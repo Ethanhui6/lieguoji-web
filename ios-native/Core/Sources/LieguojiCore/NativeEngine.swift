@@ -24,6 +24,8 @@ public final class NativeEngine {
         run = o.run; statics = o.statics
         try install()
     }
+    /// A run whose statics are already installed (module tests).
+    init(run: JS) { self.run = run; statics = .object() }
     func install() throws {
         guard let bytes = Data(base64Encoded: statics.travel.asString) else { throw NativeEngineError.message("行军图数据损坏。") }
         Armies.bridge = ForceBridge(graph: try TravelGraph(data: bytes))

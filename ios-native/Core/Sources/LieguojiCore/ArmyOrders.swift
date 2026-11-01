@@ -82,7 +82,7 @@ public enum ArmyOrders {
     }
     /// issueArmyOrderOwned47 (autonomous source). Returns whether the order was valid.
     @discardableResult
-    static func issue(_ r: JS, _ id: String, _ action: Action) -> Bool {
+    static func issue(_ r: JS, _ id: String, _ action: Action, player: Bool = false) -> Bool {
         guard case .success(let value) = resolve(r, id, action) else { return false }
         let a = r.world.armies.asArray.first { $0.id.asString == id }!
         r.armyPositions.records[id] = value.travel
@@ -92,10 +92,25 @@ public enum ArmyOrders {
         let space = Armies.space(r), status = value.travel.status.asString
         a.status = JS(retreat && (!["arrived", "halted"].contains(status) || !safeRetreatEnd(r, space.first { $0.army.id.asString == id }!, space)) ? "retreating" : "idle")
         r.battles.plans.delete(id)
+        if player { takeover(r, id) }
         var halt = false; if case .halt = action { halt = true }
         Daily.event(r, "order", "\(a.name.asString)\(halt ? "停止行军" : "前往" + value.name)", "军令从实际海陆位置生效；连续经过相邻地块，停止或改令不回跳旧城市。")
         Vassals.bump(r.armyPositions)
         return true
+    }
+    /// playerTakeover: the army leaves autonomy; an expedition it carried is released.
+    static func takeover(_ r: JS, _ id: String) {
+        let s = r.voyages
+        if !s.manualArmies.asArray.contains(where: { $0.asString == id }) { s.manualArmies.push(JS(id)) }
+        for (nation, mission) in s.missions.objectEntries where mission.armyId.optionalString == id {
+            s.missions.delete(nation); s.nextCheck[nation] = JS(r.clock.tick.asNumber + 120)
+            let d = JS.object(); d.atTick = r.clock.tick.clone(); d.text = JS("玩家已接管该远征，自动调度不覆盖手动军令。"); s.decisions[nation] = d
+            let fleetId = mission.fleetId.optionalString
+            if ["assembling", "returning"].contains(mission.phase.optionalString ?? ""), !s.manualFleets.asArray.contains(where: { $0.optionalString == fleetId }),
+               !r.transports.cargo.asArray.contains(where: { $0.fleetId.optionalString == fleetId }),
+               let fleet = r.navy.fleets.asArray.first(where: { $0.id.optionalString == fleetId }), fleet.status.asString != "lost" { fleet.patrol = JS(true) }
+        }
+        Vassals.bump(s)
     }
     static func reason(_ r: JS, _ id: String, _ action: Action) -> String? {
         if case .failure(let e) = resolve(r, id, action) { return e.reason }

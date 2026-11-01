@@ -1,0 +1,102 @@
+import Foundation
+
+/// The player's commands on the Swift run (culture47-orders applyMilitary47 for armies,
+/// civilization47-political-owner applyPoliticalCommand47 for war and peace). Each returns the
+/// web's reason text; nothing changes when a command is refused.
+extension NativeEngine {
+    /// A march to a province or a halt (provinceIndex < 0), as a player order: the army comes
+    /// under manual control.
+    public func order(armyId: String, provinceIndex: Int) -> (ok: Bool, reason: String) {
+        let r = run
+        let action: ArmyOrders.Action = provinceIndex < 0 ? .halt : .move(province: provinceIndex, retreat: false)
+        if provinceIndex >= r.world.provinces.length { return (false, "目标不在当前地图的实际海陆网格中。") }
+        switch ArmyOrders.resolve(r, armyId, action) {
+        case .failure(let e): return (false, e.reason)
+        case .success(let value):
+            let reason = provinceIndex < 0 ? "在当前位置停止行军，保留这支军队和随身物资。" : "从当前位置前往\(value.name)；途中遇敌、失去通行权或断粮会改变进程。"
+            ArmyOrders.issue(r, armyId, action, player: true)
+            let row = r.armyAutonomy.armies[armyId]
+            if !row.isNull {
+                row.decision = JS("manual"); row.targetId = .null; row.garrisonId = .null; row.campaignId = .null
+                row.issuedTick = r.clock.tick.clone(); row.nextTick = r.clock.tick.clone(); row.reason = JS("玩家军令生效，自主决策保留手动控制。")
+                Vassals.bump(r.armyAutonomy)
+            }
+            return (true, reason)
+        }
+    }
+
+    /// declareWar47 (territorial conquest) or settleWar47 type 11 (white peace) between two states.
+    public func politics(declare: Bool, _ a: Int, _ b: Int) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(a), nations.indices.contains(b), a != b else { return (false, "外交命令无效。") }
+        let ida = nations[a].id.asString, idb = nations[b].id.asString
+        if declare {
+            guard let engine = Session.engine else { return (false, "外交数据尚未载入。") }
+            if let refused = DiplomacyBridge.declareWar(r, ida, idb, engine: engine) { return (false, refused) }
+            if !r.reigns47.isNull {
+                if r.forcedWars47.isNull { r.forcedWars47 = .array() }
+                r.forcedWars47.push(r.nativeWars.campaigns.asArray.last!.id.clone())
+            }
+            War26.reconcileForces(r, [])
+            Government.reconcileContinuity(r); DiplomacyBridge.reconcile(r)
+            return (true, r.chronicle.entries.asArray.last?.text.optionalString ?? "")
+        }
+        let s = r.nativeWars
+        guard let c = s.campaigns.asArray.first(where: { $0.endedTick.isNull && Wars.coversPair($0, s, ida, idb) }) else { return (false, "两国当前没有可结束的战争。") }
+        _ = PeaceBridge.settle(r, c, reason: 11)
+        Government.reconcileContinuity(r); DiplomacyBridge.reconcile(r)
+        return (true, r.chronicle.entries.asArray.last?.text.optionalString ?? "")
+    }
+
+    /// Province sheet (engine.ts province()).
+    public func province(_ index: Int) -> Data? {
+        let r = run, w = r.world
+        guard w.provinces.asArray.indices.contains(index) else { return nil }
+        let p = w.provinces[index], id = p.id.asString
+        let stock = w.statecraft.provinces.asArray.first { $0.provinceId.asString == id }
+        func nation(_ s: String?) -> Int { s.flatMap { s in w.nations.asArray.firstIndex { $0.id.asString == s } } ?? -1 }
+        let o = JS.object()
+        o.population = JS(stock?.population.optionalNumber ?? 0); o.grain = JS(stock?.grain.optionalNumber ?? 0)
+        o.capacity = JS(r.finance.provinces[id].maxPopulation.optionalNumber ?? 0); o.supply = p.supply.isNull ? JS(0) : p.supply
+        o.controller = JS(nation(p.controller.optionalString)); o.owner = JS(nation(p.legalOwner.optionalString ?? p.controller.optionalString))
+        return Data(o.json.utf8)
+    }
+
+    /// The remaining route of an army in map units (remainingArmyTravelPoints47 / scale).
+    public func route(armyId: String) -> [[Double]] {
+        let r = run, t = r.armyPositions.records[armyId]
+        guard !t.isNull, let bridge = Armies.bridge else { return [] }
+        let g = bridge.graph, travel = bridge.travel(t), sc = r.scale.asNumber
+        var points = [g.location(travel).point]
+        if travel.status == .moving {
+            func add(_ p: TravelPoint) { if let l = points.last, l.x == p.x && l.y == p.y { return }; points.append(p) }
+            if let d = travel.destination, travel.nodes.count == 1 { add(d) }
+            else { for leg in travel.leg..<max(travel.leg, travel.nodes.count - 1) { var at = travel; at.leg = leg; if let seg = g.segment(at), !seg.local { if leg != travel.leg || !travel.crossed { add(seg.gate) }; add(seg.end) } } }
+        }
+        return points.map { [$0.x / sc, $0.y / sc] }
+    }
+}
+
+extension DiplomacyBridge {
+    /// declareWar47: the player's territorial conquest with the web's checks; nil when declared.
+    public static func declareWar(_ r: JS, _ attacker: String, _ defender: String, engine: DeclarationEngine) -> String? {
+        let nations = r.world.nations.asArray
+        guard let ai = nations.firstIndex(where: { $0.id.asString == attacker }), let di = nations.firstIndex(where: { $0.id.asString == defender }) else { return "宣战双方无效或已交战。" }
+        var w = world(r)
+        let known = w.relations.count
+        var c = DeclarationEngine.Context(engine: engine, world: w)
+        guard let a = c.states.firstIndex(where: { $0.index == ai }), let b = c.states.firstIndex(where: { $0.index == di }),
+              !c.states[a].dead, !c.states[b].dead, a != b, !c.atWar(a, b) else { return "宣战双方无效或已交战。" }
+        let truce = c.w.truce(c.relation(a, b))
+        if truce.blocked { return "停战期尚未结束（\(truce.required) 年规则）。" }
+        if c.states[a].vassal || c.w.overlordOf(di) == ai { return "附庸不能自主发动外战，宗主不能向自己的附庸宣战；可先解除关系。" }
+        guard let cb = c.usable(1, a, b) else { return "两国没有可争夺的相邻土地或外交海域。" }
+        let goals = c.goals(cb, a, b)
+        guard !goals.isEmpty, let war = c.start(a, b, cb: cb.id, goals: goals) else { return "没有可执行的陆地或跨海进攻路线。" }
+        w = c.w
+        mirrorRelations(r, w, from: known)
+        r.nativeDiplomacy.rng = JS(Double(w.rng)); r.nativeDiplomacy.draws = JS(w.draws)
+        _ = start(r, war)
+        return nil
+    }
+}

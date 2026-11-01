@@ -345,10 +345,19 @@ public enum Nobility {
             if !unmarried(r, p) || !p.isAlive.asBool { continue }
             if p.spouseId.asInt != 0 && !alive(r, p.spouseId.asInt) { p.spouseId = JS(0) }
             let own = r.kin.families[p.familyId.asInt.description], head = !own.isNull && own.headId.asInt == p.id.asInt
-            let candidates = r.kin.persons.objectValues.filter { c in
-                c.isAlive.asBool && c.gender.asInt != p.gender.asInt && c.age.asInt >= 18 && c.age.asInt <= 45 && unmarried(r, c) && c.id.asInt != p.id.asInt && !closeRelative(p, c)
-                    && (!head || r.kin.families[c.familyId.asInt.description].headId.optionalNumber.map { Int($0) } != c.id.asInt)
-            }.enumerated().map { ($0.offset, $0.element, marriageScore(r, n, p, $0.element)) }.sorted { $0.2 != $1.2 ? $0.2 > $1.2 : $0.0 < $1.0 }.prefix(10)
+            // Split for the type checker (Xcode's solver times out on the single chain).
+            func eligible(_ c: JS) -> Bool {
+                if !c.isAlive.asBool || c.gender.asInt == p.gender.asInt { return false }
+                let age = c.age.asInt
+                if age < 18 || age > 45 || !unmarried(r, c) || c.id.asInt == p.id.asInt || closeRelative(p, c) { return false }
+                if !head { return true }
+                let headId: Int? = r.kin.families[c.familyId.asInt.description].headId.optionalNumber.map { Int($0) }
+                return headId != c.id.asInt
+            }
+            var scored = [(Int, JS, Double)]()
+            for (i, c) in r.kin.persons.objectValues.filter(eligible).enumerated() { scored.append((i, c, marriageScore(r, n, p, c))) }
+            scored.sort { x, y in x.2 != y.2 ? x.2 > y.2 : x.0 < y.0 }
+            let candidates = scored.prefix(10)
             for (_, c, _) in candidates { if executeMarriage(r, n, p, c) { break } }
         }
     }

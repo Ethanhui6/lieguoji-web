@@ -105,6 +105,10 @@ struct GameState: Decodable, Equatable {
     let sieges: [Siege]
     /// Armies in contact (indices into armies), where the battle animation plays.
     var contacts: [[Int]]? = nil
+    /// Province battle arrows: source, target, attacker, defender, start x y, control x y, end x y.
+    var arrows: [[Double]]? = nil
+    /// Contacts involving a fleet: the midpoint of the two forces.
+    var seaBattles: [[Double]]? = nil
     let events: [Event]
 
     var dateText: String { date.year > 0 ? "公元\(date.year)年\(date.month)月\(date.day)日" : "公元前\(1 - date.year)年\(date.month)月\(date.day)日" }

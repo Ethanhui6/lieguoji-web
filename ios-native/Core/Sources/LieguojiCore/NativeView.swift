@@ -27,6 +27,16 @@ extension NativeEngine {
     }
 
     /// state-line fmsStateLineColor: AdjustColor(AdjustColor(colour, +0.1 s, −0.05 v), +0.2 s, −0.2 v).
+    /// ColorUtils.AdjustColor (RGB → HSV, saturation + ds, value − dv, back), on 0…1 components.
+    public static func adjustColor(_ c: (Double, Double, Double), _ ds: Double, _ dv: Double) -> (Double, Double, Double) {
+        let (r, g, b) = c, mx = max(r, g, b), mn = min(r, g, b), d = mx - mn
+        var h = 0.0
+        if d > 0 { h = mx == r ? ((g - b) / d) / 6 : mx == g ? (2 + (b - r) / d) / 6 : (4 + (r - g) / d) / 6; if h < 0 { h += 1 } }
+        let s = min(1, max(0, (mx > 0 ? d / mx : 0) + ds)), val = min(1, max(0, mx - dv))
+        let sector = h * 6, i = Int(sector.rounded(.down)) % 6, f = sector - sector.rounded(.down)
+        let p = val * (1 - s), q = val * (1 - s * f), t = val * (1 - s * (1 - f))
+        return [(val, t, p), (q, val, p), (p, val, t), (p, q, val), (t, p, val), (val, p, q)][i]
+    }
     static func stateLineColor(_ css: String) -> String {
         let v = Int(css.dropFirst(), radix: 16) ?? 0x999999
         func adjust(_ c: (Double, Double, Double), _ ds: Double, _ dv: Double) -> (Double, Double, Double) {
@@ -156,6 +166,14 @@ extension NativeEngine {
             guard let a = armyIndex[p.a.asString], let b = armyIndex[p.b.asString] else { return nil }
             return .array([JS(a), JS(b)])
         })
+        // Battles at sea (a fleet in contact): the same BattleSword between the two forces.
+        var forcePoint = [String: (Double, Double)]()
+        for (i, v) in space.enumerated() { let row = o.armies[i]; forcePoint[Daily.key("army", v.army.id.asString)] = (row.x.asNumber, row.y.asNumber) }
+        for f in fleetRows { forcePoint[Daily.key("fleet", f.id.asString)] = (f.x.asNumber, f.y.asNumber) }
+        o.seaBattles = .array(r.forceContacts.pairs.asArray.compactMap { p -> JS? in
+            guard p.a.asString.hasPrefix("[\"fleet") || p.b.asString.hasPrefix("[\"fleet"), let a = forcePoint[p.a.asString], let b = forcePoint[p.b.asString] else { return nil }
+            return .array([JS((a.0 + b.0) / 2), JS((a.1 + b.1) / 2)])
+        })
         let stateNation = Dictionary(uniqueKeysWithValues: r.nativeWars.nationIds.asArray.map { ($0[0].asInt, $0[1].asString) })
         o.wars = .array(r.nativeWars.campaigns.asArray.filter { $0.endedTick.isNull }.map { c in
             let d = r.nativeDiplomacy.declarations.asArray.first { $0.warId.asInt == c.id.asInt }, goal = d.flatMap { $0.goals.asArray.first }
@@ -177,6 +195,8 @@ extension NativeEngine {
             })
             return x
         })
+        battleArrows.update(r, day: w.day.asInt)
+        o.arrows = .array(battleArrows.all.map { a in .array([JS(a.source), JS(a.target), JS(a.attacker), JS(a.defender), JS(a.start.x / sc), JS(a.start.y / sc), JS(a.control.x / sc), JS(a.control.y / sc), JS(a.end.x / sc), JS(a.end.y / sc)]) })
         o.sieges = .array(r.occupation.sieges.asArray.map { s in
             let x = JS.object(); x.province = JS(pi[s.provinceId.asString] ?? -1); x.nation = JS(ni[s.controller.asString] ?? -1)
             x.progress = JS(s.maximum.asNumber > 0 ? s.resistance.asNumber / s.maximum.asNumber : 0); return x

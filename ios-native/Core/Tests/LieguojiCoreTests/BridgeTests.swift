@@ -40,6 +40,10 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(engine.releaseVassal(a[1]).ok)
         XCTAssertTrue(engine.annex(a[2], by: a[0]).ok)
         XCTAssertFalse(Vassals.alive(engine.run, engine.run.world.nations[a[2]].id.asString))
+        for mode in ["state", "alliance", "culture", "family", "religion"] {
+            let v = try JS.parse(engine.view(mode)); XCTAssertEqual(v.fills.length, engine.run.world.provinces.length); XCTAssertGreaterThan(v.legend.length, 0)
+        }
+        for c in ["power", "population", "economy", "war", "religion"] { XCTAssertNoThrow(try JS.parse(engine.statistics(c))) }
         engine.advance(days: 3)
         XCTAssertNotNil(try JSONSerialization.jsonObject(with: engine.state(includeLabels: true)))
     }

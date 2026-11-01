@@ -34,6 +34,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private(set) var map: WorldMap
     private var nationColors: [RGB]
     private var tint: [Int: RGB] = [:]
+    private var fills: [RGB]?
     var camera: MapCamera
     var onDraw: ((CFTimeInterval) -> Void)?
     private(set) var mode: MapMode = .political
@@ -157,7 +158,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if recolour { recolor() }
     }
     private func recolor() {
-        var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight, tint: tint)
+        var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight, tint: tint, provinceColors: mode == .political ? fills : nil)
         // 国家颜色浓度: state colours blended toward the terrain colours.
         if mode == .political && display.colorDensity < 1 {
             let terrain = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors), k = Float(max(0, display.colorDensity))
@@ -253,9 +254,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Recolours the land (view mode or selected province highlight).
-    func setAppearance(mode: MapMode, highlight: Int?, tint: [Int: RGB] = [:]) {
-        guard mode != self.mode || highlight != self.highlight || tint != self.tint else { return }
-        self.mode = mode; self.highlight = highlight; self.tint = tint
+    func setAppearance(mode: MapMode, highlight: Int?, tint: [Int: RGB] = [:], fills: [RGB]? = nil) {
+        guard mode != self.mode || highlight != self.highlight || tint != self.tint || fills != self.fills else { return }
+        self.mode = mode; self.highlight = highlight; self.tint = tint; self.fills = fills
         recolor()
     }
 

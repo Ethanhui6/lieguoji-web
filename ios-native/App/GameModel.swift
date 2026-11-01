@@ -233,6 +233,7 @@ import LieguojiCore
         if changed { controller.world = world }
         refreshArmies()
         refreshEffects(previous: previous)
+        if mapView != .state && mapView != .terrain { Task { await refreshView() } }
     }
 
     /// Wars declared or ended and provinces taken since the last state, as banners.
@@ -287,6 +288,10 @@ import LieguojiCore
             let old = spots[key] ?? (0, 0, 0)
             spots[key] = (old.x + x, old.y + y, old.n + 1)
         }
+        for p in state.seaBattles ?? [] where p.count == 2 {
+            let key = "s\(Int(p[0] / 6)):\(Int(p[1] / 6))", old = spots[key] ?? (0, 0, 0)
+            spots[key] = (old.x + p[0], old.y + p[1], old.n + 1)
+        }
         for (key, v) in spots.sorted(by: { $0.key < $1.key }) { e.battles.append(.init(key: key, x: v.x / v.n, y: v.y / v.n)) }
         // Declarations, claimed provinces and peace (WarEffects47): one-shot, keyed by war.
         func pole(_ n: Int) -> (Double, Double)? {
@@ -297,6 +302,11 @@ import LieguojiCore
             return nil
         }
         e.declarations = controller.effects.declarations; e.claims = controller.effects.claims; e.peaces = controller.effects.peaces
+        // Province battle arrows in the attacker's shallow → deep colour (MaterialManager.UpdateStateColor).
+        for a in state.arrows ?? [] where a.count == 10 {
+            let c = rgb(Int(a[2])), shallow = NativeEngine.adjustColor(c, -0.05, -0.05), deep = NativeEngine.adjustColor(c, 0.1, 0.05)
+            e.arrows.append(.init(key: "\(Int(a[0]))>\(Int(a[1]))", sx: a[4], sy: a[5], cx: a[6], cy: a[7], ex: a[8], ey: a[9], shallow: shallow, deep: deep))
+        }
         if let previous {
             let before = Set(previous.wars.map(\.id)), after = Set(state.wars.map(\.id))
             for w in state.wars where !before.contains(w.id) {
@@ -401,6 +411,23 @@ import LieguojiCore
     private func finish(_ result: (ok: Bool, reason: String, state: Data?)) -> String? {
         if let data = result.state, let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
         return result.ok ? nil : result.reason
+    }
+
+    // MARK: map views and statistics
+
+    /// The colour view on the map (国家、联盟、文化、家族、宗教、地形).
+    @Published var mapView: MapViewMode = .state { didSet { Task { await refreshView() } } }
+    @Published private(set) var viewLegend: [MapViewData.Entry] = []
+    func refreshView() async {
+        controller.mode = mapView == .terrain ? .terrain : .political
+        guard mapView != .state && mapView != .terrain, let data = await native.view(mapView.rawValue),
+              let v = try? JSONDecoder().decode(MapViewData.self, from: data) else { controller.viewFills = nil; viewLegend = []; return }
+        controller.viewFills = v.fills.map { RGB(css: $0) ?? RGB(1, 1, 1) }
+        viewLegend = v.legend
+    }
+    func statistics(_ category: String) async -> [StatisticsRow] {
+        guard let data = await native.statistics(category) else { return [] }
+        return (try? JSONDecoder().decode([StatisticsRow].self, from: data)) ?? []
     }
 
     func nationInfo(_ index: Int) async -> NationInfo? {

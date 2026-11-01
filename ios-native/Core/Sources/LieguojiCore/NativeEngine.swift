@@ -6,6 +6,8 @@ import Foundation
 public final class NativeEngine {
     public static let saveFormat = "lieguoji-native-game-2"
     public private(set) var run: JS
+    /// The original province battle arrows (presentation state, kept between days).
+    let battleArrows = BattleArrows()
     let statics: JS
 
     /// Catalogs shared by every world: native character traits, family naming by culture and the

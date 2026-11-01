@@ -29,6 +29,8 @@ public struct TravelGraph: Sendable {
     public let centers: [TravelPoint]
     let linkStart: [Int]
     let linkTo: [Int], gates: [TravelPoint], linkCost: [Double]
+    /// Link length (army-travel47-graph link.distance).
+    let linkDistance: [Double]
     public let mountain: [Bool], plateau: [Bool], targets: [TravelPoint]
     public let faceBiomes: [UInt8]
     public var count: Int { ids.count }
@@ -51,11 +53,11 @@ public struct TravelGraph: Sendable {
             centers.append(TravelPoint(x: try f64(), y: try f64())); starts.append(Int(try u32()))
         }
         starts.append(Int(try u32()))
-        var to = [Int](), gates = [TravelPoint](), costs = [Double]()
+        var to = [Int](), gates = [TravelPoint](), costs = [Double](), dists = [Double]()
         to.reserveCapacity(l); gates.reserveCapacity(l); costs.reserveCapacity(l)
         for _ in 0..<l {
             to.append(Int(try i32())); gates.append(TravelPoint(x: try f64(), y: try f64()))
-            _ = try f64(); _ = try f64() // web distance / toGate: recomputed by the segment geometry
+            dists.append(try f64()); _ = try f64() // web toGate: recomputed by the segment geometry
             costs.append(try f64())
         }
         var mountain = [Bool](), plateau = [Bool](), targets = [TravelPoint]()
@@ -64,7 +66,7 @@ public struct TravelGraph: Sendable {
         for _ in 0..<f { biomes.append(try u8()) }
         guard o == data.count, starts.last == l else { throw LoadError.format }
         self.ids = ids; self.faces = faces; self.provinces = provinces; self.centers = centers; linkStart = starts
-        linkTo = to; self.gates = gates; linkCost = costs; self.mountain = mountain; self.plateau = plateau; self.targets = targets; faceBiomes = biomes
+        linkTo = to; self.gates = gates; linkCost = costs; linkDistance = dists; self.mountain = mountain; self.plateau = plateau; self.targets = targets; faceBiomes = biomes
         var index = [Int32: Int](); for (i, id) in ids.enumerated() { index[id] = i }; self.index = index
         var byProvince = [[Int]](repeating: [], count: p)
         for (i, q) in provinces.enumerated() where q >= 0 { byProvince[Int(q)].append(i) }

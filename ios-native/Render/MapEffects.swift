@@ -17,12 +17,18 @@ struct MapEffects: Equatable {
     struct Declaration: Equatable { let id: String; let fromX: Double; let fromY: Double; let toX: Double; let toY: Double }
     struct Claim: Equatable { let id: String; let x: Double; let y: Double; let r: Double; let g: Double; let b: Double; let delay: Double }
     struct Peace: Equatable { let id: String; let x: Double; let y: Double }
+    struct Arrow: Equatable {
+        let key: String; let sx: Double; let sy: Double; let cx: Double; let cy: Double; let ex: Double; let ey: Double
+        let shallow: (Double, Double, Double); let deep: (Double, Double, Double)
+        static func == (a: Arrow, b: Arrow) -> Bool { a.key == b.key && a.sx == b.sx && a.sy == b.sy && a.ex == b.ex && a.ey == b.ey && a.cx == b.cx && a.cy == b.cy && a.deep == b.deep }
+    }
     var battles: [Battle] = []
     var sieges: [Siege] = []
     var flashes: [Flash] = []
     var declarations: [Declaration] = []
     var claims: [Claim] = []
     var peaces: [Peace] = []
+    var arrows: [Arrow] = []
 }
 
 final class EffectsView: UIView {
@@ -32,6 +38,7 @@ final class EffectsView: UIView {
     private var arrowLayers: [String: (layer: CAShapeLayer, head: CAShapeLayer, d: MapEffects.Declaration)] = [:]
     private var claimLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var peaceLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
+    private var battleArrows: [String: (root: CALayer, fill: CAShapeLayer, gradient: CAGradientLayer, outline: CAShapeLayer, head: CAShapeLayer, reveal: CAShapeLayer, a: MapEffects.Arrow)] = [:]
     private var seen = Set<String>()
     private var camera: MapCamera?
     private var viewport: CGSize = .zero
@@ -140,6 +147,43 @@ final class EffectsView: UIView {
         return l
     }
 
+    /// AttackArrowRenderer: a curved arrow growing in over 1 s, width 8 → 3, shallow → deep colour,
+    /// with a dark outline.
+    private func arrowLayer(_ a: MapEffects.Arrow) -> (CALayer, CAShapeLayer, CAGradientLayer, CAShapeLayer, CAShapeLayer, CAShapeLayer) {
+        func color(_ c: (Double, Double, Double)) -> CGColor { UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1).cgColor }
+        let root = CALayer(); root.frame = bounds
+        let gradient = CAGradientLayer(); gradient.frame = bounds; gradient.colors = [color(a.shallow), color(a.deep)]
+        let fill = CAShapeLayer(); fill.fillColor = UIColor.black.cgColor; gradient.mask = fill
+        let outline = CAShapeLayer(); outline.fillColor = UIColor.clear.cgColor; outline.strokeColor = UIColor(red: 0.11, green: 0.1, blue: 0.09, alpha: 0.55).cgColor; outline.lineWidth = 1.2; outline.lineJoin = .round
+        let head = CAShapeLayer(); head.fillColor = color(a.deep); head.strokeColor = outline.strokeColor; head.lineWidth = 0.8
+        let reveal = CAShapeLayer(); reveal.fillColor = UIColor.clear.cgColor; reveal.strokeColor = UIColor.black.cgColor; reveal.lineCap = .round; reveal.lineWidth = 40
+        let grow = CABasicAnimation(keyPath: "strokeEnd"); grow.fromValue = 0.13; grow.toValue = 1; grow.duration = 1; grow.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        reveal.add(grow, forKey: "grow")
+        root.addSublayer(gradient); root.addSublayer(outline); root.addSublayer(head); root.mask = reveal
+        return (root, fill, gradient, outline, head, reveal)
+    }
+    private func layoutArrow(_ v: (root: CALayer, fill: CAShapeLayer, gradient: CAGradientLayer, outline: CAShapeLayer, head: CAShapeLayer, reveal: CAShapeLayer, a: MapEffects.Arrow), _ screen: (Double, Double) -> CGPoint) {
+        let s = screen(v.a.sx, v.a.sy), c = screen(v.a.cx, v.a.cy), e = screen(v.a.ex, v.a.ey)
+        func bezier(_ t: CGFloat) -> CGPoint { CGPoint(x: (1 - t) * (1 - t) * s.x + 2 * (1 - t) * t * c.x + t * t * e.x, y: (1 - t) * (1 - t) * s.y + 2 * (1 - t) * t * c.y + t * t * e.y) }
+        let points = (0..<30).map { bezier(0.1 + 0.65 * CGFloat($0) / 29) }
+        func width(_ k: CGFloat) -> CGFloat { (8 - 5 * k * k * (3 - 2 * k)) * 1.3 }
+        var left = [CGPoint](), right = [CGPoint]()
+        for (i, p) in points.enumerated() {
+            let q = points[min(i + 1, 29)], o = points[max(i - 1, 0)], dx = q.x - o.x, dy = q.y - o.y, len = max(0.001, hypot(dx, dy))
+            let w = width(CGFloat(i) / 29) / 2
+            left.append(CGPoint(x: p.x - dy / len * w, y: p.y + dx / len * w)); right.append(CGPoint(x: p.x + dy / len * w, y: p.y - dx / len * w))
+        }
+        let body = UIBezierPath(); body.move(to: left[0]); for p in left.dropFirst() { body.addLine(to: p) }; for p in right.reversed() { body.addLine(to: p) }; body.close()
+        v.fill.path = body.cgPath; v.outline.path = body.cgPath
+        let tip = points[29], before = points[28], dx = tip.x - before.x, dy = tip.y - before.y, len = max(0.001, hypot(dx, dy)), ux = dx / len, uy = dy / len
+        let h: CGFloat = 7.8, l: CGFloat = 11.7
+        let head = UIBezierPath(); head.move(to: CGPoint(x: tip.x - uy * h, y: tip.y + ux * h)); head.addLine(to: CGPoint(x: tip.x + ux * l, y: tip.y + uy * l)); head.addLine(to: CGPoint(x: tip.x + uy * h, y: tip.y - ux * h)); head.close()
+        v.head.path = head.cgPath
+        let center = UIBezierPath(); center.move(to: points[0]); for p in points.dropFirst() { center.addLine(to: p) }; center.addLine(to: CGPoint(x: tip.x + ux * l, y: tip.y + uy * l))
+        v.reveal.path = center.cgPath
+        v.gradient.startPoint = CGPoint(x: s.x / max(1, bounds.width), y: s.y / max(1, bounds.height)); v.gradient.endPoint = CGPoint(x: e.x / max(1, bounds.width), y: e.y / max(1, bounds.height))
+    }
+
     private func once(_ id: String, after seconds: Double, remove: @escaping () -> Void) {
         seen.insert(id)
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { remove() }
@@ -173,6 +217,12 @@ final class EffectsView: UIView {
             let id = f.id
             once(id, after: 2.2) { [weak self] in self?.flashLayers[id]?.layer.removeFromSuperlayer(); self?.flashLayers[id] = nil }
         }
+        let liveArrows = Set(effects.arrows.map(\.key))
+        for (key, v) in battleArrows where !liveArrows.contains(key) { v.root.removeFromSuperlayer(); battleArrows[key] = nil }
+        for a in effects.arrows {
+            if let old = battleArrows[a.key] { battleArrows[a.key] = (old.root, old.fill, old.gradient, old.outline, old.head, old.reveal, a) }
+            else { let l = arrowLayer(a); layer.insertSublayer(l.0, at: 0); battleArrows[a.key] = (l.0, l.1, l.2, l.3, l.4, l.5, a) }
+        }
         for d in effects.declarations where !seen.contains(d.id) {
             let (line, head) = declarationLayers(); layer.addSublayer(line); layer.addSublayer(head)
             arrowLayers[d.id] = (line, head, d)
@@ -204,6 +254,7 @@ final class EffectsView: UIView {
         for v in flashLayers.values { v.layer.position = screen(v.x, v.y) }
         for v in claimLayers.values { v.layer.position = screen(v.x, v.y) }
         for v in peaceLayers.values { var p = screen(v.x, v.y); p.y -= 10; v.layer.position = p }
+        for v in battleArrows.values { v.root.frame = bounds; v.gradient.frame = bounds; layoutArrow(v) { screen($0, $1) } }
         for v in arrowLayers.values {
             let a = screen(v.d.fromX, v.d.fromY), b = screen(v.d.toX, v.d.toY)
             let dx = b.x - a.x, dy = b.y - a.y, len = max(1, hypot(dx, dy)), ux = dx / len, uy = dy / len

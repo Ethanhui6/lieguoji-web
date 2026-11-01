@@ -32,7 +32,8 @@ public enum MapPalette {
     public static func heightGray(_ elevation: Int16) -> Float { 1 - Float(min(100, max(0, Int(elevation)))) / 100 }
 
     /// Final sRGB colour of a cell.
-    public static func cellColor(map: WorldMap, cell: Int, mode: MapMode, nationColors: [RGB]) -> RGB {
+    /// `provinceColors`: a colour view (alliance, culture, family, religion) fills each province.
+    public static func cellColor(map: WorldMap, cell: Int, mode: MapMode, nationColors: [RGB], provinceColors: [RGB]? = nil) -> RGB {
         let e = map.elevation[cell]
         if e < WorldMap.seaLevel {
             let t = Float(min(20, max(0, Int(e)))) / 20
@@ -43,6 +44,8 @@ public enum MapPalette {
             return RGB(Float(map.biomeRGB[i]) / 255, Float(map.biomeRGB[i + 1]) / 255, Float(map.biomeRGB[i + 2]) / 255)
         }
         let gray = heightGray(e)
+        func mixed(_ state: RGB) -> RGB { func mix(_ s: Float) -> Float { linearToSrgb(gray + (srgbToLinear(s) - gray) * stateAlpha) }; return RGB(mix(state.r), mix(state.g), mix(state.b)) }
+        if let provinceColors { let p = Int(map.province[cell]); if p >= 0 && p < provinceColors.count { return mixed(provinceColors[p]) } }
         guard let n = map.nation(ofCell: cell), n < nationColors.count else {
             let s = linearToSrgb(gray); return RGB(s, s, s)
         }

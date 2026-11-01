@@ -8,6 +8,8 @@ import LieguojiCore
     @Published var mode: MapMode = .political
     /// The selected state's relations on the map (StateRelationsHighlighter): nation → 0xRRGGBB.
     @Published var relations: [Int: UInt32] = [:]
+    /// A colour view's province fills (nil: the state view).
+    @Published var viewFills: [RGB]?
     @Published var selectedProvince: Int?
     @Published var showMetrics = false
     /// 显示设置 (web 0.5.40 map display options), kept between launches.
@@ -280,7 +282,7 @@ struct MapView: UIViewRepresentable {
             labels?.alpha = controller.reveal >= 1 ? 1 : 0
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
-            renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) })
+            renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills)
             if let armies = controller.armies {
                 renderer?.setArmies(armies, route: controller.route)
                 if renderer?.isAnimating == true { startLink() }

@@ -58,6 +58,8 @@ actor NativeHost {
     }
     func province(_ index: Int) -> Data? { engine?.province(index) }
     func nationInfo(_ index: Int) -> Data? { engine?.nationInfo(index) }
+    func view(_ mode: String) -> Data? { engine?.view(mode) }
+    func statistics(_ category: String) -> Data? { engine?.statistics(category) }
     private func command(_ out: (ok: Bool, reason: String)?) -> (ok: Bool, reason: String, state: Data?) {
         guard let out else { return (false, "世界尚未载入。", nil) }
         return (out.ok, out.reason, out.ok ? state() : nil)

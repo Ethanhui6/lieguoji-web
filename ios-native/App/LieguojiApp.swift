@@ -279,13 +279,14 @@ struct GeneratingView: View {
 // MARK: - game
 
 enum Panel: Identifiable, Equatable {
-    case province(Int), army(Int), fleet(Int), nation(Int), nations, military, diplomacy, chronicle, menu
+    case province(Int), army(Int), fleet(Int), nation(Int), nations, military, diplomacy, chronicle, menu, statistics
     var id: String {
         switch self {
         case .province(let p): return "p\(p)"
         case .army(let a): return "a\(a)"
         case .fleet(let f): return "f\(f)"
         case .nation(let n): return "n\(n)"
+        case .statistics: return "statistics"
         case .nations: return "nations"
         case .military: return "military"
         case .diplomacy: return "diplomacy"
@@ -300,6 +301,7 @@ struct GameView: View {
     @ObservedObject private var controller: MapController
     @State private var panel: Panel?
     @State private var toast: String?
+    @State private var viewsOpen = false
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
 
     var body: some View {
@@ -320,6 +322,16 @@ struct GameView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingArmy)
         }
         .overlay(alignment: .bottom) { bottomBar.offset(y: controller.reveal >= 1 ? 0 : 120) }
+        .overlay(alignment: .bottomLeading) {
+            if !model.viewLegend.isEmpty {
+                MapViewLegend(mode: model.mapView, legend: model.viewLegend).padding(.leading, 14).padding(.bottom, 150)
+                    .transition(.asymmetric(insertion: .scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity), removal: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.45, dampingFraction: 0.82), value: model.viewLegend)
+        .overlay(alignment: .topTrailing) {
+            MapViewSwitcher(mode: $model.mapView, open: $viewsOpen).allowsHitTesting(viewsOpen).padding(.top, 52).padding(.trailing, 14)
+        }
         .overlay(alignment: .center) {
             if let toast {
                 Text(toast).font(Theme.kai(17)).foregroundStyle(Theme.ink).multilineTextAlignment(.center).padding(.horizontal, 18).padding(.vertical, 12)
@@ -373,6 +385,8 @@ struct GameView: View {
         case .nation(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) })
                 .presentationDetents([.medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        case .statistics:
+            StatisticsSheet(model: model) { n in self.panel = .nation(n) }.presentationDetents([.medium, .large]).presentationBackground(.clear)
         case .nations:
             NationsSheet(model: model) { n in self.panel = .nation(n) }.presentationDetents([.medium, .large])
         case .military:
@@ -407,11 +421,8 @@ struct GameView: View {
             }
             .padding(.horizontal, 16).frame(height: 42).glass(Capsule())
             Spacer()
-            Button {
-                withAnimation(.easeInOut(duration: 0.25)) { controller.mode = controller.mode == .political ? .terrain : .political }
-                say(controller.mode == .political ? "政治地图" : "地形地图")
-            } label: { CircleIcon(symbol: controller.mode == .political ? "flag.fill" : "mountain.2.fill") }
-            .buttonStyle(PressStyle())
+            Button { withAnimation { viewsOpen.toggle() } } label: { CircleIcon(symbol: viewsOpen ? "xmark" : model.mapView.symbol) }
+                .buttonStyle(PressStyle())
             Button { panel = .menu } label: { CircleIcon(symbol: "ellipsis") }.buttonStyle(PressStyle())
         }
         .padding(.horizontal, 14).padding(.top, 2)
@@ -442,6 +453,7 @@ struct GameView: View {
                     TabButton(symbol: "shield", title: "军事") { panel = .military }
                     TabButton(symbol: "scroll", title: "外交") { panel = .diplomacy }
                     TabButton(symbol: "book", title: "纪事") { panel = .chronicle }
+                    TabButton(symbol: "chart.bar.xaxis", title: "排行") { panel = .statistics }
                 }
                 .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
                 HStack(spacing: 2) {
@@ -487,7 +499,7 @@ struct TabButton: View {
                 Image(systemName: symbol).font(.system(size: 18))
                 Text(title).font(Theme.kai(12))
             }
-            .foregroundStyle(Theme.ink).frame(width: 56, height: 50).contentShape(Rectangle())
+            .foregroundStyle(Theme.ink).frame(width: 50, height: 50).contentShape(Rectangle())
         }
         .buttonStyle(PressStyle())
     }
@@ -913,6 +925,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.20", ["新增原作省份进攻箭头：被敌军进攻的省份上，从进攻方相邻省份指来弯曲粗箭头（进攻方国色由浅到深、首粗尾细、1 秒长出），规则同原作：按进攻军队数画 1 到 3 支，进攻方失去出发省份时箭头消失。原作默认只显示所选国家的战争，这里默认全部显示。",
+                   "海战也显示原作双剑交锋动画，出现在两支舰队相接处。",
+                   "地图视图（原作 1–6 视图）：国家、联盟、文化、家族、宗教、地形，右上角按钮展开纸质切换条，选中项以朱印标出；非国家视图左下角显示图例。",
+                   "新增「排行」（原作统计面板）：国力排行、人口排名、经济排行、战争统计、宗教信息，以奏折样式呈现，名次用汉字数字，墨条依次刷出；点国家可进入国家详情。"]),
         ("0.9.19", ["战斗动画改用原作双剑交锋（40 帧、每秒 12 帧），出现在两军实际相接处；交战中的军队站在真实位置，不再隔着半个省开打。",
                    "宣战时一道红色流动箭头从进攻国首都指向防守国首都（2 秒）；战争目标省份依次落下宣称标记（宣称国颜色），停留后淡出。",
                    "战争结束时，每个参战国首都上方升起和平鸽。",

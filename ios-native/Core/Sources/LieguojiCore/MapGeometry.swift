@@ -22,10 +22,10 @@ public struct CellMesh: Sendable {
 
     /// r, g, b, a per vertex: every vertex of a cell carries the cell colour.
     /// `tint`: nation → colour blended over its land (the selected state's relations).
-    public static func colors(map: WorldMap, mode: MapMode, nationColors: [RGB], highlightProvince: Int? = nil, tint: [Int: RGB] = [:]) -> [Float] {
+    public static func colors(map: WorldMap, mode: MapMode, nationColors: [RGB], highlightProvince: Int? = nil, tint: [Int: RGB] = [:], provinceColors: [RGB]? = nil) -> [Float] {
         var out = [Float](repeating: 1, count: map.vertices.count * 2)
         for c in 0..<map.cellCount {
-            var color = MapPalette.cellColor(map: map, cell: c, mode: mode, nationColors: nationColors)
+            var color = MapPalette.cellColor(map: map, cell: c, mode: mode, nationColors: nationColors, provinceColors: provinceColors)
             if !tint.isEmpty, map.isLand(c), let n = map.nation(ofCell: c), let t = tint[n] {
                 color = RGB(color.r + (t.r - color.r) * 0.55, color.g + (t.g - color.g) * 0.55, color.b + (t.b - color.b) * 0.55)
             }

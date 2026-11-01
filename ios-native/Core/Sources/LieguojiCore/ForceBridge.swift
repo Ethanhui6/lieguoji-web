@@ -16,7 +16,19 @@ public final class ForceBridge {
     static func point(_ p: JS) -> TravelPoint { TravelPoint(x: p.x.asNumber, y: p.y.asNumber) }
     static func json(_ p: TravelPoint) -> JS { let o = JS.object(); o.x = JS(p.x); o.y = JS(p.y); return o }
 
+    /// Parsed travel records. Records are replaced (never edited) when a force moves or gets an order,
+    /// so a record object parses once; the cache keeps the object alive (its identity cannot be reused)
+    /// and re-checks the fields that change with movement.
+    private var parsed = [ObjectIdentifier: (record: JS, travel: ArmyTravel, nodes: Int, status: String)]()
     public func travel(_ t: JS) -> ArmyTravel {
+        let id = ObjectIdentifier(t)
+        if let c = parsed[id], c.record === t, c.travel.leg == t.leg.asInt, c.travel.offset == t.offset.asNumber, c.nodes == t.nodes.length, c.status == t.status.asString { return c.travel }
+        let value = parse(t)
+        if parsed.count > 8192 { parsed.removeAll(keepingCapacity: true) }
+        parsed[id] = (t, value, t.nodes.length, t.status.asString)
+        return value
+    }
+    private func parse(_ t: JS) -> ArmyTravel {
         var a = ArmyTravel(origin: Self.point(t.origin), nodes: t.nodes.asArray.map { index[$0.asInt]! })
         a.leg = t.leg.asInt; a.offset = t.offset.asNumber; a.crossed = t.crossed.asBool; a.status = Self.statuses[t.status.asString]!
         if t.version.asInt == 2 { a.destination = Self.point(t.destination) }
@@ -51,9 +63,10 @@ public final class ForceBridge {
     /// The motion rules of the run: war between nations, water province of a sea face, province ids.
     public func rules(_ r: JS, canEnter: @escaping (MovingForce, Int) -> Bool = { _, _ in false }, speed: @escaping (MovingForce, Int) -> Double = { _, _ in 0 }) -> ContactMotion.Rules {
         let nations = r.world.nations.asArray.map(\.id.asString)
+        var nationAt = [String: Int](); for (i, n) in nations.enumerated() where nationAt[n] == nil { nationAt[n] = i }
         var war = Set<Int>()
         for p in r.world.statecraft.relations.asArray where p.status.asString == "war" {
-            if let a = nations.firstIndex(of: p.a.asString), let b = nations.firstIndex(of: p.b.asString) { war.insert(min(a, b) * 4096 + max(a, b)) }
+            if let a = nationAt[p.a.asString], let b = nationAt[p.b.asString] { war.insert(min(a, b) * 4096 + max(a, b)) }
         }
         // The water region of each sea face and the province ids are fixed for a world.
         if staticRegions == nil || staticProvinceIds.count != r.world.provinces.length {

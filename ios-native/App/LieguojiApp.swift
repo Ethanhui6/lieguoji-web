@@ -195,7 +195,7 @@ struct TitleView: View {
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet { options in creating = false; Task { await model.generate(options) } }
-                .presentationDetents([.medium]).presentationBackground(Theme.paper)
+                .presentationDetents([.medium, .large]).presentationBackground(Theme.paper)
         }
     }
 }
@@ -228,6 +228,15 @@ struct NewWorldSheet: View {
                 ChipPicker(items: Names.templates.map { ($0.id, $0.name) }, selection: $options.template)
             }
             PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
+            HStack {
+                Text("省份").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+                Spacer()
+                TextField("", text: $options.provinces, prompt: Text("80").foregroundColor(Theme.ink2.opacity(0.6)))
+                    .font(Theme.kai(18)).foregroundStyle(Theme.ink).keyboardType(.numberPad).multilineTextAlignment(.trailing).tint(Theme.seal)
+                    .padding(.horizontal, 12).frame(width: 110, height: 38).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                Text("个").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+            }
+            Text("可填 \(options.nations)–480，每省一城，按地形均分大小；实际生成 \(options.provinceCount) 省。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             HStack {
                 Text("种子").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
                 Spacer()
@@ -878,6 +887,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.13", ["【手机上能点到】新世界页新增「省份」数字框：自由输入省份数（不少于国家数，最多 480，与网页引擎同一上下限），每省一城，省份按地形均分大小（与网页同一分区算法）；预览地图与正式世界用同一省份数。",
+                    "【仍在核心代码】正式世界目前仍由内置网页引擎建立后交给 Swift；Swift 端的国家财政与首批征兵（政府段）、海陆军初始化（军事段）尚在移植，移植完才能完全脱离网页引擎建世界。",
+                    "【未在真机验证】以上只在 CI 构建通过，未在真机上验证；省份很多（数百）时的生成耗时未测。"]),
         ("0.9.12", ["【手机上能点到】字体统一：内置楷体（全字库正楷体 TW-Kai，政府资料开放授权）由 2617 字扩到 7799 字（含 GB2312 全部汉字与全部名称目录用字），人名、地名不再混入系统字体。",
                     "【手机上能点到】地图国名去掉国家色描边，改为与城市名相同的浅纸色细描边。",
                     "【手机上能点到】人物特质补齐中文（统一者、越战越勇、厌战、海军精通、船舶大师、改革家、天生领袖、难以服众），不再显示英文。宣战／议和横幅的图标改为文字「对」「与」。",

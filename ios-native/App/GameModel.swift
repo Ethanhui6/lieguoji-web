@@ -60,7 +60,11 @@ import LieguojiCore
 
     // MARK: worlds
 
-    struct NewWorld { var template = "continents"; var nations = 8; var seed = "" }
+    struct NewWorld {
+        var template = "continents"; var nations = 8; var seed = ""; var provinces = "80"
+        /// One city per province; the web engine (native-bridge generate) clamps to nations…480.
+        var provinceCount: Int { max(nations, min(480, Int(provinces) ?? nations * 10)) }
+    }
 
     /// The terrain, rivers, provinces and capitals are generated on the device at once (the Swift
     /// ports give the web engine's exact result for the same seed) and rise on screen while the
@@ -71,13 +75,13 @@ import LieguojiCore
         generationNote = "正在生成地形"
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
-            let json: [String: Any] = ["template": options.template, "count": options.nations, "seed": seed]
+            let json: [String: Any] = ["template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed]
             let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
             let engine = self.engine
             let full = Task { try await engine.call("generate(options)", ["options": text]) }
             if let inputs = previewInputs {
-                let nations = options.nations
-                let preview = await Task.detached(priority: .userInitiated) { PreviewWorld.build(inputs, seed: seed, template: options.template, nations: nations, cities: nations * 10) }.value
+                let nations = options.nations, provinceCount = options.provinceCount
+                let preview = await Task.detached(priority: .userInitiated) { PreviewWorld.build(inputs, seed: seed, template: options.template, nations: nations, cities: provinceCount) }.value
                 state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects()
                 map = preview; worldID = UUID()
                 generationNote = ""

@@ -152,14 +152,21 @@ final class EffectsView: UIView {
     private func arrowLayer(_ a: MapEffects.Arrow) -> (CALayer, CAShapeLayer, CAGradientLayer, CAShapeLayer, CAShapeLayer, CAShapeLayer) {
         func color(_ c: (Double, Double, Double)) -> CGColor { UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1).cgColor }
         let root = CALayer(); root.frame = bounds
-        let gradient = CAGradientLayer(); gradient.frame = bounds; gradient.colors = [color(a.shallow), color(a.deep)]
-        let fill = CAShapeLayer(); fill.fillColor = UIColor.black.cgColor; gradient.mask = fill
+        // No masks (they did not show on device): the body is filled directly, shallow → deep by two
+        // overlapping halves; the gradient layer is kept only as a hidden placeholder.
+        let gradient = CAGradientLayer(); gradient.isHidden = true
+        let mid = ((a.shallow.0 + a.deep.0) / 2, (a.shallow.1 + a.deep.1) / 2, (a.shallow.2 + a.deep.2) / 2)
+        let fill = CAShapeLayer(); fill.fillColor = color(mid)
         let outline = CAShapeLayer(); outline.fillColor = UIColor.clear.cgColor; outline.strokeColor = UIColor(red: 0.11, green: 0.1, blue: 0.09, alpha: 0.55).cgColor; outline.lineWidth = 1.2; outline.lineJoin = .round
         let head = CAShapeLayer(); head.fillColor = color(a.deep); head.strokeColor = outline.strokeColor; head.lineWidth = 0.8
-        let reveal = CAShapeLayer(); reveal.fillColor = UIColor.clear.cgColor; reveal.strokeColor = UIColor.black.cgColor; reveal.lineCap = .round; reveal.lineWidth = 40
-        let grow = CABasicAnimation(keyPath: "strokeEnd"); grow.fromValue = 0.13; grow.toValue = 1; grow.duration = 1; grow.timingFunction = CAMediaTimingFunction(name: .easeOut)
-        reveal.add(grow, forKey: "grow")
-        root.addSublayer(gradient); root.addSublayer(outline); root.addSublayer(head); root.mask = reveal
+        // The deep tail half (the arrow darkens towards its head).
+        let reveal = CAShapeLayer(); reveal.fillColor = color(a.deep)
+        // Grows in over 1 s: the outline draws itself while the body fades in.
+        let draw = CABasicAnimation(keyPath: "strokeEnd"); draw.fromValue = 0.1; draw.toValue = 1; draw.duration = 1; draw.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        outline.add(draw, forKey: "draw")
+        let fade = CABasicAnimation(keyPath: "opacity"); fade.fromValue = 0; fade.toValue = 1; fade.duration = 0.8; fade.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        root.add(fade, forKey: "fade")
+        root.addSublayer(gradient); root.addSublayer(fill); root.addSublayer(reveal); root.addSublayer(outline); root.addSublayer(head)
         return (root, fill, gradient, outline, head, reveal)
     }
     private func layoutArrow(_ v: (root: CALayer, fill: CAShapeLayer, gradient: CAGradientLayer, outline: CAShapeLayer, head: CAShapeLayer, reveal: CAShapeLayer, a: MapEffects.Arrow), _ screen: (Double, Double) -> CGPoint) {
@@ -180,7 +187,9 @@ final class EffectsView: UIView {
         let head = UIBezierPath(); head.move(to: CGPoint(x: tip.x - uy * h, y: tip.y + ux * h)); head.addLine(to: CGPoint(x: tip.x + ux * l, y: tip.y + uy * l)); head.addLine(to: CGPoint(x: tip.x + uy * h, y: tip.y - ux * h)); head.close()
         v.head.path = head.cgPath
         let center = UIBezierPath(); center.move(to: points[0]); for p in points.dropFirst() { center.addLine(to: p) }; center.addLine(to: CGPoint(x: tip.x + ux * l, y: tip.y + uy * l))
-        v.reveal.path = center.cgPath
+        _ = center
+        let tail = UIBezierPath(); tail.move(to: left[15]); for p in left[16...] { tail.addLine(to: p) }; for p in right[15...].reversed() { tail.addLine(to: p) }; tail.close()
+        v.reveal.path = tail.cgPath
         v.gradient.startPoint = CGPoint(x: s.x / max(1, bounds.width), y: s.y / max(1, bounds.height)); v.gradient.endPoint = CGPoint(x: e.x / max(1, bounds.width), y: e.y / max(1, bounds.height))
     }
 

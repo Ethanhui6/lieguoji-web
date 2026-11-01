@@ -785,7 +785,7 @@ struct MenuSheet: View {
     @State private var notes = false
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SheetHeader(title: "菜单")
+            SheetHeader(title: "菜单", subtitle: AppVersion.text)
             Group2 {
                 Button { model.save(); close() } label: { MenuRow(symbol: "square.and.arrow.down", title: "保存") }.buttonStyle(.plain)
                 Divider2()
@@ -793,7 +793,7 @@ struct MenuSheet: View {
                 Divider2()
                 Button { close(); model.backToTitle() } label: { MenuRow(symbol: "house", title: "返回标题") }.buttonStyle(.plain)
                 Divider2()
-                Button { notes = true } label: { MenuRow(symbol: "sparkles", title: "更新内容") }.buttonStyle(.plain)
+                Button { notes = true } label: { MenuRow(symbol: "sparkles", title: "本版新增与更新内容") }.buttonStyle(.plain)
                 Divider2()
                 PaperSwitch(title: "显示帧率", on: $controller.showMetrics)
             }
@@ -808,9 +808,24 @@ struct MenuSheet: View {
     }
 }
 
+/// Installed version and build (CFBundleShortVersionString / CFBundleVersion), so a sideloaded build can be identified.
+enum AppVersion {
+    static var text: String {
+        let info = Bundle.main.infoDictionary
+        return "版本 \(info?["CFBundleShortVersionString"] as? String ?? "?")（构建 \(info?["CFBundleVersion"] as? String ?? "?")）"
+    }
+}
+
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.7", ["【手机上能点到】国家详情改为原作的折叠分节：基本信息（默认展开）、国家行为、战争、人物、外交；点标题折叠或展开，动画 0.25 秒。",
+                   "【手机上能点到】新增「人物」分节（默认展开）：君主、统治家族继承人、在任官员（行政首脑、财政主管、常备军统帅、总督、战时统帅），显示姓名、性别、年龄、四项能力与特质。",
+                   "【手机上能点到】菜单顶部显示版本与构建号；本页即「本版新增」。",
+                   "【仍在核心代码】新世界创建的文化世界段（省份、人口粮食、君主、家族、贵族领地）已在本机算出并与网页逐位一致，但新世界仍由网页引擎创建，玩法无变化。",
+                   "【简化】原作国家面板共 10 节；领袖记录、国家特性、历史记录、资源四节原作运行时生成的内容待核，本版不显示，不补造。",
+                   "【简化】特质分档、家族人数年龄、女性继承 30% 等沿用网页版数值，与原作有差异（见文档）。",
+                   "【未在真机验证】本版只经 GitHub 编译与核心测试，未在真机上试过分节动画、人物分节与帧率。"]),
         ("0.9.6", ["新增国家详情（还原原作国家信息面板）：君主、政体、文化、宗教、国库与月入、国运、人口兵力；外交关系列出敌对国家、同盟、宗主国与附庸。",
                    "国家的战争卡片：宣战理由、战争目标、进攻方与防守方各国、双方阵亡、持续时间，可直接停战。",
                    "国家行为：宣战、缔结盟约（两国已在交战则先停战，规则同原作强制结盟）、退出同盟、收为附庸、解除附庸、吞并、自主外交开关。",
@@ -837,7 +852,7 @@ struct ReleaseNotesSheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: "更新内容")
+                SheetHeader(title: "本版新增与更新内容", subtitle: AppVersion.text)
                 ForEach(Self.notes, id: \.version) { note in
                     Group2 {
                         VStack(alignment: .leading, spacing: 8) {

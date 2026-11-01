@@ -9,12 +9,38 @@ struct NationInfo: Decodable {
     struct Alliance: Decodable { let name: String; let members: [Int] }
     struct Side: Decodable { let nations: [Int]; let losses: Double }
     struct War: Decodable, Identifiable { let id: Int; let casusBelli: String; let goals: [String]; let months: Double; let sides: [Side]; let side: Int }
+    struct Person: Decodable { let role: String; let name: String; let age: Double; let female: Bool; let traits: [String]; let skills: [Double] }
     let name: String; let culture: String; let religion: String; let polity: String
     let gold: Double; let goldPerMonth: Double; let destiny: Double
     let alive: Bool; let auto: Bool; let worldAuto: Bool
     let ruler: Ruler?
     let enemies: [Int]; let alliance: Alliance?; let overlord: Int; let vassals: [Int]
     let wars: [War]
+    let people: [Person]?
+}
+
+/// CollapsibleSectionUI (original StateInfoNewUI sections): a header with a chevron; 0.25 s fold
+/// animation (m_AnimationDuration). The default state is given per section (m_StartExpanded).
+struct FoldSection<Content: View>: View {
+    let title: String
+    @State var expanded: Bool
+    @ViewBuilder let content: () -> Content
+    init(_ title: String, expanded: Bool, @ViewBuilder content: @escaping () -> Content) { self.title = title; _expanded = State(initialValue: expanded); self.content = content }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button { withAnimation(.easeInOut(duration: 0.25)) { expanded.toggle() } } label: {
+                HStack {
+                    Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink)
+                    Spacer()
+                    Image(systemName: expanded ? "chevron.up" : "chevron.down").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink2)
+                }
+                .padding(.horizontal, 22).padding(.vertical, 6).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if expanded { content().transition(.opacity.combined(with: .move(edge: .top))) }
+        }
+        .clipped()
+    }
 }
 
 struct NationSheet: View {
@@ -45,29 +71,23 @@ struct NationSheet: View {
                 VStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: meta?.name ?? info?.name ?? "", subtitle: s.alive ? "\(s.provinces) 省 · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) })
                     if let info {
-                        Group2 {
-                            if let r = info.ruler { Row(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）"); Divider2() }
-                            Row(label: "政体", value: Names.polity[info.polity] ?? info.polity); Divider2()
-                            Row(label: "文化", value: Names.culture[info.culture] ?? info.culture); Divider2()
-                            Row(label: "宗教", value: Names.religion[info.religion] ?? info.religion); Divider2()
-                            Row(label: "国库", value: "\(Int(info.gold).formatted()) 金（月入 \(Int(info.goldPerMonth).formatted())）"); Divider2()
-                            Row(label: "国运", value: String(format: "%.0f", info.destiny)); Divider2()
-                            Row(label: "人口与兵力", value: "\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵")
-                        }
-                        .padding(.horizontal, 16)
-                        Text("外交").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
-                        Group2 {
-                            let rows = relationRows(info, map)
-                            if rows.isEmpty { Row(label: "外交", value: "暂无外交关系") }
-                            ForEach(Array(rows.enumerated()), id: \.offset) { i, row in
-                                Row(label: row.0, value: row.1)
-                                if i < rows.count - 1 { Divider2() }
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        if !info.wars.isEmpty {
-                            Text("战争").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                        // Original section order: BasicInfo (only one expanded by default), Action, War, Family, Diplomacy.
+                        FoldSection("基本信息", expanded: true) {
                             Group2 {
+                                if let r = info.ruler { Row(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）"); Divider2() }
+                                Row(label: "政体", value: Names.polity[info.polity] ?? info.polity); Divider2()
+                                Row(label: "文化", value: Names.culture[info.culture] ?? info.culture); Divider2()
+                                Row(label: "宗教", value: Names.religion[info.religion] ?? info.religion); Divider2()
+                                Row(label: "国库", value: "\(Int(info.gold).formatted()) 金（月入 \(Int(info.goldPerMonth).formatted())）"); Divider2()
+                                Row(label: "国运", value: String(format: "%.0f", info.destiny)); Divider2()
+                                Row(label: "人口与兵力", value: "\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵")
+                            }
+                            .padding(.horizontal, 16)
+                        }
+                        if info.alive { FoldSection("国家行为", expanded: false) { actions(info, map) } }
+                        FoldSection("战争", expanded: false) {
+                            Group2 {
+                                if info.wars.isEmpty { Row(label: "战争", value: "暂无战争") }
                                 ForEach(info.wars) { war in
                                     warCard(war, map)
                                     if war.id != info.wars.last?.id { Divider2() }
@@ -75,7 +95,19 @@ struct NationSheet: View {
                             }
                             .padding(.horizontal, 16)
                         }
-                        if info.alive { actions(info, map) }
+                        // The family/people panel opens fully expanded in the original; title 人物.
+                        FoldSection("人物", expanded: true) { peopleList(info.people ?? []) }
+                        FoldSection("外交", expanded: false) {
+                            Group2 {
+                                let rows = relationRows(info, map)
+                                if rows.isEmpty { Row(label: "外交", value: "暂无外交关系") }
+                                ForEach(Array(rows.enumerated()), id: \.offset) { i, row in
+                                    Row(label: row.0, value: row.1)
+                                    if i < rows.count - 1 { Divider2() }
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                        }
                     } else {
                         ProgressView().frame(maxWidth: .infinity).padding(40)
                     }
@@ -136,11 +168,32 @@ struct NationSheet: View {
         }
         .padding(16)
     }
+    /// 人物: monarch, heir, office holders with age, traits and the four skills.
+    private func peopleList(_ list: [NationInfo.Person]) -> some View {
+        Group2 {
+            if list.isEmpty { Row(label: "人物", value: "暂无记录") }
+            ForEach(Array(list.enumerated()), id: \.offset) { i, p in
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(p.role).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                        Spacer()
+                        Text("\(p.name)（\(p.female ? "女" : "男")，\(Int(p.age)) 岁）").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                    }
+                    if p.skills.count == 4 {
+                        Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                    }
+                    if !p.traits.isEmpty { Text("特质：" + p.traits.joined(separator: "、")).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                if i < list.count - 1 { Divider2() }
+            }
+        }
+        .padding(.horizontal, 16)
+    }
     /// 国家行为 (CultureNationActions47).
     private func actions(_ info: NationInfo, _ map: WorldMap) -> some View {
         let vassal = info.overlord >= 0
         return VStack(alignment: .leading, spacing: 10) {
-            Text("国家行为").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
             Group2 {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                     action("宣战", "flag.2.crossed", Theme.seal, disabled: vassal) { target = -1; picking = .war }

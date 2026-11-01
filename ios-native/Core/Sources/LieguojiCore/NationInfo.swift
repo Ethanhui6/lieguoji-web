@@ -29,6 +29,7 @@ extension NativeEngine {
             ruler.age = JS(p.age.optionalNumber ?? 0)
             o.ruler = ruler
         } else { o.ruler = .null }
+        o.people = people(id)
         // Relations.
         o.enemies = .array(r.world.statecraft.relations.asArray.filter { $0.status.asString == "war" && ($0.a.asString == id || $0.b.asString == id) }.map { JS(nationIndex($0.a.asString == id ? $0.b.asString : $0.a.asString)) })
         if let alliance = Vassals.allianceOf(r, id) {
@@ -59,6 +60,43 @@ extension NativeEngine {
             return card
         })
         return Data(o.json.utf8)
+    }
+
+    /// character-trait-labels.json (web).
+    static let traitLabels = ["Genius": "天才", "Brave": "勇敢", "Charismatic": "魅力超凡", "Administrator": "行政天才", "Diplomatic": "外交家", "Just": "公正",
+                              "Strategist": "战略家", "Merciful": "仁慈", "Patient": "耐心", "Craven": "懦弱", "Cruel": "残暴", "Incompetent": "无能", "Greedy": "贪婪",
+                              "Paranoid": "偏执", "Wrathful": "易怒", "Ambitious": "雄心勃勃", "SocialButterfly": "长袖善舞", "Hawkish": "鹰派", "Dovish": "鸽派"]
+    /// OFFICE_LABELS47 (civilization47-offices).
+    static let officeLabels = ["Chancellor": "行政首脑", "Steward": "财政主管", "Marshal": "常备军统帅", "Governor": "总督", "WarCommander": "战时统帅"]
+
+    func personView(_ p: JS, role: String) -> JS {
+        let culture = p.cultureName.optionalString ?? ""
+        let first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? ""
+        let familyFirst = Nobility.cultures[culture].familyFirst.optionalBool ?? (culture == "chinese" || culture == "japanese")
+        let v = JS.object()
+        v.role = JS(role)
+        v.name = JS(p.identity.name.optionalString ?? (familyFirst ? last + first : last.isEmpty ? first : first + "·" + last))
+        v.age = JS(p.age.optionalNumber ?? 0); v.female = JS(p.gender.optionalNumber == 1)
+        v.traits = .array((p.traits.isNull ? [] : p.traits.asArray).map { JS(Self.traitLabels[$0.asString] ?? $0.asString) })
+        let b = p.base
+        v.skills = .array(["charisma", "military", "diplomatic", "administrative"].map { JS((b[$0].optionalNumber ?? 0).rounded()) })
+        return v
+    }
+    /// The 人物 section: monarch, heir of the ruling family, office holders (offices47 assignments).
+    func people(_ id: String) -> JS {
+        let r = run, out = JS.array()
+        let leaderId = r.people.nations[id].leaderId
+        if !leaderId.isNull, let p = People.person(r, leaderId.asInt) { out.push(personView(p, role: "君主")) }
+        let ruling = r.nobility.rulingFamilies[id].optionalNumber.map { String(Int($0)) } ?? r.people.nations[id].id.optionalNumber.map { String(Int($0)) }
+        if let ruling, let heir = r.kin.families[ruling].heirId.optionalNumber, heir > 0, let p = People.person(r, Int(heir)), p.isAlive.asBool { out.push(personView(p, role: "继承人")) }
+        let book = r.offices47.nations[id]
+        for a in (book.isNull || book.assignments.isNull ? [] : book.assignments.asArray) {
+            guard let p = People.person(r, a.holderId.asInt), p.isAlive.asBool else { continue }
+            var role = Self.officeLabels[a.officeId.asString] ?? a.officeId.asString
+            if a.officeId.asString == "Governor", r.world.provinces.asArray.indices.contains(a.scopeId.asInt - 1) { role += "·" + r.world.provinces[a.scopeId.asInt - 1].name.asString }
+            out.push(personView(p, role: role))
+        }
+        return out
     }
 
     /// Global order follow-up (applyGlobalOrder47): vassals, alliances, continuity, diplomacy and

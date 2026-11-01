@@ -367,7 +367,8 @@ struct MapView: UIViewRepresentable {
                 mtk.setNeedsDisplay()
             }
             if let renderer, renderer.reveal != controller.reveal { renderer.setReveal(controller.reveal) }
-            labels?.alpha = controller.reveal >= 1 ? 1 : 0
+            // Names ink in last, with the cities.
+            labels?.alpha = CGFloat(max(0, min(1, (controller.reveal - 0.85) / 0.15)))
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills)
@@ -469,7 +470,7 @@ final class MapLabelsView: UIView {
         for c in map.meta.cities {
             let s = capitals.contains(c.id) ? 1.5 : 1.0, em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
             cities.append(Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
-                                stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 9, province: c.province))
+                                stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 11, province: c.province))
         }
         for l in cities + nations { l.view.isHidden = true; addSubview(l.view) }
     }
@@ -513,7 +514,7 @@ final class MapLabelsView: UIView {
         UIView.animate(withDuration: 0.3, delay: 0.08, options: [.allowUserInteraction], animations: { for l in new { l.view.alpha = 1 } })
     }
     /// Rendered label images by text, size and colours: zooming back and forth reuses them.
-    private static let images: NSCache<NSString, UIImage> = { let c = NSCache<NSString, UIImage>(); c.countLimit = 1500; return c }()
+    private static let images: NSCache<NSString, UIImage> = { let c = NSCache<NSString, UIImage>(); c.countLimit = 500; return c }()
 
     static func color(_ css: String) -> UIColor {
         let c = RGB(css: css) ?? RGB(0.5, 0.5, 0.5)
@@ -546,10 +547,14 @@ final class MapLabelsView: UIView {
         for l in nations + (showCities ? cities : []) {
             let points = l.mapEm * camera.scale
             let p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
-            guard points >= l.minPoints, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }
-            if l.rendered == 0 || points / l.rendered > 1.25 || points / l.rendered < 0.8 {
+            // A name larger than the screen can show is hidden (a continent-wide group zoomed in close).
+            guard points.isFinite, points >= l.minPoints, points < 900, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }
+            // Rendered at most 96 pt and scaled beyond: a label image never grows to thousands of pixels
+            // (that ran memory out and closed the app when a big group label was zoomed in).
+            let wanted = min(96, points)
+            if l.rendered == 0 || wanted / l.rendered > 1.25 || wanted / l.rendered < 0.8 {
                 // Sizes on a ×1.25 ladder, so the cached images are reused while zooming.
-                l.rendered = pow(1.25, (log(points) / log(1.25)).rounded())
+                l.rendered = min(96, pow(1.25, (log(wanted) / log(1.25)).rounded()))
                 l.view.transform = .identity
                 let key = "\(l.text)|\(l.rendered)|\(l.fill.hashValue)|\(l.stroke.hashValue)" as NSString
                 if let cached = Self.images.object(forKey: key) { l.view.image = cached }
@@ -579,7 +584,7 @@ final class TroopLabelsView: UIView {
         let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * camera.scale
         var seen = Set<String>()
         CATransaction.begin(); CATransaction.setDisableActions(true)
-        if icon >= 20 {
+        if icon >= 26 {
             for p in placed where p.sprite.army > -100_000 {
                 guard let text = texts[p.sprite.key] else { continue }
                 let s = camera.toScreen(x: Double(p.x), y: Double(p.y), viewport: vp)

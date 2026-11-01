@@ -128,7 +128,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// The state outlines are rebuilt on a background queue (the whole map's border walk); the land
     /// is recoloured at once, and the new outlines replace the old ones when ready.
     func setMap(_ next: WorldMap) {
-        map = next
+        map = next; base = nil
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         recolor()
         outlineGeneration += 1
@@ -150,23 +150,43 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// mountains, then the states' colours wash over it; at 1 every layer is drawn.
     private(set) var reveal: Float = 1
     func setReveal(_ t: Float) { reveal = max(0, min(1, t)); recolor() }
+    /// The map's colours before the generation reveal: the land colours of the current mode and the
+    /// terrain colours, both shaded. Kept while only the reveal moves, so the rising animation does not
+    /// recompute every cell's palette 60 times a second.
+    private var base: (land: [Float], terrain: [Float])?
 
     private(set) var display = DisplaySettings()
     func setDisplay(_ d: DisplaySettings) {
         let recolour = d.colorDensity != display.colorDensity
         display = d
-        if recolour { recolor() }
+        if recolour { base = nil; recolor() }
     }
     private func recolor() {
-        var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight, tint: tint, provinceColors: mode == .political ? fills : nil)
-        // 国家颜色浓度: state colours blended toward the terrain colours.
-        if mode == .political && display.colorDensity < 1 {
-            let terrain = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors), k = Float(max(0, display.colorDensity))
-            for i in 0..<min(c.count, terrain.count) where i % 4 != 3 { c[i] = terrain[i] + (c[i] - terrain[i]) * k }
+        if base == nil {
+            var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight, tint: tint, provinceColors: mode == .political ? fills : nil)
+            var terrain = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors)
+            // 国家颜色浓度: state colours blended toward the terrain colours.
+            if mode == .political && display.colorDensity < 1 {
+                let k = Float(max(0, display.colorDensity))
+                for i in 0..<min(c.count, terrain.count) where i % 4 != 3 { c[i] = terrain[i] + (c[i] - terrain[i]) * k }
+            }
+            // Relief shading on the land (every map mode).
+            if shade.count != map.cellCount { shade = MapLayers.hillshade(map) }
+            for cell in 0..<map.cellCount where shade[cell] != 1 {
+                let k = shade[cell]
+                for v in Int(map.offsets[cell])..<Int(map.offsets[cell + 1]) {
+                    for j in 0..<3 { c[v * 4 + j] = min(1, c[v * 4 + j] * k); terrain[v * 4 + j] = min(1, terrain[v * 4 + j] * k) }
+                }
+            }
+            base = (c, terrain)
         }
+        guard let base else { return }
+        var c = base.land
         if reveal < 1 {
-            let terrain = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors)
-            let sea = MapPalette.shallowSea, rise = min(1, reveal / 0.6), wash = max(0, (reveal - 0.6) / 0.4)
+            // Generation: the land rises from the coast to the peaks (0…0.45), forests and rivers follow,
+            // the states' colours wash in (0.55…0.75); borders and cities come after (drawn by stage).
+            let terrain = base.terrain
+            let sea = MapPalette.shallowSea, rise = min(1, reveal / 0.45), wash = min(1, max(0, (reveal - 0.55) / 0.2))
             let top = Float(max(21, map.elevation.max().map(Int.init) ?? 100))
             for cell in 0..<map.cellCount where map.isLand(cell) {
                 let h = (Float(map.elevation[cell]) - 20) / (top - 20)
@@ -178,14 +198,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                         c[v * 4 + k] = water + (ground - water) * shown
                     }
                 }
-            }
-        }
-        // Relief shading on the land (every map mode).
-        if shade.count != map.cellCount { shade = MapLayers.hillshade(map) }
-        for cell in 0..<map.cellCount where shade[cell] != 1 {
-            let k = shade[cell]
-            for v in Int(map.offsets[cell])..<Int(map.offsets[cell + 1]) {
-                c[v * 4] = min(1, c[v * 4] * k); c[v * 4 + 1] = min(1, c[v * 4 + 1] * k); c[v * 4 + 2] = min(1, c[v * 4 + 2] * k)
             }
         }
         if let b = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) { colors = b }
@@ -226,8 +238,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let target = SIMD2(a.x, a.y)
             guard let p = shown[a.key] else { shown[a.key] = target; continue }
             let d = target - p, dist2 = d.x * d.x + d.y * d.y
-            if dist2 > 6400 || dist2 < 0.0004 { shown[a.key] = target; continue }
-            shown[a.key] = p + d * k; moving = true
+            if dist2 > 62500 || dist2 < 0.0004 { shown[a.key] = target; continue }
+            // Never faster than a march (140 map units a second): a long way is walked, not zipped.
+            var move = d * k
+            let len2 = move.x * move.x + move.y * move.y, cap = 140 * dt
+            if len2 > cap * cap { move *= cap / len2.squareRoot() }
+            shown[a.key] = p + move; moving = true
         }
         chasing = moving
         rebuildArmies()
@@ -288,6 +304,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func setAppearance(mode: MapMode, highlight: Int?, tint: [Int: RGB] = [:], fills: [RGB]? = nil) {
         guard mode != self.mode || highlight != self.highlight || tint != self.tint || fills != self.fills else { return }
         self.mode = mode; self.highlight = highlight; self.tint = tint; self.fills = fills
+        base = nil
         recolor()
     }
 
@@ -325,7 +342,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0)
         // Province lines: 0.55 screen px, #303e37 at 0.2, only once zoomed in (map.ts zoom > 0.6).
-        if let lines = provinceLines, display.provinceLines, camera.scale > 0.9, reveal >= 1 {
+        if let lines = provinceLines, display.provinceLines, camera.scale > 0.9 || reveal < 1, reveal >= 0.55 {
             u.halfWidth = 0.55 / 2
             var color = SIMD4<Float>(0x30 / 255.0, 0x3E / 255.0, 0x37 / 255.0, 0.2)
             encoder.setRenderPipelineState(linePipeline)
@@ -334,7 +351,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: lines.count)
         }
-        if let rivers, reveal > 0.5 {
+        if let rivers, reveal > 0.38 {
             var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, 1)
             encoder.setRenderPipelineState(flatPipeline)
             encoder.setVertexBuffer(rivers.buffer, offset: 0, index: 0)
@@ -342,10 +359,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
         }
-        if display.vegetation { colored(relief) }
+        if display.vegetation && reveal >= 0.45 { colored(relief) }
+        if display.borders && reveal >= 0.75 { colored(outlines) }
+        if display.cityIcons && reveal >= 0.85 { colored(icons) }
         if reveal >= 1 {
-        if display.borders { colored(outlines) }
-        if display.cityIcons { colored(icons) }
         colored(route)
         encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
         for unit in units {

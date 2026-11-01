@@ -18,7 +18,7 @@ struct MapEffects: Equatable {
         /// The two armies in contact (map units): the clash line runs between them in their colours.
         var ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0
     }
-    struct Burst: Equatable { enum Kind { case destroyed, founded, shock }; let id: String; let x: Double; let y: Double; let kind: Kind; let r: Double; let g: Double; let b: Double }
+    struct Burst: Equatable { enum Kind { case destroyed, founded, shock }; let id: String; let x: Double; let y: Double; let kind: Kind; let r: Double; let g: Double; let b: Double; var unit = "" }
     struct Siege: Equatable { let key: String; let x: Double; let y: Double; let progress: Double; let r: Double; let g: Double; let b: Double }
     struct Flash: Equatable { let id: String; let x: Double; let y: Double; let r: Double; let g: Double; let b: Double }
     struct Declaration: Equatable { let id: String; let fromX: Double; let fromY: Double; let toX: Double; let toY: Double }
@@ -162,6 +162,20 @@ final class EffectsView: UIView {
             group.fillMode = .both; group.isRemovedOnCompletion = false
             ring.add(group, forKey: "burst"); root.addSublayer(ring)
         }
+        // The new owner plants its banner: the pole drops in, the flag waves, then all fades.
+        let pole = CALayer(); pole.backgroundColor = UIColor(white: 0.18, alpha: 1).cgColor
+        pole.bounds = CGRect(x: 0, y: 0, width: 1.6, height: 26); pole.anchorPoint = CGPoint(x: 0.5, y: 1); pole.position = CGPoint(x: 60, y: 62)
+        let cloth = CAShapeLayer()
+        let wave = UIBezierPath(); wave.move(to: .zero); wave.addQuadCurve(to: CGPoint(x: 16, y: 1), controlPoint: CGPoint(x: 8, y: -3))
+        wave.addLine(to: CGPoint(x: 15, y: 11)); wave.addQuadCurve(to: CGPoint(x: 0, y: 10), controlPoint: CGPoint(x: 7, y: 13)); wave.close()
+        cloth.path = wave.cgPath; cloth.fillColor = color.cgColor; cloth.strokeColor = UIColor(white: 0.15, alpha: 0.6).cgColor; cloth.lineWidth = 0.6
+        cloth.frame = CGRect(x: 0.8, y: 0, width: 16, height: 12); cloth.anchorPoint = CGPoint(x: 0, y: 0.5); cloth.position = CGPoint(x: 0.8, y: 6)
+        let flutter = CAKeyframeAnimation(keyPath: "transform.scale.x"); flutter.values = [1, 0.82, 1.04, 0.9, 1]; flutter.duration = 0.8; flutter.repeatCount = .infinity
+        cloth.add(flutter, forKey: "flutter"); pole.addSublayer(cloth)
+        let drop = CASpringAnimation(keyPath: "transform.translation.y"); drop.fromValue = -30; drop.toValue = 0; drop.damping = 9; drop.duration = drop.settlingDuration
+        let fadeOut = CAKeyframeAnimation(keyPath: "opacity"); fadeOut.values = [0, 1, 1, 0]; fadeOut.keyTimes = [0, 0.08, 0.75, 1]; fadeOut.duration = 2.1
+        let plant = CAAnimationGroup(); plant.animations = [drop, fadeOut]; plant.duration = 2.1; plant.fillMode = .forwards; plant.isRemovedOnCompletion = false
+        pole.add(plant, forKey: "plant"); root.addSublayer(pole)
         return root
     }
 
@@ -265,24 +279,28 @@ final class EffectsView: UIView {
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 120, height: 120)
         switch b.kind {
         case .destroyed:
-            let e = CAEmitterLayer(); e.emitterPosition = CGPoint(x: 60, y: 60); e.emitterShape = .point; e.isHidden = !Self.particles
-            e.emitterCells = [cell(Self.puff, color: UIColor(white: 0.25, alpha: 0.4), rate: 30, life: 1.0, velocity: 18, scale: 0.32, scaleSpeed: 0.25, alphaSpeed: -0.7, spin: 0.6)]
-            root.addSublayer(e)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { e.birthRate = 0 }
-            // The fallen army's banner: it sways, topples over and fades.
-            let banner = CALayer(); banner.bounds = CGRect(x: 0, y: 0, width: 16, height: 22)
-            banner.anchorPoint = CGPoint(x: 0.2, y: 1); banner.position = CGPoint(x: 58, y: 66)
-            if let symbol = UIImage(systemName: "flag.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold))?.withTintColor(color, renderingMode: .alwaysOriginal) {
-                banner.contents = UIGraphicsImageRenderer(size: symbol.size).image { _ in symbol.draw(at: .zero) }.cgImage
+            // An army falls in ink: its unit mark sinks and fades while a blot of ink spreads beneath it
+            // and dries away — the map's own brush, not an explosion.
+            let blot = CAShapeLayer(); blot.frame = root.bounds
+            blot.path = UIBezierPath(ovalIn: CGRect(x: 48, y: 52, width: 24, height: 16)).cgPath
+            blot.fillColor = UIColor(red: 0.16, green: 0.13, blue: 0.1, alpha: 0.55).cgColor
+            blot.shadowColor = blot.fillColor; blot.shadowOpacity = 1; blot.shadowRadius = 4; blot.shadowOffset = .zero
+            let spread = CABasicAnimation(keyPath: "transform.scale"); spread.fromValue = 0.2; spread.toValue = 1.5
+            spread.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            let dry = CAKeyframeAnimation(keyPath: "opacity"); dry.values = [0, 0.85, 0.6, 0]; dry.keyTimes = [0, 0.15, 0.6, 1]
+            let blotGroup = CAAnimationGroup(); blotGroup.animations = [spread, dry]; blotGroup.duration = 2.2; blotGroup.fillMode = .forwards; blotGroup.isRemovedOnCompletion = false
+            blot.add(blotGroup, forKey: "ink"); root.addSublayer(blot)
+            if let icon = Self.unitImage(b.unit, tint: color) {
+                let mark = CALayer(); mark.contents = icon; mark.contentsGravity = .resizeAspect
+                mark.bounds = CGRect(x: 0, y: 0, width: 22, height: 22); mark.position = CGPoint(x: 60, y: 58)
+                let sink = CABasicAnimation(keyPath: "transform.translation.y"); sink.fromValue = 0; sink.toValue = 6
+                let shrink = CABasicAnimation(keyPath: "transform.scale"); shrink.fromValue = 1; shrink.toValue = 0.7
+                let tilt = CABasicAnimation(keyPath: "transform.rotation.z"); tilt.fromValue = 0; tilt.toValue = 0.35
+                let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [1, 0.9, 0]; fade.keyTimes = [0, 0.3, 1]
+                let g = CAAnimationGroup(); g.animations = [sink, shrink, tilt, fade]; g.duration = 1.6
+                g.timingFunction = CAMediaTimingFunction(name: .easeIn); g.fillMode = .forwards; g.isRemovedOnCompletion = false
+                mark.add(g, forKey: "fall"); root.addSublayer(mark)
             }
-            banner.contentsGravity = .resizeAspect
-            let topple = CAKeyframeAnimation(keyPath: "transform.rotation.z")
-            topple.values = [0, -0.18, 0.12, Double.pi / 2 * 0.95]; topple.keyTimes = [0, 0.18, 0.36, 1]
-            topple.timingFunctions = [CAMediaTimingFunction(name: .easeOut), CAMediaTimingFunction(name: .easeInEaseOut), CAMediaTimingFunction(name: .easeIn)]
-            topple.duration = 1.1
-            let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [1, 1, 0]; fade.keyTimes = [0, 0.6, 1]; fade.duration = 2.2
-            let group = CAAnimationGroup(); group.animations = [topple, fade]; group.duration = 2.2; group.fillMode = .forwards; group.isRemovedOnCompletion = false
-            banner.add(group, forKey: "fall"); root.addSublayer(banner)
         case .founded:
             let e = CAEmitterLayer(); e.emitterPosition = CGPoint(x: 60, y: 60); e.emitterShape = .point
             e.emitterCells = [cell(Self.spark, color: color, rate: 160, life: 1.2, velocity: 70, scale: 0.9, scaleSpeed: -0.5, alphaSpeed: -0.8, accel: 40),
@@ -311,6 +329,21 @@ final class EffectsView: UIView {
             }
         }
         return root
+    }
+
+    /// The original's unit mark (World/unit-*.png, grey on clear) tinted in a state's colour.
+    private static var unitImages = [String: CGImage]()
+    static func unitImage(_ unit: String, tint: UIColor) -> CGImage? {
+        let key = unit + tint.description
+        if let c = unitImages[key] { return c }
+        guard let url = Bundle.main.url(forResource: "unit-" + (unit.isEmpty ? "Infantry" : unit), withExtension: "png", subdirectory: "World"),
+              let img = UIImage(contentsOfFile: url.path) else { return nil }
+        let out = UIGraphicsImageRenderer(size: CGSize(width: 64, height: 64)).image { _ in
+            img.withTintColor(tint, renderingMode: .alwaysOriginal).draw(in: CGRect(x: 0, y: 0, width: 64, height: 64))
+        }.cgImage
+        if unitImages.count > 64 { unitImages.removeAll() }
+        unitImages[key] = out
+        return out
     }
 
     private func once(_ id: String, after seconds: Double, remove: @escaping () -> Void) {

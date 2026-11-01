@@ -9,6 +9,7 @@ extension NativeEngine {
         return r
     }
     /// army-wander47 wanderPoint: a stationary army's fixed display point inside its province.
+    static var wanderCache = [String: (Double, Double)]()
     static func wanderPoint(_ polygon: [(Double, Double)], _ armyId: String, avoid: [(Double, Double)]) -> (Double, Double) {
         if polygon.isEmpty { return (0, 0) }
         let minX = polygon.map(\.0).min()!, maxX = polygon.map(\.0).max()!, minY = polygon.map(\.1).min()!, maxY = polygon.map(\.1).max()!
@@ -138,7 +139,13 @@ extension NativeEngine {
             let a = v.army, id = a.id.asString, moving = v.travel.status.asString == "moving"
             var at: (Double, Double)
             if let home = v.province, !moving, !engaged.contains(Daily.key("army", id)) {
-                at = Self.wanderPoint(home.polygon.asArray.map { ($0.x.asNumber, $0.y.asNumber) }, id, avoid: spots[home.id.asString] ?? [])
+                // The display spot depends only on the army, its province and the province's cities: cached.
+                let spotKey = (r.world.custom.seed.optionalString ?? "") + "|" + id + "|" + home.id.asString + "|" + String(spots[home.id.asString]?.count ?? 0)
+                if let cached = Self.wanderCache[spotKey] { at = cached } else {
+                    at = Self.wanderPoint(home.polygon.asArray.map { ($0.x.asNumber, $0.y.asNumber) }, id, avoid: spots[home.id.asString] ?? [])
+                    if Self.wanderCache.count > 6000 { Self.wanderCache.removeAll(keepingCapacity: true) }
+                    Self.wanderCache[spotKey] = at
+                }
             } else if let bridge { let p = bridge.graph.location(bridge.travel(v.travel)).point; at = (p.x, p.y) } else { at = (0, 0) }
             if let m = clash[Daily.key("army", id)] {
                 let cx = m.x / m.n, cy = m.y / m.n, dx = at.0 - cx, dy = at.1 - cy, d = (dx * dx + dy * dy).squareRoot()

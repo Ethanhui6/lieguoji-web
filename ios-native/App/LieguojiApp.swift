@@ -694,13 +694,13 @@ struct GameView: View {
             }
             .padding(.horizontal, 16).frame(height: 42).glass(Capsule())
             Spacer()
-            Button { withAnimation { viewsOpen.toggle() } } label: { CircleIcon(symbol: viewsOpen ? "xmark" : model.mapView.symbol) }
+            Button { withAnimation { viewsOpen.toggle() } } label: { CircleIcon(glyph: viewsOpen ? .close : .views) }
                 .buttonStyle(PressStyle())
             Button {
                 if controller.boxSelecting || !controller.groupArmies.isEmpty { controller.boxSelecting = false; controller.groupArmies = []; model.refreshArmies() }
                 else { controller.boxSelecting = true; say("即时战略：在地图上拖出方框选择军队") }
-            } label: { CircleIcon(symbol: controller.boxSelecting || !controller.groupArmies.isEmpty ? "xmark" : "rectangle.dashed") }.buttonStyle(PressStyle())
-            Button { show(.menu) } label: { CircleIcon(symbol: "ellipsis") }.buttonStyle(PressStyle())
+            } label: { CircleIcon(glyph: controller.boxSelecting || !controller.groupArmies.isEmpty ? .close : .command) }.buttonStyle(PressStyle())
+            Button { show(.menu) } label: { CircleIcon(glyph: .menu) }.buttonStyle(PressStyle())
         }
         .padding(.horizontal, 14).padding(.top, 2)
     }
@@ -764,11 +764,11 @@ struct GameView: View {
             }
             HStack(spacing: 10) {
                 HStack(spacing: 0) {
-                    TabButton(symbol: "building.columns", title: "国家", icon: OriginalIcon.nation, active: panel?.tab == "nations", marker: tabMarker) { show(.nations) }
-                    TabButton(symbol: "shield", title: "军事", icon: OriginalIcon.military, active: panel?.tab == "military", marker: tabMarker) { show(.military) }
-                    TabButton(symbol: "scroll", title: "外交", active: panel?.tab == "diplomacy", marker: tabMarker) { show(.diplomacy) }
-                    TabButton(symbol: "book", title: "纪事", active: panel?.tab == "chronicle", marker: tabMarker) { show(.chronicle) }
-                    TabButton(symbol: "chart.bar.xaxis", title: "排行", active: panel?.tab == "statistics", marker: tabMarker) { show(.statistics) }
+                    TabButton(symbol: "building.columns", title: "国家", glyph: .nation, active: panel?.tab == "nations", marker: tabMarker) { show(.nations) }
+                    TabButton(symbol: "shield", title: "军事", glyph: .military, active: panel?.tab == "military", marker: tabMarker) { show(.military) }
+                    TabButton(symbol: "scroll", title: "外交", glyph: .diplomacy, active: panel?.tab == "diplomacy", marker: tabMarker) { show(.diplomacy) }
+                    TabButton(symbol: "book", title: "纪事", glyph: .chronicle, active: panel?.tab == "chronicle", marker: tabMarker) { show(.chronicle) }
+                    TabButton(symbol: "chart.bar.xaxis", title: "排行", glyph: .ranking, active: panel?.tab == "statistics", marker: tabMarker) { show(.statistics) }
                 }
                 .animation(.spring(response: 0.35, dampingFraction: 0.8), value: panel?.tab)
                 .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
@@ -801,9 +801,13 @@ extension View {
 }
 
 struct CircleIcon: View {
-    let symbol: String
+    var symbol: String = ""
+    var glyph: InkGlyph? = nil
     var body: some View {
-        Image(systemName: symbol).font(.system(size: 16, weight: .medium)).foregroundStyle(Theme.ink).frame(width: 42, height: 42).glass(Circle())
+        Group {
+            if let glyph { InkIcon(glyph: glyph, size: 20) } else { Image(systemName: symbol).font(.system(size: 16, weight: .medium)) }
+        }
+        .foregroundStyle(Theme.ink).frame(width: 42, height: 42).glass(Circle())
     }
 }
 
@@ -818,13 +822,15 @@ enum OriginalIcon {
 struct TabButton: View {
     let symbol: String; let title: String
     var icon: UIImage? = nil
+    var glyph: InkGlyph? = nil
     var active = false
     var marker: Namespace.ID? = nil
     let action: () -> Void
     var body: some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                if let icon { Image(uiImage: icon).resizable().interpolation(.high).scaledToFit().frame(width: 22, height: 22) }
+                if let glyph { InkIcon(glyph: glyph, size: 23, weight: active ? 2.1 : 1.7) }
+                else if let icon { Image(uiImage: icon).resizable().interpolation(.high).scaledToFit().frame(width: 22, height: 22) }
                 else { Image(systemName: symbol).font(.system(size: 18, weight: .medium)).symbolVariant(active ? .fill : .none) }
                 Text(title).font(Theme.kai(12))
             }
@@ -1358,6 +1364,15 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.14.0", ["修复闪退：切换文化、家族、宗教等地图视图后放大地图，巨大的群体名称会被渲染成几千像素的图片导致内存耗尽闪退；现在文字图片最大只渲染 96 点、超出部分缩放，超过屏幕的名称直接隐藏。",
+                    "倍速真正生效：倍速改为每步推演的天数（1×、2×、4×、8×），引擎一次推进多天、地图与面板只刷新一次，高倍速明显更快。",
+                    "生成世界重做：地形升起延长到九秒并按阶段逐层出现——海洋、大陆、山脉、江河、森林草原、州郡界线、列国国色、国界、城市与地名，进度文字与地图同步；之后的世家、军队、邦交各停留片刻再进入世界，不再一闪而过。生成动画不再每帧重算全图配色，更流畅。",
+                    "军队不再瞬移：只有跨越大半张地图的整编回城才直接出现，其余一律走过去，并限制最高行进速度，远距离也是走过去而不是一闪而过。",
+                    "阵亡动画改为水墨：兵种图标以国色描出、倾斜下沉褪去，地上晕开一团墨迹再慢慢干去。",
+                    "攻占州郡时，新主人插下一面飘扬的国旗。",
+                    "图标统一：底栏与顶栏换成一套同笔触的手绘线条图标——城楼（国家）、交戟（军事）、卷轴（外交）、书册（纪事）、阶台（排行）、山水（视图）、令旗（即时战略）；当前标签线条加粗。",
+                    "文字减负：城市名要放大更多才显示，兵力数字也要放大到一定程度才出现；攻城横幅只在攻下都城时弹出。",
+                    "性能：休整军队的显示位置缓存（以前每步为每支军队重算多边形落点）；文字图片缓存上限降低，内存更省。"]),
         ("0.13.0", ["军队 AI 有了性格：温和、持重的国家先肃清本国被入侵的州郡再出击；好战之国的军队优先深入敌境攻城略地，而不是先去援助盟友。",
                     "权臣篡位：朝政废弛（施政低于 40）时，势力超过宗室 1.2 倍、与宗室关系 ≤ −50 的谋逆世家可能不经内战直接政变，族中最有才干的成年人登位，改朝换代写入国史，旧宗室势力大衰、国运 −8。",
                     "革命、复辟、篡位会像宣战一样弹出诏告横幅。"]),
@@ -1529,18 +1544,18 @@ struct FoundingView: View {
     /// mountains, the rivers, forests and plains, the provinces, the states' colours — and then the
     /// engine's work: cities, houses and people, armies, relations. Finished stages stay listed.
     static let stages: [(until: Float, text: String)] = [
-        (0.10, "注水成海"), (0.26, "抬升大陆"), (0.42, "隆起山脉与高原"), (0.52, "冲刷江河"),
-        (0.60, "播撒森林、草原与荒漠"), (0.80, "划分州郡"), (1.00, "分封列国"),
+        (0.06, "注水成海"), (0.24, "抬升大陆"), (0.38, "隆起山脉与高原"), (0.45, "冲刷江河"),
+        (0.55, "播撒森林、草原与荒漠"), (0.65, "划分州郡"), (0.75, "分封列国"), (0.85, "勘定国界"), (1.00, "营建城邦与港口"),
     ]
-    static let later = ["营建城邦与港口", "诞生世家与人物", "编练军队", "缔结邦交", "天下初定"]
+    static let later = ["诞生世家与人物", "编练军队", "缔结邦交", "天下初定"]
     @State private var started = Date()
     var body: some View {
         TimelineView(.periodic(from: .now, by: 0.35)) { context in
             let waited = reveal >= 1 ? context.date.timeIntervalSince(started) : 0
-            let laterIndex = min(Self.later.count - 1, Int(waited / 0.9))
+            let laterIndex = min(Self.later.count - 1, Int(waited / 0.8))
             let current = reveal < 1 ? (Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1) : Self.stages.count + laterIndex
             let all = Self.stages.map(\.text) + Self.later
-            let progress = reveal < 1 ? Double(reveal) * 0.8 : min(0.99, 0.8 + waited / 0.9 / Double(Self.later.count) * 0.2)
+            let progress = reveal < 1 ? Double(reveal) * 0.85 : min(1, 0.85 + waited / 0.8 / Double(Self.later.count) * 0.15)
             VStack {
                 Spacer()
                 VStack(alignment: .leading, spacing: 10) {

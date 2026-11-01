@@ -92,8 +92,12 @@ import LieguojiCore
                 phase = .founding
                 await rise()
             }
+            let settled = Date()
             let world = try await open(try await full.value)
             try await handOver()
+            // The founding captions after the map (houses, armies, relations) each get their moment.
+            let wait = 2.6 - Date().timeIntervalSince(settled)
+            if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
             generationNote = ""
             if phase != .founding { await reveal(world) } else { phase = .playing; controller.interactive = true }
             save()
@@ -106,7 +110,7 @@ import LieguojiCore
         controller.reveal = 0
         let start = Date()
         while true {
-            let t = Float(Date().timeIntervalSince(start) / 5.2)
+            let t = Float(Date().timeIntervalSince(start) / 9)
             controller.reveal = min(1, t)
             if t >= 1 { break }
             try? await Task.sleep(nanoseconds: 16_000_000)
@@ -195,16 +199,18 @@ import LieguojiCore
             while !Task.isCancelled {
                 guard let self else { return }
                 let started = Date()
-                do { try await self.step(days: self.speed >= 4 ? 2 : 1) }
+                // Speed is days per step: the engine runs that many days in one call and the map,
+                // the state and the panels refresh once, so 2×, 4× and 8× really are faster.
+                do { try await self.step(days: self.speed) }
                 catch { self.failure = error.localizedDescription; self.pause(); return }
-                let budget = (self.speed >= 4 ? 0.2 : 0.1) / Double(min(2, self.speed))
+                let budget = self.speed == 1 ? 0.22 : 0.12
                 let rest = budget - Date().timeIntervalSince(started)
                 if rest > 0 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) } else { await Task.yield() }
             }
         }
     }
     func pause() { let was = playing; loop?.cancel(); loop = nil; playing = false; if was, let day = state?.day { save(); lastSavedDay = day } }
-    func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : 1 }
+    func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : 1 }
     func stepOnce() { guard !playing else { return }; Task { try? await step(days: 1) } }
 
     /// The web engine's world goes to the Swift engine, which runs it from now on.
@@ -272,9 +278,11 @@ import LieguojiCore
         for e in next.events where !seen.contains(e.text) && (e.text.contains("篡位") || e.text.contains("改称")) {
             enqueue(Herald(kind: .war, text: e.text, nations: []))
         }
+        // Only a fallen capital is proclaimed (every captured province flooded the screen with banners).
+        let capitals = Set(map.meta.nations.compactMap { map.meta.cities.indices.contains($0.capital) ? map.meta.cities[$0.capital].province : nil })
         var captures = 0
-        for (p, owner) in next.owners.enumerated() where p < old.owners.count && old.owners[p] != owner && owner >= 0 {
-            captures += 1; if captures > 2 { break }
+        for (p, owner) in next.owners.enumerated() where p < old.owners.count && old.owners[p] != owner && owner >= 0 && capitals.contains(p) {
+            captures += 1; if captures > 1 { break }
             enqueue(Herald(kind: .capture, text: "\(name(owner))攻下\(map.meta.provinces[p].name)", nations: [owner]))
         }
     }
@@ -338,7 +346,7 @@ import LieguojiCore
             // Every army that leaves the map falls: its banner topples in its colour, smoke rises.
             for a in previous.armies where !alive.contains(a.id) {
                 let c = rgb(a.nation)
-                e.bursts.append(.init(id: "d\(a.id)", x: Double(a.x), y: Double(a.y), kind: .destroyed, r: c.0, g: c.1, b: c.2))
+                e.bursts.append(.init(id: "d\(a.id)", x: Double(a.x), y: Double(a.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: a.unit))
             }
             for n in previous.nations.count..<max(previous.nations.count, state.nations.count) where n < map.meta.nations.count {
                 let c = rgb(n), cap = map.meta.nations[n].capital

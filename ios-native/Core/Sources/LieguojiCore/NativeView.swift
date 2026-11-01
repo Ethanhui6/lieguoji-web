@@ -102,10 +102,13 @@ extension NativeEngine {
         var spots = [String: [(Double, Double)]]()
         for c in w.cities.asArray { spots[c.provinceId.asString, default: []].append((c.position.x.asNumber, c.position.y.asNumber)) }
         let space = Armies.space(r), bridge = Armies.bridge
+        // Armies in contact stand where they fight (the original draws the clash between them);
+        // only resting armies use the province's display spot.
+        let engaged = Set(r.forceContacts.pairs.asArray.flatMap { [$0.a.asString, $0.b.asString] })
         o.armies = .array(space.map { v in
             let a = v.army, id = a.id.asString, moving = v.travel.status.asString == "moving"
             var at: (Double, Double)
-            if let home = v.province, !moving {
+            if let home = v.province, !moving, !engaged.contains(Daily.key("army", id)) {
                 at = Self.wanderPoint(home.polygon.asArray.map { ($0.x.asNumber, $0.y.asNumber) }, id, avoid: spots[home.id.asString] ?? [])
             } else if let bridge { let p = bridge.graph.location(bridge.travel(v.travel)).point; at = (p.x, p.y) } else { at = (0, 0) }
             let x = JS.object()
@@ -148,6 +151,11 @@ extension NativeEngine {
             x.owner = JS(c.isNull ? -1 : ni[c.landOwnerId.asString] ?? -1); x.occupier = JS(c.isNull ? -1 : ni[c.occupierId.asString] ?? -1)
             x.value = JS(c.isNull ? 100 : c.value.asNumber.rounded()); return x
         })
+        var armyIndex = [String: Int](); for (i, v) in space.enumerated() { armyIndex[Daily.key("army", v.army.id.asString)] = i }
+        o.contacts = .array(r.forceContacts.pairs.asArray.compactMap { p -> JS? in
+            guard let a = armyIndex[p.a.asString], let b = armyIndex[p.b.asString] else { return nil }
+            return .array([JS(a), JS(b)])
+        })
         let stateNation = Dictionary(uniqueKeysWithValues: r.nativeWars.nationIds.asArray.map { ($0[0].asInt, $0[1].asString) })
         o.wars = .array(r.nativeWars.campaigns.asArray.filter { $0.endedTick.isNull }.map { c in
             let d = r.nativeDiplomacy.declarations.asArray.first { $0.warId.asInt == c.id.asInt }, goal = d.flatMap { $0.goals.asArray.first }
@@ -157,6 +165,16 @@ extension NativeEngine {
             x.goal = JS(goal.map { g in DeclarationText.goal(g.type.asInt, g.scope.isNull || g.scope.provinceIds.isNull ? 0 : g.scope.provinceIds.length) } ?? "")
             x.startDay = JS((c.openedTick.asNumber / 120).rounded(.down))
             x.participants = .array(c.participants.asArray.map { p in let y = JS.object(); y.nation = JS(stateNation[p.stateId.asInt].flatMap { ni[$0] } ?? -1); y.side = p.side; return y })
+            // War goals' claimed provinces with their claimant (WarClaimAnimationManager).
+            x.claims = .array(c.goals.asArray.flatMap { g -> [JS] in
+                guard !g.scope.isNull, !g.scope.provinceIds.isNull else { return [] }
+                let claimant = stateNation[g.beneficiary.optionalNumber.map { Int($0) } ?? -1].flatMap { ni[$0] } ?? -1
+                return g.scope.provinceIds.asArray.compactMap { n -> JS? in
+                    let index = n.asInt - 1
+                    guard provinces.indices.contains(index) else { return nil }
+                    let y = JS.object(); y.province = JS(index); y.nation = JS(claimant); return y
+                }
+            })
             return x
         })
         o.sieges = .array(r.occupation.sieges.asArray.map { s in

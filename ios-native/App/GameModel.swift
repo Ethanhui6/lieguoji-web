@@ -277,11 +277,39 @@ import LieguojiCore
             return (Double(c.r), Double(c.g), Double(c.b))
         }
         var e = MapEffects()
-        var seen = Set<Int>()
-        for a in state.armies where a.status == "fighting" {
-            let key = a.province >= 0 ? a.province : -1
-            if key >= 0 && !seen.insert(key).inserted { continue }
-            e.battles.append(.init(key: key >= 0 ? "p\(key)" : "a\(a.id)", x: Double(a.x), y: Double(a.y) - 4))
+        // The original BattleSword plays between every pair of armies in contact; pairs at one
+        // spot share a single animation.
+        var spots = [String: (x: Double, y: Double, n: Double)]()
+        for pair in state.contacts ?? [] where pair.count == 2 && state.armies.indices.contains(pair[0]) && state.armies.indices.contains(pair[1]) {
+            let a = state.armies[pair[0]], b = state.armies[pair[1]]
+            let x = Double(a.x + b.x) / 2, y = Double(a.y + b.y) / 2
+            let key = "\(Int(x / 6)):\(Int(y / 6))"
+            let old = spots[key] ?? (0, 0, 0)
+            spots[key] = (old.x + x, old.y + y, old.n + 1)
+        }
+        for (key, v) in spots.sorted(by: { $0.key < $1.key }) { e.battles.append(.init(key: key, x: v.x / v.n, y: v.y / v.n)) }
+        // Declarations, claimed provinces and peace (WarEffects47): one-shot, keyed by war.
+        func pole(_ n: Int) -> (Double, Double)? {
+            guard n >= 0, n < map.meta.nations.count else { return nil }
+            let c = map.meta.nations[n].capital
+            if c >= 0, c < map.meta.cities.count { return (Double(map.meta.cities[c].x), Double(map.meta.cities[c].y)) }
+            if let p = state.owners.firstIndex(of: n), p < map.meta.provinces.count { return (Double(map.meta.provinces[p].x), Double(map.meta.provinces[p].y)) }
+            return nil
+        }
+        e.declarations = controller.effects.declarations; e.claims = controller.effects.claims; e.peaces = controller.effects.peaces
+        if let previous {
+            let before = Set(previous.wars.map(\.id)), after = Set(state.wars.map(\.id))
+            for w in state.wars where !before.contains(w.id) {
+                if let a = pole(w.attacker), let b = pole(w.defender) { e.declarations.append(.init(id: "w\(w.id)", fromX: a.0, fromY: a.1, toX: b.0, toY: b.1)) }
+                for (i, c) in (w.claims ?? []).prefix(30).enumerated() where c.province >= 0 && c.province < map.meta.provinces.count {
+                    let p = map.meta.provinces[c.province], col = rgb(c.nation)
+                    e.claims.append(.init(id: "w\(w.id)-\(c.province)", x: Double(p.x), y: Double(p.y), r: col.0, g: col.1, b: col.2, delay: Double(i) * 0.05))
+                }
+            }
+            for w in previous.wars where !after.contains(w.id) {
+                for n in Set(w.participants.map(\.nation) + [w.attacker, w.defender]) { if let p = pole(n) { e.peaces.append(.init(id: "p\(w.id)-\(n)", x: p.0, y: p.1)) } }
+            }
+            e.declarations = Array(e.declarations.suffix(8)); e.claims = Array(e.claims.suffix(60)); e.peaces = Array(e.peaces.suffix(24))
         }
         for s in state.sieges where s.province >= 0 && s.province < map.meta.provinces.count {
             let p = map.meta.provinces[s.province], c = rgb(s.nation)

@@ -86,8 +86,10 @@ struct GameState: Decodable, Equatable {
     /// A harbour port: its land owner, current occupier and control value.
     struct Port: Decodable, Equatable { let province: Int; let x: Float; let y: Float; let owner: Int; let occupier: Int; let value: Double }
     struct Participant: Decodable, Equatable { let nation: Int; let side: Int }
+    struct Claim: Decodable, Equatable { let province: Int; let nation: Int }
     struct War: Decodable, Equatable, Identifiable {
         let id: Int; let attacker: Int; let defender: Int; let casusBelli: String; let goal: String; let startDay: Int; let participants: [Participant]
+        var claims: [Claim]? = nil
     }
     struct Siege: Decodable, Equatable { let province: Int; let nation: Int; let progress: Double }
     struct Event: Decodable, Equatable { let day: Int; let text: String; let kind: String }
@@ -101,6 +103,8 @@ struct GameState: Decodable, Equatable {
     var ports: [Port]? = nil
     let wars: [War]
     let sieges: [Siege]
+    /// Armies in contact (indices into armies), where the battle animation plays.
+    var contacts: [[Int]]? = nil
     let events: [Event]
 
     var dateText: String { date.year > 0 ? "公元\(date.year)年\(date.month)月\(date.day)日" : "公元前\(1 - date.year)年\(date.month)月\(date.day)日" }

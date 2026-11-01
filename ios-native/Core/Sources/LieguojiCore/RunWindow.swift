@@ -298,7 +298,7 @@ extension Nobility {
     static func leaderFamily(_ r: JS, _ nation: String) -> Int? {
         let id = r.people.nations[nation].leaderId
         if id.isNull { return nil }
-        let p = r.kin.persons[id.asString]
+        let p = r.kin.persons[String(id.asInt)]
         return p.isNull ? nil : p.familyId.asInt
     }
     static func contribute(_ n: JS, _ nation: String, _ family: Int, _ v: Double) {

@@ -493,7 +493,7 @@ struct GameView: View {
     @ViewBuilder private func sheet(for panel: Panel) -> some View {
         switch panel {
         case .province(let p):
-            ProvinceSheet(model: model, province: p, openNation: { n in open(.nation(n)) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            ProvinceSheet(model: model, province: p, openNation: { n in open(.nation(n)) }, openArmy: { a in open(.army(a)); controller.selectedArmy = a }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .army(let a):
             ArmySheet(model: model, army: a, onMarch: {
                 marchRetreat = false; controller.marchingArmy = a; self.panel = nil; say("点选地图上的目的地")
@@ -744,6 +744,7 @@ struct ProvinceSheet: View {
     @ObservedObject var model: GameModel
     let province: Int
     var openNation: (Int) -> Void = { _ in }
+    var openArmy: (Int) -> Void = { _ in }
     @State private var granting = false
     @State private var grantTarget = -1
     @State private var info: ProvinceInfo?
@@ -761,7 +762,7 @@ struct ProvinceSheet: View {
                             Row(label: "人口", value: info.population.formatted()); Divider2()
                             Row(label: "人口上限", value: info.capacity.formatted()); Divider2()
                             Row(label: "存粮", value: Int(info.grain).formatted()); Divider2()
-                            if info.owner != info.controller, info.owner >= 0 { Row(label: "法理归属", value: map.meta.nations[info.owner].name); Divider2() }
+                            if info.owner != info.controller, info.owner >= 0, info.owner < map.meta.nations.count { Row(label: "法理归属", value: map.meta.nations[info.owner].name); Divider2() }
                         }
                         if let n = nation {
                             Row(label: "政体", value: Names.polity[n.polity] ?? n.polity); Divider2(); Row(label: "文化", value: Names.culture[n.culture] ?? n.culture); Divider2()
@@ -797,7 +798,7 @@ struct ProvinceSheet: View {
                     if !armies.isEmpty {
                         Group2 {
                             ForEach(armies, id: \.element.id) { pair in
-                                Button { model.controller.selectedArmy = pair.offset } label: { ArmyRow(map: map, army: pair.element) }.buttonStyle(.plain)
+                                Button { openArmy(pair.offset) } label: { ArmyRow(map: map, army: pair.element) }.buttonStyle(.plain)
                                 if pair.element.id != armies.last?.element.id { Divider2() }
                             }
                         }
@@ -901,7 +902,8 @@ struct NationsSheet: View {
     let select: (Int) -> Void
     var body: some View {
         if let map = model.map, let state = model.state {
-            let order = state.nations.indices.sorted { state.nations[$0].provinces > state.nations[$1].provinces }
+            // A state just founded may not be in the map legend yet: list only the ones it has.
+            let order = state.nations.indices.filter { $0 < map.meta.nations.count }.sorted { state.nations[$0].provinces > state.nations[$1].provinces }
             ScrollView {
                 VStack(spacing: 14) {
                     SheetHeader(title: "国家", subtitle: "\(state.nations.filter(\.alive).count) 国并立")
@@ -1173,6 +1175,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.26", ["修复：在国家页之间滑动切换时，地图上的外交关系着色会被上一页清掉；迟到的刷新也不再覆盖当前国家的着色。",
+                    "修复：州郡页里点军团改为滑入军团页并可「返回州郡」，不再丢失来路。",
+                    "修复：新建国家尚未进入图例时打开「国家」列表可能闪退；州郡法理归属、都城索引越界的潜在闪退。"]),
         ("0.9.25", ["面板交互重做：所有面板共用一张奏折，切换时整页左右滑动，不再先收起再弹出；从列国、排行、州郡点进国家，或从军事点进军团，顶部出现「返回列国／返回军事」，逐页退回。",
                     "底部标签栏：当前打开的面板对应标签变为朱红，并有一道朱红短线在标签之间滑动。",
                     "提示改为奏折纸条：带「令」字印，从底栏上方升起，点按即收；连续提示不再互相吞掉。",

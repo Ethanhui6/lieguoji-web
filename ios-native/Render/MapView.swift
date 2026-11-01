@@ -10,6 +10,8 @@ import LieguojiCore
     @Published var relations: [Int: UInt32] = [:]
     /// A colour view's province fills (nil: the state view).
     @Published var viewFills: [RGB]?
+    /// The state whose relation colours are shown (its sheet page set them).
+    var relationsNation: Int?
     /// A colour view's group names, shown instead of the state names (nil: state names).
     @Published var viewLabels: [GroupLabel]?
     @Published var selectedProvince: Int?
@@ -415,7 +417,7 @@ final class MapLabelsView: UIView {
         super.init(frame: .zero)
         let unit = Double(MapLayers.fontUnit)
         nations = Self.nationLabels(map, unit: unit)
-        let capitals = Set(map.meta.nations.compactMap { $0.capital >= 0 ? map.meta.cities[$0.capital].id : nil })
+        let capitals = Set(map.meta.nations.compactMap { map.meta.cities.indices.contains($0.capital) ? map.meta.cities[$0.capital].id : nil })
         for c in map.meta.cities {
             let s = capitals.contains(c.id) ? 1.5 : 1.0, em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
             cities.append(Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),

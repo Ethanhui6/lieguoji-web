@@ -133,8 +133,9 @@ struct NationSheet: View {
                 .padding(.bottom, 24)
             }
             .task(id: state.day) { await reload() }
-            .onAppear { model.controller.relations = relationColors(); if let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
-            .onDisappear { model.controller.relations = [:] }
+            .onAppear { model.controller.relationsNation = nation; model.controller.relations = relationColors(); if let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
+            // Pages slide: the next state's page may already show its colours, so only clear our own.
+            .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
             .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17)) }
         }
     }
@@ -142,7 +143,7 @@ struct NationSheet: View {
     private func reload() async {
         info = await model.nationInfo(nation)
         history = await model.nationHistory(nation)
-        model.controller.relations = relationColors()
+        if model.controller.relationsNation == nation { model.controller.relations = relationColors() }
     }
     /// StateRelationsHighlighter colours.
     private func relationColors() -> [Int: UInt32] {

@@ -78,6 +78,13 @@ struct GameState: Decodable, Equatable {
         let province: Int; let supplies: Int; let morale: Int; let x: Float; let y: Float; let manual: Bool
         let destination: Int?; let mission: String?
     }
+    /// A fleet at its actual sea point (open-sea worlds) and its naval command.
+    struct Fleet: Decodable, Equatable, Identifiable {
+        let id: String; let name: String; let nation: Int; let ships: Int; let crew: Int; let food: Int; let hull: Double
+        let status: String; let travel: String; let x: Float; let y: Float; let decision: String; let reason: String; let port: Int; let manual: Bool; let patrol: Bool
+    }
+    /// A harbour port: its land owner, current occupier and control value.
+    struct Port: Decodable, Equatable { let province: Int; let x: Float; let y: Float; let owner: Int; let occupier: Int; let value: Double }
     struct Participant: Decodable, Equatable { let nation: Int; let side: Int }
     struct War: Decodable, Equatable, Identifiable {
         let id: Int; let attacker: Int; let defender: Int; let casusBelli: String; let goal: String; let startDay: Int; let participants: [Participant]
@@ -90,6 +97,8 @@ struct GameState: Decodable, Equatable {
     let labels: [WorldMeta.LabelBox]?
     let nations: [Nation]
     let armies: [Army]
+    var fleets: [Fleet]? = nil
+    var ports: [Port]? = nil
     let wars: [War]
     let sieges: [Siege]
     let events: [Event]

@@ -21,6 +21,8 @@ import LieguojiCore
     @Published var armies: [MapRenderer.ArmySprite]?
     @Published var route: [SIMD2<Float>] = []
     @Published var selectedArmy: Int?
+    /// A tapped fleet (index in the state's fleets); fleet sprites carry army −(index + 1).
+    @Published var selectedFleet: Int?
     /// While set, the next tap on land is the march destination of this army.
     @Published var marchingArmy: Int?
     var onMarchTarget: ((Int) -> Void)?
@@ -215,12 +217,12 @@ struct MapView: UIViewRepresentable {
             // An army icon under the finger (14 points) takes the tap before the province.
             if let armies = controller.armies {
                 var best: (army: Int, d: Double)?
-                for a in armies {
+                for a in armies where a.army > -100_000 {
                     let s = camera.toScreen(x: Double(a.x), y: Double(a.y), viewport: viewport)
                     let d = hypot(s.x - Double(p.x), s.y - Double(p.y))
                     if d < 14, best == nil || d < best!.d { best = (a.army, d) }
                 }
-                if let best { selection.selectionChanged(); controller.selectedArmy = best.army; return }
+                if let best { selection.selectionChanged(); if best.army < 0 { controller.selectedFleet = -best.army - 1 } else { controller.selectedArmy = best.army }; return }
             }
             if province != controller.selectedProvince { selection.selectionChanged() }
             controller.selectedProvince = province

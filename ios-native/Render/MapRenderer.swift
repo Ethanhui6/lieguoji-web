@@ -115,7 +115,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
         // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
         let loader = MTKTextureLoader(device: device)
-        for unit in ["Infantry", "Archer", "Shield", "Cavalry", "Elite"] {
+        for unit in ["Infantry", "Archer", "Shield", "Cavalry", "Elite", "Fleet", "Port"] {
             if let url = unitURL(unit), let texture = try? loader.newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true]) { unitTextures[unit] = texture }
         }
         if let start = map.meta.economy {
@@ -232,7 +232,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             var byUnit: [String: [Float]] = [:]
             for a in sprites {
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
-                let size = iconSize * (a.unit == "Elite" ? 1.5 : 1) * (a.selected ? 1.35 : 1)
+                let size = iconSize * (a.unit == "Elite" ? 1.5 : a.unit == "Port" ? 0.7 : 1) * (a.selected ? 1.35 : 1)
                 let at = displayed(a, t)
                 for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
                     byUnit[a.unit, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, 1, size])

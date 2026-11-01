@@ -279,11 +279,12 @@ struct GeneratingView: View {
 // MARK: - game
 
 enum Panel: Identifiable, Equatable {
-    case province(Int), army(Int), nation(Int), nations, military, diplomacy, chronicle, menu
+    case province(Int), army(Int), fleet(Int), nation(Int), nations, military, diplomacy, chronicle, menu
     var id: String {
         switch self {
         case .province(let p): return "p\(p)"
         case .army(let a): return "a\(a)"
+        case .fleet(let f): return "f\(f)"
         case .nation(let n): return "n\(n)"
         case .nations: return "nations"
         case .military: return "military"
@@ -344,11 +345,15 @@ struct GameView: View {
             model.refreshArmies()
             if let army { panel = .army(army) } else if case .army = panel { panel = nil }
         }
+        .onChange(of: controller.selectedFleet) { _, fleet in
+            model.refreshArmies()
+            if let fleet { panel = .fleet(fleet) } else if case .fleet = panel { panel = nil }
+        }
         .onChange(of: controller.selectedProvince) { _, province in
             if let province { panel = .province(province) } else if case .province = panel { panel = nil }
         }
         .sheet(item: $panel, onDismiss: {
-            if panel == nil { controller.selectedProvince = nil; if controller.marchingArmy == nil { controller.selectedArmy = nil } }
+            if panel == nil { controller.selectedProvince = nil; controller.selectedFleet = nil; if controller.marchingArmy == nil { controller.selectedArmy = nil } }
         }) { panel in
             sheet(for: panel).presentationBackground(Theme.paper).presentationDragIndicator(.visible).presentationCornerRadius(28).font(Theme.kai(17))
         }
@@ -363,17 +368,19 @@ struct GameView: View {
                 controller.marchingArmy = a; self.panel = nil; say("点选地图上的目的地")
             }, onHalt: { Task { if let e = await model.order(army: a, to: nil) { say(e) } } })
             .presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        case .fleet(let f):
+            FleetSheet(model: model, fleet: f).presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nation(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) })
                 .presentationDetents([.medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nations:
             NationsSheet(model: model) { n in self.panel = .nation(n) }.presentationDetents([.medium, .large])
         case .military:
-            MilitarySheet(model: model) { army in
+            MilitarySheet(model: model, select: { army in
                 self.panel = nil
                 if let p = model.army(army)?.province, p >= 0 { controller.fly(to: p) }
                 controller.selectedArmy = army
-            }.presentationDetents([.medium, .large])
+            }, selectFleet: { fleet in self.panel = nil; controller.selectedFleet = fleet }).presentationDetents([.medium, .large])
         case .diplomacy:
             DiplomacySheet(model: model, say: say).presentationDetents([.medium, .large])
         case .chronicle:
@@ -572,6 +579,14 @@ struct ProvinceSheet: View {
                         }
                         .padding(.horizontal, 16)
                     }
+                    if let port = model.state?.ports?.first(where: { $0.province == province }) {
+                        Group2 {
+                            Row(label: "海港", value: port.occupier == port.owner ? "本国控制" : "被占领"); Divider2()
+                            if port.occupier >= 0, port.occupier < map.meta.nations.count { Row(label: "港口控制", value: map.meta.nations[port.occupier].name); Divider2() }
+                            Row(label: "控制度", value: "\(Int(port.value))")
+                        }
+                        .padding(.horizontal, 16)
+                    }
                     if !armies.isEmpty {
                         Group2 {
                             ForEach(armies, id: \.element.id) { pair in
@@ -697,11 +712,22 @@ struct NationsSheet: View {
 struct MilitarySheet: View {
     @ObservedObject var model: GameModel
     let select: (Int) -> Void
+    var selectFleet: (Int) -> Void = { _ in }
     var body: some View {
         if let map = model.map, let state = model.state {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队")
+                    SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支舰队"))
+                    if let fleets = state.fleets, !fleets.isEmpty {
+                        Text("舰队").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                        Group2 {
+                            ForEach(fleets.indices, id: \.self) { i in
+                                Button { selectFleet(i) } label: { FleetRow(map: map, fleet: fleets[i]) }.buttonStyle(.plain)
+                                if i != fleets.indices.last { Divider2() }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
                     ForEach(state.nations.indices, id: \.self) { n in
                         let rows = state.armies.indices.filter { state.armies[$0].nation == n }
                         if !rows.isEmpty {
@@ -887,6 +913,13 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.17", ["【手机上能点到】新建的世界启用开阔海规则：与地图外缘相连的海面算作外海，首府临外海的省份获得港湾，各国开局各有一支舰队（老存档保持原样，不出现舰队）。",
+                    "【手机上能点到】地图上显示舰队（帆船图标）和港口（锚图标，按控制国着色）；点舰队打开舰队面板（船只、船员、舰体、口粮、状态、AI 部署与理由）；「军事」面板列出全部舰队；省份面板显示海港控制者与控制度。",
+                    "【手机上能点到】舰队由 AI 自主部署：按原作港口拥挤权重驻防、余粮不足回港补给、战时按原作比例选出进攻舰队争夺敌港；停在本国安全港口锚点按日补粮，断粮减员。",
+                    "【手机上能点到】海战伤害计入舰体、船员和船只损失；统帅的海战特质（如「海战精通」+30%）计入舰队战力，与网页一致。",
+                    "【仍在核心代码】海路图与首府港湾生成移植到 Swift，在 4 种地形样本上与网页逐位一致；开阔海世界和平 120 天、开战 120 天整日推进与网页逐位一致（含舰队、港口账本）。",
+                    "【简化】「造船大师」（造舰时间 ×0.5）当前规则没有造舰系统，暂无效果；「改革者」没有可用的原作公式，只显示说明。手动舰令尚未开放。",
+                    "【未在真机验证】以上只在 CI 通过，未在真机上验证。"]),
         ("0.9.16", ["【仍在核心代码】新世界政府段第二部分移植到 Swift：每省初始人口与人口上限、省份资源抽取、各国经济方式、首批常备军征募、首月国库结算、开局国运，在 4 种地形样本上与网页逐位一致（含键序）。手机上暂无变化。",
                     "【未在真机验证】以上只在 CI 通过。"]),
         ("0.9.15", ["【手机上能点到】国家详情「人物」分节里，每条特质后面显示原作的效果说明（取自原作特质描述的中文文本，共 27 条）。",
@@ -1122,5 +1155,59 @@ struct HeraldBanner: View {
         .glass(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .padding(.horizontal, 14)
         .onAppear { withAnimation(.spring(response: 0.36, dampingFraction: 0.55).delay(0.12)) { stamped = true } }
+    }
+}
+
+// MARK: - fleets (open-sea worlds)
+
+enum FleetText {
+    static func status(_ s: String) -> String { ["docked": "停泊", "sailing": "航行", "anchored": "下锚", "lost": "已损失"][s] ?? s }
+    static func decision(_ d: String) -> String {
+        ["waiting": "待命", "attacking": "进攻敌港", "guarding": "驻防", "resupply": "回港补给", "manual": "玩家指挥", "busy": "交战中", "lost": "已损失", "no-route": "无可达港口"][d] ?? d
+    }
+}
+
+struct FleetRow: View {
+    let map: WorldMap
+    let fleet: GameState.Fleet
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "sailboat.fill").foregroundStyle(fleet.nation >= 0 && fleet.nation < map.meta.nations.count ? Names.color(map.meta.nations[fleet.nation].color) : Theme.ink2)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(fleet.name).font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                Text("\(FleetText.status(fleet.status)) · \(FleetText.decision(fleet.decision))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+            }
+            Spacer()
+            Text("\(fleet.ships) 船 · \(fleet.crew) 人").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+    }
+}
+
+struct FleetSheet: View {
+    @ObservedObject var model: GameModel
+    let fleet: Int
+    var body: some View {
+        if let map = model.map, let f = model.fleet(fleet) {
+            let nation = f.nation >= 0 && f.nation < map.meta.nations.count ? map.meta.nations[f.nation] : nil
+            ScrollView {
+                VStack(spacing: 14) {
+                    SheetHeader(title: f.name, subtitle: nation.map { "\($0.name) · 舰队" }, color: nation.map { Names.color($0.color) })
+                    Group2 {
+                        Row(label: "船只", value: "\(f.ships)"); Divider2()
+                        Row(label: "船员", value: "\(f.crew)"); Divider2()
+                        Row(label: "舰体", value: "\(Int((f.hull * 100).rounded()))%"); Divider2()
+                        Row(label: "口粮", value: "\(f.food)"); Divider2()
+                        Row(label: "状态", value: FleetText.status(f.status)); Divider2()
+                        if f.port >= 0, f.port < map.meta.provinces.count { Row(label: "目标港口", value: map.meta.provinces[f.port].name + "港"); Divider2() }
+                        Row(label: "指挥", value: f.manual || !f.patrol ? "玩家指挥" : "AI · " + FleetText.decision(f.decision))
+                    }
+                    .padding(.horizontal, 16)
+                    if !f.reason.isEmpty { Text(f.reason).font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24) }
+                    Text("舰队由 AI 自主部署；手动舰令尚未开放。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                }
+                .padding(.bottom, 24)
+            }
+        }
     }
 }

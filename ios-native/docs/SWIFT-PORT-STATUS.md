@@ -41,13 +41,14 @@
 | 整天循环（军事帧、日结、政治外交） | culture47-session advance | Session.swift | day.json（90 天） |
 | 玩家命令（行军、停止、宣战、议和） | culture47-orders、political-owner | Commands.swift | commands.json |
 | 交接、存读档、20 天连续推进 | native-bridge nativeWorld | NativeEngine.swift | bridge-world / bridge-after |
+| 海路图与首府港湾（v1 / 开阔海 v2） | sea-path seaGraph、war46-geography buildHarbors46 | SeaGraph.swift | harbor.json（4 种地形） |
+| 舰队军令、海军自主部署、港口归属与争夺、舰队日粮、海战舰体损失、统帅海战特质 | fleet-commands47、civilization47-naval-ai、civilization47-ports、civilization47-upkeep settleFleetFood47、force-losses47、civilization47-combat volley.navy | Naval.swift、RunWindow.swift | navy-day.json（和平 120 天）、navy-war-day.json（开战 120 天） |
 
 ## 尚未移植（仍由网页引擎负责）
 - 新世界创建后续段（attachGovernment47：地形格与资源、开局人口、财政、首批征兵、国运；attachFoundingForces47：初始海陆编制；规则启用动作）。App 仍用网页引擎建世界后交给 Swift。
 - 说明：Creation.swift 只照搬网页现行规则，未新增任何数值。其中按面积与地形的人口粮食系数（2.5/2/1.3、×0.7、×20）和开篇国龄是网页自己的规则，网页事件文本已注明"模拟参数，不代表正式设定"，并非原作核实值；开篇国龄同样是网页开篇规则。
-- 港口归属账与海军（当前世界没有舰队；有港口的世界中港口账暂不更新）。
-  - 2026-10-31 核查（src/native-export/harbor-golden.test.ts，EXPORT_NATIVE_WORLD=1 运行）：在原作 20k 网格上，网页 seaGraph 判定“外海”要求水面三角形的边落在地图边界（x=0、y=0、x=1600、y=900）上，但 20k 网格 19928 个点没有一个在边界上（x 0.44–1595.62，y 0.47–899.5）。因此四个创建样本（continents、pangea、highIsland、archipelago）都得到 0 片外海、0 个港口、0 个首府港湾；attachFoundingForces47 的 initialNavy 因而不建任何舰队，造船也要求港口。结论：网页新世界里海军整体不可达。逐位照搬只会得到同样的空海军，界面上看不到任何东西，所以暂不移植海军模块。
-  - 待 Bob 决定：若要海军可见，需要改网页的外海判定（例如以网格外缘三角形代替严格边界相等），这会改变网页行为与现有存档，属于「与原作不一致」的取舍，不在原生端单方面修改。
+- 港口与海军：已移植（见上表）。2026-10-31 核查发现原规则（v1）在 20k 网格上没有外海、港口和舰队；经 Bob 确认，新世界开局参数 harbors:'capital-neighbor-v2' 以网格外缘三角形（只被一个三角形使用的边）所在水域为外海，记录在 harbors.method；老存档与未带该参数的开局仍按 v1，行为不变。网页新世界界面与 App 新世界都带此参数。
+- 造舰（war46-shipbuilding）不在现行 47 规则中，因此「造船大师」造舰时间 ×0.5 在网页与 Swift 中都没有作用对象（简化，未编造）。手动舰令只在核心代码（Naval.issue），App 尚未开放按钮。
 
 ## 性能
 - 分段计时（Profile.swift，DayTests 输出）：缓存海域表与通行关系后，整天循环约 0.09 秒/天（CI），其中行军与接触约占 75%。
@@ -58,4 +59,5 @@
 - 更正（ios-traits-attributes-effects.md，据 EV/fms-court16-v5-2026-10-07/CONTRACT.md 第 9、11 行）：Nobility.traitType 按四维修正之和分档（>5 正、<−5 负）、抽取比例 40/30/30、每人 1–3 条、精锐 ×10 均有原作依据，不再列为差异。
 - 初始兵种按军队序号轮换不是原作做法（原作推断为征募权重乘生态修正）。精锐 ×10 有依据（UPPER_EFFICIENCY_RECOVERY.md 第 15 行），但 Swift 以 unit=="Elite" 判定，原作为 isElite 标志，二者等价属推断。
 - 文化集与姓名规则、家族成员年龄、子女数、旁系人数、女性继承 30%、开篇国龄、人口粮食系数都是网页数值，原作中找不到。
-- 待核（不编造）：开局家族数、初始军队数量与位置、港口归属、海军开局。
+- 待核（不编造）：开局家族数、初始军队数量与位置。
+- 开阔海 v2（外缘三角形即外海）是网页适配，不是原作判定；原作外海判定未恢复。

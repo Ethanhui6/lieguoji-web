@@ -221,6 +221,7 @@ struct NationSheet: View {
                     action("解除附庸", "link.badge.plus", Theme.ink, disabled: !vassal) { Task { await run { await model.releaseVassal(nation) } } }
                     action("收为附庸", "crown", Theme.jade, disabled: vassal) { target = -1; picking = .vassal }
                     action("吞并", "map", Theme.seal, disabled: false) { target = -1; picking = .annex }
+                    action("触发内战", "flame", Theme.seal, disabled: false) { Task { await run { await model.triggerCivilWar(nation) } } }
                 }
                 .padding(14)
                 Divider2()

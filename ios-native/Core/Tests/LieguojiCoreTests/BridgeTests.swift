@@ -44,6 +44,10 @@ final class BridgeTests: XCTestCase {
             let v = try JS.parse(engine.view(mode)); XCTAssertEqual(v.fills.length, engine.run.world.provinces.length); XCTAssertGreaterThan(v.legend.length, 0)
         }
         for c in ["power", "population", "economy", "war", "religion"] { XCTAssertNoThrow(try JS.parse(engine.statistics(c))) }
+        XCTAssertNoThrow(try JS.parse(engine.worldSettings()))
+        XCTAssertTrue(engine.setWorld("maximumMonths", 60).ok); XCTAssertFalse(engine.setWorld("maximumMonths", 60).ok)
+        XCTAssertTrue(engine.setWorld("alliances", engine.run.alliances.enabled.isTruthy ? 0 : 1).ok)
+        for i in a.prefix(3) { _ = engine.triggerCivilWar(i) }
         engine.advance(days: 3)
         XCTAssertNotNil(try JSONSerialization.jsonObject(with: engine.state(includeLabels: true)))
     }

@@ -279,7 +279,7 @@ struct GeneratingView: View {
 // MARK: - game
 
 enum Panel: Identifiable, Equatable {
-    case province(Int), army(Int), fleet(Int), nation(Int), nations, military, diplomacy, chronicle, menu, statistics
+    case province(Int), army(Int), fleet(Int), nation(Int), nations, military, diplomacy, chronicle, menu, statistics, edicts
     var id: String {
         switch self {
         case .province(let p): return "p\(p)"
@@ -287,6 +287,7 @@ enum Panel: Identifiable, Equatable {
         case .fleet(let f): return "f\(f)"
         case .nation(let n): return "n\(n)"
         case .statistics: return "statistics"
+        case .edicts: return "edicts"
         case .nations: return "nations"
         case .military: return "military"
         case .diplomacy: return "diplomacy"
@@ -385,6 +386,8 @@ struct GameView: View {
         case .nation(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) })
                 .presentationDetents([.medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        case .edicts:
+            EdictSheet(model: model, say: say).presentationDetents([.medium, .large])
         case .statistics:
             StatisticsSheet(model: model) { n in self.panel = .nation(n) }.presentationDetents([.medium, .large]).presentationBackground(.clear)
         case .nations:
@@ -400,7 +403,7 @@ struct GameView: View {
         case .chronicle:
             ChronicleSheet(model: model).presentationDetents([.medium, .large])
         case .menu:
-            MenuSheet(model: model, controller: controller) { self.panel = nil }.presentationDetents([.medium, .large])
+            MenuSheet(model: model, controller: controller, openEdicts: { self.panel = .edicts }) { self.panel = nil }.presentationDetents([.medium, .large])
         }
     }
 
@@ -847,32 +850,60 @@ struct DiplomacySheet: View {
     }
 }
 
+/// The chronicle as a hand scroll: wooden rods, entries brushed in newest first, war in vermilion,
+/// peace in jade, the newest marked with a small seal.
 struct ChronicleSheet: View {
     @ObservedObject var model: GameModel
+    @State private var unrolled = false
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: "纪事", subtitle: model.state?.dateText)
-                Group2 {
-                    ForEach(Array((model.state?.events ?? []).reversed().enumerated()), id: \.offset) { pair in
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("第\(pair.element.day + 1)日").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
-                            Text(pair.element.text).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+        ZStack {
+            MemorialPaper()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    MemorialHeader(title: "纪事", subtitle: model.state?.dateText, seal: "史")
+                    VStack(spacing: 0) {
+                        ScrollRod().padding(.horizontal, 6)
+                        VStack(alignment: .leading, spacing: 0) {
+                            let events = Array((model.state?.events ?? []).reversed())
+                            ForEach(Array(events.enumerated()), id: \.offset) { i, e in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Circle().fill(color(e.kind)).frame(width: 7, height: 7).padding(.top, 8)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text("第\(e.day + 1)日").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                                        Text(e.text).font(Theme.kai(16)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    Spacer(minLength: 0)
+                                    if i == 0 { Seal(text: "新", size: 22) }
+                                }
+                                .padding(.horizontal, 18).padding(.vertical, 9)
+                                .opacity(unrolled ? 1 : 0).offset(y: unrolled ? 0 : -6)
+                                .animation(.easeOut(duration: 0.35).delay(min(0.6, Double(i) * 0.03)), value: unrolled)
+                                if i < events.count - 1 { Rectangle().fill(Theme.ink.opacity(0.08)).frame(height: 0.7).padding(.leading, 35).padding(.trailing, 18) }
+                            }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 10)
-                        if pair.offset < (model.state?.events.count ?? 0) - 1 { Divider2() }
+                        .padding(.vertical, 8)
+                        .background(Theme.paper2.opacity(0.55))
+                        .overlay(Rectangle().stroke(Theme.ink.opacity(0.12), lineWidth: 0.8))
+                        .padding(.horizontal, 16)
+                        .scaleEffect(x: 1, y: unrolled ? 1 : 0.02, anchor: .top)
+                        ScrollRod().padding(.horizontal, 6)
                     }
+                    .padding(.horizontal, 10)
                 }
-                .padding(.horizontal, 16)
+                .padding(.bottom, 28)
             }
-            .padding(.bottom, 24)
         }
+        .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) { unrolled = true } }
+    }
+    private func color(_ kind: String) -> Color {
+        switch kind { case "war", "battle", "uprising", "civilWar", "rebellion": return Theme.seal; case "peace", "diplomacy": return Theme.jade; default: return Theme.ink2.opacity(0.6) }
     }
 }
 
 struct MenuSheet: View {
     @ObservedObject var model: GameModel
     @ObservedObject var controller: MapController
+    var openEdicts: () -> Void = {}
     let close: () -> Void
     @State private var creating = false
     @State private var notes = false
@@ -888,6 +919,8 @@ struct MenuSheet: View {
                 Button { Task { exported = await model.exportCopy().map(ExportFile.init) } } label: { MenuRow(symbol: "square.and.arrow.up", title: "导出存档（备份）") }.buttonStyle(.plain)
                 Divider2()
                 Button { importing = true } label: { MenuRow(symbol: "tray.and.arrow.down", title: "导入存档") }.buttonStyle(.plain)
+                Divider2()
+                Button { openEdicts() } label: { MenuRow(symbol: "scroll.fill", title: "天下诏令（外交、联盟、叛乱、家族、附庸）") }.buttonStyle(.plain)
                 Divider2()
                 Button { creating = true } label: { MenuRow(symbol: "globe.asia.australia", title: "新世界") }.buttonStyle(.plain)
                 Divider2()
@@ -952,6 +985,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.21", ["新增「天下诏令」（原作全局设置，菜单进入）：世界自动外交、最长战争期限、各国自主结盟、行省叛乱开关与间隔、家族叛乱与内战开关和间隔、附庸叛变；以诏书样式呈现，每次更改都记入纪事。",
+                   "国家行为新增「触发内战」：规则同原作（两个家族时须对方有领地、关系低于 −30、影响力高于 100；三个以上家族时与统治家族关系最差的两个起兵），不满足时说明原因。",
+                   "纪事改为卷轴：上下木轴、展开动画，战事朱点、外交玉点，最新一条盖「新」字小印。"]),
         ("0.9.20", ["新增原作省份进攻箭头：被敌军进攻的省份上，从进攻方相邻省份指来弯曲粗箭头（进攻方国色由浅到深、首粗尾细、1 秒长出），规则同原作：按进攻军队数画 1 到 3 支，进攻方失去出发省份时箭头消失。原作默认只显示所选国家的战争，这里默认全部显示。",
                    "海战也显示原作双剑交锋动画，出现在两支舰队相接处。",
                    "地图视图（原作 1–6 视图）：国家、联盟、文化、家族、宗教、地形，右上角按钮展开纸质切换条，选中项以朱印标出；非国家视图左下角显示图例。",

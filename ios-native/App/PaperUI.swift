@@ -254,3 +254,96 @@ struct StatisticsSheet: View {
         }
     }
 }
+
+// MARK: - Edicts (天下诏令)
+
+struct WorldSettings: Decodable {
+    let worldAuto: Bool; let maximumMonths: Int; let alliances: Bool
+    let rebellion: Bool?; let rebellionMonths: Int
+    let families: Bool?; let familyMonths: Int; let civilWar: Bool?; let civilMonths: Int
+    let vassals: Bool?
+}
+
+/// The original's world AI and rule settings as an imperial edict: each change is proclaimed.
+struct EdictSheet: View {
+    @ObservedObject var model: GameModel
+    let say: (String) -> Void
+    @State private var s: WorldSettings?
+    var body: some View {
+        ZStack {
+            MemorialPaper()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    MemorialHeader(title: "天下诏令", subtitle: "奉天承运，诏曰：", seal: "诏")
+                    if let s {
+                        section("外交") {
+                            toggle("世界自动外交", s.worldAuto, "worldAuto")
+                            Divider2()
+                            stepper("最长战争期限", s.maximumMonths, 0...480, 6, "月", "maximumMonths", zero: "不限")
+                        }
+                        section("联盟") { toggle("各国自主结盟", s.alliances, "alliances") }
+                        if let rebellion = s.rebellion {
+                            section("行省叛乱") {
+                                toggle("允许行省叛乱", rebellion, "rebellion")
+                                Divider2()
+                                stepper("叛乱最短间隔", s.rebellionMonths, 0...240, 6, "月", "rebellionMonths")
+                            }
+                        }
+                        if let families = s.families, let civil = s.civilWar {
+                            section("家族") {
+                                toggle("允许家族叛乱", families, "families")
+                                Divider2()
+                                stepper("家族叛乱间隔", s.familyMonths, 0...240, 6, "月", "familyMonths")
+                                Divider2()
+                                toggle("允许内战", civil, "civilWar")
+                                Divider2()
+                                stepper("内战最短间隔", s.civilMonths, 0...240, 6, "月", "civilMonths")
+                            }
+                        }
+                        if let vassals = s.vassals { section("附庸") { toggle("允许附庸叛变", vassals, "vassals") } }
+                        Text("钦此。").font(Theme.kai(20)).foregroundStyle(Theme.ink).frame(maxWidth: .infinity, alignment: .trailing).padding(.horizontal, 26)
+                    } else { ProgressView().frame(maxWidth: .infinity).padding(40) }
+                }
+                .padding(.bottom, 28)
+            }
+        }
+        .task { await reload() }
+    }
+    private func reload() async { s = await model.worldSettings() }
+    private func apply(_ key: String, _ value: Int) {
+        Task { if let e = await model.setWorld(key, value) { say(e) } else { say("诏令已颁行") }; await reload() }
+    }
+    @ViewBuilder private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+        Text(title).font(Theme.kai(17)).foregroundStyle(Theme.seal).padding(.horizontal, 22)
+        Group2 { content() }.padding(.horizontal, 16)
+    }
+    private func toggle(_ title: String, _ on: Bool, _ key: String) -> some View {
+        PaperSwitch(title: title, on: Binding(get: { on }, set: { apply(key, $0 ? 1 : 0) }))
+    }
+    private func stepper(_ title: String, _ value: Int, _ range: ClosedRange<Int>, _ step: Int, _ unit: String, _ key: String, zero: String? = nil) -> some View {
+        HStack(spacing: 10) {
+            Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+            Spacer()
+            Button { apply(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 32) }
+                .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value <= range.lowerBound)
+            Text(value == 0 && zero != nil ? zero! : "\(value) \(unit)").font(Theme.kai(18)).foregroundStyle(Theme.ink).frame(minWidth: 64).contentTransition(.numericText())
+            Button { apply(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 32) }
+                .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value >= range.upperBound)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+    }
+}
+
+// MARK: - Chronicle as a hand scroll (纪事卷)
+
+/// A wooden scroll rod with brass caps, top and bottom of the chronicle.
+struct ScrollRod: View {
+    var body: some View {
+        HStack(spacing: 0) {
+            Capsule().fill(LinearGradient(colors: [Color(red: 0.72, green: 0.56, blue: 0.25), Color(red: 0.45, green: 0.32, blue: 0.12)], startPoint: .top, endPoint: .bottom)).frame(width: 14, height: 20)
+            RoundedRectangle(cornerRadius: 5).fill(LinearGradient(colors: [Color(red: 0.42, green: 0.22, blue: 0.12), Color(red: 0.22, green: 0.1, blue: 0.05), Color(red: 0.36, green: 0.18, blue: 0.09)], startPoint: .top, endPoint: .bottom)).frame(height: 14)
+            Capsule().fill(LinearGradient(colors: [Color(red: 0.72, green: 0.56, blue: 0.25), Color(red: 0.45, green: 0.32, blue: 0.12)], startPoint: .top, endPoint: .bottom)).frame(width: 14, height: 20)
+        }
+        .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
+    }
+}

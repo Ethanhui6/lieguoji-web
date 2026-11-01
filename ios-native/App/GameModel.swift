@@ -425,6 +425,12 @@ import LieguojiCore
         controller.viewFills = v.fills.map { RGB(css: $0) ?? RGB(1, 1, 1) }
         viewLegend = v.legend
     }
+    func worldSettings() async -> WorldSettings? {
+        guard let data = await native.worldSettings() else { return nil }
+        return try? JSONDecoder().decode(WorldSettings.self, from: data)
+    }
+    func setWorld(_ key: String, _ value: Int) async -> String? { finish(await native.setWorld(key, value)) }
+    func triggerCivilWar(_ n: Int) async -> String? { finish(await native.triggerCivilWar(n)) }
     func statistics(_ category: String) async -> [StatisticsRow] {
         guard let data = await native.statistics(category) else { return [] }
         return (try? JSONDecoder().decode([StatisticsRow].self, from: data)) ?? []

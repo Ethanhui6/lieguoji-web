@@ -217,11 +217,7 @@ struct MapView: UIViewRepresentable {
                 controller.groupArmies = inside.filter { $0.nation == nation }.map(\.army)
                 controller.boxSelecting = false
                 boxStart = nil
-                if controller.marchingFleet != nil {
-                if let province { impact.impactOccurred(); controller.onFleetTarget?(province) }
-                return
-            }
-            if !controller.groupArmies.isEmpty { selection.selectionChanged() }
+                if !controller.groupArmies.isEmpty { selection.selectionChanged() }
             }
         }
         @objc private func handlePan(_ g: UIPanGestureRecognizer) {
@@ -266,6 +262,10 @@ struct MapView: UIViewRepresentable {
             if let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province[cell] >= 0 { province = Int(map.province[cell]) }
             if controller.marchingArmy != nil {
                 if let province { impact.impactOccurred(); controller.onMarchTarget?(province) }
+                return
+            }
+            if controller.marchingFleet != nil {
+                if let province { impact.impactOccurred(); controller.onFleetTarget?(province) }
                 return
             }
             if !controller.groupArmies.isEmpty {

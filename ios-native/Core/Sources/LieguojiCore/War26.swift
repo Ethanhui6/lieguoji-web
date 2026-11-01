@@ -136,10 +136,36 @@ public enum War26 {
             return p.controller.asString == s.controller.asString && RunWindow.atWar(r, s.attacker.asString, s.controller.asString)
         })
         Wars.reconcileCore(r)
+        invalidateRoutes(r)
         Armies.bridge?.reconcileContacts(r)
         Daily.reconcileMilitaryClock(r)
         Government.refreshLeaderCombat(r)
         reconcile(r); Wars.reconcileLosses(r)
+    }
+    /// invalidatePoliticalRoutes47: a marching army whose remaining land route crosses a province it
+    /// may no longer enter stops where it is and is re-evaluated the next day.
+    static func invalidateRoutes(_ r: JS) {
+        guard let bridge = Armies.bridge else { return }
+        let g = bridge.graph, provinces = r.world.provinces.asArray
+        let original = !r.originalArmy47.isNull && r.originalArmy47.paths.optionalNumber == 1
+        for a in r.world.armies.asArray {
+            let id = a.id.asString, t = r.armyPositions.records[id]
+            if t.isNull || t.status.asString != "moving" { continue }
+            let nation = a.nationId.asString, retreat = a.status.asString == "retreating"
+            let anchor = original ? provinces.first { $0.id.asString == a.provinceId.asString }?.controller.asString : nil
+            let rest = t.nodes.asArray.dropFirst(t.leg.asInt + 1)
+            let blocked = rest.contains { node in
+                guard let cell = g.cell(id: node.asInt) else { return false }
+                let q = Int(g.provinces[cell]); if q < 0 { return false }
+                let c = provinces[q].controller.asString
+                return !(RunWindow.access(r, nation, c) || c == anchor || !retreat && RunWindow.atWar(r, nation, c))
+            }
+            if !blocked { continue }
+            let h = t.clone(); h.status = JS("halted"); r.armyPositions.records[id] = h; Vassals.bump(r.armyPositions)
+            let order = r.armyAutonomy.armies[id]
+            order.targetId = .null; order.campaignId = .null; order.issuedTick = .null; order.nextTick = r.clock.tick.clone(); order.decision = JS("waiting")
+            order.reason = JS("外交改变了通行权，部队在实际位置停止，下一日重新评估。"); Vassals.bump(r.armyAutonomy)
+        }
     }
     /// Install the hooks of declarations and peace.
     public static func install() {

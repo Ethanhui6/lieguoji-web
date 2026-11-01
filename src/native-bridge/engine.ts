@@ -39,6 +39,7 @@ let session:Culture47Session|undefined;
 let current:Snapshot|undefined;
 let labelInput:{cellsX:number;points:[number,number][];heights:ArrayLike<number>;cells:Int32Array|number[]}|undefined;
 let labelOwners='';
+let lastMap:{bin:string;meta:unknown}|null=null;
 
 const ENABLE=[['enable-retirement',ARMY_RETIREMENT_RULE47],['enable-recovery',ARMY_RECOVERY_RULE47],['enable-frame-loop',FRAME_LOOP_RULE47],
   ['enable-army-batch',ARMY_BATCH_RULE47],['enable-foundings',FOUNDING_RULE47],['enable-offices',OFFICE_RULE47],['enable-original-army',ORIGINAL_ARMY_RULE47]] as const;
@@ -55,7 +56,8 @@ async function mapOf(terrain:Culture47Opening['terrain'],r:Run,options:{seed:str
   const built=await buildWorldMap(terrain,r,options),grid=(await originalGridFor(terrain))!;
   labelInput={cellsX:grid.cellsX,points:grid.points as [number,number][],heights:terrain.elevations,cells:originalCellProvinces(terrain,r.world.provinces,r.scale)};
   labelOwners='';
-  return {bin:base64(built.bin),meta:built.meta};
+  lastMap={bin:base64(built.bin),meta:built.meta};
+  return lastMap;
 }
 
 /** Generates a new world exactly as the web's 生成地图 + 从当前地图创建文化世界 (CultureWorld47.tsx):
@@ -181,5 +183,6 @@ export async function load(text:string){
 export function nativeWorld(){
   const r=run() as unknown as Record<string,unknown>,out:Record<string,unknown>={};
   for(const [k,v] of Object.entries(r))if(k!=='terrain')out[k]=v;
-  return JSON.stringify({run:out,statics:nativeStatics(r)});
+  const li=labelInput,labelGrid=li?{cellsX:li.cellsX,points:li.points.flat(),cells:Array.from(li.cells,(c,i)=>li.heights[i]>=20&&c>=0?c:-1)}:null;
+  return JSON.stringify({run:out,statics:{...nativeStatics(r),labelGrid,map:lastMap}});
 }

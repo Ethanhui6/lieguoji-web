@@ -137,10 +137,10 @@ public final class JS: CustomStringConvertible {
                 switch u {
                 case "\"": out += "\\\""
                 case "\\": out += "\\\\"
-                case "\n": out += "\n"
-                case "\r": out += "\r"
-                case "\t": out += "\t"
-                default: if u.value < 0x20 { out += String(format: "\u%04x", u.value) } else { out.unicodeScalars.append(u) }
+                case "\n": out += "\\n"
+                case "\r": out += "\\r"
+                case "\t": out += "\\t"
+                default: if u.value < 0x20 { out += String(format: "\\u%04x", u.value) } else { out.unicodeScalars.append(u) }
                 }
             }
             out += "\""

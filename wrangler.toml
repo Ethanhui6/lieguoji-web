@@ -1,5 +1,6 @@
 # Cloudflare Pages config for 列国纪 (Git integration builds `npm run build:cf` into dist).
-# Only the cloud-save Functions (functions/api/cloud) use the runtime settings below.
+# The cloud-save Functions (functions/api/cloud) and the remote-computing relay (functions/api/relay)
+# use the runtime settings below.
 name = "lieguoji-web"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-09-01"
@@ -9,3 +10,9 @@ binding = "DB"
 database_name = "lieguoji-cloud"
 database_id = "056427fc-c2dd-4ac2-b15d-7baf97e52a95"
 migrations_dir = "migrations"
+
+# 远程计算中转房间：在 lieguoji-relay Worker（relay/wrangler.toml）里定义的 Durable Object。
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+script_name = "lieguoji-relay"

@@ -1,0 +1,12 @@
+# 列国纪远程计算中转：手机与电脑上的 LieguojiServer 按配对码在这里会合（npx wrangler deploy -c relay/wrangler.toml）。
+name = "lieguoji-relay"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]

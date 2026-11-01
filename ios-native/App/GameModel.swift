@@ -343,6 +343,8 @@ import LieguojiCore
     /// Alliance with another state, or leaving the current one (b < 0).
     func alliance(_ a: Int, with b: Int) async -> String? { finish(await native.alliance(a, with: b)) }
     func releaseVassal(_ n: Int) async -> String? { finish(await native.releaseVassal(n)) }
+    func makeVassal(_ vassal: Int, of overlord: Int) async -> String? { finish(await native.makeVassal(vassal, of: overlord)) }
+    func annex(_ target: Int, by annexer: Int) async -> String? { finish(await native.annex(target, by: annexer)) }
     func setAutoDiplomacy(_ n: Int, _ enabled: Bool) async -> String? { finish(await native.setAutoDiplomacy(n, enabled)) }
 
     func provinceInfo(_ index: Int) async -> ProvinceInfo? {

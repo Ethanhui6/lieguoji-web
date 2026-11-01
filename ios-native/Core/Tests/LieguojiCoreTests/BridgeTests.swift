@@ -32,6 +32,11 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(engine.alliance(a[0], with: -1).ok)
         XCTAssertTrue(engine.setAutoDiplomacy(a[0], enabled: false).ok)
         XCTAssertFalse(engine.setAutoDiplomacy(a[0], enabled: false).ok)
+        XCTAssertTrue(engine.makeVassal(a[1], of: a[0]).ok)
+        XCTAssertEqual(Vassals.overlord(engine.run, engine.run.world.nations[a[1]].id.asString), engine.run.world.nations[a[0]].id.asString)
+        XCTAssertTrue(engine.releaseVassal(a[1]).ok)
+        XCTAssertTrue(engine.annex(a[2], by: a[0]).ok)
+        XCTAssertFalse(Vassals.alive(engine.run, engine.run.world.nations[a[2]].id.asString))
         engine.advance(days: 3)
         XCTAssertNotNil(try JSONSerialization.jsonObject(with: engine.state(includeLabels: true)))
     }

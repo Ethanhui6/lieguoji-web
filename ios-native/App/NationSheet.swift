@@ -25,7 +25,17 @@ struct NationSheet: View {
     @State private var info: NationInfo?
     @State private var picking: Pick?
     @State private var target = -1
-    enum Pick: String, Identifiable { case war = "宣战", alliance = "缔结盟约"; var id: String { rawValue } }
+    enum Pick: String, Identifiable {
+        case war = "宣战", alliance = "缔结盟约", vassal = "收为附庸", annex = "吞并"
+        var id: String { rawValue }
+        var prompt: String {
+            switch self { case .war: return "选择目标国家"; case .alliance: return "选择结盟国家"; case .vassal: return "选择成为附庸的国家"; case .annex: return "选择被吞并的国家（全部领土并入本国）" }
+        }
+        var icon: String {
+            switch self { case .war: return "flag.2.crossed"; case .alliance: return "person.2.fill"; case .vassal: return "crown"; case .annex: return "map" }
+        }
+        var hostile: Bool { self == .war || self == .annex }
+    }
 
     var body: some View {
         if let map = model.map, let state = model.state, state.nations.indices.contains(nation) {
@@ -137,6 +147,8 @@ struct NationSheet: View {
                     action("缔结盟约", "person.2.fill", Theme.jade, disabled: vassal) { target = -1; picking = .alliance }
                     action("退出同盟", "person.badge.minus", Theme.ink, disabled: info.alliance == nil) { Task { await run { await model.alliance(nation, with: -1) } } }
                     action("解除附庸", "link.badge.plus", Theme.ink, disabled: !vassal) { Task { await run { await model.releaseVassal(nation) } } }
+                    action("收为附庸", "crown", Theme.jade, disabled: vassal) { target = -1; picking = .vassal }
+                    action("吞并", "map", Theme.seal, disabled: false) { target = -1; picking = .annex }
                 }
                 .padding(14)
                 Divider2()
@@ -161,16 +173,23 @@ struct NationSheet: View {
         let others = state.nations.indices.filter { $0 != nation && state.nations[$0].alive && $0 < map.meta.nations.count }
         return ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: pick.rawValue, subtitle: pick == .war ? "选择目标国家" : "选择结盟国家")
+                SheetHeader(title: pick.rawValue, subtitle: pick.prompt)
                 Group2 {
                     NationGrid(map: map, nations: others, selection: $target).padding(14)
                     Divider2()
                     Button {
                         let t = target; picking = nil
-                        Task { await run { pick == .war ? await model.declareWar(nation, on: t) : await model.alliance(nation, with: t) } }
+                        Task { await run {
+                            switch pick {
+                            case .war: return await model.declareWar(nation, on: t)
+                            case .alliance: return await model.alliance(nation, with: t)
+                            case .vassal: return await model.makeVassal(t, of: nation)
+                            case .annex: return await model.annex(t, by: nation)
+                            }
+                        } }
                     } label: {
-                        Label("确认\(pick.rawValue)", systemImage: pick == .war ? "flag.2.crossed" : "person.2.fill").font(Theme.kai(18)).frame(maxWidth: .infinity).padding(.vertical, 13)
-                            .foregroundStyle(target < 0 ? Theme.ink2 : pick == .war ? Theme.seal : Theme.jade)
+                        Label("确认\(pick.rawValue)", systemImage: pick.icon).font(Theme.kai(18)).frame(maxWidth: .infinity).padding(.vertical, 13)
+                            .foregroundStyle(target < 0 ? Theme.ink2 : pick.hostile ? Theme.seal : Theme.jade)
                     }
                     .buttonStyle(.plain).disabled(target < 0)
                 }

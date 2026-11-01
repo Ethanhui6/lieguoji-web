@@ -120,6 +120,78 @@ extension NativeEngine {
         return (true, r.chronicle.entries.asArray.last?.text.optionalString ?? "已解除附庸。")
     }
 
+    /// makeVassal47 (收为附庸, nativeMakeVassalImmediate): the vassal leaves its alliance and wars
+    /// and stops its own foreign wars; states and cities stay.
+    public func makeVassal(_ vassal: Int, of overlord: Int) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(vassal), nations.indices.contains(overlord) else { return (false, "附庸或宗主为空") }
+        let v = nations[vassal].id.asString, o = nations[overlord].id.asString
+        if v == o { return (false, "国家不能成为自己的附庸") }
+        if !Vassals.alive(r, v) || !Vassals.alive(r, o) { return (false, "附庸或宗主已经灭亡") }
+        if Vassals.overlord(r, v) != nil { return (false, "\(nations[vassal].name.asString) 已经是附庸") }
+        if Vassals.overlord(r, o) != nil { return (false, "\(nations[overlord].name.asString) 自身是附庸，不能拥有附庸") }
+        _ = Vassals.leaveAlliance(r, v, force: true)
+        let time = Native.fr(r.life.gameTime.asNumber), day = 1 + Int((Diplomatic.random(r.nativeDiplomacy) * 27).rounded(.down))
+        let rec = JS.object()
+        rec.vassalId = JS(v); rec.overlordId = JS(o); rec.time = JS(time); rec.tick = r.clock.tick.clone(); rec.tributeRate = JS(Native.fr(0.3)); rec.armyCapMultiplier = JS(0.5)
+        rec.updateDay = JS(day); rec.endedTick = .null; rec.endReason = .null
+        r.vassals.records.push(rec); Vassals.bump(r.vassals)
+        leaveWars(v)
+        People.announce(r, kind: "diplomacy", text: "\(nations[vassal].name.asString)成为\(nations[overlord].name.asString)的傀儡国", reason: "附庸关系建立：退出联盟与已有战争，停止自主外战；国家与城市保留。", nations: [v, o], province: nil)
+        afterGlobalOrder()
+        return (true, r.chronicle.entries.asArray.last?.text.optionalString ?? "已收为附庸。")
+    }
+    /// leaveWars47: a primary's war ends; a member leaves (its side ends the war when left alone).
+    func leaveWars(_ id: String) {
+        let r = run, s = r.nativeWars, stateId = Wars.stateNumber(r, id), name = Vassals.name(r, id)
+        for c in s.campaigns.asArray where c.endedTick.isNull {
+            guard let member = c.participants.asArray.first(where: { $0.stateId.asInt == stateId }), member.side.asInt != 2 else { continue }
+            let w = PeaceBridge.war(c)
+            if stateId == w.primaryAttackerId || stateId == w.primaryDefenderId { _ = PeaceBridge.settle(r, c, reason: 2); continue }
+            let alone = !c.participants.asArray.contains { $0.stateId.asInt != stateId && $0.side.asInt == member.side.asInt }
+            let pairs = Wars.opposedPairs(s, c).filter { $0.0 == id || $0.1 == id }
+            c.participants = .array(c.participants.asArray.filter { $0.stateId.asInt != stateId })
+            let departure = member.clone(); departure.tick = r.clock.tick.clone(); c.coalition.departures.push(departure); Wars.revise(s)
+            for (a, b) in pairs {
+                if s.campaigns.asArray.contains(where: { $0.endedTick.isNull && Wars.coversPair($0, s, a, b) }) { continue }
+                if let rel = r.world.statecraft.relations.asArray.first(where: { [$0.a.asString, $0.b.asString].contains(a) && [$0.a.asString, $0.b.asString].contains(b) }), rel.status.asString == "war" {
+                    rel.status = JS("peace"); rel.sinceDay = r.world.day.clone(); rel.truceUntilDay = JS(r.world.day.asNumber + 10)
+                }
+            }
+            Daily.event(r, "diplomacy", "\(name)退出战争", "宗属关系变更后退出参战；原阵营其余国家继续作战。")
+            if alone { _ = PeaceBridge.settle(r, c, reason: 2) }
+        }
+        War26.reconcileForces(r, [])
+    }
+
+    /// annexOwned47 (吞并): every province of the target joins the annexer, legal and actual owner;
+    /// the target's extinction entry carries the original Destroyed text.
+    public func annex(_ target: Int, by annexer: Int) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(target), nations.indices.contains(annexer) else { return (false, "选择的国家不存在。") }
+        if target == annexer { return (false, "不能吞并自己。") }
+        let t = nations[target].id.asString, a = nations[annexer].id.asString
+        let changed = r.world.provinces.asArray.filter { $0.controller.asString == t }
+        if changed.isEmpty { return (false, "该国已经没有领土。") }
+        for p in changed {
+            if p.controller.asString != a { PeaceBridge.transferEconomy(r, p.id.asString, p.controller.asString, a) }
+            p.controller = JS(a); p.legalOwner = JS(a)
+        }
+        let moved = Set(changed.map(\.id.asString))
+        r.occupation.sieges = .array(r.occupation.sieges.asArray.filter { !moved.contains($0.provinceId.asString) })
+        Wars.reconcileCore(r)
+        Government.reconcileContinuity(r)
+        let targetName = nations[target].name.asString, annexerName = nations[annexer].name.asString
+        if let entry = r.chronicle.entries.asArray.reversed().first(where: { $0.kind.asString == "extinction" && $0.tick.asNumber == r.clock.tick.asNumber && $0.nationIds.asArray.contains { $0.asString == t } }) {
+            entry.text = JS("\(targetName)被\(annexerName)灭亡")
+            entry.reason = JS("吞并：\(targetName)的\(changed.count)个行省全部并入\(annexerName)，法理与实控同时转移；结束当前任期，人物、家族、城市与历史保留。")
+            if let event = r.world.events.asArray.first(where: { $0.id.optionalNumber == entry.sourceEventId.optionalNumber }) { event.text = entry.text.clone(); event.reason = entry.reason.clone() }
+        }
+        War26.reconcileForces(r, []); Session.finishPoliticalTick(r); Vassals.reconcileVassals(r); DiplomacyBridge.reconcile(r); Daily.reconcileMilitaryClock(r)
+        afterGlobalOrder()
+        return (true, "\(targetName)被\(annexerName)灭亡")
+    }
+
     /// applyDiplomacy (nation scope): the state's own diplomacy on or off.
     public func setAutoDiplomacy(_ index: Int, enabled: Bool) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray

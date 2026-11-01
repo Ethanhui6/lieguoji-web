@@ -61,6 +61,8 @@ actor NativeHost {
     }
     func alliance(_ a: Int, with b: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.alliance(a, with: b)) }
     func releaseVassal(_ n: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.releaseVassal(n)) }
+    func makeVassal(_ vassal: Int, of overlord: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.makeVassal(vassal, of: overlord)) }
+    func annex(_ target: Int, by annexer: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.annex(target, by: annexer)) }
     func setAutoDiplomacy(_ n: Int, _ enabled: Bool) -> (ok: Bool, reason: String, state: Data?) { command(engine?.setAutoDiplomacy(n, enabled: enabled)) }
     func route(armyId: String) -> [[Double]] { engine?.route(armyId: armyId) ?? [] }
     func save() -> Data? { engine?.save() }

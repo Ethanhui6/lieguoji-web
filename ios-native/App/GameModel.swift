@@ -111,7 +111,8 @@ import LieguojiCore
         do {
             let data = try Data(contentsOf: Self.saveURL)
             let world: WorldMap
-            if data.starts(with: Array(#"{"format":"#(NativeEngine.saveFormat)""#.utf8)) {
+            let quote = "\""
+            if data.starts(with: Array(("{" + quote + "format" + quote + ":" + quote + NativeEngine.saveFormat + quote).utf8)) {
                 // A Swift save: the full run and its geometry, no replay.
                 let opened = try await native.open(data)
                 guard let mapData = opened.map else { throw EngineError.message("存档缺少地图") }

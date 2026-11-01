@@ -51,7 +51,7 @@ function future(e:Envelope|undefined){
   // Saves of earlier builds (another engine) are not future formats: they continue from a checkpoint or are replaced.
   if(j&&(j.version>culture47JournalVersion(j.engine)||typeof j.rule==='string'&&j.rule!==CULTURE47_RULE))fail();
   if(j?.fork&&typeof j.fork.engine==='string'&&j.fork.engine!==CULTURE47_CONTINUATION_SOURCE&&j.fork.engine!==CULTURE47_RETIREMENT_SOURCE)fail();
-  const o=j?.opening;unknown(o,['terrain','count','cityCount','relations','setup','settlementAlgorithm','layout','families']);unknown(o?.layout,['seeds','owners']);
+  const o=j?.opening;unknown(o,['terrain','count','cityCount','relations','setup','settlementAlgorithm','layout','families','harbors']);if(o&&Object.hasOwn(o,'harbors')&&o.harbors!=='capital-neighbor-v2')fail();unknown(o?.layout,['seeds','owners']);
   if(o&&Object.hasOwn(o,'settlementAlgorithm')&&o.settlementAlgorithm!==SETTLEMENT47_ALGORITHM)fail();
   unknown(o?.terrain,['format','version','worldId','revision','width','height','points','triangles','neighbors','elevations','terrainLocks']);if(o?.terrain?.version>2)fail();
   unknown(o?.setup,['mode','enabled','nations']);if(o?.setup?.nations&&typeof o.setup.nations==='object')for(const n of Object.values(o.setup.nations))unknown(n,['cultureId','religionId','polity']);

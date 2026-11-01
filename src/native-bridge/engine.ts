@@ -73,7 +73,7 @@ export async function generate(optionsText:string){
   const options={seed,template:template as typeof SEED_TERRAIN_TEMPLATES[number]['id']};
   const terrain=(await prepareFmsFullMapPreview(blank,{worldId:blank.worldId,baseRevision:blank.revision,...await generateFmsFullMap(blank,options,{yieldTask:async()=>{}})},options)).document;
   const opening:Culture47Opening={terrain,count,cityCount,relations:o.relations??'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,
-    setup:{mode:'historical-names',enabled:[...CULTURE_IDS47]},families:'original'};
+    setup:{mode:'historical-names',enabled:[...CULTURE_IDS47]},families:'original',harbors:'capital-neighbor-v2'};
   const s=new Culture47Session();
   let x=s.create(opening);
   for(const [kind,rule] of ENABLE)x=s.execute({kind,rule,expected:populationStamp47(x.run)} as never,x.journal.actions.length);

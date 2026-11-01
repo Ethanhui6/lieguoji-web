@@ -34,7 +34,7 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports world creation golden 
       const worldId=`42173000-0000-4000-8000-00000000000${k}`;
       const d:FmsDocument={...doc,worldId,elevations:Int32Array.from(heights)} as FmsDocument;
       captured.length=0;capturedNobility.length=0;const created=createCivilizationWorld47(d,count,cities,relations,setup,SETTLEMENT47_ALGORITHM,undefined,'original') as unknown as Record<string,unknown>;
-      const strip=(v:unknown)=>{const {terrain:_terrain,...rest}=v as Record<string,unknown>;return rest;};
+      const strip=(v:unknown)=>{const rest={...v as Record<string,unknown>};delete rest.terrain;return rest;};
       // base: input of attachFamilies47; families: input of attachNobility47 (families, origins); created: the returned world.
       samples.push({seed,template,cities,count,relations,worldId,setup,heights:Buffer.from(heights).toString('base64'),base:strip(captured[0]),families:strip(capturedNobility[0]),created:strip(created)});
     }

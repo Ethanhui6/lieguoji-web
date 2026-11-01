@@ -1185,6 +1185,10 @@ struct FleetRow: View {
 }
 
 struct FleetSheet: View {
+    @State private var target = -1
+    @State private var sending = false
+    @State private var feedback = ""
+
     @ObservedObject var model: GameModel
     let fleet: Int
     var body: some View {
@@ -1204,7 +1208,26 @@ struct FleetSheet: View {
                     }
                     .padding(.horizontal, 16)
                     if !f.reason.isEmpty { Text(f.reason).font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24) }
-                    Text("舰队由 AI 自主部署；手动舰令尚未开放。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                    Group2 {
+                        Picker("目标海港", selection: $target) {
+                            Text("选择港口").tag(-1)
+                            ForEach(model.state?.ports ?? [], id: \.province) { port in
+                                if map.meta.provinces.indices.contains(port.province) {
+                                    Text(map.meta.provinces[port.province].name + "港").tag(port.province)
+                                }
+                            }
+                        }
+                        Button("航行至目标港口") {
+                            sending = true
+                            Task { feedback = await model.fleetOrder(id: f.id, province: target) ?? "航行军令已生效"; sending = false }
+                        }.disabled(sending || target < 0)
+                        Button("停止航行") {
+                            sending = true
+                            Task { feedback = await model.fleetOrder(id: f.id, province: nil) ?? "已停止航行"; sending = false }
+                        }.disabled(sending)
+                        if !feedback.isEmpty { Text(feedback).font(.footnote) }
+                        Text("交战或撤退中的舰队不能用普通军令中断；目标须有连通海路与通行权限。").font(.footnote).foregroundStyle(.secondary)
+                    }.padding(.horizontal, 16)
                 }
                 .padding(.bottom, 24)
             }

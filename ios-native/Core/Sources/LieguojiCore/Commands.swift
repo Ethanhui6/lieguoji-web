@@ -4,6 +4,24 @@ import Foundation
 /// civilization47-political-owner applyPoliticalCommand47 for war and peace). Each returns the
 /// web's reason text; nothing changes when a command is refused.
 extension NativeEngine {
+    /// Uses the existing fleet resolver: combat, access and sea routes stay authoritative.
+    public func fleetOrder(fleetId: String, provinceIndex: Int?) -> (ok: Bool, reason: String) {
+        let action: Naval.Command
+        if let index = provinceIndex {
+            guard run.world.provinces.asArray.indices.contains(index),
+                  let port = Naval.sea?.ports.first(where: { $0.provinceId == run.world.provinces[index].id.asString }) else {
+                return (false, "目标省份没有可用海港。")
+            }
+            action = .sail(port: port.id)
+        } else { action = .halt }
+        switch Naval.resolve(run, fleetId, action) {
+        case .failure(let error): return (false, error.reason)
+        case .success:
+            guard Naval.issue(run, fleetId, action, player: true) else { return (false, "舰队军令未生效。") }
+            return (true, provinceIndex == nil ? "舰队已在实际位置停止航行。" : "舰队已按真实海路前往目标港口。")
+        }
+    }
+
     /// A march to a province or a halt (provinceIndex < 0), as a player order: the army comes
     /// under manual control.
     public func order(armyId: String, provinceIndex: Int) -> (ok: Bool, reason: String) {

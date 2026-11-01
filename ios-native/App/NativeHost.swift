@@ -53,6 +53,9 @@ actor NativeHost {
         let out = e.politics(declare: declare, a, b)
         return (out.ok, out.reason, out.ok ? state() : nil)
     }
+    func fleetOrder(id: String, province: Int?) -> (ok: Bool, reason: String, state: Data?) {
+        command(engine?.fleetOrder(fleetId: id, provinceIndex: province))
+    }
     func province(_ index: Int) -> Data? { engine?.province(index) }
     func nationInfo(_ index: Int) -> Data? { engine?.nationInfo(index) }
     private func command(_ out: (ok: Bool, reason: String)?) -> (ok: Bool, reason: String, state: Data?) {

@@ -363,6 +363,9 @@ import LieguojiCore
         guard let a = army(index) else { return "这支军队不存在或已失去战斗力。" }
         return finish(await native.order(armyId: a.id, province: province ?? -1))
     }
+    func fleetOrder(id: String, province: Int?) async -> String? {
+        finish(await native.fleetOrder(id: id, province: province))
+    }
     func declareWar(_ a: Int, on b: Int) async -> String? { finish(await native.politics(declare: true, a, b)) }
     func makePeace(_ a: Int, _ b: Int) async -> String? { finish(await native.politics(declare: false, a, b)) }
 

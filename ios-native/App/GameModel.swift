@@ -267,6 +267,11 @@ import LieguojiCore
         for w in old.wars where !after.contains(w.id) {
             enqueue(Herald(kind: .peace, text: "\(name(w.attacker))与\(name(w.defender))议和", nations: [w.attacker, w.defender]))
         }
+        // Revolutions, restorations and coups are proclaimed like wars.
+        let seen = Set(old.events.map(\.text))
+        for e in next.events where !seen.contains(e.text) && (e.text.contains("篡位") || e.text.contains("改称")) {
+            enqueue(Herald(kind: .war, text: e.text, nations: []))
+        }
         var captures = 0
         for (p, owner) in next.owners.enumerated() where p < old.owners.count && old.owners[p] != owner && owner >= 0 {
             captures += 1; if captures > 2 { break }

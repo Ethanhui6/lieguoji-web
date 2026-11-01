@@ -66,6 +66,10 @@ extension ArmyTravel {
 /// ration gate, no resting or staging), its five-call batch rotation (army-batch47) and the shared
 /// command checks (army-commands47 resolve / issueArmyOrderOwned47).
 public struct ArmyAutonomy: Sendable {
+    /// App rule (not in the original): a state's temper by nation index (see DeclarationEngine.temper).
+    /// A cautious state's armies first clear its own invaded provinces; a warlike state's armies push
+    /// into enemy land before supporting allies. nil keeps the original choice.
+    public static var temper: ((Int) -> Double)?
     public let statics: ArmyAIStatic
     public let graph: TravelGraph
     public init(statics: ArmyAIStatic, graph: TravelGraph) { self.statics = statics; self.graph = graph }
@@ -292,6 +296,15 @@ public struct ArmyAutonomy: Sendable {
                 }
                 let location = g.location(here.travel), home = (s.provinces[a.home].x, s.provinces[a.home].y)
                 var candidates = attack.map { Target(id: $0, x: s.provinces[$0].x, y: s.provinces[$0].y, feature: s.provinces[$0].feature, protruding: protruding($0), port: s.provinces[$0].port) }
+                if let temper = ArmyAutonomy.temper?(a.nation) {
+                    if temper < 0.9, !invaded.isEmpty {
+                        let home = candidates.filter { invaded.contains($0.id) }
+                        if !home.isEmpty { candidates = home }
+                    } else if temper > 1.2 {
+                        let deep = candidates.filter { enemySet.contains(w.owners[$0.id]) }
+                        if !deep.isEmpty { candidates = deep }
+                    }
+                }
                 var chosen: Int?
                 while !candidates.isEmpty {
                     guard let p = Context.regularTarget(location.point, home, s.cellFeatures[location.cell], candidates) else { break }

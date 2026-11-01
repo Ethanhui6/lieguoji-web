@@ -79,6 +79,7 @@ public enum Regimes {
         default: break
         }
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
+        coup(r, n, id, key)
         let b = book(r, id)
         b.calm = JS(b.calm.asInt + 1)
         // Turmoil: weak government, lost land, a very old ruler; no revolution within two years of one.
@@ -101,6 +102,38 @@ public enum Regimes {
         default: next = "Kingdom"
         }
         change(r, id, to: next, reason: polity == "Republic" || polity == "Federation" ? "复辟" : "革命")
+    }
+
+    /// 权臣篡位 (app rule): a plotting house (relation to the rulers ≤ −50) stronger than the ruling house,
+    /// in a badly governed state, may seize the throne without a war: its ablest adult takes the throne
+    /// through the engine's own appointment (chronicle, roles, ruling house), the old reign closes.
+    static func coup(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
+        guard !r.nobility.isNull, !r.nobility.families.isNull, Offices.governance(r, id) < 0.4 else { return }
+        let ruling = r.nobility.rulingFamilies[id].optionalNumber.map { String(Int($0)) } ?? ""
+        guard !ruling.isEmpty, r.nobility.families.has(ruling) else { return }
+        let rulingInfluence = r.nobility.families[ruling].influence.optionalNumber ?? 0
+        var h: UInt32 = 0x811c9dc5
+        for u in "\(id)|\(key)|coup".utf8 { h = (h ^ UInt32(u)) &* 0x1000193 }
+        guard Double(h) / 4294967296 < 0.004 else { return }
+        let rivals = r.nobility.families.objectEntries.filter { key, fam in
+            key != ruling && fam.nationId.optionalString == id && (fam.influence.optionalNumber ?? 0) > rulingInfluence * 1.2
+                && !r.kin.families[key].isNull && Nobility.relation(r, key, ruling) <= -50
+        }
+        guard let usurper = rivals.max(by: { ($0.1.influence.optionalNumber ?? 0) < ($1.1.influence.optionalNumber ?? 0) }) else { return }
+        let adults = People.livingOwn(r, r.kin.families[usurper.0]).filter { ($0.age.optionalNumber ?? 0) >= 18 }
+        func ability(_ p: JS) -> Double { let s = People.skills(p); return s.military + s.administrative + s.charisma + s.diplomatic }
+        guard let claimant = adults.max(by: { ability($0) < ability($1) }) else { return }
+        let oldName = n.name.asString, house = r.kin.families[usurper.0].surname.optionalString ?? ""
+        if let lid = r.people.nations[id].leaderId.optionalNumber, let lp = People.person(r, Int(lid)),
+           lp.roles.asArray.contains(where: { $0.nativeKind.optionalString == "leader" && $0.stateId.asInt == lp.stateId.asInt }) {
+            Government.closeLeaderRole(r, id, "usurpation")
+        }
+        _ = People.appointKnownPerson(r, id, claimant, cause: "usurpation")
+        Government.refreshLeaderCombat(r)
+        r.nobility.families[ruling].influence = JS(max(0, rulingInfluence * 0.6))
+        let d = r.destiny.nations[id]
+        if !d.isNull { d.destiny = JS(max(0, (d.destiny.optionalNumber ?? 0) - 8)) }
+        _ = People.announce(r, kind: "politics", text: "\(oldName)权臣\(house)氏篡位", reason: "宗室失德、朝政废弛，势力凌驾宗室的\(house)氏发动政变，族中贤能者登位；旧宗室势力大衰，国运 −8。", nations: [id], province: nil)
     }
 
     /// Rare monthly happenings that make each state's history its own: a bumper harvest, a disaster, a
@@ -158,6 +191,10 @@ extension NativeEngine {
         let r = run
         DeclarationEngine.nationIds = r.world.nations.asArray.map(\.id.asString)
         DeclarationEngine.temper = { id in Regimes.temper(r, id) }
+        ArmyAutonomy.temper = { index in
+            let ids = DeclarationEngine.nationIds
+            return ids.indices.contains(index) ? Regimes.temper(r, ids[index]) : 1
+        }
     }
 
     /// Polity history and the current polity's bonus, for the state panel.

@@ -303,6 +303,8 @@ struct GameView: View {
     @State private var panel: Panel?
     @State private var toast: String?
     @State private var viewsOpen = false
+    /// The pending map pick is a retreat (原作防御模式) rather than a march.
+    @State private var marchRetreat = false
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
 
     var body: some View {
@@ -348,8 +350,11 @@ struct GameView: View {
             controller.onMarchTarget = { province in
                 guard let army = controller.marchingArmy else { return }
                 Task {
-                    if let error = await model.order(army: army, to: province) { say(error) }
-                    else { say("\(model.army(army)?.name ?? "军队")前往\(model.map?.meta.provinces[province].name ?? "")"); controller.marchingArmy = nil }
+                    let retreat = marchRetreat
+                    let error: String?
+                    if retreat { error = await model.retreat(army: army, to: province) } else { error = await model.order(army: army, to: province) }
+                    if let error { say(error) }
+                    else { say("\(model.army(army)?.name ?? "军队")\(retreat ? "撤往" : "前往")\(model.map?.meta.provinces[province].name ?? "")"); controller.marchingArmy = nil; marchRetreat = false }
                     model.refreshArmies()
                 }
             }
@@ -378,8 +383,10 @@ struct GameView: View {
             ProvinceSheet(model: model, province: p, openNation: { n in self.panel = .nation(n) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .army(let a):
             ArmySheet(model: model, army: a, onMarch: {
-                controller.marchingArmy = a; self.panel = nil; say("点选地图上的目的地")
-            }, onHalt: { Task { if let e = await model.order(army: a, to: nil) { say(e) } } })
+                marchRetreat = false; controller.marchingArmy = a; self.panel = nil; say("点选地图上的目的地")
+            }, onHalt: { Task { if let e = await model.order(army: a, to: nil) { say(e) } } }, onRetreat: {
+                marchRetreat = true; controller.marchingArmy = a; self.panel = nil; say("点选撤退的目的地（途中不主动接战）")
+            })
             .presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .fleet(let f):
             FleetSheet(model: model, fleet: f).presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
@@ -434,7 +441,7 @@ struct GameView: View {
     private var marchBanner: some View {
         HStack(spacing: 10) {
             Image(systemName: "arrow.triangle.turn.up.right.diamond.fill").foregroundStyle(Theme.seal)
-            Text("调兵：点选目的地").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+            Text(marchRetreat ? "撤退：点选目的地" : "调兵：点选目的地").font(Theme.kai(16)).foregroundStyle(Theme.ink)
             Button("取消") { controller.marchingArmy = nil; controller.selectedArmy = nil; model.refreshArmies() }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
         }
         .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
@@ -587,6 +594,8 @@ struct ProvinceSheet: View {
     @ObservedObject var model: GameModel
     let province: Int
     var openNation: (Int) -> Void = { _ in }
+    @State private var granting = false
+    @State private var grantTarget = -1
     @State private var info: ProvinceInfo?
     var body: some View {
         if let map = model.map {
@@ -608,6 +617,12 @@ struct ProvinceSheet: View {
                             Row(label: "政体", value: Names.polity[n.polity] ?? n.polity); Divider2(); Row(label: "文化", value: Names.culture[n.culture] ?? n.culture); Divider2()
                             Button { openNation(owner) } label: {
                                 HStack { Text("国家详情").foregroundStyle(Theme.ink); Spacer(); Text(n.name).foregroundStyle(Theme.ink2); Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2) }
+                                    .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            Divider2()
+                            Button { grantTarget = -1; granting = true } label: {
+                                HStack { Text("划入他国（绘制国家）").foregroundStyle(Theme.ink); Spacer(); Image(systemName: "paintbrush.pointed").font(.caption).foregroundStyle(Theme.seal) }
                                     .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -642,6 +657,27 @@ struct ProvinceSheet: View {
                 .padding(.bottom, 24)
             }
             .task(id: model.state?.day) { info = await model.provinceInfo(province) }
+            .sheet(isPresented: $granting) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        SheetHeader(title: "绘制国家", subtitle: "\(p.name)划入所选国家，法理与实控同时转移", seal: "绘")
+                        if let state = model.state {
+                            Group2 {
+                                NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive && $0 != owner && $0 < map.meta.nations.count }, selection: $grantTarget).padding(14)
+                                Divider2()
+                                Button {
+                                    let t = grantTarget; granting = false
+                                    Task { _ = await model.grant(province: province, to: t); info = await model.provinceInfo(province) }
+                                } label: { Label("确认划入", systemImage: "paintbrush.pointed.fill").font(Theme.kai(18)).frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(grantTarget < 0 ? Theme.ink2 : Theme.seal) }
+                                .buttonStyle(.plain).disabled(grantTarget < 0)
+                            }
+                            .padding(.horizontal, 16)
+                        }
+                    }
+                    .padding(.bottom, 24)
+                }
+                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+            }
         }
     }
 }
@@ -679,6 +715,7 @@ struct ArmySheet: View {
     let army: Int
     let onMarch: () -> Void
     let onHalt: () -> Void
+    var onRetreat: () -> Void = {}
     var body: some View {
         if let map = model.map, let a = model.army(army) {
             let nation = a.nation >= 0 && a.nation < map.meta.nations.count ? map.meta.nations[a.nation] : nil
@@ -697,6 +734,7 @@ struct ArmySheet: View {
                     .padding(.horizontal, 16)
                     HStack(spacing: 10) {
                         Button(action: onMarch) { PrimaryLabel(title: "调兵", symbol: "arrow.triangle.turn.up.right.diamond") }
+                        Button(action: onRetreat) { SecondaryLabel(title: "撤退", symbol: "arrow.uturn.backward") }
                         if a.travel == "moving" || a.travel == "blocked" { Button(action: onHalt) { SecondaryLabel(title: "停止", symbol: "stop.fill") } }
                     }
                     .buttonStyle(.plain).padding(.horizontal, 16)
@@ -985,6 +1023,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.22", ["军队新增「撤退」令（原作防御模式）：点选目的地后以撤退方式行军，途中不主动接战，抵达安全地区后恢复待命。",
+                   "省份页新增「划入他国」（原作地图编辑·绘制国家）：把该省划给所选国家，法理与实控同时转移，经济、核心区、港口、围城、首都与亡国一并结算。",
+                   "进攻箭头加入诊断：测试中检查引擎在战争期间确实生成箭头。"]),
         ("0.9.21", ["新增「天下诏令」（原作全局设置，菜单进入）：世界自动外交、最长战争期限、各国自主结盟、行省叛乱开关与间隔、家族叛乱与内战开关和间隔、附庸叛变；以诏书样式呈现，每次更改都记入纪事。",
                    "国家行为新增「触发内战」：规则同原作（两个家族时须对方有领地、关系低于 −30、影响力高于 100；三个以上家族时与统治家族关系最差的两个起兵），不满足时说明原因。",
                    "纪事改为卷轴：上下木轴、展开动画，战事朱点、外交玉点，最新一条盖「新」字小印。"]),

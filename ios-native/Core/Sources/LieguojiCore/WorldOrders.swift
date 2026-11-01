@@ -100,7 +100,10 @@ extension NativeEngine {
             if families.count < 3 { return (false, "家族总数不足（只有\(families.count)个家族），无法发动内战") }
             if others.count < 2 { return (false, "非统治家族数量不足，无法发动内战") }
             if NobleRevolt.inCivilWar(r, state) { return (false, "该国已在内战中。") }
-            rebels = others.map { ($0, Nobility.relation(r, $0, ruling)) }.sorted { $0.1 != $1.1 ? $0.1 < $1.1 : (Int($0.0) ?? 0) < (Int($1.0) ?? 0) }.prefix(2).map(\.0)
+            var ranked: [(id: String, relation: Double, number: Int)] = []
+            for id in others { ranked.append((id, Nobility.relation(r, id, ruling), Int(id) ?? 0)) }
+            ranked.sort { a, b in a.relation != b.relation ? a.relation < b.relation : a.number < b.number }
+            rebels = ranked.prefix(2).map { $0.id }
         }
         guard NobleRevolt.startCivilWar(r, state, rebels) != nil else { return (false, "叛乱家族都与统治者同属宫廷，无法发动内战。") }
         Wars.reconcileLosses(r)

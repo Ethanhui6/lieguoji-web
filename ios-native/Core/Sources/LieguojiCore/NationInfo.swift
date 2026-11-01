@@ -228,7 +228,7 @@ extension NativeEngine {
         }
         let moved = Set(changed.map(\.id.asString))
         r.occupation.sieges = .array(r.occupation.sieges.asArray.filter { !moved.contains($0.provinceId.asString) })
-        Wars.reconcileCore(r)
+        Wars.reconcileCore(r); Naval.reconcileLandOwners(r)
         Government.reconcileContinuity(r)
         let targetName = nations[target].name.asString, annexerName = nations[annexer].name.asString
         if let entry = r.chronicle.entries.asArray.reversed().first(where: { $0.kind.asString == "extinction" && $0.tick.asNumber == r.clock.tick.asNumber && $0.nationIds.asArray.contains { $0.asString == t } }) {
@@ -239,6 +239,32 @@ extension NativeEngine {
         War26.reconcileForces(r, []); Session.finishPoliticalTick(r); Vassals.reconcileVassals(r); DiplomacyBridge.reconcile(r); Daily.reconcileMilitaryClock(r)
         afterGlobalOrder()
         return (true, "\(targetName)被\(annexerName)灭亡")
+    }
+
+    /// Original map editor 绘制国家 / 点击扩张 (applyTerritoryEdit47): the provinces go to one state,
+    /// legal and actual owner, with the same economy, core, port, siege, capital and extinction
+    /// reconciliation as a real occupation.
+    public func territoryEdit(_ provinceIndices: [Int], to nation: Int) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray, provinces = r.world.provinces.asArray
+        guard nations.indices.contains(nation) else { return (false, "选择的国家不存在。") }
+        guard !provinceIndices.isEmpty, provinceIndices.allSatisfy({ provinces.indices.contains($0) }) else { return (false, "选择的行省不存在。") }
+        let id = nations[nation].id.asString
+        let changed = provinceIndices.map { provinces[$0] }.filter { $0.controller.asString != id || $0.legalOwner.optionalString != id }
+        if changed.isEmpty { return (false, "这些行省已经属于该国。") }
+        var losers = [String](); for p in changed where p.controller.asString != id && !losers.contains(p.controller.asString) { losers.append(p.controller.asString) }
+        for p in changed {
+            if p.controller.asString != id { PeaceBridge.transferEconomy(r, p.id.asString, p.controller.asString, id) }
+            p.controller = JS(id); p.legalOwner = JS(id)
+        }
+        let moved = Set(changed.map(\.id.asString))
+        r.occupation.sieges = .array(r.occupation.sieges.asArray.filter { !moved.contains($0.provinceId.asString) })
+        Wars.reconcileCore(r); Naval.reconcileLandOwners(r)
+        let names = changed.prefix(6).map(\.name.asString).joined(separator: "、") + (changed.count > 6 ? "等" : "")
+        People.announce(r, kind: "occupation", text: "地图编辑：\(nations[nation].name.asString)获得\(changed.count)个行省",
+                        reason: "暂停时在编辑国家中重新分配领土，法理与实控同时转移；\(names)。", nations: [id] + losers, province: changed[0].id.asString)
+        Government.reconcileContinuity(r)
+        War26.reconcileForces(r, []); Session.finishPoliticalTick(r); Vassals.reconcileVassals(r); DiplomacyBridge.reconcile(r); Daily.reconcileMilitaryClock(r)
+        return (true, "\(changed.count)个行省划入\(nations[nation].name.asString)。")
     }
 
     /// applyDiplomacy (nation scope): the state's own diplomacy on or off.

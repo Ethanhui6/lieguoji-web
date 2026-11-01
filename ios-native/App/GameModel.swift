@@ -431,6 +431,11 @@ import LieguojiCore
     }
     func setWorld(_ key: String, _ value: Int) async -> String? { finish(await native.setWorld(key, value)) }
     func triggerCivilWar(_ n: Int) async -> String? { finish(await native.triggerCivilWar(n)) }
+    func grant(province: Int, to nation: Int) async -> String? { finish(await native.territory([province], to: nation)) }
+    func retreat(army index: Int, to province: Int) async -> String? {
+        guard let a = army(index) else { return "这支军队不存在或已失去战斗力。" }
+        return finish(await native.retreat(armyId: a.id, province: province))
+    }
     func statistics(_ category: String) async -> [StatisticsRow] {
         guard let data = await native.statistics(category) else { return [] }
         return (try? JSONDecoder().decode([StatisticsRow].self, from: data)) ?? []

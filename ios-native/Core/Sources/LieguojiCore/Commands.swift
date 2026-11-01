@@ -24,9 +24,10 @@ extension NativeEngine {
 
     /// A march to a province or a halt (provinceIndex < 0), as a player order: the army comes
     /// under manual control.
-    public func order(armyId: String, provinceIndex: Int) -> (ok: Bool, reason: String) {
+    /// `retreat`: the original 防御模式 — move as a retreat (does not seek battle on the way).
+    public func order(armyId: String, provinceIndex: Int, retreat: Bool = false) -> (ok: Bool, reason: String) {
         let r = run
-        let action: ArmyOrders.Action = provinceIndex < 0 ? .halt : .move(province: provinceIndex, retreat: false)
+        let action: ArmyOrders.Action = provinceIndex < 0 ? .halt : .move(province: provinceIndex, retreat: retreat)
         if provinceIndex >= r.world.provinces.length { return (false, "目标不在当前地图的实际海陆网格中。") }
         switch ArmyOrders.resolve(r, armyId, action) {
         case .failure(let e): return (false, e.reason)

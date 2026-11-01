@@ -94,13 +94,22 @@ public final class BattleArrows {
             // EnableBattleArrow.
             var counts = [(Int, Int)]()
             for s in armies where s != owner[p] { if let i = counts.firstIndex(where: { $0.0 == s }) { counts[i].1 += 1 } else { counts.append((s, 1)) } }
-            let groups = counts.enumerated().sorted { $0.element.1 != $1.element.1 ? $0.element.1 > $1.element.1 : $0.offset < $1.offset }.prefix(2).map(\.element)
+            // Largest groups first; a stable sort keeps the first-seen state on a tie.
+            var order = Array(counts.indices)
+            order.sort { x, y in counts[x].1 != counts[y].1 ? counts[x].1 > counts[y].1 : x < y }
+            let groups = order.prefix(2).map { counts[$0] }
             if groups.isEmpty { continue }
             var byState = [Int: [Int]]()
             for n in neighbors![p] { byState[owner[n], default: []].append(n) }
             var made = [Arrow](), set = starts[p] ?? []
             outer: for (state, count) in groups {
-                let picks = (byState[state] ?? []).enumerated().sorted { g.byProvince[$0.element].count != g.byProvince[$1.element].count ? g.byProvince[$0.element].count > g.byProvince[$1.element].count : $0.offset < $1.offset }.prefix(Self.count(count)).map(\.element)
+                let sources = byState[state] ?? []
+                var rank = Array(sources.indices)
+                rank.sort { x, y in
+                    let cx = g.byProvince[sources[x]].count, cy = g.byProvince[sources[y]].count
+                    return cx != cy ? cx > cy : x < y
+                }
+                let picks = rank.prefix(Self.count(count)).map { sources[$0] }
                 for n in picks {
                     if starts[n]?.contains(p) == true { continue }
                     let key = Int64(n) << 32 | Int64(p)

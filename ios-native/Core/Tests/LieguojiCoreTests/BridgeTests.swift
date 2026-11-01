@@ -48,6 +48,10 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(engine.setWorld("maximumMonths", 60).ok); XCTAssertFalse(engine.setWorld("maximumMonths", 60).ok)
         XCTAssertTrue(engine.setWorld("alliances", engine.run.alliances.enabled.isTruthy ? 0 : 1).ok)
         for i in a.prefix(3) { _ = engine.triggerCivilWar(i) }
+        let foreign = engine.run.world.provinces.asArray.firstIndex { $0.controller.asString != engine.run.world.nations[a[0]].id.asString }!
+        XCTAssertTrue(engine.territoryEdit([foreign], to: a[0]).ok)
+        XCTAssertEqual(engine.run.world.provinces[foreign].controller.asString, engine.run.world.nations[a[0]].id.asString)
+        XCTAssertFalse(engine.territoryEdit([foreign], to: a[0]).ok)
         engine.advance(days: 3)
         XCTAssertNotNil(try JSONSerialization.jsonObject(with: engine.state(includeLabels: true)))
     }

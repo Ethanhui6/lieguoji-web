@@ -47,7 +47,9 @@ extension NativeEngine {
             case "alliance":
                 // The alliance colour is its strongest member's; every state keeps its own name.
                 if let a = Vassals.allianceOf(r, controller) {
-                    let strongest = a.members.asArray.map(\.asString).enumerated().sorted { (owned[$0.element] ?? 0) != (owned[$1.element] ?? 0) ? (owned[$0.element] ?? 0) > (owned[$1.element] ?? 0) : $0.offset < $1.offset }.first?.element ?? controller
+                    // The strongest member (most provinces; the first listed on a tie).
+                    var strongest = controller, most = -1
+                    for m in a.members.asArray { let id = m.asString, n = owned[id] ?? 0; if n > most { most = n; strongest = id } }
                     fills.append(add("alliance:" + a.id.asString, a.name.asString, color[strongest] ?? "#999999"))
                 } else { fills.append(add("state:" + controller, Vassals.name(r, controller), color[controller] ?? "#999999")) }
             case "culture":

@@ -62,6 +62,8 @@ actor NativeHost {
     func worldSettings() -> Data? { engine?.worldSettings() }
     func setWorld(_ key: String, _ value: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.setWorld(key, value)) }
     func triggerCivilWar(_ n: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.triggerCivilWar(n)) }
+    func territory(_ provinces: [Int], to nation: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.territoryEdit(provinces, to: nation)) }
+    func retreat(armyId: String, province: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.order(armyId: armyId, provinceIndex: province, retreat: true)) }
     func statistics(_ category: String) -> Data? { engine?.statistics(category) }
     private func command(_ out: (ok: Bool, reason: String)?) -> (ok: Bool, reason: String, state: Data?) {
         guard let out else { return (false, "世界尚未载入。", nil) }

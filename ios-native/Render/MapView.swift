@@ -40,7 +40,11 @@ import LieguojiCore
     /// Battles, sieges and capture flashes over the map.
     @Published var effects = MapEffects()
     /// The live world (ownership and nation labels follow the engine); nil keeps the opening map.
-    @Published var world: WorldMap?
+    @Published var world: WorldMap? { didSet { worldRevision &+= 1 } }
+    /// Bumped on every world change: the map compares this instead of every province.
+    private(set) var worldRevision = 0
+    /// How long army icons glide to their next positions (the play step interval).
+    var tween: Double = 0.3
     /// Generation reveal (title screen), 0…1; labels and markers appear at 1.
     @Published var reveal: Float = 1
     /// Title screen: the map is a backdrop and takes no gestures.
@@ -87,6 +91,7 @@ struct MapView: UIViewRepresentable {
         private var labels: MapLabelsView!
         private let effects = EffectsView()
         private var shownEffects = MapEffects()
+        private var shownRevision = -1
         private var shownViewLabels: [GroupLabel]?
         private let metrics = UILabel()
         private var stats = FrameStatistics()
@@ -313,8 +318,9 @@ struct MapView: UIViewRepresentable {
         // MARK: SwiftUI → map
 
         func sync() {
-            if let next = controller.world, next.meta.provinces.map(\.nation) != map.meta.provinces.map(\.nation) || next.meta.labels.count != map.meta.labels.count
+            if controller.worldRevision != shownRevision, let next = controller.world, next.meta.provinces.map(\.nation) != map.meta.provinces.map(\.nation) || next.meta.labels.count != map.meta.labels.count
                 || zip(next.meta.labels, map.meta.labels).contains(where: { p in p.0.nation != p.1.nation || p.0.x != p.1.x || p.0.y != p.1.y }) {
+                shownRevision = controller.worldRevision
                 map = next
                 renderer?.setMap(next)
                 // City names never change hands with a province: only the state names are rebuilt.
@@ -328,7 +334,11 @@ struct MapView: UIViewRepresentable {
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills)
+            if controller.worldRevision != shownRevision { shownRevision = controller.worldRevision }
             if let armies = controller.armies {
+                // Playing: glide linearly over one step so marching does not pulse; a single move eases.
+                renderer?.tweenDuration = controller.tween
+                renderer?.tweenEase = controller.tween <= 0.3
                 renderer?.setArmies(armies, route: controller.route)
                 if renderer?.isAnimating == true { startLink() }
             }

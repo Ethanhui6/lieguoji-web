@@ -195,10 +195,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var tweenFrom: [String: SIMD2<Float>] = [:]
     private var tweenStart: CFTimeInterval = 0
     var tweenDuration: CFTimeInterval = 0.14
+    var tweenEase = true
     var isAnimating: Bool { CACurrentMediaTime() - tweenStart < tweenDuration }
     private func tweenProgress() -> Float {
         let t = Float(min(1, max(0, (CACurrentMediaTime() - tweenStart) / tweenDuration)))
-        return t * t * (3 - 2 * t)
+        return tweenEase ? t * t * (3 - 2 * t) : t
     }
     private func displayed(_ s: ArmySprite, _ t: Float) -> SIMD2<Float> {
         guard let from = tweenFrom[s.key], !s.key.isEmpty else { return SIMD2(s.x, s.y) }

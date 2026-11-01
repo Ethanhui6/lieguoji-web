@@ -202,9 +202,16 @@ import LieguojiCore
         _ = try await native.open(Data(text.utf8))
     }
 
+    /// Smoothed time between two applied steps while playing; army icons glide over it.
+    private var stepInterval: Double = 0.2
+    private var lastApplied: CFTimeInterval?
     private func step(days: Int) async throws {
         let data = await native.step(days: days)
         let next = try await Task.detached { try JSONDecoder().decode(GameState.self, from: data) }.value
+        let now = CACurrentMediaTime()
+        if playing, let last = lastApplied, now - last < 2 { stepInterval = stepInterval * 0.7 + (now - last) * 0.3 }
+        lastApplied = playing ? now : nil
+        controller.tween = playing ? min(1.2, max(0.12, stepInterval * 1.05)) : 0.3
         apply(next)
         if next.day - lastSavedDay >= 30 { save(); lastSavedDay = next.day }
     }
@@ -400,17 +407,8 @@ import LieguojiCore
     func refreshArmies() {
         guard let state else { controller.armies = []; return }
         let selected = controller.marchingArmy ?? controller.selectedArmy
-        // Armies in contact are drawn leaning towards their contact point (display only), so the
-        // two icons meet where the battle plays instead of standing apart.
-        var lean = [Int: (x: Float, y: Float, n: Float)]()
-        for pair in state.contacts ?? [] where pair.count == 2 && state.armies.indices.contains(pair[0]) && state.armies.indices.contains(pair[1]) {
-            let a = state.armies[pair[0]], b = state.armies[pair[1]], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2
-            for i in pair { let o = lean[i] ?? (0, 0, 0); lean[i] = (o.x + mx, o.y + my, o.n + 1) }
-        }
         var sprites: [MapRenderer.ArmySprite] = state.armies.enumerated().map { i, a in
-            var x = a.x, y = a.y
-            if let m = lean[i] { let tx = m.x / m.n, ty = m.y / m.n; x += (tx - x) * 0.6; y += (ty - y) * 0.6 }
-            return MapRenderer.ArmySprite(army: i, x: x, y: y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id)
+            MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id)
         }
         // Harbour anchors in the occupier's colour (not tappable; the province panel lists them), then fleets.
         for (i, p) in (state.ports ?? []).enumerated() {

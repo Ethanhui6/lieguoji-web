@@ -132,7 +132,7 @@ struct NationSheet: View {
                 }
                 .padding(.bottom, 24)
             }
-            .task(id: state.day) { await reload() }
+            .task(id: state.day / 10) { await reload() }
             .onAppear { model.controller.relationsNation = nation; model.controller.relations = relationColors(); if let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }

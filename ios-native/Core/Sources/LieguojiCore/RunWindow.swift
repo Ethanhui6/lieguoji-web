@@ -232,11 +232,20 @@ public enum RunWindow {
     static func atWarIndex(_ r: JS, _ a: Int, _ b: Int) -> Bool { atWar(r, r.world.nations[a].id.asString, r.world.nations[b].id.asString) }
 
     // MARK: Motion (force-runtime47 advanceOwnedActualForces47)
+    /// Province id → index; the province list never reorders, so it is built once per list.
+    private static var provinceIndexCache: (list: ObjectIdentifier, count: Int, last: String, index: [String: Int])?
+    static func provinceIndexById(_ r: JS) -> [String: Int] {
+        let list = r.world.provinces, items = list.asArray
+        if let c = provinceIndexCache, c.list == ObjectIdentifier(list), c.count == items.count, c.last == items.last?.id.asString ?? "", c.index[items.first?.id.asString ?? ""] == 0 { return c.index }
+        let index = Dictionary(uniqueKeysWithValues: items.enumerated().map { ($0.element.id.asString, $0.offset) })
+        provinceIndexCache = (ObjectIdentifier(list), items.count, items.last?.id.asString ?? "", index)
+        return index
+    }
     static func motion(_ r: JS, seconds: Double) -> ContactMotion.Result {
         let bridge = Armies.bridge!, g = bridge.graph
         var armies = [String: JS](); for a in r.world.armies.asArray { armies[a.id.asString] = a }
         let anchors = r.originalArmy47.isNull ? false : r.originalArmy47.paths.optionalNumber == 1
-        let index = Dictionary(uniqueKeysWithValues: r.world.provinces.asArray.enumerated().map { ($0.element.id.asString, $0.offset) })
+        let index = provinceIndexById(r)
         let seconds0 = r.forceClock.secondsPerTick.asNumber
         // Controllers, access and war do not change during one motion call: read each once.
         let controllers = r.world.provinces.asArray.map(\.controller.asString)
@@ -265,14 +274,15 @@ public enum RunWindow {
             let a = entry[force.id]!
             return ForceMotion.armySpeed(base: a.base, unitSpeed: a.unit, cell: cell, graph: g, secondsPerTick: seconds0)
         })
-        var moving = bridge.forces(r)
-        let out = ContactMotion(graph: g).advance(&moving, previous: bridge.contacts(r), seconds: seconds, rules: rules, stopAtEvent: true)
-        for m in moving {
+        var moving = Profile.measure("m.forces") { bridge.forces(r) }
+        let previous = Profile.measure("m.contacts") { bridge.contacts(r) }
+        let out = Profile.measure("m.advance") { ContactMotion(graph: g).advance(&moving, previous: previous, seconds: seconds, rules: rules, stopAtEvent: true) }
+        Profile.measure("m.write") { for m in moving {
             let book = m.kind == .army ? r.armyPositions : r.fleetPositions
             let t = book.records[m.id].clone(); bridge.write(m.travel, to: t); book.records[m.id] = t
-        }
+        } }
         r.forceContacts.pairs = .array(out.contacts.map(ForceBridge.json))
-        let space = Armies.space(r)
+        let space = Profile.measure("m.space") { Armies.space(r) }
         var safe = Set<String>()
         for v in space where v.army.status.asString == "retreating" && ["arrived", "halted"].contains(v.travel.status.asString) {
             guard let p = v.province, access(r, v.army.nationId.asString, p.controller.asString) else { continue }

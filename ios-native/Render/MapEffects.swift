@@ -113,7 +113,8 @@ final class EffectsView: UIView {
         clip.values = (0..<40).map { NSValue(cgRect: CGRect(x: CGFloat($0 % 5) * 0.2, y: CGFloat($0 / 5) * 0.125, width: 0.2, height: 0.125)) }
         clip.calculationMode = .discrete; clip.duration = 40.0 / 12; clip.repeatCount = .infinity
         l.add(clip, forKey: "clip")
-        let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: l.bounds.midX, y: l.bounds.midY); l.insertSublayer(smoke, at: 0)
+        // Particles cost: only the first few battles on the map smoke.
+        if battleLayers.count < 6 { let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: l.bounds.midX, y: l.bounds.midY); l.insertSublayer(smoke, at: 0) }
         return l
     }
 
@@ -301,7 +302,6 @@ final class EffectsView: UIView {
             if let old = battleLayers[b.key] { battleLayers[b.key] = (old.layer, b.x, b.y) }
             else {
                 let l = battleLayer(); layer.addSublayer(l); battleLayers[b.key] = (l, b.x, b.y)
-                if let tag = battleTag(b) { tag.position = CGPoint(x: l.bounds.midX, y: l.bounds.maxY + 9); l.addSublayer(tag) }
                 let pop = CASpringAnimation(keyPath: "transform.scale"); pop.fromValue = 0.2; pop.toValue = 1; pop.damping = 9; pop.duration = pop.settlingDuration
                 l.add(pop, forKey: "pop")
             }

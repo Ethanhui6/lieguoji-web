@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreText
+import UniformTypeIdentifiers
 import LieguojiCore
 
 @main struct LieguojiApp: App {
@@ -163,6 +164,7 @@ struct SealMark: View {
 
 struct TitleView: View {
     @ObservedObject var model: GameModel
+    @State private var importing = false
     @State private var creating = false
     @State private var shown = false
     var body: some View {
@@ -176,6 +178,7 @@ struct TitleView: View {
                     if model.hasSave {
                         Button { Task { await model.continueGame() } } label: { SecondaryLabel(title: "继续", symbol: "book.closed") }
                     }
+                    Button { importing = true } label: { SecondaryLabel(title: "导入存档", symbol: "tray.and.arrow.down") }
                 }
                 .padding(.top, 10)
                 .buttonStyle(PressStyle())
@@ -187,6 +190,9 @@ struct TitleView: View {
             .offset(y: shown ? 0 : 60).opacity(shown ? 1 : 0)
         }
         .onAppear { withAnimation(.spring(response: 0.7, dampingFraction: 0.85).delay(model.controller.reveal < 1 ? 1.4 : 0.1)) { shown = true } }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
+            if case .success(let url) = result { Task { await model.importSave(from: url) } }
+        }
         .sheet(isPresented: $creating) {
             NewWorldSheet { options in creating = false; Task { await model.generate(options) } }
                 .presentationDetents([.medium]).presentationBackground(Theme.paper)
@@ -783,12 +789,18 @@ struct MenuSheet: View {
     let close: () -> Void
     @State private var creating = false
     @State private var notes = false
+    @State private var exported: ExportFile?
+    @State private var importing = false
     var body: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 14) {
             SheetHeader(title: "菜单", subtitle: AppVersion.text)
             Group2 {
                 Button { model.save(); close() } label: { MenuRow(symbol: "square.and.arrow.down", title: "保存") }.buttonStyle(.plain)
+                Divider2()
+                Button { Task { exported = await model.exportCopy().map(ExportFile.init) } } label: { MenuRow(symbol: "square.and.arrow.up", title: "导出存档（备份）") }.buttonStyle(.plain)
+                Divider2()
+                Button { importing = true } label: { MenuRow(symbol: "tray.and.arrow.down", title: "导入存档") }.buttonStyle(.plain)
                 Divider2()
                 Button { creating = true } label: { MenuRow(symbol: "globe.asia.australia", title: "新世界") }.buttonStyle(.plain)
                 Divider2()
@@ -825,8 +837,21 @@ struct MenuSheet: View {
             NewWorldSheet { options in creating = false; close(); Task { await model.generate(options) } }
                 .presentationDetents([.medium]).presentationBackground(Theme.paper)
         }
+        .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
+            if case .success(let url) = result { close(); Task { await model.importSave(from: url) } }
+        }
         .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground(Theme.paper) }
     }
+}
+
+struct ExportFile: Identifiable { let url: URL; var id: String { url.absoluteString } }
+
+/// UIActivityViewController for exporting a save file.
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController { UIActivityViewController(activityItems: items, applicationActivities: nil) }
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 
 /// Installed version and build (CFBundleShortVersionString / CFBundleVersion), so a sideloaded build can be identified.
@@ -840,6 +865,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.9", ["【手机上能点到】菜单新增「导出存档（备份）」：先保存，再用系统分享面板存到“文件”或隔空投送；文件名带日期。",
+                   "【手机上能点到】标题页和菜单新增「导入存档」：选一个 .lgj 文件读入；原存档先备份为「导入前备份.lgj」。",
+                   "【手机上能点到】存档文件夹在“文件”App 的「我的 iPhone › 列国纪」里可见，重签前可自行拷出。",
+                   "【未在真机验证】以上只在 CI 构建通过，未在真机上验证；跨设备导入未测试。"]),
         ("0.9.8", ["【手机上能点到】菜单新增「显示设置」：国界、省界、城市名、城市图标、地形与植被可分别开关；国家颜色浓度滑杆 0.2–1。设置会记住。",
                    "【简化】颜色浓度是把国家色向地形底色混合，原作的具体浓度算法未核实；默认 1.0 与网页一致。",
                    "【未在真机验证】以上只在 CI 构建通过，未在真机上验证。"]),

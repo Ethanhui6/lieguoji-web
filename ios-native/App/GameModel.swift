@@ -296,9 +296,32 @@ import LieguojiCore
 
     func save() {
         guard state != nil else { return }
-        Task {
-            if let data = await native.save() { try? data.write(to: Self.saveURL, options: .atomic) }
-        }
+        Task { await saveNow() }
+    }
+    /// Saves and waits for the file (export needs it on disk).
+    @discardableResult func saveNow() async -> Bool {
+        guard state != nil, let data = await native.save() else { return false }
+        do { try data.write(to: Self.saveURL, options: .atomic); return true } catch { return false }
+    }
+    /// 导出存档: a dated copy of the current save for the share sheet (Files, AirDrop…), a backup
+    /// against the 7-day expiry of a self-signed install.
+    func exportCopy() async -> URL? {
+        if state != nil { await saveNow() }
+        guard hasSave else { return nil }
+        let f = DateFormatter(); f.dateFormat = "yyyyMMdd-HHmm"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("列国纪存档-\(f.string(from: Date())).lgj")
+        try? FileManager.default.removeItem(at: url)
+        do { try FileManager.default.copyItem(at: Self.saveURL, to: url); return url } catch { return nil }
+    }
+    /// 导入存档: a chosen .lgj replaces the current save (the old one is kept as 导入前备份.lgj), then loads.
+    func importSave(from url: URL) async {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url), data.first == UInt8(ascii: "{") else { failure = "这不是列国纪存档。"; return }
+        let backup = Self.saveURL.deletingLastPathComponent().appendingPathComponent("导入前备份.lgj")
+        if hasSave { try? FileManager.default.removeItem(at: backup); try? FileManager.default.copyItem(at: Self.saveURL, to: backup) }
+        do { try data.write(to: Self.saveURL, options: .atomic) } catch { failure = "存档无法写入：\(error.localizedDescription)"; return }
+        await continueGame()
     }
 
     // MARK: armies on the map

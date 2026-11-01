@@ -214,7 +214,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             for s in armySprites where !s.key.isEmpty { from[s.key] = displayed(s, t) }
             tweenFrom = from; tweenStart = CACurrentMediaTime()
             armySprites = sprites
-            rebuildArmies(progress: 0)
+            rebuildArmies()
         }
         if points != routePoints {
             routePoints = points
@@ -225,7 +225,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
     }
 
-    private func rebuildArmies(progress t: Float) {
+    // Immutable start/target buffers are replaced only when the snapshot changes.
+    // Per-frame interpolation runs in Metal; never overwrite a GPU in-flight buffer.
+    private func rebuildArmies() {
         do {
             let sprites = armySprites
             let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0))
@@ -233,14 +235,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             for a in sprites {
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
                 let size = iconSize * (a.unit == "Elite" ? 1.5 : a.unit == "Port" ? 0.7 : 1) * (a.selected ? 1.35 : 1)
-                let at = displayed(a, t)
+                let at = displayed(a, 0)
                 for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
-                    byUnit[a.unit, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, 1, size])
+                    byUnit[a.unit, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, 1, size, a.x, a.y])
                 }
             }
             units = byUnit.compactMap { unit, data -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
                 guard let texture = unitTextures[unit], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
-                return (texture: texture, buffer: b, count: data.count / 9)
+                return (texture: texture, buffer: b, count: data.count / 11)
             }
         }
     }
@@ -262,7 +264,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func draw(in view: MTKView) {
         guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable,
               let buffer = queue.makeCommandBuffer(), let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
-        if isAnimating || tweenStart > 0 && CACurrentMediaTime() - tweenStart < tweenDuration + 0.05 { rebuildArmies(progress: tweenProgress()) }
+        var spriteProgress = tweenProgress()
         let size = view.bounds.size
         var u = Uniforms(viewport: SIMD2(Float(size.width), Float(size.height)), center: SIMD2(Float(camera.centerX), Float(camera.centerY)), scale: Float(camera.scale), halfWidth: 0)
         let uniformLength = MemoryLayout<Uniforms>.stride
@@ -312,6 +314,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if display.borders { colored(outlines) }
         if display.cityIcons { colored(icons) }
         colored(route)
+        encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
         for unit in units {
             encoder.setRenderPipelineState(spritePipeline)
             encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
@@ -361,12 +364,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         const float2 corners[6] = { float2(0, 0), float2(1, 0), float2(0, 1), float2(0, 1), float2(1, 0), float2(1, 1) };
         QuadOut o; float2 c = corners[id]; o.position = clip(q.origin + c * q.size, u, float2(0.0)); o.uv = c; return o;
     }
-    struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; };
+    struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; packed_float2 target; };
     struct SpriteOut { float4 position [[position]]; float2 uv; float4 tint; };
-    vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
+    vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]]) {
         SpriteVertex s = v[id];
         float pixels = max(s.size * u.scale, 7.0);
-        SpriteOut o; o.position = clip(float2(s.center), u, float2(s.corner) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
+        SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, float2(s.corner) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
     }
     fragment float4 spriteFragment(SpriteOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         float4 c = t.sample(s, in.uv);

@@ -32,6 +32,15 @@ jobs:
           brew install xcodegen
           cd ios-native
           xcodegen generate
+      - name: Validate embedded Metal shader
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('ios-native/Render/MapRenderer.swift').read_text()
+          shader = source.split('static let shaders = """', 1)[1].split('"""', 1)[0]
+          Path('/tmp/lieguoji-map.metal').write_text(shader)
+          PY
+          xcrun -sdk iphoneos metal -c /tmp/lieguoji-map.metal -o /tmp/lieguoji-map.air
       - name: Archive unsigned application
         run: |
           xcodebuild -project ios-native/LieguojiNative.xcodeproj -scheme LieguojiNative -configuration Release -destination 'generic/platform=iOS' -archivePath ios-native/build/LieguojiNative.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO archive

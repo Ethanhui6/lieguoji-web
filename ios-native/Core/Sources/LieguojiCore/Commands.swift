@@ -92,7 +92,17 @@ extension DiplomacyBridge {
         if c.states[a].vassal || c.w.overlordOf(di) == ai { return "附庸不能自主发动外战，宗主不能向自己的附庸宣战；可先解除关系。" }
         guard let cb = c.usable(1, a, b) else { return "两国没有可争夺的相邻土地或外交海域。" }
         let goals = c.goals(cb, a, b)
-        guard !goals.isEmpty, let war = c.start(a, b, cb: cb.id, goals: goals) else { return "没有可执行的陆地或跨海进攻路线。" }
+        if goals.isEmpty { return "没有可执行的陆地或跨海进攻路线。" }
+        guard let war = c.start(a, b, cb: cb.id, goals: goals) else {
+            // start() declines quietly, except when the two sides cannot face each other
+            // (buildParticipants47 throws its own reason).
+            let relation = c.w.statecraft.first { [$0.a, $0.b].contains(ai) && [$0.a, $0.b].contains(di) }
+            if let relation, !relation.war, !c.w.truce(c.relation(a, b)).blocked, c.claimEntry(a, b) != nil {
+                let members = c.sides(attacker: a, defender: b)
+                if members.first(where: { $0.state == c.states[a].id })?.side != 0 || members.first(where: { $0.state == c.states[b].id })?.side != 1 { return "主攻与主守不能组成相对战方。" }
+            }
+            return "没有可执行的陆地或跨海进攻路线。"
+        }
         w = c.w
         mirrorRelations(r, w, from: known)
         r.nativeDiplomacy.rng = JS(Double(w.rng)); r.nativeDiplomacy.draws = JS(w.draws)

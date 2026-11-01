@@ -205,7 +205,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         guard let from = tweenFrom[s.key], !s.key.isEmpty else { return SIMD2(s.x, s.y) }
         let to = SIMD2(s.x, s.y), d = to - from
         // A jump across the map (reorganization at home) is not animated.
-        if d.x * d.x + d.y * d.y > 400 { return to }
+        if d.x * d.x + d.y * d.y > 6400 { return to }
         return from + d * t
     }
 

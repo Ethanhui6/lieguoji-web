@@ -43,6 +43,8 @@ final class EffectsView: UIView {
     private var battleLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     /// Who fights whom, without text: a line from each army to the clash, in its state's colour.
     private var clashLayers: [String: (a: CAShapeLayer, b: CAShapeLayer, battle: MapEffects.Battle)] = [:]
+    /// Off since the icons are drawn meeting at the clash.
+    var showClashLines = false
     private var siegeLayers: [String: (layer: CALayer, ring: CAShapeLayer, x: Double, y: Double)] = [:]
     private var flashLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var arrowLayers: [String: (layer: CAShapeLayer, head: CAShapeLayer, d: MapEffects.Declaration)] = [:]
@@ -306,7 +308,7 @@ final class EffectsView: UIView {
         for (key, v) in battleLayers where !battles.contains(key) { v.layer.removeFromSuperlayer(); battleLayers[key] = nil }
         for (key, v) in clashLayers where !battles.contains(key) { v.a.removeFromSuperlayer(); v.b.removeFromSuperlayer(); clashLayers[key] = nil }
         for b in effects.battles {
-            guard let l = b.left, let r = b.right, b.ax != b.bx || b.ay != b.by else { continue }
+            guard showClashLines, let l = b.left, let r = b.right, b.ax != b.bx || b.ay != b.by else { continue }
             if let old = clashLayers[b.key] { clashLayers[b.key] = (old.a, old.b, b); continue }
             func line(_ s: MapEffects.Side) -> CAShapeLayer {
                 let c = CAShapeLayer()

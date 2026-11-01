@@ -115,12 +115,26 @@ extension NativeEngine {
         // Armies in contact stand where they fight (the original draws the clash between them);
         // only resting armies use the province's display spot.
         let engaged = Set(r.forceContacts.pairs.asArray.flatMap { [$0.a.asString, $0.b.asString] })
+        // Two armies in contact share a province (the original's battle rule), possibly far apart:
+        // each is drawn at the middle of its clashes, half an icon back towards its own side, so the
+        // two icons meet where the battle plays. Presentation only.
+        var clash = [String: (x: Double, y: Double, n: Double)]()
+        for c in r.forceContacts.pairs.asArray where !c.pointA.isNull && !c.pointB.isNull {
+            let ax = c.pointA.x.asNumber, ay = c.pointA.y.asNumber, bx = c.pointB.x.asNumber, by = c.pointB.y.asNumber
+            let mx = (ax + bx) / 2, my = (ay + by) / 2
+            for k in [c.a.asString, c.b.asString] { let o = clash[k] ?? (0, 0, 0); clash[k] = (o.x + mx, o.y + my, o.n + 1) }
+        }
+        let halfIcon = 2.4 * sc
         o.armies = .array(space.map { v in
             let a = v.army, id = a.id.asString, moving = v.travel.status.asString == "moving"
             var at: (Double, Double)
             if let home = v.province, !moving, !engaged.contains(Daily.key("army", id)) {
                 at = Self.wanderPoint(home.polygon.asArray.map { ($0.x.asNumber, $0.y.asNumber) }, id, avoid: spots[home.id.asString] ?? [])
             } else if let bridge { let p = bridge.graph.location(bridge.travel(v.travel)).point; at = (p.x, p.y) } else { at = (0, 0) }
+            if let m = clash[Daily.key("army", id)] {
+                let cx = m.x / m.n, cy = m.y / m.n, dx = at.0 - cx, dy = at.1 - cy, d = (dx * dx + dy * dy).squareRoot()
+                at = d > halfIcon ? (cx + dx / d * halfIcon, cy + dy / d * halfIcon) : at
+            }
             let x = JS.object()
             x.id = a.id; x.name = a.name; x.nation = JS(ni[a.nationId.asString]!); x.troops = a.troops; x.unit = r.units[id].isNull ? JS("Infantry") : r.units[id]
             x.status = a.status; x.travel = v.travel.status; x.province = JS(v.province.map { pi[$0.id.asString]! } ?? -1)

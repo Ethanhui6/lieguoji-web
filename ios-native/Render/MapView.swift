@@ -550,7 +550,7 @@ final class MapLabelsView: UIView {
 final class TroopLabelsView: UIView {
     var texts: [String: String] = [:]
     private var layers = [String: CATextLayer]()
-    private static let font = UIFont(name: "TW-Kai-98_1", size: 10) ?? .systemFont(ofSize: 10, weight: .semibold)
+    private static let font = UIFont(name: "TW-Kai-98_1", size: 11) ?? .systemFont(ofSize: 11, weight: .semibold)
     override init(frame: CGRect) { super.init(frame: frame); isUserInteractionEnabled = false }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
@@ -568,10 +568,10 @@ final class TroopLabelsView: UIView {
                 let l = layers[p.sprite.key] ?? make(p.sprite.key)
                 if (l.string as? String) != text {
                     l.string = text
-                    let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 8
-                    l.bounds = CGRect(x: 0, y: 0, width: w, height: 14)
+                    let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 6
+                    l.bounds = CGRect(x: 0, y: 0, width: w, height: 15)
                 }
-                l.position = CGPoint(x: s.x, y: s.y + icon * 0.5 + 6)
+                l.position = CGPoint(x: s.x, y: s.y + icon * 0.5 + 5)
                 seen.insert(p.sprite.key)
             }
         }
@@ -580,10 +580,11 @@ final class TroopLabelsView: UIView {
     }
     private func make(_ key: String) -> CATextLayer {
         let l = CATextLayer()
-        l.font = Self.font; l.fontSize = 10; l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
-        l.foregroundColor = UIColor(white: 0.1, alpha: 1).cgColor
-        l.backgroundColor = UIColor(red: 0.984, green: 0.972, blue: 0.945, alpha: 0.88).cgColor
-        l.cornerRadius = 3; l.borderWidth = 0.5; l.borderColor = UIColor(white: 0, alpha: 0.2).cgColor
+        l.font = Self.font; l.fontSize = 11; l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
+        l.foregroundColor = UIColor(white: 0.12, alpha: 1).cgColor
+        // A paper halo like the map's names instead of a box.
+        l.shadowColor = UIColor(red: 0.953, green: 0.906, blue: 0.792, alpha: 1).cgColor
+        l.shadowOpacity = 1; l.shadowRadius = 1.6; l.shadowOffset = .zero
         layer.addSublayer(l); layers[key] = l
         return l
     }

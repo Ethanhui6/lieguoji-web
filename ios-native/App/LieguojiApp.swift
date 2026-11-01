@@ -56,6 +56,7 @@ enum Names {
 
 struct RootView: View {
     @StateObject private var model = GameModel()
+    @Environment(\.scenePhase) private var scenePhase
     var body: some View {
         ZStack {
             Theme.sea.ignoresSafeArea()
@@ -73,6 +74,8 @@ struct RootView: View {
             if model.phase == .splash { SplashView { finishSplash() }.transition(.opacity).zIndex(10) }
         }
         .animation(.easeInOut(duration: 0.45), value: model.phase)
+        // Leaving the app saves (autosave runs only every 90 days).
+        .onChange(of: scenePhase) { _, phase in if phase == .background, model.phase == .playing { model.save() } }
         .task { await model.loadBackdrop(); try? await model.engine.start() }
         .alert("出了点问题", isPresented: Binding(get: { model.failure != nil }, set: { if !$0 { model.failure = nil } })) {
             Button("好") { model.failure = nil }
@@ -1244,6 +1247,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.34", ["交战不再隔着老远：按原作规则同一州郡内的敌军即进入交战，以前两军各画在自己的位置上看起来隔很远；现在交战双方会走到一起，图标相互贴近，双剑在两军之间交击（只改显示，不改推演）。去掉了上一版的交锋虚线。",
+                    "修复瞬移：一步内移动较远（高倍速、进出交战）时以前会直接跳过去，现在都平滑滑行，只有跨越大半张地图的整编回城才直接出现。",
+                    "修复周期性卡顿：自动存档会序列化整个世界并在主线程写文件，每 30 天卡一下；现在改为每 90 天自动存一次、文件在后台写入，暂停和切出应用时也会存档。",
+                    "兵力数字改版：去掉方框，改为毛笔字配纸色描边（和地图地名同一风格），更小更清爽。"]),
         ("0.9.33", ["性能：军团路线记录解析一次后缓存（只在军团真的移动或改令时重新解析），交战判定每帧不再重复解析全部军团；行军规则里的宣战表改为字典查找。"]),
         ("0.9.32", ["交战看得清谁打谁：两支接触的军团之间画出一条交锋线，各半段是双方国色，虚线向交战点流动，双剑在中间交击；不用文字也一眼分清交战双方。"]),
         ("0.9.31", ["性能：围城与占领结算改为按州郡索引查找围城、宣战关系每次只查一遍，不再「每个州郡 × 每处围城」反复扫描；战争越多、地图越大，提速越明显。"]),

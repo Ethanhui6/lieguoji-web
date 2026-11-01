@@ -202,7 +202,7 @@ import LieguojiCore
             }
         }
     }
-    func pause() { loop?.cancel(); loop = nil; playing = false }
+    func pause() { let was = playing; loop?.cancel(); loop = nil; playing = false; if was, let day = state?.day { save(); lastSavedDay = day } }
     func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : 1 }
     func stepOnce() { guard !playing else { return }; Task { try? await step(days: 1) } }
 
@@ -223,7 +223,8 @@ import LieguojiCore
         lastApplied = playing ? now : nil
         controller.tween = playing ? min(1.2, max(0.12, stepInterval * 1.05)) : 0.3
         apply(next)
-        if next.day - lastSavedDay >= 30 { save(); lastSavedDay = next.day }
+        // Autosave every 90 days (it serializes the whole world; pausing and leaving also save).
+        if next.day - lastSavedDay >= 90 { save(); lastSavedDay = next.day }
     }
 
     private func apply(_ next: GameState) {
@@ -391,7 +392,8 @@ import LieguojiCore
     /// Saves and waits for the file (export needs it on disk).
     @discardableResult func saveNow() async -> Bool {
         guard state != nil, let data = await native.save() else { return false }
-        do { try data.write(to: Self.saveURL, options: .atomic); return true } catch { return false }
+        let url = Self.saveURL
+        return await Task.detached(priority: .utility) { (try? data.write(to: url, options: .atomic)) != nil }.value
     }
     /// 导出存档: a dated copy of the current save for the share sheet (Files, AirDrop…), a backup
     /// against the 7-day expiry of a self-signed install.

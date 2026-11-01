@@ -56,38 +56,50 @@ public enum RunWindow {
     @discardableResult
     static func occupy(_ r: JS, now: Double, due: Set<String>) -> Bool {
         guard Armies.bridge != nil else { return false }
+        // War status per state pair, read once per call (relations do not change while occupying).
+        var wars = [String: Bool]()
+        func war(_ a: String, _ b: String) -> Bool {
+            let k = a + "|" + b
+            if let v = wars[k] { return v }
+            let v = atWar(r, a, b); wars[k] = v; return v
+        }
         let space = Armies.space(r)
-        if r.occupation.sieges.length == 0 && !space.contains(where: { $0.province != nil && $0.army.status.asString != "retreating" && atWar(r, $0.army.nationId.asString, $0.province!.controller.asString) }) { return false }
+        if r.occupation.sieges.length == 0 && !space.contains(where: { $0.province != nil && $0.army.status.asString != "retreating" && war($0.army.nationId.asString, $0.province!.controller.asString) }) { return false }
         let previous = r.world.provinces.asArray.map(\.controller.asString)
         let armyDue = Set(space.filter { due.contains(key("army", $0.army.id.asString)) }.map(\.army.id.asString))
         let w = r.world, tick = now.rounded(.down)
+        let provinces = w.provinces.asArray, provinceIds = provinceIndexById(r)
         // reconcileOccupation.
         r.occupation.sieges = .array(r.occupation.sieges.asArray.filter { s in
-            guard let p = w.provinces.asArray.first(where: { $0.id.asString == s.provinceId.asString }) else { return false }
-            return p.controller.asString == s.controller.asString && atWar(r, s.attacker.asString, s.controller.asString)
+            guard let i = provinceIds[s.provinceId.asString] else { return false }
+            let p = provinces[i]
+            return p.controller.asString == s.controller.asString && war(s.attacker.asString, s.controller.asString)
         })
         var local = [String: [JS]]()
         for v in space where v.province != nil { local[v.province!.id.asString, default: []].append(v.army) }
-        for (index, p) in w.provinces.asArray.enumerated() {
+        // The first siege of each province (kept current as sieges start and end below).
+        var siegeOf = [String: JS]()
+        for sg in r.occupation.sieges.asArray where siegeOf[sg.provinceId.asString] == nil { siegeOf[sg.provinceId.asString] = sg }
+        for (index, p) in provinces.enumerated() {
             let pid = p.id.asString
             let group = (local[pid] ?? []).filter { $0.status.asString != "retreating" }
-            var siege = r.occupation.sieges.asArray.first { $0.provinceId.asString == pid }
-            if siege == nil && !group.contains(where: { atWar(r, $0.nationId.asString, p.controller.asString) }) { continue }
+            var siege = siegeOf[pid]
+            if siege == nil && !group.contains(where: { war($0.nationId.asString, p.controller.asString) }) { continue }
             // forcesFromGroup.
             var powers = [String: Double](), order = [String]()
             for a in group {
                 let c = provinceCombat(r, a, index), e = c.efficiency * Double(c.multiplier), n = a.nationId.asString
-                if n != p.controller.asString && atWar(r, n, p.controller.asString) { if powers[n] == nil { order.append(n) }; powers[n, default: 0] += e }
+                if n != p.controller.asString && war(n, p.controller.asString) { if powers[n] == nil { order.append(n) }; powers[n, default: 0] += e }
             }
             let attacker = order.sorted { x, y in powers[x]! != powers[y]! ? powers[x]! > powers[y]! : Collate.less(x, y) }.first
             if attacker == nil && siege == nil { continue }
             let attackers = group.filter { $0.nationId.asString == attacker }
-            let defenders = group.filter { attacker != nil && $0.nationId.asString != attacker! && atWar(r, $0.nationId.asString, attacker!) }
+            let defenders = group.filter { attacker != nil && $0.nationId.asString != attacker! && war($0.nationId.asString, attacker!) }
             let immediate = r.tactics.unopposed.asString == "takeover" && !attackers.isEmpty && defenders.isEmpty
             if siege == nil, let attacker {
                 let m = capacity(r, p)
                 let s = JS.object(); s.provinceId = JS(pid); s.controller = p.controller.clone(); s.attacker = JS(attacker); s.maximum = JS(m); s.resistance = JS(m); s.started = JS(tick); s.pulse = JS(tick)
-                r.occupation.sieges.push(s); siege = s
+                r.occupation.sieges.push(s); siege = s; siegeOf[pid] = s
                 if !immediate { log(r, "battle", "\(p.name.asString)\(w.cities.asArray.contains { $0.provinceId.optionalString == pid } ? "争夺城防" : "争夺地区")", "对军交锋和地区抵抗分别结算；每军独立计时，守军同时回补抵抗。") }
             }
             guard let s = siege else { continue }
@@ -100,7 +112,7 @@ public enum RunWindow {
                     let c = provinceCombat(r, a, index), base = f(c.damageToProvince * c.efficiency), damage = c.multiplier == 2 ? f(f(base) * 2) : base
                     let n = a.nationId.asString
                     if n == p.controller.asString { s.resistance = JS(min(s.maximum.asNumber, s.resistance.asNumber + damage)) }
-                    else if atWar(r, n, p.controller.asString) { s.attacker = JS(n); s.resistance = JS(max(0, s.resistance.asNumber - damage)) }
+                    else if war(n, p.controller.asString) { s.attacker = JS(n); s.resistance = JS(max(0, s.resistance.asNumber - damage)) }
                     s.pulse = JS(tick)
                     if s.resistance.asNumber == 0 { conqueror = n; captor = a.id.asString; break }
                 }
@@ -114,8 +126,10 @@ public enum RunWindow {
                 log(r, "occupation", "\(name)\(immediate ? "接管" : "攻下")\(p.name.asString)",
                     immediate ? "驻军已实际抵达，本地区没有敌军，按空城接管规则立即换旗；只改变本地区实控，不吞并全国。" : "实际军队攻击耗尽地区抵抗；只改变本地区实控，法理归属和其他领土保留。")
                 r.occupation.sieges = .array(r.occupation.sieges.asArray.filter { $0 !== s })
+                siegeOf[pid] = r.occupation.sieges.asArray.first { $0.provinceId.asString == pid }
             } else if attacker == nil && s.resistance.asNumber == s.maximum.asNumber {
                 r.occupation.sieges = .array(r.occupation.sieges.asArray.filter { $0 !== s })
+                siegeOf[pid] = r.occupation.sieges.asArray.first { $0.provinceId.asString == pid }
             }
         }
         Naval.reconcileLandOwners(r); afterOccupation?(r)

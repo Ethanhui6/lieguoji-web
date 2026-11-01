@@ -54,8 +54,8 @@
 
 ## 与原作不一致（网页适配，保持与网页逐位一致，待 Bob 决定）
 依据：games/架空地图模拟器-ref/original/_ui-export/ios-newworld-people-army-port.md。Swift 照搬网页，以下差异未改动：
-- 特质：原作实测 27 条（先天只有 Genius、Unifier）；网页互斥表引用的 Kind、Generous、Trusting、Content、Arbitrary 在原作中不存在。
-- Nobility.traitType 按四维修正之和分档，与原作 json 的 type 不符，会分错 Merciful、BattleHardened、NavalMastery、ShipMaster、Reformer、Cruel、WarWeary、Ambitious；抽取比例 40/30/30 与每人 1–3 条原作无依据。
-- 初始兵种按军队序号轮换不是原作做法（原作推断为征募权重乘生态修正）；Efficiency.swift 精锐再乘 10 原作无依据。
+- 特质：原作实测 27 条（先天只有 Genius、Unifier）；网页互斥表引用的 Kind、Generous、Trusting、Content、Arbitrary 在原作中不存在（原作按名字精确比较，同样匹配不到，不补造）。
+- 更正（ios-traits-attributes-effects.md，据 EV/fms-court16-v5-2026-10-07/CONTRACT.md 第 9、11 行）：Nobility.traitType 按四维修正之和分档（>5 正、<−5 负）、抽取比例 40/30/30、每人 1–3 条、精锐 ×10 均有原作依据，不再列为差异。
+- 初始兵种按军队序号轮换不是原作做法（原作推断为征募权重乘生态修正）。精锐 ×10 有依据（UPPER_EFFICIENCY_RECOVERY.md 第 15 行），但 Swift 以 unit=="Elite" 判定，原作为 isElite 标志，二者等价属推断。
 - 文化集与姓名规则、家族成员年龄、子女数、旁系人数、女性继承 30%、开篇国龄、人口粮食系数都是网页数值，原作中找不到。
 - 待核（不编造）：开局家族数、初始军队数量与位置、港口归属、海军开局。

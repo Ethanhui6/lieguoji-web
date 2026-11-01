@@ -199,7 +199,9 @@ struct NationSheet: View {
                     if p.skills.count == 4 {
                         Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                     }
-                    if !p.traits.isEmpty { Text("特质：" + p.traits.joined(separator: "、")).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+                    ForEach(p.traits, id: \.self) { t in
+                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.effect[t].map { "：" + $0 } ?? "").foregroundStyle(Theme.ink2)).font(Theme.kai(13))
+                    }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 if i < list.count - 1 { Divider2() }
@@ -273,4 +275,39 @@ struct NationSheet: View {
         if let reason = await command() { say(reason) } else { say(model.state?.events.last?.text ?? "已执行") }
         await reload()
     }
+}
+
+/// Each trait's effect description, from the original's Traits/CharacterTraits/localization.csv
+/// (CharacterTraitDesc_*, Chinese column), keyed by the web's trait label. Only these 27 strings are
+/// copied; see ios-native/Resources/SOURCE.md.
+enum TraitText {
+    static let effect: [String: String] = [
+        "天才": "拥有超凡的智慧和卓越的头脑",
+        "勇敢": "在战斗中无所畏惧，深受士兵敬仰",
+        "魅力超凡": "天生的领导者，能激发他人的忠诚",
+        "行政天才": "在管理国家事务方面表现卓越",
+        "外交家": "擅长谈判和建立关系",
+        "公正": "判断公平公正，深受人民爱戴",
+        "战略家": "军事战术和战略大师",
+        "仁慈": "对被征服者表现出仁慈，更倾向于宽恕和恢复被征服家族的领地",
+        "耐心": "愿意等待合适的时机",
+        "懦弱": "胆小怕事，为士兵所不齿",
+        "残暴": "对被征服者毫不留情，更倾向于清洗和剥夺被征服家族的一切",
+        "无能": "缺乏有效治理的能力",
+        "贪婪": "痴迷于财富和个人利益",
+        "偏执": "到处都看到敌人",
+        "易怒": "容易发怒，惩罚严厉",
+        "雄心勃勃": "有着远大的抱负，渴望权力",
+        "长袖善舞": "擅长社交，作为族长或国家领导人时，其他势力对其好感度+20",
+        "鹰派": "强硬派，紧急动员时可额外征召30%的军队",
+        "鸽派": "温和派，无法进行紧急动员",
+        "统一者": "立志整合同文化诸邦 倾向对同文化邻国发动统一战争",
+        "越战越勇": "面对多线作战时愈发勇猛，每个敌对国家增加5%战斗力（最多50%）",
+        "厌战": "厌倦战争，每个敌对国家减少5%战斗力（最多-50%）",
+        "海军精通": "精通海战指挥 使所属国家海军战斗力提升30%",
+        "船舶大师": "精通船舶建造 使军舰建造时间减少50%",
+        "改革家": "天生的改革家，上台时会触发改革判定，基于内政能力调整国家腐败度",
+        "天生领袖": "天生的领导者，作为家族首领时增加50点家族影响力",
+        "难以服众": "缺乏威望和号召力，作为家族首领时减少50点家族影响力"
+    ]
 }

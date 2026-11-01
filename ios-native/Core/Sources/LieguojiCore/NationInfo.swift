@@ -22,20 +22,22 @@ extension NativeEngine {
             return e
         })
         let assignments = r.offices47.nations[id].assignments.isNull ? [] : r.offices47.nations[id].assignments.asArray
-        let held = r.world.provinces.asArray.enumerated().filter { $0.element.controller.asString == id }
+        let held = r.world.provinces.asArray.enumerated().filter { $0.element.controller.optionalString == id }
         c.provinces = JS(held.count)
-        c.occupied = JS(held.filter { $0.element.owner.asString != id }.count)
-        c.lost = JS(r.world.provinces.asArray.filter { $0.owner.asString == id && $0.controller.asString != id }.count)
-        c.governors = JS(assignments.filter { $0.officeId.asString == "Governor" }.count)
-        c.commanders = .array(assignments.filter { $0.officeId.asString == "WarCommander" }.compactMap { a -> JS? in
-            guard let p = People.person(r, a.holderId.asInt) else { return nil }
+        // De jure owner: legalOwner, else the controller (as the province panel reads it).
+        func owner(_ p: JS) -> String? { p.legalOwner.optionalString ?? p.controller.optionalString }
+        c.occupied = JS(held.filter { owner($0.element) != id }.count)
+        c.lost = JS(r.world.provinces.asArray.filter { owner($0) == id && $0.controller.optionalString != id }.count)
+        c.governors = JS(assignments.filter { $0.officeId.optionalString == "Governor" }.count)
+        c.commanders = .array(assignments.filter { $0.officeId.optionalString == "WarCommander" }.compactMap { a -> JS? in
+            guard let holder = a.holderId.optionalNumber, let p = People.person(r, Int(holder)) else { return nil }
             let e = JS.object(); e.name = JS(name(p)); e.age = JS(p.age.optionalNumber ?? 0)
-            let enemy = r.people.nations.objectEntries.first { $0.1.id.optionalNumber.map { Int($0) } == a.scopeId.asInt }?.0
+            let enemy = r.people.nations.objectEntries.first { $0.1.id.optionalNumber.map { Int($0) } == a.scopeId.optionalNumber.map { Int($0) } }?.0
             e.enemy = JS(nationIndex(enemy)); return e
         })
         // Noble houses of this state, by influence (0…1000).
         let ruling = r.nobility.rulingFamilies[id].optionalNumber.map { Int($0) } ?? 0
-        let houses = r.nobility.isNull ? [] : r.nobility.families.objectEntries.filter { $0.1.nationId.asString == id }
+        let houses = r.nobility.isNull || r.nobility.families.isNull ? [] : r.nobility.families.objectEntries.filter { $0.1.nationId.optionalString == id }
         c.houses = .array(houses.sorted { ($0.1.influence.optionalNumber ?? 0) > ($1.1.influence.optionalNumber ?? 0) }.prefix(8).map { key, fam in
             let e = JS.object()
             let surname = r.kin.families[key].surname.optionalString ?? ""
@@ -43,7 +45,7 @@ extension NativeEngine {
             e.influence = JS(fam.influence.optionalNumber ?? 0)
             e.provinces = JS(fam.controlledProvinces.isNull ? 0 : fam.controlledProvinces.length)
             e.ruling = JS(Int(key) == ruling)
-            e.members = JS(Nobility.living(r, key).count)
+            e.members = JS(r.kin.families[key].isNull ? 0 : Nobility.living(r, key).count)
             return e
         })
         return c

@@ -48,7 +48,7 @@ public enum Session {
     /// there, and the political step after every window.
     public static func advance(_ r: JS, ticks: Int) {
         var remaining = ticks
-        RunWindow.afterTick = afterTick
+        RunWindow.afterTick = afterTick; War26.install(); RebelWar.install(); NobleRevolt.install()
         // issueAutonomousArmyOrders47 with the army batch: only the day is recorded.
         Daily.dailyOrders = { r in if !r.armyBatch.isNull { r.armyAutonomy.lastDay = r.world.day.clone() } }
         while remaining > 0 {

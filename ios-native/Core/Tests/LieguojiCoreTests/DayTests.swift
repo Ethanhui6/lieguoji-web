@@ -13,6 +13,9 @@ final class DayTests: XCTestCase {
         let golden = try JS.parse(data)
         let traits = try JS.parse(Data(contentsOf: dir.appendingPathComponent("Golden/nobility.json"))).traits
         People.loadTraits(traits); Nobility.traitList = traits.asArray
+        Nobility.cultures = try JS.parse(Data(contentsOf: dir.appendingPathComponent("Golden/revolt.json"))).cultures
+        Founding.cultures = try JSONDecoder().decode([Opening.Culture].self, from: Data(contentsOf: world.appendingPathComponent("cultures.json")))
+        War26.ports = golden.seaPorts.asArray.map { ($0[0].asString, $0[1].asInt) }
         struct Wrapper: Decodable { let statics: DiplomacyStatic }
         Session.engine = DeclarationEngine(statics: try JSONDecoder().decode(Wrapper.self, from: data).statics)
         Armies.bridge = ForceBridge(graph: try TravelGraph(data: Data(contentsOf: world.appendingPathComponent("travel.bin"))))

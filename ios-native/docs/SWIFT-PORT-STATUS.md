@@ -27,7 +27,7 @@
 | 外交日程、宣战登记、联盟 AI | civilization47-diplomatic-state、-declaration、-alliance | DiplomacyBridge.swift、Alliances.swift | declare.json |
 | 行省叛乱判定 | civilization47-rebellion | Rebellion.swift | rebellion.json |
 | 政府延续、迁都、君主对敌战力、在位与国家特性记录 | civilization47-political-owner、-capitals、leader-history47、state-traits47 | Government.swift | government.json |
-| 新世界创建第一段：省份、城市、国家，人口与粮食（按面积与地形），首任君主与编年史，人物与生日 | civilization47-world createCivilizationWorld47（至 attachFamilies47 前）、statecraft initializeManagement、initialCivilizationChronicle47、life22-people | Creation.swift | creation.json（4 种地形 × 2 种命名，含键序） |
+| 新世界创建（createCivilizationWorld47 全段）：省份、城市、国家，人口与粮食，首任君主与编年史，人物与生日；统治家族、主权账；开篇国龄与在位；原作贵族家族、领地与成员 | civilization47-world、statecraft initializeManagement、initialCivilizationChronicle47、life22-people、civilization47-family、-origins、-nobility、native-economy/noble-families | Creation.swift（家族成员内核与 Founding 共用） | creation.json（4 种地形 × 2 种命名，三段逐位含键序） |
 
 ## 运行编排（逐位对照）
 | 模块 | 网页源 | Swift | 黄金对照 |
@@ -42,7 +42,8 @@
 | 交接、存读档、20 天连续推进 | native-bridge nativeWorld | NativeEngine.swift | bridge-world / bridge-after |
 
 ## 尚未移植（仍由网页引擎负责）
-- 新世界创建的后续段（家族与出身、原作贵族、政府与财政、初始军队与舰队、规则启用动作）：Swift 已能算出第一段（Creation.swift），但 App 仍用网页引擎建世界后交给 Swift。
+- 新世界创建后续段（attachGovernment47：地形格与资源、开局人口、财政、首批征兵、国运；attachFoundingForces47：初始海陆编制；规则启用动作）。App 仍用网页引擎建世界后交给 Swift。
+- 说明：Creation.swift 只照搬网页现行规则，未新增任何数值。其中按面积与地形的人口粮食系数（2.5/2/1.3、×0.7、×20）和开篇国龄是网页自己的规则，网页事件文本已注明"模拟参数，不代表正式设定"，并非原作核实值；开篇国龄同样是网页开篇规则。
 - 港口归属账与海军（当前世界没有舰队；有港口的世界中港口账暂不更新）。
 
 ## 性能

@@ -30,4 +30,23 @@ final class CreationTests: XCTestCase {
             if base.json != s.base.json { XCTFail("key order or values differ, \(label)") }
         }
     }
+
+    /// attachFamilies47 then attachOrigins47 on the web's base (kin, ruling families, sovereignty, origins), and
+    /// attachNobility47 (noble families, territories and members).
+    func testFamiliesAndOriginsMatchTheWeb() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent(), resources = dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources")
+        try NativeEngine.loadCatalogs(traits: Data(contentsOf: resources.appendingPathComponent("Catalog/traits.json")), nobleCultures: Data(contentsOf: resources.appendingPathComponent("Catalog/noble-cultures.json")),
+                                      cultures: Data(contentsOf: resources.appendingPathComponent("World/cultures.json")))
+        let golden = try JS.parse(Data(contentsOf: dir.appendingPathComponent("Golden/creation.json")))
+        for s in golden.samples.asArray {
+            let label = "\(s.seed.asString) \(s.template.asString) \(s.cities.asInt) \(s.setup.mode.asString)"
+            let r = s.base.clone()
+            Creation.attachFamilies(r); Creation.attachOrigins(r)
+            if let d = r.difference(s.families) { XCTFail("\(label): \(d)") } else if r.json != s.families.json { XCTFail("key order differs, \(label)") }
+            // attachNobility47 on the web's own families stage, then the empty reign and state-trait records.
+            let n = s.families.clone()
+            Creation.attachNobility(n); n.reigns47 = .object(); n.stateTraits47 = .object()
+            if let d = n.difference(s.created) { XCTFail("nobility, \(label): \(d)") } else if n.json != s.created.json { XCTFail("nobility key order differs, \(label)") }
+        }
+    }
 }

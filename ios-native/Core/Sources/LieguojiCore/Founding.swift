@@ -62,13 +62,23 @@ public enum Founding {
         p.traits = .array(traitsDrawn(random.intRange(1, 4), random).map { JS($0) })
         return p
     }
-    /// generateFamilyMembers47: the leader's spouse, children and collateral households.
-    static func generateFamily(_ r: JS, _ family: JS, leader: JS, registry: inout [JS], nextId: inout Int) {
-        let random = SeededRandom("\(r.world.custom.seed.asString)/native-family/\(family.id.asInt)")
-        let religionId = r.civilization.nations[family.nationId.asString].religionId, life = r.life, kin = r.kin
-        func lookup(_ id: Int) -> JS? { registry.first { $0.id.asInt == id } }
+    /// The native family-member kernels (character-init, family-members) with one random stream and
+    /// one person registry: initial characters, ages, spouses, children and collateral households.
+    final class FamilyMembers {
+        let r: JS, random: SeededRandom, religionId: JS
+        var registry: [JS], nextId: Int
+        /// Also find people already in kin (attachNobility47's getCharacter); founding families look only in the registry.
+        let kinLookup: Bool
+        init(_ r: JS, random: SeededRandom, religionId: JS, registry: [JS], nextId: Int, kinLookup: Bool = false) {
+            self.r = r; self.random = random; self.religionId = religionId; self.registry = registry; self.nextId = nextId; self.kinLookup = kinLookup
+        }
+        func lookup(_ id: Int) -> JS? {
+            if let p = registry.first(where: { $0.id.asInt == id }) { return p }
+            if kinLookup { let p = r.kin.persons[String(id)]; return p.isNull ? nil : p }
+            return nil
+        }
         func lastName(_ p: JS) -> String {
-            let a = kin.families[p.originalFamilyId.asInt.description], b = kin.families[p.familyId.asInt.description]
+            let kin = r.kin, a = kin.families[p.originalFamilyId.asInt.description], b = kin.families[p.familyId.asInt.description]
             return a.surname.optionalString ?? b.surname.optionalString ?? p.lastName.asString
         }
         func generateInit(_ culture: String, _ gender: Int, _ father: JS?) -> JS {
@@ -82,6 +92,7 @@ public enum Founding {
             return p
         }
         func setBirth(_ p: JS, _ age: Double) {
+            let life = r.life
             p.birthTime = JS(f(f(f(life.gameTime.asNumber) - f(f(f(age) * f(365.25)) * f(life.secondsPerDay.asNumber)))))
             if p.isAlive.asBool { p.age = JS(People.yearSince(r, p.birthTime.asNumber)) }
         }
@@ -90,8 +101,9 @@ public enum Founding {
             for id in parent.childrenIds.asArray.map(\.asInt) { guard let c = lookup(id), c.isAlive.asBool else { continue }; if c.gender.asInt == 0 { male += 1 } else { female += 1 } }
             return male > female ? 1 : female > male ? 0 : random.value() <= f(0.5) ? 1 : 0
         }
-        func appendChild(_ child: JS, _ father: JS, _ mother: JS) { family.memberIds.push(child.id.clone()); father.childrenIds.push(child.id.clone()); mother.childrenIds.push(child.id.clone()) }
-        func household(_ m: JS, isCousin: Bool) {
+        func appendChild(_ family: JS, _ child: JS, _ father: JS, _ mother: JS) { family.memberIds.push(child.id.clone()); father.childrenIds.push(child.id.clone()); mother.childrenIds.push(child.id.clone()) }
+        /// nativeGenerateCollateralHousehold.
+        func household(_ family: JS, _ m: JS, isCousin: Bool) {
             let culture = family.cultureName.asString, spouse = generateInit(culture, m.gender.asInt == 0 ? 1 : 0, nil)
             var age = f(f(m.age.asNumber) + random.floatRange(-10, 10)); if age < 16 { age = random.floatRange(16, 20) }
             setBirth(spouse, age)
@@ -103,43 +115,53 @@ public enum Founding {
                 let child = generateInit(family.cultureName.asString, gender, father)
                 child.familyId = family.id.clone(); child.stateId = family.stateId.clone(); child.fatherId = father.id.clone(); child.motherId = mother.id.clone()
                 var childAge = f(f(m.age.asNumber) - random.floatRange(18, 35)); if childAge < 0 { childAge = f(Double(random.intRange(0, 15))) }
-                setBirth(child, childAge); appendChild(child, father, mother)
+                setBirth(child, childAge); appendChild(family, child, father, mother)
             }
         }
+        /// nativeGenerateCollateralMembers.
+        func collateral(_ family: JS, _ leader: JS) {
+            let culture = family.cultureName.asString, first = random.intRange(1, 4)
+            for _ in 0..<first {
+                let gender = random.value() <= f(0.5) ? 1 : 0, member = generateInit(culture, gender, nil)
+                var a = f(f(leader.age.asNumber) + random.floatRange(-15, 15)); if a < 16 { a = random.floatRange(16, 25) }; if a > 70 { a = random.floatRange(50, 70) }
+                setBirth(member, a); member.familyId = family.id.clone(); member.stateId = family.stateId.clone(); member.lastName = JS(lastName(leader)); family.memberIds.push(member.id.clone())
+                if member.age.asInt >= 25 && random.value() > f(0.3) { household(family, member, isCousin: false) }
+            }
+            let second = random.intRange(1, 3)
+            for _ in 0..<second {
+                let gender = random.value() <= f(0.5) ? 1 : 0, member = generateInit(culture, gender, nil)
+                var a = f(random.floatRange(10, 30) + f(leader.age.asNumber)); if a > 80 { a = random.floatRange(60, 80) }
+                setBirth(member, a); member.familyId = family.id.clone(); member.stateId = family.stateId.clone(); member.lastName = JS(lastName(leader)); family.memberIds.push(member.id.clone())
+                if random.value() > f(0.4) { household(family, member, isCousin: true) }
+            }
+        }
+    }
+    /// generateFamilyMembers47: the leader's spouse, children and collateral households.
+    static func generateFamily(_ r: JS, _ family: JS, leader: JS, registry: inout [JS], nextId: inout Int) {
+        let k = FamilyMembers(r, random: SeededRandom("\(r.world.custom.seed.asString)/native-family/\(family.id.asInt)"),
+                              religionId: r.civilization.nations[family.nationId.asString].religionId, registry: registry, nextId: nextId)
+        defer { registry = k.registry; nextId = k.nextId }
+        let random = k.random, life = r.life
         // nativeGenerateLeaderSpouse.
-        let spouse = generateInit(family.cultureName.asString, leader.gender.asInt == 0 ? 1 : 0, nil)
+        let spouse = k.generateInit(family.cultureName.asString, leader.gender.asInt == 0 ? 1 : 0, nil)
         var age = f(f(leader.age.asNumber) + random.floatRange(-10, 10)); if age < 16 { age = random.floatRange(16, 20) }
-        setBirth(spouse, age)
+        k.setBirth(spouse, age)
         leader.spouseId = spouse.id.clone(); spouse.spouseId = leader.id.clone(); leader.marriageType = JS(0); spouse.marriageType = JS(0)
-        spouse.familyId = leader.familyId.clone(); spouse.lastName = JS(lastName(leader)); family.memberIds.push(spouse.id.clone()); spouse.stateId = family.stateId.clone()
+        spouse.familyId = leader.familyId.clone(); spouse.lastName = JS(k.lastName(leader)); family.memberIds.push(spouse.id.clone()); spouse.stateId = family.stateId.clone()
         let role = JS.object()
         role.roleType = JS("Spouse"); role.holderId = JS(0); role.startTime = JS(0); role.spouseOfId = JS(0); role.stateId = JS(0); role.nativeKind = JS("spouse")
         role.spouseOfId = leader.id.clone(); role.stateId = family.stateId.clone(); role.holderId = spouse.id.clone(); role.startTime = JS(f(life.gameTime.asNumber)); spouse.roles.push(role)
         // nativeGenerateLeaderChildren (initial).
         let count = random.intRange(1, 4)
         for _ in 0..<count {
-            let gender = childGender(leader), father = leader.gender.asInt == 0 ? leader : spouse, mother = leader.gender.asInt == 1 ? leader : spouse
-            let child = generateInit(family.cultureName.asString, gender, father)
+            let gender = k.childGender(leader), father = leader.gender.asInt == 0 ? leader : spouse, mother = leader.gender.asInt == 1 ? leader : spouse
+            let child = k.generateInit(family.cultureName.asString, gender, father)
             child.familyId = family.id.clone(); child.stateId = family.stateId.clone(); child.fatherId = father.id.clone(); child.motherId = mother.id.clone()
             let younger = f(min(leader.age.asNumber, spouse.age.asNumber))
             var childAge = f(younger - random.floatRange(20, 35)); if childAge < 0 { childAge = f(Double(random.intRange(0, 5))) }
-            setBirth(child, childAge); appendChild(child, father, mother)
+            k.setBirth(child, childAge); k.appendChild(family, child, father, mother)
         }
-        // nativeGenerateCollateralMembers.
-        let culture = family.cultureName.asString, first = random.intRange(1, 4)
-        for _ in 0..<first {
-            let gender = random.value() <= f(0.5) ? 1 : 0, member = generateInit(culture, gender, nil)
-            var a = f(f(leader.age.asNumber) + random.floatRange(-15, 15)); if a < 16 { a = random.floatRange(16, 25) }; if a > 70 { a = random.floatRange(50, 70) }
-            setBirth(member, a); member.familyId = family.id.clone(); member.stateId = family.stateId.clone(); member.lastName = JS(lastName(leader)); family.memberIds.push(member.id.clone())
-            if member.age.asInt >= 25 && random.value() > f(0.3) { household(member, isCousin: false) }
-        }
-        let second = random.intRange(1, 3)
-        for _ in 0..<second {
-            let gender = random.value() <= f(0.5) ? 1 : 0, member = generateInit(culture, gender, nil)
-            var a = f(random.floatRange(10, 30) + f(leader.age.asNumber)); if a > 80 { a = random.floatRange(60, 80) }
-            setBirth(member, a); member.familyId = family.id.clone(); member.stateId = family.stateId.clone(); member.lastName = JS(lastName(leader)); family.memberIds.push(member.id.clone())
-            if random.value() > f(0.4) { household(member, isCousin: true) }
-        }
+        k.collateral(family, leader)
     }
 
     // MARK: foundState47

@@ -119,7 +119,7 @@ struct NationSheet: View {
             .task(id: state.day) { await reload() }
             .onAppear { model.controller.relations = relationColors(); if let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
             .onDisappear { model.controller.relations = [:] }
-            .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground(Theme.paper).font(Theme.kai(17)) }
+            .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17)) }
         }
     }
 

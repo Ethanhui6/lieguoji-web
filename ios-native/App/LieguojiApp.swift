@@ -195,7 +195,7 @@ struct TitleView: View {
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet { options in creating = false; Task { await model.generate(options) } }
-                .presentationDetents([.medium, .large]).presentationBackground(Theme.paper)
+                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }
         }
     }
 }
@@ -367,7 +367,7 @@ struct GameView: View {
         .sheet(item: $panel, onDismiss: {
             if panel == nil { controller.selectedProvince = nil; controller.selectedFleet = nil; if controller.marchingArmy == nil { controller.selectedArmy = nil } }
         }) { panel in
-            sheet(for: panel).presentationBackground(Theme.paper).presentationDragIndicator(.visible).presentationCornerRadius(28).font(Theme.kai(17))
+            sheet(for: panel).presentationBackground { MemorialPaper() }.presentationDragIndicator(.visible).presentationCornerRadius(28).font(Theme.kai(17))
         }
     }
 
@@ -507,41 +507,68 @@ struct TabButton: View {
 
 // MARK: - panels
 
+/// Memorial heading: a colour tab (签条) for a state, the brush title, an ink rule that draws
+/// itself, the docket line, and a small seal.
 struct SheetHeader: View {
     let title: String
     var subtitle: String?
     var color: Color?
+    var seal: String = "阅"
+    @State private var inked = false
     var body: some View {
-        HStack(spacing: 12) {
-            if let color { RoundedRectangle(cornerRadius: 4).fill(color).frame(width: 8, height: 36) }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(Theme.kai(28)).foregroundStyle(Theme.ink)
+        HStack(alignment: .center, spacing: 12) {
+            if let color {
+                VStack(spacing: 0) {
+                    RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 10, height: 40)
+                    Rectangle().fill(Theme.seal.opacity(0.7)).frame(width: 1.5, height: 8)
+                }
+                .shadow(color: Theme.ink.opacity(0.15), radius: 1, y: 1)
+            }
+            VStack(alignment: .leading, spacing: 5) {
+                Text(title).font(Theme.kai(28)).foregroundStyle(Theme.ink).tracking(2).lineLimit(1).minimumScaleFactor(0.7)
+                Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.7), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
+                    .frame(height: 1.2).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
                 if let subtitle { Text(subtitle).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
             }
-            Spacer()
+            Spacer(minLength: 6)
+            Seal(text: seal, size: 32)
         }
         .padding(.horizontal, 22).padding(.top, 22).padding(.bottom, 10)
+        .onAppear { withAnimation(.easeOut(duration: 0.55)) { inked = true } }
     }
 }
 
+/// A folded memorial page: translucent rice paper, an ink outer rule and a vermilion inner rule;
+/// it unfolds when it first appears.
 struct Group2<Content: View>: View {
     @ViewBuilder let content: Content
+    @State private var unfolded = false
     var body: some View {
         VStack(spacing: 0) { content }
-            .background(Theme.paper2, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.line))
+            .background(Theme.paper2.opacity(0.62), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.2), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.16), lineWidth: 0.6).padding(3))
+            .shadow(color: Color(red: 0.25, green: 0.18, blue: 0.08).opacity(0.08), radius: 6, y: 2)
+            .scaleEffect(x: 1, y: unfolded ? 1 : 0.94, anchor: .top).opacity(unfolded ? 1 : 0)
+            .onAppear { withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { unfolded = true } }
     }
 }
 
+/// A docket line: label, a dotted leader, the value.
 struct Row: View {
     let label: String; let value: String
     var body: some View {
-        HStack { Text(label).foregroundStyle(Theme.ink2); Spacer(); Text(value).foregroundStyle(Theme.ink) }
-            .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12)
+        HStack(alignment: .lastTextBaseline, spacing: 8) {
+            Text(label).foregroundStyle(Theme.ink2).layoutPriority(1)
+            Line().stroke(Theme.ink.opacity(0.25), style: StrokeStyle(lineWidth: 1, lineCap: .round, dash: [1, 4])).frame(height: 1).offset(y: -4)
+            Text(value).foregroundStyle(Theme.ink).multilineTextAlignment(.trailing).layoutPriority(1)
+        }
+        .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12)
     }
+    private struct Line: Shape { func path(in r: CGRect) -> Path { Path { p in p.move(to: CGPoint(x: 0, y: r.midY)); p.addLine(to: CGPoint(x: r.width, y: r.midY)) } } }
 }
 
-struct Divider2: View { var body: some View { Rectangle().fill(Theme.line).frame(height: 1).padding(.leading, 16) } }
+struct Divider2: View { var body: some View { Rectangle().fill(Theme.ink.opacity(0.12)).frame(height: 0.8).padding(.horizontal, 16) } }
 
 struct NationChip: View {
     let map: WorldMap; let nation: Int
@@ -895,13 +922,13 @@ struct MenuSheet: View {
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet { options in creating = false; close(); Task { await model.generate(options) } }
-                .presentationDetents([.medium]).presentationBackground(Theme.paper)
+                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }
         }
         .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
             if case .success(let url) = result { close(); Task { await model.importSave(from: url) } }
         }
-        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground(Theme.paper) }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() } }
     }
 }
 
@@ -928,7 +955,8 @@ struct ReleaseNotesSheet: View {
         ("0.9.20", ["新增原作省份进攻箭头：被敌军进攻的省份上，从进攻方相邻省份指来弯曲粗箭头（进攻方国色由浅到深、首粗尾细、1 秒长出），规则同原作：按进攻军队数画 1 到 3 支，进攻方失去出发省份时箭头消失。原作默认只显示所选国家的战争，这里默认全部显示。",
                    "海战也显示原作双剑交锋动画，出现在两支舰队相接处。",
                    "地图视图（原作 1–6 视图）：国家、联盟、文化、家族、宗教、地形，右上角按钮展开纸质切换条，选中项以朱印标出；非国家视图左下角显示图例。",
-                   "新增「排行」（原作统计面板）：国力排行、人口排名、经济排行、战争统计、宗教信息，以奏折样式呈现，名次用汉字数字，墨条依次刷出；点国家可进入国家详情。"]),
+                   "新增「排行」（原作统计面板）：国力排行、人口排名、经济排行、战争统计、宗教信息，以奏折样式呈现，名次用汉字数字，墨条依次刷出；点国家可进入国家详情。",
+                   "所有面板改为古纸奏折样式：古纸底纹与朱色竖格，毛笔标题配墨线与朱印，信息卡片外墨内朱双边框并像纸张展开，条目以点线连接标签与数值。"]),
         ("0.9.19", ["战斗动画改用原作双剑交锋（40 帧、每秒 12 帧），出现在两军实际相接处；交战中的军队站在真实位置，不再隔着半个省开打。",
                    "宣战时一道红色流动箭头从进攻国首都指向防守国首都（2 秒）；战争目标省份依次落下宣称标记（宣称国颜色），停留后淡出。",
                    "战争结束时，每个参战国首都上方升起和平鸽。",

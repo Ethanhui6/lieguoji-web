@@ -78,7 +78,12 @@ extension NativeEngine {
         var stock = [String: Double](); for s in w.statecraft.provinces.asArray { let v = s.population.optionalNumber ?? 0; stock[s.provinceId.asString] = v; total += v }
         for p in w.provinces.asArray { population[p.controller.asString, default: 0] += stock[p.id.asString] ?? 0 }
         let living = nations.enumerated().filter { Vassals.alive(r, $0.element.id.asString) }
-        func fmt(_ v: Double) -> String { Int(v.rounded()).formatted() }
+        func fmt(_ v: Double) -> String {
+            // Thousands separators (Linux Foundation has no formatted()).
+            let n = Int(v.rounded()), digits = Array(String(abs(n)))
+            var out = ""; for (i, d) in digits.enumerated() { if i > 0 && (digits.count - i) % 3 == 0 { out += "," }; out.append(d) }
+            return (n < 0 ? "-" : "") + out
+        }
         var rows = [(name: String, nation: Int, value: Double, text: String, color: String?)]()
         switch category {
         case "power":

@@ -35,11 +35,11 @@ extension NativeEngine {
         var holder = [String: String]()
         if !r.nobility.isNull { for (id, fam) in r.nobility.families.objectEntries { for p in fam.controlledProvinces.asArray { holder[p.asString] = id } } }
         var owned = [String: Int](); for p in provinces { owned[p.controller.asString, default: 0] += 1 }
-        var fills = [String](), legend = [(key: String, name: String, color: String, count: Int)]()
+        var fills = [String](), legend = [(key: String, name: String, color: String, count: Int)](), groupOf = [Int]()
         func add(_ key: String?, _ name: @autoclosure () -> String, _ c: @autoclosure () -> String) -> String {
-            guard let key else { return "#ffffff" }
-            if let i = legend.firstIndex(where: { $0.key == key }) { legend[i].count += 1; return legend[i].color }
-            let col = c(); legend.append((key, name(), col, 1)); return col
+            guard let key else { groupOf.append(-1); return "#ffffff" }
+            if let i = legend.firstIndex(where: { $0.key == key }) { legend[i].count += 1; groupOf.append(i); return legend[i].color }
+            let col = c(); groupOf.append(legend.count); legend.append((key, name(), col, 1)); return col
         }
         for p in provinces {
             let controller = p.controller.asString
@@ -69,6 +69,15 @@ extension NativeEngine {
         }
         let o = JS.object()
         o.fills = .array(fills.map { JS($0) })
+        // The original names each group of the view instead of the states (ViewManager
+        // Update*LabelsAndBorderVisibility); the alliance view keeps every state's own name.
+        if mode == "culture" || mode == "family" || mode == "religion" {
+            o.labels = .array(labels(groupOf).asArray.compactMap { box -> JS? in
+                let g = box.nation.asInt
+                guard legend.indices.contains(g), !legend[g].name.isEmpty else { return nil }
+                box.name = JS(legend[g].name); box.color = JS(legend[g].color); return box
+            })
+        }
         o.legend = .array(legend.sorted { $0.count != $1.count ? $0.count > $1.count : $0.name < $1.name }.map { e in let x = JS.object(); x.name = JS(e.name); x.color = JS(e.color); x.count = JS(e.count); return x })
         return Data(o.json.utf8)
     }

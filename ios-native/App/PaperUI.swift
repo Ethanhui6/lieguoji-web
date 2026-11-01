@@ -10,23 +10,28 @@ import LieguojiCore
 /// Aged paper: the original parchment, warmed, with faint vertical memorial rules.
 struct MemorialPaper: View {
     var rules = true
+    /// Full-bleed under a whole sheet; false for small paper chips (it must not grow past them).
+    var fullBleed = true
     private static let parchment: UIImage? = Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World").flatMap { UIImage(contentsOfFile: $0.path) }
     var body: some View {
-        ZStack {
-            Theme.paper
-            if let image = Self.parchment { Image(uiImage: image).resizable().scaledToFill().opacity(0.55).blendMode(.multiply) }
-            LinearGradient(colors: [Color(red: 0.98, green: 0.95, blue: 0.88).opacity(0.55), .clear, Color(red: 0.55, green: 0.42, blue: 0.25).opacity(0.10)], startPoint: .top, endPoint: .bottom)
-            if rules {
-                GeometryReader { g in
-                    Path { p in
-                        var x: CGFloat = 22
-                        while x < g.size.width { p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: g.size.height)); x += 34 }
+        // The base colour takes exactly the offered size; the texture and rules are overlays clipped to it,
+        // so the paper never widens or lengthens the view it backs.
+        let paper = Theme.paper
+            .overlay { if let image = Self.parchment { Image(uiImage: image).resizable().scaledToFill().opacity(0.55).blendMode(.multiply) } }
+            .overlay { LinearGradient(colors: [Color(red: 0.98, green: 0.95, blue: 0.88).opacity(0.55), .clear, Color(red: 0.55, green: 0.42, blue: 0.25).opacity(0.10)], startPoint: .top, endPoint: .bottom) }
+            .overlay {
+                if rules {
+                    GeometryReader { g in
+                        Path { p in
+                            var x: CGFloat = 22
+                            while x < g.size.width { p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: g.size.height)); x += 34 }
+                        }
+                        .stroke(Theme.seal.opacity(0.07), lineWidth: 0.6)
                     }
-                    .stroke(Theme.seal.opacity(0.07), lineWidth: 0.6)
                 }
             }
-        }
-        .ignoresSafeArea()
+            .clipped()
+        if fullBleed { paper.ignoresSafeArea() } else { paper }
     }
 }
 
@@ -105,7 +110,7 @@ struct MapViewSwitcher: View {
     @Binding var open: Bool
     @Namespace private var marker
     var body: some View {
-        HStack(spacing: 2) {
+        VStack(spacing: 2) {
             ForEach(MapViewMode.allCases) { m in
                 Button {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { mode = m }
@@ -115,7 +120,7 @@ struct MapViewSwitcher: View {
                         Text(m.title).font(Theme.kai(13))
                     }
                     .foregroundStyle(mode == m ? Theme.paper2 : Theme.ink)
-                    .frame(width: 46, height: 46)
+                    .frame(width: 50, height: 46)
                     .background {
                         if mode == m { RoundedRectangle(cornerRadius: 9).fill(Theme.seal).matchedGeometryEffect(id: "seal", in: marker).shadow(color: Theme.seal.opacity(0.35), radius: 4, y: 2) }
                     }
@@ -124,11 +129,11 @@ struct MapViewSwitcher: View {
             }
         }
         .padding(5)
-        .background(MemorialPaper(rules: false).clipShape(RoundedRectangle(cornerRadius: 14)))
+        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 14)))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
         .overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.seal.opacity(0.25), lineWidth: 0.6).padding(3))
         .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
-        .scaleEffect(x: open ? 1 : 0.05, y: 1, anchor: .trailing).opacity(open ? 1 : 0)
+        .scaleEffect(x: 1, y: open ? 1 : 0.05, anchor: .top).opacity(open ? 1 : 0)
         .animation(.spring(response: 0.42, dampingFraction: 0.82), value: open)
     }
 }
@@ -157,7 +162,7 @@ struct MapViewLegend: View {
             }
         }
         .padding(12).frame(width: 168)
-        .background(MemorialPaper(rules: false).clipShape(RoundedRectangle(cornerRadius: 12)))
+        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 12)))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
         .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.18), radius: 10, y: 4)
     }
@@ -167,6 +172,19 @@ struct MapViewData: Decodable {
     struct Entry: Decodable, Equatable { let name: String; let color: String; let count: Int }
     let fills: [String]
     let legend: [Entry]
+    /// Group name boxes (culture, family, religion views); nil keeps the state names.
+    let labels: [GroupLabel]?
+}
+
+/// A map name box for a group of a colour view: LabelUtility box with the group's name.
+struct GroupLabel: Decodable, Equatable {
+    let name: String
+    let box: WorldMeta.LabelBox
+    enum K: String, CodingKey { case name }
+    init(from decoder: Decoder) throws {
+        name = try decoder.container(keyedBy: K.self).decode(String.self, forKey: .name)
+        box = try WorldMeta.LabelBox(from: decoder)
+    }
 }
 
 // MARK: - Rankings (StatisticsInfoUI)

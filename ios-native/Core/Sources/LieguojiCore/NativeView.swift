@@ -57,7 +57,7 @@ extension NativeEngine {
         if grid.isNull { return .array() }
         let cellsX = grid.cellsX.asInt, pts = grid.points.asArray.map(\.asNumber), cells = grid.cells.asArray.map(\.asInt)
         let n = cells.count, unit = 1600.0 / 240.0
-        func group(_ c: Int) -> Int? { cells[c] >= 0 ? owners[cells[c]] : nil }
+        func group(_ c: Int) -> Int? { cells[c] >= 0 && owners[cells[c]] >= 0 ? owners[cells[c]] : nil }
         var order = [Int](), groups = [Int: [Int]]()
         for c in 0..<n { guard let k = group(c) else { continue }; if groups[k] == nil { order.append(k) }; groups[k, default: []].append(c) }
         var singles = [Int: Int](); for o in owners { singles[o, default: 0] += 1 }

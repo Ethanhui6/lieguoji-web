@@ -11,7 +11,10 @@ import LieguojiCore
 ///   for 3 s and fades;
 /// - peace: a dove rises above every participant's capital and fades.
 struct MapEffects: Equatable {
-    struct Battle: Equatable { let key: String; let x: Double; let y: Double }
+    /// One side of a battle: the state's name and colour for the battle tag.
+    struct Side: Equatable { let name: String; let r: Double; let g: Double; let b: Double }
+    struct Battle: Equatable { let key: String; let x: Double; let y: Double; var left: Side? = nil; var right: Side? = nil }
+    struct Burst: Equatable { enum Kind { case destroyed, founded, shock }; let id: String; let x: Double; let y: Double; let kind: Kind; let r: Double; let g: Double; let b: Double }
     struct Siege: Equatable { let key: String; let x: Double; let y: Double; let progress: Double; let r: Double; let g: Double; let b: Double }
     struct Flash: Equatable { let id: String; let x: Double; let y: Double; let r: Double; let g: Double; let b: Double }
     struct Declaration: Equatable { let id: String; let fromX: Double; let fromY: Double; let toX: Double; let toY: Double }
@@ -29,6 +32,7 @@ struct MapEffects: Equatable {
     var claims: [Claim] = []
     var peaces: [Peace] = []
     var arrows: [Arrow] = []
+    var bursts: [Burst] = []
 }
 
 final class EffectsView: UIView {
@@ -38,6 +42,7 @@ final class EffectsView: UIView {
     private var arrowLayers: [String: (layer: CAShapeLayer, head: CAShapeLayer, d: MapEffects.Declaration)] = [:]
     private var claimLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var peaceLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
+    private var burstLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var battleArrows: [String: (root: CALayer, fill: CAShapeLayer, gradient: CAGradientLayer, outline: CAShapeLayer, head: CAShapeLayer, reveal: CAShapeLayer, a: MapEffects.Arrow)] = [:]
     private var seen = Set<String>()
     private var camera: MapCamera?
@@ -55,6 +60,50 @@ final class EffectsView: UIView {
     private static let claimIcon = image("war-claim")
     private static let dove = image("peace-bird")
 
+    /// Soft round puff and a spark dot for the particle effects, drawn once.
+    private static let puff: CGImage? = UIGraphicsImageRenderer(size: CGSize(width: 32, height: 32)).image { ctx in
+        let colors = [UIColor.white.cgColor, UIColor.white.withAlphaComponent(0).cgColor] as CFArray
+        if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
+            ctx.cgContext.drawRadialGradient(g, startCenter: CGPoint(x: 16, y: 16), startRadius: 0, endCenter: CGPoint(x: 16, y: 16), endRadius: 16, options: [])
+        }
+    }.cgImage
+    private static let spark: CGImage? = UIGraphicsImageRenderer(size: CGSize(width: 6, height: 6)).image { ctx in
+        UIColor.white.setFill(); ctx.cgContext.fillEllipse(in: CGRect(x: 0, y: 0, width: 6, height: 6))
+    }.cgImage
+    private func cell(_ image: CGImage?, color: UIColor, rate: Float, life: Float, velocity: CGFloat, range: CGFloat = .pi * 2, scale: CGFloat, scaleSpeed: CGFloat, alphaSpeed: Float, spin: CGFloat = 0, angle: CGFloat = 0, accel: CGFloat = 0) -> CAEmitterCell {
+        let c = CAEmitterCell()
+        c.contents = image; c.color = color.cgColor; c.birthRate = rate; c.lifetime = life; c.lifetimeRange = life * 0.3
+        c.velocity = velocity; c.velocityRange = velocity * 0.5; c.emissionRange = range; c.emissionLongitude = angle
+        c.scale = scale; c.scaleRange = scale * 0.4; c.scaleSpeed = scaleSpeed; c.alphaSpeed = alphaSpeed; c.spin = spin; c.spinRange = spin; c.yAcceleration = accel
+        return c
+    }
+    /// Battle smoke rolling up and sparks flying where the swords clash.
+    private func battleSmoke() -> CAEmitterLayer {
+        let e = CAEmitterLayer(); e.emitterShape = .circle; e.emitterSize = CGSize(width: 18, height: 10); e.renderMode = .additive
+        e.emitterCells = [
+            cell(Self.puff, color: UIColor(white: 0.35, alpha: 0.35), rate: 6, life: 2.2, velocity: 9, range: .pi / 2, scale: 0.55, scaleSpeed: 0.35, alphaSpeed: -0.16, spin: 0.4, angle: -.pi / 2),
+            cell(Self.spark, color: UIColor(red: 1, green: 0.72, blue: 0.3, alpha: 1), rate: 14, life: 0.55, velocity: 38, scale: 0.55, scaleSpeed: -0.6, alphaSpeed: -1.6, accel: 30),
+        ]
+        e.renderMode = .unordered
+        return e
+    }
+    /// The battle tag under the swords: the two states' colours and names.
+    private func battleTag(_ b: MapEffects.Battle) -> CALayer? {
+        guard let l = b.left, let r = b.right else { return nil }
+        let font = UIFont(name: "TW-Kai-98_1", size: 10) ?? .systemFont(ofSize: 10)
+        let text = NSMutableAttributedString()
+        func add(_ s: String, _ c: UIColor) { text.append(NSAttributedString(string: s, attributes: [.font: font, .foregroundColor: c])) }
+        add("■ ", UIColor(red: l.r, green: l.g, blue: l.b, alpha: 1)); add(l.name, UIColor(white: 0.08, alpha: 1))
+        add("  ⚔  ", UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 1))
+        add("■ ", UIColor(red: r.r, green: r.g, blue: r.b, alpha: 1)); add(r.name, UIColor(white: 0.08, alpha: 1))
+        let size = text.size()
+        let tag = CATextLayer(); tag.string = text; tag.contentsScale = UIScreen.main.scale; tag.alignmentMode = .center
+        tag.frame = CGRect(x: 0, y: 0, width: ceil(size.width) + 12, height: ceil(size.height) + 4)
+        tag.backgroundColor = UIColor(red: 0.984, green: 0.972, blue: 0.945, alpha: 0.9).cgColor; tag.cornerRadius = 5
+        tag.borderColor = UIColor(white: 0, alpha: 0.18).cgColor; tag.borderWidth = 0.6
+        return tag
+    }
+
     private func battleLayer() -> CALayer {
         let l = CALayer()
         l.bounds = CGRect(x: 0, y: 0, width: 34, height: 34 * 194 / 258)
@@ -64,6 +113,7 @@ final class EffectsView: UIView {
         clip.values = (0..<40).map { NSValue(cgRect: CGRect(x: CGFloat($0 % 5) * 0.2, y: CGFloat($0 / 5) * 0.125, width: 0.2, height: 0.125)) }
         clip.calculationMode = .discrete; clip.duration = 40.0 / 12; clip.repeatCount = .infinity
         l.add(clip, forKey: "clip")
+        let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: l.bounds.midX, y: l.bounds.midY); l.insertSublayer(smoke, at: 0)
         return l
     }
 
@@ -78,6 +128,10 @@ final class EffectsView: UIView {
         let flag = CALayer(); flag.frame = CGRect(x: 9, y: 9, width: 12, height: 12)
         flag.contents = UIImage(systemName: "flag.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 9, weight: .bold))?.withTintColor(color, renderingMode: .alwaysOriginal).cgImage
         flag.contentsGravity = .resizeAspect
+        let fire = CAEmitterLayer(); fire.emitterShape = .line; fire.emitterSize = CGSize(width: 22, height: 1); fire.emitterPosition = CGPoint(x: 15, y: 30)
+        fire.emitterCells = [cell(Self.puff, color: UIColor(red: 1, green: 0.45, blue: 0.12, alpha: 0.55), rate: 10, life: 1.0, velocity: 14, range: .pi / 6, scale: 0.28, scaleSpeed: -0.18, alphaSpeed: -0.8, angle: -.pi / 2),
+                             cell(Self.spark, color: UIColor(red: 1, green: 0.8, blue: 0.4, alpha: 1), rate: 5, life: 1.4, velocity: 22, range: .pi / 4, scale: 0.4, scaleSpeed: -0.2, alphaSpeed: -0.7, angle: -.pi / 2)]
+        root.addSublayer(fire)
         root.addSublayer(track); root.addSublayer(ring); root.addSublayer(flag)
         return (root, ring)
     }
@@ -193,6 +247,47 @@ final class EffectsView: UIView {
         v.gradient.startPoint = CGPoint(x: s.x / max(1, bounds.width), y: s.y / max(1, bounds.height)); v.gradient.endPoint = CGPoint(x: e.x / max(1, bounds.width), y: e.y / max(1, bounds.height))
     }
 
+    /// One-shot bursts: smoke for an army destroyed, coloured sparks and a rising flag for a new state,
+    /// a red shockwave at the capital of a state that was declared on.
+    private func burstLayer(_ b: MapEffects.Burst) -> CALayer {
+        let color = UIColor(red: b.r, green: b.g, blue: b.b, alpha: 1)
+        let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 120, height: 120)
+        switch b.kind {
+        case .destroyed:
+            let e = CAEmitterLayer(); e.emitterPosition = CGPoint(x: 60, y: 60); e.emitterShape = .point
+            e.emitterCells = [cell(Self.puff, color: UIColor(white: 0.25, alpha: 0.6), rate: 80, life: 1.4, velocity: 30, scale: 0.6, scaleSpeed: 0.5, alphaSpeed: -0.6, spin: 0.6)]
+            root.addSublayer(e)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { e.birthRate = 0 }
+        case .founded:
+            let e = CAEmitterLayer(); e.emitterPosition = CGPoint(x: 60, y: 60); e.emitterShape = .point
+            e.emitterCells = [cell(Self.spark, color: color, rate: 160, life: 1.2, velocity: 70, scale: 0.9, scaleSpeed: -0.5, alphaSpeed: -0.8, accel: 40),
+                              cell(Self.spark, color: UIColor(red: 1, green: 0.85, blue: 0.4, alpha: 1), rate: 60, life: 1.0, velocity: 50, scale: 0.6, scaleSpeed: -0.4, alphaSpeed: -0.9, accel: 40)]
+            root.addSublayer(e)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { e.birthRate = 0 }
+            let flag = CALayer(); flag.frame = CGRect(x: 48, y: 36, width: 24, height: 24)
+            if let symbol = UIImage(systemName: "flag.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold))?.withTintColor(color, renderingMode: .alwaysOriginal) {
+                flag.contents = UIGraphicsImageRenderer(size: symbol.size).image { _ in symbol.draw(at: .zero) }.cgImage
+            }
+            flag.contentsGravity = .resizeAspect
+            let rise = CABasicAnimation(keyPath: "transform.translation.y"); rise.fromValue = 14; rise.toValue = -10; rise.duration = 0.9; rise.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.2, 0.7, 1]; fade.duration = 2.2
+            let group = CAAnimationGroup(); group.animations = [rise, fade]; group.duration = 2.2; group.fillMode = .both; group.isRemovedOnCompletion = false
+            flag.add(group, forKey: "rise"); root.addSublayer(flag)
+        case .shock:
+            for i in 0..<3 {
+                let ring = CAShapeLayer(); ring.frame = root.bounds
+                ring.path = UIBezierPath(ovalIn: CGRect(x: 40, y: 40, width: 40, height: 40)).cgPath
+                ring.fillColor = UIColor.clear.cgColor; ring.strokeColor = color.cgColor; ring.lineWidth = 3; ring.opacity = 0
+                let scale = CABasicAnimation(keyPath: "transform.scale"); scale.fromValue = 0.3; scale.toValue = 2.6
+                let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 0.9, 0]; fade.keyTimes = [0, 0.12, 1]
+                let group = CAAnimationGroup(); group.animations = [scale, fade]; group.duration = 1.3; group.beginTime = CACurrentMediaTime() + Double(i) * 0.22
+                group.timingFunction = CAMediaTimingFunction(name: .easeOut); group.fillMode = .both; group.isRemovedOnCompletion = false
+                ring.add(group, forKey: "shock"); root.addSublayer(ring)
+            }
+        }
+        return root
+    }
+
     private func once(_ id: String, after seconds: Double, remove: @escaping () -> Void) {
         seen.insert(id)
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { remove() }
@@ -206,6 +301,7 @@ final class EffectsView: UIView {
             if let old = battleLayers[b.key] { battleLayers[b.key] = (old.layer, b.x, b.y) }
             else {
                 let l = battleLayer(); layer.addSublayer(l); battleLayers[b.key] = (l, b.x, b.y)
+                if let tag = battleTag(b) { tag.position = CGPoint(x: l.bounds.midX, y: l.bounds.maxY + 9); l.addSublayer(tag) }
                 let pop = CASpringAnimation(keyPath: "transform.scale"); pop.fromValue = 0.2; pop.toValue = 1; pop.damping = 9; pop.duration = pop.settlingDuration
                 l.add(pop, forKey: "pop")
             }
@@ -231,6 +327,11 @@ final class EffectsView: UIView {
         for a in effects.arrows {
             if let old = battleArrows[a.key] { battleArrows[a.key] = (old.root, old.fill, old.gradient, old.outline, old.head, old.reveal, a) }
             else { let l = arrowLayer(a); layer.insertSublayer(l.0, at: 0); battleArrows[a.key] = (l.0, l.1, l.2, l.3, l.4, l.5, a) }
+        }
+        for b in effects.bursts where !seen.contains(b.id) {
+            let l = burstLayer(b); layer.addSublayer(l); burstLayers[b.id] = (l, b.x, b.y)
+            let id = b.id
+            once(id, after: 2.6) { [weak self] in self?.burstLayers[id]?.layer.removeFromSuperlayer(); self?.burstLayers[id] = nil }
         }
         for d in effects.declarations where !seen.contains(d.id) {
             let (line, head) = declarationLayers(); layer.addSublayer(line); layer.addSublayer(head)
@@ -262,6 +363,7 @@ final class EffectsView: UIView {
         for v in siegeLayers.values { var p = screen(v.x, v.y); p.y -= 16 * k; v.layer.position = p; v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k)) }
         for v in flashLayers.values { v.layer.position = screen(v.x, v.y) }
         for v in claimLayers.values { v.layer.position = screen(v.x, v.y) }
+        for v in burstLayers.values { v.layer.position = screen(v.x, v.y) }
         for v in peaceLayers.values { var p = screen(v.x, v.y); p.y -= 10; v.layer.position = p }
         for v in battleArrows.values { v.root.frame = bounds; v.gradient.frame = bounds; v.fill.frame = bounds; v.reveal.frame = bounds; layoutArrow(v) { screen($0, $1) } }
         for v in arrowLayers.values {

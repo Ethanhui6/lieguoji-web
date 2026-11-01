@@ -281,18 +281,47 @@ import LieguojiCore
         // The original BattleSword plays between every pair of armies in contact; pairs at one
         // spot share a single animation.
         var spots = [String: (x: Double, y: Double, n: Double)]()
+        var sides = [String: (Int, Int)]()
         for pair in state.contacts ?? [] where pair.count == 2 && state.armies.indices.contains(pair[0]) && state.armies.indices.contains(pair[1]) {
             let a = state.armies[pair[0]], b = state.armies[pair[1]]
             let x = Double(a.x + b.x) / 2, y = Double(a.y + b.y) / 2
             let key = "\(Int(x / 6)):\(Int(y / 6))"
             let old = spots[key] ?? (0, 0, 0)
             spots[key] = (old.x + x, old.y + y, old.n + 1)
+            if sides[key] == nil { sides[key] = (a.nation, b.nation) }
         }
         for p in state.seaBattles ?? [] where p.count == 2 {
             let key = "s\(Int(p[0] / 6)):\(Int(p[1] / 6))", old = spots[key] ?? (0, 0, 0)
             spots[key] = (old.x + p[0], old.y + p[1], old.n + 1)
         }
-        for (key, v) in spots.sorted(by: { $0.key < $1.key }) { e.battles.append(.init(key: key, x: v.x / v.n, y: v.y / v.n)) }
+        func side(_ n: Int) -> MapEffects.Side? {
+            guard n >= 0, n < map.meta.nations.count else { return nil }
+            let c = rgb(n); return .init(name: map.meta.nations[n].name, r: c.0, g: c.1, b: c.2)
+        }
+        for (key, v) in spots.sorted(by: { $0.key < $1.key }) {
+            let s = sides[key]
+            e.battles.append(.init(key: key, x: v.x / v.n, y: v.y / v.n, left: s.flatMap { side($0.0) }, right: s.flatMap { side($0.1) }))
+        }
+        // One-shot bursts: an army destroyed, a state founded, a war declared (shockwave at the defender).
+        e.bursts = controller.effects.bursts
+        if let previous {
+            let alive = Set(state.armies.map(\.id))
+            for a in previous.armies where !alive.contains(a.id) && a.status == "fighting" {
+                e.bursts.append(.init(id: "d\(a.id)", x: Double(a.x), y: Double(a.y), kind: .destroyed, r: 0.3, g: 0.27, b: 0.24))
+            }
+            for n in previous.nations.count..<max(previous.nations.count, state.nations.count) where n < map.meta.nations.count {
+                let c = rgb(n), cap = map.meta.nations[n].capital
+                if cap >= 0, cap < map.meta.cities.count { e.bursts.append(.init(id: "n\(n)-\(state.day)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: .founded, r: c.0, g: c.1, b: c.2)) }
+            }
+            let before = Set(previous.wars.map(\.id))
+            for w in state.wars where !before.contains(w.id) {
+                if w.defender >= 0, w.defender < map.meta.nations.count {
+                    let cap = map.meta.nations[w.defender].capital
+                    if cap >= 0, cap < map.meta.cities.count { e.bursts.append(.init(id: "s\(w.id)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: .shock, r: 0.86, g: 0.12, b: 0.1)) }
+                }
+            }
+            e.bursts = Array(e.bursts.suffix(30))
+        }
         // Declarations, claimed provinces and peace (WarEffects47): one-shot, keyed by war.
         func pole(_ n: Int) -> (Double, Double)? {
             guard n >= 0, n < map.meta.nations.count else { return nil }
@@ -371,8 +400,17 @@ import LieguojiCore
     func refreshArmies() {
         guard let state else { controller.armies = []; return }
         let selected = controller.marchingArmy ?? controller.selectedArmy
+        // Armies in contact are drawn leaning towards their contact point (display only), so the
+        // two icons meet where the battle plays instead of standing apart.
+        var lean = [Int: (x: Float, y: Float, n: Float)]()
+        for pair in state.contacts ?? [] where pair.count == 2 && state.armies.indices.contains(pair[0]) && state.armies.indices.contains(pair[1]) {
+            let a = state.armies[pair[0]], b = state.armies[pair[1]], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2
+            for i in pair { let o = lean[i] ?? (0, 0, 0); lean[i] = (o.x + mx, o.y + my, o.n + 1) }
+        }
         var sprites: [MapRenderer.ArmySprite] = state.armies.enumerated().map { i, a in
-            MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id)
+            var x = a.x, y = a.y
+            if let m = lean[i] { let tx = m.x / m.n, ty = m.y / m.n; x += (tx - x) * 0.6; y += (ty - y) * 0.6 }
+            return MapRenderer.ArmySprite(army: i, x: x, y: y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id)
         }
         // Harbour anchors in the occupier's colour (not tappable; the province panel lists them), then fleets.
         for (i, p) in (state.ports ?? []).enumerated() {
@@ -421,7 +459,8 @@ import LieguojiCore
     func refreshView() async {
         controller.mode = mapView == .terrain ? .terrain : .political
         guard mapView != .state && mapView != .terrain, let data = await native.view(mapView.rawValue),
-              let v = try? JSONDecoder().decode(MapViewData.self, from: data) else { controller.viewFills = nil; viewLegend = []; return }
+              let v = try? JSONDecoder().decode(MapViewData.self, from: data) else { controller.viewFills = nil; controller.viewLabels = nil; viewLegend = []; return }
+        controller.viewLabels = v.labels
         controller.viewFills = v.fills.map { RGB(css: $0) ?? RGB(1, 1, 1) }
         viewLegend = v.legend
     }

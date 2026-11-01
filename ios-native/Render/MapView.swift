@@ -10,6 +10,8 @@ import LieguojiCore
     @Published var relations: [Int: UInt32] = [:]
     /// A colour view's province fills (nil: the state view).
     @Published var viewFills: [RGB]?
+    /// A colour view's group names, shown instead of the state names (nil: state names).
+    @Published var viewLabels: [GroupLabel]?
     @Published var selectedProvince: Int?
     @Published var showMetrics = false
     /// 显示设置 (web 0.5.40 map display options), kept between launches.
@@ -83,6 +85,7 @@ struct MapView: UIViewRepresentable {
         private var labels: MapLabelsView!
         private let effects = EffectsView()
         private var shownEffects = MapEffects()
+        private var shownViewLabels: [GroupLabel]?
         private let metrics = UILabel()
         private var stats = FrameStatistics()
         private var lastFrame: CFTimeInterval = 0
@@ -314,6 +317,7 @@ struct MapView: UIViewRepresentable {
                 renderer?.setMap(next)
                 // City names never change hands with a province: only the state names are rebuilt.
                 labels.setNations(map: next)
+                if let groups = controller.viewLabels { labels.setGroups(groups) }
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
                 mtk.setNeedsDisplay()
             }
@@ -325,6 +329,11 @@ struct MapView: UIViewRepresentable {
             if let armies = controller.armies {
                 renderer?.setArmies(armies, route: controller.route)
                 if renderer?.isAnimating == true { startLink() }
+            }
+            if controller.viewLabels != shownViewLabels {
+                shownViewLabels = controller.viewLabels
+                if let groups = shownViewLabels { labels.setGroups(groups) } else { labels.setNations(map: map) }
+                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
             }
             if controller.effects != shownEffects { shownEffects = controller.effects; effects.set(shownEffects); effects.alpha = controller.reveal >= 1 ? 1 : 0 }
             labels?.setSelected(controller.selectedProvince)
@@ -424,6 +433,17 @@ final class MapLabelsView: UIView {
         }
     }
     /// Ownership changed: replace the state names, keep every city label and its rendered image.
+    /// A colour view names its groups (culture, family, religion) where the state names were.
+    func setGroups(_ groups: [GroupLabel]) {
+        for l in nations { l.view.removeFromSuperview() }
+        let unit = Double(MapLayers.fontUnit)
+        nations = groups.map { g in
+            let measured = (g.name as NSString).size(withAttributes: [.font: Self.font(1)])
+            let size = MapLayers.labelFontSize(box: g.box, emWidth: Float(measured.width), emHeight: Float(measured.height))
+            return Label(text: g.name, x: Double(g.box.x), y: Double(g.box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
+        }
+        for l in nations { l.view.isHidden = true; addSubview(l.view) }
+    }
     func setNations(map: WorldMap) {
         for l in nations { l.view.removeFromSuperview() }
         nations = Self.nationLabels(map, unit: Double(MapLayers.fontUnit))

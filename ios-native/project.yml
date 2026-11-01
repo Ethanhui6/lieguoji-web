@@ -24,6 +24,10 @@ targets:
       - path: Resources/Fonts
         type: folder
         buildPhase: resources
+      # Name catalogues and character traits for the Swift engine.
+      - path: Resources/Catalog
+        type: folder
+        buildPhase: resources
       # The web game's engine (src/native-bridge, built by vite.bridge.config.ts), hosted invisibly.
       - path: Resources/Engine
         type: folder

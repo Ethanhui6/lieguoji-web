@@ -37,6 +37,8 @@ public final class NativeEngine {
         ArmyOrders.cache = nil
         RunWindow.afterOccupation = nil
     }
+    /// The world map (`{bin, meta}` of the bridge) the statics carry, as JSON.
+    public var mapJSON: Data? { statics.map.isNull ? nil : Data(statics.map.json.utf8) }
     /// Whole days.
     public func advance(days: Int) { for _ in 0..<max(1, days) { Session.advance(run, ticks: 120) } }
     public func save() -> Data {

@@ -22,6 +22,9 @@ import LieguojiCore
     /// Bumped whenever a different world is opened, so the map view rebuilds.
     @Published private(set) var worldID = UUID()
     let engine = EngineHost()
+    /// The Swift engine: after a world is built (or a Swift save opened) it runs every day,
+    /// command and save; the web engine only builds new worlds.
+    let native = NativeHost()
     let controller = MapController()
     private var loop: Task<Void, Never>?
     private var lastSavedDay = 0
@@ -82,6 +85,7 @@ import LieguojiCore
                 await rise()
             }
             let world = try await open(try await full.value)
+            try await handOver()
             generationNote = ""
             if phase != .founding { await reveal(world) } else { phase = .playing; controller.interactive = true }
             save()
@@ -105,8 +109,26 @@ import LieguojiCore
         pause()
         phase = .generating; failure = nil; generationNote = "正在读取存档"
         do {
-            let saved = try String(contentsOf: Self.saveURL, encoding: .utf8)
-            let world = try await open(try await engine.call("load(text)", ["text": saved]))
+            let data = try Data(contentsOf: Self.saveURL)
+            let world: WorldMap
+            if data.starts(with: Array(#"{"format":"#(NativeEngine.saveFormat)""#.utf8)) {
+                // A Swift save: the full run and its geometry, no replay.
+                let opened = try await native.open(data)
+                guard let mapData = opened.map else { throw EngineError.message("存档缺少地图") }
+                let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState) in
+                    struct Saved: Decodable { let bin: String; let meta: WorldMeta }
+                    let m = try JSONDecoder().decode(Saved.self, from: mapData)
+                    guard let bin = Data(base64Encoded: m.bin) else { throw EngineError.message("地图数据损坏") }
+                    return (try WorldMap(binary: bin, meta: m.meta), try JSONDecoder().decode(GameState.self, from: opened.state))
+                }.value
+                map = loaded.0; worldID = UUID(); controller.world = nil
+                apply(loaded.1); lastSavedDay = loaded.1.day
+                world = loaded.0
+            } else {
+                let saved = String(decoding: data, as: UTF8.self)
+                world = try await open(try await engine.call("load(text)", ["text": saved]))
+                try await handOver()
+            }
             generationNote = ""
             await reveal(world)
         } catch { failure = "存档无法读取：\(error.localizedDescription)"; phase = .title }
@@ -169,9 +191,15 @@ import LieguojiCore
     func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : 1 }
     func stepOnce() { guard !playing else { return }; Task { try? await step(days: 1) } }
 
+    /// The web engine's world goes to the Swift engine, which runs it from now on.
+    private func handOver() async throws {
+        let text = try await engine.call("nativeWorld()")
+        _ = try await native.open(Data(text.utf8))
+    }
+
     private func step(days: Int) async throws {
-        let text = try await engine.call("step(days)", ["days": days])
-        let next = try await Task.detached { try JSONDecoder().decode(GameState.self, from: Data(text.utf8)) }.value
+        let data = await native.step(days: days)
+        let next = try await Task.detached { try JSONDecoder().decode(GameState.self, from: data) }.value
         apply(next)
         if next.day - lastSavedDay >= 30 { save(); lastSavedDay = next.day }
     }
@@ -257,7 +285,7 @@ import LieguojiCore
     func save() {
         guard state != nil else { return }
         Task {
-            if let text = try? await engine.call("save()") { try? text.write(to: Self.saveURL, atomically: true, encoding: .utf8) }
+            if let data = await native.save() { try? data.write(to: Self.saveURL, options: .atomic) }
         }
     }
 
@@ -272,9 +300,8 @@ import LieguojiCore
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
             let id = state.armies[selected].id
             Task {
-                guard let text = try? await engine.call("route(id)", ["id": id]),
-                      let points = try? JSONDecoder().decode([[Float]].self, from: Data(text.utf8)) else { return }
-                controller.route = points.map { SIMD2($0[0], $0[1]) }
+                let points = await native.route(armyId: id)
+                controller.route = points.map { SIMD2(Float($0[0]), Float($0[1])) }
             }
         } else { controller.route = [] }
     }
@@ -286,23 +313,19 @@ import LieguojiCore
     /// A player march to a province, or a halt (province nil).
     func order(army index: Int, to province: Int?) async -> String? {
         guard let a = army(index) else { return "这支军队不存在或已失去战斗力。" }
-        return await command("order(id, province)", ["id": a.id, "province": province ?? -1])
+        return finish(await native.order(armyId: a.id, province: province ?? -1))
     }
-    func declareWar(_ a: Int, on b: Int) async -> String? { await command("politics(type, a, b)", ["type": "declare-war", "a": a, "b": b]) }
-    func makePeace(_ a: Int, _ b: Int) async -> String? { await command("politics(type, a, b)", ["type": "make-peace", "a": a, "b": b]) }
+    func declareWar(_ a: Int, on b: Int) async -> String? { finish(await native.politics(declare: true, a, b)) }
+    func makePeace(_ a: Int, _ b: Int) async -> String? { finish(await native.politics(declare: false, a, b)) }
 
     /// Returns nil on success, or the engine's reason.
-    private func command(_ body: String, _ args: [String: Any]) async -> String? {
-        do {
-            let text = try await engine.call(body, args)
-            let result = try JSONDecoder().decode(CommandResult.self, from: Data(text.utf8))
-            if let next = result.state { apply(next) }
-            return result.ok ? nil : result.reason
-        } catch { return error.localizedDescription }
+    private func finish(_ result: (ok: Bool, reason: String, state: Data?)) -> String? {
+        if let data = result.state, let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
+        return result.ok ? nil : result.reason
     }
 
     func provinceInfo(_ index: Int) async -> ProvinceInfo? {
-        guard state != nil, let text = try? await engine.call("province(index)", ["index": index]) else { return nil }
-        return try? JSONDecoder().decode(ProvinceInfo.self, from: Data(text.utf8))
+        guard state != nil, let data = await native.province(index) else { return nil }
+        return try? JSONDecoder().decode(ProvinceInfo.self, from: data)
     }
 }

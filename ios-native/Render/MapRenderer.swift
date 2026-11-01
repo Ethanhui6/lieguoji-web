@@ -239,11 +239,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             guard let p = shown[a.key] else { shown[a.key] = target; continue }
             let d = target - p, dist2 = d.x * d.x + d.y * d.y
             if dist2 > 62500 || dist2 < 0.0004 { shown[a.key] = target; continue }
-            // Never faster than a march (140 map units a second): a long way is walked, not zipped.
-            var move = d * k
-            let len2 = move.x * move.x + move.y * move.y, cap = 140 * dt
-            if len2 > cap * cap { move *= cap / len2.squareRoot() }
-            shown[a.key] = p + move; moving = true
+            // No speed cap: at high speed a capped icon fell further behind every step until it snapped.
+            shown[a.key] = p + d * k; moving = true
         }
         chasing = moving
         rebuildArmies()

@@ -709,6 +709,11 @@ struct GameView: View {
                 if let wars = model.state?.wars.count, wars > 0 {
                     HStack(spacing: 3) { Circle().fill(Theme.seal).frame(width: 6, height: 6); Text("\(wars)场战争").font(Theme.kai(13)).foregroundStyle(Theme.seal) }
                 }
+                // 远程计算: the computer simulates.
+                if model.remoteAddress != nil {
+                    Image(systemName: "desktopcomputer").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.jade)
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
             .padding(.horizontal, 16).frame(height: 42).glass(Capsule())
             Spacer()
@@ -1345,6 +1350,49 @@ struct DiplomacySheet: View {
 
 /// The chronicle as a hand scroll: wooden rods, entries brushed in newest first, war in vermilion,
 /// peace in jade, the newest marked with a small seal.
+/// 天下大势: the great powers' share of the land, the wars and the states still standing.
+struct WorldSummary: View {
+    @ObservedObject var model: GameModel
+    var body: some View {
+        if let state = model.state, let map = model.map {
+            let total = max(1, state.owners.filter { $0 >= 0 }.count)
+            let powers = state.nations.indices.filter { state.nations[$0].alive && $0 < map.meta.nations.count }
+                .sorted { state.nations[$0].provinces > state.nations[$1].provinces }.prefix(4)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("天下大势").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                    Spacer()
+                    Text("\(state.nations.filter(\.alive).count) 国 · \(state.wars.count) 场战争").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                }
+                // The land in one band, each great power its colour.
+                GeometryReader { g in
+                    HStack(spacing: 1) {
+                        ForEach(Array(powers), id: \.self) { n in
+                            Rectangle().fill(Names.color(map.meta.nations[n].color))
+                                .frame(width: max(2, g.size.width * CGFloat(state.nations[n].provinces) / CGFloat(total)))
+                        }
+                        Rectangle().fill(Theme.ink.opacity(0.1))
+                    }
+                    .clipShape(Capsule())
+                }
+                .frame(height: 8)
+                ForEach(Array(powers.enumerated()), id: \.element) { i, n in
+                    HStack(spacing: 8) {
+                        Text(ChineseNumeral.of(i + 1)).font(Theme.kai(13)).foregroundStyle(Theme.seal).frame(width: 22)
+                        RoundedRectangle(cornerRadius: 2).fill(Names.color(map.meta.nations[n].color)).frame(width: 10, height: 10)
+                        Text(map.meta.nations[n].name).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
+                        Spacer()
+                        Text("\(Int((Double(state.nations[n].provinces) / Double(total) * 100).rounded()))%").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
+                    }
+                }
+            }
+            .padding(14)
+            .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.ink.opacity(0.15), lineWidth: 1))
+        }
+    }
+}
+
 struct ChronicleSheet: View {
     @ObservedObject var model: GameModel
     @State private var unrolled = false
@@ -1354,6 +1402,7 @@ struct ChronicleSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     MemorialHeader(title: "纪事", subtitle: model.state?.dateText, seal: "史")
+                    WorldSummary(model: model).padding(.horizontal, 16)
                     VStack(spacing: 0) {
                         ScrollRod().padding(.horizontal, 6)
                         VStack(alignment: .leading, spacing: 0) {
@@ -1485,6 +1534,13 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.17.0", ["修复城市名不见了：上一版把城市名的显示门槛提得太高，要放得很大才出现；现已改回（比原先稍早出现）。",
+                    "军队真正丝滑移动：所有军队都画在引擎里的真实位置，不再有「驻扎点」——以前休整的军队画在州郡里的另一个点，一出发或一交战就跳到真实位置、打完再跳回去，这就是交战前后的瞬移；挤在一起的军团由错开排列分开。图标逼近目标不再限速（高倍速下限速会越落越远，最后直接跳过去）。",
+                    "列国大事有动画：五谷丰登时都城金粒升腾，商路大开金币四溅，名臣辈出光芒绽开，天灾乌云压城、骤雨倾泻，瘟疫青雾弥漫；革命、复辟在都城盖下朱红「革」字大印，篡位盖下「篡」字印并划过一道血痕。",
+                    "纳贡：附庸每月把岁入的一成上缴宗主国，每年正月记入纪事。",
+                    "纪事页新增「天下大势」：列强疆域占比色带、前四强排名与占比、存续国家与战争数。",
+                    "顶部栏在电脑计算时显示电脑图标。",
+                    "远程计算的 Windows 服务器改用 Swift 6.1 构建（5.10 与新版 Visual Studio 不兼容）。"]),
         ("0.16.0", ["远程计算不再需要局域网：电脑上的「列国纪远程计算」启动后自动连上列国纪中转服务器，窗口显示一个配对码（如 ABCD-2345，保存在程序旁的 pairing.txt，以后不变）。手机在「远程计算」里填一次配对码即可连接，用流量在外面也行；以后每次进入世界都会自动接入电脑。同一 Wi-Fi 下也可以填局域网地址直连，速度更快。",
                     "中转走游戏自己的站点（pages.dev），国内不用翻墙；电脑不在线时会提示先运行电脑端程序。"]),
         ("0.15.0", ["新增「远程计算」：电脑负责推演，手机只负责画面。在 Windows 电脑上运行「列国纪远程计算」LieguojiServer.exe（随本版一起构建，下载包里附使用说明），窗口会显示电脑地址；手机与电脑连同一个 Wi-Fi，在「菜单 › 远程计算」或主页「设置」里填入地址点连接，当前世界会搬到电脑上继续推演。断开时世界搬回手机；连接意外中断会自动切回本机，用电脑最后一次返回的世界接着玩。",

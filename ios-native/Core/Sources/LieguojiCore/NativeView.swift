@@ -128,7 +128,7 @@ extension NativeEngine {
             if d / sc > 26 {
                 // A far pair (most of a province apart) each advance ten units towards the other instead
                 // of one icon appearing deep in the next province.
-                let ux = (bx - ax) / d, uy = (by - ay) / d, step = min(10 * sc, d / 2) + halfIcon
+                let ux = (bx - ax) / d, uy = (by - ay) / d, step = min(6 * sc, d / 2) + halfIcon
                 aim(c.a.asString, ax + ux * step, ay + uy * step); aim(c.b.asString, bx - ux * step, by - uy * step)
                 continue
             }
@@ -138,15 +138,11 @@ extension NativeEngine {
         o.armies = .array(space.map { v in
             let a = v.army, id = a.id.asString, moving = v.travel.status.asString == "moving"
             var at: (Double, Double)
-            if let home = v.province, !moving, !engaged.contains(Daily.key("army", id)) {
-                // The display spot depends only on the army, its province and the province's cities: cached.
-                let spotKey = (r.world.custom.seed.optionalString ?? "") + "|" + id + "|" + home.id.asString + "|" + String(spots[home.id.asString]?.count ?? 0)
-                if let cached = Self.wanderCache[spotKey] { at = cached } else {
-                    at = Self.wanderPoint(home.polygon.asArray.map { ($0.x.asNumber, $0.y.asNumber) }, id, avoid: spots[home.id.asString] ?? [])
-                    if Self.wanderCache.count > 6000 { Self.wanderCache.removeAll(keepingCapacity: true) }
-                    Self.wanderCache[spotKey] = at
-                }
-            } else if let bridge { let p = bridge.graph.location(bridge.travel(v.travel)).point; at = (p.x, p.y) } else { at = (0, 0) }
+            // Every army is drawn at its real point. A separate resting spot made an icon jump when the
+            // army set out or met an enemy and jump back after the battle; stacked icons are spread
+            // apart by the map instead.
+            _ = moving; _ = spots
+            if let bridge { let p = bridge.graph.location(bridge.travel(v.travel)).point; at = (p.x, p.y) } else { at = (0, 0) }
             if let m = clash[Daily.key("army", id)] {
                 let cx = m.x / m.n, cy = m.y / m.n, dx = at.0 - cx, dy = at.1 - cy, d = (dx * dx + dy * dy).squareRoot()
                 at = d > halfIcon ? (cx + dx / d * halfIcon, cy + dy / d * halfIcon) : at

@@ -381,6 +381,18 @@ import LieguojiCore
                     if cap >= 0, cap < map.meta.cities.count { e.bursts.append(.init(id: "s\(w.id)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: .shock, r: 0.86, g: 0.12, b: 0.1)) }
                 }
             }
+            // The chronicle's happenings play at the capital of the state they name.
+            let seenText = Set(previous.events.map(\.text))
+            let kinds: [(String, MapEffects.Burst.Kind)] = [("五谷丰登", .harvest), ("天灾", .disaster), ("名臣辈出", .talent), ("瘟疫", .plague), ("商路大开", .trade), ("篡位", .coup), ("改称", .regime)]
+            for ev in state.events where !seenText.contains(ev.text) {
+                guard let kind = kinds.first(where: { ev.text.contains($0.0) })?.1 else { continue }
+                let named = map.meta.nations.indices.filter { !map.meta.nations[$0].name.isEmpty && ev.text.hasPrefix(map.meta.nations[$0].name) }
+                guard let n = named.max(by: { map.meta.nations[$0].name.count < map.meta.nations[$1].name.count }) else { continue }
+                let cap = map.meta.nations[n].capital
+                guard map.meta.cities.indices.contains(cap) else { continue }
+                let c = rgb(n)
+                e.bursts.append(.init(id: "e\(ev.day)-\(ev.text.hashValue)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: kind, r: c.0, g: c.1, b: c.2))
+            }
             e.bursts = Array(e.bursts.suffix(30))
         }
         // Declarations, claimed provinces and peace (WarEffects47): one-shot, keyed by war.

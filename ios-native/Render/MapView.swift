@@ -486,7 +486,7 @@ final class MapLabelsView: UIView {
         for c in map.meta.cities {
             let s = capitals.contains(c.id) ? 1.5 : 1.0, em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
             cities.append(Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
-                                stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 11, province: c.province))
+                                stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 8, province: c.province))
         }
         for l in cities + nations { l.view.isHidden = true; addSubview(l.view) }
     }

@@ -25,15 +25,15 @@ jobs:
   # 远程计算服务器 for Windows: the computer simulates, the phone draws.
   server-windows:
     needs: core-linux
-    # Swift 5.10 (as on Linux) needs the Visual Studio 2022 toolset; windows-latest ships VS 18.
+    # Swift 5.10 cannot build against the current MSVC headers; 6.1 can (the package stays in Swift 5 mode).
     runs-on: windows-2022
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: compnerd/gha-setup-swift@main
         with:
-          branch: swift-5.10.1-release
-          tag: 5.10.1-RELEASE
+          branch: swift-6.1.2-release
+          tag: 6.1.2-RELEASE
       - name: Build server
         run: swift build -c release --product LieguojiServer --package-path ios-native/Core
       - name: Package with the Swift runtime

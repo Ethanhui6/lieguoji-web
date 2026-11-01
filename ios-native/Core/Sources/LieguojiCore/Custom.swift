@@ -79,6 +79,7 @@ public enum Regimes {
         default: break
         }
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
+        tribute(r, n, id, gain: gain)
         coup(r, n, id, key)
         let b = book(r, id)
         b.calm = JS(b.calm.asInt + 1)
@@ -102,6 +103,20 @@ public enum Regimes {
         default: next = "Kingdom"
         }
         change(r, id, to: next, reason: polity == "Republic" || polity == "Federation" ? "复辟" : "革命")
+    }
+
+    /// 纳贡 (app rule): a vassal sends a tenth of its monthly income to its overlord; each January the
+    /// chronicle records it.
+    static func tribute(_ r: JS, _ n: JS, _ id: String, gain: Double) {
+        guard gain > 0, let lord = Vassals.overlord(r, id), lord != id else { return }
+        let mine = r.finance.nations[id], theirs = r.finance.nations[lord]
+        guard !mine.isNull, !theirs.isNull else { return }
+        let amount = min(mine.gold.optionalNumber ?? 0, gain * 0.1)
+        guard amount > 0 else { return }
+        mine.gold = JS((mine.gold.optionalNumber ?? 0) - amount); theirs.gold = JS((theirs.gold.optionalNumber ?? 0) + amount)
+        if r.life.currentDate.month.asInt == 1, let lordName = r.world.nations.asArray.first(where: { $0.id.asString == lord })?.name.asString {
+            _ = People.announce(r, kind: "event", text: "\(n.name.asString)向\(lordName)纳贡", reason: "附庸每月以岁入一成上缴宗主国。", nations: [id, lord], province: nil)
+        }
     }
 
     /// 权臣篡位 (app rule): a plotting house (relation to the rulers ≤ −50) stronger than the ruling house,

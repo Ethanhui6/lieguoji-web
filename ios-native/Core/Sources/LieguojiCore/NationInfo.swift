@@ -14,6 +14,7 @@ extension NativeEngine {
             return familyFirst ? last + first : last.isEmpty ? first : first + "·" + last
         }
         c.governance = JS(Offices.governance(r, id))
+        c.temper = JS(DeclarationEngine.temper?(id) ?? 1)
         c.centralIncome = JS(Offices.centralIncome(r, id))
         c.offices = .array(Offices.central.map { office in
             let e = JS.object(); e.office = JS(office)
@@ -45,6 +46,19 @@ extension NativeEngine {
             e.influence = JS(fam.influence.optionalNumber ?? 0)
             e.provinces = JS(fam.controlledProvinces.isNull ? 0 : fam.controlledProvinces.length)
             e.ruling = JS(Int(key) == ruling)
+            // 派系: loyal (≥ 20), neutral, estranged (< −20), plotting (≤ −50 with 200+ influence and land:
+            // the original's family-rebellion threshold).
+            let isRuling = Int(key) == ruling
+            var rel = 100.0
+            if !isRuling && ruling != 0 && r.nobility.families.has(String(ruling)) { rel = Nobility.relation(r, key, String(ruling)) }
+            let influence = fam.influence.optionalNumber ?? 0
+            let landed = !fam.controlledProvinces.isNull && fam.controlledProvinces.length > 0
+            var stance = "中立"
+            if isRuling { stance = "宗室" }
+            else if rel <= -50 && influence >= 200 && landed { stance = "谋逆" }
+            else if rel < -20 { stance = "离心" }
+            else if rel >= 20 { stance = "拥戴" }
+            e.relation = JS(rel); e.stance = JS(stance)
             e.members = JS(r.kin.families[key].isNull ? 0 : Nobility.living(r, key).count)
             return e
         })

@@ -22,9 +22,9 @@ struct NationInfo: Decodable {
     let people: [Person]?
     struct Office: Decodable { let office: String; let name: String; let age: Double; let fit: Double }
     struct Commander: Decodable { let name: String; let age: Double; let enemy: Int }
-    struct House: Decodable { let name: String; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int }
+    struct House: Decodable { let name: String; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int; let stance: String?; let relation: Double? }
     struct Court: Decodable {
-        let governance: Double; let centralIncome: Double; let offices: [Office]
+        let governance: Double; let centralIncome: Double; let offices: [Office]; let temper: Double?
         let provinces: Int; let occupied: Int; let lost: Int; let governors: Int
         let commanders: [Commander]; let houses: [House]
     }
@@ -184,6 +184,10 @@ struct NationSheet: View {
         }
     }
 
+    static func temperName(_ t: Double) -> String { t >= 1.3 ? "好战" : t >= 1.1 ? "进取" : t > 0.9 ? "持重" : t > 0.75 ? "温和" : "求和" }
+    static func stanceColor(_ s: String) -> Color {
+        switch s { case "宗室": return Theme.seal; case "拥戴": return Theme.jade; case "谋逆": return Color(red: 0.45, green: 0.08, blue: 0.08); case "离心": return Color(red: 0.72, green: 0.45, blue: 0.15); default: return Theme.ink2 }
+    }
     static let officeTitle = ["Chancellor": "宰相", "Steward": "司农", "Marshal": "大将军"]
     static let officeDuty = ["Chancellor": "总理朝政 · 增国库", "Steward": "掌钱粮 · 增国库", "Marshal": "统率三军"]
     /// 朝堂: governance gauge, the three central offices with their holders' fit, local rule, war
@@ -194,6 +198,7 @@ struct NationSheet: View {
                 StatTile(label: "施政", value: "\(Int((c.governance * 100).rounded()))", fraction: c.governance, warn: c.governance < 0.3),
                 StatTile(label: "中枢增收", value: String(format: "%+.0f%%", (c.centralIncome - 1) * 100), warn: c.centralIncome < 1),
                 StatTile(label: "地方官", value: "\(c.governors)/\(c.provinces)", fraction: c.provinces > 0 ? Double(c.governors) / Double(c.provinces) : 0),
+                StatTile(label: "国策", value: Self.temperName(c.temper ?? 1), warn: (c.temper ?? 1) > 1.25),
             ])
             Group2 {
                 ForEach(Array(c.offices.enumerated()), id: \.offset) { i, o in
@@ -232,7 +237,10 @@ struct NationSheet: View {
                     ForEach(Array(c.houses.enumerated()), id: \.offset) { i, h in
                         HStack(spacing: 10) {
                             Text(h.name).font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                            if h.ruling { Text("宗室").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+                            if let stance = h.stance ?? (h.ruling ? "宗室" : nil) {
+                                Text(stance).font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1)
+                                    .background(Self.stanceColor(stance), in: Capsule())
+                            }
                             Spacer()
                             Text("\(h.members)人 · \(h.provinces)州").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                             // Influence 0…1000 as a short gauge.

@@ -212,6 +212,10 @@ public struct DeclarationEngine: Sendable {
 
     let statics: DiplomacyStatic
     public init(statics: DiplomacyStatic) { self.statics = statics }
+    /// App rule (not in the original): a state's temper (0.6 dovish … 1.6 warlike) from its ruler's
+    /// traits and polity; it lowers or raises the bar a war's weight must clear. nil keeps the original.
+    public static var temper: ((String) -> Double)?
+    public static var nationIds: [String] = []
 
     /// One monthly evaluation for `nation` (nativeSpendDeclarationPower around nativeEvaluateDeclaration).
     public func evaluate(_ w: inout DiplomacyWorld, nation: Int) -> DeclaredWar? {
@@ -594,7 +598,8 @@ public struct DeclarationEngine: Sendable {
             if st.dead || st.vassal || !w.worldAuto || !st.auto { return nil }
             if w.monthsSince(w.nations[nation].activeTime) < 12 || w.monthsSince(w.nations[nation].passiveTime) < 12 { return nil }
             if suppressed(a) { return nil }
-            var best = Native.fr(0.55), target: Int?, chosenCB: CB?
+            let temper = DeclarationEngine.nationIds.indices.contains(nation) ? DeclarationEngine.temper?(DeclarationEngine.nationIds[nation]) ?? 1 : 1
+            var best = Native.fr(0.55 / temper), target: Int?, chosenCB: CB?
             for candidate in candidates(a) {
                 let usableList = DeclarationEngine.supported.filter { canUse($0, a, candidate) }
                 for cb in usableList { let v = Native.fr(weight(cb, a, candidate)); if v > best { best = v; target = candidate; chosenCB = cb } }

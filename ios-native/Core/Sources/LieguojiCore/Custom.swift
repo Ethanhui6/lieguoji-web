@@ -18,6 +18,24 @@ public enum Regimes {
         "Tribal": "部族：骁勇善战，革命后转为王国",
     ]
 
+    /// A state's temper for the AI: its ruler's traits and its polity (warlike > 1 > peaceful).
+    public static func temper(_ r: JS, _ id: String) -> Double {
+        var t = 1.0
+        if let leader = r.people.nations[id].leaderId.optionalNumber, let p = People.person(r, Int(leader)), !p.traits.isNull {
+            let w: [String: Double] = ["Hawkish": 1.35, "Ambitious": 1.2, "Wrathful": 1.15, "Cruel": 1.1, "Brave": 1.08, "Unifier": 1.15, "Strategist": 1.05,
+                                       "Dovish": 0.72, "Merciful": 0.85, "Patient": 0.88, "WarWeary": 0.75, "Craven": 0.8, "Just": 0.92]
+            for trait in p.traits.asArray { t *= w[trait.asString] ?? 1 }
+        }
+        switch r.civilization.nations[id].polity.optionalString ?? "" {
+        case "Empire": t *= 1.12
+        case "Tribal": t *= 1.1
+        case "Republic": t *= 0.9
+        case "Federation": t *= 0.85
+        default: break
+        }
+        return min(1.6, max(0.6, t))
+    }
+
     public static func enable(_ r: JS) {
         if r.regimes.isNull { let o = JS.object(); o.nations = JS.object(); o.month = JS(-1); r.regimes = o }
         r.regimes.enabled = JS(true)
@@ -30,6 +48,7 @@ public enum Regimes {
         let key = monthKey(r)
         if r.regimes.month.asInt == key { return }
         r.regimes.month = JS(key)
+        if DeclarationEngine.temper != nil { DeclarationEngine.nationIds = r.world.nations.asArray.map(\.id.asString) }
         for n in r.world.nations.asArray {
             let id = n.id.asString
             guard Vassals.alive(r, id) else { continue }
@@ -50,7 +69,7 @@ public enum Regimes {
         let fin = r.finance.nations[id], gain = max(0, fin.goldPerMonth.optionalNumber ?? 0)
         let destiny = r.destiny.nations[id]
         func addGold(_ share: Double) { if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + gain * share) } }
-        func addDestiny(_ v: Double) { if !destiny.isNull { destiny.destiny = JS(min(100, (destiny.destiny.optionalNumber ?? 0) + v)) } }
+        func addDestiny(_ v: Double) { if !destiny.isNull { destiny.destiny = JS(max(0, min(100, (destiny.destiny.optionalNumber ?? 0) + v))) } }
         switch polity {
         case "Empire": addDestiny(0.3)
         case "Kingdom": addDestiny(0.15); addGold(0.01)
@@ -59,6 +78,7 @@ public enum Regimes {
         case "Theocracy": addDestiny(0.25)
         default: break
         }
+        happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
         let b = book(r, id)
         b.calm = JS(b.calm.asInt + 1)
         // Turmoil: weak government, lost land, a very old ruler; no revolution within two years of one.
@@ -81,6 +101,27 @@ public enum Regimes {
         default: next = "Kingdom"
         }
         change(r, id, to: next, reason: polity == "Republic" || polity == "Federation" ? "复辟" : "革命")
+    }
+
+    /// Rare monthly happenings that make each state's history its own: a bumper harvest, a disaster, a
+    /// generation of able ministers, a plague. Deterministic per state and month.
+    static func happenings(_ r: JS, _ n: JS, _ id: String, _ key: Int, gain: Double, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
+        var h: UInt32 = 0x811c9dc5
+        for u in "\(id)|\(key)|event".utf8 { h = (h ^ UInt32(u)) &* 0x1000193 }
+        let roll = Double(h) / 4294967296, name = n.name.asString
+        func say(_ text: String, _ reason: String) { _ = People.announce(r, kind: "event", text: text, reason: reason, nations: [id], province: nil) }
+        if roll < 0.004 {
+            addGold(2); say("\(name)五谷丰登", "风调雨顺，仓廪充实：国库多收两月岁入。")
+        } else if roll < 0.007 {
+            let fin = r.finance.nations[id]; if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) * 0.85) }
+            addDestiny(-3); say("\(name)遭遇天灾", "水旱相继，赈济耗费：国库减一成半，国运 −3。")
+        } else if roll < 0.009 {
+            addDestiny(5); say("\(name)名臣辈出", "朝中贤能云集，政通人和：国运 +5。")
+        } else if roll < 0.0105 {
+            addDestiny(-5); say("\(name)瘟疫流行", "疫病蔓延，民生凋敝：国运 −5。")
+        } else if roll < 0.0115 && gain > 0 {
+            addGold(4); say("\(name)商路大开", "远方商旅络绎不绝：国库多收四月岁入。")
+        }
     }
 
     /// Sets a state's polity and retitles it; a restored empire counts its ordinal.
@@ -112,7 +153,12 @@ public enum Regimes {
 
 extension NativeEngine {
     /// Turns on the app-only rules (regime changes) for this run.
-    public func enableAppRules() { Regimes.enable(run) }
+    public func enableAppRules() {
+        Regimes.enable(run)
+        let r = run
+        DeclarationEngine.nationIds = r.world.nations.asArray.map(\.id.asString)
+        DeclarationEngine.temper = { id in Regimes.temper(r, id) }
+    }
 
     /// Polity history and the current polity's bonus, for the state panel.
     public func regime(_ index: Int) -> (history: [String], trait: String) {

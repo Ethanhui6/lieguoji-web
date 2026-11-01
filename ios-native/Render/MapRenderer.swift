@@ -150,8 +150,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private(set) var reveal: Float = 1
     func setReveal(_ t: Float) { reveal = max(0, min(1, t)); recolor() }
 
+    private(set) var display = DisplaySettings()
+    func setDisplay(_ d: DisplaySettings) {
+        let recolour = d.colorDensity != display.colorDensity
+        display = d
+        if recolour { recolor() }
+    }
     private func recolor() {
         var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight, tint: tint)
+        // 国家颜色浓度: state colours blended toward the terrain colours.
+        if mode == .political && display.colorDensity < 1 {
+            let terrain = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors), k = Float(max(0, display.colorDensity))
+            for i in 0..<min(c.count, terrain.count) where i % 4 != 3 { c[i] = terrain[i] + (c[i] - terrain[i]) * k }
+        }
         if reveal < 1 {
             let terrain = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors)
             let sea = MapPalette.shallowSea, rise = min(1, reveal / 0.6), wash = max(0, (reveal - 0.6) / 0.4)
@@ -279,7 +290,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0)
         // Province lines: 0.55 screen px, #303e37 at 0.2, only once zoomed in (map.ts zoom > 0.6).
-        if let lines = provinceLines, camera.scale > 0.9, reveal >= 1 {
+        if let lines = provinceLines, display.provinceLines, camera.scale > 0.9, reveal >= 1 {
             u.halfWidth = 0.55 / 2
             var color = SIMD4<Float>(0x30 / 255.0, 0x3E / 255.0, 0x37 / 255.0, 0.2)
             encoder.setRenderPipelineState(linePipeline)
@@ -296,10 +307,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
         }
-        colored(relief)
+        if display.vegetation { colored(relief) }
         if reveal >= 1 {
-        colored(outlines)
-        colored(icons)
+        if display.borders { colored(outlines) }
+        if display.cityIcons { colored(icons) }
         colored(route)
         for unit in units {
             encoder.setRenderPipelineState(spritePipeline)

@@ -10,6 +10,8 @@ import LieguojiCore
     @Published var relations: [Int: UInt32] = [:]
     @Published var selectedProvince: Int?
     @Published var showMetrics = false
+    /// 显示设置 (web 0.5.40 map display options), kept between launches.
+    @Published var display = DisplaySettings.load() { didSet { display.save() } }
     /// Province to fly to; the id makes repeated requests for the same province animate again.
     @Published var focus: (province: Int, id: UUID)?
     @Published var resetRequest = UUID()
@@ -34,6 +36,23 @@ import LieguojiCore
     @Published var drifting = false
     func fly(to province: Int) { focus = (province, UUID()) }
     func zoom(_ factor: Double) { zoomRequest = (factor, UUID()) }
+}
+
+/// Map display options: state borders, province lines, city names and icons, vegetation and
+/// relief ornaments, and how strongly state colours cover the land (1 = the original look).
+struct DisplaySettings: Codable, Equatable {
+    var borders = true
+    var provinceLines = true
+    var cityNames = true
+    var cityIcons = true
+    var vegetation = true
+    var colorDensity = 1.0
+    static let key = "displaySettings.v1"
+    static func load() -> DisplaySettings {
+        guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) else { return DisplaySettings() }
+        return v
+    }
+    func save() { if let data = try? JSONEncoder().encode(self) { UserDefaults.standard.set(data, forKey: Self.key) } }
 }
 
 struct MapView: UIViewRepresentable {
@@ -266,6 +285,11 @@ struct MapView: UIViewRepresentable {
             }
             if controller.effects != shownEffects { shownEffects = controller.effects; effects.set(shownEffects); effects.alpha = controller.reveal >= 1 ? 1 : 0 }
             labels?.setSelected(controller.selectedProvince)
+            if let renderer, renderer.display != controller.display { renderer.setDisplay(controller.display); mtk.setNeedsDisplay() }
+            if let labels, labels.showCities != controller.display.cityNames {
+                labels.showCities = controller.display.cityNames
+                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+            }
             metrics.isHidden = !controller.showMetrics
             if let f = controller.focus, f.id != focusID {
                 focusID = f.id
@@ -371,6 +395,7 @@ final class MapLabelsView: UIView {
         return UIColor(red: CGFloat(c.r), green: CGFloat(c.g), blue: CGFloat(c.b), alpha: 1)
     }
 
+    var showCities = true
     private var selected: Int?
     func setSelected(_ province: Int?) { selected = province }
 
@@ -392,7 +417,8 @@ final class MapLabelsView: UIView {
 
     func update(camera: MapCamera, viewport: CGSize) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
-        for l in nations + cities {
+        if !showCities { for l in cities { l.view.isHidden = true } }
+        for l in nations + (showCities ? cities : []) {
             let points = l.mapEm * camera.scale
             let p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
             guard points >= l.minPoints, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }

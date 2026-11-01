@@ -364,7 +364,7 @@ struct GameView: View {
         case .chronicle:
             ChronicleSheet(model: model).presentationDetents([.medium, .large])
         case .menu:
-            MenuSheet(model: model, controller: controller) { self.panel = nil }.presentationDetents([.medium])
+            MenuSheet(model: model, controller: controller) { self.panel = nil }.presentationDetents([.medium, .large])
         }
     }
 
@@ -784,6 +784,7 @@ struct MenuSheet: View {
     @State private var creating = false
     @State private var notes = false
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 14) {
             SheetHeader(title: "菜单", subtitle: AppVersion.text)
             Group2 {
@@ -798,7 +799,27 @@ struct MenuSheet: View {
                 PaperSwitch(title: "显示帧率", on: $controller.showMetrics)
             }
             .padding(.horizontal, 16)
-            Spacer()
+            Text("显示设置").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+            Group2 {
+                PaperSwitch(title: "国界", on: $controller.display.borders)
+                Divider2()
+                PaperSwitch(title: "行省边界", on: $controller.display.provinceLines)
+                Divider2()
+                PaperSwitch(title: "城市名称", on: $controller.display.cityNames)
+                Divider2()
+                PaperSwitch(title: "城市图标", on: $controller.display.cityIcons)
+                Divider2()
+                PaperSwitch(title: "植被与地貌图标", on: $controller.display.vegetation)
+                Divider2()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("国家颜色浓度 \(Int(controller.display.colorDensity * 100))%").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                    Slider(value: $controller.display.colorDensity, in: 0.2...1, step: 0.1).tint(Theme.jade)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+            }
+            .padding(.horizontal, 16)
+        }
+        .padding(.bottom, 24)
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet { options in creating = false; close(); Task { await model.generate(options) } }
@@ -819,6 +840,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.8", ["【手机上能点到】菜单新增「显示设置」：国界、省界、城市名、城市图标、地形与植被可分别开关；国家颜色浓度滑杆 0.2–1。设置会记住。",
+                   "【简化】颜色浓度是把国家色向地形底色混合，原作的具体浓度算法未核实；默认 1.0 与网页一致。",
+                   "【未在真机验证】以上只在 CI 构建通过，未在真机上验证。"]),
         ("0.9.7", ["【手机上能点到】国家详情改为原作的折叠分节：基本信息（默认展开）、国家行为、战争、人物、外交；点标题折叠或展开，动画 0.25 秒。",
                    "【手机上能点到】新增「人物」分节（默认展开）：君主、统治家族继承人、在任官员（行政首脑、财政主管、常备军统帅、总督、战时统帅），显示姓名、性别、年龄、四项能力与特质。",
                    "【手机上能点到】菜单顶部显示版本与构建号；本页即「本版新增」。",

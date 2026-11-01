@@ -40,6 +40,8 @@ struct MapEffects: Equatable {
 }
 
 final class EffectsView: UIView {
+    /// Smoke, fire and sparks (设置 › 粒子特效).
+    static var particles = true
     private var battleLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     /// Who fights whom, without text: a line from each army to the clash, in its state's colour.
     private var clashLayers: [String: (a: CAShapeLayer, b: CAShapeLayer, battle: MapEffects.Battle)] = [:]
@@ -122,7 +124,7 @@ final class EffectsView: UIView {
         clip.calculationMode = .discrete; clip.duration = 40.0 / 12; clip.repeatCount = .infinity
         l.add(clip, forKey: "clip")
         // Particles cost: only the first few battles on the map smoke.
-        if battleLayers.count < 4 { let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: l.bounds.midX, y: l.bounds.midY); l.insertSublayer(smoke, at: 0) }
+        if Self.particles && battleLayers.count < 4 { let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: l.bounds.midX, y: l.bounds.midY); l.insertSublayer(smoke, at: 0) }
         return l
     }
 
@@ -140,7 +142,7 @@ final class EffectsView: UIView {
         let fire = CAEmitterLayer(); fire.emitterShape = .line; fire.emitterSize = CGSize(width: 22, height: 1); fire.emitterPosition = CGPoint(x: 15, y: 30)
         fire.emitterCells = [cell(Self.puff, color: UIColor(red: 1, green: 0.45, blue: 0.12, alpha: 0.4), rate: 5, life: 0.8, velocity: 10, range: .pi / 6, scale: 0.18, scaleSpeed: -0.12, alphaSpeed: -0.9, angle: -.pi / 2),
                              cell(Self.spark, color: UIColor(red: 1, green: 0.8, blue: 0.4, alpha: 1), rate: 3, life: 1.0, velocity: 16, range: .pi / 4, scale: 0.3, scaleSpeed: -0.2, alphaSpeed: -0.7, angle: -.pi / 2)]
-        root.addSublayer(fire)
+        if Self.particles { root.addSublayer(fire) }
         root.addSublayer(track); root.addSublayer(ring); root.addSublayer(flag)
         return (root, ring)
     }
@@ -263,10 +265,24 @@ final class EffectsView: UIView {
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 120, height: 120)
         switch b.kind {
         case .destroyed:
-            let e = CAEmitterLayer(); e.emitterPosition = CGPoint(x: 60, y: 60); e.emitterShape = .point
+            let e = CAEmitterLayer(); e.emitterPosition = CGPoint(x: 60, y: 60); e.emitterShape = .point; e.isHidden = !Self.particles
             e.emitterCells = [cell(Self.puff, color: UIColor(white: 0.25, alpha: 0.4), rate: 30, life: 1.0, velocity: 18, scale: 0.32, scaleSpeed: 0.25, alphaSpeed: -0.7, spin: 0.6)]
             root.addSublayer(e)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { e.birthRate = 0 }
+            // The fallen army's banner: it sways, topples over and fades.
+            let banner = CALayer(); banner.bounds = CGRect(x: 0, y: 0, width: 16, height: 22)
+            banner.anchorPoint = CGPoint(x: 0.2, y: 1); banner.position = CGPoint(x: 58, y: 66)
+            if let symbol = UIImage(systemName: "flag.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold))?.withTintColor(color, renderingMode: .alwaysOriginal) {
+                banner.contents = UIGraphicsImageRenderer(size: symbol.size).image { _ in symbol.draw(at: .zero) }.cgImage
+            }
+            banner.contentsGravity = .resizeAspect
+            let topple = CAKeyframeAnimation(keyPath: "transform.rotation.z")
+            topple.values = [0, -0.18, 0.12, Double.pi / 2 * 0.95]; topple.keyTimes = [0, 0.18, 0.36, 1]
+            topple.timingFunctions = [CAMediaTimingFunction(name: .easeOut), CAMediaTimingFunction(name: .easeInEaseOut), CAMediaTimingFunction(name: .easeIn)]
+            topple.duration = 1.1
+            let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [1, 1, 0]; fade.keyTimes = [0, 0.6, 1]; fade.duration = 2.2
+            let group = CAAnimationGroup(); group.animations = [topple, fade]; group.duration = 2.2; group.fillMode = .forwards; group.isRemovedOnCompletion = false
+            banner.add(group, forKey: "fall"); root.addSublayer(banner)
         case .founded:
             let e = CAEmitterLayer(); e.emitterPosition = CGPoint(x: 60, y: 60); e.emitterShape = .point
             e.emitterCells = [cell(Self.spark, color: color, rate: 160, life: 1.2, velocity: 70, scale: 0.9, scaleSpeed: -0.5, alphaSpeed: -0.8, accel: 40),

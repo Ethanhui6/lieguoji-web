@@ -107,9 +107,22 @@ public enum MapLayers {
                 m.polyline(ridge, width: 0.65, ink, alpha: 0.62)
                 m.fill([peak, top, x + w * 0.3, y - 3, x + w * 0.55, y - 5, x + w + 3, y + 4, x + 1, y + 1], ink, alpha: 0.23)
                 m.polyline([peak, top, x - 2, y - 1, x - 4, y + 3], width: 0.5, ink, alpha: 0.6)
+                if h >= 72 {
+                    // Snow on the high peaks.
+                    let s = (top - y) * 0.32
+                    m.fill([peak, top, peak - w * 0.28, top - s, peak - w * 0.1, top - s * 0.8, peak + w * 0.12, top - s * 1.05, peak + w * 0.3, top - s * 0.85], RGB(hex: 0xF7F4EC), alpha: 0.85)
+                }
                 for k in 0..<4 {
                     let fk = Float(k)
                     m.segment(x + fk * 1.6, y - 3 + fk, x + fk * 1.6 + 2, y + 2 + fk * 0.5, width: 0.45, ink, alpha: 0.45)
+                }
+            } else if biome == 9 {
+                // Taiga: tall dark conifers.
+                let pine = RGB(hex: 0x2F4A33)
+                for (dx, dy) in [(Float(-3), Float(1)), (1, -2), (4, 2)] {
+                    let cx = x + dx, cy = y + dy
+                    m.fill([cx, cy - 7, cx - 2, cy - 2, cx - 1, cy - 2, cx - 2.6, cy + 2, cx + 2.6, cy + 2, cx + 1, cy - 2, cx + 2, cy - 2], pine, alpha: 0.5)
+                    m.segment(cx, cy + 2, cx, cy + 4.5, width: 0.5, trunk, alpha: 0.55)
                 }
             } else {
                 for (dx, dy) in [(Float(-3), Float(1)), (2, -2), (5, 2)] {
@@ -119,7 +132,81 @@ public enum MapLayers {
                 }
             }
         }
+        // Further detail, on a finer grid and never under the original's marks: rounded hills, dunes,
+        // grass tufts, savanna acacias, tundra and ice. Presentation only.
+        var fine = Set<Int64>()
+        let sand = RGB(hex: 0xA88A55), grass = RGB(hex: 0x6F7F3C), acacia = RGB(hex: 0x56653A), frost = RGB(hex: 0xFFFFFF), moss = RGB(hex: 0x7A6E52)
+        for i in 0..<map.cellCount {
+            let h = Float(map.elevation[i]), biome = map.biome[i]
+            guard h >= Float(WorldMap.seaLevel) + 2, !touchesSea[i] else { continue }
+            let x = map.sites[i * 2], y = map.sites[i * 2 + 1]
+            let coarse = Int64(floor(x / 23)) << 32 | Int64(Int32(floor(y / 23))) & 0xFFFF_FFFF
+            if occupied.contains(coarse) && (h >= 55 || (h >= 22 && biome >= 5 && biome <= 9)) { continue }
+            let key = Int64(floor(x / 15)) << 32 | Int64(Int32(floor(y / 15))) & 0xFFFF_FFFF
+            if fine.contains(key) { continue }
+            let v = Float(i * 53 % 97) / 97
+            if h >= 42 && h < 55 {
+                fine.insert(key)
+                // Rounded hills: two soft mounds.
+                m.polyline([x - 6, y + 2, x - 4, y - 1.5, x - 1.5, y - 2.5, x + 1, y - 1, x + 2, y + 1], width: 0.55, ink, alpha: 0.45)
+                m.polyline([x + 0.5, y + 2.5, x + 2.5, y, x + 4.5, y - 0.8, x + 6.5, y + 2.5], width: 0.5, ink, alpha: 0.38)
+            } else if biome == 1 || biome == 2 {
+                if v > 0.55 { continue }
+                fine.insert(key)
+                // Dunes: wind-ridged sand.
+                m.polyline([x - 6, y, x - 3, y - 1.8, x, y - 0.6, x + 3, y - 2, x + 6, y - 0.4], width: 0.55, sand, alpha: 0.55)
+                m.polyline([x - 4, y + 3, x - 1, y + 1.6, x + 2, y + 2.6, x + 5, y + 1.4], width: 0.45, sand, alpha: 0.45)
+            } else if biome == 4 {
+                if v > 0.4 { continue }
+                fine.insert(key)
+                // Grassland tufts.
+                for dx in [Float(-3), 2] {
+                    m.segment(x + dx, y + 1.5, x + dx - 1, y - 1.2, width: 0.4, grass, alpha: 0.55)
+                    m.segment(x + dx, y + 1.5, x + dx, y - 1.8, width: 0.4, grass, alpha: 0.55)
+                    m.segment(x + dx, y + 1.5, x + dx + 1, y - 1.2, width: 0.4, grass, alpha: 0.55)
+                }
+            } else if biome == 3 {
+                if v > 0.45 { continue }
+                fine.insert(key)
+                // Savanna: a lone flat-topped acacia.
+                m.fill([x - 3.5, y - 2.5, x - 2, y - 4, x + 2, y - 4, x + 3.5, y - 2.5, x, y - 1.8], acacia, alpha: 0.5)
+                m.segment(x, y - 2, x, y + 2, width: 0.5, trunk, alpha: 0.55)
+            } else if biome == 10 {
+                if v > 0.5 { continue }
+                fine.insert(key)
+                // Tundra: low moss and stones.
+                m.polyline([x - 4, y + 1, x - 2.5, y - 0.6, x - 1, y + 1], width: 0.45, moss, alpha: 0.5)
+                m.polyline([x + 1, y + 1.5, x + 2.5, y, x + 4, y + 1.5], width: 0.45, moss, alpha: 0.5)
+            } else if biome == 11 {
+                fine.insert(key)
+                // Ice field: pale cracks.
+                m.polyline([x - 5, y - 1, x - 1, y + 1, x + 2, y - 1.5, x + 5, y + 0.5], width: 0.5, frost, alpha: 0.7)
+                m.segment(x - 1, y + 1, x - 2, y + 3.5, width: 0.4, frost, alpha: 0.6)
+            }
+        }
         return m
+    }
+
+    /// Hill shading: each land cell lit from the north-west by its slope (neighbour elevations), a
+    /// factor 0.82…1.14 for its colour. Presentation only.
+    public static func hillshade(_ map: WorldMap) -> [Float] {
+        var gx = [Float](repeating: 0, count: map.cellCount), gy = gx
+        for e in map.edges where e.a >= 0 && e.b >= 0 {
+            let a = Int(e.a), b = Int(e.b)
+            let dx = map.sites[b * 2] - map.sites[a * 2], dy = map.sites[b * 2 + 1] - map.sites[a * 2 + 1]
+            let len = max(0.001, (dx * dx + dy * dy).squareRoot())
+            let ha = max(Float(WorldMap.seaLevel), Float(map.elevation[a])), hb = max(Float(WorldMap.seaLevel), Float(map.elevation[b]))
+            let s = (hb - ha) / len
+            gx[a] += dx / len * s; gy[a] += dy / len * s
+            gx[b] += dx / len * s; gy[b] += dy / len * s
+        }
+        // Light from the upper left: a slope rising towards it is lit, facing away is shaded.
+        let lx: Float = -0.707, ly: Float = -0.707
+        return (0..<map.cellCount).map { c in
+            guard map.isLand(c) else { return 1 }
+            let lit = gx[c] * lx + gy[c] * ly
+            return 1 + min(0.14, max(-0.18, lit * 0.09))
+        }
     }
 
     /// StateLineRenderer outlines on the shared cell edges: each state strokes its own outline in its

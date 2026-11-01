@@ -134,7 +134,7 @@ extension NativeEngine {
         let first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? ""
         let familyFirst = Nobility.cultures[culture].familyFirst.optionalBool ?? (culture == "chinese" || culture == "japanese")
         let v = JS.object()
-        v.role = JS(role)
+        v.role = JS(role); v.id = JS(p.id.optionalNumber ?? -1)
         v.name = JS(p.identity.name.optionalString ?? (familyFirst ? last + first : last.isEmpty ? first : first + "·" + last))
         v.age = JS(p.age.optionalNumber ?? 0); v.female = JS(p.gender.optionalNumber == 1)
         v.traits = .array((p.traits.isNull ? [] : p.traits.asArray).map { JS(Self.traitLabels[$0.asString] ?? $0.asString) })

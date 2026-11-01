@@ -78,4 +78,9 @@ actor NativeHost {
     func setAutoDiplomacy(_ n: Int, _ enabled: Bool) -> (ok: Bool, reason: String, state: Data?) { command(engine?.setAutoDiplomacy(n, enabled: enabled)) }
     func route(armyId: String) -> [[Double]] { engine?.route(armyId: armyId) ?? [] }
     func save() -> Data? { engine?.save() }
+    func enableAppRules() { engine?.enableAppRules() }
+    func regime(_ n: Int) -> (history: [String], trait: String) { engine?.regime(n) ?? ([], "") }
+    func editPerson(_ id: Int, skills: [Double], traits: [String]) -> (ok: Bool, reason: String, state: Data?) { command(engine?.editPerson(id, skills: skills, traits: traits)) }
+    func editNation(_ n: Int, gold: Double?, destiny: Double?, polity: String?) -> (ok: Bool, reason: String, state: Data?) { command(engine?.editNation(n, gold: gold, destiny: destiny, polity: polity)) }
+    func addArmy(_ n: Int, province: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.addArmy(n, province: province)) }
 }

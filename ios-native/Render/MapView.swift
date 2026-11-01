@@ -355,7 +355,8 @@ struct MapView: UIViewRepresentable {
 
         func sync() {
             if controller.worldRevision != shownRevision, let next = controller.world, next.meta.provinces.map(\.nation) != map.meta.provinces.map(\.nation) || next.meta.labels.count != map.meta.labels.count
-                || zip(next.meta.labels, map.meta.labels).contains(where: { p in p.0.nation != p.1.nation || p.0.x != p.1.x || p.0.y != p.1.y }) {
+                || zip(next.meta.labels, map.meta.labels).contains(where: { p in p.0.nation != p.1.nation || p.0.x != p.1.x || p.0.y != p.1.y })
+                || next.meta.nations.count != map.meta.nations.count || zip(next.meta.nations, map.meta.nations).contains(where: { $0.0.name != $0.1.name || $0.0.color != $0.1.color }) {
                 shownRevision = controller.worldRevision
                 map = next
                 renderer?.setMap(next)

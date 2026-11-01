@@ -76,6 +76,7 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.45), value: model.phase)
         // Leaving the app saves (autosave runs only every 90 days).
         .onChange(of: scenePhase) { _, phase in if phase == .background, model.phase == .playing { model.save() } }
+        .task { GameFeel.shared.start() }
         .task { await model.loadBackdrop(); try? await model.engine.start() }
         .alert("出了点问题", isPresented: Binding(get: { model.failure != nil }, set: { if !$0 { model.failure = nil } })) {
             Button("好") { model.failure = nil }
@@ -112,43 +113,74 @@ struct RootView: View {
 /// The launch animation: a vermilion seal is stamped on the paper, the name appears beneath it.
 struct SplashView: View {
     let done: () -> Void
+    /// Ink: a brush circle (圆相) draws itself, mountains wash in, the title is written stroke by
+    /// stroke and the seal is pressed beside it.
+    @State private var brush: CGFloat = 0
+    @State private var hills = false
+    @State private var written = 0
     @State private var stamped = false
-    @State private var rippled = false
-    @State private var named = false
+    static let title = ["列", "國", "紀"]
     var body: some View {
         ZStack {
-            Theme.paper.ignoresSafeArea()
-            VStack(spacing: 26) {
+            MemorialPaper(rules: false)
+            // Distant ink-wash mountains.
+            VStack {
+                Spacer()
                 ZStack {
-                    // Ink spreading from the stamp.
-                    ForEach(0..<2) { i in
-                        RoundedRectangle(cornerRadius: 30, style: .continuous).stroke(Theme.seal.opacity(0.35), lineWidth: 2)
-                            .frame(width: 132, height: 132)
-                            .scaleEffect(rippled ? 1.9 + CGFloat(i) * 0.5 : 1).opacity(rippled ? 0 : 0.9)
-                            .animation(.easeOut(duration: 1.1).delay(Double(i) * 0.12), value: rippled)
-                    }
-                    SealMark(size: 132)
-                        .scaleEffect(stamped ? 1 : 1.7)
-                        .opacity(stamped ? 1 : 0)
-                        .rotationEffect(.degrees(stamped ? 0 : -10))
-                        .blur(radius: stamped ? 0 : 6)
+                    InkHills(seed: 1).fill(Theme.ink.opacity(0.07)).frame(height: 190).offset(y: hills ? 0 : 40)
+                    InkHills(seed: 2).fill(Theme.ink.opacity(0.11)).frame(height: 140).offset(y: hills ? 10 : 60)
                 }
-                Text("列國紀").font(Theme.kai(42)).tracking(named ? 12 : 30).foregroundStyle(Theme.ink)
-                    .opacity(named ? 1 : 0).offset(y: named ? 0 : 10)
-                Text("架空世界 · 列国兴衰").font(Theme.kai(15)).tracking(4).foregroundStyle(Theme.ink2)
-                    .opacity(named ? 1 : 0)
+                .opacity(hills ? 1 : 0)
+            }
+            .ignoresSafeArea()
+            VStack(spacing: 22) {
+                ZStack {
+                    Circle().trim(from: 0, to: brush).stroke(Theme.ink.opacity(0.75), style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                        .rotationEffect(.degrees(-80)).frame(width: 170, height: 170).blur(radius: 0.6)
+                    HStack(spacing: 4) {
+                        ForEach(0..<3, id: \.self) { i in
+                            Text(Self.title[i]).font(Theme.kai(46)).foregroundStyle(Theme.ink)
+                                .opacity(written > i ? 1 : 0).blur(radius: written > i ? 0 : 8).scaleEffect(written > i ? 1 : 1.25)
+                        }
+                    }
+                    SealMark(size: 40).rotationEffect(.degrees(-6)).offset(x: 78, y: 62)
+                        .scaleEffect(stamped ? 1 : 1.8).opacity(stamped ? 1 : 0)
+                }
+                Text("架空世界 · 列国兴衰").font(Theme.kai(15)).tracking(5).foregroundStyle(Theme.ink2).opacity(stamped ? 1 : 0)
             }
         }
         .task {
-            try? await Task.sleep(nanoseconds: 150_000_000)
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.6)) { stamped = true }
-            try? await Task.sleep(nanoseconds: 300_000_000)
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 0.8)
-            rippled = true
-            withAnimation(.spring(response: 0.9, dampingFraction: 0.9)) { named = true }
-            try? await Task.sleep(nanoseconds: 1_250_000_000)
+            withAnimation(.easeInOut(duration: 0.9)) { brush = 0.93 }
+            withAnimation(.easeOut(duration: 1.4)) { hills = true }
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            for i in 1...3 {
+                withAnimation(.easeOut(duration: 0.35)) { written = i }
+                try? await Task.sleep(nanoseconds: 220_000_000)
+            }
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.55)) { stamped = true }
+            GameFeel.shared.thud()
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             done()
         }
+    }
+}
+
+/// A ridge of ink-wash mountains across the bottom of a frame (seeded peaks).
+struct InkHills: Shape {
+    let seed: Int
+    func path(in rect: CGRect) -> Path {
+        var p = Path(), x: CGFloat = 0
+        p.move(to: CGPoint(x: 0, y: rect.maxY))
+        var s = UInt32(seed &* 2654435761 % 4294967291)
+        func next() -> CGFloat { s = s &* 1664525 &+ 1013904223; return CGFloat(s >> 8) / CGFloat(1 << 24) }
+        p.addLine(to: CGPoint(x: 0, y: rect.maxY - rect.height * 0.4))
+        while x < rect.width {
+            let w = rect.width * (0.12 + next() * 0.14), peak = rect.height * (0.45 + next() * 0.55)
+            p.addQuadCurve(to: CGPoint(x: x + w, y: rect.maxY - rect.height * (0.25 + next() * 0.3)), control: CGPoint(x: x + w * 0.5, y: rect.maxY - peak * 1.3))
+            x += w
+        }
+        p.addLine(to: CGPoint(x: rect.width, y: rect.maxY)); p.closeSubpath()
+        return p
     }
 }
 
@@ -172,11 +204,29 @@ struct TitleView: View {
     @State private var importing = false
     @State private var creating = false
     @State private var shown = false
+    @State private var settings = false
+    @State private var notes = false
+    /// A line of the classics under the title, changing each launch.
+    private static let mottos = ["天下大势，分久必合，合久必分", "兴，百姓苦；亡，百姓苦", "江山如画，一时多少豪杰", "运筹帷幄之中，决胜千里之外", "苟利国家生死以"]
+    @State private var motto = TitleView.mottos.randomElement()!
     var body: some View {
         VStack(spacing: 0) {
+            // The vertical title and motto over the drifting world, like a scroll's inscription.
+            HStack(alignment: .top) {
+                Spacer()
+                HStack(alignment: .top, spacing: 14) {
+                    VerticalText(motto, size: 15).foregroundStyle(Theme.ink2)
+                    VerticalText("列國紀", size: 46).foregroundStyle(Theme.ink)
+                    SealMark(size: 34).rotationEffect(.degrees(-5)).padding(.top, 6)
+                }
+                .padding(.vertical, 18).padding(.horizontal, 16)
+                .background(MemorialPaper(rules: false, fullBleed: false).opacity(0.9).clipShape(RoundedRectangle(cornerRadius: 12)))
+                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.18), radius: 10, y: 4)
+                .padding(.trailing, 22).padding(.top, 20)
+                .offset(y: shown ? 0 : -30).opacity(shown ? 1 : 0)
+            }
             Spacer()
             VStack(spacing: 18) {
-                Text("列國紀").font(Theme.kai(56)).tracking(12).foregroundStyle(Theme.ink)
                 Text("架空世界 · 列国兴衰").font(Theme.kai(16)).tracking(4).foregroundStyle(Theme.ink2)
                 VStack(spacing: 12) {
                     Button { creating = true } label: { PrimaryLabel(title: "新世界", symbol: "globe.asia.australia") }
@@ -184,8 +234,12 @@ struct TitleView: View {
                         Button { Task { await model.continueGame() } } label: { SecondaryLabel(title: "继续", symbol: "book.closed") }
                     }
                     Button { importing = true } label: { SecondaryLabel(title: "导入存档", symbol: "tray.and.arrow.down") }
+                    HStack(spacing: 12) {
+                        Button { settings = true } label: { SecondaryLabel(title: "设置", symbol: "slider.horizontal.3") }
+                        Button { notes = true } label: { SecondaryLabel(title: "更新", symbol: "sparkles") }
+                    }
                 }
-                .padding(.top, 10)
+                .padding(.top, 4)
                 .buttonStyle(PressStyle())
             }
             .padding(.horizontal, 28).padding(.vertical, 30)
@@ -201,6 +255,30 @@ struct TitleView: View {
         .sheet(isPresented: $creating) {
             NewWorldSheet { options in creating = false; Task { await model.generate(options) } }
                 .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }
+        }
+        .sheet(isPresented: $settings) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    SheetHeader(title: "设置", subtitle: AppVersion.text, seal: "设")
+                    FeelSettings()
+                }
+                .padding(.bottom, 24)
+            }
+            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }
+        }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() } }
+    }
+}
+
+/// Characters set top to bottom (a scroll's inscription).
+struct VerticalText: View {
+    let text: String; let size: CGFloat
+    init(_ text: String, size: CGFloat) { self.text = text; self.size = size }
+    var body: some View {
+        VStack(spacing: size * 0.08) {
+            ForEach(Array(text.enumerated()), id: \.offset) { _, ch in
+                Text(String(ch) == "，" || String(ch) == "；" ? "︐" : String(ch)).font(Theme.kai(size))
+            }
         }
     }
 }
@@ -1048,8 +1126,10 @@ struct MilitarySheet: View {
     var selectFleet: (Int) -> Void = { _ in }
     var body: some View {
         if let map = model.map, let state = model.state {
+            // Armies by state, built lazily as the list scrolls (hundreds of rows made opening slow).
+            let byNation = Dictionary(grouping: state.armies.indices, by: { state.armies[$0].nation })
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支舰队"))
                     if let fleets = state.fleets, !fleets.isEmpty {
                         Text("舰队").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
@@ -1062,7 +1142,7 @@ struct MilitarySheet: View {
                         .padding(.horizontal, 16)
                     }
                     ForEach(state.nations.indices, id: \.self) { n in
-                        let rows = state.armies.indices.filter { state.armies[$0].nation == n }
+                        let rows = byNation[n] ?? []
                         if !rows.isEmpty {
                             NationChip(map: map, nation: n).padding(.horizontal, 22)
                             Group2 {
@@ -1222,6 +1302,8 @@ struct MenuSheet: View {
                 PaperSwitch(title: "显示帧率", on: $controller.showMetrics)
             }
             .padding(.horizontal, 16)
+            Text("声音与触感").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+            FeelSettings()
             Text("显示设置").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
             Group2 {
                 PaperSwitch(title: "国界", on: $controller.display.borders)
@@ -1276,6 +1358,16 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.11.0", ["大版本合集：军队、地形、政体、自定义、音乐与界面。",
+                    "军队不再瞬移：每支军队的图标每帧向引擎位置平滑逼近，长距离、进出交战、战后归位都走过去；交战双方相距较近时走到一起碰头开打，相隔一整个州郡时各向对方推进一段，不会再出现在别的州郡。",
+                    "军队覆灭动画：军旗摇晃、倒下、淡出，同时冒起黑烟（所有离场的军团都有）。",
+                    "地形更真实、更丰富：整张地图按坡度做明暗（西北光照），山地立体；高山加雪顶，针叶林画成松树，新增丘陵、沙丘、草甸、稀树草原的金合欢、苔原与冰原纹理。",
+                    "政体更迭（同原作国家兴衰）：国家在施政低下、失地、君主年迈时可能爆发革命——王国、帝国变为共和国或联邦，共和国可能复辟帝制，再次称帝时国号为「某某第二帝国」「第三帝国」；神权、部族革命后成为王国。每种政体有实际加成（帝国国运、共和国国库等）每月生效，革命会损国库与国运。国家页显示政体沿革。",
+                    "自定义：点国家页人物可修改魅力、军事、外交、行政四项属性和最多四项天赋（天赋会改变实际能力）；国家页新增「自定义」——修改国库、国运，改易政体（国名随之变化），在本国州郡征募新军。",
+                    "音乐与触感：加入原作五首背景音乐（随机播放，可调音量、切歌）；宣战、媾和、攻城、交战、建国都有震动反馈；设置里可开关音乐、震动和粒子特效。",
+                    "生成世界的实时进度：注水成海、抬升大陆、隆起山脉、冲刷江河、播撒森林草原荒漠、划分州郡、分封列国……文字与地图上正在出现的地形一一对应，之后是营建城邦、诞生世家人物、编练军队、缔结邦交，带进度条与已完成清单；地形升起放慢到五秒。",
+                    "开场动画重做：毛笔圆相一笔画成、远山水墨晕开、「列國紀」逐字写出、朱印落下。主页改为竖排题签（每次随机一句古语）并加入「设置」「更新」。",
+                    "底部菜单打开不再卡顿：纸面纹理改为预先合成的一张图（以前每帧实时正片叠底），折页一次绘制；军事列表按需加载。国家改名后地图上的国名也会更新。"]),
         ("0.10.0", ["大版本：政治、绘制疆域、奏折界面。",
                     "新增「朝堂」（国家页默认展开）：施政水平（由君主才干与国运决定，带进度条）、中枢增收；宰相、司农、大将军三大要职的任职者、年龄与是否称职（按才能匹配，称职／平庸／失职）；地方官覆盖州郡数；各场战争的征讨主将；占领他国与失地州数；本国贵族世家按势力排列，标出宗室、人丁与封地。全部取自引擎里原作的官职与贵族系统。",
                     "新增「绘制疆域」（同原作画地图改国界）：在国家页「国家行为」里点「绘制疆域」，回到地图后点选或用一指拖过州郡，即划入该国（法理与实控同时转移），两指照常移动缩放，顶部横幅点「完成」结束。",
@@ -1426,20 +1518,60 @@ struct ReleaseNotesSheet: View {
 /// Over the rising device-built world while the engine founds its nations, people and armies.
 struct FoundingView: View {
     let reveal: Float
-    @State private var spin = false
+    /// The world's generation as it happens (like a world being made in a sandbox game): each stage
+    /// names what the map is drawing at that moment — the sea, the land rising from the coast, the
+    /// mountains, the rivers, forests and plains, the provinces, the states' colours — and then the
+    /// engine's work: cities, houses and people, armies, relations. Finished stages stay listed.
+    static let stages: [(until: Float, text: String)] = [
+        (0.10, "注水成海"), (0.26, "抬升大陆"), (0.42, "隆起山脉与高原"), (0.52, "冲刷江河"),
+        (0.60, "播撒森林、草原与荒漠"), (0.80, "划分州郡"), (1.00, "分封列国"),
+    ]
+    static let later = ["营建城邦与港口", "诞生世家与人物", "编练军队", "缔结邦交", "天下初定"]
+    @State private var started = Date()
     var body: some View {
-        VStack {
-            Spacer()
-            HStack(spacing: 10) {
-                Circle().trim(from: 0, to: 0.7).stroke(Theme.seal, style: StrokeStyle(lineWidth: 2.5, lineCap: .round)).frame(width: 18, height: 18)
-                    .rotationEffect(.degrees(spin ? 360 : 0)).animation(.linear(duration: 1).repeatForever(autoreverses: false), value: spin)
-                Text(reveal < 1 ? "山川河流成形中" : "正在建立国家、人物与军队").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                    .contentTransition(.opacity).animation(.easeInOut, value: reveal < 1)
+        TimelineView(.periodic(from: .now, by: 0.35)) { context in
+            let waited = reveal >= 1 ? context.date.timeIntervalSince(started) : 0
+            let laterIndex = min(Self.later.count - 1, Int(waited / 0.9))
+            let current = reveal < 1 ? (Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1) : Self.stages.count + laterIndex
+            let all = Self.stages.map(\.text) + Self.later
+            let progress = reveal < 1 ? Double(reveal) * 0.8 : min(0.99, 0.8 + waited / 0.9 / Double(Self.later.count) * 0.2)
+            VStack {
+                Spacer()
+                VStack(alignment: .leading, spacing: 10) {
+                    // The last finished stages, faded, above the one at work.
+                    ForEach(max(0, current - 3)..<current, id: \.self) { i in
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.jade)
+                            Text(all[i]).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                        }
+                        .opacity(0.45 + 0.18 * Double(i - (current - 3)))
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    HStack(spacing: 10) {
+                        ProgressView().tint(Theme.seal).scaleEffect(0.8)
+                        Text(all[min(current, all.count - 1)] + "……").font(Theme.kai(19)).foregroundStyle(Theme.ink)
+                            .id(current).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
+                    }
+                    GeometryReader { g in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Theme.ink.opacity(0.1))
+                            Capsule().fill(Theme.seal).frame(width: g.size.width * progress)
+                        }
+                    }
+                    .frame(height: 4)
+                    Text("\(Int(progress * 100))%").font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
+                }
+                .animation(.spring(response: 0.45, dampingFraction: 0.85), value: current)
+                .animation(.easeOut(duration: 0.3), value: progress)
+                .padding(.horizontal, 20).padding(.vertical, 16)
+                .frame(maxWidth: 360, alignment: .leading)
+                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous)))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
+                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
+                .padding(.bottom, 40)
             }
-            .padding(.horizontal, 18).frame(height: 44).glass(Capsule())
-            .padding(.bottom, 40)
+            .onChange(of: reveal >= 1) { _, done in if done { started = Date() } }
         }
-        .onAppear { spin = true }
     }
 }
 

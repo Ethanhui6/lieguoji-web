@@ -32,14 +32,18 @@ targets:
       - path: Resources/Engine
         type: folder
         buildPhase: resources
+      # The original's five RandomMusicPlayer tracks (AAC, as the web build ships them).
+      - path: Resources/Music
+        type: folder
+        buildPhase: resources
     dependencies:
       - package: LieguojiCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lieguoji.native
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "0.10.0"
-        CURRENT_PROJECT_VERSION: "44"
+        MARKETING_VERSION: "0.11.0"
+        CURRENT_PROJECT_VERSION: "45"
     info:
       path: App/Info.plist
       properties:

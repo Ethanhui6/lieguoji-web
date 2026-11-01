@@ -119,12 +119,21 @@ extension NativeEngine {
         // each is drawn at the middle of its clashes, half an icon back towards its own side, so the
         // two icons meet where the battle plays. Presentation only.
         var clash = [String: (x: Double, y: Double, n: Double)]()
+        let halfIcon = 2.4 * sc
+        func aim(_ k: String, _ x: Double, _ y: Double) { let o = clash[k] ?? (0, 0, 0); clash[k] = (o.x + x, o.y + y, o.n + 1) }
         for c in r.forceContacts.pairs.asArray where !c.pointA.isNull && !c.pointB.isNull {
             let ax = c.pointA.x.asNumber, ay = c.pointA.y.asNumber, bx = c.pointB.x.asNumber, by = c.pointB.y.asNumber
+            let d = ((ax - bx) * (ax - bx) + (ay - by) * (ay - by)).squareRoot()
+            if d / sc > 26 {
+                // A far pair (most of a province apart) each advance ten units towards the other instead
+                // of one icon appearing deep in the next province.
+                let ux = (bx - ax) / d, uy = (by - ay) / d, step = min(10 * sc, d / 2) + halfIcon
+                aim(c.a.asString, ax + ux * step, ay + uy * step); aim(c.b.asString, bx - ux * step, by - uy * step)
+                continue
+            }
             let mx = (ax + bx) / 2, my = (ay + by) / 2
-            for k in [c.a.asString, c.b.asString] { let o = clash[k] ?? (0, 0, 0); clash[k] = (o.x + mx, o.y + my, o.n + 1) }
+            aim(c.a.asString, mx, my); aim(c.b.asString, mx, my)
         }
-        let halfIcon = 2.4 * sc
         o.armies = .array(space.map { v in
             let a = v.army, id = a.id.asString, moving = v.travel.status.asString == "moving"
             var at: (Double, Double)

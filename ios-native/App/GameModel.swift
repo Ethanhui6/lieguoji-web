@@ -106,7 +106,7 @@ import LieguojiCore
         controller.reveal = 0
         let start = Date()
         while true {
-            let t = Float(Date().timeIntervalSince(start) / 2.6)
+            let t = Float(Date().timeIntervalSince(start) / 5.2)
             controller.reveal = min(1, t)
             if t >= 1 { break }
             try? await Task.sleep(nanoseconds: 16_000_000)
@@ -123,6 +123,7 @@ import LieguojiCore
             if data.starts(with: Array(("{" + quote + "format" + quote + ":" + quote + NativeEngine.saveFormat + quote).utf8)) {
                 // A Swift save: the full run and its geometry, no replay.
                 let opened = try await native.open(data)
+                await native.enableAppRules()
                 guard let mapData = opened.map else { throw EngineError.message("存档缺少地图") }
                 let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState) in
                     struct Saved: Decodable { let bin: String; let meta: WorldMeta }
@@ -210,6 +211,7 @@ import LieguojiCore
     private func handOver() async throws {
         let text = try await engine.call("nativeWorld()")
         _ = try await native.open(Data(text.utf8))
+        await native.enableAppRules()
     }
 
     /// Smoothed time between two applied steps while playing; army icons glide over it.
@@ -279,7 +281,7 @@ import LieguojiCore
             while let self, !self.heraldQueue.isEmpty {
                 let h = self.heraldQueue.removeFirst()
                 self.herald = h
-                if h.kind == .war { UINotificationFeedbackGenerator().notificationOccurred(.warning) }
+                switch h.kind { case .war: GameFeel.shared.notify(.warning); case .peace: GameFeel.shared.notify(.success); case .capture: GameFeel.shared.tap() }
                 try? await Task.sleep(nanoseconds: h.kind == .capture ? 1_600_000_000 : 2_600_000_000)
                 self.herald = nil
                 try? await Task.sleep(nanoseconds: 350_000_000)
@@ -322,12 +324,16 @@ import LieguojiCore
             if let p = ends[key] { battle.ax = p.0; battle.ay = p.1; battle.bx = p.2; battle.by = p.3 }
             e.battles.append(battle)
         }
+        // A new clash on the map is felt (once per step).
+        if !Set(e.battles.map(\.key)).subtracting(controller.effects.battles.map(\.key)).isEmpty { GameFeel.shared.clash() }
         // One-shot bursts: an army destroyed, a state founded, a war declared (shockwave at the defender).
         e.bursts = controller.effects.bursts
         if let previous {
             let alive = Set(state.armies.map(\.id))
-            for a in previous.armies where !alive.contains(a.id) && a.status == "fighting" {
-                e.bursts.append(.init(id: "d\(a.id)", x: Double(a.x), y: Double(a.y), kind: .destroyed, r: 0.3, g: 0.27, b: 0.24))
+            // Every army that leaves the map falls: its banner topples in its colour, smoke rises.
+            for a in previous.armies where !alive.contains(a.id) {
+                let c = rgb(a.nation)
+                e.bursts.append(.init(id: "d\(a.id)", x: Double(a.x), y: Double(a.y), kind: .destroyed, r: c.0, g: c.1, b: c.2))
             }
             for n in previous.nations.count..<max(previous.nations.count, state.nations.count) where n < map.meta.nations.count {
                 let c = rgb(n), cap = map.meta.nations[n].capital
@@ -504,6 +510,10 @@ import LieguojiCore
     }
     func setWorld(_ key: String, _ value: Int) async -> String? { finish(await native.setWorld(key, value)) }
     func triggerCivilWar(_ n: Int) async -> String? { finish(await native.triggerCivilWar(n)) }
+    func regime(_ n: Int) async -> (history: [String], trait: String) { await native.regime(n) }
+    func editPerson(_ id: Int, skills: [Double], traits: [String]) async -> String? { finish(await native.editPerson(id, skills: skills, traits: traits)) }
+    func editNation(_ n: Int, gold: Double?, destiny: Double?, polity: String?) async -> String? { finish(await native.editNation(n, gold: gold, destiny: destiny, polity: polity)) }
+    func addArmy(_ n: Int, province: Int) async -> String? { finish(await native.addArmy(n, province: province)) }
     /// 即时战略模式: the box-selected armies of one state to a province; nil reason on success.
     func rts(armies: [Int], to province: Int, defend: Bool) async -> (ok: Bool, reason: String) {
         let rows = armies.compactMap { army($0) }

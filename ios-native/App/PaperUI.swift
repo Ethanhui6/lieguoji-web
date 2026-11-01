@@ -12,37 +12,47 @@ struct MemorialPaper: View {
     var rules = true
     /// Full-bleed under a whole sheet; false for small paper chips (it must not grow past them).
     var fullBleed = true
-    private static let parchment: UIImage? = Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World").flatMap { UIImage(contentsOfFile: $0.path) }
+    /// The parchment multiplied onto the paper colour once, with its warm wash: drawing it is then a
+    /// plain image (a live multiply blend made every sheet animation render offscreen and stutter).
+    private static let texture: UIImage? = {
+        guard let url = Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"), let parchment = UIImage(contentsOfFile: url.path) else { return nil }
+        let size = CGSize(width: 1024, height: 1024), rect = CGRect(origin: .zero, size: size)
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
+        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            UIColor(Theme.paper).setFill(); ctx.fill(rect)
+            let k = max(size.width / parchment.size.width, size.height / parchment.size.height)
+            let w = parchment.size.width * k, h = parchment.size.height * k
+            parchment.draw(in: CGRect(x: (size.width - w) / 2, y: (size.height - h) / 2, width: w, height: h), blendMode: .multiply, alpha: 0.55)
+            let colors = [UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 0.55).cgColor, UIColor.clear.cgColor, UIColor(red: 0.55, green: 0.42, blue: 0.25, alpha: 0.10).cgColor] as CFArray
+            if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.5, 1]) {
+                ctx.cgContext.drawLinearGradient(g, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
+            }
+        }
+    }()
     var body: some View {
-        // The base colour takes exactly the offered size; the texture and rules are overlays clipped to it,
-        // so the paper never widens or lengthens the view it backs.
+        // The base colour takes exactly the offered size; the texture and folds are overlays clipped to
+        // it, so the paper never widens or lengthens the view it backs.
         let paper = Theme.paper
-            .overlay { if let image = Self.parchment { Image(uiImage: image).resizable().scaledToFill().opacity(0.55).blendMode(.multiply) } }
-            .overlay { LinearGradient(colors: [Color(red: 0.98, green: 0.95, blue: 0.88).opacity(0.55), .clear, Color(red: 0.55, green: 0.42, blue: 0.25).opacity(0.10)], startPoint: .top, endPoint: .bottom) }
+            .overlay { if let t = Self.texture { Image(uiImage: t).resizable().scaledToFill() } }
             .overlay {
                 if rules {
-                    GeometryReader { g in
-                        // A memorial folds like an accordion: alternate panels catch the light differently,
-                        // each crease a soft shadow line; faint vermilion column rules inside.
+                    // A memorial folds like an accordion: alternate panels catch the light differently,
+                    // each crease a soft shadow line; faint vermilion column rules inside. One canvas draw.
+                    Canvas { ctx, size in
                         let panel: CGFloat = 136
-                        ZStack {
-                            ForEach(0..<Int(g.size.width / panel) + 1, id: \.self) { i in
-                                LinearGradient(colors: i % 2 == 0 ? [Color.white.opacity(0.10), Color.clear] : [Color.black.opacity(0.035), Color.black.opacity(0.0)],
-                                               startPoint: .leading, endPoint: .trailing)
-                                    .frame(width: panel).offset(x: CGFloat(i) * panel - g.size.width / 2 + panel / 2)
-                            }
-                            Path { p in
-                                var x: CGFloat = panel
-                                while x < g.size.width { p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: g.size.height)); x += panel }
-                            }
-                            .stroke(Color(red: 0.4, green: 0.3, blue: 0.18).opacity(0.10), lineWidth: 1)
-                            Path { p in
-                                var x: CGFloat = 22
-                                while x < g.size.width { p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: g.size.height)); x += 34 }
-                            }
-                            .stroke(Theme.seal.opacity(0.06), lineWidth: 0.6)
+                        var x: CGFloat = 0, i = 0
+                        while x < size.width {
+                            let colors: [Color] = i % 2 == 0 ? [Color.white.opacity(0.10), .clear] : [Color.black.opacity(0.035), .clear]
+                            ctx.fill(Path(CGRect(x: x, y: 0, width: panel, height: size.height)),
+                                     with: .linearGradient(Gradient(colors: colors), startPoint: CGPoint(x: x, y: 0), endPoint: CGPoint(x: x + panel, y: 0)))
+                            if x > 0 { ctx.stroke(Path { p in p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: size.height)) }, with: .color(Color(red: 0.4, green: 0.3, blue: 0.18).opacity(0.10)), lineWidth: 1) }
+                            x += panel; i += 1
                         }
+                        var rule = Path(), c: CGFloat = 22
+                        while c < size.width { rule.move(to: CGPoint(x: c, y: 0)); rule.addLine(to: CGPoint(x: c, y: size.height)); c += 34 }
+                        ctx.stroke(rule, with: .color(Theme.seal.opacity(0.06)), lineWidth: 0.6)
                     }
+                    .allowsHitTesting(false)
                 }
             }
             .overlay(alignment: .top) {

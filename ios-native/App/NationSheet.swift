@@ -9,7 +9,8 @@ struct NationInfo: Decodable {
     struct Alliance: Decodable { let name: String; let members: [Int] }
     struct Side: Decodable { let nations: [Int]; let losses: Double }
     struct War: Decodable, Identifiable { let id: Int; let casusBelli: String; let goals: [String]; let months: Double; let sides: [Side]; let side: Int; let score: Double? }
-    struct Person: Decodable { let role: String; let name: String; let age: Double; let female: Bool; let traits: [String]; let skills: [Double] }
+    struct Person: Decodable, Identifiable { let id: Int?; let role: String; let name: String; let age: Double; let female: Bool; let traits: [String]; let skills: [Double]
+        var key: Int { id ?? -1 } }
     let name: String; let culture: String; let religion: String; let polity: String
     let gold: Double; let goldPerMonth: Double; let destiny: Double
     let alive: Bool; let auto: Bool; let worldAuto: Bool
@@ -61,6 +62,11 @@ struct NationSheet: View {
     let fly: (Int) -> Void
     /// 绘制疆域: paint provinces on the map for this state.
     var paint: (Int) -> Void = { _ in }
+    @State private var editing: NationInfo.Person?
+    @State private var regime: (history: [String], trait: String) = ([], "")
+    @State private var goldText = ""
+    @State private var destinyValue = 0.0
+    @State private var levyProvince = -1
     @State private var info: NationInfo?
     @State private var history: [GameState.Event] = []
     @State private var picking: Pick?
@@ -104,7 +110,21 @@ struct NationSheet: View {
                             .padding(.horizontal, 16)
                         }
                         if let court = info.court, info.alive { FoldSection("朝堂", expanded: true) { courtView(court, map) } }
+                        if !regime.history.isEmpty {
+                            // 政体沿革: the polities this state has had, and the current one's standing bonus.
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(spacing: 6) {
+                                    ForEach(Array(regime.history.suffix(6).enumerated()), id: \.offset) { i, p in
+                                        if i > 0 { Image(systemName: "arrow.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.ink2) }
+                                        Text(p).font(Theme.kai(14)).foregroundStyle(i == min(5, regime.history.count - 1) ? Theme.seal : Theme.ink2)
+                                    }
+                                }
+                                if !regime.trait.isEmpty { Text(regime.trait).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+                            }
+                            .padding(.horizontal, 24)
+                        }
                         if info.alive { FoldSection("国家行为", expanded: false) { actions(info, map) } }
+                        if info.alive { FoldSection("自定义", expanded: false) { customView(info, map, state) } }
                         FoldSection(info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）", expanded: !info.wars.isEmpty) {
                             Group2 {
                                 if info.wars.isEmpty { Row(label: "战争", value: "暂无战争") }
@@ -153,6 +173,13 @@ struct NationSheet: View {
             .onAppear { model.controller.relationsNation = nation; model.controller.relations = relationColors(); if let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
+            .sheet(item: $editing) { p in
+                PersonEditor(person: p) { skills, traits in
+                    editing = nil
+                    Task { await run { await model.editPerson(p.key, skills: skills, traits: traits) } }
+                }
+                .presentationDetents([.large]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+            }
             .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17)) }
         }
     }
@@ -227,6 +254,7 @@ struct NationSheet: View {
     private func reload() async {
         info = await model.nationInfo(nation)
         history = await model.nationHistory(nation)
+        regime = await model.regime(nation)
         if model.controller.relationsNation == nation { model.controller.relations = relationColors() }
     }
     /// StateRelationsHighlighter colours.
@@ -292,6 +320,7 @@ struct NationSheet: View {
         Group2 {
             if list.isEmpty { Row(label: "人物", value: "暂无记录") }
             ForEach(Array(list.enumerated()), id: \.offset) { i, p in
+                Button { if p.key >= 0 { editing = p } } label: {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(p.role).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
@@ -306,10 +335,78 @@ struct NationSheet: View {
                     }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
+                .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
                 if i < list.count - 1 { Divider2() }
             }
+            if !list.isEmpty { Text("点人物可修改属性与天赋").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 6) }
         }
         .padding(.horizontal, 16)
+    }
+
+    /// 自定义: treasury, destiny, polity (revolution by decree) and raising a legion.
+    @ViewBuilder private func customView(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
+        let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
+        VStack(spacing: 10) {
+            Group2 {
+                HStack {
+                    Text("国库").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                    Spacer()
+                    TextField("", text: $goldText, prompt: Text("\(Int(info.gold))").foregroundColor(Theme.ink2.opacity(0.6)))
+                        .font(Theme.kai(17)).keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 120)
+                    Text("金").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                Divider2()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("国运 \(Int(destinyValue))").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                    Slider(value: $destinyValue, in: 0...100, step: 1).tint(Theme.seal)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                Divider2()
+                Button {
+                    let gold = Double(goldText)
+                    Task { await run { await model.editNation(nation, gold: gold, destiny: destinyValue, polity: nil) } }
+                    goldText = ""
+                } label: { Text("颁行").font(Theme.kai(17)).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .onAppear { destinyValue = info.destiny }
+            Text("改易政体（国名随之更改，国库与国运受损）").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
+            Group2 {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 8)], spacing: 8) {
+                    ForEach(["Kingdom", "Empire", "Republic", "Federation", "Theocracy", "Tribal"], id: \.self) { p in
+                        let on = p == info.polity
+                        Button { if !on { Task { await run { await model.editNation(nation, gold: nil, destiny: nil, polity: p) } } } } label: {
+                            Text(Names.polity[p] ?? p).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                .frame(maxWidth: .infinity).frame(height: 34)
+                                .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 8))
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(on ? Color.clear : Theme.line))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
+                .padding(12)
+            }
+            .padding(.horizontal, 16)
+            Text("征募新军").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
+            Group2 {
+                Picker("驻地", selection: $levyProvince) {
+                    Text("选择州郡").tag(-1)
+                    ForEach(owned, id: \.self) { p in Text(map.meta.provinces[p].name).tag(p) }
+                }
+                .tint(Theme.ink).padding(.horizontal, 12).padding(.vertical, 4)
+                Divider2()
+                Button {
+                    let p = levyProvince
+                    Task { await run { await model.addArmy(nation, province: p) } }
+                } label: { Label("征兵", systemImage: "plus.circle").font(Theme.kai(17)).foregroundStyle(levyProvince < 0 ? Theme.ink2 : Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
+                .buttonStyle(.plain).disabled(levyProvince < 0)
+            }
+            .padding(.horizontal, 16)
+        }
     }
     /// 国家行为 (CultureNationActions47).
     private func actions(_ info: NationInfo, _ map: WorldMap) -> some View {
@@ -414,4 +511,56 @@ enum TraitText {
         "天生领袖": "天生的领导者，作为家族首领时增加50点家族影响力",
         "难以服众": "缺乏威望和号召力，作为家族首领时减少50点家族影响力"
     ]
+}
+
+/// 自定义人物: the four base skills (0…100) and up to four traits (天赋).
+struct PersonEditor: View {
+    let person: NationInfo.Person
+    let save: ([Double], [String]) -> Void
+    @State private var skills: [Double] = [50, 50, 50, 50]
+    @State private var traits: [String] = []
+    static let skillNames = ["魅力", "军事", "外交", "行政"]
+    static let allTraits = ["天才", "勇敢", "魅力超凡", "行政天才", "外交家", "公正", "战略家", "仁慈", "耐心", "改革家", "天生领袖", "统一者", "越战越勇", "海军精通", "船舶大师", "长袖善舞", "雄心勃勃", "鹰派", "鸽派", "懦弱", "残暴", "无能", "贪婪", "偏执", "易怒", "厌战", "难以服众"]
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                SheetHeader(title: person.name, subtitle: "\(person.role) · \(Int(person.age)) 岁", seal: "改")
+                Group2 {
+                    ForEach(0..<4, id: \.self) { i in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack { Text(Self.skillNames[i]).font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Text("\(Int(skills[i]))").font(Theme.kai(17)).foregroundStyle(Theme.seal).monospacedDigit() }
+                            Slider(value: $skills[i], in: 0...100, step: 1).tint(Theme.seal)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        if i < 3 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, 16)
+                Text("天赋（最多四项，影响实际能力）").font(Theme.kai(14)).foregroundStyle(Theme.ink2).padding(.horizontal, 24)
+                Group2 {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 82), spacing: 8)], spacing: 8) {
+                        ForEach(Self.allTraits, id: \.self) { t in
+                            let on = traits.contains(t)
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    if on { traits.removeAll { $0 == t } } else if traits.count < 4 { traits.append(t) }
+                                }
+                            } label: {
+                                Text(t).font(Theme.kai(14)).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                                    .frame(maxWidth: .infinity).frame(height: 32)
+                                    .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 8))
+                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(on ? Color.clear : Theme.line))
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                    }
+                    .padding(12)
+                }
+                .padding(.horizontal, 16)
+                Button { save(skills, traits) } label: { PrimaryLabel(title: "颁旨", symbol: "checkmark.seal") }.buttonStyle(PressStyle()).padding(.horizontal, 16)
+            }
+            .padding(.bottom, 24)
+        }
+        .onAppear { if person.skills.count == 4 { skills = person.skills }; traits = person.traits }
+    }
 }

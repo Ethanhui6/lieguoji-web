@@ -180,8 +180,17 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
             }
         }
+        // Relief shading on the land (every map mode).
+        if shade.count != map.cellCount { shade = MapLayers.hillshade(map) }
+        for cell in 0..<map.cellCount where shade[cell] != 1 {
+            let k = shade[cell]
+            for v in Int(map.offsets[cell])..<Int(map.offsets[cell + 1]) {
+                c[v * 4] = min(1, c[v * 4] * k); c[v * 4 + 1] = min(1, c[v * 4 + 1] * k); c[v * 4 + 2] = min(1, c[v * 4 + 2] * k)
+            }
+        }
         if let b = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) { colors = b }
     }
+    private var shade: [Float] = []
 
     struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = "" }
     private var unitTextures: [String: MTLTexture] = [:]
@@ -191,37 +200,52 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     /// Army icons at their current points (moving armies follow their journey) and the selected
     /// army's remaining route.
-    /// Armies glide from their previous point to the new one (one engine step) instead of jumping.
-    private var tweenFrom: [String: SIMD2<Float>] = [:]
-    private var tweenStart: CFTimeInterval = 0
-    var tweenDuration: CFTimeInterval = 0.14
+    /// Icons walk: each drawn point chases its army's engine point every frame (exponential approach
+    /// whose time constant follows the play step), so a new target never makes an icon jump — not on
+    /// a long step, not when two armies meet, not when a battle ends. Only a jump across the map
+    /// (an army re-formed at home) appears at once.
+    private var shown: [String: SIMD2<Float>] = [:]
+    private var lastChase: CFTimeInterval = CACurrentMediaTime()
+    private var chasing = false
+    /// The play step interval (seconds); the chase settles in about one step.
+    var tweenDuration: CFTimeInterval = 0.3
     var tweenEase = true
-    var isAnimating: Bool { CACurrentMediaTime() - tweenStart < tweenDuration }
-    private func tweenProgress() -> Float {
-        let t = Float(min(1, max(0, (CACurrentMediaTime() - tweenStart) / tweenDuration)))
-        return tweenEase ? t * t * (3 - 2 * t) : t
+    var isAnimating: Bool { chasing }
+    private func displayed(_ s: ArmySprite, _ t: Float = 0) -> SIMD2<Float> {
+        guard !s.key.isEmpty, let p = shown[s.key] else { return SIMD2(s.x, s.y) }
+        return p
     }
-    private func displayed(_ s: ArmySprite, _ t: Float) -> SIMD2<Float> {
-        guard let from = tweenFrom[s.key], !s.key.isEmpty else { return SIMD2(s.x, s.y) }
-        let to = SIMD2(s.x, s.y), d = to - from
-        // A jump across the map (reorganization at home) is not animated.
-        if d.x * d.x + d.y * d.y > 6400 { return to }
-        return from + d * t
+    /// Moves every drawn point towards its target for the time since the last frame.
+    private func advanceChase() {
+        let now = CACurrentMediaTime(), dt = Float(min(0.1, max(0, now - lastChase)))
+        lastChase = now
+        guard chasing else { return }
+        let tau = Float(max(0.08, tweenDuration * 0.42)), k = 1 - exp(-dt / tau)
+        var moving = false
+        for a in armySprites where !a.key.isEmpty {
+            let target = SIMD2(a.x, a.y)
+            guard let p = shown[a.key] else { shown[a.key] = target; continue }
+            let d = target - p, dist2 = d.x * d.x + d.y * d.y
+            if dist2 > 6400 || dist2 < 0.0004 { shown[a.key] = target; continue }
+            shown[a.key] = p + d * k; moving = true
+        }
+        chasing = moving
+        rebuildArmies()
     }
 
-    /// Where every icon is drawn right now (mid-glide included), for taps and troop labels.
+    /// Where every icon is drawn right now (mid-walk included), for taps and troop labels.
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
-        let t = tweenProgress()
-        return armySprites.map { s in let p = displayed(s, t); return (s, p.x, p.y) }
+        armySprites.map { s in let p = displayed(s); return (s, p.x, p.y) }
     }
 
     func setArmies(_ sprites: [ArmySprite], route points: [SIMD2<Float>]) {
         if sprites != armySprites {
-            let t = tweenProgress()
-            var from = [String: SIMD2<Float>]()
-            for s in armySprites where !s.key.isEmpty { from[s.key] = displayed(s, t) }
-            tweenFrom = from; tweenStart = CACurrentMediaTime()
+            let keys = Set(sprites.map(\.key))
+            shown = shown.filter { keys.contains($0.key) }
+            for s in sprites where !s.key.isEmpty && shown[s.key] == nil { shown[s.key] = SIMD2(s.x, s.y) }
+            if !chasing { lastChase = CACurrentMediaTime() }
             armySprites = sprites
+            chasing = true
             rebuildArmies()
         }
         if points != routePoints {
@@ -243,9 +267,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             for a in sprites {
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
                 let size = iconSize * (a.unit == "Elite" ? 1.5 : a.unit == "Port" ? 0.7 : 1) * (a.selected ? 1.35 : 1)
-                let at = displayed(a, 0)
+                let at = displayed(a)
                 for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
-                    byUnit[a.unit, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, 1, size, a.x, a.y])
+                    byUnit[a.unit, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, 1, size, at.x, at.y])
                 }
             }
             units = byUnit.compactMap { unit, data -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
@@ -272,7 +296,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func draw(in view: MTKView) {
         guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable,
               let buffer = queue.makeCommandBuffer(), let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
-        var spriteProgress = tweenProgress()
+        advanceChase()
+        var spriteProgress: Float = 1
         let size = view.bounds.size
         var u = Uniforms(viewport: SIMD2(Float(size.width), Float(size.height)), center: SIMD2(Float(camera.centerX), Float(camera.centerY)), scale: Float(camera.scale), halfWidth: 0)
         let uniformLength = MemoryLayout<Uniforms>.stride

@@ -67,7 +67,7 @@ public enum Opening {
     }
 
     /// initialCivilization47 for the default choices (each nation takes its culture's suggested religion and polity).
-    public static func civilization(seed: String, count: Int, owners: [Int], mode: String, enabled: [String], cultures: [Culture]) -> (nations: [Nation], cities: [(name: String, culture: String)])? {
+    public static func civilization(seed: String, count: Int, owners: [Int], mode: String, enabled: [String], cultures: [Culture]) -> (nations: [Nation], cities: [(name: String, culture: String, sourceKey: String)])? {
         let byId = Dictionary(uniqueKeysWithValues: cultures.map { ($0.id, $0) })
         var nations = [Nation](), states = Set<String>()
         for i in 0..<count {
@@ -76,12 +76,13 @@ public enum Opening {
             nations.append(Nation(cultureId: profile.id, religionId: profile.suggestedReligion, polity: profile.suggestedPolity, name: name.value, sourceKey: name.sourceKey,
                                   full: stateTitle(name.value, polity: profile.suggestedPolity, religion: profile.suggestedReligion)))
         }
-        var used = [String: Set<String>](), cities = [(name: String, culture: String)]()
+        // One used-name set across every culture (usedCities in initialCivilization47).
+        var used = Set<String>(), cities = [(name: String, culture: String, sourceKey: String)]()
         for (i, owner) in owners.enumerated() {
             let cultureId = nations[owner].cultureId
-            guard let c = byId[cultureId], let name = freshName(c, mode, "city", "\(seed)/city/\(i)", used[cultureId] ?? []) else { return nil }
-            used[cultureId, default: []].insert(name.value)
-            cities.append((name.value, cultureId))
+            guard let c = byId[cultureId], let name = freshName(c, mode, "city", "\(seed)/city/\(i)", used) else { return nil }
+            used.insert(name.value)
+            cities.append((name.value, cultureId, name.sourceKey))
         }
         return (nations, cities)
     }

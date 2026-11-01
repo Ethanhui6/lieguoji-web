@@ -110,7 +110,7 @@ public final class EngineService {
         case "save": return data(engine?.save())
         case "enableAppRules": engine?.enableAppRules(); return Reply()
         case "regime":
-            let g = engine?.regime(int("n")) ?? ([], "")
+            let g: (history: [String], trait: String) = engine?.regime(int("n")) ?? (history: [], trait: "")
             var r = Reply(); r.strings = g.history; r.text = g.trait; return r
         case "editPerson": return command(engine?.editPerson(int("id"), skills: dbls("skills"), traits: strs("traits")))
         case "editNation": return command(engine?.editNation(int("n"), gold: dbl("gold"), destiny: dbl("destiny"), polity: optStr("polity")))

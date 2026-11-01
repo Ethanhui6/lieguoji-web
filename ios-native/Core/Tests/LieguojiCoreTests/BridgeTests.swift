@@ -27,6 +27,7 @@ final class BridgeTests: XCTestCase {
         for i in 0..<engine.run.world.nations.length { XCTAssertNotNil(try JSONSerialization.jsonObject(with: XCTUnwrap(engine.nationInfo(i)))) }
         // 人物 section: every living state lists at least its monarch.
         let info0 = try JS.parse(XCTUnwrap(engine.nationInfo(0))); XCTAssertGreaterThan(info0.people.length, 0); XCTAssertEqual(info0.people[0].role.asString, "君主")
+        XCTAssertFalse(info0.truces.isNull); for w in info0.wars.asArray { XCTAssertLessThanOrEqual(abs(w.score.asNumber), 100) }
         let a = (0..<engine.run.world.nations.length).filter { Vassals.alive(engine.run, engine.run.world.nations[$0].id.asString) }
         XCTAssertTrue(engine.alliance(a[0], with: a[1]).ok)
         XCTAssertNotNil(Vassals.allianceOf(engine.run, engine.run.world.nations[a[0]].id.asString))

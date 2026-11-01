@@ -39,6 +39,17 @@ extension NativeEngine {
         o.vassals = .array(r.vassals.records.asArray.filter { $0.endedTick.isNull && $0.overlordId.asString == id }.map { JS(nationIndex($0.vassalId.asString)) })
         // Wars (campaign-card47): sides, goals, losses, duration.
         let stateNation = Dictionary(uniqueKeysWithValues: r.nativeWars.nationIds.asArray.map { ($0[0].asInt, $0[1].asString) })
+        // Truces still blocking a declaration (truce46), years left; for the 外交 section.
+        let dw = DiplomacyBridge.world(r)
+        o.truces = .array(nations.indices.compactMap { j -> JS? in
+            guard j != index, Vassals.alive(r, nations[j].id.asString), !dw.atWar(index, j) else { return nil }
+            let rel = dw.relations.first { $0.a == index && $0.b == j || $0.a == j && $0.b == index } ?? DiplomacyWorld.Relation(a: index, b: j, lastWar: -200, warCount: 0)
+            let t = dw.truce(rel)
+            guard t.blocked else { return nil }
+            let e = JS.object(); e.nation = JS(j); e.years = JS(t.elapsed.map { t.required - $0 } ?? 0); e.required = JS(t.required)
+            return e
+        })
+        let peaceWorld = PeaceBridge.world(r)
         o.wars = .array(r.nativeWars.campaigns.asArray.filter { $0.endedTick.isNull }.compactMap { c -> JS? in
             let all = c.participants.asArray + (c.destroyedParticipants.isNull ? [] : c.destroyedParticipants.asArray)
             guard all.contains(where: { stateNation[$0.stateId.asInt] == id }) else { return nil }
@@ -57,6 +68,8 @@ extension NativeEngine {
             })
             let mine = c.participants.asArray.first { stateNation[$0.stateId.asInt] == id }
             card.side = JS(mine.map { $0.side.asInt } ?? -1)
+            // peace47 war score, attacker's view, -100…100 (same score the peace AI uses).
+            card.score = JS(PeaceAI(war: PeaceBridge.war(c), world: peaceWorld).score().score.rounded())
             return card
         })
         return Data(o.json.utf8)

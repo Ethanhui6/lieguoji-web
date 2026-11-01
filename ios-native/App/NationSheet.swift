@@ -8,7 +8,7 @@ struct NationInfo: Decodable {
     struct Ruler: Decodable { let name: String; let title: String; let age: Double }
     struct Alliance: Decodable { let name: String; let members: [Int] }
     struct Side: Decodable { let nations: [Int]; let losses: Double }
-    struct War: Decodable, Identifiable { let id: Int; let casusBelli: String; let goals: [String]; let months: Double; let sides: [Side]; let side: Int }
+    struct War: Decodable, Identifiable { let id: Int; let casusBelli: String; let goals: [String]; let months: Double; let sides: [Side]; let side: Int; let score: Double? }
     struct Person: Decodable { let role: String; let name: String; let age: Double; let female: Bool; let traits: [String]; let skills: [Double] }
     let name: String; let culture: String; let religion: String; let polity: String
     let gold: Double; let goldPerMonth: Double; let destiny: Double
@@ -16,6 +16,8 @@ struct NationInfo: Decodable {
     let ruler: Ruler?
     let enemies: [Int]; let alliance: Alliance?; let overlord: Int; let vassals: [Int]
     let wars: [War]
+    struct Truce: Decodable { let nation: Int; let years: Int; let required: Int }
+    let truces: [Truce]?
     let people: [Person]?
 }
 
@@ -143,6 +145,7 @@ struct NationSheet: View {
         if let a = info.alliance { rows.append(("同盟国家", "\(a.name)：\(names(a.members.filter { $0 != nation }, map))")) }
         if info.overlord >= 0 { rows.append(("宗主国", names([info.overlord], map))) }
         if !info.vassals.isEmpty { rows.append(("附庸", names(info.vassals, map))) }
+        for t in info.truces ?? [] { rows.append(("停战", "\(names([t.nation], map))：还需 \(t.years) 年（\(t.required) 年规则）")) }
         return rows
     }
     private func warCard(_ war: NationInfo.War, _ map: WorldMap) -> some View {
@@ -155,6 +158,20 @@ struct NationSheet: View {
             if !war.goals.isEmpty { Text("战争目标：" + war.goals.joined(separator: "、")).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
             ForEach(Array(war.sides.enumerated()), id: \.offset) { i, side in
                 Text("\(i == 0 ? "进攻方" : "防守方")：\(names(side.nations, map))（阵亡 \(Int(side.losses).formatted())）").font(Theme.kai(14)).foregroundStyle(Theme.ink)
+            }
+            if let score = war.score {
+                // Attacker's view; shown from this nation's side.
+                let mine = war.side == 1 ? -score : score
+                HStack(spacing: 8) {
+                    Text("战争分数").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                    GeometryReader { g in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Theme.ink.opacity(0.08))
+                            Capsule().fill(mine >= 0 ? Theme.jade : Theme.seal).frame(width: g.size.width * min(1, abs(mine) / 100))
+                        }
+                    }.frame(height: 6)
+                    Text("\(mine >= 0 ? "+" : "")\(Int(mine))").font(Theme.kai(14)).foregroundStyle(mine >= 0 ? Theme.jade : Theme.seal).monospacedDigit()
+                }
             }
             HStack {
                 Text("持续 \(Int(war.months) / 12) 年 \(Int(war.months) % 12) 月").font(Theme.kai(13)).foregroundStyle(Theme.ink2)

@@ -254,7 +254,7 @@ final class EffectsView: UIView {
         for v in flashLayers.values { v.layer.position = screen(v.x, v.y) }
         for v in claimLayers.values { v.layer.position = screen(v.x, v.y) }
         for v in peaceLayers.values { var p = screen(v.x, v.y); p.y -= 10; v.layer.position = p }
-        for v in battleArrows.values { v.root.frame = bounds; v.gradient.frame = bounds; layoutArrow(v) { screen($0, $1) } }
+        for v in battleArrows.values { v.root.frame = bounds; v.gradient.frame = bounds; v.fill.frame = bounds; v.reveal.frame = bounds; layoutArrow(v) { screen($0, $1) } }
         for v in arrowLayers.values {
             let a = screen(v.d.fromX, v.d.fromY), b = screen(v.d.toX, v.d.toY)
             let dx = b.x - a.x, dy = b.y - a.y, len = max(1, hypot(dx, dy)), ux = dx / len, uy = dy / len

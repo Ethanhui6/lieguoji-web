@@ -22,13 +22,13 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports harbour golden samples
     const heights=await generateRecoveredHeights(grid,seed,template);
     const d:FmsDocument={...doc,worldId:'42173000-0000-4000-8000-000000000000',elevations:Int32Array.from(heights)} as FmsDocument;
     const created=createCivilizationWorld47(d,count,cities,relations,setup,SETTLEMENT47_ALGORITHM,undefined,'original') as unknown as {world:World};
-    const world=created.world,g=seaGraph(d,world),harbors=buildHarbors46({terrain:d,world});
+    const world=created.world,g=seaGraph(d,world),harbors=buildHarbors46({terrain:d,world}),openSea=buildHarbors46({terrain:d,world},'capital-neighbor-v2');
     const nodes=[...g.nodes.values()];
     samples.push({seed,template,cities,count,heights:Buffer.from(heights).toString('base64'),
       provinces:world.provinces.map(p=>({id:p.id,polygon:p.polygon})),cityList:world.cities.map(c=>({id:c.id,provinceId:c.provinceId,position:c.position})),
       nodes:{count:nodes.length,ids:nodes.map(n=>n.id),components:nodes.map(n=>n.component),ocean:nodes.map(n=>n.ocean?1:0),links:nodes.map(n=>n.links.length),
         sample:nodes.filter((_,i)=>i%97===0).map(n=>({id:n.id,center:n.center,polygon:n.polygon,links:n.links}))},
-      ports:g.ports,portCells:Object.fromEntries(g.ports.map(p=>[p.id,[...harborCells42(g,p.id)]])),harbors});
+      ports:g.ports,portCells:Object.fromEntries(g.ports.map(p=>[p.id,[...harborCells42(g,p.id)]])),harbors,openSea});
   }
   expect(samples.length).toBe(4);
   await mkdir('ios-native/Core/Tests/LieguojiCoreTests/Golden',{recursive:true});

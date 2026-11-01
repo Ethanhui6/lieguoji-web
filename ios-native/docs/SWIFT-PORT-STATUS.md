@@ -27,7 +27,7 @@
 | 外交日程、宣战登记、联盟 AI | civilization47-diplomatic-state、-declaration、-alliance | DiplomacyBridge.swift、Alliances.swift | declare.json |
 | 行省叛乱判定 | civilization47-rebellion | Rebellion.swift | rebellion.json |
 | 政府延续、迁都、君主对敌战力、在位与国家特性记录 | civilization47-political-owner、-capitals、leader-history47、state-traits47 | Government.swift | government.json |
-| 新世界政府段（第一部分：地貌、财政格子、省防御） | settlement25-terrain、-cells、-combat | OpeningGovernment.swift | opening-government.json（4 种地形） |
+| 新世界政府段（地貌、财政格子、省防御；人口、资源、经济方式、首批征兵、首月国库、开局国运；军队位置待移植） | settlement25-terrain、-cells、-combat、civilization47-government、-economy、-muster、native-economy population/resources | OpeningGovernment.swift | opening-government.json（4 种地形） |
 | 新世界创建（createCivilizationWorld47 全段）：省份、城市、国家，人口与粮食，首任君主与编年史，人物与生日；统治家族、主权账；开篇国龄与在位；原作贵族家族、领地与成员 | civilization47-world、statecraft initializeManagement、initialCivilizationChronicle47、life22-people、civilization47-family、-origins、-nobility、native-economy/noble-families | Creation.swift（家族成员内核与 Founding 共用） | creation.json（4 种地形 × 2 种命名，三段逐位含键序） |
 
 ## 运行编排（逐位对照）

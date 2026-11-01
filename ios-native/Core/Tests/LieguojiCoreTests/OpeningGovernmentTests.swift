@@ -23,4 +23,26 @@ final class OpeningGovernmentTests: XCTestCase {
             }
         }
     }
+
+    func testGovernmentStageMatchesTheWeb() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent(), resources = dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources")
+        let doc = try TerrainDocument(data: Data(contentsOf: resources.appendingPathComponent("World/doc20k.bin")))
+        try NativeEngine.loadCatalogs(traits: Data(contentsOf: resources.appendingPathComponent("Catalog/traits.json")), nobleCultures: Data(contentsOf: resources.appendingPathComponent("Catalog/noble-cultures.json")),
+                                      cultures: Data(contentsOf: resources.appendingPathComponent("World/cultures.json")))
+        try OpeningGovernment.loadResources(Data(contentsOf: resources.appendingPathComponent("Catalog/biome-resources.json")))
+        let golden = try JS.parse(Data(contentsOf: dir.appendingPathComponent("Golden/opening-government.json")))
+        let creation = try JS.parse(Data(contentsOf: dir.appendingPathComponent("Golden/creation.json")))
+        for (i, s) in golden.samples.asArray.enumerated() {
+            let label = "\(s.seed.asString) \(s.template.asString)"
+            let r = creation.samples[i * 2].created.clone()
+            let h = [UInt8](Data(base64Encoded: s.heights.asString)!).map(Int.init)
+            let g = OpeningGovernment.provinceGeography(doc, elevations: h, provinces: r.world.provinces.asArray, scale: 1000 / max(doc.width, doc.height))
+            OpeningGovernment.attach(r, terrain: g.terrain, cells: g.cells, combat: g.combat)
+            for k in ["upperCombat", "finance", "economy", "destiny", "units", "tactics", "governmentOpening"] {
+                if let d = r[k].difference(s.out[k], path: k) { XCTFail("\(label): \(d)") } else if r[k].json != s.out[k].json { XCTFail("\(label): key order \(k)") }
+            }
+            if let d = r.world.armies.difference(s.world.armies, path: "armies") { XCTFail("\(label): \(d)") }
+            if let d = r.world.statecraft.difference(s.world.statecraft, path: "statecraft") { XCTFail("\(label): \(d)") }
+        }
+    }
 }

@@ -351,6 +351,7 @@ struct GameView: View {
             VStack(spacing: 8) {
                 topBar
                 if controller.marchingArmy != nil { marchBanner.transition(.move(edge: .top).combined(with: .opacity)) }
+                if controller.marchingFleet != nil { fleetBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if !controller.groupArmies.isEmpty { rtsBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if let h = model.herald, let map = model.map {
                     HeraldBanner(herald: h, map: map).id(h.id)
@@ -360,6 +361,7 @@ struct GameView: View {
             .animation(.spring(response: 0.5, dampingFraction: 0.78), value: model.herald)
                 .offset(y: controller.reveal >= 1 ? 0 : -80)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingArmy)
+                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingFleet)
         }
         .overlay(alignment: .bottom) { bottomBar.offset(y: controller.reveal >= 1 ? 0 : 120) }
         .overlay(alignment: .bottomLeading) {
@@ -404,6 +406,15 @@ struct GameView: View {
                     model.refreshArmies()
                 }
             }
+            controller.onFleetTarget = { province in
+                guard let index = controller.marchingFleet, let fleet = model.fleet(index) else { controller.marchingFleet = nil; return }
+                Task {
+                    let name = model.map?.meta.provinces.indices.contains(province) == true ? model.map!.meta.provinces[province].name : ""
+                    if let error = await model.fleetOrder(id: fleet.id, province: province) { say(error) }
+                    else { say("\(fleet.name)起航，前往\(name)港"); controller.marchingFleet = nil }
+                    model.refreshArmies()
+                }
+            }
             controller.onMarchTarget = { province in
                 guard let army = controller.marchingArmy else { return }
                 Task {
@@ -417,6 +428,7 @@ struct GameView: View {
             }
         }
         .onChange(of: controller.groupArmies) { _, _ in model.refreshArmies() }
+        .onChange(of: controller.marchingFleet) { _, _ in model.refreshArmies() }
         .onChange(of: model.mapView) { _, _ in
             // Choosing a view rolls the switcher back up a moment later.
             Task { try? await Task.sleep(nanoseconds: 280_000_000); withAnimation { viewsOpen = false } }
@@ -502,7 +514,9 @@ struct GameView: View {
             })
             .presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .fleet(let f):
-            FleetSheet(model: model, fleet: f).presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            FleetSheet(model: model, fleet: f, pickOnMap: {
+                controller.marchingFleet = f; self.panel = nil; say("点选地图上本国的港口州郡")
+            }).presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nation(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) })
                 .presentationDetents([.medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
@@ -576,6 +590,15 @@ struct GameView: View {
             Button("取消") { controller.groupArmies = []; model.refreshArmies() }.font(Theme.kai(15)).foregroundStyle(Theme.seal)
         }
         .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
+    }
+
+    private var fleetBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "anchor").foregroundStyle(Theme.seal)
+            Text("舰队：点选停留的港口").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+            Button("取消") { controller.marchingFleet = nil; model.refreshArmies() }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+        }
+        .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
     }
 
     private var marchBanner: some View {
@@ -851,7 +874,7 @@ struct ArmyRow: View {
             RoundedRectangle(cornerRadius: 3).fill(army.nation >= 0 && army.nation < map.meta.nations.count ? Names.color(map.meta.nations[army.nation].color) : .gray).frame(width: 10, height: 30)
             VStack(alignment: .leading, spacing: 2) {
                 Text(army.name).font(Theme.kai(18)).foregroundStyle(Theme.ink)
-                Text("\(Names.unit[army.unit] ?? army.unit) · \(army.province >= 0 ? map.meta.provinces[army.province].name : "海上") · \(Names.status(army.status))\(Self.dest(map, army))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                Text("\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "海上") · \(Names.status(army.status))\(Self.dest(map, army))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             }
             Spacer()
             Text(Names.wan(army.troops)).font(Theme.kai(18)).foregroundStyle(Theme.ink)
@@ -873,23 +896,27 @@ struct ArmySheet: View {
             ScrollView {
                 VStack(spacing: 14) {
                     SheetHeader(title: a.name, subtitle: nation.map { "\($0.name) · \(Names.unit[a.unit] ?? a.unit)" }, color: nation.map { Names.color($0.color) })
+                    StatStrip(tiles: [
+                        StatTile(label: "兵力", value: Names.wan(a.troops)),
+                        StatTile(label: "士气", value: "\(a.morale)", fraction: Double(a.morale) / 100, warn: a.morale < 30),
+                        StatTile(label: "粮草", value: "\(a.supplies)", warn: a.supplies <= 0),
+                    ])
                     Group2 {
-                        Row(label: "兵力", value: a.troops.formatted()); Divider2()
-                        Row(label: "所在", value: a.province >= 0 ? map.meta.provinces[a.province].name : "海上"); Divider2()
-                        Row(label: "状态", value: "\(Names.status(a.status)) · \(Names.travel(a.travel))"); Divider2()
+                        Row(label: "所在", value: map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "海上"); Divider2()
+                        Row(label: "状态", value: a.travel == "moving" ? "\(Names.status(a.status)) · 行军中" : Names.status(a.status)); Divider2()
                         if let d = a.destination, d >= 0, d < map.meta.provinces.count { Row(label: "目的地", value: map.meta.provinces[d].name); Divider2() }
-                        Row(label: "指挥", value: ArmyRow.command(a)); Divider2()
-                        Row(label: "粮草", value: "\(a.supplies)"); Divider2()
-                        Row(label: "士气", value: "\(a.morale)")
+                        Row(label: "指挥", value: ArmyRow.command(a))
                     }
                     .padding(.horizontal, 16)
+                    let fighting = a.status == "fighting"
                     HStack(spacing: 10) {
-                        Button(action: onMarch) { PrimaryLabel(title: "调兵", symbol: "arrow.triangle.turn.up.right.diamond") }
+                        Button(action: onMarch) { PrimaryLabel(title: "调兵", symbol: "arrow.triangle.turn.up.right.diamond") }.disabled(fighting).opacity(fighting ? 0.5 : 1)
                         Button(action: onRetreat) { SecondaryLabel(title: "撤退", symbol: "arrow.uturn.backward") }
-                        if a.travel == "moving" || a.travel == "blocked" { Button(action: onHalt) { SecondaryLabel(title: "停止", symbol: "stop.fill") } }
+                        if a.travel == "moving" || a.travel == "blocked" { Button(action: onHalt) { SecondaryLabel(title: "停止", symbol: "stop.fill") }.transition(.scale.combined(with: .opacity)) }
                     }
                     .buttonStyle(.plain).padding(.horizontal, 16)
-                    if !a.manual { Text("未下令时由 AI 自主指挥").font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+                    .animation(.spring(response: 0.35, dampingFraction: 0.8), value: a.travel)
+                    Text(fighting ? "交战中只能撤退" : a.manual ? "执行玩家军令" : "未下令时由 AI 自主指挥").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                 }
                 .padding(.bottom, 24)
             }
@@ -1175,6 +1202,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.28", ["舰队面板重做：船只、船员、舰体（带耐久条）、口粮一排数字；「停留港口」改为本国港口列表，按离舰队远近排序并标出距离和现泊港，点选后「起航」；也可点「地图选港」直接在地图上点港口州郡。",
+                    "地图上的港口锚标不再铺满全图：只在选中舰队时显示本国可停港口，以及被他国占领的港口。",
+                    "军团面板整理：兵力、士气（带士气条，低落时朱红警示）、粮草一排；交战中「调兵」置灰并提示只能撤退；所在州郡越界不再闪退。",
+                    "性能：引擎行军结算只写回实际移动了的军队，配合上版州郡索引缓存，推演每日耗时再降约两成。"]),
         ("0.9.27", ["性能：军团行军改为连续滑行——图标移动时长自动匹配每一步推演的耗时，匀速前进，不再走一下停一下。",
                     "修复：交战军团不再瞬移到交战点（去掉了显示上的靠拢偏移），按引擎真实位置走到一起。",
                     "去掉交战双方的文字标签，地图更清爽；粒子烟火只在前几处战场显示，降低耗电和掉帧。",
@@ -1481,52 +1512,140 @@ struct FleetRow: View {
     }
 }
 
+/// A stat on a memorial: the label, a large value and an optional gauge.
+struct StatTile: View {
+    let label: String
+    let value: String
+    var fraction: Double? = nil
+    var warn = false
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(label).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+            Text(value).font(Theme.kai(21)).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.6).monospacedDigit()
+                .contentTransition(.numericText()).animation(.snappy, value: value)
+            if let fraction {
+                GeometryReader { g in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Theme.ink.opacity(0.1))
+                        Capsule().fill(warn ? Theme.seal : Theme.ink.opacity(0.65)).frame(width: g.size.width * min(1, max(0, fraction)))
+                    }
+                }
+                .frame(height: 4).animation(.spring(response: 0.5, dampingFraction: 0.85), value: fraction)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12).padding(.vertical, 10)
+    }
+}
+
+/// A row of stat tiles in one memorial fold, split by hairlines.
+struct StatStrip: View {
+    let tiles: [StatTile]
+    var body: some View {
+        Group2 {
+            HStack(spacing: 0) {
+                ForEach(tiles.indices, id: \.self) { i in
+                    if i > 0 { Rectangle().fill(Theme.ink.opacity(0.12)).frame(width: 0.8).padding(.vertical, 10) }
+                    tiles[i]
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+}
+
 struct FleetSheet: View {
     @State private var target = -1
     @State private var sending = false
     @State private var feedback = ""
+    @State private var allPorts = false
 
     @ObservedObject var model: GameModel
     let fleet: Int
+    /// Pick the port on the map instead of the list.
+    var pickOnMap: () -> Void = {}
     var body: some View {
         if let map = model.map, let f = model.fleet(fleet) {
             let nation = f.nation >= 0 && f.nation < map.meta.nations.count ? map.meta.nations[f.nation] : nil
+            let busy = f.decision == "busy" || f.status == "lost"
+            // Ports this fleet may stay at: its own state's harbours (held by it), nearest first.
+            let ports: [(port: GameState.Port, distance: Double)] = (model.state?.ports ?? []).filter { $0.occupier == f.nation && map.meta.provinces.indices.contains($0.province) }
+                .map { (port: $0, distance: hypot(Double($0.x - f.x), Double($0.y - f.y))) }.sorted { $0.distance < $1.distance }
+            let shown = allPorts ? ports : Array(ports.prefix(6))
             ScrollView {
                 VStack(spacing: 14) {
-                    SheetHeader(title: f.name, subtitle: nation.map { "\($0.name) · 舰队" }, color: nation.map { Names.color($0.color) })
+                    SheetHeader(title: f.name, subtitle: nation.map { "\($0.name) · 舰队 · \(FleetText.status(f.status))" }, color: nation.map { Names.color($0.color) }, seal: "舟")
+                    StatStrip(tiles: [
+                        StatTile(label: "船只", value: "\(f.ships)"),
+                        StatTile(label: "船员", value: Names.wan(f.crew)),
+                        StatTile(label: "舰体", value: "\(Int((f.hull * 100).rounded()))%", fraction: f.hull, warn: f.hull < 0.35),
+                        StatTile(label: "口粮", value: "\(f.food)", warn: f.food <= 0),
+                    ])
                     Group2 {
-                        Row(label: "船只", value: "\(f.ships)"); Divider2()
-                        Row(label: "船员", value: "\(f.crew)"); Divider2()
-                        Row(label: "舰体", value: "\(Int((f.hull * 100).rounded()))%"); Divider2()
-                        Row(label: "口粮", value: "\(f.food)"); Divider2()
-                        Row(label: "状态", value: FleetText.status(f.status)); Divider2()
-                        if f.port >= 0, f.port < map.meta.provinces.count { Row(label: "目标港口", value: map.meta.provinces[f.port].name + "港"); Divider2() }
-                        Row(label: "指挥", value: f.manual || !f.patrol ? "玩家指挥" : "AI · " + FleetText.decision(f.decision))
+                        Row(label: "指挥", value: f.manual || !f.patrol ? "玩家指挥" : "AI · " + FleetText.decision(f.decision)); Divider2()
+                        if f.port >= 0, f.port < map.meta.provinces.count { Row(label: "停留港口", value: map.meta.provinces[f.port].name + "港"); Divider2() }
+                        if !f.reason.isEmpty { Text(f.reason).font(Theme.kai(14)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 10) }
                     }
                     .padding(.horizontal, 16)
-                    if !f.reason.isEmpty { Text(f.reason).font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24) }
+
+                    HStack {
+                        Text("停留港口").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                        Spacer()
+                        Button(action: pickOnMap) { Label("地图选港", systemImage: "hand.tap").font(Theme.kai(14)).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle()).disabled(busy)
+                    }
+                    .padding(.horizontal, 24)
                     Group2 {
-                        Picker("目标海港", selection: $target) {
-                            Text("选择港口").tag(-1)
-                            ForEach(model.state?.ports ?? [], id: \.province) { port in
-                                if map.meta.provinces.indices.contains(port.province) {
-                                    Text(map.meta.provinces[port.province].name + "港").tag(port.province)
-                                }
-                            }
+                        if ports.isEmpty {
+                            Text("本国没有可停留的港口").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16)
                         }
-                        Button("航行至目标港口") {
+                        ForEach(shown, id: \.port.province) { item in
+                            let on = target == item.port.province
+                            Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { target = on ? -1 : item.port.province } } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "anchor").font(.system(size: 14, weight: .semibold)).foregroundStyle(on ? Theme.seal : Theme.ink2).frame(width: 22)
+                                    Text(map.meta.provinces[item.port.province].name + "港").font(Theme.kai(17)).foregroundStyle(Theme.ink)
+                                    if item.port.province == f.port { Text("现泊").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule()) }
+                                    Spacer()
+                                    Text("\(Int(item.distance)) 里").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Theme.seal : Theme.ink.opacity(0.25))
+                                }
+                                .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
+                                .background(on ? Theme.seal.opacity(0.07) : .clear)
+                            }
+                            .buttonStyle(.plain)
+                            if item.port.province != shown.last?.port.province { Divider2() }
+                        }
+                        if ports.count > 6 {
+                            Divider2()
+                            Button { withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { allPorts.toggle() } } label: {
+                                Text(allPorts ? "收起" : "展开全部 \(ports.count) 港").font(Theme.kai(15)).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 10)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+
+                    HStack(spacing: 10) {
+                        Button {
                             sending = true
-                            Task { feedback = await model.fleetOrder(id: f.id, province: target) ?? "航行军令已生效"; sending = false }
-                        }.disabled(sending || target < 0)
-                        Button("停止航行") {
+                            Task { feedback = await model.fleetOrder(id: f.id, province: target) ?? "起航，前往\(map.meta.provinces.indices.contains(target) ? map.meta.provinces[target].name : "")港"; sending = false; if feedback.hasPrefix("起航") { target = -1 } }
+                        } label: { PrimaryLabel(title: "起航", symbol: "sailboat") }
+                        .disabled(sending || target < 0 || busy).opacity(target < 0 || busy ? 0.5 : 1)
+                        Button {
                             sending = true
-                            Task { feedback = await model.fleetOrder(id: f.id, province: nil) ?? "已停止航行"; sending = false }
-                        }.disabled(sending)
-                        if !feedback.isEmpty { Text(feedback).font(.footnote) }
-                        Text("交战或撤退中的舰队不能用普通军令中断；目标须有连通海路与通行权限。").font(.footnote).foregroundStyle(.secondary)
-                    }.padding(.horizontal, 16)
+                            Task { feedback = await model.fleetOrder(id: f.id, province: nil) ?? "舰队已下锚"; sending = false }
+                        } label: { SecondaryLabel(title: "下锚停航", symbol: "stop.fill") }
+                        .disabled(sending || busy).opacity(busy ? 0.5 : 1)
+                    }
+                    .buttonStyle(.plain).padding(.horizontal, 16)
+                    .animation(.easeOut(duration: 0.2), value: target)
+                    if !feedback.isEmpty {
+                        Text(feedback).font(Theme.kai(14)).foregroundStyle(Theme.seal).transition(.opacity)
+                    }
+                    Text(busy ? "交战或撤退中的舰队不能改令" : "只能停留本国港口；目标须有连通海路").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                 }
                 .padding(.bottom, 24)
+                .animation(.easeOut(duration: 0.25), value: feedback)
             }
         }
     }

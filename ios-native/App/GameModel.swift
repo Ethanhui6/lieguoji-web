@@ -411,11 +411,13 @@ import LieguojiCore
             MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id)
         }
         // Harbour anchors in the occupier's colour (not tappable; the province panel lists them), then fleets.
-        for (i, p) in (state.ports ?? []).enumerated() {
+        let choosing = controller.marchingFleet ?? controller.selectedFleet
+        let chooser = fleet(choosing)?.nation
+        for (i, p) in (state.ports ?? []).enumerated() where p.occupier != p.owner || (chooser != nil && p.occupier == chooser) {
             sprites.append(MapRenderer.ArmySprite(army: -100_000 - i, x: p.x, y: p.y, unit: "Port", nation: p.occupier, selected: false, key: "port-\(p.province)"))
         }
         for (i, f) in (state.fleets ?? []).enumerated() {
-            sprites.append(MapRenderer.ArmySprite(army: -(i + 1), x: f.x, y: f.y, unit: "Fleet", nation: f.nation, selected: i == controller.selectedFleet, key: f.id))
+            sprites.append(MapRenderer.ArmySprite(army: -(i + 1), x: f.x, y: f.y, unit: "Fleet", nation: f.nation, selected: i == choosing, key: f.id))
         }
         controller.armies = sprites
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {

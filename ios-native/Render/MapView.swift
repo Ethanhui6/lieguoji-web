@@ -45,6 +45,9 @@ import LieguojiCore
     private(set) var worldRevision = 0
     /// How long army icons glide to their next positions (the play step interval).
     var tween: Double = 0.3
+    /// A fleet waiting for its port: the next province tap is its destination.
+    @Published var marchingFleet: Int?
+    var onFleetTarget: ((Int) -> Void)?
     /// Generation reveal (title screen), 0…1; labels and markers appear at 1.
     @Published var reveal: Float = 1
     /// Title screen: the map is a backdrop and takes no gestures.
@@ -214,7 +217,11 @@ struct MapView: UIViewRepresentable {
                 controller.groupArmies = inside.filter { $0.nation == nation }.map(\.army)
                 controller.boxSelecting = false
                 boxStart = nil
-                if !controller.groupArmies.isEmpty { selection.selectionChanged() }
+                if controller.marchingFleet != nil {
+                if let province { impact.impactOccurred(); controller.onFleetTarget?(province) }
+                return
+            }
+            if !controller.groupArmies.isEmpty { selection.selectionChanged() }
             }
         }
         @objc private func handlePan(_ g: UIPanGestureRecognizer) {

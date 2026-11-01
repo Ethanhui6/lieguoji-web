@@ -275,9 +275,11 @@ public enum RunWindow {
             return ForceMotion.armySpeed(base: a.base, unitSpeed: a.unit, cell: cell, graph: g, secondsPerTick: seconds0)
         })
         var moving = Profile.measure("m.forces") { bridge.forces(r) }
+        // Only forces whose travel changed are written back (a record rewrite is a deep clone).
+        var before = [String: ArmyTravel](minimumCapacity: moving.count); for m in moving { before[m.id + (m.kind == .army ? "|a" : "|f")] = m.travel }
         let previous = Profile.measure("m.contacts") { bridge.contacts(r) }
         let out = Profile.measure("m.advance") { ContactMotion(graph: g).advance(&moving, previous: previous, seconds: seconds, rules: rules, stopAtEvent: true) }
-        Profile.measure("m.write") { for m in moving {
+        Profile.measure("m.write") { for m in moving where before[m.id + (m.kind == .army ? "|a" : "|f")] != m.travel {
             let book = m.kind == .army ? r.armyPositions : r.fleetPositions
             let t = book.records[m.id].clone(); bridge.write(m.travel, to: t); book.records[m.id] = t
         } }

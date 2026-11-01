@@ -64,7 +64,9 @@ async function mapOf(terrain:Culture47Opening['terrain'],r:Run,options:{seed:str
 /** Generates a new world exactly as the web's 生成地图 + 从当前地图创建文化世界 (CultureWorld47.tsx):
  * the original 20k grid, a recovered terrain template, then the culture opening and its rule actions. */
 export async function generate(optionsText:string){
-  const o=JSON.parse(optionsText||'{}') as {seed?:string;template?:string;count?:number;cityCount?:number;relations?:'peace'|'war'};
+  const o=JSON.parse(optionsText||'{}') as {seed?:string;template?:string;count?:number;cityCount?:number;relations?:'peace'|'war';cultures?:string[];naming?:'historical-names'|'culture-generated'};
+  // The original world setup: which cultures appear, real or generated names, opening at peace or war.
+  const enabled=CULTURE_IDS47.filter(c=>!o.cultures?.length||o.cultures.includes(c));
   const random=crypto.getRandomValues(new Uint32Array(2));
   const seed=o.seed||String(random[0]),template=SEED_TERRAIN_TEMPLATES.some(t=>t.id===o.template)?o.template!:SEED_TERRAIN_TEMPLATES[random[1]%SEED_TERRAIN_TEMPLATES.length].id;
   const count=Math.max(2,Math.min(24,Math.round(o.count??8))),cityCount=Math.max(count,Math.min(480,Math.round(o.cityCount??count*10)));
@@ -72,8 +74,8 @@ export async function generate(optionsText:string){
   blank.worldId=uuid();
   const options={seed,template:template as typeof SEED_TERRAIN_TEMPLATES[number]['id']};
   const terrain=(await prepareFmsFullMapPreview(blank,{worldId:blank.worldId,baseRevision:blank.revision,...await generateFmsFullMap(blank,options,{yieldTask:async()=>{}})},options)).document;
-  const opening:Culture47Opening={terrain,count,cityCount,relations:o.relations??'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,
-    setup:{mode:'historical-names',enabled:[...CULTURE_IDS47]},families:'original',harbors:'capital-neighbor-v2'};
+  const opening:Culture47Opening={terrain,count,cityCount,relations:o.relations==='war'?'war':'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,
+    setup:{mode:o.naming==='culture-generated'?'culture-generated':'historical-names',enabled:enabled.length?enabled:[...CULTURE_IDS47]},families:'original',harbors:'capital-neighbor-v2'};
   const s=new Culture47Session();
   let x=s.create(opening);
   for(const [kind,rule] of ENABLE)x=s.execute({kind,rule,expected:populationStamp47(x.run)} as never,x.journal.actions.length);

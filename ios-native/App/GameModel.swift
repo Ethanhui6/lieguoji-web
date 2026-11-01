@@ -62,6 +62,9 @@ import LieguojiCore
 
     struct NewWorld {
         var template = "continents"; var nations = 8; var seed = ""; var provinces = "80"
+        /// 开局关系 (peace / war), the cultures that appear, and real or generated names.
+        var relations = "peace"; var naming = "historical-names"
+        var cultures: Set<String> = Set(Names.cultureIds)
         /// One city per province; the web engine (native-bridge generate) clamps to nations…480.
         var provinceCount: Int { max(nations, min(480, Int(provinces) ?? nations * 10)) }
     }
@@ -75,7 +78,8 @@ import LieguojiCore
         generationNote = "正在生成地形"
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
-            let json: [String: Any] = ["template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed]
+            let json: [String: Any] = ["template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed,
+                                       "relations": options.relations, "naming": options.naming, "cultures": Names.cultureIds.filter { options.cultures.contains($0) }]
             let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
             let engine = self.engine
             let full = Task { try await engine.call("generate(options)", ["options": text]) }
@@ -145,7 +149,13 @@ import LieguojiCore
             guard let bin = Data(base64Encoded: decoded.bin) else { throw EngineError.message("地图数据损坏") }
             return (try WorldMap(binary: bin, meta: decoded.meta), decoded.state)
         }.value
-        map = loaded.0; worldID = UUID(); controller.world = nil
+        if phase == .founding, let shown = map, shown.province.count == loaded.0.province.count, shown.meta.provinces.count == loaded.0.meta.provinces.count {
+            // The device-built preview has the same geometry: keep its map view (rebuilding the Metal
+            // map and every label here was the hitch before entering the world); only states and names update.
+            map = loaded.0; controller.world = loaded.0
+        } else {
+            map = loaded.0; worldID = UUID(); controller.world = nil
+        }
         apply(loaded.1)
         lastSavedDay = loaded.1.day
         return loaded.0

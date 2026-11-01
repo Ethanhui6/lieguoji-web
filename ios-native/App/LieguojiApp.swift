@@ -33,6 +33,8 @@ enum Theme {
 
 enum Names {
     static let polity = ["Kingdom": "王国", "Empire": "帝国", "Federation": "联邦", "Republic": "共和国", "Tribal": "部落", "Theocracy": "神权"]
+    /// The 12 cultures of the catalog in its order (CULTURE_IDS47).
+    static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian"]
     static let culture = ["chinese": "中华", "japanese": "日本", "english": "英格兰", "arab": "阿拉伯", "roman": "罗马", "french": "法兰西",
                           "german": "日耳曼", "greek": "希腊", "persian": "波斯", "slavic": "斯拉夫", "norse": "北欧", "indian": "印度"]
     static let religion = ["none": "无指定宗教", "chineseFolk": "中国民间信仰", "daoism": "道教", "buddhism": "佛教", "shinto": "神道",
@@ -221,6 +223,7 @@ struct NewWorldSheet: View {
     let start: (GameModel.NewWorld) -> Void
     @State private var options = GameModel.NewWorld()
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 20) {
             Text("新世界").font(Theme.kai(28)).foregroundStyle(Theme.ink)
             VStack(alignment: .leading, spacing: 10) {
@@ -244,10 +247,49 @@ struct NewWorldSheet: View {
                     .font(Theme.kai(18)).foregroundStyle(Theme.ink).keyboardType(.numberPad).multilineTextAlignment(.trailing).tint(Theme.seal)
                     .padding(.horizontal, 12).frame(width: 160, height: 38).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
             }
-            Spacer(minLength: 0)
-            Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle())
+            VStack(alignment: .leading, spacing: 10) {
+                Text("开局").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                ChipPicker(items: [("peace", "列国和平"), ("war", "群雄混战")], selection: $options.relations)
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                Text("命名").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                ChipPicker(items: [("historical-names", "历史真名"), ("culture-generated", "按文化生成")], selection: $options.naming)
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("文化").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                    Spacer()
+                    Button(options.cultures.count == Names.cultureIds.count ? "只留一种" : "全选") {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            options.cultures = options.cultures.count == Names.cultureIds.count ? ["chinese"] : Set(Names.cultureIds)
+                        }
+                    }
+                    .font(Theme.kai(14)).foregroundStyle(Theme.seal)
+                }
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
+                    ForEach(Names.cultureIds, id: \.self) { c in
+                        let on = options.cultures.contains(c)
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                // At least one culture stays chosen.
+                                if on { if options.cultures.count > 1 { options.cultures.remove(c) } } else { options.cultures.insert(c) }
+                            }
+                        } label: {
+                            Text(Names.culture[c] ?? c).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                .frame(maxWidth: .infinity).frame(height: 36)
+                                .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.line))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
+                Text("各国从所选文化中取名、取宗教与政体。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+            }
+            Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle()).padding(.top, 6)
         }
         .padding(24)
+        }
+        .scrollIndicators(.hidden)
     }
 }
 
@@ -1202,6 +1244,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.29", ["新世界可选更多开局设定（同原作文化世界）：开局「列国和平／群雄混战」、命名「历史真名／按文化生成」，以及勾选出现哪些文化（中华、日本、英格兰、阿拉伯、罗马等 12 种，至少留一种）。",
+                    "生成地图更连贯：地形升起后直接进入世界，不再重建整张地图而突然停顿一下。",
+                    "舰队图标换成原作的运输船图标。",
+                    "战场烟雾大幅减淡缩小，火星减少，只有前 4 处战场冒烟，不再遮挡地图；围城火焰、军团覆灭黑烟也更小。",
+                    "国家页重排：顶部一排疆域、人口、兵力、国库；有战争时「战争」自动展开并标出场数；「人物」默认收起并显示人数，不再一打开满屏人物。"]),
         ("0.9.28", ["舰队面板重做：船只、船员、舰体（带耐久条）、口粮一排数字；「停留港口」改为本国港口列表，按离舰队远近排序并标出距离和现泊港，点选后「起航」；也可点「地图选港」直接在地图上点港口州郡。",
                     "地图上的港口锚标不再铺满全图：只在选中舰队时显示本国可停港口，以及被他国占领的港口。",
                     "军团面板整理：兵力、士气（带士气条，低落时朱红警示）、粮草一排；交战中「调兵」置灰并提示只能撤退；所在州郡越界不再闪退。",

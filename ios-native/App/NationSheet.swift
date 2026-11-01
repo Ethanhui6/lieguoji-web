@@ -75,20 +75,25 @@ struct NationSheet: View {
                     SheetHeader(title: meta?.name ?? info?.name ?? "", subtitle: s.alive ? "\(s.provinces) 省 · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) })
                     if let info {
                         // Original section order: BasicInfo (only one expanded by default), Action, War, Family, Diplomacy.
+                        // 卷首: the state at a glance, then its ruler and identity.
+                        StatStrip(tiles: [
+                            StatTile(label: "疆域", value: "\(s.provinces)州"),
+                            StatTile(label: "人口", value: Names.wan(s.population)),
+                            StatTile(label: "兵力", value: Names.wan(s.troops)),
+                            StatTile(label: "国库", value: Names.wan(Int(info.gold)), warn: info.goldPerMonth < 0),
+                        ])
                         FoldSection("基本信息", expanded: true) {
                             Group2 {
                                 if let r = info.ruler { Row(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）"); Divider2() }
                                 Row(label: "政体", value: Names.polity[info.polity] ?? info.polity); Divider2()
-                                Row(label: "文化", value: Names.culture[info.culture] ?? info.culture); Divider2()
-                                Row(label: "宗教", value: Names.religion[info.religion] ?? info.religion); Divider2()
-                                Row(label: "国库", value: "\(Int(info.gold).formatted()) 金（月入 \(Int(info.goldPerMonth).formatted())）"); Divider2()
-                                Row(label: "国运", value: String(format: "%.0f", info.destiny)); Divider2()
-                                Row(label: "人口与兵力", value: "\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵")
+                                Row(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)"); Divider2()
+                                Row(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金"); Divider2()
+                                Row(label: "国运", value: String(format: "%.0f", info.destiny))
                             }
                             .padding(.horizontal, 16)
                         }
                         if info.alive { FoldSection("国家行为", expanded: false) { actions(info, map) } }
-                        FoldSection("战争", expanded: false) {
+                        FoldSection(info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）", expanded: !info.wars.isEmpty) {
                             Group2 {
                                 if info.wars.isEmpty { Row(label: "战争", value: "暂无战争") }
                                 ForEach(info.wars) { war in
@@ -99,7 +104,7 @@ struct NationSheet: View {
                             .padding(.horizontal, 16)
                         }
                         // The family/people panel opens fully expanded in the original; title 人物.
-                        FoldSection("人物", expanded: true) { peopleList(info.people ?? []) }
+                        FoldSection("人物（\(info.people?.count ?? 0)）", expanded: false) { peopleList(info.people ?? []) }
                         FoldSection("外交", expanded: false) {
                             Group2 {
                                 let rows = relationRows(info, map)

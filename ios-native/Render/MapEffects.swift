@@ -79,10 +79,10 @@ final class EffectsView: UIView {
     }
     /// Battle smoke rolling up and sparks flying where the swords clash.
     private func battleSmoke() -> CAEmitterLayer {
-        let e = CAEmitterLayer(); e.emitterShape = .circle; e.emitterSize = CGSize(width: 18, height: 10); e.renderMode = .additive
+        let e = CAEmitterLayer(); e.emitterShape = .circle; e.emitterSize = CGSize(width: 10, height: 6)
         e.emitterCells = [
-            cell(Self.puff, color: UIColor(white: 0.35, alpha: 0.35), rate: 6, life: 2.2, velocity: 9, range: .pi / 2, scale: 0.55, scaleSpeed: 0.35, alphaSpeed: -0.16, spin: 0.4, angle: -.pi / 2),
-            cell(Self.spark, color: UIColor(red: 1, green: 0.72, blue: 0.3, alpha: 1), rate: 14, life: 0.55, velocity: 38, scale: 0.55, scaleSpeed: -0.6, alphaSpeed: -1.6, accel: 30),
+            cell(Self.puff, color: UIColor(white: 0.3, alpha: 0.16), rate: 2.5, life: 1.6, velocity: 7, range: .pi / 3, scale: 0.28, scaleSpeed: 0.12, alphaSpeed: -0.1, spin: 0.3, angle: -.pi / 2),
+            cell(Self.spark, color: UIColor(red: 1, green: 0.72, blue: 0.3, alpha: 1), rate: 6, life: 0.4, velocity: 26, scale: 0.4, scaleSpeed: -0.6, alphaSpeed: -2, accel: 30),
         ]
         e.renderMode = .unordered
         return e
@@ -114,7 +114,7 @@ final class EffectsView: UIView {
         clip.calculationMode = .discrete; clip.duration = 40.0 / 12; clip.repeatCount = .infinity
         l.add(clip, forKey: "clip")
         // Particles cost: only the first few battles on the map smoke.
-        if battleLayers.count < 6 { let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: l.bounds.midX, y: l.bounds.midY); l.insertSublayer(smoke, at: 0) }
+        if battleLayers.count < 4 { let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: l.bounds.midX, y: l.bounds.midY); l.insertSublayer(smoke, at: 0) }
         return l
     }
 
@@ -130,8 +130,8 @@ final class EffectsView: UIView {
         flag.contents = UIImage(systemName: "flag.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 9, weight: .bold))?.withTintColor(color, renderingMode: .alwaysOriginal).cgImage
         flag.contentsGravity = .resizeAspect
         let fire = CAEmitterLayer(); fire.emitterShape = .line; fire.emitterSize = CGSize(width: 22, height: 1); fire.emitterPosition = CGPoint(x: 15, y: 30)
-        fire.emitterCells = [cell(Self.puff, color: UIColor(red: 1, green: 0.45, blue: 0.12, alpha: 0.55), rate: 10, life: 1.0, velocity: 14, range: .pi / 6, scale: 0.28, scaleSpeed: -0.18, alphaSpeed: -0.8, angle: -.pi / 2),
-                             cell(Self.spark, color: UIColor(red: 1, green: 0.8, blue: 0.4, alpha: 1), rate: 5, life: 1.4, velocity: 22, range: .pi / 4, scale: 0.4, scaleSpeed: -0.2, alphaSpeed: -0.7, angle: -.pi / 2)]
+        fire.emitterCells = [cell(Self.puff, color: UIColor(red: 1, green: 0.45, blue: 0.12, alpha: 0.4), rate: 5, life: 0.8, velocity: 10, range: .pi / 6, scale: 0.18, scaleSpeed: -0.12, alphaSpeed: -0.9, angle: -.pi / 2),
+                             cell(Self.spark, color: UIColor(red: 1, green: 0.8, blue: 0.4, alpha: 1), rate: 3, life: 1.0, velocity: 16, range: .pi / 4, scale: 0.3, scaleSpeed: -0.2, alphaSpeed: -0.7, angle: -.pi / 2)]
         root.addSublayer(fire)
         root.addSublayer(track); root.addSublayer(ring); root.addSublayer(flag)
         return (root, ring)
@@ -256,7 +256,7 @@ final class EffectsView: UIView {
         switch b.kind {
         case .destroyed:
             let e = CAEmitterLayer(); e.emitterPosition = CGPoint(x: 60, y: 60); e.emitterShape = .point
-            e.emitterCells = [cell(Self.puff, color: UIColor(white: 0.25, alpha: 0.6), rate: 80, life: 1.4, velocity: 30, scale: 0.6, scaleSpeed: 0.5, alphaSpeed: -0.6, spin: 0.6)]
+            e.emitterCells = [cell(Self.puff, color: UIColor(white: 0.25, alpha: 0.4), rate: 30, life: 1.0, velocity: 18, scale: 0.32, scaleSpeed: 0.25, alphaSpeed: -0.7, spin: 0.6)]
             root.addSublayer(e)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { e.birthRate = 0 }
         case .founded:

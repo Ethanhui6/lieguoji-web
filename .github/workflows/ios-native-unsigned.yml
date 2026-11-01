@@ -21,6 +21,45 @@ jobs:
       - uses: actions/checkout@v4
       # Optimized build: the golden tests replay large run states through the JS model.
       - run: swift test -c release -Xswiftc -enable-testing --package-path ios-native/Core
+      - run: swift build -c release --product LieguojiServer --package-path ios-native/Core
+  # 远程计算服务器 for Windows: the computer simulates, the phone draws.
+  server-windows:
+    needs: core-linux
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: compnerd/gha-setup-swift@main
+        with:
+          branch: swift-5.10.1-release
+          tag: 5.10.1-RELEASE
+      - name: Build server
+        run: swift build -c release --product LieguojiServer --package-path ios-native/Core
+      - name: Package with the Swift runtime
+        shell: pwsh
+        run: |
+          $out = "server/列国纪远程计算"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $exe = Get-ChildItem -Recurse ios-native/Core/.build -Filter LieguojiServer.exe | Where-Object { $_.FullName -match 'release' } | Select-Object -First 1
+          Copy-Item $exe.FullName $out/
+          $core = (where.exe swiftCore.dll | Select-Object -First 1)
+          $rt = Split-Path $core
+          Get-ChildItem $rt -Filter *.dll | ForEach-Object { Copy-Item $_.FullName $out/ }
+          $readme = @"
+          列国纪远程计算服务器
+          1. 双击 LieguojiServer.exe（首次运行若弹出 Windows 防火墙提示，选择允许专用网络）。
+          2. 窗口里会显示这台电脑的地址，例如 192.168.1.20:8765。
+          3. 手机与电脑连同一个 Wi-Fi，在手机游戏「菜单 › 远程计算」填入地址并连接。
+          4. 连接后推演由电脑完成，手机只负责画面；关闭窗口即停止，手机会自动切回本机计算。
+          端口被占用时，可在命令行运行：LieguojiServer.exe 8766
+          "@
+          Set-Content -Path "$out/使用说明.txt" -Value $readme -Encoding utf8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lieguoji-server-windows
+          path: server
+          if-no-files-found: error
+          retention-days: 14
   archive:
     needs: core-linux
     runs-on: macos-26

@@ -12,6 +12,18 @@ import LieguojiCore
     @Published private(set) var state: GameState?
     @Published private(set) var playing = false
     @Published var speed = 1
+    /// 远程计算: the computer simulating this world (nil: the phone does).
+    @Published private(set) var remoteAddress: String?
+    /// A one-line notice for the game screen (e.g. the computer's link broke).
+    @Published var notice: String?
+    func connectRemote(_ address: String) async -> String? {
+        do {
+            let a = try await native.connect(address)
+            remoteAddress = a; UserDefaults.standard.set(address, forKey: "remote.address")
+            return nil
+        } catch { return error.localizedDescription }
+    }
+    func disconnectRemote() async { await native.disconnect(); remoteAddress = nil }
     @Published var failure: String?
     @Published var generationNote = ""
     /// A war declared, a peace made or a province taken: shown as a banner for a moment.
@@ -225,6 +237,7 @@ import LieguojiCore
     private var lastApplied: CFTimeInterval?
     private func step(days: Int) async throws {
         let data = await native.step(days: days)
+        if remoteAddress != nil, !(await native.isRemote) { remoteAddress = nil; notice = "与电脑的连接中断，已切回本机计算" }
         let next = try await Task.detached { try JSONDecoder().decode(GameState.self, from: data) }.value
         let now = CACurrentMediaTime()
         if playing, let last = lastApplied, now - last < 2 { stepInterval = stepInterval * 0.7 + (now - last) * 0.3 }
@@ -452,6 +465,9 @@ import LieguojiCore
         for (i, f) in (state.fleets ?? []).enumerated() {
             sprites.append(MapRenderer.ArmySprite(army: -(i + 1), x: f.x, y: f.y, unit: "Fleet", nation: f.nation, selected: i == choosing, key: f.id))
         }
+        // Icons never sit on one another: armies (and fleets) closer than an icon are eased apart, the
+        // later one moving, a few passes. Display only; an army in battle keeps its spot facing the foe.
+        Self.spread(&sprites, minimum: 4.6)
         var texts = [String: String]()
         for a in state.armies { texts[a.id] = Names.wan(a.troops) }
         for f in state.fleets ?? [] { texts[f.id] = "\(f.ships)船" }
@@ -464,6 +480,38 @@ import LieguojiCore
                 controller.route = points.map { SIMD2(Float($0[0]), Float($0[1])) }
             }
         } else { controller.route = [] }
+    }
+
+    static func spread(_ sprites: inout [MapRenderer.ArmySprite], minimum: Float) {
+        let movable = sprites.indices.filter { sprites[$0].army > -100_000 }
+        guard movable.count > 1 else { return }
+        let cell = minimum
+        for _ in 0..<3 {
+            var grid = [Int64: [Int]]()
+            func cellKey(_ a: Int64, _ b: Int64) -> Int64 { (a << 32) | (b & 0xFFFF_FFFF) }
+            func key(_ x: Float, _ y: Float) -> Int64 { cellKey(Int64(floor(x / cell)), Int64(floor(y / cell))) }
+            for i in movable { grid[key(sprites[i].x, sprites[i].y), default: []].append(i) }
+            var moved = false
+            for i in movable {
+                let gx = Int64(floor(sprites[i].x / cell)), gy = Int64(floor(sprites[i].y / cell))
+                for dx in -1...1 { for dy in -1...1 {
+                    for j in grid[cellKey(gx + Int64(dx), gy + Int64(dy))] ?? [] where j > i {
+                        var vx = sprites[j].x - sprites[i].x, vy = sprites[j].y - sprites[i].y
+                        var d = (vx * vx + vy * vy).squareRoot()
+                        guard d < minimum else { continue }
+                        if d < 0.01 {
+                            // Exactly stacked: fan out by index (deterministic).
+                            let a = Float(j % 8) * .pi / 4; vx = cos(a); vy = sin(a); d = 1
+                        } else { vx /= d; vy /= d }
+                        let push = (minimum - min(d, minimum)) * 0.55
+                        sprites[i].x -= vx * push; sprites[i].y -= vy * push
+                        sprites[j].x += vx * push; sprites[j].y += vy * push
+                        moved = true
+                    }
+                } }
+            }
+            if !moved { break }
+        }
     }
 
     func fleet(_ index: Int?) -> GameState.Fleet? { index.flatMap { i in state?.fleets?.indices.contains(i) == true ? state!.fleets![i] : nil } }
@@ -527,6 +575,7 @@ import LieguojiCore
     func editPerson(_ id: Int, skills: [Double], traits: [String]) async -> String? { finish(await native.editPerson(id, skills: skills, traits: traits)) }
     func editNation(_ n: Int, gold: Double?, destiny: Double?, polity: String?) async -> String? { finish(await native.editNation(n, gold: gold, destiny: destiny, polity: polity)) }
     func addArmy(_ n: Int, province: Int) async -> String? { finish(await native.addArmy(n, province: province)) }
+    func editArmy(_ id: String, troops: Int?, unit: String?, morale: Double?) async -> String? { finish(await native.editArmy(id, troops: troops, unit: unit, morale: morale)) }
     /// 即时战略模式: the box-selected armies of one state to a province; nil reason on success.
     func rts(armies: [Int], to province: Int, defend: Bool) async -> (ok: Bool, reason: String) {
         let rows = armies.compactMap { army($0) }

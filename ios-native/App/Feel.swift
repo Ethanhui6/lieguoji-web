@@ -73,6 +73,49 @@ import UIKit
     func notify(_ kind: UINotificationFeedbackGenerator.FeedbackType) { if haptics { notice.notificationOccurred(kind) } }
 }
 
+/// 远程计算: the computer (LieguojiServer on the same Wi-Fi) simulates, the phone only draws.
+struct RemoteSettings: View {
+    @ObservedObject var model: GameModel
+    @State private var address = UserDefaults.standard.string(forKey: "remote.address") ?? ""
+    @State private var busy = false
+    @State private var message = ""
+    var body: some View {
+        Group2 {
+            HStack(spacing: 10) {
+                Circle().fill(model.remoteAddress != nil ? Theme.jade : Theme.ink.opacity(0.25)).frame(width: 9, height: 9)
+                Text(model.remoteAddress.map { "电脑计算中 · \($0)" } ?? "本机计算").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                Spacer()
+                if busy { ProgressView().tint(Theme.seal) }
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            Divider2()
+            if model.remoteAddress == nil {
+                HStack {
+                    TextField("", text: $address, prompt: Text("电脑地址，如 192.168.1.20:8765").foregroundColor(Theme.ink2.opacity(0.6)))
+                        .font(Theme.kai(16)).keyboardType(.numbersAndPunctuation).autocorrectionDisabled().textInputAutocapitalization(.never)
+                    Button("连接") {
+                        busy = true; message = ""
+                        Task { let error = await model.connectRemote(address); busy = false; message = error ?? "已连接，推演改由电脑完成"; GameFeel.shared.notify(error == nil ? .success : .error) }
+                    }
+                    .font(Theme.kai(16)).foregroundStyle(Theme.seal).disabled(busy || address.isEmpty)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+            } else {
+                Button {
+                    busy = true
+                    Task { await model.disconnectRemote(); busy = false; message = "已切回本机计算" }
+                } label: { Text("断开，回到本机计算").font(Theme.kai(16)).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
+                .buttonStyle(.plain).disabled(busy)
+            }
+            if !message.isEmpty { Text(message).font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10).frame(maxWidth: .infinity, alignment: .leading) }
+            Divider2()
+            Text("在电脑上运行「列国纪远程计算」LieguojiServer.exe（Windows），窗口会显示地址；手机与电脑连同一个 Wi-Fi 后填入即可。连接后推演由电脑完成，手机只画画面；断开时世界会搬回手机继续。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                .padding(.horizontal, 16).padding(.vertical, 10).fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 16)
+    }
+}
+
 /// 声音与触感 settings (menu and title screen).
 struct FeelSettings: View {
     @ObservedObject var feel = GameFeel.shared

@@ -260,11 +260,14 @@ struct TitleView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "设置", subtitle: AppVersion.text, seal: "设")
+                    Text("远程计算").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                    RemoteSettings(model: model)
+                    Text("声音与触感").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
                     FeelSettings()
                 }
                 .padding(.bottom, 24)
             }
-            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }
+            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }
         }
         .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() } }
     }
@@ -463,6 +466,8 @@ struct GameView: View {
     /// The pending map pick is a retreat (原作防御模式) rather than a march.
     @State private var marchRetreat = false
     @State private var rtsDefend = false
+    /// The unit sheets' height; a pick from a list drops it low so the map shows the unit.
+    @State private var unitDetent: PresentationDetent = .height(320)
     @Namespace private var tabMarker
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
 
@@ -557,6 +562,7 @@ struct GameView: View {
             }
         }
         .onChange(of: controller.groupArmies) { _, _ in model.refreshArmies() }
+        .onChange(of: model.notice) { _, n in if let n { say(n); model.notice = nil } }
         .onChange(of: controller.marchingFleet) { _, _ in model.refreshArmies() }
         .onChange(of: model.mapView) { _, _ in
             // Choosing a view rolls the switcher back up a moment later.
@@ -634,18 +640,18 @@ struct GameView: View {
     @ViewBuilder private func sheet(for panel: Panel) -> some View {
         switch panel {
         case .province(let p):
-            ProvinceSheet(model: model, province: p, openNation: { n in open(.nation(n)) }, openArmy: { a in open(.army(a)); controller.selectedArmy = a }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            ProvinceSheet(model: model, province: p, openNation: { n in open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)); controller.selectedArmy = a; locate(army: a) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .army(let a):
-            ArmySheet(model: model, army: a, onMarch: {
+            ArmySheet(model: model, army: a, say: say, locate: { locate(army: a) }, onMarch: {
                 marchRetreat = false; controller.marchingArmy = a; self.panel = nil; say("点选地图上的目的地")
             }, onHalt: { Task { if let e = await model.order(army: a, to: nil) { say(e) } } }, onRetreat: {
                 marchRetreat = true; controller.marchingArmy = a; self.panel = nil; say("点选撤退的目的地（途中不主动接战）")
             })
-            .presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            .presentationDetents([.height(320), .medium, .large], selection: $unitDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .fleet(let f):
             FleetSheet(model: model, fleet: f, pickOnMap: {
                 controller.marchingFleet = f; self.panel = nil; say("点选地图上本国的港口州郡")
-            }).presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            }).presentationDetents([.height(320), .medium, .large], selection: $unitDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nation(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, paint: { n in
                 controller.paintNation = n; self.panel = nil
@@ -660,18 +666,30 @@ struct GameView: View {
             NationsSheet(model: model) { n in open(.nation(n)) }.presentationDetents([.medium, .large])
         case .military:
             MilitarySheet(model: model, select: { army in
-                // The army's docket slides in over the roster (返回军事 goes back).
-                open(.army(army))
-                if let p = model.army(army)?.province, p >= 0 { controller.fly(to: p) }
-                controller.selectedArmy = army
-            }, selectFleet: { fleet in open(.fleet(fleet)); controller.selectedFleet = fleet }).presentationDetents([.medium, .large])
+                // The army's docket slides in over the roster (返回军事 goes back); the sheet drops low and
+                // the camera flies to the army itself.
+                unitDetent = .height(320)
+                open(.army(army)); controller.selectedArmy = army
+                locate(army: army)
+            }, selectFleet: { fleet in
+                unitDetent = .height(320)
+                open(.fleet(fleet)); controller.selectedFleet = fleet
+                if let f = model.fleet(fleet) { controller.fly(x: Double(f.x), y: Double(f.y)) }
+            }).presentationDetents([.medium, .large])
         case .diplomacy:
             DiplomacySheet(model: model, say: say).presentationDetents([.medium, .large])
         case .chronicle:
             ChronicleSheet(model: model).presentationDetents([.medium, .large])
         case .menu:
-            MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }) { self.panel = nil }.presentationDetents([.medium, .large])
+            MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }, say: say) { self.panel = nil }.presentationDetents([.medium, .large])
         }
+    }
+
+    /// The camera to where the army is drawn now.
+    private func locate(army: Int) {
+        guard let a = model.army(army) else { return }
+        let drawn = controller.placed?(a.id)
+        controller.fly(x: drawn?.0 ?? Double(a.x), y: drawn?.1 ?? Double(a.y))
     }
 
     private func say(_ text: String) {
@@ -1045,28 +1063,56 @@ struct ArmyRow: View {
 struct ArmySheet: View {
     @ObservedObject var model: GameModel
     let army: Int
+    var say: (String) -> Void = { _ in }
+    var locate: () -> Void = {}
     let onMarch: () -> Void
     let onHalt: () -> Void
     var onRetreat: () -> Void = {}
+    @State private var editing = false
+    @State private var troopsText = ""
+    @State private var unit = ""
+    @State private var morale = 100.0
+    static let units = [("Infantry", "步兵"), ("Archer", "弓兵"), ("Shield", "盾兵"), ("Cavalry", "骑兵"), ("Elite", "精锐")]
     var body: some View {
         if let map = model.map, let a = model.army(army) {
             let nation = a.nation >= 0 && a.nation < map.meta.nations.count ? map.meta.nations[a.nation] : nil
+            let tint = nation.map { Names.color($0.color) } ?? Theme.ink2
+            let fighting = a.status == "fighting"
             ScrollView {
                 VStack(spacing: 14) {
-                    SheetHeader(title: a.name, subtitle: nation.map { "\($0.name) · \(Names.unit[a.unit] ?? a.unit)" }, color: nation.map { Names.color($0.color) })
+                    // 军牌: the unit's mark in its state's colour beside the name.
+                    HStack(spacing: 14) {
+                        UnitMark(unit: a.unit, color: tint).frame(width: 46, height: 46)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(a.name).font(Theme.kai(26)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                            HStack(spacing: 6) {
+                                RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 10, height: 10)
+                                Text("\(nation?.name ?? "") · \(Names.unit[a.unit] ?? a.unit)").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                            }
+                        }
+                        Spacer()
+                        Button(action: locate) { InkIcon(glyph: .views, size: 20).foregroundStyle(Theme.seal).frame(width: 40, height: 40).background(Theme.seal.opacity(0.08), in: Circle()) }
+                            .buttonStyle(PressStyle()).accessibilityLabel("定位")
+                    }
+                    .padding(.horizontal, 22).padding(.top, 22)
                     StatStrip(tiles: [
                         StatTile(label: "兵力", value: Names.wan(a.troops)),
                         StatTile(label: "士气", value: "\(a.morale)", fraction: Double(a.morale) / 100, warn: a.morale < 30),
-                        StatTile(label: "粮草", value: "\(a.supplies)", warn: a.supplies <= 0),
+                        StatTile(label: "粮草", value: "\(a.supplies)", fraction: Double(min(100, a.supplies)) / 100, warn: a.supplies <= 10),
                     ])
-                    Group2 {
-                        Row(label: "所在", value: map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "海上"); Divider2()
-                        Row(label: "状态", value: a.travel == "moving" ? "\(Names.status(a.status)) · 行军中" : Names.status(a.status)); Divider2()
-                        if let d = a.destination, d >= 0, d < map.meta.provinces.count { Row(label: "目的地", value: map.meta.provinces[d].name); Divider2() }
-                        Row(label: "指挥", value: ArmyRow.command(a))
+                    // Status as one plain line instead of a table.
+                    HStack(spacing: 8) {
+                        Text(fighting ? "交战中" : a.travel == "moving" ? "行军中" : Names.status(a.status)).font(Theme.kai(14)).foregroundStyle(Theme.paper2)
+                            .padding(.horizontal, 8).padding(.vertical, 3).background(fighting ? Theme.seal : Theme.ink2, in: Capsule())
+                        Text(map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "海上").font(Theme.kai(15)).foregroundStyle(Theme.ink)
+                        if let d = a.destination, d >= 0, d < map.meta.provinces.count {
+                            Image(systemName: "arrow.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
+                            Text(map.meta.provinces[d].name).font(Theme.kai(15)).foregroundStyle(Theme.seal)
+                        }
+                        Spacer()
+                        Text(ArmyRow.command(a)).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                     }
-                    .padding(.horizontal, 16)
-                    let fighting = a.status == "fighting"
+                    .padding(.horizontal, 22)
                     HStack(spacing: 10) {
                         Button(action: onMarch) { PrimaryLabel(title: "调兵", symbol: "arrow.triangle.turn.up.right.diamond") }.disabled(fighting).opacity(fighting ? 0.5 : 1)
                         Button(action: onRetreat) { SecondaryLabel(title: "撤退", symbol: "arrow.uturn.backward") }
@@ -1074,11 +1120,81 @@ struct ArmySheet: View {
                     }
                     .buttonStyle(.plain).padding(.horizontal, 16)
                     .animation(.spring(response: 0.35, dampingFraction: 0.8), value: a.travel)
-                    Text(fighting ? "交战中只能撤退" : a.manual ? "执行玩家军令" : "未下令时由 AI 自主指挥").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                    // 整编 (custom): strength, arm and morale.
+                    Button { withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { editing.toggle() } } label: {
+                        HStack { Text("整编（自定义）").font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Image(systemName: editing ? "chevron.up" : "chevron.down").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.ink2) }
+                            .padding(.horizontal, 24).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if editing {
+                        Group2 {
+                            HStack(spacing: 8) {
+                                Text("兵力").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                Spacer()
+                                ForEach([-5000, -1000], id: \.self) { d in stepButton(d, a.troops) }
+                                TextField("", text: $troopsText, prompt: Text("\(a.troops)").foregroundColor(Theme.ink2.opacity(0.6)))
+                                    .font(Theme.kai(17)).keyboardType(.numberPad).multilineTextAlignment(.center).frame(width: 84)
+                                    .padding(.vertical, 5).background(Theme.paper2, in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.line))
+                                ForEach([1000, 5000], id: \.self) { d in stepButton(d, a.troops) }
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 10)
+                            Divider2()
+                            ChipPicker(items: Self.units, selection: $unit).padding(.horizontal, 12).padding(.vertical, 10)
+                            Divider2()
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("士气 \(Int(morale))").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                Slider(value: $morale, in: 0...100, step: 1).tint(Theme.seal)
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 8)
+                            Divider2()
+                            Button {
+                                let troops = Int(troopsText)
+                                Task {
+                                    let error = await model.editArmy(a.id, troops: troops, unit: unit == a.unit ? nil : unit, morale: morale)
+                                    say(error ?? "\(a.name)已整编"); GameFeel.shared.notify(error == nil ? .success : .error)
+                                    if error == nil { troopsText = "" }
+                                }
+                            } label: { Text("颁行").font(Theme.kai(17)).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 16)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        .onAppear { unit = a.unit; morale = Double(a.morale) }
+                    }
                 }
                 .padding(.bottom, 24)
             }
         }
+    }
+    private func stepButton(_ delta: Int, _ current: Int) -> some View {
+        Button {
+            let base = Int(troopsText) ?? current
+            troopsText = String(max(1, base + delta))
+        } label: {
+            Text(delta > 0 ? "+\(delta / 1000)k" : "\(delta / 1000)k").font(Theme.kai(13)).foregroundStyle(Theme.ink)
+                .frame(width: 38, height: 30).background(Theme.paper2, in: RoundedRectangle(cornerRadius: 7)).overlay(RoundedRectangle(cornerRadius: 7).stroke(Theme.line))
+        }
+        .buttonStyle(PressStyle())
+    }
+}
+
+/// The original's unit mark (World/unit-*.png) in a state's colour.
+struct UnitMark: View {
+    let unit: String; let color: Color
+    private static var cache = [String: UIImage]()
+    var body: some View {
+        Group {
+            if let img = Self.image(unit) { Image(uiImage: img).resizable().renderingMode(.template).scaledToFit().foregroundStyle(color) }
+            else { InkIcon(glyph: .military).foregroundStyle(color) }
+        }
+        .padding(6)
+        .background(Theme.paper2, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(color.opacity(0.6), lineWidth: 1.2))
+    }
+    static func image(_ unit: String) -> UIImage? {
+        if let c = cache[unit] { return c }
+        guard let url = Bundle.main.url(forResource: "unit-" + unit, withExtension: "png", subdirectory: "World"), let img = UIImage(contentsOfFile: url.path) else { return nil }
+        cache[unit] = img; return img
     }
 }
 
@@ -1281,6 +1397,7 @@ struct MenuSheet: View {
     @ObservedObject var model: GameModel
     @ObservedObject var controller: MapController
     var openEdicts: () -> Void = {}
+    var say: (String) -> Void = { _ in }
     let close: () -> Void
     @State private var creating = false
     @State private var notes = false
@@ -1291,7 +1408,9 @@ struct MenuSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             SheetHeader(title: "菜单", subtitle: AppVersion.text)
             Group2 {
-                Button { model.save(); close() } label: { MenuRow(symbol: "square.and.arrow.down", title: "保存") }.buttonStyle(.plain)
+                Button {
+                    Task { let ok = await model.saveNow(); GameFeel.shared.notify(ok ? .success : .error); say(ok ? "已保存" : "保存失败"); close() }
+                } label: { MenuRow(symbol: "square.and.arrow.down", title: "保存") }.buttonStyle(.plain)
                 Divider2()
                 Button { Task { exported = await model.exportCopy().map(ExportFile.init) } } label: { MenuRow(symbol: "square.and.arrow.up", title: "导出存档（备份）") }.buttonStyle(.plain)
                 Divider2()
@@ -1308,6 +1427,8 @@ struct MenuSheet: View {
                 PaperSwitch(title: "显示帧率", on: $controller.showMetrics)
             }
             .padding(.horizontal, 16)
+            Text("远程计算").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+            RemoteSettings(model: model)
             Text("声音与触感").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
             FeelSettings()
             Text("显示设置").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
@@ -1364,6 +1485,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.15.0", ["新增「远程计算」：电脑负责推演，手机只负责画面。在 Windows 电脑上运行「列国纪远程计算」LieguojiServer.exe（随本版一起构建，下载包里附使用说明），窗口会显示电脑地址；手机与电脑连同一个 Wi-Fi，在「菜单 › 远程计算」或主页「设置」里填入地址点连接，当前世界会搬到电脑上继续推演。断开时世界搬回手机；连接意外中断会自动切回本机，用电脑最后一次返回的世界接着玩。",
+                    "军队不再重叠、不再闪烁：挤在一起的军团会自动错开排列；以前每帧兵种图层的绘制顺序随机，重叠的图标会来回闪，现已固定。",
+                    "军队页重做：国色兵种军牌、状态一行看完（交战／行军、所在地 → 目的地、指挥），新增「定位」；新增「整编」可直接修改兵力（±1k、±5k 或输入）、兵种和士气。",
+                    "从军事列表、州郡页点军团或舰队，镜头直接飞到那支部队并放大，面板自动降低让出地图。",
+                    "修复点保存没有反应：菜单「保存」会提示已保存或保存失败；国家自定义、人物修改、征兵成功后都有明确提示和震动。"]),
         ("0.14.0", ["修复闪退：切换文化、家族、宗教等地图视图后放大地图，巨大的群体名称会被渲染成几千像素的图片导致内存耗尽闪退；现在文字图片最大只渲染 96 点、超出部分缩放，超过屏幕的名称直接隐藏。",
                     "倍速真正生效：倍速改为每步推演的天数（1×、2×、4×、8×），引擎一次推进多天、地图与面板只刷新一次，高倍速明显更快。",
                     "生成世界重做：地形升起延长到九秒并按阶段逐层出现——海洋、大陆、山脉、江河、森林草原、州郡界线、列国国色、国界、城市与地名，进度文字与地图同步；之后的世家、军队、邦交各停留片刻再进入世界，不再一闪而过。生成动画不再每帧重算全图配色，更流畅。",

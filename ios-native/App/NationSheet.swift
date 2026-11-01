@@ -176,7 +176,7 @@ struct NationSheet: View {
             .sheet(item: $editing) { p in
                 PersonEditor(person: p) { skills, traits in
                     editing = nil
-                    Task { await run { await model.editPerson(p.key, skills: skills, traits: traits) } }
+                    Task { await run(success: "\(p.name)的属性与天赋已修改") { await model.editPerson(p.key, skills: skills, traits: traits) } }
                 }
                 .presentationDetents([.large]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
             }
@@ -375,7 +375,7 @@ struct NationSheet: View {
                 Divider2()
                 Button {
                     let gold = Double(goldText)
-                    Task { await run { await model.editNation(nation, gold: gold, destiny: destinyValue, polity: nil) } }
+                    Task { await run(success: "国库与国运已修改") { await model.editNation(nation, gold: gold, destiny: destinyValue, polity: nil) } }
                     goldText = ""
                 } label: { Text("颁行").font(Theme.kai(17)).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
                 .buttonStyle(.plain)
@@ -409,7 +409,7 @@ struct NationSheet: View {
                 Divider2()
                 Button {
                     let p = levyProvince
-                    Task { await run { await model.addArmy(nation, province: p) } }
+                    Task { await run(success: "已征募新军") { await model.addArmy(nation, province: p) } }
                 } label: { Label("征兵", systemImage: "plus.circle").font(Theme.kai(17)).foregroundStyle(levyProvince < 0 ? Theme.ink2 : Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
                 .buttonStyle(.plain).disabled(levyProvince < 0)
             }
@@ -480,8 +480,10 @@ struct NationSheet: View {
         }
     }
     /// Runs a command; a refusal shows its reason, a success the chronicle line.
-    private func run(_ command: () async -> String?) async {
-        if let reason = await command() { say(reason) } else { say(model.state?.events.last?.text ?? "已执行") }
+    /// Runs a state-level order; a failure says why, a success says `success` (or the newest chronicle line).
+    private func run(success: String? = nil, _ command: () async -> String?) async {
+        if let reason = await command() { say(reason); GameFeel.shared.notify(.error) }
+        else { say(success ?? model.state?.events.last?.text ?? "已执行"); GameFeel.shared.notify(.success) }
         await reload()
     }
 }

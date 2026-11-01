@@ -288,8 +288,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     byUnit[a.unit, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, 1, size, at.x, at.y])
                 }
             }
-            units = byUnit.compactMap { unit, data -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
-                guard let texture = unitTextures[unit], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
+            // A fixed draw order (by unit kind): a fresh dictionary's order changed every rebuild, so
+            // overlapping icons swapped in front of each other and flickered.
+            units = byUnit.keys.sorted().compactMap { unit -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
+                guard let data = byUnit[unit], let texture = unitTextures[unit], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
                 return (texture: texture, buffer: b, count: data.count / 11)
             }
         }

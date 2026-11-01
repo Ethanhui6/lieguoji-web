@@ -233,6 +233,21 @@ extension NativeEngine {
         return (true, "国家设定已修改。")
     }
 
+    /// 自定义军团: troop strength (1…500 000), unit type and morale (0…100).
+    public func editArmy(_ armyId: String, troops: Int?, unit: String?, morale: Double?) -> (ok: Bool, reason: String) {
+        let r = run
+        guard let a = r.world.armies.asArray.first(where: { $0.id.asString == armyId }), a.troops.asNumber > 0 else { return (false, "这支军队不存在或已覆灭。") }
+        if let troops {
+            let t = min(500_000, max(1, troops))
+            a.troops = JS(t)
+            let force = r.tactics.forces[armyId]
+            if !force.isNull && (force.fullStrength.optionalNumber ?? 0) < Double(t) { force.fullStrength = JS(t) }
+        }
+        if let unit, ["Infantry", "Archer", "Shield", "Cavalry", "Elite"].contains(unit) { r.units[armyId] = JS(unit) }
+        if let morale { a.morale = JS(min(100, max(0, morale.rounded()))) }
+        return (true, "\(a.name.asString)已整编。")
+    }
+
     /// 添加军队: a new legion of the state raised in one of its provinces.
     public func addArmy(_ index: Int, province: Int) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray, provinces = r.world.provinces.asArray

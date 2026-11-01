@@ -42,8 +42,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lieguoji.native
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "0.14.0"
-        CURRENT_PROJECT_VERSION: "48"
+        MARKETING_VERSION: "0.15.0"
+        CURRENT_PROJECT_VERSION: "49"
     info:
       path: App/Info.plist
       properties:
@@ -52,6 +52,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CADisableMinimumFrameDurationOnPhone: true
+        NSLocalNetworkUsageDescription: 远程计算需要连接同一局域网里运行列国纪服务器的电脑，由电脑推演世界、手机显示画面。
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         UILaunchScreen: {}

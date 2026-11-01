@@ -47,6 +47,8 @@ import LieguojiCore
     var tween: Double = 0.3
     /// Troop / ship counts by army or fleet id, shown under the icons when zoomed in.
     var troopTexts: [String: String] = [:]
+    /// Where the icon with this key is drawn now (set by the map view).
+    var placed: ((String) -> (Double, Double)?)?
     /// A fleet waiting for its port: the next province tap is its destination.
     @Published var marchingFleet: Int?
     /// 绘制疆域: provinces tapped or dragged over go to this state.
@@ -60,6 +62,9 @@ import LieguojiCore
     /// Slow drift of the title backdrop.
     @Published var drifting = false
     func fly(to province: Int) { focus = (province, UUID()) }
+    /// Flies to a map point and zooms in (an army or fleet), the point above the sheet.
+    @Published var focusPoint: (x: Double, y: Double, id: UUID)?
+    func fly(x: Double, y: Double) { focusPoint = (x, y, UUID()) }
     func zoom(_ factor: Double) { zoomRequest = (factor, UUID()) }
 }
 
@@ -113,6 +118,7 @@ struct MapView: UIViewRepresentable {
         private var pinching = false, pinchTouches = 2
         private var placed = false
         private var focusID: UUID?
+        private var focusPointID: UUID?
         private var resetID: UUID?
         private var zoomID: UUID?
         private let selection = UISelectionFeedbackGenerator()
@@ -146,6 +152,10 @@ struct MapView: UIViewRepresentable {
             labels.isUserInteractionEnabled = false
             effects.frame = container.bounds; effects.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(effects)
             troops.frame = container.bounds; troops.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(troops)
+            controller.placed = { [weak self] key in
+                guard let p = self?.renderer?.placedSprites().first(where: { $0.sprite.key == key }) else { return nil }
+                return (Double(p.x), Double(p.y))
+            }
             metrics.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
             metrics.textColor = .white; metrics.backgroundColor = UIColor.black.withAlphaComponent(0.6)
             metrics.numberOfLines = 0; metrics.layer.cornerRadius = 8; metrics.layer.masksToBounds = true
@@ -399,6 +409,12 @@ struct MapView: UIViewRepresentable {
                 focusID = f.id
                 let p = map.meta.provinces[f.province]
                 animate(to: MapCamera(centerX: Double(p.x), centerY: Double(p.y), scale: max(camera.scale, bounds.lowerBound * 4)), duration: 0.5)
+            }
+            if let f = controller.focusPoint, f.id != focusPointID {
+                focusPointID = f.id
+                let scale = max(camera.scale, bounds.lowerBound * 7)
+                // The sheet covers the lower part of the screen: the unit sits in the upper third.
+                animate(to: MapCamera(centerX: f.x, centerY: f.y + Double(viewport.height) * 0.2 / scale, scale: scale), duration: 0.55)
             }
             if let z = controller.zoomRequest, z.id != zoomID {
                 zoomID = z.id

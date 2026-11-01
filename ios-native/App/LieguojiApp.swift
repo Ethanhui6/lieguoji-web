@@ -295,17 +295,52 @@ enum Panel: Identifiable, Equatable {
         case .menu: return "menu"
         }
     }
+    /// The name on the back row (返回 …) of the page this panel was opened from.
+    var title: String {
+        switch self {
+        case .province: return "州郡"
+        case .army: return "军团"
+        case .fleet: return "舰队"
+        case .nation: return "国家"
+        case .statistics: return "排行"
+        case .edicts: return "诏令"
+        case .nations: return "列国"
+        case .military: return "军事"
+        case .diplomacy: return "外交"
+        case .chronicle: return "纪事"
+        case .menu: return "菜单"
+        }
+    }
+    /// The bottom tab this panel belongs to (highlighted while it is open).
+    var tab: String? {
+        switch self {
+        case .nations, .nation: return "nations"
+        case .military, .army, .fleet: return "military"
+        case .diplomacy: return "diplomacy"
+        case .chronicle: return "chronicle"
+        case .statistics: return "statistics"
+        default: return nil
+        }
+    }
 }
 
 struct GameView: View {
     @ObservedObject var model: GameModel
     @ObservedObject private var controller: MapController
     @State private var panel: Panel?
+    /// Pages the open sheet came from: one sheet stays up and its pages slide in place (返回 goes back).
+    @State private var trail: [Panel] = []
+    /// The last page shown, kept while the sheet slides away so it does not go blank.
+    @State private var lastPanel: Panel?
+    /// Going back slides the page in from the leading edge.
+    @State private var backward = false
     @State private var toast: String?
+    @State private var toastSerial = 0
     @State private var viewsOpen = false
     /// The pending map pick is a retreat (原作防御模式) rather than a march.
     @State private var marchRetreat = false
     @State private var rtsDefend = false
+    @Namespace private var tabMarker
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
 
     var body: some View {
@@ -329,7 +364,7 @@ struct GameView: View {
         .overlay(alignment: .bottom) { bottomBar.offset(y: controller.reveal >= 1 ? 0 : 120) }
         .overlay(alignment: .bottomLeading) {
             if !model.viewLegend.isEmpty {
-                MapViewLegend(mode: model.mapView, legend: model.viewLegend).padding(.leading, 14).padding(.bottom, 150)
+                MapViewLegend(mode: model.mapView, legend: model.viewLegend).padding(.leading, 14).padding(.bottom, model.state?.events.isEmpty == false ? 120 : 80)
                     .transition(.asymmetric(insertion: .scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity), removal: .opacity))
             }
         }
@@ -337,14 +372,25 @@ struct GameView: View {
         .overlay(alignment: .topTrailing) {
             MapViewSwitcher(mode: $model.mapView, open: $viewsOpen).allowsHitTesting(viewsOpen).padding(.top, 52).padding(.trailing, 14)
         }
-        .overlay(alignment: .center) {
+        .overlay(alignment: .bottom) {
             if let toast {
-                Text(toast).font(Theme.kai(17)).foregroundStyle(Theme.ink).multilineTextAlignment(.center).padding(.horizontal, 18).padding(.vertical, 12)
-                    .glass(RoundedRectangle(cornerRadius: 16, style: .continuous)).padding(.horizontal, 40)
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                HStack(spacing: 10) {
+                    Seal(text: "令", size: 22)
+                    Text(toast).font(Theme.kai(16)).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.leading, 10).padding(.trailing, 16).padding(.vertical, 10)
+                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous)))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.2), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.22), lineWidth: 0.6).padding(3))
+                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 10, y: 4)
+                .padding(.horizontal, 32).padding(.bottom, 116)
+                .id(toastSerial)
+                .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.92, anchor: .bottom)), removal: .opacity.combined(with: .offset(y: -12))))
+                .onTapGesture { self.toast = nil }
             }
         }
-        .animation(.easeOut(duration: 0.2), value: toast)
+        .animation(.spring(response: 0.38, dampingFraction: 0.8), value: toastSerial)
+        .animation(.easeOut(duration: 0.22), value: toast)
         .opacity(controller.reveal >= 1 ? 1 : 0)
         .animation(.spring(response: 0.55, dampingFraction: 0.85), value: controller.reveal >= 1)
         .onAppear {
@@ -371,28 +417,83 @@ struct GameView: View {
             }
         }
         .onChange(of: controller.groupArmies) { _, _ in model.refreshArmies() }
+        .onChange(of: model.mapView) { _, _ in
+            // Choosing a view rolls the switcher back up a moment later.
+            Task { try? await Task.sleep(nanoseconds: 280_000_000); withAnimation { viewsOpen = false } }
+        }
+        .sensoryFeedback(.selection, trigger: model.mapView)
+        .onChange(of: panel) { _, p in if let p { lastPanel = p } }
+        .sensoryFeedback(.impact(weight: .light), trigger: panel?.id)
+        .sensoryFeedback(.selection, trigger: controller.selectedProvince)
         .onChange(of: controller.selectedArmy) { _, army in
             model.refreshArmies()
-            if let army { panel = .army(army) } else if case .army = panel { panel = nil }
+            if let army { show(.army(army)) } else if case .army = panel { panel = nil }
         }
         .onChange(of: controller.selectedFleet) { _, fleet in
             model.refreshArmies()
-            if let fleet { panel = .fleet(fleet) } else if case .fleet = panel { panel = nil }
+            if let fleet { show(.fleet(fleet)) } else if case .fleet = panel { panel = nil }
         }
         .onChange(of: controller.selectedProvince) { _, province in
-            if let province { panel = .province(province) } else if case .province = panel { panel = nil }
+            if province != nil { withAnimation { viewsOpen = false } }
+            if let province { show(.province(province)) } else if case .province = panel { panel = nil }
         }
-        .sheet(item: $panel, onDismiss: {
+        .sheet(isPresented: Binding(get: { panel != nil }, set: { if !$0 { panel = nil } }), onDismiss: {
+            trail = []
             if panel == nil { controller.selectedProvince = nil; controller.selectedFleet = nil; if controller.marchingArmy == nil { controller.selectedArmy = nil } }
-        }) { panel in
-            sheet(for: panel).presentationBackground { MemorialPaper() }.presentationDragIndicator(.visible).presentationCornerRadius(28).font(Theme.kai(17))
+        }) {
+            if let panel = panel ?? lastPanel {
+                sheet(for: panel)
+                    .id(panel.id)
+                    .transition(.asymmetric(insertion: .move(edge: backward ? .leading : .trailing).combined(with: .opacity),
+                                            removal: .move(edge: backward ? .trailing : .leading).combined(with: .opacity)))
+                    .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
+                    .presentationBackground { MemorialPaper() }.presentationDragIndicator(.visible).presentationCornerRadius(28).font(Theme.kai(17))
+            }
         }
+    }
+
+    /// Opens a page from inside the sheet: the current page goes on the trail.
+    private func open(_ next: Panel) {
+        guard next != panel else { return }
+        backward = false
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.88)) {
+            if let panel { trail.append(panel); if trail.count > 8 { trail.removeFirst() } }
+            panel = next
+        }
+    }
+    /// A map pick or a bottom tab starts a fresh docket (no trail); an open sheet slides to it.
+    private func show(_ next: Panel) {
+        guard next != panel else { return }
+        backward = false
+        if panel == nil { trail = []; panel = next; return }
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.88)) { trail = []; panel = next }
+    }
+    private func back() {
+        guard let last = trail.last else { return }
+        backward = true
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.88)) { trail.removeLast(); panel = last }
+    }
+    private func backRow(_ last: Panel) -> some View {
+        HStack {
+            Button { back() } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left").font(.system(size: 13, weight: .semibold))
+                    Text("返回" + last.title).font(Theme.kai(15))
+                }
+                .foregroundStyle(Theme.seal).padding(.horizontal, 12).frame(height: 30)
+                .background(Theme.seal.opacity(0.08), in: Capsule())
+                .overlay(Capsule().stroke(Theme.seal.opacity(0.25), lineWidth: 0.8))
+            }
+            .buttonStyle(PressStyle())
+            Spacer()
+        }
+        .padding(.horizontal, 18).padding(.top, 14)
     }
 
     @ViewBuilder private func sheet(for panel: Panel) -> some View {
         switch panel {
         case .province(let p):
-            ProvinceSheet(model: model, province: p, openNation: { n in self.panel = .nation(n) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            ProvinceSheet(model: model, province: p, openNation: { n in open(.nation(n)) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .army(let a):
             ArmySheet(model: model, army: a, onMarch: {
                 marchRetreat = false; controller.marchingArmy = a; self.panel = nil; say("点选地图上的目的地")
@@ -408,27 +509,30 @@ struct GameView: View {
         case .edicts:
             EdictSheet(model: model, say: say).presentationDetents([.medium, .large])
         case .statistics:
-            StatisticsSheet(model: model) { n in self.panel = .nation(n) }.presentationDetents([.medium, .large]).presentationBackground(.clear)
+            StatisticsSheet(model: model) { n in open(.nation(n)) }.presentationDetents([.medium, .large]).presentationBackground(.clear)
         case .nations:
-            NationsSheet(model: model) { n in self.panel = .nation(n) }.presentationDetents([.medium, .large])
+            NationsSheet(model: model) { n in open(.nation(n)) }.presentationDetents([.medium, .large])
         case .military:
             MilitarySheet(model: model, select: { army in
-                self.panel = nil
+                // The army's docket slides in over the roster (返回军事 goes back).
+                open(.army(army))
                 if let p = model.army(army)?.province, p >= 0 { controller.fly(to: p) }
                 controller.selectedArmy = army
-            }, selectFleet: { fleet in self.panel = nil; controller.selectedFleet = fleet }).presentationDetents([.medium, .large])
+            }, selectFleet: { fleet in open(.fleet(fleet)); controller.selectedFleet = fleet }).presentationDetents([.medium, .large])
         case .diplomacy:
             DiplomacySheet(model: model, say: say).presentationDetents([.medium, .large])
         case .chronicle:
             ChronicleSheet(model: model).presentationDetents([.medium, .large])
         case .menu:
-            MenuSheet(model: model, controller: controller, openEdicts: { self.panel = .edicts }) { self.panel = nil }.presentationDetents([.medium, .large])
+            MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }) { self.panel = nil }.presentationDetents([.medium, .large])
         }
     }
 
     private func say(_ text: String) {
+        toastSerial += 1
+        let serial = toastSerial
         toast = text
-        Task { try? await Task.sleep(nanoseconds: 2_000_000_000); if toast == text { toast = nil } }
+        Task { try? await Task.sleep(nanoseconds: 2_400_000_000); if toastSerial == serial { toast = nil } }
     }
 
     // MARK: chrome
@@ -436,7 +540,8 @@ struct GameView: View {
     private var topBar: some View {
         HStack(spacing: 10) {
             HStack(spacing: 8) {
-                Text(model.state?.dateText ?? "").font(Theme.kai(17)).foregroundStyle(Theme.ink)
+                Text(model.state?.dateText ?? "").font(Theme.kai(17)).foregroundStyle(Theme.ink).monospacedDigit()
+                    .contentTransition(.numericText()).animation(.snappy(duration: 0.25), value: model.state?.dateText)
                 if let wars = model.state?.wars.count, wars > 0 {
                     HStack(spacing: 3) { Circle().fill(Theme.seal).frame(width: 6, height: 6); Text("\(wars)场战争").font(Theme.kai(13)).foregroundStyle(Theme.seal) }
                 }
@@ -449,7 +554,7 @@ struct GameView: View {
                 if controller.boxSelecting || !controller.groupArmies.isEmpty { controller.boxSelecting = false; controller.groupArmies = []; model.refreshArmies() }
                 else { controller.boxSelecting = true; say("即时战略：在地图上拖出方框选择军队") }
             } label: { CircleIcon(symbol: controller.boxSelecting || !controller.groupArmies.isEmpty ? "xmark" : "rectangle.dashed") }.buttonStyle(PressStyle())
-            Button { panel = .menu } label: { CircleIcon(symbol: "ellipsis") }.buttonStyle(PressStyle())
+            Button { show(.menu) } label: { CircleIcon(symbol: "ellipsis") }.buttonStyle(PressStyle())
         }
         .padding(.horizontal, 14).padding(.top, 2)
     }
@@ -485,21 +590,22 @@ struct GameView: View {
     private var bottomBar: some View {
         VStack(spacing: 10) {
             if let event = model.state?.events.last {
-                Button { panel = .chronicle } label: {
+                Button { show(.chronicle) } label: {
                     Text(event.text).font(Theme.kai(14)).foregroundStyle(Theme.ink).lineLimit(1)
                         .padding(.horizontal, 14).frame(height: 32).glass(Capsule())
                 }
                 .buttonStyle(.plain).padding(.horizontal, 30)
-                .id(event.text).transition(.opacity)
+                .id(event.text).transition(.push(from: .bottom))
             }
             HStack(spacing: 10) {
                 HStack(spacing: 0) {
-                    TabButton(symbol: "building.columns", title: "国家") { panel = .nations }
-                    TabButton(symbol: "shield", title: "军事") { panel = .military }
-                    TabButton(symbol: "scroll", title: "外交") { panel = .diplomacy }
-                    TabButton(symbol: "book", title: "纪事") { panel = .chronicle }
-                    TabButton(symbol: "chart.bar.xaxis", title: "排行") { panel = .statistics }
+                    TabButton(symbol: "building.columns", title: "国家", active: panel?.tab == "nations", marker: tabMarker) { show(.nations) }
+                    TabButton(symbol: "shield", title: "军事", active: panel?.tab == "military", marker: tabMarker) { show(.military) }
+                    TabButton(symbol: "scroll", title: "外交", active: panel?.tab == "diplomacy", marker: tabMarker) { show(.diplomacy) }
+                    TabButton(symbol: "book", title: "纪事", active: panel?.tab == "chronicle", marker: tabMarker) { show(.chronicle) }
+                    TabButton(symbol: "chart.bar.xaxis", title: "排行", active: panel?.tab == "statistics", marker: tabMarker) { show(.statistics) }
                 }
+                .animation(.spring(response: 0.35, dampingFraction: 0.8), value: panel?.tab)
                 .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
                 HStack(spacing: 2) {
                     Button { model.cycleSpeed() } label: { Text("\(model.speed)×").font(Theme.kai(18)).foregroundStyle(Theme.ink).frame(width: 40, height: 50).contentTransition(.numericText()) }
@@ -537,14 +643,23 @@ struct CircleIcon: View {
 }
 
 struct TabButton: View {
-    let symbol: String; let title: String; let action: () -> Void
+    let symbol: String; let title: String
+    var active = false
+    var marker: Namespace.ID? = nil
+    let action: () -> Void
     var body: some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                Image(systemName: symbol).font(.system(size: 18))
+                Image(systemName: symbol).font(.system(size: 18)).symbolVariant(active ? .fill : .none)
                 Text(title).font(Theme.kai(12))
             }
-            .foregroundStyle(Theme.ink).frame(width: 50, height: 50).contentShape(Rectangle())
+            .foregroundStyle(active ? Theme.seal : Theme.ink).frame(width: 50, height: 50).contentShape(Rectangle())
+            .overlay(alignment: .bottom) {
+                // The vermilion mark under the open tab slides between tabs.
+                if active, let marker {
+                    Capsule().fill(Theme.seal).frame(width: 16, height: 2.5).offset(y: 1).matchedGeometryEffect(id: "tab", in: marker)
+                }
+            }
         }
         .buttonStyle(PressStyle())
     }
@@ -1058,6 +1173,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.25", ["面板交互重做：所有面板共用一张奏折，切换时整页左右滑动，不再先收起再弹出；从列国、排行、州郡点进国家，或从军事点进军团，顶部出现「返回列国／返回军事」，逐页退回。",
+                    "底部标签栏：当前打开的面板对应标签变为朱红，并有一道朱红短线在标签之间滑动。",
+                    "提示改为奏折纸条：带「令」字印，从底栏上方升起，点按即收；连续提示不再互相吞掉。",
+                    "地图视图：选好视图后切换器自动卷起；点地图时切换器也会收起；图例位置随底栏对齐。",
+                    "日期数字滚动变化，事件栏新事件自下而上推入；选择州郡、切换视图、翻页时有轻触反馈。"]),
         ("0.9.24", ["家族、文化、宗教视图按原作改为按群体命名：地图上画出群体的轮廓并写群体名（如某某氏、某某文化、某某教），不再显示国名；联盟视图仍显示国名。",
                     "交战改为接触才开打：两军在地图上走到一起，图标相向靠拢后才出现交战动画，不再隔很远就开战。",
                     "交战标签：双剑下方显示双方国色与国名（甲 ⚔ 乙），一眼看清谁在打谁。",

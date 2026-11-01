@@ -316,8 +316,8 @@ struct MapView: UIViewRepresentable {
                 map = next
                 renderer?.setMap(next)
                 // City names never change hands with a province: only the state names are rebuilt.
-                labels.setNations(map: next)
-                if let groups = controller.viewLabels { labels.setGroups(groups) }
+                // Daily border changes swap the names in place; only a view switch cross-fades.
+                if let groups = controller.viewLabels { labels.setGroups(groups, animated: false) } else { labels.setNations(map: next, animated: false) }
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
                 mtk.setNeedsDisplay()
             }
@@ -331,8 +331,9 @@ struct MapView: UIViewRepresentable {
                 if renderer?.isAnimating == true { startLink() }
             }
             if controller.viewLabels != shownViewLabels {
+                let animated = controller.viewLabels?.map(\.name) != shownViewLabels?.map(\.name)
                 shownViewLabels = controller.viewLabels
-                if let groups = shownViewLabels { labels.setGroups(groups) } else { labels.setNations(map: map) }
+                if let groups = shownViewLabels { labels.setGroups(groups, animated: animated) } else { labels.setNations(map: map, animated: animated) }
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
             }
             if controller.effects != shownEffects { shownEffects = controller.effects; effects.set(shownEffects); effects.alpha = controller.reveal >= 1 ? 1 : 0 }
@@ -434,20 +435,32 @@ final class MapLabelsView: UIView {
     }
     /// Ownership changed: replace the state names, keep every city label and its rendered image.
     /// A colour view names its groups (culture, family, religion) where the state names were.
-    func setGroups(_ groups: [GroupLabel]) {
-        for l in nations { l.view.removeFromSuperview() }
+    func setGroups(_ groups: [GroupLabel], animated: Bool = true) {
+        fadeOut(nations, animated)
         let unit = Double(MapLayers.fontUnit)
         nations = groups.map { g in
             let measured = (g.name as NSString).size(withAttributes: [.font: Self.font(1)])
             let size = MapLayers.labelFontSize(box: g.box, emWidth: Float(measured.width), emHeight: Float(measured.height))
             return Label(text: g.name, x: Double(g.box.x), y: Double(g.box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
         }
-        for l in nations { l.view.isHidden = true; addSubview(l.view) }
+        fadeIn(nations, animated)
     }
-    func setNations(map: WorldMap) {
-        for l in nations { l.view.removeFromSuperview() }
+    func setNations(map: WorldMap, animated: Bool = true) {
+        fadeOut(nations, animated)
         nations = Self.nationLabels(map, unit: Double(MapLayers.fontUnit))
-        for l in nations { l.view.isHidden = true; addSubview(l.view) }
+        fadeIn(nations, animated)
+    }
+    /// Name sets cross-fade when a view switches or borders change, instead of popping.
+    private func fadeOut(_ old: [Label], _ animated: Bool) {
+        let views = old.map(\.view)
+        guard animated else { for v in views { v.removeFromSuperview() }; return }
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: { for v in views { v.alpha = 0 } },
+                       completion: { _ in for v in views { v.removeFromSuperview() } })
+    }
+    private func fadeIn(_ new: [Label], _ animated: Bool) {
+        for l in new { l.view.isHidden = true; l.view.alpha = animated ? 0 : 1; addSubview(l.view) }
+        guard animated else { return }
+        UIView.animate(withDuration: 0.3, delay: 0.08, options: [.allowUserInteraction], animations: { for l in new { l.view.alpha = 1 } })
     }
     /// Rendered label images by text, size and colours: zooming back and forth reuses them.
     private static let images: NSCache<NSString, UIImage> = { let c = NSCache<NSString, UIImage>(); c.countLimit = 1500; return c }()

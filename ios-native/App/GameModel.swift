@@ -456,13 +456,29 @@ import LieguojiCore
     /// The colour view on the map (国家、联盟、文化、家族、宗教、地形).
     @Published var mapView: MapViewMode = .state { didSet { Task { await refreshView() } } }
     @Published private(set) var viewLegend: [MapViewData.Entry] = []
+    /// A colour view refresh is running / another was asked for meanwhile (refreshes coalesce, so
+    /// fast play does not pile up view computations).
+    private var viewBusy = false, viewDirty = false
     func refreshView() async {
         controller.mode = mapView == .terrain ? .terrain : .political
-        guard mapView != .state && mapView != .terrain, let data = await native.view(mapView.rawValue),
-              let v = try? JSONDecoder().decode(MapViewData.self, from: data) else { controller.viewFills = nil; controller.viewLabels = nil; viewLegend = []; return }
-        controller.viewLabels = v.labels
-        controller.viewFills = v.fills.map { RGB(css: $0) ?? RGB(1, 1, 1) }
-        viewLegend = v.legend
+        let mode = mapView
+        guard mode != .state && mode != .terrain else {
+            if controller.viewFills != nil { controller.viewFills = nil }
+            if controller.viewLabels != nil { controller.viewLabels = nil }
+            if !viewLegend.isEmpty { viewLegend = [] }
+            return
+        }
+        if viewBusy { viewDirty = true; return }
+        viewBusy = true
+        defer { viewBusy = false; if viewDirty { viewDirty = false; Task { await refreshView() } } }
+        guard let data = await native.view(mode.rawValue),
+              let v = try? await Task.detached(operation: { try JSONDecoder().decode(MapViewData.self, from: data) }).value else { return }
+        // The player switched views while this one was computed: drop it (the switch refreshes again).
+        guard mapView == mode else { return }
+        let fills = v.fills.map { RGB(css: $0) ?? RGB(1, 1, 1) }
+        if controller.viewLabels != v.labels { controller.viewLabels = v.labels }
+        if controller.viewFills != fills { controller.viewFills = fills }
+        if viewLegend != v.legend { viewLegend = v.legend }
     }
     func worldSettings() async -> WorldSettings? {
         guard let data = await native.worldSettings() else { return nil }

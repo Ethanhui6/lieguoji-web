@@ -35,7 +35,7 @@ public enum Daily {
         }
         return (eligible, result.held)
     }
-    static func frameTicks(_ r: JS) -> Int? { r.frameLoop.isNull ? nil : r.frameLoop.ticks.optionalNumber.map { Int($0) } ?? 12 }
+    static func frameTicks(_ r: JS) -> Int? { r.frameLoop.isNull ? nil : r.frameLoop.ticks.optionalNumber.map { Int($0) } ?? 20 }
     static func align(_ at: Double, _ frame: Int?) -> Double { guard let frame else { return at }; return (at / Double(frame)).rounded(.up) * Double(frame) }
     public static func reconcileAttackClock(_ r: JS, _ eligible: Set<String>, now: Double) {
         let c = r.forceClock, frame = frameTicks(r)

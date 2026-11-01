@@ -295,7 +295,6 @@ public enum RunWindow {
 }
 
 extension Nobility {
-    static let polities = ["Kingdom", "Empire", "Federation", "Republic", "Tribal", "Theocracy"]
     static func leaderFamily(_ r: JS, _ nation: String) -> Int? {
         let id = r.people.nations[nation].leaderId
         if id.isNull { return nil }

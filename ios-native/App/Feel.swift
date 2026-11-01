@@ -91,8 +91,8 @@ struct RemoteSettings: View {
             Divider2()
             if model.remoteAddress == nil {
                 HStack {
-                    TextField("", text: $address, prompt: Text("电脑地址，如 192.168.1.20:8765").foregroundColor(Theme.ink2.opacity(0.6)))
-                        .font(Theme.kai(16)).keyboardType(.numbersAndPunctuation).autocorrectionDisabled().textInputAutocapitalization(.never)
+                    TextField("", text: $address, prompt: Text("配对码（如 ABCD-2345）或局域网地址").foregroundColor(Theme.ink2.opacity(0.6)))
+                        .font(Theme.kai(16)).keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.characters)
                     Button("连接") {
                         busy = true; message = ""
                         Task { let error = await model.connectRemote(address); busy = false; message = error ?? "已连接，推演改由电脑完成"; GameFeel.shared.notify(error == nil ? .success : .error) }
@@ -109,7 +109,7 @@ struct RemoteSettings: View {
             }
             if !message.isEmpty { Text(message).font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10).frame(maxWidth: .infinity, alignment: .leading) }
             Divider2()
-            Text("在电脑上运行「列国纪远程计算」LieguojiServer.exe（Windows），窗口会显示地址；手机与电脑连同一个 Wi-Fi 后填入即可。连接后推演由电脑完成，手机只画画面；断开时世界会搬回手机继续。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+            Text("在电脑上运行「列国纪远程计算」LieguojiServer.exe（Windows），窗口会显示配对码。填入配对码即可连接，不需要同一 Wi-Fi，用流量在外面也行；以后进入世界会自动接入。同一 Wi-Fi 下也可填窗口里的局域网地址直连（更快）。断开时世界搬回手机继续。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                 .padding(.horizontal, 16).padding(.vertical, 10).fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 16)

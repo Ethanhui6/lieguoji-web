@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import LieguojiCore
 #if os(Windows)
 import WinSDK
@@ -15,6 +18,72 @@ import Darwin
 setvbuf(stdout, nil, _IONBF, 0)
 let port = UInt16(CommandLine.arguments.dropFirst().first ?? "") ?? 8765
 let service = EngineService()
+/// The relay and the local network share one engine: one request at a time.
+let engineLock = NSLock()
+func serve(_ call: String, _ args: [String: Any], _ payload: Data?) -> EngineService.Reply {
+    engineLock.lock(); defer { engineLock.unlock() }
+    return service.handle(call, args, payload: payload)
+}
+
+// MARK: 中转（不需要局域网）
+// The computer long-polls the 列国纪 relay (on the game's own site, reachable without a VPN) for
+// the phone's requests under its pairing code and posts the replies back.
+let relayBases = ["https://lieguoji-web.pages.dev/api/relay", "https://claude-native-map.lieguoji-web.pages.dev/api/relay"]
+
+func pairingCode() -> String {
+    let dir = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()
+    let file = dir.appendingPathComponent("pairing.txt")
+    if let saved = try? String(contentsOf: file, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines), saved.count >= 6 { return saved }
+    let letters = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+    let code = String((0..<8).map { _ in letters[Int.random(in: 0..<letters.count)] })
+    try? code.write(to: file, atomically: true, encoding: .utf8)
+    return code
+}
+
+func http(_ request: URLRequest) -> (status: Int, body: Data, response: HTTPURLResponse?)? {
+    let done = DispatchSemaphore(value: 0)
+    var out: (Int, Data, HTTPURLResponse?)?
+    URLSession.shared.dataTask(with: request) { data, response, _ in
+        if let h = response as? HTTPURLResponse { out = (h.statusCode, data ?? Data(), h) }
+        done.signal()
+    }.resume()
+    done.wait()
+    return out
+}
+
+func relayLoop(code: String) {
+    var base: String?
+    var announced = false
+    while true {
+        if base == nil {
+            for b in relayBases {
+                var probe = URLRequest(url: URL(string: b + "/room/\(code)/status")!); probe.timeoutInterval = 15
+                if let r = http(probe), r.status == 200, (try? JSONSerialization.jsonObject(with: r.body)) is [String: Any] { base = b; break }
+            }
+            if base == nil { if !announced { print("暂时连不上中转（稍后自动重试）；同一 Wi-Fi 下仍可用局域网地址直连。") }; announced = true; Thread.sleep(forTimeInterval: 10); continue }
+            print("已连上中转。手机「远程计算」里填配对码：\(code.prefix(4))-\(code.dropFirst(4))（不需要同一 Wi-Fi）")
+            announced = false
+        }
+        var poll = URLRequest(url: URL(string: base! + "/room/\(code)/next")!); poll.timeoutInterval = 45
+        guard let r = http(poll) else { base = nil; Thread.sleep(forTimeInterval: 3); continue }
+        if r.status == 204 { continue }
+        guard r.status == 200, r.body.count >= 8, let id = r.response?.value(forHTTPHeaderField: "x-request-id") else { Thread.sleep(forTimeInterval: 2); continue }
+        let h = EngineWire.readU32(r.body, at: 0)
+        guard r.body.count >= 8 + h else { continue }
+        let header = r.body.subdata(in: 4..<4 + h), pl = EngineWire.readU32(r.body, at: 4 + h)
+        let payload = r.body.count >= 8 + h + pl ? r.body.subdata(in: 8 + h..<8 + h + pl) : Data()
+        let o = (try? JSONSerialization.jsonObject(with: header)) as? [String: Any] ?? [:]
+        let call = o["call"] as? String ?? "", args = o["args"] as? [String: Any] ?? [:]
+        let reply = serve(call, args, payload.isEmpty ? nil : payload)
+        if call == "open" { print(reply.ok ? "（中转）世界已载入，开始推演" : "（中转）世界载入失败：\(reply.reason)") }
+        var post = URLRequest(url: URL(string: base! + "/room/\(code)/reply/\(id)")!)
+        post.httpMethod = "POST"; post.httpBody = EngineWire.reply(reply); post.timeoutInterval = 120
+        post.setValue("application/octet-stream", forHTTPHeaderField: "content-type")
+        _ = http(post)
+    }
+}
+let code = pairingCode()
+Thread.detachNewThread { relayLoop(code: code) }
 
 #if os(Windows)
 typealias Socket = SOCKET
@@ -139,10 +208,15 @@ address.sin_addr.S_un.S_addr = 0
 address.sin_addr.s_addr = 0
 #endif
 let bound = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(listener, $0, addressLength) } }
-guard bound == 0 else { print("端口 \(port) 已被占用，可在命令后加其他端口号，例如 LieguojiServer 8766"); exit(1) }
-guard listen(listener, 4) == 0 else { print("无法监听端口 \(port)"); exit(1) }
+// Without the local port the relay still serves the phone.
+if bound != 0 || listen(listener, 4) != 0 {
+    print("局域网端口 \(port) 不可用（可在命令后加其他端口号，例如 LieguojiServer 8766）；中转连接不受影响。")
+    while true { Thread.sleep(forTimeInterval: 3600) }
+}
 
-print("列国纪远程计算服务器已启动，端口 \(port)")
+print("列国纪远程计算服务器已启动")
+print("配对码：\(code.prefix(4))-\(code.dropFirst(4))（保存在程序旁的 pairing.txt，手机输入一次即可自动接入）")
+print("局域网直连端口 \(port)")
 let addresses = localAddresses()
 if addresses.isEmpty { print("在手机「设置 › 远程计算」里填写这台电脑的局域网 IP（可用 ipconfig 查看）和端口 \(port)") }
 else { print("在手机「设置 › 远程计算」里填写：" + addresses.map { "\($0):\(port)" }.joined(separator: "  或  ")) }
@@ -157,7 +231,7 @@ while true {
           let payloadLength = readU32(client), payloadLength < 1 << 30, let payload = receiveExactly(client, payloadLength) {
         let o = (try? JSONSerialization.jsonObject(with: header)) as? [String: Any] ?? [:]
         let call = o["call"] as? String ?? "", args = o["args"] as? [String: Any] ?? [:]
-        let reply = service.handle(call, args, payload: payload.isEmpty ? nil : payload)
+        let reply = serve(call, args, payload.isEmpty ? nil : payload)
         if call == "open" { print(reply.ok ? "世界已载入，开始推演" : "世界载入失败：\(reply.reason)") }
         calls += 1
         if Date().timeIntervalSince(started) > 30 { print("已处理 \(calls) 个请求"); calls = 0; started = Date() }

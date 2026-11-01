@@ -9,7 +9,7 @@ import LieguojiCore
 /// same EngineService requests.
 actor NativeHost {
     private let service = EngineService()
-    private var remote: RemoteLink?
+    private var remote: EngineLink?
     private(set) var remoteAddress: String?
     private static var catalogs = false
 
@@ -47,11 +47,22 @@ actor NativeHost {
 
     /// Connects to a computer and moves the world there (catalogues first, then the current save).
     func connect(_ address: String) async throws -> String {
-        var host = address.trimmingCharacters(in: .whitespaces), port: UInt16 = 8765
-        if let i = host.lastIndex(of: ":"), let p = UInt16(host[host.index(after: i)...]) { port = p; host = String(host[..<i]) }
-        guard !host.isEmpty else { throw EngineError.message("请填写电脑的局域网地址") }
-        let link = RemoteLink(host: host, port: port)
-        try await link.start()
+        let text = address.trimmingCharacters(in: .whitespaces)
+        // A pairing code (letters and digits, no dots) goes through the relay; an address is direct.
+        let code = text.replacingOccurrences(of: "-", with: "").uppercased()
+        let link: EngineLink, label: String
+        if code.count >= 6, code.count <= 16, code.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber) }), !text.contains(".") {
+            let relay = RelayLink(code: code)
+            try await relay.start()
+            link = relay; label = "配对码 \(code.prefix(4))-\(code.dropFirst(4))"
+        } else {
+            var host = text, port: UInt16 = 8765
+            if let i = host.lastIndex(of: ":"), let p = UInt16(host[host.index(after: i)...]) { port = p; host = String(host[..<i]) }
+            guard !host.isEmpty else { throw EngineError.message("请填写配对码或电脑的局域网地址") }
+            let direct = RemoteLink(host: host, port: port)
+            try await direct.start()
+            link = direct; label = "\(host):\(port)"
+        }
         let hello = try await link.call("ping", [:], payload: nil)
         guard hello.ok else { link.cancel(); throw EngineError.message("对方不是列国纪远程计算服务器") }
         let c = try Self.catalogData()
@@ -65,8 +76,8 @@ actor NativeHost {
             _ = try await link.call("enableAppRules", [:], payload: nil)
             lastWorld = save
         }
-        remote = link; remoteAddress = "\(host):\(port)"
-        return "\(host):\(port)"
+        remote = link; remoteAddress = label
+        return label
     }
     /// Back to the phone: the computer's world comes home first.
     func disconnect() async {
@@ -138,8 +149,54 @@ actor NativeHost {
     }
 }
 
+/// A channel to LieguojiServer: direct on the local network, or through the relay.
+protocol EngineLink: AnyObject, Sendable {
+    func call(_ name: String, _ args: [String: Any], payload: Data?) async throws -> EngineService.Reply
+    func cancel()
+}
+
+/// Through the 列国纪 relay on the game's own site (pages.dev, reachable without a VPN): the phone posts
+/// each request to the room of the computer's pairing code and gets the computer's reply back. No local
+/// network or public address needed on either side.
+final class RelayLink: EngineLink, @unchecked Sendable {
+    static let bases = ["https://lieguoji-web.pages.dev/api/relay", "https://claude-native-map.lieguoji-web.pages.dev/api/relay"]
+    let code: String
+    private var base = RelayLink.bases[0]
+    private let session: URLSession = {
+        let c = URLSessionConfiguration.default
+        c.timeoutIntervalForRequest = 200; c.timeoutIntervalForResource = 600; c.waitsForConnectivity = false
+        return URLSession(configuration: c)
+    }()
+    init(code: String) { self.code = code }
+    /// Finds a relay that answers and checks the computer is online.
+    func start() async throws {
+        var reached = false
+        for b in Self.bases {
+            var r = URLRequest(url: URL(string: b + "/room/\(code)/status")!); r.timeoutInterval = 12
+            guard let (data, response) = try? await session.data(for: r), (response as? HTTPURLResponse)?.statusCode == 200,
+                  let o = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { continue }
+            reached = true; base = b
+            if o["online"] as? Bool == true { return }
+        }
+        throw EngineError.message(reached ? "电脑不在线：请在电脑上运行「列国纪远程计算」，并核对配对码。" : "连不上中转服务器，请检查网络。")
+    }
+    func cancel() { session.invalidateAndCancel() }
+    func call(_ name: String, _ args: [String: Any], payload: Data?) async throws -> EngineService.Reply {
+        var r = URLRequest(url: URL(string: base + "/room/\(code)/call")!)
+        r.httpMethod = "POST"; r.setValue("application/octet-stream", forHTTPHeaderField: "content-type")
+        let (data, response) = try await session.upload(for: r, from: EngineWire.request(name, args, payload: payload))
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard status == 200 else { throw EngineError.message(String(data: data, encoding: .utf8).flatMap { $0.isEmpty ? nil : $0 } ?? "中转出错（\(status)）") }
+        guard data.count >= 12 else { throw EngineError.message("中转返回的数据不完整") }
+        let h = EngineWire.readU32(data, at: 0), header = data.subdata(in: 4..<4 + h)
+        let d = EngineWire.readU32(data, at: 4 + h), body = data.subdata(in: 8 + h..<8 + h + d)
+        let m = EngineWire.readU32(data, at: 8 + h + d), map = data.subdata(in: 12 + h + d..<12 + h + d + m)
+        return EngineService.Reply.decode(header: header, data: body, map: map)
+    }
+}
+
 /// A TCP link to LieguojiServer (EngineWire frames), one request at a time.
-final class RemoteLink: @unchecked Sendable {
+final class RemoteLink: EngineLink, @unchecked Sendable {
     private let connection: NWConnection
     private let queue = DispatchQueue(label: "lieguoji.remote")
     init(host: String, port: UInt16) {

@@ -19,11 +19,18 @@ import LieguojiCore
     func connectRemote(_ address: String) async -> String? {
         do {
             let a = try await native.connect(address)
-            remoteAddress = a; UserDefaults.standard.set(address, forKey: "remote.address")
+            remoteAddress = a; UserDefaults.standard.set(address, forKey: "remote.address"); UserDefaults.standard.set(true, forKey: "remote.auto")
             return nil
         } catch { return error.localizedDescription }
     }
-    func disconnectRemote() async { await native.disconnect(); remoteAddress = nil }
+    func disconnectRemote() async { await native.disconnect(); remoteAddress = nil; UserDefaults.standard.set(false, forKey: "remote.auto") }
+    /// 自动接入: entering a world reconnects to the computer used last time (if it is online).
+    func autoConnect() {
+        guard remoteAddress == nil, UserDefaults.standard.bool(forKey: "remote.auto"), let address = UserDefaults.standard.string(forKey: "remote.address"), !address.isEmpty else { return }
+        Task {
+            if let a = try? await native.connect(address) { remoteAddress = a; notice = "已自动接入电脑计算（\(a)）" }
+        }
+    }
     @Published var failure: String?
     @Published var generationNote = ""
     /// A war declared, a peace made or a province taken: shown as a banner for a moment.
@@ -113,6 +120,7 @@ import LieguojiCore
             generationNote = ""
             if phase != .founding { await reveal(world) } else { phase = .playing; controller.interactive = true }
             save()
+            autoConnect()
         } catch { failure = error.localizedDescription; phase = .title }
     }
 
@@ -157,6 +165,7 @@ import LieguojiCore
             }
             generationNote = ""
             await reveal(world)
+            autoConnect()
         } catch { failure = "存档无法读取：\(error.localizedDescription)"; phase = .title }
     }
 

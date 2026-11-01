@@ -13,7 +13,11 @@ import LieguojiCore
 struct MapEffects: Equatable {
     /// One side of a battle: the state's name and colour for the battle tag.
     struct Side: Equatable { let name: String; let r: Double; let g: Double; let b: Double }
-    struct Battle: Equatable { let key: String; let x: Double; let y: Double; var left: Side? = nil; var right: Side? = nil }
+    struct Battle: Equatable {
+        let key: String; let x: Double; let y: Double; var left: Side? = nil; var right: Side? = nil
+        /// The two armies in contact (map units): the clash line runs between them in their colours.
+        var ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0
+    }
     struct Burst: Equatable { enum Kind { case destroyed, founded, shock }; let id: String; let x: Double; let y: Double; let kind: Kind; let r: Double; let g: Double; let b: Double }
     struct Siege: Equatable { let key: String; let x: Double; let y: Double; let progress: Double; let r: Double; let g: Double; let b: Double }
     struct Flash: Equatable { let id: String; let x: Double; let y: Double; let r: Double; let g: Double; let b: Double }
@@ -37,6 +41,8 @@ struct MapEffects: Equatable {
 
 final class EffectsView: UIView {
     private var battleLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
+    /// Who fights whom, without text: a line from each army to the clash, in its state's colour.
+    private var clashLayers: [String: (a: CAShapeLayer, b: CAShapeLayer, battle: MapEffects.Battle)] = [:]
     private var siegeLayers: [String: (layer: CALayer, ring: CAShapeLayer, x: Double, y: Double)] = [:]
     private var flashLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var arrowLayers: [String: (layer: CAShapeLayer, head: CAShapeLayer, d: MapEffects.Declaration)] = [:]
@@ -298,6 +304,23 @@ final class EffectsView: UIView {
         CATransaction.begin(); CATransaction.setDisableActions(true)
         let battles = Set(effects.battles.map(\.key))
         for (key, v) in battleLayers where !battles.contains(key) { v.layer.removeFromSuperlayer(); battleLayers[key] = nil }
+        for (key, v) in clashLayers where !battles.contains(key) { v.a.removeFromSuperlayer(); v.b.removeFromSuperlayer(); clashLayers[key] = nil }
+        for b in effects.battles {
+            guard let l = b.left, let r = b.right, b.ax != b.bx || b.ay != b.by else { continue }
+            if let old = clashLayers[b.key] { clashLayers[b.key] = (old.a, old.b, b); continue }
+            func line(_ s: MapEffects.Side) -> CAShapeLayer {
+                let c = CAShapeLayer()
+                c.strokeColor = UIColor(red: s.r, green: s.g, blue: s.b, alpha: 0.95).cgColor; c.fillColor = nil
+                c.lineWidth = 3; c.lineCap = .round; c.lineDashPattern = [5, 4]
+                c.shadowColor = UIColor.black.cgColor; c.shadowOpacity = 0.35; c.shadowRadius = 1.5; c.shadowOffset = .zero
+                // The dashes run towards the clash.
+                let flow = CABasicAnimation(keyPath: "lineDashPhase"); flow.fromValue = 9; flow.toValue = 0; flow.duration = 0.45; flow.repeatCount = .infinity
+                c.add(flow, forKey: "flow")
+                layer.insertSublayer(c, at: 0)
+                return c
+            }
+            clashLayers[b.key] = (line(l), line(r), b)
+        }
         for b in effects.battles {
             if let old = battleLayers[b.key] { battleLayers[b.key] = (old.layer, b.x, b.y) }
             else {
@@ -360,6 +383,12 @@ final class EffectsView: UIView {
         CATransaction.begin(); CATransaction.setDisableActions(true)
         let k = CGFloat(max(0.6, min(1.4, camera.scale / 2)))
         for v in battleLayers.values { v.layer.position = screen(v.x, v.y); v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k)) }
+        for v in clashLayers.values {
+            let a = screen(v.battle.ax, v.battle.ay), b = screen(v.battle.bx, v.battle.by), m = screen(v.battle.x, v.battle.y)
+            let pa = UIBezierPath(); pa.move(to: a); pa.addLine(to: m); v.a.path = pa.cgPath
+            let pb = UIBezierPath(); pb.move(to: b); pb.addLine(to: m); v.b.path = pb.cgPath
+            v.a.lineWidth = 2 + k; v.b.lineWidth = 2 + k
+        }
         for v in siegeLayers.values { var p = screen(v.x, v.y); p.y -= 16 * k; v.layer.position = p; v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k)) }
         for v in flashLayers.values { v.layer.position = screen(v.x, v.y) }
         for v in claimLayers.values { v.layer.position = screen(v.x, v.y) }

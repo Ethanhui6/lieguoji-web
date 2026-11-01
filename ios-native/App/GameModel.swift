@@ -298,14 +298,14 @@ import LieguojiCore
         // The original BattleSword plays between every pair of armies in contact; pairs at one
         // spot share a single animation.
         var spots = [String: (x: Double, y: Double, n: Double)]()
-        var sides = [String: (Int, Int)]()
+        var sides = [String: (Int, Int)](), ends = [String: (Double, Double, Double, Double)]()
         for pair in state.contacts ?? [] where pair.count == 2 && state.armies.indices.contains(pair[0]) && state.armies.indices.contains(pair[1]) {
             let a = state.armies[pair[0]], b = state.armies[pair[1]]
             let x = Double(a.x + b.x) / 2, y = Double(a.y + b.y) / 2
             let key = "\(Int(x / 6)):\(Int(y / 6))"
             let old = spots[key] ?? (0, 0, 0)
             spots[key] = (old.x + x, old.y + y, old.n + 1)
-            if sides[key] == nil { sides[key] = (a.nation, b.nation) }
+            if sides[key] == nil { sides[key] = (a.nation, b.nation); ends[key] = (Double(a.x), Double(a.y), Double(b.x), Double(b.y)) }
         }
         for p in state.seaBattles ?? [] where p.count == 2 {
             let key = "s\(Int(p[0] / 6)):\(Int(p[1] / 6))", old = spots[key] ?? (0, 0, 0)
@@ -317,7 +317,9 @@ import LieguojiCore
         }
         for (key, v) in spots.sorted(by: { $0.key < $1.key }) {
             let s = sides[key]
-            e.battles.append(.init(key: key, x: v.x / v.n, y: v.y / v.n, left: s.flatMap { side($0.0) }, right: s.flatMap { side($0.1) }))
+            var battle = MapEffects.Battle(key: key, x: v.x / v.n, y: v.y / v.n, left: s.flatMap { side($0.0) }, right: s.flatMap { side($0.1) })
+            if let p = ends[key] { battle.ax = p.0; battle.ay = p.1; battle.bx = p.2; battle.by = p.3 }
+            e.battles.append(battle)
         }
         // One-shot bursts: an army destroyed, a state founded, a war declared (shockwave at the defender).
         e.bursts = controller.effects.bursts

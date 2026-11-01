@@ -3,6 +3,52 @@ import Foundation
 /// The nation panel (original StateInfoUI, web CultureNationRelations47 / campaign-card47) and the
 /// state-level diplomatic actions of the web's global orders (civilization47-global-orders).
 extension NativeEngine {
+    /// 朝堂 (state-offices47 + nobility47): governance, the central offices and their holders' fit,
+    /// governors and war commanders, the noble houses by influence, held and occupied land.
+    func court(_ id: String) -> JS {
+        let r = run, c = JS.object(), sid = Offices.stateId(r, id)
+        func name(_ p: JS) -> String {
+            let culture = p.cultureName.optionalString ?? ""
+            let first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? ""
+            let familyFirst = Nobility.cultures[culture].familyFirst.optionalBool ?? (culture == "chinese" || culture == "japanese")
+            return familyFirst ? last + first : last.isEmpty ? first : first + "·" + last
+        }
+        c.governance = JS(Offices.governance(r, id))
+        c.centralIncome = JS(Offices.centralIncome(r, id))
+        c.offices = .array(Offices.central.map { office in
+            let e = JS.object(); e.office = JS(office)
+            if let p = Offices.holder(r, id, office, sid) { e.name = JS(name(p)); e.age = JS(p.age.optionalNumber ?? 0); e.fit = JS(Offices.suitability(r, id, office, sid)) }
+            else { e.name = JS(""); e.age = JS(0); e.fit = JS(0) }
+            return e
+        })
+        let assignments = r.offices47.nations[id].assignments.isNull ? [] : r.offices47.nations[id].assignments.asArray
+        let held = r.world.provinces.asArray.enumerated().filter { $0.element.controller.asString == id }
+        c.provinces = JS(held.count)
+        c.occupied = JS(held.filter { $0.element.owner.asString != id }.count)
+        c.lost = JS(r.world.provinces.asArray.filter { $0.owner.asString == id && $0.controller.asString != id }.count)
+        c.governors = JS(assignments.filter { $0.officeId.asString == "Governor" }.count)
+        c.commanders = .array(assignments.filter { $0.officeId.asString == "WarCommander" }.compactMap { a -> JS? in
+            guard let p = People.person(r, a.holderId.asInt) else { return nil }
+            let e = JS.object(); e.name = JS(name(p)); e.age = JS(p.age.optionalNumber ?? 0)
+            let enemy = r.people.nations.objectEntries.first { $0.1.id.optionalNumber.map { Int($0) } == a.scopeId.asInt }?.0
+            e.enemy = JS(nationIndex(enemy)); return e
+        })
+        // Noble houses of this state, by influence (0…1000).
+        let ruling = r.nobility.rulingFamilies[id].optionalNumber.map { Int($0) } ?? 0
+        let houses = r.nobility.isNull ? [] : r.nobility.families.objectEntries.filter { $0.1.nationId.asString == id }
+        c.houses = .array(houses.sorted { ($0.1.influence.optionalNumber ?? 0) > ($1.1.influence.optionalNumber ?? 0) }.prefix(8).map { key, fam in
+            let e = JS.object()
+            let surname = r.kin.families[key].surname.optionalString ?? ""
+            e.name = JS(surname.isEmpty ? "无名氏" : surname + "氏")
+            e.influence = JS(fam.influence.optionalNumber ?? 0)
+            e.provinces = JS(fam.controlledProvinces.isNull ? 0 : fam.controlledProvinces.length)
+            e.ruling = JS(Int(key) == ruling)
+            e.members = JS(Nobility.living(r, key).count)
+            return e
+        })
+        return c
+    }
+
     func nationIndex(_ id: String?) -> Int { id.flatMap { s in run.world.nations.asArray.firstIndex { $0.id.asString == s } } ?? -1 }
 
     /// Ruler, polity, culture, religion, treasury and destiny, relations (enemies, alliance,
@@ -30,6 +76,7 @@ extension NativeEngine {
             o.ruler = ruler
         } else { o.ruler = .null }
         o.people = people(id)
+        o.court = court(id)
         // Relations.
         o.enemies = .array(r.world.statecraft.relations.asArray.filter { $0.status.asString == "war" && ($0.a.asString == id || $0.b.asString == id) }.map { JS(nationIndex($0.a.asString == id ? $0.b.asString : $0.a.asString)) })
         if let alliance = Vassals.allianceOf(r, id) {

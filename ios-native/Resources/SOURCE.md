@@ -5,4 +5,5 @@
 - Catalog/biome-resources.json：网页 native-economy/biome-resources.json（原作资源配置，已获授权复用）按 13 种地貌解析后的表，供新世界创建的省份资源抽取使用。
 - App/NationSheet.swift 中 `TraitText.effect`：27 条特质效果描述，取自原作 `StreamingAssets/Base/Traits/CharacterTraits/localization.csv` 的 `CharacterTraitDesc_*` 中文列，仅复制这 27 条字符串；未复制 localization.csv 本身或其他语言。
 - World/unit-Fleet.png：原作 army-transport-ship-icon（运输船线条图标，已获授权复用）。
+- World/icon-nation.png、icon-military.png：原作 gonfalon-army-chess-knight-icon 与 shield-cross-icon（已获授权复用），用作底栏「国家」「军事」图标。
 - World/unit-Port.png：本项目用 Python/PIL 绘制的锚线条图标（白色描边，运行时按国色着色），非原作素材。

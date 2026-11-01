@@ -397,6 +397,7 @@ struct GameView: View {
                 topBar
                 if controller.marchingArmy != nil { marchBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if controller.marchingFleet != nil { fleetBanner.transition(.move(edge: .top).combined(with: .opacity)) }
+                if controller.paintNation != nil { paintBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if !controller.groupArmies.isEmpty { rtsBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if let h = model.herald, let map = model.map {
                     HeraldBanner(herald: h, map: map).id(h.id)
@@ -407,6 +408,7 @@ struct GameView: View {
                 .offset(y: controller.reveal >= 1 ? 0 : -80)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingArmy)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingFleet)
+                .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.paintNation)
         }
         .overlay(alignment: .bottom) { bottomBar.offset(y: controller.reveal >= 1 ? 0 : 120) }
         .overlay(alignment: .bottomLeading) {
@@ -450,6 +452,10 @@ struct GameView: View {
                     if out.ok { controller.groupArmies = [] }
                     model.refreshArmies()
                 }
+            }
+            controller.onPaint = { province in
+                guard let n = controller.paintNation, model.state?.owners.indices.contains(province) == true, model.state?.owners[province] != n else { return }
+                Task { if let error = await model.grant(province: province, to: n) { say(error) } }
             }
             controller.onFleetTarget = { province in
                 guard let index = controller.marchingFleet, let fleet = model.fleet(index) else { controller.marchingFleet = nil; return }
@@ -563,7 +569,10 @@ struct GameView: View {
                 controller.marchingFleet = f; self.panel = nil; say("点选地图上本国的港口州郡")
             }).presentationDetents([.height(320), .medium]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nation(let n):
-            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) })
+            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, paint: { n in
+                controller.paintNation = n; self.panel = nil
+                say("绘制疆域：点选或用一指拖过州郡，划入\(model.map?.meta.nations.indices.contains(n) == true ? model.map!.meta.nations[n].name : "")；两指移动地图")
+            })
                 .presentationDetents([.medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .edicts:
             EdictSheet(model: model, say: say).presentationDetents([.medium, .large])
@@ -637,6 +646,16 @@ struct GameView: View {
         .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
     }
 
+    private var paintBanner: some View {
+        HStack(spacing: 10) {
+            let n = controller.paintNation ?? -1, nation = model.map.flatMap { $0.meta.nations.indices.contains(n) ? $0.meta.nations[n] : nil }
+            RoundedRectangle(cornerRadius: 3).fill(nation.map { Names.color($0.color) } ?? Theme.ink2).frame(width: 14, height: 14)
+            Text("绘制\(nation?.name ?? "")疆域").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+            Button("完成") { controller.paintNation = nil }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+        }
+        .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
+    }
+
     private var fleetBanner: some View {
         HStack(spacing: 10) {
             Image(systemName: "anchor").foregroundStyle(Theme.seal)
@@ -667,8 +686,8 @@ struct GameView: View {
             }
             HStack(spacing: 10) {
                 HStack(spacing: 0) {
-                    TabButton(symbol: "building.columns", title: "国家", active: panel?.tab == "nations", marker: tabMarker) { show(.nations) }
-                    TabButton(symbol: "shield", title: "军事", active: panel?.tab == "military", marker: tabMarker) { show(.military) }
+                    TabButton(symbol: "building.columns", title: "国家", icon: OriginalIcon.nation, active: panel?.tab == "nations", marker: tabMarker) { show(.nations) }
+                    TabButton(symbol: "shield", title: "军事", icon: OriginalIcon.military, active: panel?.tab == "military", marker: tabMarker) { show(.military) }
                     TabButton(symbol: "scroll", title: "外交", active: panel?.tab == "diplomacy", marker: tabMarker) { show(.diplomacy) }
                     TabButton(symbol: "book", title: "纪事", active: panel?.tab == "chronicle", marker: tabMarker) { show(.chronicle) }
                     TabButton(symbol: "chart.bar.xaxis", title: "排行", active: panel?.tab == "statistics", marker: tabMarker) { show(.statistics) }
@@ -710,15 +729,25 @@ struct CircleIcon: View {
     }
 }
 
+/// The original's grey line icons (Texture2D exports), drawn as templates in ink or vermilion.
+enum OriginalIcon {
+    static func image(_ name: String) -> UIImage? {
+        Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "World").flatMap { UIImage(contentsOfFile: $0.path) }?.withRenderingMode(.alwaysTemplate)
+    }
+    static let nation = image("icon-nation"), military = image("icon-military")
+}
+
 struct TabButton: View {
     let symbol: String; let title: String
+    var icon: UIImage? = nil
     var active = false
     var marker: Namespace.ID? = nil
     let action: () -> Void
     var body: some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                Image(systemName: symbol).font(.system(size: 18)).symbolVariant(active ? .fill : .none)
+                if let icon { Image(uiImage: icon).resizable().interpolation(.high).scaledToFit().frame(width: 22, height: 22) }
+                else { Image(systemName: symbol).font(.system(size: 18, weight: .medium)).symbolVariant(active ? .fill : .none) }
                 Text(title).font(Theme.kai(12))
             }
             .foregroundStyle(active ? Theme.seal : Theme.ink).frame(width: 50, height: 50).contentShape(Rectangle())
@@ -1247,6 +1276,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.10.0", ["大版本：政治、绘制疆域、奏折界面。",
+                    "新增「朝堂」（国家页默认展开）：施政水平（由君主才干与国运决定，带进度条）、中枢增收；宰相、司农、大将军三大要职的任职者、年龄与是否称职（按才能匹配，称职／平庸／失职）；地方官覆盖州郡数；各场战争的征讨主将；占领他国与失地州数；本国贵族世家按势力排列，标出宗室、人丁与封地。全部取自引擎里原作的官职与贵族系统。",
+                    "新增「绘制疆域」（同原作画地图改国界）：在国家页「国家行为」里点「绘制疆域」，回到地图后点选或用一指拖过州郡，即划入该国（法理与实控同时转移），两指照常移动缩放，顶部横幅点「完成」结束。",
+                    "奏折界面：纸面加入折页——每一折明暗交替、折痕淡影，顶端是深红锦缎包边与金线，像展开的奏折；底栏「国家」「军事」换成原作的旗帜骑士、十字盾线条图标，其余图标统一线宽。"]),
         ("0.9.34", ["交战不再隔着老远：按原作规则同一州郡内的敌军即进入交战，以前两军各画在自己的位置上看起来隔很远；现在交战双方会走到一起，图标相互贴近，双剑在两军之间交击（只改显示，不改推演）。去掉了上一版的交锋虚线。",
                     "修复瞬移：一步内移动较远（高倍速、进出交战）时以前会直接跳过去，现在都平滑滑行，只有跨越大半张地图的整编回城才直接出现。",
                     "修复周期性卡顿：自动存档会序列化整个世界并在主线程写文件，每 30 天卡一下；现在改为每 90 天自动存一次、文件在后台写入，暂停和切出应用时也会存档。",

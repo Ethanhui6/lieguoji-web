@@ -22,11 +22,35 @@ struct MemorialPaper: View {
             .overlay {
                 if rules {
                     GeometryReader { g in
-                        Path { p in
-                            var x: CGFloat = 22
-                            while x < g.size.width { p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: g.size.height)); x += 34 }
+                        // A memorial folds like an accordion: alternate panels catch the light differently,
+                        // each crease a soft shadow line; faint vermilion column rules inside.
+                        let panel: CGFloat = 136
+                        ZStack {
+                            ForEach(0..<Int(g.size.width / panel) + 1, id: \.self) { i in
+                                LinearGradient(colors: i % 2 == 0 ? [Color.white.opacity(0.10), Color.clear] : [Color.black.opacity(0.035), Color.black.opacity(0.0)],
+                                               startPoint: .leading, endPoint: .trailing)
+                                    .frame(width: panel).offset(x: CGFloat(i) * panel - g.size.width / 2 + panel / 2)
+                            }
+                            Path { p in
+                                var x: CGFloat = panel
+                                while x < g.size.width { p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: g.size.height)); x += panel }
+                            }
+                            .stroke(Color(red: 0.4, green: 0.3, blue: 0.18).opacity(0.10), lineWidth: 1)
+                            Path { p in
+                                var x: CGFloat = 22
+                                while x < g.size.width { p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: g.size.height)); x += 34 }
+                            }
+                            .stroke(Theme.seal.opacity(0.06), lineWidth: 0.6)
                         }
-                        .stroke(Theme.seal.opacity(0.07), lineWidth: 0.6)
+                    }
+                }
+            }
+            .overlay(alignment: .top) {
+                // The brocade binding of a memorial's cover: a deep red band edged in gold.
+                if rules && fullBleed {
+                    VStack(spacing: 0) {
+                        LinearGradient(colors: [Color(red: 0.45, green: 0.12, blue: 0.08), Color(red: 0.6, green: 0.18, blue: 0.11)], startPoint: .top, endPoint: .bottom).frame(height: 5)
+                        Rectangle().fill(Color(red: 0.78, green: 0.62, blue: 0.3).opacity(0.85)).frame(height: 1)
                     }
                 }
             }

@@ -49,6 +49,9 @@ import LieguojiCore
     var troopTexts: [String: String] = [:]
     /// A fleet waiting for its port: the next province tap is its destination.
     @Published var marchingFleet: Int?
+    /// 绘制疆域: provinces tapped or dragged over go to this state.
+    @Published var paintNation: Int?
+    var onPaint: ((Int) -> Void)?
     var onFleetTarget: ((Int) -> Void)?
     /// Generation reveal (title screen), 0…1; labels and markers appear at 1.
     @Published var reveal: Float = 1
@@ -230,8 +233,19 @@ struct MapView: UIViewRepresentable {
                 if !controller.groupArmies.isEmpty { selection.selectionChanged() }
             }
         }
+        private var lastPainted: Int?
         @objc private func handlePan(_ g: UIPanGestureRecognizer) {
             if controller.boxSelecting || boxStart != nil { boxSelect(g); return }
+            // Painting: one finger drags the brush over provinces (two fingers still move the map).
+            if controller.paintNation != nil && !pinching && g.numberOfTouches <= 1 {
+                if g.state == .ended || g.state == .cancelled { lastPainted = nil; return }
+                let p = g.location(in: mtk), w = camera.toWorld(x: Double(p.x), y: Double(p.y), viewport: viewport)
+                if let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province[cell] >= 0 {
+                    let province = Int(map.province[cell])
+                    if province != lastPainted { lastPainted = province; selection.selectionChanged(); controller.onPaint?(province) }
+                }
+                return
+            }
             // While two fingers pinch, the pinch alone moves the map (no double drag), and the
             // finger left after a pinch does not fling.
             if pinching { g.setTranslation(.zero, in: mtk); return }
@@ -272,6 +286,10 @@ struct MapView: UIViewRepresentable {
             if let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province[cell] >= 0 { province = Int(map.province[cell]) }
             if controller.marchingArmy != nil {
                 if let province { impact.impactOccurred(); controller.onMarchTarget?(province) }
+                return
+            }
+            if controller.paintNation != nil {
+                if let province { impact.impactOccurred(); controller.onPaint?(province) }
                 return
             }
             if controller.marchingFleet != nil {

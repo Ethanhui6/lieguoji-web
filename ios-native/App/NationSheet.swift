@@ -19,6 +19,15 @@ struct NationInfo: Decodable {
     struct Truce: Decodable { let nation: Int; let years: Int; let required: Int }
     let truces: [Truce]?
     let people: [Person]?
+    struct Office: Decodable { let office: String; let name: String; let age: Double; let fit: Double }
+    struct Commander: Decodable { let name: String; let age: Double; let enemy: Int }
+    struct House: Decodable { let name: String; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int }
+    struct Court: Decodable {
+        let governance: Double; let centralIncome: Double; let offices: [Office]
+        let provinces: Int; let occupied: Int; let lost: Int; let governors: Int
+        let commanders: [Commander]; let houses: [House]
+    }
+    let court: Court?
 }
 
 /// CollapsibleSectionUI (original StateInfoNewUI sections): a header with a chevron; 0.25 s fold
@@ -50,6 +59,8 @@ struct NationSheet: View {
     let nation: Int
     let say: (String) -> Void
     let fly: (Int) -> Void
+    /// 绘制疆域: paint provinces on the map for this state.
+    var paint: (Int) -> Void = { _ in }
     @State private var info: NationInfo?
     @State private var history: [GameState.Event] = []
     @State private var picking: Pick?
@@ -92,6 +103,7 @@ struct NationSheet: View {
                             }
                             .padding(.horizontal, 16)
                         }
+                        if let court = info.court, info.alive { FoldSection("朝堂", expanded: true) { courtView(court, map) } }
                         if info.alive { FoldSection("国家行为", expanded: false) { actions(info, map) } }
                         FoldSection(info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）", expanded: !info.wars.isEmpty) {
                             Group2 {
@@ -142,6 +154,73 @@ struct NationSheet: View {
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
             .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17)) }
+        }
+    }
+
+    static let officeTitle = ["Chancellor": "宰相", "Steward": "司农", "Marshal": "大将军"]
+    static let officeDuty = ["Chancellor": "总理朝政 · 增国库", "Steward": "掌钱粮 · 增国库", "Marshal": "统率三军"]
+    /// 朝堂: governance gauge, the three central offices with their holders' fit, local rule, war
+    /// commanders and the noble houses by influence.
+    @ViewBuilder private func courtView(_ c: NationInfo.Court, _ map: WorldMap) -> some View {
+        VStack(spacing: 10) {
+            StatStrip(tiles: [
+                StatTile(label: "施政", value: "\(Int((c.governance * 100).rounded()))", fraction: c.governance, warn: c.governance < 0.3),
+                StatTile(label: "中枢增收", value: String(format: "%+.0f%%", (c.centralIncome - 1) * 100), warn: c.centralIncome < 1),
+                StatTile(label: "地方官", value: "\(c.governors)/\(c.provinces)", fraction: c.provinces > 0 ? Double(c.governors) / Double(c.provinces) : 0),
+            ])
+            Group2 {
+                ForEach(Array(c.offices.enumerated()), id: \.offset) { i, o in
+                    HStack(spacing: 12) {
+                        Text(Self.officeTitle[o.office] ?? o.office).font(Theme.kai(15)).foregroundStyle(Theme.paper2)
+                            .frame(width: 52, height: 26).background(Theme.seal.opacity(o.name.isEmpty ? 0.35 : 0.85), in: RoundedRectangle(cornerRadius: 4))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(o.name.isEmpty ? "空缺" : "\(o.name)（\(Int(o.age))岁）").font(Theme.kai(16)).foregroundStyle(o.name.isEmpty ? Theme.ink2 : Theme.ink)
+                            Text(Self.officeDuty[o.office] ?? "").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                        }
+                        Spacer()
+                        if !o.name.isEmpty {
+                            // Fit −1…1: how well the holder's skills suit the office.
+                            Text(o.fit >= 0.4 ? "称职" : o.fit >= 0 ? "平庸" : "失职").font(Theme.kai(13))
+                                .foregroundStyle(o.fit >= 0.4 ? Color(red: 0.25, green: 0.45, blue: 0.25) : o.fit >= 0 ? Theme.ink2 : Theme.seal)
+                        }
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 9)
+                    if i < c.offices.count - 1 { Divider2() }
+                }
+            }
+            .padding(.horizontal, 16)
+            if c.occupied > 0 || c.lost > 0 || !c.commanders.isEmpty {
+                Group2 {
+                    if c.occupied > 0 { Row(label: "占领他国", value: "\(c.occupied) 州"); Divider2() }
+                    if c.lost > 0 { Row(label: "失地", value: "\(c.lost) 州"); Divider2() }
+                    ForEach(Array(c.commanders.enumerated()), id: \.offset) { i, w in
+                        Row(label: "征讨" + (map.meta.nations.indices.contains(w.enemy) ? map.meta.nations[w.enemy].name : "") + "主将", value: w.name)
+                        if i < c.commanders.count - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+            if !c.houses.isEmpty {
+                Group2 {
+                    ForEach(Array(c.houses.enumerated()), id: \.offset) { i, h in
+                        HStack(spacing: 10) {
+                            Text(h.name).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                            if h.ruling { Text("宗室").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+                            Spacer()
+                            Text("\(h.members)人 · \(h.provinces)州").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                            // Influence 0…1000 as a short gauge.
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Theme.ink.opacity(0.1))
+                                Capsule().fill(h.ruling ? Theme.seal : Theme.ink.opacity(0.6)).frame(width: 54 * min(1, max(0, h.influence / 1000)))
+                            }
+                            .frame(width: 54, height: 4)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 9)
+                        if i < c.houses.count - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
         }
     }
 
@@ -245,6 +324,7 @@ struct NationSheet: View {
                     action("收为附庸", "crown", Theme.jade, disabled: vassal) { target = -1; picking = .vassal }
                     action("吞并", "map", Theme.seal, disabled: false) { target = -1; picking = .annex }
                     action("触发内战", "flame", Theme.seal, disabled: false) { Task { await run { await model.triggerCivilWar(nation) } } }
+                    action("绘制疆域", "paintbrush.pointed.fill", Theme.ink, disabled: false) { paint(nation) }
                 }
                 .padding(14)
                 Divider2()

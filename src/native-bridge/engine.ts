@@ -1,4 +1,5 @@
 import {nativeStatics} from './native-statics';
+import {CULTURE_IDS47} from '../fms/play/civilization47-catalog';
 import {createFmsOriginalDocument,originalGridFor} from '../fms/original/original-document';
 import {generateFmsFullMap,prepareFmsFullMapPreview} from '../fms/full-map-terrain';
 import {Culture47Session,type Culture47Opening,type Culture47Journal} from '../fms/play/culture47-session';
@@ -72,7 +73,7 @@ export async function generate(optionsText:string){
   const options={seed,template:template as typeof SEED_TERRAIN_TEMPLATES[number]['id']};
   const terrain=(await prepareFmsFullMapPreview(blank,{worldId:blank.worldId,baseRevision:blank.revision,...await generateFmsFullMap(blank,options,{yieldTask:async()=>{}})},options)).document;
   const opening:Culture47Opening={terrain,count,cityCount,relations:o.relations??'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,
-    setup:{mode:'culture-generated',enabled:['chinese','japanese','english','arab','roman','german']},families:'original'};
+    setup:{mode:'historical-names',enabled:[...CULTURE_IDS47]},families:'original'};
   const s=new Culture47Session();
   let x=s.create(opening);
   for(const [kind,rule] of ENABLE)x=s.execute({kind,rule,expected:populationStamp47(x.run)} as never,x.journal.actions.length);

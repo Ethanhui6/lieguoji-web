@@ -18,7 +18,7 @@ final class OpeningTests: XCTestCase {
     func testOpeningMatchesTheWeb() throws {
         let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent(), resources = dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World")
         let doc = try TerrainDocument(data: Data(contentsOf: resources.appendingPathComponent("doc20k.bin")))
-        let cultures = try JSONDecoder().decode([Opening.Culture].self, from: Data(contentsOf: resources.appendingPathComponent("cultures.json")))
+        let cultures = try JSONDecoder().decode([Opening.Culture].self, from: Data(contentsOf: dir.appendingPathComponent("Golden/cultures-v1.json")))
         let golden = try JSONDecoder().decode(OpeningGolden.self, from: Data(contentsOf: dir.appendingPathComponent("Golden/opening.json")))
         var partitions = [String: [Regions.Region]]()
         for s in golden.samples {

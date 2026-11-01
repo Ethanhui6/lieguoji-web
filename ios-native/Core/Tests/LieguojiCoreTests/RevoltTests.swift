@@ -12,7 +12,7 @@ final class RevoltTests: XCTestCase {
         let golden = try JS.parse(Data(contentsOf: dir.appendingPathComponent("Golden/revolt.json")))
         let traits = try JS.parse(Data(contentsOf: dir.appendingPathComponent("Golden/nobility.json"))).traits
         People.loadTraits(traits); Nobility.traitList = traits.asArray; Nobility.cultures = golden.cultures
-        Founding.cultures = try JSONDecoder().decode([Opening.Culture].self, from: Data(contentsOf: world.appendingPathComponent("cultures.json")))
+        Founding.cultures = try JSONDecoder().decode([Opening.Culture].self, from: Data(contentsOf: dir.appendingPathComponent("Golden/cultures-v1.json")))
         Armies.bridge = ForceBridge(graph: try TravelGraph(data: Data(contentsOf: world.appendingPathComponent("travel.bin"))))
         for (k, v) in golden.homeCells.objectEntries { Armies.homeCells[k] = v.asInt }
         RebelWar.install()

@@ -123,11 +123,25 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Ownership changed (conquest, rebellion): recolour the land and redraw the state outlines.
+    /// The state outlines are rebuilt on a background queue (the whole map's border walk); the land
+    /// is recoloured at once, and the new outlines replace the old ones when ready.
     func setMap(_ next: WorldMap) {
         map = next
-        outlines = buffer(MapLayers.outlines(map).vertices, stride: 6)
         recolor()
+        outlineGeneration += 1
+        let generation = outlineGeneration
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let vertices = MapLayers.outlines(next).vertices
+            DispatchQueue.main.async {
+                guard let self, generation == self.outlineGeneration else { return }
+                self.outlines = self.buffer(vertices, stride: 6)
+                self.onOutlines?()
+            }
+        }
     }
+    private var outlineGeneration = 0
+    /// Called on the main queue when new outlines are ready to draw.
+    var onOutlines: (() -> Void)?
 
     /// The title screen's generation animation: 0 shows only the sea; land rises from the coast to the
     /// mountains, then the states' colours wash over it; at 1 every layer is drawn.

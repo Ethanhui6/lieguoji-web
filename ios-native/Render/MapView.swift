@@ -61,6 +61,7 @@ struct MapView: UIViewRepresentable {
         private var velocity = CGPoint.zero
         private var animation: (from: MapCamera, to: MapCamera, start: CFTimeInterval, duration: Double)?
         private var lastPinch = CGPoint.zero
+        private var pinching = false, pinchTouches = 2
         private var placed = false
         private var focusID: UUID?
         private var resetID: UUID?
@@ -90,6 +91,7 @@ struct MapView: UIViewRepresentable {
                                    unitURL: { Bundle.main.url(forResource: "unit-\($0)", withExtension: "png", subdirectory: "World") })
             mtk.delegate = renderer
             renderer?.onDraw = { [weak self] t in self?.frameDrawn(t) }
+            renderer?.onOutlines = { [weak self] in self?.mtk.setNeedsDisplay() }
             labels = MapLabelsView(map: map)
             for v in [mtk!, labels!] as [UIView] { v.frame = container.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(v) }
             labels.isUserInteractionEnabled = false
@@ -147,6 +149,9 @@ struct MapView: UIViewRepresentable {
         private var camera: MapCamera { renderer?.camera ?? MapCamera(centerX: 0, centerY: 0, scale: 1) }
 
         @objc private func handlePan(_ g: UIPanGestureRecognizer) {
+            // While two fingers pinch, the pinch alone moves the map (no double drag), and the
+            // finger left after a pinch does not fling.
+            if pinching { g.setTranslation(.zero, in: mtk); return }
             let t = g.translation(in: mtk)
             set(camera.panned(dx: Double(t.x), dy: Double(t.y)))
             g.setTranslation(.zero, in: mtk)
@@ -158,13 +163,15 @@ struct MapView: UIViewRepresentable {
         @objc private func handlePinch(_ g: UIPinchGestureRecognizer) {
             let p = g.location(in: mtk)
             switch g.state {
-            case .began: lastPinch = p
+            case .began: lastPinch = p; pinching = true
             case .changed:
+                // A finger lifted or added moves the touch centre: re-anchor instead of jumping.
+                if g.numberOfTouches != pinchTouches { pinchTouches = g.numberOfTouches; lastPinch = p; g.scale = 1; return }
                 // The fingers both zoom and drag the map.
                 let moved = camera.panned(dx: Double(p.x - lastPinch.x), dy: Double(p.y - lastPinch.y))
                 set(moved.zoomed(by: Double(g.scale), anchorX: Double(p.x), anchorY: Double(p.y), viewport: viewport, bounds: bounds))
                 g.scale = 1; lastPinch = p
-            default: break
+            default: pinching = false; pinchTouches = 2
             }
         }
         @objc private func handleDoubleTap(_ g: UITapGestureRecognizer) {
@@ -241,10 +248,10 @@ struct MapView: UIViewRepresentable {
                 || zip(next.meta.labels, map.meta.labels).contains(where: { p in p.0.nation != p.1.nation || p.0.x != p.1.x || p.0.y != p.1.y }) {
                 map = next
                 renderer?.setMap(next)
-                let fresh = MapLabelsView(map: next)
-                fresh.frame = labels.frame; fresh.autoresizingMask = labels.autoresizingMask; fresh.isUserInteractionEnabled = false
-                container.insertSubview(fresh, aboveSubview: labels); labels.removeFromSuperview(); labels = fresh
+                // City names never change hands with a province: only the state names are rebuilt.
+                labels.setNations(map: next)
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                mtk.setNeedsDisplay()
             }
             if let renderer, renderer.reveal != controller.reveal { renderer.setReveal(controller.reveal) }
             labels?.alpha = controller.reveal >= 1 ? 1 : 0
@@ -328,13 +335,7 @@ final class MapLabelsView: UIView {
     init(map: WorldMap) {
         super.init(frame: .zero)
         let unit = Double(MapLayers.fontUnit)
-        for box in map.meta.labels where box.nation >= 0 {
-            let n = map.meta.nations[box.nation]
-            let measured = (n.name as NSString).size(withAttributes: [.font: Self.font(1)])
-            let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
-            let tint = Self.color(n.color).withAlphaComponent(0.8)
-            nations.append(Label(text: n.name, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: tint, strokeWidth: 13.0 / 64, minPoints: 4, province: nil))
-        }
+        nations = Self.nationLabels(map, unit: unit)
         let capitals = Set(map.meta.nations.compactMap { $0.capital >= 0 ? map.meta.cities[$0.capital].id : nil })
         for c in map.meta.cities {
             let s = capitals.contains(c.id) ? 1.5 : 1.0, em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
@@ -344,6 +345,24 @@ final class MapLabelsView: UIView {
         for l in cities + nations { l.view.isHidden = true; addSubview(l.view) }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    private static func nationLabels(_ map: WorldMap, unit: Double) -> [Label] {
+        map.meta.labels.filter { $0.nation >= 0 }.map { box in
+            let n = map.meta.nations[box.nation]
+            let measured = (n.name as NSString).size(withAttributes: [.font: font(1)])
+            let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
+            let tint = color(n.color).withAlphaComponent(0.8)
+            return Label(text: n.name, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: tint, strokeWidth: 13.0 / 64, minPoints: 4, province: nil)
+        }
+    }
+    /// Ownership changed: replace the state names, keep every city label and its rendered image.
+    func setNations(map: WorldMap) {
+        for l in nations { l.view.removeFromSuperview() }
+        nations = Self.nationLabels(map, unit: Double(MapLayers.fontUnit))
+        for l in nations { l.view.isHidden = true; addSubview(l.view) }
+    }
+    /// Rendered label images by text, size and colours: zooming back and forth reuses them.
+    private static let images: NSCache<NSString, UIImage> = { let c = NSCache<NSString, UIImage>(); c.countLimit = 1500; return c }()
 
     static func color(_ css: String) -> UIColor {
         let c = RGB(css: css) ?? RGB(0.5, 0.5, 0.5)
@@ -376,9 +395,12 @@ final class MapLabelsView: UIView {
             let p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
             guard points >= l.minPoints, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }
             if l.rendered == 0 || points / l.rendered > 1.25 || points / l.rendered < 0.8 {
-                l.rendered = (points * 2).rounded() / 2
+                // Sizes on a ×1.25 ladder, so the cached images are reused while zooming.
+                l.rendered = pow(1.25, (log(points) / log(1.25)).rounded())
                 l.view.transform = .identity
-                l.view.image = Self.render(l.text, size: CGFloat(l.rendered), fill: l.fill, stroke: l.stroke, strokeEm: CGFloat(l.strokeWidth))
+                let key = "\(l.text)|\(l.rendered)|\(l.fill.hashValue)|\(l.stroke.hashValue)" as NSString
+                if let cached = Self.images.object(forKey: key) { l.view.image = cached }
+                else { let image = Self.render(l.text, size: CGFloat(l.rendered), fill: l.fill, stroke: l.stroke, strokeEm: CGFloat(l.strokeWidth)); Self.images.setObject(image, forKey: key); l.view.image = image }
                 l.view.sizeToFit()
             }
             let k = CGFloat(points / l.rendered)

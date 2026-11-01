@@ -1,6 +1,7 @@
 import type {NativePolity} from './native-combat/upper-efficiency';
 import {CHINESE_CATALOG47,ROMAN_HOUSES_FEMALE47,HISTORICAL_PEOPLE_ZH47} from './civilization47-chinese-catalog';
 import eastern from './native-culture/data/EasternFantasy.json';
+import {NAMES_V3} from './civilization47-names-v3';
 
 /** User-requested real-world naming references for a fictional simulation.
  * These are independent identities, never aliases for a translated old pool.
@@ -27,8 +28,9 @@ type Spec=Omit<CultureProfile47,'stateRoots'|'stateEnds'|'cityRoots'|'cityEnds'|
 function profile(s:Spec):CultureProfile47 {
   const {roots,ends,cityRootsText,cityEndsText,male,female,family,states,cities,...fields}=s;
   const z=CHINESE_CATALOG47[s.id];
-  const personal=(text:string,key:'male'|'female'|'surnames')=>[...new Set([...words(text),...(s.id==='chinese'?eastern.tables[key].map(row=>row[1]):[])])];
-  return {...fields,join:s.familyFirst?'':'·',stateRoots:words(z.roots??roots),stateEnds:words(z.ends??ends),cityRoots:words(z.roots??cityRootsText??roots),cityEnds:words(z.ends??cityEndsText??ends),givenMale:personal(z.male??male,'male'),givenFemale:personal(z.female??female,'female'),houses:personal(z.family??family,'surnames'),historicalStates:words(z.states??states),historicalCities:[...new Set(words((z.cities??cities)+'|'+z.extraCities))]};
+  const v3=NAMES_V3[s.id],more={male:v3?.male,female:v3?.female,surnames:v3?.family};
+  const personal=(text:string,key:'male'|'female'|'surnames')=>[...new Set([...words(text),...(s.id==='chinese'?eastern.tables[key].map(row=>row[1]):[]),...(more[key]?words(more[key]!):[])])];
+  return {...fields,join:s.familyFirst?'':'·',stateRoots:words(z.roots??roots),stateEnds:words(z.ends??ends),cityRoots:words(z.roots??cityRootsText??roots),cityEnds:words(z.ends??cityEndsText??ends),givenMale:personal(z.male??male,'male'),givenFemale:personal(z.female??female,'female'),houses:personal(z.family??family,'surnames'),historicalStates:[...new Set([...words(z.states??states),...(v3?words(v3.states):[])])],historicalCities:[...new Set([...words((z.cities??cities)+'|'+z.extraCities),...(v3?words(v3.cities):[])])]};
 }
 const person=(name:string,given:string,house:string,gender:0|1=0):HistoricalPerson47=>{const z=HISTORICAL_PEOPLE_ZH47[name];return {name:z?.[0]??name,given:z?.[1]??given,house:z?.[2]??house,gender};};
 export const CULTURES47:Readonly<Record<CultureId47,CultureProfile47>>={

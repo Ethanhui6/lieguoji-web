@@ -52,7 +52,8 @@ export function initialCivilization47(seed:string,count:number,owners:readonly n
     const name=freshName(choice.cultureId,c.mode,'state',`${seed}/state/${id}`,states);states.add(name.value);
     c.nations[id]={...choice,name,origin:'new-world',parentId:null};
   }
-  for(const [i,owner] of owners.entries()) {const cultureId=c.nations['n-'+owner].cultureId,used=cities.get(cultureId)??new Set<string>(),name=freshName(cultureId,c.mode,'city',`${seed}/city/${i}`,used);used.add(name.value);cities.set(cultureId,used);c.cities['c-'+i]={cultureId,name};}
+  const usedCities=new Set<string>();void cities;
+  for(const [i,owner] of owners.entries()) {const cultureId=c.nations['n-'+owner].cultureId,name=freshName(cultureId,c.mode,'city',`${seed}/city/${i}`,usedCities);usedCities.add(name.value);c.cities['c-'+i]={cultureId,name};}
   return c;
 }
 /** A state name not used by any current state, from the same culture pool (original GetRandomCountryKeyExceptNames). */

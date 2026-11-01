@@ -62,6 +62,8 @@ actor NativeHost {
     func worldSettings() -> Data? { engine?.worldSettings() }
     func setWorld(_ key: String, _ value: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.setWorld(key, value)) }
     func triggerCivilWar(_ n: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.triggerCivilWar(n)) }
+    func rts(_ armyIds: [String], nation: Int, province: Int, defend: Bool) -> (ok: Bool, reason: String, state: Data?) { command(engine?.rtsOrder(armyIds: armyIds, nation: nation, province: province, defend: defend)) }
+    func nationHistory(_ n: Int) -> Data? { engine?.nationHistory(n) }
     func territory(_ provinces: [Int], to nation: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.territoryEdit(provinces, to: nation)) }
     func retreat(armyId: String, province: Int) -> (ok: Bool, reason: String, state: Data?) { command(engine?.order(armyId: armyId, provinceIndex: province, retreat: true)) }
     func statistics(_ category: String) -> Data? { engine?.statistics(category) }

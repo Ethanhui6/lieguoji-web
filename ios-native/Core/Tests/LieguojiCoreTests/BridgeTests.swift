@@ -52,6 +52,11 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(engine.territoryEdit([foreign], to: a[0]).ok)
         XCTAssertEqual(engine.run.world.provinces[foreign].controller.asString, engine.run.world.nations[a[0]].id.asString)
         XCTAssertFalse(engine.territoryEdit([foreign], to: a[0]).ok)
+        let mine = engine.run.world.armies.asArray.filter { $0.nationId.asString == engine.run.world.nations[a[0]].id.asString && $0.troops.asNumber > 0 }.map { $0.id.asString }
+        let home = engine.run.world.provinces.asArray.firstIndex { $0.controller.asString == engine.run.world.nations[a[0]].id.asString }!
+        _ = engine.rtsOrder(armyIds: mine, nation: a[0], province: home, defend: true)
+        XCTAssertFalse(engine.rtsOrder(armyIds: [], nation: a[0], province: home, defend: false).ok)
+        XCTAssertNoThrow(try JS.parse(engine.nationHistory(a[0])))
         engine.advance(days: 3)
         XCTAssertNotNil(try JSONSerialization.jsonObject(with: engine.state(includeLabels: true)))
     }

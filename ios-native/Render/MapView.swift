@@ -28,6 +28,11 @@ import LieguojiCore
     /// While set, the next tap on land is the march destination of this army.
     @Published var marchingArmy: Int?
     var onMarchTarget: ((Int) -> Void)?
+    /// 即时战略模式: a one-finger drag draws a selection box instead of panning.
+    @Published var boxSelecting = false
+    /// The armies chosen by the box (indices into armies); a tap then picks their destination.
+    @Published var groupArmies: [Int] = []
+    var onGroupTarget: ((Int) -> Void)?
     /// Battles, sieges and capture flashes over the map.
     @Published var effects = MapEffects()
     /// The live world (ownership and nation labels follow the engine); nil keeps the opening map.
@@ -173,7 +178,37 @@ struct MapView: UIViewRepresentable {
         }
         private var camera: MapCamera { renderer?.camera ?? MapCamera(centerX: 0, centerY: 0, scale: 1) }
 
+        private var boxStart: CGPoint?
+        private lazy var boxLayer: CAShapeLayer = {
+            let l = CAShapeLayer()
+            l.fillColor = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 0.10).cgColor
+            l.strokeColor = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 0.9).cgColor
+            l.lineWidth = 1.5; l.lineDashPattern = [6, 4]
+            mtk.superview?.layer.addSublayer(l)
+            return l
+        }()
+        /// RTS box selection: the armies inside the box, of the state that has the most of them.
+        private func boxSelect(_ g: UIPanGestureRecognizer) {
+            let p = g.location(in: mtk)
+            switch g.state {
+            case .began: boxStart = p
+            case .changed:
+                if let s = boxStart { boxLayer.path = UIBezierPath(rect: CGRect(x: min(s.x, p.x), y: min(s.y, p.y), width: abs(p.x - s.x), height: abs(p.y - s.y))).cgPath }
+            default:
+                boxLayer.path = nil
+                guard let s = boxStart, let armies = controller.armies else { boxStart = nil; return }
+                let rect = CGRect(x: min(s.x, p.x), y: min(s.y, p.y), width: abs(p.x - s.x), height: abs(p.y - s.y)).insetBy(dx: -10, dy: -10)
+                let inside = armies.filter { a in guard a.army >= 0 else { return false }; let q = camera.toScreen(x: Double(a.x), y: Double(a.y), viewport: viewport); return rect.contains(CGPoint(x: q.x, y: q.y)) }
+                var count = [Int: Int](); for a in inside { count[a.nation, default: 0] += 1 }
+                let nation = count.max { $0.value != $1.value ? $0.value < $1.value : $0.key > $1.key }?.key
+                controller.groupArmies = inside.filter { $0.nation == nation }.map(\.army)
+                controller.boxSelecting = false
+                boxStart = nil
+                if !controller.groupArmies.isEmpty { selection.selectionChanged() }
+            }
+        }
         @objc private func handlePan(_ g: UIPanGestureRecognizer) {
+            if controller.boxSelecting || boxStart != nil { boxSelect(g); return }
             // While two fingers pinch, the pinch alone moves the map (no double drag), and the
             // finger left after a pinch does not fling.
             if pinching { g.setTranslation(.zero, in: mtk); return }
@@ -214,6 +249,10 @@ struct MapView: UIViewRepresentable {
             if let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province[cell] >= 0 { province = Int(map.province[cell]) }
             if controller.marchingArmy != nil {
                 if let province { impact.impactOccurred(); controller.onMarchTarget?(province) }
+                return
+            }
+            if !controller.groupArmies.isEmpty {
+                if let province { impact.impactOccurred(); controller.onGroupTarget?(province) }
                 return
             }
             // An army icon under the finger (14 points) takes the tap before the province.

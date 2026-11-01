@@ -129,3 +129,41 @@ extension DiplomacyBridge {
         return nil
     }
 }
+
+extension NativeEngine {
+    /// applyRtsOrder47 (原作 RTSController 即时战略模式): the selected armies of one state move to the
+    /// province together — attack mode marches and fights on the way, defend mode moves as a retreat.
+    /// Armies of another state, gone, or with no way there are skipped; at least one must move.
+    public func rtsOrder(armyIds: [String], nation: Int, province: Int, defend: Bool) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard r.world.provinces.asArray.indices.contains(province) else { return (false, "目标行省不存在。") }
+        guard nations.indices.contains(nation) else { return (false, "即时战略命令无效。") }
+        let state = nations[nation].id.asString
+        var moved = 0
+        for id in armyIds {
+            guard let a = r.world.armies.asArray.first(where: { $0.id.asString == id }), a.nationId.asString == state,
+                  a.troops.asNumber > 0, a.status.asString != "destroyed" else { continue }
+            let action = ArmyOrders.Action.move(province: province, retreat: defend)
+            guard case .success = ArmyOrders.resolve(r, id, action) else { continue }
+            ArmyOrders.issue(r, id, action, player: true)
+            let row = r.armyAutonomy.armies[id]
+            if !row.isNull {
+                row.decision = JS("manual"); row.targetId = .null; row.garrisonId = .null; row.campaignId = .null
+                row.issuedTick = r.clock.tick.clone(); row.nextTick = r.clock.tick.clone(); row.reason = JS("即时战略模式：玩家直接指挥。")
+            }
+            moved += 1
+        }
+        if moved == 0 { return (false, "选中的军团都无法前往该行省。") }
+        Vassals.bump(r.armyAutonomy)
+        return (true, "\(moved) 支军团\(defend ? "以防御模式撤往" : "以进攻模式前往")\(r.world.provinces[province].name.asString)。")
+    }
+
+    /// The state's own history: chronicle entries naming it, newest first.
+    public func nationHistory(_ index: Int, limit: Int = 60) -> Data {
+        let r = run
+        guard r.world.nations.asArray.indices.contains(index) else { return Data("[]".utf8) }
+        let id = r.world.nations[index].id.asString
+        let rows = r.chronicle.entries.asArray.reversed().filter { e in !e.nationIds.isNull && e.nationIds.asArray.contains { $0.asString == id } }.prefix(limit)
+        return Data(JS.array(rows.map { e in let o = JS.object(); o.day = e.day; o.text = e.text; o.kind = e.kind; return o }).json.utf8)
+    }
+}

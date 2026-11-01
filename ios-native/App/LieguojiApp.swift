@@ -305,6 +305,7 @@ struct GameView: View {
     @State private var viewsOpen = false
     /// The pending map pick is a retreat (原作防御模式) rather than a march.
     @State private var marchRetreat = false
+    @State private var rtsDefend = false
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
 
     var body: some View {
@@ -315,6 +316,7 @@ struct GameView: View {
             VStack(spacing: 8) {
                 topBar
                 if controller.marchingArmy != nil { marchBanner.transition(.move(edge: .top).combined(with: .opacity)) }
+                if !controller.groupArmies.isEmpty { rtsBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if let h = model.herald, let map = model.map {
                     HeraldBanner(herald: h, map: map).id(h.id)
                         .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .scale(scale: 0.85)).combined(with: .opacity), removal: .opacity.combined(with: .scale(scale: 0.95))))
@@ -347,6 +349,15 @@ struct GameView: View {
         .animation(.spring(response: 0.55, dampingFraction: 0.85), value: controller.reveal >= 1)
         .onAppear {
             controller.drifting = false
+            controller.onGroupTarget = { province in
+                let armies = controller.groupArmies, defend = rtsDefend
+                Task {
+                    let out = await model.rts(armies: armies, to: province, defend: defend)
+                    say(out.reason)
+                    if out.ok { controller.groupArmies = [] }
+                    model.refreshArmies()
+                }
+            }
             controller.onMarchTarget = { province in
                 guard let army = controller.marchingArmy else { return }
                 Task {
@@ -359,6 +370,7 @@ struct GameView: View {
                 }
             }
         }
+        .onChange(of: controller.groupArmies) { _, _ in model.refreshArmies() }
         .onChange(of: controller.selectedArmy) { _, army in
             model.refreshArmies()
             if let army { panel = .army(army) } else if case .army = panel { panel = nil }
@@ -433,9 +445,32 @@ struct GameView: View {
             Spacer()
             Button { withAnimation { viewsOpen.toggle() } } label: { CircleIcon(symbol: viewsOpen ? "xmark" : model.mapView.symbol) }
                 .buttonStyle(PressStyle())
+            Button {
+                if controller.boxSelecting || !controller.groupArmies.isEmpty { controller.boxSelecting = false; controller.groupArmies = []; model.refreshArmies() }
+                else { controller.boxSelecting = true; say("即时战略：在地图上拖出方框选择军队") }
+            } label: { CircleIcon(symbol: controller.boxSelecting || !controller.groupArmies.isEmpty ? "xmark" : "rectangle.dashed") }.buttonStyle(PressStyle())
             Button { panel = .menu } label: { CircleIcon(symbol: "ellipsis") }.buttonStyle(PressStyle())
         }
         .padding(.horizontal, 14).padding(.top, 2)
+    }
+
+    /// 即时战略 banner: the selected count, 进攻/防御 mode and cancel.
+    private var rtsBanner: some View {
+        HStack(spacing: 10) {
+            Text("已选 \(controller.groupArmies.count) 支军团 · 点选目的地").font(Theme.kai(15)).foregroundStyle(Theme.ink)
+            HStack(spacing: 0) {
+                ForEach([false, true], id: \.self) { defend in
+                    Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { rtsDefend = defend } } label: {
+                        Text(defend ? "防御" : "进攻").font(Theme.kai(14)).foregroundStyle(rtsDefend == defend ? Theme.paper2 : Theme.ink)
+                            .padding(.horizontal, 10).padding(.vertical, 5).background(rtsDefend == defend ? Theme.seal : Color.clear, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .background(Theme.wash, in: Capsule())
+            Button("取消") { controller.groupArmies = []; model.refreshArmies() }.font(Theme.kai(15)).foregroundStyle(Theme.seal)
+        }
+        .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
     }
 
     private var marchBanner: some View {
@@ -1023,6 +1058,8 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.23", ["新增即时战略模式（原作 RTSController）：点右上角虚线框按钮，在地图上拖出方框选中一国的多支军团，再点目的地一起出发；可选进攻模式（行军、途中接战）或防御模式（撤退式行军）。选中的军团高亮显示。",
+                   "国家详情新增「国史」：列出与该国有关的历史纪事，新近在前。"]),
         ("0.9.22", ["军队新增「撤退」令（原作防御模式）：点选目的地后以撤退方式行军，途中不主动接战，抵达安全地区后恢复待命。",
                    "省份页新增「划入他国」（原作地图编辑·绘制国家）：把该省划给所选国家，法理与实控同时转移，经济、核心区、港口、围城、首都与亡国一并结算。",
                    "修复进攻箭头不显示：引擎一直在生成箭头（测试中战争期间每天 4–6 支），是画面用的遮罩在手机上不显示；改为直接绘制，由浅到深、首粗尾细，轮廓 1 秒内画出。"]),

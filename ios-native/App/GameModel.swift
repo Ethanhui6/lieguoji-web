@@ -372,7 +372,7 @@ import LieguojiCore
         guard let state else { controller.armies = []; return }
         let selected = controller.marchingArmy ?? controller.selectedArmy
         var sprites: [MapRenderer.ArmySprite] = state.armies.enumerated().map { i, a in
-            MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected, key: a.id)
+            MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id)
         }
         // Harbour anchors in the occupier's colour (not tappable; the province panel lists them), then fleets.
         for (i, p) in (state.ports ?? []).enumerated() {
@@ -431,6 +431,18 @@ import LieguojiCore
     }
     func setWorld(_ key: String, _ value: Int) async -> String? { finish(await native.setWorld(key, value)) }
     func triggerCivilWar(_ n: Int) async -> String? { finish(await native.triggerCivilWar(n)) }
+    /// 即时战略模式: the box-selected armies of one state to a province; nil reason on success.
+    func rts(armies: [Int], to province: Int, defend: Bool) async -> (ok: Bool, reason: String) {
+        let rows = armies.compactMap { army($0) }
+        guard let nation = rows.first?.nation else { return (false, "没有选中军队。") }
+        let out = await native.rts(rows.map(\.id), nation: nation, province: province, defend: defend)
+        if let data = out.state, let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
+        return (out.ok, out.reason)
+    }
+    func nationHistory(_ n: Int) async -> [GameState.Event] {
+        guard let data = await native.nationHistory(n) else { return [] }
+        return (try? JSONDecoder().decode([GameState.Event].self, from: data)) ?? []
+    }
     func grant(province: Int, to nation: Int) async -> String? { finish(await native.territory([province], to: nation)) }
     func retreat(army index: Int, to province: Int) async -> String? {
         guard let a = army(index) else { return "这支军队不存在或已失去战斗力。" }

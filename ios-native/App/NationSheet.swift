@@ -51,6 +51,7 @@ struct NationSheet: View {
     let say: (String) -> Void
     let fly: (Int) -> Void
     @State private var info: NationInfo?
+    @State private var history: [GameState.Event] = []
     @State private var picking: Pick?
     @State private var target = -1
     enum Pick: String, Identifiable {
@@ -110,6 +111,21 @@ struct NationSheet: View {
                             }
                             .padding(.horizontal, 16)
                         }
+                        // 国史: the chronicle entries naming this state, newest first.
+                        FoldSection("国史", expanded: false) {
+                            Group2 {
+                                if history.isEmpty { Row(label: "国史", value: "尚无记载") }
+                                ForEach(Array(history.prefix(20).enumerated()), id: \.offset) { i, e in
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text("第\(e.day + 1)日").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                                        Text(e.text).font(Theme.kai(15)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 9)
+                                    if i < min(history.count, 20) - 1 { Divider2() }
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                        }
                     } else {
                         ProgressView().frame(maxWidth: .infinity).padding(40)
                     }
@@ -125,6 +141,7 @@ struct NationSheet: View {
 
     private func reload() async {
         info = await model.nationInfo(nation)
+        history = await model.nationHistory(nation)
         model.controller.relations = relationColors()
     }
     /// StateRelationsHighlighter colours.

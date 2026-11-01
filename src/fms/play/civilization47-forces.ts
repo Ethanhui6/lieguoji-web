@@ -45,13 +45,16 @@ export type NavalOpening47={version:1;rule:'qualified-starter-debit-v1';firstEve
  * creation. This still needs daily settlement/live validation/Store49 before
  * it is a complete playable run; no version or legacy culture is fabricated. */
 export type FoundingForces47=Government47&MilitaryRun47&{armyRetirement?:ArmyRetirement47;armyRecovery?:ArmyRecovery47;frameLoop?:FrameLoop47;armyBatch?:ArmyBatch47;harbors:HarborLayout46;navalOpening:NavalOpening47;forceSpeed:ForceSpeed47;dailyEconomy:DailyEconomy47;combatPersonnel:CombatPersonnel47;armyAutonomy:ArmyAutonomy47;navalAutonomy:NavalAutonomy47};
+/** Creation harbour rule: v1 for every existing world; v2 (open sea on the mesh hull) only when a new
+ * world's opening asks for it. The rule is recorded in harbors.method and replayed from it. */
+export type HarborMethod47='capital-neighbor-v1'|'capital-neighbor-v2';
 const fields=['battles','occupation','transports','reorganization','voyages','alliances','vassals','diplomaticGeography','harbors','navy','maritime','fleetPositions','portControl','warfare','losses','nativeWars','forceContacts','forceClock','forceDamage','navalOpening','forceSpeed','dailyEconomy','combatPersonnel','armyAutonomy','navalAutonomy'] as const;
 const seed=(text:string)=>{let h=2166136261;for(const c of text)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
 /** Private construction. The starter allocation is the existing WEB rule:
  * one affordable fleet at a qualified harbor, crew/grain debited exactly once.
  * Never run the old creation/refund/version-wrap pipeline. */
-function build<T extends Government47>(input:T):T&FoundingForces47{
-  const r=structuredClone(input);prepareOwnedGeography47(r);const harbors=buildHarbors46(r),sea=graphFor46({...r,harbors}),firstEventId=r.world.nextEventId,next=initialNavy(r.world,sea);
+function build<T extends Government47>(input:T,method:HarborMethod47='capital-neighbor-v1'):T&FoundingForces47{
+  const r=structuredClone(input);prepareOwnedGeography47(r);const harbors=buildHarbors46(r,method),sea=graphFor46({...r,harbors}),firstEventId=r.world.nextEventId,next=initialNavy(r.world,sea);
   const navalOpening:NavalOpening47={version:1,rule:'qualified-starter-debit-v1',firstEventId,charges:next.navy.fleets.map(f=>({fleetId:f.id,homeId:sea.ports.find(p=>p.id===f.dockId)!.provinceId,crew:f.crew,grain:f.food}))};
   const world=next.world,navy=next.navy,graph=armyGeographyFor47({...r,world}).graph;
   const fleetPositions:ArmyPositions47={version:1,binding:r.armyPositions.binding,revision:0,records:{}};
@@ -69,12 +72,12 @@ function build<T extends Government47>(input:T):T&FoundingForces47{
   const out={...inputWars,nativeWars,losses:initialLosses(world,warfare,r.clock.tick,false),portControl:initialPorts46(base,sea),forceContacts:initialForceContacts47(),forceClock:initialForceClock47(r.clock.tick,seed(`${world.custom!.seed}/force47`),r.life.secondsPerDay/TICKS_PER_DAY),forceDamage:initialForceDamage47(),forceSpeed:initialForceSpeed47(world,r.clock.tick,id=>stateTraitsFor47(r,id).includes('CavalryTradition'),'stateTraits47' in r?forceFaceBiomes47(r.terrain):undefined),dailyEconomy:{version:1 as const,lastDay:0,lastMusterMonth:0},navalOpening};
   const result={...out,combatPersonnel:initialCombatPersonnel47(out),armyAutonomy:initialArmyAutonomy47(world),navalAutonomy:initialNavalAutonomy47(out)};actualForces47(result);return result;
 }
-export function attachFoundingForces47<T extends Government47>(input:T):T&FoundingForces47{
+export function attachFoundingForces47<T extends Government47>(input:T,method:HarborMethod47='capital-neighbor-v1'):T&FoundingForces47{
   assertGovernmentOpening47(input);if(fields.some(k=>k in input))throw Error('海陆军事创建只能初始化一次。');
-  const result=build(input);assertFoundingForces47(result);return result;
+  const result=build(input,method);assertFoundingForces47(result);return result;
 }
-export function createFoundingForces47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={},settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM,layout?:OpeningLayout47,families?:'original'){
-  return attachFoundingForces47(createGovernmentWorld47(terrain,count,cityCount,relations,culture,economy,settlementAlgorithm,layout,families));
+export function createFoundingForces47(terrain:FmsDocument,count:number,cityCount:number,relations:'peace'|'war',culture:WorldCultureSetup47,economy:EconomySetup47={},settlementAlgorithm?:typeof SETTLEMENT47_ALGORITHM,layout?:OpeningLayout47,families?:'original',harbors?:'capital-neighbor-v2'){
+  return attachFoundingForces47(createGovernmentWorld47(terrain,count,cityCount,relations,culture,economy,settlementAlgorithm,layout,families),harbors??'capital-neighbor-v1');
 }
 const exact=(v:unknown,keys:string[])=>!!v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
 function same(a:unknown,b:unknown):boolean{
@@ -96,6 +99,7 @@ export function assertFoundingForces47(r:FoundingForces47){
   assertGovernmentOpening47(before);
   // Strip only the new initial military fields from this private replay input.
   const pure={...before} as Government47&Partial<Record<typeof fields[number],unknown>>;for(const key of fields)delete pure[key];
-  const expected=build(pure);
+  const method=r.harbors?.method;if(method!=='capital-neighbor-v1'&&method!=='capital-neighbor-v2')return fail();
+  const expected=build(pure,method);
   if(!same(r.world,expected.world)||fields.some(key=>!same(r[key],expected[key])))return fail();
 }

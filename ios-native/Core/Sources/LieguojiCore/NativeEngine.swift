@@ -35,6 +35,7 @@ public final class NativeEngine {
         let diplomacy = Data(statics.diplomacy.json.utf8)
         Session.engine = DeclarationEngine(statics: try JSONDecoder().decode(DiplomacyStatic.self, from: diplomacy))
         ArmyOrders.cache = nil
+        Naval.sea = statics.sea.isNull ? nil : Naval.Sea(statics.sea); Naval.cellsCache = nil
         RunWindow.afterOccupation = nil
     }
     /// The world map (`{bin, meta}` of the bridge) the statics carry, as JSON.

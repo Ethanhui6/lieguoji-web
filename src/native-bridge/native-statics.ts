@@ -13,7 +13,8 @@ import type {PoliticalRun47} from '../fms/play/civilization47-diplomatic-world';
  * - borders: owner province of each outside border cell of every province (province-border54);
  * - homeCells: the travel cell under each province centre (locateTravelCell47);
  * - diplomacy: the diplomatic geography (native-export/diplomacy-state diplomacyStatic);
- * - seaPorts: harbour ports of the sea graph, [land province id, water component]. */
+ * - seaPorts: harbour ports of the sea graph, [land province id, water component];
+ * - sea: water component of every sea face (-1 on land) and each harbour port's anchor (seaStatic). */
 export function nativeStatics(input:unknown){
   const r=input as FoundingForces47&PoliticalRun47&{terrain:Parameters<typeof originalCellProvinces>[0];scale:number};
   const w=r.world,provinceIndex=new Map(w.provinces.map((p,i)=>[p.id,i])),g=actualForces47(r).spatial.graph;
@@ -42,5 +43,13 @@ export function nativeStatics(input:unknown){
     homeCells:Object.fromEntries(w.provinces.map(p=>[p.id,locateTravelCell47(g,p.center,p.id)!.id])),
     diplomacy:diplomacyStatic(r),
     seaPorts:sea.ports.map(p=>[p.provinceId,sea.nodes.get(p.node)!.component]),
+    sea:seaStatic(r),
   };
+}
+/** Sea-graph facts the Swift naval rules read: components[face] (-1 for a land face) and the ports
+ * [id, land province id, anchor face, anchor centre x, y] in sea-graph order. */
+export function seaStatic(input:unknown){
+  const r=input as FoundingForces47,sea=graphFor47(r as never),components=Array<number>(r.terrain.triangles.length/3).fill(-1);
+  for(const n of sea.nodes.values())components[n.id]=n.component;
+  return {components,ports:sea.ports.map(p=>{const c=sea.nodes.get(p.node)!.center;return [p.id,p.provinceId,p.node,c.x,c.y];})};
 }

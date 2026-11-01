@@ -122,6 +122,32 @@ extension NativeEngine {
             x.mission = JS(r.voyages.missions.isNull ? "" : (r.voyages.missions.objectEntries.first { $0.1.armyId.optionalString == id }?.1.phase.optionalString ?? ""))
             return x
         })
+        // Fleets at their actual sea points and the harbour ports (open-sea worlds; empty otherwise).
+        var fleetRows = [JS]()
+        if let bridge, !r.navy.isNull, !r.navy.fleets.isNull {
+            for fl in r.navy.fleets.asArray where fl.status.asString != "lost" {
+                let id = fl.id.asString, rec = r.fleetPositions.records[id]
+                if rec.isNull { continue }
+                let p = bridge.graph.location(bridge.travel(rec)).point, row = r.navalAutonomy.isNull ? JS.null : r.navalAutonomy.fleets[id]
+                let x = JS.object()
+                x.id = fl.id; x.name = fl.name; x.nation = JS(ni[fl.nationId.asString] ?? -1); x.ships = fl.ships; x.crew = fl.crew; x.food = fl.food
+                x.hull = JS(fl.ships.asNumber > 0 ? (r.maritime.hulls[id].optionalNumber ?? 0) / (fl.ships.asNumber * 100) : 0)
+                x.status = fl.status; x.travel = rec.status; x.x = JS(p.x / sc); x.y = JS(p.y / sc)
+                x.decision = JS(row.isNull ? "" : row.decision.optionalString ?? ""); x.reason = JS(row.isNull ? "" : row.reason.optionalString ?? "")
+                let port = row.isNull ? nil : row.assignedPortId.optionalString.flatMap { a in Naval.sea?.ports.first { $0.id == a } }
+                x.port = JS(port.flatMap { pi[$0.provinceId] } ?? -1)
+                x.manual = JS(r.voyages.manualFleets.asArray.contains { $0.asString == id }); x.patrol = fl.patrol
+                fleetRows.append(x)
+            }
+        }
+        o.fleets = .array(fleetRows)
+        o.ports = .array((Naval.sea?.ports ?? []).compactMap { port in
+            guard let q = pi[port.provinceId] else { return nil }
+            let c = r.portControl.isNull ? JS.null : r.portControl.ports[port.provinceId], x = JS.object()
+            x.province = JS(q); x.x = JS(port.center.x / sc); x.y = JS(port.center.y / sc)
+            x.owner = JS(c.isNull ? -1 : ni[c.landOwnerId.asString] ?? -1); x.occupier = JS(c.isNull ? -1 : ni[c.occupierId.asString] ?? -1)
+            x.value = JS(c.isNull ? 100 : c.value.asNumber.rounded()); return x
+        })
         let stateNation = Dictionary(uniqueKeysWithValues: r.nativeWars.nationIds.asArray.map { ($0[0].asInt, $0[1].asString) })
         o.wars = .array(r.nativeWars.campaigns.asArray.filter { $0.endedTick.isNull }.map { c in
             let d = r.nativeDiplomacy.declarations.asArray.first { $0.warId.asInt == c.id.asInt }, goal = d.flatMap { $0.goals.asArray.first }

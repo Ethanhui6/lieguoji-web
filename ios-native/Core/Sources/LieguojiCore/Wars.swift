@@ -173,7 +173,8 @@ public enum Wars {
         if changed { revise(s) }
     }
     /// lossRecorder.
-    public static func recordLoss(_ r: JS, _ nation: String, _ kind: String, _ amount: Int, enemies: [String] = []) {
+    public static func recordLoss(_ r: JS, _ nation: String, _ kind: String, _ amount: Int, enemies: [String] = []) { recordLoss(r, nation, kind, value: Double(amount), enemies: enemies) }
+    public static func recordLoss(_ r: JS, _ nation: String, _ kind: String, value amount: Double, enemies: [String] = []) {
         if amount == 0 { return }
         let s = r.losses, account = s.nations[nation]
         var sources = [String](); for e in enemies where !sources.contains(e) { sources.append(e) }
@@ -182,6 +183,6 @@ public enum Wars {
            let c = r.warfare.campaigns.asArray.first(where: { $0.endedTick.isNull && ($0.a.asString == nation && $0.b.asString == sources[0] || $0.b.asString == nation && $0.a.asString == sources[0]) }) {
             target = s.campaigns[c.id.asString].losses[nation]
         }
-        account.total[kind] = JS(account.total[kind].asNumber + Double(amount)); target[kind] = JS(target[kind].asNumber + Double(amount)); revise(s)
+        account.total[kind] = JS(account.total[kind].asNumber + amount); target[kind] = JS(target[kind].asNumber + amount); revise(s)
     }
 }

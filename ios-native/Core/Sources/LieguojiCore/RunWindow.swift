@@ -118,7 +118,7 @@ public enum RunWindow {
                 r.occupation.sieges = .array(r.occupation.sieges.asArray.filter { $0 !== s })
             }
         }
-        afterOccupation?(r)
+        Naval.reconcileLandOwners(r); afterOccupation?(r)
         politicalOccupation(r, previous)
         return true
     }
@@ -164,7 +164,7 @@ public enum RunWindow {
                                           let c = CombatReader.inputs(r, armies[force.id]!, provinceIndex(bridge, force.travel))
                                           return Volley.ArmyInput(efficiency: Efficiency.compute(c.input), damageToArmy: c.damageToArmy, multiplier: Double(c.multiplier))
                                       },
-                                      navy: { _ in Volley.NavalInput(destiny: 0, maritime: false, leader: nil) })
+                                      navy: { force in Naval.combatInput(r, r.world.nations[force.nation].id.asString) })
         let armyKeys = Dictionary(uniqueKeysWithValues: forces.filter { $0.kind == .army }.map { ($0.key, $0.id) })
         // creditArmyKills47.
         if !r.originalArmy47.isNull && !r.originalArmy47.kills.isNull {
@@ -174,12 +174,27 @@ public enum RunWindow {
         var incoming = [String: Double]()
         for h in hits { incoming[h.victim, default: 0] += h.damage }
         let state = r.forceDamage, carryBefore = Dictionary(uniqueKeysWithValues: state.carry.objectEntries.map { ($0.0, $0.1.asNumber) })
-        var casualties = [(key: String, strength: Int)]()
-        for force in forces where force.kind == .army {
+        var casualties = [(key: String, strength: Int, crew: Int, ships: Int, fleet: Bool)]()
+        let navyCountToHull = r.combatPersonnel.hullPerNativeCount.optionalNumber ?? 1
+        for force in forces {
             let k = force.key
             guard let raw = incoming[k] else { continue }
-            let total = raw * 10 + (state.carry[k].optionalNumber ?? 0), whole = total.rounded(.down)
+            let total = raw * (force.kind == .army ? 10 : navyCountToHull) + (state.carry[k].optionalNumber ?? 0), whole = total.rounded(.down)
             state.carry[k] = JS(total - whole)
+            if force.kind == .fleet {
+                let fl = r.navy.fleets.asArray.first { $0.id.asString == force.id }!, id = force.id, before = r.maritime.hulls[id].asNumber, oldCrew = fl.crew.asInt
+                let strength = min(before, whole), hull = before - strength; r.maritime.hulls[id] = JS(hull)
+                let ships = fl.ships.asNumber
+                fl.crew = JS(min(oldCrew, Int((hull / (ships * 100) * ships * 40).rounded(.up))))
+                var lostShips = 0
+                if hull == 0 {
+                    fl.status = JS("lost"); fl.patrol = JS(false); r.maritime.retreating.delete(id); lostShips = fl.ships.asInt
+                    let t = r.fleetPositions.records[id].clone(); t.status = JS("halted"); r.fleetPositions.records[id] = t
+                }
+                state.losses[k] = JS((state.losses[k].optionalNumber ?? 0) + strength)
+                casualties.append((k, Int(strength), oldCrew - fl.crew.asInt, lostShips, true))
+                continue
+            }
             let a = armies[force.id]!, before = a.troops.asInt, strength = min(before, Int(whole))
             a.troops = JS(before - strength)
             if strength > 0 { a.morale = JS(max(0, a.morale.asNumber - max(0.2, Double(strength) / Double(max(1, before)) * 46))) }
@@ -189,7 +204,7 @@ public enum RunWindow {
                 r.battles.plans.delete(force.id)
             }
             state.losses[k] = JS((state.losses[k].optionalNumber ?? 0) + Double(strength))
-            casualties.append((k, strength))
+            casualties.append((k, strength, 0, 0, false))
         }
         // reconcileForceContactsOwned47 among the living, then fighting without contact → idle.
         let clean = ContactMotion(graph: bridge.graph).contacts(bridge.forces(r), bridge.contacts(r), bridge.rules(r))
@@ -206,12 +221,13 @@ public enum RunWindow {
         }
         for c in casualties {
             let enemies = (carryBefore[c.key] ?? 0) > 0 ? [] : attackers[c.key] ?? []
-            Wars.recordLoss(r, nationOf[c.key]!, "combat", c.strength, enemies: enemies)
+            Wars.recordLoss(r, nationOf[c.key]!, c.fleet ? "hull" : "combat", c.strength, enemies: enemies)
+            Wars.recordLoss(r, nationOf[c.key]!, "crew", c.crew, enemies: enemies); Wars.recordLoss(r, nationOf[c.key]!, "ships", c.ships, enemies: enemies)
         }
         if !r.nobility.isNull {
             for h in hits { if let id = armyKeys[h.attacker], armyKeys[h.victim] != nil { Nobility.battleMerit(r, id, h.damage) } }
         }
-        return (hits.count, casualties.reduce(0) { $0 + $1.strength })
+        return (hits.count, casualties.filter { !$0.fleet }.reduce(0) { $0 + $1.strength })
     }
     static func atWarIndex(_ r: JS, _ a: Int, _ b: Int) -> Bool { atWar(r, r.world.nations[a].id.asString, r.world.nations[b].id.asString) }
 
@@ -295,8 +311,11 @@ public enum RunWindow {
                     }
                     if now == Double(tick) { break }
                     let stop = F != nil ? Double(tick) : min(Double(tick), r.forceClock.deadlines.objectValues.map(\.asNumber).min() ?? Double(tick))
+                    let segment = Naval.segment(r)
                     let moved = Profile.measure("w.motion") { motion(r, seconds: stop - now) }
-                    now = moved.unused == 0 ? stop : now + moved.elapsed
+                    let end = moved.unused == 0 ? stop : now + moved.elapsed
+                    if let segment, end > now { Naval.settlePorts(r, segment.view, retreating: segment.retreating, hulls: segment.hulls, from: now, seconds: (end - now) * r.forceClock.secondsPerTick.asNumber) }
+                    now = end
                 }
             }
             for (id, until) in (r.maritime.retreating.isNull ? [] : r.maritime.retreating.objectEntries) where until.asNumber <= Double(tick) { r.maritime.retreating.delete(id) }

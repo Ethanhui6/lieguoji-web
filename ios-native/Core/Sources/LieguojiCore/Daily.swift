@@ -305,7 +305,7 @@ public enum Daily {
     public static func settle(_ r: JS) {
         r.world.day = JS(r.world.day.asNumber + 1)
         if Profile.measure("d.people", { People.month(r) }) || r.world.day.asInt % 30 == 0 { Government.refreshLeaderCombat(r) }
-        Founding.reconcilePorts?(r)
+        Profile.measure("d.fleets") { Naval.settleFleetFood(r) }
         Profile.measure("d.economy") { economy(r) }
         _ = Profile.measure("d.armyDay") { originalArmyDay(r) }
         Profile.measure("d.forces") { finishForces(r); retire(r); recover(r) }

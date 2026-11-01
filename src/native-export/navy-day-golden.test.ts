@@ -8,6 +8,7 @@ import {locateTravelCell47} from '../fms/play/army-travel47-graph';
 import {originalCellProvinces} from '../fms/original/original-politics';
 import {nativeFilterProvinceCells53} from '../fms/play/native-combat/province-cells53';
 import {graphFor47} from '../fms/play/sea-geography47';
+import {seaStatic} from '../native-bridge/native-statics';
 import type {PoliticalRun47} from '../fms/play/civilization47-diplomatic-world';
 import type {FoundingForces47} from '../fms/play/civilization47-forces';
 
@@ -28,8 +29,8 @@ function runView(r:Run){
  * frames with calendar, political tick and army orders, the daily settlement and the political
  * step): every other day for 180 days, from the web state at the day boundary. Inputs are chained. */
 it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports open-sea whole day golden samples',async()=>{
-  const {session,snapshot}=await createNativeWorld('capital-neighbor-v2');
-  let x=snapshot,previous:unknown=null,homeCells:Record<string,number>|null=null,borders:number[][]|null=null,statics:unknown=null,seaPorts:unknown=null;
+  const {session,snapshot}=await createNativeWorld('capital-neighbor-v2',process.env.NAVY_WAR==='1'?'war':'peace');
+  let x=snapshot,previous:unknown=null,homeCells:Record<string,number>|null=null,borders:number[][]|null=null,statics:unknown=null,seaPorts:unknown=null,seaFacts:unknown=null;
   const samples:unknown[]=[];
   for(let day=0;day<120;day++){
     const before=x.run as unknown as FoundingForces47;
@@ -37,7 +38,7 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports open-sea whole day gol
       const q=before as unknown as {terrain:Parameters<typeof originalCellProvinces>[0];scale:number},owners=originalCellProvinces(q.terrain,before.world.provinces,q.scale);
       const rows=nativeFilterProvinceCells53({province:Array.from(owners,i=>i+1),neighbor:q.terrain.neighbors,height:Array.from(q.terrain.elevations),feature:Array.from(owners,()=>0)},Array(before.world.provinces.length+1).fill(true));
       borders=before.world.provinces.map((_,i)=>rows[i+1]!.borderNeighborCells.map(c=>owners[c]));
-      const sea=graphFor47(before as never);seaPorts=sea.ports.map(p=>[p.provinceId,sea.nodes.get(p.node)!.component]);}
+      const sea=graphFor47(before as never);seaPorts=sea.ports.map(p=>[p.provinceId,sea.nodes.get(p.node)!.component]);seaFacts=seaStatic(before);}
     const input=day%2===0?runView(before as unknown as Run):null;
     x=session.execute({kind:'advance',ticks:120} as never,x.journal.actions.length);
     statics??=diplomacyStatic(x.run as never);
@@ -46,5 +47,5 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports open-sea whole day gol
   }
   expect(samples.length).toBe(60);
   await mkdir('ios-native/Core/Tests/LieguojiCoreTests/Golden',{recursive:true});
-  await writeFile('ios-native/Core/Tests/LieguojiCoreTests/Golden/navy-day.json',JSON.stringify({homeCells,borders,statics,seaPorts,samples}));
+  await writeFile('ios-native/Core/Tests/LieguojiCoreTests/Golden/'+(process.env.NAVY_WAR==='1'?'navy-war-day.json':'navy-day.json'),JSON.stringify({homeCells,borders,statics,seaPorts,sea:seaFacts,samples}));
 },3600000);

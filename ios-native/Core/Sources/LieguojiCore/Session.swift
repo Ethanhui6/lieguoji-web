@@ -20,12 +20,13 @@ public enum Session {
     /// finishPoliticalTick47.
     public static func finishPoliticalTick(_ r: JS) { PeaceBridge.advance(r, monthStart: false); Government.reconcileContinuity(r) }
     /// The real47 afterTick of the military window: calendar, then on a frame boundary the political
-    /// tick (not at the day boundary) and the army batch. Fleets are not raised in current worlds.
+    /// tick (not at the day boundary), the army batch and the autonomous naval orders.
     static func afterTick(_ r: JS, _ dailyPending: Bool, _ boundary: Bool) {
         calendar(r, r.clock.tick.asInt)
         if !boundary { return }
         if !dailyPending { Profile.measure("t.finishPolitics") { finishPoliticalTick(r) } }
         Profile.measure("t.orders") { ArmyOrders.issueBatch(r) }
+        Profile.measure("t.naval") { Naval.issueAutonomous(r) }
     }
     /// advancePolitics47.
     public static func politics(_ r: JS, dayChanged: Bool) {
@@ -48,7 +49,7 @@ public enum Session {
     /// there, and the political step after every window.
     public static func advance(_ r: JS, ticks: Int) {
         var remaining = ticks
-        RunWindow.afterTick = afterTick; War26.install(); RebelWar.install(); NobleRevolt.install()
+        RunWindow.afterTick = afterTick; Founding.reconcilePorts = Naval.reconcileLandOwners; War26.install(); RebelWar.install(); NobleRevolt.install()
         // issueAutonomousArmyOrders47 with the army batch: only the day is recorded.
         Daily.dailyOrders = { r in if !r.armyBatch.isNull { r.armyAutonomy.lastDay = r.world.day.clone() } }
         while remaining > 0 {

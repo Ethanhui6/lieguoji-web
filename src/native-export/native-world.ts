@@ -15,12 +15,12 @@ import {ORIGINAL_ARMY_RULE47} from '../fms/play/civilization47-original-army';
  * eight nations, created and then initialized with the same rule actions the web UI sends after
  * "从当前地图创建文化世界" (CultureWorld47.tsx), so its state is exactly a new web world on day 0. */
 export const NATIVE_WORLD_OPTIONS={seed:'421730',template:'continents'} as const;
-export async function createNativeWorld(harbors?:'capital-neighbor-v2'){
+export async function createNativeWorld(harbors?:'capital-neighbor-v2',relations:'peace'|'war'='peace'){
   const blank=await createFmsOriginalDocument('20k');
   blank.worldId='42173000-0000-4000-8000-000000000001';
   const terrain=(await prepareFmsFullMapPreview(blank,{worldId:blank.worldId,baseRevision:blank.revision,
     ...await generateFmsFullMap(blank,NATIVE_WORLD_OPTIONS,{yieldTask:async()=>{}})},NATIVE_WORLD_OPTIONS)).document;
-  const opening:Culture47Opening={terrain,count:8,cityCount:80,relations:'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,
+  const opening:Culture47Opening={terrain,count:8,cityCount:80,relations,settlementAlgorithm:SETTLEMENT47_ALGORITHM,
     setup:{mode:'culture-generated',enabled:['chinese','japanese','english','arab','roman','german']},families:'original',...(harbors?{harbors}:{})};
   const session=new Culture47Session();
   let x=session.create(opening);

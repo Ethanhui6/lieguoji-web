@@ -124,6 +124,34 @@ public final class JS: CustomStringConvertible {
         }
     }
 
+    /// JSON.stringify: escaped strings, shortest round-trip numbers, non-finite numbers as null.
+    public var json: String { var out = ""; write(&out); return out }
+    func write(_ out: inout String) {
+        switch storage {
+        case .null: out += "null"
+        case .bool(let b): out += b ? "true" : "false"
+        case .number(let n): out += !n.isFinite ? "null" : n == n.rounded() && abs(n) < 1e15 ? String(Int64(n)) : "\(n)"
+        case .string(let s):
+            out += "\""
+            for u in s.unicodeScalars {
+                switch u {
+                case "\"": out += "\\\""
+                case "\\": out += "\\\\"
+                case "\n": out += "\n"
+                case "\r": out += "\r"
+                case "\t": out += "\t"
+                default: if u.value < 0x20 { out += String(format: "\u%04x", u.value) } else { out.unicodeScalars.append(u) }
+                }
+            }
+            out += "\""
+        case .array(let a): out += "["; for (i, v) in a.enumerated() { if i > 0 { out += "," }; v.write(&out) }; out += "]"
+        case .object(let o):
+            out += "{"
+            for (i, (k, v)) in o.entries.enumerated() { if i > 0 { out += "," }; JS(.string(k)).write(&out); out += ":"; v.write(&out) }
+            out += "}"
+        }
+    }
+
     // MARK: Parsing
     public static func parse(_ data: Data) throws -> JS {
         var p = Parser(bytes: [UInt8](data))

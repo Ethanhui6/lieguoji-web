@@ -60,3 +60,12 @@ public enum Session {
         }
     }
 }
+
+extension Session {
+    /// Remove every engine hook (isolated module tests run without them).
+    public static func uninstall() {
+        RunWindow.afterTick = nil; RunWindow.afterOccupation = nil; Daily.dailyOrders = nil
+        DiplomacyBridge.reconcileWarPlans = nil; PeaceBridge.reconcileForces = nil
+        Rebellion.onRebel = nil; Rebellion.spawnArmy = nil; Nobility.monthlyChecks = nil
+    }
+}

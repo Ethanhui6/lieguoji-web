@@ -22,6 +22,7 @@ final class DayTests: XCTestCase {
         for (k, v) in golden.homeCells.objectEntries { Armies.homeCells[k] = v.asInt }
         CombatReader.borders = golden.borders.asArray.map { $0.asArray.map(\.asInt) }
         RunWindow.afterOccupation = nil
+        defer { Session.uninstall() }
         var input: JS?, failures = 0
         for (k, s) in golden.samples.asArray.enumerated() {
             if let previous = input { let next = previous.clone(); NobilityTests.apply(s.inputPatch, to: next); input = next } else { input = s.input }

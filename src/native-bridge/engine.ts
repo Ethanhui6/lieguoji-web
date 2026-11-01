@@ -1,3 +1,4 @@
+import {nativeStatics} from './native-statics';
 import {createFmsOriginalDocument,originalGridFor} from '../fms/original/original-document';
 import {generateFmsFullMap,prepareFmsFullMapPreview} from '../fms/full-map-terrain';
 import {Culture47Session,type Culture47Opening,type Culture47Journal} from '../fms/play/culture47-session';
@@ -174,4 +175,11 @@ export async function load(text:string){
   const s=new Culture47Session();current=s.load(saved.journal);session=s;
   const opening=saved.journal.opening as Culture47Opening,terrain=opening.terrain as Culture47Opening['terrain'];
   return JSON.stringify({...await mapOf(terrain,run(),{seed:'',template:''}),state:state()});
+}
+
+/** The whole run (minus the terrain document) and its static geometry, for the Swift engine. */
+export function nativeWorld(){
+  const r=run() as unknown as Record<string,unknown>,out:Record<string,unknown>={};
+  for(const [k,v] of Object.entries(r))if(k!=='terrain')out[k]=v;
+  return JSON.stringify({run:out,statics:nativeStatics(r)});
 }

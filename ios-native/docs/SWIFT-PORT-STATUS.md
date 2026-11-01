@@ -1,4 +1,4 @@
-# Swift 移植进度（App 仍以网页引擎运行，Swift 逐块移植、逐位对照）
+# Swift 移植进度（0.9.5 起游戏由 Swift 引擎运行，网页引擎只生成新世界）
 
 更新：2026-10-31
 
@@ -28,15 +28,21 @@
 | 行省叛乱判定 | civilization47-rebellion | Rebellion.swift | rebellion.json |
 | 政府延续、迁都、君主对敌战力、在位与国家特性记录 | civilization47-political-owner、-capitals、leader-history47、state-traits47 | Government.swift | government.json |
 
-## 已移植、待专项对照
-- 参战阵营、附庸管理（贡金、独立战争）、退盟：Vassals.swift
-- 军队/舰队行军记录桥接与接触重建：ForceBridge.swift
+## 运行编排（逐位对照）
+| 模块 | 网页源 | Swift | 黄金对照 |
+|---|---|---|---|
+| 新国家建立、家族叛乱、内战 | civilization47-founding、-rebellion、-nobility-revolt | Founding / RebelWar / NobleRevolt | uprising.json、revolt.json |
+| 每日结算 | civilization47-daily | Daily.swift | daily.json |
+| 每帧军事窗口（行军、交锋、齐射、占领、战功、战损账） | force-tick47、force-accounting47、war47-occupation | RunWindow.swift | run-window.json |
+| 陆军轮转军令 | civilization47-army-ai、army-commands47 | ArmyOrders.swift | army-orders.json |
+| 战争目标账本、停战后部队整理 | war26-state、civilization47-war-settlement | War26.swift | day.json |
+| 整天循环（军事帧、日结、政治外交） | culture47-session advance | Session.swift | day.json（90 天） |
+| 玩家命令（行军、停止、宣战、议和） | culture47-orders、political-owner | Commands.swift | commands.json |
+| 交接、存读档、20 天连续推进 | native-bridge nativeWorld | NativeEngine.swift | bridge-world / bridge-after |
 
-## 尚未移植（App 中由网页引擎负责）
-- 新国家建立（叛乱、家族叛乱、内战共用）、家族叛乱与内战
-- 外交后的部队整理：占领整理、港口归属、战争目标（war26，需海路图）、军事计时整理
-- 海军：舰队、港口、远征登陆、海上交锋、舰队口粮
-- 日结编排：舰队口粮、军队日结、退役、自主命令日结
-- 每帧军事窗口与运行状态的接驳（类型化移植已有，需桥接）
-- 新世界创建（人口与资源、人物家族、初始军队与海军、文化宗教）
-- Swift 每日循环与存读档，App 切换到 Swift 引擎
+## 尚未移植（仍由网页引擎负责）
+- 新世界创建（人口与资源、人物家族、初始军队）：App 用网页引擎建世界后交给 Swift。
+- 港口归属账与海军（当前世界没有舰队；有港口的世界中港口账暂不更新）。
+
+## 性能
+- 分段计时（Profile.swift，DayTests 输出）：缓存海域表与通行关系后，整天循环约 0.09 秒/天（CI），其中行军与接触约占 75%。

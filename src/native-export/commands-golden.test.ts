@@ -50,9 +50,9 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports player command golden 
     if(war)commands.push({kind:'peace',a:w.nations.findIndex(m=>m.id===war.attacker),b:w.nations.findIndex(m=>m.id===war.defender)});
     turn++;
     for(const c of commands){
-      const r=structuredClone(base),input=runView(r as unknown as Run);let ok=false,reason='';let out=r;
+      const r=structuredClone(base),input=runView(r as unknown as Run);let ok:boolean,reason:string;let out=r;
       if(c.kind==='order'){const p=r.world.provinces[c.province!];const command=c.province!<0?{type:'army-halt' as const,armyId:c.army!}:{type:'army-move' as const,armyId:c.army!,target:{kind:'province' as const,id:p.id},kind:'march' as const};
-        const intent={force:'army' as const,command},preview=previewMilitary47(r,intent) as {valid:boolean;reason:string;basedOn:never};ok=preview.valid;reason=preview.reason;if(ok)out=applyMilitary47(r,intent,preview.basedOn) as typeof r;}
+        const intent={force:'army' as const,command},preview=previewMilitary47(r,intent) as unknown as {valid:boolean;reason:string;basedOn:never};ok=preview.valid;reason=preview.reason;if(ok)out=applyMilitary47(r,intent,preview.basedOn) as typeof r;}
       else{const action={type:c.kind==='declare'?'declare-war' as const:'make-peace' as const,nationId:r.world.nations[c.a!].id,targetNationId:r.world.nations[c.b!].id};
         if(c.a===c.b)continue;
         const preview=previewPoliticalCommand47(r,action);ok=preview.valid;reason=preview.reason;if(ok)out=applyPoliticalCommand47(r,action,preview.expected) as typeof r;}

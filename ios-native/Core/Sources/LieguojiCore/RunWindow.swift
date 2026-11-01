@@ -222,17 +222,32 @@ public enum RunWindow {
         let anchors = r.originalArmy47.isNull ? false : r.originalArmy47.paths.optionalNumber == 1
         let index = Dictionary(uniqueKeysWithValues: r.world.provinces.asArray.enumerated().map { ($0.element.id.asString, $0.offset) })
         let seconds0 = r.forceClock.secondsPerTick.asNumber
+        // Controllers, access and war do not change during one motion call: read each once.
+        let controllers = r.world.provinces.asArray.map(\.controller.asString)
+        var pairs = [String: (access: Bool, war: Bool)]()
+        func relation(_ n: String, _ c: String) -> (access: Bool, war: Bool) {
+            let k = n + "|" + c
+            if let v = pairs[k] { return v }
+            let v = (access(r, n, c), atWar(r, n, c)); pairs[k] = v; return v
+        }
+        var entry = [String: (nation: String, anchor: String?, retreating: Bool, sea: Bool, base: Double, unit: Double)]()
+        for a in r.world.armies.asArray {
+            let id = a.id.asString
+            entry[id] = (a.nationId.asString, anchors ? index[a.provinceId.asString].map { controllers[$0] } : nil, a.status.asString == "retreating",
+                         r.reorganization.active[id].isNull, r.forceSpeed.armies[id].base.optionalNumber ?? 0, CombatReader.unitSpeed(r.units[id].optionalString ?? ""))
+        }
+        _ = armies
         let rules = bridge.rules(r, canEnter: { force, cell in
             let q = Int(g.provinces[cell])
             if force.kind == .fleet { return q < 0 }
-            let a = armies[force.id]!
-            if q < 0 { return r.reorganization.active[force.id].isNull }
-            let c = r.world.provinces[q].controller.asString, n = a.nationId.asString
-            let anchor = anchors ? index[a.provinceId.asString].map { r.world.provinces[$0].controller.asString } : nil
-            return access(r, n, c) || c == anchor || a.status.asString != "retreating" && atWar(r, n, c)
+            let a = entry[force.id]!
+            if q < 0 { return a.sea }
+            let c = controllers[q], v = relation(a.nation, c)
+            return v.access || c == a.anchor || !a.retreating && v.war
         }, speed: { force, cell in
             if force.kind == .fleet { return f(2.2) * ForceMotion.mapUnitsPerNativeUnit * seconds0 }
-            return ForceMotion.armySpeed(base: r.forceSpeed.armies[force.id].base.asNumber, unitSpeed: CombatReader.unitSpeed(r.units[force.id].asString), cell: cell, graph: g, secondsPerTick: seconds0)
+            let a = entry[force.id]!
+            return ForceMotion.armySpeed(base: a.base, unitSpeed: a.unit, cell: cell, graph: g, secondsPerTick: seconds0)
         })
         var moving = bridge.forces(r)
         let out = ContactMotion(graph: g).advance(&moving, previous: bridge.contacts(r), seconds: seconds, rules: rules, stopAtEvent: true)

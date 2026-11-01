@@ -6,6 +6,8 @@ import Foundation
 public final class ForceBridge {
     public let graph: TravelGraph
     let index: [Int: Int]
+    var staticRegions: [Int: Int]?
+    var staticProvinceIds = [String]()
     public init(graph: TravelGraph) {
         self.graph = graph
         var m = [Int: Int](); for (i, id) in graph.ids.enumerated() { m[Int(id)] = i }; index = m
@@ -53,9 +55,13 @@ public final class ForceBridge {
         for p in r.world.statecraft.relations.asArray where p.status.asString == "war" {
             if let a = nations.firstIndex(of: p.a.asString), let b = nations.firstIndex(of: p.b.asString) { war.insert(min(a, b) * 4096 + max(a, b)) }
         }
-        var regions = [Int: Int]()
-        for w in r.diplomaticGeography.water.asArray { for face in w.faces.asArray { regions[face.asInt] = w.id.asInt } }
-        let provinceIds = r.world.provinces.asArray.map(\.id.asString)
+        // The water region of each sea face and the province ids are fixed for a world.
+        if staticRegions == nil || staticProvinceIds.count != r.world.provinces.length {
+            var regions = [Int: Int]()
+            for w in r.diplomaticGeography.water.asArray { for face in w.faces.asArray { regions[face.asInt] = w.id.asInt } }
+            staticRegions = regions; staticProvinceIds = r.world.provinces.asArray.map(\.id.asString)
+        }
+        let regions = staticRegions!, provinceIds = staticProvinceIds
         return ContactMotion.Rules(enemy: { a, b in a != b && war.contains(min(a, b) * 4096 + max(a, b)) }, canEnter: canEnter, speed: speed,
                                    seaRegion: { regions[$0]! }, provinceID: { provinceIds[$0] })
     }

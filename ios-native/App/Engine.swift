@@ -76,6 +76,7 @@ struct GameState: Decodable, Equatable {
     struct Army: Decodable, Equatable, Identifiable {
         let id: String; let name: String; let nation: Int; let troops: Int; let unit: String; let status: String; let travel: String
         let province: Int; let supplies: Int; let morale: Int; let x: Float; let y: Float; let manual: Bool
+        let destination: Int?; let mission: String?
     }
     struct Participant: Decodable, Equatable { let nation: Int; let side: Int }
     struct War: Decodable, Equatable, Identifiable {

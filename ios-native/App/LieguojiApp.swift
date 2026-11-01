@@ -582,12 +582,23 @@ struct ProvinceSheet: View {
 
 struct ArmyRow: View {
     let map: WorldMap; let army: GameState.Army
+    static func dest(_ map: WorldMap, _ a: GameState.Army) -> String {
+        guard let d = a.destination, d >= 0, d < map.meta.provinces.count else { return "" }
+        return " → " + map.meta.provinces[d].name
+    }
+    /// Who commands the army: a player order, an AI expedition (voyages mission phase), or army AI.
+    static func command(_ a: GameState.Army) -> String {
+        if a.manual { return "玩家军令" }
+        let phases = ["assembling": "集结", "outbound": "出航", "returning": "返航"]
+        if let m = a.mission, !m.isEmpty { return "AI 远征 · \(phases[m] ?? m)" }
+        return "AI 自主调度"
+    }
     var body: some View {
         HStack(spacing: 10) {
             RoundedRectangle(cornerRadius: 3).fill(army.nation >= 0 && army.nation < map.meta.nations.count ? Names.color(map.meta.nations[army.nation].color) : .gray).frame(width: 10, height: 30)
             VStack(alignment: .leading, spacing: 2) {
                 Text(army.name).font(Theme.kai(18)).foregroundStyle(Theme.ink)
-                Text("\(Names.unit[army.unit] ?? army.unit) · \(army.province >= 0 ? map.meta.provinces[army.province].name : "海上") · \(Names.status(army.status))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                Text("\(Names.unit[army.unit] ?? army.unit) · \(army.province >= 0 ? map.meta.provinces[army.province].name : "海上") · \(Names.status(army.status))\(Self.dest(map, army))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             }
             Spacer()
             Text(Names.wan(army.troops)).font(Theme.kai(18)).foregroundStyle(Theme.ink)
@@ -612,6 +623,8 @@ struct ArmySheet: View {
                         Row(label: "兵力", value: a.troops.formatted()); Divider2()
                         Row(label: "所在", value: a.province >= 0 ? map.meta.provinces[a.province].name : "海上"); Divider2()
                         Row(label: "状态", value: "\(Names.status(a.status)) · \(Names.travel(a.travel))"); Divider2()
+                        if let d = a.destination, d >= 0, d < map.meta.provinces.count { Row(label: "目的地", value: map.meta.provinces[d].name); Divider2() }
+                        Row(label: "指挥", value: ArmyRow.command(a)); Divider2()
                         Row(label: "粮草", value: "\(a.supplies)"); Divider2()
                         Row(label: "士气", value: "\(a.morale)")
                     }
@@ -865,6 +878,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.9.11", ["【手机上能点到】军队详情新增「目的地」（行军中显示终点省份）与「指挥」：玩家军令、AI 远征（集结／出航／返航）或 AI 自主调度。",
+                    "【手机上能点到】军事列表每支军队显示「→ 目的地」。调兵（点地图选目的地）、停止、行军路线照旧。",
+                    "【仍在核心代码】军队 AI 的进攻目标选择与轮转军令已在 Swift 中逐帧运行（与网页一致），界面只显示结果，不显示 AI 的内部评分。",
+                    "【未在真机验证】以上只在 CI 构建通过，未在真机上验证。"]),
         ("0.9.10", ["【手机上能点到】国家详情「战争」卡片新增战争分数条（-100 至 +100，按本国立场显示，绿为占优、红为劣势）；原有战争目标、双方阵亡、持续时间与「停战」按钮保留。",
                     "【手机上能点到】「外交」分节新增停战期列表：与哪国停战、还需几年、几年规则；敌对、同盟、宗主、附庸照旧。宣战按钮在「国家行为」分节。",
                     "【简化】战争分数用网页和平 AI 的同一算式（战斗 20%、占领 50%、目标 30%），原作公式未核实。",

@@ -113,6 +113,13 @@ extension NativeEngine {
             x.status = a.status; x.travel = v.travel.status; x.province = JS(v.province.map { pi[$0.id.asString]! } ?? -1)
             x.supplies = JS(a.supplies.asNumber.rounded()); x.morale = JS(a.morale.asNumber.rounded()); x.x = JS(at.0 / sc); x.y = JS(at.1 / sc)
             x.manual = JS(r.voyages.manualArmies.asArray.contains { $0.asString == id })
+            // Destination province of a march (last travel node), for the army panel.
+            var dest = -1
+            if moving, let bridge, let last = v.travel.nodes.asArray.last, let cell = bridge.graph.ids.firstIndex(of: Int32(last.asInt)) {
+                let q = Int(bridge.graph.provinces[cell]); if q >= 0 && q < provinces.count { dest = q }
+            }
+            x.destination = JS(dest)
+            x.mission = JS(r.voyages.missions.isNull ? "" : (r.voyages.missions.objectEntries.first { $0.1.armyId.optionalString == id }?.1.phase.optionalString ?? ""))
             return x
         })
         let stateNation = Dictionary(uniqueKeysWithValues: r.nativeWars.nationIds.asArray.map { ($0[0].asInt, $0[1].asString) })

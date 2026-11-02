@@ -319,7 +319,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 // One to three figures for the army's strength, in a loose rank.
                 let n = a.army <= -100_000 || role == "Fleet" ? 1 : max(1, min(3, a.tier))
                 let gap: Float = UnitArt.wide(a.unit) ? 0.34 : 0.26, scale: Float = n == 1 ? 1 : 0.8
-                let ranks: [(Float, Float)] = n == 1 ? [(0, 0)] : n == 2 ? [(-gap, -0.05), (gap, 0.05)] : [(0, -0.12), (-gap * 1.2, 0.08), (gap * 1.2, 0.08)]
+                let wide: Float = gap * 1.2
+                var ranks: [(Float, Float)] = [(0, 0)]
+                if n == 2 { ranks = [(-gap, -0.05), (gap, 0.05)] }
+                if n == 3 { ranks = [(0, -0.12), (-wide, 0.08), (wide, 0.08)] }
                 for (sx, sy) in ranks { quad(role, at, c, size * scale, sx, sy) }
             }
             // A fixed draw order (banners first, then by role): a fresh dictionary's order changed every

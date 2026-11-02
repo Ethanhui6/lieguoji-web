@@ -36,6 +36,25 @@ public struct CellMesh: Sendable {
                 out[v * 4] = color.r; out[v * 4 + 1] = color.g; out[v * 4 + 2] = color.b; out[v * 4 + 3] = 1
             }
         }
+        // Soft biome transitions in the natural map only. Ownership colours and picking stay exact.
+        if mode == .terrain && highlightProvince == nil && tint.isEmpty {
+            var sums: [UInt64: (Float, Float, Float, Int)] = [:]
+            func key(_ v: Int) -> UInt64 { UInt64(map.vertices[v * 2].bitPattern) << 32 | UInt64(map.vertices[v * 2 + 1].bitPattern) }
+            for c in 0..<map.cellCount where map.isLand(c) {
+                for v in Int(map.offsets[c])..<Int(map.offsets[c + 1]) {
+                    let k = key(v), old = sums[k] ?? (0, 0, 0, 0)
+                    sums[k] = (old.0 + out[v * 4], old.1 + out[v * 4 + 1], old.2 + out[v * 4 + 2], old.3 + 1)
+                }
+            }
+            for c in 0..<map.cellCount where map.isLand(c) {
+                for v in Int(map.offsets[c])..<Int(map.offsets[c + 1]) {
+                    if let q = sums[key(v)] {
+                        let n = Float(q.3)
+                        out[v * 4] = q.0 / n; out[v * 4 + 1] = q.1 / n; out[v * 4 + 2] = q.2 / n
+                    }
+                }
+            }
+        }
         return out
     }
 }

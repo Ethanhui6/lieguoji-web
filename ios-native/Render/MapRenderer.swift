@@ -127,7 +127,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 自绘地图: the terrain itself changed (land raised from the sea, coasts moved): the land mesh,
     /// relief marks, province lines and outlines are rebuilt, and the sea texture when given.
     func setTerrain(_ next: WorldMap, refreshSea: Bool) {
-        map = next; base = nil; shade = []
+        map = next; base = nil; shade = []; terrainBase = nil
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         let mesh = CellMesh(map: next)
         if !mesh.indices.isEmpty, let i = device.makeBuffer(bytes: mesh.indices, length: mesh.indices.count * 4, options: .storageModeShared) { indices = i; indexCount = mesh.indices.count }
@@ -186,18 +186,20 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private func recolor() {
         if base == nil {
             var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight, tint: tint, provinceColors: mode == .political ? fills : nil)
-            var terrain = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors)
+            if terrainBase == nil { terrainBase = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors) }
+            var terrain = terrainBase!
             // 国家颜色浓度: state colours blended toward the terrain colours.
             if mode == .political && display.colorDensity < 1 {
                 let k = Float(max(0, display.colorDensity))
                 for i in 0..<min(c.count, terrain.count) where i % 4 != 3 { c[i] = terrain[i] + (c[i] - terrain[i]) * k }
             }
             // Relief shading on the land (every map mode).
-            if shade.count != map.cellCount { shade = MapLayers.hillshade(map) }
-            for cell in 0..<map.cellCount where shade[cell] != 1 {
-                let k = shade[cell]
-                for v in Int(map.offsets[cell])..<Int(map.offsets[cell + 1]) {
-                    for j in 0..<3 { c[v * 4 + j] = min(1, c[v * 4 + j] * k); terrain[v * 4 + j] = min(1, terrain[v * 4 + j] * k) }
+            if shade.count != map.vertices.count / 2 { shade = MapLayers.vertexHillshade(map) }
+            for v in shade.indices {
+                let k = shade[v]
+                for j in 0..<3 {
+                    c[v * 4 + j] = min(1, c[v * 4 + j] * k)
+                    terrain[v * 4 + j] = min(1, terrain[v * 4 + j] * k)
                 }
             }
             base = (c, terrain)
@@ -225,6 +227,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if let b = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) { colors = b }
     }
     private var shade: [Float] = []
+    private var terrainBase: [Float]?
 
     struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = "" }
     private var unitTextures: [String: MTLTexture] = [:]

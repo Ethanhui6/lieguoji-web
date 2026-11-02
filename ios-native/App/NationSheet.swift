@@ -610,7 +610,7 @@ struct NationSheet: View {
     }
     private func action(_ title: String, _ icon: String, _ color: Color, disabled: Bool, _ perform: @escaping () -> Void) -> some View {
         Button(action: perform) {
-            Label(title, systemImage: icon).font(Theme.kai(16)).frame(maxWidth: .infinity).padding(.vertical, 10)
+            GameActionLabel(title: title, symbol: icon).font(Theme.kai(16)).frame(maxWidth: .infinity, minHeight: 44).padding(.horizontal, 8).padding(.vertical, 4)
                 .background(color.opacity(disabled ? 0.04 : 0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .foregroundStyle(disabled ? Theme.ink2.opacity(0.5) : color)
         }

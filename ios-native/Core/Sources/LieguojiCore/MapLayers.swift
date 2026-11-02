@@ -215,6 +215,26 @@ public enum MapLayers {
         }
     }
 
+    /// Smooth the lighting at shared geometric vertices without blending political ownership.
+    /// Built only when the terrain changes; the GPU interpolates the cached vertex colours.
+    public static func vertexHillshade(_ map: WorldMap) -> [Float] {
+        let cells = hillshade(map)
+        var sums: [UInt64: (Float, Int)] = [:]
+        func key(_ v: Int) -> UInt64 {
+            UInt64(map.vertices[v * 2].bitPattern) << 32 | UInt64(map.vertices[v * 2 + 1].bitPattern)
+        }
+        for c in 0..<map.cellCount where map.isLand(c) {
+            for v in Int(map.offsets[c])..<Int(map.offsets[c + 1]) {
+                let k = key(v), old = sums[k] ?? (0, 0)
+                sums[k] = (old.0 + cells[c], old.1 + 1)
+            }
+        }
+        return (0..<(map.vertices.count / 2)).map { v in
+            guard let sum = sums[key(v)] else { return 1 }
+            return sum.0 / Float(sum.1)
+        }
+    }
+
     /// StateLineRenderer outlines on the shared cell edges: each state strokes its own outline in its
     /// adjusted colour (both sides of a border), then the smoothed coastline in grey.
     public static func outlines(_ map: WorldMap) -> ColoredMesh {

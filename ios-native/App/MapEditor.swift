@@ -12,6 +12,17 @@ import LieguojiCore
         var title: String { ["sea": "海洋", "plain": "平原", "hill": "丘陵", "mountain": "山地", "peak": "雪峰", "raise": "抬高", "lower": "压低", "smooth": "平滑"][rawValue]! }
         /// The height a shaping tool paints towards (nil: a relative tool).
         var target: Double? { ["sea": 8.0, "plain": 27.0, "hill": 44.0, "mountain": 66.0, "peak": 88.0][rawValue] }
+        var glyph: InkGlyph {
+            switch self {
+            case .sea: return .sea
+            case .plain: return .plain
+            case .hill: return .views
+            case .mountain, .peak: return .mountain
+            case .raise: return .raise
+            case .lower: return .lower
+            case .smooth: return .smooth
+            }
+        }
         var swatch: Color {
             switch self {
             case .sea: return Color(red: 0.27, green: 0.43, blue: 0.67)
@@ -27,6 +38,10 @@ import LieguojiCore
 
     @Published var tool: Tool = .plain
     @Published var radius: Double = 34 { didSet { controller.brushRadius = radius } }
+    @Published var strength = 1.0
+    @Published var softness = 1.0
+    @Published var protectCoast = false
+    @Published var targetHeight = 27.0
     @Published var step: Step = .terrain
     @Published var provinces = 80
     @Published var nations = 8
@@ -88,19 +103,16 @@ import LieguojiCore
             }
         } }
         for (c, falloff) in touched {
-            // A soft brush: full strength at the centre, fading to nothing at the rim.
-            let w = Double(falloff * falloff * (3 - 2 * falloff))
-            var h = Double(heights[c])
-            switch tool {
-            case .raise: h += 3.5 * w
-            case .lower: h -= 3.5 * w
-            case .smooth:
+            let h = Double(heights[c])
+            var target: Double? = tool.target == nil ? nil : targetHeight
+            var delta = tool == .lower ? -3.5 : 3.5
+            if tool == .smooth {
                 let ns = neighbors.indices.contains(c) ? neighbors[c] : []
-                if !ns.isEmpty { let avg = ns.reduce(0.0) { $0 + Double(heights[$1]) } / Double(ns.count); h += (avg - h) * 0.5 * w }
-            default:
-                if let t = tool.target { h += (t - h) * 0.45 * w }
+                target = nil
+                delta = ns.isEmpty ? 0 : (ns.reduce(0.0) { $0 + Double(heights[$1]) } / Double(ns.count) - h) * 0.5
             }
-            let v = UInt8(min(100, max(0, h.rounded())))
+            let v = TerrainBrush.height(current: h, target: target, delta: delta, falloff: Double(falloff),
+                                        strength: strength, softness: softness, protectCoast: protectCoast)
             if v != heights[c] { heights[c] = v; dirty.insert(c) }
         }
         // Live feedback at ~12 frames a second: the new heights in quick colours.
@@ -236,13 +248,10 @@ struct EditorView: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
                 ForEach(MapEditor.Tool.allCases) { t in
                     let on = editor.tool == t
-                    Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editor.tool = t }; GameFeel.shared.tap() } label: {
+                    Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editor.tool = t; if let h = t.target { editor.targetHeight = h } }; GameFeel.shared.tap() } label: {
                         VStack(spacing: 4) {
-                            Group {
-                                if let symbol = ["raise": "arrow.up", "lower": "arrow.down", "smooth": "water.waves"][t.rawValue] { Image(systemName: symbol).font(.system(size: 13, weight: .bold)).foregroundStyle(on ? Theme.paper2 : Theme.ink) }
-                                else { RoundedRectangle(cornerRadius: 4).fill(t.swatch).frame(width: 18, height: 12).overlay(RoundedRectangle(cornerRadius: 4).stroke(Theme.ink.opacity(0.25))) }
-                            }
-                            .frame(height: 14)
+                            InkIcon(glyph: t.glyph, size: 20).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                .frame(height: 22)
                             Text(t.title).font(Theme.kai(14)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                         }
                         .frame(maxWidth: .infinity).frame(height: 50)
@@ -257,6 +266,17 @@ struct EditorView: View {
                 Slider(value: $editor.radius, in: 8...110).tint(Theme.seal)
                 Text("\(Int(editor.radius))").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit().frame(width: 32)
             }
+            DisclosureGroup("笔触与地貌设置") {
+                VStack(spacing: 10) {
+                    HStack { Text("强度"); Slider(value: $editor.strength, in: 0.2...2); Text(String(format: "%.1f×", editor.strength)).monospacedDigit().frame(width: 42) }
+                    HStack { Text("柔和度"); Slider(value: $editor.softness, in: 0.3...2); Text(String(format: "%.1f", editor.softness)).monospacedDigit().frame(width: 42) }
+                    if editor.tool.target != nil {
+                        HStack { Text("目标高度"); Slider(value: $editor.targetHeight, in: editor.tool == .sea ? 0...19 : 20...100, step: 1); Text("\(Int(editor.targetHeight))").monospacedDigit().frame(width: 42) }
+                    }
+                    Toggle("保护现有海岸", isOn: $editor.protectCoast)
+                    Text("保护海岸时，陆地不会沉入海中，海洋不会升成陆地。高度将参与气候、河流与州郡生成。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                }.font(Theme.kai(14)).tint(Theme.jade).padding(.top, 8)
+            }.font(Theme.kai(15)).tint(Theme.ink)
             HStack(spacing: 10) {
                 Menu {
                     ForEach(Names.templates.indices, id: \.self) { i in Button("随机" + Names.templates[i].name) { editor.reset(template: Names.templates[i].id, seed: String(UInt32.random(in: 0...UInt32.max))) } }

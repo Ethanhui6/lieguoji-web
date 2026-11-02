@@ -297,14 +297,14 @@ struct VerticalText: View {
 struct PrimaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
-        Label(title, systemImage: symbol).font(Theme.kai(20)).frame(maxWidth: .infinity).frame(height: 54)
+        GameActionLabel(title: title, symbol: symbol).font(Theme.kai(18)).frame(maxWidth: .infinity).frame(minHeight: 54).padding(.horizontal, 10)
             .foregroundStyle(Theme.paper2).background(Theme.seal, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 struct SecondaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
-        Label(title, systemImage: symbol).font(Theme.kai(20)).frame(maxWidth: .infinity).frame(height: 54)
+        GameActionLabel(title: title, symbol: symbol).font(Theme.kai(18)).frame(maxWidth: .infinity).frame(minHeight: 54).padding(.horizontal, 10)
             .foregroundStyle(Theme.ink).background(Theme.paper2.opacity(0.9), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.line))
     }
@@ -949,12 +949,19 @@ struct Group2<Content: View>: View {
 struct Row: View {
     let label: String; let value: String
     var body: some View {
-        HStack(alignment: .lastTextBaseline, spacing: 8) {
-            Text(label).foregroundStyle(Theme.ink2).layoutPriority(1)
-            Line().stroke(Theme.ink.opacity(0.25), style: StrokeStyle(lineWidth: 1, lineCap: .round, dash: [1, 4])).frame(height: 1).offset(y: -4)
-            Text(value).foregroundStyle(Theme.ink).multilineTextAlignment(.trailing).layoutPriority(1)
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 16) {
+                Text(label).foregroundStyle(Theme.ink2).fixedSize()
+                Spacer(minLength: 12)
+                Text(value).foregroundStyle(Theme.ink).monospacedDigit().fixedSize()
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(label).foregroundStyle(Theme.ink2)
+                Text(value).foregroundStyle(Theme.ink).monospacedDigit().fixedSize(horizontal: false, vertical: true)
+            }.frame(maxWidth: .infinity, alignment: .leading)
         }
-        .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12)
+        .font(Theme.kai(17)).frame(minHeight: 22).padding(.horizontal, 16).padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
     }
     private struct Line: Shape { func path(in r: CGRect) -> Path { Path { p in p.move(to: CGPoint(x: 0, y: r.midY)); p.addLine(to: CGPoint(x: r.width, y: r.midY)) } } }
 }
@@ -1603,6 +1610,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.22.2", ["自然地形的群落颜色与山地明暗改为共享顶点过渡，减少地块碎片感；国界和地形高度不变。",
+                    "自绘地图增加强度、柔和度、目标高度与海岸保护，实际参与气候、河流与州郡生成，支持原有撤销重做。",
+                    "地形工具换用统一线条图标，主要操作按钮统一图标尺寸与触控高度。信息行在窄屏自动改为上下布局。",
+                    "按钮按压改为轻微缩放与短反馈，响应系统减少动态效果。新增地形编辑与明暗连续性回归测试。真机视觉与帧率仍待验证。"]),
         ("0.22.1", ["外交总页增加互不侵犯、王室联姻、同盟与赠金入口，复用真实外交命令；等待期间禁用重复提交，显示执行结果。",
                     "国家页增加搜索与现存国家筛选，军事页增加交战／围城与玩家军令筛选。",
                     "折叠分节的箭头连续旋转，统一最小触控高度；卡片入场收敛到 0.2 秒，跟随系统减少动态效果设置。",
@@ -1898,9 +1909,10 @@ struct MenuRow: View {
 
 /// Pressed buttons sink slightly, like paper under a finger.
 struct PressStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label.scaleEffect(configuration.isPressed ? 0.96 : 1).opacity(configuration.isPressed ? 0.86 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
+        configuration.label.scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1).opacity(configuration.isPressed ? 0.86 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 

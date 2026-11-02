@@ -20,11 +20,11 @@ struct NationInfo: Decodable {
     struct Truce: Decodable { let nation: Int; let years: Int; let required: Int }
     let truces: [Truce]?
     let people: [Person]?
-    struct Office: Decodable { let office: String; let name: String; let age: Double; let fit: Double }
+    struct Office: Decodable { let office: String; let name: String; let age: Double; let fit: Double; let person: Int? }
     struct Commander: Decodable { let name: String; let age: Double; let enemy: Int }
     struct House: Decodable { let name: String; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int; let stance: String?; let relation: Double? }
     struct Court: Decodable {
-        let governance: Double; let centralIncome: Double; let offices: [Office]; let temper: Double?
+        let governance: Double; let centralIncome: Double; let offices: [Office]; let temper: Double?; let manual: Bool?
         let provinces: Int; let occupied: Int; let lost: Int; let governors: Int
         let commanders: [Commander]; let houses: [House]
     }
@@ -67,6 +67,11 @@ struct NationSheet: View {
     @State private var goldText = ""
     @State private var destinyValue = 0.0
     @State private var levyProvince = -1
+    /// 任命: the office whose candidates are listed.
+    @State private var appointing: AppointTarget?
+    struct AppointTarget: Identifiable { let office: String; var id: String { office } }
+    @State private var cultureChoice = ""
+    @State private var religionChoice = ""
     @State private var info: NationInfo?
     @State private var history: [GameState.Event] = []
     @State private var picking: Pick?
@@ -173,6 +178,13 @@ struct NationSheet: View {
             .onAppear { model.controller.relationsNation = nation; model.controller.relations = relationColors(); if let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
+            .sheet(item: $appointing) { target in
+                AppointSheet(model: model, nation: nation, office: target.office) { person, name in
+                    appointing = nil
+                    Task { await run(success: "已任命\(name)为\(Self.officeTitle[target.office] ?? target.office)") { await model.appointOffice(nation, office: target.office, person: person) } }
+                }
+                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+            }
             .sheet(item: $editing) { p in
                 PersonEditor(person: p) { skills, traits in
                     editing = nil
@@ -202,6 +214,7 @@ struct NationSheet: View {
             ])
             Group2 {
                 ForEach(Array(c.offices.enumerated()), id: \.offset) { i, o in
+                    Button { appointing = AppointTarget(office: o.office) } label: {
                     HStack(spacing: 12) {
                         Text(Self.officeTitle[o.office] ?? o.office).font(Theme.kai(15)).foregroundStyle(Theme.paper2)
                             .frame(width: 52, height: 26).background(Theme.seal.opacity(o.name.isEmpty ? 0.35 : 0.85), in: RoundedRectangle(cornerRadius: 4))
@@ -215,12 +228,18 @@ struct NationSheet: View {
                             Text(o.fit >= 0.4 ? "称职" : o.fit >= 0 ? "平庸" : "失职").font(Theme.kai(13))
                                 .foregroundStyle(o.fit >= 0.4 ? Color(red: 0.25, green: 0.45, blue: 0.25) : o.fit >= 0 ? Theme.ink2 : Theme.seal)
                         }
+                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 9)
+                    .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                     if i < c.offices.count - 1 { Divider2() }
                 }
+                Divider2()
+                PaperSwitch(title: "亲自任免官员（朝廷不再自行换人）", on: Binding(get: { c.manual ?? false }, set: { on in Task { await run(success: on ? "官员由你亲自任免" : "朝廷恢复自主任免") { await model.setCourtManual(nation, manual: on) } } }))
             }
             .padding(.horizontal, 16)
+            Text("点官职可从本国人物中任命；点「人物」里的人可修改其属性与天赋。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
             if c.occupied > 0 || c.lost > 0 || !c.commanders.isEmpty {
                 Group2 {
                     if c.occupied > 0 { Row(label: "占领他国", value: "\(c.occupied) 州"); Divider2() }
@@ -382,6 +401,26 @@ struct NationSheet: View {
             }
             .padding(.horizontal, 16)
             .onAppear { destinyValue = info.destiny }
+            Text("文化与宗教").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
+            Group2 {
+                Picker("文化", selection: $cultureChoice) {
+                    ForEach(Names.cultureIds, id: \.self) { c in Text(Names.culture[c] ?? c).tag(c) }
+                }
+                .tint(Theme.ink).padding(.horizontal, 12).padding(.vertical, 4)
+                Divider2()
+                Picker("宗教", selection: $religionChoice) {
+                    ForEach(Names.religion.keys.sorted(), id: \.self) { r in Text(Names.religion[r] ?? r).tag(r) }
+                }
+                .tint(Theme.ink).padding(.horizontal, 12).padding(.vertical, 4)
+                Divider2()
+                Button {
+                    let c = cultureChoice, r = religionChoice
+                    Task { await run(success: "文化与宗教已更改") { await model.editNation(nation, gold: nil, destiny: nil, polity: nil, culture: c, religion: r) } }
+                } label: { Text("颁行").font(Theme.kai(17)).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .onAppear { cultureChoice = info.culture; religionChoice = info.religion }
             Text("改易政体（国名随之更改，国库与国运受损）").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
             Group2 {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 8)], spacing: 8) {
@@ -572,5 +611,48 @@ struct PersonEditor: View {
             .padding(.bottom, 24)
         }
         .onAppear { if person.skills.count == 4 { skills = person.skills }; traits = person.traits }
+    }
+}
+
+/// 任命官员: the people who may take an office, ablest first; a tap appoints.
+struct AppointSheet: View {
+    @ObservedObject var model: GameModel
+    let nation: Int
+    let office: String
+    let appoint: (Int, String) -> Void
+    @State private var people: [NationInfo.Person] = []
+    @State private var loaded = false
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                SheetHeader(title: "任命" + (NationSheet.officeTitle[office] ?? office), subtitle: NationSheet.officeDuty[office], seal: "任")
+                Group2 {
+                    if loaded && people.isEmpty { Text("本国暂无合适人选").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16) }
+                    if !loaded { ProgressView().frame(maxWidth: .infinity).padding(20) }
+                    ForEach(Array(people.enumerated()), id: \.offset) { i, p in
+                        Button { if let id = p.id { appoint(id, p.name) } } label: {
+                            HStack(spacing: 10) {
+                                Text(ChineseNumeral.of(i + 1)).font(Theme.kai(13)).foregroundStyle(Theme.seal).frame(width: 22)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("\(p.name)（\(p.female ? "女" : "男")，\(Int(p.age)) 岁）").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                    if p.skills.count == 4 {
+                                        Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                                    }
+                                    if !p.traits.isEmpty { Text(p.traits.joined(separator: "、")).font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
+                                }
+                                Spacer()
+                                Image(systemName: "checkmark.seal").foregroundStyle(Theme.seal)
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if i < people.count - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+            .padding(.bottom, 24)
+        }
+        .task { people = await model.officeCandidates(nation, office: office); loaded = true }
     }
 }

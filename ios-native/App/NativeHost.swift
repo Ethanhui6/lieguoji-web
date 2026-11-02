@@ -46,7 +46,7 @@ actor NativeHost {
     }
 
     /// Connects to a computer and moves the world there (catalogues first, then the current save).
-    func connect(_ address: String) async throws -> String {
+    func connect(_ address: String, timeout: Double = 6) async throws -> String {
         let text = address.trimmingCharacters(in: .whitespaces)
         // A pairing code (letters and digits, no dots) goes through the relay; an address is direct.
         let code = text.replacingOccurrences(of: "-", with: "").uppercased()
@@ -54,13 +54,13 @@ actor NativeHost {
         if code.count >= 6, code.count <= 16, code.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber) }), !text.contains(".") {
             let relay = RelayLink(code: code)
             try await relay.start()
-            link = relay; label = "配对码 \(code.prefix(4))-\(code.dropFirst(4))"
+            link = relay; label = code == RemoteRoom.personal ? "中转" : "配对码 \(code.prefix(4))-\(code.dropFirst(4))"
         } else {
             var host = text, port: UInt16 = 8765
             if let i = host.lastIndex(of: ":"), let p = UInt16(host[host.index(after: i)...]) { port = p; host = String(host[..<i]) }
             guard !host.isEmpty else { throw EngineError.message("请填写配对码或电脑的局域网地址") }
             let direct = RemoteLink(host: host, port: port)
-            try await direct.start()
+            try await direct.start(timeout: timeout)
             link = direct; label = "\(host):\(port)"
         }
         let hello = try await link.call("ping", [:], payload: nil)
@@ -92,6 +92,17 @@ actor NativeHost {
         if let lastWorld { _ = service.handle("open", [:], payload: lastWorld); service.engine?.enableAppRules() }
     }
     var isRemote: Bool { remote != nil }
+
+    /// 自动接入: finds this player's computer through the relay room built into the app; on the same
+    /// network it connects directly (fast), otherwise through the relay. Nil when the computer is off.
+    func connectAuto() async -> String? {
+        guard remote == nil, service.engine != nil else { return nil }
+        guard let status = await RelayLink(code: RemoteRoom.personal).status(), status.online else { return nil }
+        for address in status.lan {
+            if let label = try? await connect(address, timeout: 1.5) { return label + "（局域网）" }
+        }
+        return try? await connect(RemoteRoom.personal)
+    }
 
     // MARK: requests
 
@@ -140,9 +151,12 @@ actor NativeHost {
     func enableAppRules() async { _ = await call("enableAppRules") }
     func regime(_ n: Int) async -> (history: [String], trait: String) { let r = await call("regime", ["n": n]); return (r.strings ?? [], r.text ?? "") }
     func editPerson(_ id: Int, skills: [Double], traits: [String]) async -> (ok: Bool, reason: String, state: Data?) { await command("editPerson", ["id": id, "skills": skills, "traits": traits]) }
-    func editNation(_ n: Int, gold: Double?, destiny: Double?, polity: String?) async -> (ok: Bool, reason: String, state: Data?) {
-        await command("editNation", ["n": n, "gold": Self.opt(gold), "destiny": Self.opt(destiny), "polity": Self.opt(polity)])
+    func editNation(_ n: Int, gold: Double?, destiny: Double?, polity: String?, culture: String? = nil, religion: String? = nil) async -> (ok: Bool, reason: String, state: Data?) {
+        await command("editNation", ["n": n, "gold": Self.opt(gold), "destiny": Self.opt(destiny), "polity": Self.opt(polity), "culture": Self.opt(culture), "religion": Self.opt(religion)])
     }
+    func officeCandidates(_ n: Int, office: String) async -> Data? { await call("officeCandidates", ["n": n, "office": office]).data }
+    func appointOffice(_ n: Int, office: String, person: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("appointOffice", ["n": n, "office": office, "person": person]) }
+    func setCourtManual(_ n: Int, manual: Bool) async -> (ok: Bool, reason: String, state: Data?) { await command("setCourtManual", ["n": n, "manual": manual]) }
     func addArmy(_ n: Int, province: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("addArmy", ["n": n, "province": province]) }
     func editArmy(_ armyId: String, troops: Int?, unit: String?, morale: Double?) async -> (ok: Bool, reason: String, state: Data?) {
         await command("editArmy", ["armyId": armyId, "troops": Self.opt(troops), "unit": Self.opt(unit), "morale": Self.opt(morale)])
@@ -181,6 +195,17 @@ final class RelayLink: EngineLink, @unchecked Sendable {
         throw EngineError.message(reached ? "电脑不在线：请在电脑上运行「列国纪远程计算」，并核对配对码。" : "连不上中转服务器，请检查网络。")
     }
     func cancel() { session.invalidateAndCancel() }
+    /// Whether the room's computer is online, and its local addresses.
+    func status() async -> (online: Bool, lan: [String])? {
+        for b in Self.bases {
+            var r = URLRequest(url: URL(string: b + "/room/\(code)/status")!); r.timeoutInterval = 10
+            guard let (data, response) = try? await session.data(for: r), (response as? HTTPURLResponse)?.statusCode == 200,
+                  let o = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { continue }
+            base = b
+            return (o["online"] as? Bool == true, o["lan"] as? [String] ?? [])
+        }
+        return nil
+    }
     func call(_ name: String, _ args: [String: Any], payload: Data?) async throws -> EngineService.Reply {
         var r = URLRequest(url: URL(string: base + "/room/\(code)/call")!)
         r.httpMethod = "POST"; r.setValue("application/octet-stream", forHTTPHeaderField: "content-type")
@@ -203,7 +228,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         let tcp = NWProtocolTCP.Options(); tcp.noDelay = true
         connection = NWConnection(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port) ?? 8765, using: NWParameters(tls: nil, tcp: tcp))
     }
-    func start() async throws {
+    func start(timeout: Double = 6) async throws {
         let gate = Gate()
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
             func finish(_ r: Result<Void, Error>) { if gate.open() { c.resume(with: r) } }
@@ -216,7 +241,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
                 }
             }
             connection.start(queue: queue)
-            queue.asyncAfter(deadline: .now() + 6) { finish(.failure(EngineError.message("连接超时：请确认电脑上的服务器已运行且地址正确。"))) }
+            queue.asyncAfter(deadline: .now() + timeout) { finish(.failure(EngineError.message("连接超时：请确认电脑上的服务器已运行且地址正确。"))) }
         }
     }
     /// Resumes a continuation once (the connection may report several states).

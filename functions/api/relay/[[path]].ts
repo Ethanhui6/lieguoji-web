@@ -10,6 +10,6 @@ export const onRequest=async(context:{request:Request;env:{ROOMS?:Rooms}})=>{
   if(!m)return new Response('列国纪远程计算中转',{headers:{'content-type':'text/plain; charset=utf-8'}});
   if(!env.ROOMS)return new Response('中转未配置',{status:503});
   const room=env.ROOMS.get(env.ROOMS.idFromName(m[2].toUpperCase()));
-  const forwarded=new URL(m[1],url.origin);
+  const forwarded=new URL(m[1]+url.search,url.origin);
   return room.fetch(new Request(forwarded.toString(),request));
 };

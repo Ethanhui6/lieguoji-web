@@ -24,11 +24,24 @@ import LieguojiCore
         } catch { return error.localizedDescription }
     }
     func disconnectRemote() async { await native.disconnect(); remoteAddress = nil; UserDefaults.standard.set(false, forKey: "remote.auto") }
-    /// 自动接入: entering a world reconnects to the computer used last time (if it is online).
+    /// 自动接入: while a world is open, the player's computer is looked for (now and every 90 s) and
+    /// used as soon as it is on — nothing to set up on the phone. 设置 › 远程计算 can turn it off.
+    var autoRemote: Bool {
+        get { UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "remote.autoAll"); if newValue { autoConnect() } }
+    }
+    private var autoTask: Task<Void, Never>?
     func autoConnect() {
-        guard remoteAddress == nil, UserDefaults.standard.bool(forKey: "remote.auto"), let address = UserDefaults.standard.string(forKey: "remote.address"), !address.isEmpty else { return }
-        Task {
-            if let a = try? await native.connect(address) { remoteAddress = a; notice = "已自动接入电脑计算（\(a)）" }
+        guard autoTask == nil else { return }
+        autoTask = Task { [weak self] in
+            while let self, !Task.isCancelled {
+                if self.autoRemote, self.remoteAddress == nil, self.phase == .playing {
+                    if let a = await self.native.connectAuto() { self.remoteAddress = a; self.notice = "已自动接入电脑计算（\(a)）" }
+                    else if let saved = UserDefaults.standard.string(forKey: "remote.address"), !saved.isEmpty, UserDefaults.standard.bool(forKey: "remote.auto"),
+                            let a = try? await self.native.connect(saved) { self.remoteAddress = a; self.notice = "已自动接入电脑计算（\(a)）" }
+                }
+                try? await Task.sleep(nanoseconds: 90_000_000_000)
+            }
         }
     }
     @Published var failure: String?
@@ -545,7 +558,7 @@ import LieguojiCore
         }
         // Icons never sit on one another: armies (and fleets) closer than an icon are eased apart, the
         // later one moving, a few passes. Display only; an army in battle keeps its spot facing the foe.
-        Self.spread(&sprites, minimum: 4.6)
+        Self.offset(&sprites)
         var texts = [String: String]()
         for a in state.armies { texts[a.id] = Names.wan(a.troops) }
         for f in state.fleets ?? [] { texts[f.id] = "\(f.ships)船" }
@@ -558,6 +571,18 @@ import LieguojiCore
                 controller.route = points.map { SIMD2(Float($0[0]), Float($0[1])) }
             }
         } else { controller.route = [] }
+    }
+
+    /// Each icon keeps one small fixed offset from its army's point (by its id): stacked armies fan out
+    /// and a column marching together keeps its order instead of reshuffling every step.
+    static func offset(_ sprites: inout [MapRenderer.ArmySprite]) {
+        // Always applied (an offset switched on only when crowded made icons hop as columns passed).
+        for i in sprites.indices where sprites[i].army > -100_000 {
+            var h: UInt32 = 2166136261
+            for u in sprites[i].key.utf8 { h = (h ^ UInt32(u)) &* 16777619 }
+            let angle = Float(h % 360) * .pi / 180, r = Float(1.6 + Double(h >> 9 % 100) / 100 * 1.6)
+            sprites[i].x += cos(angle) * r; sprites[i].y += sin(angle) * r
+        }
     }
 
     static func spread(_ sprites: inout [MapRenderer.ArmySprite], minimum: Float) {
@@ -651,7 +676,13 @@ import LieguojiCore
     func triggerCivilWar(_ n: Int) async -> String? { finish(await native.triggerCivilWar(n)) }
     func regime(_ n: Int) async -> (history: [String], trait: String) { await native.regime(n) }
     func editPerson(_ id: Int, skills: [Double], traits: [String]) async -> String? { finish(await native.editPerson(id, skills: skills, traits: traits)) }
-    func editNation(_ n: Int, gold: Double?, destiny: Double?, polity: String?) async -> String? { finish(await native.editNation(n, gold: gold, destiny: destiny, polity: polity)) }
+    func editNation(_ n: Int, gold: Double?, destiny: Double?, polity: String?, culture: String? = nil, religion: String? = nil) async -> String? { finish(await native.editNation(n, gold: gold, destiny: destiny, polity: polity, culture: culture, religion: religion)) }
+    func officeCandidates(_ n: Int, office: String) async -> [NationInfo.Person] {
+        guard let d = await native.officeCandidates(n, office: office) else { return [] }
+        return (try? JSONDecoder().decode([NationInfo.Person].self, from: d)) ?? []
+    }
+    func appointOffice(_ n: Int, office: String, person: Int) async -> String? { finish(await native.appointOffice(n, office: office, person: person)) }
+    func setCourtManual(_ n: Int, manual: Bool) async -> String? { finish(await native.setCourtManual(n, manual: manual)) }
     func addArmy(_ n: Int, province: Int) async -> String? { finish(await native.addArmy(n, province: province)) }
     func editArmy(_ id: String, troops: Int?, unit: String?, morale: Double?) async -> String? { finish(await native.editArmy(id, troops: troops, unit: unit, morale: morale)) }
     /// 即时战略模式: the box-selected armies of one state to a province; nil reason on success.

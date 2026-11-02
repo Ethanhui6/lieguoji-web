@@ -34,10 +34,8 @@ func pairingCode() -> String {
     let dir = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()
     let file = dir.appendingPathComponent("pairing.txt")
     if let saved = try? String(contentsOf: file, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines), saved.count >= 6 { return saved }
-    let letters = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
-    let code = String((0..<8).map { _ in letters[Int.random(in: 0..<letters.count)] })
-    try? code.write(to: file, atomically: true, encoding: .utf8)
-    return code
+    // The player's own room, known to the app too: nothing to type on the phone.
+    return RemoteRoom.personal
 }
 
 func http(_ request: URLRequest) -> (status: Int, body: Data, response: HTTPURLResponse?)? {
@@ -61,10 +59,11 @@ func relayLoop(code: String) {
                 if let r = http(probe), r.status == 200, (try? JSONSerialization.jsonObject(with: r.body)) is [String: Any] { base = b; break }
             }
             if base == nil { if !announced { print("暂时连不上中转（稍后自动重试）；同一 Wi-Fi 下仍可用局域网地址直连。") }; announced = true; Thread.sleep(forTimeInterval: 10); continue }
-            print("已连上中转。手机「远程计算」里填配对码：\(code.prefix(4))-\(code.dropFirst(4))（不需要同一 Wi-Fi）")
+            print("已连上中转：手机打开游戏会自动接入这台电脑（不需要同一 Wi-Fi，也不用输入任何东西）。")
             announced = false
         }
-        var poll = URLRequest(url: URL(string: base! + "/room/\(code)/next")!); poll.timeoutInterval = 45
+        let lan = localAddresses().map { "\($0):\(port)" }.joined(separator: ",")
+        var poll = URLRequest(url: URL(string: base! + "/room/\(code)/next" + (lan.isEmpty ? "" : "?lan=" + lan))!); poll.timeoutInterval = 45
         guard let r = http(poll) else { base = nil; Thread.sleep(forTimeInterval: 3); continue }
         if r.status == 204 { continue }
         guard r.status == 200, r.body.count >= 8, let id = r.response?.value(forHTTPHeaderField: "x-request-id") else { Thread.sleep(forTimeInterval: 2); continue }
@@ -83,6 +82,21 @@ func relayLoop(code: String) {
     }
 }
 let code = pairingCode()
+
+/// 开机自动运行 (Windows): a small script in the Startup folder starts the server minimized at log-on.
+func installStartup() {
+    #if os(Windows)
+    guard let appData = ProcessInfo.processInfo.environment["APPDATA"] else { return }
+    let dir = URL(fileURLWithPath: appData).appendingPathComponent("Microsoft/Windows/Start Menu/Programs/Startup")
+    let script = dir.appendingPathComponent("lieguoji-server.cmd")
+    var exe = CommandLine.arguments[0].replacingOccurrences(of: "/", with: "\\")
+    if !exe.contains(":") { exe = FileManager.default.currentDirectoryPath.replacingOccurrences(of: "/", with: "\\") + "\\" + exe }
+    let text = "@echo off\r\nstart \"\" /min \"\(exe)\"\r\n"
+    if (try? String(contentsOf: script, encoding: .utf8)) == text { print("已设为开机自动运行。"); return }
+    do { try text.write(to: script, atomically: true, encoding: .utf8); print("已设为开机自动运行（以后电脑开机即在后台待命；不需要时删除启动文件夹里的 lieguoji-server.cmd）。") }
+    catch { print("未能设置开机自动运行：\(error.localizedDescription)") }
+    #endif
+}
 Thread.detachNewThread { relayLoop(code: code) }
 
 #if os(Windows)
@@ -215,7 +229,8 @@ if bound != 0 || listen(listener, 4) != 0 {
 }
 
 print("列国纪远程计算服务器已启动")
-print("配对码：\(code.prefix(4))-\(code.dropFirst(4))（保存在程序旁的 pairing.txt，手机输入一次即可自动接入）")
+print("手机打开游戏即自动接入；同一 Wi-Fi 下自动走局域网直连。")
+installStartup()
 print("局域网直连端口 \(port)")
 let addresses = localAddresses()
 if addresses.isEmpty { print("在手机「设置 › 远程计算」里填写这台电脑的局域网 IP（可用 ipconfig 查看）和端口 \(port)") }

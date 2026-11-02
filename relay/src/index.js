@@ -24,18 +24,23 @@ export class Room {
     this.replies = new Map();
     this.nextId = 1;
     this.lastSeen = 0;
+    this.lan = [];
   }
 
   online() { return Date.now() - this.lastSeen < 40000; }
 
   async fetch(request) {
-    const m = ROOM.exec(new URL(request.url).pathname);
+    const url = new URL(request.url);
+    const m = ROOM.exec(url.pathname);
     const action = m[2], id = Number(m[3]);
     if (action === 'status') {
-      return new Response(JSON.stringify({ online: this.online() }), { headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({ online: this.online(), lan: this.online() ? this.lan : [] }), { headers: { 'content-type': 'application/json' } });
     }
     if (action === 'next') {
-      // The computer's long poll: the next request, or 204 after 25 s.
+      // The computer's long poll: the next request, or 204 after 25 s. It also reports its local
+      // addresses, so a phone on the same network can connect directly.
+      const lan = url.searchParams.get('lan');
+      if (lan) this.lan = lan.split(',').filter((a) => /^[0-9.]+:\d+$/.test(a)).slice(0, 4);
       this.lastSeen = Date.now();
       const job = this.queue.shift() ?? await this.waitJob(25000);
       this.lastSeen = Date.now();

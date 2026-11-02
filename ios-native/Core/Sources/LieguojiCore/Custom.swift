@@ -234,13 +234,49 @@ extension NativeEngine {
         return (true, "人物属性已修改。")
     }
 
+    /// 任命官员: the people who may hold a central office, ablest first (the engine's own ranking).
+    public func officeCandidates(_ index: Int, office: String) -> Data? {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), Offices.central.contains(office) else { return nil }
+        let id = nations[index].id.asString
+        var ctx = Offices.context(r, id)
+        let list = Offices.candidates(&ctx, office, ctx.stateId).prefix(15)
+        let out = JS.array()
+        for (p, score) in list {
+            let v = personView(p, role: "")
+            v.score = JS(score.rounded())
+            out.push(v)
+        }
+        return Data(out.json.utf8)
+    }
+    /// 任命官员: puts a person into a central office (replacing its holder).
+    public func appointOffice(_ index: Int, office: String, personId: Int) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), Offices.central.contains(office) else { return (false, "官职不存在。") }
+        guard let p = People.person(r, personId), p.isAlive.asBool else { return (false, "此人已不在人世。") }
+        let id = nations[index].id.asString, ctx = Offices.context(r, id)
+        guard p.stateId.asInt == ctx.stateId else { return (false, "只能任命本国之人。") }
+        Offices.appoint(ctx, office, 0, ctx.stateId, personId)
+        return (true, "已任命\(personView(p, role: "").name.asString)")
+    }
+    /// 朝廷自主任免 on or off: off keeps the player's appointments (the court no longer fills or reviews offices).
+    public func setCourtManual(_ index: Int, manual: Bool) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index) else { return (false, "国家不存在。") }
+        Offices.book(r, nations[index].id.asString).manual = JS(manual)
+        return (true, manual ? "官员由你亲自任免" : "朝廷恢复自主任免")
+    }
+
     /// 自定义国家: treasury, destiny and polity (the name follows the polity).
-    public func editNation(_ index: Int, gold: Double?, destiny: Double?, polity: String?) -> (ok: Bool, reason: String) {
+    public func editNation(_ index: Int, gold: Double?, destiny: Double?, polity: String?, culture: String? = nil, religion: String? = nil) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray
         guard nations.indices.contains(index) else { return (false, "国家不存在。") }
         let id = nations[index].id.asString
         if let gold, !r.finance.nations[id].isNull { r.finance.nations[id].gold = JS(max(0, gold)) }
         if let destiny, !r.destiny.nations[id].isNull { r.destiny.nations[id].destiny = JS(min(100, max(0, destiny))) }
+        let civ = r.civilization.nations[id]
+        if let culture, !culture.isEmpty, !civ.isNull { civ.cultureId = JS(culture) }
+        if let religion, !religion.isEmpty, !civ.isNull { civ.religionId = JS(religion) }
         if let polity, Regimes.titles[polity] != nil, polity != r.civilization.nations[id].polity.optionalString {
             Regimes.change(r, id, to: polity, reason: "改制")
             Government.reconcileContinuity(r)

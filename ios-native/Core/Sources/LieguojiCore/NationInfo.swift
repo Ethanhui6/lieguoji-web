@@ -14,11 +14,12 @@ extension NativeEngine {
             return familyFirst ? last + first : last.isEmpty ? first : first + "·" + last
         }
         c.governance = JS(Offices.governance(r, id))
+        c.manual = JS(r.offices47.nations[id].manual.isTruthy)
         c.temper = JS(DeclarationEngine.temper?(id) ?? 1)
         c.centralIncome = JS(Offices.centralIncome(r, id))
         c.offices = .array(Offices.central.map { office in
             let e = JS.object(); e.office = JS(office)
-            if let p = Offices.holder(r, id, office, sid) { e.name = JS(name(p)); e.age = JS(p.age.optionalNumber ?? 0); e.fit = JS(Offices.suitability(r, id, office, sid)) }
+            if let p = Offices.holder(r, id, office, sid) { e.name = JS(name(p)); e.age = JS(p.age.optionalNumber ?? 0); e.fit = JS(Offices.suitability(r, id, office, sid)); e.person = JS(p.id.optionalNumber ?? -1) }
             else { e.name = JS(""); e.age = JS(0); e.fit = JS(0) }
             return e
         })

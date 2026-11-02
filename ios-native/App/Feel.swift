@@ -81,6 +81,8 @@ struct RemoteSettings: View {
     @State private var message = ""
     var body: some View {
         Group2 {
+            PaperSwitch(title: "自动接入我的电脑（开机即用，无需设置）", on: Binding(get: { model.autoRemote }, set: { model.autoRemote = $0 }))
+            Divider2()
             HStack(spacing: 10) {
                 Circle().fill(model.remoteAddress != nil ? Theme.jade : Theme.ink.opacity(0.25)).frame(width: 9, height: 9)
                 Text(model.remoteAddress.map { "电脑计算中 · \($0)" } ?? "本机计算").font(Theme.kai(16)).foregroundStyle(Theme.ink)

@@ -17,7 +17,7 @@ type Candidate=ReturnType<typeof createCivilizationWorld47>;
 let base:Candidate,historical:Candidate;
 beforeAll(()=>{
   const d=grid((x,y)=>x>20&&x<230&&y>20&&y<230?45:0);
-  const nations=Object.fromEntries(CULTURE_IDS47.map((cultureId,i)=>['n-'+i,{cultureId,religionId:'none' as const,polity:'Empire' as const}]));
+  const nations=Object.fromEntries(CULTURE_IDS47.slice(0,12).map((cultureId,i)=>['n-'+i,{cultureId,religionId:'none' as const,polity:'Empire' as const}]));
   base=createCivilizationWorld47(d,12,60,'peace',{mode:'culture-generated',enabled:[...CULTURE_IDS47],nations});
   historical=createCivilizationWorld47(d,12,60,'peace',{mode:'historical-names',enabled:[...CULTURE_IDS47],nations});
 },20000);

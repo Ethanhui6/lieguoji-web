@@ -76,11 +76,14 @@ public enum People {
     static func rulerTitle(culture: String, polity: String, religion: String, gender: Int) -> String {
         if polity == "Republic" { return culture == "roman" || culture == "greek" ? "执政官" : "总统" }
         if polity == "Federation" { return "联邦主席" }
-        if polity == "Tribal" { return culture == "norse" ? "雅尔" : "酋长" }
+        if polity == "Tribal" { return culture == "norse" ? "雅尔" : culture == "mongol" || culture == "turkic" ? "可汗" : "酋长" }
         if polity == "Theocracy" { return religion == "islam" ? "哈里发" : religion == "catholic" ? "教宗" : religion == "orthodox" ? "牧首" : religion == "buddhism" ? "法王" : "祭主" }
         if culture == "japanese" && polity == "Empire" { return "天皇" }
         if culture == "chinese" && polity == "Empire" { return gender == 1 ? "女皇" : "皇帝" }
         if culture == "persian" { return polity == "Empire" ? "沙阿" : "国王" }
+        if culture == "mongol" { return polity == "Empire" ? "大汗" : "汗" }
+        if culture == "turkic" { return religion == "islam" ? "苏丹" : "可汗" }
+        if culture == "egyptian" { return gender == 1 ? "女法老" : "法老" }
         if culture == "slavic" && polity == "Empire" { return gender == 1 ? "女沙皇" : "沙皇" }
         if polity == "Empire" { return gender == 1 ? "女皇" : "皇帝" }
         return gender == 1 ? "女王" : "国王"

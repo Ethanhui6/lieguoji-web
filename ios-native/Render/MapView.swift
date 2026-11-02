@@ -404,6 +404,7 @@ struct MapView: UIViewRepresentable {
                 map = next
                 renderer?.setMap(next)
                 // City names never change hands with a province: only the state names are rebuilt.
+                labels.setCities(map: next)
                 // Daily border changes swap the names in place; only a view switch cross-fades.
                 if let groups = controller.viewLabels { labels.setGroups(groups, animated: false) } else { labels.setNations(map: next, animated: false) }
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
@@ -422,6 +423,8 @@ struct MapView: UIViewRepresentable {
                 renderer?.setTerrain(next, refreshSea: controller.editorSeaDirty)
                 controller.editorSeaDirty = false
                 labels.setNations(map: next, animated: false)
+                labels.setCities(map: next)
+                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
                 mtk.setNeedsDisplay()
             }
             if let armies = controller.armies {
@@ -523,13 +526,26 @@ final class MapLabelsView: UIView {
         super.init(frame: .zero)
         let unit = Double(MapLayers.fontUnit)
         nations = Self.nationLabels(map, unit: unit)
-        let capitals = Set(map.meta.nations.compactMap { map.meta.cities.indices.contains($0.capital) ? map.meta.cities[$0.capital].id : nil })
-        for c in map.meta.cities {
-            let s = capitals.contains(c.id) ? 1.5 : 1.0, em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
-            cities.append(Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
-                                stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 8, province: c.province))
-        }
+        cities = Self.cityLabels(map)
         for l in cities + nations { l.view.isHidden = true; addSubview(l.view) }
+    }
+    private static func cityLabels(_ map: WorldMap) -> [Label] {
+        let capitals = Set(map.meta.nations.compactMap { map.meta.cities.indices.contains($0.capital) ? map.meta.cities[$0.capital].id : nil })
+        return map.meta.cities.filter { !$0.name.isEmpty }.map { c in
+            let s = capitals.contains(c.id) ? 1.5 : 1.0, em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
+            return Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
+                         stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 8, province: c.province)
+        }
+    }
+    /// The cities changed (a preview replaced by the founded world, whose cities have names): rebuild them.
+    private var cityKey = ""
+    func setCities(map: WorldMap) {
+        let key = map.meta.cities.map(\.name).joined(separator: "|")
+        guard key != cityKey else { return }
+        cityKey = key
+        for l in cities { l.view.removeFromSuperview() }
+        cities = Self.cityLabels(map)
+        for l in cities { l.view.isHidden = true; insertSubview(l.view, at: 0) }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 

@@ -4,10 +4,10 @@ import Foundation
 /// provinceColors47) and statistics panel (StatisticsInfoUI, statistics47), from the Swift run.
 extension NativeEngine {
     static let familyPalette = ["#dababf", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#c6b9c1", "#bc80bd", "#ccebc5", "#ffed6f", "#8dd3c7", "#eb8de7", "#FF9FAF", "#68C3DB", "#F7C3C7", "#F5E14D", "#FC61B3", "#A7A7FF", "#70DB8E", "#E6B03F", "#8AB821", "#C19D83", "#ACDEC4", "#E3CDA5", "#BA7AE2", "#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f", "#e5c494", "#b3b3b3"]
-    static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian"]
-    static let cultureNames = ["chinese": "中华", "japanese": "日本", "english": "英格兰", "arab": "阿拉伯", "roman": "罗马", "french": "法兰西", "german": "日耳曼", "greek": "希腊", "persian": "波斯", "slavic": "斯拉夫", "norse": "北欧", "indian": "印度"]
-    static let religionIds = ["none", "chineseFolk", "daoism", "buddhism", "shinto", "islam", "catholic", "orthodox", "protestant", "judaism", "hinduism", "zoroastrian", "grecoRoman", "norse"]
-    static let religionNames = ["none": "无指定宗教", "chineseFolk": "中国民间信仰", "daoism": "道教", "buddhism": "佛教", "shinto": "神道", "islam": "伊斯兰教", "catholic": "天主教", "orthodox": "东正教", "protestant": "新教", "judaism": "犹太教", "hinduism": "印度教", "zoroastrian": "祆教", "grecoRoman": "希腊罗马多神信仰", "norse": "北欧传统信仰"]
+    static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian"]
+    static let cultureNames = ["chinese": "中华", "japanese": "日本", "english": "英格兰", "arab": "阿拉伯", "roman": "罗马", "french": "法兰西", "german": "日耳曼", "greek": "希腊", "persian": "波斯", "slavic": "斯拉夫", "norse": "北欧", "indian": "印度", "korean": "朝鲜", "mongol": "蒙古", "turkic": "突厥", "egyptian": "埃及", "spanish": "西班牙", "italian": "意大利"]
+    static let religionIds = ["none", "chineseFolk", "daoism", "buddhism", "shinto", "islam", "catholic", "orthodox", "protestant", "judaism", "hinduism", "zoroastrian", "grecoRoman", "norse", "tengri", "kemetic"]
+    static let religionNames = ["none": "无指定宗教", "chineseFolk": "中国民间信仰", "daoism": "道教", "buddhism": "佛教", "shinto": "神道", "islam": "伊斯兰教", "catholic": "天主教", "orthodox": "东正教", "protestant": "新教", "judaism": "犹太教", "hinduism": "印度教", "zoroastrian": "祆教", "grecoRoman": "希腊罗马多神信仰", "norse": "北欧传统信仰", "tengri": "腾格里信仰", "kemetic": "古埃及信仰"]
 
     static func hex(_ s: String) -> Int { Int(s.dropFirst(), radix: 16) ?? 0xffffff }
     static func css(_ v: Int) -> String { String(format: "#%06x", v & 0xffffff) }

@@ -33,13 +33,15 @@ enum Theme {
 
 enum Names {
     static let polity = ["Kingdom": "王国", "Empire": "帝国", "Federation": "联邦", "Republic": "共和国", "Tribal": "部落", "Theocracy": "神权"]
-    /// The 12 cultures of the catalog in its order (CULTURE_IDS47).
-    static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian"]
+    /// The cultures of the catalog in its order (CULTURE_IDS47).
+    static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian"]
     static let culture = ["chinese": "中华", "japanese": "日本", "english": "英格兰", "arab": "阿拉伯", "roman": "罗马", "french": "法兰西",
-                          "german": "日耳曼", "greek": "希腊", "persian": "波斯", "slavic": "斯拉夫", "norse": "北欧", "indian": "印度"]
+                          "german": "日耳曼", "greek": "希腊", "persian": "波斯", "slavic": "斯拉夫", "norse": "北欧", "indian": "印度",
+                          "korean": "朝鲜", "mongol": "蒙古", "turkic": "突厥", "egyptian": "埃及", "spanish": "西班牙", "italian": "意大利"]
     static let religion = ["none": "无指定宗教", "chineseFolk": "中国民间信仰", "daoism": "道教", "buddhism": "佛教", "shinto": "神道",
                            "islam": "伊斯兰教", "catholic": "天主教", "orthodox": "东正教", "protestant": "新教", "judaism": "犹太教",
-                           "hinduism": "印度教", "zoroastrian": "祆教", "grecoRoman": "希腊罗马多神信仰", "norse": "北欧传统信仰"]
+                           "hinduism": "印度教", "zoroastrian": "祆教", "grecoRoman": "希腊罗马多神信仰", "norse": "北欧传统信仰",
+                           "tengri": "腾格里信仰", "kemetic": "古埃及信仰"]
     static let terrain = ["plain": "平原", "forest": "森林", "mountain": "山地"]
     static let unit = ["Infantry": "步兵", "Archer": "弓兵", "Shield": "盾兵", "Cavalry": "骑兵", "Elite": "精锐"]
     static func travel(_ t: String) -> String { ["moving": "行军中", "arrived": "驻扎", "blocked": "受阻", "halted": "已停止"][t] ?? t }
@@ -1541,6 +1543,13 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.19.0", ["自动接入电脑，零操作：手机版和电脑端「列国纪远程计算」内置同一个专属房间，电脑端第一次运行后设为开机自动运行；以后只要电脑开着，手机一进入世界就自动接入电脑计算（之后每 90 秒重试一次，电脑晚开机也会接上）。同一 Wi-Fi 下自动走局域网直连（快），在外面走中转；「设置 › 远程计算」可关闭。",
+                    "修复城市名在新世界里不显示：以前开局时地图沿用了生成预览，预览里城市还没有名字，之后不再重建；现在进入正式世界时城市名会重新生成。",
+                    "修复大批军队一起行军时乱跳：以前的错开算法会让一起行军的军队每一步互换位置；现在每支军队固定一个微小偏移，行军队列保持原样，叠在一起时也能分清。",
+                    "自由任命官员：朝堂里点宰相、司农、大将军，列出本国可任人选（按引擎的才能匹配排序，附属性与天赋），点谁任谁；新增「亲自任免」开关，打开后朝廷不再自行换人。人物属性与天赋仍可在「人物」里修改。",
+                    "国家自定义新增文化与宗教：可随时改变一国的文化和宗教。",
+                    "文化库扩充：新增朝鲜、蒙古、突厥、埃及、西班牙、意大利六种文化，各配真实国名、八十余座历史城市、五十余个男名、四十余个女名、三十余个家族与历史人物，以及大汗、可汗、苏丹、法老等称号；新增腾格里信仰、古埃及信仰两种宗教。新世界里可勾选使用。",
+                    "修复新世界「国家」数量按钮不灵：整个按钮都能点，长按可连续加减，下方加滑杆可直接拖动。"]),
         ("0.18.0", ["新增「自绘地图」（同原作地图编辑器）：新世界面板里点「自己绘制地图」，以所选地形为底图（或换成随机大陆、群岛、空白海洋），用笔刷亲手画山川海陆：海洋、平原、丘陵、山地、雪峰、抬高、压低、平滑八种笔刷，笔刷大小可调，单指绘制、双指移动缩放，随时撤销与重做。",
                     "每画完一笔都按原作的气候算法重算：高度与纬度、降水决定哪里长成森林、草原、热带雨林，哪里变成沙漠、苔原和冰川，海水按深浅着色；画笔经过时先用临时颜色即时显示。",
                     "画好后「下一步：分州郡」：调节州郡数（10–480）与国家数（2–24），即时预览按原作定居分区算法划出的州郡边界和列国起家疆域。",
@@ -1838,16 +1847,43 @@ struct PaperStepper: View {
     @Binding var value: Int
     let range: ClosedRange<Int>
     let unit: String
+    /// − value + with whole-button hit areas (the bare icons were easy to miss inside a scrolling
+    /// sheet), hold to repeat, a tick of haptics, and a slider beneath for big moves.
     var body: some View {
-        HStack(spacing: 12) {
-            Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
-            Spacer()
-            Button { if value > range.lowerBound { value -= 1 } } label: { Image(systemName: "minus").font(.system(size: 15, weight: .bold)).frame(width: 40, height: 36) }
-                .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
-            Text("\(value) \(unit)").font(Theme.kai(19)).foregroundStyle(Theme.ink).frame(minWidth: 56)
-            Button { if value < range.upperBound { value += 1 } } label: { Image(systemName: "plus").font(.system(size: 15, weight: .bold)).frame(width: 40, height: 36) }
-                .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+        VStack(spacing: 6) {
+            HStack(spacing: 12) {
+                Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+                Spacer()
+                stepButton("minus", -1)
+                Text("\(value) \(unit)").font(Theme.kai(19)).foregroundStyle(Theme.ink).frame(minWidth: 64)
+                    .monospacedDigit().contentTransition(.numericText()).animation(.snappy(duration: 0.2), value: value)
+                stepButton("plus", 1)
+            }
+            Slider(value: Binding(get: { Double(value) }, set: { let v = Int($0.rounded()); if v != value { value = v; GameFeel.shared.tap() } }),
+                   in: Double(range.lowerBound)...Double(range.upperBound), step: 1)
+                .tint(Theme.seal)
         }
+    }
+    private func stepButton(_ symbol: String, _ delta: Int) -> some View {
+        let enabled = delta < 0 ? value > range.lowerBound : value < range.upperBound
+        return Image(systemName: symbol).font(.system(size: 15, weight: .bold)).foregroundStyle(enabled ? Theme.ink : Theme.ink2.opacity(0.4))
+            .frame(width: 46, height: 38)
+            .background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+            .contentShape(Capsule())
+            .onTapGesture { change(delta) }
+            .onLongPressGesture(minimumDuration: 0.35, pressing: { pressing in
+                repeatTask?.cancel()
+                guard pressing else { return }
+                repeatTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 350_000_000)
+                    while !Task.isCancelled { change(delta); try? await Task.sleep(nanoseconds: 90_000_000) }
+                }
+            }, perform: {})
+    }
+    @State private var repeatTask: Task<Void, Never>?
+    private func change(_ delta: Int) {
+        let next = min(range.upperBound, max(range.lowerBound, value + delta))
+        if next != value { value = next; GameFeel.shared.tap() }
     }
 }
 

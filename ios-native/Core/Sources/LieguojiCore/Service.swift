@@ -113,12 +113,22 @@ public final class EngineService {
             let g: (history: [String], trait: String) = engine?.regime(int("n")) ?? (history: [], trait: "")
             var r = Reply(); r.strings = g.history; r.text = g.trait; return r
         case "editPerson": return command(engine?.editPerson(int("id"), skills: dbls("skills"), traits: strs("traits")))
-        case "editNation": return command(engine?.editNation(int("n"), gold: dbl("gold"), destiny: dbl("destiny"), polity: optStr("polity")))
+        case "editNation": return command(engine?.editNation(int("n"), gold: dbl("gold"), destiny: dbl("destiny"), polity: optStr("polity"), culture: optStr("culture"), religion: optStr("religion")))
+        case "officeCandidates": return data(engine?.officeCandidates(int("n"), office: str("office")))
+        case "appointOffice": return command(engine?.appointOffice(int("n"), office: str("office"), personId: int("person")))
+        case "setCourtManual": return command(engine?.setCourtManual(int("n"), manual: bool("manual")))
         case "addArmy": return command(engine?.addArmy(int("n"), province: int("province")))
         case "editArmy": return command(engine?.editArmy(str("armyId"), troops: optInt("troops"), unit: optStr("unit"), morale: dbl("morale")))
         default: return Reply(ok: false, reason: "未知请求 \(call)。")
         }
     }
+}
+
+/// 自动接入: the room this player's phone and computer meet in without typing anything (built into both
+/// the app and the server; a pairing.txt next to the server overrides it).
+public enum RemoteRoom {
+    public static let personal = "ECZV5UL3UV"
+    public static let port: UInt16 = 8765
 }
 
 /// Frame helpers shared by the server and the app's remote link.

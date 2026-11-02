@@ -117,14 +117,14 @@ final class EffectsView: UIView {
 
     private func battleLayer() -> CALayer {
         let l = CALayer()
-        l.bounds = CGRect(x: 0, y: 0, width: 44, height: 44 * 194 / 258)
-        // A red ring that beats under the clash, so a battle is found at a glance.
+        l.bounds = CGRect(x: 0, y: 0, width: 30, height: 30 * 194 / 258)
+        // A small red ring that beats round the swords, so a battle is found at a glance.
         let ring = CAShapeLayer()
-        let r: CGFloat = 20
+        let r: CGFloat = 13
         ring.path = UIBezierPath(ovalIn: CGRect(x: l.bounds.midX - r, y: l.bounds.midY - r, width: r * 2, height: r * 2)).cgPath
-        ring.fillColor = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 0.16).cgColor
-        ring.strokeColor = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 0.85).cgColor
-        ring.lineWidth = 1.6; ring.frame = l.bounds
+        ring.fillColor = UIColor(red: 0.984, green: 0.965, blue: 0.91, alpha: 0.55).cgColor
+        ring.strokeColor = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 0.9).cgColor
+        ring.lineWidth = 1.4; ring.frame = l.bounds
         let beat = CABasicAnimation(keyPath: "transform.scale"); beat.fromValue = 0.75; beat.toValue = 1.15
         beat.duration = 0.9; beat.autoreverses = true; beat.repeatCount = .infinity
         beat.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
@@ -578,7 +578,17 @@ final class EffectsView: UIView {
         func screen(_ x: Double, _ y: Double) -> CGPoint { let p = camera.toScreen(x: x, y: y, viewport: vp); return CGPoint(x: p.x, y: p.y) }
         CATransaction.begin(); CATransaction.setDisableActions(true)
         let k = CGFloat(max(0.85, min(1.4, camera.scale / 2)))
-        for v in battleLayers.values { v.layer.position = screen(v.x, v.y); v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k)) }
+        // The swords hang just above the armies they belong to (the figures stay visible beneath),
+        // and battles that would overlap on screen share one mark.
+        var marks = [CGPoint]()
+        for key in battleLayers.keys.sorted() {
+            let v = battleLayers[key]!
+            var p = screen(v.x, v.y); p.y -= 24 * k
+            let crowded = marks.contains { hypot($0.x - p.x, $0.y - p.y) < 34 * k }
+            if !crowded { marks.append(p) }
+            v.layer.position = p; v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k))
+            v.layer.isHidden = crowded
+        }
         for v in clashLayers.values {
             let a = screen(v.battle.ax, v.battle.ay), b = screen(v.battle.bx, v.battle.by), m = screen(v.battle.x, v.battle.y)
             let pa = UIBezierPath(); pa.move(to: a); pa.addLine(to: m); v.a.path = pa.cgPath
@@ -602,7 +612,7 @@ final class EffectsView: UIView {
         }
         // Hide and freeze continuous offscreen effects. A margin avoids edge flicker.
         let visibleRect = CGRect(origin: .zero, size: viewport).insetBy(dx: -80, dy: -80)
-        for v in battleLayers.values { visibility(v.layer, visible: visibleRect.contains(v.layer.position)) }
+        for v in battleLayers.values where !v.layer.isHidden { visibility(v.layer, visible: visibleRect.contains(v.layer.position)) }
         for v in siegeLayers.values { visibility(v.layer, visible: visibleRect.contains(v.layer.position)) }
         for v in clashLayers.values {
             let visible = visibleRect.contains(screen(v.battle.x, v.battle.y))

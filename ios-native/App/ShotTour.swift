@@ -43,6 +43,15 @@ enum ShotTour {
             await wait(2); await shoot("05-battle-close")
             await wait(4); await shoot("06-battle-close-later")
         }
+        // Up close on a resting army and on the one under the commander's banner (the figures).
+        if let state = model.state {
+            if let a = state.armies.filter({ $0.status != "fighting" && $0.status != "sieging" }).max(by: { $0.troops < $1.troops }) {
+                model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(2.5); await shoot("06b-army-close")
+            }
+            if let a = state.armies.first(where: { $0.banner != nil }) {
+                model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(2.5); await shoot("06c-banner-close")
+            }
+        }
         model.pause(saving: false)
         views(true); await wait(1); await shoot("07-views"); views(false)
         let panels: [(String, Panel)] = [("10-nations", .nations), ("11-nation", .nation(model.state?.nations.indices.max { (model.state?.nations[$0].provinces ?? 0) < (model.state?.nations[$1].provinces ?? 0) } ?? 0)),

@@ -669,7 +669,8 @@ final class TroopLabelsView: UIView {
         let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * camera.scale
         var seen = Set<String>()
         CATransaction.begin(); CATransaction.setDisableActions(true)
-        if icon >= 14 {
+        // Coins are drawn at least 20 points across (see spriteVertex), so the tags show from afar too.
+        if icon >= 5 {
             for p in placed where p.sprite.army > -100_000 {
                 guard let text = texts[p.sprite.key] else { continue }
                 let s = camera.toScreen(x: Double(p.x), y: Double(p.y), viewport: vp)
@@ -680,7 +681,7 @@ final class TroopLabelsView: UIView {
                     let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 6
                     l.bounds = CGRect(x: 0, y: 0, width: w, height: 15)
                 }
-                l.position = CGPoint(x: s.x, y: s.y + max(icon, 16) * 0.5 + 7)
+                l.position = CGPoint(x: s.x, y: s.y + max(icon, 20) * 0.5 + 7)
                 seen.insert(p.sprite.key)
             }
         }

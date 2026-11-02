@@ -442,8 +442,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     struct SpriteOut { float4 position [[position]]; float2 uv; float4 tint; };
     vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]]) {
         SpriteVertex s = v[id];
-        // A coin at least 16 points across, so whose army it is reads at every zoom.
-        float pixels = max(s.size * u.scale, 16.0);
+        // A coin at least 20 points across, so whose army it is reads at every zoom.
+        float pixels = max(s.size * u.scale, 20.0);
         SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, float2(s.corner) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
     }
     // A unit coin: the state's colour, an ink rim and the unit glyph in paper white.

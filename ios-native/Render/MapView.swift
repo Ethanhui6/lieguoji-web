@@ -89,7 +89,8 @@ struct DisplaySettings: Codable, Equatable {
     var cityNames = true
     var cityIcons = true
     var vegetation = true
-    var colorDensity = 1.0
+    /// State colours over the terrain: below full so mountains, forests and deserts show through.
+    var colorDensity = 0.7
     static let key = "displaySettings.v1"
     static func load() -> DisplaySettings {
         guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) else { return DisplaySettings() }
@@ -668,7 +669,7 @@ final class TroopLabelsView: UIView {
         let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * camera.scale
         var seen = Set<String>()
         CATransaction.begin(); CATransaction.setDisableActions(true)
-        if icon >= 26 {
+        if icon >= 14 {
             for p in placed where p.sprite.army > -100_000 {
                 guard let text = texts[p.sprite.key] else { continue }
                 let s = camera.toScreen(x: Double(p.x), y: Double(p.y), viewport: vp)
@@ -679,7 +680,7 @@ final class TroopLabelsView: UIView {
                     let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 6
                     l.bounds = CGRect(x: 0, y: 0, width: w, height: 15)
                 }
-                l.position = CGPoint(x: s.x, y: s.y + icon * 0.5 + 5)
+                l.position = CGPoint(x: s.x, y: s.y + max(icon, 16) * 0.5 + 7)
                 seen.insert(p.sprite.key)
             }
         }
@@ -689,10 +690,10 @@ final class TroopLabelsView: UIView {
     private func make(_ key: String) -> CATextLayer {
         let l = CATextLayer()
         l.font = Self.font; l.fontSize = 11; l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
-        l.foregroundColor = UIColor(white: 0.12, alpha: 1).cgColor
-        // A paper halo like the map's names instead of a box.
-        l.shadowColor = UIColor(red: 0.953, green: 0.906, blue: 0.792, alpha: 1).cgColor
-        l.shadowOpacity = 1; l.shadowRadius = 1.6; l.shadowOffset = .zero
+        l.foregroundColor = UIColor(white: 0.1, alpha: 1).cgColor
+        // A small paper tag under the coin, like the original's troop counts.
+        l.backgroundColor = UIColor(red: 0.984, green: 0.965, blue: 0.91, alpha: 0.92).cgColor
+        l.cornerRadius = 4; l.borderWidth = 0.6; l.borderColor = UIColor(white: 0, alpha: 0.25).cgColor
         layer.addSublayer(l); layers[key] = l
         return l
     }

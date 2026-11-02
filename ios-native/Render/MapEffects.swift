@@ -117,7 +117,19 @@ final class EffectsView: UIView {
 
     private func battleLayer() -> CALayer {
         let l = CALayer()
-        l.bounds = CGRect(x: 0, y: 0, width: 34, height: 34 * 194 / 258)
+        l.bounds = CGRect(x: 0, y: 0, width: 44, height: 44 * 194 / 258)
+        // A red ring that beats under the clash, so a battle is found at a glance.
+        let ring = CAShapeLayer()
+        let r: CGFloat = 20
+        ring.path = UIBezierPath(ovalIn: CGRect(x: l.bounds.midX - r, y: l.bounds.midY - r, width: r * 2, height: r * 2)).cgPath
+        ring.fillColor = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 0.16).cgColor
+        ring.strokeColor = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 0.85).cgColor
+        ring.lineWidth = 1.6; ring.frame = l.bounds
+        let beat = CABasicAnimation(keyPath: "transform.scale"); beat.fromValue = 0.75; beat.toValue = 1.15
+        beat.duration = 0.9; beat.autoreverses = true; beat.repeatCount = .infinity
+        beat.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        ring.add(beat, forKey: "beat")
+        l.addSublayer(ring)
         l.contents = Self.swords; l.contentsGravity = .resize
         l.contentsRect = CGRect(x: 0, y: 0, width: 0.2, height: 0.125)
         let clip = CAKeyframeAnimation(keyPath: "contentsRect")
@@ -565,7 +577,7 @@ final class EffectsView: UIView {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         func screen(_ x: Double, _ y: Double) -> CGPoint { let p = camera.toScreen(x: x, y: y, viewport: vp); return CGPoint(x: p.x, y: p.y) }
         CATransaction.begin(); CATransaction.setDisableActions(true)
-        let k = CGFloat(max(0.6, min(1.4, camera.scale / 2)))
+        let k = CGFloat(max(0.85, min(1.4, camera.scale / 2)))
         for v in battleLayers.values { v.layer.position = screen(v.x, v.y); v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k)) }
         for v in clashLayers.values {
             let a = screen(v.battle.ax, v.battle.ay), b = screen(v.battle.bx, v.battle.by), m = screen(v.battle.x, v.battle.y)

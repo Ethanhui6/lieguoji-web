@@ -442,12 +442,24 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     struct SpriteOut { float4 position [[position]]; float2 uv; float4 tint; };
     vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]]) {
         SpriteVertex s = v[id];
-        float pixels = max(s.size * u.scale, 7.0);
+        // A coin at least 16 points across, so whose army it is reads at every zoom.
+        float pixels = max(s.size * u.scale, 16.0);
         SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, float2(s.corner) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
     }
+    // A unit coin: the state's colour, an ink rim and the unit glyph in paper white.
     fragment float4 spriteFragment(SpriteOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
-        float4 c = t.sample(s, in.uv);
-        return float4(c.rgb * in.tint.rgb, c.a * in.tint.a);
+        float2 p = in.uv - 0.5;
+        float d = length(p) * 2.0;
+        float aa = max(fwidth(d), 0.02);
+        float edge = 1.0 - smoothstep(1.0 - aa, 1.0, d);
+        if (edge <= 0.0) discard_fragment();
+        float rim = smoothstep(0.78 - aa, 0.78 + aa, d);
+        float2 g = p * 1.6 + 0.5;
+        float glyph = (g.x >= 0.0 && g.x <= 1.0 && g.y >= 0.0 && g.y <= 1.0) ? t.sample(s, g).a : 0.0;
+        float3 fill = in.tint.rgb * 0.92;
+        float3 c = mix(fill, float3(0.985, 0.965, 0.91), glyph * (1.0 - rim));
+        c = mix(c, float3(0.15, 0.11, 0.08), rim);
+        return float4(c, edge * in.tint.a);
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         return float4(t.sample(s, in.uv).rgb, 1.0);

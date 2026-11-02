@@ -90,21 +90,27 @@ public enum MapLayers {
         let light = RGB(hex: 0xDDD1B1), ink = RGB(hex: 0x514D3C), tree = RGB(hex: 0x405D45), trunk = RGB(hex: 0x354A35)
         var occupied = Set<Int64>()
         var m = ColoredMesh()
-        for i in 0..<map.cellCount {
+        // Groves: a slow field over the map decides where woods stand thick and where they thin out.
+        func grove(_ x: Float, _ y: Float) -> Float { sin(x * 0.011 + 1.3) * sin(y * 0.013 + 0.7) + 0.6 * sin((x + y) * 0.006 + 2.1) }
+        // Drawn from the top of the map down, so nearer peaks and trees overlap the ones behind.
+        let order = (0..<map.cellCount).sorted { map.sites[$0 * 2 + 1] < map.sites[$1 * 2 + 1] }
+        for i in order {
             let h = Float(map.elevation[i]), biome = map.biome[i]
             let forest = h >= 22 && h < 55 && biome >= 5 && biome <= 9
             if h < 55 && !forest { continue }
             if touchesSea[i] { continue }
+            if forest && grove(map.sites[i * 2], map.sites[i * 2 + 1]) < -0.15 { continue }
             // Sparser than one mark per square: real ranges read as ridgelines, not a carpet of peaks.
             let pick = UInt32(truncatingIfNeeded: i &* 2654435761) >> 16 % 100
             if h >= 55 && (h < 62 || pick < 35) { continue }
             if forest && pick < 45 { continue }
-            let x = map.sites[i * 2], y = map.sites[i * 2 + 1]
-            let key = Int64(floor(x / 23)) << 32 | Int64(Int32(floor(y / 23))) & 0xFFFF_FFFF
+            let jx = Float(i * 7919 % 13) - 6, jy = Float(i * 104_729 % 11) - 5
+            let x = map.sites[i * 2] + jx * 0.6, y = map.sites[i * 2 + 1] + jy * 0.6
+            let key = Int64(floor(map.sites[i * 2] / 23)) << 32 | Int64(Int32(floor(map.sites[i * 2 + 1] / 23))) & 0xFFFF_FFFF
             if occupied.contains(key) { continue }
             occupied.insert(key)
             if h >= 55 {
-                let variation = Float(i * 37 % 101) / 100, w = 5 + (h - 55) * 0.08
+                let variation = Float(i * 37 % 101) / 100, w = (5 + (h - 55) * 0.11) * (0.75 + variation * 0.6)
                 let top = y - (8 + (h - 55) * 0.19) * (0.85 + variation * 0.3), peak = x - 2 + variation * 3
                 let ridge: [Float] = [x - w - 3, y + 4, x - w * 0.6, y - 2, x - w * 0.35, y - 1, peak, top, x + w * 0.3, y - 3, x + w * 0.55, y - 5, x + w + 3, y + 4]
                 m.fill(ridge, light, alpha: 0.32)

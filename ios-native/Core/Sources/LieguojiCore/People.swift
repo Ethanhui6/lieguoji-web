@@ -84,6 +84,9 @@ public enum People {
         if culture == "mongol" { return polity == "Empire" ? "大汗" : "汗" }
         if culture == "turkic" { return religion == "islam" ? "苏丹" : "可汗" }
         if culture == "egyptian" { return gender == 1 ? "女法老" : "法老" }
+        if culture == "tibetan" { return "赞普" }
+        if culture == "aztec" { return "特拉托阿尼" }
+        if culture == "inca" { return "萨帕·印卡" }
         if culture == "slavic" && polity == "Empire" { return gender == 1 ? "女沙皇" : "沙皇" }
         if polity == "Empire" { return gender == 1 ? "女皇" : "皇帝" }
         return gender == 1 ? "女王" : "国王"

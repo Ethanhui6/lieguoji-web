@@ -36,7 +36,14 @@ export class Room {
     if (action === 'status') {
       return new Response(JSON.stringify({ online: this.online(), lan: this.online() ? this.lan : [] }), { headers: { 'content-type': 'application/json' } });
     }
-    if (action === 'next') {
+    if (action === 'reply') {
+      this.lastSeen = Date.now();
+      const resolve = this.replies.get(id);
+      if (resolve) { this.replies.delete(id); resolve(await request.arrayBuffer()); }
+      // ?next=1: the same request then waits for the computer's next job (saves a round trip).
+      if (url.searchParams.get('next') !== '1') return new Response(null, { status: 204 });
+    }
+    if (action === 'next' || action === 'reply') {
       // The computer's long poll: the next request, or 204 after 25 s. It also reports its local
       // addresses, so a phone on the same network can connect directly.
       const lan = url.searchParams.get('lan');
@@ -46,12 +53,6 @@ export class Room {
       this.lastSeen = Date.now();
       if (!job) return new Response(null, { status: 204 });
       return new Response(job.body, { headers: { 'x-request-id': String(job.id), 'content-type': 'application/octet-stream' } });
-    }
-    if (action === 'reply') {
-      this.lastSeen = Date.now();
-      const resolve = this.replies.get(id);
-      if (resolve) { this.replies.delete(id); resolve(await request.arrayBuffer()); }
-      return new Response(null, { status: 204 });
     }
     // The phone's request: queued for the computer, answered with its reply.
     if (!this.online()) return new Response('电脑不在线：请在电脑上运行列国纪远程计算', { status: 503 });

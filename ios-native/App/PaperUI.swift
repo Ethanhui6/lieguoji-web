@@ -190,7 +190,7 @@ struct MapViewLegend: View {
                         .overlay(RoundedRectangle(cornerRadius: 2).stroke(Theme.ink.opacity(0.25), lineWidth: 0.5))
                     Text(e.name.isEmpty ? "—" : e.name).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(1)
                     Spacer(minLength: 4)
-                    Text("\(e.count)省").font(Theme.kai(11)).foregroundStyle(Theme.ink2)
+                    Text("\(e.count)省").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                 }
                 .transition(.opacity.combined(with: .move(edge: .leading)))
             }
@@ -366,7 +366,7 @@ struct EdictSheet: View {
         Task { if let e = await model.setWorld(key, value) { say(e) } else { say("诏令已颁行") }; await reload() }
     }
     @ViewBuilder private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
-        Text(title).font(Theme.kai(17)).foregroundStyle(Theme.seal).padding(.horizontal, 22)
+        SectionLabel(title)
         Group2 { content() }.padding(.horizontal, 16)
     }
     private func toggle(_ title: String, _ on: Bool, _ key: String) -> some View {
@@ -397,5 +397,19 @@ struct ScrollRod: View {
             Capsule().fill(LinearGradient(colors: [Color(red: 0.72, green: 0.56, blue: 0.25), Color(red: 0.45, green: 0.32, blue: 0.12)], startPoint: .top, endPoint: .bottom)).frame(width: 14, height: 20)
         }
         .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
+    }
+}
+
+/// The one heading style for sections in every panel: a short seal-red stroke and the title.
+struct SectionLabel: View {
+    let title: String; var inset = true
+    init(_ title: String, inset: Bool = true) { self.title = title; self.inset = inset }
+    var body: some View {
+        HStack(spacing: 8) {
+            RoundedRectangle(cornerRadius: 1).fill(Theme.seal).frame(width: 3, height: 15)
+            Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink)
+        }
+        .frame(maxWidth: inset ? .infinity : nil, alignment: .leading)
+        .padding(.horizontal, inset ? 22 : 0)
     }
 }

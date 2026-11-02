@@ -34,14 +34,15 @@ enum Theme {
 enum Names {
     static let polity = ["Kingdom": "王国", "Empire": "帝国", "Federation": "联邦", "Republic": "共和国", "Tribal": "部落", "Theocracy": "神权"]
     /// The cultures of the catalog in its order (CULTURE_IDS47).
-    static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian"]
+    static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian", "vietnamese", "tibetan", "hungarian", "polish", "portuguese", "dutch", "aztec", "inca"]
     static let culture = ["chinese": "中华", "japanese": "日本", "english": "英格兰", "arab": "阿拉伯", "roman": "罗马", "french": "法兰西",
                           "german": "日耳曼", "greek": "希腊", "persian": "波斯", "slavic": "斯拉夫", "norse": "北欧", "indian": "印度",
-                          "korean": "朝鲜", "mongol": "蒙古", "turkic": "突厥", "egyptian": "埃及", "spanish": "西班牙", "italian": "意大利"]
+                          "korean": "朝鲜", "mongol": "蒙古", "turkic": "突厥", "egyptian": "埃及", "spanish": "西班牙", "italian": "意大利",
+                          "vietnamese": "越南", "tibetan": "吐蕃", "hungarian": "匈牙利", "polish": "波兰", "portuguese": "葡萄牙", "dutch": "尼德兰", "aztec": "阿兹特克", "inca": "印加"]
     static let religion = ["none": "无指定宗教", "chineseFolk": "中国民间信仰", "daoism": "道教", "buddhism": "佛教", "shinto": "神道",
                            "islam": "伊斯兰教", "catholic": "天主教", "orthodox": "东正教", "protestant": "新教", "judaism": "犹太教",
                            "hinduism": "印度教", "zoroastrian": "祆教", "grecoRoman": "希腊罗马多神信仰", "norse": "北欧传统信仰",
-                           "tengri": "腾格里信仰", "kemetic": "古埃及信仰"]
+                           "tengri": "腾格里信仰", "kemetic": "古埃及信仰", "aztecFaith": "阿兹特克信仰", "incaFaith": "印加太阳信仰"]
     static let terrain = ["plain": "平原", "forest": "森林", "mountain": "山地"]
     static let unit = ["Infantry": "步兵", "Archer": "弓兵", "Shield": "盾兵", "Cavalry": "骑兵", "Elite": "精锐"]
     static func travel(_ t: String) -> String { ["moving": "行军中", "arrived": "驻扎", "blocked": "受阻", "halted": "已停止"][t] ?? t }
@@ -267,9 +268,9 @@ struct TitleView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "设置", subtitle: AppVersion.text, seal: "设")
-                    Text("远程计算").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                    SectionLabel("远程计算")
                     RemoteSettings(model: model)
-                    Text("声音与触感").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                    SectionLabel("声音与触感")
                     FeelSettings()
                 }
                 .padding(.bottom, 24)
@@ -296,14 +297,14 @@ struct VerticalText: View {
 struct PrimaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
-        Label(title, systemImage: symbol).font(Theme.kai(21)).frame(maxWidth: .infinity).frame(height: 54)
+        Label(title, systemImage: symbol).font(Theme.kai(20)).frame(maxWidth: .infinity).frame(height: 54)
             .foregroundStyle(Theme.paper2).background(Theme.seal, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 struct SecondaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
-        Label(title, systemImage: symbol).font(Theme.kai(21)).frame(maxWidth: .infinity).frame(height: 54)
+        Label(title, systemImage: symbol).font(Theme.kai(20)).frame(maxWidth: .infinity).frame(height: 54)
             .foregroundStyle(Theme.ink).background(Theme.paper2.opacity(0.9), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.line))
     }
@@ -994,7 +995,7 @@ struct ProvinceSheet: View {
                                     VStack(spacing: 2) {
                                         Text(k.0).font(Theme.kai(15)).foregroundStyle(Theme.paper2)
                                             .padding(.horizontal, 10).padding(.vertical, 4).background(k.0 == "边地" ? Theme.ink2 : Theme.seal, in: RoundedRectangle(cornerRadius: 5))
-                                        Text(k.1).font(Theme.kai(11)).foregroundStyle(Theme.ink2)
+                                        Text(k.1).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                                     }
                                 }
                             }
@@ -1097,7 +1098,7 @@ struct ArmyRow: View {
                 HStack(spacing: 6) {
                     Text(army.name).font(Theme.kai(18)).foregroundStyle(Theme.ink).lineLimit(1)
                     Text(Echelon.name(troops: army.troops, culture: map.meta.nations.indices.contains(army.nation) ? map.meta.nations[army.nation].culture : ""))
-                        .font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule())
+                        .font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule())
                 }
                 Text("\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "海上") · \(Names.status(army.status))\(Self.dest(map, army))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             }
@@ -1304,7 +1305,7 @@ struct MilitarySheet: View {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支舰队"))
                     if let fleets = state.fleets, !fleets.isEmpty {
-                        Text("舰队").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                        SectionLabel("舰队")
                         Group2 {
                             ForEach(fleets.indices, id: \.self) { i in
                                 Button { selectFleet(i) } label: { FleetRow(map: map, fleet: fleets[i]) }.buttonStyle(.plain)
@@ -1375,7 +1376,7 @@ struct DiplomacySheet: View {
                         }
                         .padding(.horizontal, 16)
                     }
-                    Text("宣战").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                    SectionLabel("宣战")
                     Group2 {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("宣战国").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
@@ -1526,11 +1527,11 @@ struct MenuSheet: View {
                 PaperSwitch(title: "显示帧率", on: $controller.showMetrics)
             }
             .padding(.horizontal, 16)
-            Text("远程计算").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+            SectionLabel("远程计算")
             RemoteSettings(model: model)
-            Text("声音与触感").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+            SectionLabel("声音与触感")
             FeelSettings()
-            Text("显示设置").font(Theme.kai(17)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+            SectionLabel("显示设置")
             Group2 {
                 PaperSwitch(title: "国界", on: $controller.display.borders)
                 Divider2()
@@ -1584,6 +1585,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.22.0", ["新增八种文化（共二十六种）：越南、吐蕃、匈牙利、波兰、葡萄牙、尼德兰、阿兹特克、印加。每种都有八十座左右真实历史城市、五十个以上男名、四十五个以上女名、三十个家族，以及真实国号与历史人物；元首称号随文化（赞普、特拉托阿尼、萨帕·印卡等）。新建世界时可选。",
+                    "新增两种宗教：阿兹特克信仰、印加太阳信仰。",
+                    "连电脑计算更快：经中转时，手机在显示这一步的同时已经向电脑要下一步，电脑不再空等；电脑交回结果的同一次请求顺便取走下一个任务，每步少一次往返。经中转时自动存档改为每 120 天一次（存档要把整个世界传回手机）。需要同时更新电脑端程序。",
+                    "界面统一：各面板的分节标题统一为朱红竖笔加标题的样式（设置、军团、宣战、国家页折叠栏、诏令），字号收拢到统一的几档。"]),
         ("0.21.0", ["打开菜单不再掉帧：打开国家、军事、外交、纪事、排行、菜单等大面板时世界自动暂停，关闭后自动继续（以前每推演一天整张面板都要重画，引擎也在抢算力）；面板打开时背后的地图降到每秒 30 帧。州郡、军团这类小面板照常推演。设置里可关闭。",
                     "修复打开「联盟」视图闪退：有的州郡控制者查不到国名时会崩溃，现已安全处理。",
                     "地形不再满屏是山：山峰只画在更高处并稀疏排列，森林、丘陵、沙丘、草甸、苔原等装饰大幅减少，山川看起来更像真实的山脉走向。",
@@ -1829,7 +1834,7 @@ struct FoundingView: View {
                     }
                     HStack(spacing: 10) {
                         ProgressView().tint(Theme.seal).scaleEffect(0.8)
-                        Text(all[min(current, all.count - 1)] + "……").font(Theme.kai(19)).foregroundStyle(Theme.ink)
+                        Text(all[min(current, all.count - 1)] + "……").font(Theme.kai(20)).foregroundStyle(Theme.ink)
                             .id(current).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
                     }
                     GeometryReader { g in
@@ -1910,7 +1915,7 @@ struct PaperStepper: View {
                 Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
                 Spacer()
                 stepButton("minus", -1)
-                Text("\(value) \(unit)").font(Theme.kai(19)).foregroundStyle(Theme.ink).frame(minWidth: 64)
+                Text("\(value) \(unit)").font(Theme.kai(20)).foregroundStyle(Theme.ink).frame(minWidth: 64)
                     .monospacedDigit().contentTransition(.numericText()).animation(.snappy(duration: 0.2), value: value)
                 stepButton("plus", 1)
             }
@@ -2053,7 +2058,7 @@ struct StatTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-            Text(value).font(Theme.kai(21)).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.6).monospacedDigit()
+            Text(value).font(Theme.kai(20)).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.6).monospacedDigit()
                 .contentTransition(.numericText()).animation(.snappy, value: value)
             if let fraction {
                 GeometryReader { g in

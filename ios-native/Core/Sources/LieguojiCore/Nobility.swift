@@ -28,7 +28,7 @@ public enum Nobility {
         let index = names.firstIndex(of: given)!, family = houses.firstIndex(of: house)!
         let name: String
         if culture == "roman" && gender == 1 { name = p.romanFemale[family].asString + "·" + given }
-        else if ["arab", "greek", "norse", "indian", "mongol", "turkic", "egyptian"].contains(culture) { name = given }
+        else if ["arab", "greek", "norse", "indian", "mongol", "turkic", "egyptian", "tibetan", "aztec", "inca"].contains(culture) { name = given }
         else { name = p.familyFirst.asBool ? house + p.join.asString + given : given + p.join.asString + house }
         let o = JS.object()
         o.cultureId = JS(culture); o.given = JS(given); o.house = JS(house); o.gender = JS(gender); o.name = JS(name); o.mode = JS("culture-generated")

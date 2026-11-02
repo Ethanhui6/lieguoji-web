@@ -7,7 +7,7 @@ import Foundation
 public enum DiplomacyBridge {
     static let f = Native.fr
     static let polities = ["Kingdom", "Empire", "Federation", "Republic", "Tribal", "Theocracy"]
-    static let cultures = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian"]
+    static let cultures = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian", "vietnamese", "tibetan", "hungarian", "polish", "portuguese", "dutch", "aztec", "inca"]
     /// Wars and losses follow-up after a declaration (reconcileWar26 + reconcileLosses), set by the engine.
     public static var reconcileWarPlans: ((JS) -> Void)?
 

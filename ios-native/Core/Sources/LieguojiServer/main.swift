@@ -38,7 +38,8 @@ func pairingCode() -> String {
     return RemoteRoom.personal
 }
 
-func http(_ request: URLRequest) -> (status: Int, body: Data, response: HTTPURLResponse?)? {
+typealias HTTPResult = (status: Int, body: Data, response: HTTPURLResponse?)
+func http(_ request: URLRequest) -> HTTPResult? {
     let done = DispatchSemaphore(value: 0)
     var out: (Int, Data, HTTPURLResponse?)?
     URLSession.shared.dataTask(with: request) { data, response, _ in
@@ -52,6 +53,7 @@ func http(_ request: URLRequest) -> (status: Int, body: Data, response: HTTPURLR
 func relayLoop(code: String) {
     var base: String?
     var announced = false
+    var carried: HTTPResult?
     while true {
         if base == nil {
             for b in relayBases {
@@ -62,9 +64,13 @@ func relayLoop(code: String) {
             print("已连上中转：手机打开游戏会自动接入这台电脑（不需要同一 Wi-Fi，也不用输入任何东西）。")
             announced = false
         }
-        let lan = localAddresses().map { "\($0):\(port)" }.joined(separator: ",")
-        var poll = URLRequest(url: URL(string: base! + "/room/\(code)/next" + (lan.isEmpty ? "" : "?lan=" + lan))!); poll.timeoutInterval = 45
-        guard let r = http(poll) else { base = nil; Thread.sleep(forTimeInterval: 3); continue }
+        let r: HTTPResult
+        if let ready = carried { r = ready; carried = nil } else {
+            let lan = localAddresses().map { "\($0):\(port)" }.joined(separator: ",")
+            var poll = URLRequest(url: URL(string: base! + "/room/\(code)/next" + (lan.isEmpty ? "" : "?lan=" + lan))!); poll.timeoutInterval = 45
+            guard let polled = http(poll) else { base = nil; Thread.sleep(forTimeInterval: 3); continue }
+            r = polled
+        }
         if r.status == 204 { continue }
         guard r.status == 200, r.body.count >= 8, let id = r.response?.value(forHTTPHeaderField: "x-request-id") else { Thread.sleep(forTimeInterval: 2); continue }
         let h = EngineWire.readU32(r.body, at: 0)
@@ -75,10 +81,11 @@ func relayLoop(code: String) {
         let call = o["call"] as? String ?? "", args = o["args"] as? [String: Any] ?? [:]
         let reply = serve(call, args, payload.isEmpty ? nil : payload)
         if call == "open" { print(reply.ok ? "（中转）世界已载入，开始推演" : "（中转）世界载入失败：\(reply.reason)") }
-        var post = URLRequest(url: URL(string: base! + "/room/\(code)/reply/\(id)")!)
+        // The reply's answer carries the next request (one round trip instead of two per call).
+        var post = URLRequest(url: URL(string: base! + "/room/\(code)/reply/\(id)?next=1")!)
         post.httpMethod = "POST"; post.httpBody = EngineWire.reply(reply); post.timeoutInterval = 120
         post.setValue("application/octet-stream", forHTTPHeaderField: "content-type")
-        _ = http(post)
+        if let answer = http(post), answer.status == 200 { carried = answer }
     }
 }
 let code = pairingCode()

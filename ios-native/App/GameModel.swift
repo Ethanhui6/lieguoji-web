@@ -319,6 +319,10 @@ import LieguojiCore
         guard loop == nil, state != nil else { return }
         playing = true
         loop = Task { [weak self] in
+            // Through the relay the next step is already asked for while this one is applied, so
+            // the computer never waits for the phone (a round trip there costs most of a step).
+            var ahead: Task<Data, Never>?
+            defer { if let ahead, let self { Task { let data = await ahead.value; try? await self.apply(stepData: data) } } }
             while !Task.isCancelled {
                 guard let self else { return }
                 let started = Date()
@@ -326,7 +330,18 @@ import LieguojiCore
                 // the state and the panels refresh once, so 2×, 4× and 8× really are faster.
                 // Through the relay each round trip costs time: twice the days per step.
                 let far = self.remoteAddress.map { !$0.contains("局域网") } ?? false
-                do { try await self.step(days: far ? self.speed * 2 : self.speed) }
+                let days = far ? self.speed * 2 : self.speed
+                do {
+                    if far {
+                        let native = self.native
+                        let data = await (ahead ?? Task { await native.step(days: days) }).value
+                        ahead = Task { await native.step(days: days) }
+                        try await self.apply(stepData: data)
+                    } else {
+                        if let pending = ahead { ahead = nil; try await self.apply(stepData: await pending.value) }
+                        try await self.step(days: days)
+                    }
+                }
                 catch { self.failure = error.localizedDescription; self.pause(); return }
                 let budget = self.speed == 1 ? 0.22 : 0.12
                 let rest = budget - Date().timeIntervalSince(started)
@@ -348,8 +363,8 @@ import LieguojiCore
     /// Smoothed time between two applied steps while playing; army icons glide over it.
     private var stepInterval: Double = 0.2
     private var lastApplied: CFTimeInterval?
-    private func step(days: Int) async throws {
-        let data = await native.step(days: days)
+    private func step(days: Int) async throws { try await apply(stepData: await native.step(days: days)) }
+    private func apply(stepData data: Data) async throws {
         if await native.lost { remoteLost(); return }
         if remoteAddress != nil, !(await native.isRemote) { remoteAddress = nil }
         let next = try await Task.detached { try JSONDecoder().decode(GameState.self, from: data) }.value
@@ -360,7 +375,9 @@ import LieguojiCore
         apply(next)
         // Autosave every 90 days (it serializes the whole world; pausing and leaving also save); every
         // 30 with a computer, so its world is never far from the phone's copy.
-        if next.day - lastSavedDay >= (remoteAddress != nil ? 30 : 90) { save(); lastSavedDay = next.day }
+        // Through the relay a save downloads the whole world, so it waits longer there.
+        let far = remoteAddress.map { !$0.contains("局域网") } ?? false
+        if next.day - lastSavedDay >= (far ? 120 : remoteAddress != nil ? 30 : 90) { save(); lastSavedDay = next.day }
     }
 
     private func apply(_ next: GameState) {

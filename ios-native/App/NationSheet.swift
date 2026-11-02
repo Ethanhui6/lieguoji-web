@@ -47,7 +47,7 @@ struct FoldSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Button { withAnimation(.easeInOut(duration: 0.25)) { expanded.toggle() } } label: {
                 HStack {
-                    Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink)
+                    SectionLabel(title, inset: false)
                     Spacer()
                     Image(systemName: expanded ? "chevron.up" : "chevron.down").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink2)
                 }
@@ -184,7 +184,7 @@ struct NationSheet: View {
                                         HStack(spacing: 8) {
                                             RoundedRectangle(cornerRadius: 2).fill(Self.partyColor(parties.firstIndex { $0.name == p.name } ?? 0)).frame(width: 10, height: 10)
                                             Text(p.name).font(Theme.kai(15)).foregroundStyle(Theme.ink)
-                                            if i == 0 { Text("执政").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+                                            if i == 0 { Text("执政").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
                                             Spacer()
                                             Text("\(p.seats) 席").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
                                         }
@@ -373,7 +373,7 @@ struct NationSheet: View {
                         HStack(spacing: 10) {
                             Text(h.name).font(Theme.kai(16)).foregroundStyle(Theme.ink)
                             if let stance = h.stance ?? (h.ruling ? "宗室" : nil) {
-                                Text(stance).font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1)
+                                Text(stance).font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1)
                                     .background(Self.stanceColor(stance), in: Capsule())
                             }
                             Spacer()

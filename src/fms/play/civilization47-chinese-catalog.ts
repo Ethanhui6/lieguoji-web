@@ -3,6 +3,14 @@
  * v1 remains recoverable at f12f16e; v2 is a new replay rule, never an in-place
  * rewrite of an existing journal. See the batch catalogue evidence. */
 export const CHINESE_CATALOG47:Record<string,{roots?:string;ends?:string;male?:string;female?:string;family?:string;states?:string;cities?:string;extraCities:string}>={
+ vietnamese:{extraCities:'京北'},
+ tibetan:{extraCities:'乃东'},
+ hungarian:{extraCities:'切格莱德'},
+ polish:{extraCities:'亚诺夫'},
+ portuguese:{extraCities:'戈伊什'},
+ dutch:{extraCities:'兹沃勒堡'},
+ aztec:{extraCities:'特奥洛扬坎'},
+ inca:{extraCities:'维尔卡班巴'},
  korean:{extraCities:'黄州|安州|定州|吉州'},
  mongol:{extraCities:'库伦|多伦|海拉尔|呼伦'},
  turkic:{extraCities:'伊兹密尔|安塔利亚|锡诺普|萨姆松'},

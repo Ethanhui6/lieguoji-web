@@ -102,6 +102,7 @@ struct RootView: View {
         model.controller.drifting = true
         model.controller.reveal = 0
         model.phase = .title
+        if ShotTour.on { Task { @MainActor in await ShotTour.start(model) } }
         // The title backdrop generates itself: sea, then land from the coast up, then the states.
         Task { @MainActor in
             let start = Date()
@@ -490,6 +491,10 @@ struct GameView: View {
     var body: some View {
         ZStack {
             Color.clear
+        }
+        .task {
+            guard ShotTour.on else { return }
+            await ShotTour.play(model, show: { p in if let p { show(p) } else { panel = nil } }, views: { viewsOpen = $0 })
         }
         .overlay(alignment: .top) {
             VStack(spacing: 8) {
@@ -1270,8 +1275,12 @@ struct NationsSheet: View {
                 LazyVStack(spacing: 14) {
                     SheetHeader(title: "国家", subtitle: "\(state.nations.filter(\.alive).count) 国并立")
                     VStack(spacing: 10) {
-                        TextField("搜索国家", text: $search).textFieldStyle(.roundedBorder)
-                        Toggle("只看现存国家", isOn: $livingOnly).tint(Theme.jade)
+                        HStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink2)
+                            TextField("", text: $search, prompt: Text("搜索国名").foregroundColor(Theme.ink2.opacity(0.6)))
+                        }
+                        .paperField()
+                        ChipPicker(items: [(true, "现存"), (false, "全部（含已亡）")], selection: $livingOnly)
                         if order.isEmpty { Text("没有符合条件的国家").foregroundStyle(Theme.ink2) }
                     }.padding(.horizontal, 16)
                     Group2 {
@@ -1320,9 +1329,7 @@ struct MilitarySheet: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支舰队"))
-                    Picker("军队筛选", selection: $filter) {
-                        Text("全部").tag("all"); Text("交战 / 围城").tag("battle"); Text("玩家军令").tag("manual")
-                    }.pickerStyle(.segmented).padding(.horizontal, 16)
+                    ChipPicker(items: [("all", "全部"), ("battle", "交战围城"), ("manual", "亲自指挥")], selection: $filter).padding(.horizontal, 16)
                     if byNation.isEmpty { Text("暂无符合条件的陆军").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
                     if filter == "all", let fleets = state.fleets, !fleets.isEmpty {
                         SectionLabel("舰队")
@@ -1610,6 +1617,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.22.3", ["界面统一：上两版新加的外交行动、国家搜索、军队筛选、地图编辑器笔刷设置原先用的是系统默认控件（圆角输入框、分段选择、系统按钮、系统开关），现全部换成游戏的纸面控件——纸笺输入框、朱红选签、朱红「遣使」按钮、纸面开关与滑杆。",
+                    "国家页的文化、宗教、征兵驻地、割让州郡改为纸面下拉行（显示当前值，点开选择），不再是系统选择器。",
+                    "外交行动按钮改为「遣使」，成功提示「国书已达」。"]),
         ("0.22.2", ["自然地形的群落颜色与山地明暗改为共享顶点过渡，减少地块碎片感；国界和地形高度不变。",
                     "自绘地图增加强度、柔和度、目标高度与海岸保护，实际参与气候、河流与州郡生成，支持原有撤销重做。",
                     "地形工具换用统一线条图标，主要操作按钮统一图标尺寸与触控高度。信息行在窄屏自动改为上下布局。",

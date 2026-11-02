@@ -522,15 +522,9 @@ struct NationSheet: View {
             .onAppear { destinyValue = info.destiny }
             Text("文化与宗教").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
             Group2 {
-                Picker("文化", selection: $cultureChoice) {
-                    ForEach(Names.cultureIds, id: \.self) { c in Text(Names.culture[c] ?? c).tag(c) }
-                }
-                .tint(Theme.ink).padding(.horizontal, 12).padding(.vertical, 4)
+                PaperMenu(title: "文化", items: Names.cultureIds.map { ($0, Names.culture[$0] ?? $0) }, selection: $cultureChoice)
                 Divider2()
-                Picker("宗教", selection: $religionChoice) {
-                    ForEach(Names.religion.keys.sorted(), id: \.self) { r in Text(Names.religion[r] ?? r).tag(r) }
-                }
-                .tint(Theme.ink).padding(.horizontal, 12).padding(.vertical, 4)
+                PaperMenu(title: "宗教", items: Names.religion.keys.sorted().map { ($0, Names.religion[$0] ?? $0) }, selection: $religionChoice)
                 Divider2()
                 Button {
                     let c = cultureChoice, r = religionChoice
@@ -563,11 +557,7 @@ struct NationSheet: View {
             .padding(.horizontal, 16)
             Text("征募新军").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
             Group2 {
-                Picker("驻地", selection: $levyProvince) {
-                    Text("选择州郡").tag(-1)
-                    ForEach(owned, id: \.self) { p in Text(map.meta.provinces[p].name).tag(p) }
-                }
-                .tint(Theme.ink).padding(.horizontal, 12).padding(.vertical, 4)
+                PaperMenu(title: "驻地", items: [(-1, "选择州郡")] + owned.map { ($0, map.meta.provinces[$0].name) }, selection: $levyProvince)
                 Divider2()
                 Button {
                     let p = levyProvince
@@ -599,10 +589,7 @@ struct NationSheet: View {
                 }
                 .padding(14)
                 Divider2()
-                Toggle(isOn: Binding(get: { info.auto }, set: { on in Task { await run { await model.setAutoDiplomacy(nation, on) } } })) {
-                    Text("自主外交\(info.worldAuto ? "" : "（全局已关闭）")").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                }
-                .tint(Theme.jade).padding(.horizontal, 16).padding(.vertical, 10)
+                PaperSwitch(title: "自主外交\(info.worldAuto ? "" : "（全局已关闭）")", on: Binding(get: { info.auto }, set: { on in Task { await run { await model.setAutoDiplomacy(nation, on) } } }))
             }
             .padding(.horizontal, 16)
             if vassal { Text("附庸国无法自主行使外交权力，需独立").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
@@ -639,11 +626,7 @@ struct NationSheet: View {
                     }
                     if pick == .cede {
                         Divider2()
-                        Picker("州郡", selection: $cedeProvince) {
-                            Text("选择本国州郡").tag(-1)
-                            ForEach(state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }, id: \.self) { p in Text(map.meta.provinces[p].name).tag(p) }
-                        }
-                        .tint(Theme.ink).padding(.horizontal, 12).padding(.vertical, 4)
+                        PaperMenu(title: "州郡", items: [(-1, "选择本国州郡")] + state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }.map { ($0, map.meta.provinces[$0].name) }, selection: $cedeProvince)
                     }
                     Divider2()
                     Button {

@@ -266,17 +266,18 @@ struct EditorView: View {
                 Slider(value: $editor.radius, in: 8...110).tint(Theme.seal)
                 Text("\(Int(editor.radius))").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit().frame(width: 32)
             }
-            DisclosureGroup("笔触与地貌设置") {
-                VStack(spacing: 10) {
-                    HStack { Text("强度"); Slider(value: $editor.strength, in: 0.2...2); Text(String(format: "%.1f×", editor.strength)).monospacedDigit().frame(width: 42) }
-                    HStack { Text("柔和度"); Slider(value: $editor.softness, in: 0.3...2); Text(String(format: "%.1f", editor.softness)).monospacedDigit().frame(width: 42) }
+            DisclosureGroup {
+                VStack(spacing: 8) {
+                    PaperSlider(title: "强度", value: $editor.strength, range: 0.2...2) { String(format: "%.1f×", $0) }
+                    PaperSlider(title: "柔和", value: $editor.softness, range: 0.3...2) { String(format: "%.1f", $0) }
                     if editor.tool.target != nil {
-                        HStack { Text("目标高度"); Slider(value: $editor.targetHeight, in: editor.tool == .sea ? 0...19 : 20...100, step: 1); Text("\(Int(editor.targetHeight))").monospacedDigit().frame(width: 42) }
+                        PaperSlider(title: "目标高", value: $editor.targetHeight, range: editor.tool == .sea ? 0...19 : 20...100, step: 1) { "\(Int($0))" }
                     }
-                    Toggle("保护现有海岸", isOn: $editor.protectCoast)
-                    Text("保护海岸时，陆地不会沉入海中，海洋不会升成陆地。高度将参与气候、河流与州郡生成。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
-                }.font(Theme.kai(14)).tint(Theme.jade).padding(.top, 8)
-            }.font(Theme.kai(15)).tint(Theme.ink)
+                    PaperSwitch(title: "保护现有海岸", on: $editor.protectCoast).padding(.horizontal, -16)
+                    Text("保护海岸时，陆地不会沉入海中，海洋不会升成陆地。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)
+                }.padding(.top, 8)
+            } label: { Text("笔触与地貌").font(Theme.kai(16)).foregroundStyle(Theme.ink) }
+            .tint(Theme.ink2)
             HStack(spacing: 10) {
                 Menu {
                     ForEach(Names.templates.indices, id: \.self) { i in Button("随机" + Names.templates[i].name) { editor.reset(template: Names.templates[i].id, seed: String(UInt32.random(in: 0...UInt32.max))) } }

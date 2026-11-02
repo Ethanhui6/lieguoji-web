@@ -16,30 +16,32 @@ struct DiplomaticActions: View {
               state.nations.indices.contains(source), state.nations.indices.contains(target) else { return false }
         return state.nations[source].alive && state.nations[target].alive
     }
+    private static let actions = [("pact", "互不侵犯"), ("marriage", "联姻"), ("alliance", "同盟"), ("gift", "赠金")]
+    private var note: String {
+        switch action {
+        case "pact": return "条约期内两国不会向彼此宣战。"
+        case "marriage": return "缔结十年王室联姻；资格由外交规则判定。"
+        case "gift": return "从发起国国库转入目标国，金额受国库限制。"
+        default: return "邀请目标国加入同盟，结果由两国关系决定。"
+        }
+    }
     var body: some View {
         Group2 {
             VStack(alignment: .leading, spacing: 12) {
-                Picker("外交行动", selection: $action) {
-                    Text("互不侵犯").tag("pact")
-                    Text("王室联姻").tag("marriage")
-                    Text("缔结同盟").tag("alliance")
-                    Text("赠送金帛").tag("gift")
-                }.tint(Theme.jade)
+                ChipPicker(items: Self.actions, selection: $action)
                 if action == "pact" {
-                    Picker("条约年限", selection: $years) {
-                        Text("五年").tag(5); Text("十年").tag(10); Text("二十年").tag(20)
-                    }.pickerStyle(.segmented)
+                    ChipPicker(items: [(5, "五年"), (10, "十年"), (20, "二十年")], selection: $years)
                 } else if action == "gift" {
-                    HStack {
-                        Text("赠金金额")
-                        TextField("金额", text: $gold).keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing).textFieldStyle(.roundedBorder)
-                        Text("金")
+                    HStack(spacing: 10) {
+                        Text("赠金").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                        TextField("", text: $gold, prompt: Text("100").foregroundColor(Theme.ink2.opacity(0.6)))
+                            .keyboardType(.decimalPad).multilineTextAlignment(.trailing).paperField()
+                        Text("金").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
                     }
                 }
-                Text(action == "pact" ? "条约期内两国 AI 不会向彼此宣战。" : action == "marriage" ? "缔结十年王室联姻条约；资格由外交规则判定。" : action == "gift" ? "从发起国国库转入目标国，金额受实际国库限制。" : "邀请目标国加入同盟，结果由当前外交关系决定。")
-                    .font(Theme.kai(14)).foregroundStyle(Theme.ink2)
-                Button {
+                Text(note).font(Theme.kai(13)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                SealButton(title: sending ? "正在传达…" : "遣使", busy: sending,
+                           disabled: !valid || (action == "gift" && !(Double(gold).map { $0.isFinite && $0 > 0 } ?? false))) {
                     let a = source, b = target, selected = action, duration = years, amount = Double(gold) ?? 0
                     sending = true
                     Task { @MainActor in
@@ -49,20 +51,14 @@ struct DiplomaticActions: View {
                         case "gift": error = await model.gift(a, to: b, gold: amount)
                         default: error = await model.treaty(a, b, years: selected == "marriage" ? 10 : duration, kind: selected)
                         }
-                        feedback = error ?? "外交行动已生效"
+                        feedback = error ?? "国书已达"
                         sending = false
                         say(feedback)
                     }
-                } label: {
-                    HStack {
-                        if sending { ProgressView() }
-                        Text(sending ? "正在传达…" : "确认外交行动")
-                    }.frame(maxWidth: .infinity, minHeight: 44)
                 }
-                .buttonStyle(.borderedProminent).tint(Theme.jade)
-                .disabled(sending || !valid || (action == "gift" && !(Double(gold).map { $0.isFinite && $0 > 0 } ?? false)))
-                if !feedback.isEmpty { Text(feedback).font(Theme.kai(14)).foregroundStyle(Theme.ink).accessibilityLabel("执行结果：" + feedback) }
-            }.padding(16).disabled(sending)
+                if !feedback.isEmpty { Text(feedback).font(Theme.kai(13)).foregroundStyle(Theme.ink).accessibilityLabel("执行结果：" + feedback) }
+            }
+            .padding(14)
         }
         .onChange(of: source) { _, _ in feedback = "" }
         .onChange(of: target) { _, _ in feedback = "" }

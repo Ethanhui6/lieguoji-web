@@ -413,3 +413,77 @@ struct SectionLabel: View {
         .padding(.horizontal, inset ? 22 : 0)
     }
 }
+
+// MARK: paper controls — every panel uses these instead of the system controls, so inputs,
+// choices and confirmations look the same everywhere.
+
+extension View {
+    /// A paper input field: a cream capsule with a fine ink rule.
+    func paperField(width: CGFloat? = nil) -> some View {
+        self.font(Theme.kai(17)).foregroundStyle(Theme.ink).tint(Theme.seal)
+            .padding(.horizontal, 14).frame(width: width, height: 40)
+            .frame(maxWidth: width == nil ? .infinity : nil)
+            .background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+    }
+}
+
+/// A labelled choice from a long list (cultures, provinces): the row shows the current value and
+/// opens a menu, in place of the system picker.
+struct PaperMenu<T: Hashable>: View {
+    let title: String
+    let items: [(T, String)]
+    @Binding var selection: T
+    var body: some View {
+        Menu {
+            ForEach(items.indices, id: \.self) { i in
+                Button { selection = items[i].0 } label: {
+                    if items[i].0 == selection { Label(items[i].1, systemImage: "checkmark") } else { Text(items[i].1) }
+                }
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                Spacer(minLength: 12)
+                Text(items.first { $0.0 == selection }?.1 ?? "请选择").font(Theme.kai(17)).foregroundStyle(Theme.ink).lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
+            }
+            .padding(.horizontal, 16).frame(minHeight: 46).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// The confirming action of a panel: a full-width seal-red plate.
+struct SealButton: View {
+    let title: String
+    var busy = false
+    var disabled = false
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                if busy { ProgressView().tint(Theme.paper2) }
+                Text(title).font(Theme.kai(18))
+            }
+            .foregroundStyle(Theme.paper2).frame(maxWidth: .infinity).frame(height: 48)
+            .background(Theme.seal.opacity(disabled ? 0.35 : 1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(PressStyle()).disabled(disabled || busy)
+    }
+}
+
+/// Label, seal-red slider and value on one line.
+struct PaperSlider: View {
+    let title: String
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    var step: Double? = nil
+    let format: (Double) -> String
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 68, alignment: .leading)
+            if let step { Slider(value: $value, in: range, step: step).tint(Theme.seal) } else { Slider(value: $value, in: range).tint(Theme.seal) }
+            Text(format(value)).font(Theme.kai(16)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 46, alignment: .trailing)
+        }
+    }
+}

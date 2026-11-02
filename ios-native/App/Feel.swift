@@ -79,40 +79,54 @@ struct RemoteSettings: View {
     @State private var address = UserDefaults.standard.string(forKey: "remote.address") ?? ""
     @State private var busy = false
     @State private var message = ""
+    @State private var advanced = false
+    /// 傻瓜式: the phone finds the player's computer by itself; nothing to type. Only a status, a
+    /// "find now" button and the on/off switch show; a manual address hides under 高级.
     var body: some View {
         Group2 {
-            PaperSwitch(title: "自动接入我的电脑（开机即用，无需设置）", on: Binding(get: { model.autoRemote }, set: { model.autoRemote = $0 }))
-            Divider2()
             HStack(spacing: 10) {
-                Circle().fill(model.remoteAddress != nil ? Theme.jade : Theme.ink.opacity(0.25)).frame(width: 9, height: 9)
-                Text(model.remoteAddress.map { "电脑计算中 · \($0)" } ?? "本机计算").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                Circle().fill(model.remoteAddress != nil ? Theme.jade : model.autoRemote ? Color.orange.opacity(0.7) : Theme.ink.opacity(0.25)).frame(width: 9, height: 9)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.remoteAddress != nil ? "已连接你的电脑" : model.autoRemote ? "正在等你的电脑上线" : "本机计算").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                    Text(model.remoteAddress ?? (model.autoRemote ? "电脑开着就会自动接上，不用填写任何东西" : "推演由手机完成")).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                }
                 Spacer()
                 if busy { ProgressView().tint(Theme.seal) }
+                else if model.remoteAddress == nil && model.autoRemote {
+                    Button("立即查找") {
+                        busy = true; message = ""
+                        Task { let ok = await model.findComputerNow(); busy = false; message = ok ? "" : "没找到电脑：请确认电脑上的「列国纪远程计算」在运行。"; GameFeel.shared.notify(ok ? .success : .warning) }
+                    }
+                    .font(Theme.kai(15)).foregroundStyle(Theme.seal)
+                } else if model.remoteAddress != nil {
+                    Button("断开") { busy = true; Task { await model.disconnectRemote(); busy = false } }.font(Theme.kai(15)).foregroundStyle(Theme.seal)
+                }
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
+            if !message.isEmpty { Text(message).font(Theme.kai(13)).foregroundStyle(Theme.seal).padding(.horizontal, 16).padding(.bottom, 10).frame(maxWidth: .infinity, alignment: .leading) }
             Divider2()
-            if model.remoteAddress == nil {
+            PaperSwitch(title: "用我的电脑计算（自动）", on: Binding(get: { model.autoRemote }, set: { model.autoRemote = $0 }))
+            Divider2()
+            Text("只需在电脑上运行一次「列国纪远程计算」（之后开机自动运行），手机进入世界就会自动接上：同一 Wi-Fi 直连，在外面经中转。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                .padding(.horizontal, 16).padding(.vertical, 10).fixedSize(horizontal: false, vertical: true)
+            Divider2()
+            Button { withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { advanced.toggle() } } label: {
+                HStack { Text("高级：手动连接（一般不需要）").font(Theme.kai(14)).foregroundStyle(Theme.ink2); Spacer(); Image(systemName: advanced ? "chevron.up" : "chevron.down").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.ink2) }
+                    .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if advanced && model.remoteAddress == nil {
                 HStack {
-                    TextField("", text: $address, prompt: Text("配对码（如 ABCD-2345）或局域网地址").foregroundColor(Theme.ink2.opacity(0.6)))
-                        .font(Theme.kai(16)).keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.characters)
+                    TextField("", text: $address, prompt: Text("局域网地址或配对码").foregroundColor(Theme.ink2.opacity(0.6)))
+                        .font(Theme.kai(15)).keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.never)
                     Button("连接") {
                         busy = true; message = ""
-                        Task { let error = await model.connectRemote(address); busy = false; message = error ?? "已连接，推演改由电脑完成"; GameFeel.shared.notify(error == nil ? .success : .error) }
+                        Task { let error = await model.connectRemote(address); busy = false; message = error ?? ""; GameFeel.shared.notify(error == nil ? .success : .error) }
                     }
-                    .font(Theme.kai(16)).foregroundStyle(Theme.seal).disabled(busy || address.isEmpty)
+                    .font(Theme.kai(15)).foregroundStyle(Theme.seal).disabled(busy || address.isEmpty)
                 }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-            } else {
-                Button {
-                    busy = true
-                    Task { await model.disconnectRemote(); busy = false; message = "已切回本机计算" }
-                } label: { Text("断开，回到本机计算").font(Theme.kai(16)).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
-                .buttonStyle(.plain).disabled(busy)
+                .padding(.horizontal, 16).padding(.bottom, 10)
             }
-            if !message.isEmpty { Text(message).font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10).frame(maxWidth: .infinity, alignment: .leading) }
-            Divider2()
-            Text("在电脑上运行「列国纪远程计算」LieguojiServer.exe（Windows），窗口会显示配对码。填入配对码即可连接，不需要同一 Wi-Fi，用流量在外面也行；以后进入世界会自动接入。同一 Wi-Fi 下也可填窗口里的局域网地址直连（更快）。断开时世界搬回手机继续。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
-                .padding(.horizontal, 16).padding(.vertical, 10).fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 16)
     }

@@ -31,6 +31,13 @@ import LieguojiCore
         set { UserDefaults.standard.set(newValue, forKey: "remote.autoAll"); if newValue { autoConnect() } }
     }
     private var autoTask: Task<Void, Never>?
+    /// 立即查找: look for the computer now (instead of the next 90-second check).
+    func findComputerNow() async -> Bool {
+        guard remoteAddress == nil else { return true }
+        guard let a = await native.connectAuto() else { return false }
+        remoteAddress = a; notice = "已接入你的电脑（\(a)）"
+        return true
+    }
     func autoConnect() {
         guard autoTask == nil else { return }
         autoTask = Task { [weak self] in

@@ -119,7 +119,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let loader = MTKTextureLoader(device: device)
         for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Banner", "Fleet", "Port"] {
             let probe = role == "Banner" || role == "Fleet" || role == "Port" ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
-            if let image = UnitArt.image(probe), let texture = try? loader.newTexture(cgImage: image, options: [.SRGB: false, .generateMipmaps: true]) { unitTextures[role] = texture }
+            guard let image = UnitArt.image(probe) else { continue }
+            if let texture = try? loader.newTexture(cgImage: image, options: [.SRGB: false, .generateMipmaps: true]) { unitTextures[role] = texture }
+            else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
         }
         if let start = map.meta.economy {
             setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
@@ -232,6 +234,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var terrainBase: [Float]?
 
     /// tier: 1–3 figures by strength; banner: 0 none, 1 a general's, 2 the ruler's (御驾亲征).
+    /// The bitmap copied straight into a texture (if the loader refuses it).
+    static func texture(_ device: MTLDevice, _ image: CGImage) -> MTLTexture? {
+        let w = image.width, h = image.height
+        var bytes = [UInt8](repeating: 0, count: w * h * 4)
+        guard let ctx = CGContext(data: &bytes, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+        let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: w, height: h, mipmapped: false)
+        guard let t = device.makeTexture(descriptor: d) else { return nil }
+        t.replace(region: MTLRegionMake2D(0, 0, w, h), mipmapLevel: 0, withBytes: bytes, bytesPerRow: w * 4)
+        return t
+    }
     struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = ""; var tier = 1; var banner = 0 }
     private var unitTextures: [String: MTLTexture] = [:]
     private var route: (buffer: MTLBuffer, count: Int)?

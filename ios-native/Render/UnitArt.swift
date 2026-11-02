@@ -20,15 +20,15 @@ enum UnitArt {
     static func image(_ unit: String) -> CGImage? {
         let key = role(unit)
         if let c = cache[key] { return c }
-        let s = CGFloat(size)
-        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = false
-        let img = UIGraphicsImageRenderer(size: CGSize(width: s, height: s), format: format).image { ctx in
-            let g = ctx.cgContext
-            g.setFillColor(UIColor.white.cgColor); g.setStrokeColor(UIColor.white.cgColor)
-            g.setLineCap(.round); g.setLineJoin(.round)
-            draw(key, g)
-        }
-        guard let cg = img.cgImage else { return nil }
+        // A plain 8-bit RGBA bitmap (the image renderer may pick a wide-colour format that the
+        // Metal texture loader refuses, and then no army was drawn at all).
+        guard let g = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: size * 4,
+                                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        g.translateBy(x: 0, y: CGFloat(size)); g.scaleBy(x: 1, y: -1)   // drawn top-down, like UIKit
+        g.setFillColor(red: 1, green: 1, blue: 1, alpha: 1); g.setStrokeColor(red: 1, green: 1, blue: 1, alpha: 1)
+        g.setLineCap(.round); g.setLineJoin(.round)
+        draw(key, g)
+        guard let cg = g.makeImage() else { return nil }
         cache[key] = cg
         return cg
     }

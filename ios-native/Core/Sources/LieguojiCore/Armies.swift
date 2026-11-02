@@ -55,7 +55,13 @@ public enum Armies {
         var id: String
         repeat { id = "force-\(t.nextArmyId.asInt)"; t.nextArmyId = JS(t.nextArmyId.asNumber + 1) } while t.forces.has(id)
         let p = r.world.provinces.asArray.first { $0.id.asString == home }!, cell = homeCells[home]!
-        let troops = strength(r, home), unit = Muster.units[(t.nextArmyId.asInt - 2) % Muster.units.count]
+        let troops = strength(r, home)
+        var unit = Muster.units[(t.nextArmyId.asInt - 2) % Muster.units.count]
+        // App rules: the state's culture decides its arms, unique troops included.
+        if UnitKinds.enabled {
+            let k = UnitKinds.pick(culture: r.civilization.nations[nation].cultureId.optionalString ?? "", id: id)
+            unit = Muster.Unit(key: k.key, name: k.name)
+        }
         let name = r.world.cities.asArray.first { $0.provinceId.asString == home }?.name.asString ?? p.name.asString
         let a = JS.object()
         a.id = JS(id); a.name = JS(name + (kind == "emergency" ? "动员" : "") + unit.name); a.nationId = JS(nation); a.provinceId = JS(home); a.originId = JS(home)

@@ -598,7 +598,8 @@ import LieguojiCore
         guard let state else { controller.armies = []; return }
         let selected = controller.marchingArmy ?? controller.selectedArmy
         var sprites: [MapRenderer.ArmySprite] = state.armies.enumerated().map { i, a in
-            MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id)
+            MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id,
+                                   tier: a.troops < 2000 ? 1 : a.troops < 6000 ? 2 : 3, banner: a.banner == "ruler" ? 2 : a.banner == "general" ? 1 : 0)
         }
         // Harbour anchors in the occupier's colour (not tappable; the province panel lists them), then fleets.
         let choosing = controller.marchingFleet ?? controller.selectedFleet
@@ -613,8 +614,9 @@ import LieguojiCore
         // later one moving, a few passes. Display only; an army in battle keeps its spot facing the foe.
         Self.offset(&sprites)
         var texts = [String: String]()
-        for a in state.armies { texts[a.id] = Names.wan(a.troops) }
-        for f in state.fleets ?? [] { texts[f.id] = "\(f.ships)船" }
+        // No numbers on the map (strength shows as one to three figures); a banner carries its
+        // commander's mark when the map is close enough to read it.
+        for a in state.armies { if let mark = a.bannerMark, !mark.isEmpty { texts[a.id] = a.banner == "ruler" ? "御" : mark } }
         controller.troopTexts = texts
         controller.armies = sprites
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {

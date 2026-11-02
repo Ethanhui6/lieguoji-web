@@ -135,6 +135,26 @@ extension NativeEngine {
             let mx = (ax + bx) / 2, my = (ay + by) / 2
             aim(c.a.asString, mx, my); aim(c.b.asString, mx, my)
         }
+        // 帅旗 (app rules): in a state at war its largest army carries the commander's banner — the war
+        // commander or the marshal, or else the ruler in person (御驾亲征), the leader its battles use.
+        var banners = [String: (kind: String, mark: String, name: String)]()
+        if !r.regimes.isNull {
+            func label(_ p: JS) -> (mark: String, name: String) {
+                let first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? "", culture = p.cultureName.optionalString ?? ""
+                let familyFirst = Nobility.cultures[culture].familyFirst.optionalBool ?? (culture == "chinese" || culture == "japanese")
+                return (String((last.isEmpty ? first : last).prefix(1)), familyFirst ? last + first : last.isEmpty ? first : first + "·" + last)
+            }
+            for n in nations {
+                let id = n.id.asString, wars = Offices.wars(r, id)
+                guard !wars.isEmpty, let lead = w.armies.asArray.filter({ $0.nationId.asString == id && $0.status.asString != "destroyed" }).max(by: { $0.troops.asNumber < $1.troops.asNumber }) else { continue }
+                var general: JS?
+                if !r.offices47.isNull {
+                    general = Offices.holder(r, id, "WarCommander", wars[0].scopeId) ?? Offices.holder(r, id, "Marshal", Offices.stateId(r, id))
+                }
+                if let g = general { let l = label(g); banners[lead.id.asString] = ("general", l.mark, l.name) }
+                else if !r.people.nations[id].leaderId.isNull, let p = People.person(r, r.people.nations[id].leaderId.asInt) { let l = label(p); banners[lead.id.asString] = ("ruler", l.mark, l.name) }
+            }
+        }
         o.armies = .array(space.map { v in
             let a = v.army, id = a.id.asString, moving = v.travel.status.asString == "moving"
             var at: (Double, Double)
@@ -152,6 +172,7 @@ extension NativeEngine {
             x.status = a.status; x.travel = v.travel.status; x.province = JS(v.province.map { pi[$0.id.asString]! } ?? -1)
             x.supplies = JS(a.supplies.asNumber.rounded()); x.morale = JS(a.morale.asNumber.rounded()); x.x = JS(at.0 / sc); x.y = JS(at.1 / sc)
             x.manual = JS(r.voyages.manualArmies.asArray.contains { $0.asString == id })
+            if let b = banners[id] { x.banner = JS(b.kind); x.bannerMark = JS(b.mark); x.commander = JS(b.name) }
             // Destination province of a march (last travel node), for the army panel.
             var dest = -1
             if moving, let bridge, let last = v.travel.nodes.asArray.last, let cell = bridge.graph.ids.firstIndex(of: Int32(last.asInt)) {

@@ -178,7 +178,9 @@ public enum RunWindow {
                                           let c = CombatReader.inputs(r, armies[force.id]!, provinceIndex(bridge, force.travel))
                                           return Volley.ArmyInput(efficiency: Efficiency.compute(c.input), damageToArmy: c.damageToArmy, multiplier: Double(c.multiplier))
                                       },
-                                      navy: { force in Naval.combatInput(r, r.world.nations[force.nation].id.asString) })
+                                      navy: { force in Naval.combatInput(r, r.world.nations[force.nation].id.asString) },
+                                      // App rules: arms counter one another (spears break horse, horse rides down archers…).
+                                      counter: UnitKinds.enabled ? { a, b in UnitKinds.counter(r.units[a.id].optionalString ?? "", r.units[b.id].optionalString ?? "") } : nil)
         let armyKeys = Dictionary(uniqueKeysWithValues: forces.filter { $0.kind == .army }.map { ($0.key, $0.id) })
         // creditArmyKills47.
         if !r.originalArmy47.isNull && !r.originalArmy47.kills.isNull {

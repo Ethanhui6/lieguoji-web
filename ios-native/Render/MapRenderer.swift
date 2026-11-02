@@ -115,9 +115,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         icons = buffer(MapLayers.cityIcons(map).vertices, stride: 6)
         // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
         // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
+        // The figures (UnitArt), one texture per role, plus the commander's banner.
         let loader = MTKTextureLoader(device: device)
-        for unit in ["Infantry", "Archer", "Shield", "Cavalry", "Elite", "Fleet", "Port"] {
-            if let url = unitURL(unit), let texture = try? loader.newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true]) { unitTextures[unit] = texture }
+        for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Banner", "Fleet", "Port"] {
+            let probe = role == "Banner" || role == "Fleet" || role == "Port" ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
+            if let image = UnitArt.image(probe), let texture = try? loader.newTexture(cgImage: image, options: [.SRGB: false, .generateMipmaps: true]) { unitTextures[role] = texture }
         }
         if let start = map.meta.economy {
             setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
@@ -229,7 +231,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var shade: [Float] = []
     private var terrainBase: [Float]?
 
-    struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = "" }
+    /// tier: 1–3 figures by strength; banner: 0 none, 1 a general's, 2 the ruler's (御驾亲征).
+    struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = ""; var tier = 1; var banner = 0 }
     private var unitTextures: [String: MTLTexture] = [:]
     private var route: (buffer: MTLBuffer, count: Int)?
     private var armySprites: [ArmySprite] = []
@@ -301,20 +304,29 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         do {
             let sprites = armySprites
             let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0))
-            var byUnit: [String: [Float]] = [:]
-            for a in sprites {
-                let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
-                let size = iconSize * (a.unit == "Elite" ? 1.5 : a.unit == "Port" ? 0.7 : 1) * (a.selected ? 1.35 : 1)
-                let at = displayed(a)
+            var byRole: [String: [Float]] = [:]
+            func quad(_ role: String, _ at: SIMD2<Float>, _ c: RGB, _ size: Float, _ sx: Float, _ sy: Float) {
                 for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
-                    byUnit[a.unit, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, 1, size, at.x, at.y])
+                    byRole[role, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, 1, size, at.x, at.y, sx, sy])
                 }
             }
-            // A fixed draw order (by unit kind): a fresh dictionary's order changed every rebuild, so
-            // overlapping icons swapped in front of each other and flickered.
-            units = byUnit.keys.sorted().compactMap { unit -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
-                guard let data = byUnit[unit], let texture = unitTextures[unit], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
-                return (texture: texture, buffer: b, count: data.count / 11)
+            for a in sprites {
+                let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
+                let role = UnitArt.role(a.unit), at = displayed(a)
+                let size = iconSize * (a.unit == "Port" ? 0.7 : 1) * (a.selected ? 1.3 : 1)
+                // The banner stands behind the figures: the state's colour, gold for the ruler himself.
+                if a.banner > 0 { quad("Banner", at, a.banner == 2 ? RGB(0.93, 0.74, 0.25) : c, size * 1.15, -0.42, -0.62) }
+                // One to three figures for the army's strength, in a loose rank.
+                let n = a.army <= -100_000 || role == "Fleet" ? 1 : max(1, min(3, a.tier))
+                let gap: Float = UnitArt.wide(a.unit) ? 0.34 : 0.26, scale: Float = n == 1 ? 1 : 0.8
+                let ranks: [(Float, Float)] = n == 1 ? [(0, 0)] : n == 2 ? [(-gap, -0.05), (gap, 0.05)] : [(0, -0.12), (-gap * 1.2, 0.08), (gap * 1.2, 0.08)]
+                for (sx, sy) in ranks { quad(role, at, c, size * scale, sx, sy) }
+            }
+            // A fixed draw order (banners first, then by role): a fresh dictionary's order changed every
+            // rebuild, so overlapping icons swapped in front of each other and flickered.
+            units = byRole.keys.sorted { ($0 == "Banner" ? "" : $0) < ($1 == "Banner" ? "" : $1) }.compactMap { role -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
+                guard let data = byRole[role], let texture = unitTextures[role], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
+                return (texture: texture, buffer: b, count: data.count / 13)
             }
         }
     }
@@ -438,28 +450,29 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         const float2 corners[6] = { float2(0, 0), float2(1, 0), float2(0, 1), float2(0, 1), float2(1, 0), float2(1, 1) };
         QuadOut o; float2 c = corners[id]; o.position = clip(q.origin + c * q.size, u, float2(0.0)); o.uv = c; return o;
     }
-    struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; packed_float2 target; };
+    struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; packed_float2 target; packed_float2 shift; };
     struct SpriteOut { float4 position [[position]]; float2 uv; float4 tint; };
     vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]]) {
         SpriteVertex s = v[id];
-        // A coin at least 20 points across, so whose army it is reads at every zoom.
-        float pixels = max(s.size * u.scale, 20.0);
-        SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, float2(s.corner) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
+        // Figures at least 18 points tall, so whose army it is reads at every zoom; the shift places
+        // each figure of a rank (and the banner) around the army's point.
+        float pixels = max(s.size * u.scale, 18.0);
+        SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, (float2(s.corner) + float2(s.shift)) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
     }
-    // A unit coin: the state's colour, an ink rim and the unit glyph in paper white.
+    // A figure: the state's colour, lit from above, with an ink outline (the silhouette dilated by
+    // about a point on screen) so it stands out on any land colour.
     fragment float4 spriteFragment(SpriteOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
-        float2 p = in.uv - 0.5;
-        float d = length(p) * 2.0;
-        float aa = max(fwidth(d), 0.02);
-        float edge = 1.0 - smoothstep(1.0 - aa, 1.0, d);
-        if (edge <= 0.0) discard_fragment();
-        float rim = smoothstep(0.78 - aa, 0.78 + aa, d);
-        float2 g = p * 1.6 + 0.5;
-        float glyph = (g.x >= 0.0 && g.x <= 1.0 && g.y >= 0.0 && g.y <= 1.0) ? t.sample(s, g).a : 0.0;
-        float3 fill = in.tint.rgb * 0.92;
-        float3 c = mix(fill, float3(0.985, 0.965, 0.91), glyph * (1.0 - rim));
-        c = mix(c, float3(0.15, 0.11, 0.08), rim);
-        return float4(c, edge * in.tint.a);
+        float a = t.sample(s, in.uv).a;
+        float2 w = fwidth(in.uv) * 1.3;
+        float n = a;
+        n = max(n, t.sample(s, in.uv + float2(w.x, 0)).a); n = max(n, t.sample(s, in.uv - float2(w.x, 0)).a);
+        n = max(n, t.sample(s, in.uv + float2(0, w.y)).a); n = max(n, t.sample(s, in.uv - float2(0, w.y)).a);
+        n = max(n, t.sample(s, in.uv + w * 0.7).a); n = max(n, t.sample(s, in.uv - w * 0.7).a);
+        n = max(n, t.sample(s, in.uv + float2(w.x, -w.y) * 0.7).a); n = max(n, t.sample(s, in.uv + float2(-w.x, w.y) * 0.7).a);
+        if (n <= 0.01) discard_fragment();
+        float3 fill = in.tint.rgb * (1.08 - 0.22 * in.uv.y);
+        float3 c = mix(float3(0.13, 0.1, 0.07), fill, smoothstep(0.35, 0.85, a));
+        return float4(c, n * in.tint.a);
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         return float4(t.sample(s, in.uv).rgb, 1.0);

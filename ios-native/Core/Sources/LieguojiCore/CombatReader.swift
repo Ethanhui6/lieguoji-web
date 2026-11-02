@@ -8,7 +8,11 @@ public enum CombatReader {
     static let f = Native.fr
     /// Owner province index of each outside border cell of every province (province-border54).
     public static var borders = [[Int]]()
-    static let unitSpeeds = ["Infantry": 1.0, "Archer": 0.95, "Shield": 0.9, "Cavalry": 1.2, "Elite": 1.05]
+    static let unitSpeeds: [String: Double] = {
+        var s = ["Infantry": 1.0, "Archer": 0.95, "Shield": 0.9, "Cavalry": 1.2, "Elite": 1.05]
+        for k in UnitKinds.kinds where s[k.key] == nil { s[k.key] = k.speed }
+        return s
+    }()
     static let polityCombat: [String: (attack: Double, defense: Double)] = [
         "Kingdom": (1, Native.fr(1.05)), "Empire": (Native.fr(1.05), 1), "Federation": (1, 1), "Republic": (1, 1), "Tribal": (Native.fr(1.05), Native.fr(0.95)), "Theocracy": (1, 1),
     ]

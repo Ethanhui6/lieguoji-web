@@ -240,7 +240,8 @@ public enum Volley {
 
     /// forceVolley47: the hits of every due force, in key order.
     public static func hits(forces: [MovingForce], contacts: [ForceContact], due: [String], enemy: (Int, Int) -> Bool, onLand: (MovingForce) -> Bool,
-                            elite: (MovingForce) -> Bool, army: (MovingForce) -> ArmyInput, navy: (MovingForce) -> NavalInput) -> [Hit] {
+                            elite: (MovingForce) -> Bool, army: (MovingForce) -> ArmyInput, navy: (MovingForce) -> NavalInput,
+                            counter: ((MovingForce, MovingForce) -> Double)? = nil) -> [Hit] {
         var byKey = [String: MovingForce](), edges = [String: Set<String>]()
         for f in forces { byKey[f.key] = f }
         for c in contacts { edges[c.a, default: []].insert(c.b); edges[c.b, default: []].insert(c.a) }
@@ -253,7 +254,10 @@ public enum Volley {
                 let targets = enemies.filter { $0.kind == .army }
                 if targets.isEmpty { continue }
                 let v = army(a)
-                for b in targets { out.append(Hit(attacker: id, victim: b.key, damage: armyHit(v.efficiency, targets.count, elite(b), v.damageToArmy, v.multiplier))) }
+                for b in targets {
+                    let hit = armyHit(v.efficiency, targets.count, elite(b), v.damageToArmy, v.multiplier)
+                    out.append(Hit(attacker: id, victim: b.key, damage: counter.map { hit * $0(a, b) } ?? hit))
+                }
             } else {
                 let factor = navalFactor(navy(a))
                 for kind in [MovingForce.Kind.fleet, .army] {

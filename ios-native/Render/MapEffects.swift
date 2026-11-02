@@ -442,13 +442,13 @@ final class EffectsView: UIView {
         return root
     }
 
-    /// The original's unit mark (World/unit-*.png, grey on clear) tinted in a state's colour.
+    /// The army's figure (UnitArt) tinted in a state's colour.
     private static var unitImages = [String: CGImage]()
     static func unitImage(_ unit: String, tint: UIColor) -> CGImage? {
         let key = unit + tint.description
         if let c = unitImages[key] { return c }
-        guard let url = Bundle.main.url(forResource: "unit-" + (unit.isEmpty ? "Infantry" : unit), withExtension: "png", subdirectory: "World"),
-              let img = UIImage(contentsOfFile: url.path) else { return nil }
+        guard let cg = UnitArt.image(unit.isEmpty ? "Infantry" : unit) else { return nil }
+        let img = UIImage(cgImage: cg)
         let out = UIGraphicsImageRenderer(size: CGSize(width: 64, height: 64)).image { _ in
             img.withTintColor(tint, renderingMode: .alwaysOriginal).draw(in: CGRect(x: 0, y: 0, width: 64, height: 64))
         }.cgImage

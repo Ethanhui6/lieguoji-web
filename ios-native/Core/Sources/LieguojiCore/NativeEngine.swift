@@ -24,6 +24,7 @@ public final class NativeEngine {
         let o = try JS.parse(data)
         if !o.format.isNull && o.format.asString != Self.saveFormat { throw NativeEngineError.message("这不是列国纪存档。") }
         run = o.run; statics = o.statics
+        UnitKinds.enabled = false  // until enableAppRules: a plain run keeps the original's five units
         try install()
     }
     /// A run whose statics are already installed (module tests).

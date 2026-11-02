@@ -472,6 +472,18 @@ extension NativeEngine {
     public func enableAppRules() {
         Regimes.enable(run)
         let r = run
+        UnitKinds.enabled = true
+        // Once per world: the opening armies take their culture's arms (renamed to match).
+        if !r.regimes.isNull && !r.regimes.armsByCulture.isTruthy {
+            r.regimes.armsByCulture = JS(true)
+            for a in r.world.armies.asArray {
+                let id = a.id.asString, old = UnitKinds.name(r.units[id].optionalString ?? "Infantry")
+                let k = UnitKinds.pick(culture: r.civilization.nations[a.nationId.asString].cultureId.optionalString ?? "", id: id)
+                r.units[id] = JS(k.key)
+                let name = a.name.asString
+                if name.hasSuffix(old) { a.name = JS(String(name.dropLast(old.count)) + k.name) }
+            }
+        }
         DeclarationEngine.nationIds = r.world.nations.asArray.map(\.id.asString)
         DeclarationEngine.temper = { id in Regimes.temper(r, id) }
         DeclarationEngine.pact = { a, b in
@@ -567,7 +579,7 @@ extension NativeEngine {
             let force = r.tactics.forces[armyId]
             if !force.isNull && (force.fullStrength.optionalNumber ?? 0) < Double(t) { force.fullStrength = JS(t) }
         }
-        if let unit, ["Infantry", "Archer", "Shield", "Cavalry", "Elite"].contains(unit) { r.units[armyId] = JS(unit) }
+        if let unit, UnitKinds.byKey[unit] != nil { r.units[armyId] = JS(unit) }
         if let morale { a.morale = JS(min(100, max(0, morale.rounded()))) }
         return (true, "\(a.name.asString)已整编。")
     }

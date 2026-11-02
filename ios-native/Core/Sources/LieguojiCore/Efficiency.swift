@@ -16,7 +16,16 @@ public enum Efficiency {
     }
 
     struct Table { let power: Double; let attack: [Double]; let defense: [Double]; let mountainAttack: Double; let mountainDefense: Double }
-    static let tables: [String: Table] = [
+    /// The original's units, then the app's kinds on the terrain table of the unit they borrow.
+    static let tables: [String: Table] = {
+        var t = originalTables
+        for k in UnitKinds.kinds where t[k.key] == nil {
+            guard let b = originalTables[k.base] else { continue }
+            t[k.key] = Table(power: Native.fr(k.power), attack: b.attack, defense: b.defense, mountainAttack: b.mountainAttack, mountainDefense: b.mountainDefense)
+        }
+        return t
+    }()
+    static let originalTables: [String: Table] = [
         "Infantry": Table(power: 1, attack: [1, 1, 1, 1.05, 1.05, 1, 1, 1, 1, 1, 1, 1, 1], defense: [1, 1, 1, 1, 1, 1.05, 1.05, 1, 1, 1, 1, 1, 1.05], mountainAttack: 1, mountainDefense: 1),
         "Archer": Table(power: 0.95, attack: [1, 1, 1, 1, 1, 1.1, 1.1, 1.15, 1.15, 1, 1, 1, 1], defense: [1, 1, 1, 1, 1, 1.15, 1.15, 1.2, 1.2, 1, 1, 1, 1], mountainAttack: 1.1, mountainDefense: 1.2),
         "Shield": Table(power: 1.05, attack: [1, 1, 1, 0.95, 0.95, 1, 1, 1, 1, 1, 1, 1, 1], defense: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1.15, 1.15, 1.15, 1.2], mountainAttack: 1.05, mountainDefense: 1.3),

@@ -4,7 +4,7 @@ import Foundation
 /// safe home provinces up to two thirds of the legal land, idle emergency armies disbanded in
 /// peace, and the destiny/ruler emergency mobilization in war with its yearly and five-year cooldowns.
 public enum Muster {
-    public struct Unit: Codable, Sendable { public let key: String, name: String }
+    public struct Unit: Codable, Sendable { public let key: String, name: String; public init(key: String, name: String) { self.key = key; self.name = name } }
     /// military-profile unitProfiles, cycled by army number.
     public static let units = [Unit(key: "Infantry", name: "步兵"), Unit(key: "Archer", name: "弓兵"), Unit(key: "Shield", name: "盾兵"), Unit(key: "Cavalry", name: "骑兵"), Unit(key: "Elite", name: "精锐")]
 

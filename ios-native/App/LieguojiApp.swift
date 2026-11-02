@@ -44,7 +44,7 @@ enum Names {
                            "hinduism": "印度教", "zoroastrian": "祆教", "grecoRoman": "希腊罗马多神信仰", "norse": "北欧传统信仰",
                            "tengri": "腾格里信仰", "kemetic": "古埃及信仰", "aztecFaith": "阿兹特克信仰", "incaFaith": "印加太阳信仰"]
     static let terrain = ["plain": "平原", "forest": "森林", "mountain": "山地"]
-    static let unit = ["Infantry": "步兵", "Archer": "弓兵", "Shield": "盾兵", "Cavalry": "骑兵", "Elite": "精锐"]
+    static let unit = Dictionary(uniqueKeysWithValues: UnitKinds.kinds.map { ($0.key, $0.name) })
     static func travel(_ t: String) -> String { ["moving": "行军中", "arrived": "驻扎", "blocked": "受阻", "halted": "已停止"][t] ?? t }
     static func status(_ s: String) -> String { ["idle": "待命", "fighting": "交战", "retreating": "撤退", "sieging": "围城", "destroyed": "覆灭"][s] ?? s }
     static let templates: [(id: String, name: String)] = [("continents", "多大陆"), ("pangea", "联合大陆"), ("archipelago", "群岛"), ("highIsland", "高山大岛")]
@@ -1135,7 +1135,7 @@ struct ArmySheet: View {
     @State private var troopsText = ""
     @State private var unit = ""
     @State private var morale = 100.0
-    static let units = [("Infantry", "步兵"), ("Archer", "弓兵"), ("Shield", "盾兵"), ("Cavalry", "骑兵"), ("Elite", "精锐")]
+    static let units = UnitKinds.kinds.map { ($0.key, $0.name) }
     var body: some View {
         if let map = model.map, let a = model.army(army) {
             let nation = a.nation >= 0 && a.nation < map.meta.nations.count ? map.meta.nations[a.nation] : nil
@@ -1158,6 +1158,12 @@ struct ArmySheet: View {
                             .buttonStyle(PressStyle()).accessibilityLabel("定位")
                     }
                     .padding(.horizontal, 22).padding(.top, 22)
+                    // The arm's strengths and weaknesses, and who leads it.
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let k = UnitKinds.byKey[a.unit] { Text(k.note).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
+                        if let c = a.commander { Text(a.banner == "ruler" ? "御驾亲征：(c)" : "主将：(c)").font(Theme.kai(14)).foregroundStyle(a.banner == "ruler" ? Theme.seal : Theme.ink) }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 22)
                     StatStrip(tiles: [
                         StatTile(label: "编制", value: Echelon.name(troops: a.troops, culture: nation?.culture ?? "")),
                         StatTile(label: "兵力", value: Names.wan(a.troops)),
@@ -1203,7 +1209,7 @@ struct ArmySheet: View {
                             }
                             .padding(.horizontal, 14).padding(.vertical, 10)
                             Divider2()
-                            ChipPicker(items: Self.units, selection: $unit).padding(.horizontal, 12).padding(.vertical, 10)
+                            UnitGrid(selection: $unit).padding(.horizontal, 12).padding(.vertical, 10)
                             Divider2()
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("士气 \(Int(morale))").font(Theme.kai(16)).foregroundStyle(Theme.ink)
@@ -1257,7 +1263,8 @@ struct UnitMark: View {
     }
     static func image(_ unit: String) -> UIImage? {
         if let c = cache[unit] { return c }
-        guard let url = Bundle.main.url(forResource: "unit-" + unit, withExtension: "png", subdirectory: "World"), let img = UIImage(contentsOfFile: url.path) else { return nil }
+        guard let cg = UnitArt.image(unit) else { return nil }
+        let img = UIImage(cgImage: cg)
         cache[unit] = img; return img
     }
 }
@@ -1617,6 +1624,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.24.0", ["军队换回原作的兵种小人，并重新精绘：步兵持剑、枪兵长枪、盾兵大盾、弓兵挽弓、弩兵端弩、骑兵、披甲重骑、骑射、羽盔精锐、战象、战船，按国色着色、加墨色描边，任何底色上都清楚。圆章与兵力数字去掉。",
+                    "兵力用小人数表示：不足两千一个，两千到六千两个，六千以上三个，排成小阵；具体人数在军团页查看。",
+                    "帅旗：交战国兵力最多的一支军队竖起帅旗——有大将军或元帅时插国色帅旗，旗上写主将的姓；没有将帅时由君主御驾亲征，竖金色御旗，旗上写「御」。与引擎的战斗规则一致（将领的军事能力决定战斗加成）。军团页显示「主将」或「御驾亲征」。",
+                    "兵种扩充到二十四种：在步、弓、盾、骑、精锐之外新增枪兵、弩兵、重骑、骑射，以及各文化特色兵——武士（日本）、军团（罗马、意大利）、战象（印度、越南）、长弓（英格兰）、马穆鲁克（阿拉伯、埃及）、怯薛（蒙古、突厥、吐蕃）、连弩（中华、朝鲜）、狂战士（北欧）、方阵（希腊）、具装骑兵（波斯）、骑士（法兰西、西班牙、葡萄牙）、长枪佣兵（日耳曼、尼德兰）、翼骑兵（波兰、匈牙利）、美洲豹武士（阿兹特克、印加）、射击军（斯拉夫）。",
+                    "兵种相克，实际参与战斗结算：枪兵克骑兵（伤害 ×1.4），骑兵冲弓弩（×1.35）却畏枪阵（×0.75），弓兵压制步兵与枪兵，弩兵穿透重骑与战象，骑射袭扰步卒，战象冲垮步阵并惊散马群，步兵克枪兵与弓兵。各兵种的速度与地形加成不同（骑兵平原强、林山弱；弓盾山地坚守）。",
+                    "征兵按国家文化决定兵种组成：草原民族多骑兵与骑射，各文化有约一成特色兵；开局军队也按文化重新编成。整编时可从二十四个兵种中任选，下方显示其长处与弱点。新建的世界生效。"]),
         ("0.23.1", ["军队圆章再放大到至少 20 点；兵力纸签在全图视野下也显示（上一版只在拉近后才出现）。"]),
         ("0.23.0", ["军队一眼看清是谁的：每支军队改为一枚国色圆章，墨边，中间是白色兵种纹样（步、弓、盾、骑、精锐、舰队），任何缩放下都不小于 16 点；以前是灰色小图标乘国色，远看几乎是黑点。",
                     "兵力标签：圆章下方挂一张小纸签写兵力，地图稍一拉近就显示（以前要拉得很近）。",
@@ -2235,6 +2248,28 @@ struct FleetSheet: View {
                 .padding(.bottom, 24)
                 .animation(.easeOut(duration: 0.25), value: feedback)
             }
+        }
+    }
+}
+
+/// Every arm in a grid of paper chips, the chosen one's strengths beneath.
+struct UnitGrid: View {
+    @Binding var selection: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
+                ForEach(UnitKinds.kinds, id: .key) { k in
+                    let on = k.key == selection
+                    Button { selection = k.key } label: {
+                        Text(k.name).font(Theme.kai(14)).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                            .frame(maxWidth: .infinity).frame(height: 34)
+                            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(on ? Color.clear : Theme.line))
+                    }
+                    .buttonStyle(PressStyle())
+                }
+            }
+            if let k = UnitKinds.byKey[selection] { Text(k.note).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
         }
     }
 }

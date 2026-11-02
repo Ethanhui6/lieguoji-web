@@ -669,8 +669,8 @@ final class TroopLabelsView: UIView {
         let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * camera.scale
         var seen = Set<String>()
         CATransaction.begin(); CATransaction.setDisableActions(true)
-        // Coins are drawn at least 20 points across (see spriteVertex), so the tags show from afar too.
-        if icon >= 5 {
+        // Banner marks only when the banner is big enough to carry a character.
+        if icon >= 22 {
             for p in placed where p.sprite.army > -100_000 {
                 guard let text = texts[p.sprite.key] else { continue }
                 let s = camera.toScreen(x: Double(p.x), y: Double(p.y), viewport: vp)
@@ -681,7 +681,8 @@ final class TroopLabelsView: UIView {
                     let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 6
                     l.bounds = CGRect(x: 0, y: 0, width: w, height: 15)
                 }
-                l.position = CGPoint(x: s.x, y: s.y + max(icon, 20) * 0.5 + 7)
+                // On the banner's flag (see rebuildArmies: the banner stands up and to the left).
+                l.position = CGPoint(x: s.x - icon * 0.43, y: s.y - icon * 0.8)
                 seen.insert(p.sprite.key)
             }
         }
@@ -691,10 +692,9 @@ final class TroopLabelsView: UIView {
     private func make(_ key: String) -> CATextLayer {
         let l = CATextLayer()
         l.font = Self.font; l.fontSize = 11; l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
-        l.foregroundColor = UIColor(white: 0.1, alpha: 1).cgColor
-        // A small paper tag under the coin, like the original's troop counts.
-        l.backgroundColor = UIColor(red: 0.984, green: 0.965, blue: 0.91, alpha: 0.92).cgColor
-        l.cornerRadius = 4; l.borderWidth = 0.6; l.borderColor = UIColor(white: 0, alpha: 0.25).cgColor
+        // A paper-white character with an ink shadow, written on the flag.
+        l.foregroundColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 1).cgColor
+        l.shadowColor = UIColor(white: 0.05, alpha: 1).cgColor; l.shadowOpacity = 0.9; l.shadowRadius = 1.2; l.shadowOffset = .zero
         layer.addSublayer(l); layers[key] = l
         return l
     }

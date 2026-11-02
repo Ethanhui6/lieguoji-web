@@ -77,6 +77,8 @@ struct GameState: Decodable, Equatable {
         let id: String; let name: String; let nation: Int; let troops: Int; let unit: String; let status: String; let travel: String
         let province: Int; let supplies: Int; let morale: Int; let x: Float; let y: Float; let manual: Bool
         let destination: Int?; let mission: String?
+        /// 帅旗: "general" or "ruler" (御驾亲征), the commander's mark and name; nil for other armies.
+        var banner: String? = nil; var bannerMark: String? = nil; var commander: String? = nil
     }
     /// A fleet at its actual sea point (open-sea worlds) and its naval command.
     struct Fleet: Decodable, Equatable, Identifiable {

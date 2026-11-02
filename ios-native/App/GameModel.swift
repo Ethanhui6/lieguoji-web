@@ -334,7 +334,7 @@ import LieguojiCore
             }
         }
     }
-    func pause() { let was = playing; loop?.cancel(); loop = nil; playing = false; if was, let day = state?.day { save(); lastSavedDay = day } }
+    func pause(saving: Bool = true) { let was = playing; loop?.cancel(); loop = nil; playing = false; if saving, was, let day = state?.day { save(); lastSavedDay = day } }
     func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : 1 }
     func stepOnce() { guard !playing else { return }; Task { try? await step(days: 1) } }
 
@@ -720,6 +720,16 @@ import LieguojiCore
     func setStyle(_ n: Int, style: String) async -> String? { finish(await native.setStyle(n, style: style)) }
     func treaty(_ a: Int, _ b: Int, years: Int, kind: String) async -> String? { finish(await native.treaty(a, b, years: years, kind: kind)) }
     func gift(_ from: Int, to: Int, gold: Double) async -> String? { finish(await native.gift(from, to: to, gold: gold)) }
+    struct PostInfo: Decodable, Identifiable { let id: String; let title: String; let effect: String; let skill: Int; let holder: NationInfo.Person?; let value: Double? }
+    func posts(_ n: Int) async -> [PostInfo] {
+        guard let d = await native.posts(n) else { return [] }
+        return (try? JSONDecoder().decode([PostInfo].self, from: d)) ?? []
+    }
+    func postCandidates(_ n: Int, post: String) async -> [NationInfo.Person] {
+        guard let d = await native.postCandidates(n, post: post) else { return [] }
+        return (try? JSONDecoder().decode([NationInfo.Person].self, from: d)) ?? []
+    }
+    func appointPost(_ n: Int, post: String, person: Int) async -> String? { finish(await native.appointPost(n, post: post, person: person)) }
     func appointOffice(_ n: Int, office: String, person: Int) async -> String? { finish(await native.appointOffice(n, office: office, person: person)) }
     func setCourtManual(_ n: Int, manual: Bool) async -> String? { finish(await native.setCourtManual(n, manual: manual)) }
     func addArmy(_ n: Int, province: Int) async -> String? { finish(await native.addArmy(n, province: province)) }

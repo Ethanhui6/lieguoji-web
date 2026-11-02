@@ -11,6 +11,8 @@ import UIKit
     @Published var volume: Double { didSet { store(); player?.volume = Float(volume) } }
     @Published var haptics: Bool { didSet { store() } }
     @Published var particles: Bool { didSet { store(); EffectsView.particles = particles } }
+    /// Opening a big panel pauses the world (and the map redraws at 30 fps) until it closes.
+    @Published var pauseInMenus: Bool { didSet { store() } }
     @Published private(set) var track = ""
 
     static let tracks = ["deplasa-pe", "final-stance", "guild-of-adventurers", "land-of-heroes", "wonders-and-mysteries-alt"]
@@ -25,12 +27,13 @@ import UIKit
         volume = d.object(forKey: "feel.volume") as? Double ?? 0.55
         haptics = d.object(forKey: "feel.haptics") as? Bool ?? true
         particles = d.object(forKey: "feel.particles") as? Bool ?? true
+        pauseInMenus = d.object(forKey: "feel.pauseInMenus") as? Bool ?? true
         super.init()
         EffectsView.particles = particles
     }
     private func store() {
         let d = UserDefaults.standard
-        d.set(music, forKey: "feel.music"); d.set(volume, forKey: "feel.volume"); d.set(haptics, forKey: "feel.haptics"); d.set(particles, forKey: "feel.particles")
+        d.set(music, forKey: "feel.music"); d.set(volume, forKey: "feel.volume"); d.set(haptics, forKey: "feel.haptics"); d.set(particles, forKey: "feel.particles"); d.set(pauseInMenus, forKey: "feel.pauseInMenus")
     }
 
     // MARK: music
@@ -154,6 +157,8 @@ struct FeelSettings: View {
             PaperSwitch(title: "震动反馈", on: $feel.haptics)
             Divider2()
             PaperSwitch(title: "粒子特效（烟雾、火光）", on: $feel.particles)
+            Divider2()
+            PaperSwitch(title: "打开面板时暂停（更流畅）", on: $feel.pauseInMenus)
         }
         .padding(.horizontal, 16)
     }

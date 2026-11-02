@@ -64,6 +64,9 @@ import LieguojiCore
     /// The brush circle under the finger (map units), drawn while painting.
     var brushRadius: Double = 30
     var onPaint: ((Int) -> Void)?
+    /// A sheet covers the map: it redraws at 30 frames a second.
+    var sheetOpen = false { didSet { onSheet?() } }
+    var onSheet: (() -> Void)?
     var onFleetTarget: ((Int) -> Void)?
     /// Generation reveal (title screen), 0…1; labels and markers appear at 1.
     @Published var reveal: Float = 1
@@ -163,6 +166,11 @@ struct MapView: UIViewRepresentable {
             labels.isUserInteractionEnabled = false
             effects.frame = container.bounds; effects.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(effects)
             troops.frame = container.bounds; troops.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(troops)
+            controller.onSheet = { [weak self] in
+                guard let self else { return }
+                self.link?.preferredFrameRateRange = self.frameRange
+                self.mtk.preferredFramesPerSecond = self.controller.sheetOpen ? 30 : 120
+            }
             controller.placed = { [weak self] key in
                 guard let p = self?.renderer?.placedSprites().first(where: { $0.sprite.key == key }) else { return nil }
                 return (Double(p.x), Double(p.y))
@@ -368,8 +376,11 @@ struct MapView: UIViewRepresentable {
         private func startLink() {
             guard link == nil else { return }
             let l = CADisplayLink(target: self, selector: #selector(step(_:)))
-            l.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
+            l.preferredFrameRateRange = frameRange
             l.add(to: .main, forMode: .common); link = l
+        }
+        private var frameRange: CAFrameRateRange {
+            controller.sheetOpen ? CAFrameRateRange(minimum: 15, maximum: 30, preferred: 30) : CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
         }
         @objc private func step(_ l: CADisplayLink) {
             let dt = min(0.05, l.targetTimestamp - l.timestamp)

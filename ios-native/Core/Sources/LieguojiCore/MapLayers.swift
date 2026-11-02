@@ -95,6 +95,10 @@ public enum MapLayers {
             let forest = h >= 22 && h < 55 && biome >= 5 && biome <= 9
             if h < 55 && !forest { continue }
             if touchesSea[i] { continue }
+            // Sparser than one mark per square: real ranges read as ridgelines, not a carpet of peaks.
+            let pick = UInt32(truncatingIfNeeded: i &* 2654435761) >> 16 % 100
+            if h >= 55 && (h < 62 || pick < 35) { continue }
+            if forest && pick < 45 { continue }
             let x = map.sites[i * 2], y = map.sites[i * 2 + 1]
             let key = Int64(floor(x / 23)) << 32 | Int64(Int32(floor(y / 23))) & 0xFFFF_FFFF
             if occupied.contains(key) { continue }
@@ -142,22 +146,23 @@ public enum MapLayers {
             let x = map.sites[i * 2], y = map.sites[i * 2 + 1]
             let coarse = Int64(floor(x / 23)) << 32 | Int64(Int32(floor(y / 23))) & 0xFFFF_FFFF
             if occupied.contains(coarse) && (h >= 55 || (h >= 22 && biome >= 5 && biome <= 9)) { continue }
-            let key = Int64(floor(x / 15)) << 32 | Int64(Int32(floor(y / 15))) & 0xFFFF_FFFF
+            let key = Int64(floor(x / 30)) << 32 | Int64(Int32(floor(y / 30))) & 0xFFFF_FFFF
             if fine.contains(key) { continue }
             let v = Float(i * 53 % 97) / 97
-            if h >= 42 && h < 55 {
+            if h >= 46 && h < 62 {
+                if v > 0.35 { continue }
                 fine.insert(key)
                 // Rounded hills: two soft mounds.
                 m.polyline([x - 6, y + 2, x - 4, y - 1.5, x - 1.5, y - 2.5, x + 1, y - 1, x + 2, y + 1], width: 0.55, ink, alpha: 0.45)
                 m.polyline([x + 0.5, y + 2.5, x + 2.5, y, x + 4.5, y - 0.8, x + 6.5, y + 2.5], width: 0.5, ink, alpha: 0.38)
             } else if biome == 1 || biome == 2 {
-                if v > 0.55 { continue }
+                if v > 0.3 { continue }
                 fine.insert(key)
                 // Dunes: wind-ridged sand.
                 m.polyline([x - 6, y, x - 3, y - 1.8, x, y - 0.6, x + 3, y - 2, x + 6, y - 0.4], width: 0.55, sand, alpha: 0.55)
                 m.polyline([x - 4, y + 3, x - 1, y + 1.6, x + 2, y + 2.6, x + 5, y + 1.4], width: 0.45, sand, alpha: 0.45)
             } else if biome == 4 {
-                if v > 0.4 { continue }
+                if v > 0.15 { continue }
                 fine.insert(key)
                 // Grassland tufts.
                 for dx in [Float(-3), 2] {
@@ -166,18 +171,19 @@ public enum MapLayers {
                     m.segment(x + dx, y + 1.5, x + dx + 1, y - 1.2, width: 0.4, grass, alpha: 0.55)
                 }
             } else if biome == 3 {
-                if v > 0.45 { continue }
+                if v > 0.25 { continue }
                 fine.insert(key)
                 // Savanna: a lone flat-topped acacia.
                 m.fill([x - 3.5, y - 2.5, x - 2, y - 4, x + 2, y - 4, x + 3.5, y - 2.5, x, y - 1.8], acacia, alpha: 0.5)
                 m.segment(x, y - 2, x, y + 2, width: 0.5, trunk, alpha: 0.55)
             } else if biome == 10 {
-                if v > 0.5 { continue }
+                if v > 0.3 { continue }
                 fine.insert(key)
                 // Tundra: low moss and stones.
                 m.polyline([x - 4, y + 1, x - 2.5, y - 0.6, x - 1, y + 1], width: 0.45, moss, alpha: 0.5)
                 m.polyline([x + 1, y + 1.5, x + 2.5, y, x + 4, y + 1.5], width: 0.45, moss, alpha: 0.5)
             } else if biome == 11 {
+                if v > 0.4 { continue }
                 fine.insert(key)
                 // Ice field: pale cracks.
                 m.polyline([x - 5, y - 1, x - 1, y + 1, x + 2, y - 1.5, x + 5, y + 0.5], width: 0.5, frost, alpha: 0.7)

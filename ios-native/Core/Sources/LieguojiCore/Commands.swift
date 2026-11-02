@@ -78,6 +78,16 @@ extension NativeEngine {
         o.population = JS(stock?.population.optionalNumber ?? 0); o.grain = JS(stock?.grain.optionalNumber ?? 0)
         o.capacity = JS(r.finance.provinces[id].maxPopulation.optionalNumber ?? 0); o.supply = p.supply.isNull ? JS(0) : p.supply
         o.controller = JS(nation(p.controller.optionalString)); o.owner = JS(nation(p.legalOwner.optionalString ?? p.controller.optionalString))
+        // What the engine already weighs for this land: core (near the state's heart: +15% defence),
+        // the fortification level, mountain ground and its biomes (combat), local income (governor).
+        let d = r.upperCombat.provinces[id], holder = r.upperCombat.nations[p.controller.optionalString ?? ""]
+        let distance = d.distance.optionalNumber ?? 2147483647
+        o.core = JS(!holder.isNull && distance != 2147483647 && distance <= (holder.coreThreshold.optionalNumber ?? 0))
+        o.defense = JS(d.isNull ? 1 : min(10, max(1, d.storedDefense.optionalNumber ?? 1)))
+        let land = r.terrainContext.provinces[id]
+        o.mountain = JS(land.mountain.isTruthy)
+        o.biomes = land.isNull || land.biomes.isNull ? .array() : land.biomes
+        o.income = JS(Offices.localIncome(r, id))
         return Data(o.json.utf8)
     }
 

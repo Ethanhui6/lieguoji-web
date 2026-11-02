@@ -116,7 +116,21 @@ struct GameState: Decodable, Equatable {
     func atWar(_ a: Int, _ b: Int) -> Bool { nations.indices.contains(a) && nations[a].enemies.contains(b) }
 }
 
-struct ProvinceInfo: Decodable { let population: Int; let grain: Double; let capacity: Int; let supply: Double; let controller: Int; let owner: Int }
+struct ProvinceInfo: Decodable {
+    let population: Int; let grain: Double; let capacity: Int; let supply: Double; let controller: Int; let owner: Int
+    let core: Bool?; let defense: Double?; let mountain: Bool?; let biomes: [Double]?; let income: Double?
+    /// The kinds of land this is, from what the engine weighs (core, fortress, granary, rich, mountain).
+    var kinds: [(String, String)] {
+        var out = [(String, String)]()
+        if core == true { out.append(("核心", "近于国都，守军 +15%")) } else { out.append(("边地", "远离国都，无核心加成")) }
+        if mountain == true { out.append(("山地", "易守难攻")) }
+        if (defense ?? 1) >= 3 { out.append(("要塞", "城防 \(Int(defense ?? 1)) 级")) }
+        if capacity > 0, Double(population) >= Double(capacity) * 0.8 { out.append(("富庶", "人口近于上限")) }
+        if grain >= Double(max(1, population)) * 0.5 { out.append(("粮仓", "存粮充足")) }
+        if let i = income, i > 1.02 { out.append(("善治", "地方官增收 \(Int(((i - 1) * 100).rounded()))%")) }
+        return out
+    }
+}
 struct CommandResult: Decodable { let ok: Bool; let reason: String; let state: GameState? }
 
 struct LoadedWorld: Decodable {

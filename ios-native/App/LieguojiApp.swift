@@ -481,6 +481,8 @@ struct GameView: View {
     @State private var rtsDefend = false
     /// The unit sheets' height; a pick from a list drops it low so the map shows the unit.
     @State private var unitDetent: PresentationDetent = .height(320)
+    /// The world was paused by a big panel and resumes when it closes.
+    @State private var pausedByPanel = false
     @Namespace private var tabMarker
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
 
@@ -582,7 +584,17 @@ struct GameView: View {
             Task { try? await Task.sleep(nanoseconds: 280_000_000); withAnimation { viewsOpen = false } }
         }
         .sensoryFeedback(.selection, trigger: model.mapView)
-        .onChange(of: panel) { _, p in if let p { lastPanel = p } }
+        .onChange(of: panel) { old, p in
+            if let p { lastPanel = p }
+            // Big panels (lists, the state, the chronicle, rankings, the menu) pause the world: every
+            // day re-drew the whole open sheet and the engine competed with it. Unit and province
+            // dockets keep the world running so a march can be watched.
+            let big: Bool = { switch p { case .some(.province), .some(.army), .some(.fleet), .none: return false; default: return true } }()
+            controller.sheetOpen = p != nil
+            if big, GameFeel.shared.pauseInMenus, model.playing { pausedByPanel = true; model.pause(saving: false) }
+            if p == nil, pausedByPanel { pausedByPanel = false; model.play() }
+            _ = old
+        }
         .sensoryFeedback(.impact(weight: .light), trigger: panel?.id)
         .sensoryFeedback(.selection, trigger: controller.selectedProvince)
         .onChange(of: controller.selectedArmy) { _, army in
@@ -974,6 +986,21 @@ struct ProvinceSheet: View {
             ScrollView {
                 VStack(spacing: 14) {
                     SheetHeader(title: p.name, subtitle: nation.map { "\($0.name) · \(Names.terrain[p.terrain] ?? p.terrain)" } ?? Names.terrain[p.terrain], color: nation.map { Names.color($0.color) })
+                    if let info {
+                        // 州郡属性: core or frontier, mountain, fortress, rich, granary, well governed.
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(Array(info.kinds.enumerated()), id: \.offset) { _, k in
+                                    VStack(spacing: 2) {
+                                        Text(k.0).font(Theme.kai(15)).foregroundStyle(Theme.paper2)
+                                            .padding(.horizontal, 10).padding(.vertical, 4).background(k.0 == "边地" ? Theme.ink2 : Theme.seal, in: RoundedRectangle(cornerRadius: 5))
+                                        Text(k.1).font(Theme.kai(11)).foregroundStyle(Theme.ink2)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 22)
+                        }
+                    }
                     Group2 {
                         if let info {
                             Row(label: "人口", value: info.population.formatted()); Divider2()
@@ -1557,6 +1584,13 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.21.0", ["打开菜单不再掉帧：打开国家、军事、外交、纪事、排行、菜单等大面板时世界自动暂停，关闭后自动继续（以前每推演一天整张面板都要重画，引擎也在抢算力）；面板打开时背后的地图降到每秒 30 帧。州郡、军团这类小面板照常推演。设置里可关闭。",
+                    "修复打开「联盟」视图闪退：有的州郡控制者查不到国名时会崩溃，现已安全处理。",
+                    "地形不再满屏是山：山峰只画在更高处并稀疏排列，森林、丘陵、沙丘、草甸、苔原等装饰大幅减少，山川看起来更像真实的山脉走向。",
+                    "州郡属性：州郡页显示引擎实际计算的属性——核心（近国都，守军 +15%）或边地、山地（易守难攻）、要塞（城防等级）、富庶、粮仓、善治（地方官增收）。",
+                    "政体扩充到三十二种：新增封建王国、选侯君主、苏丹国、公国、摄政、沙皇专制、幕府、专制帝国、城邦共和、商业共和、议会共和、总统共和、社会主义、独裁、革命委员会、邦联、联合王国、哈里发国、教宗国、政教合一、骑士团国、汗国、酋邦，各有国号与元首称号（苏丹、沙皇、征夷大将军、总督、总理、总书记、元首、委员长、大团长、可汗……）。",
+                    "朝廷百官：在宰相、司农、大将军之外新增二十个职位（户部、兵部、礼部、刑部、工部、吏部、御史、太傅、水师提督、鸿胪、少府、禁军、皇城司、太史、太仆、盐铁、漕运、国子监、都护、内侍），官名随传统变化——东方为尚书，西方为大臣，共和国为部长，教会与草原各有称谓；任职者的能力每月实际影响国库、国运或各军士气；可逐一任命，候选人只在打开国家页时计算。",
+                    "新增「经济」「政体」两种地图视图：经济按人口分五档着色，政体按各国政体着色并写出政体名。"]),
         ("0.20.0", ["政体扩充为十种：君主专制、君主立宪、帝制、军政府、民主共和、人民共和（共产主义）、寡头共和、联邦共和、神权、部落联盟。国号与元首称号随政体变化（如「某某人民共和国」主席、共和国总统、军政府最高统帅、寡头共和执政官）；改政体的页面重做为带说明的列表。",
                     "党派与议会：君主立宪、各类共和与联邦国家有自己的党派和议席（共产主义国家一党执政），国家页显示议席色带与执政党；每四年大选，议席重新分配，最大党上台执政并记入纪事。",
                     "外交新增：互不侵犯条约（五／十／二十年，期内 AI 不会对缔约国宣战）、王室联姻（十年互不兴兵）、赠送金帛、割让州郡；国家页显示现有条约与剩余年限。",

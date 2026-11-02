@@ -51,6 +51,29 @@ public enum Regimes {
         Style(id: "federal", base: "Federation", label: "联邦共和", suffix: "联邦", title: "联邦主席", parties: true, single: nil),
         Style(id: "theocracy", base: "Theocracy", label: "神权", suffix: "", title: nil, parties: false, single: nil),
         Style(id: "tribal", base: "Tribal", label: "部落联盟", suffix: "部族", title: nil, parties: false, single: nil),
+        Style(id: "feudal", base: "Kingdom", label: "封建王国", suffix: "王国", title: nil, parties: false, single: nil),
+        Style(id: "elective", base: "Kingdom", label: "选侯君主", suffix: "王国", title: "选王", parties: false, single: nil),
+        Style(id: "sultanate", base: "Kingdom", label: "苏丹国", suffix: "苏丹国", title: "苏丹", parties: false, single: nil),
+        Style(id: "principality", base: "Kingdom", label: "公国", suffix: "公国", title: "大公", parties: false, single: nil),
+        Style(id: "regency", base: "Kingdom", label: "摄政", suffix: "王国", title: "摄政王", parties: false, single: nil),
+        Style(id: "tsardom", base: "Empire", label: "沙皇专制", suffix: "沙皇国", title: "沙皇", parties: false, single: nil),
+        Style(id: "shogunate", base: "Empire", label: "幕府", suffix: "幕府", title: "征夷大将军", parties: false, single: nil),
+        Style(id: "despotism", base: "Empire", label: "专制帝国", suffix: "帝国", title: nil, parties: false, single: nil),
+        Style(id: "citystate", base: "Republic", label: "城邦共和", suffix: "城邦", title: "执政官", parties: true, single: nil),
+        Style(id: "merchant", base: "Republic", label: "商业共和", suffix: "共和国", title: "总督", parties: true, single: nil),
+        Style(id: "parliamentary", base: "Republic", label: "议会共和", suffix: "共和国", title: "总理", parties: true, single: nil),
+        Style(id: "presidential", base: "Republic", label: "总统共和", suffix: "共和国", title: "总统", parties: true, single: nil),
+        Style(id: "socialist", base: "Republic", label: "社会主义", suffix: "社会主义共和国", title: "总书记", parties: true, single: "劳动党"),
+        Style(id: "dictatorship", base: "Republic", label: "独裁", suffix: "国", title: "元首", parties: false, single: nil),
+        Style(id: "council", base: "Republic", label: "革命委员会", suffix: "共和国", title: "委员长", parties: true, single: "革命党"),
+        Style(id: "confederation", base: "Federation", label: "邦联", suffix: "邦联", title: "邦联主席", parties: true, single: nil),
+        Style(id: "union", base: "Federation", label: "联合王国", suffix: "联合王国", title: "君主", parties: true, single: nil),
+        Style(id: "caliphate", base: "Theocracy", label: "哈里发国", suffix: "哈里发国", title: "哈里发", parties: false, single: nil),
+        Style(id: "papacy", base: "Theocracy", label: "教宗国", suffix: "教宗国", title: "教宗", parties: false, single: nil),
+        Style(id: "lamaism", base: "Theocracy", label: "政教合一", suffix: "国", title: "法王", parties: false, single: nil),
+        Style(id: "order", base: "Theocracy", label: "骑士团国", suffix: "骑士团国", title: "大团长", parties: false, single: nil),
+        Style(id: "khanate", base: "Tribal", label: "汗国", suffix: "汗国", title: "可汗", parties: false, single: nil),
+        Style(id: "chiefdom", base: "Tribal", label: "酋邦", suffix: "酋邦", title: "大酋长", parties: false, single: nil),
     ]
     static let defaultStyle = ["Kingdom": "absolute", "Empire": "empire", "Republic": "democratic", "Federation": "federal", "Theocracy": "theocracy", "Tribal": "tribal"]
     public static func style(_ r: JS, _ id: String) -> Style {
@@ -63,6 +86,85 @@ public enum Regimes {
     static func title(_ r: JS, _ id: String, base: String, style s: Style) -> String {
         if s.id == "theocracy" || s.suffix.isEmpty { return Opening.stateTitle(base, polity: s.base, religion: r.civilization.nations[id].religionId.optionalString ?? "") }
         return base + s.suffix
+    }
+
+    // MARK: 朝廷职位 (posts)
+    /// Twenty posts beyond the engine's three central offices. Each is held by a person of the state;
+    /// the skill it calls for drives a monthly effect: treasury (gold), fortune (destiny) or the armies'
+    /// morale. Titles follow the state's tradition.
+    public struct Post: Sendable { public let id: String; public let skill: Int; public let effect: String; public let titles: [String] }
+    // titles: east, west, republic, church, steppe. skill: 0 charisma, 1 military, 2 diplomatic, 3 administrative.
+    public static let posts: [Post] = [
+        Post(id: "revenue", skill: 3, effect: "gold", titles: ["户部尚书", "财政大臣", "财政部长", "司库主教", "必阇赤"]),
+        Post(id: "war", skill: 1, effect: "morale", titles: ["兵部尚书", "陆军大臣", "国防部长", "护教军统领", "万户长"]),
+        Post(id: "rites", skill: 2, effect: "destiny", titles: ["礼部尚书", "外务大臣", "外交部长", "礼仪枢机", "使臣长"]),
+        Post(id: "justice", skill: 3, effect: "destiny", titles: ["刑部尚书", "大法官", "司法部长", "宗教裁判长", "札鲁忽赤"]),
+        Post(id: "works", skill: 3, effect: "gold", titles: ["工部尚书", "工务大臣", "建设部长", "营造执事", "工匠长"]),
+        Post(id: "personnel", skill: 3, effect: "destiny", titles: ["吏部尚书", "宫廷总管", "内政部长", "教区总铎", "怯薛长"]),
+        Post(id: "censor", skill: 2, effect: "destiny", titles: ["御史大夫", "监察总长", "监察委员长", "监督主教", "断事官"]),
+        Post(id: "tutor", skill: 0, effect: "destiny", titles: ["太傅", "王储导师", "教育部长", "神学院长", "智者"]),
+        Post(id: "admiral", skill: 1, effect: "morale", titles: ["水师提督", "海军大臣", "海军部长", "圣舰队长", "船队长"]),
+        Post(id: "envoy", skill: 2, effect: "destiny", titles: ["鸿胪寺卿", "首席使节", "驻外大使", "教廷使节", "通使"]),
+        Post(id: "treasury", skill: 3, effect: "gold", titles: ["少府监", "国库总管", "央行行长", "教产总管", "仓官"]),
+        Post(id: "guard", skill: 1, effect: "morale", titles: ["禁军统领", "近卫军长", "卫戍司令", "圣殿卫队长", "怯薛统领"]),
+        Post(id: "spy", skill: 2, effect: "destiny", titles: ["皇城司使", "密探总管", "情报局长", "密使", "探马赤"]),
+        Post(id: "history", skill: 0, effect: "destiny", titles: ["太史令", "宫廷史官", "档案馆长", "编年修士", "说唱人"]),
+        Post(id: "horse", skill: 1, effect: "morale", titles: ["太仆卿", "马政大臣", "后勤部长", "骑士团军需", "牧马官"]),
+        Post(id: "salt", skill: 3, effect: "gold", titles: ["盐铁使", "专卖总监", "工商部长", "什一税官", "商队长"]),
+        Post(id: "grain", skill: 3, effect: "gold", titles: ["漕运总督", "粮务大臣", "农业部长", "施赈执事", "屯田官"]),
+        Post(id: "academy", skill: 0, effect: "destiny", titles: ["国子祭酒", "学院院长", "科学院长", "大学神父", "博士"]),
+        Post(id: "frontier", skill: 1, effect: "morale", titles: ["都护", "边境总督", "边防司令", "边区主教", "镇守千户"]),
+        Post(id: "palace", skill: 0, effect: "destiny", titles: ["内侍监", "宫务大臣", "办公厅主任", "教宗内廷长", "斡耳朵总管"]),
+    ]
+    public static func tradition(_ r: JS, _ id: String) -> Int {
+        let s = style(r, id), culture = r.civilization.nations[id].cultureId.optionalString ?? ""
+        if s.base == "Republic" || s.base == "Federation" { return 2 }
+        if s.base == "Theocracy" { return 3 }
+        if s.base == "Tribal" || culture == "mongol" || culture == "turkic" { return 4 }
+        if ["chinese", "korean", "japanese"].contains(culture) { return 0 }
+        return 1
+    }
+    static func skill(_ p: JS, _ k: Int) -> Double { let s = People.skills(p); return [s.charisma, s.military, s.diplomatic, s.administrative][k] }
+    /// The living adults of a state, for the posts (read when the panel opens, not every day).
+    static func adults(_ r: JS, _ id: String) -> [JS] {
+        let sid = Offices.stateId(r, id)
+        return r.kin.persons.objectValues.filter { $0.isAlive.asBool && $0.stateId.asInt == sid && ($0.age.optionalNumber ?? 0) >= 18 && ($0.age.optionalNumber ?? 0) <= 75 }
+    }
+    /// Fills empty posts with the ablest free people (once, when the court is looked at or monthly when filled).
+    static func fillPosts(_ r: JS, _ id: String) {
+        let b = book(r, id)
+        if b.posts.isNull { b.posts = JS.object() }
+        let empty = posts.filter { p in
+            guard let pid = b.posts[p.id].optionalNumber, let person = People.person(r, Int(pid)), person.isAlive.asBool else { return true }
+            return false
+        }
+        guard !empty.isEmpty, !r.offices47.nations[id].manual.isTruthy else { return }
+        var taken = Set(b.posts.objectValues.compactMap { $0.optionalNumber.map { Int($0) } })
+        let pool = adults(r, id)
+        for p in empty {
+            guard let best = pool.filter({ !taken.contains($0.id.asInt) }).max(by: { skill($0, p.skill) < skill($1, p.skill) }) else { break }
+            b.posts[p.id] = JS(best.id.asInt); taken.insert(best.id.asInt)
+        }
+    }
+    /// Monthly effects of the filled posts.
+    static func postEffects(_ r: JS, _ id: String, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
+        let b = book(r, id)
+        guard !b.posts.isNull else { return }
+        var morale = 0.0
+        for p in posts {
+            guard let pid = b.posts[p.id].optionalNumber, let person = People.person(r, Int(pid)), person.isAlive.asBool else { continue }
+            let e = (skill(person, p.skill) - 50) / 50
+            switch p.effect {
+            case "gold": addGold(0.004 * e)
+            case "destiny": addDestiny(0.02 * e)
+            default: morale += 0.15 * e
+            }
+        }
+        if morale != 0 {
+            for a in r.world.armies.asArray where a.nationId.optionalString == id && a.troops.asNumber > 0 {
+                a.morale = JS(min(100, max(0, (a.morale.optionalNumber ?? 0) + morale)))
+            }
+        }
     }
 
     // MARK: 党派 (parties)
@@ -157,6 +259,7 @@ public enum Regimes {
         default: break
         }
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
+        postEffects(r, id, addGold: addGold, addDestiny: addDestiny)
         tribute(r, n, id, gain: gain)
         coup(r, n, id, key)
         election(r, n, id, key)
@@ -315,6 +418,43 @@ extension NativeEngine {
         _ = People.announce(r, kind: "event", text: text, reason: kind == "marriage" ? "两国王室联姻，\(years)年内互不兴兵。" : "条约期内双方不得相互宣战。", nations: [x, y], province: nil)
         return (true, text)
     }
+    /// 朝廷职位: the posts with their titles (by tradition), holders and the effect each brings.
+    public func posts(_ index: Int) -> Data? {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index) else { return nil }
+        let id = nations[index].id.asString
+        Regimes.enable(r)
+        Regimes.fillPosts(r, id)
+        let t = Regimes.tradition(r, id), b = Regimes.book(r, id)
+        let out = JS.array()
+        for p in Regimes.posts {
+            let e = JS.object(); e.id = JS(p.id); e.title = JS(p.titles[t]); e.effect = JS(p.effect); e.skill = JS(p.skill)
+            if let pid = b.posts[p.id].optionalNumber, let person = People.person(r, Int(pid)), person.isAlive.asBool {
+                let v = personView(person, role: p.titles[t]); e.holder = v; e.value = JS(Regimes.skill(person, p.skill).rounded())
+            }
+            out.push(e)
+        }
+        return Data(out.json.utf8)
+    }
+    /// Candidates for a post, ablest in its skill first.
+    public func postCandidates(_ index: Int, post: String) -> Data? {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), let p = Regimes.posts.first(where: { $0.id == post }) else { return nil }
+        let out = JS.array()
+        for person in Regimes.adults(r, nations[index].id.asString).sorted(by: { Regimes.skill($0, p.skill) > Regimes.skill($1, p.skill) }).prefix(15) { out.push(personView(person, role: "")) }
+        return Data(out.json.utf8)
+    }
+    public func appointPost(_ index: Int, post: String, personId: Int) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), Regimes.posts.contains(where: { $0.id == post }) else { return (false, "职位不存在。") }
+        guard let person = People.person(r, personId), person.isAlive.asBool else { return (false, "此人已不在人世。") }
+        Regimes.enable(r)
+        let b = Regimes.book(r, nations[index].id.asString)
+        if b.posts.isNull { b.posts = JS.object() }
+        b.posts[post] = JS(personId)
+        return (true, "已任命\(personView(person, role: "").name.asString)")
+    }
+
     /// 赠金: gold from one treasury to another.
     public func gift(_ from: Int, to: Int, gold: Double) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray

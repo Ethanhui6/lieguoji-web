@@ -74,7 +74,8 @@ struct NationSheet: View {
     @State private var levyProvince = -1
     /// 任命: the office whose candidates are listed.
     @State private var appointing: AppointTarget?
-    struct AppointTarget: Identifiable { let office: String; var id: String { office } }
+    struct AppointTarget: Identifiable { let office: String; var post: GameModel.PostInfo? = nil; var id: String { office } }
+    @State private var postList: [GameModel.PostInfo] = []
     @State private var cultureChoice = ""
     @State private var pactYears = 10
     @State private var giftText = "500"
@@ -143,6 +144,28 @@ struct NationSheet: View {
                                 if !regime.trait.isEmpty { Text(regime.trait).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
                             }
                             .padding(.horizontal, 24)
+                        }
+                        if !postList.isEmpty {
+                            FoldSection("朝廷百官（\(postList.filter { $0.holder != nil }.count)/\(postList.count)）", expanded: false) {
+                                Group2 {
+                                    ForEach(Array(postList.enumerated()), id: \.offset) { i, p in
+                                        Button { appointing = AppointTarget(office: "post-" + p.id, post: p) } label: {
+                                            HStack(spacing: 10) {
+                                                Text(p.title).font(Theme.kai(15)).foregroundStyle(Theme.ink).frame(width: 108, alignment: .leading).lineLimit(1).minimumScaleFactor(0.7)
+                                                Text(p.holder?.name ?? "空缺").font(Theme.kai(15)).foregroundStyle(p.holder == nil ? Theme.ink2 : Theme.ink).lineLimit(1)
+                                                Spacer()
+                                                if let v = p.value { Text("\(["魅", "军", "外", "政"][min(3, max(0, p.skill))])\(Int(v))").font(Theme.kai(12)).foregroundStyle(v >= 60 ? Theme.jade : v < 40 ? Theme.seal : Theme.ink2).monospacedDigit() }
+                                                Image(systemName: p.effect == "gold" ? "dollarsign.circle" : p.effect == "morale" ? "shield" : "sparkles").font(.system(size: 12)).foregroundStyle(Theme.ink2)
+                                            }
+                                            .padding(.horizontal, 16).padding(.vertical, 8).contentShape(Rectangle())
+                                        }
+                                        .buttonStyle(.plain)
+                                        if i < postList.count - 1 { Divider2() }
+                                    }
+                                    Text("称职的官员每月增国库（$）、国运（✦）或各军士气（盾）；不称职则相反。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8)
+                                }
+                                .padding(.horizontal, 16)
+                            }
                         }
                         if let parties = info.parties, !parties.isEmpty {
                             FoldSection("议会（\(info.styleLabel ?? "")）", expanded: true) {
@@ -234,9 +257,13 @@ struct NationSheet: View {
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
             .sheet(item: $appointing) { target in
-                AppointSheet(model: model, nation: nation, office: target.office) { person, name in
+                AppointSheet(model: model, nation: nation, office: target.office, post: target.post) { person, name in
                     appointing = nil
-                    Task { await run(success: "已任命\(name)为\(Self.officeTitle[target.office] ?? target.office)") { await model.appointOffice(nation, office: target.office, person: person) } }
+                    if let post = target.post {
+                        Task { await run(success: "已任命\(name)为\(post.title)") { await model.appointPost(nation, post: post.id, person: person) } }
+                    } else {
+                        Task { await run(success: "已任命\(name)为\(Self.officeTitle[target.office] ?? target.office)") { await model.appointOffice(nation, office: target.office, person: person) } }
+                    }
                 }
                 .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
             }
@@ -265,6 +292,29 @@ struct NationSheet: View {
         ("democratic", "民主共和", "共和国 · 总统 · 多党选举"), ("communist", "人民共和（共产主义）", "人民共和国 · 主席 · 一党执政"),
         ("oligarchic", "寡头共和", "共和国 · 执政官 · 元老与商会"), ("federal", "联邦共和", "联邦 · 联邦主席 · 多党"),
         ("theocracy", "神权", "神权国 · 宗教领袖"), ("tribal", "部落联盟", "部族 · 酋长或可汗"),
+        ("feudal", "封建王国", "王国 · 君主"),
+        ("elective", "选侯君主", "王国 · 选王"),
+        ("sultanate", "苏丹国", "苏丹国 · 苏丹"),
+        ("principality", "公国", "公国 · 大公"),
+        ("regency", "摄政", "王国 · 摄政王"),
+        ("tsardom", "沙皇专制", "沙皇国 · 沙皇"),
+        ("shogunate", "幕府", "幕府 · 征夷大将军"),
+        ("despotism", "专制帝国", "帝国 · 君主"),
+        ("citystate", "城邦共和", "城邦 · 执政官 · 多党"),
+        ("merchant", "商业共和", "共和国 · 总督 · 多党"),
+        ("parliamentary", "议会共和", "共和国 · 总理 · 多党"),
+        ("presidential", "总统共和", "共和国 · 总统 · 多党"),
+        ("socialist", "社会主义", "社会主义共和国 · 总书记 · 劳动党执政"),
+        ("dictatorship", "独裁", "国 · 元首"),
+        ("council", "革命委员会", "共和国 · 委员长 · 革命党执政"),
+        ("confederation", "邦联", "邦联 · 邦联主席 · 多党"),
+        ("union", "联合王国", "联合王国 · 君主 · 多党"),
+        ("caliphate", "哈里发国", "哈里发国 · 哈里发"),
+        ("papacy", "教宗国", "教宗国 · 教宗"),
+        ("lamaism", "政教合一", "国 · 法王"),
+        ("order", "骑士团国", "骑士团国 · 大团长"),
+        ("khanate", "汗国", "汗国 · 可汗"),
+        ("chiefdom", "酋邦", "酋邦 · 大酋长"),
     ]
     static let officeTitle = ["Chancellor": "宰相", "Steward": "司农", "Marshal": "大将军"]
     static let officeDuty = ["Chancellor": "总理朝政 · 增国库", "Steward": "掌钱粮 · 增国库", "Marshal": "统率三军"]
@@ -348,6 +398,7 @@ struct NationSheet: View {
         info = await model.nationInfo(nation)
         history = await model.nationHistory(nation)
         regime = await model.regime(nation)
+        postList = await model.posts(nation)
         if model.controller.relationsNation == nation { model.controller.relations = relationColors() }
     }
     /// StateRelationsHighlighter colours.
@@ -721,13 +772,14 @@ struct AppointSheet: View {
     @ObservedObject var model: GameModel
     let nation: Int
     let office: String
+    var post: GameModel.PostInfo? = nil
     let appoint: (Int, String) -> Void
     @State private var people: [NationInfo.Person] = []
     @State private var loaded = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: "任命" + (NationSheet.officeTitle[office] ?? office), subtitle: NationSheet.officeDuty[office], seal: "任")
+                SheetHeader(title: "任命" + (post?.title ?? NationSheet.officeTitle[office] ?? office), subtitle: post.map { ["按魅力", "按军事", "按外交", "按行政"][min(3, max(0, $0.skill))] + "择优" } ?? NationSheet.officeDuty[office], seal: "任")
                 Group2 {
                     if loaded && people.isEmpty { Text("本国暂无合适人选").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16) }
                     if !loaded { ProgressView().frame(maxWidth: .infinity).padding(20) }
@@ -755,6 +807,9 @@ struct AppointSheet: View {
             }
             .padding(.bottom, 24)
         }
-        .task { people = await model.officeCandidates(nation, office: office); loaded = true }
+        .task {
+            if let post { people = await model.postCandidates(nation, post: post.id) } else { people = await model.officeCandidates(nation, office: office) }
+            loaded = true
+        }
     }
 }

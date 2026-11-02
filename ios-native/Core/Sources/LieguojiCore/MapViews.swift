@@ -34,24 +34,32 @@ extension NativeEngine {
         var cityOf = [String: String](); for c in w.cities.asArray { cityOf[c.provinceId.asString] = c.id.asString }
         var holder = [String: String]()
         if !r.nobility.isNull { for (id, fam) in r.nobility.families.objectEntries { for p in fam.controlledProvinces.asArray { holder[p.asString] = id } } }
-        var owned = [String: Int](); for p in provinces { owned[p.controller.asString, default: 0] += 1 }
+        var owned = [String: Int](); for p in provinces { owned[p.controller.optionalString ?? "", default: 0] += 1 }
         var fills = [String](), legend = [(key: String, name: String, color: String, count: Int)](), groupOf = [Int]()
         func add(_ key: String?, _ name: @autoclosure () -> String, _ c: @autoclosure () -> String) -> String {
             guard let key else { groupOf.append(-1); return "#ffffff" }
             if let i = legend.firstIndex(where: { $0.key == key }) { legend[i].count += 1; groupOf.append(i); return legend[i].color }
             let col = c(); groupOf.append(legend.count); legend.append((key, name(), col, 1)); return col
         }
+        // A province may be held by no listed state (a fallen one): its name is then empty, never a crash.
+        var names = [String: String](); for n in nations { names[n.id.asString] = n.name.optionalString ?? "" }
+        func nameOf(_ id: String) -> String { names[id] ?? "" }
+        // 经济: provinces by population, in five bands from sparse to teeming.
+        var population = [String: Double](); for s in w.statecraft.provinces.asArray { population[s.provinceId.asString] = s.population.optionalNumber ?? 0 }
+        let sortedPop = population.values.sorted()
+        func band(_ v: Double) -> Int { guard !sortedPop.isEmpty else { return 0 }; let rank = sortedPop.firstIndex { $0 >= v } ?? sortedPop.count - 1; return min(4, rank * 5 / max(1, sortedPop.count)) }
+        let bandNames = ["人烟稀少", "人口疏落", "人口中等", "人口稠密", "繁华富庶"], bandColors = ["#f3ead2", "#e8d29a", "#d9b25f", "#c08a3a", "#8f5a22"]
         for p in provinces {
-            let controller = p.controller.asString
+            let controller = p.controller.optionalString ?? ""
             switch mode {
             case "alliance":
                 // The alliance colour is its strongest member's; every state keeps its own name.
                 if let a = Vassals.allianceOf(r, controller) {
                     // The strongest member (most provinces; the first listed on a tie).
                     var strongest = controller, most = -1
-                    for m in a.members.asArray { let id = m.asString, n = owned[id] ?? 0; if n > most { most = n; strongest = id } }
-                    fills.append(add("alliance:" + a.id.asString, a.name.asString, color[strongest] ?? "#999999"))
-                } else { fills.append(add("state:" + controller, Vassals.name(r, controller), color[controller] ?? "#999999")) }
+                    for m in a.members.asArray { let id = m.optionalString ?? "", n = owned[id] ?? 0; if n > most { most = n; strongest = id } }
+                    fills.append(add("alliance:" + (a.id.optionalString ?? ""), a.name.optionalString ?? "同盟", color[strongest] ?? "#999999"))
+                } else { fills.append(add("state:" + controller, nameOf(controller), color[controller] ?? "#999999")) }
             case "culture":
                 let c = cityOf[p.id.asString].flatMap { r.civilization.cities[$0].cultureId.optionalString } ?? r.civilization.nations[controller].cultureId.optionalString
                 fills.append(add(c.map { "culture:" + $0 }, Self.cultureNames[c ?? ""] ?? c ?? "", Self.familyPalette[(Self.cultureIds.firstIndex(of: c ?? "") ?? 0) % Self.familyPalette.count]))
@@ -63,15 +71,23 @@ extension NativeEngine {
                 let id = holder[p.id.asString]
                 let surname = id.flatMap { r.kin.families[$0].surname.optionalString }
                 fills.append(add(id.map { "family:" + $0 }, surname.map { $0 + "家族" } ?? "", Self.familyColor(Int(id ?? "0") ?? 0)))
+            case "economy":
+                let b = band(population[p.id.asString] ?? 0)
+                fills.append(add("band:\(b)", bandNames[b], bandColors[b]))
+            case "polity":
+                // 政体: each state in the colour of its form of government.
+                let st = r.regimes.isNull && r.civilization.nations[controller].isNull ? nil : Regimes.style(r, controller)
+                let i = st.flatMap { s in Regimes.styles.firstIndex { $0.id == s.id } } ?? 0
+                fills.append(add(st.map { "style:" + $0.id }, st?.label ?? "", Self.familyPalette[(i + 3) % Self.familyPalette.count]))
             default:
-                fills.append(add("state:" + controller, Vassals.name(r, controller), color[controller] ?? "#999999"))
+                fills.append(add("state:" + controller, nameOf(controller), color[controller] ?? "#999999"))
             }
         }
         let o = JS.object()
         o.fills = .array(fills.map { JS($0) })
         // The original names each group of the view instead of the states (ViewManager
         // Update*LabelsAndBorderVisibility); the alliance view keeps every state's own name.
-        if mode == "culture" || mode == "family" || mode == "religion" {
+        if mode == "culture" || mode == "family" || mode == "religion" || mode == "polity" {
             o.labels = .array(labels(groupOf).asArray.compactMap { box -> JS? in
                 let g = box.nation.asInt
                 guard legend.indices.contains(g), !legend[g].name.isEmpty else { return nil }

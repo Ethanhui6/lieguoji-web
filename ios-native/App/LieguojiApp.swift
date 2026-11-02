@@ -78,7 +78,11 @@ struct RootView: View {
         }
         .animation(.easeInOut(duration: 0.45), value: model.phase)
         // Leaving the app saves (autosave runs only every 90 days).
-        .onChange(of: scenePhase) { _, phase in if phase == .background, model.phase == .playing { model.save() } }
+        // Leaving pauses and saves; coming back reattaches to the computer if its link broke meanwhile.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background, model.phase == .playing { model.pause(); model.save() }
+            if phase == .active, model.phase == .playing { Task { if await model.native.lost { model.remoteLost() } } }
+        }
         .task { GameFeel.shared.start() }
         .task { await model.loadBackdrop(); try? await model.engine.start() }
         .alert("出了点问题", isPresented: Binding(get: { model.failure != nil }, set: { if !$0 { model.failure = nil } })) {
@@ -1063,7 +1067,11 @@ struct ArmyRow: View {
         HStack(spacing: 10) {
             RoundedRectangle(cornerRadius: 3).fill(army.nation >= 0 && army.nation < map.meta.nations.count ? Names.color(map.meta.nations[army.nation].color) : .gray).frame(width: 10, height: 30)
             VStack(alignment: .leading, spacing: 2) {
-                Text(army.name).font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                HStack(spacing: 6) {
+                    Text(army.name).font(Theme.kai(18)).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text(Echelon.name(troops: army.troops, culture: map.meta.nations.indices.contains(army.nation) ? map.meta.nations[army.nation].culture : ""))
+                        .font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule())
+                }
                 Text("\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "海上") · \(Names.status(army.status))\(Self.dest(map, army))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             }
             Spacer()
@@ -1101,7 +1109,7 @@ struct ArmySheet: View {
                             Text(a.name).font(Theme.kai(26)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                             HStack(spacing: 6) {
                                 RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 10, height: 10)
-                                Text("\(nation?.name ?? "") · \(Names.unit[a.unit] ?? a.unit)").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                                Text("\(nation?.name ?? "") · \(model.state.map { Echelon.designation($0, map, army: army) } ?? "") · \(Names.unit[a.unit] ?? a.unit)").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
                             }
                         }
                         Spacer()
@@ -1110,6 +1118,7 @@ struct ArmySheet: View {
                     }
                     .padding(.horizontal, 22).padding(.top, 22)
                     StatStrip(tiles: [
+                        StatTile(label: "编制", value: Echelon.name(troops: a.troops, culture: nation?.culture ?? "")),
                         StatTile(label: "兵力", value: Names.wan(a.troops)),
                         StatTile(label: "士气", value: "\(a.morale)", fraction: Double(a.morale) / 100, warn: a.morale < 30),
                         StatTile(label: "粮草", value: "\(a.supplies)", fraction: Double(min(100, a.supplies)) / 100, warn: a.supplies <= 10),
@@ -1278,9 +1287,14 @@ struct MilitarySheet: View {
                         .padding(.horizontal, 16)
                     }
                     ForEach(state.nations.indices, id: \.self) { n in
-                        let rows = byNation[n] ?? []
+                        let rows = (byNation[n] ?? []).sorted { state.armies[$0].troops > state.armies[$1].troops }
                         if !rows.isEmpty {
-                            NationChip(map: map, nation: n).padding(.horizontal, 22)
+                            HStack {
+                                NationChip(map: map, nation: n)
+                                Spacer()
+                                Text("\(rows.count) 支 · \(Names.wan(rows.reduce(0) { $0 + state.armies[$1].troops })) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                            }
+                            .padding(.horizontal, 22)
                             Group2 {
                                 ForEach(rows, id: \.self) { i in
                                     Button { select(i) } label: { ArmyRow(map: map, army: state.armies[i]) }.buttonStyle(.plain)
@@ -1543,6 +1557,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.20.0", ["政体扩充为十种：君主专制、君主立宪、帝制、军政府、民主共和、人民共和（共产主义）、寡头共和、联邦共和、神权、部落联盟。国号与元首称号随政体变化（如「某某人民共和国」主席、共和国总统、军政府最高统帅、寡头共和执政官）；改政体的页面重做为带说明的列表。",
+                    "党派与议会：君主立宪、各类共和与联邦国家有自己的党派和议席（共产主义国家一党执政），国家页显示议席色带与执政党；每四年大选，议席重新分配，最大党上台执政并记入纪事。",
+                    "外交新增：互不侵犯条约（五／十／二十年，期内 AI 不会对缔约国宣战）、王室联姻（十年互不兴兵）、赠送金帛、割让州郡；国家页显示现有条约与剩余年限。",
+                    "军队编制：按兵力定为集团军、军、师、旅、团、营，并按国家编番号（如「第二师」）；叫法随文化变化——罗马为军团、大队、百人队，蒙古与突厥为万户、千户、百户，日本为师团、旅团、联队。军团页显示番号与编制，军事列表按兵力排序并显示每国军队总数与总兵力。",
+                    "修复切到后台后报错：切后台会暂停并存档；与电脑的连接被系统切断后，回来时自动重新接上电脑（世界一直在电脑上，不会丢进度），多次连不上才改用手机继续。",
+                    "远程计算更快：经中转时每步推演两倍天数，中转返回的数据压缩后传输；手机等太久而放弃的请求会被撤回，电脑不再执行过期请求；远程时每 30 天自动存档一次。"]),
         ("0.19.1", ["远程计算改为傻瓜式：设置里只显示「已连接你的电脑／正在等你的电脑上线」、一个「立即查找」按钮和自动开关，不再出现输入框；手动输入地址收进「高级」。手机进入世界即自动接入，不用填写任何东西。"]),
         ("0.19.0", ["自动接入电脑，零操作：手机版和电脑端「列国纪远程计算」内置同一个专属房间，电脑端第一次运行后设为开机自动运行；以后只要电脑开着，手机一进入世界就自动接入电脑计算（之后每 90 秒重试一次，电脑晚开机也会接上）。同一 Wi-Fi 下自动走局域网直连（快），在外面走中转；「设置 › 远程计算」可关闭。",
                     "修复城市名在新世界里不显示：以前开局时地图沿用了生成预览，预览里城市还没有名字，之后不再重建；现在进入正式世界时城市名会重新生成。",

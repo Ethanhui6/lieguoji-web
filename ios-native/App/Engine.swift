@@ -124,3 +124,30 @@ struct LoadedWorld: Decodable {
     let meta: WorldMeta
     let state: GameState
 }
+
+/// 编制: an army's echelon by its strength, named in its state's tradition (军/师/旅 in the east,
+/// legions and cohorts for Rome, ten-thousands and thousands for the steppe), with an ordinal per state.
+enum Echelon {
+    static let thresholds = [40_000, 20_000, 10_000, 5_000, 2_000, 0]
+    static func names(_ culture: String) -> [String] {
+        switch culture {
+        case "roman", "greek": return ["方面军", "军团群", "双军团", "军团", "大队", "百人队"]
+        case "mongol", "turkic": return ["大军", "双万户", "万户", "千户", "千户", "百户"]
+        case "japanese": return ["方面军", "军", "师团", "旅团", "联队", "大队"]
+        case "arab", "persian", "egyptian": return ["大军", "军", "师", "旅", "团", "营"]
+        default: return ["集团军", "军", "师", "旅", "团", "营"]
+        }
+    }
+    static func level(_ troops: Int) -> Int { thresholds.firstIndex { troops >= $0 } ?? 5 }
+    static func name(troops: Int, culture: String) -> String { names(culture)[level(troops)] }
+    /// 第N师: the army's place among its state's armies of the same echelon (by strength).
+    static func designation(_ state: GameState, _ map: WorldMap, army i: Int) -> String {
+        guard state.armies.indices.contains(i) else { return "" }
+        let a = state.armies[i], culture = map.meta.nations.indices.contains(a.nation) ? map.meta.nations[a.nation].culture : ""
+        let lvl = level(a.troops)
+        let peers = state.armies.indices.filter { state.armies[$0].nation == a.nation && level(state.armies[$0].troops) == lvl }
+            .sorted { state.armies[$0].troops != state.armies[$1].troops ? state.armies[$0].troops > state.armies[$1].troops : state.armies[$0].id < state.armies[$1].id }
+        let n = (peers.firstIndex(of: i) ?? 0) + 1
+        return "第" + ChineseNumeral.of(min(99, n)) + names(culture)[lvl]
+    }
+}

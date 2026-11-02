@@ -114,6 +114,9 @@ public final class EngineService {
             var r = Reply(); r.strings = g.history; r.text = g.trait; return r
         case "editPerson": return command(engine?.editPerson(int("id"), skills: dbls("skills"), traits: strs("traits")))
         case "editNation": return command(engine?.editNation(int("n"), gold: dbl("gold"), destiny: dbl("destiny"), polity: optStr("polity"), culture: optStr("culture"), religion: optStr("religion")))
+        case "setStyle": return command(engine?.setStyle(int("n"), style: str("style")))
+        case "treaty": return command(engine?.treaty(int("a"), int("b"), years: int("years"), kind: str("kind")))
+        case "gift": return command(engine?.gift(int("from"), to: int("to"), gold: dbl("gold") ?? 0))
         case "officeCandidates": return data(engine?.officeCandidates(int("n"), office: str("office")))
         case "appointOffice": return command(engine?.appointOffice(int("n"), office: str("office"), personId: int("person")))
         case "setCourtManual": return command(engine?.setCourtManual(int("n"), manual: bool("manual")))

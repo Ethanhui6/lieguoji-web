@@ -216,6 +216,8 @@ public struct DeclarationEngine: Sendable {
     /// traits and polity; it lowers or raises the bar a war's weight must clear. nil keeps the original.
     public static var temper: ((String) -> Double)?
     public static var nationIds: [String] = []
+    /// App rule: whether a treaty forbids the first state (index) from declaring on the second.
+    public static var pact: ((Int, Int) -> Bool)?
 
     /// One monthly evaluation for `nation` (nativeSpendDeclarationPower around nativeEvaluateDeclaration).
     public func evaluate(_ w: inout DiplomacyWorld, nation: Int) -> DeclaredWar? {
@@ -432,6 +434,8 @@ public struct DeclarationEngine: Sendable {
                 guard let t = stateByID[id] else { continue }
                 if states[t].dead || t == a || atWar(a, t) || w.overlordOf(states[t].index) == states[a].index { continue }
                 if let al = states[a].alliance, w.alliances[al].members.contains(states[t].index) { continue }
+                // App rule: a non-aggression pact or a marriage keeps the pair at peace while it lasts.
+                if DeclarationEngine.pact?(states[a].index, states[t].index) == true { continue }
                 if states[t].vassal {
                     let f = Native.fr, lord = w.overlordOf(states[t].index).map { f(w.nations[$0].strength) } ?? 0
                     if f(f(strength(t)) + lord) > f(strength(a)) { continue }

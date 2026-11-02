@@ -38,15 +38,18 @@ actor NativeHost {
         if let remote {
             do { return try await remote.call(name, args, payload: payload) }
             catch {
-                await dropRemote()
-                return EngineService.Reply(ok: false, reason: "与电脑的连接中断，已切回本机计算：\(error.localizedDescription)")
+                // The link broke (the app went to the background, the network blinked): the world is safe
+                // on the computer. Reattach later instead of falling back to an older copy at once.
+                remote.cancel(); self.remote = nil; remoteAddress = nil; lost = true
+                return EngineService.Reply(ok: false, reason: "与电脑的连接中断")
             }
         }
+        if lost { return EngineService.Reply(ok: false, reason: "与电脑的连接中断，正在重连") }
         return service.handle(name, args, payload: payload)
     }
 
     /// Connects to a computer and moves the world there (catalogues first, then the current save).
-    func connect(_ address: String, timeout: Double = 6) async throws -> String {
+    func connect(_ address: String, timeout: Double = 6, reattach: Bool = false) async throws -> String {
         let text = address.trimmingCharacters(in: .whitespaces)
         // A pairing code (letters and digits, no dots) goes through the relay; an address is direct.
         let code = text.replacingOccurrences(of: "-", with: "").uppercased()
@@ -65,6 +68,12 @@ actor NativeHost {
         }
         let hello = try await link.call("ping", [:], payload: nil)
         guard hello.ok else { link.cancel(); throw EngineError.message("对方不是列国纪远程计算服务器") }
+        if reattach {
+            // The computer kept the world while the phone was away: use it as it is.
+            guard (try await link.call("isOpen", [:], payload: nil)).ok else { link.cancel(); throw EngineError.message("电脑上的世界已关闭") }
+            remote = link; remoteAddress = label; lost = false; lastAddress = address
+            return label
+        }
         let c = try Self.catalogData()
         let catalogs = try JSONSerialization.data(withJSONObject: ["traits": c.traits.base64EncodedString(), "nobleCultures": c.noble.base64EncodedString(), "cultures": c.cultures.base64EncodedString()])
         let loaded = try await link.call("catalogs", [:], payload: catalogs)
@@ -76,7 +85,7 @@ actor NativeHost {
             _ = try await link.call("enableAppRules", [:], payload: nil)
             lastWorld = save
         }
-        remote = link; remoteAddress = label
+        remote = link; remoteAddress = label; lastAddress = address; lost = false
         return label
     }
     /// Back to the phone: the computer's world comes home first.
@@ -87,8 +96,19 @@ actor NativeHost {
         }
         link.cancel(); remote = nil; remoteAddress = nil
     }
-    private func dropRemote() async {
-        remote?.cancel(); remote = nil; remoteAddress = nil
+    /// The computer's link broke while it held the world; requests wait for a reattach or the fallback.
+    private(set) var lost = false
+    private var lastAddress: String?
+    /// Reattaches to the computer still holding the world (no upload); nil if it cannot be reached.
+    func reattach() async -> String? {
+        guard lost, let address = lastAddress else { return nil }
+        if let label = try? await connect(address, timeout: 4, reattach: true) { return label }
+        if address != RemoteRoom.personal, let label = try? await connect(RemoteRoom.personal, reattach: true) { return label }
+        return nil
+    }
+    /// The computer is gone: continue on the phone from the last world it returned (the last save).
+    func fallbackLocal() {
+        lost = false
         if let lastWorld { _ = service.handle("open", [:], payload: lastWorld); service.engine?.enableAppRules() }
     }
     var isRemote: Bool { remote != nil }
@@ -96,6 +116,7 @@ actor NativeHost {
     /// 自动接入: finds this player's computer through the relay room built into the app; on the same
     /// network it connects directly (fast), otherwise through the relay. Nil when the computer is off.
     func connectAuto() async -> String? {
+        if lost { return await reattach() }
         guard remote == nil, service.engine != nil else { return nil }
         guard let status = await RelayLink(code: RemoteRoom.personal).status(), status.online else { return nil }
         for address in status.lan {
@@ -117,6 +138,7 @@ actor NativeHost {
     }
     func close() async { _ = await call("close") }
     func step(days: Int) async -> Data { await call("step", ["days": days]).data ?? Data() }
+    func state() async -> Data? { await call("state").data }
     private func command(_ name: String, _ args: [String: Any]) async -> (ok: Bool, reason: String, state: Data?) {
         let r = await call(name, args); return (r.ok, r.reason, r.data)
     }
@@ -154,6 +176,9 @@ actor NativeHost {
     func editNation(_ n: Int, gold: Double?, destiny: Double?, polity: String?, culture: String? = nil, religion: String? = nil) async -> (ok: Bool, reason: String, state: Data?) {
         await command("editNation", ["n": n, "gold": Self.opt(gold), "destiny": Self.opt(destiny), "polity": Self.opt(polity), "culture": Self.opt(culture), "religion": Self.opt(religion)])
     }
+    func setStyle(_ n: Int, style: String) async -> (ok: Bool, reason: String, state: Data?) { await command("setStyle", ["n": n, "style": style]) }
+    func treaty(_ a: Int, _ b: Int, years: Int, kind: String) async -> (ok: Bool, reason: String, state: Data?) { await command("treaty", ["a": a, "b": b, "years": years, "kind": kind]) }
+    func gift(_ from: Int, to: Int, gold: Double) async -> (ok: Bool, reason: String, state: Data?) { await command("gift", ["from": from, "to": to, "gold": gold]) }
     func officeCandidates(_ n: Int, office: String) async -> Data? { await call("officeCandidates", ["n": n, "office": office]).data }
     func appointOffice(_ n: Int, office: String, person: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("appointOffice", ["n": n, "office": office, "person": person]) }
     func setCourtManual(_ n: Int, manual: Bool) async -> (ok: Bool, reason: String, state: Data?) { await command("setCourtManual", ["n": n, "manual": manual]) }

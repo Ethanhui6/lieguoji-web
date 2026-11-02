@@ -36,6 +36,82 @@ public enum Regimes {
         return min(1.6, max(0.6, t))
     }
 
+    // MARK: 政体细分 (styles)
+    /// A form of government over one of the engine's six polities: its own name ending, head-of-state
+    /// title and party system. The engine's rules follow the base polity.
+    public struct Style: Sendable { public let id: String, base: String, label: String, suffix: String, title: String?, parties: Bool, single: String? }
+    public static let styles: [Style] = [
+        Style(id: "absolute", base: "Kingdom", label: "君主专制", suffix: "王国", title: nil, parties: false, single: nil),
+        Style(id: "constitutional", base: "Kingdom", label: "君主立宪", suffix: "王国", title: nil, parties: true, single: nil),
+        Style(id: "empire", base: "Empire", label: "帝制", suffix: "帝国", title: nil, parties: false, single: nil),
+        Style(id: "junta", base: "Empire", label: "军政府", suffix: "国", title: "最高统帅", parties: false, single: nil),
+        Style(id: "democratic", base: "Republic", label: "民主共和", suffix: "共和国", title: "总统", parties: true, single: nil),
+        Style(id: "communist", base: "Republic", label: "人民共和（共产主义）", suffix: "人民共和国", title: "主席", parties: true, single: "共产党"),
+        Style(id: "oligarchic", base: "Republic", label: "寡头共和", suffix: "共和国", title: "执政官", parties: true, single: nil),
+        Style(id: "federal", base: "Federation", label: "联邦共和", suffix: "联邦", title: "联邦主席", parties: true, single: nil),
+        Style(id: "theocracy", base: "Theocracy", label: "神权", suffix: "", title: nil, parties: false, single: nil),
+        Style(id: "tribal", base: "Tribal", label: "部落联盟", suffix: "部族", title: nil, parties: false, single: nil),
+    ]
+    static let defaultStyle = ["Kingdom": "absolute", "Empire": "empire", "Republic": "democratic", "Federation": "federal", "Theocracy": "theocracy", "Tribal": "tribal"]
+    public static func style(_ r: JS, _ id: String) -> Style {
+        let polity = r.civilization.nations[id].polity.optionalString ?? "Kingdom"
+        let chosen = r.regimes.isNull ? nil : r.regimes.nations[id].style.optionalString
+        if let chosen, let s = styles.first(where: { $0.id == chosen && $0.base == polity }) { return s }
+        return styles.first { $0.id == defaultStyle[polity] } ?? styles[0]
+    }
+    /// The state's name for its base name and style (a restored empire's ordinal kept by the caller).
+    static func title(_ r: JS, _ id: String, base: String, style s: Style) -> String {
+        if s.id == "theocracy" || s.suffix.isEmpty { return Opening.stateTitle(base, polity: s.base, religion: r.civilization.nations[id].religionId.optionalString ?? "") }
+        return base + s.suffix
+    }
+
+    // MARK: 党派 (parties)
+    static let partyNames = ["自由党", "保守党", "民主党", "共和党", "进步党", "人民党", "国民党", "社会党", "工党", "民族党", "联邦党", "改革党", "农民党", "统一党", "立宪党", "公民党"]
+    static let oligarchs = ["元老派", "商人公会", "贵族院派", "将门派"]
+    /// Seats out of 100 for each party of a state with a party system (made once, re-dealt at elections).
+    static func parties(_ r: JS, _ id: String, _ s: Style, seed: Int) -> JS {
+        var h: UInt32 = 0x811c9dc5
+        for u in "\(id)|\(seed)|parties".utf8 { h = (h ^ UInt32(u)) &* 0x1000193 }
+        func next() -> UInt32 { h = h &* 1664525 &+ 1013904223; return h >> 8 }
+        var names: [String]
+        if let single = s.single { names = [single] }
+        else if s.id == "oligarchic" { names = oligarchs }
+        else {
+            var pool = partyNames; names = []
+            for _ in 0..<(3 + Int(next() % 2)) { names.append(pool.remove(at: Int(next() % UInt32(pool.count)))) }
+        }
+        var weights = names.map { _ in Double(10 + next() % 40) }
+        if s.single != nil { weights = [100] }
+        let total = weights.reduce(0, +)
+        var seats = weights.map { Int(($0 / total * 100).rounded()) }
+        seats[0] += 100 - seats.reduce(0, +)
+        return .array(zip(names, seats).map { n, v in let o = JS.object(); o.name = JS(n); o.seats = JS(max(0, v)); return o })
+    }
+    /// Every four years a state with parties re-deals its seats; a new largest party takes power.
+    static func election(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
+        let s = style(r, id)
+        guard s.parties, s.single == nil else { return }
+        let b = book(r, id)
+        if b.parties.isNull { b.parties = parties(r, id, s, seed: key); return }
+        guard key % 48 == Offices.stateId(r, id) % 48 else { return }
+        let before = b.parties.asArray.max { $0.seats.asInt < $1.seats.asInt }?.name.optionalString
+        b.parties = parties(r, id, s, seed: key)
+        let after = b.parties.asArray.max { $0.seats.asInt < $1.seats.asInt }?.name.optionalString ?? ""
+        let text = after == before ? "\(n.name.asString)大选：\(after)连任执政" : "\(n.name.asString)大选：\(after)上台执政"
+        _ = People.announce(r, kind: "event", text: text, reason: "四年一度的议会选举，议席重新分配；最大党组织政府。", nations: [id], province: nil)
+    }
+
+    // MARK: 条约 (treaties)
+    /// A live treaty between two states (pact or marriage), if any.
+    public static func treaty(_ r: JS, _ a: String, _ b: String) -> JS? {
+        guard !r.regimes.isNull, !r.regimes.pacts.isNull else { return nil }
+        let now = r.regimes.month.asInt
+        return r.regimes.pacts.asArray.first { p in
+            let x = p.a.asString, y = p.b.asString
+            return ((x == a && y == b) || (x == b && y == a)) && p.until.asInt > now
+        }
+    }
+
     public static func enable(_ r: JS) {
         if r.regimes.isNull { let o = JS.object(); o.nations = JS.object(); o.month = JS(-1); r.regimes = o }
         r.regimes.enabled = JS(true)
@@ -49,6 +125,8 @@ public enum Regimes {
         if r.regimes.month.asInt == key { return }
         r.regimes.month = JS(key)
         if DeclarationEngine.temper != nil { DeclarationEngine.nationIds = r.world.nations.asArray.map(\.id.asString) }
+        // Treaties end in their month.
+        if !r.regimes.pacts.isNull { r.regimes.pacts = .array(r.regimes.pacts.asArray.filter { $0.until.asInt > key }) }
         for n in r.world.nations.asArray {
             let id = n.id.asString
             guard Vassals.alive(r, id) else { continue }
@@ -81,6 +159,7 @@ public enum Regimes {
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
         tribute(r, n, id, gain: gain)
         coup(r, n, id, key)
+        election(r, n, id, key)
         let b = book(r, id)
         b.calm = JS(b.calm.asInt + 1)
         // Turmoil: weak government, lost land, a very old ruler; no revolution within two years of one.
@@ -187,7 +266,9 @@ public enum Regimes {
         }
         if let b { b.history.push(JS(polity)); b.calm = JS(0) }
         let base = civ.name.value.optionalString ?? oldName
-        n.name = JS(prefix.isEmpty ? Opening.stateTitle(base, polity: polity, religion: civ.religionId.optionalString ?? "") : base + prefix + (titles[polity] ?? ""))
+        if let b { b.parties = .null }
+        let s = style(r, id)
+        n.name = JS(prefix.isEmpty ? title(r, id, base: base, style: s) : base + prefix + (titles[polity] ?? ""))
         // Turmoil costs: a fifth of the treasury and ten points of destiny.
         let fin = r.finance.nations[id]
         if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) * 0.8) }
@@ -201,11 +282,63 @@ public enum Regimes {
 
 extension NativeEngine {
     /// Turns on the app-only rules (regime changes) for this run.
+    /// 改易政体 by style (君主立宪、人民共和…): the base polity changes as a revolution would; the style
+    /// sets the name ending, the head's title and the parties.
+    public func setStyle(_ index: Int, style: String) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), let s = Regimes.styles.first(where: { $0.id == style }) else { return (false, "政体不存在。") }
+        Regimes.enable(r)
+        let id = nations[index].id.asString
+        let b = Regimes.book(r, id)
+        b.style = JS(style)
+        if r.civilization.nations[id].polity.optionalString != s.base {
+            Regimes.change(r, id, to: s.base, reason: "改制")
+            Government.reconcileContinuity(r)
+        } else {
+            b.parties = .null
+            nations[index].name = JS(Regimes.title(r, id, base: r.civilization.nations[id].name.value.optionalString ?? nations[index].name.asString, style: s))
+        }
+        return (true, "已改行\(s.label)")
+    }
+    /// 外交: a non-aggression pact or a marriage between two states for some years (no war between them).
+    public func treaty(_ a: Int, _ b: Int, years: Int, kind: String) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(a), nations.indices.contains(b), a != b else { return (false, "国家不存在。") }
+        let x = nations[a].id.asString, y = nations[b].id.asString
+        if Wars.relation(r, x, y)?.status.asString == "war" { return (false, "两国正在交战，须先议和。") }
+        Regimes.enable(r)
+        if r.regimes.pacts.isNull { r.regimes.pacts = .array() }
+        let p = JS.object(); p.a = JS(x); p.b = JS(y); p.kind = JS(kind); p.until = JS(max(0, r.regimes.month.asInt) + max(1, years) * 12)
+        r.regimes.pacts.push(p)
+        let an = nations[a].name.asString, bn = nations[b].name.asString
+        let text = kind == "marriage" ? "\(an)与\(bn)联姻" : "\(an)与\(bn)缔结\(years)年互不侵犯条约"
+        _ = People.announce(r, kind: "event", text: text, reason: kind == "marriage" ? "两国王室联姻，\(years)年内互不兴兵。" : "条约期内双方不得相互宣战。", nations: [x, y], province: nil)
+        return (true, text)
+    }
+    /// 赠金: gold from one treasury to another.
+    public func gift(_ from: Int, to: Int, gold: Double) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(from), nations.indices.contains(to), from != to else { return (false, "国家不存在。") }
+        let a = r.finance.nations[nations[from].id.asString], b = r.finance.nations[nations[to].id.asString]
+        guard !a.isNull, !b.isNull else { return (false, "国库不存在。") }
+        let amount = min(max(0, gold), a.gold.optionalNumber ?? 0)
+        guard amount > 0 else { return (false, "国库空虚，无金可赠。") }
+        a.gold = JS((a.gold.optionalNumber ?? 0) - amount); b.gold = JS((b.gold.optionalNumber ?? 0) + amount)
+        let text = "\(nations[from].name.asString)赠\(nations[to].name.asString)\(Int(amount))金"
+        _ = People.announce(r, kind: "event", text: text, reason: "国书往来，金帛相赠。", nations: [nations[from].id.asString, nations[to].id.asString], province: nil)
+        return (true, text)
+    }
+
     public func enableAppRules() {
         Regimes.enable(run)
         let r = run
         DeclarationEngine.nationIds = r.world.nations.asArray.map(\.id.asString)
         DeclarationEngine.temper = { id in Regimes.temper(r, id) }
+        DeclarationEngine.pact = { a, b in
+            let ids = DeclarationEngine.nationIds
+            guard ids.indices.contains(a), ids.indices.contains(b) else { return false }
+            return Regimes.treaty(r, ids[a], ids[b]) != nil
+        }
         ArmyAutonomy.temper = { index in
             let ids = DeclarationEngine.nationIds
             return ids.indices.contains(index) ? Regimes.temper(r, ids[index]) : 1

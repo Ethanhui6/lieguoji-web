@@ -32,6 +32,31 @@ import LieguojiCore
     }
     private var autoTask: Task<Void, Never>?
     /// 立即查找: look for the computer now (instead of the next 90-second check).
+    /// The computer's link broke (background, network): pause quietly and reattach; after several
+    /// failures continue on the phone from the last copy.
+    private var reconnecting = false
+    func remoteLost() {
+        let wasPlaying = playing
+        if playing { loop?.cancel(); loop = nil; playing = false }
+        remoteAddress = nil
+        guard !reconnecting else { return }
+        reconnecting = true
+        notice = "与电脑的连接中断，正在重连…"
+        Task {
+            for _ in 0..<8 {
+                if let a = await native.reattach() {
+                    remoteAddress = a; reconnecting = false; notice = "已重新接上电脑"
+                    if wasPlaying { play() }
+                    return
+                }
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
+            }
+            await native.fallbackLocal()
+            reconnecting = false
+            notice = "电脑暂时连不上，改用手机继续（从最近一次存档）"
+            if let data = await native.state(), let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
+        }
+    }
     func findComputerNow() async -> Bool {
         guard remoteAddress == nil else { return true }
         guard let a = await native.connectAuto() else { return false }
@@ -299,7 +324,9 @@ import LieguojiCore
                 let started = Date()
                 // Speed is days per step: the engine runs that many days in one call and the map,
                 // the state and the panels refresh once, so 2×, 4× and 8× really are faster.
-                do { try await self.step(days: self.speed) }
+                // Through the relay each round trip costs time: twice the days per step.
+                let far = self.remoteAddress.map { !$0.contains("局域网") } ?? false
+                do { try await self.step(days: far ? self.speed * 2 : self.speed) }
                 catch { self.failure = error.localizedDescription; self.pause(); return }
                 let budget = self.speed == 1 ? 0.22 : 0.12
                 let rest = budget - Date().timeIntervalSince(started)
@@ -323,15 +350,17 @@ import LieguojiCore
     private var lastApplied: CFTimeInterval?
     private func step(days: Int) async throws {
         let data = await native.step(days: days)
-        if remoteAddress != nil, !(await native.isRemote) { remoteAddress = nil; notice = "与电脑的连接中断，已切回本机计算" }
+        if await native.lost { remoteLost(); return }
+        if remoteAddress != nil, !(await native.isRemote) { remoteAddress = nil }
         let next = try await Task.detached { try JSONDecoder().decode(GameState.self, from: data) }.value
         let now = CACurrentMediaTime()
         if playing, let last = lastApplied, now - last < 2 { stepInterval = stepInterval * 0.7 + (now - last) * 0.3 }
         lastApplied = playing ? now : nil
         controller.tween = playing ? min(1.2, max(0.12, stepInterval * 1.05)) : 0.3
         apply(next)
-        // Autosave every 90 days (it serializes the whole world; pausing and leaving also save).
-        if next.day - lastSavedDay >= 90 { save(); lastSavedDay = next.day }
+        // Autosave every 90 days (it serializes the whole world; pausing and leaving also save); every
+        // 30 with a computer, so its world is never far from the phone's copy.
+        if next.day - lastSavedDay >= (remoteAddress != nil ? 30 : 90) { save(); lastSavedDay = next.day }
     }
 
     private func apply(_ next: GameState) {
@@ -688,6 +717,9 @@ import LieguojiCore
         guard let d = await native.officeCandidates(n, office: office) else { return [] }
         return (try? JSONDecoder().decode([NationInfo.Person].self, from: d)) ?? []
     }
+    func setStyle(_ n: Int, style: String) async -> String? { finish(await native.setStyle(n, style: style)) }
+    func treaty(_ a: Int, _ b: Int, years: Int, kind: String) async -> String? { finish(await native.treaty(a, b, years: years, kind: kind)) }
+    func gift(_ from: Int, to: Int, gold: Double) async -> String? { finish(await native.gift(from, to: to, gold: gold)) }
     func appointOffice(_ n: Int, office: String, person: Int) async -> String? { finish(await native.appointOffice(n, office: office, person: person)) }
     func setCourtManual(_ n: Int, manual: Bool) async -> String? { finish(await native.setCourtManual(n, manual: manual)) }
     func addArmy(_ n: Int, province: Int) async -> String? { finish(await native.addArmy(n, province: province)) }

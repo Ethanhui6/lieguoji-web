@@ -1,4 +1,4 @@
-/* global Response */
+/* global Response, CompressionStream */
 // 列国纪远程计算中转（Cloudflare Worker + Durable Object）。
 // 电脑上的 LieguojiServer 主动长轮询本中转取任务、回结果；手机把请求发到同一个配对码的房间，
 // 中转把请求交给电脑、等结果返回手机。双方都只发出站请求，不需要公网 IP 或局域网。
@@ -59,11 +59,22 @@ export class Room {
     const reply = new Promise((resolve) => this.replies.set(job.id, resolve));
     this.push(job);
     let timer;
-    const timeout = new Promise((resolve) => { timer = setTimeout(() => resolve(null), 180000); });
+    // A phone that hangs up (or waits too long) withdraws its request, so the computer never runs
+    // a stale one later (a step nobody waits for would advance the world twice).
+    const timeout = new Promise((resolve) => {
+      timer = setTimeout(() => resolve(null), 180000);
+      request.signal?.addEventListener?.('abort', () => resolve(null));
+    });
     const out = await Promise.race([reply, timeout]);
     clearTimeout(timer);
-    if (!out) { this.replies.delete(job.id); return new Response('电脑没有响应', { status: 504 }); }
-    return new Response(out, { headers: { 'content-type': 'application/octet-stream' } });
+    if (!out) {
+      this.replies.delete(job.id);
+      this.queue = this.queue.filter((j) => j.id !== job.id);
+      return new Response('电脑没有响应', { status: 504 });
+    }
+    // Compressed for the phone (states are repetitive JSON); URLSession inflates gzip by itself.
+    const body = new Response(out).body.pipeThrough(new CompressionStream('gzip'));
+    return new Response(body, { headers: { 'content-type': 'application/octet-stream', 'content-encoding': 'gzip' }, encodeBody: 'manual' });
   }
 
   push(job) {

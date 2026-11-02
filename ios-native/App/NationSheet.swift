@@ -29,6 +29,11 @@ struct NationInfo: Decodable {
         let commanders: [Commander]; let houses: [House]
     }
     let court: Court?
+    struct Party: Decodable { let name: String; let seats: Int }
+    struct Treaty: Decodable { let nation: Int; let kind: String; let years: Int }
+    let style: String?; let styleLabel: String?
+    let parties: [Party]?
+    let treaties: [Treaty]?
 }
 
 /// CollapsibleSectionUI (original StateInfoNewUI sections): a header with a chevron; 0.25 s fold
@@ -71,6 +76,9 @@ struct NationSheet: View {
     @State private var appointing: AppointTarget?
     struct AppointTarget: Identifiable { let office: String; var id: String { office } }
     @State private var cultureChoice = ""
+    @State private var pactYears = 10
+    @State private var giftText = "500"
+    @State private var cedeProvince = -1
     @State private var religionChoice = ""
     @State private var info: NationInfo?
     @State private var history: [GameState.Event] = []
@@ -78,12 +86,20 @@ struct NationSheet: View {
     @State private var target = -1
     enum Pick: String, Identifiable {
         case war = "宣战", alliance = "缔结盟约", vassal = "收为附庸", annex = "吞并"
+        case pact = "互不侵犯条约", marriage = "王室联姻", gift = "赠送金帛", cede = "割让州郡"
         var id: String { rawValue }
         var prompt: String {
-            switch self { case .war: return "选择目标国家"; case .alliance: return "选择结盟国家"; case .vassal: return "选择成为附庸的国家"; case .annex: return "选择被吞并的国家（全部领土并入本国）" }
+            switch self {
+            case .war: return "选择目标国家"; case .alliance: return "选择结盟国家"; case .vassal: return "选择成为附庸的国家"; case .annex: return "选择被吞并的国家（全部领土并入本国）"
+            case .pact: return "选择缔约国家与年限，期内双方不会相互宣战"; case .marriage: return "两国王室联姻，十年内互不兴兵"
+            case .gift: return "选择受赠国家与金额"; case .cede: return "选择割让的州郡与接收国家"
+            }
         }
         var icon: String {
-            switch self { case .war: return "flag.2.crossed"; case .alliance: return "person.2.fill"; case .vassal: return "crown"; case .annex: return "map" }
+            switch self {
+            case .war: return "flag.2.crossed"; case .alliance: return "person.2.fill"; case .vassal: return "crown"; case .annex: return "map"
+            case .pact: return "doc.text"; case .marriage: return "heart.circle"; case .gift: return "dollarsign.circle"; case .cede: return "rectangle.portrait.and.arrow.right"
+            }
         }
         var hostile: Bool { self == .war || self == .annex }
     }
@@ -127,6 +143,45 @@ struct NationSheet: View {
                                 if !regime.trait.isEmpty { Text(regime.trait).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
                             }
                             .padding(.horizontal, 24)
+                        }
+                        if let parties = info.parties, !parties.isEmpty {
+                            FoldSection("议会（\(info.styleLabel ?? "")）", expanded: true) {
+                                Group2 {
+                                    // Seats in one band, then each party.
+                                    GeometryReader { g in
+                                        HStack(spacing: 1) {
+                                            ForEach(Array(parties.enumerated()), id: \.offset) { i, p in
+                                                Rectangle().fill(Self.partyColor(i)).frame(width: max(2, g.size.width * CGFloat(p.seats) / 100))
+                                            }
+                                        }
+                                        .clipShape(Capsule())
+                                    }
+                                    .frame(height: 10).padding(.horizontal, 16).padding(.top, 12)
+                                    ForEach(Array(parties.sorted { $0.seats > $1.seats }.enumerated()), id: \.offset) { i, p in
+                                        HStack(spacing: 8) {
+                                            RoundedRectangle(cornerRadius: 2).fill(Self.partyColor(parties.firstIndex { $0.name == p.name } ?? 0)).frame(width: 10, height: 10)
+                                            Text(p.name).font(Theme.kai(15)).foregroundStyle(Theme.ink)
+                                            if i == 0 { Text("执政").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+                                            Spacer()
+                                            Text("\(p.seats) 席").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
+                                        }
+                                        .padding(.horizontal, 16).padding(.vertical, 6)
+                                    }
+                                    Text("每四年改选一次，最大党组织政府。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10)
+                                }
+                                .padding(.horizontal, 16)
+                            }
+                        }
+                        if let treaties = info.treaties, !treaties.isEmpty {
+                            FoldSection("条约（\(treaties.count)）", expanded: false) {
+                                Group2 {
+                                    ForEach(Array(treaties.enumerated()), id: \.offset) { i, t in
+                                        Row(label: t.kind == "marriage" ? "联姻" : "互不侵犯", value: (map.meta.nations.indices.contains(t.nation) ? map.meta.nations[t.nation].name : "") + " · 余\(max(1, t.years))年")
+                                        if i < treaties.count - 1 { Divider2() }
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                            }
                         }
                         if info.alive { FoldSection("国家行为", expanded: false) { actions(info, map) } }
                         if info.alive { FoldSection("自定义", expanded: false) { customView(info, map, state) } }
@@ -196,10 +251,21 @@ struct NationSheet: View {
         }
     }
 
+    static func partyColor(_ i: Int) -> Color {
+        [Color(red: 0.75, green: 0.2, blue: 0.15), Color(red: 0.2, green: 0.4, blue: 0.65), Color(red: 0.85, green: 0.6, blue: 0.2), Color(red: 0.3, green: 0.55, blue: 0.3), Color(red: 0.5, green: 0.35, blue: 0.6)][i % 5]
+    }
     static func temperName(_ t: Double) -> String { t >= 1.3 ? "好战" : t >= 1.1 ? "进取" : t > 0.9 ? "持重" : t > 0.75 ? "温和" : "求和" }
     static func stanceColor(_ s: String) -> Color {
         switch s { case "宗室": return Theme.seal; case "拥戴": return Theme.jade; case "谋逆": return Color(red: 0.45, green: 0.08, blue: 0.08); case "离心": return Color(red: 0.72, green: 0.45, blue: 0.15); default: return Theme.ink2 }
     }
+    /// The forms of government (engine Regimes.styles): label, and what they bring.
+    static let styles: [(id: String, label: String, note: String)] = [
+        ("absolute", "君主专制", "王国 · 国王独断"), ("constitutional", "君主立宪", "王国 · 议会与党派"),
+        ("empire", "帝制", "帝国 · 皇帝"), ("junta", "军政府", "国 · 最高统帅"),
+        ("democratic", "民主共和", "共和国 · 总统 · 多党选举"), ("communist", "人民共和（共产主义）", "人民共和国 · 主席 · 一党执政"),
+        ("oligarchic", "寡头共和", "共和国 · 执政官 · 元老与商会"), ("federal", "联邦共和", "联邦 · 联邦主席 · 多党"),
+        ("theocracy", "神权", "神权国 · 宗教领袖"), ("tribal", "部落联盟", "部族 · 酋长或可汗"),
+    ]
     static let officeTitle = ["Chancellor": "宰相", "Steward": "司农", "Marshal": "大将军"]
     static let officeDuty = ["Chancellor": "总理朝政 · 增国库", "Steward": "掌钱粮 · 增国库", "Marshal": "统率三军"]
     /// 朝堂: governance gauge, the three central offices with their holders' fit, local rule, war
@@ -421,21 +487,25 @@ struct NationSheet: View {
             }
             .padding(.horizontal, 16)
             .onAppear { cultureChoice = info.culture; religionChoice = info.religion }
-            Text("改易政体（国名随之更改，国库与国运受损）").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
+            Text("改易政体（国号与元首称号随之改变；改变基本政体如同革命，国库与国运受损）").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
             Group2 {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 8)], spacing: 8) {
-                    ForEach(["Kingdom", "Empire", "Republic", "Federation", "Theocracy", "Tribal"], id: \.self) { p in
-                        let on = p == info.polity
-                        Button { if !on { Task { await run { await model.editNation(nation, gold: nil, destiny: nil, polity: p) } } } } label: {
-                            Text(Names.polity[p] ?? p).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                .frame(maxWidth: .infinity).frame(height: 34)
-                                .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 8))
-                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(on ? Color.clear : Theme.line))
+                ForEach(Array(Self.styles.enumerated()), id: \.offset) { i, s in
+                    let on = s.id == (info.style ?? "")
+                    Button { if !on { Task { await run(success: "已改行\(s.label)") { await model.setStyle(nation, style: s.id) } } } } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: on ? "largecircle.fill.circle" : "circle").foregroundStyle(on ? Theme.seal : Theme.ink.opacity(0.3))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(s.label).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                Text(s.note).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                            }
+                            Spacer()
                         }
-                        .buttonStyle(PressStyle())
+                        .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
+                        .background(on ? Theme.seal.opacity(0.06) : .clear)
                     }
+                    .buttonStyle(.plain)
+                    if i < Self.styles.count - 1 { Divider2() }
                 }
-                .padding(12)
             }
             .padding(.horizontal, 16)
             Text("征募新军").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
@@ -469,6 +539,10 @@ struct NationSheet: View {
                     action("吞并", "map", Theme.seal, disabled: false) { target = -1; picking = .annex }
                     action("触发内战", "flame", Theme.seal, disabled: false) { Task { await run { await model.triggerCivilWar(nation) } } }
                     action("绘制疆域", "paintbrush.pointed.fill", Theme.ink, disabled: false) { paint(nation) }
+                    action("互不侵犯", "doc.text", Theme.jade, disabled: false) { target = -1; picking = .pact }
+                    action("王室联姻", "heart.circle", Theme.jade, disabled: false) { target = -1; picking = .marriage }
+                    action("赠送金帛", "dollarsign.circle", Theme.ink, disabled: false) { target = -1; picking = .gift }
+                    action("割让州郡", "rectangle.portrait.and.arrow.right", Theme.seal, disabled: false) { target = -1; cedeProvince = -1; picking = .cede }
                 }
                 .padding(14)
                 Divider2()
@@ -496,15 +570,43 @@ struct NationSheet: View {
                 SheetHeader(title: pick.rawValue, subtitle: pick.prompt)
                 Group2 {
                     NationGrid(map: map, nations: others, selection: $target).padding(14)
+                    if pick == .pact {
+                        Divider2()
+                        ChipPicker(items: [(5, "五年"), (10, "十年"), (20, "二十年")], selection: $pactYears).padding(12)
+                    }
+                    if pick == .gift {
+                        Divider2()
+                        HStack {
+                            Text("金额").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                            Spacer()
+                            TextField("", text: $giftText).font(Theme.kai(17)).keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 110)
+                            Text("金").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                    }
+                    if pick == .cede {
+                        Divider2()
+                        Picker("州郡", selection: $cedeProvince) {
+                            Text("选择本国州郡").tag(-1)
+                            ForEach(state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }, id: \.self) { p in Text(map.meta.provinces[p].name).tag(p) }
+                        }
+                        .tint(Theme.ink).padding(.horizontal, 12).padding(.vertical, 4)
+                    }
                     Divider2()
                     Button {
-                        let t = target; picking = nil
+                        let t = target, years = pactYears, gold = Double(giftText) ?? 0, province = cedeProvince; picking = nil
                         Task { await run {
                             switch pick {
                             case .war: return await model.declareWar(nation, on: t)
                             case .alliance: return await model.alliance(nation, with: t)
                             case .vassal: return await model.makeVassal(t, of: nation)
                             case .annex: return await model.annex(t, by: nation)
+                            case .pact: return await model.treaty(nation, t, years: years, kind: "pact")
+                            case .marriage: return await model.treaty(nation, t, years: 10, kind: "marriage")
+                            case .gift: return await model.gift(nation, to: t, gold: gold)
+                            case .cede:
+                                if province < 0 { return "请选择要割让的州郡" }
+                                return await model.grant(province: province, to: t)
                             }
                         } }
                     } label: {

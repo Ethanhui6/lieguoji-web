@@ -117,8 +117,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
         // The figures (UnitArt), one texture per role, plus the commander's banner.
         let loader = MTKTextureLoader(device: device)
-        for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Banner", "Fleet", "Port"] {
-            let probe = role == "Banner" || role == "Fleet" || role == "Port" ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
+        for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Banner", "Pip", "Fleet", "Port"] {
+            let probe = ["Banner", "Pip", "Fleet", "Port"].contains(role) ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
             guard let image = UnitArt.image(probe) else { continue }
             if let texture = try? loader.newTexture(cgImage: image, options: [.SRGB: false, .generateMipmaps: true]) { unitTextures[role] = texture }
             else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
@@ -330,14 +330,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 let size = iconSize * (a.unit == "Port" ? 0.7 : 1) * (a.selected ? 1.3 : 1)
                 // The banner stands behind the figures: the state's colour, gold for the ruler himself.
                 if a.banner > 0 { quad("Banner", at, a.banner == 2 ? RGB(0.93, 0.74, 0.25) : c, size * 1.15, -0.42, -0.62) }
-                // One to three figures for the army's strength, in a loose rank.
-                let n = a.army <= -100_000 || role == "Fleet" ? 1 : max(1, min(3, a.tier))
-                let gap: Float = UnitArt.wide(a.unit) ? 0.34 : 0.26, scale: Float = n == 1 ? 1 : 0.8
-                let wide: Float = gap * 1.2
-                var ranks: [(Float, Float)] = [(0, 0)]
-                if n == 2 { ranks = [(-gap, -0.05), (gap, 0.05)] }
-                if n == 3 { ranks = [(0, -0.12), (-wide, 0.08), (wide, 0.08)] }
-                for (sx, sy) in ranks { quad(role, at, c, size * scale, sx, sy) }
+                // One clear mark for the arm, and one to three pips beneath for its strength.
+                quad(role, at, c, size, 0, 0)
+                if a.army > -100_000 && role != "Fleet" {
+                    let n = max(1, min(3, a.tier)), pip = size * 0.26
+                    for i in 0..<n {
+                        let sx = (Float(i) - Float(n - 1) / 2) * 1.15
+                        quad("Pip", at, RGB(0.985, 0.965, 0.91), pip, sx, 0.66 * size / pip)
+                    }
+                }
             }
             // A fixed draw order (banners first, then by role): a fresh dictionary's order changed every
             // rebuild, so overlapping icons swapped in front of each other and flickered.
@@ -471,9 +472,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     struct SpriteOut { float4 position [[position]]; float2 uv; float4 tint; };
     vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]]) {
         SpriteVertex s = v[id];
-        // Figures at least 18 points tall, so whose army it is reads at every zoom; the shift places
-        // each figure of a rank (and the banner) around the army's point.
-        float pixels = max(s.size * u.scale, 18.0);
+        // Marks at least 22 points tall (an army mark is 5 map units), so whose army it is reads at
+        // every zoom; banner and pips keep their proportions. The shift (in the quad's own size)
+        // places the banner and the pips around the army's point.
+        float pixels = s.size * max(u.scale, 22.0 / 5.02);
         SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, (float2(s.corner) + float2(s.shift)) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
     }
     // A figure: the state's colour, lit from above, with an ink outline (the silhouette dilated by

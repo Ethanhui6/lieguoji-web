@@ -6,7 +6,7 @@ import LieguojiCore
 /// game, driven by the web engine (EngineHost). Speeds follow the web: 1倍速 ≈ 10 days a second when
 /// the device keeps up, 2 / 4 倍速 proportionally faster.
 @MainActor final class GameModel: ObservableObject {
-    enum Phase: Equatable { case splash, title, generating, founding, playing }
+    enum Phase: Equatable { case splash, title, generating, founding, playing, editing }
     @Published var phase: Phase = .splash
     @Published private(set) var map: WorldMap?
     @Published private(set) var state: GameState?
@@ -55,6 +55,63 @@ import LieguojiCore
     /// The bundled world, used as the title backdrop before a game exists.
     /// The original grid geometry and the ported generators, for worlds built on the device.
     private(set) var previewInputs: PreviewWorld.Inputs?
+    /// 自绘地图: the open map editor and the world options chosen for it.
+    @Published private(set) var editor: MapEditor?
+    private var editorOptions = NewWorld()
+
+    /// Opens the map editor on a template terrain (drawn over, or replaced by open sea).
+    func openEditor(_ options: NewWorld) {
+        guard let inputs = previewInputs else { failure = "缺少原作地图网格，无法绘制"; return }
+        pause()
+        state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.viewFills = nil; controller.viewLabels = nil
+        editorOptions = options
+        let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
+        let heights = TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: options.template)
+        let ed = MapEditor(inputs: inputs, heights: heights, seed: seed, template: options.template, controller: controller)
+        ed.nations = options.nations; ed.provinces = options.provinceCount
+        editor = ed; map = ed.map; worldID = UUID()
+        controller.drifting = false; controller.mode = .terrain; controller.reveal = 1; controller.interactive = true
+        controller.terrainBrush = true
+        controller.onTerrainStroke = { [weak ed] x, y in ed?.stamp(x: x, y: y) }
+        controller.onTerrainStrokeEnd = { [weak ed] in ed?.endStroke() }
+        phase = .editing
+    }
+    private func detachEditor() {
+        controller.terrainBrush = false; controller.onTerrainStroke = nil; controller.onTerrainStrokeEnd = nil
+        editor = nil
+    }
+    func closeEditor() { detachEditor(); controller.editorMap = nil; controller.mode = .political; phase = .title }
+
+    /// Founds the world on the drawn terrain: the engine runs its climate, rivers, settlement and
+    /// opening on these heights; the drawn map stays on screen while it does.
+    func foundCustomWorld(_ ed: MapEditor) async {
+        failure = nil
+        let o = editorOptions
+        let json: [String: Any] = ["template": ed.template, "count": ed.nations, "cityCount": max(ed.nations, ed.provinces), "seed": ed.seed,
+                                   "relations": o.relations, "naming": o.naming, "cultures": Names.cultureIds.filter { o.cultures.contains($0) },
+                                   "heights": Data(ed.heights).base64EncodedString()]
+        guard let text = String(data: (try? JSONSerialization.data(withJSONObject: json)) ?? Data(), encoding: .utf8) else { return }
+        detachEditor()
+        map = ed.map
+        controller.reveal = 1
+        phase = .founding
+        let settled = Date()
+        do {
+            let world = try await open(try await engine.call("generate(options)", ["options": text]))
+            // The engine's world (rivers, cities, names) replaces the drawn preview in place.
+            controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
+            try await handOver()
+            let wait = 2.6 - Date().timeIntervalSince(settled)
+            if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
+            controller.editorMap = nil
+            phase = .playing; controller.interactive = true
+            save()
+            autoConnect()
+        } catch {
+            failure = error.localizedDescription
+            phase = .title
+        }
+    }
 
     /// A fresh random world for the title backdrop, generated on the device by the Swift ports.
     func loadBackdrop() async {

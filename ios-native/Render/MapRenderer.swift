@@ -20,8 +20,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// Army icons grouped by unit type: the texture and its quads.
     private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int)] = []
     private let positions: MTLBuffer
-    private let indices: MTLBuffer
-    private let indexCount: Int
+    private var indices: MTLBuffer
+    private var indexCount: Int
     private var colors: MTLBuffer
     private var provinceLines: (buffer: MTLBuffer, count: Int)?
     private var rivers: (buffer: MTLBuffer, count: Int)?
@@ -122,6 +122,28 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if let start = map.meta.economy {
             setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
         }
+    }
+
+    /// 自绘地图: the terrain itself changed (land raised from the sea, coasts moved): the land mesh,
+    /// relief marks, province lines and outlines are rebuilt, and the sea texture when given.
+    func setTerrain(_ next: WorldMap, refreshSea: Bool) {
+        map = next; base = nil; shade = []
+        nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
+        let mesh = CellMesh(map: next)
+        if !mesh.indices.isEmpty, let i = device.makeBuffer(bytes: mesh.indices, length: mesh.indices.count * 4, options: .storageModeShared) { indices = i; indexCount = mesh.indices.count }
+        else if mesh.indices.isEmpty { indexCount = 0 }
+        let lines = BorderMesh(map: next)
+        provinceLines = lines.vertices[.province].flatMap { $0.isEmpty ? nil : buffer($0, stride: 4) }
+        rivers = next.rivers.isEmpty ? nil : buffer(next.rivers, stride: 2)
+        relief = buffer(MapLayers.relief(next).vertices, stride: 6)
+        outlines = buffer(MapLayers.outlines(next).vertices, stride: 6)
+        icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
+        if refreshSea, let sea, next.seaRGBA.count == next.seaWidth * next.seaHeight * 4 {
+            next.seaRGBA.withUnsafeBytes { bytes in
+                if let b = bytes.baseAddress { sea.replace(region: MTLRegionMake2D(0, 0, next.seaWidth, next.seaHeight), mipmapLevel: 0, withBytes: b, bytesPerRow: next.seaWidth * 4) }
+            }
+        }
+        recolor()
     }
 
     /// Ownership changed (conquest, rebellion): recolour the land and redraw the state outlines.
@@ -339,7 +361,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBuffer(positions, offset: 0, index: 0)
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-        encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0)
+        if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
         // Province lines: 0.55 screen px, #303e37 at 0.2, only once zoomed in (map.ts zoom > 0.6).
         if let lines = provinceLines, display.provinceLines, camera.scale > 0.9 || reveal < 1, reveal >= 0.55 {
             u.halfWidth = 0.55 / 2

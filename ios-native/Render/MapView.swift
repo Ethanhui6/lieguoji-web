@@ -53,6 +53,16 @@ import LieguojiCore
     @Published var marchingFleet: Int?
     /// 绘制疆域: provinces tapped or dragged over go to this state.
     @Published var paintNation: Int?
+    /// 自绘地图: one finger draws terrain (world point per move; nil = the stroke ended).
+    var terrainBrush = false
+    var onTerrainStroke: ((Double, Double) -> Void)?
+    var onTerrainStrokeEnd: (() -> Void)?
+    /// The drawn terrain to show; bump the revision to redraw (sea texture too when seaDirty).
+    var editorMap: WorldMap?
+    var editorSeaDirty = false
+    @Published var editorRevision = 0
+    /// The brush circle under the finger (map units), drawn while painting.
+    var brushRadius: Double = 30
     var onPaint: ((Int) -> Void)?
     var onFleetTarget: ((Int) -> Void)?
     /// Generation reveal (title screen), 0…1; labels and markers appear at 1.
@@ -106,6 +116,7 @@ struct MapView: UIViewRepresentable {
         private let troops = TroopLabelsView()
         private var shownEffects = MapEffects()
         private var shownRevision = -1
+        private var shownEditorRevision = 0
         private var shownViewLabels: [GroupLabel]?
         private let metrics = UILabel()
         private var stats = FrameStatistics()
@@ -244,8 +255,29 @@ struct MapView: UIViewRepresentable {
             }
         }
         private var lastPainted: Int?
+        private lazy var brushRing: CAShapeLayer = {
+            let l = CAShapeLayer(); l.fillColor = UIColor(white: 1, alpha: 0.12).cgColor
+            l.strokeColor = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 0.9).cgColor; l.lineWidth = 1.5; l.lineDashPattern = [4, 3]
+            mtk.layer.addSublayer(l); return l
+        }()
+        private func showBrush(at p: CGPoint?) {
+            guard let p else { brushRing.isHidden = true; return }
+            let r = CGFloat(controller.brushRadius * camera.scale)
+            CATransaction.begin(); CATransaction.setDisableActions(true)
+            brushRing.isHidden = false; brushRing.path = UIBezierPath(ovalIn: CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2)).cgPath
+            CATransaction.commit()
+        }
         @objc private func handlePan(_ g: UIPanGestureRecognizer) {
             if controller.boxSelecting || boxStart != nil { boxSelect(g); return }
+            // 自绘地图: one finger draws (two fingers still move and zoom the map).
+            if controller.terrainBrush && !pinching && g.numberOfTouches <= 1 {
+                let p = g.location(in: mtk)
+                if g.state == .ended || g.state == .cancelled || g.state == .failed { showBrush(at: nil); controller.onTerrainStrokeEnd?(); return }
+                let w = camera.toWorld(x: Double(p.x), y: Double(p.y), viewport: viewport)
+                showBrush(at: p)
+                controller.onTerrainStroke?(w.x, w.y)
+                return
+            }
             // Painting: one finger drags the brush over provinces (two fingers still move the map).
             if controller.paintNation != nil && !pinching && g.numberOfTouches <= 1 {
                 if g.state == .ended || g.state == .cancelled { lastPainted = nil; return }
@@ -292,6 +324,7 @@ struct MapView: UIViewRepresentable {
         }
         @objc private func handleTap(_ g: UITapGestureRecognizer) {
             let p = g.location(in: mtk), w = camera.toWorld(x: Double(p.x), y: Double(p.y), viewport: viewport)
+            if controller.terrainBrush { controller.onTerrainStroke?(w.x, w.y); controller.onTerrainStrokeEnd?(); return }
             var province: Int?
             if let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province[cell] >= 0 { province = Int(map.province[cell]) }
             if controller.marchingArmy != nil {
@@ -383,6 +416,14 @@ struct MapView: UIViewRepresentable {
             if controller.drifting { startDrift() }
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills)
             if controller.worldRevision != shownRevision { shownRevision = controller.worldRevision }
+            if controller.editorRevision != shownEditorRevision, let next = controller.editorMap {
+                shownEditorRevision = controller.editorRevision
+                map = next
+                renderer?.setTerrain(next, refreshSea: controller.editorSeaDirty)
+                controller.editorSeaDirty = false
+                labels.setNations(map: next, animated: false)
+                mtk.setNeedsDisplay()
+            }
             if let armies = controller.armies {
                 // Playing: glide linearly over one step so marching does not pulse; a single move eases.
                 renderer?.tweenDuration = controller.tween

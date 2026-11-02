@@ -16,8 +16,13 @@ public enum PreviewWorld {
     static let biomeColors: [UInt32] = [0x466eab, 0xfbe79f, 0xb5b887, 0xd2d082, 0xc8d68f, 0xb6d95d, 0x29bc56, 0x7dcb35, 0x409c43, 0x4b6b32, 0x96784b, 0xd5e7eb, 0x0b9131]
 
     public static func build(_ input: Inputs, seed: String, template: String, nations: Int, cities: Int) -> WorldMap {
+        build(input, heights: TerrainGenerator.generate(graph: input.grid, seed: seed, template: template), nations: nations, cities: cities)
+    }
+
+    /// Terrain only (自绘地图 while drawing): heights, the climate's biomes and the depth-shaded sea; no
+    /// provinces or states.
+    public static func terrain(_ input: Inputs, heights: [UInt8], sea withSea: Bool = true) -> (map: WorldMap, surface: Climate.Surface) {
         var m = input.base
-        let heights = TerrainGenerator.generate(graph: input.grid, seed: seed, template: template)
         let elevations = heights.map(Int.init)
         let surface = Climate.surface(input.document, elevations: elevations)
         let n = min(m.cellCount, heights.count)
@@ -27,6 +32,30 @@ public enum PreviewWorld {
         for c in 0..<n { let v = biomeColors[Int(min(12, surface.ids[c]))]; rgb[c * 3] = UInt8(v >> 16 & 255); rgb[c * 3 + 1] = UInt8(v >> 8 & 255); rgb[c * 3 + 2] = UInt8(v & 255) }
         m.biomeRGB = rgb
         m.coast = []; m.rivers = []
+        m.province = [Int32](repeating: -1, count: m.cellCount)
+        m.meta.provinces = []; m.meta.nations = []; m.meta.cities = []; m.meta.labels = []
+        if withSea { m.seaRGBA = sea(m) }
+        return (m, surface)
+    }
+
+    /// The colour of a height before the climate is known (live feedback while a stroke is drawn).
+    public static func quickColor(_ h: Int) -> (UInt8, UInt8, UInt8) {
+        switch h {
+        case ..<20: return (0x46, 0x6e, 0xab)
+        case ..<30: return (0xc8, 0xd6, 0x8f)
+        case ..<42: return (0x29, 0xbc, 0x56)
+        case ..<55: return (0x40, 0x9c, 0x43)
+        case ..<70: return (0x96, 0x78, 0x4b)
+        default: return (0xd5, 0xe7, 0xeb)
+        }
+    }
+
+    /// The opening on given heights: terrain, provinces (the settlement partition) and the states'
+    /// starting land and capitals, as the engine will found them.
+    public static func build(_ input: Inputs, heights: [UInt8], nations: Int, cities: Int) -> WorldMap {
+        let t = terrain(input, heights: heights, sea: false)
+        var m = t.map
+        let surface = t.surface, elevations = heights.map(Int.init), n = min(m.cellCount, heights.count)
         // Provinces: each land cell joins the province of a clipped face it belongs to.
         var province = [Int32](repeating: -1, count: m.cellCount)
         var provinces = [WorldMeta.Province](), owners = [Int](), seeds = [Int]()

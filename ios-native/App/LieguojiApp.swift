@@ -70,6 +70,7 @@ struct RootView: View {
             case .generating: GeneratingView(note: model.generationNote).transition(.opacity)
             case .founding: FoundingView(reveal: model.controller.reveal).transition(.opacity)
             case .playing: GameView(model: model).transition(.opacity)
+            case .editing: if let ed = model.editor { EditorView(model: model, editor: ed).transition(.opacity) }
             }
             if model.phase == .splash { SplashView { finishSplash() }.transition(.opacity).zIndex(10) }
         }
@@ -253,7 +254,7 @@ struct TitleView: View {
             if case .success(let url) = result { Task { await model.importSave(from: url) } }
         }
         .sheet(isPresented: $creating) {
-            NewWorldSheet { options in creating = false; Task { await model.generate(options) } }
+            NewWorldSheet(start: { options in creating = false; Task { await model.generate(options) } }, draw: { options in creating = false; model.openEditor(options) })
                 .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }
         }
         .sheet(isPresented: $settings) {
@@ -305,6 +306,8 @@ struct SecondaryLabel: View {
 /// 生成地图: the original's terrain templates and the number of states.
 struct NewWorldSheet: View {
     let start: (GameModel.NewWorld) -> Void
+    /// 自绘地图 with these options.
+    var draw: ((GameModel.NewWorld) -> Void)? = nil
     @State private var options = GameModel.NewWorld()
     var body: some View {
         ScrollView {
@@ -370,6 +373,10 @@ struct NewWorldSheet: View {
                 Text("各国从所选文化中取名、取宗教与政体。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             }
             Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle()).padding(.top, 6)
+            if let draw {
+                Button { draw(options) } label: { SecondaryLabel(title: "自己绘制地图", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle())
+                Text("以所选地形为底图，亲手画山川、海陆，再划分州郡与列国。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+            }
         }
         .padding(24)
         }
@@ -1503,7 +1510,7 @@ struct MenuSheet: View {
         .padding(.bottom, 24)
         }
         .sheet(isPresented: $creating) {
-            NewWorldSheet { options in creating = false; close(); Task { await model.generate(options) } }
+            NewWorldSheet(start: { options in creating = false; close(); Task { await model.generate(options) } }, draw: { options in creating = false; close(); model.openEditor(options) })
                 .presentationDetents([.medium]).presentationBackground { MemorialPaper() }
         }
         .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }
@@ -1534,6 +1541,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.18.0", ["新增「自绘地图」（同原作地图编辑器）：新世界面板里点「自己绘制地图」，以所选地形为底图（或换成随机大陆、群岛、空白海洋），用笔刷亲手画山川海陆：海洋、平原、丘陵、山地、雪峰、抬高、压低、平滑八种笔刷，笔刷大小可调，单指绘制、双指移动缩放，随时撤销与重做。",
+                    "每画完一笔都按原作的气候算法重算：高度与纬度、降水决定哪里长成森林、草原、热带雨林，哪里变成沙漠、苔原和冰川，海水按深浅着色；画笔经过时先用临时颜色即时显示。",
+                    "画好后「下一步：分州郡」：调节州郡数（10–480）与国家数（2–24），即时预览按原作定居分区算法划出的州郡边界和列国起家疆域。",
+                    "「开辟天下」：引擎在你画的地形上原样生成正式世界——江河、城市、地名、人物、军队、外交全部照常；新世界面板里选的文化、开局和平或混战、命名方式同样生效。"]),
         ("0.17.0", ["修复城市名不见了：上一版把城市名的显示门槛提得太高，要放得很大才出现；现已改回（比原先稍早出现）。",
                     "军队真正丝滑移动：所有军队都画在引擎里的真实位置，不再有「驻扎点」——以前休整的军队画在州郡里的另一个点，一出发或一交战就跳到真实位置、打完再跳回去，这就是交战前后的瞬移；挤在一起的军团由错开排列分开。图标逼近目标不再限速（高倍速下限速会越落越远，最后直接跳过去）。",
                     "列国大事有动画：五谷丰登时都城金粒升腾，商路大开金币四溅，名臣辈出光芒绽开，天灾乌云压城、骤雨倾泻，瘟疫青雾弥漫；革命、复辟在都城盖下朱红「革」字大印，篡位盖下「篡」字印并划过一道血痕。",

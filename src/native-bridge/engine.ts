@@ -1,7 +1,7 @@
 import {nativeStatics} from './native-statics';
 import {CULTURE_IDS47} from '../fms/play/civilization47-catalog';
 import {createFmsOriginalDocument,originalGridFor} from '../fms/original/original-document';
-import {generateFmsFullMap,prepareFmsFullMapPreview} from '../fms/full-map-terrain';
+import {generateFmsFullMap,prepareFmsFullMapPreview,fmsFullMapAlgorithm} from '../fms/full-map-terrain';
 import {Culture47Session,type Culture47Opening,type Culture47Journal} from '../fms/play/culture47-session';
 import {SETTLEMENT47_ALGORITHM} from '../fms/play/settlement47-regions';
 import {populationStamp47} from '../fms/play/civilization47-population-types';
@@ -64,7 +64,7 @@ async function mapOf(terrain:Culture47Opening['terrain'],r:Run,options:{seed:str
 /** Generates a new world exactly as the web's 生成地图 + 从当前地图创建文化世界 (CultureWorld47.tsx):
  * the original 20k grid, a recovered terrain template, then the culture opening and its rule actions. */
 export async function generate(optionsText:string){
-  const o=JSON.parse(optionsText||'{}') as {seed?:string;template?:string;count?:number;cityCount?:number;relations?:'peace'|'war';cultures?:string[];naming?:'historical-names'|'culture-generated'};
+  const o=JSON.parse(optionsText||'{}') as {seed?:string;template?:string;count?:number;cityCount?:number;relations?:'peace'|'war';cultures?:string[];naming?:'historical-names'|'culture-generated';heights?:string};
   // The original world setup: which cultures appear, real or generated names, opening at peace or war.
   const enabled=CULTURE_IDS47.filter(c=>!o.cultures?.length||o.cultures.includes(c));
   const random=crypto.getRandomValues(new Uint32Array(2));
@@ -73,7 +73,17 @@ export async function generate(optionsText:string){
   const blank=await createFmsOriginalDocument('20k');
   blank.worldId=uuid();
   const options={seed,template:template as typeof SEED_TERRAIN_TEMPLATES[number]['id']};
-  const terrain=(await prepareFmsFullMapPreview(blank,{worldId:blank.worldId,baseRevision:blank.revision,...await generateFmsFullMap(blank,options,{yieldTask:async()=>{}})},options)).document;
+  // A drawn map (自绘地图) brings its own heights, one per cell of the original grid; else the template's.
+  let generated:{elevations:Int32Array;stats:Awaited<ReturnType<typeof generateFmsFullMap>>['stats']};
+  if(o.heights){
+    const bytes=Uint8Array.from(atob(o.heights),c=>c.charCodeAt(0));
+    if(bytes.length!==blank.points.length)throw Error('自绘地图与原作网格不一致。');
+    const elevations=new Int32Array(bytes.length);let landCells=0,changedCells=0;
+    for(let i=0;i<bytes.length;i++){const h=Math.min(100,bytes[i]);elevations[i]=h;if(h!==0)changedCells++;if(h>=20)landCells++;}
+    if(landCells<count*4)throw Error('陆地太少，请再画一些陆地。');
+    generated={elevations,stats:{...options,algorithm:await fmsFullMapAlgorithm(blank),changedCells,landCells,seaCells:bytes.length-landCells}};
+  }else generated=await generateFmsFullMap(blank,options,{yieldTask:async()=>{}});
+  const terrain=(await prepareFmsFullMapPreview(blank,{worldId:blank.worldId,baseRevision:blank.revision,...generated},options)).document;
   const opening:Culture47Opening={terrain,count,cityCount,relations:o.relations==='war'?'war':'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,
     setup:{mode:o.naming==='culture-generated'?'culture-generated':'historical-names',enabled:enabled.length?enabled:[...CULTURE_IDS47]},families:'original',harbors:'capital-neighbor-v2'};
   const s=new Culture47Session();

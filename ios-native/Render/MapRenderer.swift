@@ -27,6 +27,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var rivers: (buffer: MTLBuffer, count: Int)?
     private var relief: (buffer: MTLBuffer, count: Int)?
     private var outlines: (buffer: MTLBuffer, count: Int)?
+    private var worldFrame: (buffer: MTLBuffer, count: Int)?
     private var icons: (buffer: MTLBuffer, count: Int)?
     private let sea: MTLTexture?
     private let parchment: MTLTexture?
@@ -107,6 +108,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         s.sAddressMode = .clampToEdge; s.tAddressMode = .clampToEdge
         sampler = device.makeSamplerState(descriptor: s)
         super.init()
+        var frame = ColoredMesh()
+        for (inset, width, color) in [(Float(2), Float(2), RGB(0.23, 0.26, 0.22)), (Float(6), Float(0.7), RGB(0.57, 0.46, 0.31))] {
+            let x = map.width - inset, y = map.height - inset
+            frame.polyline([inset, inset, x, inset, x, y, inset, y, inset, inset], width: width, color, alpha: 0.9)
+        }
+        worldFrame = buffer(frame.vertices, stride: 6)
         let lines = BorderMesh(map: map)
         if let data = lines.vertices[.province], !data.isEmpty { provinceLines = buffer(data, stride: 4) }
         if !map.rivers.isEmpty { rivers = buffer(map.rivers, stride: 2) }
@@ -259,6 +266,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// a long step, not when two armies meet, not when a battle ends. Only a jump across the map
     /// (an army re-formed at home) appears at once.
     private var shown: [String: SIMD2<Float>] = [:]
+    private var arrivals: [String: CFTimeInterval] = [:]
     private var lastChase: CFTimeInterval = CACurrentMediaTime()
     private var chasing = false
     /// The play step interval (seconds); the chase settles in about one step.
@@ -284,7 +292,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             // No speed cap: at high speed a capped icon fell further behind every step until it snapped.
             shown[a.key] = p + d * k; moving = true
         }
-        chasing = moving
+        arrivals = arrivals.filter { now - $0.value < 0.4 }
+        chasing = moving || !arrivals.isEmpty
         rebuildArmies()
     }
 
@@ -297,6 +306,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if sprites != armySprites {
             let keys = Set(sprites.map(\.key))
             shown = shown.filter { keys.contains($0.key) }
+            arrivals = arrivals.filter { keys.contains($0.key) }
+            if !armySprites.isEmpty {
+                for s in sprites where !s.key.isEmpty && shown[s.key] == nil { arrivals[s.key] = CACurrentMediaTime() }
+            }
             for s in sprites where !s.key.isEmpty && shown[s.key] == nil { shown[s.key] = SIMD2(s.x, s.y) }
             if !chasing { lastChase = CACurrentMediaTime() }
             armySprites = sprites
@@ -319,12 +332,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let sprites = armySprites
             let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0))
             var byRole: [String: [Float]] = [:]
+            var opacity: Float = 1
             func quad(_ role: String, _ at: SIMD2<Float>, _ c: RGB, _ size: Float, _ sx: Float, _ sy: Float) {
                 for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
-                    byRole[role, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, 1, size, at.x, at.y, sx, sy])
+                    byRole[role, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, opacity, size, at.x, at.y, sx, sy])
                 }
             }
             for a in sprites {
+                opacity = arrivals[a.key].map { Float(min(1, max(0, (CACurrentMediaTime() - $0) / 0.4))) } ?? 1
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
                 let role = UnitArt.role(a.unit), at = displayed(a)
                 let size = iconSize * (a.unit == "Port" ? 0.7 : 1) * (a.selected ? 1.3 : 1)
@@ -415,6 +430,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         if display.vegetation && reveal >= 0.45 { colored(relief) }
         if display.borders && reveal >= 0.75 { colored(outlines) }
+        colored(worldFrame)
         if display.cityIcons && reveal >= 0.85 { colored(icons) }
         if reveal >= 1 {
         colored(route)

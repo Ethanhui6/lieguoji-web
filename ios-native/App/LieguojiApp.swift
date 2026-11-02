@@ -558,7 +558,18 @@ struct GameView: View {
                 }
             }
             controller.onPaint = { province in
-                guard let n = controller.paintNation, model.state?.owners.indices.contains(province) == true, model.state?.owners[province] != n else { return }
+                guard let n = controller.paintNation, model.state?.owners.indices.contains(province) == true else { return }
+                if controller.placingArmy {
+                    guard !controller.placementBusy else { return }
+                    controller.placementBusy = true
+                    Task {
+                        let error = await model.addArmy(n, province: province)
+                        controller.placementBusy = false
+                        say(error ?? "新军已在所选州郡集结")
+                    }
+                    return
+                }
+                guard model.state?.owners[province] != n else { return }
                 Task { if let error = await model.grant(province: province, to: n) { say(error) } }
             }
             controller.onFleetTarget = { province in
@@ -685,8 +696,12 @@ struct GameView: View {
             }).presentationDetents([.height(320), .medium, .large], selection: $unitDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nation(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, paint: { n in
-                controller.paintNation = n; self.panel = nil
+                controller.placingArmy = false; controller.paintNation = n; self.panel = nil
                 say("绘制疆域：点选或用一指拖过州郡，划入\(model.map?.meta.nations.indices.contains(n) == true ? model.map!.meta.nations[n].name : "")；两指移动地图")
+            }, placeArmy: { n in
+                controller.marchingArmy = nil; controller.marchingFleet = nil; controller.groupArmies = []
+                controller.placingArmy = true; controller.paintNation = n; self.panel = nil
+                say("点选本国州郡放置新军；拖动移动地图，点完成退出。征募仍受游戏规则约束。")
             })
                 .presentationDetents([.medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .edicts:
@@ -782,8 +797,8 @@ struct GameView: View {
         HStack(spacing: 10) {
             let n = controller.paintNation ?? -1, nation = model.map.flatMap { $0.meta.nations.indices.contains(n) ? $0.meta.nations[n] : nil }
             RoundedRectangle(cornerRadius: 3).fill(nation.map { Names.color($0.color) } ?? Theme.ink2).frame(width: 14, height: 14)
-            Text("绘制\(nation?.name ?? "")疆域").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-            Button("完成") { controller.paintNation = nil }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+            Text(controller.placingArmy ? "为\(nation?.name ?? "")放置新军" : "绘制\(nation?.name ?? "")疆域").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+            Button("完成") { controller.paintNation = nil; controller.placingArmy = false }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
         }
         .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
     }
@@ -1624,6 +1639,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.24.5", ["国家页增加在地图上放置新军：点击州郡征募，禁止重复提交，拖动不连续刷兵。继续使用现有征募规则。",
+                    "新增世界外圈双线边框，与地图坐标一致。此为纸面风格适配，原作外框细节仍待核实。",
+                    "交战移除圆圈与双剑叠加，改为小幅朱红接触闪线，保留有限烟尘。新出现军队使用 0.4 秒显现。",
+                    "尚未修复：重组军队真实位置跳变、战时协同留守、小国数值平衡、开局自由画省界与创建文化国家。"]),
         ("0.24.4", ["军队图标改为简洁的单一标记：每支军队一个粗线条兵种符号，国色填充、墨色描边——剑（步兵）、长枪、盾、弓、弩、马首（骑兵）、披甲马首（重骑）、马首加弓（骑射）、羽冠头盔（精锐）、象首（战象）、帆船、锚（港口）。至少 22 点大，远看也一目了然。",
                     "兵力改为标记下方的一至三个白点（不足两千一点，两千到六千两点，六千以上三点），不再画成一堆小人。帅旗保留。"]),
         ("0.24.3", ["修复地图上完全看不到军队：新画的兵种小人在 iPhone 的广色域屏幕上生成了地图引擎不支持的图片格式，贴图加载失败后整组军队都没画出来。现改为标准 8 位位图，并在加载失败时直接写入贴图兜底。"]),

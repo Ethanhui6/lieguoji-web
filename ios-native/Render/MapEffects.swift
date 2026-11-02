@@ -116,29 +116,25 @@ final class EffectsView: UIView {
     }
 
     private func battleLayer() -> CALayer {
-        let l = CALayer()
-        l.bounds = CGRect(x: 0, y: 0, width: 30, height: 30 * 194 / 258)
-        // A small red ring that beats round the swords, so a battle is found at a glance.
-        let ring = CAShapeLayer()
-        let r: CGFloat = 13
-        ring.path = UIBezierPath(ovalIn: CGRect(x: l.bounds.midX - r, y: l.bounds.midY - r, width: r * 2, height: r * 2)).cgPath
-        ring.fillColor = UIColor(red: 0.984, green: 0.965, blue: 0.91, alpha: 0.55).cgColor
-        ring.strokeColor = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 0.9).cgColor
-        ring.lineWidth = 1.4; ring.frame = l.bounds
-        let beat = CABasicAnimation(keyPath: "transform.scale"); beat.fromValue = 0.75; beat.toValue = 1.15
-        beat.duration = 0.9; beat.autoreverses = true; beat.repeatCount = .infinity
-        beat.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        ring.add(beat, forKey: "beat")
-        l.addSublayer(ring)
-        l.contents = Self.swords; l.contentsGravity = .resize
-        l.contentsRect = CGRect(x: 0, y: 0, width: 0.2, height: 0.125)
-        let clip = CAKeyframeAnimation(keyPath: "contentsRect")
-        clip.values = (0..<40).map { NSValue(cgRect: CGRect(x: CGFloat($0 % 5) * 0.2, y: CGFloat($0 / 5) * 0.125, width: 0.2, height: 0.125)) }
-        clip.calculationMode = .discrete; clip.duration = 40.0 / 12; clip.repeatCount = .infinity
-        l.add(clip, forKey: "clip")
-        // Particles cost: only the first few battles on the map smoke.
-        if Self.particles && battleLayers.count < 4 { let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: l.bounds.midX, y: l.bounds.midY); l.insertSublayer(smoke, at: 0) }
-        return l
+        // A small contact flash, not a badge: the opposing unit symbols remain the focal point.
+        let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 24, height: 18)
+        let marks = CAShapeLayer(); marks.frame = root.bounds
+        let path = UIBezierPath()
+        for (x, y) in [(CGFloat(3), CGFloat(4)), (20, 3), (2, 13), (21, 14)] {
+            path.move(to: CGPoint(x: 12 + (x - 12) * 0.45, y: 9 + (y - 9) * 0.45))
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        marks.path = path.cgPath; marks.fillColor = nil
+        marks.strokeColor = UIColor(red: 0.66, green: 0.22, blue: 0.12, alpha: 0.9).cgColor
+        marks.lineWidth = 1.4; marks.lineCap = .round
+        let flash = CAKeyframeAnimation(keyPath: "opacity")
+        flash.values = [0.15, 0.9, 0.2, 0.15]; flash.keyTimes = [0, 0.2, 0.5, 1]
+        flash.duration = 1.2; flash.repeatCount = .infinity
+        marks.add(flash, forKey: "contact"); root.addSublayer(marks)
+        if Self.particles && battleLayers.count < 4 {
+            let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: 12, y: 9); root.insertSublayer(smoke, at: 0)
+        }
+        return root
     }
 
     private func siegeLayer(color: UIColor) -> (CALayer, CAShapeLayer) {

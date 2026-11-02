@@ -69,6 +69,7 @@ struct NationSheet: View {
     let fly: (Int) -> Void
     /// 绘制疆域: paint provinces on the map for this state.
     var paint: (Int) -> Void = { _ in }
+    var placeArmy: (Int) -> Void = { _ in }
     @State private var editing: NationInfo.Person?
     @State private var regime: (history: [String], trait: String) = ([], "")
     @State private var goldText = ""
@@ -555,6 +556,7 @@ struct NationSheet: View {
                 }
             }
             .padding(.horizontal, 16)
+            Button { placeArmy(nation) } label: { SecondaryLabel(title: "在地图上放置新军", symbol: "plus.circle") }.buttonStyle(PressStyle()).padding(.horizontal, 16)
             Text("征募新军").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
             Group2 {
                 PaperMenu(title: "驻地", items: [(-1, "选择州郡")] + owned.map { ($0, map.meta.provinces[$0].name) }, selection: $levyProvince)

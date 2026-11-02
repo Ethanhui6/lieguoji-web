@@ -39,21 +39,23 @@ struct NationInfo: Decodable {
 /// CollapsibleSectionUI (original StateInfoNewUI sections): a header with a chevron; 0.25 s fold
 /// animation (m_AnimationDuration). The default state is given per section (m_StartExpanded).
 struct FoldSection<Content: View>: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let title: String
     @State var expanded: Bool
     @ViewBuilder let content: () -> Content
     init(_ title: String, expanded: Bool, @ViewBuilder content: @escaping () -> Content) { self.title = title; _expanded = State(initialValue: expanded); self.content = content }
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button { withAnimation(.easeInOut(duration: 0.25)) { expanded.toggle() } } label: {
+            Button { withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { expanded.toggle() } } label: {
                 HStack {
                     SectionLabel(title, inset: false)
                     Spacer()
-                    Image(systemName: expanded ? "chevron.up" : "chevron.down").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink2)
+                    Image(systemName: "chevron.down").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink2).rotationEffect(.degrees(expanded ? 180 : 0))
                 }
-                .padding(.horizontal, 22).padding(.vertical, 6).contentShape(Rectangle())
+                .padding(.horizontal, 22).frame(minHeight: 44).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityValue(expanded ? "已展开" : "已收起")
             if expanded { content().transition(.opacity.combined(with: .move(edge: .top))) }
         }
         .clipped()

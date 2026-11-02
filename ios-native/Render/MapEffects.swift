@@ -55,6 +55,7 @@ final class EffectsView: UIView {
     private var burstLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var battleArrows: [String: (root: CALayer, fill: CAShapeLayer, gradient: CAGradientLayer, outline: CAShapeLayer, head: CAShapeLayer, reveal: CAShapeLayer, a: MapEffects.Arrow)] = [:]
     private var seen = Set<String>()
+    private var seenOrder: [String] = []
     private var camera: MapCamera?
     private var viewport: CGSize = .zero
 
@@ -445,11 +446,24 @@ final class EffectsView: UIView {
     }
 
     private func once(_ id: String, after seconds: Double, remove: @escaping () -> Void) {
-        seen.insert(id)
+        if seen.insert(id).inserted { seenOrder.append(id) }
+        if seenOrder.count > 2048 {
+            seen.remove(seenOrder.removeFirst())
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { remove() }
     }
 
-    func set(_ effects: MapEffects) {
+    func set(_ incoming: MapEffects) {
+        // Bound presentation cost only; never truncate simulation or battle accounting.
+        var effects = incoming
+        effects.battles = Array(incoming.battles.prefix(48))
+        effects.sieges = Array(incoming.sieges.prefix(64))
+        effects.arrows = Array(incoming.arrows.prefix(32))
+        effects.flashes = Array(incoming.flashes.prefix(24))
+        effects.bursts = Array(incoming.bursts.prefix(24))
+        effects.claims = Array(incoming.claims.prefix(24))
+        effects.declarations = Array(incoming.declarations.prefix(8))
+        effects.peaces = Array(incoming.peaces.prefix(8))
         CATransaction.begin(); CATransaction.setDisableActions(true)
         let battles = Set(effects.battles.map(\.key))
         for (key, v) in battleLayers where !battles.contains(key) { v.layer.removeFromSuperlayer(); battleLayers[key] = nil }
@@ -489,6 +503,7 @@ final class EffectsView: UIView {
             CATransaction.setDisableActions(true)
         }
         for f in effects.flashes where !seen.contains(f.id) {
+            guard flashLayers.count < 24 else { continue }
             let l = flashLayer(color: UIColor(red: f.r, green: f.g, blue: f.b, alpha: 1)); layer.addSublayer(l)
             flashLayers[f.id] = (l, f.x, f.y)
             let id = f.id
@@ -501,28 +516,48 @@ final class EffectsView: UIView {
             else { let l = arrowLayer(a); layer.insertSublayer(l.0, at: 0); battleArrows[a.key] = (l.0, l.1, l.2, l.3, l.4, l.5, a) }
         }
         for b in effects.bursts where !seen.contains(b.id) {
+            guard burstLayers.count < 24 else { continue }
             let l = burstLayer(b); layer.addSublayer(l); burstLayers[b.id] = (l, b.x, b.y)
             let id = b.id
             once(id, after: 2.6) { [weak self] in self?.burstLayers[id]?.layer.removeFromSuperlayer(); self?.burstLayers[id] = nil }
         }
         for d in effects.declarations where !seen.contains(d.id) {
+            guard arrowLayers.count < 8 else { continue }
             let (line, head) = declarationLayers(); layer.addSublayer(line); layer.addSublayer(head)
             arrowLayers[d.id] = (line, head, d)
             let id = d.id
             once(id, after: 2.1) { [weak self] in self?.arrowLayers[id]?.layer.removeFromSuperlayer(); self?.arrowLayers[id]?.head.removeFromSuperlayer(); self?.arrowLayers[id] = nil }
         }
         for c in effects.claims where !seen.contains(c.id) {
+            guard claimLayers.count < 24 else { continue }
             let l = claimLayer(c); layer.addSublayer(l); claimLayers[c.id] = (l, c.x, c.y)
             let id = c.id
             once(id, after: 4.2 + c.delay) { [weak self] in self?.claimLayers[id]?.layer.removeFromSuperlayer(); self?.claimLayers[id] = nil }
         }
         for p in effects.peaces where !seen.contains(p.id) {
+            guard peaceLayers.count < 8 else { continue }
             let l = peaceLayer(); layer.addSublayer(l); peaceLayers[p.id] = (l, p.x, p.y)
             let id = p.id
             once(id, after: 1.8) { [weak self] in self?.peaceLayers[id]?.layer.removeFromSuperlayer(); self?.peaceLayers[id] = nil }
         }
         CATransaction.commit()
         if let camera { update(camera: camera, viewport: viewport) }
+    }
+
+    private func visibility(_ item: CALayer, visible: Bool) {
+        item.isHidden = !visible
+        let paused = !visible || UIAccessibility.isReduceMotionEnabled
+        if paused && item.speed != 0 {
+            let time = item.convertTime(CACurrentMediaTime(), from: nil)
+            item.speed = 0
+            item.timeOffset = time
+        } else if !paused && item.speed == 0 {
+            let time = item.timeOffset
+            item.speed = 1
+            item.timeOffset = 0
+            item.beginTime = 0
+            item.beginTime = item.convertTime(CACurrentMediaTime(), from: nil) - time
+        }
     }
 
     func update(camera: MapCamera, viewport: CGSize) {
@@ -552,6 +587,14 @@ final class EffectsView: UIView {
             let head = UIBezierPath(); head.move(to: tip)
             head.addLine(to: CGPoint(x: base.x - uy * 9, y: base.y + ux * 9)); head.addLine(to: CGPoint(x: base.x + uy * 9, y: base.y - ux * 9)); head.close()
             v.head.path = head.cgPath
+        }
+        // Hide and freeze continuous offscreen effects. A margin avoids edge flicker.
+        let visibleRect = CGRect(origin: .zero, size: viewport).insetBy(dx: -80, dy: -80)
+        for v in battleLayers.values { visibility(v.layer, visible: visibleRect.contains(v.layer.position)) }
+        for v in siegeLayers.values { visibility(v.layer, visible: visibleRect.contains(v.layer.position)) }
+        for v in clashLayers.values {
+            let visible = visibleRect.contains(screen(v.battle.x, v.battle.y))
+            visibility(v.a, visible: visible); visibility(v.b, visible: visible)
         }
         CATransaction.commit()
     }

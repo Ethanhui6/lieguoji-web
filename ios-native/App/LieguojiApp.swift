@@ -931,6 +931,7 @@ struct SheetHeader: View {
 /// A folded memorial page: translucent rice paper, an ink outer rule and a vermilion inner rule;
 /// it unfolds when it first appears.
 struct Group2<Content: View>: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ViewBuilder let content: Content
     @State private var unfolded = false
     var body: some View {
@@ -940,7 +941,7 @@ struct Group2<Content: View>: View {
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.16), lineWidth: 0.6).padding(3))
             .shadow(color: Color(red: 0.25, green: 0.18, blue: 0.08).opacity(0.08), radius: 6, y: 2)
             .scaleEffect(x: 1, y: unfolded ? 1 : 0.94, anchor: .top).opacity(unfolded ? 1 : 0)
-            .onAppear { withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { unfolded = true } }
+            .onAppear { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { unfolded = true } }
     }
 }
 
@@ -1250,15 +1251,22 @@ struct UnitMark: View {
 }
 
 struct NationsSheet: View {
+    @State private var search = ""
+    @State private var livingOnly = true
     @ObservedObject var model: GameModel
     let select: (Int) -> Void
     var body: some View {
         if let map = model.map, let state = model.state {
             // A state just founded may not be in the map legend yet: list only the ones it has.
-            let order = state.nations.indices.filter { $0 < map.meta.nations.count }.sorted { state.nations[$0].provinces > state.nations[$1].provinces }
+            let order = state.nations.indices.filter { $0 < map.meta.nations.count && (!livingOnly || state.nations[$0].alive) && (search.isEmpty || map.meta.nations[$0].name.localizedCaseInsensitiveContains(search)) }.sorted { state.nations[$0].provinces > state.nations[$1].provinces }
             ScrollView {
-                VStack(spacing: 14) {
+                LazyVStack(spacing: 14) {
                     SheetHeader(title: "国家", subtitle: "\(state.nations.filter(\.alive).count) 国并立")
+                    VStack(spacing: 10) {
+                        TextField("搜索国家", text: $search).textFieldStyle(.roundedBorder)
+                        Toggle("只看现存国家", isOn: $livingOnly).tint(Theme.jade)
+                        if order.isEmpty { Text("没有符合条件的国家").foregroundStyle(Theme.ink2) }
+                    }.padding(.horizontal, 16)
                     Group2 {
                         ForEach(order, id: \.self) { i in
                             let n = map.meta.nations[i], s = state.nations[i]
@@ -1294,17 +1302,22 @@ struct NationsSheet: View {
 }
 
 struct MilitarySheet: View {
+    @State private var filter = "all"
     @ObservedObject var model: GameModel
     let select: (Int) -> Void
     var selectFleet: (Int) -> Void = { _ in }
     var body: some View {
         if let map = model.map, let state = model.state {
             // Armies by state, built lazily as the list scrolls (hundreds of rows made opening slow).
-            let byNation = Dictionary(grouping: state.armies.indices, by: { state.armies[$0].nation })
+            let byNation = Dictionary(grouping: state.armies.indices.filter { filter == "all" || (filter == "manual" ? state.armies[$0].manual : state.armies[$0].status == "fighting" || state.armies[$0].status == "sieging") }, by: { state.armies[$0].nation })
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支舰队"))
-                    if let fleets = state.fleets, !fleets.isEmpty {
+                    Picker("军队筛选", selection: $filter) {
+                        Text("全部").tag("all"); Text("交战 / 围城").tag("battle"); Text("玩家军令").tag("manual")
+                    }.pickerStyle(.segmented).padding(.horizontal, 16)
+                    if byNation.isEmpty { Text("暂无符合条件的陆军").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
+                    if filter == "all", let fleets = state.fleets, !fleets.isEmpty {
                         SectionLabel("舰队")
                         Group2 {
                             ForEach(fleets.indices, id: \.self) { i in
@@ -1347,7 +1360,7 @@ struct DiplomacySheet: View {
     var body: some View {
         if let map = model.map, let state = model.state {
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "外交", subtitle: state.wars.isEmpty ? "天下太平" : "\(state.wars.count) 场战争进行中")
                     if !state.wars.isEmpty {
                         Group2 {
@@ -1376,10 +1389,10 @@ struct DiplomacySheet: View {
                         }
                         .padding(.horizontal, 16)
                     }
-                    SectionLabel("宣战")
+                    SectionLabel("往来国与目标国")
                     Group2 {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("宣战国").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                            Text("发起国").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
                             NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive }, selection: $attacker)
                             Text("目标国").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.top, 6)
                             NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive && $0 != attacker }, selection: $defender)
@@ -1389,11 +1402,16 @@ struct DiplomacySheet: View {
                         Button {
                             Task { if let e = await model.declareWar(attacker, on: defender) { say(e) } else { say(model.state?.events.last?.text ?? "已宣战") } }
                         } label: { Label("宣战", systemImage: "flag.2.crossed").font(Theme.kai(18)).frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(Theme.seal) }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.plain).disabled(attacker == defender || !state.nations.indices.contains(attacker) || !state.nations.indices.contains(defender) || !state.nations[attacker].alive || !state.nations[defender].alive)
                     }
                     .padding(.horizontal, 16)
+                    SectionLabel("条约与邦交")
+                    DiplomaticActions(model: model, source: attacker, target: defender, say: say).padding(.horizontal, 16)
                 }
                 .padding(.bottom, 24)
+                .onChange(of: attacker) { _, value in
+                    if defender == value { defender = state.nations.indices.first { $0 != value && state.nations[$0].alive } ?? -1 }
+                }
             }
         }
     }
@@ -1585,6 +1603,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.22.1", ["外交总页增加互不侵犯、王室联姻、同盟与赠金入口，复用真实外交命令；等待期间禁用重复提交，显示执行结果。",
+                    "国家页增加搜索与现存国家筛选，军事页增加交战／围城与玩家军令筛选。",
+                    "折叠分节的箭头连续旋转，统一最小触控高度；卡片入场收敛到 0.2 秒，跟随系统减少动态效果设置。",
+                    "限制地图装饰特效数量，视野外的交锋与围城动画暂停，重新进入视野接续播放；模拟规则不变。",
+                    "全新海青、玉白与朱红城阙地图图标。真机帧率与触控视觉效果待验证。"]),
         ("0.22.0", ["新增八种文化（共二十六种）：越南、吐蕃、匈牙利、波兰、葡萄牙、尼德兰、阿兹特克、印加。每种都有八十座左右真实历史城市、五十个以上男名、四十五个以上女名、三十个家族，以及真实国号与历史人物；元首称号随文化（赞普、特拉托阿尼、萨帕·印卡等）。新建世界时可选。",
                     "新增两种宗教：阿兹特克信仰、印加太阳信仰。",
                     "连电脑计算更快：经中转时，手机在显示这一步的同时已经向电脑要下一步，电脑不再空等；电脑交回结果的同一次请求顺便取走下一个任务，每步少一次往返。经中转时自动存档改为每 120 天一次（存档要把整个世界传回手机）。需要同时更新电脑端程序。",

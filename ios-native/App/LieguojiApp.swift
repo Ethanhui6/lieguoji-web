@@ -1161,7 +1161,7 @@ struct ArmySheet: View {
                     // The arm's strengths and weaknesses, and who leads it.
                     VStack(alignment: .leading, spacing: 4) {
                         if let k = UnitKinds.byKey[a.unit] { Text(k.note).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
-                        if let c = a.commander { Text(a.banner == "ruler" ? "御驾亲征：(c)" : "主将：(c)").font(Theme.kai(14)).foregroundStyle(a.banner == "ruler" ? Theme.seal : Theme.ink) }
+                        if let c = a.commander { Text(a.banner == "ruler" ? "御驾亲征：\(c)" : "主将：\(c)").font(Theme.kai(14)).foregroundStyle(a.banner == "ruler" ? Theme.seal : Theme.ink) }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 22)
                     StatStrip(tiles: [
@@ -1624,6 +1624,7 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.25.2", ["修复 0.25.1 安装包编译失败（国家页军事分类的军队列表一处代码），0.25.0 起的全部内容随此版发布。"]),
         ("0.25.1", ["修复：通到海岸的国界线在平滑后差一点没连上海岸，现在两端准确接到海岸线；0.25.0 的全部内容随此版发布。"]),
         ("0.25.0", ["地图边缘还原原作：国界改用原作的平滑曲线（同海岸线一样的 CurveBasis 四段样条，取自原作 SmoothBorderLines），每国国界连成一整条柔和的线，不再是一格一格的锯齿台阶。",
                     "国家页分为五类：概览（君主、政体、文化宗教、国运、政体沿革、国史）、朝政（朝堂、议会、朝廷百官、家族人物）、军事（本国军队一览，点一支直接打开，帅旗与御驾标出；战争）、外交（外交关系、条约、国家行为）、自定义。",

@@ -283,10 +283,10 @@ struct NationSheet: View {
         VStack(alignment: .leading, spacing: 14) {
                 // 军事: the state's armies at a glance (tap one to open it), then its wars.
                 let mine = state.armies.indices.filter { state.armies[$0].nation == nation }
-                FoldSection("军队（(mine.count) 支 · (Names.wan(mine.reduce(0) { $0 + state.armies[$1].troops }))）", expanded: true) {
+                FoldSection("军队（\(mine.count) 支 · \(Names.wan(mine.reduce(0) { $0 + state.armies[$1].troops }))）", expanded: true) {
                     Group2 {
                         if mine.isEmpty { Row(label: "军队", value: "暂无军队") }
-                        ForEach(Array(mine.sorted { state.armies[$0].troops > state.armies[$1].troops }.prefix(12).enumerated()), id: .offset) { k, i in
+                        ForEach(Array(mine.sorted { state.armies[$0].troops > state.armies[$1].troops }.prefix(12).enumerated()), id: \.offset) { k, i in
                             let a = state.armies[i]
                             Button { openArmy(i) } label: {
                                 HStack(spacing: 10) {

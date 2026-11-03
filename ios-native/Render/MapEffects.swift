@@ -140,12 +140,13 @@ final class EffectsView: UIView {
     private func siegeLayer(color: UIColor) -> (CALayer, CAShapeLayer) {
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 30, height: 30)
         let track = CAShapeLayer(); track.frame = root.bounds
-        track.path = UIBezierPath(ovalIn: CGRect(x: 4, y: 4, width: 22, height: 22)).cgPath
-        track.fillColor = UIColor(white: 1, alpha: 0.75).cgColor; track.strokeColor = UIColor(white: 0, alpha: 0.18).cgColor; track.lineWidth = 3.5
+        let bar = UIBezierPath(); bar.move(to: CGPoint(x: 4, y: 23)); bar.addLine(to: CGPoint(x: 26, y: 23))
+        track.path = bar.cgPath
+        track.fillColor = nil; track.strokeColor = UIColor(white: 0, alpha: 0.18).cgColor; track.lineWidth = 3.5
         let ring = CAShapeLayer(); ring.frame = root.bounds
-        ring.path = UIBezierPath(arcCenter: CGPoint(x: 15, y: 15), radius: 11, startAngle: -.pi / 2, endAngle: .pi * 1.5, clockwise: true).cgPath
+        ring.path = bar.cgPath
         ring.fillColor = UIColor.clear.cgColor; ring.strokeColor = color.cgColor; ring.lineWidth = 3.5; ring.lineCap = .round
-        let flag = CALayer(); flag.frame = CGRect(x: 9, y: 9, width: 12, height: 12)
+        let flag = CALayer(); flag.frame = CGRect(x: 9, y: 5, width: 12, height: 12)
         flag.contents = UIImage(systemName: "flag.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 9, weight: .bold))?.withTintColor(color, renderingMode: .alwaysOriginal).cgImage
         flag.contentsGravity = .resizeAspect
         let fire = CAEmitterLayer(); fire.emitterShape = .line; fire.emitterSize = CGSize(width: 22, height: 1); fire.emitterPosition = CGPoint(x: 15, y: 30)

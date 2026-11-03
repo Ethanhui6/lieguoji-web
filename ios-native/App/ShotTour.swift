@@ -52,6 +52,11 @@ enum ShotTour {
                 model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(2.5); await shoot("06c-banner-close")
             }
         }
+        // A burst on a marching army, one shot a second, to see how it walks and meets the enemy.
+        if let state = model.state, let a = state.armies.first(where: { $0.travel == "moving" && $0.destination != nil }) {
+            model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(1.5)
+            for i in 0..<10 { await shoot(String(format: "08-march-%02d", i)); await wait(1) }
+        }
         model.pause(saving: false)
         views(true); await wait(1); await shoot("07-views"); views(false)
         let panels: [(String, Panel)] = [("10-nations", .nations), ("11-nation", .nation(model.state?.nations.indices.max { (model.state?.nations[$0].provinces ?? 0) < (model.state?.nations[$1].provinces ?? 0) } ?? 0)),

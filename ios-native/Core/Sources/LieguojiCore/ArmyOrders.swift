@@ -239,7 +239,7 @@ public enum ArmyOrders {
             let owned = provinces.indices.filter { provinces[$0].controller.asString == nation }
             let invaded = owned.filter { enemyAt(provinces[$0].id.asString) != nil }
             // The running native world's tactical policy, gated by its existing app-rule marker.
-            if r.regimes.enabled.asBool, invaded.isEmpty, !ongoing, a.status.asString != "retreating",
+            if r.regimes.enabled.isTruthy, invaded.isEmpty, !ongoing, a.status.asString != "retreating",
                let hp = here.province, hp.controller.asString == nation {
                 let threatened = hp.neighbors.asArray.contains { enemyAt($0.asString) != nil }
                 let local = space.filter { $0.province?.id.asString == hp.id.asString && $0.army.nationId.asString == nation }.map { f in
@@ -274,7 +274,7 @@ public enum ArmyOrders {
                 ArmyAutonomy.Context.Target(id: p, x: provinces[p].center.x.asNumber, y: provinces[p].center.y.asNumber, feature: geo.provinceFeature[provinces[p].id.asString] ?? -1,
                                             protruding: CombatReader.protruding(r, p), port: ports.contains(provinces[p].id.asString))
             }
-            if r.regimes.enabled.asBool, !invaded.isEmpty {
+            if r.regimes.enabled.isTruthy, !invaded.isEmpty {
                 let defense = candidates.filter { invaded.contains($0.id) }
                 if !defense.isEmpty { candidates = defense }
             }

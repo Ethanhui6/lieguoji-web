@@ -5,7 +5,9 @@ import LieguojiCore
 /// relations, the state's wars, and the state-level actions (国家行为). While open, the map shows
 /// the state's relations: enemies red, allies blue, vassals green, the overlord magenta.
 struct NationInfo: Decodable {
-    struct Ruler: Decodable { let name: String; let title: String; let age: Double }
+    struct Ruler: Decodable { let name: String; let title: String; let age: Double; var id: Int? = nil; var traits: [String]? = nil; var skills: [Double]? = nil }
+    /// 国家加成 (自定义) in percent: income, attack, defense, growth, speed.
+    var bonus: [String: Double]? = nil
     struct Alliance: Decodable { let name: String; let members: [Int] }
     struct Side: Decodable { let nations: [Int]; let losses: Double }
     struct War: Decodable, Identifiable { let id: Int; let casusBelli: String; let goals: [String]; let months: Double; let sides: [Side]; let side: Int; let score: Double? }
@@ -95,6 +97,11 @@ struct NationSheet: View {
     @State private var temperSet = false
     @State private var provinceChoice = -1
     @State private var populationText = ""
+    /// 点数字即改: the value being edited.
+    @State private var numberEdit: NumberEdit?
+    struct NumberEdit: Identifiable { let id = UUID(); let title: String; let unit: String; let value: Double; let apply: (Double) async -> String? }
+    @State private var partyEdit: PartyEdit?
+    struct PartyEdit: Identifiable { let id: Int; let name: String; let seats: Int }
     @State private var history: [GameState.Event] = []
     @State private var picking: Pick?
     @State private var target = -1
@@ -128,11 +135,18 @@ struct NationSheet: View {
                     if let info {
                         // Original section order: BasicInfo (only one expanded by default), Action, War, Family, Diplomacy.
                         // 卷首: the state at a glance, then its ruler and identity.
+                        // Every number here can be tapped and changed (点一下数字即可修改).
                         StatStrip(tiles: [
-                            StatTile(label: "疆域", value: "\(s.provinces)州"),
-                            StatTile(label: "人口", value: Names.wan(s.population)),
-                            StatTile(label: "兵力", value: Names.wan(s.troops)),
-                            StatTile(label: "国库", value: Names.wan(Int(info.gold)), warn: info.goldPerMonth < 0),
+                            StatTile(label: "疆域", value: "\(s.provinces)州", edit: info.alive ? { paint(nation) } : nil),
+                            StatTile(label: "人口", value: Names.wan(s.population), edit: info.alive ? {
+                                numberEdit = NumberEdit(title: "全国人口", unit: "人", value: Double(s.population)) { v in await model.scaleTotal(nation, key: "population", value: v) }
+                            } : nil),
+                            StatTile(label: "兵力", value: Names.wan(s.troops), edit: info.alive ? {
+                                numberEdit = NumberEdit(title: "全国兵力", unit: "人", value: Double(s.troops)) { v in await model.scaleTotal(nation, key: "troops", value: v) }
+                            } : nil),
+                            StatTile(label: "国库", value: Names.wan(Int(info.gold)), warn: info.goldPerMonth < 0, edit: info.alive ? {
+                                numberEdit = NumberEdit(title: "国库", unit: "金", value: info.gold) { v in await model.editNation(nation, gold: v, destiny: nil, polity: nil) }
+                            } : nil),
                         ])
                         NationTabs(tab: $tab)
                         switch tab {
@@ -177,6 +191,20 @@ struct NationSheet: View {
                 .presentationDetents([.large]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
             }
             .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17)) }
+            .sheet(item: $numberEdit) { e in
+                NumberEditSheet(title: e.title, unit: e.unit, value: e.value) { v in
+                    numberEdit = nil
+                    Task { await run(success: "\(e.title)已改为 \(Int(v))\(e.unit)") { await e.apply(v) } }
+                }
+                .presentationDetents([.height(300)]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+            }
+            .sheet(item: $partyEdit) { p in
+                PartyEditSheet(name: p.name, seats: p.seats) { name, seats in
+                    partyEdit = nil
+                    Task { await run(success: "\(name)已修改") { await model.editParty(nation, party: p.id, name: name, seats: seats) } }
+                }
+                .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+            }
         }
     }
 
@@ -184,11 +212,21 @@ struct NationSheet: View {
         VStack(alignment: .leading, spacing: 14) {
                 FoldSection("基本信息", expanded: true) {
                     Group2 {
-                        if let r = info.ruler { Row(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）"); Divider2() }
-                        Row(label: "政体", value: Names.polity[info.polity] ?? info.polity); Divider2()
-                        Row(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)"); Divider2()
-                        Row(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金"); Divider2()
-                        Row(label: "国运", value: String(format: "%.0f", info.destiny))
+                        if let r = info.ruler {
+                            EditRow(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）") {
+                                if let id = r.id { editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50]) }
+                            }
+                            Divider2()
+                        }
+                        EditRow(label: "政体", value: info.styleLabel ?? Names.polity[info.polity] ?? info.polity) { tab = .custom }; Divider2()
+                        EditRow(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)") { tab = .custom }; Divider2()
+                        EditRow(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金" + Self.percent(info.bonus?["income"])) {
+                            numberEdit = NumberEdit(title: "月入加成（%）", unit: "%", value: info.bonus?["income"] ?? 0) { v in await model.setBonus(nation, key: "income", value: v) }
+                        }
+                        Divider2()
+                        EditRow(label: "国运", value: String(format: "%.0f", info.destiny)) {
+                            numberEdit = NumberEdit(title: "国运（0–100）", unit: "", value: info.destiny) { v in await model.editNation(nation, gold: nil, destiny: v, polity: nil) }
+                        }
                     }
                     .padding(.horizontal, 16)
                 }
@@ -239,16 +277,21 @@ struct NationSheet: View {
                             }
                             .frame(height: 10).padding(.horizontal, 16).padding(.top, 12)
                             ForEach(Array(parties.sorted { $0.seats > $1.seats }.enumerated()), id: \.offset) { i, p in
-                                HStack(spacing: 8) {
-                                    RoundedRectangle(cornerRadius: 2).fill(Self.partyColor(parties.firstIndex { $0.name == p.name } ?? 0)).frame(width: 10, height: 10)
-                                    Text(p.name).font(Theme.kai(15)).foregroundStyle(Theme.ink)
-                                    if i == 0 { Text("执政").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
-                                    Spacer()
-                                    Text("\(p.seats) 席").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
+                                let index = parties.firstIndex { $0.name == p.name } ?? 0
+                                Button { partyEdit = PartyEdit(id: index, name: p.name, seats: p.seats) } label: {
+                                    HStack(spacing: 8) {
+                                        RoundedRectangle(cornerRadius: 2).fill(Self.partyColor(index)).frame(width: 10, height: 10)
+                                        Text(p.name).font(Theme.kai(15)).foregroundStyle(Theme.ink)
+                                        if i == 0 { Text("执政").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+                                        Spacer()
+                                        Text("\(p.seats) 席").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
+                                        Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7))
+                                    }
+                                    .padding(.horizontal, 16).padding(.vertical, 6).contentShape(Rectangle())
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 6)
+                                .buttonStyle(.plain)
                             }
-                            Text("每四年改选一次，最大党组织政府。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10)
+                            Text("每四年改选一次，最大党组织政府。点党派可改名与席位。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10)
                         }
                         .padding(.horizontal, 16)
                     }
@@ -646,6 +689,18 @@ struct NationSheet: View {
                 }
             }
             .padding(.horizontal, 16)
+            SectionLabel("国家加成")
+            Group2 {
+                VStack(spacing: 0) {
+                    ForEach(Array(Self.bonuses.enumerated()), id: \.offset) { i, b in
+                        EditRow(label: b.label, value: Self.percent(info.bonus?[b.key], zero: "无") + " · " + b.note) {
+                            numberEdit = NumberEdit(title: b.label + "（%）", unit: "%", value: info.bonus?[b.key] ?? 0) { v in await model.setBonus(nation, key: b.key, value: v) }
+                        }
+                        if i < Self.bonuses.count - 1 { Divider2() }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
             SectionLabel("国库与国运")
             Group2 {
                 HStack {
@@ -996,5 +1051,73 @@ struct NationTabs: View {
         }
         .padding(.horizontal, 12)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1).padding(.horizontal, 22) }
+    }
+}
+
+extension NationSheet {
+    /// 国家加成: what each one changes in the rules.
+    static let bonuses: [(key: String, label: String, note: String)] = [
+        ("income", "财政加成", "每月国库增收"), ("attack", "进攻加成", "军队伤害"), ("defense", "防守加成", "承受伤害减少"),
+        ("growth", "人口增长", "每年州郡人口"), ("speed", "行军速度", "全国军队"),
+    ]
+    static func percent(_ v: Double?, zero: String = "") -> String {
+        guard let v, v != 0 else { return zero.isEmpty ? "" : zero }
+        return (zero.isEmpty ? "（" : "") + (v > 0 ? "+" : "") + "\(Int(v))%" + (zero.isEmpty ? "）" : "")
+    }
+}
+
+/// A row that opens an editor when tapped (a small brush mark shows it can be changed).
+struct EditRow: View {
+    let label: String; let value: String; let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(label).foregroundStyle(Theme.ink2).fixedSize()
+                Spacer(minLength: 8)
+                Text(value).foregroundStyle(Theme.ink).monospacedDigit().multilineTextAlignment(.trailing).lineLimit(2)
+                Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7))
+            }
+            .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// 改数: one number, typed or nudged, then 颁行.
+struct NumberEditSheet: View {
+    let title: String; let unit: String; let value: Double
+    let save: (Double) -> Void
+    @State private var text = ""
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SheetHeader(title: title, subtitle: "现为 \(Self.format(value))\(unit)", seal: "改")
+            HStack(spacing: 10) {
+                TextField("", text: $text, prompt: Text(Self.format(value)).foregroundColor(Theme.ink2.opacity(0.6)))
+                    .keyboardType(.numbersAndPunctuation).multilineTextAlignment(.trailing).paperField()
+                if !unit.isEmpty { Text(unit).font(Theme.kai(17)).foregroundStyle(Theme.ink2) }
+            }
+            .padding(.horizontal, 22)
+            SealButton(title: "颁行", disabled: Double(text) == nil) { if let v = Double(text) { save(v) } }.padding(.horizontal, 22)
+        }
+        .padding(.bottom, 16)
+    }
+    static func format(_ v: Double) -> String { v.rounded() == v ? String(Int(v)) : String(format: "%.1f", v) }
+}
+
+/// 改党派: a party's name and its seats.
+struct PartyEditSheet: View {
+    let name: String; let seats: Int
+    let save: (String, Int) -> Void
+    @State private var text = ""
+    @State private var value = 0.0
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SheetHeader(title: name, subtitle: "议席 \(seats) / 100", seal: "党")
+            TextField("", text: $text, prompt: Text(name).foregroundColor(Theme.ink2.opacity(0.6))).paperField().padding(.horizontal, 22)
+            PaperSlider(title: "议席", value: $value, range: 0...100, step: 1) { "\(Int($0)) 席" }.padding(.horizontal, 22)
+            SealButton(title: "颁行") { save(text.isEmpty ? name : text, Int(value)) }.padding(.horizontal, 22)
+        }
+        .padding(.bottom, 16)
+        .onAppear { value = Double(seats) }
     }
 }

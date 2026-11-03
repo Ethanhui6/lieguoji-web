@@ -180,7 +180,12 @@ public enum RunWindow {
                                       },
                                       navy: { force in Naval.combatInput(r, r.world.nations[force.nation].id.asString) },
                                       // App rules: arms counter one another (spears break horse, horse rides down archers…).
-                                      counter: UnitKinds.enabled ? { a, b in UnitKinds.counter(r.units[a.id].optionalString ?? "", r.units[b.id].optionalString ?? "") } : nil)
+                                      // App rules: arms counter one another, and each state's attack and defence bonuses (自定义).
+                                      counter: UnitKinds.enabled ? { a, b in
+                                          let ids = r.world.nations.asArray
+                                          let bonus = ids.indices.contains(a.nation) && ids.indices.contains(b.nation) ? Regimes.combatBonus(r, attacker: ids[a.nation].id.asString, victim: ids[b.nation].id.asString) : 1
+                                          return UnitKinds.counter(r.units[a.id].optionalString ?? "", r.units[b.id].optionalString ?? "") * bonus
+                                      } : nil)
         let armyKeys = Dictionary(uniqueKeysWithValues: forces.filter { $0.kind == .army }.map { ($0.key, $0.id) })
         // creditArmyKills47.
         if !r.originalArmy47.isNull && !r.originalArmy47.kills.isNull {
@@ -275,7 +280,8 @@ public enum RunWindow {
         for a in r.world.armies.asArray {
             let id = a.id.asString
             entry[id] = (a.nationId.asString, anchors ? index[a.provinceId.asString].map { controllers[$0] } : nil, a.status.asString == "retreating",
-                         r.reorganization.active[id].isNull, r.forceSpeed.armies[id].base.optionalNumber ?? 0, CombatReader.unitSpeed(r.units[id].optionalString ?? ""))
+                         r.reorganization.active[id].isNull, r.forceSpeed.armies[id].base.optionalNumber ?? 0,
+                         CombatReader.unitSpeed(r.units[id].optionalString ?? "") * (UnitKinds.enabled ? 1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100 : 1))
         }
         _ = armies
         let rules = bridge.rules(r, canEnter: { force, cell in

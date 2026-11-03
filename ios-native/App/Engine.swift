@@ -121,11 +121,14 @@ struct GameState: Decodable, Equatable {
 struct ProvinceInfo: Decodable {
     let population: Int; let grain: Double; let capacity: Int; let supply: Double; let controller: Int; let owner: Int
     let core: Bool?; let defense: Double?; let mountain: Bool?; let biomes: [Double]?; let income: Double?
+    /// The main land (地形) and an army's march pace over it (1 = normal).
+    var terrain: String? = nil; var pace: Double? = nil
     /// The kinds of land this is, from what the engine weighs (core, fortress, granary, rich, mountain).
     var kinds: [(String, String)] {
         var out = [(String, String)]()
         if core == true { out.append(("核心", "近于国都，守军 +15%")) } else { out.append(("边地", "远离国都，无核心加成")) }
-        if mountain == true { out.append(("山地", "易守难攻")) }
+        if mountain == true { out.append(("山地", "易守难攻，行军减半")) }
+        else if let t = terrain, let p = pace { out.append((t, p >= 1 ? "行军通畅" : "行军慢 \(Int(((1 - p) * 100).rounded()))%")) }
         if (defense ?? 1) >= 3 { out.append(("要塞", "城防 \(Int(defense ?? 1)) 级")) }
         if capacity > 0, Double(population) >= Double(capacity) * 0.8 { out.append(("富庶", "人口近于上限")) }
         if grain >= Double(max(1, population)) * 0.5 { out.append(("粮仓", "存粮充足")) }

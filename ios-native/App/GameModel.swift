@@ -330,9 +330,12 @@ import LieguojiCore
                 // the state and the panels refresh once, so 2×, 4× and 8× really are faster.
                 // Through the relay each round trip costs time: twice the days per step.
                 let far = self.remoteAddress.map { !$0.contains("局域网") } ?? false
-                // The original runs fast (secondsPerDay 0.1: ten days a second at 1×). A step of
-                // several days every quarter second keeps that pace; the map tweens between steps.
-                let pace = [1: 3, 2: 5, 4: 10, 8: 16][self.speed] ?? 3
+                // Days per step: as many as the device computes in its share of a step (measured),
+                // up to the speed's pace — a quick phone runs near the original's pace, a slow one
+                // runs fewer days rather than stuttering. The map glides between steps.
+                let wanted = [1: 2, 2: 4, 4: 8, 8: 14][self.speed] ?? 2
+                let affordable = max(1, Int((0.16 / max(0.004, self.dayCost)).rounded(.down)))
+                let pace = min(wanted, affordable)
                 let days = far ? pace * 2 : pace
                 do {
                     if far {
@@ -346,8 +349,10 @@ import LieguojiCore
                     }
                 }
                 catch { self.failure = error.localizedDescription; self.pause(); return }
+                let spent = Date().timeIntervalSince(started)
+                if !far { self.dayCost = self.dayCost * 0.7 + spent / Double(max(1, days)) * 0.3 }
                 let budget = 0.25
-                let rest = budget - Date().timeIntervalSince(started)
+                let rest = budget - spent
                 if rest > 0 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) } else { await Task.yield() }
             }
         }
@@ -363,6 +368,8 @@ import LieguojiCore
         await native.enableAppRules()
     }
 
+    /// Measured seconds one simulated day costs (step and apply), smoothed; the pace follows it.
+    private var dayCost: Double = 0.03
     /// Smoothed time between two applied steps while playing; army icons glide over it.
     private var stepInterval: Double = 0.2
     private var lastApplied: CFTimeInterval?
@@ -505,6 +512,17 @@ import LieguojiCore
             for a in previous.armies where !alive.contains(a.id) {
                 let c = rgb(a.nation)
                 e.bursts.append(.init(id: "d\(a.id)", x: Double(a.x), y: Double(a.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: a.unit))
+            }
+            // An army beaten to nothing re-forms at home under the same banner (the original's
+            // reorganisation): it falls where it fought and rises again at home, instead of its icon
+            // sliding across the map.
+            let prior = Dictionary(previous.armies.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+            for a in state.armies {
+                guard let old = prior[a.id] else { continue }
+                let dx = a.x - old.x, dy = a.y - old.y
+                guard dx * dx + dy * dy > 1600 else { continue }
+                let c = rgb(a.nation)
+                e.bursts.append(.init(id: "d\(a.id)-\(state.day)", x: Double(old.x), y: Double(old.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: old.unit))
             }
             for n in previous.nations.count..<max(previous.nations.count, state.nations.count) where n < map.meta.nations.count {
                 let c = rgb(n), cap = map.meta.nations[n].capital
@@ -749,6 +767,9 @@ import LieguojiCore
         guard let d = await native.officeCandidates(n, office: office) else { return [] }
         return (try? JSONDecoder().decode([NationInfo.Person].self, from: d)) ?? []
     }
+    func setBonus(_ n: Int, key: String, value: Double?) async -> String? { finish(await native.setBonus(n, key: key, value: value)) }
+    func scaleTotal(_ n: Int, key: String, value: Double) async -> String? { finish(await native.scaleTotal(n, key: key, value: value)) }
+    func editParty(_ n: Int, party: Int, name: String?, seats: Int?) async -> String? { finish(await native.editParty(n, party: party, name: name, seats: seats)) }
     func editIdentity(_ n: Int, name: String?, color: String?) async -> String? { finish(await native.editIdentity(n, name: name, color: color)) }
     func setCapital(_ n: Int, province: Int) async -> String? { finish(await native.setCapital(n, province: province)) }
     func editProvince(_ index: Int, population: Double?, fortress: Bool?) async -> String? { finish(await native.editProvince(index, population: population, fortress: fortress)) }

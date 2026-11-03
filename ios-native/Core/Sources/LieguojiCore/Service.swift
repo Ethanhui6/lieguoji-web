@@ -113,6 +113,9 @@ public final class EngineService {
             let g: (history: [String], trait: String) = engine?.regime(int("n")) ?? (history: [], trait: "")
             var r = Reply(); r.strings = g.history; r.text = g.trait; return r
         case "editPerson": return command(engine?.editPerson(int("id"), skills: dbls("skills"), traits: strs("traits")))
+        case "setBonus": return command(engine?.setBonus(int("n"), key: str("key"), value: dbl("value")))
+        case "scaleTotal": return command(engine?.scaleTotal(int("n"), key: str("key"), value: dbl("value") ?? -1))
+        case "editParty": return command(engine?.editParty(int("n"), party: int("party"), name: optStr("name"), seats: optInt("seats")))
         case "editIdentity": lastOwners = []; return command(engine?.editIdentity(int("n"), name: optStr("name"), color: optStr("color")))
         case "setCapital": lastOwners = []; return command(engine?.setCapital(int("n"), province: int("province")))
         case "editProvince": return command(engine?.editProvince(int("index"), population: dbl("population"), fortress: args["fortress"] is NSNull || args["fortress"] == nil ? nil : bool("fortress")))

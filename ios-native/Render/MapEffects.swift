@@ -118,18 +118,9 @@ final class EffectsView: UIView {
     private func battleLayer() -> CALayer {
         let l = CALayer()
         l.bounds = CGRect(x: 0, y: 0, width: 30, height: 30 * 194 / 258)
-        // A small red ring that beats round the swords, so a battle is found at a glance.
-        let ring = CAShapeLayer()
-        let r: CGFloat = 13
-        ring.path = UIBezierPath(ovalIn: CGRect(x: l.bounds.midX - r, y: l.bounds.midY - r, width: r * 2, height: r * 2)).cgPath
-        ring.fillColor = UIColor(red: 0.984, green: 0.965, blue: 0.91, alpha: 0.55).cgColor
-        ring.strokeColor = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 0.9).cgColor
-        ring.lineWidth = 1.4; ring.frame = l.bounds
-        let beat = CABasicAnimation(keyPath: "transform.scale"); beat.fromValue = 0.75; beat.toValue = 1.15
-        beat.duration = 0.9; beat.autoreverses = true; beat.repeatCount = .infinity
-        beat.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        ring.add(beat, forKey: "beat")
-        l.addSublayer(ring)
+        // Only the original's clashing swords (Battle atlas), with a faint ink shadow under them.
+        l.shadowColor = UIColor(red: 0.12, green: 0.08, blue: 0.05, alpha: 1).cgColor
+        l.shadowOpacity = 0.35; l.shadowRadius = 2; l.shadowOffset = CGSize(width: 0, height: 1)
         l.contents = Self.swords; l.contentsGravity = .resize
         l.contentsRect = CGRect(x: 0, y: 0, width: 0.2, height: 0.125)
         let clip = CAKeyframeAnimation(keyPath: "contentsRect")
@@ -486,8 +477,8 @@ final class EffectsView: UIView {
             func line(_ s: MapEffects.Side) -> CAShapeLayer {
                 let c = CAShapeLayer()
                 c.strokeColor = UIColor(red: s.r, green: s.g, blue: s.b, alpha: 0.95).cgColor; c.fillColor = nil
-                c.lineWidth = 3; c.lineCap = .round; c.lineDashPattern = [5, 4]
-                c.shadowColor = UIColor.black.cgColor; c.shadowOpacity = 0.35; c.shadowRadius = 1.5; c.shadowOffset = .zero
+                c.lineWidth = 1.4; c.lineCap = .round; c.lineDashPattern = [3, 4]
+                c.opacity = 0.75
                 // The dashes run towards the clash.
                 let flow = CABasicAnimation(keyPath: "lineDashPhase"); flow.fromValue = 9; flow.toValue = 0; flow.duration = 0.45; flow.repeatCount = .infinity
                 c.add(flow, forKey: "flow")
@@ -593,7 +584,7 @@ final class EffectsView: UIView {
             let a = screen(v.battle.ax, v.battle.ay), b = screen(v.battle.bx, v.battle.by), m = screen(v.battle.x, v.battle.y)
             let pa = UIBezierPath(); pa.move(to: a); pa.addLine(to: m); v.a.path = pa.cgPath
             let pb = UIBezierPath(); pb.move(to: b); pb.addLine(to: m); v.b.path = pb.cgPath
-            v.a.lineWidth = 2 + k; v.b.lineWidth = 2 + k
+            v.a.lineWidth = 1 + k * 0.6; v.b.lineWidth = 1 + k * 0.6
         }
         for v in siegeLayers.values { var p = screen(v.x, v.y); p.y -= 16 * k; v.layer.position = p; v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k)) }
         for v in flashLayers.values { v.layer.position = screen(v.x, v.y) }

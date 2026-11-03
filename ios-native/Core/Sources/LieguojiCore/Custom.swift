@@ -238,6 +238,18 @@ public enum Regimes {
         }
     }
 
+    /// 国家加成 (自定义), in percent: income, attack, defense, growth (a year), speed. nil when unset.
+    public static let bonusKeys = ["income", "attack", "defense", "growth", "speed"]
+    public static func bonus(_ r: JS, _ id: String, _ key: String) -> Double? {
+        guard !r.regimes.isNull, !r.regimes.bonus.isNull else { return nil }
+        return r.regimes.bonus[id][key].optionalNumber
+    }
+    /// Damage multiplier for `attacker`'s army hitting `victim`'s (attack and defence bonuses).
+    static func combatBonus(_ r: JS, attacker: String, victim: String) -> Double {
+        let a = bonus(r, attacker, "attack") ?? 0, d = bonus(r, victim, "defense") ?? 0
+        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100))
+    }
+
     static func book(_ r: JS, _ id: String) -> JS {
         if r.regimes.nations[id].isNull {
             let b = JS.object(); b.history = .array([JS(r.civilization.nations[id].polity.optionalString ?? "Kingdom")]); b.empires = JS(r.civilization.nations[id].polity.optionalString == "Empire" ? 1 : 0); b.calm = JS(0)
@@ -259,6 +271,14 @@ public enum Regimes {
         case "Federation": addGold(0.02)
         case "Theocracy": addDestiny(0.25)
         default: break
+        }
+        // 国家加成 (自定义): extra income and population growth each month.
+        if let income = bonus(r, id, "income"), income != 0 { addGold(income / 100) }
+        if let growth = bonus(r, id, "growth"), growth != 0 {
+            let owned = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
+            for s in r.world.statecraft.provinces.asArray where owned.contains(s.provinceId.asString) {
+                s.population = JS(max(100, ((s.population.optionalNumber ?? 0) * (1 + growth / 1200)).rounded()))
+            }
         }
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
         postEffects(r, id, addGold: addGold, addDestiny: addDestiny)
@@ -638,6 +658,56 @@ extension NativeEngine {
         let id = nations[index].id.asString
         if let value { r.regimes.temper[id] = JS(min(1.6, max(0.6, value))) } else { r.regimes.temper.delete(id) }
         return (true, value == nil ? "好战程度随君主性情" : "好战程度已设定")
+    }
+    /// 国家加成 (自定义, percent): income −50…+200, attack/defense −50…+100, growth −20…+50 a
+    /// year, speed −50…+100; nil clears it. Each acts on the real rules (monthly gold, battle damage,
+    /// population each month, march speed).
+    public func setBonus(_ index: Int, key: String, value: Double?) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), !r.regimes.isNull, Regimes.bonusKeys.contains(key) else { return (false, "无此加成。") }
+        if r.regimes.bonus.isNull { r.regimes.bonus = JS.object() }
+        let id = nations[index].id.asString
+        if r.regimes.bonus[id].isNull { r.regimes.bonus[id] = JS.object() }
+        let range: ClosedRange<Double> = key == "income" ? -50...200 : key == "growth" ? -20...50 : -50...100
+        if let value { r.regimes.bonus[id][key] = JS(min(range.upperBound, max(range.lowerBound, value.rounded()))) } else { r.regimes.bonus[id].delete(key) }
+        return (true, "加成已设定。")
+    }
+    /// 党派 (自定义): a party's name and seats (0…100); the largest party governs.
+    public func editParty(_ index: Int, party: Int, name: String?, seats: Int?) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), !r.regimes.isNull else { return (false, "国家不存在。") }
+        let b = Regimes.book(r, nations[index].id.asString)
+        guard !b.parties.isNull, b.parties.asArray.indices.contains(party) else { return (false, "此国没有这个党派。") }
+        let p = b.parties.asArray[party]
+        if let name { let t = name.trimmingCharacters(in: .whitespaces); if !t.isEmpty { p.name = JS(String(t.prefix(10))) } }
+        if let seats { p.seats = JS(min(100, max(0, seats))) }
+        return (true, "党派已修改。")
+    }
+    /// 自定义总人口、总兵力: scales every province (or every army) of the state so the total is `value`.
+    public func scaleTotal(_ index: Int, key: String, value: Double) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), value >= 0 else { return (false, "数值无效。") }
+        let id = nations[index].id.asString
+        if key == "population" {
+            let owned = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
+            let rows = r.world.statecraft.provinces.asArray.filter { owned.contains($0.provinceId.asString) }
+            let total = rows.reduce(0.0) { $0 + ($1.population.optionalNumber ?? 0) }
+            guard total > 0, !rows.isEmpty else { return (false, "此国没有州郡。") }
+            let k = min(50, max(0.02, value / total))
+            for s in rows { s.population = JS(min(5_000_000, max(100, ((s.population.optionalNumber ?? 0) * k).rounded()))) }
+            return (true, "总人口已改。")
+        }
+        let armies = r.world.armies.asArray.filter { $0.nationId.asString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
+        let total = armies.reduce(0.0) { $0 + $1.troops.asNumber }
+        guard total > 0 else { return (false, "此国没有军队，可在「自定义」征兵。") }
+        let k = min(50, max(0.02, value / total))
+        for a in armies {
+            let t = min(500_000, max(1, Int((a.troops.asNumber * k).rounded())))
+            a.troops = JS(t)
+            let force = r.tactics.forces[a.id.asString]
+            if !force.isNull && (force.fullStrength.optionalNumber ?? 0) < Double(t) { force.fullStrength = JS(t) }
+        }
+        return (true, "总兵力已改。")
     }
     /// 自定义人物: name and age.
     public func renamePerson(_ id: Int, first: String?, last: String?, age: Int?) -> (ok: Bool, reason: String) {

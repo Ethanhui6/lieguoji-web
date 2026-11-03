@@ -267,6 +267,9 @@ public enum ForceMotion {
 
     /// Biomes.SpeedModifier (native-war/biome-speed.ts).
     static let biomeSpeed: [Double] = [1, 0.7, 0.7, 1, 1, 1, 1, 1, 1, 1, 1, 0.7, 1].map(Native.fr)
+    /// App rules: march pace per biome (marine, hot desert, cold desert, savanna, grassland, tropical
+    /// seasonal forest, temperate forest, rainforest, temperate rainforest, taiga, tundra, glacier, wetland).
+    public static let terrainSpeed: [Double] = [1, 0.6, 0.65, 1, 1.05, 0.85, 0.85, 0.7, 0.75, 0.8, 0.75, 0.5, 0.6]
     public static let mapUnitsPerNativeUnit = 1000.0 / 240.0
 
     /// actualForceSpeed47 for an army: native Army.GetSpeed (nativeArmyMovementSpeed) per tick, in map units.
@@ -274,6 +277,12 @@ public enum ForceMotion {
         let fr = Native.fr, b = fr(base), unit = max(fr(0.05), fr(unitSpeed))
         let value: Double
         let q = Int(g.provinces[cell])
+        if UnitKinds.enabled, q >= 0 {
+            // App rules: every kind of land sets the pace (deserts, marshes, jungle and ice slow a
+            // march; open grassland is quickest), on top of the original's mountain and plateau.
+            let m = g.mountain[q] ? 0.45 : g.plateau[q] ? 0.65 : terrainSpeed[min(terrainSpeed.count - 1, Int(g.faceBiomes[Int(g.faces[cell])]))]
+            return fr(fr(b * fr(m)) * unit) * mapUnitsPerNativeUnit * secondsPerTick
+        }
         if q < 0 { value = fr(b * fr(1.5)) }
         else if g.mountain[q] { value = fr(fr(b * fr(0.5)) * unit) }
         else if g.plateau[q] { value = fr(fr(b * fr(0.7)) * unit) }

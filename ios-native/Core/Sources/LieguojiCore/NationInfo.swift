@@ -90,6 +90,10 @@ extension NativeEngine {
             ruler.name = JS(familyFirst ? last + first : last.isEmpty ? first : first + "·" + last)
             ruler.title = JS(People.rulerTitle(culture: civ.cultureId.optionalString ?? "", polity: civ.polity.optionalString ?? "", religion: civ.religionId.optionalString ?? "", gender: p.gender.optionalNumber.map { Int($0) } ?? 0))
             ruler.age = JS(p.age.optionalNumber ?? 0)
+            // For the editor (tap the ruler): id, traits and base skills.
+            ruler.id = JS(leaderId.asInt)
+            ruler.traits = p.traits.isNull ? .array() : .array(p.traits.asArray.map { JS(Self.traitLabels[$0.asString] ?? $0.asString) })
+            ruler.skills = .array(["charisma", "military", "diplomatic", "administrative"].map { JS((p.base[$0].optionalNumber ?? 0).rounded()) })
             if !r.regimes.isNull, let t = Regimes.style(r, id).title { ruler.title = JS(t) }
             o.ruler = ruler
         } else { o.ruler = .null }
@@ -99,6 +103,10 @@ extension NativeEngine {
         o.style = JS(st.id); o.styleLabel = JS(st.label)
         let book = r.regimes.isNull ? JS.null : r.regimes.nations[id]
         o.parties = book.isNull || book.parties.isNull ? .array() : book.parties
+        // 国家加成 (自定义) in percent, unset ones as 0.
+        let bonus = JS.object()
+        for k in Regimes.bonusKeys { bonus[k] = JS(Regimes.bonus(r, id, k) ?? 0) }
+        o.bonus = bonus
         o.treaties = .array((r.regimes.isNull || r.regimes.pacts.isNull ? [] : r.regimes.pacts.asArray).filter { ($0.a.asString == id || $0.b.asString == id) && $0.until.asInt > r.regimes.month.asInt }.map { p in
             let e = JS.object(); let other = p.a.asString == id ? p.b.asString : p.a.asString
             e.nation = JS(nationIndex(other)); e.kind = p.kind; e.years = JS(max(0, (p.until.asInt - r.regimes.month.asInt) / 12)); return e

@@ -1624,6 +1624,15 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.0", ["行军丝滑：每支军队在两步之间匀速走完（以前是先快后慢的追赶，看起来一顿一顿）；推演速度改为按手机实际算力自适应，算不过来就少算几天，不再卡顿。",
+                    "新兵与重组：新征的军队在驻地淡入出现；被打光的军队先在战场倒下（墨迹散开），再在故乡淡入重组，不再像以前那样整支「尸体」滑过半张地图。",
+                    "战争画面精简：交战处只留原作的双剑动画和淡淡的墨影，去掉了红圈；两军之间的连线改细改淡。",
+                    "地图卷轴边缘：地图四周像旧卷轴一样渐渐泛褐，外加一粗一细两道墨框。",
+                    "国家页点数字即改：疆域（绘制）、人口（全国按比例）、兵力（全军按比例）、国库、国运、月入加成都可以直接点开修改；点君主可改其姓名、年岁、能力与天赋；政体与文化点开即到自定义；议会的每个党派可改名、改席位。",
+                    "国家加成（自定义页）：财政加成（每月增收）、进攻加成（军队伤害）、防守加成（承受伤害减少）、人口增长（每年各州人口）、行军速度（全国军队），都按真实规则生效。",
+                    "地形影响行军：沙漠、雨林、沼泽、冰川、苔原、针叶林都会拖慢军队（如炎热荒漠六成速度、冰川一半、沼泽六成），草原最快；山地四成五、高原六成五。州郡页显示该地地形与行军快慢。",
+                    "地图细节加回来：山峰与森林更密，沙漠有沙丘与碎石，沼泽有水纹与芦苇，草原、苔原、冰原的纹样也更多。"]),
+        ("0.25.2", ["修复 0.25.1 安装包编译失败（国家页军事分类的军队列表一处代码），0.25.0 起的全部内容随此版发布。"]),
         ("0.25.2", ["修复 0.25.1 安装包编译失败（国家页军事分类的军队列表一处代码），0.25.0 起的全部内容随此版发布。"]),
         ("0.25.1", ["修复：通到海岸的国界线在平滑后差一点没连上海岸，现在两端准确接到海岸线；0.25.0 的全部内容随此版发布。"]),
         ("0.25.0", ["地图边缘还原原作：国界改用原作的平滑曲线（同海岸线一样的 CurveBasis 四段样条，取自原作 SmoothBorderLines），每国国界连成一整条柔和的线，不再是一格一格的锯齿台阶。",
@@ -2142,7 +2151,15 @@ struct StatTile: View {
     let value: String
     var fraction: Double? = nil
     var warn = false
+    /// 点一下数字即可修改: the tile becomes a button with a small brush mark.
+    var edit: (() -> Void)? = nil
     var body: some View {
+        if let edit {
+            Button(action: edit) { content.overlay(alignment: .topTrailing) { Image(systemName: "pencil").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)).padding(6) } }
+                .buttonStyle(PressStyle())
+        } else { content }
+    }
+    private var content: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             Text(value).font(Theme.kai(20)).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.6).monospacedDigit()
@@ -2159,6 +2176,7 @@ struct StatTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12).padding(.vertical, 10)
+        .contentShape(Rectangle())
     }
 }
 

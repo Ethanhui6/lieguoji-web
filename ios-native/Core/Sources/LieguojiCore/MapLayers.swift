@@ -29,6 +29,11 @@ public struct ColoredMesh: Sendable {
         guard points.count >= 4 else { return }
         for i in stride(from: 0, to: points.count - 2, by: 2) { segment(points[i], points[i + 1], points[i + 2], points[i + 3], width: width, color, alpha: alpha) }
     }
+    /// A quad a→b→c→d whose alpha runs from `outer` (a, b) to `inner` (d, c): a soft band.
+    public mutating func band(_ a: SIMD2<Float>, _ b: SIMD2<Float>, _ c: SIMD2<Float>, _ d: SIMD2<Float>, _ color: RGB, outer: Float, inner: Float) {
+        vertex(a.x, a.y, color, outer); vertex(b.x, b.y, color, outer); vertex(c.x, c.y, color, inner)
+        vertex(a.x, a.y, color, outer); vertex(c.x, c.y, color, inner); vertex(d.x, d.y, color, inner)
+    }
     public mutating func disc(_ x: Float, _ y: Float, radius: Float, _ color: RGB, alpha: Float = 1, sides: Int = 20) {
         for k in 0..<sides {
             let a0 = Float(k) / Float(sides) * 2 * .pi, a1 = Float(k + 1) / Float(sides) * 2 * .pi
@@ -99,11 +104,12 @@ public enum MapLayers {
             let forest = h >= 22 && h < 55 && biome >= 5 && biome <= 9
             if h < 55 && !forest { continue }
             if touchesSea[i] { continue }
-            if forest && grove(map.sites[i * 2], map.sites[i * 2 + 1]) < -0.15 { continue }
+            if forest && grove(map.sites[i * 2], map.sites[i * 2 + 1]) < -0.45 { continue }
             // Sparser than one mark per square: real ranges read as ridgelines, not a carpet of peaks.
             let pick = UInt32(truncatingIfNeeded: i &* 2654435761) >> 16 % 100
-            if h >= 55 && (h < 62 || pick < 35) { continue }
-            if forest && pick < 45 { continue }
+            // Fuller than 0.21 (it had thinned the land too far): more peaks along the ranges, denser woods.
+            if h >= 55 && (h < 58 || pick < 15) { continue }
+            if forest && pick < 22 { continue }
             let jx = Float(i * 7919 % 13) - 6, jy = Float(i * 104_729 % 11) - 5
             let x = map.sites[i * 2] + jx * 0.6, y = map.sites[i * 2 + 1] + jy * 0.6
             let key = Int64(floor(map.sites[i * 2] / 23)) << 32 | Int64(Int32(floor(map.sites[i * 2 + 1] / 23))) & 0xFFFF_FFFF
@@ -152,7 +158,7 @@ public enum MapLayers {
             let x = map.sites[i * 2], y = map.sites[i * 2 + 1]
             let coarse = Int64(floor(x / 23)) << 32 | Int64(Int32(floor(y / 23))) & 0xFFFF_FFFF
             if occupied.contains(coarse) && (h >= 55 || (h >= 22 && biome >= 5 && biome <= 9)) { continue }
-            let key = Int64(floor(x / 30)) << 32 | Int64(Int32(floor(y / 30))) & 0xFFFF_FFFF
+            let key = Int64(floor(x / 20)) << 32 | Int64(Int32(floor(y / 20))) & 0xFFFF_FFFF
             if fine.contains(key) { continue }
             let v = Float(i * 53 % 97) / 97
             if h >= 46 && h < 62 {
@@ -162,13 +168,23 @@ public enum MapLayers {
                 m.polyline([x - 6, y + 2, x - 4, y - 1.5, x - 1.5, y - 2.5, x + 1, y - 1, x + 2, y + 1], width: 0.55, ink, alpha: 0.45)
                 m.polyline([x + 0.5, y + 2.5, x + 2.5, y, x + 4.5, y - 0.8, x + 6.5, y + 2.5], width: 0.5, ink, alpha: 0.38)
             } else if biome == 1 || biome == 2 {
-                if v > 0.3 { continue }
+                if v > 0.7 { continue }
                 fine.insert(key)
-                // Dunes: wind-ridged sand.
-                m.polyline([x - 6, y, x - 3, y - 1.8, x, y - 0.6, x + 3, y - 2, x + 6, y - 0.4], width: 0.55, sand, alpha: 0.55)
-                m.polyline([x - 4, y + 3, x - 1, y + 1.6, x + 2, y + 2.6, x + 5, y + 1.4], width: 0.45, sand, alpha: 0.45)
+                // Dunes: wind-ridged sand, a crest shaded on its lee, and scattered stones.
+                m.fill([x - 6, y + 1, x - 2, y - 2.2, x + 1, y - 0.8, x + 5, y - 2.4, x + 7, y + 1], sand, alpha: 0.18)
+                m.polyline([x - 6, y, x - 3, y - 1.8, x, y - 0.6, x + 3, y - 2, x + 6, y - 0.4], width: 0.6, sand, alpha: 0.65)
+                m.polyline([x - 4, y + 3, x - 1, y + 1.6, x + 2, y + 2.6, x + 5, y + 1.4], width: 0.45, sand, alpha: 0.5)
+                if v < 0.25 { m.disc(x + 4, y + 3.5, radius: 0.5, ink, alpha: 0.35, sides: 6); m.disc(x - 5, y + 3, radius: 0.4, ink, alpha: 0.3, sides: 6) }
+            } else if biome == 12 {
+                if v > 0.6 { continue }
+                fine.insert(key)
+                // Marsh: still water lines and reeds.
+                let reed = RGB(hex: 0x4F6B4A), water = RGB(hex: 0x6F8F98)
+                m.segment(x - 5, y + 2, x + 5, y + 2, width: 0.45, water, alpha: 0.55)
+                m.segment(x - 3, y + 3.5, x + 3, y + 3.5, width: 0.4, water, alpha: 0.45)
+                for dx in [Float(-3), -1, 2] { m.segment(x + dx, y + 2, x + dx + 0.4, y - 2.5, width: 0.4, reed, alpha: 0.6) }
             } else if biome == 4 {
-                if v > 0.15 { continue }
+                if v > 0.3 { continue }
                 fine.insert(key)
                 // Grassland tufts.
                 for dx in [Float(-3), 2] {
@@ -189,7 +205,7 @@ public enum MapLayers {
                 m.polyline([x - 4, y + 1, x - 2.5, y - 0.6, x - 1, y + 1], width: 0.45, moss, alpha: 0.5)
                 m.polyline([x + 1, y + 1.5, x + 2.5, y, x + 4, y + 1.5], width: 0.45, moss, alpha: 0.5)
             } else if biome == 11 {
-                if v > 0.4 { continue }
+                if v > 0.6 { continue }
                 fine.insert(key)
                 // Ice field: pale cracks.
                 m.polyline([x - 5, y - 1, x - 1, y + 1, x + 2, y - 1.5, x + 5, y + 0.5], width: 0.5, frost, alpha: 0.7)
@@ -261,6 +277,30 @@ public enum MapLayers {
         for s in stride(from: 0, to: map.coast.count, by: 4) {
             m.segment(map.coast[s], map.coast[s + 1], map.coast[s + 2], map.coast[s + 3], width: lineWidth, coastColor, alpha: 1)
         }
+        return m
+    }
+
+    /// 卷轴边缘 (the original's mapframes and dark border): the paper browns towards the map's edge
+    /// like an old scroll, and a thick and a thin ink rule frame it.
+    public static func scrollFrame(width w: Float, height h: Float) -> ColoredMesh {
+        var m = ColoredMesh()
+        let brown = RGB(hex: 0x4A3418), ink = RGB(hex: 0x2B2116)
+        func ring(_ inset: Float, _ depth: Float, _ color: RGB, outer: Float, inner: Float) {
+            let a0 = SIMD2<Float>(inset, inset), a1 = SIMD2<Float>(w - inset, inset), a2 = SIMD2<Float>(w - inset, h - inset), a3 = SIMD2<Float>(inset, h - inset)
+            let i = inset + depth
+            let b0 = SIMD2<Float>(i, i), b1 = SIMD2<Float>(w - i, i), b2 = SIMD2<Float>(w - i, h - i), b3 = SIMD2<Float>(i, h - i)
+            m.band(a0, a1, b1, b0, color, outer: outer, inner: inner)
+            m.band(a1, a2, b2, b1, color, outer: outer, inner: inner)
+            m.band(a2, a3, b3, b2, color, outer: outer, inner: inner)
+            m.band(a3, a0, b0, b3, color, outer: outer, inner: inner)
+        }
+        // Burnt edge: dark at the rim, gone a little way in (two bands for a soft curve).
+        let depth = min(w, h) * 0.05
+        ring(0, depth * 0.35, brown, outer: 0.55, inner: 0.22)
+        ring(depth * 0.35, depth * 0.65, brown, outer: 0.22, inner: 0)
+        // The double rule.
+        ring(3.2, 2.0, ink, outer: 0.85, inner: 0.85)
+        ring(7.2, 0.6, ink, outer: 0.7, inner: 0.7)
         return m
     }
 

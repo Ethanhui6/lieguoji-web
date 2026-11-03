@@ -280,6 +280,22 @@ public struct ArmyAutonomy: Sendable {
                     continue
                 }
                 if a.status != "retreating", let p = here.province, atWar(a.nation, w.owners[p]) { note("busy"); continue }
+                // Native app policy only. Preserve the recovered baseline when no app policy is installed.
+                if ArmyAutonomy.temper != nil, !ongoing, a.status != "retreating",
+                   let hp = here.province, w.owners[hp] == a.nation, enemyAt(hp) == nil,
+                   !w.owners.indices.contains(where: { w.owners[$0] == a.nation && enemyAt($0) != nil }) {
+                    let threatened = s.provinces[hp].neighbors.contains { enemyAt($0) != nil }
+                    let local = (sp.land[hp] ?? []).filter { w.armies[$0].nation == a.nation }.map { j in
+                        let f = w.armies[j]
+                        return FrontGuard.Force(id: f.id, troops: f.troops,
+                            available: !f.manual && !f.busy && f.status != "retreating" && f.status != "fighting"
+                                && f.status != "destroyed" && sp.byArmy[j]?.travel.status != .moving)
+                    }
+                    if FrontGuard.choose(local, threatened: threatened) == a.id {
+                        row.target = hp; row.garrison = hp; row.campaign = -1
+                        note("garrison"); continue
+                    }
+                }
                 var attack = [Int](), attackSet = Set<Int>()
                 func add(_ p: Int) { if attackSet.insert(p).inserted { attack.append(p) } }
                 let owned = w.owners.indices.filter { w.owners[$0] == a.nation }, invaded = owned.filter { enemyAt($0) != nil }
@@ -297,7 +313,7 @@ public struct ArmyAutonomy: Sendable {
                 let location = g.location(here.travel), home = (s.provinces[a.home].x, s.provinces[a.home].y)
                 var candidates = attack.map { Target(id: $0, x: s.provinces[$0].x, y: s.provinces[$0].y, feature: s.provinces[$0].feature, protruding: protruding($0), port: s.provinces[$0].port) }
                 if let temper = ArmyAutonomy.temper?(a.nation) {
-                    if temper < 0.9, !invaded.isEmpty {
+                    if !invaded.isEmpty {
                         let home = candidates.filter { invaded.contains($0.id) }
                         if !home.isEmpty { candidates = home }
                     } else if temper > 1.2 {

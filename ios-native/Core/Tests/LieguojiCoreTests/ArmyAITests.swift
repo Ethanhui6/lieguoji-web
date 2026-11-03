@@ -58,3 +58,49 @@ final class ArmyAITests: XCTestCase {
         XCTAssertTrue(a >= 0 && a < 1 && b >= 0 && b < 1 && a != b)
     }
 }
+
+
+extension ArmyAITests {
+    func testNativeBatchKeepsAFrontGuardWithoutTakingManualOrders() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let graph = try TravelGraph(data: Data(contentsOf: dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World/travel.bin")))
+        let golden = try JSONDecoder().decode(ArmyAIGolden.self, from: Data(contentsOf: dir.appendingPathComponent("Golden/army-ai.json")))
+        let pair = golden.statics.provinces.indices.lazy.compactMap { p -> (Int, Int)? in
+            guard graph.targetCell(province: p) != nil else { return nil }
+            guard let q = golden.statics.provinces[p].neighbors.first(where: { graph.targetCell(province: $0) != nil }) else { return nil }
+            return (p, q)
+        }.first
+        let (p, q) = try XCTUnwrap(pair)
+        let pc = try XCTUnwrap(graph.targetCell(province: p)), qc = try XCTUnwrap(graph.targetCell(province: q))
+        var world = try XCTUnwrap(golden.samples.first).input
+        let template = try XCTUnwrap(world.armies.first)
+        world.owners = Array(repeating: 1, count: world.owners.count); world.owners[p] = 0
+        world.wars = [[0, 1]]; world.alliances = []; world.vassals = []
+        world.campaigns = [.init(id: 1, ended: false, internal: false,
+                                participants: [.init(nation: 0, side: 0), .init(nation: 1, side: 1)])]
+        world.armies = (0..<3).map { i in
+            var a = template
+            let cell = i == 2 ? qc : pc, point = graph.centers[cell]
+            a.id = "guard-test-\(i)"; a.nation = i == 2 ? 1 : 0; a.troops = i == 0 ? 2000 : 1000
+            a.home = i == 2 ? q : p; a.anchor = a.home; a.manual = false; a.busy = false; a.engaged = false
+            a.status = "idle"; a.row = .init()
+            a.travel = .init(version: 2, origin: .init(x: point.x, y: point.y), destination: nil,
+                             nodes: [Int(graph.ids[cell])], leg: 0, offset: 0, crossed: false, status: "arrived")
+            return a
+        }
+        let travel = world.armies.map { ArmyTravel(record: $0.travel, graph: graph)! }
+        let engine = ArmyAutonomy(statics: golden.statics, graph: graph)
+        let saved = ArmyAutonomy.temper; ArmyAutonomy.temper = { _ in 1.4 }
+        defer { ArmyAutonomy.temper = saved }
+        var context = ArmyAutonomy.Context(engine: engine, w: world, travels: travel)
+        context.run([0])
+        XCTAssertEqual(context.w.armies[0].row.decision, "garrison")
+        XCTAssertEqual(context.w.armies[0].row.garrison, p)
+        XCTAssertEqual(context.travels[0], travel[0])
+        world.armies[0].manual = true
+        context = ArmyAutonomy.Context(engine: engine, w: world, travels: travel)
+        context.run([0])
+        XCTAssertEqual(context.w.armies[0].row.decision, "manual")
+        XCTAssertEqual(context.travels[0], travel[0])
+    }
+}

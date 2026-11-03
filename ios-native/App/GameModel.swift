@@ -79,7 +79,7 @@ import LieguojiCore
     @Published var failure: String?
     @Published var generationNote = ""
     /// A war declared, a peace made or a province taken: shown as a banner for a moment.
-    struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture } }
+    struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital } }
     @Published var herald: Herald?
     private var heraldQueue: [Herald] = []
     private var heraldTask: Task<Void, Never>?
@@ -330,7 +330,10 @@ import LieguojiCore
                 // the state and the panels refresh once, so 2×, 4× and 8× really are faster.
                 // Through the relay each round trip costs time: twice the days per step.
                 let far = self.remoteAddress.map { !$0.contains("局域网") } ?? false
-                let days = far ? self.speed * 2 : self.speed
+                // The original runs fast (secondsPerDay 0.1: ten days a second at 1×). A step of
+                // several days every quarter second keeps that pace; the map tweens between steps.
+                let pace = [1: 3, 2: 5, 4: 10, 8: 16][self.speed] ?? 3
+                let days = far ? pace * 2 : pace
                 do {
                     if far {
                         let native = self.native
@@ -343,7 +346,7 @@ import LieguojiCore
                     }
                 }
                 catch { self.failure = error.localizedDescription; self.pause(); return }
-                let budget = self.speed == 1 ? 0.22 : 0.12
+                let budget = 0.25
                 let rest = budget - Date().timeIntervalSince(started)
                 if rest > 0 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) } else { await Task.yield() }
             }
@@ -423,6 +426,16 @@ import LieguojiCore
         for e in next.events where !seen.contains(e.text) && (e.text.contains("篡位") || e.text.contains("改称")) {
             enqueue(Herald(kind: .war, text: e.text, nations: []))
         }
+        // Rebellions, restorations, dynasties dying out and capitals moving: the original's big news.
+        for e in next.events where !seen.contains(e.text) {
+            switch e.kind {
+            case "uprising": enqueue(Herald(kind: .uprising, text: e.text, nations: []))
+            case "restoration": enqueue(Herald(kind: .restoration, text: e.text, nations: []))
+            case "extinction": enqueue(Herald(kind: .extinction, text: e.text, nations: []))
+            case "capital": enqueue(Herald(kind: .capital, text: e.text, nations: []))
+            default: break
+            }
+        }
         // Only a fallen capital is proclaimed (every captured province flooded the screen with banners).
         let capitals = Set(map.meta.nations.compactMap { map.meta.cities.indices.contains($0.capital) ? map.meta.cities[$0.capital].province : nil })
         var captures = 0
@@ -439,7 +452,7 @@ import LieguojiCore
             while let self, !self.heraldQueue.isEmpty {
                 let h = self.heraldQueue.removeFirst()
                 self.herald = h
-                switch h.kind { case .war: GameFeel.shared.notify(.warning); case .peace: GameFeel.shared.notify(.success); case .capture: GameFeel.shared.tap() }
+                switch h.kind { case .war, .uprising: GameFeel.shared.notify(.warning); case .peace, .restoration: GameFeel.shared.notify(.success); case .capture, .extinction, .capital: GameFeel.shared.tap() }
                 try? await Task.sleep(nanoseconds: h.kind == .capture ? 1_600_000_000 : 2_600_000_000)
                 self.herald = nil
                 try? await Task.sleep(nanoseconds: 350_000_000)
@@ -736,6 +749,11 @@ import LieguojiCore
         guard let d = await native.officeCandidates(n, office: office) else { return [] }
         return (try? JSONDecoder().decode([NationInfo.Person].self, from: d)) ?? []
     }
+    func editIdentity(_ n: Int, name: String?, color: String?) async -> String? { finish(await native.editIdentity(n, name: name, color: color)) }
+    func setCapital(_ n: Int, province: Int) async -> String? { finish(await native.setCapital(n, province: province)) }
+    func editProvince(_ index: Int, population: Double?, fortress: Bool?) async -> String? { finish(await native.editProvince(index, population: population, fortress: fortress)) }
+    func setTemper(_ n: Int, _ value: Double?) async -> String? { finish(await native.setTemper(n, value)) }
+    func renamePerson(_ id: Int, first: String?, last: String?, age: Int?) async -> String? { finish(await native.renamePerson(id, first: first, last: last, age: age)) }
     func setStyle(_ n: Int, style: String) async -> String? { finish(await native.setStyle(n, style: style)) }
     func treaty(_ a: Int, _ b: Int, years: Int, kind: String) async -> String? { finish(await native.treaty(a, b, years: years, kind: kind)) }
     func gift(_ from: Int, to: Int, gold: Double) async -> String? { finish(await native.gift(from, to: to, gold: gold)) }

@@ -246,10 +246,17 @@ public enum MapLayers {
     public static func outlines(_ map: WorldMap) -> ColoredMesh {
         let colors = map.meta.nations.map { RGB(css: $0.line) ?? RGB(0.2, 0.2, 0.2) }
         var m = ColoredMesh()
+        // Each state's border edges, joined into lines and smoothed with the original's curve
+        // (BorderDataProcessor.UpdateStateLine → SmoothBorderLines, CurveBasis(points, 4)), so a
+        // border runs as one soft line instead of the cells' stair steps.
+        var perNation = [Int: [BorderCurve.Segment]]()
         for e in map.edges where e.a >= 0 && e.b >= 0 {
             let na = map.nation(ofCell: Int(e.a)), nb = map.nation(ofCell: Int(e.b))
             guard map.isLand(Int(e.a)) && map.isLand(Int(e.b)), na != nb else { continue }
-            for n in [na, nb] { if let n { m.segment(e.x1, e.y1, e.x2, e.y2, width: lineWidth, colors[n], alpha: 1) } }
+            for n in [na, nb] { if let n, n < colors.count { perNation[n, default: []].append(BorderCurve.Segment(e.x1, e.y1, e.x2, e.y2)) } }
+        }
+        for n in perNation.keys.sorted() {
+            for line in BorderCurve.smooth(BorderCurve.chain(perNation[n]!)) { m.polyline(line, width: lineWidth, colors[n], alpha: 1) }
         }
         for s in stride(from: 0, to: map.coast.count, by: 4) {
             m.segment(map.coast[s], map.coast[s + 1], map.coast[s + 2], map.coast[s + 3], width: lineWidth, coastColor, alpha: 1)
@@ -280,4 +287,75 @@ public enum MapLayers {
     }
     /// Map units per font-size point (MAP_UNIT47 / 10).
     public static let fontUnit: Float = (1600.0 / 240.0) / 10
+}
+
+/// The original's border smoothing (MathUtility.Basis / CurveBasis / CurveBasisClosed and
+/// BorderCalculationHelper.SmoothBorderLines, as recovered in the web's coast-curve.ts).
+public enum BorderCurve {
+    public struct Segment: Sendable { let x1, y1, x2, y2: Float; init(_ a: Float, _ b: Float, _ c: Float, _ d: Float) { x1 = a; y1 = b; x2 = c; y2 = d } }
+    static func basis(_ t: Float) -> (Float, Float, Float, Float) {
+        let t2 = t * t, t3 = t2 * t
+        return ((1 - t * 3 + t2 * 3 - t3) / 6, (4 - t2 * 6 + t3 * 3) / 6, (t * 3 + 1 + t2 * 3 - t3 * 3) / 6, t3 / 6)
+    }
+    private static func mix(_ p: [SIMD2<Float>], _ b: (Float, Float, Float, Float)) -> SIMD2<Float> { p[0] * b.0 + p[1] * b.1 + p[2] * b.2 + p[3] * b.3 }
+    /// Segments sharing exact endpoints joined into maximal lines; a loop repeats its first point.
+    public static func chain(_ segments: [Segment]) -> [[SIMD2<Float>]] {
+        func key(_ x: Float, _ y: Float) -> UInt64 { UInt64(x.bitPattern) << 32 | UInt64(y.bitPattern) }
+        var ends = [UInt64: [Int]]()
+        for (i, s) in segments.enumerated() { ends[key(s.x1, s.y1), default: []].append(i); ends[key(s.x2, s.y2), default: []].append(i) }
+        var used = [Bool](repeating: false, count: segments.count)
+        func next(_ p: SIMD2<Float>) -> Int? { ends[key(p.x, p.y)]?.first { !used[$0] } }
+        func extend(_ line: inout [SIMD2<Float>]) {
+            while let i = next(line[line.count - 1]) {
+                used[i] = true
+                let s = segments[i], at = line[line.count - 1]
+                line.append(s.x1 == at.x && s.y1 == at.y ? SIMD2(s.x2, s.y2) : SIMD2(s.x1, s.y1))
+            }
+        }
+        func tip(_ i: Int) -> Bool { ends[key(segments[i].x1, segments[i].y1)]?.count == 1 || ends[key(segments[i].x2, segments[i].y2)]?.count == 1 }
+        let order = segments.indices.sorted { (tip($0) ? 0 : 1, $0) < (tip($1) ? 0 : 1, $1) }
+        var out = [[SIMD2<Float>]]()
+        for start in order where !used[start] {
+            used[start] = true
+            var s = segments[start]
+            if ends[key(s.x2, s.y2)]?.count == 1 { s = Segment(s.x2, s.y2, s.x1, s.y1) }
+            var line = [SIMD2(s.x1, s.y1), SIMD2(s.x2, s.y2)]
+            extend(&line)
+            if line[0] != line[line.count - 1] {
+                var head = [line[0]]
+                extend(&head)
+                if head.count > 1 { line.insert(contentsOf: head.dropFirst().reversed(), at: 0) }
+            }
+            out.append(line)
+        }
+        return out
+    }
+    /// CurveBasis(points, 4) per line as flat x, y pairs (closed lines wrap around).
+    public static func smooth(_ lines: [[SIMD2<Float>]], segments: Int = 4) -> [[Float]] {
+        lines.map { pts in
+            let n = pts.count
+            guard n >= 2 else { return [] }
+            var curve = [SIMD2<Float>]()
+            let closed = n >= 3 && abs(pts[0].x - pts[n - 1].x) < 0.001 && abs(pts[0].y - pts[n - 1].y) < 0.001
+            if closed {
+                let ring = Array(pts.dropLast()), m = ring.count
+                for i in 0..<m {
+                    let p = [ring[(m - 1 + i) % m], ring[i], ring[(i + 1) % m], ring[(i + 2) % m]]
+                    for j in 0...segments { curve.append(mix(p, basis(Float(j) / Float(segments)))) }
+                }
+                if let f = curve.first { curve.append(f) }
+            } else {
+                for i in 0..<(n - 1) {
+                    let p = [i > 0 ? pts[i - 1] : pts[i], pts[i], pts[i + 1], i < n - 2 ? pts[i + 2] : pts[i + 1]]
+                    for j in (i != 0 ? 1 : 0)...segments { curve.append(mix(p, basis(Float(j) / Float(segments)))) }
+                }
+            }
+            var flat = [Float](); var last: SIMD2<Float>?
+            for (k, q) in curve.enumerated() {
+                if let l = last, k != curve.count - 1, abs(q.x - l.x) < 0.001, abs(q.y - l.y) < 0.001 { continue }
+                flat.append(q.x); flat.append(q.y); last = q
+            }
+            return flat
+        }
+    }
 }

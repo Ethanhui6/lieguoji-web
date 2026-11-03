@@ -687,7 +687,7 @@ struct GameView: View {
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, paint: { n in
                 controller.paintNation = n; self.panel = nil
                 say("绘制疆域：点选或用一指拖过州郡，划入\(model.map?.meta.nations.indices.contains(n) == true ? model.map!.meta.nations[n].name : "")；两指移动地图")
-            })
+            }, openArmy: { a in open(.army(a)) })
                 .presentationDetents([.medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .edicts:
             EdictSheet(model: model, say: say).presentationDetents([.medium, .large])
@@ -1624,6 +1624,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.25.0", ["地图边缘还原原作：国界改用原作的平滑曲线（同海岸线一样的 CurveBasis 四段样条，取自原作 SmoothBorderLines），每国国界连成一整条柔和的线，不再是一格一格的锯齿台阶。",
+                    "国家页分为五类：概览（君主、政体、文化宗教、国运、政体沿革、国史）、朝政（朝堂、议会、朝廷百官、家族人物）、军事（本国军队一览，点一支直接打开，帅旗与御驾标出；战争）、外交（外交关系、条约、国家行为）、自定义。",
+                    "高度自定义，改完即时生效：国号（地图名字立即重画）、国色（十六色，疆域与国界随之变色）、迁都（核心州郡与防守加成随新都重算）、好战程度（直接决定此国 AI 主动宣战的倾向，可交还君主性情决定）、州郡人口（决定税收与兵源）、筑拆要塞（要塞守军防御三倍）、绘制疆域；国库、国运、文化、宗教、政体、征兵照旧。人物可改姓名与年岁，以及四项能力与天赋。",
+                    "推演速度接近原作：原作一秒约十天，现在 1× 每步三天、每秒四步，2× / 4× / 8× 依次加快到每秒约二十、四十、六十余天，战争、攻城、反叛与家族兴衰都快了许多。",
+                    "大事传报：起义、复辟、绝嗣、迁都像宣战与议和一样以朱印传报弹出，并有对应震动。"]),
         ("0.24.5", ["内部：自动截图增加行军连拍（逐秒跟拍一支行军中的军队），用于排查军队瞬移、隔空交战。游戏内容与 0.24.4 相同。"]),
         ("0.24.4", ["军队图标改为简洁的单一标记：每支军队一个粗线条兵种符号，国色填充、墨色描边——剑（步兵）、长枪、盾、弓、弩、马首（骑兵）、披甲马首（重骑）、马首加弓（骑射）、羽冠头盔（精锐）、象首（战象）、帆船、锚（港口）。至少 22 点大，远看也一目了然。",
                     "兵力改为标记下方的一至三个白点（不足两千一点，两千到六千两点，六千以上三点），不再画成一堆小人。帅旗保留。"]),
@@ -2067,7 +2072,17 @@ struct HeraldBanner: View {
     let map: WorldMap
     @State private var stamped = false
     var body: some View {
-        let (word, color): (String, Color) = herald.kind == .war ? ("宣战", Theme.seal) : herald.kind == .peace ? ("议和", Theme.jade) : ("攻克", Theme.ink)
+        let (word, color): (String, Color) = {
+            switch herald.kind {
+            case .war: return ("宣战", Theme.seal)
+            case .peace: return ("议和", Theme.jade)
+            case .capture: return ("攻克", Theme.ink)
+            case .uprising: return ("起义", Color(red: 0.55, green: 0.12, blue: 0.1))
+            case .restoration: return ("复辟", Color(red: 0.62, green: 0.45, blue: 0.12))
+            case .extinction: return ("绝嗣", Theme.ink2)
+            case .capital: return ("迁都", Theme.jade)
+            }
+        }()
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 9, style: .continuous).fill(color)
                 .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Theme.paper2.opacity(0.85), lineWidth: 1.2).padding(3))

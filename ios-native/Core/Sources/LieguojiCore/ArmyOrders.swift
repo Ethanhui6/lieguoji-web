@@ -238,6 +238,24 @@ public enum ArmyOrders {
             let provinces = r.world.provinces.asArray
             let owned = provinces.indices.filter { provinces[$0].controller.asString == nation }
             let invaded = owned.filter { enemyAt(provinces[$0].id.asString) != nil }
+            // The running native world's tactical policy, gated by its existing app-rule marker.
+            if r.regimes.enabled.asBool, invaded.isEmpty, !ongoing, a.status.asString != "retreating",
+               let hp = here.province, hp.controller.asString == nation {
+                let threatened = hp.neighbors.asArray.contains { enemyAt($0.asString) != nil }
+                let local = space.filter { $0.province?.id.asString == hp.id.asString && $0.army.nationId.asString == nation }.map { f in
+                    let key = f.army.id.asString
+                    return FrontGuard.Force(id: key, troops: f.army.troops.asInt,
+                        available: !r.voyages.manualArmies.asArray.contains { $0.asString == key }
+                            && !held.contains(Daily.key("army", key)) && r.reorganization.active[key].isNull
+                            && f.army.status.asString != "retreating" && f.army.status.asString != "fighting"
+                            && f.travel.status.asString != "moving")
+                }
+                if FrontGuard.choose(local, threatened: threatened) == id {
+                    row.targetId = hp.id.clone(); row.garrisonId = hp.id.clone(); row.campaignId = .null
+                    note("garrison", "相邻地区有敌军，保留一支部队守卫已控制州郡；威胁解除后重新部署。")
+                    continue
+                }
+            }
             if a.status.asString != "retreating" && !en.isEmpty {
                 for p in invaded { add(p) }
                 for p in stateBorders(r, nation, enemySet) { add(p) }
@@ -255,6 +273,10 @@ public enum ArmyOrders {
             var candidates = attack.map { p in
                 ArmyAutonomy.Context.Target(id: p, x: provinces[p].center.x.asNumber, y: provinces[p].center.y.asNumber, feature: geo.provinceFeature[provinces[p].id.asString] ?? -1,
                                             protruding: CombatReader.protruding(r, p), port: ports.contains(provinces[p].id.asString))
+            }
+            if r.regimes.enabled.asBool, !invaded.isEmpty {
+                let defense = candidates.filter { invaded.contains($0.id) }
+                if !defense.isEmpty { candidates = defense }
             }
             var chosen: Int?, why = ""
             while !candidates.isEmpty {

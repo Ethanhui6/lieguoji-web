@@ -346,7 +346,9 @@ public enum BorderCurve {
                 if let f = curve.first { curve.append(f) }
             } else {
                 for i in 0..<(n - 1) {
-                    let p = [i > 0 ? pts[i - 1] : pts[i], pts[i], pts[i + 1], i < n - 2 ? pts[i + 2] : pts[i + 1]]
+                    // Mirrored end points make an open line start and end exactly where it meets the
+                    // coast (a repeated end point, as for the original's closed state outlines, stops short).
+                    let p = [i > 0 ? pts[i - 1] : pts[i] * 2 - pts[i + 1], pts[i], pts[i + 1], i < n - 2 ? pts[i + 2] : pts[i + 1] * 2 - pts[i]]
                     for j in (i != 0 ? 1 : 0)...segments { curve.append(mix(p, basis(Float(j) / Float(segments)))) }
                 }
             }

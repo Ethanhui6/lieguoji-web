@@ -13,6 +13,7 @@ final class BorderCurveTests: XCTestCase {
         let open = BorderCurve.chain([BorderCurve.Segment(0, 0, 10, 0), BorderCurve.Segment(10, 0, 10, 10)])
         let flat = BorderCurve.smooth(open)[0]
         XCTAssertGreaterThan(flat.count, 6)
+        // Open lines (borders running into the coast) end exactly on their end points.
         XCTAssertEqual(flat[0], 0, accuracy: 0.001); XCTAssertEqual(flat[1], 0, accuracy: 0.001)
         XCTAssertEqual(flat[flat.count - 2], 10, accuracy: 0.001); XCTAssertEqual(flat[flat.count - 1], 10, accuracy: 0.001)
         // The corner (10, 0) is cut: no sample sits on it.

@@ -37,7 +37,11 @@ final class BorderCurveTests: XCTestCase {
         XCTAssertEqual(lines.mapValues { $0.count }, expected)
         // Turning a formerly owned cell into water must expose its neighbours' boundary.
         var edited = map
-        let cell = try! XCTUnwrap((0..<map.cellCount).first { map.nation(ofCell: $0) != nil && map.isLand($0) })
+        let boundaryCells = Set(map.edges.filter { e in
+            guard e.a >= 0, e.b >= 0 else { return true }
+            return !map.isLand(Int(e.a)) || !map.isLand(Int(e.b)) || map.nation(ofCell: Int(e.a)) != map.nation(ofCell: Int(e.b))
+        }.flatMap { [Int($0.a), Int($0.b)] })
+        let cell = try! XCTUnwrap((0..<map.cellCount).first { map.nation(ofCell: $0) != nil && map.isLand($0) && !boundaryCells.contains($0) })
         edited.elevation[cell] = 0
         XCTAssertNotEqual(MapLayers.stateEdges(edited).mapValues { $0.count }, lines.mapValues { $0.count })
     }

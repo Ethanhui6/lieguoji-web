@@ -24,7 +24,7 @@ struct DotNetRandom {
 
 extension Nobility {
     // MARK: Family relations (civilization47-nobility-relations)
-    static func relation(_ r: JS, _ aId: String, _ bId: String) -> Double {
+    static func relation(_ r: JS, _ aId: String, _ bId: String, bounded: Bool = true) -> Double {
         let n = r.nobility, a = n.families[aId], b = n.families[bId], ka = r.kin.families[aId], kb = r.kin.families[bId]
         if a.isNull || b.isNull || ka.isNull || kb.isNull || aId == bId || ka.stateId.asInt != kb.stateId.asInt { return 0 }
         let stored = n.relations[aId][bId].optionalNumber ?? 0
@@ -40,7 +40,7 @@ extension Nobility {
             }
         }
         let total = f(stored + x)
-        return -100 > total ? -100 : total > 100 ? 100 : total
+        return bounded ? (-100 > total ? -100 : total > 100 ? 100 : total) : total
     }
     static func marriageConnection(_ r: JS, _ aId: String, _ bId: String) -> Double {
         if aId == bId { return 0 }
@@ -113,6 +113,7 @@ public enum Offices {
     static func revise(_ r: JS) { r.offices47.revision = JS(r.offices47.revision.asNumber + 1) }
 
     public static func governance(_ r: JS, _ nation: String) -> Double {
+        if let custom = r.regimes.governance[nation].optionalNumber { return min(1, max(0, custom)) }
         let leaderId = r.people.nations[nation].leaderId
         var acumen = 25.0
         if !leaderId.isNull, let leader = People.person(r, leaderId.asInt), validHolder(leader, stateId(r, nation)) {

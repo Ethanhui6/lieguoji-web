@@ -495,6 +495,7 @@ extension NativeEngine {
         Regimes.enable(run)
         let r = run
         UnitKinds.enabled = true
+        Armies.bridge?.reconcileContacts(r)  // Drop obsolete province-wide contacts before the first volley.
         // Once per world: the opening armies take their culture's arms (renamed to match).
         if !r.regimes.isNull && !r.regimes.armsByCulture.isTruthy {
             r.regimes.armsByCulture = JS(true)
@@ -541,13 +542,48 @@ extension NativeEngine {
         return (true, "人物属性已修改。")
     }
 
+    /// A war command uses the enemy state's office scope, not the central court scope.
+    private func officeScope(_ index: Int, _ token: String) -> (office: String, kind: Int, scope: Int)? {
+        let nations = run.world.nations.asArray
+        guard nations.indices.contains(index) else { return nil }
+        let id = nations[index].id.asString
+        if Offices.central.contains(token) { return (token, 0, Offices.stateId(run, id)) }
+        let parts = token.split(separator: ":")
+        guard parts.count == 2, parts[0] == "WarCommander", let enemy = Int(parts[1]), nations.indices.contains(enemy),
+              let war = Offices.wars(run, id).first(where: { $0.enemy == nations[enemy].id.asString }) else { return nil }
+        return ("WarCommander", 2, war.scopeId)
+    }
+
+    public func editCourt(_ index: Int, key: String, value: Double) -> (ok: Bool, reason: String) {
+        guard value.isFinite, run.world.nations.asArray.indices.contains(index) else { return (false, "国家或数值无效。") }
+        let id = run.world.nations[index].id.asString
+        if key == "governance" {
+            if run.regimes.governance.isNull { run.regimes.governance = .object() }
+            if value < 0 { run.regimes.governance.delete(id) }
+            else { run.regimes.governance[id] = JS(min(1, value / 100)) }
+            return (true, "施政已更新。")
+        }
+        guard key.hasPrefix("house:"), !run.nobility.isNull else { return (false, "设置不存在。") }
+        let family = String(key.dropFirst(6)), ruling = run.nobility.rulingFamilies[id].optionalNumber.map { String(Int($0)) }
+        guard run.nobility.families[family].nationId.optionalString == id, let ruling, family != ruling,
+              !run.nobility.families[ruling].isNull else { return (false, "只能修改本国非宗室家族对宗室的关系。") }
+        if run.nobility.relations[family].isNull { run.nobility.relations[family] = .object() }
+        let row = run.nobility.relations[family]
+        row[ruling] = JS(0)
+        // relation() applies marriage, religion, geography and the ruler's charisma. Remove the
+        // clamp by measuring its zero-offset result; the next read and monthly rules use this row.
+        let base = Nobility.relation(run, family, ruling, bounded: false)
+        row[ruling] = JS(min(100, max(-100, value)) - base)
+        return (true, "家族关系已更新。")
+    }
+
     /// 任命官员: the people who may hold a central office, ablest first (the engine's own ranking).
     public func officeCandidates(_ index: Int, office: String) -> Data? {
         let r = run, nations = r.world.nations.asArray
-        guard nations.indices.contains(index), Offices.central.contains(office) else { return nil }
+        guard let target = officeScope(index, office) else { return nil }
         let id = nations[index].id.asString
         var ctx = Offices.context(r, id)
-        let list = Offices.candidates(&ctx, office, ctx.stateId).prefix(15)
+        let list = Offices.candidates(&ctx, target.office, target.scope).prefix(15)
         let out = JS.array()
         for (p, score) in list {
             let v = personView(p, role: "")
@@ -559,11 +595,11 @@ extension NativeEngine {
     /// 任命官员: puts a person into a central office (replacing its holder).
     public func appointOffice(_ index: Int, office: String, personId: Int) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray
-        guard nations.indices.contains(index), Offices.central.contains(office) else { return (false, "官职不存在。") }
+        guard let target = officeScope(index, office) else { return (false, "官职不存在，或战争已经结束。") }
         guard let p = People.person(r, personId), p.isAlive.asBool else { return (false, "此人已不在人世。") }
         let id = nations[index].id.asString, ctx = Offices.context(r, id)
         guard p.stateId.asInt == ctx.stateId else { return (false, "只能任命本国之人。") }
-        Offices.appoint(ctx, office, 0, ctx.stateId, personId)
+        Offices.appoint(ctx, target.office, target.kind, target.scope, personId)
         return (true, "已任命\(personView(p, role: "").name.asString)")
     }
     /// 朝廷自主任免 on or off: off keeps the player's appointments (the court no longer fills or reviews offices).

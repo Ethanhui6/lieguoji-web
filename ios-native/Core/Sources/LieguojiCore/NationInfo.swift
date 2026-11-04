@@ -35,7 +35,7 @@ extension NativeEngine {
             guard let holder = a.holderId.optionalNumber, let p = People.person(r, Int(holder)) else { return nil }
             let e = JS.object(); e.name = JS(name(p)); e.age = JS(p.age.optionalNumber ?? 0)
             let enemy = r.people.nations.objectEntries.first { $0.1.id.optionalNumber.map { Int($0) } == a.scopeId.optionalNumber.map { Int($0) } }?.0
-            e.enemy = JS(nationIndex(enemy)); return e
+            e.enemy = JS(nationIndex(enemy)); e.person = JS(p.id.asInt); return e
         })
         // Noble houses of this state, by influence (0…1000).
         let ruling = r.nobility.rulingFamilies[id].optionalNumber.map { Int($0) } ?? 0
@@ -44,6 +44,7 @@ extension NativeEngine {
             let e = JS.object()
             let surname = r.kin.families[key].surname.optionalString ?? ""
             e.name = JS(surname.isEmpty ? "无名氏" : surname + "氏")
+            e.id = JS(key)
             e.influence = JS(fam.influence.optionalNumber ?? 0)
             e.provinces = JS(fam.controlledProvinces.isNull ? 0 : fam.controlledProvinces.length)
             e.ruling = JS(Int(key) == ruling)

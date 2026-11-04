@@ -519,8 +519,7 @@ import LieguojiCore
             let prior = Dictionary(previous.armies.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
             for a in state.armies {
                 guard let old = prior[a.id] else { continue }
-                let dx = a.x - old.x, dy = a.y - old.y
-                guard dx * dx + dy * dy > 1600 else { continue }
+                guard a.reorganizing == true, old.reorganizing != true else { continue }
                 let c = rgb(a.nation)
                 e.bursts.append(.init(id: "d\(a.id)-\(state.day)", x: Double(old.x), y: Double(old.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: old.unit))
             }
@@ -630,12 +629,11 @@ import LieguojiCore
         let selected = controller.marchingArmy ?? controller.selectedArmy
         var sprites: [MapRenderer.ArmySprite] = state.armies.enumerated().map { i, a in
             MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id,
-                                   tier: a.troops < 2000 ? 1 : a.troops < 6000 ? 2 : 3, banner: a.banner == "ruler" ? 2 : a.banner == "general" ? 1 : 0)
+                                   tier: a.troops < 2000 ? 1 : a.troops < 6000 ? 2 : 3, banner: a.banner == "ruler" ? 2 : a.banner == "general" ? 1 : 0, reorganizing: a.reorganizing ?? false)
         }
         // Harbour anchors in the occupier's colour (not tappable; the province panel lists them), then fleets.
         let choosing = controller.marchingFleet ?? controller.selectedFleet
-        let chooser = fleet(choosing)?.nation
-        for (i, p) in (state.ports ?? []).enumerated() where p.occupier != p.owner || (chooser != nil && p.occupier == chooser) {
+        for (i, p) in (state.ports ?? []).enumerated() {
             sprites.append(MapRenderer.ArmySprite(army: -100_000 - i, x: p.x, y: p.y, unit: "Port", nation: p.occupier, selected: false, key: "port-\(p.province)"))
         }
         for (i, f) in (state.fleets ?? []).enumerated() {
@@ -785,6 +783,7 @@ import LieguojiCore
         return (try? JSONDecoder().decode([NationInfo.Person].self, from: d)) ?? []
     }
     func appointPost(_ n: Int, post: String, person: Int) async -> String? { finish(await native.appointPost(n, post: post, person: person)) }
+    func editCourt(_ n: Int, key: String, value: Double) async -> String? { finish(await native.editCourt(n, key: key, value: value)) }
     func appointOffice(_ n: Int, office: String, person: Int) async -> String? { finish(await native.appointOffice(n, office: office, person: person)) }
     func setCourtManual(_ n: Int, manual: Bool) async -> String? { finish(await native.setCourtManual(n, manual: manual)) }
     func addArmy(_ n: Int, province: Int) async -> String? { finish(await native.addArmy(n, province: province)) }

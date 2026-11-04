@@ -79,5 +79,19 @@ extension ArmyOrdersTests {
         ArmyOrders.selection(r, [id])
         XCTAssertEqual(r.armyAutonomy.armies[id].decision.asString, "manual")
         XCTAssertEqual(r.armyPositions.records[id].json, before)
+        // With its final province occupied, an army away from the city must march to
+        // recover its legal territory, not wait forever merely because the cell is hostile.
+        let oldHomes = Armies.homeCells
+        defer { Armies.homeCells = oldHomes }
+        for i in provinces.indices { if let cell = graph.targetCell(province: i) { Armies.homeCells[provinces[i].id.asString] = Int(graph.ids[cell]) } }
+        provinces[p].controller = JS(enemy); provinces[p].legalOwner = JS(nation)
+        r.voyages.manualArmies = .array(); r.armyAutonomy.armies[id].nextTick = JS(0)
+        let travel = r.armyPositions.records[id]
+        travel.origin = ForceBridge.json(.init(x: graph.targets[p].x + 0.5, y: graph.targets[p].y))
+        r.tactics.forces[id].homeId = provinces[p].id.clone()
+        ArmyOrders.selection(r, [id])
+        XCTAssertEqual(r.armyAutonomy.armies[id].decision.asString, "attacking")
+        XCTAssertEqual(r.armyPositions.records[id].version.asInt, 2)
+        XCTAssertEqual(r.armyPositions.records[id].status.asString, "moving")
     }
 }

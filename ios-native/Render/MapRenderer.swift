@@ -249,7 +249,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         t.replace(region: MTLRegionMake2D(0, 0, w, h), mipmapLevel: 0, withBytes: bytes, bytesPerRow: w * 4)
         return t
     }
-    struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = ""; var tier = 1; var banner = 0 }
+    struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = ""; var tier = 1; var banner = 0; var reorganizing = false }
     private var unitTextures: [String: MTLTexture] = [:]
     private var route: (buffer: MTLBuffer, count: Int)?
     private var armySprites: [ArmySprite] = []
@@ -312,6 +312,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if sprites != armySprites {
             let keys = Set(sprites.map(\.key)), now = CACurrentMediaTime()
             shown = shown.filter { keys.contains($0.key) }; legs = legs.filter { keys.contains($0.key) }; born = born.filter { keys.contains($0.key) }
+            let previous = Dictionary(armySprites.map { ($0.key, $0.reorganizing) }, uniquingKeysWith: { a, _ in a })
             for s in sprites where !s.key.isEmpty {
                 let target = SIMD2(s.x, s.y)
                 guard let p = shown[s.key] else {
@@ -319,7 +320,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     shown[s.key] = target; if !armySprites.isEmpty { born[s.key] = now }; continue
                 }
                 let d = target - p
-                if d.x * d.x + d.y * d.y > 1600 {
+                if s.reorganizing && previous[s.key] != true {
                     // Far more than a march step: an army re-formed at home (the fall plays where it was).
                     shown[s.key] = target; legs[s.key] = nil; born[s.key] = now; jumped.append((s.key, p.x, p.y))
                 } else if d.x * d.x + d.y * d.y > 0.0004 { legs[s.key] = (p, target, now) }

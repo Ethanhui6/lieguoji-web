@@ -161,14 +161,16 @@ public struct ContactMotion {
                     velocities[key] = TravelPoint(x: (end.x - p.x) / m.time, y: (end.y - p.y) / m.time)
                 }
                 let zero = TravelPoint(x: 0, y: 0)
-                for i in forces.indices { for j in (i + 1)..<forces.count {
-                    let a = forces[i], b = forces[j]
+                var groups = [String: [Int]]()
+                for i in forces.indices { groups[area(positions[forces[i].key]!.cell, rules), default: []].append(i) }
+                for group in groups.values { for k in group.indices { for l in (k + 1)..<group.count {
+                    let a = forces[group[k]], b = forces[group[l]]
                     guard rules.enemy(a.nation, b.nation), !a.withdrawing, !b.withdrawing,
                           !current.held.contains(a.key), !current.held.contains(b.key) else { continue }
                     let pa = positions[a.key]!, pb = positions[b.key]!
                     guard area(pa.cell, rules) == area(pb.cell, rules) else { continue }
                     if let t = EncounterGeometry.meetingTime(pa.point, velocities[a.key] ?? zero, pb.point, velocities[b.key] ?? zero, limit: dt) { dt = min(dt, t) }
-                } }
+                } } }
             }
             if dt > 0 {
                 for m in movers {

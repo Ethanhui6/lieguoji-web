@@ -284,6 +284,10 @@ public enum ArmyOrders {
                 ArmyAutonomy.Context.Target(id: p, x: provinces[p].center.x.asNumber, y: provinces[p].center.y.asNumber, feature: geo.provinceFeature[provinces[p].id.asString] ?? -1,
                                             protruding: CombatReader.protruding(r, p), port: ports.contains(provinces[p].id.asString))
             }
+            if r.regimes.enabled.isTruthy, owned.isEmpty {
+                let claims = candidates.filter { provinces[$0.id].legalOwner.optionalString == nation }
+                if !claims.isEmpty { candidates = claims }
+            }
             if r.regimes.enabled.isTruthy, !invaded.isEmpty {
                 let defense = candidates.filter { invaded.contains($0.id) }
                 if !defense.isEmpty { candidates = defense }

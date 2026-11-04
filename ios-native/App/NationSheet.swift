@@ -23,8 +23,8 @@ struct NationInfo: Decodable {
     let truces: [Truce]?
     let people: [Person]?
     struct Office: Decodable { let office: String; let name: String; let age: Double; let fit: Double; let person: Int? }
-    struct Commander: Decodable { let name: String; let age: Double; let enemy: Int }
-    struct House: Decodable { let name: String; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int; let stance: String?; let relation: Double? }
+    struct Commander: Decodable { let name: String; let age: Double; let enemy: Int; let person: Int? }
+    struct House: Decodable { let id: String?; let name: String; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int; let stance: String?; let relation: Double? }
     struct Court: Decodable {
         let governance: Double; let centralIncome: Double; let offices: [Office]; let temper: Double?; let manual: Bool?
         let provinces: Int; let occupied: Int; let lost: Int; let governors: Int
@@ -174,7 +174,7 @@ struct NationSheet: View {
                     if let post = target.post {
                         Task { await run(success: "已任命\(name)为\(post.title)") { await model.appointPost(nation, post: post.id, person: person) } }
                     } else {
-                        Task { await run(success: "已任命\(name)为\(Self.officeTitle[target.office] ?? target.office)") { await model.appointOffice(nation, office: target.office, person: person) } }
+                        Task { await run(success: "已任命\(name)为\(Self.officeTitle[String(target.office.split(separator: ":").first ?? "")] ?? "征伐主将")") { await model.appointOffice(nation, office: target.office, person: person) } }
                     }
                 }
                 .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
@@ -438,10 +438,12 @@ struct NationSheet: View {
     @ViewBuilder private func courtView(_ c: NationInfo.Court, _ map: WorldMap) -> some View {
         VStack(spacing: 10) {
             StatStrip(tiles: [
-                StatTile(label: "施政", value: "\(Int((c.governance * 100).rounded()))", fraction: c.governance, warn: c.governance < 0.3),
+                StatTile(label: "施政", value: "\(Int((c.governance * 100).rounded()))", fraction: c.governance, warn: c.governance < 0.3, edit: {
+                    numberEdit = NumberEdit(title: "施政（0–100；-1 恢复自动）", unit: "", value: c.governance * 100) { v in await model.editCourt(nation, key: "governance", value: v) }
+                }),
                 StatTile(label: "中枢增收", value: String(format: "%+.0f%%", (c.centralIncome - 1) * 100), warn: c.centralIncome < 1),
                 StatTile(label: "地方官", value: "\(c.governors)/\(c.provinces)", fraction: c.provinces > 0 ? Double(c.governors) / Double(c.provinces) : 0),
-                StatTile(label: "国策", value: Self.temperName(c.temper ?? 1), warn: (c.temper ?? 1) > 1.25),
+                StatTile(label: "国策", value: Self.temperName(c.temper ?? 1), warn: (c.temper ?? 1) > 1.25, edit: { tab = .custom }),
             ])
             Group2 {
                 ForEach(Array(c.offices.enumerated()), id: \.offset) { i, o in
@@ -479,7 +481,12 @@ struct NationSheet: View {
                     if c.occupied > 0 { Row(label: "占领他国", value: "\(c.occupied) 州"); Divider2() }
                     if c.lost > 0 { Row(label: "失地", value: "\(c.lost) 州"); Divider2() }
                     ForEach(Array(c.commanders.enumerated()), id: \.offset) { i, w in
+                        Button { appointing = AppointTarget(office: "WarCommander:\(w.enemy)") } label: {
                         Row(label: "征讨" + (map.meta.nations.indices.contains(w.enemy) ? map.meta.nations[w.enemy].name : "") + "主将", value: w.name)
+                        }.buttonStyle(.plain)
+                        if let person = info?.people?.first(where: { $0.id == w.person }), person.key >= 0 {
+                            Button { editing = person } label: { Row(label: "修改主将属性", value: "能力与天赋 ›") }.buttonStyle(.plain)
+                        }
                         if i < c.commanders.count - 1 { Divider2() }
                     }
                 }
@@ -504,6 +511,11 @@ struct NationSheet: View {
                             .frame(width: 54, height: 4)
                         }
                         .padding(.horizontal, 16).padding(.vertical, 9)
+                        if !h.ruling, let id = h.id {
+                            Button {
+                                numberEdit = NumberEdit(title: h.name + "对宗室关系（-100–100）", unit: "", value: h.relation ?? 0) { v in await model.editCourt(nation, key: "house:" + id, value: v) }
+                            } label: { Row(label: "修改拥戴关系", value: String(Int(h.relation ?? 0)) + " ›") }.buttonStyle(.plain)
+                        }
                         if i < c.houses.count - 1 { Divider2() }
                     }
                 }
@@ -1001,7 +1013,7 @@ struct AppointSheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: "任命" + (post?.title ?? NationSheet.officeTitle[office] ?? office), subtitle: post.map { ["按魅力", "按军事", "按外交", "按行政"][min(3, max(0, $0.skill))] + "择优" } ?? NationSheet.officeDuty[office], seal: "任")
+                SheetHeader(title: "任命" + (post?.title ?? NationSheet.officeTitle[String(office.split(separator: ":").first ?? "")] ?? "征伐主将"), subtitle: post.map { ["按魅力", "按军事", "按外交", "按行政"][min(3, max(0, $0.skill))] + "择优" } ?? NationSheet.officeDuty[office], seal: "任")
                 Group2 {
                     if loaded && people.isEmpty { Text("本国暂无合适人选").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16) }
                     if !loaded { ProgressView().frame(maxWidth: .infinity).padding(20) }

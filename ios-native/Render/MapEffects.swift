@@ -483,8 +483,8 @@ final class EffectsView: UIView {
             func line(_ s: MapEffects.Side) -> CAShapeLayer {
                 let c = CAShapeLayer()
                 c.strokeColor = UIColor(red: s.r, green: s.g, blue: s.b, alpha: 0.95).cgColor; c.fillColor = nil
-                c.lineWidth = 3; c.lineCap = .round; c.lineDashPattern = [5, 4]
-                c.shadowColor = UIColor.black.cgColor; c.shadowOpacity = 0.35; c.shadowRadius = 1.5; c.shadowOffset = .zero
+                c.lineWidth = 1.4; c.lineCap = .round; c.lineDashPattern = [3, 4]
+                c.opacity = 0.75
                 // The dashes run towards the clash.
                 let flow = CABasicAnimation(keyPath: "lineDashPhase"); flow.fromValue = 9; flow.toValue = 0; flow.duration = 0.45; flow.repeatCount = .infinity
                 c.add(flow, forKey: "flow")
@@ -590,7 +590,7 @@ final class EffectsView: UIView {
             let a = screen(v.battle.ax, v.battle.ay), b = screen(v.battle.bx, v.battle.by), m = screen(v.battle.x, v.battle.y)
             let pa = UIBezierPath(); pa.move(to: a); pa.addLine(to: m); v.a.path = pa.cgPath
             let pb = UIBezierPath(); pb.move(to: b); pb.addLine(to: m); v.b.path = pb.cgPath
-            v.a.lineWidth = 2 + k; v.b.lineWidth = 2 + k
+            v.a.lineWidth = 1 + k * 0.6; v.b.lineWidth = 1 + k * 0.6
         }
         for v in siegeLayers.values { var p = screen(v.x, v.y); p.y -= 16 * k; v.layer.position = p; v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k)) }
         for v in flashLayers.values { v.layer.position = screen(v.x, v.y) }

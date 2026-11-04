@@ -702,7 +702,7 @@ struct GameView: View {
                 controller.marchingArmy = nil; controller.marchingFleet = nil; controller.groupArmies = []
                 controller.placingArmy = true; controller.paintNation = n; self.panel = nil
                 say("点选本国州郡放置新军；拖动移动地图，点完成退出。征募仍受游戏规则约束。")
-            })
+            }, openArmy: { a in open(.army(a)) })
                 .presentationDetents([.medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .edicts:
             EdictSheet(model: model, say: say).presentationDetents([.medium, .large])
@@ -1176,7 +1176,7 @@ struct ArmySheet: View {
                     // The arm's strengths and weaknesses, and who leads it.
                     VStack(alignment: .leading, spacing: 4) {
                         if let k = UnitKinds.byKey[a.unit] { Text(k.note).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
-                        if let c = a.commander { Text(a.banner == "ruler" ? "御驾亲征：(c)" : "主将：(c)").font(Theme.kai(14)).foregroundStyle(a.banner == "ruler" ? Theme.seal : Theme.ink) }
+                        if let c = a.commander { Text(a.banner == "ruler" ? "御驾亲征：\(c)" : "主将：\(c)").font(Theme.kai(14)).foregroundStyle(a.banner == "ruler" ? Theme.seal : Theme.ink) }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 22)
                     StatStrip(tiles: [
@@ -1639,6 +1639,23 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.0", ["行军丝滑：每支军队在两步之间匀速走完（以前是先快后慢的追赶，看起来一顿一顿）；推演速度改为按手机实际算力自适应，算不过来就少算几天，不再卡顿。",
+                    "新兵与重组：新征的军队在驻地淡入出现；被打光的军队先在战场倒下（墨迹散开），再在故乡淡入重组，不再像以前那样整支「尸体」滑过半张地图。",
+                    "战争画面精简：交战处只留原作的双剑动画和淡淡的墨影，去掉了红圈；两军之间的连线改细改淡。",
+                    "地图卷轴边缘：地图四周像旧卷轴一样渐渐泛褐，外加一粗一细两道墨框。",
+                    "国家页点数字即改：疆域（绘制）、人口（全国按比例）、兵力（全军按比例）、国库、国运、月入加成都可以直接点开修改；点君主可改其姓名、年岁、能力与天赋；政体与文化点开即到自定义；议会的每个党派可改名、改席位。",
+                    "国家加成（自定义页）：财政加成（每月增收）、进攻加成（军队伤害）、防守加成（承受伤害减少）、人口增长（每年各州人口）、行军速度（全国军队），都按真实规则生效。",
+                    "地形影响行军：沙漠、雨林、沼泽、冰川、苔原、针叶林都会拖慢军队（如炎热荒漠六成速度、冰川一半、沼泽六成），草原最快；山地四成五、高原六成五。州郡页显示该地地形与行军快慢。",
+                    "地图细节加回来：山峰与森林更密，沙漠有沙丘与碎石，沼泽有水纹与芦苇，草原、苔原、冰原的纹样也更多。"]),
+        ("0.25.2", ["修复 0.25.1 安装包编译失败（国家页军事分类的军队列表一处代码），0.25.0 起的全部内容随此版发布。"]),
+        ("0.25.2", ["修复 0.25.1 安装包编译失败（国家页军事分类的军队列表一处代码），0.25.0 起的全部内容随此版发布。"]),
+        ("0.25.1", ["修复：通到海岸的国界线在平滑后差一点没连上海岸，现在两端准确接到海岸线；0.25.0 的全部内容随此版发布。"]),
+        ("0.25.0", ["地图边缘还原原作：国界改用原作的平滑曲线（同海岸线一样的 CurveBasis 四段样条，取自原作 SmoothBorderLines），每国国界连成一整条柔和的线，不再是一格一格的锯齿台阶。",
+                    "国家页分为五类：概览（君主、政体、文化宗教、国运、政体沿革、国史）、朝政（朝堂、议会、朝廷百官、家族人物）、军事（本国军队一览，点一支直接打开，帅旗与御驾标出；战争）、外交（外交关系、条约、国家行为）、自定义。",
+                    "高度自定义，改完即时生效：国号（地图名字立即重画）、国色（十六色，疆域与国界随之变色）、迁都（核心州郡与防守加成随新都重算）、好战程度（直接决定此国 AI 主动宣战的倾向，可交还君主性情决定）、州郡人口（决定税收与兵源）、筑拆要塞（要塞守军防御三倍）、绘制疆域；国库、国运、文化、宗教、政体、征兵照旧。人物可改姓名与年岁，以及四项能力与天赋。",
+                    "推演速度接近原作：原作一秒约十天，现在 1× 每步三天、每秒四步，2× / 4× / 8× 依次加快到每秒约二十、四十、六十余天，战争、攻城、反叛与家族兴衰都快了许多。",
+                    "大事传报：起义、复辟、绝嗣、迁都像宣战与议和一样以朱印传报弹出，并有对应震动。"]),
+        ("0.24.5", ["内部：自动截图增加行军连拍（逐秒跟拍一支行军中的军队），用于排查军队瞬移、隔空交战。游戏内容与 0.24.4 相同。"]),
         ("0.24.6", ["围城标记移除圆盘，改为小旗与横向抵抗进度条，减少地图遮挡。",
                     "战时守备：相邻州郡有实际敌军时，在本国实控州郡保留一支可用驻军，其余可继续推进；敌军离开后重新评估。不接管玩家军令、撤退或正在交战的部队。",
                     "回援优先：本国实控州郡已被敌军进入时，部队新选目标优先回援，不再因好战性格直接选择深入敌境。正在执行的行军暂不强制打断。",
@@ -2089,7 +2106,17 @@ struct HeraldBanner: View {
     let map: WorldMap
     @State private var stamped = false
     var body: some View {
-        let (word, color): (String, Color) = herald.kind == .war ? ("宣战", Theme.seal) : herald.kind == .peace ? ("议和", Theme.jade) : ("攻克", Theme.ink)
+        let (word, color): (String, Color) = {
+            switch herald.kind {
+            case .war: return ("宣战", Theme.seal)
+            case .peace: return ("议和", Theme.jade)
+            case .capture: return ("攻克", Theme.ink)
+            case .uprising: return ("起义", Color(red: 0.55, green: 0.12, blue: 0.1))
+            case .restoration: return ("复辟", Color(red: 0.62, green: 0.45, blue: 0.12))
+            case .extinction: return ("绝嗣", Theme.ink2)
+            case .capital: return ("迁都", Theme.jade)
+            }
+        }()
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 9, style: .continuous).fill(color)
                 .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Theme.paper2.opacity(0.85), lineWidth: 1.2).padding(3))
@@ -2147,7 +2174,15 @@ struct StatTile: View {
     let value: String
     var fraction: Double? = nil
     var warn = false
+    /// 点一下数字即可修改: the tile becomes a button with a small brush mark.
+    var edit: (() -> Void)? = nil
     var body: some View {
+        if let edit {
+            Button(action: edit) { content.overlay(alignment: .topTrailing) { Image(systemName: "pencil").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)).padding(6) } }
+                .buttonStyle(PressStyle())
+        } else { content }
+    }
+    private var content: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             Text(value).font(Theme.kai(20)).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.6).monospacedDigit()
@@ -2164,6 +2199,7 @@ struct StatTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12).padding(.vertical, 10)
+        .contentShape(Rectangle())
     }
 }
 

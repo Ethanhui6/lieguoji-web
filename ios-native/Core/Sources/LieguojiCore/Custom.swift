@@ -26,6 +26,8 @@ public enum Regimes {
                                        "Dovish": 0.72, "Merciful": 0.85, "Patient": 0.88, "WarWeary": 0.75, "Craven": 0.8, "Just": 0.92]
             for trait in p.traits.asArray { t *= w[trait.asString] ?? 1 }
         }
+        // 自定义好战程度 overrides the ruler's and the polity's temper.
+        if !r.regimes.isNull, let set = r.regimes.temper[id].optionalNumber { return min(1.6, max(0.6, set)) }
         switch r.civilization.nations[id].polity.optionalString ?? "" {
         case "Empire": t *= 1.12
         case "Tribal": t *= 1.1
@@ -236,6 +238,18 @@ public enum Regimes {
         }
     }
 
+    /// 国家加成 (自定义), in percent: income, attack, defense, growth (a year), speed. nil when unset.
+    public static let bonusKeys = ["income", "attack", "defense", "growth", "speed"]
+    public static func bonus(_ r: JS, _ id: String, _ key: String) -> Double? {
+        guard !r.regimes.isNull, !r.regimes.bonus.isNull else { return nil }
+        return r.regimes.bonus[id][key].optionalNumber
+    }
+    /// Damage multiplier for `attacker`'s army hitting `victim`'s (attack and defence bonuses).
+    static func combatBonus(_ r: JS, attacker: String, victim: String) -> Double {
+        let a = bonus(r, attacker, "attack") ?? 0, d = bonus(r, victim, "defense") ?? 0
+        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100))
+    }
+
     static func book(_ r: JS, _ id: String) -> JS {
         if r.regimes.nations[id].isNull {
             let b = JS.object(); b.history = .array([JS(r.civilization.nations[id].polity.optionalString ?? "Kingdom")]); b.empires = JS(r.civilization.nations[id].polity.optionalString == "Empire" ? 1 : 0); b.calm = JS(0)
@@ -257,6 +271,14 @@ public enum Regimes {
         case "Federation": addGold(0.02)
         case "Theocracy": addDestiny(0.25)
         default: break
+        }
+        // 国家加成 (自定义): extra income and population growth each month.
+        if let income = bonus(r, id, "income"), income != 0 { addGold(income / 100) }
+        if let growth = bonus(r, id, "growth"), growth != 0 {
+            let owned = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
+            for s in r.world.statecraft.provinces.asArray where owned.contains(s.provinceId.asString) {
+                s.population = JS(max(100, ((s.population.optionalNumber ?? 0) * (1 + growth / 1200)).rounded()))
+            }
         }
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
         postEffects(r, id, addGold: addGold, addDestiny: addDestiny)
@@ -582,6 +604,118 @@ extension NativeEngine {
         if let unit, UnitKinds.byKey[unit] != nil { r.units[armyId] = JS(unit) }
         if let morale { a.morale = JS(min(100, max(0, morale.rounded()))) }
         return (true, "\(a.name.asString)已整编。")
+    }
+
+    /// 自定义国名、国色: the state's name and colour (its border line follows the colour).
+    public func editIdentity(_ index: Int, name: String?, color: String?) -> (ok: Bool, reason: String) {
+        let nations = run.world.nations.asArray
+        guard nations.indices.contains(index) else { return (false, "国家不存在。") }
+        let n = nations[index]
+        if let name {
+            let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard (1...12).contains(t.count) else { return (false, "国名须为 1 到 12 个字。") }
+            guard !nations.enumerated().contains(where: { $0.offset != index && $0.element.name.optionalString == t }) else { return (false, "已有同名国家。") }
+            n.name = JS(t)
+        }
+        if let color {
+            let hex = color.hasPrefix("#") ? String(color.dropFirst()) : color
+            guard hex.count == 6, UInt32(hex, radix: 16) != nil else { return (false, "颜色格式不对。") }
+            n.color = JS("#" + hex.uppercased())
+        }
+        return (true, "国号与国色已更改。")
+    }
+    /// 迁都: the capital moves to a city the state controls (core distances follow).
+    public func setCapital(_ index: Int, province: Int) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray, provinces = r.world.provinces.asArray
+        guard nations.indices.contains(index), provinces.indices.contains(province) else { return (false, "国家或州郡不存在。") }
+        let n = nations[index], id = n.id.asString, p = provinces[province]
+        guard p.controller.optionalString == id else { return (false, "只能迁都到本国实控的州郡。") }
+        guard let city = r.world.cities.asArray.first(where: { $0.provinceId.asString == p.id.asString }) else { return (false, "该州郡没有城池。") }
+        n.capitalId = city.id.clone()
+        Wars.reconcileCore(r)
+        People.announce(r, kind: "capital", text: "\(n.name.asString)迁都\(city.name.asString)", reason: "朝廷下诏迁都。", nations: [id], province: p.id.asString)
+        return (true, "已迁都\(city.name.asString)。")
+    }
+    /// 自定义州郡: population (and the grain that feeds it), and a manual fortress (defence 3).
+    public func editProvince(_ index: Int, population: Double?, fortress: Bool?) -> (ok: Bool, reason: String) {
+        let r = run, provinces = r.world.provinces.asArray
+        guard provinces.indices.contains(index) else { return (false, "州郡不存在。") }
+        let id = provinces[index].id.asString
+        if let population, let stock = r.world.statecraft.provinces.asArray.first(where: { $0.provinceId.asString == id }) {
+            stock.population = JS(min(5_000_000, max(100, population.rounded())))
+        }
+        if let fortress {
+            let d = r.upperCombat.provinces[id]
+            if !d.isNull { d.manualSet = JS(true); d.manualFortress = JS(fortress); d.locked = JS(false) }
+        }
+        return (true, "州郡设定已修改。")
+    }
+    /// 好战程度 (0.6 peaceable … 1.6 warlike), or nil for the ruler's own temper.
+    public func setTemper(_ index: Int, _ value: Double?) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), !r.regimes.isNull else { return (false, "国家不存在。") }
+        if r.regimes.temper.isNull { r.regimes.temper = JS.object() }
+        let id = nations[index].id.asString
+        if let value { r.regimes.temper[id] = JS(min(1.6, max(0.6, value))) } else { r.regimes.temper.delete(id) }
+        return (true, value == nil ? "好战程度随君主性情" : "好战程度已设定")
+    }
+    /// 国家加成 (自定义, percent): income −50…+200, attack/defense −50…+100, growth −20…+50 a
+    /// year, speed −50…+100; nil clears it. Each acts on the real rules (monthly gold, battle damage,
+    /// population each month, march speed).
+    public func setBonus(_ index: Int, key: String, value: Double?) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), !r.regimes.isNull, Regimes.bonusKeys.contains(key) else { return (false, "无此加成。") }
+        if r.regimes.bonus.isNull { r.regimes.bonus = JS.object() }
+        let id = nations[index].id.asString
+        if r.regimes.bonus[id].isNull { r.regimes.bonus[id] = JS.object() }
+        let range: ClosedRange<Double> = key == "income" ? -50...200 : key == "growth" ? -20...50 : -50...100
+        if let value { r.regimes.bonus[id][key] = JS(min(range.upperBound, max(range.lowerBound, value.rounded()))) } else { r.regimes.bonus[id].delete(key) }
+        return (true, "加成已设定。")
+    }
+    /// 党派 (自定义): a party's name and seats (0…100); the largest party governs.
+    public func editParty(_ index: Int, party: Int, name: String?, seats: Int?) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), !r.regimes.isNull else { return (false, "国家不存在。") }
+        let b = Regimes.book(r, nations[index].id.asString)
+        guard !b.parties.isNull, b.parties.asArray.indices.contains(party) else { return (false, "此国没有这个党派。") }
+        let p = b.parties.asArray[party]
+        if let name { let t = name.trimmingCharacters(in: .whitespaces); if !t.isEmpty { p.name = JS(String(t.prefix(10))) } }
+        if let seats { p.seats = JS(min(100, max(0, seats))) }
+        return (true, "党派已修改。")
+    }
+    /// 自定义总人口、总兵力: scales every province (or every army) of the state so the total is `value`.
+    public func scaleTotal(_ index: Int, key: String, value: Double) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), value >= 0 else { return (false, "数值无效。") }
+        let id = nations[index].id.asString
+        if key == "population" {
+            let owned = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
+            let rows = r.world.statecraft.provinces.asArray.filter { owned.contains($0.provinceId.asString) }
+            let total = rows.reduce(0.0) { $0 + ($1.population.optionalNumber ?? 0) }
+            guard total > 0, !rows.isEmpty else { return (false, "此国没有州郡。") }
+            let k = min(50, max(0.02, value / total))
+            for s in rows { s.population = JS(min(5_000_000, max(100, ((s.population.optionalNumber ?? 0) * k).rounded()))) }
+            return (true, "总人口已改。")
+        }
+        let armies = r.world.armies.asArray.filter { $0.nationId.asString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
+        let total = armies.reduce(0.0) { $0 + $1.troops.asNumber }
+        guard total > 0 else { return (false, "此国没有军队，可在「自定义」征兵。") }
+        let k = min(50, max(0.02, value / total))
+        for a in armies {
+            let t = min(500_000, max(1, Int((a.troops.asNumber * k).rounded())))
+            a.troops = JS(t)
+            let force = r.tactics.forces[a.id.asString]
+            if !force.isNull && (force.fullStrength.optionalNumber ?? 0) < Double(t) { force.fullStrength = JS(t) }
+        }
+        return (true, "总兵力已改。")
+    }
+    /// 自定义人物: name and age.
+    public func renamePerson(_ id: Int, first: String?, last: String?, age: Int?) -> (ok: Bool, reason: String) {
+        guard let p = People.person(run, id) else { return (false, "人物不存在。") }
+        if let first { let t = first.trimmingCharacters(in: .whitespaces); if !t.isEmpty { p.firstName = JS(String(t.prefix(8))) } }
+        if let last { p.lastName = JS(String(last.trimmingCharacters(in: .whitespaces).prefix(8))) }
+        if let age { p.age = JS(min(110, max(0, age))) }
+        return (true, "人物已修改。")
     }
 
     /// 添加军队: a new legion of the state raised in one of its provinces.

@@ -88,6 +88,11 @@ extension NativeEngine {
         o.mountain = JS(land.mountain.isTruthy)
         o.biomes = land.isNull || land.biomes.isNull ? .array() : land.biomes
         o.income = JS(Offices.localIncome(r, id))
+        // 地形 and the pace an army marches over it (app rules), from the province's main biome.
+        let ratios = land.isNull || land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
+        let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
+        o.terrain = JS(["海滨", "炎热荒漠", "寒冷荒漠", "稀树草原", "草原", "热带季雨林", "温带森林", "热带雨林", "温带雨林", "针叶林", "苔原", "冰川", "沼泽"][min(12, main)])
+        o.pace = JS(land.mountain.isTruthy ? 0.45 : ForceMotion.terrainSpeed[min(ForceMotion.terrainSpeed.count - 1, main)])
         return Data(o.json.utf8)
     }
 

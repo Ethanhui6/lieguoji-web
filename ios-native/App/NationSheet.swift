@@ -312,6 +312,9 @@ struct NationSheet: View {
                                     .padding(.horizontal, 16).padding(.vertical, 8).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
+                                if let person = p.holder, person.key >= 0 {
+                                    Button { editing = person } label: { Row(label: "修改" + person.name + "的属性", value: "能力与天赋 ›") }.buttonStyle(.plain)
+                                }
                                 if i < postList.count - 1 { Divider2() }
                             }
                             Text("称职的官员每月增国库（$）、国运（✦）或各军士气（盾）；不称职则相反。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8)
@@ -461,13 +464,16 @@ struct NationSheet: View {
                     .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    if let person = info?.people?.first(where: { $0.id == o.person }), person.key >= 0 {
+                        Button { editing = person } label: { Row(label: "修改" + o.name + "的属性", value: "能力与天赋 ›") }.buttonStyle(.plain)
+                    }
                     if i < c.offices.count - 1 { Divider2() }
                 }
                 Divider2()
                 PaperSwitch(title: "亲自任免官员（朝廷不再自行换人）", on: Binding(get: { c.manual ?? false }, set: { on in Task { await run(success: on ? "官员由你亲自任免" : "朝廷恢复自主任免") { await model.setCourtManual(nation, manual: on) } } }))
             }
             .padding(.horizontal, 16)
-            Text("点官职可从本国人物中任命；点「人物」里的人可修改其属性与天赋。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
+            Text("点官职任命；在官职下直接修改在任者的能力与天赋。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)
             if c.occupied > 0 || c.lost > 0 || !c.commanders.isEmpty {
                 Group2 {
                     if c.occupied > 0 { Row(label: "占领他国", value: "\(c.occupied) 州"); Divider2() }

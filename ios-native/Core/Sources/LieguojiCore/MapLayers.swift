@@ -265,19 +265,33 @@ public enum MapLayers {
         // Each state's border edges, joined into lines and smoothed with the original's curve
         // (BorderDataProcessor.UpdateStateLine → SmoothBorderLines, CurveBasis(points, 4)), so a
         // border runs as one soft line instead of the cells' stair steps.
-        var perNation = [Int: [BorderCurve.Segment]]()
-        for e in map.edges where e.a >= 0 && e.b >= 0 {
-            let na = map.nation(ofCell: Int(e.a)), nb = map.nation(ofCell: Int(e.b))
-            guard map.isLand(Int(e.a)) && map.isLand(Int(e.b)), na != nb else { continue }
-            for n in [na, nb] { if let n, n < colors.count { perNation[n, default: []].append(BorderCurve.Segment(e.x1, e.y1, e.x2, e.y2)) } }
-        }
-        for n in perNation.keys.sorted() {
-            for line in BorderCurve.smooth(BorderCurve.chain(perNation[n]!)) { m.polyline(line, width: lineWidth, colors[n], alpha: 1) }
-        }
         for s in stride(from: 0, to: map.coast.count, by: 4) {
             m.segment(map.coast[s], map.coast[s + 1], map.coast[s + 2], map.coast[s + 3], width: lineWidth, coastColor, alpha: 1)
         }
+        let perNation = stateEdges(map)
+        for n in perNation.keys.sorted() {
+            for line in BorderCurve.smooth(BorderCurve.chain(perNation[n]!)) { m.polyline(line, width: lineWidth, colors[n], alpha: 1) }
+        }
         return m
+    }
+
+    /// Full political perimeter, including islands, lake holes and the edge of the world.
+    /// Water never inherits an owner from a stale province assignment after terrain editing.
+    static func stateEdges(_ map: WorldMap) -> [Int: [BorderCurve.Segment]] {
+        func owner(_ cell: Int32) -> Int? {
+            guard cell >= 0, Int(cell) < map.cellCount, map.isLand(Int(cell)),
+                  let n = map.nation(ofCell: Int(cell)), n < map.meta.nations.count else { return nil }
+            return n
+        }
+        var result = [Int: [BorderCurve.Segment]]()
+        for edge in map.edges {
+            let a = owner(edge.a), b = owner(edge.b)
+            guard a != b else { continue }
+            for n in [a, b].compactMap({ $0 }) {
+                result[n, default: []].append(.init(edge.x1, edge.y1, edge.x2, edge.y2))
+            }
+        }
+        return result
     }
 
     /// 卷轴边缘 (the original's mapframes and dark border): the paper browns towards the map's edge

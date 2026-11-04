@@ -54,6 +54,7 @@ public struct ContactMotion {
         public var speed: (MovingForce, Int) -> Double
         public var seaRegion: (Int) -> Int
         public var provinceID: (Int) -> String
+        public var physicalContact = false
         public init(enemy: @escaping (Int, Int) -> Bool, canEnter: @escaping (MovingForce, Int) -> Bool, speed: @escaping (MovingForce, Int) -> Double,
                     seaRegion: @escaping (Int) -> Int, provinceID: @escaping (Int) -> String) {
             self.enemy = enemy; self.canEnter = canEnter; self.speed = speed; self.seaRegion = seaRegion; self.provinceID = provinceID
@@ -90,7 +91,10 @@ public struct ContactMotion {
         var byKey = [String: MovingForce](); for f in forces { byKey[f.key] = f }
         var pairs = [String: ForceContact](), order = [String]()
         func put(_ c: ForceContact) { let k = ContactMotion.pairKey(c.a, c.b); if pairs[k] == nil { order.append(k) }; pairs[k] = c }
-        func eligible(_ a: MovingForce, _ b: MovingForce, _ area: String) -> Bool { rules.enemy(a.nation, b.nation) && (area.hasPrefix("sea/") || !a.withdrawing && !b.withdrawing) }
+        func eligible(_ a: MovingForce, _ b: MovingForce, _ area: String) -> Bool {
+            rules.enemy(a.nation, b.nation) && (area.hasPrefix("sea/") || !a.withdrawing && !b.withdrawing)
+                && (!rules.physicalContact || EncounterGeometry.touching(p[a.key]!.point, p[b.key]!.point))
+        }
         for c in old {
             guard let a = p[c.a], let b = p[c.b], let fa = byKey[c.a], let fb = byKey[c.b] else { continue }
             let departed = c.area.hasPrefix("sea/") && (fa.withdrawing || fb.withdrawing) && area(a.cell, rules) != area(b.cell, rules)
@@ -107,7 +111,7 @@ public struct ContactMotion {
                 if !eligible(byKey[a]!, byKey[b]!, ar) { continue }
                 war = true; put(pair(a, b, p, ar))
             } }
-            if war && ar.hasPrefix("sea/") { for id in group where !byKey[id]!.withdrawing { held.insert(id) } }
+            if war && !rules.physicalContact && ar.hasPrefix("sea/") { for id in group where !byKey[id]!.withdrawing { held.insert(id) } }
         }
         for k in order { let c = pairs[k]!; for id in [c.a, c.b] where !(byKey[id]?.withdrawing ?? true) { held.insert(id) } }
         let sorted = order.sorted { Collate.less($0, $1) }.map { pairs[$0]! }
@@ -145,7 +149,27 @@ public struct ContactMotion {
                 let v = left == 0 ? 0 : rules.speed(forces[i], s.crossed ? seg.b : seg.a)
                 movers.append(Mover(f: i, seg: seg, speed: v, end: end, time: left == 0 ? 0 : v > 0 ? left / v : .infinity))
             }
-            let dt = movers.reduce(remaining) { min($0, $1.time) }
+            var dt = movers.reduce(remaining) { min($0, $1.time) }
+            if rules.physicalContact && dt > 0 {
+                // Each segment is linear until the next gate. Solve the relative motion before
+                // stepping, so fast opposing columns cannot tunnel through each other.
+                let positions = current.positions
+                var velocities = [String: TravelPoint]()
+                for m in movers where m.time > 0 && m.time.isFinite {
+                    let key = forces[m.f].key, p = positions[key]!.point
+                    let end = m.seg.local || forces[m.f].travel.crossed ? m.seg.end : m.seg.gate
+                    velocities[key] = TravelPoint(x: (end.x - p.x) / m.time, y: (end.y - p.y) / m.time)
+                }
+                let zero = TravelPoint(x: 0, y: 0)
+                for i in forces.indices { for j in (i + 1)..<forces.count {
+                    let a = forces[i], b = forces[j]
+                    guard rules.enemy(a.nation, b.nation), !a.withdrawing, !b.withdrawing,
+                          !current.held.contains(a.key), !current.held.contains(b.key) else { continue }
+                    let pa = positions[a.key]!, pb = positions[b.key]!
+                    guard area(pa.cell, rules) == area(pb.cell, rules) else { continue }
+                    if let t = EncounterGeometry.meetingTime(pa.point, velocities[a.key] ?? zero, pb.point, velocities[b.key] ?? zero, limit: dt) { dt = min(dt, t) }
+                } }
+            }
             if dt > 0 {
                 for m in movers {
                     let o = forces[m.f].travel.offset
@@ -155,7 +179,7 @@ public struct ContactMotion {
             }
             func reached(_ m: Mover) -> Bool { m.time <= dt || m.seg.local && forces[m.f].travel.offset == m.end }
             var interiorEnd: [String: Position]?
-            if remaining == 0 && book.isEmpty && current.held.isEmpty && !forces.contains(where: \.withdrawing) && !movers.contains(where: reached) {
+            if !rules.physicalContact && remaining == 0 && book.isEmpty && current.held.isEmpty && !forces.contains(where: \.withdrawing) && !movers.contains(where: reached) {
                 let end = positions(forces)
                 interiorEnd = end
                 if forces.allSatisfy({ end[$0.key]!.cell == current.positions[$0.key]?.cell }) {
@@ -190,7 +214,7 @@ public struct ContactMotion {
                 let f = forces[m.f], ar = area(m.seg.b, rules)
                 for g in forces where g.key != f.key {
                     guard let v = before[g.key] else { continue }
-                    if area(v.cell, rules) == ar && rules.enemy(f.nation, g.nation) && (ar.hasPrefix("sea/") || !f.withdrawing && !g.withdrawing) { meetings.append((f.key, g.key, ar)) }
+                    if !rules.physicalContact && area(v.cell, rules) == ar && rules.enemy(f.nation, g.nation) && (ar.hasPrefix("sea/") || !f.withdrawing && !g.withdrawing) { meetings.append((f.key, g.key, ar)) }
                 }
             }
             for m in admitted where !stopped.contains(forces[m.f].key) {

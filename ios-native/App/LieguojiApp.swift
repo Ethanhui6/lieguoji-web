@@ -603,12 +603,9 @@ struct GameView: View {
         .sensoryFeedback(.selection, trigger: model.mapView)
         .onChange(of: panel) { old, p in
             if let p { lastPanel = p }
-            // Big panels (lists, the state, the chronicle, rankings, the menu) pause the world: every
-            // day re-drew the whole open sheet and the engine competed with it. Unit and province
-            // dockets keep the world running so a march can be watched.
-            let big: Bool = { switch p { case .some(.province), .some(.army), .some(.fleet), .none: return false; default: return true } }()
+            // All inspection pages share one pause policy, including map picks.
             controller.sheetOpen = p != nil
-            if big, GameFeel.shared.pauseInMenus, model.playing { pausedByPanel = true; model.pause(saving: false) }
+            if p != nil, model.playing { pausedByPanel = true; model.pause(saving: false) }
             if p == nil, pausedByPanel { pausedByPanel = false; model.play() }
             _ = old
         }
@@ -1639,6 +1636,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.1", ["国界补入海岸、湖岸和世界边缘，国家外轮廓闭合。领土、军队、舰队等检查页面统一暂停推演，关闭后仅恢复原本正在运行的世界。",
+                    "原生接战改为实际位置相遇，计算跨步相遇防止高速穿越；移除远距离交战时把图标拉到中点的表现补丁。进攻走到省城坐标，抵达后才结算占领。此为原生修复，原作完整军事规则仍需继续核查。",
+                    "失去全部实控领土的国家仍可选择被敌国占领的法理领土作为反攻目标。朝堂与百官增加直接修改在任人物属性入口。",
+                    "取消军队头顶旗帜与姓氏，主将改用侧边小徽记。海军完整还原、家族拥戴编辑及开局兵力突减仍在排查，未宣称完成。"]),
         ("0.26.0", ["行军丝滑：每支军队在两步之间匀速走完（以前是先快后慢的追赶，看起来一顿一顿）；推演速度改为按手机实际算力自适应，算不过来就少算几天，不再卡顿。",
                     "新兵与重组：新征的军队在驻地淡入出现；被打光的军队先在战场倒下（墨迹散开），再在故乡淡入重组，不再像以前那样整支「尸体」滑过半张地图。",
                     "战争画面精简：交战处只留原作的双剑动画和淡淡的墨影，去掉了红圈；两军之间的连线改细改淡。",

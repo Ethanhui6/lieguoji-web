@@ -55,7 +55,7 @@ public enum ArmyOrders {
         let hostile = here.province.map { RunWindow.atWar(r, nation, $0.controller.asString) } ?? false
         var retreat = false
         if case .move(_, let v) = action { retreat = v }
-        if (hostile || enemiesHere) && !retreat { return .failure(Refused(reason: "当前地区尚未安全，只能撤退或等待交锋与占领完成。")) }
+        if !r.regimes.enabled.isTruthy && (hostile || enemiesHere) && !retreat { return .failure(Refused(reason: "当前地区尚未安全，只能撤退或等待交锋与占领完成。")) }
         if a.status.asString == "retreating", case .move = action, !retreat, !safeRetreatEnd(r, here, space) { return .failure(Refused(reason: "撤退途中不能改为进攻，请先抵达安全地区。")) }
         let travel = bridge.travel(here.travel)
         switch action {
@@ -77,6 +77,10 @@ public enum ArmyOrders {
             let t = JS.object()
             t.version = JS(1); t.armyId = JS(id); t.origin = ForceBridge.json(point); t.nodes = .array(path.nodes.map { JS(Int(g.ids[$0])) })
             t.leg = JS(0); t.offset = JS(0); t.crossed = JS(false); t.status = JS(path.nodes.count == 1 ? "arrived" : "moving")
+            if r.regimes.enabled.isTruthy {
+                t.version = JS(2); t.destination = ForceBridge.json(g.targets[province])
+                t.status = JS(EncounterGeometry.touching(point, g.targets[province]) ? "arrived" : "moving")
+            }
             return .success((t, p.name.asString))
         }
     }
@@ -232,7 +236,8 @@ public enum ArmyOrders {
                 if garrisonIsTarget && targetOwned && en.isEmpty { note("garrison", "正在沿原定路线前往驻地，保留既有行军进度。") } else { row.nextTick = JS(tick + retry) }
                 continue
             }
-            if a.status.asString != "retreating", let p = here.province, RunWindow.atWar(r, nation, p.controller.asString) { note("busy", "部队已在敌方真实陆地，等待交锋或地区抵抗结算。"); continue }
+            if a.status.asString != "retreating", let p = here.province, RunWindow.atWar(r, nation, p.controller.asString),
+               !r.regimes.enabled.isTruthy || RunWindow.atCity(here, bridge: bridge) { note("busy", "部队已在敌方真实陆地，等待交锋或地区抵抗结算。"); continue }
             var attack = [Int](), attackSet = Set<Int>()
             func add(_ p: Int) { if attackSet.insert(p).inserted { attack.append(p) } }
             let provinces = r.world.provinces.asArray
@@ -257,6 +262,11 @@ public enum ArmyOrders {
                 }
             }
             if a.status.asString != "retreating" && !en.isEmpty {
+                // A dispossessed nation still has legal claims and living armies. Its borders
+                // cannot supply candidates once its final controlled province is lost.
+                if r.regimes.enabled.isTruthy, owned.isEmpty {
+                    for (p, province) in provinces.enumerated() where province.legalOwner.optionalString == nation && enemySet.contains(province.controller.asString) { add(p) }
+                }
                 for p in invaded { add(p) }
                 for p in stateBorders(r, nation, enemySet) { add(p) }
                 if invaded.isEmpty {

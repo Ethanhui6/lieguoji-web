@@ -24,6 +24,13 @@ public enum RunWindow {
     }
     static func log(_ r: JS, _ kind: String, _ text: String, _ reason: String) { Daily.event(r, kind, text, reason) }
 
+    static func atCity(_ force: Armies.Located, bridge: ForceBridge) -> Bool {
+        guard let p = force.province, let cell = Armies.homeCells[p.id.asString].flatMap({ bridge.graph.cell(id: $0) }) else { return false }
+        let index = Int(bridge.graph.provinces[cell])
+        guard bridge.graph.targets.indices.contains(index) else { return false }
+        return EncounterGeometry.touching(bridge.graph.location(bridge.travel(force.travel)).point, bridge.graph.targets[index])
+    }
+
     // MARK: Resistance capacity (occupation resistanceCapacity)
     static func area(_ p: JS) -> Double {
         let poly = p.polygon.asArray
@@ -76,7 +83,7 @@ public enum RunWindow {
             return p.controller.asString == s.controller.asString && war(s.attacker.asString, s.controller.asString)
         })
         var local = [String: [JS]]()
-        for v in space where v.province != nil { local[v.province!.id.asString, default: []].append(v.army) }
+        for v in space where v.province != nil && (!r.regimes.enabled.isTruthy || atCity(v, bridge: Armies.bridge!)) { local[v.province!.id.asString, default: []].append(v.army) }
         // The first siege of each province (kept current as sieges start and end below).
         var siegeOf = [String: JS]()
         for sg in r.occupation.sieges.asArray where siegeOf[sg.provinceId.asString] == nil { siegeOf[sg.provinceId.asString] = sg }

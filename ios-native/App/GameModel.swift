@@ -644,11 +644,8 @@ import LieguojiCore
         // Icons never sit on one another: armies (and fleets) closer than an icon are eased apart, the
         // later one moving, a few passes. Display only; an army in battle keeps its spot facing the foe.
         Self.offset(&sprites)
-        var texts = [String: String]()
-        // No numbers on the map (strength shows as one to three figures); a banner carries its
-        // commander's mark when the map is close enough to read it.
-        for a in state.armies { if let mark = a.bannerMark, !mark.isEmpty { texts[a.id] = a.banner == "ruler" ? "御" : mark } }
-        controller.troopTexts = texts
+        // Commander identity stays in the army page; no floating surname over the map.
+        controller.troopTexts = [:]
         controller.armies = sprites
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
             let id = state.armies[selected].id

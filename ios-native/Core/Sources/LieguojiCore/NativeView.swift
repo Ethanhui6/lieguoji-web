@@ -116,25 +116,6 @@ extension NativeEngine {
         // Armies in contact stand where they fight (the original draws the clash between them);
         // only resting armies use the province's display spot.
         let engaged = Set(r.forceContacts.pairs.asArray.flatMap { [$0.a.asString, $0.b.asString] })
-        // Two armies in contact share a province (the original's battle rule), possibly far apart:
-        // each is drawn at the middle of its clashes, half an icon back towards its own side, so the
-        // two icons meet where the battle plays. Presentation only.
-        var clash = [String: (x: Double, y: Double, n: Double)]()
-        let halfIcon = 2.4 * sc
-        func aim(_ k: String, _ x: Double, _ y: Double) { let o = clash[k] ?? (0, 0, 0); clash[k] = (o.x + x, o.y + y, o.n + 1) }
-        for c in r.forceContacts.pairs.asArray where !c.pointA.isNull && !c.pointB.isNull {
-            let ax = c.pointA.x.asNumber, ay = c.pointA.y.asNumber, bx = c.pointB.x.asNumber, by = c.pointB.y.asNumber
-            let d = ((ax - bx) * (ax - bx) + (ay - by) * (ay - by)).squareRoot()
-            if d / sc > 26 {
-                // A far pair (most of a province apart) each advance ten units towards the other instead
-                // of one icon appearing deep in the next province.
-                let ux = (bx - ax) / d, uy = (by - ay) / d, step = min(6 * sc, d / 2) + halfIcon
-                aim(c.a.asString, ax + ux * step, ay + uy * step); aim(c.b.asString, bx - ux * step, by - uy * step)
-                continue
-            }
-            let mx = (ax + bx) / 2, my = (ay + by) / 2
-            aim(c.a.asString, mx, my); aim(c.b.asString, mx, my)
-        }
         // 帅旗 (app rules): in a state at war its largest army carries the commander's banner — the war
         // commander or the marshal, or else the ruler in person (御驾亲征), the leader its battles use.
         var banners = [String: (kind: String, mark: String, name: String)]()
@@ -163,10 +144,6 @@ extension NativeEngine {
             // apart by the map instead.
             _ = moving; _ = spots
             if let bridge { let p = bridge.graph.location(bridge.travel(v.travel)).point; at = (p.x, p.y) } else { at = (0, 0) }
-            if let m = clash[Daily.key("army", id)] {
-                let cx = m.x / m.n, cy = m.y / m.n, dx = at.0 - cx, dy = at.1 - cy, d = (dx * dx + dy * dy).squareRoot()
-                at = d > halfIcon ? (cx + dx / d * halfIcon, cy + dy / d * halfIcon) : at
-            }
             let x = JS.object()
             x.id = a.id; x.name = a.name; x.nation = JS(ni[a.nationId.asString]!); x.troops = a.troops; x.unit = r.units[id].isNull ? JS("Infantry") : r.units[id]
             x.status = a.status; x.travel = v.travel.status; x.province = JS(v.province.map { pi[$0.id.asString]! } ?? -1)

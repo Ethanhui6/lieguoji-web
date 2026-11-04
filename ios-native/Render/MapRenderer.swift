@@ -357,7 +357,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 let role = UnitArt.role(a.unit), at = displayed(a)
                 let size = iconSize * (a.unit == "Port" ? 0.7 : 1) * (a.selected ? 1.3 : 1)
                 // The banner stands behind the figures: the state's colour, gold for the ruler himself.
-                if a.banner > 0 { quad("Banner", at, a.banner == 2 ? RGB(0.93, 0.74, 0.25) : c, size * 1.15, -0.42, -0.62) }
+                if a.banner > 0 { quad("Shield", at, a.banner == 2 ? RGB(0.93, 0.74, 0.25) : RGB(0.70, 0.20, 0.14), size * 0.34, 0.95, -0.85) }
                 // One clear mark for the arm, and one to three pips beneath for its strength.
                 quad(role, at, c, size, 0, 0)
                 if a.army > -100_000 && role != "Fleet" {

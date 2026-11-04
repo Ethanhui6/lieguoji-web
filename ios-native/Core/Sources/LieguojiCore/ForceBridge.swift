@@ -75,8 +75,10 @@ public final class ForceBridge {
             staticRegions = regions; staticProvinceIds = r.world.provinces.asArray.map(\.id.asString)
         }
         let regions = staticRegions!, provinceIds = staticProvinceIds
-        return ContactMotion.Rules(enemy: { a, b in a != b && war.contains(min(a, b) * 4096 + max(a, b)) }, canEnter: canEnter, speed: speed,
+        var rules = ContactMotion.Rules(enemy: { a, b in a != b && war.contains(min(a, b) * 4096 + max(a, b)) }, canEnter: canEnter, speed: speed,
                                    seaRegion: { regions[$0]! }, provinceID: { provinceIds[$0] })
+        rules.physicalContact = r.regimes.enabled.isTruthy
+        return rules
     }
     /// reconcileForceContactsOwned47 + the status update of reconcileDiplomaticForces47.
     public func reconcileContacts(_ r: JS) {

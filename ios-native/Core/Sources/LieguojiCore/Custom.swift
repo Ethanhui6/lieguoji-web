@@ -493,6 +493,7 @@ extension NativeEngine {
 
     public func enableAppRules() {
         Regimes.enable(run)
+        IosTraitRules.enable()
         let r = run
         UnitKinds.enabled = true
         Armies.bridge?.reconcileContacts(r)  // Drop obsolete province-wide contacts before the first volley.

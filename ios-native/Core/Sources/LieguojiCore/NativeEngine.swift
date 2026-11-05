@@ -25,6 +25,7 @@ public final class NativeEngine {
         if !o.format.isNull && o.format.asString != Self.saveFormat { throw NativeEngineError.message("这不是列国纪存档。") }
         run = o.run; statics = o.statics
         UnitKinds.enabled = false  // until enableAppRules: a plain run keeps the original's five units
+        IosTraitRules.enabled = false
         try install()
     }
     /// A run whose statics are already installed (module tests).

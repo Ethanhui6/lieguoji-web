@@ -27,7 +27,7 @@ enum Theme {
     static let wash = Color(red: 0.925, green: 0.894, blue: 0.835)
     static let seal = Color(red: 0.706, green: 0.255, blue: 0.18)
     static let jade = Color(red: 0.184, green: 0.365, blue: 0.314)
-    static let sea = Color(red: 0x52 / 255, green: 0x7C / 255, blue: 0x86 / 255)
+    static let sea = Color(red: 0x14 / 255, green: 0x87 / 255, blue: 0xFF / 255)
     static func kai(_ size: CGFloat) -> Font { .custom(fontName, size: size) }
 }
 
@@ -317,6 +317,13 @@ struct NewWorldSheet: View {
     /// 自绘地图 with these options.
     var draw: ((GameModel.NewWorld) -> Void)? = nil
     @State private var options = GameModel.NewWorld()
+    private static let provincePresets = [("40", "稀疏"), ("80", "标准"), ("120", "稠密"), ("200", "极密")]
+    private static let culturePresets: [(String, String, Set<String>)] = [
+        ("east", "东亚", ["chinese", "japanese", "korean", "mongol", "tibetan"]),
+        ("west", "西欧", ["english", "french", "german", "roman", "norse"]),
+        ("near", "近东", ["arab", "persian", "turkic", "egyptian", "greek"]),
+        ("all", "全部", Set(Names.cultureIds)),
+    ]
     var body: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 20) {
@@ -326,6 +333,10 @@ struct NewWorldSheet: View {
                 ChipPicker(items: Names.templates.map { ($0.id, $0.name) }, selection: $options.template)
             }
             PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
+            VStack(alignment: .leading, spacing: 10) {
+                Text("省份预设").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                ChipPicker(items: Self.provincePresets.map { ($0.0, $0.1) }, selection: $options.provinces)
+            }
             HStack {
                 Text("省份").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
                 Spacer()
@@ -349,6 +360,21 @@ struct NewWorldSheet: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("命名").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
                 ChipPicker(items: [("historical-names", "历史真名"), ("culture-generated", "按文化生成")], selection: $options.naming)
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                Text("文化预设").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                HStack(spacing: 8) {
+                    ForEach(Self.culturePresets, id: \.0) { preset in
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { options.cultures = preset.2 }
+                        } label: {
+                            Text(preset.1).font(Theme.kai(14)).foregroundStyle(Theme.seal)
+                                .padding(.horizontal, 10).frame(height: 32)
+                                .background(Theme.seal.opacity(0.1), in: Capsule())
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
             }
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
@@ -379,6 +405,10 @@ struct NewWorldSheet: View {
                     }
                 }
                 Text("各国从所选文化中取名、取宗教与政体。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                PaperSwitch(title: "宗教后处理（网页适配）", on: $options.religionPass)
+                Text("沿用网页生成管线的宗教铺设；关闭时仍按文化默认宗教。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             }
             Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle()).padding(.top, 6)
             if let draw {
@@ -1586,13 +1616,29 @@ struct MenuSheet: View {
             Group2 {
                 PaperSwitch(title: "国界", on: $controller.display.borders)
                 Divider2()
-                PaperSwitch(title: "行省边界", on: $controller.display.provinceLines)
+                PaperSwitch(title: "行省边界（默认关 · #B2B2B2）", on: $controller.display.provinceLines)
                 Divider2()
                 PaperSwitch(title: "城市名称", on: $controller.display.cityNames)
                 Divider2()
                 PaperSwitch(title: "城市图标", on: $controller.display.cityIcons)
                 Divider2()
                 PaperSwitch(title: "植被与地貌图标", on: $controller.display.vegetation)
+                Divider2()
+                PaperSwitch(title: "卷轴暗角（待核）", on: $controller.display.vignette)
+                Divider2()
+                PaperSwitch(title: "羊皮纸叠色（待核）", on: $controller.display.parchment)
+                Divider2()
+                PaperSwitch(title: "行军路线（待核）", on: $controller.display.routes)
+                Divider2()
+                PaperSwitch(title: "完整国名（待核）", on: $controller.display.fullCountryNames)
+                Divider2()
+                PaperSwitch(title: "开场进场动画（网页适配）", on: $controller.display.introAnimation)
+                Divider2()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("国名缩放（待核） \(String(format: "%.1f", controller.display.countryNameScale))×").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                    Slider(value: $controller.display.countryNameScale, in: 0.6...1.4, step: 0.1).tint(Theme.jade)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
                 Divider2()
                 VStack(alignment: .leading, spacing: 4) {
                     Text("国家颜色浓度 \(Int(controller.display.colorDensity * 100))%").font(Theme.kai(16)).foregroundStyle(Theme.ink)
@@ -1606,7 +1652,7 @@ struct MenuSheet: View {
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet(start: { options in creating = false; close(); Task { await model.generate(options) } }, draw: { options in creating = false; close(); model.openEditor(options) })
-                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }
+                .presentationDetents([.large]).presentationBackground { MemorialPaper() }
         }
         .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
@@ -1636,6 +1682,14 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.27.0", [
+            "国家面板默认只展开「基本信息」，其余分节点开；人物改为五段卷宗（君主／继承人／中央官员／总督／战时统帅），触控不少于 44pt。",
+            "城市标记区分国都（三环）、府城／省会（方标，网页适配）、普通城市（双环）。省界色 #B2B2B2，默认关闭。",
+            "海洋默认 ORIGINAL_PRESETS[0]：浅 #3C9CFF、深 #1487FF；羊皮纸海仍作烘焙底色，由着色器重映射。",
+            "显示设置新增：卷轴暗角／羊皮纸／行军路线／国名缩放／完整国名（待核）、开场进场动画（网页适配）。选中国家国界加粗 2×。",
+            "新世界：文化预设、省份预设、宗教后处理（网页适配）。战争卡注明占领50%·目标30%·战斗20% 计分。自定义数值编辑加滑条。",
+            "【iOS 独有特质效果】改革家（简化）：上台按行政能力 ±20 调整腐败度，腐败度影响月入。船舶大师（简化）：约每 3 月向现有舰队加 1 艘与 100 舰体（对应建造时间×0.5）。均挂在 enableAppRules，不改网页、不影响黄金测试。",
+        ]),
         ("0.26.1", ["国界补入海岸、湖岸和世界边缘，国家外轮廓闭合。领土、军队、舰队等检查页面统一暂停推演，关闭后仅恢复原本正在运行的世界。",
                     "原生接战改为实际位置相遇，计算跨步相遇防止高速穿越；移除远距离交战时把图标拉到中点的表现补丁。进攻走到省城坐标，抵达后才结算占领。此为原生修复，原作完整军事规则仍需继续核查。",
                     "失去全部实控领土的国家仍可选择被敌国占领的法理领土作为反攻目标。朝堂与百官增加直接修改在任人物属性入口。",

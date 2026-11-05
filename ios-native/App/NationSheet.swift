@@ -244,8 +244,8 @@ struct NationSheet: View {
                     }
                     .padding(.horizontal, 24)
                 }
-                // 国史: the chronicle entries naming this state, newest first.
-                FoldSection("国史", expanded: true) {
+                // 国史: default collapsed — only 「基本信息」 starts open.
+                FoldSection("国史", expanded: false) {
                     Group2 {
                         if history.isEmpty { Row(label: "国史", value: "尚无记载") }
                         ForEach(Array(history.prefix(20).enumerated()), id: \.offset) { i, e in
@@ -263,9 +263,9 @@ struct NationSheet: View {
     }
     @ViewBuilder private func courtTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-                if let court = info.court, info.alive { FoldSection("朝堂", expanded: true) { courtView(court, map) } }
+                if let court = info.court, info.alive { FoldSection("朝堂", expanded: false) { courtView(court, map) } }
                 if let parties = info.parties, !parties.isEmpty {
-                    FoldSection("议会（\(info.styleLabel ?? "")）", expanded: true) {
+                    FoldSection("议会（\(info.styleLabel ?? "")）", expanded: false) {
                         Group2 {
                             // Seats in one band, then each party.
                             GeometryReader { g in
@@ -322,15 +322,14 @@ struct NationSheet: View {
                         .padding(.horizontal, 16)
                     }
                 }
-                // The family/people panel opens fully expanded in the original; title 人物.
-                FoldSection("人物（\(info.people?.count ?? 0)）", expanded: false) { peopleList(info.people ?? []) }
+                FoldSection("人物（\(info.people?.count ?? 0)）", expanded: false) { peopleDossier(info.people ?? []) }
         }
     }
     @ViewBuilder private func militaryTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         VStack(alignment: .leading, spacing: 14) {
                 // 军事: the state's armies at a glance (tap one to open it), then its wars.
                 let mine = state.armies.indices.filter { state.armies[$0].nation == nation }
-                FoldSection("军队（\(mine.count) 支 · \(Names.wan(mine.reduce(0) { $0 + state.armies[$1].troops }))）", expanded: true) {
+                FoldSection("军队（\(mine.count) 支 · \(Names.wan(mine.reduce(0) { $0 + state.armies[$1].troops }))）", expanded: false) {
                     Group2 {
                         if mine.isEmpty { Row(label: "军队", value: "暂无军队") }
                         ForEach(Array(mine.sorted { state.armies[$0].troops > state.armies[$1].troops }.prefix(12).enumerated()), id: \.offset) { k, i in
@@ -351,7 +350,7 @@ struct NationSheet: View {
                     }
                     .padding(.horizontal, 16)
                 }
-                FoldSection(info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）", expanded: !info.wars.isEmpty) {
+                FoldSection(info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）", expanded: false) {
                     Group2 {
                         if info.wars.isEmpty { Row(label: "战争", value: "暂无战争") }
                         ForEach(info.wars) { war in
@@ -365,7 +364,7 @@ struct NationSheet: View {
     }
     @ViewBuilder private func diplomacyTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-                FoldSection("外交关系", expanded: true) {
+                FoldSection("外交关系", expanded: false) {
                     Group2 {
                         let rows = relationRows(info, map)
                         if rows.isEmpty { Row(label: "外交", value: "暂无外交关系") }
@@ -387,7 +386,7 @@ struct NationSheet: View {
                         .padding(.horizontal, 16)
                     }
                 }
-                if info.alive { FoldSection("国家行为", expanded: true) { actions(info, map) } }
+                if info.alive { FoldSection("国家行为", expanded: false) { actions(info, map) } }
         }
     }
     /// 国色 choices: the original's map palette.
@@ -564,17 +563,20 @@ struct NationSheet: View {
                 Text("\(i == 0 ? "进攻方" : "防守方")：\(names(side.nations, map))（阵亡 \(Int(side.losses).formatted())）").font(Theme.kai(14)).foregroundStyle(Theme.ink)
             }
             if let score = war.score {
-                // Attacker's view; shown from this nation's side.
+                // Attacker's view; shown from this nation's side. PeaceAI: occupation 50% / goal 30% / battle 20%.
                 let mine = war.side == 1 ? -score : score
-                HStack(spacing: 8) {
-                    Text("战争分数").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-                    GeometryReader { g in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Theme.ink.opacity(0.08))
-                            Capsule().fill(mine >= 0 ? Theme.jade : Theme.seal).frame(width: g.size.width * min(1, abs(mine) / 100))
-                        }
-                    }.frame(height: 6)
-                    Text("\(mine >= 0 ? "+" : "")\(Int(mine))").font(Theme.kai(14)).foregroundStyle(mine >= 0 ? Theme.jade : Theme.seal).monospacedDigit()
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text("战争分数").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                        GeometryReader { g in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Theme.ink.opacity(0.08))
+                                Capsule().fill(mine >= 0 ? Theme.jade : Theme.seal).frame(width: g.size.width * min(1, abs(mine) / 100))
+                            }
+                        }.frame(height: 6)
+                        Text("\(mine >= 0 ? "+" : "")\(Int(mine))").font(Theme.kai(14)).foregroundStyle(mine >= 0 ? Theme.jade : Theme.seal).monospacedDigit()
+                    }
+                    Text("计分：占领 50% · 目标 30% · 战斗 20%").font(Theme.kai(11)).foregroundStyle(Theme.ink2)
                 }
             }
             HStack {
@@ -589,34 +591,52 @@ struct NationSheet: View {
         }
         .padding(16)
     }
-    /// 人物: monarch, heir, office holders with age, traits and the four skills.
-    private func peopleList(_ list: [NationInfo.Person]) -> some View {
-        Group2 {
-            if list.isEmpty { Row(label: "人物", value: "暂无记录") }
-            ForEach(Array(list.enumerated()), id: \.offset) { i, p in
-                Button { if p.key >= 0 { editing = p } } label: {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(p.role).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
-                        Spacer()
-                        Text("\(p.name)（\(p.female ? "女" : "男")，\(Int(p.age)) 岁）").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                    }
-                    if p.skills.count == 4 {
-                        Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-                    }
-                    ForEach(p.traits, id: \.self) { t in
-                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.effect[t].map { "：" + $0 } ?? "").foregroundStyle(Theme.ink2)).font(Theme.kai(13))
-                    }
-                }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-                .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                if i < list.count - 1 { Divider2() }
-            }
-            if !list.isEmpty { Text("点人物可修改属性与天赋").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 6) }
+    /// 人物卷宗: five nested tap-to-reveal sections (君主 / 继承人 / 中央官员 / 总督 / 战时统帅).
+    private func peopleDossier(_ list: [NationInfo.Person]) -> some View {
+        let rulers = list.filter { $0.role == "君主" }
+        let heirs = list.filter { $0.role == "继承人" }
+        let central = list.filter { ["行政首脑", "财政主管", "常备军统帅"].contains($0.role) }
+        let governors = list.filter { $0.role.hasPrefix("总督") }
+        let commanders = list.filter { $0.role.hasPrefix("战时统帅") }
+        return VStack(alignment: .leading, spacing: 10) {
+            if list.isEmpty { Group2 { Row(label: "人物", value: "暂无记录") }.padding(.horizontal, 16) }
+            peopleFold("君主", rulers)
+            peopleFold("继承人", heirs)
+            peopleFold("中央官员", central)
+            peopleFold("总督", governors)
+            peopleFold("战时统帅", commanders)
+            if !list.isEmpty { Text("点人物可修改属性与天赋").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 4) }
         }
-        .padding(.horizontal, 16)
+    }
+    private func peopleFold(_ title: String, _ people: [NationInfo.Person]) -> some View {
+        FoldSection("\(title)（\(people.count)）", expanded: false) {
+            Group2 {
+                if people.isEmpty { Row(label: title, value: "暂无") }
+                ForEach(Array(people.enumerated()), id: \.offset) { i, p in
+                    Button { if p.key >= 0 { editing = p } } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(p.role).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                                Spacer()
+                                Text("\(p.name)（\(p.female ? "女" : "男")，\(Int(p.age)) 岁）").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                            }
+                            if p.skills.count == 4 {
+                                Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                            }
+                            ForEach(p.traits, id: \.self) { t in
+                                (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.effect[t].map { "：" + $0 } ?? "").foregroundStyle(Theme.ink2)).font(Theme.kai(13))
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if i < people.count - 1 { Divider2() }
+                }
+            }
+            .padding(.horizontal, 16)
+        }
     }
 
     /// 自定义: treasury, destiny, polity (revolution by decree) and raising a legion.
@@ -921,8 +941,8 @@ enum TraitText {
         "越战越勇": "面对多线作战时愈发勇猛，每个敌对国家增加5%战斗力（最多50%）",
         "厌战": "厌倦战争，每个敌对国家减少5%战斗力（最多-50%）",
         "海军精通": "精通海战指挥 使所属国家海军战斗力提升30%",
-        "船舶大师": "精通船舶建造 使军舰建造时间减少50%",
-        "改革家": "天生的改革家，上台时会触发改革判定，基于内政能力调整国家腐败度",
+        "船舶大师": "精通船舶建造，使军舰建造时间减少50%。（简化）现有舰队每约3月加1艘与100舰体",
+        "改革家": "天生的改革家，上台时触发改革判定。（简化）按行政能力±20调整腐败度，腐败度影响月入",
         "天生领袖": "天生的领导者，作为家族首领时增加50点家族影响力",
         "难以服众": "缺乏威望和号召力，作为家族首领时减少50点家族影响力"
     ]
@@ -1108,6 +1128,15 @@ struct NumberEditSheet: View {
     let title: String; let unit: String; let value: Double
     let save: (Double) -> Void
     @State private var text = ""
+    @State private var slider = 0.0
+    /// Percent / bounded values get a slider; gold and population keep free entry with a coarse slider assist.
+    private var sliderRange: ClosedRange<Double>? {
+        if unit == "%" { return -100...200 }
+        if title.contains("国运") || title.contains("施政") { return -1...100 }
+        if unit == "金" { return 0...max(50_000, value * 2) }
+        if unit == "人" { return 0...max(100_000, value * 2) }
+        return nil
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             SheetHeader(title: title, subtitle: "现为 \(Self.format(value))\(unit)", seal: "改")
@@ -1117,9 +1146,17 @@ struct NumberEditSheet: View {
                 if !unit.isEmpty { Text(unit).font(Theme.kai(17)).foregroundStyle(Theme.ink2) }
             }
             .padding(.horizontal, 22)
+            if let range = sliderRange {
+                PaperSlider(title: "滑条", value: $slider, range: range, step: unit == "%" || title.contains("国运") || title.contains("施政") ? 1 : max(1, (range.upperBound / 100).rounded())) {
+                    Self.format($0) + unit
+                }
+                .padding(.horizontal, 22)
+                .onChange(of: slider) { _, v in text = Self.format(v) }
+            }
             SealButton(title: "颁行", disabled: Double(text) == nil) { if let v = Double(text) { save(v) } }.padding(.horizontal, 22)
         }
         .padding(.bottom, 16)
+        .onAppear { slider = value; text = Self.format(value) }
     }
     static func format(_ v: Double) -> String { v.rounded() == v ? String(Int(v)) : String(format: "%.1f", v) }
 }

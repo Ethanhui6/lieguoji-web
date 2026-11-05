@@ -40,6 +40,10 @@ public struct ColoredMesh: Sendable {
             vertex(x, y, color, alpha); vertex(x + cos(a0) * radius, y + sin(a0) * radius, color, alpha); vertex(x + cos(a1) * radius, y + sin(a1) * radius, color, alpha)
         }
     }
+    /// Axis-aligned square mark (府城 / 省会), half-side = `half`.
+    public mutating func square(_ x: Float, _ y: Float, half: Float, _ color: RGB, alpha: Float = 1) {
+        fill([x - half, y - half, x + half, y - half, x + half, y + half, x - half, y + half], color, alpha: alpha)
+    }
 }
 
 public enum Triangulation {
@@ -259,7 +263,8 @@ public enum MapLayers {
 
     /// StateLineRenderer outlines on the shared cell edges: each state strokes its own outline in its
     /// adjusted colour (both sides of a border), then the smoothed coastline in grey.
-    public static func outlines(_ map: WorldMap) -> ColoredMesh {
+    /// `highlightNation`: selected / player state drawn at 2× width so it stands out.
+    public static func outlines(_ map: WorldMap, highlightNation: Int? = nil) -> ColoredMesh {
         let colors = map.meta.nations.map { RGB(css: $0.line) ?? RGB(0.2, 0.2, 0.2) }
         var m = ColoredMesh()
         // Each state's border edges, joined into lines and smoothed with the original's curve
@@ -270,7 +275,8 @@ public enum MapLayers {
         }
         let perNation = stateEdges(map)
         for n in perNation.keys.sorted() {
-            for line in BorderCurve.smooth(BorderCurve.chain(perNation[n]!)) { m.polyline(line, width: lineWidth, colors[n], alpha: 1) }
+            let w = (highlightNation == n) ? lineWidth * 2 : lineWidth
+            for line in BorderCurve.smooth(BorderCurve.chain(perNation[n]!)) { m.polyline(line, width: w, colors[n], alpha: 1) }
         }
         return m
     }
@@ -318,14 +324,24 @@ public enum MapLayers {
         return m
     }
 
-    /// Shapes CityMain (black disc, white centre 0.56) and CityCapitalFinal (1.3 / 0.885 / 0.43 rings).
+    /// 国都: CityCapitalFinal triple ring. 府城/省会: square mark（网页适配）. 普通城市: CityMain double ring.
     public static func cityIcons(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
         let capitals = Set(map.meta.nations.compactMap { $0.capital >= 0 ? $0.capital : nil })
+        // First city index of each province = 府城 when that city is not the national capital.
+        var seatByProvince = [Int: Int]()
+        for (i, city) in map.meta.cities.enumerated() {
+            if seatByProvince[city.province] == nil { seatByProvince[city.province] = i }
+        }
+        let seats = Set(seatByProvince.values.filter { !capitals.contains($0) })
         let black = RGB(0, 0, 0), white = RGB(1, 1, 1), u = cityUnit, c = cityUnit * 1.5
         for (i, city) in map.meta.cities.enumerated() {
             if capitals.contains(i) {
                 m.disc(city.x, city.y, radius: 1.3 * c, black); m.disc(city.x, city.y, radius: 0.885 * c, white); m.disc(city.x, city.y, radius: 0.43 * c, black)
+            } else if seats.contains(i) {
+                m.square(city.x, city.y, half: 1.15 * u, black)
+                m.square(city.x, city.y, half: 0.72 * u, white)
+                m.square(city.x, city.y, half: 0.32 * u, black)
             } else {
                 m.disc(city.x, city.y, radius: u, black, sides: 14); m.disc(city.x, city.y, radius: 0.56 * u, white, sides: 14)
             }

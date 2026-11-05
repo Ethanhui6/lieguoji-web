@@ -41,6 +41,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     var onDraw: ((CFTimeInterval) -> Void)?
     private(set) var mode: MapMode = .political
     private(set) var highlight: Int?
+    /// Selected / focused nation: borders drawn at 2× width.
+    private(set) var highlightNation: Int? {
+        didSet {
+            guard highlightNation != oldValue else { return }
+            outlines = buffer(MapLayers.outlines(map, highlightNation: highlightNation).vertices, stride: 6)
+        }
+    }
+    func setHighlightNation(_ n: Int?) { highlightNation = n }
 
     struct Uniforms { var viewport: SIMD2<Float>; var center: SIMD2<Float>; var scale: Float; var halfWidth: Float }
     struct QuadUniforms { var origin: SIMD2<Float>; var size: SIMD2<Float> }
@@ -113,7 +121,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if let data = lines.vertices[.province], !data.isEmpty { provinceLines = buffer(data, stride: 4) }
         if !map.rivers.isEmpty { rivers = buffer(map.rivers, stride: 2) }
         relief = buffer(MapLayers.relief(map).vertices, stride: 6)
-        outlines = buffer(MapLayers.outlines(map).vertices, stride: 6)
+        outlines = buffer(MapLayers.outlines(map, highlightNation: highlightNation).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(map).vertices, stride: 6)
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
@@ -143,7 +151,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         provinceLines = lines.vertices[.province].flatMap { $0.isEmpty ? nil : buffer($0, stride: 4) }
         rivers = next.rivers.isEmpty ? nil : buffer(next.rivers, stride: 2)
         relief = buffer(MapLayers.relief(next).vertices, stride: 6)
-        outlines = buffer(MapLayers.outlines(next).vertices, stride: 6)
+        outlines = buffer(MapLayers.outlines(next, highlightNation: highlightNation).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
         if refreshSea, let sea, next.seaRGBA.count == next.seaWidth * next.seaHeight * 4 {
             next.seaRGBA.withUnsafeBytes { bytes in
@@ -163,7 +171,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         outlineGeneration += 1
         let generation = outlineGeneration
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let vertices = MapLayers.outlines(next).vertices
+            let highlight = self?.highlightNation
+            let vertices = MapLayers.outlines(next, highlightNation: highlight).vertices
             DispatchQueue.main.async {
                 guard let self, generation == self.outlineGeneration else { return }
                 self.outlines = self.buffer(vertices, stride: 6)
@@ -217,7 +226,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             // Generation: the land rises from the coast to the peaks (0…0.45), forests and rivers follow,
             // the states' colours wash in (0.55…0.75); borders and cities come after (drawn by stage).
             let terrain = base.terrain
-            let sea = MapPalette.shallowSea, rise = min(1, reveal / 0.45), wash = min(1, max(0, (reveal - 0.55) / 0.2))
+            let sea = MapPalette.displayShallowSea, rise = min(1, reveal / 0.45), wash = min(1, max(0, (reveal - 0.55) / 0.2))
             let top = Float(max(21, map.elevation.max().map(Int.init) ?? 100))
             for cell in 0..<map.cellCount where map.isLand(cell) {
                 let h = (Float(map.elevation[cell]) - 20) / (top - 20)
@@ -424,10 +433,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
-        // Province lines: 0.55 screen px, #303e37 at 0.2, only once zoomed in (map.ts zoom > 0.6).
+        // Province lines: 0.55 screen px, #B2B2B2 (原作省界色), only once zoomed in.
         if let lines = provinceLines, display.provinceLines, camera.scale > 0.9 || reveal < 1, reveal >= 0.55 {
             u.halfWidth = 0.55 / 2
-            var color = SIMD4<Float>(0x30 / 255.0, 0x3E / 255.0, 0x37 / 255.0, 0.2)
+            var color = SIMD4<Float>(0xB2 / 255.0, 0xB2 / 255.0, 0xB2 / 255.0, 0.55)
             encoder.setRenderPipelineState(linePipeline)
             encoder.setVertexBuffer(lines.buffer, offset: 0, index: 0)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
@@ -457,9 +466,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
         }
         }
-        let r = map.meta.parchment
-        quad(parchment, multiplyPipeline, x: r.x, y: r.y, width: r.width, height: r.height)
-        if reveal >= 0.2 { colored(frame) }
+        if display.parchment {
+            let r = map.meta.parchment
+            quad(parchment, multiplyPipeline, x: r.x, y: r.y, width: r.width, height: r.height)
+        }
+        if display.vignette && reveal >= 0.2 { colored(frame) }
         encoder.endEncoding()
         buffer.present(drawable)
         buffer.commit()
@@ -523,8 +534,20 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float3 c = mix(float3(0.13, 0.1, 0.07), fill, smoothstep(0.35, 0.85, a));
         return float4(c, n * in.tint.a);
     }
+    // Remap baked paper-sea colours (#8EAFB1 / #527C86) to ORIGINAL_PRESETS[0]
+    // shallow #3C9CFF / deep #1487FF so fixtures keep paper bytes while the screen shows preset 0.
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
-        return float4(t.sample(s, in.uv).rgb, 1.0);
+        float3 c = t.sample(s, in.uv).rgb;
+        float3 paperDeep = float3(0x52, 0x7C, 0x86) / 255.0;
+        float3 paperShallow = float3(0x8E, 0xAF, 0xB1) / 255.0;
+        float3 presetDeep = float3(0x14, 0x87, 0xFF) / 255.0;
+        float3 presetShallow = float3(0x3C, 0x9C, 0xFF) / 255.0;
+        float3 d = paperShallow - paperDeep;
+        float denom = max(1e-5, dot(d, d));
+        float tSea = clamp(dot(c - paperDeep, d) / denom, 0.0, 1.0);
+        float near = step(distance(c, mix(paperDeep, paperShallow, tSea)), 0.08);
+        float3 remapped = mix(presetDeep, presetShallow, tSea);
+        return float4(mix(c, remapped, near), 1.0);
     }
     """
 }

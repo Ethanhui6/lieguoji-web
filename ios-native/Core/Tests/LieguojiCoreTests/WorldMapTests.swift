@@ -70,7 +70,8 @@ final class WorldMapTests: XCTestCase {
         let relief = MapLayers.relief(map), outlines = MapLayers.outlines(map), icons = MapLayers.cityIcons(map)
         XCTAssertGreaterThan(relief.vertexCount, 1000); XCTAssertEqual(relief.vertexCount % 3, 0)
         XCTAssertGreaterThan(outlines.vertexCount, 11108 * 6 - 1)
-        XCTAssertEqual(icons.vertexCount, (80 - 8) * 2 * 14 * 3 + 8 * 3 * 20 * 3)
+        // 8 国都 × 三环圆盘；其余 72 府城 × 三层方标（每层四边形 6 顶点）；本样本一省一城无普通城市。
+        XCTAssertEqual(icons.vertexCount, 8 * 3 * 20 * 3 + 72 * 3 * 6)
         // Ear clipping covers the polygon area exactly, in either winding.
         let square: [Float] = [0, 0, 2, 0, 2, 2, 0, 2], dent: [Float] = [0, 0, 4, 0, 4, 4, 2, 1, 0, 4]
         for poly in [square, Array(square.reversed()), dent] {

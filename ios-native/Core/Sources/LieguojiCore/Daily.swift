@@ -279,6 +279,7 @@ public enum Daily {
             l.day = r.world.day.clone(); l.openingGold = JS(openingGold); l.reorganizationCost = JS(0); l.distanceSuspended = JS(fees.suspended)
             n.ledger = l
         }
+        IosTraitRules.monthly(r)
     }
     static func destinyMonth(_ r: JS) {
         let day = r.world.day.asInt

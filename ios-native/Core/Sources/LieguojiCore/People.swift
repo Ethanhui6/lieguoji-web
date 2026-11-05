@@ -315,6 +315,7 @@ public enum People {
         else { text = "\(leaderName)继承\(stateName)的统治权，前任统治者\(oldName)去世" }
         let reason = cause == "abdication" ? "玩家安排已知家族成员传位，前任仍然在世。" : (polity == "Republic" || polity == "Federation" ? "按原作共和国／联邦紧急候选规则，从至少25岁的已知在世成员中补位；正常投票选举尚未接入。" : "按已恢复的本政体候选规则，从真实登记的在世人物中接任。")
         announce(r, kind: "accession", text: text, reason: reason + " 人物身份、生日、能力和亲属关系保留；家主独立继承。", nations: [nationId], province: nil, people: [reign])
+        IosTraitRules.onAccession(r, nationId: nationId, heir: heir, reign: reign)
         return reign
     }
 

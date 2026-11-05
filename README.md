@@ -15,6 +15,12 @@ npm run dev
 
 常用命令：`npm run lint`、`npm run typecheck`、`npm test`（全量单测，较慢）、`npm run build`、`npm run test:e2e`。
 
+## 原生 iOS（SwiftUI + Metal）
+
+目录 `ios-native/`：列国纪的原生客户端（不嵌网页游戏）。当前原生版 **0.27.0（build 74）**，说明见 `ios-native/docs/RELEASE-0.27.0.md`。推送对应分支后，在 Actions 手动跑 **iOS unsigned IPA** 打包。
+
+与网页版并存：网页仍由 Cloudflare Pages 部署；原生改动不修改 `src/` 游戏引擎。iOS 独有的简化特质效果（改革家、船舶大师等）只在原生 Swift 核心、且仅在应用启用规则后生效。
+
 ## iOS 自签安装
 
 没有 Mac 也可以装到自己的手机。Actions 里的 **iOS unsigned IPA** 只在你手动运行时，用 GitHub 的 macOS 机器打出一个未签名的 `.ipa`。你再用自己的自签工具重签、安装。不需要 Apple 开发者账号，也不会上传 App Store。网页正式站的 Cloudflare Pages 部署不变。

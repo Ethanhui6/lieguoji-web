@@ -20,10 +20,16 @@ public struct RGB: Equatable, Sendable {
 
 public enum MapPalette {
     public static let stateAlpha: Float = 0.78
+    /// Baked paper-sea colours (world.bin / preview bytes); keep for fixtures.
     public static let shallowSea = RGB(hex: 0x8EAFB1)
     public static let deepSea = RGB(hex: 0x527C86)
+    /// ORIGINAL_PRESETS[0] — default on-screen ocean (Metal remaps paper texture to these).
+    public static let displayShallowSea = RGB(hex: 0x3C9CFF)
+    public static let displayDeepSea = RGB(hex: 0x1487FF)
     public static let coastLine = RGB(hex: 0x5F5F5F)
     public static let stateLine = RGB(hex: 0x1487FF)
+    /// Province border stroke on screen (#B2B2B2).
+    public static let provinceLine = RGB(hex: 0xB2B2B2)
 
     public static func srgbToLinear(_ c: Float) -> Float { c <= 0.04045 ? c / 12.92 : powf((c + 0.055) / 1.055, 2.4) }
     public static func linearToSrgb(_ c: Float) -> Float { c <= 0.0031308 ? 12.92 * c : 1.055 * powf(c, 1 / 2.4) - 0.055 }

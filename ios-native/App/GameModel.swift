@@ -134,6 +134,7 @@ import LieguojiCore
         let o = editorOptions
         let json: [String: Any] = ["template": ed.template, "count": ed.nations, "cityCount": max(ed.nations, ed.provinces), "seed": ed.seed,
                                    "relations": o.relations, "naming": o.naming, "cultures": Names.cultureIds.filter { o.cultures.contains($0) },
+                                   "religionPass": o.religionPass,
                                    "heights": Data(ed.heights).base64EncodedString()]
         guard let text = String(data: (try? JSONSerialization.data(withJSONObject: json)) ?? Data(), encoding: .utf8) else { return }
         detachEditor()
@@ -186,6 +187,8 @@ import LieguojiCore
         /// 开局关系 (peace / war), the cultures that appear, and real or generated names.
         var relations = "peace"; var naming = "historical-names"
         var cultures: Set<String> = Set(Names.cultureIds)
+        /// 宗教后处理（网页适配）: keep the web generator's religion pass when true.
+        var religionPass = true
         /// One city per province; the web engine (native-bridge generate) clamps to nations…480.
         var provinceCount: Int { max(nations, min(480, Int(provinces) ?? nations * 10)) }
     }
@@ -199,11 +202,14 @@ import LieguojiCore
         generationNote = "正在生成地形"
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
-            let json: [String: Any] = ["template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed,
+            var json: [String: Any] = ["template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed,
                                        "relations": options.relations, "naming": options.naming, "cultures": Names.cultureIds.filter { options.cultures.contains($0) }]
+            // 网页适配: religion post-pass flag for the web generator when supported.
+            json["religionPass"] = options.religionPass
             let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
             let engine = self.engine
             let full = Task { try await engine.call("generate(options)", ["options": text]) }
+            let animate = controller.display.introAnimation
             if let inputs = previewInputs {
                 let nations = options.nations, provinceCount = options.provinceCount
                 let preview = await Task.detached(priority: .userInitiated) { PreviewWorld.build(inputs, seed: seed, template: options.template, nations: nations, cities: provinceCount) }.value
@@ -211,16 +217,18 @@ import LieguojiCore
                 map = preview; worldID = UUID()
                 generationNote = ""
                 phase = .founding
-                await rise()
+                if animate { await rise() } else { controller.reveal = 1 }
             }
             let settled = Date()
             let world = try await open(try await full.value)
             try await handOver()
             // The founding captions after the map (houses, armies, relations) each get their moment.
-            let wait = 2.6 - Date().timeIntervalSince(settled)
+            let wait = animate ? (2.6 - Date().timeIntervalSince(settled)) : 0
             if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
             generationNote = ""
-            if phase != .founding { await reveal(world) } else { phase = .playing; controller.interactive = true }
+            if phase != .founding {
+                if animate { await reveal(world) } else { controller.reveal = 1; phase = .playing; controller.interactive = true }
+            } else { phase = .playing; controller.interactive = true }
             save()
             autoConnect()
         } catch { failure = error.localizedDescription; phase = .title }
@@ -266,7 +274,8 @@ import LieguojiCore
                 try await handOver()
             }
             generationNote = ""
-            await reveal(world)
+            if controller.display.introAnimation { await reveal(world) }
+            else { controller.reveal = 1; phase = .playing; controller.interactive = true }
             autoConnect()
         } catch { failure = "存档无法读取：\(error.localizedDescription)"; phase = .title }
     }

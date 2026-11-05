@@ -87,18 +87,41 @@ import LieguojiCore
 /// relief ornaments, and how strongly state colours cover the land (1 = the original look).
 struct DisplaySettings: Codable, Equatable {
     var borders = true
-    var provinceLines = true
+    /// Default off (原作省界默认关闭); colour #B2B2B2 when drawn.
+    var provinceLines = false
     var cityNames = true
     var cityIcons = true
     var vegetation = true
+    /// 卷轴暗角 / 边缘（待核：原作 vignette 强度未完整核实）.
+    var vignette = true
+    /// 羊皮纸叠色（待核）.
+    var parchment = true
+    /// 行军路线（待核：仅影响选中军队路线是否绘制）.
+    var routes = true
+    /// 国名缩放（待核）0.6…1.4.
+    var countryNameScale: Double = 1
+    /// 完整国名（待核：关则截短显示）.
+    var fullCountryNames = true
+    /// 开场 / 生成进场动画（网页适配）.
+    var introAnimation = true
     /// State colours over the terrain: below full so mountains, forests and deserts show through.
     var colorDensity = 0.7
-    static let key = "displaySettings.v1"
+    static let key = "displaySettings.v2"
     static func load() -> DisplaySettings {
-        guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) else { return DisplaySettings() }
-        return v
+        if let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) { return v }
+        // Migrate v1: keep remembered toggles, apply new defaults for added fields.
+        if let data = UserDefaults.standard.data(forKey: "displaySettings.v1"), let old = try? JSONDecoder().decode(DisplaySettingsV1.self, from: data) {
+            var v = DisplaySettings()
+            v.borders = old.borders; v.provinceLines = false; v.cityNames = old.cityNames
+            v.cityIcons = old.cityIcons; v.vegetation = old.vegetation; v.colorDensity = old.colorDensity
+            v.save(); return v
+        }
+        return DisplaySettings()
     }
     func save() { if let data = try? JSONEncoder().encode(self) { UserDefaults.standard.set(data, forKey: Self.key) } }
+}
+private struct DisplaySettingsV1: Codable {
+    var borders = true, provinceLines = true, cityNames = true, cityIcons = true, vegetation = true, colorDensity = 0.7
 }
 
 struct MapView: UIViewRepresentable {
@@ -154,7 +177,8 @@ struct MapView: UIViewRepresentable {
         func build() -> MapContainerView {
             container = MapContainerView()
             mtk = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
-            mtk.clearColor = MTLClearColor(red: 0x52 / 255.0, green: 0x7C / 255.0, blue: 0x86 / 255.0, alpha: 1)
+            // ORIGINAL_PRESETS[0] deep sea #1487FF (shader remaps the baked paper sea to match).
+            mtk.clearColor = MTLClearColor(red: 0x14 / 255.0, green: 0x87 / 255.0, blue: 0xFF / 255.0, alpha: 1)
             mtk.isPaused = true
             mtk.enableSetNeedsDisplay = true
             mtk.preferredFramesPerSecond = 120
@@ -430,13 +454,14 @@ struct MapView: UIViewRepresentable {
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills)
+            renderer?.setHighlightNation(controller.relationsNation)
             if controller.worldRevision != shownRevision { shownRevision = controller.worldRevision }
             if controller.editorRevision != shownEditorRevision, let next = controller.editorMap {
                 shownEditorRevision = controller.editorRevision
                 map = next
                 renderer?.setTerrain(next, refreshSea: controller.editorSeaDirty)
                 controller.editorSeaDirty = false
-                labels.setNations(map: next, animated: false)
+                labels.setNations(map: next, animated: false, scale: controller.display.countryNameScale, fullNames: controller.display.fullCountryNames)
                 labels.setCities(map: next)
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
                 mtk.setNeedsDisplay()
@@ -445,19 +470,27 @@ struct MapView: UIViewRepresentable {
                 // Playing: glide linearly over one step so marching does not pulse; a single move eases.
                 renderer?.tweenDuration = controller.tween
                 renderer?.tweenEase = controller.tween <= 0.3
-                renderer?.setArmies(armies, route: controller.route)
+                renderer?.setArmies(armies, route: controller.display.routes ? controller.route : [])
                 updateTroops()
                 if renderer?.isAnimating == true { startLink() }
             }
             if controller.viewLabels != shownViewLabels {
                 let animated = controller.viewLabels?.map(\.name) != shownViewLabels?.map(\.name)
                 shownViewLabels = controller.viewLabels
-                if let groups = shownViewLabels { labels.setGroups(groups, animated: animated) } else { labels.setNations(map: map, animated: animated) }
+                if let groups = shownViewLabels { labels.setGroups(groups, animated: animated) }
+                else { labels.setNations(map: map, animated: animated, scale: controller.display.countryNameScale, fullNames: controller.display.fullCountryNames) }
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
             }
             if controller.effects != shownEffects { shownEffects = controller.effects; effects.set(shownEffects); effects.alpha = controller.reveal >= 1 ? 1 : 0 }
             labels?.setSelected(controller.selectedProvince)
-            if let renderer, renderer.display != controller.display { renderer.setDisplay(controller.display); mtk.setNeedsDisplay() }
+            if let renderer, renderer.display != controller.display {
+                renderer.setDisplay(controller.display)
+                if controller.viewLabels == nil {
+                    labels.setNations(map: map, animated: false, scale: controller.display.countryNameScale, fullNames: controller.display.fullCountryNames)
+                    if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                }
+                mtk.setNeedsDisplay()
+            }
             if let labels, labels.showCities != controller.display.cityNames {
                 labels.showCities = controller.display.cityNames
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
@@ -563,12 +596,21 @@ final class MapLabelsView: UIView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
-    private static func nationLabels(_ map: WorldMap, unit: Double) -> [Label] {
-        map.meta.labels.filter { $0.nation >= 0 }.map { box in
+    private static func shortName(_ name: String) -> String {
+        if name.count <= 2 { return name }
+        // CJK-heavy names: keep two characters; otherwise truncate Latin-like names.
+        let cjk = name.unicodeScalars.filter { (0x4E00...0x9FFF).contains($0.value) }.count
+        if cjk >= name.count / 2 { return String(name.prefix(2)) }
+        return String(name.prefix(6))
+    }
+    private static func nationLabels(_ map: WorldMap, unit: Double, scale: Double = 1, fullNames: Bool = true) -> [Label] {
+        let k = max(0.6, min(1.4, scale))
+        return map.meta.labels.filter { $0.nation >= 0 }.map { box in
             let n = map.meta.nations[box.nation]
-            let measured = (n.name as NSString).size(withAttributes: [.font: font(1)])
+            let text = fullNames ? n.name : shortName(n.name)
+            let measured = (text as NSString).size(withAttributes: [.font: font(1)])
             let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
-            return Label(text: n.name, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
+            return Label(text: text, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit * k, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
         }
     }
     /// Ownership changed: replace the state names, keep every city label and its rendered image.
@@ -583,9 +625,9 @@ final class MapLabelsView: UIView {
         }
         fadeIn(nations, animated)
     }
-    func setNations(map: WorldMap, animated: Bool = true) {
+    func setNations(map: WorldMap, animated: Bool = true, scale: Double = 1, fullNames: Bool = true) {
         fadeOut(nations, animated)
-        nations = Self.nationLabels(map, unit: Double(MapLayers.fontUnit))
+        nations = Self.nationLabels(map, unit: Double(MapLayers.fontUnit), scale: scale, fullNames: fullNames)
         fadeIn(nations, animated)
     }
     /// Name sets cross-fade when a view switches or borders change, instead of popping.

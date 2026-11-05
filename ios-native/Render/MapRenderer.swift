@@ -551,18 +551,23 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         return float4(c, n * in.tint.a);
     }
     // Remap baked paper-sea colours (#8EAFB1 / #527C86) to ORIGINAL_PRESETS[0]
-    // shallow #3C9CFF / deep #1487FF so fixtures keep paper bytes while the screen shows preset 0.
+    // shallow #3C9CFF / deep #1487FF. Soft coast band + light procedural ripple so the edge
+    // is not a flat deep-cyan slab (see ios-art/map-ocean-edge-ref.md).
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         float3 c = t.sample(s, in.uv).rgb;
         float3 paperDeep = float3(0x52, 0x7C, 0x86) / 255.0;
         float3 paperShallow = float3(0x8E, 0xAF, 0xB1) / 255.0;
         float3 presetDeep = float3(0x14, 0x87, 0xFF) / 255.0;
         float3 presetShallow = float3(0x3C, 0x9C, 0xFF) / 255.0;
+        float3 coastTint = float3(0x6B, 0xB8, 0xFF) / 255.0;
         float3 d = paperShallow - paperDeep;
         float denom = max(1e-5, dot(d, d));
         float tSea = clamp(dot(c - paperDeep, d) / denom, 0.0, 1.0);
-        float near = step(distance(c, mix(paperDeep, paperShallow, tSea)), 0.08);
-        float3 remapped = mix(presetDeep, presetShallow, tSea);
+        float near = 1.0 - smoothstep(0.06, 0.14, distance(c, mix(paperDeep, paperShallow, tSea)));
+        float3 remapped = mix(presetDeep, presetShallow, pow(tSea, 0.85));
+        remapped = mix(remapped, coastTint, smoothstep(0.55, 1.0, tSea) * 0.35);
+        float ripple = sin(in.uv.x * 140.0 + in.uv.y * 95.0) * 0.012 + sin(in.uv.x * 37.0 - in.uv.y * 61.0) * 0.008;
+        remapped = clamp(remapped + float3(ripple), 0.0, 1.0);
         return float4(mix(c, remapped, near), 1.0);
     }
     """

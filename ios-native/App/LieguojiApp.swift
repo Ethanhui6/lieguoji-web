@@ -27,7 +27,8 @@ enum Theme {
     static let wash = Color(red: 0.925, green: 0.894, blue: 0.835)
     static let seal = Color(red: 0.706, green: 0.255, blue: 0.18)
     static let jade = Color(red: 0.184, green: 0.365, blue: 0.314)
-    static let sea = Color(red: 0x14 / 255, green: 0x87 / 255, blue: 0xFF / 255)
+    /// Letterbox / root backdrop: shallow ocean (preset 0), not deep cyan.
+    static let sea = Color(red: 0x3C / 255, green: 0x9C / 255, blue: 0xFF / 255)
     static func kai(_ size: CGFloat) -> Font { .custom(fontName, size: size) }
 }
 
@@ -244,6 +245,7 @@ struct SealMark: View {
 
 struct TitleView: View {
     @ObservedObject var model: GameModel
+    @ObservedObject private var newWorldShot = NewWorldShotHost.shared
     @State private var importing = false
     @State private var creating = false
     @State private var shown = false
@@ -297,6 +299,10 @@ struct TitleView: View {
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet(start: { options in creating = false; Task { await model.generate(options) } }, draw: { options in creating = false; model.openEditor(options) })
+                .presentationDetents([.large]).presentationBackground { MemorialPaper() }
+        }
+        .sheet(isPresented: $newWorldShot.presented) {
+            NewWorldSheet(start: { _ in newWorldShot.dismiss() }, draw: nil)
                 .presentationDetents([.large]).presentationBackground { MemorialPaper() }
         }
         .sheet(isPresented: $settings) {
@@ -1681,7 +1687,7 @@ struct MenuSheet: View {
             Group2 {
                 PaperSwitch(title: "国界", on: $controller.display.borders)
                 Divider2()
-                PaperSwitch(title: "行省边界（默认关 · #B2B2B2）", on: $controller.display.provinceLines)
+                PaperSwitch(title: "行省边界（#B2B2B2）", on: $controller.display.provinceLines)
                 Divider2()
                 PaperSwitch(title: "城市名称", on: $controller.display.cityNames)
                 Divider2()
@@ -1751,12 +1757,13 @@ enum AppVersion {
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
         ("0.27.1", [
-            "开场闪屏重做：羊皮展开 → 墨色陆影 → 题名落印，约 2.5–3 秒，可轻触跳过；关闭「开场与生成动画」则直达标题且地图满显。",
-            "显示设置文案去掉「待核」：卷轴暗角、羊皮纸叠色、行军路线、完整国名、国名缩放；开场开关改名为「开场与生成动画」。",
-            "生成揭示时间线：陆影出水 → 勘定州郡 → 营建城邦 → 列国立名 → 镜头飞向本国（首国都城）；去掉「注水成海」。",
-            "新世界改为整页选项：陆比、列国疆域分布、山岳／江河／气候带、国家数、省份自由输入、文化数、宗教数与重铺、随机种子、起始年、开局海军；选项写入 UserDefaults。",
-            "高度图整形在生成前生效（陆比／山岳／江河／气候／疆域分布），并经 heights 交给网页引擎；起始年与关海军在接管世界后本机改写。",
-            "【已知问题】地图尺寸仅原作 20k 网格，无法调节；网页 generate 不识别 religionPass／startYear／navy，宗教重铺与起始年／关海军走本机后处理；列国疆域分布为陆块整形近似，非精确省份配额。",
+            "国家面板改为概览+下钻：顶屏关键数字，人物／省份／外交／军事／编年／自定义逐级进入；人物列表一行摘要，点入详情页再改属性。",
+            "国都（三环）／府城（方标）／普通城（双环）按屏幕最小尺寸重绘，选中省府城朱红高亮；省界默认可见；绘制疆域时本国国界加粗。",
+            "开场闪屏：羊皮展开 → 墨色陆影 → 题名落印，约 2.5–3 秒，可跳过可关。生成进场：陆影→州郡→城邦→国名→镜头飞向本国。",
+            "新世界整页选项（陆比、山岳／江河／气候、疆域分布、国家／省份、文化／宗教数、种子、起始年、海军等）真正影响生成并记住上次选择。",
+            "海洋对齐预设 0：浅海 letterbox、海岸浅水渐变与轻微波纹；去掉纯色深青边框。数值编辑为滑条＋加减＋输入。",
+            "截图 tour 增补：开场三帧、新世界选项、生成三帧、城市近景、国家面板、人物详情。",
+            "【已知问题】地图尺寸固定原作 20k 网格；起始年／关海军／宗教重铺走本机后处理（网页 generate 无对应键）；列国疆域分布为陆块整形近似。",
         ]),
         ("0.27.0", [
             "国家面板默认只展开「基本信息」，其余分节点开；人物改为五段卷宗（君主／继承人／中央官员／总督／战时统帅），触控不少于 44pt。",
@@ -1792,7 +1799,7 @@ struct ReleaseNotesSheet: View {
                     "回援优先：本国实控州郡已被敌军进入时，部队新选目标优先回援，不再因好战性格直接选择深入敌境。正在执行的行军暂不强制打断。",
                     "这是原生版战术适配，不增加小国隐藏倍率，不改变战斗伤害。完整协同、战力评估与开局自由省界编辑仍未完成。"]),
         ("0.24.5", ["国家页增加在地图上放置新军：点击州郡征募，禁止重复提交，拖动不连续刷兵。继续使用现有征募规则。",
-                    "新增世界外圈双线边框，与地图坐标一致。此为纸面风格适配，原作外框细节仍待核实。",
+                    "新增世界外圈双线边框，与地图坐标一致。此为纸面风格适配，原作外框细节仍可继续对照原作。",
                     "交战移除圆圈与双剑叠加，改为小幅朱红接触闪线，保留有限烟尘。新出现军队使用 0.4 秒显现。",
                     "尚未修复：重组军队真实位置跳变、战时协同留守、小国数值平衡、开局自由画省界与创建文化国家。"]),
         ("0.24.4", ["军队图标改为简洁的单一标记：每支军队一个粗线条兵种符号，国色填充、墨色描边——剑（步兵）、长枪、盾、弓、弩、马首（骑兵）、披甲马首（重骑）、马首加弓（骑射）、羽冠头盔（精锐）、象首（战象）、帆船、锚（港口）。至少 22 点大，远看也一目了然。",
@@ -1991,7 +1998,7 @@ struct ReleaseNotesSheet: View {
                    "【手机上能点到】新增「人物」分节（默认展开）：君主、统治家族继承人、在任官员（行政首脑、财政主管、常备军统帅、总督、战时统帅），显示姓名、性别、年龄、四项能力与特质。",
                    "【手机上能点到】菜单顶部显示版本与构建号；本页即「本版新增」。",
                    "【仍在核心代码】新世界创建的文化世界段（省份、人口粮食、君主、家族、贵族领地）已在本机算出并与网页逐位一致，但新世界仍由网页引擎创建，玩法无变化。",
-                   "【简化】原作国家面板共 10 节；领袖记录、国家特性、历史记录、资源四节原作运行时生成的内容待核，本版不显示，不补造。",
+                   "【简化】原作国家面板共 10 节；领袖记录、国家特性、历史记录、资源四节原作运行时生成的内容本版不显示，不补造。",
                    "【简化】家族人数年龄、女性继承 30% 等沿用网页版数值（见文档）。",
                    "【未在真机验证】本版只经 GitHub 编译与核心测试，未在真机上试过分节动画、人物分节与帧率。"]),
         ("0.9.6", ["新增国家详情（还原原作国家信息面板）：君主、政体、文化、宗教、国库与月入、国运、人口兵力；外交关系列出敌对国家、同盟、宗主国与附庸。",

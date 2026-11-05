@@ -74,6 +74,8 @@ struct NationSheet: View {
     var placeArmy: (Int) -> Void = { _ in }
     /// Opens an army's page (the military tab lists the state's armies).
     var openArmy: (Int) -> Void = { _ in }
+    @ObservedObject private var shot = NationShotHost.shared
+    @State private var path = NavigationPath()
     @State private var editing: NationInfo.Person?
     @State private var regime: (history: [String], trait: String) = ([], "")
     @State private var goldText = ""
@@ -129,7 +131,7 @@ struct NationSheet: View {
         if let map = model.map, let state = model.state, state.nations.indices.contains(nation) {
             let meta = nation < map.meta.nations.count ? map.meta.nations[nation] : nil
             let s = state.nations[nation]
-            NavigationStack {
+            NavigationStack(path: $path) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         SheetHeader(title: meta?.name ?? info?.name ?? "", subtitle: s.alive ? "\(s.provinces) 省 · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) })
@@ -179,6 +181,11 @@ struct NationSheet: View {
                         }
                     }
                 }
+            }
+            .onChange(of: shot.openPeople) { _, on in if on { path.append(Dest.people) } }
+            .onChange(of: shot.openPersonDetail) { _, on in
+                guard on, let p = info?.people?.first(where: { $0.key >= 0 }) ?? info?.people?.first else { return }
+                editing = p
             }
             .task(id: state.day / 10) { await reload() }
             .onAppear { model.controller.relationsNation = nation; model.controller.relations = relationColors(); if let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }

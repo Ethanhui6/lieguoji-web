@@ -275,7 +275,8 @@ public enum MapLayers {
         }
         let perNation = stateEdges(map)
         for n in perNation.keys.sorted() {
-            let w = (highlightNation == n) ? lineWidth * 2 : lineWidth
+            // Selected / paint-target nation: 2.5× border so reassignment borders read on a phone.
+            let w = (highlightNation == n) ? lineWidth * 2.5 : lineWidth
             for line in BorderCurve.smooth(BorderCurve.chain(perNation[n]!)) { m.polyline(line, width: w, colors[n], alpha: 1) }
         }
         return m

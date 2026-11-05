@@ -449,7 +449,8 @@ struct MapView: UIViewRepresentable {
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills)
-            renderer?.setHighlightNation(controller.relationsNation)
+            // Relations tint takes priority; while painting borders, thicken the paint target's outline.
+            renderer?.setHighlightNation(controller.relationsNation ?? controller.paintNation)
             renderer?.setHighlightProvince(controller.selectedProvince)
             if controller.worldRevision != shownRevision { shownRevision = controller.worldRevision }
             if controller.editorRevision != shownEditorRevision, let next = controller.editorMap {

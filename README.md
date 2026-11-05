@@ -17,24 +17,28 @@ npm run dev
 
 ## 原生 iOS（SwiftUI + Metal）
 
-目录 `ios-native/`：列国纪的原生客户端（不嵌网页游戏）。当前原生版 **0.27.0（build 74）**，说明见 `ios-native/docs/RELEASE-0.27.0.md`。推送对应分支后，在 Actions 手动跑 **iOS unsigned IPA** 打包。
+目录 `ios-native/`：列国纪的 **原生客户端**（SwiftUI + Metal 地图，不嵌 WKWebView 游戏）。当前原生版 **0.27.1（build 75）**，说明见 [`ios-native/docs/RELEASE-0.27.1.md`](ios-native/docs/RELEASE-0.27.1.md)。
 
-与网页版并存：网页仍由 Cloudflare Pages 部署；原生改动不修改 `src/` 游戏引擎。iOS 独有的简化特质效果（改革家、船舶大师等）只在原生 Swift 核心、且仅在应用启用规则后生效。
+### 构建与安装
 
-## iOS 自签安装
+1. 推送分支（或合并进 `main`）后，在 Actions 手动跑 **iOS unsigned IPA**（不会在 push 时自动跑）。
+2. 运行变绿后下载产物 `lieguoji-unsigned-ipa`，解压得到 `lieguoji-unsigned.ipa`。
+3. 用自签工具换成你的证书与描述文件后安装。桌面名「列国纪」；Bundle ID 默认 `com.lieguoji.native`（见 `ios-native/project.yml`）。
+4. 若系统提示不受信任：设置 → 通用 → VPN 与设备管理，信任证书后再打开。
 
-没有 Mac 也可以装到自己的手机。Actions 里的 **iOS unsigned IPA** 只在你手动运行时，用 GitHub 的 macOS 机器打出一个未签名的 `.ipa`。你再用自己的自签工具重签、安装。不需要 Apple 开发者账号，也不会上传 App Store。网页正式站的 Cloudflare Pages 部署不变。
+工程由 `ios-native/project.yml`（XcodeGen）生成。CI 还会跑截图 tour（`LGJ_SHOT=1`），产物 `lieguoji-screenshots`。
 
-1. 打开本仓库的 Actions，选 **iOS unsigned IPA**，点 **Run workflow**。选要打包的分支（合并进 `main` 之后一般选 `main`）。推送代码不会自动跑这一步。
-2. 运行变绿后，在该次运行页面底部下载产物 `lieguoji-unsigned-ipa`，解压得到 `lieguoji-unsigned.ipa`。
-3. 用你现有的自签工具打开这个 `.ipa`，换成你自己的证书和描述文件。桌面上的名字是「列国纪」。占位 Bundle ID 是 `app.lieguoji.game`；工具里可以改成你自己的标识，避免和手机上别的应用撞名。
-4. 装到手机后，若系统提示开发者不受信任：打开 **设置 → 通用 → VPN 与设备管理**（有的系统写「描述文件与设备管理」），信任你的证书，再打开应用。
+与网页版并存：Cloudflare Pages 仍部署网页；原生改动不修改 `src/` 游戏引擎。iOS 独有的简化特质（改革家、船舶大师等）只在原生 Swift 核心、且 `enableAppRules` 开启后生效。
 
-应用把当次网页构建打进安装包，打开地图不需要网络。存档在本机。云存档仍然要联网。
+### 本地（需 macOS）
 
-占位 Bundle ID 写在 `capacitor.config.json` 的 `appId`。改完后重新跑上面的工作流（工作流会执行 `npm run ios:sync`，把标识写进 Xcode 工程）。工作流拒绝带 Apple 证书的包。不要把证书、描述文件或私钥放进仓库。
+```bash
+cd ios-native
+xcodegen generate   # 或按仓库脚本
+open Lieguoji.xcodeproj
+```
 
-横屏和竖屏都可以。状态栏保留（深色内容），地图铺满屏幕，刘海和底部横条用安全区留白。壳会把真实 insets 写成 `--sat` 等变量，避免 `env(safe-area-inset-*)` 在 WebView 里变成 0 时控件钻进刘海。切到后台时，未保存的地图和进行中的世界会写入本机存档。
+横竖屏均可；地图 Metal 铺满，UI 走纸面／宣纸风格。存档在本机 Documents。
 
 ## 目录
 - `src/fms` 游戏：地图编辑与生成（FmsApp）、文化世界与推演（`play/`，culture47 引擎运行在 Web Worker）。

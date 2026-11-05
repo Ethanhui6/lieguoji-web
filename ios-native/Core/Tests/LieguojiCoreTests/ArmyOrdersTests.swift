@@ -86,7 +86,8 @@ extension ArmyOrdersTests {
         for i in provinces.indices { if let cell = graph.targetCell(province: i) { Armies.homeCells[provinces[i].id.asString] = Int(graph.ids[cell]) } }
         provinces[p].controller = JS(enemy); provinces[p].legalOwner = JS(nation)
         r.voyages.manualArmies = .array(); r.armyAutonomy.armies[id].nextTick = JS(0)
-        let travel = r.armyPositions.records[id]
+        let travel = r.armyPositions.records[id].clone()
+        r.armyPositions.records[id] = travel
         travel.origin = ForceBridge.json(.init(x: graph.targets[p].x + 0.5, y: graph.targets[p].y))
         r.tactics.forces[id].homeId = provinces[p].id.clone()
         ArmyOrders.selection(r, [id])

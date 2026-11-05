@@ -87,35 +87,28 @@ import LieguojiCore
 /// relief ornaments, and how strongly state colours cover the land (1 = the original look).
 struct DisplaySettings: Codable, Equatable {
     var borders = true
-    /// Default off (原作省界默认关闭); colour #B2B2B2 when drawn.
-    var provinceLines = false
+            /// Province borders (#B2B2B2); on so seats and land divisions read on a phone.
+    var provinceLines = true
     var cityNames = true
     var cityIcons = true
     var vegetation = true
-    /// 卷轴暗角 / 边缘（待核：原作 vignette 强度未完整核实）.
+    /// Scroll-edge vignette (ORIGINAL_PRESETS[0] darkBorder).
     var vignette = true
-    /// 羊皮纸叠色（待核）.
+    /// Parchment multiply overlay.
     var parchment = true
-    /// 行军路线（待核：仅影响选中军队路线是否绘制）.
+    /// Selected army march route.
     var routes = true
-    /// 国名缩放（待核）0.6…1.4.
+    /// Country name scale 0.6…1.4.
     var countryNameScale: Double = 1
-    /// 完整国名（待核：关则截短显示）.
+    /// Full country names (off: shortened).
     var fullCountryNames = true
-    /// 开场 / 生成进场动画（网页适配）.
+    /// Opening splash and world-gen reveal animation.
     var introAnimation = true
     /// State colours over the terrain: below full so mountains, forests and deserts show through.
     var colorDensity = 0.7
-    static let key = "displaySettings.v2"
+    static let key = "displaySettings.v3"
     static func load() -> DisplaySettings {
         if let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) { return v }
-        // Migrate v1: keep remembered toggles, apply new defaults for added fields.
-        if let data = UserDefaults.standard.data(forKey: "displaySettings.v1"), let old = try? JSONDecoder().decode(DisplaySettingsV1.self, from: data) {
-            var v = DisplaySettings()
-            v.borders = old.borders; v.provinceLines = false; v.cityNames = old.cityNames
-            v.cityIcons = old.cityIcons; v.vegetation = old.vegetation; v.colorDensity = old.colorDensity
-            v.save(); return v
-        }
         return DisplaySettings()
     }
     func save() { if let data = try? JSONEncoder().encode(self) { UserDefaults.standard.set(data, forKey: Self.key) } }
@@ -177,8 +170,8 @@ struct MapView: UIViewRepresentable {
         func build() -> MapContainerView {
             container = MapContainerView()
             mtk = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
-            // ORIGINAL_PRESETS[0] deep sea #1487FF (shader remaps the baked paper sea to match).
-            mtk.clearColor = MTLClearColor(red: 0x14 / 255.0, green: 0x87 / 255.0, blue: 0xFF / 255.0, alpha: 1)
+            // Match coastal shallow water so the letterbox beyond the map is not a flat deep slab.
+            mtk.clearColor = MTLClearColor(red: 0x3C / 255.0, green: 0x9C / 255.0, blue: 0xFF / 255.0, alpha: 1)
             mtk.isPaused = true
             mtk.enableSetNeedsDisplay = true
             mtk.preferredFramesPerSecond = 120
@@ -449,12 +442,15 @@ struct MapView: UIViewRepresentable {
                 mtk.setNeedsDisplay()
             }
             if let renderer, renderer.reveal != controller.reveal { renderer.setReveal(controller.reveal) }
-            // Names ink in last, with the cities.
-            labels?.alpha = CGFloat(max(0, min(1, (controller.reveal - 0.85) / 0.15)))
+            // Cities after province lines; nation names after cities (match MapRenderer thresholds).
+            let r = controller.reveal
+            labels?.setLayerReveal(cities: CGFloat(max(0, min(1, (r - 0.48) / 0.12))),
+                                   nations: CGFloat(max(0, min(1, (r - 0.62) / 0.15))))
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills)
             renderer?.setHighlightNation(controller.relationsNation)
+            renderer?.setHighlightProvince(controller.selectedProvince)
             if controller.worldRevision != shownRevision { shownRevision = controller.worldRevision }
             if controller.editorRevision != shownEditorRevision, let next = controller.editorMap {
                 shownEditorRevision = controller.editorRevision
@@ -653,6 +649,12 @@ final class MapLabelsView: UIView {
     var showCities = true
     private var selected: Int?
     func setSelected(_ province: Int?) { selected = province }
+    /// Generation reveal: city labels and nation labels fade in on separate timelines.
+    func setLayerReveal(cities: CGFloat, nations: CGFloat) {
+        alpha = 1
+        for l in self.cities { l.view.alpha = cities }
+        for l in self.nations { l.view.alpha = nations }
+    }
 
     /// The web's Pixi text: the outline (a round-joined stroke, its width a fraction of the em) is
     /// drawn first and the fill on top, with the browser's synthetic bold (a thin fill-coloured stroke).

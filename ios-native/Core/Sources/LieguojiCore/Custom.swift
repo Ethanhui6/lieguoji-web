@@ -766,4 +766,49 @@ extension NativeEngine {
         Daily.reconcileMilitaryClock(r)
         return (true, "\(p.name.asString)征募新军一支。")
     }
+
+    /// New-world start year: rewrite the calendar origin and current date (native post-handover).
+    public func setStartYear(_ year: Int) -> (ok: Bool, reason: String) {
+        let y = min(3000, max(-3000, year))
+        let r = run
+        guard !r.life.isNull else { return (false, "历法未就绪。") }
+        r.life.startDate.year = JS(y); r.life.startDate.month = JS(1); r.life.startDate.day = JS(1)
+        r.life.currentDate.year = JS(y); r.life.currentDate.month = JS(1); r.life.currentDate.day = JS(1)
+        r.life.originDay = JS(0); r.life.gameTime = JS(0); r.life.lastTick = JS(0); r.life.lastAgeMonth = JS(12)
+        r.life.revision = JS(r.life.revision.asInt + 1)
+        return (true, "起始年份 \(y)")
+    }
+
+    /// Navy off: sink every fleet so the opening has no ships (native post-handover).
+    public func clearNavy() -> (ok: Bool, reason: String) {
+        let r = run
+        guard !r.navy.isNull, !r.navy.fleets.isNull else { return (true, "无舰队") }
+        var n = 0
+        for f in r.navy.fleets.asArray where f.status.asString != "lost" {
+            f.status = JS("lost"); f.ships = JS(0); f.crew = JS(0); f.patrol = JS(false)
+            r.maritime.hulls[f.id.asString] = JS(0)
+            r.maritime.retreating.delete(f.id.asString)
+            n += 1
+        }
+        return (true, n == 0 ? "无舰队" : "已关闭海军（\(n)）")
+    }
+
+    /// Cap how many distinct religions appear after founding (reassigns nations round-robin).
+    public func limitReligions(_ count: Int, pool: [String]) -> (ok: Bool, reason: String) {
+        let r = run
+        let religions = pool.filter { !$0.isEmpty }
+        guard !religions.isEmpty else { return (false, "宗教列表为空。") }
+        let k = min(max(1, count), religions.count)
+        let chosen = Array(religions.prefix(k))
+        var i = 0
+        for n in r.world.nations.asArray {
+            let id = n.id.asString
+            let civ = r.civilization.nations[id]
+            if !civ.isNull {
+                civ.religionId = JS(chosen[i % chosen.count])
+                i += 1
+            }
+        }
+        return (true, "宗教种类 \(k)")
+    }
 }

@@ -75,7 +75,9 @@ struct RootView: View {
             case .playing: GameView(model: model).transition(.opacity)
             case .editing: if let ed = model.editor { EditorView(model: model, editor: ed).transition(.opacity) }
             }
-            if model.phase == .splash { SplashView { finishSplash() }.transition(.opacity).zIndex(10) }
+            if model.phase == .splash, model.controller.display.introAnimation {
+                SplashView { finishSplash() }.transition(.opacity).zIndex(10)
+            }
         }
         .animation(.easeInOut(duration: 0.45), value: model.phase)
         // Leaving the app saves (autosave runs only every 90 days).
@@ -85,29 +87,39 @@ struct RootView: View {
             if phase == .active, model.phase == .playing { Task { if await model.native.lost { model.remoteLost() } } }
         }
         .task { GameFeel.shared.start() }
-        .task { await model.loadBackdrop(); try? await model.engine.start() }
+        .task {
+            await model.loadBackdrop(); try? await model.engine.start()
+            // 开场与生成动画关闭：跳过闪屏，标题地图直接满显。
+            if model.phase == .splash, !model.controller.display.introAnimation {
+                while model.map == nil { try? await Task.sleep(nanoseconds: 50_000_000) }
+                finishSplash(animate: false)
+            }
+        }
         .alert("出了点问题", isPresented: Binding(get: { model.failure != nil }, set: { if !$0 { model.failure = nil } })) {
             Button("好") { model.failure = nil }
         } message: { Text(model.failure ?? "") }
         .tint(Theme.seal)
     }
 
-    private func finishSplash() {
+    private func finishSplash(animate: Bool? = nil) {
         guard model.map != nil else {
-            // The device-built backdrop is still being generated: wait for it.
-            Task { @MainActor in while model.map == nil { try? await Task.sleep(nanoseconds: 50_000_000) }; finishSplash() }
+            Task { @MainActor in while model.map == nil { try? await Task.sleep(nanoseconds: 50_000_000) }; finishSplash(animate: animate) }
             return
         }
+        let animateReveal = animate ?? model.controller.display.introAnimation
         model.controller.interactive = false
         model.controller.drifting = true
-        model.controller.reveal = 0
         model.phase = .title
         if ShotTour.on { Task { @MainActor in await ShotTour.start(model) } }
-        // The title backdrop generates itself: sea, then land from the coast up, then the states.
+        if !animateReveal {
+            model.controller.reveal = 1
+            return
+        }
+        model.controller.reveal = 0
         Task { @MainActor in
             let start = Date()
             while model.phase == .title {
-                let t = Float(Date().timeIntervalSince(start) / 3.2)
+                let t = Float(Date().timeIntervalSince(start) / 2.8)
                 model.controller.reveal = min(1, t)
                 if t >= 1 { break }
                 try? await Task.sleep(nanoseconds: 16_000_000)
@@ -119,58 +131,80 @@ struct RootView: View {
 
 // MARK: - launch
 
-/// The launch animation: a vermilion seal is stamped on the paper, the name appears beneath it.
+/// Opening splash (~2.5–3s): parchment unfolds → ink map washes in → title is stamped. Tap to skip.
 struct SplashView: View {
     let done: () -> Void
-    /// Ink: a brush circle (圆相) draws itself, mountains wash in, the title is written stroke by
-    /// stroke and the seal is pressed beside it.
+    @State private var unfold: CGFloat = 0.08
+    @State private var mapIn = false
     @State private var brush: CGFloat = 0
-    @State private var hills = false
     @State private var written = 0
     @State private var stamped = false
+    @State private var finished = false
     static let title = ["列", "國", "紀"]
     var body: some View {
         ZStack {
+            Theme.ink.opacity(0.55).ignoresSafeArea()
             MemorialPaper(rules: false)
-            // Distant ink-wash mountains.
+                .mask(
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .scaleEffect(x: unfold, y: max(0.35, unfold), anchor: .center)
+                )
+                .opacity(Double(min(1, unfold * 1.2)))
             VStack {
                 Spacer()
                 ZStack {
-                    InkHills(seed: 1).fill(Theme.ink.opacity(0.07)).frame(height: 190).offset(y: hills ? 0 : 40)
-                    InkHills(seed: 2).fill(Theme.ink.opacity(0.11)).frame(height: 140).offset(y: hills ? 10 : 60)
+                    InkHills(seed: 1).fill(Theme.ink.opacity(0.08)).frame(height: 200).offset(y: mapIn ? 0 : 36)
+                    InkHills(seed: 2).fill(Theme.ink.opacity(0.13)).frame(height: 150).offset(y: mapIn ? 12 : 58)
                 }
-                .opacity(hills ? 1 : 0)
+                .opacity(mapIn ? 1 : 0)
             }
             .ignoresSafeArea()
-            VStack(spacing: 22) {
+            VStack(spacing: 20) {
                 ZStack {
-                    Circle().trim(from: 0, to: brush).stroke(Theme.ink.opacity(0.75), style: StrokeStyle(lineWidth: 9, lineCap: .round))
-                        .rotationEffect(.degrees(-80)).frame(width: 170, height: 170).blur(radius: 0.6)
+                    Circle().trim(from: 0, to: brush).stroke(Theme.ink.opacity(0.78), style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                        .rotationEffect(.degrees(-80)).frame(width: 168, height: 168).blur(radius: 0.5)
                     HStack(spacing: 4) {
                         ForEach(0..<3, id: \.self) { i in
                             Text(Self.title[i]).font(Theme.kai(46)).foregroundStyle(Theme.ink)
-                                .opacity(written > i ? 1 : 0).blur(radius: written > i ? 0 : 8).scaleEffect(written > i ? 1 : 1.25)
+                                .opacity(written > i ? 1 : 0).blur(radius: written > i ? 0 : 8).scaleEffect(written > i ? 1 : 1.2)
                         }
                     }
                     SealMark(size: 40).rotationEffect(.degrees(-6)).offset(x: 78, y: 62)
-                        .scaleEffect(stamped ? 1 : 1.8).opacity(stamped ? 1 : 0)
+                        .scaleEffect(stamped ? 1 : 1.7).opacity(stamped ? 1 : 0)
                 }
                 Text("架空世界 · 列国兴衰").font(Theme.kai(15)).tracking(5).foregroundStyle(Theme.ink2).opacity(stamped ? 1 : 0)
+                Text("轻触跳过").font(Theme.kai(12)).foregroundStyle(Theme.ink2.opacity(0.55)).opacity(stamped ? 0 : 0.7).padding(.top, 8)
             }
         }
-        .task {
-            withAnimation(.easeInOut(duration: 0.9)) { brush = 0.93 }
-            withAnimation(.easeOut(duration: 1.4)) { hills = true }
-            try? await Task.sleep(nanoseconds: 450_000_000)
-            for i in 1...3 {
-                withAnimation(.easeOut(duration: 0.35)) { written = i }
-                try? await Task.sleep(nanoseconds: 220_000_000)
-            }
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.55)) { stamped = true }
-            GameFeel.shared.thud()
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            done()
+        .contentShape(Rectangle())
+        .onTapGesture { skip() }
+        .task { await play() }
+    }
+    private func skip() {
+        guard !finished else { return }
+        finished = true
+        done()
+    }
+    private func play() async {
+        // Parchment unfold (~0.55s) → map fade (~0.7s) → title stamp (~1.2s). Total ≈ 2.7s.
+        withAnimation(.easeOut(duration: 0.55)) { unfold = 1 }
+        try? await Task.sleep(nanoseconds: 380_000_000)
+        if finished { return }
+        withAnimation(.easeOut(duration: 0.7)) { mapIn = true }
+        try? await Task.sleep(nanoseconds: 420_000_000)
+        if finished { return }
+        withAnimation(.easeInOut(duration: 0.55)) { brush = 0.93 }
+        try? await Task.sleep(nanoseconds: 180_000_000)
+        for i in 1...3 {
+            if finished { return }
+            withAnimation(.easeOut(duration: 0.22)) { written = i }
+            try? await Task.sleep(nanoseconds: 160_000_000)
         }
+        if finished { return }
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.55)) { stamped = true }
+        GameFeel.shared.thud()
+        try? await Task.sleep(nanoseconds: 720_000_000)
+        if !finished { finished = true; done() }
     }
 }
 
@@ -263,7 +297,7 @@ struct TitleView: View {
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet(start: { options in creating = false; Task { await model.generate(options) } }, draw: { options in creating = false; model.openEditor(options) })
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }
+                .presentationDetents([.large]).presentationBackground { MemorialPaper() }
         }
         .sheet(isPresented: $settings) {
             ScrollView {
@@ -311,12 +345,12 @@ struct SecondaryLabel: View {
     }
 }
 
-/// 生成地图: the original's terrain templates and the number of states.
+/// Full New World options page (paper controls). Last choices persist in UserDefaults.
 struct NewWorldSheet: View {
     let start: (GameModel.NewWorld) -> Void
-    /// 自绘地图 with these options.
     var draw: ((GameModel.NewWorld) -> Void)? = nil
-    @State private var options = GameModel.NewWorld()
+    @State private var options = GameModel.NewWorld.load()
+    @State private var startYearText = ""
     private static let provincePresets = [("40", "稀疏"), ("80", "标准"), ("120", "稠密"), ("200", "极密")]
     private static let culturePresets: [(String, String, Set<String>)] = [
         ("east", "东亚", ["chinese", "japanese", "korean", "mongol", "tibetan"]),
@@ -326,99 +360,130 @@ struct NewWorldSheet: View {
     ]
     var body: some View {
         ScrollView {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("新世界").font(Theme.kai(28)).foregroundStyle(Theme.ink)
-            VStack(alignment: .leading, spacing: 10) {
-                Text("地形").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
-                ChipPicker(items: Names.templates.map { ($0.id, $0.name) }, selection: $options.template)
-            }
-            PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
-            VStack(alignment: .leading, spacing: 10) {
-                Text("省份预设").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
-                ChipPicker(items: Self.provincePresets.map { ($0.0, $0.1) }, selection: $options.provinces)
-            }
-            HStack {
-                Text("省份").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
-                Spacer()
-                TextField("", text: $options.provinces, prompt: Text("80").foregroundColor(Theme.ink2.opacity(0.6)))
-                    .font(Theme.kai(18)).foregroundStyle(Theme.ink).keyboardType(.numberPad).multilineTextAlignment(.trailing).tint(Theme.seal)
-                    .padding(.horizontal, 12).frame(width: 110, height: 38).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
-                Text("个").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
-            }
-            Text("可填 \(options.nations)–480，每省一城，按地形均分大小；实际生成 \(options.provinceCount) 省。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-            HStack {
-                Text("种子").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
-                Spacer()
-                TextField("", text: $options.seed, prompt: Text("随机").foregroundColor(Theme.ink2.opacity(0.6)))
-                    .font(Theme.kai(18)).foregroundStyle(Theme.ink).keyboardType(.numberPad).multilineTextAlignment(.trailing).tint(Theme.seal)
-                    .padding(.horizontal, 12).frame(width: 160, height: 38).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                Text("开局").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
-                ChipPicker(items: [("peace", "列国和平"), ("war", "群雄混战")], selection: $options.relations)
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                Text("命名").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
-                ChipPicker(items: [("historical-names", "历史真名"), ("culture-generated", "按文化生成")], selection: $options.naming)
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                Text("文化预设").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
-                HStack(spacing: 8) {
-                    ForEach(Self.culturePresets, id: \.0) { preset in
-                        Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { options.cultures = preset.2 }
-                        } label: {
-                            Text(preset.1).font(Theme.kai(14)).foregroundStyle(Theme.seal)
-                                .padding(.horizontal, 10).frame(height: 32)
-                                .background(Theme.seal.opacity(0.1), in: Capsule())
-                        }
-                        .buttonStyle(PressStyle())
-                    }
+            VStack(alignment: .leading, spacing: 22) {
+                SheetHeader(title: "新世界", subtitle: "生成选项会记住上次选择", seal: "世")
+
+                section("海陆形态") {
+                    Text("岛屿／大陆模板").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                    ChipPicker(items: Names.templates.map { ($0.id, $0.name) }, selection: $options.template)
+                    PaperSlider(title: "陆比", value: $options.landRatio, range: 0.15...0.65, step: 0.05) { String(format: "%.0f%%", $0 * 100) }
+                    Text("目标陆地占比；生成前对高度图整形。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                    Text("列国疆域").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                    ChipPicker(items: [("balanced", "均势"), ("hegemony", "一强众弱"), ("fragmented", "碎土林立")], selection: $options.nationSize)
+                    Text("通过陆块整形影响开局疆域大小分布。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                 }
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("文化").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
-                    Spacer()
-                    Button(options.cultures.count == Names.cultureIds.count ? "只留一种" : "全选") {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            options.cultures = options.cultures.count == Names.cultureIds.count ? ["chinese"] : Set(Names.cultureIds)
-                        }
-                    }
-                    .font(Theme.kai(14)).foregroundStyle(Theme.seal)
+
+                section("地貌") {
+                    PaperSlider(title: "山岳", value: $options.mountains, range: 0...1, step: 0.05) { String(format: "%.0f%%", $0 * 100) }
+                    PaperSlider(title: "江河", value: $options.rivers, range: 0...1, step: 0.05) { String(format: "%.0f%%", $0 * 100) }
+                    PaperSlider(title: "气候带", value: $options.climate, range: 0...1, step: 0.05) { String(format: "%.0f%%", $0 * 100) }
+                    Text("山岳抬升峰峦；江河开凿谷道；气候带加强纬度高差。均作用于高度图。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                 }
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
-                    ForEach(Names.cultureIds, id: \.self) { c in
-                        let on = options.cultures.contains(c)
-                        Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                // At least one culture stays chosen.
-                                if on { if options.cultures.count > 1 { options.cultures.remove(c) } } else { options.cultures.insert(c) }
+
+                section("州郡与列国") {
+                    PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
+                    Text("省份预设").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                    ChipPicker(items: Self.provincePresets.map { ($0.0, $0.1) }, selection: $options.provinces)
+                    HStack {
+                        Text("省份").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+                        Spacer()
+                        TextField("", text: $options.provinces, prompt: Text("80").foregroundColor(Theme.ink2.opacity(0.6)))
+                            .font(Theme.kai(18)).foregroundStyle(Theme.ink).keyboardType(.numberPad).multilineTextAlignment(.trailing).tint(Theme.seal)
+                            .padding(.horizontal, 12).frame(width: 110, height: 38).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                        Text("个").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+                    }
+                    Text("可填 \(options.nations)–480，每省一城；实际生成 \(options.provinceCount) 省。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                }
+
+                section("开局") {
+                    ChipPicker(items: [("peace", "列国和平"), ("war", "群雄混战")], selection: $options.relations)
+                    ChipPicker(items: [("historical-names", "历史真名"), ("culture-generated", "按文化生成")], selection: $options.naming)
+                    HStack {
+                        Text("种子").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+                        Spacer()
+                        TextField("", text: $options.seed, prompt: Text("随机").foregroundColor(Theme.ink2.opacity(0.6)))
+                            .font(Theme.kai(18)).foregroundStyle(Theme.ink).keyboardType(.numberPad).multilineTextAlignment(.trailing).tint(Theme.seal)
+                            .padding(.horizontal, 12).frame(width: 160, height: 38).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                    }
+                    HStack {
+                        Text("起始年").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+                        Spacer()
+                        TextField("", text: $startYearText, prompt: Text("1").foregroundColor(Theme.ink2.opacity(0.6)))
+                            .font(Theme.kai(18)).foregroundStyle(Theme.ink).keyboardType(.numbersAndPunctuation).multilineTextAlignment(.trailing).tint(Theme.seal)
+                            .padding(.horizontal, 12).frame(width: 110, height: 38).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                            .onChange(of: startYearText) { _, v in if let y = Int(v.trimmingCharacters(in: .whitespaces)) { options.startYear = y } }
+                        Text("年").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+                    }
+                    Text("生成后由本机改写历法起点（网页桥无此键）。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                    PaperSwitch(title: "开局海军", on: $options.navy)
+                    Text("关闭则在接管世界后沉没全部开局舰队。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                }
+
+                section("文化与宗教") {
+                    PaperStepper(title: "文化数", value: $options.cultureCount, range: 1...Names.cultureIds.count, unit: "种")
+                    Text("从下方勾选中按目录顺序取前若干种实际出现。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                    HStack(spacing: 8) {
+                        ForEach(Self.culturePresets, id: \.0) { preset in
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { options.cultures = preset.2 }
+                            } label: {
+                                Text(preset.1).font(Theme.kai(14)).foregroundStyle(Theme.seal)
+                                    .padding(.horizontal, 10).frame(height: 32)
+                                    .background(Theme.seal.opacity(0.1), in: Capsule())
                             }
-                        } label: {
-                            Text(Names.culture[c] ?? c).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                .frame(maxWidth: .infinity).frame(height: 36)
-                                .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.line))
+                            .buttonStyle(PressStyle())
                         }
-                        .buttonStyle(PressStyle())
                     }
+                    HStack {
+                        Text("文化").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                        Spacer()
+                        Button(options.cultures.count == Names.cultureIds.count ? "只留一种" : "全选") {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                options.cultures = options.cultures.count == Names.cultureIds.count ? ["chinese"] : Set(Names.cultureIds)
+                            }
+                        }
+                        .font(Theme.kai(14)).foregroundStyle(Theme.seal)
+                    }
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
+                        ForEach(Names.cultureIds, id: \.self) { c in
+                            let on = options.cultures.contains(c)
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    if on { if options.cultures.count > 1 { options.cultures.remove(c) } } else { options.cultures.insert(c) }
+                                }
+                            } label: {
+                                Text(Names.culture[c] ?? c).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                    .frame(maxWidth: .infinity).frame(height: 36)
+                                    .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.line))
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                    }
+                    PaperSwitch(title: "宗教重铺", on: $options.religionPass)
+                    PaperStepper(title: "宗教数", value: $options.religionCount, range: 1...18, unit: "种")
+                    Text("开启后在接管世界时把各国宗教收束到指定种数。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                 }
-                Text("各国从所选文化中取名、取宗教与政体。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+
+                Button { options.save(); start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }
+                    .buttonStyle(PressStyle()).padding(.top, 4)
+                if let draw {
+                    Button { options.save(); draw(options) } label: { SecondaryLabel(title: "自己绘制地图", symbol: "paintbrush.pointed") }
+                        .buttonStyle(PressStyle())
+                    Text("以所选地形为底图，亲手画山川、海陆，再划分州郡与列国。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                }
             }
-            VStack(alignment: .leading, spacing: 8) {
-                PaperSwitch(title: "宗教后处理（网页适配）", on: $options.religionPass)
-                Text("沿用网页生成管线的宗教铺设；关闭时仍按文化默认宗教。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-            }
-            Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle()).padding(.top, 6)
-            if let draw {
-                Button { draw(options) } label: { SecondaryLabel(title: "自己绘制地图", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle())
-                Text("以所选地形为底图，亲手画山川、海陆，再划分州郡与列国。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-            }
-        }
-        .padding(24)
+            .padding(24)
         }
         .scrollIndicators(.hidden)
+        .onAppear { startYearText = "\(options.startYear)" }
+    }
+
+    @ViewBuilder private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionLabel(title)
+            content()
+        }
     }
 }
 
@@ -1624,18 +1689,18 @@ struct MenuSheet: View {
                 Divider2()
                 PaperSwitch(title: "植被与地貌图标", on: $controller.display.vegetation)
                 Divider2()
-                PaperSwitch(title: "卷轴暗角（待核）", on: $controller.display.vignette)
+                PaperSwitch(title: "卷轴暗角", on: $controller.display.vignette)
                 Divider2()
-                PaperSwitch(title: "羊皮纸叠色（待核）", on: $controller.display.parchment)
+                PaperSwitch(title: "羊皮纸叠色", on: $controller.display.parchment)
                 Divider2()
-                PaperSwitch(title: "行军路线（待核）", on: $controller.display.routes)
+                PaperSwitch(title: "行军路线", on: $controller.display.routes)
                 Divider2()
-                PaperSwitch(title: "完整国名（待核）", on: $controller.display.fullCountryNames)
+                PaperSwitch(title: "完整国名", on: $controller.display.fullCountryNames)
                 Divider2()
-                PaperSwitch(title: "开场进场动画（网页适配）", on: $controller.display.introAnimation)
+                PaperSwitch(title: "开场与生成动画", on: $controller.display.introAnimation)
                 Divider2()
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("国名缩放（待核） \(String(format: "%.1f", controller.display.countryNameScale))×").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                    Text("国名缩放 \(String(format: "%.1f", controller.display.countryNameScale))×").font(Theme.kai(16)).foregroundStyle(Theme.ink)
                     Slider(value: $controller.display.countryNameScale, in: 0.6...1.4, step: 0.1).tint(Theme.jade)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
@@ -1673,20 +1738,31 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 /// Installed version and build (CFBundleShortVersionString / CFBundleVersion), so a sideloaded build can be identified.
 enum AppVersion {
+    /// Marketing version for this release notes cycle.
+    static let string = "0.27.1"
     static var text: String {
         let info = Bundle.main.infoDictionary
-        return "版本 \(info?["CFBundleShortVersionString"] as? String ?? "?")（构建 \(info?["CFBundleVersion"] as? String ?? "?")）"
+        let short = info?["CFBundleShortVersionString"] as? String ?? string
+        return "版本 \(short)（构建 \(info?["CFBundleVersion"] as? String ?? "?")）"
     }
 }
 
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.27.1", [
+            "开场闪屏重做：羊皮展开 → 墨色陆影 → 题名落印，约 2.5–3 秒，可轻触跳过；关闭「开场与生成动画」则直达标题且地图满显。",
+            "显示设置文案去掉「待核」：卷轴暗角、羊皮纸叠色、行军路线、完整国名、国名缩放；开场开关改名为「开场与生成动画」。",
+            "生成揭示时间线：陆影出水 → 勘定州郡 → 营建城邦 → 列国立名 → 镜头飞向本国（首国都城）；去掉「注水成海」。",
+            "新世界改为整页选项：陆比、列国疆域分布、山岳／江河／气候带、国家数、省份自由输入、文化数、宗教数与重铺、随机种子、起始年、开局海军；选项写入 UserDefaults。",
+            "高度图整形在生成前生效（陆比／山岳／江河／气候／疆域分布），并经 heights 交给网页引擎；起始年与关海军在接管世界后本机改写。",
+            "【已知问题】地图尺寸仅原作 20k 网格，无法调节；网页 generate 不识别 religionPass／startYear／navy，宗教重铺与起始年／关海军走本机后处理；列国疆域分布为陆块整形近似，非精确省份配额。",
+        ]),
         ("0.27.0", [
             "国家面板默认只展开「基本信息」，其余分节点开；人物改为五段卷宗（君主／继承人／中央官员／总督／战时统帅），触控不少于 44pt。",
             "城市标记区分国都（三环）、府城／省会（方标，网页适配）、普通城市（双环）。省界色 #B2B2B2，默认关闭。",
             "海洋默认 ORIGINAL_PRESETS[0]：浅 #3C9CFF、深 #1487FF；羊皮纸海仍作烘焙底色，由着色器重映射。",
-            "显示设置新增：卷轴暗角／羊皮纸／行军路线／国名缩放／完整国名（待核）、开场进场动画（网页适配）。选中国家国界加粗 2×。",
+            "显示设置新增：卷轴暗角／羊皮纸／行军路线／国名缩放／完整国名、开场与生成动画。选中国家国界加粗 2×。",
             "新世界：文化预设、省份预设、宗教后处理（网页适配）。战争卡注明占领50%·目标30%·战斗20% 计分。自定义数值编辑加滑条。",
             "【iOS 独有特质效果】改革家（简化）：上台按行政能力 ±20 调整腐败度，腐败度影响月入。船舶大师（简化）：约每 3 月向现有舰队加 1 艘与 100 舰体（对应建造时间×0.5）。均挂在 enableAppRules，不改网页、不影响黄金测试。",
         ]),
@@ -1966,13 +2042,13 @@ struct ReleaseNotesSheet: View {
 /// Over the rising device-built world while the engine founds its nations, people and armies.
 struct FoundingView: View {
     let reveal: Float
-    /// The world's generation as it happens (like a world being made in a sandbox game): each stage
-    /// names what the map is drawing at that moment — the sea, the land rising from the coast, the
-    /// mountains, the rivers, forests and plains, the provinces, the states' colours — and then the
-    /// engine's work: cities, houses and people, armies, relations. Finished stages stay listed.
+    /// Reveal timeline aligned with MapRenderer / labels: land → provinces → cities → names → camera.
     static let stages: [(until: Float, text: String)] = [
-        (0.06, "注水成海"), (0.24, "抬升大陆"), (0.38, "隆起山脉与高原"), (0.45, "冲刷江河"),
-        (0.55, "播撒森林、草原与荒漠"), (0.65, "划分州郡"), (0.75, "分封列国"), (0.85, "勘定国界"), (1.00, "营建城邦与港口"),
+        (0.32, "陆影出水"),
+        (0.48, "勘定州郡"),
+        (0.62, "营建城邦"),
+        (0.82, "列国立名"),
+        (1.00, "镜头飞向本国"),
     ]
     static let later = ["诞生世家与人物", "编练军队", "缔结邦交", "天下初定"]
     @State private var started = Date()

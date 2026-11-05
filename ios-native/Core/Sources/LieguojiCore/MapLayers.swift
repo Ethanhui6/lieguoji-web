@@ -324,26 +324,51 @@ public enum MapLayers {
         return m
     }
 
-    /// 国都: CityCapitalFinal triple ring. 府城/省会: square mark（网页适配）. 普通城市: CityMain double ring.
-    public static func cityIcons(_ map: WorldMap) -> ColoredMesh {
+    /// Kind of city mark on the map.
+    public enum CityMark: Sendable { case capital, seat, town }
+    /// Capitals / 府城 / ordinary cities with screen-aware size.
+    /// `scale` is the current map camera scale (screen px per map unit). Marks never shrink below
+    /// ~11 / 9 / 7 screen points so they stay visible on a phone at fit-zoom.
+    /// `highlightProvince`: that province's 府城 gets a vermilion outer ring.
+    public static func cityIcons(_ map: WorldMap, scale: Float = 1, highlightProvince: Int? = nil) -> ColoredMesh {
         var m = ColoredMesh()
         let capitals = Set(map.meta.nations.compactMap { $0.capital >= 0 ? $0.capital : nil })
-        // First city index of each province = 府城 when that city is not the national capital.
         var seatByProvince = [Int: Int]()
         for (i, city) in map.meta.cities.enumerated() {
             if seatByProvince[city.province] == nil { seatByProvince[city.province] = i }
         }
         let seats = Set(seatByProvince.values.filter { !capitals.contains($0) })
-        let black = RGB(0, 0, 0), white = RGB(1, 1, 1), u = cityUnit, c = cityUnit * 1.5
+        let black = RGB(0, 0, 0), white = RGB(1, 1, 1), seal = RGB(hex: 0xB4412E)
+        let s = max(0.05, scale)
+        // Base world radii (original prefab), then enforce a minimum on screen.
+        func radius(_ kind: CityMark) -> Float {
+            let base: Float
+            switch kind {
+            case .capital: base = cityUnit * 1.5 * 1.3
+            case .seat: base = cityUnit * 1.25
+            case .town: base = cityUnit
+            }
+            let minPx: Float = kind == .capital ? 12 : kind == .seat ? 10 : 8
+            return max(base, minPx / s)
+        }
         for (i, city) in map.meta.cities.enumerated() {
-            if capitals.contains(i) {
-                m.disc(city.x, city.y, radius: 1.3 * c, black); m.disc(city.x, city.y, radius: 0.885 * c, white); m.disc(city.x, city.y, radius: 0.43 * c, black)
-            } else if seats.contains(i) {
-                m.square(city.x, city.y, half: 1.15 * u, black)
-                m.square(city.x, city.y, half: 0.72 * u, white)
-                m.square(city.x, city.y, half: 0.32 * u, black)
+            let kind: CityMark = capitals.contains(i) ? .capital : seats.contains(i) ? .seat : .town
+            let r = radius(kind)
+            let lit = highlightProvince == city.province
+            if kind == .capital {
+                if lit { m.disc(city.x, city.y, radius: r * 1.35, seal, alpha: 0.85) }
+                m.disc(city.x, city.y, radius: r, black)
+                m.disc(city.x, city.y, radius: r * 0.68, white)
+                m.disc(city.x, city.y, radius: r * 0.33, black)
+            } else if kind == .seat {
+                if lit { m.square(city.x, city.y, half: r * 1.35, seal, alpha: 0.9) }
+                m.square(city.x, city.y, half: r, black)
+                m.square(city.x, city.y, half: r * 0.62, white)
+                m.square(city.x, city.y, half: r * 0.28, black)
             } else {
-                m.disc(city.x, city.y, radius: u, black, sides: 14); m.disc(city.x, city.y, radius: 0.56 * u, white, sides: 14)
+                if lit { m.disc(city.x, city.y, radius: r * 1.3, seal, alpha: 0.8, sides: 14) }
+                m.disc(city.x, city.y, radius: r, black, sides: 14)
+                m.disc(city.x, city.y, radius: r * 0.56, white, sides: 14)
             }
         }
         return m

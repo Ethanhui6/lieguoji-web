@@ -134,6 +134,9 @@ public final class EngineService {
         case "setCourtManual": return command(engine?.setCourtManual(int("n"), manual: bool("manual")))
         case "addArmy": return command(engine?.addArmy(int("n"), province: int("province")))
         case "editArmy": return command(engine?.editArmy(str("armyId"), troops: optInt("troops"), unit: optStr("unit"), morale: dbl("morale")))
+        case "setStartYear": return command(engine?.setStartYear(int("year")))
+        case "clearNavy": return command(engine?.clearNavy())
+        case "limitReligions": return command(engine?.limitReligions(int("count"), pool: strs("pool")))
         default: return Reply(ok: false, reason: "未知请求 \(call)。")
         }
     }

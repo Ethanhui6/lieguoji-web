@@ -109,11 +109,11 @@ import LieguojiCore
         guard let inputs = previewInputs else { failure = "缺少原作地图网格，无法绘制"; return }
         pause()
         state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.viewFills = nil; controller.viewLabels = nil
-        editorOptions = options
-        let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
-        let heights = TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: options.template)
-        let ed = MapEditor(inputs: inputs, heights: heights, seed: seed, template: options.template, controller: controller)
-        ed.nations = options.nations; ed.provinces = options.provinceCount
+        var o = options; o.save(); editorOptions = o
+        let seed = o.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : o.seed
+        let heights = shapedHeights(inputs: inputs, seed: seed, options: o)
+        let ed = MapEditor(inputs: inputs, heights: heights, seed: seed, template: o.template, controller: controller)
+        ed.nations = o.nations; ed.provinces = o.provinceCount
         editor = ed; map = ed.map; worldID = UUID()
         controller.drifting = false; controller.mode = .terrain; controller.reveal = 1; controller.interactive = true
         controller.terrainBrush = true
@@ -133,7 +133,7 @@ import LieguojiCore
         failure = nil
         let o = editorOptions
         let json: [String: Any] = ["template": ed.template, "count": ed.nations, "cityCount": max(ed.nations, ed.provinces), "seed": ed.seed,
-                                   "relations": o.relations, "naming": o.naming, "cultures": Names.cultureIds.filter { o.cultures.contains($0) },
+                                   "relations": o.relations, "naming": o.naming, "cultures": o.activeCultures(),
                                    "religionPass": o.religionPass,
                                    "heights": Data(ed.heights).base64EncodedString()]
         guard let text = String(data: (try? JSONSerialization.data(withJSONObject: json)) ?? Data(), encoding: .utf8) else { return }
@@ -147,9 +147,11 @@ import LieguojiCore
             // The engine's world (rivers, cities, names) replaces the drawn preview in place.
             controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
             try await handOver()
+            await applyOpeningOptions(o)
             let wait = 2.6 - Date().timeIntervalSince(settled)
             if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
             controller.editorMap = nil
+            flyToHomeland()
             phase = .playing; controller.interactive = true
             save()
             autoConnect()
@@ -182,15 +184,66 @@ import LieguojiCore
 
     // MARK: worlds
 
-    struct NewWorld {
+    struct NewWorld: Codable, Equatable {
         var template = "continents"; var nations = 8; var seed = ""; var provinces = "80"
         /// 开局关系 (peace / war), the cultures that appear, and real or generated names.
         var relations = "peace"; var naming = "historical-names"
         var cultures: Set<String> = Set(Names.cultureIds)
-        /// 宗教后处理（网页适配）: keep the web generator's religion pass when true.
+        /// When true, redistribute religions to `religionCount` after handover.
         var religionPass = true
+        /// Target land fraction (heights post-process before generate).
+        var landRatio: Double = 0.35
+        /// balanced | hegemony | fragmented — landmass bias for settlement size.
+        var nationSize = "balanced"
+        /// 0…1 mountain exaggeration / river corridor carve / climate-band strength.
+        var mountains: Double = 0.5
+        var rivers: Double = 0.5
+        var climate: Double = 0.5
+        /// How many cultures from the selection actually appear.
+        var cultureCount = 12
+        /// Distinct religions after founding (native post-handover when religionPass).
+        var religionCount = 8
+        /// Calendar year at founding (native post-handover; web bridge has no startYear).
+        var startYear = 1
+        /// When false, clear opening fleets after handover.
+        var navy = true
         /// One city per province; the web engine (native-bridge generate) clamps to nations…480.
         var provinceCount: Int { max(nations, min(480, Int(provinces) ?? nations * 10)) }
+        static let storageKey = "newWorld.options.v1"
+        static func load() -> NewWorld {
+            if let data = UserDefaults.standard.data(forKey: storageKey), let v = try? JSONDecoder().decode(NewWorld.self, from: data) { return v }
+            return NewWorld()
+        }
+        func save() { if let data = try? JSONEncoder().encode(self) { UserDefaults.standard.set(data, forKey: Self.storageKey) } }
+        /// Cultures sent to generate: first `cultureCount` of the checked set, catalog order.
+        func activeCultures() -> [String] {
+            let all = Names.cultureIds.filter { cultures.contains($0) }
+            let n = max(1, min(cultureCount, max(1, all.count)))
+            return Array(all.prefix(n))
+        }
+        func shaping() -> TerrainShaping.Options {
+            .init(landRatio: landRatio, mountains: mountains, rivers: rivers, climate: climate, nationSize: nationSize)
+        }
+    }
+
+    private func shapedHeights(inputs: PreviewWorld.Inputs, seed: String, options: NewWorld) -> [UInt8] {
+        let raw = TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: options.template)
+        return TerrainShaping.apply(raw, graph: inputs.grid, seed: seed, options: options.shaping())
+    }
+
+    /// Native post-handover knobs the web generate JSON cannot carry.
+    private func applyOpeningOptions(_ options: NewWorld) async {
+        _ = await native.setStartYear(options.startYear)
+        if !options.navy { _ = await native.clearNavy() }
+        if options.religionPass {
+            var seen = Set<String>(), pool = [String]()
+            for id in options.activeCultures() {
+                if let r = Founding.cultures.first(where: { $0.id == id })?.suggestedReligion, seen.insert(r).inserted { pool.append(r) }
+            }
+            if pool.isEmpty { pool = Array(Names.religion.keys.filter { $0 != "none" }) }
+            _ = await native.limitReligions(options.religionCount, pool: pool)
+        }
+        if let data = await native.state(), let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
     }
 
     /// The terrain, rivers, provinces and capitals are generated on the device at once (the Swift
@@ -198,23 +251,36 @@ import LieguojiCore
     /// engine builds the same world with its people and armies; that world then takes over.
     func generate(_ options: NewWorld) async {
         pause()
+        var options = options; options.save()
         phase = .generating; failure = nil
         generationNote = "正在生成地形"
+        controller.drifting = false
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
+            var heightsB64: String?
+            if let inputs = previewInputs {
+                let template = options.template, shaping = options.shaping()
+                let nations = options.nations, provinceCount = options.provinceCount
+                let shaped = await Task.detached(priority: .userInitiated) {
+                    let raw = TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: template)
+                    return TerrainShaping.apply(raw, graph: inputs.grid, seed: seed, options: shaping)
+                }.value
+                heightsB64 = Data(shaped).base64EncodedString()
+                let preview = await Task.detached(priority: .userInitiated) {
+                    PreviewWorld.build(inputs, heights: shaped, nations: nations, cities: provinceCount)
+                }.value
+                state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects()
+                map = preview; worldID = UUID()
+            }
             var json: [String: Any] = ["template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed,
-                                       "relations": options.relations, "naming": options.naming, "cultures": Names.cultureIds.filter { options.cultures.contains($0) }]
-            // 网页适配: religion post-pass flag for the web generator when supported.
+                                       "relations": options.relations, "naming": options.naming, "cultures": options.activeCultures()]
             json["religionPass"] = options.religionPass
+            if let heightsB64 { json["heights"] = heightsB64 }
             let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
             let engine = self.engine
             let full = Task { try await engine.call("generate(options)", ["options": text]) }
             let animate = controller.display.introAnimation
-            if let inputs = previewInputs {
-                let nations = options.nations, provinceCount = options.provinceCount
-                let preview = await Task.detached(priority: .userInitiated) { PreviewWorld.build(inputs, seed: seed, template: options.template, nations: nations, cities: provinceCount) }.value
-                state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects()
-                map = preview; worldID = UUID()
+            if map != nil {
                 generationNote = ""
                 phase = .founding
                 if animate { await rise() } else { controller.reveal = 1 }
@@ -222,29 +288,48 @@ import LieguojiCore
             let settled = Date()
             let world = try await open(try await full.value)
             try await handOver()
+            await applyOpeningOptions(options)
             // The founding captions after the map (houses, armies, relations) each get their moment.
             let wait = animate ? (2.6 - Date().timeIntervalSince(settled)) : 0
             if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
             generationNote = ""
             if phase != .founding {
                 if animate { await reveal(world) } else { controller.reveal = 1; phase = .playing; controller.interactive = true }
-            } else { phase = .playing; controller.interactive = true }
+            } else {
+                if animate { flyToHomeland() }
+                phase = .playing; controller.interactive = true
+            }
             save()
             autoConnect()
         } catch { failure = error.localizedDescription; phase = .title }
     }
 
-    /// The generation animation on the device-built world.
+    /// Land → provinces → cities → names → camera, ~7.5s on the device-built world.
     private func rise() async {
         controller.interactive = false
+        controller.drifting = false
         controller.reveal = 0
+        var flew = false
         let start = Date()
         while true {
-            let t = Float(Date().timeIntervalSince(start) / 9)
+            let t = Float(Date().timeIntervalSince(start) / 7.5)
             controller.reveal = min(1, t)
+            if !flew, t >= 0.82 { flew = true; flyToHomeland() }
             if t >= 1 { break }
             try? await Task.sleep(nanoseconds: 16_000_000)
         }
+        if !flew { flyToHomeland() }
+    }
+
+    /// Fly the camera to nation 0's capital (or first city), after names have inked in.
+    private func flyToHomeland() {
+        guard let map else { return }
+        if let n = map.meta.nations.first, n.capital >= 0, n.capital < map.meta.cities.count {
+            controller.fly(to: map.meta.cities[n.capital].province)
+            return
+        }
+        if let city = map.meta.cities.first { controller.fly(to: city.province); return }
+        if !map.meta.provinces.isEmpty { controller.fly(to: 0) }
     }
 
     func continueGame() async {
@@ -298,18 +383,22 @@ import LieguojiCore
         return loaded.0
     }
 
-    /// Land rises from the sea, then the states' colours wash over it (about two seconds).
+    /// Land → provinces → cities → names → camera (~3.2s when loading a save).
     private func reveal(_ world: WorldMap) async {
         controller.interactive = false
+        controller.drifting = false
         controller.reveal = 0
         phase = .playing
+        var flew = false
         let start = Date()
         while true {
-            let t = Float(Date().timeIntervalSince(start) / 2.2)
+            let t = Float(Date().timeIntervalSince(start) / 3.2)
             controller.reveal = min(1, t)
+            if !flew, t >= 0.82 { flew = true; flyToHomeland() }
             if t >= 1 { break }
             try? await Task.sleep(nanoseconds: 16_000_000)
         }
+        if !flew { flyToHomeland() }
         controller.interactive = true
     }
 

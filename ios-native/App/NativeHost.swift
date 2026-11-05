@@ -198,6 +198,11 @@ actor NativeHost {
     func editArmy(_ armyId: String, troops: Int?, unit: String?, morale: Double?) async -> (ok: Bool, reason: String, state: Data?) {
         await command("editArmy", ["armyId": armyId, "troops": Self.opt(troops), "unit": Self.opt(unit), "morale": Self.opt(morale)])
     }
+    func setStartYear(_ year: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("setStartYear", ["year": year]) }
+    func clearNavy() async -> (ok: Bool, reason: String, state: Data?) { await command("clearNavy", [:]) }
+    func limitReligions(_ count: Int, pool: [String]) async -> (ok: Bool, reason: String, state: Data?) {
+        await command("limitReligions", ["count": count, "pool": pool])
+    }
 }
 
 /// A channel to LieguojiServer: direct on the local network, or through the relay.

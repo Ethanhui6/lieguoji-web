@@ -49,6 +49,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
     }
     func setHighlightNation(_ n: Int?) { highlightNation = n }
+    /// Selected province: its 府城 (or city) gets a vermilion halo.
+    private var highlightCityProvince: Int? {
+        didSet { if highlightCityProvince != oldValue { rebuildCityIcons(force: true) } }
+    }
+    func setHighlightProvince(_ p: Int?) { highlightCityProvince = p }
+    private var iconsScale: Float = -1
+    private func rebuildCityIcons(force: Bool = false) {
+        let s = Float(camera.scale)
+        if !force, iconsScale > 0, abs(log(s / iconsScale)) < 0.18 { return }
+        iconsScale = s
+        icons = buffer(MapLayers.cityIcons(map, scale: s, highlightProvince: highlightCityProvince).vertices, stride: 6)
+    }
 
     struct Uniforms { var viewport: SIMD2<Float>; var center: SIMD2<Float>; var scale: Float; var halfWidth: Float }
     struct QuadUniforms { var origin: SIMD2<Float>; var size: SIMD2<Float> }
@@ -122,7 +134,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if !map.rivers.isEmpty { rivers = buffer(map.rivers, stride: 2) }
         relief = buffer(MapLayers.relief(map).vertices, stride: 6)
         outlines = buffer(MapLayers.outlines(map, highlightNation: highlightNation).vertices, stride: 6)
-        icons = buffer(MapLayers.cityIcons(map).vertices, stride: 6)
+        iconsScale = -1
+        rebuildCityIcons(force: true)
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
         // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
@@ -152,7 +165,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         rivers = next.rivers.isEmpty ? nil : buffer(next.rivers, stride: 2)
         relief = buffer(MapLayers.relief(next).vertices, stride: 6)
         outlines = buffer(MapLayers.outlines(next, highlightNation: highlightNation).vertices, stride: 6)
-        icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
+        iconsScale = -1
+        rebuildCityIcons(force: true)
         if refreshSea, let sea, next.seaRGBA.count == next.seaWidth * next.seaHeight * 4 {
             next.seaRGBA.withUnsafeBytes { bytes in
                 if let b = bytes.baseAddress { sea.replace(region: MTLRegionMake2D(0, 0, next.seaWidth, next.seaHeight), mipmapLevel: 0, withBytes: b, bytesPerRow: next.seaWidth * 4) }
@@ -223,10 +237,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         guard let base else { return }
         var c = base.land
         if reveal < 1 {
-            // Generation: the land rises from the coast to the peaks (0…0.45), forests and rivers follow,
-            // the states' colours wash in (0.55…0.75); borders and cities come after (drawn by stage).
+            // Timeline: land silhouette (0…0.32) → province lines → cities → nation colour + names.
             let terrain = base.terrain
-            let sea = MapPalette.displayShallowSea, rise = min(1, reveal / 0.45), wash = min(1, max(0, (reveal - 0.55) / 0.2))
+            let sea = MapPalette.displayShallowSea
+            let rise = min(1, reveal / 0.32)
+            let wash = min(1, max(0, (reveal - 0.55) / 0.18))
             let top = Float(max(21, map.elevation.max().map(Int.init) ?? 100))
             for cell in 0..<map.cellCount where map.isLand(cell) {
                 let h = (Float(map.elevation[cell]) - 20) / (top - 20)
@@ -433,17 +448,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
-        // Province lines: 0.55 screen px, #B2B2B2 (原作省界色), only once zoomed in.
-        if let lines = provinceLines, display.provinceLines, camera.scale > 0.9 || reveal < 1, reveal >= 0.55 {
-            u.halfWidth = 0.55 / 2
-            var color = SIMD4<Float>(0xB2 / 255.0, 0xB2 / 255.0, 0xB2 / 255.0, 0.55)
+        rebuildCityIcons()
+        // 1 land → 2 province borders (≥0.32) → 3 cities (≥0.48) → 4 nation outlines/names (≥0.62).
+        if let lines = provinceLines, display.provinceLines, reveal >= 0.32 {
+            u.halfWidth = max(0.7, 1.1 / max(0.2, Float(camera.scale))) / 2
+            var color = SIMD4<Float>(0xB2 / 255.0, 0xB2 / 255.0, 0xB2 / 255.0, 0.75)
             encoder.setRenderPipelineState(linePipeline)
             encoder.setVertexBuffer(lines.buffer, offset: 0, index: 0)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: lines.count)
         }
-        if let rivers, reveal > 0.38 {
+        if let rivers, reveal > 0.28 {
             var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, 1)
             encoder.setRenderPipelineState(flatPipeline)
             encoder.setVertexBuffer(rivers.buffer, offset: 0, index: 0)
@@ -451,9 +467,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
         }
-        if display.vegetation && reveal >= 0.45 { colored(relief) }
-        if display.borders && reveal >= 0.75 { colored(outlines) }
-        if display.cityIcons && reveal >= 0.85 { colored(icons) }
+        if display.vegetation && reveal >= 0.30 { colored(relief) }
+        if display.cityIcons && reveal >= 0.48 { colored(icons) }
+        if display.borders && reveal >= 0.62 { colored(outlines) }
         if reveal >= 1 {
         colored(route)
         encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)

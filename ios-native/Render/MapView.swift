@@ -487,11 +487,11 @@ struct MapView: UIViewRepresentable {
                 renderer.setDisplay(controller.display)
                 if controller.viewLabels == nil {
                     labels.setNations(map: map, animated: false, scale: controller.display.countryNameScale, fullNames: controller.display.fullCountryNames)
-                    if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                    labels.update(camera: renderer.camera, viewport: mtk.bounds.size)
                 }
                 mtk.setNeedsDisplay()
             }
-            if let labels, labels.showCities != controller.display.cityNames {
+            if labels.showCities != controller.display.cityNames {
                 labels.showCities = controller.display.cityNames
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
             }

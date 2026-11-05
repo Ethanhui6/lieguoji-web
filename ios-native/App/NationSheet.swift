@@ -89,9 +89,8 @@ struct NationSheet: View {
     @State private var cedeProvince = -1
     @State private var religionChoice = ""
     @State private var info: NationInfo?
-    /// 分类: the page's tabs.
-    enum Tab: String, CaseIterable { case overview = "概览", court = "朝政", military = "军事", diplomacy = "外交", custom = "自定义" }
-    @State private var tab: Tab = .overview
+    /// Drill-in destinations from the overview (no tab strip; medium detent shows overview + rows).
+    enum Dest: Hashable { case people, provinces, diplomacy, military, chronicle, custom }
     @State private var nameText = ""
     @State private var capitalProvince = -1
     @State private var temperValue = 1.0
@@ -130,43 +129,59 @@ struct NationSheet: View {
         if let map = model.map, let state = model.state, state.nations.indices.contains(nation) {
             let meta = nation < map.meta.nations.count ? map.meta.nations[nation] : nil
             let s = state.nations[nation]
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    SheetHeader(title: meta?.name ?? info?.name ?? "", subtitle: s.alive ? "\(s.provinces) 省 · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) })
-                    if let info {
-                        // Original section order: BasicInfo (only one expanded by default), Action, War, Family, Diplomacy.
-                        // 卷首: the state at a glance, then its ruler and identity.
-                        // Every number here can be tapped and changed (点一下数字即可修改).
-                        StatStrip(tiles: [
-                            StatTile(label: "疆域", value: "\(s.provinces)州", edit: info.alive ? { paint(nation) } : nil),
-                            StatTile(label: "人口", value: Names.wan(s.population), edit: info.alive ? {
-                                numberEdit = NumberEdit(title: "全国人口", unit: "人", value: Double(s.population)) { v in await model.scaleTotal(nation, key: "population", value: v) }
-                            } : nil),
-                            StatTile(label: "兵力", value: Names.wan(s.troops), edit: info.alive ? {
-                                numberEdit = NumberEdit(title: "全国兵力", unit: "人", value: Double(s.troops)) { v in await model.scaleTotal(nation, key: "troops", value: v) }
-                            } : nil),
-                            StatTile(label: "国库", value: Names.wan(Int(info.gold)), warn: info.goldPerMonth < 0, edit: info.alive ? {
-                                numberEdit = NumberEdit(title: "国库", unit: "金", value: info.gold) { v in await model.editNation(nation, gold: v, destiny: nil, polity: nil) }
-                            } : nil),
-                        ])
-                        NationTabs(tab: $tab)
-                        switch tab {
-                        case .overview: overviewTab(info, map, state)
-                        case .court: courtTab(info, map, state)
-                        case .military: militaryTab(info, map, state)
-                        case .diplomacy: diplomacyTab(info, map, state)
-                        case .custom:
-                            if info.alive { customView(info, map, state) } else { Text("此国已亡，无可设定。").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        SheetHeader(title: meta?.name ?? info?.name ?? "", subtitle: s.alive ? "\(s.provinces) 省 · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) })
+                        if let info {
+                            StatStrip(tiles: [
+                                StatTile(label: "疆域", value: "\(s.provinces)州", edit: info.alive ? { paint(nation) } : nil),
+                                StatTile(label: "人口", value: Names.wan(s.population), edit: info.alive ? {
+                                    numberEdit = NumberEdit(title: "全国人口", unit: "人", value: Double(s.population)) { v in await model.scaleTotal(nation, key: "population", value: v) }
+                                } : nil),
+                                StatTile(label: "兵力", value: Names.wan(s.troops), edit: info.alive ? {
+                                    numberEdit = NumberEdit(title: "全国兵力", unit: "人", value: Double(s.troops)) { v in await model.scaleTotal(nation, key: "troops", value: v) }
+                                } : nil),
+                                StatTile(label: "国库", value: Names.wan(Int(info.gold)), warn: info.goldPerMonth < 0, edit: info.alive ? {
+                                    numberEdit = NumberEdit(title: "国库", unit: "金", value: info.gold) { v in await model.editNation(nation, gold: v, destiny: nil, polity: nil) }
+                                } : nil),
+                            ])
+                            overviewGlance(info)
+                            Group2 {
+                                drillRow("人物", "\(info.people?.count ?? 0) 人", "person.2", .people); Divider2()
+                                drillRow("省份", "\(s.provinces) 州", "map", .provinces); Divider2()
+                                drillRow("外交", relationRows(info, map).isEmpty ? "暂无" : "\(relationRows(info, map).count) 项", "envelope", .diplomacy); Divider2()
+                                drillRow("军事", info.wars.isEmpty ? "\(state.armies.filter { $0.nation == nation }.count) 军" : "\(info.wars.count) 场战争", "shield", .military); Divider2()
+                                drillRow("编年", history.isEmpty ? "尚无记载" : "\(min(history.count, 20)) 条", "book", .chronicle); Divider2()
+                                drillRow("自定义", info.alive ? "国号 · 加成 · 政体" : "已亡", "slider.horizontal.3", .custom)
+                            }
+                            .padding(.horizontal, 16)
+                        } else {
+                            ProgressView().frame(maxWidth: .infinity).padding(40)
                         }
-                    } else {
-                        ProgressView().frame(maxWidth: .infinity).padding(40)
+                    }
+                    .padding(.bottom, 24)
+                }
+                .navigationDestination(for: Dest.self) { dest in
+                    if let info {
+                        switch dest {
+                        case .people: peoplePage(info, map)
+                        case .provinces: provincesPage(info, map, state)
+                        case .diplomacy: diplomacyPage(info, map)
+                        case .military: militaryPage(info, map, state)
+                        case .chronicle: chroniclePage()
+                        case .custom:
+                            ScrollView {
+                                if info.alive { customView(info, map, state).padding(.bottom, 24) }
+                                else { Text("此国已亡，无可设定。").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(22) }
+                            }
+                            .navigationTitle("自定义").navigationBarTitleDisplayMode(.inline)
+                        }
                     }
                 }
-                .padding(.bottom, 24)
             }
             .task(id: state.day / 10) { await reload() }
             .onAppear { model.controller.relationsNation = nation; model.controller.relations = relationColors(); if let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
-            // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
             .sheet(item: $appointing) { target in
                 AppointSheet(model: model, nation: nation, office: target.office, post: target.post) { person, name in
@@ -197,7 +212,7 @@ struct NationSheet: View {
                     numberEdit = nil
                     Task { await run(success: "\(e.title)已改为 \(Int(v))\(e.unit)") { await e.apply(v) } }
                 }
-                .presentationDetents([.height(300)]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+                .presentationDetents([.height(360)]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
             }
             .sheet(item: $partyEdit) { p in
                 PartyEditSheet(name: p.name, seats: p.seats) { name, seats in
@@ -209,185 +224,259 @@ struct NationSheet: View {
         }
     }
 
-    @ViewBuilder private func overviewTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-                FoldSection("基本信息", expanded: true) {
-                    Group2 {
-                        if let r = info.ruler {
-                            EditRow(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）") {
-                                if let id = r.id { editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50]) }
-                            }
-                            Divider2()
-                        }
-                        EditRow(label: "政体", value: info.styleLabel ?? Names.polity[info.polity] ?? info.polity) { tab = .custom }; Divider2()
-                        EditRow(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)") { tab = .custom }; Divider2()
-                        EditRow(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金" + Self.percent(info.bonus?["income"])) {
-                            numberEdit = NumberEdit(title: "月入加成（%）", unit: "%", value: info.bonus?["income"] ?? 0) { v in await model.setBonus(nation, key: "income", value: v) }
-                        }
-                        Divider2()
-                        EditRow(label: "国运", value: String(format: "%.0f", info.destiny)) {
-                            numberEdit = NumberEdit(title: "国运（0–100）", unit: "", value: info.destiny) { v in await model.editNation(nation, gold: nil, destiny: v, polity: nil) }
-                        }
+    private func drillRow(_ title: String, _ value: String, _ symbol: String, _ dest: Dest) -> some View {
+        NavigationLink(value: dest) {
+            HStack(spacing: 12) {
+                Image(systemName: symbol).frame(width: 22).foregroundStyle(Theme.seal)
+                Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink)
+                Spacer()
+                Text(value).font(Theme.kai(14)).foregroundStyle(Theme.ink2).lineLimit(1)
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.ink2)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 13).frame(minHeight: 44).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder private func overviewGlance(_ info: NationInfo) -> some View {
+        Group2 {
+            if let r = info.ruler {
+                Button {
+                    if let id = r.id {
+                        editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50])
                     }
-                    .padding(.horizontal, 16)
+                } label: {
+                    Row(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）")
                 }
-                if !regime.history.isEmpty {
-                    // 政体沿革: the polities this state has had, and the current one's standing bonus.
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 6) {
-                            ForEach(Array(regime.history.suffix(6).enumerated()), id: \.offset) { i, p in
-                                if i > 0 { Image(systemName: "arrow.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.ink2) }
-                                Text(p).font(Theme.kai(14)).foregroundStyle(i == min(5, regime.history.count - 1) ? Theme.seal : Theme.ink2)
-                            }
-                        }
-                        if !regime.trait.isEmpty { Text(regime.trait).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
-                    }
-                    .padding(.horizontal, 24)
+                .buttonStyle(.plain)
+                Divider2()
+            }
+            Row(label: "政体 · 文化", value: "\(info.styleLabel ?? Names.polity[info.polity] ?? info.polity) · \(Names.culture[info.culture] ?? info.culture)")
+            Divider2()
+            EditRow(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金" + Self.percent(info.bonus?["income"])) {
+                numberEdit = NumberEdit(title: "月入加成（%）", unit: "%", value: info.bonus?["income"] ?? 0) { v in await model.setBonus(nation, key: "income", value: v) }
+            }
+            Divider2()
+            EditRow(label: "国运", value: String(format: "%.0f", info.destiny)) {
+                numberEdit = NumberEdit(title: "国运（0–100）", unit: "", value: info.destiny) { v in await model.editNation(nation, gold: nil, destiny: v, polity: nil) }
+            }
+        }
+        .padding(.horizontal, 16)
+        if !regime.history.isEmpty {
+            HStack(spacing: 6) {
+                ForEach(Array(regime.history.suffix(5).enumerated()), id: \.offset) { i, p in
+                    if i > 0 { Image(systemName: "arrow.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.ink2) }
+                    Text(p).font(Theme.kai(13)).foregroundStyle(i == min(4, regime.history.count - 1) ? Theme.seal : Theme.ink2)
                 }
-                // 国史: default collapsed — only 「基本信息」 starts open.
-                FoldSection("国史", expanded: false) {
-                    Group2 {
-                        if history.isEmpty { Row(label: "国史", value: "尚无记载") }
-                        ForEach(Array(history.prefix(20).enumerated()), id: \.offset) { i, e in
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("第\(e.day + 1)日").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
-                                Text(e.text).font(Theme.kai(15)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 9)
-                            if i < min(history.count, 20) - 1 { Divider2() }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
+            }
+            .padding(.horizontal, 24)
         }
     }
-    @ViewBuilder private func courtTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-                if let court = info.court, info.alive { FoldSection("朝堂", expanded: false) { courtView(court, map) } }
+
+    @ViewBuilder private func peoplePage(_ info: NationInfo, _ map: WorldMap) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                if let court = info.court, info.alive { SectionLabel("朝堂"); courtView(court, map) }
                 if let parties = info.parties, !parties.isEmpty {
-                    FoldSection("议会（\(info.styleLabel ?? "")）", expanded: false) {
-                        Group2 {
-                            // Seats in one band, then each party.
-                            GeometryReader { g in
-                                HStack(spacing: 1) {
-                                    ForEach(Array(parties.enumerated()), id: \.offset) { i, p in
-                                        Rectangle().fill(Self.partyColor(i)).frame(width: max(2, g.size.width * CGFloat(p.seats) / 100))
-                                    }
-                                }
-                                .clipShape(Capsule())
-                            }
-                            .frame(height: 10).padding(.horizontal, 16).padding(.top, 12)
-                            ForEach(Array(parties.sorted { $0.seats > $1.seats }.enumerated()), id: \.offset) { i, p in
-                                let index = parties.firstIndex { $0.name == p.name } ?? 0
-                                Button { partyEdit = PartyEdit(id: index, name: p.name, seats: p.seats) } label: {
-                                    HStack(spacing: 8) {
-                                        RoundedRectangle(cornerRadius: 2).fill(Self.partyColor(index)).frame(width: 10, height: 10)
-                                        Text(p.name).font(Theme.kai(15)).foregroundStyle(Theme.ink)
-                                        if i == 0 { Text("执政").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
-                                        Spacer()
-                                        Text("\(p.seats) 席").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
-                                        Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7))
-                                    }
-                                    .padding(.horizontal, 16).padding(.vertical, 6).contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                            }
-                            Text("每四年改选一次，最大党组织政府。点党派可改名与席位。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10)
-                        }
-                        .padding(.horizontal, 16)
-                    }
-                }
-                if !postList.isEmpty {
-                    FoldSection("朝廷百官（\(postList.filter { $0.holder != nil }.count)/\(postList.count)）", expanded: false) {
-                        Group2 {
-                            ForEach(Array(postList.enumerated()), id: \.offset) { i, p in
-                                Button { appointing = AppointTarget(office: "post-" + p.id, post: p) } label: {
-                                    HStack(spacing: 10) {
-                                        Text(p.title).font(Theme.kai(15)).foregroundStyle(Theme.ink).frame(width: 108, alignment: .leading).lineLimit(1).minimumScaleFactor(0.7)
-                                        Text(p.holder?.name ?? "空缺").font(Theme.kai(15)).foregroundStyle(p.holder == nil ? Theme.ink2 : Theme.ink).lineLimit(1)
-                                        Spacer()
-                                        if let v = p.value { Text("\(["魅", "军", "外", "政"][min(3, max(0, p.skill))])\(Int(v))").font(Theme.kai(12)).foregroundStyle(v >= 60 ? Theme.jade : v < 40 ? Theme.seal : Theme.ink2).monospacedDigit() }
-                                        Image(systemName: p.effect == "gold" ? "dollarsign.circle" : p.effect == "morale" ? "shield" : "sparkles").font(.system(size: 12)).foregroundStyle(Theme.ink2)
-                                    }
-                                    .padding(.horizontal, 16).padding(.vertical, 8).contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                                if let person = p.holder, person.key >= 0 {
-                                    Button { editing = person } label: { Row(label: "修改" + person.name + "的属性", value: "能力与天赋 ›") }.buttonStyle(.plain)
-                                }
-                                if i < postList.count - 1 { Divider2() }
-                            }
-                            Text("称职的官员每月增国库（$）、国运（✦）或各军士气（盾）；不称职则相反。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8)
-                        }
-                        .padding(.horizontal, 16)
-                    }
-                }
-                FoldSection("人物（\(info.people?.count ?? 0)）", expanded: false) { peopleDossier(info.people ?? []) }
-        }
-    }
-    @ViewBuilder private func militaryTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-                // 军事: the state's armies at a glance (tap one to open it), then its wars.
-                let mine = state.armies.indices.filter { state.armies[$0].nation == nation }
-                FoldSection("军队（\(mine.count) 支 · \(Names.wan(mine.reduce(0) { $0 + state.armies[$1].troops }))）", expanded: false) {
+                    SectionLabel("议会")
                     Group2 {
-                        if mine.isEmpty { Row(label: "军队", value: "暂无军队") }
-                        ForEach(Array(mine.sorted { state.armies[$0].troops > state.armies[$1].troops }.prefix(12).enumerated()), id: \.offset) { k, i in
-                            let a = state.armies[i]
-                            Button { openArmy(i) } label: {
-                                HStack(spacing: 10) {
-                                    Text(a.name).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
-                                    if a.banner != nil { Text(a.banner == "ruler" ? "御驾" : "帅旗").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
-                                    Spacer()
-                                    Text(Names.unit[a.unit] ?? a.unit).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-                                    Text(Names.wan(a.troops)).font(Theme.kai(15)).foregroundStyle(Theme.ink).monospacedDigit()
+                        GeometryReader { g in
+                            HStack(spacing: 1) {
+                                ForEach(Array(parties.enumerated()), id: \.offset) { i, p in
+                                    Rectangle().fill(Self.partyColor(i)).frame(width: max(2, g.size.width * CGFloat(p.seats) / 100))
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
+                            }
+                            .clipShape(Capsule())
+                        }
+                        .frame(height: 10).padding(.horizontal, 16).padding(.top, 12)
+                        ForEach(Array(parties.sorted { $0.seats > $1.seats }.enumerated()), id: \.offset) { i, p in
+                            let index = parties.firstIndex { $0.name == p.name } ?? 0
+                            Button { partyEdit = PartyEdit(id: index, name: p.name, seats: p.seats) } label: {
+                                HStack(spacing: 8) {
+                                    RoundedRectangle(cornerRadius: 2).fill(Self.partyColor(index)).frame(width: 10, height: 10)
+                                    Text(p.name).font(Theme.kai(15)).foregroundStyle(Theme.ink)
+                                    if i == 0 { Text("执政").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+                                    Spacer()
+                                    Text("\(p.seats) 席").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
+                                }
+                                .padding(.horizontal, 16).padding(.vertical, 8).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            if k < min(mine.count, 12) - 1 { Divider2() }
                         }
                     }
                     .padding(.horizontal, 16)
                 }
-                FoldSection(info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）", expanded: false) {
+                if !postList.isEmpty {
+                    SectionLabel("朝廷百官")
                     Group2 {
-                        if info.wars.isEmpty { Row(label: "战争", value: "暂无战争") }
-                        ForEach(info.wars) { war in
-                            warCard(war, map)
-                            if war.id != info.wars.last?.id { Divider2() }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-        }
-    }
-    @ViewBuilder private func diplomacyTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-                FoldSection("外交关系", expanded: false) {
-                    Group2 {
-                        let rows = relationRows(info, map)
-                        if rows.isEmpty { Row(label: "外交", value: "暂无外交关系") }
-                        ForEach(Array(rows.enumerated()), id: \.offset) { i, row in
-                            Row(label: row.0, value: row.1)
-                            if i < rows.count - 1 { Divider2() }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-                if let treaties = info.treaties, !treaties.isEmpty {
-                    FoldSection("条约（\(treaties.count)）", expanded: false) {
-                        Group2 {
-                            ForEach(Array(treaties.enumerated()), id: \.offset) { i, t in
-                                Row(label: t.kind == "marriage" ? "联姻" : "互不侵犯", value: (map.meta.nations.indices.contains(t.nation) ? map.meta.nations[t.nation].name : "") + " · 余\(max(1, t.years))年")
-                                if i < treaties.count - 1 { Divider2() }
+                        ForEach(Array(postList.enumerated()), id: \.offset) { i, p in
+                            Button { appointing = AppointTarget(office: "post-" + p.id, post: p) } label: {
+                                HStack(spacing: 10) {
+                                    Text(p.title).font(Theme.kai(15)).foregroundStyle(Theme.ink).frame(width: 108, alignment: .leading).lineLimit(1).minimumScaleFactor(0.7)
+                                    Text(p.holder?.name ?? "空缺").font(Theme.kai(15)).foregroundStyle(p.holder == nil ? Theme.ink2 : Theme.ink).lineLimit(1)
+                                    Spacer()
+                                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
+                                }
+                                .padding(.horizontal, 16).padding(.vertical, 10).frame(minHeight: 44).contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
+                            if i < postList.count - 1 { Divider2() }
                         }
-                        .padding(.horizontal, 16)
+                    }
+                    .padding(.horizontal, 16)
+                }
+                SectionLabel("人物")
+                peopleList(info.people ?? [])
+            }
+            .padding(.bottom, 24)
+        }
+        .navigationTitle("人物").navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder private func provincesPage(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
+        let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                if info.alive {
+                    SealButton(title: "绘制疆域（点选／拖过州郡划归本国）") { paint(nation) }.padding(.horizontal, 16)
+                }
+                Group2 {
+                    if owned.isEmpty { Row(label: "州郡", value: "无") }
+                    ForEach(owned.prefix(80), id: \.self) { p in
+                        Button { fly(p); provinceChoice = p } label: {
+                            HStack {
+                                Text(map.meta.provinces[p].name).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                Spacer()
+                                Text(Names.terrain[map.meta.provinces[p].terrain] ?? map.meta.provinces[p].terrain).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                                Image(systemName: "location").font(.system(size: 12)).foregroundStyle(Theme.seal)
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 11).frame(minHeight: 44).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if p != owned.prefix(80).last { Divider2() }
                     }
                 }
-                if info.alive { FoldSection("国家行为", expanded: false) { actions(info, map) } }
+                .padding(.horizontal, 16)
+                if info.alive, provinceChoice >= 0 {
+                    SectionLabel("编辑 · \(map.meta.provinces[provinceChoice].name)")
+                    Group2 {
+                        HStack(spacing: 10) {
+                            Text("人口").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                            TextField("", text: $populationText, prompt: Text("例如 50000").foregroundColor(Theme.ink2.opacity(0.6))).keyboardType(.numberPad).multilineTextAlignment(.trailing).paperField()
+                            Text("人").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                        }
+                        .padding(12)
+                        Divider2()
+                        HStack(spacing: 10) {
+                            SealButton(title: "定人口", disabled: Double(populationText) == nil) {
+                                let p = provinceChoice, v = Double(populationText)
+                                Task { await run(success: "人口已改") { await model.editProvince(p, population: v, fortress: nil) } }
+                                populationText = ""
+                            }
+                            SealButton(title: "筑要塞") { let p = provinceChoice; Task { await run(success: "已筑要塞") { await model.editProvince(p, population: nil, fortress: true) } } }
+                            SealButton(title: "拆要塞") { let p = provinceChoice; Task { await run(success: "已拆要塞") { await model.editProvince(p, population: nil, fortress: false) } } }
+                        }
+                        .padding(12)
+                    }
+                    .padding(.horizontal, 16)
+                }
+            }
+            .padding(.bottom, 24)
         }
+        .navigationTitle("省份").navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder private func diplomacyPage(_ info: NationInfo, _ map: WorldMap) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                SectionLabel("外交关系")
+                Group2 {
+                    let rows = relationRows(info, map)
+                    if rows.isEmpty { Row(label: "外交", value: "暂无外交关系") }
+                    ForEach(Array(rows.enumerated()), id: \.offset) { i, row in
+                        Row(label: row.0, value: row.1)
+                        if i < rows.count - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, 16)
+                if let treaties = info.treaties, !treaties.isEmpty {
+                    SectionLabel("条约")
+                    Group2 {
+                        ForEach(Array(treaties.enumerated()), id: \.offset) { i, t in
+                            Row(label: t.kind == "marriage" ? "联姻" : "互不侵犯", value: (map.meta.nations.indices.contains(t.nation) ? map.meta.nations[t.nation].name : "") + " · 余\(max(1, t.years))年")
+                            if i < treaties.count - 1 { Divider2() }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+                if info.alive {
+                    SectionLabel("国家行为")
+                    actions(info, map)
+                }
+            }
+            .padding(.bottom, 24)
+        }
+        .navigationTitle("外交").navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder private func militaryPage(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
+        let mine = state.armies.indices.filter { state.armies[$0].nation == nation }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                SectionLabel("军队（\(mine.count)）")
+                Group2 {
+                    if mine.isEmpty { Row(label: "军队", value: "暂无军队") }
+                    ForEach(Array(mine.sorted { state.armies[$0].troops > state.armies[$1].troops }.prefix(20).enumerated()), id: \.offset) { k, i in
+                        let a = state.armies[i]
+                        Button { openArmy(i) } label: {
+                            HStack(spacing: 10) {
+                                Text(a.name).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
+                                if a.banner != nil { Text(a.banner == "ruler" ? "御驾" : "帅旗").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+                                Spacer()
+                                Text(Names.unit[a.unit] ?? a.unit).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                                Text(Names.wan(a.troops)).font(Theme.kai(15)).foregroundStyle(Theme.ink).monospacedDigit()
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 10).frame(minHeight: 44).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if k < min(mine.count, 20) - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, 16)
+                SectionLabel(info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）")
+                VStack(spacing: 12) {
+                    if info.wars.isEmpty {
+                        Group2 { Row(label: "战争", value: "暂无战争") }.padding(.horizontal, 16)
+                    }
+                    ForEach(info.wars) { war in
+                        warCard(war, map)
+                            .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.seal.opacity(0.35), lineWidth: 1))
+                            .padding(.horizontal, 16)
+                    }
+                }
+            }
+            .padding(.bottom, 24)
+        }
+        .navigationTitle("军事").navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder private func chroniclePage() -> some View {
+        ScrollView {
+            Group2 {
+                if history.isEmpty { Row(label: "编年", value: "尚无记载") }
+                ForEach(Array(history.prefix(40).enumerated()), id: \.offset) { i, e in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("第\(e.day + 1)日").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                        Text(e.text).font(Theme.kai(15)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 9)
+                    if i < min(history.count, 40) - 1 { Divider2() }
+                }
+            }
+            .padding(.horizontal, 16).padding(.bottom, 24)
+        }
+        .navigationTitle("编年").navigationBarTitleDisplayMode(.inline)
     }
     /// 国色 choices: the original's map palette.
     static let palette = ["#C0392B", "#E67E22", "#F1C40F", "#A0B83C", "#27AE60", "#16A085", "#2E86C1", "#5B4BA0",
@@ -442,7 +531,7 @@ struct NationSheet: View {
                 }),
                 StatTile(label: "中枢增收", value: String(format: "%+.0f%%", (c.centralIncome - 1) * 100), warn: c.centralIncome < 1),
                 StatTile(label: "地方官", value: "\(c.governors)/\(c.provinces)", fraction: c.provinces > 0 ? Double(c.governors) / Double(c.provinces) : 0),
-                StatTile(label: "国策", value: Self.temperName(c.temper ?? 1), warn: (c.temper ?? 1) > 1.25, edit: { tab = .custom }),
+                StatTile(label: "国策", value: Self.temperName(c.temper ?? 1), warn: (c.temper ?? 1) > 1.25),
             ])
             Group2 {
                 ForEach(Array(c.offices.enumerated()), id: \.offset) { i, o in
@@ -591,52 +680,36 @@ struct NationSheet: View {
         }
         .padding(16)
     }
-    /// 人物卷宗: five nested tap-to-reveal sections (君主 / 继承人 / 中央官员 / 总督 / 战时统帅).
-    private func peopleDossier(_ list: [NationInfo.Person]) -> some View {
-        let rulers = list.filter { $0.role == "君主" }
-        let heirs = list.filter { $0.role == "继承人" }
-        let central = list.filter { ["行政首脑", "财政主管", "常备军统帅"].contains($0.role) }
-        let governors = list.filter { $0.role.hasPrefix("总督") }
-        let commanders = list.filter { $0.role.hasPrefix("战时统帅") }
-        return VStack(alignment: .leading, spacing: 10) {
-            if list.isEmpty { Group2 { Row(label: "人物", value: "暂无记录") }.padding(.horizontal, 16) }
-            peopleFold("君主", rulers)
-            peopleFold("继承人", heirs)
-            peopleFold("中央官员", central)
-            peopleFold("总督", governors)
-            peopleFold("战时统帅", commanders)
-            if !list.isEmpty { Text("点人物可修改属性与天赋").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 4) }
+    /// One-line people list; tap opens PersonDetailView (then PersonEditor).
+    private func peopleList(_ list: [NationInfo.Person]) -> some View {
+        let order = ["君主", "继承人", "行政首脑", "财政主管", "常备军统帅"]
+        let sorted = list.sorted { a, b in
+            let ia = order.firstIndex(of: a.role) ?? (a.role.hasPrefix("总督") ? 20 : a.role.hasPrefix("战时统帅") ? 30 : 40)
+            let ib = order.firstIndex(of: b.role) ?? (b.role.hasPrefix("总督") ? 20 : b.role.hasPrefix("战时统帅") ? 30 : 40)
+            if ia != ib { return ia < ib }
+            return a.name < b.name
         }
-    }
-    private func peopleFold(_ title: String, _ people: [NationInfo.Person]) -> some View {
-        FoldSection("\(title)（\(people.count)）", expanded: false) {
-            Group2 {
-                if people.isEmpty { Row(label: title, value: "暂无") }
-                ForEach(Array(people.enumerated()), id: \.offset) { i, p in
-                    Button { if p.key >= 0 { editing = p } } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(p.role).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
-                                Spacer()
-                                Text("\(p.name)（\(p.female ? "女" : "男")，\(Int(p.age)) 岁）").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                            }
-                            if p.skills.count == 4 {
-                                Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-                            }
-                            ForEach(p.traits, id: \.self) { t in
-                                (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.effect[t].map { "：" + $0 } ?? "").foregroundStyle(Theme.ink2)).font(Theme.kai(13))
-                            }
-                        }
-                        .padding(.horizontal, 16).padding(.vertical, 10)
-                        .frame(minHeight: 44)
-                        .contentShape(Rectangle())
+        return Group2 {
+            if sorted.isEmpty { Row(label: "人物", value: "暂无记录") }
+            ForEach(Array(sorted.enumerated()), id: \.offset) { i, p in
+                NavigationLink {
+                    PersonDetailView(person: p) { editing = p }
+                } label: {
+                    HStack(spacing: 10) {
+                        Text(p.role).font(Theme.kai(14)).foregroundStyle(Theme.ink2).frame(width: 72, alignment: .leading).lineLimit(1)
+                        Text(p.name).font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1)
+                        Spacer()
+                        Text("\(Int(p.age))岁").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
+                        if let t = p.traits.first { Text(t).font(Theme.kai(12)).foregroundStyle(Theme.seal).lineLimit(1) }
+                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
                     }
-                    .buttonStyle(.plain)
-                    if i < people.count - 1 { Divider2() }
+                    .padding(.horizontal, 16).padding(.vertical, 11).frame(minHeight: 44).contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                if i < sorted.count - 1 { Divider2() }
             }
-            .padding(.horizontal, 16)
         }
+        .padding(.horizontal, 16)
     }
 
     /// 自定义: treasury, destiny, polity (revolution by decree) and raising a legion.
@@ -1068,29 +1141,43 @@ struct AppointSheet: View {
     }
 }
 
-/// 国家页分类: five tabs with a seal-red marker under the chosen one.
-struct NationTabs: View {
-    @Binding var tab: NationSheet.Tab
-    @Namespace private var marker
+/// Person detail page: summary + traits, then open PersonEditor to change values.
+struct PersonDetailView: View {
+    let person: NationInfo.Person
+    let edit: () -> Void
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(NationSheet.Tab.allCases, id: \.self) { t in
-                let on = t == tab
-                Button { withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) { tab = t } } label: {
-                    VStack(spacing: 5) {
-                        Text(t.rawValue).font(Theme.kai(16)).foregroundStyle(on ? Theme.seal : Theme.ink2)
-                        ZStack {
-                            Capsule().fill(Color.clear).frame(height: 3)
-                            if on { Capsule().fill(Theme.seal).frame(width: 26, height: 3).matchedGeometryEffect(id: "tab", in: marker) }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                SheetHeader(title: person.name, subtitle: "\(person.role) · \(person.female ? "女" : "男") · \(Int(person.age)) 岁", seal: "人")
+                if person.skills.count == 4 {
+                    StatStrip(tiles: [
+                        StatTile(label: "魅力", value: "\(Int(person.skills[0]))"),
+                        StatTile(label: "军事", value: "\(Int(person.skills[1]))"),
+                        StatTile(label: "外交", value: "\(Int(person.skills[2]))"),
+                        StatTile(label: "行政", value: "\(Int(person.skills[3]))"),
+                    ])
                 }
-                .buttonStyle(.plain)
+                SectionLabel("天赋")
+                Group2 {
+                    if person.traits.isEmpty { Row(label: "天赋", value: "无") }
+                    ForEach(person.traits, id: \.self) { t in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(t).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                            if let e = TraitText.effect[t] { Text(e).font(Theme.kai(13)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true) }
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        if t != person.traits.last { Divider2() }
+                    }
+                }
+                .padding(.horizontal, 16)
+                if person.key >= 0 {
+                    Button(action: edit) { PrimaryLabel(title: "修改属性与天赋", symbol: "pencil") }
+                        .buttonStyle(PressStyle()).padding(.horizontal, 16)
+                }
             }
+            .padding(.bottom, 24)
         }
-        .padding(.horizontal, 12)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1).padding(.horizontal, 22) }
+        .navigationTitle(person.name).navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -1123,40 +1210,56 @@ struct EditRow: View {
     }
 }
 
-/// 改数: one number, typed or nudged, then 颁行.
+/// 改数: slider + typed value + ± steppers, then 颁行.
 struct NumberEditSheet: View {
     let title: String; let unit: String; let value: Double
     let save: (Double) -> Void
     @State private var text = ""
     @State private var slider = 0.0
-    /// Percent / bounded values get a slider; gold and population keep free entry with a coarse slider assist.
-    private var sliderRange: ClosedRange<Double>? {
+    private var step: Double {
+        if unit == "%" || title.contains("国运") || title.contains("施政") { return 1 }
+        if unit == "金" { return max(10, (value / 50).rounded()) }
+        if unit == "人" { return max(100, (value / 50).rounded()) }
+        return 1
+    }
+    private var sliderRange: ClosedRange<Double> {
         if unit == "%" { return -100...200 }
         if title.contains("国运") || title.contains("施政") { return -1...100 }
-        if unit == "金" { return 0...max(50_000, value * 2) }
-        if unit == "人" { return 0...max(100_000, value * 2) }
-        return nil
+        if unit == "金" { return 0...max(50_000, value * 2, 1) }
+        if unit == "人" { return 0...max(100_000, value * 2, 1) }
+        return min(value, 0)...max(value * 2, 100)
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             SheetHeader(title: title, subtitle: "现为 \(Self.format(value))\(unit)", seal: "改")
             HStack(spacing: 10) {
+                Button { nudge(-step) } label: {
+                    Image(systemName: "minus").font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.seal)
+                        .frame(width: 44, height: 44).background(Theme.paper2, in: Circle()).overlay(Circle().stroke(Theme.line))
+                }
+                .buttonStyle(PressStyle())
                 TextField("", text: $text, prompt: Text(Self.format(value)).foregroundColor(Theme.ink2.opacity(0.6)))
-                    .keyboardType(.numbersAndPunctuation).multilineTextAlignment(.trailing).paperField()
+                    .keyboardType(.numbersAndPunctuation).multilineTextAlignment(.center).paperField()
+                    .onChange(of: text) { _, v in if let n = Double(v) { slider = min(sliderRange.upperBound, max(sliderRange.lowerBound, n)) } }
                 if !unit.isEmpty { Text(unit).font(Theme.kai(17)).foregroundStyle(Theme.ink2) }
+                Button { nudge(step) } label: {
+                    Image(systemName: "plus").font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.seal)
+                        .frame(width: 44, height: 44).background(Theme.paper2, in: Circle()).overlay(Circle().stroke(Theme.line))
+                }
+                .buttonStyle(PressStyle())
             }
             .padding(.horizontal, 22)
-            if let range = sliderRange {
-                PaperSlider(title: "滑条", value: $slider, range: range, step: unit == "%" || title.contains("国运") || title.contains("施政") ? 1 : max(1, (range.upperBound / 100).rounded())) {
-                    Self.format($0) + unit
-                }
+            PaperSlider(title: "滑条", value: $slider, range: sliderRange, step: step) { Self.format($0) + unit }
                 .padding(.horizontal, 22)
                 .onChange(of: slider) { _, v in text = Self.format(v) }
-            }
             SealButton(title: "颁行", disabled: Double(text) == nil) { if let v = Double(text) { save(v) } }.padding(.horizontal, 22)
         }
         .padding(.bottom, 16)
         .onAppear { slider = value; text = Self.format(value) }
+    }
+    private func nudge(_ d: Double) {
+        let next = min(sliderRange.upperBound, max(sliderRange.lowerBound, (Double(text) ?? slider) + d))
+        slider = next; text = Self.format(next)
     }
     static func format(_ v: Double) -> String { v.rounded() == v ? String(Int(v)) : String(format: "%.1f", v) }
 }

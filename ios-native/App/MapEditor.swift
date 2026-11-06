@@ -206,6 +206,7 @@ struct EditorView: View {
     @ObservedObject var model: GameModel
     @ObservedObject var editor: MapEditor
     @State private var leaving = false
+    @State private var pickingBase = false
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
@@ -237,9 +238,35 @@ struct EditorView: View {
             .padding(.horizontal, 12).padding(.bottom, 6)
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: editor.step)
-        .confirmationDialog("放弃这幅地图？", isPresented: $leaving, titleVisibility: .visible) {
-            Button("放弃并返回标题", role: .destructive) { model.closeEditor() }
-            Button("继续绘制", role: .cancel) {}
+        .sheet(isPresented: $leaving) {
+            VStack(alignment: .leading, spacing: 14) {
+                SheetHeader(title: "放弃这幅地图？", subtitle: "还没开辟的画稿不会保存", seal: "弃")
+                SealButton(title: "放弃并返回标题") { leaving = false; model.closeEditor() }.padding(.horizontal, 22)
+                Button { leaving = false } label: { SecondaryLabel(title: "继续绘制", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle()).padding(.horizontal, 22)
+            }
+            .padding(.bottom, 24)
+            .presentationDetents([.height(320)]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+        }
+        .sheet(isPresented: $pickingBase) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    SheetHeader(title: "换底图", subtitle: "当前画稿会被换掉", seal: "底")
+                    Group2 {
+                        ForEach(Names.templates.indices, id: \.self) { i in
+                            Button {
+                                pickingBase = false
+                                editor.reset(template: Names.templates[i].id, seed: String(UInt32.random(in: 0...UInt32.max)))
+                            } label: { MenuRow(symbol: "square.stack.3d.up", title: "随机" + Names.templates[i].name) }.buttonStyle(.plain)
+                            if i < Names.templates.count - 1 { Divider2() }
+                        }
+                        Divider2()
+                        Button { pickingBase = false; editor.reset(template: nil, seed: editor.seed) } label: { MenuRow(symbol: "water.waves", title: "空白海洋（一座小岛）") }.buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 16)
+                }
+                .padding(.bottom, 24)
+            }
+            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
         }
     }
 
@@ -261,12 +288,8 @@ struct EditorView: View {
                     .buttonStyle(PressStyle())
                 }
             }
-            HStack(spacing: 10) {
-                Text("笔刷").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
-                Slider(value: $editor.radius, in: 8...110).tint(Theme.seal)
-                Text("\(Int(editor.radius))").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit().frame(width: 32)
-            }
-            DisclosureGroup {
+            PaperSlider(title: "笔刷", value: $editor.radius, range: 8...110) { "\(Int($0))" }
+            FoldSection("笔触与地貌", expanded: false) {
                 VStack(spacing: 8) {
                     PaperSlider(title: "强度", value: $editor.strength, range: 0.2...2) { String(format: "%.1f×", $0) }
                     PaperSlider(title: "柔和", value: $editor.softness, range: 0.3...2) { String(format: "%.1f", $0) }
@@ -275,14 +298,10 @@ struct EditorView: View {
                     }
                     PaperSwitch(title: "保护现有海岸", on: $editor.protectCoast).padding(.horizontal, -16)
                     Text("保护海岸时，陆地不会沉入海中，海洋不会升成陆地。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)
-                }.padding(.top, 8)
-            } label: { Text("笔触与地貌").font(Theme.kai(16)).foregroundStyle(Theme.ink) }
-            .tint(Theme.ink2)
+                }
+            }
             HStack(spacing: 10) {
-                Menu {
-                    ForEach(Names.templates.indices, id: \.self) { i in Button("随机" + Names.templates[i].name) { editor.reset(template: Names.templates[i].id, seed: String(UInt32.random(in: 0...UInt32.max))) } }
-                    Button("空白海洋（一座小岛）") { editor.reset(template: nil, seed: editor.seed) }
-                } label: { SecondaryLabel(title: "换底图", symbol: "square.stack.3d.up") }
+                Button { pickingBase = true } label: { SecondaryLabel(title: "换底图", symbol: "square.stack.3d.up") }
                 Button { editor.toProvinces() } label: { PrimaryLabel(title: "下一步：分州郡", symbol: "square.grid.3x3") }
                     .disabled(editor.landShare < 0.03).opacity(editor.landShare < 0.03 ? 0.5 : 1)
             }
@@ -292,13 +311,9 @@ struct EditorView: View {
 
     private var provinceTools: some View {
         VStack(spacing: 12) {
-            VStack(spacing: 6) {
-                HStack { Text("州郡").font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Text("\(editor.provinces)").font(Theme.kai(17)).foregroundStyle(Theme.seal).monospacedDigit() }
-                Slider(value: Binding(get: { Double(editor.provinces) }, set: { editor.provinces = max(editor.nations, Int($0)) }), in: 10...480, step: 5, onEditingChanged: { editing in if !editing { editor.recompute() } })
-                    .tint(Theme.seal)
-                HStack { Text("国家").font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Text("\(editor.nations)").font(Theme.kai(17)).foregroundStyle(Theme.seal).monospacedDigit() }
-                Slider(value: Binding(get: { Double(editor.nations) }, set: { editor.nations = Int($0); if editor.provinces < editor.nations { editor.provinces = editor.nations } }), in: 2...24, step: 1, onEditingChanged: { editing in if !editing { editor.recompute() } })
-                    .tint(Theme.seal)
+            VStack(spacing: 8) {
+                PaperSlider(title: "州郡", value: Binding(get: { Double(editor.provinces) }, set: { editor.provinces = max(editor.nations, Int($0)) }), range: 10...480, step: 5, onEditingChanged: { editing in if !editing { editor.recompute() } }) { "\(Int($0))" }
+                PaperSlider(title: "国家", value: Binding(get: { Double(editor.nations) }, set: { editor.nations = Int($0); if editor.provinces < editor.nations { editor.provinces = editor.nations } }), range: 2...24, step: 1, onEditingChanged: { editing in if !editing { editor.recompute() } }) { "\(Int($0))" }
             }
             Text("州郡按原作的定居分区算法划分：平原州小而密，山地、荒原州大而疏；各国从相隔最远的都城起家。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {

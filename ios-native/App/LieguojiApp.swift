@@ -90,10 +90,14 @@ struct RootView: View {
         }
         .task { GameFeel.shared.start() }
         .task { await model.loadBackdrop(); try? await model.engine.start() }
-        .alert("出了点问题", isPresented: Binding(get: { model.failure != nil }, set: { if !$0 { model.failure = nil } })) {
-            Button("好") { model.failure = nil }
-        } message: { Text(model.failure ?? "") }
-        .tint(Theme.seal)
+        .sheet(isPresented: Binding(get: { model.failure != nil }, set: { if !$0 { model.failure = nil } })) {
+            VStack(alignment: .leading, spacing: 16) {
+                SheetHeader(title: "出了点问题", subtitle: model.failure, seal: "误")
+                SealButton(title: "知道了") { model.failure = nil }.padding(.horizontal, 22)
+            }
+            .padding(.bottom, 24)
+            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+        }
     }
 
     private func finishSplash() {
@@ -332,21 +336,13 @@ struct NewWorldSheet: View {
                 ChipPicker(items: Names.templates.map { ($0.id, $0.name) }, selection: $options.template)
             }
             PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
-            HStack {
-                Text("省份").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
-                Spacer()
-                TextField("", text: $options.provinces, prompt: Text("80").foregroundColor(Theme.ink2.opacity(0.6)))
-                    .font(Theme.kai(18)).foregroundStyle(Theme.ink).keyboardType(.numberPad).multilineTextAlignment(.trailing).tint(Theme.seal)
-                    .padding(.horizontal, 12).frame(width: 110, height: 38).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
-                Text("个").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
-            }
-            Text("可填 \(options.nations)–480，每省一城，按地形均分大小；实际生成 \(options.provinceCount) 省。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+            PaperStepper(title: "省份", value: Binding(get: { options.provinceCount }, set: { options.provinces = String($0) }), range: options.nations...480, unit: "省")
+            Text("每省一城，按地形均分大小；实际生成 \(options.provinceCount) 省。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             HStack {
                 Text("种子").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
                 Spacer()
                 TextField("", text: $options.seed, prompt: Text("随机").foregroundColor(Theme.ink2.opacity(0.6)))
-                    .font(Theme.kai(18)).foregroundStyle(Theme.ink).keyboardType(.numberPad).multilineTextAlignment(.trailing).tint(Theme.seal)
-                    .padding(.horizontal, 12).frame(width: 160, height: 38).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                    .paperField(width: 160).keyboardType(.numberPad).multilineTextAlignment(.trailing)
             }
             VStack(alignment: .leading, spacing: 10) {
                 Text("开局").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
@@ -1239,11 +1235,8 @@ struct ArmySheet: View {
                             Divider2()
                             UnitGrid(selection: $unit).padding(.horizontal, 12).padding(.vertical, 10)
                             Divider2()
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("士气 \(Int(morale))").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                                Slider(value: $morale, in: 0...100, step: 1).tint(Theme.seal)
-                            }
-                            .padding(.horizontal, 16).padding(.vertical, 8)
+                            PaperSlider(title: "士气", value: $morale, range: 0...100, step: 1) { "\(Int($0))" }
+                                .padding(.horizontal, 16).padding(.vertical, 8)
                             Divider2()
                             Button {
                                 let troops = Int(troopsText)
@@ -1645,17 +1638,11 @@ struct MapDisplaySettings: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
             Divider2()
-            VStack(alignment: .leading, spacing: 4) {
-                Text("国名缩放 \(String(format: "%.2f", controller.display.nationNameScale))").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                Slider(value: $controller.display.nationNameScale, in: 0.5...2, step: 0.05).tint(Theme.jade)
-            }
-            .padding(.horizontal, 16).padding(.vertical, 10)
+            PaperSlider(title: "国名", value: $controller.display.nationNameScale, range: 0.5...2, step: 0.05) { String(format: "%.2f", $0) }
+                .padding(.horizontal, 16).padding(.vertical, 10)
             Divider2()
-            VStack(alignment: .leading, spacing: 4) {
-                Text("国家颜色浓度 \(Int(controller.display.colorDensity * 100))%").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                Slider(value: $controller.display.colorDensity, in: 0.2...1, step: 0.1).tint(Theme.jade)
-            }
-            .padding(.horizontal, 16).padding(.vertical, 10)
+            PaperSlider(title: "浓度", value: $controller.display.colorDensity, range: 0.2...1, step: 0.1) { "\(Int($0 * 100))%" }
+                .padding(.horizontal, 16).padding(.vertical, 10)
             Text("行省边界默认关闭，打开后为 #B2B2B2。羊皮纸默认按预设打开（网页适配）。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                 .padding(.horizontal, 16).padding(.bottom, 10)
         }
@@ -1683,6 +1670,7 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.4", ["设置、新世界、显示设置、自绘地图、军团士气和国家页的国运与能力，改用已有的纸面滑杆和宣纸面板。出错提示和放弃地图不再用系统弹窗。"]),
         ("0.26.3", ["开场和生成世界恢复上一版的「注水成海」流程，不再用短淡入替换。",
                     "国家失去最后一块实控领土的同一刻，该国还有兵力的军队被清除，不再停在地图上发呆，也不再改去进攻或投奔盟国。清除时兵力、士气、军粮写 0，行军停下。这是按现有「失去作战能力」的写法收束（简化）。",
                     "省会、海色、省界、显示设置、州郡地形标题、国家页只展开基本信息，仍是 0.26.2 的内容。"]),

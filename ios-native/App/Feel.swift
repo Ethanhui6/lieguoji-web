@@ -121,7 +121,7 @@ struct RemoteSettings: View {
             if advanced && model.remoteAddress == nil {
                 HStack {
                     TextField("", text: $address, prompt: Text("局域网地址或配对码").foregroundColor(Theme.ink2.opacity(0.6)))
-                        .font(Theme.kai(15)).keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.never)
+                        .paperField().keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.never)
                     Button("连接") {
                         busy = true; message = ""
                         Task { let error = await model.connectRemote(address); busy = false; message = error ?? ""; GameFeel.shared.notify(error == nil ? .success : .error) }
@@ -142,15 +142,12 @@ struct FeelSettings: View {
         Group2 {
             PaperSwitch(title: "背景音乐（原作曲目）", on: $feel.music)
             Divider2()
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("音量 \(Int(feel.volume * 100))%").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                    Spacer()
-                    if feel.music && !feel.track.isEmpty {
-                        Button { feel.next() } label: { Label(feel.track, systemImage: "forward.fill").font(Theme.kai(13)).foregroundStyle(Theme.seal).lineLimit(1) }
-                    }
+            VStack(alignment: .leading, spacing: 8) {
+                if feel.music && !feel.track.isEmpty {
+                    Button { feel.next() } label: { Label(feel.track, systemImage: "forward.fill").font(Theme.kai(13)).foregroundStyle(Theme.seal).lineLimit(1) }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                Slider(value: $feel.volume, in: 0...1, step: 0.05).tint(Theme.jade)
+                PaperSlider(title: "音量", value: $feel.volume, range: 0...1, step: 0.05) { "\(Int($0 * 100))%" }
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
             Divider2()

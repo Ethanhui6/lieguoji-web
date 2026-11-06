@@ -478,12 +478,14 @@ struct PaperSlider: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     var step: Double? = nil
+    var onEditingChanged: ((Bool) -> Void)? = nil
     let format: (Double) -> String
     var body: some View {
         HStack(spacing: 12) {
             Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 68, alignment: .leading)
-            if let step { Slider(value: $value, in: range, step: step).tint(Theme.seal) } else { Slider(value: $value, in: range).tint(Theme.seal) }
-            Text(format(value)).font(Theme.kai(16)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 46, alignment: .trailing)
+            if let step { Slider(value: $value, in: range, step: step, onEditingChanged: { onEditingChanged?($0) }).tint(Theme.seal) }
+            else { Slider(value: $value, in: range, onEditingChanged: { onEditingChanged?($0) }).tint(Theme.seal) }
+            Text(format(value)).font(Theme.kai(16)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 52, alignment: .trailing)
         }
     }
 }

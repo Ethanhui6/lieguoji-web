@@ -731,11 +731,8 @@ struct NationSheet: View {
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 Divider2()
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("国运 \(Int(destinyValue))").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                    Slider(value: $destinyValue, in: 0...100, step: 1).tint(Theme.seal)
-                }
-                .padding(.horizontal, 16).padding(.vertical, 10)
+                PaperSlider(title: "国运", value: $destinyValue, range: 0...100, step: 1) { "\(Int($0))" }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
                 Divider2()
                 Button {
                     let gold = Double(goldText)
@@ -961,11 +958,8 @@ struct PersonEditor: View {
                 SectionLabel("能力")
                 Group2 {
                     ForEach(0..<4, id: \.self) { i in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack { Text(Self.skillNames[i]).font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Text("\(Int(skills[i]))").font(Theme.kai(17)).foregroundStyle(Theme.seal).monospacedDigit() }
-                            Slider(value: $skills[i], in: 0...100, step: 1).tint(Theme.seal)
-                        }
-                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        PaperSlider(title: Self.skillNames[i], value: $skills[i], range: 0...100, step: 1) { "\(Int($0))" }
+                            .padding(.horizontal, 16).padding(.vertical, 8)
                         if i < 3 { Divider2() }
                     }
                 }

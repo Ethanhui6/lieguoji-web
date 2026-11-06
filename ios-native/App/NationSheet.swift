@@ -661,7 +661,7 @@ struct NationSheet: View {
                         Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                     }
                     ForEach(p.traits, id: \.self) { t in
-                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.effect[t].map { "：" + $0 } ?? "").foregroundStyle(Theme.ink2)).font(Theme.kai(13))
+                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.caption(t)).foregroundStyle(Theme.ink2)).font(Theme.kai(13))
                     }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
@@ -950,6 +950,12 @@ struct NationSheet: View {
 /// (CharacterTraitDesc_*, Chinese column), keyed by the web's trait label. Only these 27 strings are
 /// copied; see ios-native/Resources/SOURCE.md.
 enum TraitText {
+    /// Shown after the original description. These two have no settlement in this build.
+    static let inactive: Set<String> = ["船舶大师", "改革家"]
+    static func caption(_ name: String) -> String {
+        let body = effect[name].map { "：" + $0 } ?? ""
+        return inactive.contains(name) ? body + "（本版未生效）" : body
+    }
     static let effect: [String: String] = [
         "天才": "拥有超凡的智慧和卓越的头脑",
         "勇敢": "在战斗中无所畏惧，深受士兵敬仰",

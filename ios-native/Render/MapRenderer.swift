@@ -28,6 +28,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var relief: (buffer: MTLBuffer, count: Int)?
     private var outlines: (buffer: MTLBuffer, count: Int)?
     private var icons: (buffer: MTLBuffer, count: Int)?
+    /// Sea lanes between harbours. Rebuilt when the port list changes, hidden by the display switch.
+    private var seaLanes: (buffer: MTLBuffer, count: Int)?
+    private var seaLaneKey: [SIMD2<Float>] = []
+    /// Warm-authored sea bytes. Recoloured into `sea` for the selected preset.
+    private var seaSource: [UInt8] = []
     /// 卷轴边缘: the map's paper edge darkens like an old scroll and a double ink rule frames it.
     private var frame: (buffer: MTLBuffer, count: Int)?
     private let sea: MTLTexture?
@@ -91,16 +96,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let c = CellMesh.colors(map: map, mode: .political, nationColors: nationColors)
         guard let cb = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) else { return nil }
         colors = cb
-        // Sea texture straight from the exported RGBA bytes.
+        // Sea texture: authored warm, shown in the active preset (preset 0 until settings arrive).
         let seaDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: map.seaWidth, height: map.seaHeight, mipmapped: false)
         seaDescriptor.usage = .shaderRead
         let seaTexture = device.makeTexture(descriptor: seaDescriptor)
-        map.seaRGBA.withUnsafeBytes { bytes in
-            if let base = bytes.baseAddress {
-                seaTexture?.replace(region: MTLRegionMake2D(0, 0, map.seaWidth, map.seaHeight), mipmapLevel: 0, withBytes: base, bytesPerRow: map.seaWidth * 4)
-            }
-        }
         sea = seaTexture
+        seaSource = map.seaRGBA
         if let url = parchmentURL {
             parchment = try? MTKTextureLoader(device: device).newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true])
         } else { parchment = nil }
@@ -116,6 +117,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         outlines = buffer(MapLayers.outlines(map).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(map).vertices, stride: 6)
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
+        uploadSea()
         // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
         // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
         // The figures (UnitArt), one texture per role, plus the commander's banner.
@@ -145,12 +147,26 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         relief = buffer(MapLayers.relief(next).vertices, stride: 6)
         outlines = buffer(MapLayers.outlines(next).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
-        if refreshSea, let sea, next.seaRGBA.count == next.seaWidth * next.seaHeight * 4 {
-            next.seaRGBA.withUnsafeBytes { bytes in
-                if let b = bytes.baseAddress { sea.replace(region: MTLRegionMake2D(0, 0, next.seaWidth, next.seaHeight), mipmapLevel: 0, withBytes: b, bytesPerRow: next.seaWidth * 4) }
+        if refreshSea { seaSource = next.seaRGBA; uploadSea(); seaLaneKey = []; seaLanes = nil }
+        recolor()
+    }
+
+    /// Harbour points in map units. Empty hides the lanes even when the switch is on.
+    @discardableResult func setSeaPorts(_ ports: [SIMD2<Float>]) -> Bool {
+        guard ports != seaLaneKey else { return false }
+        seaLaneKey = ports
+        seaLanes = buffer(MapLayers.seaLanes(map, ports: ports.map { (x: $0.x, y: $0.y) }).vertices, stride: 6)
+        return true
+    }
+
+    private func uploadSea() {
+        guard let sea, seaSource.count == map.seaWidth * map.seaHeight * 4 else { return }
+        let bytes = MapPalette.recolorSea(seaSource, from: .warmPaper, to: MapPalette.ocean(display.ocean))
+        bytes.withUnsafeBytes { raw in
+            if let base = raw.baseAddress {
+                sea.replace(region: MTLRegionMake2D(0, 0, map.seaWidth, map.seaHeight), mipmapLevel: 0, withBytes: base, bytesPerRow: map.seaWidth * 4)
             }
         }
-        recolor()
     }
 
     /// Ownership changed (conquest, rebellion): recolour the land and redraw the state outlines.
@@ -159,6 +175,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func setMap(_ next: WorldMap) {
         map = next; base = nil
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
+        icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
         recolor()
         outlineGeneration += 1
         let generation = outlineGeneration
@@ -186,8 +203,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     private(set) var display = DisplaySettings()
     func setDisplay(_ d: DisplaySettings) {
-        let recolour = d.colorDensity != display.colorDensity
+        let recolour = d.colorDensity != display.colorDensity || d.ocean != display.ocean
+        let seaChanged = d.ocean != display.ocean
         display = d
+        if seaChanged { uploadSea() }
         if recolour { base = nil; recolor() }
     }
     private func recolor() {
@@ -214,14 +233,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         guard let base else { return }
         var c = base.land
         if reveal < 1 {
-            // Generation: the land rises from the coast to the peaks (0…0.45), forests and rivers follow,
-            // the states' colours wash in (0.55…0.75); borders and cities come after (drawn by stage).
+            // The land fades up together, with state colours following. Borders and cities are drawn later.
             let terrain = base.terrain
-            let sea = MapPalette.shallowSea, rise = min(1, reveal / 0.45), wash = min(1, max(0, (reveal - 0.55) / 0.2))
+            let sea = MapPalette.ocean(display.ocean).shallow
+            // A soft rise of the whole land (网页适配). A hard coast-to-peak sweep read as water being poured in.
+            let fade = reveal * reveal * (3 - 2 * reveal), wash = min(1, max(0, (reveal - 0.42) / 0.38))
             let top = Float(max(21, map.elevation.max().map(Int.init) ?? 100))
             for cell in 0..<map.cellCount where map.isLand(cell) {
                 let h = (Float(map.elevation[cell]) - 20) / (top - 20)
-                let shown = min(1, max(0, (rise * 1.15 - h) * 8))
+                let shown = min(1, max(0, (fade + (1 - h) * 0.08 - 0.04) / 0.9))
                 for v in Int(map.offsets[cell])..<Int(map.offsets[cell + 1]) {
                     for k in 0..<3 {
                         let ground = terrain[v * 4 + k] + (c[v * 4 + k] - terrain[v * 4 + k]) * wash
@@ -424,10 +444,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
-        // Province lines: 0.55 screen px, #303e37 at 0.2, only once zoomed in (map.ts zoom > 0.6).
+        // Province lines: 0.55 screen px once zoomed in. Colour is the measured #B2B2B2.
+        // The screen width is the previous client choice; it is not a measured original width.
         if let lines = provinceLines, display.provinceLines, camera.scale > 0.9 || reveal < 1, reveal >= 0.55 {
             u.halfWidth = 0.55 / 2
-            var color = SIMD4<Float>(0x30 / 255.0, 0x3E / 255.0, 0x37 / 255.0, 0.2)
+            var color = SIMD4<Float>(MapPalette.provinceBorder.r, MapPalette.provinceBorder.g, MapPalette.provinceBorder.b, 1)
             encoder.setRenderPipelineState(linePipeline)
             encoder.setVertexBuffer(lines.buffer, offset: 0, index: 0)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
@@ -442,6 +463,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
         }
+        if display.seaRoutes && reveal >= 0.7 { colored(seaLanes) }
         if display.vegetation && reveal >= 0.45 { colored(relief) }
         if display.borders && reveal >= 0.75 { colored(outlines) }
         if display.cityIcons && reveal >= 0.85 { colored(icons) }
@@ -457,9 +479,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
         }
         }
-        let r = map.meta.parchment
-        quad(parchment, multiplyPipeline, x: r.x, y: r.y, width: r.width, height: r.height)
-        if reveal >= 0.2 { colored(frame) }
+        if display.parchment {
+            let r = map.meta.parchment
+            quad(parchment, multiplyPipeline, x: r.x, y: r.y, width: r.width, height: r.height)
+        }
+        if display.darkEdges && reveal >= 0.2 { colored(frame) }
         encoder.endEncoding()
         buffer.present(drawable)
         buffer.commit()

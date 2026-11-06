@@ -49,6 +49,8 @@ import LieguojiCore
     var troopTexts: [String: String] = [:]
     /// Where the icon with this key is drawn now (set by the map view).
     var placed: ((String) -> (Double, Double)?)?
+    /// Harbour points in map units. The sea-route layer is rebuilt when this changes.
+    @Published var seaPorts: [SIMD2<Float>] = []
     /// A fleet waiting for its port: the next province tap is its destination.
     @Published var marchingFleet: Int?
     /// 绘制疆域: provinces tapped or dragged over go to this state.
@@ -83,17 +85,33 @@ import LieguojiCore
     func zoom(_ factor: Double) { zoomRequest = (factor, UUID()) }
 }
 
-/// Map display options: state borders, province lines, city names and icons, vegetation and
-/// relief ornaments, and how strongly state colours cover the land (1 = the original look).
+/// Map display options kept between launches. v2 resets older saves so province borders start off
+/// and the new switches take the display-settings defaults.
 struct DisplaySettings: Codable, Equatable {
     var borders = true
-    var provinceLines = true
+    /// Province borders start off (DisplayProvinceBorderToggle). On, they draw #B2B2B2.
+    var provinceLines = false
     var cityNames = true
     var cityIcons = true
     var vegetation = true
     /// State colours over the terrain: below full so mountains, forests and deserts show through.
     var colorDensity = 0.7
-    static let key = "displaySettings.v1"
+    /// Sea routes between harbours. Default on.
+    var seaRoutes = true
+    /// Scroll-edge darkening. Default on (IsEnableDarkBorder).
+    var darkEdges = true
+    /// Parchment multiply. Preset 0 has it on; the serialized toggle's runtime winner is unresolved,
+    /// so this build follows preset 0 and labels the switch 网页适配.
+    var parchment = true
+    /// State-name scale. Default 1. The 0.5–2 range matches the web display slider, not a measured original limit.
+    var nationNameScale = 1.0
+    /// Full state titles. Off, a known polity suffix is dropped from the map label.
+    var fullNationNames = true
+    /// "original" is preset 0. "warm" keeps the previous paper sea (网页适配).
+    var ocean = "original"
+    /// Opening and world-entry fade (网页适配). Off, the map is shown complete.
+    var entrance = true
+    static let key = "displaySettings.v2"
     static func load() -> DisplaySettings {
         guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) else { return DisplaySettings() }
         return v
@@ -154,7 +172,8 @@ struct MapView: UIViewRepresentable {
         func build() -> MapContainerView {
             container = MapContainerView()
             mtk = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
-            mtk.clearColor = MTLClearColor(red: 0x52 / 255.0, green: 0x7C / 255.0, blue: 0x86 / 255.0, alpha: 1)
+            let deep = MapPalette.ocean(controller.display.ocean).deep
+            mtk.clearColor = MTLClearColor(red: Double(deep.r), green: Double(deep.g), blue: Double(deep.b), alpha: 1)
             mtk.isPaused = true
             mtk.enableSetNeedsDisplay = true
             mtk.preferredFramesPerSecond = 120
@@ -457,7 +476,23 @@ struct MapView: UIViewRepresentable {
             }
             if controller.effects != shownEffects { shownEffects = controller.effects; effects.set(shownEffects); effects.alpha = controller.reveal >= 1 ? 1 : 0 }
             labels?.setSelected(controller.selectedProvince)
-            if let renderer, renderer.display != controller.display { renderer.setDisplay(controller.display); mtk.setNeedsDisplay() }
+            if let renderer, renderer.display != controller.display {
+                let oceanChanged = renderer.display.ocean != controller.display.ocean
+                renderer.setDisplay(controller.display)
+                if oceanChanged {
+                    let deep = MapPalette.ocean(controller.display.ocean).deep
+                    mtk.clearColor = MTLClearColor(red: Double(deep.r), green: Double(deep.g), blue: Double(deep.b), alpha: 1)
+                }
+                mtk.setNeedsDisplay()
+            }
+            if renderer?.setSeaPorts(controller.seaPorts) == true { mtk.setNeedsDisplay() }
+            if labels.nameScale != controller.display.nationNameScale || labels.fullNames != controller.display.fullNationNames {
+                labels.nameScale = controller.display.nationNameScale
+                let namesChanged = labels.fullNames != controller.display.fullNationNames
+                labels.fullNames = controller.display.fullNationNames
+                if namesChanged, controller.viewLabels == nil { labels.setNations(map: map, animated: false) }
+                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+            }
             if let labels, labels.showCities != controller.display.cityNames {
                 labels.showCities = controller.display.cityNames
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
@@ -539,14 +574,14 @@ final class MapLabelsView: UIView {
     init(map: WorldMap) {
         super.init(frame: .zero)
         let unit = Double(MapLayers.fontUnit)
-        nations = Self.nationLabels(map, unit: unit)
+        nations = Self.nationLabels(map, unit: unit, full: true)
         cities = Self.cityLabels(map)
         for l in cities + nations { l.view.isHidden = true; addSubview(l.view) }
     }
     private static func cityLabels(_ map: WorldMap) -> [Label] {
-        let capitals = Set(map.meta.nations.compactMap { map.meta.cities.indices.contains($0.capital) ? map.meta.cities[$0.capital].id : nil })
-        return map.meta.cities.filter { !$0.name.isEmpty }.map { c in
-            let s = capitals.contains(c.id) ? 1.5 : 1.0, em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
+        return zip(map.meta.cities, MapLayers.cityMarks(map)).filter { !$0.0.name.isEmpty }.map { c, mark in
+            let s: Double = mark == .capital ? 1.5 : mark == .provinceSeat ? 1.12 : 1
+            let em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
             return Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
                          stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 8, province: c.province)
         }
@@ -563,12 +598,13 @@ final class MapLabelsView: UIView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
-    private static func nationLabels(_ map: WorldMap, unit: Double) -> [Label] {
-        map.meta.labels.filter { $0.nation >= 0 }.map { box in
+    private static func nationLabels(_ map: WorldMap, unit: Double, full: Bool) -> [Label] {
+        map.meta.labels.filter { $0.nation >= 0 && map.meta.nations.indices.contains($0.nation) }.map { box in
             let n = map.meta.nations[box.nation]
-            let measured = (n.name as NSString).size(withAttributes: [.font: font(1)])
+            let shown = MapLayers.stateLabel(n.name, full: full)
+            let measured = (shown as NSString).size(withAttributes: [.font: font(1)])
             let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
-            return Label(text: n.name, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
+            return Label(text: shown, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
         }
     }
     /// Ownership changed: replace the state names, keep every city label and its rendered image.
@@ -585,7 +621,7 @@ final class MapLabelsView: UIView {
     }
     func setNations(map: WorldMap, animated: Bool = true) {
         fadeOut(nations, animated)
-        nations = Self.nationLabels(map, unit: Double(MapLayers.fontUnit))
+        nations = Self.nationLabels(map, unit: Double(MapLayers.fontUnit), full: fullNames)
         fadeIn(nations, animated)
     }
     /// Name sets cross-fade when a view switches or borders change, instead of popping.
@@ -609,6 +645,9 @@ final class MapLabelsView: UIView {
     }
 
     var showCities = true
+    /// Multiplies state-name size. 1 leaves the label boxes as they are.
+    var nameScale = 1.0
+    var fullNames = true
     private var selected: Int?
     func setSelected(_ province: Int?) { selected = province }
 
@@ -632,7 +671,7 @@ final class MapLabelsView: UIView {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         if !showCities { for l in cities { l.view.isHidden = true } }
         for l in nations + (showCities ? cities : []) {
-            let points = l.mapEm * camera.scale
+            let points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)
             let p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
             // A name larger than the screen can show is hidden (a continent-wide group zoomed in close).
             guard points.isFinite, points >= l.minPoints, points < 900, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }

@@ -245,7 +245,7 @@ struct NationSheet: View {
                     .padding(.horizontal, 24)
                 }
                 // 国史: the chronicle entries naming this state, newest first.
-                FoldSection("国史", expanded: true) {
+                FoldSection("国史", expanded: false) {
                     Group2 {
                         if history.isEmpty { Row(label: "国史", value: "尚无记载") }
                         ForEach(Array(history.prefix(20).enumerated()), id: \.offset) { i, e in
@@ -263,9 +263,9 @@ struct NationSheet: View {
     }
     @ViewBuilder private func courtTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-                if let court = info.court, info.alive { FoldSection("朝堂", expanded: true) { courtView(court, map) } }
+                if let court = info.court, info.alive { FoldSection("朝堂", expanded: false) { courtView(court, map) } }
                 if let parties = info.parties, !parties.isEmpty {
-                    FoldSection("议会（\(info.styleLabel ?? "")）", expanded: true) {
+                    FoldSection("议会（\(info.styleLabel ?? "")）", expanded: false) {
                         Group2 {
                             // Seats in one band, then each party.
                             GeometryReader { g in
@@ -330,7 +330,7 @@ struct NationSheet: View {
         VStack(alignment: .leading, spacing: 14) {
                 // 军事: the state's armies at a glance (tap one to open it), then its wars.
                 let mine = state.armies.indices.filter { state.armies[$0].nation == nation }
-                FoldSection("军队（\(mine.count) 支 · \(Names.wan(mine.reduce(0) { $0 + state.armies[$1].troops }))）", expanded: true) {
+                FoldSection("军队（\(mine.count) 支 · \(Names.wan(mine.reduce(0) { $0 + state.armies[$1].troops }))）", expanded: false) {
                     Group2 {
                         if mine.isEmpty { Row(label: "军队", value: "暂无军队") }
                         ForEach(Array(mine.sorted { state.armies[$0].troops > state.armies[$1].troops }.prefix(12).enumerated()), id: \.offset) { k, i in
@@ -351,7 +351,7 @@ struct NationSheet: View {
                     }
                     .padding(.horizontal, 16)
                 }
-                FoldSection(info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）", expanded: !info.wars.isEmpty) {
+                FoldSection(info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）", expanded: false) {
                     Group2 {
                         if info.wars.isEmpty { Row(label: "战争", value: "暂无战争") }
                         ForEach(info.wars) { war in
@@ -365,7 +365,7 @@ struct NationSheet: View {
     }
     @ViewBuilder private func diplomacyTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-                FoldSection("外交关系", expanded: true) {
+                FoldSection("外交关系", expanded: false) {
                     Group2 {
                         let rows = relationRows(info, map)
                         if rows.isEmpty { Row(label: "外交", value: "暂无外交关系") }
@@ -387,7 +387,7 @@ struct NationSheet: View {
                         .padding(.horizontal, 16)
                     }
                 }
-                if info.alive { FoldSection("国家行为", expanded: true) { actions(info, map) } }
+                if info.alive { FoldSection("国家行为", expanded: false) { actions(info, map) } }
         }
     }
     /// 国色 choices: the original's map palette.

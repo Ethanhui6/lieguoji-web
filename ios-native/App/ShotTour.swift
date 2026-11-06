@@ -1,4 +1,5 @@
 import SwiftUI
+import LieguojiCore
 
 /// The CI screenshot tour (launched with LGJ_SHOT=1 in the simulator): it starts a world at war and
 /// walks the map and every panel. Each stop leaves a marker file in Documents; the workflow takes
@@ -20,13 +21,18 @@ enum ShotTour {
 
     /// Title, then a new world; the founding is shot while it rises.
     @MainActor static func start(_ model: GameModel) async {
-        await wait(4)
+        await wait(0.45)
+        await shoot("01-opening")
+        await wait(1.5)
         await shoot("01-title")
         var options = GameModel.NewWorld()
         options.seed = "20261101"; options.nations = 12; options.provinces = "140"; options.relations = "war"
         Task { @MainActor in
             while model.phase != .founding && model.phase != .playing { await wait(0.2) }
-            if model.phase == .founding { await wait(1.2); await shoot("02-founding") }
+            if model.phase == .founding {
+                await wait(0.7); await shoot("02-world-rise")
+                await wait(1.3); await shoot("02-world-ready")
+            }
         }
         await model.generate(options)
     }
@@ -56,6 +62,11 @@ enum ShotTour {
         if let state = model.state, let a = state.armies.first(where: { $0.travel == "moving" && $0.destination != nil }) {
             model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(1.5)
             for i in 0..<10 { await shoot(String(format: "08-march-%02d", i)); await wait(1) }
+        }
+        // Close on a province seat, which is drawn differently from a national capital.
+        if let map = model.map, let seat = zip(map.meta.cities, MapLayers.cityMarks(map)).first(where: { $0.1 == .provinceSeat })?.0 {
+            model.controller.fly(x: Double(seat.x), y: Double(seat.y))
+            await wait(2.2); await shoot("05d-province-seat")
         }
         model.pause(saving: false)
         views(true); await wait(1); await shoot("07-views"); views(false)

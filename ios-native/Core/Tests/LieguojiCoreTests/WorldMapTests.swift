@@ -70,7 +70,14 @@ final class WorldMapTests: XCTestCase {
         let relief = MapLayers.relief(map), outlines = MapLayers.outlines(map), icons = MapLayers.cityIcons(map)
         XCTAssertGreaterThan(relief.vertexCount, 1000); XCTAssertEqual(relief.vertexCount % 3, 0)
         XCTAssertGreaterThan(outlines.vertexCount, 11108 * 6 - 1)
-        XCTAssertEqual(icons.vertexCount, (80 - 8) * 2 * 14 * 3 + 8 * 3 * 20 * 3)
+        let marks = MapLayers.cityMarks(map)
+        XCTAssertEqual(marks.filter { $0 == .capital }.count, 8)
+        XCTAssertEqual(marks.filter { $0 == .provinceSeat }.count, 72)
+        XCTAssertEqual(marks.filter { $0 == .city }.count, 0)
+        XCTAssertEqual(icons.vertexCount, 8 * 3 * 20 * 3 + 72 * (16 + 16 + 12) * 3)
+        var extra = map
+        extra.meta.cities.append(WorldMeta.City(id: "extra", name: "extra", x: 1, y: 1, province: 0))
+        XCTAssertEqual(MapLayers.cityMarks(extra).last, .city)
         // Ear clipping covers the polygon area exactly, in either winding.
         let square: [Float] = [0, 0, 2, 0, 2, 2, 0, 2], dent: [Float] = [0, 0, 4, 0, 4, 4, 2, 1, 0, 4]
         for poly in [square, Array(square.reversed()), dent] {
@@ -102,6 +109,42 @@ final class WorldMapTests: XCTestCase {
         let sea = (0..<map.cellCount).first(where: { !map.isLand($0) })!
         XCTAssertEqual(MapPalette.cellColor(map: map, cell: sea, mode: .political, nationColors: colors), MapPalette.cellColor(map: map, cell: sea, mode: .terrain, nationColors: colors))
         for x: Float in [0, 0.002, 0.5, 1] { XCTAssertEqual(MapPalette.linearToSrgb(MapPalette.srgbToLinear(x)), x, accuracy: 1e-5) }
+        XCTAssertEqual(MapPalette.shallowSea, RGB(hex: 0x3C9CFF))
+        XCTAssertEqual(MapPalette.deepSea, RGB(hex: 0x1487FF))
+        XCTAssertEqual(MapPalette.coastLine, RGB(hex: 0x5F5F5F))
+        XCTAssertEqual(MapPalette.provinceBorder, RGB(hex: 0xB2B2B2))
+        XCTAssertEqual(MapPalette.seaLane, RGB(hex: 0x868686))
+    }
+
+    func testOceanRecolorKeepsTheGradientEnds() {
+        let warm = MapPalette.Ocean.warmPaper, original = MapPalette.Ocean.original
+        func bytes(_ c: RGB) -> [UInt8] { [UInt8((c.r * 255).rounded()), UInt8((c.g * 255).rounded()), UInt8((c.b * 255).rounded()), 255] }
+        var rgba = bytes(warm.deep) + bytes(warm.shallow)
+        let out = MapPalette.recolorSea(rgba, from: warm, to: original)
+        XCTAssertEqual(Array(out[0..<3]), Array(bytes(original.deep)[0..<3]))
+        XCTAssertEqual(Array(out[4..<7]), Array(bytes(original.shallow)[0..<3]))
+        XCTAssertEqual(out[3], 255); XCTAssertEqual(out[7], 255)
+        XCTAssertEqual(MapPalette.recolorSea(rgba, from: warm, to: warm), rgba)
+        XCTAssertEqual(MapPalette.ocean("warm"), warm)
+        XCTAssertEqual(MapPalette.ocean("original"), original)
+        XCTAssertEqual(MapLayers.stateLabel("英格兰王国", full: true), "英格兰王国")
+        XCTAssertEqual(MapLayers.stateLabel("英格兰王国", full: false), "英格兰")
+        XCTAssertEqual(MapLayers.stateLabel("神圣罗马帝国", full: false), "神圣罗马")
+        XCTAssertEqual(MapLayers.stateLabel("长安", full: false), "长安")
+    }
+
+    func testSeaLanesStayOnWater() {
+        let map = Self.map
+        XCTAssertEqual(MapLayers.seaLanes(map, ports: []).vertexCount, 0)
+        guard let edge = map.edges.first(where: { e in
+            let a = Int(e.a), b = Int(e.b)
+            return a >= 0 && b >= 0 && !map.isLand(a) && !map.isLand(b)
+        }) else { return XCTFail("no sea edge") }
+        let a = Int(edge.a), b = Int(edge.b)
+        let ports = [(x: map.sites[a * 2], y: map.sites[a * 2 + 1]), (x: map.sites[b * 2], y: map.sites[b * 2 + 1])]
+        let lanes = MapLayers.seaLanes(map, ports: ports)
+        XCTAssertGreaterThan(lanes.vertexCount, 0)
+        XCTAssertEqual(lanes.vertexCount % 3, 0)
     }
 }
 

@@ -318,19 +318,98 @@ public enum MapLayers {
         return m
     }
 
+    public enum CityMark: Equatable, Sendable { case capital, provinceSeat, city }
+
+    /// Nation capitals keep the triple ring. The city nearest each province centre is that province's
+    /// seat. Any other city in the province keeps the ordinary double ring. Port, fortress and holy
+    /// icons need a city type this metadata does not carry, so they are not guessed.
+    public static func cityMarks(_ map: WorldMap) -> [CityMark] {
+        let capitals = Set(map.meta.nations.compactMap { $0.capital >= 0 && map.meta.cities.indices.contains($0.capital) ? $0.capital : nil })
+        var best = [Int: (index: Int, distance: Float)]()
+        for (i, city) in map.meta.cities.enumerated() {
+            guard map.meta.provinces.indices.contains(city.province) else { continue }
+            let p = map.meta.provinces[city.province]
+            let dx = city.x - p.x, dy = city.y - p.y, d = dx * dx + dy * dy
+            if let old = best[city.province], old.distance < d || (old.distance == d && old.index < i) { continue }
+            best[city.province] = (i, d)
+        }
+        let seats = Set(best.values.map(\.index))
+        return map.meta.cities.indices.map { capitals.contains($0) ? .capital : seats.contains($0) ? .provinceSeat : .city }
+    }
+
     /// Shapes CityMain (black disc, white centre 0.56) and CityCapitalFinal (1.3 / 0.885 / 0.43 rings).
+    /// A province seat uses the same discs, drawn clearer than an ordinary city and smaller than a capital.
+    /// Those seat radii are a presentation choice (网页适配), not a measured original size.
     public static func cityIcons(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
-        let capitals = Set(map.meta.nations.compactMap { $0.capital >= 0 ? $0.capital : nil })
         let black = RGB(0, 0, 0), white = RGB(1, 1, 1), u = cityUnit, c = cityUnit * 1.5
-        for (i, city) in map.meta.cities.enumerated() {
-            if capitals.contains(i) {
+        for (mark, city) in zip(cityMarks(map), map.meta.cities) {
+            switch mark {
+            case .capital:
                 m.disc(city.x, city.y, radius: 1.3 * c, black); m.disc(city.x, city.y, radius: 0.885 * c, white); m.disc(city.x, city.y, radius: 0.43 * c, black)
-            } else {
+            case .provinceSeat:
+                let s = u * 1.28
+                m.disc(city.x, city.y, radius: s, black, sides: 16); m.disc(city.x, city.y, radius: 0.62 * s, white, sides: 16); m.disc(city.x, city.y, radius: 0.22 * s, black, sides: 12)
+            case .city:
                 m.disc(city.x, city.y, radius: u, black, sides: 14); m.disc(city.x, city.y, radius: 0.56 * u, white, sides: 14)
             }
         }
         return m
+    }
+
+    /// Full nation name, or the same name with a known polity suffix removed. Names that do not end
+    /// in one of those suffixes are left as written (a custom title is not trimmed).
+    public static func stateLabel(_ name: String, full: Bool) -> String {
+        guard !full else { return name }
+        let suffixes = ["人民共和国", "哈里发国", "教宗国", "神权国", "共和国", "王国", "帝国", "联邦", "部族", "部落"]
+        for suffix in suffixes where name.hasSuffix(suffix) && name.count > suffix.count { return String(name.dropLast(suffix.count)) }
+        return name
+    }
+
+    /// Lanes between harbour points, walking sea cells so the line stays on water. Colour is the
+    /// measured sea-route grey. The stroke width is a presentation choice: the original's serialized
+    /// width and dash are not in this client, so the line is solid.
+    public static let seaLaneWidth: Float = 0.55
+    public static func seaLanes(_ map: WorldMap, ports: [(x: Float, y: Float)]) -> ColoredMesh {
+        var mesh = ColoredMesh()
+        let points = ports.filter { $0.x.isFinite && $0.y.isFinite }
+        guard points.count >= 2, map.cellCount > 0, map.sites.count >= map.cellCount * 2 else { return mesh }
+        var neighbors = [[Int]](repeating: [], count: map.cellCount)
+        for edge in map.edges {
+            let a = Int(edge.a), b = Int(edge.b)
+            guard a >= 0, b >= 0, a < map.cellCount, b < map.cellCount, !map.isLand(a), !map.isLand(b) else { continue }
+            neighbors[a].append(b); neighbors[b].append(a)
+        }
+        func site(_ cell: Int) -> SIMD2<Float> { SIMD2(map.sites[cell * 2], map.sites[cell * 2 + 1]) }
+        var docks = [Int](), seenDock = Set<Int>()
+        for point in points {
+            var best = -1, bestD = Float.greatestFiniteMagnitude
+            for cell in 0..<map.cellCount where !map.isLand(cell) {
+                let s = site(cell), d = (s.x - point.x) * (s.x - point.x) + (s.y - point.y) * (s.y - point.y)
+                if d < bestD { bestD = d; best = cell }
+            }
+            if best >= 0, seenDock.insert(best).inserted { docks.append(best) }
+        }
+        guard docks.count >= 2 else { return mesh }
+        let goals = Set(docks)
+        var linked = Set<UInt64>()
+        func pair(_ a: Int, _ b: Int) -> UInt64 { let x = UInt64(min(a, b)), y = UInt64(max(a, b)); return x << 32 | y }
+        for start in docks {
+            var queue = [start], from = [Int: Int](), seen: Set<Int> = [start], found: Int?, index = 0
+            while index < queue.count {
+                let cell = queue[index]; index += 1
+                if cell != start, goals.contains(cell) { found = cell; break }
+                for next in neighbors[cell] where seen.insert(next).inserted { from[next] = cell; queue.append(next) }
+            }
+            guard let end = found, linked.insert(pair(start, end)).inserted else { continue }
+            var chain = [end], cursor = end
+            while let previous = from[cursor] { chain.append(previous); cursor = previous; if cursor == start { break } }
+            chain.reverse()
+            var flat = [Float](); flat.reserveCapacity(chain.count * 2)
+            for cell in chain { let s = site(cell); flat.append(s.x); flat.append(s.y) }
+            mesh.polyline(flat, width: seaLaneWidth, MapPalette.seaLane, alpha: 0.95)
+        }
+        return mesh
     }
 
     /// TextMeshPro auto-size inside a LabelUtility box (original-labels47 autoFontSize47): `em` is

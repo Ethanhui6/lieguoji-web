@@ -15,20 +15,22 @@ npm run dev
 
 常用命令：`npm run lint`、`npm run typecheck`、`npm test`（全量单测，较慢）、`npm run build`、`npm run test:e2e`。
 
-## iOS 自签安装
+## iOS
 
-没有 Mac 也可以装到自己的手机。Actions 里的 **iOS unsigned IPA** 只在你手动运行时，用 GitHub 的 macOS 机器打出一个未签名的 `.ipa`。你再用自己的自签工具重签、安装。不需要 Apple 开发者账号，也不会上传 App Store。网页正式站的 Cloudflare Pages 部署不变。
+手机上玩的是 `ios-native/` 里的 SwiftUI / Metal 原生版，不是 Capacitor 网页壳。当前原生版本 **0.26.2（build 74）**。更新说明在 [ios-native/docs/RELEASE-0.26.2.md](ios-native/docs/RELEASE-0.26.2.md)，应用里「更新」页也能看到这一版改了什么。网页正式站仍由 Cloudflare Pages 部署 `main`，和这个原生包不是同一个版本号。
 
-1. 打开本仓库的 Actions，选 **iOS unsigned IPA**，点 **Run workflow**。选要打包的分支（合并进 `main` 之后一般选 `main`）。推送代码不会自动跑这一步。
-2. 运行变绿后，在该次运行页面底部下载产物 `lieguoji-unsigned-ipa`，解压得到 `lieguoji-unsigned.ipa`。
-3. 用你现有的自签工具打开这个 `.ipa`，换成你自己的证书和描述文件。桌面上的名字是「列国纪」。占位 Bundle ID 是 `app.lieguoji.game`；工具里可以改成你自己的标识，避免和手机上别的应用撞名。
+没有 Mac 也可以装到自己的手机。Actions 里的 **iOS Native unsigned IPA**（`ios-native-unsigned.yml`）打出未签名的 `.ipa`。你再用自己的自签工具重签、安装。不需要上传 App Store。
+
+1. 打开本仓库的 Actions，选 **iOS Native unsigned IPA**，点 **Run workflow**，选要打包的分支。这个工作流在拉取请求上经常因为分支名对不上而跳过，推送也不一定会跑，需要手动运行。
+2. 运行变绿后，在该次运行页面底部下载产物 `lieguoji-native-unsigned`，解压得到 `lieguoji-native-unsigned.ipa`。同一次运行若开了截图，产物 `lieguoji-screenshots` 是模拟器画面，不是真机验收。
+3. 用你现有的自签工具打开这个 `.ipa`，换成你自己的证书和描述文件。桌面上的名字是「列国纪」。Bundle ID 是 `com.lieguoji.native`。
 4. 装到手机后，若系统提示开发者不受信任：打开 **设置 → 通用 → VPN 与设备管理**（有的系统写「描述文件与设备管理」），信任你的证书，再打开应用。
 
-应用把当次网页构建打进安装包，打开地图不需要网络。存档在本机。云存档仍然要联网。
+原生包在本机推演和画地图，打开地图不需要网络。存档在本机「文件」里的「列国纪」。连电脑计算时才需要和电脑在同一网络。
 
-占位 Bundle ID 写在 `capacitor.config.json` 的 `appId`。改完后重新跑上面的工作流（工作流会执行 `npm run ios:sync`，把标识写进 Xcode 工程）。工作流拒绝带 Apple 证书的包。不要把证书、描述文件或私钥放进仓库。
+横屏和竖屏都可以。地图铺满屏幕。切到后台时，进行中的世界会写入本机存档。
 
-横屏和竖屏都可以。状态栏保留（深色内容），地图铺满屏幕，刘海和底部横条用安全区留白。壳会把真实 insets 写成 `--sat` 等变量，避免 `env(safe-area-inset-*)` 在 WebView 里变成 0 时控件钻进刘海。切到后台时，未保存的地图和进行中的世界会写入本机存档。
+仓库里还留着旧的 Capacitor 工程（`ios/`、`capacitor.config.json`，网页 0.5.x 那条安装说明）。那不是现在要装的原生版。不要把证书、描述文件或私钥放进仓库。
 
 ## 目录
 - `src/fms` 游戏：地图编辑与生成（FmsApp）、文化世界与推演（`play/`，culture47 引擎运行在 Web Worker）。

@@ -80,11 +80,12 @@ public enum PreviewWorld {
         return m
     }
 
-    /// A sea texture shaded by depth (deep 0x527c86 → shallow 0x8eafb1), sampled from the cell under each texel.
+    /// A sea texture shaded by depth, authored in the warm-paper pair (deep 0x527c86 → shallow 0x8eafb1).
+    /// The renderer recolours this onto the selected preset, so the coastal gradient stays put.
     static func sea(_ m: WorldMap) -> [UInt8] {
         let picker = CellPicker(map: m), w = m.seaWidth, h = m.seaHeight
         var out = [UInt8](repeating: 255, count: w * h * 4)
-        let deep = MapPalette.deepSea, shallow = MapPalette.shallowSea
+        let deep = MapPalette.Ocean.warmPaper.deep, shallow = MapPalette.Ocean.warmPaper.shallow
         for y in 0..<h { for x in 0..<w {
             let px = (Float(x) + 0.5) * m.width / Float(w), py = (Float(y) + 0.5) * m.height / Float(h)
             let e = picker.cell(atX: px, y: py).map { Float(min(20, max(0, Int(m.elevation[$0])))) / 20 } ?? 0

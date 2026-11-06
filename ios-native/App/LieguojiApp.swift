@@ -27,7 +27,11 @@ enum Theme {
     static let wash = Color(red: 0.925, green: 0.894, blue: 0.835)
     static let seal = Color(red: 0.706, green: 0.255, blue: 0.18)
     static let jade = Color(red: 0.184, green: 0.365, blue: 0.314)
-    static let sea = Color(red: 0x52 / 255, green: 0x7C / 255, blue: 0x86 / 255)
+    /// Backdrop behind the map. Follows the sea preset so the edges are not a different blue.
+    static func seaColor(_ ocean: String) -> Color {
+        let c = MapPalette.ocean(ocean).deep
+        return Color(red: Double(c.r), green: Double(c.g), blue: Double(c.b))
+    }
     static func kai(_ size: CGFloat) -> Font { .custom(fontName, size: size) }
 }
 
@@ -62,7 +66,7 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     var body: some View {
         ZStack {
-            Theme.sea.ignoresSafeArea()
+            Theme.seaColor(model.controller.display.ocean).ignoresSafeArea()
             EngineView(host: model.engine).frame(width: 1, height: 1).opacity(0.01).allowsHitTesting(false)
             if let map = model.map {
                 MapView(map: map, controller: model.controller).id(model.worldID).ignoresSafeArea()
@@ -71,7 +75,12 @@ struct RootView: View {
             case .splash: EmptyView()
             case .title: TitleView(model: model).transition(.opacity)
             case .generating: GeneratingView(note: model.generationNote).transition(.opacity)
-            case .founding: FoundingView(reveal: model.controller.reveal).transition(.opacity)
+            case .founding:
+                if model.controller.display.entrance && !UIAccessibility.isReduceMotionEnabled {
+                    FoundingView(reveal: model.controller.reveal).transition(.opacity)
+                } else {
+                    EmptyView()
+                }
             case .playing: GameView(model: model).transition(.opacity)
             case .editing: if let ed = model.editor { EditorView(model: model, editor: ed).transition(.opacity) }
             }
@@ -100,19 +109,21 @@ struct RootView: View {
         }
         model.controller.interactive = false
         model.controller.drifting = true
-        model.controller.reveal = 0
         model.phase = .title
         if ShotTour.on { Task { @MainActor in await ShotTour.start(model) } }
-        // The title backdrop generates itself: sea, then land from the coast up, then the states.
+        let animate = model.controller.display.entrance && !UIAccessibility.isReduceMotionEnabled
+        guard animate else { model.controller.reveal = 1; return }
+        model.controller.reveal = 0
+        // Title map fades up (网页适配). Kept short so splash plus this stay near three seconds.
         Task { @MainActor in
             let start = Date()
             while model.phase == .title {
-                let t = Float(Date().timeIntervalSince(start) / 3.2)
+                let t = Float(Date().timeIntervalSince(start) / 1.5)
                 model.controller.reveal = min(1, t)
                 if t >= 1 { break }
                 try? await Task.sleep(nanoseconds: 16_000_000)
             }
-            model.controller.reveal = 1
+            if model.phase == .title { model.controller.reveal = 1 }
         }
     }
 }
@@ -159,16 +170,16 @@ struct SplashView: View {
             }
         }
         .task {
-            withAnimation(.easeInOut(duration: 0.9)) { brush = 0.93 }
-            withAnimation(.easeOut(duration: 1.4)) { hills = true }
-            try? await Task.sleep(nanoseconds: 450_000_000)
+            withAnimation(.easeInOut(duration: 0.55)) { brush = 0.93 }
+            withAnimation(.easeOut(duration: 0.8)) { hills = true }
+            try? await Task.sleep(nanoseconds: 180_000_000)
             for i in 1...3 {
-                withAnimation(.easeOut(duration: 0.35)) { written = i }
-                try? await Task.sleep(nanoseconds: 220_000_000)
+                withAnimation(.easeOut(duration: 0.22)) { written = i }
+                try? await Task.sleep(nanoseconds: 120_000_000)
             }
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.55)) { stamped = true }
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.62)) { stamped = true }
             GameFeel.shared.thud()
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            try? await Task.sleep(nanoseconds: 280_000_000)
             done()
         }
     }
@@ -257,7 +268,7 @@ struct TitleView: View {
             .padding(.horizontal, 20).padding(.bottom, 34)
             .offset(y: shown ? 0 : 60).opacity(shown ? 1 : 0)
         }
-        .onAppear { withAnimation(.spring(response: 0.7, dampingFraction: 0.85).delay(model.controller.reveal < 1 ? 1.4 : 0.1)) { shown = true } }
+        .onAppear { withAnimation(.spring(response: 0.55, dampingFraction: 0.86).delay(model.controller.reveal < 1 ? 0.35 : 0.05)) { shown = true } }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
             if case .success(let url) = result { Task { await model.importSave(from: url) } }
         }
@@ -269,6 +280,8 @@ struct TitleView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "设置", subtitle: AppVersion.text, seal: "设")
+                    SectionLabel("显示设置")
+                    MapDisplaySettings(controller: model.controller)
                     SectionLabel("远程计算")
                     RemoteSettings(model: model)
                     SectionLabel("声音与触感")
@@ -410,7 +423,7 @@ struct GeneratingView: View {
                 }
                 .frame(height: 140)
                 Text(note.isEmpty ? "请稍候" : note).font(Theme.kai(20)).foregroundStyle(Theme.ink)
-                Text("地形、海岸、河流、国家与城市依次成形").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                Text("正在铺开地图（网页适配）").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
             }
         }
         .onAppear { phase = true }
@@ -1011,7 +1024,7 @@ struct ProvinceSheet: View {
             let armies = model.state?.armies.enumerated().filter { $0.element.province == province } ?? []
             ScrollView {
                 VStack(spacing: 14) {
-                    SheetHeader(title: p.name, subtitle: nation.map { "\($0.name) · \(Names.terrain[p.terrain] ?? p.terrain)" } ?? Names.terrain[p.terrain], color: nation.map { Names.color($0.color) })
+                    SheetHeader(title: p.name, subtitle: nation.map { "\($0.name) · \(Self.terrainLine(info, p.terrain))" } ?? Self.terrainLine(info, p.terrain), color: nation.map { Names.color($0.color) })
                     if let info {
                         // 州郡属性: core or frontier, mountain, fortress, rich, granary, well governed.
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -1100,6 +1113,16 @@ struct ProvinceSheet: View {
                 .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
             }
         }
+    }
+}
+
+extension ProvinceSheet {
+    /// Subtitle uses the same land name as the tags. The coarse plain/forest/mountain field can
+    /// disagree with the biome (平原 beside 热带雨林); the tag wins once the province is loaded.
+    static func terrainLine(_ info: ProvinceInfo?, _ stored: String) -> String {
+        if info?.mountain == true { return "山地" }
+        if let name = info?.terrain, !name.isEmpty { return name }
+        return Names.terrain[stored] ?? stored
     }
 }
 
@@ -1583,24 +1606,7 @@ struct MenuSheet: View {
             SectionLabel("声音与触感")
             FeelSettings()
             SectionLabel("显示设置")
-            Group2 {
-                PaperSwitch(title: "国界", on: $controller.display.borders)
-                Divider2()
-                PaperSwitch(title: "行省边界", on: $controller.display.provinceLines)
-                Divider2()
-                PaperSwitch(title: "城市名称", on: $controller.display.cityNames)
-                Divider2()
-                PaperSwitch(title: "城市图标", on: $controller.display.cityIcons)
-                Divider2()
-                PaperSwitch(title: "植被与地貌图标", on: $controller.display.vegetation)
-                Divider2()
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("国家颜色浓度 \(Int(controller.display.colorDensity * 100))%").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                    Slider(value: $controller.display.colorDensity, in: 0.2...1, step: 0.1).tint(Theme.jade)
-                }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-            }
-            .padding(.horizontal, 16)
+            MapDisplaySettings(controller: controller)
         }
         .padding(.bottom, 24)
         }
@@ -1613,6 +1619,56 @@ struct MenuSheet: View {
             if case .success(let url) = result { close(); Task { await model.importSave(from: url) } }
         }
         .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() } }
+    }
+}
+
+/// The map switches. Same paper rows as the rest of the menus.
+struct MapDisplaySettings: View {
+    @ObservedObject var controller: MapController
+    var body: some View {
+        Group2 {
+            PaperSwitch(title: "国界", on: $controller.display.borders)
+            Divider2()
+            PaperSwitch(title: "行省边界", on: $controller.display.provinceLines)
+            Divider2()
+            PaperSwitch(title: "城市名称", on: $controller.display.cityNames)
+            Divider2()
+            PaperSwitch(title: "城市图标", on: $controller.display.cityIcons)
+            Divider2()
+            PaperSwitch(title: "植被与地貌图标", on: $controller.display.vegetation)
+            Divider2()
+            PaperSwitch(title: "航线", on: $controller.display.seaRoutes)
+            Divider2()
+            PaperSwitch(title: "暗边", on: $controller.display.darkEdges)
+            Divider2()
+            PaperSwitch(title: "羊皮纸", on: $controller.display.parchment)
+            Divider2()
+            PaperSwitch(title: "完整国名", on: $controller.display.fullNationNames)
+            Divider2()
+            PaperSwitch(title: "开场与进世界动画", on: $controller.display.entrance)
+            Divider2()
+            VStack(alignment: .leading, spacing: 8) {
+                Text("海色").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                ChipPicker(items: [("original", "原作海蓝"), ("warm", "暖纸海色")], selection: $controller.display.ocean)
+                Text(controller.display.ocean == "warm" ? "暖纸海色是原先的网页配色（网页适配）。" : "浅海 #3c9cff，深海 #1487ff，海岸 #5f5f5f。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            Divider2()
+            VStack(alignment: .leading, spacing: 4) {
+                Text("国名缩放 \(String(format: "%.2f", controller.display.nationNameScale))").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                Slider(value: $controller.display.nationNameScale, in: 0.5...2, step: 0.05).tint(Theme.jade)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            Divider2()
+            VStack(alignment: .leading, spacing: 4) {
+                Text("国家颜色浓度 \(Int(controller.display.colorDensity * 100))%").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                Slider(value: $controller.display.colorDensity, in: 0.2...1, step: 0.1).tint(Theme.jade)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            Text("行省边界默认关闭，打开后为 #B2B2B2。羊皮纸默认按预设打开（网页适配）。开场动画可关。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                .padding(.horizontal, 16).padding(.bottom, 10)
+        }
+        .padding(.horizontal, 16)
     }
 }
 
@@ -1636,6 +1692,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.2", ["省会比普通城更清楚，国家首都仍是三环。港口、要塞、圣地还没有城市类型，所以不加那些图标。",
+                    "海水默认改为原作预设：浅海 #3c9cff、深海 #1487ff、海岸 #5f5f5f。原先的暖纸海色留在显示设置里（网页适配）。行省边界默认关闭，打开后是 #B2B2B2。",
+                    "开场和进入世界改成地图淡入浮现（网页适配），大约三秒内，可在设置里关掉。不再使用「注水成海」分段字幕。",
+                    "显示设置新增航线、暗边、羊皮纸、国名缩放、完整国名。拨动后地图立刻变，并会记住。",
+                    "州郡页的地形小标题与地上的地形标签一致，不再出现「平原」旁边标着「热带雨林」。",
+                    "国家页打开时只有基本信息展开，其余分节点开，展开动画 0.25 秒。纸面样式不变。"]),
         ("0.26.1", ["国界补入海岸、湖岸和世界边缘，国家外轮廓闭合。领土、军队、舰队等检查页面统一暂停推演，关闭后仅恢复原本正在运行的世界。",
                     "原生接战改为实际位置相遇，计算跨步相遇防止高速穿越；移除远距离交战时把图标拉到中点的表现补丁。进攻走到省城坐标，抵达后才结算占领。此为原生修复，原作完整军事规则仍需继续核查。",
                     "失去全部实控领土的国家仍可选择被敌国占领的法理领土作为反攻目标。朝堂与百官增加直接修改在任人物属性入口。",
@@ -1909,63 +1971,33 @@ struct ReleaseNotesSheet: View {
     }
 }
 
-/// Over the rising device-built world while the engine founds its nations, people and armies.
+/// Quiet card over the rising map (网页适配). One line and a bar — not a checklist that pops in.
 struct FoundingView: View {
     let reveal: Float
-    /// The world's generation as it happens (like a world being made in a sandbox game): each stage
-    /// names what the map is drawing at that moment — the sea, the land rising from the coast, the
-    /// mountains, the rivers, forests and plains, the provinces, the states' colours — and then the
-    /// engine's work: cities, houses and people, armies, relations. Finished stages stay listed.
-    static let stages: [(until: Float, text: String)] = [
-        (0.06, "注水成海"), (0.24, "抬升大陆"), (0.38, "隆起山脉与高原"), (0.45, "冲刷江河"),
-        (0.55, "播撒森林、草原与荒漠"), (0.65, "划分州郡"), (0.75, "分封列国"), (0.85, "勘定国界"), (1.00, "营建城邦与港口"),
-    ]
-    static let later = ["诞生世家与人物", "编练军队", "缔结邦交", "天下初定"]
-    @State private var started = Date()
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.35)) { context in
-            let waited = reveal >= 1 ? context.date.timeIntervalSince(started) : 0
-            let laterIndex = min(Self.later.count - 1, Int(waited / 0.8))
-            let current = reveal < 1 ? (Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1) : Self.stages.count + laterIndex
-            let all = Self.stages.map(\.text) + Self.later
-            let progress = reveal < 1 ? Double(reveal) * 0.85 : min(1, 0.85 + waited / 0.8 / Double(Self.later.count) * 0.15)
-            VStack {
-                Spacer()
-                VStack(alignment: .leading, spacing: 10) {
-                    // The last finished stages, faded, above the one at work.
-                    ForEach(max(0, current - 3)..<current, id: \.self) { i in
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.jade)
-                            Text(all[i]).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
-                        }
-                        .opacity(0.45 + 0.18 * Double(i - (current - 3)))
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+        let progress = min(1, Double(reveal))
+        VStack {
+            Spacer()
+            VStack(alignment: .leading, spacing: 8) {
+                Text(reveal < 1 ? "地图浮现" : "写入人物与军队").font(Theme.kai(20)).foregroundStyle(Theme.ink)
+                Text("网页适配").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                GeometryReader { g in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Theme.ink.opacity(0.1))
+                        Capsule().fill(Theme.seal).frame(width: max(4, g.size.width * progress))
                     }
-                    HStack(spacing: 10) {
-                        ProgressView().tint(Theme.seal).scaleEffect(0.8)
-                        Text(all[min(current, all.count - 1)] + "……").font(Theme.kai(20)).foregroundStyle(Theme.ink)
-                            .id(current).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
-                    }
-                    GeometryReader { g in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Theme.ink.opacity(0.1))
-                            Capsule().fill(Theme.seal).frame(width: g.size.width * progress)
-                        }
-                    }
-                    .frame(height: 4)
-                    Text("\(Int(progress * 100))%").font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
                 }
-                .animation(.spring(response: 0.45, dampingFraction: 0.85), value: current)
-                .animation(.easeOut(duration: 0.3), value: progress)
-                .padding(.horizontal, 20).padding(.vertical, 16)
-                .frame(maxWidth: 360, alignment: .leading)
-                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous)))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
-                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
-                .padding(.bottom, 40)
+                .frame(height: 4)
             }
-            .onChange(of: reveal >= 1) { _, done in if done { started = Date() } }
+            .animation(.easeOut(duration: 0.25), value: reveal < 1)
+            .padding(.horizontal, 20).padding(.vertical, 16)
+            .frame(maxWidth: 360, alignment: .leading)
+            .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
+            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
+            .padding(.bottom, 40)
         }
+        .allowsHitTesting(false)
     }
 }
 

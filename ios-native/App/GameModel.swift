@@ -146,7 +146,7 @@ import LieguojiCore
             // The engine's world (rivers, cities, names) replaces the drawn preview in place.
             controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
             try await handOver()
-            let wait = 2.6 - Date().timeIntervalSince(settled)
+            let wait = (playEntrance ? 0.4 : 0) - Date().timeIntervalSince(settled)
             if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
             controller.editorMap = nil
             phase = .playing; controller.interactive = true
@@ -207,17 +207,15 @@ import LieguojiCore
             if let inputs = previewInputs {
                 let nations = options.nations, provinceCount = options.provinceCount
                 let preview = await Task.detached(priority: .userInitiated) { PreviewWorld.build(inputs, seed: seed, template: options.template, nations: nations, cities: provinceCount) }.value
-                state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects()
+                state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.seaPorts = []
                 map = preview; worldID = UUID()
                 generationNote = ""
-                phase = .founding
-                await rise()
+                if playEntrance { phase = .founding; await rise() } else { controller.reveal = 1 }
             }
             let settled = Date()
             let world = try await open(try await full.value)
             try await handOver()
-            // The founding captions after the map (houses, armies, relations) each get their moment.
-            let wait = 2.6 - Date().timeIntervalSince(settled)
+            let wait = (playEntrance ? 0.4 : 0) - Date().timeIntervalSince(settled)
             if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
             generationNote = ""
             if phase != .founding { await reveal(world) } else { phase = .playing; controller.interactive = true }
@@ -226,13 +224,15 @@ import LieguojiCore
         } catch { failure = error.localizedDescription; phase = .title }
     }
 
-    /// The generation animation on the device-built world.
+    /// Map fade after a new world is previewed (网页适配). About 1.8s, not a staged sea injection.
+    private var playEntrance: Bool { controller.display.entrance && !UIAccessibility.isReduceMotionEnabled }
     private func rise() async {
+        guard playEntrance else { controller.reveal = 1; return }
         controller.interactive = false
         controller.reveal = 0
         let start = Date()
         while true {
-            let t = Float(Date().timeIntervalSince(start) / 9)
+            let t = Float(Date().timeIntervalSince(start) / 1.8)
             controller.reveal = min(1, t)
             if t >= 1 { break }
             try? await Task.sleep(nanoseconds: 16_000_000)
@@ -289,14 +289,15 @@ import LieguojiCore
         return loaded.0
     }
 
-    /// Land rises from the sea, then the states' colours wash over it (about two seconds).
+    /// Saved worlds fade in (网页适配, about 1.6s). With the switch off, the map is already complete.
     private func reveal(_ world: WorldMap) async {
         controller.interactive = false
-        controller.reveal = 0
         phase = .playing
+        guard playEntrance else { controller.reveal = 1; controller.interactive = true; return }
+        controller.reveal = 0
         let start = Date()
         while true {
-            let t = Float(Date().timeIntervalSince(start) / 2.2)
+            let t = Float(Date().timeIntervalSince(start) / 1.6)
             controller.reveal = min(1, t)
             if t >= 1 { break }
             try? await Task.sleep(nanoseconds: 16_000_000)
@@ -412,6 +413,8 @@ import LieguojiCore
         }
         if legend { changed = true; map?.meta.nations = world.meta.nations }
         if changed { controller.world = world }
+        let ports = (next.ports ?? []).map { SIMD2<Float>($0.x, $0.y) }
+        if ports != controller.seaPorts { controller.seaPorts = ports }
         refreshArmies()
         refreshEffects(previous: previous)
         if mapView != .state && mapView != .terrain { Task { await refreshView() } }

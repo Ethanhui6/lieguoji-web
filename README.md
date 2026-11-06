@@ -17,7 +17,7 @@ npm run dev
 
 ## iOS
 
-手机上玩的是 `ios-native/` 里的 SwiftUI / Metal 原生版，不是 Capacitor 网页壳。当前原生版本 **0.26.12（build 84）**。更新说明在 [ios-native/docs/RELEASE-0.26.12.md](ios-native/docs/RELEASE-0.26.12.md)，应用里「更新」页也能看到这一版改了什么。网页正式站仍由 Cloudflare Pages 部署 `main`，和这个原生包不是同一个版本号。
+手机上玩的是 `ios-native/` 里的 SwiftUI / Metal 原生版，不是 Capacitor 网页壳。当前原生版本 **0.26.13（build 85）**。更新说明在 [ios-native/docs/RELEASE-0.26.13.md](ios-native/docs/RELEASE-0.26.13.md)，应用里「更新」页也能看到这一版改了什么。网页正式站仍由 Cloudflare Pages 部署 `main`，和这个原生包不是同一个版本号。
 
 没有 Mac 也可以装到自己的手机。Actions 里的 **iOS Native unsigned IPA**（`ios-native-unsigned.yml`）打出未签名的 `.ipa`。你再用自己的自签工具重签、安装。不需要上传 App Store。
 

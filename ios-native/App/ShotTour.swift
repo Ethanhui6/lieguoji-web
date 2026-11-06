@@ -70,14 +70,30 @@ enum ShotTour {
         }
         model.pause(saving: false)
         views(true); await wait(1); await shoot("07-views"); views(false)
-        let panels: [(String, Panel)] = [("10-nations", .nations), ("11-nation", .nation(model.state?.nations.indices.max { (model.state?.nations[$0].provinces ?? 0) < (model.state?.nations[$1].provinces ?? 0) } ?? 0)),
+        let nation = model.state?.nations.indices.max { (model.state?.nations[$0].provinces ?? 0) < (model.state?.nations[$1].provinces ?? 0) } ?? 0
+        let panels: [(String, Panel)] = [("10-nations", .nations), ("11-nation", .nation(nation)),
                                          ("12-military", .military), ("13-army", .army(0)), ("14-diplomacy", .diplomacy), ("15-chronicle", .chronicle),
                                          ("16-statistics", .statistics), ("17-edicts", .edicts), ("18-menu", .menu), ("19-province", .province(0))]
         for (name, panel) in panels {
             if case .army = panel, model.state?.armies.isEmpty ?? true { continue }
             show(panel); await wait(1.4); await shoot(name)
         }
+        await shootRulerTraits(model, nation: nation, show: show)
         show(nil); await wait(1)
         await shoot("done")
+    }
+
+    /// Opens 人物 for the largest state after giving its ruler two catalog traits that this build does not apply.
+    @MainActor private static func shootRulerTraits(_ model: GameModel, nation: Int, show: (Panel?) -> Void) async {
+        guard let info = await model.nationInfo(nation) else { return }
+        let ruler = info.people?.first { $0.role == "君主" } ?? info.people?.first
+        guard let ruler, ruler.key >= 0 else { return }
+        var traits = ["船舶大师", "改革家"]
+        for name in ruler.traits where !traits.contains(name) && traits.count < 4 { traits.append(name) }
+        let skills = ruler.skills.count == 4 ? ruler.skills : [50.0, 50, 50, 50]
+        _ = await model.editPerson(ruler.key, skills: skills, traits: traits)
+        show(.people(nation))
+        await wait(1.8)
+        await shoot("11b-nation-traits")
     }
 }

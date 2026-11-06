@@ -509,7 +509,10 @@ struct GameView: View {
         }
         .task {
             guard ShotTour.on else { return }
-            await ShotTour.play(model, show: { p in if let p { show(p) } else { panel = nil } }, views: { viewsOpen = $0 })
+            await ShotTour.play(model, show: { p in
+                if case .people = p { nationDetent = .large }
+                if let p { show(p) } else { panel = nil }
+            }, views: { viewsOpen = $0 })
         }
         .overlay(alignment: .top) {
             VStack(spacing: 8) {
@@ -1699,6 +1702,7 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.13", ["截图行程会打开最大国家的人物页。君主写上目录里已有的船舶大师和改革家，画面上能看到「（本版未生效）」。"]),
         ("0.26.12", ["人物行上，船舶大师和改革家在原有说明后面标明「（本版未生效）」。任命和改天赋时也能看到同一句说明。",
                     "载入、重算、查找电脑和朱红按钮忙碌时，改用生成世界那条墨条，不再用系统转圈。",
                     "纸面滑杆改成墨轨和朱点，数值和原来一样。"]),

@@ -521,11 +521,12 @@ struct GameView: View {
                 if controller.paintNation != nil { paintBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if !controller.groupArmies.isEmpty { rtsBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if let h = model.herald, let map = model.map {
+                    // Slides down and fades like the other top banners (调兵、绘制、即时战略).
                     HeraldBanner(herald: h, map: map).id(h.id)
-                        .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .scale(scale: 0.85)).combined(with: .opacity), removal: .opacity.combined(with: .scale(scale: 0.95))))
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
-            .animation(.spring(response: 0.5, dampingFraction: 0.78), value: model.herald)
+            .animation(.spring(response: 0.4, dampingFraction: 0.85), value: model.herald)
                 .offset(y: controller.reveal >= 1 ? 0 : -80)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingArmy)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingFleet)
@@ -878,10 +879,13 @@ struct GameView: View {
 
 extension View {
     /// Frosted glass with a hairline, the iOS 17 floating-control look.
+    /// Floating chrome (date, buttons, tab bar, notices) in the panels' own paper: the ink rule and
+    /// the faint vermilion inner rule of Group2, so the map's controls and the pages read as one set.
     func glass<S: Shape>(_ shape: S) -> some View {
         background(Theme.paper2.opacity(0.97), in: shape)
-            .overlay(shape.stroke(Theme.ink.opacity(0.12), lineWidth: 1))
-            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.18), radius: 14, y: 5)
+            .overlay(shape.stroke(Theme.ink.opacity(0.2), lineWidth: 1))
+            .overlay(shape.stroke(Theme.seal.opacity(0.16), lineWidth: 0.6).padding(3))
+            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.16), radius: 12, y: 4)
     }
 }
 
@@ -1904,6 +1908,17 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.30.0", ["【战争】交战改为按距离：敌军接近到约两个军队图标的距离才接战，同一省有敌军时向本省城池进军迎敌，走到城下才围城；不再隔着半个省开打，也不再两军擦肩而过。",
+                    "【战争】停战或没有战争目标时，按原作 Army.Idle：留在他国的军队先撤回本国，再按原作首都圈与边境权重选驻地；以前会原地待命、一直不动。本国被敌军或叛军占着的失地，军队会主动收复。",
+                    "【战争】外交页每场战争加战况条：双方兵力对比、历时、围城数。",
+                    "【行军】地形减速改回原作（荒漠、冰川 0.7，山地 0.5，高原 0.7，其余不减）；1 倍速为原作的每秒 10 天，2×、4×、8× 依次翻倍。",
+                    "【海军】舰队停泊在本国港口时逐月扩编，最多 5 艘；地图上按船数显示 1～3 艘船；舰队页可改船只数（1～10）与舰队名。战船与港口图标改画成与兵种棋子同一套风格。",
+                    "【自定义】天下诏令新增「天下规则」：战争频率（0 为止战）、战斗烈度、行军速度、征兵规模、造舰速度，都接入真实计算。",
+                    "【外交】新增邦交总览：盟友、宗主与附庸、交战国、联姻与互不侵犯条约（余月）、停战（余日）、接壤国兵力与强弱。",
+                    "【地图】省界改为平滑的半透明墨线，任何缩放都清楚可见，默认打开；州郡页新增「地利」表，列出各兵种在此地形的攻守加减（与战斗实际计算相同）。",
+                    "【画面】开局点开始时军队不再整体「瞬移」滑动；军队图标缩小约两成；底部纪事条每条至少停 1.6 秒，高倍速不再每步滑动。",
+                    "【界面】菜单分「游戏 / 地图显示 / 声音与其他」三页，显示设置分四组；国家页分页、顶部弹出消息、日期栏与底栏统一为面板同款纸面与朱印，弹出动画与其他横幅一致。",
+                    "【性能】推演去掉重复计算（外交关系建索引、每步状态一次汇总、军队目的地直接查表），实测每推演一天的耗时降低约三成；自动存档改为推演中最多每 2 分钟一次，不再每隔几秒卡顿；单次慢步不再拖慢之后的推演节奏；帧率面板移到顶部，并显示推演耗时。"]),
         ("0.29.0", ["海军造舰：被击沉的舰队不再永远消失。只要本国仍握有它的母港，船坞用六个月造成新舰并重新出港；军事页新增「船坞」一栏，显示正在重建的舰队和剩余月数。",
                     "「船舶大师」生效：君主有此特质时造舰时间减半（原作造舰时间 ×0.5）。",
                     "「改革家」生效：改革家登位时按其内政能力做一次变法判定，成功则在位期间施政 +15%，失败国运 −3；改革家在位时政体动荡的几率减半。",
@@ -2407,7 +2422,6 @@ struct NationGrid: View {
 struct HeraldBanner: View {
     let herald: GameModel.Herald
     let map: WorldMap
-    @State private var stamped = false
     var body: some View {
         let (word, color): (String, Color) = {
             switch herald.kind {
@@ -2421,11 +2435,8 @@ struct HeraldBanner: View {
             }
         }()
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 9, style: .continuous).fill(color)
-                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Theme.paper2.opacity(0.85), lineWidth: 1.2).padding(3))
-                .overlay(Text(word).font(Theme.kai(15)).foregroundStyle(Theme.paper2))
-                .frame(width: 46, height: 46)
-                .scaleEffect(stamped ? 1 : 1.5).rotationEffect(.degrees(stamped ? 0 : -12)).opacity(stamped ? 1 : 0)
+            // The pages' own vermilion seal (SheetHeader), pressed in the same way.
+            Seal(text: word, size: 40)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     ForEach(Array(herald.nations.enumerated()), id: \.offset) { pair in
@@ -2439,9 +2450,8 @@ struct HeraldBanner: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .frame(maxWidth: 440)
-        .glass(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .glass(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .padding(.horizontal, 14)
-        .onAppear { withAnimation(.spring(response: 0.36, dampingFraction: 0.55).delay(0.12)) { stamped = true } }
     }
 }
 

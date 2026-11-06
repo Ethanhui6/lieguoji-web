@@ -94,6 +94,7 @@ import LieguojiCore
     let controller = MapController()
     private var loop: Task<Void, Never>?
     private var lastSavedDay = 0
+    private var lastSaveTime = Date()
 
     init() {
         engine.onCrash = { [weak self] in self?.engineCrashed() }
@@ -363,8 +364,9 @@ import LieguojiCore
                 // Days per step: as many as the device computes in its share of a step (measured),
                 // up to the speed's pace — a quick phone runs near the original's pace, a slow one
                 // runs fewer days rather than stuttering. The map glides between steps.
-                let wanted = [1: 2, 2: 4, 4: 8, 8: 14][self.speed] ?? 2
-                let affordable = max(1, Int((0.16 / max(0.004, self.dayCost)).rounded(.down)))
+                // The original's pace: 1× is ten days a second (secondsPerDay 0.1), five steps a second.
+                let wanted = [1: 2, 2: 4, 4: 8, 8: 16][self.speed] ?? 2
+                let affordable = max(1, Int((0.13 / max(0.004, self.dayCost)).rounded(.down)))
                 let pace = min(wanted, affordable)
                 let days = far ? pace * 2 : pace
                 self.lastDays = days
@@ -381,8 +383,10 @@ import LieguojiCore
                 }
                 catch { self.failure = error.localizedDescription; self.pause(); return }
                 let spent = Date().timeIntervalSince(started)
-                if !far { self.dayCost = self.dayCost * 0.7 + spent / Double(max(1, days)) * 0.3 }
-                let budget = 0.25
+                // A single slow step (a save, a month's politics) is clipped, so it cannot drag the pace
+                // down to one day a step for many steps after it.
+                if !far { self.dayCost = self.dayCost * 0.7 + min(spent / Double(max(1, days)), self.dayCost * 2.5) * 0.3 }
+                let budget = 0.2
                 let rest = budget - spent
                 if rest > 0 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) } else { await Task.yield() }
             }
@@ -431,11 +435,12 @@ import LieguojiCore
         if controller.showMetrics {
             controller.simText = String(format: "  推演 %.1f ms/日 · 每步 %d 日 · 界面更新 %.1f ms  ", dayCost * 1000, lastDays, applyCost * 1000)
         }
-        // Autosave every 90 days (it serializes the whole world; pausing and leaving also save); every
-        // 30 with a computer, so its world is never far from the phone's copy.
-        // Through the relay a save downloads the whole world, so it waits longer there.
-        let far = remoteAddress.map { !$0.contains("局域网") } ?? false
-        if next.day - lastSavedDay >= (far ? 120 : remoteAddress != nil ? 30 : 90) { save(); lastSavedDay = next.day }
+        // Autosave by real time, at most every two minutes while playing (a save serializes the whole
+        // world on the engine and the steps wait behind it: every 90 days stalled fast play every few
+        // seconds). Pausing, leaving and backgrounding still save at once. With a computer, every
+        // 30 seconds, so its world is never far from the phone's copy.
+        let interval: TimeInterval = remoteAddress != nil ? 30 : 120
+        if next.day != lastSavedDay, Date().timeIntervalSince(lastSaveTime) >= interval { save(); lastSavedDay = next.day; lastSaveTime = Date() }
     }
 
     private func apply(_ next: GameState) {

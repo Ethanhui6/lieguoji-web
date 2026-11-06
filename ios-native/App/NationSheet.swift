@@ -1109,26 +1109,10 @@ struct AppointSheet: View {
 /// 国家页分类: five tabs with a seal-red marker under the chosen one.
 struct NationTabs: View {
     @Binding var tab: NationSheet.Tab
-    @Namespace private var marker
+    // The same paper chips as every other page's tabs (军事、菜单、军队筛选).
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(NationSheet.Tab.allCases, id: \.self) { t in
-                let on = t == tab
-                Button { withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) { tab = t } } label: {
-                    VStack(spacing: 5) {
-                        Text(t.rawValue).font(Theme.kai(16)).foregroundStyle(on ? Theme.seal : Theme.ink2)
-                        ZStack {
-                            Capsule().fill(Color.clear).frame(height: 3)
-                            if on { Capsule().fill(Theme.seal).frame(width: 26, height: 3).matchedGeometryEffect(id: "tab", in: marker) }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 12)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1).padding(.horizontal, 22) }
+        ChipPicker(items: NationSheet.Tab.allCases.map { ($0, $0.rawValue) }, selection: $tab)
+            .padding(.horizontal, 16)
     }
 }
 

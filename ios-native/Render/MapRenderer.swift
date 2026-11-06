@@ -384,7 +384,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private func rebuildArmies() {
         do {
             let sprites = armySprites
-            let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0))
+            let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.8)
             var byRole: [String: [Float]] = [:]
             var fade: Float = 1
             func quad(_ role: String, _ at: SIMD2<Float>, _ c: RGB, _ size: Float, _ sx: Float, _ sy: Float) {
@@ -546,7 +546,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // Marks at least 22 points tall (an army mark is 5 map units), so whose army it is reads at
         // every zoom; banner and pips keep their proportions. The shift (in the quad's own size)
         // places the banner and the pips around the army's point.
-        float pixels = s.size * max(u.scale, 26.0 / 5.02);
+        float pixels = s.size * max(u.scale, 18.0 / 4.02);
         SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, (float2(s.corner) + float2(s.shift)) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
     }
     // A piece: the texture multiplied by the state's colour (white body → the colour, grey rim → its

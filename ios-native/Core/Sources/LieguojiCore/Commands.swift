@@ -92,7 +92,7 @@ extension NativeEngine {
         let ratios = land.isNull || land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
         let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
         o.terrain = JS(["海滨", "炎热荒漠", "寒冷荒漠", "稀树草原", "草原", "热带季雨林", "温带森林", "热带雨林", "温带雨林", "针叶林", "苔原", "冰川", "沼泽"][min(12, main)])
-        o.pace = JS(land.mountain.isTruthy ? 0.45 : ForceMotion.terrainSpeed[min(ForceMotion.terrainSpeed.count - 1, main)])
+        o.pace = JS(land.mountain.isTruthy ? 0.5 : ForceMotion.terrainSpeed[min(ForceMotion.terrainSpeed.count - 1, main)])
         // 地利: what this land does to each of the original's arms in battle (Efficiency's terrain
         // tables, the same numbers the volleys use), attacking into it and defending it.
         o.combat = .array([("Infantry", "步兵"), ("Archer", "弓兵"), ("Shield", "盾兵"), ("Cavalry", "骑兵"), ("Elite", "精锐")].map { key, name in

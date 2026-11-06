@@ -205,7 +205,7 @@ struct MapView: UIViewRepresentable {
             metrics.isHidden = true; metrics.translatesAutoresizingMaskIntoConstraints = false
             container.addSubview(metrics)
             NSLayoutConstraint.activate([metrics.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-                                         metrics.bottomAnchor.constraint(equalTo: container.safeAreaLayoutGuide.bottomAnchor, constant: -16)])
+                                         metrics.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 64)])
             container.onLayout = { [weak self] in self?.layoutChanged() }
             installGestures()
             return container
@@ -720,7 +720,7 @@ final class TroopLabelsView: UIView {
     func update(_ placed: [(sprite: MapRenderer.ArmySprite, x: Float, y: Float)], camera: MapCamera, viewport: CGSize) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // Icon size on screen (the renderer's icon size in map units × scale).
-        let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * max(camera.scale, 22.0 / 5.02)
+        let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.8 * max(camera.scale, 18.0 / 4.02)
         var seen = Set<String>()
         CATransaction.begin(); CATransaction.setDisableActions(true)
         // Banner marks only when the banner is big enough to carry a character.

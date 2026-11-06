@@ -295,11 +295,9 @@ public enum ArmyOrders {
                                             protruding: CombatReader.protruding(r, p), port: ports.contains(provinces[p].id.asString))
             }
             var chosen: Int?, why = ""
-            if originalTargets && attack.isEmpty {
-                if ongoing { halt() }
-                note("waiting", "没有常规目标，就地待命，不改派回乡。", clear: true)
-                continue
-            }
+            // No war target (peace made, or none reachable): the original's Army.Idle — the army is
+            // not left standing where it is. Below, at peace in its own land it takes a garrison by
+            // FindTargetIdleProvince's weights; in foreign land it first marches home.
             while !candidates.isEmpty {
                 guard let p = ArmyAutonomy.Context.regularTarget(location.point, home, geo.cellFeature[location.cell], candidates) else { break }
                 if let refused = reason(r, id, .move(province: p.id, retreat: false)) { why = refused; candidates.removeAll { $0.id == p.id }; continue }
@@ -332,11 +330,6 @@ public enum ArmyOrders {
             if let hp = here.province, hp.controller.asString == nation {
                 if ongoing { halt() }
                 note(attack.isEmpty ? "waiting" : "no-route", why.isEmpty ? "当前没有可执行的常规战争目标，留在本国驻地。" : why, clear: true); continue
-            }
-            if originalTargets {
-                if ongoing { halt() }
-                note("waiting", "没有可执行的常规目标，就地待命，不强制撤回。", clear: true)
-                continue
             }
             let point = location.point
             let homes = owned.enumerated().sorted { x, y in

@@ -148,4 +148,12 @@ extension ArmyAITests {
     func testRegularCandidatesAreInvadedHomeAndBorderOnly() {
         XCTAssertEqual(ArmyAutonomy.Context.regularCandidateIds(invaded: [3, 3], borders: [8, 3, 1]), [3, 8, 1])
     }
+
+    func testEmergencyIsNotTreatedAsAGarrisonRole() {
+        XCTAssertEqual(ArmyAutonomy.ArmyDuty.classify("regular"), .field)
+        XCTAssertEqual(ArmyAutonomy.ArmyDuty.classify(""), .field)
+        XCTAssertEqual(ArmyAutonomy.ArmyDuty.classify("emergency"), .notGarrison)
+        XCTAssertEqual(ArmyAutonomy.ArmyDuty.classify("manual"), .notGarrison)
+        XCTAssertFalse(ArmyAutonomy.ArmyDuty.rebelSearchAvailable)
+    }
 }

@@ -265,7 +265,12 @@ public enum ArmyOrders {
             let invaded = owned.filter { enemyAt(provinces[$0].id.asString) != nil }
             if a.status.asString != "retreating" && !en.isEmpty {
                 if originalTargets {
-                    for p in ArmyAutonomy.Context.regularCandidateIds(invaded: invaded, borders: stateBorders(r, nation, enemySet)) { add(p) }
+                    let duty = ArmyAutonomy.ArmyDuty.classify(r.tactics.forces[id].kind.asString)
+                    if duty == .notGarrison && ArmyAutonomy.ArmyDuty.rebelSearchAvailable {
+                        // Original Garrison would search rebel provinces here. That scorer is not in this client.
+                    } else {
+                        for p in ArmyAutonomy.Context.regularCandidateIds(invaded: invaded, borders: stateBorders(r, nation, enemySet)) { add(p) }
+                    }
                 } else {
                     for p in invaded { add(p) }
                     for p in stateBorders(r, nation, enemySet) { add(p) }

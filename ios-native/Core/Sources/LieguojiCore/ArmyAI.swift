@@ -70,6 +70,17 @@ public struct ArmyAutonomy: Sendable {
     /// A cautious state's armies first clear its own invaded provinces; a warlike state's armies push
     /// into enemy land before supporting allies. nil keeps the original choice.
     public static var temper: ((Int) -> Double)?
+    /// `regular` is the standing army and uses FindRegularTargetProvince.
+    /// `emergency` and `manual` are web muster and player placement, not original Garrison.
+    /// Rebel-province search is absent, so those kinds do not get a second target list.
+    public enum ArmyDuty: Equatable {
+        case field
+        case notGarrison
+        public static let rebelSearchAvailable = false
+        public static func classify(_ kind: String) -> ArmyDuty {
+            kind == "regular" || kind.isEmpty ? .field : .notGarrison
+        }
+    }
     /// Attacked home provinces compete with border enemy provinces, and an empty list goes idle.
     /// Golden web samples turn this off so they still match the web bridge list (ally help and every coastal enemy province).
     public static var originalRegularTargets = true

@@ -782,7 +782,7 @@ struct NationSheet: View {
                     Text("国库").font(Theme.kai(16)).foregroundStyle(Theme.ink)
                     Spacer()
                     TextField("", text: $goldText, prompt: Text("\(Int(info.gold))").foregroundColor(Theme.ink2.opacity(0.6)))
-                        .font(Theme.kai(17)).keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 120)
+                        .keyboardType(.numberPad).multilineTextAlignment(.trailing).paperField(width: 120)
                     Text("金").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
@@ -900,7 +900,7 @@ struct NationSheet: View {
                         HStack {
                             Text("金额").font(Theme.kai(16)).foregroundStyle(Theme.ink)
                             Spacer()
-                            TextField("", text: $giftText).font(Theme.kai(17)).keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 110)
+                            TextField("", text: $giftText).keyboardType(.numberPad).multilineTextAlignment(.trailing).paperField(width: 110)
                             Text("金").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
                         }
                         .padding(.horizontal, 16).padding(.vertical, 10)

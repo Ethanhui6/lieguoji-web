@@ -1699,6 +1699,7 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.11", ["生成世界的进度不再用系统转圈，只留纸面上的文句和墨条。国库、赠金改用纸面输入框。新世界的国家数和省份数，加减下面改用同一条纸面滑杆。"]),
         ("0.26.10", ["常备军仍走常规目标。应急军和玩家放置的军队不是原作驻军，没有叛省打分，所以没有改成另一条目标。打分用的地块特征没有改。"]),
         ("0.26.9", ["行军路过已有敌军的省会停下来接战，不再只盯着远处的目标。开战时只在被打的本省和边境敌省之间挑目标；没有这类目标就原地待命，不强制撤回。驻军和叛军分路还没有军队类型，没有另做。"]),
         ("0.26.8", ["生成进度的文字跟着地图走。中途截图停在「冲刷江河」，不再停在「注水成海」。"]),
@@ -2025,11 +2026,8 @@ struct FoundingView: View {
                         .opacity(0.45 + 0.18 * Double(i - (current - 3)))
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    HStack(spacing: 10) {
-                        ProgressView().tint(Theme.seal).scaleEffect(0.8)
-                        Text(all[min(current, all.count - 1)] + "……").font(Theme.kai(20)).foregroundStyle(Theme.ink)
-                            .id(current).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
-                    }
+                    Text(all[min(current, all.count - 1)] + "……").font(Theme.kai(20)).foregroundStyle(Theme.ink)
+                        .id(current).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
                     GeometryReader { g in
                         ZStack(alignment: .leading) {
                             Capsule().fill(Theme.ink.opacity(0.1))
@@ -2113,9 +2111,8 @@ struct PaperStepper: View {
                     .monospacedDigit().contentTransition(.numericText()).animation(.snappy(duration: 0.2), value: value)
                 stepButton("plus", 1)
             }
-            Slider(value: Binding(get: { Double(value) }, set: { let v = Int($0.rounded()); if v != value { value = v; GameFeel.shared.tap() } }),
-                   in: Double(range.lowerBound)...Double(range.upperBound), step: 1)
-                .tint(Theme.seal)
+            PaperSlider(title: title, value: Binding(get: { Double(value) }, set: { let v = Int($0.rounded()); if v != value { value = v; GameFeel.shared.tap() } }),
+                        range: Double(range.lowerBound)...Double(range.upperBound), step: 1) { "\(Int($0)) \(unit)" }
         }
     }
     private func stepButton(_ symbol: String, _ delta: Int) -> some View {

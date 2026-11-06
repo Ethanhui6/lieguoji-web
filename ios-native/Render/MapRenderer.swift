@@ -179,8 +179,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         recolor()
         outlineGeneration += 1
         let generation = outlineGeneration
+        let wide = borderWide
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let vertices = MapLayers.outlines(next).vertices
+            let vertices = MapLayers.outlines(next, wide: wide).vertices
             DispatchQueue.main.async {
                 guard let self, generation == self.outlineGeneration else { return }
                 self.outlines = self.buffer(vertices, stride: 6)
@@ -189,6 +190,23 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
     }
     private var outlineGeneration = 0
+    private var borderWide = Set<Int>()
+    /// The open nation and the owner of the selected province, drawn at twice the border width.
+    func setBorderEmphasis(_ wide: Set<Int>) {
+        guard wide != borderWide else { return }
+        borderWide = wide
+        outlineGeneration += 1
+        let generation = outlineGeneration
+        let next = map
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let vertices = MapLayers.outlines(next, wide: wide).vertices
+            DispatchQueue.main.async {
+                guard let self, generation == self.outlineGeneration else { return }
+                self.outlines = self.buffer(vertices, stride: 6)
+                self.onOutlines?()
+            }
+        }
+    }
     /// Called on the main queue when new outlines are ready to draw.
     var onOutlines: (() -> Void)?
 

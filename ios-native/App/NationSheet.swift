@@ -74,6 +74,12 @@ struct NationSheet: View {
     var placeArmy: (Int) -> Void = { _ in }
     /// Opens an army's page (the military tab lists the state's armies).
     var openArmy: (Int) -> Void = { _ in }
+    var openPeople: () -> Void = {}
+    var openWars: () -> Void = {}
+    var openTalks: () -> Void = {}
+    /// A secondary page opened from the nation sheet. Nil is the nation sheet itself.
+    var focus: Focus? = nil
+    enum Focus { case people, wars, talks }
     @State private var editing: NationInfo.Person?
     @State private var regime: (history: [String], trait: String) = ([], "")
     @State private var goldText = ""
@@ -132,6 +138,9 @@ struct NationSheet: View {
             let s = state.nations[nation]
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
+                    if let focus {
+                        focusPage(focus, info: info, map: map, state: state, meta: meta)
+                    } else {
                     SheetHeader(title: meta?.name ?? info?.name ?? "", subtitle: s.alive ? "\(s.provinces) 省 · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) })
                     if let info {
                         // Original section order: BasicInfo (only one expanded by default), Action, War, Family, Diplomacy.
@@ -161,11 +170,12 @@ struct NationSheet: View {
                     } else {
                         ProgressView().frame(maxWidth: .infinity).padding(40)
                     }
+                    }
                 }
                 .padding(.bottom, 24)
             }
             .task(id: state.day / 10) { await reload() }
-            .onAppear { model.controller.relationsNation = nation; model.controller.relations = relationColors(); if let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
+            .onAppear { model.controller.relationsNation = nation; model.controller.relations = relationColors(); if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
             .sheet(item: $appointing) { target in
@@ -209,6 +219,56 @@ struct NationSheet: View {
         }
     }
 
+    @ViewBuilder private func focusPage(_ page: Focus, info: NationInfo?, map: WorldMap, state: GameState, meta: WorldMeta.Nation?) -> some View {
+        let title = page == .people ? "人物" : page == .wars ? "战争" : "外交"
+        SheetHeader(title: title, subtitle: meta?.name ?? info?.name, color: meta.map { Names.color($0.color) }, seal: page == .people ? "人" : page == .wars ? "战" : "交")
+        if let info {
+            switch page {
+            case .people: peoplePage(info.people ?? [])
+            case .wars: warPage(info, map)
+            case .talks: diplomacyTab(info, map, state, startExpanded: true)
+            }
+        } else {
+            ProgressView().frame(maxWidth: .infinity).padding(40)
+        }
+    }
+    /// 人物: five identity groups, each open. Extra roles already in the data (总督、战时统帅) open the same way.
+    @ViewBuilder private func peoplePage(_ list: [NationInfo.Person]) -> some View {
+        let sections: [(String, [NationInfo.Person])] = [
+            ("君主", list.filter { $0.role == "君主" }),
+            ("继承人", list.filter { $0.role == "继承人" }),
+            ("行政首脑", list.filter { $0.role == "行政首脑" }),
+            ("财政主管", list.filter { $0.role == "财政主管" }),
+            ("常备军统帅", list.filter { $0.role == "常备军统帅" }),
+        ]
+        VStack(alignment: .leading, spacing: 14) {
+            ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
+                FoldSection(section.0, expanded: true) { peopleList(section.1, empty: "无") }
+            }
+            let governors = list.filter { $0.role.hasPrefix("总督") }
+            if !governors.isEmpty { FoldSection("总督", expanded: true) { peopleList(governors, empty: "无") } }
+            let commanders = list.filter { $0.role == "战时统帅" }
+            if !commanders.isEmpty { FoldSection("战时统帅", expanded: true) { peopleList(commanders, empty: "无") } }
+        }
+    }
+    @ViewBuilder private func warPage(_ info: NationInfo, _ map: WorldMap) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("国际宣战理由按目录登记的六条：\(WarText.internationalCasus.map { WarText.casusBelli($0) }.joined(separator: "、"))。编号 4、5 没有登记。")
+                .font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).fixedSize(horizontal: false, vertical: true)
+            Text("战争目标：索取若干省、占领若干省、吞并全境、附庸。目录另外允许索取赔款，以及迫使目标改信本国宗教。")
+                .font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).fixedSize(horizontal: false, vertical: true)
+            Text("结束原文：\(WarText.endReasons.filter { $0.0 != 9 }.map(\.1).joined(separator: "、"))，另有首都沦陷。进行中的战争不写还没发生的结束原因。")
+                .font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).fixedSize(horizontal: false, vertical: true)
+            Group2 {
+                if info.wars.isEmpty { Row(label: "战争", value: "暂无战争") }
+                ForEach(info.wars) { war in
+                    warCard(war, map)
+                    if war.id != info.wars.last?.id { Divider2() }
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
     @ViewBuilder private func overviewTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         VStack(alignment: .leading, spacing: 14) {
                 FoldSection("基本信息", expanded: true) {
@@ -231,6 +291,14 @@ struct NationSheet: View {
                     }
                     .padding(.horizontal, 16)
                 }
+                Group2 {
+                    Button(action: openPeople) { MenuRow(symbol: "person.2", title: "人物") }.buttonStyle(.plain)
+                    Divider2()
+                    Button(action: openWars) { MenuRow(symbol: "flag.2.crossed", title: info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）") }.buttonStyle(.plain)
+                    Divider2()
+                    Button(action: openTalks) { MenuRow(symbol: "scroll", title: "外交") }.buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
                 if !regime.history.isEmpty {
                     // 政体沿革: the polities this state has had, and the current one's standing bonus.
                     VStack(alignment: .leading, spacing: 6) {
@@ -322,8 +390,6 @@ struct NationSheet: View {
                         .padding(.horizontal, 16)
                     }
                 }
-                // The family/people panel opens fully expanded in the original; title 人物.
-                FoldSection("人物（\(info.people?.count ?? 0)）", expanded: false) { peopleList(info.people ?? []) }
         }
     }
     @ViewBuilder private func militaryTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
@@ -351,21 +417,11 @@ struct NationSheet: View {
                     }
                     .padding(.horizontal, 16)
                 }
-                FoldSection(info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）", expanded: false) {
-                    Group2 {
-                        if info.wars.isEmpty { Row(label: "战争", value: "暂无战争") }
-                        ForEach(info.wars) { war in
-                            warCard(war, map)
-                            if war.id != info.wars.last?.id { Divider2() }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
         }
     }
-    @ViewBuilder private func diplomacyTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
+    @ViewBuilder func diplomacyTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState, startExpanded: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-                FoldSection("外交关系", expanded: false) {
+                FoldSection("外交关系", expanded: startExpanded) {
                     Group2 {
                         let rows = relationRows(info, map)
                         if rows.isEmpty { Row(label: "外交", value: "暂无外交关系") }
@@ -377,7 +433,7 @@ struct NationSheet: View {
                     .padding(.horizontal, 16)
                 }
                 if let treaties = info.treaties, !treaties.isEmpty {
-                    FoldSection("条约（\(treaties.count)）", expanded: false) {
+                    FoldSection("条约（\(treaties.count)）", expanded: startExpanded) {
                         Group2 {
                             ForEach(Array(treaties.enumerated()), id: \.offset) { i, t in
                                 Row(label: t.kind == "marriage" ? "联姻" : "互不侵犯", value: (map.meta.nations.indices.contains(t.nation) ? map.meta.nations[t.nation].name : "") + " · 余\(max(1, t.years))年")
@@ -387,7 +443,7 @@ struct NationSheet: View {
                         .padding(.horizontal, 16)
                     }
                 }
-                if info.alive { FoldSection("国家行为", expanded: false) { actions(info, map) } }
+                if info.alive { FoldSection("国家行为", expanded: startExpanded) { actions(info, map) } }
         }
     }
     /// 国色 choices: the original's map palette.
@@ -552,7 +608,7 @@ struct NationSheet: View {
         for t in info.truces ?? [] { rows.append(("停战", "\(names([t.nation], map))：还需 \(t.years) 年（\(t.required) 年规则）")) }
         return rows
     }
-    private func warCard(_ war: NationInfo.War, _ map: WorldMap) -> some View {
+    func warCard(_ war: NationInfo.War, _ map: WorldMap) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(war.casusBelli.isEmpty ? "战争" : war.casusBelli).font(Theme.kai(18)).foregroundStyle(Theme.seal)
@@ -590,9 +646,9 @@ struct NationSheet: View {
         .padding(16)
     }
     /// 人物: monarch, heir, office holders with age, traits and the four skills.
-    private func peopleList(_ list: [NationInfo.Person]) -> some View {
+    func peopleList(_ list: [NationInfo.Person], empty: String = "暂无记录") -> some View {
         Group2 {
-            if list.isEmpty { Row(label: "人物", value: "暂无记录") }
+            if list.isEmpty { Row(label: "人物", value: empty) }
             ForEach(Array(list.enumerated()), id: \.offset) { i, p in
                 Button { if p.key >= 0 { editing = p } } label: {
                 VStack(alignment: .leading, spacing: 4) {

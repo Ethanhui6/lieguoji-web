@@ -474,6 +474,15 @@ struct MapView: UIViewRepresentable {
             }
             if controller.effects != shownEffects { shownEffects = controller.effects; effects.set(shownEffects); effects.alpha = controller.reveal >= 1 ? 1 : 0 }
             labels?.setSelected(controller.selectedProvince)
+            if let renderer {
+                var wide = Set<Int>()
+                if let n = controller.relationsNation { wide.insert(n) }
+                if let p = controller.selectedProvince, map.meta.provinces.indices.contains(p) {
+                    let owner = map.meta.provinces[p].nation
+                    if owner >= 0 { wide.insert(owner) }
+                }
+                renderer.setBorderEmphasis(wide)
+            }
             if let renderer, renderer.display != controller.display {
                 let oceanChanged = renderer.display.ocean != controller.display.ocean
                 renderer.setDisplay(controller.display)

@@ -259,7 +259,8 @@ public enum MapLayers {
 
     /// StateLineRenderer outlines on the shared cell edges: each state strokes its own outline in its
     /// adjusted colour (both sides of a border), then the smoothed coastline in grey.
-    public static func outlines(_ map: WorldMap) -> ColoredMesh {
+    /// `wide` nations are drawn at twice the line width. The app passes the open nation and the owner of the selected province.
+    public static func outlines(_ map: WorldMap, wide: Set<Int> = []) -> ColoredMesh {
         let colors = map.meta.nations.map { RGB(css: $0.line) ?? RGB(0.2, 0.2, 0.2) }
         var m = ColoredMesh()
         // Each state's border edges, joined into lines and smoothed with the original's curve
@@ -270,7 +271,8 @@ public enum MapLayers {
         }
         let perNation = stateEdges(map)
         for n in perNation.keys.sorted() {
-            for line in BorderCurve.smooth(BorderCurve.chain(perNation[n]!)) { m.polyline(line, width: lineWidth, colors[n], alpha: 1) }
+            let width = wide.contains(n) ? lineWidth * 2 : lineWidth
+            for line in BorderCurve.smooth(BorderCurve.chain(perNation[n]!)) { m.polyline(line, width: width, colors[n], alpha: 1) }
         }
         return m
     }

@@ -354,7 +354,7 @@ struct NewWorldSheet: View {
             }
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text("文化").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                    Text("文化集").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
                     Spacer()
                     Button(options.cultures.count == Names.cultureIds.count ? "只留一种" : "全选") {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -380,7 +380,8 @@ struct NewWorldSheet: View {
                         .buttonStyle(PressStyle())
                     }
                 }
-                Text("各国从所选文化中取名、取宗教与政体。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                Text("各国从所选文化中取名、取宗教与政体。宗教跟着文化走，这里没有单独的宗教集。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                Text("生成只接受种子、地形、国家数、省份数、开局和平或开战、文化集和命名。雪原、沙漠、战争规则的新游戏偏好，以及高度图二万、三万、四万格，生成接口都不接收，所以这里不放空开关。高度图固定为二万格。").font(Theme.kai(13)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             }
             Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle()).padding(.top, 6)
             if let draw {
@@ -422,13 +423,16 @@ struct GeneratingView: View {
 // MARK: - game
 
 enum Panel: Identifiable, Equatable {
-    case province(Int), army(Int), fleet(Int), nation(Int), nations, military, diplomacy, chronicle, menu, statistics, edicts
+    case province(Int), army(Int), fleet(Int), nation(Int), people(Int), nationWars(Int), nationTalks(Int), nations, military, diplomacy, chronicle, menu, statistics, edicts
     var id: String {
         switch self {
         case .province(let p): return "p\(p)"
         case .army(let a): return "a\(a)"
         case .fleet(let f): return "f\(f)"
         case .nation(let n): return "n\(n)"
+        case .people(let n): return "people\(n)"
+        case .nationWars(let n): return "wars\(n)"
+        case .nationTalks(let n): return "talks\(n)"
         case .statistics: return "statistics"
         case .edicts: return "edicts"
         case .nations: return "nations"
@@ -445,6 +449,9 @@ enum Panel: Identifiable, Equatable {
         case .army: return "军团"
         case .fleet: return "舰队"
         case .nation: return "国家"
+        case .people: return "人物"
+        case .nationWars: return "战争"
+        case .nationTalks: return "外交"
         case .statistics: return "排行"
         case .edicts: return "诏令"
         case .nations: return "列国"
@@ -457,7 +464,7 @@ enum Panel: Identifiable, Equatable {
     /// The bottom tab this panel belongs to (highlighted while it is open).
     var tab: String? {
         switch self {
-        case .nations, .nation: return "nations"
+        case .nations, .nation, .people, .nationWars, .nationTalks: return "nations"
         case .military, .army, .fleet: return "military"
         case .diplomacy: return "diplomacy"
         case .chronicle: return "chronicle"
@@ -485,6 +492,8 @@ struct GameView: View {
     @State private var rtsDefend = false
     /// The unit sheets' height; a pick from a list drops it low so the map shows the unit.
     @State private var unitDetent: PresentationDetent = .height(320)
+    /// Nation pages stay under about 40% so the map keeps at least 60% of the screen.
+    @State private var nationDetent: PresentationDetent = .fraction(0.38)
     /// The world was paused by a big panel and resumes when it closes.
     @State private var pausedByPanel = false
     @Namespace private var tabMarker
@@ -681,7 +690,7 @@ struct GameView: View {
     @ViewBuilder private func sheet(for panel: Panel) -> some View {
         switch panel {
         case .province(let p):
-            ProvinceSheet(model: model, province: p, openNation: { n in open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)); controller.selectedArmy = a; locate(army: a) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            ProvinceSheet(model: model, province: p, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)); controller.selectedArmy = a; locate(army: a) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .army(let a):
             ArmySheet(model: model, army: a, say: say, locate: { locate(army: a) }, onMarch: {
                 marchRetreat = false; controller.marchingArmy = a; self.panel = nil; say("点选地图上的目的地")
@@ -701,14 +710,23 @@ struct GameView: View {
                 controller.marchingArmy = nil; controller.marchingFleet = nil; controller.groupArmies = []
                 controller.placingArmy = true; controller.paintNation = n; self.panel = nil
                 say("点选本国州郡放置新军；拖动移动地图，点完成退出。征募仍受游戏规则约束。")
-            }, openArmy: { a in open(.army(a)) })
-                .presentationDetents([.medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            }, openArmy: { a in open(.army(a)) }, openPeople: { nationDetent = .fraction(0.38); open(.people(n)) }, openWars: { nationDetent = .fraction(0.38); open(.nationWars(n)) }, openTalks: { nationDetent = .fraction(0.38); open(.nationTalks(n)) })
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+        case .people(let n):
+            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .people)
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+        case .nationWars(let n):
+            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .wars)
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+        case .nationTalks(let n):
+            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .talks)
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
         case .edicts:
             EdictSheet(model: model, say: say).presentationDetents([.medium, .large])
         case .statistics:
-            StatisticsSheet(model: model) { n in open(.nation(n)) }.presentationDetents([.medium, .large]).presentationBackground(.clear)
+            StatisticsSheet(model: model) { n in nationDetent = .fraction(0.38); open(.nation(n)) }.presentationDetents([.medium, .large]).presentationBackground(.clear)
         case .nations:
-            NationsSheet(model: model) { n in open(.nation(n)) }.presentationDetents([.medium, .large])
+            NationsSheet(model: model) { n in nationDetent = .fraction(0.38); open(.nation(n)) }.presentationDetents([.medium, .large])
         case .military:
             MilitarySheet(model: model, select: { army in
                 // The army's docket slides in over the roster (返回军事 goes back); the sheet drops low and
@@ -1670,6 +1688,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.5", ["国家页点「人物」「战争」「外交」进入下一页，返回回到国家页。国家页默认只占屏幕大约四成，地图留在六成以上。基本信息仍是打开就展开。",
+                    "人物页标题是「人物」。君主、继承人、行政首脑、财政主管、常备军统帅五节默认展开。有总督或战时统帅时同样展开。",
+                    "打开国家页，或点中某州郡时，该国国界加粗一倍。没有单独的玩家国家。",
+                    "战争页沿用已恢复的宣战理由和战争目标原文。国际理由是目录里的六条，不是八条，也不是九条。",
+                    "新世界的文化勾选标明为文化集。宗教跟着文化。雪原、沙漠、战争规则偏好和高度图三档，生成接口不接收，没有空开关。"]),
         ("0.26.4", ["设置、新世界、显示设置、自绘地图、军团士气和国家页的国运与能力，改用已有的纸面滑杆和宣纸面板。出错提示和放弃地图不再用系统弹窗。"]),
         ("0.26.3", ["开场和生成世界恢复上一版的「注水成海」流程，不再用短淡入替换。",
                     "国家失去最后一块实控领土的同一刻，该国还有兵力的军队被清除，不再停在地图上发呆，也不再改去进攻或投奔盟国。清除时兵力、士气、军粮写 0，行军停下。这是按现有「失去作战能力」的写法收束（简化）。",

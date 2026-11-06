@@ -632,6 +632,7 @@ public enum WarText {
     public static func casusBelli(_ id: Int) -> String {
         [1: "领土征服", 2: "吞并", 3: "霸权臣服", 6: "文化统一", 7: "强制改宗", 8: "空白开拓", 10: "继承内战", 11: "改革内战", 12: "独立内战", 13: "推翻内战", 14: "行省叛乱", 15: "家族叛乱", 16: "傀儡反抗"][id] ?? "未知"
     }
+    /// WarV2EventText.GoalDesc. International goals in the recovered catalog are 索取、占领、吞并全境、附庸, plus 索取赔款 and 迫使改信 where that casus allows them.
     public static func goal(_ type: Int, _ count: Int) -> String {
         switch type {
         case 0, 1: return "索取\(count)省"
@@ -639,9 +640,18 @@ public enum WarText {
         case 3: return "吞并全境"
         case 4: return "附庸"
         case 6: return "索取赔款"
+        case 7: return "独立"
+        case 8: return "推翻统治"
+        case 9: return "改革政体"
+        case 10: return "夺取王位"
+        case 11: return "迫使目标改信本国宗教"
         default: return "未知"
         }
     }
+    /// BuildCatalog international ids. 4 and 5 are not registered. 宿怨报复 and 劫掠 are unused localization leftovers, not extra casus.
+    public static let internationalCasus = [1, 2, 3, 6, 7, 8]
+    /// WarV2EventText.ReasonName. 2 and 3 share 对方崩溃. 9 is 首都沦陷 and is separate from the four settlement reasons.
+    public static let endReasons = [(0, "达成目标"), (1, "战局已定"), (2, "对方崩溃"), (4, "久战厌兵"), (9, "首都沦陷")]
     /// WarV2DeclaredEvent.GetDescription.
     public static func declared(attacker: String, defender: String, war: DeclaredWar) -> String {
         let goal = war.goals.first.map { self.goal($0.type, $0.scope.count) } ?? "未知"

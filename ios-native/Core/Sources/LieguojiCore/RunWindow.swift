@@ -24,11 +24,12 @@ public enum RunWindow {
     }
     static func log(_ r: JS, _ kind: String, _ text: String, _ reason: String) { Daily.event(r, kind, text, reason) }
 
-    static func atCity(_ force: Armies.Located, bridge: ForceBridge) -> Bool {
+    /// App worlds: an army besieges a province once it stands within the engagement distance of its city.
+    static func atCity(_ r: JS, _ force: Armies.Located, bridge: ForceBridge) -> Bool {
         guard let p = force.province, let cell = Armies.homeCells[p.id.asString].flatMap({ bridge.graph.cell(id: $0) }) else { return false }
         let index = Int(bridge.graph.provinces[cell])
         guard bridge.graph.targets.indices.contains(index) else { return false }
-        return EncounterGeometry.touching(bridge.graph.location(bridge.travel(force.travel)).point, bridge.graph.targets[index])
+        return EncounterGeometry.touching(bridge.graph.location(bridge.travel(force.travel)).point, bridge.graph.targets[index], reach: ForceBridge.engageReach(r))
     }
 
     // MARK: Resistance capacity (occupation resistanceCapacity)
@@ -70,7 +71,7 @@ public enum RunWindow {
             if let v = wars[k] { return v }
             let v = atWar(r, a, b); wars[k] = v; return v
         }
-        let space = Armies.space(r)
+        let space = Profile.measure("o.space") { Armies.space(r) }
         if r.occupation.sieges.length == 0 && !space.contains(where: { $0.province != nil && $0.army.status.asString != "retreating" && war($0.army.nationId.asString, $0.province!.controller.asString) }) { return false }
         let previous = r.world.provinces.asArray.map(\.controller.asString)
         let armyDue = Set(space.filter { due.contains(key("army", $0.army.id.asString)) }.map(\.army.id.asString))
@@ -83,7 +84,7 @@ public enum RunWindow {
             return p.controller.asString == s.controller.asString && war(s.attacker.asString, s.controller.asString)
         })
         var local = [String: [JS]]()
-        for v in space where v.province != nil { local[v.province!.id.asString, default: []].append(v.army) }
+        for v in space where v.province != nil && (!r.regimes.enabled.isTruthy || atCity(r, v, bridge: Armies.bridge!)) { local[v.province!.id.asString, default: []].append(v.army) }
         // The first siege of each province (kept current as sieges start and end below).
         var siegeOf = [String: JS]()
         for sg in r.occupation.sieges.asArray where siegeOf[sg.provinceId.asString] == nil { siegeOf[sg.provinceId.asString] = sg }
@@ -288,7 +289,7 @@ public enum RunWindow {
             let id = a.id.asString
             entry[id] = (a.nationId.asString, anchors ? index[a.provinceId.asString].map { controllers[$0] } : nil, a.status.asString == "retreating",
                          r.reorganization.active[id].isNull, r.forceSpeed.armies[id].base.optionalNumber ?? 0,
-                         CombatReader.unitSpeed(r.units[id].optionalString ?? "") * (UnitKinds.enabled ? 1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100 : 1))
+                         CombatReader.unitSpeed(r.units[id].optionalString ?? "") * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") : 1))
         }
         _ = armies
         let rules = bridge.rules(r, canEnter: { force, cell in

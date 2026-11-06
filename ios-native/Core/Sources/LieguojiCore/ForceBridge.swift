@@ -60,6 +60,8 @@ public final class ForceBridge {
     public static func json(_ c: ForceContact) -> JS {
         let o = JS.object(); o.a = JS(c.a); o.b = JS(c.b); o.cellA = JS(c.cellA); o.cellB = JS(c.cellB); o.pointA = json(c.pointA); o.pointB = json(c.pointB); o.area = JS(c.area); return o
     }
+    /// The engagement distance of app worlds, in engine units: nine display units (an army icon is five).
+    public static func engageReach(_ r: JS) -> Double { 9 * max(0.0001, r.scale.optionalNumber ?? 1) }
     /// The motion rules of the run: war between nations, water province of a sea face, province ids.
     public func rules(_ r: JS, canEnter: @escaping (MovingForce, Int) -> Bool = { _, _ in false }, speed: @escaping (MovingForce, Int) -> Double = { _, _ in 0 }) -> ContactMotion.Rules {
         let nations = r.world.nations.asArray.map(\.id.asString)
@@ -77,9 +79,12 @@ public final class ForceBridge {
         let regions = staticRegions!, provinceIds = staticProvinceIds
         var rules = ContactMotion.Rules(enemy: { a, b in a != b && war.contains(min(a, b) * 4096 + max(a, b)) }, canEnter: canEnter, speed: speed,
                                    seaRegion: { regions[$0]! }, provinceID: { provinceIds[$0] })
-        // The original fights by province (Army.AddDamageToEnemyArmyInProvince): enemies in one
-        // province are in contact. Exact-point contact let columns walk through each other.
-        rules.physicalContact = false
+        // The original fights by province (Army.AddDamageToEnemyArmyInProvince). This map's provinces
+        // are far larger than the original's, so app worlds engage by distance instead: enemies in one
+        // province meet when they come within about two army icons (the AI closes on the battle), not
+        // from opposite ends of the province, and not only when their points coincide exactly.
+        rules.physicalContact = r.regimes.enabled.isTruthy
+        rules.reach = Self.engageReach(r)
         return rules
     }
     /// reconcileForceContactsOwned47 + the status update of reconcileDiplomaticForces47.

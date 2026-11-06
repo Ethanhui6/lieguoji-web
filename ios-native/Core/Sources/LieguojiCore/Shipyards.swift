@@ -33,13 +33,14 @@ public enum Shipyards {
                 if let k = Nobility.trait(t.asString)?.warshipBuildTimeMultiplier.optionalNumber, k > 0 { m *= k }
             }
         }
-        return baseMonths * m
+        return baseMonths * m / Regimes.rule(r, "ships")
     }
 
     /// Once a month: a month of work on every sunk fleet whose state holds its dock.
     static func month(_ r: JS) {
         guard !r.regimes.isNull, !r.navy.isNull, !r.fleetPositions.isNull, !r.maritime.isNull, let sea = Naval.sea else { return }
         remember(r)
+        grow(r)
         let s = book(r), provinces = r.world.provinces.asArray
         for fl in Naval.fleets(r) where fl.status.asString == "lost" {
             let id = fl.id.asString, nation = fl.nationId.asString, h = s.home[id]
@@ -57,6 +58,28 @@ public enum Shipyards {
             r.fleetPositions.records[id] = h.record.clone()
             _ = People.announce(r, kind: "event", text: "\(fl.name.asString)重建完成，重新出港",
                                 reason: "港口仍在本国手中，船坞用\(Int(buildMonths(r, nation).rounded()))个月造成新舰（船舶大师在位时减半）。", nations: [nation], province: nil)
+        }
+    }
+
+    /// 扩编: a fleet lying in its own state's port gains a ship every two build times, up to five
+    /// (hull, crew and stores grow with it). The original's ports build warships over months.
+    static let maxShips = 5
+    static func grow(_ r: JS) {
+        guard let sea = Naval.sea else { return }
+        let s = book(r), provinces = r.world.provinces.asArray
+        for fl in Naval.fleets(r) where fl.status.asString == "docked" && fl.ships.asInt < maxShips {
+            let id = fl.id.asString, nation = fl.nationId.asString, key = "grow:" + id
+            guard let dock = fl.dockId.optionalString, let port = sea.ports.first(where: { $0.id == dock }),
+                  provinces.first(where: { $0.id.asString == port.provinceId })?.controller.asString == nation else { s.progress.delete(key); continue }
+            let done = (s.progress[key].optionalNumber ?? 0) + 1
+            if done < buildMonths(r, nation) * 2 { s.progress[key] = JS(done); continue }
+            s.progress.delete(key)
+            let n = fl.ships.asInt + 1
+            fl.ships = JS(n); fl.crew = JS(fl.crew.asInt + 40); fl.food = JS(fl.food.asNumber + 2400)
+            r.maritime.hulls[id] = JS((r.maritime.hulls[id].optionalNumber ?? 0) + 100)
+            if n == maxShips || n == 3 {
+                _ = People.announce(r, kind: "event", text: "\(fl.name.asString)扩编至\(n)艘战船", reason: "母港船坞陆续造成新舰，编入舰队。", nations: [nation], province: nil)
+            }
         }
     }
 

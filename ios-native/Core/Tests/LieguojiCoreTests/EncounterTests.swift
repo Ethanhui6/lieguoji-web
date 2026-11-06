@@ -9,6 +9,17 @@ final class EncounterTests: XCTestCase {
         XCTAssertNil(EncounterGeometry.meetingTime(a, right, .init(x: 20, y: 1), left, limit: 2))
         XCTAssertNil(EncounterGeometry.meetingTime(a, right, b, right, limit: 2))
     }
+    func testEngagementReachMeetsBeforeTheyCoincide() {
+        let a = TravelPoint(x: 0, y: 0), b = TravelPoint(x: 100, y: 0)
+        let right = TravelPoint(x: 10, y: 0), left = TravelPoint(x: -10, y: 0)
+        // Closing at 20 a second from 100 apart, they engage at 10 apart: after 4.5 seconds.
+        XCTAssertEqual(EncounterGeometry.meetingTime(a, right, b, left, limit: 10, reach: 10)!, 4.5, accuracy: 1e-9)
+        // Passing 8 apart is within a reach of 10, but not of 5.
+        XCTAssertNotNil(EncounterGeometry.meetingTime(a, right, .init(x: 100, y: 8), left, limit: 10, reach: 10))
+        XCTAssertNil(EncounterGeometry.meetingTime(a, right, .init(x: 100, y: 8), left, limit: 10, reach: 5))
+        XCTAssertTrue(EncounterGeometry.touching(a, .init(x: 6, y: 8), reach: 10))
+        XCTAssertFalse(EncounterGeometry.touching(a, .init(x: 6, y: 8), reach: 9.9))
+    }
     func testSameProvinceDoesNotStartRemoteBattleOrPreserveOldContact() throws {
         let resources = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World")
         let graph = try TravelGraph(data: Data(contentsOf: resources.appendingPathComponent("travel.bin")))

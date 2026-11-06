@@ -5,7 +5,7 @@ import LieguojiCore
 /// The army marks: one chess set in the original's manner (grey-rimmed white pieces that the map
 /// multiplies by the state's colour, as the original's SpriteRenderer.color does). Every arm stands on
 /// the same plinth with the same rim; its crown — pawn, spear, shield, bow, crossbow, knight, plumed
-/// knight, knight with bow, gonfalon, elephant — names it. Ships and ports keep the original icons.
+/// knight, knight with bow, gonfalon, elephant — names it. The warship and the anchor are drawn in the same line.
 enum UnitArt {
     static let size = 256
     private static var cache = [String: CGImage]()
@@ -15,10 +15,6 @@ enum UnitArt {
         return UnitKinds.byKey[unit]?.role.rawValue ?? "infantry"
     }
 
-    private static func bundled(_ name: String) -> CGImage? {
-        guard let url = Bundle.main.url(forResource: "unit-\(name)", withExtension: "png", subdirectory: "World") else { return nil }
-        return UIImage(contentsOfFile: url.path)?.cgImage
-    }
 
     static func image(_ unit: String) -> CGImage? {
         let key = role(unit)
@@ -83,14 +79,6 @@ enum UnitArt {
     private static func detail(_ g: CGContext, _ p: CGPath, _ w: CGFloat) {
         g.setStrokeColor(gray: 0.4, alpha: 1); g.setLineWidth(w); g.addPath(p); g.strokePath()
     }
-    /// An original icon in a square of the 256 grid (the context is flipped, the image is not).
-    private static func piece(_ g: CGContext, _ name: String, _ x: CGFloat, _ y: CGFloat, _ side: CGFloat) {
-        guard let img = bundled(name) else { return }
-        g.saveGState(); g.translateBy(x: x, y: y + side); g.scaleBy(x: 1, y: -1)
-        g.interpolationQuality = .high
-        g.draw(img, in: CGRect(x: 0, y: 0, width: side, height: side))
-        g.restoreGState()
-    }
 
     /// The shared plinth every piece stands on, so the set reads as one.
     private static let base: [Shape] = [.solid(poly([(78, 184), (178, 184), (184, 204), (72, 204)])), .solid(poly([(52, 212), (204, 212), (204, 236), (52, 236)]))]
@@ -101,8 +89,16 @@ enum UnitArt {
 
     /// One chess set: the same plinth, rim and fill; only the crown of each piece names the arm.
     private static func draw(_ role: String, _ g: CGContext) {
-        if role == "Fleet" || role == "Port" { piece(g, role, 0, 0, 256); return }
         switch role {
+        case "Fleet":
+            // A two-sailed warship, in the same line as the pieces (no plinth: it floats).
+            render(g, [.rod(line((128, 30), (128, 170)), 12), .solid(poly([(138, 36), (204, 150), (138, 150)])), .solid(poly([(118, 56), (118, 150), (64, 150)])),
+                       .solid(poly([(28, 170), (228, 170), (196, 222), (60, 222)]))])
+        case "Port":
+            // An anchor.
+            render(g, [.rod(line((128, 56), (128, 214)), 16), .rod(line((84, 84), (172, 84)), 14), .solid(oval(108, 18, 40, 40)),
+                       .rod(curve((46, 150), (128, 268), (210, 150)), 16), .solid(poly([(30, 156), (62, 138), (64, 170)])), .solid(poly([(226, 156), (194, 138), (192, 170)]))])
+            g.setFillColor(gray: 0.4, alpha: 1); g.fillEllipse(in: CGRect(x: 120, y: 30, width: 16, height: 16))
         case "spear":
             render(g, [.rod(line((128, 186), (128, 74)), 14), .solid(poly([(128, 14), (154, 58), (128, 96), (102, 58)])), .rod(line((92, 112), (164, 112)), 12)] + base)
         case "shield":

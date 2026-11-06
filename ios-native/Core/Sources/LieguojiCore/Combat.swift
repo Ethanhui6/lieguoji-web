@@ -55,6 +55,8 @@ public struct ContactMotion {
         public var seaRegion: (Int) -> Int
         public var provinceID: (Int) -> String
         public var physicalContact = false
+        /// With physical contact: the distance at which enemies engage (engine units).
+        public var reach = EncounterGeometry.epsilon
         public init(enemy: @escaping (Int, Int) -> Bool, canEnter: @escaping (MovingForce, Int) -> Bool, speed: @escaping (MovingForce, Int) -> Double,
                     seaRegion: @escaping (Int) -> Int, provinceID: @escaping (Int) -> String) {
             self.enemy = enemy; self.canEnter = canEnter; self.speed = speed; self.seaRegion = seaRegion; self.provinceID = provinceID
@@ -93,7 +95,7 @@ public struct ContactMotion {
         func put(_ c: ForceContact) { let k = ContactMotion.pairKey(c.a, c.b); if pairs[k] == nil { order.append(k) }; pairs[k] = c }
         func eligible(_ a: MovingForce, _ b: MovingForce, _ area: String) -> Bool {
             rules.enemy(a.nation, b.nation) && (area.hasPrefix("sea/") || !a.withdrawing && !b.withdrawing)
-                && (!rules.physicalContact || EncounterGeometry.touching(p[a.key]!.point, p[b.key]!.point))
+                && (!rules.physicalContact || EncounterGeometry.touching(p[a.key]!.point, p[b.key]!.point, reach: rules.reach))
         }
         for c in old {
             guard let a = p[c.a], let b = p[c.b], let fa = byKey[c.a], let fb = byKey[c.b] else { continue }
@@ -169,7 +171,7 @@ public struct ContactMotion {
                           !current.held.contains(a.key), !current.held.contains(b.key) else { continue }
                     let pa = positions[a.key]!, pb = positions[b.key]!
                     guard area(pa.cell, rules) == area(pb.cell, rules) else { continue }
-                    if let t = EncounterGeometry.meetingTime(pa.point, velocities[a.key] ?? zero, pb.point, velocities[b.key] ?? zero, limit: dt) { dt = min(dt, t) }
+                    if let t = EncounterGeometry.meetingTime(pa.point, velocities[a.key] ?? zero, pb.point, velocities[b.key] ?? zero, limit: dt, reach: rules.reach) { dt = min(dt, t) }
                 } } }
             }
             if dt > 0 {

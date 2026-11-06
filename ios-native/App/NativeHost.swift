@@ -148,8 +148,12 @@ actor NativeHost {
     func fleetOrder(id: String, province: Int?) async -> (ok: Bool, reason: String, state: Data?) { await command("fleetOrder", ["id": id, "province": Self.opt(province)]) }
     func province(_ index: Int) async -> Data? { await call("province", ["index": index]).data }
     func nationInfo(_ index: Int) async -> Data? { await call("nationInfo", ["index": index]).data }
+    func diplomacyInfo(_ index: Int) async -> Data? { await call("diplomacyInfo", ["index": index]).data }
     func view(_ mode: String) async -> Data? { await call("view", ["mode": mode]).data }
     func worldSettings() async -> Data? { await call("worldSettings").data }
+    func worldRules() async -> Data? { await call("worldRules").data }
+    func setWorldRule(_ key: String, value: Double?) async -> (ok: Bool, reason: String, state: Data?) { await command("setWorldRule", ["key": key, "value": Self.opt(value)]) }
+    func editFleet(_ id: String, ships: Int?, name: String?) async -> (ok: Bool, reason: String, state: Data?) { await command("editFleet", ["id": id, "ships": Self.opt(ships), "name": Self.opt(name)]) }
     func setWorld(_ key: String, _ value: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("setWorld", ["key": key, "value": value]) }
     func triggerCivilWar(_ n: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("triggerCivilWar", ["n": n]) }
     func rts(_ armyIds: [String], nation: Int, province: Int, defend: Bool) async -> (ok: Bool, reason: String, state: Data?) {

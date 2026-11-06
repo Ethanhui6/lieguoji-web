@@ -277,6 +277,22 @@ public enum MapLayers {
         return m
     }
 
+    /// Province borders inside the land: every edge between two land provinces, joined and smoothed
+    /// with the state lines' curve, in a thin translucent ink — clear at every zoom, as the original's
+    /// are, and never the cells' stair steps.
+    public static let provinceInk = RGB(hex: 0x4A4036)
+    public static func provinceLines(_ map: WorldMap) -> ColoredMesh {
+        var segments = [BorderCurve.Segment]()
+        for edge in map.edges {
+            let a = Int(edge.a), b = Int(edge.b)
+            guard a >= 0, b >= 0, a < map.cellCount, b < map.cellCount, map.isLand(a), map.isLand(b), map.province[a] != map.province[b] else { continue }
+            segments.append(.init(edge.x1, edge.y1, edge.x2, edge.y2))
+        }
+        var m = ColoredMesh()
+        for line in BorderCurve.smooth(BorderCurve.chain(segments)) { m.polyline(line, width: lineWidth * 0.42, provinceInk, alpha: 0.5) }
+        return m
+    }
+
     /// Full political perimeter, including islands, lake holes and the edge of the world.
     /// Water never inherits an owner from a stale province assignment after terrain editing.
     static func stateEdges(_ map: WorldMap) -> [Int: [BorderCurve.Segment]] {

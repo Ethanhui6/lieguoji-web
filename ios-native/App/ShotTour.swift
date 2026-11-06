@@ -83,12 +83,14 @@ enum ShotTour {
             if case .army = panel, model.state?.armies.isEmpty ?? true { continue }
             show(panel); await wait(1.4); await shoot(name)
         }
+        // The navy: a fleet's page (ships editable) when the world has fleets.
+        if !(model.state?.fleets ?? []).isEmpty { show(.fleet(0)); await wait(1.4); await shoot("13b-fleet") }
         await shootRulerTraits(model, nation: nation, show: show)
         show(nil); await wait(1)
         await shoot("done")
     }
 
-    /// Opens 人物 for the largest state after giving its ruler two catalog traits that this build does not apply.
+    /// Opens 人物 for the largest state after giving its ruler the ShipMaster and Reformer traits.
     @MainActor private static func shootRulerTraits(_ model: GameModel, nation: Int, show: (Panel?) -> Void) async {
         guard let info = await model.nationInfo(nation) else { return }
         let ruler = info.people?.first { $0.role == "君主" } ?? info.people?.first

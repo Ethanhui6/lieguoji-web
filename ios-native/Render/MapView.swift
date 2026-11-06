@@ -16,6 +16,8 @@ import LieguojiCore
     @Published var viewLabels: [GroupLabel]?
     @Published var selectedProvince: Int?
     @Published var showMetrics = false
+    /// The next army update places every icon at once (a world just opened), with no walk or fade.
+    var snapArmies = false
     /// The simulation's own costs for the metrics overlay (set by the game each step; not published).
     var simText = ""
     /// 显示设置 (web 0.5.40 map display options), kept between launches.
@@ -87,12 +89,12 @@ import LieguojiCore
     func zoom(_ factor: Double) { zoomRequest = (factor, UUID()) }
 }
 
-/// Map display options kept between launches. v2 resets older saves so province borders start off
-/// and the new switches take the display-settings defaults.
+/// Map display options kept between launches. v3 resets older saves once so the province borders
+/// (now smoothed ink lines) start on.
 struct DisplaySettings: Codable, Equatable {
     var borders = true
-    /// Province borders start off (DisplayProvinceBorderToggle). On, they draw #B2B2B2.
-    var provinceLines = false
+    /// Province borders: smoothed translucent ink lines, on by default (provinces read as clearly as the original's).
+    var provinceLines = true
     var cityNames = true
     var cityIcons = true
     var vegetation = true
@@ -111,7 +113,7 @@ struct DisplaySettings: Codable, Equatable {
     var fullNationNames = true
     /// "original" is preset 0. "warm" keeps the previous paper sea (网页适配).
     var ocean = "original"
-    static let key = "displaySettings.v2"
+    static let key = "displaySettings.v3"
     static func load() -> DisplaySettings {
         guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) else { return DisplaySettings() }
         return v
@@ -464,7 +466,8 @@ struct MapView: UIViewRepresentable {
                 // Playing: glide linearly over one step so marching does not pulse; a single move eases.
                 renderer?.tweenDuration = controller.tween
                 renderer?.tweenEase = controller.tween <= 0.3
-                renderer?.setArmies(armies, route: controller.route)
+                renderer?.setArmies(armies, route: controller.route, snap: controller.snapArmies)
+                controller.snapArmies = false
                 updateTroops()
                 if renderer?.isAnimating == true { startLink() }
             }

@@ -281,7 +281,6 @@ struct TitleView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "设置", subtitle: AppVersion.text, seal: "设")
-                    SectionLabel("显示设置")
                     MapDisplaySettings(controller: model.controller)
                     SectionLabel("远程计算")
                     RemoteSettings(model: model)
@@ -1379,39 +1378,12 @@ struct MilitarySheet: View {
     var body: some View {
         if let map = model.map, let state = model.state {
             // Armies by state, built lazily as the list scrolls (hundreds of rows made opening slow).
-            let byNation = Dictionary(grouping: state.armies.indices.filter { filter == "all" || (filter == "manual" ? state.armies[$0].manual : state.armies[$0].status == "fighting" || state.armies[$0].status == "sieging") }, by: { state.armies[$0].nation })
+            let byNation = Dictionary(grouping: state.armies.indices.filter { filter == "navy" ? false : filter == "all" || (filter == "manual" ? state.armies[$0].manual : state.armies[$0].status == "fighting" || state.armies[$0].status == "sieging") }, by: { state.armies[$0].nation })
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支舰队"))
-                    ChipPicker(items: [("all", "全部"), ("battle", "交战围城"), ("manual", "亲自指挥")], selection: $filter).padding(.horizontal, 16)
-                    if byNation.isEmpty { Text("暂无符合条件的陆军").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
-                    if filter == "all", let fleets = state.fleets, !fleets.isEmpty {
-                        SectionLabel("舰队")
-                        Group2 {
-                            ForEach(fleets.indices, id: \.self) { i in
-                                Button { selectFleet(i) } label: { FleetRow(map: map, fleet: fleets[i]) }.buttonStyle(.plain)
-                                if i != fleets.indices.last { Divider2() }
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                    }
-                    if filter == "all", let yards = state.yards, !yards.isEmpty {
-                        SectionLabel("船坞")
-                        Group2 {
-                            ForEach(yards.indices, id: \.self) { i in
-                                let y = yards[i]
-                                HStack {
-                                    Text(y.name).font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                                    Spacer()
-                                    Text(map.meta.nations.indices.contains(y.nation) ? map.meta.nations[y.nation].name : "").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-                                    Text("重建中 · 还需 \(Int(y.months)) 月").font(Theme.kai(14)).foregroundStyle(Theme.seal)
-                                }
-                                .padding(.horizontal, 14).padding(.vertical, 10)
-                                if i != yards.indices.last { Divider2() }
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                    }
+                    ChipPicker(items: [("all", "全部"), ("battle", "交战围城"), ("manual", "亲自指挥"), ("navy", "舰队")], selection: $filter).padding(.horizontal, 16)
+                    if byNation.isEmpty && filter != "navy" { Text("暂无符合条件的陆军").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
                     ForEach(state.nations.indices, id: \.self) { n in
                         let rows = (byNation[n] ?? []).sorted { state.armies[$0].troops > state.armies[$1].troops }
                         if !rows.isEmpty {
@@ -1430,10 +1402,147 @@ struct MilitarySheet: View {
                             .padding(.horizontal, 16)
                         }
                     }
+                    if filter == "all" || filter == "navy", let fleets = state.fleets, !fleets.isEmpty {
+                        SectionLabel("舰队")
+                        Group2 {
+                            ForEach(fleets.indices, id: \.self) { i in
+                                Button { selectFleet(i) } label: { FleetRow(map: map, fleet: fleets[i]) }.buttonStyle(.plain)
+                                if i != fleets.indices.last { Divider2() }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                    if filter == "all" || filter == "navy", let yards = state.yards, !yards.isEmpty {
+                        SectionLabel("船坞")
+                        Group2 {
+                            ForEach(yards.indices, id: \.self) { i in
+                                let y = yards[i]
+                                HStack {
+                                    Text(y.name).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                    Spacer()
+                                    Text(map.meta.nations.indices.contains(y.nation) ? map.meta.nations[y.nation].name : "").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                                    Text("重建中 · 还需 \(Int(y.months)) 月").font(Theme.kai(14)).foregroundStyle(Theme.seal)
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 10)
+                                if i != yards.indices.last { Divider2() }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
                 }
                 .padding(.bottom, 24)
             }
         }
+    }
+}
+
+/// 战况: the two sides' field troops as one bar in their colours, the land each side holds of the
+/// other's (sieges won), and how long the war has run.
+struct WarBalance: View {
+    let map: WorldMap; let state: GameState; let war: GameState.War
+    var body: some View {
+        let attackerSide = war.participants.first { $0.nation == war.attacker }?.side
+        let a = Set(war.participants.filter { $0.side == attackerSide }.map(\.nation)).union([war.attacker])
+        let d = Set(war.participants.filter { $0.side != attackerSide }.map(\.nation)).union([war.defender]).subtracting(a)
+        let at = state.armies.reduce(0) { a.contains($1.nation) ? $0 + $1.troops : $0 }
+        let dt = state.armies.reduce(0) { d.contains($1.nation) ? $0 + $1.troops : $0 }
+        let share = at + dt > 0 ? Double(at) / Double(at + dt) : 0.5
+        let days = max(0, state.day - war.startDay)
+        let sieges = state.sieges.filter { s in (a.contains(s.nation) || d.contains(s.nation)) }.count
+        VStack(alignment: .leading, spacing: 5) {
+            GeometryReader { g in
+                HStack(spacing: 0) {
+                    Rectangle().fill(color(war.attacker)).frame(width: max(2, g.size.width * share))
+                    Rectangle().fill(color(war.defender))
+                }
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(Theme.ink.opacity(0.25), lineWidth: 0.8))
+            }
+            .frame(height: 8)
+            .animation(.easeOut(duration: 0.4), value: share)
+            HStack {
+                Text("\(Names.wan(at)) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink)
+                Spacer()
+                Text((days >= 360 ? "历时 \(days / 360) 年 \(days % 360 / 30) 月" : "历时 \(max(1, days / 30)) 月") + (sieges > 0 ? " · 围城 \(sieges)" : ""))
+                    .font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                Spacer()
+                Text("\(Names.wan(dt)) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink)
+            }
+            .monospacedDigit()
+        }
+    }
+    private func color(_ n: Int) -> Color { n >= 0 && n < map.meta.nations.count ? Names.color(map.meta.nations[n].color) : Theme.ink2 }
+}
+
+/// One state's standing (engine diplomacyInfo).
+struct DiplomacyOverview: Decodable {
+    struct Pact: Decodable { let nation: Int; let kind: String; let months: Int }
+    struct Truce: Decodable { let nation: Int; let days: Int }
+    struct Neighbor: Decodable { let nation: Int; let troops: Int }
+    let allies: [Int]; let overlord: Int?; let vassals: [Int]; let pacts: [Pact]; let truces: [Truce]; let enemies: [Int]; let neighbors: [Neighbor]; let troops: Int
+}
+
+/// 邦交总览: the chosen state's allies, overlord and vassals, treaties, truces, wars and neighbours.
+struct DiplomacyOverviewView: View {
+    @ObservedObject var model: GameModel
+    let map: WorldMap; let nation: Int; let day: Int; let troops: Int
+    @State private var info: DiplomacyOverview?
+    var body: some View {
+        Group2 {
+            if let info {
+                row("盟友", info.allies, empty: "无同盟")
+                Divider2()
+                if let lord = info.overlord { row("宗主", [lord], empty: ""); Divider2() }
+                row("附庸", info.vassals, empty: "无附庸")
+                Divider2()
+                row("交战", info.enemies, empty: "无战事", warn: true)
+                Divider2()
+                labeled("条约", info.pacts.isEmpty ? [] : info.pacts.map { ($0.nation, ($0.kind == "marriage" ? "联姻" : "互不侵犯") + " · 余 \($0.months) 月") }, empty: "无条约")
+                Divider2()
+                labeled("停战", info.truces.map { ($0.nation, "余 \($0.days) 日") }, empty: "无停战期")
+                Divider2()
+                labeled("接壤", info.neighbors.sorted { $0.troops > $1.troops }.map { n in
+                    let ratio = troops > 0 ? Double(n.troops) / Double(troops) : 0
+                    return (n.nation, "\(Names.wan(n.troops)) 兵" + (troops > 0 ? (ratio > 1.5 ? " · 强于我" : ratio < 0.67 ? " · 弱于我" : " · 相当") : ""))
+                }, empty: "无接壤国")
+            } else {
+                Text("载入……").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
+            }
+        }
+        .task(id: "\(nation)-\(day)") { info = await model.diplomacyInfo(nation) }
+    }
+    private func name(_ n: Int) -> String { n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].name : "无主" }
+    private func color(_ n: Int) -> Color { n >= 0 && n < map.meta.nations.count ? Names.color(map.meta.nations[n].color) : .gray }
+    private func row(_ title: String, _ nations: [Int], empty: String, warn: Bool = false) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 44, alignment: .leading)
+            if nations.isEmpty { Text(empty).font(Theme.kai(15)).foregroundStyle(Theme.ink2.opacity(0.7)) }
+            else {
+                Text(nations.map(name).joined(separator: "、")).font(Theme.kai(16)).foregroundStyle(warn ? Theme.seal : Theme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+    }
+    private func labeled(_ title: String, _ items: [(Int, String)], empty: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 44, alignment: .leading)
+            if items.isEmpty { Text(empty).font(Theme.kai(15)).foregroundStyle(Theme.ink2.opacity(0.7)) }
+            else {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(items.indices, id: \.self) { i in
+                        HStack(spacing: 6) {
+                            RoundedRectangle(cornerRadius: 2).fill(color(items[i].0)).frame(width: 10, height: 10)
+                            Text(name(items[i].0)).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                            Text(items[i].1).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                        }
+                    }
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
     }
 }
 
@@ -1467,6 +1576,7 @@ struct DiplomacySheet: View {
                                         Text("参战：" + war.participants.compactMap { p in p.nation >= 0 && p.nation < map.meta.nations.count ? map.meta.nations[p.nation].name : nil }.joined(separator: "、"))
                                             .font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                                     }
+                                    WarBalance(map: map, state: state, war: war)
                                 }
                                 .padding(16)
                                 if war.id != state.wars.last?.id { Divider2() }
@@ -1492,6 +1602,9 @@ struct DiplomacySheet: View {
                     .padding(.horizontal, 16)
                     SectionLabel("条约与邦交")
                     DiplomaticActions(model: model, source: attacker, target: defender, say: say).padding(.horizontal, 16)
+                    SectionLabel("邦交总览")
+                    DiplomacyOverviewView(model: model, map: map, nation: attacker, day: state.day / 30, troops: state.nations.indices.contains(attacker) ? state.nations[attacker].troops : 0)
+                        .padding(.horizontal, 16)
                 }
                 .padding(.bottom, 24)
                 .onChange(of: attacker) { _, value in
@@ -1606,38 +1719,52 @@ struct MenuSheet: View {
     @State private var notes = false
     @State private var exported: ExportFile?
     @State private var importing = false
+    /// 菜单 in three pages: the game (saves, worlds, edicts), the map's look, and the rest.
+    @State private var page = "game"
     var body: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 14) {
             SheetHeader(title: "菜单", subtitle: AppVersion.text)
-            Group2 {
-                Button {
-                    Task { let ok = await model.saveNow(); GameFeel.shared.notify(ok ? .success : .error); say(ok ? "已保存" : "保存失败"); close() }
-                } label: { MenuRow(symbol: "square.and.arrow.down", title: "保存") }.buttonStyle(.plain)
-                Divider2()
-                Button { Task { exported = await model.exportCopy().map(ExportFile.init) } } label: { MenuRow(symbol: "square.and.arrow.up", title: "导出存档（备份）") }.buttonStyle(.plain)
-                Divider2()
-                Button { importing = true } label: { MenuRow(symbol: "tray.and.arrow.down", title: "导入存档") }.buttonStyle(.plain)
-                Divider2()
-                Button { openEdicts() } label: { MenuRow(symbol: "scroll.fill", title: "天下诏令（外交、联盟、叛乱、家族、附庸）") }.buttonStyle(.plain)
-                Divider2()
-                Button { creating = true } label: { MenuRow(symbol: "globe.asia.australia", title: "新世界") }.buttonStyle(.plain)
-                Divider2()
-                Button { close(); model.backToTitle() } label: { MenuRow(symbol: "house", title: "返回标题") }.buttonStyle(.plain)
-                Divider2()
-                Button { notes = true } label: { MenuRow(symbol: "sparkles", title: "本版新增与更新内容") }.buttonStyle(.plain)
-                Divider2()
-                PaperSwitch(title: "显示帧率", on: $controller.showMetrics)
+            ChipPicker(items: [("game", "游戏"), ("map", "地图显示"), ("other", "声音与其他")], selection: $page).padding(.horizontal, 16)
+            switch page {
+            case "map":
+                MapDisplaySettings(controller: controller)
+            case "other":
+                SectionLabel("声音与触感")
+                FeelSettings()
+                SectionLabel("远程计算")
+                RemoteSettings(model: model)
+                SectionLabel("调试")
+                Group2 { PaperSwitch(title: "显示帧率与推演耗时", on: $controller.showMetrics) }.padding(.horizontal, 16)
+            default:
+                SectionLabel("存档")
+                Group2 {
+                    Button {
+                        Task { let ok = await model.saveNow(); GameFeel.shared.notify(ok ? .success : .error); say(ok ? "已保存" : "保存失败"); close() }
+                    } label: { MenuRow(symbol: "square.and.arrow.down", title: "保存") }.buttonStyle(.plain)
+                    Divider2()
+                    Button { Task { exported = await model.exportCopy().map(ExportFile.init) } } label: { MenuRow(symbol: "square.and.arrow.up", title: "导出存档（备份）") }.buttonStyle(.plain)
+                    Divider2()
+                    Button { importing = true } label: { MenuRow(symbol: "tray.and.arrow.down", title: "导入存档") }.buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+                SectionLabel("世界")
+                Group2 {
+                    Button { openEdicts() } label: { MenuRow(symbol: "scroll.fill", title: "天下诏令与规则") }.buttonStyle(.plain)
+                    Divider2()
+                    Button { creating = true } label: { MenuRow(symbol: "globe.asia.australia", title: "新世界") }.buttonStyle(.plain)
+                    Divider2()
+                    Button { close(); model.backToTitle() } label: { MenuRow(symbol: "house", title: "返回标题") }.buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+                Group2 {
+                    Button { notes = true } label: { MenuRow(symbol: "sparkles", title: "本版新增与更新内容") }.buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
             }
-            .padding(.horizontal, 16)
-            SectionLabel("远程计算")
-            RemoteSettings(model: model)
-            SectionLabel("声音与触感")
-            FeelSettings()
-            SectionLabel("显示设置")
-            MapDisplaySettings(controller: controller)
         }
         .padding(.bottom, 24)
+        .animation(.easeOut(duration: 0.2), value: page)
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet(start: { options in creating = false; close(); Task { await model.generate(options) } }, draw: { options in creating = false; close(); model.openEditor(options) })
@@ -1655,41 +1782,50 @@ struct MenuSheet: View {
 struct MapDisplaySettings: View {
     @ObservedObject var controller: MapController
     var body: some View {
-        Group2 {
-            PaperSwitch(title: "国界", on: $controller.display.borders)
-            Divider2()
-            PaperSwitch(title: "行省边界", on: $controller.display.provinceLines)
-            Divider2()
-            PaperSwitch(title: "城市名称", on: $controller.display.cityNames)
-            Divider2()
-            PaperSwitch(title: "城市图标", on: $controller.display.cityIcons)
-            Divider2()
-            PaperSwitch(title: "植被与地貌图标", on: $controller.display.vegetation)
-            Divider2()
-            PaperSwitch(title: "航线", on: $controller.display.seaRoutes)
-            Divider2()
-            PaperSwitch(title: "暗边", on: $controller.display.darkEdges)
-            Divider2()
-            PaperSwitch(title: "羊皮纸", on: $controller.display.parchment)
-            Divider2()
-            PaperSwitch(title: "完整国名", on: $controller.display.fullNationNames)
-            Divider2()
-            VStack(alignment: .leading, spacing: 8) {
-                Text("海色").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                ChipPicker(items: [("original", "原作海蓝"), ("warm", "暖纸海色")], selection: $controller.display.ocean)
-                Text(controller.display.ocean == "warm" ? "暖纸海色是原先的网页配色（网页适配）。" : "浅海 #3c9cff，深海 #1487ff，海岸 #5f5f5f。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+        VStack(alignment: .leading, spacing: 14) {
+            SectionLabel("界线")
+            Group2 {
+                PaperSwitch(title: "国界", on: $controller.display.borders)
+                Divider2()
+                PaperSwitch(title: "行省边界", on: $controller.display.provinceLines)
+                Divider2()
+                PaperSwitch(title: "航线", on: $controller.display.seaRoutes)
             }
-            .padding(.horizontal, 16).padding(.vertical, 10)
-            Divider2()
-            PaperSlider(title: "国名", value: $controller.display.nationNameScale, range: 0.5...2, step: 0.05) { String(format: "%.2f", $0) }
+            .padding(.horizontal, 16)
+            SectionLabel("城市与地貌")
+            Group2 {
+                PaperSwitch(title: "城市名称", on: $controller.display.cityNames)
+                Divider2()
+                PaperSwitch(title: "城市图标", on: $controller.display.cityIcons)
+                Divider2()
+                PaperSwitch(title: "植被与地貌图标", on: $controller.display.vegetation)
+            }
+            .padding(.horizontal, 16)
+            SectionLabel("国名")
+            Group2 {
+                PaperSwitch(title: "完整国名", on: $controller.display.fullNationNames)
+                Divider2()
+                PaperSlider(title: "大小", value: $controller.display.nationNameScale, range: 0.5...2, step: 0.05) { String(format: "%.2f", $0) }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+            }
+            .padding(.horizontal, 16)
+            SectionLabel("画面")
+            Group2 {
+                PaperSwitch(title: "羊皮纸", on: $controller.display.parchment)
+                Divider2()
+                PaperSwitch(title: "暗边", on: $controller.display.darkEdges)
+                Divider2()
+                PaperSlider(title: "国色浓度", value: $controller.display.colorDensity, range: 0.2...1, step: 0.1) { "\(Int($0 * 100))%" }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                Divider2()
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("海色").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                    ChipPicker(items: [("original", "原作海蓝"), ("warm", "暖纸海色")], selection: $controller.display.ocean)
+                }
                 .padding(.horizontal, 16).padding(.vertical, 10)
-            Divider2()
-            PaperSlider(title: "浓度", value: $controller.display.colorDensity, range: 0.2...1, step: 0.1) { "\(Int($0 * 100))%" }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-            Text("行省边界默认关闭，打开后为 #B2B2B2。羊皮纸默认按预设打开（网页适配）。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
-                .padding(.horizontal, 16).padding(.bottom, 10)
+            }
+            .padding(.horizontal, 16)
         }
-        .padding(.horizontal, 16)
     }
 }
 
@@ -2333,6 +2469,10 @@ struct StatStrip: View {
 
 struct FleetSheet: View {
     @State private var target = -1
+    /// 整编舰队: ship count and name edits.
+    @State private var shipsEdit = false
+    @State private var renaming = false
+    @State private var newName = ""
     @State private var sending = false
     @State private var feedback = ""
     @State private var allPorts = false
@@ -2353,12 +2493,17 @@ struct FleetSheet: View {
                 VStack(spacing: 14) {
                     SheetHeader(title: f.name, subtitle: nation.map { "\($0.name) · 舰队 · \(FleetText.status(f.status))" }, color: nation.map { Names.color($0.color) }, seal: "舟")
                     StatStrip(tiles: [
-                        StatTile(label: "船只", value: "\(f.ships)"),
+                        StatTile(label: "船只", value: "\(f.ships)", edit: f.status == "lost" ? nil : { shipsEdit = true }),
                         StatTile(label: "船员", value: Names.wan(f.crew)),
                         StatTile(label: "舰体", value: "\(Int((f.hull * 100).rounded()))%", fraction: f.hull, warn: f.hull < 0.35),
                         StatTile(label: "口粮", value: "\(f.food)", warn: f.food <= 0),
                     ])
                     Group2 {
+                        Button { newName = f.name; renaming = true } label: {
+                            HStack { Text("舰队名").font(Theme.kai(16)).foregroundStyle(Theme.ink2); Spacer(); Text(f.name).font(Theme.kai(16)).foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.seal) }
+                                .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain).disabled(f.status == "lost"); Divider2()
                         Row(label: "指挥", value: f.manual || !f.patrol ? "玩家指挥" : "AI · " + FleetText.decision(f.decision)); Divider2()
                         if f.port >= 0, f.port < map.meta.provinces.count { Row(label: "停留港口", value: map.meta.provinces[f.port].name + "港"); Divider2() }
                         if !f.reason.isEmpty { Text(f.reason).font(Theme.kai(14)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 10) }
@@ -2423,6 +2568,26 @@ struct FleetSheet: View {
                 }
                 .padding(.bottom, 24)
                 .animation(.easeOut(duration: 0.25), value: feedback)
+            }
+            .sheet(isPresented: $shipsEdit) {
+                NumberEditSheet(title: "\(f.name)船只", unit: "艘", value: Double(f.ships)) { v in
+                    shipsEdit = false
+                    Task { feedback = await model.editFleet(f.id, ships: Int(v.rounded()), name: nil) ?? "已整编为 \(min(10, max(1, Int(v.rounded())))) 艘" }
+                }
+                .presentationDetents([.height(300)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+            }
+            .sheet(isPresented: $renaming) {
+                VStack(alignment: .leading, spacing: 14) {
+                    SheetHeader(title: "舰队更名", subtitle: "现名 \(f.name)", seal: "改")
+                    TextField("", text: $newName).paperField().padding(.horizontal, 22)
+                    SealButton(title: "颁行", disabled: newName.trimmingCharacters(in: .whitespaces).isEmpty) {
+                        renaming = false
+                        Task { feedback = await model.editFleet(f.id, ships: nil, name: newName) ?? "已更名为\(newName)" }
+                    }
+                    .padding(.horizontal, 22)
+                }
+                .padding(.bottom, 16)
+                .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
             }
         }
     }

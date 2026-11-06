@@ -246,10 +246,20 @@ public enum Regimes {
         guard !r.regimes.isNull, !r.regimes.bonus.isNull else { return nil }
         return r.regimes.bonus[id][key].optionalNumber
     }
-    /// Damage multiplier for `attacker`'s army hitting `victim`'s (attack and defence bonuses).
+    /// Damage multiplier for `attacker`'s army hitting `victim`'s (attack and defence bonuses, and the
+    /// world's combat intensity).
     static func combatBonus(_ r: JS, attacker: String, victim: String) -> Double {
         let a = bonus(r, attacker, "attack") ?? 0, d = bonus(r, victim, "defense") ?? 0
-        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100))
+        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage")
+    }
+
+    /// 天下规则 (自定义): world-wide rates in percent of normal — war frequency, combat intensity, march
+    /// speed, levy size and shipbuilding speed. 100 (or unset) is the normal game.
+    public static let ruleKeys = ["war", "damage", "march", "levy", "ships"]
+    public static let ruleRanges: [String: ClosedRange<Double>] = ["war": 0...300, "damage": 25...400, "march": 25...300, "levy": 25...400, "ships": 25...400]
+    public static func rule(_ r: JS, _ key: String) -> Double {
+        guard !r.regimes.isNull, let v = r.regimes.world[key].optionalNumber else { return 1 }
+        return max(0.05, v / 100)
     }
 
     static func book(_ r: JS, _ id: String) -> JS {
@@ -545,7 +555,8 @@ extension NativeEngine {
             }
         }
         DeclarationEngine.nationIds = r.world.nations.asArray.map(\.id.asString)
-        DeclarationEngine.temper = { id in Regimes.temper(r, id) }
+        // A state's temper, times the world's war frequency (天下规则).
+        DeclarationEngine.temper = { id in Regimes.temper(r, id) * Regimes.rule(r, "war") }
         DeclarationEngine.pact = { a, b in
             let ids = DeclarationEngine.nationIds
             guard ids.indices.contains(a), ids.indices.contains(b) else { return false }
@@ -744,6 +755,41 @@ extension NativeEngine {
         let range: ClosedRange<Double> = key == "income" ? -50...200 : key == "growth" ? -20...50 : -50...100
         if let value { r.regimes.bonus[id][key] = JS(min(range.upperBound, max(range.lowerBound, value.rounded()))) } else { r.regimes.bonus[id].delete(key) }
         return (true, "加成已设定。")
+    }
+
+    /// 天下规则 (自定义): sets one world rate (percent; nil restores 100).
+    public func setWorldRule(_ key: String, value: Double?) -> (ok: Bool, reason: String) {
+        guard let range = Regimes.ruleRanges[key] else { return (false, "无此规则。") }
+        Regimes.enable(run)
+        if run.regimes.world.isNull { run.regimes.world = JS.object() }
+        if let value, value.isFinite { run.regimes.world[key] = JS(min(range.upperBound, max(range.lowerBound, value.rounded()))) } else { run.regimes.world.delete(key) }
+        return (true, "天下规则已更改。")
+    }
+    /// The world rates in percent, every key present.
+    public func worldRules() -> Data? {
+        let o = JS.object()
+        for k in Regimes.ruleKeys { o[k] = JS((Regimes.rule(run, k) * 100).rounded()) }
+        return Data(o.json.utf8)
+    }
+
+    /// 整编舰队 (自定义): a fleet's name and its ships (1…10); hull, crew and stores follow the ships.
+    public func editFleet(_ fleetId: String, ships: Int?, name: String?) -> (ok: Bool, reason: String) {
+        let r = run
+        guard !r.navy.isNull, let fl = Naval.fleets(r).first(where: { $0.id.asString == fleetId }), fl.status.asString != "lost" else { return (false, "这支舰队不存在或已沉没。") }
+        if let name {
+            let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard (1...12).contains(t.count) else { return (false, "名字须为 1 到 12 个字。") }
+            fl.name = JS(t)
+        }
+        if let ships {
+            let n = min(10, max(1, ships)), old = max(1, fl.ships.asNumber)
+            let condition = min(1, max(0.05, (r.maritime.hulls[fleetId].optionalNumber ?? old * 100) / (old * 100)))
+            fl.ships = JS(n)
+            r.maritime.hulls[fleetId] = JS((Double(n) * 100 * condition).rounded())
+            fl.crew = JS(Int((Double(n) * 40 * condition).rounded(.up)))
+            fl.food = JS(max(fl.food.asNumber, Double(n) * 2400))
+        }
+        return (true, "\(fl.name.asString)已整编。")
     }
     /// 党派 (自定义): a party's name and seats (0…100); the largest party governs.
     public func editParty(_ index: Int, party: Int, name: String?, seats: Int?) -> (ok: Bool, reason: String) {

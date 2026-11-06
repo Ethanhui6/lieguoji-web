@@ -16,9 +16,9 @@ public enum Daily {
     @discardableResult
     public static func frame(_ r: JS) -> (eligible: Set<String>, held: Set<String>) {
         guard let bridge = Armies.bridge else { return ([], []) }
-        let forces = bridge.forces(r)
-        let result = ContactMotion(graph: bridge.graph).contacts(forces, bridge.contacts(r), bridge.rules(r))
-        r.forceContacts.pairs = .array(result.contacts.map(ForceBridge.json))
+        let forces = Profile.measure("f.forces") { bridge.forces(r) }
+        let result = Profile.measure("f.contacts") { ContactMotion(graph: bridge.graph).contacts(forces, bridge.contacts(r), bridge.rules(r)) }
+        Profile.measure("f.write") { r.forceContacts.pairs = .array(result.contacts.map(ForceBridge.json)) }
         var eligible = Set<String>()
         let nations = r.world.nations.asArray.map(\.id.asString)
         // Read once per frame: active sieges (province|besieger) and each state pair's war status.

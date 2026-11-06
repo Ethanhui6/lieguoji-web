@@ -55,7 +55,8 @@ public enum Armies {
         var id: String
         repeat { id = "force-\(t.nextArmyId.asInt)"; t.nextArmyId = JS(t.nextArmyId.asNumber + 1) } while t.forces.has(id)
         let p = r.world.provinces.asArray.first { $0.id.asString == home }!, cell = homeCells[home]!
-        let troops = strength(r, home)
+        // 天下规则: the world's levy size scales new armies (app rules only).
+        let troops = UnitKinds.enabled ? max(1, Int((Double(strength(r, home)) * Regimes.rule(r, "levy")).rounded())) : strength(r, home)
         var unit = Muster.units[(t.nextArmyId.asInt - 2) % Muster.units.count]
         // App rules: the state's culture decides its arms, unique troops included.
         if UnitKinds.enabled {

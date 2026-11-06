@@ -92,6 +92,7 @@ public final class EngineService {
         case "fleetOrder": return command(engine?.fleetOrder(fleetId: str("id"), provinceIndex: optInt("province")))
         case "province": return data(engine?.province(int("index")))
         case "nationInfo": return data(engine?.nationInfo(int("index")))
+        case "diplomacyInfo": return data(engine?.diplomacyInfo(int("index")))
         case "view": return data(engine?.view(str("mode")))
         case "worldSettings": return data(engine?.worldSettings())
         case "setWorld": return command(engine?.setWorld(str("key"), int("value")))
@@ -114,6 +115,9 @@ public final class EngineService {
             var r = Reply(); r.strings = g.history; r.text = g.trait; return r
         case "editPerson": return command(engine?.editPerson(int("id"), skills: dbls("skills"), traits: strs("traits")))
         case "setBonus": return command(engine?.setBonus(int("n"), key: str("key"), value: dbl("value")))
+        case "setWorldRule": return command(engine?.setWorldRule(str("key"), value: dbl("value")))
+        case "worldRules": return data(engine?.worldRules())
+        case "editFleet": return command(engine?.editFleet(str("id"), ships: optInt("ships"), name: optStr("name")))
         case "scaleTotal": return command(engine?.scaleTotal(int("n"), key: str("key"), value: dbl("value") ?? -1))
         case "editParty": return command(engine?.editParty(int("n"), party: int("party"), name: optStr("name"), seats: optInt("seats")))
         case "editIdentity": lastOwners = []; return command(engine?.editIdentity(int("n"), name: optStr("name"), color: optStr("color")))

@@ -316,11 +316,20 @@ struct WorldSettings: Decodable {
     let vassals: Bool?
 }
 
+/// The ranges of the world rates (Regimes.ruleRanges), in percent.
+enum WorldRuleRange {
+    static func of(_ key: String) -> ClosedRange<Int> {
+        switch key { case "war": return 0...300; case "march": return 25...300; default: return 25...400 }
+    }
+}
+
 /// The original's world AI and rule settings as an imperial edict: each change is proclaimed.
 struct EdictSheet: View {
     @ObservedObject var model: GameModel
     let say: (String) -> Void
     @State private var s: WorldSettings?
+    /// 天下规则: world rates in percent of normal.
+    @State private var rules: [String: Int] = [:]
     var body: some View {
         ZStack {
             MemorialPaper()
@@ -353,6 +362,21 @@ struct EdictSheet: View {
                             }
                         }
                         if let vassals = s.vassals { section("附庸") { toggle("允许附庸叛变", vassals, "vassals") } }
+                        if !rules.isEmpty {
+                            section("天下规则") {
+                                ruleStepper("战争频率", "war", 25, zero: "止战")
+                                Divider2()
+                                ruleStepper("战斗烈度", "damage", 25)
+                                Divider2()
+                                ruleStepper("行军速度", "march", 25)
+                                Divider2()
+                                ruleStepper("征兵规模", "levy", 25)
+                                Divider2()
+                                ruleStepper("造舰速度", "ships", 25)
+                            }
+                            Text("以常态为 100%。战争频率影响各国宣战意愿，战斗烈度影响交战伤亡，征兵规模影响新征军队的兵力，造舰速度影响舰队重建与扩编。")
+                                .font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 26)
+                        }
                         Text("钦此。").font(Theme.kai(20)).foregroundStyle(Theme.ink).frame(maxWidth: .infinity, alignment: .trailing).padding(.horizontal, 26)
                     } else { InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40) }
                 }
@@ -361,7 +385,25 @@ struct EdictSheet: View {
         }
         .task { await reload() }
     }
-    private func reload() async { s = await model.worldSettings() }
+    private func reload() async { s = await model.worldSettings(); rules = await model.worldRules() }
+    private func ruleStepper(_ title: String, _ key: String, _ step: Int, zero: String? = nil) -> some View {
+        let value = rules[key] ?? 100
+        let range = WorldRuleRange.of(key)
+        return HStack(spacing: 10) {
+            Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+            Spacer()
+            Button { setRule(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 32) }
+                .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value <= range.lowerBound)
+            Text(value == 0 && zero != nil ? zero! : "\(value)%").font(Theme.kai(18)).foregroundStyle(value == 100 ? Theme.ink : Theme.seal).frame(minWidth: 64).contentTransition(.numericText())
+            Button { setRule(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 32) }
+                .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value >= range.upperBound)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+    }
+    private func setRule(_ key: String, _ value: Int) {
+        rules[key] = value
+        Task { if let e = await model.setWorldRule(key, Double(value)) { say(e) } else { say("诏令已颁行") }; rules = await model.worldRules() }
+    }
     private func apply(_ key: String, _ value: Int) {
         Task { if let e = await model.setWorld(key, value) { say(e) } else { say("诏令已颁行") }; await reload() }
     }

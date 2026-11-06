@@ -233,16 +233,16 @@ public enum ArmyOrders {
             // this province. Halt is refused by the shared command check while that enemy stands here,
             // so the stop is written on the travel record.
             if originalTargets, a.status.asString != "retreating", let c = here.province, c.id.asString != target?.id.asString, let foe = enemyAt(c.id.asString) {
-                if here.travel.status.asString == "moving" {
-                    let t = r.armyPositions.records[id]
-                    t.status = JS("halted")
-                    if a.status.asString != "fighting" { a.status = JS("idle") }
-                    a.route = .array(); a.progress = JS(0)
+                // Close on the battle: march on this province's city, where the enemy is met within the
+                // engagement distance (a halt in place left two armies facing each other across a
+                // large province without ever fighting).
+                if !held.contains(Daily.key("army", id)), a.status.asString != "fighting", let ci = index(r, c.id.asString), reason(r, id, .move(province: ci, retreat: false)) == nil {
+                    issue(r, id, .move(province: ci, retreat: false))
                 }
                 row.targetId = c.id.clone()
                 row.campaignId = JS(en.first { $0.nation == foe }?.campaign ?? -1)
                 row.issuedTick = JS(tick)
-                note("attacking", "当前省有陆战，改以本省为目标并停止行军。")
+                note("attacking", "当前省有敌军，向本省城池进军迎敌。")
                 continue
             }
             if held.contains(Daily.key("army", id)) || a.status.asString == "fighting" || !r.reorganization.active[id].isNull { note("busy", "正在实际交锋或整编，保留当前任务。"); continue }
@@ -256,7 +256,9 @@ public enum ArmyOrders {
                 if garrisonIsTarget && targetOwned && en.isEmpty { note("garrison", "正在沿原定路线前往驻地，保留既有行军进度。") } else { row.nextTick = JS(tick + retry) }
                 continue
             }
-            if a.status.asString != "retreating", let p = here.province, RunWindow.atWar(r, nation, p.controller.asString) { note("busy", "部队已在敌方真实陆地，等待交锋或地区抵抗结算。"); continue }
+            // App worlds: an army in enemy land keeps marching until it reaches the city it besieges.
+            if a.status.asString != "retreating", let p = here.province, RunWindow.atWar(r, nation, p.controller.asString),
+               !originalTargets || RunWindow.atCity(r, here, bridge: bridge) { note("busy", "部队已在敌方真实陆地，等待交锋或地区抵抗结算。"); continue }
             var attack = [Int](), attackSet = Set<Int>()
             func add(_ p: Int) { if attackSet.insert(p).inserted { attack.append(p) } }
             let provinces = r.world.provinces.asArray
@@ -268,7 +270,10 @@ public enum ArmyOrders {
                     if duty == .notGarrison && ArmyAutonomy.ArmyDuty.rebelSearchAvailable {
                         // Original Garrison would search rebel provinces here. That scorer is not in this client.
                     } else {
-                        for p in ArmyAutonomy.Context.regularCandidateIds(invaded: invaded, borders: stateBorders(r, nation, enemySet)) { add(p) }
+                        // 收复失地 (app rules): our own provinces an enemy holds join the invaded ones, so a
+                        // garrison retakes occupied and rebel-held land instead of only pushing the border.
+                        let lost = provinces.indices.filter { provinces[$0].legalOwner.optionalString == nation && enemySet.contains(provinces[$0].controller.asString) }
+                        for p in ArmyAutonomy.Context.regularCandidateIds(invaded: invaded + lost, borders: stateBorders(r, nation, enemySet)) { add(p) }
                     }
                 } else {
                     for p in invaded { add(p) }

@@ -110,8 +110,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         s.sAddressMode = .clampToEdge; s.tAddressMode = .clampToEdge
         sampler = device.makeSamplerState(descriptor: s)
         super.init()
-        let lines = BorderMesh(map: map)
-        if let data = lines.vertices[.province], !data.isEmpty { provinceLines = buffer(data, stride: 4) }
+        provinceLines = buffer(MapLayers.provinceLines(map).vertices, stride: 6)
         if !map.rivers.isEmpty { rivers = buffer(map.rivers, stride: 2) }
         relief = buffer(MapLayers.relief(map).vertices, stride: 6)
         outlines = buffer(MapLayers.outlines(map).vertices, stride: 6)
@@ -142,8 +141,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let mesh = CellMesh(map: next)
         if !mesh.indices.isEmpty, let i = device.makeBuffer(bytes: mesh.indices, length: mesh.indices.count * 4, options: .storageModeShared) { indices = i; indexCount = mesh.indices.count }
         else if mesh.indices.isEmpty { indexCount = 0 }
-        let lines = BorderMesh(map: next)
-        provinceLines = lines.vertices[.province].flatMap { $0.isEmpty ? nil : buffer($0, stride: 4) }
+        provinceLines = buffer(MapLayers.provinceLines(next).vertices, stride: 6)
         rivers = next.rivers.isEmpty ? nil : buffer(next.rivers, stride: 2)
         relief = buffer(MapLayers.relief(next).vertices, stride: 6)
         outlines = buffer(MapLayers.outlines(next).vertices, stride: 6)
@@ -346,7 +344,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         armySprites.map { s in let p = displayed(s); return (s, p.x, p.y) }
     }
 
-    func setArmies(_ sprites: [ArmySprite], route points: [SIMD2<Float>]) {
+    func setArmies(_ sprites: [ArmySprite], route points: [SIMD2<Float>], snap: Bool = false) {
+        if snap {
+            // A world just opened: every icon stands where it is, nothing walks or fades in.
+            shown = Dictionary(sprites.filter { !$0.key.isEmpty }.map { ($0.key, SIMD2($0.x, $0.y)) }, uniquingKeysWith: { a, _ in a })
+            legs = [:]; born = [:]
+        }
         if sprites != armySprites {
             let keys = Set(sprites.map(\.key)), now = CACurrentMediaTime()
             shown = shown.filter { keys.contains($0.key) }; legs = legs.filter { keys.contains($0.key) }; born = born.filter { keys.contains($0.key) }
@@ -401,7 +404,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     quad("banner", at, a.banner == 2 ? RGB(0.93, 0.74, 0.25) : RGB(0.72, 0.22, 0.16), size * k, 0.55 / k, -0.5 / k)
                 }
                 // Strength as one to three pieces of the arm (the back ones a shade darker).
-                let n = role == "Fleet" || role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
+                let n = role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
                 let layout: [(Float, Float, Float)] = n == 1 ? [(0, 0, 1)] : n == 2 ? [(-0.2, -0.04, 0.9), (0.2, 0.04, 0.9)]
                     : [(-0.28, -0.1, 0.82), (0.28, -0.1, 0.82), (0, 0.06, 0.9)]
                 for (i, (dx, dy, k)) in layout.enumerated() {
@@ -466,15 +469,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
         // Province lines: 0.55 screen px once zoomed in. Colour is the measured #B2B2B2.
         // The screen width is the previous client choice; it is not a measured original width.
-        if let lines = provinceLines, display.provinceLines, camera.scale > 0.9 || reveal < 1, reveal >= 0.55 {
-            u.halfWidth = 0.55 / 2
-            var color = SIMD4<Float>(MapPalette.provinceBorder.r, MapPalette.provinceBorder.g, MapPalette.provinceBorder.b, 1)
-            encoder.setRenderPipelineState(linePipeline)
-            encoder.setVertexBuffer(lines.buffer, offset: 0, index: 0)
-            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-            encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: lines.count)
-        }
+        // Province borders: smoothed ink lines at every zoom (MapLayers.provinceLines), so each
+        // province reads as clearly as in the original.
+        if display.provinceLines && reveal >= 0.55 { colored(provinceLines) }
         if let rivers, reveal > 0.38 {
             var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, 1)
             encoder.setRenderPipelineState(flatPipeline)

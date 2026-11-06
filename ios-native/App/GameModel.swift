@@ -397,6 +397,14 @@ import LieguojiCore
         let text = try await engine.call("nativeWorld()")
         _ = try await native.open(Data(text.utf8))
         await native.enableAppRules()
+        // The Swift engine's own first state (its army points, the arms by culture) replaces the web
+        // engine's at once: otherwise the first step after 开始 slid every army from the web's
+        // points to the engine's, a burst of "teleport" walks before the game began.
+        if let data = await native.state(), let next = try? JSONDecoder().decode(GameState.self, from: data) {
+            controller.snapArmies = true
+            state = nil   // no heralds for the web state's wars and events read again
+            apply(next)
+        }
     }
 
     /// Measured seconds one simulated day costs (step and apply), smoothed; the pace follows it.
@@ -682,7 +690,9 @@ import LieguojiCore
             sprites.append(MapRenderer.ArmySprite(army: -100_000 - i, x: p.x, y: p.y, unit: "Port", nation: p.occupier, selected: false, key: "port-\(p.province)"))
         }
         for (i, f) in (state.fleets ?? []).enumerated() {
-            sprites.append(MapRenderer.ArmySprite(army: -(i + 1), x: f.x, y: f.y, unit: "Fleet", nation: f.nation, selected: i == choosing, key: f.id))
+            // One to three ships on the map for one, two to three, and four or more hulls.
+            sprites.append(MapRenderer.ArmySprite(army: -(i + 1), x: f.x, y: f.y, unit: "Fleet", nation: f.nation, selected: i == choosing, key: f.id,
+                                                  tier: f.ships >= 4 ? 3 : f.ships >= 2 ? 2 : 1))
         }
         // Icons never sit on one another: armies (and fleets) closer than an icon are eased apart, the
         // later one moving, a few passes. Display only; an army in battle keeps its spot facing the foe.
@@ -794,6 +804,13 @@ import LieguojiCore
         if controller.viewFills != fills { controller.viewFills = fills }
         if viewLegend != v.legend { viewLegend = v.legend }
     }
+    /// 天下规则: world rates in percent (war, damage, march, levy, ships).
+    func worldRules() async -> [String: Int] {
+        guard let data = await native.worldRules(), let v = try? JSONDecoder().decode([String: Double].self, from: data) else { return [:] }
+        return v.mapValues { Int($0.rounded()) }
+    }
+    func setWorldRule(_ key: String, _ value: Double?) async -> String? { finish(await native.setWorldRule(key, value: value)) }
+    func editFleet(_ id: String, ships: Int?, name: String?) async -> String? { finish(await native.editFleet(id, ships: ships, name: name)) }
     func worldSettings() async -> WorldSettings? {
         guard let data = await native.worldSettings() else { return nil }
         return try? JSONDecoder().decode(WorldSettings.self, from: data)
@@ -855,6 +872,10 @@ import LieguojiCore
         return (try? JSONDecoder().decode([StatisticsRow].self, from: data)) ?? []
     }
 
+    func diplomacyInfo(_ index: Int) async -> DiplomacyOverview? {
+        guard state != nil, let data = await native.diplomacyInfo(index) else { return nil }
+        return try? JSONDecoder().decode(DiplomacyOverview.self, from: data)
+    }
     func nationInfo(_ index: Int) async -> NationInfo? {
         guard state != nil, let data = await native.nationInfo(index) else { return nil }
         return try? JSONDecoder().decode(NationInfo.self, from: data)

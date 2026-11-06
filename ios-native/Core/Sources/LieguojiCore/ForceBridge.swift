@@ -77,7 +77,9 @@ public final class ForceBridge {
         let regions = staticRegions!, provinceIds = staticProvinceIds
         var rules = ContactMotion.Rules(enemy: { a, b in a != b && war.contains(min(a, b) * 4096 + max(a, b)) }, canEnter: canEnter, speed: speed,
                                    seaRegion: { regions[$0]! }, provinceID: { provinceIds[$0] })
-        rules.physicalContact = r.regimes.enabled.isTruthy
+        // The original fights by province (Army.AddDamageToEnemyArmyInProvince): enemies in one
+        // province are in contact. Exact-point contact let columns walk through each other.
+        rules.physicalContact = false
         return rules
     }
     /// reconcileForceContactsOwned47 + the status update of reconcileDiplomaticForces47.

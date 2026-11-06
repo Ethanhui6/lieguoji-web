@@ -83,7 +83,7 @@ public enum RunWindow {
             return p.controller.asString == s.controller.asString && war(s.attacker.asString, s.controller.asString)
         })
         var local = [String: [JS]]()
-        for v in space where v.province != nil && (!r.regimes.enabled.isTruthy || atCity(v, bridge: Armies.bridge!)) { local[v.province!.id.asString, default: []].append(v.army) }
+        for v in space where v.province != nil { local[v.province!.id.asString, default: []].append(v.army) }
         // The first siege of each province (kept current as sieges start and end below).
         var siegeOf = [String: JS]()
         for sg in r.occupation.sieges.asArray where siegeOf[sg.provinceId.asString] == nil { siegeOf[sg.provinceId.asString] = sg }

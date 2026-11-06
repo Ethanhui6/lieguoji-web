@@ -256,8 +256,7 @@ public enum ArmyOrders {
                 if garrisonIsTarget && targetOwned && en.isEmpty { note("garrison", "正在沿原定路线前往驻地，保留既有行军进度。") } else { row.nextTick = JS(tick + retry) }
                 continue
             }
-            if a.status.asString != "retreating", let p = here.province, RunWindow.atWar(r, nation, p.controller.asString),
-               !r.regimes.enabled.isTruthy || RunWindow.atCity(here, bridge: bridge) { note("busy", "部队已在敌方真实陆地，等待交锋或地区抵抗结算。"); continue }
+            if a.status.asString != "retreating", let p = here.province, RunWindow.atWar(r, nation, p.controller.asString) { note("busy", "部队已在敌方真实陆地，等待交锋或地区抵抗结算。"); continue }
             var attack = [Int](), attackSet = Set<Int>()
             func add(_ p: Int) { if attackSet.insert(p).inserted { attack.append(p) } }
             let provinces = r.world.provinces.asArray

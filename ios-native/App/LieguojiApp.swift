@@ -775,9 +775,10 @@ struct GameView: View {
         HStack(spacing: 10) {
             HStack(spacing: 8) {
                 Text(model.state?.dateText ?? "").font(Theme.kai(17)).foregroundStyle(Theme.ink).monospacedDigit()
+                    .lineLimit(1).minimumScaleFactor(0.7).fixedSize(horizontal: true, vertical: false)
                     .contentTransition(.numericText()).animation(.snappy(duration: 0.25), value: model.state?.dateText)
                 if let wars = model.state?.wars.count, wars > 0 {
-                    HStack(spacing: 3) { Circle().fill(Theme.seal).frame(width: 6, height: 6); Text("\(wars)场战争").font(Theme.kai(13)).foregroundStyle(Theme.seal) }
+                    HStack(spacing: 3) { Circle().fill(Theme.seal).frame(width: 6, height: 6); Text("\(wars)场战争").font(Theme.kai(13)).foregroundStyle(Theme.seal).lineLimit(1).fixedSize() }
                 }
                 // 远程计算: the computer simulates.
                 if model.remoteAddress != nil {
@@ -1304,21 +1305,14 @@ struct ArmySheet: View {
 /// The original's unit mark (World/unit-*.png) in a state's colour.
 struct UnitMark: View {
     let unit: String; let color: Color
-    private static var cache = [String: UIImage]()
     var body: some View {
         Group {
-            if let img = Self.image(unit) { Image(uiImage: img).resizable().renderingMode(.template).scaledToFit().foregroundStyle(color) }
+            if let img = UnitArt.tinted(unit, UIColor(color), side: 96) { Image(uiImage: img).resizable().scaledToFit() }
             else { InkIcon(glyph: .military).foregroundStyle(color) }
         }
         .padding(6)
         .background(Theme.paper2, in: RoundedRectangle(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(color.opacity(0.6), lineWidth: 1.2))
-    }
-    static func image(_ unit: String) -> UIImage? {
-        if let c = cache[unit] { return c }
-        guard let cg = UnitArt.image(unit) else { return nil }
-        let img = UIImage(cgImage: cg)
-        cache[unit] = img; return img
     }
 }
 
@@ -1702,6 +1696,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.28.0", ["战争改回原作的按省交战：同一省里的敌军就会交锋，围城也按省进行。上一版把交战改成「两军坐标必须完全重合」，结果军队互相穿过、全挤在城点上，这一版修好。",
+                    "交战中的两支军队重新画成面对面相遇的位置，不再叠在同一点上。",
+                    "兵种图标重绘成一整套棋子：同样的底座、灰边和白底，地图上按国色上色（与原作的上色方式相同）。只有顶部区分兵种：兵卒、长枪、盾牌、弓、弩、马、披甲马、马背弓、帅旗、战象。",
+                    "兵力档改用一到三枚棋子表示，不再用小圆点；统帅、御驾亲征的帅旗画在棋子后面（御驾亲征为金色）。修好帅旗以前根本画不出来的问题。",
+                    "军队图标在屏幕上最小 26 点，远景也看得清。",
+                    "顶部日期和战争数不再折成两行。"]),
         ("0.26.13", ["截图行程会打开最大国家的人物页。君主写上目录里已有的船舶大师和改革家，画面上能看到「（本版未生效）」。"]),
         ("0.26.12", ["人物行上，船舶大师和改革家在原有说明后面标明「（本版未生效）」。任命和改天赋时也能看到同一句说明。",
                     "载入、重算、查找电脑和朱红按钮忙碌时，改用生成世界那条墨条，不再用系统转圈。",

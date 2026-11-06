@@ -444,11 +444,7 @@ final class EffectsView: UIView {
     static func unitImage(_ unit: String, tint: UIColor) -> CGImage? {
         let key = unit + tint.description
         if let c = unitImages[key] { return c }
-        guard let cg = UnitArt.image(unit.isEmpty ? "Infantry" : unit) else { return nil }
-        let img = UIImage(cgImage: cg)
-        let out = UIGraphicsImageRenderer(size: CGSize(width: 64, height: 64)).image { _ in
-            img.withTintColor(tint, renderingMode: .alwaysOriginal).draw(in: CGRect(x: 0, y: 0, width: 64, height: 64))
-        }.cgImage
+        let out = UnitArt.tinted(unit.isEmpty ? "Infantry" : unit, tint)?.cgImage
         if unitImages.count > 64 { unitImages.removeAll() }
         unitImages[key] = out
         return out

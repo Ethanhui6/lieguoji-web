@@ -119,7 +119,7 @@ final class WorldMapTests: XCTestCase {
     func testOceanRecolorKeepsTheGradientEnds() {
         let warm = MapPalette.Ocean.warmPaper, original = MapPalette.Ocean.original
         func bytes(_ c: RGB) -> [UInt8] { [UInt8((c.r * 255).rounded()), UInt8((c.g * 255).rounded()), UInt8((c.b * 255).rounded()), 255] }
-        var rgba = bytes(warm.deep) + bytes(warm.shallow)
+        let rgba = bytes(warm.deep) + bytes(warm.shallow)
         let out = MapPalette.recolorSea(rgba, from: warm, to: original)
         XCTAssertEqual(Array(out[0..<3]), Array(bytes(original.deep)[0..<3]))
         XCTAssertEqual(Array(out[4..<7]), Array(bytes(original.shallow)[0..<3]))
@@ -141,7 +141,10 @@ final class WorldMapTests: XCTestCase {
             return a >= 0 && b >= 0 && !map.isLand(a) && !map.isLand(b)
         }) else { return XCTFail("no sea edge") }
         let a = Int(edge.a), b = Int(edge.b)
-        let ports = [(x: map.sites[a * 2], y: map.sites[a * 2 + 1]), (x: map.sites[b * 2], y: map.sites[b * 2 + 1])]
+        let ports: [(x: Float, y: Float)] = [
+            (x: map.sites[a * 2], y: map.sites[a * 2 + 1]),
+            (x: map.sites[b * 2], y: map.sites[b * 2 + 1]),
+        ]
         let lanes = MapLayers.seaLanes(map, ports: ports)
         XCTAssertGreaterThan(lanes.vertexCount, 0)
         XCTAssertEqual(lanes.vertexCount % 3, 0)

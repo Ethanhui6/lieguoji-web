@@ -89,6 +89,9 @@ public enum Government {
             let history = r.chronicle.leaders[id], last = history.asArray.last!
             if land.isEmpty && !ended {
                 closeLeaderRole(r, id, "extinction"); r.chronicle.ended[id] = r.world.day.clone()
+                // Last province removed this tick: a dead state does not keep field armies.
+                // Positive-strength armies are cleared here (DestroyArmy), not left idle and not sent to allies.
+                clearCollapsedArmies(r, id)
                 if last.endedDay.isNull { last.endedDay = r.world.day.clone() }
                 r.people.nations[id].leaderId = .null; r.people.revision = JS(r.people.revision.asNumber + 1); r.kin.lifecycle.vacancies.delete(id); r.kin.revision = JS(r.kin.revision.asNumber + 1); changed = true
                 People.announce(r, kind: "extinction", text: "\(n.name.asString)失去全部领土，国家覆亡", reason: "实控领土归零，结束当前任期；人物、家族、城市与历史保留。", nations: [id], province: nil, people: [last])
@@ -106,6 +109,24 @@ public enum Government {
         }
         if changed { refreshLeaderCombat(r) }
         relocateLostCapitals(r)
+    }
+
+    /// Armies of a state that already has no provinces. App rules only, so web-parity runs keep their armies.
+    /// Clears follow this client's existing destroyed-army write (SIMPLIFIED_ next to the original component list).
+    static func clearCollapsedArmies(_ r: JS, _ nationId: String) {
+        guard !r.regimes.isNull, r.regimes.enabled.isTruthy else { return }
+        guard !r.world.provinces.asArray.contains(where: { $0.controller.asString == nationId }) else { return }
+        for a in r.world.armies.asArray where a.nationId.asString == nationId && a.troops.asNumber > 0 && a.status.asString != "destroyed" {
+            let id = a.id.asString
+            a.troops = JS(0); a.status = JS("destroyed"); a.morale = JS(0); a.supplies = JS(0); a.route = .array(); a.progress = JS(0)
+            if !r.armyPositions.isNull {
+                let t = r.armyPositions.records[id]
+                if !t.isNull { t.status = JS("halted") }
+            }
+            if !r.battles.isNull { r.battles.plans.delete(id) }
+            if !r.reorganization.isNull { r.reorganization.active.delete(id) }
+            if !r.tactics.isNull { r.tactics.rounds.delete(id) }
+        }
     }
 
     // MARK: Records (recordReigns47, recordStateTraits47)

@@ -233,15 +233,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         guard let base else { return }
         var c = base.land
         if reveal < 1 {
-            // The land fades up together, with state colours following. Borders and cities are drawn later.
+            // Generation: the land rises from the coast to the peaks (0…0.45), forests and rivers follow,
+            // the states' colours wash in (0.55…0.75); borders and cities come after (drawn by stage).
             let terrain = base.terrain
-            let sea = MapPalette.ocean(display.ocean).shallow
-            // A soft rise of the whole land (网页适配). A hard coast-to-peak sweep read as water being poured in.
-            let fade = reveal * reveal * (3 - 2 * reveal), wash = min(1, max(0, (reveal - 0.42) / 0.38))
+            let sea = MapPalette.ocean(display.ocean).shallow, rise = min(1, reveal / 0.45), wash = min(1, max(0, (reveal - 0.55) / 0.2))
             let top = Float(max(21, map.elevation.max().map(Int.init) ?? 100))
             for cell in 0..<map.cellCount where map.isLand(cell) {
                 let h = (Float(map.elevation[cell]) - 20) / (top - 20)
-                let shown = min(1, max(0, (fade + (1 - h) * 0.08 - 0.04) / 0.9))
+                let shown = min(1, max(0, (rise * 1.15 - h) * 8))
                 for v in Int(map.offsets[cell])..<Int(map.offsets[cell + 1]) {
                     for k in 0..<3 {
                         let ground = terrain[v * 4 + k] + (c[v * 4 + k] - terrain[v * 4 + k]) * wash

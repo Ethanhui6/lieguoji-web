@@ -191,6 +191,9 @@ public enum ArmyOrders {
     /// issueArmyBatchOrders47: whether any army was selected this frame.
     @discardableResult
     public static func issueBatch(_ r: JS) -> Bool {
+        if !r.regimes.isNull, r.regimes.enabled.isTruthy, !r.chronicle.isNull {
+            for n in r.world.nations.asArray where r.chronicle.ended.has(n.id.asString) { Government.clearCollapsedArmies(r, n.id.asString) }
+        }
         let s = r.armyBatch
         if s.isNull || r.clock.tick.asNumber == s.lastTick.asNumber { return false }
         let live = r.world.armies.asArray.filter { $0.troops.asNumber > 0 }.map(\.id.asString)
@@ -262,11 +265,6 @@ public enum ArmyOrders {
                 }
             }
             if a.status.asString != "retreating" && !en.isEmpty {
-                // A dispossessed nation still has legal claims and living armies. Its borders
-                // cannot supply candidates once its final controlled province is lost.
-                if r.regimes.enabled.isTruthy, owned.isEmpty {
-                    for (p, province) in provinces.enumerated() where province.legalOwner.optionalString == nation && enemySet.contains(province.controller.asString) { add(p) }
-                }
                 for p in invaded { add(p) }
                 for p in stateBorders(r, nation, enemySet) { add(p) }
                 if invaded.isEmpty {
@@ -283,10 +281,6 @@ public enum ArmyOrders {
             var candidates = attack.map { p in
                 ArmyAutonomy.Context.Target(id: p, x: provinces[p].center.x.asNumber, y: provinces[p].center.y.asNumber, feature: geo.provinceFeature[provinces[p].id.asString] ?? -1,
                                             protruding: CombatReader.protruding(r, p), port: ports.contains(provinces[p].id.asString))
-            }
-            if r.regimes.enabled.isTruthy, owned.isEmpty {
-                let claims = candidates.filter { provinces[$0.id].legalOwner.optionalString == nation }
-                if !claims.isEmpty { candidates = claims }
             }
             if r.regimes.enabled.isTruthy, !invaded.isEmpty {
                 let defense = candidates.filter { invaded.contains($0.id) }

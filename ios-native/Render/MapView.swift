@@ -109,8 +109,6 @@ struct DisplaySettings: Codable, Equatable {
     var fullNationNames = true
     /// "original" is preset 0. "warm" keeps the previous paper sea (网页适配).
     var ocean = "original"
-    /// Opening and world-entry fade (网页适配). Off, the map is shown complete.
-    var entrance = true
     static let key = "displaySettings.v2"
     static func load() -> DisplaySettings {
         guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) else { return DisplaySettings() }

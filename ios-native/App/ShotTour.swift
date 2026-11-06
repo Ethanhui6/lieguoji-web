@@ -21,18 +21,13 @@ enum ShotTour {
 
     /// Title, then a new world; the founding is shot while it rises.
     @MainActor static func start(_ model: GameModel) async {
-        await wait(0.45)
-        await shoot("01-opening")
-        await wait(1.5)
+        await wait(4)
         await shoot("01-title")
         var options = GameModel.NewWorld()
         options.seed = "20261101"; options.nations = 12; options.provinces = "140"; options.relations = "war"
         Task { @MainActor in
             while model.phase != .founding && model.phase != .playing { await wait(0.2) }
-            if model.phase == .founding {
-                await wait(0.7); await shoot("02-world-rise")
-                await wait(1.3); await shoot("02-world-ready")
-            }
+            if model.phase == .founding { await wait(1.2); await shoot("02-founding") }
         }
         await model.generate(options)
     }

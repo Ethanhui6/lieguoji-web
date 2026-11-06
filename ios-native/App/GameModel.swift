@@ -146,7 +146,7 @@ import LieguojiCore
             // The engine's world (rivers, cities, names) replaces the drawn preview in place.
             controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
             try await handOver()
-            let wait = (playEntrance ? 0.4 : 0) - Date().timeIntervalSince(settled)
+            let wait = 2.6 - Date().timeIntervalSince(settled)
             if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
             controller.editorMap = nil
             phase = .playing; controller.interactive = true
@@ -210,12 +210,14 @@ import LieguojiCore
                 state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.seaPorts = []
                 map = preview; worldID = UUID()
                 generationNote = ""
-                if playEntrance { phase = .founding; await rise() } else { controller.reveal = 1 }
+                phase = .founding
+                await rise()
             }
             let settled = Date()
             let world = try await open(try await full.value)
             try await handOver()
-            let wait = (playEntrance ? 0.4 : 0) - Date().timeIntervalSince(settled)
+            // The founding captions after the map (houses, armies, relations) each get their moment.
+            let wait = 2.6 - Date().timeIntervalSince(settled)
             if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
             generationNote = ""
             if phase != .founding { await reveal(world) } else { phase = .playing; controller.interactive = true }
@@ -224,15 +226,13 @@ import LieguojiCore
         } catch { failure = error.localizedDescription; phase = .title }
     }
 
-    /// Map fade after a new world is previewed (网页适配). About 1.8s, not a staged sea injection.
-    private var playEntrance: Bool { controller.display.entrance && !UIAccessibility.isReduceMotionEnabled }
+    /// The generation animation on the device-built world.
     private func rise() async {
-        guard playEntrance else { controller.reveal = 1; return }
         controller.interactive = false
         controller.reveal = 0
         let start = Date()
         while true {
-            let t = Float(Date().timeIntervalSince(start) / 1.8)
+            let t = Float(Date().timeIntervalSince(start) / 9)
             controller.reveal = min(1, t)
             if t >= 1 { break }
             try? await Task.sleep(nanoseconds: 16_000_000)
@@ -289,15 +289,14 @@ import LieguojiCore
         return loaded.0
     }
 
-    /// Saved worlds fade in (网页适配, about 1.6s). With the switch off, the map is already complete.
+    /// Land rises from the sea, then the states' colours wash over it (about two seconds).
     private func reveal(_ world: WorldMap) async {
         controller.interactive = false
-        phase = .playing
-        guard playEntrance else { controller.reveal = 1; controller.interactive = true; return }
         controller.reveal = 0
+        phase = .playing
         let start = Date()
         while true {
-            let t = Float(Date().timeIntervalSince(start) / 1.6)
+            let t = Float(Date().timeIntervalSince(start) / 2.2)
             controller.reveal = min(1, t)
             if t >= 1 { break }
             try? await Task.sleep(nanoseconds: 16_000_000)

@@ -79,8 +79,22 @@ public enum Wars {
     public static func diplomaticEndPairs(_ s: JS, _ c: JS) -> [(String, String)] { opposedPairs(s, c, currentOnly: !c.coalition.isNull) }
     public static func coversPair(_ c: JS, _ s: JS, _ a: String, _ b: String) -> Bool { opposedPairs(s, c).contains { [$0.0, $0.1].contains(a) && [$0.0, $0.1].contains(b) } }
     static func relation(_ r: JS, _ a: String, _ b: String) -> JS? {
-        r.world.statecraft.relations.asArray.first { let x = $0.a.asString, y = $0.b.asString; return (x == a || y == a) && (x == b || y == b) }
+        let list = r.world.statecraft.relations
+        // A pair index over the relations array (rebuilt when the array object or its length changes;
+        // records are only ever pushed, and their status changes in place). Same first match as the
+        // linear scan it replaces, which every war check, occupation and army order used to run.
+        if list.isNull { return nil }
+        if a == b { return list.asArray.first { let x = $0.a.asString, y = $0.b.asString; return (x == a || y == a) && (x == b || y == b) } }
+        let all = list.asArray
+        if relationIndex.list !== list || relationIndex.count != all.count {
+            var map = [String: JS]()
+            for x in all { let k = pairKey(x.a.asString, x.b.asString); if map[k] == nil { map[k] = x } }
+            relationIndex = (list, all.count, map)
+        }
+        return relationIndex.map[pairKey(a, b)]
     }
+    private static var relationIndex: (list: JS?, count: Int, map: [String: JS]) = (nil, -1, [:])
+    private static func pairKey(_ a: String, _ b: String) -> String { a < b ? a + "|" + b : b + "|" + a }
     /// registerWar46.
     @discardableResult
     public static func register(_ r: JS, attacker: String, defender: String, goals: JS, history: String = "complete", internalWar: JS? = nil, members: JS? = nil) -> JS {

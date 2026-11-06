@@ -90,24 +90,37 @@ extension NativeEngine {
         var pi = [String: Int](); for (i, p) in provinces.enumerated() { pi[p.id.asString] = i }
         let owners = provinces.map { ni[$0.controller.asString] ?? -1 }
         var stock = [String: JS](); for s in w.statecraft.provinces.asArray { stock[s.provinceId.asString] = s }
-        func atWar(_ a: String, _ b: String) -> Bool { RunWindow.atWar(r, a, b) }
         let o = JS.object()
         o.day = w.day; o.date = r.life.currentDate; o.owners = .array(owners.map { JS($0) })
         if includeLabels { o.labels = labels(owners) }
-        o.nations = .array(nations.map { n in
-            let id = n.id.asString, own = provinces.filter { $0.controller.asString == id }, ownIds = Set(own.map(\.id.asString))
+        // Per-state totals in one pass over provinces, cities, armies and relations (each state used
+        // to filter all of them again, every step).
+        let cities = w.cities.asArray
+        var cityIndex = [String: Int](); for (i, c) in cities.enumerated() { if let cid = c.id.optionalString, cityIndex[cid] == nil { cityIndex[cid] = i } }
+        var ownCount = [Int](repeating: 0, count: nations.count), cityCount = ownCount
+        var population = [Double](repeating: 0, count: nations.count), grain = population, troops = population
+        for (p, owner) in owners.enumerated() where owner >= 0 {
+            ownCount[owner] += 1
+            if let s = stock[provinces[p].id.asString] { population[owner] += s.population.optionalNumber ?? 0; grain[owner] += s.grain.optionalNumber ?? 0 }
+        }
+        for c in cities { if let p = pi[c.provinceId.asString], owners[p] >= 0 { cityCount[owners[p]] += 1 } }
+        for a in w.armies.asArray where a.status.asString != "destroyed" { if let n = ni[a.nationId.asString] { troops[n] += a.troops.asNumber } }
+        var enemies = [[Int]](repeating: [], count: nations.count)
+        for rel in w.statecraft.relations.asArray where rel.status.asString == "war" {
+            if let x = ni[rel.a.asString], let y = ni[rel.b.asString], x != y { enemies[x].append(y); enemies[y].append(x) }
+        }
+        o.nations = .array(nations.enumerated().map { i, n in
+            let id = n.id.asString
             let x = JS.object()
             // Identity for the map legend: states founded during play are not in the opening map.
             let civ = r.civilization.nations[id], color = n.color.optionalString ?? "#999999"
             x.id = n.id; x.name = n.name; x.color = JS(color); x.line = JS(Self.stateLineColor(color))
-            x.capital = JS(w.cities.asArray.firstIndex { $0.id.optionalString == n.capitalId.optionalString } ?? -1)
+            x.capital = JS(n.capitalId.optionalString.flatMap { cityIndex[$0] } ?? -1)
             x.culture = JS(civ.cultureId.optionalString ?? ""); x.polity = JS(civ.polity.optionalString ?? ""); x.religion = JS(civ.religionId.optionalString ?? "")
-            x.provinces = JS(own.count); x.cities = JS(w.cities.asArray.filter { ownIds.contains($0.provinceId.asString) }.count)
-            x.population = JS(own.reduce(0.0) { $0 + (stock[$1.id.asString]?.population.optionalNumber ?? 0) })
-            x.grain = JS(own.reduce(0.0) { $0 + (stock[$1.id.asString]?.grain.optionalNumber ?? 0) })
-            x.troops = JS(w.armies.asArray.filter { $0.nationId.asString == id && $0.status.asString != "destroyed" }.reduce(0.0) { $0 + $1.troops.asNumber })
+            x.provinces = JS(ownCount[i]); x.cities = JS(cityCount[i])
+            x.population = JS(population[i]); x.grain = JS(grain[i]); x.troops = JS(troops[i])
             x.gold = JS(r.finance.nations[id].gold.optionalNumber ?? 0); x.destiny = JS(r.destiny.nations[id].destiny.optionalNumber ?? 0)
-            x.enemies = .array(nations.filter { $0.id.asString != id && atWar(id, $0.id.asString) }.map { JS(ni[$0.id.asString]!) }); x.alive = JS(!own.isEmpty)
+            x.enemies = .array(Array(Set(enemies[i])).sorted().map { JS($0) }); x.alive = JS(ownCount[i] > 0)
             return x
         })
         var spots = [String: [(Double, Double)]]()
@@ -176,7 +189,7 @@ extension NativeEngine {
             if let b = banners[id] { x.banner = JS(b.kind); x.bannerMark = JS(b.mark); x.commander = JS(b.name) }
             // Destination province of a march (last travel node), for the army panel.
             var dest = -1
-            if moving, let bridge, let last = v.travel.nodes.asArray.last, let cell = bridge.graph.ids.firstIndex(of: Int32(last.asInt)) {
+            if moving, let bridge, let last = v.travel.nodes.asArray.last, let cell = bridge.graph.cell(id: last.asInt) {
                 let q = Int(bridge.graph.provinces[cell]); if q >= 0 && q < provinces.count { dest = q }
             }
             x.destination = JS(dest)

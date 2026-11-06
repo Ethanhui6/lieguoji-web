@@ -55,8 +55,9 @@ extension ArmyOrdersTests {
             return nil
         }.first
         let (p, q) = try XCTUnwrap(pair)
-        for province in provinces { province.controller = JS(enemy) }
-        provinces[p].controller = JS(nation)
+        // Rightful owners follow the controllers: no land counts as lost (收复失地 targets are tested apart).
+        for province in provinces { province.controller = JS(enemy); province.legalOwner = JS(enemy) }
+        provinces[p].controller = JS(nation); provinces[p].legalOwner = JS(nation)
         r.world.armies.asArray = Array(r.world.armies.asArray.prefix(3))
         XCTAssertEqual(r.world.armies.length, 3)
         r.forceContacts.pairs = .array(); r.voyages.manualArmies = .array()

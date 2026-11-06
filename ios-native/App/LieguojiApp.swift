@@ -847,14 +847,7 @@ struct GameView: View {
 
     private var bottomBar: some View {
         VStack(spacing: 10) {
-            if let event = model.state?.events.last {
-                Button { show(.chronicle) } label: {
-                    Text(event.text).font(Theme.kai(14)).foregroundStyle(Theme.ink).lineLimit(1)
-                        .padding(.horizontal, 14).frame(height: 32).glass(Capsule())
-                }
-                .buttonStyle(.plain).padding(.horizontal, 30)
-                .id(event.text).transition(.push(from: .bottom))
-            }
+            EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }
             HStack(spacing: 10) {
                 HStack(spacing: 0) {
                     TabButton(symbol: "building.columns", title: "国家", glyph: .nation, active: panel?.tab == "nations", marker: tabMarker) { show(.nations) }
@@ -879,7 +872,6 @@ struct GameView: View {
                 .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
             }
         }
-        .animation(.easeOut(duration: 0.3), value: model.state?.events.last?.text)
         .padding(.horizontal, 12).padding(.bottom, 4)
     }
 }
@@ -1053,6 +1045,29 @@ struct ProvinceSheet: View {
                             }
                             .padding(.horizontal, 22)
                         }
+                        if let arms = info.combat, !arms.isEmpty {
+                            // 地利: how this land favours each arm (attacking into it / holding it).
+                            Group2 {
+                                HStack {
+                                    Text("地利").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                                    Spacer()
+                                    Text("进攻").font(Theme.kai(13)).foregroundStyle(Theme.ink2).frame(width: 58, alignment: .trailing)
+                                    Text("防守").font(Theme.kai(13)).foregroundStyle(Theme.ink2).frame(width: 58, alignment: .trailing)
+                                }
+                                .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 4)
+                                ForEach(arms.indices, id: \.self) { i in
+                                    HStack {
+                                        Text(arms[i].unit).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                        Spacer()
+                                        Self.percent(arms[i].attack).frame(width: 58, alignment: .trailing)
+                                        Self.percent(arms[i].defense).frame(width: 58, alignment: .trailing)
+                                    }
+                                    .padding(.horizontal, 16).padding(.vertical, 5)
+                                }
+                                Spacer(minLength: 6)
+                            }
+                            .padding(.horizontal, 16)
+                        }
                     }
                     Group2 {
                         if let info {
@@ -1144,6 +1159,12 @@ extension ProvinceSheet {
         if info?.mountain == true { return "山地" }
         if let name = info?.terrain, !name.isEmpty { return name }
         return Names.terrain[stored] ?? stored
+    }
+    /// A terrain multiplier as a signed percent: seal red when it helps, faded when it hurts.
+    static func percent(_ v: Double) -> some View {
+        let p = Int(((v - 1) * 100).rounded())
+        return Text(p == 0 ? "—" : (p > 0 ? "+\(p)%" : "\(p)%")).font(Theme.kai(15)).monospacedDigit()
+            .foregroundStyle(p > 0 ? Theme.seal : p < 0 ? Theme.ink2 : Theme.ink)
     }
 }
 
@@ -1475,6 +1496,40 @@ struct WarBalance: View {
 }
 
 /// One state's standing (engine diplomacyInfo).
+/// The newest chronicle line above the tab bar. Each line stays at least 1.6 seconds; lines that
+/// arrive meanwhile are skipped to the latest, so fast play no longer slides a new line in every step.
+struct EventTicker: View {
+    let latest: String?
+    let open: () -> Void
+    @State private var shown: String?
+    @State private var changed = Date.distantPast
+    @State private var pending: Task<Void, Never>?
+    var body: some View {
+        VStack {
+            if let text = shown {
+                Button(action: open) {
+                    Text(text).font(Theme.kai(14)).foregroundStyle(Theme.ink).lineLimit(1)
+                        .padding(.horizontal, 14).frame(height: 32).glass(Capsule())
+                }
+                .buttonStyle(.plain).padding(.horizontal, 30)
+                .id(text).transition(.push(from: .bottom))
+            }
+        }
+        .onAppear { shown = latest; changed = Date() }
+        .onChange(of: latest) { _, next in
+            pending?.cancel()
+            let wait = 1.6 - Date().timeIntervalSince(changed)
+            if wait <= 0 { show(next) }
+            else { pending = Task { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)); if !Task.isCancelled { show(next) } } }
+        }
+    }
+    private func show(_ text: String?) {
+        guard text != shown else { return }
+        withAnimation(.easeOut(duration: 0.3)) { shown = text }
+        changed = Date()
+    }
+}
+
 struct DiplomacyOverview: Decodable {
     struct Pact: Decodable { let nation: Int; let kind: String; let months: Int }
     struct Truce: Decodable { let nation: Int; let days: Int }

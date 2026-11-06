@@ -587,7 +587,7 @@ final class MapLabelsView: UIView {
     }
     private static func cityLabels(_ map: WorldMap) -> [Label] {
         return zip(map.meta.cities, MapLayers.cityMarks(map)).filter { !$0.0.name.isEmpty }.map { c, mark in
-            let s: Double = mark == .capital ? 1.5 : mark == .provinceSeat ? 1.12 : 1
+            let s: Double = mark == .capital ? 1.5 : mark == .provinceSeat ? 1.28 : 1
             let em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
             return Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
                          stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 8, province: c.province)

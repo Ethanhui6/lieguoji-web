@@ -428,28 +428,51 @@ extension View {
 }
 
 /// A labelled choice from a long list (cultures, provinces): the row shows the current value and
-/// opens a menu, in place of the system picker.
+/// opens a parchment list, in place of the system menu.
 struct PaperMenu<T: Hashable>: View {
     let title: String
     let items: [(T, String)]
     @Binding var selection: T
+    @State private var open = false
     var body: some View {
-        Menu {
-            ForEach(items.indices, id: \.self) { i in
-                Button { selection = items[i].0 } label: {
-                    if items[i].0 == selection { Label(items[i].1, systemImage: "checkmark") } else { Text(items[i].1) }
-                }
-            }
-        } label: {
+        Button { open = true } label: {
             HStack(spacing: 10) {
                 Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink2)
                 Spacer(minLength: 12)
                 Text(items.first { $0.0 == selection }?.1 ?? "请选择").font(Theme.kai(17)).foregroundStyle(Theme.ink).lineLimit(1)
-                Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
             }
             .padding(.horizontal, 16).frame(minHeight: 46).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .sheet(isPresented: $open) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    SheetHeader(title: title, subtitle: "点一行选定", seal: "选")
+                    Group2 {
+                        if items.isEmpty { Row(label: title, value: "没有可选项") }
+                        ForEach(items.indices, id: \.self) { i in
+                            Button {
+                                selection = items[i].0
+                                open = false
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Text(items[i].1).font(Theme.kai(17)).foregroundStyle(items[i].0 == selection ? Theme.seal : Theme.ink).lineLimit(1)
+                                    Spacer()
+                                    if items[i].0 == selection { Image(systemName: "checkmark").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.seal) }
+                                }
+                                .padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            if i < items.count - 1 { Divider2() }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+                .padding(.bottom, 24)
+            }
+            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+        }
     }
 }
 

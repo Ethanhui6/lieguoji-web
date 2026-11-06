@@ -341,7 +341,7 @@ public enum MapLayers {
 
     /// Shapes CityMain (black disc, white centre 0.56) and CityCapitalFinal (1.3 / 0.885 / 0.43 rings).
     /// A province seat uses the same discs, drawn clearer than an ordinary city and smaller than a capital.
-    /// Those seat radii are a presentation choice (网页适配), not a measured original size.
+    /// The seat radius (1.7× a town, under the capital's 1.95× outer ring) is a presentation choice (网页适配), not a measured original size.
     public static func cityIcons(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
         let black = RGB(0, 0, 0), white = RGB(1, 1, 1), u = cityUnit, c = cityUnit * 1.5
@@ -350,8 +350,10 @@ public enum MapLayers {
             case .capital:
                 m.disc(city.x, city.y, radius: 1.3 * c, black); m.disc(city.x, city.y, radius: 0.885 * c, white); m.disc(city.x, city.y, radius: 0.43 * c, black)
             case .provinceSeat:
-                let s = u * 1.28
-                m.disc(city.x, city.y, radius: s, black, sides: 16); m.disc(city.x, city.y, radius: 0.62 * s, white, sides: 16); m.disc(city.x, city.y, radius: 0.22 * s, black, sides: 12)
+                // Larger than a town (u) and still inside the capital's outer ring (1.95u). The white
+                // disc is wide so the black rim and the centre pip read at the close-up used in screenshots.
+                let s = u * 1.7
+                m.disc(city.x, city.y, radius: s, black, sides: 16); m.disc(city.x, city.y, radius: 0.72 * s, white, sides: 16); m.disc(city.x, city.y, radius: 0.34 * s, black, sides: 12)
             case .city:
                 m.disc(city.x, city.y, radius: u, black, sides: 14); m.disc(city.x, city.y, radius: 0.56 * u, white, sides: 14)
             }

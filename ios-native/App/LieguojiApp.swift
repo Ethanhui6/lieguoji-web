@@ -1073,7 +1073,14 @@ struct ProvinceSheet: View {
                     if let siege = model.state?.sieges.first(where: { $0.province == province }) {
                         Group2 {
                             HStack { Text("围城").foregroundStyle(Theme.seal); Spacer(); NationChip(map: map, nation: siege.nation) }.padding(.horizontal, 16).padding(.top, 12)
-                            ProgressView(value: min(1, max(0, siege.progress))).tint(Theme.seal).padding(16)
+                            GeometryReader { g in
+                                let filled = min(1, max(0, siege.progress))
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(Theme.ink.opacity(0.08))
+                                    Capsule().fill(Theme.seal).frame(width: g.size.width * filled)
+                                }
+                            }
+                            .frame(height: 6).padding(.horizontal, 16).padding(.bottom, 14)
                         }
                         .padding(.horizontal, 16)
                     }
@@ -1688,6 +1695,8 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.6", ["府城圆标加大，仍小于国家首都的外环，普通城保持原大小。港口、要塞、圣地仍没有城市类型。",
+                    "文化、宗教、迁都、州郡这些长列表改在宣纸上点选，不再弹出系统菜单。围城进度改成纸面上的墨条。"]),
         ("0.26.5", ["国家页点「人物」「战争」「外交」进入下一页，返回回到国家页。国家页默认只占屏幕大约四成，地图留在六成以上。基本信息仍是打开就展开。",
                     "人物页标题是「人物」。君主、继承人、行政首脑、财政主管、常备军统帅五节默认展开。有总督或战时统帅时同样展开。",
                     "打开国家页，或点中某州郡时，该国国界加粗一倍。没有单独的玩家国家。",

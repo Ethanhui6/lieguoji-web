@@ -354,7 +354,7 @@ struct EdictSheet: View {
                         }
                         if let vassals = s.vassals { section("附庸") { toggle("允许附庸叛变", vassals, "vassals") } }
                         Text("钦此。").font(Theme.kai(20)).foregroundStyle(Theme.ink).frame(maxWidth: .infinity, alignment: .trailing).padding(.horizontal, 26)
-                    } else { ProgressView().frame(maxWidth: .infinity).padding(40) }
+                    } else { InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40) }
                 }
                 .padding(.bottom, 28)
             }
@@ -476,6 +476,32 @@ struct PaperMenu<T: Hashable>: View {
     }
 }
 
+/// The founding progress bar when the fraction is not known yet: an ink track and a vermilion segment.
+struct InkBusy: View {
+    var text: String? = nil
+    var tint: Color = Theme.seal
+    var track: Color = Theme.ink.opacity(0.1)
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var slide = false
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let text { Text(text).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
+            GeometryReader { g in
+                let span = max(18, g.size.width * 0.35)
+                ZStack(alignment: .leading) {
+                    Capsule().fill(track)
+                    Capsule().fill(tint).frame(width: span).offset(x: reduceMotion ? 0 : (slide ? max(0, g.size.width - span) : 0))
+                }
+            }
+            .frame(height: 4)
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { slide = true }
+        }
+    }
+}
+
 /// The confirming action of a panel: a full-width seal-red plate.
 struct SealButton: View {
     let title: String
@@ -485,7 +511,7 @@ struct SealButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                if busy { ProgressView().tint(Theme.paper2) }
+                if busy { InkBusy(tint: Theme.paper2, track: Theme.paper2.opacity(0.35)).frame(width: 44) }
                 Text(title).font(Theme.kai(18))
             }
             .foregroundStyle(Theme.paper2).frame(maxWidth: .infinity).frame(height: 48)
@@ -495,7 +521,7 @@ struct SealButton: View {
     }
 }
 
-/// Label, seal-red slider and value on one line.
+/// Label, seal-red track and value on one line. The thumb is vermilion on the same ink bar as founding.
 struct PaperSlider: View {
     let title: String
     @Binding var value: Double
@@ -506,9 +532,64 @@ struct PaperSlider: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 68, alignment: .leading)
-            if let step { Slider(value: $value, in: range, step: step, onEditingChanged: { onEditingChanged?($0) }).tint(Theme.seal) }
-            else { Slider(value: $value, in: range, onEditingChanged: { onEditingChanged?($0) }).tint(Theme.seal) }
+            PaperTrack(value: $value, range: range, step: step, onEditingChanged: onEditingChanged)
             Text(format(value)).font(Theme.kai(16)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 52, alignment: .trailing)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityAdjustableAction { direction in
+            let delta = step ?? max((range.upperBound - range.lowerBound) / 20, 0.0001)
+            let next = value + (direction == .increment ? delta : -delta)
+            value = min(range.upperBound, max(range.lowerBound, next))
+        }
+    }
+}
+
+/// Ink track and vermilion thumb. Values stay on the same binding as the old slider.
+private struct PaperTrack: View {
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    var step: Double?
+    var onEditingChanged: ((Bool) -> Void)?
+    private var fraction: Double {
+        let span = range.upperBound - range.lowerBound
+        guard span > 0 else { return 0 }
+        return min(1, max(0, (value - range.lowerBound) / span))
+    }
+    var body: some View {
+        GeometryReader { g in
+            let width = max(g.size.width, 1)
+            let thumb: CGFloat = 14
+            let x = (width - thumb) * CGFloat(fraction)
+            ZStack(alignment: .leading) {
+                Capsule().fill(Theme.ink.opacity(0.1)).frame(height: 4)
+                Capsule().fill(Theme.seal).frame(width: x + thumb / 2, height: 4)
+                Circle().fill(Theme.seal).frame(width: thumb, height: thumb)
+                    .overlay(Circle().stroke(Theme.paper, lineWidth: 2))
+                    .offset(x: x)
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { drag in
+                    onEditingChanged?(true)
+                    write(drag.location.x, width: width)
+                }
+                .onEnded { drag in
+                    write(drag.location.x, width: width)
+                    onEditingChanged?(false)
+                })
+        }
+        .frame(height: 22)
+    }
+    private func write(_ location: CGFloat, width: CGFloat) {
+        let span = range.upperBound - range.lowerBound
+        guard width > 0, span > 0 else { return }
+        let t = min(1, max(0, Double(location / width)))
+        var next = range.lowerBound + t * span
+        if let step, step > 0 {
+            let n = ((next - range.lowerBound) / step).rounded()
+            next = min(range.upperBound, max(range.lowerBound, range.lowerBound + n * step))
+        }
+        value = next
     }
 }

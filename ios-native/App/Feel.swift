@@ -94,7 +94,7 @@ struct RemoteSettings: View {
                     Text(model.remoteAddress ?? (model.autoRemote ? "电脑开着就会自动接上，不用填写任何东西" : "推演由手机完成")).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                 }
                 Spacer()
-                if busy { ProgressView().tint(Theme.seal) }
+                if busy { InkBusy().frame(width: 56) }
                 else if model.remoteAddress == nil && model.autoRemote {
                     Button("立即查找") {
                         busy = true; message = ""

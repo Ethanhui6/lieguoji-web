@@ -168,7 +168,7 @@ struct NationSheet: View {
                             if info.alive { customView(info, map, state) } else { Text("此国已亡，无可设定。").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
                         }
                     } else {
-                        ProgressView().frame(maxWidth: .infinity).padding(40)
+                        InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40)
                     }
                     }
                 }
@@ -229,7 +229,7 @@ struct NationSheet: View {
             case .talks: diplomacyTab(info, map, state, startExpanded: true)
             }
         } else {
-            ProgressView().frame(maxWidth: .infinity).padding(40)
+            InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40)
         }
     }
     /// 人物: five identity groups, each open. Extra roles already in the data (总督、战时统帅) open the same way.
@@ -1045,6 +1045,11 @@ struct PersonEditor: View {
                         }
                     }
                     .padding(12)
+                    ForEach(traits, id: \.self) { t in
+                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.caption(t)).foregroundStyle(Theme.ink2)).font(Theme.kai(13))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.horizontal, 12).padding(.bottom, traits.isEmpty ? 0 : 10)
                 }
                 .padding(.horizontal, 16)
                 Button {
@@ -1072,7 +1077,7 @@ struct AppointSheet: View {
                 SheetHeader(title: "任命" + (post?.title ?? NationSheet.officeTitle[String(office.split(separator: ":").first ?? "")] ?? "征伐主将"), subtitle: post.map { ["按魅力", "按军事", "按外交", "按行政"][min(3, max(0, $0.skill))] + "择优" } ?? NationSheet.officeDuty[office], seal: "任")
                 Group2 {
                     if loaded && people.isEmpty { Text("本国暂无合适人选").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16) }
-                    if !loaded { ProgressView().frame(maxWidth: .infinity).padding(20) }
+                    if !loaded { InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(20) }
                     ForEach(Array(people.enumerated()), id: \.offset) { i, p in
                         Button { if let id = p.id { appoint(id, p.name) } } label: {
                             HStack(spacing: 10) {
@@ -1082,7 +1087,9 @@ struct AppointSheet: View {
                                     if p.skills.count == 4 {
                                         Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                                     }
-                                    if !p.traits.isEmpty { Text(p.traits.joined(separator: "、")).font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
+                                    ForEach(p.traits, id: \.self) { t in
+                                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.caption(t)).foregroundStyle(Theme.ink2)).font(Theme.kai(12))
+                                    }
                                 }
                                 Spacer()
                                 Image(systemName: "checkmark.seal").foregroundStyle(Theme.seal)

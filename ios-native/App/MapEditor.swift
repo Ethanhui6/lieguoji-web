@@ -217,7 +217,7 @@ struct EditorView: View {
                 }
                 .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
                 Spacer()
-                if editor.busy { ProgressView().tint(Theme.seal).frame(width: 42, height: 42).glass(Circle()) }
+                if editor.busy { InkBusy().frame(width: 56) }
                 if editor.step == .terrain {
                     Button { editor.undoStroke() } label: { CircleIcon(symbol: "arrow.uturn.backward") }.buttonStyle(PressStyle()).disabled(!editor.canUndo).opacity(editor.canUndo ? 1 : 0.4)
                     Button { editor.redoStroke() } label: { CircleIcon(symbol: "arrow.uturn.forward") }.buttonStyle(PressStyle()).disabled(!editor.canRedo).opacity(editor.canRedo ? 1 : 0.4)

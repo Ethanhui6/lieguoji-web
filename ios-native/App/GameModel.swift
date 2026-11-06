@@ -242,15 +242,24 @@ import LieguojiCore
             last = now
             let t = min(1, elapsed / 9)
             controller.reveal = t
-            // CI waits on these frames. The clock pauses so a slow screenshot cannot skip 注水成海.
+            // CI waits on these frames. The clock pauses, then the next shot is pinned to a later stage.
             if ShotTour.on, !shotSea, t >= 0.02 {
                 shotSea = true
+                elapsed = 0.03 * 9
+                controller.reveal = 0.03
+                await Task.yield()
+                try? await Task.sleep(nanoseconds: 80_000_000)
                 await ShotTour.shoot("02-founding")
                 last = Date()
                 continue
             }
-            if ShotTour.on, !shotRise, t >= 0.42 {
+            if ShotTour.on, !shotRise, t >= 0.40 {
                 shotRise = true
+                // 冲刷江河 is the stage while reveal is in [0.38, 0.45).
+                elapsed = 0.42 * 9
+                controller.reveal = 0.42
+                await Task.yield()
+                try? await Task.sleep(nanoseconds: 80_000_000)
                 await ShotTour.shoot("02b-rise")
                 last = Date()
                 continue

@@ -75,7 +75,7 @@ struct RootView: View {
             case .splash: EmptyView()
             case .title: TitleView(model: model).transition(.opacity)
             case .generating: GeneratingView(note: model.generationNote).transition(.opacity)
-            case .founding: FoundingView(reveal: model.controller.reveal).transition(.opacity)
+            case .founding: FoundingView(controller: model.controller).transition(.opacity)
             case .playing: GameView(model: model).transition(.opacity)
             case .editing: if let ed = model.editor { EditorView(model: model, editor: ed).transition(.opacity) }
             }
@@ -1699,6 +1699,7 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.8", ["生成进度的文字跟着地图走。中途截图停在「冲刷江河」，不再停在「注水成海」。"]),
         ("0.26.7", ["截图行程会停在「注水成海」和大陆升起的中途，再拍设置和新世界。游戏里的纸面面板不再显示系统拉条。"]),
         ("0.26.6", ["府城圆标加大，仍小于国家首都的外环，普通城保持原大小。港口、要塞、圣地仍没有城市类型。",
                     "文化、宗教、迁都、州郡这些长列表改在宣纸上点选，不再弹出系统菜单。围城进度改成纸面上的墨条。"]),
@@ -1991,7 +1992,9 @@ struct ReleaseNotesSheet: View {
 
 /// Over the rising device-built world while the engine founds its nations, people and armies.
 struct FoundingView: View {
-    let reveal: Float
+    /// Observes the map clock. A plain Float copied into this view stayed on 注水成海 while the land kept rising.
+    @ObservedObject var controller: MapController
+    private var reveal: Float { controller.reveal }
     /// The world's generation as it happens (like a world being made in a sandbox game): each stage
     /// names what the map is drawing at that moment — the sea, the land rising from the coast, the
     /// mountains, the rivers, forests and plains, the provinces, the states' colours — and then the

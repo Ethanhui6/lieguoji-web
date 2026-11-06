@@ -23,6 +23,9 @@ final class ArmyAITests: XCTestCase {
         let graph = try TravelGraph(data: Data(contentsOf: dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World/travel.bin")))
         let golden = try JSONDecoder().decode(ArmyAIGolden.self, from: Data(contentsOf: dir.appendingPathComponent("Golden/army-ai.json")))
         let engine = ArmyAutonomy(statics: golden.statics, graph: graph)
+        let savedTargets = ArmyAutonomy.originalRegularTargets
+        ArmyAutonomy.originalRegularTargets = false
+        defer { ArmyAutonomy.originalRegularTargets = savedTargets }
         var checked = 0, orders = 0, failures = 0
         for (k, s) in golden.samples.enumerated() {
             let travels = s.input.armies.map { ArmyTravel(record: $0.travel, graph: graph) }
@@ -102,5 +105,47 @@ extension ArmyAITests {
         context.run([0])
         XCTAssertEqual(context.w.armies[0].row.decision, "manual")
         XCTAssertEqual(context.travels[0], travel[0])
+    }
+
+    func testPassingBattleRetargetsTheCurrentProvince() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let graph = try TravelGraph(data: Data(contentsOf: dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World/travel.bin")))
+        let golden = try JSONDecoder().decode(ArmyAIGolden.self, from: Data(contentsOf: dir.appendingPathComponent("Golden/army-ai.json")))
+        let pair = golden.statics.provinces.indices.lazy.compactMap { p -> (Int, Int)? in
+            guard graph.targetCell(province: p) != nil else { return nil }
+            guard let q = golden.statics.provinces[p].neighbors.first(where: { graph.targetCell(province: $0) != nil }) else { return nil }
+            return (p, q)
+        }.first
+        let (p, q) = try XCTUnwrap(pair)
+        let pc = try XCTUnwrap(graph.targetCell(province: p))
+        var world = try XCTUnwrap(golden.samples.first).input
+        let template = try XCTUnwrap(world.armies.first)
+        world.owners = Array(repeating: 0, count: world.owners.count)
+        world.wars = [[0, 1]]; world.alliances = []; world.vassals = []
+        world.campaigns = [.init(id: 7, ended: false, internal: false, participants: [.init(nation: 0, side: 0), .init(nation: 1, side: 1)])]
+        let point = graph.centers[pc]
+        world.armies = (0..<2).map { i in
+            var a = template
+            a.id = "battle-\(i)"; a.nation = i; a.troops = 1000; a.home = p; a.anchor = p
+            a.manual = false; a.busy = false; a.engaged = false; a.status = i == 0 ? "idle" : "idle"
+            a.row = i == 0 ? .init(target: q) : .init()
+            a.travel = .init(version: 1, origin: .init(x: point.x, y: point.y), destination: nil,
+                             nodes: [Int(graph.ids[pc]), Int(graph.ids[pc])], leg: 0, offset: 0, crossed: false, status: i == 0 ? "moving" : "arrived")
+            return a
+        }
+        let travel = world.armies.map { ArmyTravel(record: $0.travel, graph: graph)! }
+        let saved = ArmyAutonomy.originalRegularTargets
+        ArmyAutonomy.originalRegularTargets = true
+        defer { ArmyAutonomy.originalRegularTargets = saved }
+        var context = ArmyAutonomy.Context(engine: ArmyAutonomy(statics: golden.statics, graph: graph), w: world, travels: travel)
+        context.run([0])
+        XCTAssertEqual(context.w.armies[0].row.decision, "attacking")
+        XCTAssertEqual(context.w.armies[0].row.target, p)
+        XCTAssertEqual(context.w.armies[0].row.campaign, 7)
+        XCTAssertEqual(context.travels[0].status, .halted)
+    }
+
+    func testRegularCandidatesAreInvadedHomeAndBorderOnly() {
+        XCTAssertEqual(ArmyAutonomy.Context.regularCandidateIds(invaded: [3, 3], borders: [8, 3, 1]), [3, 8, 1])
     }
 }

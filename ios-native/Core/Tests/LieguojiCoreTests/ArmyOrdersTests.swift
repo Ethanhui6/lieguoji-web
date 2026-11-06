@@ -39,8 +39,11 @@ extension ArmyOrdersTests {
         let golden = try JS.parse(Data(contentsOf: dir.appendingPathComponent("Golden/army-orders.json")))
         let r = golden.samples[0].input.clone()
         let graph = try TravelGraph(data: Data(contentsOf: world.appendingPathComponent("travel.bin")))
-        let oldBridge = Armies.bridge; Armies.bridge = ForceBridge(graph: graph)
-        defer { Armies.bridge = oldBridge }
+        let oldBridge = Armies.bridge
+        Armies.bridge = ForceBridge(graph: graph)
+        let oldBorders = CombatReader.borders
+        CombatReader.borders = Array(repeating: [], count: r.world.provinces.length)
+        defer { Armies.bridge = oldBridge; CombatReader.borders = oldBorders }
         let nation = try XCTUnwrap(r.world.nations.asArray.first { !ArmyOrders.enemies(r, $0.id.asString).isEmpty }).id.asString
         let enemy = try XCTUnwrap(ArmyOrders.enemies(r, nation).first).nation
         let provinces = r.world.provinces.asArray
@@ -72,8 +75,10 @@ extension ArmyOrdersTests {
         let id = r.world.armies[0].id.asString
         let before = r.armyPositions.records[id].json
         ArmyOrders.selection(r, [id])
-        XCTAssertEqual(r.armyAutonomy.armies[id].decision.asString, "garrison")
-        XCTAssertEqual(r.armyAutonomy.armies[id].garrisonId.asString, provinces[p].id.asString)
+        // Homeland remains, but this province has no land battle and the border reader may be empty.
+        // Empty regular candidates go idle in place. They are not pinned as a garrison and not sent home.
+        XCTAssertEqual(r.armyAutonomy.armies[id].decision.asString, "waiting")
+        XCTAssertTrue(r.armyAutonomy.armies[id].targetId.isNull)
         XCTAssertEqual(r.armyPositions.records[id].json, before)
         r.voyages.manualArmies = .array([JS(id)])
         ArmyOrders.selection(r, [id])

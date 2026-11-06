@@ -70,6 +70,9 @@ public struct ArmyAutonomy: Sendable {
     /// A cautious state's armies first clear its own invaded provinces; a warlike state's armies push
     /// into enemy land before supporting allies. nil keeps the original choice.
     public static var temper: ((Int) -> Double)?
+    /// Attacked home provinces compete with border enemy provinces, and an empty list goes idle.
+    /// Golden web samples turn this off so they still match the web bridge list (ally help and every coastal enemy province).
+    public static var originalRegularTargets = true
     public let statics: ArmyAIStatic
     public let graph: TravelGraph
     public init(statics: ArmyAIStatic, graph: TravelGraph) { self.statics = statics; self.graph = graph }
@@ -209,6 +212,15 @@ public struct ArmyAutonomy: Sendable {
             let hx = f(f(home.0) - f(p.x)), hy = f(f(home.1) - f(p.y)), back = f(f(f(hy * hy) + f(hx * hx)).squareRoot())
             return f(back + weighted)
         }
+        /// FindRegularTargetProvince's candidate set as far as this snapshot goes: own provinces that
+        /// already hold an enemy army, then enemy provinces on our border. Ally assistance and "every
+        /// coastal enemy province" are the web bridge and are not in this list. Border membership is
+        /// still the web state-border reader, not a restored borderRegularEnemyProvinces.
+        static func regularCandidateIds(invaded: [Int], borders: [Int]) -> [Int] {
+            var out = [Int](), seen = Set<Int>()
+            for p in invaded + borders where seen.insert(p).inserted { out.append(p) }
+            return out
+        }
         static func regularTarget(_ current: TravelPoint, _ home: (Double, Double), _ feature: Int, _ list: [Target]) -> Target? {
             let max = 3.4028234663852886e38
             var same: Target?, port: Target?, cross: Target?, sameScore = max, portScore = max, crossScore = max
@@ -267,10 +279,29 @@ public struct ArmyAutonomy: Sendable {
                 if !en.isEmpty || row.garrison >= 0 && w.owners[row.garrison] != a.nation { row.garrison = -1 }
                 guard let here = sp.byArmy[i] else { row.garrison = -1; note("lost", clear: true); continue }
                 if a.manual { row.garrison = -1; note("manual", clear: true); continue }
-                if a.busy || a.status == "fighting" { note("busy"); continue }
-                if tick < row.nextTick { continue }
                 func enemyAt(_ p: Int) -> Int? { (sp.land[p] ?? []).first { w.armies[$0].status != "retreating" && enemySet.contains(w.armies[$0].nation) }.map { w.armies[$0].nation } }
                 let target = row.target >= 0 ? row.target : nil
+                // Army.Attacking: a land battle in the province underfoot retargets here unless this
+                // is already the target or a player RTS order. "Land battle" is an enemy army standing
+                // in the province (SIMPLIFIED_: this snapshot has no separate battle id). The shared
+                // command check refuses a halt while that enemy is present, so the stop is written
+                // on the travel record itself.
+                if ArmyAutonomy.originalRegularTargets, a.status != "retreating", let c = here.province, c != target, enemyAt(c) != nil {
+                    if here.travel.status == .moving {
+                        var stopped = travels[i]
+                        stopped.status = .halted
+                        travels[i] = stopped
+                        w.armies[i].travel = record(stopped)
+                        if w.armies[i].status != "fighting" { w.armies[i].status = "idle" }
+                    }
+                    row.target = c
+                    row.campaign = en.first { $0.nation == enemyAt(c) }?.campaign ?? -1
+                    row.issuedTick = tick
+                    note("attacking")
+                    continue
+                }
+                if a.busy || a.status == "fighting" { note("busy"); continue }
+                if tick < row.nextTick { continue }
                 let targetEnemy: Int? = target.flatMap { t in enemySet.contains(w.owners[t]) ? w.owners[t] : access(a.nation, w.owners[t]) ? enemyAt(t) : nil }
                 let ongoing = here.travel.status == .moving
                 let targetOwned = target.map { w.owners[$0] == a.nation } ?? false
@@ -300,19 +331,23 @@ public struct ArmyAutonomy: Sendable {
                 func add(_ p: Int) { if attackSet.insert(p).inserted { attack.append(p) } }
                 let owned = w.owners.indices.filter { w.owners[$0] == a.nation }, invaded = owned.filter { enemyAt($0) != nil }
                 if a.status != "retreating" && !en.isEmpty {
-                    for p in invaded { add(p) }
-                    for p in stateBorders(a.nation, enemySet) { add(p) }
-                    if invaded.isEmpty {
-                        for p in w.owners.indices where w.owners[p] != a.nation && access(a.nation, w.owners[p]) {
-                            if enemyAt(p) != nil { add(p) }
-                            for q in s.provinces[p].neighbors where enemySet.contains(w.owners[q]) { add(q) }
+                    if ArmyAutonomy.originalRegularTargets {
+                        for p in Context.regularCandidateIds(invaded: invaded, borders: stateBorders(a.nation, enemySet)) { add(p) }
+                    } else {
+                        for p in invaded { add(p) }
+                        for p in stateBorders(a.nation, enemySet) { add(p) }
+                        if invaded.isEmpty {
+                            for p in w.owners.indices where w.owners[p] != a.nation && access(a.nation, w.owners[p]) {
+                                if enemyAt(p) != nil { add(p) }
+                                for q in s.provinces[p].neighbors where enemySet.contains(w.owners[q]) { add(q) }
+                            }
                         }
+                        for p in w.owners.indices where enemySet.contains(w.owners[p]) && s.provinces[p].coast { add(p) }
                     }
-                    for p in w.owners.indices where enemySet.contains(w.owners[p]) && s.provinces[p].coast { add(p) }
                 }
                 let location = g.location(here.travel), home = (s.provinces[a.home].x, s.provinces[a.home].y)
                 var candidates = attack.map { Target(id: $0, x: s.provinces[$0].x, y: s.provinces[$0].y, feature: s.provinces[$0].feature, protruding: protruding($0), port: s.provinces[$0].port) }
-                if let temper = ArmyAutonomy.temper?(a.nation) {
+                if !ArmyAutonomy.originalRegularTargets, let temper = ArmyAutonomy.temper?(a.nation) {
                     if !invaded.isEmpty {
                         let home = candidates.filter { invaded.contains($0.id) }
                         if !home.isEmpty { candidates = home }
@@ -320,6 +355,11 @@ public struct ArmyAutonomy: Sendable {
                         let deep = candidates.filter { enemySet.contains(w.owners[$0.id]) }
                         if !deep.isEmpty { candidates = deep }
                     }
+                }
+                if ArmyAutonomy.originalRegularTargets && attack.isEmpty {
+                    if ongoing { halt(i) }
+                    note("waiting", clear: true)
+                    continue
                 }
                 var chosen: Int?
                 while !candidates.isEmpty {
@@ -347,6 +387,7 @@ public struct ArmyAutonomy: Sendable {
                     }
                 }
                 if let hp = here.province, w.owners[hp] == a.nation { if ongoing { halt(i) }; note(attack.isEmpty ? "waiting" : "no-route", clear: true); continue }
+                if ArmyAutonomy.originalRegularTargets { if ongoing { halt(i) }; note("waiting", clear: true); continue }
                 let homes = owned.enumerated().sorted { x, y in
                     let dx = jsHypot(s.provinces[x.element].x - here.point.x, s.provinces[x.element].y - here.point.y)
                     let dy = jsHypot(s.provinces[y.element].x - here.point.x, s.provinces[y.element].y - here.point.y)

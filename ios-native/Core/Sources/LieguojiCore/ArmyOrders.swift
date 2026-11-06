@@ -224,12 +224,29 @@ public enum ArmyOrders {
             
             guard let here = space.first(where: { $0.army.id.asString == id }) else { row.garrisonId = .null; note("lost", "部队已失去战斗力，保留既有军令历史。", clear: true); continue }
             if r.voyages.manualArmies.asArray.contains(where: { $0.asString == id }) { row.garrisonId = .null; note("manual", "玩家已接管，自主指挥保留其军令。", clear: true); continue }
-            if held.contains(Daily.key("army", id)) || a.status.asString == "fighting" || !r.reorganization.active[id].isNull { note("busy", "正在实际交锋或整编，保留当前任务。"); continue }
-            if tick < row.nextTick.asInt { continue }
             func enemyAt(_ pid: String) -> String? {
                 space.first { $0.province?.id.asString == pid && $0.army.status.asString != "retreating" && enemySet.contains($0.army.nationId.asString) }?.army.nationId.asString
             }
             let target = row.targetId.isNull ? nil : r.world.provinces.asArray.first { $0.id.asString == row.targetId.asString }
+            let originalTargets = !r.regimes.isNull && r.regimes.enabled.isTruthy
+            // Army.Attacking, app-rule worlds. SIMPLIFIED_: a land battle is a living enemy army in
+            // this province. Halt is refused by the shared command check while that enemy stands here,
+            // so the stop is written on the travel record.
+            if originalTargets, a.status.asString != "retreating", let c = here.province, c.id.asString != target?.id.asString, let foe = enemyAt(c.id.asString) {
+                if here.travel.status.asString == "moving" {
+                    let t = r.armyPositions.records[id]
+                    t.status = JS("halted")
+                    if a.status.asString != "fighting" { a.status = JS("idle") }
+                    a.route = .array(); a.progress = JS(0)
+                }
+                row.targetId = c.id.clone()
+                row.campaignId = JS(en.first { $0.nation == foe }?.campaign ?? -1)
+                row.issuedTick = JS(tick)
+                note("attacking", "当前省有陆战，改以本省为目标并停止行军。")
+                continue
+            }
+            if held.contains(Daily.key("army", id)) || a.status.asString == "fighting" || !r.reorganization.active[id].isNull { note("busy", "正在实际交锋或整编，保留当前任务。"); continue }
+            if tick < row.nextTick.asInt { continue }
             let targetEnemy: String? = target.flatMap { t in enemySet.contains(t.controller.asString) ? t.controller.asString : RunWindow.access(r, nation, t.controller.asString) ? enemyAt(t.id.asString) : nil }
             let ongoing = here.travel.status.asString == "moving"
             let targetOwned = target?.controller.asString == nation
@@ -246,34 +263,20 @@ public enum ArmyOrders {
             let provinces = r.world.provinces.asArray
             let owned = provinces.indices.filter { provinces[$0].controller.asString == nation }
             let invaded = owned.filter { enemyAt(provinces[$0].id.asString) != nil }
-            // The running native world's tactical policy, gated by its existing app-rule marker.
-            if r.regimes.enabled.isTruthy, invaded.isEmpty, !ongoing, a.status.asString != "retreating",
-               let hp = here.province, hp.controller.asString == nation {
-                let threatened = hp.neighbors.asArray.contains { enemyAt($0.asString) != nil }
-                let local = space.filter { $0.province?.id.asString == hp.id.asString && $0.army.nationId.asString == nation }.map { f in
-                    let key = f.army.id.asString
-                    return FrontGuard.Force(id: key, troops: f.army.troops.asInt,
-                        available: !r.voyages.manualArmies.asArray.contains { $0.asString == key }
-                            && !held.contains(Daily.key("army", key)) && r.reorganization.active[key].isNull
-                            && f.army.status.asString != "retreating" && f.army.status.asString != "fighting"
-                            && f.travel.status.asString != "moving")
-                }
-                if FrontGuard.choose(local, threatened: threatened) == id {
-                    row.targetId = hp.id.clone(); row.garrisonId = hp.id.clone(); row.campaignId = .null
-                    note("garrison", "相邻地区有敌军，保留一支部队守卫已控制州郡；威胁解除后重新部署。")
-                    continue
-                }
-            }
             if a.status.asString != "retreating" && !en.isEmpty {
-                for p in invaded { add(p) }
-                for p in stateBorders(r, nation, enemySet) { add(p) }
-                if invaded.isEmpty {
-                    for (p, province) in provinces.enumerated() where province.controller.asString != nation && RunWindow.access(r, nation, province.controller.asString) {
-                        if enemyAt(province.id.asString) != nil { add(p) }
-                        for q in province.neighbors.asArray { if let qi = index(r, q.asString), enemySet.contains(provinces[qi].controller.asString) { add(qi) } }
+                if originalTargets {
+                    for p in ArmyAutonomy.Context.regularCandidateIds(invaded: invaded, borders: stateBorders(r, nation, enemySet)) { add(p) }
+                } else {
+                    for p in invaded { add(p) }
+                    for p in stateBorders(r, nation, enemySet) { add(p) }
+                    if invaded.isEmpty {
+                        for (p, province) in provinces.enumerated() where province.controller.asString != nation && RunWindow.access(r, nation, province.controller.asString) {
+                            if enemyAt(province.id.asString) != nil { add(p) }
+                            for q in province.neighbors.asArray { if let qi = index(r, q.asString), enemySet.contains(provinces[qi].controller.asString) { add(qi) } }
+                        }
                     }
+                    for (p, province) in provinces.enumerated() where enemySet.contains(province.controller.asString) && geo.coasts.contains(p) { add(p) }
                 }
-                for (p, province) in provinces.enumerated() where enemySet.contains(province.controller.asString) && geo.coasts.contains(p) { add(p) }
             }
             let location = g.location(bridge.travel(here.travel))
             guard let homeIndex = index(r, r.tactics.forces[id].homeId.asString) else { continue }
@@ -282,11 +285,12 @@ public enum ArmyOrders {
                 ArmyAutonomy.Context.Target(id: p, x: provinces[p].center.x.asNumber, y: provinces[p].center.y.asNumber, feature: geo.provinceFeature[provinces[p].id.asString] ?? -1,
                                             protruding: CombatReader.protruding(r, p), port: ports.contains(provinces[p].id.asString))
             }
-            if r.regimes.enabled.isTruthy, !invaded.isEmpty {
-                let defense = candidates.filter { invaded.contains($0.id) }
-                if !defense.isEmpty { candidates = defense }
-            }
             var chosen: Int?, why = ""
+            if originalTargets && attack.isEmpty {
+                if ongoing { halt() }
+                note("waiting", "没有常规目标，就地待命，不改派回乡。", clear: true)
+                continue
+            }
             while !candidates.isEmpty {
                 guard let p = ArmyAutonomy.Context.regularTarget(location.point, home, geo.cellFeature[location.cell], candidates) else { break }
                 if let refused = reason(r, id, .move(province: p.id, retreat: false)) { why = refused; candidates.removeAll { $0.id == p.id }; continue }
@@ -319,6 +323,11 @@ public enum ArmyOrders {
             if let hp = here.province, hp.controller.asString == nation {
                 if ongoing { halt() }
                 note(attack.isEmpty ? "waiting" : "no-route", why.isEmpty ? "当前没有可执行的常规战争目标，留在本国驻地。" : why, clear: true); continue
+            }
+            if originalTargets {
+                if ongoing { halt() }
+                note("waiting", "没有可执行的常规目标，就地待命，不强制撤回。", clear: true)
+                continue
             }
             let point = location.point
             let homes = owned.enumerated().sorted { x, y in

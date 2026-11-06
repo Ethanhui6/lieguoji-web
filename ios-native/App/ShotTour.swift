@@ -60,8 +60,13 @@ enum ShotTour {
         }
         // A burst on a marching army, one shot a second, to see how it walks and meets the enemy.
         if let state = model.state, let a = state.armies.first(where: { $0.travel == "moving" && $0.destination != nil }) {
+            // At 4× with the metrics overlay: the shots carry the frame time, the engine's cost per
+            // day and the main-thread cost of applying a step.
+            let speed = model.speed
+            model.speed = 4; model.controller.showMetrics = true
             model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(1.5)
             for i in 0..<10 { await shoot(String(format: "08-march-%02d", i)); await wait(1) }
+            model.speed = speed; model.controller.showMetrics = false
         }
         // Close on a province seat, which is drawn differently from a national capital.
         if let map = model.map, let seat = zip(map.meta.cities, MapLayers.cityMarks(map)).first(where: { $0.1 == .provinceSeat })?.0 {

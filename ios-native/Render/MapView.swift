@@ -16,6 +16,8 @@ import LieguojiCore
     @Published var viewLabels: [GroupLabel]?
     @Published var selectedProvince: Int?
     @Published var showMetrics = false
+    /// The simulation's own costs for the metrics overlay (set by the game each step; not published).
+    var simText = ""
     /// 显示设置 (web 0.5.40 map display options), kept between launches.
     @Published var display = DisplaySettings.load() { didSet { display.save() } }
     /// Province to fly to; the id makes repeated requests for the same province animate again.
@@ -533,6 +535,7 @@ struct MapView: UIViewRepresentable {
             if !metrics.isHidden, t - lastReport > 0.5 {
                 lastReport = t
                 metrics.text = String(format: "  平均 %.2f ms · 1%% low %.0f fps  \n  绘制间隔（按需重绘，非 GPU 耗时）  ", stats.averageMilliseconds, stats.onePercentLow)
+                    + (controller.simText.isEmpty ? "" : "\n" + controller.simText)
             }
         }
 

@@ -219,6 +219,7 @@ public enum Regimes {
     public static func enable(_ r: JS) {
         if r.regimes.isNull { let o = JS.object(); o.nations = JS.object(); o.month = JS(-1); r.regimes = o }
         r.regimes.enabled = JS(true)
+        Shipyards.remember(r)
     }
     static func monthKey(_ r: JS) -> Int { r.life.currentDate.year.asInt * 12 + r.life.currentDate.month.asInt }
 
@@ -236,6 +237,7 @@ public enum Regimes {
             guard Vassals.alive(r, id) else { continue }
             month(r, n, id, key)
         }
+        Shipyards.month(r)
     }
 
     /// 国家加成 (自定义), in percent: income, attack, defense, growth (a year), speed. nil when unset.
@@ -285,6 +287,7 @@ public enum Regimes {
         tribute(r, n, id, gain: gain)
         coup(r, n, id, key)
         election(r, n, id, key)
+        reform(r, n, id, key)
         let b = book(r, id)
         b.calm = JS(b.calm.asInt + 1)
         // Turmoil: weak government, lost land, a very old ruler; no revolution within two years of one.
@@ -297,6 +300,8 @@ public enum Regimes {
         var risk = 0.0015 + (governance < 0.3 ? 0.004 : 0) + Double(lost) / Double(held + lost) * 0.02
         if let leader = r.people.nations[id].leaderId.optionalNumber, let p = People.person(r, Int(leader)), (p.age.optionalNumber ?? 0) > 70 { risk += 0.0015 }
         if polity == "Federation" { risk *= 0.6 }
+        // A reformer on the throne channels unrest into reform: half the risk.
+        if rulerHas(r, id, { $0.isReformer.isTruthy }) { risk *= 0.5 }
         var h: UInt32 = 0x811c9dc5
         for u in "\(id)|\(key)|regime".utf8 { h = (h ^ UInt32(u)) &* 0x1000193 }
         guard Double(h) / 4294967296 < risk else { return }
@@ -353,6 +358,38 @@ public enum Regimes {
         let d = r.destiny.nations[id]
         if !d.isNull { d.destiny = JS(max(0, (d.destiny.optionalNumber ?? 0) - 8)) }
         _ = People.announce(r, kind: "politics", text: "\(oldName)权臣\(house)氏篡位", reason: "宗室失德、朝政废弛，势力凌驾宗室的\(house)氏发动政变，族中贤能者登位；旧宗室势力大衰，国运 −8。", nations: [id], province: nil)
+    }
+
+    /// Whether the state's living ruler has a trait matching the catalogue test.
+    static func rulerHas(_ r: JS, _ id: String, _ test: (JS) -> Bool) -> Bool {
+        let lid = r.people.nations[id].leaderId
+        guard !lid.isNull, let p = People.person(r, lid.asInt), !p.traits.isNull else { return false }
+        return p.traits.asArray.contains { Nobility.trait($0.asString).map(test) ?? false }
+    }
+
+    /// 改革家 (the original's Reformer: a reform check when he comes to power, by his administration,
+    /// that changes the state's corruption). Once per reign: success raises governance by 0.15 for as
+    /// long as he reigns; failure costs three points of destiny.
+    static func reform(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
+        let lid = r.people.nations[id].leaderId
+        guard !lid.isNull, rulerHas(r, id, { $0.isReformer.isTruthy }), let p = People.person(r, lid.asInt) else { return }
+        if r.regimes.reform.isNull { r.regimes.reform = .object() }
+        if r.regimes.reform[id].leader.optionalNumber == lid.asNumber { return }
+        let row = JS.object(); row.leader = lid.clone()
+        let admin = People.skills(p).administrative, chance = min(0.9, max(0.15, admin / 100))
+        var h: UInt32 = 0x811c9dc5
+        for u in "\(id)|\(key)|reform".utf8 { h = (h ^ UInt32(u)) &* 0x1000193 }
+        let who = n.name.asString + "君主"
+        if Double(h) / 4294967296 < chance {
+            row.bonus = JS(0.15)
+            _ = People.announce(r, kind: "politics", text: who + "推行变法", reason: "改革家登位，整顿吏治、裁汰冗员：在位期间施政 +15%。", nations: [id], province: nil)
+        } else {
+            row.bonus = JS(0)
+            let d = r.destiny.nations[id]
+            if !d.isNull { d.destiny = JS(max(0, (d.destiny.optionalNumber ?? 0) - 3)) }
+            _ = People.announce(r, kind: "politics", text: who + "变法受阻", reason: "改革家登位推行新政，朝野阻挠未能成功：国运 −3。", nations: [id], province: nil)
+        }
+        r.regimes.reform[id] = row
     }
 
     /// Rare monthly happenings that make each state's history its own: a bumper harvest, a disaster, a

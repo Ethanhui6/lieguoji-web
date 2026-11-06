@@ -1395,6 +1395,23 @@ struct MilitarySheet: View {
                         }
                         .padding(.horizontal, 16)
                     }
+                    if filter == "all", let yards = state.yards, !yards.isEmpty {
+                        SectionLabel("船坞")
+                        Group2 {
+                            ForEach(yards.indices, id: \.self) { i in
+                                let y = yards[i]
+                                HStack {
+                                    Text(y.name).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                    Spacer()
+                                    Text(map.meta.nations.indices.contains(y.nation) ? map.meta.nations[y.nation].name : "").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                                    Text("重建中 · 还需 \(Int(y.months)) 月").font(Theme.kai(14)).foregroundStyle(Theme.seal)
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 10)
+                                if i != yards.indices.last { Divider2() }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
                     ForEach(state.nations.indices, id: \.self) { n in
                         let rows = (byNation[n] ?? []).sorted { state.armies[$0].troops > state.armies[$1].troops }
                         if !rows.isEmpty {
@@ -1696,6 +1713,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.29.0", ["海军造舰：被击沉的舰队不再永远消失。只要本国仍握有它的母港，船坞用六个月造成新舰并重新出港；军事页新增「船坞」一栏，显示正在重建的舰队和剩余月数。",
+                    "「船舶大师」生效：君主有此特质时造舰时间减半（原作造舰时间 ×0.5）。",
+                    "「改革家」生效：改革家登位时按其内政能力做一次变法判定，成功则在位期间施政 +15%，失败国运 −3；改革家在位时政体动荡的几率减半。",
+                    "人物页不再标「（本版未生效）」。",
+                    "减少卡顿：推演中切到文化、宗教等着色视图时，视图最多每 0.6 秒重算一次，不再每一步都排队占用推演。",
+                    "设置里的「显示帧率」现在还显示推演每日耗时、每步推进几天和界面更新耗时，方便看出卡在哪里。"]),
         ("0.28.0", ["战争改回原作的按省交战：同一省里的敌军就会交锋，围城也按省进行。上一版把交战改成「两军坐标必须完全重合」，结果军队互相穿过、全挤在城点上，这一版修好。",
                     "交战中的两支军队重新画成面对面相遇的位置，不再叠在同一点上。",
                     "兵种图标重绘成一整套棋子：同样的底座、灰边和白底，地图上按国色上色（与原作的上色方式相同）。只有顶部区分兵种：兵卒、长枪、盾牌、弓、弩、马、披甲马、马背弓、帅旗、战象。",

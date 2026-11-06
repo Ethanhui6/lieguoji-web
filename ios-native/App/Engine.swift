@@ -103,6 +103,9 @@ struct GameState: Decodable, Equatable {
     let nations: [Nation]
     let armies: [Army]
     var fleets: [Fleet]? = nil
+    /// Sunk fleets being rebuilt at their docks (造舰), with the months left.
+    struct Yard: Decodable, Equatable { let name: String; let nation: Int; let months: Double }
+    var yards: [Yard]? = nil
     var ports: [Port]? = nil
     let wars: [War]
     let sieges: [Siege]

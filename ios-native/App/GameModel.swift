@@ -367,6 +367,7 @@ import LieguojiCore
                 let affordable = max(1, Int((0.16 / max(0.004, self.dayCost)).rounded(.down)))
                 let pace = min(wanted, affordable)
                 let days = far ? pace * 2 : pace
+                self.lastDays = days
                 do {
                     if far {
                         let native = self.native
@@ -400,6 +401,10 @@ import LieguojiCore
 
     /// Measured seconds one simulated day costs (step and apply), smoothed; the pace follows it.
     private var dayCost: Double = 0.03
+    /// Days in the last step and the main-thread cost of applying it (for the metrics overlay).
+    private var lastDays = 1, applyCost: Double = 0
+    /// Colour views refresh at most this often while playing (each refresh queues on the engine).
+    private var lastViewRefresh: CFTimeInterval = 0
     /// Smoothed time between two applied steps while playing; army icons glide over it.
     private var stepInterval: Double = 0.2
     private var lastApplied: CFTimeInterval?
@@ -412,7 +417,12 @@ import LieguojiCore
         if playing, let last = lastApplied, now - last < 2 { stepInterval = stepInterval * 0.7 + (now - last) * 0.3 }
         lastApplied = playing ? now : nil
         controller.tween = playing ? min(1.2, max(0.12, stepInterval * 1.05)) : 0.3
+        let applying = CACurrentMediaTime()
         apply(next)
+        applyCost = applyCost * 0.7 + (CACurrentMediaTime() - applying) * 0.3
+        if controller.showMetrics {
+            controller.simText = String(format: "  推演 %.1f ms/日 · 每步 %d 日 · 界面更新 %.1f ms  ", dayCost * 1000, lastDays, applyCost * 1000)
+        }
         // Autosave every 90 days (it serializes the whole world; pausing and leaving also save); every
         // 30 with a computer, so its world is never far from the phone's copy.
         // Through the relay a save downloads the whole world, so it waits longer there.
@@ -446,7 +456,10 @@ import LieguojiCore
         if ports != controller.seaPorts { controller.seaPorts = ports }
         refreshArmies()
         refreshEffects(previous: previous)
-        if mapView != .state && mapView != .terrain { Task { await refreshView() } }
+        if mapView != .state && mapView != .terrain, !playing || CACurrentMediaTime() - lastViewRefresh > 0.6 {
+            lastViewRefresh = CACurrentMediaTime()
+            Task { await refreshView() }
+        }
     }
 
     /// Wars declared or ended and provinces taken since the last state, as banners.

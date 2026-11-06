@@ -120,7 +120,11 @@ public enum Offices {
             let s = People.skills(leader); acumen = f(f(s.administrative * f(0.6)) + f(s.charisma * f(0.4)))
         }
         let destiny = clamp(f(f(r.destiny.nations[nation].destiny.optionalNumber ?? 0) / 100), 0, 1), a = clamp(f(acumen / 100), 0, 1)
-        return clamp(f(f(f(f(a * f(0.45)) + f(destiny * f(0.55))) - f(0.45)) / f(0.4)), 0, 1)
+        let value = clamp(f(f(f(f(a * f(0.45)) + f(destiny * f(0.55))) - f(0.45)) / f(0.4)), 0, 1)
+        // 变法 (app rules): a reformer's successful reform holds for his reign.
+        let reform = r.regimes.reform[nation]
+        if !leaderId.isNull, let bonus = reform.bonus.optionalNumber, bonus > 0, reform.leader.optionalNumber == leaderId.asNumber { return clamp(value + bonus, 0, 1) }
+        return value
     }
     static func context(_ r: JS, _ nation: String) -> Ctx {
         let ruling = r.nobility.rulingFamilies[nation].optionalNumber.map { Int($0) } ?? 0

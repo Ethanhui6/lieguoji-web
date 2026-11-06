@@ -202,6 +202,13 @@ extension NativeEngine {
             }
         }
         o.fleets = .array(fleetRows)
+        // 造舰: sunk fleets their state is rebuilding, with the months left.
+        if !r.navy.isNull, !r.navy.fleets.isNull {
+            o.yards = .array(r.navy.fleets.asArray.compactMap { fl -> JS? in
+                guard let left = Shipyards.remaining(r, fl) else { return nil }
+                let y = JS.object(); y.name = fl.name; y.nation = JS(ni[fl.nationId.asString] ?? -1); y.months = JS(left.rounded(.up)); return y
+            })
+        }
         o.ports = .array((Naval.sea?.ports ?? []).compactMap { port in
             guard let q = pi[port.provinceId] else { return nil }
             let c = r.portControl.isNull ? JS.null : r.portControl.ports[port.provinceId], x = JS.object()

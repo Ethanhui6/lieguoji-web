@@ -1,40 +1,43 @@
-# 列国纪
+# 列国纪（iOS）
 
-Fantasy Map Simulator 的网页 / 手机复刻：绘制或生成地图，建立多文化国家与城市，观察各国自主发展、外交、战争、叛乱与家族兴衰。
+Fantasy Map Simulator 的 iOS 原生复刻：生成或绘制地图，建立多文化国家与城市，观察各国自主发展、外交、战争、叛乱与家族兴衰。SwiftUI 界面 + Metal 地图，推演在手机本地完成，不需要网络。
 
-- 在线游玩：https://lieguoji-web.pages.dev
-- 版本日志：[CHANGELOG.md](CHANGELOG.md)
-- 部署说明：[docs/DEPLOY_CLOUDFLARE.md](docs/DEPLOY_CLOUDFLARE.md)
+当前版本 **0.28.0（build 86）**。每版改了什么，在应用的「更新」页里看。
 
-## 本地运行
+## 安装（不需要 Mac）
+
+GitHub Actions 的 **iOS Native unsigned IPA**（`.github/workflows/ios-native-unsigned.yml`）在每次推送 `main` 时打出未签名的 `.ipa`，也可以在 Actions 页面手动 **Run workflow**。
+
+1. 运行变绿后，在运行页面底部下载产物 `lieguoji-native-unsigned`，解压得到 `.ipa`。
+2. 用自己的自签工具换上你的证书和描述文件后安装。Bundle ID 是 `com.lieguoji.native`，桌面名字「列国纪」。
+3. 若提示开发者不受信任：**设置 → 通用 → VPN 与设备管理**，信任证书后再打开。
+
+同一次运行还有：
+- `lieguoji-screenshots`：模拟器自动巡览截图（不是真机验收）。
+- `lieguoji-server-windows`：电脑计算服务器（Windows）。手机通过配对码经中转连上电脑，由电脑推演、手机显示。
+
+存档在「文件」App 的「列国纪」文件夹。不要把证书、描述文件或私钥放进仓库。
+
+## 目录
+
+| 路径 | 内容 |
+|---|---|
+| `ios-native/App` | SwiftUI 界面、游戏状态、自动截图巡览 |
+| `ios-native/Render` | Metal 地图渲染、军队棋子、战场效果 |
+| `ios-native/Core` | Swift 推演引擎 `LieguojiCore`、电脑计算服务器 `LieguojiServer`、单元与对照测试 |
+| `ios-native/Resources` | 地图数据、原作素材、字体、名称目录、音乐、打包好的推演引擎 `Engine/engine.js` |
+| `ios-native/project.yml` | XcodeGen 工程描述（版本号在这里） |
+| `src` | 推演引擎的 TypeScript 源码（culture47），打包成 `engine.js`，并生成 Swift 对照测试的数据 |
+| `functions/api/relay`、`relay` | 电脑计算的中转（Cloudflare Pages 函数 + Worker） |
+| `docs` | 原作移植分析、素材授权说明、第三方许可 |
+
+## 开发
 
 ```bash
 npm ci
-npm run dev
+npm run check
 ```
 
-常用命令：`npm run lint`、`npm run typecheck`、`npm test`（全量单测，较慢）、`npm run build`、`npm run test:e2e`。
-
-## iOS
-
-手机上玩的是 `ios-native/` 里的 SwiftUI / Metal 原生版，不是 Capacitor 网页壳。当前原生版本 **0.26.13（build 85）**。更新说明在 [ios-native/docs/RELEASE-0.26.13.md](ios-native/docs/RELEASE-0.26.13.md)，应用里「更新」页也能看到这一版改了什么。网页正式站仍由 Cloudflare Pages 部署 `main`，和这个原生包不是同一个版本号。
-
-没有 Mac 也可以装到自己的手机。Actions 里的 **iOS Native unsigned IPA**（`ios-native-unsigned.yml`）打出未签名的 `.ipa`。你再用自己的自签工具重签、安装。不需要上传 App Store。
-
-1. 打开本仓库的 Actions，选 **iOS Native unsigned IPA**，点 **Run workflow**，选要打包的分支。这个工作流在拉取请求上经常因为分支名对不上而跳过，推送也不一定会跑，需要手动运行。
-2. 运行变绿后，在该次运行页面底部下载产物 `lieguoji-native-unsigned`，解压得到 `lieguoji-native-unsigned.ipa`。同一次运行若开了截图，产物 `lieguoji-screenshots` 是模拟器画面，不是真机验收。
-3. 用你现有的自签工具打开这个 `.ipa`，换成你自己的证书和描述文件。桌面上的名字是「列国纪」。Bundle ID 是 `com.lieguoji.native`。
-4. 装到手机后，若系统提示开发者不受信任：打开 **设置 → 通用 → VPN 与设备管理**（有的系统写「描述文件与设备管理」），信任你的证书，再打开应用。
-
-原生包在本机推演和画地图，打开地图不需要网络。存档在本机「文件」里的「列国纪」。连电脑计算时才需要和电脑在同一网络。
-
-横屏和竖屏都可以。地图铺满屏幕。切到后台时，进行中的世界会写入本机存档。
-
-仓库里还留着旧的 Capacitor 工程（`ios/`、`capacitor.config.json`，网页 0.5.x 那条安装说明）。那不是现在要装的原生版。不要把证书、描述文件或私钥放进仓库。
-
-## 目录
-- `src/fms` 游戏：地图编辑与生成（FmsApp）、文化世界与推演（`play/`，culture47 引擎运行在 Web Worker）。
-- `src/world` 地形与渲染基础模块。
-- `tests` Playwright 浏览器测试。
-- `scripts` 构建产物检查、密钥扫描、原作数据提取工具。
-- `docs` 原作移植说明与部署说明。
+- `npm run check`：引擎源码的 lint、类型检查、单元测试。
+- `npm run engine`：重新打包 `ios-native/Resources/Engine/engine.js`。
+- Swift 部分（引擎测试、应用编译、截图）在 GitHub Actions 的 macOS / Linux 机器上跑。

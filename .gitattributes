@@ -11,102 +11,16 @@
 *.html text eol=lf
 src/fms/play/compat/tactics1/**/*.source text eol=lf
 .githooks/* text eol=lf
-# Immutable measurement reports and source snapshots must retain their recorded SHA.
-# Tool stdout / historic snapshots may intentionally include trailing whitespace.
-docs/evidence/ph03/** -text whitespace=cr-at-eol
-docs/evidence/ph03/checks/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph03/source-snapshots/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph04/** -text whitespace=cr-at-eol
-docs/evidence/ph04/first-batch/*.txt whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph04/integration-v1/*.log whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph04/integration-v2/*.log whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph04/performance-v1/*.log whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph04/performance-v3/*.log whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph04/performance-v4/*.log whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph04/source-snapshots/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph04/scoped-checks/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-# PH05 content-addressed evidence and exact restoration/evaluator bytes.
-docs/evidence/ph05/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph05-verification/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 
-# Authorized playtest verification preserves exact report bytes.
-docs/evidence/playtest-2026-09-24/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-# PH06 raw repair reports keep the exact bytes referenced by their inventory.
-docs/evidence/ph06-zoom-density-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph06-fine-coast-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph06-fine-integration-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-
-docs/evidence/ph06-preview7-generator-history-2026-09-27/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/ph06-additive-2026-09-27/** -text
-
-docs/evidence/ph06-preview8-generator-history-2026-09-27/** -text
-docs/evidence/ph06-natural-2026-09-27/** -text
-
-docs/evidence/ph06-preview9-generator-history-2026-09-27/** -text
-docs/evidence/ph06-natural-repair-2026-09-27/** -text
-docs/evidence/ph06-continuous-light-2026-09-27/** -text
-docs/evidence/ph06-preview11-generator-history-2026-09-27/** -text
-docs/evidence/ph06-local-relief-2026-09-27/** -text
-docs/evidence/ph06-lock-snapshot-2026-09-27/** -text
-docs/evidence/ph06-owned-snapshot-measurement-2026-09-28/** -text
-docs/evidence/ph06-preview13-generator-history-2026-09-28/** -text
-docs/evidence/ph06-continuous-relief-2026-09-28/** -text
-docs/evidence/ph06-preview14-generator-history-2026-09-28/** -text
-docs/evidence/ph06-asymmetric-coast-2026-09-28/** -text
-docs/evidence/ph06-preview15-generator-history-2026-09-28/** -text
-docs/evidence/ph06-coast-scale-2026-09-28/** -text
-docs/evidence/ph06-preview16-generator-history-2026-09-28/** -text
-docs/evidence/ph06-branching-relief-2026-09-28/** -text
-docs/evidence/ph06-preview17-generator-history-2026-09-28/** -text
-docs/evidence/ph06-fine-land-belt-2026-09-28/** -text
-docs/evidence/ph07-hydrology-kernel-2026-09-28/** -text
-docs/evidence/ph07-flow-view-2026-09-28/** -text
-docs/evidence/ph06-preview18-generator-history-2026-09-28/** -text
-docs/evidence/ph06-fine-world-relief-2026-09-28/** -text
-docs/evidence/ph06-preview20-generator-history-2026-09-28/** -text
-docs/evidence/ph06-regional-coast-2026-09-28/** -text
 src/world/generation/test-fixtures/preview20-coast/** -text
-docs/evidence/ph06-preview21-generator-history-2026-09-28/** -text
-docs/evidence/ph06-natural-range-sea-2026-09-28/** -text
 src/world/test-fixtures/preview21-terrain-material.ts -text
 
-docs/evidence/ph06-preview22-generator-history-2026-09-28/** -text
-docs/evidence/ph07-receivers-2026-09-28/** -text
-docs/evidence/ph06-mountain-area-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 src/world/generation/test-fixtures/preview22-orography/** -text
 
-docs/evidence/ph06-preview23-generator-history-2026-10-03/** -text
-docs/evidence/ph06-coast-ph07-macro-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/country-world-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/country-scale-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/country-natural-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/country-response-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/country-institution-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/country-ownership-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/fms-package-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/fms-terrain-import-2026-10-03/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-docs/evidence/fms-direct-generation-2026-10-04/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
-# V5 frozen static/fixture evidence must match its recorded SHA after checkout.
-docs/evidence/fms-hill-recovery-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-brush-input-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-brush-numeric-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-drawing-entry-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-naturalization-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-coast-preservation-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-region-locks-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-coastal-width-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-coast-refinement-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-coast-smoothing-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-coast-resolution-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-area-runoff-2026-10-04/** -text whitespace=cr-at-eol
-docs/evidence/fms-native-hill-v5-2026-10-04/** -text whitespace=cr-at-eol
 # Preserve reviewed third-party notices byte-for-byte, including their trailing newlines.
-public/terrain-licenses.txt -text whitespace=cr-at-eol,-blank-at-eof
+docs/licenses/THIRD_PARTY_TERRAIN.txt -text whitespace=cr-at-eol,-blank-at-eof
 src/world/recovered-terrain/licenses/** -text whitespace=cr-at-eol,-blank-at-eof
-
-docs/evidence/fms-click-template-v5-2026-10-04/** -text whitespace=cr-at-eol
 
 src/fms/play/compat/campaign1/**/*.source text eol=lf
 
 src/fms/play/compat/chronicle1/**/*.source text eol=lf
-*.cmd text eol=crlf

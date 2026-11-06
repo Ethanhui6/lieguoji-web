@@ -1,25 +1,20 @@
 # 列国纪执行规则
 
-列国纪是用户自有作品 Fantasy Map Simulator（安装目录 `D:\steam\steamapps\common\FantasyMapSimulator`）的网页/PWA 复刻。一切以原作为准：原作怎么做，网页就怎么还原。用户消息优先于本文件。报告用中文。
+列国纪是用户自有作品 Fantasy Map Simulator（安装目录 `D:\steam\steamapps\common\FantasyMapSimulator`）的 iOS 原生复刻。以原作为参照，但画面与玩法可以按用户要求优化，不必逐像素照搬。用户消息优先于本文件。报告用中文。
 
 ## 原作素材
 - 用户已授权只读分析该安装目录，并在本项目中适配其中的代码、数据和资源（见 docs/FMS_PACKAGE_REUSE_2026-10-03.md）。
 - 安装目录只读；不读取认证、SDK 配置（如 gameConfigDyV2.json、envs.log）或个人存档。
-- 反汇编、dump 和分析中间产物只放在 `.autopilot/fms-audit`（已忽略），不提交、不进 dist。
+- 反汇编、dump 和分析中间产物只放在 `.autopilot/fms-audit`（已忽略），不提交。
 
-## 版本流程（2026-10-22 起）
-用户要求：每做完一个新版本，就统一上传 GitHub，由 Cloudflare Pages 自动部署到正式站，用户直接在手机上体验；上传后继续做下一版。
-1. 在 main 分支本地开发；改动涉及的单元测试通过，并在浏览器中实际试玩确认。
-2. 提升 package.json 版本号，在 CHANGELOG.md 顶部写本版本的中文日志（新增、修改、修复、已知问题）。
-3. 提交后推送 main。pre-push 会检查：仓库地址、工作区干净、lint、类型、生产构建与产物白名单，并对推送新增的全部内容做密钥/隐私路径扫描。不得跳过 hook。
-4. 发布前在本地运行全量检查 `npm run check`（lint、类型、全量单测、构建、浏览器测试），结果写进 CHANGELOG / 交接记录。GitHub Actions 只保留手动触发，不再在推送时自动运行。
-5. Cloudflare Pages（原生 Git 集成，构建命令 `npm run build:cf`，输出 dist）自动部署 main；推送后核对 https://lieguoji-web.pages.dev/build.json 的版本与提交，再告诉用户。
-6. 不改写已推送的历史，不删除用户数据。
-
-## 存档
-从 0.5.0 起只支持当前版本创建的世界；旧版本存档不再读取。以后若引擎改动导致旧档不兼容，在 CHANGELOG 中写明。
+## 版本流程
+1. 每个版本提升 `ios-native/project.yml` 的 MARKETING_VERSION 与 CURRENT_PROJECT_VERSION，并在 `ios-native/App/LieguojiApp.swift` 的 ReleaseNotes 顶部写中文更新说明。
+2. 推送 `main`。pre-push 检查仓库地址、工作区干净、新增内容的密钥扫描、引擎源码 lint 与类型。不得跳过 hook。
+3. 推送后 GitHub Actions（ios-native-unsigned.yml）跑 Swift 测试、打包未签名 IPA 和模拟器截图；看截图确认后把运行链接告诉用户。
+4. 不改写已推送的历史，不删除用户数据。
 
 ## 代码约定
-- TypeScript / React / Vite / PixiJS；模拟在 Web Worker（culture47 引擎），存档在 IndexedDB。
-- 模拟必须确定性可重放（journal：开局 + 操作）；改动规则后新建世界即用新规则。
+- Swift：SwiftUI + Metal；推演引擎 `ios-native/Core/LieguojiCore`，对照测试数据在 `Core/Tests/LieguojiCoreTests/Golden`（由 `src/native-export` 生成）。
+- TypeScript：`src` 只保留推演引擎（culture47），`npm run engine` 打包成 `ios-native/Resources/Engine/engine.js`。
+- 模拟必须确定性可重放；改动规则后新建世界即用新规则。
 - 不提交秘密；不改动其他项目。

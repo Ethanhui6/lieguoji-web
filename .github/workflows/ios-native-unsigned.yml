@@ -2,7 +2,7 @@ name: iOS Native unsigned IPA
 on:
   workflow_dispatch:
   push:
-    branches: ['claude/native-*']
+    branches: ['main', 'claude/native-*']
     paths:
       - 'ios-native/**'
       - '.github/workflows/ios-native-unsigned.yml'
@@ -14,7 +14,6 @@ permissions:
   contents: read
 jobs:
   core-linux:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.head_ref == 'codex/swiftui-native'
     runs-on: ubuntu-latest
     container: swift:5.10
     steps:

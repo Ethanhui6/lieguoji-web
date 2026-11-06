@@ -1,17 +1,9 @@
-# Cloudflare Pages config for 列国纪 (Git integration builds `npm run build:cf` into dist).
-# The cloud-save Functions (functions/api/cloud) and the remote-computing relay (functions/api/relay)
-# use the runtime settings below.
+# Cloudflare Pages：只承载 iOS 版「电脑计算」的中转函数（functions/api/relay）。
+# 中转房间是 lieguoji-relay Worker（relay/wrangler.toml）里的 Durable Object。
+# 网页版已停止更新，线上保留最后一次部署。
 name = "lieguoji-web"
-pages_build_output_dir = "dist"
 compatibility_date = "2026-09-01"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "lieguoji-cloud"
-database_id = "056427fc-c2dd-4ac2-b15d-7baf97e52a95"
-migrations_dir = "migrations"
-
-# 远程计算中转房间：在 lieguoji-relay Worker（relay/wrangler.toml）里定义的 Durable Object。
 [[durable_objects.bindings]]
 name = "ROOMS"
 class_name = "Room"

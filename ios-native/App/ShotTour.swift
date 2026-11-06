@@ -23,12 +23,17 @@ enum ShotTour {
     @MainActor static func start(_ model: GameModel) async {
         await wait(4)
         await shoot("01-title")
+        model.tourTitle = "settings"
+        await wait(0.8)
+        await shoot("01b-settings")
+        model.tourTitle = "new-world"
+        await wait(0.8)
+        await shoot("01c-new-world")
+        model.tourTitle = nil
+        await wait(0.4)
         var options = GameModel.NewWorld()
         options.seed = "20261101"; options.nations = 12; options.provinces = "140"; options.relations = "war"
-        Task { @MainActor in
-            while model.phase != .founding && model.phase != .playing { await wait(0.2) }
-            if model.phase == .founding { await wait(1.2); await shoot("02-founding") }
-        }
+        // 02-founding and 02b-rise are taken inside the rise itself, while those lines are on screen.
         await model.generate(options)
     }
 

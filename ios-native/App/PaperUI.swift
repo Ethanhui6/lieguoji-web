@@ -471,7 +471,7 @@ struct PaperMenu<T: Hashable>: View {
                 }
                 .padding(.bottom, 24)
             }
-            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
         }
     }
 }

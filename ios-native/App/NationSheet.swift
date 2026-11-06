@@ -187,7 +187,7 @@ struct NationSheet: View {
                         Task { await run(success: "已任命\(name)为\(Self.officeTitle[String(target.office.split(separator: ":").first ?? "")] ?? "征伐主将")") { await model.appointOffice(nation, office: target.office, person: person) } }
                     }
                 }
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
             }
             .sheet(item: $editing) { p in
                 PersonEditor(person: p) { skills, traits, first, last, age in
@@ -199,22 +199,22 @@ struct NationSheet: View {
                         }
                     }
                 }
-                .presentationDetents([.large]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+                .presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
             }
-            .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17)) }
+            .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17)) }
             .sheet(item: $numberEdit) { e in
                 NumberEditSheet(title: e.title, unit: e.unit, value: e.value) { v in
                     numberEdit = nil
                     Task { await run(success: "\(e.title)已改为 \(Int(v))\(e.unit)") { await e.apply(v) } }
                 }
-                .presentationDetents([.height(300)]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+                .presentationDetents([.height(300)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
             }
             .sheet(item: $partyEdit) { p in
                 PartyEditSheet(name: p.name, seats: p.seats) { name, seats in
                     partyEdit = nil
                     Task { await run(success: "\(name)已修改") { await model.editParty(nation, party: p.id, name: name, seats: seats) } }
                 }
-                .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+                .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
             }
         }
     }

@@ -96,7 +96,7 @@ struct RootView: View {
                 SealButton(title: "知道了") { model.failure = nil }.padding(.horizontal, 22)
             }
             .padding(.bottom, 24)
-            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
         }
     }
 
@@ -266,12 +266,16 @@ struct TitleView: View {
             .offset(y: shown ? 0 : 60).opacity(shown ? 1 : 0)
         }
         .onAppear { withAnimation(.spring(response: 0.7, dampingFraction: 0.85).delay(model.controller.reveal < 1 ? 1.4 : 0.1)) { shown = true } }
+        .onChange(of: model.tourTitle) { _, name in
+            settings = name == "settings"
+            creating = name == "new-world"
+        }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
             if case .success(let url) = result { Task { await model.importSave(from: url) } }
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet(start: { options in creating = false; Task { await model.generate(options) } }, draw: { options in creating = false; model.openEditor(options) })
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }
+                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $settings) {
             ScrollView {
@@ -286,9 +290,9 @@ struct TitleView: View {
                 }
                 .padding(.bottom, 24)
             }
-            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }
+            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
-        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() } }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
     }
 }
 
@@ -644,7 +648,7 @@ struct GameView: View {
                     .transition(.asymmetric(insertion: .move(edge: backward ? .leading : .trailing).combined(with: .opacity),
                                             removal: .move(edge: backward ? .trailing : .leading).combined(with: .opacity)))
                     .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
-                    .presentationBackground { MemorialPaper() }.presentationDragIndicator(.visible).presentationCornerRadius(28).font(Theme.kai(17))
+                    .presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(28).font(Theme.kai(17))
             }
         }
     }
@@ -1124,7 +1128,7 @@ struct ProvinceSheet: View {
                     }
                     .padding(.bottom, 24)
                 }
-                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
             }
         }
     }
@@ -1623,13 +1627,13 @@ struct MenuSheet: View {
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet(start: { options in creating = false; close(); Task { await model.generate(options) } }, draw: { options in creating = false; close(); model.openEditor(options) })
-                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }
+                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
             if case .success(let url) = result { close(); Task { await model.importSave(from: url) } }
         }
-        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() } }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
     }
 }
 
@@ -1695,6 +1699,7 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.26.7", ["截图行程会停在「注水成海」和大陆升起的中途，再拍设置和新世界。游戏里的纸面面板不再显示系统拉条。"]),
         ("0.26.6", ["府城圆标加大，仍小于国家首都的外环，普通城保持原大小。港口、要塞、圣地仍没有城市类型。",
                     "文化、宗教、迁都、州郡这些长列表改在宣纸上点选，不再弹出系统菜单。围城进度改成纸面上的墨条。"]),
         ("0.26.5", ["国家页点「人物」「战争」「外交」进入下一页，返回回到国家页。国家页默认只占屏幕大约四成，地图留在六成以上。基本信息仍是打开就展开。",

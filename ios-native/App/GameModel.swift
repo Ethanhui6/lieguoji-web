@@ -8,6 +8,8 @@ import LieguojiCore
 @MainActor final class GameModel: ObservableObject {
     enum Phase: Equatable { case splash, title, generating, founding, playing, editing }
     @Published var phase: Phase = .splash
+    /// CI tour only. "settings" or "new-world" holds that title sheet open.
+    @Published var tourTitle: String?
     @Published private(set) var map: WorldMap?
     @Published private(set) var state: GameState?
     @Published private(set) var playing = false
@@ -230,10 +232,29 @@ import LieguojiCore
     private func rise() async {
         controller.interactive = false
         controller.reveal = 0
-        let start = Date()
+        var elapsed: Float = 0
+        var last = Date()
+        var shotSea = false
+        var shotRise = false
         while true {
-            let t = Float(Date().timeIntervalSince(start) / 9)
-            controller.reveal = min(1, t)
+            let now = Date()
+            elapsed += Float(now.timeIntervalSince(last))
+            last = now
+            let t = min(1, elapsed / 9)
+            controller.reveal = t
+            // CI waits on these frames. The clock pauses so a slow screenshot cannot skip 注水成海.
+            if ShotTour.on, !shotSea, t >= 0.02 {
+                shotSea = true
+                await ShotTour.shoot("02-founding")
+                last = Date()
+                continue
+            }
+            if ShotTour.on, !shotRise, t >= 0.42 {
+                shotRise = true
+                await ShotTour.shoot("02b-rise")
+                last = Date()
+                continue
+            }
             if t >= 1 { break }
             try? await Task.sleep(nanoseconds: 16_000_000)
         }

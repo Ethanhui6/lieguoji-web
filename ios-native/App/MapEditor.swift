@@ -245,7 +245,7 @@ struct EditorView: View {
                 Button { leaving = false } label: { SecondaryLabel(title: "继续绘制", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle()).padding(.horizontal, 22)
             }
             .padding(.bottom, 24)
-            .presentationDetents([.height(320)]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+            .presentationDetents([.height(320)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
         }
         .sheet(isPresented: $pickingBase) {
             ScrollView {
@@ -266,7 +266,7 @@ struct EditorView: View {
                 }
                 .padding(.bottom, 24)
             }
-            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.font(Theme.kai(17))
+            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
         }
     }
 

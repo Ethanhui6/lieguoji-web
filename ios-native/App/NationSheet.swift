@@ -1241,7 +1241,7 @@ struct FinanceSection: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("税制").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
                     ChipPicker(items: Self.policies.map { ($0.0, $0.1) }, selection: Binding(get: { f.policy }, set: { v in
-                        Task { _ = await model.setTax(nation, v); info = await model.financeInfo(nation) }
+                        Task { @MainActor in _ = await model.setTax(nation, v); info = await model.financeInfo(nation) }
                     }))
                     Text(Self.policies.first { $0.0 == f.policy }?.2 ?? "").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                 }

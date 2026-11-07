@@ -1103,9 +1103,9 @@ struct ProvinceSheet: View {
                                 .buttonStyle(.plain)
                                 .confirmationDialog("特产", isPresented: $pickingGood, titleVisibility: .visible) {
                                     ForEach(Array(Trade.goods.enumerated()), id: \.offset) { i, n in
-                                        Button(n) { Task { _ = await model.setSpecialty(province, i); info = await model.provinceInfo(province) } }
+                                        Button(n) { Task { _ = await model.setSpecialty(province, i); self.info = await model.provinceInfo(province) } }
                                     }
-                                    Button("恢复本地特产") { Task { _ = await model.setSpecialty(province, nil); info = await model.provinceInfo(province) } }
+                                    Button("恢复本地特产") { Task { _ = await model.setSpecialty(province, nil); self.info = await model.provinceInfo(province) } }
                                 }
                                 Divider2()
                             }
@@ -1141,7 +1141,7 @@ struct ProvinceSheet: View {
                             .buttonStyle(.plain)
                             .confirmationDialog("本地文化", isPresented: $pickingCulture, titleVisibility: .visible) {
                                 ForEach(Names.culture.keys.sorted(), id: \.self) { k in
-                                    Button(Names.culture[k] ?? k) { Task { _ = await model.setCityCulture(province, k); info = await model.provinceInfo(province) } }
+                                    Button(Names.culture[k] ?? k) { Task { _ = await model.setCityCulture(province, k); self.info = await model.provinceInfo(province) } }
                                 }
                             }
                             Divider2()
@@ -1208,7 +1208,7 @@ struct ProvinceSheet: View {
                                 Divider2()
                                 Button {
                                     let t = grantTarget; granting = false
-                                    Task { _ = await model.grant(province: province, to: t); info = await model.provinceInfo(province) }
+                                    Task { _ = await model.grant(province: province, to: t); self.info = await model.provinceInfo(province) }
                                 } label: { Label("确认划入", systemImage: "paintbrush.pointed.fill").font(Theme.kai(18)).frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(grantTarget < 0 ? Theme.ink2 : Theme.seal) }
                                 .buttonStyle(.plain).disabled(grantTarget < 0)
                             }

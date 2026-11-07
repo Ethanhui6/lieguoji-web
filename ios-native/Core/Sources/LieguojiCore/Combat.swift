@@ -134,6 +134,15 @@ public struct ContactMotion {
         pairs.map { "[\"\($0.a)\",\"\($0.b)\",\"\($0.area)\"]" }.sorted { $0.utf16.lexicographicallyPrecedes($1.utf16) }
     }
 
+    /// Whether two forces of states at war stand in one area (a province or sea region).
+    func hostileShare(_ p: [String: Position], _ forces: [MovingForce], _ rules: Rules) -> Bool {
+        var byArea = [Int: [Int]]()
+        for (i, f) in forces.enumerated() { if let c = p[f.key]?.cell { byArea[areaKey(c, rules), default: []].append(i) } }
+        for list in byArea.values where list.count > 1 {
+            for x in 0..<list.count - 1 { for y in (x + 1)..<list.count where rules.enemy(forces[list[x]].nation, forces[list[y]].nation) { return true } }
+        }
+        return false
+    }
     /// One call of advanceForceContacts47 (stopAtEvent as force-tick47 uses it). Forces are mutated in place.
     public func advance(_ input: inout [MovingForce], previous: [ForceContact], seconds: Double, rules: Rules, stopAtEvent: Bool) -> Result {
         // The phase keeps the forces in collation order of their keys.
@@ -175,6 +184,10 @@ public struct ContactMotion {
                 let zero = TravelPoint(x: 0, y: 0)
                 var groups = [Int: [Int]]()
                 for i in forces.indices { groups[areaKey(positions[forces[i].key]!.cell, rules), default: []].append(i) }
+                // Only areas where hostile forces meet need the relative-motion solve.
+                groups = groups.filter { _, list in
+                    list.count > 1 && list.indices.dropLast().contains { k in list[(k + 1)...].contains { rules.enemy(forces[list[k]].nation, forces[$0].nation) } }
+                }
                 for group in groups.values { for k in group.indices { for l in (k + 1)..<group.count {
                     let a = forces[group[k]], b = forces[group[l]]
                     guard rules.enemy(a.nation, b.nation), !a.withdrawing, !b.withdrawing,
@@ -243,6 +256,13 @@ public struct ContactMotion {
             for m in meetings {
                 let c = pair(m.a, m.b, after, m.area), k = ContactMotion.pairKey(c.a, c.b)
                 if let i = merged.firstIndex(where: { ContactMotion.pairKey($0.a, $0.b) == k }) { merged[i] = c } else { merged.append(c) }
+            }
+            // App worlds: with no contact standing or met this step and no two hostile forces sharing an
+            // area, no engagement can begin — skip the whole contact rebuild (the bulk of a busy day: it ran
+            // at every node any of some two hundred armies reached).
+            if rules.physicalContact && current.contacts.isEmpty && merged.isEmpty && !hostileShare(after, forces, rules) {
+                current = ([], [], after)
+                continue
             }
             let held0 = ContactMotion.identity(current.contacts)
             current = contacts(forces, merged, rules, after)

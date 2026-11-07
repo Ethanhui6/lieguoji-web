@@ -45,6 +45,17 @@ public enum ArmyOrders {
         guard let p = here.province, !engaged(r, here.army), RunWindow.access(r, here.army.nationId.asString, p.controller.asString) else { return false }
         return !space.contains { $0.province?.id.asString == p.id.asString && $0.army.status.asString != "retreating" && RunWindow.atWar(r, here.army.nationId.asString, $0.army.nationId.asString) }
     }
+    /// The provinces with a harbour, kept until the harbour list changes (every candidate route the
+    /// army AI checks asked for it).
+    static var portCache: (sites: JS?, count: Int, set: Set<Int>)?
+    static func portProvinces(_ r: JS) -> Set<Int> {
+        let sites = r.harbors.sites
+        if let c = portCache, c.sites === sites, c.count == sites.length { return c.set }
+        let index = RunWindow.provinceIndexById(r)
+        let set = Set(sites.asArray.compactMap { index[$0.provinceId.asString] })
+        portCache = (sites, sites.length, set)
+        return set
+    }
     /// Forty average steps of travel (the original's 450 against its average cell spacing), per graph.
     static var embarkCache: (count: Int, cost: Double)?
     static func embarkPenalty(_ g: TravelGraph) -> Double {
@@ -80,9 +91,7 @@ public enum ArmyOrders {
             // 港口登船 (app worlds, the original's NON_PORT_CELL_TRANSITION_PENALTY 450): taking ship from a
             // province without a harbour costs about forty steps of travel, so armies embark at ports.
             let embark: ((Int) -> Double)? = r.regimes.enabled.isTruthy && allowSea ? {
-                let index = RunWindow.provinceIndexById(r)
-                let ports = Set(r.harbors.sites.asArray.compactMap { index[$0.provinceId.asString] })
-                let cost = embarkPenalty(g)
+                let ports = portProvinces(r), cost = embarkPenalty(g)
                 return { q in ports.contains(q) ? 0 : cost }
             }() : nil
             guard let path = g.path(from: here.cell, to: target, allowSea: allowSea, canEnterProvince: { q in

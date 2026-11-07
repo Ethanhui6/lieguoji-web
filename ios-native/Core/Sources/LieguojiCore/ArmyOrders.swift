@@ -323,7 +323,9 @@ public enum ArmyOrders {
                 }
             }
             let location = g.location(bridge.travel(here.travel))
-            guard let homeIndex = index(r, r.tactics.forces[id].homeId.asString) else { continue }
+            // An army without a home record (one handed to a rebel state) takes its state's first province
+            // as home: it used to be skipped on every pass, so it never received an order again.
+            guard let homeIndex = index(r, r.tactics.forces[id].homeId.asString) ?? (originalTargets ? owned.first : nil) else { continue }
             let home = (provinces[homeIndex].center.x.asNumber, provinces[homeIndex].center.y.asNumber)
             var candidates = attack.map { p in
                 ArmyAutonomy.Context.Target(id: p, x: provinces[p].center.x.asNumber, y: provinces[p].center.y.asNumber, feature: geo.provinceFeature[provinces[p].id.asString] ?? -1,
@@ -360,7 +362,7 @@ public enum ArmyOrders {
                     // nobody there, about two columns for the siege). One that the comrades marching on it
                     // already cover is left to them, so the armies spread along the front instead of all
                     // pouring onto one point (the old 集中兵力 rule snowballed every army onto one target).
-                    func needed(_ p: Int) -> Double { max(foes(p) * 1.5, mine * 1.6) }
+                    func needed(_ p: Int) -> Double { max(foes(p) * 1.4, mine * 1.2) }
                     let open = candidates.filter { friends($0.id) < needed($0.id) }
                     if !open.isEmpty { candidates = open }
                 }

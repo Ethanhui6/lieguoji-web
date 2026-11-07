@@ -575,7 +575,7 @@ extension NativeEngine {
         }
         DeclarationEngine.nationIds = r.world.nations.asArray.map(\.id.asString)
         // A state's temper, times the world's war frequency (天下规则).
-        DeclarationEngine.temper = { id in Regimes.temper(r, id) * Regimes.rule(r, "war") }
+        DeclarationEngine.temper = { id in Regimes.temper(r, id) * Regimes.rule(r, "war") * Tuning.current.warEagerness }
         DeclarationEngine.pact = { a, b in
             let ids = DeclarationEngine.nationIds
             guard ids.indices.contains(a), ids.indices.contains(b) else { return false }

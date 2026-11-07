@@ -13,10 +13,12 @@ public struct Tuning: Codable, Sendable, Equatable {
     public var peaceGoalMonths = 4
     public var peaceDecisiveMonths = 9
     /// War weariness starts after this many months and is total this many months later.
-    public var wearyStart = 12
-    public var wearySpan = 24
+    public var wearyStart = 6
+    public var wearySpan = 12
     /// Months a state rests between its wars.
-    public var warRestMonths = 6
+    public var warRestMonths = 4
+    /// How readily states go to war (× their temper; the three-year audit found 7 wars in 3 years).
+    public var warEagerness = 1.5
     /// Standing armies: per province in all, per province at home, in the whole world.
     public var armiesPerProvince = 2.2
     public var armiesAtHome = 3
@@ -38,6 +40,7 @@ public struct Tuning: Codable, Sendable, Equatable {
         wearyStart = max(0, min(240, v(.wearyStart, d.wearyStart)))
         wearySpan = max(1, min(240, v(.wearySpan, d.wearySpan)))
         warRestMonths = max(0, min(60, v(.warRestMonths, d.warRestMonths)))
+        warEagerness = max(0.2, min(5, v(.warEagerness, d.warEagerness)))
         armiesPerProvince = max(0.3, min(6, v(.armiesPerProvince, d.armiesPerProvince)))
         armiesAtHome = max(1, min(8, v(.armiesAtHome, d.armiesAtHome)))
         armyCap = max(100, min(2000, v(.armyCap, d.armyCap)))

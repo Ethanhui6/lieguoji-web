@@ -174,6 +174,7 @@ public struct ContactMotion {
             }
             if Profile.enabled { Profile.add("a.movers", Date.timeIntervalSinceReferenceDate - t0) }
             var dt = movers.reduce(remaining) { min($0, $1.time) }
+            var meetingHit = false
             let t1 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             if rules.physicalContact && dt > 0 {
                 // Each segment is linear until the next gate. Solve the relative motion before
@@ -198,7 +199,7 @@ public struct ContactMotion {
                           !current.held.contains(a.key), !current.held.contains(b.key) else { continue }
                     let pa = positions[a.key]!, pb = positions[b.key]!
                     guard areaKey(pa.cell, rules) == areaKey(pb.cell, rules) else { continue }
-                    if let t = EncounterGeometry.meetingTime(pa.point, velocities[a.key] ?? zero, pb.point, velocities[b.key] ?? zero, limit: dt, reach: rules.reach) { dt = min(dt, t) }
+                    if let t = EncounterGeometry.meetingTime(pa.point, velocities[a.key] ?? zero, pb.point, velocities[b.key] ?? zero, limit: dt, reach: rules.reach) { dt = min(dt, t); meetingHit = true }
                 } } }
             }
             if Profile.enabled { Profile.add("a.meet", Date.timeIntervalSinceReferenceDate - t1) }
@@ -267,9 +268,17 @@ public struct ContactMotion {
             // App worlds: with no contact standing or met this step and no two hostile forces sharing an
             // area, no engagement can begin — skip the whole contact rebuild (the bulk of a busy day: it ran
             // at every node any of some two hundred armies reached).
-            if rules.physicalContact && current.contacts.isEmpty && merged.isEmpty && !hostileShare(after, forces, rules) {
-                current = ([], [], after)
-                continue
+            // App worlds: contacts change only when two hostile forces meet (the solve above stopped the
+            // step there), a force crosses into another area, or a force in a contact moves. Otherwise the
+            // contact set stands as it is and the rebuild (half the cost of a busy day) is skipped.
+            if rules.physicalContact && !meetingHit && merged.count == book.count {
+                let members = Set(current.contacts.flatMap { [$0.a, $0.b] })
+                let shifted = movers.contains { m in
+                    let k = forces[m.f].key
+                    guard let was = current.positions[k], let now = after[k] else { return true }
+                    return members.contains(k) || areaKey(was.cell, rules) != areaKey(now.cell, rules)
+                }
+                if !shifted { current = (current.contacts, current.held, after); continue }
             }
             let held0 = ContactMotion.identity(current.contacts)
             let t3 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0

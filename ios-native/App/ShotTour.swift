@@ -83,6 +83,18 @@ enum ShotTour {
         meter.start()
         for _ in 0..<5 { show(.nation(0)); await wait(0.8); show(nil); await wait(0.5) }
         await shoot("21-stress-panels-" + meter.stop())
+        // The same for the province and army pages, to see which page is heavy.
+        meter.start()
+        for _ in 0..<5 { show(.province(0)); await wait(0.8); show(nil); await wait(0.5) }
+        await shoot("22-stress-province-" + meter.stop())
+        if !(model.state?.armies.isEmpty ?? true) {
+            meter.start()
+            for _ in 0..<5 { show(.army(0)); await wait(0.8); show(nil); await wait(0.5) }
+            await shoot("23-stress-army-" + meter.stop())
+        }
+        meter.start()
+        for _ in 0..<5 { show(.statistics); await wait(0.8); show(nil); await wait(0.5) }
+        await shoot("24-stress-ranking-" + meter.stop())
         model.speed = speed
         model.pause(saving: false)
         views(true); await wait(1); await shoot("07-views"); views(false)

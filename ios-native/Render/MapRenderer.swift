@@ -146,8 +146,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // so armies stand out from the terrain at every zoom (pale pieces alone vanished into the land).
         let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 96, height: 96), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; return f }()).image { ctx in
             let g = ctx.cgContext
-            g.setFillColor(UIColor.black.cgColor); g.fillEllipse(in: CGRect(x: 3, y: 3, width: 90, height: 90))
-            g.setFillColor(UIColor.white.cgColor); g.fillEllipse(in: CGRect(x: 11, y: 11, width: 74, height: 74))
+            // The original's avatarSquare: a rounded square plaque, dark rim, light face.
+            g.setFillColor(UIColor.black.cgColor); g.addPath(UIBezierPath(roundedRect: CGRect(x: 4, y: 4, width: 88, height: 88), cornerRadius: 18).cgPath); g.fillPath()
+            g.setFillColor(UIColor.white.cgColor); g.addPath(UIBezierPath(roundedRect: CGRect(x: 11, y: 11, width: 74, height: 74), cornerRadius: 13).cgPath); g.fillPath()
         }.cgImage
         if let plateArt { unitTextures["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
         if let start = map.meta.economy {
@@ -377,8 +378,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     private func displayed(_ s: ArmySprite) -> SIMD2<Float> {
         guard !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] else { return SIMD2(s.x, s.y) }
-        return a + (b - a) * progress(CACurrentMediaTime())
+        return Self.hermite(a, b, legLead[s.key] ?? (b - a), progress(CACurrentMediaTime()))
     }
+    /// The leg's curve (as spriteVertex draws it): from a leaving along m0, arriving at b along b − a.
+    static func hermite(_ a: SIMD2<Float>, _ b: SIMD2<Float>, _ m0: SIMD2<Float>, _ t: Float) -> SIMD2<Float> {
+        let t2 = t * t, t3 = t2 * t
+        return a * (2 * t3 - 3 * t2 + 1) + m0 * (t3 - 2 * t2 + t) + b * (3 * t2 - 2 * t3) + (b - a) * (t3 - t2)
+    }
+    /// Each army's leaving tangent for this leg (map units over the leg).
+    private var legLead: [String: SIMD2<Float>] = [:]
     /// Whether the icons are still walking (the GPU does the moving).
     private func advanceChase() -> Float {
         let t = progress(CACurrentMediaTime())
@@ -398,11 +406,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if snap || sprites != armySprites {
             let now = CACurrentMediaTime(), t = progress(now)
             let previous = Dictionary(armySprites.map { ($0.key, $0.reorganizing) }, uniquingKeysWith: { a, _ in a })
-            var from = [String: SIMD2<Float>](), to = [String: SIMD2<Float>](), fading = Set<String>()
+            var from = [String: SIMD2<Float>](), to = [String: SIMD2<Float>](), fading = Set<String>(), lead = [String: SIMD2<Float>]()
+            let newLength = snap ? 0 : max(0.12, tweenDuration * 1.08)
             for s in sprites where !s.key.isEmpty {
                 let target = SIMD2(s.x, s.y)
                 // Where the icon stands now, mid-walk included (nil: a new army, or a world just opened).
-                let here: SIMD2<Float>? = snap ? nil : legFrom[s.key].flatMap { a in legTo[s.key].map { b in a + (b - a) * t } }
+                let here: SIMD2<Float>? = snap ? nil : legFrom[s.key].flatMap { a in legTo[s.key].map { b in Self.hermite(a, b, legLead[s.key] ?? (b - a), t) } }
                 guard let p = here else {
                     // A new army fades in where it stands (no walk from nowhere); none on a fresh world.
                     from[s.key] = target; to[s.key] = target
@@ -412,10 +421,26 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 if s.reorganizing && previous[s.key] != true {
                     // An army re-formed at home: it appears there (the fall plays where it was).
                     from[s.key] = target; to[s.key] = target; fading.insert(s.key); jumped.append((s.key, p.x, p.y))
-                } else { from[s.key] = p; to[s.key] = target }
+                } else {
+                    from[s.key] = p; to[s.key] = target
+                    // 平滑行军 (the original walks a smoothed path at an even pace): this leg leaves in the
+                    // direction and at the speed the last one was going (its Hermite tangent there), so the
+                    // walk bends through each step instead of turning sharply at it. Capped, so a stop
+                    // does not overshoot.
+                    if let a = legFrom[s.key], let b = legTo[s.key], legLength > 0, t < 1 {
+                        // The old curve's velocity where the icon stands now, rescaled to the new leg's time.
+                        let m0 = legLead[s.key] ?? (b - a), t2 = t * t
+                        let v = a * (6 * t2 - 6 * t) + m0 * (3 * t2 - 4 * t + 1) + b * (6 * t - 6 * t2) + (b - a) * (3 * t2 - 2 * t)
+                        let chord = target - p, along = (chord.x * chord.x + chord.y * chord.y).squareRoot()
+                        var m = v * Float(newLength / legLength)
+                        let k = (m.x * m.x + m.y * m.y).squareRoot()
+                        if k > along * 1.2 + 0.0001 { m *= (along * 1.2) / k }
+                        lead[s.key] = m
+                    }
+                }
             }
-            legFrom = from; legTo = to; fresh = fading
-            legStart = now; legLength = snap ? 0 : max(0.12, tweenDuration * 1.08)
+            legFrom = from; legTo = to; legLead = lead; fresh = fading
+            legStart = now; legLength = newLength
             armySprites = sprites
             chasing = !snap
             rebuildArmies()
@@ -440,9 +465,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             // Alpha −1 asks the shader to fade the icon in with the leg's progress.
             var fade: Float = 1
             var end = SIMD2<Float>(0, 0)
+            var lead = SIMD2<Float>(0, 0)
             func quad(_ role: String, _ at: SIMD2<Float>, _ c: RGB, _ size: Float, _ sx: Float, _ sy: Float) {
                 for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
-                    byRole[role, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, fade, size, end.x, end.y, sx, sy])
+                    byRole[role, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, fade, size, end.x, end.y, sx, sy, lead.x, lead.y])
                 }
             }
             // Armies standing on one spot (a city several armies hold or fight over) fan out in a small
@@ -467,11 +493,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
             }
             for a in sprites {
-                fade = fresh.contains(a.key) ? -1 : a.fighting ? 2 : 1
+                // Harbours (and merchantmen) keep still: alpha 0.99 tells the shader not to let them drift.
+                fade = fresh.contains(a.key) ? -1 : a.fighting ? 2 : a.army <= -100_000 ? 0.99 : 1
                 let o = spread[a.key] ?? SIMD2<Float>(0, 0)
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
                 let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)
                 end = legTo[a.key] ?? at
+                lead = legLead[a.key] ?? (end - at)
                 let size = iconSize * iconScale * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
                 // The commander's gonfalon stands behind the pieces: gold for the ruler in person.
                 if a.banner > 0 && role != "Fleet" {
@@ -497,7 +525,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             // Banners, then the tokens ("0plate" sorts before every arm), then the pieces.
             units = byRole.keys.sorted { ($0 == "banner" ? "" : $0) < ($1 == "banner" ? "" : $1) }.compactMap { role -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
                 guard let data = byRole[role], let texture = unitTextures[role], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
-                return (texture: texture, buffer: b, count: data.count / 13)
+                return (texture: texture, buffer: b, count: data.count / 15)
             }
         }
     }
@@ -658,7 +686,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         const float2 corners[6] = { float2(0, 0), float2(1, 0), float2(0, 1), float2(0, 1), float2(1, 0), float2(1, 1) };
         QuadOut o; float2 c = corners[id]; o.position = clip(q.origin + c * q.size, u, float2(0.0)); o.uv = c; return o;
     }
-    struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; packed_float2 target; packed_float2 shift; };
+    struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; packed_float2 target; packed_float2 shift; packed_float2 lead; };
     struct SpriteOut { float4 position [[position]]; float2 uv; float4 tint; };
     vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
                                   constant float& time [[buffer(5)]]) {
@@ -675,8 +703,17 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             tint.a = 1.0;
             float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2832, beat = time * 9.0 + seed;
             jab = float2(sin(beat) * 0.07, -max(0.0, sin(beat * 0.5)) * 0.12);
+        } else if (s.center[0] == s.target[0] && s.center[1] == s.target[1] && tint.a > 0.995) {
+            // 州郡内游走 (the original's RandomMoveInProvince): a standing army drifts slowly about its
+            // post instead of standing frozen on one point.
+            float seed = fract(s.center[0] * 0.173 + s.center[1] * 0.059) * 6.2832;
+            jab = float2(sin(time * 0.33 + seed), cos(time * 0.27 + seed * 1.7)) * 0.16;
         }
-        SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, (float2(s.corner) + float2(s.shift) + jab) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = tint; return o;
+        // 平滑行军: a Hermite curve leaving along the last leg's heading (lead), arriving straight.
+        float t = progress, t2 = t * t, t3 = t2 * t;
+        float2 a = float2(s.center), b = float2(s.target);
+        float2 walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + (b - a) * (t3 - t2);
+        SpriteOut o; o.position = clip(walk, u, (float2(s.corner) + float2(s.shift) + jab) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = tint; return o;
     }
     // A piece: the texture multiplied by the state's colour (white body → the colour, grey rim → its
     // shade, as the original's SpriteRenderer.color), the rim pulled towards ink so it reads on land

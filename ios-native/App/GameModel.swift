@@ -209,7 +209,13 @@ import LieguojiCore
             let full = Task { try await engine.call("generate(options)", ["options": text]) }
             if let inputs = previewInputs {
                 let nations = options.nations, provinceCount = options.provinceCount
-                let preview = await Task.detached(priority: .userInitiated) { PreviewWorld.build(inputs, seed: seed, template: options.template, nations: nations, cities: provinceCount) }.value
+                // The world and its map layers are built off the main thread, so the map appears
+                // without a pause (the renderer used to build the layers on the main thread).
+                let (preview, layers) = await Task.detached(priority: .userInitiated) { () -> (WorldMap, MapLayers.Prepared) in
+                    let w = PreviewWorld.build(inputs, seed: seed, template: options.template, nations: nations, cities: provinceCount)
+                    return (w, MapLayers.prepare(w))
+                }.value
+                MapRenderer.prepared = layers
                 state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.seaPorts = []
                 map = preview; worldID = UUID()
                 generationNote = ""
@@ -282,12 +288,14 @@ import LieguojiCore
                 let opened = try await native.open(data)
                 await native.enableAppRules()
                 guard let mapData = opened.map else { throw EngineError.message("存档缺少地图") }
-                let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState) in
+                let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared) in
                     struct Saved: Decodable { let bin: String; let meta: WorldMeta }
                     let m = try JSONDecoder().decode(Saved.self, from: mapData)
                     guard let bin = Data(base64Encoded: m.bin) else { throw EngineError.message("地图数据损坏") }
-                    return (try WorldMap(binary: bin, meta: m.meta), try JSONDecoder().decode(GameState.self, from: opened.state))
+                    let w = try WorldMap(binary: bin, meta: m.meta)
+                    return (w, try JSONDecoder().decode(GameState.self, from: opened.state), MapLayers.prepare(w))
                 }.value
+                MapRenderer.prepared = loaded.2
                 map = loaded.0; worldID = UUID(); controller.world = nil
                 apply(loaded.1); lastSavedDay = loaded.1.day
                 world = loaded.0
@@ -303,11 +311,15 @@ import LieguojiCore
     }
 
     private func open(_ text: String) async throws -> WorldMap {
-        let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState) in
+        let keeps = phase == .founding
+        let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared?) in
             let decoded = try JSONDecoder().decode(LoadedWorld.self, from: Data(text.utf8))
             guard let bin = Data(base64Encoded: decoded.bin) else { throw EngineError.message("地图数据损坏") }
-            return (try WorldMap(binary: bin, meta: decoded.meta), decoded.state)
+            let world = try WorldMap(binary: bin, meta: decoded.meta)
+            // A new map view will be built (a loaded save): its layers are prepared here, off the main thread.
+            return (world, decoded.state, keeps ? nil : MapLayers.prepare(world))
         }.value
+        if let layers = loaded.2 { MapRenderer.prepared = layers }
         if phase == .founding, let shown = map, shown.province.count == loaded.0.province.count, shown.meta.provinces.count == loaded.0.meta.provinces.count {
             // The device-built preview has the same geometry: keep its map view (rebuilding the Metal
             // map and every label here was the hitch before entering the world); only states and names update.

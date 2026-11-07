@@ -277,6 +277,21 @@ public enum MapLayers {
         return m
     }
 
+    /// The heavy map layers of one world, built off the main thread (world generation, loading) and
+    /// handed to the renderer, which otherwise built them on the main thread as the map appeared —
+    /// the hitch right after 创建世界. `key` ties them to the exact geometry and ownership.
+    public struct Prepared: Sendable {
+        public let key: String
+        public let provinceLines: [Float], relief: [Float], outlines: [Float], icons: [Float]
+    }
+    public static func key(_ map: WorldMap) -> String {
+        "\(map.cellCount)|\(map.meta.provinces.count)|\(map.width)x\(map.height)|\(map.rivers.count)|\(map.meta.cities.count)|"
+            + map.meta.provinces.map { String($0.nation) }.joined(separator: ",") + "|" + map.meta.nations.map(\.line).joined(separator: ",")
+    }
+    public static func prepare(_ map: WorldMap) -> Prepared {
+        Prepared(key: key(map), provinceLines: provinceLines(map).vertices, relief: relief(map).vertices, outlines: outlines(map).vertices, icons: cityIcons(map).vertices)
+    }
+
     /// Province borders inside the land: every edge between two land provinces, joined and smoothed
     /// with the state lines' curve, in a thin translucent ink — clear at every zoom, as the original's
     /// are, and never the cells' stair steps.

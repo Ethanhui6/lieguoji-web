@@ -110,11 +110,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         s.sAddressMode = .clampToEdge; s.tAddressMode = .clampToEdge
         sampler = device.makeSamplerState(descriptor: s)
         super.init()
-        provinceLines = buffer(MapLayers.provinceLines(map).vertices, stride: 6)
+        // Layers built off the main thread for this very map are used as they are.
+        let ready = Self.prepared.flatMap { $0.key == MapLayers.key(map) ? $0 : nil }
+        Self.prepared = nil
+        provinceLines = buffer(ready?.provinceLines ?? MapLayers.provinceLines(map).vertices, stride: 6)
         if !map.rivers.isEmpty { rivers = buffer(map.rivers, stride: 2) }
-        relief = buffer(MapLayers.relief(map).vertices, stride: 6)
-        outlines = buffer(MapLayers.outlines(map).vertices, stride: 6)
-        icons = buffer(MapLayers.cityIcons(map).vertices, stride: 6)
+        relief = buffer(ready?.relief ?? MapLayers.relief(map).vertices, stride: 6)
+        outlines = buffer(ready?.outlines ?? MapLayers.outlines(map).vertices, stride: 6)
+        icons = buffer(ready?.icons ?? MapLayers.cityIcons(map).vertices, stride: 6)
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
         // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
@@ -420,6 +423,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             }
         }
     }
+
+    /// Layers prepared off the main thread for the next map view (MapLayers.prepare).
+    static var prepared: MapLayers.Prepared?
 
     private func buffer(_ data: [Float], stride: Int) -> (MTLBuffer, Int)? {
         guard !data.isEmpty, let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }

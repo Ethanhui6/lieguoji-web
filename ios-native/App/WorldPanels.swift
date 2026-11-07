@@ -1,4 +1,5 @@
 import SwiftUI
+import LieguojiCore
 
 /// 军团信息 (engine armyRecord): where an army was raised, its service, battles and the enemies it struck down.
 struct ArmyService: Decodable {

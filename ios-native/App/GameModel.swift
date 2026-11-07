@@ -438,10 +438,9 @@ import LieguojiCore
         // Ownership held back while playing reaches the map — after the page that paused the game has
         // slid in (a page opening paused and redrew the map and every state name during its animation:
         // the stutter measured on every page).
-        if was, let s = state {
-            if saving { apply(s) }
-            else { Task { [weak self] in try? await Task.sleep(nanoseconds: 450_000_000); guard let self, !self.playing, self.state?.day == s.day else { return }; self.apply(s) } }
-        }
+        // A page pausing the game (saving: false) leaves the map as it is: closing the page resumes play,
+        // which brings the map up to date anyway, and redrawing it under the opening page was the stutter.
+        if was, saving, let s = state { apply(s) }
         if saving, was, let day = state?.day { save(); lastSavedDay = day }
     }
     func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : 1 }

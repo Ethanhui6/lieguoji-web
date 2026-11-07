@@ -74,10 +74,23 @@ extension NativeEngine {
             var start = pole, end = pole
             while start % cellsX > 0 && group(start - 1) == k { start -= 1 }
             while (end + 1) % cellsX > 0 && end + 1 < n && group(end + 1) == k { end += 1 }
-            let length = abs(pts[2 * end] - pts[2 * start]) / unit, width = length * 0.6, height = max(width / 3, 1.5)
+            // 国名随领土倾斜 (the original lays a state's name along its land): the long axis of the
+            // state's points (their principal direction), tilted at most 35°, the name as long as the land
+            // is along it (the middle 80%) and centred on it. Recomputed whenever the borders move.
+            var sxx = 0.0, syy = 0.0, sxy = 0.0
+            for c in list { let dx = pts[2 * c] - cx, dy = pts[2 * c + 1] - cy; sxx += dx * dx; syy += dy * dy; sxy += dx * dy }
+            var theta = 0.5 * atan2(2 * sxy, sxx - syy)
+            if theta > .pi / 2 { theta -= .pi } else if theta < -.pi / 2 { theta += .pi }
+            theta = max(-0.61, min(0.61, theta))
+            let ux = cos(theta), uy = sin(theta)
+            let along = list.map { (pts[2 * $0] - cx) * ux + (pts[2 * $0 + 1] - cy) * uy }.sorted()
+            let lo = along[along.count / 10], hi = along[min(along.count - 1, along.count * 9 / 10)]
+            let rowLength = abs(pts[2 * end] - pts[2 * start]) / unit
+            let length = max(rowLength, (hi - lo) / unit), width = length * 0.6, height = max(width / 3, 1.5)
             let scale = (Double(min(2400, max(500, list.count))) - 500) / 1900
             let o = JS.object()
-            o.nation = JS(k); o.x = JS((pts[2 * start] + pts[2 * end]) / 2); o.y = JS((pts[2 * start + 1] + pts[2 * end + 1]) / 2)
+            let mid = (lo + hi) / 2
+            o.nation = JS(k); o.x = JS(cx + ux * mid); o.y = JS(cy + uy * mid); o.angle = JS(theta)
             o.width = JS(width); o.height = JS(height); o.fontMax = JS(25 + 15 * min(1, max(0, scale))); o.fontMin = JS(15)
             out.append(o)
         }

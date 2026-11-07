@@ -73,6 +73,17 @@ enum ShotTour {
             model.controller.fly(x: Double(seat.x), y: Double(seat.y))
             await wait(2.2); await shoot("05d-province-seat")
         }
+        // 卡顿体检: pan across the map while it plays at 4×, then open and close the nation page five
+        // times. Frame gaps of the main thread are measured; the result rides in the shot's name.
+        let meter = HitchMeter(), speed = model.speed
+        model.speed = 4
+        meter.start()
+        for a in (model.state?.armies ?? []).prefix(8) { model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(0.7) }
+        await shoot("20-stress-pan-" + meter.stop())
+        meter.start()
+        for _ in 0..<5 { show(.nation(0)); await wait(0.8); show(nil); await wait(0.5) }
+        await shoot("21-stress-panels-" + meter.stop())
+        model.speed = speed
         model.pause(saving: false)
         views(true); await wait(1); await shoot("07-views"); views(false)
         let nation = model.state?.nations.indices.max { (model.state?.nations[$0].provinces ?? 0) < (model.state?.nations[$1].provinces ?? 0) } ?? 0
@@ -91,6 +102,23 @@ enum ShotTour {
     }
 
     /// Opens 人物 for the largest state after giving its ruler the ShipMaster and Reformer traits.
+    /// Main-thread frame gaps on the display link: average, 95th percentile, worst, and how many over
+    /// 50 ms (a visible hitch).
+    @MainActor final class HitchMeter: NSObject {
+        private var link: CADisplayLink?, last: CFTimeInterval = 0, gaps: [Double] = []
+        func start() {
+            gaps = []; last = 0
+            let l = CADisplayLink(target: self, selector: #selector(tick(_:))); l.add(to: .main, forMode: .common); link = l
+        }
+        @objc private func tick(_ l: CADisplayLink) { if last > 0 { gaps.append((l.timestamp - last) * 1000) }; last = l.timestamp }
+        func stop() -> String {
+            link?.invalidate(); link = nil
+            let s = gaps.sorted()
+            guard let worst = s.last else { return "none" }
+            let p95 = s[min(s.count - 1, s.count * 95 / 100)], avg = s.reduce(0, +) / Double(s.count)
+            return String(format: "avg%.0fms-p95_%.0fms-max%.0fms-hitches%d", avg, p95, worst, s.filter { $0 > 50 }.count)
+        }
+    }
     @MainActor private static func shootRulerTraits(_ model: GameModel, nation: Int, show: (Panel?) -> Void) async {
         guard let info = await model.nationInfo(nation) else { return }
         let ruler = info.people?.first { $0.role == "君主" } ?? info.people?.first

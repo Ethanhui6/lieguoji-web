@@ -752,6 +752,8 @@ final class MapLabelsView: UIView {
         let view = UIImageView()
         let text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?
         var rendered: Double = 0
+        /// Tilt in radians (a state name along its land).
+        var angle: Double = 0
         init(text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?) {
             self.text = text; self.x = x; self.y = y; self.mapEm = mapEm; self.fill = fill; self.stroke = stroke; self.strokeWidth = strokeWidth; self.minPoints = minPoints; self.province = province
         }
@@ -794,7 +796,9 @@ final class MapLabelsView: UIView {
             let shown = MapLayers.stateLabel(n.name, full: full)
             let measured = (shown as NSString).size(withAttributes: [.font: font(1)])
             let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
-            return Label(text: shown, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
+            let l = Label(text: shown, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
+            l.angle = Double(box.angle ?? 0)
+            return l
         }
     }
     /// Ownership changed: replace the state names, keep every city label and its rendered image.
@@ -878,7 +882,7 @@ final class MapLabelsView: UIView {
                 l.view.sizeToFit()
             }
             let k = CGFloat(points / l.rendered)
-            l.view.transform = CGAffineTransform(scaleX: k, y: k)
+            l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: k, y: k)
             l.view.center = CGPoint(x: p.x, y: p.y)
             l.view.isHidden = false
         }

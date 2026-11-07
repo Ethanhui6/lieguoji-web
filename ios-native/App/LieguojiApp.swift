@@ -112,16 +112,7 @@ struct RootView: View {
         model.phase = .title
         if ShotTour.on { Task { @MainActor in await ShotTour.start(model) } }
         // The title backdrop generates itself: sea, then land from the coast up, then the states.
-        Task { @MainActor in
-            let start = Date()
-            while model.phase == .title {
-                let t = Float(Date().timeIntervalSince(start) / 3.2)
-                model.controller.reveal = min(1, t)
-                if t >= 1 { break }
-                try? await Task.sleep(nanoseconds: 16_000_000)
-            }
-            model.controller.reveal = 1
-        }
+        Task { @MainActor in await model.playReveal(duration: 3.2, while: { model.phase == .title }) }
     }
 }
 
@@ -2112,7 +2103,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
-        ("0.36.0", ["【原作补全】军团信息：军队页显示当前状态（休整待命／前往进攻某地／前往防守某地／在海洋中航行／交战中／撤退中）、征召于何地、服役时长、满编兵力、参战次数、战史共歼灭敌军、折损，以及将领此刻的打算。",
+        ("0.36.0", ["【动画】生成世界、标题背景、进入游戏时「陆地从海中升起、国色铺开」的动画改由显卡逐帧绘制：以前每帧都在主线程重算整张地图每个顶点的颜色并重建缓冲，所以卡顿掉帧；现在只传一个进度值，跟屏幕刷新率一样顺滑。",
+                    "【动画】这段动画不再每帧刷新整个界面（以前每秒六十次触发全部 SwiftUI 面板和地图同步），面板上的阶段文字每秒只更新十次；节奏改为先快后缓。",
+                    "【动画】进入游戏（新世界或读档）时镜头从近处缓缓拉远到全图，陆地同时升起。",
+                    "【原作补全】军团信息：军队页显示当前状态（休整待命／前往进攻某地／前往防守某地／在海洋中航行／交战中／撤退中）、征召于何地、服役时长、满编兵力、参战次数、战史共歼灭敌军、折损，以及将领此刻的打算。",
                     "【原作补全】州郡页新增战争状态（和平中／与几国交战）、城市防御力、被围时的占领进度条（谁在围城、城防还剩多少），以及生物群系分布。",
                     "【原作补全】天下诏令新增「停止所有战争」（国与国的战争全部停战，内战与叛乱照旧）和「解除所有同盟」，执行前会确认。",
                     "【原作补全】排行新增「当前战争」：每场战争的攻守双方、开战理由和持续时间，点一下进入攻方国家。",

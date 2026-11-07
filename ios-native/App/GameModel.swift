@@ -241,6 +241,7 @@ import LieguojiCore
     private func rise() async {
         controller.interactive = false
         controller.reveal = 0
+        if !ShotTour.on { await playReveal(duration: 9); return }
         var elapsed: Float = 0
         var last = Date()
         var shotSea = false
@@ -339,14 +340,22 @@ import LieguojiCore
         controller.interactive = false
         controller.reveal = 0
         phase = .playing
-        let start = Date()
-        while true {
-            let t = Float(Date().timeIntervalSince(start) / 2.2)
-            controller.reveal = min(1, t)
-            if t >= 1 { break }
-            try? await Task.sleep(nanoseconds: 16_000_000)
-        }
+        // The land rises and the camera eases out to the whole world (on the display link).
+        await playReveal(duration: 2.4, push: true)
         controller.interactive = true
+    }
+
+    /// Plays a reveal on the map's display link, smooth at the screen's rate; the published value the
+    /// panels read (stage list, bars) follows ten times a second instead of every frame.
+    func playReveal(duration: Double, push: Bool = false, while keep: () -> Bool = { true }) async {
+        controller.reveal = 0
+        controller.animateReveal(duration: duration, push: push)
+        while !controller.revealDone && keep() {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            controller.reveal = controller.revealNow ?? 1
+        }
+        controller.reveal = 1
+        controller.endReveal()
     }
 
     func backToTitle() { pause(); save(); phase = .title }

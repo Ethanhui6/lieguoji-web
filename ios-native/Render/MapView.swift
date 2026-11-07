@@ -80,6 +80,24 @@ import LieguojiCore
     var onFleetTarget: ((Int) -> Void)?
     /// Generation reveal (title screen), 0…1; labels and markers appear at 1.
     @Published var reveal: Float = 1
+    /// A reveal played on the map's display link (smooth, without a SwiftUI update each frame); the
+    /// published `reveal` then only follows it coarsely for the panels. `push`: the camera eases in.
+    private(set) var revealClock: (from: Float, to: Float, start: CFTimeInterval, duration: Double, push: Bool)?
+    var onRevealClock: (() -> Void)?
+    func animateReveal(from: Float = 0, to: Float = 1, duration: Double, push: Bool = false) {
+        revealClock = (from, to, CACurrentMediaTime(), max(0.05, duration), push)
+        onRevealClock?()
+    }
+    /// The clock's value now (nil when none runs); it clears itself at the end.
+    var revealNow: Float? {
+        guard let c = revealClock else { return nil }
+        let x = min(1, (CACurrentMediaTime() - c.start) / c.duration)
+        // Ease out: the land rises quickly, then settles.
+        let e = Float(1 - pow(1 - x, 2.2))
+        return c.from + (c.to - c.from) * e
+    }
+    var revealDone: Bool { revealClock.map { CACurrentMediaTime() - $0.start >= $0.duration } ?? true }
+    func endReveal() { revealClock = nil }
     /// Title screen: the map is a backdrop and takes no gestures.
     @Published var interactive = true
     /// Slow drift of the title backdrop.
@@ -252,6 +270,7 @@ struct MapView: UIViewRepresentable {
             mtk.delegate = renderer
             renderer?.onDraw = { [weak self] t in self?.frameDrawn(t) }
             renderer?.onOutlines = { [weak self] in self?.mtk.setNeedsDisplay() }
+            controller.onRevealClock = { [weak self] in self?.revealStarted() }
             labels = MapLabelsView(map: map)
             for v in [mtk!, labels!] as [UIView] { v.frame = container.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(v) }
             labels.isUserInteractionEnabled = false
@@ -498,8 +517,29 @@ struct MapView: UIViewRepresentable {
             gliding = glide
             l.preferredFrameRateRange = glide ? glideRange : frameRange
         }
+        /// A reveal clock began: the map follows it frame by frame; with `push` the camera eases in from afar.
+        private func revealStarted() {
+            if let c = controller.revealClock, c.push, renderer != nil {
+                let target = camera
+                var from = target; from.scale = target.scale * 1.25
+                set(from)
+                animate(to: target, duration: c.duration * 1.1)
+            }
+            startLink()
+        }
+        /// One frame of the reveal clock; false when none runs.
+        private func advanceReveal() -> Bool {
+            guard let t = controller.revealNow, let renderer else { return false }
+            renderer.setReveal(t)
+            labels?.alpha = CGFloat(max(0, min(1, (t - 0.85) / 0.15)))
+            mtk.setNeedsDisplay()
+            // The owner (GameModel) clears the clock once the published value has caught up.
+            if controller.revealDone { renderer.setReveal(controller.revealClock?.to ?? t); return false }
+            return true
+        }
         @objc private func step(_ l: CADisplayLink) {
             let dt = min(0.05, l.targetTimestamp - l.timestamp)
+            let revealing = advanceReveal()
             pace(l, glide: animation == nil && hypot(velocity.x, velocity.y) <= 8)
             if let a = animation {
                 let x = min(1, (CACurrentMediaTime() - a.start) / a.duration)
@@ -515,7 +555,7 @@ struct MapView: UIViewRepresentable {
                 velocity = .zero
                 updateTroops()
                 mtk.setNeedsDisplay()
-            } else {
+            } else if !revealing {
                 velocity = .zero
                 mtk.setNeedsDisplay()
                 link?.invalidate(); link = nil
@@ -538,9 +578,13 @@ struct MapView: UIViewRepresentable {
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
                 mtk.setNeedsDisplay()
             }
-            if let renderer, renderer.reveal != controller.reveal { renderer.setReveal(controller.reveal) }
-            // Names ink in last, with the cities.
-            labels?.alpha = CGFloat(max(0, min(1, (controller.reveal - 0.85) / 0.15)))
+            // While a reveal clock runs the display link draws it; the published value is only coarse.
+            if controller.revealClock != nil && !controller.revealDone && link == nil { startLink() }
+            if controller.revealClock == nil {
+                if let renderer, renderer.reveal != controller.reveal { renderer.setReveal(controller.reveal) }
+                // Names ink in last, with the cities.
+                labels?.alpha = CGFloat(max(0, min(1, (controller.reveal - 0.85) / 0.15)))
+            }
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills)

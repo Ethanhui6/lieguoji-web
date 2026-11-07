@@ -11,6 +11,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let device: MTLDevice
     private let queue: MTLCommandQueue
     private let cellPipeline: MTLRenderPipelineState
+    /// The generation reveal on the GPU: land rises from the sea by height, then the states' colours wash in.
+    private let revealPipeline: MTLRenderPipelineState
     private let linePipeline: MTLRenderPipelineState
     private let flatPipeline: MTLRenderPipelineState
     private let coloredPipeline: MTLRenderPipelineState
@@ -46,7 +48,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let sea: MTLTexture?
     private let parchment: MTLTexture?
     private let sampler: MTLSamplerState?
-    private(set) var map: WorldMap
+    private(set) var map: WorldMap { didSet { revealHeights = nil } }
     private var nationColors: [RGB]
     private var tint: [Int: RGB] = [:]
     private var fills: [RGB]?
@@ -90,6 +92,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 return try device.makeRenderPipelineState(descriptor: d)
             }
             cellPipeline = try pipeline("cellVertex", "colorFragment", .none)
+            revealPipeline = try pipeline("revealVertex", "colorFragment", .none)
             linePipeline = try pipeline("lineVertex", "flatFragment", .alpha)
             flatPipeline = try pipeline("flatVertex", "flatFragment", .alpha)
             coloredPipeline = try pipeline("coloredVertex", "colorFragment", .alpha)
@@ -257,11 +260,30 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// The title screen's generation animation: 0 shows only the sea; land rises from the coast to the
     /// mountains, then the states' colours wash over it; at 1 every layer is drawn.
     private(set) var reveal: Float = 1
-    func setReveal(_ t: Float) { reveal = max(0, min(1, t)); recolor() }
+    /// Only a value for the reveal shader: no colours are recomputed while the land rises.
+    func setReveal(_ t: Float) { reveal = max(0, min(1, t)); if base == nil { recolor() } }
     /// The map's colours before the generation reveal: the land colours of the current mode and the
     /// terrain colours, both shaded. Kept while only the reveal moves, so the rising animation does not
     /// recompute every cell's palette 60 times a second.
-    private var base: (land: [Float], terrain: [Float])?
+    private var base: (land: [Float], terrain: [Float])? { didSet { revealTerrain = nil } }
+    /// For the reveal shader: each vertex's height (0 coast … 1 peak; −1 water) and the shaded terrain colours.
+    private var revealHeights: MTLBuffer?
+    private var revealTerrain: MTLBuffer?
+    private func revealBuffers() -> (heights: MTLBuffer, terrain: MTLBuffer)? {
+        guard let base else { return nil }
+        if revealTerrain == nil { revealTerrain = device.makeBuffer(bytes: base.terrain, length: max(4, base.terrain.count * 4), options: .storageModeShared) }
+        if revealHeights == nil {
+            var h = [Float](repeating: -1, count: map.vertices.count / 2)
+            let top = Float(max(21, map.elevation.max().map(Int.init) ?? 100))
+            for cell in 0..<map.cellCount where map.isLand(cell) {
+                let v = (Float(map.elevation[cell]) - 20) / (top - 20)
+                for i in Int(map.offsets[cell])..<min(h.count, Int(map.offsets[cell + 1])) { h[i] = max(0, v) }
+            }
+            revealHeights = device.makeBuffer(bytes: h, length: max(4, h.count * 4), options: .storageModeShared)
+        }
+        guard let a = revealHeights, let b = revealTerrain else { return nil }
+        return (a, b)
+    }
 
     private(set) var display = DisplaySettings()
     func setDisplay(_ d: DisplaySettings) {
@@ -293,25 +315,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             base = (c, terrain)
         }
         guard let base else { return }
-        var c = base.land
-        if reveal < 1 {
-            // Generation: the land rises from the coast to the peaks (0…0.45), forests and rivers follow,
-            // the states' colours wash in (0.55…0.75); borders and cities come after (drawn by stage).
-            let terrain = base.terrain
-            let sea = MapPalette.ocean(display.ocean).shallow, rise = min(1, reveal / 0.45), wash = min(1, max(0, (reveal - 0.55) / 0.2))
-            let top = Float(max(21, map.elevation.max().map(Int.init) ?? 100))
-            for cell in 0..<map.cellCount where map.isLand(cell) {
-                let h = (Float(map.elevation[cell]) - 20) / (top - 20)
-                let shown = min(1, max(0, (rise * 1.15 - h) * 8))
-                for v in Int(map.offsets[cell])..<Int(map.offsets[cell + 1]) {
-                    for k in 0..<3 {
-                        let ground = terrain[v * 4 + k] + (c[v * 4 + k] - terrain[v * 4 + k]) * wash
-                        let water = k == 0 ? sea.r : k == 1 ? sea.g : sea.b
-                        c[v * 4 + k] = water + (ground - water) * shown
-                    }
-                }
-            }
-        }
+        // The generation reveal (land rising from the coast to the peaks over 0…0.45, the states' colours
+        // washing in over 0.55…0.75) is drawn by revealVertex from these colours: no per-frame CPU work.
+        let c = base.land
         if let b = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) { colors = b }
     }
     private var shade: [Float] = []
@@ -505,7 +511,16 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
         }
         quad(sea, texturePipeline, x: 0, y: 0, width: map.width, height: map.height)
-        encoder.setRenderPipelineState(cellPipeline)
+        if reveal < 1, let rb = revealBuffers() {
+            let sea = MapPalette.ocean(display.ocean).shallow
+            var r = SIMD4<Float>(sea.r, sea.g, sea.b, reveal)
+            encoder.setRenderPipelineState(revealPipeline)
+            encoder.setVertexBuffer(rb.terrain, offset: 0, index: 3)
+            encoder.setVertexBuffer(rb.heights, offset: 0, index: 4)
+            encoder.setVertexBytes(&r, length: MemoryLayout<SIMD4<Float>>.stride, index: 5)
+        } else {
+            encoder.setRenderPipelineState(cellPipeline)
+        }
         encoder.setVertexBuffer(positions, offset: 0, index: 0)
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
@@ -572,6 +587,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); return o;
     }
     fragment float4 colorFragment(ColorOut in [[stage_in]]) { return in.color; }
+    vertex ColorOut revealVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
+                                 constant Uniforms& u [[buffer(2)]], const device float4* terrain [[buffer(3)]], const device float* heights [[buffer(4)]],
+                                 constant float4& r [[buffer(5)]]) {
+        ColorOut o; o.position = clip(positions[id], u, float2(0.0));
+        float4 c = colors[id]; float h = heights[id];
+        if (h >= 0.0) {
+            float rise = min(1.0, r.w / 0.45), wash = clamp((r.w - 0.55) / 0.2, 0.0, 1.0);
+            float shown = clamp((rise * 1.15 - h) * 8.0, 0.0, 1.0);
+            float3 ground = terrain[id].rgb + (c.rgb - terrain[id].rgb) * wash;
+            c.rgb = r.rgb + (ground - r.rgb) * shown;
+        }
+        o.color = c; return o;
+    }
     vertex FlatOut lineVertex(uint id [[vertex_id]], const device float4* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
         FlatOut o; float4 p = v[id]; o.position = clip(p.xy, u, p.zw * u.halfWidth); return o;
     }

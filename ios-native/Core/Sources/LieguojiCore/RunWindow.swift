@@ -93,10 +93,17 @@ public enum RunWindow {
             let group = (local[pid] ?? []).filter { $0.status.asString != "retreating" }
             var siege = siegeOf[pid]
             if siege == nil && !group.contains(where: { war($0.nationId.asString, p.controller.asString) }) { continue }
+            // Each army's combat inputs here, read once for the siege strength and the damage below
+            // (nothing they depend on changes inside one province's pass).
+            var memo = [String: (efficiency: Double, damageToProvince: Double, multiplier: Int)]()
+            func combat(_ a: JS) -> (efficiency: Double, damageToProvince: Double, multiplier: Int) {
+                if let c = memo[a.id.asString] { return c }
+                let c = provinceCombat(r, a, index); memo[a.id.asString] = c; return c
+            }
             // forcesFromGroup.
             var powers = [String: Double](), order = [String]()
             for a in group {
-                let c = provinceCombat(r, a, index), e = c.efficiency * Double(c.multiplier), n = a.nationId.asString
+                let c = combat(a), e = c.efficiency * Double(c.multiplier), n = a.nationId.asString
                 if n != p.controller.asString && war(n, p.controller.asString) { if powers[n] == nil { order.append(n) }; powers[n, default: 0] += e }
             }
             let attacker = order.sorted { x, y in powers[x]! != powers[y]! ? powers[x]! > powers[y]! : Collate.less(x, y) }.first
@@ -117,7 +124,7 @@ public enum RunWindow {
             if immediate { s.resistance = JS(0) }
             else {
                 for a in group.filter({ armyDue.contains($0.id.asString) }).sorted(by: { Collate.less($0.id.asString, $1.id.asString) }) {
-                    let c = provinceCombat(r, a, index), base = f(c.damageToProvince * c.efficiency), damage = c.multiplier == 2 ? f(f(base) * 2) : base
+                    let c = combat(a), base = f(c.damageToProvince * c.efficiency), damage = c.multiplier == 2 ? f(f(base) * 2) : base
                     let n = a.nationId.asString
                     if n == p.controller.asString { s.resistance = JS(min(s.maximum.asNumber, s.resistance.asNumber + damage)) }
                     else if war(n, p.controller.asString) { s.attacker = JS(n); s.resistance = JS(max(0, s.resistance.asNumber - damage)) }

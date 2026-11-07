@@ -1965,7 +1965,9 @@ struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
         ("0.31.0", ["【军令】点开军队新增八项操作：亲自指挥／交还 AI、就地驻守、回师本国驻地、补充兵员（按缺额花国库、从驻地征丁）、分兵（一半兵力另成一军）、合兵（并入同州郡的本国军队）、改名、解散（兵员回乡）。原有的调兵、撤退、停止、整编、定位保留。",
                     "【舰队】舰队页新增「亲自指挥／交还 AI 自主巡防」。",
-                    "【流畅】创建世界与读档时，地图的地貌、省界、国界和城市图标改在后台与世界一起生成，点「创建」后进入生成画面不再卡一下。"]),
+                    "【流畅】创建世界与读档时，地图的地貌、省界、国界和城市图标改在后台与世界一起生成，点「创建」后进入生成画面不再卡一下。",
+                    "【性能】占领判定里每支军队的战力只算一次（原先每省算两遍）。",
+                    "【界面】新世界页的国家数、省份数不再重复显示两次标题和数值；排行页的分类改为与其他页面相同的纸面按钮。"]),
         ("0.30.0", ["【战争】交战改为按距离：敌军接近到约两个军队图标的距离才接战，同一省有敌军时向本省城池进军迎敌，走到城下才围城；不再隔着半个省开打，也不再两军擦肩而过。",
                     "【战争】停战或没有战争目标时，按原作 Army.Idle：留在他国的军队先撤回本国，再按原作首都圈与边境权重选驻地；以前会原地待命、一直不动。本国被敌军或叛军占着的失地，军队会主动收复。",
                     "【战争】外交页每场战争加战况条：双方兵力对比、历时、围城数。",
@@ -2405,8 +2407,10 @@ struct PaperStepper: View {
                     .monospacedDigit().contentTransition(.numericText()).animation(.snappy(duration: 0.2), value: value)
                 stepButton("plus", 1)
             }
-            PaperSlider(title: title, value: Binding(get: { Double(value) }, set: { let v = Int($0.rounded()); if v != value { value = v; GameFeel.shared.tap() } }),
-                        range: Double(range.lowerBound)...Double(range.upperBound), step: 1) { "\(Int($0)) \(unit)" }
+            // The bare track for big moves: the title and the value are already on the line above.
+            PaperTrack(value: Binding(get: { Double(value) }, set: { let v = Int($0.rounded()); if v != value { value = v; GameFeel.shared.tap() } }),
+                       range: Double(range.lowerBound)...Double(range.upperBound), step: 1, onEditingChanged: nil)
+                .padding(.leading, 4)
         }
     }
     private func stepButton(_ symbol: String, _ delta: Int) -> some View {

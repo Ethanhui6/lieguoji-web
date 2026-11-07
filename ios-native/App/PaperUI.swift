@@ -237,7 +237,6 @@ struct StatisticsSheet: View {
     @State private var category = "power"
     @State private var rows: [StatisticsRow] = []
     @State private var brushed = false
-    @Namespace private var fold
     var body: some View {
         ZStack {
             MemorialPaper()
@@ -247,16 +246,15 @@ struct StatisticsSheet: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
                             ForEach(Self.categories, id: \.id) { c in
-                                Button { withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { category = c.id } } label: {
-                                    Text(c.title).font(Theme.kai(15)).foregroundStyle(category == c.id ? Theme.seal : Theme.ink2)
-                                        .padding(.horizontal, 12).padding(.vertical, 8)
-                                        .background {
-                                            if category == c.id {
-                                                VStack(spacing: 0) { Spacer(); Rectangle().fill(Theme.seal).frame(height: 2) }.matchedGeometryEffect(id: "fold", in: fold)
-                                            }
-                                        }
+                                // The same paper chips as the other pages' tabs (scrolling: five of them).
+                                let on = category == c.id
+                                Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { category = c.id } } label: {
+                                    Text(c.title).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                        .padding(.horizontal, 14).frame(height: 38)
+                                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? Color.clear : Theme.line))
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(PressStyle())
                             }
                         }
                         .padding(.horizontal, 16)
@@ -587,7 +585,7 @@ struct PaperSlider: View {
 }
 
 /// Ink track and vermilion thumb. Values stay on the same binding as the old slider.
-private struct PaperTrack: View {
+struct PaperTrack: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     var step: Double?

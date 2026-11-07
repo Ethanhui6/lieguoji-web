@@ -8,6 +8,8 @@ struct NationInfo: Decodable {
     struct Ruler: Decodable { let name: String; let title: String; let age: Double; var id: Int? = nil; var traits: [String]? = nil; var skills: [Double]? = nil }
     /// 国家加成 (自定义) in percent: income, attack, defense, growth, speed.
     var bonus: [String: Double]? = nil
+    /// 生计 (民族特性): Agriculture, Nomadic, Maritime, FishAndHunting, Commercial, Other.
+    var livelihood: String? = nil
     struct Alliance: Decodable { let name: String; let members: [Int] }
     struct Side: Decodable { let nations: [Int]; let losses: Double }
     struct War: Decodable, Identifiable { let id: Int; let casusBelli: String; let goals: [String]; let months: Double; let sides: [Side]; let side: Int; let score: Double? }
@@ -81,6 +83,9 @@ struct NationSheet: View {
     var focus: Focus? = nil
     enum Focus { case people, wars, talks }
     @State private var editing: NationInfo.Person?
+    @State private var pickingLivelihood = false
+    @State private var tree: TreePick?
+    struct TreePick: Identifiable { let id: String; let name: String }
     @State private var regime: (history: [String], trait: String) = ([], "")
     @State private var goldText = ""
     @State private var destinyValue = 0.0
@@ -202,6 +207,10 @@ struct NationSheet: View {
                 .presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
             }
             .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17)) }
+            .sheet(item: $tree) { t in
+                FamilyTreeSheet(model: model, family: t.id, name: t.name)
+                    .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            }
             .sheet(item: $numberEdit) { e in
                 NumberEditSheet(title: e.title, unit: e.unit, value: e.value) { v in
                     numberEdit = nil
@@ -288,9 +297,17 @@ struct NationSheet: View {
                         EditRow(label: "国运", value: String(format: "%.0f", info.destiny)) {
                             numberEdit = NumberEdit(title: "国运（0–100）", unit: "", value: info.destiny) { v in await model.editNation(nation, gold: nil, destiny: v, polity: nil) }
                         }
+                        Divider2()
+                        EditRow(label: "生计", value: Livelihood.name(info.livelihood ?? "")) { pickingLivelihood = true }
                     }
                     .padding(.horizontal, 16)
+                    .confirmationDialog("生计（民族特性）", isPresented: $pickingLivelihood, titleVisibility: .visible) {
+                        ForEach(Livelihood.all, id: \.key) { l in
+                            Button("\(l.name) · \(l.note)") { Task { await run { await model.setLivelihood(nation, l.key) } } }
+                        }
+                    }
                 }
+                FoldSection("特产与贸易", expanded: false) { TradeSection(model: model, map: map, nation: nation, day: state.day / 30) }
                 Group2 {
                     Button(action: openPeople) { MenuRow(symbol: "person.2", title: "人物") }.buttonStyle(.plain)
                     Divider2()
@@ -567,6 +584,8 @@ struct NationSheet: View {
                             .frame(width: 54, height: 4)
                         }
                         .padding(.horizontal, 16).padding(.vertical, 9)
+                        .contentShape(Rectangle())
+                        .onTapGesture { if let id = h.id { tree = TreePick(id: id, name: h.name) } }
                         if !h.ruling, let id = h.id {
                             Button {
                                 numberEdit = NumberEdit(title: h.name + "对宗室关系（-100–100）", unit: "", value: h.relation ?? 0) { v in await model.editCourt(nation, key: "house:" + id, value: v) }
@@ -1174,6 +1193,137 @@ struct NumberEditSheet: View {
         .padding(.bottom, 16)
     }
     static func format(_ v: Double) -> String { v.rounded() == v ? String(Int(v)) : String(format: "%.1f", v) }
+}
+
+/// 生计 (the original's 民族特性): what each does to income and growth (Monthly factors).
+enum Livelihood {
+    static let all: [(key: String, name: String, note: String)] = [
+        ("Agriculture", "农耕", "收入 +3%"), ("Nomadic", "游牧", "收入 +1%"), ("Maritime", "海洋", "收入 +4%，海战加成"),
+        ("FishAndHunting", "渔猎", "收入 +2%"), ("Commercial", "商贸", "收入 +5%"), ("Other", "其他", "无加成"),
+    ]
+    static func name(_ key: String) -> String { all.first { $0.key == key }?.name ?? (key.isEmpty ? "—" : key) }
+}
+
+/// One state's specialties and trade (engine tradeInfo).
+struct TradeOverview: Decodable {
+    struct Good: Decodable { let name: String; let provinces: Int }
+    struct Partner: Decodable { let nation: Int; let goods: [String] }
+    let goods: [Good]; let partners: [Partner]; let rate: Double; let income: Double
+}
+
+/// 特产与贸易: the kinds of goods the state yields, its partners at peace and what each sells it,
+/// and what the trade adds to the monthly income.
+struct TradeSection: View {
+    @ObservedObject var model: GameModel
+    let map: WorldMap; let nation: Int; let day: Int
+    @State private var info: TradeOverview?
+    var body: some View {
+        Group2 {
+            if let info {
+                HStack {
+                    Text("贸易增收").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                    Spacer()
+                    Text("每月 +\(Int(info.income)) 金（+\(String(format: "%.1f", info.rate))%）").font(Theme.kai(16)).foregroundStyle(Theme.seal)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                Divider2()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("本国特产").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 5) {
+                            ForEach(info.goods.indices, id: \.self) { i in
+                                Text("\(info.goods[i].name) \(info.goods[i].provinces)").font(Theme.kai(13)).foregroundStyle(Theme.ink)
+                                    .padding(.horizontal, 7).padding(.vertical, 2).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                if !info.partners.isEmpty {
+                    Divider2()
+                    ForEach(info.partners.indices, id: \.self) { i in
+                        let p = info.partners[i]
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text(p.nation >= 0 && p.nation < map.meta.nations.count ? map.meta.nations[p.nation].name : "").font(Theme.kai(15)).foregroundStyle(Theme.ink)
+                            Spacer()
+                            Text(p.goods.isEmpty ? "无新货" : p.goods.joined(separator: "、")).font(Theme.kai(13)).foregroundStyle(Theme.ink2).lineLimit(1)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 7)
+                    }
+                }
+            } else {
+                Text("载入……").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
+            }
+        }
+        .padding(.horizontal, 16)
+        .task(id: "\(nation)-\(day)") { info = await model.tradeInfo(nation) }
+    }
+}
+
+/// One house's members (engine familyTree).
+struct FamilyTree: Decodable {
+    struct Member: Decodable { let id: Int; let name: String; let female: Bool; let age: Double; let alive: Bool; let father: Int; let mother: Int; let spouse: Int; let title: String }
+    let surname: String; let head: Int; let members: [Member]
+}
+
+/// 族谱: a house by generations — each member with spouse, the head marked, the dead in grey.
+struct FamilyTreeSheet: View {
+    @ObservedObject var model: GameModel
+    let family: String; let name: String
+    @State private var tree: FamilyTree?
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                SheetHeader(title: name, subtitle: tree.map { "族谱 · \($0.members.count) 人" } ?? "族谱", seal: "谱")
+                if let tree {
+                    let byId = Dictionary(tree.members.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+                    let generations = Self.generations(tree.members, byId)
+                    ForEach(generations.indices, id: \.self) { g in
+                        SectionLabel("第\(Self.numeral(g + 1))代")
+                        Group2 {
+                            ForEach(generations[g].indices, id: \.self) { i in
+                                let m = generations[g][i]
+                                HStack(spacing: 8) {
+                                    Text(m.name).font(Theme.kai(17)).foregroundStyle(m.alive ? Theme.ink : Theme.ink2.opacity(0.6))
+                                    if m.id == tree.head { Text("家主").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+                                    if !m.title.isEmpty { Text(m.title).font(Theme.kai(12)).foregroundStyle(Theme.seal) }
+                                    Spacer()
+                                    if m.spouse > 0, let s = byId[m.spouse] { Text("配 \(s.name)").font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+                                    Text(m.alive ? "\(m.female ? "女" : "男") · \(Int(m.age))" : "已故").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                                }
+                                .padding(.horizontal, 16).padding(.vertical, 8)
+                                if i < generations[g].count - 1 { Divider2() }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                } else {
+                    InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(30)
+                }
+            }
+            .padding(.bottom, 24)
+        }
+        .task { tree = await model.familyTree(family) }
+    }
+    /// Generations by descent inside the house: those with no parent in it first, then their children.
+    static func generations(_ members: [FamilyTree.Member], _ byId: [Int: FamilyTree.Member]) -> [[FamilyTree.Member]] {
+        var depth = [Int: Int]()
+        func level(_ m: FamilyTree.Member, _ guardDepth: Int = 0) -> Int {
+            if let d = depth[m.id] { return d }
+            if guardDepth > 30 { return 0 }
+            let parent = byId[m.father] ?? byId[m.mother]
+            let d = parent.map { level($0, guardDepth + 1) + 1 } ?? 0
+            depth[m.id] = d; return d
+        }
+        var out = [[FamilyTree.Member]]()
+        for m in members.sorted(by: { $0.age > $1.age }) {
+            let d = level(m)
+            while out.count <= d { out.append([]) }
+            out[d].append(m)
+        }
+        return out.filter { !$0.isEmpty }
+    }
+    static func numeral(_ n: Int) -> String { let d = Array("零一二三四五六七八九"); return n < 10 ? String(d[n]) : n < 20 ? "十" + (n % 10 == 0 ? "" : String(d[n % 10])) : String(n) }
 }
 
 /// 改党派: a party's name and its seats.

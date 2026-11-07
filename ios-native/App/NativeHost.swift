@@ -153,6 +153,10 @@ actor NativeHost {
     func province(_ index: Int) async -> Data? { await call("province", ["index": index]).data }
     func nationInfo(_ index: Int) async -> Data? { await call("nationInfo", ["index": index]).data }
     func diplomacyInfo(_ index: Int) async -> Data? { await call("diplomacyInfo", ["index": index]).data }
+    func tradeInfo(_ index: Int) async -> Data? { await call("tradeInfo", ["index": index]).data }
+    func familyTree(_ family: String) async -> Data? { await call("familyTree", ["family": family]).data }
+    func setLivelihood(_ n: Int, _ value: String) async -> (ok: Bool, reason: String, state: Data?) { await command("setLivelihood", ["n": n, "value": value]) }
+    func setSpecialty(_ province: Int, _ good: Int?) async -> (ok: Bool, reason: String, state: Data?) { await command("setSpecialty", ["province": province, "good": Self.opt(good)]) }
     func view(_ mode: String) async -> Data? { await call("view", ["mode": mode]).data }
     func worldSettings() async -> Data? { await call("worldSettings").data }
     func worldRules() async -> Data? { await call("worldRules").data }

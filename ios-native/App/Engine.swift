@@ -127,6 +127,8 @@ struct ProvinceInfo: Decodable {
     let core: Bool?; let defense: Double?; let mountain: Bool?; let biomes: [Double]?; let income: Double?
     /// The main land (地形) and an army's march pace over it (1 = normal).
     var terrain: String? = nil; var pace: Double? = nil
+    /// 特产 and its index in the goods list.
+    var specialty: String? = nil; var specialtyIndex: Int? = nil
     /// 地利: each original arm's attack and defence multiplier on this land.
     struct Arm: Decodable { let unit: String; let attack: Double; let defense: Double }
     var combat: [Arm]? = nil

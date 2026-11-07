@@ -43,6 +43,16 @@ final class ArmyCommandsTests: XCTestCase {
         XCTAssertTrue(engine.setWorldRule("war", value: 200).ok)
         XCTAssertEqual(try JS.parse(XCTUnwrap(engine.worldRules())).war.asNumber, 200)
         XCTAssertNotNil(try JSONSerialization.jsonObject(with: XCTUnwrap(engine.diplomacyInfo(0))))
+        // 特产与贸易, 生计, 族谱.
+        let trade = try JS.parse(XCTUnwrap(engine.tradeInfo(0)))
+        XCTAssertGreaterThan(trade.goods.length, 0)
+        XCTAssertTrue(engine.setLivelihood(0, "Commercial").ok)
+        XCTAssertFalse(engine.setLivelihood(0, "Nonsense").ok)
+        XCTAssertTrue(engine.setSpecialty(0, 6).ok)
+        XCTAssertEqual(Trade.of(engine.run, engine.run.world.provinces[0].id.asString), 6)
+        if let family = engine.run.kin.families.objectKeys.first {
+            XCTAssertGreaterThan(try JS.parse(XCTUnwrap(engine.familyTree(family))).members.length, 0)
+        }
         engine.advance(days: 3)
         XCTAssertNotNil(try JSONSerialization.jsonObject(with: engine.state(includeLabels: false)))
     }

@@ -1026,6 +1026,7 @@ struct ProvinceSheet: View {
     @State private var granting = false
     @State private var grantTarget = -1
     @State private var info: ProvinceInfo?
+    @State private var pickingGood = false
     var body: some View {
         if let map = model.map {
             let p = map.meta.provinces[province]
@@ -1078,6 +1079,20 @@ struct ProvinceSheet: View {
                             Row(label: "人口", value: info.population.formatted()); Divider2()
                             Row(label: "人口上限", value: info.capacity.formatted()); Divider2()
                             Row(label: "存粮", value: Int(info.grain).formatted()); Divider2()
+                            if let good = info.specialty {
+                                Button { pickingGood = true } label: {
+                                    HStack { Text("特产").foregroundStyle(Theme.ink2); Spacer(); Text(good).foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)) }
+                                        .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .confirmationDialog("特产", isPresented: $pickingGood, titleVisibility: .visible) {
+                                    ForEach(Array(Trade.goods.enumerated()), id: \.offset) { i, n in
+                                        Button(n) { Task { _ = await model.setSpecialty(province, i); info = await model.provinceInfo(province) } }
+                                    }
+                                    Button("恢复本地特产") { Task { _ = await model.setSpecialty(province, nil); info = await model.provinceInfo(province) } }
+                                }
+                                Divider2()
+                            }
                             if info.owner != info.controller, info.owner >= 0, info.owner < map.meta.nations.count { Row(label: "法理归属", value: map.meta.nations[info.owner].name); Divider2() }
                         }
                         if let n = nation {
@@ -1963,7 +1978,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
-        ("0.31.0", ["【流畅】推演时军队的移动改由显卡逐帧完成：每一步只写一次起止位置，不再每一帧在处理器上重建全部军队的顶点和缓冲（军队越多越卡的主要原因）；跟随军队的兵力字样改为预先栅格化，不再每帧重绘阴影。",
+        ("0.31.0", ["【原作补全】特产与贸易：每个州郡按地形出产一种特产（粮食、木材、毛皮、马匹、铁矿、食盐、丝绸、茶叶、香料、瓷器、美酒、鱼获、宝石、棉布、铜矿），州郡页可改；国家拥有的特产种类越多、与接壤和同盟的和平国家互通有无越多，每月收入越高（国家页「特产与贸易」显示贸易伙伴与增收）。",
+                    "【原作补全】生计（民族特性）：国家页显示农耕／游牧／海洋／渔猎／商贸，点开即可更改，影响收入，海洋国家海战有加成。",
+                    "【原作补全】族谱：国家页「朝政」里点任一贵族世家，按世代列出族人、配偶、家主与官职，已故者以灰字标出。",
+                    "【流畅】推演时军队的移动改由显卡逐帧完成：每一步只写一次起止位置，不再每一帧在处理器上重建全部军队的顶点和缓冲（军队越多越卡的主要原因）；跟随军队的兵力字样改为预先栅格化，不再每帧重绘阴影。",
                     "【战争】战争箭头重画：由浅到深六段渐变，不再是两截色块拼接；箭头头部加大。",
                     "【海洋】按原作在海面上随机掀起浪花：使用原作的浪花动画（64 帧），在视野内的海上此起彼伏，可在「粒子特效」开关里关闭。",
                     "【战争】军队本身的行军速度提高一倍（本作的州郡比原作大得多，按原作速度横穿一省太慢）；行军快慢不再只靠推演日数。",

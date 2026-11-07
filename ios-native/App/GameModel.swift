@@ -895,6 +895,16 @@ import LieguojiCore
         return (try? JSONDecoder().decode([StatisticsRow].self, from: data)) ?? []
     }
 
+    func tradeInfo(_ index: Int) async -> TradeOverview? {
+        guard state != nil, let data = await native.tradeInfo(index) else { return nil }
+        return try? JSONDecoder().decode(TradeOverview.self, from: data)
+    }
+    func familyTree(_ family: String) async -> FamilyTree? {
+        guard state != nil, let data = await native.familyTree(family) else { return nil }
+        return try? JSONDecoder().decode(FamilyTree.self, from: data)
+    }
+    func setLivelihood(_ n: Int, _ value: String) async -> String? { finish(await native.setLivelihood(n, value)) }
+    func setSpecialty(_ province: Int, _ good: Int?) async -> String? { finish(await native.setSpecialty(province, good)) }
     func diplomacyInfo(_ index: Int) async -> DiplomacyOverview? {
         guard state != nil, let data = await native.diplomacyInfo(index) else { return nil }
         return try? JSONDecoder().decode(DiplomacyOverview.self, from: data)

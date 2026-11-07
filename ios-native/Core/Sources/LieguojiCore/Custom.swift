@@ -292,6 +292,9 @@ public enum Regimes {
                 s.population = JS(max(100, ((s.population.optionalNumber ?? 0) * (1 + growth / 1200)).rounded()))
             }
         }
+        // 特产与贸易: the kinds of goods held and bought from partners at peace add to the income.
+        let trade = Trade.share(r, id).rate
+        if trade > 0 { addGold(trade) }
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
         postEffects(r, id, addGold: addGold, addDestiny: addDestiny)
         tribute(r, n, id, gain: gain)

@@ -142,6 +142,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
         }
         unitTextures["banner"] = unitTextures["elite"]
+        // 军牌底盘: a round token under each army, a light disc in a dark rim, tinted with its state's colour,
+        // so armies stand out from the terrain at every zoom (pale pieces alone vanished into the land).
+        let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 96, height: 96), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; return f }()).image { ctx in
+            let g = ctx.cgContext
+            g.setFillColor(UIColor.black.cgColor); g.fillEllipse(in: CGRect(x: 3, y: 3, width: 90, height: 90))
+            g.setFillColor(UIColor.white.cgColor); g.fillEllipse(in: CGRect(x: 11, y: 11, width: 74, height: 74))
+        }.cgImage
+        if let plateArt { unitTextures["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
         if let start = map.meta.economy {
             setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
         }
@@ -446,6 +454,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     let k: Float = 0.62
                     quad("banner", at, a.banner == 2 ? RGB(0.93, 0.74, 0.25) : RGB(0.72, 0.22, 0.16), size * k, 0.55 / k, -0.5 / k)
                 }
+                // The state's token under land armies; the pieces on it are drawn light so they read on it.
+                let token = role != "Fleet" && role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
+                if token { quad("0plate", at, c, size * 0.92, 0, 0.16 / 0.92) }
+                let piece = token ? RGB(0.62 + c.r * 0.38, 0.62 + c.g * 0.38, 0.62 + c.b * 0.38) : c
                 // Strength as one to three pieces of the arm (the back ones a shade darker).
                 let n = role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
                 // Strength: the piece, with one or two smaller pieces just behind it (not a wide spread).
@@ -453,11 +465,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     : [(-0.22, -0.12, 0.65), (0.22, -0.12, 0.65), (0, 0, 1)]
                 for (i, (dx, dy, k)) in layout.enumerated() {
                     let shade: Float = i < layout.count - 1 && n > 1 ? 0.9 : 1
-                    quad(role, at, RGB(c.r * shade, c.g * shade, c.b * shade), size * k, dx / k, dy / k)
+                    quad(role, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, dx / k, dy / k)
                 }
             }
             // A fixed draw order (banners first, then by role): a fresh dictionary's order changed every
             // rebuild, so overlapping icons swapped in front of each other and flickered.
+            // Banners, then the tokens ("0plate" sorts before every arm), then the pieces.
             units = byRole.keys.sorted { ($0 == "banner" ? "" : $0) < ($1 == "banner" ? "" : $1) }.compactMap { role -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
                 guard let data = byRole[role], let texture = unitTextures[role], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
                 return (texture: texture, buffer: b, count: data.count / 13)

@@ -39,7 +39,7 @@ final class WarAuditTests: XCTestCase {
         print("AUDIT war length days: average \(lengths.isEmpty ? 0 : Int(lengths.reduce(0, +) / Double(lengths.count))), longest \(Int(lengths.max() ?? 0))")
         print("AUDIT provinces changed hands \(changes) (\(changes * 360 / days) a year); armies at most \(peaks)")
         let alive = r.world.nations.asArray.filter { Vassals.alive(r, $0.id.asString) }.count
-        print("AUDIT states: (statesAtFirst) at first, (r.world.nations.length) ever (rebels and successors), (alive) alive")
+        print("AUDIT states: \(statesAtFirst) at first, \(r.world.nations.length) ever (rebels and successors), \(alive) alive")
         let stranded = worst.filter { $0.value > 60 }.sorted { $0.value > $1.value }
         print("AUDIT armies standing abroad at peace over 60 days: \(stranded.count)")
         for (id, d) in stranded.prefix(8) {

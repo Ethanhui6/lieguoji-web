@@ -180,18 +180,22 @@ public struct ContactMotion {
                 // Each segment is linear until the next gate. Solve the relative motion before
                 // stepping, so fast opposing columns cannot tunnel through each other.
                 let positions = current.positions
-                var velocities = [String: TravelPoint]()
-                for m in movers where m.time > 0 && m.time.isFinite {
-                    let key = forces[m.f].key, p = positions[key]!.point
-                    let end = m.seg.local || forces[m.f].travel.crossed ? m.seg.end : m.seg.gate
-                    velocities[key] = TravelPoint(x: (end.x - p.x) / m.time, y: (end.y - p.y) / m.time)
-                }
                 let zero = TravelPoint(x: 0, y: 0)
                 var groups = [Int: [Int]]()
                 for i in forces.indices { groups[areaKey(positions[forces[i].key]!.cell, rules), default: []].append(i) }
                 // Only areas where hostile forces meet need the relative-motion solve.
                 groups = groups.filter { _, list in
                     list.count > 1 && list.indices.dropLast().contains { k in list[(k + 1)...].contains { rules.enemy(forces[list[k]].nation, forces[$0].nation) } }
+                }
+                // Velocities only for the movers in those areas (they used to be worked out for every mover).
+                var velocities = [String: TravelPoint]()
+                if !groups.isEmpty {
+                    let hot = Set(groups.values.joined())
+                    for m in movers where m.time > 0 && m.time.isFinite && hot.contains(m.f) {
+                        let key = forces[m.f].key, p = positions[key]!.point
+                        let end = m.seg.local || forces[m.f].travel.crossed ? m.seg.end : m.seg.gate
+                        velocities[key] = TravelPoint(x: (end.x - p.x) / m.time, y: (end.y - p.y) / m.time)
+                    }
                 }
                 for group in groups.values { for k in group.indices { for l in (k + 1)..<group.count {
                     let a = forces[group[k]], b = forces[group[l]]

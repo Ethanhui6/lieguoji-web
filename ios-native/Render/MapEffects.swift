@@ -42,10 +42,12 @@ struct MapEffects: Equatable {
 final class EffectsView: UIView {
     /// Smoke, fire and sparks (设置 › 粒子特效).
     static var particles = true
-    /// Looping ambient animations (waves, battle marks, flags, marching arrows) at 30 frames: with
-    /// ProMotion unlocked they otherwise ran the whole screen at 120 for as long as a war lasted.
+    /// 动画帧率 (推演与画面): looping ambient animations (waves, battle marks, flags, marching arrows)
+    /// run at this many frames; with ProMotion unlocked they otherwise ran the screen at 120 all war long.
+    static var fps = 30
     static func calm(_ a: CAAnimation) -> CAAnimation {
-        a.preferredFrameRateRange = CAFrameRateRange(minimum: 10, maximum: 30, preferred: 30)
+        let f = Float(Energy.hot ? min(fps, 30) : fps)
+        a.preferredFrameRateRange = CAFrameRateRange(minimum: max(8, f / 2), maximum: f, preferred: f)
         return a
     }
     private var battleLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]

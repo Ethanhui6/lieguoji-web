@@ -128,10 +128,54 @@ struct PlaySettings: Codable, Equatable {
     var showArmies = true
     var warArrows = true
     var iconScale = 1.0
-    var highFrameRate = false
+    /// Frames a second while the map is dragged or zoomed, while only the armies march, and for the
+    /// looping effects (waves, battle marks, flags, arrows).
+    var mapFPS = 60
+    var marchFPS = 60
+    var effectFPS = 30
+    /// Pixels per point the map is drawn at (capped at the screen's own; the names stay sharp).
+    var renderScale = 2.0
+    /// The share of real time the simulation may keep a core busy, in percent.
+    var simLoad = 80
+    /// Lower the frames and rest the simulation when the phone runs hot or in Low Power Mode.
+    var autoCool = true
     /// Autosave while playing, seconds (0: off; pausing and leaving still save).
     var autosave = 120
     static let key = "playSettings.v1"
+    init() {}
+    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, autosave }
+    // Every field is optional in a stored setting: older versions saved fewer (and a 高帧率 switch).
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: Keys.self)
+        showArmies = try c.decodeIfPresent(Bool.self, forKey: .showArmies) ?? true
+        warArrows = try c.decodeIfPresent(Bool.self, forKey: .warArrows) ?? true
+        iconScale = try c.decodeIfPresent(Double.self, forKey: .iconScale) ?? 1
+        mapFPS = try c.decodeIfPresent(Int.self, forKey: .mapFPS) ?? ((try c.decodeIfPresent(Bool.self, forKey: .highFrameRate)) == true ? 120 : 60)
+        marchFPS = try c.decodeIfPresent(Int.self, forKey: .marchFPS) ?? 60
+        effectFPS = try c.decodeIfPresent(Int.self, forKey: .effectFPS) ?? 30
+        renderScale = try c.decodeIfPresent(Double.self, forKey: .renderScale) ?? 2
+        simLoad = try c.decodeIfPresent(Int.self, forKey: .simLoad) ?? 80
+        autoCool = try c.decodeIfPresent(Bool.self, forKey: .autoCool) ?? true
+        autosave = try c.decodeIfPresent(Int.self, forKey: .autosave) ?? 120
+    }
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: Keys.self)
+        try c.encode(showArmies, forKey: .showArmies); try c.encode(warArrows, forKey: .warArrows); try c.encode(iconScale, forKey: .iconScale)
+        try c.encode(mapFPS, forKey: .mapFPS); try c.encode(marchFPS, forKey: .marchFPS); try c.encode(effectFPS, forKey: .effectFPS)
+        try c.encode(renderScale, forKey: .renderScale); try c.encode(simLoad, forKey: .simLoad); try c.encode(autoCool, forKey: .autoCool)
+        try c.encode(autosave, forKey: .autosave)
+    }
+    /// 画面档位: 省电, 均衡, 流畅 (nil: the values were set one by one).
+    static let presets: [(key: String, name: String, mapFPS: Int, marchFPS: Int, effectFPS: Int, renderScale: Double, simLoad: Int)] = [
+        ("saver", "省电", 60, 30, 15, 1.5, 50), ("balanced", "均衡", 60, 60, 30, 2, 80), ("smooth", "流畅", 120, 120, 60, 3, 100),
+    ]
+    var preset: String {
+        get { Self.presets.first { $0.mapFPS == mapFPS && $0.marchFPS == marchFPS && $0.effectFPS == effectFPS && $0.renderScale == renderScale && $0.simLoad == simLoad }?.key ?? "custom" }
+        set {
+            guard let p = Self.presets.first(where: { $0.key == newValue }) else { return }
+            mapFPS = p.mapFPS; marchFPS = p.marchFPS; effectFPS = p.effectFPS; renderScale = p.renderScale; simLoad = p.simLoad
+        }
+    }
     static func load() -> PlaySettings {
         guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(PlaySettings.self, from: data) else { return PlaySettings() }
         return v
@@ -198,9 +242,9 @@ struct MapView: UIViewRepresentable {
             mtk.enableSetNeedsDisplay = true
             mtk.preferredFramesPerSecond = 120
             mtk.autoResizeDrawable = true
-            // At most 2× pixels: on a 3× screen the map (drawn with 4× multisampling) cost more than twice
+            // 地图清晰度 (default 2×): on a 3× screen the map (drawn with 4× multisampling) cost more than twice
             // the GPU work for no visible gain; the names and labels above it stay at full resolution.
-            mtk.contentScaleFactor = min(UIScreen.main.scale, 2)
+            mtk.contentScaleFactor = min(UIScreen.main.scale, controller.play.renderScale)
             renderer = MapRenderer(view: mtk, map: map, parchmentURL: Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"),
                                    unitURL: { Bundle.main.url(forResource: "unit-\($0)", withExtension: "png", subdirectory: "World") })
             mtk.delegate = renderer
@@ -433,18 +477,20 @@ struct MapView: UIViewRepresentable {
             l.preferredFrameRateRange = frameRange
             l.add(to: .main, forMode: .common); link = l; gliding = false
         }
+        private static func range(_ fps: Int) -> CAFrameRateRange {
+            let f = Float(fps)
+            return CAFrameRateRange(minimum: max(10, f / 2), maximum: f, preferred: f)
+        }
         private var frameRange: CAFrameRateRange {
-            controller.sheetOpen ? CAFrameRateRange(minimum: 15, maximum: 30, preferred: 30)
-                : Energy.hot ? CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
-                : controller.play.highFrameRate ? CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120) : CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+            controller.sheetOpen ? Self.range(30) : Self.range(Energy.hot ? min(60, controller.play.mapFPS) : controller.play.mapFPS)
         }
         /// While only the armies glide (the camera still): 60 frames, 30 when the phone runs hot. Icons
         /// moving a few points a frame look the same, and the map is drawn half as often as at 120.
         private var glideRange: CAFrameRateRange {
-            controller.sheetOpen ? CAFrameRateRange(minimum: 15, maximum: 30, preferred: 30)
-                : Energy.hot ? CAFrameRateRange(minimum: 20, maximum: 30, preferred: 30) : CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+            controller.sheetOpen ? Self.range(30) : Self.range(Energy.hot ? min(30, controller.play.marchFPS) : controller.play.marchFPS)
         }
         private var gliding = false
+        private var appliedPlay: PlaySettings?
         private func pace(_ l: CADisplayLink, glide: Bool) {
             guard glide != gliding else { return }
             gliding = glide
@@ -538,7 +584,17 @@ struct MapView: UIViewRepresentable {
                 renderer.iconScale = Float(controller.play.iconScale)
                 effects.showArrows = controller.play.warArrows
                 troops.iconScale = controller.play.iconScale
-                if mtk.preferredFramesPerSecond > 30 { mtk.preferredFramesPerSecond = controller.play.highFrameRate ? 120 : 60 }
+                if mtk.preferredFramesPerSecond > 30 { mtk.preferredFramesPerSecond = controller.play.mapFPS }
+                // 画面 settings: the simulation's share, cooling, the effects' frames and the map's pixels.
+                Energy.autoCool = controller.play.autoCool
+                Energy.load = Double(controller.play.simLoad) / 100
+                EffectsView.fps = controller.play.effectFPS
+                let scale = min(UIScreen.main.scale, controller.play.renderScale)
+                if mtk.contentScaleFactor != scale { mtk.contentScaleFactor = scale; mtk.setNeedsDisplay() }
+                if controller.play != appliedPlay {
+                    appliedPlay = controller.play
+                    gliding = false; link?.preferredFrameRateRange = frameRange
+                }
             }
             if let renderer, renderer.display != controller.display {
                 let oceanChanged = renderer.display.ocean != controller.display.ocean

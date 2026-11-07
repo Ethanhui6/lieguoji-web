@@ -1965,7 +1965,7 @@ struct MenuSheet: View {
                     PaperSlider(title: "军队图标", value: $controller.play.iconScale, range: 0.6...1.6, step: 0.1) { String(format: "%.1f×", $0) }
                         .padding(.horizontal, 16).padding(.vertical, 10)
                     Divider2()
-                    PaperSwitch(title: "高帧率（120Hz，更耗电）", on: $controller.play.highFrameRate)
+                    FrameSettings(play: $controller.play)
                     Divider2()
                     VStack(alignment: .leading, spacing: 8) {
                         Text("自动存档").font(Theme.kai(16)).foregroundStyle(Theme.ink)
@@ -2110,6 +2110,7 @@ struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
         ("0.35.0", ["【发热】地图改为最多 2 倍像素绘制（3 倍屏上显卡负担减半以上，文字仍是原清晰度）；只有军队在走时地图每秒 60 帧，不再一直 120 帧；高帧率默认关闭，只在拖动缩放地图时生效。",
                     "【发热】战场标记、旗帜飘动、行军箭头、海浪这些循环动画限制在每秒 30 帧（以前战争期间整屏一直跑 120 帧）。",
+                    "【设置】菜单 › 声音与其他 › 推演与画面：新增「画面档位」（省电／均衡／流畅，一键设定），以及可单独调节的拖动地图帧率（30/60/120）、行军帧率（30/60/120）、动画帧率（15/30/60）、地图清晰度（低／中／高／原生）、推演占用（50%～全速），「发热时自动降档」可关闭。旧版的高帧率开关会自动换成对应设置。",
                     "【发热】推演每一步都给处理器留出空闲，不再让一个核心满负荷连轴转；手机变热或开启低电量模式时，自动降到 30 帧、加长休息、暂停海浪与战场烟雾，降温后恢复。",
                     "【原作补全】国家特性接通：奋战至死（不因厌战求和，丢掉九成国土才投降）、欺凌弱小（挑最弱的邻国开战）、不畏强权（挑最强的邻国开战）、全面战争（与接壤的国家都更容易开战）。",
                     "【原作补全】朝堂页显示本国的国家特性及其效果（原作名称与说明）。"]),
@@ -2550,6 +2551,42 @@ struct PressStyle: ButtonStyle {
 }
 
 /// A row of paper chips (replaces the system segmented control).
+/// 画面档位 and each frame rate, the map's sharpness and the simulation's share of the processor.
+struct FrameSettings: View {
+    @Binding var play: PlaySettings
+    private func row<T: Hashable>(_ title: String, _ note: String, _ items: [(T, String)], _ value: Binding<T>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                Spacer()
+                Text(note).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+            }
+            ChipPicker(items: items, selection: value)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 9)
+    }
+    var body: some View {
+        VStack(spacing: 0) {
+            row("画面档位", play.preset == "custom" ? "自定" : "一键设定下面各项", PlaySettings.presets.map { ($0.key, $0.name) } + (play.preset == "custom" ? [("custom", "自定")] : []), $play.preset)
+            Divider2()
+            row("拖动地图帧率", "拖动、缩放时", [(30, "30"), (60, "60"), (120, "120")], $play.mapFPS)
+            Divider2()
+            row("行军帧率", "军队移动时", [(30, "30"), (60, "60"), (120, "120")], $play.marchFPS)
+            Divider2()
+            row("动画帧率", "海浪、战场、旗帜", [(15, "15"), (30, "30"), (60, "60")], $play.effectFPS)
+            Divider2()
+            row("地图清晰度", "越高越耗电", [(1.0, "低"), (1.5, "中"), (2.0, "高"), (3.0, "原生")], $play.renderScale)
+            Divider2()
+            row("推演占用", "越高越快、越热", [(50, "50%"), (65, "65%"), (80, "80%"), (100, "全速")], $play.simLoad)
+            Divider2()
+            PaperSwitch(title: "发热时自动降档", on: $play.autoCool)
+            Text("手机变热或开启低电量模式时，帧率降到 30、推演多休息、暂停海浪和战场烟雾，降温后恢复。")
+                .font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 9)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
 struct ChipPicker<T: Hashable>: View {
     let items: [(T, String)]
     @Binding var selection: T

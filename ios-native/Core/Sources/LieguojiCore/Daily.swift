@@ -17,7 +17,16 @@ public enum Daily {
     public static func frame(_ r: JS) -> (eligible: Set<String>, held: Set<String>) {
         guard let bridge = Armies.bridge else { return ([], []) }
         let forces = Profile.measure("f.forces") { bridge.forces(r) }
-        let result = Profile.measure("f.contacts") { ContactMotion(graph: bridge.graph).contacts(forces, bridge.contacts(r), bridge.rules(r)) }
+        let result = Profile.measure("f.contacts") { () -> (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position]) in
+            let motion = ContactMotion(graph: bridge.graph), rules = bridge.rules(r), old = bridge.contacts(r)
+            // App worlds: nothing standing and no hostile forces sharing an area — no contact can form.
+            if rules.physicalContact && old.isEmpty {
+                let p = motion.positions(forces)
+                if !motion.hostileShare(p, forces, rules) { return ([], [], p) }
+                return motion.contacts(forces, old, rules, p)
+            }
+            return motion.contacts(forces, old, rules)
+        }
         Profile.measure("f.write") { r.forceContacts.pairs = .array(result.contacts.map(ForceBridge.json)) }
         var eligible = Set<String>()
         let nations = r.world.nations.asArray.map(\.id.asString)

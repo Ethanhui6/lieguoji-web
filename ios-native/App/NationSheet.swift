@@ -1240,9 +1240,7 @@ struct FinanceSection: View {
                 Divider2()
                 VStack(alignment: .leading, spacing: 8) {
                     Text("税制").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
-                    ChipPicker(items: Self.policies.map { ($0.0, $0.1) }, selection: Binding(get: { f.policy }, set: { v in
-                        Task { @MainActor in _ = await model.setTax(nation, v); info = await model.financeInfo(nation) }
-                    }))
+                    ChipPicker(items: Self.policies.map { ($0.0, $0.1) }, selection: Binding(get: { f.policy }, set: { v in choose(v) }))
                     Text(Self.policies.first { $0.0 == f.policy }?.2 ?? "").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
@@ -1252,6 +1250,14 @@ struct FinanceSection: View {
         }
         .padding(.horizontal, 16)
         .task(id: "\(nation)-\(day)") { info = await model.financeInfo(nation) }
+    }
+    /// Sets the tax policy, then reloads the ledger.
+    private func choose(_ policy: String) {
+        Task { await apply(policy) }
+    }
+    private func apply(_ policy: String) async {
+        _ = await model.setTax(nation, policy)
+        info = await model.financeInfo(nation)
     }
     static let policies = [("light", "轻徭薄赋", "收入 −20%，国运每月 +0.1，人口增长加快"), ("normal", "常税", "按原作税收"), ("heavy", "重税", "收入 +30%，国运每月 −0.15，人口缓慢流失")]
     private func line(_ label: String, _ value: String, warn: Bool = false, strong: Bool = false) -> some View {

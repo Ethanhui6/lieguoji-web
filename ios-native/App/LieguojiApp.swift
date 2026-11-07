@@ -1213,6 +1213,10 @@ struct ArmySheet: View {
     let onHalt: () -> Void
     var onRetreat: () -> Void = {}
     @State private var editing = false
+    @State private var merging = false
+    @State private var renaming = false
+    @State private var disbanding = false
+    @State private var newName = ""
     @State private var troopsText = ""
     @State private var unit = ""
     @State private var morale = 100.0
@@ -1271,6 +1275,50 @@ struct ArmySheet: View {
                     }
                     .buttonStyle(.plain).padding(.horizontal, 16)
                     .animation(.spring(response: 0.35, dampingFraction: 0.8), value: a.travel)
+                    // 军令: command, stance and the army's own changes, in one grid of paper chips.
+                    let peers = (model.state?.armies ?? []).enumerated().filter { $0.offset != army && $0.element.nation == a.nation && $0.element.province == a.province && $0.element.province >= 0 && $0.element.status != "fighting" }
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                        ArmyChip(title: a.manual ? "交还AI" : "亲自指挥", symbol: a.manual ? "cpu" : "person.fill") { act("armyManual", a, flag: !a.manual) }
+                        ArmyChip(title: "驻守", symbol: "flag.fill") { act("holdArmy", a) }
+                        ArmyChip(title: "回师", symbol: "house.fill") { act("returnHome", a) }
+                        ArmyChip(title: "补员", symbol: "person.3.fill", disabled: fighting) { act("reinforceArmy", a) }
+                        ArmyChip(title: "分兵", symbol: "arrow.triangle.branch", disabled: fighting || a.troops < 400) { act("splitArmy", a) }
+                        ArmyChip(title: "合兵", symbol: "arrow.triangle.merge", disabled: fighting || peers.isEmpty) { merging = true }
+                        ArmyChip(title: "改名", symbol: "pencil") { newName = a.name; renaming = true }
+                        ArmyChip(title: "解散", symbol: "xmark.circle", disabled: fighting, danger: true) { disbanding = true }
+                    }
+                    .padding(.horizontal, 16)
+                    .confirmationDialog("解散\(a.name)？", isPresented: $disbanding, titleVisibility: .visible) {
+                        Button("解散（\(a.troops) 人回乡）", role: .destructive) { act("disbandArmy", a) }
+                    }
+                    .sheet(isPresented: $merging) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SheetHeader(title: "合兵", subtitle: "\(a.name)并入同州郡的本国军队", seal: "合")
+                            Group2 {
+                                ForEach(peers, id: \.element.id) { p in
+                                    Button { merging = false; act("mergeArmy", a, text: p.element.id) } label: {
+                                        HStack { Text(p.element.name).font(Theme.kai(17)).foregroundStyle(Theme.ink); Spacer(); Text("\(Names.wan(p.element.troops)) 兵").font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
+                                            .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    if p.element.id != peers.last?.element.id { Divider2() }
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            Spacer(minLength: 0)
+                        }
+                        .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                    }
+                    .sheet(isPresented: $renaming) {
+                        VStack(alignment: .leading, spacing: 14) {
+                            SheetHeader(title: "军队更名", subtitle: "现名 \(a.name)", seal: "改")
+                            TextField("", text: $newName).paperField().padding(.horizontal, 22)
+                            SealButton(title: "颁行", disabled: newName.trimmingCharacters(in: .whitespaces).isEmpty) { renaming = false; act("renameArmy", a, text: newName) }
+                                .padding(.horizontal, 22)
+                        }
+                        .padding(.bottom, 16)
+                        .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                    }
                     // 整编 (custom): strength, arm and morale.
                     Button { withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { editing.toggle() } } label: {
                         HStack { Text("整编（自定义）").font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Image(systemName: editing ? "chevron.up" : "chevron.down").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.ink2) }
@@ -1312,6 +1360,13 @@ struct ArmySheet: View {
                 }
                 .padding(.bottom, 24)
             }
+        }
+    }
+    /// Runs one army order and says what happened.
+    private func act(_ action: String, _ a: GameState.Army, text: String = "", flag: Bool = false) {
+        Task {
+            let out = await model.armyAction(action, armyId: a.id, text: text, flag: flag)
+            say(out.message); GameFeel.shared.notify(out.ok ? .success : .error)
         }
     }
     private func stepButton(_ delta: Int, _ current: Int) -> some View {
@@ -1908,6 +1963,8 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.31.0", ["【军令】点开军队新增八项操作：亲自指挥／交还 AI、就地驻守、回师本国驻地、补充兵员（按缺额花国库、从驻地征丁）、分兵（一半兵力另成一军）、合兵（并入同州郡的本国军队）、改名、解散（兵员回乡）。原有的调兵、撤退、停止、整编、定位保留。",
+                    "【舰队】舰队页新增「亲自指挥／交还 AI 自主巡防」。"]),
         ("0.30.0", ["【战争】交战改为按距离：敌军接近到约两个军队图标的距离才接战，同一省有敌军时向本省城池进军迎敌，走到城下才围城；不再隔着半个省开打，也不再两军擦肩而过。",
                     "【战争】停战或没有战争目标时，按原作 Army.Idle：留在他国的军队先撤回本国，再按原作首都圈与边境权重选驻地；以前会原地待命、一直不动。本国被敌军或叛军占着的失地，军队会主动收复。",
                     "【战争】外交页每场战争加战况条：双方兵力对比、历时、围城数。",
@@ -2626,6 +2683,13 @@ struct FleetSheet: View {
                     }
                     .buttonStyle(.plain).padding(.horizontal, 16)
                     .animation(.easeOut(duration: 0.2), value: target)
+                    if f.status != "lost" {
+                        let mine = f.manual || !f.patrol
+                        Button {
+                            Task { let out = await model.armyAction("fleetManual", armyId: f.id, flag: !mine); feedback = out.message }
+                        } label: { SecondaryLabel(title: mine ? "交还 AI 自主巡防" : "亲自指挥", symbol: mine ? "cpu" : "person.fill") }
+                        .buttonStyle(.plain).padding(.horizontal, 16)
+                    }
                     if !feedback.isEmpty {
                         Text(feedback).font(Theme.kai(14)).foregroundStyle(Theme.seal).transition(.opacity)
                     }
@@ -2655,6 +2719,28 @@ struct FleetSheet: View {
                 .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
             }
         }
+    }
+}
+
+/// One army order as a small paper chip: symbol over a two-character name.
+struct ArmyChip: View {
+    let title: String; let symbol: String
+    var disabled = false
+    var danger = false
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: symbol).font(.system(size: 15, weight: .semibold))
+                Text(title).font(Theme.kai(14)).lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .foregroundStyle(danger ? Theme.seal : Theme.ink)
+            .frame(maxWidth: .infinity, minHeight: 56)
+            .background(Theme.paper2.opacity(0.9), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(danger ? Theme.seal.opacity(0.4) : Theme.line))
+        }
+        .buttonStyle(PressStyle())
+        .disabled(disabled).opacity(disabled ? 0.45 : 1)
     }
 }
 

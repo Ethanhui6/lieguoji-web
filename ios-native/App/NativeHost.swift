@@ -143,6 +143,10 @@ actor NativeHost {
         let r = await call(name, args); return (r.ok, r.reason, r.data)
     }
     private static func opt<T>(_ v: T?) -> Any { v.map { $0 as Any } ?? NSNull() }
+    /// 军令 on the army page (armyManual, holdArmy, returnHome, reinforceArmy, splitArmy, mergeArmy, disbandArmy, renameArmy).
+    func armyAction(_ action: String, armyId: String, text: String = "", flag: Bool = false) async -> (ok: Bool, reason: String, state: Data?) {
+        await command(action, ["armyId": armyId, "text": text, "manual": flag])
+    }
     func order(armyId: String, province: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("order", ["armyId": armyId, "province": province]) }
     func politics(declare: Bool, _ a: Int, _ b: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("politics", ["declare": declare, "a": a, "b": b]) }
     func fleetOrder(id: String, province: Int?) async -> (ok: Bool, reason: String, state: Data?) { await command("fleetOrder", ["id": id, "province": Self.opt(province)]) }

@@ -138,6 +138,15 @@ public final class EngineService {
         case "setCourtManual": return command(engine?.setCourtManual(int("n"), manual: bool("manual")))
         case "addArmy": return command(engine?.addArmy(int("n"), province: int("province")))
         case "editArmy": return command(engine?.editArmy(str("armyId"), troops: optInt("troops"), unit: optStr("unit"), morale: dbl("morale")))
+        case "armyManual": return command(engine?.setArmyManual(str("armyId"), manual: bool("manual")))
+        case "holdArmy": return command(engine?.holdArmy(str("armyId")))
+        case "returnHome": return command(engine?.returnHome(str("armyId")))
+        case "reinforceArmy": return command(engine?.reinforceArmy(str("armyId")))
+        case "splitArmy": return command(engine?.splitArmy(str("armyId")))
+        case "mergeArmy": return command(engine?.mergeArmy(str("armyId"), into: str("text")))
+        case "disbandArmy": return command(engine?.disbandArmy(str("armyId")))
+        case "renameArmy": return command(engine?.renameArmy(str("armyId"), name: str("text")))
+        case "fleetManual": return command(engine?.setFleetManual(str("armyId"), manual: bool("manual")))
         default: return Reply(ok: false, reason: "未知请求 \(call)。")
         }
     }

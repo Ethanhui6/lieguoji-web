@@ -855,6 +855,12 @@ import LieguojiCore
     func setCourtManual(_ n: Int, manual: Bool) async -> String? { finish(await native.setCourtManual(n, manual: manual)) }
     func addArmy(_ n: Int, province: Int) async -> String? { finish(await native.addArmy(n, province: province)) }
     func editArmy(_ id: String, troops: Int?, unit: String?, morale: Double?) async -> String? { finish(await native.editArmy(id, troops: troops, unit: unit, morale: morale)) }
+    /// One army order: whether it took, and the engine's message either way.
+    func armyAction(_ action: String, armyId: String, text: String = "", flag: Bool = false) async -> (ok: Bool, message: String) {
+        let out = await native.armyAction(action, armyId: armyId, text: text, flag: flag)
+        if let data = out.state, let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
+        return (out.ok, out.reason)
+    }
     /// 即时战略模式: the box-selected armies of one state to a province; nil reason on success.
     func rts(armies: [Int], to province: Int, defend: Bool) async -> (ok: Bool, reason: String) {
         let rows = armies.compactMap { army($0) }

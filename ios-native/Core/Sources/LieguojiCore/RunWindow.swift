@@ -88,8 +88,11 @@ public enum RunWindow {
         // The first siege of each province (kept current as sieges start and end below).
         var siegeOf = [String: JS]()
         for sg in r.occupation.sieges.asArray where siegeOf[sg.provinceId.asString] == nil { siegeOf[sg.provinceId.asString] = sg }
-        for (index, p) in provinces.enumerated() {
-            let pid = p.id.asString
+        // Only provinces with armies in them or a siege can change here (any other is skipped below):
+        // visit those, in province order, instead of the whole map twenty times a day.
+        let candidates = Set(local.keys).union(siegeOf.keys).compactMap { provinceIds[$0] }.sorted()
+        for index in candidates {
+            let p = provinces[index], pid = p.id.asString
             let group = (local[pid] ?? []).filter { $0.status.asString != "retreating" }
             var siege = siegeOf[pid]
             if siege == nil && !group.contains(where: { war($0.nationId.asString, p.controller.asString) }) { continue }

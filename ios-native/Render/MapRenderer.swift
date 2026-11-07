@@ -175,21 +175,55 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// The state outlines are rebuilt on a background queue (the whole map's border walk); the land
     /// is recoloured at once, and the new outlines replace the old ones when ready.
     func setMap(_ next: WorldMap) {
-        map = next; base = nil
+        map = next
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
-        icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
-        recolor()
         outlineGeneration += 1
         let generation = outlineGeneration
         let wide = borderWide
+        // Everything an ownership change redraws — every vertex's colour, the state outlines and the
+        // city marks — is computed off the main thread and swapped in together (the colours used to be
+        // recomputed for the whole map on the main thread at each conquest).
+        let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let vertices = MapLayers.outlines(next, wide: wide).vertices
+            let marks = MapLayers.cityIcons(next).vertices
+            let provinceLines = MapLayers.provinceLines(next).vertices
+            let colours = MapRenderer.baseColors(next, inputs)
             DispatchQueue.main.async {
                 guard let self, generation == self.outlineGeneration else { return }
                 self.outlines = self.buffer(vertices, stride: 6)
+                self.icons = self.buffer(marks, stride: 6)
+                self.provinceLines = self.buffer(provinceLines, stride: 6)
+                if self.terrainBase == nil { self.terrainBase = colours.terrainBase }
+                if self.shade.isEmpty { self.shade = colours.shade }
+                // Only if nothing changed the look meanwhile (a mode switch rebuilds its own base).
+                if self.mode == inputs.mode && self.fills == inputs.fills && self.highlight == inputs.highlight { self.base = (colours.land, colours.terrain) }
+                else { self.base = nil }
+                self.recolor()
                 self.onOutlines?()
             }
         }
+    }
+    /// What the land colours are computed from (copied, so a background thread can work on them).
+    struct BaseInputs {
+        let mode: MapMode; let nationColors: [RGB]; let highlight: Int?; let tint: [Int: RGB]; let fills: [RGB]?
+        let density: Float; let terrain: [Float]?; let shade: [Float]
+    }
+    /// The shaded land colours of a mode and the terrain colours (recolor's base), as a pure function.
+    static func baseColors(_ map: WorldMap, _ i: BaseInputs) -> (land: [Float], terrain: [Float], terrainBase: [Float], shade: [Float]) {
+        var c = CellMesh.colors(map: map, mode: i.mode, nationColors: i.nationColors, highlightProvince: i.highlight, tint: i.tint, provinceColors: i.mode == .political ? i.fills : nil)
+        let terrainBase = i.terrain ?? CellMesh.colors(map: map, mode: .terrain, nationColors: i.nationColors)
+        var terrain = terrainBase
+        if i.mode == .political && i.density < 1 {
+            let k = max(0, i.density)
+            for j in 0..<min(c.count, terrain.count) where j % 4 != 3 { c[j] = terrain[j] + (c[j] - terrain[j]) * k }
+        }
+        let shade = i.shade.count == map.vertices.count / 2 ? i.shade : MapLayers.vertexHillshade(map)
+        for v in shade.indices {
+            let k = shade[v]
+            for j in 0..<3 { c[v * 4 + j] = min(1, c[v * 4 + j] * k); terrain[v * 4 + j] = min(1, terrain[v * 4 + j] * k) }
+        }
+        return (c, terrain, terrainBase, shade)
     }
     private var outlineGeneration = 0
     private var borderWide = Set<Int>()

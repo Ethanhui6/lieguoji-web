@@ -56,7 +56,9 @@ extension NativeEngine {
     func labels(_ owners: [Int]) -> JS {
         let grid = statics.labelGrid
         if grid.isNull { return .array() }
-        let cellsX = grid.cellsX.asInt, pts = grid.points.asArray.map(\.asNumber), cells = grid.cells.asArray.map(\.asInt)
+        // The label grid is fixed for a world: read into arrays once.
+        if labelGridCache == nil { labelGridCache = (grid.points.asArray.map(\.asNumber), grid.cells.asArray.map(\.asInt)) }
+        let cellsX = grid.cellsX.asInt, pts = labelGridCache!.points, cells = labelGridCache!.cells
         let n = cells.count, unit = 1600.0 / 240.0
         func group(_ c: Int) -> Int? { cells[c] >= 0 && owners[cells[c]] >= 0 ? owners[cells[c]] : nil }
         var order = [Int](), groups = [Int: [Int]]()

@@ -9,6 +9,8 @@ public final class NativeEngine {
     /// The original province battle arrows (presentation state, kept between days).
     let battleArrows = BattleArrows()
     let statics: JS
+    /// The statics' label grid as arrays (NativeView.labels).
+    var labelGridCache: (points: [Double], cells: [Int])?
 
     /// Catalogs shared by every world: native character traits, family naming by culture and the
     /// opening cultures (Resources/Catalog, Resources/World/cultures.json).

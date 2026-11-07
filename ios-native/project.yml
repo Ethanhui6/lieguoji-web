@@ -42,8 +42,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lieguoji.native
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "0.33.0"
-        CURRENT_PROJECT_VERSION: "91"
+        MARKETING_VERSION: "0.34.0"
+        CURRENT_PROJECT_VERSION: "92"
     info:
       path: App/Info.plist
       properties:

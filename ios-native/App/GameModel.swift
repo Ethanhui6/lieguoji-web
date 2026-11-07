@@ -95,6 +95,8 @@ import LieguojiCore
     private var loop: Task<Void, Never>?
     private var lastSavedDay = 0
     private var lastSaveTime = Date()
+    private var lastMapUpdate: CFTimeInterval = 0
+    private var pendingLabels: [WorldMeta.LabelBox]?
 
     init() {
         engine.onCrash = { [weak self] in self?.engineCrashed() }
@@ -378,7 +380,10 @@ import LieguojiCore
                 // runs fewer days rather than stuttering. The map glides between steps.
                 // The original's pace: 1× is ten days a second (secondsPerDay 0.1), five steps a second.
                 let wanted = [1: 2, 2: 4, 4: 8, 8: 16][self.speed] ?? 2
-                let affordable = max(1, Int((0.13 / max(0.004, self.dayCost)).rounded(.down)))
+                // A step may take longer at the higher speeds (the map glides over a whole step on the GPU,
+                // so a longer step is still smooth): large worlds then really run faster at 4× and 8×.
+                let stepTime = [1: 0.13, 2: 0.2, 4: 0.32, 8: 0.5][self.speed] ?? 0.13
+                let affordable = max(1, Int((stepTime / max(0.004, self.dayCost)).rounded(.down)))
                 let pace = min(wanted, affordable)
                 let days = far ? pace * 2 : pace
                 self.lastDays = days
@@ -398,13 +403,18 @@ import LieguojiCore
                 // A single slow step (a save, a month's politics) is clipped, so it cannot drag the pace
                 // down to one day a step for many steps after it.
                 if !far { self.dayCost = self.dayCost * 0.7 + min(spent / Double(max(1, days)), self.dayCost * 2.5) * 0.3 }
-                let budget = 0.2
+                let budget = max(0.2, stepTime)
                 let rest = budget - spent
                 if rest > 0 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) } else { await Task.yield() }
             }
         }
     }
-    func pause(saving: Bool = true) { let was = playing; loop?.cancel(); loop = nil; playing = false; if saving, was, let day = state?.day { save(); lastSavedDay = day } }
+    func pause(saving: Bool = true) {
+        let was = playing; loop?.cancel(); loop = nil; playing = false
+        // Ownership held back while playing reaches the map now.
+        if was, let s = state { apply(s) }
+        if saving, was, let day = state?.day { save(); lastSavedDay = day }
+    }
     func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : 1 }
     func stepOnce() { guard !playing else { return }; Task { try? await step(days: 1) } }
 
@@ -461,10 +471,17 @@ import LieguojiCore
         if let previous { announce(previous, next) }
         guard var world = controller.world ?? map else { return }
         var changed = false
-        for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
-            world.meta.provinces[i].nation = owner; changed = true
+        // Ownership reaches the map at most twice a second while playing (each change recolours every
+        // cell and rebuilds the borders and names); labels that arrive meanwhile wait for it.
+        if let labels = next.labels { pendingLabels = labels }
+        let now = CACurrentMediaTime()
+        if !playing || now - lastMapUpdate >= 0.5 {
+            for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
+                world.meta.provinces[i].nation = owner; changed = true
+            }
+            if let labels = pendingLabels { world.meta.labels = labels; pendingLabels = nil; changed = true }
+            if changed { lastMapUpdate = now }
         }
-        if let labels = next.labels { world.meta.labels = labels; changed = true }
         // States founded by rebellion or civil war, and renamed states, join the legend.
         var legend = false
         for (i, s) in next.nations.enumerated() {

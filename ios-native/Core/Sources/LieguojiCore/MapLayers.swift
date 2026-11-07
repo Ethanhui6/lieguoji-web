@@ -269,13 +269,56 @@ public enum MapLayers {
         for s in stride(from: 0, to: map.coast.count, by: 4) {
             m.segment(map.coast[s], map.coast[s + 1], map.coast[s + 2], map.coast[s + 3], width: lineWidth, coastColor, alpha: 1)
         }
-        let perNation = stateEdges(map)
-        for n in perNation.keys.sorted() {
-            let width = wide.contains(n) ? lineWidth * 2 : lineWidth
-            for line in BorderCurve.smooth(BorderCurve.chain(perNation[n]!)) { m.polyline(line, width: width, colors[n], alpha: 1) }
+        // The state borders are the shared province-pair curves whose two sides belong to different
+        // states (or one side is water), so they lie exactly on the province lines.
+        for pair in boundaries(map) {
+            let oa = owner(map, pair.a), ob = owner(map, pair.b)
+            guard oa != ob else { continue }
+            for n in [oa, ob].compactMap({ $0 }) where n < colors.count {
+                let width = wide.contains(n) ? lineWidth * 2 : lineWidth
+                for line in pair.lines { m.polyline(line, width: width, colors[n], alpha: 1) }
+            }
         }
         return m
     }
+
+    /// The state holding a province (nil for water, −1, or none).
+    static func owner(_ map: WorldMap, _ province: Int) -> Int? {
+        guard province >= 0, province < map.meta.provinces.count else { return nil }
+        let n = map.meta.provinces[province].nation
+        return n >= 0 && n < map.meta.nations.count ? n : nil
+    }
+    /// Every boundary between two provinces (or a province and the sea, −1), joined and smoothed once
+    /// with the original's curve, by the pair it separates. Province lines and state borders are both
+    /// drawn from these, so a border never strays from the province line under it. Cached per
+    /// geometry (the land and its provinces), not per owner.
+    public static func boundaries(_ map: WorldMap) -> [(a: Int, b: Int, lines: [[Float]])] {
+        var h: UInt64 = 1469598103934665603
+        for (i, p) in map.province.enumerated() where i % 7 == 0 { h = (h ^ UInt64(UInt32(bitPattern: p)) ^ (map.isLand(i) ? 1 << 40 : 0)) &* 1099511628211 }
+        let key = "\(map.cellCount)|\(map.edges.count)|\(map.meta.provinces.count)|\(h)"
+        boundaryLock.lock()
+        if let c = boundaryCache, c.key == key { boundaryLock.unlock(); return c.value }
+        boundaryLock.unlock()
+        func side(_ cell: Int32) -> Int {
+            let c = Int(cell)
+            guard c >= 0, c < map.cellCount, map.isLand(c) else { return -1 }
+            return Int(map.province[c])
+        }
+        var groups = [Int64: [BorderCurve.Segment]]()
+        for edge in map.edges {
+            let a = side(edge.a), b = side(edge.b)
+            guard a != b else { continue }
+            let lo = min(a, b), hi = max(a, b)
+            groups[Int64(lo) << 32 | Int64(hi & 0xFFFF_FFFF), default: []].append(.init(edge.x1, edge.y1, edge.x2, edge.y2))
+        }
+        let value = groups.keys.sorted().map { k -> (a: Int, b: Int, lines: [[Float]]) in
+            (Int(Int32(truncatingIfNeeded: k >> 32)), Int(Int32(truncatingIfNeeded: k & 0xFFFF_FFFF)), BorderCurve.smooth(BorderCurve.chain(groups[k]!)))
+        }
+        boundaryLock.lock(); boundaryCache = (key, value); boundaryLock.unlock()
+        return value
+    }
+    private static var boundaryCache: (key: String, value: [(a: Int, b: Int, lines: [[Float]])])?
+    private static let boundaryLock = NSLock()
 
     /// The heavy map layers of one world, built off the main thread (world generation, loading) and
     /// handed to the renderer, which otherwise built them on the main thread as the map appeared —
@@ -297,14 +340,11 @@ public enum MapLayers {
     /// are, and never the cells' stair steps.
     public static let provinceInk = RGB(hex: 0x4A4036)
     public static func provinceLines(_ map: WorldMap) -> ColoredMesh {
-        var segments = [BorderCurve.Segment]()
-        for edge in map.edges {
-            let a = Int(edge.a), b = Int(edge.b)
-            guard a >= 0, b >= 0, a < map.cellCount, b < map.cellCount, map.isLand(a), map.isLand(b), map.province[a] != map.province[b] else { continue }
-            segments.append(.init(edge.x1, edge.y1, edge.x2, edge.y2))
-        }
         var m = ColoredMesh()
-        for line in BorderCurve.smooth(BorderCurve.chain(segments)) { m.polyline(line, width: lineWidth * 0.42, provinceInk, alpha: 0.5) }
+        // Inside a state only: where the owners differ, the state border is drawn on the same curve.
+        for pair in boundaries(map) where pair.a >= 0 && pair.b >= 0 && owner(map, pair.a) == owner(map, pair.b) {
+            for line in pair.lines { m.polyline(line, width: lineWidth * 0.42, provinceInk, alpha: 0.5) }
+        }
         return m
     }
 

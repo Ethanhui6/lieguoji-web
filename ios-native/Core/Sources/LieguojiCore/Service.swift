@@ -39,12 +39,17 @@ public final class EngineService {
         }
     }
 
-    /// The state for the views; nation labels only when ownership changed.
-    func state() -> Data {
+    /// The state for the views; nation labels only when ownership changed, and while playing at most
+    /// every fourth step (a conquest every step recomputed every state's label each step); the
+    /// pending change is sent with a later step.
+    private var stepsSinceLabels = 0
+    func state(stepping: Bool = false) -> Data {
         guard let e = engine else { return Data() }
-        let owners = e.run.world.provinces.asArray.map { p in e.run.world.nations.asArray.firstIndex { $0.id.asString == p.controller.asString } ?? -1 }
-        let labels = owners != lastOwners
-        lastOwners = owners
+        var at = [String: Int](); for (i, n) in e.run.world.nations.asArray.enumerated() where at[n.id.asString] == nil { at[n.id.asString] = i }
+        let owners = e.run.world.provinces.asArray.map { at[$0.controller.asString] ?? -1 }
+        stepsSinceLabels += 1
+        let labels = owners != lastOwners && (!stepping || stepsSinceLabels >= 4)
+        if labels { lastOwners = owners; stepsSinceLabels = 0 }
         return e.state(includeLabels: labels)
     }
 
@@ -84,7 +89,7 @@ public final class EngineService {
         case "close": engine = nil; return Reply()
         case "step":
             engine?.advance(days: max(1, int("days")))
-            return data(engine == nil ? nil : state())
+            return data(engine == nil ? nil : state(stepping: true))
         case "state": return data(engine == nil ? nil : state())
         case "order": return command(engine?.order(armyId: str("armyId"), provinceIndex: int("province")))
         case "retreat": return command(engine?.order(armyId: str("armyId"), provinceIndex: int("province"), retreat: true))

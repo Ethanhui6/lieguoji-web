@@ -185,7 +185,7 @@ public enum ArmyOrders {
         for p in list { sum = f(sum + p.1); if sum >= draw { return p.0 } }
         return list.last!.0
     }
-    static func index(_ r: JS, _ id: String) -> Int? { r.world.provinces.asArray.firstIndex { $0.id.asString == id } }
+    static func index(_ r: JS, _ id: String) -> Int? { RunWindow.provinceIndexById(r)[id] }
 
     // MARK: The batch (army-batch47 consumeArmyBatch47, issueArmySelection47)
     /// issueArmyBatchOrders47: whether any army was selected this frame.
@@ -211,23 +211,32 @@ public enum ArmyOrders {
         let ports = Set(r.harbors.sites.asArray.map(\.provinceId.asString))
         var enemyMaps = [String: [(nation: String, campaign: Int)]]()
         for n in r.world.nations.asArray { enemyMaps[n.id.asString] = enemies(r, n.id.asString) }
+        // Read once for the whole batch: every army, location, province owner and the states present in
+        // each province used to be rescanned for every army (armies × provinces × armies a day).
+        let provinceList = r.world.provinces.asArray, provinceAt = RunWindow.provinceIndexById(r)
+        var armyById = [String: JS](); for x in r.world.armies.asArray where armyById[x.id.asString] == nil { armyById[x.id.asString] = x }
+        var spaceById = [String: Armies.Located](); for v in space where spaceById[v.army.id.asString] == nil { spaceById[v.army.id.asString] = v }
+        var presentAt = [String: [JS]]()
+        for v in space { if let pid = v.province?.id.asString { presentAt[pid, default: []].append(v.army) } }
+        let manual = Set(r.voyages.manualArmies.asArray.map(\.asString))
+        var ownedBy = [String: [Int]](); for (i, p) in provinceList.enumerated() { ownedBy[p.controller.asString, default: []].append(i) }
+        var bordersOf = [String: [Int]](), lostOf = [String: [Int]]()
         for id in ids {
-            let a = r.world.armies.asArray.first { $0.id.asString == id }!, row = state.armies[id], nation = a.nationId.asString
+            let a = armyById[id]!, row = state.armies[id], nation = a.nationId.asString
             let en = enemyMaps[nation] ?? [], enemySet = Set(en.map(\.nation))
             func note(_ d: String, _ reason: String, clear: Bool = false) {
                 row.decision = JS(d); row.reason = JS(reason); row.nextTick = JS(tick + retry)
                 if clear { row.targetId = .null; row.campaignId = .null; row.issuedTick = .null }
             }
             func halt() { if reason(r, id, .halt) == nil { issue(r, id, .halt) } }
-            func controller(_ pid: String) -> String? { r.world.provinces.asArray.first { $0.id.asString == pid }?.controller.asString }
+            func controller(_ pid: String) -> String? { provinceAt[pid].map { provinceList[$0].controller.asString } }
             if !en.isEmpty || !row.garrisonId.isNull && controller(row.garrisonId.asString) != nation { row.garrisonId = .null }
             
-            guard let here = space.first(where: { $0.army.id.asString == id }) else { row.garrisonId = .null; note("lost", "部队已失去战斗力，保留既有军令历史。", clear: true); continue }
-            if r.voyages.manualArmies.asArray.contains(where: { $0.asString == id }) { row.garrisonId = .null; note("manual", "玩家已接管，自主指挥保留其军令。", clear: true); continue }
-            func enemyAt(_ pid: String) -> String? {
-                space.first { $0.province?.id.asString == pid && $0.army.status.asString != "retreating" && enemySet.contains($0.army.nationId.asString) }?.army.nationId.asString
-            }
-            let target = row.targetId.isNull ? nil : r.world.provinces.asArray.first { $0.id.asString == row.targetId.asString }
+            guard let here = spaceById[id] else { row.garrisonId = .null; note("lost", "部队已失去战斗力，保留既有军令历史。", clear: true); continue }
+            if manual.contains(id) { row.garrisonId = .null; note("manual", "玩家已接管，自主指挥保留其军令。", clear: true); continue }
+            // Status read now (an order earlier in this batch may have set an army retreating).
+            func enemyAt(_ pid: String) -> String? { presentAt[pid]?.first { $0.status.asString != "retreating" && enemySet.contains($0.nationId.asString) }?.nationId.asString }
+            let target = row.targetId.isNull ? nil : provinceAt[row.targetId.asString].map { provinceList[$0] }
             let originalTargets = !r.regimes.isNull && r.regimes.enabled.isTruthy
             // Army.Attacking, app-rule worlds. SIMPLIFIED_: a land battle is a living enemy army in
             // this province. Halt is refused by the shared command check while that enemy stands here,
@@ -262,7 +271,7 @@ public enum ArmyOrders {
             var attack = [Int](), attackSet = Set<Int>()
             func add(_ p: Int) { if attackSet.insert(p).inserted { attack.append(p) } }
             let provinces = r.world.provinces.asArray
-            let owned = provinces.indices.filter { provinces[$0].controller.asString == nation }
+            let owned = ownedBy[nation] ?? []
             let invaded = owned.filter { enemyAt(provinces[$0].id.asString) != nil }
             if a.status.asString != "retreating" && !en.isEmpty {
                 if originalTargets {
@@ -272,8 +281,11 @@ public enum ArmyOrders {
                     } else {
                         // 收复失地 (app rules): our own provinces an enemy holds join the invaded ones, so a
                         // garrison retakes occupied and rebel-held land instead of only pushing the border.
-                        let lost = provinces.indices.filter { provinces[$0].legalOwner.optionalString == nation && enemySet.contains(provinces[$0].controller.asString) }
-                        for p in ArmyAutonomy.Context.regularCandidateIds(invaded: invaded + lost, borders: stateBorders(r, nation, enemySet)) { add(p) }
+                        let lost = lostOf[nation] ?? provinces.indices.filter { provinces[$0].legalOwner.optionalString == nation && enemySet.contains(provinces[$0].controller.asString) }
+                        lostOf[nation] = lost
+                        let borders = bordersOf[nation] ?? stateBorders(r, nation, enemySet)
+                        bordersOf[nation] = borders
+                        for p in ArmyAutonomy.Context.regularCandidateIds(invaded: invaded + lost, borders: borders) { add(p) }
                     }
                 } else {
                     for p in invaded { add(p) }

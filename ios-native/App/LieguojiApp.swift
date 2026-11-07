@@ -89,7 +89,14 @@ struct RootView: View {
             if phase == .active, model.phase == .playing { Task { if await model.native.lost { model.remoteLost() } } }
         }
         .task { GameFeel.shared.start() }
-        .task { await model.loadBackdrop(); try? await model.engine.start() }
+        .task {
+            await model.loadBackdrop()
+            // The world-building engine starts once the launch and the title reveal have played: starting
+            // it during them made both stutter. 新世界 waits for it if pressed earlier.
+            var waited = 0
+            while (model.phase == .splash || model.controller.revealClock != nil) && waited < 60 { try? await Task.sleep(nanoseconds: 100_000_000); waited += 1 }
+            try? await model.engine.start()
+        }
         .sheet(isPresented: Binding(get: { model.failure != nil }, set: { if !$0 { model.failure = nil } })) {
             VStack(alignment: .leading, spacing: 16) {
                 SheetHeader(title: "出了点问题", subtitle: model.failure, seal: "误")
@@ -121,53 +128,69 @@ struct RootView: View {
 /// The launch animation: a vermilion seal is stamped on the paper, the name appears beneath it.
 struct SplashView: View {
     let done: () -> Void
-    /// Ink: a brush circle (圆相) draws itself, mountains wash in, the title is written stroke by
-    /// stroke and the seal is pressed beside it.
-    @State private var brush: CGFloat = 0
-    @State private var hills = false
+    /// 夜幕山河: on an ink-dark ground a vermilion sun rises behind a globe's gold meridians drawing
+    /// themselves; the title is brushed in top to bottom, the seal is pressed, then the dark lifts away
+    /// to the world. Shapes and gradients only (no blur, no shadow), so it holds the frame rate while
+    /// the backdrop world is being built.
+    @State private var sun = false
+    @State private var lines: CGFloat = 0
     @State private var written = 0
     @State private var stamped = false
+    @State private var motto = false
+    @State private var lifted = false
     static let title = ["列", "國", "紀"]
+    static let night = Color(red: 0.085, green: 0.07, blue: 0.055)
+    static let gold = Color(red: 0.82, green: 0.68, blue: 0.42)
     var body: some View {
         ZStack {
-            MemorialPaper(rules: false)
-            // Distant ink-wash mountains.
-            VStack {
-                Spacer()
-                ZStack {
-                    InkHills(seed: 1).fill(Theme.ink.opacity(0.07)).frame(height: 190).offset(y: hills ? 0 : 40)
-                    InkHills(seed: 2).fill(Theme.ink.opacity(0.11)).frame(height: 140).offset(y: hills ? 10 : 60)
+            Self.night.ignoresSafeArea()
+            // The rising sun: a soft vermilion disc behind everything.
+            Circle()
+                .fill(RadialGradient(colors: [Theme.seal.opacity(0.9), Theme.seal.opacity(0.35), Theme.seal.opacity(0)], center: .center, startRadius: 10, endRadius: 190))
+                .frame(width: 380, height: 380)
+                .offset(y: sun ? -40 : 120).opacity(sun ? 1 : 0)
+            // A globe: meridians and parallels in thin gold, drawing themselves.
+            ZStack {
+                ForEach(0..<5, id: \.self) { i in
+                    Ellipse().trim(from: 0, to: lines).stroke(Self.gold.opacity(0.42 - Double(i) * 0.05), lineWidth: 0.9)
+                        .frame(width: 280 - CGFloat(i) * 62, height: 280)
                 }
-                .opacity(hills ? 1 : 0)
+                ForEach([-70, 0, 70], id: \.self) { y in
+                    Capsule().fill(Self.gold.opacity(y == 0 ? 0.5 : 0.25))
+                        .frame(width: (y == 0 ? 280 : 250) * lines, height: 0.9).offset(y: CGFloat(y))
+                }
+                Circle().trim(from: 0, to: lines).stroke(Self.gold.opacity(0.6), lineWidth: 1.2).frame(width: 280, height: 280).rotationEffect(.degrees(-90))
             }
-            .ignoresSafeArea()
-            VStack(spacing: 22) {
-                ZStack {
-                    Circle().trim(from: 0, to: brush).stroke(Theme.ink.opacity(0.75), style: StrokeStyle(lineWidth: 9, lineCap: .round))
-                        .rotationEffect(.degrees(-80)).frame(width: 170, height: 170).blur(radius: 0.6)
-                    HStack(spacing: 4) {
-                        ForEach(0..<3, id: \.self) { i in
-                            Text(Self.title[i]).font(Theme.kai(46)).foregroundStyle(Theme.ink)
-                                .opacity(written > i ? 1 : 0).blur(radius: written > i ? 0 : 8).scaleEffect(written > i ? 1 : 1.25)
-                        }
+            .rotationEffect(.degrees(lifted ? 8 : 0))
+            // The title, brushed in from the top.
+            VStack(spacing: 18) {
+                VStack(spacing: 6) {
+                    ForEach(0..<3, id: \.self) { i in
+                        Text(Self.title[i]).font(Theme.kai(62)).foregroundStyle(Theme.paper)
+                            .opacity(written > i ? 1 : 0).offset(y: written > i ? 0 : -14).scaleEffect(written > i ? 1 : 1.15)
                     }
-                    SealMark(size: 40).rotationEffect(.degrees(-6)).offset(x: 78, y: 62)
-                        .scaleEffect(stamped ? 1 : 1.8).opacity(stamped ? 1 : 0)
                 }
-                Text("架空世界 · 列国兴衰").font(Theme.kai(15)).tracking(5).foregroundStyle(Theme.ink2).opacity(stamped ? 1 : 0)
+                SealMark(size: 38).rotationEffect(.degrees(-6))
+                    .scaleEffect(stamped ? 1 : 2.2).opacity(stamped ? 1 : 0)
+                Text("架空世界 · 列国兴衰").font(Theme.kai(14)).tracking(7).foregroundStyle(Self.gold)
+                    .opacity(motto ? 1 : 0).offset(y: motto ? 0 : 8)
             }
         }
+        .scaleEffect(lifted ? 1.08 : 1).opacity(lifted ? 0 : 1)
         .task {
-            withAnimation(.easeInOut(duration: 0.9)) { brush = 0.93 }
-            withAnimation(.easeOut(duration: 1.4)) { hills = true }
-            try? await Task.sleep(nanoseconds: 450_000_000)
+            withAnimation(.easeOut(duration: 1.6)) { sun = true }
+            withAnimation(.easeInOut(duration: 1.3)) { lines = 1 }
+            try? await Task.sleep(nanoseconds: 380_000_000)
             for i in 1...3 {
-                withAnimation(.easeOut(duration: 0.35)) { written = i }
-                try? await Task.sleep(nanoseconds: 220_000_000)
+                withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) { written = i }
+                try? await Task.sleep(nanoseconds: 200_000_000)
             }
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.55)) { stamped = true }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { stamped = true }
             GameFeel.shared.thud()
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            withAnimation(.easeOut(duration: 0.5).delay(0.15)) { motto = true }
+            try? await Task.sleep(nanoseconds: 1_050_000_000)
+            withAnimation(.easeIn(duration: 0.45)) { lifted = true }
+            try? await Task.sleep(nanoseconds: 380_000_000)
             done()
         }
     }
@@ -218,45 +241,58 @@ struct TitleView: View {
     private static let mottos = ["天下大势，分久必合，合久必分", "兴，百姓苦；亡，百姓苦", "江山如画，一时多少豪杰", "运筹帷幄之中，决胜千里之外", "苟利国家生死以"]
     @State private var motto = TitleView.mottos.randomElement()!
     var body: some View {
-        VStack(spacing: 0) {
-            // The vertical title and motto over the drifting world, like a scroll's inscription.
-            HStack(alignment: .top) {
-                Spacer()
+        ZStack {
+            // Ink at the top, paper at the bottom: the title and the actions read over any world.
+            LinearGradient(stops: [.init(color: SplashView.night.opacity(0.62), location: 0), .init(color: SplashView.night.opacity(0), location: 0.38),
+                                   .init(color: Theme.paper.opacity(0), location: 0.52), .init(color: Theme.paper.opacity(0.94), location: 0.86)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea().allowsHitTesting(false)
+            VStack(spacing: 0) {
+                // The inscription: the title brushed top to bottom, the seal, and a line of the classics.
                 HStack(alignment: .top, spacing: 14) {
-                    VerticalText(motto, size: 15).foregroundStyle(Theme.ink2)
-                    VerticalText("列國紀", size: 46).foregroundStyle(Theme.ink)
-                    SealMark(size: 34).rotationEffect(.degrees(-5)).padding(.top, 6)
+                    VStack(spacing: 4) {
+                        ForEach(Array(SplashView.title.enumerated()), id: \.offset) { i, ch in
+                            Text(ch).font(Theme.kai(56)).foregroundStyle(Theme.paper)
+                                .opacity(shown ? 1 : 0).offset(y: shown ? 0 : -12)
+                                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(Double(i) * 0.08), value: shown)
+                        }
+                    }
+                    VStack(alignment: .center, spacing: 12) {
+                        SealMark(size: 30).rotationEffect(.degrees(-6))
+                        VerticalText(motto, size: 13).foregroundStyle(SplashView.gold)
+                    }
+                    .padding(.top, 8)
+                    .opacity(shown ? 1 : 0).animation(.easeOut(duration: 0.6).delay(0.3), value: shown)
+                    Spacer()
                 }
-                .padding(.vertical, 18).padding(.horizontal, 16)
-                .background(MemorialPaper(rules: false, fullBleed: false).opacity(0.9).clipShape(RoundedRectangle(cornerRadius: 12)))
-                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.18), radius: 10, y: 4)
-                .padding(.trailing, 22).padding(.top, 20)
-                .offset(y: shown ? 0 : -30).opacity(shown ? 1 : 0)
-            }
-            Spacer()
-            VStack(spacing: 18) {
-                Text("架空世界 · 列国兴衰").font(Theme.kai(16)).tracking(4).foregroundStyle(Theme.ink2)
+                .padding(.leading, 26).padding(.top, 12)
+                Spacer()
                 VStack(spacing: 12) {
-                    Button { creating = true } label: { PrimaryLabel(title: "新世界", symbol: "globe.asia.australia") }
+                    Text("架空世界 · 列国兴衰").font(Theme.kai(14)).tracking(6).foregroundStyle(Theme.ink2)
+                    Button { creating = true } label: {
+                        HeroAction(title: "开创新世界", detail: "生成山河 · 分封列国 · 自观兴衰", symbol: "globe.asia.australia")
+                    }
+                    .rise(shown, 0.05)
                     if model.hasSave {
-                        Button { Task { await model.continueGame() } } label: { SecondaryLabel(title: "继续", symbol: "book.closed") }
+                        Button { Task { await model.continueGame() } } label: {
+                            HeroAction(title: "继续上次的世界", detail: "从最近的存档接着推演", symbol: "book.closed", primary: false)
+                        }
+                        .rise(shown, 0.1)
                     }
-                    Button { importing = true } label: { SecondaryLabel(title: "导入存档", symbol: "tray.and.arrow.down") }
-                    HStack(spacing: 12) {
-                        Button { settings = true } label: { SecondaryLabel(title: "设置", symbol: "slider.horizontal.3") }
-                        Button { notes = true } label: { SecondaryLabel(title: "更新", symbol: "sparkles") }
+                    HStack(spacing: 10) {
+                        Button { importing = true } label: { TileAction(title: "导入存档", symbol: "tray.and.arrow.down") }
+                        Button { settings = true } label: { TileAction(title: "设置", symbol: "slider.horizontal.3") }
+                        Button { notes = true } label: { TileAction(title: "更新", symbol: "sparkles") }
                     }
+                    .rise(shown, 0.16)
+                    Text(AppVersion.text).font(Theme.kai(11)).foregroundStyle(Theme.ink2.opacity(0.7)).padding(.top, 2)
                 }
-                .padding(.top, 4)
                 .buttonStyle(PressStyle())
+                .frame(maxWidth: 440)
+                .padding(.horizontal, 22).padding(.bottom, 26)
             }
-            .padding(.horizontal, 28).padding(.vertical, 30)
-            .frame(maxWidth: 420)
-            .glass(RoundedRectangle(cornerRadius: 30, style: .continuous))
-            .padding(.horizontal, 20).padding(.bottom, 34)
-            .offset(y: shown ? 0 : 60).opacity(shown ? 1 : 0)
         }
-        .onAppear { withAnimation(.spring(response: 0.7, dampingFraction: 0.85).delay(model.controller.reveal < 1 ? 1.4 : 0.1)) { shown = true } }
+        .onAppear { shown = false; withAnimation(.spring(response: 0.7, dampingFraction: 0.85).delay(model.controller.reveal < 1 ? 1.2 : 0.1)) { shown = true } }
         .onChange(of: model.tourTitle) { _, name in
             settings = name == "settings"
             creating = name == "new-world"
@@ -283,6 +319,56 @@ struct TitleView: View {
             .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
+    }
+}
+
+/// The title screen's main action: a vermilion seal plate (or a paper one) with an icon, a title and a
+/// line of what it does.
+struct HeroAction: View {
+    let title: String; let detail: String; let symbol: String
+    var primary = true
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: symbol).font(.system(size: 22, weight: .medium))
+                .foregroundStyle(primary ? Theme.seal : Theme.paper2)
+                .frame(width: 46, height: 46)
+                .background(primary ? Theme.paper2 : Theme.seal, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(Theme.kai(21)).foregroundStyle(primary ? Theme.paper2 : Theme.ink)
+                Text(detail).font(Theme.kai(12)).foregroundStyle(primary ? Theme.paper2.opacity(0.8) : Theme.ink2).lineLimit(1)
+            }
+            Spacer(minLength: 6)
+            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(primary ? Theme.paper2.opacity(0.8) : Theme.ink2)
+        }
+        .padding(.horizontal, 14).frame(height: 74)
+        .background((primary ? Theme.seal : Theme.paper2), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        // A seal's inner rule.
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(primary ? Theme.paper2.opacity(0.35) : Theme.seal.opacity(0.18), lineWidth: 0.8).padding(4))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(primary ? Color.clear : Theme.line))
+        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+}
+
+/// A small square action under the main ones: icon over a word.
+struct TileAction: View {
+    let title: String; let symbol: String
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: symbol).font(.system(size: 18, weight: .medium)).foregroundStyle(Theme.seal)
+            Text(title).font(Theme.kai(14)).foregroundStyle(Theme.ink)
+        }
+        .frame(maxWidth: .infinity).frame(height: 64)
+        .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.line))
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+extension View {
+    /// Rises into place after `delay` once `on` turns true.
+    func rise(_ on: Bool, _ delay: Double) -> some View {
+        opacity(on ? 1 : 0).offset(y: on ? 0 : 24)
+            .animation(.spring(response: 0.55, dampingFraction: 0.82).delay(delay), value: on)
     }
 }
 
@@ -884,10 +970,11 @@ extension View {
     /// Floating chrome (date, buttons, tab bar, notices) in the panels' own paper: the ink rule and
     /// the faint vermilion inner rule of Group2, so the map's controls and the pages read as one set.
     func glass<S: Shape>(_ shape: S) -> some View {
-        background(Theme.paper2.opacity(0.97), in: shape)
+        // The shadow belongs to the plain shape behind the content (a path shadow), not to the whole
+        // panel: over a map that redraws every frame, a view shadow cost an offscreen pass each frame.
+        background(shape.fill(Theme.paper2.opacity(0.97)).shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.16), radius: 12, y: 4))
             .overlay(shape.stroke(Theme.ink.opacity(0.2), lineWidth: 1))
             .overlay(shape.stroke(Theme.seal.opacity(0.16), lineWidth: 0.6).padding(3))
-            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.16), radius: 12, y: 4)
     }
 }
 
@@ -2112,6 +2199,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.39.0", ["【启动动画】重做为「夜幕山河」：墨色底上，朱红旭日缓缓升起，金色经纬线自行勾画出一只地球，「列國紀」三字自上而下落笔，印章按下，随后夜幕向外散开露出世界。只用图形和渐变，不用模糊和阴影，构建背景世界时也不掉帧。",
+                    "【主页】重新设计：顶部墨色渐隐，竖排大字标题、印章与一句古语；底部纸色渐显，主按钮改为朱印样式的「开创新世界」（附一行说明），有存档时出现「继续上次的世界」，导入存档、设置、更新改为三个图标方块；各元素依次浮现。",
+                    "【性能·主页】背景地图漂移由每秒 60 帧降到 30 帧（每秒只移 8 点，看不出差别，地图和国名重绘减半）；主页不再刷海浪；面板阴影改为只画在底板形状上，不再每帧额外离屏合成；建世界用的引擎等启动动画和主页展开结束后才启动，不再和动画抢处理器。",
+                    "【修复】启动中过早点「新世界」时，引擎可能被加载两次、第一次请求永远等不到结果；现在同一时间只加载一次。"]),
         ("0.38.0", ["【军队AI】出兵前先掂量强弱：敌军兵力超过本军加上同袍援军 1.6 倍的地方不去硬碰（本国被入侵的州郡除外，照样回援）；同袍已在合击的目标，只要不比最近的目标远太多，就优先去会合（集中兵力），不再各自零散送死。",
                     "【军队数量】每个州郡在本土最多可驻三支常备军（原为两支），全国常备军上限由每州 1.5 支提到 2.2 支，天下总数上限 900 支。",
                     "【节奏】1× 由每秒 10 天提到 15 天，各档同比加快；新增 16× 档（每步最多 40 天）。手机算不过来时仍会自动少推几天，不会卡顿。",

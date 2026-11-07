@@ -595,6 +595,8 @@ struct MapView: UIViewRepresentable {
             }
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
+            // No sea waves behind the title (they kept spawning animated layers over the drifting map).
+            if controller.drifting { effects.stopWaves() } else if controller.reveal >= 1 { effects.startWaves() }
             renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills)
             if controller.worldRevision != shownRevision { shownRevision = controller.worldRevision }
             if controller.editorRevision != shownEditorRevision, let next = controller.editorMap {
@@ -710,7 +712,9 @@ struct MapView: UIViewRepresentable {
         private func startDrift() {
             guard drift == nil else { return }
             let l = CADisplayLink(target: self, selector: #selector(driftStep(_:)))
-            l.preferredFrameRateRange = CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+            // The title backdrop drifts eight points a second: thirty frames are as smooth to the eye and
+            // halve the map and name redraws behind the title.
+            l.preferredFrameRateRange = CAFrameRateRange(minimum: 20, maximum: 30, preferred: 30)
             l.add(to: .main, forMode: .common); drift = l
         }
         @objc private func driftStep(_ l: CADisplayLink) {

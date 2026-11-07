@@ -20,7 +20,18 @@ import LieguojiCore
         web.navigationDelegate = self
     }
 
+    /// One load at a time: a second caller (新世界 pressed while the delayed start runs) waits for it
+    /// instead of loading again and leaving the first one waiting forever.
+    private var starting: Task<Void, Error>?
     func start() async throws {
+        if loaded { return }
+        if let starting { return try await starting.value }
+        let t = Task { try await self.load() }
+        starting = t
+        defer { starting = nil }
+        try await t.value
+    }
+    private func load() async throws {
         if loaded { return }
         guard let html = Bundle.main.url(forResource: "engine", withExtension: "html", subdirectory: "Engine") else { throw EngineError.message("安装包缺少游戏引擎") }
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in

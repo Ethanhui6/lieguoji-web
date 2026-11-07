@@ -233,7 +233,19 @@ struct StatisticsRow: Decodable, Identifiable {
 struct StatisticsSheet: View {
     @ObservedObject var model: GameModel
     let openNation: (Int) -> Void
-    static let categories: [(id: String, title: String)] = [("power", "国力排行"), ("population", "人口排名"), ("economy", "经济排行"), ("war", "战争统计"), ("religion", "宗教信息")]
+    static let categories: [(id: String, title: String)] = [("power", "国力排行"), ("population", "人口排名"), ("economy", "经济排行"), ("wars", "当前战争"), ("war", "战争统计"), ("religion", "宗教信息")]
+    /// 当前战争: attacker against defender, the cause and how long it has lasted (longest first).
+    static func currentWars(_ state: GameState?, _ map: WorldMap?) -> [StatisticsRow] {
+        guard let state, let map else { return [] }
+        func name(_ n: Int) -> String { n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].name : "?" }
+        return state.wars.map { w in
+            let days = max(0, state.day - w.startDay), y = days / 360, m = days % 360 / 30
+            let span = y > 0 ? "\(y)年\(m)个月" : "\(m)个月"
+            return StatisticsRow(name: "\(name(w.attacker)) 攻 \(name(w.defender))", nation: w.attacker, value: Double(days), text: "\(w.casusBelli) · \(span)",
+                                 color: w.attacker >= 0 && w.attacker < map.meta.nations.count ? map.meta.nations[w.attacker].color : nil)
+        }
+        .sorted { $0.value > $1.value }
+    }
     @State private var category = "power"
     @State private var rows: [StatisticsRow] = []
     @State private var brushed = false
@@ -286,7 +298,7 @@ struct StatisticsSheet: View {
                             .buttonStyle(.plain)
                             if i < rows.count - 1 { Rectangle().fill(Theme.ink.opacity(0.1)).frame(height: 0.7).padding(.leading, 64) }
                         }
-                        if rows.isEmpty { Text(category == "war" ? "天下无战事" : "暂无记录").font(Theme.kai(17)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(30) }
+                        if rows.isEmpty { Text(category == "war" || category == "wars" ? "天下无战事" : "暂无记录").font(Theme.kai(17)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(30) }
                     }
                     .background(Theme.paper2.opacity(0.45), in: RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.ink.opacity(0.12), lineWidth: 1))
@@ -296,7 +308,7 @@ struct StatisticsSheet: View {
             }
         }
         .task(id: "\(category)-\(model.state?.day ?? 0)") {
-            let next = await model.statistics(category)
+            let next = category == "wars" ? Self.currentWars(model.state, model.map) : await model.statistics(category)
             if next.map(\.name) != rows.map(\.name) { brushed = false }
             rows = next
             try? await Task.sleep(nanoseconds: 30_000_000)
@@ -360,6 +372,11 @@ struct EdictSheet: View {
                             }
                         }
                         if let vassals = s.vassals { section("附庸") { toggle("允许附庸叛变", vassals, "vassals") } }
+                        section("天下") {
+                            order("停止所有战争", "国与国的战争全部就地停战（内战与叛乱照旧）", "stopWars")
+                            Divider2()
+                            order("解除所有同盟", "现有联盟全部解散", "dissolveAlliances")
+                        }
                         if !rules.isEmpty {
                             section("天下规则") {
                                 ruleStepper("战争频率", "war", 25, zero: "止战")
@@ -384,6 +401,28 @@ struct EdictSheet: View {
         .task { await reload() }
     }
     private func reload() async { s = await model.worldSettings(); rules = await model.worldRules() }
+    @State private var confirming: (title: String, key: String)?
+    /// A one-off world order (the original's world editor), confirmed first.
+    private func order(_ title: String, _ note: String, _ key: String) -> some View {
+        Button { confirming = (title, key) } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(Theme.kai(17)).foregroundStyle(Theme.seal)
+                    Text(note).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .confirmationDialog(confirming?.title ?? "", isPresented: Binding(get: { confirming?.key == key }, set: { if !$0 { confirming = nil } }), titleVisibility: .visible) {
+            Button(title, role: .destructive) {
+                confirming = nil
+                apply(key, 1)
+            }
+        }
+    }
     private func ruleStepper(_ title: String, _ key: String, _ step: Int, zero: String? = nil) -> some View {
         let value = rules[key] ?? 100
         let range = WorldRuleRange.of(key)

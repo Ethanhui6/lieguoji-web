@@ -984,6 +984,10 @@ import LieguojiCore
     }
     func setLivelihood(_ n: Int, _ value: String) async -> String? { finish(await native.setLivelihood(n, value)) }
     func setSpecialty(_ province: Int, _ good: Int?) async -> String? { finish(await native.setSpecialty(province, good)) }
+    func armyRecord(_ id: String) async -> ArmyService? {
+        guard state != nil, let data = await native.armyRecord(id) else { return nil }
+        return try? JSONDecoder().decode(ArmyService.self, from: data)
+    }
     func diplomacyInfo(_ index: Int) async -> DiplomacyOverview? {
         guard state != nil, let data = await native.diplomacyInfo(index) else { return nil }
         return try? JSONDecoder().decode(DiplomacyOverview.self, from: data)

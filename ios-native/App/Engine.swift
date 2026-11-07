@@ -150,6 +150,9 @@ struct ProvinceInfo: Decodable {
     /// 地利: each original arm's attack and defence multiplier on this land.
     struct Arm: Decodable { let unit: String; let attack: Double; let defense: Double }
     var combat: [Arm]? = nil
+    /// 围城: who besieges this province and the city defence left of its full.
+    struct SiegeInfo: Decodable { let nation: Int; let resistance: Double; let maximum: Double }
+    var sieges: [SiegeInfo]? = nil
     /// The kinds of land this is, from what the engine weighs (core, fortress, granary, rich, mountain).
     var kinds: [(String, String)] {
         var out = [(String, String)]()

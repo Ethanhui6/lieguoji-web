@@ -212,6 +212,8 @@ public enum RunWindow {
         }
         var incoming = [String: Double]()
         for h in hits { incoming[h.victim, default: 0] += h.damage }
+        // 军团战史 (app rules): troops each army struck down and lost.
+        if ArmyLedger.on { for h in hits { if let a = armyKeys[h.attacker], let v = armyKeys[h.victim] { ArmyLedger.hit(r, attacker: a, victim: v, troops: h.damage * 10) } } }
         let state = r.forceDamage, carryBefore = Dictionary(uniqueKeysWithValues: state.carry.objectEntries.map { ($0.0, $0.1.asNumber) })
         var casualties = [(key: String, strength: Int, crew: Int, ships: Int, fleet: Bool)]()
         let navyCountToHull = r.combatPersonnel.hullPerNativeCount.optionalNumber ?? 1
@@ -332,7 +334,9 @@ public enum RunWindow {
         }
         for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" {
             let id = a.id.asString
-            a.status = JS(safe.contains(id) ? "idle" : a.status.asString == "retreating" ? "retreating" : out.held.contains(key("army", id)) ? "fighting" : "idle")
+            let was = a.status.asString
+            a.status = JS(safe.contains(id) ? "idle" : was == "retreating" ? "retreating" : out.held.contains(key("army", id)) ? "fighting" : "idle")
+            if ArmyLedger.on && was != "fighting" && a.status.asString == "fighting" { ArmyLedger.battle(r, id) }
         }
         Vassals.bump(r.armyPositions); Vassals.bump(r.fleetPositions)
         return out

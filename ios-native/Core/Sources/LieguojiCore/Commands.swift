@@ -88,6 +88,11 @@ extension NativeEngine {
         o.mountain = JS(land.mountain.isTruthy)
         o.biomes = land.isNull || land.biomes.isNull ? .array() : land.biomes
         o.income = JS(Offices.localIncome(r, id))
+        // 城市防御力 and 占领进度: each siege of this province (resistance left of its maximum).
+        let sieges = r.occupation.isNull || r.occupation.sieges.isNull ? [] : r.occupation.sieges.asArray.filter { $0.provinceId.asString == id }
+        o.sieges = .array(sieges.map { s in
+            let x = JS.object(); x.nation = JS(nation(s.attacker.optionalString)); x.resistance = JS(s.resistance.optionalNumber ?? 0); x.maximum = JS(s.maximum.optionalNumber ?? 0); return x
+        })
         // 地形 and the pace an army marches over it (app rules), from the province's main biome.
         let ratios = land.isNull || land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
         let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4

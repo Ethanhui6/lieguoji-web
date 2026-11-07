@@ -53,6 +53,12 @@ final class ArmyCommandsTests: XCTestCase {
         if let family = engine.run.kin.families.objectKeys.first {
             XCTAssertGreaterThan(try JS.parse(XCTUnwrap(engine.familyTree(family))).members.length, 0)
         }
+        // 军团信息 and the world editor's 停止所有战争 / 解除所有同盟.
+        XCTAssertNotNil(try JSONSerialization.jsonObject(with: XCTUnwrap(engine.armyRecord(id))))
+        _ = engine.setWorld("dissolveAlliances", 1)
+        _ = engine.setWorld("stopWars", 1)
+        XCTAssertFalse(engine.run.nativeWars.campaigns.asArray.contains { $0.endedTick.isNull && $0.internal.isNull })
+        XCTAssertFalse(engine.run.alliances.records.asArray.contains { $0.endedTick.isNull && $0.members.length > 0 })
         engine.advance(days: 3)
         XCTAssertNotNil(try JSONSerialization.jsonObject(with: engine.state(includeLabels: false)))
     }

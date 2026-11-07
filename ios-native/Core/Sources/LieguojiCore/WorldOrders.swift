@@ -27,6 +27,8 @@ extension NativeEngine {
         func months(_ max: Int) -> Bool { value >= 0 && value <= max }
         var reason = ""
         switch key {
+        case "stopWars": return stopAllWars()
+        case "dissolveAlliances": return dissolveAllAlliances()
         case "worldAuto":
             let on = value != 0
             if on == r.diplomacy.worldAuto.isTruthy { return (false, "世界自动外交没有变化。") }

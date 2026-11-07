@@ -154,6 +154,7 @@ actor NativeHost {
     func nationInfo(_ index: Int) async -> Data? { await call("nationInfo", ["index": index]).data }
     func diplomacyInfo(_ index: Int) async -> Data? { await call("diplomacyInfo", ["index": index]).data }
     func tradeInfo(_ index: Int) async -> Data? { await call("tradeInfo", ["index": index]).data }
+    func armyRecord(_ id: String) async -> Data? { await call("armyRecord", ["armyId": id]).data }
     func financeInfo(_ index: Int) async -> Data? { await call("financeInfo", ["index": index]).data }
     func regionInfo(_ province: Int) async -> Data? { await call("regionInfo", ["province": province]).data }
     func renameRegion(_ province: Int, _ name: String) async -> (ok: Bool, reason: String, state: Data?) { await command("renameRegion", ["province": province, "name": name]) }

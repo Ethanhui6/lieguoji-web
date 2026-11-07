@@ -99,6 +99,7 @@ public final class EngineService {
         case "nationInfo": return data(engine?.nationInfo(int("index")))
         case "diplomacyInfo": return data(engine?.diplomacyInfo(int("index")))
         case "tradeInfo": return data(engine?.tradeInfo(int("index")))
+        case "armyRecord": return data(engine?.armyRecord(str("armyId")))
         case "financeInfo": return data(engine?.financeInfo(int("index")))
         case "regionInfo": return data(engine?.regionInfo(int("province")))
         case "renameRegion": return command(engine?.renameRegion(int("province"), str("name")))

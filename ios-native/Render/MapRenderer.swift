@@ -30,6 +30,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var icons: (buffer: MTLBuffer, count: Int)?
     /// Sea lanes between harbours. Rebuilt when the port list changes, hidden by the display switch.
     private var seaLanes: (buffer: MTLBuffer, count: Int)?
+    /// 经纬线: twelve meridians and eight parallels over the map, built once on first use.
+    private lazy var gridLines: (buffer: MTLBuffer, count: Int)? = {
+        var m = ColoredMesh()
+        let w = self.map.width, h = self.map.height, ink = RGB(hex: 0x3A3027), width = MapLayers.lineWidth * 0.5
+        for i in 1..<12 { let x = w * Float(i) / 12; m.polyline([x, 0, x, h], width: width, ink, alpha: 0.28) }
+        for j in 1..<8 { let y = h * Float(j) / 8; m.polyline([0, y, w, y], width: width, ink, alpha: j == 4 ? 0.42 : 0.28) }
+        return self.buffer(m.vertices, stride: 6)
+    }()
     private var seaLaneKey: [SIMD2<Float>] = []
     /// Warm-authored sea bytes. Recoloured into `sea` for the selected preset.
     private var seaSource: [UInt8] = []
@@ -516,6 +524,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
         }
         if display.seaRoutes && reveal >= 0.7 { colored(seaLanes) }
+        if display.gridLines == true && reveal >= 1 { colored(gridLines) }
         if display.vegetation && reveal >= 0.45 { colored(relief) }
         if display.borders && reveal >= 0.75 { colored(outlines) }
         if display.cityIcons && reveal >= 0.85 { colored(icons) }

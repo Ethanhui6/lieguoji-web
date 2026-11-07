@@ -1089,6 +1089,7 @@ struct ProvinceSheet: View {
                             }
                             .padding(.horizontal, 16)
                         }
+                        ProvinceWarView(info: info, owner: owner, state: model.state, map: map)
                     }
                     Group2 {
                         if let info {
@@ -1386,6 +1387,7 @@ struct ArmySheet: View {
                         .padding(.bottom, 16)
                         .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
                     }
+                    ArmyServiceView(model: model, army: a)
                     // 整编 (custom): strength, arm and morale.
                     Button { withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { editing.toggle() } } label: {
                         HStack { Text("整编（自定义）").font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Image(systemName: editing ? "chevron.up" : "chevron.down").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.ink2) }
@@ -2049,6 +2051,8 @@ struct MapDisplaySettings: View {
                 PaperSwitch(title: "行省边界", on: $controller.display.provinceLines)
                 Divider2()
                 PaperSwitch(title: "航线", on: $controller.display.seaRoutes)
+                Divider2()
+                PaperSwitch(title: "经纬线", on: Binding(get: { controller.display.gridLines == true }, set: { controller.display.gridLines = $0 }))
             }
             .padding(.horizontal, 16)
             SectionLabel("城市与地貌")
@@ -2108,6 +2112,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.36.0", ["【原作补全】军团信息：军队页显示当前状态（休整待命／前往进攻某地／前往防守某地／在海洋中航行／交战中／撤退中）、征召于何地、服役时长、满编兵力、参战次数、战史共歼灭敌军、折损，以及将领此刻的打算。",
+                    "【原作补全】州郡页新增战争状态（和平中／与几国交战）、城市防御力、被围时的占领进度条（谁在围城、城防还剩多少），以及生物群系分布。",
+                    "【原作补全】天下诏令新增「停止所有战争」（国与国的战争全部停战，内战与叛乱照旧）和「解除所有同盟」，执行前会确认。",
+                    "【原作补全】排行新增「当前战争」：每场战争的攻守双方、开战理由和持续时间，点一下进入攻方国家。",
+                    "【原作补全】国家页显示国教的圣书与三条教规，以及全天下的信徒人数和奉行国家数（原作有的宗教用原作文字）。",
+                    "【原作补全】地图显示新增「经纬线」开关。"]),
         ("0.35.0", ["【发热】地图改为最多 2 倍像素绘制（3 倍屏上显卡负担减半以上，文字仍是原清晰度）；只有军队在走时地图每秒 60 帧，不再一直 120 帧；高帧率默认关闭，只在拖动缩放地图时生效。",
                     "【发热】战场标记、旗帜飘动、行军箭头、海浪这些循环动画限制在每秒 30 帧（以前战争期间整屏一直跑 120 帧）。",
                     "【设置】菜单 › 声音与其他 › 推演与画面：新增「画面档位」（省电／均衡／流畅，一键设定），以及可单独调节的拖动地图帧率（30/60/120）、行军帧率（30/60/120）、动画帧率（15/30/60）、地图清晰度（低／中／高／原生）、推演占用（50%～全速），「发热时自动降档」可关闭。旧版的高帧率开关会自动换成对应设置。",

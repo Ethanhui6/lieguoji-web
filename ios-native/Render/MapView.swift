@@ -115,6 +115,8 @@ struct DisplaySettings: Codable, Equatable {
     var fullNationNames = true
     /// "original" is preset 0. "warm" keeps the previous paper sea (网页适配).
     var ocean = "original"
+    /// 经纬线 (the original's GridLines). Optional so settings saved before it still load.
+    var gridLines: Bool? = nil
     static let key = "displaySettings.v3"
     static func load() -> DisplaySettings {
         guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) else { return DisplaySettings() }

@@ -200,8 +200,12 @@ import LieguojiCore
     /// engine builds the same world with its people and armies; that world then takes over.
     func generate(_ options: NewWorld) async {
         pause()
-        phase = .generating; failure = nil
+        failure = nil
         generationNote = "正在生成地形"
+        // Straight into the founding: the sea fills the screen at once and the new land rises from it as
+        // soon as it is built (the separate loading screen in between is gone). Without the device-built
+        // preview the engine's world is awaited on the loading screen as before.
+        if previewInputs != nil { controller.reveal = 0; phase = .founding } else { phase = .generating }
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
             let json: [String: Any] = ["template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed,
@@ -355,7 +359,8 @@ import LieguojiCore
             try? await Task.sleep(nanoseconds: 100_000_000)
             controller.reveal = controller.revealNow ?? 1
         }
-        controller.reveal = 1
+        // Cut short (the title left for a new world): the next reveal owns the map from here.
+        if keep() { controller.reveal = 1 }
         controller.endReveal()
     }
 

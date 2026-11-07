@@ -218,7 +218,7 @@ struct NationSheet: View {
                     numberEdit = nil
                     Task { await run(success: "\(e.title)已改为 \(Int(v))\(e.unit)") { await e.apply(v) } }
                 }
-                .presentationDetents([.height(300)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+                .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
             }
             .sheet(item: $partyEdit) { p in
                 PartyEditSheet(name: p.name, seats: p.seats) { name, seats in
@@ -816,7 +816,9 @@ struct NationSheet: View {
                 VStack(spacing: 0) {
                     ForEach(Array(Self.bonuses.enumerated()), id: \.offset) { i, b in
                         EditRow(label: b.label, value: Self.percent(info.bonus?[b.key], zero: "无") + " · " + b.note) {
-                            numberEdit = NumberEdit(title: b.label + "（%）", unit: "%", value: info.bonus?[b.key] ?? 0) { v in await model.setBonus(nation, key: b.key, value: v) }
+                            // The engine's own range for each (Regimes.setBonus), so the slider spans exactly it.
+                            let r = b.key == "income" ? "-50–200" : b.key == "growth" ? "-20–50" : "-50–100"
+                            numberEdit = NumberEdit(title: b.label + "（\(r)%）", unit: "%", value: info.bonus?[b.key] ?? 0) { v in await model.setBonus(nation, key: b.key, value: v) }
                         }
                         if i < Self.bonuses.count - 1 { Divider2() }
                     }
@@ -1192,11 +1194,30 @@ struct EditRow: View {
     }
 }
 
-/// 改数: one number, typed or nudged, then 颁行.
+/// 改数: one number, typed or dragged on a slider, then 颁行.
 struct NumberEditSheet: View {
     let title: String; let unit: String; let value: Double
+    /// The slider's range; nil reads it from the title (「0–100」), or −50…200 for a percentage, or
+    /// 0 up to three times the current value.
+    var range: ClosedRange<Double>? = nil
     let save: (Double) -> Void
     @State private var text = ""
+    @State private var slide = 0.0
+    private var bounds: ClosedRange<Double> { range ?? Self.infer(title, unit, value) }
+    static func infer(_ title: String, _ unit: String, _ v: Double) -> ClosedRange<Double> {
+        if let r = title.range(of: "-?[0-9]+–-?[0-9]+", options: .regularExpression) {
+            let parts = title[r].split(separator: "–").compactMap { Double($0) }
+            if parts.count == 2, parts[0] < parts[1] { return parts[0]...parts[1] }
+        }
+        if unit == "%" { return -50...200 }
+        return 0...max(100, (abs(v) * 3).rounded())
+    }
+    /// Whole numbers, or a round step of a two-hundredth of a wide range.
+    private func snap(_ v: Double) -> Double {
+        let span = bounds.upperBound - bounds.lowerBound
+        let step = span > 2000 ? pow(10, (log10(span / 200)).rounded(.down)) : 1
+        return (v / step).rounded() * step
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             SheetHeader(title: title, subtitle: "现为 \(Self.format(value))\(unit)", seal: "改")
@@ -1206,9 +1227,21 @@ struct NumberEditSheet: View {
                 if !unit.isEmpty { Text(unit).font(Theme.kai(17)).foregroundStyle(Theme.ink2) }
             }
             .padding(.horizontal, 22)
+            VStack(spacing: 4) {
+                Slider(value: $slide, in: bounds).tint(Theme.seal)
+                HStack {
+                    Text(Self.format(bounds.lowerBound) + unit).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Spacer()
+                    Text(Self.format(bounds.upperBound) + unit).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                }
+            }
+            .padding(.horizontal, 22)
+            .onChange(of: slide) { _, v in let s = Self.format(snap(v)); if s != text { text = s } }
+            .onChange(of: text) { _, t in if let v = Double(t), bounds.contains(v), abs(v - slide) > 0.5 { slide = v } }
             SealButton(title: "颁行", disabled: Double(text) == nil) { if let v = Double(text) { save(v) } }.padding(.horizontal, 22)
         }
         .padding(.bottom, 16)
+        .onAppear { slide = min(bounds.upperBound, max(bounds.lowerBound, value)) }
     }
     static func format(_ v: Double) -> String { v.rounded() == v ? String(Int(v)) : String(format: "%.1f", v) }
 }

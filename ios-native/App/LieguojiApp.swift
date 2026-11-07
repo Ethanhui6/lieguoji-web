@@ -130,69 +130,59 @@ struct RootView: View {
 /// The launch animation: a vermilion seal is stamped on the paper, the name appears beneath it.
 struct SplashView: View {
     let done: () -> Void
-    /// 夜幕山河: on an ink-dark ground a vermilion sun rises behind a globe's gold meridians drawing
-    /// themselves; the title is brushed in top to bottom, the seal is pressed, then the dark lifts away
-    /// to the world. Shapes and gradients only (no blur, no shadow), so it holds the frame rate while
-    /// the backdrop world is being built.
-    @State private var sun = false
-    @State private var lines: CGFloat = 0
+    /// The app's own jade city-gate art on its deep sea-blue: it rises out of the dark and settles, a
+    /// band of light passes over it, 列國紀 is written beneath, then everything drifts forward into the
+    /// world. One image and a gradient (no blur, no shadow), so it holds the frame rate while the
+    /// backdrop world is built.
+    @State private var risen = false
+    @State private var sheen: CGFloat = -1
     @State private var written = 0
-    @State private var stamped = false
     @State private var motto = false
     @State private var lifted = false
     static let title = ["列", "國", "紀"]
-    static let night = Color(red: 0.085, green: 0.07, blue: 0.055)
-    static let gold = Color(red: 0.82, green: 0.68, blue: 0.42)
+    static let night = Color(red: 0.035, green: 0.09, blue: 0.11)
+    static let gold = Color(red: 0.86, green: 0.74, blue: 0.5)
+    static let sea = Color(red: 0.07, green: 0.2, blue: 0.24)
     var body: some View {
         ZStack {
-            Self.night.ignoresSafeArea()
-            // The rising sun: a soft vermilion disc behind everything.
-            Circle()
-                .fill(RadialGradient(colors: [Theme.seal.opacity(0.9), Theme.seal.opacity(0.35), Theme.seal.opacity(0)], center: .center, startRadius: 10, endRadius: 190))
-                .frame(width: 380, height: 380)
-                .offset(y: sun ? -40 : 120).opacity(sun ? 1 : 0)
-            // A globe: meridians and parallels in thin gold, drawing themselves.
-            ZStack {
-                ForEach(0..<5, id: \.self) { i in
-                    Ellipse().trim(from: 0, to: lines).stroke(Self.gold.opacity(0.42 - Double(i) * 0.05), lineWidth: 0.9)
-                        .frame(width: 280 - CGFloat(i) * 62, height: 280)
-                }
-                ForEach([-70, 0, 70], id: \.self) { y in
-                    Capsule().fill(Self.gold.opacity(y == 0 ? 0.5 : 0.25))
-                        .frame(width: (y == 0 ? 280 : 250) * lines, height: 0.9).offset(y: CGFloat(y))
-                }
-                Circle().trim(from: 0, to: lines).stroke(Self.gold.opacity(0.6), lineWidth: 1.2).frame(width: 280, height: 280).rotationEffect(.degrees(-90))
-            }
-            .rotationEffect(.degrees(lifted ? 8 : 0))
-            // The title, brushed in from the top.
-            VStack(spacing: 18) {
-                VStack(spacing: 6) {
+            RadialGradient(colors: [Self.sea, Self.night], center: .center, startRadius: 40, endRadius: 520).ignoresSafeArea()
+            VStack(spacing: 26) {
+                Image("SplashArt").resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 210, height: 210)
+                    .clipShape(RoundedRectangle(cornerRadius: 48, style: .continuous))
+                    // A band of light passing over the art once.
+                    .overlay(
+                        LinearGradient(colors: [.clear, .white.opacity(0.28), .clear], startPoint: .leading, endPoint: .trailing)
+                            .frame(width: 90).rotationEffect(.degrees(20)).offset(x: sheen * 220)
+                            .blendMode(.plusLighter)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 48, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 48, style: .continuous).stroke(Self.gold.opacity(0.35), lineWidth: 1))
+                    .scaleEffect(risen ? 1 : 0.86).opacity(risen ? 1 : 0).offset(y: risen ? 0 : 18)
+                HStack(spacing: 18) {
                     ForEach(0..<3, id: \.self) { i in
-                        Text(Self.title[i]).font(Theme.kai(62)).foregroundStyle(Theme.paper)
-                            .opacity(written > i ? 1 : 0).offset(y: written > i ? 0 : -14).scaleEffect(written > i ? 1 : 1.15)
+                        Text(Self.title[i]).font(Theme.kai(40)).foregroundStyle(Theme.paper)
+                            .opacity(written > i ? 1 : 0).offset(y: written > i ? 0 : 8)
                     }
                 }
-                SealMark(size: 38).rotationEffect(.degrees(-6))
-                    .scaleEffect(stamped ? 1 : 2.2).opacity(stamped ? 1 : 0)
-                Text("架空世界 · 列国兴衰").font(Theme.kai(14)).tracking(7).foregroundStyle(Self.gold)
-                    .opacity(motto ? 1 : 0).offset(y: motto ? 0 : 8)
+                Text("架空世界 · 列国兴衰").font(Theme.kai(13)).tracking(7).foregroundStyle(Self.gold.opacity(0.85))
+                    .opacity(motto ? 1 : 0)
             }
         }
-        .scaleEffect(lifted ? 1.08 : 1).opacity(lifted ? 0 : 1)
+        .scaleEffect(lifted ? 1.06 : 1).opacity(lifted ? 0 : 1)
         .task {
-            withAnimation(.easeOut(duration: 1.6)) { sun = true }
-            withAnimation(.easeInOut(duration: 1.3)) { lines = 1 }
-            try? await Task.sleep(nanoseconds: 380_000_000)
+            withAnimation(.spring(response: 0.9, dampingFraction: 0.86)) { risen = true }
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            withAnimation(.easeInOut(duration: 1.1)) { sheen = 1 }
             for i in 1...3 {
-                withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) { written = i }
-                try? await Task.sleep(nanoseconds: 200_000_000)
+                withAnimation(.easeOut(duration: 0.45)) { written = i }
+                try? await Task.sleep(nanoseconds: 170_000_000)
             }
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { stamped = true }
-            GameFeel.shared.thud()
-            withAnimation(.easeOut(duration: 0.5).delay(0.15)) { motto = true }
-            try? await Task.sleep(nanoseconds: 1_050_000_000)
-            withAnimation(.easeIn(duration: 0.45)) { lifted = true }
-            try? await Task.sleep(nanoseconds: 380_000_000)
+            withAnimation(.easeOut(duration: 0.6)) { motto = true }
+            GameFeel.shared.tap()
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            withAnimation(.easeIn(duration: 0.5)) { lifted = true }
+            try? await Task.sleep(nanoseconds: 420_000_000)
             done()
         }
     }
@@ -2213,7 +2203,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
-        ("1.3.0", ["【军队AI·分兵合击】军队不再全部扑向同一个目标：每个目标只需要足够的兵力（那里敌军的 1.5 倍，空城约两支军队），同袍已经凑够的目标就留给他们，其余军队去打别处，整条战线同时推进；本国失地仍优先派兵收复。上一版的「集中兵力」会让所有军队滚雪球般挤到一处，现已改掉。",
+        ("1.3.0", ["【音乐】五首原作曲目从原作无损音轨重新编码：由 98 kbps 提到 256 kbps，并留出 2 dB 余量（原音轨峰值几乎顶满，压缩后播放时会削波破音）；音质明显更好。",
+                    "【启动动画】改用应用图标的玉雕城门：深海蓝底上图标缓缓升起定格，一道光扫过，「列國紀」三字依次写出，随后整体推向世界。",
+                    "【创建世界】点「创建」后不再出现单独的加载动画，直接进入海水铺满、陆地升起的开国流程，无缝衔接。",
+                    "【自定义】所有改数的地方都加了拖动条，按各项的实际范围拖动（如施政 0–100、关系 −100–100、财政加成 −50%–200%、人口增长 −20%–50%），也可以直接输入。国家加成逐项核对过都会实际生效：财政加成每月增收、进攻与防守加成乘在每一次交战伤害上、人口增长每月作用于各州郡、行军速度乘在全国军队的速度上。",
+                    "【军队AI·分兵合击】军队不再全部扑向同一个目标：每个目标只需要足够的兵力（那里敌军的 1.5 倍，空城约两支军队），同袍已经凑够的目标就留给他们，其余军队去打别处，整条战线同时推进；本国失地仍优先派兵收复。上一版的「集中兵力」会让所有军队滚雪球般挤到一处，现已改掉。",
                     "【修复】大部队行军时上下左右扭动：为避免图标重叠，驻在同一处的军队会围成一圈，但行军中的军队每一步都重新排圈、来回跳动。现在只有停驻的军队才散开，且每支军队在圈里的位置固定。",
                     "【修复·震动】战报（宣战、议和、攻陷）每条都震、每场新战斗都震，战争一多手机就震个不停；现在战报至多每 5 秒震一次，新战斗至多每 8 秒一次，力度也调轻。",
                     "【音乐】加大音频缓冲，推演繁忙时音乐不再因丢帧而发出爆音。",
@@ -3105,11 +3099,11 @@ struct FleetSheet: View {
                 .animation(.easeOut(duration: 0.25), value: feedback)
             }
             .sheet(isPresented: $shipsEdit) {
-                NumberEditSheet(title: "\(f.name)船只", unit: "艘", value: Double(f.ships)) { v in
+                NumberEditSheet(title: "\(f.name)船只", unit: "艘", value: Double(f.ships), range: 1...10) { v in
                     shipsEdit = false
                     Task { feedback = await model.editFleet(f.id, ships: Int(v.rounded()), name: nil) ?? "已整编为 \(min(10, max(1, Int(v.rounded())))) 艘" }
                 }
-                .presentationDetents([.height(300)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+                .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
             }
             .sheet(isPresented: $renaming) {
                 VStack(alignment: .leading, spacing: 14) {

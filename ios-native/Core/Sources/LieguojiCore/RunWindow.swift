@@ -291,6 +291,7 @@ public enum RunWindow {
         let anchors = r.originalArmy47.isNull ? false : r.originalArmy47.paths.optionalNumber == 1
         let index = provinceIndexById(r)
         let seconds0 = r.forceClock.secondsPerTick.asNumber
+        let homeward = r.regimes.enabled.isTruthy
         // Controllers, access and war do not change during one motion call: read each once.
         let controllers = r.world.provinces.asArray.map(\.controller.asString)
         var pairs = [String: (access: Bool, war: Bool)]()
@@ -313,7 +314,8 @@ public enum RunWindow {
             let a = entry[force.id]!
             if q < 0 { return a.sea }
             let c = controllers[q], v = relation(a.nation, c)
-            return v.access || c == a.anchor || !a.retreating && v.war
+            // App worlds (归国通行): a force marching home crosses land it is not at war with.
+            return v.access || c == a.anchor || !a.retreating && v.war || a.retreating && homeward && !v.war
         }, speed: { force, cell in
             if force.kind == .fleet { return f(2.2) * ForceMotion.mapUnitsPerNativeUnit * seconds0 }
             let a = entry[force.id]!

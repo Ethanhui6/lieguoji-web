@@ -71,7 +71,10 @@ public enum ArmyOrders {
             let allowSea = r.reorganization.active[id].isNull
             guard let path = g.path(from: here.cell, to: target, allowSea: allowSea, canEnterProvince: { q in
                 let c = r.world.provinces[q].controller.asString
+                // App worlds (归国通行): an army marching home may cross any land it is not at war with;
+                // after a peace it used to find no lawful road out of the former enemy's land and stood there.
                 return RunWindow.access(r, nation, c) || c == anchor || !v && RunWindow.atWar(r, nation, c)
+                    || v && r.regimes.enabled.isTruthy && !RunWindow.atWar(r, nation, c)
             }) else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }
             let point = g.location(travel).point
             let t = JS.object()
@@ -408,11 +411,27 @@ public enum ArmyOrders {
             for p in homes {
                 if let refused = reason(r, id, .move(province: p, retreat: true)) { why = refused; continue }
                 issue(r, id, .move(province: p, retreat: true))
-                row.targetId = provinces[p].id.clone(); row.campaignId = .null; row.issuedTick = JS(tick); note("returning", "原目标已结束，从实际位置撤回本国。"); returning = true; break
+                row.targetId = provinces[p].id.clone(); row.campaignId = .null; row.issuedTick = JS(tick); row.strandedTick = .null
+                note("returning", "原目标已结束，从实际位置撤回本国。"); returning = true; break
             }
             if !returning {
                 if ongoing && (here.province == nil || !RunWindow.atWar(r, nation, here.province!.controller.asString)) { halt() }
                 note("no-route", why.isEmpty ? "暂时没有符合当前通行权的返乡路线，保留实际位置。" : why, clear: true)
+                // 遣返 (app worlds): an army with no road home for sixty days (an enclave, a closed sea) is
+                // brought back to its nearest province instead of standing abroad for ever.
+                if originalTargets, here.province.map({ !RunWindow.atWar(r, nation, $0.controller.asString) }) ?? true, let home = homes.first {
+                    if row.strandedTick.isNull { row.strandedTick = JS(tick) }
+                    else if tick - row.strandedTick.asInt >= 60 * 120, let cell = Armies.homeCells[provinces[home].id.asString] {
+                        let t = JS.object()
+                        t.version = JS(1); t.armyId = JS(id); t.origin = provinces[home].center.clone(); t.nodes = .array([JS(cell)])
+                        t.leg = JS(0); t.offset = JS(0); t.crossed = JS(false); t.status = JS("arrived")
+                        r.armyPositions.records[id] = t; Vassals.bump(r.armyPositions)
+                        a.status = JS("idle"); a.provinceId = provinces[home].id.clone()
+                        row.strandedTick = .null; row.targetId = .null
+                        note("returning", "久无归路，遣返本国\(provinces[home].name.asString)。")
+                        People.announce(r, kind: "diplomacy", text: "\(a.name.asString)遣返归国", reason: "战事已了，滞留外境六十日无路可归，经交涉遣返\(provinces[home].name.asString)。", nations: [nation], province: provinces[home].id.asString)
+                    }
+                }
             }
         }
         state.lastDay = r.world.day.clone(); state.revision = JS(state.revision.asNumber + 1)

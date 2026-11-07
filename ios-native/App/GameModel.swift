@@ -289,6 +289,7 @@ import LieguojiCore
             if data.starts(with: Array(("{" + quote + "format" + quote + ":" + quote + NativeEngine.saveFormat + quote).utf8)) {
                 // A Swift save: the full run and its geometry, no replay.
                 let opened = try await native.open(data)
+                await applyCloud()
                 await native.enableAppRules()
                 guard let mapData = opened.map else { throw EngineError.message("存档缺少地图") }
                 let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared) in
@@ -368,6 +369,9 @@ import LieguojiCore
 
     // MARK: time
 
+    /// 云更新: the cloud's balance numbers to the engine (before a world's rules are enabled, and again
+    /// when a newer config arrives during play).
+    func applyCloud() async { if let d = CloudConfig.shared.tuningData { await native.setTuning(d) } }
     func togglePlay() { playing ? pause() : play() }
     func play() {
         guard loop == nil, state != nil else { return }
@@ -388,7 +392,7 @@ import LieguojiCore
                 // up to the speed's pace — a quick phone runs near the original's pace, a slow one
                 // runs fewer days rather than stuttering. The map glides between steps.
                 // 1× is fifteen days a second (half again the original's ten, which felt slow on a phone), five steps a second.
-                let wanted = [1: 3, 2: 6, 4: 12, 8: 24, 16: 40][self.speed] ?? 3
+                let wanted = CloudConfig.shared.pace[self.speed] ?? [1: 3, 2: 6, 4: 12, 8: 24, 16: 40][self.speed] ?? 3
                 // A step may take longer at the higher speeds (the map glides over a whole step on the GPU,
                 // so a longer step is still smooth): large worlds then really run faster at 4× and 8×.
                 let stepTime = [1: 0.13, 2: 0.2, 4: 0.32, 8: 0.5, 16: 0.6][self.speed] ?? 0.13
@@ -434,6 +438,7 @@ import LieguojiCore
     private func handOver() async throws {
         let text = try await engine.call("nativeWorld()")
         _ = try await native.open(Data(text.utf8))
+        await applyCloud()
         await native.enableAppRules()
         // The Swift engine's own first state (its army points, the arms by culture) replaces the web
         // engine's at once: otherwise the first step after 开始 slid every army from the web's
@@ -990,6 +995,7 @@ import LieguojiCore
         guard state != nil, let data = await native.financeInfo(index) else { return nil }
         return try? JSONDecoder().decode(FinanceOverview.self, from: data)
     }
+    func changeCorruption(_ n: Int, lower: Bool) async -> String? { finish(await native.changeCorruption(n, lower: lower)) }
     func setTax(_ n: Int, _ value: String) async -> String? { finish(await native.setTax(n, value)) }
     func regionInfo(_ province: Int) async -> RegionInfo? {
         guard state != nil, let data = await native.regionInfo(province) else { return nil }

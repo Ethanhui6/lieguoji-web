@@ -131,7 +131,7 @@ public enum RunWindow {
                     let n = a.nationId.asString
                     // App worlds: a siege falls in a third of the time (provinces here are few and large, so
                     // land changed hands far more slowly than in the original).
-                    let assault = UnitKinds.enabled ? damage * 4 : damage
+                    let assault = UnitKinds.enabled ? damage * Tuning.current.siege : damage
                     if n == p.controller.asString { s.resistance = JS(min(s.maximum.asNumber, s.resistance.asNumber + damage)) }
                     else if war(n, p.controller.asString) { s.attacker = JS(n); s.resistance = JS(max(0, s.resistance.asNumber - assault)) }
                     s.pulse = JS(tick)

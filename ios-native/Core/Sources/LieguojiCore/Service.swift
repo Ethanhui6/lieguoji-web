@@ -98,6 +98,11 @@ public final class EngineService {
         case "province": return data(engine?.province(int("index")))
         case "nationInfo": return data(engine?.nationInfo(int("index")))
         case "diplomacyInfo": return data(engine?.diplomacyInfo(int("index")))
+        // 云端调校: the balance numbers from the cloud config.
+        case "tuning":
+            guard let payload, let t = try? JSONDecoder().decode(Tuning.self, from: payload) else { return Reply(ok: false, reason: "调校数据无效。") }
+            Tuning.current = t
+            return Reply(ok: true, reason: "")
         case "tradeInfo": return data(engine?.tradeInfo(int("index")))
         case "armyRecord": return data(engine?.armyRecord(str("armyId")))
         case "financeInfo": return data(engine?.financeInfo(int("index")))
@@ -107,6 +112,7 @@ public final class EngineService {
         case "chronicle": return data(engine?.chronicle(str("category")))
         case "setCalendar": return command(engine?.setCalendar(era: str("era"), year: optInt("year")))
         case "setCityCulture": return command(engine?.setCityCulture(int("province"), str("culture")))
+        case "corruption": return command(engine?.changeCorruption(int("n"), lower: bool("lower")))
         case "setTax": return command(engine?.setTax(int("n"), str("value")))
         case "familyTree": return data(engine?.familyTree(str("family")))
         case "setLivelihood": return command(engine?.setLivelihood(int("n"), str("value")))

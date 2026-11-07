@@ -24,6 +24,14 @@ public enum Finance {
                 s.population = JS(max(100, ((s.population.optionalNumber ?? 0) * (1 + p.growth)).rounded()))
             }
         }
+        // 腐化度 (the original's Corruption): drifts each month toward what the state's size, taxes and
+        // government make it, eats into the income and, when severe, the state's fortune.
+        let c = corruption(r, id), land = Double(r.world.provinces.asArray.reduce(0) { $1.controller.optionalString == id ? $0 + 1 : $0 })
+        let target = max(0, min(95, 8 + land * 1.1 + (p.key == "heavy" ? 12 : p.key == "light" ? -6 : 0) - Offices.governance(r, id) * 28))
+        setCorruption(r, id, c + (target - c) * 0.06)
+        let now = corruption(r, id)
+        if now > 15 { addGold(-now / 250) }
+        if now >= 65 { addDestiny(-(now - 60) / 200) }
         if r.regimes.treasury.isNull { r.regimes.treasury = JS.object() }
         var record = r.regimes.treasury[id].isNull ? [JS]() : r.regimes.treasury[id].asArray
         record.append(JS((r.finance.nations[id].gold.optionalNumber ?? 0).rounded()))
@@ -31,7 +39,32 @@ public enum Finance {
     }
 }
 
+extension Finance {
+    static func corruption(_ r: JS, _ id: String) -> Double { r.regimes.isNull || r.regimes.corruption.isNull ? 10 : r.regimes.corruption[id].optionalNumber ?? 10 }
+    static func setCorruption(_ r: JS, _ id: String, _ v: Double) {
+        if r.regimes.corruption.isNull { r.regimes.corruption = JS.object() }
+        r.regimes.corruption[id] = JS((max(0, min(100, v)) * 10).rounded() / 10)
+    }
+    /// The original's four levels.
+    static func corruptionLevel(_ v: Double) -> String { v < 20 ? "政治清明" : v < 40 ? "轻度腐败" : v < 65 ? "中度腐败" : "严重腐败" }
+}
+
 extension NativeEngine {
+    /// 降低腐败 / 加深腐败: an inquest costs four months of income and lowers it by 15; or raise it by 15 (自定义).
+    public func changeCorruption(_ index: Int, lower: Bool) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), !r.regimes.isNull else { return (false, "国家不存在。") }
+        let id = nations[index].id.asString, fin = r.finance.nations[id], c = Finance.corruption(r, id)
+        if lower {
+            let cost = max(50, (fin.goldPerMonth.optionalNumber ?? 0) * 4).rounded()
+            guard (fin.gold.optionalNumber ?? 0) >= cost else { return (false, "国库不足 \(Int(cost)) 金，无法整肃吏治。") }
+            fin.gold = JS((fin.gold.optionalNumber ?? 0) - cost)
+            Finance.setCorruption(r, id, c - 15)
+            return (true, "整肃吏治，耗金 \(Int(cost))，腐化度降至 \(Int(Finance.corruption(r, id)))。")
+        }
+        Finance.setCorruption(r, id, c + 15)
+        return (true, "腐化度升至 \(Int(Finance.corruption(r, id)))。")
+    }
     /// 财政 of one state: treasury and its record, net monthly income, land taxes, the hoard factor,
     /// army upkeep, trade, the tax policy and the treasury's battle multiplier.
     public func financeInfo(_ index: Int) -> Data? {
@@ -48,6 +81,8 @@ extension NativeEngine {
         o.trade = JS(((n.goldPerMonth.optionalNumber ?? 0) * trade.rate).rounded())
         let p = Finance.policy(r, id)
         o.policy = JS(p.key); o.policyName = JS(p.name)
+        let corruption = Finance.corruption(r, id)
+        o.corruption = JS(corruption); o.corruptionLevel = JS(Finance.corruptionLevel(corruption))
         o.record = r.regimes.isNull || r.regimes.treasury[id].isNull ? .array() : r.regimes.treasury[id]
         return Data(o.json.utf8)
     }

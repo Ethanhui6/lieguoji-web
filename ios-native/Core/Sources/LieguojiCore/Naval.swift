@@ -75,7 +75,7 @@ public enum Naval {
     static func attackCount(_ count: Int) -> Int {
         if count <= 0 { return 0 }
         // App worlds (制海权): six fleets in ten put to sea against the enemy (the original: about a third).
-        var n = max(0, min(count, Int(f(f(Double(count)) * f(UnitKinds.enabled ? 0.6 : 0.35)).rounded(.up))))
+        var n = max(0, min(count, Int(f(f(Double(count)) * f(UnitKinds.enabled ? Tuning.current.navyAttackShare : 0.35)).rounded(.up))))
         if count >= 2 { n = min(n, count - 1) }
         return max(1, n)
     }

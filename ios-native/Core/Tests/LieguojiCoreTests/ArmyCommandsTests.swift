@@ -59,6 +59,11 @@ final class ArmyCommandsTests: XCTestCase {
         _ = engine.setWorld("stopWars", 1)
         XCTAssertFalse(engine.run.nativeWars.campaigns.asArray.contains { $0.endedTick.isNull && $0.internal.isNull })
         XCTAssertFalse(engine.run.alliances.records.asArray.contains { $0.endedTick.isNull && $0.members.length > 0 })
+        // 腐化度 and the cloud's balance numbers (a partial config keeps the defaults).
+        XCTAssertTrue(engine.changeCorruption(0, lower: false).ok)
+        let partial = try JSONDecoder().decode(Tuning.self, from: Data(#"{"siege":6}"#.utf8))
+        XCTAssertEqual(partial.siege, 6)
+        XCTAssertEqual(partial.lethality, Tuning().lethality)
         engine.advance(days: 3)
         XCTAssertNotNil(try JSONSerialization.jsonObject(with: engine.state(includeLabels: false)))
     }

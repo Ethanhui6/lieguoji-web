@@ -153,6 +153,8 @@ actor NativeHost {
     func province(_ index: Int) async -> Data? { await call("province", ["index": index]).data }
     func nationInfo(_ index: Int) async -> Data? { await call("nationInfo", ["index": index]).data }
     func diplomacyInfo(_ index: Int) async -> Data? { await call("diplomacyInfo", ["index": index]).data }
+    /// 云端调校 (Tuning) for the engine, here or on the computer.
+    func setTuning(_ data: Data) async { _ = await call("tuning", [:], payload: data) }
     func tradeInfo(_ index: Int) async -> Data? { await call("tradeInfo", ["index": index]).data }
     func armyRecord(_ id: String) async -> Data? { await call("armyRecord", ["armyId": id]).data }
     func financeInfo(_ index: Int) async -> Data? { await call("financeInfo", ["index": index]).data }
@@ -162,6 +164,7 @@ actor NativeHost {
     func chronicle(_ category: String) async -> Data? { await call("chronicle", ["category": category]).data }
     func setCalendar(era: String, year: Int?) async -> (ok: Bool, reason: String, state: Data?) { await command("setCalendar", ["era": era, "year": Self.opt(year)]) }
     func setCityCulture(_ province: Int, _ culture: String) async -> (ok: Bool, reason: String, state: Data?) { await command("setCityCulture", ["province": province, "culture": culture]) }
+    func changeCorruption(_ n: Int, lower: Bool) async -> (ok: Bool, reason: String, state: Data?) { await command("corruption", ["n": n, "lower": lower]) }
     func setTax(_ n: Int, _ value: String) async -> (ok: Bool, reason: String, state: Data?) { await command("setTax", ["n": n, "value": value]) }
     func familyTree(_ family: String) async -> Data? { await call("familyTree", ["family": family]).data }
     func setLivelihood(_ n: Int, _ value: String) async -> (ok: Bool, reason: String, state: Data?) { await command("setLivelihood", ["n": n, "value": value]) }

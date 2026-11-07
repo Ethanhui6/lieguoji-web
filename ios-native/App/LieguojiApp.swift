@@ -89,6 +89,8 @@ struct RootView: View {
             if phase == .active, model.phase == .playing { Task { if await model.native.lost { model.remoteLost() } } }
         }
         .task { GameFeel.shared.start() }
+        // 云更新: the latest balance numbers and notice; a running world takes them at once.
+        .task { if await CloudConfig.shared.refresh() { await model.applyCloud() } }
         .task {
             await model.loadBackdrop()
             // The world-building engine starts once the launch and the title reveal have played: starting
@@ -240,6 +242,7 @@ struct TitleView: View {
     /// A line of the classics under the title, changing each launch.
     private static let mottos = ["天下大势，分久必合，合久必分", "兴，百姓苦；亡，百姓苦", "江山如画，一时多少豪杰", "运筹帷幄之中，决胜千里之外", "苟利国家生死以"]
     @State private var motto = TitleView.mottos.randomElement()!
+    @ObservedObject private var cloud = CloudConfig.shared
     var body: some View {
         ZStack {
             // Ink at the top, paper at the bottom: the title and the actions read over any world.
@@ -268,6 +271,15 @@ struct TitleView: View {
                 .padding(.leading, 26).padding(.top, 12)
                 Spacer()
                 VStack(spacing: 12) {
+                    if let notice = cloud.notice {
+                        HStack(spacing: 6) {
+                            Image(systemName: "megaphone.fill").font(.system(size: 12)).foregroundStyle(Theme.seal)
+                            Text(notice).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(2)
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(Theme.paper2.opacity(0.95), in: Capsule()).overlay(Capsule().stroke(Theme.seal.opacity(0.3)))
+                        .rise(shown, 0)
+                    }
                     Text("架空世界 · 列国兴衰").font(Theme.kai(14)).tracking(6).foregroundStyle(Theme.ink2)
                     Button { creating = true } label: {
                         HeroAction(title: "开创新世界", detail: "生成山河 · 分封列国 · 自观兴衰", symbol: "globe.asia.australia")
@@ -285,7 +297,7 @@ struct TitleView: View {
                         Button { notes = true } label: { TileAction(title: "更新", symbol: "sparkles") }
                     }
                     .rise(shown, 0.16)
-                    Text(AppVersion.text).font(Theme.kai(11)).foregroundStyle(Theme.ink2.opacity(0.7)).padding(.top, 2)
+                    Text(AppVersion.text + (cloud.version > 0 ? " · 云配置 \(cloud.version)" : "")).font(Theme.kai(11)).foregroundStyle(Theme.ink2.opacity(0.7)).padding(.top, 2)
                 }
                 .buttonStyle(PressStyle())
                 .frame(maxWidth: 440)
@@ -2201,7 +2213,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
-        ("1.2.0", ["【节奏】交战杀伤力提高到原来的两倍（「战斗烈度」仍可调）：兵力相当的两军以前要磨一整年，现在几周内就分出胜负；攻城速度由三倍再提到四倍。",
+        ("1.2.0", ["【云更新】游戏启动时自动从服务器拉取最新的平衡数值（杀伤力、攻城、议和、厌战、宣战间隔、军队与舰队规模）、各档推演速度和公告，改了马上生效，不用重新安装；没网时沿用上次拉到的。新功能和新界面仍需装新版本（iOS 不允许下载运行新代码）。主页底部显示当前云配置版本，有公告时显示在主按钮上方。",
+                    "【原作补全·腐化度】国家页财政里新增腐化度：按原作分为政治清明、轻度、中度、严重腐败四级，国土越大、税越重、施政越差就越高，每月吃掉一部分收入，严重时国运逐月下降；可花四个月收入「降低腐败」，或自定义「加深腐败」。",
+                    "【包含 1.1.0】行军计算提速、前线分配、海军争夺制海权、交战军队前冲后撤动画。",
+                    "【节奏】交战杀伤力提高到原来的两倍（「战斗烈度」仍可调）：兵力相当的两军以前要磨一整年，现在几周内就分出胜负；攻城速度由三倍再提到四倍。",
                     "【节奏】议和更早：达成战争目标 4 个月即可议和，战局占优 9 个月即可强制结算；打满一年开始厌战、三年彻底打不下去（原作是五年和十年），僵持的战争会在一两年内收场，领土与政权更替更快。",
                     "【修复】多支军队驻在同一座城或在同一处交战时，图标叠成一团看不清；现在围成一圈散开，每支都看得见。"]),
         ("1.1.0", ["【性能】军队行军每一小步都要给每支军队拼一次所在地区的名字（「陆地/州郡号」）再按名字分组，一步两次；改为按数字分组，只在两军真正相遇时才生成名字。1.0 因军队增多而变慢的那部分推演时间可以省回来。",

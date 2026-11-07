@@ -252,7 +252,7 @@ public enum Regimes {
         let a = bonus(r, attacker, "attack") ?? 0, d = bonus(r, victim, "defense") ?? 0
         // App worlds fight at twice the original's lethality: evenly matched armies used to grind for a
         // whole year; a battle now decides within weeks (战斗烈度 still scales it).
-        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage") * 2
+        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage") * Tuning.current.lethality
     }
 
     /// 天下规则 (自定义): world-wide rates in percent of normal — war frequency, combat intensity, march
@@ -554,11 +554,12 @@ extension NativeEngine {
         // battles all but invisible); hull, crew and stores follow.
         if !r.regimes.isNull && !r.regimes.navyMustered.isTruthy {
             r.regimes.navyMustered = JS(true)
-            for fl in Naval.fleets(r) where fl.status.asString != "lost" && fl.ships.asInt < 3 {
+            for fl in Naval.fleets(r) where fl.status.asString != "lost" && fl.ships.asInt < Tuning.current.openingShips {
                 let id = fl.id.asString, old = max(1, fl.ships.asNumber)
                 let condition = r.maritime.isNull ? 1 : min(1, max(0.05, (r.maritime.hulls[id].optionalNumber ?? old * 100) / (old * 100)))
-                fl.ships = JS(3); fl.crew = JS(Int((120 * condition).rounded(.up))); fl.food = JS(max(fl.food.asNumber, 7200))
-                if !r.maritime.isNull { r.maritime.hulls[id] = JS((300 * condition).rounded()) }
+                let n = Double(Tuning.current.openingShips)
+                fl.ships = JS(Int(n)); fl.crew = JS(Int((40 * n * condition).rounded(.up))); fl.food = JS(max(fl.food.asNumber, 2400 * n))
+                if !r.maritime.isNull { r.maritime.hulls[id] = JS((100 * n * condition).rounded()) }
             }
         }
         // Once per world: the opening armies take their culture's arms (renamed to match).

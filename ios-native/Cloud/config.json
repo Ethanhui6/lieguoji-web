@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "notice": "",
+  "pace": { "1": 3, "2": 6, "4": 12, "8": 24, "16": 40 },
+  "tuning": {
+    "lethality": 2,
+    "siege": 4,
+    "peaceGoalMonths": 4,
+    "peaceDecisiveMonths": 9,
+    "wearyStart": 12,
+    "wearySpan": 24,
+    "warRestMonths": 6,
+    "armiesPerProvince": 2.2,
+    "armiesAtHome": 3,
+    "armyCap": 900,
+    "navyAttackShare": 0.6,
+    "openingShips": 3
+  }
+}

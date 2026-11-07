@@ -1226,6 +1226,7 @@ enum Livelihood {
 struct FinanceOverview: Decodable {
     let gold: Double; let net: Double; let taxes: Double; let hoard: Double; let army: Double; let battle: Double; let trade: Double
     let policy: String; let policyName: String; let record: [Double]
+    var corruption: Double? = nil; var corruptionLevel: String? = nil
 }
 
 /// 财政: the treasury with its two-year trend, where the month's money comes from and goes, how a
@@ -1255,6 +1256,32 @@ struct FinanceSection: View {
                 line("每月净入", (f.net - f.army >= 0 ? "+" : "") + "\(Int(f.net - f.army))", strong: true)
                 line("国库对战力", "×\(String(format: "%.2f", f.battle))", warn: f.battle < 1)
                 Divider2()
+                if let c = f.corruption {
+                    // 腐化度: the original's four levels, its cost to the income, and the two orders.
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("腐化度").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                            Spacer()
+                            Text("\(f.corruptionLevel ?? "") · \(Int(c))").font(Theme.kai(15)).foregroundStyle(c >= 40 ? Theme.seal : Theme.ink)
+                        }
+                        GeometryReader { g in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Theme.ink.opacity(0.1))
+                                Capsule().fill(c >= 65 ? Theme.seal : c >= 40 ? Theme.seal.opacity(0.65) : Theme.jade).frame(width: g.size.width * CGFloat(min(100, c)) / 100)
+                            }
+                        }
+                        .frame(height: 5).animation(.spring(response: 0.5, dampingFraction: 0.85), value: c)
+                        Text(c > 15 ? "每月收入约 −\(Int(c / 2.5))%" + (c >= 65 ? "，国运逐月下降" : "") + "。国土越大、税越重、施政越差，腐化越深。" : "吏治清明，收入不受影响。")
+                            .font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                        HStack(spacing: 10) {
+                            Button { Task { await corruption(lower: true) } } label: { SecondaryLabel(title: "降低腐败", symbol: "checkmark.seal") }
+                            Button { Task { await corruption(lower: false) } } label: { SecondaryLabel(title: "加深腐败", symbol: "exclamationmark.triangle") }
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    Divider2()
+                }
                 VStack(alignment: .leading, spacing: 8) {
                     Text("税制").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
                     ChipPicker(items: Self.policies.map { ($0.0, $0.1) }, selection: Binding(get: { f.policy }, set: { v in choose(v) }))
@@ -1267,6 +1294,11 @@ struct FinanceSection: View {
         }
         .padding(.horizontal, 16)
         .task(id: "\(nation)-\(day)") { info = await model.financeInfo(nation) }
+    }
+    @State private var note: String?
+    private func corruption(lower: Bool) async {
+        if let refused = await model.changeCorruption(nation, lower: lower) { note = refused }
+        info = await model.financeInfo(nation)
     }
     /// Sets the tax policy, then reloads the ledger.
     private func choose(_ policy: String) {

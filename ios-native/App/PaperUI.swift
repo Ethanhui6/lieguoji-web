@@ -143,23 +143,15 @@ struct MapViewSwitcher: View {
     @Binding var mode: MapViewMode
     @Binding var open: Bool
     @Namespace private var marker
+    /// Landscape: the column of views was taller than the screen and ran under the bottom bar; it
+    /// becomes a grid of four.
+    @Environment(\.verticalSizeClass) private var vertical
     var body: some View {
-        VStack(spacing: 2) {
-            ForEach(MapViewMode.allCases) { m in
-                Button {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { mode = m }
-                } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: m.symbol).font(.system(size: 13, weight: .semibold))
-                        Text(m.title).font(Theme.kai(13))
-                    }
-                    .foregroundStyle(mode == m ? Theme.paper2 : Theme.ink)
-                    .frame(width: 50, height: 46)
-                    .background {
-                        if mode == m { RoundedRectangle(cornerRadius: 9).fill(Theme.seal).matchedGeometryEffect(id: "seal", in: marker).shadow(color: Theme.seal.opacity(0.35), radius: 4, y: 2) }
-                    }
-                }
-                .buttonStyle(PressStyle())
+        Group {
+            if vertical == .compact {
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 2), count: 4), spacing: 2) { buttons }
+            } else {
+                VStack(spacing: 2) { buttons }
             }
         }
         .padding(5)
@@ -169,6 +161,24 @@ struct MapViewSwitcher: View {
         .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
         .scaleEffect(x: 1, y: open ? 1 : 0.05, anchor: .top).opacity(open ? 1 : 0)
         .animation(.spring(response: 0.42, dampingFraction: 0.82), value: open)
+    }
+    @ViewBuilder private var buttons: some View {
+        ForEach(MapViewMode.allCases) { m in
+            Button {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { mode = m }
+            } label: {
+                VStack(spacing: 3) {
+                    Image(systemName: m.symbol).font(.system(size: 13, weight: .semibold))
+                    Text(m.title).font(Theme.kai(13))
+                }
+                .foregroundStyle(mode == m ? Theme.paper2 : Theme.ink)
+                .frame(width: 50, height: 46)
+                .background {
+                    if mode == m { RoundedRectangle(cornerRadius: 9).fill(Theme.seal).matchedGeometryEffect(id: "seal", in: marker).shadow(color: Theme.seal.opacity(0.35), radius: 4, y: 2) }
+                }
+            }
+            .buttonStyle(PressStyle())
+        }
     }
 }
 

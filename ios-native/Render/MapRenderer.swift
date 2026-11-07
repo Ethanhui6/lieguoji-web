@@ -669,8 +669,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             // A slow field over the map: the states' colours spread like ink soaking into paper, in
             // patches, rather than all at once.
             float n = 0.5 + 0.5 * sin(q.x * 0.0115 + 1.7) * cos(q.y * 0.0137 - 0.6) * 0.8 + 0.1 * sin((q.x + q.y) * 0.031);
-            float rise = min(1.0, r.w / 0.45), wash = clamp((r.w - 0.5 - n * 0.22) / 0.12, 0.0, 1.0);
-            float shown = clamp((rise * 1.15 - h) * 8.0, 0.0, 1.0);
+            // Heights are per cell, so a cell used to pop up whole (a mosaic of blocks). A fine field over
+            // each vertex varies the height inside the cell, and a wider band lets the shore creep in.
+            float fine = 0.5 * sin(q.x * 0.071 + q.y * 0.013) + 0.5 * cos(q.y * 0.083 - q.x * 0.021);
+            float hh = h + fine * 0.09 + (n - 0.5) * 0.12;
+            float rise = min(1.0, r.w / 0.45), wash = clamp((r.w - 0.5 - n * 0.22 - fine * 0.04) / 0.16, 0.0, 1.0);
+            float shown = smoothstep(0.0, 1.0, clamp((rise * 1.2 - hh) * 3.2, 0.0, 1.0));
             float3 ground = terrain[id].rgb + (c.rgb - terrain[id].rgb) * wash;
             c.rgb = r.rgb + (ground - r.rgb) * shown;
             // An ink line runs along the rising shore, and a darker rim where the colour arrives.

@@ -272,6 +272,9 @@ public enum ForceMotion {
     /// The pace over each kind of land, as the original sets it (biomeSpeed; mountain 0.5, plateau 0.7).
     public static let terrainSpeed: [Double] = [1, 0.7, 0.7, 1, 1, 1, 1, 1, 1, 1, 1, 0.7, 1]
     public static let mapUnitsPerNativeUnit = 1000.0 / 240.0
+    /// App worlds: this map's provinces are several times the original's, so an army marches twice
+    /// the original's pace to cross one in about the original's time.
+    public static let appMarch = 2.0
 
     /// actualForceSpeed47 for an army: native Army.GetSpeed (nativeArmyMovementSpeed) per tick, in map units.
     public static func armySpeed(base: Double, unitSpeed: Double, cell: Int, graph g: TravelGraph, secondsPerTick: Double) -> Double {

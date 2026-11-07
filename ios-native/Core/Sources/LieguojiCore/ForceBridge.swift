@@ -60,8 +60,9 @@ public final class ForceBridge {
     public static func json(_ c: ForceContact) -> JS {
         let o = JS.object(); o.a = JS(c.a); o.b = JS(c.b); o.cellA = JS(c.cellA); o.cellB = JS(c.cellB); o.pointA = json(c.pointA); o.pointB = json(c.pointB); o.area = JS(c.area); return o
     }
-    /// The engagement distance of app worlds, in engine units: nine display units (an army icon is five).
-    public static func engageReach(_ r: JS) -> Double { 9 * max(0.0001, r.scale.optionalNumber ?? 1) }
+    /// The engagement distance of app worlds, in engine units: eighteen display units, so columns meet
+    /// in the field and at the border, not only at the city they march on.
+    public static func engageReach(_ r: JS) -> Double { 18 * max(0.0001, r.scale.optionalNumber ?? 1) }
     /// The motion rules of the run: war between nations, water province of a sea face, province ids.
     public func rules(_ r: JS, canEnter: @escaping (MovingForce, Int) -> Bool = { _, _ in false }, speed: @escaping (MovingForce, Int) -> Double = { _, _ in 0 }) -> ContactMotion.Rules {
         let nations = r.world.nations.asArray.map(\.id.asString)

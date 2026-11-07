@@ -387,7 +387,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private func rebuildArmies() {
         do {
             let sprites = armySprites
-            let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.8)
+            let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6)
             var byRole: [String: [Float]] = [:]
             var fade: Float = 1
             func quad(_ role: String, _ at: SIMD2<Float>, _ c: RGB, _ size: Float, _ sx: Float, _ sy: Float) {
@@ -408,10 +408,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
                 // Strength as one to three pieces of the arm (the back ones a shade darker).
                 let n = role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
-                let layout: [(Float, Float, Float)] = n == 1 ? [(0, 0, 1)] : n == 2 ? [(-0.2, -0.04, 0.9), (0.2, 0.04, 0.9)]
-                    : [(-0.28, -0.1, 0.82), (0.28, -0.1, 0.82), (0, 0.06, 0.9)]
+                // Strength: the piece, with one or two smaller pieces just behind it (not a wide spread).
+                let layout: [(Float, Float, Float)] = n == 1 ? [(0, 0, 1)] : n == 2 ? [(0.2, -0.12, 0.7), (0, 0, 1)]
+                    : [(-0.22, -0.12, 0.65), (0.22, -0.12, 0.65), (0, 0, 1)]
                 for (i, (dx, dy, k)) in layout.enumerated() {
-                    let shade: Float = i < layout.count - 1 && n > 1 ? 0.82 : 1
+                    let shade: Float = i < layout.count - 1 && n > 1 ? 0.9 : 1
                     quad(role, at, RGB(c.r * shade, c.g * shade, c.b * shade), size * k, dx / k, dy / k)
                 }
             }
@@ -552,7 +553,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // Marks at least 22 points tall (an army mark is 5 map units), so whose army it is reads at
         // every zoom; banner and pips keep their proportions. The shift (in the quad's own size)
         // places the banner and the pips around the army's point.
-        float pixels = s.size * max(u.scale, 18.0 / 4.02);
+        float pixels = s.size * max(u.scale, 14.0 / 3.01);
         SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, (float2(s.corner) + float2(s.shift)) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
     }
     // A piece: the texture multiplied by the state's colour (white body → the colour, grey rim → its

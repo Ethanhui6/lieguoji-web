@@ -296,7 +296,7 @@ public enum RunWindow {
             let id = a.id.asString
             entry[id] = (a.nationId.asString, anchors ? index[a.provinceId.asString].map { controllers[$0] } : nil, a.status.asString == "retreating",
                          r.reorganization.active[id].isNull, r.forceSpeed.armies[id].base.optionalNumber ?? 0,
-                         CombatReader.unitSpeed(r.units[id].optionalString ?? "") * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") : 1))
+                         CombatReader.unitSpeed(r.units[id].optionalString ?? "") * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1))
         }
         _ = armies
         let rules = bridge.rules(r, canEnter: { force, cell in

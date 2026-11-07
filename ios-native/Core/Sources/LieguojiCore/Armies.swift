@@ -95,12 +95,16 @@ public enum Armies {
         func alive(_ a: JS) -> Bool { a.troops.asNumber > 0 && a.status.asString != "destroyed" }
         for n in r.world.nations.asArray {
             let id = n.id.asString, owned = r.world.provinces.asArray.filter { $0.controller.asString == id }, land = owned.filter { $0.legalOwner.asString == id }
-            let cap = land.isEmpty ? 0 : max(1, Int((Double(land.count) * f(2.0 / 3.0)).rounded(.down)))
+            // App worlds: this map's provinces are far larger and fewer than the original's, so a state
+            // keeps up to two standing armies a province and one and a half per province in all (the original:
+            // one a province, two thirds of them), for armies as numerous as the original's.
+            let app = UnitKinds.enabled, perHome = app ? 2 : 1, globalCap = app ? 700 : 500
+            let cap = land.isEmpty ? 0 : max(1, Int((Double(land.count) * f(app ? 1.5 : 2.0 / 3.0)).rounded(.down)))
             var formed = 0, cost = 0
             for p in land {
                 let live = r.world.armies.asArray.filter(alive)
-                if live.filter({ $0.nationId.asString == id && r.tactics.forces[$0.id.asString].kind.asString != "emergency" }).count >= cap || r.world.armies.length >= 500 { break }
-                if !safe(p.id.asString, id) || live.contains(where: { r.tactics.forces[$0.id.asString].homeId.asString == p.id.asString }) { continue }
+                if live.filter({ $0.nationId.asString == id && r.tactics.forces[$0.id.asString].kind.asString != "emergency" }).count >= cap || r.world.armies.length >= globalCap { break }
+                if !safe(p.id.asString, id) || live.filter({ r.tactics.forces[$0.id.asString].homeId.asString == p.id.asString }).count >= perHome { continue }
                 let data = r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == p.id.asString }!
                 let required = Int((Double(strength(r, p.id.asString)) / 10 + 0.5).rounded(.down))
                 if data.population.asNumber < Double(required) { continue }

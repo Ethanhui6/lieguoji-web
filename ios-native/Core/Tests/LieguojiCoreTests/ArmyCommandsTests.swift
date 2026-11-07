@@ -11,7 +11,8 @@ final class ArmyCommandsTests: XCTestCase {
         try NativeEngine.loadCatalogs(traits: Data(contentsOf: resources.appendingPathComponent("Catalog/traits.json")),
                                       nobleCultures: Data(contentsOf: resources.appendingPathComponent("Catalog/noble-cultures.json")),
                                       cultures: Data(contentsOf: resources.appendingPathComponent("World/cultures.json")))
-        defer { Session.uninstall(); UnitKinds.enabled = false }
+        // enableAppRules installs global hooks; later parity tests must run without them.
+        defer { Session.uninstall(); UnitKinds.enabled = false; DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; ArmyAutonomy.temper = nil }
         let engine = try NativeEngine(world: Data(contentsOf: dir.appendingPathComponent("Golden/bridge-world.json")))
         engine.enableAppRules()
         func live() -> [JS] { engine.run.world.armies.asArray.filter { $0.troops.asNumber > 0 && $0.status.asString != "destroyed" } }

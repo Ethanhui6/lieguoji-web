@@ -650,27 +650,38 @@ struct NationSheet: View {
         Group2 {
             if list.isEmpty { Row(label: "人物", value: empty) }
             ForEach(Array(list.enumerated()), id: \.offset) { i, p in
+                // One compact card: name and age with a small brush to edit, the four skills as short
+                // numbers, the traits as tags (their full descriptions are in the editor).
                 Button { if p.key >= 0 { editing = p } } label: {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(p.role).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        if list.count > 1 { Text(p.role).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+                        Text(p.name).font(Theme.kai(17)).foregroundStyle(Theme.ink).lineLimit(1)
+                        Text("\(p.female ? "女" : "男") · \(Int(p.age))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                         Spacer()
-                        Text("\(p.name)（\(p.female ? "女" : "男")，\(Int(p.age)) 岁）").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                        if p.skills.count == 4 {
+                            Text("魅\(Int(p.skills[0])) 军\(Int(p.skills[1])) 外\(Int(p.skills[2])) 政\(Int(p.skills[3]))").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit()
+                        }
+                        if p.key >= 0 { Image(systemName: "pencil").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)) }
                     }
-                    if p.skills.count == 4 {
-                        Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-                    }
-                    ForEach(p.traits, id: \.self) { t in
-                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.caption(t)).foregroundStyle(Theme.ink2)).font(Theme.kai(13))
+                    if !p.traits.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 5) {
+                                ForEach(p.traits, id: \.self) { t in
+                                    Text(t).font(Theme.kai(12)).foregroundStyle(Theme.ink)
+                                        .padding(.horizontal, 7).padding(.vertical, 2)
+                                        .background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                                }
+                            }
+                        }
                     }
                 }
-                .padding(.horizontal, 16).padding(.vertical, 10)
+                .padding(.horizontal, 16).padding(.vertical, 9)
                 .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 if i < list.count - 1 { Divider2() }
             }
-            if !list.isEmpty { Text("点人物可修改属性与天赋").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 6) }
         }
         .padding(.horizontal, 16)
     }
@@ -680,7 +691,6 @@ struct NationSheet: View {
         let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
         let current = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation] : nil
         VStack(spacing: 10) {
-            Text("每一项改动即时生效：国号与国色立即改画地图，迁都改变核心州郡与防守加成，好战程度决定此国主动宣战的倾向，州郡人口决定税收与兵源，要塞使守军防御三倍。").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
             SectionLabel("国号与国色")
             Group2 {
                 VStack(alignment: .leading, spacing: 12) {

@@ -720,7 +720,7 @@ final class TroopLabelsView: UIView {
     func update(_ placed: [(sprite: MapRenderer.ArmySprite, x: Float, y: Float)], camera: MapCamera, viewport: CGSize) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // Icon size on screen (the renderer's icon size in map units × scale).
-        let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.8 * max(camera.scale, 18.0 / 4.02)
+        let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * max(camera.scale, 14.0 / 3.01)
         var seen = Set<String>()
         CATransaction.begin(); CATransaction.setDisableActions(true)
         // Banner marks only when the banner is big enough to carry a character.

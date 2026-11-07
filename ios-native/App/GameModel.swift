@@ -585,7 +585,7 @@ import LieguojiCore
             while let self, !self.heraldQueue.isEmpty {
                 let h = self.heraldQueue.removeFirst()
                 self.herald = h
-                switch h.kind { case .war, .uprising: GameFeel.shared.notify(.warning); case .peace, .restoration: GameFeel.shared.notify(.success); case .capture, .extinction, .capital: GameFeel.shared.tap() }
+                switch h.kind { case .war, .uprising: GameFeel.shared.news(.warning); case .peace, .restoration: GameFeel.shared.news(.success); case .capture, .extinction, .capital: GameFeel.shared.newsTap() }
                 try? await Task.sleep(nanoseconds: h.kind == .capture ? 1_600_000_000 : 2_600_000_000)
                 self.herald = nil
                 try? await Task.sleep(nanoseconds: 350_000_000)

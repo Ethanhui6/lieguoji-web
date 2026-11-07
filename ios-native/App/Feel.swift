@@ -41,6 +41,8 @@ import UIKit
     /// Starts the music if it is on (ambient: it mixes with other audio and follows the silent switch).
     func start() {
         try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
+        // A longer audio buffer: under a busy simulation the music no longer drops samples (heard as crackle).
+        try? AVAudioSession.sharedInstance().setPreferredIOBufferDuration(0.046)
         try? AVAudioSession.sharedInstance().setActive(true)
         if music && player == nil { play() }
     }
@@ -72,7 +74,18 @@ import UIKit
     private let notice = UINotificationFeedbackGenerator()
     func tap() { if haptics { light.impactOccurred() } }
     func thud() { if haptics { heavy.impactOccurred(intensity: 0.9) } }
-    func clash() { if haptics { rigid.impactOccurred(intensity: 0.7) } }
+    /// A new battle: at most once every eight seconds (with many armies a new fight began every step,
+    /// and the phone buzzed without pause).
+    func clash() { if haptics && due("clash", 8) { rigid.impactOccurred(intensity: 0.6) } }
+    /// News of the world (a war, a peace, a fall): at most once every five seconds, each kind.
+    func news(_ kind: UINotificationFeedbackGenerator.FeedbackType) { if haptics && due("news", 5) { notice.notificationOccurred(kind) } }
+    func newsTap() { if haptics && due("news", 5) { light.impactOccurred(intensity: 0.6) } }
+    private var last = [String: CFTimeInterval]()
+    private func due(_ key: String, _ gap: CFTimeInterval) -> Bool {
+        let now = CACurrentMediaTime()
+        if let t = last[key], now - t < gap { return false }
+        last[key] = now; return true
+    }
     func notify(_ kind: UINotificationFeedbackGenerator.FeedbackType) { if haptics { notice.notificationOccurred(kind) } }
 }
 

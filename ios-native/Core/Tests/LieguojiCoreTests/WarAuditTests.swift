@@ -18,8 +18,22 @@ final class WarAuditTests: XCTestCase {
         let r = engine.run, days = 1080, start = Date(), statesAtFirst = r.world.nations.length
         var standing = [String: Int](), worst = [String: Int]()
         var owners = r.world.provinces.asArray.map(\.controller.asString), changes = 0, peaks = 0
-        for _ in 0..<days {
+        // 分兵: each month, for every state with three or more armies on the march, the share heading for
+        // its single most popular target (1.0 = every army on one point).
+        var focus = [Double]()
+        for day in 0..<days {
             engine.advance(days: 1)
+            if day % 30 == 29 {
+                var byNation = [String: [String: Int]]()
+                for a in r.world.armies.asArray where a.troops.asNumber > 0 {
+                    let t = r.armyAutonomy.armies[a.id.asString].targetId
+                    if !t.isNull && r.armyAutonomy.armies[a.id.asString].decision.optionalString == "attacking" { byNation[a.nationId.asString, default: [:]][t.asString, default: 0] += 1 }
+                }
+                for targets in byNation.values {
+                    let total = targets.values.reduce(0, +)
+                    if total >= 3 { focus.append(Double(targets.values.max()!) / Double(total)) }
+                }
+            }
             for v in Armies.space(r) {
                 let a = v.army, id = a.id.asString, n = a.nationId.asString
                 guard let p = v.province, a.troops.asNumber > 0 else { standing[id] = 0; continue }
@@ -38,6 +52,7 @@ final class WarAuditTests: XCTestCase {
         print("AUDIT wars started \(wars.count), ended \(ended.count), still open \(wars.count - ended.count)")
         print("AUDIT war length days: average \(lengths.isEmpty ? 0 : Int(lengths.reduce(0, +) / Double(lengths.count))), longest \(Int(lengths.max() ?? 0))")
         print("AUDIT provinces changed hands \(changes) (\(changes * 360 / days) a year); armies at most \(peaks)")
+        print("AUDIT attacking armies on one target (share, monthly average): \(focus.isEmpty ? 0 : Int(focus.reduce(0, +) / Double(focus.count) * 100))%")
         let alive = r.world.nations.asArray.filter { Vassals.alive(r, $0.id.asString) }.count
         print("AUDIT states: \(statesAtFirst) at first, \(r.world.nations.length) ever (rebels and successors), \(alive) alive")
         let stranded = worst.filter { $0.value > 60 }.sorted { $0.value > $1.value }

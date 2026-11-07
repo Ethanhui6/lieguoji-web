@@ -356,9 +356,13 @@ public enum ArmyOrders {
                 let uncovered = candidates.filter { invadedSet.contains($0.id) && foes($0.id) * 1.2 > friends($0.id) }
                 if !uncovered.isEmpty { candidates = uncovered }
                 else {
-                    let nearest = candidates.map(dist).min() ?? 0
-                    let massed = candidates.filter { friends($0.id) > 0 && dist($0) <= nearest * 1.8 + 1 }
-                    if !massed.isEmpty { candidates = massed }
+                    // 分兵合击: a target needs only so many troops, half again what stands there (or, with
+                    // nobody there, about two columns for the siege). One that the comrades marching on it
+                    // already cover is left to them, so the armies spread along the front instead of all
+                    // pouring onto one point (the old 集中兵力 rule snowballed every army onto one target).
+                    func needed(_ p: Int) -> Double { max(foes(p) * 1.5, mine * 1.6) }
+                    let open = candidates.filter { friends($0.id) < needed($0.id) }
+                    if !open.isEmpty { candidates = open }
                 }
                 // A new target joins the comrades' count at once, so the next army in this batch sees it.
             }

@@ -446,16 +446,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
             }
             // Armies standing on one spot (a city several armies hold or fight over) fan out in a small
-            // ring around it instead of stacking into one blob.
+            // ring around it instead of stacking into one blob. Only armies standing still this leg: a
+            // marching column re-formed its ring at every step and jerked up, down and sideways.
             var spread = [String: SIMD2<Float>]()
             do {
                 let cell = max(0.001, iconSize * iconScale * 0.6)
                 var cluster = [SIMD2<Int32>: [Int]]()
-                for (i, a) in sprites.enumerated() where a.army > -100_000 && a.army >= 0 {
+                for (i, a) in sprites.enumerated() where a.army >= 0 && (legFrom[a.key] ?? SIMD2(a.x, a.y)) == (legTo[a.key] ?? SIMD2(a.x, a.y)) {
                     let e = legTo[a.key] ?? SIMD2(a.x, a.y)
                     cluster[SIMD2(Int32((e.x / cell).rounded()), Int32((e.y / cell).rounded())), default: []].append(i)
                 }
-                for list in cluster.values where list.count > 1 {
+                for var list in cluster.values where list.count > 1 {
+                    // A stable seat for each army in the ring (by its key), whatever the order of the state.
+                    list.sort { sprites[$0].key < sprites[$1].key }
                     let radius: Float = list.count <= 3 ? 0.42 : list.count <= 6 ? 0.6 : 0.78
                     for (j, i) in list.enumerated() {
                         let angle = Float(j) / Float(list.count) * 2 * .pi - .pi / 2

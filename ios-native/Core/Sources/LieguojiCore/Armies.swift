@@ -98,8 +98,9 @@ public enum Armies {
             // App worlds: this map's provinces are far larger and fewer than the original's, so a state
             // keeps up to two standing armies a province and one and a half per province in all (the original:
             // one a province, two thirds of them), for armies as numerous as the original's.
-            let app = UnitKinds.enabled, perHome = app ? 2 : 1, globalCap = app ? 700 : 500
-            let cap = land.isEmpty ? 0 : max(1, Int((Double(land.count) * f(app ? 1.5 : 2.0 / 3.0)).rounded(.down)))
+            // App worlds raise more: up to three a province at home and 2.2 a province in all (900 in the world).
+            let app = UnitKinds.enabled, perHome = app ? 3 : 1, globalCap = app ? 900 : 500
+            let cap = land.isEmpty ? 0 : max(1, Int((Double(land.count) * f(app ? 2.2 : 2.0 / 3.0)).rounded(.down)))
             var formed = 0, cost = 0
             // Counted once per state and kept current as armies form (the loop used to refilter every army
             // and rebuild every army's position for each province). Same results: a new army is this

@@ -993,7 +993,7 @@ struct Row: View {
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .firstTextBaseline, spacing: 16) {
-                Text(label).foregroundStyle(Theme.ink2).fixedSize()
+                GlyphLabel(text: label).foregroundStyle(Theme.ink2).fixedSize()
                 Spacer(minLength: 12)
                 Text(value).foregroundStyle(Theme.ink).monospacedDigit().fixedSize()
             }
@@ -2112,6 +2112,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.38.0", ["【军队AI】出兵前先掂量强弱：敌军兵力超过本军加上同袍援军 1.6 倍的地方不去硬碰（本国被入侵的州郡除外，照样回援）；同袍已在合击的目标，只要不比最近的目标远太多，就优先去会合（集中兵力），不再各自零散送死。",
+                    "【军队数量】每个州郡在本土最多可驻三支常备军（原为两支），全国常备军上限由每州 1.5 支提到 2.2 支，天下总数上限 900 支。",
+                    "【节奏】1× 由每秒 10 天提到 15 天，各档同比加快；新增 16× 档（每步最多 40 天）。手机算不过来时仍会自动少推几天，不会卡顿。",
+                    "【界面】各页的数据行和数字格都配上小图标（人口、兵力、士气、粮草、国库、国运、州郡、战役等），一眼可辨；数字格打开页面时依次浮现。"]),
         ("0.37.0", ["【原作补全】战役：两军在某州郡交战即开启一场战役，按原作命名「第N次某地战役」（N 为该地第几次战役），之后在此参战的军队都记入同一战役，三天无战事即告结束；大事记记下战役爆发。",
                     "【原作补全】排行新增「战役」：最近一百场战役的名称、进行中与否、持续天数、参战军队数和交战各国；军队页显示「当前战役」和参加过的战役数。",
                     "【设置·可回退】推演与画面新增「进场镜头拉远」「动画先快后缓（关闭为匀速）」两个开关，可退回上一版的效果；调试里新增「恢复默认设置」，地图显示与推演画面的全部设置一键还原（世界与存档不受影响）。",
@@ -2810,15 +2814,21 @@ struct StatTile: View {
     var warn = false
     /// 点一下数字即可修改: the tile becomes a button with a small brush mark.
     var edit: (() -> Void)? = nil
+    @State private var appeared = false
     var body: some View {
-        if let edit {
-            Button(action: edit) { content.overlay(alignment: .topTrailing) { Image(systemName: "pencil").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)).padding(6) } }
-                .buttonStyle(PressStyle())
-        } else { content }
+        Group {
+            if let edit {
+                Button(action: edit) { content.overlay(alignment: .topTrailing) { Image(systemName: "pencil").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)).padding(6) } }
+                    .buttonStyle(PressStyle())
+            } else { content }
+        }
+        // Tiles rise into place when a page opens.
+        .opacity(appeared ? 1 : 0).offset(y: appeared ? 0 : 8)
+        .onAppear { withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { appeared = true } }
     }
     private var content: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(label).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+            GlyphLabel(text: label).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             Text(value).font(Theme.kai(20)).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.6).monospacedDigit()
                 .contentTransition(.numericText()).animation(.snappy, value: value)
             if let fraction {

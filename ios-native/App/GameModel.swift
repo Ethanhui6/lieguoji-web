@@ -387,11 +387,11 @@ import LieguojiCore
                 // Days per step: as many as the device computes in its share of a step (measured),
                 // up to the speed's pace — a quick phone runs near the original's pace, a slow one
                 // runs fewer days rather than stuttering. The map glides between steps.
-                // The original's pace: 1× is ten days a second (secondsPerDay 0.1), five steps a second.
-                let wanted = [1: 2, 2: 4, 4: 8, 8: 16][self.speed] ?? 2
+                // 1× is fifteen days a second (half again the original's ten, which felt slow on a phone), five steps a second.
+                let wanted = [1: 3, 2: 6, 4: 12, 8: 24, 16: 40][self.speed] ?? 3
                 // A step may take longer at the higher speeds (the map glides over a whole step on the GPU,
                 // so a longer step is still smooth): large worlds then really run faster at 4× and 8×.
-                let stepTime = [1: 0.13, 2: 0.2, 4: 0.32, 8: 0.5][self.speed] ?? 0.13
+                let stepTime = [1: 0.13, 2: 0.2, 4: 0.32, 8: 0.5, 16: 0.6][self.speed] ?? 0.13
                 // Only a share of each step goes to the engine (less when the phone runs warm; see Energy).
                 let affordable = max(1, Int((stepTime * Energy.duty / max(0.004, self.dayCost)).rounded(.down)))
                 let pace = min(wanted, affordable)
@@ -427,7 +427,7 @@ import LieguojiCore
         if was, let s = state { apply(s) }
         if saving, was, let day = state?.day { save(); lastSavedDay = day }
     }
-    func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : 1 }
+    func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : 1 }
     func stepOnce() { guard !playing else { return }; Task { try? await step(days: 1) } }
 
     /// The web engine's world goes to the Swift engine, which runs it from now on.

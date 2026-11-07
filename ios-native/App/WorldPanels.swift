@@ -106,6 +106,35 @@ struct ProvinceWarView: View {
     }
 }
 
+/// A small icon for a row or tile by its label, so every page reads at a glance. The first keyword
+/// found wins (the more specific ones come first).
+enum Glyph {
+    static let table: [(String, String)] = [
+        ("人口上限", "person.3.sequence"), ("人口", "person.3"), ("信徒", "person.3"),
+        ("战役", "flag.2.crossed"), ("参战", "flag.2.crossed"), ("歼灭", "scope"), ("折损", "cross.case"),
+        ("战争状态", "exclamationmark.shield"), ("交战", "exclamationmark.shield"), ("城市防御", "building.2"), ("城防", "building.2"),
+        ("兵力", "shield.lefthalf.filled"), ("满编", "shield.lefthalf.filled"), ("军队", "shield.lefthalf.filled"), ("编制", "flag"),
+        ("士气", "flame"), ("粮", "leaf"), ("补给", "leaf"),
+        ("国库", "banknote"), ("月入", "banknote"), ("收入", "banknote"), ("金", "banknote"), ("财", "banknote"), ("增收", "chart.line.uptrend.xyaxis"),
+        ("国运", "sparkles"), ("施政", "building.columns"), ("地方官", "person.text.rectangle"), ("国策", "scroll"),
+        ("政体", "crown"), ("文化", "book.closed"), ("宗教", "book.closed"),
+        ("州郡", "map"), ("行省", "map"), ("领土", "map"), ("区域", "square.grid.3x3"), ("特产", "shippingbox"),
+        ("当前状态", "figure.walk"), ("征召", "house"), ("服役", "hourglass"), ("首都", "star"),
+    ]
+    static func of(_ label: String) -> String? { table.first { label.contains($0.0) }?.1 }
+}
+
+/// A label with its icon (if one fits), in the label's colour.
+struct GlyphLabel: View {
+    let text: String
+    var body: some View {
+        HStack(spacing: 5) {
+            if let g = Glyph.of(text) { Image(systemName: g).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.seal.opacity(0.75)).frame(width: 16) }
+            Text(text)
+        }
+    }
+}
+
 /// 宗教: holy book and practices (the original's for the faiths it has; the rest after the faith's own
 /// tradition) and its followers across the world.
 enum Faith {

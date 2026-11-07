@@ -221,6 +221,8 @@ public enum ArmyOrders {
         let manual = Set(r.voyages.manualArmies.asArray.map(\.asString))
         var ownedBy = [String: [Int]](); for (i, p) in provinceList.enumerated() { ownedBy[p.controller.asString, default: []].append(i) }
         var bordersOf = [String: [Int]](), lostOf = [String: [Int]]()
+        // App worlds: troops each state already has marching on each province (read once a batch).
+        var headingOf = [String: [String: Double]]()
         for id in ids {
             let a = armyById[id]!, row = state.armies[id], nation = a.nationId.asString
             let en = enemyMaps[nation] ?? [], enemySet = Set(en.map(\.nation))
@@ -306,6 +308,33 @@ public enum ArmyOrders {
                 ArmyAutonomy.Context.Target(id: p, x: provinces[p].center.x.asNumber, y: provinces[p].center.y.asNumber, feature: geo.provinceFeature[provinces[p].id.asString] ?? -1,
                                             protruding: CombatReader.protruding(r, p), port: ports.contains(provinces[p].id.asString))
             }
+            // App worlds (兵法): weigh strength before marching. A target held by far more enemy troops than
+            // this army and the comrades already marching on it can bring is passed over (our own invaded
+            // land excepted: it is always defended), and a target comrades converge on wins over a nearer
+            // lone one when it is not much farther (集中兵力).
+            if originalTargets && candidates.count > 1 {
+                if headingOf[nation] == nil {
+                    var h = [String: Double]()
+                    for x in r.world.armies.asArray where x.nationId.asString == nation && x.troops.asNumber > 0 {
+                        let t = state.armies[x.id.asString].targetId
+                        if !t.isNull { h[t.asString, default: 0] += x.troops.asNumber }
+                    }
+                    headingOf[nation] = h
+                }
+                let h = headingOf[nation]!, mine = a.troops.asNumber, ownTarget = row.targetId.optionalString
+                let invadedSet = Set(invaded)
+                func foes(_ p: Int) -> Double {
+                    (presentAt[provinces[p].id.asString] ?? []).reduce(0) { $1.status.asString != "retreating" && enemySet.contains($1.nationId.asString) ? $0 + $1.troops.asNumber : $0 }
+                }
+                func friends(_ p: Int) -> Double { let pid = provinces[p].id.asString; return max(0, (h[pid] ?? 0) - (ownTarget == pid ? mine : 0)) }
+                let viable = candidates.filter { invadedSet.contains($0.id) || foes($0.id) <= 1.6 * (mine + friends($0.id)) }
+                if !viable.isEmpty { candidates = viable }
+                func dist(_ t: ArmyAutonomy.Context.Target) -> Double { ((t.x - location.point.x) * (t.x - location.point.x) + (t.y - location.point.y) * (t.y - location.point.y)).squareRoot() }
+                let nearest = candidates.map(dist).min() ?? 0
+                let massed = candidates.filter { friends($0.id) > 0 && dist($0) <= nearest * 1.8 + 1 }
+                if !massed.isEmpty { candidates = massed }
+                // A new target joins the comrades' count at once, so the next army in this batch sees it.
+            }
             var chosen: Int?, why = ""
             // No war target (peace made, or none reachable): the original's Army.Idle — the army is
             // not left standing where it is. Below, at peace in its own land it takes a garrison by
@@ -313,7 +342,9 @@ public enum ArmyOrders {
             while !candidates.isEmpty {
                 guard let p = ArmyAutonomy.Context.regularTarget(location.point, home, geo.cellFeature[location.cell], candidates) else { break }
                 if let refused = reason(r, id, .move(province: p.id, retreat: false)) { why = refused; candidates.removeAll { $0.id == p.id }; continue }
-                issue(r, id, .move(province: p.id, retreat: false)); chosen = p.id; break
+                issue(r, id, .move(province: p.id, retreat: false)); chosen = p.id
+                if originalTargets, headingOf[nation] != nil { headingOf[nation]![provinces[p.id].id.asString, default: 0] += a.troops.asNumber }
+                break
             }
             if let p = chosen {
                 let c = provinces[p].controller.asString, enemy = enemySet.contains(c) ? c : enemyAt(provinces[p].id.asString)!

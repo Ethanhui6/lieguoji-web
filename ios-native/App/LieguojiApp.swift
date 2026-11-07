@@ -2203,7 +2203,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
-        ("1.3.0", ["【海战】海上交战不再用陆战的刀光，改为舷炮齐射：炮口火光、白色硝烟随风飘散、落弹处水花一圈圈扩开。",
+        ("1.3.0", ["【战斗】败退中的军队在地图上变淡，一眼看出谁在溃逃；战争箭头改细、加深色描边，不再又粗又亮压住地图。",
+                    "【界面】国家页顶部四个数字格去掉铅笔记号（点一下仍可修改），不再四个铅笔排一排。",
+                    "【海战】海上交战不再用陆战的刀光，改为舷炮齐射：炮口火光、白色硝烟随风飘散、落弹处水花一圈圈扩开。",
                     "【界面】各页数据行去掉 0.38 加的系统小图标（与纸墨风格不搭、显得杂乱），只在数字格保留。",
                     "【军队·对照原作】军牌下方显示兵力（如 3200、1.2万），地图放大到一定程度时出现，跟着军队走。",
                     "【战斗·对照原作】交战处换上原作的刀光动画（两把刀交击的 40 帧循环），每处战场节奏错开；原来只有一个很小的闪烁记号。",
@@ -2952,7 +2954,7 @@ struct StatTile: View {
     var body: some View {
         Group {
             if let edit {
-                Button(action: edit) { content.overlay(alignment: .topTrailing) { Image(systemName: "pencil").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)).padding(6) } }
+                Button(action: edit) { content }
                     .buttonStyle(PressStyle())
             } else { content }
         }

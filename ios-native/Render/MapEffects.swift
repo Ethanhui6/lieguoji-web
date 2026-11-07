@@ -348,7 +348,7 @@ final class EffectsView: UIView {
         let gradient = CAGradientLayer(); gradient.isHidden = true
         let mid = ((a.shallow.0 + a.deep.0) / 2, (a.shallow.1 + a.deep.1) / 2, (a.shallow.2 + a.deep.2) / 2)
         let fill = CAShapeLayer(); fill.fillColor = color(mid)
-        let outline = CAShapeLayer(); outline.fillColor = UIColor.clear.cgColor; outline.strokeColor = UIColor(red: 0.11, green: 0.1, blue: 0.09, alpha: 0.55).cgColor; outline.lineWidth = 1.2; outline.lineJoin = .round
+        let outline = CAShapeLayer(); outline.fillColor = UIColor.clear.cgColor; outline.strokeColor = UIColor(red: 0.09, green: 0.07, blue: 0.05, alpha: 0.8).cgColor; outline.lineWidth = 1.3; outline.lineJoin = .round
         let head = CAShapeLayer(); head.fillColor = color(a.deep); head.strokeColor = outline.strokeColor; head.lineWidth = 0.8
         fill.fillColor = color(a.shallow); fill.opacity = 0.92
         // The arrow deepens towards its head in six overlapping bands, each a step deeper (a smooth
@@ -373,7 +373,7 @@ final class EffectsView: UIView {
         let s = screen(v.a.sx, v.a.sy), c = screen(v.a.cx, v.a.cy), e = screen(v.a.ex, v.a.ey)
         func bezier(_ t: CGFloat) -> CGPoint { CGPoint(x: (1 - t) * (1 - t) * s.x + 2 * (1 - t) * t * c.x + t * t * e.x, y: (1 - t) * (1 - t) * s.y + 2 * (1 - t) * t * c.y + t * t * e.y) }
         let points = (0..<30).map { bezier(0.1 + 0.65 * CGFloat($0) / 29) }
-        func width(_ k: CGFloat) -> CGFloat { (8 - 5 * k * k * (3 - 2 * k)) * 1.3 }
+        func width(_ k: CGFloat) -> CGFloat { (6.5 - 4.5 * k * k * (3 - 2 * k)) * 1.15 }
         var left = [CGPoint](), right = [CGPoint]()
         for (i, p) in points.enumerated() {
             let q = points[min(i + 1, 29)], o = points[max(i - 1, 0)], dx = q.x - o.x, dy = q.y - o.y, len = max(0.001, hypot(dx, dy))
@@ -383,7 +383,7 @@ final class EffectsView: UIView {
         let body = UIBezierPath(); body.move(to: left[0]); for p in left.dropFirst() { body.addLine(to: p) }; for p in right.reversed() { body.addLine(to: p) }; body.close()
         v.fill.path = body.cgPath; v.outline.path = body.cgPath
         let tip = points[29], before = points[28], dx = tip.x - before.x, dy = tip.y - before.y, len = max(0.001, hypot(dx, dy)), ux = dx / len, uy = dy / len
-        let h: CGFloat = 9, l: CGFloat = 14
+        let h: CGFloat = 7.5, l: CGFloat = 13
         let head = UIBezierPath(); head.move(to: CGPoint(x: tip.x - uy * h, y: tip.y + ux * h)); head.addLine(to: CGPoint(x: tip.x + ux * l, y: tip.y + uy * l)); head.addLine(to: CGPoint(x: tip.x + uy * h, y: tip.y - ux * h)); head.close()
         v.head.path = head.cgPath
         let center = UIBezierPath(); center.move(to: points[0]); for p in points.dropFirst() { center.addLine(to: p) }; center.addLine(to: CGPoint(x: tip.x + ux * l, y: tip.y + uy * l))

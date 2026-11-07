@@ -347,7 +347,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = ""; var tier = 1; var banner = 0; var reorganizing = false
         /// Locked in battle: its pieces lunge and recoil on the map (spriteVertex, alpha marker 2).
-        var fighting = false }
+        var fighting = false
+        /// Falling back: drawn faded (败退), without the idle drift.
+        var retreating = false }
     private var unitTextures: [String: MTLTexture] = [:]
     private var route: (buffer: MTLBuffer, count: Int)?
     private var armySprites: [ArmySprite] = []
@@ -497,7 +499,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             self.spread = spread
             for a in sprites {
                 // Harbours (and merchantmen) keep still: alpha 0.99 tells the shader not to let them drift.
-                fade = fresh.contains(a.key) ? -1 : a.fighting ? 2 : a.army <= -100_000 ? 0.99 : 1
+                fade = fresh.contains(a.key) ? -1 : a.fighting ? 2 : a.retreating ? 0.55 : a.army <= -100_000 ? 0.99 : 1
                 let o = spread[a.key] ?? SIMD2<Float>(0, 0)
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
                 let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)

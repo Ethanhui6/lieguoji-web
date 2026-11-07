@@ -1082,7 +1082,7 @@ struct Row: View {
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .firstTextBaseline, spacing: 16) {
-                GlyphLabel(text: label).foregroundStyle(Theme.ink2).fixedSize()
+                Text(label).foregroundStyle(Theme.ink2).fixedSize()
                 Spacer(minLength: 12)
                 Text(value).foregroundStyle(Theme.ink).monospacedDigit().fixedSize()
             }
@@ -2203,7 +2203,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
-        ("1.3.0", ["【军队·对照原作】军牌下方显示兵力（如 3200、1.2万），地图放大到一定程度时出现，跟着军队走。",
+        ("1.3.0", ["【海战】海上交战不再用陆战的刀光，改为舷炮齐射：炮口火光、白色硝烟随风飘散、落弹处水花一圈圈扩开。",
+                    "【界面】各页数据行去掉 0.38 加的系统小图标（与纸墨风格不搭、显得杂乱），只在数字格保留。",
+                    "【军队·对照原作】军牌下方显示兵力（如 3200、1.2万），地图放大到一定程度时出现，跟着军队走。",
                     "【战斗·对照原作】交战处换上原作的刀光动画（两把刀交击的 40 帧循环），每处战场节奏错开；原来只有一个很小的闪烁记号。",
                     "【寻路·对照原作】原作寻路给「不在港口登船」加了 450 的代价，所以军队渡海都从港口上船；现在照此处理：没有港口的州郡下海要多走约四十步的路程，军队会绕到港口登船。",
                     "【行军·对照原作】原作把行军路线平滑成曲线、匀速前进；我们以前每一步直线滑行、下一步突然转向，看起来一顿一顿、走折线。现在每一步都沿着上一步的方向和速度出发，整条路线连贯成弧线。",

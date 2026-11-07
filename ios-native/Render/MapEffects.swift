@@ -160,6 +160,28 @@ final class EffectsView: UIView {
         return c
     }
     /// Battle smoke rolling up and sparks flying where the swords clash.
+    /// 海战: broadsides over the water, muzzle flashes and white gun smoke drifting off, and a splash
+    /// ring where the shot falls (no blades at sea).
+    private func navalLayer() -> CALayer {
+        let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 30, height: 20)
+        let ring = CAShapeLayer(); ring.frame = root.bounds
+        ring.path = UIBezierPath(ovalIn: CGRect(x: 9, y: 6, width: 12, height: 8)).cgPath
+        ring.fillColor = nil; ring.strokeColor = UIColor(white: 1, alpha: 0.8).cgColor; ring.lineWidth = 1.2
+        let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.3; grow.toValue = 1.8
+        let fade = CABasicAnimation(keyPath: "opacity"); fade.fromValue = 0.9; fade.toValue = 0
+        let g = CAAnimationGroup(); g.animations = [grow, fade]; g.duration = 1.1; g.repeatCount = .infinity; g.timeOffset = Double.random(in: 0..<1.1)
+        ring.add(Self.calm(g), forKey: "splash"); root.addSublayer(ring)
+        if Self.particles && !Energy.hot && battleLayers.count < 6 {
+            let e = CAEmitterLayer(); e.emitterShape = .line; e.emitterSize = CGSize(width: 26, height: 1); e.emitterPosition = CGPoint(x: 15, y: 10)
+            e.emitterCells = [
+                cell(Self.puff, color: UIColor(white: 0.95, alpha: 0.22), rate: 3, life: 2.0, velocity: 6, range: .pi / 4, scale: 0.3, scaleSpeed: 0.16, alphaSpeed: -0.1, spin: 0.2, angle: -.pi / 2),
+                cell(Self.spark, color: UIColor(red: 1, green: 0.62, blue: 0.2, alpha: 1), rate: 4, life: 0.25, velocity: 18, range: .pi / 5, scale: 0.55, scaleSpeed: -1.4, alphaSpeed: -3, angle: -.pi / 2),
+            ]
+            e.renderMode = .unordered
+            root.insertSublayer(e, at: 0)
+        }
+        return root
+    }
     private func battleSmoke() -> CAEmitterLayer {
         let e = CAEmitterLayer(); e.emitterShape = .circle; e.emitterSize = CGSize(width: 10, height: 6)
         e.emitterCells = [
@@ -587,7 +609,7 @@ final class EffectsView: UIView {
         for b in effects.battles {
             if let old = battleLayers[b.key] { battleLayers[b.key] = (old.layer, b.x, b.y) }
             else {
-                let l = battleLayer(); layer.addSublayer(l); battleLayers[b.key] = (l, b.x, b.y)
+                let l = b.key.hasPrefix("s") ? navalLayer() : battleLayer(); layer.addSublayer(l); battleLayers[b.key] = (l, b.x, b.y)
                 let pop = CASpringAnimation(keyPath: "transform.scale"); pop.fromValue = 0.2; pop.toValue = 1; pop.damping = 9; pop.duration = pop.settlingDuration
                 l.add(pop, forKey: "pop")
             }

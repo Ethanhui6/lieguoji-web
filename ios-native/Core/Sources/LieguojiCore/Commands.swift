@@ -96,6 +96,7 @@ extension NativeEngine {
         // 特产 (app rules) and its index for the custom picker.
         let good = Trade.of(r, id)
         o.specialty = JS(Trade.goods[good]); o.specialtyIndex = JS(good)
+        if let city = w.cities.asArray.first(where: { $0.provinceId.asString == id }) { o.cityCulture = r.civilization.cities[city.id.asString].cultureId }
         // 地利: what this land does to each of the original's arms in battle (Efficiency's terrain
         // tables, the same numbers the volleys use), attacking into it and defending it.
         o.combat = .array([("Infantry", "步兵"), ("Archer", "弓兵"), ("Shield", "盾兵"), ("Cavalry", "骑兵"), ("Elite", "精锐")].map { key, name in

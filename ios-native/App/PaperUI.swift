@@ -132,10 +132,10 @@ enum ChineseNumeral {
 
 /// The original's colour views (keys 1–6 of ViewManager) plus the terrain map.
 enum MapViewMode: String, CaseIterable, Identifiable {
-    case state, alliance, culture, family, religion, polity, economy, terrain
+    case state, alliance, culture, family, religion, polity, economy, goods, terrain
     var id: String { rawValue }
-    var title: String { ["state": "国家", "alliance": "联盟", "culture": "文化", "family": "家族", "religion": "宗教", "polity": "政体", "economy": "经济", "terrain": "地形"][rawValue]! }
-    var symbol: String { ["state": "flag.fill", "alliance": "person.3.fill", "culture": "character.book.closed.fill", "family": "house.fill", "religion": "sun.max.fill", "polity": "building.columns.fill", "economy": "chart.bar.fill", "terrain": "mountain.2.fill"][rawValue]! }
+    var title: String { ["state": "国家", "alliance": "联盟", "culture": "文化", "family": "家族", "religion": "宗教", "polity": "政体", "economy": "经济", "goods": "特产", "terrain": "地形"][rawValue]! }
+    var symbol: String { ["state": "flag.fill", "alliance": "person.3.fill", "culture": "character.book.closed.fill", "family": "house.fill", "religion": "sun.max.fill", "polity": "building.columns.fill", "economy": "chart.bar.fill", "goods": "shippingbox.fill", "terrain": "mountain.2.fill"][rawValue]! }
 }
 
 /// A strip of paper tabs that unrolls from the button; the selected view is marked by a sliding seal.

@@ -97,6 +97,8 @@ extension NativeEngine {
             ruler.traits = p.traits.isNull ? .array() : .array(p.traits.asArray.map { JS(Self.traitLabels[$0.asString] ?? $0.asString) })
             ruler.skills = .array(["charisma", "military", "diplomatic", "administrative"].map { JS((p.base[$0].optionalNumber ?? 0).rounded()) })
             if !r.regimes.isNull, let t = Regimes.style(r, id).title { ruler.title = JS(t) }
+            // A woman on the throne takes the female form of the title (the original's 女酋长、女教皇…).
+            if p.gender.optionalNumber == 1 { let t = ruler.title.asString; ruler.title = JS(Self.femaleTitles[t] ?? t) }
             o.ruler = ruler
         } else { o.ruler = .null }
         o.people = people(id)
@@ -160,6 +162,9 @@ extension NativeEngine {
 
     /// character-trait-labels.json (web).
     static let traitLabels = ["Genius": "天才", "Brave": "勇敢", "Charismatic": "魅力超凡", "Administrator": "行政天才", "Diplomatic": "外交家", "Just": "公正", "Strategist": "战略家", "Merciful": "仁慈", "Patient": "耐心", "Craven": "懦弱", "Cruel": "残暴", "Incompetent": "无能", "Greedy": "贪婪", "Paranoid": "偏执", "Wrathful": "易怒", "Ambitious": "雄心勃勃", "SocialButterfly": "长袖善舞", "Hawkish": "鹰派", "Dovish": "鸽派", "Unifier": "统一者", "BattleHardened": "越战越勇", "WarWeary": "厌战", "NavalMastery": "海军精通", "ShipMaster": "船舶大师", "Reformer": "改革家", "NaturalLeader": "天生领袖", "Unconvincing": "难以服众"]
+    /// Female forms of the rulers' titles.
+    static let femaleTitles = ["国王": "女王", "皇帝": "女皇", "酋长": "女酋长", "教宗": "女教宗", "教皇": "女教皇", "可汗": "可敦", "大汗": "女大汗", "汗": "女汗",
+                                      "沙皇": "女沙皇", "天皇": "女天皇", "法老": "女法老", "苏丹": "苏丹娜", "雅尔": "女雅尔", "牧首": "女牧首", "法王": "女法王", "祭主": "女祭主"]
     /// OFFICE_LABELS47 (civilization47-offices).
     static let officeLabels = ["Chancellor": "行政首脑", "Steward": "财政主管", "Marshal": "常备军统帅", "Governor": "总督", "WarCommander": "战时统帅"]
 

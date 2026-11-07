@@ -490,6 +490,8 @@ struct GameView: View {
     @State private var toast: String?
     @State private var toastSerial = 0
     @State private var viewsOpen = false
+    /// 壁纸模式: the controls hide and the map drifts; a tap anywhere returns.
+    @State private var wallpaper = false
     /// The pending map pick is a retreat (原作防御模式) rather than a march.
     @State private var marchRetreat = false
     @State private var rtsDefend = false
@@ -528,11 +530,19 @@ struct GameView: View {
             }
             .animation(.spring(response: 0.4, dampingFraction: 0.85), value: model.herald)
                 .offset(y: controller.reveal >= 1 ? 0 : -80)
+                .opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingArmy)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingFleet)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.paintNation)
         }
-        .overlay(alignment: .bottom) { bottomBar.offset(y: controller.reveal >= 1 ? 0 : 120) }
+        .overlay(alignment: .bottom) { bottomBar.offset(y: controller.reveal >= 1 ? 0 : 120).opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper) }
+        .overlay {
+            if wallpaper {
+                Color.clear.contentShape(Rectangle()).ignoresSafeArea()
+                    .onTapGesture { withAnimation(.easeInOut(duration: 0.5)) { wallpaper = false }; controller.drifting = false }
+                    .overlay(alignment: .bottom) { Text("轻点返回").font(Theme.kai(13)).foregroundStyle(Theme.paper2.opacity(0.7)).padding(.bottom, 30) }
+            }
+        }
         .overlay(alignment: .bottomLeading) {
             if !model.viewLegend.isEmpty {
                 MapViewLegend(mode: model.mapView, legend: model.viewLegend).padding(.leading, 14).padding(.bottom, model.state?.events.isEmpty == false ? 120 : 80)
@@ -751,7 +761,8 @@ struct GameView: View {
         case .chronicle:
             ChronicleSheet(model: model).presentationDetents([.medium, .large])
         case .menu:
-            MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }, say: say) { self.panel = nil }.presentationDetents([.medium, .large])
+            MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) },
+                      wallpaper: { self.panel = nil; withAnimation(.easeInOut(duration: 0.6)) { wallpaper = true }; controller.drifting = true }, say: say) { self.panel = nil }.presentationDetents([.medium, .large])
         }
     }
 
@@ -1027,6 +1038,7 @@ struct ProvinceSheet: View {
     @State private var grantTarget = -1
     @State private var info: ProvinceInfo?
     @State private var pickingGood = false
+    @State private var pickingCulture = false
     var body: some View {
         if let map = model.map {
             let p = map.meta.provinces[province]
@@ -1093,6 +1105,17 @@ struct ProvinceSheet: View {
                                 }
                                 Divider2()
                             }
+                            Button { pickingCulture = true } label: {
+                                HStack { Text("本地文化").foregroundStyle(Theme.ink2); Spacer(); Text(Names.culture[info.cityCulture ?? ""] ?? info.cityCulture ?? "—").foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)) }
+                                    .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .confirmationDialog("本地文化", isPresented: $pickingCulture, titleVisibility: .visible) {
+                                ForEach(Names.culture.keys.sorted(), id: \.self) { k in
+                                    Button(Names.culture[k] ?? k) { Task { _ = await model.setCityCulture(province, k); info = await model.provinceInfo(province) } }
+                                }
+                            }
+                            Divider2()
                             if info.owner != info.controller, info.owner >= 0, info.owner < map.meta.nations.count { Row(label: "法理归属", value: map.meta.nations[info.owner].name); Divider2() }
                         }
                         if let n = nation {
@@ -1842,6 +1865,7 @@ struct MenuSheet: View {
     @ObservedObject var model: GameModel
     @ObservedObject var controller: MapController
     var openEdicts: () -> Void = {}
+    var wallpaper: () -> Void = {}
     var say: (String) -> Void = { _ in }
     let close: () -> Void
     @State private var creating = false
@@ -1850,6 +1874,9 @@ struct MenuSheet: View {
     @State private var importing = false
     /// 菜单 in three pages: the game (saves, worlds, edicts), the map's look, and the rest.
     @State private var page = "game"
+    @State private var calendar = false
+    @State private var eraText = ""
+    @State private var yearText = ""
     var body: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 14) {
@@ -1883,6 +1910,10 @@ struct MenuSheet: View {
                     Divider2()
                     Button { creating = true } label: { MenuRow(symbol: "globe.asia.australia", title: "新世界") }.buttonStyle(.plain)
                     Divider2()
+                    Button { wallpaper() } label: { MenuRow(symbol: "photo.on.rectangle", title: "壁纸模式") }.buttonStyle(.plain)
+                    Divider2()
+                    Button { calendar = true } label: { MenuRow(symbol: "calendar", title: "纪年与日期") }.buttonStyle(.plain)
+                    Divider2()
                     Button { close(); model.backToTitle() } label: { MenuRow(symbol: "house", title: "返回标题") }.buttonStyle(.plain)
                 }
                 .padding(.horizontal, 16)
@@ -1900,6 +1931,21 @@ struct MenuSheet: View {
                 .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }
+        .sheet(isPresented: $calendar) {
+            VStack(alignment: .leading, spacing: 14) {
+                SheetHeader(title: "纪年与日期", subtitle: model.state?.dateText ?? "", seal: "历")
+                HStack { Text("年号").font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 70, alignment: .leading); TextField("公元", text: $eraText).paperField() }.padding(.horizontal, 22)
+                HStack { Text("今年为").font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 70, alignment: .leading); TextField("\(model.state?.displayYear ?? 1)", text: $yearText).keyboardType(.numbersAndPunctuation).paperField(); Text("年").font(Theme.kai(16)).foregroundStyle(Theme.ink2) }.padding(.horizontal, 22)
+                Text("只改纪年的显示（年号与年份），推演的时间不变；留空年号即用「公元」。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                SealButton(title: "颁行", disabled: false) {
+                    calendar = false
+                    Task { if let e = await model.setCalendar(era: eraText, year: Int(yearText)) { say(e) } else { say("纪年已改") } }
+                }
+                .padding(.horizontal, 22)
+            }
+            .padding(.bottom, 16)
+            .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
             if case .success(let url) = result { close(); Task { await model.importSave(from: url) } }
         }
@@ -1978,6 +2024,14 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.32.0", ["【经济】国家页新增「财政」：国库与两年走势、土地税收、国库过盈时的收入递减、贸易增收、军费、每月净入，以及国库多寡对战力的倍率（原作规则，以前看不到）。",
+                    "【经济】税制可选「轻徭薄赋／常税／重税」：重税收入 +30% 但国运逐月下降、人口流失；轻徭薄赋收入 −20% 但国运上升、人口增长加快，每月真实生效。",
+                    "【经济】地图视图新增「特产」，按特产给州郡上色；海上按原作出现商船，沿航线在和平国家的港口之间往返，交战双方的航线上没有商船。",
+                    "【原作补全】壁纸模式（菜单 › 游戏）：隐藏所有按钮，地图缓缓漂移，轻点返回。",
+                    "【原作补全】纪年与日期：可改年号和今年的年份（只改显示，不影响推演）。",
+                    "【原作补全】编辑行省：州郡页可改本地文化（文化视图随之变化）和特产。",
+                    "【原作补全】女性君主使用女性称号：女王、女皇、女酋长、女教宗、可敦、女沙皇等。",
+                    "【说明】原作的「自动翻译」需要联网的翻译服务，手机离线版不做；创意工坊按你的要求不做。"]),
         ("0.31.0", ["【原作补全】特产与贸易：每个州郡按地形出产一种特产（粮食、木材、毛皮、马匹、铁矿、食盐、丝绸、茶叶、香料、瓷器、美酒、鱼获、宝石、棉布、铜矿），州郡页可改；国家拥有的特产种类越多、与接壤和同盟的和平国家互通有无越多，每月收入越高（国家页「特产与贸易」显示贸易伙伴与增收）。",
                     "【原作补全】生计（民族特性）：国家页显示农耕／游牧／海洋／渔猎／商贸，点开即可更改，影响收入，海洋国家海战有加成。",
                     "【原作补全】族谱：国家页「朝政」里点任一贵族世家，按世代列出族人、配偶、家主与官职，已故者以灰字标出。",

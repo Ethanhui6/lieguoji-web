@@ -74,6 +74,10 @@ extension NativeEngine {
             case "economy":
                 let b = band(population[p.id.asString] ?? 0)
                 fills.append(add("band:\(b)", bandNames[b], bandColors[b]))
+            case "goods":
+                // 特产: each province in the colour of its specialty.
+                let g = Trade.of(r, p.id.asString)
+                fills.append(add("good:\(g)", Trade.goods[g], Self.goodsPalette[g % Self.goodsPalette.count]))
             case "polity":
                 // 政体: each state in the colour of its form of government.
                 let st = r.regimes.isNull && r.civilization.nations[controller].isNull ? nil : Regimes.style(r, controller)
@@ -97,6 +101,8 @@ extension NativeEngine {
         o.legend = .array(legend.sorted { $0.count != $1.count ? $0.count > $1.count : $0.name < $1.name }.map { e in let x = JS.object(); x.name = JS(e.name); x.color = JS(e.color); x.count = JS(e.count); return x })
         return Data(o.json.utf8)
     }
+
+    static let goodsPalette = ["#e8c66a", "#8a6a3a", "#a07a5a", "#c99a5e", "#6f7b86", "#e9e4d8", "#c86f9a", "#6f9a5a", "#c7552f", "#5b8fc7", "#8e3b55", "#4fa3a8", "#7a5fc0", "#f0d9a8", "#b8733a"]
 
     /// statistics47: 国力排行, 人口排名, 经济排行, 战争统计, 宗教信息.
     public func statistics(_ category: String) -> Data {

@@ -307,6 +307,7 @@ struct NationSheet: View {
                         }
                     }
                 }
+                FoldSection("财政", expanded: true) { FinanceSection(model: model, nation: nation, day: state.day / 30) }
                 FoldSection("特产与贸易", expanded: false) { TradeSection(model: model, map: map, nation: nation, day: state.day / 30) }
                 Group2 {
                     Button(action: openPeople) { MenuRow(symbol: "person.2", title: "人物") }.buttonStyle(.plain)
@@ -1202,6 +1203,86 @@ enum Livelihood {
         ("FishAndHunting", "渔猎", "收入 +2%"), ("Commercial", "商贸", "收入 +5%"), ("Other", "其他", "无加成"),
     ]
     static func name(_ key: String) -> String { all.first { $0.key == key }?.name ?? (key.isEmpty ? "—" : key) }
+}
+
+/// One state's treasury and ledger (engine financeInfo).
+struct FinanceOverview: Decodable {
+    let gold: Double; let net: Double; let taxes: Double; let hoard: Double; let army: Double; let battle: Double; let trade: Double
+    let policy: String; let policyName: String; let record: [Double]
+}
+
+/// 财政: the treasury with its two-year trend, where the month's money comes from and goes, how a
+/// full or empty treasury weighs on battle, and the tax policy (a choice with real effects).
+struct FinanceSection: View {
+    @ObservedObject var model: GameModel
+    let nation: Int; let day: Int
+    @State private var info: FinanceOverview?
+    var body: some View {
+        Group2 {
+            if let f = info {
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("国库").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                        Text(Names.wan(Int(f.gold))).font(Theme.kai(22)).foregroundStyle(f.gold < 0 ? Theme.seal : Theme.ink)
+                    }
+                    Spacer()
+                    Sparkline(values: f.record).frame(width: 120, height: 34)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                Divider2()
+                line("土地税收", "+\(Int(f.taxes))")
+                if f.hoard < 0.999 { line("国库过盈（收入递减）", "×\(String(format: "%.2f", f.hoard))", warn: true) }
+                line("贸易增收", "+\(Int(f.trade))")
+                line("军费", "−\(Int(f.army))", warn: f.army > f.taxes)
+                Divider2()
+                line("每月净入", (f.net - f.army >= 0 ? "+" : "") + "\(Int(f.net - f.army))", strong: true)
+                line("国库对战力", "×\(String(format: "%.2f", f.battle))", warn: f.battle < 1)
+                Divider2()
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("税制").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                    ChipPicker(items: Self.policies.map { ($0.0, $0.1) }, selection: Binding(get: { f.policy }, set: { v in
+                        Task { _ = await model.setTax(nation, v); info = await model.financeInfo(nation) }
+                    }))
+                    Text(Self.policies.first { $0.0 == f.policy }?.2 ?? "").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+            } else {
+                Text("载入……").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
+            }
+        }
+        .padding(.horizontal, 16)
+        .task(id: "\(nation)-\(day)") { info = await model.financeInfo(nation) }
+    }
+    static let policies = [("light", "轻徭薄赋", "收入 −20%，国运每月 +0.1，人口增长加快"), ("normal", "常税", "按原作税收"), ("heavy", "重税", "收入 +30%，国运每月 −0.15，人口缓慢流失")]
+    private func line(_ label: String, _ value: String, warn: Bool = false, strong: Bool = false) -> some View {
+        HStack {
+            Text(label).font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+            Spacer()
+            Text(value).font(Theme.kai(strong ? 17 : 15)).foregroundStyle(warn ? Theme.seal : Theme.ink).monospacedDigit()
+        }
+        .padding(.horizontal, 16).padding(.vertical, 6)
+    }
+}
+
+/// A small ink line of values (the treasury's last two years).
+struct Sparkline: View {
+    let values: [Double]
+    var body: some View {
+        GeometryReader { g in
+            if values.count >= 2, let lo = values.min(), let hi = values.max() {
+                let span = max(1, hi - lo)
+                Path { p in
+                    for (i, v) in values.enumerated() {
+                        let pt = CGPoint(x: g.size.width * CGFloat(i) / CGFloat(values.count - 1), y: g.size.height * (1 - CGFloat((v - lo) / span)))
+                        if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
+                    }
+                }
+                .stroke((values.last ?? 0) >= (values.first ?? 0) ? Theme.jade : Theme.seal, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+            } else {
+                Text("记录中").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
 }
 
 /// One state's specialties and trade (engine tradeInfo).

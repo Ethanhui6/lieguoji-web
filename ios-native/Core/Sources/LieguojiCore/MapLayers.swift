@@ -407,8 +407,17 @@ public enum MapLayers {
     public static let seaLaneWidth: Float = 0.55
     public static func seaLanes(_ map: WorldMap, ports: [(x: Float, y: Float)]) -> ColoredMesh {
         var mesh = ColoredMesh()
+        for lane in seaLanePaths(map, ports: ports) {
+            mesh.polyline(lane.points.flatMap { [$0.x, $0.y] }, width: seaLaneWidth, MapPalette.seaLane, alpha: 0.95)
+        }
+        return mesh
+    }
+    /// The lanes themselves: for each harbour, the sea path to its nearest other harbour, with the
+    /// two harbours' indices (the merchant ships sail them).
+    public static func seaLanePaths(_ map: WorldMap, ports: [(x: Float, y: Float)]) -> [(from: Int, to: Int, points: [SIMD2<Float>])] {
+        var out = [(from: Int, to: Int, points: [SIMD2<Float>])]()
         let points = ports.filter { $0.x.isFinite && $0.y.isFinite }
-        guard points.count >= 2, map.cellCount > 0, map.sites.count >= map.cellCount * 2 else { return mesh }
+        guard points.count >= 2, points.count == ports.count, map.cellCount > 0, map.sites.count >= map.cellCount * 2 else { return out }
         var neighbors = [[Int]](repeating: [], count: map.cellCount)
         for edge in map.edges {
             let a = Int(edge.a), b = Int(edge.b)
@@ -416,16 +425,16 @@ public enum MapLayers {
             neighbors[a].append(b); neighbors[b].append(a)
         }
         func site(_ cell: Int) -> SIMD2<Float> { SIMD2(map.sites[cell * 2], map.sites[cell * 2 + 1]) }
-        var docks = [Int](), seenDock = Set<Int>()
-        for point in points {
+        var docks = [Int](), seenDock = Set<Int>(), portOf = [Int: Int]()
+        for (pi, point) in points.enumerated() {
             var best = -1, bestD = Float.greatestFiniteMagnitude
             for cell in 0..<map.cellCount where !map.isLand(cell) {
                 let s = site(cell), d = (s.x - point.x) * (s.x - point.x) + (s.y - point.y) * (s.y - point.y)
                 if d < bestD { bestD = d; best = cell }
             }
-            if best >= 0, seenDock.insert(best).inserted { docks.append(best) }
+            if best >= 0, seenDock.insert(best).inserted { docks.append(best); portOf[best] = pi }
         }
-        guard docks.count >= 2 else { return mesh }
+        guard docks.count >= 2 else { return out }
         let goals = Set(docks)
         var linked = Set<UInt64>()
         func pair(_ a: Int, _ b: Int) -> UInt64 { let x = UInt64(min(a, b)), y = UInt64(max(a, b)); return x << 32 | y }
@@ -440,11 +449,9 @@ public enum MapLayers {
             var chain = [end], cursor = end
             while let previous = from[cursor] { chain.append(previous); cursor = previous; if cursor == start { break } }
             chain.reverse()
-            var flat = [Float](); flat.reserveCapacity(chain.count * 2)
-            for cell in chain { let s = site(cell); flat.append(s.x); flat.append(s.y) }
-            mesh.polyline(flat, width: seaLaneWidth, MapPalette.seaLane, alpha: 0.95)
+            out.append((portOf[start] ?? 0, portOf[end] ?? 0, chain.map(site)))
         }
-        return mesh
+        return out
     }
 
     /// TextMeshPro auto-size inside a LabelUtility box (original-labels47 autoFontSize47): `em` is

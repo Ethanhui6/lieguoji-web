@@ -92,6 +92,7 @@ extension NativeEngine {
         var stock = [String: JS](); for s in w.statecraft.provinces.asArray { stock[s.provinceId.asString] = s }
         let o = JS.object()
         o.day = w.day; o.date = r.life.currentDate; o.owners = .array(owners.map { JS($0) })
+        if !r.regimes.isNull, !r.regimes.calendar.isNull { o.era = r.regimes.calendar.era; o.yearOffset = r.regimes.calendar.offset }
         if includeLabels { o.labels = labels(owners) }
         // Per-state totals in one pass over provinces, cities, armies and relations (each state used
         // to filter all of them again, every step).

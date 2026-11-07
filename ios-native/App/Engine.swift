@@ -117,7 +117,15 @@ struct GameState: Decodable, Equatable {
     var seaBattles: [[Double]]? = nil
     let events: [Event]
 
-    var dateText: String { date.year > 0 ? "公元\(date.year)年\(date.month)月\(date.day)日" : "公元前\(1 - date.year)年\(date.month)月\(date.day)日" }
+    /// 纪年 (custom): an era name and a shift of the year, display only.
+    var era: String? = nil
+    var yearOffset: Int? = nil
+    var displayYear: Int { date.year + (yearOffset ?? 0) }
+    var dateText: String {
+        let y = displayYear
+        if let era, !era.isEmpty { return "\(era)\(y > 0 ? "\(y)" : "前\(1 - y)")年\(date.month)月\(date.day)日" }
+        return y > 0 ? "公元\(y)年\(date.month)月\(date.day)日" : "公元前\(1 - y)年\(date.month)月\(date.day)日"
+    }
     var shortDate: String { "\(date.year)年\(date.month)月" }
     func atWar(_ a: Int, _ b: Int) -> Bool { nations.indices.contains(a) && nations[a].enemies.contains(b) }
 }
@@ -129,6 +137,8 @@ struct ProvinceInfo: Decodable {
     var terrain: String? = nil; var pace: Double? = nil
     /// 特产 and its index in the goods list.
     var specialty: String? = nil; var specialtyIndex: Int? = nil
+    /// The province city's own culture.
+    var cityCulture: String? = nil
     /// 地利: each original arm's attack and defence multiplier on this land.
     struct Arm: Decodable { let unit: String; let attack: Double; let defense: Double }
     var combat: [Arm]? = nil

@@ -295,6 +295,8 @@ public enum Regimes {
         // 特产与贸易: the kinds of goods held and bought from partners at peace add to the income.
         let trade = Trade.share(r, id).rate
         if trade > 0 { addGold(trade) }
+        // 税制 and the treasury record (财政).
+        Finance.month(r, id, addGold: addGold, addDestiny: addDestiny)
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
         postEffects(r, id, addGold: addGold, addDestiny: addDestiny)
         tribute(r, n, id, gain: gain)

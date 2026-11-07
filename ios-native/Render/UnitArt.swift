@@ -11,7 +11,7 @@ enum UnitArt {
     private static var cache = [String: CGImage]()
 
     static func role(_ unit: String) -> String {
-        if ["Fleet", "Port"].contains(unit) { return unit }
+        if ["Fleet", "Port", "Merchant"].contains(unit) { return unit }
         return UnitKinds.byKey[unit]?.role.rawValue ?? "infantry"
     }
 
@@ -94,6 +94,11 @@ enum UnitArt {
             // A two-sailed warship, in the same line as the pieces (no plinth: it floats).
             render(g, [.rod(line((128, 30), (128, 170)), 12), .solid(poly([(138, 36), (204, 150), (138, 150)])), .solid(poly([(118, 56), (118, 150), (64, 150)])),
                        .solid(poly([(28, 170), (228, 170), (196, 222), (60, 222)]))])
+        case "Merchant":
+            // A merchant cog: one square sail with a stripe over a deep hull (the warship has two sails).
+            render(g, [.rod(line((128, 36), (128, 168)), 10), .solid(poly([(72, 52), (184, 52), (176, 150), (80, 150)])),
+                       .solid(poly([(36, 168), (220, 168), (194, 216), (62, 216)]))])
+            detail(g, line((78, 100), (178, 100)), 8)
         case "Port":
             // An anchor.
             render(g, [.rod(line((128, 56), (128, 214)), 16), .rod(line((84, 84), (172, 84)), 14), .solid(oval(108, 18, 40, 40)),

@@ -479,6 +479,7 @@ import LieguojiCore
         if changed { controller.world = world }
         let ports = (next.ports ?? []).map { SIMD2<Float>($0.x, $0.y) }
         if ports != controller.seaPorts { controller.seaPorts = ports }
+        refreshLanes()
         refreshArmies()
         refreshEffects(previous: previous)
         if mapView != .state && mapView != .terrain, !playing || CACurrentMediaTime() - lastViewRefresh > 0.6 {
@@ -694,6 +695,29 @@ import LieguojiCore
 
     // MARK: armies on the map
 
+    /// The sea lanes between harbours (built off the main thread when the harbours change), with the
+    /// running length along each, for the merchant ships.
+    private var lanes: [(from: Int, to: Int, points: [SIMD2<Float>], cumulative: [Float])] = []
+    private var laneKey = ""
+    private func refreshLanes() {
+        guard let map, let ports = state?.ports, ports.count >= 2 else { return }
+        let key = "\(worldID)-\(ports.count)"
+        guard key != laneKey else { return }
+        laneKey = key
+        let points = ports.map { (x: $0.x, y: $0.y) }
+        Task {
+            let built = await Task.detached(priority: .utility) { () -> [(from: Int, to: Int, points: [SIMD2<Float>], cumulative: [Float])] in
+                MapLayers.seaLanePaths(map, ports: points).map { lane in
+                    var run: Float = 0, cumulative = [Float]()
+                    for (j, p) in lane.points.enumerated() { if j > 0 { let v = p - lane.points[j - 1]; run += (v.x * v.x + v.y * v.y).squareRoot() }; cumulative.append(run) }
+                    return (lane.from, lane.to, lane.points, cumulative)
+                }
+            }.value
+            guard self.laneKey == key else { return }
+            self.lanes = built
+        }
+    }
+
     func refreshArmies() {
         guard let state else { controller.armies = []; return }
         let selected = controller.marchingArmy ?? controller.selectedArmy
@@ -710,6 +734,23 @@ import LieguojiCore
             // One to three ships on the map for one, two to three, and four or more hulls.
             sprites.append(MapRenderer.ArmySprite(army: -(i + 1), x: f.x, y: f.y, unit: "Fleet", nation: f.nation, selected: i == choosing, key: f.id,
                                                   tier: f.ships >= 4 ? 3 : f.ships >= 2 ? 2 : 1))
+        }
+        // 商船: merchant ships ply the sea lanes between harbours whose holders are at peace, back and
+        // forth, in the colour of the harbour they sailed from (the original's merchant ships carrying
+        // specialties). Placed by the day, so they glide with the steps like the armies.
+        if let ports = state.ports {
+            for (i, lane) in lanes.prefix(40).enumerated() {
+                guard ports.indices.contains(lane.from), ports.indices.contains(lane.to), let total = lane.cumulative.last, total > 4 else { continue }
+                let a = ports[lane.from].occupier, b = ports[lane.to].occupier
+                guard state.nations.indices.contains(a), state.nations.indices.contains(b), !state.nations[a].enemies.contains(b) else { continue }
+                let travel = Float(state.day) * 3 + Float(i * 37)
+                var d = travel.truncatingRemainder(dividingBy: 2 * total)
+                let back = d > total; if back { d = 2 * total - d }
+                let k = lane.cumulative.firstIndex { $0 >= d } ?? lane.cumulative.count - 1
+                let p0 = lane.points[max(0, k - 1)], p1 = lane.points[k], c0 = lane.cumulative[max(0, k - 1)], c1 = lane.cumulative[k]
+                let f = c1 > c0 ? (d - c0) / (c1 - c0) : 0, at = p0 + (p1 - p0) * f
+                sprites.append(MapRenderer.ArmySprite(army: -300_000 - i, x: at.x, y: at.y, unit: "Merchant", nation: back ? b : a, selected: false, key: "merchant-\(i)"))
+            }
         }
         // Icons never sit on one another: armies (and fleets) closer than an icon are eased apart, the
         // later one moving, a few passes. Display only; an army in battle keeps its spot facing the foe.
@@ -895,6 +936,13 @@ import LieguojiCore
         return (try? JSONDecoder().decode([StatisticsRow].self, from: data)) ?? []
     }
 
+    func financeInfo(_ index: Int) async -> FinanceOverview? {
+        guard state != nil, let data = await native.financeInfo(index) else { return nil }
+        return try? JSONDecoder().decode(FinanceOverview.self, from: data)
+    }
+    func setTax(_ n: Int, _ value: String) async -> String? { finish(await native.setTax(n, value)) }
+    func setCalendar(era: String, year: Int?) async -> String? { finish(await native.setCalendar(era: era, year: year)) }
+    func setCityCulture(_ province: Int, _ culture: String) async -> String? { finish(await native.setCityCulture(province, culture)) }
     func tradeInfo(_ index: Int) async -> TradeOverview? {
         guard state != nil, let data = await native.tradeInfo(index) else { return nil }
         return try? JSONDecoder().decode(TradeOverview.self, from: data)

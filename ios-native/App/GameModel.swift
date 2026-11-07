@@ -377,6 +377,11 @@ import LieguojiCore
     /// 云更新: the cloud's balance numbers to the engine (before a world's rules are enabled, and again
     /// when a newer config arrives during play).
     func applyCloud() async { if let d = CloudConfig.shared.tuningData { await native.setTuning(d) } }
+    /// Panel data decoded off the main thread: a state page carries every person and house, and decoding
+    /// it on the main thread froze the screen for a moment each time a page opened.
+    nonisolated static func decode<T: Decodable>(_ type: T.Type, from data: Data) async -> T? {
+        await Task.detached(priority: .userInitiated) { try? JSONDecoder().decode(T.self, from: data) }.value
+    }
     func togglePlay() { playing ? pause() : play() }
     func play() {
         guard loop == nil, state != nil else { return }
@@ -407,15 +412,13 @@ import LieguojiCore
                 let days = far ? pace * 2 : pace
                 self.lastDays = days
                 do {
-                    if far {
-                        let native = self.native
-                        let data = await (ahead ?? Task { await native.step(days: days) }).value
-                        ahead = Task { await native.step(days: days) }
-                        try await self.apply(stepData: data)
-                    } else {
-                        if let pending = ahead { ahead = nil; try await self.apply(stepData: await pending.value) }
-                        try await self.step(days: days)
-                    }
+                    // The next step is asked for before this one is applied: the engine works on it while
+                    // the main thread applies the last (on the phone too, not only through the relay —
+                    // the two used to take turns, and a day cost the sum of both).
+                    let native = self.native
+                    let data = await (ahead ?? Task { await native.step(days: days) }).value
+                    ahead = Task { await native.step(days: days) }
+                    try await self.apply(stepData: data)
                 }
                 catch { self.failure = error.localizedDescription; self.pause(); return }
                 let spent = Date().timeIntervalSince(started)
@@ -926,14 +929,14 @@ import LieguojiCore
     }
     /// 天下规则: world rates in percent (war, damage, march, levy, ships).
     func worldRules() async -> [String: Int] {
-        guard let data = await native.worldRules(), let v = try? JSONDecoder().decode([String: Double].self, from: data) else { return [:] }
+        guard let data = await native.worldRules(), let v = await Self.decode([String: Double].self, from: data) else { return [:] }
         return v.mapValues { Int($0.rounded()) }
     }
     func setWorldRule(_ key: String, _ value: Double?) async -> String? { finish(await native.setWorldRule(key, value: value)) }
     func editFleet(_ id: String, ships: Int?, name: String?) async -> String? { finish(await native.editFleet(id, ships: ships, name: name)) }
     func worldSettings() async -> WorldSettings? {
         guard let data = await native.worldSettings() else { return nil }
-        return try? JSONDecoder().decode(WorldSettings.self, from: data)
+        return await Self.decode(WorldSettings.self, from: data)
     }
     func setWorld(_ key: String, _ value: Int) async -> String? { finish(await native.setWorld(key, value)) }
     func triggerCivilWar(_ n: Int) async -> String? { finish(await native.triggerCivilWar(n)) }
@@ -942,7 +945,7 @@ import LieguojiCore
     func editNation(_ n: Int, gold: Double?, destiny: Double?, polity: String?, culture: String? = nil, religion: String? = nil) async -> String? { finish(await native.editNation(n, gold: gold, destiny: destiny, polity: polity, culture: culture, religion: religion)) }
     func officeCandidates(_ n: Int, office: String) async -> [NationInfo.Person] {
         guard let d = await native.officeCandidates(n, office: office) else { return [] }
-        return (try? JSONDecoder().decode([NationInfo.Person].self, from: d)) ?? []
+        return (await Self.decode([NationInfo.Person].self, from: d)) ?? []
     }
     func setBonus(_ n: Int, key: String, value: Double?) async -> String? { finish(await native.setBonus(n, key: key, value: value)) }
     func scaleTotal(_ n: Int, key: String, value: Double) async -> String? { finish(await native.scaleTotal(n, key: key, value: value)) }
@@ -958,11 +961,11 @@ import LieguojiCore
     struct PostInfo: Decodable, Identifiable { let id: String; let title: String; let effect: String; let skill: Int; let holder: NationInfo.Person?; let value: Double? }
     func posts(_ n: Int) async -> [PostInfo] {
         guard let d = await native.posts(n) else { return [] }
-        return (try? JSONDecoder().decode([PostInfo].self, from: d)) ?? []
+        return (await Self.decode([PostInfo].self, from: d)) ?? []
     }
     func postCandidates(_ n: Int, post: String) async -> [NationInfo.Person] {
         guard let d = await native.postCandidates(n, post: post) else { return [] }
-        return (try? JSONDecoder().decode([NationInfo.Person].self, from: d)) ?? []
+        return (await Self.decode([NationInfo.Person].self, from: d)) ?? []
     }
     func appointPost(_ n: Int, post: String, person: Int) async -> String? { finish(await native.appointPost(n, post: post, person: person)) }
     func editCourt(_ n: Int, key: String, value: Double) async -> String? { finish(await native.editCourt(n, key: key, value: value)) }
@@ -986,7 +989,7 @@ import LieguojiCore
     }
     func nationHistory(_ n: Int) async -> [GameState.Event] {
         guard let data = await native.nationHistory(n) else { return [] }
-        return (try? JSONDecoder().decode([GameState.Event].self, from: data)) ?? []
+        return (await Self.decode([GameState.Event].self, from: data)) ?? []
     }
     func grant(province: Int, to nation: Int) async -> String? { finish(await native.territory([province], to: nation)) }
     func retreat(army index: Int, to province: Int) async -> String? {
@@ -995,49 +998,49 @@ import LieguojiCore
     }
     func statistics(_ category: String) async -> [StatisticsRow] {
         guard let data = await native.statistics(category) else { return [] }
-        return (try? JSONDecoder().decode([StatisticsRow].self, from: data)) ?? []
+        return (await Self.decode([StatisticsRow].self, from: data)) ?? []
     }
 
     func financeInfo(_ index: Int) async -> FinanceOverview? {
         guard state != nil, let data = await native.financeInfo(index) else { return nil }
-        return try? JSONDecoder().decode(FinanceOverview.self, from: data)
+        return await Self.decode(FinanceOverview.self, from: data)
     }
     func changeCorruption(_ n: Int, lower: Bool) async -> String? { finish(await native.changeCorruption(n, lower: lower)) }
     func setTax(_ n: Int, _ value: String) async -> String? { finish(await native.setTax(n, value)) }
     func regionInfo(_ province: Int) async -> RegionInfo? {
         guard state != nil, let data = await native.regionInfo(province) else { return nil }
-        return try? JSONDecoder().decode(RegionInfo.self, from: data)
+        return await Self.decode(RegionInfo.self, from: data)
     }
     func renameRegion(_ province: Int, _ name: String) async -> String? { finish(await native.renameRegion(province, name)) }
     func setRegionCenter(_ province: Int) async -> String? { finish(await native.setRegionCenter(province)) }
     /// 大事记 by category, newest first.
     func chronicle(_ category: String) async -> [ChronicleEntry] {
         guard state != nil, let data = await native.chronicle(category) else { return [] }
-        return (try? JSONDecoder().decode([ChronicleEntry].self, from: data)) ?? []
+        return (await Self.decode([ChronicleEntry].self, from: data)) ?? []
     }
     func setCalendar(era: String, year: Int?) async -> String? { finish(await native.setCalendar(era: era, year: year)) }
     func setCityCulture(_ province: Int, _ culture: String) async -> String? { finish(await native.setCityCulture(province, culture)) }
     func tradeInfo(_ index: Int) async -> TradeOverview? {
         guard state != nil, let data = await native.tradeInfo(index) else { return nil }
-        return try? JSONDecoder().decode(TradeOverview.self, from: data)
+        return await Self.decode(TradeOverview.self, from: data)
     }
     func familyTree(_ family: String) async -> FamilyTree? {
         guard state != nil, let data = await native.familyTree(family) else { return nil }
-        return try? JSONDecoder().decode(FamilyTree.self, from: data)
+        return await Self.decode(FamilyTree.self, from: data)
     }
     func setLivelihood(_ n: Int, _ value: String) async -> String? { finish(await native.setLivelihood(n, value)) }
     func setSpecialty(_ province: Int, _ good: Int?) async -> String? { finish(await native.setSpecialty(province, good)) }
     func armyRecord(_ id: String) async -> ArmyService? {
         guard state != nil, let data = await native.armyRecord(id) else { return nil }
-        return try? JSONDecoder().decode(ArmyService.self, from: data)
+        return await Self.decode(ArmyService.self, from: data)
     }
     func diplomacyInfo(_ index: Int) async -> DiplomacyOverview? {
         guard state != nil, let data = await native.diplomacyInfo(index) else { return nil }
-        return try? JSONDecoder().decode(DiplomacyOverview.self, from: data)
+        return await Self.decode(DiplomacyOverview.self, from: data)
     }
     func nationInfo(_ index: Int) async -> NationInfo? {
         guard state != nil, let data = await native.nationInfo(index) else { return nil }
-        return try? JSONDecoder().decode(NationInfo.self, from: data)
+        return await Self.decode(NationInfo.self, from: data)
     }
     /// Alliance with another state, or leaving the current one (b < 0).
     func alliance(_ a: Int, with b: Int) async -> String? { finish(await native.alliance(a, with: b)) }
@@ -1048,6 +1051,6 @@ import LieguojiCore
 
     func provinceInfo(_ index: Int) async -> ProvinceInfo? {
         guard state != nil, let data = await native.province(index) else { return nil }
-        return try? JSONDecoder().decode(ProvinceInfo.self, from: data)
+        return await Self.decode(ProvinceInfo.self, from: data)
     }
 }

@@ -158,8 +158,10 @@ public struct ContactMotion {
         struct Mover { let f: Int; let seg: TravelSegment; let speed: Double; let end: Double; let time: Double }
         while remaining > 0 {
             events += 1; if events > 100_000 { break }
+            Profile.measure("a.event") {}
             book = current.contacts
             var movers = [Mover]()
+            let t0 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             for i in forces.indices {
                 let s = forces[i].travel
                 if current.held.contains(forces[i].key) || s.status == .arrived || s.status == .halted { continue }
@@ -170,7 +172,9 @@ public struct ContactMotion {
                 let v = left == 0 ? 0 : rules.speed(forces[i], s.crossed ? seg.b : seg.a)
                 movers.append(Mover(f: i, seg: seg, speed: v, end: end, time: left == 0 ? 0 : v > 0 ? left / v : .infinity))
             }
+            if Profile.enabled { Profile.add("a.movers", Date.timeIntervalSinceReferenceDate - t0) }
             var dt = movers.reduce(remaining) { min($0, $1.time) }
+            let t1 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             if rules.physicalContact && dt > 0 {
                 // Each segment is linear until the next gate. Solve the relative motion before
                 // stepping, so fast opposing columns cannot tunnel through each other.
@@ -197,6 +201,7 @@ public struct ContactMotion {
                     if let t = EncounterGeometry.meetingTime(pa.point, velocities[a.key] ?? zero, pb.point, velocities[b.key] ?? zero, limit: dt, reach: rules.reach) { dt = min(dt, t) }
                 } } }
             }
+            if Profile.enabled { Profile.add("a.meet", Date.timeIntervalSinceReferenceDate - t1) }
             if dt > 0 {
                 for m in movers {
                     let o = forces[m.f].travel.offset
@@ -251,7 +256,9 @@ public struct ContactMotion {
                     if forces[m.f].travel.leg == forces[m.f].travel.nodes.count - 1 { forces[m.f].travel.status = .arrived }
                 }
             }
+            let t2 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             let after = interiorEnd ?? positions(forces)
+            if Profile.enabled { Profile.add("a.after", Date.timeIntervalSinceReferenceDate - t2) }
             var merged = book
             for m in meetings {
                 let c = pair(m.a, m.b, after, m.area), k = ContactMotion.pairKey(c.a, c.b)
@@ -265,7 +272,9 @@ public struct ContactMotion {
                 continue
             }
             let held0 = ContactMotion.identity(current.contacts)
+            let t3 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             current = contacts(forces, merged, rules, after)
+            if Profile.enabled { Profile.add("a.contacts", Date.timeIntervalSinceReferenceDate - t3) }
             // App worlds (physical contact): contacts are re-read at every step of this loop, so the
             // window only needs to end when an engagement begins or ends — not each time any army on the
             // map reaches a node, which split a day into dozens of whole-map passes (frame, occupation,

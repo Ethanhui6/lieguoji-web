@@ -47,6 +47,8 @@ final class EffectsView: UIView {
     private var clashLayers: [String: (a: CAShapeLayer, b: CAShapeLayer, battle: MapEffects.Battle)] = [:]
     /// Off since the icons are drawn meeting at the clash.
     var showClashLines = false
+    /// 显示战争箭头 (推演与画面).
+    var showArrows = true
     private var siegeLayers: [String: (layer: CALayer, ring: CAShapeLayer, x: Double, y: Double)] = [:]
     private var flashLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var arrowLayers: [String: (layer: CAShapeLayer, head: CAShapeLayer, d: MapEffects.Declaration)] = [:]
@@ -516,7 +518,7 @@ final class EffectsView: UIView {
         var effects = incoming
         effects.battles = Array(incoming.battles.prefix(48))
         effects.sieges = Array(incoming.sieges.prefix(64))
-        effects.arrows = Array(incoming.arrows.prefix(32))
+        effects.arrows = showArrows ? Array(incoming.arrows.prefix(32)) : []
         effects.flashes = Array(incoming.flashes.prefix(24))
         effects.bursts = Array(incoming.bursts.prefix(24))
         effects.claims = Array(incoming.claims.prefix(24))

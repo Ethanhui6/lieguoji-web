@@ -101,14 +101,23 @@ public enum Armies {
             let app = UnitKinds.enabled, perHome = app ? 2 : 1, globalCap = app ? 700 : 500
             let cap = land.isEmpty ? 0 : max(1, Int((Double(land.count) * f(app ? 1.5 : 2.0 / 3.0)).rounded(.down)))
             var formed = 0, cost = 0
+            // Counted once per state and kept current as armies form (the loop used to refilter every army
+            // and rebuild every army's position for each province). Same results: a new army is this
+            // state's, regular, at home in its province, and its own armies never make a province unsafe.
+            let live = r.world.armies.asArray.filter(alive)
+            var standing = live.filter { $0.nationId.asString == id && r.tactics.forces[$0.id.asString].kind.asString != "emergency" }.count
+            var atHome = [String: Int](); for a in live { atHome[r.tactics.forces[a.id.asString].homeId.asString, default: 0] += 1 }
+            var total = r.world.armies.length
+            let here = space(r)
+            func safeHere(_ province: String) -> Bool { !landHolders(here, province).contains { atWar($0.nationId.asString, id) } }
             for p in land {
-                let live = r.world.armies.asArray.filter(alive)
-                if live.filter({ $0.nationId.asString == id && r.tactics.forces[$0.id.asString].kind.asString != "emergency" }).count >= cap || r.world.armies.length >= globalCap { break }
-                if !safe(p.id.asString, id) || live.filter({ r.tactics.forces[$0.id.asString].homeId.asString == p.id.asString }).count >= perHome { continue }
+                if standing >= cap || total >= globalCap { break }
+                if !safeHere(p.id.asString) || (atHome[p.id.asString] ?? 0) >= perHome { continue }
                 let data = r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == p.id.asString }!
                 let required = Int((Double(strength(r, p.id.asString)) / 10 + 0.5).rounded(.down))
                 if data.population.asNumber < Double(required) { continue }
                 create(r, nation: id, home: p.id.asString, kind: "regular"); data.population = JS(data.population.asNumber - Double(required)); formed += 1; cost += required
+                standing += 1; atHome[p.id.asString, default: 0] += 1; total += 1
             }
             if formed > 0 { People.announce(r, kind: "diplomacy", text: "\(n.name.asString)新编\(formed)支常备军", reason: "按故乡编制征集，本次扣内部人口\(cost)；每支新军同时建立真实位置、速度和基础战力记录。", nations: [id], province: nil) }
             let war = r.world.statecraft.relations.asArray.contains { ($0.a.asString == id || $0.b.asString == id) && $0.status.asString == "war" }

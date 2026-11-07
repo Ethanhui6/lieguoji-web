@@ -22,6 +22,8 @@ import LieguojiCore
     var simText = ""
     /// 显示设置 (web 0.5.40 map display options), kept between launches.
     @Published var display = DisplaySettings.load() { didSet { display.save() } }
+    /// 推演与画面 settings (armies shown, war arrows, icon size, frame rate, autosave).
+    @Published var play = PlaySettings.load() { didSet { play.save() } }
     /// Province to fly to; the id makes repeated requests for the same province animate again.
     @Published var focus: (province: Int, id: UUID)?
     @Published var resetRequest = UUID()
@@ -116,6 +118,22 @@ struct DisplaySettings: Codable, Equatable {
     static let key = "displaySettings.v3"
     static func load() -> DisplaySettings {
         guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) else { return DisplaySettings() }
+        return v
+    }
+    func save() { if let data = try? JSONEncoder().encode(self) { UserDefaults.standard.set(data, forKey: Self.key) } }
+}
+
+/// 推演与画面 (the original's IsDisplayArmy and the like), kept between launches.
+struct PlaySettings: Codable, Equatable {
+    var showArmies = true
+    var warArrows = true
+    var iconScale = 1.0
+    var highFrameRate = true
+    /// Autosave while playing, seconds (0: off; pausing and leaving still save).
+    var autosave = 120
+    static let key = "playSettings.v1"
+    static func load() -> PlaySettings {
+        guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(PlaySettings.self, from: data) else { return PlaySettings() }
         return v
     }
     func save() { if let data = try? JSONEncoder().encode(self) { UserDefaults.standard.set(data, forKey: Self.key) } }
@@ -412,7 +430,8 @@ struct MapView: UIViewRepresentable {
             l.add(to: .main, forMode: .common); link = l
         }
         private var frameRange: CAFrameRateRange {
-            controller.sheetOpen ? CAFrameRateRange(minimum: 15, maximum: 30, preferred: 30) : CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
+            controller.sheetOpen ? CAFrameRateRange(minimum: 15, maximum: 30, preferred: 30)
+                : controller.play.highFrameRate ? CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120) : CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
         }
         @objc private func step(_ l: CADisplayLink) {
             let dt = min(0.05, l.targetTimestamp - l.timestamp)
@@ -495,6 +514,13 @@ struct MapView: UIViewRepresentable {
                     if owner >= 0 { wide.insert(owner) }
                 }
                 renderer.setBorderEmphasis(wide)
+            }
+            if let renderer {
+                renderer.showArmies = controller.play.showArmies
+                renderer.iconScale = Float(controller.play.iconScale)
+                effects.showArrows = controller.play.warArrows
+                troops.iconScale = controller.play.iconScale
+                if mtk.preferredFramesPerSecond > 30 { mtk.preferredFramesPerSecond = controller.play.highFrameRate ? 120 : 60 }
             }
             if let renderer, renderer.display != controller.display {
                 let oceanChanged = renderer.display.ocean != controller.display.ocean
@@ -725,10 +751,12 @@ final class TroopLabelsView: UIView {
     override init(frame: CGRect) { super.init(frame: frame); isUserInteractionEnabled = false }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
+    /// The army icons' size setting (推演与画面).
+    var iconScale = 1.0
     func update(_ placed: [(sprite: MapRenderer.ArmySprite, x: Float, y: Float)], camera: MapCamera, viewport: CGSize) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // Icon size on screen (the renderer's icon size in map units × scale).
-        let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * max(camera.scale, 14.0 / 3.01)
+        let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * max(camera.scale, 14.0 / 3.01)
         var seen = Set<String>()
         CATransaction.begin(); CATransaction.setDisableActions(true)
         // Banner marks only when the banner is big enough to carry a character.

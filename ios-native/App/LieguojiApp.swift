@@ -1039,6 +1039,10 @@ struct ProvinceSheet: View {
     @State private var info: ProvinceInfo?
     @State private var pickingGood = false
     @State private var pickingCulture = false
+    @State private var region: RegionInfo?
+    @State private var regionActions = false
+    @State private var renamingRegion = false
+    @State private var regionName = ""
     var body: some View {
         if let map = model.map {
             let p = map.meta.provinces[province]
@@ -1105,6 +1109,31 @@ struct ProvinceSheet: View {
                                 }
                                 Divider2()
                             }
+                            if let g = region {
+                                Button { regionActions = true } label: {
+                                    HStack { Text("区域").foregroundStyle(Theme.ink2); Spacer(); Text("\(g.name) · \(g.provinces.count)州 · \(Names.wan(Int(g.population)))人").foregroundStyle(Theme.ink).lineLimit(1); Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)) }
+                                        .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .confirmationDialog(g.name, isPresented: $regionActions, titleVisibility: .visible) {
+                                    Button("区域更名") { regionName = g.name; renamingRegion = true }
+                                    if g.center != province { Button("设为区域中心") { Task { _ = await model.setRegionCenter(province); region = await model.regionInfo(province) } } }
+                                }
+                                .sheet(isPresented: $renamingRegion) {
+                                    VStack(alignment: .leading, spacing: 14) {
+                                        SheetHeader(title: "区域更名", subtitle: "现名 \(g.name)", seal: "改")
+                                        TextField("", text: $regionName).paperField().padding(.horizontal, 22)
+                                        SealButton(title: "颁行", disabled: regionName.trimmingCharacters(in: .whitespaces).isEmpty) {
+                                            renamingRegion = false
+                                            Task { _ = await model.renameRegion(province, regionName); region = await model.regionInfo(province) }
+                                        }
+                                        .padding(.horizontal, 22)
+                                    }
+                                    .padding(.bottom, 16)
+                                    .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                                }
+                                Divider2()
+                            }
                             Button { pickingCulture = true } label: {
                                 HStack { Text("本地文化").foregroundStyle(Theme.ink2); Spacer(); Text(Names.culture[info.cityCulture ?? ""] ?? info.cityCulture ?? "—").foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)) }
                                     .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
@@ -1168,7 +1197,7 @@ struct ProvinceSheet: View {
                 }
                 .padding(.bottom, 24)
             }
-            .task(id: model.state?.day) { info = await model.provinceInfo(province) }
+            .task(id: model.state?.day) { info = await model.provinceInfo(province); if region == nil { region = await model.regionInfo(province) } }
             .sheet(isPresented: $granting) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
@@ -1815,6 +1844,17 @@ struct WorldSummary: View {
 struct ChronicleSheet: View {
     @ObservedObject var model: GameModel
     @State private var unrolled = false
+    @State private var category = "all"
+    @State private var entries: [ChronicleEntry] = []
+    @State private var open: String?
+    static let categories = [("all", "全部"), ("war", "战争"), ("politics", "政事"), ("diplomacy", "外交"), ("family", "家族"), ("events", "天时人事")]
+    private var era: String { (model.state?.era).flatMap { $0.isEmpty ? nil : $0 } ?? "公元" }
+    /// The year of a day (the calendar runs 365¼ days a year from the state's current date).
+    private func yearOf(_ day: Int) -> Int {
+        guard let s = model.state else { return 1 }
+        let dayOfYear = Double(s.date.month - 1) * 30.44 + Double(s.date.day - 1)
+        return s.displayYear + Int(((dayOfYear - Double(s.day - day)) / 365.25).rounded(.down))
+    }
     var body: some View {
         ZStack {
             MemorialPaper()
@@ -1822,24 +1862,49 @@ struct ChronicleSheet: View {
                 VStack(alignment: .leading, spacing: 12) {
                     MemorialHeader(title: "纪事", subtitle: model.state?.dateText, seal: "史")
                     WorldSummary(model: model).padding(.horizontal, 16)
+                    // 大事记 by category: the whole chronicle (not only the latest lines), grouped by year;
+                    // tap an entry for why it happened.
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(Self.categories, id: \.0) { c in
+                                let on = category == c.0
+                                Button { category = c.0 } label: {
+                                    Text(c.1).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                        .padding(.horizontal, 14).frame(height: 36)
+                                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? Color.clear : Theme.line))
+                                }
+                                .buttonStyle(PressStyle())
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
                     VStack(spacing: 0) {
                         ScrollRod().padding(.horizontal, 6)
-                        VStack(alignment: .leading, spacing: 0) {
-                            let events = Array((model.state?.events ?? []).reversed())
-                            ForEach(Array(events.enumerated()), id: \.offset) { i, e in
-                                HStack(alignment: .top, spacing: 10) {
-                                    Circle().fill(color(e.kind)).frame(width: 7, height: 7).padding(.top, 8)
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text("第\(e.day + 1)日").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
-                                        Text(e.text).font(Theme.kai(16)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
-                                    }
-                                    Spacer(minLength: 0)
-                                    if i == 0 { Seal(text: "新", size: 22) }
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            if entries.isEmpty { Text("尚无记载").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 20) }
+                            ForEach(Array(entries.enumerated()), id: \.offset) { i, e in
+                                let year = yearOf(e.day)
+                                if i == 0 || yearOf(entries[i - 1].day) != year {
+                                    Text(year > 0 ? "\(era)\(year)年" : "\(era)前\(1 - year)年").font(Theme.kai(15)).foregroundStyle(Theme.seal)
+                                        .padding(.horizontal, 18).padding(.top, 10).padding(.bottom, 2)
                                 }
-                                .padding(.horizontal, 18).padding(.vertical, 9)
-                                .opacity(unrolled ? 1 : 0).offset(y: unrolled ? 0 : -6)
-                                .animation(.easeOut(duration: 0.35).delay(min(0.6, Double(i) * 0.03)), value: unrolled)
-                                if i < events.count - 1 { Rectangle().fill(Theme.ink.opacity(0.08)).frame(height: 0.7).padding(.leading, 35).padding(.trailing, 18) }
+                                Button { withAnimation(.easeOut(duration: 0.2)) { open = open == e.id ? nil : e.id } } label: {
+                                    HStack(alignment: .top, spacing: 10) {
+                                        Circle().fill(color(e.kind)).frame(width: 7, height: 7).padding(.top, 8)
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text(e.text).font(Theme.kai(16)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true).multilineTextAlignment(.leading)
+                                            if open == e.id, !e.reason.isEmpty {
+                                                Text(e.reason).font(Theme.kai(13)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true).multilineTextAlignment(.leading)
+                                            }
+                                        }
+                                        Spacer(minLength: 0)
+                                        if i == 0 { Seal(text: "新", size: 22) }
+                                    }
+                                    .padding(.horizontal, 18).padding(.vertical, 8).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                if i < entries.count - 1 { Rectangle().fill(Theme.ink.opacity(0.08)).frame(height: 0.7).padding(.leading, 35).padding(.trailing, 18) }
                             }
                         }
                         .padding(.vertical, 8)
@@ -1855,6 +1920,7 @@ struct ChronicleSheet: View {
             }
         }
         .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) { unrolled = true } }
+        .task(id: "\(category)-\((model.state?.day ?? 0) / 30)") { entries = await model.chronicle(category) }
     }
     private func color(_ kind: String) -> Color {
         switch kind { case "war", "battle", "uprising", "civilWar", "rebellion": return Theme.seal; case "peace", "diplomacy": return Theme.jade; default: return Theme.ink2.opacity(0.6) }
@@ -1890,6 +1956,24 @@ struct MenuSheet: View {
                 FeelSettings()
                 SectionLabel("远程计算")
                 RemoteSettings(model: model)
+                SectionLabel("推演与画面")
+                Group2 {
+                    PaperSwitch(title: "显示军队", on: $controller.play.showArmies)
+                    Divider2()
+                    PaperSwitch(title: "显示战争箭头", on: $controller.play.warArrows)
+                    Divider2()
+                    PaperSlider(title: "军队图标", value: $controller.play.iconScale, range: 0.6...1.6, step: 0.1) { String(format: "%.1f×", $0) }
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                    Divider2()
+                    PaperSwitch(title: "高帧率（120Hz，更耗电）", on: $controller.play.highFrameRate)
+                    Divider2()
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("自动存档").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                        ChipPicker(items: [(60, "1分钟"), (120, "2分钟"), (300, "5分钟"), (0, "关闭")], selection: $controller.play.autosave)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                }
+                .padding(.horizontal, 16)
                 SectionLabel("调试")
                 Group2 { PaperSwitch(title: "显示帧率与推演耗时", on: $controller.showMetrics) }.padding(.horizontal, 16)
             default:
@@ -2024,6 +2108,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.33.0", ["【原作补全】区域：相邻的四到六个州郡编成一个区域，以中心城市命名（某某道）；州郡页显示所属区域、州数和人口，可改区域名、设为区域中心；地图视图新增「区域」。",
+                    "【大事记】纪事改为完整大事记：不再只显示最近三十条，按「战争／政事／外交／家族／天时人事」分类，按年份分段，点一条可看到事情的来由。",
+                    "【设置】「声音与其他」新增「推演与画面」：显示军队、显示战争箭头、军队图标大小（0.6～1.6 倍）、高帧率开关（关闭后 60 帧更省电）、自动存档间隔（1／2／5 分钟或关闭）。",
+                    "【性能】每月征兵不再为每个州郡重扫全部军队、重算全部军队位置，改为每国统计一次。"]),
         ("0.32.0", ["【经济】国家页新增「财政」：国库与两年走势、土地税收、国库过盈时的收入递减、贸易增收、军费、每月净入，以及国库多寡对战力的倍率（原作规则，以前看不到）。",
                     "【经济】税制可选「轻徭薄赋／常税／重税」：重税收入 +30% 但国运逐月下降、人口流失；轻徭薄赋收入 −20% 但国运上升、人口增长加快，每月真实生效。",
                     "【经济】地图视图新增「特产」，按特产给州郡上色；海上按原作出现商船，沿航线在和平国家的港口之间往返，交战双方的航线上没有商船。",

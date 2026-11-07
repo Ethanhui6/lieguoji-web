@@ -130,6 +130,14 @@ struct GameState: Decodable, Equatable {
     func atWar(_ a: Int, _ b: Int) -> Bool { nations.indices.contains(a) && nations[a].enemies.contains(b) }
 }
 
+/// A province's region (区域).
+struct RegionInfo: Decodable { let id: Int; let name: String; let center: Int; let provinces: [Int]; let population: Double }
+/// One chronicle entry with its reason and the states it names.
+struct ChronicleEntry: Decodable, Identifiable {
+    let day: Int; let text: String; let kind: String; let reason: String; let nations: [Int]
+    var id: String { "\(day)|\(text)" }
+}
+
 struct ProvinceInfo: Decodable {
     let population: Int; let grain: Double; let capacity: Int; let supply: Double; let controller: Int; let owner: Int
     let core: Bool?; let defense: Double?; let mountain: Bool?; let biomes: [Double]?; let income: Double?

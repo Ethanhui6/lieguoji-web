@@ -49,9 +49,15 @@ extension NativeEngine {
         let sortedPop = population.values.sorted()
         func band(_ v: Double) -> Int { guard !sortedPop.isEmpty else { return 0 }; let rank = sortedPop.firstIndex { $0 >= v } ?? sortedPop.count - 1; return min(4, rank * 5 / max(1, sortedPop.count)) }
         let bandNames = ["人烟稀少", "人口疏落", "人口中等", "人口稠密", "繁华富庶"], bandColors = ["#f3ead2", "#e8d29a", "#d9b25f", "#c08a3a", "#8f5a22"]
+        if mode == "region" { Districts.ensure(r) }
         for p in provinces {
             let controller = p.controller.optionalString ?? ""
             switch mode {
+            case "region":
+                // 区域: each region in its own colour, named after its centre.
+                let rid = r.regimes.regions.of[p.id.asString].optionalNumber.map { Int($0) }
+                let name = rid.flatMap { i in i < r.regimes.regions.list.length ? r.regimes.regions.list[i].name.optionalString : nil } ?? ""
+                fills.append(add(rid.map { "region:\($0)" }, name, Self.familyPalette[(rid ?? 0) % Self.familyPalette.count]))
             case "alliance":
                 // The alliance colour is its strongest member's; every state keeps its own name.
                 if let a = Vassals.allianceOf(r, controller) {
@@ -91,7 +97,7 @@ extension NativeEngine {
         o.fills = .array(fills.map { JS($0) })
         // The original names each group of the view instead of the states (ViewManager
         // Update*LabelsAndBorderVisibility); the alliance view keeps every state's own name.
-        if mode == "culture" || mode == "family" || mode == "religion" || mode == "polity" {
+        if mode == "culture" || mode == "family" || mode == "religion" || mode == "polity" || mode == "region" {
             o.labels = .array(labels(groupOf).asArray.compactMap { box -> JS? in
                 let g = box.nation.asInt
                 guard legend.indices.contains(g), !legend[g].name.isEmpty else { return nil }

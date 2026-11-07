@@ -392,7 +392,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
                 let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)
                 end = legTo[a.key] ?? at
-                let size = iconSize * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
+                let size = iconSize * iconScale * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
                 // The commander's gonfalon stands behind the pieces: gold for the ruler in person.
                 if a.banner > 0 && role != "Fleet" {
                     let k: Float = 0.62
@@ -417,6 +417,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
     }
 
+    /// 显示军队 and the icons' size (推演与画面).
+    var showArmies = true
+    var iconScale: Float = 1 { didSet { if iconScale != oldValue { rebuildArmies() } } }
     /// Layers prepared off the main thread for the next map view (MapLayers.prepare).
     static var prepared: MapLayers.Prepared?
 
@@ -485,7 +488,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if reveal >= 1 {
         colored(route)
         encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
-        for unit in units {
+        for unit in units where showArmies {
             encoder.setRenderPipelineState(spritePipeline)
             encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)

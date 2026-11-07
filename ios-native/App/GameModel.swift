@@ -451,8 +451,8 @@ import LieguojiCore
         // world on the engine and the steps wait behind it: every 90 days stalled fast play every few
         // seconds). Pausing, leaving and backgrounding still save at once. With a computer, every
         // 30 seconds, so its world is never far from the phone's copy.
-        let interval: TimeInterval = remoteAddress != nil ? 30 : 120
-        if next.day != lastSavedDay, Date().timeIntervalSince(lastSaveTime) >= interval { save(); lastSavedDay = next.day; lastSaveTime = Date() }
+        let interval: TimeInterval = remoteAddress != nil ? 30 : Double(controller.play.autosave)
+        if interval > 0, next.day != lastSavedDay, Date().timeIntervalSince(lastSaveTime) >= interval { save(); lastSavedDay = next.day; lastSaveTime = Date() }
     }
 
     private func apply(_ next: GameState) {
@@ -941,6 +941,17 @@ import LieguojiCore
         return try? JSONDecoder().decode(FinanceOverview.self, from: data)
     }
     func setTax(_ n: Int, _ value: String) async -> String? { finish(await native.setTax(n, value)) }
+    func regionInfo(_ province: Int) async -> RegionInfo? {
+        guard state != nil, let data = await native.regionInfo(province) else { return nil }
+        return try? JSONDecoder().decode(RegionInfo.self, from: data)
+    }
+    func renameRegion(_ province: Int, _ name: String) async -> String? { finish(await native.renameRegion(province, name)) }
+    func setRegionCenter(_ province: Int) async -> String? { finish(await native.setRegionCenter(province)) }
+    /// 大事记 by category, newest first.
+    func chronicle(_ category: String) async -> [ChronicleEntry] {
+        guard state != nil, let data = await native.chronicle(category) else { return [] }
+        return (try? JSONDecoder().decode([ChronicleEntry].self, from: data)) ?? []
+    }
     func setCalendar(era: String, year: Int?) async -> String? { finish(await native.setCalendar(era: era, year: year)) }
     func setCityCulture(_ province: Int, _ culture: String) async -> String? { finish(await native.setCityCulture(province, culture)) }
     func tradeInfo(_ index: Int) async -> TradeOverview? {

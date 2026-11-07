@@ -84,6 +84,8 @@ import LieguojiCore
     /// published `reveal` then only follows it coarsely for the panels. `push`: the camera eases in.
     private(set) var revealClock: (from: Float, to: Float, start: CFTimeInterval, duration: Double, push: Bool)?
     var onRevealClock: (() -> Void)?
+    /// Battle losses to float over the map (map point, text, at sea).
+    var onHits: (([(x: Float, y: Float, text: String, naval: Bool)]) -> Void)?
     func animateReveal(from: Float = 0, to: Float = 1, duration: Double, push: Bool = false) {
         revealClock = (from, to, CACurrentMediaTime(), max(0.05, duration), push)
         onRevealClock?()
@@ -277,6 +279,15 @@ struct MapView: UIViewRepresentable {
             renderer?.onDraw = { [weak self] t in self?.frameDrawn(t) }
             renderer?.onOutlines = { [weak self] in self?.mtk.setNeedsDisplay() }
             controller.onRevealClock = { [weak self] in self?.revealStarted() }
+            controller.onHits = { [weak self] hits in
+                guard let self, let renderer = self.renderer else { return }
+                let size = self.mtk.bounds.size, vp = (width: Double(size.width), height: Double(size.height))
+                for h in hits {
+                    let s = renderer.camera.toScreen(x: Double(h.x), y: Double(h.y), viewport: vp)
+                    guard s.x > 10, s.y > 60, s.x < vp.width - 10, s.y < vp.height - 60 else { continue }
+                    self.effects.float(h.text, at: CGPoint(x: s.x, y: s.y - 18), naval: h.naval)
+                }
+            }
             labels = MapLabelsView(map: map)
             for v in [mtk!, labels!] as [UIView] { v.frame = container.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(v) }
             labels.isUserInteractionEnabled = false

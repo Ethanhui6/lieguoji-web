@@ -200,9 +200,12 @@ public struct PeaceAI {
     /// nativeDecidePeaceReason for external wars: 0 goals achieved, 2 collapse, 1 decisive score, 4 weariness.
     public func decide() -> Int? {
         if w.internal { return nil }
-        if months() >= 12 && allGoalsAchieved() { return 0 }
+        // App worlds settle sooner (goals met after six months, a decisive score after eighteen), so land
+        // changes hands at the original's rhythm on this map's fewer, larger provinces.
+        let app = UnitKinds.enabled
+        if months() >= (app ? 6 : 12) && allGoalsAchieved() { return 0 }
         if collapsed(w.primaryDefenderId) || collapsed(w.primaryAttackerId) { return 2 }
-        if months() < 36 { return nil }
+        if months() < (app ? 18 : 36) { return nil }
         let s = score().score
         if abs(s) >= forceSettleThreshold() { return 1 }
         if s <= -50 || s >= 50 { return 1 }

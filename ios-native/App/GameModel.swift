@@ -477,10 +477,31 @@ import LieguojiCore
         if interval > 0, next.day != lastSavedDay, Date().timeIntervalSince(lastSaveTime) >= interval { save(); lastSavedDay = next.day; lastSaveTime = Date() }
     }
 
+    /// 战况飘字: each province's battle losses this step (and fleets' hull lost at sea) float up over the
+    /// map, so a fight reads at a glance. Ten at most a step, the biggest first.
+    private func battleHits(_ a: GameState, _ b: GameState) {
+        guard controller.onHits != nil, controller.reveal >= 1, controller.play.showArmies else { return }
+        var before = [String: Int](); for x in a.armies { before[x.id] = x.troops }
+        var byProvince = [Int: (x: Float, y: Float, n: Int, loss: Int)]()
+        for x in b.armies where x.province >= 0 {
+            guard let t = before[x.id], t > x.troops, x.status == "fighting" || x.status == "retreating" else { continue }
+            var e = byProvince[x.province] ?? (0, 0, 0, 0)
+            e.x += x.x; e.y += x.y; e.n += 1; e.loss += t - x.troops
+            byProvince[x.province] = e
+        }
+        var hits = byProvince.values.filter { $0.loss >= 20 && $0.n > 0 }.sorted { $0.loss > $1.loss }.prefix(8)
+            .map { (x: $0.x / Float($0.n), y: $0.y / Float($0.n), text: "−" + Names.wan($0.loss), naval: false) }
+        var hull = [String: Double](); for f in a.fleets ?? [] { hull[f.id] = f.hull }
+        for f in (b.fleets ?? []) where (hull[f.id] ?? f.hull) - f.hull >= 1 {
+            if hits.count >= 10 { break }
+            hits.append((x: f.x, y: f.y, text: "−\(Int(((hull[f.id] ?? f.hull) - f.hull).rounded()))船", naval: true))
+        }
+        if !hits.isEmpty { controller.onHits?(hits) }
+    }
     private func apply(_ next: GameState) {
         let previous = state
         state = next
-        if let previous { announce(previous, next) }
+        if let previous { announce(previous, next); if playing { battleHits(previous, next) } }
         guard var world = controller.world ?? map else { return }
         var changed = false
         // Ownership reaches the map at most twice a second while playing (each change recolours every

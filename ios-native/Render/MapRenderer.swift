@@ -593,10 +593,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         ColorOut o; o.position = clip(positions[id], u, float2(0.0));
         float4 c = colors[id]; float h = heights[id];
         if (h >= 0.0) {
-            float rise = min(1.0, r.w / 0.45), wash = clamp((r.w - 0.55) / 0.2, 0.0, 1.0);
+            float2 q = positions[id];
+            // A slow field over the map: the states' colours spread like ink soaking into paper, in
+            // patches, rather than all at once.
+            float n = 0.5 + 0.5 * sin(q.x * 0.0115 + 1.7) * cos(q.y * 0.0137 - 0.6) * 0.8 + 0.1 * sin((q.x + q.y) * 0.031);
+            float rise = min(1.0, r.w / 0.45), wash = clamp((r.w - 0.5 - n * 0.22) / 0.12, 0.0, 1.0);
             float shown = clamp((rise * 1.15 - h) * 8.0, 0.0, 1.0);
             float3 ground = terrain[id].rgb + (c.rgb - terrain[id].rgb) * wash;
             c.rgb = r.rgb + (ground - r.rgb) * shown;
+            // An ink line runs along the rising shore, and a darker rim where the colour arrives.
+            float shore = shown * (1.0 - shown) * 4.0, front = wash * (1.0 - wash) * 4.0;
+            c.rgb = mix(c.rgb, float3(0.14, 0.11, 0.08), shore * 0.55);
+            c.rgb = mix(c.rgb, c.rgb * 0.72, front * 0.6);
         }
         o.color = c; return o;
     }

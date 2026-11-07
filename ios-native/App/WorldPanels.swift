@@ -53,6 +53,97 @@ struct ArmyServiceView: View {
     }
 }
 
+/// 对阵图: the two sides of a province's battle or siege — their states, armies, troops and morale, and
+/// the balance of strength as one bar. Shown on the province and on an army in the fight.
+struct BattleBoard: View {
+    let province: Int
+    let state: GameState
+    let map: WorldMap
+    var openArmy: ((Int) -> Void)? = nil
+    private func name(_ n: Int) -> String { n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].name : "?" }
+    private func tint(_ n: Int) -> Color { n >= 0 && n < map.meta.nations.count ? Names.color(map.meta.nations[n].color) : Theme.ink2 }
+    var body: some View {
+        let here = state.armies.enumerated().filter { $0.element.province == province && $0.element.troops > 0 }
+        let owner = state.owners.indices.contains(province) ? state.owners[province] : -1
+        let foesOfOwner = state.nations.indices.contains(owner) ? Set(state.nations[owner].enemies) : []
+        let attackers = here.filter { foesOfOwner.contains($0.element.nation) }
+        let defenders = here.filter { !foesOfOwner.contains($0.element.nation) }
+        if !attackers.isEmpty {
+            let a = attackers.reduce(0) { $0 + $1.element.troops }, d = defenders.reduce(0) { $0 + $1.element.troops }
+            let fighting = here.contains { $0.element.status == "fighting" }
+            let attackerNation = attackers.max { $0.element.troops < $1.element.troops }!.element.nation
+            VStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "flag.2.crossed.fill").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.seal)
+                        .symbolEffect(.pulse, isActive: fighting)
+                    Text("对阵").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                    Spacer()
+                    Text(fighting ? "交战中" : defenders.isEmpty ? "围城中" : "对峙中").font(Theme.kai(13)).foregroundStyle(Theme.paper2)
+                        .padding(.horizontal, 8).padding(.vertical, 3).background(fighting ? Theme.seal : Theme.ink2, in: Capsule())
+                }
+                // Each side's name and strength, and the balance between them.
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("守 · \(name(owner))").font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
+                        Text(defenders.isEmpty ? "仅余城防" : "\(Names.wan(d)) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit()
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("攻 · \(name(attackerNation))\(Set(attackers.map(\.element.nation)).count > 1 ? "等" : "")").font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
+                        Text("\(Names.wan(a)) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit()
+                    }
+                }
+                GeometryReader { g in
+                    let total = max(1, a + d), left = g.size.width * CGFloat(d) / CGFloat(total)
+                    HStack(spacing: 2) {
+                        Rectangle().fill(tint(owner)).frame(width: max(d > 0 ? 6 : 0, left - 1))
+                        Rectangle().fill(tint(attackerNation))
+                    }
+                    .clipShape(Capsule())
+                    .animation(.spring(response: 0.6, dampingFraction: 0.85), value: d)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.85), value: a)
+                }
+                .frame(height: 8)
+                HStack(alignment: .top, spacing: 10) {
+                    column(defenders, empty: "无野战守军")
+                    Rectangle().fill(Theme.ink.opacity(0.1)).frame(width: 0.8)
+                    column(attackers, empty: "")
+                }
+            }
+            .padding(14)
+            .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.seal.opacity(0.25), lineWidth: 1))
+            .padding(.horizontal, 16)
+            .transition(.scale(scale: 0.96).combined(with: .opacity))
+        }
+    }
+    private func column(_ list: [EnumeratedSequence<[GameState.Army]>.Element], empty: String) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            if list.isEmpty { Text(empty).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+            ForEach(list.prefix(6), id: \.element.id) { item in
+                let x = item.element
+                Button { openArmy?(item.offset) } label: {
+                    HStack(spacing: 7) {
+                        UnitMark(unit: x.unit, color: tint(x.nation)).frame(width: 24, height: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(x.name).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(1)
+                            HStack(spacing: 4) {
+                                Text(Names.wan(x.troops)).font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
+                                Capsule().fill(Theme.ink.opacity(0.12)).frame(width: 34, height: 3)
+                                    .overlay(alignment: .leading) { Capsule().fill(x.morale < 30 ? Theme.seal : Theme.jade).frame(width: 34 * CGFloat(min(100, max(0, x.morale))) / 100, height: 3) }
+                            }
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).disabled(openArmy == nil)
+            }
+            if list.count > 6 { Text("另有 \(list.count - 6) 军").font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 /// 战争状态, 城市防御力 / 占领进度 and 生物群系分布 of a province.
 struct ProvinceWarView: View {
     let info: ProvinceInfo

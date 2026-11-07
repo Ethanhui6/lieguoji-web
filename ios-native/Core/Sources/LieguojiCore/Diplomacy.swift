@@ -602,7 +602,9 @@ public struct DeclarationEngine: Sendable {
             guard let a = states.firstIndex(where: { $0.index == nation }) else { return nil }
             let st = states[a]
             if st.dead || st.vassal || !w.worldAuto || !st.auto { return nil }
-            if w.monthsSince(w.nations[nation].activeTime) < 12 || w.monthsSince(w.nations[nation].passiveTime) < 12 { return nil }
+            // App worlds: a state may go to war again after six months (the original waits a year).
+            let rest = UnitKinds.enabled ? 6 : 12
+            if w.monthsSince(w.nations[nation].activeTime) < rest || w.monthsSince(w.nations[nation].passiveTime) < rest { return nil }
             if suppressed(a) { return nil }
             let temper = DeclarationEngine.nationIds.indices.contains(nation) ? DeclarationEngine.temper?(DeclarationEngine.nationIds[nation]) ?? 1 : 1
             let stance = DeclarationEngine.nationIds.indices.contains(nation) ? DeclarationEngine.stance?(DeclarationEngine.nationIds[nation]) ?? [] : []

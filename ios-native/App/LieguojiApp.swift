@@ -1130,6 +1130,7 @@ struct ProvinceSheet: View {
             ScrollView {
                 VStack(spacing: 14) {
                     SheetHeader(title: p.name, subtitle: nation.map { "\($0.name) · \(Self.terrainLine(info, p.terrain))" } ?? Self.terrainLine(info, p.terrain), color: nation.map { Names.color($0.color) })
+                    if let s = model.state { BattleBoard(province: province, state: s, map: map, openArmy: openArmy) }
                     if let info {
                         // 州郡属性: core or frontier, mountain, fortress, rich, granary, well governed.
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -1465,6 +1466,7 @@ struct ArmySheet: View {
                         .padding(.bottom, 16)
                         .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
                     }
+                    if a.province >= 0, let s = model.state { BattleBoard(province: a.province, state: s, map: map) }
                     ArmyServiceView(model: model, army: a)
                     // 整编 (custom): strength, arm and morale.
                     Button { withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { editing.toggle() } } label: {
@@ -2199,6 +2201,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("1.0.0", ["【正式版】版本号进入 1.0。",
+                    "【节奏】攻城速度提高到原来的三倍（这张地图州郡少而大，原先一座城要围很久，领土几乎不动）；一国两场战争之间的冷却由 12 个月缩短到 6 个月；达成战争目标后 6 个月即可议和，战局一边倒时 18 个月即可强制结算（原为 12 和 36 个月），领土易手和政权更替明显更频繁。",
+                    "【军队AI·协助盟友】参战盟友的州郡被敌军攻入或占领时，本国军队会把它列入目标，前去救援、收复（原作的「协助盟友占领土地」）；仍遵循上一版的强弱掂量与集中兵力。",
+                    "【对阵图】点开正在交战或被围的州郡、或点开交战中的军队，顶部显示对阵图：守方与攻方国家、各自兵力、一条随战况伸缩的强弱条，以及双方每支军队的兵种、兵力和士气；点军队可直接打开。",
+                    "【战况飘字】推演中每一步的交战伤亡在战场上方飘出（朱红为陆战伤亡，蓝色为海战船体损失），一眼看出哪里在打、打得多狠；手机发热时自动停用。",
+                    "【开局动画】陆地升起时海岸线有一道墨线随之推进，国家颜色像墨渗入纸面一样成片晕开，而不是整张图同时变色。"]),
         ("0.39.0", ["【启动动画】重做为「夜幕山河」：墨色底上，朱红旭日缓缓升起，金色经纬线自行勾画出一只地球，「列國紀」三字自上而下落笔，印章按下，随后夜幕向外散开露出世界。只用图形和渐变，不用模糊和阴影，构建背景世界时也不掉帧。",
                     "【主页】重新设计：顶部墨色渐隐，竖排大字标题、印章与一句古语；底部纸色渐显，主按钮改为朱印样式的「开创新世界」（附一行说明），有存档时出现「继续上次的世界」，导入存档、设置、更新改为三个图标方块；各元素依次浮现。",
                     "【性能·主页】背景地图漂移由每秒 60 帧降到 30 帧（每秒只移 8 点，看不出差别，地图和国名重绘减半）；主页不再刷海浪；面板阴影改为只画在底板形状上，不再每帧额外离屏合成；建世界用的引擎等启动动画和主页展开结束后才启动，不再和动画抢处理器。",

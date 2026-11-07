@@ -129,8 +129,11 @@ public enum RunWindow {
                 for a in group.filter({ armyDue.contains($0.id.asString) }).sorted(by: { Collate.less($0.id.asString, $1.id.asString) }) {
                     let c = combat(a), base = f(c.damageToProvince * c.efficiency), damage = c.multiplier == 2 ? f(f(base) * 2) : base
                     let n = a.nationId.asString
+                    // App worlds: a siege falls in a third of the time (provinces here are few and large, so
+                    // land changed hands far more slowly than in the original).
+                    let assault = UnitKinds.enabled ? damage * 3 : damage
                     if n == p.controller.asString { s.resistance = JS(min(s.maximum.asNumber, s.resistance.asNumber + damage)) }
-                    else if war(n, p.controller.asString) { s.attacker = JS(n); s.resistance = JS(max(0, s.resistance.asNumber - damage)) }
+                    else if war(n, p.controller.asString) { s.attacker = JS(n); s.resistance = JS(max(0, s.resistance.asNumber - assault)) }
                     s.pulse = JS(tick)
                     if s.resistance.asNumber == 0 { conqueror = n; captor = a.id.asString; break }
                 }

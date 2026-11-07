@@ -223,6 +223,22 @@ public enum ArmyOrders {
         var bordersOf = [String: [Int]](), lostOf = [String: [Int]]()
         // App worlds: troops each state already has marching on each province (read once a batch).
         var headingOf = [String: [String: Double]]()
+        // 协助盟友 (app worlds): allied land where an enemy of ours stands or that an enemy holds.
+        var alliedOf = [String: [Int]]()
+        func alliedFront(_ nation: String, _ enemySet: Set<String>) -> [Int] {
+            if let v = alliedOf[nation] { return v }
+            var out = [Int]()
+            if let v = Vassals.allianceOf(r, nation) {
+                let friends = Set(v.members.asArray.map(\.asString)).subtracting([nation])
+                for (i, p) in provinceList.enumerated() where friends.contains(p.legalOwner.optionalString ?? p.controller.asString) {
+                    let pid = p.id.asString
+                    let enemyHere = presentAt[pid]?.contains { $0.status.asString != "retreating" && enemySet.contains($0.nationId.asString) } ?? false
+                    if enemyHere || enemySet.contains(p.controller.asString) { out.append(i) }
+                }
+            }
+            alliedOf[nation] = out
+            return out
+        }
         for id in ids {
             let a = armyById[id]!, row = state.armies[id], nation = a.nationId.asString
             let en = enemyMaps[nation] ?? [], enemySet = Set(en.map(\.nation))
@@ -288,6 +304,8 @@ public enum ArmyOrders {
                         let borders = bordersOf[nation] ?? stateBorders(r, nation, enemySet)
                         bordersOf[nation] = borders
                         for p in ArmyAutonomy.Context.regularCandidateIds(invaded: invaded + lost, borders: borders) { add(p) }
+                        // 协助盟友: an ally's invaded or occupied land is ours to relieve as well.
+                        for p in alliedFront(nation, enemySet) { add(p) }
                     }
                 } else {
                     for p in invaded { add(p) }

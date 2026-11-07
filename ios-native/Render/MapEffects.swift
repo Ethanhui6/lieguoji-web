@@ -88,6 +88,28 @@ final class EffectsView: UIView {
     var seaSpots: [CGPoint] = []
     private var waves: [(layer: CALayer, x: Double, y: Double, scale: Double)] = []
     private var waveTimer: Timer?
+    /// 战况飘字: a loss rises, swells and fades over the fight (vermilion on land, blue at sea).
+    private var floats = 0
+    func float(_ text: String, at p: CGPoint, naval: Bool) {
+        guard !Energy.hot, floats < 12, window != nil else { return }
+        let font = UIFont(name: "TW-Kai-98_1", size: 16) ?? .boldSystemFont(ofSize: 16)
+        let fill = naval ? UIColor(red: 0.16, green: 0.4, blue: 0.72, alpha: 1) : UIColor(red: 0.74, green: 0.16, blue: 0.1, alpha: 1)
+        let l = CATextLayer()
+        // Filled and outlined in paper, readable over land, sea and borders without a shadow pass.
+        l.string = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: fill, .strokeColor: UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 1), .strokeWidth: -4])
+        l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
+        l.bounds = CGRect(x: 0, y: 0, width: 110, height: 22); l.position = p
+        layer.addSublayer(l)
+        let up = CABasicAnimation(keyPath: "position.y"); up.fromValue = p.y; up.toValue = p.y - 36
+        let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.12, 0.7, 1]
+        let pop = CAKeyframeAnimation(keyPath: "transform.scale"); pop.values = [0.5, 1.2, 1, 1]; pop.keyTimes = [0, 0.18, 0.35, 1]
+        let g = CAAnimationGroup(); g.animations = [up, fade, pop]; g.duration = 1.4; g.fillMode = .forwards; g.isRemovedOnCompletion = false
+        g.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        l.opacity = 0
+        l.add(Self.calm(g), forKey: "float")
+        floats += 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.45) { [weak self] in l.removeFromSuperlayer(); self?.floats -= 1 }
+    }
     func startWaves() {
         guard waveTimer == nil else { return }
         waveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in self?.spawnWave() }

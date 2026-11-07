@@ -383,7 +383,8 @@ import LieguojiCore
                 // A step may take longer at the higher speeds (the map glides over a whole step on the GPU,
                 // so a longer step is still smooth): large worlds then really run faster at 4× and 8×.
                 let stepTime = [1: 0.13, 2: 0.2, 4: 0.32, 8: 0.5][self.speed] ?? 0.13
-                let affordable = max(1, Int((stepTime / max(0.004, self.dayCost)).rounded(.down)))
+                // Only a share of each step goes to the engine (less when the phone runs warm; see Energy).
+                let affordable = max(1, Int((stepTime * Energy.duty / max(0.004, self.dayCost)).rounded(.down)))
                 let pace = min(wanted, affordable)
                 let days = far ? pace * 2 : pace
                 self.lastDays = days
@@ -404,7 +405,9 @@ import LieguojiCore
                 // down to one day a step for many steps after it.
                 if !far { self.dayCost = self.dayCost * 0.7 + min(spent / Double(max(1, days)), self.dayCost * 2.5) * 0.3 }
                 let budget = max(0.2, stepTime)
-                let rest = budget - spent
+                // The processor rests for part of every step, more when the phone is warm: a large world
+                // used to keep a core busy without pause, which is what heated the phone.
+                let rest = max(budget - spent, far ? 0 : spent * (1 / Energy.duty - 1))
                 if rest > 0 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) } else { await Task.yield() }
             }
         }

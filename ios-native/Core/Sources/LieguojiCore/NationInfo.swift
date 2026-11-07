@@ -16,6 +16,11 @@ extension NativeEngine {
         c.governance = JS(Offices.governance(r, id))
         c.manual = JS(r.offices47.nations[id].manual.isTruthy)
         c.temper = JS(DeclarationEngine.temper?(id) ?? 1)
+        // 国家特性: the original's state traits with their effect.
+        c.traits = .array(Armies.stateTraits(r, id).compactMap { k in
+            guard let t = Government.stateTraitText[k] else { return nil }
+            let o = JS.object(); o.name = JS(t.0); o.text = JS(t.1); return o
+        })
         c.centralIncome = JS(Offices.centralIncome(r, id))
         c.offices = .array(Offices.central.map { office in
             let e = JS.object(); e.office = JS(office)

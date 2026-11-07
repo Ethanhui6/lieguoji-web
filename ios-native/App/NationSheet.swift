@@ -29,6 +29,8 @@ struct NationInfo: Decodable {
     struct House: Decodable { let id: String?; let name: String; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int; let stance: String?; let relation: Double? }
     struct Court: Decodable {
         let governance: Double; let centralIncome: Double; let offices: [Office]; let temper: Double?; let manual: Bool?
+        struct Trait: Decodable { let name: String; let text: String }
+        let traits: [Trait]?
         let provinces: Int; let occupied: Int; let lost: Int; let governors: Int
         let commanders: [Commander]; let houses: [House]
     }
@@ -519,6 +521,20 @@ struct NationSheet: View {
                 StatTile(label: "地方官", value: "\(c.governors)/\(c.provinces)", fraction: c.provinces > 0 ? Double(c.governors) / Double(c.provinces) : 0),
                 StatTile(label: "国策", value: Self.temperName(c.temper ?? 1), warn: (c.temper ?? 1) > 1.25, edit: { tab = .custom }),
             ])
+            if let traits = c.traits, !traits.isEmpty {
+                // 国家特性 (the original's state traits), each with what it does.
+                Group2 {
+                    ForEach(Array(traits.enumerated()), id: \.offset) { i, t in
+                        if i > 0 { Divider2() }
+                        HStack(spacing: 12) {
+                            Text(t.name).font(Theme.kai(15)).foregroundStyle(Theme.ink)
+                            Spacer(minLength: 8)
+                            Text(t.text).font(Theme.kai(12)).foregroundStyle(Theme.ink2).multilineTextAlignment(.trailing)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                    }
+                }
+            }
             Group2 {
                 ForEach(Array(c.offices.enumerated()), id: \.offset) { i, o in
                     Button { appointing = AppointTarget(office: o.office) } label: {

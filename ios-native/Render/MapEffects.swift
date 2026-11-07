@@ -42,6 +42,12 @@ struct MapEffects: Equatable {
 final class EffectsView: UIView {
     /// Smoke, fire and sparks (设置 › 粒子特效).
     static var particles = true
+    /// Looping ambient animations (waves, battle marks, flags, marching arrows) at 30 frames: with
+    /// ProMotion unlocked they otherwise ran the whole screen at 120 for as long as a war lasted.
+    static func calm(_ a: CAAnimation) -> CAAnimation {
+        a.preferredFrameRateRange = CAFrameRateRange(minimum: 10, maximum: 30, preferred: 30)
+        return a
+    }
     private var battleLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     /// Who fights whom, without text: a line from each army to the clash, in its state's colour.
     private var clashLayers: [String: (a: CAShapeLayer, b: CAShapeLayer, battle: MapEffects.Battle)] = [:]
@@ -86,7 +92,7 @@ final class EffectsView: UIView {
     }
     func stopWaves() { waveTimer?.invalidate(); waveTimer = nil }
     private func spawnWave() {
-        guard Self.particles, let sheet = Self.waveSheet, let camera, !seaSpots.isEmpty, waves.count < 9, window != nil, viewport.width > 0 else { return }
+        guard Self.particles, !Energy.hot, let sheet = Self.waveSheet, let camera, !seaSpots.isEmpty, waves.count < 9, window != nil, viewport.width > 0 else { return }
         let vp = (width: Double(viewport.width), height: Double(viewport.height)), view = bounds.insetBy(dx: 10, dy: 60)
         var pick: (CGPoint, CGPoint)?
         for _ in 0..<12 {
@@ -101,7 +107,7 @@ final class EffectsView: UIView {
         l.bounds = CGRect(x: 0, y: 0, width: side, height: side); l.position = at; l.opacity = 0.9
         let flip = CAKeyframeAnimation(keyPath: "contentsRect"); flip.values = Self.waveFrames; flip.calculationMode = .discrete
         flip.duration = 2.7; flip.fillMode = .forwards; flip.isRemovedOnCompletion = false
-        l.add(flip, forKey: "wave")
+        l.add(Self.calm(flip), forKey: "wave")
         layer.insertSublayer(l, at: 0)
         waves.append((l, Double(spot.x), Double(spot.y), camera.scale))
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.7) { [weak self] in
@@ -170,8 +176,8 @@ final class EffectsView: UIView {
         let flash = CAKeyframeAnimation(keyPath: "opacity")
         flash.values = [0.15, 0.9, 0.2, 0.15]; flash.keyTimes = [0, 0.2, 0.5, 1]
         flash.duration = 1.2; flash.repeatCount = .infinity
-        marks.add(flash, forKey: "contact"); root.addSublayer(marks)
-        if Self.particles && battleLayers.count < 4 {
+        marks.add(Self.calm(flash), forKey: "contact"); root.addSublayer(marks)
+        if Self.particles && !Energy.hot && battleLayers.count < 4 {
             let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: 12, y: 9); root.insertSublayer(smoke, at: 0)
         }
         return root
@@ -221,7 +227,7 @@ final class EffectsView: UIView {
         cloth.path = wave.cgPath; cloth.fillColor = color.cgColor; cloth.strokeColor = UIColor(white: 0.15, alpha: 0.6).cgColor; cloth.lineWidth = 0.6
         cloth.frame = CGRect(x: 0.8, y: 0, width: 16, height: 12); cloth.anchorPoint = CGPoint(x: 0, y: 0.5); cloth.position = CGPoint(x: 0.8, y: 6)
         let flutter = CAKeyframeAnimation(keyPath: "transform.scale.x"); flutter.values = [1, 0.82, 1.04, 0.9, 1]; flutter.duration = 0.8; flutter.repeatCount = .infinity
-        cloth.add(flutter, forKey: "flutter"); pole.addSublayer(cloth)
+        cloth.add(Self.calm(flutter), forKey: "flutter"); pole.addSublayer(cloth)
         let drop = CASpringAnimation(keyPath: "transform.translation.y"); drop.fromValue = -30; drop.toValue = 0; drop.damping = 9; drop.duration = drop.settlingDuration
         let fadeOut = CAKeyframeAnimation(keyPath: "opacity"); fadeOut.values = [0, 1, 1, 0]; fadeOut.keyTimes = [0, 0.08, 0.75, 1]; fadeOut.duration = 2.1
         let plant = CAAnimationGroup(); plant.animations = [drop, fadeOut]; plant.duration = 2.1; plant.fillMode = .forwards; plant.isRemovedOnCompletion = false
@@ -235,7 +241,7 @@ final class EffectsView: UIView {
         line.strokeColor = UIColor(red: 0.86, green: 0.12, blue: 0.1, alpha: 0.92).cgColor; line.fillColor = UIColor.clear.cgColor
         line.lineWidth = 5; line.lineCap = .round; line.lineDashPattern = [14, 8]
         let flow = CABasicAnimation(keyPath: "lineDashPhase"); flow.fromValue = 0; flow.toValue = -44; flow.duration = 0.45; flow.repeatCount = .infinity
-        line.add(flow, forKey: "flow")
+        line.add(Self.calm(flow), forKey: "flow")
         let head = CAShapeLayer(); head.fillColor = line.strokeColor
         for l in [line, head] {
             let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.1, 0.85, 1]; fade.duration = 2
@@ -538,7 +544,7 @@ final class EffectsView: UIView {
                 c.opacity = 0.75
                 // The dashes run towards the clash.
                 let flow = CABasicAnimation(keyPath: "lineDashPhase"); flow.fromValue = 9; flow.toValue = 0; flow.duration = 0.45; flow.repeatCount = .infinity
-                c.add(flow, forKey: "flow")
+                c.add(Self.calm(flow), forKey: "flow")
                 layer.insertSublayer(c, at: 0)
                 return c
             }

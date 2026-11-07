@@ -218,6 +218,8 @@ public struct DeclarationEngine: Sendable {
     public static var nationIds: [String] = []
     /// App rule: whether a treaty forbids the first state (index) from declaring on the second.
     public static var pact: ((Int, Int) -> Bool)?
+    /// App rule: a state's traits by id; the original's 欺凌弱小, 不畏强权 and 全面战争 steer its wars.
+    public static var stance: ((String) -> [String])?
 
     /// One monthly evaluation for `nation` (nativeSpendDeclarationPower around nativeEvaluateDeclaration).
     public func evaluate(_ w: inout DiplomacyWorld, nation: Int) -> DeclaredWar? {
@@ -603,10 +605,17 @@ public struct DeclarationEngine: Sendable {
             if w.monthsSince(w.nations[nation].activeTime) < 12 || w.monthsSince(w.nations[nation].passiveTime) < 12 { return nil }
             if suppressed(a) { return nil }
             let temper = DeclarationEngine.nationIds.indices.contains(nation) ? DeclarationEngine.temper?(DeclarationEngine.nationIds[nation]) ?? 1 : 1
-            var best = Native.fr(0.55 / temper), target: Int?, chosenCB: CB?
-            for candidate in candidates(a) {
+            let stance = DeclarationEngine.nationIds.indices.contains(nation) ? DeclarationEngine.stance?(DeclarationEngine.nationIds[nation]) ?? [] : []
+            // 全面战争: war with every state it touches, so the bar a war must clear is far lower.
+            var best = Native.fr(0.55 / temper * (stance.contains("TotalWar") ? 0.45 : 1)), target: Int?, chosenCB: CB?
+            let list = candidates(a)
+            // 欺凌弱小 goes for the weakest neighbour, 不畏强权 for the strongest.
+            let bully = stance.contains("BullyTheWeak"), defy = stance.contains("DefyTheStrong")
+            let weakest = bully ? list.min { strength($0) < strength($1) } : nil, strongest = defy ? list.max { strength($0) < strength($1) } : nil
+            for candidate in list {
+                let bias = bully ? (candidate == weakest ? 1.6 : 0.8) : defy ? (candidate == strongest ? 1.6 : 0.8) : 1
                 let usableList = DeclarationEngine.supported.filter { canUse($0, a, candidate) }
-                for cb in usableList { let v = Native.fr(weight(cb, a, candidate)); if v > best { best = v; target = candidate; chosenCB = cb } }
+                for cb in usableList { let v = Native.fr(weight(cb, a, candidate) * bias); if v > best { best = v; target = candidate; chosenCB = cb } }
             }
             guard let target, let fallback = chosenCB, let chosen = choose(a, target, fallback: fallback) else { return nil }
             let g = goals(chosen, a, target)

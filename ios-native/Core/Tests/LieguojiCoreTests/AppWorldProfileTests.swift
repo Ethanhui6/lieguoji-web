@@ -10,7 +10,7 @@ final class AppWorldProfileTests: XCTestCase {
         try NativeEngine.loadCatalogs(traits: Data(contentsOf: resources.appendingPathComponent("Catalog/traits.json")),
                                       nobleCultures: Data(contentsOf: resources.appendingPathComponent("Catalog/noble-cultures.json")),
                                       cultures: Data(contentsOf: resources.appendingPathComponent("World/cultures.json")))
-        defer { Session.uninstall(); UnitKinds.enabled = false; DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; ArmyAutonomy.temper = nil; Profile.enabled = false }
+        defer { Session.uninstall(); UnitKinds.enabled = false; DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil; Profile.enabled = false }
         let engine = try NativeEngine(world: Data(contentsOf: dir.appendingPathComponent("Golden/bridge-world.json")))
         engine.enableAppRules()
         Profile.reset(); Profile.enabled = true

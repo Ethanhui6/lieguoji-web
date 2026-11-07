@@ -49,7 +49,8 @@ public enum PeaceBridge {
                               return PeaceWorld.State(id: Wars.stateNumber(r, id), dead: !r.world.provinces.asArray.contains { $0.controller.asString == id },
                                                       provinces: Wars.orderedProvinces(r, id).map { index[$0.id.asString]! }, gold: fin.gold.asNumber, goldPerMonth: fin.goldPerMonth.asNumber,
                                                       armyCostGold: fin.armyCostGold.asNumber, strength: strength(r, id), lossThreshold: f(lossThreshold[r.civilization.nations[id].polity.asString]!),
-                                                      autonomous: r.diplomacy.nations[id].optionalBool == true)
+                                                      autonomous: r.diplomacy.nations[id].optionalBool == true,
+                                                      fightToEnd: UnitKinds.enabled && Armies.stateTraits(r, id).contains("FightToTheEnd") ? true : nil)
                           })
     }
     static func nation(_ r: JS, _ stateId: Int) -> String { Wars.nationOf(r.nativeWars, stateId) }

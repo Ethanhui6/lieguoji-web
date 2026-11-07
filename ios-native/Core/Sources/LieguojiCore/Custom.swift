@@ -567,6 +567,7 @@ extension NativeEngine {
             guard ids.indices.contains(a), ids.indices.contains(b) else { return false }
             return Regimes.treaty(r, ids[a], ids[b]) != nil
         }
+        DeclarationEngine.stance = { id in Armies.stateTraits(r, id) }
         ArmyAutonomy.temper = { index in
             let ids = DeclarationEngine.nationIds
             return ids.indices.contains(index) ? Regimes.temper(r, ids[index]) : 1

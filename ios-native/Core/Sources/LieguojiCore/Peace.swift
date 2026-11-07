@@ -18,6 +18,8 @@ public struct PeaceWorld: Codable, Sendable {
         public let id: Int; public var dead: Bool; public var provinces: [Int]
         public var gold: Double; public let goldPerMonth: Double; public let armyCostGold: Double
         public let strength: Double; public let lossThreshold: Double; public let autonomous: Bool
+        /// App rule: 奋战至死 (the original's FightToTheEnd) never yields to weariness and fights on to near-total loss.
+        public var fightToEnd: Bool?
     }
     public let gameTime: Double; public let secondsPerDay: Double; public let start: DiplomacyWorld.Start
     /// State number of each province's controller (province numbers are index + 1).
@@ -161,6 +163,7 @@ public struct PeaceAI {
     func wearinessFloor() -> Double { clamp(f(f(Double(months() - 60)) / 60)) }
     public func weariness(_ id: Int) -> Double {
         let side = self.side(id); guard side != 2, let s = byState[id] else { return 0 }
+        if s.fightToEnd == true { return wearinessFloor() }
         let enemy = side == 0 ? 1 : 0
         let casualty = casualtyStress(side, enemy), strength = strengthStress(side, enemy), territory = clamp(f(f(Double(gainedProvinces(id))) / 3)), economy = economyStress(s)
         var subtotal = f(f(casualty * f(0.35)) + f(strength * 0.25)); subtotal = f(subtotal + f(territory * 0.25))
@@ -175,6 +178,7 @@ public struct PeaceAI {
     public func collapsed(_ id: Int) -> Bool {
         let initial = initialCounts[id] ?? 0; if initial <= 0 { return false }
         let raw = byState[id].map { $0.lossThreshold }
+        if byState[id]?.fightToEnd == true { return f(f(Double(initial - currentCount(id))) / f(Double(initial))) > f(0.9) }
         let threshold = raw == nil ? 0.5 : raw! < f(0.3) ? f(0.3) : raw! > f(0.8) ? f(0.8) : raw!
         return f(f(Double(initial - currentCount(id))) / f(Double(initial))) > threshold
     }

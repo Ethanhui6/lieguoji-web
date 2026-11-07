@@ -128,7 +128,7 @@ struct PlaySettings: Codable, Equatable {
     var showArmies = true
     var warArrows = true
     var iconScale = 1.0
-    var highFrameRate = true
+    var highFrameRate = false
     /// Autosave while playing, seconds (0: off; pausing and leaving still save).
     var autosave = 120
     static let key = "playSettings.v1"
@@ -198,6 +198,9 @@ struct MapView: UIViewRepresentable {
             mtk.enableSetNeedsDisplay = true
             mtk.preferredFramesPerSecond = 120
             mtk.autoResizeDrawable = true
+            // At most 2× pixels: on a 3× screen the map (drawn with 4× multisampling) cost more than twice
+            // the GPU work for no visible gain; the names and labels above it stay at full resolution.
+            mtk.contentScaleFactor = min(UIScreen.main.scale, 2)
             renderer = MapRenderer(view: mtk, map: map, parchmentURL: Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"),
                                    unitURL: { Bundle.main.url(forResource: "unit-\($0)", withExtension: "png", subdirectory: "World") })
             mtk.delegate = renderer
@@ -218,6 +221,7 @@ struct MapView: UIViewRepresentable {
             troops.frame = container.bounds; troops.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(troops)
             controller.onSheet = { [weak self] in
                 guard let self else { return }
+                self.gliding = false
                 self.link?.preferredFrameRateRange = self.frameRange
                 self.mtk.preferredFramesPerSecond = self.controller.sheetOpen ? 30 : 120
             }
@@ -427,14 +431,28 @@ struct MapView: UIViewRepresentable {
             guard link == nil else { return }
             let l = CADisplayLink(target: self, selector: #selector(step(_:)))
             l.preferredFrameRateRange = frameRange
-            l.add(to: .main, forMode: .common); link = l
+            l.add(to: .main, forMode: .common); link = l; gliding = false
         }
         private var frameRange: CAFrameRateRange {
             controller.sheetOpen ? CAFrameRateRange(minimum: 15, maximum: 30, preferred: 30)
+                : Energy.hot ? CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
                 : controller.play.highFrameRate ? CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120) : CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+        }
+        /// While only the armies glide (the camera still): 60 frames, 30 when the phone runs hot. Icons
+        /// moving a few points a frame look the same, and the map is drawn half as often as at 120.
+        private var glideRange: CAFrameRateRange {
+            controller.sheetOpen ? CAFrameRateRange(minimum: 15, maximum: 30, preferred: 30)
+                : Energy.hot ? CAFrameRateRange(minimum: 20, maximum: 30, preferred: 30) : CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+        }
+        private var gliding = false
+        private func pace(_ l: CADisplayLink, glide: Bool) {
+            guard glide != gliding else { return }
+            gliding = glide
+            l.preferredFrameRateRange = glide ? glideRange : frameRange
         }
         @objc private func step(_ l: CADisplayLink) {
             let dt = min(0.05, l.targetTimestamp - l.timestamp)
+            pace(l, glide: animation == nil && hypot(velocity.x, velocity.y) <= 8)
             if let a = animation {
                 let x = min(1, (CACurrentMediaTime() - a.start) / a.duration)
                 let eased = x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2

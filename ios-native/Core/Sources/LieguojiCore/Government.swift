@@ -8,6 +8,16 @@ import Foundation
 public enum Government {
     static let f = Native.fr
     static let combatTraits = ["WellTrained", "CoreDefense", "HomelandDefense", "Conqueror", "StrengthenCore"]
+    /// The original's names and descriptions (I2 localization).
+    static let stateTraitText: [String: (String, String)] = [
+        "FightToTheEnd": ("奋战至死", "永远不会投降，直到最后一兵一卒"), "StrengthenCore": ("强化核心", "核心省份上限占比增加"),
+        "ManifestDestiny": ("天命昭昭", "命由天定，一往无前，天赋荣光，唯我独尊"), "BullyTheWeak": ("欺凌弱小", "选择最弱小的国家发动进攻"),
+        "DefyTheStrong": ("不畏强权", "选择最强大的国家发动攻击"), "TotalWar": ("全面战争", "与每一个接触的国家发生战争"),
+        "WellTrained": ("训练有素", "无视负面地形对军队战斗力的削弱"), "CoreDefense": ("核心守卫", "在核心领土上战斗力增加"),
+        "CavalryTradition": ("骑兵传统", "军队移动速度增加"), "HomelandDefense": ("国土防卫", "在防守的时候战斗力增加"),
+        "Conqueror": ("我来，我见，我征服", "在进攻时战斗力增加"), "SiegeCapture": ("攻城略地", "能够快速的占领地方行省"),
+        "FieldCombatElite": ("野战精英", "能够快速的击败敌人的军队"),
+    ]
     static let stateTraits = ["FightToTheEnd", "StrengthenCore", "ManifestDestiny", "BullyTheWeak", "DefyTheStrong", "TotalWar", "WellTrained", "CoreDefense", "CavalryTradition", "HomelandDefense", "Conqueror", "SiegeCapture", "FieldCombatElite"]
 
     // MARK: Leader combat (refreshLeaderCombat47)

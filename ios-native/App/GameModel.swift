@@ -341,7 +341,7 @@ import LieguojiCore
         controller.reveal = 0
         phase = .playing
         // The land rises and the camera eases out to the whole world (on the display link).
-        await playReveal(duration: 2.4, push: true)
+        await playReveal(duration: 2.4, push: controller.play.introCamera)
         controller.interactive = true
     }
 

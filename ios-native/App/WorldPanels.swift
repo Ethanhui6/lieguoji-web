@@ -5,6 +5,7 @@ import LieguojiCore
 struct ArmyService: Decodable {
     let home: Int; let days: Double; let full: Double; let levy: Bool
     let kills: Double; let losses: Double; let battles: Double; let reason: String
+    var campaigns: Double? = nil; var campaign: String? = nil
 }
 
 /// The original's army status line (休整待命 / 前往进攻 / 前往防守 / 在海洋中航行) and the army's record.
@@ -35,7 +36,8 @@ struct ArmyServiceView: View {
                     Row(label: "征召于", value: map.meta.provinces.indices.contains(r.home) ? map.meta.provinces[r.home].name + (r.levy ? "（动员）" : "") : "—"); Divider2()
                     Row(label: "服役", value: Self.served(r.days)); Divider2()
                     Row(label: "满编", value: Names.wan(Int(r.full))); Divider2()
-                    Row(label: "参战", value: "\(Int(r.battles)) 次"); Divider2()
+                    if let c = r.campaign, !c.isEmpty { Row(label: "当前战役", value: c); Divider2() }
+                    Row(label: "参战", value: "\(Int(r.battles)) 次 · 战役 \(Int(r.campaigns ?? 0)) 场"); Divider2()
                     Row(label: "战史共歼灭敌军", value: "\(Names.wan(Int(r.kills))) 人"); Divider2()
                     Row(label: "折损", value: "\(Names.wan(Int(r.losses))) 人")
                     if !r.reason.isEmpty && !army.manual {

@@ -92,8 +92,8 @@ import LieguojiCore
     var revealNow: Float? {
         guard let c = revealClock else { return nil }
         let x = min(1, (CACurrentMediaTime() - c.start) / c.duration)
-        // Ease out: the land rises quickly, then settles.
-        let e = Float(1 - pow(1 - x, 2.2))
+        // Ease out: the land rises quickly, then settles (linear when 动画缓动 is off).
+        let e = play.easeReveal ? Float(1 - pow(1 - x, 2.2)) : Float(x)
         return c.from + (c.to - c.from) * e
     }
     var revealDone: Bool { revealClock.map { CACurrentMediaTime() - $0.start >= $0.duration } ?? true }
@@ -159,11 +159,14 @@ struct PlaySettings: Codable, Equatable {
     var simLoad = 80
     /// Lower the frames and rest the simulation when the phone runs hot or in Low Power Mode.
     var autoCool = true
+    /// 可回退: the entry camera (eases out to the whole world) and the reveal's ease (else linear, as before).
+    var introCamera = true
+    var easeReveal = true
     /// Autosave while playing, seconds (0: off; pausing and leaving still save).
     var autosave = 120
     static let key = "playSettings.v1"
     init() {}
-    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, autosave }
+    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave }
     // Every field is optional in a stored setting: older versions saved fewer (and a 高帧率 switch).
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -176,6 +179,8 @@ struct PlaySettings: Codable, Equatable {
         renderScale = try c.decodeIfPresent(Double.self, forKey: .renderScale) ?? 2
         simLoad = try c.decodeIfPresent(Int.self, forKey: .simLoad) ?? 80
         autoCool = try c.decodeIfPresent(Bool.self, forKey: .autoCool) ?? true
+        introCamera = try c.decodeIfPresent(Bool.self, forKey: .introCamera) ?? true
+        easeReveal = try c.decodeIfPresent(Bool.self, forKey: .easeReveal) ?? true
         autosave = try c.decodeIfPresent(Int.self, forKey: .autosave) ?? 120
     }
     func encode(to encoder: Encoder) throws {
@@ -183,6 +188,7 @@ struct PlaySettings: Codable, Equatable {
         try c.encode(showArmies, forKey: .showArmies); try c.encode(warArrows, forKey: .warArrows); try c.encode(iconScale, forKey: .iconScale)
         try c.encode(mapFPS, forKey: .mapFPS); try c.encode(marchFPS, forKey: .marchFPS); try c.encode(effectFPS, forKey: .effectFPS)
         try c.encode(renderScale, forKey: .renderScale); try c.encode(simLoad, forKey: .simLoad); try c.encode(autoCool, forKey: .autoCool)
+        try c.encode(introCamera, forKey: .introCamera); try c.encode(easeReveal, forKey: .easeReveal)
         try c.encode(autosave, forKey: .autosave)
     }
     /// 画面档位: 省电, 均衡, 流畅 (nil: the values were set one by one).
@@ -347,6 +353,8 @@ struct MapView: UIViewRepresentable {
         }
         private func updateTroops() {
             guard let renderer else { return }
+            // Zoomed out the banners carry no marks: skip collecting every army's position each frame.
+            if !troops.shows(renderer.camera) && troops.isEmpty { return }
             troops.texts = controller.troopTexts
             troops.update(renderer.placedSprites(), camera: renderer.camera, viewport: mtk.bounds.size)
         }
@@ -873,6 +881,9 @@ final class TroopLabelsView: UIView {
 
     /// The army icons' size setting (推演与画面).
     var iconScale = 1.0
+    var isEmpty: Bool { layers.isEmpty }
+    /// Whether banners are large enough at this zoom to carry a mark.
+    func shows(_ camera: MapCamera) -> Bool { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * max(camera.scale, 14.0 / 3.01) >= 22 }
     func update(_ placed: [(sprite: MapRenderer.ArmySprite, x: Float, y: Float)], camera: MapCamera, viewport: CGSize) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // Icon size on screen (the renderer's icon size in map units × scale).

@@ -233,7 +233,7 @@ struct StatisticsRow: Decodable, Identifiable {
 struct StatisticsSheet: View {
     @ObservedObject var model: GameModel
     let openNation: (Int) -> Void
-    static let categories: [(id: String, title: String)] = [("power", "国力排行"), ("population", "人口排名"), ("economy", "经济排行"), ("wars", "当前战争"), ("war", "战争统计"), ("religion", "宗教信息")]
+    static let categories: [(id: String, title: String)] = [("power", "国力排行"), ("population", "人口排名"), ("economy", "经济排行"), ("wars", "当前战争"), ("campaigns", "战役"), ("war", "战争统计"), ("religion", "宗教信息")]
     /// 当前战争: attacker against defender, the cause and how long it has lasted (longest first).
     static func currentWars(_ state: GameState?, _ map: WorldMap?) -> [StatisticsRow] {
         guard let state, let map else { return [] }
@@ -298,7 +298,7 @@ struct StatisticsSheet: View {
                             .buttonStyle(.plain)
                             if i < rows.count - 1 { Rectangle().fill(Theme.ink.opacity(0.1)).frame(height: 0.7).padding(.leading, 64) }
                         }
-                        if rows.isEmpty { Text(category == "war" || category == "wars" ? "天下无战事" : "暂无记录").font(Theme.kai(17)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(30) }
+                        if rows.isEmpty { Text(category == "war" || category == "wars" || category == "campaigns" ? "天下无战事" : "暂无记录").font(Theme.kai(17)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(30) }
                     }
                     .background(Theme.paper2.opacity(0.45), in: RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.ink.opacity(0.12), lineWidth: 1))

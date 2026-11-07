@@ -131,6 +131,15 @@ extension NativeEngine {
             for (i, n) in living { let v = population[n.id.asString] ?? 0; rows.append((n.name.asString, i, v, fmt(v), n.color.optionalString)) }
         case "economy":
             for (i, n) in living { let v = r.finance.nations[n.id.asString].gold.optionalNumber ?? 0; rows.append((n.name.asString, i, v, v < 0 ? "赤字 \(fmt(-v))" : fmt(v), n.color.optionalString)) }
+        case "campaigns":
+            // 战役: the latest hundred, newest first; the value is the start day (the sort key).
+            let list = r.regimes.isNull || r.regimes.campaigns.isNull ? [] : r.regimes.campaigns.list.asArray.suffix(100)
+            for c in list {
+                let start = c.start.asNumber, end = c.end.optionalNumber ?? w.day.asNumber, days = Int(max(1, end - start))
+                let sides = c.states.asArray.map { Vassals.name(r, $0.asString) }.joined(separator: "、")
+                let lead = c.states.length > 0 ? nations.firstIndex { $0.id.asString == c.states[0].asString } ?? -1 : -1
+                rows.append((c.name.asString, lead, start, (c.end.isNull ? "进行中 · " : "") + "\(days)天 · \(c.armies.length)军 · " + sides, lead >= 0 ? nations[lead].color.optionalString : nil))
+            }
         case "war":
             for rel in w.statecraft.relations.asArray where rel.status.asString == "war" {
                 let days = max(0, w.day.asNumber - rel.sinceDay.asNumber)

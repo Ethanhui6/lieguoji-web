@@ -1960,6 +1960,10 @@ struct MenuSheet: View {
                     Divider2()
                     FrameSettings(play: $controller.play)
                     Divider2()
+                    PaperSwitch(title: "进场镜头拉远", on: $controller.play.introCamera)
+                    Divider2()
+                    PaperSwitch(title: "动画先快后缓（关闭为匀速）", on: $controller.play.easeReveal)
+                    Divider2()
                     VStack(alignment: .leading, spacing: 8) {
                         Text("自动存档").font(Theme.kai(16)).foregroundStyle(Theme.ink)
                         ChipPicker(items: [(60, "1分钟"), (120, "2分钟"), (300, "5分钟"), (0, "关闭")], selection: $controller.play.autosave)
@@ -1968,7 +1972,12 @@ struct MenuSheet: View {
                 }
                 .padding(.horizontal, 16)
                 SectionLabel("调试")
-                Group2 { PaperSwitch(title: "显示帧率与推演耗时", on: $controller.showMetrics) }.padding(.horizontal, 16)
+                Group2 {
+                    PaperSwitch(title: "显示帧率与推演耗时", on: $controller.showMetrics)
+                    Divider2()
+                    ResetSettingsRow(controller: controller, say: say)
+                }
+                .padding(.horizontal, 16)
             default:
                 SectionLabel("存档")
                 Group2 {
@@ -2103,6 +2112,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("0.37.0", ["【原作补全】战役：两军在某州郡交战即开启一场战役，按原作命名「第N次某地战役」（N 为该地第几次战役），之后在此参战的军队都记入同一战役，三天无战事即告结束；大事记记下战役爆发。",
+                    "【原作补全】排行新增「战役」：最近一百场战役的名称、进行中与否、持续天数、参战军队数和交战各国；军队页显示「当前战役」和参加过的战役数。",
+                    "【设置·可回退】推演与画面新增「进场镜头拉远」「动画先快后缓（关闭为匀速）」两个开关，可退回上一版的效果；调试里新增「恢复默认设置」，地图显示与推演画面的全部设置一键还原（世界与存档不受影响）。",
+                    "【性能】地图缩小到军旗上不显示字时，行军中不再每帧收集全部军队的位置。"]),
         ("0.36.0", ["【动画】生成世界、标题背景、进入游戏时「陆地从海中升起、国色铺开」的动画改由显卡逐帧绘制：以前每帧都在主线程重算整张地图每个顶点的颜色并重建缓冲，所以卡顿掉帧；现在只传一个进度值，跟屏幕刷新率一样顺滑。",
                     "【动画】这段动画不再每帧刷新整个界面（以前每秒六十次触发全部 SwiftUI 面板和地图同步），面板上的阶段文字每秒只更新十次；节奏改为先快后缓。",
                     "【动画】进入游戏（新世界或读档）时镜头从近处缓缓拉远到全图，陆地同时升起。",
@@ -2555,6 +2568,31 @@ struct PressStyle: ButtonStyle {
 }
 
 /// A row of paper chips (replaces the system segmented control).
+/// 恢复默认设置: the map display and the 推演与画面 settings back to how a new install starts (the
+/// worlds and saves are untouched). Every newer change in those settings can be undone this way.
+struct ResetSettingsRow: View {
+    @ObservedObject var controller: MapController
+    let say: (String) -> Void
+    @State private var asking = false
+    var body: some View {
+        Button { asking = true } label: {
+            HStack {
+                Text("恢复默认设置").font(Theme.kai(18)).foregroundStyle(Theme.seal)
+                Spacer()
+                Image(systemName: "arrow.counterclockwise").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.seal)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .confirmationDialog("恢复地图显示与推演画面的默认设置？", isPresented: $asking, titleVisibility: .visible) {
+            Button("恢复默认", role: .destructive) {
+                controller.play = PlaySettings(); controller.display = DisplaySettings()
+                say("已恢复默认设置")
+            }
+        } message: { Text("世界与存档不受影响。") }
+    }
+}
+
 /// 画面档位 and each frame rate, the map's sharpness and the simulation's share of the processor.
 struct FrameSettings: View {
     @Binding var play: PlaySettings

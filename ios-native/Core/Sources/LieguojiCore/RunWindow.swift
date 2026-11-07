@@ -338,6 +338,7 @@ public enum RunWindow {
             a.status = JS(safe.contains(id) ? "idle" : was == "retreating" ? "retreating" : out.held.contains(key("army", id)) ? "fighting" : "idle")
             if ArmyLedger.on && was != "fighting" && a.status.asString == "fighting" { ArmyLedger.battle(r, id) }
         }
+        if ArmyLedger.on { ArmyLedger.campaigns(r, space) }
         Vassals.bump(r.armyPositions); Vassals.bump(r.fleetPositions)
         return out
     }

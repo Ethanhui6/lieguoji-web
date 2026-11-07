@@ -46,6 +46,10 @@ extension NativeEngine {
         o.losses = JS((rec.isNull ? 0 : rec.losses.optionalNumber ?? 0).rounded())
         o.battles = JS(rec.isNull ? 0 : rec.battles.optionalNumber ?? 0)
         o.reason = JS(r.armyAutonomy.armies[id].reason.optionalString ?? "")
+        // 当前战役 and the campaigns it has fought in.
+        let all = r.regimes.isNull || r.regimes.campaigns.isNull ? [] : r.regimes.campaigns.list.asArray.filter { c in c.armies.asArray.contains { $0.asString == id } }
+        o.campaigns = JS(all.count)
+        o.campaign = JS(all.last { $0.end.isNull }?.name.optionalString ?? "")
         return Data(o.json.utf8)
     }
 }
@@ -63,6 +67,49 @@ enum ArmyLedger {
         guard on, !r.regimes.isNull, troops > 0 else { return }
         let a = entry(r, attacker); a.kills = JS((a.kills.optionalNumber ?? 0) + troops)
         let v = entry(r, victim); v.losses = JS((v.losses.optionalNumber ?? 0) + troops)
+    }
+    /// 战役 (the original's CampaignManager): the first battle in a province opens a campaign named after
+    /// it, 第N次某地战役 (N counts that province's campaigns); every army that fights there joins it, and
+    /// it ends after three days without fighting. Kept in regimes.campaigns (list, per-province count,
+    /// the active one by province).
+    static func campaigns(_ r: JS, _ space: [Armies.Located]) {
+        guard on, !r.regimes.isNull else { return }
+        if r.regimes.campaigns.isNull {
+            let b = JS.object(); b.list = .array(); b.count = JS.object(); b.active = JS.object(); r.regimes.campaigns = b
+        }
+        let book = r.regimes.campaigns, day = r.world.day.asNumber
+        var fighting = [String: (province: JS, armies: [JS])]()
+        for v in space where v.army.status.asString == "fighting" {
+            guard let p = v.province else { continue }
+            fighting[p.id.asString, default: (p, [])].armies.append(v.army)
+        }
+        for pid in fighting.keys.sorted() {
+            let (p, armies) = fighting[pid]!
+            let c: JS
+            if let i = book.active[pid].optionalNumber { c = book.list[Int(i)] } else {
+                let n = (book.count[pid].optionalNumber ?? 0) + 1
+                book.count[pid] = JS(n)
+                let x = JS.object()
+                x.name = JS("第\(Int(n))次\(p.name.asString)战役"); x.province = JS(pid); x.start = JS(day); x.end = .null
+                x.armies = .array(); x.states = .array(); x.peak = JS(0)
+                book.active[pid] = JS(book.list.length); book.list.push(x)
+                c = x
+                let states = Array(Set(armies.map { $0.nationId.asString })).sorted()
+                People.announce(r, kind: "battle", text: x.name.asString + "爆发", reason: states.map { Vassals.name(r, $0) }.joined(separator: "、") + "的军队在\(p.name.asString)交战。", nations: states, province: pid)
+            }
+            c.last = JS(day)
+            var ids = Set(c.armies.asArray.map(\.asString)), states = Set(c.states.asArray.map(\.asString))
+            for a in armies {
+                if ids.insert(a.id.asString).inserted { c.armies.push(a.id.clone()) }
+                if states.insert(a.nationId.asString).inserted { c.states.push(a.nationId.clone()) }
+            }
+            let troops = armies.reduce(0.0) { $0 + $1.troops.asNumber }
+            if troops > c.peak.asNumber { c.peak = JS(troops) }
+        }
+        for pid in book.active.objectKeys where fighting[pid] == nil {
+            let c = book.list[book.active[pid].asInt]
+            if day - (c.last.optionalNumber ?? day) >= 3 { c.end = JS(day); book.active.delete(pid) }
+        }
     }
     /// An army entering a battle.
     static func battle(_ r: JS, _ id: String) {

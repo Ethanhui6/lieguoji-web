@@ -300,43 +300,32 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// whose time constant follows the play step), so a new target never makes an icon jump — not on
     /// a long step, not when two armies meet, not when a battle ends. Only a jump across the map
     /// (an army re-formed at home) appears at once.
-    private var shown: [String: SIMD2<Float>] = [:]
-    /// Each icon walks at an even pace from where it is drawn to its new point over one play step
-    /// (an easing chase sped up and slowed down every step, which read as stop-and-go).
-    private var legs: [String: (from: SIMD2<Float>, to: SIMD2<Float>, start: CFTimeInterval)] = [:]
-    /// When each icon appeared (new armies and re-formed ones fade in instead of popping up).
-    private var born: [String: CFTimeInterval] = [:]
-    private var lastChase: CFTimeInterval = CACurrentMediaTime()
+    /// Every icon walks at an even pace from where it stood to its new point over one play step. The
+    /// two points are written once per step and the GPU moves the icons every frame (spriteVertex
+    /// mixes them by `progress`); the CPU used to rebuild every army's vertices and buffers each frame.
+    private var legFrom: [String: SIMD2<Float>] = [:]
+    private var legTo: [String: SIMD2<Float>] = [:]
+    private var legStart: CFTimeInterval = 0
+    private var legLength: CFTimeInterval = 0.3
+    /// Icons that fade in over this leg (new armies, re-formed ones).
+    private var fresh = Set<String>()
     private var chasing = false
     /// The play step interval (seconds); a leg lasts a little longer so the next one starts before it ends.
     var tweenDuration: CFTimeInterval = 0.3
     var tweenEase = true
     var isAnimating: Bool { chasing }
-    static let fadeIn: CFTimeInterval = 0.7
-    private func displayed(_ s: ArmySprite, _ t: Float = 0) -> SIMD2<Float> {
-        guard !s.key.isEmpty, let p = shown[s.key] else { return SIMD2(s.x, s.y) }
-        return p
+    private func progress(_ now: CFTimeInterval) -> Float {
+        legLength <= 0 ? 1 : Float(min(1, max(0, (now - legStart) / legLength)))
     }
-    private func alpha(_ s: ArmySprite, _ now: CFTimeInterval) -> Float {
-        guard let b = born[s.key] else { return 1 }
-        return Float(min(1, max(0, (now - b) / Self.fadeIn)))
+    private func displayed(_ s: ArmySprite) -> SIMD2<Float> {
+        guard !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] else { return SIMD2(s.x, s.y) }
+        return a + (b - a) * progress(CACurrentMediaTime())
     }
-    /// Moves every drawn point along its leg for the current time.
-    private func advanceChase() {
-        let now = CACurrentMediaTime()
-        lastChase = now
-        guard chasing else { return }
-        let length = max(0.12, tweenDuration * 1.08)
-        var moving = false
-        for a in armySprites where !a.key.isEmpty {
-            guard let leg = legs[a.key] else { continue }
-            let t = Float(min(1, (now - leg.start) / length))
-            shown[a.key] = leg.from + (leg.to - leg.from) * t
-            if t < 1 { moving = true } else { legs[a.key] = nil }
-        }
-        for (k, b) in born where now - b >= Self.fadeIn { born[k] = nil }
-        chasing = moving || !born.isEmpty
-        rebuildArmies()
+    /// Whether the icons are still walking (the GPU does the moving).
+    private func advanceChase() -> Float {
+        let t = progress(CACurrentMediaTime())
+        chasing = t < 1
+        return t
     }
 
     /// Where every icon is drawn right now (mid-walk included), for taps and troop labels.
@@ -348,29 +337,29 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     func setArmies(_ sprites: [ArmySprite], route points: [SIMD2<Float>], snap: Bool = false) {
-        if snap {
-            // A world just opened: every icon stands where it is, nothing walks or fades in.
-            shown = Dictionary(sprites.filter { !$0.key.isEmpty }.map { ($0.key, SIMD2($0.x, $0.y)) }, uniquingKeysWith: { a, _ in a })
-            legs = [:]; born = [:]
-        }
-        if sprites != armySprites {
-            let keys = Set(sprites.map(\.key)), now = CACurrentMediaTime()
-            shown = shown.filter { keys.contains($0.key) }; legs = legs.filter { keys.contains($0.key) }; born = born.filter { keys.contains($0.key) }
+        if snap || sprites != armySprites {
+            let now = CACurrentMediaTime(), t = progress(now)
             let previous = Dictionary(armySprites.map { ($0.key, $0.reorganizing) }, uniquingKeysWith: { a, _ in a })
+            var from = [String: SIMD2<Float>](), to = [String: SIMD2<Float>](), fading = Set<String>()
             for s in sprites where !s.key.isEmpty {
                 let target = SIMD2(s.x, s.y)
-                guard let p = shown[s.key] else {
-                    // A new army fades in where it stands (no walk from nowhere).
-                    shown[s.key] = target; if !armySprites.isEmpty { born[s.key] = now }; continue
+                // Where the icon stands now, mid-walk included (nil: a new army, or a world just opened).
+                let here: SIMD2<Float>? = snap ? nil : legFrom[s.key].flatMap { a in legTo[s.key].map { b in a + (b - a) * t } }
+                guard let p = here else {
+                    // A new army fades in where it stands (no walk from nowhere); none on a fresh world.
+                    from[s.key] = target; to[s.key] = target
+                    if !snap && !armySprites.isEmpty { fading.insert(s.key) }
+                    continue
                 }
-                let d = target - p
                 if s.reorganizing && previous[s.key] != true {
-                    // Far more than a march step: an army re-formed at home (the fall plays where it was).
-                    shown[s.key] = target; legs[s.key] = nil; born[s.key] = now; jumped.append((s.key, p.x, p.y))
-                } else if d.x * d.x + d.y * d.y > 0.0004 { legs[s.key] = (p, target, now) }
+                    // An army re-formed at home: it appears there (the fall plays where it was).
+                    from[s.key] = target; to[s.key] = target; fading.insert(s.key); jumped.append((s.key, p.x, p.y))
+                } else { from[s.key] = p; to[s.key] = target }
             }
+            legFrom = from; legTo = to; fresh = fading
+            legStart = now; legLength = snap ? 0 : max(0.12, tweenDuration * 1.08)
             armySprites = sprites
-            chasing = true
+            chasing = !snap
             rebuildArmies()
         }
         if points != routePoints {
@@ -389,17 +378,20 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let sprites = armySprites
             let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6)
             var byRole: [String: [Float]] = [:]
+            byRole.reserveCapacity(16)
+            // Alpha −1 asks the shader to fade the icon in with the leg's progress.
             var fade: Float = 1
+            var end = SIMD2<Float>(0, 0)
             func quad(_ role: String, _ at: SIMD2<Float>, _ c: RGB, _ size: Float, _ sx: Float, _ sy: Float) {
                 for (cx, cy) in [(Float(-0.5), Float(-0.5)), (0.5, -0.5), (-0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)] {
-                    byRole[role, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, fade, size, at.x, at.y, sx, sy])
+                    byRole[role, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, fade, size, end.x, end.y, sx, sy])
                 }
             }
-            let now = CACurrentMediaTime()
             for a in sprites {
-                fade = alpha(a, now)
+                fade = fresh.contains(a.key) ? -1 : 1
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
-                let role = UnitArt.role(a.unit), at = displayed(a)
+                let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)
+                end = legTo[a.key] ?? at
                 let size = iconSize * (a.unit == "Port" ? 0.7 : 1) * (a.selected ? 1.3 : 1)
                 // The commander's gonfalon stands behind the pieces: gold for the ruler in person.
                 if a.banner > 0 && role != "Fleet" {
@@ -446,8 +438,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func draw(in view: MTKView) {
         guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable,
               let buffer = queue.makeCommandBuffer(), let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
-        advanceChase()
-        var spriteProgress: Float = 1
+        var spriteProgress: Float = advanceChase()
         let size = view.bounds.size
         var u = Uniforms(viewport: SIMD2(Float(size.width), Float(size.height)), center: SIMD2(Float(camera.centerX), Float(camera.centerY)), scale: Float(camera.scale), halfWidth: 0)
         let uniformLength = MemoryLayout<Uniforms>.stride
@@ -554,7 +545,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // every zoom; banner and pips keep their proportions. The shift (in the quad's own size)
         // places the banner and the pips around the army's point.
         float pixels = s.size * max(u.scale, 14.0 / 3.01);
-        SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, (float2(s.corner) + float2(s.shift)) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = float4(s.tint); return o;
+        // Alpha below zero: the icon fades in over the leg (new and re-formed armies).
+        float4 tint = float4(s.tint); if (tint.a < 0.0) tint.a = progress;
+        SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, (float2(s.corner) + float2(s.shift)) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = tint; return o;
     }
     // A piece: the texture multiplied by the state's colour (white body → the colour, grey rim → its
     // shade, as the original's SpriteRenderer.color), the rim pulled towards ink so it reads on land

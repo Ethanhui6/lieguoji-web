@@ -68,6 +68,44 @@ final class EffectsView: UIView {
     }
     /// The original BattleSword atlas: 5 × 8 frames of 258 × 194.
     private static let swords = image("battle-sword")
+
+    // MARK: Sea waves
+    /// The original's Water_Cartoon_Min: a wave that rises, curls and breaks, 8 × 8 frames. Like the
+    /// original, waves come and go at random points of the sea in view.
+    private static let waveSheet = image("sea-wave")
+    private static let waveFrames: [NSValue] = (0..<64).map { i in NSValue(cgRect: CGRect(x: CGFloat(i % 8) / 8, y: CGFloat(i / 8) / 8, width: 1.0 / 8, height: 1.0 / 8)) }
+    /// Sea points (cell centres) waves may rise at; set with the map.
+    var seaSpots: [CGPoint] = []
+    private var waves: [(layer: CALayer, x: Double, y: Double, scale: Double)] = []
+    private var waveTimer: Timer?
+    func startWaves() {
+        guard waveTimer == nil else { return }
+        waveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in self?.spawnWave() }
+    }
+    func stopWaves() { waveTimer?.invalidate(); waveTimer = nil }
+    private func spawnWave() {
+        guard Self.particles, let sheet = Self.waveSheet, let camera, !seaSpots.isEmpty, waves.count < 9, window != nil, viewport.width > 0 else { return }
+        let vp = (width: Double(viewport.width), height: Double(viewport.height)), view = bounds.insetBy(dx: 10, dy: 60)
+        var pick: (CGPoint, CGPoint)?
+        for _ in 0..<12 {
+            let s = seaSpots[Int.random(in: 0..<seaSpots.count)], p = camera.toScreen(x: Double(s.x), y: Double(s.y), viewport: vp)
+            let q = CGPoint(x: p.x, y: p.y)
+            if view.contains(q) { pick = (s, q); break }
+        }
+        guard let (spot, at) = pick else { return }
+        let side = CGFloat(min(110, max(30, 22 * camera.scale)))
+        let l = CALayer()
+        l.contents = sheet; l.contentsRect = Self.waveFrames[0].cgRectValue
+        l.bounds = CGRect(x: 0, y: 0, width: side, height: side); l.position = at; l.opacity = 0.9
+        let flip = CAKeyframeAnimation(keyPath: "contentsRect"); flip.values = Self.waveFrames; flip.calculationMode = .discrete
+        flip.duration = 2.7; flip.fillMode = .forwards; flip.isRemovedOnCompletion = false
+        l.add(flip, forKey: "wave")
+        layer.insertSublayer(l, at: 0)
+        waves.append((l, Double(spot.x), Double(spot.y), camera.scale))
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.7) { [weak self] in
+            l.removeFromSuperlayer(); self?.waves.removeAll { $0.layer === l }
+        }
+    }
     private static let claimIcon = image("war-claim")
     private static let dove = image("peace-bird")
 
@@ -248,8 +286,17 @@ final class EffectsView: UIView {
         let fill = CAShapeLayer(); fill.fillColor = color(mid)
         let outline = CAShapeLayer(); outline.fillColor = UIColor.clear.cgColor; outline.strokeColor = UIColor(red: 0.11, green: 0.1, blue: 0.09, alpha: 0.55).cgColor; outline.lineWidth = 1.2; outline.lineJoin = .round
         let head = CAShapeLayer(); head.fillColor = color(a.deep); head.strokeColor = outline.strokeColor; head.lineWidth = 0.8
-        // The deep tail half (the arrow darkens towards its head).
-        let reveal = CAShapeLayer(); reveal.fillColor = color(a.deep)
+        fill.fillColor = color(a.shallow); fill.opacity = 0.92
+        // The arrow deepens towards its head in six overlapping bands, each a step deeper (a smooth
+        // ramp instead of the two flat halves that met in a hard seam).
+        let reveal = CAShapeLayer(); reveal.fillColor = UIColor.clear.cgColor
+        for i in 1...6 {
+            let k = Double(i) / 6
+            let band = CAShapeLayer()
+            band.fillColor = color((a.shallow.0 + (a.deep.0 - a.shallow.0) * k, a.shallow.1 + (a.deep.1 - a.shallow.1) * k, a.shallow.2 + (a.deep.2 - a.shallow.2) * k))
+            band.opacity = 0.92
+            reveal.addSublayer(band)
+        }
         // Grows in over 1 s: the outline draws itself while the body fades in.
         let draw = CABasicAnimation(keyPath: "strokeEnd"); draw.fromValue = 0.1; draw.toValue = 1; draw.duration = 1; draw.timingFunction = CAMediaTimingFunction(name: .easeOut)
         outline.add(draw, forKey: "draw")
@@ -272,13 +319,19 @@ final class EffectsView: UIView {
         let body = UIBezierPath(); body.move(to: left[0]); for p in left.dropFirst() { body.addLine(to: p) }; for p in right.reversed() { body.addLine(to: p) }; body.close()
         v.fill.path = body.cgPath; v.outline.path = body.cgPath
         let tip = points[29], before = points[28], dx = tip.x - before.x, dy = tip.y - before.y, len = max(0.001, hypot(dx, dy)), ux = dx / len, uy = dy / len
-        let h: CGFloat = 7.8, l: CGFloat = 11.7
+        let h: CGFloat = 9, l: CGFloat = 14
         let head = UIBezierPath(); head.move(to: CGPoint(x: tip.x - uy * h, y: tip.y + ux * h)); head.addLine(to: CGPoint(x: tip.x + ux * l, y: tip.y + uy * l)); head.addLine(to: CGPoint(x: tip.x + uy * h, y: tip.y - ux * h)); head.close()
         v.head.path = head.cgPath
         let center = UIBezierPath(); center.move(to: points[0]); for p in points.dropFirst() { center.addLine(to: p) }; center.addLine(to: CGPoint(x: tip.x + ux * l, y: tip.y + uy * l))
         _ = center
-        let tail = UIBezierPath(); tail.move(to: left[15]); for p in left[16...] { tail.addLine(to: p) }; for p in right[15...].reversed() { tail.addLine(to: p) }; tail.close()
-        v.reveal.path = tail.cgPath
+        // The deepening bands: band i covers the body from a point i/6 along to the head.
+        for (i, band) in (v.reveal.sublayers ?? []).enumerated() {
+            guard let shape = band as? CAShapeLayer else { continue }
+            let from = min(28, 4 * (i + 1))
+            let path = UIBezierPath(); path.move(to: left[from]); for p in left[(from + 1)...] { path.addLine(to: p) }; for p in right[from...].reversed() { path.addLine(to: p) }; path.close()
+            shape.frame = v.reveal.bounds; shape.path = path.cgPath
+        }
+        v.reveal.path = nil
         v.gradient.startPoint = CGPoint(x: s.x / max(1, bounds.width), y: s.y / max(1, bounds.height)); v.gradient.endPoint = CGPoint(x: e.x / max(1, bounds.width), y: e.y / max(1, bounds.height))
     }
 
@@ -570,6 +623,10 @@ final class EffectsView: UIView {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         func screen(_ x: Double, _ y: Double) -> CGPoint { let p = camera.toScreen(x: x, y: y, viewport: vp); return CGPoint(x: p.x, y: p.y) }
         CATransaction.begin(); CATransaction.setDisableActions(true)
+        for w in waves {
+            w.layer.position = screen(w.x, w.y)
+            let z = CGFloat(camera.scale / max(0.0001, w.scale)); w.layer.setAffineTransform(CGAffineTransform(scaleX: z, y: z))
+        }
         let k = CGFloat(max(0.85, min(1.4, camera.scale / 2)))
         // The swords hang just above the armies they belong to (the figures stay visible beneath),
         // and battles that would overlap on screen share one mark.

@@ -189,6 +189,14 @@ struct MapView: UIViewRepresentable {
             for v in [mtk!, labels!] as [UIView] { v.frame = container.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(v) }
             labels.isUserInteractionEnabled = false
             effects.frame = container.bounds; effects.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(effects)
+            // Sea points for the waves: open-sea cell centres, thinned to a few thousand.
+            var spots = [CGPoint]()
+            let cells = map.cellCount, stride = max(1, cells / 3000)
+            for c in Swift.stride(from: 0, to: cells, by: stride) where !map.isLand(c) && 2 * c + 1 < map.sites.count {
+                spots.append(CGPoint(x: CGFloat(map.sites[2 * c]), y: CGFloat(map.sites[2 * c + 1])))
+            }
+            effects.seaSpots = spots
+            effects.startWaves()
             troops.frame = container.bounds; troops.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(troops)
             controller.onSheet = { [weak self] in
                 guard let self else { return }
@@ -542,7 +550,7 @@ struct MapView: UIViewRepresentable {
             }
         }
 
-        func stop() { link?.invalidate(); link = nil; drift?.invalidate(); drift = nil }
+        func stop() { link?.invalidate(); link = nil; drift?.invalidate(); drift = nil; effects.stopWaves() }
 
         private var drift: CADisplayLink?
         private func startDrift() {
@@ -749,6 +757,9 @@ final class TroopLabelsView: UIView {
         // A paper-white character with an ink shadow, written on the flag.
         l.foregroundColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 1).cgColor
         l.shadowColor = UIColor(white: 0.05, alpha: 1).cgColor; l.shadowOpacity = 0.9; l.shadowRadius = 1.2; l.shadowOffset = .zero
+        // Rasterized once: these labels move with their armies every frame, and a live text shadow
+        // was re-rendered offscreen each time (a cause of dropped frames while playing).
+        l.shouldRasterize = true; l.rasterizationScale = UIScreen.main.scale
         layer.addSublayer(l); layers[key] = l
         return l
     }

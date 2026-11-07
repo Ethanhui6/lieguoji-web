@@ -367,7 +367,7 @@ struct MapView: UIViewRepresentable {
             // Zoomed out the banners carry no marks: skip collecting every army's position each frame.
             if !troops.shows(renderer.camera) && troops.isEmpty { return }
             troops.texts = controller.troopTexts
-            troops.update(renderer.placedSprites(), camera: renderer.camera, viewport: mtk.bounds.size)
+            troops.update(renderer.placedSprites(), camera: renderer.camera, viewport: mtk.bounds.size, spread: renderer.spread)
         }
         private var camera: MapCamera { renderer?.camera ?? MapCamera(centerX: 0, centerY: 0, scale: 1) }
 
@@ -899,7 +899,7 @@ final class TroopLabelsView: UIView {
     var isEmpty: Bool { layers.isEmpty }
     /// Whether banners are large enough at this zoom to carry a mark.
     func shows(_ camera: MapCamera) -> Bool { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * max(camera.scale, 14.0 / 3.01) >= 22 }
-    func update(_ placed: [(sprite: MapRenderer.ArmySprite, x: Float, y: Float)], camera: MapCamera, viewport: CGSize) {
+    func update(_ placed: [(sprite: MapRenderer.ArmySprite, x: Float, y: Float)], camera: MapCamera, viewport: CGSize, spread: [String: SIMD2<Float>] = [:]) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // Icon size on screen (the renderer's icon size in map units × scale).
         let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * max(camera.scale, 14.0 / 3.01)
@@ -917,8 +917,10 @@ final class TroopLabelsView: UIView {
                     let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 6
                     l.bounds = CGRect(x: 0, y: 0, width: w, height: 15)
                 }
-                // On the banner's flag (see rebuildArmies: the banner stands up and to the left).
-                l.position = CGPoint(x: s.x - icon * 0.46, y: s.y - icon * 0.92)
+                // Under the plaque (rebuildArmies: the plaque sits 0.16 below the point, half an icon tall),
+                // following the army's seat in a ring of armies on one spot.
+                let o = spread[p.sprite.key] ?? SIMD2<Float>(0, 0)
+                l.position = CGPoint(x: s.x + Double(o.x) * icon, y: s.y + (Double(o.y) + 0.78) * icon)
                 seen.insert(p.sprite.key)
             }
         }

@@ -98,7 +98,9 @@ public struct TravelGraph: Sendable {
     /// createArmyTravelSearch47 with the plain policy (no port preference, no ocean routes):
     /// Dijkstra over Float32 costs, equal costs settled in cell id order. `enter` is the travel
     /// policy (land province access; sea when allowed). Returns cell indices from start to end.
-    public func path(from start: Int, to end: Int, allowSea: Bool = true, canEnterProvince: (Int) -> Bool) -> (nodes: [Int], cost: Double)? {
+    /// `embark`: extra cost for stepping from a province's land into the sea (app worlds: the original's
+    /// NON_PORT_CELL_TRANSITION_PENALTY, so armies take ship at ports); nil keeps the plain search.
+    public func path(from start: Int, to end: Int, allowSea: Bool = true, canEnterProvince: (Int) -> Bool, embark: ((Int) -> Double)? = nil) -> (nodes: [Int], cost: Double)? {
         var allowed = [Int8](repeating: 0, count: mountain.count)
         func enter(_ i: Int) -> Bool {
             let q = Int(provinces[i]); if q < 0 { return allowSea }
@@ -115,7 +117,9 @@ public struct TravelGraph: Sendable {
             for k in linkStart[a]..<linkStart[a + 1] {
                 let b = linkTo[k]
                 if settled[b] || !enter(b) { continue }
-                let next = Native.fr(c + linkCost[k])
+                var step = linkCost[k]
+                if let embark, provinces[b] < 0, provinces[a] >= 0 { step += embark(Int(provinces[a])) }
+                let next = Native.fr(c + step)
                 if next < cost[b] { cost[b] = next; prev[b] = a; heap.push(next, b) }
             }
         }

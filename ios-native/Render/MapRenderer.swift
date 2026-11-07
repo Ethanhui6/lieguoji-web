@@ -387,6 +387,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     /// Each army's leaving tangent for this leg (map units over the leg).
     private var legLead: [String: SIMD2<Float>] = [:]
+    /// Each standing army's seat in its ring (icon units), for the labels drawn over the map.
+    private(set) var spread: [String: SIMD2<Float>] = [:]
     /// Whether the icons are still walking (the GPU does the moving).
     private func advanceChase() -> Float {
         let t = progress(CACurrentMediaTime())
@@ -492,6 +494,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     }
                 }
             }
+            self.spread = spread
             for a in sprites {
                 // Harbours (and merchantmen) keep still: alpha 0.99 tells the shader not to let them drift.
                 fade = fresh.contains(a.key) ? -1 : a.fighting ? 2 : a.army <= -100_000 ? 0.99 : 1

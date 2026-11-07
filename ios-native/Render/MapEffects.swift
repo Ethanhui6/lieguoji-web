@@ -78,6 +78,7 @@ final class EffectsView: UIView {
     }
     /// The original BattleSword atlas: 5 × 8 frames of 258 × 194.
     private static let swords = image("battle-sword")
+    private static let swordFrames: [NSValue] = (0..<40).map { i in NSValue(cgRect: CGRect(x: CGFloat(i % 5) / 5, y: CGFloat(i / 5) / 8, width: 1.0 / 5, height: 1.0 / 8)) }
 
     // MARK: Sea waves
     /// The original's Water_Cartoon_Min: a wave that rises, curls and breaks, 8 × 8 frames. Like the
@@ -200,7 +201,16 @@ final class EffectsView: UIView {
         let flash = CAKeyframeAnimation(keyPath: "opacity")
         flash.values = [0.15, 0.9, 0.2, 0.15]; flash.keyTimes = [0, 0.2, 0.5, 1]
         flash.duration = 1.2; flash.repeatCount = .infinity
-        marks.add(Self.calm(flash), forKey: "contact"); root.addSublayer(marks)
+        if let sheet = Self.swords {
+            // The original BattleSword: two blades clashing over the fight, a 40-frame loop.
+            let blades = CALayer()
+            blades.contents = sheet; blades.contentsRect = Self.swordFrames[0].cgRectValue
+            blades.bounds = CGRect(x: 0, y: 0, width: 40, height: 30); blades.position = CGPoint(x: 12, y: -6)
+            let clash = CAKeyframeAnimation(keyPath: "contentsRect"); clash.values = Self.swordFrames; clash.calculationMode = .discrete
+            clash.duration = 1.4; clash.repeatCount = .infinity
+            clash.timeOffset = Double.random(in: 0..<1.4)
+            blades.add(Self.calm(clash), forKey: "clash"); root.addSublayer(blades)
+        } else { marks.add(Self.calm(flash), forKey: "contact"); root.addSublayer(marks) }
         if Self.particles && !Energy.hot && battleLayers.count < 4 {
             let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: 12, y: 9); root.insertSublayer(smoke, at: 0)
         }

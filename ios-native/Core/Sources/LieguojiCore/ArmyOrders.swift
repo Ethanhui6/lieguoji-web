@@ -45,6 +45,14 @@ public enum ArmyOrders {
         guard let p = here.province, !engaged(r, here.army), RunWindow.access(r, here.army.nationId.asString, p.controller.asString) else { return false }
         return !space.contains { $0.province?.id.asString == p.id.asString && $0.army.status.asString != "retreating" && RunWindow.atWar(r, here.army.nationId.asString, $0.army.nationId.asString) }
     }
+    /// Forty average steps of travel (the original's 450 against its average cell spacing), per graph.
+    static var embarkCache: (count: Int, cost: Double)?
+    static func embarkPenalty(_ g: TravelGraph) -> Double {
+        if let c = embarkCache, c.count == g.linkCost.count { return c.cost }
+        let v = g.linkCost.isEmpty ? 0 : g.linkCost.reduce(0, +) / Double(g.linkCost.count) * 40
+        embarkCache = (g.linkCost.count, v)
+        return v
+    }
     /// resolve(): the travel record and target name of an order, or the refusal.
     static func resolve(_ r: JS, _ id: String, _ action: Action) -> Result<(travel: JS, name: String), Refused> {
         let bridge = Armies.bridge!, g = bridge.graph, space = Armies.space(r)
@@ -69,13 +77,21 @@ public enum ArmyOrders {
             let original = !r.originalArmy47.isNull && r.originalArmy47.paths.optionalNumber == 1
             let anchor = original ? r.world.provinces.asArray.first { $0.id.asString == a.provinceId.asString }?.controller.asString : nil
             let allowSea = r.reorganization.active[id].isNull
+            // 港口登船 (app worlds, the original's NON_PORT_CELL_TRANSITION_PENALTY 450): taking ship from a
+            // province without a harbour costs about forty steps of travel, so armies embark at ports.
+            let embark: ((Int) -> Double)? = r.regimes.enabled.isTruthy && allowSea ? {
+                let index = RunWindow.provinceIndexById(r)
+                let ports = Set(r.harbors.sites.asArray.compactMap { index[$0.provinceId.asString] })
+                let cost = embarkPenalty(g)
+                return { q in ports.contains(q) ? 0 : cost }
+            }() : nil
             guard let path = g.path(from: here.cell, to: target, allowSea: allowSea, canEnterProvince: { q in
                 let c = r.world.provinces[q].controller.asString
                 // App worlds (归国通行): an army marching home may cross any land it is not at war with;
                 // after a peace it used to find no lawful road out of the former enemy's land and stood there.
                 return RunWindow.access(r, nation, c) || c == anchor || !v && RunWindow.atWar(r, nation, c)
                     || v && r.regimes.enabled.isTruthy && !RunWindow.atWar(r, nation, c)
-            }) else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }
+            }, embark: embark) else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }
             let point = g.location(travel).point
             let t = JS.object()
             t.version = JS(1); t.armyId = JS(id); t.origin = ForceBridge.json(point); t.nodes = .array(path.nodes.map { JS(Int(g.ids[$0])) })

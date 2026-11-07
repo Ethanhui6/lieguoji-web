@@ -71,6 +71,13 @@ public struct ContactMotion {
     func positions(_ forces: [MovingForce]) -> [String: Position] {
         var out = [String: Position](); for f in forces { let l = graph.location(f.travel); out[f.key] = Position(point: l.point, cell: l.cell) }; return out
     }
+    /// The area a cell lies in as a number (a land province's index, or −1 − its sea region), for
+    /// grouping forces each step without building every force's area name (the name is built only for
+    /// a pair that actually meets).
+    func areaKey(_ cell: Int, _ rules: Rules) -> Int {
+        let q = Int(graph.provinces[cell])
+        return q >= 0 ? q : -1 - rules.seaRegion(Int(graph.faces[cell]))
+    }
     func area(_ cell: Int, _ rules: Rules) -> String {
         let q = Int(graph.provinces[cell])
         return q >= 0 ? "land/" + rules.provinceID(q) : "sea/\(rules.seaRegion(Int(graph.faces[cell])))"
@@ -93,27 +100,30 @@ public struct ContactMotion {
         var byKey = [String: MovingForce](); for f in forces { byKey[f.key] = f }
         var pairs = [String: ForceContact](), order = [String]()
         func put(_ c: ForceContact) { let k = ContactMotion.pairKey(c.a, c.b); if pairs[k] == nil { order.append(k) }; pairs[k] = c }
-        func eligible(_ a: MovingForce, _ b: MovingForce, _ area: String) -> Bool {
-            rules.enemy(a.nation, b.nation) && (area.hasPrefix("sea/") || !a.withdrawing && !b.withdrawing)
+        func eligible(_ a: MovingForce, _ b: MovingForce, sea: Bool) -> Bool {
+            rules.enemy(a.nation, b.nation) && (sea || !a.withdrawing && !b.withdrawing)
                 && (!rules.physicalContact || EncounterGeometry.touching(p[a.key]!.point, p[b.key]!.point, reach: rules.reach))
         }
         for c in old {
             guard let a = p[c.a], let b = p[c.b], let fa = byKey[c.a], let fb = byKey[c.b] else { continue }
             let departed = c.area.hasPrefix("sea/") && (fa.withdrawing || fb.withdrawing) && area(a.cell, rules) != area(b.cell, rules)
-            if !departed && a.point == c.pointA && b.point == c.pointB && Int(graph.ids[a.cell]) == c.cellA && Int(graph.ids[b.cell]) == c.cellB && eligible(fa, fb, c.area) { put(c) }
+            if !departed && a.point == c.pointA && b.point == c.pointB && Int(graph.ids[a.cell]) == c.cellA && Int(graph.ids[b.cell]) == c.cellB && eligible(fa, fb, sea: c.area.hasPrefix("sea/")) { put(c) }
         }
-        var groups = [String: [String]](), groupOrder = [String]()
-        for f in forces { let ar = area(p[f.key]!.cell, rules); if groups[ar] == nil { groupOrder.append(ar) }; groups[ar, default: []].append(f.key) }
+        var groups = [Int: [String]](), groupOrder = [Int]()
+        for f in forces { let ar = areaKey(p[f.key]!.cell, rules); if groups[ar] == nil { groupOrder.append(ar) }; groups[ar, default: []].append(f.key) }
         var held = Set<String>()
         for ar in groupOrder {
             let group = groups[ar]!
-            var war = false
+            if group.count < 2 { continue }
+            let sea = ar < 0
+            var war = false, name: String?
             for i in 0..<group.count { for j in (i + 1)..<max(i + 1, group.count) {
                 let a = group[i], b = group[j]
-                if !eligible(byKey[a]!, byKey[b]!, ar) { continue }
-                war = true; put(pair(a, b, p, ar))
+                if !eligible(byKey[a]!, byKey[b]!, sea: sea) { continue }
+                if name == nil { name = area(p[a]!.cell, rules) }
+                war = true; put(pair(a, b, p, name!))
             } }
-            if war && !rules.physicalContact && ar.hasPrefix("sea/") { for id in group where !byKey[id]!.withdrawing { held.insert(id) } }
+            if war && !rules.physicalContact && sea { for id in group where !byKey[id]!.withdrawing { held.insert(id) } }
         }
         for k in order { let c = pairs[k]!; for id in [c.a, c.b] where !(byKey[id]?.withdrawing ?? true) { held.insert(id) } }
         let sorted = order.sorted { Collate.less($0, $1) }.map { pairs[$0]! }
@@ -163,14 +173,14 @@ public struct ContactMotion {
                     velocities[key] = TravelPoint(x: (end.x - p.x) / m.time, y: (end.y - p.y) / m.time)
                 }
                 let zero = TravelPoint(x: 0, y: 0)
-                var groups = [String: [Int]]()
-                for i in forces.indices { groups[area(positions[forces[i].key]!.cell, rules), default: []].append(i) }
+                var groups = [Int: [Int]]()
+                for i in forces.indices { groups[areaKey(positions[forces[i].key]!.cell, rules), default: []].append(i) }
                 for group in groups.values { for k in group.indices { for l in (k + 1)..<group.count {
                     let a = forces[group[k]], b = forces[group[l]]
                     guard rules.enemy(a.nation, b.nation), !a.withdrawing, !b.withdrawing,
                           !current.held.contains(a.key), !current.held.contains(b.key) else { continue }
                     let pa = positions[a.key]!, pb = positions[b.key]!
-                    guard area(pa.cell, rules) == area(pb.cell, rules) else { continue }
+                    guard areaKey(pa.cell, rules) == areaKey(pb.cell, rules) else { continue }
                     if let t = EncounterGeometry.meetingTime(pa.point, velocities[a.key] ?? zero, pb.point, velocities[b.key] ?? zero, limit: dt, reach: rules.reach) { dt = min(dt, t) }
                 } } }
             }

@@ -773,7 +773,7 @@ import LieguojiCore
         let selected = controller.marchingArmy ?? controller.selectedArmy
         var sprites: [MapRenderer.ArmySprite] = state.armies.enumerated().map { i, a in
             MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id,
-                                   tier: a.troops < 2000 ? 1 : a.troops < 6000 ? 2 : 3, banner: a.banner == "ruler" ? 2 : a.banner == "general" ? 1 : 0, reorganizing: a.reorganizing ?? false)
+                                   tier: a.troops < 2000 ? 1 : a.troops < 6000 ? 2 : 3, banner: a.banner == "ruler" ? 2 : a.banner == "general" ? 1 : 0, reorganizing: a.reorganizing ?? false, fighting: a.status == "fighting")
         }
         // Harbour anchors in the occupier's colour (not tappable; the province panel lists them), then fleets.
         let choosing = controller.marchingFleet ?? controller.selectedFleet

@@ -344,7 +344,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         t.replace(region: MTLRegionMake2D(0, 0, w, h), mipmapLevel: 0, withBytes: bytes, bytesPerRow: w * 4)
         return t
     }
-    struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = ""; var tier = 1; var banner = 0; var reorganizing = false }
+    struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = ""; var tier = 1; var banner = 0; var reorganizing = false
+        /// Locked in battle: its pieces lunge and recoil on the map (spriteVertex, alpha marker 2).
+        var fighting = false }
     private var unitTextures: [String: MTLTexture] = [:]
     private var route: (buffer: MTLBuffer, count: Int)?
     private var armySprites: [ArmySprite] = []
@@ -444,7 +446,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
             }
             for a in sprites {
-                fade = fresh.contains(a.key) ? -1 : 1
+                fade = fresh.contains(a.key) ? -1 : a.fighting ? 2 : 1
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
                 let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)
                 end = legTo[a.key] ?? at
@@ -559,6 +561,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if reveal >= 1 {
         colored(route)
         encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
+        var clock = Float(CACurrentMediaTime().truncatingRemainder(dividingBy: 600))
+        encoder.setVertexBytes(&clock, length: MemoryLayout<Float>.stride, index: 5)
         for unit in units where showArmies {
             encoder.setRenderPipelineState(spritePipeline)
             encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
@@ -634,7 +638,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; packed_float2 target; packed_float2 shift; };
     struct SpriteOut { float4 position [[position]]; float2 uv; float4 tint; };
-    vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]]) {
+    vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
+                                  constant float& time [[buffer(5)]]) {
         SpriteVertex s = v[id];
         // Marks at least 22 points tall (an army mark is 5 map units), so whose army it is reads at
         // every zoom; banner and pips keep their proportions. The shift (in the quad's own size)
@@ -642,7 +647,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float pixels = s.size * max(u.scale, 14.0 / 3.01);
         // Alpha below zero: the icon fades in over the leg (new and re-formed armies).
         float4 tint = float4(s.tint); if (tint.a < 0.0) tint.a = progress;
-        SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, (float2(s.corner) + float2(s.shift)) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = tint; return o;
+        // Alpha 2: an army in battle. Its pieces lunge and recoil, each army on its own beat.
+        float2 jab = float2(0.0);
+        if (tint.a > 1.5) {
+            tint.a = 1.0;
+            float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2832, beat = time * 9.0 + seed;
+            jab = float2(sin(beat) * 0.07, -max(0.0, sin(beat * 0.5)) * 0.12);
+        }
+        SpriteOut o; o.position = clip(mix(float2(s.center), float2(s.target), progress), u, (float2(s.corner) + float2(s.shift) + jab) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = tint; return o;
     }
     // A piece: the texture multiplied by the state's colour (white body → the colour, grey rim → its
     // shade, as the original's SpriteRenderer.color), the rim pulled towards ink so it reads on land

@@ -348,9 +348,15 @@ public enum ArmyOrders {
                 let viable = candidates.filter { invadedSet.contains($0.id) || foes($0.id) <= 1.6 * (mine + friends($0.id)) }
                 if !viable.isEmpty { candidates = viable }
                 func dist(_ t: ArmyAutonomy.Context.Target) -> Double { ((t.x - location.point.x) * (t.x - location.point.x) + (t.y - location.point.y) * (t.y - location.point.y)).squareRoot() }
-                let nearest = candidates.map(dist).min() ?? 0
-                let massed = candidates.filter { friends($0.id) > 0 && dist($0) <= nearest * 1.8 + 1 }
-                if !massed.isEmpty { candidates = massed }
+                // 前线分配: our invaded provinces are covered first, each until the troops on their way
+                // outweigh the enemy there; only then do armies mass for the attack.
+                let uncovered = candidates.filter { invadedSet.contains($0.id) && foes($0.id) * 1.2 > friends($0.id) }
+                if !uncovered.isEmpty { candidates = uncovered }
+                else {
+                    let nearest = candidates.map(dist).min() ?? 0
+                    let massed = candidates.filter { friends($0.id) > 0 && dist($0) <= nearest * 1.8 + 1 }
+                    if !massed.isEmpty { candidates = massed }
+                }
                 // A new target joins the comrades' count at once, so the next army in this batch sees it.
             }
             var chosen: Int?, why = ""

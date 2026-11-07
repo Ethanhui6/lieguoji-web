@@ -74,7 +74,8 @@ public enum Naval {
     }
     static func attackCount(_ count: Int) -> Int {
         if count <= 0 { return 0 }
-        var n = max(0, min(count, Int(f(f(Double(count)) * f(0.35)).rounded(.up))))
+        // App worlds (制海权): six fleets in ten put to sea against the enemy (the original: about a third).
+        var n = max(0, min(count, Int(f(f(Double(count)) * f(UnitKinds.enabled ? 0.6 : 0.35)).rounded(.up))))
         if count >= 2 { n = min(n, count - 1) }
         return max(1, n)
     }
@@ -324,7 +325,13 @@ public enum Naval {
                     if atAnchor(port) { row0 = (port, control, 0) }
                     else { let p = preview(r, id, .sail(port: port.id)); if p.valid && food >= rationNow * (days(p.distance) + 3) + crew * 30 { row0 = (port, control, p.distance) } }
                     guard let c = row0 else { continue }
-                    let rank = c.control.landOwnerId.asString == nation ? 0 : 1, bestRank = best.map { $0.control.landOwnerId.asString == nation ? 0 : 1 } ?? 1
+                    // App worlds (制海权): after retaking our own ports, seek the enemy fleet where it lies at anchor.
+                    func rankOf(_ x: (port: Port, control: JS, distance: Double)) -> Int {
+                        if x.control.landOwnerId.asString == nation { return 0 }
+                        if UnitKinds.enabled && view.atPort(x.port.id).contains(where: { enemy($0.fleet.nationId.asString) }) { return 1 }
+                        return UnitKinds.enabled ? 2 : 1
+                    }
+                    let rank = rankOf(c), bestRank = best.map(rankOf) ?? 3
                     if best == nil || rank < bestRank || rank == bestRank && c.distance < best!.distance { best = c }
                 }
                 if let best {

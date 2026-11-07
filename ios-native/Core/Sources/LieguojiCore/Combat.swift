@@ -234,8 +234,13 @@ public struct ContactMotion {
                 let c = pair(m.a, m.b, after, m.area), k = ContactMotion.pairKey(c.a, c.b)
                 if let i = merged.firstIndex(where: { ContactMotion.pairKey($0.a, $0.b) == k }) { merged[i] = c } else { merged.append(c) }
             }
+            let held0 = ContactMotion.identity(current.contacts)
             current = contacts(forces, merged, rules, after)
-            if stopAtEvent && movers.contains(where: reached) { break }
+            // App worlds (physical contact): contacts are re-read at every step of this loop, so the
+            // window only needs to end when an engagement begins or ends — not each time any army on the
+            // map reaches a node, which split a day into dozens of whole-map passes (frame, occupation,
+            // positions) as armies grew faster and more numerous. Parity worlds stop at every node.
+            if stopAtEvent && (rules.physicalContact ? ContactMotion.identity(current.contacts) != held0 : movers.contains(where: reached)) { break }
         }
         return Result(contacts: current.contacts, held: current.held, elapsed: seconds - remaining, unused: remaining)
     }

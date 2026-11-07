@@ -100,7 +100,11 @@ public struct TravelGraph: Sendable {
     /// policy (land province access; sea when allowed). Returns cell indices from start to end.
     /// `embark`: extra cost for stepping from a province's land into the sea (app worlds: the original's
     /// NON_PORT_CELL_TRANSITION_PENALTY, so armies take ship at ports); nil keeps the plain search.
-    public func path(from start: Int, to end: Int, allowSea: Bool = true, canEnterProvince: (Int) -> Bool, embark: ((Int) -> Double)? = nil) -> (nodes: [Int], cost: Double)? {
+    /// `aStar` (app worlds, the original's ArmyPathfinding): the search is guided toward the goal by the
+    /// straight-line distance times the cheapest cost per unit of any link (never more than the true
+    /// cost), so it settles a corridor instead of half the map. Same optimal cost; ties may differ, so
+    /// original-parity worlds keep the plain search.
+    public func path(from start: Int, to end: Int, allowSea: Bool = true, canEnterProvince: (Int) -> Bool, embark: ((Int) -> Double)? = nil, aStar: Bool = false) -> (nodes: [Int], cost: Double)? {
         var allowed = [Int8](repeating: 0, count: mountain.count)
         func enter(_ i: Int) -> Bool {
             let q = Int(provinces[i]); if q < 0 { return allowSea }
@@ -110,9 +114,12 @@ public struct TravelGraph: Sendable {
         guard (isSea(start) ? allowSea : true), enter(end) else { return nil }
         let n = count
         var cost = [Double](repeating: .infinity, count: n), prev = [Int](repeating: -1, count: n), settled = [Bool](repeating: false, count: n)
-        var heap = MinHeap(); cost[start] = 0; heap.push(0, start)
-        while !settled[end], let (c, a) = heap.pop() {
-            if cost[a] != c || settled[a] { continue }
+        let goal = centers[end], rate = aStar ? TravelGraph.cheapestRate(self) : 0
+        func h(_ i: Int) -> Double { rate == 0 ? 0 : ((centers[i].x - goal.x) * (centers[i].x - goal.x) + (centers[i].y - goal.y) * (centers[i].y - goal.y)).squareRoot() * rate }
+        var heap = MinHeap(); cost[start] = 0; heap.push(h(start), start)
+        while !settled[end], let (f, a) = heap.pop() {
+            if settled[a] || f > cost[a] + h(a) + 1e-9 { continue }
+            let c = cost[a]
             settled[a] = true
             for k in linkStart[a]..<linkStart[a + 1] {
                 let b = linkTo[k]
@@ -120,13 +127,26 @@ public struct TravelGraph: Sendable {
                 var step = linkCost[k]
                 if let embark, provinces[b] < 0, provinces[a] >= 0 { step += embark(Int(provinces[a])) }
                 let next = Native.fr(c + step)
-                if next < cost[b] { cost[b] = next; prev[b] = a; heap.push(next, b) }
+                if next < cost[b] { cost[b] = next; prev[b] = a; heap.push(next + h(b), b) }
             }
         }
         guard settled[end] else { return nil }
         var nodes = [end], i = end
         while i != start { i = prev[i]; nodes.append(i) }
         return (nodes.reversed(), cost[end])
+    }
+}
+
+extension TravelGraph {
+    /// The least cost per unit of distance over every link (the A* heuristic's scale), per graph.
+    nonisolated(unsafe) static var rateCache: (count: Int, rate: Double)?
+    static func cheapestRate(_ g: TravelGraph) -> Double {
+        if let c = rateCache, c.count == g.linkCost.count { return c.rate }
+        var r = Double.infinity
+        for k in g.linkCost.indices where g.linkDistance[k] > 0 { r = min(r, g.linkCost[k] / g.linkDistance[k]) }
+        let v = r.isFinite ? r * 0.999 : 0
+        rateCache = (g.linkCost.count, v)
+        return v
     }
 }
 

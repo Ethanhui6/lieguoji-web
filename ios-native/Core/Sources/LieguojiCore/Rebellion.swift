@@ -63,10 +63,10 @@ public enum Rebellion {
         s.recent[id] = .array(q.map { JS($0) }); s.lastRebel[id] = r.life.gameTime.clone()
     }
     static func canProvinceRebel(_ r: JS, _ s: JS, _ id: String, _ province: String) -> Bool {
-        if monthsSince(r, never) < 24 || !canAllowNew(r, s, id) { return false }
+        if monthsSince(r, never) < (UnitKinds.enabled ? Tuning.current.calmMonths : 24) || !canAllowNew(r, s, id) { return false }
         let threshold = (r.upperCombat.provinces[province].connected.isTruthy ? s.destinyToRebelConnected.asNumber : s.destinyToRebel.asNumber) - Double(manifest(r, id)) + 5
         if destiny(r, id) > threshold { return false }
-        if r.world.provinces.asArray.filter({ $0.controller.asString == id }).count < 30 { return false }
+        if r.world.provinces.asArray.filter({ $0.controller.asString == id }).count < (UnitKinds.enabled ? Tuning.current.rebelMinProvinces : 30) { return false }
         var interval = f(s.minMonths.asNumber)
         if destiny(r, id) < 15 && superSuperPower(r, id) { interval = f(interval / 6) }
         if interval > Double(monthsSince(r, s.lastRebel[id].optionalNumber ?? 0)) { return false }
@@ -113,7 +113,7 @@ public enum Rebellion {
         let s = r.foundings
         if s.isNull || !s.enabled.isTruthy || !alive(r, id) { return }
         let d = destiny(r, id)
-        if monthsSince(r, never) < 24 || d > 30 || !superSuperPower(r, id) || !canAllowNew(r, s, id) { return }
+        if monthsSince(r, never) < (UnitKinds.enabled ? Tuning.current.calmMonths : 24) || d > 30 || !superSuperPower(r, id) || !canAllowNew(r, s, id) { return }
         let capital = capitalProvince(r, id)
         let owned = r.upperCombat.nations[id].provinceOrder.asArray.map(\.asString).filter { pid in r.world.provinces.asArray.first { $0.id.asString == pid }?.controller.asString == id }
         let list = owned.filter { d > 13 ? !isCore(r, $0, id) && !provinceAtWar(r, $0) : !provinceAtWar(r, $0) && $0 != capital }

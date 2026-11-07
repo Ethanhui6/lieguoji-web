@@ -18,7 +18,8 @@ public enum NobleRevolt {
     // MARK: Family rebellion (shouldFamilyRebel47 … startFamilyRebellion47)
     static func shouldRebel(_ r: JS, _ id: String) -> Bool {
         let n = r.nobility, fam = n.families[id]
-        if fam.isNull || fam.ruling.asBool || fam.controlledProvinces.length == 0 || 200 > fam.influence.asNumber || !alive(r, fam.nationId.asString) { return false }
+        let app = UnitKinds.enabled
+        if fam.isNull || fam.ruling.asBool || fam.controlledProvinces.length == 0 || (app ? 120 : 200) > fam.influence.asNumber || !alive(r, fam.nationId.asString) { return false }
         let state = fam.nationId.asString, d = r.destiny.nations[state]
         var minimum = n.settings.familyRebelMinMonths.asNumber
         if d.manifest.isTruthy && d.manifestCount.asNumber > 0 { minimum *= 4 }
@@ -26,7 +27,7 @@ public enum NobleRevolt {
         let ruling = rulingId(r, state)
         if !n.families.has(ruling) { return false }
         let rel = Nobility.relation(r, id, ruling)
-        if rel > -50 { return false }
+        if rel > (app ? -35 : -50) { return false }
         var chance = f(f(f(f(abs(rel) / 100) * f(0.1)) + f(f(f(100 - (d.destiny.optionalNumber ?? 0)) / 100) * f(0.1))) + f(0.05))
         let p = polities.firstIndex(of: r.civilization.nations[state].polity.asString) ?? -1
         if p == 2 || p == 3 { chance = f(chance * f(0.5)) } else if p == 4 { chance = f(chance * f(1.5)) }
@@ -34,6 +35,7 @@ public enum NobleRevolt {
         if !leaderId.isNull, let leader = People.person(r, leaderId.asInt), leader.isAlive.asBool {
             chance = f(chance * f(1 - resistance(leader.traits.isNull ? [] : leader.traits.asArray.map(\.asString))))
         }
+        if app { chance = f(chance * Tuning.current.unrest) }
         return chance > Nobility.Random(n: n).value()
     }
     static func rallyProbability(_ r: JS, _ rebel: String, _ target: String, _ restored: String?) -> Double {

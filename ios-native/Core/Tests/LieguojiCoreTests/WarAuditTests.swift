@@ -15,7 +15,7 @@ final class WarAuditTests: XCTestCase {
         defer { Session.uninstall(); UnitKinds.enabled = false; DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil }
         let engine = try NativeEngine(world: Data(contentsOf: dir.appendingPathComponent("Golden/bridge-world.json")))
         engine.enableAppRules()
-        let r = engine.run, days = 1080, start = Date()
+        let r = engine.run, days = 1080, start = Date(), statesAtFirst = r.world.nations.length
         var standing = [String: Int](), worst = [String: Int]()
         var owners = r.world.provinces.asArray.map(\.controller.asString), changes = 0, peaks = 0
         for _ in 0..<days {
@@ -38,6 +38,8 @@ final class WarAuditTests: XCTestCase {
         print("AUDIT wars started \(wars.count), ended \(ended.count), still open \(wars.count - ended.count)")
         print("AUDIT war length days: average \(lengths.isEmpty ? 0 : Int(lengths.reduce(0, +) / Double(lengths.count))), longest \(Int(lengths.max() ?? 0))")
         print("AUDIT provinces changed hands \(changes) (\(changes * 360 / days) a year); armies at most \(peaks)")
+        let alive = r.world.nations.asArray.filter { Vassals.alive(r, $0.id.asString) }.count
+        print("AUDIT states: (statesAtFirst) at first, (r.world.nations.length) ever (rebels and successors), (alive) alive")
         let stranded = worst.filter { $0.value > 60 }.sorted { $0.value > $1.value }
         print("AUDIT armies standing abroad at peace over 60 days: \(stranded.count)")
         for (id, d) in stranded.prefix(8) {

@@ -1,20 +1,29 @@
 {
-  "version": 1,
+  "version": 2,
   "notice": "",
-  "pace": { "1": 3, "2": 6, "4": 12, "8": 24, "16": 40 },
+  "pace": {
+    "1": 3,
+    "2": 6,
+    "4": 12,
+    "8": 24,
+    "16": 40
+  },
   "tuning": {
     "lethality": 2,
     "siege": 4,
     "peaceGoalMonths": 4,
-    "peaceDecisiveMonths": 9,
-    "wearyStart": 6,
-    "wearySpan": 12,
-    "warRestMonths": 4,
-    "warEagerness": 1.5,
+    "peaceDecisiveMonths": 6,
+    "wearyStart": 3,
+    "wearySpan": 9,
+    "warRestMonths": 3,
+    "warEagerness": 2,
     "armiesPerProvince": 2.2,
     "armiesAtHome": 3,
     "armyCap": 900,
     "navyAttackShare": 0.6,
-    "openingShips": 3
+    "openingShips": 3,
+    "rebelMinProvinces": 8,
+    "calmMonths": 6,
+    "unrest": 1.6
   }
 }

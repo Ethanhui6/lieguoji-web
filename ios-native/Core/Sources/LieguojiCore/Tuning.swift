@@ -11,14 +11,20 @@ public struct Tuning: Codable, Sendable, Equatable {
     public var siege = 4.0
     /// Months before a war whose goals are met may end, and before a decisive score forces peace.
     public var peaceGoalMonths = 4
-    public var peaceDecisiveMonths = 9
+    public var peaceDecisiveMonths = 6
     /// War weariness starts after this many months and is total this many months later.
-    public var wearyStart = 6
-    public var wearySpan = 12
+    public var wearyStart = 3
+    public var wearySpan = 9
     /// Months a state rests between its wars.
-    public var warRestMonths = 4
+    public var warRestMonths = 3
     /// How readily states go to war (× their temper; the three-year audit found 7 wars in 3 years).
-    public var warEagerness = 1.5
+    public var warEagerness = 2.0
+    /// 政权更替: a state may lose provinces to rebellion once it holds this many (the original: 30, on
+    /// maps of hundreds of provinces); rebellions and family risings may begin this many months into a
+    /// world (the original: 24); and family risings are this much likelier.
+    public var rebelMinProvinces = 8
+    public var calmMonths = 6
+    public var unrest = 1.6
     /// Standing armies: per province in all, per province at home, in the whole world.
     public var armiesPerProvince = 2.2
     public var armiesAtHome = 3
@@ -41,6 +47,9 @@ public struct Tuning: Codable, Sendable, Equatable {
         wearySpan = max(1, min(240, v(.wearySpan, d.wearySpan)))
         warRestMonths = max(0, min(60, v(.warRestMonths, d.warRestMonths)))
         warEagerness = max(0.2, min(5, v(.warEagerness, d.warEagerness)))
+        rebelMinProvinces = max(2, min(60, v(.rebelMinProvinces, d.rebelMinProvinces)))
+        calmMonths = max(0, min(60, v(.calmMonths, d.calmMonths)))
+        unrest = max(0.2, min(5, v(.unrest, d.unrest)))
         armiesPerProvince = max(0.3, min(6, v(.armiesPerProvince, d.armiesPerProvince)))
         armiesAtHome = max(1, min(8, v(.armiesAtHome, d.armiesAtHome)))
         armyCap = max(100, min(2000, v(.armyCap, d.armyCap)))

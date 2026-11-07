@@ -445,8 +445,27 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     byRole[role, default: []].append(contentsOf: [at.x, at.y, cx, cy, c.r, c.g, c.b, fade, size, end.x, end.y, sx, sy])
                 }
             }
+            // Armies standing on one spot (a city several armies hold or fight over) fan out in a small
+            // ring around it instead of stacking into one blob.
+            var spread = [String: SIMD2<Float>]()
+            do {
+                let cell = max(0.001, iconSize * iconScale * 0.6)
+                var cluster = [SIMD2<Int32>: [Int]]()
+                for (i, a) in sprites.enumerated() where a.army > -100_000 && a.army >= 0 {
+                    let e = legTo[a.key] ?? SIMD2(a.x, a.y)
+                    cluster[SIMD2(Int32((e.x / cell).rounded()), Int32((e.y / cell).rounded())), default: []].append(i)
+                }
+                for list in cluster.values where list.count > 1 {
+                    let radius: Float = list.count <= 3 ? 0.42 : list.count <= 6 ? 0.6 : 0.78
+                    for (j, i) in list.enumerated() {
+                        let angle = Float(j) / Float(list.count) * 2 * .pi - .pi / 2
+                        spread[sprites[i].key] = SIMD2(cos(angle) * radius, sin(angle) * radius)
+                    }
+                }
+            }
             for a in sprites {
                 fade = fresh.contains(a.key) ? -1 : a.fighting ? 2 : 1
+                let o = spread[a.key] ?? SIMD2<Float>(0, 0)
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
                 let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)
                 end = legTo[a.key] ?? at
@@ -454,11 +473,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 // The commander's gonfalon stands behind the pieces: gold for the ruler in person.
                 if a.banner > 0 && role != "Fleet" {
                     let k: Float = 0.62
-                    quad("banner", at, a.banner == 2 ? RGB(0.93, 0.74, 0.25) : RGB(0.72, 0.22, 0.16), size * k, 0.55 / k, -0.5 / k)
+                    quad("banner", at, a.banner == 2 ? RGB(0.93, 0.74, 0.25) : RGB(0.72, 0.22, 0.16), size * k, (0.55 + o.x) / k, (-0.5 + o.y) / k)
                 }
                 // The state's token under land armies; the pieces on it are drawn light so they read on it.
                 let token = role != "Fleet" && role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
-                if token { quad("0plate", at, c, size * 0.92, 0, 0.16 / 0.92) }
+                if token { quad("0plate", at, c, size * 0.92, o.x / 0.92, (0.16 + o.y) / 0.92) }
                 let piece = token ? RGB(0.62 + c.r * 0.38, 0.62 + c.g * 0.38, 0.62 + c.b * 0.38) : c
                 // Strength as one to three pieces of the arm (the back ones a shade darker).
                 let n = role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
@@ -467,7 +486,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     : [(-0.22, -0.12, 0.65), (0.22, -0.12, 0.65), (0, 0, 1)]
                 for (i, (dx, dy, k)) in layout.enumerated() {
                     let shade: Float = i < layout.count - 1 && n > 1 ? 0.9 : 1
-                    quad(role, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, dx / k, dy / k)
+                    quad(role, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, (dx + o.x) / k, (dy + o.y) / k)
                 }
             }
             // A fixed draw order (banners first, then by role): a fresh dictionary's order changed every

@@ -160,7 +160,8 @@ public struct PeaceAI {
         return DiplomacyCalendar.wholeMonths(DiplomacyCalendar.date(w.startTime, secondsPerDay: world.secondsPerDay, start: start),
                                              DiplomacyCalendar.date(Native.fr(world.gameTime), secondsPerDay: world.secondsPerDay, start: start))
     }
-    func wearinessFloor() -> Double { clamp(f(f(Double(months() - 60)) / 60)) }
+    // App worlds tire of a war after a year and are exhausted by three (the original: five and ten).
+    func wearinessFloor() -> Double { UnitKinds.enabled ? clamp(f(f(Double(months() - 12)) / 24)) : clamp(f(f(Double(months() - 60)) / 60)) }
     public func weariness(_ id: Int) -> Double {
         let side = self.side(id); guard side != 2, let s = byState[id] else { return 0 }
         if s.fightToEnd == true { return wearinessFloor() }
@@ -203,9 +204,9 @@ public struct PeaceAI {
         // App worlds settle sooner (goals met after six months, a decisive score after eighteen), so land
         // changes hands at the original's rhythm on this map's fewer, larger provinces.
         let app = UnitKinds.enabled
-        if months() >= (app ? 6 : 12) && allGoalsAchieved() { return 0 }
+        if months() >= (app ? 4 : 12) && allGoalsAchieved() { return 0 }
         if collapsed(w.primaryDefenderId) || collapsed(w.primaryAttackerId) { return 2 }
-        if months() < (app ? 18 : 36) { return nil }
+        if months() < (app ? 9 : 36) { return nil }
         let s = score().score
         if abs(s) >= forceSettleThreshold() { return 1 }
         if s <= -50 || s >= 50 { return 1 }

@@ -250,7 +250,9 @@ public enum Regimes {
     /// world's combat intensity).
     static func combatBonus(_ r: JS, attacker: String, victim: String) -> Double {
         let a = bonus(r, attacker, "attack") ?? 0, d = bonus(r, victim, "defense") ?? 0
-        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage")
+        // App worlds fight at twice the original's lethality: evenly matched armies used to grind for a
+        // whole year; a battle now decides within weeks (战斗烈度 still scales it).
+        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage") * 2
     }
 
     /// 天下规则 (自定义): world-wide rates in percent of normal — war frequency, combat intensity, march

@@ -548,6 +548,17 @@ extension NativeEngine {
         let r = run
         UnitKinds.enabled = true
         Armies.bridge?.reconcileContacts(r)  // Drop obsolete province-wide contacts before the first volley.
+        // Once per world: the opening fleets sail with three ships (one ship of forty hands made sea
+        // battles all but invisible); hull, crew and stores follow.
+        if !r.regimes.isNull && !r.regimes.navyMustered.isTruthy {
+            r.regimes.navyMustered = JS(true)
+            for fl in Naval.fleets(r) where fl.status.asString != "lost" && fl.ships.asInt < 3 {
+                let id = fl.id.asString, old = max(1, fl.ships.asNumber)
+                let condition = r.maritime.isNull ? 1 : min(1, max(0.05, (r.maritime.hulls[id].optionalNumber ?? old * 100) / (old * 100)))
+                fl.ships = JS(3); fl.crew = JS(Int((120 * condition).rounded(.up))); fl.food = JS(max(fl.food.asNumber, 7200))
+                if !r.maritime.isNull { r.maritime.hulls[id] = JS((300 * condition).rounded()) }
+            }
+        }
         // Once per world: the opening armies take their culture's arms (renamed to match).
         if !r.regimes.isNull && !r.regimes.armsByCulture.isTruthy {
             r.regimes.armsByCulture = JS(true)

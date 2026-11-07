@@ -38,6 +38,8 @@ struct NationInfo: Decodable {
     struct Party: Decodable { let name: String; let seats: Int }
     struct Treaty: Decodable { let nation: Int; let kind: String; let years: Int }
     let style: String?; let styleLabel: String?
+    /// 国力走势: monthly strength, the last ten years.
+    var power: [Double]? = nil
     let parties: [Party]?
     let treaties: [Treaty]?
 }
@@ -282,6 +284,23 @@ struct NationSheet: View {
     }
     @ViewBuilder private func overviewTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         VStack(alignment: .leading, spacing: 14) {
+                if let p = info.power, p.count >= 2 {
+                    // 国力走势: rise and fall at a glance.
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("国力走势").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                            let change = (p.last ?? 0) - (p.first ?? 0)
+                            Text((change >= 0 ? "↑ " : "↓ ") + String(format: "%.0f%%", abs(change) / max(1, p.first ?? 1) * 100))
+                                .font(Theme.kai(17)).foregroundStyle(change >= 0 ? Theme.jade : Theme.seal)
+                            Text(p.count >= 24 ? "近 \(p.count / 12) 年" : "近 \(p.count) 个月").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                        }
+                        Sparkline(values: p).frame(height: 46)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.line))
+                    .padding(.horizontal, 16)
+                }
                 FoldSection("基本信息", expanded: true) {
                     Group2 {
                         if let r = info.ruler {

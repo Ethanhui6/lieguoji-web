@@ -302,6 +302,11 @@ public enum Regimes {
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
         postEffects(r, id, addGold: addGold, addDestiny: addDestiny)
         tribute(r, n, id, gain: gain)
+        // 国力走势: the state's strength once a month, the last ten years.
+        if r.regimes.power.isNull { r.regimes.power = JS.object() }
+        var power = r.regimes.power[id].isNull ? [JS]() : r.regimes.power[id].asArray
+        power.append(JS((War26.strength(r, id) * 10).rounded() / 10))
+        r.regimes.power[id] = .array(Array(power.suffix(120)))
         coup(r, n, id, key)
         election(r, n, id, key)
         reform(r, n, id, key)

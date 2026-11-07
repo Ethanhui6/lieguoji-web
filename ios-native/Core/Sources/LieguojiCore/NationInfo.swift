@@ -85,6 +85,7 @@ extension NativeEngine {
         o.culture = civ.cultureId.isNull ? JS("") : civ.cultureId; o.religion = civ.religionId.isNull ? JS("") : civ.religionId; o.polity = civ.polity.isNull ? JS("") : civ.polity
         o.gold = JS(r.finance.nations[id].gold.optionalNumber ?? 0); o.goldPerMonth = JS(r.finance.nations[id].goldPerMonth.optionalNumber ?? 0)
         o.destiny = JS(r.destiny.nations[id].destiny.optionalNumber ?? 0)
+        o.power = r.regimes.isNull || r.regimes.power.isNull || r.regimes.power[id].isNull ? .array() : r.regimes.power[id]
         o.livelihood = JS(r.economy.nations[id].ethnic.optionalString ?? "")
         o.alive = JS(Vassals.alive(r, id)); o.auto = JS(r.diplomacy.nations[id].optionalBool == true); o.worldAuto = JS(r.diplomacy.worldAuto.isTruthy)
         // Ruler.

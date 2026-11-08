@@ -108,6 +108,12 @@ enum ShotTour {
         }
         // The navy: a fleet's page (ships editable) when the world has fleets.
         if !(model.state?.fleets ?? []).isEmpty { show(.fleet(0)); await wait(1.4); await shoot("13b-fleet") }
+        // The nation page's tabs, opened full height.
+        for (name, t) in [("11c-court", NationSheet.Tab.court), ("11d-nation-military", .military), ("11e-nation-diplomacy", .diplomacy), ("11f-custom", .custom)] {
+            NationSheet.tourTab = t
+            show(nil); await wait(0.6); show(.nation(nation)); await wait(1.8); await shoot(name)
+        }
+        NationSheet.tourTab = nil
         await shootRulerTraits(model, nation: nation, show: show)
         show(nil); await wait(1)
         await shoot("done")

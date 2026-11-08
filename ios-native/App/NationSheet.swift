@@ -114,6 +114,8 @@ struct NationSheet: View {
     /// 分类: the page's tabs.
     enum Tab: String, CaseIterable { case overview = "概览", court = "朝政", military = "军事", diplomacy = "外交", custom = "自定义" }
     @State private var tab: Tab = .overview
+    /// The screenshot tour opens the page on a given tab.
+    static var tourTab: Tab?
     @State private var nameText = ""
     @State private var capitalProvince = -1
     @State private var customColor = Color(red: 0.6, green: 0.3, blue: 0.2)
@@ -192,7 +194,7 @@ struct NationSheet: View {
                 .padding(.bottom, 24)
             }
             .task(id: state.day / 10) { await reload() }
-            .onAppear { model.controller.relationsNation = nation; model.controller.relations = relationColors(); if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
+            .onAppear { if let t = Self.tourTab { tab = t }; model.controller.relationsNation = nation; model.controller.relations = relationColors(); if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
             .sheet(item: $appointing) { target in
@@ -255,19 +257,21 @@ struct NationSheet: View {
     }
     /// 人物: five identity groups, each open. Extra roles already in the data (总督、战时统帅) open the same way.
     @ViewBuilder private func peoplePage(_ list: [NationInfo.Person]) -> some View {
+        // Office sections under the polity's own titles (丞相、总理、战酋…), as the court shows them.
+        let polity = info?.polity
         let sections: [(String, [NationInfo.Person])] = [
-            ("君主", list.filter { $0.role == "君主" }),
+            (info?.ruler?.title ?? "君主", list.filter { $0.role == "君主" }),
             ("继承人", list.filter { $0.role == "继承人" }),
-            ("行政首脑", list.filter { $0.role == "行政首脑" }),
-            ("财政主管", list.filter { $0.role == "财政主管" }),
-            ("常备军统帅", list.filter { $0.role == "常备军统帅" }),
+            (Self.title("Chancellor", polity), list.filter { $0.role == "行政首脑" }),
+            (Self.title("Steward", polity), list.filter { $0.role == "财政主管" }),
+            (Self.title("Marshal", polity), list.filter { $0.role == "常备军统帅" }),
         ]
         VStack(alignment: .leading, spacing: 14) {
             ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
                 FoldSection(section.0, expanded: true) { peopleList(section.1, empty: "无") }
             }
             let governors = list.filter { $0.role.hasPrefix("总督") }
-            if !governors.isEmpty { FoldSection("总督", expanded: true) { peopleList(governors, empty: "无") } }
+            if !governors.isEmpty { FoldSection(Self.title("Governor", polity) + "（\(governors.count)）", expanded: governors.count <= 6) { peopleList(governors, empty: "无") } }
             let commanders = list.filter { $0.role == "战时统帅" }
             if !commanders.isEmpty { FoldSection("战时统帅", expanded: true) { peopleList(commanders, empty: "无") } }
         }
@@ -945,8 +949,10 @@ struct NationSheet: View {
                 Button { if p.key >= 0 { editing = p } } label: {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
-                        if list.count > 1 { Text(p.role).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
                         Text(p.name).font(Theme.kai(17)).foregroundStyle(Theme.ink).lineLimit(1)
+                        // A governor's province (the role is 总督·某州) as a small tag after the name.
+                        if p.role.hasPrefix("总督·") { Text(String(p.role.dropFirst(3))).font(Theme.kai(12)).foregroundStyle(Theme.seal).lineLimit(1) }
+                        else if list.count > 1 && p.role != "君主" { Text(p.role).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1) }
                         Text("\(p.female ? "女" : "男") · \(Int(p.age))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                         Spacer()
                         if p.skills.count == 4 {

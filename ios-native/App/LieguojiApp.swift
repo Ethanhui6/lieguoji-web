@@ -822,6 +822,7 @@ struct GameView: View {
                 self.panel = nil
             }, openArmy: { a in open(.army(a)) }, openPeople: { nationDetent = .fraction(0.38); open(.people(n)) }, openWars: { nationDetent = .fraction(0.38); open(.nationWars(n)) }, openTalks: { nationDetent = .fraction(0.38); open(.nationTalks(n)) })
                 .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+                .onAppear { if NationSheet.tourTab != nil { nationDetent = .large } }
         case .people(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .people)
                 .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))

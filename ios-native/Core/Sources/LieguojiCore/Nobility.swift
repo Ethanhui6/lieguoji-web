@@ -25,7 +25,7 @@ public enum Nobility {
     // MARK: Names and characters
     static func personName(_ culture: String, given: String, house: String, gender: Int) -> JS {
         let p = cultures[culture], names = (gender == 0 ? p.givenMale : p.givenFemale).asArray.map(\.asString), houses = p.houses.asArray.map(\.asString)
-        let index = names.firstIndex(of: given)!, family = houses.firstIndex(of: house)!
+        let extra = (gender == 0 ? moreMale : moreFemale)[culture] ?? [], index = names.firstIndex(of: given) ?? (names.count + (extra.firstIndex(of: given) ?? 0)), family = houses.firstIndex(of: house)!
         let name: String
         if culture == "roman" && gender == 1 { name = p.romanFemale[family].asString + "·" + given }
         else if ["arab", "greek", "norse", "indian", "mongol", "turkic", "egyptian", "tibetan", "aztec", "inca"].contains(culture) { name = given }

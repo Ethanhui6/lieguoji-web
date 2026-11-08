@@ -13,6 +13,20 @@ public enum Daily {
     // MARK: Contacts and attack clocks (force-tick47 frame / reconcileMilitaryClock47)
     static func key(_ kind: String, _ id: String) -> String { "[\"\(kind)\",\"\(id)\"]" }
     /// frame(): contacts reconciled into the run, and the forces eligible to attack.
+    /// What a frame's contacts depend on: the forces' places and number, the contacts, the wars, who is retreating.
+    static func frameKey(_ r: JS, _ forces: Int) -> String {
+        let wars = r.world.statecraft.relations.asArray.reduce(0) { $1.status.asString == "war" ? $0 + 1 : $0 }
+        let back = r.world.armies.asArray.reduce(0) { $1.status.asString == "retreating" ? $0 + 1 : $0 }
+        return "\(ObjectIdentifier(r).hashValue)|\(r.armyPositions.revision.asNumber)|\(r.fleetPositions.revision.asNumber)|\(r.forceContacts.pairs.length)|\(wars)|\(back)|\(forces)"
+    }
+    typealias FrameValue = (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position])
+    /// The frame already worked out for this very state of the world, if there is one.
+    static func knownFrame(_ r: JS, _ forces: Int) -> FrameValue? {
+        guard UnitKinds.enabled, let c = frameCache, c.key == frameKey(r, forces) else { return nil }
+        return c.value
+    }
+    /// A march ends knowing the contacts and places the next frame would otherwise rebuild.
+    static func seedFrame(_ r: JS, _ forces: Int, _ value: FrameValue) { if UnitKinds.enabled { frameCache = (frameKey(r, forces), value) } }
     static var frameCache: (key: String, value: (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position]))?
     @discardableResult
     public static func frame(_ r: JS) -> (eligible: Set<String>, held: Set<String>) {
@@ -60,8 +74,7 @@ public enum Daily {
         }
         // App worlds: frames between two marches see the same positions, contacts and wars — the last
         // result stands (two frames in three used to recompute it unchanged).
-        let wars = UnitKinds.enabled ? r.world.statecraft.relations.asArray.reduce(0) { $1.status.asString == "war" ? $0 + 1 : $0 } : 0
-        let key = UnitKinds.enabled ? "\(ObjectIdentifier(r).hashValue)|\(r.armyPositions.revision.asNumber)|\(r.fleetPositions.revision.asNumber)|\(r.forceContacts.pairs.length)|\(wars)|\(forces.count)" : ""
+        let key = UnitKinds.enabled ? frameKey(r, forces.count) : ""
         let result = Profile.measure("f.contacts") { () -> (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position]) in
             if !key.isEmpty, let c = frameCache, c.key == key { return c.value }
             let v = computeFrame()
@@ -69,6 +82,8 @@ public enum Daily {
             return v
         }
         Profile.measure("f.write") { r.forceContacts.pairs = .array(result.contacts.map(ForceBridge.json)) }
+        // Keyed as the world stands now it has written its contacts, so the march that follows can start from it.
+        if !key.isEmpty { frameCache = (frameKey(r, forces.count), result) }
         var eligible = Set<String>()
         let nations = r.world.nations.asArray.map(\.id.asString)
         // Read once per frame: active sieges (province|besieger) and each state pair's war status.

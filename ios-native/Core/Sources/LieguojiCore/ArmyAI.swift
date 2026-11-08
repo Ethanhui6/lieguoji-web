@@ -70,6 +70,14 @@ public struct ArmyAutonomy: Sendable {
     /// A cautious state's armies first clear its own invaded provinces; a warlike state's armies push
     /// into enemy land before supporting allies. nil keeps the original choice.
     public static var temper: ((Int) -> Double)?
+    static var troopMemo: (tick: Int, by: [Int: Int])?
+    /// Each state's troops, counted once a tick.
+    static func troopsBy(_ w: ArmyWorld) -> [Int: Int] {
+        if let m = troopMemo, m.tick == w.tick { return m.by }
+        var by = [Int: Int](); for a in w.armies where a.troops > 0 { by[a.nation, default: 0] += a.troops }
+        troopMemo = (w.tick, by)
+        return by
+    }
     /// `regular` is the standing army and uses FindRegularTargetProvince.
     /// `emergency` and `manual` are web muster and player placement, not original Garrison.
     /// Rebel-province search is absent, so those kinds do not get a second target list.
@@ -362,9 +370,18 @@ public struct ArmyAutonomy: Sendable {
                     if !invaded.isEmpty {
                         let home = candidates.filter { invaded.contains($0.id) }
                         if !home.isEmpty { candidates = home }
-                    } else if temper > 1.2 {
-                        let deep = candidates.filter { enemySet.contains(w.owners[$0.id]) }
-                        if !deep.isEmpty { candidates = deep }
+                    } else {
+                        // 集中兵力: most of a host that far outnumbers an enemy goes for the weakest such enemy and
+                        // finishes it; one army in five keeps the other fronts.
+                        if i % 5 != 0 {
+                            let by = ArmyAutonomy.troopsBy(w), mine = by[a.nation] ?? 0
+                            let weak = Set(candidates.map { w.owners[$0.id] }).filter { enemySet.contains($0) && mine >= 3 * max(1, by[$0] ?? 0) }
+                            if let target = weak.min(by: { (by[$0] ?? 0, $0) < (by[$1] ?? 0, $1) }) { candidates = candidates.filter { w.owners[$0.id] == target } }
+                        }
+                        if temper > 1.2 {
+                            let deep = candidates.filter { enemySet.contains(w.owners[$0.id]) }
+                            if !deep.isEmpty { candidates = deep }
+                        }
                     }
                 }
                 if ArmyAutonomy.originalRegularTargets && attack.isEmpty {

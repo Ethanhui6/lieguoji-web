@@ -17,6 +17,8 @@ struct MapEffects: Equatable {
         let key: String; let x: Double; let y: Double; var left: Side? = nil; var right: Side? = nil
         /// The two armies in contact (map units): the clash line runs between them in their colours.
         var ax = 0.0, ay = 0.0, bx = 0.0, by = 0.0
+        /// Troops on each side, for the strength bar over the fight.
+        var leftTroops = 0, rightTroops = 0
     }
     struct Burst: Equatable { enum Kind { case destroyed, founded, shock, harvest, disaster, talent, plague, trade, regime, coup }; let id: String; let x: Double; let y: Double; let kind: Kind; let r: Double; let g: Double; let b: Double; var unit = "" }
     struct Siege: Equatable { let key: String; let x: Double; let y: Double; let progress: Double; let r: Double; let g: Double; let b: Double }
@@ -208,9 +210,22 @@ final class EffectsView: UIView {
         return tag
     }
 
+    /// The two sides' strength over a fight: one bar in their colours, split by troops.
+    private func setStrength(_ root: CALayer, _ b: MapEffects.Battle) {
+        guard let bar = root.sublayers?.first(where: { $0.name == "strength" }), bar.sublayers?.count == 2, let l = b.left, let r = b.right else { return }
+        let total = b.leftTroops + b.rightTroops
+        bar.isHidden = total <= 0
+        guard total > 0 else { return }
+        let w = bar.bounds.width, h = bar.bounds.height, share = w * CGFloat(b.leftTroops) / CGFloat(total)
+        bar.sublayers![0].frame = CGRect(x: 0, y: 0, width: share, height: h); bar.sublayers![0].backgroundColor = UIColor(red: l.r, green: l.g, blue: l.b, alpha: 1).cgColor
+        bar.sublayers![1].frame = CGRect(x: share, y: 0, width: w - share, height: h); bar.sublayers![1].backgroundColor = UIColor(red: r.r, green: r.g, blue: r.b, alpha: 1).cgColor
+    }
     private func battleLayer() -> CALayer {
         // A small contact flash, not a badge: the opposing unit symbols remain the focal point.
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 24, height: 18)
+        let strength = CALayer(); strength.name = "strength"; strength.bounds = CGRect(x: 0, y: 0, width: 34, height: 4); strength.position = CGPoint(x: 12, y: -25)
+        strength.cornerRadius = 2; strength.masksToBounds = true; strength.borderWidth = 0.5; strength.borderColor = UIColor(white: 0, alpha: 0.55).cgColor; strength.isHidden = true
+        strength.addSublayer(CALayer()); strength.addSublayer(CALayer()); root.addSublayer(strength)
         let marks = CAShapeLayer(); marks.frame = root.bounds
         let path = UIBezierPath()
         for (x, y) in [(CGFloat(3), CGFloat(4)), (20, 3), (2, 13), (21, 14)] {
@@ -607,9 +622,10 @@ final class EffectsView: UIView {
             clashLayers[b.key] = (line(l), line(r), b)
         }
         for b in effects.battles {
-            if let old = battleLayers[b.key] { battleLayers[b.key] = (old.layer, b.x, b.y) }
+            if let old = battleLayers[b.key] { battleLayers[b.key] = (old.layer, b.x, b.y); setStrength(old.layer, b) }
             else {
                 let l = b.key.hasPrefix("s") ? navalLayer() : battleLayer(); layer.addSublayer(l); battleLayers[b.key] = (l, b.x, b.y)
+                setStrength(l, b)
                 let pop = CASpringAnimation(keyPath: "transform.scale"); pop.fromValue = 0.2; pop.toValue = 1; pop.damping = 9; pop.duration = pop.settlingDuration
                 l.add(pop, forKey: "pop")
             }

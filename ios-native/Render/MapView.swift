@@ -275,8 +275,8 @@ struct MapView: UIViewRepresentable {
         func build() -> MapContainerView {
             container = MapContainerView()
             mtk = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
-            let deep = MapPalette.ocean(controller.display.ocean).deep
-            mtk.clearColor = MTLClearColor(red: Double(deep.r), green: Double(deep.g), blue: Double(deep.b), alpha: 1)
+            // Beyond the map: the paper of its mounting (#DED1C5).
+            mtk.clearColor = MTLClearColor(red: 0.87, green: 0.82, blue: 0.77, alpha: 1)
             mtk.isPaused = true
             mtk.enableSetNeedsDisplay = true
             mtk.preferredFramesPerSecond = 120
@@ -369,7 +369,7 @@ struct MapView: UIViewRepresentable {
             let b = bounds
             var c = camera
             c.scale = min(b.upperBound, max(b.lowerBound, c.scale))
-            renderer.camera = c.clamped(map: mapSize, viewport: viewport)
+            renderer.camera = c.clamped(map: mapSize, viewport: viewport, margin: 44)
             labels.update(camera: renderer.camera, viewport: mtk.bounds.size)
             effects.update(camera: renderer.camera, viewport: mtk.bounds.size)
             updateTroops()
@@ -535,7 +535,7 @@ struct MapView: UIViewRepresentable {
         private func animate(to target: MapCamera, duration: Double = 0.38) {
             var t = target
             t.scale = min(bounds.upperBound, max(bounds.lowerBound, t.scale))
-            animation = (camera, t.clamped(map: mapSize, viewport: viewport), CACurrentMediaTime(), duration)
+            animation = (camera, t.clamped(map: mapSize, viewport: viewport, margin: 44), CACurrentMediaTime(), duration)
             velocity = .zero
             startLink()
         }
@@ -695,10 +695,6 @@ struct MapView: UIViewRepresentable {
             if let renderer, renderer.display != controller.display {
                 let oceanChanged = renderer.display.ocean != controller.display.ocean
                 renderer.setDisplay(controller.display)
-                if oceanChanged {
-                    let deep = MapPalette.ocean(controller.display.ocean).deep
-                    mtk.clearColor = MTLClearColor(red: Double(deep.r), green: Double(deep.g), blue: Double(deep.b), alpha: 1)
-                }
                 mtk.setNeedsDisplay()
             }
             if renderer?.setSeaPorts(controller.seaPorts) == true { mtk.setNeedsDisplay() }

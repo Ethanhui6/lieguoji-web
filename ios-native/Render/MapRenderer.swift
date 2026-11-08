@@ -56,6 +56,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var seaSource: [UInt8] = []
     /// 卷轴边缘: the map's paper edge darkens like an old scroll and a double ink rule frames it.
     private var frame: (buffer: MTLBuffer, count: Int)?
+    /// The paper band and rules round the map (always drawn).
+    private var mount: Int)?
     private let sea: MTLTexture?
     private let parchment: MTLTexture?
     private let sampler: MTLSamplerState?
@@ -142,6 +144,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         outlines = buffer(ready?.outlines ?? MapLayers.outlines(map).vertices, stride: 6)
         icons = buffer(ready?.icons ?? MapLayers.cityIcons(map).vertices, stride: 6)
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
+        mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
         // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
         // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
@@ -678,6 +681,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
         }
+        // The paper beyond the map, under everything (the original's parchment covers the whole screen).
+        if display.parchment { let r = map.meta.parchment; quad(parchment, multiplyPipeline, x: r.x - 500, y: r.y - 500, width: r.width + 1000, height: r.height + 1000) }
         quad(sea, texturePipeline, x: 0, y: 0, width: map.width, height: map.height)
         if reveal < 1, let rb = revealBuffers() {
             let sea = MapPalette.ocean(display.ocean).shallow
@@ -737,6 +742,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             quad(parchment, multiplyPipeline, x: r.x, y: r.y, width: r.width, height: r.height)
         }
         if display.darkEdges && reveal >= 0.2 { colored(frame) }
+        colored(mount)
         encoder.endEncoding()
         buffer.present(drawable)
         buffer.commit()

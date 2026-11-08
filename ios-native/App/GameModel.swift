@@ -11,7 +11,21 @@ import LieguojiCore
     /// CI tour only. "settings" or "new-world" holds that title sheet open.
     @Published var tourTitle: String?
     @Published private(set) var map: WorldMap?
-    @Published private(set) var state: GameState?
+    private(set) var state: GameState? { didSet { publishState() } }
+    /// A page is open over the map: its numbers refresh twice a second instead of with every step.
+    var pageOpen = false
+    private var lastPublish = 0.0, publishPending = false
+    private func publishState() {
+        let now = Date().timeIntervalSinceReferenceDate, gap = pageOpen ? 0.5 : 0.1
+        if now - lastPublish >= gap || state == nil { lastPublish = now; objectWillChange.send(); return }
+        guard !publishPending else { return }
+        publishPending = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + gap) { [weak self] in
+            guard let self else { return }
+            publishPending = false; lastPublish = Date().timeIntervalSinceReferenceDate
+            objectWillChange.send()
+        }
+    }
     @Published private(set) var playing = false
     @Published var speed = 1
     /// 远程计算: the computer simulating this world (nil: the phone does).
@@ -669,6 +683,7 @@ import LieguojiCore
         // spot share a single animation.
         var spots = [String: (x: Double, y: Double, n: Double)]()
         var sides = [String: (Int, Int)](), ends = [String: (Double, Double, Double, Double)]()
+        var fighters = [String: [Int: Int]]()
         for pair in state.contacts ?? [] where pair.count == 2 && state.armies.indices.contains(pair[0]) && state.armies.indices.contains(pair[1]) {
             let a = state.armies[pair[0]], b = state.armies[pair[1]]
             let x = Double(a.x + b.x) / 2, y = Double(a.y + b.y) / 2
@@ -676,6 +691,7 @@ import LieguojiCore
             let old = spots[key] ?? (0, 0, 0)
             spots[key] = (old.x + x, old.y + y, old.n + 1)
             if sides[key] == nil { sides[key] = (a.nation, b.nation); ends[key] = (Double(a.x), Double(a.y), Double(b.x), Double(b.y)) }
+            fighters[key, default: [:]][pair[0]] = a.nation; fighters[key, default: [:]][pair[1]] = b.nation
         }
         for p in state.seaBattles ?? [] where p.count == 2 {
             let key = "s\(Int(p[0] / 6)):\(Int(p[1] / 6))", old = spots[key] ?? (0, 0, 0)
@@ -689,6 +705,9 @@ import LieguojiCore
             let s = sides[key]
             var battle = MapEffects.Battle(key: key, x: v.x / v.n, y: v.y / v.n, left: s.flatMap { side($0.0) }, right: s.flatMap { side($0.1) })
             if let p = ends[key] { battle.ax = p.0; battle.ay = p.1; battle.bx = p.2; battle.by = p.3 }
+            if let s, let f = fighters[key] {
+                for (i, n) in f { if n == s.0 { battle.leftTroops += state.armies[i].troops } else { battle.rightTroops += state.armies[i].troops } }
+            }
             e.battles.append(battle)
         }
         // A new clash on the map is felt (once per step).

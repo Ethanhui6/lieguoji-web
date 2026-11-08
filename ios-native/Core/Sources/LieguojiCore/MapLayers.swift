@@ -381,13 +381,33 @@ public enum MapLayers {
             m.band(a2, a3, b3, b2, color, outer: outer, inner: inner)
             m.band(a3, a0, b0, b3, color, outer: outer, inner: inner)
         }
-        // Burnt edge: dark at the rim, gone a little way in (two bands for a soft curve).
+        // Burnt edge inside the mounting: soft, and gone a little way in.
         let depth = min(w, h) * 0.05
-        ring(0, depth * 0.35, brown, outer: 0.55, inner: 0.22)
-        ring(depth * 0.35, depth * 0.65, brown, outer: 0.22, inner: 0)
-        // The double rule.
-        ring(3.2, 2.0, ink, outer: 0.85, inner: 0.85)
-        ring(7.2, 0.6, ink, outer: 0.7, inner: 0.7)
+        ring(23.2, depth * 0.35, brown, outer: 0.3, inner: 0.12)
+        ring(23.2 + depth * 0.35, depth * 0.65, brown, outer: 0.12, inner: 0)
+        _ = ink
+        return m
+    }
+
+    /// The original's World.InitMapFrame on a map of up to 60000 cells: a paper band #DED1C5 of 6.96 world
+    /// units along the map's edge and, outside it, black rules at 24 (0.15 thick), 25 and 30 (0.3 thick).
+    /// One world unit is 1600/240 map units.
+    public static func mapMount(width w: Float, height h: Float) -> ColoredMesh {
+        var m = ColoredMesh()
+        let unit: Float = 1600.0 / 240.0, paper = RGB(hex: 0xDED1C5), ink = RGB(hex: 0x000000)
+        func ring(_ offset: Float, _ thickness: Float, _ color: RGB) {
+            let out = offset + thickness / 2, inn = offset - thickness / 2
+            let a0 = SIMD2<Float>(-out, -out), a1 = SIMD2<Float>(w + out, -out), a2 = SIMD2<Float>(w + out, h + out), a3 = SIMD2<Float>(-out, h + out)
+            let b0 = SIMD2<Float>(-inn, -inn), b1 = SIMD2<Float>(w + inn, -inn), b2 = SIMD2<Float>(w + inn, h + inn), b3 = SIMD2<Float>(-inn, h + inn)
+            m.band(a0, a1, b1, b0, color, outer: 1, inner: 1)
+            m.band(a1, a2, b2, b1, color, outer: 1, inner: 1)
+            m.band(a2, a3, b3, b2, color, outer: 1, inner: 1)
+            m.band(a3, a0, b0, b3, color, outer: 1, inner: 1)
+        }
+        ring(0, 6.96 * unit, paper)
+        ring(25, 0.3 * unit, ink)
+        ring(30, 0.3 * unit, ink)
+        ring(24, 0.15 * unit, ink)
         return m
     }
 

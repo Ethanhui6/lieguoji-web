@@ -62,7 +62,9 @@ public struct ContactMotion {
             self.enemy = enemy; self.canEnter = canEnter; self.speed = speed; self.seaRegion = seaRegion; self.provinceID = provinceID
         }
     }
-    public struct Result { public var contacts: [ForceContact]; public var held: Set<String>; public var elapsed: Double; public var unused: Double }
+    public struct Result { public var contacts: [ForceContact]; public var held: Set<String>; public var elapsed: Double; public var unused: Double; public var positions: [String: Position]? = nil }
+    /// The last sort of the forces by key (the set rarely changes between calls).
+    nonisolated(unsafe) static var orderCache: (keys: [String], order: [Int])?
 
     let graph: TravelGraph
     public init(graph: TravelGraph) { self.graph = graph }
@@ -144,13 +146,20 @@ public struct ContactMotion {
         return false
     }
     /// One call of advanceForceContacts47 (stopAtEvent as force-tick47 uses it). Forces are mutated in place.
-    public func advance(_ input: inout [MovingForce], previous: [ForceContact], seconds: Double, rules: Rules, stopAtEvent: Bool) -> Result {
+    public func advance(_ input: inout [MovingForce], previous: [ForceContact], seconds: Double, rules: Rules, stopAtEvent: Bool, known: (contacts: [ForceContact], held: Set<String>, positions: [String: Position])? = nil) -> Result {
         // The phase keeps the forces in collation order of their keys.
-        let order = Profile.measure("a.sort") { input.indices.sorted { Collate.less(input[$0].key, input[$1].key) } }
+        let order = Profile.measure("a.sort") { () -> [Int] in
+            guard rules.physicalContact else { return input.indices.sorted { Collate.less(input[$0].key, input[$1].key) } }
+            let keys = input.map(\.key)
+            if let c = ContactMotion.orderCache, c.keys == keys { return c.order }
+            let sorted = input.indices.sorted { Collate.less(keys[$0], keys[$1]) }
+            ContactMotion.orderCache = (keys, sorted)
+            return sorted
+        }
         var forces = order.map { input[$0] }
         defer { for (k, i) in order.enumerated() { input[i] = forces[k] } }
         var book = previous, remaining = seconds, events = 0
-        let initial = Profile.measure("a.initial") { contacts(forces, book, rules) }
+        let initial = known ?? Profile.measure("a.initial") { contacts(forces, book, rules) }
         if stopAtEvent && ContactMotion.identity(initial.contacts) != ContactMotion.identity(book) {
             return Result(contacts: initial.contacts, held: initial.held, elapsed: 0, unused: seconds)
         }
@@ -338,7 +347,7 @@ public struct ContactMotion {
             // positions) as armies grew faster and more numerous. Parity worlds stop at every node.
             if stopAtEvent && (rules.physicalContact ? ContactMotion.identity(current.contacts) != held0 : movers.contains(where: reached)) { break }
         }
-        return Result(contacts: current.contacts, held: current.held, elapsed: seconds - remaining, unused: remaining)
+        return Result(contacts: current.contacts, held: current.held, elapsed: seconds - remaining, unused: remaining, positions: current.positions)
     }
 }
 

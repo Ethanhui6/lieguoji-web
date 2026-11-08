@@ -48,10 +48,10 @@ public struct MapCamera: Equatable, Sendable {
     }
     /// Keeps the map on screen: the centre may not leave the map, and a map smaller than the
     /// viewport stays centred on that axis.
-    public func clamped(map: (width: Double, height: Double), viewport: (width: Double, height: Double)) -> MapCamera {
+    public func clamped(map: (width: Double, height: Double), viewport: (width: Double, height: Double), margin: Double = 0) -> MapCamera {
         func axis(_ c: Double, _ size: Double, _ view: Double) -> Double {
             let half = view / 2 / scale
-            return size <= half * 2 ? size / 2 : min(size - half, max(half, c))
+            return size + 2 * margin <= half * 2 ? size / 2 : min(size + margin - half, max(half - margin, c))
         }
         return MapCamera(centerX: axis(centerX, map.width, viewport.width), centerY: axis(centerY, map.height, viewport.height), scale: scale)
     }

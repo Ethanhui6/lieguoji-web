@@ -325,7 +325,7 @@ public enum RunWindow {
         // Only forces whose travel changed are written back (a record rewrite is a deep clone).
         var before = [String: ArmyTravel](minimumCapacity: moving.count); for m in moving { before[m.id + (m.kind == .army ? "|a" : "|f")] = m.travel }
         let previous = Profile.measure("m.contacts") { bridge.contacts(r) }
-        let out = Profile.measure("m.advance") { ContactMotion(graph: g).advance(&moving, previous: previous, seconds: seconds, rules: rules, stopAtEvent: true) }
+        let out = Profile.measure("m.advance") { ContactMotion(graph: g).advance(&moving, previous: previous, seconds: seconds, rules: rules, stopAtEvent: true, known: Daily.knownFrame(r, moving.count)) }
         Profile.measure("m.write") { for m in moving where before[m.id + (m.kind == .army ? "|a" : "|f")] != m.travel {
             let book = m.kind == .army ? r.armyPositions : r.fleetPositions
             let t = book.records[m.id].shallowClone(); bridge.write(m.travel, to: t); book.records[m.id] = t
@@ -349,6 +349,7 @@ public enum RunWindow {
         }
         if ArmyLedger.on { ArmyLedger.campaigns(r, space) }
         Vassals.bump(r.armyPositions); Vassals.bump(r.fleetPositions)
+        if let p = out.positions { Daily.seedFrame(r, moving.count, (out.contacts, out.held, p)) }
         return out
     }
 
@@ -356,6 +357,7 @@ public enum RunWindow {
     /// advanceMilitaryWindowCore47 for `ticks` within the current day. Returns the volleys and whether
     /// the day boundary was reached (the run then needs its daily settlement).
     @discardableResult
+    static var occupyStamp = ""
     public static func advance(_ r: JS, ticks: Int) -> (volleys: [Salvo], dailyPending: Bool) {
         let F = Daily.frameTicks(r), start = r.clock.tick.asInt, end = start + ticks, untilDay = (r.world.day.asInt + 1) * 120
         var now = Double(F.map { start / $0 * $0 } ?? start), volleys = [Salvo](), events = 0
@@ -365,7 +367,9 @@ public enum RunWindow {
             if boundary {
                 while true {
                     events += 1; if events > 100_000 { break }
-                    Profile.measure("w.occupy") { occupy(r, now: now, due: []) }
+                    // App worlds: with no one moved and no volley since the last pass, occupation has nothing new to do.
+                    let stamp = UnitKinds.enabled ? "\(r.armyPositions.revision.asNumber)|\(r.occupation.sieges.length)|\(r.world.armies.length)|\(r.world.nations.length)|\(r.world.statecraft.relations.asArray.reduce(0) { $1.status.asString == "war" ? $0 + 1 : $0 })" : ""
+                    if stamp.isEmpty || stamp != occupyStamp { Profile.measure("w.occupy") { occupy(r, now: now, due: []) }; occupyStamp = stamp }
                     Profile.measure("w.frame") { Daily.reconcileAttackClock(r, Daily.frame(r).eligible, now: now) }
                     let due = r.forceClock.deadlines.objectEntries.filter { $0.1.asNumber <= now }.map(\.0).sorted { $0.utf16.lexicographicallyPrecedes($1.utf16) }
                     if !due.isEmpty {

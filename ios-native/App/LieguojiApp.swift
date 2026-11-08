@@ -638,7 +638,8 @@ struct GameView: View {
     @State private var ripple: CGPoint?
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
 
-    var body: some View {
+    // Split in three: as one expression the compiler cannot type-check it in reasonable time.
+    private var backdrop: some View {
         ZStack {
             Color.clear
         }
@@ -678,6 +679,10 @@ struct GameView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingFleet)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.paintNation)
         }
+    }
+
+    private var stage: some View {
+        backdrop
         .overlay(alignment: .bottom) {
             Group {
                 if landscape { EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }.frame(maxWidth: 380).padding(.bottom, 4) }
@@ -806,10 +811,17 @@ struct GameView: View {
             if province != nil { withAnimation { viewsOpen = false } }
             if let province { show(.province(province)) } else if case .province = panel { panel = nil }
         }
+    }
+
+    private var sideKey: String? { landscape ? panel?.id : nil }
+    private var pageShown: Binding<Bool> { Binding(get: { panel != nil && !landscape }, set: { if !$0 && !landscape { panel = nil } }) }
+
+    var body: some View {
+        stage
         .overlay(alignment: .trailing) { sidePage }
-        .animation(.spring(response: 0.38, dampingFraction: 0.88), value: landscape ? panel?.id : nil)
+        .animation(.spring(response: 0.38, dampingFraction: 0.88), value: sideKey)
         .overlay { if let ripple { PressRipple().position(ripple).ignoresSafeArea() } }
-        .sheet(isPresented: Binding(get: { panel != nil && !landscape }, set: { if !$0 && !landscape { panel = nil } }), onDismiss: {
+        .sheet(isPresented: pageShown, onDismiss: {
             trail = []
             if panel == nil { controller.selectedProvince = nil; controller.selectedFleet = nil; if controller.marchingArmy == nil { controller.selectedArmy = nil } }
         }) {

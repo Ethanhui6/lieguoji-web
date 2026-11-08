@@ -153,7 +153,7 @@ public enum Armies {
                 create(r, nation: id, home: p.id.asString, kind: "regular"); data.population = JS(data.population.asNumber - Double(required)); formed += 1; cost += required
                 standing += 1; atHome[p.id.asString, default: 0] += 1; total += 1
             }
-            if formed > (UnitKinds.enabled ? 3 : 0) { People.announce(r, kind: "diplomacy", text: "\(n.name.asString)新编\(formed)支常备军", reason: "按故乡编制征集，本次扣内部人口\(cost)；每支新军同时建立真实位置、速度和基础战力记录。", nations: [id], province: nil) }
+            if formed > (UnitKinds.enabled ? 3 : 0) { People.announce(r, kind: UnitKinds.enabled ? "regular" : "diplomacy", text: "\(n.name.asString)新编\(formed)支常备军", reason: "按故乡编制征集，本次扣内部人口\(cost)；每支新军同时建立真实位置、速度和基础战力记录。", nations: [id], province: nil) }
             let war = r.world.statecraft.relations.asArray.contains { ($0.a.asString == id || $0.b.asString == id) && $0.status.asString == "war" }
             if !war {
                 let sp = space(r)
@@ -189,7 +189,7 @@ public enum Armies {
                 t(r).seed = JS(Double(seed))
                 create(r, nation: id, home: places[Int(seed % UInt32(places.count))].id.asString, kind: "emergency")
             }
-            if q.count > 0 { People.announce(r, kind: "diplomacy", text: "\(n.name.asString)进行一次紧急动员，征招\(q.count)个军团", reason: "原月检国运与君主特性决定数量；网页按安全核心集结、保留年度与五年冷却，不扣常备兵源或粮储。", nations: [id], province: nil) }
+            if q.count > 0 { People.announce(r, kind: UnitKinds.enabled ? "emergency" : "diplomacy", text: "\(n.name.asString)进行一次紧急动员，征招\(q.count)个军团", reason: "原月检国运与君主特性决定数量；网页按安全核心集结、保留年度与五年冷却，不扣常备兵源或粮储。", nations: [id], province: nil) }
         }
         r.dailyEconomy.lastMusterMonth = JS(month)
     }

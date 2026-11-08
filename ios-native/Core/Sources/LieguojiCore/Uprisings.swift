@@ -220,6 +220,13 @@ extension Regimes {
         if let styleId, let s = styles.first(where: { $0.id == styleId }) { c.polity = JS(s.base); b.style = JS(styleId); b.parties = .null }
         n.name = JS(title(r, id, base: c.name.value.asString, style: style(r, id)))
     }
+    /// The founding notice was written before the rising took its name.
+    private static func renameFounding(_ r: JS, from old: String, to new: String) {
+        guard old != new else { return }
+        let fix: (JS) -> Void = { $0.text = JS($0.text.asString.replacingOccurrences(of: old, with: new)) }
+        r.chronicle.entries.asArray.suffix(6).filter { $0.text.asString.hasPrefix(old) }.forEach(fix)
+        r.world.events.asArray.suffix(6).filter { $0.text.asString.hasPrefix(old) }.forEach(fix)
+    }
     /// How many provinces a rising in this state takes with it.
     static func uprisingSize(_ r: JS, _ owner: String) -> Int {
         let land = r.world.provinces.asArray.reduce(0) { $1.controller.optionalString == owner ? $0 + 1 : $0 }
@@ -278,6 +285,8 @@ extension Regimes {
             Government.relocateLostCapitals(r); Wars.reconcileCore(r); Founding.reconcilePorts?(r)
         } else {
             rebel = Founding.foundState(r, parent: owner, provinces: land, reason: (rebelLabels[kind] ?? "叛乱") + "：\(land.count)州一同举事。").nationId.asString
+            let foundedAs = Vassals.name(r, rebel)
+            defer { renameFounding(r, from: foundedAs, to: Vassals.name(r, rebel)) }
             switch kind {
             case "peasant":
                 if cityCulture == "chinese" { retitle(r, rebel, base: unusedName(r, dynastyNames, tag + "|name"), style: "dynasty") }
@@ -323,6 +332,9 @@ extension Regimes {
             guard !weighted.isEmpty else { continue }
             var roll = draw(tag + "|seed") % weighted.reduce(0) { $0 + $1.1 }, seed = weighted[0].0
             for (q, w) in weighted { if roll < w { seed = q; break }; roll -= w }
+            // An enclave cannot carry a region with it: start where the land joins up.
+            var byId = [String: JS](); for p in owned { byId[p.id.asString] = p }
+            if region(r, id, seed, 2, byId).count < 2, let joined = weighted.first(where: { region(r, id, $0.0, 2, byId).count >= 2 }) { seed = joined.0 }
             if raise(r, owner: id, seed: seed, size: uprisingSize(r, id)) != nil { b.lastUprising = JS(key) }
         }
     }

@@ -34,7 +34,7 @@ public struct Tuning: Codable, Sendable, Equatable {
     /// Ships of each opening fleet.
     public var openingShips = 3
     /// 小国坚韧: a state under eight provinces takes up to this much less battle damage (at one province).
-    public var smallStateGrit = 0.35
+    public var smallStateGrit = 0.25
 
     public init() {}
     /// Every key optional: an older or partial config keeps the defaults for what it leaves out.

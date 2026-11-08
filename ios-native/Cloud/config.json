@@ -25,6 +25,6 @@
     "rebelMinProvinces": 8,
     "calmMonths": 6,
     "unrest": 1.6,
-    "smallStateGrit": 0.35
+    "smallStateGrit": 0.25
   }
 }

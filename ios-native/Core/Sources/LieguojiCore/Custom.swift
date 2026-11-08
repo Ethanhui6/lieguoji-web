@@ -276,7 +276,7 @@ public enum Regimes {
     /// take less damage the fewer provinces it holds (none at eight or more), so a great power cannot
     /// swallow a small neighbour in one season.
     static func grit(_ r: JS, _ id: String) -> Double {
-        let day = r.world.day.asNumber, world = ObjectIdentifier(r)
+        let day = r.world.day.optionalNumber ?? 0, world = ObjectIdentifier(r)
         if gritCache?.world != world || gritCache?.day != day {
             var counts = [String: Int]()
             for p in r.world.provinces.asArray { counts[p.controller.asString, default: 0] += 1 }

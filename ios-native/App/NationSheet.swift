@@ -26,7 +26,7 @@ struct NationInfo: Decodable {
     let people: [Person]?
     struct Office: Decodable { let office: String; let name: String; let age: Double; let fit: Double; let person: Int? }
     struct Commander: Decodable { let name: String; let age: Double; let enemy: Int; let person: Int? }
-    struct House: Decodable { let id: String?; let name: String; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int; let stance: String?; let relation: Double? }
+    struct House: Decodable { let id: String?; let name: String; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int; let stance: String?; let relation: Double?; var rival: String? = nil }
     struct Court: Decodable {
         let governance: Double; let centralIncome: Double; let offices: [Office]; let temper: Double?; let manual: Bool?
         struct Trait: Decodable { let name: String; let text: String }
@@ -40,7 +40,7 @@ struct NationInfo: Decodable {
         let commanders: [Commander]; let houses: [House]
     }
     let court: Court?
-    struct Party: Decodable { let name: String; let seats: Int; var line: String? = nil; var effect: String? = nil }
+    struct Party: Decodable { let name: String; let seats: Int; var line: String? = nil; var effect: String? = nil; var policies: [String]? = nil }
     struct Treaty: Decodable { let nation: Int; let kind: String; let years: Int }
     let style: String?; let styleLabel: String?
     /// 国力走势: monthly strength, the last ten years.
@@ -114,6 +114,8 @@ struct NationSheet: View {
     /// 分类: the page's tabs.
     enum Tab: String, CaseIterable { case overview = "概览", court = "朝政", military = "军事", diplomacy = "外交", custom = "自定义" }
     @State private var tab: Tab = .overview
+    @State private var pressMenu: PressMenu?
+    @State private var flash: String?
     /// The screenshot tour opens the page on a given tab.
     static var tourTab: Tab?
     @State private var nameText = ""
@@ -193,17 +195,19 @@ struct NationSheet: View {
                 }
                 .padding(.bottom, 24)
             }
+            .pressMenuHost($pressMenu)
+            .paperToast($flash)
             .task(id: state.day / 10) { await reload() }
             .onAppear { if let t = Self.tourTab { tab = t }; model.controller.relationsNation = nation; model.controller.relations = relationColors(); if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
             .sheet(item: $appointing) { target in
-                AppointSheet(model: model, nation: nation, office: target.office, post: target.post, polity: info?.polity) { person, name in
+                AppointSheet(model: model, nation: nation, office: target.office, post: target.post, who: info) { person, name in
                     appointing = nil
                     if let post = target.post {
                         Task { await run(success: "已任命\(name)为\(post.title)") { await model.appointPost(nation, post: post.id, person: person) } }
                     } else {
-                        Task { await run(success: "已任命\(name)为\((target.office.hasPrefix("WarCommander") ? "征伐主将" : Self.title(String(target.office.split(separator: ":").first ?? ""), info?.polity)))") { await model.appointOffice(nation, office: target.office, person: person) } }
+                        Task { await run(success: "已任命\(name)为\((target.office.hasPrefix("WarCommander") ? "征伐主将" : Self.title(String(target.office.split(separator: ":").first ?? ""), info)))") { await model.appointOffice(nation, office: target.office, person: person) } }
                     }
                 }
                 .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
@@ -222,7 +226,7 @@ struct NationSheet: View {
             }
             .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17)) }
             .sheet(item: $tree) { t in
-                FamilyTreeSheet(model: model, family: t.id, name: t.name, say: say)
+                FamilyTreeSheet(model: model, family: t.id, name: t.name)
                     .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
             }
             .sheet(item: $numberEdit) { e in
@@ -258,7 +262,7 @@ struct NationSheet: View {
     /// 人物: five identity groups, each open. Extra roles already in the data (总督、战时统帅) open the same way.
     @ViewBuilder private func peoplePage(_ list: [NationInfo.Person]) -> some View {
         // Office sections under the polity's own titles (丞相、总理、战酋…), as the court shows them.
-        let polity = info?.polity
+        let polity = info
         let sections: [(String, [NationInfo.Person])] = [
             (info?.ruler?.title ?? "君主", list.filter { $0.role == "君主" }),
             ("继承人", list.filter { $0.role == "继承人" }),
@@ -349,7 +353,7 @@ struct NationSheet: View {
                         }
                     }
                 }
-                FoldSection("财政", expanded: true) { FinanceSection(model: model, nation: nation, day: state.day / 30) }
+                FoldSection("财政", expanded: true) { FinanceSection(model: model, nation: nation, day: state.day / 30, say: { flash = $0 }) }
                 FoldSection("特产与贸易", expanded: true) { TradeSection(model: model, map: map, nation: nation, day: state.day / 30) }
                 Group2 {
                     Button(action: openPeople) { MenuRow(symbol: "person.2", title: "人物") }.buttonStyle(.plain)
@@ -471,9 +475,11 @@ struct NationSheet: View {
                                         Text("\(p.seats) 席").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
                                         Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7))
                                     }
-                                    .padding(.horizontal, 16).padding(.vertical, 6).contentShape(Rectangle())
+                                    .padding(.horizontal, 16).padding(.top, 6).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
+                                // 党纲: what the party would do.
+                                if let policies = p.policies { Text(policies.joined(separator: " · ")).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8).padding(.leading, 34).padding(.trailing, 16).frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 6) }
                             }
                             if let top = parties.max(by: { $0.seats < $1.seats }), let effect = top.effect {
                                 Text("执政 · \(top.name)（\(top.line ?? "")）：\(effect)。每四年改选。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10).fixedSize(horizontal: false, vertical: true)
@@ -697,6 +703,7 @@ struct NationSheet: View {
     static let styles: [(id: String, label: String, note: String)] = [
         ("absolute", "君主专制", "王国 · 国王独断"), ("constitutional", "君主立宪", "王国 · 议会与党派"),
         ("empire", "帝制", "帝国 · 皇帝"), ("junta", "军政府", "国 · 最高统帅"),
+        ("fascist", "法西斯", "国 · 领袖 · 国家法西斯党"), ("nazi", "国家社会主义", "国 · 元首 · 纳粹党"),
         ("democratic", "民主共和", "共和国 · 总统 · 多党选举"), ("communist", "人民共和（共产主义）", "人民共和国 · 主席 · 一党执政"),
         ("oligarchic", "寡头共和", "共和国 · 执政官 · 元老与商会"), ("federal", "联邦共和", "联邦 · 联邦主席 · 多党"),
         ("theocracy", "神权", "神权国 · 宗教领袖"), ("tribal", "部落联盟", "部族 · 酋长或可汗"),
@@ -735,7 +742,57 @@ struct NationSheet: View {
         "Theocracy": ["Chancellor": "枢机首辅", "Steward": "圣库总管", "Marshal": "圣殿统领", "Governor": "主教"],
         "Tribal": ["Chancellor": "大长老", "Steward": "掌粮官", "Marshal": "战酋", "Governor": "部落头人"],
     ]
-    static func title(_ office: String, _ polity: String?) -> String { titlesByPolity[polity ?? ""]?[office] ?? officeTitle[office] ?? office }
+    /// 官称: the form of government first, then the culture for a monarchy, then the polity.
+    static let titlesByStyle: [String: [String: String]] = [
+        "communist": ["Chancellor": "总理", "Steward": "财政人民委员", "Marshal": "国防人民委员", "Governor": "省委书记"],
+        "socialist": ["Chancellor": "总理", "Steward": "财政人民委员", "Marshal": "国防人民委员", "Governor": "省委书记"],
+        "council": ["Chancellor": "革委会主任", "Steward": "财经委员", "Marshal": "军事委员", "Governor": "地方委员"],
+        "fascist": ["Chancellor": "内阁首相", "Steward": "经济大臣", "Marshal": "帝国元帅", "Governor": "大区长官"],
+        "nazi": ["Chancellor": "帝国总理", "Steward": "经济部长", "Marshal": "帝国元帅", "Governor": "大区长官"],
+        "junta": ["Chancellor": "国务总理", "Steward": "军需总监", "Marshal": "总参谋长", "Governor": "军管专员"],
+        "dictatorship": ["Chancellor": "国务总理", "Steward": "财政总监", "Marshal": "总参谋长", "Governor": "专员"],
+        "sultanate": ["Chancellor": "大维齐尔", "Steward": "迪万长官", "Marshal": "大埃米尔", "Governor": "帕夏"],
+        "caliphate": ["Chancellor": "大维齐尔", "Steward": "迪万长官", "Marshal": "大埃米尔", "Governor": "埃米尔"],
+        "shogunate": ["Chancellor": "老中", "Steward": "勘定奉行", "Marshal": "侍大将", "Governor": "大名"],
+        "tsardom": ["Chancellor": "首席大臣", "Steward": "国库大臣", "Marshal": "陆军元帅", "Governor": "督军"],
+        "khanate": ["Chancellor": "断事官", "Steward": "掌帑官", "Marshal": "万户长", "Governor": "千户长"],
+        "papacy": ["Chancellor": "枢机国务卿", "Steward": "圣库总管", "Marshal": "教廷卫队长", "Governor": "主教"],
+        "order": ["Chancellor": "副团长", "Steward": "司库骑士", "Marshal": "元帅骑士", "Governor": "分团长"],
+        "merchant": ["Chancellor": "首席议员", "Steward": "财务官", "Marshal": "舰队统帅", "Governor": "商站总督"],
+        "citystate": ["Chancellor": "首席执政", "Steward": "财务官", "Marshal": "将军", "Governor": "督政"],
+    ]
+    static let titlesByCulture: [String: [String: String]] = [
+        "japanese": ["Chancellor": "关白", "Steward": "勘定奉行", "Marshal": "征夷大将军", "Governor": "国守"],
+        "korean": ["Chancellor": "领议政", "Steward": "户曹判书", "Marshal": "都元帅", "Governor": "观察使"],
+        "vietnamese": ["Chancellor": "丞相", "Steward": "户部尚书", "Marshal": "大将军", "Governor": "镇守"],
+        "arab": ["Chancellor": "大维齐尔", "Steward": "迪万长官", "Marshal": "大埃米尔", "Governor": "瓦利"],
+        "egyptian": ["Chancellor": "维齐尔", "Steward": "司库", "Marshal": "大将军", "Governor": "州长"],
+        "persian": ["Chancellor": "大维齐尔", "Steward": "司库", "Marshal": "斯帕赫巴德", "Governor": "萨特拉普"],
+        "turkic": ["Chancellor": "大维齐尔", "Steward": "财政官", "Marshal": "大埃米尔", "Governor": "贝伊"],
+        "mongol": ["Chancellor": "中书令", "Steward": "掌帑官", "Marshal": "万户长", "Governor": "达鲁花赤"],
+        "tibetan": ["Chancellor": "大论", "Steward": "粮官", "Marshal": "大将", "Governor": "节儿"],
+        "indian": ["Chancellor": "迪万", "Steward": "司库", "Marshal": "军事统帅", "Governor": "纳瓦卜"],
+        "roman": ["Chancellor": "执政官", "Steward": "财务官", "Marshal": "军团统帅", "Governor": "行省总督"],
+        "greek": ["Chancellor": "首席执政", "Steward": "司库", "Marshal": "将军", "Governor": "督政"],
+        "english": ["Chancellor": "首席大臣", "Steward": "财政大臣", "Marshal": "元帅", "Governor": "郡长"],
+        "french": ["Chancellor": "首相", "Steward": "财政总监", "Marshal": "大元帅", "Governor": "省督"],
+        "german": ["Chancellor": "宰相", "Steward": "财政大臣", "Marshal": "陆军元帅", "Governor": "邦伯"],
+        "spanish": ["Chancellor": "首席大臣", "Steward": "财政大臣", "Marshal": "总司令", "Governor": "总督"],
+        "portuguese": ["Chancellor": "首席大臣", "Steward": "财政大臣", "Marshal": "总司令", "Governor": "总督"],
+        "italian": ["Chancellor": "首席大臣", "Steward": "财务官", "Marshal": "雇佣军统帅", "Governor": "执政"],
+        "dutch": ["Chancellor": "大议长", "Steward": "财政官", "Marshal": "执政统帅", "Governor": "省督"],
+        "slavic": ["Chancellor": "首席大臣", "Steward": "国库大臣", "Marshal": "军统帅", "Governor": "督军"],
+        "polish": ["Chancellor": "大法官", "Steward": "国库总管", "Marshal": "大盖特曼", "Governor": "沃伊沃达"],
+        "hungarian": ["Chancellor": "帕拉丁", "Steward": "司库", "Marshal": "总司令", "Governor": "伊什潘"],
+        "norse": ["Chancellor": "首席大臣", "Steward": "司库", "Marshal": "元帅", "Governor": "雅尔"],
+        "aztec": ["Chancellor": "蛇女官", "Steward": "税吏长", "Marshal": "鹰武士统帅", "Governor": "城邦之主"],
+        "inca": ["Chancellor": "大祭司", "Steward": "结绳总管", "Marshal": "大将", "Governor": "四方总督"],
+    ]
+    static func title(_ office: String, _ who: NationInfo?) -> String {
+        if let t = titlesByStyle[who?.style ?? ""]?[office] { return t }
+        if who?.polity == "Kingdom" || who?.polity == "Empire", let t = titlesByCulture[who?.culture ?? ""]?[office] { return t }
+        return titlesByPolity[who?.polity ?? ""]?[office] ?? officeTitle[office] ?? office
+    }
     static let officeShort = ["Chancellor": "理政 · 增国库", "Steward": "钱粮 · 增国库", "Marshal": "统兵 · 振士气"]
     /// 朝堂: governance gauge, the three central offices with their holders' fit, local rule, war
     /// commanders and the noble houses by influence.
@@ -769,9 +826,9 @@ struct NationSheet: View {
             Group2 {
                 ForEach(Array(c.offices.enumerated()), id: \.offset) { i, o in
                     let person = info?.people?.first(where: { $0.id == o.person })
-                    Button { appointing = AppointTarget(office: o.office) } label: {
+                    Button { if !PressGuard.consume() { appointing = AppointTarget(office: o.office) } } label: {
                         HStack(spacing: 10) {
-                            Text(Self.title(o.office, info?.polity)).font(Theme.kai(14)).foregroundStyle(Theme.paper2).lineLimit(1).minimumScaleFactor(0.6)
+                            Text(Self.title(o.office, info)).font(Theme.kai(14)).foregroundStyle(Theme.paper2).lineLimit(1).minimumScaleFactor(0.6)
                                 .frame(width: 70, height: 26).background(Theme.seal.opacity(o.name.isEmpty ? 0.35 : 0.85), in: RoundedRectangle(cornerRadius: 5))
                             Text(o.name.isEmpty ? "空缺" : o.name).font(Theme.kai(16)).foregroundStyle(o.name.isEmpty ? Theme.ink2 : Theme.ink).lineLimit(1)
                             if !o.name.isEmpty { Text("\(Int(o.age))岁").font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
@@ -784,10 +841,11 @@ struct NationSheet: View {
                         .padding(.horizontal, 14).padding(.vertical, 9).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .contextMenu {
-                        Button { appointing = AppointTarget(office: o.office) } label: { Label("改任他人", systemImage: "person.crop.circle.badge.plus") }
-                        if let person, person.key >= 0 { Button { editing = person } label: { Label("修改能力与天赋", systemImage: "slider.horizontal.3") } }
-                    }
+                    .pressMenu({
+                        var items = [PressMenuItem(title: "改任他人", symbol: "person.crop.circle.badge.plus") { appointing = AppointTarget(office: o.office) }]
+                        if let person, person.key >= 0 { items.append(PressMenuItem(title: "修改能力与天赋", symbol: "slider.horizontal.3") { editing = person }) }
+                        return PressMenu(title: Self.title(o.office, info), subtitle: o.name.isEmpty ? "空缺" : o.name, items: items)
+                    }, present: { pressMenu = $0 })
                     if i < c.offices.count - 1 { Divider2() }
                 }
                 Divider2()
@@ -807,7 +865,7 @@ struct NationSheet: View {
                     }
                     ForEach(Array(c.commanders.enumerated()), id: \.offset) { i, w in
                         let person = info?.people?.first(where: { $0.id == w.person })
-                        Button { appointing = AppointTarget(office: "WarCommander:\(w.enemy)") } label: {
+                        Button { if !PressGuard.consume() { appointing = AppointTarget(office: "WarCommander:\(w.enemy)") } } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "flag.2.crossed.fill").font(.system(size: 13)).foregroundStyle(Theme.seal)
                                 Text("征讨").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
@@ -818,7 +876,10 @@ struct NationSheet: View {
                             .padding(.horizontal, 16).padding(.vertical, 8).contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .contextMenu { if let person, person.key >= 0 { Button { editing = person } label: { Label("修改主将能力与天赋", systemImage: "slider.horizontal.3") } } }
+                        .pressMenu({
+                            guard let person, person.key >= 0 else { return nil }
+                            return PressMenu(title: "征讨主将", subtitle: w.name, items: [PressMenuItem(title: "修改能力与天赋", symbol: "slider.horizontal.3") { editing = person }])
+                        }, present: { pressMenu = $0 })
                         if i < c.commanders.count - 1 { Divider2() }
                     }
                 }
@@ -840,6 +901,7 @@ struct NationSheet: View {
                             if let stance = h.stance ?? (h.ruling ? "宗室" : nil) {
                                 PaperTag(text: stance, color: Self.stanceColor(stance))
                             }
+                            if let foe = h.rival { Text("宿敌 " + foe).font(Theme.kai(12)).foregroundStyle(Theme.seal).lineLimit(1) }
                             Spacer()
                             Text("\(h.members)人 · \(h.provinces)州").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                             // Influence 0…1000 as a short gauge.
@@ -852,14 +914,16 @@ struct NationSheet: View {
                         .padding(.horizontal, 16).padding(.vertical, 9)
                         .contentShape(Rectangle())
                         .onTapGesture { if let id = h.id { tree = TreePick(id: id, name: h.name) } }
-                        .contextMenu {
-                            if let id = h.id { Button { tree = TreePick(id: id, name: h.name) } label: { Label("族谱", systemImage: "person.3") } }
-                            if !h.ruling, let id = h.id {
-                                Button {
+                        .pressMenu({
+                            guard let id = h.id else { return nil }
+                            var items = [PressMenuItem(title: "查看族谱", symbol: "person.3") { tree = TreePick(id: id, name: h.name) }]
+                            if !h.ruling {
+                                items.append(PressMenuItem(title: "修改拥戴关系（现 \(Int(h.relation ?? 0))）", symbol: "slider.horizontal.3") {
                                     numberEdit = NumberEdit(title: h.name + "对宗室关系（-100–100）", unit: "", value: h.relation ?? 0) { v in await model.editCourt(nation, key: "house:" + id, value: v) }
-                                } label: { Label("修改拥戴关系（现 \(Int(h.relation ?? 0))）", systemImage: "slider.horizontal.3") }
+                                })
                             }
-                        }
+                            return PressMenu(title: h.name, subtitle: "\(h.members) 人 · \(h.provinces) 州", items: items)
+                        }, present: { pressMenu = $0 })
                         if i < c.houses.count - 1 { Divider2() }
                     }
                 }
@@ -1254,8 +1318,8 @@ struct NationSheet: View {
     /// Runs a command; a refusal shows its reason, a success the chronicle line.
     /// Runs a state-level order; a failure says why, a success says `success` (or the newest chronicle line).
     private func run(success: String? = nil, _ command: () async -> String?) async {
-        if let reason = await command() { say(reason); GameFeel.shared.notify(.error) }
-        else { say(success ?? model.state?.events.last?.text ?? "已执行"); GameFeel.shared.notify(.success) }
+        if let reason = await command() { flash = reason; GameFeel.shared.notify(.error) }
+        else { flash = success ?? model.state?.events.last?.text ?? "已执行"; GameFeel.shared.notify(.success) }
         await reload()
     }
 }
@@ -1377,14 +1441,14 @@ struct AppointSheet: View {
     let nation: Int
     let office: String
     var post: GameModel.PostInfo? = nil
-    var polity: String? = nil
+    var who: NationInfo? = nil
     let appoint: (Int, String) -> Void
     @State private var people: [NationInfo.Person] = []
     @State private var loaded = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: "任命" + (post?.title ?? (office.hasPrefix("WarCommander") ? "征伐主将" : NationSheet.title(String(office.split(separator: ":").first ?? ""), polity))), subtitle: post.map { ["按魅力", "按军事", "按外交", "按行政"][min(3, max(0, $0.skill))] + "择优" } ?? NationSheet.officeDuty[office], seal: "任")
+                SheetHeader(title: "任命" + (post?.title ?? (office.hasPrefix("WarCommander") ? "征伐主将" : NationSheet.title(String(office.split(separator: ":").first ?? ""), who))), subtitle: post.map { ["按魅力", "按军事", "按外交", "按行政"][min(3, max(0, $0.skill))] + "择优" } ?? NationSheet.officeDuty[office], seal: "任")
                 Group2 {
                     if loaded && people.isEmpty { Text("本国暂无合适人选").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16) }
                     if !loaded { InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(20) }
@@ -1526,6 +1590,7 @@ struct FinanceOverview: Decodable {
     let gold: Double; let net: Double; let taxes: Double; let hoard: Double; let army: Double; let battle: Double; let trade: Double
     let policy: String; let policyName: String; let record: [Double]
     var corruption: Double? = nil; var corruptionLevel: String? = nil
+    var debt: Double? = nil; var interest: Double? = nil; var debtLevel: Int? = nil; var debtMonths: Double? = nil
 }
 
 /// 财政: the treasury with its two-year trend, where the month's money comes from and goes, how a
@@ -1533,6 +1598,7 @@ struct FinanceOverview: Decodable {
 struct FinanceSection: View {
     @ObservedObject var model: GameModel
     let nation: Int; let day: Int
+    var say: (String) -> Void = { _ in }
     @State private var info: FinanceOverview?
     var body: some View {
         Group2 {
@@ -1581,6 +1647,24 @@ struct FinanceSection: View {
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     Divider2()
                 }
+                // 国债: what is owed, what it costs a month, how the lenders see it.
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "building.columns").font(.system(size: 14)).foregroundStyle(Theme.seal.opacity(0.8))
+                        Text("国债").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                        PaperTag(text: ["信用良好", "负债尚可", "债务沉重", "濒临破产"][min(3, max(0, f.debtLevel ?? 0))], color: (f.debtLevel ?? 0) >= 2 ? Theme.seal : (f.debtLevel ?? 0) == 1 ? Theme.ink2 : Theme.jade)
+                        Spacer()
+                        Text(Names.wan(Int(f.debt ?? 0))).font(Theme.kai(15)).foregroundStyle(Theme.ink).monospacedDigit().contentTransition(.numericText())
+                    }
+                    if (f.debt ?? 0) > 0 { Text("每月利息 \(Int(f.interest ?? 0)) 金，相当于 \(Int(f.debtMonths ?? 0)) 个月收入；超过 48 个月将国家破产。").font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
+                    HStack(spacing: 10) {
+                        Button { Task { await debt(borrow: true) } } label: { SecondaryLabel(title: "举债一年岁入", symbol: "arrow.down.circle") }
+                        Button { Task { await debt(borrow: false) } } label: { SecondaryLabel(title: "偿还国债", symbol: "arrow.up.circle") }
+                    }
+                    .buttonStyle(PressStyle())
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                Divider2()
                 VStack(alignment: .leading, spacing: 8) {
                     Text("税制").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
                     ChipPicker(items: Self.policies.map { ($0.0, $0.1) }, selection: Binding(get: { f.policy }, set: { v in choose(v) }))
@@ -1596,16 +1680,26 @@ struct FinanceSection: View {
     }
     @State private var note: String?
     private func corruption(lower: Bool) async {
-        if let refused = await model.changeCorruption(nation, lower: lower) { note = refused }
+        let before = Int(info?.corruption ?? 0), refused = await model.changeCorruption(nation, lower: lower)
         info = await model.financeInfo(nation)
+        say(refused ?? (lower ? "整肃吏治：腐化度 \(before) → \(Int(info?.corruption ?? 0))" : "腐化度 \(before) → \(Int(info?.corruption ?? 0))"))
+        GameFeel.shared.notify(refused == nil ? .success : .error)
+    }
+    private func debt(borrow: Bool) async {
+        let before = Int(info?.debt ?? 0), refused = await model.changeDebt(nation, borrow: borrow)
+        info = await model.financeInfo(nation)
+        say(refused ?? "国债 \(Names.wan(before)) → \(Names.wan(Int(info?.debt ?? 0)))")
+        GameFeel.shared.notify(refused == nil ? .success : .error)
     }
     /// Sets the tax policy, then reloads the ledger.
     private func choose(_ policy: String) {
         Task { await apply(policy) }
     }
     private func apply(_ policy: String) async {
-        _ = await model.setTax(nation, policy)
+        let refused = await model.setTax(nation, policy)
         info = await model.financeInfo(nation)
+        say(refused ?? "税制改为\(Self.policies.first { $0.0 == policy }?.1 ?? "")")
+        GameFeel.shared.notify(refused == nil ? .success : .error)
     }
     static let policies = [("light", "轻徭薄赋", "收入 −20%，国运每月 +0.1，人口增长加快"), ("normal", "常税", "按原作税收"), ("heavy", "重税", "收入 +30%，国运每月 −0.15，人口缓慢流失")]
     private func line(_ label: String, _ value: String, warn: Bool = false, strong: Bool = false) -> some View {
@@ -1705,10 +1799,10 @@ struct FamilyTree: Decodable {
 struct FamilyTreeSheet: View {
     @ObservedObject var model: GameModel
     let family: String; let name: String
-    var say: (String) -> Void = { _ in }
     @State private var tree: FamilyTree?
     /// 族谱操作: the member whose actions are offered.
-    @State private var acting: FamilyTree.Member?
+    @State private var pressMenu: PressMenu?
+    @State private var flash: String?
     @State private var editing: NationInfo.Person?
     @State private var ageEdit: FamilyTree.Member?
     var body: some View {
@@ -1734,7 +1828,7 @@ struct FamilyTreeSheet: View {
                                 }
                                 .padding(.horizontal, 16).padding(.vertical, 8)
                                 .contentShape(Rectangle())
-                                .onTapGesture { if m.alive { acting = m } }
+                                .onTapGesture { if m.alive { pressMenu = actions(m) } }
                                 if i < generations[g].count - 1 { Divider2() }
                             }
                         }
@@ -1747,20 +1841,15 @@ struct FamilyTreeSheet: View {
             .padding(.bottom, 24)
         }
         .task { tree = await model.familyTree(family) }
-        .confirmationDialog(acting?.name ?? "", isPresented: Binding(get: { acting != nil }, set: { if !$0 { acting = nil } }), titleVisibility: .visible, presenting: acting) { m in
-            Button("修改能力与天赋") { editing = NationInfo.Person(id: m.id, role: m.title.isEmpty ? (m.id == tree?.head ? "家主" : "族人") : m.title, name: m.name, age: m.age, female: m.female, traits: m.traits ?? [], skills: m.skills ?? [50, 50, 50, 50]) }
-            Button("设定年龄") { ageEdit = m }
-            if m.spouse == 0 || tree?.members.first(where: { $0.id == m.spouse })?.alive != true { Button("为其婚配") { act(m, "spouse", "婚配已成") } }
-            else { Button("添一子女") { act(m, "child", "家添新丁") } }
-            Button("处死", role: .destructive) { act(m, "kill", "\(m.name)已被处死") }
-        }
+        .pressMenuHost($pressMenu)
+        .paperToast($flash)
         .sheet(item: $editing) { p in
             PersonEditor(person: p) { skills, traits, first, last, age in
                 editing = nil
                 Task {
                     let e = await model.renamePerson(p.key, first: first, last: last, age: age)
                     let e2 = e == nil ? await model.editPerson(p.key, skills: skills, traits: traits) : e
-                    say(e2 ?? "\(p.name)已修改"); GameFeel.shared.notify(e2 == nil ? .success : .error)
+                    flash = e2 ?? "\(p.name)已修改"; GameFeel.shared.notify(e2 == nil ? .success : .error)
                     tree = await model.familyTree(family)
                 }
             }
@@ -1771,17 +1860,27 @@ struct FamilyTreeSheet: View {
                 ageEdit = nil
                 Task {
                     let e = await model.renamePerson(m.id, first: nil, last: nil, age: Int(v))
-                    say(e ?? "\(m.name)已改为\(Int(v))岁"); GameFeel.shared.notify(e == nil ? .success : .error)
+                    flash = e ?? "\(m.name)已改为\(Int(v))岁"; GameFeel.shared.notify(e == nil ? .success : .error)
                     tree = await model.familyTree(family)
                 }
             }
             .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
         }
     }
+    /// 族谱操作 on a living member.
+    private func actions(_ m: FamilyTree.Member) -> PressMenu {
+        var items = [PressMenuItem(title: "修改能力与天赋", symbol: "slider.horizontal.3") {
+            editing = NationInfo.Person(id: m.id, role: m.title.isEmpty ? (m.id == tree?.head ? "家主" : "族人") : m.title, name: m.name, age: m.age, female: m.female, traits: m.traits ?? [], skills: m.skills ?? [50, 50, 50, 50])
+        }, PressMenuItem(title: "设定年龄", symbol: "calendar") { ageEdit = m }]
+        if m.spouse == 0 || tree?.members.first(where: { $0.id == m.spouse })?.alive != true { items.append(PressMenuItem(title: "为其婚配", symbol: "heart") { act(m, "spouse", "婚配已成") }) }
+        else { items.append(PressMenuItem(title: "添一子女", symbol: "figure.and.child.holdinghands") { act(m, "child", "家添新丁") }) }
+        items.append(PressMenuItem(title: "处死", symbol: "xmark.seal", destructive: true) { act(m, "kill", "\(m.name)已被处死") })
+        return PressMenu(title: m.name, subtitle: "\(m.female ? "女" : "男") · \(Int(m.age)) 岁", items: items)
+    }
     private func act(_ m: FamilyTree.Member, _ action: String, _ success: String) {
         Task {
             let e = await model.familyAction(m.id, action: action)
-            say(e ?? success); GameFeel.shared.notify(e == nil ? .success : .error)
+            flash = e ?? success; GameFeel.shared.notify(e == nil ? .success : .error)
             tree = await model.familyTree(family)
         }
     }

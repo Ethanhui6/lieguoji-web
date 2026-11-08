@@ -1187,8 +1187,9 @@ struct ProvinceSheet: View {
     @State private var regionActions = false
     @State private var renamingRegion = false
     @State private var regionName = ""
-    @State private var founding = false
-    @State private var foundNote: String?
+    @State private var flash: String?
+    @State private var pressMenu: PressMenu?
+    private func report(_ e: String?, _ ok: String) { flash = e ?? ok; GameFeel.shared.notify(e == nil ? .success : .error) }
     var body: some View {
         if let map = model.map {
             let p = map.meta.provinces[province]
@@ -1249,9 +1250,9 @@ struct ProvinceSheet: View {
                                 .buttonStyle(.plain)
                                 .confirmationDialog("特产", isPresented: $pickingGood, titleVisibility: .visible) {
                                     ForEach(Array(Trade.goods.enumerated()), id: \.offset) { i, n in
-                                        Button(n) { Task { _ = await model.setSpecialty(province, i); self.info = await model.provinceInfo(province) } }
+                                        Button(n) { Task { report(await model.setSpecialty(province, i), "特产改为" + n); self.info = await model.provinceInfo(province) } }
                                     }
-                                    Button("恢复本地特产") { Task { _ = await model.setSpecialty(province, nil); self.info = await model.provinceInfo(province) } }
+                                    Button("恢复本地特产") { Task { report(await model.setSpecialty(province, nil), "已恢复本地特产"); self.info = await model.provinceInfo(province) } }
                                 }
                                 Divider2()
                             }
@@ -1263,7 +1264,7 @@ struct ProvinceSheet: View {
                                 .buttonStyle(.plain)
                                 .confirmationDialog(g.name, isPresented: $regionActions, titleVisibility: .visible) {
                                     Button("区域更名") { regionName = g.name; renamingRegion = true }
-                                    if g.center != province { Button("设为区域中心") { Task { _ = await model.setRegionCenter(province); region = await model.regionInfo(province) } } }
+                                    if g.center != province { Button("设为区域中心") { Task { report(await model.setRegionCenter(province), "已设为区域中心"); region = await model.regionInfo(province) } } }
                                 }
                                 .sheet(isPresented: $renamingRegion) {
                                     VStack(alignment: .leading, spacing: 14) {
@@ -1271,7 +1272,7 @@ struct ProvinceSheet: View {
                                         TextField("", text: $regionName).paperField().padding(.horizontal, 22)
                                         SealButton(title: "颁行", disabled: regionName.trimmingCharacters(in: .whitespaces).isEmpty) {
                                             renamingRegion = false
-                                            Task { _ = await model.renameRegion(province, regionName); region = await model.regionInfo(province) }
+                                            Task { report(await model.renameRegion(province, regionName), "区域已更名"); region = await model.regionInfo(province) }
                                         }
                                         .padding(.horizontal, 22)
                                     }
@@ -1287,7 +1288,7 @@ struct ProvinceSheet: View {
                             .buttonStyle(.plain)
                             .confirmationDialog("本地文化", isPresented: $pickingCulture, titleVisibility: .visible) {
                                 ForEach(Names.culture.keys.sorted(), id: \.self) { k in
-                                    Button(Names.culture[k] ?? k) { Task { _ = await model.setCityCulture(province, k); self.info = await model.provinceInfo(province) } }
+                                    Button(Names.culture[k] ?? k) { Task { report(await model.setCityCulture(province, k), "本地文化已更改"); self.info = await model.provinceInfo(province) } }
                                 }
                             }
                             Divider2()
@@ -1308,22 +1309,23 @@ struct ProvinceSheet: View {
                             .buttonStyle(.plain)
                             Divider2()
                             // 在此立国: a new state in this province, at peace or in arms against its owner.
-                            Button { founding = true } label: {
-                                HStack { Text("在此立国").foregroundStyle(Theme.ink); Spacer(); if let note = foundNote { Text(note).font(Theme.kai(13)).foregroundStyle(Theme.ink2).lineLimit(1) }; Image(systemName: "flag.fill").font(.caption).foregroundStyle(Theme.seal) }
+                            Button {
+                                pressMenu = PressMenu(title: "在\(p.name)建立新国家", subtitle: "按本州文化生成国号、君主与家族", items: [
+                                    PressMenuItem(title: "和平独立", symbol: "leaf") { Task { report(await model.foundNation(province, war: false), "新国已立"); self.info = await model.provinceInfo(province) } },
+                                    PressMenuItem(title: "举兵独立（与原主开战）", symbol: "flag.2.crossed", destructive: true) { Task { report(await model.foundNation(province, war: true), "已举兵"); self.info = await model.provinceInfo(province) } },
+                                ])
+                            } label: {
+                                HStack { Text("在此立国").foregroundStyle(Theme.ink); Spacer(); Image(systemName: "flag.fill").font(.caption).foregroundStyle(Theme.seal) }
                                     .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .confirmationDialog("在" + p.name + "建立新国家", isPresented: $founding, titleVisibility: .visible) {
-                                Button("和平独立") { Task { let e = await model.foundNation(province, war: false); foundNote = e ?? "已立国"; GameFeel.shared.notify(e == nil ? .success : .error); self.info = await model.provinceInfo(province) } }
-                                Button("举兵独立（与原主开战）", role: .destructive) { Task { let e = await model.foundNation(province, war: true); foundNote = e ?? "已起兵"; GameFeel.shared.notify(e == nil ? .success : .error); self.info = await model.provinceInfo(province) } }
-                            } message: { Text("新国家按本州文化生成国号、君主与家族；和平独立双方不开战。") }
                             Divider2()
                             // 圣地: this province as its owner's faith's holy province.
                             let holyOf = model.state?.holy?.first { $0.province == province }
                             if let h = holyOf {
                                 Row(label: "圣地", value: (Names.religion[h.religion] ?? h.religion) + "圣地")
                             } else {
-                                Button { Task { let e = await model.setHolyProvince(province); foundNote = e ?? "已定为圣地"; GameFeel.shared.notify(e == nil ? .success : .error) } } label: {
+                                Button { Task { report(await model.setHolyProvince(province), "已定为圣地") } } label: {
                                     HStack { Text("设为" + (Names.religion[n.religion] ?? "本教") + "圣地").foregroundStyle(Theme.ink); Spacer(); Image(systemName: "sparkle").font(.caption).foregroundStyle(Theme.seal) }
                                         .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                                 }
@@ -1366,6 +1368,8 @@ struct ProvinceSheet: View {
                 }
                 .padding(.bottom, 24)
             }
+            .pressMenuHost($pressMenu)
+            .paperToast($flash)
             .task(id: model.state?.day) { info = await model.provinceInfo(province); if region == nil { region = await model.regionInfo(province) } }
             .sheet(isPresented: $granting) {
                 ScrollView {
@@ -1377,7 +1381,7 @@ struct ProvinceSheet: View {
                                 Divider2()
                                 Button {
                                     let t = grantTarget; granting = false
-                                    Task { _ = await model.grant(province: province, to: t); self.info = await model.provinceInfo(province) }
+                                    Task { report(await model.grant(province: province, to: t), "已划入他国"); self.info = await model.provinceInfo(province) }
                                 } label: { Label("确认划入", systemImage: "paintbrush.pointed.fill").font(Theme.kai(18)).frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(grantTarget < 0 ? Theme.ink2 : Theme.seal) }
                                 .buttonStyle(.plain).disabled(grantTarget < 0)
                             }
@@ -2295,6 +2299,14 @@ struct ReleaseNotesSheet: View {
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
                     "【自绘地图】新增「崎岖」笔刷：在笔刷范围内随机起伏，画出的海岸与山脊不再圆滑生硬；地形工具改为五列排布。",
+                    "【长按菜单】长按不再弹系统菜单：按住时该行下沉并染上淡朱色，随后震动一下，弹出纸面卡片菜单，选项逐条浮现；族谱操作、在此立国也改用这张卡片。",
+                    "【操作反馈】所有按钮都有回应：整肃吏治、改税制、举债偿债、改特产、改文化、划地等，结果直接显示在当前页顶部（以前的提示被全屏页面挡住，看起来像没反应），并有成功或失败的震动。",
+                    "【党派】党派按文化取材：纳粹党、德国社会民主党、中央党，布尔什维克、孟什维克，国民党、中国共产党，立宪政友会、大政翼赞会，长枪党，复兴党、穆斯林兄弟会等共七十余个；分十二种路线（共产主义、社会民主、农民派、改革派、自由主义、商业派、保守主义、宗教保守、君主派、军人派、民族主义、法西斯），各有三项政策和实际效果（开战意愿、岁入、攻守、国运、人口、腐化）。新增法西斯、国家社会主义两种政体。",
+                    "【党派对抗】议席不再每次选举重新抽签：丢地、缺钱、腐败、负债时执政党逐月失席，选举在现有议席上摇摆；路线对立的大党爆发街头冲突，弱势内阁被倒阁，共产或法西斯执政党可查禁反对党，大党会分裂出新党，全部记入国史。",
+                    "【家族对抗】世家之间结世仇、联姻修好、朝堂排挤、刺杀家主，势力与彼此关系随之变化；世家一栏标出宿敌。",
+                    "【金融】新增国债：战时缺钱自动举债，也可在财政栏手动举债、偿债；利率随负债升高，利息按月扣除；负债超过 48 个月收入则国家破产（赖掉一半、国库清零、国运 −10、腐化 +10）。负债沉重会拖累执政党。",
+                    "【天灾】瘟疫和饥荒变为持续数月的灾害：瘟疫每月减员并向邻州蔓延，最多波及 12 州，州郡页标出灾情，平息时记入国史。",
+                    "【官称】官职名称再按文化和政体细分：关白、领议政、大维齐尔、萨特拉普、执政官、大盖特曼、人民委员、帝国元帅、老中、万户长等。",
                     "【界面统一·图示】从标题、新世界、设置到游戏内各页，统一一套纸面朱印样式：所有分页按钮（国家页、菜单、军事、排行等）在文字上方配线描图标；所有开关、数字调节、信息行和可编辑行按名称自动配朱色小图标，不再是一列列纯文字。",
                     "【新世界】改用与其他页相同的标题与朱印、分节标题；地形改为带示意图的卡片（多大陆、联合大陆、群岛、高山大岛各有图示与一句说明），开局与命名改为带图示的二选一卡片，删去冗长的技术说明。",
                     "【行军不扭】军队转弯、停下、掉头或改道时，新一段路程直接朝目标走，延续的方向最多占该段六成，不再画出向外鼓的弧线、左右摇摆；几支军队同驻一处围成一圈后出发，保持原来的错位前进，不再一出发就从圈上跳回中心。",

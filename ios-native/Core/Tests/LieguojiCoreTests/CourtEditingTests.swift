@@ -95,4 +95,41 @@ final class CourtEditingTests: XCTestCase {
         XCTAssertFalse(p.isAlive.asBool)
         XCTAssertFalse(engine.familyAction(p.id.asInt, action: "kill").ok)
     }
+
+    func testPartiesDebtAndDisasters() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let resources = dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources")
+        try NativeEngine.loadCatalogs(traits: Data(contentsOf: resources.appendingPathComponent("Catalog/traits.json")),
+                                      nobleCultures: Data(contentsOf: resources.appendingPathComponent("Catalog/noble-cultures.json")),
+                                      cultures: Data(contentsOf: resources.appendingPathComponent("World/cultures.json")))
+        defer { Session.uninstall(); UnitKinds.enabled = false; DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil }
+        let engine = try NativeEngine(world: Data(contentsOf: dir.appendingPathComponent("Golden/bridge-world.json")))
+        engine.enableAppRules()
+        let r = engine.run, id = r.world.nations[0].id.asString
+        // Every named party has a line, and the two new forms of government exist.
+        for names in Regimes.partyPools.values { for n in names { XCTAssertNotNil(Regimes.partyLine[n], n) } }
+        XCTAssertNotNil(Regimes.styles.first { $0.id == "nazi" })
+        // 国债: borrowing fills the treasury, repaying empties the debt.
+        let gold = r.finance.nations[id].gold.optionalNumber ?? 0
+        XCTAssertTrue(engine.changeDebt(0, borrow: true).ok)
+        XCTAssertGreaterThan(Regimes.debt(r, id), 0)
+        XCTAssertGreaterThan(r.finance.nations[id].gold.asNumber, gold)
+        XCTAssertTrue(engine.changeDebt(0, borrow: false).ok)
+        // 天灾: a plague begins, strikes, spreads and burns out.
+        let p = r.world.provinces.asArray.first { $0.controller.asString == id }!.id.asString
+        Regimes.startDisaster(r, kind: "plague", province: p, months: 2)
+        XCTAssertEqual(Regimes.disasterAt(r, p), "plague")
+        Regimes.disasterMonth(r, 9001); Regimes.disasterMonth(r, 9002)
+        XCTAssertNil(Regimes.disasterAt(r, p))
+        // 党派对抗: two years of politics keep the chamber whole.
+        XCTAssertTrue(engine.setStyle(0, style: "democratic").ok)
+        Regimes.book(r, id).parties = Regimes.parties(r, id, Regimes.style(r, id), seed: 1)
+        for key in 0..<240 {
+            Regimes.partyMonth(r, r.world.nations[0], id, key)
+            Regimes.feudMonth(r, r.world.nations[0], id, key)
+            let seats = Regimes.book(r, id).parties.asArray.map(\.seats.asInt)
+            XCTAssertEqual(seats.reduce(0, +), 100); XCTAssertTrue(seats.allSatisfy { $0 >= 0 })
+        }
+        _ = engine.nationInfo(0); _ = engine.financeInfo(0); _ = engine.province(0)
+    }
 }

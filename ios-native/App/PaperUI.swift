@@ -714,3 +714,118 @@ struct PaperTag: View {
             .background(color, in: Capsule())
     }
 }
+
+
+// MARK: 长按菜单与页内提示
+
+struct PressMenuItem: Identifiable { let id = UUID(); let title: String; let symbol: String; var destructive = false; let action: () -> Void }
+struct PressMenu: Identifiable { let id = UUID(); let title: String; var subtitle: String? = nil; let items: [PressMenuItem] }
+/// A long press also ends as a tap on the row's button: the button asks this first.
+enum PressGuard {
+    static var fired = false
+    static func consume() -> Bool { defer { fired = false }; return fired }
+}
+/// The row sinks and tints under the finger, then a tick of haptics and the paper menu.
+private struct LongPressLift: ViewModifier {
+    let menu: () -> PressMenu?
+    let present: (PressMenu) -> Void
+    @GestureState private var pressing = false
+    func body(content: Content) -> some View {
+        content
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.seal.opacity(pressing ? 0.1 : 0)))
+            .scaleEffect(pressing ? 0.965 : 1)
+            .animation(.spring(response: 0.28, dampingFraction: 0.7), value: pressing)
+            .simultaneousGesture(LongPressGesture(minimumDuration: 0.38).updating($pressing) { v, s, _ in s = v }.onEnded { _ in
+                guard let m = menu() else { return }
+                PressGuard.fired = true
+                GameFeel.shared.tap()
+                present(m)
+            })
+    }
+}
+private struct PressMenuCard: View {
+    let menu: PressMenu
+    let close: () -> Void
+    @State private var shown = false
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(menu.title).font(Theme.kai(19)).foregroundStyle(Theme.ink).lineLimit(1)
+                if let s = menu.subtitle { Text(s).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(2) }
+            }
+            .padding(.horizontal, 18).padding(.vertical, 12)
+            ForEach(Array(menu.items.enumerated()), id: \.element.id) { i, item in
+                Divider2()
+                Button { GameFeel.shared.tap(); close(); item.action() } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: item.symbol).font(.system(size: 15)).foregroundStyle(Theme.seal).frame(width: 22)
+                        Text(item.title).font(Theme.kai(17)).foregroundStyle(item.destructive ? Theme.seal : Theme.ink)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 18).padding(.vertical, 13).contentShape(Rectangle())
+                }
+                .buttonStyle(PressStyle())
+                // The rows settle in one after another.
+                .opacity(shown ? 1 : 0).offset(y: shown ? 0 : 8)
+                .animation(.easeOut(duration: 0.22).delay(0.04 * Double(i)), value: shown)
+            }
+        }
+        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.ink.opacity(0.22), lineWidth: 1))
+        .overlay(alignment: .top) { Rectangle().fill(Theme.seal).frame(height: 3).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)) }
+        .shadow(color: .black.opacity(0.25), radius: 18, y: 8)
+        .padding(.horizontal, 44)
+        .onAppear { shown = true }
+    }
+}
+private struct PressMenuHost: ViewModifier {
+    @Binding var menu: PressMenu?
+    func body(content: Content) -> some View {
+        content.overlay {
+            ZStack {
+                if let m = menu {
+                    Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { dismiss() }.transition(.opacity)
+                    PressMenuCard(menu: m, close: dismiss).id(m.id).transition(.scale(scale: 0.84).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(response: 0.34, dampingFraction: 0.78), value: menu?.id)
+        }
+    }
+    private func dismiss() { menu = nil; PressGuard.fired = false }
+}
+/// A message inside a page (the game's own toast sits under a full-height sheet, where nothing showed).
+private struct PaperToastHost: ViewModifier {
+    @Binding var text: String?
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .top) {
+                ZStack {
+                    if let text {
+                        HStack(spacing: 8) {
+                            Seal(text: "令", size: 20)
+                            Text(text).font(Theme.kai(15)).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 9)
+                        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous)))
+                        .paperCard()
+                        .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
+                        .padding(.horizontal, 28).padding(.top, 10)
+                        .id(text)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .onTapGesture { self.text = nil }
+                    }
+                }
+                .animation(.spring(response: 0.36, dampingFraction: 0.8), value: text)
+            }
+            .task(id: text) {
+                guard text != nil else { return }
+                try? await Task.sleep(nanoseconds: 2_400_000_000)
+                if !Task.isCancelled { text = nil }
+            }
+    }
+}
+extension View {
+    func pressMenu(_ menu: @escaping () -> PressMenu?, present: @escaping (PressMenu) -> Void) -> some View { modifier(LongPressLift(menu: menu, present: present)) }
+    func pressMenuHost(_ menu: Binding<PressMenu?>) -> some View { modifier(PressMenuHost(menu: menu)) }
+    func paperToast(_ text: Binding<String?>) -> some View { modifier(PaperToastHost(text: text)) }
+}

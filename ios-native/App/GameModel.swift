@@ -1027,6 +1027,7 @@ import LieguojiCore
         guard state != nil, let data = await native.financeInfo(index) else { return nil }
         return await Self.decode(FinanceOverview.self, from: data)
     }
+    func changeDebt(_ n: Int, borrow: Bool) async -> String? { finish(await native.changeDebt(n, borrow: borrow)) }
     func changeCorruption(_ n: Int, lower: Bool) async -> String? { finish(await native.changeCorruption(n, lower: lower)) }
     func inciteRebellion(_ n: Int) async -> String? { finish(await native.inciteRebellion(n)) }
     func setHolyProvince(_ province: Int) async -> String? { finish(await native.setHolyProvince(province)) }

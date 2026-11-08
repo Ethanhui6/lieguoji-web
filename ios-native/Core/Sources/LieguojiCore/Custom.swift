@@ -87,6 +87,8 @@ public enum Regimes {
         Style(id: "parliamentary", base: "Republic", label: "议会共和", suffix: "共和国", title: "总理", parties: true, single: nil),
         Style(id: "presidential", base: "Republic", label: "总统共和", suffix: "共和国", title: "总统", parties: true, single: nil),
         Style(id: "socialist", base: "Republic", label: "社会主义", suffix: "社会主义共和国", title: "总书记", parties: true, single: "劳动党"),
+        Style(id: "fascist", base: "Republic", label: "法西斯", suffix: "国", title: "领袖", parties: true, single: "国家法西斯党"),
+        Style(id: "nazi", base: "Republic", label: "国家社会主义", suffix: "国", title: "元首", parties: true, single: "纳粹党"),
         Style(id: "dictatorship", base: "Republic", label: "独裁", suffix: "国", title: "元首", parties: false, single: nil),
         Style(id: "council", base: "Republic", label: "革命委员会", suffix: "共和国", title: "委员长", parties: true, single: "革命党"),
         Style(id: "confederation", base: "Federation", label: "邦联", suffix: "邦联", title: "邦联主席", parties: true, single: nil),
@@ -193,28 +195,6 @@ public enum Regimes {
     // MARK: 党派 (parties)
     static let partyNames = ["自由党", "保守党", "民主党", "共和党", "进步党", "人民党", "国民党", "社会党", "工党", "民族党", "联邦党", "改革党", "农民党", "统一党", "立宪党", "公民党"]
     static let oligarchs = ["元老派", "商人公会", "贵族院派", "将门派"]
-    /// 党纲 (app rules): each party's line, and what it does while it governs (the largest party).
-    public struct Platform: Sendable { public let name: String, text: String, temper: Double, income: Double, destiny: Double }
-    static let platforms: [String: Platform] = [
-        "主战": Platform(name: "主战", text: "执政时开战意愿 ×1.15", temper: 1.15, income: 0, destiny: 0),
-        "主和": Platform(name: "主和", text: "执政时开战意愿 ×0.85", temper: 0.85, income: 0, destiny: 0),
-        "重商": Platform(name: "重商", text: "执政时岁入 +5%", temper: 1, income: 5, destiny: 0),
-        "重农": Platform(name: "重农", text: "执政时国运每年 +0.7，岁入 +2%", temper: 1, income: 2, destiny: 0.06),
-        "改革": Platform(name: "改革", text: "执政时岁入 +3%，开战意愿 ×1.05", temper: 1.05, income: 3, destiny: 0),
-        "守旧": Platform(name: "守旧", text: "执政时国运每年 +1，开战意愿 ×0.95", temper: 0.95, income: 0, destiny: 0.08),
-    ]
-    static let partyLine: [String: String] = [
-        "自由党": "重商", "保守党": "守旧", "民主党": "主和", "共和党": "重商", "进步党": "改革", "人民党": "重农", "国民党": "主战", "社会党": "重农",
-        "工党": "重农", "民族党": "主战", "联邦党": "守旧", "改革党": "改革", "农民党": "重农", "统一党": "主战", "立宪党": "守旧", "公民党": "主和",
-        "元老派": "守旧", "商人公会": "重商", "贵族院派": "守旧", "将门派": "主战", "共产党": "改革", "劳动党": "重农", "革命党": "主战",
-    ]
-    public static func platform(_ party: String) -> Platform { platforms[partyLine[party] ?? "改革"]! }
-    /// The governing party's line, for a state with parties.
-    static func governing(_ r: JS, _ id: String) -> Platform? {
-        guard !r.regimes.isNull, !r.regimes.nations[id].isNull, !r.regimes.nations[id].parties.isNull else { return nil }
-        guard let top = r.regimes.nations[id].parties.asArray.max(by: { $0.seats.asInt < $1.seats.asInt }) else { return nil }
-        return platform(top.name.asString)
-    }
     /// Seats out of 100 for each party of a state with a party system (made once, re-dealt at elections).
     static func parties(_ r: JS, _ id: String, _ s: Style, seed: Int) -> JS {
         var h: UInt32 = 0x811c9dc5
@@ -224,7 +204,7 @@ public enum Regimes {
         if let single = s.single { names = [single] }
         else if s.id == "oligarchic" { names = oligarchs }
         else {
-            var pool = partyNames; names = []
+            var pool = partyPool(r, id); names = []
             for _ in 0..<(3 + Int(next() % 2)) { names.append(pool.remove(at: Int(next() % UInt32(pool.count)))) }
         }
         var weights = names.map { _ in Double(10 + next() % 40) }
@@ -242,7 +222,14 @@ public enum Regimes {
         if b.parties.isNull { b.parties = parties(r, id, s, seed: key); return }
         guard key % 48 == Offices.stateId(r, id) % 48 else { return }
         let before = b.parties.asArray.max { $0.seats.asInt < $1.seats.asInt }?.name.optionalString
-        b.parties = parties(r, id, s, seed: key)
+        // 大选: the same parties stand again; each swings a few seats, and the government pays for bad times
+        // or gains from good ones.
+        let list = b.parties.asArray, tilt = Int(mood(r, id) * 8)
+        var votes = list.enumerated().map { i, p in max(1, p.seats.asInt + Int(draw("\(id)|\(key)|vote|\(i)") % 13) - 6 + (p.name.optionalString == before ? tilt : 0)) }
+        let total = votes.reduce(0, +)
+        votes = votes.map { max(1, Int((Double($0) / Double(total) * 100).rounded())) }
+        if let top = votes.indices.max(by: { votes[$0] < votes[$1] }) { votes[top] += 100 - votes.reduce(0, +) }
+        for (p, v) in zip(list, votes) { p.seats = JS(v) }
         let after = b.parties.asArray.max { $0.seats.asInt < $1.seats.asInt }?.name.optionalString ?? ""
         let text = after == before ? "\(n.name.asString)大选：\(after)连任执政" : "\(n.name.asString)大选：\(after)上台执政"
         _ = People.announce(r, kind: "event", text: text, reason: "四年一度的议会选举，议席重新分配；最大党组织政府。", nations: [id], province: nil)
@@ -310,7 +297,7 @@ public enum Regimes {
     /// Damage multiplier for `attacker`'s army hitting `victim`'s (attack and defence bonuses, and the
     /// world's combat intensity).
     static func combatBonus(_ r: JS, attacker: String, victim: String) -> Double {
-        let a = (bonus(r, attacker, "attack") ?? 0) + (persona(r, attacker)?.attack ?? 0), d = (bonus(r, victim, "defense") ?? 0) + (persona(r, victim)?.defense ?? 0)
+        let a = (bonus(r, attacker, "attack") ?? 0) + (persona(r, attacker)?.attack ?? 0) + (governing(r, attacker)?.attack ?? 0), d = (bonus(r, victim, "defense") ?? 0) + (persona(r, victim)?.defense ?? 0) + (governing(r, victim)?.defense ?? 0)
         // App worlds fight at twice the original's lethality: evenly matched armies used to grind for a
         // whole year; a battle now decides within weeks (战斗烈度 still scales it).
         return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage") * Tuning.current.lethality / grit(r, victim)
@@ -382,6 +369,15 @@ public enum Regimes {
         // 税制 and the treasury record (财政).
         Finance.month(r, id, addGold: addGold, addDestiny: addDestiny)
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
+        // 党派对抗、家族对抗、国债、持续性天灾.
+        partyMonth(r, n, id, key)
+        feudMonth(r, n, id, key)
+        debtMonth(r, n, id)
+        disasterMonth(r, key)
+        if let g = governing(r, id), g.growth != 0 {
+            let owned = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
+            for s in r.world.statecraft.provinces.asArray where owned.contains(s.provinceId.asString) { s.population = JS((s.population.asNumber * (1 + g.growth / 1200)).rounded()) }
+        }
         postEffects(r, id, addGold: addGold, addDestiny: addDestiny)
         tribute(r, n, id, gain: gain)
         // 国力走势: the state's strength once a month, the last ten years.
@@ -520,8 +516,9 @@ public enum Regimes {
         case ..<0.009:
             addDestiny(5); say("\(name)名臣辈出", "朝中贤能云集，政通人和：国运 +5。")
         case ..<0.0105:
-            everyStock { $0.population = JS(max(100, ($0.population.asNumber * 0.97).rounded())) }
-            addDestiny(-5); say("\(name)瘟疫流行", "疫病蔓延，民生凋敝：全国人口 −3%，国运 −5。")
+            guard let p = place else { return }
+            startDisaster(r, kind: "plague", province: p.id.asString, months: 8)
+            addDestiny(-3); say("\(p.name.asString)爆发瘟疫", "疫病自\(p.name.asString)而起，将向邻州蔓延（持续约八个月，每月人口 −1.2%）；国运 −3。", p)
         case ..<0.0115 where gain > 0:
             addGold(4); say("\(name)商路大开", "远方商旅络绎不绝：国库多收四月岁入。")
         case ..<0.0130:
@@ -540,7 +537,8 @@ public enum Regimes {
             say("\(p.name.asString)洪水", "江河决堤，田庐漂没：\(p.name.asString)存粮尽失，人口 −5%。", p)
         case ..<0.0166:
             everyStock { $0.grain = JS(($0.grain.asNumber * 0.7).rounded()) }
-            say("\(name)大旱", "赤地千里：全国存粮减三成。")
+            if let p = place { startDisaster(r, kind: "famine", province: p.id.asString, months: 5) }
+            say("\(name)大旱", "赤地千里：全国存粮减三成，\(place?.name.asString ?? "")饥荒五月不止。", place)
         case ..<0.0180:
             everyStock { $0.population = JS(($0.population.asNumber * 1.02).rounded()) }
             say("\(name)人丁兴旺", "太平日久，生齿日繁：全国人口 +2%。")

@@ -112,6 +112,7 @@ public final class EngineService {
         case "chronicle": return data(engine?.chronicle(str("category")))
         case "setCalendar": return command(engine?.setCalendar(era: str("era"), year: optInt("year")))
         case "setCityCulture": return command(engine?.setCityCulture(int("province"), str("culture")))
+        case "debt": return command(engine?.changeDebt(int("n"), borrow: bool("borrow")))
         case "corruption": return command(engine?.changeCorruption(int("n"), lower: bool("lower")))
         case "incite": return command(engine?.inciteRebellion(int("n")))
         case "setHoly": return command(engine?.setHolyProvince(int("province"), religion: optStr("religion")))

@@ -77,6 +77,9 @@ extension NativeEngine {
             else if rel >= 20 { stance = "拥戴" }
             e.relation = JS(rel); e.stance = JS(stance)
             e.members = JS(r.kin.families[key].isNull ? 0 : Nobility.living(r, key).count)
+            // 宿敌: the house it is on the worst terms with, if they are bad.
+            let foes = houses.filter { $0.0 != key }.map { (k: $0.0, rel: r.nobility.relations[key][$0.0].optionalNumber ?? 0) }.filter { $0.rel <= -20 }
+            if let foe = foes.min(by: { $0.rel < $1.rel }), let surname = r.kin.families[foe.k].surname.optionalString { e.rival = JS(surname + "氏") }
             return e
         })
         return c
@@ -124,7 +127,7 @@ extension NativeEngine {
         let book = r.regimes.isNull ? JS.null : r.regimes.nations[id]
         // Each party with its line and what that line does in government.
         o.parties = book.isNull || book.parties.isNull ? .array() : .array(book.parties.asArray.map { p in
-            let x = p.clone(), line = Regimes.platform(p.name.asString); x.line = JS(line.name); x.effect = JS(line.text); return x
+            let x = p.clone(), line = Regimes.platform(p.name.asString); x.line = JS(line.name); x.effect = JS(line.text); x.policies = .array(line.policies.map { JS($0) }); return x
         })
         // 国家加成 (自定义) in percent, unset ones as 0.
         let bonus = JS.object()

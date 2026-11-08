@@ -164,6 +164,8 @@ struct ProvinceInfo: Decodable {
     /// 围城: who besieges this province and the city defence left of its full.
     struct SiegeInfo: Decodable { let nation: Int; let resistance: Double; let maximum: Double }
     var sieges: [SiegeInfo]? = nil
+    /// 总督 and how well he suits the post, the noble house holding it as a fief, and 民心: the chance it rises at a rebellion check.
+    var governor: String? = nil; var governorFit: Double? = nil; var house: String? = nil; var unrest: Int? = nil
     /// The kinds of land this is, from what the engine weighs (core, fortress, granary, rich, mountain).
     var kinds: [(String, String)] {
         var out = [(String, String)]()
@@ -173,6 +175,9 @@ struct ProvinceInfo: Decodable {
         if (defense ?? 1) >= 3 { out.append(("要塞", "城防 \(Int(defense ?? 1)) 级")) }
         if capacity > 0, Double(population) >= Double(capacity) * 0.8 { out.append(("富庶", "人口近于上限")) }
         if grain >= Double(max(1, population)) * 0.5 { out.append(("粮仓", "存粮充足")) }
+        if let g = governor { out.append(("总督", g + "（" + ((governorFit ?? 0) >= 0.4 ? "称职" : (governorFit ?? 0) >= 0 ? "平庸" : "失职") + "）")) }
+        if let h = house { out.append(("封地", h + "世代所据")) }
+        if let u = unrest { out.append((u >= 40 ? "民变" : "民心", u > 0 ? "每次检定起事概率 \(u)%" : "安定")) }
         if let i = income, i > 1.02 { out.append(("善治", "地方官增收 \(Int(((i - 1) * 100).rounded()))%")) }
         return out
     }

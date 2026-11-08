@@ -88,6 +88,17 @@ extension NativeEngine {
         o.mountain = JS(land.mountain.isTruthy)
         o.biomes = land.isNull || land.biomes.isNull ? .array() : land.biomes
         o.income = JS(Offices.localIncome(r, id))
+        // 总督, 封地世家 and 民心 (the chance this province rises at a rebellion check).
+        if let owner = p.controller.optionalString {
+            if let g = Offices.holder(r, owner, "Governor", index + 1) {
+                o.governor = personView(g, role: "").name; o.governorFit = JS(Offices.suitability(r, owner, "Governor", index + 1))
+            }
+            if !r.nobility.isNull, let fam = Nobility.holder(r.nobility, id) {
+                let surname = r.kin.families[fam].surname.optionalString ?? ""
+                o.house = JS(surname.isEmpty ? "无名氏" : surname + "氏")
+            }
+            if !r.foundings.isNull, r.foundings.enabled.isTruthy, let chance = Rebellion.provinceChance(r, owner, id) { o.unrest = JS(chance) }
+        }
         // 城市防御力 and 占领进度: each siege of this province (resistance left of its maximum).
         let sieges = r.occupation.isNull || r.occupation.sieges.isNull ? [] : r.occupation.sieges.asArray.filter { $0.provinceId.asString == id }
         o.sieges = .array(sieges.map { s in

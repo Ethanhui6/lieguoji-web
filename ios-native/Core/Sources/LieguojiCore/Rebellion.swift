@@ -212,14 +212,7 @@ extension Rebellion {
         let capital = capitalProvince(r, id)
         var list = [(String, Int)]()
         for p in owned where p.id.asString != capital {
-            let pid = p.id.asString, c = r.upperCombat.provinces[pid]
-            if c.distance.asNumber <= r.upperCombat.nations[id].coreThreshold.asNumber && manifest(r, id) > 1 { continue }
-            let threshold = (c.connected.isTruthy ? s.destinyToRebelConnected.asNumber : s.destinyToRebel.asNumber) - Double(manifest(r, id)) + 5
-            if destiny(r, id) > threshold { continue }
-            if monthsSince(r, s.conquered[pid].time.asNumber) < 8 || provinceAtWar(r, pid) { continue }
-            var chance = min(80, (c.distance.asInt + 2) * 5)
-            if !r.offices47.isNull { chance = roundHalfEven(f(Double(chance) * Offices.localRebellion(r, pid))) }
-            if chance > 0 { list.append((p.name.asString, max(0, min(100, chance)))) }
+            if let chance = provinceChance(r, id, p.id.asString), chance > 0 { list.append((p.name.asString, chance)) }
         }
         if status == nil && list.isEmpty { status = "天命稳固，各州安定" }
         list.sort { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0 < $1.0 }
@@ -227,5 +220,19 @@ extension Rebellion {
         o.status = JS(status ?? "有\(list.count)州可能起事（逢双月检定）")
         o.provinces = .array(list.prefix(5).map { let e = JS.object(); e.name = JS($0.0); e.chance = JS($0.1); return e })
         return o
+    }
+    /// One province's chance (0…100) to rise at a bimonthly check, once the state may see rebellions at
+    /// all; nil when this province itself is exempt (core land of a manifest state, high destiny, newly
+    /// conquered, a battlefield).
+    static func provinceChance(_ r: JS, _ id: String, _ pid: String) -> Int? {
+        let s = r.foundings, c = r.upperCombat.provinces[pid]
+        guard !s.isNull, !c.isNull, capitalProvince(r, id) != pid else { return nil }
+        if c.distance.asNumber <= r.upperCombat.nations[id].coreThreshold.asNumber && manifest(r, id) > 1 { return nil }
+        let threshold = (c.connected.isTruthy ? s.destinyToRebelConnected.asNumber : s.destinyToRebel.asNumber) - Double(manifest(r, id)) + 5
+        if destiny(r, id) > threshold { return nil }
+        if monthsSince(r, s.conquered[pid].time.asNumber) < 8 || provinceAtWar(r, pid) { return nil }
+        var chance = min(80, (c.distance.asInt + 2) * 5)
+        if !r.offices47.isNull { chance = roundHalfEven(f(Double(chance) * Offices.localRebellion(r, pid))) }
+        return max(0, min(100, chance))
     }
 }

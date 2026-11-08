@@ -59,7 +59,7 @@ struct EditorLandTab: View {
                         choice = Choice(title: "绘制哪个行政区", items: districts.map { d in ("\(d.name) · \(d.provinces)州", { begin("绘制行政区：\(d.name)") { q in await model.edit("setDistrict", ["province": q, "region": d.id, "name": NSNull()]) } }) })
                     }
                     quickTile("删除", "trash", destructive: true) {
-                        choice = Choice(title: "删除哪个行政区", items: districts.map { d in ("\(d.name) · \(d.provinces)州", { Task { say(await model.edit("deleteDistrict", ["region": d.id]), "行政区已删除"); await reload() } }) })
+                        choice = Choice(title: "删除哪个行政区", items: districts.map { d in ("\(d.name) · \(d.provinces)州", later { say(await model.edit("deleteDistrict", ["region": d.id]), "行政区已删除"); await reload() }) })
                     }
                     quickTile("重新生成", "arrow.triangle.2.circlepath") { Task { say(await model.edit("regenerateDistricts", [:]), "行政区已重新生成"); await reload() } }
                 }
@@ -71,7 +71,7 @@ struct EditorLandTab: View {
                     }
                     quickTile("擦除封地", "eraser") { begin("擦除封地") { q in await model.edit("setFamilyLand", ["province": q, "family": NSNull()]) } }
                     quickTile("除爵", "person.fill.xmark", destructive: true) {
-                        choice = Choice(title: "剥夺哪个家族的爵位与封地", items: families.map { f in (f.name, { Task { say(await model.edit("editFamily", ["family": f.id, "surname": NSNull(), "influence": NSNull(), "strip": 1]), "已除爵"); await reload() } }) })
+                        choice = Choice(title: "剥夺哪个家族的爵位与封地", items: families.map { f in (f.name, later { say(await model.edit("editFamily", ["family": f.id, "surname": NSNull(), "influence": NSNull(), "strip": 1]), "已除爵"); await reload() }) })
                     }
                 }
             }

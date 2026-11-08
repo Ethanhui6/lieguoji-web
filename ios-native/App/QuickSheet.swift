@@ -418,3 +418,6 @@ func quickTile(_ title: String, _ symbol: String, destructive: Bool = false, _ a
     }
     .buttonStyle(PressStyle())
 }
+
+/// An action that starts async work (a tuple of a title and a bare Task closure cannot be typed by the compiler).
+@MainActor func later(_ body: @escaping @MainActor () async -> Void) -> () -> Void { { Task { @MainActor in await body() } } }

@@ -235,10 +235,11 @@ public enum ArmyOrders {
     static func selection(_ r: JS, _ ids: [String]) {
         guard let bridge = Armies.bridge else { return }
         let g = bridge.graph, state = r.armyAutonomy, geo = geography(r, bridge), tick = r.clock.tick.asInt
-        let space = Armies.space(r), held = Set(r.forceContacts.pairs.asArray.flatMap { [$0.a.asString, $0.b.asString] })
+        let space = Profile.measure("t.space") { Armies.space(r) }, held = Set(r.forceContacts.pairs.asArray.flatMap { [$0.a.asString, $0.b.asString] })
         let ports = Set(r.harbors.sites.asArray.map(\.provinceId.asString))
+        // Only the states of this batch's armies (five armies a batch; every state used to be read).
         var enemyMaps = [String: [(nation: String, campaign: Int)]]()
-        for n in r.world.nations.asArray { enemyMaps[n.id.asString] = enemies(r, n.id.asString) }
+        func enemiesOf(_ n: String) -> [(nation: String, campaign: Int)] { if let v = enemyMaps[n] { return v }; let v = enemies(r, n); enemyMaps[n] = v; return v }
         // Read once for the whole batch: every army, location, province owner and the states present in
         // each province used to be rescanned for every army (armies × provinces × armies a day).
         let provinceList = r.world.provinces.asArray, provinceAt = RunWindow.provinceIndexById(r)
@@ -269,7 +270,7 @@ public enum ArmyOrders {
         }
         for id in ids {
             let a = armyById[id]!, row = state.armies[id], nation = a.nationId.asString
-            let en = enemyMaps[nation] ?? [], enemySet = Set(en.map(\.nation))
+            let en = enemiesOf(nation), enemySet = Set(en.map(\.nation))
             func note(_ d: String, _ reason: String, clear: Bool = false) {
                 row.decision = JS(d); row.reason = JS(reason); row.nextTick = JS(tick + retry)
                 if clear { row.targetId = .null; row.campaignId = .null; row.issuedTick = .null }

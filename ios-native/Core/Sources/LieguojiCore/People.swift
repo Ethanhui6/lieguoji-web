@@ -227,13 +227,13 @@ public enum People {
         if !r.nobility.isNull { return familiesOf(r, nationId).map { Electing(k: $0.k, influence: $0.fam.influence.asNumber, warMerit: warMerit($0.fam)) } }
         return r.kin.families.objectValues.map { Electing(k: $0, influence: 0, warMerit: 0) }
     }
-    static func republicLeader(_ r: JS, families: [Electing]) -> JS? {
+    static func republicLeader(_ r: JS, families: [Electing], excluding: Int = 0) -> JS? {
         var candidates = [(JS, Double)]()
         for fam in families {
             let hasLiving = !living47(r, fam.k).isEmpty || ids(fam.k.collateralMemberIds).contains { person(r, $0)?.isAlive.asBool == true }
             if !hasLiving { continue }
             let merit = f(fam.warMerit), influence = f(fam.influence)
-            for p in living47(r, fam.k) where p.age.asInt >= 25 {
+            for p in living47(r, fam.k) where p.age.asInt >= 25 && p.id.asInt != excluding {
                 let s = skills(p), influenceTerm = f(influence * f(0.15)), meritTerm = f(merit * f(0.1))
                 candidates.append((p, f(f(f(f(f(s.military + s.charisma) + s.diplomatic) + s.administrative) + meritTerm) + influenceTerm)))
             }
@@ -305,7 +305,8 @@ public enum People {
         let leaderName = rulerDisplayName(culture: nation.cultureId.asString, polity: polity, name: identity.name.asString, regnalName: regnalName, ordinal: ordinal, given: identity.given.asString, title: title)
         let stateName = r.world.nations.asArray.first { $0.id.asString == nationId }!.name.asString, oldName = old.name.asString
         let text: String
-        if cause == "restoration" { text = "\(leaderName)恢复\(stateName)的统治，取代了\(oldName)" }
+        if cause == "election" { text = "\(leaderName)在大选中当选为\(stateName)的领导人，前任\(oldName)卸任" }
+        else if cause == "restoration" { text = "\(leaderName)恢复\(stateName)的统治，取代了\(oldName)" }
         else if cause != "death" { text = "\(leaderName)成为\(stateName)的统治者，前任领导人\(oldName)卸任" }
         else if polity == "Republic" || polity == "Federation" { text = "\(leaderName)在选举中当选为\(stateName)的领导人，前任\(oldName)卸任" }
         else if polity == "Empire" { text = "\(leaderName)继承\(stateName)的帝位，前皇帝\(oldName)驾崩" }
@@ -313,7 +314,7 @@ public enum People {
         else if polity == "Tribal" { text = "\(leaderName)成为\(stateName)的酋长，前酋长\(oldName)去世" }
         else if polity == "Theocracy" { text = "\(leaderName)被选为\(stateName)的教宗，前教宗\(oldName)去世" }
         else { text = "\(leaderName)继承\(stateName)的统治权，前任统治者\(oldName)去世" }
-        let reason = cause == "abdication" ? "玩家安排已知家族成员传位，前任仍然在世。" : (polity == "Republic" || polity == "Federation" ? "按原作共和国／联邦紧急候选规则，从至少25岁的已知在世成员中补位；正常投票选举尚未接入。" : "按已恢复的本政体候选规则，从真实登记的在世人物中接任。")
+        let reason = cause == "election" ? "四年一度大选，按共和国／联邦候选规则（能力、家族势力与战功）择优当选；连任满八年者不得再选。" : cause == "abdication" ? "玩家安排已知家族成员传位，前任仍然在世。" : (polity == "Republic" || polity == "Federation" ? "按原作共和国／联邦紧急候选规则，从至少25岁的已知在世成员中补位；正常投票选举尚未接入。" : "按已恢复的本政体候选规则，从真实登记的在世人物中接任。")
         announce(r, kind: "accession", text: text, reason: reason + " 人物身份、生日、能力和亲属关系保留；家主独立继承。", nations: [nationId], province: nil, people: [reign])
         return reign
     }

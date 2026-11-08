@@ -203,6 +203,24 @@ public enum Regimes {
         let after = b.parties.asArray.max { $0.seats.asInt < $1.seats.asInt }?.name.optionalString ?? ""
         let text = after == before ? "\(n.name.asString)大选：\(after)连任执政" : "\(n.name.asString)大选：\(after)上台执政"
         _ = People.announce(r, kind: "event", text: text, reason: "四年一度的议会选举，议席重新分配；最大党组织政府。", nations: [id], province: nil)
+        leaderElection(r, id)
+    }
+    /// 大选 (共和国、联邦): the head of state is chosen at each election by the republic candidate rule;
+    /// the incumbent may stand again until he has served eight years.
+    static func leaderElection(_ r: JS, _ id: String) {
+        let polity = r.civilization.nations[id].polity.optionalString ?? ""
+        guard polity == "Republic" || polity == "Federation", let lid = r.people.nations[id].leaderId.optionalNumber, let old = People.person(r, Int(lid)), old.isAlive.asBool else { return }
+        let reign = r.chronicle.leaders[id].isNull ? nil : r.chronicle.leaders[id].asArray.last
+        let served = (r.world.day.asNumber - (reign?.ascendedDay.optionalNumber ?? 0)) / 365
+        let stateId = r.people.nations[id].id.asInt
+        let families = People.electionFamilies(r, id).filter { /usr/bin/bash.k.stateId.asInt == stateId }
+        guard let winner = People.republicLeader(r, families: families, excluding: served >= 8 ? old.id.asInt : 0), winner.id.asInt != old.id.asInt else { return }
+        if !old.roles.isNull, let i = old.roles.asArray.firstIndex(where: { /usr/bin/bash.nativeKind.optionalString == "leader" }) {
+            if old.pastRoles.isNull { old.pastRoles = .array() }
+            old.pastRoles.push(People.pastRole(old.roles.asArray[i], time: Native.fr(r.life.gameTime.asNumber), reason: "election"))
+            old.roles.asArray.remove(at: i)
+        }
+        People.appointKnownPerson(r, id, winner, cause: "election")
     }
 
     // MARK: 条约 (treaties)

@@ -277,7 +277,7 @@ struct MapView: UIViewRepresentable {
                                    unitURL: { Bundle.main.url(forResource: "unit-\($0)", withExtension: "png", subdirectory: "World") })
             mtk.delegate = renderer
             renderer?.onDraw = { [weak self] t in self?.frameDrawn(t) }
-            renderer?.onOutlines = { [weak self] in self?.mtk.setNeedsDisplay() }
+            renderer?.onOutlines = { [weak self] in self?.startLink(); self?.mtk.setNeedsDisplay() }
             controller.onRevealClock = { [weak self] in self?.revealStarted() }
             controller.onHits = { [weak self] hits in
                 guard let self, let renderer = self.renderer else { return }

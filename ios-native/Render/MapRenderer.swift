@@ -13,6 +13,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let cellPipeline: MTLRenderPipelineState
     /// The generation reveal on the GPU: land rises from the sea by height, then the states' colours wash in.
     private let revealPipeline: MTLRenderPipelineState
+    /// 易主渐变: a conquered province's colour blends from its old owner's to the new one's.
+    private let fadePipeline: MTLRenderPipelineState
+    private var previousColors: MTLBuffer?
+    private var fadeStart: CFTimeInterval = 0
+    private var fadeOnRecolor = false
+    static let fadeDuration: CFTimeInterval = 0.7
+    private var fading: Bool { previousColors != nil && CACurrentMediaTime() - fadeStart < Self.fadeDuration }
     private let linePipeline: MTLRenderPipelineState
     private let flatPipeline: MTLRenderPipelineState
     private let coloredPipeline: MTLRenderPipelineState
@@ -93,6 +100,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             }
             cellPipeline = try pipeline("cellVertex", "colorFragment", .none)
             revealPipeline = try pipeline("revealVertex", "colorFragment", .none)
+            fadePipeline = try pipeline("fadeVertex", "colorFragment", .none)
             linePipeline = try pipeline("lineVertex", "flatFragment", .alpha)
             flatPipeline = try pipeline("flatVertex", "flatFragment", .alpha)
             coloredPipeline = try pipeline("coloredVertex", "colorFragment", .alpha)
@@ -219,7 +227,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 // Only if nothing changed the look meanwhile (a mode switch rebuilds its own base).
                 if self.mode == inputs.mode && self.fills == inputs.fills && self.highlight == inputs.highlight { self.base = (colours.land, colours.terrain) }
                 else { self.base = nil }
+                self.fadeOnRecolor = true
                 self.recolor()
+                self.fadeOnRecolor = false
                 self.onOutlines?()
             }
         }
@@ -327,7 +337,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // The generation reveal (land rising from the coast to the peaks over 0…0.45, the states' colours
         // washing in over 0.55…0.75) is drawn by revealVertex from these colours: no per-frame CPU work.
         let c = base.land
-        if let b = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) { colors = b }
+        if let b = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) {
+            // An ownership change after the reveal fades in; mode switches and the reveal stay instant.
+            if fadeOnRecolor && reveal >= 1 && colors.length == b.length { previousColors = fading ? previousColors : colors; fadeStart = CACurrentMediaTime() }
+            colors = b
+        }
     }
     private var shade: [Float] = []
     private var terrainBase: [Float]?
@@ -353,6 +367,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var unitTextures: [String: MTLTexture] = [:]
     private var route: (buffer: MTLBuffer, count: Int)?
     private var armySprites: [ArmySprite] = []
+    /// 溃散: armies gone since the last snapshot, fading out where they fell over one leg (drawn only).
+    private var dying: [ArmySprite] = []
     private var routePoints: [SIMD2<Float>] = []
 
     /// Army icons at their current points (moving armies follow their journey) and the selected
@@ -374,7 +390,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// The play step interval (seconds); a leg lasts a little longer so the next one starts before it ends.
     var tweenDuration: CFTimeInterval = 0.3
     var tweenEase = true
-    var isAnimating: Bool { chasing }
+    var isAnimating: Bool { chasing || fading }
     private func progress(_ now: CFTimeInterval) -> Float {
         legLength <= 0 ? 1 : Float(min(1, max(0, (now - legStart) / legLength)))
     }
@@ -443,6 +459,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     }
                 }
             }
+            // Armies destroyed or disbanded since the last snapshot fade out where they stood instead of
+            // vanishing between two frames (none on a snap: a world opened or reloaded).
+            var gone = [ArmySprite]()
+            if !snap {
+                let keys = Set(sprites.map(\.key))
+                for s in armySprites where !s.key.isEmpty && !keys.contains(s.key) && s.army > -100_000 && gone.count < 40 {
+                    var g = s
+                    let p = legFrom[s.key].flatMap { a in legTo[s.key].map { b in Self.hermite(a, b, legLead[s.key] ?? (b - a), t) } } ?? SIMD2(s.x, s.y)
+                    g.key = "✝" + s.key; g.x = p.x; g.y = p.y; g.selected = false; g.fighting = false
+                    from[g.key] = p; to[g.key] = p; gone.append(g)
+                }
+            }
+            dying = gone
             legFrom = from; legTo = to; legLead = lead; fresh = fading
             legStart = now; legLength = newLength
             armySprites = sprites
@@ -462,7 +491,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     // Per-frame interpolation runs in Metal; never overwrite a GPU in-flight buffer.
     private func rebuildArmies() {
         do {
-            let sprites = armySprites
+            let sprites = armySprites + dying
+            let ghosts = Set(dying.map(\.key))
             let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6)
             var byRole: [String: [Float]] = [:]
             byRole.reserveCapacity(16)
@@ -482,7 +512,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             do {
                 let cell = max(0.001, iconSize * iconScale * 0.6)
                 var cluster = [SIMD2<Int32>: [Int]]()
-                for (i, a) in sprites.enumerated() where a.army >= 0 && (legFrom[a.key] ?? SIMD2(a.x, a.y)) == (legTo[a.key] ?? SIMD2(a.x, a.y)) {
+                for (i, a) in sprites.enumerated() where a.army >= 0 && !ghosts.contains(a.key) && (legFrom[a.key] ?? SIMD2(a.x, a.y)) == (legTo[a.key] ?? SIMD2(a.x, a.y)) {
                     let e = legTo[a.key] ?? SIMD2(a.x, a.y)
                     cluster[SIMD2(Int32((e.x / cell).rounded()), Int32((e.y / cell).rounded())), default: []].append(i)
                 }
@@ -499,7 +529,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             self.spread = spread
             for a in sprites {
                 // Harbours (and merchantmen) keep still: alpha 0.99 tells the shader not to let them drift.
-                fade = fresh.contains(a.key) ? -1 : a.fighting ? 2 : a.retreating ? 0.55 : a.army <= -100_000 ? 0.99 : 1
+                fade = ghosts.contains(a.key) ? -2 : fresh.contains(a.key) ? -1 : a.fighting ? 2 : a.retreating ? 0.55 : a.army <= -100_000 ? 0.99 : 1
                 let o = spread[a.key] ?? SIMD2<Float>(0, 0)
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
                 let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)
@@ -588,7 +618,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setVertexBuffer(rb.terrain, offset: 0, index: 3)
             encoder.setVertexBuffer(rb.heights, offset: 0, index: 4)
             encoder.setVertexBytes(&r, length: MemoryLayout<SIMD4<Float>>.stride, index: 5)
+        } else if fading, let previous = previousColors {
+            let x = Float(min(1, (CACurrentMediaTime() - fadeStart) / Self.fadeDuration))
+            var t = x * x * (3 - 2 * x)
+            encoder.setRenderPipelineState(fadePipeline)
+            encoder.setVertexBuffer(previous, offset: 0, index: 3)
+            encoder.setVertexBytes(&t, length: MemoryLayout<Float>.stride, index: 4)
         } else {
+            if previousColors != nil { previousColors = nil }
             encoder.setRenderPipelineState(cellPipeline)
         }
         encoder.setVertexBuffer(positions, offset: 0, index: 0)
@@ -659,6 +696,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); return o;
     }
     fragment float4 colorFragment(ColorOut in [[stage_in]]) { return in.color; }
+    vertex ColorOut fadeVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
+                               constant Uniforms& u [[buffer(2)]], const device float4* previous [[buffer(3)]], constant float& t [[buffer(4)]]) {
+        ColorOut o; o.position = clip(positions[id], u, float2(0.0)); o.color = mix(previous[id], colors[id], t); return o;
+    }
     vertex ColorOut revealVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
                                  constant Uniforms& u [[buffer(2)]], const device float4* terrain [[buffer(3)]], const device float* heights [[buffer(4)]],
                                  constant float4& r [[buffer(5)]]) {
@@ -709,7 +750,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // places the banner and the pips around the army's point.
         float pixels = s.size * max(u.scale, 14.0 / 3.01);
         // Alpha below zero: the icon fades in over the leg (new and re-formed armies).
-        float4 tint = float4(s.tint); if (tint.a < 0.0) tint.a = progress;
+        // Alpha −2: an army that fell fades out over the leg.
+        float4 tint = float4(s.tint); if (tint.a < -1.5) tint.a = 1.0 - progress; else if (tint.a < 0.0) tint.a = progress;
         // Alpha 2: an army in battle. Its pieces lunge and recoil, each army on its own beat.
         float2 jab = float2(0.0);
         if (tint.a > 1.5) {

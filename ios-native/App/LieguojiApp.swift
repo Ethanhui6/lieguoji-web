@@ -38,7 +38,7 @@ enum Theme {
 enum Names {
     static let polity = ["Kingdom": "王国", "Empire": "帝国", "Federation": "联邦", "Republic": "共和国", "Tribal": "部落", "Theocracy": "神权"]
     /// The cultures of the catalog in its order (CULTURE_IDS47).
-    static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian", "vietnamese", "tibetan", "hungarian", "polish", "portuguese", "dutch", "aztec", "inca"]
+    static var cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian", "vietnamese", "tibetan", "hungarian", "polish", "portuguese", "dutch", "aztec", "inca"]
     static var culture = ["chinese": "中华", "japanese": "日本", "english": "英格兰", "arab": "阿拉伯", "roman": "罗马", "french": "法兰西",
                           "german": "日耳曼", "greek": "希腊", "persian": "波斯", "slavic": "斯拉夫", "norse": "北欧", "indian": "印度",
                           "korean": "朝鲜", "mongol": "蒙古", "turkic": "突厥", "egyptian": "埃及", "spanish": "西班牙", "italian": "意大利",
@@ -459,6 +459,14 @@ struct NewWorldSheet: View {
                     TextField("", text: $options.seed, prompt: Text("随机").foregroundColor(Theme.ink2.opacity(0.6)))
                         .paperField(width: 160).keyboardType(.numberPad).multilineTextAlignment(.trailing)
                 }
+            }
+            .padding(.horizontal, 22)
+            SectionLabel("气候")
+            VStack(spacing: 10) {
+                PaperStepper(title: "降水", value: $options.climate.rain, range: 10...200, unit: "%")
+                PaperStepper(title: "气温修正", value: $options.climate.temperature, range: -30...30, unit: "°")
+                PaperStepper(title: "北界纬度", value: $options.climate.north, range: -80...90, unit: "")
+                PaperStepper(title: "南界纬度", value: $options.climate.south, range: -90...80, unit: "")
             }
             .padding(.horizontal, 22)
             SectionLabel("开局")
@@ -2446,6 +2454,7 @@ struct ReleaseNotesSheet: View {
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
                     "【自绘地图】新增「崎岖」笔刷：在笔刷范围内随机起伏，画出的海岸与山脊不再圆滑生硬；地形工具改为五列排布。",
+                    "【气候与自建文化】新世界和自绘地图可调降水、气温、南北纬度；游戏中可在山河图页重算气候与河流（仅开局的世界）；可新建全新的文化和宗教，所有列表与地图图例同步显示。",
                     "【世界编辑·续】疆土页：无主之地（可设不可征服）、行政区新建绘制删除与重生成、家族封地绘制擦除与除爵、自动放弃孤立行省、协助盟友开关；同盟页：改名、改色、踢人、拉人、铁盟、解散；山河图页：手绘河流、按文化重命名全部城市、随机地名、地图图片（缩放、旋转、透明、前后层）；国家页：新增兵种、军事档案与文化宗教的导入导出、国名模板、随机国名；州郡可锁定城防与人口；天下规则新增叛乱与事件频率。",
                     "【世界编辑】菜单新增世界编辑页，对照原作的编辑面板：笔刷（国家、文化、信仰、圣地、要塞、人口、瘟疫饥荒与平灾，划过州郡即可落笔）；地图标注（自定义文字、字号、颜色、倾斜，存入存档）；文化宗教改名、写描述、追加人名；导出地图截图与大事记、清空大事记。",
                     "【国家自定义】新增国家特性逐项开关与全开全关、官职称号修改、兵种档案（名称、战力、行速、征募权重，可禁用某兵种）、强制退出同盟。原有自定义内容全部保留。",

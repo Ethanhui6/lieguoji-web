@@ -31,6 +31,8 @@ struct WorldEditorSheet: View {
     @State private var female = ""
     @State private var exported: URL?
     @State private var importing = false
+    @State private var newName = ""
+    private var baseCultures: [String] { Names.cultureIds.filter { !$0.hasPrefix("custom") } }
 
     private func report(_ e: String?, _ ok: String) { flash = e ?? ok; GameFeel.shared.notify(e == nil ? .success : .error) }
 
@@ -233,7 +235,13 @@ struct WorldEditorSheet: View {
     private var cultures: some View {
         VStack(spacing: 12) {
             quickSection("选择") {
+                TextField("新文化或新宗教的名称", text: $newName).paperField()
                 quickGrid {
+                    quickTile("新建文化", "plus.circle") {
+                        let n = newName
+                        choice = Choice(title: "以哪种文化为底", items: baseCultures.map { k in (Names.culture[k] ?? k, { Task { let e = await model.edit("createCulture", ["base": k, "name": n]); await model.refreshCustom(); report(e, "\(n)文化已创立") } }) })
+                    }
+                    quickTile("新建宗教", "plus.circle.fill") { let n = newName; Task { let e = await model.edit("createFaith", ["name": n]); await model.refreshCustom(); report(e, "\(n)已创立") } }
                     quickTile("选文化", "text.book.closed") { choice = Choice(title: "文化", items: Names.culture.keys.sorted().map { k in (Names.culture[k] ?? k, { load(false, k) }) }) }
                     quickTile("选宗教", "hands.sparkles") { choice = Choice(title: "宗教", items: Names.religion.keys.filter { $0 != "none" }.sorted().map { k in (Names.religion[k] ?? k, { load(true, k) }) }) }
                 }

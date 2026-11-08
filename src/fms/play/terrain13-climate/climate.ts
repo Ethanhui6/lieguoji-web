@@ -24,6 +24,11 @@ export interface FmsClimateOptions { north: number; south: number; precipitation
 // Latitude is resolved from calculateMapCoordinates; seed is a WEB fixed stream,
 // independent of the original global RNG consumed by terrain generation.
 export const FMS_CLIMATE_DEFAULTS: Readonly<FmsClimateOptions> = Object.freeze({ north: 0.9, south: -0.9, precipitation:80, temperatureOffset:0, seed:'1337' });
+
+let fmsClimateCurrent: FmsClimateOptions = FMS_CLIMATE_DEFAULTS;
+/** The climate new maps use (the app's 气候 settings; the defaults otherwise). */
+export function fmsClimateNow(): FmsClimateOptions { return fmsClimateCurrent; }
+export function setFmsClimate(o: Partial<FmsClimateOptions> | null | undefined) { fmsClimateCurrent = o ? { ...FMS_CLIMATE_DEFAULTS, ...o } : FMS_CLIMATE_DEFAULTS; }
 export class FmsClimateError extends Error {
   constructor(message='气候试算参数无效，地图保持原样。') { super(message); this.name='FmsClimateError'; }
 }
@@ -54,7 +59,7 @@ export function recoveredBiome(moisture: number, temperature: number, height: nu
  * Explicit web repairs: unpack row-zero tuples; winds stop at their row/column
  * boundary instead of reading the next row or an undefined off-map elevation.
  */
-export function generateFmsClimateGrid(heights: Uint8Array, columns: number, rows: number, options: FmsClimateOptions=FMS_CLIMATE_DEFAULTS) {
+export function generateFmsClimateGrid(heights: Uint8Array, columns: number, rows: number, options: FmsClimateOptions=fmsClimateNow()) {
   if(!Number.isInteger(columns)||!Number.isInteger(rows)||columns<1||rows<1||columns>192||rows>192
     ||!(heights instanceof Uint8Array)||heights.length!==columns*rows||heights.some(h=>h>100)
     ||!options||!Number.isFinite(options.north)||!Number.isFinite(options.south)||options.north>90||options.south < -90||options.north<=options.south

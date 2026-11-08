@@ -23,7 +23,8 @@ public struct TerrainDocument: Sendable {
 /// Recovered climate (terrain13-climate climate.ts), drainage rivers (settlement25-rivers.ts) and
 /// biomes (settlement25-biomes.ts). Typed-array stores truncate like the web's Int8/Uint8/Uint16 arrays.
 public enum Climate {
-    static let north = 0.9, south = -0.9, precipitationInput = 80.0
+    /// 气候 (the original's latitude, rainfall and temperature settings); the defaults are its own.
+    public static var north = 0.9, south = -0.9, precipitationInput = 80.0, temperatureOffset = 0.0
     static let biomeMatrix: [[Int]] = [
         [1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,10],
         [3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,9,9,9,9,10,10,10],
@@ -37,7 +38,7 @@ public enum Climate {
     /// JavaScript Math.round: halves round toward +infinity.
     static func jsRound(_ x: Double) -> Double { (x + 0.5).rounded(.down) }
 
-    public static func temperature(height: Double, latitude: Double, offset: Double = 0) -> Int {
+    public static func temperature(height: Double, latitude: Double, offset: Double = Climate.temperatureOffset) -> Int {
         let equator = 27 + offset, northPole = -20 + offset, southPole = -20 + offset
         let northTropic = equator - 16 * 0.15, southTropic = equator - 20 * 0.15
         let sea = latitude <= 16 && latitude >= -20 ? equator - abs(latitude) * 0.15

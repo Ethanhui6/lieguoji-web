@@ -174,7 +174,8 @@ import LieguojiCore
     func foundCustomWorld(_ ed: MapEditor) async {
         failure = nil
         let o = editorOptions
-        var json: [String: Any] = ["template": ed.template, "count": ed.nations, "cityCount": max(ed.nations, ed.provinces), "seed": ed.seed,
+        o.climate.apply()
+        var json: [String: Any] = ["climate": o.climate.json, "template": ed.template, "count": ed.nations, "cityCount": max(ed.nations, ed.provinces), "seed": ed.seed,
                                    "relations": o.relations, "naming": o.naming, "cultures": Names.cultureIds.filter { o.cultures.contains($0) },
                                    "heights": Data(ed.heights).base64EncodedString()]
         // 划定列国: the drawn states (their land and capitals) found the world as laid out.
@@ -225,10 +226,30 @@ import LieguojiCore
 
     // MARK: worlds
 
+    /// 气候: percent of the original's rainfall, degrees of temperature, and the latitude bounds × 100.
+    struct ClimateSettings: Equatable {
+        var rain = 80, temperature = 0, north = 90, south = -90
+        var json: [String: Any] { ["precipitation": rain, "temperatureOffset": temperature, "north": Double(north) / 100, "south": Double(min(south, north - 10)) / 100] }
+        func apply() { Climate.precipitationInput = Double(rain); Climate.temperatureOffset = Double(temperature); Climate.north = Double(north) / 100; Climate.south = Double(min(south, north - 10)) / 100 }
+    }
+    private struct WorldBinary: Decodable { let bin: String }
+    /// 重算气候: new biomes and rivers on the same land.
+    func reclimate(_ c: ClimateSettings) async -> String? {
+        guard let text = String(data: (try? JSONSerialization.data(withJSONObject: c.json)) ?? Data(), encoding: .utf8), let current = controller.world ?? map else { return "世界尚未载入" }
+        do {
+            let out = try await engine.call("reclimate(options)", ["options": text])
+            let decoded = try JSONDecoder().decode(WorldBinary.self, from: Data(out.utf8))
+            guard let bin = Data(base64Encoded: decoded.bin) else { return "地图数据损坏" }
+            let next = try WorldMap(binary: bin, meta: current.meta)
+            c.apply(); map = next; controller.world = next
+            return nil
+        } catch { return error.localizedDescription }
+    }
     struct NewWorld {
         var template = "continents"; var nations = 8; var seed = ""; var provinces = "80"
         /// 开局关系 (peace / war), the cultures that appear, and real or generated names.
         var relations = "peace"; var naming = "historical-names"
+        var climate = ClimateSettings()
         var cultures: Set<String> = Set(Names.cultureIds)
         /// One city per province; the web engine (native-bridge generate) clamps to nations…480.
         var provinceCount: Int { max(nations, min(480, Int(provinces) ?? nations * 10)) }
@@ -247,7 +268,8 @@ import LieguojiCore
         if previewInputs != nil { controller.reveal = 0; phase = .founding } else { phase = .generating }
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
-            let json: [String: Any] = ["template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed,
+            options.climate.apply()
+            let json: [String: Any] = ["climate": options.climate.json, "template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed,
                                        "relations": options.relations, "naming": options.naming, "cultures": Names.cultureIds.filter { options.cultures.contains($0) }]
             let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
             let engine = self.engine
@@ -1091,12 +1113,12 @@ import LieguojiCore
     }
     struct UnitRow: Decodable, Identifiable { let key: String; let base: String; let name: String; let note: String; let power: Double; let speed: Double; let weight: Double; var id: String { key } }
     struct MapLabel: Decodable, Identifiable, Equatable { let id: Int; let text: String; let x: Double; let y: Double; let size: Double; let color: String; let angle: Double }
-    struct CultureEdit: Decodable { var name: String? = nil; var text: String? = nil; var male: [String]? = nil; var female: [String]? = nil }
+    struct CultureEdit: Decodable { var base: String? = nil; var name: String? = nil; var text: String? = nil; var male: [String]? = nil; var female: [String]? = nil }
     struct FaithEdit: Decodable { var name: String? = nil; var text: String? = nil }
     struct Catalog: Decodable { var cultures: [String: CultureEdit] = [:]; var faiths: [String: FaithEdit] = [:] }
     @Published var customLabels: [MapLabel] = []
     @Published var catalog = Catalog()
-    private let baseCulture = Names.culture, baseReligion = Names.religion
+    private let baseCulture = Names.culture, baseReligion = Names.religion, baseCultureIds = Names.cultureIds
     /// The world's labels and reworded cultures and faiths.
     func refreshCustom() async {
         if let d = await native.mapLabels(), let list = await Self.decode([MapLabel].self, from: d) { customLabels = list; controller.customLabels = list }
@@ -1105,7 +1127,7 @@ import LieguojiCore
         await refreshPlaceNames()
         if let d = await native.catalogEdits(), let c = await Self.decode(Catalog.self, from: d) {
             catalog = c
-            Names.culture = baseCulture; Names.religion = baseReligion
+            Names.culture = baseCulture; Names.religion = baseReligion; Names.cultureIds = baseCultureIds + c.cultures.filter { $0.value.base != nil }.keys.sorted()
             for (k, e) in c.cultures { if let n = e.name { Names.culture[k] = n } }
             for (k, e) in c.faiths { if let n = e.name { Names.religion[k] = n } }
         }

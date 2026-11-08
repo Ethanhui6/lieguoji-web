@@ -1,5 +1,11 @@
 import {nativeStatics} from './native-statics';
 import {varyPlaceNames} from './extra-places';
+import {setFmsClimate} from '../fms/climate';
+import {setFmsClimate as setPlayClimate} from '../fms/play/terrain13-climate/climate';
+
+type ClimateOptions={north?:number;south?:number;precipitation?:number;temperatureOffset?:number};
+function applyClimate(c?:ClimateOptions|null){setFmsClimate(c??null);setPlayClimate(c??null);}
+let lastTerrain:Culture47Opening['terrain']|null=null,lastOptions:{seed:string;template:string}|null=null;
 import {CULTURE_IDS47} from '../fms/play/civilization47-catalog';
 import {createFmsOriginalDocument,originalGridFor} from '../fms/original/original-document';
 import {generateFmsFullMap,prepareFmsFullMapPreview,fmsFullMapAlgorithm} from '../fms/full-map-terrain';
@@ -55,6 +61,7 @@ function base64(bytes:Uint8Array){let s='';for(let i=0;i<bytes.length;i+=0x8000)
 const run=()=>{if(!current)throw Error('世界尚未载入。');return current.run as unknown as Run;};
 
 async function mapOf(terrain:Culture47Opening['terrain'],r:Run,options:{seed:string;template:string}){
+  lastTerrain=terrain;lastOptions=options;
   const built=await buildWorldMap(terrain,r,options),grid=(await originalGridFor(terrain))!;
   labelInput={cellsX:grid.cellsX,points:grid.points as [number,number][],heights:terrain.elevations,cells:originalCellProvinces(terrain,r.world.provinces,r.scale)};
   labelOwners='';
@@ -62,15 +69,23 @@ async function mapOf(terrain:Culture47Opening['terrain'],r:Run,options:{seed:str
   return lastMap;
 }
 
+/** 重算气候: the same land under new weather — biomes and rivers only, the states are not touched. */
+export async function reclimate(optionsText:string){
+  if(!current||!lastTerrain||!lastOptions)throw Error('这局是读档进入的，重算气候需要新开的世界。');
+  applyClimate(JSON.parse(optionsText) as ClimateOptions);
+  return JSON.stringify(await mapOf(lastTerrain,run(),lastOptions));
+}
+
 /** Generates a new world exactly as the web's 生成地图 + 从当前地图创建文化世界 (CultureWorld47.tsx):
  * the original 20k grid, a recovered terrain template, then the culture opening and its rule actions. */
 export async function generate(optionsText:string){
-  const o=JSON.parse(optionsText||'{}') as {seed?:string;template?:string;count?:number;cityCount?:number;relations?:'peace'|'war';cultures?:string[];naming?:'historical-names'|'culture-generated';heights?:string;layout?:{seeds:number[];owners:number[]}};
+  const o=JSON.parse(optionsText||'{}') as {climate?:ClimateOptions;seed?:string;template?:string;count?:number;cityCount?:number;relations?:'peace'|'war';cultures?:string[];naming?:'historical-names'|'culture-generated';heights?:string;layout?:{seeds:number[];owners:number[]}};
   // The original world setup: which cultures appear, real or generated names, opening at peace or war.
   const enabled=CULTURE_IDS47.filter(c=>!o.cultures?.length||o.cultures.includes(c));
   const random=crypto.getRandomValues(new Uint32Array(2));
   const seed=o.seed||String(random[0]),template=SEED_TERRAIN_TEMPLATES.some(t=>t.id===o.template)?o.template!:SEED_TERRAIN_TEMPLATES[random[1]%SEED_TERRAIN_TEMPLATES.length].id;
   const count=o.layout?o.layout.seeds.length:Math.max(2,Math.min(24,Math.round(o.count??8))),cityCount=Math.max(count,Math.min(480,Math.round(o.cityCount??count*10)));
+  applyClimate(o.climate);
   const blank=await createFmsOriginalDocument('20k');
   blank.worldId=uuid();
   const options={seed,template:template as typeof SEED_TERRAIN_TEMPLATES[number]['id']};

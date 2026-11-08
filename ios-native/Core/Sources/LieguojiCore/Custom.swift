@@ -719,6 +719,7 @@ extension NativeEngine {
         Regimes.enable(run)
         let r = run
         UnitKinds.enabled = true
+        Regimes.registerCustomCultures(r)
         Armies.bridge?.reconcileContacts(r)  // Drop obsolete province-wide contacts before the first volley.
         // Once per world: the opening fleets sail with three ships (one ship of forty hands made sea
         // battles all but invisible); hull, crew and stores follow.

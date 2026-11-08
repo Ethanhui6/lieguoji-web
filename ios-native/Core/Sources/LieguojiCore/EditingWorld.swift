@@ -329,7 +329,7 @@ extension NativeEngine {
             b.units = p.units; if !p.extraUnits.isNull { b.extraUnits = p.extraUnits }; if !p.titles.isNull { b.titles = p.titles }
             return (true, "军事档案已导入")
         }
-        if !p.cultures.isNull { r.regimes.cultures = p.cultures; if !p.faithEdits.isNull { r.regimes.faithEdits = p.faithEdits }; return (true, "文化宗教已导入") }
+        if !p.cultures.isNull { r.regimes.cultures = p.cultures; if !p.faithEdits.isNull { r.regimes.faithEdits = p.faithEdits }; Regimes.registerCustomCultures(r); return (true, "文化宗教已导入") }
         return (false, "档案包内容与所选对象不符。")
     }
 }

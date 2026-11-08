@@ -57,7 +57,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 卷轴边缘: the map's paper edge darkens like an old scroll and a double ink rule frames it.
     private var frame: (buffer: MTLBuffer, count: Int)?
     /// The paper band and rules round the map (always drawn).
-    private var mount: Int)?
+    private var mount: (buffer: MTLBuffer, count: Int)?
     private let sea: MTLTexture?
     private let parchment: MTLTexture?
     private let sampler: MTLSamplerState?

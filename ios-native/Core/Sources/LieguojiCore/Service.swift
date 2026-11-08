@@ -165,6 +165,8 @@ public final class EngineService {
         case "appointOffice": return command(engine?.appointOffice(int("n"), office: str("office"), personId: int("person")))
         case "editCourt": return command(engine?.editCourt(int("n"), key: str("key"), value: dbl("value") ?? .nan))
         case "setCourtManual": return command(engine?.setCourtManual(int("n"), manual: bool("manual")))
+        case "createCulture": return command(engine?.createCulture(base: str("base"), name: str("name")))
+        case "createFaith": return command(engine?.createFaith(name: str("name")))
         case "createBlankLand": return command(engine?.createBlankLand(int("province"), name: str("name"), unconquerable: int("unconquerable") == 1))
         case "allianceList": return data(engine?.allianceList())
         case "editAlliance": return command(engine?.editAlliance(int("i"), name: optStr("name"), color: optStr("color"), unbreakable: optInt("unbreakable").map { $0 == 1 }))

@@ -198,6 +198,8 @@ struct EditorMapTab: View {
     @State private var visible = true
     @State private var imageX = 800.0
     @State private var imageY = 450.0
+    @State private var climate = GameModel.ClimateSettings()
+    @State private var busy = false
 
     private func drawRiver() {
         let c = model.controller
@@ -232,6 +234,17 @@ struct EditorMapTab: View {
     }
     var body: some View {
         VStack(spacing: 12) {
+            quickSection("气候与河流") {
+                PaperStepper(title: "降水", value: $climate.rain, range: 10...200, unit: "%")
+                PaperStepper(title: "气温修正", value: $climate.temperature, range: -30...30, unit: "°")
+                PaperStepper(title: "北界纬度", value: $climate.north, range: -80...90, unit: "")
+                PaperStepper(title: "南界纬度", value: $climate.south, range: -90...80, unit: "")
+                SealButton(title: busy ? "推演中……" : "重算气候与河流", disabled: busy) {
+                    busy = true
+                    let c = climate
+                    Task { let e = await model.reclimate(c); busy = false; say(e, "气候与河流已重算") }
+                }
+            }
             quickSection("河流") {
                 quickGrid {
                     quickTile("手绘河流", "scribble") { drawRiver() }

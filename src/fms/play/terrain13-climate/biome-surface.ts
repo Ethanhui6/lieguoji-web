@@ -1,5 +1,5 @@
 import { assertFmsDocument, type FmsDocument } from '../../model';
-import { FMS_BIOMES, FMS_CLIMATE_ALGORITHM, FMS_CLIMATE_DEFAULTS, FmsClimateError, generateFmsClimateGrid, recoveredBiome, recoveredTemperature } from './climate';
+import { FMS_BIOMES, FMS_CLIMATE_ALGORITHM, FMS_CLIMATE_DEFAULTS, fmsClimateNow, FmsClimateError, generateFmsClimateGrid, recoveredBiome, recoveredTemperature } from './climate';
 import { srgbToLinear } from './height-palette';
 import { deriveFmsClimateRivers, recoveredRiverMoisture, type FmsClimateRivers } from './climate-rivers';
 
@@ -43,7 +43,7 @@ export function deriveFmsBiomeSurface(doc:FmsDocument):FmsBiomeSurface {
   const references=doc.points.map(([x,y])=>Math.min(rows-1,Math.floor(y/doc.height*rows))*columns+Math.min(columns-1,Math.floor(x/doc.width*columns)));
   // Temperature must use the actual vertex height: a narrow summit/island can
   // fall between climate samples. Only precipitation is resampled from grid.
-  const temperatures=Int8Array.from(doc.elevations,(h,i)=>recoveredTemperature(Math.min(100,Math.max(0,h)),FMS_CLIMATE_DEFAULTS.north-doc.points[i][1]/doc.height*(FMS_CLIMATE_DEFAULTS.north-FMS_CLIMATE_DEFAULTS.south)));
+  const temperatures=Int8Array.from(doc.elevations,(h,i)=>recoveredTemperature(Math.min(100,Math.max(0,h)),fmsClimateNow().north-doc.points[i][1]/doc.height*(fmsClimateNow().north-fmsClimateNow().south)));
   const ids=new Uint8Array(doc.points.length),precipitation=Uint8Array.from(references,i=>climate.precipitation[i]);
   const rivers=deriveFmsClimateRivers(doc,precipitation);
   const colors=new Float32Array(ids.length*3),counts=new Array<number>(13).fill(0);

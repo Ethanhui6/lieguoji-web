@@ -68,12 +68,12 @@ extension NativeEngine {
                 } else { fills.append(add("state:" + controller, nameOf(controller), color[controller] ?? "#999999")) }
             case "culture":
                 let c = cityOf[p.id.asString].flatMap { r.civilization.cities[$0].cultureId.optionalString } ?? r.civilization.nations[controller].cultureId.optionalString
-                fills.append(add(c.map { "culture:" + $0 }, Self.cultureNames[c ?? ""] ?? c ?? "", Self.familyPalette[(Self.cultureIds.firstIndex(of: c ?? "") ?? 0) % Self.familyPalette.count]))
+                fills.append(add(c.map { "culture:" + $0 }, r.regimes.cultures[c ?? ""].name.optionalString ?? Self.cultureNames[c ?? ""] ?? c ?? "", Self.familyPalette[(Self.cultureIds.firstIndex(of: c ?? "") ?? 0) % Self.familyPalette.count]))
             case "religion":
                 // Each province by its own faith.
                 let id = Regimes.provinceFaith(r, p)
                 let valid = id != nil && id != "none"
-                fills.append(add(valid ? "religion:" + id! : nil, Self.religionNames[id ?? ""] ?? Regimes.creeds[id ?? ""]?.name ?? id ?? "", Self.familyPalette[((Self.religionIds.firstIndex(of: id ?? "") ?? 1) - 1 + Self.familyPalette.count) % Self.familyPalette.count]))
+                fills.append(add(valid ? "religion:" + id! : nil, r.regimes.faithEdits[id ?? ""].name.optionalString ?? Self.religionNames[id ?? ""] ?? Regimes.creeds[id ?? ""]?.name ?? id ?? "", Self.familyPalette[((Self.religionIds.firstIndex(of: id ?? "") ?? 1) - 1 + Self.familyPalette.count) % Self.familyPalette.count]))
             case "family":
                 let id = holder[p.id.asString]
                 let surname = id.flatMap { r.kin.families[$0].surname.optionalString }
@@ -150,7 +150,7 @@ extension NativeEngine {
             var followers = [String: Double]()
             for (_, n) in living { if let id = r.civilization.nations[n.id.asString].religionId.optionalString { followers[id, default: 0] += population[n.id.asString] ?? 0 } }
             let all = max(1, total)
-            for (id, v) in followers { rows.append((Self.religionNames[id] ?? Regimes.creeds[id]?.name ?? id, -1, v, "\(fmt(v))（\(String(format: "%.1f", v / all * 100))%）", Self.familyPalette[((Self.religionIds.firstIndex(of: id) ?? 1) - 1 + Self.familyPalette.count) % Self.familyPalette.count])) }
+            for (id, v) in followers { rows.append((r.regimes.faithEdits[id].name.optionalString ?? Self.religionNames[id] ?? Regimes.creeds[id]?.name ?? id, -1, v, "\(fmt(v))（\(String(format: "%.1f", v / all * 100))%）", Self.familyPalette[((Self.religionIds.firstIndex(of: id) ?? 1) - 1 + Self.familyPalette.count) % Self.familyPalette.count])) }
         }
         rows.sort { $0.value != $1.value ? $0.value > $1.value : $0.name < $1.name }
         return Data(JS.array(rows.map { row in

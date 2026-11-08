@@ -30,6 +30,18 @@ extension Regimes {
         }
         return UnitKinds.pick(culture: culture, id: id)
     }
+    /// The player's own cultures join the static catalogues (a copy of their base under a new id).
+    static func registerCustomCultures(_ r: JS) {
+        guard !r.regimes.isNull, !r.regimes.cultures.isNull else { return }
+        for (k, e) in r.regimes.cultures.objectEntries {
+            guard let base = e.base.optionalString, !Founding.cultures.contains(where: { $0.id == k }), let source = Founding.cultures.first(where: { $0.id == base }) else { continue }
+            guard let data = try? JSONEncoder().encode(source), var o = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { continue }
+            o["id"] = k; o["label"] = e.name.optionalString ?? k
+            guard let next = try? JSONSerialization.data(withJSONObject: o), let culture = try? JSONDecoder().decode(Opening.Culture.self, from: next) else { continue }
+            Founding.cultures.append(culture)
+            Nobility.cultures[k] = Nobility.cultures[base].clone()
+        }
+    }
     static func unitName(_ r: JS, _ nation: String, _ kind: UnitKinds.Kind) -> String { kind.note == "extra" ? kind.name : unitEdit(r, nation, kind.key).name.optionalString ?? kind.name }
     /// A new-kind army carries its own figures.
     static func noteExtraUnit(_ r: JS, army: String, _ kind: UnitKinds.Kind) {
@@ -127,6 +139,7 @@ extension NativeEngine {
         if let name, !name.isEmpty { e.name = JS(name) }
         if let text, !text.isEmpty { e.text = JS(text) }
         e.male = .array(male.map { JS($0) }); e.female = .array(female.map { JS($0) })
+        if let base = r.regimes.cultures[culture].base.optionalString { e.base = JS(base) }
         r.regimes.cultures[culture] = e
         return (true, "文化已修改")
     }
@@ -139,6 +152,26 @@ extension NativeEngine {
         if let text, !text.isEmpty { e.text = JS(text) }
         r.regimes.faithEdits[faith] = e
         return (true, "宗教已修改")
+    }
+
+    /// 新建文化: a culture of the player's, built on one that exists.
+    public func createCulture(base: String, name: String) -> (ok: Bool, reason: String) {
+        let r = run
+        guard !r.regimes.isNull, !name.isEmpty, Founding.cultures.contains(where: { $0.id == base }) else { return (false, "请先写好名称。") }
+        if r.regimes.cultures.isNull { r.regimes.cultures = .object() }
+        let id = "custom\(r.regimes.cultures.objectKeys.count + 1)x\(Int(r.clock.tick.asNumber))"
+        let e = JS.object(); e.name = JS(name); e.base = JS(base); e.male = .array([]); e.female = .array([])
+        r.regimes.cultures[id] = e
+        Regimes.registerCustomCultures(r)
+        return (true, "\(name)文化已创立")
+    }
+    public func createFaith(name: String) -> (ok: Bool, reason: String) {
+        let r = run
+        guard !r.regimes.isNull, !name.isEmpty else { return (false, "请先写好名称。") }
+        if r.regimes.faithEdits.isNull { r.regimes.faithEdits = .object() }
+        let e = JS.object(); e.name = JS(name)
+        r.regimes.faithEdits["faith\(r.regimes.faithEdits.objectKeys.count + 1)x\(Int(r.clock.tick.asNumber))"] = e
+        return (true, "\(name)已创立")
     }
 
     // MARK: 地图标注

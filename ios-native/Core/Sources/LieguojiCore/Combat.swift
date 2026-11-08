@@ -155,6 +155,11 @@ public struct ContactMotion {
             return Result(contacts: initial.contacts, held: initial.held, elapsed: 0, unused: seconds)
         }
         var current = initial
+        // Forces that may still move in this call (arrived and halted ones stay so), and each force's area
+        // as a number, kept current as movers move: every step used to look every force's position up by
+        // its string key to group them (the bulk of a step on a map of several hundred armies).
+        var active = forces.indices.filter { forces[$0].travel.status != .arrived && forces[$0].travel.status != .halted }
+        var areaOf = forces.map { areaKey(initial.positions[$0.key]!.cell, rules) }
         struct Mover { let f: Int; let seg: TravelSegment; let speed: Double; let end: Double; let time: Double }
         while remaining > 0 {
             events += 1; if events > 100_000 { break }
@@ -162,9 +167,10 @@ public struct ContactMotion {
             book = current.contacts
             var movers = [Mover]()
             let t0 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
-            for i in forces.indices {
+            active.removeAll { forces[$0].travel.status == .arrived || forces[$0].travel.status == .halted }
+            for i in active {
                 let s = forces[i].travel
-                if current.held.contains(forces[i].key) || s.status == .arrived || s.status == .halted { continue }
+                if current.held.contains(forces[i].key) { continue }
                 guard let seg = graph.segment(s) else { continue }
                 if !seg.local && !s.crossed && (s.offset == 0 || s.offset == seg.toGate) && !rules.canEnter(forces[i], seg.b) { forces[i].travel.status = .blocked; continue }
                 forces[i].travel.status = .moving
@@ -182,7 +188,10 @@ public struct ContactMotion {
                 let positions = current.positions
                 let zero = TravelPoint(x: 0, y: 0)
                 var groups = [Int: [Int]]()
-                for i in forces.indices { groups[areaKey(positions[forces[i].key]!.cell, rules), default: []].append(i) }
+                // Only areas a mover stands in: two forces standing still cannot come to meet (a touching
+                // pair would already be in contact).
+                let moving = Set(movers.map { areaOf[$0.f] })
+                for i in forces.indices where moving.contains(areaOf[i]) { groups[areaOf[i], default: []].append(i) }
                 // Only areas where hostile forces meet need the relative-motion solve.
                 groups = groups.filter { _, list in
                     list.count > 1 && list.indices.dropLast().contains { k in list[(k + 1)...].contains { rules.enemy(forces[list[k]].nation, forces[$0].nation) } }
@@ -271,6 +280,7 @@ public struct ContactMotion {
             let t2 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             let after = interiorEnd ?? (admitted.isEmpty ? moved() : positions(forces))
             if Profile.enabled { Profile.add("a.after", Date.timeIntervalSinceReferenceDate - t2) }
+            for m in movers { if let p = after[forces[m.f].key] { areaOf[m.f] = areaKey(p.cell, rules) } }
             var merged = book
             for m in meetings {
                 let c = pair(m.a, m.b, after, m.area), k = ContactMotion.pairKey(c.a, c.b)

@@ -100,7 +100,11 @@ public enum Armies {
             // one a province, two thirds of them), for armies as numerous as the original's.
             // App worlds raise more: up to three a province at home and 2.2 a province in all (900 in the world).
             let app = UnitKinds.enabled, perHome = app ? Tuning.current.armiesAtHome : 1, globalCap = app ? Tuning.current.armyCap : 500
-            let cap = land.isEmpty ? 0 : max(1, Int((Double(land.count) * f(app ? Tuning.current.armiesPerProvince : 2.0 / 3.0)).rounded(.down)))
+            // Large maps (over 80 provinces): fewer armies a province, falling with the square root of the
+            // map's size (240 provinces: 0.58 of the rate), so the world holds about as many columns on the
+            // move as the original's maps do and a day of marching stays affordable.
+            let scale = app ? min(1, (80 / Double(max(80, r.world.provinces.length))).squareRoot()) : 1
+            let cap = land.isEmpty ? 0 : max(1, Int((Double(land.count) * f(app ? Tuning.current.armiesPerProvince * scale : 2.0 / 3.0)).rounded(.down)))
             var formed = 0, cost = 0
             // Counted once per state and kept current as armies form (the loop used to refilter every army
             // and rebuild every army's position for each province). Same results: a new army is this

@@ -17,6 +17,36 @@ public enum Daily {
     @discardableResult
     public static func frame(_ r: JS) -> (eligible: Set<String>, held: Set<String>) {
         guard let bridge = Armies.bridge else { return ([], []) }
+        // App worlds: the whole frame (contacts written, eligible forces) stands while nothing it reads has
+        // changed — positions, contacts, wars, the forces and who is withdrawing, province holders and the
+        // sieges. A day ran it about twenty times over the same world on large maps.
+        var whole = ""
+        if UnitKinds.enabled {
+            var alive = 0, back = 0
+            for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" { alive += 1; if a.status.asString == "retreating" { back += 1 } }
+            var ships = 0, away = 0
+            let tick = r.clock.tick.asNumber
+            for f in (r.navy.fleets.isNull ? [] : r.navy.fleets.asArray) where f.status.asString != "lost" && r.maritime.hulls[f.id.asString].asNumber > 0 {
+                ships += 1; if (r.maritime.retreating[f.id.asString].optionalNumber ?? 0) > tick { away += 1 }
+            }
+            var h: UInt64 = 1469598103934665603
+            for p in r.world.provinces.asArray { for u in p.controller.asString.utf8 { h = (h ^ UInt64(u)) &* 1099511628211 }; h = (h ^ 0x2c) &* 1099511628211 }
+            for sg in r.occupation.sieges.asArray where sg.resistance.asNumber < sg.maximum.asNumber {
+                for u in (sg.provinceId.asString + "|" + sg.controller.asString + ";").utf8 { h = (h ^ UInt64(u)) &* 1099511628211 }
+            }
+            let wars = r.world.statecraft.relations.asArray.reduce(0) { $1.status.asString == "war" ? $0 + 1 : $0 }
+            func key() -> String { "\(ObjectIdentifier(r).hashValue)|\(r.armyPositions.revision.asNumber)|\(r.fleetPositions.revision.asNumber)|\(r.forceContacts.pairs.length)|\(wars)|\(alive)|\(back)|\(ships)|\(away)|\(h)" }
+            whole = key()
+            if let c = wholeCache, c.key == whole { return c.value }
+            let out = computeWholeFrame(r, bridge)
+            // Keyed as the world stands after this frame wrote its contacts.
+            wholeCache = (key(), out)
+            return out
+        }
+        return computeWholeFrame(r, bridge)
+    }
+    static var wholeCache: (key: String, value: (eligible: Set<String>, held: Set<String>))?
+    static func computeWholeFrame(_ r: JS, _ bridge: ForceBridge) -> (eligible: Set<String>, held: Set<String>) {
         let forces = Profile.measure("f.forces") { bridge.forces(r) }
         func computeFrame() -> (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position]) {
             let motion = ContactMotion(graph: bridge.graph), rules = bridge.rules(r), old = bridge.contacts(r)

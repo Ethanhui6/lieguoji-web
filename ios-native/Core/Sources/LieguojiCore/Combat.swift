@@ -259,7 +259,8 @@ public struct ContactMotion {
                 for m in movers { let l = graph.location(forces[m.f].travel); out[forces[m.f].key] = Position(point: l.point, cell: l.cell) }
                 return out
             }
-            let before = requests.isEmpty ? [:] : moved()
+            // Only the gate meetings of parity worlds read the positions before the crossing.
+            let before = requests.isEmpty || rules.physicalContact ? [:] : moved()
             var admitted = [Mover]()
             for m in requests { if rules.canEnter(forces[m.f], m.seg.b) { admitted.append(m) } else { forces[m.f].travel.status = .blocked } }
             var stopped = Set<String>(), meetings = [(a: String, b: String, area: String)]()
@@ -286,8 +287,17 @@ public struct ContactMotion {
                 }
             }
             let t2 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
-            let after = interiorEnd ?? moved()
+            let after: [String: Position]
+            if let end = interiorEnd { after = end } else {
+                // In place: the table is taken out of the current state (so it is not copied) and only the
+                // movers' entries are rewritten — copying it at every step cost as much as the step.
+                var p = current.positions
+                current.positions = [:]
+                for m in movers { let l = graph.location(forces[m.f].travel); p[forces[m.f].key] = Position(point: l.point, cell: l.cell) }
+                after = p
+            }
             if Profile.enabled { Profile.add("a.after", Date.timeIntervalSinceReferenceDate - t2) }
+            let oldArea = movers.map { areaOf[$0.f] }
             for m in movers { if let p = after[forces[m.f].key] { areaOf[m.f] = areaKey(p.cell, rules) } }
             var merged = book
             for m in meetings {
@@ -303,10 +313,9 @@ public struct ContactMotion {
             let tS = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             if rules.physicalContact && !meetingHit && merged.count == book.count {
                 let members = Set(current.contacts.flatMap { [$0.a, $0.b] })
-                let shifted = movers.contains { m in
-                    let k = forces[m.f].key
-                    guard let was = current.positions[k], let now = after[k] else { return true }
-                    return members.contains(k) || areaKey(was.cell, rules) != areaKey(now.cell, rules)
+                let shifted = movers.indices.contains { j in
+                    let m = movers[j]
+                    return members.contains(forces[m.f].key) || oldArea[j] != areaOf[m.f]
                 }
                 if Profile.enabled { Profile.add("a.shift", Date.timeIntervalSinceReferenceDate - tS) }
                 if !shifted { current = (current.contacts, current.held, after); continue }

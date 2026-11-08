@@ -312,14 +312,14 @@ extension Regimes {
         guard !r.foundings.isNull, r.foundings.enabled.isTruthy, Rebellion.monthsSince(r, Rebellion.never) >= Tuning.current.calmMonths else { return }
         for n in r.world.nations.asArray {
             let id = n.id.asString
-            guard Vassals.alive(r, id) else { continue }
+            guard Vassals.alive(r, id), !isBlank(r, id) else { continue }
             let owned = r.world.provinces.asArray.filter { $0.controller.asString == id }
             guard owned.count >= 5 else { continue }
             let b = book(r, id)
             if let last = b.lastUprising.optionalNumber, Double(key) - last < 8 { continue }
             var calm = leverage(r, id).stability
             if r.world.statecraft.relations.asArray.contains(where: { ($0.a.asString == id || $0.b.asString == id) && $0.status.asString == "war" }) { calm -= 6 }
-            let tag = "\(id)|\(key)|uprising", risk = max(0, 55 - calm) / 100 * 0.35 * Tuning.current.unrest + (owned.count > 20 ? 0.004 : 0)
+            let tag = "\(id)|\(key)|uprising", risk = (max(0, 55 - calm) / 100 * 0.35 * Tuning.current.unrest + (owned.count > 20 ? 0.004 : 0)) * rule(r, "rebel")
             guard chance(tag) < risk else { continue }
             let capital = Rebellion.capitalProvince(r, id)
             var weighted = [(String, UInt32)]()

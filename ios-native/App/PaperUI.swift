@@ -343,7 +343,7 @@ struct WorldSettings: Decodable {
 /// The ranges of the world rates (Regimes.ruleRanges), in percent.
 enum WorldRuleRange {
     static func of(_ key: String) -> ClosedRange<Int> {
-        switch key { case "war": return 0...300; case "march": return 25...300; default: return 25...400 }
+        switch key { case "war": return 0...300; case "march": return 25...300; case "rebel", "event": return 0...400; default: return 25...400 }
     }
 }
 
@@ -402,6 +402,10 @@ struct EdictSheet: View {
                                 ruleStepper("征兵规模", "levy", 25)
                                 Divider2()
                                 ruleStepper("造舰速度", "ships", 25)
+                                Divider2()
+                                ruleStepper("叛乱频率", "rebel", 25)
+                                Divider2()
+                                ruleStepper("事件频率", "event", 25)
                             }
                             Text("以常态为 100%。战争频率影响各国宣战意愿，战斗烈度影响交战伤亡，征兵规模影响新征军队的兵力，造舰速度影响舰队重建与扩编。")
                                 .font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 26)

@@ -91,6 +91,7 @@ public enum Armies {
         if UnitKinds.enabled {
             let k = Regimes.pickUnit(r, nation, id: id)
             unit = Muster.Unit(key: k.key, name: Regimes.unitName(r, nation, k))
+            Regimes.noteExtraUnit(r, army: id, k)
         }
         let name = r.world.cities.asArray.first { $0.provinceId.asString == home }?.name.asString ?? p.name.asString
         let a = JS.object()
@@ -145,7 +146,7 @@ public enum Armies {
             let here = space(r)
             func safeHere(_ province: String) -> Bool { !landHolders(here, province).contains { atWar($0.nationId.asString, id) } }
             for p in land {
-                if standing >= cap || total >= globalCap { break }
+                if Regimes.isBlank(r, id) || standing >= cap || total >= globalCap { break }
                 if !safeHere(p.id.asString) || (atHome[p.id.asString] ?? 0) >= perHome { continue }
                 let data = r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == p.id.asString }!
                 let required = Int((Double(strength(r, p.id.asString)) / 10 + 0.5).rounded(.down))
@@ -185,6 +186,7 @@ public enum Armies {
             if !q.allowed || q.count < 0 || places.isEmpty || r.world.armies.length + q.count > 500 { continue }
             history.lastMonth = JS(month); history.recent = .array(Array((history.recent.asArray.map(\.asInt) + [month]).suffix(3)).map { JS($0) })
             for _ in 0..<q.count {
+                if Regimes.isBlank(r, id) { break }
                 let seed = UInt32(truncatingIfNeeded: Int64(t(r).seed.asNumber)) &* 1664525 &+ 1013904223
                 t(r).seed = JS(Double(seed))
                 create(r, nation: id, home: places[Int(seed % UInt32(places.count))].id.asString, kind: "emergency")

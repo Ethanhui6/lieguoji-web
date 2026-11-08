@@ -50,6 +50,7 @@ extension NativeEngine {
         guard nations.indices.contains(a), nations.indices.contains(b), a != b else { return (false, "外交命令无效。") }
         let ida = nations[a].id.asString, idb = nations[b].id.asString
         if declare {
+            if Regimes.unconquerable(r, ida) || Regimes.unconquerable(r, idb) { return (false, "无主之地不可征服。") }
             guard let engine = Session.engine else { return (false, "外交数据尚未载入。") }
             if let refused = DiplomacyBridge.declareWar(r, ida, idb, engine: engine) { return (false, refused) }
             if !r.reigns47.isNull {

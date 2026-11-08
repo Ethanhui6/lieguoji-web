@@ -114,6 +114,8 @@ public enum Regimes {
     }
     /// The state's name for its base name and style (a restored empire's ordinal kept by the caller).
     static func title(_ r: JS, _ id: String, base: String, style s: Style) -> String {
+        // 国名模板 (自定义命名).
+        if !r.regimes.isNull, let t = r.regimes.nations[id].nameTemplate.optionalString { return t.replacingOccurrences(of: "{名}", with: base).replacingOccurrences(of: "{号}", with: s.suffix) }
         if s.id == "theocracy" || (s.suffix.isEmpty && s.id != "dynasty") { return Opening.stateTitle(base, polity: s.base, religion: r.civilization.nations[id].religionId.optionalString ?? "") }
         return base + s.suffix
     }
@@ -287,10 +289,12 @@ public enum Regimes {
         if !r.regimes.pacts.isNull { r.regimes.pacts = .array(r.regimes.pacts.asArray.filter { $0.until.asInt > key }) }
         for n in r.world.nations.asArray {
             let id = n.id.asString
-            guard Vassals.alive(r, id) else { continue }
+            guard Vassals.alive(r, id), !isBlank(r, id) else { continue }
             month(r, n, id, key)
         }
         uprisingsMonth(r, key)
+        editsMonth(r, key)
+        ArmyAutonomy.noAllySupport = r.regimes.world.noAssist.isTruthy
         Shipyards.month(r)
     }
 
@@ -339,8 +343,8 @@ public enum Regimes {
 
     /// 天下规则 (自定义): world-wide rates in percent of normal — war frequency, combat intensity, march
     /// speed, levy size and shipbuilding speed. 100 (or unset) is the normal game.
-    public static let ruleKeys = ["war", "damage", "march", "levy", "ships"]
-    public static let ruleRanges: [String: ClosedRange<Double>] = ["war": 0...300, "damage": 25...400, "march": 25...300, "levy": 25...400, "ships": 25...400]
+    public static let ruleKeys = ["war", "damage", "march", "levy", "ships", "rebel", "event"]
+    public static let ruleRanges: [String: ClosedRange<Double>] = ["war": 0...300, "damage": 25...400, "march": 25...300, "levy": 25...400, "ships": 25...400, "rebel": 0...400, "event": 0...400]
     public static func rule(_ r: JS, _ key: String) -> Double {
         guard !r.regimes.isNull, let v = r.regimes.world[key].optionalNumber else { return 1 }
         return max(0.05, v / 100)
@@ -669,9 +673,10 @@ extension NativeEngine {
         let t = Regimes.tradition(r, id), b = Regimes.book(r, id)
         let out = JS.array()
         for p in Regimes.posts {
-            let e = JS.object(); e.id = JS(p.id); e.title = JS(p.titles[t]); e.effect = JS(p.effect); e.skill = JS(p.skill)
+            let shown = b.titles[p.id].optionalString ?? p.titles[t]
+            let e = JS.object(); e.id = JS(p.id); e.title = JS(shown); e.effect = JS(p.effect); e.skill = JS(p.skill)
             if let pid = b.posts[p.id].optionalNumber, let person = People.person(r, Int(pid)), person.isAlive.asBool {
-                let v = personView(person, role: p.titles[t]); e.holder = v; e.value = JS(Regimes.skill(person, p.skill).rounded())
+                let v = personView(person, role: shown); e.holder = v; e.value = JS(Regimes.skill(person, p.skill).rounded())
             }
             out.push(e)
         }
@@ -744,6 +749,7 @@ extension NativeEngine {
         DeclarationEngine.pact = { a, b in
             let ids = DeclarationEngine.nationIds
             guard ids.indices.contains(a), ids.indices.contains(b) else { return false }
+            if Regimes.unconquerable(r, ids[a]) || Regimes.unconquerable(r, ids[b]) { return true }
             return Regimes.treaty(r, ids[a], ids[b]) != nil
         }
         DeclarationEngine.stance = { id in Armies.stateTraits(r, id) }

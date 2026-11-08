@@ -85,6 +85,8 @@ import LieguojiCore
     var brushAction: ((Int) -> Void)?
     /// 地图标注.
     @Published var customLabels: [GameModel.MapLabel] = []
+    @Published var customImages: [GameModel.MapImage] = []
+    @Published var customRivers: [[Float]] = []
     /// 长按地图: the province and the finger's place in the view.
     var onLongPress: ((Int, CGPoint) -> Void)?
     /// 地图点选: a page asked for a province (a new capital…): the prompt on the banner and what the tap does.
@@ -705,6 +707,8 @@ struct MapView: UIViewRepresentable {
             if renderer?.setSeaPorts(controller.seaPorts) == true { mtk.setNeedsDisplay() }
             if renderer?.setForts(controller.forts, holy: controller.holy) == true { mtk.setNeedsDisplay() }
             if labels.setCustom(controller.customLabels) { mtk.setNeedsDisplay() }
+            if labels.setImages(controller.customImages) { mtk.setNeedsDisplay() }
+            if renderer?.setExtraRivers(controller.customRivers) == true { mtk.setNeedsDisplay() }
             if labels.nameScale != controller.display.nationNameScale || labels.fullNames != controller.display.fullNationNames {
                 labels.nameScale = controller.display.nationNameScale
                 let namesChanged = labels.fullNames != controller.display.fullNationNames
@@ -792,6 +796,22 @@ final class MapLabelsView: UIView {
     }
     private var nations: [Label] = []
     private var custom: [Label] = []
+    private struct Picture { let view: UIImageView; let x: Double; let y: Double; let width: Double; let angle: Double }
+    private var pictures: [Picture] = []
+    private var picturesShown: [GameModel.MapImage] = []
+    /// 地图图片: under the names, or over them when the player asks.
+    func setImages(_ list: [GameModel.MapImage]) -> Bool {
+        guard list != picturesShown else { return false }
+        picturesShown = list
+        for p in pictures { p.view.removeFromSuperview() }
+        pictures = list.filter(\.visible).compactMap { m in
+            guard let data = Data(base64Encoded: m.data), let image = UIImage(data: data) else { return nil }
+            let v = UIImageView(image: image); v.alpha = m.alpha; v.isHidden = true
+            if m.front { addSubview(v) } else { insertSubview(v, at: 0) }
+            return Picture(view: v, x: m.x, y: m.y, width: m.width, angle: m.angle)
+        }
+        return true
+    }
     private var customShown: [GameModel.MapLabel] = []
     /// The player's own words on the map; they come before every other name.
     func setCustom(_ list: [GameModel.MapLabel]) -> Bool {
@@ -934,6 +954,12 @@ final class MapLabelsView: UIView {
         // 避让: the biggest names first; a name that would land on one already placed waits until the
         // player zooms in. One already showing gets a little slack, so names do not flicker at the limit.
         var taken = [Box](); taken.reserveCapacity(nations.count + 64)
+        for p in pictures {
+            let at = camera.toScreen(x: p.x, y: p.y, viewport: vp), w = p.width * camera.scale, size = p.view.bounds.width
+            guard size > 0, w > 2, at.x > -w, at.y > -w, at.x < vp.width + w, at.y < vp.height + w else { p.view.isHidden = true; continue }
+            p.view.transform = CGAffineTransform(rotationAngle: CGFloat(p.angle)).scaledBy(x: CGFloat(w / Double(size)), y: CGFloat(w / Double(size)))
+            p.view.center = CGPoint(x: at.x, y: at.y); p.view.isHidden = false
+        }
         if !showCities { for l in cities { l.view.isHidden = true } }
         for l in custom + nations + (showCities ? cities : []) {
             let points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)

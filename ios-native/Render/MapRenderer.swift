@@ -197,6 +197,17 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// A small battlement beside each fortified city (above right of its mark), in ink with a light inner wall.
+    private var extraRivers: (buffer: MTLBuffer, count: Int)?
+    private var extraRiverKey: [[Float]] = []
+    /// 手绘河流: the player's rivers, in the map's own water colour.
+    func setExtraRivers(_ paths: [[Float]]) -> Bool {
+        guard paths != extraRiverKey else { return false }
+        extraRiverKey = paths
+        var m = ColoredMesh()
+        for p in paths where p.count >= 4 { m.polyline(p, width: 2.6, RGB(0.23, 0.49, 0.6), alpha: 0.92) }
+        extraRivers = paths.isEmpty ? nil : buffer(m.vertices, stride: 6)
+        return true
+    }
     @discardableResult func setForts(_ points: [SIMD2<Float>], holy: [SIMD2<Float>] = []) -> Bool {
         guard points != fortKey || holy != holyKey else { return false }
         fortKey = points; holyKey = holy
@@ -737,6 +748,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
         }
         }
+        colored(extraRivers)
         if display.parchment {
             let r = map.meta.parchment
             quad(parchment, multiplyPipeline, x: r.x, y: r.y, width: r.width, height: r.height)

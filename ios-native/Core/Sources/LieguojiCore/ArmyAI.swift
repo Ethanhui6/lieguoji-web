@@ -71,6 +71,8 @@ public struct ArmyAutonomy: Sendable {
     /// into enemy land before supporting allies. nil keeps the original choice.
     public static var temper: ((Int) -> Double)?
     static var troopMemo: (tick: Int, by: [Int: Int])?
+    /// 协助盟友占领土地 turned off.
+    static var noAllySupport = false
     /// Each state's troops, counted once a tick.
     static func troopsBy(_ w: ArmyAIWorld) -> [Int: Int] {
         if let m = troopMemo, m.tick == w.tick { return m.by }
@@ -384,6 +386,7 @@ public struct ArmyAutonomy: Sendable {
                         }
                     }
                 }
+                if ArmyAutonomy.noAllySupport { candidates = candidates.filter { enemySet.contains(w.owners[$0.id]) } }
                 if ArmyAutonomy.originalRegularTargets && attack.isEmpty {
                     if ongoing { halt(i) }
                     note("waiting", clear: true)

@@ -1045,6 +1045,50 @@ import LieguojiCore
     func editCourt(_ n: Int, key: String, value: Double) async -> String? { finish(await native.editCourt(n, key: key, value: value)) }
     func appointOffice(_ n: Int, office: String, person: Int) async -> String? { finish(await native.appointOffice(n, office: office, person: person)) }
     func setCourtManual(_ n: Int, manual: Bool) async -> String? { finish(await native.setCourtManual(n, manual: manual)) }
+    func edit(_ name: String, _ args: [String: Any]) async -> String? { finish(await native.edit(name, args)) }
+    struct DistrictRow: Decodable, Identifiable { let id: Int; let name: String; let provinces: Int }
+    struct FamilyRow: Decodable, Identifiable { let id: String; let name: String; let provinces: Int; let influence: Double }
+    struct AllianceRow: Decodable, Identifiable { let id: Int; let name: String; let color: String; let unbreakable: Bool; let members: [Int] }
+    struct ExtraUnit: Decodable, Hashable { let base: String; let name: String; let power: Double; let speed: Double; let weight: Double }
+    struct MapImage: Decodable, Identifiable, Equatable { let id: Int; let name: String; let data: String; let x: Double; let y: Double; let width: Double; let angle: Double; let alpha: Double; let front: Bool; let visible: Bool }
+    struct MapExtras: Decodable { var rivers: [[Double]]? = nil; var images: [MapImage]? = nil; var abandon: Bool? = nil; var noAssist: Bool? = nil }
+    struct PlaceNames: Decodable { let cities: [String]; let provinces: [String] }
+    @Published var customImages: [MapImage] = []
+    private func list<T: Decodable>(_ type: T.Type, _ name: String, _ args: [String: Any] = [:]) async -> T? {
+        guard let d = await native.query(name, args) else { return nil }
+        return await Self.decode(type, from: d)
+    }
+    func districtList() async -> [DistrictRow] { await list([DistrictRow].self, "districtList") ?? [] }
+    func familyList() async -> [FamilyRow] { await list([FamilyRow].self, "familyList") ?? [] }
+    func allianceList() async -> [AllianceRow] { await list([AllianceRow].self, "allianceList") ?? [] }
+    func mapExtras() async -> MapExtras { await list(MapExtras.self, "mapExtras") ?? MapExtras() }
+    func extraUnits(_ n: Int) async -> [ExtraUnit] { await list([ExtraUnit].self, "extraUnits", ["n": n]) ?? [] }
+    func addRiver(_ points: [Double]) async -> String? { let e = finish(await native.edit("addMapRiver", ["points": points])); await refreshCustom(); return e }
+    func setMapImage(id: Int, name: String, data: String?, x: Double, y: Double, width: Double, angle: Double, alpha: Double, front: Bool, visible: Bool) async -> String? {
+        let body: [String: Any] = ["id": id, "name": name, "data": data.map { $0 as Any } ?? NSNull(), "x": Int(x), "y": Int(y), "width": Int(width), "angle": Int(angle * 1000), "alpha": Int(alpha * 1000), "front": front ? 1 : 0, "visible": visible ? 1 : 0]
+        let e = finish(await native.edit("setMapImage", body)); await refreshCustom(); return e
+    }
+    /// 档案包 to a file for sharing.
+    func exportPackage(_ n: Int, name: String) async -> URL? {
+        guard let d = await native.query("exportPackage", ["n": n]) else { return nil }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(name + ".json")
+        return (try? d.write(to: url)) == nil ? nil : url
+    }
+    func importPackage(_ n: Int, from url: URL) async -> String? {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return "读取文件失败" }
+        let e = finish(await native.edit("importPackage", ["n": n, "text": text])); await refreshCustom(); return e
+    }
+    /// Renamed places reach the map.
+    private func refreshPlaceNames() async {
+        guard let names = await list(PlaceNames.self, "placeNames"), var world = controller.world ?? map else { return }
+        guard names.cities.count == world.meta.cities.count, names.provinces.count == world.meta.provinces.count else { return }
+        var changed = false
+        for i in world.meta.cities.indices where world.meta.cities[i].name != names.cities[i] { world.meta.cities[i].name = names.cities[i]; changed = true }
+        for i in world.meta.provinces.indices where world.meta.provinces[i].name != names.provinces[i] { world.meta.provinces[i].name = names.provinces[i]; changed = true }
+        if changed { map?.meta.cities = world.meta.cities; map?.meta.provinces = world.meta.provinces; controller.world = world }
+    }
     struct UnitRow: Decodable, Identifiable { let key: String; let base: String; let name: String; let note: String; let power: Double; let speed: Double; let weight: Double; var id: String { key } }
     struct MapLabel: Decodable, Identifiable, Equatable { let id: Int; let text: String; let x: Double; let y: Double; let size: Double; let color: String; let angle: Double }
     struct CultureEdit: Decodable { var name: String? = nil; var text: String? = nil; var male: [String]? = nil; var female: [String]? = nil }
@@ -1056,6 +1100,9 @@ import LieguojiCore
     /// The world's labels and reworded cultures and faiths.
     func refreshCustom() async {
         if let d = await native.mapLabels(), let list = await Self.decode([MapLabel].self, from: d) { customLabels = list; controller.customLabels = list }
+        let extras = await mapExtras()
+        customImages = extras.images ?? []; controller.customImages = customImages; controller.customRivers = (extras.rivers ?? []).map { $0.map { Float($0) } }
+        await refreshPlaceNames()
         if let d = await native.catalogEdits(), let c = await Self.decode(Catalog.self, from: d) {
             catalog = c
             Names.culture = baseCulture; Names.religion = baseReligion

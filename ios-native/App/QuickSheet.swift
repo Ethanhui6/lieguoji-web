@@ -23,6 +23,7 @@ struct ProvinceQuickSheet: View {
     @State private var choice: Choice?
     @State private var picking: NationAction?
     @State private var target = -1
+    @State private var defense = 1
 
     private func report(_ e: String?, _ ok: String) { flash = e ?? ok; GameFeel.shared.notify(e == nil ? .success : .error) }
     private func reload() async {
@@ -104,6 +105,10 @@ struct ProvinceQuickSheet: View {
                                 act(on ? "要塞已筑" : "要塞已拆") { await model.editProvince(province, population: nil, fortress: on) }
                             }
                             tile("定为圣地", "sparkles") { act("已定为圣地") { await model.setHolyProvince(province) } }
+                            tile("城防锁定 +", "lock.shield") { defense = min(10, defense + 1); let d = defense; act("城防锁定为 \(d)") { await model.edit("setProvinceDefense", ["province": province, "level": d]) } }
+                            tile("城防自动", "lock.open") { defense = 1; act("城防恢复自动") { await model.edit("setProvinceDefense", ["province": province, "level": NSNull()]) } }
+                            tile("人口锁定", "lock") { act("人口已锁定") { await model.edit("lockPopulation", ["province": province, "lock": 1]) } }
+                            tile("人口解锁", "lock.open.display") { act("人口已解锁") { await model.edit("lockPopulation", ["province": province, "lock": 0]) } }
                         }
                     }
                     section("叛乱与复国") {

@@ -89,7 +89,7 @@ public struct WorldMap: Sendable {
 }
 
 public struct WorldMeta: Codable, Sendable {
-    public struct Province: Codable, Sendable { public let id: String; public let name: String; public let x: Float; public let y: Float; public var nation: Int; public let terrain: String }
+    public struct Province: Codable, Sendable { public let id: String; public var name: String; public let x: Float; public let y: Float; public var nation: Int; public let terrain: String }
     public struct Nation: Codable, Sendable {
         public let id: String; public let name: String; public let color: String
         /// State-line colour (ColorUtils.AdjustColor of the nation colour, fmsStateLineColor).
@@ -105,7 +105,7 @@ public struct WorldMeta: Codable, Sendable {
         public var angle: Float? = nil }
     public struct Event: Codable, Sendable { public let day: Int; public let text: String; public let reason: String }
     public struct Rect: Codable, Sendable { public let x: Float; public let y: Float; public let width: Float; public let height: Float }
-    public struct City: Codable, Sendable { public let id: String; public let name: String; public let x: Float; public let y: Float; public let province: Int
+    public struct City: Codable, Sendable { public let id: String; public var name: String; public let x: Float; public let y: Float; public let province: Int
         public init(id: String, name: String, x: Float, y: Float, province: Int) { self.id = id; self.name = name; self.x = x; self.y = y; self.province = province } }
     public let format: String
     public let version: Int

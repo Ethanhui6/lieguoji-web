@@ -12,17 +12,33 @@ extension Regimes {
     /// A new army's kind: the culture's roster with the state's own weights.
     static func pickUnit(_ r: JS, _ nation: String, id: String) -> UnitKinds.Kind {
         let culture = r.civilization.nations[nation].cultureId.optionalString ?? ""
-        guard !r.regimes.isNull, !r.regimes.nations[nation].units.isNull else { return UnitKinds.pick(culture: culture, id: id) }
+        guard !r.regimes.isNull, !r.regimes.nations[nation].units.isNull || !r.regimes.nations[nation].extraUnits.isNull else { return UnitKinds.pick(culture: culture, id: id) }
         var h: UInt32 = 2166136261
         for u in id.utf8 { h = (h ^ UInt32(u)) &* 16777619 }
         let roster = UnitKinds.roster(culture).map { ($0.0, Int(unitEdit(r, nation, $0.0).weight.optionalNumber ?? Double($0.1))) }.filter { $0.1 > 0 }
-        let total = roster.reduce(0) { $0 + $1.1 }
+        let extras = r.regimes.nations[nation].extraUnits.isNull ? [] : r.regimes.nations[nation].extraUnits.asArray
+        let total = roster.reduce(0) { $0 + $1.1 } + extras.reduce(0) { $0 + $1.weight.asInt }
         guard total > 0 else { return UnitKinds.pick(culture: culture, id: id) }
         var x = Int(h % UInt32(total))
         for (k, w) in roster { if x < w { return UnitKinds.byKey[k]! }; x -= w }
+        // 新增兵种: built on an existing arm, under its own name and figures.
+        for e in extras {
+            if x < e.weight.asInt, let base = UnitKinds.byKey[e.base.asString] {
+                return UnitKinds.Kind(key: base.key, name: e.name.asString, role: base.role, base: base.base, power: e.power.asNumber / 100, speed: e.speed.asNumber / 100, note: "extra")
+            }
+            x -= e.weight.asInt
+        }
         return UnitKinds.pick(culture: culture, id: id)
     }
-    static func unitName(_ r: JS, _ nation: String, _ kind: UnitKinds.Kind) -> String { unitEdit(r, nation, kind.key).name.optionalString ?? kind.name }
+    static func unitName(_ r: JS, _ nation: String, _ kind: UnitKinds.Kind) -> String { kind.note == "extra" ? kind.name : unitEdit(r, nation, kind.key).name.optionalString ?? kind.name }
+    /// A new-kind army carries its own figures.
+    static func noteExtraUnit(_ r: JS, army: String, _ kind: UnitKinds.Kind) {
+        guard kind.note == "extra", !r.regimes.isNull else { return }
+        if r.regimes.armyBoost.isNull { r.regimes.armyBoost = .object() }
+        let e = JS.object(); e.power = JS(kind.power); e.speed = JS(kind.speed); r.regimes.armyBoost[army] = e
+    }
+    static func armyPower(_ r: JS, _ army: String) -> Double { r.regimes.isNull ? 1 : r.regimes.armyBoost[army].power.optionalNumber ?? 1 }
+    static func armySpeed(_ r: JS, _ army: String) -> Double { r.regimes.isNull ? 1 : r.regimes.armyBoost[army].speed.optionalNumber ?? 1 }
 }
 
 extension NativeEngine {

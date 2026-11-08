@@ -679,7 +679,7 @@ struct GameView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "hand.tap").foregroundStyle(Theme.seal)
                         Text(prompt).font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
-                        Button("取消") { controller.pickPrompt = nil; controller.onPick = nil }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+                        Button("取消") { controller.pickPrompt = nil; controller.onPick = nil; if controller.onTerrainStrokeEnd != nil && controller.brushName == nil && model.controller.terrainBrush { controller.terrainBrush = false; controller.onTerrainStroke = nil; controller.onTerrainStrokeEnd = nil } }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
                     }
                     .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -2446,6 +2446,7 @@ struct ReleaseNotesSheet: View {
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
                     "【自绘地图】新增「崎岖」笔刷：在笔刷范围内随机起伏，画出的海岸与山脊不再圆滑生硬；地形工具改为五列排布。",
+                    "【世界编辑·续】疆土页：无主之地（可设不可征服）、行政区新建绘制删除与重生成、家族封地绘制擦除与除爵、自动放弃孤立行省、协助盟友开关；同盟页：改名、改色、踢人、拉人、铁盟、解散；山河图页：手绘河流、按文化重命名全部城市、随机地名、地图图片（缩放、旋转、透明、前后层）；国家页：新增兵种、军事档案与文化宗教的导入导出、国名模板、随机国名；州郡可锁定城防与人口；天下规则新增叛乱与事件频率。",
                     "【世界编辑】菜单新增世界编辑页，对照原作的编辑面板：笔刷（国家、文化、信仰、圣地、要塞、人口、瘟疫饥荒与平灾，划过州郡即可落笔）；地图标注（自定义文字、字号、颜色、倾斜，存入存档）；文化宗教改名、写描述、追加人名；导出地图截图与大事记、清空大事记。",
                     "【国家自定义】新增国家特性逐项开关与全开全关、官职称号修改、兵种档案（名称、战力、行速、征募权重，可禁用某兵种）、强制退出同盟。原有自定义内容全部保留。",
                     "【地图边框】按原作规则重做：地图外沿一条纸色宽边，外侧三道细墨线，地图之外是整张羊皮纸；可以把地图拖到露出边框。",

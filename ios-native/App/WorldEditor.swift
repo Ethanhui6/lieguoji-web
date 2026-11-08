@@ -1,5 +1,6 @@
 import SwiftUI
 import LieguojiCore
+import UniformTypeIdentifiers
 
 /// 世界编辑 (the original's edit panel): brushes over the map, free labels, cultures and faiths, exports.
 struct WorldEditorSheet: View {
@@ -7,7 +8,7 @@ struct WorldEditorSheet: View {
     var close: () -> Void = {}
     var takeShot: () -> Void = {}
 
-    private enum Tab: String, CaseIterable { case brush = "笔刷", labels = "标注", culture = "文化宗教", output = "导出" }
+    private enum Tab: String, CaseIterable { case brush = "笔刷", land = "疆土", pact = "同盟", map = "山河图", labels = "标注", culture = "文化宗教", output = "导出" }
     private struct Choice: Identifiable { let id = UUID(); let title: String; let items: [(String, () -> Void)] }
 
     @State private var tab = Tab.brush
@@ -29,6 +30,7 @@ struct WorldEditorSheet: View {
     @State private var male = ""
     @State private var female = ""
     @State private var exported: URL?
+    @State private var importing = false
 
     private func report(_ e: String?, _ ok: String) { flash = e ?? ok; GameFeel.shared.notify(e == nil ? .success : .error) }
 
@@ -50,19 +52,22 @@ struct WorldEditorSheet: View {
         ScrollView {
             VStack(spacing: 12) {
                 SheetHeader(title: "世界编辑", subtitle: "笔刷、标注、文化宗教与导出", seal: "编")
-                HStack(spacing: 8) {
+                ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 8) {
                     ForEach(Tab.allCases, id: \.self) { t in
                         Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { tab = t } } label: {
                             Text(t.rawValue).font(Theme.kai(15)).foregroundStyle(tab == t ? Theme.paper2 : Theme.ink)
-                                .frame(maxWidth: .infinity).frame(height: 38)
+                                .padding(.horizontal, 14).frame(height: 38)
                                 .background(tab == t ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                                 .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(tab == t ? Color.clear : Theme.line))
                         }
                         .buttonStyle(PressStyle())
                     }
                 }
-                .padding(.horizontal, 14)
+                .padding(.horizontal, 14) }
                 switch tab {
+                case .land: EditorLandTab(model: model, begin: { n, a in brush(n, a) }, say: { report($0, $1) }, close: close)
+                case .pact: EditorAllianceTab(model: model, say: { report($0, $1) })
+                case .map: EditorMapTab(model: model, say: { report($0, $1) }, close: close)
                 case .brush: brushes
                 case .labels: labels
                 case .culture: cultures
@@ -113,6 +118,9 @@ struct WorldEditorSheet: View {
             }
         }
         .sheet(item: Binding(get: { exported.map(Shared.init) }, set: { exported = $0?.url })) { ShareSheet(items: [$0.url]) }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
+            if case .success(let url) = result { Task { report(await model.importPackage(-1, from: url), "文化宗教已导入") } }
+        }
     }
     private struct Shared: Identifiable { let url: URL; var id: URL { url } }
 
@@ -258,6 +266,8 @@ struct WorldEditorSheet: View {
                 quickTile("导出地图截图", "camera") { takeShot() }
                 quickTile("导出大事记", "doc.text") { Task { exported = await model.exportChronicle(); if exported == nil { report("暂无大事记", "") } } }
                 quickTile("清空大事记", "trash", destructive: true) { Task { report(await model.setWorld("clearHistory", 1), "大事记已清空") } }
+                quickTile("导出文化宗教", "square.and.arrow.up") { Task { exported = await model.exportPackage(-1, name: "列国纪文化宗教") } }
+                quickTile("导入文化宗教", "square.and.arrow.down") { importing = true }
             }
         }
     }
@@ -276,6 +286,12 @@ struct NationExtrasView: View {
     @State private var titleEdit: Edit?
     @State private var units: [GameModel.UnitRow] = []
     @State private var unitEdit: GameModel.UnitRow?
+    @State private var extras: [GameModel.ExtraUnit] = []
+    @State private var addingUnit = false
+    @State private var template = ""
+    @State private var exported: URL?
+    @State private var importing = false
+    private struct SharedFile: Identifiable { let url: URL; var id: URL { url } }
 
     private func run(_ ok: String, _ body: @escaping () async -> String?) {
         Task { let e = await body(); say(e ?? ok); GameFeel.shared.notify(e == nil ? .success : .error); await reload() }
@@ -333,11 +349,42 @@ struct NationExtrasView: View {
                     .buttonStyle(.plain)
                 }
             }
+            quickSection("新增兵种") {
+                ForEach(Array(extras.enumerated()), id: \.offset) { i, e in
+                    HStack {
+                        Text("\(e.name)（基于\(UnitKinds.name(e.base))）").font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
+                        Spacer()
+                        Button("删除") { run("兵种已删除") { let r = await model.edit("removeExtraUnit", ["n": nation, "i": i]); extras = await model.extraUnits(nation); return r } }.font(Theme.kai(14)).foregroundStyle(Theme.seal)
+                    }
+                }
+                quickGrid {
+                    quickTile("编入新兵种", "plus.circle") { addingUnit = true }
+                    quickTile("导出档案", "square.and.arrow.up") { Task { exported = await model.exportPackage(nation, name: "列国纪军事档案") } }
+                    quickTile("导入档案", "square.and.arrow.down") { importing = true }
+                }
+            }
+            quickSection("国名") {
+                TextField("模板：用 {名} 和 {号}，留空恢复", text: $template).paperField()
+                quickGrid {
+                    quickTile("应用模板", "textformat") { let t = template; run("国名已更改") { await model.edit("setNameTemplate", ["n": nation, "template": t.isEmpty ? NSNull() as Any : t as Any]) } }
+                    quickTile("随机国名", "dice") { run("国名已更改") { await model.edit("randomNationName", ["n": nation]) } }
+                }
+            }
             quickSection("同盟") {
                 quickGrid { quickTile("强制退出同盟", "person.2.slash", destructive: true) { run("已退出同盟") { await model.leaveAlliance(nation) } } }
             }
         }
-        .task { units = await model.unitProfile(nation) }
+        .task { units = await model.unitProfile(nation); extras = await model.extraUnits(nation) }
+        .sheet(item: Binding(get: { exported.map(SharedFile.init) }, set: { exported = $0?.url })) { ShareSheet(items: [$0.url]) }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
+            if case .success(let url) = result { run("军事档案已导入") { let e = await model.importPackage(nation, from: url); units = await model.unitProfile(nation); extras = await model.extraUnits(nation); return e } }
+        }
+        .sheet(isPresented: $addingUnit) {
+            NewUnitEditor { base, name, power, speed, weight in
+                addingUnit = false
+                run("\(name)已编入") { let r = await model.edit("addExtraUnit", ["n": nation, "base": base, "name": name, "power": Int(power), "speed": Int(speed), "weight": Int(weight)]); extras = await model.extraUnits(nation); return r }
+            }
+        }
         .sheet(item: $titleEdit) { e in
             TitleEditor(edit: e.text, label: e.label) { value in
                 titleEdit = nil
@@ -355,6 +402,33 @@ struct NationExtrasView: View {
                 }
             }
         }
+    }
+}
+
+private struct NewUnitEditor: View {
+    let done: (String, String, Double, Double, Double) -> Void
+    @State private var base = "Infantry"
+    @State private var name = ""
+    @State private var power = 120.0
+    @State private var speed = 100.0
+    @State private var weight = 10.0
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                SheetHeader(title: "编入新兵种", subtitle: "以现有兵种为底", seal: "兵")
+                VStack(spacing: 12) {
+                    Picker("基础兵种", selection: $base) { ForEach(UnitKinds.kinds, id: \.key) { k in Text(k.name).tag(k.key) } }.pickerStyle(.menu).tint(Theme.seal).frame(maxWidth: .infinity, alignment: .leading)
+                    TextField("新兵种名称", text: $name).paperField()
+                    quickSlider("战力", value: $power, 10...500, step: 5, text: "\(Int(power))%")
+                    quickSlider("行速", value: $speed, 10...300, step: 5, text: "\(Int(speed))%")
+                    quickSlider("征募", value: $weight, 1...100, text: "\(Int(weight))")
+                }
+                .padding(.horizontal, 22)
+                SealButton(title: "编入", disabled: name.trimmingCharacters(in: .whitespaces).isEmpty) { done(base, name, power, speed, weight) }.padding(.horizontal, 22)
+            }
+            .padding(.bottom, 16)
+        }
+        .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
     }
 }
 

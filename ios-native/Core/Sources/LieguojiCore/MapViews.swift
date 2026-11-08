@@ -64,7 +64,7 @@ extension NativeEngine {
                     // The strongest member (most provinces; the first listed on a tie).
                     var strongest = controller, most = -1
                     for m in a.members.asArray { let id = m.optionalString ?? "", n = owned[id] ?? 0; if n > most { most = n; strongest = id } }
-                    fills.append(add("alliance:" + (a.id.optionalString ?? ""), a.name.optionalString ?? "同盟", color[strongest] ?? "#999999"))
+                    fills.append(add("alliance:" + (a.id.optionalString ?? ""), a.name.optionalString ?? "同盟", (a.color.optionalString.flatMap { $0.isEmpty ? nil : $0 }) ?? color[strongest] ?? "#999999"))
                 } else { fills.append(add("state:" + controller, nameOf(controller), color[controller] ?? "#999999")) }
             case "culture":
                 let c = cityOf[p.id.asString].flatMap { r.civilization.cities[$0].cultureId.optionalString } ?? r.civilization.nations[controller].cultureId.optionalString

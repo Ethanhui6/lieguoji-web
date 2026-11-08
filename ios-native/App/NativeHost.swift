@@ -234,6 +234,9 @@ actor NativeHost {
     func mapLabels() async -> Data? { await call("mapLabels", [:]).data }
     func setMapLabel(id: Int, text: String, x: Int, y: Int, size: Int, color: String, angle: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("setMapLabel", ["id": id, "text": text, "x": x, "y": y, "size": size, "color": color, "angle": angle]) }
     func removeMapLabel(id: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("removeMapLabel", ["id": id]) }
+    /// The editor's commands and queries, by name.
+    func edit(_ name: String, _ args: [String: Any]) async -> (ok: Bool, reason: String, state: Data?) { await command(name, args) }
+    func query(_ name: String, _ args: [String: Any]) async -> Data? { await call(name, args).data }
     func grantRegion(_ province: Int, size: Int, to nation: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("grantRegion", ["province": province, "size": size, "n": nation]) }
     func greatRebellion(_ province: Int, size: Int, kind: String?) async -> (ok: Bool, reason: String, state: Data?) { await command("greatRebellion", ["province": province, "size": size, "kind": kind.map { $0 as Any } ?? NSNull()]) }
     func restoreNation(_ province: Int, nation: Int, size: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("restoreNation", ["province": province, "n": nation, "size": size]) }

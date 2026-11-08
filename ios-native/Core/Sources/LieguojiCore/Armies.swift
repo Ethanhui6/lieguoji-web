@@ -153,7 +153,7 @@ public enum Armies {
                 create(r, nation: id, home: p.id.asString, kind: "regular"); data.population = JS(data.population.asNumber - Double(required)); formed += 1; cost += required
                 standing += 1; atHome[p.id.asString, default: 0] += 1; total += 1
             }
-            if formed > 0 { People.announce(r, kind: "diplomacy", text: "\(n.name.asString)新编\(formed)支常备军", reason: "按故乡编制征集，本次扣内部人口\(cost)；每支新军同时建立真实位置、速度和基础战力记录。", nations: [id], province: nil) }
+            if formed > (UnitKinds.enabled ? 3 : 0) { People.announce(r, kind: "diplomacy", text: "\(n.name.asString)新编\(formed)支常备军", reason: "按故乡编制征集，本次扣内部人口\(cost)；每支新军同时建立真实位置、速度和基础战力记录。", nations: [id], province: nil) }
             let war = r.world.statecraft.relations.asArray.contains { ($0.a.asString == id || $0.b.asString == id) && $0.status.asString == "war" }
             if !war {
                 let sp = space(r)

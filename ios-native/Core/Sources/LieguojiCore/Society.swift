@@ -235,8 +235,9 @@ extension Regimes {
         var owed = debt(r, id), gold = fin.gold.optionalNumber ?? 0
         let atWar = r.world.statecraft.relations.asArray.contains { ($0.a.asString == id || $0.b.asString == id) && $0.status.asString == "war" }
         if atWar && gold < income && owed < income * 24 {
+            let first = owed < income
             owed += income * 6; gold += income * 6
-            _ = People.announce(r, kind: "event", text: "\(n.name.asString)举债充军费", reason: "战事吃紧，国库告罄，向商贾借银 \(Int(income * 6)) 金。", nations: [id], province: nil)
+            if first { _ = People.announce(r, kind: "event", text: "\(n.name.asString)举债充军费", reason: "战事吃紧，国库告罄，向商贾借银 \(Int(income * 6)) 金。", nations: [id], province: nil) }
         } else if gold > income * 15 && owed > 0 {
             let pay = min(owed, income * 3)
             owed -= pay; gold -= pay
@@ -249,11 +250,11 @@ extension Regimes {
         if gold < 0 { owed -= gold; gold = 0 }
         if owed > income * 48 {
             // 国家破产
-            owed *= 0.5; gold = 0
+            owed = min(owed * 0.5, income * 12); gold = 0
             let d = r.destiny.nations[id]
             if !d.isNull { d.destiny = JS(max(0, (d.destiny.optionalNumber ?? 0) - 10)) }
             Finance.setCorruption(r, id, Finance.corruption(r, id) + 10)
-            _ = People.announce(r, kind: "politics", text: "\(n.name.asString)国家破产", reason: "债台高筑，无力偿付：赖掉一半国债，国库清零，国运 −10，腐化 +10。", nations: [id], province: nil)
+            _ = People.announce(r, kind: "politics", text: "\(n.name.asString)国家破产", reason: "债台高筑，无力偿付：赖掉大半国债，国库清零，国运 −10，腐化 +10。", nations: [id], province: nil)
         }
         fin.gold = JS(gold.rounded()); setDebt(r, id, owed)
     }

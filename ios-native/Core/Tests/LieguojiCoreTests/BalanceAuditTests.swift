@@ -17,35 +17,47 @@ final class BalanceAuditTests: XCTestCase {
     private func cleanup() { Session.uninstall(); UnitKinds.enabled = false; DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil }
 
     /// A great power against a neighbour with a fraction of its troops.
-    func testHopelessWarEndsQuickly() throws {
+    private func hopeless(wantWar: Bool) throws {
         defer { cleanup() }
         let engine = try world(), r = engine.run
         let nations = r.world.nations.asArray, provinces = r.world.provinces.asArray
         var pair: (Int, Int)?
-        for (i, n) in nations.enumerated() {
+        search: for (i, n) in nations.enumerated() {
             for p in provinces where p.controller.asString == n.id.asString {
                 for q in p.neighbors.asArray {
-                    if let o = provinces.first(where: { $0.id.asString == q.asString }), o.controller.asString != n.id.asString, let j = nations.firstIndex(where: { $0.id.asString == o.controller.asString }) { pair = (i, j); break }
+                    guard let o = provinces.first(where: { $0.id.asString == q.asString }), o.controller.asString != n.id.asString, let j = nations.firstIndex(where: { $0.id.asString == o.controller.asString }) else { continue }
+                    if RunWindow.atWar(r, n.id.asString, o.controller.asString) == wantWar { pair = (i, j); break search }
                 }
-                if pair != nil { break }
             }
-            if pair != nil { break }
         }
-        let (a, b) = try XCTUnwrap(pair), ida = nations[a].id.asString, idb = nations[b].id.asString
-        for x in r.world.armies.asArray where x.nationId.asString == ida { x.troops = JS(x.troops.asNumber * 20); r.tactics.forces[x.id.asString].fullStrength = JS(x.troops.asNumber) }
+        guard let (a, b) = pair else { print("LOPSIDED no pair wantWar=\(wantWar)"); return }
+        let ida = nations[a].id.asString, idb = nations[b].id.asString
+        for x in r.world.armies.asArray where x.nationId.asString == ida { x.troops = JS(x.troops.asNumber * 20) }
         let start = provinces.filter { $0.controller.asString == idb }.count
-        let declared = engine.politics(declare: true, a, b)
-        print("LOPSIDED declared \(declared.ok) \(declared.reason)")
+        if !wantWar { let d = engine.politics(declare: true, a, b); print("LOPSIDED declared \(d.ok) \(d.reason)") }
         var firstLoss = -1, ended = -1
+        func held() -> Int { r.world.provinces.asArray.filter { $0.controller.asString == idb }.count }
         for day in 1...360 {
             engine.advance(days: 1)
-            let held = r.world.provinces.asArray.filter { $0.controller.asString == idb }.count
-            if firstLoss < 0 && held < start { firstLoss = day }
+            if firstLoss < 0 && held() < start { firstLoss = day }
+            if day % 60 == 0 || day == 15 {
+                var status = [String: Int](), decision = [String: Int](), there = 0
+                let owner = Dictionary(r.world.provinces.asArray.map { ($0.id.asString, $0.controller.asString) }, uniquingKeysWith: { a, _ in a })
+                for x in r.world.armies.asArray where x.nationId.asString == ida && x.troops.asNumber > 0 {
+                    status[x.status.asString, default: 0] += 1
+                    decision[r.armyAutonomy.armies[x.id.asString].decision.optionalString ?? "-", default: 0] += 1
+                    if owner[x.provinceId.asString] == idb { there += 1 }
+                }
+                let foe = r.world.armies.asArray.filter { $0.nationId.asString == idb }.reduce(0) { $0 + $1.troops.asNumber }
+                print("LOPSIDED day \(day) held \(held()) inEnemyLand \(there) status \(status) decision \(decision) enemyTroops \(Int(foe)) odds \(Int(Regimes.odds(r, ida, idb)))")
+            }
             if ended < 0 && !RunWindow.atWar(r, ida, idb) { ended = day; break }
         }
         let troopsA = r.world.armies.asArray.filter { $0.nationId.asString == ida }.reduce(0) { $0 + $1.troops.asNumber }
-        print("LOPSIDED provinces \(start) → \(r.world.provinces.asArray.filter { $0.controller.asString == idb }.count), first loss day \(firstLoss), war ended day \(ended), attacker troops \(Int(troopsA))")
+        print("LOPSIDED wantWar=\(wantWar) provinces \(start) → \(held()), first loss day \(firstLoss), war ended day \(ended), attacker troops \(Int(troopsA)), worldAuto \(r.diplomacy.worldAuto.isTruthy)")
     }
+    func testHopelessDeclaredWar() throws { try hopeless(wantWar: false) }
+    func testHopelessOngoingWar() throws { try hopeless(wantWar: true) }
 
     /// Two years of world: what the chronicle says over and over, and which names are used twice.
     func testRepetition() throws {

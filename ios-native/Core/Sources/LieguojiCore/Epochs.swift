@@ -31,7 +31,7 @@ extension Regimes {
     /// caliphates, tsardoms, khanates, merchant republics, military orders…
     static func regimeDrift(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
         let tag = "\(id)|\(key)|drift", roll = chance(tag)
-        guard roll < 0.012 else { return }
+        guard roll < 0.025 else { return }
         let civ = r.civilization.nations[id], polity = civ.polity.optionalString ?? "", culture = civ.cultureId.optionalString ?? "", faith = civ.religionId.optionalString ?? ""
         let land = r.world.provinces.asArray.reduce(0) { $1.controller.optionalString == id ? $0 + 1 : $0 }
         var list = [String]()
@@ -56,7 +56,7 @@ extension Regimes {
         default: break
         }
         // Rarer still: a change of the whole order.
-        if roll < 0.002 {
+        if roll < 0.003 {
             if polity == "Kingdom" || polity == "Empire" {
                 if faith == "islam" { list = ["caliphate"] } else if faith == "catholic" { list = ["papacy"] } else if faith == "tantric" { list = ["lamaism"] } else { list = ["junta", "dictatorship"] }
             } else if polity == "Republic" { list = ["dictatorship", "junta", "council"] }

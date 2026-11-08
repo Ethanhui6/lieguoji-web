@@ -457,18 +457,68 @@ public enum Regimes {
         var h: UInt32 = 0x811c9dc5
         for u in "\(id)|\(key)|event".utf8 { h = (h ^ UInt32(u)) &* 0x1000193 }
         let roll = Double(h) / 4294967296, name = n.name.asString
-        func say(_ text: String, _ reason: String) { _ = People.announce(r, kind: "event", text: text, reason: reason, nations: [id], province: nil) }
-        if roll < 0.004 {
+        // A second draw from the same seed picks the province or army an event falls on.
+        let pick = Int((h &* 2654435761) >> 8)
+        let land = r.world.provinces.asArray.filter { $0.controller.asString == id }
+        let place = land.isEmpty ? nil : land[pick % land.count]
+        func stock(_ p: JS) -> JS? { r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == p.id.asString } }
+        let mine = Set(land.map(\.id.asString))
+        func everyStock(_ body: (JS) -> Void) { for s in r.world.statecraft.provinces.asArray where mine.contains(s.provinceId.asString) { body(s) } }
+        let armies = r.world.armies.asArray.filter { $0.nationId.asString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
+        func say(_ text: String, _ reason: String, _ province: JS? = nil) { _ = People.announce(r, kind: "event", text: text, reason: reason, nations: [id], province: province?.id.optionalString) }
+        switch roll {
+        case ..<0.004:
             addGold(2); say("\(name)五谷丰登", "风调雨顺，仓廪充实：国库多收两月岁入。")
-        } else if roll < 0.007 {
+        case ..<0.007:
             let fin = r.finance.nations[id]; if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) * 0.85) }
             addDestiny(-3); say("\(name)遭遇天灾", "水旱相继，赈济耗费：国库减一成半，国运 −3。")
-        } else if roll < 0.009 {
+        case ..<0.009:
             addDestiny(5); say("\(name)名臣辈出", "朝中贤能云集，政通人和：国运 +5。")
-        } else if roll < 0.0105 {
-            addDestiny(-5); say("\(name)瘟疫流行", "疫病蔓延，民生凋敝：国运 −5。")
-        } else if roll < 0.0115 && gain > 0 {
+        case ..<0.0105:
+            everyStock { $0.population = JS(max(100, ($0.population.asNumber * 0.97).rounded())) }
+            addDestiny(-5); say("\(name)瘟疫流行", "疫病蔓延，民生凋敝：全国人口 −3%，国运 −5。")
+        case ..<0.0115 where gain > 0:
             addGold(4); say("\(name)商路大开", "远方商旅络绎不绝：国库多收四月岁入。")
+        case ..<0.0130:
+            guard let p = place, let s = stock(p) else { return }
+            s.grain = JS((s.grain.asNumber * 0.4).rounded()); s.population = JS(max(100, (s.population.asNumber * 0.98).rounded()))
+            say("\(p.name.asString)蝗灾", "飞蝗蔽日，禾稼一空：\(p.name.asString)存粮去六成，人口 −2%。", p)
+        case ..<0.0142:
+            guard let p = place, let s = stock(p) else { return }
+            let d = r.upperCombat.provinces[p.id.asString]
+            if !d.isNull, let v = d.storedDefense.optionalNumber, v > 1 { d.storedDefense = JS(v - 1) }
+            s.population = JS(max(100, (s.population.asNumber * 0.96).rounded()))
+            say("\(p.name.asString)地震", "地动山摇，城垣崩塌：\(p.name.asString)城防降一级，人口 −4%。", p)
+        case ..<0.0154:
+            guard let p = place, let s = stock(p) else { return }
+            s.grain = JS(0); s.population = JS(max(100, (s.population.asNumber * 0.95).rounded()))
+            say("\(p.name.asString)洪水", "江河决堤，田庐漂没：\(p.name.asString)存粮尽失，人口 −5%。", p)
+        case ..<0.0166:
+            everyStock { $0.grain = JS(($0.grain.asNumber * 0.7).rounded()) }
+            say("\(name)大旱", "赤地千里：全国存粮减三成。")
+        case ..<0.0180:
+            everyStock { $0.population = JS(($0.population.asNumber * 1.02).rounded()) }
+            say("\(name)人丁兴旺", "太平日久，生齿日繁：全国人口 +2%。")
+        case ..<0.0192 where !armies.isEmpty:
+            for a in armies { a.morale = JS(min(100, a.morale.asNumber + 15)) }
+            say("\(name)名将出世", "良将练兵，三军用命：全国军队士气 +15。")
+        case ..<0.0202 where !armies.isEmpty:
+            let a = armies[pick % armies.count]
+            a.troops = JS((a.troops.asNumber * 0.8).rounded(.down)); a.morale = JS(max(0, a.morale.asNumber - 25))
+            say("\(a.name.asString)兵变", "欠饷生怨，士卒哗变：\(a.name.asString)折损两成兵力，士气 −25。")
+        case ..<0.0214:
+            addDestiny(-2); addGold(-0.5)
+            say("\(name)盗匪蜂起", "山林啸聚，劫掠行旅：国运 −2，国库少收半月岁入。")
+        case ..<0.0226:
+            addDestiny(3); say("\(name)天降祥瑞", "景星庆云，民心振奋：国运 +3。")
+        case ..<0.0236:
+            addGold(3); say("\(name)发现矿藏", "山中掘得金银：国库多收三月岁入。")
+        case ..<0.0246:
+            addGold(1); addDestiny(2); say("\(name)学者云集", "四方文士来投，书院兴盛：国运 +2，国库多收一月岁入。")
+        case ..<0.0254 where !r.vassals.isNull && r.vassals.records.asArray.contains(where: { $0.endedTick.isNull && $0.overlordId.asString == id }):
+            addGold(2); say("\(name)诸藩朝贡", "附庸诸国遣使来朝：国库多收两月岁入。")
+        default:
+            break
         }
     }
 

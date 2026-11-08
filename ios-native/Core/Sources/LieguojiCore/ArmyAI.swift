@@ -72,7 +72,7 @@ public struct ArmyAutonomy: Sendable {
     public static var temper: ((Int) -> Double)?
     static var troopMemo: (tick: Int, by: [Int: Int])?
     /// Each state's troops, counted once a tick.
-    static func troopsBy(_ w: ArmyWorld) -> [Int: Int] {
+    static func troopsBy(_ w: ArmyAIWorld) -> [Int: Int] {
         if let m = troopMemo, m.tick == w.tick { return m.by }
         var by = [Int: Int](); for a in w.armies where a.troops > 0 { by[a.nation, default: 0] += a.troops }
         troopMemo = (w.tick, by)

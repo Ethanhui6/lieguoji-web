@@ -298,10 +298,19 @@ public enum Regimes {
     /// Damage multiplier for `attacker`'s army hitting `victim`'s (attack and defence bonuses, and the
     /// world's combat intensity).
     static func combatBonus(_ r: JS, attacker: String, victim: String) -> Double {
-        let a = (bonus(r, attacker, "attack") ?? 0) + (persona(r, attacker)?.attack ?? 0) + (governing(r, attacker)?.attack ?? 0) + (stateCreed(r, attacker)?.attack ?? 0), d = (bonus(r, victim, "defense") ?? 0) + (persona(r, victim)?.defense ?? 0) + (governing(r, victim)?.defense ?? 0) + (stateCreed(r, victim)?.defense ?? 0)
+        var a: Double = bonus(r, attacker, "attack") ?? 0
+        a += persona(r, attacker)?.attack ?? 0
+        a += governing(r, attacker)?.attack ?? 0
+        a += stateCreed(r, attacker)?.attack ?? 0
+        var d: Double = bonus(r, victim, "defense") ?? 0
+        d += persona(r, victim)?.defense ?? 0
+        d += governing(r, victim)?.defense ?? 0
+        d += stateCreed(r, victim)?.defense ?? 0
         // App worlds fight at twice the original's lethality: evenly matched armies used to grind for a
         // whole year; a battle now decides within weeks (战斗烈度 still scales it).
-        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage") * Tuning.current.lethality / grit(r, victim)
+        let ratio: Double = max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100))
+        let scaled: Double = ratio * rule(r, "damage") * Tuning.current.lethality
+        return scaled / grit(r, victim)
     }
     /// 小国坚韧 (app worlds): a small state fights on its last land with its back to the wall; its armies
     /// take less damage the fewer provinces it holds (none at eight or more), so a great power cannot

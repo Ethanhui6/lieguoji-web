@@ -672,7 +672,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             // Heights are per cell, so a cell used to pop up whole (a mosaic of blocks). A fine field over
             // each vertex varies the height inside the cell, and a wider band lets the shore creep in.
             float fine = 0.5 * sin(q.x * 0.071 + q.y * 0.013) + 0.5 * cos(q.y * 0.083 - q.x * 0.021);
-            float hh = h + fine * 0.09 + (n - 0.5) * 0.12;
+            // The rise follows a field of map position only: neighbouring cells meet at the same points, so
+            // they reach the same value there and the shore blends across cell borders instead of
+            // stepping cell by cell (a cell's own height jumped at every border: the mosaic).
+            float field = 0.5 + 0.28 * sin(q.x * 0.0093 + 1.3) * cos(q.y * 0.0108 - 0.4) + 0.14 * sin((q.x - q.y) * 0.0231) + 0.08 * cos(q.x * 0.041 + q.y * 0.037);
+            float hh = field + fine * 0.03;
             float rise = min(1.0, r.w / 0.45), wash = clamp((r.w - 0.5 - n * 0.22 - fine * 0.04) / 0.16, 0.0, 1.0);
             float shown = smoothstep(0.0, 1.0, clamp((rise * 1.2 - hh) * 3.2, 0.0, 1.0));
             float3 ground = terrain[id].rgb + (c.rgb - terrain[id].rgb) * wash;

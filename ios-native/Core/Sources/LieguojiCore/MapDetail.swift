@@ -15,11 +15,10 @@ extension MapLayers {
         return shore
     }
 
-    /// The sea texture with old-chart waterlines: three fine lines following the coast and a paler shallows.
+    /// Old-chart waterlines: for each sea pixel, how strongly a line and the paler shallows lie on it (two bytes).
     public static func waterlines(_ map: WorldMap) -> [UInt8] {
-        var out = map.seaRGBA
         let w = map.seaWidth, h = map.seaHeight
-        guard w > 1, h > 1, out.count == w * h * 4, map.coast.count >= 4 else { return out }
+        guard w > 1, h > 1, map.seaRGBA.count == w * h * 4, map.coast.count >= 4 else { return [] }
         let sx = Float(w) / map.width, sy = Float(h) / map.height, reach = Int((26 * max(sx, sy)).rounded(.up))
         var distance = [Int16](repeating: -1, count: w * h)
         var frontier = [Int32]()
@@ -49,23 +48,25 @@ extension MapLayers {
             }
             frontier = next
         }
-        let rings: [(at: Float, strength: Float)] = [(6, 0.34), (12.5, 0.22), (20, 0.14)]
+        let rings: [(at: Float, strength: Float)] = [(6, 0.5), (12.5, 0.34), (20, 0.2)]
         let unit = 1 / max(sx, sy)
+        var mask = [UInt8](repeating: 0, count: w * h * 2)
         for p in 0..<(w * h) where distance[p] > 0 {
             let d = Float(distance[p]) * unit
             var light: Float = 0
             for r in rings { light = max(light, max(0, 1 - abs(d - r.at) / max(1, unit)) * r.strength) }
-            let shallow = max(0, 1 - d / 16) * 0.18
-            let i = p * 4
-            func blend(_ v: UInt8, _ pale: Float, _ line: Float) -> UInt8 {
-                var c = Float(v)
-                c += (pale - c) * shallow
-                c += (236 - c) * light
-                return UInt8(max(0, min(255, c)))
-            }
-            out[i] = blend(out[i], 186, light); out[i + 1] = blend(out[i + 1], 214, light); out[i + 2] = blend(out[i + 2], 206, light)
+            mask[p * 2] = UInt8(light * 255); mask[p * 2 + 1] = UInt8(max(0, 1 - d / 16) * 0.2 * 255)
         }
-        return out
+        return mask
+    }
+    /// Lays the waterlines on the sea once it has its colours (a preset's recolouring keeps only depth).
+    public static func applyWaterlines(_ mask: [UInt8], to rgba: inout [UInt8]) {
+        guard mask.count * 2 == rgba.count else { return }
+        for p in 0..<(mask.count / 2) where mask[p * 2] != 0 || mask[p * 2 + 1] != 0 {
+            let light = Float(mask[p * 2]) / 255, shallow = Float(mask[p * 2 + 1]) / 255, i = p * 4
+            func blend(_ v: UInt8, _ pale: Float) -> UInt8 { var c = Float(v); c += (pale - c) * shallow; c += (238 - c) * light; return UInt8(max(0, min(255, c))) }
+            rgba[i] = blend(rgba[i], 186); rgba[i + 1] = blend(rgba[i + 1], 214); rgba[i + 2] = blend(rgba[i + 2], 206)
+        }
     }
 
     /// Always on the map: the sand edge of the land, wave marks on the open sea, the compass and the scale.
@@ -148,12 +149,12 @@ extension MapLayers {
             let h = Float(map.elevation[c]), biome = map.biome[c], x = map.sites[c * 2], y = map.sites[c * 2 + 1], pick = hash(c) % 100
             if h >= 55 || (biome >= 5 && biome <= 9) { continue }
             let key = Int64(floor(x / 13)) << 32 | Int64(Int32(floor(y / 13))) & 0xFFFF_FFFF
-            if h < 40 && pick < 55 && nearCity(x, y) {
+            if h < 40 && pick < 32 && nearCity(x, y) {
                 if !taken.insert(key).inserted { continue }
                 // Ploughed strips, each patch lying its own way.
-                let a = Float(hash(c &+ 5) % 180) * .pi / 180, ux = cos(a), uy = sin(a), vx = -uy, vy = ux, w: Float = 6.5, d: Float = 4
-                m.fill([x - ux * w - vx * d, y - uy * w - vy * d, x + ux * w - vx * d, y + uy * w - vy * d, x + ux * w + vx * d, y + uy * w + vy * d, x - ux * w + vx * d, y - uy * w + vy * d], field, alpha: 0.32)
-                for k in -1...1 { let o = Float(k) * d * 0.6; m.segment(x - ux * w + vx * o, y - uy * w + vy * o, x + ux * w + vx * o, y + uy * w + vy * o, width: 0.35, furrow, alpha: 0.42) }
+                let a = Float(hash(c &+ 5) % 180) * .pi / 180, ux = cos(a), uy = sin(a), vx = -uy, vy = ux, w: Float = 5, d: Float = 3
+                m.fill([x - ux * w - vx * d, y - uy * w - vy * d, x + ux * w - vx * d, y + uy * w - vy * d, x + ux * w + vx * d, y + uy * w + vy * d, x - ux * w + vx * d, y - uy * w + vy * d], field, alpha: 0.2)
+                for k in -1...1 { let o = Float(k) * d * 0.6; m.segment(x - ux * w + vx * o, y - uy * w + vy * o, x + ux * w + vx * o, y + uy * w + vy * o, width: 0.3, furrow, alpha: 0.28) }
                 continue
             }
             if pick >= 42 || !taken.insert(key).inserted { continue }

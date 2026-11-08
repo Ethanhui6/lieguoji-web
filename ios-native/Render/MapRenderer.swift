@@ -54,6 +54,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var holyKey: [SIMD2<Float>] = []
     /// Warm-authored sea bytes. Recoloured into `sea` for the selected preset.
     private var seaSource: [UInt8] = []
+    private var seaMask: [UInt8] = []
     /// 卷轴边缘: the map's paper edge darkens like an old scroll and a double ink rule frames it.
     private var frame: (buffer: MTLBuffer, count: Int)?
     /// The paper band and rules round the map (always drawn).
@@ -145,7 +146,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         icons = buffer(ready?.icons ?? MapLayers.cityIcons(map).vertices, stride: 6)
         ornaments = buffer(ready?.ornaments ?? MapLayers.ornaments(map).vertices, stride: 6)
         fineDetail = buffer(ready?.fine ?? MapLayers.fineDetail(map).vertices, stride: 6)
-        seaSource = ready?.sea ?? MapLayers.waterlines(map)
+        seaMask = ready?.sea ?? MapLayers.waterlines(map)
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
@@ -188,7 +189,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         outlines = buffer(MapLayers.outlines(next).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
         if refreshSea {
-            seaSource = MapLayers.waterlines(next); uploadSea(); seaLaneKey = []; seaLanes = nil
+            seaSource = next.seaRGBA; seaMask = MapLayers.waterlines(next); uploadSea(); seaLaneKey = []; seaLanes = nil
             ornaments = buffer(MapLayers.ornaments(next).vertices, stride: 6); fineDetail = buffer(MapLayers.fineDetail(next).vertices, stride: 6)
         }
         recolor()
@@ -245,7 +246,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     private func uploadSea() {
         guard let sea, seaSource.count == map.seaWidth * map.seaHeight * 4 else { return }
-        let bytes = MapPalette.recolorSea(seaSource, from: .warmPaper, to: MapPalette.ocean(display.ocean))
+        var bytes = MapPalette.recolorSea(seaSource, from: .warmPaper, to: MapPalette.ocean(display.ocean))
+        if display.mapDetail ?? true { MapLayers.applyWaterlines(seaMask, to: &bytes) }
         bytes.withUnsafeBytes { raw in
             if let base = raw.baseAddress {
                 sea.replace(region: MTLRegionMake2D(0, 0, map.seaWidth, map.seaHeight), mipmapLevel: 0, withBytes: base, bytesPerRow: map.seaWidth * 4)
@@ -361,9 +363,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private(set) var display = DisplaySettings()
     func setDisplay(_ d: DisplaySettings) {
         let recolour = d.colorDensity != display.colorDensity || d.ocean != display.ocean
-        let seaChanged = d.ocean != display.ocean
+        let seaChanged = d.ocean != display.ocean, detailChanged = d.mapDetail != display.mapDetail
         display = d
-        if seaChanged { uploadSea() }
+        if seaChanged || detailChanged { uploadSea() }
         if recolour { base = nil; recolor() }
     }
     private func recolor() {
@@ -701,8 +703,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
         }
-        // The paper beyond the map, under everything (the original's parchment covers the whole screen).
-        if display.parchment { let r = map.meta.parchment; quad(parchment, multiplyPipeline, x: r.x - 500, y: r.y - 500, width: r.width + 1000, height: r.height + 1000) }
         quad(sea, texturePipeline, x: 0, y: 0, width: map.width, height: map.height)
         if reveal < 1, let rb = revealBuffers() {
             let sea = MapPalette.ocean(display.ocean).shallow
@@ -761,12 +761,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         }
         colored(extraRivers)
+        colored(mount)
         if display.parchment {
+            // A little past the map: the parchment lies over the paper mounting too.
             let r = map.meta.parchment
-            quad(parchment, multiplyPipeline, x: r.x, y: r.y, width: r.width, height: r.height)
+            quad(parchment, multiplyPipeline, x: r.x - 70, y: r.y - 70, width: r.width + 140, height: r.height + 140)
         }
         if display.darkEdges && reveal >= 0.2 { colored(frame) }
-        colored(mount)
         encoder.endEncoding()
         buffer.present(drawable)
         buffer.commit()

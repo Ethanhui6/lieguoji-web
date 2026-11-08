@@ -664,9 +664,9 @@ struct GameView: View {
         // A breath of ink at the screen's top and foot, so the floating controls settle into the map.
         .overlay {
             VStack(spacing: 0) {
-                LinearGradient(colors: [Color.black.opacity(0.3), .clear], startPoint: .top, endPoint: .bottom).frame(height: 130)
+                LinearGradient(colors: [Color.black.opacity(0.18), .clear], startPoint: .top, endPoint: .bottom).frame(height: 130)
                 Spacer()
-                LinearGradient(colors: [.clear, Color.black.opacity(0.26)], startPoint: .top, endPoint: .bottom).frame(height: landscape ? 60 : 150)
+                LinearGradient(colors: [.clear, Color.black.opacity(0.16)], startPoint: .top, endPoint: .bottom).frame(height: landscape ? 60 : 150)
             }
             .ignoresSafeArea().allowsHitTesting(false).opacity(wallpaper ? 0 : 1)
         }
@@ -2327,7 +2327,7 @@ struct MenuSheet: View {
                 .padding(.horizontal, 16)
                 SectionLabel("世界")
                 Group2 {
-                    Button { openEditor() } label: { MenuRow(symbol: "paintbrush.pointed.fill", title: "世界编辑（笔刷、标注、文化宗教）") }.buttonStyle(.plain)
+                    Button { openEditor() } label: { MenuRow(symbol: "paintbrush.pointed.fill", title: "世界编辑") }.buttonStyle(.plain)
                     Divider2()
                     Button { openEdicts() } label: { MenuRow(symbol: "scroll.fill", title: "天下诏令与规则") }.buttonStyle(.plain)
                     Divider2()

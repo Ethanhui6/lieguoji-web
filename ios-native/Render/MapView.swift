@@ -188,11 +188,10 @@ struct PlaySettings: Codable, Equatable {
     var autosave = 120
     static let key = "playSettings.v1"
     init() {}
-    private enum Keys: String, CodingKey { case mapDetail, showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave }
+    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave }
     // Every field is optional in a stored setting: older versions saved fewer (and a 高帧率 switch).
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
-        mapDetail = try c.decodeIfPresent(Bool.self, forKey: .mapDetail)
         showArmies = try c.decodeIfPresent(Bool.self, forKey: .showArmies) ?? true
         warArrows = try c.decodeIfPresent(Bool.self, forKey: .warArrows) ?? true
         iconScale = try c.decodeIfPresent(Double.self, forKey: .iconScale) ?? 1
@@ -208,7 +207,6 @@ struct PlaySettings: Codable, Equatable {
     }
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: Keys.self)
-        try c.encodeIfPresent(mapDetail, forKey: .mapDetail)
         try c.encode(showArmies, forKey: .showArmies); try c.encode(warArrows, forKey: .warArrows); try c.encode(iconScale, forKey: .iconScale)
         try c.encode(mapFPS, forKey: .mapFPS); try c.encode(marchFPS, forKey: .marchFPS); try c.encode(effectFPS, forKey: .effectFPS)
         try c.encode(renderScale, forKey: .renderScale); try c.encode(simLoad, forKey: .simLoad); try c.encode(autoCool, forKey: .autoCool)

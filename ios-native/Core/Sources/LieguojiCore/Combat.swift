@@ -62,7 +62,7 @@ public struct ContactMotion {
             self.enemy = enemy; self.canEnter = canEnter; self.speed = speed; self.seaRegion = seaRegion; self.provinceID = provinceID
         }
     }
-    public struct Result { public var contacts: [ForceContact]; public var held: Set<String>; public var elapsed: Double; public var unused: Double; public var positions: [String: Position]? = nil }
+    public struct Result { public var contacts: [ForceContact]; public var held: Set<String>; public var elapsed: Double; public var unused: Double; var positions: [String: Position]? = nil }
     /// The last sort of the forces by key (the set rarely changes between calls).
     nonisolated(unsafe) static var orderCache: (keys: [String], order: [Int])?
 
@@ -146,7 +146,10 @@ public struct ContactMotion {
         return false
     }
     /// One call of advanceForceContacts47 (stopAtEvent as force-tick47 uses it). Forces are mutated in place.
-    public func advance(_ input: inout [MovingForce], previous: [ForceContact], seconds: Double, rules: Rules, stopAtEvent: Bool, known: (contacts: [ForceContact], held: Set<String>, positions: [String: Position])? = nil) -> Result {
+    public func advance(_ input: inout [MovingForce], previous: [ForceContact], seconds: Double, rules: Rules, stopAtEvent: Bool) -> Result {
+        advance(&input, previous: previous, seconds: seconds, rules: rules, stopAtEvent: stopAtEvent, known: nil)
+    }
+    func advance(_ input: inout [MovingForce], previous: [ForceContact], seconds: Double, rules: Rules, stopAtEvent: Bool, known: (contacts: [ForceContact], held: Set<String>, positions: [String: Position])?) -> Result {
         // The phase keeps the forces in collation order of their keys.
         let order = Profile.measure("a.sort") { () -> [Int] in
             guard rules.physicalContact else { return input.indices.sorted { Collate.less(input[$0].key, input[$1].key) } }

@@ -356,8 +356,8 @@ public enum RunWindow {
     // MARK: The window
     /// advanceMilitaryWindowCore47 for `ticks` within the current day. Returns the volleys and whether
     /// the day boundary was reached (the run then needs its daily settlement).
-    @discardableResult
     static var occupyStamp = ""
+    @discardableResult
     public static func advance(_ r: JS, ticks: Int) -> (volleys: [Salvo], dailyPending: Bool) {
         let F = Daily.frameTicks(r), start = r.clock.tick.asInt, end = start + ticks, untilDay = (r.world.day.asInt + 1) * 120
         var now = Double(F.map { start / $0 * $0 } ?? start), volleys = [Salvo](), events = 0

@@ -330,6 +330,10 @@ public enum Regimes {
         // 特产与贸易: the kinds of goods held and bought from partners at peace add to the income.
         let trade = Trade.share(r, id).rate
         if trade > 0 { addGold(trade) }
+        // 海上封锁 (app rules): ports an enemy fleet holds take their share of the sea trade and customs
+        // with them, up to three tenths of the monthly income when every port is held.
+        let blocked = Naval.blockade(r, id)
+        if blocked.ports > 0 { addGold(-0.3 * Double(blocked.held) / Double(blocked.ports)) }
         // 税制 and the treasury record (财政).
         Finance.month(r, id, addGold: addGold, addDestiny: addDestiny)
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)

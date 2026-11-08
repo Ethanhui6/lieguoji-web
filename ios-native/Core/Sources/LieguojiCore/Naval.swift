@@ -406,4 +406,14 @@ public enum Naval {
             r.portControl.attackFleetIds = .array(r.portControl.attackFleetIds.asArray.filter { $0.asString != id }); revise(r)
         }
     }
+    /// 海上封锁: a state's ports, and how many of them an enemy fleet holds now.
+    static func blockade(_ r: JS, _ id: String) -> (ports: Int, held: Int) {
+        guard !r.portControl.isNull, !r.portControl.ports.isNull else { return (0, 0) }
+        var ports = 0, held = 0
+        for (_, c) in r.portControl.ports.objectEntries where c.landOwnerId.optionalString == id {
+            ports += 1
+            if let o = c.occupierId.optionalString, o != id, atWar(r, id, o) { held += 1 }
+        }
+        return (ports, held)
+    }
 }

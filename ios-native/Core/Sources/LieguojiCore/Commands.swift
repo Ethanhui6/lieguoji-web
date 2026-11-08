@@ -98,6 +98,10 @@ extension NativeEngine {
                 o.house = JS(surname.isEmpty ? "无名氏" : surname + "氏")
             }
             if !r.foundings.isNull, r.foundings.enabled.isTruthy, let chance = Rebellion.provinceChance(r, owner, id) { o.unrest = JS(chance) }
+            // 海上封锁: an enemy fleet holds this province's port.
+            if !r.portControl.isNull, !r.portControl.ports.isNull, let fleet = r.portControl.ports[id].occupierId.optionalString, fleet != owner, RunWindow.atWar(r, owner, fleet) {
+                o.blockade = JS(nation(fleet))
+            }
         }
         // 城市防御力 and 占领进度: each siege of this province (resistance left of its maximum).
         let sieges = r.occupation.isNull || r.occupation.sieges.isNull ? [] : r.occupation.sieges.asArray.filter { $0.provinceId.asString == id }

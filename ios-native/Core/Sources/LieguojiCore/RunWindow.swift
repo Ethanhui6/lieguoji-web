@@ -205,7 +205,7 @@ public enum RunWindow {
                                       counter: UnitKinds.enabled ? { a, b in
                                           let ids = r.world.nations.asArray
                                           let bonus = ids.indices.contains(a.nation) && ids.indices.contains(b.nation) ? Regimes.combatBonus(r, attacker: ids[a.nation].id.asString, victim: ids[b.nation].id.asString) : 1
-                                          return UnitKinds.counter(r.units[a.id].optionalString ?? "", r.units[b.id].optionalString ?? "") * bonus
+                                          return UnitKinds.counter(r.units[a.id].optionalString ?? "", r.units[b.id].optionalString ?? "") * bonus * ArmyLedger.veterancy(r, attacker: a.id, victim: b.id)
                                       } : nil)
         let armyKeys = Dictionary(uniqueKeysWithValues: forces.filter { $0.kind == .army }.map { ($0.key, $0.id) })
         // creditArmyKills47.

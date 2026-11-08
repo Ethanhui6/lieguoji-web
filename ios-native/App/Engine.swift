@@ -171,6 +171,8 @@ struct ProvinceInfo: Decodable {
     var sieges: [SiegeInfo]? = nil
     /// 总督 and how well he suits the post, the noble house holding it as a fief, and 民心: the chance it rises at a rebellion check.
     var governor: String? = nil; var governorFit: Double? = nil; var house: String? = nil; var unrest: Int? = nil
+    /// 海上封锁: the state whose fleet holds this province's port.
+    var blockade: Int? = nil
     /// The kinds of land this is, from what the engine weighs (core, fortress, granary, rich, mountain).
     var kinds: [(String, String)] {
         var out = [(String, String)]()
@@ -183,6 +185,7 @@ struct ProvinceInfo: Decodable {
         if let g = governor { out.append(("总督", g + "（" + ((governorFit ?? 0) >= 0.4 ? "称职" : (governorFit ?? 0) >= 0 ? "平庸" : "失职") + "）")) }
         if let h = house { out.append(("封地", h + "世代所据")) }
         if let u = unrest { out.append((u >= 40 ? "民变" : "民心", u > 0 ? "每次检定起事概率 \(u)%" : "安定")) }
+        if blockade != nil { out.append(("封锁", "港口被敌国舰队封锁，海贸与关税断绝")) }
         if let i = income, i > 1.02 { out.append(("善治", "地方官增收 \(Int(((i - 1) * 100).rounded()))%")) }
         return out
     }

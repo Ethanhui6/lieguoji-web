@@ -59,6 +59,7 @@ extension NativeEngine {
         o.kills = JS((rec.isNull ? 0 : rec.kills.optionalNumber ?? 0).rounded())
         o.losses = JS((rec.isNull ? 0 : rec.losses.optionalNumber ?? 0).rounded())
         o.battles = JS(rec.isNull ? 0 : rec.battles.optionalNumber ?? 0)
+        o.rank = JS(ArmyLedger.rank(r, id))
         o.reason = JS(r.armyAutonomy.armies[id].reason.optionalString ?? "")
         // 当前战役 and the campaigns it has fought in.
         let all = r.regimes.isNull || r.regimes.campaigns.isNull ? [] : r.regimes.campaigns.list.asArray.filter { c in c.armies.asArray.contains { $0.asString == id } }
@@ -124,6 +125,18 @@ enum ArmyLedger {
             let c = book.list[book.active[pid].asInt]
             if day - (c.last.optionalNumber ?? day) >= 3 { c.end = JS(day); book.active.delete(pid) }
         }
+    }
+    /// 军功等级 (app rules): an army hardens with the battles it has fought — 新军, 劲旅 (2+), 精锐 (6+),
+    /// 百战之师 (12+). Each rank strikes 6% harder and takes 4% less.
+    static let ranks = ["新军", "劲旅", "精锐", "百战之师"]
+    static func rank(_ r: JS, _ id: String) -> Int {
+        guard on, !r.regimes.isNull, !r.regimes.record.isNull else { return 0 }
+        let b = r.regimes.record[id].battles.optionalNumber ?? 0
+        return b >= 12 ? 3 : b >= 6 ? 2 : b >= 2 ? 1 : 0
+    }
+    /// Damage multiplier for `attacker` striking `victim` by their ranks.
+    static func veterancy(_ r: JS, attacker: String, victim: String) -> Double {
+        (1 + 0.06 * Double(rank(r, attacker))) * (1 - 0.04 * Double(rank(r, victim)))
     }
     /// An army entering a battle.
     static func battle(_ r: JS, _ id: String) {

@@ -5,6 +5,8 @@ import LieguojiCore
 struct ArmyService: Decodable {
     let home: Int; let days: Double; let full: Double; let levy: Bool
     let kills: Double; let losses: Double; let battles: Double; let reason: String
+    /// 军功等级 0…3.
+    var rank: Int? = nil
     var campaigns: Double? = nil; var campaign: String? = nil
 }
 
@@ -37,6 +39,7 @@ struct ArmyServiceView: View {
                     Row(label: "服役", value: Self.served(r.days)); Divider2()
                     Row(label: "满编", value: Names.wan(Int(r.full))); Divider2()
                     if let c = r.campaign, !c.isEmpty { Row(label: "当前战役", value: c); Divider2() }
+                    Row(label: "军功", value: ["新军", "劲旅 · 攻+6% 受伤−4%", "精锐 · 攻+12% 受伤−8%", "百战之师 · 攻+18% 受伤−12%"][min(3, max(0, r.rank ?? 0))]); Divider2()
                     Row(label: "参战", value: "\(Int(r.battles)) 次 · 战役 \(Int(r.campaigns ?? 0)) 场"); Divider2()
                     Row(label: "战史共歼灭敌军", value: "\(Names.wan(Int(r.kills))) 人"); Divider2()
                     Row(label: "折损", value: "\(Names.wan(Int(r.losses))) 人")

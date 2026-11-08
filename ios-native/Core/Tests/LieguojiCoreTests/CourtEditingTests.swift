@@ -35,12 +35,17 @@ final class CourtEditingTests: XCTestCase {
         XCTAssertFalse(engine.appointOffice(0, office: "WarCommander:1", personId: person).ok)
     }
     func testGovernorFamilyActionsAndRebellionOutlook() throws {
-        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Golden")
-        let r = try JS.parse(Data(contentsOf: dir.appendingPathComponent("offices.json"))).samples[0].input.clone()
-        let traits = try JS.parse(Data(contentsOf: dir.appendingPathComponent("nobility.json"))).traits
-        People.loadTraits(traits); Nobility.traitList = traits.asArray
-        let engine = NativeEngine(run: r), id = r.world.nations[0].id.asString
-        r.regimes = .object()
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let resources = dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources")
+        try NativeEngine.loadCatalogs(traits: Data(contentsOf: resources.appendingPathComponent("Catalog/traits.json")),
+                                      nobleCultures: Data(contentsOf: resources.appendingPathComponent("Catalog/noble-cultures.json")),
+                                      cultures: Data(contentsOf: resources.appendingPathComponent("World/cultures.json")))
+        defer { Session.uninstall(); UnitKinds.enabled = false; DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil }
+        let engine = try NativeEngine(world: Data(contentsOf: dir.appendingPathComponent("Golden/bridge-world.json")))
+        engine.enableAppRules()
+        engine.advance(days: 40)
+        let r = engine.run, id = r.world.nations[0].id.asString
+        _ = engine.nationInfo(0); _ = engine.province(0)
         // 总督: any held province can be given a governor; another state's cannot.
         let provinces = r.world.provinces.asArray
         let mine = try XCTUnwrap(provinces.indices.first { provinces[$0].controller.asString == id })

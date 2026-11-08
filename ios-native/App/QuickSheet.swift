@@ -7,10 +7,11 @@ struct ProvinceQuickSheet: View {
     let province: Int
     var openProvince: () -> Void = {}
     var openNation: (Int) -> Void = { _ in }
+    var openArmy: (Int) -> Void = { _ in }
     var close: () -> Void = {}
 
     private struct Choice: Identifiable { let id = UUID(); let title: String; let items: [(String, () -> Void)] }
-    private enum NationAction: Identifiable { case army, grant, war, restore; var id: Int { hashValue } }
+    private enum NationAction: Identifiable { case army, grant, region, war, restore, annex, vassal, ally; var id: Int { hashValue } }
 
     @State private var info: ProvinceInfo?
     @State private var flash: String?
@@ -76,9 +77,25 @@ struct ProvinceQuickSheet: View {
                             }
                         }
                     }
+                    section("军令") {
+                        let own = state.armies.indices.filter { state.armies[$0].nation == owner }
+                        tiles {
+                            tile("全军来援", "arrow.down.to.line") {
+                                Task { let out = await model.rts(armies: own, to: province, defend: false); report(out.ok ? nil : out.reason, "\(own.count) 支军队开赴\(p.name)"); if out.ok { close() } }
+                            }
+                            tile("全军固守", "shield") {
+                                Task { let out = await model.rts(armies: own, to: province, defend: true); report(out.ok ? nil : out.reason, "\(own.count) 支军队奉命固守"); if out.ok { close() } }
+                            }
+                            tile("本州军队", "list.bullet") {
+                                let list = state.armies.enumerated().filter { $0.element.province == province }
+                                choice = Choice(title: "\(p.name)的军队", items: list.map { i, a in ("\(a.name) · \(Names.wan(a.troops))", { openArmy(i) }) })
+                            }
+                        }
+                    }
                     section("疆域") {
                         tiles {
                             tile("划入他国", "paintbrush.pointed") { target = -1; picking = .grant }
+                            tile("连片划入", "square.dashed") { target = -1; picking = .region }
                             tile("定为都城", "star") { act("已迁都\(p.name)") { await model.setCapital(owner, province: province) } }
                             tile("和平立国", "leaf") { act("新国已立") { await model.foundNation(province, war: false) } }
                             tile("举兵立国", "flag.2.crossed", destructive: true) { act("新国已立") { await model.foundNation(province, war: true) } }
@@ -98,6 +115,7 @@ struct ProvinceQuickSheet: View {
                             tile("藩镇独立", "flag", destructive: true) { rise("secession") }
                             tile("旧邦复国", "arrow.uturn.backward.circle") { target = -1; picking = .restore }
                             tile("随机起事", "dice") { rise(nil) }
+                            tile("全国煽动", "megaphone", destructive: true) { act("叛乱已煽动") { await model.inciteRebellion(owner) } }
                         }
                     }
                     section("民生") {
@@ -141,6 +159,26 @@ struct ProvinceQuickSheet: View {
                                 tile("国家详情", "building.columns") { openNation(owner) }
                                 tile("州郡详情", "map") { openProvince() }
                                 tile("向他国宣战", "flag.2.crossed", destructive: true) { target = -1; picking = .war }
+                                tile("停止全部战争", "hand.raised") {
+                                    let wars = state.wars.filter { $0.attacker == owner || $0.defender == owner }
+                                    Task {
+                                        var failed: String?
+                                        for w in wars { if let e = await model.makePeace(w.attacker, w.defender) { failed = e } }
+                                        report(wars.isEmpty ? "该国没有战争" : failed, "已停战 \(wars.count) 场")
+                                    }
+                                }
+                                tile("与他国结盟", "link") { target = -1; picking = .ally }
+                                tile("归附他国", "person.2") { target = -1; picking = .vassal }
+                                tile("被他国吞并", "arrow.triangle.merge", destructive: true) { target = -1; picking = .annex }
+                                tile("更改政体", "building.2") {
+                                    choice = Choice(title: "政体", items: Regimes.styles.map { s in option(s.label, "政体改为\(s.label)") { await model.setStyle(owner, style: s.id) } })
+                                }
+                                tile("颁行制度", "scroll") {
+                                    choice = Choice(title: "颁行制度", items: Regimes.reforms.map { f in option("\(f.name)（\(f.text)）", "已颁行\(f.name)") { await model.setReform(owner, reform: f.id, on: true) } })
+                                }
+                                tile("和平主义", "leaf") { act("该国转趋和平") { await model.setTemper(owner, 0.6) } }
+                                tile("穷兵黩武", "bolt", destructive: true) { act("该国转趋好战") { await model.setTemper(owner, 1.6) } }
+                                tile("军威大振", "bolt.shield") { act("该国进攻 +50%") { await model.setBonus(owner, key: "attack", value: 50) } }
                                 tile("国库大增", "banknote") {
                                     let gold = state.nations.indices.contains(owner) ? state.nations[owner].gold : 0
                                     act("国库 +5000") { await model.editNation(owner, gold: gold + 5000, destiny: nil, polity: nil) }
@@ -191,7 +229,7 @@ struct ProvinceQuickSheet: View {
                 }
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
-                        SheetHeader(title: action == .restore ? "旧邦复国" : action == .war ? "向谁宣战" : action == .grant ? "划入哪国" : "放置哪国军队", subtitle: pool.isEmpty ? "没有可选的国家" : nil, seal: "择")
+                        SheetHeader(title: Self.pickTitle(action, size), subtitle: pool.isEmpty ? "没有可选的国家" : nil, seal: "择")
                         if !pool.isEmpty {
                             Group2 { NationGrid(map: map, nations: pool, selection: $target) }.padding(.horizontal, 16)
                             SealButton(title: "确定", disabled: target < 0) {
@@ -200,6 +238,10 @@ struct ProvinceQuickSheet: View {
                                 switch action {
                                 case .army: armyNation = t
                                 case .grant: act("已划入他国") { await model.grant(province: province, to: t) }
+                                case .region: let s = size; act("\(s) 州已划入") { await model.grantRegion(province, size: s, to: t) }
+                                case .annex: act("已被吞并") { await model.annex(owner, by: t) }
+                                case .vassal: act("已归附") { await model.makeVassal(owner, of: t) }
+                                case .ally: act("已结盟") { await model.alliance(owner, with: t) }
                                 case .war: act("战端已开") { await model.declareWar(owner, on: t) }
                                 case .restore:
                                     let s = size
@@ -219,6 +261,18 @@ struct ProvinceQuickSheet: View {
         }
     }
 
+    private static func pickTitle(_ action: NationAction, _ size: Int) -> String {
+        switch action {
+        case .restore: return "旧邦复国"
+        case .war: return "向谁宣战"
+        case .grant: return "划入哪国"
+        case .region: return "连片 \(size) 州划入哪国"
+        case .annex: return "被哪国吞并"
+        case .vassal: return "归附哪国"
+        case .ally: return "与哪国结盟"
+        case .army: return "放置哪国军队"
+        }
+    }
     private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             SectionLabel(title)

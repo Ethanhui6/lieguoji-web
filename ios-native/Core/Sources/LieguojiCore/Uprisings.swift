@@ -234,8 +234,8 @@ extension Regimes {
         return max(2, min(40, Int(Double(land) * share)))
     }
     /// The land around `seed` that rises with it: connected, the owner's, never the capital.
-    private static func region(_ r: JS, _ owner: String, _ seed: String, _ size: Int, _ byId: [String: JS]) -> [String] {
-        let capital = Rebellion.capitalProvince(r, owner)
+    static func region(_ r: JS, _ owner: String, _ seed: String, _ size: Int, _ byId: [String: JS], sparing: Bool = true) -> [String] {
+        let capital = sparing ? Rebellion.capitalProvince(r, owner) : nil
         var list = [seed], seen: Set<String> = [seed], i = 0
         while i < list.count && list.count < size {
             for q in byId[list[i]]?.neighbors.asArray.map(\.asString) ?? [] where !seen.contains(q) && list.count < size {
@@ -338,8 +338,52 @@ extension Regimes {
             if raise(r, owner: id, seed: seed, size: uprisingSize(r, id)) != nil { b.lastUprising = JS(key) }
         }
     }
+    /// 改朝换代: a rebel host does not stay one. Once its war is won or it holds enough land it builds a state:
+    /// the peasant leader takes the throne and names a dynasty, the warlord crowns himself, hands power to
+    /// a parliament or rules as dictator, the holy kingdom settles into a church state or a crown.
+    static func maturityMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int, addDestiny: (Double) -> Void) {
+        let current = style(r, id).id
+        guard ["peasant", "warlord", "holy"].contains(current) else { return }
+        let c = r.civilization.nations[id], tag = "\(id)|\(key)|mature", land = r.world.provinces.asArray.reduce(0) { $1.controller.optionalString == id ? $0 + 1 : $0 }
+        let months = Rebellion.monthsSince(r, Rebellion.bornTime(r, id)), atWar = Rebellion.rebelWar(r, id) != nil
+        let parent = c.parentId.optionalString, fallen = parent.map { !Vassals.alive(r, $0) } ?? false
+        guard months >= 6, !atWar || land >= 8 else { return }
+        guard chance(tag) < (fallen ? 0.3 : land >= 8 ? 0.16 : 0.08) else { return }
+        let culture = c.cultureId.optionalString ?? "", old = n.name.asString, pick = draw(tag + "|how") % 10
+        func dynasty() -> String? { culture == "chinese" ? unusedName(r, dynastyNames, tag + "|name") : unusedName(r, moreStates[culture] ?? [], tag + "|name") }
+        let crown = land >= 10 ? (culture == "chinese" ? "dynasty" : "empire") : land >= 4 ? (culture == "chinese" ? "dynasty" : "absolute") : "principality"
+        var target = crown, base = dynasty(), how = "开国建制，设官分职，改元称帝。"
+        switch current {
+        case "peasant":
+            if pick < 2 { target = "council"; base = nil; how = "义军公议，废除旧制，推举委员治国。" }
+            else { how = "义军入主，首领登基，封赏功臣，定国号、立太庙。" }
+        case "warlord":
+            if pick < 3 { target = "presidential"; base = nil; how = "军人交权，召开国会，选举总统，还政于民。" }
+            else if pick < 5 { target = "dictatorship"; base = nil; how = "大帅废军政府，自任元首，大权独揽。" }
+            else { how = "大帅黄袍加身，受百官劝进，建号开国。" }
+        default:
+            if pick < 4 { target = "theocracy"; base = nil; how = "教众定鼎，立教规为国法，设教廷治民。" }
+            else { how = "教主还俗称帝，教团转为官僚，以世俗治国。" }
+        }
+        guard target != current else { return }
+        retitle(r, id, base: base, style: target)
+        book(r, id).parties = .null
+        addDestiny(5)
+        _ = People.announce(r, kind: "politics", text: "\(old)改制，建立\(n.name.asString)", reason: how + "国运 +5。", nations: [id], province: nil)
+    }
+    /// 禅让: a failing crown is replaced by a new house under a new dynastic name, with the land unchanged.
+    static func dynastyMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
+        let polity = r.civilization.nations[id].polity.optionalString ?? "", culture = r.civilization.nations[id].cultureId.optionalString ?? "", tag = "\(id)|\(key)|mandate"
+        guard polity == "Empire" || polity == "Kingdom", leverage(r, id).stability < 45, chance(tag) < 0.008 else { return }
+        guard let base = culture == "chinese" ? unusedName(r, dynastyNames, tag + "|name") : unusedName(r, moreStates[culture] ?? [], tag + "|name") else { return }
+        let old = n.name.asString
+        retitle(r, id, base: base, style: culture == "chinese" ? "dynasty" : nil)
+        Finance.setCorruption(r, id, Finance.corruption(r, id) * 0.6)
+        _ = People.announce(r, kind: "politics", text: "\(old)禅位，\(n.name.asString)代之", reason: "权臣逼宫，旧主逊位，新朝肃清积弊：国号更易，腐化大减。", nations: [id], province: nil)
+    }
     /// 复辟 and 神权: a republic that once had a crown may take it back; a devout state may become a holy kingdom.
     static func orderMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
+        dynastyMonth(r, n, id, key)
         let polity = r.civilization.nations[id].polity.optionalString ?? "Kingdom", tag = "\(id)|\(key)|order", b = book(r, id)
         if polity == "Republic" || polity == "Federation", chance(tag) < 0.006 {
             guard let old = b.history.asArray.last(where: { $0.asString == "Empire" || $0.asString == "Kingdom" })?.asString else { return }
@@ -410,6 +454,15 @@ extension NativeEngine {
         guard let p = provinceAt(index), let s = run.world.statecraft.provinces.asArray.first(where: { $0.provinceId.asString == p.id.asString }) else { return (false, "州郡不存在。") }
         s.grain = JS(max(0, min(50_000_000, grain.rounded())))
         return (true, "\(p.name.asString)存粮已修改。")
+    }
+    /// 连片划入: this province and the land joined to it (of the same owner) go to another state.
+    public func grantRegion(_ index: Int, size: Int, to nation: Int) -> (ok: Bool, reason: String) {
+        let provinces = run.world.provinces.asArray
+        guard let p = provinceAt(index) else { return (false, "州郡不存在。") }
+        var byId = [String: JS](), at = [String: Int]()
+        for (i, q) in provinces.enumerated() { byId[q.id.asString] = q; at[q.id.asString] = i }
+        let list = Regimes.region(run, p.controller.asString, p.id.asString, max(1, min(80, size)), byId, sparing: false)
+        return territoryEdit(list.compactMap { at[$0] }, to: nation)
     }
     public func setReform(_ index: Int, reform: String, on: Bool) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray

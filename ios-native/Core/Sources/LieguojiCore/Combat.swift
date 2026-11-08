@@ -162,7 +162,12 @@ public struct ContactMotion {
         var areaOf = forces.map { areaKey(initial.positions[$0.key]!.cell, rules) }
         // A force's speed over a cell does not change within one call: worked out once per cell.
         var speedAt = [(cell: Int, v: Double)](repeating: (-1, 0), count: forces.count)
-        struct Mover { let f: Int; let seg: TravelSegment; let speed: Double; let end: Double; let time: Double }
+        struct Mover { let f: Int; let seg: TravelSegment; let speed: Double; let end: Double; let time: Double; let bonus: Double }
+        // App worlds: a step lasts at least a sixth of the call. Stepping every force to whichever of several
+        // hundred reaches a node first split a call into dozens of whole-map steps; a force that gets
+        // to its node inside a step now carries the time left over into its next stretch, so nobody slows.
+        let quantum = rules.physicalContact ? seconds / 6 : 0
+        var credit = rules.physicalContact ? [Double](repeating: 0, count: forces.count) : []
         while remaining > 0 {
             events += 1; if events > 100_000 { break }
             Profile.measure("a.event") {}
@@ -172,7 +177,7 @@ public struct ContactMotion {
             active.removeAll { forces[$0].travel.status == .arrived || forces[$0].travel.status == .halted }
             for i in active {
                 let s = forces[i].travel
-                if current.held.contains(forces[i].key) { continue }
+                if current.held.contains(forces[i].key) { if !credit.isEmpty { credit[i] = 0 }; continue }
                 guard let seg = graph.segment(s) else { continue }
                 if !seg.local && !s.crossed && (s.offset == 0 || s.offset == seg.toGate) && !rules.canEnter(forces[i], seg.b) { forces[i].travel.status = .blocked; continue }
                 forces[i].travel.status = .moving
@@ -182,10 +187,12 @@ public struct ContactMotion {
                 if left != 0 {
                     if speedAt[i].cell == over { v = speedAt[i].v } else { v = rules.speed(forces[i], over); speedAt[i] = (over, v) }
                 }
-                movers.append(Mover(f: i, seg: seg, speed: v, end: end, time: left == 0 ? 0 : v > 0 ? left / v : .infinity))
+                let bonus = credit.isEmpty ? 0 : credit[i], time = left == 0 ? 0 : v > 0 ? left / v : Double.infinity
+                movers.append(Mover(f: i, seg: seg, speed: v, end: end, time: max(0, time - bonus), bonus: bonus))
             }
             if Profile.enabled { Profile.add("a.movers", Date.timeIntervalSinceReferenceDate - t0) }
             var dt = movers.reduce(remaining) { min($0, $1.time) }
+            if dt < quantum { dt = min(remaining, quantum) }
             var meetingHit = false
             let t1 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             if rules.physicalContact && dt > 0 {
@@ -225,7 +232,8 @@ public struct ContactMotion {
             if dt > 0 {
                 for m in movers {
                     let o = forces[m.f].travel.offset
-                    forces[m.f].travel.offset = m.time <= dt ? m.end : m.seg.local ? min(m.end, o + dt * m.speed) : o + dt * m.speed
+                    forces[m.f].travel.offset = m.time <= dt ? m.end : m.seg.local ? min(m.end, o + (dt + m.bonus) * m.speed) : o + (dt + m.bonus) * m.speed
+                    if !credit.isEmpty { credit[m.f] = m.time <= dt ? dt - m.time : 0 }
                 }
                 remaining = max(0, remaining - dt)
             }

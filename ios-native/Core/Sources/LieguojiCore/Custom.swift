@@ -396,6 +396,7 @@ public enum Regimes {
         seizure(r, n, id, key)
         regimeDrift(r, n, id, key)
         orderMonth(r, n, id, key)
+        maturityMonth(r, n, id, key, addDestiny: addDestiny)
         attributeMonth(r, id, addGold: addGold)
         reformMonth(r, n, id, key, addGold: addGold)
         cultureMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)

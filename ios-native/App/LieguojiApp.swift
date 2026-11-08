@@ -877,7 +877,7 @@ struct GameView: View {
     @ViewBuilder private func sheet(for panel: Panel) -> some View {
         switch panel {
         case .quick(let p):
-            ProvinceQuickSheet(model: model, province: p, openProvince: { open(.province(p)) }, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, close: { closePage() })
+            ProvinceQuickSheet(model: model, province: p, openProvince: { open(.province(p)) }, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)) }, close: { closePage() })
                 .presentationDetents([.medium, .large])
         case .province(let p):
             ProvinceSheet(model: model, province: p, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)); controller.selectedArmy = a; locate(army: a) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
@@ -2397,6 +2397,9 @@ struct ReleaseNotesSheet: View {
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
                     "【自绘地图】新增「崎岖」笔刷：在笔刷范围内随机起伏，画出的海岸与山脊不再圆滑生硬；地形工具改为五列排布。",
+                    "【改朝换代】义军、军政府、神国站稳后会改制：义军首领称帝立新朝或建革命政权，军阀黄袍加身、还政于民或自任元首，神国转为教廷或世俗王朝；衰败的王朝也会被权臣禅代，国号随之更易。",
+                    "【快捷面板扩充】长按面板新增军令（全军来援、全军固守、查看本州军队）、连片划入、全国煽动、停止全部战争、结盟、归附、吞并、更改政体、颁行制度、好战程度、军威加成。",
+                    "【240 州优化】行军改为军队各自结算到节点，不再因某一支到达节点就让全图重算一遍。",
                     "【大叛乱】民变不再只丢一州：安定度过低的国家会爆发波及大片州郡的叛乱，驻军倒戈，叛军一次拿下一个地区，分农民起义、军阀割据、神国起义、藩镇独立、旧邦复国五种，新朝、义军、军政府、神国各有国号。",
                     "【节奏】停战期由三到十二年缩短为一年，战争目标翻倍，占优一方乘胜不收兵，厌战来得更晚，开战更频繁。",
                     "【属性】君主的军事、行政、魅力与国运、腐化直接影响进攻、防御、岁入、人口增长和安定，国家页新增「国势」一栏把数值摆出来。",

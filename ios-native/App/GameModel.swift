@@ -554,6 +554,14 @@ import LieguojiCore
             }
             if forts != controller.forts { controller.forts = forts }
         }
+        if let list = next.holy, let meta = map?.meta {
+            let holy = list.compactMap { h -> SIMD2<Float>? in
+                guard meta.provinces.indices.contains(h.province) else { return nil }
+                if let c = meta.cities.first(where: { $0.province == h.province }) { return SIMD2(c.x, c.y) }
+                return SIMD2(meta.provinces[h.province].x, meta.provinces[h.province].y)
+            }
+            if holy != controller.holy { controller.holy = holy }
+        }
         refreshLanes()
         refreshArmies()
         refreshEffects(previous: previous)
@@ -1019,6 +1027,7 @@ import LieguojiCore
     }
     func changeCorruption(_ n: Int, lower: Bool) async -> String? { finish(await native.changeCorruption(n, lower: lower)) }
     func inciteRebellion(_ n: Int) async -> String? { finish(await native.inciteRebellion(n)) }
+    func setHolyProvince(_ province: Int) async -> String? { finish(await native.setHolyProvince(province)) }
     func foundNation(_ province: Int, war: Bool) async -> String? { finish(await native.foundNation(province, war: war)) }
     func familyAction(_ id: Int, action: String) async -> String? { finish(await native.familyAction(id, action: action)) }
     func setTax(_ n: Int, _ value: String) async -> String? { finish(await native.setTax(n, value)) }

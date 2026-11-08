@@ -260,6 +260,8 @@ extension NativeEngine {
                 let y = JS.object(); y.name = fl.name; y.nation = JS(ni[fl.nationId.asString] ?? -1); y.months = JS(left.rounded(.up)); return y
             })
         }
+        // 圣地: each faith's holy province.
+        o.holy = .array(Regimes.holyProvinces(r).map { h in let x = JS.object(); x.religion = JS(h.religion); x.province = JS(h.province); return x })
         // 要塞: provinces whose city defence is level three or more (a fortress mark on the map).
         o.forts = .array(w.provinces.asArray.enumerated().compactMap { i, p in
             let d = r.upperCombat.provinces[p.id.asString].storedDefense.optionalNumber ?? 1

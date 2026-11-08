@@ -120,6 +120,9 @@ struct GameState: Decodable, Equatable {
     var ports: [Port]? = nil
     /// 要塞: provinces whose city defence is level three or more.
     var forts: [Int]? = nil
+    /// 圣地: each faith's holy province.
+    struct Holy: Decodable, Equatable { let religion: String; let province: Int }
+    var holy: [Holy]? = nil
     let wars: [War]
     let sieges: [Siege]
     /// Armies in contact (indices into armies), where the battle animation plays.

@@ -51,6 +51,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 要塞 marks beside fortified cities.
     private var forts: (buffer: MTLBuffer, count: Int)?
     private var fortKey: [SIMD2<Float>] = []
+    private var holyKey: [SIMD2<Float>] = []
     /// Warm-authored sea bytes. Recoloured into `sea` for the selected preset.
     private var seaSource: [UInt8] = []
     /// 卷轴边缘: the map's paper edge darkens like an old scroll and a double ink rule frames it.
@@ -193,9 +194,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// A small battlement beside each fortified city (above right of its mark), in ink with a light inner wall.
-    @discardableResult func setForts(_ points: [SIMD2<Float>]) -> Bool {
-        guard points != fortKey else { return false }
-        fortKey = points
+    @discardableResult func setForts(_ points: [SIMD2<Float>], holy: [SIMD2<Float>] = []) -> Bool {
+        guard points != fortKey || holy != holyKey else { return false }
+        fortKey = points; holyKey = holy
         var m = ColoredMesh()
         let u = MapLayers.cityUnit, ink = RGB(0.16, 0.12, 0.1), wall = RGB(0.93, 0.89, 0.8)
         func rect(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ c: RGB) { m.fill([x0, y0, x1, y0, x1, y1, x0, y1], c, alpha: 1) }
@@ -205,6 +206,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             for i in [0, 2, 4] { rect(x - w / 2 + Float(i) * k, y - h / 2 - k * 1.1, x - w / 2 + Float(i + 1) * k, y - h / 2, ink) }
             rect(x - w / 2 + k * 0.6, y - h / 2 + k * 0.6, x + w / 2 - k * 0.6, y + h / 2 - k * 0.6, wall)
             rect(x - k * 0.45, y + h / 2 - k * 1.8, x + k * 0.45, y + h / 2, ink)
+        }
+        // 圣地: a gold four-pointed star with an ink rim above left of the city mark.
+        let gold = RGB(0.86, 0.66, 0.2)
+        for p in holy {
+            let x = p.x - 2.5 * u, y = p.y - 2.4 * u
+            for (r, c) in [(1.55 * u, ink), (1.2 * u, gold)] {
+                let k = r * 0.36
+                m.fill([x, y - r, x + k, y - k, x + r, y, x + k, y + k, x, y + r, x - k, y + k, x - r, y, x - k, y - k], c, alpha: 1)
+            }
         }
         forts = buffer(m.vertices, stride: 6)
         return true

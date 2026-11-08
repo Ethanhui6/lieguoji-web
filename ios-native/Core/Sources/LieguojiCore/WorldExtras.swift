@@ -212,3 +212,42 @@ extension NativeEngine {
         return (true, "\(name)于\(p.name.asString)和平立国。")
     }
 }
+
+/// 圣地 (the original's MapReligionManager holy provinces and the HolyCity city type): each religion
+/// followed by a living state has one holy province. It is chosen once (the most populous province
+/// held by a state of that faith) and kept, wherever the border moves; the player may set it.
+extension Regimes {
+    static func holyProvinces(_ r: JS) -> [(religion: String, province: Int)] {
+        guard !r.regimes.isNull, r.regimes.enabled.isTruthy else { return [] }
+        if r.regimes.holy.isNull { r.regimes.holy = .object() }
+        let provinces = r.world.provinces.asArray, holy = r.regimes.holy
+        var faithOf = [String: String]()
+        for n in r.world.nations.asArray { if let f = r.civilization.nations[n.id.asString].religionId.optionalString, !f.isEmpty { faithOf[n.id.asString] = f } }
+        let alive = Set(provinces.map(\.controller.asString))
+        let faiths = Set(faithOf.filter { alive.contains($0.key) }.values)
+        var people = [String: Double]()
+        for s in r.world.statecraft.provinces.asArray { people[s.provinceId.asString] = s.population.optionalNumber ?? 0 }
+        for f in faiths.sorted() where !(holy[f].optionalNumber.map { provinces.indices.contains(Int($0)) } ?? false) {
+            var best: (Int, Double)?
+            for (i, p) in provinces.enumerated() where faithOf[p.controller.asString] == f {
+                let v = people[p.id.asString] ?? 0
+                if best == nil || v > best!.1 { best = (i, v) }
+            }
+            if let best { holy[f] = JS(best.0) }
+        }
+        return holy.objectEntries.compactMap { f, v in v.optionalNumber.map { (f, Int($0)) } }.sorted { $0.religion < $1.religion }
+    }
+}
+
+extension NativeEngine {
+    /// 设为圣地: this province becomes the holy province of its owner's faith (or of `religion`).
+    func setHolyProvince(_ province: Int, religion: String?) -> (ok: Bool, reason: String) {
+        let r = run, provinces = r.world.provinces.asArray
+        guard provinces.indices.contains(province), !r.regimes.isNull, r.regimes.enabled.isTruthy else { return (false, "这个世界没有圣地规则。") }
+        let faith = religion ?? r.civilization.nations[provinces[province].controller.asString].religionId.optionalString ?? ""
+        guard !faith.isEmpty else { return (false, "此地的主人没有宗教。") }
+        if r.regimes.holy.isNull { r.regimes.holy = .object() }
+        r.regimes.holy[faith] = JS(province)
+        return (true, "\(provinces[province].name.asString)已定为圣地。")
+    }
+}

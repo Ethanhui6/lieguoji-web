@@ -286,6 +286,7 @@ enum Faith {
 struct FaithCard: View {
     let religion: String
     let state: GameState?
+    var map: WorldMap? = nil
     var body: some View {
         if let f = Faith.catalog[religion] {
             let followers = (state?.nations ?? []).filter { $0.alive && $0.religion == religion }
@@ -304,6 +305,15 @@ struct FaithCard: View {
                     }
                 }
                 Text("信徒约 \(Names.wan(followers.reduce(0) { $0 + $1.population })) · 奉行国家 \(followers.count) 个").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                // 圣地: the faith's holy province and who holds it now.
+                if let map, let h = state?.holy?.first(where: { $0.religion == religion }), map.meta.provinces.indices.contains(h.province) {
+                    let owner = state?.owners.indices.contains(h.province) == true ? state!.owners[h.province] : -1
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkle").font(.system(size: 12)).foregroundStyle(Color(red: 0.72, green: 0.52, blue: 0.14))
+                        Text("圣地 \(map.meta.provinces[h.province].name)").font(Theme.kai(14)).foregroundStyle(Theme.ink)
+                        if owner >= 0, owner < map.meta.nations.count { Text("今属\(map.meta.nations[owner].name)").font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+                    }
+                }
             }
             .padding(.horizontal, 16).padding(.vertical, 11)
         }

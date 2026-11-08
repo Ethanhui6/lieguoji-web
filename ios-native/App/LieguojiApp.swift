@@ -1255,6 +1255,18 @@ struct ProvinceSheet: View {
                                 Button("和平独立") { Task { let e = await model.foundNation(province, war: false); foundNote = e ?? "已立国"; GameFeel.shared.notify(e == nil ? .success : .error); self.info = await model.provinceInfo(province) } }
                                 Button("举兵独立（与原主开战）", role: .destructive) { Task { let e = await model.foundNation(province, war: true); foundNote = e ?? "已起兵"; GameFeel.shared.notify(e == nil ? .success : .error); self.info = await model.provinceInfo(province) } }
                             } message: { Text("新国家按本州文化生成国号、君主与家族；和平独立双方不开战。") }
+                            Divider2()
+                            // 圣地: this province as its owner's faith's holy province.
+                            let holyOf = model.state?.holy?.first { $0.province == province }
+                            if let h = holyOf {
+                                Row(label: "圣地", value: (Names.religion[h.religion] ?? h.religion) + "圣地")
+                            } else {
+                                Button { Task { let e = await model.setHolyProvince(province); foundNote = e ?? "已定为圣地"; GameFeel.shared.notify(e == nil ? .success : .error) } } label: {
+                                    HStack { Text("设为" + (Names.religion[n.religion] ?? "本教") + "圣地").foregroundStyle(Theme.ink); Spacer(); Image(systemName: "sparkle").font(.caption).foregroundStyle(Theme.seal) }
+                                        .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                     .padding(.horizontal, 16)
@@ -2220,6 +2232,7 @@ struct ReleaseNotesSheet: View {
                     "【动画·符合直觉】州郡易主时颜色在约 0.7 秒内由旧主渐变为新主，不再一帧跳变；被歼灭、解散或并入他军的部队在原地渐隐消失，不再凭空不见。",
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 35%，云端可调），强国不再一季之内吞掉小邻国。",
+                    "【原作补全·圣地】每个宗教都有一处圣地（原作的圣地与「圣城」城市类型）：开局取该教国家中人口最多的州，此后不随疆界变动；地图上以金色四芒星标在城旁，宗教卡片写明圣地及今属哪国；州郡页可「设为本教圣地」。",
                     "【地图·要塞】城防 3 级以上的州郡在城池旁标出城垛图标，一眼看出哪里是要塞。",
                     "【性能】行军推演每一步只重算真正移动了的军队位置（以前每一步把全图二百多支军队全部重算一遍）。",
                     "【世界编辑·在此立国】州郡页新增「在此立国」：选「和平独立」则本州立即成为新国家（按本州文化生成国号、君主与家族，双方不开战）；选「举兵独立」则本州起兵反抗原主（可能复兴故国）。该国最后一州与无城池之州不可。",

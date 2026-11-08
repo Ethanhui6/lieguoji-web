@@ -59,6 +59,8 @@ import LieguojiCore
     @Published var seaPorts: [SIMD2<Float>] = []
     /// 要塞 marks: the cities of fortified provinces, in map units.
     @Published var forts: [SIMD2<Float>] = []
+    /// 圣地 marks: the cities of holy provinces, in map units.
+    @Published var holy: [SIMD2<Float>] = []
     /// A fleet waiting for its port: the next province tap is its destination.
     @Published var marchingFleet: Int?
     /// 绘制疆域: provinces tapped or dragged over go to this state.
@@ -675,7 +677,7 @@ struct MapView: UIViewRepresentable {
                 mtk.setNeedsDisplay()
             }
             if renderer?.setSeaPorts(controller.seaPorts) == true { mtk.setNeedsDisplay() }
-            if renderer?.setForts(controller.forts) == true { mtk.setNeedsDisplay() }
+            if renderer?.setForts(controller.forts, holy: controller.holy) == true { mtk.setNeedsDisplay() }
             if labels.nameScale != controller.display.nationNameScale || labels.fullNames != controller.display.fullNationNames {
                 labels.nameScale = controller.display.nationNameScale
                 let namesChanged = labels.fullNames != controller.display.fullNationNames

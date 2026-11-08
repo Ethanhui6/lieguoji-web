@@ -59,6 +59,13 @@ final class CourtEditingTests: XCTestCase {
         let o = Rebellion.outlook(r, id)
         XCTAssertFalse(o.status.asString.isEmpty)
         XCTAssertEqual(r.foundings.isNull ? "" : r.foundings.json, before)
+        // 圣地: every followed faith has a holy province; it can be set to another province.
+        let holy = Regimes.holyProvinces(r)
+        XCTAssertFalse(holy.isEmpty)
+        if let h = holy.first, let other = r.world.provinces.asArray.indices.first(where: { $0 != h.province && r.civilization.nations[r.world.provinces[$0].controller.asString].religionId.optionalString == h.religion }) {
+            XCTAssertTrue(engine.setHolyProvince(other, religion: h.religion).ok)
+            XCTAssertEqual(Regimes.holyProvinces(r).first { $0.religion == h.religion }?.province, other)
+        }
         // 在此立国: a province with a city of a state with other land becomes a new state at peace.
         let before2 = r.world.nations.length
         let ps = r.world.provinces.asArray

@@ -144,6 +144,8 @@ struct DisplaySettings: Codable, Equatable {
     var seaRoutes = true
     /// Scroll-edge darkening. Default on (IsEnableDarkBorder).
     var darkEdges = true
+    /// 舆图细节 (nil in older settings: on).
+    var mapDetail: Bool? = nil
     /// Parchment multiply. Preset 0 has it on; the serialized toggle's runtime winner is unresolved,
     /// so this build follows preset 0 and labels the switch 网页适配.
     var parchment = true

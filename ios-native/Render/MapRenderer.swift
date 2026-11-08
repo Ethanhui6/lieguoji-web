@@ -143,6 +143,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         relief = buffer(ready?.relief ?? MapLayers.relief(map).vertices, stride: 6)
         outlines = buffer(ready?.outlines ?? MapLayers.outlines(map).vertices, stride: 6)
         icons = buffer(ready?.icons ?? MapLayers.cityIcons(map).vertices, stride: 6)
+        ornaments = buffer(ready?.ornaments ?? MapLayers.ornaments(map).vertices, stride: 6)
+        fineDetail = buffer(ready?.fine ?? MapLayers.fineDetail(map).vertices, stride: 6)
+        seaSource = ready?.sea ?? MapLayers.waterlines(map)
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
@@ -184,7 +187,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         relief = buffer(MapLayers.relief(next).vertices, stride: 6)
         outlines = buffer(MapLayers.outlines(next).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
-        if refreshSea { seaSource = next.seaRGBA; uploadSea(); seaLaneKey = []; seaLanes = nil }
+        if refreshSea {
+            seaSource = MapLayers.waterlines(next); uploadSea(); seaLaneKey = []; seaLanes = nil
+            ornaments = buffer(MapLayers.ornaments(next).vertices, stride: 6); fineDetail = buffer(MapLayers.fineDetail(next).vertices, stride: 6)
+        }
         recolor()
     }
 
@@ -198,6 +204,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     /// A small battlement beside each fortified city (above right of its mark), in ink with a light inner wall.
     private var extraRivers: (buffer: MTLBuffer, count: Int)?
+    /// 舆图细节 (MapDetail.swift): the chart ornaments, and what shows only when zoomed in.
+    private var ornaments: (buffer: MTLBuffer, count: Int)?
+    private var fineDetail: (buffer: MTLBuffer, count: Int)?
     private var extraRiverKey: [[Float]] = []
     /// 手绘河流: the player's rivers, in the map's own water colour.
     func setExtraRivers(_ paths: [[Float]]) -> Bool {
@@ -731,6 +740,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         if display.seaRoutes && reveal >= 0.7 { colored(seaLanes) }
         if display.gridLines == true && reveal >= 1 { colored(gridLines) }
+        let chart = display.mapDetail ?? true
+        if chart && reveal >= 0.45 { colored(ornaments) }
+        if chart && reveal >= 0.45 && camera.scale >= 1.5 { colored(fineDetail) }
         if display.vegetation && reveal >= 0.45 { colored(relief) }
         if display.borders && reveal >= 0.75 { colored(outlines) }
         if display.cityIcons && reveal >= 0.85 { colored(icons); colored(forts) }

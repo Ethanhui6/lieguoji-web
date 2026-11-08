@@ -27,6 +27,7 @@ extension NativeEngine {
         func months(_ max: Int) -> Bool { value >= 0 && value <= max }
         var reason = ""
         switch key {
+        case "clearHistory": r.chronicle.entries = .array([]); return (true, "大事记已清空。")
         case "stopWars": return stopAllWars()
         case "dissolveAlliances": return dissolveAllAlliances()
         case "worldAuto":

@@ -80,6 +80,11 @@ import LieguojiCore
     /// The brush circle under the finger (map units), drawn while painting.
     var brushRadius: Double = 30
     var onPaint: ((Int) -> Void)?
+    /// 世界编辑的笔刷: its name on the banner and what it does to a province.
+    @Published var brushName: String?
+    var brushAction: ((Int) -> Void)?
+    /// 地图标注.
+    @Published var customLabels: [GameModel.MapLabel] = []
     /// 长按地图: the province and the finger's place in the view.
     var onLongPress: ((Int, CGPoint) -> Void)?
     /// 地图点选: a page asked for a province (a new capital…): the prompt on the banner and what the tap does.
@@ -699,6 +704,7 @@ struct MapView: UIViewRepresentable {
             }
             if renderer?.setSeaPorts(controller.seaPorts) == true { mtk.setNeedsDisplay() }
             if renderer?.setForts(controller.forts, holy: controller.holy) == true { mtk.setNeedsDisplay() }
+            if labels.setCustom(controller.customLabels) { mtk.setNeedsDisplay() }
             if labels.nameScale != controller.display.nationNameScale || labels.fullNames != controller.display.fullNationNames {
                 labels.nameScale = controller.display.nationNameScale
                 let namesChanged = labels.fullNames != controller.display.fullNationNames
@@ -785,6 +791,21 @@ final class MapLabelsView: UIView {
         }
     }
     private var nations: [Label] = []
+    private var custom: [Label] = []
+    private var customShown: [GameModel.MapLabel] = []
+    /// The player's own words on the map; they come before every other name.
+    func setCustom(_ list: [GameModel.MapLabel]) -> Bool {
+        guard list != customShown else { return false }
+        customShown = list
+        for l in custom { l.view.removeFromSuperview() }
+        custom = list.map { m in
+            let l = Label(text: m.text, x: m.x, y: m.y, mapEm: m.size, fill: Self.color(m.color), stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 3, province: nil)
+            l.angle = m.angle
+            return l
+        }
+        for l in custom { l.view.isHidden = true; addSubview(l.view) }
+        return true
+    }
     private var cities: [Label] = []
 
     static func font(_ size: CGFloat) -> UIFont { UIFont(name: fontName, size: size) ?? .systemFont(ofSize: size, weight: .semibold) }
@@ -914,7 +935,7 @@ final class MapLabelsView: UIView {
         // player zooms in. One already showing gets a little slack, so names do not flicker at the limit.
         var taken = [Box](); taken.reserveCapacity(nations.count + 64)
         if !showCities { for l in cities { l.view.isHidden = true } }
-        for l in nations + (showCities ? cities : []) {
+        for l in custom + nations + (showCities ? cities : []) {
             let points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)
             let p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
             // A name larger than the screen can show is hidden (a continent-wide group zoomed in close).

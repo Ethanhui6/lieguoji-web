@@ -193,9 +193,13 @@ extension Nobility {
         "slavic": "奥尔加 叶卡捷琳娜 伊丽莎白 安娜 索菲亚 塔季扬娜 娜塔莉亚 柳德米拉 薇拉 玛尔法".split(separator: " ").map(String.init),
     ]
     /// A culture's given names, with the larger list in app worlds.
-    static func givenPool(_ profile: JS, _ culture: String, gender: Int) -> [JS] {
+    static func givenPool(_ r: JS, _ profile: JS, _ culture: String, gender: Int) -> [JS] {
         let base = (gender == 0 ? profile.givenMale : profile.givenFemale).asArray
         guard UnitKinds.enabled else { return base }
-        return base + ((gender == 0 ? moreMale : moreFemale)[culture] ?? []).map { JS($0) }
+        var pool = base + ((gender == 0 ? moreMale : moreFemale)[culture] ?? []).map { JS($0) }
+        // 文化编辑: names the player added.
+        let added = r.regimes.isNull ? JS.null : r.regimes.cultures[culture][gender == 0 ? "male" : "female"]
+        if !added.isNull { pool += added.asArray }
+        return pool
     }
 }

@@ -39,11 +39,11 @@ enum Names {
     static let polity = ["Kingdom": "王国", "Empire": "帝国", "Federation": "联邦", "Republic": "共和国", "Tribal": "部落", "Theocracy": "神权"]
     /// The cultures of the catalog in its order (CULTURE_IDS47).
     static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian", "vietnamese", "tibetan", "hungarian", "polish", "portuguese", "dutch", "aztec", "inca"]
-    static let culture = ["chinese": "中华", "japanese": "日本", "english": "英格兰", "arab": "阿拉伯", "roman": "罗马", "french": "法兰西",
+    static var culture = ["chinese": "中华", "japanese": "日本", "english": "英格兰", "arab": "阿拉伯", "roman": "罗马", "french": "法兰西",
                           "german": "日耳曼", "greek": "希腊", "persian": "波斯", "slavic": "斯拉夫", "norse": "北欧", "indian": "印度",
                           "korean": "朝鲜", "mongol": "蒙古", "turkic": "突厥", "egyptian": "埃及", "spanish": "西班牙", "italian": "意大利",
                           "vietnamese": "越南", "tibetan": "吐蕃", "hungarian": "匈牙利", "polish": "波兰", "portuguese": "葡萄牙", "dutch": "尼德兰", "aztec": "阿兹特克", "inca": "印加"]
-    static let religion = ["none": "无指定宗教", "confucian": "儒教", "quanzhen": "全真道", "zhengyi": "正一道", "chan": "禅宗", "pureLand": "净土宗", "tiantai": "天台宗", "tantric": "藏传密宗", "whiteLotus": "白莲教", "manichean": "明教", "nestorian": "景教", "chineseFolk": "中国民间信仰", "daoism": "道教", "buddhism": "佛教", "shinto": "神道",
+    static var religion = ["none": "无指定宗教", "confucian": "儒教", "quanzhen": "全真道", "zhengyi": "正一道", "chan": "禅宗", "pureLand": "净土宗", "tiantai": "天台宗", "tantric": "藏传密宗", "whiteLotus": "白莲教", "manichean": "明教", "nestorian": "景教", "chineseFolk": "中国民间信仰", "daoism": "道教", "buddhism": "佛教", "shinto": "神道",
                            "islam": "伊斯兰教", "catholic": "天主教", "orthodox": "东正教", "protestant": "新教", "judaism": "犹太教",
                            "hinduism": "印度教", "zoroastrian": "祆教", "grecoRoman": "希腊罗马多神信仰", "norse": "北欧传统信仰",
                            "tengri": "腾格里信仰", "kemetic": "古埃及信仰", "aztecFaith": "阿兹特克信仰", "incaFaith": "印加太阳信仰"]
@@ -560,9 +560,10 @@ struct GeneratingView: View {
 // MARK: - game
 
 enum Panel: Identifiable, Equatable {
-    case quick(Int), province(Int), army(Int), fleet(Int), nation(Int), people(Int), nationWars(Int), nationTalks(Int), nations, military, diplomacy, chronicle, menu, statistics, edicts
+    case editor, quick(Int), province(Int), army(Int), fleet(Int), nation(Int), people(Int), nationWars(Int), nationTalks(Int), nations, military, diplomacy, chronicle, menu, statistics, edicts
     var id: String {
         switch self {
+        case .editor: return "editor"
         case .quick(let p): return "q\(p)"
         case .province(let p): return "p\(p)"
         case .army(let a): return "a\(a)"
@@ -583,6 +584,7 @@ enum Panel: Identifiable, Equatable {
     /// The name on the back row (返回 …) of the page this panel was opened from.
     var title: String {
         switch self {
+        case .editor: return "世界编辑"
         case .quick: return "快捷"
         case .province: return "州郡"
         case .army: return "军团"
@@ -642,6 +644,8 @@ struct GameView: View {
     /// 横屏 on a phone: its own layout (a rail down the left, pages beside the map).
     private var landscape: Bool { verticalClass == .compact }
     @State private var ripple: CGPoint?
+    private struct ShotFile: Identifiable { let url: URL; var id: URL { url } }
+    @State private var shot: ShotFile?
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
 
     // Split in three: as one expression the compiler cannot type-check it in reasonable time.
@@ -767,6 +771,7 @@ struct GameView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) { ripple = nil; show(.quick(province)) }
             }
             controller.onPaint = { province in
+                if let brush = controller.brushAction { brush(province); return }
                 guard let n = controller.paintNation, model.state?.owners.indices.contains(province) == true else { return }
                 if controller.placingArmy {
                     // 一指划过：每过一州放下所选数量的军队，落点有动效。
@@ -838,6 +843,7 @@ struct GameView: View {
 
     var body: some View {
         stage
+        .sheet(item: $shot) { ShareSheet(items: [$0.url]) }
         .onChange(of: panel == nil) { _, closed in model.pageOpen = !closed }
         .overlay(alignment: .trailing) { sidePage }
         .animation(.spring(response: 0.38, dampingFraction: 0.88), value: sideKey)
@@ -897,6 +903,9 @@ struct GameView: View {
 
     @ViewBuilder private func sheet(for panel: Panel) -> some View {
         switch panel {
+        case .editor:
+            WorldEditorSheet(model: model, close: { closePage() }, takeShot: { mapShot() })
+                .presentationDetents([.medium, .large])
         case .quick(let p):
             ProvinceQuickSheet(model: model, province: p, openProvince: { open(.province(p)) }, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)) }, close: { closePage() })
                 .presentationDetents([.medium, .large])
@@ -962,7 +971,7 @@ struct GameView: View {
         case .chronicle:
             ChronicleSheet(model: model).presentationDetents([.medium, .large])
         case .menu:
-            MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) },
+            MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }, openEditor: { open(.editor) },
                       wallpaper: { self.panel = nil; withAnimation(.easeInOut(duration: 0.6)) { wallpaper = true }; controller.drifting = true }, say: say) { self.panel = nil }.presentationDetents([.medium, .large])
         }
     }
@@ -1036,8 +1045,8 @@ struct GameView: View {
             HStack(spacing: 10) {
                 let n = controller.paintNation ?? -1, nation = model.map.flatMap { $0.meta.nations.indices.contains(n) ? $0.meta.nations[n] : nil }
                 RoundedRectangle(cornerRadius: 3).fill(nation.map { Names.color($0.color) } ?? Theme.ink2).frame(width: 14, height: 14)
-                Text(controller.placingArmy ? "在地图上点按或划过州郡放置" : "绘制\(nation?.name ?? "")疆域").font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1)
-                Button("完成") { controller.paintNation = nil; controller.placingArmy = false; controller.placeCount = 1 }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+                Text(controller.brushName ?? (controller.placingArmy ? "在地图上点按或划过州郡放置" : "绘制\(nation?.name ?? "")疆域")).font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1)
+                Button("完成") { controller.paintNation = nil; controller.placingArmy = false; controller.placeCount = 1; controller.brushName = nil; controller.brushAction = nil }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
             }
             if controller.placingArmy {
                 // 拖动选择一次放多少支军队.
@@ -1124,6 +1133,23 @@ struct GameView: View {
                 .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { if $0.translation.width > 90 && abs($0.translation.height) < 60 { closePage() } })
                 .ignoresSafeArea(.container, edges: .vertical)
                 .transition(.move(edge: .trailing).combined(with: .opacity))
+        }
+    }
+    /// 导出地图截图: the controls step aside for a moment, the screen is drawn to an image and shared.
+    private func mapShot() {
+        closePage()
+        withAnimation(.easeInOut(duration: 0.2)) { wallpaper = true }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            let window = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+            var url: URL?
+            if let window {
+                let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+                let file = FileManager.default.temporaryDirectory.appendingPathComponent("列国纪地图.png")
+                if (try? image.pngData()?.write(to: file)) != nil { url = file }
+            }
+            withAnimation(.easeInOut(duration: 0.2)) { wallpaper = false }
+            shot = url.map(ShotFile.init)
         }
     }
     private func closePage() {
@@ -2224,6 +2250,7 @@ struct MenuSheet: View {
     @ObservedObject var model: GameModel
     @ObservedObject var controller: MapController
     var openEdicts: () -> Void = {}
+    var openEditor: () -> Void = {}
     var wallpaper: () -> Void = {}
     var say: (String) -> Void = { _ in }
     let close: () -> Void
@@ -2292,6 +2319,8 @@ struct MenuSheet: View {
                 .padding(.horizontal, 16)
                 SectionLabel("世界")
                 Group2 {
+                    Button { openEditor() } label: { MenuRow(symbol: "paintbrush.pointed.fill", title: "世界编辑（笔刷、标注、文化宗教）") }.buttonStyle(.plain)
+                    Divider2()
                     Button { openEdicts() } label: { MenuRow(symbol: "scroll.fill", title: "天下诏令与规则") }.buttonStyle(.plain)
                     Divider2()
                     Button { creating = true } label: { MenuRow(symbol: "globe.asia.australia", title: "新世界") }.buttonStyle(.plain)
@@ -2417,6 +2446,8 @@ struct ReleaseNotesSheet: View {
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
                     "【自绘地图】新增「崎岖」笔刷：在笔刷范围内随机起伏，画出的海岸与山脊不再圆滑生硬；地形工具改为五列排布。",
+                    "【世界编辑】菜单新增世界编辑页，对照原作的编辑面板：笔刷（国家、文化、信仰、圣地、要塞、人口、瘟疫饥荒与平灾，划过州郡即可落笔）；地图标注（自定义文字、字号、颜色、倾斜，存入存档）；文化宗教改名、写描述、追加人名；导出地图截图与大事记、清空大事记。",
+                    "【国家自定义】新增国家特性逐项开关与全开全关、官职称号修改、兵种档案（名称、战力、行速、征募权重，可禁用某兵种）、强制退出同盟。原有自定义内容全部保留。",
                     "【地图边框】按原作规则重做：地图外沿一条纸色宽边，外侧三道细墨线，地图之外是整张羊皮纸；可以把地图拖到露出边框。",
                     "【战斗】地图上的交战处显示双方兵力对比条；占绝对优势的国家会集中大军先灭最弱的敌人。",
                     "【流畅度】页面打开时不再随每步行军重绘；240 州下接战判定、占领结算、行军排序都不再重复计算。",

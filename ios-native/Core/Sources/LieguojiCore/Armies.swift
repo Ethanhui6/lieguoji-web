@@ -89,8 +89,8 @@ public enum Armies {
         var unit = Muster.units[(t.nextArmyId.asInt - 2) % Muster.units.count]
         // App rules: the state's culture decides its arms, unique troops included.
         if UnitKinds.enabled {
-            let k = UnitKinds.pick(culture: r.civilization.nations[nation].cultureId.optionalString ?? "", id: id)
-            unit = Muster.Unit(key: k.key, name: k.name)
+            let k = Regimes.pickUnit(r, nation, id: id)
+            unit = Muster.Unit(key: k.key, name: Regimes.unitName(r, nation, k))
         }
         let name = r.world.cities.asArray.first { $0.provinceId.asString == home }?.name.asString ?? p.name.asString
         let a = JS.object()

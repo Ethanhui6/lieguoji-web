@@ -50,6 +50,8 @@ struct NationInfo: Decodable {
     struct Sway: Decodable { let name: String; let value: String; let text: String }
     struct ReformRow: Decodable { let id: String; let name: String; let text: String; let on: Bool }
     var sway: [Sway]? = nil; var reforms: [ReformRow]? = nil
+    struct TraitToggle: Decodable { let key: String; let name: String; let text: String; let on: Bool }
+    var allTraits: [TraitToggle]? = nil; var customTitles: [String: String]? = nil
     /// 国力走势: monthly strength, the last ten years.
     var power: [Double]? = nil
     let parties: [Party]?
@@ -806,6 +808,7 @@ struct NationSheet: View {
         "inca": ["Chancellor": "大祭司", "Steward": "结绳总管", "Marshal": "大将", "Governor": "四方总督"],
     ]
     static func title(_ office: String, _ who: NationInfo?) -> String {
+        if let t = who?.customTitles?[office] { return t }
         if let t = titlesByStyle[who?.style ?? ""]?[office] { return t }
         if who?.polity == "Kingdom" || who?.polity == "Empire", let t = titlesByCulture[who?.culture ?? ""]?[office] { return t }
         return titlesByPolity[who?.polity ?? ""]?[office] ?? officeTitle[office] ?? office
@@ -1156,6 +1159,7 @@ struct NationSheet: View {
                 }
             }
             .padding(.horizontal, 16)
+            NationExtrasView(model: model, nation: nation, info: info, who: info, say: { flash = $0 }, reload: { await reload() })
             SectionLabel("国家加成")
             Group2 {
                 VStack(spacing: 0) {

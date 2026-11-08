@@ -223,6 +223,17 @@ actor NativeHost {
     func editCourt(_ n: Int, key: String, value: Double) async -> (ok: Bool, reason: String, state: Data?) { await command("editCourt", ["n": n, "key": key, "value": value]) }
     func appointOffice(_ n: Int, office: String, person: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("appointOffice", ["n": n, "office": office, "person": person]) }
     func setCourtManual(_ n: Int, manual: Bool) async -> (ok: Bool, reason: String, state: Data?) { await command("setCourtManual", ["n": n, "manual": manual]) }
+    func setStateTrait(_ n: Int, trait: String?, on: Bool) async -> (ok: Bool, reason: String, state: Data?) { await command("setStateTrait", ["n": n, "trait": trait.map { $0 as Any } ?? NSNull(), "on": on ? 1 : 0]) }
+    func setOfficeTitle(_ n: Int, office: String, title: String?) async -> (ok: Bool, reason: String, state: Data?) { await command("setOfficeTitle", ["n": n, "office": office, "title": title.map { $0 as Any } ?? NSNull()]) }
+    func unitProfile(_ n: Int) async -> Data? { await call("unitProfile", ["n": n]).data }
+    func setUnitProfile(_ n: Int, unit: String, name: String?, power: Int?, speed: Int?, weight: Int?) async -> (ok: Bool, reason: String, state: Data?) { await command("setUnitProfile", ["n": n, "unit": unit, "name": name.map { $0 as Any } ?? NSNull(), "power": power.map { $0 as Any } ?? NSNull(), "speed": speed.map { $0 as Any } ?? NSNull(), "weight": weight.map { $0 as Any } ?? NSNull()]) }
+    func leaveAlliance(_ n: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("leaveAlliance", ["n": n]) }
+    func catalogEdits() async -> Data? { await call("catalogEdits", [:]).data }
+    func setCultureEdit(_ culture: String, name: String?, text: String?, male: [String], female: [String]) async -> (ok: Bool, reason: String, state: Data?) { await command("setCultureEdit", ["culture": culture, "name": name.map { $0 as Any } ?? NSNull(), "text": text.map { $0 as Any } ?? NSNull(), "male": male, "female": female]) }
+    func setFaithEdit(_ faith: String, name: String?, text: String?) async -> (ok: Bool, reason: String, state: Data?) { await command("setFaithEdit", ["faith": faith, "name": name.map { $0 as Any } ?? NSNull(), "text": text.map { $0 as Any } ?? NSNull()]) }
+    func mapLabels() async -> Data? { await call("mapLabels", [:]).data }
+    func setMapLabel(id: Int, text: String, x: Int, y: Int, size: Int, color: String, angle: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("setMapLabel", ["id": id, "text": text, "x": x, "y": y, "size": size, "color": color, "angle": angle]) }
+    func removeMapLabel(id: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("removeMapLabel", ["id": id]) }
     func grantRegion(_ province: Int, size: Int, to nation: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("grantRegion", ["province": province, "size": size, "n": nation]) }
     func greatRebellion(_ province: Int, size: Int, kind: String?) async -> (ok: Bool, reason: String, state: Data?) { await command("greatRebellion", ["province": province, "size": size, "kind": kind.map { $0 as Any } ?? NSNull()]) }
     func restoreNation(_ province: Int, nation: Int, size: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("restoreNation", ["province": province, "n": nation, "size": size]) }

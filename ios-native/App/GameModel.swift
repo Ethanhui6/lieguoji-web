@@ -123,7 +123,7 @@ import LieguojiCore
     private var heraldQueue: [Herald] = []
     private var heraldTask: Task<Void, Never>?
     /// Bumped whenever a different world is opened, so the map view rebuilds.
-    @Published private(set) var worldID = UUID()
+    @Published private(set) var worldID = UUID() { didSet { Task { await refreshCustom() } } }
     let engine = EngineHost()
     /// The Swift engine: after a world is built (or a Swift save opened) it runs every day,
     /// command and save; the web engine only builds new worlds.
@@ -1045,6 +1045,48 @@ import LieguojiCore
     func editCourt(_ n: Int, key: String, value: Double) async -> String? { finish(await native.editCourt(n, key: key, value: value)) }
     func appointOffice(_ n: Int, office: String, person: Int) async -> String? { finish(await native.appointOffice(n, office: office, person: person)) }
     func setCourtManual(_ n: Int, manual: Bool) async -> String? { finish(await native.setCourtManual(n, manual: manual)) }
+    struct UnitRow: Decodable, Identifiable { let key: String; let base: String; let name: String; let note: String; let power: Double; let speed: Double; let weight: Double; var id: String { key } }
+    struct MapLabel: Decodable, Identifiable, Equatable { let id: Int; let text: String; let x: Double; let y: Double; let size: Double; let color: String; let angle: Double }
+    struct CultureEdit: Decodable { var name: String? = nil; var text: String? = nil; var male: [String]? = nil; var female: [String]? = nil }
+    struct FaithEdit: Decodable { var name: String? = nil; var text: String? = nil }
+    struct Catalog: Decodable { var cultures: [String: CultureEdit] = [:]; var faiths: [String: FaithEdit] = [:] }
+    @Published var customLabels: [MapLabel] = []
+    @Published var catalog = Catalog()
+    private let baseCulture = Names.culture, baseReligion = Names.religion
+    /// The world's labels and reworded cultures and faiths.
+    func refreshCustom() async {
+        if let d = await native.mapLabels(), let list = await Self.decode([MapLabel].self, from: d) { customLabels = list; controller.customLabels = list }
+        if let d = await native.catalogEdits(), let c = await Self.decode(Catalog.self, from: d) {
+            catalog = c
+            Names.culture = baseCulture; Names.religion = baseReligion
+            for (k, e) in c.cultures { if let n = e.name { Names.culture[k] = n } }
+            for (k, e) in c.faiths { if let n = e.name { Names.religion[k] = n } }
+        }
+    }
+    func setStateTrait(_ n: Int, trait: String?, on: Bool) async -> String? { finish(await native.setStateTrait(n, trait: trait, on: on)) }
+    func setOfficeTitle(_ n: Int, office: String, title: String?) async -> String? { finish(await native.setOfficeTitle(n, office: office, title: title)) }
+    func unitProfile(_ n: Int) async -> [UnitRow] {
+        guard let d = await native.unitProfile(n) else { return [] }
+        return await Self.decode([UnitRow].self, from: d) ?? []
+    }
+    func setUnitProfile(_ n: Int, unit: String, name: String?, power: Double?, speed: Double?, weight: Double?) async -> String? { finish(await native.setUnitProfile(n, unit: unit, name: name, power: power.map { Int($0) }, speed: speed.map { Int($0) }, weight: weight.map { Int($0) })) }
+    func leaveAlliance(_ n: Int) async -> String? { finish(await native.leaveAlliance(n)) }
+    func setCultureEdit(_ k: String, name: String?, text: String?, male: [String], female: [String]) async -> String? { let e = finish(await native.setCultureEdit(k, name: name, text: text, male: male, female: female)); await refreshCustom(); return e }
+    func setFaithEdit(_ k: String, name: String?, text: String?) async -> String? { let e = finish(await native.setFaithEdit(k, name: name, text: text)); await refreshCustom(); return e }
+    func setMapLabel(id: Int, text: String, x: Double, y: Double, size: Double, color: String, angle: Double) async -> String? {
+        let e = finish(await native.setMapLabel(id: id, text: text, x: Int(x), y: Int(y), size: Int(size), color: color, angle: Int(angle * 1000)))
+        await refreshCustom(); return e
+    }
+    func removeMapLabel(_ id: Int) async -> String? { let e = finish(await native.removeMapLabel(id: id)); await refreshCustom(); return e }
+    /// 导出大事记: the whole chronicle as a text file.
+    func exportChronicle() async -> URL? {
+        let all = await chronicle("all"), land = await chronicle("territory")
+        let rows = (all + land).sorted { $0.day < $1.day }
+        guard !rows.isEmpty else { return nil }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("列国纪大事记.txt")
+        let text = rows.map { "第\($0.day)日　\($0.text)" + ($0.reason.isEmpty ? "" : "（\($0.reason)）") }.joined(separator: "\n")
+        return (try? text.write(to: url, atomically: true, encoding: .utf8)) == nil ? nil : url
+    }
     func grantRegion(_ province: Int, size: Int, to nation: Int) async -> String? { finish(await native.grantRegion(province, size: size, to: nation)) }
     func greatRebellion(_ province: Int, size: Int, kind: String?) async -> String? { finish(await native.greatRebellion(province, size: size, kind: kind)) }
     func restoreNation(_ province: Int, nation: Int, size: Int) async -> String? { finish(await native.restoreNation(province, nation: nation, size: size)) }

@@ -168,6 +168,7 @@ struct ProvinceQuickSheet: View {
                                     }
                                 }
                                 tile("与他国结盟", "link") { target = -1; picking = .ally }
+                                tile("退出同盟", "person.2.slash", destructive: true) { act("已退出同盟") { await model.leaveAlliance(owner) } }
                                 tile("归附他国", "person.2") { target = -1; picking = .vassal }
                                 tile("被他国吞并", "arrow.triangle.merge", destructive: true) { target = -1; picking = .annex }
                                 tile("更改政体", "building.2") {
@@ -273,35 +274,10 @@ struct ProvinceQuickSheet: View {
         case .army: return "放置哪国军队"
         }
     }
-    private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(title)
-            VStack(spacing: 10) { content() }.padding(12).paperCard().padding(.horizontal, 14)
-        }
-    }
-    private func slider(_ title: String, value: Binding<Double>, _ range: ClosedRange<Double>, step: Double = 1, text: String) -> some View {
-        HStack(spacing: 10) {
-            Text(title).font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(width: 64, alignment: .leading)
-            PaperTrack(value: value, range: range, step: step, onEditingChanged: nil)
-            Text(text).font(Theme.kai(15)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 72, alignment: .trailing).lineLimit(1).minimumScaleFactor(0.7)
-        }
-    }
-    private func tiles<C: View>(@ViewBuilder _ content: () -> C) -> some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) { content() }
-    }
-    private func tile(_ title: String, _ symbol: String, destructive: Bool = false, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 5) {
-                Image(systemName: symbol).font(.system(size: 19, weight: .regular)).frame(height: 24)
-                Text(title).font(Theme.kai(13)).lineLimit(1).minimumScaleFactor(0.7)
-            }
-            .foregroundStyle(destructive ? Theme.seal : Theme.ink).frame(maxWidth: .infinity).frame(height: 66)
-            .background(Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(destructive ? Theme.seal.opacity(0.35) : Theme.line))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressStyle())
-    }
+    private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View { quickSection(title, content) }
+    private func slider(_ title: String, value: Binding<Double>, _ range: ClosedRange<Double>, step: Double = 1, text: String) -> some View { quickSlider(title, value: value, range, step: step, text: text) }
+    private func tiles<C: View>(@ViewBuilder _ content: () -> C) -> some View { quickGrid(content) }
+    private func tile(_ title: String, _ symbol: String, destructive: Bool = false, _ action: @escaping () -> Void) -> some View { quickTile(title, symbol, destructive: destructive, action) }
 }
 
 /// 制度 and 属性: what the state's institutions and ruler are worth, with a tap to change the laws.
@@ -406,4 +382,34 @@ struct EpochCard: View {
             GameFeel.shared.news(.warning)
         }
     }
+}
+
+func quickSection<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+    VStack(alignment: .leading, spacing: 8) {
+        SectionLabel(title)
+        VStack(spacing: 10) { content() }.padding(12).paperCard().padding(.horizontal, 14)
+    }
+}
+func quickSlider(_ title: String, value: Binding<Double>, _ range: ClosedRange<Double>, step: Double = 1, text: String) -> some View {
+    HStack(spacing: 10) {
+        Text(title).font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(width: 64, alignment: .leading)
+        PaperTrack(value: value, range: range, step: step, onEditingChanged: nil)
+        Text(text).font(Theme.kai(15)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 72, alignment: .trailing).lineLimit(1).minimumScaleFactor(0.7)
+    }
+}
+func quickGrid<C: View>(@ViewBuilder _ content: () -> C) -> some View {
+    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) { content() }
+}
+func quickTile(_ title: String, _ symbol: String, destructive: Bool = false, _ action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+        VStack(spacing: 5) {
+            Image(systemName: symbol).font(.system(size: 19, weight: .regular)).frame(height: 24)
+            Text(title).font(Theme.kai(13)).lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .foregroundStyle(destructive ? Theme.seal : Theme.ink).frame(maxWidth: .infinity).frame(height: 66)
+        .background(Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(destructive ? Theme.seal.opacity(0.35) : Theme.line))
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(PressStyle())
 }

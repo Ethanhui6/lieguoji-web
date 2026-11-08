@@ -126,6 +126,9 @@ extension NativeEngine {
         o.style = JS(st.id); o.styleLabel = JS(st.label)
         // 宗教: the state faith's effect and the provinces by faith.
         o.creedEffect = JS(Regimes.stateCreed(r, id)?.text ?? "")
+        // 编辑: every state trait, and the titles the player set.
+        o.allTraits = stateTraitRows(id)
+        o.customTitles = r.regimes.isNull || r.regimes.nations[id].titles.isNull ? .object() : r.regimes.nations[id].titles
         // 国势: what the ruler, fortune, corruption and institutions add up to; and the laws on the books.
         let sway = Regimes.leverage(r, id), held = Set(Regimes.heldReforms(r, id).map(\.id))
         func swayRow(_ name: String, _ value: String, _ text: String) -> JS { let x = JS.object(); x.name = JS(name); x.value = JS(value); x.text = JS(text); return x }

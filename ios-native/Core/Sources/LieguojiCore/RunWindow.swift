@@ -205,7 +205,8 @@ public enum RunWindow {
                                       counter: UnitKinds.enabled ? { a, b in
                                           let ids = r.world.nations.asArray
                                           let bonus = ids.indices.contains(a.nation) && ids.indices.contains(b.nation) ? Regimes.combatBonus(r, attacker: ids[a.nation].id.asString, victim: ids[b.nation].id.asString) : 1
-                                          return UnitKinds.counter(r.units[a.id].optionalString ?? "", r.units[b.id].optionalString ?? "") * bonus * ArmyLedger.veterancy(r, attacker: a.id, victim: b.id)
+                                          let power: Double = ids.indices.contains(a.nation) ? Regimes.unitPower(r, ids[a.nation].id.asString, r.units[a.id].optionalString ?? "") : 1
+                                          return UnitKinds.counter(r.units[a.id].optionalString ?? "", r.units[b.id].optionalString ?? "") * bonus * ArmyLedger.veterancy(r, attacker: a.id, victim: b.id) * power
                                       } : nil)
         let armyKeys = Dictionary(uniqueKeysWithValues: forces.filter { $0.kind == .army }.map { ($0.key, $0.id) })
         // creditArmyKills47.
@@ -305,7 +306,7 @@ public enum RunWindow {
             let id = a.id.asString
             entry[id] = (a.nationId.asString, anchors ? index[a.provinceId.asString].map { controllers[$0] } : nil, a.status.asString == "retreating",
                          r.reorganization.active[id].isNull, r.forceSpeed.armies[id].base.optionalNumber ?? 0,
-                         CombatReader.unitSpeed(r.units[id].optionalString ?? "") * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1))
+                         CombatReader.unitSpeed(r.units[id].optionalString ?? "") * Regimes.unitSpeed(r, a.nationId.asString, r.units[id].optionalString ?? "") * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1))
         }
         _ = armies
         let rules = bridge.rules(r, canEnter: { force, cell in

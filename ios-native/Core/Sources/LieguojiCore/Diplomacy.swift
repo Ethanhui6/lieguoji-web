@@ -44,8 +44,6 @@ public struct DiplomacyWorld: Codable, Sendable, Equatable {
     public var start: Start
     public var day: Int
     public var worldAuto: Bool
-    /// 上帝之手 (app worlds): the player's own declarations are not held back by truces.
-    public var ignoreTruce = false
     public var rng: UInt32
     public var draws: Int
     public var nations: [Nation]
@@ -148,6 +146,8 @@ struct OrderedIDs {
 }
 
 extension DiplomacyWorld {
+    /// 上帝之手 (app worlds): set while the player's own declaration is checked; truces do not hold it back.
+    static var ignoreTruce = false
     static let initialWarTime = -8.988465674311579e307
 
     /// diplomacyRandom46: the persisted browser PRNG (mulberry32 step), as float32 by its callers.
@@ -178,7 +178,7 @@ extension DiplomacyWorld {
         let required = p.warCount.map { Native.imul(min(3, max(0, Native.i32($0 - 1))) + 1, 3) } ?? 12
         let elapsed = p.lastWar.map { yearsSince($0) }
         let old = statecraft.first { [$0.a, $0.b].contains(p.a) && [$0.a, $0.b].contains(p.b) }
-        if ignoreTruce { return (required, elapsed, false) }
+        if Self.ignoreTruce { return (required, elapsed, false) }
         return (required, elapsed, elapsed.map { $0 < required } ?? (day < (old?.truceUntilDay ?? 0)))
     }
     public func atWar(_ a: Int, _ b: Int) -> Bool { a != b && statecraft.contains { $0.war && ($0.a == a && $0.b == b || $0.a == b && $0.b == a) } }

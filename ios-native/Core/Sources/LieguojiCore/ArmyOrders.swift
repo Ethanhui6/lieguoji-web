@@ -365,7 +365,8 @@ public enum ArmyOrders {
                         // 远征 (app worlds): an enemy with no border to ours (across the sea, or beyond a
                         // third state) is still fought: its provinces nearest this army — by sea, or through
                         // land we may cross — become targets (they used to wait out the truce at home).
-                        if attack.isEmpty {
+                        let bordering = owned.contains { i in provinces[i].neighbors.asArray.contains { q in controller(q.asString).map { enemySet.contains($0) } ?? false } }
+                        if attack.isEmpty && !bordering {
                             let at = here.travel.origin.isNull ? nil : (x: here.travel.origin.x.asNumber, y: here.travel.origin.y.asNumber)
                             let cx = at?.x ?? provinces[owned.first ?? 0].center.x.asNumber, cy = at?.y ?? provinces[owned.first ?? 0].center.y.asNumber
                             let far = provinces.indices.filter { enemySet.contains(provinces[$0].controller.asString) }

@@ -150,7 +150,8 @@ extension DiplomacyBridge {
         guard let ai = nations.firstIndex(where: { $0.id.asString == attacker }), let di = nations.firstIndex(where: { $0.id.asString == defender }) else { return "宣战双方无效或已交战。" }
         var w = world(r)
         // The player is above the truces in app worlds (god mode): only the AI waits them out.
-        if r.regimes.enabled.isTruthy { w.ignoreTruce = true }
+        DiplomacyWorld.ignoreTruce = r.regimes.enabled.isTruthy
+        defer { DiplomacyWorld.ignoreTruce = false }
         let known = w.relations.count
         var c = DeclarationEngine.Context(engine: engine, world: w)
         guard let a = c.states.firstIndex(where: { $0.index == ai }), let b = c.states.firstIndex(where: { $0.index == di }),
@@ -173,7 +174,7 @@ extension DiplomacyBridge {
             }
             return "没有可执行的陆地或跨海进攻路线。"
         }
-        w = c.w; w.ignoreTruce = false
+        w = c.w
         mirrorRelations(r, w, from: known)
         r.nativeDiplomacy.rng = JS(Double(w.rng)); r.nativeDiplomacy.draws = JS(w.draws)
         _ = start(r, war)

@@ -146,7 +146,7 @@ public struct ContactMotion {
     /// One call of advanceForceContacts47 (stopAtEvent as force-tick47 uses it). Forces are mutated in place.
     public func advance(_ input: inout [MovingForce], previous: [ForceContact], seconds: Double, rules: Rules, stopAtEvent: Bool) -> Result {
         // The phase keeps the forces in collation order of their keys.
-        let order = input.indices.sorted { Collate.less(input[$0].key, input[$1].key) }
+        let order = Profile.measure("a.sort") { input.indices.sorted { Collate.less(input[$0].key, input[$1].key) } }
         var forces = order.map { input[$0] }
         defer { for (k, i) in order.enumerated() { input[i] = forces[k] } }
         var book = previous, remaining = seconds, events = 0
@@ -239,6 +239,8 @@ public struct ContactMotion {
                     break
                 }
             }
+            let tR = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
+            defer { if Profile.enabled { Profile.add("a.step", Date.timeIntervalSinceReferenceDate - tR) } }
             for m in movers where reached(m) {
                 if m.seg.local { forces[m.f].travel.offset = m.seg.distance; forces[m.f].travel.status = .arrived }
                 else if forces[m.f].travel.crossed {
@@ -298,6 +300,7 @@ public struct ContactMotion {
             // App worlds: contacts change only when two hostile forces meet (the solve above stopped the
             // step there), a force crosses into another area, or a force in a contact moves. Otherwise the
             // contact set stands as it is and the rebuild (half the cost of a busy day) is skipped.
+            let tS = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             if rules.physicalContact && !meetingHit && merged.count == book.count {
                 let members = Set(current.contacts.flatMap { [$0.a, $0.b] })
                 let shifted = movers.contains { m in
@@ -305,6 +308,7 @@ public struct ContactMotion {
                     guard let was = current.positions[k], let now = after[k] else { return true }
                     return members.contains(k) || areaKey(was.cell, rules) != areaKey(now.cell, rules)
                 }
+                if Profile.enabled { Profile.add("a.shift", Date.timeIntervalSinceReferenceDate - tS) }
                 if !shifted { current = (current.contacts, current.held, after); continue }
             }
             let held0 = ContactMotion.identity(current.contacts)

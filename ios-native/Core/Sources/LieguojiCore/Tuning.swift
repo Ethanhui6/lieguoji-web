@@ -8,7 +8,7 @@ public struct Tuning: Codable, Sendable, Equatable {
     /// Battle damage (× the original's).
     public var lethality = 2.0
     /// Siege damage (× the original's).
-    public var siege = 4.0
+    public var siege = 6.0
     /// Months before a war whose goals are met may end, and before a decisive score forces peace.
     public var peaceGoalMonths = 4
     public var peaceDecisiveMonths = 6
@@ -16,9 +16,9 @@ public struct Tuning: Codable, Sendable, Equatable {
     public var wearyStart = 3
     public var wearySpan = 9
     /// Months a state rests between its wars.
-    public var warRestMonths = 3
+    public var warRestMonths = 2
     /// How readily states go to war (× their temper; the three-year audit found 7 wars in 3 years).
-    public var warEagerness = 2.0
+    public var warEagerness = 2.6
     /// 政权更替: a state may lose provinces to rebellion once it holds this many (the original: 30, on
     /// maps of hundreds of provinces); rebellions and family risings may begin this many months into a
     /// world (the original: 24); and family risings are this much likelier.

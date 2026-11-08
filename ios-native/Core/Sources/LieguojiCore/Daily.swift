@@ -102,7 +102,10 @@ public enum Daily {
         var policies = [String: JS](); for p in management.nations.asArray { policies[p.nationId.asString] = p }
         var provinces = [String: JS](); for p in w.provinces.asArray { provinces[p.id.asString] = p }
         func atWar(_ a: String, _ b: String) -> Bool { a != b && Wars.relation(r, a, b)?.status.asString == "war" }
-        func contested(_ p: JS) -> Bool { Armies.landHolders(space, p.id.asString).contains { atWar($0.nationId.asString, p.controller.asString) } }
+        // The armies in each province, read once (each province used to filter every army twice).
+        var located = [String: [Armies.Located]]()
+        for v in space { if let pid = v.province?.id.asString { located[pid, default: []].append(v) } }
+        func contested(_ p: JS) -> Bool { (located[p.id.asString] ?? []).contains { $0.army.status.asString != "retreating" && atWar($0.army.nationId.asString, p.controller.asString) } }
         func capacity(_ p: JS) -> Double { r.finance.provinces[p.id.asString].maxPopulation.asNumber }
         func production(_ p: JS, _ population: Double, _ occupied: Bool) -> Double {
             (min(population, capacity(p)) * (p.terrain.asString == "plain" ? 1.12 : p.terrain.asString == "forest" ? 1.04 : 0.82) * (occupied ? 0.5 : 1)).rounded(.down)
@@ -122,7 +125,7 @@ public enum Daily {
             economy.grain = JS(economy.grain.asNumber + produced); add(ledger, "production", produced)
             func refill(_ reserve: Double) {
                 if occupied { return }
-                let local = space.filter { $0.province?.id.asString == province.id.asString && canRefill($0) && $0.army.nationId.asString == province.controller.asString }
+                let local = (located[province.id.asString] ?? []).filter { canRefill($0) && $0.army.nationId.asString == province.controller.asString }
                 for v in local.sorted(by: { Collate.less($0.army.id.asString, $1.army.id.asString) }) {
                     let army = v.army, strength = army.troops.asNumber / 10
                     let points = max(0, min(province.supply.asNumber, 100 - army.supplies.asNumber, max(0, economy.grain.asNumber - reserve) * 6 / strength).rounded(.down))

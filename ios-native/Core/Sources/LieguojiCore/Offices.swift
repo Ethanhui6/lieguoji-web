@@ -120,7 +120,9 @@ public enum Offices {
             let s = People.skills(leader); acumen = f(f(s.administrative * f(0.6)) + f(s.charisma * f(0.4)))
         }
         let destiny = clamp(f(f(r.destiny.nations[nation].destiny.optionalNumber ?? 0) / 100), 0, 1), a = clamp(f(acumen / 100), 0, 1)
-        let value = clamp(f(f(f(f(a * f(0.45)) + f(destiny * f(0.55))) - f(0.45)) / f(0.4)), 0, 1)
+        // App worlds: half the ruler's acumen, half the state's fortune. The original's scale reads 0 for
+        // any state of ordinary fortune, which said nothing and left corruption at its worst everywhere.
+        let value = r.regimes.enabled.isTruthy ? clamp(f(f(a * f(0.5)) + f(destiny * f(0.5))), 0, 1) : clamp(f(f(f(f(a * f(0.45)) + f(destiny * f(0.55))) - f(0.45)) / f(0.4)), 0, 1)
         // 变法 (app rules): a reformer's successful reform holds for his reign.
         let reform = r.regimes.reform[nation]
         if !leaderId.isNull, let bonus = reform.bonus.optionalNumber, bonus > 0, reform.leader.optionalNumber == leaderId.asNumber { return clamp(value + bonus, 0, 1) }

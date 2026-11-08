@@ -245,6 +245,8 @@ extension Regimes {
             let interest = owed * interestRate(r, id), paid = min(max(0, gold), interest)
             gold -= paid; owed += interest - paid
         }
+        // A treasury in the red is money borrowed: the deficit joins the debt instead of running on for ever.
+        if gold < 0 { owed -= gold; gold = 0 }
         if owed > income * 48 {
             // 国家破产
             owed *= 0.5; gold = 0

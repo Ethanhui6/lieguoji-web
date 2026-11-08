@@ -1010,6 +1010,7 @@ import LieguojiCore
         return await Self.decode(FinanceOverview.self, from: data)
     }
     func changeCorruption(_ n: Int, lower: Bool) async -> String? { finish(await native.changeCorruption(n, lower: lower)) }
+    func inciteRebellion(_ n: Int) async -> String? { finish(await native.inciteRebellion(n)) }
     func setTax(_ n: Int, _ value: String) async -> String? { finish(await native.setTax(n, value)) }
     func regionInfo(_ province: Int) async -> RegionInfo? {
         guard state != nil, let data = await native.regionInfo(province) else { return nil }

@@ -16,6 +16,20 @@ extension NativeEngine {
         return (true, "\(text)：\(open.count)场战争停战。")
     }
 
+    /// 煽动叛乱 (the original's InciteRebellion: 「随机省份煽动叛乱，成立新的国家」): a random province of
+    /// the state, not its capital and not a battlefield, rises and founds a new state.
+    func inciteRebellion(_ index: Int) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index), !r.foundings.isNull else { return (false, "这个世界没有启用叛乱规则。") }
+        let id = nations[index].id.asString, capital = Rebellion.capitalProvince(r, id)
+        let list = r.world.provinces.asArray.filter { $0.controller.asString == id && $0.id.asString != capital && !Rebellion.provinceAtWar(r, $0.id.asString) }
+        guard list.count >= 2 else { return (false, "该国州郡太少，煽动不起叛乱。") }
+        for p in list.shuffled() where Rebellion.tryRebel(r, p.id.asString, force: true) {
+            afterGlobalOrder()
+            return (true, "\(p.name.asString)揭竿而起，自立为国。")
+        }
+        return (false, "煽动未成：各州郡都无人响应。")
+    }
     /// 解除所有同盟: every alliance is dissolved (the states may ally again later if 自主结盟 is on).
     func dissolveAllAlliances() -> (ok: Bool, reason: String) {
         let r = run

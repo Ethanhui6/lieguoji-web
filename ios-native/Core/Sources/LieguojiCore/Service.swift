@@ -113,6 +113,7 @@ public final class EngineService {
         case "setCalendar": return command(engine?.setCalendar(era: str("era"), year: optInt("year")))
         case "setCityCulture": return command(engine?.setCityCulture(int("province"), str("culture")))
         case "corruption": return command(engine?.changeCorruption(int("n"), lower: bool("lower")))
+        case "incite": return command(engine?.inciteRebellion(int("n")))
         case "setTax": return command(engine?.setTax(int("n"), str("value")))
         case "familyTree": return data(engine?.familyTree(str("family")))
         case "setLivelihood": return command(engine?.setLivelihood(int("n"), str("value")))

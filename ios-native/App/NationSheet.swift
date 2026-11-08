@@ -930,6 +930,7 @@ struct NationSheet: View {
                     action("收为附庸", "crown", Theme.jade, disabled: vassal) { target = -1; picking = .vassal }
                     action("吞并", "map", Theme.seal, disabled: false) { target = -1; picking = .annex }
                     action("触发内战", "flame", Theme.seal, disabled: false) { Task { await run { await model.triggerCivilWar(nation) } } }
+                    action("煽动叛乱", "flame.fill", Theme.seal, disabled: !info.alive) { Task { await run { await model.inciteRebellion(nation) } } }
                     action("绘制疆域", "paintbrush.pointed.fill", Theme.ink, disabled: false) { paint(nation) }
                     action("互不侵犯", "doc.text", Theme.jade, disabled: false) { target = -1; picking = .pact }
                     action("王室联姻", "heart.circle", Theme.jade, disabled: false) { target = -1; picking = .marriage }

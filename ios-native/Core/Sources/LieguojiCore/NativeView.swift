@@ -65,8 +65,30 @@ extension NativeEngine {
         for c in 0..<n { guard let k = group(c) else { continue }; if groups[k] == nil { order.append(k) }; groups[k, default: []].append(c) }
         var singles = [Int: Int](); for o in owners { singles[o, default: 0] += 1 }
         var out = [JS]()
+        // 国名分块 (as the original labels a state): each connected piece of a state's land gets its own
+        // name — a state with land in the east and the west is named in both, not once in the gap
+        // between them over another state. Pieces under a quarter of the largest (and under forty grid
+        // points) stay unnamed.
+        var parts = [(Int, [Int])]()
         for k in order {
-            let list = groups[k]!
+            let all = groups[k]!
+            var seen = Set<Int>(), pieces = [[Int]]()
+            for s in all where !seen.contains(s) {
+                var piece = [Int](), stack = [s]
+                seen.insert(s)
+                while let c = stack.popLast() {
+                    piece.append(c)
+                    let x = c % cellsX
+                    for d in [x > 0 ? c - 1 : -1, x < cellsX - 1 ? c + 1 : -1, c - cellsX, c + cellsX] where d >= 0 && d < n && !seen.contains(d) && group(d) == k {
+                        seen.insert(d); stack.append(d)
+                    }
+                }
+                pieces.append(piece.sorted())
+            }
+            let largest = pieces.map(\.count).max() ?? 0
+            for piece in pieces where piece.count == largest || piece.count >= max(40, largest / 4) { parts.append((k, piece)) }
+        }
+        for (k, list) in parts {
             if singles[k] == 1 && list.count < 30 { continue }
             var cx = 0.0, cy = 0.0; for c in list { cx += pts[2 * c]; cy += pts[2 * c + 1] }; cx /= Double(list.count); cy /= Double(list.count)
             var pole = list[0], best = Double.infinity

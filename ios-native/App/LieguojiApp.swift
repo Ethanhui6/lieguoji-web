@@ -340,7 +340,7 @@ struct HeroAction: View {
                 Text(detail).font(Theme.kai(12)).foregroundStyle(primary ? Theme.paper2.opacity(0.8) : Theme.ink2).lineLimit(1)
             }
             Spacer(minLength: 6)
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(primary ? Theme.paper2.opacity(0.8) : Theme.ink2)
+            Image(systemName: "chevron.right").font(.system(size: 13, weight: .regular)).foregroundStyle(primary ? Theme.paper2.opacity(0.8) : Theme.ink2)
         }
         .padding(.horizontal, 14).frame(height: 74)
         .background((primary ? Theme.seal : Theme.paper2), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -770,7 +770,7 @@ struct GameView: View {
         HStack {
             Button { back() } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "chevron.left").font(.system(size: 13, weight: .semibold))
+                    Image(systemName: "chevron.left").font(.system(size: 13, weight: .regular))
                     Text("返回" + last.title).font(Theme.kai(15))
                 }
                 .foregroundStyle(Theme.seal).padding(.horizontal, 12).frame(height: 30)
@@ -872,7 +872,7 @@ struct GameView: View {
                 }
                 // 远程计算: the computer simulates.
                 if model.remoteAddress != nil {
-                    Image(systemName: "desktopcomputer").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.jade)
+                    Image(systemName: "desktopcomputer").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.jade)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
@@ -953,7 +953,7 @@ struct GameView: View {
                     Button { model.cycleSpeed() } label: { Text("\(model.speed)×").font(Theme.kai(18)).foregroundStyle(Theme.ink).frame(width: 40, height: 50).contentTransition(.numericText()) }
                         .buttonStyle(PressStyle())
                     Button { model.togglePlay() } label: {
-                        Image(systemName: model.playing ? "pause.fill" : "play.fill").font(.system(size: 18, weight: .semibold))
+                        Image(systemName: model.playing ? "pause.fill" : "play.fill").font(.system(size: 18, weight: .regular))
                             .foregroundStyle(Theme.paper2).frame(width: 46, height: 46).background(Theme.seal, in: Circle())
                             .contentTransition(.symbolEffect(.replace))
                     }
@@ -1179,7 +1179,7 @@ struct ProvinceSheet: View {
                             Row(label: "存粮", value: Int(info.grain).formatted()); Divider2()
                             if let good = info.specialty {
                                 Button { pickingGood = true } label: {
-                                    HStack { Text("特产").foregroundStyle(Theme.ink2); Spacer(); Text(good).foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)) }
+                                    HStack { Text("特产").foregroundStyle(Theme.ink2); Spacer(); Text(good).foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7)) }
                                         .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
@@ -1193,7 +1193,7 @@ struct ProvinceSheet: View {
                             }
                             if let g = region {
                                 Button { regionActions = true } label: {
-                                    HStack { Text("区域").foregroundStyle(Theme.ink2); Spacer(); Text("\(g.name) · \(g.provinces.count)州 · \(Names.wan(Int(g.population)))人").foregroundStyle(Theme.ink).lineLimit(1); Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)) }
+                                    HStack { Text("区域").foregroundStyle(Theme.ink2); Spacer(); Text("\(g.name) · \(g.provinces.count)州 · \(Names.wan(Int(g.population)))人").foregroundStyle(Theme.ink).lineLimit(1); Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7)) }
                                         .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
@@ -1217,7 +1217,7 @@ struct ProvinceSheet: View {
                                 Divider2()
                             }
                             Button { pickingCulture = true } label: {
-                                HStack { Text("本地文化").foregroundStyle(Theme.ink2); Spacer(); Text(Names.culture[info.cityCulture ?? ""] ?? info.cityCulture ?? "—").foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)) }
+                                HStack { Text("本地文化").foregroundStyle(Theme.ink2); Spacer(); Text(Names.culture[info.cityCulture ?? ""] ?? info.cityCulture ?? "—").foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7)) }
                                     .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -1410,7 +1410,7 @@ struct ArmySheet: View {
                             .padding(.horizontal, 8).padding(.vertical, 3).background(fighting ? Theme.seal : Theme.ink2, in: Capsule())
                         Text(map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "海上").font(Theme.kai(15)).foregroundStyle(Theme.ink)
                         if let d = a.destination, d >= 0, d < map.meta.provinces.count {
-                            Image(systemName: "arrow.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
+                            Image(systemName: "arrow.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
                             Text(map.meta.provinces[d].name).font(Theme.kai(15)).foregroundStyle(Theme.seal)
                         }
                         Spacer()
@@ -1472,7 +1472,7 @@ struct ArmySheet: View {
                     ArmyServiceView(model: model, army: a)
                     // 整编 (custom): strength, arm and morale.
                     Button { withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { editing.toggle() } } label: {
-                        HStack { Text("整编（自定义）").font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Image(systemName: editing ? "chevron.up" : "chevron.down").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.ink2) }
+                        HStack { Text("整编（自定义）").font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Image(systemName: editing ? "chevron.up" : "chevron.down").font(.system(size: 13, weight: .regular)).foregroundStyle(Theme.ink2) }
                             .padding(.horizontal, 24).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -1560,7 +1560,7 @@ struct NationsSheet: View {
                     SheetHeader(title: "国家", subtitle: "\(state.nations.filter(\.alive).count) 国并立")
                     VStack(spacing: 10) {
                         HStack(spacing: 8) {
-                            Image(systemName: "magnifyingglass").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink2)
+                            Image(systemName: "magnifyingglass").font(.system(size: 14, weight: .regular)).foregroundStyle(Theme.ink2)
                             TextField("", text: $search, prompt: Text("搜索国名").foregroundColor(Theme.ink2.opacity(0.6)))
                         }
                         .paperField()
@@ -2203,6 +2203,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("1.5.0", ["【2.0 计划表全部完成】五个阶段（平滑行军、军牌与驻军、统一图标、对照原作的寻路、战斗表现）都已落地。",
+                    "【寻路·对照原作】原作的海路代价远低于陆路，长途行军会选择渡海；现在应用世界里海上行程按一半计价，远征更常走海路。",
+                    "【界面】全部系统图标改为细笔画（原为粗体），与楷书文字和水墨图标协调，不再显得生硬。",
+                    "【性能】逐帧交战判定：两次行军之间位置、交战和战争状态都没变时直接沿用上次的结果（以前三帧里有两帧在重复计算同样的东西）。"]),
         ("1.4.0", ["【寻路·对照原作】原作寻路用 A* 算法：朝着目标方向搜索。我们原来每次都把半张地图的格子搜一遍，而军队 AI 每选一个目标都要算一次路线；现在改为 A*，结果同样是最短路线，但只搜索通往目标的一条走廊，军令计算明显变快。",
                     "【开局动画】生成地图与开场背景的「陆地升起」有马赛克：高度按格子计算，每个格子整块跳出来。真正的原因是相邻格子不共用顶点、各按自己的高度显示，边界处颜色断开；现在升起改为按地图位置的连续起伏计算，相邻格子在交界处取值相同，海岸线成片地漫上来。",
                     "【横屏】地图图层切换在横屏时太高、被底栏挡住，横屏改为四列网格。",
@@ -2667,7 +2671,7 @@ struct FoundingView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(max(0, current - 3)..<current, id: \.self) { i in
                         HStack(spacing: 8) {
-                            Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.jade)
+                            Image(systemName: "checkmark").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.jade)
                             Text(all[i]).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
                         }
                         .opacity(0.45 + 0.18 * Double(i - (current - 3)))
@@ -2732,7 +2736,7 @@ struct ResetSettingsRow: View {
             HStack {
                 Text("恢复默认设置").font(Theme.kai(18)).foregroundStyle(Theme.seal)
                 Spacer()
-                Image(systemName: "arrow.counterclockwise").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.seal)
+                Image(systemName: "arrow.counterclockwise").font(.system(size: 14, weight: .regular)).foregroundStyle(Theme.seal)
             }
             .padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
         }
@@ -2827,7 +2831,7 @@ struct PaperStepper: View {
     }
     private func stepButton(_ symbol: String, _ delta: Int) -> some View {
         let enabled = delta < 0 ? value > range.lowerBound : value < range.upperBound
-        return Image(systemName: symbol).font(.system(size: 15, weight: .bold)).foregroundStyle(enabled ? Theme.ink : Theme.ink2.opacity(0.4))
+        return Image(systemName: symbol).font(.system(size: 15, weight: .regular)).foregroundStyle(enabled ? Theme.ink : Theme.ink2.opacity(0.4))
             .frame(width: 46, height: 38)
             .background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
             .contentShape(Capsule())
@@ -3045,7 +3049,7 @@ struct FleetSheet: View {
                     ])
                     Group2 {
                         Button { newName = f.name; renaming = true } label: {
-                            HStack { Text("舰队名").font(Theme.kai(16)).foregroundStyle(Theme.ink2); Spacer(); Text(f.name).font(Theme.kai(16)).foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.seal) }
+                            HStack { Text("舰队名").font(Theme.kai(16)).foregroundStyle(Theme.ink2); Spacer(); Text(f.name).font(Theme.kai(16)).foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.seal) }
                                 .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
                         }
                         .buttonStyle(.plain).disabled(f.status == "lost"); Divider2()
@@ -3069,7 +3073,7 @@ struct FleetSheet: View {
                             let on = target == item.port.province
                             Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { target = on ? -1 : item.port.province } } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "anchor").font(.system(size: 14, weight: .semibold)).foregroundStyle(on ? Theme.seal : Theme.ink2).frame(width: 22)
+                                    Image(systemName: "anchor").font(.system(size: 14, weight: .regular)).foregroundStyle(on ? Theme.seal : Theme.ink2).frame(width: 22)
                                     Text(map.meta.provinces[item.port.province].name + "港").font(Theme.kai(17)).foregroundStyle(Theme.ink)
                                     if item.port.province == f.port { Text("现泊").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule()) }
                                     Spacer()
@@ -3154,7 +3158,7 @@ struct ArmyChip: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 4) {
-                Image(systemName: symbol).font(.system(size: 15, weight: .semibold))
+                Image(systemName: symbol).font(.system(size: 15, weight: .regular))
                 Text(title).font(Theme.kai(14)).lineLimit(1).minimumScaleFactor(0.7)
             }
             .foregroundStyle(danger ? Theme.seal : Theme.ink)

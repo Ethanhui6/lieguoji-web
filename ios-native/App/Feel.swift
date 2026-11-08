@@ -127,7 +127,7 @@ struct RemoteSettings: View {
                 .padding(.horizontal, 16).padding(.vertical, 10).fixedSize(horizontal: false, vertical: true)
             Divider2()
             Button { withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { advanced.toggle() } } label: {
-                HStack { Text("高级：手动连接（一般不需要）").font(Theme.kai(14)).foregroundStyle(Theme.ink2); Spacer(); Image(systemName: advanced ? "chevron.up" : "chevron.down").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.ink2) }
+                HStack { Text("高级：手动连接（一般不需要）").font(Theme.kai(14)).foregroundStyle(Theme.ink2); Spacer(); Image(systemName: advanced ? "chevron.up" : "chevron.down").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.ink2) }
                     .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
             }
             .buttonStyle(.plain)

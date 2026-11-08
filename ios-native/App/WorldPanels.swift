@@ -74,7 +74,7 @@ struct BattleBoard: View {
             let attackerNation = attackers.max { $0.element.troops < $1.element.troops }!.element.nation
             VStack(spacing: 10) {
                 HStack(spacing: 8) {
-                    Image(systemName: "flag.2.crossed.fill").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.seal)
+                    Image(systemName: "flag.2.crossed.fill").font(.system(size: 15, weight: .regular)).foregroundStyle(Theme.seal)
                         .symbolEffect(.pulse, isActive: fighting)
                     Text("对阵").font(Theme.kai(18)).foregroundStyle(Theme.ink)
                     Spacer()

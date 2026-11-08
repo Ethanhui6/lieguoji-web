@@ -104,7 +104,7 @@ public struct TravelGraph: Sendable {
     /// straight-line distance times the cheapest cost per unit of any link (never more than the true
     /// cost), so it settles a corridor instead of half the map. Same optimal cost; ties may differ, so
     /// original-parity worlds keep the plain search.
-    public func path(from start: Int, to end: Int, allowSea: Bool = true, canEnterProvince: (Int) -> Bool, embark: ((Int) -> Double)? = nil, aStar: Bool = false) -> (nodes: [Int], cost: Double)? {
+    public func path(from start: Int, to end: Int, allowSea: Bool = true, canEnterProvince: (Int) -> Bool, embark: ((Int) -> Double)? = nil, aStar: Bool = false, seaRate: Double = 1) -> (nodes: [Int], cost: Double)? {
         var allowed = [Int8](repeating: 0, count: mountain.count)
         func enter(_ i: Int) -> Bool {
             let q = Int(provinces[i]); if q < 0 { return allowSea }
@@ -114,7 +114,9 @@ public struct TravelGraph: Sendable {
         guard (isSea(start) ? allowSea : true), enter(end) else { return nil }
         let n = count
         var cost = [Double](repeating: .infinity, count: n), prev = [Int](repeating: -1, count: n), settled = [Bool](repeating: false, count: n)
-        let goal = centers[end], rate = aStar ? TravelGraph.cheapestRate(self) : 0
+        // seaRate (app worlds, after the original's SEA_ROUTE cost multipliers): open sea is cheaper to
+        // cross than land, so a long march may take ship; the heuristic is scaled with it.
+        let goal = centers[end], rate = aStar ? TravelGraph.cheapestRate(self) * min(1, seaRate) : 0
         func h(_ i: Int) -> Double { rate == 0 ? 0 : ((centers[i].x - goal.x) * (centers[i].x - goal.x) + (centers[i].y - goal.y) * (centers[i].y - goal.y)).squareRoot() * rate }
         var heap = MinHeap(); cost[start] = 0; heap.push(h(start), start)
         while !settled[end], let (f, a) = heap.pop() {
@@ -125,6 +127,7 @@ public struct TravelGraph: Sendable {
                 let b = linkTo[k]
                 if settled[b] || !enter(b) { continue }
                 var step = linkCost[k]
+                if seaRate != 1, provinces[a] < 0, provinces[b] < 0 { step *= seaRate }
                 if let embark, provinces[b] < 0, provinces[a] >= 0 { step += embark(Int(provinces[a])) }
                 let next = Native.fr(c + step)
                 if next < cost[b] { cost[b] = next; prev[b] = a; heap.push(next + h(b), b) }

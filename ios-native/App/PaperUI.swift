@@ -168,7 +168,7 @@ struct MapViewSwitcher: View {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { mode = m }
             } label: {
                 VStack(spacing: 3) {
-                    Image(systemName: m.symbol).font(.system(size: 13, weight: .semibold))
+                    Image(systemName: m.symbol).font(.system(size: 13, weight: .regular))
                     Text(m.title).font(Theme.kai(13))
                 }
                 .foregroundStyle(mode == m ? Theme.paper2 : Theme.ink)
@@ -421,7 +421,7 @@ struct EdictSheet: View {
                     Text(note).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                 }
                 Spacer()
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
             }
             .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
         }
@@ -439,10 +439,10 @@ struct EdictSheet: View {
         return HStack(spacing: 10) {
             Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
             Spacer()
-            Button { setRule(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 32) }
+            Button { setRule(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value <= range.lowerBound)
             Text(value == 0 && zero != nil ? zero! : "\(value)%").font(Theme.kai(18)).foregroundStyle(value == 100 ? Theme.ink : Theme.seal).frame(minWidth: 64).contentTransition(.numericText())
-            Button { setRule(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 32) }
+            Button { setRule(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value >= range.upperBound)
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -465,10 +465,10 @@ struct EdictSheet: View {
         HStack(spacing: 10) {
             Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
             Spacer()
-            Button { apply(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 32) }
+            Button { apply(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value <= range.lowerBound)
             Text(value == 0 && zero != nil ? zero! : "\(value) \(unit)").font(Theme.kai(18)).foregroundStyle(Theme.ink).frame(minWidth: 64).contentTransition(.numericText())
-            Button { apply(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 32) }
+            Button { apply(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value >= range.upperBound)
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -529,7 +529,7 @@ struct PaperMenu<T: Hashable>: View {
                 Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink2)
                 Spacer(minLength: 12)
                 Text(items.first { $0.0 == selection }?.1 ?? "请选择").font(Theme.kai(17)).foregroundStyle(Theme.ink).lineLimit(1)
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
             }
             .padding(.horizontal, 16).frame(minHeight: 46).contentShape(Rectangle())
         }
@@ -548,7 +548,7 @@ struct PaperMenu<T: Hashable>: View {
                                 HStack(spacing: 10) {
                                     Text(items[i].1).font(Theme.kai(17)).foregroundStyle(items[i].0 == selection ? Theme.seal : Theme.ink).lineLimit(1)
                                     Spacer()
-                                    if items[i].0 == selection { Image(systemName: "checkmark").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.seal) }
+                                    if items[i].0 == selection { Image(systemName: "checkmark").font(.system(size: 13, weight: .regular)).foregroundStyle(Theme.seal) }
                                 }
                                 .padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }

@@ -58,7 +58,7 @@ struct FoldSection<Content: View>: View {
                 HStack {
                     SectionLabel(title, inset: false)
                     Spacer()
-                    Image(systemName: "chevron.down").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink2).rotationEffect(.degrees(expanded ? 180 : 0))
+                    Image(systemName: "chevron.down").font(.system(size: 14, weight: .regular)).foregroundStyle(Theme.ink2).rotationEffect(.degrees(expanded ? 180 : 0))
                 }
                 .padding(.horizontal, 22).frame(minHeight: 44).contentShape(Rectangle())
             }
@@ -344,7 +344,7 @@ struct NationSheet: View {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 6) {
                             ForEach(Array(regime.history.suffix(6).enumerated()), id: \.offset) { i, p in
-                                if i > 0 { Image(systemName: "arrow.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.ink2) }
+                                if i > 0 { Image(systemName: "arrow.right").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.ink2) }
                                 Text(p).font(Theme.kai(14)).foregroundStyle(i == min(5, regime.history.count - 1) ? Theme.seal : Theme.ink2)
                             }
                         }
@@ -394,7 +394,7 @@ struct NationSheet: View {
                                         if i == 0 { Text("执政").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
                                         Spacer()
                                         Text("\(p.seats) 席").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
-                                        Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7))
+                                        Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7))
                                     }
                                     .padding(.horizontal, 16).padding(.vertical, 6).contentShape(Rectangle())
                                 }
@@ -571,7 +571,7 @@ struct NationSheet: View {
                             Text(o.fit >= 0.4 ? "称职" : o.fit >= 0 ? "平庸" : "失职").font(Theme.kai(13))
                                 .foregroundStyle(o.fit >= 0.4 ? Color(red: 0.25, green: 0.45, blue: 0.25) : o.fit >= 0 ? Theme.ink2 : Theme.seal)
                         }
-                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.ink2)
+                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
                     }
@@ -718,7 +718,7 @@ struct NationSheet: View {
                         if p.skills.count == 4 {
                             Text("魅\(Int(p.skills[0])) 军\(Int(p.skills[1])) 外\(Int(p.skills[2])) 政\(Int(p.skills[3]))").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit()
                         }
-                        if p.key >= 0 { Image(systemName: "pencil").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7)) }
+                        if p.key >= 0 { Image(systemName: "pencil").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7)) }
                     }
                     if !p.traits.isEmpty {
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -1205,7 +1205,7 @@ struct EditRow: View {
                 Text(label).foregroundStyle(Theme.ink2).fixedSize()
                 Spacer(minLength: 8)
                 Text(value).foregroundStyle(Theme.ink).monospacedDigit().multilineTextAlignment(.trailing).lineLimit(2)
-                Image(systemName: "pencil").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.seal.opacity(0.7))
+                Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7))
             }
             .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
         }

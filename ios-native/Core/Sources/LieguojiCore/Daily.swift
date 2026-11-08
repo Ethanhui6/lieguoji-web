@@ -14,10 +14,11 @@ public enum Daily {
     static func key(_ kind: String, _ id: String) -> String { "[\"\(kind)\",\"\(id)\"]" }
     /// frame(): contacts reconciled into the run, and the forces eligible to attack.
     @discardableResult
+    static var frameCache: (key: String, value: (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position]))?
     public static func frame(_ r: JS) -> (eligible: Set<String>, held: Set<String>) {
         guard let bridge = Armies.bridge else { return ([], []) }
         let forces = Profile.measure("f.forces") { bridge.forces(r) }
-        let result = Profile.measure("f.contacts") { () -> (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position]) in
+        func computeFrame() -> (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position]) {
             let motion = ContactMotion(graph: bridge.graph), rules = bridge.rules(r), old = bridge.contacts(r)
             // App worlds: nothing standing and no hostile forces sharing an area — no contact can form.
             if rules.physicalContact && old.isEmpty {
@@ -26,6 +27,16 @@ public enum Daily {
                 return motion.contacts(forces, old, rules, p)
             }
             return motion.contacts(forces, old, rules)
+        }
+        // App worlds: frames between two marches see the same positions, contacts and wars — the last
+        // result stands (two frames in three used to recompute it unchanged).
+        let wars = UnitKinds.enabled ? r.world.statecraft.relations.asArray.reduce(0) { $1.status.asString == "war" ? $0 + 1 : $0 } : 0
+        let key = UnitKinds.enabled ? "\(ObjectIdentifier(r).hashValue)|\(r.armyPositions.revision.asNumber)|\(r.fleetPositions.revision.asNumber)|\(r.forceContacts.pairs.length)|\(wars)|\(forces.count)" : ""
+        let result = Profile.measure("f.contacts") { () -> (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position]) in
+            if !key.isEmpty, let c = frameCache, c.key == key { return c.value }
+            let v = computeFrame()
+            if !key.isEmpty { frameCache = (key, v) }
+            return v
         }
         Profile.measure("f.write") { r.forceContacts.pairs = .array(result.contacts.map(ForceBridge.json)) }
         var eligible = Set<String>()

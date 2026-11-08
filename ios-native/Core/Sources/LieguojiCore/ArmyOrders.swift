@@ -100,7 +100,7 @@ public enum ArmyOrders {
                 // after a peace it used to find no lawful road out of the former enemy's land and stood there.
                 return RunWindow.access(r, nation, c) || c == anchor || !v && RunWindow.atWar(r, nation, c)
                     || v && r.regimes.enabled.isTruthy && !RunWindow.atWar(r, nation, c)
-            }, embark: embark, aStar: r.regimes.enabled.isTruthy) else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }
+            }, embark: embark, aStar: r.regimes.enabled.isTruthy, seaRate: r.regimes.enabled.isTruthy ? 0.5 : 1) else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }
             let point = g.location(travel).point
             let t = JS.object()
             t.version = JS(1); t.armyId = JS(id); t.origin = ForceBridge.json(point); t.nodes = .array(path.nodes.map { JS(Int(g.ids[$0])) })

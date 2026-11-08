@@ -682,3 +682,30 @@ struct PaperTrack: View {
         value = next
     }
 }
+
+// MARK: 统一卡片与标签
+
+extension View {
+    /// The one card look of every page (Group2's): paper, an ink rim, a fine vermilion inner line and a
+    /// soft shadow. `tint` washes the paper faintly in a colour (a relation group, a side in battle).
+    func paperCard(tint: Color? = nil) -> some View {
+        self
+            .background(Theme.paper2.opacity(0.62), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background((tint ?? .clear).opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke((tint ?? Theme.ink).opacity(tint == nil ? 0.2 : 0.35), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.16), lineWidth: 0.6).padding(3))
+            .shadow(color: Color(red: 0.25, green: 0.18, blue: 0.08).opacity(0.08), radius: 6, y: 2)
+    }
+}
+
+/// The one tag look: a short word on a filled capsule (状态、等级、立场…).
+struct PaperTag: View {
+    let text: String
+    var color: Color = Theme.seal
+    var size: CGFloat = 12
+    var body: some View {
+        Text(text).font(Theme.kai(size)).foregroundStyle(Theme.paper2).lineLimit(1).fixedSize()
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(color, in: Capsule())
+    }
+}

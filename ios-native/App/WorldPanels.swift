@@ -115,8 +115,7 @@ struct BattleBoard: View {
                     .symbolEffect(.pulse, isActive: fighting)
                 Text(c.owner ? "对阵" : "遭遇").font(Theme.kai(18)).foregroundStyle(Theme.ink)
                 Spacer()
-                Text(fighting ? "交战中" : c.owner && defenders.isEmpty ? "围城中" : "对峙中").font(Theme.kai(13)).foregroundStyle(Theme.paper2)
-                    .padding(.horizontal, 8).padding(.vertical, 3).background(fighting ? Theme.seal : Theme.ink2, in: Capsule())
+                PaperTag(text: fighting ? "交战中" : c.owner && defenders.isEmpty ? "围城中" : "对峙中", color: fighting ? Theme.seal : Theme.ink2, size: 13)
             }
             // Each side's name and strength, and the balance between them.
             HStack(alignment: .firstTextBaseline) {
@@ -148,8 +147,7 @@ struct BattleBoard: View {
             }
         }
         .padding(14)
-        .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.seal.opacity(0.25), lineWidth: 1))
+        .paperCard(tint: Theme.seal)
         .padding(.horizontal, 16)
         .transition(.scale(scale: 0.96).combined(with: .opacity))
     }

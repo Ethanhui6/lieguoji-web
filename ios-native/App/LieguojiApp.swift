@@ -1156,9 +1156,7 @@ struct ProvinceSheet: View {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10, alignment: .leading), GridItem(.flexible(), spacing: 10, alignment: .leading)], alignment: .leading, spacing: 8) {
                             ForEach(Array(info.kinds.enumerated()), id: \.offset) { _, k in
                                 HStack(spacing: 6) {
-                                    Text(k.0).font(Theme.kai(13)).foregroundStyle(Theme.paper2).lineLimit(1).fixedSize()
-                                        .padding(.horizontal, 7).padding(.vertical, 3)
-                                        .background(k.0 == "边地" ? Theme.ink2 : k.0 == "封锁" || k.0 == "民变" ? Color(red: 0.45, green: 0.08, blue: 0.08) : Theme.seal, in: RoundedRectangle(cornerRadius: 5))
+                                    PaperTag(text: k.0, color: k.0 == "边地" ? Theme.ink2 : k.0 == "封锁" || k.0 == "民变" ? Color(red: 0.45, green: 0.08, blue: 0.08) : Theme.seal, size: 13)
                                     Text(k.1).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).fixedSize(horizontal: false, vertical: true)
                                 }
                             }
@@ -2248,6 +2246,9 @@ struct ReleaseNotesSheet: View {
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
                     "【自绘地图】新增「崎岖」笔刷：在笔刷范围内随机起伏，画出的海岸与山脊不再圆滑生硬；地形工具改为五列排布。",
+                    "【行军不扭】军队转弯、停下、掉头或改道时，新一段路程直接朝目标走，延续的方向最多占该段六成，不再画出向外鼓的弧线、左右摇摆；几支军队同驻一处围成一圈后出发，保持原来的错位前进，不再一出发就从圈上跳回中心。",
+                    "【界面统一】各页卡片统一为同一种纸底墨框样式（圆角、边线、内朱线、投影一致），国力走势、兵种构成、外交分组、对阵图不再各用各的圆角与描边；状态、称职、执政、立场、帅旗、州郡属性等小标签统一为同一种标签样式。",
+                    "【流畅】打开国家页时为盟友与敌国上色、切换地图图层时的整图着色改在后台计算，打开页面不再卡一下。",
                     "【战争·修复】战争结束后进攻箭头不再残留：箭头只为仍在交战的国家而画（以前回国的军队也会把箭头留在原处）。",
                     "【战争·修复】宣战后与敌国不接壤（隔海或隔着第三国）时，军队不再在家干等到停战：会向距离最近的敌国州郡远征（渡海或借道）。",
                     "【上帝之手】玩家亲自宣战不再受停战期限制；两国不接壤时自动改用其他可用的宣战理由（吞并、文化统一、强制改宗等）。AI 仍须遵守停战。",

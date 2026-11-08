@@ -309,8 +309,7 @@ struct NationSheet: View {
                         Sparkline(values: p).frame(height: 46)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.line))
+                    .paperCard()
                     .padding(.horizontal, 16)
                 }
                 FoldSection("基本信息", expanded: true) {
@@ -467,7 +466,7 @@ struct NationSheet: View {
                                         RoundedRectangle(cornerRadius: 2).fill(Self.partyColor(index)).frame(width: 10, height: 10)
                                         Text(p.name).font(Theme.kai(15)).foregroundStyle(Theme.ink)
                                         if let line = p.line { Text(line).font(Theme.kai(11)).foregroundStyle(Self.partyColor(index)).padding(.horizontal, 5).padding(.vertical, 1).overlay(Capsule().stroke(Self.partyColor(index).opacity(0.6))) }
-                                        if i == 0 { Text("执政").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+                                        if i == 0 { PaperTag(text: "执政") }
                                         Spacer()
                                         Text("\(p.seats) 席").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
                                         Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7))
@@ -557,8 +556,7 @@ struct NationSheet: View {
                         }
                     }
                     .padding(14)
-                    .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.line))
+                    .paperCard()
                     .padding(.horizontal, 16)
                 }
             }
@@ -575,10 +573,10 @@ struct NationSheet: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     HStack(spacing: 6) {
                                         Text(a.name).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
-                                        if a.banner != nil { Text(a.banner == "ruler" ? "御驾" : "帅旗").font(Theme.kai(10)).foregroundStyle(Theme.paper2).padding(.horizontal, 4).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+                                        if a.banner != nil { PaperTag(text: a.banner == "ruler" ? "御驾" : "帅旗", size: 11) }
                                     }
                                     HStack(spacing: 6) {
-                                        Text(status.0).font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(status.1, in: Capsule())
+                                        PaperTag(text: status.0, color: status.1, size: 11)
                                         Text(Names.unit[a.unit] ?? a.unit).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                                         if map.meta.provinces.indices.contains(a.province) { Text("· " + map.meta.provinces[a.province].name).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1) }
                                     }
@@ -657,7 +655,7 @@ struct NationSheet: View {
                             HStack(spacing: 6) {
                                 Image(systemName: g.icon).font(.system(size: 12)).foregroundStyle(g.color)
                                 Text(g.title).font(Theme.kai(15)).foregroundStyle(Theme.ink)
-                                Text("\(g.nations.count)").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 6).padding(.vertical, 1).background(g.color, in: Capsule())
+                                PaperTag(text: "\(g.nations.count)", color: g.color)
                                 Spacer()
                             }
                             FlowChips(items: g.nations.filter { $0 >= 0 && $0 < map.meta.nations.count }.map { n in
@@ -665,8 +663,7 @@ struct NationSheet: View {
                             }) { n in fly(map.meta.cities.indices.contains(map.meta.nations[n].capital) ? map.meta.cities[map.meta.nations[n].capital].province : 0) }
                         }
                         .padding(12)
-                        .background(g.color.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(g.color.opacity(0.25)))
+                        .paperCard(tint: g.color)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -781,9 +778,7 @@ struct NationSheet: View {
                             Spacer(minLength: 6)
                             if !o.name.isEmpty {
                                 // Fit −1…1: how well the holder's skills suit the office.
-                                Text(o.fit >= 0.4 ? "称职" : o.fit >= 0 ? "平庸" : "失职").font(Theme.kai(12)).foregroundStyle(Theme.paper2)
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .background(o.fit >= 0.4 ? Theme.jade : o.fit >= 0 ? Theme.ink2 : Theme.seal, in: Capsule())
+                                PaperTag(text: o.fit >= 0.4 ? "称职" : o.fit >= 0 ? "平庸" : "失职", color: o.fit >= 0.4 ? Theme.jade : o.fit >= 0 ? Theme.ink2 : Theme.seal)
                             }
                         }
                         .padding(.horizontal, 14).padding(.vertical, 9).contentShape(Rectangle())
@@ -843,8 +838,7 @@ struct NationSheet: View {
                         HStack(spacing: 10) {
                             Text(h.name).font(Theme.kai(16)).foregroundStyle(Theme.ink)
                             if let stance = h.stance ?? (h.ruling ? "宗室" : nil) {
-                                Text(stance).font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1)
-                                    .background(Self.stanceColor(stance), in: Capsule())
+                                PaperTag(text: stance, color: Self.stanceColor(stance))
                             }
                             Spacer()
                             Text("\(h.members)人 · \(h.provinces)州").font(Theme.kai(13)).foregroundStyle(Theme.ink2)

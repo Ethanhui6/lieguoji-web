@@ -485,7 +485,22 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                         let chord = target - p, along = (chord.x * chord.x + chord.y * chord.y).squareRoot()
                         var m = v * Float(newLength / legLength)
                         let k = (m.x * m.x + m.y * m.y).squareRoot()
-                        if k > along * 1.2 + 0.0001 { m *= (along * 1.2) / k }
+                        // 行军不扭: the carried-over heading only rounds a gentle bend. A sharp turn, a stop or
+                        // a reversal (a column halted, sent back or re-routed) starts the new leg straight at
+                        // its target, and the heading never exceeds 0.6 of the leg — longer ones bowed the path
+                        // outwards and the icon swayed side to side.
+                        if along < 0.001 || k < 0.0001 { m = .zero }
+                        else {
+                            let cos = (m.x * chord.x + m.y * chord.y) / (k * along)
+                            if cos < 0.7 { m = chord }
+                            else {
+                                // Lean towards the chord the more the two differ.
+                                let w = (cos - 0.7) / 0.3
+                                m = m * w + chord * (1 - w)
+                                let k2 = (m.x * m.x + m.y * m.y).squareRoot()
+                                if k2 > along * 0.6 { m *= (along * 0.6) / k2 }
+                            }
+                        }
                         lead[s.key] = m
                     }
                 }
@@ -556,6 +571,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                         spread[sprites[i].key] = SIMD2(cos(angle) * radius, sin(angle) * radius)
                     }
                 }
+            }
+            // A column setting out from a ring keeps its seat's offset while it marches (it used to snap from
+            // the ring to the centre at the first step: a visible jerk); it takes a new seat when it stops.
+            for a in sprites where a.army >= 0 && spread[a.key] == nil && !ghosts.contains(a.key) {
+                if let was = self.spread[a.key], (legFrom[a.key] ?? .zero) != (legTo[a.key] ?? .zero) { spread[a.key] = was }
             }
             self.spread = spread
             for a in sprites {

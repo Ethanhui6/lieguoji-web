@@ -34,7 +34,7 @@ import LieguojiCore
             }
         }
     }
-    enum Step { case terrain, provinces }
+    enum Step { case terrain, provinces, nations }
 
     @Published var tool: Tool = .plain
     @Published var radius: Double = 34 { didSet { controller.brushRadius = radius } }
@@ -194,11 +194,112 @@ import LieguojiCore
         recompute()
     }
     func toTerrain() {
+        releasePaint()
         step = .terrain
         controller.terrainBrush = true
         controller.mode = .terrain
         recompute()
     }
+    // MARK: 划定列国 (the original's EditPanelUI DrawState / SetAsCapital / PlaceState)
+
+    /// The states' opening: each province's state and each state's capital province (OpeningLayout47).
+    @Published private(set) var owners: [Int] = []
+    @Published private(set) var seeds: [Int] = []
+    /// The state being painted, and what a tap does.
+    @Published var selected = 0
+    enum NationTool: String { case paint, capital, found }
+    @Published var nationTool: NationTool = .paint
+    private var regionNeighbors: [[Int]] = []
+    /// The game's own paint handler, given back when the editor lets go of the map.
+    private var savedPaint: ((Int) -> Void)?
+    func releasePaint() {
+        controller.paintNation = nil
+        if let s = savedPaint { controller.onPaint = s; savedPaint = nil }
+    }
+
+    func toNations() {
+        guard step == .provinces, !busy, !map.meta.provinces.isEmpty else { return }
+        step = .nations
+        owners = map.meta.provinces.map(\.nation)
+        seeds = map.meta.cities.map(\.province)
+        // Provinces touching across a cell edge (for regrowing a removed state's land).
+        var touching = [Set<Int>](repeating: [], count: owners.count)
+        let n = min(map.cellCount, neighbors.count)
+        for c in 0..<n {
+            let a = Int(map.province[c]); guard a >= 0, a < owners.count else { continue }
+            for d in neighbors[c] where d < map.cellCount { let b = Int(map.province[d]); if b >= 0 && b != a && b < owners.count { touching[a].insert(b) } }
+        }
+        regionNeighbors = touching.map { $0.sorted() }
+        selected = 0; nationTool = .paint
+        controller.paintNation = 0
+        if savedPaint == nil { savedPaint = controller.onPaint }
+        controller.onPaint = { [weak self] p in self?.tap(p) }
+        applyLayout()
+    }
+    func backToProvinces() {
+        releasePaint()
+        step = .provinces
+        recompute()
+    }
+    /// A tap or drag over a province, by the chosen tool.
+    func tap(_ p: Int) {
+        guard step == .nations, owners.indices.contains(p) else { return }
+        let capitalOf = seeds.firstIndex(of: p)
+        switch nationTool {
+        case .paint:
+            // DrawState: a capital never changes hands.
+            guard capitalOf == nil, owners[p] != selected, seeds.indices.contains(selected) else { return }
+            owners[p] = selected
+        case .capital:
+            // SetAsCapital: a tap on a capital selects that state instead.
+            if let c = capitalOf { select(c); return }
+            owners[p] = selected; seeds[selected] = p
+            nationTool = .paint
+        case .found:
+            // PlaceState: a new state on a province that is not a capital (twenty-four at most).
+            guard capitalOf == nil else { return }
+            guard seeds.count < 24 else { message = "最多 24 国"; return }
+            seeds.append(p); owners[p] = seeds.count - 1
+            selected = seeds.count - 1; controller.paintNation = selected
+            nationTool = .paint
+        }
+        GameFeel.shared.tap()
+        applyLayout()
+    }
+    /// Removes the selected state; its land regrows from its neighbours (removeNation47).
+    func removeSelected() {
+        guard seeds.count > 2, seeds.indices.contains(selected) else { message = "至少保留两国"; return }
+        let gone = selected
+        seeds.remove(at: gone)
+        var next = owners.map { $0 == gone ? -1 : $0 > gone ? $0 - 1 : $0 }
+        for (i, s) in seeds.enumerated() { next[s] = i }
+        var queue = next.indices.filter { next[$0] >= 0 }, head = 0
+        while head < queue.count {
+            let a = queue[head]; head += 1
+            for b in regionNeighbors[a] where next[b] < 0 { next[b] = next[a]; queue.append(b) }
+        }
+        let centers = map.meta.provinces.map { ($0.x, $0.y) }
+        for i in next.indices where next[i] < 0 {
+            func d(_ s: Int) -> Float { let dx = centers[i].0 - centers[s].0, dy = centers[i].1 - centers[s].1; return dx * dx + dy * dy }
+            next[i] = seeds.indices.min { d(seeds[$0]) < d(seeds[$1]) } ?? 0
+        }
+        owners = next
+        select(min(gone, seeds.count - 1))
+        applyLayout()
+    }
+    func select(_ n: Int) { selected = n; controller.paintNation = n; nationTool = .paint }
+    /// The layout on the preview map: province colours, the capitals' marks.
+    private func applyLayout() {
+        for i in map.meta.provinces.indices where owners.indices.contains(i) { map.meta.provinces[i].nation = owners[i] }
+        map.meta.nations = seeds.indices.map { i in
+            WorldMeta.Nation(id: "n-\(i)", name: "", color: PreviewWorld.palette[i % PreviewWorld.palette.count], line: "#1487ff", capital: i, culture: "", polity: "", religion: "")
+        }
+        map.meta.cities = seeds.enumerated().map { i, s in WorldMeta.City(id: "c-\(s)", name: "", x: map.meta.provinces[s].x, y: map.meta.provinces[s].y, province: s) }
+        nations = seeds.count
+        show(map, sea: false)
+    }
+    /// The layout for the engine's opening (nil: the automatic one).
+    var layout: [String: [Int]]? { step == .nations && !seeds.isEmpty ? ["seeds": seeds, "owners": owners] : nil }
 }
 
 /// The editor screen: map in the middle, tools on a paper strip below, steps on top.
@@ -212,8 +313,8 @@ struct EditorView: View {
             HStack(spacing: 10) {
                 Button { leaving = true } label: { CircleIcon(glyph: .close) }.buttonStyle(PressStyle())
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(editor.step == .terrain ? "绘制山川" : "划分州郡").font(Theme.kai(18)).foregroundStyle(Theme.ink)
-                    Text(editor.step == .terrain ? "单指绘制 · 双指移动缩放 · 陆地 \(Int(editor.landShare * 100))%" : "\(editor.provinces) 州 · \(editor.nations) 国").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Text(editor.step == .terrain ? "绘制山川" : editor.step == .provinces ? "划分州郡" : "划定列国").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                    Text(editor.step == .terrain ? "单指绘制 · 双指移动缩放 · 陆地 \(Int(editor.landShare * 100))%" : editor.step == .provinces ? "\(editor.provinces) 州 · \(editor.nations) 国" : "单指涂抹州郡 · 双指移动缩放 · \(editor.seeds.count) 国").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                 }
                 .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
                 Spacer()
@@ -229,7 +330,7 @@ struct EditorView: View {
             }
             Spacer()
             VStack(spacing: 12) {
-                if editor.step == .terrain { terrainTools } else { provinceTools }
+                switch editor.step { case .terrain: terrainTools; case .provinces: provinceTools; case .nations: nationTools }
             }
             .padding(14)
             .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous)))
@@ -318,10 +419,54 @@ struct EditorView: View {
             Text("州郡按原作的定居分区算法划分：平原州小而密，山地、荒原州大而疏；各国从相隔最远的都城起家。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {
                 Button { editor.toTerrain() } label: { SecondaryLabel(title: "返回改地形", symbol: "paintbrush.pointed") }
+                Button { editor.toNations() } label: { SecondaryLabel(title: "划定列国", symbol: "flag.2.crossed") }
+                    .disabled(editor.busy || editor.map.meta.provinces.isEmpty).opacity(editor.busy || editor.map.meta.provinces.isEmpty ? 0.5 : 1)
                 Button { Task { await model.foundCustomWorld(editor) } } label: { PrimaryLabel(title: "开辟天下", symbol: "flag.fill") }
                     .disabled(editor.busy || editor.map.meta.provinces.isEmpty).opacity(editor.busy || editor.map.meta.provinces.isEmpty ? 0.5 : 1)
             }
             .buttonStyle(PressStyle())
         }
     }
+    /// 划定列国: pick a state, then paint its land, move its capital, found or remove states.
+    private var nationTools: some View {
+        VStack(spacing: 12) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(editor.seeds.indices, id: \.self) { i in
+                        let count = editor.owners.filter { $0 == i }.count
+                        Button { editor.select(i) } label: {
+                            HStack(spacing: 5) {
+                                Circle().fill(Names.color(PreviewWorld.palette[i % PreviewWorld.palette.count])).frame(width: 14, height: 14)
+                                Text("\(i + 1)号国 · \(count)州").font(Theme.kai(14)).foregroundStyle(Theme.ink)
+                            }
+                            .padding(.horizontal, 10).frame(height: 32)
+                            .background(editor.selected == i ? Theme.seal.opacity(0.14) : Theme.paper2, in: Capsule())
+                            .overlay(Capsule().stroke(editor.selected == i ? Theme.seal : Theme.line, lineWidth: editor.selected == i ? 1.5 : 1))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            HStack(spacing: 8) {
+                ForEach([(MapEditor.NationTool.paint, "涂抹领土", "paintbrush.pointed"), (.capital, "移都城", "building.columns"), (.found, "新建国家", "plus.circle")], id: \.0) { t in
+                    Button { editor.nationTool = t.0 } label: {
+                        Label(t.1, systemImage: t.2).font(Theme.kai(14)).foregroundStyle(editor.nationTool == t.0 ? Theme.paper2 : Theme.ink)
+                            .padding(.horizontal, 8).frame(height: 34).frame(maxWidth: .infinity)
+                            .background(editor.nationTool == t.0 ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 9))
+                    }
+                    .buttonStyle(.plain)
+                }
+                Button { editor.removeSelected() } label: { Image(systemName: "trash").font(.system(size: 15)).foregroundStyle(Theme.seal).frame(width: 40, height: 34).background(Theme.paper2, in: RoundedRectangle(cornerRadius: 9)) }
+                    .buttonStyle(.plain).disabled(editor.seeds.count <= 2).opacity(editor.seeds.count <= 2 ? 0.4 : 1)
+            }
+            Text(editor.nationTool == .paint ? "选一国，在地图上涂抹州郡划入该国；都城不可涂走。" : editor.nationTool == .capital ? "点一个州郡，设为所选国家的都城。" : "点一个州郡，在此建立新国家（最多 24 国）。")
+                .font(Theme.kai(12)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 10) {
+                Button { editor.backToProvinces() } label: { SecondaryLabel(title: "返回分州郡", symbol: "square.grid.3x3") }
+                Button { Task { await model.foundCustomWorld(editor) } } label: { PrimaryLabel(title: "开辟天下", symbol: "flag.fill") }
+            }
+            .buttonStyle(PressStyle())
+        }
+    }
+
 }

@@ -127,7 +127,7 @@ import LieguojiCore
         phase = .editing
     }
     private func detachEditor() {
-        controller.terrainBrush = false; controller.onTerrainStroke = nil; controller.onTerrainStrokeEnd = nil
+        controller.terrainBrush = false; controller.onTerrainStroke = nil; controller.onTerrainStrokeEnd = nil; editor?.releasePaint()
         editor = nil
     }
     func closeEditor() { detachEditor(); controller.editorMap = nil; controller.mode = .political; phase = .title }
@@ -137,9 +137,11 @@ import LieguojiCore
     func foundCustomWorld(_ ed: MapEditor) async {
         failure = nil
         let o = editorOptions
-        let json: [String: Any] = ["template": ed.template, "count": ed.nations, "cityCount": max(ed.nations, ed.provinces), "seed": ed.seed,
+        var json: [String: Any] = ["template": ed.template, "count": ed.nations, "cityCount": max(ed.nations, ed.provinces), "seed": ed.seed,
                                    "relations": o.relations, "naming": o.naming, "cultures": Names.cultureIds.filter { o.cultures.contains($0) },
                                    "heights": Data(ed.heights).base64EncodedString()]
+        // 划定列国: the drawn states (their land and capitals) found the world as laid out.
+        if let layout = ed.layout { json["layout"] = layout; json["count"] = layout["seeds"]?.count ?? ed.nations }
         guard let text = String(data: (try? JSONSerialization.data(withJSONObject: json)) ?? Data(), encoding: .utf8) else { return }
         detachEditor()
         map = ed.map

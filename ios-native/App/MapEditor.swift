@@ -7,9 +7,9 @@ import LieguojiCore
 /// it. The heights are the world: the engine's own climate, rivers, settlement and opening run on them.
 @MainActor final class MapEditor: ObservableObject {
     enum Tool: String, CaseIterable, Identifiable {
-        case sea, plain, hill, mountain, peak, raise, lower, smooth
+        case sea, plain, hill, mountain, peak, raise, lower, smooth, rough
         var id: String { rawValue }
-        var title: String { ["sea": "海洋", "plain": "平原", "hill": "丘陵", "mountain": "山地", "peak": "雪峰", "raise": "抬高", "lower": "压低", "smooth": "平滑"][rawValue]! }
+        var title: String { ["sea": "海洋", "plain": "平原", "hill": "丘陵", "mountain": "山地", "peak": "雪峰", "raise": "抬高", "lower": "压低", "smooth": "平滑", "rough": "崎岖"][rawValue]! }
         /// The height a shaping tool paints towards (nil: a relative tool).
         var target: Double? { ["sea": 8.0, "plain": 27.0, "hill": 44.0, "mountain": 66.0, "peak": 88.0][rawValue] }
         var glyph: InkGlyph {
@@ -21,6 +21,7 @@ import LieguojiCore
             case .raise: return .raise
             case .lower: return .lower
             case .smooth: return .smooth
+            case .rough: return .mountain
             }
         }
         var swatch: Color {
@@ -30,7 +31,7 @@ import LieguojiCore
             case .hill: return Color(red: 0.25, green: 0.61, blue: 0.26)
             case .mountain: return Color(red: 0.59, green: 0.47, blue: 0.29)
             case .peak: return Color(red: 0.84, green: 0.9, blue: 0.92)
-            case .raise, .lower, .smooth: return Theme.ink2
+            case .raise, .lower, .smooth, .rough: return Theme.ink2
             }
         }
     }
@@ -89,9 +90,10 @@ import LieguojiCore
     // MARK: drawing
 
     /// One stamp of the brush at a map point.
+    private var strokeSerial = 0
     func stamp(x: Double, y: Double) {
         guard step == .terrain else { return }
-        if strokeStart == nil { strokeStart = heights }
+        if strokeStart == nil { strokeStart = heights; strokeSerial &+= 1 }
         let r = Float(radius), px = Float(x), py = Float(y)
         let x0 = Int64(floor((px - r) / bucket)), x1 = Int64(floor((px + r) / bucket))
         let y0 = Int64(floor((py - r) / bucket)), y1 = Int64(floor((py + r) / bucket))
@@ -106,6 +108,14 @@ import LieguojiCore
             let h = Double(heights[c])
             var target: Double? = tool.target == nil ? nil : targetHeight
             var delta = tool == .lower ? -3.5 : 3.5
+            // 崎岖: uneven ups and downs (a fresh pattern each stroke), so drawn coasts and ridges break up
+            // like natural ones instead of running smooth and round.
+            if tool == .rough {
+                target = nil
+                var h = UInt32(truncatingIfNeeded: c) &* 2654435761 ^ UInt32(truncatingIfNeeded: strokeSerial) &* 40503
+                h ^= h >> 13; h = h &* 0x5bd1e995; h ^= h >> 15
+                delta = Double(Int(h % 13) - 6)
+            }
             if tool == .smooth {
                 let ns = neighbors.indices.contains(c) ? neighbors[c] : []
                 target = nil
@@ -373,7 +383,7 @@ struct EditorView: View {
 
     private var terrainTools: some View {
         VStack(spacing: 12) {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
                 ForEach(MapEditor.Tool.allCases) { t in
                     let on = editor.tool == t
                     Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editor.tool = t; if let h = t.target { editor.targetHeight = h } }; GameFeel.shared.tap() } label: {

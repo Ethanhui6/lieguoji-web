@@ -286,7 +286,7 @@ public struct ContactMotion {
                 }
             }
             let t2 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
-            let after = interiorEnd ?? (admitted.isEmpty ? moved() : positions(forces))
+            let after = interiorEnd ?? moved()
             if Profile.enabled { Profile.add("a.after", Date.timeIntervalSinceReferenceDate - t2) }
             for m in movers { if let p = after[forces[m.f].key] { areaOf[m.f] = areaKey(p.cell, rules) } }
             var merged = book

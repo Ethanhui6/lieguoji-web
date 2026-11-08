@@ -235,6 +235,22 @@ struct ProvinceWarView: View {
 /// found wins (the more specific ones come first).
 enum Glyph {
     static let table: [(String, String)] = [
+        // 分页 (every tab bar).
+        ("概览", "doc.text.magnifyingglass"), ("朝政", "building.columns"), ("军事", "shield.lefthalf.filled"), ("自定义", "slider.horizontal.3"),
+        ("游戏", "gamecontroller"), ("地图显示", "map"), ("声音与其他", "speaker.wave.2"), ("全部", "square.grid.2x2"), ("交战围城", "flag.2.crossed"),
+        ("亲自指挥", "hand.point.up.left"), ("舰队", "sailboat"), ("排行", "list.number"), ("统计", "chart.bar"), ("纪事", "book.pages"), ("国史", "book.pages"),
+        // 设置与菜单 (more specific words first: the first match wins).
+        ("国界", "square.dashed"), ("行省边界", "square.grid.2x2"), ("省界", "square.grid.2x2"), ("航线", "ferry"), ("经纬线", "globe"),
+        ("城市名称", "textformat"), ("城市图标", "building.2"), ("国名", "character.textbox"), ("全称", "character.textbox"),
+        ("地貌", "mountain.2"), ("植被", "tree"), ("山脉", "mountain.2"), ("河流", "water.waves"), ("海洋", "water.waves"), ("暗边", "circle.lefthalf.filled"),
+        ("颜色", "paintpalette"), ("国色", "paintpalette"), ("浓度", "drop.halffull"),
+        ("音乐", "music.note"), ("音效", "speaker.wave.2"), ("声音", "speaker.wave.2"), ("震动", "iphone.radiowaves.left.and.right"), ("触感", "iphone.radiowaves.left.and.right"),
+        ("帧率", "speedometer"), ("流畅", "speedometer"), ("画质", "photo"), ("分辨率", "photo"), ("降温", "thermometer.snowflake"), ("发热", "thermometer.sun"), ("耗时", "stopwatch"), ("调试", "ladybug"),
+        ("自动存档", "clock.arrow.circlepath"), ("存档", "tray.and.arrow.down"), ("开场", "film"), ("镜头", "camera.viewfinder"), ("动画", "sparkles.rectangle.stack"),
+        ("箭头", "arrow.up.right"), ("军旗", "flag"), ("军队图标", "shield"), ("显示军队", "eye"), ("兵力数字", "number"),
+        ("战争期限", "hourglass"), ("间隔", "timer"), ("自主结盟", "person.2"), ("允许", "checkmark.seal"), ("附庸叛变", "crown"), ("自动", "gearshape.2"), ("外交", "scroll"), ("同盟", "person.2"), ("附庸", "crown"), ("停战", "hand.raised"), ("条约", "doc.text"), ("宣战", "flag.2.crossed"), ("战争", "flag.2.crossed"),
+        ("叛乱", "flame"), ("内战", "flame"), ("家族", "person.3"), ("世家", "person.3"), ("继承", "person.badge.clock"), ("君主", "crown"), ("年龄", "calendar"), ("纪年", "calendar"),
+        ("都城", "star"), ("性格", "theatermasks"), ("好战", "bolt"), ("生计", "leaf"), ("国家", "flag"), ("州", "map"), ("省", "map"), ("种子", "dice"),
         ("人口上限", "person.3.sequence"), ("人口", "person.3"), ("信徒", "person.3"),
         ("战役", "flag.2.crossed"), ("参战", "flag.2.crossed"), ("歼灭", "scope"), ("折损", "cross.case"),
         ("战争状态", "exclamationmark.shield"), ("交战", "exclamationmark.shield"), ("城市防御", "building.2"), ("城防", "building.2"),
@@ -247,6 +263,10 @@ enum Glyph {
         ("当前状态", "figure.walk"), ("征召", "house"), ("服役", "hourglass"), ("首都", "star"),
     ]
     static func of(_ label: String) -> String? { table.first { label.contains($0.0) }?.1 }
+    /// A small line icon in the seal colour, the same at every row.
+    static func icon(_ label: String, size: CGFloat = 14) -> some View {
+        Group { if let g = of(label) { Image(systemName: g).font(.system(size: size, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.8)).frame(width: size + 8) } }
+    }
 }
 
 /// A label with its icon (if one fits), in the label's colour.

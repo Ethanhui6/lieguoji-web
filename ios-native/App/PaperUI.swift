@@ -243,6 +243,7 @@ struct StatisticsRow: Decodable, Identifiable {
 struct StatisticsSheet: View {
     @ObservedObject var model: GameModel
     let openNation: (Int) -> Void
+    static let categoryIcon = ["power": "chart.bar.fill", "population": "person.3", "economy": "banknote", "wars": "flag.2.crossed", "campaigns": "scope", "war": "chart.xyaxis.line", "religion": "book.closed"]
     static let categories: [(id: String, title: String)] = [("power", "国力排行"), ("population", "人口排名"), ("economy", "经济排行"), ("wars", "当前战争"), ("campaigns", "战役"), ("war", "战争统计"), ("religion", "宗教信息")]
     /// 当前战争: attacker against defender, the cause and how long it has lasted (longest first).
     static func currentWars(_ state: GameState?, _ map: WorldMap?) -> [StatisticsRow] {
@@ -271,10 +272,13 @@ struct StatisticsSheet: View {
                                 // The same paper chips as the other pages' tabs (scrolling: five of them).
                                 let on = category == c.id
                                 Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { category = c.id } } label: {
-                                    Text(c.title).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                        .padding(.horizontal, 14).frame(height: 38)
-                                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? Color.clear : Theme.line))
+                                    HStack(spacing: 5) {
+                                        Image(systemName: Self.categoryIcon[c.id] ?? "list.number").font(.system(size: 13)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
+                                        Text(c.title).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                    }
+                                    .padding(.horizontal, 14).frame(height: 40)
+                                    .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
                                 }
                                 .buttonStyle(PressStyle())
                             }
@@ -463,6 +467,7 @@ struct EdictSheet: View {
     }
     private func stepper(_ title: String, _ value: Int, _ range: ClosedRange<Int>, _ step: Int, _ unit: String, _ key: String, zero: String? = nil) -> some View {
         HStack(spacing: 10) {
+            Glyph.icon(title, size: 15)
             Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
             Spacer()
             Button { apply(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }

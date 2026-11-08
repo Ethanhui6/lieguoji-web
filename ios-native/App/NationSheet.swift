@@ -1448,8 +1448,8 @@ struct EditRow: View {
     let label: String; let value: String; let action: () -> Void
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(label).foregroundStyle(Theme.ink2).fixedSize()
+            HStack(alignment: .center, spacing: 12) {
+                HStack(spacing: 8) { Glyph.icon(label); Text(label).foregroundStyle(Theme.ink2) }.fixedSize()
                 Spacer(minLength: 8)
                 Text(value).foregroundStyle(Theme.ink).monospacedDigit().multilineTextAlignment(.trailing).lineLimit(2)
                 Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7))

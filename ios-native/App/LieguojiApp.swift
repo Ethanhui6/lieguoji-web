@@ -409,75 +409,124 @@ struct NewWorldSheet: View {
     /// 自绘地图 with these options.
     var draw: ((GameModel.NewWorld) -> Void)? = nil
     @State private var options = GameModel.NewWorld()
+    /// Each terrain template's picture and one line of what it makes.
+    static let templateArt: [String: (symbol: String, note: String)] = [
+        "continents": ("globe.asia.australia", "数块大陆隔海相望"),
+        "pangea": ("globe.europe.africa", "一整块大陆，列国接壤"),
+        "archipelago": ("water.waves", "星罗棋布的海岛"),
+        "highIsland": ("mountain.2", "群山耸立的大岛"),
+    ]
     var body: some View {
         ScrollView {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("新世界").font(Theme.kai(28)).foregroundStyle(Theme.ink)
-            VStack(alignment: .leading, spacing: 10) {
-                Text("地形").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
-                ChipPicker(items: Names.templates.map { ($0.id, $0.name) }, selection: $options.template)
-            }
-            PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
-            PaperStepper(title: "省份", value: Binding(get: { options.provinceCount }, set: { options.provinces = String($0) }), range: options.nations...480, unit: "省")
-            Text("每省一城，按地形均分大小；实际生成 \(options.provinceCount) 省。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-            HStack {
-                Text("种子").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
-                Spacer()
-                TextField("", text: $options.seed, prompt: Text("随机").foregroundColor(Theme.ink2.opacity(0.6)))
-                    .paperField(width: 160).keyboardType(.numberPad).multilineTextAlignment(.trailing)
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                Text("开局").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
-                ChipPicker(items: [("peace", "列国和平"), ("war", "群雄混战")], selection: $options.relations)
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                Text("命名").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
-                ChipPicker(items: [("historical-names", "历史真名"), ("culture-generated", "按文化生成")], selection: $options.naming)
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("文化集").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
-                    Spacer()
-                    Button(options.cultures.count == Names.cultureIds.count ? "只留一种" : "全选") {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            options.cultures = options.cultures.count == Names.cultureIds.count ? ["chinese"] : Set(Names.cultureIds)
-                        }
-                    }
-                    .font(Theme.kai(14)).foregroundStyle(Theme.seal)
-                }
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
-                    ForEach(Names.cultureIds, id: \.self) { c in
-                        let on = options.cultures.contains(c)
-                        Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                // At least one culture stays chosen.
-                                if on { if options.cultures.count > 1 { options.cultures.remove(c) } } else { options.cultures.insert(c) }
+        VStack(alignment: .leading, spacing: 18) {
+            SheetHeader(title: "新世界", subtitle: "开辟一方天下", seal: "新")
+            SectionLabel("地形")
+            // 地形: a card each, with its picture.
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(Names.templates, id: \.id) { t in
+                    let on = options.template == t.id, art = Self.templateArt[t.id]
+                    Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { options.template = t.id } } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: art?.symbol ?? "map").font(.system(size: 24, weight: .light)).foregroundStyle(on ? Theme.paper2 : Theme.seal).frame(width: 34)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(t.name).font(Theme.kai(16)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                Text(art?.note ?? "").font(Theme.kai(11)).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
                             }
-                        } label: {
-                            Text(Names.culture[c] ?? c).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                .frame(maxWidth: .infinity).frame(height: 36)
-                                .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.line))
+                            Spacer(minLength: 0)
                         }
-                        .buttonStyle(PressStyle())
+                        .padding(.horizontal, 12).frame(height: 58)
+                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
+                    }
+                    .buttonStyle(PressStyle())
+                }
+            }
+            .padding(.horizontal, 22)
+            SectionLabel("规模")
+            VStack(alignment: .leading, spacing: 12) {
+                PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
+                PaperStepper(title: "州郡", value: Binding(get: { options.provinceCount }, set: { options.provinces = String($0) }), range: options.nations...480, unit: "州")
+                HStack(spacing: 10) {
+                    Image(systemName: "dice").font(.system(size: 16)).foregroundStyle(Theme.seal).frame(width: 22)
+                    Text("种子").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+                    Spacer()
+                    TextField("", text: $options.seed, prompt: Text("随机").foregroundColor(Theme.ink2.opacity(0.6)))
+                        .paperField(width: 160).keyboardType(.numberPad).multilineTextAlignment(.trailing)
+                }
+            }
+            .padding(.horizontal, 22)
+            SectionLabel("开局")
+            HStack(spacing: 10) {
+                choice("peace", "列国和平", "leaf", "各国相安，渐起争端", selection: $options.relations)
+                choice("war", "群雄混战", "flag.2.crossed", "开局即四面开战", selection: $options.relations)
+            }
+            .padding(.horizontal, 22)
+            SectionLabel("命名")
+            HStack(spacing: 10) {
+                choice("historical-names", "历史真名", "book.closed", "取自史书的国名人名", selection: $options.naming)
+                choice("culture-generated", "按文化生成", "character.book.closed", "按各文化新造名字", selection: $options.naming)
+            }
+            .padding(.horizontal, 22)
+            HStack {
+                SectionLabel("文化", inset: false)
+                Spacer()
+                Button(options.cultures.count == Names.cultureIds.count ? "只留一种" : "全选") {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        options.cultures = options.cultures.count == Names.cultureIds.count ? ["chinese"] : Set(Names.cultureIds)
                     }
                 }
-                Text("各国从所选文化中取名、取宗教与政体。宗教跟着文化走，这里没有单独的宗教集。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-                Text("生成只接受种子、地形、国家数、省份数、开局和平或开战、文化集和命名。雪原、沙漠、战争规则的新游戏偏好，以及高度图二万、三万、四万格，生成接口都不接收，所以这里不放空开关。高度图固定为二万格。").font(Theme.kai(13)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.kai(14)).foregroundStyle(Theme.seal)
             }
-            Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle()).padding(.top, 6)
-            if let draw {
-                Button { draw(options) } label: { SecondaryLabel(title: "自己绘制地图", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle())
-                Text("以所选地形为底图，亲手画山川、海陆，再划分州郡与列国。").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+            .padding(.horizontal, 22)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
+                ForEach(Names.cultureIds, id: \.self) { c in
+                    let on = options.cultures.contains(c)
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            // At least one culture stays chosen.
+                            if on { if options.cultures.count > 1 { options.cultures.remove(c) } } else { options.cultures.insert(c) }
+                        }
+                    } label: {
+                        Text(Names.culture[c] ?? c).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                            .frame(maxWidth: .infinity).frame(height: 36)
+                            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
+                    }
+                    .buttonStyle(PressStyle())
+                }
             }
+            .padding(.horizontal, 22)
+            Text("各国从所选文化中取名、宗教与政体。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+            VStack(spacing: 10) {
+                Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle())
+                if let draw {
+                    Button { draw(options) } label: { SecondaryLabel(title: "自己绘制地图", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle())
+                }
+            }
+            .padding(.horizontal, 22).padding(.top, 4)
         }
-        .padding(24)
+        .padding(.vertical, 18)
         }
         .scrollIndicators(.hidden)
     }
+    /// A two-way choice as an illustrated card.
+    private func choice(_ id: String, _ title: String, _ symbol: String, _ note: String, selection: Binding<String>) -> some View {
+        let on = selection.wrappedValue == id
+        return Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { selection.wrappedValue = id } } label: {
+            VStack(spacing: 4) {
+                Image(systemName: symbol).font(.system(size: 22, weight: .light)).foregroundStyle(on ? Theme.paper2 : Theme.seal)
+                Text(title).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                Text(note).font(Theme.kai(11)).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 10)
+            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
+        }
+        .buttonStyle(PressStyle())
+    }
 }
 
-/// While the engine builds a world: ink drops spreading on paper.
+// While the engine builds a world: ink drops spreading on paper.
 struct GeneratingView: View {
     let note: String
     @State private var phase = false
@@ -1096,8 +1145,8 @@ struct Row: View {
     let label: String; let value: String
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline, spacing: 16) {
-                Text(label).foregroundStyle(Theme.ink2).fixedSize()
+            HStack(alignment: .center, spacing: 16) {
+                HStack(spacing: 8) { Glyph.icon(label); Text(label).foregroundStyle(Theme.ink2) }.fixedSize()
                 Spacer(minLength: 12)
                 Text(value).foregroundStyle(Theme.ink).monospacedDigit().fixedSize()
             }
@@ -2246,6 +2295,8 @@ struct ReleaseNotesSheet: View {
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
                     "【自绘地图】新增「崎岖」笔刷：在笔刷范围内随机起伏，画出的海岸与山脊不再圆滑生硬；地形工具改为五列排布。",
+                    "【界面统一·图示】从标题、新世界、设置到游戏内各页，统一一套纸面朱印样式：所有分页按钮（国家页、菜单、军事、排行等）在文字上方配线描图标；所有开关、数字调节、信息行和可编辑行按名称自动配朱色小图标，不再是一列列纯文字。",
+                    "【新世界】改用与其他页相同的标题与朱印、分节标题；地形改为带示意图的卡片（多大陆、联合大陆、群岛、高山大岛各有图示与一句说明），开局与命名改为带图示的二选一卡片，删去冗长的技术说明。",
                     "【行军不扭】军队转弯、停下、掉头或改道时，新一段路程直接朝目标走，延续的方向最多占该段六成，不再画出向外鼓的弧线、左右摇摆；几支军队同驻一处围成一圈后出发，保持原来的错位前进，不再一出发就从圈上跳回中心。",
                     "【界面统一】各页卡片统一为同一种纸底墨框样式（圆角、边线、内朱线、投影一致），国力走势、兵种构成、外交分组、对阵图不再各用各的圆角与描边；状态、称职、执政、立场、帅旗、州郡属性等小标签统一为同一种标签样式。",
                     "【流畅】打开国家页时为盟友与敌国上色、切换地图图层时的整图着色改在后台计算，打开页面不再卡一下。",
@@ -2865,14 +2916,20 @@ struct ChipPicker<T: Hashable>: View {
     let items: [(T, String)]
     @Binding var selection: T
     var body: some View {
+        // One height for the whole row: pictured if any choice has a picture.
+        let tall = items.contains { Glyph.of($0.1) != nil }
         HStack(spacing: 8) {
             ForEach(items.indices, id: \.self) { i in
                 let item = items[i], on = item.0 == selection
                 Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { selection = item.0 } } label: {
-                    Text(item.1).font(Theme.kai(16)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                        .frame(maxWidth: .infinity).frame(height: 40)
-                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? Color.clear : Theme.line))
+                    // Every tab and choice row in the game: a small picture over the word where one fits.
+                    VStack(spacing: 2) {
+                        if let g = Glyph.of(item.1) { Image(systemName: g).font(.system(size: 13, weight: .regular)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85)) }
+                        Text(item.1).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    .frame(maxWidth: .infinity).frame(height: tall ? 50 : 40)
+                    .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
                 }
                 .buttonStyle(PressStyle())
             }
@@ -2891,7 +2948,7 @@ struct PaperStepper: View {
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 12) {
-                Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+                HStack(spacing: 8) { Glyph.icon(title, size: 15); Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2) }
                 Spacer()
                 stepButton("minus", -1)
                 Text("\(value) \(unit)").font(Theme.kai(20)).foregroundStyle(Theme.ink).frame(minWidth: 64)
@@ -2933,7 +2990,8 @@ struct PaperSwitch: View {
     @Binding var on: Bool
     var body: some View {
         Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { on.toggle() } } label: {
-            HStack {
+            HStack(spacing: 10) {
+                Glyph.icon(title, size: 15)
                 Text(title).font(Theme.kai(18)).foregroundStyle(Theme.ink)
                 Spacer()
                 ZStack(alignment: on ? .trailing : .leading) {

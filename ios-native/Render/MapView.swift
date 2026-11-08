@@ -806,7 +806,7 @@ final class MapLabelsView: UIView {
             let em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
             return Label(text: mark == .capital ? "★" + c.name : c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
                          stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 8, province: c.province)
-        }
+        }.sorted { $0.mapEm > $1.mapEm }
     }
     /// The cities changed (a preview replaced by the founded world, whose cities have names): rebuild them.
     private var cityKey = ""
@@ -829,7 +829,7 @@ final class MapLabelsView: UIView {
             let l = Label(text: shown, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
             l.angle = Double(box.angle ?? 0)
             return l
-        }
+        }.sorted { $0.mapEm != $1.mapEm ? $0.mapEm > $1.mapEm : $0.text < $1.text }
     }
     /// Ownership changed: replace the state names, keep every city label and its rendered image.
     /// A colour view names its groups (culture, family, religion) where the state names were.
@@ -840,7 +840,7 @@ final class MapLabelsView: UIView {
             let measured = (g.name as NSString).size(withAttributes: [.font: Self.font(1)])
             let size = MapLayers.labelFontSize(box: g.box, emWidth: Float(measured.width), emHeight: Float(measured.height))
             return Label(text: g.name, x: Double(g.box.x), y: Double(g.box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
-        }
+        }.sorted { $0.mapEm > $1.mapEm }
         fadeIn(nations, animated)
     }
     func setNations(map: WorldMap, animated: Bool = true) {
@@ -891,8 +891,31 @@ final class MapLabelsView: UIView {
         }
     }
 
+    /// A name on the screen: its centre, half size and tilt.
+    private struct Box {
+        let x, y, halfW, halfH, cosine, sine: CGFloat; let nation: Bool; let text: String
+        var reach: CGFloat { (halfW * halfW + halfH * halfH).squareRoot() }
+    }
+    /// Separating-axis test for two tilted names; the same state's name is also kept well apart from itself.
+    private static func clash(_ a: Box, _ b: Box, margin: CGFloat) -> Bool {
+        let dx = b.x - a.x, dy = b.y - a.y, far = a.reach + b.reach + margin, gap = dx * dx + dy * dy
+        if a.nation && b.nation && a.text == b.text {
+            let apart = (a.halfW + b.halfW) * 1.6
+            if gap < apart * apart { return true }
+        }
+        if gap > far * far { return false }
+        for (ux, uy) in [(a.cosine, a.sine), (-a.sine, a.cosine), (b.cosine, b.sine), (-b.sine, b.cosine)] {
+            func radius(_ q: Box) -> CGFloat { q.halfW * abs(q.cosine * ux + q.sine * uy) + q.halfH * abs(-q.sine * ux + q.cosine * uy) }
+            if abs(dx * ux + dy * uy) > radius(a) + radius(b) + margin { return false }
+        }
+        return true
+    }
+
     func update(camera: MapCamera, viewport: CGSize) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
+        // 避让: the biggest names first; a name that would land on one already placed waits until the
+        // player zooms in. One already showing gets a little slack, so names do not flicker at the limit.
+        var taken = [Box](); taken.reserveCapacity(nations.count + 64)
         if !showCities { for l in cities { l.view.isHidden = true } }
         for l in nations + (showCities ? cities : []) {
             let points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)
@@ -911,7 +934,11 @@ final class MapLabelsView: UIView {
                 else { let image = Self.render(l.text, size: CGFloat(l.rendered), fill: l.fill, stroke: l.stroke, strokeEm: CGFloat(l.strokeWidth)); Self.images.setObject(image, forKey: key); l.view.image = image }
                 l.view.sizeToFit()
             }
-            let k = CGFloat(points / l.rendered)
+            let k = CGFloat(points / l.rendered), image = l.view.image?.size ?? .zero
+            let box = Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: image.width * k / 2, halfH: image.height * k / 2, cosine: CGFloat(cos(l.angle)), sine: CGFloat(sin(l.angle)), nation: l.province == nil, text: l.text)
+            let margin: CGFloat = l.view.isHidden ? 6 : 0
+            if taken.contains(where: { Self.clash($0, box, margin: margin) }) { l.view.isHidden = true; continue }
+            taken.append(box)
             l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: k, y: k)
             l.view.center = CGPoint(x: p.x, y: p.y)
             l.view.isHidden = false

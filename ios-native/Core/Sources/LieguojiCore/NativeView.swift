@@ -88,6 +88,25 @@ extension NativeEngine {
             let largest = pieces.map(\.count).max() ?? 0
             for piece in pieces where piece.count == largest || piece.count >= max(40, largest / 4) { parts.append((k, piece)) }
         }
+        // 国名入境 (app worlds): the name stands on the deepest ground of its piece, along the longest straight
+        // run of its own land through that point, sized to fit. On a tangled continent a centroid falls on a
+        // neighbour's land and names pile up there.
+        let fit = run.regimes.enabled.isTruthy
+        let rows = n / max(1, cellsX), x0 = pts[0], y0 = pts[1]
+        let dx = cellsX > 1 ? (pts[2 * (cellsX - 1)] - x0) / Double(cellsX - 1) : unit, dy = rows > 1 ? (pts[2 * (n - cellsX) + 1] - y0) / Double(rows - 1) : unit
+        var depth = [Int32](repeating: -1, count: fit ? n : 0)
+        func cell(_ x: Double, _ y: Double) -> Int? {
+            let row = Int(((y - y0) / dy).rounded()), column = Int(((x - x0) / dx).rounded())
+            return row >= 0 && row < rows && column >= 0 && column < cellsX ? row * cellsX + column : nil
+        }
+        func neighbour(_ c: Int, _ i: Int) -> Int {
+            switch i {
+            case 0: return c % cellsX > 0 ? c - 1 : -1
+            case 1: return c % cellsX < cellsX - 1 ? c + 1 : -1
+            case 2: return c - cellsX
+            default: return c + cellsX < n ? c + cellsX : -1
+            }
+        }
         for (k, list) in parts {
             if singles[k] == 1 && list.count < 30 { continue }
             var cx = 0.0, cy = 0.0; for c in list { cx += pts[2 * c]; cy += pts[2 * c + 1] }; cx /= Double(list.count); cy /= Double(list.count)
@@ -112,8 +131,48 @@ extension NativeEngine {
             let scale = (Double(min(2400, max(500, list.count))) - 500) / 1900
             let o = JS.object()
             let mid = (lo + hi) / 2
-            o.nation = JS(k); o.x = JS(cx + ux * mid); o.y = JS(cy + uy * mid); o.angle = JS(theta)
-            o.width = JS(width); o.height = JS(height); o.fontMax = JS(25 + 15 * min(1, max(0, scale))); o.fontMin = JS(15)
+            var labelX = cx + ux * mid, labelY = cy + uy * mid, labelAngle = theta, labelWidth = width, labelHeight = height, labelMin = 15.0
+            if fit {
+                var queue = [Int](); queue.reserveCapacity(list.count)
+                for c in list {
+                    var edge = false
+                    for i in 0..<4 { let d = neighbour(c, i); if d < 0 || d >= n || group(d) != k { edge = true; break } }
+                    if edge { depth[c] = 0; queue.append(c) }
+                }
+                var head = 0
+                while head < queue.count {
+                    let c = queue[head]; head += 1
+                    for i in 0..<4 { let d = neighbour(c, i); if d >= 0 && d < n && depth[d] < 0 && group(d) == k { depth[d] = depth[c] + 1; queue.append(d) } }
+                }
+                var deepest = list[0], score = -Double.infinity
+                for c in list {
+                    let off = pow(pts[2 * c] - cx, 2) + pow(pts[2 * c + 1] - cy, 2), s = Double(depth[c]) * Double(depth[c]) * dx * dx - off * 0.02
+                    if s > score { score = s; deepest = c }
+                }
+                let px = pts[2 * deepest], py = pts[2 * deepest + 1], step = min(dx, dy) * 0.6
+                func reach(_ ax: Double, _ ay: Double) -> Double {
+                    var t = 0.0, end = 0.0, misses = 0
+                    while misses < 2 && t < 3000 {
+                        t += step
+                        if let c = cell(px + ax * t, py + ay * t), group(c) == k { end = t; misses = 0 } else { misses += 1 }
+                    }
+                    return end
+                }
+                var longest = -1.0
+                for angle in [theta, theta * 0.5, 0] {
+                    let ax = cos(angle), ay = sin(angle), a = reach(ax, ay), b = reach(-ax, -ay)
+                    let length = (a + b) * (angle == theta ? 1.1 : 1)
+                    if length > longest {
+                        longest = length
+                        labelX = px + ax * (a - b) / 2; labelY = py + ay * (a - b) / 2; labelAngle = angle
+                        labelWidth = (a + b) / unit * 0.76
+                    }
+                }
+                let across = Double(depth[deepest] + 1) * min(dx, dy) * 2 / unit
+                labelHeight = min(max(labelWidth / 3, 1.5), max(1, across * 0.9)); labelMin = 6
+            }
+            o.nation = JS(k); o.x = JS(labelX); o.y = JS(labelY); o.angle = JS(labelAngle)
+            o.width = JS(labelWidth); o.height = JS(labelHeight); o.fontMax = JS(25 + 15 * min(1, max(0, scale))); o.fontMin = JS(labelMin)
             out.append(o)
         }
         return .array(out)

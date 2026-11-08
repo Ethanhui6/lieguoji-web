@@ -765,6 +765,7 @@ struct NationSheet: View {
                         .padding(.horizontal, 16).padding(.vertical, 8)
                     }
                 }
+                .padding(.horizontal, 16)
             }
             // 三公: one compact row each — the polity's title, the holder, how well he serves. Tap to
             // appoint; press and hold to change the holder's abilities.
@@ -778,7 +779,6 @@ struct NationSheet: View {
                             Text(o.name.isEmpty ? "空缺" : o.name).font(Theme.kai(16)).foregroundStyle(o.name.isEmpty ? Theme.ink2 : Theme.ink).lineLimit(1)
                             if !o.name.isEmpty { Text("\(Int(o.age))岁").font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
                             Spacer(minLength: 6)
-                            Text(Self.officeShort[o.office] ?? "").font(Theme.kai(11)).foregroundStyle(Theme.ink2).lineLimit(1)
                             if !o.name.isEmpty {
                                 // Fit −1…1: how well the holder's skills suit the office.
                                 Text(o.fit >= 0.4 ? "称职" : o.fit >= 0 ? "平庸" : "失职").font(Theme.kai(12)).foregroundStyle(Theme.paper2)

@@ -1152,18 +1152,18 @@ struct ProvinceSheet: View {
                     if let s = model.state { BattleBoard(province: province, state: s, map: map, openArmy: openArmy) }
                     if let info {
                         // 州郡属性: core or frontier, mountain, fortress, rich, granary, well governed.
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(Array(info.kinds.enumerated()), id: \.offset) { _, k in
-                                    VStack(spacing: 2) {
-                                        Text(k.0).font(Theme.kai(15)).foregroundStyle(Theme.paper2)
-                                            .padding(.horizontal, 10).padding(.vertical, 4).background(k.0 == "边地" ? Theme.ink2 : Theme.seal, in: RoundedRectangle(cornerRadius: 5))
-                                        Text(k.1).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
-                                    }
+                        // Two columns, each a tag and what it means (one long row ran off the page).
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10, alignment: .leading), GridItem(.flexible(), spacing: 10, alignment: .leading)], alignment: .leading, spacing: 8) {
+                            ForEach(Array(info.kinds.enumerated()), id: \.offset) { _, k in
+                                HStack(spacing: 6) {
+                                    Text(k.0).font(Theme.kai(13)).foregroundStyle(Theme.paper2).lineLimit(1).fixedSize()
+                                        .padding(.horizontal, 7).padding(.vertical, 3)
+                                        .background(k.0 == "边地" ? Theme.ink2 : k.0 == "封锁" || k.0 == "民变" ? Color(red: 0.45, green: 0.08, blue: 0.08) : Theme.seal, in: RoundedRectangle(cornerRadius: 5))
+                                    Text(k.1).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).fixedSize(horizontal: false, vertical: true)
                                 }
                             }
-                            .padding(.horizontal, 22)
                         }
+                        .padding(.horizontal, 22)
                         if let arms = info.combat, !arms.isEmpty {
                             // 地利: how this land favours each arm (attacking into it / holding it).
                             Group2 {

@@ -187,15 +187,31 @@ extension MapLayers {
         var drawn = Set<Int64>()
         for (a, list) in near.sorted(by: { $0.key < $1.key }) {
             guard let pa = firstCity[a] else { continue }
-            let nearest = list.compactMap { b in firstCity[b].map { (b, $0) } }
-                .sorted { pow($0.1.0 - pa.0, 2) + pow($0.1.1 - pa.1, 2) < pow($1.1.0 - pa.0, 2) + pow($1.1.1 - pa.1, 2) || ($0.1 == $1.1 && $0.0 < $1.0) }.prefix(2)
+            let candidates: [(Int, (Float, Float))] = list.compactMap { other -> (Int, (Float, Float))? in
+                guard let p = firstCity[other] else { return nil }
+                return (other, p)
+            }
+            func gap(_ p: (Float, Float)) -> Float { let x: Float = p.0 - pa.0, y: Float = p.1 - pa.1; return x * x + y * y }
+            let nearest = candidates.sorted { (l: (Int, (Float, Float)), r: (Int, (Float, Float))) -> Bool in
+                let dl: Float = gap(l.1), dr: Float = gap(r.1)
+                return dl != dr ? dl < dr : l.0 < r.0
+            }.prefix(2)
             for (b, pb) in nearest {
                 let id = Int64(min(a, b)) << 32 | Int64(max(a, b))
                 if !drawn.insert(id).inserted { continue }
-                let dx = pb.0 - pa.0, dy = pb.1 - pa.1, len = max(1, (dx * dx + dy * dy).squareRoot())
-                let bend = (Float(hash(a &* 31 &+ b) % 100) / 100 - 0.5) * len * 0.22, mx = (pa.0 + pb.0) / 2 - dy / len * bend, my = (pa.1 + pb.1) / 2 + dx / len * bend
+                let dx: Float = pb.0 - pa.0, dy: Float = pb.1 - pa.1
+                let len: Float = max(1, (dx * dx + dy * dy).squareRoot())
+                let wobble: Float = Float(hash(a &* 31 &+ b) % 100) / 100 - 0.5
+                let bend: Float = wobble * len * 0.22
+                let mx: Float = (pa.0 + pb.0) / 2 - dy / len * bend
+                let my: Float = (pa.1 + pb.1) / 2 + dx / len * bend
                 let steps = max(6, Int(len / 5))
-                func at(_ t: Float) -> (Float, Float) { let u = 1 - t; return (u * u * pa.0 + 2 * u * t * mx + t * t * pb.0, u * u * pa.1 + 2 * u * t * my + t * t * pb.1) }
+                func at(_ t: Float) -> (Float, Float) {
+                    let u: Float = 1 - t, p0: Float = u * u, p1: Float = 2 * u * t, p2: Float = t * t
+                    let x: Float = p0 * pa.0 + p1 * mx + p2 * pb.0
+                    let y: Float = p0 * pa.1 + p1 * my + p2 * pb.1
+                    return (x, y)
+                }
                 for k in stride(from: 1, to: steps - 1, by: 2) {
                     let p = at(Float(k) / Float(steps)), q = at(Float(k + 1) / Float(steps))
                     m.segment(p.0, p.1, q.0, q.1, width: 0.7, road, alpha: 0.5)

@@ -189,3 +189,26 @@ extension NativeEngine {
         }
     }
 }
+
+/// 在此立国 (the original's world editor: a new state in a chosen province): peacefully, or by rising
+/// against its owner (a rebellion in that province).
+extension NativeEngine {
+    func foundNation(_ province: Int, war: Bool) -> (ok: Bool, reason: String) {
+        let r = run, provinces = r.world.provinces.asArray
+        guard provinces.indices.contains(province) else { return (false, "州郡不存在。") }
+        let p = provinces[province], pid = p.id.asString, owner = p.controller.asString
+        guard !r.foundings.isNull, Vassals.alive(r, owner) else { return (false, "此地无主，或这个世界没有建国规则。") }
+        guard r.world.cities.asArray.contains(where: { $0.provinceId.asString == pid }) else { return (false, "此州没有城池，无法立国。") }
+        guard provinces.filter({ $0.controller.asString == owner }).count >= 2 else { return (false, "这是该国最后一州，无法再分出新国。") }
+        if war {
+            guard Rebellion.tryRebel(r, pid, force: true) else { return (false, "此州无人响应起事。") }
+            afterGlobalOrder()
+            return (true, "\(p.name.asString)举兵反抗，自立为国。")
+        }
+        let record = Founding.foundState(r, parent: owner, provinces: [pid], reason: "世界编辑：\(p.name.asString)和平独立，按原作新国家初始化领袖与家族。")
+        Wars.reconcileLosses(r); Vassals.reconcileAlliances(r); DiplomacyBridge.reconcile(r); Wars.reconcileIdentities(r)
+        afterGlobalOrder()
+        let name = r.world.nations.asArray.first { $0.id.asString == record.nationId.asString }?.name.asString ?? "新国"
+        return (true, "\(name)于\(p.name.asString)和平立国。")
+    }
+}

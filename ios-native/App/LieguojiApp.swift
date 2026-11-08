@@ -1123,6 +1123,8 @@ struct ProvinceSheet: View {
     @State private var regionActions = false
     @State private var renamingRegion = false
     @State private var regionName = ""
+    @State private var founding = false
+    @State private var foundNote: String?
     var body: some View {
         if let map = model.map {
             let p = map.meta.provinces[province]
@@ -1242,6 +1244,17 @@ struct ProvinceSheet: View {
                                     .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            Divider2()
+                            // 在此立国: a new state in this province, at peace or in arms against its owner.
+                            Button { founding = true } label: {
+                                HStack { Text("在此立国").foregroundStyle(Theme.ink); Spacer(); if let note = foundNote { Text(note).font(Theme.kai(13)).foregroundStyle(Theme.ink2).lineLimit(1) }; Image(systemName: "flag.fill").font(.caption).foregroundStyle(Theme.seal) }
+                                    .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .confirmationDialog("在" + p.name + "建立新国家", isPresented: $founding, titleVisibility: .visible) {
+                                Button("和平独立") { Task { let e = await model.foundNation(province, war: false); foundNote = e ?? "已立国"; GameFeel.shared.notify(e == nil ? .success : .error); self.info = await model.provinceInfo(province) } }
+                                Button("举兵独立（与原主开战）", role: .destructive) { Task { let e = await model.foundNation(province, war: true); foundNote = e ?? "已起兵"; GameFeel.shared.notify(e == nil ? .success : .error); self.info = await model.provinceInfo(province) } }
+                            } message: { Text("新国家按本州文化生成国号、君主与家族；和平独立双方不开战。") }
                         }
                     }
                     .padding(.horizontal, 16)
@@ -2205,6 +2218,7 @@ struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
         ("1.5.0", ["【国名·对照原作】一个国家的领土被别国隔成几块时，每一块各写一个国名（太小的碎块除外），不再把一个国名写在几块领土的中间、压在别国头上。",
                     "【动画·符合直觉】州郡易主时颜色在约 0.7 秒内由旧主渐变为新主，不再一帧跳变；被歼灭、解散或并入他军的部队在原地渐隐消失，不再凭空不见。",
+                    "【世界编辑·在此立国】州郡页新增「在此立国」：选「和平独立」则本州立即成为新国家（按本州文化生成国号、君主与家族，双方不开战）；选「举兵独立」则本州起兵反抗原主（可能复兴故国）。该国最后一州与无城池之州不可。",
                     "【共和国／联邦大选】以前共和国、联邦的元首终身在位，只在去世时按紧急规则补位；现在四年一度大选时按原作共和国候选规则（能力、家族势力、战功）择优当选，在任满八年者不得再选，纪事记录「在大选中当选」。",
                     "【性能】军队自主调度每批只查本批军队所属国家的战事（以前每次把所有国家都查一遍）。",
                     "【对阵图】一州之内有多国军队时，按交战关系分成几场：守方与其盟军对攻方，另有不相干的两国在此交战则另起一张「遭遇」图；从军队页打开时自家那一场排在最前。",

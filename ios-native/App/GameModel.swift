@@ -1011,6 +1011,7 @@ import LieguojiCore
     }
     func changeCorruption(_ n: Int, lower: Bool) async -> String? { finish(await native.changeCorruption(n, lower: lower)) }
     func inciteRebellion(_ n: Int) async -> String? { finish(await native.inciteRebellion(n)) }
+    func foundNation(_ province: Int, war: Bool) async -> String? { finish(await native.foundNation(province, war: war)) }
     func familyAction(_ id: Int, action: String) async -> String? { finish(await native.familyAction(id, action: action)) }
     func setTax(_ n: Int, _ value: String) async -> String? { finish(await native.setTax(n, value)) }
     func regionInfo(_ province: Int) async -> RegionInfo? {

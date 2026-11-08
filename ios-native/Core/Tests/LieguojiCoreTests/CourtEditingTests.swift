@@ -59,6 +59,20 @@ final class CourtEditingTests: XCTestCase {
         let o = Rebellion.outlook(r, id)
         XCTAssertFalse(o.status.asString.isEmpty)
         XCTAssertEqual(r.foundings.isNull ? "" : r.foundings.json, before)
+        // 在此立国: a province with a city of a state with other land becomes a new state at peace.
+        let before2 = r.world.nations.length
+        let ps = r.world.provinces.asArray
+        if let pick = ps.indices.first(where: { i in
+            let owner = ps[i].controller.asString
+            return Vassals.alive(r, owner) && ps.filter { $0.controller.asString == owner }.count >= 3
+                && r.world.cities.asArray.contains { $0.provinceId.asString == ps[i].id.asString } && Rebellion.capitalProvince(r, owner) != ps[i].id.asString
+        }) {
+            let result = engine.foundNation(pick, war: false)
+            XCTAssertTrue(result.ok, result.reason)
+            XCTAssertEqual(r.world.nations.length, before2 + 1)
+            XCTAssertEqual(r.world.provinces[pick].controller.asString, r.world.nations.asArray.last!.id.asString)
+            _ = engine.state(includeLabels: true)
+        }
         // 族谱: marry an unmarried adult, give the couple a child, execute.
         guard !r.nobility.isNull, !r.kin.isNull else { return }
         let single = r.kin.families.objectEntries.flatMap { $0.1.memberIds.isNull ? [] : $0.1.memberIds.asArray }.compactMap { People.person(r, $0.asInt) }

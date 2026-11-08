@@ -160,6 +160,8 @@ public struct ContactMotion {
         // its string key to group them (the bulk of a step on a map of several hundred armies).
         var active = forces.indices.filter { forces[$0].travel.status != .arrived && forces[$0].travel.status != .halted }
         var areaOf = forces.map { areaKey(initial.positions[$0.key]!.cell, rules) }
+        // A force's speed over a cell does not change within one call: worked out once per cell.
+        var speedAt = [(cell: Int, v: Double)](repeating: (-1, 0), count: forces.count)
         struct Mover { let f: Int; let seg: TravelSegment; let speed: Double; let end: Double; let time: Double }
         while remaining > 0 {
             events += 1; if events > 100_000 { break }
@@ -175,7 +177,11 @@ public struct ContactMotion {
                 if !seg.local && !s.crossed && (s.offset == 0 || s.offset == seg.toGate) && !rules.canEnter(forces[i], seg.b) { forces[i].travel.status = .blocked; continue }
                 forces[i].travel.status = .moving
                 let end = seg.local || s.crossed ? seg.distance : seg.toGate, left = end - s.offset
-                let v = left == 0 ? 0 : rules.speed(forces[i], s.crossed ? seg.b : seg.a)
+                let over = s.crossed ? seg.b : seg.a
+                var v = 0.0
+                if left != 0 {
+                    if speedAt[i].cell == over { v = speedAt[i].v } else { v = rules.speed(forces[i], over); speedAt[i] = (over, v) }
+                }
                 movers.append(Mover(f: i, seg: seg, speed: v, end: end, time: left == 0 ? 0 : v > 0 ? left / v : .infinity))
             }
             if Profile.enabled { Profile.add("a.movers", Date.timeIntervalSinceReferenceDate - t0) }

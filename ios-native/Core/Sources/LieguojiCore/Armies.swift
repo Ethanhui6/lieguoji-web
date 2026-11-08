@@ -14,12 +14,28 @@ public enum Armies {
     public static func space(_ r: JS) -> [Located] {
         guard let bridge else { return [] }
         var out = [Located]()
+        // Each army's cell, kept per travel record: every move writes a new record object (positions are
+        // never edited in place), so a record seen before stands where it stood. The record is held, so
+        // its identity cannot be reused. The world is read several times a tick; decoding every army's
+        // path each time was the largest share of a day on maps of a few hundred armies.
+        if spaceWorld != ObjectIdentifier(r) { spaceCache = [:]; spaceWorld = ObjectIdentifier(r) }
+        let provinces = r.world.provinces
         for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" {
-            let t = r.armyPositions.records[a.id.asString], loc = bridge.graph.location(bridge.travel(t)), q = Int(bridge.graph.provinces[loc.cell])
-            out.append(Located(army: a, travel: t, province: q >= 0 ? r.world.provinces[q] : nil, cell: loc.cell))
+            let id = a.id.asString, t = r.armyPositions.records[id]
+            let cell: Int
+            if let c = spaceCache[id], c.record === t { cell = c.cell }
+            else { cell = bridge.graph.location(bridge.travel(t)).cell; spaceCache[id] = (t, cell) }
+            let q = Int(bridge.graph.provinces[cell])
+            out.append(Located(army: a, travel: t, province: q >= 0 ? provinces[q] : nil, cell: cell))
+        }
+        if spaceCache.count > out.count * 2 + 64 {
+            let live = Set(out.map { $0.army.id.asString })
+            spaceCache = spaceCache.filter { live.contains($0.key) }
         }
         return out
     }
+    static var spaceCache = [String: (record: JS, cell: Int)]()
+    static var spaceWorld: ObjectIdentifier?
     /// landHolders47: armies standing on the province's land, retreaters excluded.
     public static func landHolders(_ space: [Located], _ province: String) -> [JS] {
         space.filter { $0.province?.id.asString == province && $0.army.status.asString != "retreating" }.map(\.army)

@@ -333,9 +333,13 @@ public enum RunWindow {
         r.forceContacts.pairs = .array(out.contacts.map(ForceBridge.json))
         let space = Profile.measure("m.space") { Armies.space(r) }
         var safe = Set<String>()
+        // The states standing (not retreating) in each province, read once for the retreaters' check.
+        var standing = [String: Set<String>]()
+        for v in space where v.army.status.asString != "retreating" { if let pid = v.province?.id.asString { standing[pid, default: []].insert(v.army.nationId.asString) } }
         for v in space where v.army.status.asString == "retreating" && ["arrived", "halted"].contains(v.travel.status.asString) {
             guard let p = v.province, access(r, v.army.nationId.asString, p.controller.asString) else { continue }
-            if !space.contains(where: { $0.province?.id.asString == p.id.asString && $0.army.status.asString != "retreating" && atWar(r, v.army.nationId.asString, $0.army.nationId.asString) }) { safe.insert(v.army.id.asString) }
+            let mine = v.army.nationId.asString
+            if !(standing[p.id.asString] ?? []).contains(where: { atWar(r, mine, $0) }) { safe.insert(v.army.id.asString) }
         }
         for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" {
             let id = a.id.asString

@@ -419,7 +419,9 @@ public enum MapLayers {
         for (mark, city) in zip(cityMarks(map), map.meta.cities) {
             switch mark {
             case .capital:
-                m.disc(city.x, city.y, radius: 1.3 * c, black); m.disc(city.x, city.y, radius: 0.885 * c, white); m.disc(city.x, city.y, radius: 0.43 * c, black)
+                // 都城: larger than any seat and unmistakable — an ink rim, a gold ring, a vermilion heart.
+                m.disc(city.x, city.y, radius: 1.75 * c, black); m.disc(city.x, city.y, radius: 1.42 * c, RGB(0.9, 0.72, 0.3)); m.disc(city.x, city.y, radius: 1.08 * c, black)
+                m.disc(city.x, city.y, radius: 0.82 * c, white); m.disc(city.x, city.y, radius: 0.5 * c, RGB(0.72, 0.16, 0.12))
             case .provinceSeat:
                 // Larger than a town (u) and still inside the capital's outer ring (1.95u). The white
                 // disc is wide so the black rim and the centre pip read at the close-up used in screenshots.

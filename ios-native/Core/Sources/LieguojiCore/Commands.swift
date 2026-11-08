@@ -149,6 +149,8 @@ extension DiplomacyBridge {
         let nations = r.world.nations.asArray
         guard let ai = nations.firstIndex(where: { $0.id.asString == attacker }), let di = nations.firstIndex(where: { $0.id.asString == defender }) else { return "宣战双方无效或已交战。" }
         var w = world(r)
+        // The player is above the truces in app worlds (god mode): only the AI waits them out.
+        if r.regimes.enabled.isTruthy { w.ignoreTruce = true }
         let known = w.relations.count
         var c = DeclarationEngine.Context(engine: engine, world: w)
         guard let a = c.states.firstIndex(where: { $0.index == ai }), let b = c.states.firstIndex(where: { $0.index == di }),
@@ -156,7 +158,9 @@ extension DiplomacyBridge {
         let truce = c.w.truce(c.relation(a, b))
         if truce.blocked { return "停战期尚未结束（\(truce.required) 年规则）。" }
         if c.states[a].vassal || c.w.overlordOf(di) == ai { return "附庸不能自主发动外战，宗主不能向自己的附庸宣战；可先解除关系。" }
-        guard let cb = c.usable(1, a, b) else { return "两国没有可争夺的相邻土地或外交海域。" }
+        // God mode: a state with no land to contest next to the other may still be sent to war on any other
+        // casus belli it holds (annexation, cultural unity, forced conversion, colonisation).
+        guard let cb = c.usable(1, a, b) ?? (r.regimes.enabled.isTruthy ? [2, 6, 7, 8, 3].lazy.compactMap({ c.usable($0, a, b) }).first : nil) else { return "两国没有可争夺的相邻土地或外交海域。" }
         let goals = c.goals(cb, a, b)
         if goals.isEmpty { return "没有可执行的陆地或跨海进攻路线。" }
         guard let war = c.start(a, b, cb: cb.id, goals: goals) else {
@@ -169,7 +173,7 @@ extension DiplomacyBridge {
             }
             return "没有可执行的陆地或跨海进攻路线。"
         }
-        w = c.w
+        w = c.w; w.ignoreTruce = false
         mirrorRelations(r, w, from: known)
         r.nativeDiplomacy.rng = JS(Double(w.rng)); r.nativeDiplomacy.draws = JS(w.draws)
         _ = start(r, war)

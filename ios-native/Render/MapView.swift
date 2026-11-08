@@ -78,6 +78,9 @@ import LieguojiCore
     /// The brush circle under the finger (map units), drawn while painting.
     var brushRadius: Double = 30
     var onPaint: ((Int) -> Void)?
+    /// 地图点选: a page asked for a province (a new capital…): the prompt on the banner and what the tap does.
+    @Published var pickPrompt: String?
+    var onPick: ((Int) -> Void)?
     /// A sheet covers the map: it redraws at 30 frames a second.
     var sheetOpen = false { didSet { onSheet?() } }
     var onSheet: (() -> Void)?
@@ -477,6 +480,10 @@ struct MapView: UIViewRepresentable {
             if controller.terrainBrush { controller.onTerrainStroke?(w.x, w.y); controller.onTerrainStrokeEnd?(); return }
             var province: Int?
             if let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province[cell] >= 0 { province = Int(map.province[cell]) }
+            if controller.pickPrompt != nil {
+                if let province { impact.impactOccurred(); controller.onPick?(province) }
+                return
+            }
             if controller.marchingArmy != nil {
                 if let province { impact.impactOccurred(); controller.onMarchTarget?(province) }
                 return

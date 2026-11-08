@@ -105,7 +105,8 @@ public struct WorldMeta: Codable, Sendable {
         public var angle: Float? = nil }
     public struct Event: Codable, Sendable { public let day: Int; public let text: String; public let reason: String }
     public struct Rect: Codable, Sendable { public let x: Float; public let y: Float; public let width: Float; public let height: Float }
-    public struct City: Codable, Sendable { public let id: String; public let name: String; public let x: Float; public let y: Float; public let province: Int }
+    public struct City: Codable, Sendable { public let id: String; public let name: String; public let x: Float; public let y: Float; public let province: Int
+        public init(id: String, name: String, x: Float, y: Float, province: Int) { self.id = id; self.name = name; self.x = x; self.y = y; self.province = province } }
     public let format: String
     public let version: Int
     public let seed: String

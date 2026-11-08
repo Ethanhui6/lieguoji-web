@@ -18,6 +18,25 @@ public enum Regimes {
         "Tribal": "部族：骁勇善战，革命后转为王国",
     ]
 
+    /// 国家性格 (app rules): each state's standing character, drawn from the world's seed and its id (the
+    /// player may set it): how readily it goes to war, and what it is good at.
+    public struct Persona: Sendable { public let key: String, name: String, text: String, temper: Double, income: Double, attack: Double, defense: Double, destiny: Double }
+    public static let personas: [Persona] = [
+        Persona(key: "expansionist", name: "开疆拓土", text: "好大喜功，惯于扩张：开战意愿 ×1.25", temper: 1.25, income: 0, attack: 0, defense: 0, destiny: 0),
+        Persona(key: "martial", name: "尚武", text: "以武立国：开战意愿 ×1.1，所部攻击 +6%", temper: 1.1, income: 0, attack: 6, defense: 0, destiny: 0),
+        Persona(key: "steadfast", name: "守成持重", text: "慎于兵事，善守本土：开战意愿 ×0.8，所部受伤 −8%", temper: 0.8, income: 0, attack: 0, defense: 8, destiny: 0),
+        Persona(key: "mercantile", name: "重商务实", text: "通商致富：岁入 +6%，开战意愿 ×0.9", temper: 0.9, income: 6, attack: 0, defense: 0, destiny: 0),
+        Persona(key: "pious", name: "崇信教化", text: "敬天礼神：国运每年 +1.2", temper: 1.0, income: 0, attack: 0, defense: 0, destiny: 0.1),
+        Persona(key: "balanced", name: "中庸", text: "不偏不倚，随君主与时势而变", temper: 1.0, income: 0, attack: 0, defense: 0, destiny: 0),
+    ]
+    public static func persona(_ r: JS, _ id: String) -> Persona? {
+        guard !r.regimes.isNull, r.regimes.enabled.isTruthy else { return nil }
+        if let set = r.regimes.persona[id].optionalString, let p = personas.first(where: { $0.key == set }) { return p }
+        var h: UInt32 = 0x811c9dc5
+        for u in "\(r.world.custom.seed.optionalString ?? "")|\(id)|persona".utf8 { h = (h ^ UInt32(u)) &* 0x1000193 }
+        return personas[Int(h % UInt32(personas.count))]
+    }
+
     /// A state's temper for the AI: its ruler's traits and its polity (warlike > 1 > peaceful).
     public static func temper(_ r: JS, _ id: String) -> Double {
         var t = 1.0
@@ -35,6 +54,8 @@ public enum Regimes {
         case "Federation": t *= 0.85
         default: break
         }
+        if let p = persona(r, id) { t *= p.temper }
+        if let g = governing(r, id) { t *= g.temper }
         return min(1.6, max(0.6, t))
     }
 
@@ -172,6 +193,28 @@ public enum Regimes {
     // MARK: 党派 (parties)
     static let partyNames = ["自由党", "保守党", "民主党", "共和党", "进步党", "人民党", "国民党", "社会党", "工党", "民族党", "联邦党", "改革党", "农民党", "统一党", "立宪党", "公民党"]
     static let oligarchs = ["元老派", "商人公会", "贵族院派", "将门派"]
+    /// 党纲 (app rules): each party's line, and what it does while it governs (the largest party).
+    public struct Platform: Sendable { public let name: String, text: String, temper: Double, income: Double, destiny: Double }
+    static let platforms: [String: Platform] = [
+        "主战": Platform(name: "主战", text: "执政时开战意愿 ×1.15", temper: 1.15, income: 0, destiny: 0),
+        "主和": Platform(name: "主和", text: "执政时开战意愿 ×0.85", temper: 0.85, income: 0, destiny: 0),
+        "重商": Platform(name: "重商", text: "执政时岁入 +5%", temper: 1, income: 5, destiny: 0),
+        "重农": Platform(name: "重农", text: "执政时国运每年 +0.7，岁入 +2%", temper: 1, income: 2, destiny: 0.06),
+        "改革": Platform(name: "改革", text: "执政时岁入 +3%，开战意愿 ×1.05", temper: 1.05, income: 3, destiny: 0),
+        "守旧": Platform(name: "守旧", text: "执政时国运每年 +1，开战意愿 ×0.95", temper: 0.95, income: 0, destiny: 0.08),
+    ]
+    static let partyLine: [String: String] = [
+        "自由党": "重商", "保守党": "守旧", "民主党": "主和", "共和党": "重商", "进步党": "改革", "人民党": "重农", "国民党": "主战", "社会党": "重农",
+        "工党": "重农", "民族党": "主战", "联邦党": "守旧", "改革党": "改革", "农民党": "重农", "统一党": "主战", "立宪党": "守旧", "公民党": "主和",
+        "元老派": "守旧", "商人公会": "重商", "贵族院派": "守旧", "将门派": "主战", "共产党": "改革", "劳动党": "重农", "革命党": "主战",
+    ]
+    public static func platform(_ party: String) -> Platform { platforms[partyLine[party] ?? "改革"]! }
+    /// The governing party's line, for a state with parties.
+    static func governing(_ r: JS, _ id: String) -> Platform? {
+        guard !r.regimes.isNull, !r.regimes.nations[id].isNull, !r.regimes.nations[id].parties.isNull else { return nil }
+        guard let top = r.regimes.nations[id].parties.asArray.max(by: { $0.seats.asInt < $1.seats.asInt }) else { return nil }
+        return platform(top.name.asString)
+    }
     /// Seats out of 100 for each party of a state with a party system (made once, re-dealt at elections).
     static func parties(_ r: JS, _ id: String, _ s: Style, seed: Int) -> JS {
         var h: UInt32 = 0x811c9dc5
@@ -267,7 +310,7 @@ public enum Regimes {
     /// Damage multiplier for `attacker`'s army hitting `victim`'s (attack and defence bonuses, and the
     /// world's combat intensity).
     static func combatBonus(_ r: JS, attacker: String, victim: String) -> Double {
-        let a = bonus(r, attacker, "attack") ?? 0, d = bonus(r, victim, "defense") ?? 0
+        let a = (bonus(r, attacker, "attack") ?? 0) + (persona(r, attacker)?.attack ?? 0), d = (bonus(r, victim, "defense") ?? 0) + (persona(r, victim)?.defense ?? 0)
         // App worlds fight at twice the original's lethality: evenly matched armies used to grind for a
         // whole year; a battle now decides within weeks (战斗烈度 still scales it).
         return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage") * Tuning.current.lethality / grit(r, victim)
@@ -321,6 +364,8 @@ public enum Regimes {
         }
         // 国家加成 (自定义): extra income and population growth each month.
         if let income = bonus(r, id, "income"), income != 0 { addGold(income / 100) }
+        if let p = persona(r, id) { if p.income != 0 { addGold(p.income / 100) }; if p.destiny != 0 { addDestiny(p.destiny) } }
+        if let g = governing(r, id) { if g.income != 0 { addGold(g.income / 100) }; if g.destiny != 0 { addDestiny(g.destiny) } }
         if let growth = bonus(r, id, "growth"), growth != 0 {
             let owned = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
             for s in r.world.statecraft.provinces.asArray where owned.contains(s.provinceId.asString) {

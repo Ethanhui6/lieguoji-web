@@ -600,6 +600,15 @@ struct GameView: View {
                 if controller.marchingArmy != nil { marchBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if controller.marchingFleet != nil { fleetBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if controller.paintNation != nil { paintBanner.transition(.move(edge: .top).combined(with: .opacity)) }
+                if let prompt = controller.pickPrompt {
+                    HStack(spacing: 10) {
+                        Image(systemName: "hand.tap").foregroundStyle(Theme.seal)
+                        Text(prompt).font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                        Button("取消") { controller.pickPrompt = nil; controller.onPick = nil }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+                    }
+                    .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
                 if !controller.groupArmies.isEmpty { rtsBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if let h = model.herald, let map = model.map {
                     // Slides down and fades like the other top banners (调兵、绘制、即时战略).
@@ -806,6 +815,11 @@ struct GameView: View {
                 controller.marchingArmy = nil; controller.marchingFleet = nil; controller.groupArmies = []
                 controller.placingArmy = true; controller.paintNation = n; self.panel = nil
                 say("点选本国州郡放置新军；拖动移动地图，点完成退出。征募仍受游戏规则约束。")
+            }, pickProvince: { prompt, done in
+                // 地图点选: the page steps aside, the player taps the map, and the page comes back with the choice.
+                controller.pickPrompt = prompt
+                controller.onPick = { p in controller.pickPrompt = nil; controller.onPick = nil; done(p); nationDetent = .medium; open(.nation(n)) }
+                self.panel = nil
             }, openArmy: { a in open(.army(a)) }, openPeople: { nationDetent = .fraction(0.38); open(.people(n)) }, openWars: { nationDetent = .fraction(0.38); open(.nationWars(n)) }, openTalks: { nationDetent = .fraction(0.38); open(.nationTalks(n)) })
                 .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
         case .people(let n):
@@ -2232,6 +2246,17 @@ struct ReleaseNotesSheet: View {
                     "【动画·符合直觉】州郡易主时颜色在约 0.7 秒内由旧主渐变为新主，不再一帧跳变；被歼灭、解散或并入他军的部队在原地渐隐消失，不再凭空不见。",
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
+                    "【战争·修复】战争结束后进攻箭头不再残留：箭头只为仍在交战的国家而画（以前回国的军队也会把箭头留在原处）。",
+                    "【战争·修复】宣战后与敌国不接壤（隔海或隔着第三国）时，军队不再在家干等到停战：会向距离最近的敌国州郡远征（渡海或借道）。",
+                    "【上帝之手】玩家亲自宣战不再受停战期限制；两国不接壤时自动改用其他可用的宣战理由（吞并、文化统一、强制改宗等）。AI 仍须遵守停战。",
+                    "【朝堂】官职名称随政体而变：帝国 丞相·大司农·太尉，王国 宰相·司农·大将军，共和 总理·财政部长·国防部长，联邦、神权、部族各有其名；总督在共和制下称州长。每行只留官称、在任者、称职与否，修改能力改为长按。",
+                    "【党派】每个党派都有党纲（主战、主和、重商、重农、改革、守旧），执政党的党纲实际影响开战意愿、岁入或国运，议会里写明。",
+                    "【世家】各世家移入朝政页底部的「世家」折叠栏，并写明作用：子弟出任官职、执掌封地，离心至谋逆可能举兵；点家族看族谱，长按改拥戴关系。",
+                    "【国家性格】每个国家有一种性格（开疆拓土、尚武、守成持重、重商务实、崇信教化、中庸），影响开战意愿、攻守、岁入或国运，显示在朝堂特性里。",
+                    "【军事页】重做：总兵力、军队数、交战数、平均士气一览；兵种构成条与图例；每支军队带兵种图标、状态（交战/行军/驻守/撤退）、所在州郡与士气条；舰队与战事卡片。",
+                    "【外交页】重做：交战、同盟、宗主、附庸、停战、条约分组，以国家色块标签列出（点标签飞到该国），停战与条约注明剩余年限。",
+                    "【自定义】国色可用系统取色器自由调色；迁都改为在地图上直接点选（页面暂时收起，点完自动回到国家页）；政体列表收为折叠的两列卡片。",
+                    "【都城】地图上的都城标记加大并改为金环红心，一眼可辨；国家页基本信息显示都城，点一下即可在地图上点选迁都。",
                     "【天下大事】随机事件由 5 种扩充到 16 种，并有实在后果：蝗灾（一州存粮去六成）、地震（城防降一级）、洪水（存粮尽失）、大旱、瘟疫（全国人口 −3%）、人丁兴旺、名将出世（全军士气 +15）、兵变（一军折损两成）、盗匪蜂起、天降祥瑞、发现矿藏、学者云集、诸藩朝贡等，均记入国史。",
                     "【军队特性·军功】军队按参战次数晋升：新军 → 劲旅（2 战）→ 精锐（6 战）→ 百战之师（12 战），每级攻击 +6%、受伤 −4%；军队页写明军功等级。",
                     "【海军·海上封锁】敌国舰队占住本国港口时，按被封港口占本国港口的比例，每月最多少收三成国库收入；州郡页标出「封锁」。",

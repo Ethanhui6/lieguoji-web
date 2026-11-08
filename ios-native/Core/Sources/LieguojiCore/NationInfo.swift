@@ -17,10 +17,13 @@ extension NativeEngine {
         c.manual = JS(r.offices47.nations[id].manual.isTruthy)
         c.temper = JS(DeclarationEngine.temper?(id) ?? 1)
         // 国家特性: the original's state traits with their effect.
-        c.traits = .array(Armies.stateTraits(r, id).compactMap { k in
+        var traitRows: [JS] = Armies.stateTraits(r, id).compactMap { k in
             guard let t = Government.stateTraitText[k] else { return nil }
             let o = JS.object(); o.name = JS(t.0); o.text = JS(t.1); return o
-        })
+        }
+        // 国家性格 first.
+        if let p = Regimes.persona(r, id) { let o = JS.object(); o.name = JS("性格·" + p.name); o.text = JS(p.text); traitRows.insert(o, at: 0) }
+        c.traits = .array(traitRows)
         c.rebellion = Rebellion.outlook(r, id)
         c.centralIncome = JS(Offices.centralIncome(r, id))
         c.offices = .array(Offices.central.map { office in
@@ -119,7 +122,10 @@ extension NativeEngine {
         let st = Regimes.style(r, id)
         o.style = JS(st.id); o.styleLabel = JS(st.label)
         let book = r.regimes.isNull ? JS.null : r.regimes.nations[id]
-        o.parties = book.isNull || book.parties.isNull ? .array() : book.parties
+        // Each party with its line and what that line does in government.
+        o.parties = book.isNull || book.parties.isNull ? .array() : .array(book.parties.asArray.map { p in
+            let x = p.clone(), line = Regimes.platform(p.name.asString); x.line = JS(line.name); x.effect = JS(line.text); return x
+        })
         // 国家加成 (自定义) in percent, unset ones as 0.
         let bonus = JS.object()
         for k in Regimes.bonusKeys { bonus[k] = JS(Regimes.bonus(r, id, k) ?? 0) }

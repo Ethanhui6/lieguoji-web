@@ -84,11 +84,20 @@ public final class BattleArrows {
             targeting[p, default: []].append(n)
         }
         let scale = r.scale.asNumber
+        // Only states at war with the province's holder draw arrows on it: an army marching home after
+        // the peace (or a garrison) targets a province too, and used to keep the war's arrows standing.
+        var wars = [Int64: Bool]()
+        func war(_ a: Int, _ b: Int) -> Bool {
+            guard a >= 0, b >= 0, a != b else { return false }
+            let k = Int64(min(a, b)) << 32 | Int64(max(a, b))
+            if let v = wars[k] { return v }
+            let v = RunWindow.atWar(r, nations[a].id.asString, nations[b].id.asString); wars[k] = v; return v
+        }
         for p in provinces.indices {
             if g.byProvince.indices.contains(p) == false || g.byProvince[p].count < Self.minCells || owner[p] < 0 { continue }
-            let armies = targeting[p] ?? []
+            let armies = (targeting[p] ?? []).filter { war($0, owner[p]) }
             if armies.isEmpty { arrows[p] = nil; starts[p]?.removeAll(); continue }
-            let kept = (arrows[p] ?? []).filter { owner[$0.source] == $0.attacker }
+            let kept = (arrows[p] ?? []).filter { owner[$0.source] == $0.attacker && war($0.attacker, owner[p]) }
             if !kept.isEmpty { arrows[p] = kept; continue }
             arrows[p] = nil
             // EnableBattleArrow.

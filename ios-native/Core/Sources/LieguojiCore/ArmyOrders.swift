@@ -362,6 +362,20 @@ public enum ArmyOrders {
                         for p in ArmyAutonomy.Context.regularCandidateIds(invaded: invaded + lost, borders: borders) { add(p) }
                         // 协助盟友: an ally's invaded or occupied land is ours to relieve as well.
                         for p in alliedFront(nation, enemySet) { add(p) }
+                        // 远征 (app worlds): an enemy with no border to ours (across the sea, or beyond a
+                        // third state) is still fought: its provinces nearest this army — by sea, or through
+                        // land we may cross — become targets (they used to wait out the truce at home).
+                        if attack.isEmpty {
+                            let at = here.travel.origin.isNull ? nil : (x: here.travel.origin.x.asNumber, y: here.travel.origin.y.asNumber)
+                            let cx = at?.x ?? provinces[owned.first ?? 0].center.x.asNumber, cy = at?.y ?? provinces[owned.first ?? 0].center.y.asNumber
+                            let far = provinces.indices.filter { enemySet.contains(provinces[$0].controller.asString) }
+                                .sorted { a, b in
+                                    let da = (provinces[a].center.x.asNumber - cx) * (provinces[a].center.x.asNumber - cx) + (provinces[a].center.y.asNumber - cy) * (provinces[a].center.y.asNumber - cy)
+                                    let db = (provinces[b].center.x.asNumber - cx) * (provinces[b].center.x.asNumber - cx) + (provinces[b].center.y.asNumber - cy) * (provinces[b].center.y.asNumber - cy)
+                                    return da != db ? da < db : a < b
+                                }
+                            for p in far.prefix(6) { add(p) }
+                        }
                     }
                 } else {
                     for p in invaded { add(p) }

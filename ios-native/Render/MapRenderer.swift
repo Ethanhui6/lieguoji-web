@@ -256,7 +256,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 if self.terrainBase == nil { self.terrainBase = colours.terrainBase }
                 if self.shade.isEmpty { self.shade = colours.shade }
                 // Only if nothing changed the look meanwhile (a mode switch rebuilds its own base).
-                if self.mode == inputs.mode && self.fills == inputs.fills && self.highlight == inputs.highlight { self.base = (colours.land, colours.terrain) }
+                if self.mode == inputs.mode && self.fills == inputs.fills && self.highlight == inputs.highlight && self.tint == inputs.tint { self.base = (colours.land, colours.terrain) }
                 else { self.base = nil }
                 self.fadeOnRecolor = true
                 self.recolor()
@@ -611,9 +611,26 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func setAppearance(mode: MapMode, highlight: Int?, tint: [Int: RGB] = [:], fills: [RGB]? = nil) {
         guard mode != self.mode || highlight != self.highlight || tint != self.tint || fills != self.fills else { return }
         self.mode = mode; self.highlight = highlight; self.tint = tint; self.fills = fills
-        base = nil
-        recolor()
+        // The whole map's colours are worked out off the main thread (opening a state's page tints its
+        // friends and foes, and recolouring every vertex there stalled the page's slide-in); the old
+        // colours stay on screen until the new ones are ready.
+        appearanceGeneration += 1
+        let generation = appearanceGeneration, map = self.map, outlines = outlineGeneration
+        let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let colours = MapRenderer.baseColors(map, inputs)
+            DispatchQueue.main.async {
+                // A newer appearance, or a new map since (its own pass sets the colours), wins.
+                guard let self, generation == self.appearanceGeneration, outlines == self.outlineGeneration else { return }
+                if self.terrainBase == nil { self.terrainBase = colours.terrainBase }
+                if self.shade.isEmpty { self.shade = colours.shade }
+                self.base = (colours.land, colours.terrain)
+                self.recolor()
+                self.onOutlines?()
+            }
+        }
     }
+    private var appearanceGeneration = 0
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 

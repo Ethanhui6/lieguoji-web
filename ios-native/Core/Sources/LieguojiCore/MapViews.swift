@@ -6,7 +6,7 @@ extension NativeEngine {
     static let familyPalette = ["#dababf", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#c6b9c1", "#bc80bd", "#ccebc5", "#ffed6f", "#8dd3c7", "#eb8de7", "#FF9FAF", "#68C3DB", "#F7C3C7", "#F5E14D", "#FC61B3", "#A7A7FF", "#70DB8E", "#E6B03F", "#8AB821", "#C19D83", "#ACDEC4", "#E3CDA5", "#BA7AE2", "#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f", "#e5c494", "#b3b3b3"]
     static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian", "vietnamese", "tibetan", "hungarian", "polish", "portuguese", "dutch", "aztec", "inca"]
     static let cultureNames = ["chinese": "中华", "japanese": "日本", "english": "英格兰", "arab": "阿拉伯", "roman": "罗马", "french": "法兰西", "german": "日耳曼", "greek": "希腊", "persian": "波斯", "slavic": "斯拉夫", "norse": "北欧", "indian": "印度", "korean": "朝鲜", "mongol": "蒙古", "turkic": "突厥", "egyptian": "埃及", "spanish": "西班牙", "italian": "意大利", "vietnamese": "越南", "tibetan": "吐蕃", "hungarian": "匈牙利", "polish": "波兰", "portuguese": "葡萄牙", "dutch": "尼德兰", "aztec": "阿兹特克", "inca": "印加"]
-    static let religionIds = ["none", "chineseFolk", "daoism", "buddhism", "shinto", "islam", "catholic", "orthodox", "protestant", "judaism", "hinduism", "zoroastrian", "grecoRoman", "norse", "tengri", "kemetic", "aztecFaith", "incaFaith"]
+    static let religionIds = ["none", "confucian", "quanzhen", "zhengyi", "chan", "pureLand", "tiantai", "tantric", "whiteLotus", "manichean", "nestorian", "chineseFolk", "daoism", "buddhism", "shinto", "islam", "catholic", "orthodox", "protestant", "judaism", "hinduism", "zoroastrian", "grecoRoman", "norse", "tengri", "kemetic", "aztecFaith", "incaFaith"]
     static let religionNames = ["none": "无指定宗教", "chineseFolk": "中国民间信仰", "daoism": "道教", "buddhism": "佛教", "shinto": "神道", "islam": "伊斯兰教", "catholic": "天主教", "orthodox": "东正教", "protestant": "新教", "judaism": "犹太教", "hinduism": "印度教", "zoroastrian": "祆教", "grecoRoman": "希腊罗马多神信仰", "norse": "北欧传统信仰", "tengri": "腾格里信仰", "kemetic": "古埃及信仰", "aztecFaith": "阿兹特克信仰", "incaFaith": "印加太阳信仰"]
 
     static func hex(_ s: String) -> Int { Int(s.dropFirst(), radix: 16) ?? 0xffffff }
@@ -70,9 +70,10 @@ extension NativeEngine {
                 let c = cityOf[p.id.asString].flatMap { r.civilization.cities[$0].cultureId.optionalString } ?? r.civilization.nations[controller].cultureId.optionalString
                 fills.append(add(c.map { "culture:" + $0 }, Self.cultureNames[c ?? ""] ?? c ?? "", Self.familyPalette[(Self.cultureIds.firstIndex(of: c ?? "") ?? 0) % Self.familyPalette.count]))
             case "religion":
-                let id = r.civilization.nations[controller].religionId.optionalString
+                // Each province by its own faith.
+                let id = Regimes.provinceFaith(r, p)
                 let valid = id != nil && id != "none"
-                fills.append(add(valid ? "religion:" + id! : nil, Self.religionNames[id ?? ""] ?? id ?? "", Self.familyPalette[((Self.religionIds.firstIndex(of: id ?? "") ?? 1) - 1 + Self.familyPalette.count) % Self.familyPalette.count]))
+                fills.append(add(valid ? "religion:" + id! : nil, Self.religionNames[id ?? ""] ?? Regimes.creeds[id ?? ""]?.name ?? id ?? "", Self.familyPalette[((Self.religionIds.firstIndex(of: id ?? "") ?? 1) - 1 + Self.familyPalette.count) % Self.familyPalette.count]))
             case "family":
                 let id = holder[p.id.asString]
                 let surname = id.flatMap { r.kin.families[$0].surname.optionalString }
@@ -149,7 +150,7 @@ extension NativeEngine {
             var followers = [String: Double]()
             for (_, n) in living { if let id = r.civilization.nations[n.id.asString].religionId.optionalString { followers[id, default: 0] += population[n.id.asString] ?? 0 } }
             let all = max(1, total)
-            for (id, v) in followers { rows.append((Self.religionNames[id] ?? id, -1, v, "\(fmt(v))（\(String(format: "%.1f", v / all * 100))%）", Self.familyPalette[((Self.religionIds.firstIndex(of: id) ?? 1) - 1 + Self.familyPalette.count) % Self.familyPalette.count])) }
+            for (id, v) in followers { rows.append((Self.religionNames[id] ?? Regimes.creeds[id]?.name ?? id, -1, v, "\(fmt(v))（\(String(format: "%.1f", v / all * 100))%）", Self.familyPalette[((Self.religionIds.firstIndex(of: id) ?? 1) - 1 + Self.familyPalette.count) % Self.familyPalette.count])) }
         }
         rows.sort { $0.value != $1.value ? $0.value > $1.value : $0.name < $1.name }
         return Data(JS.array(rows.map { row in

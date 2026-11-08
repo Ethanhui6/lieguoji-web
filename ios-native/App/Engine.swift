@@ -175,6 +175,8 @@ struct ProvinceInfo: Decodable {
     var blockade: Int? = nil
     /// 持续性天灾 here (plague, famine).
     var disaster: String? = nil
+    /// 信仰: the province's own faith when it is not its holder's.
+    var faith: String? = nil; var heresy: Bool? = nil
     /// The kinds of land this is, from what the engine weighs (core, fortress, granary, rich, mountain).
     var kinds: [(String, String)] {
         var out = [(String, String)]()
@@ -187,6 +189,7 @@ struct ProvinceInfo: Decodable {
         if let g = governor { out.append(("总督", g + "（" + ((governorFit ?? 0) >= 0.4 ? "称职" : (governorFit ?? 0) >= 0 ? "平庸" : "失职") + "）")) }
         if let h = house { out.append(("封地", h + "世代所据")) }
         if let u = unrest { out.append((u >= 40 ? "民变" : "民心", u > 0 ? "每次检定起事概率 \(u)%" : "安定")) }
+        if let f = faith { out.append((heresy == true ? "异端" : "异教", f + (heresy == true ? "，信众易起事" : "，叛乱风险上升"))) }
         if disaster == "plague" { out.append(("瘟疫", "每月人口 −1.2%，向邻州蔓延")) }
         if disaster == "famine" { out.append(("饥荒", "每月人口 −0.5%，存粮锐减")) }
         if blockade != nil { out.append(("封锁", "港口被敌国舰队封锁，海贸与关税断绝")) }

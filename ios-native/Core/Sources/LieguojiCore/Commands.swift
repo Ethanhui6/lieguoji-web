@@ -99,6 +99,10 @@ extension NativeEngine {
             }
             if !r.foundings.isNull, r.foundings.enabled.isTruthy, let chance = Rebellion.provinceChance(r, owner, id) { o.unrest = JS(chance) }
             if let d = Regimes.disasterAt(r, id) { o.disaster = JS(d) }
+            // 信仰: this province's own, when it differs from its holder's.
+            if let f = Regimes.provinceFaith(r, p), f != r.civilization.nations[owner].religionId.optionalString {
+                o.faith = JS(Regimes.creeds[f]?.name ?? f); o.heresy = JS(Regimes.creeds[f]?.heresy == true)
+            }
             // 海上封锁: an enemy fleet holds this province's port.
             if !r.portControl.isNull, !r.portControl.ports.isNull, let fleet = r.portControl.ports[id].occupierId.optionalString, fleet != owner, RunWindow.atWar(r, owner, fleet) {
                 o.blockade = JS(nation(fleet))

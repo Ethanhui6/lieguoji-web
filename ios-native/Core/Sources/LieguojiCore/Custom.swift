@@ -56,6 +56,7 @@ public enum Regimes {
         }
         if let p = persona(r, id) { t *= p.temper }
         if let g = governing(r, id) { t *= g.temper }
+        if let c = stateCreed(r, id) { t *= c.temper }
         return min(1.6, max(0.6, t))
     }
 
@@ -297,7 +298,7 @@ public enum Regimes {
     /// Damage multiplier for `attacker`'s army hitting `victim`'s (attack and defence bonuses, and the
     /// world's combat intensity).
     static func combatBonus(_ r: JS, attacker: String, victim: String) -> Double {
-        let a = (bonus(r, attacker, "attack") ?? 0) + (persona(r, attacker)?.attack ?? 0) + (governing(r, attacker)?.attack ?? 0), d = (bonus(r, victim, "defense") ?? 0) + (persona(r, victim)?.defense ?? 0) + (governing(r, victim)?.defense ?? 0)
+        let a = (bonus(r, attacker, "attack") ?? 0) + (persona(r, attacker)?.attack ?? 0) + (governing(r, attacker)?.attack ?? 0) + (stateCreed(r, attacker)?.attack ?? 0), d = (bonus(r, victim, "defense") ?? 0) + (persona(r, victim)?.defense ?? 0) + (governing(r, victim)?.defense ?? 0) + (stateCreed(r, victim)?.defense ?? 0)
         // App worlds fight at twice the original's lethality: evenly matched armies used to grind for a
         // whole year; a battle now decides within weeks (战斗烈度 still scales it).
         return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage") * Tuning.current.lethality / grit(r, victim)
@@ -370,7 +371,11 @@ public enum Regimes {
         Finance.month(r, id, addGold: addGold, addDestiny: addDestiny)
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
         // 党派对抗、家族对抗、国债、持续性天灾.
+        eventsMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
+        faithMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
+        unrestMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         partyMonth(r, n, id, key)
+        seizure(r, n, id, key)
         feudMonth(r, n, id, key)
         debtMonth(r, n, id)
         disasterMonth(r, key)

@@ -124,6 +124,9 @@ extension NativeEngine {
         o.court = court(id)
         let st = Regimes.style(r, id)
         o.style = JS(st.id); o.styleLabel = JS(st.label)
+        // 宗教: the state faith's effect and the provinces by faith.
+        o.creedEffect = JS(Regimes.stateCreed(r, id)?.text ?? "")
+        o.faiths = faithShares(id)
         let book = r.regimes.isNull ? JS.null : r.regimes.nations[id]
         // Each party with its line and what that line does in government.
         o.parties = book.isNull || book.parties.isNull ? .array() : .array(book.parties.asArray.map { p in

@@ -43,6 +43,9 @@ struct NationInfo: Decodable {
     struct Party: Decodable { let name: String; let seats: Int; var line: String? = nil; var effect: String? = nil; var policies: [String]? = nil }
     struct Treaty: Decodable { let nation: Int; let kind: String; let years: Int }
     let style: String?; let styleLabel: String?
+    /// 宗教: the state faith's effect and the realm by faith.
+    struct FaithShare: Decodable { let id: String; let name: String; let provinces: Int; let heresy: Bool }
+    var creedEffect: String? = nil; var faiths: [FaithShare]? = nil
     /// 国力走势: monthly strength, the last ten years.
     var power: [Double]? = nil
     let parties: [Party]?
@@ -335,7 +338,7 @@ struct NationSheet: View {
                         }
                         Divider2()
                         EditRow(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)") { tab = .custom }; Divider2()
-                        if Faith.catalog[info.religion] != nil { FaithCard(religion: info.religion, state: model.state, map: map); Divider2() }
+                        if Faith.catalog[info.religion] != nil { FaithCard(religion: info.religion, state: model.state, map: map, effect: info.creedEffect, shares: info.faiths); Divider2() }
                         EditRow(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金" + Self.percent(info.bonus?["income"])) {
                             numberEdit = NumberEdit(title: "月入加成（%）", unit: "%", value: info.bonus?["income"] ?? 0) { v in await model.setBonus(nation, key: "income", value: v) }
                         }

@@ -291,6 +291,16 @@ enum Faith {
         "buddhism": ("三藏（巴利文经典）", ["冥想", "道德生活（五戒）", "学习佛教教义"]),
         "tengri": ("长生天之言", ["天神", "秘传", "与天共鸣"]),
         "norse": ("北地境巅", ["守护神", "不屈信仰", "追逐权力"]),
+        "confucian": ("四书五经", ["祭孔释奠", "科举取士", "宗法礼制"]),
+        "quanzhen": ("道藏", ["内丹清修", "三教合一", "丛林出家"]),
+        "zhengyi": ("正一经", ["符箓斋醮", "天师传承", "驱邪祈福"]),
+        "chan": ("六祖坛经", ["参禅打坐", "农禅并重", "顿悟见性"]),
+        "pureLand": ("无量寿经", ["念佛往生", "结社修行", "放生积德"]),
+        "tiantai": ("妙法莲华经", ["止观双修", "一念三千", "忏法"]),
+        "tantric": ("甘珠尔", ["灌顶传法", "活佛转世", "转经朝圣"]),
+        "whiteLotus": ("弥勒下生经", ["烧香结社", "弥勒下生", "白莲忏法"]),
+        "manichean": ("二宗三际经", ["明暗二宗", "素食戒律", "崇拜光明"]),
+        "nestorian": ("圣经（景教译本）", ["十字礼拜", "七日一荐", "医药济世"]),
         "chineseFolk": ("无定典（口传与方志）", ["祭祖", "社稷之祭", "岁时节令"]),
         "daoism": ("道德经", ["斋醮科仪", "内丹修炼", "清静无为"]),
         "shinto": ("古事记", ["参拜神社", "祓禊", "祭礼"]),
@@ -308,6 +318,8 @@ struct FaithCard: View {
     let religion: String
     let state: GameState?
     var map: WorldMap? = nil
+    var effect: String? = nil
+    var shares: [NationInfo.FaithShare]? = nil
     var body: some View {
         if let f = Faith.catalog[religion] {
             let followers = (state?.nations ?? []).filter { $0.alive && $0.religion == religion }
@@ -326,6 +338,25 @@ struct FaithCard: View {
                     }
                 }
                 Text("信徒约 \(Names.wan(followers.reduce(0) { $0 + $1.population })) · 奉行国家 \(followers.count) 个").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                if let effect, !effect.isEmpty { Text("国教之效：" + effect).font(Theme.kai(12)).foregroundStyle(Theme.seal.opacity(0.9)).fixedSize(horizontal: false, vertical: true) }
+                // 信仰构成: the realm's provinces by faith, as one bar and its legend.
+                if let shares, shares.count > 1 {
+                    let total = max(1, shares.reduce(0) { $0 + $1.provinces })
+                    GeometryReader { g in
+                        HStack(spacing: 1.5) {
+                            ForEach(Array(shares.enumerated()), id: \.offset) { i, s in
+                                Rectangle().fill(s.heresy ? Color(red: 0.45, green: 0.08, blue: 0.08) : Theme.seal.opacity(max(0.25, 0.85 - Double(i) * 0.17))).frame(width: max(3, g.size.width * CGFloat(s.provinces) / CGFloat(total)))
+                            }
+                        }
+                        .clipShape(Capsule())
+                    }
+                    .frame(height: 7)
+                    WrapLayout(spacing: 6) {
+                        ForEach(Array(shares.enumerated()), id: \.offset) { _, s in
+                            Text("\(s.name) \(s.provinces)州").font(Theme.kai(11)).foregroundStyle(s.heresy ? Color(red: 0.45, green: 0.08, blue: 0.08) : Theme.ink2)
+                        }
+                    }
+                }
                 // 圣地: the faith's holy province and who holds it now.
                 if let map, let h = state?.holy?.first(where: { $0.religion == religion }), map.meta.provinces.indices.contains(h.province) {
                     let owner = state?.owners.indices.contains(h.province) == true ? state!.owners[h.province] : -1

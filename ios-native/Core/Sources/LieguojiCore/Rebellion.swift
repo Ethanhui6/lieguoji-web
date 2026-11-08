@@ -94,6 +94,7 @@ public enum Rebellion {
             var chance = min(80, Native.imul(Native.i32(c.distance.asInt + 2), 5))
             if monthsSince(r, never) < 18 { chance = Int((Double(chance) * f(0.1)).rounded(.towardZero)) }
             if !r.offices47.isNull { chance = roundHalfEven(f(Double(chance) * Offices.localRebellion(r, province))) }
+            chance += Regimes.faithUnrest(r, p)
             chance = max(0, min(100, chance))
             if !(range(s, 0, 100) < chance) { return false }
         }
@@ -233,6 +234,7 @@ extension Rebellion {
         if monthsSince(r, s.conquered[pid].time.asNumber) < 8 || provinceAtWar(r, pid) { return nil }
         var chance = min(80, (c.distance.asInt + 2) * 5)
         if !r.offices47.isNull { chance = roundHalfEven(f(Double(chance) * Offices.localRebellion(r, pid))) }
+        if let p = r.world.provinces.asArray.first(where: { $0.id.asString == pid }) { chance += Regimes.faithUnrest(r, p) }
         return max(0, min(100, chance))
     }
 }

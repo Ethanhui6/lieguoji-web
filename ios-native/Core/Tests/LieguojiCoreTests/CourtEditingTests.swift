@@ -130,6 +130,17 @@ final class CourtEditingTests: XCTestCase {
             let seats = Regimes.book(r, id).parties.asArray.map(\.seats.asInt)
             XCTAssertEqual(seats.reduce(0, +), 100); XCTAssertTrue(seats.allSatisfy { $0 >= 0 })
         }
+        // 宗教与事件: thousands of months through every branch, on a state with the sects set up.
+        Regimes.faithSetup(r)
+        for key in 1000..<5000 {
+            guard r.world.nations.length > 0, Vassals.alive(r, id) else { break }
+            let n = r.world.nations[0]
+            Regimes.eventsMonth(r, n, id, key, addGold: { _ in }, addDestiny: { _ in })
+            Regimes.faithMonth(r, n, id, key, addGold: { _ in }, addDestiny: { _ in })
+            Regimes.unrestMonth(r, n, id, key, addGold: { _ in }, addDestiny: { _ in })
+        }
+        XCTAssertEqual(Regimes.applyStyleProbe(r, id), true)
         _ = engine.nationInfo(0); _ = engine.financeInfo(0); _ = engine.province(0)
+        _ = engine.state(includeLabels: false)
     }
 }

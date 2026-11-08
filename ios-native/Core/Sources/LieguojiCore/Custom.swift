@@ -270,8 +270,23 @@ public enum Regimes {
         let a = bonus(r, attacker, "attack") ?? 0, d = bonus(r, victim, "defense") ?? 0
         // App worlds fight at twice the original's lethality: evenly matched armies used to grind for a
         // whole year; a battle now decides within weeks (战斗烈度 still scales it).
-        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage") * Tuning.current.lethality
+        return max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100)) * rule(r, "damage") * Tuning.current.lethality / grit(r, victim)
     }
+    /// 小国坚韧 (app worlds): a small state fights on its last land with its back to the wall; its armies
+    /// take less damage the fewer provinces it holds (none at eight or more), so a great power cannot
+    /// swallow a small neighbour in one season.
+    static func grit(_ r: JS, _ id: String) -> Double {
+        let day = r.world.day.asNumber, world = ObjectIdentifier(r)
+        if gritCache?.world != world || gritCache?.day != day {
+            var counts = [String: Int]()
+            for p in r.world.provinces.asArray { counts[p.controller.asString, default: 0] += 1 }
+            gritCache = (world, day, counts)
+        }
+        let n = gritCache?.counts[id] ?? 0
+        guard n > 0, n < 8 else { return 1 }
+        return 1 + Tuning.current.smallStateGrit * Double(8 - n) / 7
+    }
+    static var gritCache: (world: ObjectIdentifier, day: Double, counts: [String: Int])?
 
     /// 天下规则 (自定义): world-wide rates in percent of normal — war frequency, combat intensity, march
     /// speed, levy size and shipbuilding speed. 100 (or unset) is the normal game.

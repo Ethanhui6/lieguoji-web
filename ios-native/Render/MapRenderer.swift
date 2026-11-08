@@ -48,6 +48,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         return self.buffer(m.vertices, stride: 6)
     }()
     private var seaLaneKey: [SIMD2<Float>] = []
+    /// 要塞 marks beside fortified cities.
+    private var forts: (buffer: MTLBuffer, count: Int)?
+    private var fortKey: [SIMD2<Float>] = []
     /// Warm-authored sea bytes. Recoloured into `sea` for the selected preset.
     private var seaSource: [UInt8] = []
     /// 卷轴边缘: the map's paper edge darkens like an old scroll and a double ink rule frames it.
@@ -186,6 +189,24 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         guard ports != seaLaneKey else { return false }
         seaLaneKey = ports
         seaLanes = buffer(MapLayers.seaLanes(map, ports: ports.map { (x: $0.x, y: $0.y) }).vertices, stride: 6)
+        return true
+    }
+
+    /// A small battlement beside each fortified city (above right of its mark), in ink with a light inner wall.
+    @discardableResult func setForts(_ points: [SIMD2<Float>]) -> Bool {
+        guard points != fortKey else { return false }
+        fortKey = points
+        var m = ColoredMesh()
+        let u = MapLayers.cityUnit, ink = RGB(0.16, 0.12, 0.1), wall = RGB(0.93, 0.89, 0.8)
+        func rect(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ c: RGB) { m.fill([x0, y0, x1, y0, x1, y1, x0, y1], c, alpha: 1) }
+        for p in points {
+            let x = p.x + 2.5 * u, y = p.y - 2.4 * u, w = 2.2 * u, h = 1.6 * u, k = w / 5
+            rect(x - w / 2, y - h / 2, x + w / 2, y + h / 2, ink)
+            for i in [0, 2, 4] { rect(x - w / 2 + Float(i) * k, y - h / 2 - k * 1.1, x - w / 2 + Float(i + 1) * k, y - h / 2, ink) }
+            rect(x - w / 2 + k * 0.6, y - h / 2 + k * 0.6, x + w / 2 - k * 0.6, y + h / 2 - k * 0.6, wall)
+            rect(x - k * 0.45, y + h / 2 - k * 1.8, x + k * 0.45, y + h / 2, ink)
+        }
+        forts = buffer(m.vertices, stride: 6)
         return true
     }
 
@@ -649,7 +670,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if display.gridLines == true && reveal >= 1 { colored(gridLines) }
         if display.vegetation && reveal >= 0.45 { colored(relief) }
         if display.borders && reveal >= 0.75 { colored(outlines) }
-        if display.cityIcons && reveal >= 0.85 { colored(icons) }
+        if display.cityIcons && reveal >= 0.85 { colored(icons); colored(forts) }
         if reveal >= 1 {
         colored(route)
         encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)

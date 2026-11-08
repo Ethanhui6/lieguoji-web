@@ -150,7 +150,7 @@ public struct ContactMotion {
         var forces = order.map { input[$0] }
         defer { for (k, i) in order.enumerated() { input[i] = forces[k] } }
         var book = previous, remaining = seconds, events = 0
-        let initial = contacts(forces, book, rules)
+        let initial = Profile.measure("a.initial") { contacts(forces, book, rules) }
         if stopAtEvent && ContactMotion.identity(initial.contacts) != ContactMotion.identity(book) {
             return Result(contacts: initial.contacts, held: initial.held, elapsed: 0, unused: seconds)
         }
@@ -235,7 +235,14 @@ public struct ContactMotion {
                 let s = forces[m.f].travel
                 return !m.seg.local && m.time <= dt && s.status != .arrived && !s.crossed && s.nodes[s.leg] == m.seg.a && s.offset == m.seg.toGate
             }
-            let before = requests.isEmpty ? [:] : positions(forces)
+            // Only movers changed place since the last positions: the rest are copied (the same values a
+            // whole recompute gives).
+            func moved() -> [String: Position] {
+                var out = current.positions
+                for m in movers { let l = graph.location(forces[m.f].travel); out[forces[m.f].key] = Position(point: l.point, cell: l.cell) }
+                return out
+            }
+            let before = requests.isEmpty ? [:] : moved()
             var admitted = [Mover]()
             for m in requests { if rules.canEnter(forces[m.f], m.seg.b) { admitted.append(m) } else { forces[m.f].travel.status = .blocked } }
             var stopped = Set<String>(), meetings = [(a: String, b: String, area: String)]()
@@ -262,7 +269,7 @@ public struct ContactMotion {
                 }
             }
             let t2 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
-            let after = interiorEnd ?? positions(forces)
+            let after = interiorEnd ?? (admitted.isEmpty ? moved() : positions(forces))
             if Profile.enabled { Profile.add("a.after", Date.timeIntervalSinceReferenceDate - t2) }
             var merged = book
             for m in meetings {

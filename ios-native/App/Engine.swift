@@ -118,6 +118,8 @@ struct GameState: Decodable, Equatable {
     struct Yard: Decodable, Equatable { let name: String; let nation: Int; let months: Double }
     var yards: [Yard]? = nil
     var ports: [Port]? = nil
+    /// 要塞: provinces whose city defence is level three or more.
+    var forts: [Int]? = nil
     let wars: [War]
     let sieges: [Siege]
     /// Armies in contact (indices into armies), where the battle animation plays.

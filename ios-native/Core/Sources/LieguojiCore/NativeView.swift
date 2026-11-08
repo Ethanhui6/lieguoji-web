@@ -260,6 +260,11 @@ extension NativeEngine {
                 let y = JS.object(); y.name = fl.name; y.nation = JS(ni[fl.nationId.asString] ?? -1); y.months = JS(left.rounded(.up)); return y
             })
         }
+        // 要塞: provinces whose city defence is level three or more (a fortress mark on the map).
+        o.forts = .array(w.provinces.asArray.enumerated().compactMap { i, p in
+            let d = r.upperCombat.provinces[p.id.asString].storedDefense.optionalNumber ?? 1
+            return d >= 3 ? JS(i) : nil
+        })
         o.ports = .array((Naval.sea?.ports ?? []).compactMap { port in
             guard let q = pi[port.provinceId] else { return nil }
             let c = r.portControl.isNull ? JS.null : r.portControl.ports[port.provinceId], x = JS.object()

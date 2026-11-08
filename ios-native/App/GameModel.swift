@@ -546,6 +546,14 @@ import LieguojiCore
         if changed { controller.world = world }
         let ports = (next.ports ?? []).map { SIMD2<Float>($0.x, $0.y) }
         if ports != controller.seaPorts { controller.seaPorts = ports }
+        if let list = next.forts, let meta = map?.meta {
+            let forts = list.compactMap { p -> SIMD2<Float>? in
+                guard meta.provinces.indices.contains(p) else { return nil }
+                if let c = meta.cities.first(where: { $0.province == p }) { return SIMD2(c.x, c.y) }
+                return SIMD2(meta.provinces[p].x, meta.provinces[p].y)
+            }
+            if forts != controller.forts { controller.forts = forts }
+        }
         refreshLanes()
         refreshArmies()
         refreshEffects(previous: previous)

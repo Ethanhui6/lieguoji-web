@@ -33,6 +33,8 @@ public struct Tuning: Codable, Sendable, Equatable {
     public var navyAttackShare = 0.6
     /// Ships of each opening fleet.
     public var openingShips = 3
+    /// 小国坚韧: a state under eight provinces takes up to this much less battle damage (at one province).
+    public var smallStateGrit = 0.35
 
     public init() {}
     /// Every key optional: an older or partial config keeps the defaults for what it leaves out.
@@ -55,6 +57,7 @@ public struct Tuning: Codable, Sendable, Equatable {
         armyCap = max(100, min(2000, v(.armyCap, d.armyCap)))
         navyAttackShare = max(0.1, min(1, v(.navyAttackShare, d.navyAttackShare)))
         openingShips = max(1, min(10, v(.openingShips, d.openingShips)))
+        smallStateGrit = max(0, min(1.5, v(.smallStateGrit, d.smallStateGrit)))
     }
 
     /// The numbers in force (set by the app from the cloud config).

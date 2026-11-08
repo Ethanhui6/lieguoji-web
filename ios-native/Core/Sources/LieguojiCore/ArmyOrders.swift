@@ -307,7 +307,7 @@ public enum ArmyOrders {
             let ongoing = here.travel.status.asString == "moving"
             let targetOwned = target?.controller.asString == nation
             let garrisonIsTarget = !row.garrisonId.isNull && row.garrisonId.asString == target?.id.asString
-            if ongoing && (row.targetId.isNull || targetEnemy != nil || row.decision.asString == "returning" && targetOwned || row.decision.asString == "staging" && targetOwned && !en.isEmpty
+            if ongoing && (row.targetId.isNull || targetEnemy != nil || row.decision.asString == "returning" && targetOwned || row.decision.asString == "staging" && targetOwned && !en.isEmpty || row.decision.asString == "guarding" && targetOwned && !en.isEmpty
                            || garrisonIsTarget && targetOwned && en.isEmpty || a.status.asString == "retreating") {
                 if garrisonIsTarget && targetOwned && en.isEmpty { note("garrison", "正在沿原定路线前往驻地，保留既有行军进度。") } else { row.nextTick = JS(tick + retry) }
                 continue
@@ -320,6 +320,33 @@ public enum ArmyOrders {
             let provinces = r.world.provinces.asArray
             let owned = ownedBy[nation] ?? []
             let invaded = owned.filter { enemyAt(provinces[$0].id.asString) != nil }
+            // 留守都城 (app worlds): at war, a threatened capital (an enemy in it, next to it, or holding a
+            // neighbour) keeps one army: the one standing there stays, and when none stands there or is
+            // marching there, an army in our own land goes back to it instead of joining the offensive.
+            if originalTargets, !en.isEmpty, a.status.asString != "retreating", owned.count >= 3,
+               let cap = Rebellion.capitalProvince(r, nation), let ci = provinceAt[cap], provinces[ci].controller.asString == nation {
+                let capital = provinces[ci]
+                let threatened = enemyAt(cap) != nil || capital.neighbors.asArray.contains { q in
+                    let qid = q.asString
+                    return enemyAt(qid) != nil || controller(qid).map { enemySet.contains($0) } == true
+                }
+                if threatened {
+                    let mineHere = (presentAt[cap] ?? []).filter { $0.nationId.asString == nation && $0.status.asString != "retreating" && $0.id.asString != id }
+                    let mineComing = r.world.armies.asArray.contains { x in
+                        x.nationId.asString == nation && x.id.asString != id && x.troops.asNumber > 0 && state.armies[x.id.asString].targetId.optionalString == cap && state.armies[x.id.asString].decision.optionalString == "guarding"
+                    }
+                    if here.province?.id.asString == cap && mineHere.isEmpty {
+                        if ongoing && targetEnemy == nil { halt() }
+                        row.targetId = JS(cap); row.campaignId = .null; row.issuedTick = JS(tick)
+                        note("guarding", "都城告急，留守都城。"); continue
+                    }
+                    if mineHere.isEmpty && !mineComing, here.province?.controller.asString == nation, reason(r, id, .move(province: ci, retreat: false)) == nil {
+                        issue(r, id, .move(province: ci, retreat: false))
+                        row.targetId = JS(cap); row.campaignId = .null; row.issuedTick = JS(tick)
+                        note("guarding", "都城告急，回师留守都城。"); continue
+                    }
+                }
+            }
             if a.status.asString != "retreating" && !en.isEmpty {
                 if originalTargets {
                     let duty = ArmyAutonomy.ArmyDuty.classify(r.tactics.forces[id].kind.asString)

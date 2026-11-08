@@ -57,6 +57,8 @@ import LieguojiCore
     var placed: ((String) -> (Double, Double)?)?
     /// Harbour points in map units. The sea-route layer is rebuilt when this changes.
     @Published var seaPorts: [SIMD2<Float>] = []
+    /// 要塞 marks: the cities of fortified provinces, in map units.
+    @Published var forts: [SIMD2<Float>] = []
     /// A fleet waiting for its port: the next province tap is its destination.
     @Published var marchingFleet: Int?
     /// 绘制疆域: provinces tapped or dragged over go to this state.
@@ -673,6 +675,7 @@ struct MapView: UIViewRepresentable {
                 mtk.setNeedsDisplay()
             }
             if renderer?.setSeaPorts(controller.seaPorts) == true { mtk.setNeedsDisplay() }
+            if renderer?.setForts(controller.forts) == true { mtk.setNeedsDisplay() }
             if labels.nameScale != controller.display.nationNameScale || labels.fullNames != controller.display.fullNationNames {
                 labels.nameScale = controller.display.nationNameScale
                 let namesChanged = labels.fullNames != controller.display.fullNationNames

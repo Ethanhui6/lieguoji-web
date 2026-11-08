@@ -18,6 +18,6 @@ final class WorldRulesTests: XCTestCase {
         let r = JS.object()
         r.regimes = JS.object(); r.regimes.world = JS.object(); r.regimes.world.damage = JS(150)
         // 战斗烈度 times the cloud-tuned lethality of app worlds.
-        XCTAssertEqual(Regimes.combatBonus(r, attacker: "n-0", victim: "n-1"), 1.5 * Tuning.current.lethality, accuracy: 1e-9)
+        XCTAssertEqual(Regimes.combatBonus(r, attacker: "n-0", victim: "n-1"), 1.5 * Tuning.current.lethality / Regimes.grit(r, "n-1"), accuracy: 1e-9)
     }
 }

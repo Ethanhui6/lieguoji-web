@@ -213,9 +213,9 @@ public enum Regimes {
         let reign = r.chronicle.leaders[id].isNull ? nil : r.chronicle.leaders[id].asArray.last
         let served = (r.world.day.asNumber - (reign?.ascendedDay.optionalNumber ?? 0)) / 365
         let stateId = r.people.nations[id].id.asInt
-        let families = People.electionFamilies(r, id).filter { /usr/bin/bash.k.stateId.asInt == stateId }
+        let families = People.electionFamilies(r, id).filter { $0.k.stateId.asInt == stateId }
         guard let winner = People.republicLeader(r, families: families, excluding: served >= 8 ? old.id.asInt : 0), winner.id.asInt != old.id.asInt else { return }
-        if !old.roles.isNull, let i = old.roles.asArray.firstIndex(where: { /usr/bin/bash.nativeKind.optionalString == "leader" }) {
+        if !old.roles.isNull, let i = old.roles.asArray.firstIndex(where: { $0.nativeKind.optionalString == "leader" }) {
             if old.pastRoles.isNull { old.pastRoles = .array() }
             old.pastRoles.push(People.pastRole(old.roles.asArray[i], time: Native.fr(r.life.gameTime.asNumber), reason: "election"))
             old.roles.asArray.remove(at: i)

@@ -279,7 +279,7 @@ public enum Regimes {
         let day = r.world.day.optionalNumber ?? 0, world = ObjectIdentifier(r)
         if gritCache?.world != world || gritCache?.day != day {
             var counts = [String: Int]()
-            for p in r.world.provinces.asArray { counts[p.controller.asString, default: 0] += 1 }
+            for p in (r.world.provinces.isNull ? [] : r.world.provinces.asArray) { if let c = p.controller.optionalString { counts[c, default: 0] += 1 } }
             gritCache = (world, day, counts)
         }
         let n = gritCache?.counts[id] ?? 0

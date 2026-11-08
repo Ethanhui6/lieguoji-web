@@ -624,6 +624,15 @@ import LieguojiCore
         }
     }
 
+    /// 放置军队的动效: a burst of the state's colour where they land and how many rose there.
+    func playMuster(nation n: Int, province p: Int, count: Int) {
+        guard let map, let at = map.meta.cities.first(where: { $0.province == p }) else { return }
+        let c = n >= 0 && n < map.meta.nations.count ? (RGB(css: map.meta.nations[n].color) ?? RGB(0.6, 0.6, 0.6)) : RGB(0.6, 0.6, 0.6)
+        var e = controller.effects
+        e.bursts.append(.init(id: "muster-\(p)-\(UUID().uuidString)", x: Double(at.x), y: Double(at.y), kind: .founded, r: Double(c.r), g: Double(c.g), b: Double(c.b)))
+        controller.effects = e
+        controller.onHits?([(x: at.x, y: at.y, text: "+\(count) 军", naval: false)])
+    }
     /// Battles (fighting armies, grouped by province), sieges and fresh captures on the map.
     private func refreshEffects(previous: GameState?) {
         guard let state, let map else { return }
@@ -692,7 +701,7 @@ import LieguojiCore
             }
             // The chronicle's happenings play at the capital of the state they name.
             let seenText = Set(previous.events.map(\.text))
-            let kinds: [(String, MapEffects.Burst.Kind)] = [("五谷丰登", .harvest), ("天灾", .disaster), ("名臣辈出", .talent), ("瘟疫", .plague), ("商路大开", .trade), ("篡位", .coup), ("改称", .regime)]
+            let kinds: [(String, MapEffects.Burst.Kind)] = [("五谷丰登", .harvest), ("人丁兴旺", .harvest), ("婴戏盈门", .harvest), ("天灾", .disaster), ("大旱", .disaster), ("水患", .disaster), ("大雪", .disaster), ("蝗灾", .disaster), ("地震", .disaster), ("洪水", .disaster), ("大火", .disaster), ("名臣辈出", .talent), ("开科", .talent), ("名医", .talent), ("学者", .talent), ("瘟疫", .plague), ("商路大开", .trade), ("互市", .trade), ("宝藏", .trade), ("矿藏", .trade), ("万国来朝", .trade), ("篡位", .coup), ("政变", .coup), ("夺权", .coup), ("革命", .coup), ("倒台", .regime), ("改称", .regime), ("改行", .regime), ("改奉", .regime), ("破产", .regime), ("总罢工", .shock), ("街头冲突", .shock), ("学潮", .shock)]
             for ev in state.events where !seenText.contains(ev.text) {
                 guard let kind = kinds.first(where: { ev.text.contains($0.0) })?.1 else { continue }
                 let named = map.meta.nations.indices.filter { !map.meta.nations[$0].name.isEmpty && ev.text.hasPrefix(map.meta.nations[$0].name) }
@@ -993,7 +1002,7 @@ import LieguojiCore
     func editCourt(_ n: Int, key: String, value: Double) async -> String? { finish(await native.editCourt(n, key: key, value: value)) }
     func appointOffice(_ n: Int, office: String, person: Int) async -> String? { finish(await native.appointOffice(n, office: office, person: person)) }
     func setCourtManual(_ n: Int, manual: Bool) async -> String? { finish(await native.setCourtManual(n, manual: manual)) }
-    func addArmy(_ n: Int, province: Int) async -> String? { finish(await native.addArmy(n, province: province)) }
+    func addArmy(_ n: Int, province: Int, count: Int = 1) async -> String? { finish(await native.addArmy(n, province: province, count: count)) }
     func editArmy(_ id: String, troops: Int?, unit: String?, morale: Double?) async -> String? { finish(await native.editArmy(id, troops: troops, unit: unit, morale: morale)) }
     /// One army order: whether it took, and the engine's message either way.
     func armyAction(_ action: String, armyId: String, text: String = "", flag: Bool = false) async -> (ok: Bool, message: String) {

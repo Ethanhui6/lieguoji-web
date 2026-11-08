@@ -310,7 +310,9 @@ public enum Regimes {
         // whole year; a battle now decides within weeks (战斗烈度 still scales it).
         let ratio: Double = max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100))
         let scaled: Double = ratio * rule(r, "damage") * Tuning.current.lethality
-        return scaled / grit(r, victim)
+        // 兵力悬殊: a host many times the enemy's strikes harder, and the few get no last-stand discount.
+        let o: Double = odds(r, attacker, victim)
+        return scaled * overwhelm(o) / (o >= 4 ? 1 : grit(r, victim))
     }
     /// 小国坚韧 (app worlds): a small state fights on its last land with its back to the wall; its armies
     /// take less damage the fewer provinces it holds (none at eight or more), so a great power cannot
@@ -385,6 +387,7 @@ public enum Regimes {
         unrestMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         partyMonth(r, n, id, key)
         seizure(r, n, id, key)
+        regimeDrift(r, n, id, key)
         feudMonth(r, n, id, key)
         debtMonth(r, n, id)
         disasterMonth(r, key)
@@ -1013,14 +1016,14 @@ extension NativeEngine {
     }
 
     /// 添加军队: a new legion of the state raised in one of its provinces.
-    public func addArmy(_ index: Int, province: Int) -> (ok: Bool, reason: String) {
+    public func addArmy(_ index: Int, province: Int, count: Int = 1) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray, provinces = r.world.provinces.asArray
         guard nations.indices.contains(index), provinces.indices.contains(province) else { return (false, "国家或州郡不存在。") }
         let id = nations[index].id.asString, p = provinces[province]
         guard p.controller.optionalString == id else { return (false, "只能在本国实控的州郡征兵。") }
         guard Armies.homeCells[p.id.asString] != nil else { return (false, "该州郡无法驻军。") }
-        Armies.create(r, nation: id, home: p.id.asString, kind: "emergency")
+        for _ in 0..<min(30, max(1, count)) { Armies.create(r, nation: id, home: p.id.asString, kind: "emergency") }
         Daily.reconcileMilitaryClock(r)
-        return (true, "\(p.name.asString)征募新军一支。")
+        return (true, "\(p.name.asString)征募新军 \(min(30, max(1, count))) 支。")
     }
 }

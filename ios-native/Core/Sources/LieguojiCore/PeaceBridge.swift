@@ -208,6 +208,7 @@ public enum PeaceBridge {
             let c = s.campaigns.asArray.first { $0.id.asInt == id }!
             if !c.endedTick.isNull { continue }
             let ai = PeaceAI(war: war(c), world: world(r))
+            PeaceAI.odds = { a, b in Regimes.odds(r, nation(r, a), nation(r, b)) }
             if !ai.hasAutonomousParticipant() { continue }
             if let reason = ai.decide() { settle(r, c, reason: reason) }
         }

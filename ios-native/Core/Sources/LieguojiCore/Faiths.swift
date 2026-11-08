@@ -208,8 +208,9 @@ extension Regimes {
     /// One state's chance at a month's event; each changes the game, none is only words.
     static func eventsMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
         let tag = "\(id)|\(key)|chronicle", roll = chance(tag)
-        guard roll < 0.07 else { return }
-        let which = Int(draw(tag + "|which") % 26), pick = Int(draw(tag + "|pick") >> 4), name = n.name.asString
+        guard roll < 0.14 else { return }
+        let which = Int(draw(tag + "|which") % 52), pick = Int(draw(tag + "|pick") >> 4), name = n.name.asString
+        if which >= 26 { moreEvents(r, n, id, key, which - 26, pick, addGold: addGold, addDestiny: addDestiny); return }
         let land = r.world.provinces.asArray.filter { $0.controller.asString == id }
         guard !land.isEmpty else { return }
         let place = land[pick % land.count], pid = place.id.asString, pname = place.name.asString

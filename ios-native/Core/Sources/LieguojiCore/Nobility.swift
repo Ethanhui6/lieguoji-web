@@ -165,7 +165,7 @@ public enum Nobility {
     }
     static func createCollateral(_ r: JS, _ n: JS, _ id: String) {
         let k = r.kin.families[id], random = Random(n: n), gender = random.value() <= f(0.5) ? 1 : 0, culture = k.cultureName.asString, profile = cultures[culture]
-        let pool = (gender == 0 ? profile.givenMale : profile.givenFemale).asArray, first = pool[random.intRange(0, pool.count)].asString
+        let pool = givenPool(profile, culture, gender: gender), first = pool[random.intRange(0, pool.count)].asString
         let houses = profile.houses.asArray, generatedLast = houses[random.intRange(0, houses.count)].asString
         let last = k.surname.asString.isEmpty ? generatedLast : k.surname.asString, life = r.life
         let identity = personName(culture, given: first, house: last, gender: gender), religionId = r.civilization.nations[k.nationId.asString].religionId
@@ -257,7 +257,7 @@ public enum Nobility {
         let life = r.life, noble = n.families[k.id.asInt.description]
         let religionId = noble.isNull ? r.civilization.nations[k.nationId.asString].religionId : noble.religionId
         let culture = k.cultureName.asString, profile = cultures[culture]
-        let pool = (gender == 0 ? profile.givenMale : profile.givenFemale).asArray, first = pool[random.intRange(0, pool.count)].asString
+        let pool = givenPool(profile, culture, gender: gender), first = pool[random.intRange(0, pool.count)].asString
         let houses = profile.houses.asArray; var surname = houses[random.intRange(0, houses.count)].asString
         if father.familyId.asInt > 0 && !last.isEmpty { surname = last }
         let identity = personName(culture, given: first, house: surname, gender: gender)

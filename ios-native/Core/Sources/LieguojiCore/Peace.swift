@@ -190,6 +190,8 @@ public struct PeaceAI {
         return achieved >= max(1, min(max(1, range.count), g.requiredCount))
     }
     static func enforceable(_ t: Int) -> Bool { t >= 0 && t <= 4 || t >= 6 && t <= 11 }
+    /// Armies of the first state for each of the second's (set while a run decides its wars).
+    nonisolated(unsafe) static var odds: ((Int, Int) -> Double)?
     public func allGoalsAchieved() -> Bool {
         var any = false
         for g in w.goals where PeaceAI.enforceable(g.type) { any = true; if !goalAchieved(g) { return false } }
@@ -206,11 +208,16 @@ public struct PeaceAI {
         let app = UnitKinds.enabled
         if months() >= (app ? Tuning.current.peaceGoalMonths : 12) && allGoalsAchieved() { return 0 }
         if collapsed(w.primaryDefenderId) || collapsed(w.primaryAttackerId) { return 2 }
+        // 兵力悬殊: a state many times outmatched sues for terms once the first land has fallen (the attacker
+        // gets what it came for), and a host that is winning does not tire and go home.
+        let o = app ? (PeaceAI.odds?(w.primaryAttackerId, w.primaryDefenderId) ?? 1) : 1
+        if app, o >= 10, months() >= 2, gainedProvinces(w.primaryAttackerId) >= 1 { return 0 }
+        if app, o <= 0.1, months() >= 2, gainedProvinces(w.primaryDefenderId) >= 1 { return 1 }
         if months() < (app ? Tuning.current.peaceDecisiveMonths : 36) { return nil }
         let s = score().score
         if abs(s) >= forceSettleThreshold() { return 1 }
         if s <= -50 || s >= 50 { return 1 }
-        if weariness(w.primaryAttackerId) >= 0.5 || weariness(w.primaryDefenderId) >= 0.5 { return 4 }
+        if !(app && (o >= 5 || o <= 0.2) && months() < 15), weariness(w.primaryAttackerId) >= 0.5 || weariness(w.primaryDefenderId) >= 0.5 { return 4 }
         return nil
     }
 }

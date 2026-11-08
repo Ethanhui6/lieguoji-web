@@ -1,4 +1,5 @@
 import {nativeStatics} from './native-statics';
+import {varyPlaceNames} from './extra-places';
 import {CULTURE_IDS47} from '../fms/play/civilization47-catalog';
 import {createFmsOriginalDocument,originalGridFor} from '../fms/original/original-document';
 import {generateFmsFullMap,prepareFmsFullMapPreview,fmsFullMapAlgorithm} from '../fms/full-map-terrain';
@@ -89,6 +90,7 @@ export async function generate(optionsText:string){
   const s=new Culture47Session();
   let x=s.create(opening);
   for(const [kind,rule] of ENABLE)x=s.execute({kind,rule,expected:populationStamp47(x.run)} as never,x.journal.actions.length);
+  varyPlaceNames(x.run as never,seed);
   session=s;current=x;
   return JSON.stringify({...await mapOf(terrain,run(),options),state:state()});
 }

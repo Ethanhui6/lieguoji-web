@@ -165,7 +165,7 @@ public final class EngineService {
         case "appointOffice": return command(engine?.appointOffice(int("n"), office: str("office"), personId: int("person")))
         case "editCourt": return command(engine?.editCourt(int("n"), key: str("key"), value: dbl("value") ?? .nan))
         case "setCourtManual": return command(engine?.setCourtManual(int("n"), manual: bool("manual")))
-        case "addArmy": return command(engine?.addArmy(int("n"), province: int("province")))
+        case "addArmy": return command(engine?.addArmy(int("n"), province: int("province"), count: optInt("count") ?? 1))
         case "editArmy": return command(engine?.editArmy(str("armyId"), troops: optInt("troops"), unit: optStr("unit"), morale: dbl("morale")))
         case "armyManual": return command(engine?.setArmyManual(str("armyId"), manual: bool("manual")))
         case "holdArmy": return command(engine?.holdArmy(str("armyId")))

@@ -223,7 +223,7 @@ actor NativeHost {
     func editCourt(_ n: Int, key: String, value: Double) async -> (ok: Bool, reason: String, state: Data?) { await command("editCourt", ["n": n, "key": key, "value": value]) }
     func appointOffice(_ n: Int, office: String, person: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("appointOffice", ["n": n, "office": office, "person": person]) }
     func setCourtManual(_ n: Int, manual: Bool) async -> (ok: Bool, reason: String, state: Data?) { await command("setCourtManual", ["n": n, "manual": manual]) }
-    func addArmy(_ n: Int, province: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("addArmy", ["n": n, "province": province]) }
+    func addArmy(_ n: Int, province: Int, count: Int = 1) async -> (ok: Bool, reason: String, state: Data?) { await command("addArmy", ["n": n, "province": province, "count": count]) }
     func editArmy(_ armyId: String, troops: Int?, unit: String?, morale: Double?) async -> (ok: Bool, reason: String, state: Data?) {
         await command("editArmy", ["armyId": armyId, "troops": Self.opt(troops), "unit": Self.opt(unit), "morale": Self.opt(morale)])
     }

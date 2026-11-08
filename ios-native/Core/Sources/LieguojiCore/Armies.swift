@@ -42,6 +42,19 @@ public enum Armies {
     }
 
     // MARK: New armies (createForce47)
+    /// 军号: a second army raised under the same name is 第二团, 第三团… (app worlds).
+    static func armyName(_ r: JS, _ base: String) -> String {
+        guard UnitKinds.enabled else { return base }
+        let used = Set(r.world.armies.asArray.filter { $0.troops.asNumber > 0 }.compactMap { $0.name.optionalString })
+        if !used.contains(base) { return base }
+        let digits = Array("零一二三四五六七八九")
+        for k in 2..<100 {
+            let n = k < 10 ? String(digits[k]) : (k >= 20 ? String(digits[k / 10]) : "") + "十" + (k % 10 == 0 ? "" : String(digits[k % 10]))
+            let name = base + "第" + n + "团"
+            if !used.contains(name) { return name }
+        }
+        return base
+    }
     static func stateTraits(_ r: JS, _ id: String) -> [String] {
         if r.stateTraits47.isNull { return [] }
         let l = r.stateTraits47[id]
@@ -81,7 +94,7 @@ public enum Armies {
         }
         let name = r.world.cities.asArray.first { $0.provinceId.asString == home }?.name.asString ?? p.name.asString
         let a = JS.object()
-        a.id = JS(id); a.name = JS(name + (kind == "emergency" ? "动员" : "") + unit.name); a.nationId = JS(nation); a.provinceId = JS(home); a.originId = JS(home)
+        a.id = JS(id); a.name = JS(armyName(r, name + (kind == "emergency" ? "动员" : "") + unit.name)); a.nationId = JS(nation); a.provinceId = JS(home); a.originId = JS(home)
         a.troops = JS(troops); a.morale = JS(80); a.supplies = JS(100); a.status = JS("idle"); a.route = .array(); a.progress = JS(0)
         r.world.armies.push(a)
         r.units[id] = JS(unit.key)

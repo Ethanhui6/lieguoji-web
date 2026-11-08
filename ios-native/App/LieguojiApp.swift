@@ -725,12 +725,11 @@ struct GameView: View {
             controller.onPaint = { province in
                 guard let n = controller.paintNation, model.state?.owners.indices.contains(province) == true else { return }
                 if controller.placingArmy {
-                    guard !controller.placementBusy else { return }
-                    controller.placementBusy = true
+                    // 一指划过：每过一州放下所选数量的军队，落点有动效。
+                    let count = controller.placeCount
                     Task {
-                        let error = await model.addArmy(n, province: province)
-                        controller.placementBusy = false
-                        say(error ?? "新军已在所选州郡集结")
+                        if let error = await model.addArmy(n, province: province, count: count) { say(error); GameFeel.shared.notify(.error) }
+                        else { GameFeel.shared.tap(); model.playMuster(nation: n, province: province, count: count) }
                     }
                     return
                 }
@@ -863,7 +862,8 @@ struct GameView: View {
             }, placeArmy: { n in
                 controller.marchingArmy = nil; controller.marchingFleet = nil; controller.groupArmies = []
                 controller.placingArmy = true; controller.paintNation = n; self.panel = nil
-                say("点选本国州郡放置新军；拖动移动地图，点完成退出。征募仍受游戏规则约束。")
+                controller.placeCount = 3
+                say("拖动滑条选数量，点按或一指划过州郡放下军队；两指移动地图")
             }, pickProvince: { prompt, done in
                 // 地图点选: the page steps aside, the player taps the map, and the page comes back with the choice.
                 controller.pickPrompt = prompt
@@ -973,13 +973,26 @@ struct GameView: View {
     }
 
     private var paintBanner: some View {
-        HStack(spacing: 10) {
-            let n = controller.paintNation ?? -1, nation = model.map.flatMap { $0.meta.nations.indices.contains(n) ? $0.meta.nations[n] : nil }
-            RoundedRectangle(cornerRadius: 3).fill(nation.map { Names.color($0.color) } ?? Theme.ink2).frame(width: 14, height: 14)
-            Text(controller.placingArmy ? "为\(nation?.name ?? "")放置新军" : "绘制\(nation?.name ?? "")疆域").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-            Button("完成") { controller.paintNation = nil; controller.placingArmy = false }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+        VStack(spacing: 6) {
+            HStack(spacing: 10) {
+                let n = controller.paintNation ?? -1, nation = model.map.flatMap { $0.meta.nations.indices.contains(n) ? $0.meta.nations[n] : nil }
+                RoundedRectangle(cornerRadius: 3).fill(nation.map { Names.color($0.color) } ?? Theme.ink2).frame(width: 14, height: 14)
+                Text(controller.placingArmy ? "在地图上点按或划过州郡放置" : "绘制\(nation?.name ?? "")疆域").font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1)
+                Button("完成") { controller.paintNation = nil; controller.placingArmy = false; controller.placeCount = 1 }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+            }
+            if controller.placingArmy {
+                // 拖动选择一次放多少支军队.
+                HStack(spacing: 10) {
+                    Image(systemName: "shield.lefthalf.filled").font(.system(size: 14)).foregroundStyle(Theme.seal)
+                    Slider(value: Binding(get: { Double(controller.placeCount) }, set: { v in
+                        let k = Int(v.rounded()); if k != controller.placeCount { controller.placeCount = k; GameFeel.shared.tap() }
+                    }), in: 1...30, step: 1).tint(Theme.seal)
+                    Text("\(controller.placeCount) 军").font(Theme.kai(16)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 48, alignment: .trailing).contentTransition(.numericText())
+                }
+                .frame(width: 270)
+            }
         }
-        .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
+        .padding(.horizontal, 16).padding(.vertical, 8).glass(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var fleetBanner: some View {
@@ -2299,6 +2312,11 @@ struct ReleaseNotesSheet: View {
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
                     "【自绘地图】新增「崎岖」笔刷：在笔刷范围内随机起伏，画出的海岸与山脊不再圆滑生硬；地形工具改为五列排布。",
+                    "【悬殊之战】兵力相差两倍以上时伤害与围城随之提高（最多 ×2.5 与 ×3），十倍之敌在丢失第一块土地后乞和割地，占绝对优势的一方不再因厌战半途停战，小国背水加成在四倍劣势时失效。",
+                    "【冷门政权】各国会按文化与宗教演变出苏丹国、哈里发国、幕府、沙皇专制、汗国、商业共和、城邦、骑士团国、教宗国、政教合一、选侯君主、摄政、封建王国、军政府、独裁等，国号随之改变。",
+                    "【事件翻倍】事件再增 26 种（共 50 余种），频率提高一倍，全部有实际结果：水患、雪灾、军器革新、士卒逃亡、募兵成军、屯田、储位之争、弹劾权贵、和亲、蛮族寇掠、掘得宝藏、君主励精图治或沉湎酒色等；灾害、人才、财富、政变等事件在地图上有对应特效。",
+                    "【放置军队】放置模式顶部新增数量滑条（1～30），拖动选择后点按或一指划过州郡即可成批放下军队，落点有光效和飘字，滑条有震动。",
+                    "【名字】同名军队自动编为「第二团、第三团」；九大文化各增数十个人名；中华等十八种文化各增二十到四十个地名，每局随机替换约一半城市。",
                     "【施政与赤字】施政改为君主才干与国运各占一半，不再几乎人人为 0（施政越高腐化越低）。国库不能再无限透支：赤字自动转入国债，负债超过 48 个月收入即国家破产。",
                     "【宗教细分】中华宗教细分为儒教、民间信仰、道教、全真道、正一道、佛教、禅宗、净土宗、天台宗、藏传密宗，另有白莲教、明教、景教；东亚各国开局按文化取其一为国教。每种宗教作为国教都有实际效果（开战意愿、岁入、攻守、国运、人口、腐化）。",
                     "【州郡信仰】每州有自己的信仰：被征服后保留旧教、逐月改宗（同宗相近的改得快）；异教州更易叛乱，异端（白莲教、明教）会揭竿起事。国中信仰统一得国运，四分五裂损国运，国教信众不足三成时朝廷改宗；持有本教圣地每年国运 +1。宗教地图按各州实际信仰上色，国家页显示信仰构成。",

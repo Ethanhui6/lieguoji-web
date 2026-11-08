@@ -66,6 +66,8 @@ import LieguojiCore
     /// 绘制疆域: provinces tapped or dragged over go to this state.
     @Published var paintNation: Int?
     @Published var placingArmy = false
+    /// 一次放置的军队数.
+    @Published var placeCount = 1
     var placementBusy = false
     /// 自绘地图: one finger draws terrain (world point per move; nil = the stroke ended).
     var terrainBrush = false
@@ -432,7 +434,7 @@ struct MapView: UIViewRepresentable {
                 return
             }
             // Painting: one finger drags the brush over provinces (two fingers still move the map).
-            if controller.paintNation != nil && !controller.placingArmy && !pinching && g.numberOfTouches <= 1 {
+            if controller.paintNation != nil && !pinching && g.numberOfTouches <= 1 {
                 if g.state == .ended || g.state == .cancelled { lastPainted = nil; return }
                 let p = g.location(in: mtk), w = camera.toWorld(x: Double(p.x), y: Double(p.y), viewport: viewport)
                 if let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province[cell] >= 0 {

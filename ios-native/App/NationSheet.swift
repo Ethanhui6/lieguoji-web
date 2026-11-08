@@ -46,6 +46,10 @@ struct NationInfo: Decodable {
     /// 宗教: the state faith's effect and the realm by faith.
     struct FaithShare: Decodable { let id: String; let name: String; let provinces: Int; let heresy: Bool }
     var creedEffect: String? = nil; var faiths: [FaithShare]? = nil
+    /// 国势 and 制度.
+    struct Sway: Decodable { let name: String; let value: String; let text: String }
+    struct ReformRow: Decodable { let id: String; let name: String; let text: String; let on: Bool }
+    var sway: [Sway]? = nil; var reforms: [ReformRow]? = nil
     /// 国力走势: monthly strength, the last ten years.
     var power: [Double]? = nil
     let parties: [Party]?
@@ -336,8 +340,17 @@ struct NationSheet: View {
                                 Task { await run(success: "迁都\(map.meta.provinces[p].name)") { await model.setCapital(nation, province: p) } }
                             }
                         }
+                        if nation < map.meta.nations.count, map.meta.cities.indices.contains(map.meta.nations[nation].capital) {
+                            Divider2()
+                            Button { fly(map.meta.cities[map.meta.nations[nation].capital].province) } label: {
+                                HStack { Text("★ 在地图上查看都城").foregroundStyle(Theme.seal); Spacer(); Image(systemName: "scope").foregroundStyle(Theme.seal) }
+                                    .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
                         Divider2()
                         EditRow(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)") { tab = .custom }; Divider2()
+                        ReformCard(model: model, nation: nation, info: info, say: { flash = $0 }, reload: { await reload() })
                         if Faith.catalog[info.religion] != nil { FaithCard(religion: info.religion, state: model.state, map: map, effect: info.creedEffect, shares: info.faiths); Divider2() }
                         EditRow(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金" + Self.percent(info.bonus?["income"])) {
                             numberEdit = NumberEdit(title: "月入加成（%）", unit: "%", value: info.bonus?["income"] ?? 0) { v in await model.setBonus(nation, key: "income", value: v) }

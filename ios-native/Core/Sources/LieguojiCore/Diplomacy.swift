@@ -179,6 +179,8 @@ extension DiplomacyWorld {
         let elapsed = p.lastWar.map { yearsSince($0) }
         let old = statecraft.first { [$0.a, $0.b].contains(p.a) && [$0.a, $0.b].contains(p.b) }
         if Self.ignoreTruce { return (required, elapsed, false) }
+        // App worlds: old enemies may fight again a year after the treaty (the original waits three to twelve).
+        if UnitKinds.enabled { return (1, elapsed, elapsed.map { $0 < 1 } ?? false) }
         return (required, elapsed, elapsed.map { $0 < required } ?? (day < (old?.truceUntilDay ?? 0)))
     }
     public func atWar(_ a: Int, _ b: Int) -> Bool { a != b && statecraft.contains { $0.war && ($0.a == a && $0.b == b || $0.a == b && $0.b == a) } }
@@ -549,7 +551,7 @@ public struct DeclarationEngine: Sendable {
             } else { cedeable = [] }
             if territorial && !cedeable.isEmpty {
                 if cb.forceDecisiveCede { return [DeclaredWar.Goal(id: 1, type: 1, scope: cedeable, requiredCount: 0)] }
-                let count = cedeable.count <= 1 ? 1 : Context.occupyCount(strength(a), strength(d), cedeable.count)
+                let count = cedeable.count <= 1 ? 1 : min(cedeable.count, Context.occupyCount(strength(a), strength(d), cedeable.count) * (UnitKinds.enabled ? 2 : 1))
                 var chosen = claimEntry(a, d).map { growClaim(seed: lookup($0 + 1), defender: states[d].id, count: count) } ?? []
                 if chosen.isEmpty { chosen = Array(cedeable.prefix(count)) }
                 let attack = f(strength(a)), defend = f(strength(d)), sum = f(attack + defend), share = sum > 0 ? f(attack / sum) : f(0.5)

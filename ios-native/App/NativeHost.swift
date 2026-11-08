@@ -223,6 +223,13 @@ actor NativeHost {
     func editCourt(_ n: Int, key: String, value: Double) async -> (ok: Bool, reason: String, state: Data?) { await command("editCourt", ["n": n, "key": key, "value": value]) }
     func appointOffice(_ n: Int, office: String, person: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("appointOffice", ["n": n, "office": office, "person": person]) }
     func setCourtManual(_ n: Int, manual: Bool) async -> (ok: Bool, reason: String, state: Data?) { await command("setCourtManual", ["n": n, "manual": manual]) }
+    func greatRebellion(_ province: Int, size: Int, kind: String?) async -> (ok: Bool, reason: String, state: Data?) { await command("greatRebellion", ["province": province, "size": size, "kind": kind.map { $0 as Any } ?? NSNull()]) }
+    func restoreNation(_ province: Int, nation: Int, size: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("restoreNation", ["province": province, "n": nation, "size": size]) }
+    func provinceDisaster(_ province: Int, kind: String?) async -> (ok: Bool, reason: String, state: Data?) { await command("provinceDisaster", ["province": province, "kind": kind.map { $0 as Any } ?? NSNull()]) }
+    func clearArmies(_ province: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("clearArmies", ["province": province]) }
+    func setProvinceFaith(_ province: Int, religion: String) async -> (ok: Bool, reason: String, state: Data?) { await command("setProvinceFaith", ["province": province, "religion": religion]) }
+    func setProvinceGrain(_ province: Int, grain: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("setProvinceGrain", ["province": province, "grain": grain]) }
+    func setReform(_ n: Int, reform: String, on: Bool) async -> (ok: Bool, reason: String, state: Data?) { await command("setReform", ["n": n, "reform": reform, "on": on ? 1 : 0]) }
     func addArmy(_ n: Int, province: Int, count: Int = 1) async -> (ok: Bool, reason: String, state: Data?) { await command("addArmy", ["n": n, "province": province, "count": count]) }
     func editArmy(_ armyId: String, troops: Int?, unit: String?, morale: Double?) async -> (ok: Bool, reason: String, state: Data?) {
         await command("editArmy", ["armyId": armyId, "troops": Self.opt(troops), "unit": Self.opt(unit), "morale": Self.opt(morale)])

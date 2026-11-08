@@ -100,6 +100,10 @@ public enum Regimes {
         Style(id: "order", base: "Theocracy", label: "骑士团国", suffix: "骑士团国", title: "大团长", parties: false, single: nil),
         Style(id: "khanate", base: "Tribal", label: "汗国", suffix: "汗国", title: "可汗", parties: false, single: nil),
         Style(id: "chiefdom", base: "Tribal", label: "酋邦", suffix: "酋邦", title: "大酋长", parties: false, single: nil),
+        Style(id: "dynasty", base: "Empire", label: "新朝", suffix: "", title: "皇帝", parties: false, single: nil),
+        Style(id: "warlord", base: "Empire", label: "军阀割据", suffix: "军政府", title: "大帅", parties: false, single: nil),
+        Style(id: "peasant", base: "Tribal", label: "义军", suffix: "义军", title: "大元帅", parties: false, single: nil),
+        Style(id: "holy", base: "Theocracy", label: "神国", suffix: "神国", title: "天王", parties: false, single: nil),
     ]
     static let defaultStyle = ["Kingdom": "absolute", "Empire": "empire", "Republic": "democratic", "Federation": "federal", "Theocracy": "theocracy", "Tribal": "tribal"]
     public static func style(_ r: JS, _ id: String) -> Style {
@@ -110,7 +114,7 @@ public enum Regimes {
     }
     /// The state's name for its base name and style (a restored empire's ordinal kept by the caller).
     static func title(_ r: JS, _ id: String, base: String, style s: Style) -> String {
-        if s.id == "theocracy" || s.suffix.isEmpty { return Opening.stateTitle(base, polity: s.base, religion: r.civilization.nations[id].religionId.optionalString ?? "") }
+        if s.id == "theocracy" || (s.suffix.isEmpty && s.id != "dynasty") { return Opening.stateTitle(base, polity: s.base, religion: r.civilization.nations[id].religionId.optionalString ?? "") }
         return base + s.suffix
     }
 
@@ -286,6 +290,7 @@ public enum Regimes {
             guard Vassals.alive(r, id) else { continue }
             month(r, n, id, key)
         }
+        uprisingsMonth(r, key)
         Shipyards.month(r)
     }
 
@@ -306,6 +311,8 @@ public enum Regimes {
         d += persona(r, victim)?.defense ?? 0
         d += governing(r, victim)?.defense ?? 0
         d += stateCreed(r, victim)?.defense ?? 0
+        a += leverage(r, attacker).attack
+        d += leverage(r, victim).defense
         // App worlds fight at twice the original's lethality: evenly matched armies used to grind for a
         // whole year; a battle now decides within weeks (战斗烈度 still scales it).
         let ratio: Double = max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100))
@@ -388,6 +395,11 @@ public enum Regimes {
         partyMonth(r, n, id, key)
         seizure(r, n, id, key)
         regimeDrift(r, n, id, key)
+        orderMonth(r, n, id, key)
+        attributeMonth(r, id, addGold: addGold)
+        reformMonth(r, n, id, key, addGold: addGold)
+        cultureMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
+        religionMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         feudMonth(r, n, id, key)
         debtMonth(r, n, id)
         disasterMonth(r, key)

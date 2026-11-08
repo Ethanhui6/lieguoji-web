@@ -91,14 +91,18 @@ extension NativeEngine {
         let r = run
         var at = [String: Int](); for (i, n) in r.world.nations.asArray.enumerated() where at[n.id.asString] == nil { at[n.id.asString] = i }
         let kinds: [String: Set<String>] = [
-            "war": ["war", "battle", "occupation", "uprising", "emergency", "regular", "civilWar", "rebellion", "siege"],
+            "war": ["war", "battle", "uprising", "emergency", "regular", "civilWar", "rebellion"],
+            "territory": ["occupation", "siege"],
             "politics": ["politics", "accession", "extinction", "restoration", "capital", "founding"],
+            "reform": ["reform"], "culture": ["culture"], "religion": ["religion"],
             "family": ["family", "marriage", "birth", "death"],
             "diplomacy": ["diplomacy", "peace", "alliance", "vassal"],
             "events": ["event"],
         ]
         let allow = kinds[category]
-        let rows = Array(r.chronicle.entries.asArray.reversed().lazy.filter { e in allow.map { $0.contains(e.kind.asString) } ?? true }.prefix(limit))
+        // 要闻: every kind but the routine changes of a province and the musters.
+        let routine: Set<String> = ["occupation", "siege", "battle", "regular", "emergency"]
+        let rows = Array(r.chronicle.entries.asArray.reversed().lazy.filter { e in allow.map { $0.contains(e.kind.asString) } ?? !routine.contains(e.kind.asString) }.prefix(limit))
         return Data(JS.array(rows.map { e in
             let o = JS.object(); o.day = e.day; o.text = e.text; o.kind = e.kind
             o.reason = e.reason.isNull ? JS("") : e.reason

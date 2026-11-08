@@ -126,6 +126,19 @@ extension NativeEngine {
         o.style = JS(st.id); o.styleLabel = JS(st.label)
         // 宗教: the state faith's effect and the provinces by faith.
         o.creedEffect = JS(Regimes.stateCreed(r, id)?.text ?? "")
+        // 国势: what the ruler, fortune, corruption and institutions add up to; and the laws on the books.
+        let sway = Regimes.leverage(r, id), held = Set(Regimes.heldReforms(r, id).map(\.id))
+        func swayRow(_ name: String, _ value: String, _ text: String) -> JS { let x = JS.object(); x.name = JS(name); x.value = JS(value); x.text = JS(text); return x }
+        func signed(_ v: Double) -> String { (v >= 0 ? "+" : "−") + "\(Int(abs(v).rounded()))%" }
+        let calm = Int(sway.stability.rounded())
+        o.sway = .array([
+            swayRow("军略", signed(sway.attack), "全军进攻：君主军事、国运、腐化、制度"),
+            swayRow("守御", signed(sway.defense), "全军防御：君主军事魅力、国运、制度"),
+            swayRow("财政", signed(sway.income), "每月额外岁入：君主行政、腐化、制度"),
+            swayRow("民生", signed(sway.growth), "年人口增长：君主行政魅力、制度"),
+            swayRow("安定", "\(calm)", calm < 40 ? "民心离散，大叛乱随时爆发" : calm < 55 ? "暗流涌动，可能爆发大叛乱" : "民心安定，暂无大乱之虞"),
+        ])
+        o.reforms = .array(Regimes.reforms.map { f in let x = JS.object(); x.id = JS(f.id); x.name = JS(f.name); x.text = JS(f.text); x.on = JS(held.contains(f.id)); return x })
         o.faiths = faithShares(id)
         let book = r.regimes.isNull ? JS.null : r.regimes.nations[id]
         // Each party with its line and what that line does in government.

@@ -55,6 +55,7 @@ extension Regimes {
             if culture == "mongol" || culture == "turkic" { list += ["khanate", "khanate"] }
         default: break
         }
+        if polity == "Theocracy" { list.append("holy") }
         // Rarer still: a change of the whole order.
         if roll < 0.003 {
             if polity == "Kingdom" || polity == "Empire" {
@@ -152,6 +153,15 @@ extension Regimes {
 
 extension Nobility {
     static let moreMale: [String: [String]] = [
+        "chinese": "承业 景略 玄龄 如晦 仁贵 敬德 叔宝 知节 靖 世勣 光弼 子仪 秀实 希烈 重诲 匡胤 彦卿 仁美 普 延昭 继业 飞 世忠 俊 允文 文焕 伯颜 基 善长 达 遇春 文忠 继光 大猷 居正 守仁 廷弼 崇焕 可法 成功 孝庄 经略 振邦 鼎臣 嗣同 鸿章 宗棠 国藩 世凯 元洪 汝昌 步蟾 宝桢 之洞 同龢".split(separator: " ").map(String.init),
+        "korean": "世宗 李舜臣 太祖 光宗 成宗 显宗 文武 真兴 广开土 长寿 乙支 姜邯赞 崔莹 郑梦周 柳成龙 权栗 金庾信 阶伯".split(separator: " ").map(String.init),
+        "mongol": "铁木真 窝阔台 贵由 蒙哥 忽必烈 拖雷 术赤 察合台 速不台 哲别 博尔术 木华黎 也先 达延 俺答 噶尔丹 策妄 巴图".split(separator: " ").map(String.init),
+        "turkic": "苏莱曼 穆罕默德 巴耶济德 塞利姆 奥尔汗 穆拉德 阿尔普 托格鲁尔 马利克沙 帖木儿 巴布尔 阿提拉 颉利 骨咄禄 默啜 毗伽".split(separator: " ").map(String.init),
+        "indian": "阿育王 旃陀罗 笈多 超日王 戒日王 阿克巴 贾汉吉尔 沙贾汗 奥朗则布 希瓦吉 拉贾 普里特维 克里希纳 毗湿奴笈多 拉纳 泰姬".split(separator: " ").map(String.init),
+        "norse": "拉格纳 比约恩 哈拉尔 奥拉夫 克努特 斯韦恩 埃里克 莱夫 古斯塔夫 卡尔 西居尔 伊瓦尔 乌尔夫 托尔 弗雷迪斯 霍康".split(separator: " ").map(String.init),
+        "spanish": "熙德 费尔南多 阿方索 科尔特斯 皮萨罗 贡萨洛 迭戈 罗德里戈 桑乔 佩德罗 卡洛斯 菲利佩 胡安 哈梅 阿尔瓦 埃尔南".split(separator: " ").map(String.init),
+        "italian": "洛伦佐 科西莫 马基雅维利 加里波第 但丁 彼特拉克 切萨雷 莱昂纳多 米开朗基罗 弗朗切斯科 贝内代托 恩里科 马可 乔瓦尼 安东尼奥 费德里科".split(separator: " ").map(String.init),
+        "vietnamese": "陈兴道 黎利 李公蕴 吴权 丁部领 阮惠 阮福映 潘佩珠 黎圣宗 陈仁宗 光中 李常杰".split(separator: " ").map(String.init),
         "japanese": "义昭 信玄 谦信 政宗 幸村 元就 光秀 利家 清正 正则 长政 胜赖 忠胜 康政 直政 景胜 兼续 宗麟 义弘 久秀".split(separator: " ").map(String.init),
         "english": "奥斯瓦尔德 埃格伯特 阿瑟尔斯坦 哈罗德 罗兰 杰弗里 西蒙 休伯特 兰斯洛特 珀西瓦尔 克拉伦斯 塞德里克 埃德蒙 奈杰尔 吉尔伯特 蒙哥马利 温斯顿 霍雷肖 奥利弗 伯特兰".split(separator: " ").map(String.init),
         "arab": "萨拉丁 哈伦 马蒙 穆阿维叶 阿里 欧麦尔 奥斯曼 哈立德 扎希尔 纳西尔 拜巴尔斯 马哈茂德 塔里克 乌萨马 贾法尔 伊德里斯 阿拔斯 法蒂玛德 阿明 穆塔西姆".split(separator: " ").map(String.init),
@@ -163,6 +173,15 @@ extension Nobility {
         "slavic": "伊凡 彼得 亚历山大 德米特里 弗拉基米尔 雅罗斯拉夫 斯维亚托斯拉夫 涅夫斯基 库图佐夫 苏沃洛夫 鲍里斯 瓦西里 米哈伊尔 阿列克谢 尼古拉 康斯坦丁 伊戈尔 奥列格 留里克 波将金".split(separator: " ").map(String.init),
     ]
     static let moreFemale: [String: [String]] = [
+        "chinese": "昭君 文姬 飞燕 合德 婉儿 太平 安乐 上官 红玉 良玉 清照 淑真 徽音 道韫 兰英 木兰 冼英 明空 大玉 小玉 孟姜 绿珠 红拂 秋瑾 宋庆".split(separator: " ").map(String.init),
+        "korean": "善德 真德 真圣 明成 申师任堂 黄真伊 许兰雪轩 张禧嫔".split(separator: " ").map(String.init),
+        "mongol": "孛儿帖 诃额仑 忽兰 也遂 也速干 满都海 三娘子 海迷失".split(separator: " ").map(String.init),
+        "turkic": "许蕾姆 科塞姆 努尔巴努 米赫丽玛 图兰 库塔 阿伊达 赛尔玛".split(separator: " ").map(String.init),
+        "indian": "拉克希米 拉齐娅 努尔贾汗 泰姬玛哈尔 帕德米尼 甘地瓦 苏伯德拉 德劳帕蒂".split(separator: " ").map(String.init),
+        "norse": "拉格莎 弗蕾雅 英格丽德 阿斯特丽德 西格丽德 玛格丽特 希尔达 托拉".split(separator: " ").map(String.init),
+        "spanish": "伊莎贝拉 胡安娜 卡塔利娜 乌拉卡 特蕾莎 贝伦加丽亚 梅塞德丝 多洛蕾丝".split(separator: " ").map(String.init),
+        "italian": "卢克雷齐娅 比安卡 贝雅特丽齐 伊莎贝拉 卡泰丽娜 劳拉 西莫内塔 马蒂尔德".split(separator: " ").map(String.init),
+        "vietnamese": "徵侧 徵贰 赵氏贞 倚兰 阮氏明开 黎真".split(separator: " ").map(String.init),
         "japanese": "阿市 茶茶 千代 浓姬 北政所 筱 静 巴 樱 枫 葵 百合 雪 菖蒲".split(separator: " ").map(String.init),
         "english": "玛蒂尔达 埃莉诺 伊丽莎白 维多利亚 安妮 简 格温多林 罗温娜 贝雅特丽丝 奥利维亚 康斯坦斯 艾格尼丝".split(separator: " ").map(String.init),
         "arab": "法蒂玛 阿伊莎 哈蒂嘉 祖贝达 莱拉 萨菲娅 玛丽亚姆 努尔 雅斯敏 沙贾拉".split(separator: " ").map(String.init),

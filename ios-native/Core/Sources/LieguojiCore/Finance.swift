@@ -27,7 +27,7 @@ public enum Finance {
         // 腐化度 (the original's Corruption): drifts each month toward what the state's size, taxes and
         // government make it, eats into the income and, when severe, the state's fortune.
         let c = corruption(r, id), land = Double(r.world.provinces.asArray.reduce(0) { $1.controller.optionalString == id ? $0 + 1 : $0 })
-        let target = max(0, min(95, 8 + land * 1.1 + (p.key == "heavy" ? 12 : p.key == "light" ? -6 : 0) - Offices.governance(r, id) * 28 + (Regimes.governing(r, id)?.corruption ?? 0) + (Regimes.stateCreed(r, id)?.corruption ?? 0)))
+        let target = max(0, min(95, 8 + land * 1.1 + (p.key == "heavy" ? 12 : p.key == "light" ? -6 : 0) - Offices.governance(r, id) * 28 + Regimes.reformSum(r, id).corruption + (Regimes.governing(r, id)?.corruption ?? 0) + (Regimes.stateCreed(r, id)?.corruption ?? 0)))
         setCorruption(r, id, c + (target - c) * 0.06)
         let now = corruption(r, id)
         if now > 15 { addGold(-now / 250) }

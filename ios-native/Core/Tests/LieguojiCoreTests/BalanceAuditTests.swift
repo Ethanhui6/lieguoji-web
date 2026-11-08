@@ -49,6 +49,9 @@ final class BalanceAuditTests: XCTestCase {
                     if owner[x.provinceId.asString] == idb { there += 1 }
                 }
                 let foe = r.world.armies.asArray.filter { $0.nationId.asString == idb }.reduce(0) { $0 + $1.troops.asNumber }
+                var aims = [String: Int](); for x in r.world.armies.asArray where x.nationId.asString == ida { if let t = r.armyAutonomy.armies[x.id.asString].targetId.optionalString { aims[owner[t] ?? "?", default: 0] += 1 } }
+                var moving = [String: Int](); for v in Armies.space(r) where v.army.nationId.asString == ida { moving[v.travel.status.asString, default: 0] += 1 }
+                print("LOPSIDED sieges \(r.occupation.sieges.length) enemy \(idb) aims \(aims) travel \(moving)")
                 print("LOPSIDED day \(day) held \(held()) inEnemyLand \(there) status \(status) decision \(decision) enemyTroops \(Int(foe)) odds \(Int(Regimes.odds(r, ida, idb)))")
             }
             if ended < 0 && !RunWindow.atWar(r, ida, idb) { ended = day; break }
@@ -83,5 +86,9 @@ final class BalanceAuditTests: XCTestCase {
         print("REPEAT people " + dup(r.kin.persons.objectValues.filter { $0.isAlive.asBool }.compactMap { $0.firstName.optionalString }))
         let styles = r.world.nations.asArray.map { Regimes.style(r, $0.id.asString).label }
         print("REPEAT regimes " + dup(styles))
+        var kinds = [String: Int](); for e in r.chronicle.entries.asArray { kinds[e.kind.asString, default: 0] += 1 }
+        print("REPEAT kinds \(kinds.sorted { $0.value > $1.value }.map { "\($0.key)=\($0.value)" }.joined(separator: " "))")
+        for e in r.chronicle.entries.asArray where e.kind.asString == "uprising" { print("REPEAT rising day \(e.day.asInt): \(e.text.asString.prefix(36))") }
+        print("REPEAT stability " + r.world.nations.asArray.filter { Vassals.alive(r, $0.id.asString) }.map { "\($0.name.asString)=\(Int(Regimes.leverage(r, $0.id.asString).stability))" }.joined(separator: " "))
     }
 }

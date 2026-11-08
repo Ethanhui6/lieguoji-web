@@ -554,9 +554,10 @@ struct GeneratingView: View {
 // MARK: - game
 
 enum Panel: Identifiable, Equatable {
-    case province(Int), army(Int), fleet(Int), nation(Int), people(Int), nationWars(Int), nationTalks(Int), nations, military, diplomacy, chronicle, menu, statistics, edicts
+    case quick(Int), province(Int), army(Int), fleet(Int), nation(Int), people(Int), nationWars(Int), nationTalks(Int), nations, military, diplomacy, chronicle, menu, statistics, edicts
     var id: String {
         switch self {
+        case .quick(let p): return "q\(p)"
         case .province(let p): return "p\(p)"
         case .army(let a): return "a\(a)"
         case .fleet(let f): return "f\(f)"
@@ -576,6 +577,7 @@ enum Panel: Identifiable, Equatable {
     /// The name on the back row (返回 …) of the page this panel was opened from.
     var title: String {
         switch self {
+        case .quick: return "快捷"
         case .province: return "州郡"
         case .army: return "军团"
         case .fleet: return "舰队"
@@ -630,6 +632,10 @@ struct GameView: View {
     /// The world was paused by a big panel and resumes when it closes.
     @State private var pausedByPanel = false
     @Namespace private var tabMarker
+    @Environment(\.verticalSizeClass) private var verticalClass
+    /// 横屏 on a phone: its own layout (a rail down the left, pages beside the map).
+    private var landscape: Bool { verticalClass == .compact }
+    @State private var ripple: CGPoint?
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
 
     var body: some View {
@@ -672,7 +678,16 @@ struct GameView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingFleet)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.paintNation)
         }
-        .overlay(alignment: .bottom) { bottomBar.offset(y: controller.reveal >= 1 ? 0 : 120).opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper) }
+        .overlay(alignment: .bottom) {
+            Group {
+                if landscape { EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }.frame(maxWidth: 380).padding(.bottom, 4) }
+                else { bottomBar }
+            }
+            .offset(y: controller.reveal >= 1 ? 0 : 120).opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper)
+        }
+        .overlay(alignment: .topLeading) {
+            if landscape { landscapeRail.offset(x: controller.reveal >= 1 ? 0 : -120).opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper) }
+        }
         .overlay {
             if wallpaper {
                 Color.clear.contentShape(Rectangle()).ignoresSafeArea()
@@ -682,7 +697,7 @@ struct GameView: View {
         }
         .overlay(alignment: .bottomLeading) {
             if !model.viewLegend.isEmpty {
-                MapViewLegend(mode: model.mapView, legend: model.viewLegend).padding(.leading, 14).padding(.bottom, model.state?.events.isEmpty == false ? 120 : 80)
+                MapViewLegend(mode: model.mapView, legend: model.viewLegend).padding(.leading, landscape ? 84 : 14).padding(.bottom, landscape ? 40 : model.state?.events.isEmpty == false ? 120 : 80)
                     .transition(.asymmetric(insertion: .scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity), removal: .opacity))
             }
         }
@@ -721,6 +736,10 @@ struct GameView: View {
                     if out.ok { controller.groupArmies = [] }
                     model.refreshArmies()
                 }
+            }
+            controller.onLongPress = { province, point in
+                ripple = point
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) { ripple = nil; show(.quick(province)) }
             }
             controller.onPaint = { province in
                 guard let n = controller.paintNation, model.state?.owners.indices.contains(province) == true else { return }
@@ -787,7 +806,10 @@ struct GameView: View {
             if province != nil { withAnimation { viewsOpen = false } }
             if let province { show(.province(province)) } else if case .province = panel { panel = nil }
         }
-        .sheet(isPresented: Binding(get: { panel != nil }, set: { if !$0 { panel = nil } }), onDismiss: {
+        .overlay(alignment: .trailing) { sidePage }
+        .animation(.spring(response: 0.38, dampingFraction: 0.88), value: landscape ? panel?.id : nil)
+        .overlay { if let ripple { PressRipple().position(ripple).ignoresSafeArea() } }
+        .sheet(isPresented: Binding(get: { panel != nil && !landscape }, set: { if !$0 && !landscape { panel = nil } }), onDismiss: {
             trail = []
             if panel == nil { controller.selectedProvince = nil; controller.selectedFleet = nil; if controller.marchingArmy == nil { controller.selectedArmy = nil } }
         }) {
@@ -842,6 +864,9 @@ struct GameView: View {
 
     @ViewBuilder private func sheet(for panel: Panel) -> some View {
         switch panel {
+        case .quick(let p):
+            ProvinceQuickSheet(model: model, province: p, openProvince: { open(.province(p)) }, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, close: { closePage() })
+                .presentationDetents([.medium, .large])
         case .province(let p):
             ProvinceSheet(model: model, province: p, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)); controller.selectedArmy = a; locate(army: a) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .army(let a):
@@ -941,6 +966,7 @@ struct GameView: View {
                 }
             }
             .padding(.horizontal, 16).frame(height: 42).glass(Capsule())
+            if landscape { transport.padding(.horizontal, 6).frame(height: 50).glass(Capsule()) }
             Spacer()
             Button { withAnimation { viewsOpen.toggle() } } label: { CircleIcon(glyph: viewsOpen ? .close : .views) }
                 .buttonStyle(PressStyle())
@@ -1013,30 +1039,72 @@ struct GameView: View {
         .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
     }
 
+    @ViewBuilder private var mainTabs: some View {
+        TabButton(symbol: "building.columns", title: "国家", glyph: .nation, active: panel?.tab == "nations", marker: tabMarker) { show(.nations) }
+        TabButton(symbol: "shield", title: "军事", glyph: .military, active: panel?.tab == "military", marker: tabMarker) { show(.military) }
+        TabButton(symbol: "scroll", title: "外交", glyph: .diplomacy, active: panel?.tab == "diplomacy", marker: tabMarker) { show(.diplomacy) }
+        TabButton(symbol: "book", title: "纪事", glyph: .chronicle, active: panel?.tab == "chronicle", marker: tabMarker) { show(.chronicle) }
+        TabButton(symbol: "chart.bar.xaxis", title: "排行", glyph: .ranking, active: panel?.tab == "statistics", marker: tabMarker) { show(.statistics) }
+    }
+    private var transport: some View {
+        HStack(spacing: 2) {
+            Button { model.cycleSpeed() } label: { Text("\(model.speed)×").font(Theme.kai(18)).foregroundStyle(Theme.ink).frame(width: 40, height: 50).contentTransition(.numericText()) }
+                .buttonStyle(PressStyle())
+            Button { model.togglePlay() } label: {
+                Image(systemName: model.playing ? "pause.fill" : "play.fill").font(.system(size: 18, weight: .regular))
+                    .foregroundStyle(Theme.paper2).frame(width: 46, height: 46).background(Theme.seal, in: Circle())
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(PressStyle())
+            .sensoryFeedback(.impact(weight: .light), trigger: model.playing)
+        }
+    }
+    /// 横屏: the tabs stand down the left edge, so the map keeps its full height.
+    private var landscapeRail: some View {
+        VStack(spacing: 4) { mainTabs }
+            .padding(.vertical, 6).padding(.horizontal, 4)
+            .glass(RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .padding(.leading, 10).padding(.top, 52)
+            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: panel?.tab)
+    }
+    /// 横屏: a page opens beside the map instead of covering it.
+    @ViewBuilder private var sidePage: some View {
+        if landscape, let panel {
+            sheet(for: panel)
+                .id(panel.id)
+                .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
+                .background { MemorialPaper().ignoresSafeArea() }
+                .font(Theme.kai(17))
+                .frame(width: min(480, UIScreen.main.bounds.width * 0.52))
+                .frame(maxHeight: .infinity)
+                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 22, bottomLeadingRadius: 22, bottomTrailingRadius: 0, topTrailingRadius: 0, style: .continuous))
+                .shadow(color: .black.opacity(0.25), radius: 16, x: -4)
+                .overlay(alignment: .topLeading) {
+                    Button { closePage() } label: { Image(systemName: "chevron.right").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink).frame(width: 36, height: 36).glass(Circle()) }
+                        .buttonStyle(PressStyle()).padding(.leading, 10).padding(.top, 10)
+                }
+                .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { if $0.translation.width > 90 && abs($0.translation.height) < 60 { closePage() } })
+                .ignoresSafeArea(.container, edges: .vertical)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+        }
+    }
+    private func closePage() {
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.88)) { panel = nil }
+        trail = []
+        controller.selectedProvince = nil; controller.selectedFleet = nil
+        if controller.marchingArmy == nil { controller.selectedArmy = nil }
+    }
+
     private var bottomBar: some View {
         VStack(spacing: 10) {
             EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }
             HStack(spacing: 10) {
                 HStack(spacing: 0) {
-                    TabButton(symbol: "building.columns", title: "国家", glyph: .nation, active: panel?.tab == "nations", marker: tabMarker) { show(.nations) }
-                    TabButton(symbol: "shield", title: "军事", glyph: .military, active: panel?.tab == "military", marker: tabMarker) { show(.military) }
-                    TabButton(symbol: "scroll", title: "外交", glyph: .diplomacy, active: panel?.tab == "diplomacy", marker: tabMarker) { show(.diplomacy) }
-                    TabButton(symbol: "book", title: "纪事", glyph: .chronicle, active: panel?.tab == "chronicle", marker: tabMarker) { show(.chronicle) }
-                    TabButton(symbol: "chart.bar.xaxis", title: "排行", glyph: .ranking, active: panel?.tab == "statistics", marker: tabMarker) { show(.statistics) }
+                    mainTabs
                 }
                 .animation(.spring(response: 0.35, dampingFraction: 0.8), value: panel?.tab)
                 .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
-                HStack(spacing: 2) {
-                    Button { model.cycleSpeed() } label: { Text("\(model.speed)×").font(Theme.kai(18)).foregroundStyle(Theme.ink).frame(width: 40, height: 50).contentTransition(.numericText()) }
-                        .buttonStyle(PressStyle())
-                    Button { model.togglePlay() } label: {
-                        Image(systemName: model.playing ? "pause.fill" : "play.fill").font(.system(size: 18, weight: .regular))
-                            .foregroundStyle(Theme.paper2).frame(width: 46, height: 46).background(Theme.seal, in: Circle())
-                            .contentTransition(.symbolEffect(.replace))
-                    }
-                    .buttonStyle(PressStyle())
-                    .sensoryFeedback(.impact(weight: .light), trigger: model.playing)
-                }
+                transport
                 .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
             }
         }
@@ -2035,7 +2103,7 @@ struct ChronicleSheet: View {
     @State private var category = "all"
     @State private var entries: [ChronicleEntry] = []
     @State private var open: String?
-    static let categories = [("all", "全部"), ("war", "战争"), ("politics", "政事"), ("diplomacy", "外交"), ("family", "家族"), ("events", "天时人事")]
+    static let categories = [("all", "要闻"), ("politics", "政权"), ("reform", "制度"), ("culture", "文化"), ("religion", "宗教"), ("war", "战争"), ("territory", "领土"), ("diplomacy", "外交"), ("family", "家族"), ("events", "天时人事")]
     private var era: String { (model.state?.era).flatMap { $0.isEmpty ? nil : $0 } ?? "公元" }
     /// The year of a day (the calendar runs 365¼ days a year from the state's current date).
     private func yearOf(_ day: Int) -> Int {
@@ -2312,7 +2380,15 @@ struct ReleaseNotesSheet: View {
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
                     "【自绘地图】新增「崎岖」笔刷：在笔刷范围内随机起伏，画出的海岸与山脊不再圆滑生硬；地形工具改为五列排布。",
-                    "【悬殊之战】兵力相差两倍以上时伤害与围城随之提高（最多 ×2.5 与 ×3），十倍之敌在丢失第一块土地后乞和割地，占绝对优势的一方不再因厌战半途停战，小国背水加成在四倍劣势时失效。",
+                    "【大叛乱】民变不再只丢一州：安定度过低的国家会爆发波及大片州郡的叛乱，驻军倒戈，叛军一次拿下一个地区，分农民起义、军阀割据、神国起义、藩镇独立、旧邦复国五种，新朝、义军、军政府、神国各有国号。",
+                    "【节奏】停战期由三到十二年缩短为一年，战争目标翻倍，占优一方乘胜不收兵，厌战来得更晚，开战更频繁。",
+                    "【属性】君主的军事、行政、魅力与国运、腐化直接影响进攻、防御、岁入、人口增长和安定，国家页新增「国势」一栏把数值摆出来。",
+                    "【制度】新增科举、郡县、分封、均田、两税、募兵、府兵、议会、大宪章、海禁、开海等二十种制度，各有实际效果，各国会自行变法，玩家可在国家页点选颁行或废止。",
+                    "【文化宗教】新增文化事件与涵化、宗教事件、复辟与神权建国；大事记改为要闻、政权、制度、文化、宗教、战争、领土等分类，州郡易手单列到领土，不再刷屏。",
+                    "【长按地图】长按任一州郡打开快捷面板：放军、遣散、划地、迁都、立国、要塞、圣地、五种叛乱、旧邦复国、人口存粮、特产、文化、信仰、天灾、国库国运、宣战，一页全有。",
+                    "【横屏专用界面】手机横屏时功能栏竖排在左侧，所有页面从右侧滑出，地图不再被遮挡，可向右滑动关闭。",
+                    "【都城】灭国后不再残留都城标识；都城在地图上带★，国家页可一键定位。",
+                    "【悬殊之战】兵力相差两倍以上时伤害与围城随之提高（最多 ×2.5 与 ×3），十倍之敌失地过半才乞和，占绝对优势的一方不再因厌战半途停战，小国背水加成在四倍劣势时失效。",
                     "【冷门政权】各国会按文化与宗教演变出苏丹国、哈里发国、幕府、沙皇专制、汗国、商业共和、城邦、骑士团国、教宗国、政教合一、选侯君主、摄政、封建王国、军政府、独裁等，国号随之改变。",
                     "【事件翻倍】事件再增 26 种（共 50 余种），频率提高一倍，全部有实际结果：水患、雪灾、军器革新、士卒逃亡、募兵成军、屯田、储位之争、弹劾权贵、和亲、蛮族寇掠、掘得宝藏、君主励精图治或沉湎酒色等；灾害、人才、财富、政变等事件在地图上有对应特效。",
                     "【放置军队】放置模式顶部新增数量滑条（1～30），拖动选择后点按或一指划过州郡即可成批放下军队，落点有光效和飘字，滑条有震动。",

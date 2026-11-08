@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "notice": "",
   "pace": {
     "1": 3,
@@ -13,10 +13,10 @@
     "siege": 6,
     "peaceGoalMonths": 4,
     "peaceDecisiveMonths": 6,
-    "wearyStart": 3,
-    "wearySpan": 9,
+    "wearyStart": 5,
+    "wearySpan": 12,
     "warRestMonths": 2,
-    "warEagerness": 2.6,
+    "warEagerness": 3.4,
     "armiesPerProvince": 2.2,
     "armiesAtHome": 3,
     "armyCap": 900,

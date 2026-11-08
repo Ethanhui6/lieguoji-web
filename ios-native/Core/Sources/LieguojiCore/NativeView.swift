@@ -153,7 +153,8 @@ extension NativeEngine {
             // Identity for the map legend: states founded during play are not in the opening map.
             let civ = r.civilization.nations[id], color = n.color.optionalString ?? "#999999"
             x.id = n.id; x.name = n.name; x.color = JS(color); x.line = JS(Self.stateLineColor(color))
-            x.capital = JS(n.capitalId.optionalString.flatMap { cityIndex[$0] } ?? -1)
+            // A state with no land has no capital left to mark.
+            x.capital = JS(ownCount[i] > 0 ? n.capitalId.optionalString.flatMap { cityIndex[$0] } ?? -1 : -1)
             x.culture = JS(civ.cultureId.optionalString ?? ""); x.polity = JS(civ.polity.optionalString ?? ""); x.religion = JS(civ.religionId.optionalString ?? "")
             x.provinces = JS(ownCount[i]); x.cities = JS(cityCount[i])
             x.population = JS(population[i]); x.grain = JS(grain[i]); x.troops = JS(troops[i])

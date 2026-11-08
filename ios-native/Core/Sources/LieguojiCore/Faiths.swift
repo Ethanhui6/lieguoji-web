@@ -122,7 +122,7 @@ extension Regimes {
         faithSetup(r)
         guard let creedId = r.civilization.nations[id].religionId.optionalString else { return }
         let creed = creeds[creedId], name = n.name.asString
-        func say(_ text: String, _ reason: String, _ p: JS? = nil) { _ = People.announce(r, kind: "event", text: text, reason: reason, nations: [id], province: p?.id.optionalString) }
+        func say(_ text: String, _ reason: String, _ p: JS? = nil) { _ = People.announce(r, kind: "religion", text: text, reason: reason, nations: [id], province: p?.id.optionalString) }
         if let creed { if creed.income != 0 { addGold(creed.income / 100) }; if creed.destiny != 0 { addDestiny(creed.destiny) } }
         let land = r.world.provinces.asArray.filter { $0.controller.asString == id }
         guard !land.isEmpty else { return }

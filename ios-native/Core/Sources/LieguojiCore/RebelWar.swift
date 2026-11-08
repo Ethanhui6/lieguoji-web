@@ -14,7 +14,7 @@ public enum RebelWar {
         if r.world.cities.asArray.first(where: { $0.id.optionalString == nation.capitalId.optionalString })?.provinceId.asString == province { return true }
         if !r.world.cities.asArray.contains(where: { $0.provinceId.asString == province }) { return true }
         if r.world.provinces.asArray.filter({ $0.controller.asString == nation.id.asString }).count < 2 { return true }
-        return r.world.nations.length >= 50
+        return r.world.nations.length >= (UnitKinds.enabled ? 160 : 50)
     }
     static func destroyArmies(_ r: JS, _ nation: String, _ province: String) {
         for v in Armies.space(r) where v.army.nationId.asString == nation && v.province?.id.asString == province {
@@ -40,7 +40,7 @@ public enum RebelWar {
         let owned = r.world.provinces.asArray.filter { $0.controller.asString == rebel }
         if owned.isEmpty { return }
         for _ in 0..<count {
-            if r.world.armies.length >= 500 { break }
+            if r.world.armies.length >= (UnitKinds.enabled ? 900 : 500) { break }
             Armies.create(r, nation: rebel, home: owned[Rebellion.range(r.foundings, 0, owned.count)].id.asString, kind: "emergency")
         }
     }
@@ -62,6 +62,8 @@ public enum RebelWar {
         Rebellion.onRebel = { r, province, force in
             let s = r.foundings, p = r.world.provinces.asArray.first { $0.id.asString == province }!, owner = p.controller.asString
             if blocked(r, province) { return false }
+            // App worlds: a rising takes the country round it (大叛乱).
+            if UnitKinds.enabled { return Regimes.raise(r, owner: owner, seed: province, size: Regimes.uprisingSize(r, owner)) != nil }
             if !r.nobility.isNull { for fam in r.nobility.families.objectValues { fam.controlledProvinces.asArray = fam.controlledProvinces.asArray.filter { $0.asString != province } } }
             People.announce(r, kind: "uprising", text: "\(p.name.asString)发生叛乱", reason: "\(Vassals.name(r, owner))的\(p.name.asString)起兵反抗。", nations: [owner], province: province)
             let months = s.coreMonths[province]

@@ -13,12 +13,12 @@ public struct Tuning: Codable, Sendable, Equatable {
     public var peaceGoalMonths = 4
     public var peaceDecisiveMonths = 6
     /// War weariness starts after this many months and is total this many months later.
-    public var wearyStart = 3
-    public var wearySpan = 9
+    public var wearyStart = 5
+    public var wearySpan = 12
     /// Months a state rests between its wars.
     public var warRestMonths = 2
     /// How readily states go to war (× their temper; the three-year audit found 7 wars in 3 years).
-    public var warEagerness = 2.6
+    public var warEagerness = 3.4
     /// 政权更替: a state may lose provinces to rebellion once it holds this many (the original: 30, on
     /// maps of hundreds of provinces); rebellions and family risings may begin this many months into a
     /// world (the original: 24); and family risings are this much likelier.

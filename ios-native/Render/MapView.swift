@@ -80,6 +80,8 @@ import LieguojiCore
     /// The brush circle under the finger (map units), drawn while painting.
     var brushRadius: Double = 30
     var onPaint: ((Int) -> Void)?
+    /// 长按地图: the province and the finger's place in the view.
+    var onLongPress: ((Int, CGPoint) -> Void)?
     /// 地图点选: a page asked for a province (a new capital…): the prompt on the banner and what the tap does.
     @Published var pickPrompt: String?
     var onPick: ((Int) -> Void)?
@@ -342,7 +344,9 @@ struct MapView: UIViewRepresentable {
             twoFinger.numberOfTouchesRequired = 2
             let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
             tap.require(toFail: double)
-            for g in [pan, pinch, double, twoFinger, tap] as [UIGestureRecognizer] { g.delegate = self; mtk.addGestureRecognizer(g) }
+            let press = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+            press.minimumPressDuration = 0.42
+            for g in [pan, pinch, double, twoFinger, tap, press] as [UIGestureRecognizer] { g.delegate = self; mtk.addGestureRecognizer(g) }
         }
 
         func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
@@ -477,7 +481,19 @@ struct MapView: UIViewRepresentable {
             let p = g.location(in: mtk)
             animate(to: camera.zoomed(by: 0.5, anchorX: Double(p.x), anchorY: Double(p.y), viewport: viewport, bounds: bounds))
         }
+        /// A long press ends as a tap too: that tap is not a selection.
+        private var pressing = false
+        @objc private func handleLongPress(_ g: UILongPressGestureRecognizer) {
+            if g.state == .ended || g.state == .cancelled || g.state == .failed { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in self?.pressing = false }; return }
+            guard g.state == .began, controller.pickPrompt == nil, controller.marchingArmy == nil, controller.marchingFleet == nil, controller.paintNation == nil, !controller.boxSelecting, !controller.terrainBrush else { return }
+            let p = g.location(in: mtk), w = camera.toWorld(x: Double(p.x), y: Double(p.y), viewport: viewport)
+            guard let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province[cell] >= 0 else { return }
+            pressing = true
+            impact.impactOccurred()
+            controller.onLongPress?(Int(map.province[cell]), p)
+        }
         @objc private func handleTap(_ g: UITapGestureRecognizer) {
+            if pressing { return }
             let p = g.location(in: mtk), w = camera.toWorld(x: Double(p.x), y: Double(p.y), viewport: viewport)
             if controller.terrainBrush { controller.onTerrainStroke?(w.x, w.y); controller.onTerrainStrokeEnd?(); return }
             var province: Int?
@@ -788,14 +804,14 @@ final class MapLabelsView: UIView {
         return zip(map.meta.cities, MapLayers.cityMarks(map)).filter { !$0.0.name.isEmpty }.map { c, mark in
             let s: Double = mark == .capital ? 1.5 : mark == .provinceSeat ? 1.28 : 1
             let em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
-            return Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
+            return Label(text: mark == .capital ? "★" + c.name : c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: UIColor(white: 0x11 / 255.0, alpha: 1),
                          stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 8, province: c.province)
         }
     }
     /// The cities changed (a preview replaced by the founded world, whose cities have names): rebuild them.
     private var cityKey = ""
     func setCities(map: WorldMap) {
-        let key = map.meta.cities.map(\.name).joined(separator: "|")
+        let key = map.meta.cities.map(\.name).joined(separator: "|") + zip(map.meta.cities.indices, MapLayers.cityMarks(map)).filter { $0.1 == .capital }.map { "\($0.0)" }.joined(separator: ",")
         guard key != cityKey else { return }
         cityKey = key
         for l in cities { l.view.removeFromSuperview() }

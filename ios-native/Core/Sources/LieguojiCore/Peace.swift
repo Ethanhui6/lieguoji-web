@@ -206,13 +206,15 @@ public struct PeaceAI {
         // App worlds settle sooner (goals met after six months, a decisive score after eighteen), so land
         // changes hands at the original's rhythm on this map's fewer, larger provinces.
         let app = UnitKinds.enabled
-        if months() >= (app ? Tuning.current.peaceGoalMonths : 12) && allGoalsAchieved() { return 0 }
-        if collapsed(w.primaryDefenderId) || collapsed(w.primaryAttackerId) { return 2 }
-        // 兵力悬殊: a state many times outmatched sues for terms once the first land has fallen (the attacker
-        // gets what it came for), and a host that is winning does not tire and go home.
         let o = app ? (PeaceAI.odds?(w.primaryAttackerId, w.primaryDefenderId) ?? 1) : 1
-        if app, o >= 10, months() >= 2, gainedProvinces(w.primaryAttackerId) >= 1 { return 0 }
-        if app, o <= 0.1, months() >= 2, gainedProvinces(w.primaryDefenderId) >= 1 { return 1 }
+        // 乘胜: a host that far outnumbers the enemy does not stop at its first demands.
+        let pressing = app && o >= 3 && months() < 15
+        if months() >= (app ? Tuning.current.peaceGoalMonths : 12) && allGoalsAchieved() && !pressing { return 0 }
+        if collapsed(w.primaryDefenderId) || collapsed(w.primaryAttackerId) { return 2 }
+        // 兵力悬殊: a state many times outmatched sues for terms once half its land has fallen, and a host
+        // that is winning does not tire and go home.
+        if app, o >= 10, months() >= 2, gainedProvinces(w.primaryAttackerId) >= max(2, initialLand(w.primaryDefenderId) / 2) { return 0 }
+        if app, o <= 0.1, months() >= 2, gainedProvinces(w.primaryDefenderId) >= max(2, initialLand(w.primaryAttackerId) / 2) { return 1 }
         if months() < (app ? Tuning.current.peaceDecisiveMonths : 36) { return nil }
         let s = score().score
         if abs(s) >= forceSettleThreshold() { return 1 }

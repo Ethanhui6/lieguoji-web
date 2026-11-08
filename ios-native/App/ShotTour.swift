@@ -114,6 +114,17 @@ enum ShotTour {
             show(nil); await wait(0.6); show(.nation(nation)); await wait(1.8); await shoot(name)
         }
         NationSheet.tourTab = nil
+        // 长按面板 and 横屏 (its rail and its side page).
+        if let p = model.map?.meta.cities.dropFirst(3).first?.province { show(nil); await wait(0.6); show(.quick(p)); await wait(1.4); await shoot("14-quick") }
+        show(nil); await wait(0.6)
+        if let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first {
+            scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight))
+            await wait(1.8); await shoot("30-landscape")
+            show(.nation(nation)); await wait(1.8); await shoot("31-landscape-nation")
+            show(nil); await wait(0.6)
+            scene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
+            await wait(1.4)
+        }
         await shootRulerTraits(model, nation: nation, show: show)
         show(nil); await wait(1)
         await shoot("done")

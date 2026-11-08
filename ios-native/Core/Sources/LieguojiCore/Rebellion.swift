@@ -187,3 +187,45 @@ public enum Rebellion {
         }
     }
 }
+
+extension Rebellion {
+    /// 叛乱形势 (read-only): why a state's provinces can or cannot rise this month, and the provinces most
+    /// likely to — the same checks as `tryRebel` without drawing or pruning anything.
+    static func outlook(_ r: JS, _ id: String) -> JS {
+        let o = JS.object(), s = r.foundings
+        o.provinces = .array()
+        guard !s.isNull, s.enabled.isTruthy, alive(r, id) else { o.status = JS("本世界未开启行省叛乱"); o.open = JS(false); return o }
+        let owned = r.world.provinces.asArray.filter { $0.controller.asString == id }
+        let minProvinces = UnitKinds.enabled ? Tuning.current.rebelMinProvinces : 30
+        let calm = UnitKinds.enabled ? Tuning.current.calmMonths : 24
+        let recent = (s.recent[id].isNull ? [] : s.recent[id].asArray.map(\.asNumber)).filter { monthsSince(r, $0) <= 26 }.count
+        var interval = f(s.minMonths.asNumber)
+        if destiny(r, id) < 15 && superSuperPower(r, id) { interval = f(interval / 6) }
+        let since = monthsSince(r, s.lastRebel[id].optionalNumber ?? 0)
+        o.destiny = JS(destiny(r, id).rounded())
+        var status: String?
+        if monthsSince(r, never) < calm { status = "开局太平期，暂无叛乱" }
+        else if owned.count < minProvinces { status = "州郡不足\(minProvinces)，难以生乱" }
+        else if monthsSince(r, bornTime(r, id)) < 15 { status = "立国未满十五月" }
+        else if recent >= maxRecent(r, id) { status = "近两年叛乱已多，暂时平息" }
+        else if interval > Double(since) { status = "距上次叛乱仅\(since)月，尚需\(Int(interval) - since)月" }
+        let capital = capitalProvince(r, id)
+        var list = [(String, Int)]()
+        for p in owned where p.id.asString != capital {
+            let pid = p.id.asString, c = r.upperCombat.provinces[pid]
+            if c.distance.asNumber <= r.upperCombat.nations[id].coreThreshold.asNumber && manifest(r, id) > 1 { continue }
+            let threshold = (c.connected.isTruthy ? s.destinyToRebelConnected.asNumber : s.destinyToRebel.asNumber) - Double(manifest(r, id)) + 5
+            if destiny(r, id) > threshold { continue }
+            if monthsSince(r, s.conquered[pid].time.asNumber) < 8 || provinceAtWar(r, pid) { continue }
+            var chance = min(80, (c.distance.asInt + 2) * 5)
+            if !r.offices47.isNull { chance = roundHalfEven(f(Double(chance) * Offices.localRebellion(r, pid))) }
+            if chance > 0 { list.append((p.name.asString, max(0, min(100, chance)))) }
+        }
+        if status == nil && list.isEmpty { status = "天命稳固，各州安定" }
+        list.sort { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0 < $1.0 }
+        o.open = JS(status == nil)
+        o.status = JS(status ?? "有\(list.count)州可能起事（逢双月检定）")
+        o.provinces = .array(list.prefix(5).map { let e = JS.object(); e.name = JS($0.0); e.chance = JS($0.1); return e })
+        return o
+    }
+}

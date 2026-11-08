@@ -21,6 +21,7 @@ extension NativeEngine {
             guard let t = Government.stateTraitText[k] else { return nil }
             let o = JS.object(); o.name = JS(t.0); o.text = JS(t.1); return o
         })
+        c.rebellion = Rebellion.outlook(r, id)
         c.centralIncome = JS(Offices.centralIncome(r, id))
         c.offices = .array(Offices.central.map { office in
             let e = JS.object(); e.office = JS(office)
@@ -36,6 +37,12 @@ extension NativeEngine {
         c.occupied = JS(held.filter { owner($0.element) != id }.count)
         c.lost = JS(r.world.provinces.asArray.filter { owner($0) == id && $0.controller.optionalString != id }.count)
         c.governors = JS(assignments.filter { $0.officeId.optionalString == "Governor" }.count)
+        // 各州总督: each held province with its governor and how well he suits it.
+        c.governorList = .array(held.map { i, p in
+            let e = JS.object(); e.province = JS(i); e.name = JS(p.name.asString)
+            if let h = Offices.holder(r, id, "Governor", i + 1) { e.holder = JS(name(h)); e.fit = JS(Offices.suitability(r, id, "Governor", i + 1)); e.person = JS(h.id.optionalNumber ?? -1) }
+            return e
+        })
         c.commanders = .array(assignments.filter { $0.officeId.optionalString == "WarCommander" }.compactMap { a -> JS? in
             guard let holder = a.holderId.optionalNumber, let p = People.person(r, Int(holder)) else { return nil }
             let e = JS.object(); e.name = JS(name(p)); e.age = JS(p.age.optionalNumber ?? 0)

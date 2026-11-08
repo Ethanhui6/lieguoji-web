@@ -86,6 +86,7 @@ extension NativeEngine {
             x.id = p.id; x.name = v.name; x.female = v.female; x.age = v.age; x.alive = JS(p.isAlive.asBool)
             x.father = JS(p.fatherId.optionalNumber ?? 0); x.mother = JS(p.motherId.optionalNumber ?? 0); x.spouse = JS(p.spouseId.optionalNumber ?? 0)
             x.title = JS((p.roles.isNull ? [] : p.roles.asArray).first?.title.optionalString ?? "")
+            x.traits = v.traits; x.skills = v.skills
             return x
         })
         return Data(o.json.utf8)

@@ -31,6 +31,11 @@ struct NationInfo: Decodable {
         let governance: Double; let centralIncome: Double; let offices: [Office]; let temper: Double?; let manual: Bool?
         struct Trait: Decodable { let name: String; let text: String }
         let traits: [Trait]?
+        /// 叛乱形势: whether provinces can rise now and the likeliest ones.
+        struct Unrest: Decodable { struct Spot: Decodable { let name: String; let chance: Int }; let status: String; let open: Bool; let destiny: Double?; let provinces: [Spot] }
+        let rebellion: Unrest?
+        struct Governor: Decodable { let province: Int; let name: String; let holder: String?; let fit: Double?; let person: Int? }
+        let governorList: [Governor]?
         let provinces: Int; let occupied: Int; let lost: Int; let governors: Int
         let commanders: [Commander]; let houses: [House]
     }
@@ -212,7 +217,7 @@ struct NationSheet: View {
             }
             .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17)) }
             .sheet(item: $tree) { t in
-                FamilyTreeSheet(model: model, family: t.id, name: t.name)
+                FamilyTreeSheet(model: model, family: t.id, name: t.name, say: say)
                     .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
             }
             .sheet(item: $numberEdit) { e in
@@ -372,6 +377,60 @@ struct NationSheet: View {
     @ViewBuilder private func courtTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         VStack(alignment: .leading, spacing: 14) {
                 if let court = info.court, info.alive { FoldSection("朝堂", expanded: true) { courtView(court, map) } }
+                if let list = info.court?.governorList, !list.isEmpty, info.alive {
+                    FoldSection("各州总督（\(list.filter { $0.holder != nil }.count)/\(list.count)）", expanded: list.count <= 12) {
+                        Group2 {
+                            ForEach(Array(list.enumerated()), id: \.offset) { i, g in
+                                Button { appointing = AppointTarget(office: "Governor:\(g.province)") } label: {
+                                    HStack(spacing: 10) {
+                                        Text(g.name).font(Theme.kai(15)).foregroundStyle(Theme.ink).frame(width: 96, alignment: .leading).lineLimit(1).minimumScaleFactor(0.7)
+                                        Text(g.holder ?? "空缺").font(Theme.kai(15)).foregroundStyle(g.holder == nil ? Theme.ink2 : Theme.ink).lineLimit(1)
+                                        Spacer()
+                                        if let fit = g.fit {
+                                            Text(fit >= 0.4 ? "称职" : fit >= 0 ? "平庸" : "失职").font(Theme.kai(13))
+                                                .foregroundStyle(fit >= 0.4 ? Theme.jade : fit >= 0 ? Theme.ink2 : Theme.seal)
+                                        }
+                                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
+                                    }
+                                    .padding(.horizontal, 16).padding(.vertical, 8).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                if i < list.count - 1 { Divider2() }
+                            }
+                            Text("称职的总督每月为本州增税至多 12%，并压低本州叛乱。点州郡改任。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8)
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                }
+                if let u = info.court?.rebellion, info.alive {
+                    FoldSection("叛乱形势", expanded: true) {
+                        Group2 {
+                            HStack(spacing: 10) {
+                                Image(systemName: u.open ? "flame" : "checkmark.shield").font(.system(size: 15)).foregroundStyle(u.open ? Theme.seal : Theme.jade)
+                                Text(u.status).font(Theme.kai(15)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 6)
+                                if let d = u.destiny { Text("国运 \(Int(d))").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit() }
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 10)
+                            ForEach(Array(u.provinces.enumerated()), id: \.offset) { _, p in
+                                Divider2()
+                                HStack(spacing: 10) {
+                                    Text(p.name).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
+                                    Spacer()
+                                    ZStack(alignment: .leading) {
+                                        Capsule().fill(Theme.ink.opacity(0.1))
+                                        Capsule().fill(p.chance >= 40 ? Theme.seal : Theme.ink.opacity(0.55)).frame(width: 70 * CGFloat(min(100, p.chance)) / 100)
+                                    }
+                                    .frame(width: 70, height: 4)
+                                    Text("\(p.chance)%").font(Theme.kai(13)).foregroundStyle(u.open ? Theme.ink : Theme.ink2).monospacedDigit().frame(width: 40, alignment: .trailing)
+                                }
+                                .padding(.horizontal, 16).padding(.vertical, 7)
+                            }
+                            Text("国运越低、离都城越远的州郡越易起事；称职的总督可压低叛乱。家族「谋逆」见朝堂世家。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8).fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                }
                 if let parties = info.parties, !parties.isEmpty {
                     FoldSection("议会（\(info.styleLabel ?? "")）", expanded: true) {
                         Group2 {
@@ -406,7 +465,7 @@ struct NationSheet: View {
                     }
                 }
                 if !postList.isEmpty {
-                    FoldSection("朝廷百官（\(postList.filter { $0.holder != nil }.count)/\(postList.count)）", expanded: false) {
+                    FoldSection("朝廷百官（\(postList.filter { $0.holder != nil }.count)/\(postList.count)）", expanded: postList.count <= 12) {
                         Group2 {
                             ForEach(Array(postList.enumerated()), id: \.offset) { i, p in
                                 Button { appointing = AppointTarget(office: "post-" + p.id, post: p) } label: {
@@ -527,8 +586,8 @@ struct NationSheet: View {
         ("khanate", "汗国", "汗国 · 可汗"),
         ("chiefdom", "酋邦", "酋邦 · 大酋长"),
     ]
-    static let officeTitle = ["Chancellor": "宰相", "Steward": "司农", "Marshal": "大将军"]
-    static let officeDuty = ["Chancellor": "总理朝政 · 增国库", "Steward": "掌钱粮 · 增国库", "Marshal": "统率三军"]
+    static let officeTitle = ["Chancellor": "宰相", "Steward": "司农", "Marshal": "大将军", "Governor": "总督"]
+    static let officeDuty = ["Chancellor": "总理朝政 · 增国库", "Steward": "掌钱粮 · 增国库", "Marshal": "统率三军", "Governor": "治一州 · 增税收、压叛乱"]
     /// 朝堂: governance gauge, the three central offices with their holders' fit, local rule, war
     /// commanders and the noble houses by influence.
     @ViewBuilder private func courtView(_ c: NationInfo.Court, _ map: WorldMap) -> some View {
@@ -1451,7 +1510,7 @@ struct TradeSection: View {
 
 /// One house's members (engine familyTree).
 struct FamilyTree: Decodable {
-    struct Member: Decodable { let id: Int; let name: String; let female: Bool; let age: Double; let alive: Bool; let father: Int; let mother: Int; let spouse: Int; let title: String }
+    struct Member: Decodable, Identifiable { let id: Int; let name: String; let female: Bool; let age: Double; let alive: Bool; let father: Int; let mother: Int; let spouse: Int; let title: String; var traits: [String]? = nil; var skills: [Double]? = nil }
     let surname: String; let head: Int; let members: [Member]
 }
 
@@ -1459,7 +1518,12 @@ struct FamilyTree: Decodable {
 struct FamilyTreeSheet: View {
     @ObservedObject var model: GameModel
     let family: String; let name: String
+    var say: (String) -> Void = { _ in }
     @State private var tree: FamilyTree?
+    /// 族谱操作: the member whose actions are offered.
+    @State private var acting: FamilyTree.Member?
+    @State private var editing: NationInfo.Person?
+    @State private var ageEdit: FamilyTree.Member?
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -1479,8 +1543,11 @@ struct FamilyTreeSheet: View {
                                     Spacer()
                                     if m.spouse > 0, let s = byId[m.spouse] { Text("配 \(s.name)").font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
                                     Text(m.alive ? "\(m.female ? "女" : "男") · \(Int(m.age))" : "已故").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                                    if m.alive { Image(systemName: "ellipsis.circle").font(.system(size: 13)).foregroundStyle(Theme.seal.opacity(0.7)) }
                                 }
                                 .padding(.horizontal, 16).padding(.vertical, 8)
+                                .contentShape(Rectangle())
+                                .onTapGesture { if m.alive { acting = m } }
                                 if i < generations[g].count - 1 { Divider2() }
                             }
                         }
@@ -1493,6 +1560,43 @@ struct FamilyTreeSheet: View {
             .padding(.bottom, 24)
         }
         .task { tree = await model.familyTree(family) }
+        .confirmationDialog(acting?.name ?? "", isPresented: Binding(get: { acting != nil }, set: { if !$0 { acting = nil } }), titleVisibility: .visible, presenting: acting) { m in
+            Button("修改能力与天赋") { editing = NationInfo.Person(id: m.id, role: m.title.isEmpty ? (m.id == tree?.head ? "家主" : "族人") : m.title, name: m.name, age: m.age, female: m.female, traits: m.traits ?? [], skills: m.skills ?? [50, 50, 50, 50]) }
+            Button("设定年龄") { ageEdit = m }
+            if m.spouse == 0 || tree?.members.first(where: { $0.id == m.spouse })?.alive != true { Button("为其婚配") { act(m, "spouse", "婚配已成") } }
+            else { Button("添一子女") { act(m, "child", "家添新丁") } }
+            Button("处死", role: .destructive) { act(m, "kill", "\(m.name)已被处死") }
+        }
+        .sheet(item: $editing) { p in
+            PersonEditor(person: p) { skills, traits, first, last, age in
+                editing = nil
+                Task {
+                    let e = await model.renamePerson(p.key, first: first, last: last, age: age)
+                    let e2 = e == nil ? await model.editPerson(p.key, skills: skills, traits: traits) : e
+                    say(e2 ?? "\(p.name)已修改"); GameFeel.shared.notify(e2 == nil ? .success : .error)
+                    tree = await model.familyTree(family)
+                }
+            }
+            .presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+        }
+        .sheet(item: $ageEdit) { m in
+            NumberEditSheet(title: m.name + "的年龄", unit: "岁", value: m.age) { v in
+                ageEdit = nil
+                Task {
+                    let e = await model.renamePerson(m.id, first: nil, last: nil, age: Int(v))
+                    say(e ?? "\(m.name)已改为\(Int(v))岁"); GameFeel.shared.notify(e == nil ? .success : .error)
+                    tree = await model.familyTree(family)
+                }
+            }
+            .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+        }
+    }
+    private func act(_ m: FamilyTree.Member, _ action: String, _ success: String) {
+        Task {
+            let e = await model.familyAction(m.id, action: action)
+            say(e ?? success); GameFeel.shared.notify(e == nil ? .success : .error)
+            tree = await model.familyTree(family)
+        }
     }
     /// Generations by descent inside the house: those with no parent in it first, then their children.
     static func generations(_ members: [FamilyTree.Member], _ byId: [Int: FamilyTree.Member]) -> [[FamilyTree.Member]] {

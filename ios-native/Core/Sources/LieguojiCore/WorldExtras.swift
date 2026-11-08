@@ -131,3 +131,61 @@ enum ArmyLedger {
         let e = entry(r, id); e.battles = JS((e.battles.optionalNumber ?? 0) + 1)
     }
 }
+
+/// 族谱操作 (the original's FamilyTreeUI actions: 添加配偶、添加子女、处死): edits to one house's members.
+extension NativeEngine {
+    func familyAction(_ personId: Int, action: String) -> (ok: Bool, reason: String) {
+        let r = run
+        guard let p = People.person(r, personId) else { return (false, "人物不存在。") }
+        guard p.isAlive.asBool else { return (false, "此人已故。") }
+        let name = p.identity.name.optionalString ?? p.firstName.optionalString ?? "此人"
+        switch action {
+        case "kill":
+            People.die(r, p, cause: "executed")
+            People.recordHistory(r, kind: "family", text: "\(name)被处死", reason: "族谱中下令处死；其官职、家主与王位按原作规则由他人继承。", nations: [], province: nil)
+            afterGlobalOrder()
+            return (true, "\(name)已被处死。")
+        case "spouse":
+            guard p.age.asInt >= 16 else { return (false, "未满十六岁，不能婚配。") }
+            if p.spouseId.asInt != 0, People.person(r, p.spouseId.asInt)?.isAlive.asBool == true { return (false, "此人已有配偶。") }
+            guard !r.nobility.isNull, p.familyId.asInt > 0 else { return (false, "此人不属任何家族。") }
+            let family = r.kin.families[p.familyId.asInt.description]
+            guard !family.isNull else { return (false, "此人不属任何家族。") }
+            let random = Nobility.Random(n: r.nobility), gender = p.gender.asInt == 0 ? 1 : 0
+            let culture = p.cultureName.optionalString ?? family.cultureName.asString, profile = Nobility.cultures[culture]
+            guard !profile.isNull else { return (false, "此人的文化没有人名表。") }
+            let pool = (gender == 0 ? profile.givenMale : profile.givenFemale).asArray, houses = profile.houses.asArray
+            guard !pool.isEmpty, !houses.isEmpty else { return (false, "此人的文化没有人名表。") }
+            let first = pool[random.intRange(0, pool.count)].asString, last = houses[random.intRange(0, houses.count)].asString
+            let s = Nobility.createNamed(r, first: first, last: last, gender: gender, culture: culture, source: "spouse", religionId: p.religionId, identity: Nobility.personName(culture, given: first, house: last, gender: gender), random: random)
+            var age = Native.fr(p.age.asNumber + random.floatRange(-6, 6)); if age < 16 { age = random.floatRange(16, 20) }
+            let life = r.life
+            s.birthTime = JS(Native.fr(life.gameTime.asNumber - age * 365.25 * life.secondsPerDay.asNumber))
+            s.age = JS(People.yearSince(r, s.birthTime.asNumber, now: r.kin.ageTime.asNumber))
+            s.familyId = family.id.clone(); s.stateId = p.stateId.clone()
+            p.spouseId = s.id.clone(); s.spouseId = p.id.clone(); p.marriageType = JS(0); s.marriageType = JS(0)
+            family.memberIds.push(s.id.clone()); r.kin.persons[s.id.asInt.description] = s
+            let lp = JS.object(); lp.source = JS("native-family"); lp.birthTime = s.birthTime.clone(); lp.age = s.age.clone(); lp.initialAge = .null; lp.updatedMonth = r.kin.lastAgeMonth.clone()
+            life.persons[s.id.asInt.description] = lp
+            Nobility.bump(r.people); Nobility.bump(r.kin); Nobility.bump(life)
+            let spouseName = s.identity.name.optionalString ?? first
+            People.recordHistory(r, kind: "family", text: "\(name)与\(spouseName)成婚", reason: "族谱中为其婚配。", nations: [family.nationId.asString], province: nil)
+            return (true, "\(name)与\(spouseName)成婚。")
+        case "child":
+            guard !r.nobility.isNull, let spouse = People.person(r, p.spouseId.asInt), spouse.isAlive.asBool else { return (false, "此人尚无在世配偶，先为其婚配。") }
+            let mother = p.gender.asInt == 1 ? p : spouse, father = mother === p ? spouse : p
+            guard mother.gender.asInt == 1, father.gender.asInt == 0 else { return (false, "夫妇无法生育。") }
+            guard mother.age.asInt <= 50 else { return (false, "母亲年事已高，不能生育。") }
+            guard mother.childrenIds.length < 10 else { return (false, "子女已经太多。") }
+            let familyId = father.familyId.asInt > 0 ? father.familyId.asInt : mother.familyId.asInt
+            guard familyId > 0, !r.kin.families[familyId.description].isNull else { return (false, "此人不属任何家族。") }
+            let before = mother.childrenIds.length
+            Nobility.createChild(r, r.nobility, familyId.description, mother, Nobility.Random(n: r.nobility))
+            guard mother.childrenIds.length > before, let child = People.person(r, mother.childrenIds.asArray.last!.asInt) else { return (false, "未能添子。") }
+            let childName = child.identity.name.optionalString ?? child.firstName.optionalString ?? ""
+            return (true, "\(name)家添\(child.gender.asInt == 1 ? "女" : "子")\(childName)。")
+        default:
+            return (false, "无此操作。")
+        }
+    }
+}

@@ -62,60 +62,93 @@ struct BattleBoard: View {
     var openArmy: ((Int) -> Void)? = nil
     private func name(_ n: Int) -> String { n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].name : "?" }
     private func tint(_ n: Int) -> Color { n >= 0 && n < map.meta.nations.count ? Names.color(map.meta.nations[n].color) : Theme.ink2 }
+    /// The army whose page shows this board: its own clash comes first.
+    var focusNation: Int = -1
+    typealias Entry = EnumeratedSequence<[GameState.Army]>.Element
+    /// One clash in the province: an anchor state (the owner when it is attacked) with its allies here,
+    /// against the states here at war with it. Armies of several wars in one province give several
+    /// clashes; armies at peace with everyone here stand aside.
+    struct Clash { let anchor: Int; let owner: Bool; let defend: [Entry]; let attack: [Entry] }
+    static func clashes(_ here: [Entry], owner: Int, state: GameState, focus: Int) -> [Clash] {
+        func enemies(_ n: Int) -> Set<Int> { state.nations.indices.contains(n) ? Set(state.nations[n].enemies) : [] }
+        var troops = [Int: Int]()
+        for e in here { troops[e.element.nation, default: 0] += e.element.troops }
+        var left = Set(troops.keys), out = [Clash](), ownerUsed = false
+        while true {
+            var anchor: Int?
+            if !ownerUsed, owner >= 0, !left.intersection(enemies(owner)).isEmpty { anchor = owner; ownerUsed = true }
+            else {
+                let hot = left.filter { !left.intersection(enemies($0)).isEmpty }
+                if hot.isEmpty { break }
+                anchor = hot.contains(focus) ? focus : hot.max { (troops[$0] ?? 0, -$0) < (troops[$1] ?? 0, -$1) }
+            }
+            guard let a = anchor else { break }
+            let foes = left.intersection(enemies(a))
+            if foes.isEmpty { left.remove(a); continue }
+            let friends = left.filter { $0 == a || (!foes.contains($0) && !enemies($0).isDisjoint(with: foes) && !enemies(a).contains($0)) }
+            left.subtract(foes); left.subtract(friends)
+            out.append(Clash(anchor: a, owner: a == owner, defend: here.filter { friends.contains($0.element.nation) }, attack: here.filter { foes.contains($0.element.nation) }))
+        }
+        if focus >= 0, let i = out.firstIndex(where: { c in (c.defend + c.attack).contains { $0.element.nation == focus } }), i > 0 { out.insert(out.remove(at: i), at: 0) }
+        return out
+    }
     var body: some View {
         let here = state.armies.enumerated().filter { $0.element.province == province && $0.element.troops > 0 }
         let owner = state.owners.indices.contains(province) ? state.owners[province] : -1
-        let foesOfOwner = state.nations.indices.contains(owner) ? Set(state.nations[owner].enemies) : []
-        let attackers = here.filter { foesOfOwner.contains($0.element.nation) }
-        let defenders = here.filter { !foesOfOwner.contains($0.element.nation) }
-        if !attackers.isEmpty {
-            let a = attackers.reduce(0) { $0 + $1.element.troops }, d = defenders.reduce(0) { $0 + $1.element.troops }
-            let fighting = here.contains { $0.element.status == "fighting" }
-            let attackerNation = attackers.max { $0.element.troops < $1.element.troops }!.element.nation
-            VStack(spacing: 10) {
-                HStack(spacing: 8) {
-                    Image(systemName: "flag.2.crossed.fill").font(.system(size: 15, weight: .regular)).foregroundStyle(Theme.seal)
-                        .symbolEffect(.pulse, isActive: fighting)
-                    Text("对阵").font(Theme.kai(18)).foregroundStyle(Theme.ink)
-                    Spacer()
-                    Text(fighting ? "交战中" : defenders.isEmpty ? "围城中" : "对峙中").font(Theme.kai(13)).foregroundStyle(Theme.paper2)
-                        .padding(.horizontal, 8).padding(.vertical, 3).background(fighting ? Theme.seal : Theme.ink2, in: Capsule())
+        let list = Self.clashes(Array(here), owner: owner, state: state, focus: focusNation)
+        VStack(spacing: 10) {
+            ForEach(Array(list.enumerated()), id: \.offset) { _, c in card(c) }
+        }
+    }
+    @ViewBuilder private func card(_ c: Clash) -> some View {
+        let attackers = c.attack, defenders = c.defend
+        let a = attackers.reduce(0) { $0 + $1.element.troops }, d = defenders.reduce(0) { $0 + $1.element.troops }
+        let fighting = (attackers + defenders).contains { $0.element.status == "fighting" }
+        let attackerNation = attackers.max { $0.element.troops < $1.element.troops }!.element.nation
+        let allies = Set(defenders.map(\.element.nation)).subtracting([c.anchor]).count
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "flag.2.crossed.fill").font(.system(size: 15, weight: .regular)).foregroundStyle(Theme.seal)
+                    .symbolEffect(.pulse, isActive: fighting)
+                Text(c.owner ? "对阵" : "遭遇").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                Spacer()
+                Text(fighting ? "交战中" : c.owner && defenders.isEmpty ? "围城中" : "对峙中").font(Theme.kai(13)).foregroundStyle(Theme.paper2)
+                    .padding(.horizontal, 8).padding(.vertical, 3).background(fighting ? Theme.seal : Theme.ink2, in: Capsule())
+            }
+            // Each side's name and strength, and the balance between them.
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text((c.owner ? "守 · " : "") + name(c.anchor) + (allies > 0 ? "与盟军" : "")).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text(defenders.isEmpty ? "仅余城防" : "\(Names.wan(d)) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit()
                 }
-                // Each side's name and strength, and the balance between them.
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("守 · \(name(owner))").font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
-                        Text(defenders.isEmpty ? "仅余城防" : "\(Names.wan(d)) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit()
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("攻 · \(name(attackerNation))\(Set(attackers.map(\.element.nation)).count > 1 ? "等" : "")").font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
-                        Text("\(Names.wan(a)) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit()
-                    }
-                }
-                GeometryReader { g in
-                    let total = max(1, a + d), left = g.size.width * CGFloat(d) / CGFloat(total)
-                    HStack(spacing: 2) {
-                        Rectangle().fill(tint(owner)).frame(width: max(d > 0 ? 6 : 0, left - 1))
-                        Rectangle().fill(tint(attackerNation))
-                    }
-                    .clipShape(Capsule())
-                    .animation(.spring(response: 0.6, dampingFraction: 0.85), value: d)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.85), value: a)
-                }
-                .frame(height: 8)
-                HStack(alignment: .top, spacing: 10) {
-                    column(defenders, empty: "无野战守军")
-                    Rectangle().fill(Theme.ink.opacity(0.1)).frame(width: 0.8)
-                    column(attackers, empty: "")
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text((c.owner ? "攻 · " : "") + name(attackerNation) + (Set(attackers.map(\.element.nation)).count > 1 ? "等" : "")).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text("\(Names.wan(a)) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit()
                 }
             }
-            .padding(14)
-            .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.seal.opacity(0.25), lineWidth: 1))
-            .padding(.horizontal, 16)
-            .transition(.scale(scale: 0.96).combined(with: .opacity))
+            GeometryReader { g in
+                let total = max(1, a + d), left = g.size.width * CGFloat(d) / CGFloat(total)
+                HStack(spacing: 2) {
+                    Rectangle().fill(tint(c.anchor)).frame(width: max(d > 0 ? 6 : 0, left - 1))
+                    Rectangle().fill(tint(attackerNation))
+                }
+                .clipShape(Capsule())
+                .animation(.spring(response: 0.6, dampingFraction: 0.85), value: d)
+                .animation(.spring(response: 0.6, dampingFraction: 0.85), value: a)
+            }
+            .frame(height: 8)
+            HStack(alignment: .top, spacing: 10) {
+                column(defenders, empty: c.owner ? "无野战守军" : "")
+                Rectangle().fill(Theme.ink.opacity(0.1)).frame(width: 0.8)
+                column(attackers, empty: "")
+            }
         }
+        .padding(14)
+        .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.seal.opacity(0.25), lineWidth: 1))
+        .padding(.horizontal, 16)
+        .transition(.scale(scale: 0.96).combined(with: .opacity))
     }
     private func column(_ list: [EnumeratedSequence<[GameState.Army]>.Element], empty: String) -> some View {
         VStack(alignment: .leading, spacing: 7) {

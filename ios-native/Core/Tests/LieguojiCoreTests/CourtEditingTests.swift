@@ -34,4 +34,39 @@ final class CourtEditingTests: XCTestCase {
         relation.status = JS("peace")
         XCTAssertFalse(engine.appointOffice(0, office: "WarCommander:1", personId: person).ok)
     }
+    func testGovernorFamilyActionsAndRebellionOutlook() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Golden")
+        let r = try JS.parse(Data(contentsOf: dir.appendingPathComponent("offices.json"))).samples[0].input.clone()
+        let traits = try JS.parse(Data(contentsOf: dir.appendingPathComponent("nobility.json"))).traits
+        People.loadTraits(traits); Nobility.traitList = traits.asArray
+        let engine = NativeEngine(run: r), id = r.world.nations[0].id.asString
+        r.regimes = .object()
+        // 总督: any held province can be given a governor; another state's cannot.
+        let provinces = r.world.provinces.asArray
+        let mine = try XCTUnwrap(provinces.indices.first { provinces[$0].controller.asString == id })
+        let candidates = try JS.parse(try XCTUnwrap(engine.officeCandidates(0, office: "Governor:" + String(mine))))
+        let person = try XCTUnwrap(candidates.asArray.first).id.asInt
+        XCTAssertTrue(engine.appointOffice(0, office: "Governor:" + String(mine), personId: person).ok)
+        XCTAssertEqual(Offices.holder(r, id, "Governor", mine + 1)?.id.asInt, person)
+        if let other = provinces.indices.first(where: { provinces[$0].controller.asString != id }) { XCTAssertNil(engine.officeCandidates(0, office: "Governor:" + String(other))) }
+        // 叛乱形势 reads without changing anything.
+        let before = r.foundings.isNull ? "" : r.foundings.json
+        let o = Rebellion.outlook(r, id)
+        XCTAssertFalse(o.status.asString.isEmpty)
+        XCTAssertEqual(r.foundings.isNull ? "" : r.foundings.json, before)
+        // 族谱: marry an unmarried adult, give the couple a child, execute.
+        guard !r.nobility.isNull, !r.kin.isNull else { return }
+        let single = r.kin.families.objectEntries.flatMap { $0.1.memberIds.isNull ? [] : $0.1.memberIds.asArray }.compactMap { People.person(r, $0.asInt) }
+            .first { $0.isAlive.asBool && $0.age.asInt >= 18 && $0.age.asInt <= 40 && ($0.spouseId.asInt == 0 || People.person(r, $0.spouseId.asInt)?.isAlive.asBool != true) }
+        guard let p = single else { return }
+        XCTAssertTrue(engine.familyAction(p.id.asInt, action: "spouse").ok)
+        XCTAssertNotEqual(p.spouseId.asInt, 0)
+        let mother = p.gender.asInt == 1 ? p : People.person(r, p.spouseId.asInt)!
+        let children = mother.childrenIds.length
+        XCTAssertTrue(engine.familyAction(p.id.asInt, action: "child").ok)
+        XCTAssertEqual(mother.childrenIds.length, children + 1)
+        XCTAssertTrue(engine.familyAction(p.id.asInt, action: "kill").ok)
+        XCTAssertFalse(p.isAlive.asBool)
+        XCTAssertFalse(engine.familyAction(p.id.asInt, action: "kill").ok)
+    }
 }

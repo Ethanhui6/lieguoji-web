@@ -114,6 +114,7 @@ public final class EngineService {
         case "setCityCulture": return command(engine?.setCityCulture(int("province"), str("culture")))
         case "corruption": return command(engine?.changeCorruption(int("n"), lower: bool("lower")))
         case "incite": return command(engine?.inciteRebellion(int("n")))
+        case "familyAction": return command(engine?.familyAction(int("id"), action: str("action")))
         case "setTax": return command(engine?.setTax(int("n"), str("value")))
         case "familyTree": return data(engine?.familyTree(str("family")))
         case "setLivelihood": return command(engine?.setLivelihood(int("n"), str("value")))

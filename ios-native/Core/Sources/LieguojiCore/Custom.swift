@@ -622,6 +622,12 @@ extension NativeEngine {
         let id = nations[index].id.asString
         if Offices.central.contains(token) { return (token, 0, Offices.stateId(run, id)) }
         let parts = token.split(separator: ":")
+        // 总督: "Governor:<province index>", a province the state holds.
+        if parts.count == 2, parts[0] == "Governor", let p = Int(parts[1]) {
+            let provinces = run.world.provinces.asArray
+            guard provinces.indices.contains(p), provinces[p].controller.asString == id else { return nil }
+            return ("Governor", 1, p + 1)
+        }
         guard parts.count == 2, parts[0] == "WarCommander", let enemy = Int(parts[1]), nations.indices.contains(enemy),
               let war = Offices.wars(run, id).first(where: { $0.enemy == nations[enemy].id.asString }) else { return nil }
         return ("WarCommander", 2, war.scopeId)

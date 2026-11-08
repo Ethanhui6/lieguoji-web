@@ -1468,7 +1468,7 @@ struct ArmySheet: View {
                         .padding(.bottom, 16)
                         .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
                     }
-                    if a.province >= 0, let s = model.state { BattleBoard(province: a.province, state: s, map: map) }
+                    if a.province >= 0, let s = model.state { BattleBoard(province: a.province, state: s, map: map, focusNation: a.nation) }
                     ArmyServiceView(model: model, army: a)
                     // 整编 (custom): strength, arm and morale.
                     Button { withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { editing.toggle() } } label: {
@@ -2204,6 +2204,10 @@ enum AppVersion {
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
         ("1.5.0", ["【国名·对照原作】一个国家的领土被别国隔成几块时，每一块各写一个国名（太小的碎块除外），不再把一个国名写在几块领土的中间、压在别国头上。",
+                    "【对阵图】一州之内有多国军队时，按交战关系分成几场：守方与其盟军对攻方，另有不相干的两国在此交战则另起一张「遭遇」图；从军队页打开时自家那一场排在最前。",
+                    "【家族·族谱】族谱里点在世族人即可：修改能力与天赋、设定年龄、为其婚配、添一子女、处死（原作族谱的操作），处死会按原作规则让官职、家主、王位由他人接任。",
+                    "【官职】朝政页新增「各州总督」：每个州郡的总督与称职程度一目了然，点州郡即可改任；朝廷百官在官职不多时默认展开。",
+                    "【叛乱】朝政页新增「叛乱形势」：说明本国此刻能否生乱（太平期、州郡不足、立国未久、距上次叛乱太近、国运稳固），并列出最可能起事的州郡与每次检定的起事概率。",
                     "【原作补全·煽动叛乱】国家页「国家行为」新增「煽动叛乱」：在该国随机一个州郡（不含都城和战区）煽动起事，自立为新国家（原作功能）。",
                     "【2.0 计划表全部完成】五个阶段（平滑行军、军牌与驻军、统一图标、对照原作的寻路、战斗表现）都已落地。",
                     "【寻路·对照原作】原作的海路代价远低于陆路，长途行军会选择渡海；现在应用世界里海上行程按一半计价，远征更常走海路。",

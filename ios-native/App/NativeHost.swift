@@ -166,6 +166,7 @@ actor NativeHost {
     func setCityCulture(_ province: Int, _ culture: String) async -> (ok: Bool, reason: String, state: Data?) { await command("setCityCulture", ["province": province, "culture": culture]) }
     func changeCorruption(_ n: Int, lower: Bool) async -> (ok: Bool, reason: String, state: Data?) { await command("corruption", ["n": n, "lower": lower]) }
     func inciteRebellion(_ n: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("incite", ["n": n]) }
+    func familyAction(_ id: Int, action: String) async -> (ok: Bool, reason: String, state: Data?) { await command("familyAction", ["id": id, "action": action]) }
     func setTax(_ n: Int, _ value: String) async -> (ok: Bool, reason: String, state: Data?) { await command("setTax", ["n": n, "value": value]) }
     func familyTree(_ family: String) async -> Data? { await call("familyTree", ["family": family]).data }
     func setLivelihood(_ n: Int, _ value: String) async -> (ok: Bool, reason: String, state: Data?) { await command("setLivelihood", ["n": n, "value": value]) }

@@ -251,7 +251,7 @@ enum Glyph {
         ("战争期限", "hourglass"), ("间隔", "timer"), ("自主结盟", "person.2"), ("允许", "checkmark.seal"), ("附庸叛变", "crown"), ("自动", "gearshape.2"), ("外交", "scroll"), ("同盟", "person.2"), ("附庸", "crown"), ("停战", "hand.raised"), ("条约", "doc.text"), ("宣战", "flag.2.crossed"), ("战争", "flag.2.crossed"),
         ("叛乱", "flame"), ("内战", "flame"), ("家族", "person.3"), ("世家", "person.3"), ("继承", "person.badge.clock"), ("君主", "crown"), ("年龄", "calendar"), ("纪年", "calendar"),
         ("都城", "star"), ("性格", "theatermasks"), ("好战", "bolt"), ("生计", "leaf"), ("国家", "flag"), ("州", "map"), ("省", "map"), ("种子", "dice"),
-        ("人口上限", "person.3.sequence"), ("人口", "person.3"), ("信徒", "person.3"),
+        ("疆域", "map"), ("现存", "flag"), ("人口上限", "person.3.sequence"), ("人口", "person.3"), ("信徒", "person.3"),
         ("战役", "flag.2.crossed"), ("参战", "flag.2.crossed"), ("歼灭", "scope"), ("折损", "cross.case"),
         ("战争状态", "exclamationmark.shield"), ("交战", "exclamationmark.shield"), ("城市防御", "building.2"), ("城防", "building.2"),
         ("兵力", "shield.lefthalf.filled"), ("满编", "shield.lefthalf.filled"), ("军队", "shield.lefthalf.filled"), ("编制", "flag"),

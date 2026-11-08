@@ -114,6 +114,8 @@ enum ShotTour {
             show(nil); await wait(0.6); show(.nation(nation)); await wait(1.8); await shoot(name)
         }
         NationSheet.tourTab = nil
+        // 史册大字.
+        show(nil); await wait(0.6); model.proclaim("改朝换代", "秋冈义军改制，建立大顺"); await wait(1.5); await shoot("15b-epoch"); await wait(2)
         // 长按面板 and 横屏 (its rail and its side page).
         if let p = model.map?.meta.cities.dropFirst(3).first?.province { show(nil); await wait(0.6); show(.quick(p)); await wait(1.4); await shoot("14-quick") }
         show(nil); await wait(0.6)

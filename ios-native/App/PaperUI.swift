@@ -111,7 +111,7 @@ struct MemorialHeader: View {
                 if let subtitle { Text(subtitle).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
             }
             Spacer(minLength: 8)
-            Seal(text: seal, size: 46)
+            Seal(text: seal, size: 32)
         }
         .padding(.horizontal, 22).padding(.top, 22)
         .onAppear { withAnimation(.easeOut(duration: 0.6)) { inked = true } }
@@ -300,7 +300,7 @@ struct StatisticsSheet: View {
                                         }
                                         // The ink bar brushes in, staggered by rank.
                                         GeometryReader { g in
-                                            Capsule().fill(LinearGradient(colors: [Theme.ink.opacity(0.78), Theme.ink.opacity(0.35)], startPoint: .leading, endPoint: .trailing))
+                                            Capsule().fill(LinearGradient(colors: [(row.color.map { Names.color($0) } ?? Theme.ink).opacity(0.95), (row.color.map { Names.color($0) } ?? Theme.ink).opacity(0.45)], startPoint: .leading, endPoint: .trailing))
                                                 .frame(width: max(2, g.size.width * CGFloat(abs(row.value) / top)) * (brushed ? 1 : 0.001), height: 4)
                                                 .animation(.easeOut(duration: 0.55).delay(Double(i) * 0.05), value: brushed)
                                         }

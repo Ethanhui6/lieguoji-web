@@ -220,12 +220,11 @@ extension Regimes {
         if let styleId, let s = styles.first(where: { $0.id == styleId }) { c.polity = JS(s.base); b.style = JS(styleId); b.parties = .null }
         n.name = JS(title(r, id, base: c.name.value.asString, style: style(r, id)))
     }
-    /// The founding notice was written before the rising took its name.
-    private static func renameFounding(_ r: JS, from old: String, to new: String) {
-        guard old != new else { return }
-        let fix: (JS) -> Void = { $0.text = JS($0.text.asString.replacingOccurrences(of: old, with: new)) }
-        r.chronicle.entries.asArray.suffix(6).filter { $0.text.asString.hasPrefix(old) }.forEach(fix)
-        r.world.events.asArray.suffix(6).filter { $0.text.asString.hasPrefix(old) }.forEach(fix)
+    /// The rising's own notice says who rose and where: the routine founding line would only repeat it.
+    private static func dropFoundingNotice(_ r: JS, _ name: String) {
+        let founding: (JS) -> Bool = { $0.text.asString.hasPrefix(name) && $0.text.asString.contains("成立于") }
+        r.chronicle.entries.asArray = r.chronicle.entries.asArray.filter { !founding($0) }
+        r.world.events.asArray = r.world.events.asArray.filter { !founding($0) }
     }
     /// How many provinces a rising in this state takes with it.
     static func uprisingSize(_ r: JS, _ owner: String) -> Int {
@@ -285,8 +284,7 @@ extension Regimes {
             Government.relocateLostCapitals(r); Wars.reconcileCore(r); Founding.reconcilePorts?(r)
         } else {
             rebel = Founding.foundState(r, parent: owner, provinces: land, reason: (rebelLabels[kind] ?? "叛乱") + "：\(land.count)州一同举事。").nationId.asString
-            let foundedAs = Vassals.name(r, rebel)
-            defer { renameFounding(r, from: foundedAs, to: Vassals.name(r, rebel)) }
+            dropFoundingNotice(r, Vassals.name(r, rebel))
             switch kind {
             case "peasant":
                 if cityCulture == "chinese" { retitle(r, rebel, base: unusedName(r, dynastyNames, tag + "|name"), style: "dynasty") }

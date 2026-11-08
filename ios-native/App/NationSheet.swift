@@ -343,7 +343,7 @@ struct NationSheet: View {
                         if nation < map.meta.nations.count, map.meta.cities.indices.contains(map.meta.nations[nation].capital) {
                             Divider2()
                             Button { fly(map.meta.cities[map.meta.nations[nation].capital].province) } label: {
-                                HStack { Text("★ 在地图上查看都城").foregroundStyle(Theme.seal); Spacer(); Image(systemName: "scope").foregroundStyle(Theme.seal) }
+                                HStack { Text("在地图上查看都城").foregroundStyle(Theme.seal); Spacer(); Image(systemName: "scope").foregroundStyle(Theme.seal) }
                                     .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -560,9 +560,10 @@ struct NationSheet: View {
                         GeometryReader { g in
                             HStack(spacing: 1.5) {
                                 ForEach(Array(byUnit.enumerated()), id: \.offset) { i, u in
-                                    Rectangle().fill(tint.opacity(1 - Double(min(i, 5)) * 0.14)).frame(width: max(3, g.size.width * CGFloat(u.troops) / CGFloat(max(1, troops))))
+                                    Rectangle().fill(tint.opacity(1 - Double(min(i, 5)) * 0.14)).frame(width: max(2, (g.size.width - CGFloat(byUnit.count - 1) * 1.5) * CGFloat(u.troops) / CGFloat(max(1, troops))))
                                 }
                             }
+                            .frame(width: g.size.width, alignment: .leading)
                             .clipShape(Capsule())
                         }
                         .frame(height: 10)

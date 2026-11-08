@@ -366,3 +366,44 @@ struct PressRipple: View {
             .allowsHitTesting(false)
     }
 }
+
+/// 史册大字: a band of paper across the map, four brushed characters writing themselves in and a seal coming down.
+struct EpochCard: View {
+    let epoch: GameModel.Epoch
+    @State private var written = 0
+    @State private var stamped = false
+    @State private var opened = false
+    var body: some View {
+        VStack(spacing: 8) {
+            Rectangle().fill(Theme.seal.opacity(0.75)).frame(height: 1)
+            HStack(alignment: .center, spacing: 16) {
+                HStack(spacing: 10) {
+                    ForEach(Array(epoch.title.enumerated()), id: \.offset) { i, ch in
+                        Text(String(ch)).font(Theme.kai(50)).foregroundStyle(Theme.ink)
+                            .opacity(written > i ? 1 : 0).scaleEffect(written > i ? 1 : 1.25).blur(radius: written > i ? 0 : 3)
+                    }
+                }
+                Seal(text: "史", size: 34).scaleEffect(stamped ? 1 : 2).opacity(stamped ? 1 : 0).rotationEffect(.degrees(stamped ? -6 : 8))
+            }
+            Text(epoch.line).font(Theme.kai(15)).foregroundStyle(Theme.ink2).lineLimit(2).multilineTextAlignment(.center).padding(.horizontal, 28)
+            Rectangle().fill(Theme.seal.opacity(0.75)).frame(height: 1)
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(Theme.paper2.opacity(0.97))
+        .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.1), .init(color: .black, location: 0.9), .init(color: .clear, location: 1)], startPoint: .leading, endPoint: .trailing))
+        .scaleEffect(x: opened ? 1 : 0.2, y: 1)
+        .shadow(color: .black.opacity(0.25), radius: 18, y: 6)
+        .offset(y: -70)
+        .task {
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) { opened = true }
+            for i in 1...max(1, epoch.title.count) {
+                try? await Task.sleep(nanoseconds: 110_000_000)
+                withAnimation(.easeOut(duration: 0.22)) { written = i }
+            }
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            withAnimation(.spring(response: 0.26, dampingFraction: 0.6)) { stamped = true }
+            GameFeel.shared.news(.warning)
+        }
+    }
+}

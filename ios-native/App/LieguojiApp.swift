@@ -237,8 +237,13 @@ struct TitleView: View {
         ZStack {
             // Ink at the top, paper at the bottom: the title and the actions read over any world.
             LinearGradient(stops: [.init(color: SplashView.night.opacity(0.62), location: 0), .init(color: SplashView.night.opacity(0), location: 0.38),
-                                   .init(color: Theme.paper.opacity(0), location: 0.52), .init(color: Theme.paper.opacity(0.94), location: 0.86)],
+                                   .init(color: Theme.paper.opacity(0), location: 0.5), .init(color: Theme.paper.opacity(0.96), location: 0.74)],
                            startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea().allowsHitTesting(false)
+            // An ink wash down the left, behind the title and the line of the classics.
+            LinearGradient(colors: [SplashView.night.opacity(0.72), SplashView.night.opacity(0)], startPoint: .leading, endPoint: .trailing)
+                .frame(width: 300).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.32), .init(color: .clear, location: 0.46)], startPoint: .top, endPoint: .bottom))
                 .ignoresSafeArea().allowsHitTesting(false)
             VStack(spacing: 0) {
                 // The inscription: the title brushed top to bottom, the seal, and a line of the classics.
@@ -294,6 +299,7 @@ struct TitleView: View {
                 .padding(.horizontal, 22).padding(.bottom, 26)
             }
         }
+        .statusBarHidden()
         .onAppear { shown = false; withAnimation(.spring(response: 0.7, dampingFraction: 0.85).delay(model.controller.reveal < 1 ? 1.2 : 0.1)) { shown = true } }
         .onChange(of: model.tourTitle) { _, name in
             settings = name == "settings"
@@ -643,6 +649,15 @@ struct GameView: View {
         ZStack {
             Color.clear
         }
+        // A breath of ink at the screen's top and foot, so the floating controls settle into the map.
+        .overlay {
+            VStack(spacing: 0) {
+                LinearGradient(colors: [Color.black.opacity(0.3), .clear], startPoint: .top, endPoint: .bottom).frame(height: 130)
+                Spacer()
+                LinearGradient(colors: [.clear, Color.black.opacity(0.26)], startPoint: .top, endPoint: .bottom).frame(height: landscape ? 60 : 150)
+            }
+            .ignoresSafeArea().allowsHitTesting(false).opacity(wallpaper ? 0 : 1)
+        }
         .task {
             guard ShotTour.on else { return }
             await ShotTour.play(model, show: { p in
@@ -683,6 +698,11 @@ struct GameView: View {
 
     private var stage: some View {
         backdrop
+        .overlay {
+            if let e = model.epoch { EpochCard(epoch: e).id(e.id).transition(.opacity).allowsHitTesting(false) }
+        }
+        .animation(.easeOut(duration: 0.35), value: model.epoch?.id)
+        .statusBarHidden()
         .overlay(alignment: .bottom) {
             Group {
                 if landscape { EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }.frame(maxWidth: 380).padding(.bottom, 4) }
@@ -1201,11 +1221,8 @@ struct SheetHeader: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             if let color {
-                VStack(spacing: 0) {
-                    RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 10, height: 40)
-                    Rectangle().fill(Theme.seal.opacity(0.7)).frame(width: 1.5, height: 8)
-                }
-                .shadow(color: Theme.ink.opacity(0.15), radius: 1, y: 1)
+                RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 8, height: 46)
+                    .shadow(color: Theme.ink.opacity(0.15), radius: 1, y: 1)
             }
             VStack(alignment: .leading, spacing: 5) {
                 Text(title).font(Theme.kai(28)).foregroundStyle(Theme.ink).tracking(2).lineLimit(1).minimumScaleFactor(0.7)
@@ -1764,11 +1781,13 @@ struct NationsSheet: View {
                                     RoundedRectangle(cornerRadius: 5).fill(Names.color(n.color)).frame(width: 22, height: 22)
                                     VStack(alignment: .leading, spacing: 3) {
                                         HStack(spacing: 6) {
-                                            Text(n.name).font(Theme.kai(20)).foregroundStyle(s.alive ? Theme.ink : Theme.ink2)
-                                            if !s.enemies.isEmpty { Text("交战").font(Theme.kai(12)).foregroundStyle(Theme.seal).padding(.horizontal, 6).padding(.vertical, 1).background(Theme.seal.opacity(0.1), in: Capsule()) }
+                                            Text(n.name).font(Theme.kai(20)).foregroundStyle(s.alive ? Theme.ink : Theme.ink2).lineLimit(1).minimumScaleFactor(0.65)
                                             if !s.alive { Text("已亡").font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
                                         }
-                                        Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)文化").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                                        HStack(spacing: 6) {
+                                            Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)文化").font(Theme.kai(13)).foregroundStyle(Theme.ink2).lineLimit(1)
+                                            if !s.enemies.isEmpty { Text("交战").font(Theme.kai(11)).foregroundStyle(Theme.seal).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal.opacity(0.1), in: Capsule()) }
+                                        }
                                     }
                                     Spacer()
                                     VStack(alignment: .trailing, spacing: 3) {
@@ -2397,6 +2416,8 @@ struct ReleaseNotesSheet: View {
                     "【战时留守】交战时都城受威胁（敌军进入都城、兵临邻州或占了邻州），必留一军守都：已在都城的那支原地留守；都城空虚时，本国境内的一支回师留守，不再倾巢而出。",
                     "【小国坚韧】不足 8 州的国家背水一战，所部承受的战斗伤害随州数减少而降低（1 州时少 25%，云端可调），强国不再一季之内吞掉小邻国。",
                     "【自绘地图】新增「崎岖」笔刷：在笔刷范围内随机起伏，画出的海岸与山脊不再圆滑生硬；地形工具改为五列排布。",
+                    "【视觉打磨】状态栏隐藏，地图上下加墨色过渡；各页数据栏文字、数值和进度条对齐；去掉标题色条下的残线，印章大小统一；兵种色带不再溢出卡片；排行榜用各国国色；列国列表国名不再折行；重大事件出现「改朝换代、旧邦复国」等史册大字与落印动画；都城名改为朱红。",
+                    "【大事记去重】叛乱的建国记录与叛乱记录合并。",
                     "【改朝换代】义军、军政府、神国站稳后会改制：义军首领称帝立新朝或建革命政权，军阀黄袍加身、还政于民或自任元首，神国转为教廷或世俗王朝；衰败的王朝也会被权臣禅代，国号随之更易。",
                     "【快捷面板扩充】长按面板新增军令（全军来援、全军固守、查看本州军队）、连片划入、全国煽动、停止全部战争、结盟、归附、吞并、更改政体、颁行制度、好战程度、军威加成。",
                     "【240 州优化】行军改为军队各自结算到节点，不再因某一支到达节点就让全图重算一遍。",
@@ -2408,7 +2429,7 @@ struct ReleaseNotesSheet: View {
                     "【长按地图】长按任一州郡打开快捷面板：放军、遣散、划地、迁都、立国、要塞、圣地、五种叛乱、旧邦复国、人口存粮、特产、文化、信仰、天灾、国库国运、宣战，一页全有。",
                     "【横屏专用界面】手机横屏时功能栏竖排在左侧，所有页面从右侧滑出，地图不再被遮挡，可向右滑动关闭。",
                     "【国名避让】国名改放在领土最深处，沿本国最长的一段土地排布并按地块缩放，不再压到邻国；重叠的国名和城市名自动让位，放大后再显示，大的优先，飞地的同名也不会挤在一起。",
-                    "【都城】灭国后不再残留都城标识；都城在地图上带★，国家页可一键定位。",
+                    "【都城】灭国后不再残留都城标识；都城名在地图上以朱红显示，国家页可一键定位。",
                     "【悬殊之战】兵力相差两倍以上时伤害与围城随之提高（最多 ×2.5 与 ×3），十倍之敌失地过半才乞和，占绝对优势的一方不再因厌战半途停战，小国背水加成在四倍劣势时失效。",
                     "【冷门政权】各国会按文化与宗教演变出苏丹国、哈里发国、幕府、沙皇专制、汗国、商业共和、城邦、骑士团国、教宗国、政教合一、选侯君主、摄政、封建王国、军政府、独裁等，国号随之改变。",
                     "【事件翻倍】事件再增 26 种（共 50 余种），频率提高一倍，全部有实际结果：水患、雪灾、军器革新、士卒逃亡、募兵成军、屯田、储位之争、弹劾权贵、和亲、蛮族寇掠、掘得宝藏、君主励精图治或沉湎酒色等；灾害、人才、财富、政变等事件在地图上有对应特效。",
@@ -3232,6 +3253,8 @@ struct StatTile: View {
     var warn = false
     /// 点一下数字即可修改: the tile becomes a button with a small brush mark.
     var edit: (() -> Void)? = nil
+    /// In a strip where another tile has a bar, keep the room for one so every value sits on one line.
+    var reserveBar = false
     @State private var appeared = false
     var body: some View {
         Group {
@@ -3246,7 +3269,7 @@ struct StatTile: View {
     }
     private var content: some View {
         VStack(alignment: .leading, spacing: 5) {
-            GlyphLabel(text: label).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+            GlyphLabel(text: label).font(Theme.kai(13)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
             Text(value).font(Theme.kai(20)).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.6).monospacedDigit()
                 .contentTransition(.numericText()).animation(.snappy, value: value)
             if let fraction {
@@ -3257,7 +3280,7 @@ struct StatTile: View {
                     }
                 }
                 .frame(height: 4).animation(.spring(response: 0.5, dampingFraction: 0.85), value: fraction)
-            }
+            } else if reserveBar { Color.clear.frame(height: 4) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12).padding(.vertical, 10)
@@ -3268,14 +3291,17 @@ struct StatTile: View {
 /// A row of stat tiles in one memorial fold, split by hairlines.
 struct StatStrip: View {
     let tiles: [StatTile]
+    private func tile(_ i: Int, _ bars: Bool) -> StatTile { var t = tiles[i]; t.reserveBar = bars; return t }
     var body: some View {
         Group2 {
-            HStack(spacing: 0) {
+            let bars = tiles.contains { $0.fraction != nil }
+            HStack(alignment: .top, spacing: 0) {
                 ForEach(tiles.indices, id: \.self) { i in
-                    if i > 0 { Rectangle().fill(Theme.ink.opacity(0.12)).frame(width: 0.8).padding(.vertical, 10) }
-                    tiles[i]
+                    if i > 0 { Rectangle().fill(Theme.ink.opacity(0.12)).frame(width: 0.8).frame(maxHeight: .infinity).padding(.vertical, 10) }
+                    tile(i, bars)
                 }
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 16)
     }

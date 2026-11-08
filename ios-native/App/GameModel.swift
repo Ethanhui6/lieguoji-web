@@ -83,6 +83,29 @@ import LieguojiCore
     /// A war declared, a peace made or a province taken: shown as a banner for a moment.
     struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital } }
     @Published var herald: Herald?
+    /// 史册大字: the great turns of history, shown large for a moment.
+    struct Epoch: Equatable, Identifiable { let id = UUID(); let title: String; let line: String }
+    @Published var epoch: Epoch?
+    private var lastEpoch = Date.distantPast
+    func proclaim(_ title: String, _ line: String) {
+        guard Date().timeIntervalSince(lastEpoch) > 8 else { return }
+        lastEpoch = Date()
+        let e = Epoch(title: title, line: line)
+        epoch = e
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 2_800_000_000)
+            if self?.epoch?.id == e.id { self?.epoch = nil }
+        }
+    }
+    private static func epochTitle(_ e: GameState.Event) -> String? {
+        if e.text.contains("改制，建立") || e.text.contains("禅位") { return "改朝换代" }
+        if e.text.contains("复国") { return "旧邦复国" }
+        if e.text.contains("复辟") { return "复辟旧制" }
+        if e.kind == "extinction" { return "国祚终结" }
+        if e.text.contains("改建") { return "神权建国" }
+        if e.kind == "uprising", let r = e.text.range(of: "据有"), let n = Int(e.text[r.upperBound...].prefix { $0.isNumber }), n >= 6 { return "天下大乱" }
+        return nil
+    }
     private var heraldQueue: [Herald] = []
     private var heraldTask: Task<Void, Never>?
     /// Bumped whenever a different world is opened, so the map view rebuilds.
@@ -591,6 +614,7 @@ import LieguojiCore
         }
         // Rebellions, restorations, dynasties dying out and capitals moving: the original's big news.
         for e in next.events where !seen.contains(e.text) {
+            if let title = Self.epochTitle(e) { proclaim(title, e.text) }
             switch e.kind {
             case "uprising": enqueue(Herald(kind: .uprising, text: e.text, nations: []))
             case "restoration": enqueue(Herald(kind: .restoration, text: e.text, nations: []))

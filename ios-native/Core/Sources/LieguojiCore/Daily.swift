@@ -13,8 +13,8 @@ public enum Daily {
     // MARK: Contacts and attack clocks (force-tick47 frame / reconcileMilitaryClock47)
     static func key(_ kind: String, _ id: String) -> String { "[\"\(kind)\",\"\(id)\"]" }
     /// frame(): contacts reconciled into the run, and the forces eligible to attack.
-    @discardableResult
     static var frameCache: (key: String, value: (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position]))?
+    @discardableResult
     public static func frame(_ r: JS) -> (eligible: Set<String>, held: Set<String>) {
         guard let bridge = Armies.bridge else { return ([], []) }
         let forces = Profile.measure("f.forces") { bridge.forces(r) }

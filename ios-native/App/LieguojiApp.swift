@@ -1085,15 +1085,20 @@ struct GameView: View {
             sheet(for: panel)
                 .id(panel.id)
                 .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
-                .background { MemorialPaper().ignoresSafeArea() }
                 .font(Theme.kai(17))
                 .frame(width: min(480, UIScreen.main.bounds.width * 0.52))
                 .frame(maxHeight: .infinity)
-                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 22, bottomLeadingRadius: 22, bottomTrailingRadius: 0, topTrailingRadius: 0, style: .continuous))
-                .shadow(color: .black.opacity(0.25), radius: 16, x: -4)
-                .overlay(alignment: .topLeading) {
+                // The paper runs on past the safe area to the screen's edge; the text stays inside it.
+                .background {
+                    MemorialPaper()
+                        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 22, bottomLeadingRadius: 22, bottomTrailingRadius: 0, topTrailingRadius: 0, style: .continuous))
+                        .shadow(color: .black.opacity(0.25), radius: 16, x: -4)
+                        .padding(.trailing, -90)
+                        .ignoresSafeArea()
+                }
+                .overlay(alignment: .leading) {
                     Button { closePage() } label: { Image(systemName: "chevron.right").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink).frame(width: 36, height: 36).glass(Circle()) }
-                        .buttonStyle(PressStyle()).padding(.leading, 10).padding(.top, 10)
+                        .buttonStyle(PressStyle()).offset(x: -18)
                 }
                 .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { if $0.translation.width > 90 && abs($0.translation.height) < 60 { closePage() } })
                 .ignoresSafeArea(.container, edges: .vertical)

@@ -32,6 +32,8 @@ public enum PreviewWorld {
         for c in 0..<n { let v = biomeColors[Int(min(12, surface.ids[c]))]; rgb[c * 3] = UInt8(v >> 16 & 255); rgb[c * 3 + 1] = UInt8(v >> 8 & 255); rgb[c * 3 + 2] = UInt8(v & 255) }
         m.biomeRGB = rgb
         m.coast = []; m.rivers = []
+        // The bundled map's armies belong to its own land: on this one they would stand in the open sea.
+        m.meta.economy = nil
         m.province = [Int32](repeating: -1, count: m.cellCount)
         m.meta.provinces = []; m.meta.nations = []; m.meta.cities = []; m.meta.labels = []
         if withSea { m.seaRGBA = sea(m) }
@@ -59,7 +61,14 @@ public enum PreviewWorld {
         // Provinces: each land cell joins the province of a clipped face it belongs to.
         var province = [Int32](repeating: -1, count: m.cellCount)
         var provinces = [WorldMeta.Province](), owners = [Int](), seeds = [Int]()
-        if let part = Regions.partition(input.document, elevations: elevations, cities: cities, surface: surface) {
+        // Too few provinces for this land: the same steps up as the engine, so the two still agree.
+        var target = cities
+        var found = Regions.partition(input.document, elevations: elevations, cities: target, surface: surface)
+        while found == nil && target < 480 {
+            target = raisedCities(target)
+            found = Regions.partition(input.document, elevations: elevations, cities: target, surface: surface)
+        }
+        if let part = found {
             for (r, region) in part.regions.enumerated() { for f in region.members { for s in part.faces[f].source where s < n && heights[s] >= 20 && province[s] < 0 { province[s] = Int32(r) } } }
             let count = min(nations, part.regions.count)
             let layout = Opening.layout(part.regions, count: count)
@@ -78,6 +87,44 @@ public enum PreviewWorld {
         m.meta.labels = []
         m.seaRGBA = sea(m)
         return m
+    }
+
+    /// engine.ts raisedCities.
+    static func raisedCities(_ n: Int) -> Int { min(480, max(n + 1, Int((Double(n) * 1.15).rounded(.up)))) }
+
+    /// A small shaded chart of the land these heights make, for the new-world sheet.
+    public static func thumbnail(_ input: Inputs, heights: [UInt8], width: Int) -> (rgba: [UInt8], width: Int, height: Int) {
+        let map = input.base, picker = CellPicker(map: map)
+        let w = max(2, width), h = max(2, Int(Float(w) * map.height / map.width))
+        var field = [Float](repeating: 0, count: w * h)
+        for y in 0..<h { for x in 0..<w {
+            let px = (Float(x) + 0.5) * map.width / Float(w), py = (Float(y) + 0.5) * map.height / Float(h)
+            if let c = picker.cell(atX: px, y: py), c < heights.count { field[y * w + x] = Float(heights[c]) }
+        } }
+        let deep = MapPalette.Ocean.warmPaper.deep, shallow = MapPalette.Ocean.warmPaper.shallow, ink = RGB(hex: 0x4A3A28)
+        let ramp: [(at: Float, color: RGB)] = [(20, RGB(hex: 0xD3D49B)), (34, RGB(hex: 0xA9BC78)), (48, RGB(hex: 0xBFA96F)), (66, RGB(hex: 0x927A54)), (84, RGB(hex: 0xEFE8D8))]
+        func mix(_ a: RGB, _ b: RGB, _ t: Float) -> (Float, Float, Float) { (a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t) }
+        func land(_ v: Float) -> (Float, Float, Float) {
+            for k in 1..<ramp.count where v < ramp[k].at { return mix(ramp[k - 1].color, ramp[k].color, (v - ramp[k - 1].at) / (ramp[k].at - ramp[k - 1].at)) }
+            let top = ramp[ramp.count - 1].color
+            return (top.r, top.g, top.b)
+        }
+        var out = [UInt8](repeating: 255, count: w * h * 4)
+        for y in 0..<h { for x in 0..<w {
+            let i = y * w + x, v = field[i]
+            let north = field[max(0, y - 1) * w + x], west = field[y * w + max(0, x - 1)], nw = field[max(0, y - 1) * w + max(0, x - 1)]
+            var c: (Float, Float, Float)
+            if v < 20 { let t = v / 20; c = mix(deep, shallow, t * t) }
+            else {
+                c = land(v)
+                let light: Float = max(0.78, min(1.2, 1 + (v - nw) * 0.022))
+                c = (c.0 * light, c.1 * light, c.2 * light)
+                // The coast inked in.
+                if north < 20 || west < 20 { c = (c.0 + (ink.r - c.0) * 0.6, c.1 + (ink.g - c.1) * 0.6, c.2 + (ink.b - c.2) * 0.6) }
+            }
+            out[i * 4] = UInt8(max(0, min(1, c.0)) * 255); out[i * 4 + 1] = UInt8(max(0, min(1, c.1)) * 255); out[i * 4 + 2] = UInt8(max(0, min(1, c.2)) * 255)
+        } }
+        return (out, w, h)
     }
 
     /// A sea texture shaded by depth, authored in the warm-paper pair (deep 0x527c86 → shallow 0x8eafb1).

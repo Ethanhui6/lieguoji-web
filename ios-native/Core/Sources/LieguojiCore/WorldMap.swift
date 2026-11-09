@@ -119,7 +119,7 @@ public struct WorldMeta: Codable, Sendable {
     /// The world's opening chronicle.
     public let events: [Event]
     /// Where the Swift simulation starts (day 0 of the web world).
-    public let economy: EconomyStart?
+    public var economy: EconomyStart?
     /// Month-end treasury and destiny start.
     public let monthly: [MonthlyStart]?
     /// Army motion start (travel.bin): scale, clock, each army's travel cell, point and speed.

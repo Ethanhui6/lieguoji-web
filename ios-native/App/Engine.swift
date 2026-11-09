@@ -5,20 +5,57 @@ import LieguojiCore
 /// The web game's own engine (src/native-bridge/engine.ts, bundled as Resources/Engine/engine.js),
 /// hosted in an invisible WebKit context so it runs with the JavaScript JIT. Nothing of it is ever
 /// shown: the app draws the map and every panel natively and only exchanges JSON with the engine.
-@MainActor final class EngineHost: NSObject, WKNavigationDelegate {
-    let web: WKWebView
+@MainActor final class EngineHost: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    private(set) var web: WKWebView
     private var ready: CheckedContinuation<Void, Error>?
     private var loaded = false
+    /// Calls on their way through the engine; a timeout, a reset or a dead engine answers them all.
+    private var pending = [UUID: CheckedContinuation<String, Error>]()
+    /// The stage the founding has reached, as the engine reports it (a stage name).
+    var onProgress: ((String) -> Void)?
 
-    override init() {
+    private static func makeWeb() -> WKWebView {
         let config = WKWebViewConfiguration()
         config.suppressesIncrementalRendering = true
-        web = WKWebView(frame: CGRect(x: 0, y: 0, width: 1, height: 1), configuration: config)
-        web.isUserInteractionEnabled = false
-        web.alpha = 0.01
+        let view = WKWebView(frame: CGRect(x: 0, y: 0, width: 1, height: 1), configuration: config)
+        view.isUserInteractionEnabled = false
+        view.alpha = 0.01
+        return view
+    }
+
+    override init() {
+        web = EngineHost.makeWeb()
         super.init()
         web.navigationDelegate = self
+        web.configuration.userContentController.add(self, name: "progress")
     }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if let stage = message.body as? String { onProgress?(stage) }
+    }
+
+    /// Drops the engine, however busy it is (a page cannot be reloaded while its script runs, so a new
+    /// one takes its place), and answers everything that was waiting on it.
+    func reset(_ error: Error) {
+        let old = web, holder = old.superview
+        old.navigationDelegate = nil
+        old.stopLoading()
+        old.configuration.userContentController.removeScriptMessageHandler(forName: "progress")
+        old.removeFromSuperview()
+        web = Self.makeWeb()
+        web.navigationDelegate = self
+        web.configuration.userContentController.add(self, name: "progress")
+        holder?.addSubview(web)
+        loaded = false
+        starting = nil
+        failAll(error)
+    }
+    private func failAll(_ error: Error) {
+        ready?.resume(throwing: error); ready = nil
+        let waiting = pending; pending = [:]
+        for call in waiting.values { call.resume(throwing: error) }
+    }
+    private func finish(_ id: UUID, _ result: Result<String, Error>) { pending.removeValue(forKey: id)?.resume(with: result) }
 
     /// One load at a time: a second caller (新世界 pressed while the delayed start runs) waits for it
     /// instead of loading again and leaving the first one waiting forever.
@@ -43,20 +80,37 @@ import LieguojiCore
     nonisolated func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { Task { @MainActor in ready?.resume(); ready = nil } }
     nonisolated func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { Task { @MainActor in ready?.resume(throwing: error); ready = nil } }
     nonisolated func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { Task { @MainActor in ready?.resume(throwing: error); ready = nil } }
-    /// WebKit restarts a terminated content process with an empty page; the game must be reloaded.
-    var onCrash: (() -> Void)?
-    nonisolated func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { Task { @MainActor in loaded = false; onCrash?() } }
+    /// WebKit restarts a terminated content process with an empty page; the next call reloads the game.
+    /// The engine only founds worlds, so a running world is not touched: only what waits on it fails.
+    nonisolated func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        Task { @MainActor in loaded = false; failAll(EngineError.message("建世引擎被系统中止（多半是内存不足），请关掉其他应用后再试一次。")) }
+    }
 
-    /// Calls `NativeGame.<body>` and returns its JSON string.
-    func call(_ body: String, _ arguments: [String: Any] = [:]) async throws -> String {
+    /// Calls `NativeGame.<body>` and returns its JSON string. Past `timeout` seconds the engine is
+    /// replaced and the call fails, rather than waiting for ever.
+    func call(_ body: String, _ arguments: [String: Any] = [:], timeout: Double? = nil) async throws -> String {
         try await start()
-        do {
-            let value = try await web.callAsyncJavaScript("return await NativeGame.\(body)", arguments: arguments, in: nil, contentWorld: .page)
-            guard let text = value as? String else { throw EngineError.message("引擎没有返回结果") }
-            return text
-        } catch let error as NSError {
-            let message = (error.userInfo["WKJavaScriptExceptionMessage"] as? String) ?? error.localizedDescription
-            throw EngineError.message(message.replacingOccurrences(of: "Error: ", with: ""))
+        let id = UUID(), page = web
+        return try await withCheckedThrowingContinuation { (c: CheckedContinuation<String, Error>) in
+            pending[id] = c
+            Task { @MainActor [weak self] in
+                do {
+                    let value = try await page.callAsyncJavaScript("return await NativeGame.\(body)", arguments: arguments, in: nil, contentWorld: .page)
+                    guard let text = value as? String else { throw EngineError.message("引擎没有返回结果") }
+                    self?.finish(id, .success(text))
+                } catch {
+                    let e = error as NSError
+                    let message = (e.userInfo["WKJavaScriptExceptionMessage"] as? String) ?? e.localizedDescription
+                    self?.finish(id, .failure(EngineError.message(message.replacingOccurrences(of: "Error: ", with: ""))))
+                }
+            }
+            if let timeout {
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                    guard let self, self.pending[id] != nil else { return }
+                    self.reset(EngineError.message("推算超时：这方世界没有在限定时间内建成，引擎已重启，请再试一次。"))
+                }
+            }
         }
     }
 }

@@ -28,7 +28,11 @@ enum ShotTour {
         await shoot("01b-settings")
         model.tourTitle = "new-world"
         await wait(0.8)
+        await wait(1.2)
         await shoot("01c-new-world")
+        model.tourTitle = "archive"
+        await wait(0.8)
+        await shoot("01d-archive")
         model.tourTitle = nil
         await wait(0.4)
         var options = GameModel.NewWorld()

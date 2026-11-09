@@ -113,7 +113,10 @@ import LieguojiCore
     private var pendingLabels: [WorldMeta.LabelBox]?
 
     init() {
-        engine.onCrash = { [weak self] in self?.engineCrashed() }
+        engine.onProgress = { [weak self] stage in
+            guard let self, let index = ["people": 0, "armies": 1, "map": 2][stage] else { return }
+            self.controller.foundingStage = index
+        }
     }
 
     /// The bundled world, used as the title backdrop before a game exists.
@@ -127,6 +130,7 @@ import LieguojiCore
     func openEditor(_ options: NewWorld) {
         guard let inputs = previewInputs else { failure = "缺少原作地图网格，无法绘制"; return }
         pause()
+        worldEpoch &+= 1
         state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.viewFills = nil; controller.viewLabels = nil
         editorOptions = options
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
@@ -150,6 +154,9 @@ import LieguojiCore
     /// opening on these heights; the drawn map stays on screen while it does.
     func foundCustomWorld(_ ed: MapEditor) async {
         failure = nil
+        worldEpoch &+= 1
+        let epoch = worldEpoch
+        controller.foundingStage = 0
         let o = editorOptions
         o.climate.apply()
         var json: [String: Any] = ["climate": o.climate.json, "template": ed.template, "count": ed.nations, "cityCount": max(ed.nations, ed.provinces), "seed": ed.seed,
@@ -164,20 +171,43 @@ import LieguojiCore
         phase = .founding
         let settled = Date()
         do {
-            let world = try await open(try await engine.call("generate(options)", ["options": text]))
+            let built = try await engine.call("generate(options)", ["options": text], timeout: Self.foundingLimit)
+            guard epoch == worldEpoch else { return }
+            let world = try await open(built)
             // The engine's world (rivers, cities, names) replaces the drawn preview in place.
             controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
+            controller.foundingStage = 3
             try await handOver()
+            guard epoch == worldEpoch else { return }
             let wait = 2.6 - Date().timeIntervalSince(settled)
             if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
+            guard epoch == worldEpoch else { return }
             controller.editorMap = nil
             phase = .playing; controller.interactive = true
+            await archiveCurrent()
             save()
             autoConnect()
         } catch {
+            guard epoch == worldEpoch else { return }
             failure = error.localizedDescription
-            phase = .title
+            toTitle()
         }
+    }
+
+    /// Longest the engine may take to found a world before it is replaced (a phone needs well under a minute).
+    private static let foundingLimit: Double = 180
+    /// Bumped when another world is begun: whatever the last one still had under way is dropped.
+    private var worldEpoch = 0
+    /// 放弃: the founding is abandoned, the busy engine replaced, and the title comes back.
+    func cancelGeneration() {
+        worldEpoch &+= 1
+        engine.reset(EngineError.message("已放弃这次开创。"))
+        controller.endReveal()
+        toTitle()
+    }
+    private func toTitle() {
+        controller.interactive = false; controller.drifting = true; controller.reveal = 1
+        phase = .title
     }
 
     /// A fresh random world for the title backdrop, generated on the device by the Swift ports.
@@ -240,6 +270,9 @@ import LieguojiCore
     func generate(_ options: NewWorld) async {
         pause()
         failure = nil
+        worldEpoch &+= 1
+        let epoch = worldEpoch
+        controller.foundingStage = 0
         generationNote = "正在生成地形"
         // Straight into the founding: the sea fills the screen at once and the new land rises from it as
         // soon as it is built (the separate loading screen in between is gone). Without the device-built
@@ -252,7 +285,7 @@ import LieguojiCore
                                        "relations": options.relations, "naming": options.naming, "cultures": Names.cultureIds.filter { options.cultures.contains($0) }]
             let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
             let engine = self.engine
-            let full = Task { try await engine.call("generate(options)", ["options": text]) }
+            let full = Task { try await engine.call("generate(options)", ["options": text], timeout: Self.foundingLimit) }
             if let inputs = previewInputs {
                 let nations = options.nations, provinceCount = options.provinceCount
                 // The world and its map layers are built off the main thread, so the map appears
@@ -261,31 +294,45 @@ import LieguojiCore
                     let w = PreviewWorld.build(inputs, seed: seed, template: options.template, nations: nations, cities: provinceCount)
                     return (w, MapLayers.prepare(w))
                 }.value
+                guard epoch == worldEpoch else { return }
                 MapRenderer.prepared = layers
                 state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.seaPorts = []
                 map = preview; worldID = UUID()
                 generationNote = ""
                 phase = .founding
-                await rise()
+                await rise(epoch)
+                guard epoch == worldEpoch else { return }
             }
             let settled = Date()
-            let world = try await open(try await full.value)
+            let built = try await full.value
+            guard epoch == worldEpoch else { return }
+            let world = try await open(built)
+            controller.foundingStage = 3
             try await handOver()
+            guard epoch == worldEpoch else { return }
             // The founding captions after the map (houses, armies, relations) each get their moment.
             let wait = 2.6 - Date().timeIntervalSince(settled)
             if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
+            guard epoch == worldEpoch else { return }
             generationNote = ""
             if phase != .founding { await reveal(world) } else { phase = .playing; controller.interactive = true }
+            // A coast too broken for the provinces asked for: the engine took more.
+            if world.meta.provinces.count > options.provinceCount { notice = "这片陆地支离破碎，州郡已增至 \(world.meta.provinces.count) 个" }
+            await archiveCurrent()
             save()
             autoConnect()
-        } catch { failure = error.localizedDescription; phase = .title }
+        } catch {
+            guard epoch == worldEpoch else { return }
+            failure = error.localizedDescription
+            toTitle()
+        }
     }
 
     /// The generation animation on the device-built world.
-    private func rise() async {
+    private func rise(_ epoch: Int) async {
         controller.interactive = false
         controller.reveal = 0
-        if !ShotTour.on { await playReveal(duration: 9); return }
+        if !ShotTour.on { await playReveal(duration: 9, while: { self.worldEpoch == epoch }); return }
         var elapsed: Float = 0
         var last = Date()
         var shotSea = false
@@ -325,6 +372,7 @@ import LieguojiCore
 
     func continueGame() async {
         pause()
+        worldEpoch &+= 1
         phase = .generating; failure = nil; generationNote = "正在读取存档"
         do {
             let data = try Data(contentsOf: Self.saveURL)
@@ -406,12 +454,6 @@ import LieguojiCore
 
     func backToTitle() { pause(); save(); phase = .title }
 
-    private func engineCrashed() {
-        pause()
-        failure = "游戏引擎被系统中止，已回到标题画面；可从存档继续。"
-        phase = .title
-    }
-
     // MARK: time
 
     /// 云更新: the cloud's balance numbers to the engine (before a world's rules are enabled, and again
@@ -430,7 +472,9 @@ import LieguojiCore
             // Through the relay the next step is already asked for while this one is applied, so
             // the computer never waits for the phone (a round trip there costs most of a step).
             var ahead: Task<Data, Never>?
-            defer { if let ahead, let self { Task { let data = await ahead.value; try? await self.apply(stepData: data) } } }
+            // The step still under way is applied when the loop stops, unless another world has begun since.
+            let epoch = self?.worldEpoch
+            defer { if let ahead, let self { Task { let data = await ahead.value; if self.worldEpoch == epoch { try? await self.apply(stepData: data) } } } }
             while !Task.isCancelled {
                 guard let self else { return }
                 let started = Date()
@@ -488,7 +532,7 @@ import LieguojiCore
 
     /// The web engine's world goes to the Swift engine, which runs it from now on.
     private func handOver() async throws {
-        let text = try await engine.call("nativeWorld()")
+        let text = try await engine.call("nativeWorld()", timeout: 90)
         _ = try await native.open(Data(text.utf8))
         await applyCloud()
         await native.enableAppRules()
@@ -811,8 +855,12 @@ import LieguojiCore
     /// Saves and waits for the file (export needs it on disk).
     @discardableResult func saveNow() async -> Bool {
         guard state != nil, let data = await native.save() else { return false }
-        let url = Self.saveURL
-        return await Task.detached(priority: .utility) { (try? data.write(to: url, options: .atomic)) != nil }.value
+        let url = Self.saveURL, card = Self.currentCardURL, info = currentCard()
+        return await Task.detached(priority: .utility) { () -> Bool in
+            guard (try? data.write(to: url, options: .atomic)) != nil else { return false }
+            if let info, let raw = try? JSONEncoder().encode(info) { try? raw.write(to: card, options: .atomic) }
+            return true
+        }.value
     }
     /// 导出存档: a dated copy of the current save for the share sheet (Files, AirDrop…), a backup
     /// against the 7-day expiry of a self-signed install.
@@ -832,6 +880,7 @@ import LieguojiCore
         let backup = Self.saveURL.deletingLastPathComponent().appendingPathComponent("导入前备份.lgj")
         if hasSave { try? FileManager.default.removeItem(at: backup); try? FileManager.default.copyItem(at: Self.saveURL, to: backup) }
         do { try data.write(to: Self.saveURL, options: .atomic) } catch { failure = "存档无法写入：\(error.localizedDescription)"; return }
+        try? FileManager.default.removeItem(at: Self.currentCardURL)
         await continueGame()
     }
 

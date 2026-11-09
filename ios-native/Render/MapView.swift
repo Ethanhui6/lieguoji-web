@@ -122,6 +122,8 @@ import LieguojiCore
     @Published var interactive = true
     /// Slow drift of the title backdrop.
     @Published var drifting = false
+    /// How far the engine has got once the map has risen (FoundingView.later).
+    @Published var foundingStage = 0
     func fly(to province: Int) { focus = (province, UUID()) }
     /// Flies to a map point and zooms in (an army or fleet), the point above the sheet.
     @Published var focusPoint: (x: Double, y: Double, id: UUID)?

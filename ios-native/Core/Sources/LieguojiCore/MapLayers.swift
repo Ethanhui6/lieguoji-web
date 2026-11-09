@@ -395,7 +395,7 @@ public enum MapLayers {
     /// One world unit is 1600/240 map units.
     public static func mapMount(width w: Float, height h: Float) -> ColoredMesh {
         var m = ColoredMesh()
-        let unit: Float = 1600.0 / 240.0, paper = RGB(hex: 0xDED1C5), ink = RGB(hex: 0x000000)
+        let unit: Float = 1600.0 / 240.0, paper = RGB(hex: 0xDED1C5), ink = RGB(hex: 0x4A3A28)
         func ring(_ offset: Float, _ thickness: Float, _ color: RGB) {
             let out = offset + thickness / 2, inn = offset - thickness / 2
             let a0 = SIMD2<Float>(-out, -out), a1 = SIMD2<Float>(w + out, -out), a2 = SIMD2<Float>(w + out, h + out), a3 = SIMD2<Float>(-out, h + out)

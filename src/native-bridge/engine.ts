@@ -58,6 +58,10 @@ function uuid(){
   const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
 }
 function base64(bytes:Uint8Array){let s='';for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(s);}
+/** Tells the app which stage the founding has reached (the map's rise is only a picture of the first part). */
+function report(stage:string){(globalThis as unknown as {webkit?:{messageHandlers?:{progress?:{postMessage(v:string):void}}}}).webkit?.messageHandlers?.progress?.postMessage(stage);}
+/** A coast too broken for this many provinces: the next count tried (ios-native PreviewWorld.raisedCities keeps the same steps). */
+function raisedCities(n:number){return Math.min(480,Math.max(n+1,Math.ceil(n*1.15)));}
 const run=()=>{if(!current)throw Error('世界尚未载入。');return current.run as unknown as Run;};
 
 async function mapOf(terrain:Culture47Opening['terrain'],r:Run,options:{seed:string;template:string}){
@@ -102,11 +106,23 @@ export async function generate(optionsText:string){
   const terrain=(await prepareFmsFullMapPreview(blank,{worldId:blank.worldId,baseRevision:blank.revision,...generated},options)).document;
   const opening:Culture47Opening={terrain,count,cityCount,relations:o.relations==='war'?'war':'peace',settlementAlgorithm:SETTLEMENT47_ALGORITHM,
     setup:{mode:o.naming==='culture-generated'?'culture-generated':'historical-names',enabled:enabled.length?enabled:[...CULTURE_IDS47]},families:'original',harbors:'capital-neighbor-v2',...(o.layout?{layout:{seeds:[...o.layout.seeds],owners:[...o.layout.owners]}}:{})};
+  report('people');
   const s=new Culture47Session();
-  let x=s.create(opening);
+  // Too few provinces for this land (islands, lakes) used to end the founding with an error: the count rises until it fits.
+  let x:ReturnType<Culture47Session['create']>;
+  for(;;){
+    try{x=s.create(opening);break;}
+    catch(e){
+      const fits=/辖区|不相连|城市/.test(e instanceof Error?e.message:String(e));
+      if(!fits||o.layout||opening.cityCount>=480)throw e;
+      opening.cityCount=raisedCities(opening.cityCount);
+    }
+  }
+  report('armies');
   for(const [kind,rule] of ENABLE)x=s.execute({kind,rule,expected:populationStamp47(x.run)} as never,x.journal.actions.length);
   varyPlaceNames(x.run as never,seed);
   session=s;current=x;
+  report('map');
   return JSON.stringify({...await mapOf(terrain,run(),options),state:state()});
 }
 

@@ -68,6 +68,7 @@ actor NativeHost {
         }
         let hello = try await link.call("ping", [:], payload: nil)
         guard hello.ok else { link.cancel(); throw EngineError.message("对方不是列国纪远程计算服务器") }
+        guard hello.reason == EngineWire.greeting else { link.cancel(); throw EngineError.message("电脑上的计算服务器版本较旧，请更新后再连接；这局先用手机计算。") }
         if reattach {
             // The computer kept the world while the phone was away: use it as it is.
             guard (try await link.call("isOpen", [:], payload: nil)).ok else { link.cancel(); throw EngineError.message("电脑上的世界已关闭") }

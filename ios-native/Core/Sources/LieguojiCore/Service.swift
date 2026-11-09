@@ -71,7 +71,7 @@ public final class EngineService {
         func data(_ d: Data?) -> Reply { Reply(ok: d != nil, reason: d == nil ? "世界尚未载入。" : "", data: d) }
 
         switch call {
-        case "ping": return Reply(reason: "列国纪远程计算")
+        case "ping": return Reply(reason: EngineWire.greeting)
         case "catalogs":
             guard let payload, let o = (try? JSONSerialization.jsonObject(with: payload)) as? [String: String],
                   let traits = o["traits"].flatMap({ Data(base64Encoded: $0) }), let noble = o["nobleCultures"].flatMap({ Data(base64Encoded: $0) }),
@@ -240,6 +240,9 @@ public enum RemoteRoom {
 
 /// Frame helpers shared by the server and the app's remote link.
 public enum EngineWire {
+    /// What a server answers to `ping`. The app only hands its world to a server with the same rules:
+    /// raise the number whenever the engine or this protocol changes in a way an older server would get wrong.
+    public static let greeting = "列国纪远程计算·2"
     public static func u32(_ n: Int) -> Data { var v = UInt32(n).bigEndian; return Data(bytes: &v, count: 4) }
     public static func readU32(_ d: Data, at i: Int) -> Int { d[d.startIndex + i..<d.startIndex + i + 4].reduce(0) { $0 << 8 | Int($1) } }
     public static func request(_ call: String, _ args: [String: Any], payload: Data?) -> Data {

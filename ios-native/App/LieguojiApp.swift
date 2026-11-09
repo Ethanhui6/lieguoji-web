@@ -75,7 +75,7 @@ struct RootView: View {
             case .splash: EmptyView()
             case .title: TitleView(model: model).transition(.opacity)
             case .generating: GeneratingView(note: model.generationNote).transition(.opacity)
-            case .founding: FoundingView(controller: model.controller).transition(.opacity)
+            case .founding: FoundingView(controller: model.controller, cancel: { model.cancelGeneration() }).transition(.opacity)
             case .playing: GameView(model: model).transition(.opacity)
             case .editing: if let ed = model.editor { EditorView(model: model, editor: ed).transition(.opacity) }
             }
@@ -226,6 +226,7 @@ struct TitleView: View {
     @ObservedObject var model: GameModel
     @State private var importing = false
     @State private var creating = false
+    @State private var archive = false
     @State private var shown = false
     @State private var settings = false
     @State private var notes = false
@@ -288,6 +289,7 @@ struct TitleView: View {
                     }
                     HStack(spacing: 10) {
                         Button { importing = true } label: { TileAction(title: "导入存档", symbol: "tray.and.arrow.down") }
+                        Button { archive = true } label: { TileAction(title: "世界卷宗", symbol: "books.vertical") }
                         Button { settings = true } label: { TileAction(title: "设置", symbol: "slider.horizontal.3") }
                         Button { notes = true } label: { TileAction(title: "更新", symbol: "sparkles") }
                     }
@@ -304,12 +306,17 @@ struct TitleView: View {
         .onChange(of: model.tourTitle) { _, name in
             settings = name == "settings"
             creating = name == "new-world"
+            archive = name == "archive"
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
             if case .success(let url) = result { Task { await model.importSave(from: url) } }
         }
         .sheet(isPresented: $creating) {
-            NewWorldSheet(start: { options in creating = false; Task { await model.generate(options) } }, draw: { options in creating = false; model.openEditor(options) })
+            NewWorldSheet(start: { options in creating = false; Task { await model.generate(options) } }, draw: { options in creating = false; model.openEditor(options) }, inputs: model.previewInputs)
+                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $archive) {
+            WorldArchiveSheet(model: model) { world in archive = false; Task { await model.openArchived(world) } }
                 .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $settings) {
@@ -328,6 +335,15 @@ struct TitleView: View {
         }
         .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
     }
+}
+
+/// 山河预览 off the main thread: the template's heights for this seed, drawn small.
+func terrainThumbnail(_ inputs: PreviewWorld.Inputs, seed: String, template: String) -> UIImage? {
+    let t = PreviewWorld.thumbnail(inputs, heights: TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: template), width: 480)
+    guard let provider = CGDataProvider(data: Data(t.rgba) as CFData),
+          let image = CGImage(width: t.width, height: t.height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: t.width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                              bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipLast.rawValue), provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent) else { return nil }
+    return UIImage(cgImage: image)
 }
 
 /// The title screen's main action: a vermilion seal plate (or a paper one) with an icon, a title and a
@@ -362,8 +378,8 @@ struct TileAction: View {
     let title: String; let symbol: String
     var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: symbol).font(.system(size: 18, weight: .medium)).foregroundStyle(Theme.seal)
-            Text(title).font(Theme.kai(14)).foregroundStyle(Theme.ink)
+            Image(systemName: symbol).font(.system(size: 18, weight: .medium)).foregroundStyle(Theme.seal).frame(height: 22)
+            Text(title).font(Theme.kai(14)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity).frame(height: 64)
         .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -387,7 +403,7 @@ struct VerticalText: View {
     var body: some View {
         VStack(spacing: size * 0.08) {
             ForEach(Array(text.enumerated()), id: \.offset) { _, ch in
-                Text(String(ch) == "，" || String(ch) == "；" ? "︐" : String(ch)).font(Theme.kai(size))
+                if "，；。".contains(ch) { Color.clear.frame(width: size, height: size * 0.45) } else { Text(String(ch)).font(Theme.kai(size)) }
             }
         }
     }
@@ -414,7 +430,14 @@ struct NewWorldSheet: View {
     let start: (GameModel.NewWorld) -> Void
     /// 自绘地图 with these options.
     var draw: ((GameModel.NewWorld) -> Void)? = nil
+    /// The original grid, for the picture of the land this seed makes.
+    var inputs: PreviewWorld.Inputs? = nil
     @State private var options = GameModel.NewWorld()
+    /// The seed used while the field is left blank, so the land shown is the land founded.
+    @State private var rolled = String(UInt32.random(in: 0...UInt32.max))
+    @State private var terrain: UIImage?
+    private var seed: String { options.seed.isEmpty ? rolled : options.seed }
+    private var chosen: GameModel.NewWorld { var o = options; o.seed = seed; return o }
     /// Each terrain template's picture and one line of what it makes.
     static let templateArt: [String: (symbol: String, note: String)] = [
         "continents": ("globe.asia.australia", "数块大陆隔海相望"),
@@ -448,6 +471,7 @@ struct NewWorldSheet: View {
                 }
             }
             .padding(.horizontal, 22)
+            if inputs != nil { terrainCard.padding(.horizontal, 22) }
             SectionLabel("规模")
             VStack(alignment: .leading, spacing: 12) {
                 PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
@@ -512,9 +536,9 @@ struct NewWorldSheet: View {
             .padding(.horizontal, 22)
             Text("各国从所选文化中取名、宗教与政体。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
             VStack(spacing: 10) {
-                Button { start(options) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle())
+                Button { start(chosen) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle())
                 if let draw {
-                    Button { draw(options) } label: { SecondaryLabel(title: "自己绘制地图", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle())
+                    Button { draw(chosen) } label: { SecondaryLabel(title: "自己绘制地图", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle())
                 }
             }
             .padding(.horizontal, 22).padding(.top, 4)
@@ -522,6 +546,37 @@ struct NewWorldSheet: View {
         .padding(.vertical, 18)
         }
         .scrollIndicators(.hidden)
+        .task(id: seed + "|" + options.template) { await drawTerrain() }
+    }
+    /// 山河预览: the land this template and seed will make, before anything is founded.
+    private var terrainCard: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Group {
+                if let terrain { Image(uiImage: terrain).resizable() } else { Theme.paper2 }
+            }
+            .aspectRatio(16.0 / 9.0, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.3), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.paper2.opacity(0.4), lineWidth: 0.6).padding(3))
+            Button {
+                options.seed = ""; rolled = String(UInt32.random(in: 0...UInt32.max))
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 12, weight: .medium))
+                    Text("换一方山河").font(Theme.kai(13))
+                }
+                .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 30)
+                .background(Theme.seal, in: Capsule())
+            }
+            .buttonStyle(PressStyle()).padding(9)
+        }
+    }
+    private func drawTerrain() async {
+        guard let inputs else { return }
+        let seed = self.seed, template = options.template
+        let image = await Task.detached(priority: .userInitiated) { terrainThumbnail(inputs, seed: seed, template: template) }.value
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeOut(duration: 0.3)) { terrain = image }
     }
     /// A two-way choice as an illustrated card.
     private func choice(_ id: String, _ title: String, _ symbol: String, _ note: String, selection: Binding<String>) -> some View {
@@ -1580,7 +1635,7 @@ struct ArmyRow: View {
                     Text(Echelon.name(troops: army.troops, culture: map.meta.nations.indices.contains(army.nation) ? map.meta.nations[army.nation].culture : ""))
                         .font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule())
                 }
-                Text("\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "海上") · \(Names.status(army.status))\(Self.dest(map, army))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                Text("\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "途中") · \(Names.status(army.status))\(Self.dest(map, army))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             }
             Spacer()
             Text(Names.wan(army.troops)).font(Theme.kai(18)).foregroundStyle(Theme.ink)
@@ -1645,7 +1700,7 @@ struct ArmySheet: View {
                     HStack(spacing: 8) {
                         Text(fighting ? "交战中" : a.travel == "moving" ? "行军中" : Names.status(a.status)).font(Theme.kai(14)).foregroundStyle(Theme.paper2)
                             .padding(.horizontal, 8).padding(.vertical, 3).background(fighting ? Theme.seal : Theme.ink2, in: Capsule())
-                        Text(map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "海上").font(Theme.kai(15)).foregroundStyle(Theme.ink)
+                        Text(map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "途中").font(Theme.kai(15)).foregroundStyle(Theme.ink)
                         if let d = a.destination, d >= 0, d < map.meta.provinces.count {
                             Image(systemName: "arrow.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
                             Text(map.meta.provinces[d].name).font(Theme.kai(15)).foregroundStyle(Theme.seal)
@@ -2259,6 +2314,7 @@ struct MenuSheet: View {
     var say: (String) -> Void = { _ in }
     let close: () -> Void
     @State private var creating = false
+    @State private var archive = false
     @State private var notes = false
     @State private var exported: ExportFile?
     @State private var importing = false
@@ -2319,6 +2375,8 @@ struct MenuSheet: View {
                     Button { Task { exported = await model.exportCopy().map(ExportFile.init) } } label: { MenuRow(symbol: "square.and.arrow.up", title: "导出存档（备份）") }.buttonStyle(.plain)
                     Divider2()
                     Button { importing = true } label: { MenuRow(symbol: "tray.and.arrow.down", title: "导入存档") }.buttonStyle(.plain)
+                    Divider2()
+                    Button { archive = true } label: { MenuRow(symbol: "books.vertical", title: "世界卷宗") }.buttonStyle(.plain)
                 }
                 .padding(.horizontal, 16)
                 SectionLabel("世界")
@@ -2346,8 +2404,12 @@ struct MenuSheet: View {
         .animation(.easeOut(duration: 0.2), value: page)
         }
         .sheet(isPresented: $creating) {
-            NewWorldSheet(start: { options in creating = false; close(); Task { await model.generate(options) } }, draw: { options in creating = false; close(); model.openEditor(options) })
-                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            NewWorldSheet(start: { options in creating = false; close(); Task { await model.generate(options) } }, draw: { options in creating = false; close(); model.openEditor(options) }, inputs: model.previewInputs)
+                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $archive) {
+            WorldArchiveSheet(model: model) { world in archive = false; close(); Task { await model.openArchived(world) } }
+                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }
         .sheet(isPresented: $calendar) {
@@ -2446,6 +2508,14 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("1.9.0", ["【生成世界】进度条改为引擎的真实进度，不再先走到 100% 然后干等；等待超过 20 秒可放弃回标题，超过 3 分钟自动重启建世引擎并提示，不会再无限卡住。",
+                   "【生成世界】州郡数偏少时（如联合大陆 35 州、群岛 12 州）引擎划不出疆域，以前会失败报错；现在州郡数自动上调到能成立的数目，并在开局提示。",
+                   "【稳定】手机内存紧张时系统回收建世引擎，不再把正在玩的世界踢回标题；局中开新世界时，旧世界尚未结算的一步不再写到新地图上。",
+                   "【远程计算】App 只接入同版本的电脑服务器；旧版服务器不再接手世界，这局留在手机上计算。电脑端需更新到本版。",
+                   "【新功能·山河预览】新世界页直接显示这个地形和种子会生成的山河，可一键换一方山河，看中了再开创。",
+                   "【新功能·世界卷宗】开创新世界时，推演满一个月的旧世界自动收进卷宗，不再被覆盖；标题页和菜单都能展卷继续，也可以焚毁不要的。",
+                   "【画面】标题和开局时海面上不再漂着无主的兵牌；陆地升起之前海面是干净的深海，不再提前露出海岸的影子。",
+                   "【画面】地图外框的墨线改为暖褐色，竖排题词去掉错位的标点，各处图标按钮的文字基线对齐；军队在路上显示「途中」，不再误写成「海上」。"]),
         ("1.8.0", ["【动画】叛乱、复国等特效改在事发州郡显示；兵力对比条随战况平滑变化；国家页切换标签时内容淡入；被避让的地名重新出现时淡入。",
                     "【修复】重算气候现在会真正更新地貌、河流和海岸水线；无主之地不再发生叛乱或被当作旧邦复国。",
                     "【舆图细节】地图新增沿岸水线与浅水、沙岸、海上波纹、罗盘和比例尺；放大后可见草丛、沙丘、丘陵、田亩与城市间的道路；可在地图显示里关闭。",
@@ -2974,6 +3044,8 @@ struct ReleaseNotesSheet: View {
 struct FoundingView: View {
     /// Observes the map clock. A plain Float copied into this view stayed on 注水成海 while the land kept rising.
     @ObservedObject var controller: MapController
+    /// Gives up on this world (offered once the engine has taken unusually long).
+    let cancel: () -> Void
     private var reveal: Float { controller.reveal }
     /// The world's generation as it happens (like a world being made in a sandbox game): each stage
     /// names what the map is drawing at that moment — the sea, the land rising from the coast, the
@@ -2988,10 +3060,12 @@ struct FoundingView: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 0.35)) { context in
             let waited = reveal >= 1 ? context.date.timeIntervalSince(started) : 0
-            let laterIndex = min(Self.later.count - 1, Int(waited / 0.8))
+            // The engine's own stage, not a timer: the bar never says done before the world is.
+            let laterIndex = min(Self.later.count - 1, controller.foundingStage)
             let current = reveal < 1 ? (Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1) : Self.stages.count + laterIndex
             let all = Self.stages.map(\.text) + Self.later
-            let progress = reveal < 1 ? Double(reveal) * 0.85 : min(1, 0.85 + waited / 0.8 / Double(Self.later.count) * 0.15)
+            let creep: Double = (1 - exp(-waited / 8)) * 0.9
+            let progress: Double = reveal < 1 ? Double(reveal) * 0.85 : 0.85 + (Double(laterIndex) + creep) / Double(Self.later.count) * 0.15
             VStack {
                 Spacer()
                 VStack(alignment: .leading, spacing: 10) {
@@ -3013,9 +3087,18 @@ struct FoundingView: View {
                     }
                     .frame(height: 4)
                     Text("\(Int(progress * 100))%").font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
+                    if waited > 20 {
+                        HStack(spacing: 8) {
+                            Text("比平时久一些，仍在推算").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                            Spacer(minLength: 8)
+                            Button(action: cancel) { Text("放弃，回标题").font(Theme.kai(13)).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle())
+                        }
+                        .transition(.opacity)
+                    }
                 }
                 .animation(.spring(response: 0.45, dampingFraction: 0.85), value: current)
                 .animation(.easeOut(duration: 0.3), value: progress)
+                .animation(.easeOut(duration: 0.3), value: waited > 20)
                 .padding(.horizontal, 20).padding(.vertical, 16)
                 .frame(maxWidth: 360, alignment: .leading)
                 .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous)))
@@ -3124,7 +3207,7 @@ struct ChipPicker<T: Hashable>: View {
                 Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { selection = item.0 } } label: {
                     // Every tab and choice row in the game: a small picture over the word where one fits.
                     VStack(spacing: 2) {
-                        if let g = Glyph.of(item.1) { Image(systemName: g).font(.system(size: 13, weight: .regular)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85)) }
+                        if let g = Glyph.of(item.1) { Image(systemName: g).font(.system(size: 13, weight: .regular)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85)).frame(height: 18) }
                         Text(item.1).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity).frame(height: tall ? 50 : 40)

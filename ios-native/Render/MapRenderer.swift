@@ -716,6 +716,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
         }
         quad(sea, texturePipeline, x: 0, y: 0, width: map.width, height: map.height)
+        // The shallows and waterlines of a coast not yet risen would show as a ghost of it: open water first.
+        if reveal < 0.24 {
+            var veil = ColoredMesh()
+            let x = min(1, max(0, (reveal - 0.05) / 0.19)), opacity = 1 - x * x * (3 - 2 * x)
+            veil.fill([0, 0, map.width, 0, map.width, map.height, 0, map.height], MapPalette.ocean(display.ocean).deep, alpha: opacity)
+            colored(buffer(veil.vertices, stride: 6))
+        }
         if reveal < 1, let rb = revealBuffers() {
             let sea = MapPalette.ocean(display.ocean).shallow
             var r = SIMD4<Float>(sea.r, sea.g, sea.b, reveal)

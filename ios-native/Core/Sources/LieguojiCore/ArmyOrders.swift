@@ -252,6 +252,20 @@ public enum ArmyOrders {
         var bordersOf = [String: [Int]](), lostOf = [String: [Int]]()
         // App worlds: troops each state already has marching on each province (read once a batch).
         var headingOf = [String: [String: Double]]()
+        // 军机调度 (WarCouncil.swift): each state's plan, read once a batch and only for states that need one.
+        var plans = [String: [String: WarCouncil.Duty]]()
+        var councilContext: CouncilContext?
+        func plan(_ nation: String, _ enemySet: Set<String>) -> [String: WarCouncil.Duty] {
+            if let v = plans[nation] { return v }
+            if councilContext == nil {
+                var forcesOf = [String: [Armies.Located]](), strength = [String: Double]()
+                for v in space { forcesOf[v.army.nationId.asString, default: []].append(v); strength[v.army.nationId.asString, default: 0] += v.army.troops.asNumber }
+                councilContext = CouncilContext(presentAt: presentAt, provinces: provinceList, provinceAt: provinceAt, ownedBy: ownedBy, geo: geo, manual: manual, held: held, forcesOf: forcesOf, strength: strength)
+            }
+            let v = warPlan(r, nation: nation, enemies: enemySet, councilContext!, bridge: bridge)
+            plans[nation] = v
+            return v
+        }
         // 协助盟友 (app worlds): allied land where an enemy of ours stands or that an enemy holds.
         var alliedOf = [String: [Int]]()
         func alliedFront(_ nation: String, _ enemySet: Set<String>) -> [Int] {
@@ -307,7 +321,10 @@ public enum ArmyOrders {
             let ongoing = here.travel.status.asString == "moving"
             let targetOwned = target?.controller.asString == nation
             let garrisonIsTarget = !row.garrisonId.isNull && row.garrisonId.asString == target?.id.asString
-            if ongoing && (row.targetId.isNull || targetEnemy != nil || row.decision.asString == "returning" && targetOwned || row.decision.asString == "staging" && targetOwned && !en.isEmpty || row.decision.asString == "guarding" && targetOwned && !en.isEmpty
+            let duty: WarCouncil.Duty? = originalTargets && !en.isEmpty && a.status.asString != "retreating" ? plan(nation, enemySet)[id] : nil
+            // Called back: the state needs this army at a post of its own, and it is marching elsewhere.
+            let recalled = duty.map { $0.urgent && provinceList[$0.province].id.asString != row.targetId.optionalString } ?? false
+            if ongoing && !recalled && (row.targetId.isNull || targetEnemy != nil || row.decision.asString == "returning" && targetOwned || row.decision.asString == "staging" && targetOwned && !en.isEmpty || row.decision.asString == "guarding" && targetOwned && !en.isEmpty
                            || garrisonIsTarget && targetOwned && en.isEmpty || a.status.asString == "retreating") {
                 if garrisonIsTarget && targetOwned && en.isEmpty { note("garrison", "正在沿原定路线前往驻地，保留既有行军进度。") } else { row.nextTick = JS(tick + retry) }
                 continue
@@ -345,6 +362,27 @@ public enum ArmyOrders {
                         row.targetId = JS(cap); row.campaignId = .null; row.issuedTick = JS(tick)
                         note("guarding", "都城告急，回师留守都城。"); continue
                     }
+                }
+            }
+            if let duty {
+                let p = duty.province, post = provinces[p], pid = post.id.asString, ours = post.controller.asString == nation
+                var decision = "attacking", why = "军机调度：主力向前线推进。"
+                switch duty {
+                case .defend: decision = ours ? "supporting" : "attacking"; why = "军机调度：驰援本土，兵力按来犯之敌调拨。"
+                case .hold: decision = "guarding"; why = "军机调度：分兵把守边境。"
+                case .attack: break
+                }
+                if ours && here.province?.id.asString == pid && enemyAt(pid) == nil {
+                    if ongoing { halt() }
+                    row.targetId = post.id.clone(); row.campaignId = .null; row.issuedTick = JS(tick)
+                    note("guarding", why); continue
+                }
+                if ongoing && row.targetId.optionalString == pid { row.nextTick = JS(tick + retry); continue }
+                if reason(r, id, .move(province: p, retreat: false)) == nil {
+                    issue(r, id, .move(province: p, retreat: false))
+                    let enemy = enemySet.contains(post.controller.asString) ? post.controller.asString : enemyAt(pid)
+                    row.targetId = post.id.clone(); row.campaignId = JS(en.first { $0.nation == enemy }?.campaign ?? -1); row.issuedTick = JS(tick)
+                    note(decision, why); continue
                 }
             }
             if a.status.asString != "retreating" && !en.isEmpty {

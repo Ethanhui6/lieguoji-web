@@ -208,18 +208,28 @@ public struct PeaceAI {
         let app = UnitKinds.enabled
         let o = app ? (PeaceAI.odds?(w.primaryAttackerId, w.primaryDefenderId) ?? 1) : 1
         // 乘胜: a host that far outnumbers the enemy does not stop at its first demands.
-        let pressing = app && o >= 3 && months() < 15
-        if months() >= (app ? Tuning.current.peaceGoalMonths : 12) && allGoalsAchieved() && !pressing { return 0 }
-        if collapsed(w.primaryDefenderId) || collapsed(w.primaryAttackerId) { return 2 }
+        let pressing = app && o >= 1.5 && months() < 24 && countLand(byState[w.primaryDefenderId]) > 0
+        // 不割地: a state with the larger host does not sign away land while its armies are still on the way back.
+        let holdingOut = app && o <= 0.67 && months() < 12
+        if months() >= (app ? Tuning.current.peaceGoalMonths : 12) && allGoalsAchieved() && !pressing && !holdingOut { return 0 }
+        // 穷追: a beaten state is not let off while a stronger enemy can still finish it (see Settlement.decisiveAnnex).
+        let finishing = app && o >= 1.5 && months() < 36 && f(Double(countLand(byState[w.primaryDefenderId]))) > f(f(Double(initialCounts[w.primaryDefenderId] ?? 0)) * 0.3)
+        if (collapsed(w.primaryDefenderId) && !finishing) || collapsed(w.primaryAttackerId) { return 2 }
         // 兵力悬殊: a state many times outmatched sues for terms once half its land has fallen, and a host
         // that is winning does not tire and go home.
         if app, o >= 10, months() >= 2, gainedProvinces(w.primaryAttackerId) >= max(2, initialLand(w.primaryDefenderId) / 2) { return 0 }
         if app, o <= 0.1, months() >= 2, gainedProvinces(w.primaryDefenderId) >= max(2, initialLand(w.primaryAttackerId) / 2) { return 1 }
         if months() < (app ? Tuning.current.peaceDecisiveMonths : 36) { return nil }
         let s = score().score
-        if abs(s) >= forceSettleThreshold() { return 1 }
-        if s <= -50 || s >= 50 { return 1 }
-        if !(app && (o >= 5 || o <= 0.2) && months() < 15), weariness(w.primaryAttackerId) >= 0.5 || weariness(w.primaryDefenderId) >= 0.5 { return 4 }
+        // 反攻在即: the side behind on the map but ahead in men fights on for its first year and a half.
+        let counterattack = app && months() < 18 && (s > 0 ? o <= 1 / 1.2 : o >= 1.2)
+        // 乘胜不罢兵: the side ahead keeps at it; only an even war, or a very long one, ends from weariness.
+        let stalemate = !app || abs(s) < 30 || months() >= 36
+        if !counterattack && !finishing && !(pressing && s > 0) {
+            if abs(s) >= forceSettleThreshold() { return 1 }
+            if s <= -50 || s >= 50 { return 1 }
+        }
+        if stalemate, !(app && (o >= 5 || o <= 0.2) && months() < 15), weariness(w.primaryAttackerId) >= 0.5 || weariness(w.primaryDefenderId) >= 0.5 { return 4 }
         return nil
     }
 }

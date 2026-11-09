@@ -55,6 +55,11 @@ public enum Settlement {
     static func decisiveAnnex(_ ai: PeaceAI, _ w: PeaceWar, _ victor: Int?) -> Bool {
         guard victor == 0, let attacker = ai.byState[w.primaryAttackerId], let defender = ai.byState[w.primaryDefenderId], !defender.dead else { return false }
         let current = ai.countLand(defender); if current < 1 { return false }
+        // 并吞残局 (app worlds): what is left of a beaten state goes to a victor at least twice as strong.
+        if UnitKinds.enabled, attacker.strength >= f(defender.strength * 2) {
+            let initial = ai.initialCounts[w.primaryDefenderId] ?? 0
+            if initial > 0 && f(Double(current)) <= f(f(Double(initial)) * 0.3) { return true }
+        }
         if w.goals.contains(where: { $0.type == 3 }) {
             let initial = ai.initialLand(w.primaryDefenderId)
             let capital = ai.capitals[w.primaryDefenderId].flatMap { ai.owner($0) }

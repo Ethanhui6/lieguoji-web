@@ -107,6 +107,7 @@ extension NativeEngine {
             let o = JS.object(); o.day = e.day; o.text = e.text; o.kind = e.kind
             o.reason = e.reason.isNull ? JS("") : e.reason
             o.nations = .array((e.nationIds.isNull ? [] : e.nationIds.asArray).compactMap { at[$0.asString].map { JS($0) } })
+            if let p = e.place.id.optionalString.flatMap({ RunWindow.provinceIndexById(r)[$0] }) { o.province = JS(p) }
             return o
         }).json.utf8)
     }

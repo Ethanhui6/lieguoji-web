@@ -690,6 +690,7 @@ import LieguojiCore
         }
     }
     private func enqueue(_ h: Herald) {
+        if controller.play.pauseOnNews, playing, [Herald.Kind.war, .uprising, .extinction].contains(h.kind) { pause(saving: false) }
         heraldQueue.append(h)
         if heraldQueue.count > 4 { heraldQueue.removeFirst(heraldQueue.count - 4) }
         guard heraldTask == nil else { return }

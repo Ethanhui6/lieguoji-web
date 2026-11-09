@@ -188,9 +188,11 @@ struct PlaySettings: Codable, Equatable {
     var easeReveal = true
     /// Autosave while playing, seconds (0: off; pausing and leaving still save).
     var autosave = 120
+    /// 大事暂停: a declaration of war, a rising or a state's end stops the clock.
+    var pauseOnNews = false
     static let key = "playSettings.v1"
     init() {}
-    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave }
+    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave, pauseOnNews }
     // Every field is optional in a stored setting: older versions saved fewer (and a 高帧率 switch).
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -206,6 +208,7 @@ struct PlaySettings: Codable, Equatable {
         introCamera = try c.decodeIfPresent(Bool.self, forKey: .introCamera) ?? true
         easeReveal = try c.decodeIfPresent(Bool.self, forKey: .easeReveal) ?? true
         autosave = try c.decodeIfPresent(Int.self, forKey: .autosave) ?? 120
+        pauseOnNews = try c.decodeIfPresent(Bool.self, forKey: .pauseOnNews) ?? false
     }
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: Keys.self)
@@ -213,7 +216,7 @@ struct PlaySettings: Codable, Equatable {
         try c.encode(mapFPS, forKey: .mapFPS); try c.encode(marchFPS, forKey: .marchFPS); try c.encode(effectFPS, forKey: .effectFPS)
         try c.encode(renderScale, forKey: .renderScale); try c.encode(simLoad, forKey: .simLoad); try c.encode(autoCool, forKey: .autoCool)
         try c.encode(introCamera, forKey: .introCamera); try c.encode(easeReveal, forKey: .easeReveal)
-        try c.encode(autosave, forKey: .autosave)
+        try c.encode(autosave, forKey: .autosave); try c.encode(pauseOnNews, forKey: .pauseOnNews)
     }
     /// 画面档位: 省电, 均衡, 流畅 (nil: the values were set one by one).
     static let presets: [(key: String, name: String, mapFPS: Int, marchFPS: Int, effectFPS: Int, renderScale: Double, simLoad: Int)] = [

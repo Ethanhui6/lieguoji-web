@@ -18,8 +18,10 @@ public enum WarCouncil {
     }
     public struct Post: Equatable {
         public let province: Int; public let x: Double; public let y: Double; public let feature: Int; public let need: Double
-        public init(province: Int, x: Double, y: Double, feature: Int, need: Double) {
-            self.province = province; self.x = x; self.y = y; self.feature = feature; self.need = need
+        /// Filled however badly the odds stand (the capital).
+        public let mustHold: Bool
+        public init(province: Int, x: Double, y: Double, feature: Int, need: Double, mustHold: Bool = false) {
+            self.province = province; self.x = x; self.y = y; self.feature = feature; self.need = need; self.mustHold = mustHold
         }
     }
     public enum Duty: Equatable {
@@ -50,6 +52,10 @@ public enum WarCouncil {
                 else { rest.append(f) }
             }
             free = rest
+            // Sent in dribs and drabs against a host it cannot match, an army only dies: leave it for now.
+            var reachable = have
+            for f in free where f.movable { reachable += f.troops }
+            if !post.mustHold && reachable < post.need * 0.5 { return }
             while have < post.need && budget > 0 {
                 var best = -1, bestDistance = Double.infinity
                 for (i, f) in free.enumerated() where f.movable {
@@ -114,9 +120,9 @@ extension ArmyOrders {
         let mine = forces.reduce(0.0) { $0 + $1.troops }, average = mine / Double(forces.count)
 
         func center(_ p: Int) -> (x: Double, y: Double) { (provinces[p].center.x.asNumber, provinces[p].center.y.asNumber) }
-        func post(_ p: Int, need: Double) -> WarCouncil.Post {
+        func post(_ p: Int, need: Double, mustHold: Bool = false) -> WarCouncil.Post {
             let at = center(p)
-            return WarCouncil.Post(province: p, x: at.x, y: at.y, feature: c.geo.provinceFeature[provinces[p].id.asString] ?? -1, need: need)
+            return WarCouncil.Post(province: p, x: at.x, y: at.y, feature: c.geo.provinceFeature[provinces[p].id.asString] ?? -1, need: need, mustHold: mustHold)
         }
         func foes(_ p: Int) -> Double {
             (c.presentAt[provinces[p].id.asString] ?? []).reduce(0.0) { sum, x in
@@ -131,7 +137,7 @@ extension ArmyOrders {
             if (x.p == capital) != (y.p == capital) { return x.p == capital }
             return x.foes != y.foes ? x.foes > y.foes : x.p < y.p
         }
-        var defend = ranked.map { post($0.p, need: max($0.foes * 1.25, 1)) }
+        var defend = ranked.map { post($0.p, need: max($0.foes * 1.25, 1), mustHold: $0.p == capital) }
         // 收复失地: a column or two at a time, in strength, starting with what is nearest the host; one army
         // sent to each lost province only fed them to the enemy one by one.
         let columns = max(1, min(4, forces.count / 6)), siege = max(2500, average * 1.5)

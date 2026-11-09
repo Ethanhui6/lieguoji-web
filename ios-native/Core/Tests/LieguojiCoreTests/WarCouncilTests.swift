@@ -31,6 +31,15 @@ final class WarCouncilTests: XCTestCase {
         XCTAssertEqual(duties["free"], .defend(1))
     }
 
+    func testAHostTooStrongIsNotFedArmiesOneByOneUnlessItIsTheCapital() {
+        let forces = [force("a", 0), force("b", 1)]
+        let far = WarCouncil.assign(forces: forces, defend: [post(1, 0, need: 20000)], hold: [], holdBudget: 0, attack: [post(2, 5, need: 1000)])
+        XCTAssertEqual(far["a"], .attack(2), "the armies go where they can do some good")
+        let capital = WarCouncil.Post(province: 1, x: 0, y: 0, feature: 1, need: 20000, mustHold: true)
+        let home = WarCouncil.assign(forces: forces, defend: [capital], hold: [], holdBudget: 0, attack: [post(2, 5, need: 1000)])
+        XCTAssertEqual(home["a"], .defend(1), "a capital is held regardless")
+    }
+
     func testHoldingForcesStayWithinTheirBudget() {
         let forces = (0..<4).map { force("a\($0)", Double($0)) }
         let duties = WarCouncil.assign(forces: forces, defend: [], hold: [post(1, 0, need: 2000), post(2, 0, need: 2000), post(3, 0, need: 2000)], holdBudget: 2500, attack: [post(4, 0, need: 1)])

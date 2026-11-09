@@ -1024,11 +1024,11 @@ struct GameView: View {
                 unitDetent = .height(320)
                 open(.fleet(fleet)); controller.selectedFleet = fleet
                 if let f = model.fleet(fleet) { controller.fly(x: Double(f.x), y: Double(f.y)) }
-            }).presentationDetents([.medium, .large])
+            }, flyTo: { x, y in controller.fly(x: x, y: y) }).presentationDetents([.medium, .large])
         case .diplomacy:
             DiplomacySheet(model: model, say: say).presentationDetents([.medium, .large])
         case .chronicle:
-            ChronicleSheet(model: model).presentationDetents([.medium, .large])
+            ChronicleSheet(model: model, fly: { controller.fly(to: $0) }).presentationDetents([.medium, .large])
         case .menu:
             MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }, openEditor: { open(.editor) },
                       wallpaper: { self.panel = nil; withAnimation(.easeInOut(duration: 0.6)) { wallpaper = true }; controller.drifting = true }, say: say) { self.panel = nil }.presentationDetents([.medium, .large])
@@ -1615,6 +1615,7 @@ extension ProvinceSheet {
 
 struct ArmyRow: View {
     let map: WorldMap; let army: GameState.Army
+    static let duties = ["attacking": "主攻", "supporting": "回援", "guarding": "把守"]
     static func dest(_ map: WorldMap, _ a: GameState.Army) -> String {
         guard let d = a.destination, d >= 0, d < map.meta.provinces.count else { return "" }
         return " → " + map.meta.provinces[d].name
@@ -1634,6 +1635,10 @@ struct ArmyRow: View {
                     Text(army.name).font(Theme.kai(18)).foregroundStyle(Theme.ink).lineLimit(1)
                     Text(Echelon.name(troops: army.troops, culture: map.meta.nations.indices.contains(army.nation) ? map.meta.nations[army.nation].culture : ""))
                         .font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule())
+                    if let duty = army.duty.flatMap({ Self.duties[$0] }) {
+                        Text(duty).font(Theme.kai(12)).foregroundStyle(Theme.seal).padding(.horizontal, 5).padding(.vertical, 1)
+                            .overlay(Capsule().stroke(Theme.seal.opacity(0.55), lineWidth: 0.8))
+                    }
                 }
                 Text("\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "途中") · \(Names.status(army.status))\(Self.dest(map, army))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
             }
@@ -1896,19 +1901,64 @@ struct NationsSheet: View {
 }
 
 struct MilitarySheet: View {
+    /// The screenshot tour opens this page on one tab.
+    static var tourFilter: String?
     @State private var filter = "all"
     @ObservedObject var model: GameModel
     let select: (Int) -> Void
     var selectFleet: (Int) -> Void = { _ in }
+    var flyTo: (Double, Double) -> Void = { _, _ in }
+    /// 一国的军机: how many of its armies attack, relieve and guard.
+    private func dutySummary(_ state: GameState, _ rows: [Int]) -> String {
+        var counts = [String: Int]()
+        for i in rows { if let d = state.armies[i].duty { counts[d, default: 0] += 1 } }
+        return ["attacking", "supporting", "guarding"].compactMap { key -> String? in
+            guard let n = counts[key], let name = ArmyRow.duties[key] else { return nil }
+            return "\(name) \(n)"
+        }.joined(separator: " · ")
+    }
+    /// The camera goes where this war is being fought: a siege first, else its armies in the field.
+    private func showFront(_ map: WorldMap, _ state: GameState, _ war: GameState.War) {
+        let sides = Set(war.participants.map(\.nation)).union([war.attacker, war.defender])
+        if let s = state.sieges.first(where: { sides.contains($0.nation) && map.meta.provinces.indices.contains($0.province) }) {
+            flyTo(Double(map.meta.provinces[s.province].x), Double(map.meta.provinces[s.province].y)); return
+        }
+        let inField = state.armies.first { sides.contains($0.nation) && $0.status == "fighting" } ?? state.armies.first { $0.nation == war.attacker }
+        if let a = inField { flyTo(Double(a.x), Double(a.y)) }
+    }
+    private func warCard(_ map: WorldMap, _ state: GameState, _ war: GameState.War) -> some View {
+        Group2 {
+            Button { showFront(map, state, war) } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        NationChip(map: map, nation: war.attacker)
+                        Text("伐").font(Theme.kai(14)).foregroundStyle(Theme.seal)
+                        NationChip(map: map, nation: war.defender)
+                        Spacer(minLength: 4)
+                        Image(systemName: "scope").font(.system(size: 14)).foregroundStyle(Theme.seal)
+                    }
+                    Text("\(war.casusBelli) · \(war.goal)").font(Theme.kai(13)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
+                    WarBalance(map: map, state: state, war: war)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 12).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+    }
     var body: some View {
         if let map = model.map, let state = model.state {
             // Armies by state, built lazily as the list scrolls (hundreds of rows made opening slow).
-            let byNation = Dictionary(grouping: state.armies.indices.filter { filter == "navy" ? false : filter == "all" || (filter == "manual" ? state.armies[$0].manual : state.armies[$0].status == "fighting" || state.armies[$0].status == "sieging") }, by: { state.armies[$0].nation })
+            let byNation = Dictionary(grouping: state.armies.indices.filter { filter == "navy" || filter == "wars" ? false : filter == "all" || (filter == "manual" ? state.armies[$0].manual : state.armies[$0].status == "fighting" || state.armies[$0].status == "sieging") }, by: { state.armies[$0].nation })
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支舰队"))
-                    ChipPicker(items: [("all", "全部"), ("battle", "交战围城"), ("manual", "亲自指挥"), ("navy", "舰队")], selection: $filter).padding(.horizontal, 16)
-                    if byNation.isEmpty && filter != "navy" { Text("暂无符合条件的陆军").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
+                    ChipPicker(items: [("all", "全部"), ("wars", "战局"), ("battle", "交战围城"), ("manual", "亲自指挥"), ("navy", "舰队")], selection: $filter).padding(.horizontal, 16)
+                    if filter == "wars" {
+                        if state.wars.isEmpty { Text("天下暂无战事").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
+                        ForEach(state.wars) { war in warCard(map, state, war) }
+                    }
+                    if byNation.isEmpty && filter != "navy" && filter != "wars" { Text("暂无符合条件的陆军").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
                     ForEach(state.nations.indices, id: \.self) { n in
                         let rows = (byNation[n] ?? []).sorted { state.armies[$0].troops > state.armies[$1].troops }
                         if !rows.isEmpty {
@@ -1918,6 +1968,8 @@ struct MilitarySheet: View {
                                 Text("\(rows.count) 支 · \(Names.wan(rows.reduce(0) { $0 + state.armies[$1].troops })) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
                             }
                             .padding(.horizontal, 22)
+                            let summary = dutySummary(state, rows)
+                            if !summary.isEmpty { Text(summary).font(Theme.kai(12)).foregroundStyle(Theme.seal).padding(.horizontal, 22).padding(.top, -8) }
                             Group2 {
                                 ForEach(rows, id: \.self) { i in
                                     Button { select(i) } label: { ArmyRow(map: map, army: state.armies[i]) }.buttonStyle(.plain)
@@ -1957,6 +2009,7 @@ struct MilitarySheet: View {
                 }
                 .padding(.bottom, 24)
             }
+            .onAppear { if let t = Self.tourFilter { filter = t } }
         }
     }
 }
@@ -2221,6 +2274,7 @@ struct WorldSummary: View {
 
 struct ChronicleSheet: View {
     @ObservedObject var model: GameModel
+    var fly: (Int) -> Void = { _ in }
     @State private var unrolled = false
     @State private var category = "all"
     @State private var entries: [ChronicleEntry] = []
@@ -2282,6 +2336,16 @@ struct ChronicleSheet: View {
                                     .padding(.horizontal, 18).padding(.vertical, 8).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
+                                if open == e.id, let place = e.province {
+                                    Button { fly(place) } label: {
+                                        HStack(spacing: 5) {
+                                            Image(systemName: "scope").font(.system(size: 12))
+                                            Text("在舆图上查看").font(Theme.kai(13))
+                                        }
+                                        .foregroundStyle(Theme.seal).padding(.leading, 35).padding(.bottom, 8)
+                                    }
+                                    .buttonStyle(PressStyle())
+                                }
                                 if i < entries.count - 1 { Rectangle().fill(Theme.ink.opacity(0.08)).frame(height: 0.7).padding(.leading, 35).padding(.trailing, 18) }
                             }
                         }
@@ -2350,6 +2414,8 @@ struct MenuSheet: View {
                     PaperSwitch(title: "进场镜头拉远", on: $controller.play.introCamera)
                     Divider2()
                     PaperSwitch(title: "动画先快后缓（关闭为匀速）", on: $controller.play.easeReveal)
+                    Divider2()
+                    PaperSwitch(title: "大事自动暂停（宣战、起义、亡国）", on: $controller.play.pauseOnNews)
                     Divider2()
                     VStack(alignment: .leading, spacing: 8) {
                         Text("自动存档").font(Theme.kai(16)).foregroundStyle(Theme.ink)
@@ -2513,7 +2579,10 @@ struct ReleaseNotesSheet: View {
                     "【和谈】兵力占优的一方不会因打了几个月就草草收场；援军还在路上的大国不急着割地；僵持的战争才会因厌战结束。打到只剩残局的敌国会被直接吞并。",
                     "【统一】单次叛乱的规模大幅缩小（最多 12 州），大国叛乱门槛提高，打下来的江山不再一场起义就丢掉一半。",
                     "【修复卡死】两军临近接战距离时可能出现计算空转，游戏会卡住数分钟，已修复。",
-                    "【修复闪退】一支军队覆灭、同时又新建一支时可能闪退，已修复。"]),
+                    "【修复闪退】一支军队覆灭、同时又新建一支时可能闪退，已修复。",
+                    "【军事页】每支军队标出主攻、回援或把守，每国显示兵力分配；新增「战局」分页，查看所有战争的兵力对比，点一下镜头飞到战场。",
+                    "【纪事】展开一条有地点的记载，可以「在舆图上查看」。",
+                    "【大事暂停】设置里可打开：宣战、起义、亡国时自动暂停，不错过关键时刻。"]),
         ("1.9.0", ["【生成世界】进度条改为引擎的真实进度，不再先走到 100% 然后干等；等待超过 20 秒可放弃回标题，超过 3 分钟自动重启建世引擎并提示，不会再无限卡住。",
                    "【生成世界】州郡数偏少时（如联合大陆 35 州、群岛 12 州）引擎划不出疆域，以前会失败报错；现在州郡数自动上调到能成立的数目，并在开局提示。",
                    "【稳定】手机内存紧张时系统回收建世引擎，不再把正在玩的世界踢回标题；局中开新世界时，旧世界尚未结算的一步不再写到新地图上。",

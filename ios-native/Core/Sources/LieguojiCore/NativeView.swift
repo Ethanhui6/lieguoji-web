@@ -284,6 +284,8 @@ extension NativeEngine {
             x.status = a.status; x.travel = v.travel.status; x.province = JS(v.province.map { pi[$0.id.asString]! } ?? -1)
             x.supplies = JS(a.supplies.asNumber.rounded()); x.morale = JS(a.morale.asNumber.rounded()); x.x = JS(at.0 / sc); x.y = JS(at.1 / sc)
             x.manual = JS(r.voyages.manualArmies.asArray.contains { $0.asString == id })
+            let order = r.armyAutonomy.armies[id].decision.optionalString ?? ""
+            if ["attacking", "supporting", "guarding"].contains(order) { x.duty = JS(order) }
             if let b = banners[id] { x.banner = JS(b.kind); x.bannerMark = JS(b.mark); x.commander = JS(b.name) }
             // Destination province of a march (last travel node), for the army panel.
             var dest = -1

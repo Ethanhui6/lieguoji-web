@@ -237,7 +237,7 @@ enum Glyph {
     static let table: [(String, String)] = [
         // 分页 (every tab bar).
         ("概览", "doc.text.magnifyingglass"), ("朝政", "building.columns"), ("军事", "shield.lefthalf.filled"), ("自定义", "slider.horizontal.3"),
-        ("游戏", "gamecontroller"), ("地图显示", "map"), ("声音与其他", "speaker.wave.2"), ("全部", "square.grid.2x2"), ("交战围城", "flag.2.crossed"),
+        ("游戏", "gamecontroller"), ("地图显示", "map"), ("声音与其他", "speaker.wave.2"), ("全部", "square.grid.2x2"), ("交战围城", "flag.2.crossed"), ("战局", "map"),
         ("亲自指挥", "hand.point.up.left"), ("舰队", "sailboat"), ("排行", "list.number"), ("统计", "chart.bar"), ("纪事", "book.pages"), ("国史", "book.pages"),
         // 设置与菜单 (more specific words first: the first match wins).
         ("国界", "square.dashed"), ("行省边界", "square.grid.2x2"), ("省界", "square.grid.2x2"), ("航线", "ferry"), ("经纬线", "globe"),

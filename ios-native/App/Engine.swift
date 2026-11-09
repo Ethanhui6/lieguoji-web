@@ -144,6 +144,8 @@ struct GameState: Decodable, Equatable {
         let destination: Int?; let mission: String?
         /// 帅旗: "general" or "ruler" (御驾亲征), the commander's mark and name; nil for other armies.
         var reorganizing: Bool? = nil
+        /// 军机调度: attacking, supporting (relieving home) or guarding; nil when the army has no war post.
+        var duty: String? = nil
         var banner: String? = nil; var bannerMark: String? = nil; var commander: String? = nil
     }
     /// A fleet at its actual sea point (open-sea worlds) and its naval command.
@@ -205,6 +207,7 @@ struct RegionInfo: Decodable { let id: Int; let name: String; let center: Int; l
 /// One chronicle entry with its reason and the states it names.
 struct ChronicleEntry: Decodable, Identifiable {
     let day: Int; let text: String; let kind: String; let reason: String; let nations: [Int]
+    var province: Int? = nil
     var id: String { "\(day)|\(text)" }
 }
 

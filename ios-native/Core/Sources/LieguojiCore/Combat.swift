@@ -242,6 +242,9 @@ public struct ContactMotion {
                     guard areaKey(pa.cell, rules) == areaKey(pb.cell, rules) else { continue }
                     if let t = EncounterGeometry.meetingTime(pa.point, velocities[a.key] ?? zero, pb.point, velocities[b.key] ?? zero, limit: dt, reach: rules.reach) { dt = min(dt, t); meetingHit = true }
                 } } }
+                // Two columns a rounding error from engaging were stepped towards each other by rounding
+                // errors, tens of thousands of whole-map passes in one call: a meeting takes a real step.
+                if meetingHit { dt = min(remaining, max(dt, seconds / 4096)) }
             }
             if Profile.enabled { Profile.add("a.meet", Date.timeIntervalSinceReferenceDate - t1) }
             if dt > 0 {

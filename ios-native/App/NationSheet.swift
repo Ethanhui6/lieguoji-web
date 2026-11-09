@@ -189,14 +189,10 @@ struct NationSheet: View {
                             } : nil),
                         ])
                         NationTabs(tab: $tab)
-                        switch tab {
-                        case .overview: overviewTab(info, map, state)
-                        case .court: courtTab(info, map, state)
-                        case .military: militaryTab(info, map, state)
-                        case .diplomacy: diplomacyTab(info, map, state)
-                        case .custom:
-                            if info.alive { customView(info, map, state) } else { Text("此国已亡，无可设定。").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
-                        }
+                        tabContent(info, map, state)
+                            .id(tab)
+                            .transition(.opacity.combined(with: .offset(y: 8)))
+                            .animation(.easeOut(duration: 0.22), value: tab)
                     } else {
                         InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40)
                     }
@@ -206,7 +202,7 @@ struct NationSheet: View {
             }
             .pressMenuHost($pressMenu)
             .paperToast($flash)
-            .task(id: state.day / 10) { await reload() }
+            .task(id: state.day / 30) { await reload() }
             .onAppear { if let t = Self.tourTab { tab = t }; model.controller.relationsNation = nation; model.controller.relations = relationColors(); if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
@@ -1061,6 +1057,16 @@ struct NationSheet: View {
     }
 
     /// 自定义: treasury, destiny, polity (revolution by decree) and raising a legion.
+    @ViewBuilder private func tabContent(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
+        switch tab {
+        case .overview: overviewTab(info, map, state)
+        case .court: courtTab(info, map, state)
+        case .military: militaryTab(info, map, state)
+        case .diplomacy: diplomacyTab(info, map, state)
+        case .custom:
+            if info.alive { customView(info, map, state) } else { Text("此国已亡，无可设定。").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
+        }
+    }
     @ViewBuilder private func customView(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
         let current = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation] : nil

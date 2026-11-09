@@ -374,7 +374,7 @@ extension NativeEngine {
             let x = JS.object(); x.province = JS(pi[s.provinceId.asString] ?? -1); x.nation = JS(ni[s.controller.asString] ?? -1)
             x.progress = JS(s.maximum.asNumber > 0 ? s.resistance.asNumber / s.maximum.asNumber : 0); return x
         })
-        o.events = .array(r.chronicle.entries.asArray.suffix(30).map { e in let x = JS.object(); x.day = e.day; x.text = e.text; x.kind = e.kind; return x })
+        o.events = .array(r.chronicle.entries.asArray.suffix(30).map { e in let x = JS.object(); x.day = e.day; x.text = e.text; x.kind = e.kind; if let p = e.place.id.optionalString.flatMap({ pi[$0] }) { x.province = JS(p) }; return x })
         return Data(o.json.utf8)
     }
 }

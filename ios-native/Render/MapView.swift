@@ -987,7 +987,11 @@ final class MapLabelsView: UIView {
             taken.append(box)
             l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: k, y: k)
             l.view.center = CGPoint(x: p.x, y: p.y)
-            l.view.isHidden = false
+            if l.view.isHidden {
+                // A name that gave way comes back softly.
+                l.view.isHidden = false; l.view.alpha = 0
+                UIView.animate(withDuration: 0.22, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) { l.view.alpha = 1 }
+            }
         }
     }
 }

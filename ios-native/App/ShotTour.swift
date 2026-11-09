@@ -117,8 +117,7 @@ enum ShotTour {
         // 舆图细节: the whole chart, then close on the land.
         show(nil); await wait(0.6)
         if let map = model.map, let c = map.meta.cities.dropFirst(5).first { model.controller.fly(x: Double(c.x), y: Double(c.y)); await wait(2.2); await shoot("05e-map-detail") }
-        // 史册大字.
-        show(nil); await wait(0.6); model.proclaim("改朝换代", "秋冈义军改制，建立大顺", force: true); await wait(1.3); await shoot("15b-epoch"); await wait(2)
+        show(nil); await wait(0.6)
         // 罗盘, and the world editor's pages.
         if let map = model.map { let c = MapLayers.compassCorner(map); model.controller.fly(x: Double(c.x), y: Double(c.y)); await wait(2.2); await shoot("05f-compass") }
         for (name, t) in [("17b-editor-brush", WorldEditorSheet.Tab.brush), ("17c-editor-land", .land), ("17d-editor-pact", .pact), ("17e-editor-map", .map), ("17f-editor-labels", .labels), ("17g-editor-culture", .culture)] {

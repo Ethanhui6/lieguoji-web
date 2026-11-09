@@ -97,29 +97,6 @@ import LieguojiCore
     /// A war declared, a peace made or a province taken: shown as a banner for a moment.
     struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital } }
     @Published var herald: Herald?
-    /// 史册大字: the great turns of history, shown large for a moment.
-    struct Epoch: Equatable, Identifiable { let id = UUID(); let title: String; let line: String }
-    @Published var epoch: Epoch?
-    private var lastEpoch = Date.distantPast
-    func proclaim(_ title: String, _ line: String, force: Bool = false) {
-        guard force || Date().timeIntervalSince(lastEpoch) > 8 else { return }
-        lastEpoch = Date()
-        let e = Epoch(title: title, line: line)
-        epoch = e
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 2_800_000_000)
-            if self?.epoch?.id == e.id { self?.epoch = nil }
-        }
-    }
-    private static func epochTitle(_ e: GameState.Event) -> String? {
-        if e.text.contains("改制，建立") || e.text.contains("禅位") { return "改朝换代" }
-        if e.text.contains("复国") { return "旧邦复国" }
-        if e.text.contains("复辟") { return "复辟旧制" }
-        if e.kind == "extinction" { return "国祚终结" }
-        if e.text.contains("改建") { return "神权建国" }
-        if e.kind == "uprising", let r = e.text.range(of: "据有"), let n = Int(e.text[r.upperBound...].prefix { $0.isNumber }), n >= 6 { return "天下大乱" }
-        return nil
-    }
     private var heraldQueue: [Herald] = []
     private var heraldTask: Task<Void, Never>?
     /// Bumped whenever a different world is opened, so the map view rebuilds.
@@ -242,6 +219,8 @@ import LieguojiCore
             guard let bin = Data(base64Encoded: decoded.bin) else { return "地图数据损坏" }
             let next = try WorldMap(binary: bin, meta: current.meta)
             c.apply(); map = next; controller.world = next
+            // New land colours, rivers and sea: the terrain path, not the ownership one.
+            controller.editorMap = next; controller.editorSeaDirty = true; controller.editorRevision += 1
             return nil
         } catch { return error.localizedDescription }
     }
@@ -645,12 +624,11 @@ import LieguojiCore
         }
         // Revolutions, restorations and coups are proclaimed like wars.
         let seen = Set(old.events.map(\.text))
-        for e in next.events where !seen.contains(e.text) && (e.text.contains("篡位") || e.text.contains("改称")) {
+        for e in next.events where !seen.contains(e.text) && (e.text.contains("篡位") || e.text.contains("改称") || e.text.contains("改制，建立") || e.text.contains("禅位") || e.text.contains("改建")) {
             enqueue(Herald(kind: .war, text: e.text, nations: []))
         }
         // Rebellions, restorations, dynasties dying out and capitals moving: the original's big news.
         for e in next.events where !seen.contains(e.text) {
-            if let title = Self.epochTitle(e) { proclaim(title, e.text) }
             switch e.kind {
             case "uprising": enqueue(Herald(kind: .uprising, text: e.text, nations: []))
             case "restoration": enqueue(Herald(kind: .restoration, text: e.text, nations: []))
@@ -769,6 +747,11 @@ import LieguojiCore
             let kinds: [(String, MapEffects.Burst.Kind)] = [("农民起义", .shock), ("军阀割据", .coup), ("藩镇独立", .coup), ("神国起义", .regime), ("复国运动", .founded), ("复辟", .regime), ("改制", .regime), ("禅位", .regime), ("改建", .regime), ("推行", .talent), ("诗文", .talent), ("书院", .talent), ("文艺复兴", .talent), ("寺观", .talent), ("五谷丰登", .harvest), ("人丁兴旺", .harvest), ("婴戏盈门", .harvest), ("天灾", .disaster), ("大旱", .disaster), ("水患", .disaster), ("大雪", .disaster), ("蝗灾", .disaster), ("地震", .disaster), ("洪水", .disaster), ("大火", .disaster), ("名臣辈出", .talent), ("开科", .talent), ("名医", .talent), ("学者", .talent), ("瘟疫", .plague), ("商路大开", .trade), ("互市", .trade), ("宝藏", .trade), ("矿藏", .trade), ("万国来朝", .trade), ("篡位", .coup), ("政变", .coup), ("夺权", .coup), ("革命", .coup), ("倒台", .regime), ("改称", .regime), ("改行", .regime), ("改奉", .regime), ("破产", .regime), ("总罢工", .shock), ("街头冲突", .shock), ("学潮", .shock)]
             for ev in state.events where !seenText.contains(ev.text) {
                 guard let kind = kinds.first(where: { ev.text.contains($0.0) })?.1 else { continue }
+                // Where it happened, when the chronicle knows the place.
+                if let p = ev.province, let city = map.meta.cities.first(where: { $0.province == p }) {
+                    e.bursts.append(.init(id: "e\(ev.day)-\(ev.text.hashValue)", x: Double(city.x), y: Double(city.y), kind: kind, r: 0.86, g: 0.2, b: 0.12))
+                    continue
+                }
                 let named = map.meta.nations.indices.filter { !map.meta.nations[$0].name.isEmpty && ev.text.hasPrefix(map.meta.nations[$0].name) }
                 guard let n = named.max(by: { map.meta.nations[$0].name.count < map.meta.nations[$1].name.count }) else { continue }
                 let cap = map.meta.nations[n].capital

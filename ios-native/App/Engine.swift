@@ -106,7 +106,7 @@ struct GameState: Decodable, Equatable {
         var claims: [Claim]? = nil
     }
     struct Siege: Decodable, Equatable { let province: Int; let nation: Int; let progress: Double }
-    struct Event: Decodable, Equatable { let day: Int; let text: String; let kind: String }
+    struct Event: Decodable, Equatable { let day: Int; let text: String; let kind: String; var province: Int? = nil }
     let day: Int
     let date: Date
     let owners: [Int]

@@ -250,7 +250,7 @@ extension Regimes {
     @discardableResult
     static func raise(_ r: JS, owner: String, seed: String, size: Int, kind wanted: String? = nil, restoring: String? = nil) -> (rebel: String, text: String)? {
         var byId = [String: JS](); for p in r.world.provinces.asArray { byId[p.id.asString] = p }
-        guard let p = byId[seed], p.controller.asString == owner, Rebellion.capitalProvince(r, owner) != seed,
+        guard !isBlank(r, owner), let p = byId[seed], p.controller.asString == owner, Rebellion.capitalProvince(r, owner) != seed,
               let city = r.world.cities.asArray.first(where: { $0.provinceId.asString == seed }) else { return nil }
         let land = region(r, owner, seed, max(1, size), byId), s = r.foundings, c = r.civilization
         let tag = "\(owner)|\(seed)|\(Int(r.clock.tick.asNumber))|rise", cityCulture = c.cities[city.id.asString].cultureId.optionalString ?? ""
@@ -258,8 +258,8 @@ extension Regimes {
         var heirs = [String]()
         if restoring == nil, wanted == nil || wanted == "restoration" {
             let months = s.coreMonths[seed]
-            heirs = months.isNull ? [] : months.objectEntries.filter { $0.0 != owner && $0.1.asNumber > 3 && !Vassals.alive(r, $0.0) }.map(\.0).sorted()
-            if heirs.isEmpty { heirs = r.world.nations.asArray.map(\.id.asString).filter { !Vassals.alive(r, $0) && c.nations[$0].cultureId.optionalString == cityCulture }.sorted() }
+            heirs = months.isNull ? [] : months.objectEntries.filter { $0.0 != owner && $0.1.asNumber > 3 && !Vassals.alive(r, $0.0) && !isBlank(r, $0.0) }.map(\.0).sorted()
+            if heirs.isEmpty { heirs = r.world.nations.asArray.map(\.id.asString).filter { !Vassals.alive(r, $0) && !isBlank(r, $0) && c.nations[$0].cultureId.optionalString == cityCulture }.sorted() }
         }
         let heir = restoring ?? (!heirs.isEmpty && (wanted == "restoration" || chance(tag + "|restore") < 0.55) ? heirs[Int(draw(tag + "|heir") % UInt32(heirs.count))] : nil)
         if heir == nil && r.world.nations.length >= 160 { return nil }

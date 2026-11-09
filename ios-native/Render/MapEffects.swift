@@ -217,6 +217,9 @@ final class EffectsView: UIView {
         bar.isHidden = total <= 0
         guard total > 0 else { return }
         let w = bar.bounds.width, h = bar.bounds.height, share = w * CGFloat(b.leftTroops) / CGFloat(total)
+        // The balance moves as the fight goes.
+        CATransaction.setDisableActions(false); CATransaction.setAnimationDuration(0.35)
+        defer { CATransaction.setDisableActions(true) }
         bar.sublayers![0].frame = CGRect(x: 0, y: 0, width: share, height: h); bar.sublayers![0].backgroundColor = UIColor(red: l.r, green: l.g, blue: l.b, alpha: 1).cgColor
         bar.sublayers![1].frame = CGRect(x: share, y: 0, width: w - share, height: h); bar.sublayers![1].backgroundColor = UIColor(red: r.r, green: r.g, blue: r.b, alpha: 1).cgColor
     }

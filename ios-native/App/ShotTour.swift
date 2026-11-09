@@ -118,7 +118,15 @@ enum ShotTour {
         show(nil); await wait(0.6)
         if let map = model.map, let c = map.meta.cities.dropFirst(5).first { model.controller.fly(x: Double(c.x), y: Double(c.y)); await wait(2.2); await shoot("05e-map-detail") }
         // 史册大字.
-        show(nil); await wait(0.6); model.proclaim("改朝换代", "秋冈义军改制，建立大顺"); await wait(1.5); await shoot("15b-epoch"); await wait(2)
+        show(nil); await wait(0.6); model.proclaim("改朝换代", "秋冈义军改制，建立大顺", force: true); await wait(1.3); await shoot("15b-epoch"); await wait(2)
+        // 罗盘, and the world editor's pages.
+        if let map = model.map { let c = MapLayers.compassCorner(map); model.controller.fly(x: Double(c.x), y: Double(c.y)); await wait(2.2); await shoot("05f-compass") }
+        for (name, t) in [("17b-editor-brush", WorldEditorSheet.Tab.brush), ("17c-editor-land", .land), ("17d-editor-pact", .pact), ("17e-editor-map", .map), ("17f-editor-labels", .labels), ("17g-editor-culture", .culture)] {
+            WorldEditorSheet.tourTab = t
+            show(nil); await wait(0.5); show(.editor); await wait(1.6); await shoot(name)
+        }
+        WorldEditorSheet.tourTab = nil
+        show(nil); await wait(0.5)
         // 长按面板 and 横屏 (its rail and its side page).
         if let p = model.map?.meta.cities.dropFirst(3).first?.province { show(nil); await wait(0.6); show(.quick(p)); await wait(1.4); await shoot("14-quick") }
         show(nil); await wait(0.6)

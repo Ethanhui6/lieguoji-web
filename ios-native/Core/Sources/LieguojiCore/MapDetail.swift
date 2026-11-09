@@ -5,6 +5,29 @@ import Foundation
 extension MapLayers {
     private static func hash(_ i: Int) -> UInt32 { UInt32(truncatingIfNeeded: i &* 2654435761) >> 16 }
 
+    /// The coast as segments. A preview map has no smoothed coast yet: its cell edges stand in.
+    private static func coastLines(_ map: WorldMap) -> [Float] {
+        if !map.coast.isEmpty { return map.coast }
+        var out = [Float]()
+        for e in map.edges where e.a >= 0 && e.b >= 0 && map.isLand(Int(e.a)) != map.isLand(Int(e.b)) { out += [e.x1, e.y1, e.x2, e.y2] }
+        return out
+    }
+    /// The emptiest corner of the sea, where the compass stands.
+    public static func compassCorner(_ map: WorldMap) -> (x: Float, y: Float) {
+        let inset: Float = 118
+        let corners: [(Float, Float)] = [(inset, inset), (map.width - inset, inset), (inset, map.height - inset), (map.width - inset, map.height - inset)]
+        var best = corners[0], fewest = Int.max
+        for (cx, cy) in corners {
+            var n = 0
+            for c in 0..<map.cellCount where map.isLand(c) {
+                let dx: Float = map.sites[c * 2] - cx, dy: Float = map.sites[c * 2 + 1] - cy
+                if dx * dx + dy * dy < 9025 { n += 1 }
+            }
+            if n < fewest { fewest = n; best = (cx, cy) }
+        }
+        return (best.0, best.1)
+    }
+
     /// Cells that touch the other element (land next to sea, sea next to land).
     private static func shoreCells(_ map: WorldMap) -> [Bool] {
         var shore = [Bool](repeating: false, count: map.cellCount)
@@ -18,12 +41,13 @@ extension MapLayers {
     /// Old-chart waterlines: for each sea pixel, how strongly a line and the paler shallows lie on it (two bytes).
     public static func waterlines(_ map: WorldMap) -> [UInt8] {
         let w = map.seaWidth, h = map.seaHeight
-        guard w > 1, h > 1, map.seaRGBA.count == w * h * 4, map.coast.count >= 4 else { return [] }
+        let coast = coastLines(map)
+        guard w > 1, h > 1, map.seaRGBA.count == w * h * 4, coast.count >= 4 else { return [] }
         let sx = Float(w) / map.width, sy = Float(h) / map.height, reach = Int((26 * max(sx, sy)).rounded(.up))
         var distance = [Int16](repeating: -1, count: w * h)
         var frontier = [Int32]()
-        for i in stride(from: 0, to: map.coast.count - 3, by: 4) {
-            let x1 = map.coast[i] * sx, y1 = map.coast[i + 1] * sy, x2 = map.coast[i + 2] * sx, y2 = map.coast[i + 3] * sy
+        for i in stride(from: 0, to: coast.count - 3, by: 4) {
+            let x1 = coast[i] * sx, y1 = coast[i + 1] * sy, x2 = coast[i + 2] * sx, y2 = coast[i + 3] * sy
             let steps = max(1, Int(max(abs(x2 - x1), abs(y2 - y1)).rounded(.up)))
             for s in 0...steps {
                 let t = Float(s) / Float(steps), x = Int(x1 + (x2 - x1) * t), y = Int(y1 + (y2 - y1) * t)
@@ -73,8 +97,9 @@ extension MapLayers {
     public static func ornaments(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
         let sand = RGB(hex: 0xE9D9AE), wave = RGB(hex: 0xD5E4E2), ink = RGB(hex: 0x2E2518), paper = RGB(hex: 0xEFE4C8)
-        for i in stride(from: 0, to: map.coast.count - 3, by: 4) {
-            m.segment(map.coast[i], map.coast[i + 1], map.coast[i + 2], map.coast[i + 3], width: 3.4, sand, alpha: 0.3)
+        let coast = coastLines(map)
+        for i in stride(from: 0, to: coast.count - 3, by: 4) {
+            m.segment(coast[i], coast[i + 1], coast[i + 2], coast[i + 3], width: 3.4, sand, alpha: 0.3)
         }
         let shore = shoreCells(map)
         // Waves keep well off the coast, and a slow field gathers them into patches.
@@ -89,14 +114,7 @@ extension MapLayers {
             m.polyline(line, width: 0.55, wave, alpha: 0.42)
         }
         // The compass stands in the emptiest corner of the sea.
-        let inset: Float = 118
-        let corners: [(Float, Float)] = [(inset, inset), (map.width - inset, inset), (inset, map.height - inset), (map.width - inset, map.height - inset)]
-        func land(_ cx: Float, _ cy: Float) -> Int {
-            var n = 0
-            for c in 0..<map.cellCount where map.isLand(c) { let dx = map.sites[c * 2] - cx, dy = map.sites[c * 2 + 1] - cy; if dx * dx + dy * dy < 95 * 95 { n += 1 } }
-            return n
-        }
-        let (cx, cy) = corners.min { land($0.0, $0.1) < land($1.0, $1.1) } ?? corners[0]
+        let (cx, cy) = compassCorner(map)
         let radius: Float = 52
         func ring(_ r: Float, _ width: Float, _ alpha: Float) {
             var p = [Float]()

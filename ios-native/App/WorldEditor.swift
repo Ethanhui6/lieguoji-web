@@ -8,7 +8,8 @@ struct WorldEditorSheet: View {
     var close: () -> Void = {}
     var takeShot: () -> Void = {}
 
-    private enum Tab: String, CaseIterable { case brush = "笔刷", land = "疆土", pact = "同盟", map = "山河图", labels = "标注", culture = "文化宗教", output = "导出" }
+    static var tourTab: Tab?
+    enum Tab: String, CaseIterable { case brush = "笔刷", land = "疆土", pact = "同盟", map = "山河图", labels = "标注", culture = "文化宗教", output = "导出" }
     private struct Choice: Identifiable { let id = UUID(); let title: String; let items: [(String, () -> Void)] }
 
     @State private var tab = Tab.brush
@@ -80,6 +81,7 @@ struct WorldEditorSheet: View {
         }
         .paperToast($flash)
         .task { await model.refreshCustom() }
+        .onAppear { if let t = Self.tourTab { tab = t } }
         .sheet(item: $choice) { c in
             ScrollView {
                 VStack(spacing: 0) {
@@ -295,6 +297,7 @@ struct NationExtrasView: View {
     @State private var units: [GameModel.UnitRow] = []
     @State private var unitEdit: GameModel.UnitRow?
     @State private var extras: [GameModel.ExtraUnit] = []
+    @State private var posts: [GameModel.PostInfo] = []
     @State private var addingUnit = false
     @State private var template = ""
     @State private var exported: URL?
@@ -331,6 +334,12 @@ struct NationExtrasView: View {
                 }
             }
             quickSection("官职称号") {
+                ForEach(posts, id: \.id) { p in
+                    Button { titleEdit = Edit(id: p.id, label: p.title, text: p.title) } label: {
+                        HStack { Text(p.title).font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Image(systemName: "pencil").font(.system(size: 12)).foregroundStyle(Theme.seal) }.contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
                 ForEach(["Chancellor", "Steward", "Marshal"], id: \.self) { o in
                     Button { titleEdit = Edit(id: o, label: NationSheet.title(o, who), text: NationSheet.title(o, who)) } label: {
                         HStack {
@@ -382,7 +391,7 @@ struct NationExtrasView: View {
                 quickGrid { quickTile("强制退出同盟", "person.2.slash", destructive: true) { run("已退出同盟") { await model.leaveAlliance(nation) } } }
             }
         }
-        .task { units = await model.unitProfile(nation); extras = await model.extraUnits(nation) }
+        .task { units = await model.unitProfile(nation); extras = await model.extraUnits(nation); posts = await model.posts(nation) }
         .sheet(item: Binding(get: { exported.map(SharedFile.init) }, set: { exported = $0?.url })) { ShareSheet(items: [$0.url]) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
             if case .success(let url) = result { run("军事档案已导入") { let e = await model.importPackage(nation, from: url); units = await model.unitProfile(nation); extras = await model.extraUnits(nation); return e } }
@@ -396,7 +405,7 @@ struct NationExtrasView: View {
         .sheet(item: $titleEdit) { e in
             TitleEditor(edit: e.text, label: e.label) { value in
                 titleEdit = nil
-                run("官职称号已修改") { await model.setOfficeTitle(nation, office: e.id, title: value) }
+                run("官职称号已修改") { let r = await model.setOfficeTitle(nation, office: e.id, title: value); posts = await model.posts(nation); return r }
             }
         }
         .sheet(item: $unitEdit) { u in

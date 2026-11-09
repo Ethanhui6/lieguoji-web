@@ -55,6 +55,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// Warm-authored sea bytes. Recoloured into `sea` for the selected preset.
     private var seaSource: [UInt8] = []
     private var seaMask: [UInt8] = []
+    private var coastRefined = false
     /// 卷轴边缘: the map's paper edge darkens like an old scroll and a double ink rule frames it.
     private var frame: (buffer: MTLBuffer, count: Int)?
     /// The paper band and rules round the map (always drawn).
@@ -259,6 +260,17 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// The state outlines are rebuilt on a background queue (the whole map's border walk); the land
     /// is recoloured at once, and the new outlines replace the old ones when ready.
     func setMap(_ next: WorldMap) {
+        // The founded world brings the smoothed coast the preview lacked: the waterlines and sand follow it.
+        if !coastRefined && !next.coast.isEmpty {
+            coastRefined = true
+            DispatchQueue.global(qos: .utility).async { [weak self] in
+                let mask = MapLayers.waterlines(next), marks = MapLayers.ornaments(next).vertices
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.seaSource = next.seaRGBA; self.seaMask = mask; self.ornaments = self.buffer(marks, stride: 6); self.uploadSea(); self.onOutlines?()
+                }
+            }
+        }
         map = next
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         outlineGeneration += 1

@@ -101,8 +101,8 @@ import LieguojiCore
     struct Epoch: Equatable, Identifiable { let id = UUID(); let title: String; let line: String }
     @Published var epoch: Epoch?
     private var lastEpoch = Date.distantPast
-    func proclaim(_ title: String, _ line: String) {
-        guard Date().timeIntervalSince(lastEpoch) > 8 else { return }
+    func proclaim(_ title: String, _ line: String, force: Bool = false) {
+        guard force || Date().timeIntervalSince(lastEpoch) > 8 else { return }
         lastEpoch = Date()
         let e = Epoch(title: title, line: line)
         epoch = e

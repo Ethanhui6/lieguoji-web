@@ -229,8 +229,9 @@ extension Regimes {
     /// How many provinces a rising in this state takes with it.
     static func uprisingSize(_ r: JS, _ owner: String) -> Int {
         let land = r.world.provinces.asArray.reduce(0) { $1.controller.optionalString == owner ? $0 + 1 : $0 }
-        let share = 0.2 + min(0.35, max(0, 55 - leverage(r, owner).stability) / 60)
-        return max(2, min(40, Int(Double(land) * share)))
+        // A rising shakes a realm without carving it in two: a fifth to over half of a great state used to go at once.
+        let share = 0.1 + min(0.15, max(0, 55 - leverage(r, owner).stability) / 120)
+        return max(2, min(12, Int(Double(land) * share)))
     }
     /// The land around `seed` that rises with it: connected, the owner's, never the capital.
     static func region(_ r: JS, _ owner: String, _ seed: String, _ size: Int, _ byId: [String: JS], sparing: Bool = true) -> [String] {

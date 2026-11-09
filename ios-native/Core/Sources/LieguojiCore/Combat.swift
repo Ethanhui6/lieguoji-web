@@ -162,7 +162,10 @@ public struct ContactMotion {
         var forces = order.map { input[$0] }
         defer { for (k, i) in order.enumerated() { input[i] = forces[k] } }
         var book = previous, remaining = seconds, events = 0
-        let initial = known ?? Profile.measure("a.initial") { contacts(forces, book, rules) }
+        // The cached frame is keyed by how many forces there are: one army lost and another raised in the
+        // same frame leaves that count alone, so it is only used when it knows every force here.
+        let usable = known.flatMap { k in forces.allSatisfy { k.positions[$0.key] != nil } ? k : nil }
+        let initial = usable ?? Profile.measure("a.initial") { contacts(forces, book, rules) }
         if stopAtEvent && ContactMotion.identity(initial.contacts) != ContactMotion.identity(book) {
             return Result(contacts: initial.contacts, held: initial.held, elapsed: 0, unused: seconds)
         }

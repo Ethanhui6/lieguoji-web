@@ -126,13 +126,21 @@ extension ArmyOrders {
 
         // 守土: land an enemy stands on or has taken from us.
         let capital = Rebellion.capitalProvince(r, nation).flatMap { c.provinceAt[$0] }
-        var invaded = owned.filter { foes($0) > 0 }
-        for p in provinces.indices where provinces[p].legalOwner.optionalString == nation && enemySet.contains(provinces[p].controller.asString) && !invaded.contains(p) { invaded.append(p) }
+        let invaded = owned.filter { foes($0) > 0 }
         let ranked = invaded.map { (p: $0, foes: foes($0)) }.sorted { x, y in
             if (x.p == capital) != (y.p == capital) { return x.p == capital }
             return x.foes != y.foes ? x.foes > y.foes : x.p < y.p
         }
-        let defend = ranked.map { post($0.p, need: max($0.foes * 1.25, 1)) }
+        var defend = ranked.map { post($0.p, need: max($0.foes * 1.25, 1)) }
+        // 收复失地: a column or two at a time, in strength, starting with what is nearest the host; one army
+        // sent to each lost province only fed them to the enemy one by one.
+        let columns = max(1, min(4, forces.count / 6)), siege = max(2500, average * 1.5)
+        var hostX = 0.0, hostY = 0.0
+        for f in forces { hostX += f.x * f.troops; hostY += f.y * f.troops }
+        hostX /= max(1, mine); hostY /= max(1, mine)
+        func away(_ p: Int) -> Double { let at = center(p); return jsHypot(at.x - hostX, at.y - hostY) }
+        let lost = provinces.indices.filter { provinces[$0].legalOwner.optionalString == nation && enemySet.contains(provinces[$0].controller.asString) && !invaded.contains($0) }
+        for p in lost.sorted(by: { away($0) != away($1) ? away($0) < away($1) : $0 < $1 }).prefix(columns) { defend.append(post(p, need: max(foes(p) * 1.5, siege))) }
 
         // Who touches us, and the provinces where they touch.
         var contact = [String: [Int: Double]]()
@@ -179,8 +187,6 @@ extension ArmyOrders {
         // 进军: a few columns against the main enemy, each given what its target calls for; more enemies
         // open only when the first front is full. The next target is the one nearest where the host now
         // stands and on the road to the enemy's capital, never one chosen for being close to home.
-        let columns = max(1, min(4, forces.count / 6))
-        let siege = max(2500, average * 1.5)
         var attack = [WarCouncil.Post]()
         let freeTroops = forces.reduce(0.0) { $0 + ($1.movable ? $1.troops : 0) }
         for (k, enemy) in order.enumerated() {

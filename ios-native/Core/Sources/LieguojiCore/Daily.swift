@@ -13,6 +13,15 @@ public enum Daily {
     // MARK: Contacts and attack clocks (force-tick47 frame / reconcileMilitaryClock47)
     static func key(_ kind: String, _ id: String) -> String { "[\"\(kind)\",\"\(id)\"]" }
     /// frame(): contacts reconciled into the run, and the forces eligible to attack.
+    /// Which forces exist, not only how many: one lost and another raised in the same frame leaves the
+    /// count alone, and a frame cached for the old set then undid every contact the new set made.
+    static func forceStamp(_ r: JS) -> UInt64 {
+        var h: UInt64 = 1469598103934665603
+        func mix(_ id: String) { for u in id.utf8 { h = (h ^ UInt64(u)) &* 1099511628211 }; h = (h ^ 0x2c) &* 1099511628211 }
+        for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" { mix(a.id.asString) }
+        for f in (r.navy.fleets.isNull ? [] : r.navy.fleets.asArray) where f.status.asString != "lost" { mix(f.id.asString) }
+        return h
+    }
     /// What a frame's contacts depend on: the forces' places and number, the contacts, the wars, who is retreating.
     static func frameKey(_ r: JS, _ forces: Int) -> String {
         let wars = r.world.statecraft.relations.asArray.reduce(0) { $1.status.asString == "war" ? $0 + 1 : $0 }

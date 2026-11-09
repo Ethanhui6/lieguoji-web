@@ -1055,7 +1055,7 @@ struct GameView: View {
         HStack(spacing: 10) {
             HStack(spacing: 8) {
                 Text(model.state?.dateText ?? "").font(Theme.kai(17)).foregroundStyle(Theme.ink).monospacedDigit()
-                    .lineLimit(1).minimumScaleFactor(0.7).fixedSize(horizontal: true, vertical: false)
+                    .lineLimit(1).minimumScaleFactor(0.7)
                     .contentTransition(.numericText()).animation(.snappy(duration: 0.25), value: model.state?.dateText)
                 if let wars = model.state?.wars.count, wars > 0 {
                     HStack(spacing: 3) { Circle().fill(Theme.seal).frame(width: 6, height: 6); Text("\(wars)场战争").font(Theme.kai(13)).foregroundStyle(Theme.seal).lineLimit(1).fixedSize() }

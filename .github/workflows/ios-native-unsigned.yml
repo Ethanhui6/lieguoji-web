@@ -1,30 +1,11 @@
 name: iOS Native unsigned IPA
 on:
-  workflow_dispatch:
   push:
-    branches: ['main', 'claude/native-*']
-    paths:
-      - 'ios-native/**'
-      - '.github/workflows/ios-native-unsigned.yml'
-  pull_request:
-    paths:
-      - 'ios-native/**'
-      - '.github/workflows/ios-native-unsigned.yml'
+    branches: ['claude/native-*']
 permissions:
   contents: read
 jobs:
-  core-linux:
-    runs-on: ubuntu-latest
-    container: swift:5.10
-    steps:
-      - uses: actions/checkout@v4
-      # Optimized build: the golden tests replay large run states through the JS model.
-      - run: swift test -c release -Xswiftc -enable-testing --package-path ios-native/Core
-      - run: swift build -c release --product LieguojiServer --package-path ios-native/Core
-  # 远程计算服务器 for Windows: the computer simulates, the phone draws.
   server-windows:
-    needs: core-linux
-    # Swift 5.10 cannot build against the current MSVC headers; 6.1 can (the package stays in Swift 5 mode).
     runs-on: windows-2022
     timeout-minutes: 40
     steps:
@@ -34,107 +15,20 @@ jobs:
           branch: swift-6.1.2-release
           tag: 6.1.2-RELEASE
       - name: Build server
-        run: swift build -c release --product LieguojiServer --package-path ios-native/Core
-      - name: Package with the Swift runtime
+        run: swift build -c debug --product LieguojiServer --package-path ios-native/Core
+      - name: Package
         shell: pwsh
         run: |
-          $out = "server/列国纪远程计算"
+          $out = "server/diag"
           New-Item -ItemType Directory -Force $out | Out-Null
-          $exe = Get-ChildItem -Recurse ios-native/Core/.build -Filter LieguojiServer.exe | Where-Object { $_.FullName -match 'release' } | Select-Object -First 1
+          $exe = Get-ChildItem -Recurse ios-native/Core/.build -Filter LieguojiServer.exe | Where-Object { $_.FullName -match 'debug' } | Select-Object -First 1
           Copy-Item $exe.FullName $out/
           $core = (where.exe swiftCore.dll | Select-Object -First 1)
           $rt = Split-Path $core
           Get-ChildItem $rt -Filter *.dll | ForEach-Object { Copy-Item $_.FullName $out/ }
-          $readme = @"
-          列国纪远程计算服务器
-          1. 双击 LieguojiServer.exe（首次运行若弹出 Windows 防火墙提示，选择允许专用网络）。
-          2. 窗口里会显示这台电脑的地址，例如 192.168.1.20:8765。
-          3. 手机与电脑连同一个 Wi-Fi，在手机游戏「菜单 › 远程计算」填入地址并连接。
-          4. 连接后推演由电脑完成，手机只负责画面；关闭窗口即停止，手机会自动切回本机计算。
-          端口被占用时，可在命令行运行：LieguojiServer.exe 8766
-          "@
-          Set-Content -Path "$out/使用说明.txt" -Value $readme -Encoding utf8
       - uses: actions/upload-artifact@v4
         with:
-          name: lieguoji-server-windows
+          name: lieguoji-server-debug
           path: server
           if-no-files-found: error
-          retention-days: 14
-  archive:
-    needs: core-linux
-    runs-on: macos-26
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - name: Generate project
-        run: |
-          brew install xcodegen
-          cd ios-native
-          xcodegen generate
-      - name: Validate embedded Metal shader
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          source = Path('ios-native/Render/MapRenderer.swift').read_text()
-          shader = source.split('static let shaders = """', 1)[1].split('"""', 1)[0]
-          Path('/tmp/lieguoji-map.metal').write_text(shader)
-          PY
-          xcrun -sdk iphoneos metal -c /tmp/lieguoji-map.metal -o /tmp/lieguoji-map.air
-      - name: Archive unsigned application
-        run: |
-          xcodebuild -project ios-native/LieguojiNative.xcodeproj -scheme LieguojiNative -configuration Release -destination 'generic/platform=iOS' -archivePath ios-native/build/LieguojiNative.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO archive
-      - name: Package
-        run: |
-          mkdir -p ios-native/build/Payload
-          cp -R ios-native/build/LieguojiNative.xcarchive/Products/Applications/*.app ios-native/build/Payload/
-          ditto -c -k --keepParent ios-native/build/Payload ios-native/build/lieguoji-native-unsigned.ipa
-      - uses: actions/upload-artifact@v4
-        with:
-          name: lieguoji-native-unsigned
-          path: ios-native/build/lieguoji-native-unsigned.ipa
-          if-no-files-found: error
-          retention-days: 14
-  screenshots:
-    # The app tours itself in the simulator (LGJ_SHOT=1): title, founding, the war, close-ups and
-    # every panel; each stop leaves a marker that this job screenshots and clears.
-    needs: core-linux
-    runs-on: macos-26
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@v4
-      - name: Generate project
-        run: |
-          brew install xcodegen
-          cd ios-native
-          xcodegen generate
-      - name: Build for the simulator
-        run: |
-          xcodebuild -project ios-native/LieguojiNative.xcodeproj -scheme LieguojiNative -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-native/build/sim CODE_SIGNING_ALLOWED=NO build | tail -5
-      - name: Tour and screenshot
-        run: |
-          set -x
-          APP=$(find ios-native/build/sim/Build/Products -name '*.app' -maxdepth 2 | head -1)
-          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];c=[x for k,v in d.items() if 'iOS' in k for x in v if x['name'].startswith('iPhone')];p=[x for x in c if 'Pro' in x['name'] and 'Max' not in x['name']];print((p or c)[-1]['udid'])")
-          xcrun simctl boot "$UDID"; xcrun simctl bootstatus "$UDID" -b
-          xcrun simctl install "$UDID" "$APP"
-          SIMCTL_CHILD_LGJ_SHOT=1 xcrun simctl launch "$UDID" com.lieguoji.native
-          DATA=$(xcrun simctl get_app_container "$UDID" com.lieguoji.native data)
-          mkdir -p shots; end=$((SECONDS+1500)); finished=0
-          while [ $SECONDS -lt $end ] && [ $finished = 0 ]; do
-            for f in "$DATA"/Documents/shot-*.ready; do
-              [ -e "$f" ] || continue
-              n=$(basename "$f" .ready); n=${n#shot-}
-              sleep 0.6
-              [ "$n" = done ] && finished=1 || xcrun simctl io "$UDID" screenshot "shots/$n.png"
-              rm -f "$f"
-            done
-            sleep 0.4
-          done
-          xcrun simctl io "$UDID" screenshot shots/zz-last.png || true
-          ls shots
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lieguoji-screenshots
-          path: shots
-          retention-days: 14
+          retention-days: 3

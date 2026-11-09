@@ -185,6 +185,7 @@ public struct ContactMotion {
         var credit = rules.physicalContact ? [Double](repeating: 0, count: forces.count) : []
         while remaining > 0 {
             events += 1; if events > 100_000 { break }
+            Profile.c2 = events
             Profile.measure("a.event") {}
             book = current.contacts
             var movers = [Mover]()

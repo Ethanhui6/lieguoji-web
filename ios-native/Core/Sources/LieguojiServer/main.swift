@@ -16,6 +16,16 @@ import Darwin
 // the phone reconnects. Requests and replies are EngineWire frames handled by EngineService.
 
 setvbuf(stdout, nil, _IONBF, 0)
+Thread.detachNewThread {
+    var last = "", same = 0
+    while true {
+        Thread.sleep(forTimeInterval: 5)
+        let now = Profile.crumbs()
+        same = now == last ? same + 1 : 0
+        last = now
+        if !now.hasPrefix(" ") { print("WATCH", same, now) }
+    }
+}
 let port = UInt16(CommandLine.arguments.dropFirst().first ?? "") ?? 8765
 let service = EngineService()
 /// The relay and the local network share one engine: one request at a time.

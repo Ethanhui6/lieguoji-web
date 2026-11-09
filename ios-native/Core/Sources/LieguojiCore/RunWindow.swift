@@ -368,6 +368,7 @@ public enum RunWindow {
             if boundary {
                 while true {
                     events += 1; if events > 100_000 { break }
+                    Profile.c1 = events
                     // App worlds: with no one moved and no volley since the last pass, occupation has nothing new to do.
                     let stamp = UnitKinds.enabled ? "\(r.armyPositions.revision.asNumber)|\(r.occupation.sieges.length)|\(r.world.armies.length)|\(r.world.nations.length)|\(r.world.statecraft.relations.asArray.reduce(0) { $1.status.asString == "war" ? $0 + 1 : $0 })" : ""
                     if stamp.isEmpty || stamp != occupyStamp { Profile.measure("w.occupy") { occupy(r, now: now, due: []) }; occupyStamp = stamp }

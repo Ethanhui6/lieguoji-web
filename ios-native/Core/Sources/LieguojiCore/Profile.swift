@@ -3,9 +3,15 @@ import Foundation
 /// Optional wall-clock totals per engine phase (off unless `enabled`), for finding hot spots.
 public enum Profile {
     public static var enabled = false
+    public static let lock = NSLock()
+    public static var stack = [String]()
+    public static var c1 = 0, c2 = 0
+    public static func crumbs() -> String { lock.lock(); defer { lock.unlock() }; return stack.joined(separator: ">") + " c1=\(c1) c2=\(c2)" }
     public private(set) static var totals = [String: (seconds: Double, calls: Int)]()
     @discardableResult @inline(__always)
     public static func measure<T>(_ name: String, _ body: () -> T) -> T {
+        lock.lock(); stack.append(name); lock.unlock()
+        defer { lock.lock(); stack.removeLast(); lock.unlock() }
         if !enabled { return body() }
         let start = DispatchTime.now().uptimeNanoseconds
         let value = body()

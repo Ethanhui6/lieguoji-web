@@ -290,10 +290,10 @@ public enum Regimes {
         for n in r.world.nations.asArray {
             let id = n.id.asString
             guard Vassals.alive(r, id), !isBlank(r, id) else { continue }
-            month(r, n, id, key)
+            Profile.measure("regime.month") { month(r, n, id, key) }
         }
-        uprisingsMonth(r, key)
-        editsMonth(r, key)
+        Profile.measure("regime.uprisings") { uprisingsMonth(r, key) }
+        Profile.measure("regime.edits") { editsMonth(r, key) }
         ArmyAutonomy.noAllySupport = r.regimes.world.noAssist.isTruthy
         Shipyards.month(r)
     }

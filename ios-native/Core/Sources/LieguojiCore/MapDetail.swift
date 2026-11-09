@@ -72,7 +72,7 @@ extension MapLayers {
             }
             frontier = next
         }
-        let rings: [(at: Float, strength: Float)] = [(6, 0.5), (12.5, 0.34), (20, 0.2)]
+        let rings: [(at: Float, strength: Float)] = [(6, 0.72), (12.5, 0.5), (20, 0.3)]
         let unit = 1 / max(sx, sy)
         var mask = [UInt8](repeating: 0, count: w * h * 2)
         for p in 0..<(w * h) where distance[p] > 0 {
@@ -80,6 +80,16 @@ extension MapLayers {
             var light: Float = 0
             for r in rings { light = max(light, max(0, 1 - abs(d - r.at) / max(1, unit)) * r.strength) }
             mask[p * 2] = UInt8(light * 255); mask[p * 2 + 1] = UInt8(max(0, 1 - d / 16) * 0.2 * 255)
+        }
+        // The sea texture is coarse: two soft passes take the stair steps out of the lines.
+        for _ in 0..<2 {
+            var next = mask
+            for y in 1..<(h - 1) { for x in 1..<(w - 1) where distance[y * w + x] >= 0 {
+                var sum = 0
+                for dy in -1...1 { for dx in -1...1 { sum += Int(mask[((y + dy) * w + x + dx) * 2]) } }
+                next[(y * w + x) * 2] = UInt8(sum / 9)
+            } }
+            mask = next
         }
         return mask
     }

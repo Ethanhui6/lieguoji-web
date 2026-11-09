@@ -361,7 +361,7 @@ public enum RunWindow {
     @discardableResult
     public static func advance(_ r: JS, ticks: Int) -> (volleys: [Salvo], dailyPending: Bool) {
         let F = Daily.frameTicks(r), start = r.clock.tick.asInt, end = start + ticks, untilDay = (r.world.day.asInt + 1) * 120
-        var now = Double(F.map { start / $0 * $0 } ?? start), volleys = [Salvo](), events = 0
+        var now = Double(F.map { start / $0 * $0 } ?? start), volleys = [Salvo](), events = 0, stalled = 0
         if ticks < 1 || end > untilDay { return ([], false) }
         for tick in start + 1...end {
             let boundary = F == nil || tick % F! == 0
@@ -386,7 +386,9 @@ public enum RunWindow {
                     let moved = Profile.measure("w.motion") { motion(r, seconds: stop - now) }
                     let end = moved.unused == 0 ? stop : now + moved.elapsed
                     if let segment, end > now { Naval.settlePorts(r, segment.view, retreating: segment.retreating, hulls: segment.hulls, from: now, seconds: (end - now) * r.forceClock.secondsPerTick.asNumber) }
-                    now = end
+                    // A frame that cannot settle must not spin: a few passes without progress and time moves on.
+                    stalled = end > now ? 0 : stalled + 1
+                    now = UnitKinds.enabled && stalled > 16 ? stop : end
                 }
             }
             for (id, until) in (r.maritime.retreating.isNull ? [] : r.maritime.retreating.objectEntries) where until.asNumber <= Double(tick) { r.maritime.retreating.delete(id) }

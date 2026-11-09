@@ -26,7 +26,7 @@ public enum Daily {
     static func frameKey(_ r: JS, _ forces: Int) -> String {
         let wars = r.world.statecraft.relations.asArray.reduce(0) { $1.status.asString == "war" ? $0 + 1 : $0 }
         let back = r.world.armies.asArray.reduce(0) { $1.status.asString == "retreating" ? $0 + 1 : $0 }
-        return "\(ObjectIdentifier(r).hashValue)|\(r.armyPositions.revision.asNumber)|\(r.fleetPositions.revision.asNumber)|\(r.forceContacts.pairs.length)|\(wars)|\(back)|\(forces)"
+        return "\(ObjectIdentifier(r).hashValue)|\(r.armyPositions.revision.asNumber)|\(r.fleetPositions.revision.asNumber)|\(r.forceContacts.pairs.length)|\(wars)|\(back)|\(forces)|\(forceStamp(r))"
     }
     typealias FrameValue = (contacts: [ForceContact], held: Set<String>, positions: [String: ContactMotion.Position])
     /// The frame already worked out for this very state of the world, if there is one.
@@ -58,7 +58,7 @@ public enum Daily {
                 for u in (sg.provinceId.asString + "|" + sg.controller.asString + ";").utf8 { h = (h ^ UInt64(u)) &* 1099511628211 }
             }
             let wars = r.world.statecraft.relations.asArray.reduce(0) { $1.status.asString == "war" ? $0 + 1 : $0 }
-            func key() -> String { "\(ObjectIdentifier(r).hashValue)|\(r.armyPositions.revision.asNumber)|\(r.fleetPositions.revision.asNumber)|\(r.forceContacts.pairs.length)|\(wars)|\(alive)|\(back)|\(ships)|\(away)|\(h)" }
+            func key() -> String { "\(ObjectIdentifier(r).hashValue)|\(r.armyPositions.revision.asNumber)|\(r.fleetPositions.revision.asNumber)|\(r.forceContacts.pairs.length)|\(wars)|\(alive)|\(back)|\(ships)|\(away)|\(h)|\(forceStamp(r))" }
             whole = key()
             if let c = wholeCache, c.key == whole { return c.value }
             let out = computeWholeFrame(r, bridge)

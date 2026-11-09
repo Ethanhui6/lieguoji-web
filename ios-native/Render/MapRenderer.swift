@@ -347,6 +347,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// The title screen's generation animation: 0 shows only the sea; land rises from the coast to the
     /// mountains, then the states' colours wash over it; at 1 every layer is drawn.
     private(set) var reveal: Float = 1
+    /// How much of the open-water veil lies over the sea: whole at first, gone once the coast has risen.
+    private var revealVeil: Float { let x = min(1, max(0, (reveal - 0.05) / 0.19)); return 1 - x * x * (3 - 2 * x) }
     /// Only a value for the reveal shader: no colours are recomputed while the land rises.
     func setReveal(_ t: Float) { reveal = max(0, min(1, t)); if base == nil { recolor() } }
     /// The map's colours before the generation reveal: the land colours of the current mode and the
@@ -718,13 +720,16 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         quad(sea, texturePipeline, x: 0, y: 0, width: map.width, height: map.height)
         // The shallows and waterlines of a coast not yet risen would show as a ghost of it: open water first.
         if reveal < 0.24 {
+            let opacity = revealVeil
             var veil = ColoredMesh()
-            let x = min(1, max(0, (reveal - 0.05) / 0.19)), opacity = 1 - x * x * (3 - 2 * x)
             veil.fill([0, 0, map.width, 0, map.width, map.height, 0, map.height], MapPalette.ocean(display.ocean).deep, alpha: opacity)
             colored(self.buffer(veil.vertices, stride: 6))
         }
         if reveal < 1, let rb = revealBuffers() {
-            let sea = MapPalette.ocean(display.ocean).shallow
+            // Land not yet risen is the colour of the water around it, or the veil would show its outline.
+            let ocean = MapPalette.ocean(display.ocean), k = revealVeil
+            func mix(_ a: Float, _ b: Float) -> Float { a + (b - a) * k }
+            let sea = RGB(mix(ocean.shallow.r, ocean.deep.r), mix(ocean.shallow.g, ocean.deep.g), mix(ocean.shallow.b, ocean.deep.b))
             var r = SIMD4<Float>(sea.r, sea.g, sea.b, reveal)
             encoder.setRenderPipelineState(revealPipeline)
             encoder.setVertexBuffer(rb.terrain, offset: 0, index: 3)

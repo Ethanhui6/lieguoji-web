@@ -721,7 +721,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             var veil = ColoredMesh()
             let x = min(1, max(0, (reveal - 0.05) / 0.19)), opacity = 1 - x * x * (3 - 2 * x)
             veil.fill([0, 0, map.width, 0, map.width, map.height, 0, map.height], MapPalette.ocean(display.ocean).deep, alpha: opacity)
-            colored(buffer(veil.vertices, stride: 6))
+            colored(self.buffer(veil.vertices, stride: 6))
         }
         if reveal < 1, let rb = revealBuffers() {
             let sea = MapPalette.ocean(display.ocean).shallow

@@ -177,6 +177,19 @@ enum ShotTour {
             model.pause(saving: false)
             controls += 6
         }
+        // These three synchronous controls deterministically cancel play before it can await the
+        // queued single step. Its real reply must still reach the paused display.
+        let beforeManual = await model.native.localDayForTour() ?? -1
+        model.stepOnce(); model.play(); model.pause(saving: false)
+        controls += 3
+        let manualDeadline = Date().addingTimeInterval(15)
+        var manualDrain = false
+        while Date() < manualDeadline, !manualDrain {
+            await wait(0.15)
+            if let day = await model.native.localDayForTour() {
+                manualDrain = day > beforeManual && model.state?.day == day
+            }
+        }
         model.play(); await wait(2); model.pause(saving: false)
         controls += 2
         var authoritative = -1, stable = 0
@@ -190,9 +203,10 @@ enum ShotTour {
             }
         }
         let endDay = model.state?.day ?? -1
-        let passed = backwards == 0 && endDay > startDay && stable >= 3 && endDay == authoritative
-        let report: [String: Any] = ["version": 1, "passed": passed, "controls": controls, "samples": days.count,
-                                     "startDay": startDay, "endDay": endDay, "authoritativeDay": authoritative, "backwards": backwards]
+        let passed = manualDrain && backwards == 0 && endDay > startDay && stable >= 3 && endDay == authoritative
+        let report: [String: Any] = ["version": 2, "passed": passed, "controls": controls, "samples": days.count,
+                                     "startDay": startDay, "endDay": endDay, "authoritativeDay": authoritative,
+                                     "backwards": backwards, "manualDrain": manualDrain]
         if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {
             try? data.write(to: dir.appendingPathComponent("advance-ownership.json"), options: .atomic)
         }

@@ -473,18 +473,22 @@ import LieguojiCore
     }
     func play() {
         guard loop == nil, state != nil, phase == .playing else { return }
-        let ticket = advanceOwnership.begin(world: worldEpoch), revision = nativeRevision
+        let epoch = worldEpoch, revision = nativeRevision
         let manual = singleStep?.world == worldEpoch ? singleStep?.task : nil
         playing = true
         loop = Task { [weak self] in
+            // A cancelled play waiting for a manual step never became a producer. Keep that step's
+            // ownership until it can display its result, even if play was paused before it finished.
+            if let manual { await manual.value }
+            guard let self, !Task.isCancelled, self.playing, self.phase == .playing, self.worldEpoch == epoch else { return }
+            let ticket = self.advanceOwnership.begin(world: epoch)
             // Through the relay the next step is already asked for while this one is applied, so
             // the computer never waits for the phone (a round trip there costs most of a step).
             var ahead: Task<Data?, Never>?
             // Drain a real accepted tail, but never let a previous loop overwrite a resumed world.
-            defer { if let ahead, let self { Task { if let data = await ahead.value, self.owns(ticket) { try? await self.apply(stepData: data, ticket: ticket) } } } }
-            if let manual { await manual.value }
+            defer { if let ahead { Task { if let data = await ahead.value, self.owns(ticket) { try? await self.apply(stepData: data, ticket: ticket) } } } }
             while !Task.isCancelled {
-                guard let self, self.owns(ticket) else { return }
+                guard self.owns(ticket) else { return }
                 let started = Date()
                 // Speed is days per step: the engine runs that many days in one call and the map,
                 // the state and the panels refresh once, so 2×, 4× and 8× really are faster.

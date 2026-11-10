@@ -18,7 +18,7 @@ function fixture(t) {
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jVf8AAAAASUVORK5CYII=','base64');
   for(const name of requiredShots) writeFileSync(join(directory,`${name}.png`),png);
   writeFileSync(join(directory,'tour-status.json'),JSON.stringify({finished:true}));
-  writeFileSync(join(directory,'advance-ownership.json'),JSON.stringify({version:1,passed:true,controls:40,samples:12,startDay:0,endDay:10,authoritativeDay:10,backwards:0}));
+  writeFileSync(join(directory,'advance-ownership.json'),JSON.stringify({version:2,passed:true,manualDrain:true,controls:40,samples:12,startDay:0,endDay:10,authoritativeDay:10,backwards:0}));
   writeFileSync(join(directory,'panel-profile.json'),JSON.stringify({version:1,frozen:true,day:10,endDay:10,worldSHA256:'a'.repeat(64),
     panels:['nation','province','ranking'].map(scene => ({scene,cycles:3,samples:100,averageMs:20,p95Ms:40,maxMs:60,hitches:2}))}));
   return directory;
@@ -42,13 +42,18 @@ test('a corrupt image fails instead of counting its filename',t => {
 });
 test('a finished tour still fails when pause leaves the display behind the engine',t => {
   const d = fixture(t);
-  writeFileSync(join(d,'advance-ownership.json'),JSON.stringify({version:1,passed:true,controls:40,samples:12,startDay:0,endDay:10,authoritativeDay:11,backwards:0}));
+  writeFileSync(join(d,'advance-ownership.json'),JSON.stringify({version:2,passed:true,manualDrain:true,controls:40,samples:12,startDay:0,endDay:10,authoritativeDay:11,backwards:0}));
   assert.throws(() => checkNativeTour(d),/显示与引擎不一致/);
 });
 test('a finished tour fails when a stale reply moved the clock back',t => {
   const d = fixture(t);
-  writeFileSync(join(d,'advance-ownership.json'),JSON.stringify({version:1,passed:true,controls:40,samples:12,startDay:0,endDay:10,authoritativeDay:10,backwards:1}));
+  writeFileSync(join(d,'advance-ownership.json'),JSON.stringify({version:2,passed:true,manualDrain:true,controls:40,samples:12,startDay:0,endDay:10,authoritativeDay:10,backwards:1}));
   assert.throws(() => checkNativeTour(d),/时间回退/);
+});
+test('a cancelled play must leave the queued single step able to finish',t => {
+  const d = fixture(t);
+  writeFileSync(join(d,'advance-ownership.json'),JSON.stringify({version:2,passed:true,manualDrain:false,controls:40,samples:12,startDay:0,endDay:10,authoritativeDay:10,backwards:0}));
+  assert.throws(() => checkNativeTour(d),/单步尾批次丢失/);
 });
 test('a panel profile fails when the world changed during measurement',t => {
   const d = fixture(t);

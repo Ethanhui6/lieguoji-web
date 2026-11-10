@@ -46,6 +46,38 @@ final class WarCouncilTests: XCTestCase {
         XCTAssertEqual(duties.values.filter { if case .hold = $0 { return true }; return false }.count, 2)
     }
 
+    func testOutmatchedReliefDoesNotKeepMarchingArmiesCommitted() {
+        let forces = [force("bound", 0, target: 1), force("free", 20)]
+        let duties = WarCouncil.assign(forces: forces, defend: [post(1, 0, need: 20000)], hold: [], holdBudget: 0, attack: [post(2, 30, need: 1000)])
+        XCTAssertEqual(duties["bound"], .attack(2), "a marching order must not commit a hopeless relief before the strength check")
+        XCTAssertEqual(duties["free"], .attack(2))
+    }
+
+    func testOutmatchedReliefKeepsOnlyArmiesAlreadyEngagedThere() {
+        let forces = [force("engaged", 0, target: 1, movable: false), force("bound", 10, target: 1), force("free", 20)]
+        let duties = WarCouncil.assign(forces: forces, defend: [post(1, 0, need: 20000)], hold: [], holdBudget: 0, attack: [post(2, 30, need: 1000)])
+        XCTAssertEqual(duties["engaged"], .defend(1), "an ongoing battle cannot be recalled")
+        XCTAssertEqual(duties["bound"], .attack(2))
+        XCTAssertEqual(duties["free"], .attack(2))
+    }
+
+    func testBoundReliefStillDefendsAnOutmatchedCapital() {
+        let forces = [force("bound", 0, target: 1), force("free", 20)]
+        let capital = WarCouncil.Post(province: 1, x: 0, y: 0, feature: 1, need: 20000, mustHold: true)
+        let duties = WarCouncil.assign(forces: forces, defend: [capital], hold: [], holdBudget: 0, attack: [post(2, 30, need: 1000)])
+        XCTAssertEqual(duties["bound"], .defend(1))
+        XCTAssertEqual(duties["free"], .defend(1))
+    }
+
+    func testCancelledReliefCanReplaceMarchButOrdinaryAttacksKeepTheirProgress() {
+        XCTAssertTrue(WarCouncil.Duty.attack(2).replaces(target: 1, decision: "supporting"))
+        XCTAssertTrue(WarCouncil.Duty.attack(2).replaces(target: 1, decision: "guarding"))
+        XCTAssertFalse(WarCouncil.Duty.attack(2).replaces(target: 1, decision: "attacking"))
+        XCTAssertFalse(WarCouncil.Duty.attack(2).replaces(target: 1, decision: "returning"))
+        XCTAssertFalse(WarCouncil.Duty.defend(1).replaces(target: 1, decision: "supporting"))
+        XCTAssertTrue(WarCouncil.Duty.defend(2).replaces(target: 1, decision: "attacking"))
+    }
+
     func testEveryFreeArmyGetsOrdersAndOnlyDefenceIsWorthARecall() {
         let forces = (0..<5).map { force("a\($0)", Double($0)) }
         let duties = WarCouncil.assign(forces: forces, defend: [], hold: [], holdBudget: 0, attack: [post(4, 0, need: 1)])

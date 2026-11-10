@@ -322,8 +322,9 @@ public enum ArmyOrders {
             let targetOwned = target?.controller.asString == nation
             let garrisonIsTarget = !row.garrisonId.isNull && row.garrisonId.asString == target?.id.asString
             let duty: WarCouncil.Duty? = originalTargets && !en.isEmpty && a.status.asString != "retreating" ? plan(nation, enemySet)[id] : nil
-            // Called back: the state needs this army at a post of its own, and it is marching elsewhere.
-            let recalled = duty.map { $0.urgent && provinceList[$0.province].id.asString != row.targetId.optionalString } ?? false
+            // A new defensive post or a cancelled relief can replace a marching order. Normal
+            // attacks retain their route; held, manual and withdrawing armies remain protected.
+            let recalled = duty.map { $0.replaces(target: row.targetId.optionalString.flatMap { provinceAt[$0] }, decision: row.decision.asString) } ?? false
             if ongoing && !recalled && (row.targetId.isNull || targetEnemy != nil || row.decision.asString == "returning" && targetOwned || row.decision.asString == "staging" && targetOwned && !en.isEmpty || row.decision.asString == "guarding" && targetOwned && !en.isEmpty
                            || garrisonIsTarget && targetOwned && en.isEmpty || a.status.asString == "retreating") {
                 if garrisonIsTarget && targetOwned && en.isEmpty { note("garrison", "正在沿原定路线前往驻地，保留既有行军进度。") } else { row.nextTick = JS(tick + retry) }

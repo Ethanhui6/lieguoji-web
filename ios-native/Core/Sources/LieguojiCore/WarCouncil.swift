@@ -29,6 +29,12 @@ public enum WarCouncil {
         public var province: Int { switch self { case .defend(let p), .hold(let p), .attack(let p): return p } }
         /// Worth turning an army around for on the march.
         public var urgent: Bool { if case .attack = self { return false }; return true }
+        /// A refused relief can release a marching defender for another task. Ordinary attacks
+        /// keep their route, so fresh plans do not repeatedly restart their progress.
+        public func replaces(target: Int?, decision: String) -> Bool {
+            guard target != province else { return false }
+            return urgent || decision == "supporting" || decision == "guarding"
+        }
     }
 
     static func distance(_ f: Force, _ p: Post) -> Double {
@@ -45,6 +51,19 @@ public enum WarCouncil {
         var free = forces.sorted { $0.id < $1.id }
 
         func fill(_ post: Post, budget: inout Double, make: (Int) -> Duty) {
+            // Decide whether this post can be relieved before committing any marching armies.
+            // Counting them first left an outmatched column assigned even when this check refused
+            // the relief. Armies already engaged at the post keep their orders; they cannot leave.
+            let committed = free.filter { !$0.movable && $0.target == post.province }
+            let reachable = free.reduce(0.0) { sum, f in
+                sum + (f.movable || f.target == post.province ? f.troops : 0)
+            }
+            if !post.mustHold && reachable < post.need * 0.5 {
+                for f in committed { duties[f.id] = make(post.province) }
+                let engaged = Set(committed.map(\.id))
+                free.removeAll { engaged.contains($0.id) }
+                return
+            }
             var have = 0.0
             var rest = [Force]()
             for f in free {
@@ -52,10 +71,6 @@ public enum WarCouncil {
                 else { rest.append(f) }
             }
             free = rest
-            // Sent in dribs and drabs against a host it cannot match, an army only dies: leave it for now.
-            var reachable = have
-            for f in free where f.movable { reachable += f.troops }
-            if !post.mustHold && reachable < post.need * 0.5 { return }
             while have < post.need && budget > 0 {
                 var best = -1, bestDistance = Double.infinity
                 for (i, f) in free.enumerated() where f.movable {

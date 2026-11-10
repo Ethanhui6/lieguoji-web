@@ -245,7 +245,7 @@ public enum RemoteRoom {
 public enum EngineWire {
     /// What a server answers to `ping`. The app only hands its world to a server with the same rules:
     /// raise the number whenever the engine or this protocol changes in a way an older server would get wrong.
-    public static let greeting = "列国纪远程计算·2"
+    public static let greeting = "列国纪远程计算·3"
     public static func u32(_ n: Int) -> Data { var v = UInt32(n).bigEndian; return Data(bytes: &v, count: 4) }
     public static func readU32(_ d: Data, at i: Int) -> Int { d[d.startIndex + i..<d.startIndex + i + 4].reduce(0) { $0 << 8 | Int($1) } }
     public static func request(_ call: String, _ args: [String: Any], payload: Data?) -> Data {

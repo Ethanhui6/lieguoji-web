@@ -14,6 +14,11 @@ export const requiredShots = [
 export function checkNativeTour(directory) {
   const status = JSON.parse(readFileSync(join(directory,'tour-status.json'),'utf8'));
   if(status.finished !== true) throw Error('原生试玩巡览未到达 done；可能在创建世界、推演或面板中卡住。');
+  const ownership = JSON.parse(readFileSync(join(directory,'advance-ownership.json'),'utf8'));
+  if(ownership.version !== 1 || ownership.passed !== true || ownership.controls < 20 || ownership.samples < 1
+    || ownership.backwards !== 0 || !(ownership.endDay > ownership.startDay) || ownership.endDay !== ownership.authoritativeDay) {
+    throw Error('暂停恢复回归失败：时间回退、推演未前进或暂停后的显示与引擎不一致。');
+  }
   for(const name of requiredShots) {
     let bytes;
     try { bytes = readFileSync(join(directory,`${name}.png`)); }

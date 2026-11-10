@@ -45,6 +45,7 @@ enum ShotTour {
     @MainActor static func play(_ model: GameModel, show: @escaping (Panel?) -> Void, views: @escaping (Bool) -> Void) async {
         await wait(3)
         await shoot("03-world")
+        await checkAdvanceOwnership(model)
         model.play()
         for i in 0..<3 { await wait(12); await shoot("04-war-\(i)") }
         // Up close on the biggest fight: armies that are fighting or besieging.
@@ -148,6 +149,52 @@ enum ShotTour {
         await shootRulerTraits(model, nation: nation, show: show)
         show(nil); await wait(1)
         await shoot("done")
+    }
+
+    /// Real controls and the real Swift engine: fast pause/resume, then queued single steps.
+    /// Check every installed reply, and finish only when the paused display matches the engine.
+    @MainActor private static func checkAdvanceOwnership(_ model: GameModel) async {
+        let startDay = model.state?.day ?? 0
+        var days = [Int](), backwards = 0, previous = startDay, controls = 0
+        model.onAdvanceApplied = { day in
+            if day < previous { backwards += 1 }
+            previous = day; days.append(day)
+        }
+        defer { model.onAdvanceApplied = nil }
+        if let world = await model.native.save() {
+            try? world.write(to: dir.appendingPathComponent("ci-control-world.lgj"), options: .atomic)
+        }
+        if let tuning = CloudConfig.shared.tuningData {
+            try? tuning.write(to: dir.appendingPathComponent("ci-control-tuning.json"), options: .atomic)
+        }
+        for _ in 0..<10 {
+            model.play(); await wait(0.035)
+            model.pause(saving: false); model.stepOnce(); model.stepOnce()
+            await wait(0.015)
+            model.play(); await wait(0.035)
+            model.pause(saving: false)
+            controls += 6
+        }
+        model.play(); await wait(2); model.pause(saving: false)
+        controls += 2
+        var authoritative = -1, stable = 0
+        let deadline = Date().addingTimeInterval(15)
+        while Date() < deadline, stable < 3 {
+            await wait(0.15)
+            if let day = await model.native.localDayForTour() {
+                let matching = model.state?.day == day
+                stable = matching && authoritative == day ? stable + 1 : 0
+                authoritative = day
+            }
+        }
+        let endDay = model.state?.day ?? -1
+        let passed = backwards == 0 && endDay > startDay && stable >= 3 && endDay == authoritative
+        let report: [String: Any] = ["version": 1, "passed": passed, "controls": controls, "samples": days.count,
+                                     "startDay": startDay, "endDay": endDay, "authoritativeDay": authoritative, "backwards": backwards]
+        if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {
+            try? data.write(to: dir.appendingPathComponent("advance-ownership.json"), options: .atomic)
+        }
+        await shoot("09-pause-resume")
     }
 
     /// Opens 人物 for the largest state after giving its ruler the ShipMaster and Reformer traits.

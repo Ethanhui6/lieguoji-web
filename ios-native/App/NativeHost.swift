@@ -128,18 +128,33 @@ actor NativeHost {
 
     // MARK: requests
 
+    private var advances = AdvanceSession()
+
     /// Opens `{run, statics}` (from the web bridge or a save). Returns the saved map, when the
     /// statics carry one, and the first state.
-    func open(_ data: Data) async throws -> (map: Data?, state: Data) {
+    func open(_ data: Data, world: Int) async throws -> (map: Data?, state: Data, revision: UInt64) {
+        guard let revision = advances.replaceWorld(world: world) else { throw EngineError.message("世界已经切换，忽略旧的载入请求") }
         try Self.loadCatalogs()
         if remote != nil { lastWorld = data }
         let r = await call("open", payload: data)
+        guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的载入结果") }
         guard r.ok else { throw EngineError.message(r.reason) }
-        return (r.map, r.data ?? Data())
+        return (r.map, r.data ?? Data(), revision)
     }
-    func close() async { _ = await call("close") }
-    func step(days: Int) async -> Data { await call("step", ["days": days]).data ?? Data() }
+    func close(world: Int) async {
+        guard advances.replaceWorld(world: world) != nil else { return }
+        _ = await call("close")
+    }
+    func step(days: Int, revision: UInt64, producer: UInt64) async -> Data? {
+        guard advances.admit(revision: revision, producer: producer) else { return nil }
+        return await call("step", ["days": days]).data ?? Data()
+    }
     func state() async -> Data? { await call("state").data }
+    /// Read-only CI observation; unlike `state`, it does not consume pending map-label updates.
+    func localDayForTour() -> Int? {
+        guard ShotTour.on, remote == nil, let engine = service.engine else { return nil }
+        return engine.run.world.day.asInt
+    }
     private func command(_ name: String, _ args: [String: Any]) async -> (ok: Bool, reason: String, state: Data?) {
         let r = await call(name, args); return (r.ok, r.reason, r.data)
     }

@@ -136,6 +136,9 @@ jobs:
           done
           xcrun simctl io "$UDID" screenshot shots/zz-last.png || true
           [ "$finished" = 1 ] && printf '{"finished":true}\n' > shots/tour-status.json || printf '{"finished":false}\n' > shots/tour-status.json
+          for name in advance-ownership.json ci-control-world.lgj ci-control-tuning.json; do
+            [ ! -f "$DATA/Documents/$name" ] || cp "$DATA/Documents/$name" shots/
+          done
           node scripts/check-native-tour.mjs shots
           ls shots
       - uses: actions/upload-artifact@v4

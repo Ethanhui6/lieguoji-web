@@ -107,6 +107,10 @@ import LieguojiCore
     let native = NativeHost()
     let controller = MapController()
     private var loop: Task<Void, Never>?
+    private var advanceOwnership = AdvanceOwnership()
+    private var nativeRevision: UInt64 = 0
+    private var singleStep: (world: Int, task: Task<Void, Never>)?
+    var onAdvanceApplied: (@MainActor (Int) -> Void)?
     private var lastSavedDay = 0
     private var lastSaveTime = Date()
     private var lastMapUpdate: CFTimeInterval = 0
@@ -174,6 +178,7 @@ import LieguojiCore
             let built = try await engine.call("generate(options)", ["options": text], timeout: Self.foundingLimit)
             guard epoch == worldEpoch else { return }
             let world = try await open(built)
+            try checkWorld(epoch)
             // The engine's world (rivers, cities, names) replaces the drawn preview in place.
             controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
             controller.foundingStage = 3
@@ -198,6 +203,9 @@ import LieguojiCore
     private static let foundingLimit: Double = 180
     /// Bumped when another world is begun: whatever the last one still had under way is dropped.
     private var worldEpoch = 0
+    private func checkWorld(_ epoch: Int) throws {
+        guard epoch == worldEpoch else { throw CancellationError() }
+    }
     /// 放弃: the founding is abandoned, the busy engine replaced, and the title comes back.
     func cancelGeneration() {
         worldEpoch &+= 1
@@ -308,6 +316,7 @@ import LieguojiCore
             let built = try await full.value
             guard epoch == worldEpoch else { return }
             let world = try await open(built)
+            try checkWorld(epoch)
             controller.foundingStage = 3
             try await handOver()
             guard epoch == worldEpoch else { return }
@@ -348,6 +357,7 @@ import LieguojiCore
     func continueGame() async {
         pause()
         worldEpoch &+= 1
+        let epoch = worldEpoch
         phase = .generating; failure = nil; generationNote = "正在读取存档"
         do {
             let data = try Data(contentsOf: Self.saveURL)
@@ -355,9 +365,13 @@ import LieguojiCore
             let quote = "\""
             if data.starts(with: Array(("{" + quote + "format" + quote + ":" + quote + NativeEngine.saveFormat + quote).utf8)) {
                 // A Swift save: the full run and its geometry, no replay.
-                let opened = try await native.open(data)
+                let opened = try await native.open(data, world: epoch)
+                try checkWorld(epoch)
+                nativeRevision = opened.revision
                 await applyCloud()
+                try checkWorld(epoch)
                 await native.enableAppRules()
+                try checkWorld(epoch)
                 guard let mapData = opened.map else { throw EngineError.message("存档缺少地图") }
                 let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared) in
                     struct Saved: Decodable { let bin: String; let meta: WorldMeta }
@@ -366,22 +380,29 @@ import LieguojiCore
                     let w = try WorldMap(binary: bin, meta: m.meta)
                     return (w, try JSONDecoder().decode(GameState.self, from: opened.state), MapLayers.prepare(w))
                 }.value
+                try checkWorld(epoch)
                 MapRenderer.prepared = loaded.2
                 map = loaded.0; worldID = UUID(); controller.world = nil
                 apply(loaded.1); lastSavedDay = loaded.1.day
                 world = loaded.0
             } else {
                 let saved = String(decoding: data, as: UTF8.self)
-                world = try await open(try await engine.call("load(text)", ["text": saved]))
+                let restored = try await engine.call("load(text)", ["text": saved])
+                try checkWorld(epoch)
+                world = try await open(restored)
+                try checkWorld(epoch)
                 try await handOver()
             }
+            try checkWorld(epoch)
             generationNote = ""
             await reveal(world)
+            try checkWorld(epoch)
             autoConnect()
-        } catch { failure = "存档无法读取：\(error.localizedDescription)"; phase = .title }
+        } catch { if epoch == worldEpoch { failure = "存档无法读取：\(error.localizedDescription)"; phase = .title } }
     }
 
     private func open(_ text: String) async throws -> WorldMap {
+        let epoch = worldEpoch
         let keeps = phase == .founding
         let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared?) in
             let decoded = try JSONDecoder().decode(LoadedWorld.self, from: Data(text.utf8))
@@ -390,6 +411,7 @@ import LieguojiCore
             // A new map view will be built (a loaded save): its layers are prepared here, off the main thread.
             return (world, decoded.state, keeps ? nil : MapLayers.prepare(world))
         }.value
+        try checkWorld(epoch)
         if let layers = loaded.2 { MapRenderer.prepared = layers }
         if phase == .founding, let shown = map, shown.province.count == loaded.0.province.count, shown.meta.provinces.count == loaded.0.meta.provinces.count {
             // The device-built preview has the same geometry: keep its map view (rebuilding the Metal
@@ -440,18 +462,29 @@ import LieguojiCore
         await Task.detached(priority: .userInitiated) { try? JSONDecoder().decode(T.self, from: data) }.value
     }
     func togglePlay() { playing ? pause() : play() }
+    private func owns(_ ticket: AdvanceOwnership.Ticket) -> Bool {
+        phase == .playing && advanceOwnership.owns(ticket, world: worldEpoch)
+    }
+    private func requestStep(days: Int, ticket: AdvanceOwnership.Ticket, revision: UInt64) -> Task<Data?, Never> {
+        Task { [weak self] in
+            guard let self, self.owns(ticket), self.playing else { return nil }
+            return await self.native.step(days: days, revision: revision, producer: ticket.producer)
+        }
+    }
     func play() {
-        guard loop == nil, state != nil else { return }
+        guard loop == nil, state != nil, phase == .playing else { return }
+        let ticket = advanceOwnership.begin(world: worldEpoch), revision = nativeRevision
+        let manual = singleStep?.world == worldEpoch ? singleStep?.task : nil
         playing = true
         loop = Task { [weak self] in
             // Through the relay the next step is already asked for while this one is applied, so
             // the computer never waits for the phone (a round trip there costs most of a step).
-            var ahead: Task<Data, Never>?
-            // The step still under way is applied when the loop stops, unless another world has begun since.
-            let epoch = self?.worldEpoch
-            defer { if let ahead, let self { Task { let data = await ahead.value; if self.worldEpoch == epoch { try? await self.apply(stepData: data) } } } }
+            var ahead: Task<Data?, Never>?
+            // Drain a real accepted tail, but never let a previous loop overwrite a resumed world.
+            defer { if let ahead, let self { Task { if let data = await ahead.value, self.owns(ticket) { try? await self.apply(stepData: data, ticket: ticket) } } } }
+            if let manual { await manual.value }
             while !Task.isCancelled {
-                guard let self else { return }
+                guard let self, self.owns(ticket) else { return }
                 let started = Date()
                 // Speed is days per step: the engine runs that many days in one call and the map,
                 // the state and the panels refresh once, so 2×, 4× and 8× really are faster.
@@ -474,12 +507,15 @@ import LieguojiCore
                     // The next step is asked for before this one is applied: the engine works on it while
                     // the main thread applies the last (on the phone too, not only through the relay —
                     // the two used to take turns, and a day cost the sum of both).
-                    let native = self.native
-                    let data = await (ahead ?? Task { await native.step(days: days) }).value
-                    ahead = Task { await native.step(days: days) }
-                    try await self.apply(stepData: data)
+                    if ahead == nil { ahead = self.requestStep(days: days, ticket: ticket, revision: revision) }
+                    guard let data = await ahead!.value else { ahead = nil; return }
+                    ahead = nil
+                    guard self.owns(ticket) else { return }
+                    if !Task.isCancelled, self.playing { ahead = self.requestStep(days: days, ticket: ticket, revision: revision) }
+                    try await self.apply(stepData: data, ticket: ticket)
                 }
-                catch { self.failure = error.localizedDescription; self.pause(); return }
+                catch { if self.owns(ticket) { self.failure = error.localizedDescription; self.pause() }; return }
+                guard self.owns(ticket), !Task.isCancelled else { return }
                 let spent = Date().timeIntervalSince(started)
                 // A single slow step (a save, a month's politics) is clipped, so it cannot drag the pace
                 // down to one day a step for many steps after it.
@@ -503,18 +539,38 @@ import LieguojiCore
         if saving, was, let day = state?.day { save(); lastSavedDay = day }
     }
     func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : 1 }
-    func stepOnce() { guard !playing else { return }; Task { try? await step(days: 1) } }
+    func stepOnce() {
+        guard !playing, phase == .playing, state != nil else { return }
+        let ticket = advanceOwnership.begin(world: worldEpoch), revision = nativeRevision
+        let previous = singleStep?.world == worldEpoch ? singleStep?.task : nil
+        let task = Task { [weak self] in
+            if let previous { await previous.value }
+            guard let self, self.phase == .playing, self.worldEpoch == ticket.world else { return }
+            if let data = await self.native.step(days: 1, revision: revision, producer: ticket.producer), self.owns(ticket) {
+                do { try await self.apply(stepData: data, ticket: ticket) }
+                catch { if self.owns(ticket) { self.failure = error.localizedDescription } }
+            }
+        }
+        singleStep = (worldEpoch, task)
+    }
 
     /// The web engine's world goes to the Swift engine, which runs it from now on.
     private func handOver() async throws {
+        let epoch = worldEpoch
         let text = try await engine.call("nativeWorld()", timeout: 90)
-        _ = try await native.open(Data(text.utf8))
+        try checkWorld(epoch)
+        let opened = try await native.open(Data(text.utf8), world: epoch)
+        try checkWorld(epoch)
+        nativeRevision = opened.revision
         await applyCloud()
+        try checkWorld(epoch)
         await native.enableAppRules()
+        try checkWorld(epoch)
         // The Swift engine's own first state (its army points, the arms by culture) replaces the web
         // engine's at once: otherwise the first step after 开始 slid every army from the web's
         // points to the engine's, a burst of "teleport" walks before the game began.
-        if let data = await native.state(), let next = try? JSONDecoder().decode(GameState.self, from: data) {
+        if let data = await native.state(), let next = await Self.decode(GameState.self, from: data) {
+            try checkWorld(epoch)
             controller.snapArmies = true
             state = nil   // no heralds for the web state's wars and events read again
             apply(next)
@@ -530,17 +586,21 @@ import LieguojiCore
     /// Smoothed time between two applied steps while playing; army icons glide over it.
     private var stepInterval: Double = 0.2
     private var lastApplied: CFTimeInterval?
-    private func step(days: Int) async throws { try await apply(stepData: await native.step(days: days)) }
-    private func apply(stepData data: Data) async throws {
-        if await native.lost { remoteLost(); return }
-        if remoteAddress != nil, !(await native.isRemote) { remoteAddress = nil }
+    private func apply(stepData data: Data, ticket: AdvanceOwnership.Ticket) async throws {
+        let lost = await native.lost, isRemote = await native.isRemote
+        guard owns(ticket) else { return }
+        if lost { remoteLost(); return }
+        guard !data.isEmpty else { throw EngineError.message("推演没有返回有效世界状态") }
         let next = try await Task.detached { try JSONDecoder().decode(GameState.self, from: data) }.value
+        guard owns(ticket) else { return }
+        if remoteAddress != nil, !isRemote { remoteAddress = nil }
         let now = CACurrentMediaTime()
         if playing, let last = lastApplied, now - last < 2 { stepInterval = stepInterval * 0.7 + (now - last) * 0.3 }
         lastApplied = playing ? now : nil
         controller.tween = playing ? min(1.2, max(0.12, stepInterval * 1.05)) : 0.3
         let applying = CACurrentMediaTime()
         apply(next)
+        onAdvanceApplied?(next.day)
         applyCost = applyCost * 0.7 + (CACurrentMediaTime() - applying) * 0.3
         if controller.showMetrics {
             controller.simText = String(format: "  推演 %.1f ms/日 · 每步 %d 日 · 界面更新 %.1f ms  ", dayCost * 1000, lastDays, applyCost * 1000)

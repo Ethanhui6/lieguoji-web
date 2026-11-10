@@ -277,6 +277,7 @@ import LieguojiCore
         // Straight into the founding: the sea fills the screen at once and the new land rises from it as
         // soon as it is built (the separate loading screen in between is gone). Without the device-built
         // preview the engine's world is awaited on the loading screen as before.
+        controller.drifting = false
         if previewInputs != nil { controller.reveal = 0; phase = .founding } else { phase = .generating }
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
@@ -332,42 +333,16 @@ import LieguojiCore
     private func rise(_ epoch: Int) async {
         controller.interactive = false
         controller.reveal = 0
-        if !ShotTour.on { await playReveal(duration: 9, while: { self.worldEpoch == epoch }); return }
-        var elapsed: Float = 0
-        var last = Date()
-        var shotSea = false
-        var shotRise = false
-        while true {
-            let now = Date()
-            elapsed += Float(now.timeIntervalSince(last))
-            last = now
-            let t = min(1, elapsed / 9)
-            controller.reveal = t
-            // CI waits on these frames. The clock pauses, then the next shot is pinned to a later stage.
-            if ShotTour.on, !shotSea, t >= 0.02 {
-                shotSea = true
-                elapsed = 0.03 * 9
-                controller.reveal = 0.03
-                await Task.yield()
-                try? await Task.sleep(nanoseconds: 80_000_000)
-                await ShotTour.shoot("02-founding")
-                last = Date()
-                continue
-            }
-            if ShotTour.on, !shotRise, t >= 0.40 {
-                shotRise = true
-                // 冲刷江河 is the stage while reveal is in [0.38, 0.45).
-                elapsed = 0.42 * 9
-                controller.reveal = 0.42
-                await Task.yield()
-                try? await Task.sleep(nanoseconds: 80_000_000)
-                await ShotTour.shoot("02b-rise")
-                last = Date()
-                continue
-            }
-            if t >= 1 { break }
-            try? await Task.sleep(nanoseconds: 16_000_000)
+        if !ShotTour.on { await playReveal(duration: 9, push: true, while: { self.worldEpoch == epoch }); return }
+        // CI waits on these frames: the clock is pinned to each stage in turn while its shot is taken.
+        let shots: [(at: Float, name: String)] = [(0.03, "02-founding"), (0.10, "02a-sea"), (0.24, "02b-rise"), (0.36, "02c-ink"), (0.62, "02d-states"), (0.80, "02e-borders")]
+        for shot in shots {
+            controller.reveal = shot.at
+            await Task.yield()
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            await ShotTour.shoot(shot.name)
         }
+        controller.reveal = 1
     }
 
     func continueGame() async {
@@ -434,7 +409,7 @@ import LieguojiCore
         controller.reveal = 0
         phase = .playing
         // The land rises and the camera eases out to the whole world (on the display link).
-        await playReveal(duration: 2.4, push: controller.play.introCamera)
+        await playReveal(duration: 3.2, push: controller.play.introCamera)
         controller.interactive = true
     }
 

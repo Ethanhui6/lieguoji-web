@@ -22,9 +22,9 @@ public struct Tuning: Codable, Sendable, Equatable {
     /// 政权更替: a state may lose provinces to rebellion once it holds this many (the original: 30, on
     /// maps of hundreds of provinces); rebellions and family risings may begin this many months into a
     /// world (the original: 24); and family risings are this much likelier.
-    public var rebelMinProvinces = 14
-    public var calmMonths = 6
-    public var unrest = 1.0
+    public var rebelMinProvinces = 24
+    public var calmMonths = 18
+    public var unrest = 0.35
     /// Standing armies: per province in all, per province at home, in the whole world.
     public var armiesPerProvince = 2.2
     public var armiesAtHome = 3

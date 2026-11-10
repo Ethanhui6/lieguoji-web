@@ -139,6 +139,9 @@ public final class EngineService {
             var r = Reply(); r.points = engine?.route(armyId: str("armyId")) ?? []; return r
         case "save": return data(engine?.save())
         case "enableAppRules": engine?.enableAppRules(); return Reply()
+        // Where a day goes (Profile.swift): switched on, then read back as text.
+        case "profile": Profile.reset(); Profile.enabled = bool("on"); return Reply()
+        case "profileReport": return Reply(data: Data(Profile.report.utf8))
         case "regime":
             let g: (history: [String], trait: String) = engine?.regime(int("n")) ?? (history: [], trait: "")
             var r = Reply(); r.strings = g.history; r.text = g.trait; return r

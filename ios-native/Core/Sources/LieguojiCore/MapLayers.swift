@@ -327,13 +327,15 @@ public enum MapLayers {
         public let key: String
         public let provinceLines: [Float], relief: [Float], outlines: [Float], icons: [Float]
         public let ornaments: [Float], fine: [Float], sea: [UInt8]
+        /// RevealFields.swift.
+        public let reveal: [Float]
     }
     public static func key(_ map: WorldMap) -> String {
         "\(map.cellCount)|\(map.meta.provinces.count)|\(map.width)x\(map.height)|\(map.rivers.count)|\(map.meta.cities.count)|"
             + map.meta.provinces.map { String($0.nation) }.joined(separator: ",") + "|" + map.meta.nations.map(\.line).joined(separator: ",")
     }
     public static func prepare(_ map: WorldMap) -> Prepared {
-        Prepared(key: key(map), provinceLines: provinceLines(map).vertices, relief: relief(map).vertices, outlines: outlines(map).vertices, icons: cityIcons(map).vertices, ornaments: ornaments(map).vertices, fine: fineDetail(map).vertices, sea: waterlines(map))
+        Prepared(key: key(map), provinceLines: provinceLines(map).vertices, relief: relief(map).vertices, outlines: outlines(map).vertices, icons: cityIcons(map).vertices, ornaments: ornaments(map).vertices, fine: fineDetail(map).vertices, sea: waterlines(map), reveal: revealFields(map))
     }
 
     /// Province borders inside the land: every edge between two land provinces, joined and smoothed

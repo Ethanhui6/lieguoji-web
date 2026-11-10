@@ -11,8 +11,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let device: MTLDevice
     private let queue: MTLCommandQueue
     private let cellPipeline: MTLRenderPipelineState
-    /// The generation reveal on the GPU: land rises from the sea by height, then the states' colours wash in.
+    /// 开卷, the generation reveal on the GPU: the sea is brushed onto blank paper (veil), the land is
+    /// inked in from the shore to the peaks, then the states' colours spread from their capitals.
     private let revealPipeline: MTLRenderPipelineState
+    private let veilPipeline: MTLRenderPipelineState
     /// 易主渐变: a conquered province's colour blends from its old owner's to the new one's.
     private let fadePipeline: MTLRenderPipelineState
     private var previousColors: MTLBuffer?
@@ -63,7 +65,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let sea: MTLTexture?
     private let parchment: MTLTexture?
     private let sampler: MTLSamplerState?
-    private(set) var map: WorldMap { didSet { revealHeights = nil } }
+    private(set) var map: WorldMap { didSet { revealFields = nil; revealFieldData = nil } }
     private var nationColors: [RGB]
     private var tint: [Int: RGB] = [:]
     private var fills: [RGB]?
@@ -72,7 +74,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private(set) var mode: MapMode = .political
     private(set) var highlight: Int?
 
-    struct Uniforms { var viewport: SIMD2<Float>; var center: SIMD2<Float>; var scale: Float; var halfWidth: Float }
+    struct Uniforms { var viewport: SIMD2<Float>; var center: SIMD2<Float>; var scale: Float; var halfWidth: Float; var alpha: Float = 1; var pad: Float = 0 }
+    /// The blank sheet the map is painted on (the parchment is multiplied over it).
+    static let paper = RGB(hex: 0xEDE3CC)
     struct QuadUniforms { var origin: SIMD2<Float>; var size: SIMD2<Float> }
 
     init?(view: MTKView, map: WorldMap, parchmentURL: URL?, unitURL: (String) -> URL? = { _ in nil }) {
@@ -107,7 +111,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 return try device.makeRenderPipelineState(descriptor: d)
             }
             cellPipeline = try pipeline("cellVertex", "colorFragment", .none)
-            revealPipeline = try pipeline("revealVertex", "colorFragment", .none)
+            revealPipeline = try pipeline("revealVertex", "revealFragment", .none)
+            veilPipeline = try pipeline("quadVertex", "veilFragment", .alpha)
             fadePipeline = try pipeline("fadeVertex", "colorFragment", .none)
             linePipeline = try pipeline("lineVertex", "flatFragment", .alpha)
             flatPipeline = try pipeline("flatVertex", "flatFragment", .alpha)
@@ -140,6 +145,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // Layers built off the main thread for this very map are used as they are.
         let ready = Self.prepared.flatMap { $0.key == MapLayers.key(map) ? $0 : nil }
         Self.prepared = nil
+        revealFieldData = ready?.reveal
         provinceLines = buffer(ready?.provinceLines ?? MapLayers.provinceLines(map).vertices, stride: 6)
         if !map.rivers.isEmpty { rivers = buffer(map.rivers, stride: 2) }
         relief = buffer(ready?.relief ?? MapLayers.relief(map).vertices, stride: 6)
@@ -344,33 +350,29 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// Called on the main queue when new outlines are ready to draw.
     var onOutlines: (() -> Void)?
 
-    /// The title screen's generation animation: 0 shows only the sea; land rises from the coast to the
-    /// mountains, then the states' colours wash over it; at 1 every layer is drawn.
+    /// 开卷: 0 is blank paper; the sea is brushed in, the land inked from the shore to the peaks, the
+    /// states' colours spread from their capitals, then lines, marks and names; at 1 every layer is drawn.
     private(set) var reveal: Float = 1
-    /// How much of the open-water veil lies over the sea: whole at first, gone once the coast has risen.
-    private var revealVeil: Float { let x = min(1, max(0, (reveal - 0.05) / 0.19)); return 1 - x * x * (3 - 2 * x) }
-    /// Only a value for the reveal shader: no colours are recomputed while the land rises.
+    /// Only a value for the reveal shader: no colours are recomputed while the map is painted.
     func setReveal(_ t: Float) { reveal = max(0, min(1, t)); if base == nil { recolor() } }
     /// The map's colours before the generation reveal: the land colours of the current mode and the
-    /// terrain colours, both shaded. Kept while only the reveal moves, so the rising animation does not
+    /// terrain colours, both shaded. Kept while only the reveal moves, so the animation does not
     /// recompute every cell's palette 60 times a second.
     private var base: (land: [Float], terrain: [Float])? { didSet { revealTerrain = nil } }
-    /// For the reveal shader: each vertex's height (0 coast … 1 peak; −1 water) and the shaded terrain colours.
-    private var revealHeights: MTLBuffer?
+    /// For the reveal shader: each vertex's two fields (RevealFields.swift) and the shaded terrain colours.
+    private var revealFields: MTLBuffer?
+    private var revealFieldData: [Float]?
     private var revealTerrain: MTLBuffer?
-    private func revealBuffers() -> (heights: MTLBuffer, terrain: MTLBuffer)? {
+    private func revealBuffers() -> (fields: MTLBuffer, terrain: MTLBuffer)? {
         guard let base else { return nil }
         if revealTerrain == nil { revealTerrain = device.makeBuffer(bytes: base.terrain, length: max(4, base.terrain.count * 4), options: .storageModeShared) }
-        if revealHeights == nil {
-            var h = [Float](repeating: -1, count: map.vertices.count / 2)
-            let top = Float(max(21, map.elevation.max().map(Int.init) ?? 100))
-            for cell in 0..<map.cellCount where map.isLand(cell) {
-                let v = (Float(map.elevation[cell]) - 20) / (top - 20)
-                for i in Int(map.offsets[cell])..<min(h.count, Int(map.offsets[cell + 1])) { h[i] = max(0, v) }
-            }
-            revealHeights = device.makeBuffer(bytes: h, length: max(4, h.count * 4), options: .storageModeShared)
+        if revealFields == nil {
+            var data = revealFieldData ?? []
+            if data.count != map.vertices.count { data = MapLayers.revealFields(map) }
+            revealFieldData = nil
+            revealFields = device.makeBuffer(bytes: data, length: max(8, data.count * 4), options: .storageModeShared)
         }
-        guard let a = revealHeights, let b = revealTerrain else { return nil }
+        guard let a = revealFields, let b = revealTerrain else { return nil }
         return (a, b)
     }
 
@@ -710,31 +712,40 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setFragmentSamplerState(sampler, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
         }
-        func colored(_ layer: (buffer: MTLBuffer, count: Int)?) {
-            guard let layer else { return }
+        func colored(_ layer: (buffer: MTLBuffer, count: Int)?, alpha: Float = 1) {
+            guard let layer, alpha > 0 else { return }
+            u.alpha = alpha
             encoder.setRenderPipelineState(coloredPipeline)
             encoder.setVertexBuffer(layer.buffer, offset: 0, index: 0)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
+            u.alpha = 1
         }
+        // 开卷: each layer is brushed in over a moment at its turn, none pops up whole.
+        let stage = reveal
+        func ramp(_ from: Float) -> Float { min(1, max(0, (stage - from) / 0.07)) }
         quad(sea, texturePipeline, x: 0, y: 0, width: map.width, height: map.height)
-        // The shallows and waterlines of a coast not yet risen would show as a ghost of it: open water first.
-        if reveal < 0.24 {
-            let opacity = revealVeil
-            var veil = ColoredMesh()
-            veil.fill([0, 0, map.width, 0, map.width, map.height, 0, map.height], MapPalette.ocean(display.ocean).deep, alpha: opacity)
-            colored(self.buffer(veil.vertices, stride: 6))
+        if reveal < 0.2 {
+            // Blank paper over the sea, soaked through from the middle of the sheet outwards.
+            var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
+            var sheet = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, reveal)
+            let deep = MapPalette.ocean(display.ocean).deep
+            var water = SIMD4<Float>(deep.r, deep.g, deep.b, 0), extent = SIMD4<Float>(map.width, map.height, 0, 0)
+            encoder.setRenderPipelineState(veilPipeline)
+            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+            encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
+            encoder.setFragmentBytes(&sheet, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
+            encoder.setFragmentBytes(&water, length: MemoryLayout<SIMD4<Float>>.stride, index: 1)
+            encoder.setFragmentBytes(&extent, length: MemoryLayout<SIMD4<Float>>.stride, index: 2)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
         }
         if reveal < 1, let rb = revealBuffers() {
-            // Land not yet risen is the colour of the water around it, or the veil would show its outline.
-            let ocean = MapPalette.ocean(display.ocean), k = revealVeil
-            func mix(_ a: Float, _ b: Float) -> Float { a + (b - a) * k }
-            let sea = RGB(mix(ocean.shallow.r, ocean.deep.r), mix(ocean.shallow.g, ocean.deep.g), mix(ocean.shallow.b, ocean.deep.b))
-            var r = SIMD4<Float>(sea.r, sea.g, sea.b, reveal)
+            // Land not yet inked is the paper itself, left white while the sea is painted round it.
+            var r = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, reveal)
             encoder.setRenderPipelineState(revealPipeline)
             encoder.setVertexBuffer(rb.terrain, offset: 0, index: 3)
-            encoder.setVertexBuffer(rb.heights, offset: 0, index: 4)
-            encoder.setVertexBytes(&r, length: MemoryLayout<SIMD4<Float>>.stride, index: 5)
+            encoder.setVertexBuffer(rb.fields, offset: 0, index: 4)
+            encoder.setFragmentBytes(&r, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
         } else if fading, let previous = previousColors {
             let x = Float(min(1, (CACurrentMediaTime() - fadeStart) / Self.fadeDuration))
             var t = x * x * (3 - 2 * x)
@@ -753,23 +764,23 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // The screen width is the previous client choice; it is not a measured original width.
         // Province borders: smoothed ink lines at every zoom (MapLayers.provinceLines), so each
         // province reads as clearly as in the original.
-        if display.provinceLines && reveal >= 0.55 { colored(provinceLines) }
-        if let rivers, reveal > 0.38 {
-            var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, 1)
+        if display.provinceLines { colored(provinceLines, alpha: ramp(0.5)) }
+        if let rivers, reveal > 0.42 {
+            var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, ramp(0.42))
             encoder.setRenderPipelineState(flatPipeline)
             encoder.setVertexBuffer(rivers.buffer, offset: 0, index: 0)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
         }
-        if display.seaRoutes && reveal >= 0.7 { colored(seaLanes) }
+        if display.seaRoutes { colored(seaLanes, alpha: ramp(0.7)) }
         if display.gridLines == true && reveal >= 1 { colored(gridLines) }
         let chart = display.mapDetail ?? true
-        if chart && reveal >= 0.45 { colored(ornaments) }
-        if chart && reveal >= 0.45 && camera.scale >= 1.5 { colored(fineDetail) }
-        if display.vegetation && reveal >= 0.45 { colored(relief) }
-        if display.borders && reveal >= 0.75 { colored(outlines) }
-        if display.cityIcons && reveal >= 0.85 { colored(icons); colored(forts) }
+        if chart { colored(ornaments, alpha: ramp(0.44)) }
+        if chart && camera.scale >= 1.5 { colored(fineDetail, alpha: ramp(0.44)) }
+        if display.vegetation { colored(relief, alpha: ramp(0.44)) }
+        if display.borders { colored(outlines, alpha: ramp(0.75)) }
+        if display.cityIcons { colored(icons, alpha: ramp(0.85)); colored(forts, alpha: ramp(0.85)) }
         if reveal >= 1 {
         colored(route)
         encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
@@ -791,7 +802,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let r = map.meta.parchment
             quad(parchment, multiplyPipeline, x: r.x - 70, y: r.y - 70, width: r.width + 140, height: r.height + 140)
         }
-        if display.darkEdges && reveal >= 0.2 { colored(frame) }
+        if display.darkEdges { colored(frame) }
         encoder.endEncoding()
         buffer.present(drawable)
         buffer.commit()
@@ -801,7 +812,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     static let shaders = """
     #include <metal_stdlib>
     using namespace metal;
-    struct Uniforms { float2 viewport; float2 center; float scale; float halfWidth; };
+    struct Uniforms { float2 viewport; float2 center; float scale; float halfWidth; float alpha; float pad; };
     struct QuadUniforms { float2 origin; float2 size; };
     struct ColorOut { float4 position [[position]]; float4 color; };
     struct FlatOut { float4 position [[position]]; };
@@ -816,41 +827,59 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     struct ColoredVertex { packed_float2 position; packed_float4 color; };
     vertex ColorOut coloredVertex(uint id [[vertex_id]], const device ColoredVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
-        ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); return o;
+        ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); o.color.a *= u.alpha; return o;
     }
     fragment float4 colorFragment(ColorOut in [[stage_in]]) { return in.color; }
     vertex ColorOut fadeVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
                                constant Uniforms& u [[buffer(2)]], const device float4* previous [[buffer(3)]], constant float& t [[buffer(4)]]) {
         ColorOut o; o.position = clip(positions[id], u, float2(0.0)); o.color = mix(previous[id], colors[id], t); return o;
     }
-    vertex ColorOut revealVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
-                                 constant Uniforms& u [[buffer(2)]], const device float4* terrain [[buffer(3)]], const device float* heights [[buffer(4)]],
-                                 constant float4& r [[buffer(5)]]) {
-        ColorOut o; o.position = clip(positions[id], u, float2(0.0));
-        float4 c = colors[id]; float h = heights[id];
-        if (h >= 0.0) {
-            float2 q = positions[id];
-            // A slow field over the map: the states' colours spread like ink soaking into paper, in
-            // patches, rather than all at once.
-            float n = 0.5 + 0.5 * sin(q.x * 0.0115 + 1.7) * cos(q.y * 0.0137 - 0.6) * 0.8 + 0.1 * sin((q.x + q.y) * 0.031);
-            // Heights are per cell, so a cell used to pop up whole (a mosaic of blocks). A fine field over
-            // each vertex varies the height inside the cell, and a wider band lets the shore creep in.
-            float fine = 0.5 * sin(q.x * 0.071 + q.y * 0.013) + 0.5 * cos(q.y * 0.083 - q.x * 0.021);
-            // The rise follows a field of map position only: neighbouring cells meet at the same points, so
-            // they reach the same value there and the shore blends across cell borders instead of
-            // stepping cell by cell (a cell's own height jumped at every border: the mosaic).
-            float field = 0.5 + 0.28 * sin(q.x * 0.0093 + 1.3) * cos(q.y * 0.0108 - 0.4) + 0.14 * sin((q.x - q.y) * 0.0231) + 0.08 * cos(q.x * 0.041 + q.y * 0.037);
-            float hh = field + fine * 0.03;
-            float rise = min(1.0, r.w / 0.45), wash = clamp((r.w - 0.5 - n * 0.22 - fine * 0.04) / 0.16, 0.0, 1.0);
-            float shown = smoothstep(0.0, 1.0, clamp((rise * 1.2 - hh) * 3.2, 0.0, 1.0));
-            float3 ground = terrain[id].rgb + (c.rgb - terrain[id].rgb) * wash;
-            c.rgb = r.rgb + (ground - r.rgb) * shown;
-            // An ink line runs along the rising shore, and a darker rim where the colour arrives.
-            float shore = shown * (1.0 - shown) * 4.0, front = wash * (1.0 - wash) * 4.0;
-            c.rgb = mix(c.rgb, float3(0.14, 0.11, 0.08), shore * 0.55);
-            c.rgb = mix(c.rgb, c.rgb * 0.72, front * 0.6);
-        }
-        o.color = c; return o;
+    // 开卷. Paper grain for the brush: value noise, four octaves.
+    static float hash21(float2 p) { p = fract(p * float2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+    static float vnoise(float2 p) {
+        float2 i = floor(p), f = fract(p), w = f * f * (3.0 - 2.0 * f);
+        float a = hash21(i), b = hash21(i + float2(1.0, 0.0)), c = hash21(i + float2(0.0, 1.0)), d = hash21(i + float2(1.0, 1.0));
+        return mix(mix(a, b, w.x), mix(c, d, w.x), w.y);
+    }
+    static float fbm(float2 p) {
+        float v = 0.0, a = 0.5;
+        for (int k = 0; k < 4; k++) { v += a * vnoise(p); p = p * 2.03 + float2(17.1, 9.2); a *= 0.5; }
+        return v;
+    }
+    struct RevealOut { float4 position [[position]]; float4 color; float4 terrain; float2 world; float2 field; };
+    vertex RevealOut revealVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
+                                  constant Uniforms& u [[buffer(2)]], const device float4* terrain [[buffer(3)]], const device float2* fields [[buffer(4)]]) {
+        RevealOut o; o.position = clip(positions[id], u, float2(0.0));
+        o.color = colors[id]; o.terrain = terrain[id]; o.world = positions[id]; o.field = fields[id];
+        return o;
+    }
+    // The land. Every edge is decided per pixel from fields that run smoothly across cells, so the ink
+    // creeps like a wash on paper instead of popping up cell by cell.
+    fragment float4 revealFragment(RevealOut in [[stage_in]], constant float4& r [[buffer(0)]]) {
+        float2 q = in.world;
+        // Inked from the shore up to the peaks over 0.14…0.44.
+        float rise = clamp((r.w - 0.14) / 0.30, 0.0, 1.0);
+        float e = rise * 1.25 - 0.1 - (in.field.x * 0.8 + fbm(q * 0.02) * 0.25);
+        float shown = smoothstep(-0.03, 0.05, e);
+        // Each state's colour spreads from its capital over 0.5…0.75.
+        float spread = clamp((r.w - 0.5) / 0.25, 0.0, 1.0);
+        float ew = spread * 1.3 - 0.1 - (clamp(in.field.y, 0.0, 1.0) * 0.85 + fbm(q * 0.015 + float2(31.7, 11.3)) * 0.3);
+        float washed = smoothstep(-0.02, 0.07, ew);
+        float3 ground = mix(in.terrain.rgb, in.color.rgb, washed);
+        // Fresh ink is darker until it dries.
+        ground *= 1.0 - 0.12 * clamp(1.0 - e * 4.0, 0.0, 1.0) * shown;
+        float3 c = mix(r.rgb, ground, shown);
+        float rim = shown * (1.0 - shown) * 4.0, front = washed * (1.0 - washed) * 4.0;
+        c = mix(c, float3(0.14, 0.11, 0.08), rim * 0.5);
+        c = mix(c, c * 0.72, front * 0.5);
+        return float4(c, 1.0);
+    }
+    // The blank sheet over the sea, soaked through over 0…0.16 (r: paper and the reveal).
+    fragment float4 veilFragment(QuadOut in [[stage_in]], constant float4& r [[buffer(0)]], constant float4& water [[buffer(1)]], constant float4& extent [[buffer(2)]]) {
+        float2 q = in.uv * extent.xy, middle = extent.xy * 0.5;
+        float flood = fbm(q * 0.006) * 0.55 + 0.45 * distance(q, middle) / max(1.0, length(middle));
+        float wet = smoothstep(-0.04, 0.04, clamp(r.w / 0.16, 0.0, 1.0) * 1.2 - 0.1 - flood);
+        return float4(mix(r.rgb, water.rgb * 0.55, wet), 1.0 - wet);
     }
     vertex FlatOut lineVertex(uint id [[vertex_id]], const device float4* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
         FlatOut o; float4 p = v[id]; o.position = clip(p.xy, u, p.zw * u.halfWidth); return o;

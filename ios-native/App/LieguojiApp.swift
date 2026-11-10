@@ -707,6 +707,9 @@ struct GameView: View {
     /// 横屏 on a phone: its own layout (a rail down the left, pages beside the map).
     private var landscape: Bool { verticalClass == .compact }
     @State private var ripple: CGPoint?
+    /// 入场: the controls settle in a moment after the map is whole.
+    @State private var entered = false
+    private var chromeIn: Bool { controller.reveal >= 1 && entered }
     private struct ShotFile: Identifiable { let url: URL; var id: URL { url } }
     @State private var shot: ShotFile?
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
@@ -755,7 +758,8 @@ struct GameView: View {
                 }
             }
             .animation(.spring(response: 0.4, dampingFraction: 0.85), value: model.herald)
-                .offset(y: controller.reveal >= 1 ? 0 : -80)
+                .offset(y: chromeIn ? 0 : -90).opacity(chromeIn ? 1 : 0)
+                .animation(.spring(response: 0.7, dampingFraction: 0.8), value: chromeIn)
                 .opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingArmy)
                 .animation(.spring(response: 0.4, dampingFraction: 0.85), value: controller.marchingFleet)
@@ -771,10 +775,13 @@ struct GameView: View {
                 if landscape { EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }.frame(maxWidth: 380).padding(.bottom, 4) }
                 else { bottomBar }
             }
-            .offset(y: controller.reveal >= 1 ? 0 : 120).opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper)
+            .offset(y: chromeIn ? 0 : 130).opacity(chromeIn ? 1 : 0)
+            .animation(.spring(response: 0.7, dampingFraction: 0.8).delay(0.12), value: chromeIn)
+            .opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper)
+            .task { try? await Task.sleep(nanoseconds: 250_000_000); entered = true }
         }
         .overlay(alignment: .topLeading) {
-            if landscape { landscapeRail.offset(x: controller.reveal >= 1 ? 0 : -120).opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper) }
+            if landscape { landscapeRail.offset(x: chromeIn ? 0 : -120).animation(.spring(response: 0.7, dampingFraction: 0.8), value: chromeIn).opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper) }
         }
         .overlay {
             if wallpaper {
@@ -3127,8 +3134,8 @@ struct FoundingView: View {
     /// mountains, the rivers, forests and plains, the provinces, the states' colours — and then the
     /// engine's work: cities, houses and people, armies, relations. Finished stages stay listed.
     static let stages: [(until: Float, text: String)] = [
-        (0.06, "注水成海"), (0.24, "抬升大陆"), (0.38, "隆起山脉与高原"), (0.45, "冲刷江河"),
-        (0.55, "播撒森林、草原与荒漠"), (0.65, "划分州郡"), (0.75, "分封列国"), (0.85, "勘定国界"), (1.00, "营建城邦与港口"),
+        (0.15, "铺纸注海"), (0.30, "勾勒海岸"), (0.44, "晕染山河"), (0.50, "冲刷江河，播撒林木"),
+        (0.56, "划分州郡"), (0.75, "分封列国"), (0.85, "勘定国界"), (1.00, "营建城邦与港口"),
     ]
     static let later = ["诞生世家与人物", "编练军队", "缔结邦交", "天下初定"]
     @State private var started = Date()

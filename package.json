@@ -11,7 +11,7 @@
     "lint": "eslint src scripts functions",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run lint && npm run typecheck && npm test",
+    "check": "npm run lint && npm run typecheck && node --test scripts/check-native-tour.test.mjs && npm test",
     "secret-scan": "node scripts/secret-scan.mjs"
   },
   "dependencies": {

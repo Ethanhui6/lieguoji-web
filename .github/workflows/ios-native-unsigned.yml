@@ -131,6 +131,8 @@ jobs:
             sleep 0.4
           done
           xcrun simctl io "$UDID" screenshot shots/zz-last.png || true
+          [ "$finished" = 1 ] && printf '{"finished":true}\n' > shots/tour-status.json || printf '{"finished":false}\n' > shots/tour-status.json
+          node scripts/check-native-tour.mjs shots
           ls shots
       - uses: actions/upload-artifact@v4
         if: always()

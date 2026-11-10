@@ -19,6 +19,14 @@ export function checkNativeTour(directory) {
     || ownership.backwards !== 0 || !(ownership.endDay > ownership.startDay) || ownership.endDay !== ownership.authoritativeDay) {
     throw Error('暂停恢复回归失败：时间回退、推演未前进或暂停后的显示与引擎不一致。');
   }
+  const profile = JSON.parse(readFileSync(join(directory,'panel-profile.json'),'utf8'));
+  if(profile.version !== 1 || profile.frozen !== true || profile.day < 0 || profile.day !== profile.endDay
+    || !/^[a-f0-9]{64}$/.test(profile.worldSHA256) || !Array.isArray(profile.panels)
+    || !['nation','province','ranking'].every(scene => profile.panels.some(row => row.scene === scene))
+    || profile.panels.some(row => !(row.samples > 0) || row.cycles !== 3
+      || !['averageMs','p95Ms','maxMs','hitches'].every(key => Number.isFinite(row[key]) && row[key] >= 0))) {
+    throw Error('面板性能记录无效：世界未保持冻结、场景不完整或没有有效采样。');
+  }
   for(const name of requiredShots) {
     let bytes;
     try { bytes = readFileSync(join(directory,`${name}.png`)); }

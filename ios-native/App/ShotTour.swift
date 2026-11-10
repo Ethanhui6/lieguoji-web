@@ -1,4 +1,5 @@
 import SwiftUI
+import CryptoKit
 import LieguojiCore
 
 /// The CI screenshot tour (launched with LGJ_SHOT=1 in the simulator): it starts a world at war and
@@ -102,6 +103,7 @@ enum ShotTour {
         await shoot("24-stress-ranking-" + meter.stop())
         model.speed = speed
         model.pause(saving: false)
+        await profilePausedPanels(model, show: show)
         views(true); await wait(1); await shoot("07-views"); views(false)
         let nation = model.state?.nations.indices.max { (model.state?.nations[$0].provinces ?? 0) < (model.state?.nations[$1].provinces ?? 0) } ?? 0
         let panels: [(String, Panel)] = [("10-nations", .nations), ("11-nation", .nation(nation)),
@@ -197,7 +199,44 @@ enum ShotTour {
         await shoot("09-pause-resume")
     }
 
-    /// Opens 人物 for the largest state after giving its ruler the ShipMaster and Reformer traits.
+    /// Keep one world frozen across all panel measurements. Saving is outside the measured window;
+    /// the before/after bytes ensure a background tail or an inspection query did not change it.
+    @MainActor private static func profilePausedPanels(_ model: GameModel, show: (Panel?) -> Void) async {
+        let deadline = Date().addingTimeInterval(15)
+        var stable = 0, day = -1
+        while Date() < deadline, stable < 3 {
+            await wait(0.15)
+            let current = await model.native.localDayForTour() ?? -1
+            stable = current >= 0 && current == day && model.state?.day == current ? stable + 1 : 0
+            day = current
+        }
+        let before = await model.native.save()
+        if let before { try? before.write(to: dir.appendingPathComponent("ci-panel-world.lgj"), options: .atomic) }
+        let scenes: [(String, Panel)] = [("nation", .nation(0)), ("province", .province(0)),
+                                         ("army", .army(0)), ("ranking", .statistics)]
+        var rows = [[String: Any]]()
+        let meter = HitchMeter()
+        for (name, panel) in scenes {
+            if name == "army", model.state?.armies.isEmpty ?? true { continue }
+            meter.start()
+            for _ in 0..<3 { show(panel); await wait(0.8); show(nil); await wait(0.5) }
+            var row = meter.measure().mapValues { $0 as Any }
+            row["scene"] = name
+            row["cycles"] = 3
+            rows.append(row)
+        }
+        let after = await model.native.save()
+        let engineDay = await model.native.localDayForTour() ?? -1
+        let frozen = stable >= 3 && !model.playing && day == engineDay && model.state?.day == day
+            && before != nil && before == after
+        let digest = before.map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() } ?? ""
+        let report: [String: Any] = ["version": 1, "frozen": frozen, "day": day, "endDay": engineDay,
+                                     "worldSHA256": digest, "panels": rows]
+        if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {
+            try? data.write(to: dir.appendingPathComponent("panel-profile.json"), options: .atomic)
+        }
+    }
+
     /// Main-thread frame gaps on the display link: average, 95th percentile, worst, and how many over
     /// 50 ms (a visible hitch).
     @MainActor final class HitchMeter: NSObject {
@@ -207,12 +246,18 @@ enum ShotTour {
             let l = CADisplayLink(target: self, selector: #selector(tick(_:))); l.add(to: .main, forMode: .common); link = l
         }
         @objc private func tick(_ l: CADisplayLink) { if last > 0 { gaps.append((l.timestamp - last) * 1000) }; last = l.timestamp }
-        func stop() -> String {
+        func measure() -> [String: Double] {
             link?.invalidate(); link = nil
             let s = gaps.sorted()
-            guard let worst = s.last else { return "none" }
+            guard let worst = s.last else { return ["samples": 0] }
             let p95 = s[min(s.count - 1, s.count * 95 / 100)], avg = s.reduce(0, +) / Double(s.count)
-            return String(format: "avg%.0fms-p95_%.0fms-max%.0fms-hitches%d", avg, p95, worst, s.filter { $0 > 50 }.count)
+            return ["samples": Double(s.count), "averageMs": avg, "p95Ms": p95, "maxMs": worst,
+                    "hitches": Double(s.filter { $0 > 50 }.count)]
+        }
+        func stop() -> String {
+            let m = measure()
+            guard let avg = m["averageMs"], let p95 = m["p95Ms"], let worst = m["maxMs"], let hitches = m["hitches"] else { return "none" }
+            return String(format: "avg%.0fms-p95_%.0fms-max%.0fms-hitches%d", avg, p95, worst, Int(hitches))
         }
     }
     @MainActor private static func shootRulerTraits(_ model: GameModel, nation: Int, show: (Panel?) -> Void) async {

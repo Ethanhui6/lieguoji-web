@@ -185,6 +185,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 自绘地图: the terrain itself changed (land raised from the sea, coasts moved): the land mesh,
     /// relief marks, province lines and outlines are rebuilt, and the sea texture when given.
     func setTerrain(_ next: WorldMap, refreshSea: Bool) {
+        workRevision.replaceMap()
         map = next; base = nil; shade = []; terrainBase = nil
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         let mesh = CellMesh(map: next)
@@ -193,7 +194,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         provinceLines = buffer(MapLayers.provinceLines(next).vertices, stride: 6)
         rivers = next.rivers.isEmpty ? nil : buffer(next.rivers, stride: 2)
         relief = buffer(MapLayers.relief(next).vertices, stride: 6)
-        outlines = buffer(MapLayers.outlines(next).vertices, stride: 6)
+        outlines = buffer(MapLayers.outlines(next, wide: borderWide).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
         if refreshSea {
             seaSource = next.seaRGBA; seaMask = MapLayers.waterlines(next); uploadSea(); seaLaneKey = []; seaLanes = nil
@@ -266,6 +267,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// The state outlines are rebuilt on a background queue (the whole map's border walk); the land
     /// is recoloured at once, and the new outlines replace the old ones when ready.
     func setMap(_ next: WorldMap) {
+        let work = workRevision.replaceMap()
         // The founded world brings the smoothed coast the preview lacked: the waterlines and sand follow it.
         if !coastRefined && !next.coast.isEmpty {
             coastRefined = true
@@ -279,8 +281,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         map = next
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
-        outlineGeneration += 1
-        let generation = outlineGeneration
         let wide = borderWide
         // Everything an ownership change redraws — every vertex's colour, the state outlines and the
         // city marks — is computed off the main thread and swapped in together (the colours used to be
@@ -292,18 +292,20 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let provinceLines = MapLayers.provinceLines(next).vertices
             let colours = MapRenderer.baseColors(next, inputs)
             DispatchQueue.main.async {
-                guard let self, generation == self.outlineGeneration else { return }
-                self.outlines = self.buffer(vertices, stride: 6)
+                guard let self, self.workRevision.acceptsMap(work) else { return }
+                if self.workRevision.acceptsOutlines(work) { self.outlines = self.buffer(vertices, stride: 6) }
                 self.icons = self.buffer(marks, stride: 6)
                 self.provinceLines = self.buffer(provinceLines, stride: 6)
                 if self.terrainBase == nil { self.terrainBase = colours.terrainBase }
                 if self.shade.isEmpty { self.shade = colours.shade }
-                // Only if nothing changed the look meanwhile (a mode switch rebuilds its own base).
-                if self.mode == inputs.mode && self.fills == inputs.fills && self.highlight == inputs.highlight && self.tint == inputs.tint { self.base = (colours.land, colours.terrain) }
-                else { self.base = nil }
-                self.fadeOnRecolor = true
-                self.recolor()
-                self.fadeOnRecolor = false
+                // A view switch owns its own colour pass. Never recompute the whole map on the
+                // main thread when that pass races a conquest or a border selection.
+                if self.workRevision.acceptsAppearance(work) {
+                    self.base = (colours.land, colours.terrain)
+                    self.fadeOnRecolor = true
+                    self.recolor()
+                    self.fadeOnRecolor = false
+                }
                 self.onOutlines?()
             }
         }
@@ -329,19 +331,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         return (c, terrain, terrainBase, shade)
     }
-    private var outlineGeneration = 0
+    private var workRevision = MapWorkRevision()
     private var borderWide = Set<Int>()
     /// The open nation and the owner of the selected province, drawn at twice the border width.
     func setBorderEmphasis(_ wide: Set<Int>) {
         guard wide != borderWide else { return }
         borderWide = wide
-        outlineGeneration += 1
-        let generation = outlineGeneration
+        let work = workRevision.changeOutlines()
         let next = map
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let vertices = MapLayers.outlines(next, wide: wide).vertices
             DispatchQueue.main.async {
-                guard let self, generation == self.outlineGeneration else { return }
+                guard let self, self.workRevision.acceptsOutlines(work) else { return }
                 self.outlines = self.buffer(vertices, stride: 6)
                 self.onOutlines?()
             }
@@ -378,11 +379,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     private(set) var display = DisplaySettings()
     func setDisplay(_ d: DisplaySettings) {
-        let recolour = d.colorDensity != display.colorDensity || d.ocean != display.ocean
+        let recolour = d.colorDensity != display.colorDensity
         let seaChanged = d.ocean != display.ocean, detailChanged = d.mapDetail != display.mapDetail
         display = d
         if seaChanged || detailChanged { uploadSea() }
-        if recolour { base = nil; recolor() }
+        if recolour { rebuildAppearance() }
     }
     private func recolor() {
         if base == nil {
@@ -672,17 +673,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func setAppearance(mode: MapMode, highlight: Int?, tint: [Int: RGB] = [:], fills: [RGB]? = nil) {
         guard mode != self.mode || highlight != self.highlight || tint != self.tint || fills != self.fills else { return }
         self.mode = mode; self.highlight = highlight; self.tint = tint; self.fills = fills
+        rebuildAppearance()
+    }
+    private func rebuildAppearance() {
         // The whole map's colours are worked out off the main thread (opening a state's page tints its
         // friends and foes, and recolouring every vertex there stalled the page's slide-in); the old
         // colours stay on screen until the new ones are ready.
-        appearanceGeneration += 1
-        let generation = appearanceGeneration, map = self.map, outlines = outlineGeneration
+        let work = workRevision.changeAppearance(), map = self.map
         let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let colours = MapRenderer.baseColors(map, inputs)
             DispatchQueue.main.async {
                 // A newer appearance, or a new map since (its own pass sets the colours), wins.
-                guard let self, generation == self.appearanceGeneration, outlines == self.outlineGeneration else { return }
+                guard let self, self.workRevision.acceptsAppearance(work) else { return }
                 if self.terrainBase == nil { self.terrainBase = colours.terrainBase }
                 if self.shade.isEmpty { self.shade = colours.shade }
                 self.base = (colours.land, colours.terrain)
@@ -691,7 +694,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             }
         }
     }
-    private var appearanceGeneration = 0
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 

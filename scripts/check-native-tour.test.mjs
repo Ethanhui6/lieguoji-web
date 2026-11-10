@@ -9,7 +9,7 @@ import {checkNativeTour,requiredShots} from './check-native-tour.mjs';
 function fixture(t) {
   const directory = mkdtempSync(join(tmpdir(),'lieguoji-tour-'));
   t.after(() => {
-    for(const name of ['tour-status.json','advance-ownership.json',...requiredShots.map(name => `${name}.png`)]) {
+    for(const name of ['tour-status.json','advance-ownership.json','panel-profile.json',...requiredShots.map(name => `${name}.png`)]) {
       try { unlinkSync(join(directory,name)); } catch(error) { if(error.code !== 'ENOENT') throw error; }
     }
     rmdirSync(directory);
@@ -19,6 +19,8 @@ function fixture(t) {
   for(const name of requiredShots) writeFileSync(join(directory,`${name}.png`),png);
   writeFileSync(join(directory,'tour-status.json'),JSON.stringify({finished:true}));
   writeFileSync(join(directory,'advance-ownership.json'),JSON.stringify({version:1,passed:true,controls:40,samples:12,startDay:0,endDay:10,authoritativeDay:10,backwards:0}));
+  writeFileSync(join(directory,'panel-profile.json'),JSON.stringify({version:1,frozen:true,day:10,endDay:10,worldSHA256:'a'.repeat(64),
+    panels:['nation','province','ranking'].map(scene => ({scene,cycles:3,samples:100,averageMs:20,p95Ms:40,maxMs:60,hitches:2}))}));
   return directory;
 }
 
@@ -47,4 +49,14 @@ test('a finished tour fails when a stale reply moved the clock back',t => {
   const d = fixture(t);
   writeFileSync(join(d,'advance-ownership.json'),JSON.stringify({version:1,passed:true,controls:40,samples:12,startDay:0,endDay:10,authoritativeDay:10,backwards:1}));
   assert.throws(() => checkNativeTour(d),/时间回退/);
+});
+test('a panel profile fails when the world changed during measurement',t => {
+  const d = fixture(t);
+  writeFileSync(join(d,'panel-profile.json'),JSON.stringify({version:1,frozen:false,day:10,endDay:11}));
+  assert.throws(() => checkNativeTour(d),/世界未保持冻结/);
+});
+test('a frozen profile without samples fails',t => {
+  const d = fixture(t);
+  writeFileSync(join(d,'panel-profile.json'),JSON.stringify({version:1,frozen:true,day:10,endDay:10,worldSHA256:'a'.repeat(64),panels:[]}));
+  assert.throws(() => checkNativeTour(d),/没有有效采样/);
 });

@@ -770,7 +770,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // province reads as clearly as in the original.
         if reveal < 0.82 {
             // The shore is outlined first and gives way to the finished borders.
-            if coastInk == nil { coastInk = buffer(MapLayers.coastInk(map).vertices, stride: 6) }
+            if coastInk == nil { coastInk = self.buffer(MapLayers.coastInk(map).vertices, stride: 6) }
             colored(coastInk, alpha: ramp(0.1) * (1 - ramp(0.75)))
         } else if coastInk != nil { coastInk = nil }
         if display.provinceLines { colored(provinceLines, alpha: ramp(0.5)) }

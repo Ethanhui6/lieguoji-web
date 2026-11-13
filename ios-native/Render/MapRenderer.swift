@@ -65,7 +65,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let sea: MTLTexture?
     private let parchment: MTLTexture?
     private let sampler: MTLSamplerState?
-    private(set) var map: WorldMap { didSet { revealFields = nil; revealFieldData = nil } }
+    private(set) var map: WorldMap { didSet { revealFields = nil; revealFieldData = nil; coastInk = nil } }
+    /// 勾勒海岸 (MapDetail.coastInk), kept only while a reveal runs.
+    private var coastInk: (buffer: MTLBuffer, count: Int)?
     private var nationColors: [RGB]
     private var tint: [Int: RGB] = [:]
     private var fills: [RGB]?
@@ -766,6 +768,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // The screen width is the previous client choice; it is not a measured original width.
         // Province borders: smoothed ink lines at every zoom (MapLayers.provinceLines), so each
         // province reads as clearly as in the original.
+        if reveal < 0.82 {
+            // The shore is outlined first and gives way to the finished borders.
+            if coastInk == nil { coastInk = buffer(MapLayers.coastInk(map).vertices, stride: 6) }
+            colored(coastInk, alpha: ramp(0.1) * (1 - ramp(0.75)))
+        } else if coastInk != nil { coastInk = nil }
         if display.provinceLines { colored(provinceLines, alpha: ramp(0.5)) }
         if let rivers, reveal > 0.42 {
             var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, ramp(0.42))
@@ -867,7 +874,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float spread = clamp((r.w - 0.5) / 0.25, 0.0, 1.0);
         float ew = spread * 1.3 - 0.1 - (clamp(in.field.y, 0.0, 1.0) * 0.85 + fbm(q * 0.015 + float2(31.7, 11.3)) * 0.3);
         float washed = smoothstep(-0.02, 0.07, ew);
-        float3 ground = mix(in.terrain.rgb, in.color.rgb, washed);
+        // The first wash is ink and tea, as a landscape is laid in before it is coloured.
+        float light = dot(in.terrain.rgb, float3(0.3, 0.59, 0.11));
+        float3 sepia = mix(float3(0.42, 0.34, 0.24), r.rgb, smoothstep(0.15, 0.85, light) * 0.8);
+        float3 ground = mix(mix(sepia, in.terrain.rgb, 0.32), in.color.rgb, washed);
         // Fresh ink is darker until it dries.
         ground *= 1.0 - 0.12 * clamp(1.0 - e * 4.0, 0.0, 1.0) * shown;
         float3 c = mix(r.rgb, ground, shown);

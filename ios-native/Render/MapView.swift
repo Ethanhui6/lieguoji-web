@@ -594,6 +594,7 @@ struct MapView: UIViewRepresentable {
             guard let t = controller.revealNow, let renderer else { return false }
             renderer.setReveal(t)
             labels?.alpha = CGFloat(max(0, min(1, (t - 0.85) / 0.15)))
+            effects?.alpha = CGFloat(max(0, min(1, (t - 0.9) / 0.1)))
             mtk.setNeedsDisplay()
             // The owner (GameModel) clears the clock once the published value has caught up.
             if controller.revealDone { renderer.setReveal(controller.revealClock?.to ?? t); return false }
@@ -646,6 +647,7 @@ struct MapView: UIViewRepresentable {
                 if let renderer, renderer.reveal != controller.reveal { renderer.setReveal(controller.reveal) }
                 // Names ink in last, with the cities.
                 labels?.alpha = CGFloat(max(0, min(1, (controller.reveal - 0.85) / 0.15)))
+                effects?.alpha = CGFloat(max(0, min(1, (controller.reveal - 0.9) / 0.1)))
             }
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }

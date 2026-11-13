@@ -12,6 +12,15 @@ extension MapLayers {
         for e in map.edges where e.a >= 0 && e.b >= 0 && map.isLand(Int(e.a)) != map.isLand(Int(e.b)) { out += [e.x1, e.y1, e.x2, e.y2] }
         return out
     }
+    /// 勾勒海岸: the shore as one ink line, drawn while the land is still blank paper (开卷).
+    public static func coastInk(_ map: WorldMap) -> ColoredMesh {
+        var m = ColoredMesh()
+        let ink = RGB(hex: 0x2E2518), coast = coastLines(map)
+        for i in stride(from: 0, to: coast.count - 3, by: 4) {
+            m.segment(coast[i], coast[i + 1], coast[i + 2], coast[i + 3], width: 1.5, ink, alpha: 0.6)
+        }
+        return m
+    }
     /// The emptiest corner of the sea, where the compass stands.
     public static func compassCorner(_ map: WorldMap) -> (x: Float, y: Float) {
         let inset: Float = 118

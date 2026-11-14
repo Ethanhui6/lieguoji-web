@@ -1010,7 +1010,7 @@ struct GameView: View {
                 controller.marchingFleet = f; self.panel = nil; say("点选地图上本国的港口州郡")
             }).presentationDetents([.height(320), .medium, .large], selection: $unitDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nation(let n):
-            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, paint: { n in
+            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, lower: { nationDetent = .fraction(0.38) }, paint: { n in
                 controller.placingArmy = false; controller.paintNation = n; self.panel = nil
                 say("绘制疆域：点选或用一指拖过州郡，划入\(model.map?.meta.nations.indices.contains(n) == true ? model.map!.meta.nations[n].name : "")；两指移动地图")
             }, placeArmy: { n in

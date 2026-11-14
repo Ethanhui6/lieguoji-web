@@ -55,6 +55,15 @@ public struct MapCamera: Equatable, Sendable {
         }
         return MapCamera(centerX: axis(centerX, map.width, viewport.width), centerY: axis(centerY, map.height, viewport.height), scale: scale)
     }
+    /// 查看都城: the camera that shows a place close up, the place `lift` of the screen's height above
+    /// the centre (a page covers the lower part). It always zooms in to at least `closeness` × the
+    /// whole-map scale, so the tap is seen even when the camera already looks at the place.
+    public static func spotlight(x: Double, y: Double, from current: MapCamera, map: (width: Double, height: Double), viewport: (width: Double, height: Double),
+                                 closeness: Double = 10, lift: Double = 0.2) -> MapCamera {
+        let b = scaleBounds(map: map, viewport: viewport)
+        let scale = min(b.upperBound, max(current.scale, b.lowerBound * closeness))
+        return MapCamera(centerX: x, centerY: y + viewport.height * lift / scale, scale: scale).clamped(map: map, viewport: viewport)
+    }
     public static func interpolate(_ a: MapCamera, _ b: MapCamera, _ t: Double) -> MapCamera {
         // Zoom interpolates in log space so a zoom animation feels uniform.
         let s = a.scale > 0 && b.scale > 0 ? exp(log(a.scale) + (log(b.scale) - log(a.scale)) * t) : b.scale

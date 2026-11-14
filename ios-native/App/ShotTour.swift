@@ -47,8 +47,36 @@ enum ShotTour {
         await wait(3)
         await shoot("03-world")
         await checkAdvanceOwnership(model)
+        // 国名稳定: while the war redraws the borders and the camera stands still, every frame is compared
+        // with the one before. A name that dips (hidden or fading) and is back within 45 frames blinked.
+        let names = NameWatch(model.controller)
+        let owners = model.state?.owners ?? []
+        MapLabelsView.namesCreated = 0; MapLabelsView.namesMoved = 0; MapLabelsView.namesFadedIn = 0
+        names.start()
         model.play()
         for i in 0..<3 { await wait(12); await shoot("04-war-\(i)") }
+        var watch = names.stop()
+        watch["provincesChanged"] = zip(owners, model.state?.owners ?? []).filter { $0 != $1 }.count
+        watch["created"] = MapLabelsView.namesCreated; watch["moved"] = MapLabelsView.namesMoved; watch["fadedIn"] = MapLabelsView.namesFadedIn
+        watch["version"] = 1
+        let steady = (watch["frames"] ?? 0) >= 300 && (watch["names"] ?? 0) >= 1 && (watch["blinks"] ?? 99) <= 4
+        var report = watch.mapValues { $0 as Any }
+        report["passed"] = steady
+        if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {
+            try? data.write(to: dir.appendingPathComponent("name-stability.json"), options: .atomic)
+        }
+        // 查看都城: the biggest state's 在地图上查看都城 (the camera glides and zooms, the seal ring closes in).
+        if let map = model.map, let state = model.state, let top = state.nations.indices.max(by: { state.nations[$0].provinces < state.nations[$1].provinces }),
+           map.meta.nations.indices.contains(top), map.meta.cities.indices.contains(map.meta.nations[top].capital) {
+            let c = map.meta.cities[map.meta.nations[top].capital]
+            model.controller.showPlace(x: Double(c.x), y: Double(c.y))
+            await wait(1.3); await shoot("04c-capital-spotlight")
+            await wait(2.4)
+        }
+        // 地图展开: zoomed all the way out, the whole chart is on screen.
+        for _ in 0..<8 { model.controller.zoom(0.5); await wait(0.35) }
+        await wait(0.6); await shoot("04d-map-unrolled")
+        model.controller.resetRequest = UUID(); await wait(0.8)
         // Up close on the biggest fight: armies that are fighting or besieging.
         if let state = model.state, let a = state.armies.filter({ $0.status == "fighting" || $0.status == "sieging" }).max(by: { $0.troops < $1.troops }) ?? state.armies.first {
             model.controller.fly(x: Double(a.x), y: Double(a.y))
@@ -251,6 +279,35 @@ enum ShotTour {
         }
     }
 
+    /// 连续帧对比: samples the state names of every displayed frame (MapLabelsView.nameFrame).
+    @MainActor final class NameWatch: NSObject {
+        private let controller: MapController
+        private var link: CADisplayLink?, frame = 0, blinks = 0, seen = Set<String>()
+        /// Per name: whether it was fully drawn in the last frame, and the frame it last dipped at.
+        private var full = [String: Bool](), dipped = [String: Int]()
+        init(_ controller: MapController) { self.controller = controller }
+        func start() { let l = CADisplayLink(target: self, selector: #selector(tick(_:))); l.add(to: .main, forMode: .common); link = l }
+        @objc private func tick(_ l: CADisplayLink) {
+            guard let shown = controller.nameFrame?() else { return }
+            frame += 1
+            var now = [String: Bool]()
+            for (key, opacity) in shown {
+                let text = String(key.split(separator: "#").first ?? "")
+                now[text] = (now[text] ?? false) || opacity >= 0.98
+            }
+            for text in seen.union(now.keys) {
+                let was = full[text] ?? false, isFull = now[text] ?? false
+                if was && !isFull { dipped[text] = frame }
+                if !was && isFull, let d = dipped[text], frame - d <= 45 { blinks += 1 }
+                full[text] = isFull
+            }
+            seen.formUnion(now.keys)
+        }
+        func stop() -> [String: Int] {
+            link?.invalidate(); link = nil
+            return ["frames": frame, "names": seen.count, "blinks": blinks]
+        }
+    }
     /// Main-thread frame gaps on the display link: average, 95th percentile, worst, and how many over
     /// 50 ms (a visible hitch).
     @MainActor final class HitchMeter: NSObject {

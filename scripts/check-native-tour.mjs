@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 export const requiredShots = [
   '01-title','01b-settings','01c-new-world','01d-archive',
   '02-founding','02a-sea','02b-rise','02c-ink','02d-states','02e-borders',
-  '03-world','04-war-0','04-war-1','04-war-2','07-views',
+  '03-world','04-war-0','04-war-1','04-war-2','04c-capital-spotlight','04d-map-unrolled','07-views',
   '10-nations','11-nation','12-military','14-diplomacy','15-chronicle',
   '16-statistics','17-edicts','18-menu','19-province','30-landscape','31-landscape-nation',
 ];
@@ -26,6 +26,10 @@ export function checkNativeTour(directory) {
     || profile.panels.some(row => !(row.samples > 0) || row.cycles !== 3
       || !['averageMs','p95Ms','maxMs','hitches'].every(key => Number.isFinite(row[key]) && row[key] >= 0))) {
     throw Error('面板性能记录无效：世界未保持冻结、场景不完整或没有有效采样。');
+  }
+  const names = JSON.parse(readFileSync(join(directory,'name-stability.json'),'utf8'));
+  if(names.version !== 1 || names.passed !== true || !(names.frames >= 300) || !(names.names >= 1) || !(names.blinks <= 4)) {
+    throw Error(`国名稳定回归失败：镜头静止推演 ${names.frames} 帧里国名闪烁 ${names.blinks} 次（易主 ${names.provincesChanged} 州，新建 ${names.created}，移位 ${names.moved}）。`);
   }
   for(const name of requiredShots) {
     let bytes;

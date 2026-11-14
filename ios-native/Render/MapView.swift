@@ -55,6 +55,8 @@ import LieguojiCore
     var troopTexts: [String: String] = [:]
     /// Where the icon with this key is drawn now (set by the map view).
     var placed: ((String) -> (Double, Double)?)?
+    /// CI 连续帧对比: the state names on screen in this frame and how opaque each is drawn.
+    var nameFrame: (() -> [String: Float])?
     /// Harbour points in map units. The sea-route layer is rebuilt when this changes.
     @Published var seaPorts: [SIMD2<Float>] = []
     /// 要塞 marks: the cities of fortified provinces, in map units.
@@ -129,6 +131,9 @@ import LieguojiCore
     @Published var focusPoint: (x: Double, y: Double, id: UUID)?
     func fly(x: Double, y: Double) { focusPoint = (x, y, UUID()) }
     func zoom(_ factor: Double) { zoomRequest = (factor, UUID()) }
+    /// 查看都城: the camera glides to the place, zooms in and a vermilion seal ring closes on it.
+    @Published var spotlight: (x: Double, y: Double, id: UUID)?
+    func showPlace(x: Double, y: Double) { spotlight = (x, y, UUID()) }
 }
 
 /// Map display options kept between launches. v3 resets older saves once so the province borders
@@ -276,6 +281,45 @@ struct MapView: UIViewRepresentable {
         private var focusPointID: UUID?
         private var resetID: UUID?
         private var zoomID: UUID?
+        private var spotlightID: UUID?
+        /// The seal ring over a spotlit place; it follows the map while it shows.
+        private var spot: (x: Double, y: Double, layer: CALayer)?
+        private func placeSpot() {
+            guard let spot, let renderer else { return }
+            let p = renderer.camera.toScreen(x: spot.x, y: spot.y, viewport: viewport)
+            CATransaction.begin(); CATransaction.setDisableActions(true)
+            spot.layer.position = CGPoint(x: p.x, y: p.y)
+            CATransaction.commit()
+        }
+        /// 朱印高亮: two vermilion rings close in on the place like a seal pressed on paper, a soft wash
+        /// of cinnabar under them, and they pulse three times before fading.
+        private func showSpot(x: Double, y: Double) {
+            spot?.layer.removeFromSuperlayer()
+            let seal = UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 1)
+            let root = CALayer()
+            func ring(_ radius: CGFloat, width: CGFloat, fill: CGFloat, dash: [NSNumber]?) -> CAShapeLayer {
+                let l = CAShapeLayer()
+                l.path = UIBezierPath(ovalIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2)).cgPath
+                l.strokeColor = seal.cgColor; l.lineWidth = width; l.fillColor = seal.withAlphaComponent(fill).cgColor; l.lineDashPattern = dash
+                return l
+            }
+            let inner = ring(30, width: 3, fill: 0.10, dash: nil), outer = ring(40, width: 1.2, fill: 0, dash: [7, 5])
+            root.addSublayer(outer); root.addSublayer(inner)
+            labels.layer.addSublayer(root)
+            let duration = 3.2
+            let press = CAKeyframeAnimation(keyPath: "transform.scale")
+            press.values = [3.2, 1, 1.18, 1, 1.18, 1, 1.18, 1]; press.keyTimes = [0, 0.2, 0.33, 0.46, 0.59, 0.72, 0.85, 1]
+            let fade = CAKeyframeAnimation(keyPath: "opacity")
+            fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.16, 0.82, 1]
+            let turn = CABasicAnimation(keyPath: "transform.rotation.z"); turn.fromValue = 0; turn.toValue = Double.pi / 2; turn.duration = duration
+            outer.add(turn, forKey: "turn")
+            for a in [press, fade] as [CAKeyframeAnimation] { a.duration = duration; a.timingFunctions = nil; a.calculationMode = .cubic; a.isRemovedOnCompletion = false; a.fillMode = .forwards; root.add(a, forKey: a.keyPath) }
+            spot = (x, y, root); placeSpot()
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.05) { [weak self, weak root] in
+                root?.removeFromSuperlayer()
+                if let self, self.spot?.layer === root { self.spot = nil }
+            }
+        }
         private let selection = UISelectionFeedbackGenerator()
         private let impact = UIImpactFeedbackGenerator(style: .light)
 
@@ -287,13 +331,10 @@ struct MapView: UIViewRepresentable {
 
         var mapSize: (width: Double, height: Double) { (Double(map.width), Double(map.height)) }
         var viewport: (width: Double, height: Double) { (Double(mtk.bounds.width), Double(mtk.bounds.height)) }
-        /// From covering the screen (nothing beyond the map is ever shown: no band or frame at the top or
-        /// bottom of a phone) to the closest zoom.
-        var bounds: ClosedRange<Double> {
-            let b = MapCamera.scaleBounds(map: mapSize, viewport: viewport)
-            let cover = max(viewport.width / max(1, mapSize.width), viewport.height / max(1, mapSize.height))
-            return min(cover, b.upperBound)...b.upperBound
-        }
+        /// From the whole map on screen (地图展开: the chart lies unrolled on its paper) to the closest zoom.
+        /// The game opens covering the screen (MapCamera.cover); 1.12 made that the furthest zoom too, and
+        /// the map could no longer be unrolled.
+        var bounds: ClosedRange<Double> { MapCamera.scaleBounds(map: mapSize, viewport: viewport) }
 
         func build() -> MapContainerView {
             container = MapContainerView()
@@ -341,6 +382,7 @@ struct MapView: UIViewRepresentable {
                 self.link?.preferredFrameRateRange = self.frameRange
                 self.mtk.preferredFramesPerSecond = self.controller.sheetOpen ? 30 : 120
             }
+            controller.nameFrame = { [weak self] in self?.labels?.nameFrame() ?? [:] }
             controller.placed = { [weak self] key in
                 guard let p = self?.renderer?.placedSprites().first(where: { $0.sprite.key == key }) else { return nil }
                 return (Double(p.x), Double(p.y))
@@ -396,6 +438,7 @@ struct MapView: UIViewRepresentable {
             labels.update(camera: renderer.camera, viewport: mtk.bounds.size)
             effects.update(camera: renderer.camera, viewport: mtk.bounds.size)
             updateTroops()
+            placeSpot()
             mtk.setNeedsDisplay()
         }
         private func updateTroops() {
@@ -750,6 +793,12 @@ struct MapView: UIViewRepresentable {
                 // The sheet covers the lower part of the screen: the unit sits in the upper third.
                 animate(to: MapCamera(centerX: f.x, centerY: f.y + Double(viewport.height) * 0.2 / scale, scale: scale), duration: 0.55)
             }
+            if let s = controller.spotlight, s.id != spotlightID {
+                spotlightID = s.id
+                // The sheet (dropped to its lowest stop) covers the lower part: the place sits at 30 % from the top.
+                animate(to: MapCamera.spotlight(x: s.x, y: s.y, from: camera, map: mapSize, viewport: viewport), duration: 0.75)
+                showSpot(x: s.x, y: s.y)
+            }
             if let z = controller.zoomRequest, z.id != zoomID {
                 zoomID = z.id
                 animate(to: camera.zoomed(by: z.factor, anchorX: viewport.width / 2, anchorY: viewport.height / 2, viewport: viewport, bounds: bounds), duration: 0.3)
@@ -804,7 +853,9 @@ final class MapLabelsView: UIView {
     static let fontName = "TW-Kai-98_1"
     private final class Label {
         let view = UIImageView()
-        let text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?
+        let text: String
+        var x: Double, y: Double, mapEm: Double
+        let fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?
         var rendered: Double = 0
         /// Tilt in radians (a state name along its land).
         var angle: Double = 0
@@ -902,20 +953,51 @@ final class MapLabelsView: UIView {
     /// Ownership changed: replace the state names, keep every city label and its rendered image.
     /// A colour view names its groups (culture, family, religion) where the state names were.
     func setGroups(_ groups: [GroupLabel], animated: Bool = true) {
-        fadeOut(nations, animated)
         let unit = Double(MapLayers.fontUnit)
-        nations = groups.map { g in
+        let fresh = groups.map { g -> Label in
             let measured = (g.name as NSString).size(withAttributes: [.font: Self.font(1)])
             let size = MapLayers.labelFontSize(box: g.box, emWidth: Float(measured.width), emHeight: Float(measured.height))
             return Label(text: g.name, x: Double(g.box.x), y: Double(g.box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
         }.sorted { $0.mapEm > $1.mapEm }
+        guard animated else { continueNames(fresh); return }
+        fadeOut(nations, animated)
+        nations = fresh
         fadeIn(nations, animated)
     }
     func setNations(map: WorldMap, animated: Bool = true) {
+        let fresh = Self.nationLabels(map, unit: Double(MapLayers.fontUnit), full: fullNames)
+        guard animated else { continueNames(fresh); return }
         fadeOut(nations, animated)
-        nations = Self.nationLabels(map, unit: Double(MapLayers.fontUnit), full: fullNames)
+        nations = fresh
         fadeIn(nations, animated)
     }
+    /// 国名不闪: borders changed while the same names stay on the map. A name that is still there keeps
+    /// its view (rebuilding them all made every name vanish and fade in again with each province that
+    /// changed hands), and keeps its place when its box barely moved (NameStability).
+    private func continueNames(_ fresh: [Label]) {
+        func placement(_ l: Label) -> NameStability.Placement { .init(text: l.text, x: l.x, y: l.y, em: l.mapEm, angle: l.angle) }
+        let old = nations, matches = NameStability.match(old: old.map(placement), fresh: fresh.map(placement))
+        var kept = Set<Int>(), next = [Label]()
+        for (f, m) in zip(fresh, matches) {
+            guard let i = m.reuse else {
+                f.view.isHidden = true; addSubview(f.view); next.append(f); Self.namesCreated += 1; continue
+            }
+            let o = old[i]; kept.insert(i)
+            if !m.keep { o.x = f.x; o.y = f.y; o.mapEm = f.mapEm; o.angle = f.angle; Self.namesMoved += 1 }
+            next.append(o)
+        }
+        for (i, o) in old.enumerated() where !kept.contains(i) { o.view.removeFromSuperview() }
+        nations = next.sorted { $0.mapEm != $1.mapEm ? $0.mapEm > $1.mapEm : $0.text < $1.text }
+    }
+    /// The state names showing now and the opacity each is drawn with this frame (the presentation
+    /// layer: a name that is fading in reads below 1).
+    func nameFrame() -> [String: Float] {
+        var out = [String: Float]()
+        for l in nations where !l.view.isHidden { out["\(l.text)#\(ObjectIdentifier(l.view).hashValue)"] = (l.view.layer.presentation() ?? l.view.layer).opacity }
+        return out
+    }
+    /// CI's 国名稳定 check: names created and moved by border changes, and names that faded in.
+    static var namesCreated = 0, namesMoved = 0, namesFadedIn = 0
     /// Name sets cross-fade when a view switches or borders change, instead of popping.
     private func fadeOut(_ old: [Label], _ animated: Bool) {
         let views = old.map(\.view)
@@ -1031,6 +1113,7 @@ final class MapLabelsView: UIView {
             if l.view.isHidden {
                 // A name that gave way comes back softly.
                 l.view.isHidden = false; l.view.alpha = 0
+                if l.province == nil { Self.namesFadedIn += 1 }
                 UIView.animate(withDuration: 0.22, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) { l.view.alpha = 1 }
             }
         }

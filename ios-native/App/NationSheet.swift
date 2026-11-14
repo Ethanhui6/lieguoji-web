@@ -89,6 +89,8 @@ struct NationSheet: View {
     let nation: Int
     let say: (String) -> Void
     let fly: (Int) -> Void
+    /// 查看都城: the page drops to its lowest stop so the map above it is seen.
+    var lower: () -> Void = {}
     /// 绘制疆域: paint provinces on the map for this state.
     var paint: (Int) -> Void = { _ in }
     var placeArmy: (Int) -> Void = { _ in }
@@ -340,7 +342,10 @@ struct NationSheet: View {
                         }
                         if nation < map.meta.nations.count, map.meta.cities.indices.contains(map.meta.nations[nation].capital) {
                             Divider2()
-                            Button { fly(map.meta.cities[map.meta.nations[nation].capital].province) } label: {
+                            Button {
+                                let c = map.meta.cities[map.meta.nations[nation].capital]
+                                lower(); model.controller.showPlace(x: Double(c.x), y: Double(c.y)); GameFeel.shared.tap()
+                            } label: {
                                 HStack { Text("在地图上查看都城").foregroundStyle(Theme.seal); Spacer(); Image(systemName: "scope").foregroundStyle(Theme.seal) }
                                     .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }

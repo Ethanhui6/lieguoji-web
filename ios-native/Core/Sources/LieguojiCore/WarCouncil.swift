@@ -275,9 +275,13 @@ extension ArmyOrders {
         let freeTroops = forces.reduce(0.0) { $0 + ($1.movable ? $1.troops : 0) }
         // 取富庶之地 (app rule, at the player's request; the original FindRegularTargetProvince weighs
         // distance only): among targets about as near, the more populous one is taken first.
-        var populace = 0.0
-        for p in provinces { populace += p.population.asNumber }
-        let meanPopulation = max(1, populace / Double(max(1, provinces.count)))
+        // Each province's people are kept in the statecraft ledger (as the state page reads them).
+        var people = [String: Double](), populace = 0.0
+        for s in r.world.statecraft.provinces.asArray {
+            let n = s.population.optionalNumber ?? 0
+            people[s.provinceId.asString] = n; populace += n
+        }
+        let meanPopulation = max(1, populace / Double(max(1, people.count)))
         for (k, enemy) in order.enumerated() {
             let list = frontier[enemy] ?? []
             let bound = forces.filter { f in f.target.map { provinces[$0].controller.asString == enemy } ?? false }
@@ -293,7 +297,7 @@ extension ArmyOrders {
                 if let heart { v += 0.7 * jsHypot(at.x - heart.x, at.y - heart.y) }
                 if targeted.contains(p) { v -= 60 }
                 if CombatReader.protruding(r, p) { v -= 30 }
-                v -= 40 * min(2.5, provinces[p].population.asNumber / meanPopulation)
+                v -= 40 * min(2.5, (people[provinces[p].id.asString] ?? 0) / meanPopulation)
                 return v
             }
             let sorted = list.map { (p: $0, v: value($0)) }.sorted { x, y in x.v != y.v ? x.v < y.v : x.p < y.p }

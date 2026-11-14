@@ -384,10 +384,11 @@ public enum MapLayers {
             m.band(a2, a3, b3, b2, color, outer: outer, inner: inner)
             m.band(a3, a0, b0, b3, color, outer: outer, inner: inner)
         }
-        // Burnt edge inside the mounting: soft, and gone a little way in.
-        let depth = min(w, h) * 0.05
-        ring(23.2, depth * 0.35, brown, outer: 0.3, inner: 0.12)
-        ring(23.2 + depth * 0.35, depth * 0.65, brown, outer: 0.12, inner: 0)
+        // Aged paper at the very edge of the sheet, fading to nothing a little way in: a soft vignette in
+        // the paper's own warm brown, with no hard band or rule (the screen's edge is the sheet's edge).
+        let depth = min(w, h) * 0.06
+        ring(0, depth * 0.3, brown, outer: 0.22, inner: 0.08)
+        ring(depth * 0.3, depth * 0.7, brown, outer: 0.08, inner: 0)
         _ = ink
         return m
     }

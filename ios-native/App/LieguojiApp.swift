@@ -257,7 +257,8 @@ struct TitleView: View {
     var body: some View {
         ZStack {
             // Ink at the top, paper at the bottom: the title and the actions read over any world.
-            LinearGradient(stops: [.init(color: SplashView.night.opacity(0.62), location: 0), .init(color: SplashView.night.opacity(0), location: 0.38),
+            // A soft ink wash from the very top edge (no band under the status bar): it fades out over a third.
+            LinearGradient(stops: [.init(color: SplashView.night.opacity(0.5), location: 0), .init(color: SplashView.night.opacity(0.22), location: 0.16), .init(color: SplashView.night.opacity(0), location: 0.4),
                                    .init(color: Theme.paper.opacity(0), location: 0.5), .init(color: Theme.paper.opacity(0.96), location: 0.74)],
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea().allowsHitTesting(false)
@@ -742,9 +743,9 @@ struct GameView: View {
         // A breath of ink at the screen's top and foot, so the floating controls settle into the map.
         .overlay {
             VStack(spacing: 0) {
-                LinearGradient(colors: [Color.black.opacity(0.18), .clear], startPoint: .top, endPoint: .bottom).frame(height: 130)
+                LinearGradient(colors: [Theme.ink.opacity(0.14), Theme.ink.opacity(0.05), .clear], startPoint: .top, endPoint: .bottom).frame(height: 140)
                 Spacer()
-                LinearGradient(colors: [.clear, Color.black.opacity(0.16)], startPoint: .top, endPoint: .bottom).frame(height: landscape ? 60 : 150)
+                LinearGradient(colors: [.clear, Theme.ink.opacity(0.05), Theme.ink.opacity(0.13)], startPoint: .top, endPoint: .bottom).frame(height: landscape ? 60 : 150)
             }
             .ignoresSafeArea().allowsHitTesting(false).opacity(wallpaper ? 0 : 1)
         }
@@ -2629,7 +2630,8 @@ struct ReleaseNotesSheet: View {
                     "【勘定国界】开卷时国界原先是蓝色，改用「天下初定」相同的配色，前后不再跳色。",
                     "【首都】首都仍用原作三重圈，图标放大约四分之一。排地名时先给首都图标留位，首都名排在国名前面，国名不再盖住首都。",
                     "【发热】「均衡」档行军帧率由 60 降到 30，推演占用由 80% 降到 65%。手机微热时行军降到 30 帧，发热严重时降到 20 帧。以前用默认「均衡」的玩家会自动换成新档位。",
-                    "【本机计算】自动接入电脑默认关闭，推演全部在手机上完成；需要时可以在「设置 › 远程计算」打开。"]),
+                    "【本机计算】自动接入电脑默认关闭，推演全部在手机上完成；需要时可以在「设置 › 远程计算」打开。",
+                    "【画面边缘】地图铺满整屏，包括刘海、灵动岛和底部 Home 条区域，最小缩放也不会露出地图外的底色。去掉原先贴着地图边缘的米色纸带和黑线，改为宣纸色的淡淡做旧暗角。主页顶部、地图页上下改为淡墨渐隐，不再出现色带或硬边。"]),
         ("1.11.0", ["【开卷动画】新世界与进入游戏的动画重做成一幅画的过程：先是一张白纸，海水晕开，陆地留白；墨线勾出海岸，赭墨染出山河；各国颜色从都城向四境晕开，最后才落下国界、城池与地名。每一层都是渐显，不再整块跳出。",
                     "【入场】地图画完后，上下的控件带弹性滑入；读档进场的镜头更舒缓。",
                     "【集结出击】需要几支军队合打的目标，不再一支一支送上去：先到目标旁的本国州郡集结，兵力大致到齐再一同进攻；兵力远不够时就在边境等待，不去送死。估算敌情时把目标邻州的敌军也算进去。军事页会标出「集结」。",

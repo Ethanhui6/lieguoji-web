@@ -287,7 +287,13 @@ struct MapView: UIViewRepresentable {
 
         var mapSize: (width: Double, height: Double) { (Double(map.width), Double(map.height)) }
         var viewport: (width: Double, height: Double) { (Double(mtk.bounds.width), Double(mtk.bounds.height)) }
-        var bounds: ClosedRange<Double> { MapCamera.scaleBounds(map: mapSize, viewport: viewport) }
+        /// From covering the screen (nothing beyond the map is ever shown: no band or frame at the top or
+        /// bottom of a phone) to the closest zoom.
+        var bounds: ClosedRange<Double> {
+            let b = MapCamera.scaleBounds(map: mapSize, viewport: viewport)
+            let cover = max(viewport.width / max(1, mapSize.width), viewport.height / max(1, mapSize.height))
+            return min(cover, b.upperBound)...b.upperBound
+        }
 
         func build() -> MapContainerView {
             container = MapContainerView()
@@ -386,7 +392,7 @@ struct MapView: UIViewRepresentable {
             let b = bounds
             var c = camera
             c.scale = min(b.upperBound, max(b.lowerBound, c.scale))
-            renderer.camera = c.clamped(map: mapSize, viewport: viewport, margin: 44)
+            renderer.camera = c.clamped(map: mapSize, viewport: viewport, margin: 0)
             labels.update(camera: renderer.camera, viewport: mtk.bounds.size)
             effects.update(camera: renderer.camera, viewport: mtk.bounds.size)
             updateTroops()
@@ -552,7 +558,7 @@ struct MapView: UIViewRepresentable {
         private func animate(to target: MapCamera, duration: Double = 0.38) {
             var t = target
             t.scale = min(bounds.upperBound, max(bounds.lowerBound, t.scale))
-            animation = (camera, t.clamped(map: mapSize, viewport: viewport, margin: 44), CACurrentMediaTime(), duration)
+            animation = (camera, t.clamped(map: mapSize, viewport: viewport, margin: 0), CACurrentMediaTime(), duration)
             velocity = .zero
             startLink()
         }

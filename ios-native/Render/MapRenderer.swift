@@ -805,7 +805,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         }
         colored(extraRivers)
-        colored(mount)
+        // The original's mounting (a paper band and black rules along the edge) read as a hard brown frame
+        // on a phone screen; the scroll edge below (a soft aged wash) frames the map instead.
+        _ = mount
         if display.parchment {
             // A little past the map: the parchment lies over the paper mounting too.
             let r = map.meta.parchment

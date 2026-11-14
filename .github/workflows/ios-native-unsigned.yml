@@ -140,7 +140,17 @@ jobs:
             [ ! -f "$DATA/Documents/$name" ] || cp "$DATA/Documents/$name" shots/
           done
           node scripts/check-native-tour.mjs shots
-          ls shots
+          # 边缘特写: the top of the title screen and the top and bottom of the map, where an empty band
+          # or a hard frame would show (cropped full-width, 360 px tall).
+          mkdir -p shots/edges
+          for pair in "01-title:top" "03-world:top" "03-world:bottom" "02e-borders:top"; do
+            n=${pair%%:*}; side=${pair##*:}; src="shots/$n.png"
+            [ -f "$src" ] || continue
+            h=$(sips -g pixelHeight "$src" | awk '/pixelHeight/{print $2}'); w=$(sips -g pixelWidth "$src" | awk '/pixelWidth/{print $2}')
+            off=0; [ "$side" = bottom ] && off=$((h-360))
+            sips -c 360 "$w" --cropOffset "$off" 0 "$src" --out "shots/edges/$n-$side.png" >/dev/null || true
+          done
+          ls shots shots/edges
       - uses: actions/upload-artifact@v4
         if: always()
         with:

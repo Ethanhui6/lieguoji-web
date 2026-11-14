@@ -1117,7 +1117,9 @@ final class MapLabelsView: UIView {
             if points < l.floorPoints, points >= 4.5, let anchor = l.anchorY {
                 points = l.floorPoints
                 let at = camera.toScreen(x: l.x, y: anchor, viewport: vp)
-                p = (x: at.x, y: at.y - (max(ring, 3) + 4 + points * 0.62))
+                // Clear of its own rings as the layout sees them (their box, the slack a hidden name is asked
+                // for, and half the name's height): 1.14 put the name a point too low and it hid itself.
+                p = (x: at.x, y: at.y - (max(ring, 3) + 3 + 7 + points * 0.78))
             }
             // A name larger than the screen can show is hidden (a continent-wide group zoomed in close).
             guard points.isFinite, points >= l.minPoints, points < 900, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }

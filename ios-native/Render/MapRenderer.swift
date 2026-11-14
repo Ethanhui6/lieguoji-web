@@ -257,7 +257,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private func uploadSea() {
         guard let sea, seaSource.count == map.seaWidth * map.seaHeight * 4 else { return }
         var bytes = MapPalette.recolorSea(seaSource, from: .warmPaper, to: MapPalette.ocean(display.ocean))
-        if display.mapDetail ?? true { MapLayers.applyWaterlines(seaMask, to: &bytes) }
+        if display.mapDetail ?? true {
+            // The brush's wash under the waterlines (the lines stay crisp), on the cold sea and the warm one alike.
+            MapLayers.applySeaWash(width: map.seaWidth, height: map.seaHeight, to: &bytes)
+            MapLayers.applyWaterlines(seaMask, to: &bytes)
+        }
         bytes.withUnsafeBytes { raw in
             if let base = raw.baseAddress {
                 sea.replace(region: MTLRegionMake2D(0, 0, map.seaWidth, map.seaHeight), mipmapLevel: 0, withBytes: base, bytesPerRow: map.seaWidth * 4)

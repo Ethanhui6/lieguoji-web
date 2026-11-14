@@ -60,3 +60,31 @@ final class MapCameraRegressionTests: XCTestCase {
         XCTAssertEqual(NameStability.match(old: twin, fresh: after).map(\.reuse), [1, 0, nil])
     }
 }
+
+/// 海面细节: the brush's wash on the sea texture.
+final class SeaWashTests: XCTestCase {
+    func testTheWashIsGentleRepeatableAndVaried() {
+        let w = 96, h = 54
+        func sea(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> [UInt8] { (0..<(w * h)).flatMap { _ in [r, g, b, 255] } }
+        // The cold (original) deep sea and the warm one.
+        for base in [(UInt8(0x14), UInt8(0x87), UInt8(0xFF)), (UInt8(0x52), UInt8(0x7C), UInt8(0x86))] {
+            var a = sea(base.0, base.1, base.2), b = a
+            MapLayers.applySeaWash(width: w, height: h, to: &a)
+            MapLayers.applySeaWash(width: w, height: h, to: &b)
+            XCTAssertEqual(a, b)
+            var seen = Set<UInt8>()
+            for p in 0..<(w * h) {
+                // The green channel never saturates in either sea: within ±5.5 % (and rounding) of the flat colour.
+                let g = Double(a[p * 4 + 1]), flat = Double(base.1)
+                XCTAssertLessThanOrEqual(abs(g - flat), flat * 0.055 + 1.01)
+                XCTAssertEqual(a[p * 4 + 3], 255)
+                seen.insert(a[p * 4 + 1])
+            }
+            XCTAssertGreaterThan(seen.count, 5, "the wash must vary across the sea")
+        }
+        // A texture of the wrong size is left alone.
+        var odd: [UInt8] = [1, 2, 3]
+        MapLayers.applySeaWash(width: w, height: h, to: &odd)
+        XCTAssertEqual(odd, [1, 2, 3])
+    }
+}

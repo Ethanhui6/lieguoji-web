@@ -52,7 +52,7 @@ extension MapLayers {
         let w = map.seaWidth, h = map.seaHeight
         let coast = coastLines(map)
         guard w > 1, h > 1, map.seaRGBA.count == w * h * 4, coast.count >= 4 else { return [] }
-        let sx = Float(w) / map.width, sy = Float(h) / map.height, reach = Int((26 * max(sx, sy)).rounded(.up))
+        let sx = Float(w) / map.width, sy = Float(h) / map.height, reach = Int((42 * max(sx, sy)).rounded(.up))
         var distance = [Int16](repeating: -1, count: w * h)
         var frontier = [Int32]()
         for i in stride(from: 0, to: coast.count - 3, by: 4) {
@@ -81,14 +81,16 @@ extension MapLayers {
             }
             frontier = next
         }
-        let rings: [(at: Float, strength: Float)] = [(6, 0.72), (12.5, 0.5), (20, 0.3)]
+        // Five lines, each further out fainter and wider apart (a woodcut chart's 水线), over shallows
+        // that pale towards the shore.
+        let rings: [(at: Float, strength: Float)] = [(5, 0.72), (10.5, 0.56), (17, 0.42), (25, 0.3), (35, 0.19)]
         let unit = 1 / max(sx, sy)
         var mask = [UInt8](repeating: 0, count: w * h * 2)
         for p in 0..<(w * h) where distance[p] > 0 {
             let d = Float(distance[p]) * unit
             var light: Float = 0
             for r in rings { light = max(light, max(0, 1 - abs(d - r.at) / max(1, unit)) * r.strength) }
-            mask[p * 2] = UInt8(light * 255); mask[p * 2 + 1] = UInt8(max(0, 1 - d / 16) * 0.2 * 255)
+            mask[p * 2] = UInt8(light * 255); mask[p * 2 + 1] = UInt8(max(0, 1 - d / 22) * 0.26 * 255)
         }
         // The sea texture is coarse: two soft passes take the stair steps out of the lines.
         for _ in 0..<2 {
@@ -112,6 +114,30 @@ extension MapLayers {
         }
     }
 
+    /// 水墨晕染: the sea is not one flat wash. Three octaves of smooth noise make it a little lighter and
+    /// darker in slow patches, as a brush leaves it, whatever the sea's colours (cold or warm preset).
+    /// At most ±`depth` of each channel; the same for the same size, so a recoloured sea keeps its wash.
+    public static func applySeaWash(width w: Int, height h: Int, to rgba: inout [UInt8], depth: Float = 0.055) {
+        guard w > 1, h > 1, rgba.count == w * h * 4 else { return }
+        func lattice(_ x: Int, _ y: Int, _ salt: Int) -> Float { Float(hash(x &* 73856093 ^ y &* 19349663 ^ salt &* 83492791) & 0xFFF) / Float(0xFFF) }
+        func noise(_ x: Float, _ y: Float, _ salt: Int) -> Float {
+            let x0 = Int(floor(x)), y0 = Int(floor(y)), fx = x - Float(x0), fy = y - Float(y0)
+            let u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy)
+            let a = lattice(x0, y0, salt), b = lattice(x0 + 1, y0, salt), c = lattice(x0, y0 + 1, salt), d = lattice(x0 + 1, y0 + 1, salt)
+            return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v
+        }
+        // The patches are sized against the texture's short side, so a map of any size is washed alike.
+        let unit = Float(min(w, h))
+        for y in 0..<h {
+            for x in 0..<w {
+                let px = Float(x) / unit, py = Float(y) / unit
+                let n = noise(px * 5, py * 5, 1) * 0.55 + noise(px * 13, py * 13, 2) * 0.3 + noise(px * 34, py * 34, 3) * 0.15
+                let k = 1 + (n - 0.5) * 2 * depth, i = (y * w + x) * 4
+                rgba[i] = UInt8(max(0, min(255, Float(rgba[i]) * k))); rgba[i + 1] = UInt8(max(0, min(255, Float(rgba[i + 1]) * k))); rgba[i + 2] = UInt8(max(0, min(255, Float(rgba[i + 2]) * k)))
+            }
+        }
+    }
+
     /// Always on the map: the sand edge of the land, wave marks on the open sea, the compass and the scale.
     public static func ornaments(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
@@ -123,14 +149,38 @@ extension MapLayers {
         let shore = shoreCells(map)
         // Waves keep well off the coast, and a slow field gathers them into patches.
         var taken = Set<Int64>()
-        for c in 0..<map.cellCount where !map.isLand(c) && !shore[c] && hash(c &* 3 &+ 11) % 12 == 0 {
+        // 叠浪: where the field gathers them the waves come stacked three deep, each crest shorter and
+        // fainter than the one before and set off to the side; elsewhere one or two. Every crest has a
+        // thin dark line under it (the engraver's shadow), so it reads on the pale warm sea as well as
+        // on the blue one. Lengths, phase and spacing vary from mark to mark.
+        let trough = RGB(hex: 0x23424E)
+        for c in 0..<map.cellCount where !map.isLand(c) && !shore[c] && hash(c &* 3 &+ 11) % 7 == 0 {
             let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
-            if sin(x * 0.017 + 0.4) * sin(y * 0.021 + 1.9) < -0.2 { continue }
-            let key = Int64(floor(x / 30)) << 32 | Int64(Int32(floor(y / 30))) & 0xFFFF_FFFF
+            let field = sin(x * 0.017 + 0.4) * sin(y * 0.021 + 1.9)
+            if field < -0.3 { continue }
+            let key = Int64(floor(x / 24)) << 32 | Int64(Int32(floor(y / 24))) & 0xFFFF_FFFF
             if !taken.insert(key).inserted { continue }
-            var line = [Float]()
-            for k in 0...8 { let t = Float(k) / 8; line += [x - 7 + 14 * t, y + sin(t * 2 * .pi * 1.5) * 1.3] }
-            m.polyline(line, width: 0.55, wave, alpha: 0.42)
+            let h = Int(hash(c &* 7 &+ 5))
+            let crests = field > 0.3 ? 3 : h % 3 == 0 ? 1 : 2
+            let half = 5.5 + Float(h % 5), phase = Float(h % 7)
+            for k in 0..<crests {
+                let reach = half * (1 - Float(k) * 0.2), left = x - reach + (k % 2 == 0 ? 0 : half * 0.4), top = y + Float(k) * 2.7
+                var line = [Float](), shade = [Float]()
+                for s in 0...10 {
+                    let t = Float(s) / 10
+                    // The swell dies away towards both ends of the stroke.
+                    let px = left + 2 * reach * t, py = top + sin(t * 2 * .pi * 1.5 + phase) * 1.25 * (1 - abs(t - 0.5) * 0.9)
+                    line += [px, py]; shade += [px, py + 0.6]
+                }
+                m.polyline(shade, width: 0.5, trough, alpha: 0.17 - Float(k) * 0.03)
+                m.polyline(line, width: 0.62 - Float(k) * 0.08, wave, alpha: 0.5 - Float(k) * 0.09)
+            }
+        }
+        // 浅滩: short pale dashes along the coast in the shallows, as old charts mark shoal water.
+        for c in 0..<map.cellCount where !map.isLand(c) && shore[c] && hash(c &* 5 &+ 3) % 2 == 0 {
+            let x = map.sites[c * 2], y = map.sites[c * 2 + 1], h = Int(hash(c &* 13 &+ 1))
+            let dx = Float(h % 9) / 4 - 1, dy = Float(h / 9 % 9) / 4 - 1
+            m.segment(x + dx - 0.9, y + dy, x + dx + 0.9, y + dy, width: 0.42, sand, alpha: 0.5)
         }
         // The compass stands in the emptiest corner of the sea.
         let (cx, cy) = compassCorner(map)

@@ -304,6 +304,44 @@ public enum ArmyOrders {
             func enemyAt(_ pid: String) -> String? { presentAt[pid]?.first { $0.status.asString != "retreating" && enemySet.contains($0.nationId.asString) }?.nationId.asString }
             let target = row.targetId.isNull ? nil : provinceAt[row.targetId.asString].map { provinceList[$0] }
             let originalTargets = !r.regimes.isNull && r.regimes.enabled.isTruthy
+            // 敌众我寡 (app worlds): an army in enemy land that is not yet in the fight looks at what stands
+            // here and at its target. Against well over its own and its comrades' strength it falls back to
+            // our nearest land to gather again; it used to march on into a host several times its size.
+            if originalTargets, a.status.asString != "retreating", !en.isEmpty, let hp = here.province, enemySet.contains(hp.controller.asString) {
+                func troopsAt(_ pid: String, ours: Bool) -> Double {
+                    var sum = 0.0
+                    for x in presentAt[pid] ?? [] where x.status.asString != "retreating" {
+                        let n = x.nationId.asString
+                        if ours ? n == nation : enemySet.contains(n) { sum += x.troops.asNumber }
+                    }
+                    return sum
+                }
+                let hid = hp.id.asString
+                var foesNear: Double = troopsAt(hid, ours: false), friendsNear: Double = troopsAt(hid, ours: true)
+                if let t = target, t.id.asString != hid {
+                    foesNear += troopsAt(t.id.asString, ours: false)
+                    friendsNear += troopsAt(t.id.asString, ours: true)
+                }
+                if foesNear > 1.6 * max(friendsNear, a.troops.asNumber) {
+                    let at = g.location(bridge.travel(here.travel)).point
+                    func far(_ q: Int) -> Double { jsHypot(provinceList[q].center.x.asNumber - at.x, provinceList[q].center.y.asNumber - at.y) }
+                    let homes = (ownedBy[nation] ?? []).sorted { x, y in
+                        let dx: Double = far(x), dy: Double = far(y)
+                        return dx != dy ? dx < dy : x < y
+                    }
+                    var fled = false
+                    for q in homes.prefix(4) {
+                        if reason(r, id, .move(province: q, retreat: true)) != nil { continue }
+                        issue(r, id, .move(province: q, retreat: true))
+                        row.targetId = provinceList[q].id.clone(); row.campaignId = .null; row.issuedTick = JS(tick)
+                        row.pledge = .null; row.pledgeTick = .null
+                        note("returning", "敌众我寡，退回本国整顿后再战。")
+                        fled = true
+                        break
+                    }
+                    if fled { continue }
+                }
+            }
             // Army.Attacking, app-rule worlds. SIMPLIFIED_: a land battle is a living enemy army in
             // this province. Halt is refused by the shared command check while that enemy stands here,
             // so the stop is written on the travel record.

@@ -252,24 +252,17 @@ extension ArmyOrders {
             hold.append(post(cp, need: max(average, mine * 0.12), mustHold: true))
         }
         if forces.count >= 6 {
-            let others = contact.keys.filter { $0 != order.first && !RunWindow.access(r, nation, $0) }.sorted { x, y in
-                let wx = enemySet.contains(x), wy = enemySet.contains(y)
-                if wx != wy { return wx }
-                return strength(x) != strength(y) ? strength(x) > strength(y) : x < y
-            }
-            // Each border is held against what actually stands next to it, not against half the other
-            // state's whole army: in a war of several states every side held every secondary front with
-            // a third of its host and the borders stood still (1.12 measurements: most armies idle in
-            // a quiet war were "分兵把守边境"). An enemy well under our strength is attacked instead (its
-            // provinces are already among the targets), and only a strong neighbour at peace is watched.
+            // An enemy we are at war with is not watched: its border provinces are attack targets, as in the
+            // original (every army goes for the nearest enemy border province), so every front is pressed.
+            // Secondary fronts used to be held with half the enemy's whole army, and in a war of several
+            // states every side sat on every border (1.12 measurements: most armies idle in a quiet war
+            // were "分兵把守边境"). Only a strong neighbour still at peace keeps a small watch.
+            let others = contact.keys.filter { $0 != order.first && !enemySet.contains($0) && !RunWindow.access(r, nation, $0) && strength($0) >= mine * 0.5 }
+                .sorted { x, y in strength(x) != strength(y) ? strength(x) > strength(y) : x < y }
             for other in others {
-                let atWar = enemySet.contains(other), power = strength(other)
-                if atWar && power < mine * 0.6 { continue }
-                if !atWar && power < mine * 0.5 { continue }
-                let posts = (contact[other] ?? [:]).sorted { x, y in x.value != y.value ? x.value > y.value : x.key < y.key }.prefix(atWar ? 2 : 1)
-                for (p, near) in posts where !hold.contains(where: { $0.province == p }) && !invaded.contains(p) {
-                    let need = atWar ? min(power * 0.5, near * 1.2) : min(power, mine) * 0.1
-                    hold.append(post(p, need: max(need, average * 0.6)))
+                let posts = (contact[other] ?? [:]).sorted { x, y in x.value != y.value ? x.value > y.value : x.key < y.key }.prefix(1)
+                for (p, _) in posts where !hold.contains(where: { $0.province == p }) && !invaded.contains(p) {
+                    hold.append(post(p, need: max(min(strength(other), mine) * 0.1, average * 0.6)))
                 }
             }
         }

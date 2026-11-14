@@ -742,6 +742,7 @@ extension NativeEngine {
         UnitKinds.enabled = true
         Regimes.registerCustomCultures(r)
         NameVariety.apply(r)
+        NationColors.apply(r)
         Armies.bridge?.reconcileContacts(r)  // Drop obsolete province-wide contacts before the first volley.
         // 推演帧长 (Tuning.frameTicks): set at a day's start, so every day is a whole number of frames.
         if !r.frameLoop.isNull && r.clock.tick.asInt % 120 == 0 { r.frameLoop.ticks = JS(Tuning.current.frameTicks) }

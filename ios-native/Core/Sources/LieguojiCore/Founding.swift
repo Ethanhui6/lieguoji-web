@@ -165,7 +165,9 @@ public enum Founding {
     }
 
     // MARK: foundState47
-    static func color(_ r: JS, _ index: Int) -> String {
+    static func color(_ r: JS, _ index: Int, provinces: [JS] = []) -> String {
+        // 国色分明 (本作规则): away from the colours of the states that hold or border the new state's land.
+        if UnitKinds.enabled { return NationColors.pick(r, provinces: provinces.map { $0.id.asString }, salt: "\(r.world.custom.seed.asString)/state-color/\(index)") }
         let used = Set(r.world.nations.asArray.map { $0.color.asString.lowercased() })
         for i in 0..<palette.count { let c = palette[(index + i) % palette.count]; if !used.contains(c.lowercased()) { return c } }
         var attempt = 1
@@ -205,7 +207,7 @@ public enum Founding {
         identity.origin = JS("secession"); identity.parentId = JS(parent)
         c.nations[id] = identity; Vassals.bump(c)
         let nation = JS.object()
-        nation.id = JS(id); nation.name = JS(Opening.stateTitle(fresh.value, polity: profile.suggestedPolity, religion: identity.religionId.asString)); nation.color = JS(color(r, index))
+        nation.id = JS(id); nation.name = JS(Opening.stateTitle(fresh.value, polity: profile.suggestedPolity, religion: identity.religionId.asString)); nation.color = JS(color(r, index, provinces: provinces))
         nation.capitalId = capital.id.clone(); nation.regimeId = JS("regime-\(index)"); nation.dynastyId = JS("dynasty-\(index)")
         w.nations.push(nation)
         let policy = JS.object(); policy.nationId = JS(id); policy.priority = JS("balanced"); policy.lastLedger = .null; policy.lastDecision = .null; w.statecraft.nations.push(policy)

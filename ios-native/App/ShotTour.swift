@@ -46,6 +46,7 @@ enum ShotTour {
     @MainActor static func play(_ model: GameModel, show: @escaping (Panel?) -> Void, views: @escaping (Bool) -> Void) async {
         await wait(3)
         await shoot("03-world")
+        await checkColors(model)
         await checkAdvanceOwnership(model)
         // 国名稳定: while the war redraws the borders and the camera stands still, every frame is compared
         // with the one before. A name that dips (hidden or fading) and is back within 45 frames blinked.
@@ -276,6 +277,36 @@ enum ShotTour {
                                      "worldSHA256": digest, "panels": rows]
         if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {
             try? data.write(to: dir.appendingPathComponent("panel-profile.json"), options: .atomic)
+        }
+    }
+
+    /// 国色分明: the smallest colour difference (CIELAB ΔE) between a state and the four states whose
+    /// capitals are nearest, and a close-up where the capitals stand densest.
+    @MainActor private static func checkColors(_ model: GameModel) async {
+        guard let map = model.map else { return }
+        let seats: [(nation: Int, x: Double, y: Double, color: String)] = map.meta.nations.enumerated().compactMap { i, n in
+            guard map.meta.cities.indices.contains(n.capital) else { return nil }
+            let c = map.meta.cities[n.capital]
+            return (i, Double(c.x), Double(c.y), n.color)
+        }
+        var least = 999.0, pair = "", densest: (x: Double, y: Double, spread: Double)?
+        for a in seats {
+            let near = seats.filter { $0.nation != a.nation }.sorted { hypot($0.x - a.x, $0.y - a.y) < hypot($1.x - a.x, $1.y - a.y) }.prefix(4)
+            for b in near {
+                let d = NationColors.difference(a.color, b.color)
+                if d < least { least = d; pair = "\(a.color) \(b.color)" }
+            }
+            let spread = near.reduce(0) { $0 + hypot($1.x - a.x, $1.y - a.y) }
+            if near.count == 4, densest == nil || spread < densest!.spread { densest = (a.x, a.y, spread) }
+        }
+        let report: [String: Any] = ["version": 1, "states": seats.count, "leastDifference": least, "closestPair": pair, "passed": seats.count >= 2 && least >= 15]
+        if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {
+            try? data.write(to: dir.appendingPathComponent("color-contrast.json"), options: .atomic)
+        }
+        if let d = densest {
+            model.controller.fly(x: d.x, y: d.y)
+            await wait(2.2); await shoot("03b-colors-dense")
+            model.controller.resetRequest = UUID(); await wait(0.9)
         }
     }
 

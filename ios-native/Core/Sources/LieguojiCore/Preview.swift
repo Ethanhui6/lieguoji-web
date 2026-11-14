@@ -80,8 +80,10 @@ public enum PreviewWorld {
         for c in 0..<n where heights[c] >= 20 && province[c] < 0 { province[c] = provinces.isEmpty ? -1 : 0 }
         m.province = province
         m.meta.provinces = provinces
+        // 国色分明: the colours the finished world takes (NationColors.apply), so nothing changes at the hand-over.
+        let colors = NationColors.assign(capitals: seeds.map { (x: Double(provinces[$0].x), y: Double(provinces[$0].y)) })
         m.meta.nations = seeds.indices.map { i in
-            WorldMeta.Nation(id: "n-\(i)", name: "", color: palette[i % palette.count], line: NativeEngine.stateLineColor(palette[i % palette.count]), capital: i, culture: "", polity: "", religion: "")
+            WorldMeta.Nation(id: "n-\(i)", name: "", color: colors[i], line: NativeEngine.stateLineColor(colors[i]), capital: i, culture: "", polity: "", religion: "")
         }
         m.meta.cities = seeds.enumerated().map { i, s in WorldMeta.City(id: "c-\(s)", name: "", x: provinces[s].x, y: provinces[s].y, province: s) }
         m.meta.labels = []

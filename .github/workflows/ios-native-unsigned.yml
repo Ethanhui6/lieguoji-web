@@ -146,9 +146,7 @@ jobs:
           for pair in "01-title:top" "03-world:top" "03-world:bottom" "02e-borders:top"; do
             n=${pair%%:*}; side=${pair##*:}; src="shots/$n.png"
             [ -f "$src" ] || continue
-            h=$(sips -g pixelHeight "$src" | awk '/pixelHeight/{print $2}'); w=$(sips -g pixelWidth "$src" | awk '/pixelWidth/{print $2}')
-            off=0; [ "$side" = bottom ] && off=$((h-360))
-            sips -c 360 "$w" --cropOffset "$off" 0 "$src" --out "shots/edges/$n-$side.png" >/dev/null || true
+            swift scripts/crop-edge.swift "$src" "shots/edges/$n-$side.png" "$side" 360 || true
           done
           ls shots shots/edges
       - uses: actions/upload-artifact@v4

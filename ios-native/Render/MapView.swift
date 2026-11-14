@@ -175,12 +175,12 @@ struct PlaySettings: Codable, Equatable {
     /// Frames a second while the map is dragged or zoomed, while only the armies march, and for the
     /// looping effects (waves, battle marks, flags, arrows).
     var mapFPS = 60
-    var marchFPS = 60
+    var marchFPS = 30
     var effectFPS = 30
     /// Pixels per point the map is drawn at (capped at the screen's own; the names stay sharp).
     var renderScale = 2.0
     /// The share of real time the simulation may keep a core busy, in percent.
-    var simLoad = 80
+    var simLoad = 65
     /// Lower the frames and rest the simulation when the phone runs hot or in Low Power Mode.
     var autoCool = true
     /// 可回退: the entry camera (eases out to the whole world) and the reveal's ease (else linear, as before).
@@ -200,15 +200,18 @@ struct PlaySettings: Codable, Equatable {
         warArrows = try c.decodeIfPresent(Bool.self, forKey: .warArrows) ?? true
         iconScale = try c.decodeIfPresent(Double.self, forKey: .iconScale) ?? 1
         mapFPS = try c.decodeIfPresent(Int.self, forKey: .mapFPS) ?? ((try c.decodeIfPresent(Bool.self, forKey: .highFrameRate)) == true ? 120 : 60)
-        marchFPS = try c.decodeIfPresent(Int.self, forKey: .marchFPS) ?? 60
+        marchFPS = try c.decodeIfPresent(Int.self, forKey: .marchFPS) ?? 30
         effectFPS = try c.decodeIfPresent(Int.self, forKey: .effectFPS) ?? 30
         renderScale = try c.decodeIfPresent(Double.self, forKey: .renderScale) ?? 2
-        simLoad = try c.decodeIfPresent(Int.self, forKey: .simLoad) ?? 80
+        simLoad = try c.decodeIfPresent(Int.self, forKey: .simLoad) ?? 65
         autoCool = try c.decodeIfPresent(Bool.self, forKey: .autoCool) ?? true
         introCamera = try c.decodeIfPresent(Bool.self, forKey: .introCamera) ?? true
         easeReveal = try c.decodeIfPresent(Bool.self, forKey: .easeReveal) ?? true
         autosave = try c.decodeIfPresent(Int.self, forKey: .autosave) ?? 120
         pauseOnNews = try c.decodeIfPresent(Bool.self, forKey: .pauseOnNews) ?? false
+        // 1.12: the old 均衡 (marching at 60 frames, the simulation at 80 %) kept the phone hot; who had it
+        // takes the new 均衡. A setting chosen one by one is left as it was.
+        if mapFPS == 60 && marchFPS == 60 && effectFPS == 30 && renderScale == 2 && simLoad == 80 { marchFPS = 30; simLoad = 65 }
     }
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: Keys.self)
@@ -220,7 +223,7 @@ struct PlaySettings: Codable, Equatable {
     }
     /// 画面档位: 省电, 均衡, 流畅 (nil: the values were set one by one).
     static let presets: [(key: String, name: String, mapFPS: Int, marchFPS: Int, effectFPS: Int, renderScale: Double, simLoad: Int)] = [
-        ("saver", "省电", 60, 30, 15, 1.5, 50), ("balanced", "均衡", 60, 60, 30, 2, 80), ("smooth", "流畅", 120, 120, 60, 3, 100),
+        ("saver", "省电", 60, 30, 15, 1.5, 50), ("balanced", "均衡", 60, 30, 30, 2, 65), ("smooth", "流畅", 120, 120, 60, 3, 100),
     ]
     var preset: String {
         get { Self.presets.first { $0.mapFPS == mapFPS && $0.marchFPS == marchFPS && $0.effectFPS == effectFPS && $0.renderScale == renderScale && $0.simLoad == simLoad }?.key ?? "custom" }
@@ -565,12 +568,12 @@ struct MapView: UIViewRepresentable {
             return CAFrameRateRange(minimum: max(10, f / 2), maximum: f, preferred: f)
         }
         private var frameRange: CAFrameRateRange {
-            controller.sheetOpen ? Self.range(30) : Self.range(Energy.hot ? min(60, controller.play.mapFPS) : controller.play.mapFPS)
+            controller.sheetOpen ? Self.range(30) : Self.range(Energy.hot ? min(30, controller.play.mapFPS) : Energy.level >= 1 ? min(60, controller.play.mapFPS) : controller.play.mapFPS)
         }
         /// While only the armies glide (the camera still): 60 frames, 30 when the phone runs hot. Icons
         /// moving a few points a frame look the same, and the map is drawn half as often as at 120.
         private var glideRange: CAFrameRateRange {
-            controller.sheetOpen ? Self.range(30) : Self.range(Energy.hot ? min(30, controller.play.marchFPS) : controller.play.marchFPS)
+            controller.sheetOpen ? Self.range(30) : Self.range(Energy.hot ? min(20, controller.play.marchFPS) : Energy.level >= 1 ? min(30, controller.play.marchFPS) : controller.play.marchFPS)
         }
         private var gliding = false
         private var appliedPlay: PlaySettings?
@@ -768,14 +771,14 @@ struct MapView: UIViewRepresentable {
         private func startDrift() {
             guard drift == nil else { return }
             let l = CADisplayLink(target: self, selector: #selector(driftStep(_:)))
-            // The title backdrop drifts eight points a second: thirty frames are as smooth to the eye and
-            // halve the map and name redraws behind the title.
-            l.preferredFrameRateRange = CAFrameRateRange(minimum: 20, maximum: 30, preferred: 30)
+            // The title backdrop drifts three points a second (eight read as hurried): at that pace
+            // twenty frames are as smooth to the eye and cost a third of the redraws of sixty.
+            l.preferredFrameRateRange = CAFrameRateRange(minimum: 15, maximum: 24, preferred: 20)
             l.add(to: .main, forMode: .common); drift = l
         }
         @objc private func driftStep(_ l: CADisplayLink) {
             guard controller.drifting else { drift?.invalidate(); drift = nil; return }
-            set(camera.panned(dx: -8 * (l.targetTimestamp - l.timestamp), dy: 0))
+            set(camera.panned(dx: -3 * (l.targetTimestamp - l.timestamp), dy: 0))
         }
     }
 }
@@ -845,13 +848,14 @@ final class MapLabelsView: UIView {
         nations = Self.nationLabels(map, unit: unit, full: true)
         cities = Self.cityLabels(map)
         for l in cities + nations { l.view.isHidden = true; addSubview(l.view) }
+        setSeals(map)
     }
     private static func cityLabels(_ map: WorldMap) -> [Label] {
         return zip(map.meta.cities, MapLayers.cityMarks(map)).filter { !$0.0.name.isEmpty }.map { c, mark in
             let s: Double = mark == .capital ? 1.5 : mark == .provinceSeat ? 1.28 : 1
             let em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
             // A capital's name in vermilion: it stays centred over its mark and is found at a glance.
-            return Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: mark == .capital ? UIColor(red: 0.62, green: 0.1, blue: 0.07, alpha: 1) : UIColor(white: 0x11 / 255.0, alpha: 1),
+            return Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: mark == .capital ? Self.capitalInk : UIColor(white: 0x11 / 255.0, alpha: 1),
                          stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 8, province: c.province)
         }.sorted { $0.mapEm > $1.mapEm }
     }
@@ -864,6 +868,17 @@ final class MapLabelsView: UIView {
         for l in cities { l.view.removeFromSuperview() }
         cities = Self.cityLabels(map)
         for l in cities { l.view.isHidden = true; insertSubview(l.view, at: 0) }
+        setSeals(map)
+    }
+
+    /// Where the capitals stand: their marks (the original's rings, MapLayers.cityIcons) are kept clear
+    /// of every name, and their own names are placed before the state names, so a state's name never
+    /// covers its capital.
+    private var capitals: [(x: Double, y: Double)] = []
+    /// The capital names' vermilion (one instance, so the layout can tell those names apart).
+    static let capitalInk = UIColor(red: 0.62, green: 0.1, blue: 0.07, alpha: 1)
+    private func setSeals(_ map: WorldMap) {
+        capitals = zip(map.meta.cities, MapLayers.cityMarks(map)).filter { $0.1 == .capital }.map { c, _ in (Double(c.x), Double(c.y)) }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
@@ -970,7 +985,20 @@ final class MapLabelsView: UIView {
             p.view.center = CGPoint(x: at.x, y: at.y); p.view.isHidden = false
         }
         if !showCities { for l in cities { l.view.isHidden = true } }
-        for l in custom + nations + (showCities ? cities : []) {
+        // The capitals' rings are kept clear first (with a little margin), and the capitals' names are
+        // placed before the state names: a state's name gives way instead of covering its capital.
+        let ring = Double(MapLayers.cityUnit) * 1.5 * MapLayers.capitalOuter * camera.scale
+        if showCities {
+            for c in capitals {
+                let p = camera.toScreen(x: c.x, y: c.y, viewport: vp)
+                guard p.x > -40, p.y > -40, p.x < vp.width + 40, p.y < vp.height + 40 else { continue }
+                let half = CGFloat(max(ring, 3) + 3)
+                taken.append(Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: half, halfH: half, cosine: 1, sine: 0, nation: false, text: ""))
+            }
+        }
+        let capitalNames = showCities ? cities.filter { $0.fill === Self.capitalInk } : []
+        let otherCities = showCities ? cities.filter { $0.fill !== Self.capitalInk } : []
+        for l in custom + capitalNames + nations + otherCities {
             let points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)
             let p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
             // A name larger than the screen can show is hidden (a continent-wide group zoomed in close).

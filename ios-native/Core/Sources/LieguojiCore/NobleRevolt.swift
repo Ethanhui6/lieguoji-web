@@ -165,6 +165,7 @@ public enum NobleRevolt {
             Government.relocateLostCapitals(r); Wars.reconcileCore(r); Founding.reconcilePorts?(r)
             r.chronicle.ended.delete(restore)
             r.sovereignty.restorations[restore] = JS((r.sovereignty.restorations[restore].optionalNumber ?? 0) + 1); Vassals.bump(r.sovereignty)
+            Regimes.retitleRestored(r, restore)
             let state = Vassals.name(r, restore), place = r.world.provinces.asArray.first { $0.id.asString == provinces[0] }!.name.asString
             People.announce(r, kind: "restoration", text: "\(r.kin.families[id].surname.asString)家族复国，恢复\(state)的统治", reason: "\(reason)\(state)于\(place)复国（第\(r.sovereignty.restorations[restore].asInt)次）。", nations: [restore], province: provinces[0])
             People.appointKnownPerson(r, restore, leader, cause: "restoration")

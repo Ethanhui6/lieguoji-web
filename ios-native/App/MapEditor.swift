@@ -302,7 +302,7 @@ import LieguojiCore
     private func applyLayout() {
         for i in map.meta.provinces.indices where owners.indices.contains(i) { map.meta.provinces[i].nation = owners[i] }
         map.meta.nations = seeds.indices.map { i in
-            WorldMeta.Nation(id: "n-\(i)", name: "", color: PreviewWorld.palette[i % PreviewWorld.palette.count], line: "#1487ff", capital: i, culture: "", polity: "", religion: "")
+            WorldMeta.Nation(id: "n-\(i)", name: "", color: PreviewWorld.palette[i % PreviewWorld.palette.count], line: NativeEngine.stateLineColor(PreviewWorld.palette[i % PreviewWorld.palette.count]), capital: i, culture: "", polity: "", religion: "")
         }
         map.meta.cities = seeds.enumerated().map { i, s in WorldMeta.City(id: "c-\(s)", name: "", x: map.meta.provinces[s].x, y: map.meta.provinces[s].y, province: s) }
         nations = seeds.count

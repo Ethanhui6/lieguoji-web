@@ -121,68 +121,88 @@ struct RootView: View {
         model.phase = .title
         if ShotTour.on { Task { @MainActor in await ShotTour.start(model) } }
         // The title backdrop generates itself: sea, then land from the coast up, then the states.
-        Task { @MainActor in await model.playReveal(duration: 3.2, while: { model.phase == .title }) }
+        // Slow and unhurried behind the title (3.2 s read as rushed on the phone).
+        Task { @MainActor in await model.playReveal(duration: 7, while: { model.phase == .title }) }
     }
 }
 
 // MARK: - launch
 
-/// The launch animation: a vermilion seal is stamped on the paper, the name appears beneath it.
+/// The launch animation on the game's own rice paper (the system launch screen is the same paper
+/// colour, so the hand-over from the home screen does not flash): a drop of ink soaks into the sheet,
+/// far hills wash in along the bottom, 列國紀 is brushed stroke-down one character at a time, the
+/// vermilion seal is pressed beside it, then the ink fades and the blank sheet becomes the world's
+/// own paper, on which the title map is painted (its reveal starts from blank paper too). Shapes and
+/// gradients only (no blur, no offscreen blend), so it holds the frame rate while the backdrop is built.
 struct SplashView: View {
     let done: () -> Void
-    /// The app's own jade city-gate art on its deep sea-blue: it rises out of the dark and settles, a
-    /// band of light passes over it, 列國紀 is written beneath, then everything drifts forward into the
-    /// world. One image and a gradient (no blur, no shadow), so it holds the frame rate while the
-    /// backdrop world is built.
-    @State private var risen = false
-    @State private var sheen: CGFloat = -1
-    @State private var written = 0
+    @State private var soaked = false
+    @State private var hills = false
+    @State private var brushed = 0
+    @State private var stamped = false
     @State private var motto = false
-    @State private var lifted = false
+    @State private var dried = false
     static let title = ["列", "國", "紀"]
     static let night = Color(red: 0.035, green: 0.09, blue: 0.11)
     static let gold = Color(red: 0.86, green: 0.74, blue: 0.5)
     static let sea = Color(red: 0.07, green: 0.2, blue: 0.24)
     var body: some View {
         ZStack {
-            RadialGradient(colors: [Self.sea, Self.night], center: .center, startRadius: 40, endRadius: 520).ignoresSafeArea()
-            VStack(spacing: 26) {
-                Image("SplashArt").resizable().interpolation(.high).scaledToFit()
-                    .frame(width: 210, height: 210)
-                    .clipShape(RoundedRectangle(cornerRadius: 48, style: .continuous))
-                    // A band of light passing over the art once.
-                    .overlay(
-                        LinearGradient(colors: [.clear, .white.opacity(0.28), .clear], startPoint: .leading, endPoint: .trailing)
-                            .frame(width: 90).rotationEffect(.degrees(20)).offset(x: sheen * 220)
-                            .blendMode(.plusLighter)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 48, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 48, style: .continuous).stroke(Self.gold.opacity(0.35), lineWidth: 1))
-                    .scaleEffect(risen ? 1 : 0.86).opacity(risen ? 1 : 0).offset(y: risen ? 0 : 18)
-                HStack(spacing: 18) {
+            MemorialPaper(rules: false).ignoresSafeArea()
+            // The ink drop: two soft rings spreading behind the title.
+            ZStack {
+                Circle().fill(RadialGradient(colors: [Theme.ink.opacity(0.13), Theme.ink.opacity(0.05), .clear], center: .center, startRadius: 0, endRadius: 190))
+                    .frame(width: 380, height: 380).scaleEffect(soaked ? 1 : 0.15)
+                Circle().fill(RadialGradient(colors: [Theme.seal.opacity(0.07), .clear], center: .center, startRadius: 0, endRadius: 120))
+                    .frame(width: 240, height: 240).offset(x: 40, y: -30).scaleEffect(soaked ? 1 : 0.3)
+            }
+            .opacity(soaked && !dried ? 1 : 0).offset(y: -40)
+            // Far and near hills in two washes along the bottom of the sheet.
+            VStack(spacing: 0) {
+                Spacer()
+                ZStack(alignment: .bottom) {
+                    InkHills(seed: 11).fill(Theme.ink.opacity(0.06)).frame(height: 190)
+                    InkHills(seed: 4).fill(Theme.ink.opacity(0.10)).frame(height: 120)
+                }
+                .offset(y: hills ? 0 : 50).opacity(hills && !dried ? 1 : 0)
+            }
+            .ignoresSafeArea()
+            HStack(alignment: .top, spacing: 18) {
+                VStack(spacing: 6) {
                     ForEach(0..<3, id: \.self) { i in
-                        Text(Self.title[i]).font(Theme.kai(40)).foregroundStyle(Theme.paper)
-                            .opacity(written > i ? 1 : 0).offset(y: written > i ? 0 : 8)
+                        // Each character is uncovered from the top down, as a brush writes it.
+                        Text(Self.title[i]).font(Theme.kai(66)).foregroundStyle(Theme.ink)
+                            .mask(alignment: .top) {
+                                Rectangle().scaleEffect(x: 1, y: brushed > i ? 1 : 0.001, anchor: .top)
+                            }
                     }
                 }
-                Text("架空世界 · 列国兴衰").font(Theme.kai(13)).tracking(7).foregroundStyle(Self.gold.opacity(0.85))
-                    .opacity(motto ? 1 : 0)
+                VStack(spacing: 14) {
+                    SealMark(size: 42).rotationEffect(.degrees(-6))
+                        .scaleEffect(stamped ? 1 : 1.7).opacity(stamped ? 1 : 0)
+                    VerticalText("架空世界列国兴衰", size: 14).foregroundStyle(Theme.ink2)
+                        .opacity(motto ? 1 : 0).offset(y: motto ? 0 : -8)
+                }
+                .padding(.top, 12)
             }
+            .offset(y: -40)
+            .opacity(dried ? 0 : 1).scaleEffect(dried ? 1.03 : 1)
         }
-        .scaleEffect(lifted ? 1.06 : 1).opacity(lifted ? 0 : 1)
         .task {
-            withAnimation(.spring(response: 0.9, dampingFraction: 0.86)) { risen = true }
-            try? await Task.sleep(nanoseconds: 450_000_000)
-            withAnimation(.easeInOut(duration: 1.1)) { sheen = 1 }
+            withAnimation(.easeOut(duration: 1.4)) { soaked = true }
+            withAnimation(.easeOut(duration: 1.6).delay(0.2)) { hills = true }
+            try? await Task.sleep(nanoseconds: 350_000_000)
             for i in 1...3 {
-                withAnimation(.easeOut(duration: 0.45)) { written = i }
-                try? await Task.sleep(nanoseconds: 170_000_000)
+                withAnimation(.easeInOut(duration: 0.42)) { brushed = i }
+                try? await Task.sleep(nanoseconds: 300_000_000)
             }
-            withAnimation(.easeOut(duration: 0.6)) { motto = true }
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.62)) { stamped = true }
             GameFeel.shared.tap()
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            withAnimation(.easeIn(duration: 0.5)) { lifted = true }
-            try? await Task.sleep(nanoseconds: 420_000_000)
+            withAnimation(.easeOut(duration: 0.7).delay(0.15)) { motto = true }
+            try? await Task.sleep(nanoseconds: 1_300_000_000)
+            withAnimation(.easeInOut(duration: 0.6)) { dried = true }
+            try? await Task.sleep(nanoseconds: 450_000_000)
             done()
         }
     }
@@ -1101,6 +1121,11 @@ struct GameView: View {
                 }
             }
             .background(Theme.wash, in: Capsule())
+            // 交 AI: the selected armies back to the war council.
+            Button("交AI") {
+                let armies = controller.groupArmies
+                Task { let out = await model.releaseToAI(armies: armies); say(out.reason); if out.ok { controller.groupArmies = [] }; model.refreshArmies() }
+            }.font(Theme.kai(15)).foregroundStyle(Theme.jade)
             Button("取消") { controller.groupArmies = []; model.refreshArmies() }.font(Theme.kai(15)).foregroundStyle(Theme.seal)
         }
         .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
@@ -1911,6 +1936,7 @@ struct MilitarySheet: View {
     /// The screenshot tour opens this page on one tab.
     static var tourFilter: String?
     @State private var filter = "all"
+    @State private var released: String?
     @ObservedObject var model: GameModel
     let select: (Int) -> Void
     var selectFleet: (Int) -> Void = { _ in }
@@ -1961,6 +1987,19 @@ struct MilitarySheet: View {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支舰队"))
                     ChipPicker(items: [("all", "全部"), ("wars", "战局"), ("battle", "交战围城"), ("manual", "亲自指挥"), ("navy", "舰队")], selection: $filter).padding(.horizontal, 16)
+                    // 全军交 AI: every army and fleet the player commands goes back to the war council.
+                    let manualCount = state.armies.filter(\.manual).count
+                    if manualCount > 0 {
+                        HStack(spacing: 10) {
+                            Text("亲自指挥 \(manualCount) 支").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                            Spacer()
+                            Button {
+                                Task { let out = await model.releaseToAI(armies: []); released = out.reason }
+                            } label: { SecondaryLabel(title: "全部交还 AI", symbol: "cpu") }.buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 22)
+                    }
+                    if let released { Text(released).font(Theme.kai(13)).foregroundStyle(Theme.jade).padding(.horizontal, 22).transition(.opacity) }
                     if filter == "wars" {
                         if state.wars.isEmpty { Text("天下暂无战事").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
                         ForEach(state.wars) { war in warCard(map, state, war) }
@@ -2581,6 +2620,16 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("1.12.0", ["【战争】修复开战后双方都不出兵、一直在边境集结：集结最多等 15 天，兵力不足时最多等 30 天，到期带着现有兵力进攻，不再无限期等待。",
+                    "【全军交 AI】军事页新增「全部交还 AI」，亲自指挥过的军队和舰队一次交回军机调度。框选部队后也可以点「交AI」。手动下令打完仗的部队交还后，会继续进攻或反击。",
+                    "【京畿驻军】战时都城常驻约八分之一兵力。进攻时，距离相近的目标优先打人口多的州郡。原作战时选目标只按距离计算，这两条是本作规则；原作的首都优先只用于和平时期驻防，本作已照原作实现。",
+                    "【国名】历史国名库扩充到每种文化 22–90 个。新世界按文化随机政体细分：苏丹国、公国、选侯国、沙皇国、幕府、汗国、城邦、商业共和国、邦联等，每局不再千篇一律。规则仍按原政体计算。复国按原作格式加序号，如「第二秦帝国」。",
+                    "【启动动画】改成宣纸画面：纸上晕开墨迹、远山淡入、「列國紀」逐字写出、盖上朱印，再从白纸过渡到开卷地图。系统启动屏也改成同色宣纸，不再闪一下。",
+                    "【主页】背景开卷从 3.2 秒放慢到 7 秒，背景平移速度降到原来的约 4 成。",
+                    "【勘定国界】开卷时国界原先是蓝色，改用「天下初定」相同的配色，前后不再跳色。",
+                    "【首都】首都仍用原作三重圈，图标放大约四分之一。排地名时先给首都图标留位，首都名排在国名前面，国名不再盖住首都。",
+                    "【发热】「均衡」档行军帧率由 60 降到 30，推演占用由 80% 降到 65%。手机微热时行军降到 30 帧，发热严重时降到 20 帧。以前用默认「均衡」的玩家会自动换成新档位。",
+                    "【本机计算】自动接入电脑默认关闭，推演全部在手机上完成；需要时可以在「设置 › 远程计算」打开。"]),
         ("1.11.0", ["【开卷动画】新世界与进入游戏的动画重做成一幅画的过程：先是一张白纸，海水晕开，陆地留白；墨线勾出海岸，赭墨染出山河；各国颜色从都城向四境晕开，最后才落下国界、城池与地名。每一层都是渐显，不再整块跳出。",
                     "【入场】地图画完后，上下的控件带弹性滑入；读档进场的镜头更舒缓。",
                     "【集结出击】需要几支军队合打的目标，不再一支一支送上去：先到目标旁的本国州郡集结，兵力大致到齐再一同进攻；兵力远不够时就在边境等待，不去送死。估算敌情时把目标邻州的敌军也算进去。军事页会标出「集结」。",

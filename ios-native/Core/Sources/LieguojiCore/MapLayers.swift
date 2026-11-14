@@ -415,6 +415,8 @@ public enum MapLayers {
     }
 
     public enum CityMark: Equatable, Sendable { case capital, provinceSeat, city }
+    /// The capital's outer ring in capital units (1.5 × cityUnit); the labels keep clear of it.
+    public static let capitalOuter: Double = 2.2
 
     /// Nation capitals keep the triple ring. The city nearest each province centre is that province's
     /// seat. Any other city in the province keeps the ordinary double ring. Port, fortress and holy
@@ -443,8 +445,10 @@ public enum MapLayers {
             switch mark {
             case .capital:
                 // 都城: larger than any seat and unmistakable — an ink rim, a gold ring, a vermilion heart.
-                m.disc(city.x, city.y, radius: 1.75 * c, black); m.disc(city.x, city.y, radius: 1.42 * c, RGB(0.9, 0.72, 0.3)); m.disc(city.x, city.y, radius: 1.08 * c, black)
-                m.disc(city.x, city.y, radius: 0.82 * c, white); m.disc(city.x, city.y, radius: 0.5 * c, RGB(0.72, 0.16, 0.12))
+                // Drawn a quarter larger than before (same rings), so it is found at a glance.
+                let k = Float(capitalOuter / 1.75)
+                m.disc(city.x, city.y, radius: 1.75 * k * c, black); m.disc(city.x, city.y, radius: 1.42 * k * c, RGB(0.9, 0.72, 0.3)); m.disc(city.x, city.y, radius: 1.08 * k * c, black)
+                m.disc(city.x, city.y, radius: 0.82 * k * c, white); m.disc(city.x, city.y, radius: 0.5 * k * c, RGB(0.72, 0.16, 0.12))
             case .provinceSeat:
                 // Larger than a town (u) and still inside the capital's outer ring (1.95u). The white
                 // disc is wide so the black rim and the centre pip read at the close-up used in screenshots.

@@ -56,8 +56,10 @@ public enum WarCouncil {
     /// 集结后出击: a target that takes several armies is not attacked one army at a time. Those sent
     /// against it gather first in our own land beside it and go in together, once most of what the
     /// target calls for stands ready or is already on its way in; whoever arrives later follows at once.
-    /// A column that has waited past its patience goes with what it has, unless that is far too little.
-    public static func muster(_ duties: [String: Duty], forces: [Force], attack: [Post], rally: [Int: Int], patience: Double = 40) -> [String: Duty] {
+    /// A column that has waited past its patience goes with what it has. A column too small for its
+    /// target waits twice as long, but never for ever: two hosts facing each other across a border
+    /// each found the other too strong and neither crossed (1.11.0), so a declared war was never fought.
+    public static func muster(_ duties: [String: Duty], forces: [Force], attack: [Post], rally: [Int: Int], patience: Double = 15) -> [String: Duty] {
         var out = duties
         var columns = [Int: [Force]]()
         for f in forces {
@@ -65,18 +67,19 @@ public enum WarCouncil {
         }
         for post in attack {
             guard let at = rally[post.province], let column = columns[post.province], column.count > 1 else { continue }
-            var ready = 0.0, total = 0.0, overdue = false
+            var ready = 0.0, total = 0.0, waited = 0.0
             for f in column {
                 total += f.troops
                 let marching = !f.movable || (f.target == post.province && !f.pledged)
                 let gathered = f.province == at && f.still
                 if marching || gathered { ready += f.troops }
-                if f.pledged && f.waited > patience { overdue = true }
+                if f.pledged { waited = max(waited, f.waited) }
             }
-            // Too few for this target even all together: the column waits at the border however long,
-            // rather than go in to be beaten (those already inside fight on).
+            // Too few for this target even all together: the column waits longer for reinforcements,
+            // then goes in with what it has.
             let outmatched = total < 0.7 * post.need
-            if !outmatched && (overdue || ready >= 0.8 * min(post.need, total)) { continue }
+            let overdue = waited > (outmatched ? patience * 2 : patience)
+            if overdue || (!outmatched && ready >= 0.8 * min(post.need, total)) { continue }
             for f in column where f.movable && !(f.target == post.province && !f.pledged) {
                 out[f.id] = .stage(at: at, goal: post.province)
             }
@@ -242,6 +245,12 @@ extension ArmyOrders {
 
         // 分守: the borders we are not attacking across keep a holding force; a host too small to divide does not.
         var hold = [WarCouncil.Post]()
+        // 京畿驻军 (app rule, at the player's request): at war the capital keeps a standing guard of about
+        // an eighth of the host, first call on the holding budget. The original weighs the capital and
+        // its neighbours only in its peacetime garrison choice (FindTargetIdleProvince, chooseIdle).
+        if forces.count >= 3, let cp = capital, !invaded.contains(cp) {
+            hold.append(post(cp, need: max(average, mine * 0.12), mustHold: true))
+        }
         if forces.count >= 6 {
             let others = contact.keys.filter { $0 != order.first && !RunWindow.access(r, nation, $0) }.sorted { x, y in
                 let wx = enemySet.contains(x), wy = enemySet.contains(y)
@@ -264,6 +273,11 @@ extension ArmyOrders {
         // 集结地: our own quiet province beside each target, the one nearest the host.
         var rally = [Int: Int]()
         let freeTroops = forces.reduce(0.0) { $0 + ($1.movable ? $1.troops : 0) }
+        // 取富庶之地 (app rule, at the player's request; the original FindRegularTargetProvince weighs
+        // distance only): among targets about as near, the more populous one is taken first.
+        var populace = 0.0
+        for p in provinces { populace += p.population.asNumber }
+        let meanPopulation = max(1, populace / Double(max(1, provinces.count)))
         for (k, enemy) in order.enumerated() {
             let list = frontier[enemy] ?? []
             let bound = forces.filter { f in f.target.map { provinces[$0].controller.asString == enemy } ?? false }
@@ -279,6 +293,7 @@ extension ArmyOrders {
                 if let heart { v += 0.7 * jsHypot(at.x - heart.x, at.y - heart.y) }
                 if targeted.contains(p) { v -= 60 }
                 if CombatReader.protruding(r, p) { v -= 30 }
+                v -= 40 * min(2.5, provinces[p].population.asNumber / meanPopulation)
                 return v
             }
             let sorted = list.map { (p: $0, v: value($0)) }.sorted { x, y in x.v != y.v ? x.v < y.v : x.p < y.p }

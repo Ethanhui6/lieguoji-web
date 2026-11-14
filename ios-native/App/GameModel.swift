@@ -41,9 +41,11 @@ import LieguojiCore
     }
     func disconnectRemote() async { await native.disconnect(); remoteAddress = nil; UserDefaults.standard.set(false, forKey: "remote.auto") }
     /// 自动接入: while a world is open, the player's computer is looked for (now and every 90 s) and
-    /// used as soon as it is on — nothing to set up on the phone. 设置 › 远程计算 can turn it off.
+    /// used as soon as it is on, once the player turns this on in 设置 › 远程计算.
     var autoRemote: Bool {
-        get { UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? true }
+        // Off unless the player turns it on (设置 › 远程计算): the phone computes everything itself; a
+        // computer that was often unreachable made the default worse than the phone alone.
+        get { UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? false }
         set { UserDefaults.standard.set(newValue, forKey: "remote.autoAll"); if newValue { autoConnect() } }
     }
     private var autoTask: Task<Void, Never>?
@@ -1249,6 +1251,12 @@ import LieguojiCore
         let rows = armies.compactMap { army($0) }
         guard let nation = rows.first?.nation else { return (false, "没有选中军队。") }
         let out = await native.rts(rows.map(\.id), nation: nation, province: province, defend: defend)
+        if let data = out.state, let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
+        return (out.ok, out.reason)
+    }
+    /// 全军交 AI: these armies (every player-commanded army and fleet when empty) back to the war council.
+    func releaseToAI(armies: [Int]) async -> (ok: Bool, reason: String) {
+        let out = await native.releaseToAI(armies.compactMap { army($0)?.id })
         if let data = out.state, let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
         return (out.ok, out.reason)
     }

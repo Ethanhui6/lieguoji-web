@@ -221,6 +221,7 @@ public final class EngineService {
         case "addArmy": return command(engine?.addArmy(int("n"), province: int("province"), count: optInt("count") ?? 1))
         case "editArmy": return command(engine?.editArmy(str("armyId"), troops: optInt("troops"), unit: optStr("unit"), morale: dbl("morale")))
         case "armyManual": return command(engine?.setArmyManual(str("armyId"), manual: bool("manual")))
+        case "releaseToAI": return command(engine?.releaseToAI(armyIds: strs("armyIds")))
         case "holdArmy": return command(engine?.holdArmy(str("armyId")))
         case "returnHome": return command(engine?.returnHome(str("armyId")))
         case "reinforceArmy": return command(engine?.reinforceArmy(str("armyId")))

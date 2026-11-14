@@ -112,6 +112,7 @@ public enum Government {
                     People.appointKnownPerson(r, id, previous, cause: "restoration", requestedName: last.regnalName.asString)
                 } else { People.resolveKnownSuccession(r, id, previous, cause: "restoration") }
                 r.sovereignty.restorations[id] = JS(r.sovereignty.restorations[id].asNumber + 1); r.sovereignty.revision = JS(r.sovereignty.revision.asNumber + 1); changed = true
+                Regimes.retitleRestored(r, id)
                 let reign = history.asArray.last!, active = reign.endedDay.isNull
                 let tail = active ? "，\(reign.name.asString)\(r.sovereignty.reigns[reign.id.asString].asInt == previous.id.asInt ? "复位" : "接任")" : "，领袖暂缺"
                 People.announce(r, kind: "restoration", text: "\(n.name.asString)重获领土\(tail)", reason: "保留已知身份，符合本政体年龄资格的在世前任复位；否则按政体选已知候选，没有合法候选则保持空位。", nations: [id], province: land[0].id.asString, people: active ? [reign] : [])

@@ -38,7 +38,7 @@ extension NativeEngine {
         let p = val * (1 - s), q = val * (1 - s * f), t = val * (1 - s * (1 - f))
         return [(val, t, p), (q, val, p), (p, val, t), (p, q, val), (t, p, val), (val, p, q)][i]
     }
-    static func stateLineColor(_ css: String) -> String {
+    public static func stateLineColor(_ css: String) -> String {
         let v = Int(css.dropFirst(), radix: 16) ?? 0x999999
         func adjust(_ c: (Double, Double, Double), _ ds: Double, _ dv: Double) -> (Double, Double, Double) {
             let (r, g, b) = c, mx = max(r, g, b), mn = min(r, g, b), d = mx - mn

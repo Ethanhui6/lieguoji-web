@@ -81,7 +81,7 @@ public enum PreviewWorld {
         m.province = province
         m.meta.provinces = provinces
         m.meta.nations = seeds.indices.map { i in
-            WorldMeta.Nation(id: "n-\(i)", name: "", color: palette[i % palette.count], line: "#1487ff", capital: i, culture: "", polity: "", religion: "")
+            WorldMeta.Nation(id: "n-\(i)", name: "", color: palette[i % palette.count], line: NativeEngine.stateLineColor(palette[i % palette.count]), capital: i, culture: "", polity: "", religion: "")
         }
         m.meta.cities = seeds.enumerated().map { i, s in WorldMeta.City(id: "c-\(s)", name: "", x: provinces[s].x, y: provinces[s].y, province: s) }
         m.meta.labels = []

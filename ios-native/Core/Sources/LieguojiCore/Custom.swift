@@ -114,10 +114,31 @@ public enum Regimes {
     }
     /// The state's name for its base name and style (a restored empire's ordinal kept by the caller).
     static func title(_ r: JS, _ id: String, base: String, style s: Style) -> String {
+        // 复国序号: the original's full-name template puts {RestorationOrdinal} (第{0}) before {Name}.
+        let ordinal = restorationOrdinal(r, id)
         // 国名模板 (自定义命名).
-        if !r.regimes.isNull, let t = r.regimes.nations[id].nameTemplate.optionalString { return t.replacingOccurrences(of: "{名}", with: base).replacingOccurrences(of: "{号}", with: s.suffix) }
-        if s.id == "theocracy" || (s.suffix.isEmpty && s.id != "dynasty") { return Opening.stateTitle(base, polity: s.base, religion: r.civilization.nations[id].religionId.optionalString ?? "") }
-        return base + s.suffix
+        if !r.regimes.isNull, let t = r.regimes.nations[id].nameTemplate.optionalString { return t.replacingOccurrences(of: "{名}", with: ordinal + base).replacingOccurrences(of: "{号}", with: s.suffix) }
+        if s.id == "theocracy" || (s.suffix.isEmpty && s.id != "dynasty") { return ordinal + Opening.stateTitle(base, polity: s.base, religion: r.civilization.nations[id].religionId.optionalString ?? "") }
+        return ordinal + base + s.suffix
+    }
+    /// The original's restoration ordinal (StateNameFormatUtility, "第{0}", RestorationOrdinal): a state
+    /// restored once is 第二, twice 第三… App-rule worlds only; the founding states have none.
+    public static func restorationOrdinal(_ r: JS, _ id: String) -> String {
+        guard !r.regimes.isNull, r.regimes.enabled.isTruthy, !r.sovereignty.isNull else { return "" }
+        let n = Int(r.sovereignty.restorations[id].optionalNumber ?? 0)
+        return n >= 1 ? "第" + chineseNumeral(n + 1) : ""
+    }
+    public static func chineseNumeral(_ n: Int) -> String {
+        let d = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
+        if n < 10 { return d[max(0, n)] }
+        let tens = n / 10 % 10, ones = n % 10
+        return (tens == 1 ? "" : d[tens]) + "十" + (ones == 0 ? "" : d[ones])
+    }
+    /// After a restoration the state takes its ordinal at once (第二秦帝国).
+    static func retitleRestored(_ r: JS, _ id: String) {
+        guard !r.regimes.isNull, r.regimes.enabled.isTruthy, let n = r.world.nations.asArray.first(where: { $0.id.asString == id }) else { return }
+        let base = r.civilization.nations[id].name.value.optionalString ?? MapLayers.stateLabel(n.name.asString, full: false)
+        n.name = JS(title(r, id, base: base, style: style(r, id)))
     }
 
     // MARK: 朝廷职位 (posts)
@@ -720,6 +741,7 @@ extension NativeEngine {
         let r = run
         UnitKinds.enabled = true
         Regimes.registerCustomCultures(r)
+        NameVariety.apply(r)
         Armies.bridge?.reconcileContacts(r)  // Drop obsolete province-wide contacts before the first volley.
         // 推演帧长 (Tuning.frameTicks): set at a day's start, so every day is a whole number of frames.
         if !r.frameLoop.isNull && r.clock.tick.asInt % 120 == 0 { r.frameLoop.ticks = JS(Tuning.current.frameTicks) }

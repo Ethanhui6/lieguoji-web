@@ -27,6 +27,28 @@ extension NativeEngine {
         return (true, manual ? "\(a.name.asString)由你亲自指挥，AI 不再调动。" : "\(a.name.asString)交还 AI 自主调度。")
     }
 
+    /// 全军交 AI: the given armies (all armies the player commands when the list is empty) and, with
+    /// an empty list, every fleet the player commands go back to the war council at its next pass.
+    public func releaseToAI(armyIds: [String]) -> (ok: Bool, reason: String) {
+        let r = run
+        let ids = armyIds.isEmpty ? r.voyages.manualArmies.asArray.map(\.asString) : armyIds
+        var armies = 0
+        for id in ids where liveArmy(id) != nil {
+            let wasManual = isManual(id)
+            setManual(id, false)
+            // A box-selected army the AI already commands is sent for a fresh plan as well.
+            if !wasManual { let row = r.armyAutonomy.armies[id]; if !row.isNull { row.nextTick = JS(0) } }
+            armies += 1
+        }
+        var fleets = 0
+        if armyIds.isEmpty {
+            for id in r.voyages.manualFleets.asArray.map(\.asString) { if setFleetManual(id, manual: false).ok { fleets += 1 } }
+        }
+        if armies == 0 && fleets == 0 { return (false, "没有可交还 AI 的军队。") }
+        Vassals.bump(r.armyAutonomy)
+        return (true, "\(armies) 支军队" + (fleets > 0 ? "、\(fleets) 支舰队" : "") + "交还 AI，下一轮军机调度即重新部署。")
+    }
+
     /// 驻守: stop where it stands and stay (the AI no longer moves it).
     public func holdArmy(_ id: String) -> (ok: Bool, reason: String) {
         guard let a = liveArmy(id) else { return (false, "这支军队不存在或已覆灭。") }

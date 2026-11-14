@@ -435,6 +435,7 @@ public enum Regimes {
             let owned = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
             for s in r.world.statecraft.provinces.asArray where owned.contains(s.provinceId.asString) { s.population = JS((s.population.asNumber * (1 + g.growth / 1200)).rounded()) }
         }
+        if !book(r, id).posts.isNull { fillPosts(r, id) }
         postEffects(r, id, addGold: addGold, addDestiny: addDestiny)
         tribute(r, n, id, gain: gain)
         // 国力走势: the state's strength once a month, the last ten years.
@@ -706,7 +707,10 @@ extension NativeEngine {
         guard nations.indices.contains(index) else { return nil }
         let id = nations[index].id.asString
         Regimes.enable(r)
-        Regimes.fillPosts(r, id)
+        // Looking at the court does not change the world: the posts are filled the first time only (a
+        // paused world must stay byte for byte the same while its pages are opened); vacancies left by
+        // the dead are filled in the monthly pass.
+        if Regimes.book(r, id).posts.isNull { Regimes.fillPosts(r, id) }
         let t = Regimes.tradition(r, id), b = Regimes.book(r, id)
         let out = JS.array()
         for p in Regimes.posts {

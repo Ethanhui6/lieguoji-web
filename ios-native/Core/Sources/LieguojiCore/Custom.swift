@@ -442,6 +442,7 @@ public enum Regimes {
         r.regimes.power[id] = .array(Array(power.suffix(120)))
         coup(r, n, id, key)
         election(r, n, id, key)
+        Regimes.cabinet(r, n, id, key)
         reform(r, n, id, key)
         let b = book(r, id)
         b.calm = JS(b.calm.asInt + 1)

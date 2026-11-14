@@ -118,8 +118,19 @@ extension NativeEngine {
             if !r.regimes.isNull, let t = Regimes.style(r, id).title { ruler.title = JS(t) }
             // A woman on the throne takes the female form of the title (the original's 女酋长、女教皇…).
             if p.gender.optionalNumber == 1 { let t = ruler.title.asString; ruler.title = JS(Self.femaleTitles[t] ?? t) }
+            // 元首与掌权者 (Heads.swift): the form of government may set the head of state's title.
+            if !r.regimes.isNull, let t = Regimes.seats(r, id).head { ruler.title = JS(p.gender.optionalNumber == 1 ? (Self.femaleTitles[t] ?? t) : t) }
             o.ruler = ruler
         } else { o.ruler = .null }
+        if !r.regimes.isNull {
+            let seat = Regimes.seats(r, id)
+            if let title = seat.premier {
+                let h = JS.object()
+                h.premierTitle = JS(title); h.premierRules = JS(seat.premierRules); h.elected = JS(seat.elected)
+                if let p = Regimes.premier(r, id) { h.premierName = JS(Regimes.personName(p)) }
+                o.heads = h
+            }
+        }
         o.people = people(id)
         o.court = court(id)
         let st = Regimes.style(r, id)

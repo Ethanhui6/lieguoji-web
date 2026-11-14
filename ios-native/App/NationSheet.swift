@@ -19,6 +19,10 @@ struct NationInfo: Decodable {
     let gold: Double; let goldPerMonth: Double; let destiny: Double
     let alive: Bool; let auto: Bool; let worldAuto: Bool
     let ruler: Ruler?
+    /// 元首与掌权者: the head of government's seat where the form of government has one (首相、总理、
+    /// 丞相、征夷大将军…), who holds it, and whether he, not the head of state, governs.
+    struct Heads: Decodable { let premierTitle: String; let premierRules: Bool; let elected: Bool; var premierName: String? = nil }
+    var heads: Heads? = nil
     let enemies: [Int]; let alliance: Alliance?; let overlord: Int; let vassals: [Int]
     let wars: [War]
     struct Truce: Decodable { let nation: Int; let years: Int; let required: Int }
@@ -273,7 +277,7 @@ struct NationSheet: View {
         let sections: [(String, [NationInfo.Person])] = [
             (info?.ruler?.title ?? "君主", list.filter { $0.role == "君主" }),
             ("继承人", list.filter { $0.role == "继承人" }),
-            (Self.title("Chancellor", polity), list.filter { $0.role == "行政首脑" }),
+            (info?.heads?.premierTitle ?? Self.title("Chancellor", polity), list.filter { $0.role == "行政首脑" }),
             (Self.title("Steward", polity), list.filter { $0.role == "财政主管" }),
             (Self.title("Marshal", polity), list.filter { $0.role == "常备军统帅" }),
         ]
@@ -326,9 +330,14 @@ struct NationSheet: View {
                 FoldSection("基本信息", expanded: true) {
                     Group2 {
                         if let r = info.ruler {
-                            EditRow(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）") {
+                            EditRow(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）" + (info.heads?.premierRules == true ? " · 虚位" : "")) {
                                 if let id = r.id { editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50]) }
                             }
+                            Divider2()
+                        }
+                        // 掌权者: the head of government under the form's own title, apart from the head of state.
+                        if let h = info.heads {
+                            Row(label: h.premierTitle, value: (h.premierName ?? "出缺") + (h.premierRules ? " · 掌国政" : "") + (h.elected ? " · 大选组阁" : ""))
                             Divider2()
                         }
                         EditRow(label: "政体", value: info.styleLabel ?? Names.polity[info.polity] ?? info.polity) { tab = .custom }; Divider2()

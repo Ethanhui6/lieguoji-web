@@ -92,3 +92,91 @@ final class HandoverTests: XCTestCase {
         XCTAssertEqual(r.chronicle.entries.length, entries)
     }
 }
+
+/// 元首与掌权者: the head of state and the head of government are two seats.
+final class HeadsTests: XCTestCase {
+    private func world() throws -> NativeEngine {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let resources = dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources")
+        try NativeEngine.loadCatalogs(traits: Data(contentsOf: resources.appendingPathComponent("Catalog/traits.json")),
+                                      nobleCultures: Data(contentsOf: resources.appendingPathComponent("Catalog/noble-cultures.json")),
+                                      cultures: Data(contentsOf: resources.appendingPathComponent("World/cultures.json")))
+        let engine = try NativeEngine(world: Data(contentsOf: dir.appendingPathComponent("Golden/bridge-world.json")))
+        engine.enableAppRules()
+        engine.advance(days: 10)
+        return engine
+    }
+    private func cleanUp() {
+        Session.uninstall(); UnitKinds.enabled = false; DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil
+    }
+    private func make(_ r: JS, _ id: String, culture: String, polity: String, style: String) {
+        let c = r.civilization.nations[id]
+        c.cultureId = JS(culture); c.polity = JS(polity)
+        Regimes.book(r, id).style = JS(style)
+    }
+
+    func testEachFormNamesItsSeats() throws {
+        let engine = try world(); defer { cleanUp() }
+        let r = engine.run, id = r.world.nations[0].id.asString
+        // 君主立宪: the crown reigns, an elected prime minister governs.
+        make(r, id, culture: "english", polity: "Kingdom", style: "constitutional")
+        XCTAssertEqual(Regimes.seats(r, id), .init(head: "国王", premier: "首相", premierRules: true, elected: true))
+        make(r, id, culture: "japanese", polity: "Kingdom", style: "constitutional")
+        XCTAssertEqual(Regimes.seats(r, id), .init(head: "天皇", premier: "首相", premierRules: true, elected: true))
+        // 议会共和: president and premier.
+        make(r, id, culture: "french", polity: "Republic", style: "parliamentary")
+        XCTAssertEqual(Regimes.seats(r, id), .init(head: "总统", premier: "总理", premierRules: true, elected: true))
+        // 幕府: the emperor reigns, the shogun rules, and nobody elects him.
+        make(r, id, culture: "japanese", polity: "Empire", style: "shogunate")
+        XCTAssertEqual(Regimes.seats(r, id), .init(head: "天皇", premier: "征夷大将军", premierRules: true, elected: false))
+        // 帝制: the emperor rules through a chancellor he appoints.
+        make(r, id, culture: "chinese", polity: "Empire", style: "empire")
+        XCTAssertEqual(Regimes.seats(r, id), .init(head: "皇帝", premier: "丞相", premierRules: false, elected: false))
+        // 人民共和: chairman and premier, the chairman in charge.
+        make(r, id, culture: "chinese", polity: "Republic", style: "communist")
+        XCTAssertEqual(Regimes.seats(r, id), .init(head: "主席", premier: "总理", premierRules: false, elected: false))
+        // 总统共和: one seat.
+        make(r, id, culture: "english", polity: "Republic", style: "presidential")
+        XCTAssertEqual(Regimes.seats(r, id), .init(head: nil, premier: nil, premierRules: false, elected: false))
+    }
+
+    func testOnlyOneEmperorOfJapanUnlessTwoCourtsAreAtWar() throws {
+        let engine = try world(); defer { cleanUp() }
+        let r = engine.run, nations = r.world.nations.asArray
+        let living = nations.map { $0.id.asString }.filter { Vassals.alive(r, $0) }
+        try XCTSkipIf(living.count < 2)
+        let elder = living[0], younger = living[1]
+        make(r, elder, culture: "japanese", polity: "Empire", style: "empire")
+        make(r, younger, culture: "japanese", polity: "Empire", style: "empire")
+        XCTAssertEqual(Regimes.seats(r, elder).head, "天皇")
+        XCTAssertEqual(Regimes.seats(r, younger).head, "大王")
+        // 南北朝: two courts at war both claim the title.
+        let war = JS.object(); war.a = JS(elder); war.b = JS(younger); war.status = JS("war")
+        r.world.statecraft.relations.push(war)
+        XCTAssertEqual(Regimes.seats(r, elder).head, "天皇")
+        XCTAssertEqual(Regimes.seats(r, younger).head, "天皇")
+    }
+
+    func testAnElectionChangesThePrimeMinisterAndNeverTheCrown() throws {
+        let engine = try world(); defer { cleanUp() }
+        let r = engine.run
+        let nation = try XCTUnwrap(r.world.nations.asArray.first { Regimes.ruler(r, $0.id.asString) != nil && Vassals.alive(r, $0.id.asString) })
+        let id = nation.id.asString, index = r.world.nations.asArray.firstIndex { $0.id.asString == id }!
+        // The player's own 改制 to 君主立宪 (the ruler stays: only the form changes).
+        XCTAssertTrue(engine.setStyle(index, style: "constitutional").ok)
+        let crown = try XCTUnwrap(Regimes.ruler(r, id)).id.asInt, reigns = r.chronicle.leaders[id].length
+        let sid = Offices.stateId(r, id)
+        // Two general elections (the month whose number matches the state's place in the cycle).
+        for round in 1...2 {
+            Regimes.cabinet(r, nation, id, sid % 48 + 48 * round)
+            XCTAssertEqual(Regimes.ruler(r, id)?.id.asInt, crown, "the election replaced the crown")
+            XCTAssertEqual(r.chronicle.leaders[id].length, reigns, "the election opened a new reign")
+            if let premier = Regimes.premier(r, id) { XCTAssertNotEqual(premier.id.asInt, crown, "the crown sits as its own prime minister") }
+        }
+        // The page's data carries both seats.
+        let info = try JS.parse(try XCTUnwrap(engine.nationInfo(index)))
+        XCTAssertTrue(["首相", "内阁总理", "宰相"].contains(info.heads.premierTitle.optionalString ?? ""))
+        XCTAssertTrue(info.heads.premierRules.isTruthy)
+        XCTAssertFalse((info.ruler.title.optionalString ?? "").isEmpty)
+    }
+}

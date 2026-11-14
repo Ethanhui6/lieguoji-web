@@ -73,7 +73,11 @@ public enum DiplomacyBridge {
             let p = leaderId.isNull ? nil : r.people.persons[leaderId.asInt.description]
             let alliance = Vassals.allianceOf(r, id).flatMap { a in alliances.firstIndex { $0 === a } } ?? -1
             let lord = Vassals.overlord(r, id).flatMap { index[$0] } ?? -1
-            let leader = p.map { p in
+            // 实际掌权者 (本作规则): diplomacy is conducted by whoever governs.
+            let governing = Regimes.governor(r, id)
+            let leader = governing.map { g in
+                DiplomacyWorld.Leader(alive: true, traits: (g.traits.isNull ? [] : g.traits.asArray).map { t in DiplomacyWorld.Trait(name: t.asString, bonus: Nobility.trait(t.asString)?.relationshipBonus.optionalNumber ?? 0) }, diplomatic: People.skills(g).diplomatic)
+            } ?? p.map { p in
                 DiplomacyWorld.Leader(alive: p.alive.optionalBool == true, traits: p.traits.asArray.map { t in DiplomacyWorld.Trait(name: t.asString, bonus: Nobility.trait(t.asString)?.relationshipBonus.optionalNumber ?? 0) }, diplomatic: People.skills(p).diplomatic)
             }
             return DiplomacyWorld.Nation(id: r.people.nations[id].id.asInt, provinces: Wars.orderedProvinces(r, id).map { provinceIndex[$0.id.asString]! }, overlord: lord, auto: r.diplomacy.nations[id].optionalBool == true,

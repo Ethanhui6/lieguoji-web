@@ -44,7 +44,7 @@ public enum CombatReader {
         let traits = Set(state.traits.asArray.map(\.asString)), politics = polityCombat[state.polity.asString]!
         let land = p.map { r.terrainContext.provinces[$0.id.asString] }
         let leaderId = r.people.nations[nation].leaderId
-        let leader = leaderId.isNull ? nil : People.person(r, leaderId.asInt)
+        let leader = Regimes.governor(r, nation) ?? (leaderId.isNull ? nil : People.person(r, leaderId.asInt))
         let wars = Offices.wars(r, nation)
         let enemy: String? = p != nil && attacking ? p!.controller.asString : wars.count == 1 ? wars[0].enemy : nil
         let official = militaryLeaderSkill(r, nation, enemy: enemy) ?? leader.map { People.skills($0).military } ?? 50

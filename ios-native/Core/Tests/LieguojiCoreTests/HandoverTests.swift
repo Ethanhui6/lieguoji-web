@@ -173,6 +173,22 @@ final class HeadsTests: XCTestCase {
             XCTAssertEqual(r.chronicle.leaders[id].length, reigns, "the election opened a new reign")
             if let premier = Regimes.premier(r, id) { XCTAssertNotEqual(premier.id.asInt, crown, "the crown sits as its own prime minister") }
         }
+        // 更替必书: a change the court makes on its own (not an election) is written down with its reason.
+        Regimes.watchPremier(r, nation, id)
+        let sitting = Regimes.premier(r, id)?.id.asInt ?? 0
+        let families = People.electionFamilies(r, id).filter { $0.k.stateId.asInt == sid }
+        if sitting > 0, let other = People.republicLeader(r, families: families, excluding: sitting), other.id.asInt != crown, other.id.asInt != sitting {
+            Offices.appoint(Offices.context(r, id), "Chancellor", 0, sid, other.id.asInt)
+            let entries = r.chronicle.entries.length
+            Regimes.watchPremier(r, nation, id)
+            XCTAssertEqual(r.chronicle.entries.length, entries + 1)
+            XCTAssertTrue(r.chronicle.entries.asArray.last?.text.asString.contains("继任") == true)
+            // Nothing more is written while the seat does not change.
+            Regimes.watchPremier(r, nation, id)
+            XCTAssertEqual(r.chronicle.entries.length, entries + 1)
+            // 实际掌权者: the state is run by the prime minister's abilities, not the crown's.
+            XCTAssertEqual(Regimes.governor(r, id)?.id.asInt, other.id.asInt)
+        }
         // The page's data carries both seats.
         let info = try JS.parse(try XCTUnwrap(engine.nationInfo(index)))
         XCTAssertTrue(["首相", "内阁总理", "宰相"].contains(info.heads.premierTitle.optionalString ?? ""))

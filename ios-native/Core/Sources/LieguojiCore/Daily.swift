@@ -325,6 +325,12 @@ public enum Daily {
     }
     static func taxMultiplier(_ r: JS, _ nation: String) -> Double {
         let n = r.people.nations[nation]
+        // 实际掌权者 (本作规则): the taxes are gathered by whoever governs.
+        if let g = Regimes.governor(r, nation) {
+            var total = 0.0
+            for t in (g.traits.isNull ? [] : g.traits.asArray) { total = f(total + f(Nobility.trait(t.asString)?.taxEfficiencyModifier.optionalNumber ?? 0)) }
+            return f(1 + total)
+        }
         if n.isNull || n.leaderId.isNull { return 1 }
         let leader = r.people.persons[n.leaderId.asInt.description]
         guard !leader.isNull, leader.id.asInt > 0, leader.alive.isTruthy, leader.stateId.asInt == n.id.asInt else { return 1 }
@@ -369,7 +375,7 @@ public enum Daily {
             let caps = owned.map { r.finance.provinces[$0.id.asString].maxPopulation.asNumber }
             let ratio = f(f(pops.reduce(0, +)) / f(caps.reduce(0, +)))
             let leaderId = r.people.nations[id].leaderId
-            let leader: JS? = leaderId.isNull ? nil : r.people.persons[leaderId.asInt.description]
+            let leader: JS? = Regimes.governor(r, id) ?? (leaderId.isNull ? nil : r.people.persons[leaderId.asInt.description])
             var administrative: Double? = v.destiny.asNumber >= 30 ? 50 : nil
             var s = Destiny.State(destiny: v.destiny.asNumber, decrease: v.decrease.asNumber, manifestCount: v.manifestCount.asInt, manifest: v.manifest.asBool, seed: UInt32(truncatingIfNeeded: Int64(v.seed.asNumber)), lastMonth: v.lastMonth.asInt)
             let before = s.destiny, gold = r.finance.nations[id].gold.asNumber

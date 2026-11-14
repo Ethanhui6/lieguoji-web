@@ -144,32 +144,55 @@ extension NativeEngine {
                     let c = queue[head]; head += 1
                     for i in 0..<4 { let d = neighbour(c, i); if d >= 0 && d < n && depth[d] < 0 && group(d) == k { depth[d] = depth[c] + 1; queue.append(d) } }
                 }
-                var deepest = list[0], score = -Double.infinity
-                for c in list {
-                    let off = pow(pts[2 * c] - cx, 2) + pow(pts[2 * c + 1] - cy, 2), s = Double(depth[c]) * Double(depth[c]) * dx * dx - off * 0.02
-                    if s > score { score = s; deepest = c }
-                }
-                let px = pts[2 * deepest], py = pts[2 * deepest + 1], step = min(dx, dy) * 0.6
-                func reach(_ ax: Double, _ ay: Double) -> Double {
-                    var t = 0.0, end = 0.0, misses = 0
-                    while misses < 2 && t < 3000 {
-                        t += step
-                        if let c = cell(px + ax * t, py + ay * t), group(c) == k { end = t; misses = 0 } else { misses += 1 }
+                // 国名居中 (1.14): not one candidate but the best of several. Among the deepest ground of the piece
+                // (at least 60 % as far from any border as its deepest point) eight places are tried, each along
+                // the land's own direction, half of it and level. A place is worth the size the name can be
+                // written there: as long as the straight run of own land through it allows, and as tall as the
+                // narrowest clearance to a border along the middle of that run. So the name sits where the
+                // land is broad, runs along it, and neither touches a border nor spills over one.
+                var deepestDepth: Int32 = 0
+                for c in list where depth[c] > deepestDepth { deepestDepth = depth[c] }
+                let inner = list.filter { depth[$0] * 10 >= deepestDepth * 6 }.sorted { depth[$0] != depth[$1] ? depth[$0] > depth[$1] : $0 < $1 }
+                let stride = max(1, inner.count / 8)
+                let places = Swift.stride(from: 0, to: inner.count, by: stride).prefix(8).map { inner[$0] }
+                let letters = Double(max(1, MapLayers.stateLabel(run.world.nations[k].name.optionalString ?? "", full: true).count))
+                let step = min(dx, dy) * 0.6
+                var bestScore = -Double.infinity
+                for place in places {
+                    let px = pts[2 * place], py = pts[2 * place + 1]
+                    func reach(_ ax: Double, _ ay: Double) -> Double {
+                        var t = 0.0, end = 0.0, misses = 0
+                        while misses < 2 && t < 3000 {
+                            t += step
+                            if let c = cell(px + ax * t, py + ay * t), group(c) == k { end = t; misses = 0 } else { misses += 1 }
+                        }
+                        return end
                     }
-                    return end
-                }
-                var longest = -1.0
-                for angle in [theta, theta * 0.5, 0] {
-                    let ax = cos(angle), ay = sin(angle), a = reach(ax, ay), b = reach(-ax, -ay)
-                    let length = (a + b) * (angle == theta ? 1.1 : 1)
-                    if length > longest {
-                        longest = length
-                        labelX = px + ax * (a - b) / 2; labelY = py + ay * (a - b) / 2; labelAngle = angle
-                        labelWidth = (a + b) / unit * 0.76
+                    for angle in [theta, theta * 0.5, 0] {
+                        let ax = cos(angle), ay = sin(angle), a = reach(ax, ay), b = reach(-ax, -ay)
+                        guard a + b > 0 else { continue }
+                        // The clearance along the middle 70 % of the run: the name's band must fit inside it.
+                        let mid = (a - b) / 2, half = (a + b) / 2 * 0.7
+                        var clear = depth[place]
+                        for j in 0...6 {
+                            let t = mid + half * (Double(j) / 3 - 1)
+                            let d = cell(px + ax * t, py + ay * t).map { group($0) == k ? depth[$0] : 0 } ?? 0
+                            clear = min(clear, max(0, d))
+                        }
+                        let width = (a + b) / unit * 0.76
+                        let across = Double(clear + 1) * min(dx, dy) * 2 / unit
+                        let height = min(max(width / 3, 1.5), max(1, across * 0.9))
+                        let x = px + ax * mid, y = py + ay * mid
+                        let away = ((x - cx) * (x - cx) + (y - cy) * (y - cy)).squareRoot() / unit
+                        // The size the name can take here, a little for running along the land, a little against straying from the middle.
+                        let size = min(width / letters, height) * (angle == theta ? 1.08 : 1) - away * 0.004
+                        if size > bestScore {
+                            bestScore = size
+                            labelX = x; labelY = y; labelAngle = angle; labelWidth = width; labelHeight = height
+                        }
                     }
                 }
-                let across = Double(depth[deepest] + 1) * min(dx, dy) * 2 / unit
-                labelHeight = min(max(labelWidth / 3, 1.5), max(1, across * 0.9)); labelMin = 6
+                labelMin = 6
             }
             o.nation = JS(k); o.x = JS(labelX); o.y = JS(labelY); o.angle = JS(labelAngle)
             o.width = JS(labelWidth); o.height = JS(labelHeight); o.fontMax = JS(25 + 15 * min(1, max(0, scale))); o.fontMin = JS(labelMin)

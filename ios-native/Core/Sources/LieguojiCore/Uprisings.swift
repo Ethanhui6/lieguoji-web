@@ -24,6 +24,10 @@ extension Regimes {
             let s = People.skills(p)
             mil = s.military; adm = s.administrative; cha = s.charisma
         }
+        // 实际掌权者: where the head of government rules, the state is run by his abilities; the head of
+        // state's charisma still counts for stability (legitimacy).
+        let crown = cha
+        if let g = governor(r, id) { let s = People.skills(g); mil = s.military; adm = s.administrative; cha = s.charisma }
         let fortune = r.destiny.nations[id].destiny.optionalNumber ?? 50, graft = Finance.corruption(r, id), sum = reformSum(r, id)
         var l = Leverage()
         l.attack = (mil - 50) * 0.8 + (fortune - 50) * 0.25 - graft * 0.15 + sum.attack
@@ -35,7 +39,7 @@ extension Regimes {
         let land = Double(gritCache?.counts[id] ?? 0), total = max(1, Double(gritCache?.counts.values.reduce(0, +) ?? 1))
         var owed = 0.0
         if !r.finance.nations[id].isNull { let income = max(1, monthlyIncome(r, id)); owed = min(15, debt(r, id) / income / 12 * 10) }
-        l.stability = 60 + (adm - 50) * 0.35 + (cha - 50) * 0.35 + (fortune - 50) * 0.4 - graft * 0.4 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability
+        l.stability = 60 + (adm - 50) * 0.35 + (crown - 50) * 0.35 + (fortune - 50) * 0.4 - graft * 0.4 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability
         return l
     }
     static func attributeMonth(_ r: JS, _ id: String, addGold: (Double) -> Void) {

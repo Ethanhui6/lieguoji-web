@@ -859,6 +859,9 @@ final class MapLabelsView: UIView {
         var rendered: Double = 0
         /// Tilt in radians (a state name along its land).
         var angle: Double = 0
+        /// The smallest size on screen (a capital's name), and the city's own place the enlarged name stands above.
+        var floorPoints: Double = 0
+        var anchorY: Double?
         init(text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?) {
             self.text = text; self.x = x; self.y = y; self.mapEm = mapEm; self.fill = fill; self.stroke = stroke; self.strokeWidth = strokeWidth; self.minPoints = minPoints; self.province = province
         }
@@ -912,8 +915,12 @@ final class MapLabelsView: UIView {
             let s: Double = mark == .capital ? 1.5 : mark == .provinceSeat ? 1.28 : 1
             let em = 64 * 0.13 * s / 10 * (1600.0 / 240.0), offset = 0.7 * s * (1600.0 / 240.0)
             // A capital's name in vermilion: it stays centred over its mark and is found at a glance.
-            return Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: mark == .capital ? Self.capitalInk : UIColor(white: 0x11 / 255.0, alpha: 1),
+            let l = Label(text: c.name, x: Double(c.x), y: Double(c.y) - offset, mapEm: em, fill: mark == .capital ? Self.capitalInk : UIColor(white: 0x11 / 255.0, alpha: 1),
                          stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.7), strokeWidth: 6.0 / 64, minPoints: 8, province: c.province)
+            // 首都名分级: a capital's name is written at eleven points at the least, so it is read at the zoom the
+            // game opens at (it used to show only close up); it keeps clear of the capital's rings.
+            if mark == .capital { l.floorPoints = 11; l.anchorY = Double(c.y) }
+            return l
         }.sorted { $0.mapEm > $1.mapEm }
     }
     /// The cities changed (a preview replaced by the founded world, whose cities have names): rebuild them.
@@ -1086,9 +1093,18 @@ final class MapLabelsView: UIView {
         }
         let capitalNames = showCities ? cities.filter { $0.fill === Self.capitalInk } : []
         let otherCities = showCities ? cities.filter { $0.fill !== Self.capitalInk } : []
-        for l in custom + capitalNames + nations + otherCities {
-            let points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)
-            let p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
+        // Enlarged capital names (the map seen from afar) give way to the state names; at their own size
+        // (close up) they come first, as before.
+        let enlarged = capitalNames.first.map { $0.mapEm * camera.scale < $0.floorPoints } ?? false
+        let order = enlarged ? custom + nations + capitalNames + otherCities : custom + capitalNames + nations + otherCities
+        for l in order {
+            var points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)
+            var p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
+            if points < l.floorPoints, points >= 4.5, let anchor = l.anchorY {
+                points = l.floorPoints
+                let at = camera.toScreen(x: l.x, y: anchor, viewport: vp)
+                p = (x: at.x, y: at.y - (max(ring, 3) + 4 + points * 0.62))
+            }
             // A name larger than the screen can show is hidden (a continent-wide group zoomed in close).
             guard points.isFinite, points >= l.minPoints, points < 900, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }
             // Rendered at most 96 pt and scaled beyond: a label image never grows to thousands of pixels

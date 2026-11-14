@@ -89,6 +89,17 @@ extension Regimes {
         }
     }
 
+    /// The forms in which the head of government, not the head of state, holds power.
+    static let premierStyles: Set<String> = ["constitutional", "union", "parliamentary", "shogunate", "regency"]
+    /// 实际掌权者 (本作规则): the living head of government where the form gives him power; nil where the
+    /// head of state governs (and in a plain run, which keeps the original's single ruler). The state's
+    /// leverage, its temper, its diplomacy, its taxes, its fortune and its command in battle read his
+    /// abilities and traits; the head of state keeps only what legitimacy gives (stability).
+    static func governor(_ r: JS, _ id: String) -> JS? {
+        guard UnitKinds.enabled, !r.regimes.isNull, let st = r.regimes.nations[id].style.optionalString, premierStyles.contains(st),
+              style(r, id).id == st, let p = premier(r, id), p.isAlive.asBool, !p.base.isNull else { return nil }
+        return p
+    }
     /// The head of government: the Chancellor's holder.
     static func premier(_ r: JS, _ id: String) -> JS? { Offices.holder(r, id, "Chancellor", Offices.stateId(r, id)) }
 
@@ -96,6 +107,30 @@ extension Regimes {
         if let name = p.identity.name.optionalString { return name }
         let culture = p.cultureName.optionalString ?? "", first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? ""
         return culture == "chinese" || culture == "japanese" || culture == "korean" || culture == "vietnamese" ? last + first : last.isEmpty ? first : first + "·" + last
+    }
+
+    /// 更替必书: every change of the head of government is written in the chronicle with its reason, also
+    /// the ones the court makes on its own (the yearly review dismissing a minister, a death in office,
+    /// the player's appointment). The seat's holder is compared month by month with the one last recorded.
+    static func watchPremier(_ r: JS, _ n: JS, _ id: String) {
+        let seat = seats(r, id), b = book(r, id)
+        guard let title = seat.premier else { b.premierSeen = .null; return }
+        let now = premier(r, id), seen = b.premierSeen.optionalNumber.map { Int($0) }
+        guard now?.id.asInt != seen else { return }
+        b.premierSeen = now.map { $0.id.clone() } ?? .null
+        // The first month under this form only records who sits.
+        guard let seen, let before = People.person(r, seen) else { return }
+        let state = n.name.asString, old = personName(before)
+        let why: String
+        if !before.isAlive.asBool { why = "\(title)\(old)卒于任上" }
+        else if before.stateId.asInt != Offices.stateId(r, id) { why = "\(title)\(old)已不在本国" }
+        else if Offices.book(r, id).manual.isTruthy { why = "奉君命改任，\(old)去职" }
+        else { why = seat.elected ? "议会改组内阁，\(old)去职" : "朝廷岁末考核，\(old)政绩不称而罢" }
+        if let now {
+            _ = People.announce(r, kind: "politics", text: "\(personName(now))继任\(state)\(title)", reason: why + "；" + (seat.premierRules ? "国政自此由新任\(title)主持。" : "新任\(title)辅佐国政。"), nations: [id], province: nil)
+        } else {
+            _ = People.announce(r, kind: "politics", text: "\(state)\(title)出缺", reason: why + "；朝中暂无合适人选。", nations: [id], province: nil)
+        }
     }
 
     /// 组阁与倒阁, each month, where the head of government is elected: at the general election the
@@ -115,6 +150,7 @@ extension Regimes {
         guard let next = People.republicLeader(r, families: commons.isEmpty ? all : commons, excluding: barred),
               next.id.asInt != (head?.id.asInt ?? -1), next.id.asInt != (current?.id.asInt ?? -1) else { return }
         Offices.appoint(Offices.context(r, id), "Chancellor", 0, sid, next.id.asInt)
+        book(r, id).premierSeen = next.id.clone()
         let state = n.name.asString, who = personName(next), reigning = seat.head ?? "元首"
         if fall, let current {
             _ = People.announce(r, kind: "politics", text: "\(state)倒阁：\(title)\(personName(current))去职，\(who)组阁",

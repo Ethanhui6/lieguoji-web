@@ -40,7 +40,7 @@ public enum Regimes {
     /// A state's temper for the AI: its ruler's traits and its polity (warlike > 1 > peaceful).
     public static func temper(_ r: JS, _ id: String) -> Double {
         var t = 1.0
-        if let leader = r.people.nations[id].leaderId.optionalNumber, let p = People.person(r, Int(leader)), !p.traits.isNull {
+        if let p = Regimes.governor(r, id) ?? r.people.nations[id].leaderId.optionalNumber.flatMap({ People.person(r, Int($0)) }), !p.traits.isNull {
             let w: [String: Double] = ["Hawkish": 1.35, "Ambitious": 1.2, "Wrathful": 1.15, "Cruel": 1.1, "Brave": 1.08, "Unifier": 1.15, "Strategist": 1.05,
                                        "Dovish": 0.72, "Merciful": 0.85, "Patient": 0.88, "WarWeary": 0.75, "Craven": 0.8, "Just": 0.92]
             for trait in p.traits.asArray { t *= w[trait.asString] ?? 1 }
@@ -443,6 +443,7 @@ public enum Regimes {
         coup(r, n, id, key)
         election(r, n, id, key)
         Regimes.cabinet(r, n, id, key)
+        Regimes.watchPremier(r, n, id)
         reform(r, n, id, key)
         let b = book(r, id)
         b.calm = JS(b.calm.asInt + 1)

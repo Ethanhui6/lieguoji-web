@@ -2,30 +2,6 @@ import Foundation
 
 /// The compact state the app's views read (src/native-bridge/engine.ts state()), from the Swift run.
 extension NativeEngine {
-    static func hash(_ s: String) -> UInt32 { var h: UInt32 = 2166136261; for c in s.utf16 { h = (h ^ UInt32(c)) &* 16777619 }; return h }
-    static func inside(_ x: Double, _ y: Double, _ ring: [(Double, Double)]) -> Bool {
-        var r = false, j = ring.count - 1
-        for i in ring.indices { let a = ring[i], b = ring[j]; if (a.1 > y) != (b.1 > y) && x < (b.0 - a.0) * (y - a.1) / (b.1 - a.1) + a.0 { r.toggle() }; j = i }
-        return r
-    }
-    /// army-wander47 wanderPoint: a stationary army's fixed display point inside its province.
-    static var wanderCache = [String: (Double, Double)]()
-    static func wanderPoint(_ polygon: [(Double, Double)], _ armyId: String, avoid: [(Double, Double)]) -> (Double, Double) {
-        if polygon.isEmpty { return (0, 0) }
-        let minX = polygon.map(\.0).min()!, maxX = polygon.map(\.0).max()!, minY = polygon.map(\.1).min()!, maxY = polygon.map(\.1).max()!
-        var h = hash(armyId), fallback: (Double, Double)?
-        let clear = min(maxX - minX, maxY - minY) * 0.22
-        for _ in 0..<32 {
-            h = (h ^ (h >> 15)) &* 2246822519
-            let u = Double(h & 0xffff) / 0x10000, v = Double(h >> 16) / 0x10000
-            let p = (minX + (maxX - minX) * (0.15 + 0.7 * u), minY + (maxY - minY) * (0.15 + 0.7 * v))
-            if !inside(p.0, p.1, polygon) { continue }
-            if avoid.allSatisfy({ abs(p.0 - $0.0) > clear * 1.6 || p.1 - $0.1 > clear * 0.6 || $0.1 - p.1 > clear * 1.2 }) { return p }
-            if fallback == nil { fallback = p }
-        }
-        if let fallback { return fallback }
-        return (polygon.map(\.0).reduce(0, +) / Double(polygon.count), polygon.map(\.1).reduce(0, +) / Double(polygon.count))
-    }
 
     /// state-line fmsStateLineColor: AdjustColor(AdjustColor(colour, +0.1 s, −0.05 v), +0.2 s, −0.2 v).
     /// ColorUtils.AdjustColor (RGB → HSV, saturation + ds, value − dv, back), on 0…1 components.

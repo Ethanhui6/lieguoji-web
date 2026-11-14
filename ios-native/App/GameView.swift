@@ -1,0 +1,636 @@
+import SwiftUI
+import CoreText
+import UniformTypeIdentifiers
+import LieguojiCore
+
+enum Panel: Identifiable, Equatable {
+    case editor, quick(Int), province(Int), army(Int), fleet(Int), nation(Int), people(Int), nationWars(Int), nationTalks(Int), nations, military, diplomacy, chronicle, menu, statistics, edicts
+    var id: String {
+        switch self {
+        case .editor: return "editor"
+        case .quick(let p): return "q\(p)"
+        case .province(let p): return "p\(p)"
+        case .army(let a): return "a\(a)"
+        case .fleet(let f): return "f\(f)"
+        case .nation(let n): return "n\(n)"
+        case .people(let n): return "people\(n)"
+        case .nationWars(let n): return "wars\(n)"
+        case .nationTalks(let n): return "talks\(n)"
+        case .statistics: return "statistics"
+        case .edicts: return "edicts"
+        case .nations: return "nations"
+        case .military: return "military"
+        case .diplomacy: return "diplomacy"
+        case .chronicle: return "chronicle"
+        case .menu: return "menu"
+        }
+    }
+    /// The name on the back row (返回 …) of the page this panel was opened from.
+    var title: String {
+        switch self {
+        case .editor: return "世界编辑"
+        case .quick: return "快捷"
+        case .province: return "州郡"
+        case .army: return "军团"
+        case .fleet: return "舰队"
+        case .nation: return "国家"
+        case .people: return "人物"
+        case .nationWars: return "战争"
+        case .nationTalks: return "外交"
+        case .statistics: return "排行"
+        case .edicts: return "诏令"
+        case .nations: return "列国"
+        case .military: return "军事"
+        case .diplomacy: return "外交"
+        case .chronicle: return "纪事"
+        case .menu: return "菜单"
+        }
+    }
+    /// The bottom tab this panel belongs to (highlighted while it is open).
+    var tab: String? {
+        switch self {
+        case .nations, .nation, .people, .nationWars, .nationTalks: return "nations"
+        case .military, .army, .fleet: return "military"
+        case .diplomacy: return "diplomacy"
+        case .chronicle: return "chronicle"
+        case .statistics: return "statistics"
+        default: return nil
+        }
+    }
+}
+
+struct GameView: View {
+    @ObservedObject var model: GameModel
+    @ObservedObject private var controller: MapController
+    @State private var panel: Panel?
+    /// Pages the open sheet came from: one sheet stays up and its pages slide in place (返回 goes back).
+    @State private var trail: [Panel] = []
+    /// The last page shown, kept while the sheet slides away so it does not go blank.
+    @State private var lastPanel: Panel?
+    /// Going back slides the page in from the leading edge.
+    @State private var backward = false
+    @State private var toast: String?
+    @State private var toastSerial = 0
+    @State private var viewsOpen = false
+    /// 壁纸模式: the controls hide and the map drifts; a tap anywhere returns.
+    @State private var wallpaper = false
+    /// The pending map pick is a retreat (原作防御模式) rather than a march.
+    @State private var marchRetreat = false
+    @State private var rtsDefend = false
+    /// The unit sheets' height; a pick from a list drops it low so the map shows the unit.
+    @State private var unitDetent: PresentationDetent = .height(320)
+    /// Nation pages stay under about 40% so the map keeps at least 60% of the screen.
+    @State private var nationDetent: PresentationDetent = .fraction(0.38)
+    /// The world was paused by a big panel and resumes when it closes.
+    @State private var pausedByPanel = false
+    @Namespace private var tabMarker
+    @Environment(\.verticalSizeClass) private var verticalClass
+    /// 横屏 on a phone: its own layout (a rail down the left, pages beside the map).
+    private var landscape: Bool { verticalClass == .compact }
+    @State private var ripple: CGPoint?
+    /// 入场: the controls settle in a moment after the map is whole.
+    @State private var entered = false
+    private var chromeIn: Bool { controller.reveal >= 1 && entered }
+    private struct ShotFile: Identifiable { let url: URL; var id: URL { url } }
+    @State private var shot: ShotFile?
+    init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
+
+    // Split in three: as one expression the compiler cannot type-check it in reasonable time.
+    private var backdrop: some View {
+        ZStack {
+            Color.clear
+        }
+        // A breath of ink at the screen's top and foot, so the floating controls settle into the map.
+        .overlay {
+            VStack(spacing: 0) {
+                LinearGradient(colors: [Theme.ink.opacity(0.14), Theme.ink.opacity(0.05), .clear], startPoint: .top, endPoint: .bottom).frame(height: 140)
+                Spacer()
+                LinearGradient(colors: [.clear, Theme.ink.opacity(0.05), Theme.ink.opacity(0.13)], startPoint: .top, endPoint: .bottom).frame(height: landscape ? 60 : 150)
+            }
+            .ignoresSafeArea().allowsHitTesting(false).opacity(wallpaper ? 0 : 1)
+        }
+        .task {
+            guard ShotTour.on else { return }
+            await ShotTour.play(model, show: { p in
+                if case .people = p { nationDetent = .large }
+                if let p { show(p) } else { panel = nil }
+            }, views: { viewsOpen = $0 })
+        }
+        .overlay(alignment: .top) {
+            VStack(spacing: 8) {
+                topBar
+                if controller.marchingArmy != nil { marchBanner.transition(.move(edge: .top).combined(with: .opacity)) }
+                if controller.marchingFleet != nil { fleetBanner.transition(.move(edge: .top).combined(with: .opacity)) }
+                if controller.paintNation != nil { paintBanner.transition(.move(edge: .top).combined(with: .opacity)) }
+                if let prompt = controller.pickPrompt {
+                    HStack(spacing: 10) {
+                        Image(systemName: "hand.tap").foregroundStyle(Theme.seal)
+                        Text(prompt).font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                        Button("取消") { controller.pickPrompt = nil; controller.onPick = nil; if controller.onTerrainStrokeEnd != nil && controller.brushName == nil && model.controller.terrainBrush { controller.terrainBrush = false; controller.onTerrainStroke = nil; controller.onTerrainStrokeEnd = nil } }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+                    }
+                    .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                if !controller.groupArmies.isEmpty { rtsBanner.transition(.move(edge: .top).combined(with: .opacity)) }
+                if let h = model.herald, let map = model.map {
+                    // Slides down and fades like the other top banners (调兵、绘制、即时战略).
+                    HeraldBanner(herald: h, map: map).id(h.id)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(Motion.panel, value: model.herald)
+                .offset(y: chromeIn ? 0 : -90).opacity(chromeIn ? 1 : 0)
+                .animation(Motion.drift, value: chromeIn)
+                .opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper)
+                .animation(Motion.panel, value: controller.marchingArmy)
+                .animation(Motion.panel, value: controller.marchingFleet)
+                .animation(Motion.panel, value: controller.paintNation)
+        }
+    }
+
+    private var stage: some View {
+        backdrop
+        .statusBarHidden()
+        .overlay(alignment: .bottom) {
+            Group {
+                if landscape { EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }.frame(maxWidth: 380).padding(.bottom, 4) }
+                else { bottomBar }
+            }
+            .offset(y: chromeIn ? 0 : 130).opacity(chromeIn ? 1 : 0)
+            .animation(Motion.drift.delay(0.12), value: chromeIn)
+            .opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper)
+            .task { try? await Task.sleep(nanoseconds: 250_000_000); entered = true }
+        }
+        .overlay(alignment: .topLeading) {
+            if landscape { landscapeRail.offset(x: chromeIn ? 0 : -120).animation(Motion.drift, value: chromeIn).opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper) }
+        }
+        .overlay {
+            if wallpaper {
+                Color.clear.contentShape(Rectangle()).ignoresSafeArea()
+                    .onTapGesture { withAnimation(Motion.reveal) { wallpaper = false }; controller.drifting = false }
+                    .overlay(alignment: .bottom) { Text("轻点返回").font(Theme.kai(13)).foregroundStyle(Theme.paper2.opacity(0.7)).padding(.bottom, 30) }
+            }
+        }
+        .overlay(alignment: .bottomLeading) {
+            if !model.viewLegend.isEmpty {
+                MapViewLegend(mode: model.mapView, legend: model.viewLegend).padding(.leading, landscape ? 84 : 14).padding(.bottom, landscape ? 40 : model.state?.events.isEmpty == false ? 120 : 80)
+                    .transition(.asymmetric(insertion: .scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity), removal: .opacity))
+            }
+        }
+        .animation(Motion.panel, value: model.viewLegend)
+        .overlay(alignment: .topTrailing) {
+            MapViewSwitcher(mode: $model.mapView, open: $viewsOpen).allowsHitTesting(viewsOpen).padding(.top, 52).padding(.trailing, 14)
+        }
+        .overlay(alignment: .bottom) {
+            if let toast {
+                HStack(spacing: 10) {
+                    Seal(text: "令", size: 22)
+                    Text(toast).font(Theme.kai(16)).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.leading, 10).padding(.trailing, 16).padding(.vertical, 10)
+                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous)))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.2), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.22), lineWidth: 0.6).padding(3))
+                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 10, y: 4)
+                .padding(.horizontal, 32).padding(.bottom, 116)
+                .id(toastSerial)
+                .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.92, anchor: .bottom)), removal: .opacity.combined(with: .offset(y: -12))))
+                .onTapGesture { self.toast = nil }
+            }
+        }
+        .animation(Motion.panel, value: toastSerial)
+        .animation(Motion.fade, value: toast)
+        .opacity(controller.reveal >= 1 ? 1 : 0)
+        .animation(Motion.panel, value: controller.reveal >= 1)
+        .onAppear {
+            controller.drifting = false
+            controller.onGroupTarget = { province in
+                let armies = controller.groupArmies, defend = rtsDefend
+                Task {
+                    let out = await model.rts(armies: armies, to: province, defend: defend)
+                    say(out.reason)
+                    if out.ok { controller.groupArmies = [] }
+                    model.refreshArmies()
+                }
+            }
+            controller.onLongPress = { province, point in
+                ripple = point
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) { ripple = nil; show(.quick(province)) }
+            }
+            controller.onPaint = { province in
+                if let brush = controller.brushAction { brush(province); return }
+                guard let n = controller.paintNation, model.state?.owners.indices.contains(province) == true else { return }
+                if controller.placingArmy {
+                    // 一指划过：每过一州放下所选数量的军队，落点有动效。
+                    let count = controller.placeCount
+                    Task {
+                        if let error = await model.addArmy(n, province: province, count: count) { say(error); GameFeel.shared.notify(.error) }
+                        else { GameFeel.shared.tap(); model.playMuster(nation: n, province: province, count: count) }
+                    }
+                    return
+                }
+                guard model.state?.owners[province] != n else { return }
+                Task { if let error = await model.grant(province: province, to: n) { say(error) } }
+            }
+            controller.onFleetTarget = { province in
+                guard let index = controller.marchingFleet, let fleet = model.fleet(index) else { controller.marchingFleet = nil; return }
+                Task {
+                    let name = model.map?.meta.provinces.indices.contains(province) == true ? model.map!.meta.provinces[province].name : ""
+                    if let error = await model.fleetOrder(id: fleet.id, province: province) { say(error) }
+                    else { say("\(fleet.name)起航，前往\(name)港"); controller.marchingFleet = nil }
+                    model.refreshArmies()
+                }
+            }
+            controller.onMarchTarget = { province in
+                guard let army = controller.marchingArmy else { return }
+                Task {
+                    let retreat = marchRetreat
+                    let error: String?
+                    if retreat { error = await model.retreat(army: army, to: province) } else { error = await model.order(army: army, to: province) }
+                    if let error { say(error) }
+                    else { say("\(model.army(army)?.name ?? "军队")\(retreat ? "撤往" : "前往")\(model.map?.meta.provinces[province].name ?? "")"); controller.marchingArmy = nil; marchRetreat = false }
+                    model.refreshArmies()
+                }
+            }
+        }
+        .onChange(of: controller.groupArmies) { _, _ in model.refreshArmies() }
+        .onChange(of: model.notice) { _, n in if let n { say(n); model.notice = nil } }
+        .onChange(of: controller.marchingFleet) { _, _ in model.refreshArmies() }
+        .onChange(of: model.mapView) { _, _ in
+            // Choosing a view rolls the switcher back up a moment later.
+            Task { try? await Task.sleep(nanoseconds: 280_000_000); withAnimation { viewsOpen = false } }
+        }
+        .sensoryFeedback(.selection, trigger: model.mapView)
+        .onChange(of: panel) { old, p in
+            if let p { lastPanel = p }
+            // All inspection pages share one pause policy, including map picks.
+            controller.sheetOpen = p != nil
+            if p != nil, model.playing { pausedByPanel = true; model.pause(saving: false) }
+            if p == nil, pausedByPanel { pausedByPanel = false; model.play() }
+            _ = old
+        }
+        .sensoryFeedback(.impact(weight: .light), trigger: panel?.id)
+        .sensoryFeedback(.selection, trigger: controller.selectedProvince)
+        .onChange(of: controller.selectedArmy) { _, army in
+            model.refreshArmies()
+            if let army { show(.army(army)) } else if case .army = panel { panel = nil }
+        }
+        .onChange(of: controller.selectedFleet) { _, fleet in
+            model.refreshArmies()
+            if let fleet { show(.fleet(fleet)) } else if case .fleet = panel { panel = nil }
+        }
+        .onChange(of: controller.selectedProvince) { _, province in
+            if province != nil { withAnimation { viewsOpen = false } }
+            if let province { show(.province(province)) } else if case .province = panel { panel = nil }
+        }
+    }
+
+    private var sideKey: String? { landscape ? panel?.id : nil }
+    private var pageShown: Binding<Bool> { Binding(get: { panel != nil && !landscape }, set: { if !$0 && !landscape { panel = nil } }) }
+
+    var body: some View {
+        stage
+        .sheet(item: $shot) { ShareSheet(items: [$0.url]) }
+        .onChange(of: panel == nil) { _, closed in model.pageOpen = !closed }
+        .overlay(alignment: .trailing) { sidePage }
+        .animation(Motion.panel, value: sideKey)
+        .overlay { if let ripple { PressRipple().position(ripple).ignoresSafeArea() } }
+        .sheet(isPresented: pageShown, onDismiss: {
+            trail = []
+            if panel == nil { controller.selectedProvince = nil; controller.selectedFleet = nil; if controller.marchingArmy == nil { controller.selectedArmy = nil } }
+        }) {
+            if let panel = panel ?? lastPanel {
+                sheet(for: panel)
+                    .id(panel.id)
+                    .transition(.asymmetric(insertion: .move(edge: backward ? .leading : .trailing).combined(with: .opacity),
+                                            removal: .move(edge: backward ? .trailing : .leading).combined(with: .opacity)))
+                    .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
+                    .presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(28).font(Theme.kai(17))
+            }
+        }
+    }
+
+    /// Opens a page from inside the sheet: the current page goes on the trail.
+    private func open(_ next: Panel) {
+        guard next != panel else { return }
+        backward = false
+        withAnimation(Motion.panel) {
+            if let panel { trail.append(panel); if trail.count > 8 { trail.removeFirst() } }
+            panel = next
+        }
+    }
+    /// A map pick or a bottom tab starts a fresh docket (no trail); an open sheet slides to it.
+    private func show(_ next: Panel) {
+        guard next != panel else { return }
+        backward = false
+        if panel == nil { trail = []; panel = next; return }
+        withAnimation(Motion.panel) { trail = []; panel = next }
+    }
+    private func back() {
+        guard let last = trail.last else { return }
+        backward = true
+        withAnimation(Motion.panel) { trail.removeLast(); panel = last }
+    }
+    private func backRow(_ last: Panel) -> some View {
+        HStack {
+            Button { back() } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left").font(.system(size: 13, weight: .regular))
+                    Text("返回" + last.title).font(Theme.kai(15))
+                }
+                .foregroundStyle(Theme.seal).padding(.horizontal, 12).frame(height: 30)
+                .background(Theme.seal.opacity(0.08), in: Capsule())
+                .overlay(Capsule().stroke(Theme.seal.opacity(0.25), lineWidth: 0.8))
+            }
+            .buttonStyle(PressStyle())
+            Spacer()
+        }
+        .padding(.horizontal, 18).padding(.top, 14)
+    }
+
+    @ViewBuilder private func sheet(for panel: Panel) -> some View {
+        switch panel {
+        case .editor:
+            WorldEditorSheet(model: model, close: { closePage() }, takeShot: { mapShot() })
+                .presentationDetents([.medium, .large])
+        case .quick(let p):
+            ProvinceQuickSheet(model: model, province: p, openProvince: { open(.province(p)) }, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)) }, close: { closePage() })
+                .presentationDetents([.medium, .large])
+        case .province(let p):
+            ProvinceSheet(model: model, province: p, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)); controller.selectedArmy = a; locate(army: a) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        case .army(let a):
+            ArmySheet(model: model, army: a, say: say, locate: { locate(army: a) }, onMarch: {
+                marchRetreat = false; controller.marchingArmy = a; self.panel = nil; say("点选地图上的目的地")
+            }, onHalt: { Task { if let e = await model.order(army: a, to: nil) { say(e) } } }, onRetreat: {
+                marchRetreat = true; controller.marchingArmy = a; self.panel = nil; say("点选撤退的目的地（途中不主动接战）")
+            })
+            .presentationDetents([.height(320), .medium, .large], selection: $unitDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        case .fleet(let f):
+            FleetSheet(model: model, fleet: f, pickOnMap: {
+                controller.marchingFleet = f; self.panel = nil; say("点选地图上本国的港口州郡")
+            }).presentationDetents([.height(320), .medium, .large], selection: $unitDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+        case .nation(let n):
+            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, lower: { nationDetent = .fraction(0.38) }, paint: { n in
+                controller.placingArmy = false; controller.paintNation = n; self.panel = nil
+                say("绘制疆域：点选或用一指拖过州郡，划入\(model.map?.meta.nations.indices.contains(n) == true ? model.map!.meta.nations[n].name : "")；两指移动地图")
+            }, placeArmy: { n in
+                controller.marchingArmy = nil; controller.marchingFleet = nil; controller.groupArmies = []
+                controller.placingArmy = true; controller.paintNation = n; self.panel = nil
+                controller.placeCount = 3
+                say("拖动滑条选数量，点按或一指划过州郡放下军队；两指移动地图")
+            }, pickProvince: { prompt, done in
+                // 地图点选: the page steps aside, the player taps the map, and the page comes back with the choice.
+                controller.pickPrompt = prompt
+                controller.onPick = { p in controller.pickPrompt = nil; controller.onPick = nil; done(p); nationDetent = .medium; open(.nation(n)) }
+                self.panel = nil
+            }, openArmy: { a in open(.army(a)) }, openPeople: { nationDetent = .fraction(0.38); open(.people(n)) }, openWars: { nationDetent = .fraction(0.38); open(.nationWars(n)) }, openTalks: { nationDetent = .fraction(0.38); open(.nationTalks(n)) })
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+                .onAppear { if NationSheet.tourTab != nil { nationDetent = .large } }
+        case .people(let n):
+            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .people)
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+        case .nationWars(let n):
+            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .wars)
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+        case .nationTalks(let n):
+            NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .talks)
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+        case .edicts:
+            EdictSheet(model: model, say: say).presentationDetents([.medium, .large])
+        case .statistics:
+            StatisticsSheet(model: model) { n in nationDetent = .fraction(0.38); open(.nation(n)) }.presentationDetents([.medium, .large]).presentationBackground(.clear)
+        case .nations:
+            NationsSheet(model: model) { n in nationDetent = .fraction(0.38); open(.nation(n)) }.presentationDetents([.medium, .large])
+        case .military:
+            MilitarySheet(model: model, select: { army in
+                // The army's docket slides in over the roster (返回军事 goes back); the sheet drops low and
+                // the camera flies to the army itself.
+                unitDetent = .height(320)
+                open(.army(army)); controller.selectedArmy = army
+                locate(army: army)
+            }, selectFleet: { fleet in
+                unitDetent = .height(320)
+                open(.fleet(fleet)); controller.selectedFleet = fleet
+                if let f = model.fleet(fleet) { controller.fly(x: Double(f.x), y: Double(f.y)) }
+            }, flyTo: { x, y in controller.fly(x: x, y: y) }).presentationDetents([.medium, .large])
+        case .diplomacy:
+            DiplomacySheet(model: model, say: say, fly: { n in
+                if let map = model.map, map.meta.nations.indices.contains(n), map.meta.cities.indices.contains(map.meta.nations[n].capital) {
+                    let c = map.meta.cities[map.meta.nations[n].capital]
+                    controller.showPlace(x: Double(c.x), y: Double(c.y))
+                }
+            }, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) },
+               openWars: { MilitarySheet.openOn = "wars"; open(.military) },
+               openChronicle: { n in ChronicleSheet.openNation = n; open(.chronicle) }).presentationDetents([.medium, .large])
+        case .chronicle:
+            ChronicleSheet(model: model, fly: { controller.fly(to: $0) }).presentationDetents([.medium, .large])
+        case .menu:
+            MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }, openEditor: { open(.editor) },
+                      wallpaper: { self.panel = nil; withAnimation(Motion.reveal) { wallpaper = true }; controller.drifting = true }, say: say) { self.panel = nil }.presentationDetents([.medium, .large])
+        }
+    }
+
+    /// The camera to where the army is drawn now.
+    private func locate(army: Int) {
+        guard let a = model.army(army) else { return }
+        let drawn = controller.placed?(a.id)
+        controller.fly(x: drawn?.0 ?? Double(a.x), y: drawn?.1 ?? Double(a.y))
+    }
+
+    private func say(_ text: String) {
+        toastSerial += 1
+        let serial = toastSerial
+        toast = text
+        Task { try? await Task.sleep(nanoseconds: 2_400_000_000); if toastSerial == serial { toast = nil } }
+    }
+
+    // MARK: chrome
+
+    private var topBar: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Text(model.state?.dateText ?? "").font(Theme.kai(17)).foregroundStyle(Theme.ink).monospacedDigit()
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                    .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
+                if let wars = model.state?.wars.count, wars > 0 {
+                    HStack(spacing: 3) { Circle().fill(Theme.seal).frame(width: 6, height: 6); Text("\(wars)场战争").font(Theme.kai(13)).foregroundStyle(Theme.seal).lineLimit(1).fixedSize() }
+                }
+                // 远程计算: the computer simulates.
+                if model.remoteAddress != nil {
+                    Image(systemName: "desktopcomputer").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.jade)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .padding(.horizontal, 16).frame(height: 42).glass(Capsule())
+            if landscape { transport.padding(.horizontal, 6).frame(height: 50).glass(Capsule()) }
+            Spacer()
+            Button { withAnimation { viewsOpen.toggle() } } label: { CircleIcon(glyph: viewsOpen ? .close : .views) }
+                .buttonStyle(PressStyle())
+            Button {
+                if controller.boxSelecting || !controller.groupArmies.isEmpty { controller.boxSelecting = false; controller.groupArmies = []; model.refreshArmies() }
+                else { controller.boxSelecting = true; say("即时战略：在地图上拖出方框选择军队") }
+            } label: { CircleIcon(glyph: controller.boxSelecting || !controller.groupArmies.isEmpty ? .close : .command) }.buttonStyle(PressStyle())
+            Button { show(.menu) } label: { CircleIcon(glyph: .menu) }.buttonStyle(PressStyle())
+        }
+        .padding(.horizontal, 14).padding(.top, 2)
+    }
+
+    /// 即时战略 banner: the selected count, 进攻/防御 mode and cancel.
+    private var rtsBanner: some View {
+        HStack(spacing: 10) {
+            Text("已选 \(controller.groupArmies.count) 支军团 · 点选目的地").font(Theme.kai(15)).foregroundStyle(Theme.ink)
+            HStack(spacing: 0) {
+                ForEach([false, true], id: \.self) { defend in
+                    Button { withAnimation(Motion.tap) { rtsDefend = defend } } label: {
+                        Text(defend ? "防御" : "进攻").font(Theme.kai(14)).foregroundStyle(rtsDefend == defend ? Theme.paper2 : Theme.ink)
+                            .padding(.horizontal, 10).padding(.vertical, 5).background(rtsDefend == defend ? Theme.seal : Color.clear, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .background(Theme.wash, in: Capsule())
+            // 交 AI: the selected armies back to the war council.
+            Button("交AI") {
+                let armies = controller.groupArmies
+                Task { let out = await model.releaseToAI(armies: armies); say(out.reason); if out.ok { controller.groupArmies = [] }; model.refreshArmies() }
+            }.font(Theme.kai(15)).foregroundStyle(Theme.jade)
+            Button("取消") { controller.groupArmies = []; model.refreshArmies() }.font(Theme.kai(15)).foregroundStyle(Theme.seal)
+        }
+        .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
+    }
+
+    private var paintBanner: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 10) {
+                let n = controller.paintNation ?? -1, nation = model.map.flatMap { $0.meta.nations.indices.contains(n) ? $0.meta.nations[n] : nil }
+                RoundedRectangle(cornerRadius: 3).fill(nation.map { Names.color($0.color) } ?? Theme.ink2).frame(width: 14, height: 14)
+                Text(controller.brushName ?? (controller.placingArmy ? "在地图上点按或划过州郡放置" : "绘制\(nation?.name ?? "")疆域")).font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1)
+                Button("完成") { controller.paintNation = nil; controller.placingArmy = false; controller.placeCount = 1; controller.brushName = nil; controller.brushAction = nil }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+            }
+            if controller.placingArmy {
+                // 拖动选择一次放多少支军队.
+                HStack(spacing: 10) {
+                    Image(systemName: "shield.lefthalf.filled").font(.system(size: 14)).foregroundStyle(Theme.seal)
+                    Slider(value: Binding(get: { Double(controller.placeCount) }, set: { v in
+                        let k = Int(v.rounded()); if k != controller.placeCount { controller.placeCount = k; GameFeel.shared.tap() }
+                    }), in: 1...30, step: 1).tint(Theme.seal)
+                    Text("\(controller.placeCount) 军").font(Theme.kai(16)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 48, alignment: .trailing).contentTransition(.numericText())
+                }
+                .frame(width: 270)
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 8).glass(RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    private var fleetBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "anchor").foregroundStyle(Theme.seal)
+            Text("舰队：点选停留的港口").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+            Button("取消") { controller.marchingFleet = nil; model.refreshArmies() }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+        }
+        .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
+    }
+
+    private var marchBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.triangle.turn.up.right.diamond.fill").foregroundStyle(Theme.seal)
+            Text(marchRetreat ? "撤退：点选目的地" : "调兵：点选目的地").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+            Button("取消") { controller.marchingArmy = nil; controller.selectedArmy = nil; model.refreshArmies() }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+        }
+        .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
+    }
+
+    @ViewBuilder private var mainTabs: some View {
+        TabButton(symbol: "building.columns", title: "国家", glyph: .nation, active: panel?.tab == "nations", marker: tabMarker) { show(.nations) }
+        TabButton(symbol: "shield", title: "军事", glyph: .military, active: panel?.tab == "military", marker: tabMarker) { show(.military) }
+        TabButton(symbol: "scroll", title: "外交", glyph: .diplomacy, active: panel?.tab == "diplomacy", marker: tabMarker) { show(.diplomacy) }
+        TabButton(symbol: "book", title: "纪事", glyph: .chronicle, active: panel?.tab == "chronicle", marker: tabMarker) { show(.chronicle) }
+        TabButton(symbol: "chart.bar.xaxis", title: "排行", glyph: .ranking, active: panel?.tab == "statistics", marker: tabMarker) { show(.statistics) }
+    }
+    private var transport: some View {
+        HStack(spacing: 2) {
+            Button { model.cycleSpeed() } label: { Text("\(model.speed)×").font(Theme.kai(18)).foregroundStyle(Theme.ink).frame(width: 40, height: 50).contentTransition(.numericText()) }
+                .buttonStyle(PressStyle())
+            Button { model.togglePlay() } label: {
+                Image(systemName: model.playing ? "pause.fill" : "play.fill").font(.system(size: 18, weight: .regular))
+                    .foregroundStyle(Theme.paper2).frame(width: 46, height: 46).background(Theme.seal, in: Circle())
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(PressStyle())
+            .sensoryFeedback(.impact(weight: .light), trigger: model.playing)
+        }
+    }
+    /// 横屏: the tabs stand down the left edge, so the map keeps its full height.
+    private var landscapeRail: some View {
+        VStack(spacing: 4) { mainTabs }
+            .padding(.vertical, 6).padding(.horizontal, 4)
+            .glass(RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .padding(.leading, 10).padding(.top, 52)
+            .animation(Motion.tap, value: panel?.tab)
+    }
+    /// 横屏: a page opens beside the map instead of covering it.
+    @ViewBuilder private var sidePage: some View {
+        if landscape, let panel {
+            sheet(for: panel)
+                .id(panel.id)
+                .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
+                .font(Theme.kai(17))
+                .frame(width: min(480, UIScreen.main.bounds.width * 0.52))
+                .frame(maxHeight: .infinity)
+                // The paper runs on past the safe area to the screen's edge; the text stays inside it.
+                .background {
+                    MemorialPaper()
+                        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 22, bottomLeadingRadius: 22, bottomTrailingRadius: 0, topTrailingRadius: 0, style: .continuous))
+                        .shadow(color: .black.opacity(0.25), radius: 16, x: -4)
+                        .padding(.trailing, -90)
+                        .ignoresSafeArea()
+                }
+                .overlay(alignment: .leading) {
+                    Button { closePage() } label: { Image(systemName: "chevron.right").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink).frame(width: 36, height: 36).glass(Circle()) }
+                        .buttonStyle(PressStyle()).offset(x: -18)
+                }
+                .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { if $0.translation.width > 90 && abs($0.translation.height) < 60 { closePage() } })
+                .ignoresSafeArea(.container, edges: .vertical)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+        }
+    }
+    /// 导出地图截图: the controls step aside for a moment, the screen is drawn to an image and shared.
+    private func mapShot() {
+        closePage()
+        withAnimation(Motion.fade) { wallpaper = true }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            let window = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+            var url: URL?
+            if let window {
+                let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+                let file = FileManager.default.temporaryDirectory.appendingPathComponent("列国纪地图.png")
+                if (try? image.pngData()?.write(to: file)) != nil { url = file }
+            }
+            withAnimation(Motion.fade) { wallpaper = false }
+            shot = url.map(ShotFile.init)
+        }
+    }
+    private func closePage() {
+        withAnimation(Motion.panel) { panel = nil }
+        trail = []
+        controller.selectedProvince = nil; controller.selectedFleet = nil
+        if controller.marchingArmy == nil { controller.selectedArmy = nil }
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 10) {
+            EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }
+            HStack(spacing: 10) {
+                HStack(spacing: 0) {
+                    mainTabs
+                }
+                .animation(Motion.tap, value: panel?.tab)
+                .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
+                transport
+                .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
+            }
+        }
+        .padding(.horizontal, 12).padding(.bottom, 4)
+    }
+}

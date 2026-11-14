@@ -116,7 +116,7 @@ struct WorldArchiveSheet: View {
             Button("焚毁这卷", role: .destructive) {
                 guard let w = burning else { return }
                 model.deleteArchived(w)
-                withAnimation(.easeOut(duration: 0.25)) { worlds.removeAll { $0.id == w.id } }
+                withAnimation(Motion.fade) { worlds.removeAll { $0.id == w.id } }
                 burning = nil
             }
             Button("留着", role: .cancel) { burning = nil }

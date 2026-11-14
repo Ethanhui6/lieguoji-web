@@ -343,7 +343,7 @@ struct PressRipple: View {
     var body: some View {
         Circle().stroke(Theme.seal, lineWidth: 3).frame(width: 96, height: 96)
             .scaleEffect(grown ? 1 : 0.2).opacity(grown ? 0 : 0.9)
-            .onAppear { withAnimation(.easeOut(duration: 0.3)) { grown = true } }
+            .onAppear { withAnimation(Motion.fade) { grown = true } }
             .allowsHitTesting(false)
     }
 }

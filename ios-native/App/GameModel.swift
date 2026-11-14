@@ -990,7 +990,11 @@ import LieguojiCore
         Self.offset(&sprites)
         // 兵力 under each army's plaque (the original's army label), shown once zoomed in enough.
         var counts = [String: String]()
-        for a in state.armies where a.troops > 0 { counts[a.id] = a.troops >= 10000 ? String(format: "%.1f万", Double(a.troops) / 10000) : "\(a.troops)" }
+        // 兵力前加一字军情：战（交战）、退（撤退）、集（集结待发）、守（驻防）、援（回援本土）、征（出征）、行（行军）；驻扎不标。
+        for a in state.armies where a.troops > 0 {
+            let n = a.troops >= 10000 ? String(format: "%.1f万", Double(a.troops) / 10000) : "\(a.troops)"
+            counts[a.id] = Self.stateMark(a).map { $0 + " " + n } ?? n
+        }
         controller.troopTexts = counts
         controller.armies = sprites
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
@@ -1004,6 +1008,18 @@ import LieguojiCore
 
     /// Each icon keeps one small fixed offset from its army's point (by its id): stacked armies fan out
     /// and a column marching together keeps its order instead of reshuffling every step.
+    /// 军队状态的一字标记（与军事页的分类一致）；驻扎不动的军队不标。
+    static func stateMark(_ a: GameState.Army) -> String? {
+        if a.status == "fighting" { return "战" }
+        if a.status == "retreating" { return "退" }
+        switch a.duty {
+        case "staging": return "集"
+        case "guarding": return "守"
+        case "supporting": return "援"
+        case "attacking": return "征"
+        default: return a.travel == "moving" ? "行" : nil
+        }
+    }
     static func offset(_ sprites: inout [MapRenderer.ArmySprite]) {
         // Always applied (an offset switched on only when crowded made icons hop as columns passed).
         for i in sprites.indices where sprites[i].army > -100_000 {
@@ -1014,37 +1030,6 @@ import LieguojiCore
         }
     }
 
-    static func spread(_ sprites: inout [MapRenderer.ArmySprite], minimum: Float) {
-        let movable = sprites.indices.filter { sprites[$0].army > -100_000 }
-        guard movable.count > 1 else { return }
-        let cell = minimum
-        for _ in 0..<3 {
-            var grid = [Int64: [Int]]()
-            func cellKey(_ a: Int64, _ b: Int64) -> Int64 { (a << 32) | (b & 0xFFFF_FFFF) }
-            func key(_ x: Float, _ y: Float) -> Int64 { cellKey(Int64(floor(x / cell)), Int64(floor(y / cell))) }
-            for i in movable { grid[key(sprites[i].x, sprites[i].y), default: []].append(i) }
-            var moved = false
-            for i in movable {
-                let gx = Int64(floor(sprites[i].x / cell)), gy = Int64(floor(sprites[i].y / cell))
-                for dx in -1...1 { for dy in -1...1 {
-                    for j in grid[cellKey(gx + Int64(dx), gy + Int64(dy))] ?? [] where j > i {
-                        var vx = sprites[j].x - sprites[i].x, vy = sprites[j].y - sprites[i].y
-                        var d = (vx * vx + vy * vy).squareRoot()
-                        guard d < minimum else { continue }
-                        if d < 0.01 {
-                            // Exactly stacked: fan out by index (deterministic).
-                            let a = Float(j % 8) * .pi / 4; vx = cos(a); vy = sin(a); d = 1
-                        } else { vx /= d; vy /= d }
-                        let push = (minimum - min(d, minimum)) * 0.55
-                        sprites[i].x -= vx * push; sprites[i].y -= vy * push
-                        sprites[j].x += vx * push; sprites[j].y += vy * push
-                        moved = true
-                    }
-                } }
-            }
-            if !moved { break }
-        }
-    }
 
     func fleet(_ index: Int?) -> GameState.Fleet? { index.flatMap { i in state?.fleets?.indices.contains(i) == true ? state!.fleets![i] : nil } }
     func army(_ index: Int?) -> GameState.Army? { index.flatMap { i in state?.armies.indices.contains(i) == true ? state!.armies[i] : nil } }

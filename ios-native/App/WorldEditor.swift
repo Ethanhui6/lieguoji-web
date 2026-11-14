@@ -57,7 +57,7 @@ struct WorldEditorSheet: View {
                 SheetHeader(title: "世界编辑", subtitle: "笔刷、标注、文化宗教与导出", seal: "编")
                 ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 8) {
                     ForEach(Tab.allCases, id: \.self) { t in
-                        Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { tab = t } } label: {
+                        Button { withAnimation(Motion.tap) { tab = t } } label: {
                             Text(t.rawValue).font(Theme.kai(15)).foregroundStyle(tab == t ? Theme.paper2 : Theme.ink)
                                 .padding(.horizontal, 14).frame(height: 38)
                                 .background(tab == t ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))

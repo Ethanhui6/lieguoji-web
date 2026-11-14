@@ -136,8 +136,8 @@ struct BattleBoard: View {
                     Rectangle().fill(tint(attackerNation))
                 }
                 .clipShape(Capsule())
-                .animation(.spring(response: 0.6, dampingFraction: 0.85), value: d)
-                .animation(.spring(response: 0.6, dampingFraction: 0.85), value: a)
+                .animation(Motion.drift, value: d)
+                .animation(Motion.drift, value: a)
             }
             .frame(height: 8)
             HStack(alignment: .top, spacing: 10) {

@@ -148,7 +148,6 @@ struct OrderedIDs {
 extension DiplomacyWorld {
     /// 上帝之手 (app worlds): set while the player's own declaration is checked; truces do not hold it back.
     static var ignoreTruce = false
-    static let initialWarTime = -8.988465674311579e307
 
     /// diplomacyRandom46: the persisted browser PRNG (mulberry32 step), as float32 by its callers.
     mutating func random() -> Double {

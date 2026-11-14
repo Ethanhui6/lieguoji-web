@@ -34,7 +34,6 @@ public enum MapPalette {
     public static let shallowSea = Ocean.original.shallow
     public static let deepSea = Ocean.original.deep
     public static let coastLine = RGB(hex: 0x5F5F5F)
-    public static let stateLine = RGB(hex: 0x1487FF)
     /// Province borders when the switch is on. Measured #B2B2B2, not the web #303e37 at 0.2.
     public static let provinceBorder = RGB(hex: 0xB2B2B2)
     /// Sea-route colour from the original display settings. Width and dash are not in this client.

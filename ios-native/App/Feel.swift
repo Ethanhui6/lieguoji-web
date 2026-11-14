@@ -73,7 +73,6 @@ import UIKit
     private let light = UIImpactFeedbackGenerator(style: .light), heavy = UIImpactFeedbackGenerator(style: .heavy), rigid = UIImpactFeedbackGenerator(style: .rigid)
     private let notice = UINotificationFeedbackGenerator()
     func tap() { if haptics { light.impactOccurred() } }
-    func thud() { if haptics { heavy.impactOccurred(intensity: 0.9) } }
     /// A new battle: at most once every eight seconds (with many armies a new fight began every step,
     /// and the phone buzzed without pause).
     func clash() { if haptics && due("clash", 8) { rigid.impactOccurred(intensity: 0.6) } }
@@ -126,7 +125,7 @@ struct RemoteSettings: View {
             Text("只需在电脑上运行一次「列国纪远程计算」（之后开机自动运行），手机进入世界就会自动接上：同一 Wi-Fi 直连，在外面经中转。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
                 .padding(.horizontal, 16).padding(.vertical, 10).fixedSize(horizontal: false, vertical: true)
             Divider2()
-            Button { withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { advanced.toggle() } } label: {
+            Button { withAnimation(Motion.tap) { advanced.toggle() } } label: {
                 HStack { Text("高级：手动连接（一般不需要）").font(Theme.kai(14)).foregroundStyle(Theme.ink2); Spacer(); Image(systemName: advanced ? "chevron.up" : "chevron.down").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.ink2) }
                     .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
             }

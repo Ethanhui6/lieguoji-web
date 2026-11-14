@@ -348,7 +348,7 @@ struct EditorView: View {
             .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 14, y: 5)
             .padding(.horizontal, 12).padding(.bottom, 6)
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: editor.step)
+        .animation(Motion.panel, value: editor.step)
         .sheet(isPresented: $leaving) {
             VStack(alignment: .leading, spacing: 14) {
                 SheetHeader(title: "放弃这幅地图？", subtitle: "还没开辟的画稿不会保存", seal: "弃")
@@ -386,7 +386,7 @@ struct EditorView: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
                 ForEach(MapEditor.Tool.allCases) { t in
                     let on = editor.tool == t
-                    Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editor.tool = t; if let h = t.target { editor.targetHeight = h } }; GameFeel.shared.tap() } label: {
+                    Button { withAnimation(Motion.tap) { editor.tool = t; if let h = t.target { editor.targetHeight = h } }; GameFeel.shared.tap() } label: {
                         VStack(spacing: 4) {
                             InkIcon(glyph: t.glyph, size: 20).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                                 .frame(height: 22)

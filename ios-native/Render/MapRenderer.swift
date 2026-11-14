@@ -494,9 +494,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Where every icon is drawn right now (mid-walk included), for taps and troop labels.
-    /// Armies that re-formed far away since the last call (key and where they fell), for the effects.
-    private(set) var jumped: [(key: String, x: Float, y: Float)] = []
-    func takeJumped() -> [(key: String, x: Float, y: Float)] { defer { jumped = [] }; return jumped }
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
         armySprites.map { s in let p = displayed(s); return (s, p.x, p.y) }
     }
@@ -519,7 +516,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
                 if s.reorganizing && previous[s.key] != true {
                     // An army re-formed at home: it appears there (the fall plays where it was).
-                    from[s.key] = target; to[s.key] = target; fading.insert(s.key); jumped.append((s.key, p.x, p.y))
+                    from[s.key] = target; to[s.key] = target; fading.insert(s.key)
                 } else {
                     from[s.key] = p; to[s.key] = target
                     // 平滑行军 (the original walks a smoothed path at an even pace): this leg leaves in the

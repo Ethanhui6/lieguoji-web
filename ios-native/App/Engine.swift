@@ -186,7 +186,6 @@ struct ProvinceInfo: Decodable {
         return out
     }
 }
-struct CommandResult: Decodable { let ok: Bool; let reason: String; let state: GameState? }
 
 struct LoadedWorld: Decodable {
     let bin: String

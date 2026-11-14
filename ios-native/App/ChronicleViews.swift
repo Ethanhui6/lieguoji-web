@@ -60,12 +60,8 @@ struct KindSeal: View {
     let kind: ChronicleKind
     var size: CGFloat = 22
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
-        Text(kind.mark).font(Theme.kai(size * 0.6)).foregroundStyle(Theme.paper2)
-            .frame(width: size, height: size)
-            .background(kind.color.opacity(0.88), in: shape)
-            .overlay(shape.stroke(Theme.paper2.opacity(0.55), lineWidth: 0.8).padding(1.6))
-            .accessibilityLabel(kind.label)
+        // 统一印面，颜色按纪事类别。
+        SealFace(text: kind.mark, size: size, color: kind.color.opacity(0.9)).accessibilityLabel(kind.label)
     }
 }
 

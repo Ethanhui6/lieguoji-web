@@ -197,7 +197,6 @@ public struct PeaceAI {
         for g in w.goals where PeaceAI.enforceable(g.type) { any = true; if !goalAchieved(g) { return false } }
         return any
     }
-    func deadOrZero(_ id: Int) -> Bool { guard let s = byState[id] else { return true }; return s.dead || countLand(s) <= 0 }
     public func hasAutonomousParticipant() -> Bool { w.participants.contains { p in byState[p.stateId].map { !$0.dead && $0.autonomous } ?? false } }
 
     /// nativeDecidePeaceReason for external wars: 0 goals achieved, 2 collapse, 1 decisive score, 4 weariness.

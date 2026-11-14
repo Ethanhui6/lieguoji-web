@@ -72,7 +72,6 @@ public enum PeaceBridge {
             if next.count != old.count { n.offices.assignments = .array(next); n.offices.revision = JS(n.offices.revision.asNumber + 1); r.people.revision = JS(r.people.revision.asNumber + 1) }
         }
     }
-    static let goalDesc = [0: "索取", 1: "索取", 2: "占领"]
     static func goalText(_ type: Int, _ count: Int) -> String {
         switch type {
         case 0, 1: return "索取\(count)省"

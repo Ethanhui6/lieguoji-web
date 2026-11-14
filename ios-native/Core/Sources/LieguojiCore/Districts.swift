@@ -43,11 +43,6 @@ public enum Districts {
         let list = r.regimes.regions.list
         return Int(id) < list.length ? list[Int(id)] : nil
     }
-    /// The region index of every province (−1 when none), for the map view.
-    static func indexes(_ r: JS) -> [Int] {
-        ensure(r)
-        return r.world.provinces.asArray.map { r.regimes.regions.of[$0.id.asString].optionalNumber.map { Int($0) } ?? -1 }
-    }
 }
 
 extension NativeEngine {

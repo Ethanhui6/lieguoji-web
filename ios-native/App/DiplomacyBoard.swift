@@ -162,10 +162,8 @@ private struct LinkSeal: View {
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            Text(mark).font(Theme.kai(13)).foregroundStyle(color)
-                .frame(width: 30, height: 30)
-                .background(Theme.paper2, in: Circle())
-                .overlay(Circle().stroke(color.opacity(0.55), lineWidth: 0.9))
+            // 可点的链接印：与全作同一印面，朱文描边（不实填，表示可点而非落款）。
+            SealFace(text: mark, size: 28, color: color, filled: false)
         }
         .buttonStyle(PressStyle())
     }

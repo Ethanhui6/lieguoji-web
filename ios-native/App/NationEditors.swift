@@ -1,0 +1,250 @@
+import SwiftUI
+import LieguojiCore
+
+/// Each trait's effect description, from the original's Traits/CharacterTraits/localization.csv
+/// (CharacterTraitDesc_*, Chinese column), keyed by the web's trait label. Only these 27 strings are
+/// copied; see ios-native/Resources/SOURCE.md.
+enum TraitText {
+    static func caption(_ name: String) -> String { effect[name].map { "：" + $0 } ?? "" }
+    static let effect: [String: String] = [
+        "天才": "拥有超凡的智慧和卓越的头脑",
+        "勇敢": "在战斗中无所畏惧，深受士兵敬仰",
+        "魅力超凡": "天生的领导者，能激发他人的忠诚",
+        "行政天才": "在管理国家事务方面表现卓越",
+        "外交家": "擅长谈判和建立关系",
+        "公正": "判断公平公正，深受人民爱戴",
+        "战略家": "军事战术和战略大师",
+        "仁慈": "对被征服者表现出仁慈，更倾向于宽恕和恢复被征服家族的领地",
+        "耐心": "愿意等待合适的时机",
+        "懦弱": "胆小怕事，为士兵所不齿",
+        "残暴": "对被征服者毫不留情，更倾向于清洗和剥夺被征服家族的一切",
+        "无能": "缺乏有效治理的能力",
+        "贪婪": "痴迷于财富和个人利益",
+        "偏执": "到处都看到敌人",
+        "易怒": "容易发怒，惩罚严厉",
+        "雄心勃勃": "有着远大的抱负，渴望权力",
+        "长袖善舞": "擅长社交，作为族长或国家领导人时，其他势力对其好感度+20",
+        "鹰派": "强硬派，紧急动员时可额外征召30%的军队",
+        "鸽派": "温和派，无法进行紧急动员",
+        "统一者": "立志整合同文化诸邦 倾向对同文化邻国发动统一战争",
+        "越战越勇": "面对多线作战时愈发勇猛，每个敌对国家增加5%战斗力（最多50%）",
+        "厌战": "厌倦战争，每个敌对国家减少5%战斗力（最多-50%）",
+        "海军精通": "精通海战指挥 使所属国家海军战斗力提升30%",
+        "船舶大师": "精通船舶建造 使军舰建造时间减少50%",
+        "改革家": "天生的改革家，上台时会触发改革判定，基于内政能力调整国家腐败度",
+        "天生领袖": "天生的领导者，作为家族首领时增加50点家族影响力",
+        "难以服众": "缺乏威望和号召力，作为家族首领时减少50点家族影响力"
+    ]
+}
+
+/// 自定义人物: the four base skills (0…100) and up to four traits (天赋).
+struct PersonEditor: View {
+    let person: NationInfo.Person
+    /// Skills, traits, then given name, family name and age (nil: unchanged).
+    let save: ([Double], [String], String?, String?, Int?) -> Void
+    @State private var skills: [Double] = [50, 50, 50, 50]
+    @State private var traits: [String] = []
+    @State private var first = ""
+    @State private var last = ""
+    @State private var age = 30.0
+    static let skillNames = ["魅力", "军事", "外交", "行政"]
+    static let allTraits = ["天才", "勇敢", "魅力超凡", "行政天才", "外交家", "公正", "战略家", "仁慈", "耐心", "改革家", "天生领袖", "统一者", "越战越勇", "海军精通", "船舶大师", "长袖善舞", "雄心勃勃", "鹰派", "鸽派", "懦弱", "残暴", "无能", "贪婪", "偏执", "易怒", "厌战", "难以服众"]
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                SheetHeader(title: person.name, subtitle: "\(person.role) · \(Int(person.age)) 岁", seal: "改")
+                SectionLabel("姓名与年岁")
+                Group2 {
+                    VStack(spacing: 10) {
+                        HStack(spacing: 10) {
+                            Text("姓").font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 22)
+                            TextField("", text: $last, prompt: Text("不改").foregroundColor(Theme.ink2.opacity(0.6))).paperField()
+                            Text("名").font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 22)
+                            TextField("", text: $first, prompt: Text("不改").foregroundColor(Theme.ink2.opacity(0.6))).paperField()
+                        }
+                        PaperSlider(title: "年岁", value: $age, range: 0...100, step: 1) { "\(Int($0)) 岁" }
+                    }
+                    .padding(14)
+                }
+                .padding(.horizontal, 16)
+                SectionLabel("能力")
+                Group2 {
+                    ForEach(0..<4, id: \.self) { i in
+                        PaperSlider(title: Self.skillNames[i], value: $skills[i], range: 0...100, step: 1) { "\(Int($0))" }
+                            .padding(.horizontal, 16).padding(.vertical, 8)
+                        if i < 3 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, 16)
+                Text("天赋（最多四项，影响实际能力）").font(Theme.kai(14)).foregroundStyle(Theme.ink2).padding(.horizontal, 24)
+                Group2 {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 82), spacing: 8)], spacing: 8) {
+                        ForEach(Self.allTraits, id: \.self) { t in
+                            let on = traits.contains(t)
+                            Button {
+                                withAnimation(Motion.tap) {
+                                    if on { traits.removeAll { $0 == t } } else if traits.count < 4 { traits.append(t) }
+                                }
+                            } label: {
+                                Text(t).font(Theme.kai(14)).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                                    .frame(maxWidth: .infinity).frame(height: 32)
+                                    .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 8))
+                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(on ? Color.clear : Theme.line))
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                    }
+                    .padding(12)
+                    ForEach(traits, id: \.self) { t in
+                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.caption(t)).foregroundStyle(Theme.ink2)).font(Theme.kai(13))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.horizontal, 12).padding(.bottom, traits.isEmpty ? 0 : 10)
+                }
+                .padding(.horizontal, 16)
+                Button {
+                    save(skills, traits, first.isEmpty ? nil : first, last.isEmpty ? nil : last, Int(age) == Int(person.age) ? nil : Int(age))
+                } label: { PrimaryLabel(title: "颁旨", symbol: "checkmark.seal") }.buttonStyle(PressStyle()).padding(.horizontal, 16)
+            }
+            .padding(.bottom, 24)
+        }
+        .onAppear { if person.skills.count == 4 { skills = person.skills }; traits = person.traits; age = person.age }
+    }
+}
+
+/// 任命官员: the people who may take an office, ablest first; a tap appoints.
+struct AppointSheet: View {
+    @ObservedObject var model: GameModel
+    let nation: Int
+    let office: String
+    var post: GameModel.PostInfo? = nil
+    var who: NationInfo? = nil
+    let appoint: (Int, String) -> Void
+    @State private var people: [NationInfo.Person] = []
+    @State private var loaded = false
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                SheetHeader(title: "任命" + (post?.title ?? (office.hasPrefix("WarCommander") ? "征伐主将" : NationSheet.title(String(office.split(separator: ":").first ?? ""), who))), subtitle: post.map { ["按魅力", "按军事", "按外交", "按行政"][min(3, max(0, $0.skill))] + "择优" } ?? NationSheet.officeDuty[office], seal: "任")
+                Group2 {
+                    if loaded && people.isEmpty { Text("本国暂无合适人选").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16) }
+                    if !loaded { InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(20) }
+                    ForEach(Array(people.enumerated()), id: \.offset) { i, p in
+                        Button { if let id = p.id { appoint(id, p.name) } } label: {
+                            HStack(spacing: 10) {
+                                Text(ChineseNumeral.of(i + 1)).font(Theme.kai(13)).foregroundStyle(Theme.seal).frame(width: 22)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("\(p.name)（\(p.female ? "女" : "男")，\(Int(p.age)) 岁）").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                    if p.skills.count == 4 {
+                                        Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                                    }
+                                    ForEach(p.traits, id: \.self) { t in
+                                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.caption(t)).foregroundStyle(Theme.ink2)).font(Theme.kai(12))
+                                    }
+                                }
+                                Spacer()
+                                Image(systemName: "checkmark.seal").foregroundStyle(Theme.seal)
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if i < people.count - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+            .padding(.bottom, 24)
+        }
+        .task {
+            if let post { people = await model.postCandidates(nation, post: post.id) } else { people = await model.officeCandidates(nation, office: office) }
+            loaded = true
+        }
+    }
+}
+
+/// A row that opens an editor when tapped (a small brush mark shows it can be changed).
+struct EditRow: View {
+    let label: String; let value: String; let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .center, spacing: 12) {
+                HStack(spacing: 8) { Glyph.icon(label); Text(label).foregroundStyle(Theme.ink2) }.fixedSize()
+                Spacer(minLength: 8)
+                Text(value).foregroundStyle(Theme.ink).monospacedDigit().multilineTextAlignment(.trailing).lineLimit(2)
+                Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7))
+            }
+            .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// 改数: one number, typed or dragged on a slider, then 颁行.
+struct NumberEditSheet: View {
+    let title: String; let unit: String; let value: Double
+    /// The slider's range; nil reads it from the title (「0–100」), or −50…200 for a percentage, or
+    /// 0 up to three times the current value.
+    var range: ClosedRange<Double>? = nil
+    let save: (Double) -> Void
+    @State private var text = ""
+    @State private var slide = 0.0
+    private var bounds: ClosedRange<Double> { range ?? Self.infer(title, unit, value) }
+    static func infer(_ title: String, _ unit: String, _ v: Double) -> ClosedRange<Double> {
+        if let r = title.range(of: "-?[0-9]+–-?[0-9]+", options: .regularExpression) {
+            let parts = title[r].split(separator: "–").compactMap { Double($0) }
+            if parts.count == 2, parts[0] < parts[1] { return parts[0]...parts[1] }
+        }
+        if unit == "%" { return -50...200 }
+        return 0...max(100, (abs(v) * 3).rounded())
+    }
+    /// Whole numbers, or a round step of a two-hundredth of a wide range.
+    private func snap(_ v: Double) -> Double {
+        let span = bounds.upperBound - bounds.lowerBound
+        let step = span > 2000 ? pow(10, (log10(span / 200)).rounded(.down)) : 1
+        return (v / step).rounded() * step
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SheetHeader(title: title, subtitle: "现为 \(Self.format(value))\(unit)", seal: "改")
+            HStack(spacing: 10) {
+                TextField("", text: $text, prompt: Text(Self.format(value)).foregroundColor(Theme.ink2.opacity(0.6)))
+                    .keyboardType(.numbersAndPunctuation).multilineTextAlignment(.trailing).paperField()
+                if !unit.isEmpty { Text(unit).font(Theme.kai(17)).foregroundStyle(Theme.ink2) }
+            }
+            .padding(.horizontal, 22)
+            VStack(spacing: 4) {
+                Slider(value: $slide, in: bounds).tint(Theme.seal)
+                HStack {
+                    Text(Self.format(bounds.lowerBound) + unit).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Spacer()
+                    Text(Self.format(bounds.upperBound) + unit).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                }
+            }
+            .padding(.horizontal, 22)
+            .onChange(of: slide) { _, v in let s = Self.format(snap(v)); if s != text { text = s } }
+            .onChange(of: text) { _, t in if let v = Double(t), bounds.contains(v), abs(v - slide) > 0.5 { slide = v } }
+            SealButton(title: "颁行", disabled: Double(text) == nil) { if let v = Double(text) { save(v) } }.padding(.horizontal, 22)
+        }
+        .padding(.bottom, 16)
+        .onAppear { slide = min(bounds.upperBound, max(bounds.lowerBound, value)) }
+    }
+    static func format(_ v: Double) -> String { v.rounded() == v ? String(Int(v)) : String(format: "%.1f", v) }
+}
+
+/// 改党派: a party's name and its seats.
+struct PartyEditSheet: View {
+    let name: String; let seats: Int
+    let save: (String, Int) -> Void
+    @State private var text = ""
+    @State private var value = 0.0
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SheetHeader(title: name, subtitle: "议席 \(seats) / 100", seal: "党")
+            TextField("", text: $text, prompt: Text(name).foregroundColor(Theme.ink2.opacity(0.6))).paperField().padding(.horizontal, 22)
+            PaperSlider(title: "议席", value: $value, range: 0...100, step: 1) { "\(Int($0)) 席" }.padding(.horizontal, 22)
+            SealButton(title: "颁行") { save(text.isEmpty ? name : text, Int(value)) }.padding(.horizontal, 22)
+        }
+        .padding(.bottom, 16)
+        .onAppear { value = Double(seats) }
+    }
+}

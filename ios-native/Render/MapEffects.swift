@@ -193,22 +193,6 @@ final class EffectsView: UIView {
         e.renderMode = .unordered
         return e
     }
-    /// The battle tag under the swords: the two states' colours and names.
-    private func battleTag(_ b: MapEffects.Battle) -> CALayer? {
-        guard let l = b.left, let r = b.right else { return nil }
-        let font = UIFont(name: "TW-Kai-98_1", size: 10) ?? .systemFont(ofSize: 10)
-        let text = NSMutableAttributedString()
-        func add(_ s: String, _ c: UIColor) { text.append(NSAttributedString(string: s, attributes: [.font: font, .foregroundColor: c])) }
-        add("■ ", UIColor(red: l.r, green: l.g, blue: l.b, alpha: 1)); add(l.name, UIColor(white: 0.08, alpha: 1))
-        add("  ⚔  ", UIColor(red: 0.706, green: 0.255, blue: 0.18, alpha: 1))
-        add("■ ", UIColor(red: r.r, green: r.g, blue: r.b, alpha: 1)); add(r.name, UIColor(white: 0.08, alpha: 1))
-        let size = text.size()
-        let tag = CATextLayer(); tag.string = text; tag.contentsScale = UIScreen.main.scale; tag.alignmentMode = .center
-        tag.frame = CGRect(x: 0, y: 0, width: ceil(size.width) + 12, height: ceil(size.height) + 4)
-        tag.backgroundColor = UIColor(red: 0.984, green: 0.972, blue: 0.945, alpha: 0.9).cgColor; tag.cornerRadius = 5
-        tag.borderColor = UIColor(white: 0, alpha: 0.18).cgColor; tag.borderWidth = 0.6
-        return tag
-    }
 
     /// The two sides' strength over a fight: one bar in their colours, split by troops.
     private func setStrength(_ root: CALayer, _ b: MapEffects.Battle) {

@@ -15,7 +15,7 @@ public enum Regimes {
         "Republic": "共和国：商贸兴盛，国库每月 +3%",
         "Federation": "联邦：诸邦共治，国库每月 +2%、更不易爆发革命",
         "Theocracy": "神权国：信仰凝聚，国运每月 +0.25",
-        "Tribal": "部族：骁勇善战，革命后转为王国",
+        "Tribal": "部落联盟：骁勇善战，革命后转为王国",
     ]
 
     /// 国家性格 (app rules): each state's standing character, drawn from the world's seed and its id (the
@@ -221,7 +221,6 @@ public enum Regimes {
     }
 
     // MARK: 党派 (parties)
-    static let partyNames = ["自由党", "保守党", "民主党", "共和党", "进步党", "人民党", "国民党", "社会党", "工党", "民族党", "联邦党", "改革党", "农民党", "统一党", "立宪党", "公民党"]
     static let oligarchs = ["元老派", "商人公会", "贵族院派", "将门派"]
     /// Seats out of 100 for each party of a state with a party system (made once, re-dealt at elections).
     static func parties(_ r: JS, _ id: String, _ s: Style, seed: Int) -> JS {

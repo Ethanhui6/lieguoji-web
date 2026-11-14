@@ -69,30 +69,87 @@ struct MemorialPaper: View {
     }
 }
 
-/// A vermilion seal: square, white characters cut into red, slightly rotated, pressed in.
+/// 全作统一的动效：同一类动作用同一条曲线，节奏一致、不抢视线（原先散落着约 45 种时长与弹性）。
+/// 开场等一秒以上的整段演出不在此列，各自保留时长。
+enum Motion {
+    /// 点按、开关、小控件的反馈。
+    static let tap = Animation.spring(response: 0.3, dampingFraction: 0.82)
+    /// 面板切换、展开收起、布局变化。
+    static let panel = Animation.spring(response: 0.44, dampingFraction: 0.86)
+    /// 较大的位移（整页滑入、镜头相关的界面跟随）。
+    static let drift = Animation.spring(response: 0.65, dampingFraction: 0.86)
+    /// 淡入淡出、提示出现。
+    static let fade = Animation.easeOut(duration: 0.22)
+    /// 墨迹显现、数字与图表的生长。
+    static let reveal = Animation.easeOut(duration: 0.55)
+    /// 只表达一件事：落印确认（标题印、宣战印）。略带回弹，像印章按下去。
+    static let stamp = Animation.spring(response: 0.36, dampingFraction: 0.62)
+}
+
+/// 印面：全作统一的朱印。始终是正方形，按字数定版式，使一字印与多字印的视觉重量一致——
+/// 一字居中大字；两字竖排一列；三、四字两列，自右列起、自上而下（传统印文读序）。
+/// 统一的圆角、内框细线、朱色与压印斑驳；`filled` 为假时是白文转朱文的描边印（用于可点的链接印）。
+struct SealFace: View {
+    let text: String
+    var size: CGFloat = 40
+    var color: Color = Theme.seal
+    var filled = true
+    var body: some View {
+        let chars = Array(text.prefix(4)).map(String.init)
+        let ink = filled ? Theme.paper2 : color
+        let shape = RoundedRectangle(cornerRadius: size * 0.12, style: .continuous)
+        ZStack {
+            if filled { shape.fill(color) } else { shape.fill(Theme.paper2) }
+            // 压印斑驳：几处纸色细点，让印面像真的盖在纸上（位置由字决定，固定不闪）。
+            if filled { SealSpecks(seed: text).fill(Theme.paper2.opacity(0.16)) }
+            shape.inset(by: size * 0.07).stroke(ink.opacity(filled ? 0.75 : 0.6), lineWidth: max(0.8, size * 0.025))
+            Group {
+                switch chars.count {
+                case 0: EmptyView()
+                case 1: Text(chars[0]).font(Theme.kai(size * 0.6))
+                case 2: VStack(spacing: -size * 0.04) { ForEach(chars.indices, id: \.self) { Text(chars[$0]).font(Theme.kai(size * 0.36)) } }
+                default:
+                    // 右列先读：右列放前一半，左列放后一半。
+                    let half = (chars.count + 1) / 2
+                    HStack(spacing: size * 0.02) {
+                        VStack(spacing: -size * 0.03) { ForEach(half..<chars.count, id: \.self) { Text(chars[$0]).font(Theme.kai(size * 0.34)) } }
+                        VStack(spacing: -size * 0.03) { ForEach(0..<half, id: \.self) { Text(chars[$0]).font(Theme.kai(size * 0.34)) } }
+                    }
+                }
+            }
+            .foregroundStyle(ink)
+        }
+        .frame(width: size, height: size)
+        .overlay(filled ? nil : shape.stroke(color.opacity(0.7), lineWidth: max(0.8, size * 0.03)))
+    }
+}
+
+/// 印面斑驳：由印文定出的几处小圆点（同一方印每次都一样）。
+private struct SealSpecks: Shape {
+    let seed: String
+    func path(in r: CGRect) -> Path {
+        var h: UInt32 = 2166136261
+        for u in seed.utf8 { h = (h ^ UInt32(u)) &* 16777619 }
+        var p = Path()
+        for _ in 0..<7 {
+            h = (h ^ (h >> 13)) &* 2246822519
+            let x = CGFloat(h & 0xff) / 255, y = CGFloat((h >> 8) & 0xff) / 255, s = 0.02 + CGFloat((h >> 16) & 0x0f) / 15 * 0.035
+            p.addEllipse(in: CGRect(x: r.minX + x * r.width, y: r.minY + y * r.height, width: s * r.width, height: s * r.width * 0.7))
+        }
+        return p
+    }
+}
+
+/// A vermilion seal pressed onto the page (the headings' seal): the unified face, slightly rotated, stamped in once.
 struct Seal: View {
     let text: String
     var size: CGFloat = 40
     @State private var pressed = false
     var body: some View {
-        let chars = Array(text)
-        VStack(spacing: 0) {
-            ForEach(0..<((chars.count + 1) / 2), id: \.self) { row in
-                HStack(spacing: 0) {
-                    ForEach(0..<2, id: \.self) { col in
-                        let i = col * ((chars.count + 1) / 2) + row
-                        Text(i < chars.count ? String(chars[chars.count - 1 - i]) : "").font(Theme.kai(size * 0.36)).foregroundStyle(Theme.paper2)
-                            .frame(width: size * 0.42, height: size * 0.42)
-                    }
-                }
-            }
-        }
-        .padding(size * 0.06)
-        .background(Theme.seal, in: RoundedRectangle(cornerRadius: size * 0.08))
-        .overlay(RoundedRectangle(cornerRadius: size * 0.06).stroke(Theme.paper2.opacity(0.7), lineWidth: 1).padding(size * 0.05))
-        .rotationEffect(.degrees(-6))
-        .scaleEffect(pressed ? 1 : 1.6).opacity(pressed ? 0.92 : 0)
-        .onAppear { withAnimation(.spring(response: 0.38, dampingFraction: 0.55).delay(0.15)) { pressed = true } }
+        SealFace(text: text, size: size)
+            .rotationEffect(.degrees(-4))
+            .scaleEffect(pressed ? 1 : 1.35).opacity(pressed ? 0.94 : 0)
+            .onAppear { withAnimation(Motion.stamp) { pressed = true } }
     }
 }
 
@@ -114,7 +171,7 @@ struct MemorialHeader: View {
             Seal(text: seal, size: 32)
         }
         .padding(.horizontal, 22).padding(.top, 22)
-        .onAppear { withAnimation(.easeOut(duration: 0.6)) { inked = true } }
+        .onAppear { withAnimation(Motion.reveal) { inked = true } }
     }
 }
 
@@ -160,12 +217,12 @@ struct MapViewSwitcher: View {
         .overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.seal.opacity(0.25), lineWidth: 0.6).padding(3))
         .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
         .scaleEffect(x: 1, y: open ? 1 : 0.05, anchor: .top).opacity(open ? 1 : 0)
-        .animation(.spring(response: 0.42, dampingFraction: 0.82), value: open)
+        .animation(Motion.panel, value: open)
     }
     @ViewBuilder private var buttons: some View {
         ForEach(MapViewMode.allCases) { m in
             Button {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { mode = m }
+                withAnimation(Motion.tap) { mode = m }
             } label: {
                 VStack(spacing: 3) {
                     Image(systemName: m.symbol).font(.system(size: 13, weight: .regular))
@@ -271,7 +328,7 @@ struct StatisticsSheet: View {
                             ForEach(Self.categories, id: \.id) { c in
                                 // The same paper chips as the other pages' tabs (scrolling: five of them).
                                 let on = category == c.id
-                                Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { category = c.id } } label: {
+                                Button { withAnimation(Motion.tap) { category = c.id } } label: {
                                     HStack(spacing: 5) {
                                         Image(systemName: Self.categoryIcon[c.id] ?? "list.number").font(.system(size: 13)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
                                         Text(c.title).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
@@ -302,7 +359,7 @@ struct StatisticsSheet: View {
                                         GeometryReader { g in
                                             Capsule().fill(LinearGradient(colors: [(row.color.map { Names.color($0) } ?? Theme.ink).opacity(0.95), (row.color.map { Names.color($0) } ?? Theme.ink).opacity(0.45)], startPoint: .leading, endPoint: .trailing))
                                                 .frame(width: max(2, g.size.width * CGFloat(abs(row.value) / top)) * (brushed ? 1 : 0.001), height: 4)
-                                                .animation(.easeOut(duration: 0.55).delay(Double(i) * 0.05), value: brushed)
+                                                .animation(Motion.reveal.delay(Double(i) * 0.05), value: brushed)
                                         }
                                         .frame(height: 4)
                                     }
@@ -595,7 +652,7 @@ struct InkBusy: View {
         }
         .onAppear {
             guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { slide = true }
+            withAnimation(Motion.reveal.repeatForever(autoreverses: true)) { slide = true }
         }
     }
 }
@@ -738,7 +795,7 @@ private struct LongPressLift: ViewModifier {
         content
             .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.seal.opacity(pressing ? 0.1 : 0)))
             .scaleEffect(pressing ? 0.965 : 1)
-            .animation(.spring(response: 0.28, dampingFraction: 0.7), value: pressing)
+            .animation(Motion.tap, value: pressing)
             .simultaneousGesture(LongPressGesture(minimumDuration: 0.38).updating($pressing) { v, s, _ in s = v }.onEnded { _ in
                 guard let m = menu() else { return }
                 PressGuard.fired = true
@@ -771,7 +828,7 @@ private struct PressMenuCard: View {
                 .buttonStyle(PressStyle())
                 // The rows settle in one after another.
                 .opacity(shown ? 1 : 0).offset(y: shown ? 0 : 8)
-                .animation(.easeOut(duration: 0.22).delay(0.04 * Double(i)), value: shown)
+                .animation(Motion.fade.delay(0.04 * Double(i)), value: shown)
             }
         }
         .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)))
@@ -792,7 +849,7 @@ private struct PressMenuHost: ViewModifier {
                     PressMenuCard(menu: m, close: dismiss).id(m.id).transition(.scale(scale: 0.84).combined(with: .opacity))
                 }
             }
-            .animation(.spring(response: 0.34, dampingFraction: 0.78), value: menu?.id)
+            .animation(Motion.tap, value: menu?.id)
         }
     }
     private func dismiss() { menu = nil; PressGuard.fired = false }
@@ -819,7 +876,7 @@ private struct PaperToastHost: ViewModifier {
                         .onTapGesture { self.text = nil }
                     }
                 }
-                .animation(.spring(response: 0.36, dampingFraction: 0.8), value: text)
+                .animation(Motion.tap, value: text)
             }
             .task(id: text) {
                 guard text != nil else { return }

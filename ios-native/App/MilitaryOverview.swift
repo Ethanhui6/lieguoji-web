@@ -158,7 +158,7 @@ struct MilitaryOverview: View {
     }
 }
 
-private struct CountTile: View {
+struct CountTile: View {
     let title: String
     let value: Int
     let hot: Bool

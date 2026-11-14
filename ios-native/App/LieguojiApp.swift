@@ -1054,7 +1054,14 @@ struct GameView: View {
                 if let f = model.fleet(fleet) { controller.fly(x: Double(f.x), y: Double(f.y)) }
             }, flyTo: { x, y in controller.fly(x: x, y: y) }).presentationDetents([.medium, .large])
         case .diplomacy:
-            DiplomacySheet(model: model, say: say).presentationDetents([.medium, .large])
+            DiplomacySheet(model: model, say: say, fly: { n in
+                if let map = model.map, map.meta.nations.indices.contains(n), map.meta.cities.indices.contains(map.meta.nations[n].capital) {
+                    let c = map.meta.cities[map.meta.nations[n].capital]
+                    controller.showPlace(x: Double(c.x), y: Double(c.y))
+                }
+            }, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) },
+               openWars: { MilitarySheet.openOn = "wars"; open(.military) },
+               openChronicle: { n in ChronicleSheet.openNation = n; open(.chronicle) }).presentationDetents([.medium, .large])
         case .chronicle:
             ChronicleSheet(model: model, fly: { controller.fly(to: $0) }).presentationDetents([.medium, .large])
         case .menu:
@@ -1936,6 +1943,8 @@ struct NationsSheet: View {
 struct MilitarySheet: View {
     /// The screenshot tour opens this page on one tab.
     static var tourFilter: String?
+    /// 联动: another page asks for this tab once (外交 › 战).
+    static var openOn: String?
     /// The page opens on 军情, the war room at a glance (MilitaryOverview).
     @State private var filter = "overview"
     /// 名将谱, reread each month of the game.
@@ -2060,7 +2069,7 @@ struct MilitarySheet: View {
                 }
                 .padding(.bottom, 24)
             }
-            .onAppear { if let t = Self.tourFilter { filter = t } }
+            .onAppear { if let t = Self.tourFilter ?? Self.openOn { filter = t; Self.openOn = nil } }
             .task(id: state.day / 30) { generals = await model.generals() }
         }
     }
@@ -2213,6 +2222,11 @@ struct DiplomacyOverviewView: View {
 struct DiplomacySheet: View {
     @ObservedObject var model: GameModel
     let say: (String) -> Void
+    /// 联动: the camera to a state's capital, its page, the wars (军事 › 战局) and its records (纪事).
+    var fly: (Int) -> Void = { _ in }
+    var openNation: (Int) -> Void = { _ in }
+    var openWars: () -> Void = {}
+    var openChronicle: (Int) -> Void = { _ in }
     @State private var attacker = 0
     @State private var defender = 1
     var body: some View {
@@ -2220,7 +2234,9 @@ struct DiplomacySheet: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "外交", subtitle: state.wars.isEmpty ? "天下太平" : "\(state.wars.count) 场战争进行中")
+                    DiplomacyBoard(model: model, map: map, state: state, nation: attacker, fly: fly, openNation: openNation, openWars: openWars, openChronicle: openChronicle)
                     if !state.wars.isEmpty {
+                        SectionLabel("战事")
                         Group2 {
                             ForEach(state.wars) { war in
                                 VStack(alignment: .leading, spacing: 8) {
@@ -2334,6 +2350,8 @@ struct ChronicleSheet: View {
     @State private var digest: [ChronicleEntry] = []
     /// 只看一国 and 搜寻: the list narrowed to one state's records or to a word.
     @State private var nationFilter: Int?
+    /// 联动: another page asks for one state's records once (外交 › 史).
+    static var openNation: Int?
     @State private var keyword = ""
     private var shown: [ChronicleEntry] {
         entries.filter { e in
@@ -2434,7 +2452,10 @@ struct ChronicleSheet: View {
                 .padding(.bottom, 28)
             }
         }
-        .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) { unrolled = true } }
+        .onAppear {
+            if let n = Self.openNation { nationFilter = n; Self.openNation = nil }
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) { unrolled = true }
+        }
         .task(id: "\(category)-\((model.state?.day ?? 0) / 30)") { entries = await model.chronicle(category) }
         .task(id: (model.state?.day ?? 0) / 30) { digest = await model.chronicle("all") }
     }
@@ -2649,6 +2670,7 @@ struct ReleaseNotesSheet: View {
                     "【合纵连横】一国占到天下三成时，它的邻国里最强的两国会结盟对抗（同一个霸主两年内至多一次），大事记记为「某与某合纵，共抗某」。大国不再一路滚雪球。",
                     "【天灾随气候】水旱蝗疫、地震和祥瑞原来就有，这一版让它们看地方：荒漠州郡不发洪水而是旱灾，冰原冻土不闹蝗灾而是雪灾。",
                     "【首都名】修正上一版首都名在常规缩放下仍不显示：放大后的名字被自己的首都圈挡掉了。",
+                    "【外交】外交页顶部新增邦交总览：战争、同盟、停战、接壤四个数；「同盟一览」列出每个联盟和成员；所选国家与各国的关系列成一张表，交战、同盟、宗主、附庸、条约、停战、接壤强弱一目了然。点一行镜头飞到对方都城并亮起朱印环；行尾的小印可以直接去该国的国家页、战局和纪事。",
                     "【朝堂】暂停时打开国家页不再改动世界：官员去世留下的空缺改为每月补任，不在查看朝堂时临时补。"]),
         ("1.14.0", ["【易主】大事记说换了人，就真的换人。以前禅让只改国号，皇帝还是原来那位；革命之后旧君主留任总统。现在禅让由势力最强的别家贤能者受禅登基，革命后的共和国选出新元首，复辟由别家登位，政党夺权和军人交权也换上新政权自己的人。国号、宗室、任期和纪事同步变化；没有别家可以继位时，禅让不会发生。",
                     "【元首与掌权者】政体分出两个位子。君主立宪里国王或天皇是虚位元首，首相掌国政，随大选组阁，民怨深重时会被倒阁，君主在位如故；议会共和有总统和总理；幕府里天皇在位、征夷大将军掌权；帝制由皇帝亲政，另设丞相、关白、维齐尔等辅政；人民共和是主席加总理。国家页分两行显示，并标出「虚位」「掌国政」。",

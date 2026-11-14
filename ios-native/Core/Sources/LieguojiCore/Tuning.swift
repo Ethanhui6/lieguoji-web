@@ -33,6 +33,10 @@ public struct Tuning: Codable, Sendable, Equatable {
     public var navyAttackShare = 0.6
     /// Ships of each opening fleet.
     public var openingShips = 3
+    /// 推演帧长: ticks of one simulation frame (a day is 120). The original settles six frames a day; on
+    /// this map two give the same wars for half the work (measured over three years on four worlds:
+    /// battles, provinces changing hands and the leading state's share all within a few percent).
+    public var frameTicks = 60
     /// 小国坚韧: a state under eight provinces takes up to this much less battle damage (at one province).
     public var smallStateGrit = 0.25
 
@@ -58,6 +62,9 @@ public struct Tuning: Codable, Sendable, Equatable {
         navyAttackShare = max(0.1, min(1, v(.navyAttackShare, d.navyAttackShare)))
         openingShips = max(1, min(10, v(.openingShips, d.openingShips)))
         smallStateGrit = max(0, min(1.5, v(.smallStateGrit, d.smallStateGrit)))
+        // A whole number of frames to the day.
+        let wanted = v(.frameTicks, d.frameTicks)
+        frameTicks = [20, 24, 30, 40, 60, 120].min { abs($0 - wanted) < abs($1 - wanted) } ?? 60
     }
 
     /// The numbers in force (set by the app from the cloud config).

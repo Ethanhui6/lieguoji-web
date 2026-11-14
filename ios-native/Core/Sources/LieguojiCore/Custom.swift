@@ -721,6 +721,8 @@ extension NativeEngine {
         UnitKinds.enabled = true
         Regimes.registerCustomCultures(r)
         Armies.bridge?.reconcileContacts(r)  // Drop obsolete province-wide contacts before the first volley.
+        // 推演帧长 (Tuning.frameTicks): set at a day's start, so every day is a whole number of frames.
+        if !r.frameLoop.isNull && r.clock.tick.asInt % 120 == 0 { r.frameLoop.ticks = JS(Tuning.current.frameTicks) }
         // Once per world: the opening fleets sail with three ships (one ship of forty hands made sea
         // battles all but invisible); hull, crew and stores follow.
         if !r.regimes.isNull && !r.regimes.navyMustered.isTruthy {

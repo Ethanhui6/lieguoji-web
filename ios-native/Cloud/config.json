@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "notice": "",
   "pace": {
     "1": 3,
@@ -25,6 +25,7 @@
     "rebelMinProvinces": 24,
     "calmMonths": 18,
     "unrest": 0.35,
-    "smallStateGrit": 0.25
+    "smallStateGrit": 0.25,
+    "frameTicks": 60
   }
 }

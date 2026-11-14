@@ -2318,8 +2318,7 @@ struct WorldSummary: View {
                 }
             }
             .padding(14)
-            .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.ink.opacity(0.15), lineWidth: 1))
+            .paperCard()
         }
     }
 }
@@ -2370,9 +2369,9 @@ struct ChronicleSheet: View {
                                 let on = category == c.0
                                 Button { category = c.0 } label: {
                                     Text(c.1).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                        .padding(.horizontal, 14).frame(height: 36)
-                                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? Color.clear : Theme.line))
+                                        .padding(.horizontal, 14).frame(height: 40)
+                                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
                                 }
                                 .buttonStyle(PressStyle())
                             }

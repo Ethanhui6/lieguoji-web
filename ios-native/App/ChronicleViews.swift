@@ -140,8 +140,7 @@ struct ChronicleDigest: View {
             }
         }
         .padding(14)
-        .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.ink.opacity(0.15), lineWidth: 1))
+        .paperCard()
     }
 }
 
@@ -199,16 +198,15 @@ struct ChronicleFilterBar: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 12).frame(height: 36)
-            .background(Theme.paper2, in: box)
-            .overlay(box.stroke(Theme.line))
+            // The same field as 搜索国名 on the states page.
+            .paperField()
             if let nation {
                 Button(action: clearNation) {
                     HStack(spacing: 4) {
                         Text("只看 " + nation).font(Theme.kai(14)).lineLimit(1)
                         Image(systemName: "xmark").font(.system(size: 10))
                     }
-                    .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 36)
+                    .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 40)
                     .background(Theme.seal, in: box)
                 }
                 .buttonStyle(.plain)

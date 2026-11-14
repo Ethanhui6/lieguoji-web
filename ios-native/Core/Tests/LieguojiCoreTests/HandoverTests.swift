@@ -228,21 +228,24 @@ final class AnnalsTests: XCTestCase {
         guard let nation = r.world.nations.asArray.first(where: { !Regimes.commanders(r, $0.id.asString).isEmpty }) else { throw XCTSkip("no state at war with a commander in this world") }
         let id = nation.id.asString, commander = Regimes.commanders(r, id)[0].id.asInt
         let land = r.world.provinces.asArray.filter { $0.controller.optionalString == id }.count
+        // What he had earned before the test (the world has already run ten days).
+        let earned = r.regimes.generals[String(commander)].merit.optionalNumber ?? 0
+        let won = r.regimes.generals[String(commander)].gained.optionalNumber ?? 0
         // Three months, each with four provinces gained (the land last seen is set four short).
         for month in 0..<3 {
             Regimes.book(r, id).landSeen = JS(land - 4)
             Regimes.generalsMonth(r, nation, id, 100 + month)
         }
         let entry = r.regimes.generals[String(commander)]
-        XCTAssertEqual(entry.merit.optionalNumber, 3 * (4 + 4 * 12))
-        XCTAssertEqual(entry.gained.asInt, 12)
+        XCTAssertEqual(entry.merit.optionalNumber, earned + 3 * (4 + 4 * 12))
+        XCTAssertEqual(entry.gained.asInt, Int(won) + 12)
         XCTAssertTrue(r.chronicle.entries.asArray.contains { $0.text.asString.contains("列为名将") })
         let roll = try JS.parse(engine.generals()).asArray
         XCTAssertEqual(roll.first?.id.asInt, commander)
         XCTAssertEqual(roll.first?.rank.optionalString, "名将")
         // No gain, no war month counted twice: a month without new land adds four.
         Regimes.generalsMonth(r, nation, id, 104)
-        XCTAssertEqual(entry.merit.optionalNumber, 3 * 52 + 4)
+        XCTAssertEqual(entry.merit.optionalNumber, earned + 3 * 52 + 4)
     }
 
     func testNeighboursLeagueAgainstAHegemon() throws {

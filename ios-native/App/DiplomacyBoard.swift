@@ -48,7 +48,9 @@ struct DiplomacyBoard: View {
         for t in info.truces { add(t.nation, "停战", Theme.ink2, rank: 4, note: "余 \(max(1, t.days / 30)) 月") }
         for n in info.neighbors {
             let ratio = info.troops > 0 ? Double(n.troops) / Double(info.troops) : 0
-            add(n.nation, "接壤", Theme.ink2.opacity(0.75), rank: 5, note: Names.wan(n.troops) + " 兵" + (info.troops > 0 ? (ratio > 1.5 ? "，强于我" : ratio < 0.67 ? "，弱于我" : "，相当") : ""))
+            var strength: String = Names.wan(n.troops) + " 兵"
+            if info.troops > 0 { strength += ratio > 1.5 ? "，强于我" : ratio < 0.67 ? "，弱于我" : "，相当" }
+            add(n.nation, "接壤", Theme.ink2.opacity(0.75), rank: 5, note: strength)
         }
         return rows.values.sorted { $0.rank != $1.rank ? $0.rank < $1.rank : $0.id < $1.id }
     }

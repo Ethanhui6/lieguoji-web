@@ -233,6 +233,11 @@ private struct GeneralRow: View {
     let entry: GeneralEntry
     let state: String
     let color: Color
+    private var service: String {
+        let months: String = "统兵 " + String(entry.months) + " 月"
+        let land: String = "拓地 " + String(entry.gained) + " 州"
+        return [state, months, land].joined(separator: " · ")
+    }
     var body: some View {
         HStack(spacing: 10) {
             PaperTag(text: entry.rank, color: entry.fallen ? Theme.ink2 : Theme.seal)
@@ -243,7 +248,7 @@ private struct GeneralRow: View {
                 }
                 HStack(spacing: 5) {
                     RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 8, height: 8)
-                    Text(state + " · 统兵 " + String(entry.months) + " 月 · 拓地 " + String(entry.gained) + " 州").font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1)
+                    Text(service).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1)
                 }
             }
             Spacer(minLength: 4)

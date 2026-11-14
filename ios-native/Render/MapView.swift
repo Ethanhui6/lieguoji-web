@@ -27,6 +27,10 @@ import LieguojiCore
     /// Province to fly to; the id makes repeated requests for the same province animate again.
     @Published var focus: (province: Int, id: UUID)?
     @Published var resetRequest = UUID()
+    /// 地图展开: the camera draws back until the whole map is on screen.
+    @Published var unrollRequest = UUID()
+    /// The camera's scale now and the scale at which the whole map fits (CI checks the map can be unrolled).
+    var cameraScale: (() -> (scale: Double, fit: Double))?
     /// Zoom by a factor around the screen centre (the + / − buttons).
     @Published var zoomRequest: (factor: Double, id: UUID)?
     /// Army icons and the selected army's remaining route, from the simulation (nil keeps the opening icons).
@@ -281,6 +285,7 @@ struct MapView: UIViewRepresentable {
         private var focusPointID: UUID?
         private var resetID: UUID?
         private var zoomID: UUID?
+        private var unrollID: UUID?
         private var spotlightID: UUID?
         /// The seal ring over a spotlit place; it follows the map while it shows.
         private var spot: (x: Double, y: Double, layer: CALayer)?
@@ -327,6 +332,7 @@ struct MapView: UIViewRepresentable {
             self.map = map; self.controller = controller; picker = CellPicker(map: map)
             super.init()
             resetID = controller.resetRequest
+            unrollID = controller.unrollRequest
         }
 
         var mapSize: (width: Double, height: Double) { (Double(map.width), Double(map.height)) }
@@ -381,6 +387,10 @@ struct MapView: UIViewRepresentable {
                 self.gliding = false
                 self.link?.preferredFrameRateRange = self.frameRange
                 self.mtk.preferredFramesPerSecond = self.controller.sheetOpen ? 30 : 120
+            }
+            controller.cameraScale = { [weak self] in
+                guard let self else { return (0, 0) }
+                return (self.camera.scale, self.bounds.lowerBound)
             }
             controller.nameFrame = { [weak self] in self?.labels?.nameFrame() ?? [:] }
             controller.placed = { [weak self] key in
@@ -802,6 +812,10 @@ struct MapView: UIViewRepresentable {
             if let z = controller.zoomRequest, z.id != zoomID {
                 zoomID = z.id
                 animate(to: camera.zoomed(by: z.factor, anchorX: viewport.width / 2, anchorY: viewport.height / 2, viewport: viewport, bounds: bounds), duration: 0.3)
+            }
+            if controller.unrollRequest != unrollID {
+                unrollID = controller.unrollRequest
+                animate(to: MapCamera.fit(map: mapSize, viewport: viewport), duration: 0.6)
             }
             if controller.resetRequest != resetID {
                 resetID = controller.resetRequest

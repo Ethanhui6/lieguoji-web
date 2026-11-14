@@ -31,6 +31,10 @@ export function checkNativeTour(directory) {
   if(colors.version !== 1 || colors.passed !== true || !(colors.states >= 2) || !(colors.leastDifference >= 15)) {
     throw Error('国色区分回归失败：相邻国家最小色差 ΔE ' + Number(colors.leastDifference).toFixed(1) + '（' + colors.closestPair + '），低于 15。');
   }
+  const unrolled = JSON.parse(readFileSync(join(directory,'map-unrolled.json'),'utf8'));
+  if(unrolled.version !== 1 || unrolled.passed !== true || !(unrolled.fit > 0) || !(unrolled.scale <= unrolled.fit * 1.02)) {
+    throw Error('地图展开回归失败：镜头缩放 ' + unrolled.scale + ' 没有退到整图可见的 ' + unrolled.fit + '。');
+  }
   const names = JSON.parse(readFileSync(join(directory,'name-stability.json'),'utf8'));
   if(names.version !== 1 || names.passed !== true || !(names.frames >= 300) || !(names.names >= 1) || !(names.blinks <= 4)) {
     throw Error(`国名稳定回归失败：镜头静止推演 ${names.frames} 帧里国名闪烁 ${names.blinks} 次（易主 ${names.provincesChanged} 州，新建 ${names.created}，移位 ${names.moved}）。`);

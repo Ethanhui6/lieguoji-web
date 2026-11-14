@@ -9,7 +9,7 @@ import {checkNativeTour,requiredShots} from './check-native-tour.mjs';
 function fixture(t) {
   const directory = mkdtempSync(join(tmpdir(),'lieguoji-tour-'));
   t.after(() => {
-    for(const name of ['tour-status.json','advance-ownership.json','panel-profile.json','name-stability.json','color-contrast.json',...requiredShots.map(name => `${name}.png`)]) {
+    for(const name of ['tour-status.json','advance-ownership.json','panel-profile.json','name-stability.json','color-contrast.json','map-unrolled.json',...requiredShots.map(name => `${name}.png`)]) {
       try { unlinkSync(join(directory,name)); } catch(error) { if(error.code !== 'ENOENT') throw error; }
     }
     rmdirSync(directory);
@@ -23,6 +23,7 @@ function fixture(t) {
     panels:['nation','province','ranking'].map(scene => ({scene,cycles:3,samples:100,averageMs:20,p95Ms:40,maxMs:60,hitches:2}))}));
   writeFileSync(join(directory,'name-stability.json'),JSON.stringify({version:1,passed:true,frames:2000,names:12,blinks:0,provincesChanged:9,created:1,moved:3,fadedIn:1}));
   writeFileSync(join(directory,'color-contrast.json'),JSON.stringify({version:1,passed:true,states:12,leastDifference:27.4,closestPair:'#fec2cb #8d9d50'}));
+  writeFileSync(join(directory,'map-unrolled.json'),JSON.stringify({version:1,passed:true,scale:0.2437,fit:0.2437}));
   return directory;
 }
 
@@ -76,4 +77,9 @@ test('neighbouring states in near-identical colours fail the tour',t => {
   const d = fixture(t);
   writeFileSync(join(d,'color-contrast.json'),JSON.stringify({version:1,passed:false,states:12,leastDifference:10.3,closestPair:'#80b1d3 #a4c5ed'}));
   assert.throws(() => checkNativeTour(d),/最小色差 ΔE 10.3/);
+});
+test('a map that cannot be zoomed out to show all of itself fails the tour',t => {
+  const d = fixture(t);
+  writeFileSync(join(d,'map-unrolled.json'),JSON.stringify({version:1,passed:false,scale:0.94,fit:0.2437}));
+  assert.throws(() => checkNativeTour(d),/地图展开回归失败/);
 });

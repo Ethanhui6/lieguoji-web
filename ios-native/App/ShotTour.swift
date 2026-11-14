@@ -75,8 +75,14 @@ enum ShotTour {
             await wait(2.4)
         }
         // 地图展开: zoomed all the way out, the whole chart is on screen.
-        for _ in 0..<8 { model.controller.zoom(0.5); await wait(0.35) }
-        await wait(0.6); await shoot("04d-map-unrolled")
+        model.controller.unrollRequest = UUID()
+        await wait(1.4)
+        let reached = model.controller.cameraScale?() ?? (scale: 0, fit: 0)
+        let unrolled: [String: Any] = ["version": 1, "scale": reached.scale, "fit": reached.fit, "passed": reached.fit > 0 && reached.scale <= reached.fit * 1.02]
+        if let data = try? JSONSerialization.data(withJSONObject: unrolled, options: .sortedKeys) {
+            try? data.write(to: dir.appendingPathComponent("map-unrolled.json"), options: .atomic)
+        }
+        await shoot("04d-map-unrolled")
         model.controller.resetRequest = UUID(); await wait(0.8)
         // Up close on the biggest fight: armies that are fighting or besieging.
         if let state = model.state, let a = state.armies.filter({ $0.status == "fighting" || $0.status == "sieging" }).max(by: { $0.troops < $1.troops }) ?? state.armies.first {

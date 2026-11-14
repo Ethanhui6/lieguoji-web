@@ -105,6 +105,11 @@ final class WarCouncilTests: XCTestCase {
         forces = [army("a", at: 5, target: 9, pledged: true, waited: 50), army("b", at: 2), army("c", at: 3)]
         out = WarCouncil.muster(orders, forces: forces, attack: [goal], rally: [9: 5])
         XCTAssertEqual(out["a"], .attack(9))
+        // Far too few for the target: they wait however long, and are not sent in to be beaten.
+        let fortress = post(9, 0, need: 20000)
+        forces = [army("a", at: 5, target: 9, pledged: true, waited: 90), army("b", at: 5, target: 9, pledged: true, waited: 90), army("c", at: 5, target: 9, pledged: true, waited: 90)]
+        out = WarCouncil.muster(orders, forces: forces, attack: [fortress], rally: [9: 5])
+        XCTAssertEqual(out["a"], .stage(at: 5, goal: 9))
         // A lone army, and a target with no land of ours beside it, are not held back.
         XCTAssertEqual(WarCouncil.muster(["a": .attack(9)], forces: [army("a", at: 1)], attack: [goal], rally: [9: 5])["a"], .attack(9))
         XCTAssertEqual(WarCouncil.muster(orders, forces: [army("a", at: 1), army("b", at: 2), army("c", at: 3)], attack: [goal], rally: [:])["a"], .attack(9))

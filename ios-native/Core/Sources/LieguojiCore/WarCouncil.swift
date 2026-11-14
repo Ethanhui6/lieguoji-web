@@ -56,7 +56,7 @@ public enum WarCouncil {
     /// 集结后出击: a target that takes several armies is not attacked one army at a time. Those sent
     /// against it gather first in our own land beside it and go in together, once most of what the
     /// target calls for stands ready or is already on its way in; whoever arrives later follows at once.
-    /// A column that has waited past its patience goes with what it has.
+    /// A column that has waited past its patience goes with what it has, unless that is far too little.
     public static func muster(_ duties: [String: Duty], forces: [Force], attack: [Post], rally: [Int: Int], patience: Double = 40) -> [String: Duty] {
         var out = duties
         var columns = [Int: [Force]]()
@@ -73,7 +73,10 @@ public enum WarCouncil {
                 if marching || gathered { ready += f.troops }
                 if f.pledged && f.waited > patience { overdue = true }
             }
-            if overdue || ready >= 0.8 * min(post.need, total) { continue }
+            // Too few for this target even all together: the column waits at the border however long,
+            // rather than go in to be beaten (those already inside fight on).
+            let outmatched = total < 0.7 * post.need
+            if !outmatched && (overdue || ready >= 0.8 * min(post.need, total)) { continue }
             for f in column where f.movable && !(f.target == post.province && !f.pledged) {
                 out[f.id] = .stage(at: at, goal: post.province)
             }
@@ -280,7 +283,12 @@ extension ArmyOrders {
             }
             let sorted = list.map { (p: $0, v: value($0)) }.sorted { x, y in x.v != y.v ? x.v < y.v : x.p < y.p }
             for item in sorted.prefix(k == 0 ? columns : max(1, columns / 2)) {
-                let need = max(foes(item.p) * 1.5, siege)
+                // The enemy next door will come to its aid: half of them count.
+                var nearby = 0.0
+                for q in provinces[item.p].neighbors.asArray {
+                    if let qi = c.provinceAt[q.asString], enemySet.contains(provinces[qi].controller.asString) { nearby += foes(qi) }
+                }
+                let need = max((foes(item.p) + nearby * 0.5) * 1.4, siege)
                 // A stronghold the whole host could not take is left for later.
                 if need > max(freeTroops, mine * 0.5) * 1.1 && !attack.isEmpty { continue }
                 attack.append(post(item.p, need: need))

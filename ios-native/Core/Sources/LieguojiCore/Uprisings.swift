@@ -213,6 +213,8 @@ extension Regimes {
         let start = Int(draw(tag) % UInt32(pool.count))
         return (0..<pool.count).lazy.map { pool[(start + $0) % pool.count] }.first { !used.contains($0) }
     }
+    /// For Handover.swift (禅让): the same renaming.
+    static func retitleState(_ r: JS, _ id: String, base: String?, style: String?) { retitle(r, id, base: base, style: style) }
     private static func retitle(_ r: JS, _ id: String, base: String?, style styleId: String?) {
         guard let n = r.world.nations.asArray.first(where: { $0.id.asString == id }) else { return }
         let c = r.civilization.nations[id], b = book(r, id)
@@ -367,6 +369,8 @@ extension Regimes {
         guard target != current else { return }
         retitle(r, id, base: base, style: target)
         book(r, id).parties = .null
+        // 军人交权、选举总统: the general does hand over, to whoever the vote chooses.
+        if target == "presidential" { seat(r, id) }
         addDestiny(5)
         _ = People.announce(r, kind: "politics", text: "\(old)改制，建立\(n.name.asString)", reason: how + "国运 +5。", nations: [id], province: nil)
     }
@@ -375,10 +379,8 @@ extension Regimes {
         let polity = r.civilization.nations[id].polity.optionalString ?? "", culture = r.civilization.nations[id].cultureId.optionalString ?? "", tag = "\(id)|\(key)|mandate"
         guard polity == "Empire" || polity == "Kingdom", leverage(r, id).stability < 45, chance(tag) < 0.008 else { return }
         guard let base = culture == "chinese" ? unusedName(r, dynastyNames, tag + "|name") : unusedName(r, moreStates[culture] ?? [], tag + "|name") else { return }
-        let old = n.name.asString
-        retitle(r, id, base: base, style: culture == "chinese" ? "dynasty" : nil)
-        Finance.setCorruption(r, id, Finance.corruption(r, id) * 0.6)
-        _ = People.announce(r, kind: "politics", text: "\(old)禅位，\(n.name.asString)代之", reason: "权臣逼宫，旧主逊位，新朝肃清积弊：国号更易，腐化大减。", nations: [id], province: nil)
+        // The throne itself passes to another house (Handover.swift); with no other house there is no 禅让.
+        _ = abdicate(r, n, id, base: base, style: culture == "chinese" ? "dynasty" : nil)
     }
     /// 复辟 and 神权: a republic that once had a crown may take it back; a devout state may become a holy kingdom.
     static func orderMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
@@ -387,6 +389,7 @@ extension Regimes {
         if polity == "Republic" || polity == "Federation", chance(tag) < 0.006 {
             guard let old = b.history.asArray.last(where: { $0.asString == "Empire" || $0.asString == "Kingdom" })?.asString else { return }
             change(r, id, to: old, reason: "复辟")
+            seat(r, id)
             return
         }
         if polity != "Theocracy", chance(tag + "|holy") < 0.002 {

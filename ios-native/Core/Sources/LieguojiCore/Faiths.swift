@@ -182,6 +182,8 @@ extension Regimes {
             guard let party = b.parties.asArray.first(where: { platform($0.name.asString).name == line && $0.seats.asInt >= 28 }), chance("\(id)|\(key)|seize|\(line)") < 0.06 else { continue }
             let who = party.name.asString, old = n.name.asString
             applyStyle(r, id, target, reason: who + verb)
+            // The party that took the state puts its own man at its head.
+            if let heir = claimant(r, id, .elected) { install(r, id, heir, cause: "usurpation") }
             _ = People.announce(r, kind: "politics", text: "\(who)在\(old)\(verb)成功", reason: "国势危殆、民怨沸腾，手握 \(party.seats.asInt) 席的\(who)推翻旧政府，改行\(styles.first { $0.id == target }?.label ?? target)。", nations: [id], province: nil)
             return
         }

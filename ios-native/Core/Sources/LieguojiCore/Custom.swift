@@ -467,6 +467,8 @@ public enum Regimes {
         default: next = "Kingdom"
         }
         change(r, id, to: next, reason: polity == "Republic" || polity == "Federation" ? "复辟" : "革命")
+        // The new order seats its own head: the fallen ruler does not stay on under another title.
+        Regimes.seat(r, id)
     }
 
     /// 纳贡 (app rule): a vassal sends a tenth of its monthly income to its overlord; each January the

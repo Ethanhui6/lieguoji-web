@@ -1936,7 +1936,8 @@ struct NationsSheet: View {
 struct MilitarySheet: View {
     /// The screenshot tour opens this page on one tab.
     static var tourFilter: String?
-    @State private var filter = "all"
+    /// The page opens on 军情, the war room at a glance (MilitaryOverview).
+    @State private var filter = "overview"
     @State private var released: String?
     @ObservedObject var model: GameModel
     let select: (Int) -> Void
@@ -1983,11 +1984,11 @@ struct MilitarySheet: View {
     var body: some View {
         if let map = model.map, let state = model.state {
             // Armies by state, built lazily as the list scrolls (hundreds of rows made opening slow).
-            let byNation = Dictionary(grouping: state.armies.indices.filter { filter == "navy" || filter == "wars" ? false : filter == "all" || (filter == "manual" ? state.armies[$0].manual : state.armies[$0].status == "fighting" || state.armies[$0].status == "sieging") }, by: { state.armies[$0].nation })
+            let byNation = Dictionary(grouping: state.armies.indices.filter { filter == "navy" || filter == "wars" || filter == "overview" ? false : filter == "all" || (filter == "manual" ? state.armies[$0].manual : state.armies[$0].status == "fighting" || state.armies[$0].status == "sieging") }, by: { state.armies[$0].nation })
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支舰队"))
-                    ChipPicker(items: [("all", "全部"), ("wars", "战局"), ("battle", "交战围城"), ("manual", "亲自指挥"), ("navy", "舰队")], selection: $filter).padding(.horizontal, 16)
+                    ChipPicker(items: [("overview", "军情"), ("all", "全部"), ("wars", "战局"), ("battle", "交战围城"), ("manual", "亲自指挥"), ("navy", "舰队")], selection: $filter).padding(.horizontal, 16)
                     // 全军交 AI: every army and fleet the player commands goes back to the war council.
                     let manualCount = state.armies.filter(\.manual).count
                     if manualCount > 0 {
@@ -2001,6 +2002,7 @@ struct MilitarySheet: View {
                         .padding(.horizontal, 22)
                     }
                     if let released { Text(released).font(Theme.kai(13)).foregroundStyle(Theme.jade).padding(.horizontal, 22).transition(.opacity) }
+                    if filter == "overview" { MilitaryOverview(map: map, state: state, select: select, flyTo: flyTo) }
                     if filter == "wars" {
                         if state.wars.isEmpty { Text("天下暂无战事").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
                         ForEach(state.wars) { war in warCard(map, state, war) }

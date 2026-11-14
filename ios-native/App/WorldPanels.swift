@@ -239,6 +239,7 @@ enum Glyph {
         ("概览", "doc.text.magnifyingglass"), ("朝政", "building.columns"), ("军事", "shield.lefthalf.filled"), ("自定义", "slider.horizontal.3"),
         ("游戏", "gamecontroller"), ("地图显示", "map"), ("声音与其他", "speaker.wave.2"), ("全部", "square.grid.2x2"), ("交战围城", "flag.2.crossed"), ("战局", "map"),
         ("亲自指挥", "hand.point.up.left"), ("舰队", "sailboat"), ("排行", "list.number"), ("统计", "chart.bar"), ("纪事", "book.pages"), ("国史", "book.pages"),
+        ("军情", "binoculars"),
         // 国势 (the nation page's five rows: every row carries its icon, not 财政 alone).
         ("军略", "flag.2.crossed"), ("守御", "shield.lefthalf.filled"), ("财政", "banknote"), ("民生", "leaf"), ("安定", "house"),
         // 设置与菜单 (more specific words first: the first match wins).

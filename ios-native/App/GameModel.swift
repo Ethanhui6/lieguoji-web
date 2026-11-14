@@ -1292,6 +1292,11 @@ import LieguojiCore
     func renameRegion(_ province: Int, _ name: String) async -> String? { finish(await native.renameRegion(province, name)) }
     func setRegionCenter(_ province: Int) async -> String? { finish(await native.setRegionCenter(province)) }
     /// 大事记 by category, newest first.
+    /// 名将谱: the commanders who earned a rank, the most merit first.
+    func generals() async -> [GeneralEntry] {
+        guard state != nil, let data = await native.generals() else { return [] }
+        return (await Self.decode([GeneralEntry].self, from: data)) ?? []
+    }
     func chronicle(_ category: String) async -> [ChronicleEntry] {
         guard state != nil, let data = await native.chronicle(category) else { return [] }
         return (await Self.decode([ChronicleEntry].self, from: data)) ?? []

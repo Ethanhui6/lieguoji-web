@@ -10,6 +10,8 @@ struct MilitaryOverview: View {
     let state: GameState
     let select: (Int) -> Void
     let flyTo: (Double, Double) -> Void
+    /// 名将谱: the commanders who earned a rank in their states' wars.
+    var generals: [GeneralEntry] = []
 
     struct Power: Identifiable { let id: Int; let troops: Int; let armies: Int }
     struct Share: Identifiable { let id: String; let troops: Int }
@@ -115,6 +117,18 @@ struct MilitaryOverview: View {
                 .padding(12).paperCard().padding(.horizontal, 14)
             }
 
+            if !generals.isEmpty {
+                SectionLabel("名将谱")
+                Group2 {
+                    let shown = Array(generals.prefix(8))
+                    ForEach(shown) { g in
+                        GeneralRow(entry: g, state: name(g.nation), color: color(g.nation))
+                        if g.id != shown.last?.id { Divider2() }
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+
             if !strongest.isEmpty {
                 SectionLabel("最强之军")
                 armyList(strongest)
@@ -211,6 +225,34 @@ private struct SiegeRow: View {
             Image(systemName: "scope").font(.system(size: 13)).foregroundStyle(Theme.seal)
         }
         .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+    }
+}
+
+/// One of the roll: rank, name, state, months in command, provinces won, merit.
+private struct GeneralRow: View {
+    let entry: GeneralEntry
+    let state: String
+    let color: Color
+    var body: some View {
+        HStack(spacing: 10) {
+            PaperTag(text: entry.rank, color: entry.fallen ? Theme.ink2 : Theme.seal)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(entry.name).font(Theme.kai(17)).foregroundStyle(entry.fallen ? Theme.ink2 : Theme.ink).lineLimit(1)
+                    if entry.fallen { Text("已故").font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
+                }
+                HStack(spacing: 5) {
+                    RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 8, height: 8)
+                    Text(state + " · 统兵 " + String(entry.months) + " 月 · 拓地 " + String(entry.gained) + " 州").font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1)
+                }
+            }
+            Spacer(minLength: 4)
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(String(Int(entry.merit))).font(Theme.kai(17)).foregroundStyle(Theme.ink).monospacedDigit()
+                Text("战功").font(Theme.kai(11)).foregroundStyle(Theme.ink2)
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 9)
     }
 }
 

@@ -110,6 +110,7 @@ public final class EngineService {
         case "renameRegion": return command(engine?.renameRegion(int("province"), str("name")))
         case "setRegionCenter": return command(engine?.setRegionCenter(int("province")))
         case "chronicle": return data(engine?.chronicle(str("category")))
+        case "generals": return data(engine?.generals())
         case "setCalendar": return command(engine?.setCalendar(era: str("era"), year: optInt("year")))
         case "setCityCulture": return command(engine?.setCityCulture(int("province"), str("culture")))
         case "debt": return command(engine?.changeDebt(int("n"), borrow: bool("borrow")))

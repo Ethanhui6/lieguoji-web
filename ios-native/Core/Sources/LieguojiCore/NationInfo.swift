@@ -258,6 +258,9 @@ extension NativeEngine {
         Daily.reconcileMilitaryClock(r)
     }
 
+    /// 名将谱 (Annals.swift).
+    public func generals() -> Data { Data(Regimes.generalsRoll(run).json.utf8) }
+
     /// Alliance (applyAllianceOwned47 unite / leave) between two states, or leaving (b < 0).
     public func alliance(_ a: Int, with b: Int) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray

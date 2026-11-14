@@ -196,3 +196,81 @@ final class HeadsTests: XCTestCase {
         XCTAssertFalse((info.ruler.title.optionalString ?? "").isEmpty)
     }
 }
+
+/// 名将谱 and 合纵连横.
+final class AnnalsTests: XCTestCase {
+    private func world() throws -> NativeEngine {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let resources = dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources")
+        try NativeEngine.loadCatalogs(traits: Data(contentsOf: resources.appendingPathComponent("Catalog/traits.json")),
+                                      nobleCultures: Data(contentsOf: resources.appendingPathComponent("Catalog/noble-cultures.json")),
+                                      cultures: Data(contentsOf: resources.appendingPathComponent("World/cultures.json")))
+        let engine = try NativeEngine(world: Data(contentsOf: dir.appendingPathComponent("Golden/bridge-world.json")))
+        engine.enableAppRules()
+        engine.advance(days: 10)
+        return engine
+    }
+    private func cleanUp() {
+        Session.uninstall(); UnitKinds.enabled = false; DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil
+    }
+
+    func testRanksByMerit() {
+        XCTAssertNil(Regimes.generalRank(39))
+        XCTAssertEqual(Regimes.generalRank(40), "骁将")
+        XCTAssertEqual(Regimes.generalRank(100), "名将")
+        XCTAssertEqual(Regimes.generalRank(250), "上将军")
+        XCTAssertEqual(Regimes.generalRank(350), "军神")
+    }
+
+    func testACommanderWhoWinsLandEntersTheRoll() throws {
+        let engine = try world(); defer { cleanUp() }
+        let r = engine.run
+        guard let nation = r.world.nations.asArray.first(where: { !Regimes.commanders(r, $0.id.asString).isEmpty }) else { throw XCTSkip("no state at war with a commander in this world") }
+        let id = nation.id.asString, commander = Regimes.commanders(r, id)[0].id.asInt
+        let land = r.world.provinces.asArray.filter { $0.controller.optionalString == id }.count
+        // Three months, each with four provinces gained (the land last seen is set four short).
+        for month in 0..<3 {
+            Regimes.book(r, id).landSeen = JS(land - 4)
+            Regimes.generalsMonth(r, nation, id, 100 + month)
+        }
+        let entry = r.regimes.generals[String(commander)]
+        XCTAssertEqual(entry.merit.optionalNumber, 3 * (4 + 4 * 12))
+        XCTAssertEqual(entry.gained.asInt, 12)
+        XCTAssertTrue(r.chronicle.entries.asArray.contains { $0.text.asString.contains("列为名将") })
+        let roll = try JS.parse(engine.generals()).asArray
+        XCTAssertEqual(roll.first?.id.asInt, commander)
+        XCTAssertEqual(roll.first?.rank.optionalString, "名将")
+        // No gain, no war month counted twice: a month without new land adds four.
+        Regimes.generalsMonth(r, nation, id, 104)
+        XCTAssertEqual(entry.merit.optionalNumber, 3 * 52 + 4)
+    }
+
+    func testNeighboursLeagueAgainstAHegemon() throws {
+        let engine = try world(); defer { cleanUp() }
+        let r = engine.run, provinces = r.world.provinces.asArray
+        var held = [String: Int]()
+        for p in provinces { if let c = p.controller.optionalString { held[c, default: 0] += 1 } }
+        let hegemon = try XCTUnwrap(held.max { $0.value != $1.value ? $0.value < $1.value : $0.key > $1.key }?.key)
+        let nation = try XCTUnwrap(r.world.nations.asArray.first { $0.id.asString == hegemon })
+        // Below three tenths of the world nobody leagues.
+        let alliances = r.alliances.records.length
+        if Double(held[hegemon]!) / Double(provinces.count) < 0.3 {
+            for key in 0..<60 { Regimes.leagueMonth(r, nation, hegemon, key) }
+            XCTAssertEqual(r.alliances.records.length, alliances)
+            XCTAssertFalse(r.chronicle.entries.asArray.contains { $0.text.asString.contains("合纵") })
+        }
+        // The hegemon swallows the land of the smallest states until it holds a third.
+        let order = held.filter { $0.key != hegemon }.sorted { $0.value != $1.value ? $0.value < $1.value : $0.key < $1.key }.map(\.key)
+        var mine = held[hegemon]!
+        for victim in order where Double(mine) / Double(provinces.count) < 0.34 {
+            for p in provinces where p.controller.optionalString == victim && Double(mine) / Double(provinces.count) < 0.34 { p.controller = JS(hegemon); mine += 1 }
+        }
+        var left = Set<String>(); for p in provinces { if let c = p.controller.optionalString { left.insert(c) } }
+        try XCTSkipIf(left.count < 5 || Double(mine) / Double(provinces.count) < 0.3, "the world is too small for a league")
+        for key in 100..<700 { Regimes.leagueMonth(r, nation, hegemon, key) }
+        let notice = try XCTUnwrap(r.chronicle.entries.asArray.first { $0.text.asString.contains("合纵") })
+        XCTAssertTrue(notice.text.asString.hasSuffix("共抗" + nation.name.asString))
+        // At most once in two years: 600 months allow no more than 25 leagues.
+        XCTAssertLessThanOrEqual(r.chronicle.entries.asArray.filter { $0.text.asString.contains("合纵，共抗") }.count, 25)
+    }
+}

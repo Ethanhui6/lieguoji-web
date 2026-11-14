@@ -419,6 +419,8 @@ public enum Regimes {
         unrestMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         partyMonth(r, n, id, key)
         seizure(r, n, id, key)
+        generalsMonth(r, n, id, key)
+        leagueMonth(r, n, id, key)
         regimeDrift(r, n, id, key)
         orderMonth(r, n, id, key)
         maturityMonth(r, n, id, key, addDestiny: addDestiny)
@@ -582,6 +584,11 @@ public enum Regimes {
             addGold(4); say("\(name)商路大开", "远方商旅络绎不绝：国库多收四月岁入。")
         case ..<0.0130:
             guard let p = place, let s = stock(p) else { return }
+            // 天灾随气候: locusts do not swarm over frozen land; there it is a winter that kills the herds.
+            if climate(r, p.id.asString).frozen > 0.5 {
+                s.grain = JS((s.grain.asNumber * 0.6).rounded()); s.population = JS(max(100, (s.population.asNumber * 0.98).rounded()))
+                say("\(p.name.asString)雪灾", "大雪封山，牲畜冻毙：\(p.name.asString)存粮去四成，人口 −2%。", p); return
+            }
             s.grain = JS((s.grain.asNumber * 0.4).rounded()); s.population = JS(max(100, (s.population.asNumber * 0.98).rounded()))
             say("\(p.name.asString)蝗灾", "飞蝗蔽日，禾稼一空：\(p.name.asString)存粮去六成，人口 −2%。", p)
         case ..<0.0142:
@@ -592,6 +599,11 @@ public enum Regimes {
             say("\(p.name.asString)地震", "地动山摇，城垣崩塌：\(p.name.asString)城防降一级，人口 −4%。", p)
         case ..<0.0154:
             guard let p = place, let s = stock(p) else { return }
+            // A desert province has no river to burst: its disaster is drought.
+            if climate(r, p.id.asString).arid > 0.5 {
+                s.grain = JS((s.grain.asNumber * 0.5).rounded()); s.population = JS(max(100, (s.population.asNumber * 0.97).rounded()))
+                say("\(p.name.asString)旱灾", "井泉枯竭，沙进人退：\(p.name.asString)存粮减半，人口 −3%。", p); return
+            }
             s.grain = JS(0); s.population = JS(max(100, (s.population.asNumber * 0.95).rounded()))
             say("\(p.name.asString)洪水", "江河决堤，田庐漂没：\(p.name.asString)存粮尽失，人口 −5%。", p)
         case ..<0.0166:

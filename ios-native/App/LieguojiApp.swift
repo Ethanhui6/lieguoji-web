@@ -1938,6 +1938,8 @@ struct MilitarySheet: View {
     static var tourFilter: String?
     /// The page opens on 军情, the war room at a glance (MilitaryOverview).
     @State private var filter = "overview"
+    /// 名将谱, reread each month of the game.
+    @State private var generals: [GeneralEntry] = []
     @State private var released: String?
     @ObservedObject var model: GameModel
     let select: (Int) -> Void
@@ -2002,7 +2004,7 @@ struct MilitarySheet: View {
                         .padding(.horizontal, 22)
                     }
                     if let released { Text(released).font(Theme.kai(13)).foregroundStyle(Theme.jade).padding(.horizontal, 22).transition(.opacity) }
-                    if filter == "overview" { MilitaryOverview(map: map, state: state, select: select, flyTo: flyTo) }
+                    if filter == "overview" { MilitaryOverview(map: map, state: state, select: select, flyTo: flyTo, generals: generals) }
                     if filter == "wars" {
                         if state.wars.isEmpty { Text("天下暂无战事").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
                         ForEach(state.wars) { war in warCard(map, state, war) }
@@ -2059,6 +2061,7 @@ struct MilitarySheet: View {
                 .padding(.bottom, 24)
             }
             .onAppear { if let t = Self.tourFilter { filter = t } }
+            .task(id: state.day / 30) { generals = await model.generals() }
         }
     }
 }

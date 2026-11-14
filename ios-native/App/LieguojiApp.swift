@@ -1622,7 +1622,7 @@ extension ProvinceSheet {
 
 struct ArmyRow: View {
     let map: WorldMap; let army: GameState.Army
-    static let duties = ["attacking": "主攻", "supporting": "回援", "guarding": "把守"]
+    static let duties = ["attacking": "主攻", "supporting": "回援", "guarding": "把守", "staging": "集结"]
     static func dest(_ map: WorldMap, _ a: GameState.Army) -> String {
         guard let d = a.destination, d >= 0, d < map.meta.provinces.count else { return "" }
         return " → " + map.meta.provinces[d].name
@@ -1919,7 +1919,7 @@ struct MilitarySheet: View {
     private func dutySummary(_ state: GameState, _ rows: [Int]) -> String {
         var counts = [String: Int]()
         for i in rows { if let d = state.armies[i].duty { counts[d, default: 0] += 1 } }
-        return ["attacking", "supporting", "guarding"].compactMap { key -> String? in
+        return ["attacking", "staging", "supporting", "guarding"].compactMap { key -> String? in
             guard let n = counts[key], let name = ArmyRow.duties[key] else { return nil }
             return "\(name) \(n)"
         }.joined(separator: " · ")

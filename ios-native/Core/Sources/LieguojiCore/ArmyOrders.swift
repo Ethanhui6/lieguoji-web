@@ -224,9 +224,13 @@ public enum ArmyOrders {
         }
         let s = r.armyBatch
         if s.isNull || r.clock.tick.asNumber == s.lastTick.asNumber { return false }
+        // App worlds: fifteen armies every third frame instead of five every frame. As many armies get
+        // their orders in a day, and the whole map is read a third as often to give them.
+        let app = !r.regimes.isNull && r.regimes.enabled.isTruthy
+        if app && r.clock.tick.asNumber - s.lastTick.asNumber < 60 && r.clock.tick.asNumber > s.lastTick.asNumber { return false }
         let live = r.world.armies.asArray.filter { $0.troops.asNumber > 0 }.map(\.id.asString)
         var cursor = s.cursor.asInt, selected = [String]()
-        if !live.isEmpty { for _ in 0..<5 { if cursor >= live.count { cursor = 0 }; selected.append(live[cursor]); cursor += 1 } }
+        if !live.isEmpty { for _ in 0..<(app ? min(15, live.count) : 5) { if cursor >= live.count { cursor = 0 }; selected.append(live[cursor]); cursor += 1 } }
         s.cursor = JS(cursor); s.lastTick = r.clock.tick.clone(); s.calls = JS(s.calls.asNumber + Double(selected.count))
         if selected.isEmpty { return false }
         selection(r, selected)
@@ -292,6 +296,7 @@ public enum ArmyOrders {
             func halt() { if reason(r, id, .halt) == nil { issue(r, id, .halt) } }
             func controller(_ pid: String) -> String? { provinceAt[pid].map { provinceList[$0].controller.asString } }
             if !en.isEmpty || !row.garrisonId.isNull && controller(row.garrisonId.asString) != nation { row.garrisonId = .null }
+            if en.isEmpty && !row.pledge.isNull { row.pledge = .null; row.pledgeTick = .null }
             
             guard let here = spaceById[id] else { row.garrisonId = .null; note("lost", "部队已失去战斗力，保留既有军令历史。", clear: true); continue }
             if manual.contains(id) { row.garrisonId = .null; note("manual", "玩家已接管，自主指挥保留其军令。", clear: true); continue }
@@ -366,12 +371,33 @@ public enum ArmyOrders {
                 }
             }
             if let duty {
-                let p = duty.province, post = provinces[p], pid = post.id.asString, ours = post.controller.asString == nation
+                var p = duty.province
+                if case .stage(let at, let goal) = duty {
+                    // 集结: to our own land beside the target, and wait there for the rest of the column.
+                    let rallyId = provinces[at].id.asString
+                    row.pledge = provinces[goal].id.clone()
+                    if row.pledgeTick.isNull { row.pledgeTick = JS(tick) }
+                    if here.province?.id.asString == rallyId {
+                        if ongoing { halt() }
+                        row.targetId = JS(rallyId); row.campaignId = .null; row.issuedTick = JS(tick)
+                        note("staging", "军机调度：在边境集结，兵力齐备后一同出击。"); continue
+                    }
+                    if ongoing && row.targetId.optionalString == rallyId { row.nextTick = JS(tick + retry); continue }
+                    if reason(r, id, .move(province: at, retreat: false)) == nil {
+                        issue(r, id, .move(province: at, retreat: false))
+                        row.targetId = JS(rallyId); row.campaignId = .null; row.issuedTick = JS(tick)
+                        note("staging", "军机调度：前往边境集结。"); continue
+                    }
+                    // No road to the gathering place: straight on to the target.
+                    p = goal
+                }
+                row.pledge = .null; row.pledgeTick = .null
+                let post = provinces[p], pid = post.id.asString, ours = post.controller.asString == nation
                 var decision = "attacking", why = "军机调度：主力向前线推进。"
                 switch duty {
                 case .defend: decision = ours ? "supporting" : "attacking"; why = "军机调度：驰援本土，兵力按来犯之敌调拨。"
                 case .hold: decision = "guarding"; why = "军机调度：分兵把守边境。"
-                case .attack: break
+                case .attack, .stage: break
                 }
                 if ours && here.province?.id.asString == pid && enemyAt(pid) == nil {
                     if ongoing { halt() }

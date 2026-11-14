@@ -12,8 +12,16 @@ public enum WarCouncil {
         public let target: Int?
         /// False while it fights or besieges: it counts where it is bound, but is not called away.
         public let movable: Bool
-        public init(id: String, troops: Double, x: Double, y: Double, feature: Int, target: Int?, movable: Bool) {
+        /// The province it stands in, and whether it stands still there.
+        public let province: Int?
+        public let still: Bool
+        /// Its target is a post it is gathering for, not yet marching on; and for how many days.
+        public let pledged: Bool
+        public let waited: Double
+        public init(id: String, troops: Double, x: Double, y: Double, feature: Int, target: Int?, movable: Bool,
+                    province: Int? = nil, still: Bool = true, pledged: Bool = false, waited: Double = 0) {
             self.id = id; self.troops = troops; self.x = x; self.y = y; self.feature = feature; self.target = target; self.movable = movable
+            self.province = province; self.still = still; self.pledged = pledged; self.waited = waited
         }
     }
     public struct Post: Equatable {
@@ -26,15 +34,51 @@ public enum WarCouncil {
     }
     public enum Duty: Equatable {
         case defend(Int), hold(Int), attack(Int)
-        public var province: Int { switch self { case .defend(let p), .hold(let p), .attack(let p): return p } }
+        /// 集结: wait at `at`, our own land beside the target `goal`, until the column is whole.
+        case stage(at: Int, goal: Int)
+        /// Where the army is to go now.
+        public var province: Int {
+            switch self {
+            case .defend(let p), .hold(let p), .attack(let p): return p
+            case .stage(let at, _): return at
+            }
+        }
         /// Worth turning an army around for on the march.
         public var urgent: Bool { if case .attack = self { return false }; return true }
         /// A refused relief can release a marching defender for another task. Ordinary attacks
         /// keep their route, so fresh plans do not repeatedly restart their progress.
         public func replaces(target: Int?, decision: String) -> Bool {
             guard target != province else { return false }
-            return urgent || decision == "supporting" || decision == "guarding"
+            return urgent || decision == "supporting" || decision == "guarding" || decision == "staging"
         }
+    }
+
+    /// 集结后出击: a target that takes several armies is not attacked one army at a time. Those sent
+    /// against it gather first in our own land beside it and go in together, once most of what the
+    /// target calls for stands ready or is already on its way in; whoever arrives later follows at once.
+    /// A column that has waited past its patience goes with what it has.
+    public static func muster(_ duties: [String: Duty], forces: [Force], attack: [Post], rally: [Int: Int], patience: Double = 40) -> [String: Duty] {
+        var out = duties
+        var columns = [Int: [Force]]()
+        for f in forces {
+            if let duty = duties[f.id], case .attack(let p) = duty { columns[p, default: []].append(f) }
+        }
+        for post in attack {
+            guard let at = rally[post.province], let column = columns[post.province], column.count > 1 else { continue }
+            var ready = 0.0, total = 0.0, overdue = false
+            for f in column {
+                total += f.troops
+                let marching = !f.movable || (f.target == post.province && !f.pledged)
+                let gathered = f.province == at && f.still
+                if marching || gathered { ready += f.troops }
+                if f.pledged && f.waited > patience { overdue = true }
+            }
+            if overdue || ready >= 0.8 * min(post.need, total) { continue }
+            for f in column where f.movable && !(f.target == post.province && !f.pledged) {
+                out[f.id] = .stage(at: at, goal: post.province)
+            }
+        }
+        return out
     }
 
     static func distance(_ f: Force, _ p: Post) -> Double {
@@ -128,8 +172,13 @@ extension ArmyOrders {
             let at = g.location(bridge.travel(v.travel)).point
             let inEnemyLand = v.province.map { enemySet.contains($0.controller.asString) } ?? false
             let fighting = c.held.contains(Daily.key("army", id)) || a.status.asString == "fighting"
-            let target = state.armies[id].targetId.optionalString.flatMap { c.provinceAt[$0] }
-            forces.append(WarCouncil.Force(id: id, troops: a.troops.asNumber, x: at.x, y: at.y, feature: c.geo.cellFeature[v.cell], target: target, movable: !inEnemyLand && !fighting))
+            let row = state.armies[id]
+            let pledge: Int? = row.pledge.optionalString.flatMap { c.provinceAt[$0] }
+            let ordered: Int? = row.targetId.optionalString.flatMap { c.provinceAt[$0] }
+            let waited: Double = row.pledgeTick.optionalNumber.map { (r.clock.tick.asNumber - $0) / 120 } ?? 0
+            let standing: Int? = v.province.flatMap { c.provinceAt[$0.id.asString] }
+            forces.append(WarCouncil.Force(id: id, troops: a.troops.asNumber, x: at.x, y: at.y, feature: c.geo.cellFeature[v.cell], target: pledge ?? ordered, movable: !inEnemyLand && !fighting,
+                                           province: standing, still: v.travel.status.asString != "moving", pledged: pledge != nil, waited: waited))
         }
         guard !forces.isEmpty else { return [:] }
         let mine = forces.reduce(0.0) { $0 + $1.troops }, average = mine / Double(forces.count)
@@ -209,6 +258,8 @@ extension ArmyOrders {
         // open only when the first front is full. The next target is the one nearest where the host now
         // stands and on the road to the enemy's capital, never one chosen for being close to home.
         var attack = [WarCouncil.Post]()
+        // 集结地: our own quiet province beside each target, the one nearest the host.
+        var rally = [Int: Int]()
         let freeTroops = forces.reduce(0.0) { $0 + ($1.movable ? $1.troops : 0) }
         for (k, enemy) in order.enumerated() {
             let list = frontier[enemy] ?? []
@@ -233,8 +284,17 @@ extension ArmyOrders {
                 // A stronghold the whole host could not take is left for later.
                 if need > max(freeTroops, mine * 0.5) * 1.1 && !attack.isEmpty { continue }
                 attack.append(post(item.p, need: need))
+                var best = -1, bestDistance = Double.infinity
+                for q in provinces[item.p].neighbors.asArray {
+                    guard let qi = c.provinceAt[q.asString], provinces[qi].controller.asString == nation, foes(qi) == 0 else { continue }
+                    let at = center(qi)
+                    let d: Double = jsHypot(at.x - cx, at.y - cy)
+                    if d < bestDistance || (d == bestDistance && qi < best) { bestDistance = d; best = qi }
+                }
+                if best >= 0 { rally[item.p] = best }
             }
         }
-        return WarCouncil.assign(forces: forces, defend: defend, hold: hold, holdBudget: mine * 0.35, attack: attack)
+        let duties = WarCouncil.assign(forces: forces, defend: defend, hold: hold, holdBudget: mine * 0.35, attack: attack)
+        return WarCouncil.muster(duties, forces: forces, attack: attack, rally: rally)
     }
 }

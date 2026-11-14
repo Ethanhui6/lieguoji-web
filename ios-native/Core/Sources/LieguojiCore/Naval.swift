@@ -247,6 +247,9 @@ public enum Naval {
         guard !s.isNull else { return }
         let now = r.clock.tick.asNumber
         if now == s.lastTick.asNumber { return }
+        // App worlds: fleets take their orders three times a day, not at every frame (a fifth of a day's
+        // work went on reading every port and fleet six times a day for orders that seldom change).
+        if !r.regimes.isNull && r.regimes.enabled.isTruthy && now > s.lastTick.asNumber && now - s.lastTick.asNumber < 40 { return }
         guard let sea, Armies.bridge != nil, !fleets(r).isEmpty else { s.lastTick = JS(now); s.revision = JS(s.revision.asNumber + 1); return }
         reconcileLandOwners(r)
         let view = presence(r), space = Armies.space(r), portBefore = r.portControl.json

@@ -78,6 +78,41 @@ final class WarCouncilTests: XCTestCase {
         XCTAssertTrue(WarCouncil.Duty.defend(2).replaces(target: 1, decision: "attacking"))
     }
 
+    func testAColumnGathersBesideItsTargetAndGoesInTogether() {
+        func army(_ id: String, at province: Int?, target: Int? = nil, pledged: Bool = false, waited: Double = 0, movable: Bool = true) -> WarCouncil.Force {
+            WarCouncil.Force(id: id, troops: 2000, x: 0, y: 0, feature: 1, target: target, movable: movable, province: province, still: true, pledged: pledged, waited: waited)
+        }
+        let goal = post(9, 0, need: 6000), orders: [String: WarCouncil.Duty] = ["a": .attack(9), "b": .attack(9), "c": .attack(9)]
+        // Nobody is at the gathering place yet: all three are sent there first.
+        var forces = [army("a", at: 1), army("b", at: 2), army("c", at: 3)]
+        var out = WarCouncil.muster(orders, forces: forces, attack: [goal], rally: [9: 5])
+        XCTAssertEqual(out["a"], .stage(at: 5, goal: 9))
+        XCTAssertEqual(out["c"], .stage(at: 5, goal: 9))
+        // Two of three have gathered: not yet four fifths of the column.
+        forces = [army("a", at: 5, target: 9, pledged: true), army("b", at: 5, target: 9, pledged: true), army("c", at: 3, target: 9, pledged: true)]
+        out = WarCouncil.muster(orders, forces: forces, attack: [goal], rally: [9: 5])
+        XCTAssertEqual(out["a"], .stage(at: 5, goal: 9))
+        // All three stand ready: they go in.
+        forces = [army("a", at: 5, target: 9, pledged: true), army("b", at: 5, target: 9, pledged: true), army("c", at: 5, target: 9, pledged: true)]
+        out = WarCouncil.muster(orders, forces: forces, attack: [goal], rally: [9: 5])
+        XCTAssertEqual(out["a"], .attack(9))
+        XCTAssertEqual(out["c"], .attack(9))
+        // Once two are on the march, the third follows without waiting behind.
+        forces = [army("a", at: 5, target: 9), army("b", at: 5, target: 9), army("c", at: 5, target: 9, pledged: true)]
+        out = WarCouncil.muster(orders, forces: forces, attack: [goal], rally: [9: 5])
+        XCTAssertEqual(out["c"], .attack(9))
+        // A column that has waited too long goes with what it has.
+        forces = [army("a", at: 5, target: 9, pledged: true, waited: 50), army("b", at: 2), army("c", at: 3)]
+        out = WarCouncil.muster(orders, forces: forces, attack: [goal], rally: [9: 5])
+        XCTAssertEqual(out["a"], .attack(9))
+        // A lone army, and a target with no land of ours beside it, are not held back.
+        XCTAssertEqual(WarCouncil.muster(["a": .attack(9)], forces: [army("a", at: 1)], attack: [goal], rally: [9: 5])["a"], .attack(9))
+        XCTAssertEqual(WarCouncil.muster(orders, forces: [army("a", at: 1), army("b", at: 2), army("c", at: 3)], attack: [goal], rally: [:])["a"], .attack(9))
+        XCTAssertEqual(WarCouncil.Duty.stage(at: 5, goal: 9).province, 5)
+        XCTAssertFalse(WarCouncil.Duty.stage(at: 5, goal: 9).urgent)
+        XCTAssertTrue(WarCouncil.Duty.attack(9).replaces(target: 5, decision: "staging"))
+    }
+
     func testEveryFreeArmyGetsOrdersAndOnlyDefenceIsWorthARecall() {
         let forces = (0..<5).map { force("a\($0)", Double($0)) }
         let duties = WarCouncil.assign(forces: forces, defend: [], hold: [], holdBudget: 0, attack: [post(4, 0, need: 1)])

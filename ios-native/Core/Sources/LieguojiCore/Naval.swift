@@ -40,7 +40,20 @@ public enum Naval {
     }
     static func presence(_ r: JS) -> Presence {
         let bridge = Armies.bridge!, g = bridge.graph
-        let held = ContactMotion(graph: g).contacts(bridge.forces(r), bridge.contacts(r), bridge.rules(r)).held
+        // 本帧已算出的接触（同一世界状态）直接沿用，不再对全部部队重算一遍。
+        // 这里只查询舰队是否接战：只取舰队、与舰队同处一区的部队和舰队原有接触的对方来算，
+        // 舰队的接战结果与全量计算完全相同（曾每次对全部军队重算接触）。
+        let all = bridge.forces(r)
+        var held = Set<String>()
+        if all.contains(where: { $0.kind == .fleet }) {
+            let motion = ContactMotion(graph: g), rules = bridge.rules(r), old = bridge.contacts(r), p = motion.positions(all)
+            let fleetKeys = Set(all.filter { $0.kind == .fleet }.map(\.key))
+            let areas = Set(all.filter { $0.kind == .fleet }.map { motion.areaKey(p[$0.key]!.cell, rules) })
+            var partners = Set<String>()
+            for c in old where fleetKeys.contains(c.a) || fleetKeys.contains(c.b) { partners.insert(c.a); partners.insert(c.b) }
+            let subset = all.filter { $0.kind == .fleet || partners.contains($0.key) || areas.contains(motion.areaKey(p[$0.key]!.cell, rules)) }
+            held = motion.contacts(subset, old, rules, p).held.intersection(fleetKeys)
+        }
         let list = fleets(r).filter { $0.status.asString != "lost" }.map { fl -> Present in
             let loc = g.location(bridge.travel(r.fleetPositions.records[fl.id.asString]))
             return Present(fleet: fl, point: loc.point, cell: loc.cell, face: Int(g.faces[loc.cell]))
@@ -251,8 +264,10 @@ public enum Naval {
         // work went on reading every port and fleet six times a day for orders that seldom change).
         if !r.regimes.isNull && r.regimes.enabled.isTruthy && now > s.lastTick.asNumber && now - s.lastTick.asNumber < 40 { return }
         guard let sea, Armies.bridge != nil, !fleets(r).isEmpty else { s.lastTick = JS(now); s.revision = JS(s.revision.asNumber + 1); return }
-        reconcileLandOwners(r)
-        let view = presence(r), space = Armies.space(r), portBefore = r.portControl.json
+        let tN = Profile.mark()
+        Profile.measure("n.reconcile") { reconcileLandOwners(r) }
+        let view = Profile.measure("n.presence") { presence(r) }, space = Armies.space(r), portBefore = Profile.measure("n.json") { r.portControl.json }
+        Profile.since("n.head", tN)
         var landById = [String: JS](), stockById = [String: JS](), portById = [String: Port]()
         for p in r.world.provinces.asArray where landById[p.id.asString] == nil { landById[p.id.asString] = p }
         for p in r.world.statecraft.provinces.asArray where stockById[p.provinceId.asString] == nil { stockById[p.provinceId.asString] = p }

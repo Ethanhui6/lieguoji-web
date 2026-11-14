@@ -261,7 +261,14 @@ extension ArmyOrders {
                 let atWar = enemySet.contains(other), power = strength(other)
                 if !atWar && power < mine * 0.2 { continue }
                 let total = atWar ? power * 0.5 : min(power, mine) * 0.2
-                let posts = (contact[other] ?? [:]).sorted { x, y in x.value != y.value ? x.value > y.value : x.key < y.key }.prefix(atWar ? 2 : 1)
+                // 驻防点有滞回：已有我军开赴的边境州只要仍与该国接壤就继续守，空位才按此刻对面兵力挑选。
+                // 原先每次都按邻国军队眼下站在哪里重排，对面一走动驻防点就换，在路上的军队被改派回头、来回往返。
+                let manned = Set(forces.compactMap(\.target))
+                let posts = (contact[other] ?? [:]).sorted { x, y in
+                    let mx = manned.contains(x.key), my = manned.contains(y.key)
+                    if mx != my { return mx }
+                    return x.value != y.value ? x.value > y.value : x.key < y.key
+                }.prefix(atWar ? 2 : 1)
                 for (p, _) in posts where !hold.contains(where: { $0.province == p }) && !invaded.contains(p) { hold.append(post(p, need: max(total / Double(posts.count), average * 0.6))) }
             }
         }

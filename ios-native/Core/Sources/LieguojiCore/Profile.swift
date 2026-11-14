@@ -20,6 +20,9 @@ public enum Profile {
         totals[name] = (old.seconds + seconds, old.calls + 1)
     }
     public static func reset() { totals = [:] }
+    /// A start mark for `since` (0 while off).
+    @inline(__always) public static func mark() -> Double { enabled ? Date.timeIntervalSinceReferenceDate : 0 }
+    @inline(__always) public static func since(_ name: String, _ start: Double) { if enabled { add(name, Date.timeIntervalSinceReferenceDate - start) } }
     public static var report: String {
         totals.sorted { $0.value.seconds > $1.value.seconds }.map { String(format: "%@ %.3fs ×%d", $0.key, $0.value.seconds, $0.value.calls) }.joined(separator: "\n")
     }

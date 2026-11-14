@@ -45,12 +45,22 @@ public final class EngineService {
     private var stepsSinceLabels = 0
     func state(stepping: Bool = false) -> Data {
         guard let e = engine else { return Data() }
+        return e.state(includeLabels: labelsDue(e, stepping: stepping))
+    }
+    /// 这一步是否要带国名框（规则同上）。
+    private func labelsDue(_ e: NativeEngine, stepping: Bool) -> Bool {
         var at = [String: Int](); for (i, n) in e.run.world.nations.asArray.enumerated() where at[n.id.asString] == nil { at[n.id.asString] = i }
         let owners = e.run.world.provinces.asArray.map { at[$0.controller.asString] ?? -1 }
         stepsSinceLabels += 1
         let labels = owners != lastOwners && (!stepping || stepsSinceLabels >= 4)
         if labels { lastOwners = owners; stepsSinceLabels = 0 }
-        return e.state(includeLabels: labels)
+        return labels
+    }
+    /// 本机推演一步并直接返回界面状态结构体（与 "step" 请求相同，只是不经 JSON）。
+    public func stepState(days: Int) -> GameState? {
+        guard let e = engine else { return nil }
+        e.advance(days: max(1, days))
+        return e.gameState(includeLabels: labelsDue(e, stepping: true))
     }
 
     /// Runs one request. `payload` carries the world for `open` and the catalogues for `catalogs`.

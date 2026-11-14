@@ -105,6 +105,9 @@ public struct TravelGraph: Sendable {
     /// cost), so it settles a corridor instead of half the map. Same optimal cost; ties may differ, so
     /// original-parity worlds keep the plain search.
     public func path(from start: Int, to end: Int, allowSea: Bool = true, canEnterProvince: (Int) -> Bool, embark: ((Int) -> Double)? = nil, aStar: Bool = false, seaRate: Double = 1) -> (nodes: [Int], cost: Double)? {
+        Profile.measure("p.path") { path0(from: start, to: end, allowSea: allowSea, canEnterProvince: canEnterProvince, embark: embark, aStar: aStar, seaRate: seaRate) }
+    }
+    func path0(from start: Int, to end: Int, allowSea: Bool, canEnterProvince: (Int) -> Bool, embark: ((Int) -> Double)?, aStar: Bool, seaRate: Double) -> (nodes: [Int], cost: Double)? {
         var allowed = [Int8](repeating: 0, count: mountain.count)
         func enter(_ i: Int) -> Bool {
             let q = Int(provinces[i]); if q < 0 { return allowSea }
@@ -505,5 +508,44 @@ extension SimState {
             w.armies[i].troops = armies[i].troops; w.armies[i].status = armies[i].status
             w.armies[i].busy = false; w.armies[i].engaged = armies[i].status == "fighting"
         }
+    }
+}
+
+// MARK: 显示用平滑位置（仅用于界面，推演不读）
+extension TravelGraph {
+    /// 行军路径经过“格中心→边界门→格中心”，门点偏向两侧时路线呈之字形，按日取样的图标会左右来回摆。
+    /// 这里取沿路径弧长 ±window 范围内的平均点：路线整体方向不变、之字被抹平；起点与终点处窗口收缩为零，
+    /// 出发、到达时位置与真实位置重合，不会跳变。
+    public func displayPoint(_ s: ArmyTravel, window: Double) -> TravelPoint {
+        let here = location(s).point
+        guard s.status == .moving, s.leg + 1 < s.nodes.count, window > 0 else { return here }
+        // 当前段前后各取两段，构成局部折线（含各点的弧长）。
+        let first = max(0, s.leg - 2), last = min(s.nodes.count - 2, s.leg + 2)
+        var points = [TravelPoint](), arc = [Double]()
+        var walked = 0.0, at = 0.0
+        for leg in first...last {
+            var t = s; t.leg = leg; t.offset = 0; t.crossed = false
+            guard let seg = segment(t) else { return here }
+            if points.isEmpty { points.append(seg.start); arc.append(walked) }
+            if leg == s.leg { at = walked + s.offset }
+            walked += seg.toGate; points.append(seg.gate); arc.append(walked)
+            walked += seg.distance - seg.toGate; points.append(seg.end); arc.append(walked)
+        }
+        // 局部折线两端：若它就是整条路线的起点或终点，窗口在那里收缩为零；否则只受局部长度限制。
+        let atStart = first == 0, atEnd = last == s.nodes.count - 2
+        let back = atStart ? at : at - arc[0], ahead = atEnd ? walked - at : walked - at
+        let w = min(window, max(0, back), max(0, ahead))
+        if w <= 0 { return here }
+        func point(_ d: Double) -> TravelPoint {
+            var i = 1
+            while i < arc.count - 1 && arc[i] < d { i += 1 }
+            let a = points[i - 1], b = points[i], span = arc[i] - arc[i - 1]
+            let k = span > 0 ? max(0, min(1, (d - arc[i - 1]) / span)) : 0
+            return TravelPoint(x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k)
+        }
+        var x = 0.0, y = 0.0
+        let samples = [-1.0, -0.5, 0, 0.5, 1.0]
+        for f in samples { let p = point(at + f * w); x += p.x; y += p.y }
+        return TravelPoint(x: x / Double(samples.count), y: y / Double(samples.count))
     }
 }

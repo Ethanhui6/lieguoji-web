@@ -34,7 +34,7 @@ public enum ArmyOrders {
     }
 
     // MARK: Commands (army-commands47)
-    enum Action { case halt; case move(province: Int, retreat: Bool) }
+    enum Action: Equatable { case halt; case move(province: Int, retreat: Bool) }
     struct Refused: Error { let reason: String }
     static func engaged(_ r: JS, _ a: JS) -> Bool {
         let id = a.id.asString, k = Daily.key("army", id)
@@ -66,6 +66,13 @@ public enum ArmyOrders {
     }
     /// resolve(): the travel record and target name of an order, or the refusal.
     static func resolve(_ r: JS, _ id: String, _ action: Action) -> Result<(travel: JS, name: String), Refused> {
+        // 先 reason() 检查、紧接着 issue() 下达同一道军令时，第二次直接用第一次的寻路结果（只给紧随其后的一次调用用）。
+        let memo = lastResolve; lastResolve = nil
+        if let memo, memo.run === r, memo.id == id, memo.action == action, memo.revision == r.armyPositions.revision.asNumber, memo.tick == r.clock.tick.asNumber { return memo.value }
+        return Profile.measure("o.resolve") { resolve0(r, id, action) }
+    }
+    nonisolated(unsafe) static var lastResolve: (run: JS, id: String, action: Action, revision: Double, tick: Double, value: Result<(travel: JS, name: String), Refused>)?
+    static func resolve0(_ r: JS, _ id: String, _ action: Action) -> Result<(travel: JS, name: String), Refused> {
         let bridge = Armies.bridge!, g = bridge.graph, space = Armies.space(r)
         guard let here = space.first(where: { $0.army.id.asString == id }) else { return .failure(Refused(reason: "这支军队不存在或已失去战斗力。")) }
         let a = here.army, nation = a.nationId.asString
@@ -145,7 +152,9 @@ public enum ArmyOrders {
         Vassals.bump(s)
     }
     static func reason(_ r: JS, _ id: String, _ action: Action) -> String? {
-        if case .failure(let e) = resolve(r, id, action) { return e.reason }
+        let value = resolve(r, id, action)
+        lastResolve = (r, id, action, r.armyPositions.revision.asNumber, r.clock.tick.asNumber, value)
+        if case .failure(let e) = value { return e.reason }
         return nil
     }
 
@@ -230,7 +239,9 @@ public enum ArmyOrders {
         if app && r.clock.tick.asNumber - s.lastTick.asNumber < 60 && r.clock.tick.asNumber > s.lastTick.asNumber { return false }
         let live = r.world.armies.asArray.filter { $0.troops.asNumber > 0 }.map(\.id.asString)
         var cursor = s.cursor.asInt, selected = [String]()
-        if !live.isEmpty { for _ in 0..<(app ? min(15, live.count) : 5) { if cursor >= live.count { cursor = 0 }; selected.append(live[cursor]); cursor += 1 } }
+        // 帧长超过 60 刻时每批按比例多给几支军队下令：每日重新评估的军队数与帧长无关（AI 反应速度不变）。
+        let perBatch = 15 * max(1, (Daily.frameTicks(r) ?? 60) / 60)
+        if !live.isEmpty { for _ in 0..<(app ? min(perBatch, live.count) : 5) { if cursor >= live.count { cursor = 0 }; selected.append(live[cursor]); cursor += 1 } }
         s.cursor = JS(cursor); s.lastTick = r.clock.tick.clone(); s.calls = JS(s.calls.asNumber + Double(selected.count))
         if selected.isEmpty { return false }
         selection(r, selected)
@@ -238,7 +249,7 @@ public enum ArmyOrders {
     }
     static func selection(_ r: JS, _ ids: [String]) {
         guard let bridge = Armies.bridge else { return }
-        let g = bridge.graph, state = r.armyAutonomy, geo = geography(r, bridge), tick = r.clock.tick.asInt
+        let g = bridge.graph, state = r.armyAutonomy, geo = Profile.measure("o.geo") { geography(r, bridge) }, tick = r.clock.tick.asInt
         let space = Profile.measure("t.space") { Armies.space(r) }, held = Set(r.forceContacts.pairs.asArray.flatMap { [$0.a.asString, $0.b.asString] })
         let ports = Set(r.harbors.sites.asArray.map(\.provinceId.asString))
         // Only the states of this batch's armies (five armies a batch; every state used to be read).
@@ -266,7 +277,7 @@ public enum ArmyOrders {
                 for v in space { forcesOf[v.army.nationId.asString, default: []].append(v); strength[v.army.nationId.asString, default: 0] += v.army.troops.asNumber }
                 councilContext = CouncilContext(presentAt: presentAt, provinces: provinceList, provinceAt: provinceAt, ownedBy: ownedBy, geo: geo, manual: manual, held: held, forcesOf: forcesOf, strength: strength)
             }
-            let v = warPlan(r, nation: nation, enemies: enemySet, councilContext!, bridge: bridge)
+            let v = Profile.measure("o.plan") { warPlan(r, nation: nation, enemies: enemySet, councilContext!, bridge: bridge) }
             plans[nation] = v
             return v
         }

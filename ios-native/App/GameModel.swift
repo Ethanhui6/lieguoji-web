@@ -467,7 +467,7 @@ import LieguojiCore
     private func owns(_ ticket: AdvanceOwnership.Ticket) -> Bool {
         phase == .playing && advanceOwnership.owns(ticket, world: worldEpoch)
     }
-    private func requestStep(days: Int, ticket: AdvanceOwnership.Ticket, revision: UInt64) -> Task<Data?, Never> {
+    private func requestStep(days: Int, ticket: AdvanceOwnership.Ticket, revision: UInt64) -> Task<NativeHost.Step?, Never> {
         Task { [weak self] in
             guard let self, self.owns(ticket), self.playing else { return nil }
             return await self.native.step(days: days, revision: revision, producer: ticket.producer)
@@ -486,9 +486,9 @@ import LieguojiCore
             let ticket = self.advanceOwnership.begin(world: epoch)
             // Through the relay the next step is already asked for while this one is applied, so
             // the computer never waits for the phone (a round trip there costs most of a step).
-            var ahead: Task<Data?, Never>?
+            var ahead: Task<NativeHost.Step?, Never>?
             // Drain a real accepted tail, but never let a previous loop overwrite a resumed world.
-            defer { if let ahead { Task { if let data = await ahead.value, self.owns(ticket) { try? await self.apply(stepData: data, ticket: ticket) } } } }
+            defer { if let ahead { Task { if let data = await ahead.value, self.owns(ticket) { try? await self.apply(step: data, ticket: ticket) } } } }
             while !Task.isCancelled {
                 guard self.owns(ticket) else { return }
                 let started = Date()
@@ -518,7 +518,7 @@ import LieguojiCore
                     ahead = nil
                     guard self.owns(ticket) else { return }
                     if !Task.isCancelled, self.playing { ahead = self.requestStep(days: days, ticket: ticket, revision: revision) }
-                    try await self.apply(stepData: data, ticket: ticket)
+                    try await self.apply(step: data, ticket: ticket)
                 }
                 catch { if self.owns(ticket) { self.failure = error.localizedDescription; self.pause() }; return }
                 guard self.owns(ticket), !Task.isCancelled else { return }
@@ -553,7 +553,7 @@ import LieguojiCore
             if let previous { await previous.value }
             guard let self, self.phase == .playing, self.worldEpoch == ticket.world else { return }
             if let data = await self.native.step(days: 1, revision: revision, producer: ticket.producer), self.owns(ticket) {
-                do { try await self.apply(stepData: data, ticket: ticket) }
+                do { try await self.apply(step: data, ticket: ticket) }
                 catch { if self.owns(ticket) { self.failure = error.localizedDescription } }
             }
         }
@@ -592,12 +592,12 @@ import LieguojiCore
     /// Smoothed time between two applied steps while playing; army icons glide over it.
     private var stepInterval: Double = 0.2
     private var lastApplied: CFTimeInterval?
-    private func apply(stepData data: Data, ticket: AdvanceOwnership.Ticket) async throws {
+    private func apply(step: NativeHost.Step, ticket: AdvanceOwnership.Ticket) async throws {
         let lost = await native.lost, isRemote = await native.isRemote
         guard owns(ticket) else { return }
         if lost { remoteLost(); return }
-        guard !data.isEmpty else { throw EngineError.message("推演没有返回有效世界状态") }
-        let next = try await Task.detached { try JSONDecoder().decode(GameState.self, from: data) }.value
+        // 本机推演直接拿到结构体；远程的 JSON 已在引擎执行器上解码。
+        let next = try step.get()
         guard owns(ticket) else { return }
         if remoteAddress != nil, !isRemote { remoteAddress = nil }
         let now = CACurrentMediaTime()

@@ -145,9 +145,18 @@ actor NativeHost {
         guard advances.replaceWorld(world: world) != nil else { return }
         _ = await call("close")
     }
-    func step(days: Int, revision: UInt64, producer: UInt64) async -> Data? {
+    /// 一步推演的结果（nil：这一步未被接纳）。
+    typealias Step = Result<GameState, Error>
+    func step(days: Int, revision: UInt64, producer: UInt64) async -> Step? {
         guard advances.admit(revision: revision, producer: producer) else { return nil }
-        return await call("step", ["days": days]).data ?? Data()
+        // 本机推演：引擎直接给出结构体，不再编码成 JSON 再在界面端解码（每步省去两次整份状态的转换）。
+        if remote == nil && !lost {
+            guard let s = service.stepState(days: days) else { return .failure(EngineError.message("推演没有返回有效世界状态")) }
+            return .success(s)
+        }
+        let data = await call("step", ["days": days]).data ?? Data()
+        guard !data.isEmpty else { return .failure(EngineError.message("推演没有返回有效世界状态")) }
+        return Result { try JSONDecoder().decode(GameState.self, from: data) }
     }
     func state() async -> Data? { await call("state").data }
     /// Read-only CI observation; unlike `state`, it does not consume pending map-label updates.

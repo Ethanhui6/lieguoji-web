@@ -83,11 +83,15 @@ public enum RunWindow {
             let p = provinces[i]
             return p.controller.asString == s.controller.asString && war(s.attacker.asString, s.controller.asString)
         })
-        var local = [String: [JS]]()
-        for v in space where v.province != nil && (!r.regimes.enabled.isTruthy || atCity(r, v, bridge: Armies.bridge!)) { local[v.province!.id.asString, default: []].append(v.army) }
         // The first siege of each province (kept current as sieges start and end below).
         var siegeOf = [String: JS]()
         for sg in r.occupation.sieges.asArray where siegeOf[sg.provinceId.asString] == nil { siegeOf[sg.provinceId.asString] = sg }
+        // 只有正在围城、或有与守方交战之军的州才会结算（其余在下面直接跳过）：只为这些州里的军队判断是否抵近城池，
+        // 不再对全图每支军队都算一遍几何（结果与原先逐军计算相同）。
+        var contested = Set(siegeOf.keys)
+        for v in space { if let p = v.province, war(v.army.nationId.asString, p.controller.asString) { contested.insert(p.id.asString) } }
+        var local = [String: [JS]]()
+        for v in space where v.province != nil && contested.contains(v.province!.id.asString) && (!r.regimes.enabled.isTruthy || atCity(r, v, bridge: Armies.bridge!)) { local[v.province!.id.asString, default: []].append(v.army) }
         // Only provinces with armies in them or a siege can change here (any other is skipped below):
         // visit those, in province order, instead of the whole map twenty times a day.
         let candidates = Set(local.keys).union(siegeOf.keys).compactMap { provinceIds[$0] }.sorted()
@@ -301,6 +305,7 @@ public enum RunWindow {
             if let v = pairs[k] { return v }
             let v = (access(r, n, c), atWar(r, n, c)); pairs[k] = v; return v
         }
+        let tEntry = Profile.mark()
         var entry = [String: (nation: String, anchor: String?, retreating: Bool, sea: Bool, base: Double, unit: Double)]()
         for a in r.world.armies.asArray {
             let id = a.id.asString
@@ -309,6 +314,7 @@ public enum RunWindow {
                          CombatReader.unitSpeed(r.units[id].optionalString ?? "") * Regimes.unitSpeed(r, a.nationId.asString, r.units[id].optionalString ?? "") * Regimes.armySpeed(r, id) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1))
         }
         _ = armies
+        Profile.since("m.entry", tEntry)
         let rules = bridge.rules(r, canEnter: { force, cell in
             let q = Int(g.provinces[cell])
             if force.kind == .fleet { return q < 0 }
@@ -329,10 +335,19 @@ public enum RunWindow {
         let out = Profile.measure("m.advance") { ContactMotion(graph: g).advance(&moving, previous: previous, seconds: seconds, rules: rules, stopAtEvent: true, known: Daily.knownFrame(r, moving.count)) }
         Profile.measure("m.write") { for m in moving where before[m.id + (m.kind == .army ? "|a" : "|f")] != m.travel {
             let book = m.kind == .army ? r.armyPositions : r.fleetPositions
-            let t = book.records[m.id].shallowClone(); bridge.write(m.travel, to: t); book.records[m.id] = t
+            let key = m.id + (m.kind == .army ? "|a" : "|f"), was = before[key]!
+            let t = book.records[m.id].shallowClone()
+            // 行军只会改动段号、段内位置、是否过门与状态：起点、路径与终点不变时只写这四项（整条路径每次重建是多余的分配）。
+            if was.origin == m.travel.origin && was.nodes == m.travel.nodes && was.destination == m.travel.destination { bridge.writeProgress(m.travel, to: t) }
+            else { bridge.write(m.travel, to: t) }
+            book.records[m.id] = t
+            // 新记录的解析结果与所在格已知：先存入缓存，下一次读取不必重新解析、定位。
+            bridge.remember(t, m.travel)
+            if m.kind == .army { Armies.spaceCache[m.id] = (t, g.location(m.travel).cell) }
         } }
         r.forceContacts.pairs = .array(out.contacts.map(ForceBridge.json))
         let space = Profile.measure("m.space") { Armies.space(r) }
+        let tPost = Profile.mark()
         var safe = Set<String>()
         // The states standing (not retreating) in each province, read once for the retreaters' check.
         var standing = [String: Set<String>]()
@@ -350,7 +365,8 @@ public enum RunWindow {
         }
         if ArmyLedger.on { ArmyLedger.campaigns(r, space) }
         Vassals.bump(r.armyPositions); Vassals.bump(r.fleetPositions)
-        if let p = out.positions { Daily.seedFrame(r, moving.count, (out.contacts, out.held, p)) }
+        Profile.since("m.post", tPost)
+        if let p = out.positions { Profile.measure("m.seed") { Daily.seedFrame(r, moving.count, (out.contacts, out.held, p)) } }
         return out
     }
 

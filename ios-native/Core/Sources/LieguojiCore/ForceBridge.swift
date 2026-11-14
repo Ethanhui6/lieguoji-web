@@ -34,6 +34,17 @@ public final class ForceBridge {
         if t.version.asInt == 2 { a.destination = Self.point(t.destination) }
         return a
     }
+    /// 只写行军中会变化的字段（起点、路径、终点与记录相同）。
+    func writeProgress(_ a: ArmyTravel, to t: JS) {
+        t.leg = JS(a.leg); t.offset = JS(a.offset); t.crossed = JS(a.crossed)
+        t.status = JS(Self.statusNames[a.status.rawValue])
+    }
+    static let statusNames = ["moving", "arrived", "blocked", "halted"]
+    /// 记下一条刚写好的记录的解析结果（与 parse(t) 相同），省去下一次解析。
+    func remember(_ t: JS, _ a: ArmyTravel) {
+        if parsed.count > 8192 { parsed.removeAll(keepingCapacity: true) }
+        parsed[ObjectIdentifier(t)] = (t, a, a.nodes.count, Self.statusNames[a.status.rawValue])
+    }
     public func write(_ a: ArmyTravel, to t: JS) {
         t.origin = Self.json(a.origin); t.nodes = .array(a.nodes.map { JS(Int(graph.ids[$0])) }); t.leg = JS(a.leg); t.offset = JS(a.offset); t.crossed = JS(a.crossed)
         t.status = JS(Self.statuses.first { $0.value == a.status }!.key)

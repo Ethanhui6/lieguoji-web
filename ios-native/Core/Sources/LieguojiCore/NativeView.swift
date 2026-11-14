@@ -201,18 +201,26 @@ extension NativeEngine {
         return .array(out)
     }
 
-    /// state(): day, date, owners (and labels when they changed), nations, armies, wars, sieges, events.
+    /// state(): day, date, owners (and labels when they changed), nations, armies, wars, sieges, events — as JSON (远程计算与测试).
     public func state(includeLabels: Bool) -> Data {
+        let s = gameState(includeLabels: includeLabels)
+        return Profile.measure("s.json") { (try? JSONEncoder().encode(s)) ?? Data() }
+    }
+
+    /// 界面状态，直接构造结构体（本机推演不经 JSON；字段与 JSON 版一致）。
+    public func gameState(includeLabels: Bool) -> GameState {
         let r = run, w = r.world, sc = r.scale.asNumber
         let nations = w.nations.asArray, provinces = w.provinces.asArray
         var ni = [String: Int](); for (i, n) in nations.enumerated() { ni[n.id.asString] = i }
         var pi = [String: Int](); for (i, p) in provinces.enumerated() { pi[p.id.asString] = i }
         let owners = provinces.map { ni[$0.controller.asString] ?? -1 }
         var stock = [String: JS](); for s in w.statecraft.provinces.asArray { stock[s.provinceId.asString] = s }
-        let o = JS.object()
-        o.day = w.day; o.date = r.life.currentDate; o.owners = .array(owners.map { JS($0) })
-        if !r.regimes.isNull, !r.regimes.calendar.isNull { o.era = r.regimes.calendar.era; o.yearOffset = r.regimes.calendar.offset }
-        if includeLabels { o.labels = labels(owners) }
+        let current = r.life.currentDate
+        let date = GameState.Date(year: current.year.asInt, month: current.month.asInt, day: current.day.asInt)
+        var era: String?, yearOffset: Int?
+        if !r.regimes.isNull, !r.regimes.calendar.isNull { era = r.regimes.calendar.era.optionalString; yearOffset = r.regimes.calendar.offset.optionalNumber.map { Int($0) } }
+        // 国名框只在归属变化时才有：由原有的计算得出，再转成结构体（不常发生）。
+        let labelBoxes: [WorldMeta.LabelBox]? = includeLabels ? Profile.measure("s.labels") { (try? JSONDecoder().decode([WorldMeta.LabelBox].self, from: Data(labels(owners).json.utf8))) ?? [] } : nil
         // Per-state totals in one pass over provinces, cities, armies and relations (each state used
         // to filter all of them again, every step).
         let cities = w.cities.asArray
@@ -229,34 +237,28 @@ extension NativeEngine {
         for rel in w.statecraft.relations.asArray where rel.status.asString == "war" {
             if let x = ni[rel.a.asString], let y = ni[rel.b.asString], x != y { enemies[x].append(y); enemies[y].append(x) }
         }
-        o.nations = .array(nations.enumerated().map { i, n in
+        let nationRows = nations.enumerated().map { i, n -> GameState.Nation in
             let id = n.id.asString
-            let x = JS.object()
             // Identity for the map legend: states founded during play are not in the opening map.
             let civ = r.civilization.nations[id], color = n.color.optionalString ?? "#999999"
-            x.id = n.id; x.name = n.name; x.color = JS(color); x.line = JS(Self.stateLineColor(color))
+            var x = GameState.Nation(provinces: ownCount[i], cities: cityCount[i], population: Int(population[i]), grain: grain[i], troops: Int(troops[i]),
+                                     gold: r.finance.nations[id].gold.optionalNumber ?? 0, destiny: r.destiny.nations[id].destiny.optionalNumber ?? 0,
+                                     enemies: Array(Set(enemies[i])).sorted(), alive: ownCount[i] > 0)
+            x.id = id; x.name = n.name.optionalString; x.color = color; x.line = Self.stateLineColor(color)
             // A state with no land has no capital left to mark.
-            x.capital = JS(ownCount[i] > 0 ? n.capitalId.optionalString.flatMap { cityIndex[$0] } ?? -1 : -1)
-            x.culture = JS(civ.cultureId.optionalString ?? ""); x.polity = JS(civ.polity.optionalString ?? ""); x.religion = JS(civ.religionId.optionalString ?? "")
-            x.provinces = JS(ownCount[i]); x.cities = JS(cityCount[i])
-            x.population = JS(population[i]); x.grain = JS(grain[i]); x.troops = JS(troops[i])
-            x.gold = JS(r.finance.nations[id].gold.optionalNumber ?? 0); x.destiny = JS(r.destiny.nations[id].destiny.optionalNumber ?? 0)
-            x.enemies = .array(Array(Set(enemies[i])).sorted().map { JS($0) }); x.alive = JS(ownCount[i] > 0)
+            x.capital = ownCount[i] > 0 ? n.capitalId.optionalString.flatMap { cityIndex[$0] } ?? -1 : -1
+            x.culture = civ.cultureId.optionalString ?? ""; x.polity = civ.polity.optionalString ?? ""; x.religion = civ.religionId.optionalString ?? ""
             return x
-        })
-        var spots = [String: [(Double, Double)]]()
-        for c in w.cities.asArray { spots[c.provinceId.asString, default: []].append((c.position.x.asNumber, c.position.y.asNumber)) }
+        }
         let space = Armies.space(r), bridge = Armies.bridge
-        // Armies in contact stand where they fight (the original draws the clash between them);
-        // only resting armies use the province's display spot.
-        let engaged = Set(r.forceContacts.pairs.asArray.flatMap { [$0.a.asString, $0.b.asString] })
         // Two armies in contact share a province (the original's battle rule), possibly far apart:
         // each is drawn at the middle of its clashes, half an icon back towards its own side, so the
         // two icons meet where the battle plays. Presentation only.
         var clash = [String: (x: Double, y: Double, n: Double)]()
         let halfIcon = 2.4 * sc
         func aim(_ k: String, _ x: Double, _ y: Double) { let o = clash[k] ?? (0, 0, 0); clash[k] = (o.x + x, o.y + y, o.n + 1) }
-        for c in r.forceContacts.pairs.asArray where !c.pointA.isNull && !c.pointB.isNull {
+        let pairs = r.forceContacts.pairs.asArray
+        for c in pairs where !c.pointA.isNull && !c.pointB.isNull {
             let ax = c.pointA.x.asNumber, ay = c.pointA.y.asNumber, bx = c.pointB.x.asNumber, by = c.pointB.y.asNumber
             let d = ((ax - bx) * (ax - bx) + (ay - by) * (ay - by)).squareRoot()
             if d / sc > 26 {
@@ -278,9 +280,16 @@ extension NativeEngine {
                 let familyFirst = Nobility.cultures[culture].familyFirst.optionalBool ?? (culture == "chinese" || culture == "japanese")
                 return (String((last.isEmpty ? first : last).prefix(1)), familyFirst ? last + first : last.isEmpty ? first : first + "·" + last)
             }
+            // 各国最大的一支军队：一次遍历得出（原先每国都把全部军队筛一遍）。
+            var largest = [String: JS]()
+            for a in w.armies.asArray where a.status.asString != "destroyed" {
+                let n = a.nationId.asString
+                if let b = largest[n], !(b.troops.asNumber < a.troops.asNumber) { continue }
+                largest[n] = a
+            }
             for n in nations {
                 let id = n.id.asString, wars = Offices.wars(r, id)
-                guard !wars.isEmpty, let lead = w.armies.asArray.filter({ $0.nationId.asString == id && $0.status.asString != "destroyed" }).max(by: { $0.troops.asNumber < $1.troops.asNumber }) else { continue }
+                guard !wars.isEmpty, let lead = largest[id] else { continue }
                 var general: JS?
                 if !r.offices47.isNull {
                     general = Offices.holder(r, id, "WarCommander", wars[0].scopeId) ?? Offices.holder(r, id, "Marshal", Offices.stateId(r, id))
@@ -289,117 +298,119 @@ extension NativeEngine {
                 else if !r.people.nations[id].leaderId.isNull, let p = People.person(r, r.people.nations[id].leaderId.asInt) { let l = label(p); banners[lead.id.asString] = ("ruler", l.mark, l.name) }
             }
         }
-        o.armies = .array(space.map { v in
+        let manualArmies = Set(r.voyages.manualArmies.asArray.map(\.asString))
+        var missionOf = [String: String]()
+        if !r.voyages.missions.isNull { for (_, m) in r.voyages.missions.objectEntries { if let a = m.armyId.optionalString, missionOf[a] == nil { missionOf[a] = m.phase.optionalString ?? "" } } }
+        var armyPoint = [(Double, Double)]()
+        armyPoint.reserveCapacity(space.count)
+        let armyRows = space.map { v -> GameState.Army in
             let a = v.army, id = a.id.asString, moving = v.travel.status.asString == "moving"
             var at: (Double, Double)
             // Every army is drawn at its real point. A separate resting spot made an icon jump when the
             // army set out or met an enemy and jump back after the battle; stacked icons are spread
             // apart by the map instead.
-            _ = moving; _ = spots
-            if let bridge { let p = bridge.graph.location(bridge.travel(v.travel)).point; at = (p.x, p.y) } else { at = (0, 0) }
+            // 行军中的军队按路径弧长平滑后的位置显示（抹平之字形路线造成的左右摆动；推演位置不变）。
+            if let bridge { let p = bridge.graph.displayPoint(bridge.travel(v.travel), window: 4 * sc); at = (p.x, p.y) } else { at = (0, 0) }
             if let m = clash[Daily.key("army", id)] {
                 let cx = m.x / m.n, cy = m.y / m.n, dx = at.0 - cx, dy = at.1 - cy, d = (dx * dx + dy * dy).squareRoot()
                 at = d > halfIcon ? (cx + dx / d * halfIcon, cy + dy / d * halfIcon) : at
             }
-            let x = JS.object()
-            x.id = a.id; x.name = a.name; x.nation = JS(ni[a.nationId.asString]!); x.troops = a.troops; x.unit = r.units[id].isNull ? JS("Infantry") : r.units[id]
-            x.reorganizing = JS(!r.reorganization.active[id].isNull)
-            x.status = a.status; x.travel = v.travel.status; x.province = JS(v.province.map { pi[$0.id.asString]! } ?? -1)
-            x.supplies = JS(a.supplies.asNumber.rounded()); x.morale = JS(a.morale.asNumber.rounded()); x.x = JS(at.0 / sc); x.y = JS(at.1 / sc)
-            x.manual = JS(r.voyages.manualArmies.asArray.contains { $0.asString == id })
-            let order = r.armyAutonomy.armies[id].decision.optionalString ?? ""
-            if ["attacking", "supporting", "guarding", "staging"].contains(order) { x.duty = JS(order) }
-            if let b = banners[id] { x.banner = JS(b.kind); x.bannerMark = JS(b.mark); x.commander = JS(b.name) }
+            armyPoint.append((at.0 / sc, at.1 / sc))
             // Destination province of a march (last travel node), for the army panel.
             var dest = -1
             if moving, let bridge, let last = v.travel.nodes.asArray.last, let cell = bridge.graph.cell(id: last.asInt) {
                 let q = Int(bridge.graph.provinces[cell]); if q >= 0 && q < provinces.count { dest = q }
             }
-            x.destination = JS(dest)
-            x.mission = JS(r.voyages.missions.isNull ? "" : (r.voyages.missions.objectEntries.first { $0.1.armyId.optionalString == id }?.1.phase.optionalString ?? ""))
+            var x = GameState.Army(id: id, name: a.name.asString, nation: ni[a.nationId.asString]!, troops: Int(a.troops.asNumber), unit: r.units[id].optionalString ?? "Infantry",
+                                   status: a.status.asString, travel: v.travel.status.asString, province: v.province.map { pi[$0.id.asString]! } ?? -1,
+                                   supplies: Int(a.supplies.asNumber.rounded()), morale: Int(a.morale.asNumber.rounded()), x: Float(at.0 / sc), y: Float(at.1 / sc),
+                                   manual: manualArmies.contains(id), destination: dest, mission: missionOf[id] ?? "")
+            x.reorganizing = !r.reorganization.active[id].isNull
+            let order = r.armyAutonomy.armies[id].decision.optionalString ?? ""
+            if ["attacking", "supporting", "guarding", "staging"].contains(order) { x.duty = order }
+            if let b = banners[id] { x.banner = b.kind; x.bannerMark = b.mark; x.commander = b.name }
             return x
-        })
+        }
         // Fleets at their actual sea points and the harbour ports (open-sea worlds; empty otherwise).
-        var fleetRows = [JS]()
+        var fleetRows = [GameState.Fleet](), fleetPoint = [(Double, Double)]()
         if let bridge, !r.navy.isNull, !r.navy.fleets.isNull {
+            let manualFleets = Set(r.voyages.manualFleets.asArray.map(\.asString))
             for fl in r.navy.fleets.asArray where fl.status.asString != "lost" {
                 let id = fl.id.asString, rec = r.fleetPositions.records[id]
                 if rec.isNull { continue }
                 let p = bridge.graph.location(bridge.travel(rec)).point, row = r.navalAutonomy.isNull ? JS.null : r.navalAutonomy.fleets[id]
-                let x = JS.object()
-                x.id = fl.id; x.name = fl.name; x.nation = JS(ni[fl.nationId.asString] ?? -1); x.ships = fl.ships; x.crew = fl.crew; x.food = fl.food
-                x.hull = JS(fl.ships.asNumber > 0 ? (r.maritime.hulls[id].optionalNumber ?? 0) / (fl.ships.asNumber * 100) : 0)
-                x.status = fl.status; x.travel = rec.status; x.x = JS(p.x / sc); x.y = JS(p.y / sc)
-                x.decision = JS(row.isNull ? "" : row.decision.optionalString ?? ""); x.reason = JS(row.isNull ? "" : row.reason.optionalString ?? "")
                 let port = row.isNull ? nil : row.assignedPortId.optionalString.flatMap { a in Naval.sea?.ports.first { $0.id == a } }
-                x.port = JS(port.flatMap { pi[$0.provinceId] } ?? -1)
-                x.manual = JS(r.voyages.manualFleets.asArray.contains { $0.asString == id }); x.patrol = fl.patrol
-                fleetRows.append(x)
+                fleetPoint.append((p.x / sc, p.y / sc))
+                fleetRows.append(GameState.Fleet(id: id, name: fl.name.asString, nation: ni[fl.nationId.asString] ?? -1, ships: Int(fl.ships.asNumber), crew: Int(fl.crew.asNumber), food: Int(fl.food.asNumber),
+                                                 hull: fl.ships.asNumber > 0 ? (r.maritime.hulls[id].optionalNumber ?? 0) / (fl.ships.asNumber * 100) : 0,
+                                                 status: fl.status.asString, travel: rec.status.asString, x: Float(p.x / sc), y: Float(p.y / sc),
+                                                 decision: row.isNull ? "" : row.decision.optionalString ?? "", reason: row.isNull ? "" : row.reason.optionalString ?? "",
+                                                 port: port.flatMap { pi[$0.provinceId] } ?? -1, manual: manualFleets.contains(id), patrol: fl.patrol.optionalBool ?? false))
             }
         }
-        o.fleets = .array(fleetRows)
         // 造舰: sunk fleets their state is rebuilding, with the months left.
+        var yards: [GameState.Yard]?
         if !r.navy.isNull, !r.navy.fleets.isNull {
-            o.yards = .array(r.navy.fleets.asArray.compactMap { fl -> JS? in
+            yards = r.navy.fleets.asArray.compactMap { fl in
                 guard let left = Shipyards.remaining(r, fl) else { return nil }
-                let y = JS.object(); y.name = fl.name; y.nation = JS(ni[fl.nationId.asString] ?? -1); y.months = JS(left.rounded(.up)); return y
-            })
+                return GameState.Yard(name: fl.name.asString, nation: ni[fl.nationId.asString] ?? -1, months: left.rounded(.up))
+            }
         }
         // 圣地: each faith's holy province.
-        o.holy = .array(Regimes.holyProvinces(r).map { h in let x = JS.object(); x.religion = JS(h.religion); x.province = JS(h.province); return x })
+        let holy = Regimes.holyProvinces(r).map { GameState.Holy(religion: $0.religion, province: $0.province) }
         // 要塞: provinces whose city defence is level three or more (a fortress mark on the map).
-        o.forts = .array(w.provinces.asArray.enumerated().compactMap { i, p in
-            let d = r.upperCombat.provinces[p.id.asString].storedDefense.optionalNumber ?? 1
-            return d >= 3 ? JS(i) : nil
-        })
-        o.ports = .array((Naval.sea?.ports ?? []).compactMap { port in
+        let forts = provinces.enumerated().compactMap { i, p -> Int? in (r.upperCombat.provinces[p.id.asString].storedDefense.optionalNumber ?? 1) >= 3 ? i : nil }
+        let ports = (Naval.sea?.ports ?? []).compactMap { port -> GameState.Port? in
             guard let q = pi[port.provinceId] else { return nil }
-            let c = r.portControl.isNull ? JS.null : r.portControl.ports[port.provinceId], x = JS.object()
-            x.province = JS(q); x.x = JS(port.center.x / sc); x.y = JS(port.center.y / sc)
-            x.owner = JS(c.isNull ? -1 : ni[c.landOwnerId.asString] ?? -1); x.occupier = JS(c.isNull ? -1 : ni[c.occupierId.asString] ?? -1)
-            x.value = JS(c.isNull ? 100 : c.value.asNumber.rounded()); return x
-        })
+            let c = r.portControl.isNull ? JS.null : r.portControl.ports[port.provinceId]
+            return GameState.Port(province: q, x: Float(port.center.x / sc), y: Float(port.center.y / sc), owner: c.isNull ? -1 : ni[c.landOwnerId.asString] ?? -1,
+                                  occupier: c.isNull ? -1 : ni[c.occupierId.asString] ?? -1, value: c.isNull ? 100 : c.value.asNumber.rounded())
+        }
         var armyIndex = [String: Int](); for (i, v) in space.enumerated() { armyIndex[Daily.key("army", v.army.id.asString)] = i }
-        o.contacts = .array(r.forceContacts.pairs.asArray.compactMap { p -> JS? in
+        let contacts = pairs.compactMap { p -> [Int]? in
             guard let a = armyIndex[p.a.asString], let b = armyIndex[p.b.asString] else { return nil }
-            return .array([JS(a), JS(b)])
-        })
+            return [a, b]
+        }
         // Battles at sea (a fleet in contact): the same BattleSword between the two forces.
         var forcePoint = [String: (Double, Double)]()
-        for (i, v) in space.enumerated() { let row = o.armies[i]; forcePoint[Daily.key("army", v.army.id.asString)] = (row.x.asNumber, row.y.asNumber) }
-        for f in fleetRows { forcePoint[Daily.key("fleet", f.id.asString)] = (f.x.asNumber, f.y.asNumber) }
-        o.seaBattles = .array(r.forceContacts.pairs.asArray.compactMap { p -> JS? in
+        for (i, v) in space.enumerated() { forcePoint[Daily.key("army", v.army.id.asString)] = armyPoint[i] }
+        for (i, f) in fleetRows.enumerated() { forcePoint[Daily.key("fleet", f.id)] = fleetPoint[i] }
+        let seaBattles = pairs.compactMap { p -> [Double]? in
             guard p.a.asString.hasPrefix("[\"fleet") || p.b.asString.hasPrefix("[\"fleet"), let a = forcePoint[p.a.asString], let b = forcePoint[p.b.asString] else { return nil }
-            return .array([JS((a.0 + b.0) / 2), JS((a.1 + b.1) / 2)])
-        })
+            return [(a.0 + b.0) / 2, (a.1 + b.1) / 2]
+        }
         let stateNation = Dictionary(uniqueKeysWithValues: r.nativeWars.nationIds.asArray.map { ($0[0].asInt, $0[1].asString) })
-        o.wars = .array(r.nativeWars.campaigns.asArray.filter { $0.endedTick.isNull }.map { c in
+        let wars = r.nativeWars.campaigns.asArray.filter { $0.endedTick.isNull }.map { c -> GameState.War in
             let d = r.nativeDiplomacy.declarations.asArray.first { $0.warId.asInt == c.id.asInt }, goal = d.flatMap { $0.goals.asArray.first }
-            let x = JS.object()
-            x.id = c.id; x.attacker = JS(c.attacker.optionalString.flatMap { ni[$0] } ?? -1); x.defender = JS(c.defender.optionalString.flatMap { ni[$0] } ?? -1)
-            x.casusBelli = JS(d.map { DeclarationText.casusBelli($0.casusBelliId.asInt) } ?? "")
-            x.goal = JS(goal.map { g in DeclarationText.goal(g.type.asInt, g.scope.isNull || g.scope.provinceIds.isNull ? 0 : g.scope.provinceIds.length) } ?? "")
-            x.startDay = JS((c.openedTick.asNumber / 120).rounded(.down))
-            x.participants = .array(c.participants.asArray.map { p in let y = JS.object(); y.nation = JS(stateNation[p.stateId.asInt].flatMap { ni[$0] } ?? -1); y.side = p.side; return y })
             // War goals' claimed provinces with their claimant (WarClaimAnimationManager).
-            x.claims = .array(c.goals.asArray.flatMap { g -> [JS] in
+            let claims = c.goals.asArray.flatMap { g -> [GameState.Claim] in
                 guard !g.scope.isNull, !g.scope.provinceIds.isNull else { return [] }
                 let claimant = stateNation[g.beneficiary.optionalNumber.map { Int($0) } ?? -1].flatMap { ni[$0] } ?? -1
-                return g.scope.provinceIds.asArray.compactMap { n -> JS? in
+                return g.scope.provinceIds.asArray.compactMap { n -> GameState.Claim? in
                     let index = n.asInt - 1
                     guard provinces.indices.contains(index) else { return nil }
-                    let y = JS.object(); y.province = JS(index); y.nation = JS(claimant); return y
+                    return GameState.Claim(province: index, nation: claimant)
                 }
-            })
+            }
+            var x = GameState.War(id: c.id.asInt, attacker: c.attacker.optionalString.flatMap { ni[$0] } ?? -1, defender: c.defender.optionalString.flatMap { ni[$0] } ?? -1,
+                                  casusBelli: d.map { DeclarationText.casusBelli($0.casusBelliId.asInt) } ?? "",
+                                  goal: goal.map { g in DeclarationText.goal(g.type.asInt, g.scope.isNull || g.scope.provinceIds.isNull ? 0 : g.scope.provinceIds.length) } ?? "",
+                                  startDay: Int((c.openedTick.asNumber / 120).rounded(.down)),
+                                  participants: c.participants.asArray.map { p in GameState.Participant(nation: stateNation[p.stateId.asInt].flatMap { ni[$0] } ?? -1, side: p.side.asInt) })
+            x.claims = claims
             return x
-        })
-        battleArrows.update(r, day: w.day.asInt)
-        o.arrows = .array(battleArrows.all.map { a in .array([JS(a.source), JS(a.target), JS(a.attacker), JS(a.defender), JS(a.start.x / sc), JS(a.start.y / sc), JS(a.control.x / sc), JS(a.control.y / sc), JS(a.end.x / sc), JS(a.end.y / sc)]) })
-        o.sieges = .array(r.occupation.sieges.asArray.map { s in
-            let x = JS.object(); x.province = JS(pi[s.provinceId.asString] ?? -1); x.nation = JS(ni[s.controller.asString] ?? -1)
-            x.progress = JS(s.maximum.asNumber > 0 ? s.resistance.asNumber / s.maximum.asNumber : 0); return x
-        })
-        o.events = .array(r.chronicle.entries.asArray.suffix(30).map { e in let x = JS.object(); x.day = e.day; x.text = e.text; x.kind = e.kind; if let p = e.place.id.optionalString.flatMap({ pi[$0] }) { x.province = JS(p) }; return x })
-        return Data(o.json.utf8)
+        }
+        Profile.measure("s.arrows") { battleArrows.update(r, day: w.day.asInt) }
+        let arrows = battleArrows.all.map { a in [Double(a.source), Double(a.target), Double(a.attacker), Double(a.defender), a.start.x / sc, a.start.y / sc, a.control.x / sc, a.control.y / sc, a.end.x / sc, a.end.y / sc] }
+        let sieges = r.occupation.sieges.asArray.map { s in
+            GameState.Siege(province: pi[s.provinceId.asString] ?? -1, nation: ni[s.controller.asString] ?? -1, progress: s.maximum.asNumber > 0 ? s.resistance.asNumber / s.maximum.asNumber : 0)
+        }
+        let events = r.chronicle.entries.asArray.suffix(30).map { e in
+            GameState.Event(day: e.day.asInt, text: e.text.optionalString ?? "", kind: e.kind.optionalString ?? "", province: e.place.id.optionalString.flatMap { pi[$0] })
+        }
+        var out = GameState(day: w.day.asInt, date: date, owners: owners, labels: labelBoxes, nations: nationRows, armies: armyRows, wars: wars, sieges: sieges, events: events)
+        out.fleets = fleetRows; out.yards = yards; out.ports = ports; out.forts = forts; out.holy = holy
+        out.contacts = contacts; out.arrows = arrows; out.seaBattles = seaBattles; out.era = era; out.yearOffset = yearOffset
+        return out
     }
 }

@@ -26,13 +26,15 @@ enum Collate {
 /// One army or fleet in the shared motion phase (force-motion47 MovingForce47).
 public struct MovingForce: Sendable, Equatable {
     public enum Kind: String, Sendable { case army, fleet }
-    public var kind: Kind
-    public var id: String
+    public var kind: Kind { didSet { key = Self.key(kind, id) } }
+    public var id: String { didSet { key = Self.key(kind, id) } }
     public var nation: Int
     public var withdrawing: Bool
     public var travel: ArmyTravel
-    public var key: String { "[\"\(kind.rawValue)\",\"\(id)\"]" }
-    public init(kind: Kind, id: String, nation: Int, withdrawing: Bool, travel: ArmyTravel) { self.kind = kind; self.id = id; self.nation = nation; self.withdrawing = withdrawing; self.travel = travel }
+    /// 键在构造时算好存下（接触、位置等热循环里反复用它作字典键，曾每次访问都重新拼接字符串）。
+    public private(set) var key: String
+    static func key(_ kind: Kind, _ id: String) -> String { "[\"\(kind.rawValue)\",\"\(id)\"]" }
+    public init(kind: Kind, id: String, nation: Int, withdrawing: Bool, travel: ArmyTravel) { self.kind = kind; self.id = id; self.nation = nation; self.withdrawing = withdrawing; self.travel = travel; key = Self.key(kind, id) }
 }
 
 /// A recorded encounter between two hostile forces (ForceContact47): their exact points and cells at
@@ -274,6 +276,7 @@ public struct ContactMotion {
                     if forces[m.f].travel.leg == forces[m.f].travel.nodes.count - 1 { forces[m.f].travel.status = .arrived }
                 }
             }
+            let tReach = Profile.mark()
             let requests = movers.filter { m in
                 let s = forces[m.f].travel
                 return !m.seg.local && m.time <= dt && s.status != .arrived && !s.crossed && s.nodes[s.leg] == m.seg.a && s.offset == m.seg.toGate
@@ -298,7 +301,8 @@ public struct ContactMotion {
                     meetings.append((fa.key, fb.key, "gate/\(ids[0])/\(ids[1])"))
                 }
             } }
-            for m in admitted where !stopped.contains(forces[m.f].key) {
+            // 本作规则（实体接触）下 before 为空，过门相遇不会产生：整段跳过（它曾对每个过门军队遍历全部部队做字符串哈希）。
+            for m in admitted where !rules.physicalContact && !stopped.contains(forces[m.f].key) {
                 let f = forces[m.f], ar = area(m.seg.b, rules)
                 for g in forces where g.key != f.key {
                     guard let v = before[g.key] else { continue }
@@ -312,6 +316,7 @@ public struct ContactMotion {
                     if forces[m.f].travel.leg == forces[m.f].travel.nodes.count - 1 { forces[m.f].travel.status = .arrived }
                 }
             }
+            Profile.since("a.reach", tReach)
             let t2 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             let after: [String: Position]
             if let end = interiorEnd { after = end } else {
@@ -323,6 +328,7 @@ public struct ContactMotion {
                 after = p
             }
             if Profile.enabled { Profile.add("a.after", Date.timeIntervalSinceReferenceDate - t2) }
+            let tArea = Profile.mark()
             let oldArea = movers.map { areaOf[$0.f] }
             for m in movers { if let p = after[forces[m.f].key] { areaOf[m.f] = areaKey(p.cell, rules) } }
             var merged = book
@@ -336,6 +342,7 @@ public struct ContactMotion {
             // App worlds: contacts change only when two hostile forces meet (the solve above stopped the
             // step there), a force crosses into another area, or a force in a contact moves. Otherwise the
             // contact set stands as it is and the rebuild (half the cost of a busy day) is skipped.
+            Profile.since("a.area", tArea)
             let tS = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             if rules.physicalContact && !meetingHit && merged.count == book.count {
                 let members = Set(current.contacts.flatMap { [$0.a, $0.b] })
@@ -346,7 +353,7 @@ public struct ContactMotion {
                 if Profile.enabled { Profile.add("a.shift", Date.timeIntervalSinceReferenceDate - tS) }
                 if !shifted { current = (current.contacts, current.held, after); continue }
             }
-            let held0 = ContactMotion.identity(current.contacts)
+            let held0 = Profile.measure("a.ident") { ContactMotion.identity(current.contacts) }
             let t3 = Profile.enabled ? Date.timeIntervalSinceReferenceDate : 0
             current = contacts(forces, merged, rules, after)
             if Profile.enabled { Profile.add("a.contacts", Date.timeIntervalSinceReferenceDate - t3) }

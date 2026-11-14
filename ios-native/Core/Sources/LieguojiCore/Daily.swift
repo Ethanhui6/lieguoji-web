@@ -44,6 +44,7 @@ public enum Daily {
         // changed — positions, contacts, wars, the forces and who is withdrawing, province holders and the
         // sieges. A day ran it about twenty times over the same world on large maps.
         var whole = ""
+        let tKey = Profile.mark()
         if UnitKinds.enabled {
             var alive = 0, back = 0
             for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" { alive += 1; if a.status.asString == "retreating" { back += 1 } }
@@ -60,6 +61,7 @@ public enum Daily {
             let wars = r.world.statecraft.relations.asArray.reduce(0) { $1.status.asString == "war" ? $0 + 1 : $0 }
             func key() -> String { "\(ObjectIdentifier(r).hashValue)|\(r.armyPositions.revision.asNumber)|\(r.fleetPositions.revision.asNumber)|\(r.forceContacts.pairs.length)|\(wars)|\(alive)|\(back)|\(ships)|\(away)|\(h)|\(forceStamp(r))" }
             whole = key()
+            Profile.since("f.key", tKey)
             if let c = wholeCache, c.key == whole { return c.value }
             let out = computeWholeFrame(r, bridge)
             // Keyed as the world stands after this frame wrote its contacts.

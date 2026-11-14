@@ -57,6 +57,10 @@ import LieguojiCore
     var tween: Double = 0.3
     /// Troop / ship counts by army or fleet id, shown under the icons when zoomed in.
     var troopTexts: [String: String] = [:]
+    /// 战场地面：每场陆战的州与各营兵力（每步更新）。
+    var battleGrounds: [BattleGround] = []
+    /// CI 巡览演示战场地面时为真：推演不覆盖演示用的战况。
+    var groundDemo = false
     /// Where the icon with this key is drawn now (set by the map view).
     var placed: ((String) -> (Double, Double)?)?
     /// CI 连续帧对比: the state names on screen in this frame and how opaque each is drawn.
@@ -168,6 +172,8 @@ struct DisplaySettings: Codable, Equatable {
     var ocean = "original"
     /// 经纬线 (the original's GridLines). Optional so settings saved before it still load.
     var gridLines: Bool? = nil
+    /// 战场地面：交战州按各方兵力分色的墨晕（nil：旧设置，默认开）。
+    var battleGround: Bool? = nil
     static let key = "displaySettings.v3"
     static func load() -> DisplaySettings {
         guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) else { return DisplaySettings() }
@@ -635,6 +641,7 @@ struct MapView: UIViewRepresentable {
             controller.sheetOpen ? Self.range(30) : Self.range(Energy.hot ? min(20, controller.play.marchFPS) : Energy.level >= 1 ? min(30, controller.play.marchFPS) : controller.play.marchFPS)
         }
         private var gliding = false
+        private var shownGrounds: [BattleGround] = []
         private var appliedPlay: PlaySettings?
         private func pace(_ l: CADisplayLink, glide: Bool) {
             guard glide != gliding else { return }
@@ -733,6 +740,7 @@ struct MapView: UIViewRepresentable {
                 renderer?.tweenEase = controller.tween <= 0.3
                 renderer?.setArmies(armies, route: controller.route, snap: controller.snapArmies)
                 controller.snapArmies = false
+                if controller.battleGrounds != shownGrounds { shownGrounds = controller.battleGrounds; renderer?.setBattleGrounds(shownGrounds) }
                 updateTroops()
                 if renderer?.isAnimating == true { startLink() }
             }

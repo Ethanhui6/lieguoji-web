@@ -8,7 +8,7 @@ import LieguojiCore
 /// everything. Geometry is uploaded once; land colours only when the view mode or selection
 /// changes. The view redraws on demand (camera change, animation), not continuously.
 final class MapRenderer: NSObject, MTKViewDelegate {
-    private let device: MTLDevice
+    let device: MTLDevice
     private let queue: MTLCommandQueue
     private let cellPipeline: MTLRenderPipelineState
     /// 开卷, the generation reveal on the GPU: the sea is brushed onto blank paper (veil), the land is
@@ -28,6 +28,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let texturePipeline: MTLRenderPipelineState
     private let multiplyPipeline: MTLRenderPipelineState
     private let spritePipeline: MTLRenderPipelineState
+    /// 战场地面（BattleGround.swift）。
+    let groundPipeline: MTLRenderPipelineState
     /// Army icons grouped by unit type: the texture and its quads.
     private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int)] = []
     private let positions: MTLBuffer
@@ -68,7 +70,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private(set) var map: WorldMap { didSet { revealFields = nil; revealFieldData = nil; coastInk = nil } }
     /// 勾勒海岸 (MapDetail.coastInk), kept only while a reveal runs.
     private var coastInk: (buffer: MTLBuffer, count: Int)?
-    private var nationColors: [RGB]
+    private(set) var nationColors: [RGB]
     private var tint: [Int: RGB] = [:]
     private var fills: [RGB]?
     var camera: MapCamera
@@ -122,6 +124,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             texturePipeline = try pipeline("quadVertex", "textureFragment", .none)
             multiplyPipeline = try pipeline("quadVertex", "textureFragment", .multiply)
             spritePipeline = try pipeline("spriteVertex", "spriteFragment", .alpha)
+            groundPipeline = try pipeline("groundVertex", "groundFragment", .alpha)
         } catch { return nil }
         let mesh = CellMesh(map: map)
         guard let p = device.makeBuffer(bytes: mesh.positions, length: mesh.positions.count * 4, options: .storageModeShared),
@@ -465,11 +468,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var legLength: CFTimeInterval = 0.3
     /// Icons that fade in over this leg (new armies, re-formed ones).
     private var fresh = Set<String>()
+    /// 战场地面的动画状态（BattleGround.swift）。
+    let grounds = GroundBook()
     private var chasing = false
     /// The play step interval (seconds); a leg lasts a little longer so the next one starts before it ends.
     var tweenDuration: CFTimeInterval = 0.3
     var tweenEase = true
-    var isAnimating: Bool { chasing || fading }
+    /// 陆地顶点（战场地面复用同一份）。
+    var positionBuffer: MTLBuffer { positions }
+    var isAnimating: Bool { chasing || fading || groundsAnimating }
     private func progress(_ now: CFTimeInterval) -> Float {
         legLength <= 0 ? 1 : Float(min(1, max(0, (now - legStart) / legLength)))
     }
@@ -765,6 +772,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
+        // 战场地面：在陆地颜色之上、州界与军队之下（地面层）。
+        if reveal >= 1 && (display.battleGround ?? true) { drawGrounds(encoder, &u) }
         // Province lines: 0.55 screen px once zoomed in. Colour is the measured #B2B2B2.
         // The screen width is the previous client choice; it is not a measured original width.
         // Province borders: smoothed ink lines at every zoom (MapLayers.provinceLines), so each
@@ -923,14 +932,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float2 jab = float2(0.0);
         if (tint.a > 1.5) {
             tint.a = 1.0;
-            float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2832, beat = time * 9.0 + seed;
-            jab = float2(sin(beat) * 0.07, -max(0.0, sin(beat * 0.5)) * 0.12);
-        } else if (s.center[0] == s.target[0] && s.center[1] == s.target[1] && tint.a > 0.995) {
-            // 州郡内游走 (the original's RandomMoveInProvince): a standing army drifts slowly about its
-            // post instead of standing frozen on one point.
-            float seed = fract(s.center[0] * 0.173 + s.center[1] * 0.059) * 6.2832;
-            jab = float2(sin(time * 0.33 + seed), cos(time * 0.27 + seed * 1.7)) * 0.16;
+            // 交战：节奏放缓、幅度减小，只表达“正在交锋”，不抖动（原先每秒九拍，看起来像晃动）。
+            float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2832, beat = time * 4.5 + seed;
+            jab = float2(sin(beat) * 0.04, -max(0.0, sin(beat * 0.5)) * 0.07);
         }
+        // 驻扎的军队停稳不动：原先的“州郡内游走”让全图静止的军队一直缓慢漂移，与行军晃动混在一起难以分辨，已去掉。
         // 平滑行军: a Hermite curve leaving along the last leg's heading (lead), arriving straight.
         float t = progress, t2 = t * t, t3 = t2 * t;
         float2 a = float2(s.center), b = float2(s.target);
@@ -948,6 +954,34 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float3 rim = mix(float3(0.14, 0.11, 0.08), in.tint.rgb, 0.3);
         float3 c = mix(rim, fill, smoothstep(0.45, 0.95, lum));
         return float4(c, p.a * in.tint.a);
+    }
+    // 战场地面：交战州内按各方“进入方向的锚点＋兵力权重”加权分区，每块填该方国色；
+    // 分界随兵力缓动，近看时分界带墨晕抖动与一道淡墨线，地面带笔触浓淡（复用开卷晕染的 fbm）。
+    struct GroundOut { float4 position [[position]]; float2 world; };
+    vertex GroundOut groundVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
+        GroundOut o; o.position = clip(positions[id], u, float2(0.0)); o.world = positions[id]; return o;
+    }
+    struct GroundUniforms { float4 anchor[4]; float4 color[4]; float4 weight; float4 info; };
+    fragment float4 groundFragment(GroundOut in [[stage_in]], constant GroundUniforms& g [[buffer(0)]]) {
+        float2 q = in.world;
+        int n = int(g.info.x);
+        float alpha = g.info.y, detail = g.info.z, radius = max(g.info.w, 0.001);
+        float2 jitter = detail > 0.5 ? (float2(fbm(q * 0.05), fbm(q * 0.05 + float2(5.2, 1.3))) - 0.5) * radius * 0.3 : float2(0.0);
+        float best = 1e9, second = 1e9; int k = 0;
+        for (int i = 0; i < 4; i++) {
+            if (i >= n) break;
+            float d = distance(q + jitter, g.anchor[i].xy) - g.weight[i];
+            if (d < best) { second = best; best = d; k = i; } else if (d < second) { second = d; }
+        }
+        float3 c = g.color[k].rgb;
+        float edge = n > 1 ? second - best : 1e9;
+        float line = 1.0 - smoothstep(0.0, radius * 0.04, edge);
+        float grain = detail > 0.5 ? fbm(q * 0.1 + float2(13.1, 7.7)) : 0.5;
+        c = mix(c, c * 0.8, (grain - 0.5) * 0.9);
+        c = mix(c, float3(0.16, 0.12, 0.09), line * 0.5 * detail);
+        float a = alpha * (0.4 + 0.1 * grain);
+        a = max(a, alpha * 0.65 * line * detail);
+        return float4(c, a);
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         return float4(t.sample(s, in.uv).rgb, 1.0);

@@ -89,6 +89,29 @@ enum ShotTour {
             model.controller.fly(x: Double(a.x), y: Double(a.y))
             await wait(2); await shoot("05-battle-close")
             await wait(4); await shoot("06-battle-close-later")
+            // 战场地面关键帧：在这场战斗所在的州演示两方左右、优势一方推进、上下方向、三方、五方、战斗结束。
+            if a.province >= 0, state.nations.count >= 5 {
+                let c = SIMD2<Float>(a.x, a.y)
+                func camp(_ n: Int, _ dx: Float, _ dy: Float, _ t: Float) -> BattleGround.Camp { BattleGround.Camp(nation: n, toward: c + SIMD2(dx, dy) * 20, troops: t) }
+                let frames: [(String, [BattleGround.Camp])] = [
+                    ("07a-ground-two", [camp(0, -1, 0, 5000), camp(1, 1, 0, 5000)]),
+                    ("07b-ground-push", [camp(0, -1, 0, 2500), camp(1, 1, 0, 7500)]),
+                    ("07c-ground-vertical", [camp(2, 0, -1, 6000), camp(3, 0, 1, 4000)]),
+                    ("07d-ground-three", [camp(0, -1, 0.4, 5000), camp(1, 1, 0.4, 3000), camp(2, 0, -1, 2000)]),
+                    ("07e-ground-five", [camp(0, -1, 0, 4000), camp(1, 1, 0, 3000), camp(2, 0, -1, 2000), camp(3, 0, 1, 1500), camp(4, 0.7, 0.7, 600)]),
+                ]
+                model.controller.groundDemo = true
+                for (name, camps) in frames {
+                    model.controller.battleGrounds = [BattleGround(province: a.province, camps: camps)]
+                    model.controller.objectWillChange.send()
+                    await wait(1.6); await shoot(name)
+                }
+                // 战斗结束：份额最大的一方铺满，随后淡出。
+                model.controller.battleGrounds = []
+                model.controller.objectWillChange.send()
+                await wait(0.7); await shoot("07f-ground-end")
+                model.controller.groundDemo = false
+            }
         }
         // Up close on a resting army and on the one under the commander's banner (the figures).
         if let state = model.state {

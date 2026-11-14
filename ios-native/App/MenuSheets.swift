@@ -173,6 +173,7 @@ struct MapDisplaySettings: View {
                 Divider2()
                 PaperSwitch(title: "暗边", on: $controller.display.darkEdges)
                 PaperSwitch(title: "舆图细节（水线、罗盘、田亩、道路）", on: Binding(get: { controller.display.mapDetail ?? true }, set: { controller.display.mapDetail = $0 }))
+                PaperSwitch(title: "战场地面（交战州按兵力分色晕染）", on: Binding(get: { controller.display.battleGround ?? true }, set: { controller.display.battleGround = $0 }))
                 Divider2()
                 PaperSlider(title: "国色浓度", value: $controller.display.colorDensity, range: 0.2...1, step: 0.1) { "\(Int($0 * 100))%" }
                     .padding(.horizontal, 16).padding(.vertical, 10)

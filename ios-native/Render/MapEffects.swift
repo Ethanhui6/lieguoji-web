@@ -65,6 +65,8 @@ final class EffectsView: UIView {
     private var claimLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var peaceLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var burstLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
+    /// 正在显示的事件印（同屏最多三方，不抢视线）。
+    private var sealIDs = Set<String>()
     private var battleArrows: [String: (root: CALayer, fill: CAShapeLayer, gradient: CAGradientLayer, outline: CAShapeLayer, head: CAShapeLayer, reveal: CAShapeLayer, a: MapEffects.Arrow)] = [:]
     private var seen = Set<String>()
     private var seenOrder: [String] = []
@@ -430,133 +432,63 @@ final class EffectsView: UIView {
                 g.timingFunction = CAMediaTimingFunction(name: .easeIn); g.fillMode = .forwards; g.isRemovedOnCompletion = false
                 mark.add(g, forKey: "fall"); root.addSublayer(mark)
             }
-        case .founded:
-            let e = CAEmitterLayer(); e.emitterPosition = CGPoint(x: 60, y: 60); e.emitterShape = .point
-            e.emitterCells = [cell(Self.spark, color: color, rate: 160, life: 1.2, velocity: 70, scale: 0.9, scaleSpeed: -0.5, alphaSpeed: -0.8, accel: 40),
-                              cell(Self.spark, color: UIColor(red: 1, green: 0.85, blue: 0.4, alpha: 1), rate: 60, life: 1.0, velocity: 50, scale: 0.6, scaleSpeed: -0.4, alphaSpeed: -0.9, accel: 40)]
-            root.addSublayer(e)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { e.birthRate = 0 }
-            let flag = CALayer(); flag.frame = CGRect(x: 48, y: 36, width: 24, height: 24)
-            if let symbol = UIImage(systemName: "flag.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold))?.withTintColor(color, renderingMode: .alwaysOriginal) {
-                flag.contents = UIGraphicsImageRenderer(size: symbol.size).image { _ in symbol.draw(at: .zero) }.cgImage
-            }
-            flag.contentsGravity = .resizeAspect
-            let rise = CABasicAnimation(keyPath: "transform.translation.y"); rise.fromValue = 14; rise.toValue = -10; rise.duration = 0.9; rise.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.2, 0.7, 1]; fade.duration = 2.2
-            let group = CAAnimationGroup(); group.animations = [rise, fade]; group.duration = 2.2; group.fillMode = .both; group.isRemovedOnCompletion = false
-            flag.add(group, forKey: "rise"); root.addSublayer(flag)
-        case .harvest:
-            // 五谷丰登: golden grain motes rise in a warm glow.
-            root.addSublayer(glow(UIColor(red: 0.98, green: 0.82, blue: 0.35, alpha: 1)))
-            root.addSublayer(motes(UIColor(red: 1, green: 0.85, blue: 0.3, alpha: 1), rate: 40, velocity: 26, angle: -.pi / 2, range: .pi / 3, accel: -10))
-        case .trade:
-            // 商路大开: coins spray out and fall.
-            root.addSublayer(glow(UIColor(red: 0.95, green: 0.75, blue: 0.3, alpha: 1)))
-            root.addSublayer(motes(UIColor(red: 1, green: 0.78, blue: 0.25, alpha: 1), rate: 60, velocity: 55, angle: -.pi / 2, range: .pi * 0.9, accel: 90))
-        case .talent:
-            // 名臣辈出: a star of light opens and turns.
-            let rays = CAShapeLayer(); rays.frame = root.bounds
-            let path = UIBezierPath()
-            for i in 0..<12 {
-                let a = Double(i) * .pi / 6, r1: Double = 8, r2: Double = i % 2 == 0 ? 34 : 22
-                path.move(to: CGPoint(x: 60 + cos(a) * r1, y: 60 + sin(a) * r1)); path.addLine(to: CGPoint(x: 60 + cos(a) * r2, y: 60 + sin(a) * r2))
-            }
-            rays.path = path.cgPath; rays.strokeColor = UIColor(red: 1, green: 0.88, blue: 0.5, alpha: 1).cgColor; rays.lineWidth = 2.2; rays.lineCap = .round
-            rays.shadowColor = rays.strokeColor; rays.shadowOpacity = 1; rays.shadowRadius = 4; rays.shadowOffset = .zero
-            let open = CABasicAnimation(keyPath: "transform.scale"); open.fromValue = 0.2; open.toValue = 1.3
-            let turn = CABasicAnimation(keyPath: "transform.rotation.z"); turn.fromValue = 0; turn.toValue = Double.pi / 3
-            let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.15, 0.6, 1]
-            let g = CAAnimationGroup(); g.animations = [open, turn, fade]; g.duration = 2.2; g.timingFunction = CAMediaTimingFunction(name: .easeOut); g.fillMode = .forwards; g.isRemovedOnCompletion = false
-            rays.add(g, forKey: "star"); root.addSublayer(rays)
-        case .disaster:
-            // 天灾: a dark cloud gathers and rain sweeps down.
-            root.addSublayer(cloud(UIColor(white: 0.25, alpha: 0.55)))
-            let rain = CAEmitterLayer(); rain.emitterPosition = CGPoint(x: 60, y: 46); rain.emitterShape = .line; rain.emitterSize = CGSize(width: 46, height: 1)
-            let drop = CAEmitterCell()
-            drop.contents = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 9)).image { _ in UIColor.white.setFill(); UIRectFill(CGRect(x: 0, y: 0, width: 2, height: 9)) }.cgImage
-            drop.color = UIColor(red: 0.55, green: 0.65, blue: 0.8, alpha: 0.8).cgColor; drop.birthRate = 70; drop.lifetime = 0.6; drop.velocity = 70; drop.emissionLongitude = .pi / 2 + 0.25; drop.scale = 0.7; drop.alphaSpeed = -1
-            rain.emitterCells = [drop]; rain.isHidden = !Self.particles; root.addSublayer(rain)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { rain.birthRate = 0 }
-        case .plague:
-            // 瘟疫: a sickly mist creeps outward.
-            root.addSublayer(cloud(UIColor(red: 0.45, green: 0.55, blue: 0.25, alpha: 0.45)))
-            root.addSublayer(motes(UIColor(red: 0.55, green: 0.7, blue: 0.3, alpha: 1), rate: 20, velocity: 14, angle: 0, range: .pi * 2, accel: 0))
-        case .regime, .coup:
-            // 革命 / 篡位: a great seal is pressed onto the capital, a ring of ink spreads.
-            let seal = CATextLayer()
-            seal.string = b.kind == .coup ? "篡" : "革"
-            seal.font = UIFont(name: "TW-Kai-98_1", size: 30) ?? UIFont.systemFont(ofSize: 30); seal.fontSize = 30
-            seal.alignmentMode = .center; seal.contentsScale = UIScreen.main.scale
-            seal.foregroundColor = UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 1).cgColor
-            seal.backgroundColor = (b.kind == .coup ? UIColor(red: 0.42, green: 0.08, blue: 0.08, alpha: 0.95) : UIColor(red: 0.75, green: 0.18, blue: 0.12, alpha: 0.95)).cgColor
-            seal.cornerRadius = 6; seal.frame = CGRect(x: 40, y: 38, width: 40, height: 40)
-            seal.borderColor = UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 0.8).cgColor; seal.borderWidth = 1.5
-            let press = CAKeyframeAnimation(keyPath: "transform.scale"); press.values = [2.6, 0.9, 1.05, 1]; press.keyTimes = [0, 0.35, 0.55, 1]
-            let tilt = CABasicAnimation(keyPath: "transform.rotation.z"); tilt.fromValue = -0.3; tilt.toValue = -0.08
-            let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.12, 0.8, 1]
-            let g = CAAnimationGroup(); g.animations = [press, tilt, fade]; g.duration = 2.4; g.fillMode = .forwards; g.isRemovedOnCompletion = false
-            seal.add(g, forKey: "stamp"); root.addSublayer(seal)
-            let ring = CAShapeLayer(); ring.frame = root.bounds
-            ring.path = UIBezierPath(ovalIn: CGRect(x: 30, y: 28, width: 60, height: 60)).cgPath
-            ring.fillColor = UIColor.clear.cgColor; ring.strokeColor = UIColor(red: 0.6, green: 0.12, blue: 0.08, alpha: 0.6).cgColor; ring.lineWidth = 3; ring.opacity = 0
-            let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.6; grow.toValue = 1.8
-            let ringFade = CAKeyframeAnimation(keyPath: "opacity"); ringFade.values = [0, 0.9, 0]; ringFade.keyTimes = [0, 0.3, 1]
-            let rg = CAAnimationGroup(); rg.animations = [grow, ringFade]; rg.duration = 1.4; rg.beginTime = CACurrentMediaTime() + 0.3; rg.fillMode = .both; rg.isRemovedOnCompletion = false
-            ring.add(rg, forKey: "ring"); root.addSublayer(ring)
-            if b.kind == .coup {
-                let slash = CAShapeLayer(); slash.frame = root.bounds
-                let sp = UIBezierPath(); sp.move(to: CGPoint(x: 28, y: 84)); sp.addLine(to: CGPoint(x: 92, y: 32))
-                slash.path = sp.cgPath; slash.strokeColor = UIColor(red: 0.85, green: 0.1, blue: 0.08, alpha: 0.9).cgColor; slash.lineWidth = 3.5; slash.lineCap = .round; slash.strokeEnd = 0
-                let cut = CABasicAnimation(keyPath: "strokeEnd"); cut.fromValue = 0; cut.toValue = 1; cut.duration = 0.25; cut.beginTime = CACurrentMediaTime() + 0.5; cut.fillMode = .forwards; cut.isRemovedOnCompletion = false
-                let gone = CABasicAnimation(keyPath: "opacity"); gone.fromValue = 1; gone.toValue = 0; gone.beginTime = CACurrentMediaTime() + 1.4; gone.duration = 0.8; gone.fillMode = .forwards; gone.isRemovedOnCompletion = false
-                slash.add(cut, forKey: "cut"); slash.add(gone, forKey: "gone"); root.addSublayer(slash)
-            }
-        case .shock:
-            for i in 0..<3 {
-                let ring = CAShapeLayer(); ring.frame = root.bounds
-                ring.path = UIBezierPath(ovalIn: CGRect(x: 40, y: 40, width: 40, height: 40)).cgPath
-                ring.fillColor = UIColor.clear.cgColor; ring.strokeColor = color.cgColor; ring.lineWidth = 3; ring.opacity = 0
-                let scale = CABasicAnimation(keyPath: "transform.scale"); scale.fromValue = 0.3; scale.toValue = 2.6
-                let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 0.9, 0]; fade.keyTimes = [0, 0.12, 1]
-                let group = CAAnimationGroup(); group.animations = [scale, fade]; group.duration = 1.3; group.beginTime = CACurrentMediaTime() + Double(i) * 0.22
-                group.timingFunction = CAMediaTimingFunction(name: .easeOut); group.fillMode = .both; group.isRemovedOnCompletion = false
-                ring.add(group, forKey: "shock"); root.addSublayer(ring)
-            }
+        default:
+            // 统一的事件语言：一圈墨晕洇开，一方一字印落下（立、战、丰、商、才、灾、疫、革、篡），节奏一致。
+            let look = Self.stampLook(b.kind, nation: color)
+            root.addSublayer(inkRing(look.ring))
+            root.addSublayer(stamp(look.mark, fill: look.fill))
         }
         return root
     }
 
-    /// A soft glow pulsing once (event effects).
-    private func glow(_ color: UIColor) -> CALayer {
-        let g = CAGradientLayer(); g.type = .radial; g.frame = CGRect(x: 20, y: 20, width: 80, height: 80)
-        g.colors = [color.withAlphaComponent(0.55).cgColor, color.withAlphaComponent(0).cgColor]; g.startPoint = CGPoint(x: 0.5, y: 0.5); g.endPoint = CGPoint(x: 1, y: 1)
-        let pulse = CAKeyframeAnimation(keyPath: "opacity"); pulse.values = [0, 1, 0.6, 0]; pulse.keyTimes = [0, 0.2, 0.6, 1]; pulse.duration = 2.2; pulse.fillMode = .forwards; pulse.isRemovedOnCompletion = false
-        let swell = CABasicAnimation(keyPath: "transform.scale"); swell.fromValue = 0.5; swell.toValue = 1.4; swell.duration = 2.2; swell.fillMode = .forwards; swell.isRemovedOnCompletion = false
-        g.add(pulse, forKey: "pulse"); g.add(swell, forKey: "swell")
-        return g
-    }
-    /// A short spray of motes (grain, coins, spores).
-    private func motes(_ color: UIColor, rate: Float, velocity: CGFloat, angle: CGFloat, range: CGFloat, accel: CGFloat) -> CAEmitterLayer {
-        let e = CAEmitterLayer(); e.emitterPosition = CGPoint(x: 60, y: 60); e.emitterShape = .circle; e.emitterSize = CGSize(width: 14, height: 14)
-        e.emitterCells = [cell(Self.spark, color: color, rate: rate, life: 1.3, velocity: velocity, range: range, scale: 0.6, scaleSpeed: -0.3, alphaSpeed: -0.7, angle: angle, accel: accel)]
-        e.isHidden = !Self.particles
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { e.birthRate = 0 }
-        return e
-    }
-    /// A cloud of puffs gathering and fading (disaster, plague).
-    private func cloud(_ color: UIColor) -> CALayer {
-        let root = CALayer(); root.frame = CGRect(x: 0, y: 0, width: 120, height: 120)
-        for (dx, dy, r) in [(-12.0, -18.0, 16.0), (4.0, -22.0, 19.0), (18.0, -16.0, 14.0), (-2.0, -12.0, 15.0)] {
-            let puff = CALayer(); puff.backgroundColor = color.cgColor; puff.cornerRadius = r
-            puff.frame = CGRect(x: 60 + dx - r, y: 60 + dy - r, width: r * 2, height: r * 2)
-            puff.shadowColor = color.cgColor; puff.shadowOpacity = 1; puff.shadowRadius = 6; puff.shadowOffset = .zero
-            let gather = CABasicAnimation(keyPath: "transform.scale"); gather.fromValue = 0.3; gather.toValue = 1.15
-            let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.25, 0.7, 1]
-            let g = CAAnimationGroup(); g.animations = [gather, fade]; g.duration = 2.4; g.timingFunction = CAMediaTimingFunction(name: .easeOut); g.fillMode = .forwards; g.isRemovedOnCompletion = false
-            puff.add(g, forKey: "cloud"); root.addSublayer(puff)
+    /// 各类事件的印文与颜色：建国用该国国色，宣战与革命用朱，天灾、瘟疫用墨与秋香，丰收、通商、名臣用赭黄。
+    static func stampLook(_ kind: MapEffects.Burst.Kind, nation: UIColor) -> (mark: String, fill: UIColor, ring: UIColor) {
+        let vermilion = UIColor(red: 0.72, green: 0.18, blue: 0.12, alpha: 1), ochre = UIColor(red: 0.72, green: 0.52, blue: 0.2, alpha: 1)
+        switch kind {
+        case .founded: return ("立", nation, nation)
+        case .shock: return ("战", vermilion, vermilion)
+        case .harvest: return ("丰", ochre, ochre)
+        case .trade: return ("商", ochre, ochre)
+        case .talent: return ("才", ochre, ochre)
+        case .disaster: return ("灾", UIColor(red: 0.22, green: 0.2, blue: 0.18, alpha: 1), UIColor(white: 0.2, alpha: 1))
+        case .plague: return ("疫", UIColor(red: 0.4, green: 0.45, blue: 0.22, alpha: 1), UIColor(red: 0.4, green: 0.45, blue: 0.22, alpha: 1))
+        case .regime: return ("革", vermilion, vermilion)
+        case .coup: return ("篡", UIColor(red: 0.42, green: 0.08, blue: 0.08, alpha: 1), vermilion)
+        case .destroyed: return ("亡", UIColor(white: 0.2, alpha: 1), UIColor(white: 0.2, alpha: 1))
         }
-        return root
     }
+    /// 一圈墨晕：由小到大洇开并淡去（1.4 秒）。
+    private func inkRing(_ color: UIColor) -> CALayer {
+        let ring = CAShapeLayer(); ring.frame = CGRect(x: 0, y: 0, width: 120, height: 120)
+        ring.path = UIBezierPath(ovalIn: CGRect(x: 34, y: 34, width: 52, height: 52)).cgPath
+        ring.fillColor = color.withAlphaComponent(0.12).cgColor; ring.strokeColor = color.withAlphaComponent(0.55).cgColor; ring.lineWidth = 2.5; ring.opacity = 0
+        ring.shadowColor = color.cgColor; ring.shadowOpacity = 0.5; ring.shadowRadius = 3; ring.shadowOffset = .zero
+        let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.5; grow.toValue = 1.6
+        let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 0.9, 0]; fade.keyTimes = [0, 0.25, 1]
+        let g = CAAnimationGroup(); g.animations = [grow, fade]; g.duration = 1.4; g.timingFunction = CAMediaTimingFunction(name: .easeOut); g.fillMode = .both; g.isRemovedOnCompletion = false
+        ring.add(g, forKey: "ink"); return ring
+    }
+    /// 一字印：与界面朱印同一印面（方形、内框细线），按下、停留、淡去（2.2 秒）。
+    private func stamp(_ mark: String, fill: UIColor) -> CALayer {
+        let size: CGFloat = 30
+        let seal = CALayer(); seal.frame = CGRect(x: 60 - size / 2, y: 58 - size / 2, width: size, height: size)
+        seal.backgroundColor = fill.withAlphaComponent(0.94).cgColor; seal.cornerRadius = size * 0.12
+        let frame = CALayer(); frame.frame = seal.bounds.insetBy(dx: size * 0.07, dy: size * 0.07); frame.cornerRadius = size * 0.08
+        frame.borderColor = UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 0.75).cgColor; frame.borderWidth = 1
+        seal.addSublayer(frame)
+        let text = CATextLayer(); text.string = mark
+        text.font = UIFont(name: "TW-Kai-98_1", size: size * 0.6) ?? UIFont.systemFont(ofSize: size * 0.6); text.fontSize = size * 0.6
+        text.alignmentMode = .center; text.contentsScale = UIScreen.main.scale
+        text.foregroundColor = UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 1).cgColor
+        text.frame = CGRect(x: 0, y: (size - size * 0.74) / 2, width: size, height: size * 0.74)
+        seal.addSublayer(text)
+        let press = CAKeyframeAnimation(keyPath: "transform.scale"); press.values = [1.6, 0.94, 1.0, 1.0]; press.keyTimes = [0, 0.16, 0.24, 1]
+        let tilt = CABasicAnimation(keyPath: "transform.rotation.z"); tilt.fromValue = -0.12; tilt.toValue = -0.07
+        let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.1, 0.75, 1]
+        let g = CAAnimationGroup(); g.animations = [press, tilt, fade]; g.duration = 2.2; g.fillMode = .forwards; g.isRemovedOnCompletion = false
+        seal.add(g, forKey: "stamp"); return seal
+    }
+
 
     /// The army's figure (UnitArt) tinted in a state's colour.
     private static var unitImages = [String: CGImage]()
@@ -642,9 +574,10 @@ final class EffectsView: UIView {
         }
         for b in effects.bursts where !seen.contains(b.id) {
             guard burstLayers.count < 24 else { continue }
+            if b.kind != .destroyed { if sealIDs.count >= 3 { continue }; sealIDs.insert(b.id) }
             let l = burstLayer(b); layer.addSublayer(l); burstLayers[b.id] = (l, b.x, b.y)
             let id = b.id
-            once(id, after: 2.6) { [weak self] in self?.burstLayers[id]?.layer.removeFromSuperlayer(); self?.burstLayers[id] = nil }
+            once(id, after: 2.6) { [weak self] in self?.burstLayers[id]?.layer.removeFromSuperlayer(); self?.burstLayers[id] = nil; self?.sealIDs.remove(id) }
         }
         for d in effects.declarations where !seen.contains(d.id) {
             guard arrowLayers.count < 8 else { continue }

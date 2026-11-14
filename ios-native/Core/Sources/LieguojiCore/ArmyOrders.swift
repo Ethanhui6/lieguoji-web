@@ -154,7 +154,13 @@ public enum ArmyOrders {
         let ids = r.nativeWars.nationIds.asArray
         guard let own = ids.first(where: { $0[1].asString == nation })?[0].asInt else { return [] }
         var out = [(nation: String, campaign: Int)]()
-        for c in r.nativeWars.campaigns.asArray where c.endedTick.isNull && !c.internal.isTruthy {
+        // 平叛 (app worlds): a civil war, rising or house's revolt is fought like any war. The original leaves
+        // internal campaigns to its garrison's rebel-province search (FindRebelProvinceWithHighPriority),
+        // which this client does not have, so both the state and its rebels kept their peacetime posts and
+        // a rebellion was never put down or pressed (1.12 measurements: most idle armies of a state at war
+        // stood on "驻守已分配的本国地区").
+        let app = !r.regimes.isNull && r.regimes.enabled.isTruthy
+        for c in r.nativeWars.campaigns.asArray where c.endedTick.isNull && (app || !c.internal.isTruthy) {
             guard let p = c.participants.asArray.first(where: { $0.stateId.asInt == own }) else { continue }
             for e in c.participants.asArray where e.side.asInt != p.side.asInt {
                 guard let id = ids.first(where: { $0[0].asInt == e.stateId.asInt })?[1].asString else { continue }

@@ -839,6 +839,7 @@ struct MapView: UIViewRepresentable {
                 lastReport = t
                 metrics.text = String(format: "  平均 %.2f ms · 1%% low %.0f fps  \n  绘制间隔（按需重绘，非 GPU 耗时）  ", stats.averageMilliseconds, stats.onePercentLow)
                     + (controller.simText.isEmpty ? "" : "\n" + controller.simText)
+                PerfLog.record(frameMs: stats.averageMilliseconds, lowFPS: stats.onePercentLow, sim: controller.simText)
             }
         }
 

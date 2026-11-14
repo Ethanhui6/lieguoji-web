@@ -62,6 +62,12 @@ struct MenuSheet: View {
                 Group2 {
                     PaperSwitch(title: "显示帧率与推演耗时", on: $controller.showMetrics)
                     Divider2()
+                    // 打开上面的开关后会记录性能日志；导出为表格文本，便于真机前后对比。
+                    Button {
+                        if !PerfLog.isEmpty, let url = PerfLog.export() { exported = ExportFile(url: url) } else { say("还没有记录：先打开「显示帧率与推演耗时」玩一会儿") }
+                    } label: { MenuRow(symbol: "waveform.path.ecg", title: "导出性能日志") }
+                    .buttonStyle(PressStyle())
+                    Divider2()
                     ResetSettingsRow(controller: controller, say: say)
                 }
                 .padding(.horizontal, 16)

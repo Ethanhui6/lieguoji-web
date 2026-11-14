@@ -44,7 +44,7 @@ public enum WarCouncil {
             }
         }
         /// Worth turning an army around for on the march.
-        public var urgent: Bool { if case .attack = self { return false }; return true }
+        public var urgent: Bool { switch self { case .attack, .stage: return false; case .defend, .hold: return true } }
         /// A refused relief can release a marching defender for another task. Ordinary attacks
         /// keep their route, so fresh plans do not repeatedly restart their progress.
         public func replaces(target: Int?, decision: String) -> Bool {

@@ -2326,6 +2326,21 @@ struct ChronicleSheet: View {
     @State private var category = "all"
     @State private var entries: [ChronicleEntry] = []
     @State private var open: String?
+    /// 岁纪 counts every kind of record, whatever category is listed below.
+    @State private var digest: [ChronicleEntry] = []
+    /// 只看一国 and 搜寻: the list narrowed to one state's records or to a word.
+    @State private var nationFilter: Int?
+    @State private var keyword = ""
+    private var shown: [ChronicleEntry] {
+        entries.filter { e in
+            (nationFilter.map { e.nations.contains($0) } ?? true) && (keyword.isEmpty || e.text.contains(keyword) || e.reason.contains(keyword))
+        }
+    }
+    private func yearLabel(_ year: Int) -> String { year > 0 ? "\(year)" : "前\(1 - year)" }
+    private var filterName: String? {
+        guard let n = nationFilter, let map = model.map, n >= 0, n < map.meta.nations.count else { return nil }
+        return MapLayers.stateLabel(map.meta.nations[n].name, full: false)
+    }
     static let categories = [("all", "要闻"), ("politics", "政权"), ("reform", "制度"), ("culture", "文化"), ("religion", "宗教"), ("war", "战争"), ("territory", "领土"), ("diplomacy", "外交"), ("family", "家族"), ("events", "天时人事")]
     private var era: String { (model.state?.era).flatMap { $0.isEmpty ? nil : $0 } ?? "公元" }
     /// The year of a day (the calendar runs 365¼ days a year from the state's current date).
@@ -2341,6 +2356,7 @@ struct ChronicleSheet: View {
                 VStack(alignment: .leading, spacing: 12) {
                     MemorialHeader(title: "纪事", subtitle: model.state?.dateText, seal: "史")
                     WorldSummary(model: model).padding(.horizontal, 16)
+                    ChronicleDigest(entries: digest, yearOf: yearOf, yearText: yearLabel).padding(.horizontal, 16)
                     // 大事记 by category: the whole chronicle (not only the latest lines), grouped by year;
                     // tap an entry for why it happened.
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -2358,7 +2374,9 @@ struct ChronicleSheet: View {
                         }
                         .padding(.horizontal, 16)
                     }
+                    ChronicleFilterBar(keyword: $keyword, nation: filterName, clearNation: { nationFilter = nil }).padding(.horizontal, 16)
                     VStack(spacing: 0) {
+                        let entries = shown
                         ScrollRod().padding(.horizontal, 6)
                         LazyVStack(alignment: .leading, spacing: 0) {
                             if entries.isEmpty { Text("尚无记载").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 20) }
@@ -2370,7 +2388,7 @@ struct ChronicleSheet: View {
                                 }
                                 Button { withAnimation(.easeOut(duration: 0.2)) { open = open == e.id ? nil : e.id } } label: {
                                     HStack(alignment: .top, spacing: 10) {
-                                        Circle().fill(color(e.kind)).frame(width: 7, height: 7).padding(.top, 8)
+                                        KindSeal(kind: .of(e.kind), size: 20).padding(.top, 1)
                                         VStack(alignment: .leading, spacing: 3) {
                                             Text(e.text).font(Theme.kai(16)).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true).multilineTextAlignment(.leading)
                                             if open == e.id, !e.reason.isEmpty {
@@ -2380,20 +2398,24 @@ struct ChronicleSheet: View {
                                         Spacer(minLength: 0)
                                         if i == 0 { Seal(text: "新", size: 22) }
                                     }
-                                    .padding(.horizontal, 18).padding(.vertical, 8).contentShape(Rectangle())
+                                    .padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 3).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
+                                ChronicleEntryMeta(entry: e, map: model.map, today: model.state?.day ?? e.day) { n in
+                                    withAnimation(.easeOut(duration: 0.2)) { nationFilter = nationFilter == n ? nil : n }
+                                }
+                                .padding(.leading, 48).padding(.trailing, 18).padding(.bottom, 7)
                                 if open == e.id, let place = e.province {
                                     Button { fly(place) } label: {
                                         HStack(spacing: 5) {
                                             Image(systemName: "scope").font(.system(size: 12))
                                             Text("在舆图上查看").font(Theme.kai(13))
                                         }
-                                        .foregroundStyle(Theme.seal).padding(.leading, 35).padding(.bottom, 8)
+                                        .foregroundStyle(Theme.seal).padding(.leading, 48).padding(.bottom, 8)
                                     }
                                     .buttonStyle(PressStyle())
                                 }
-                                if i < entries.count - 1 { Rectangle().fill(Theme.ink.opacity(0.08)).frame(height: 0.7).padding(.leading, 35).padding(.trailing, 18) }
+                                if i < entries.count - 1 { Rectangle().fill(Theme.ink.opacity(0.08)).frame(height: 0.7).padding(.leading, 48).padding(.trailing, 18) }
                             }
                         }
                         .padding(.vertical, 8)
@@ -2410,9 +2432,7 @@ struct ChronicleSheet: View {
         }
         .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) { unrolled = true } }
         .task(id: "\(category)-\((model.state?.day ?? 0) / 30)") { entries = await model.chronicle(category) }
-    }
-    private func color(_ kind: String) -> Color {
-        switch kind { case "war", "battle", "uprising", "civilWar", "rebellion": return Theme.seal; case "peace", "diplomacy": return Theme.jade; default: return Theme.ink2.opacity(0.6) }
+        .task(id: (model.state?.day ?? 0) / 30) { digest = await model.chronicle("all") }
     }
 }
 

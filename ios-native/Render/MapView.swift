@@ -1119,7 +1119,10 @@ final class MapLabelsView: UIView {
         // Enlarged capital names (the map seen from afar) give way to the state names; at their own size
         // (close up) they come first, as before.
         let enlarged = capitalNames.first.map { $0.mapEm * camera.scale < $0.floorPoints } ?? false
-        let order = enlarged ? custom + nations + capitalNames + otherCities : custom + capitalNames + nations + otherCities
+        // 国名先排、都城名其次：首都圈已最先占位，国名不会盖住首都标记；都城名若与国名相撞，先换到圈下方再试。
+        // （都城名排在国名前时，近看能显示的都城名会把附近的大国名挤掉，边界一动国名就时隐时现。）
+        _ = enlarged
+        let order = custom + nations + capitalNames + otherCities
         for l in order {
             var points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)
             var p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
@@ -1146,9 +1149,17 @@ final class MapLabelsView: UIView {
                 l.view.sizeToFit()
             }
             let k = CGFloat(points / l.rendered), image = l.view.image?.size ?? .zero
-            let box = Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: image.width * k / 2, halfH: image.height * k / 2, cosine: CGFloat(cos(l.angle)), sine: CGFloat(sin(l.angle)), nation: l.province == nil, text: l.text)
+            var box = Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: image.width * k / 2, halfH: image.height * k / 2, cosine: CGFloat(cos(l.angle)), sine: CGFloat(sin(l.angle)), nation: l.province == nil, text: l.text)
             let margin: CGFloat = l.view.isHidden ? 6 : 0
-            if taken.contains(where: { Self.clash($0, box, margin: margin) }) { l.view.isHidden = true; continue }
+            if taken.contains(where: { Self.clash($0, box, margin: margin) }) {
+                // 都城名：上方被占时改写在首都圈下方。
+                guard let anchor = l.anchorY else { l.view.isHidden = true; continue }
+                let at = camera.toScreen(x: l.x, y: anchor, viewport: vp)
+                let below = at.y + (max(ring, 3) + 3 + 7 + points * 0.78)
+                box = Box(x: CGFloat(p.x), y: CGFloat(below), halfW: box.halfW, halfH: box.halfH, cosine: box.cosine, sine: box.sine, nation: box.nation, text: box.text)
+                if taken.contains(where: { Self.clash($0, box, margin: margin) }) { l.view.isHidden = true; continue }
+                p = (x: p.x, y: below)
+            }
             taken.append(box)
             l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: k, y: k)
             l.view.center = CGPoint(x: p.x, y: p.y)

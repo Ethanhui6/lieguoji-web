@@ -81,9 +81,13 @@ extension MapRenderer {
             seen.insert(b.province)
             var g = grounds.list[b.province] ?? GroundBook.Ground(province: b.province, center: mesh.2, radius: mesh.3, index: mesh.0, count: mesh.1, slots: [])
             g.ending = false; g.alphaTarget = 1
-            let total = max(1, b.camps.reduce(0) { $0 + $1.troops })
+            var sum: Float = 0
+            for camp in b.camps { sum += camp.troops }
+            let total: Float = max(1, sum)
             // 每营的锚点：从战场中心朝该营军队所在方向，推到州的边缘附近（颜色从那一侧进来）。
-            let middle = b.camps.reduce(SIMD2<Float>(0, 0)) { $0 + $1.toward * $1.troops } / total
+            var weighted = SIMD2<Float>(0, 0)
+            for camp in b.camps { weighted += camp.toward * camp.troops }
+            let middle: SIMD2<Float> = weighted / total
             var next = [GroundBook.Slot]()
             for (i, camp) in b.camps.prefix(GroundBook.maxCamps).enumerated() {
                 var dir = camp.toward - middle

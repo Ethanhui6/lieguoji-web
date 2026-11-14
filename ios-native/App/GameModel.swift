@@ -1021,7 +1021,7 @@ import LieguojiCore
         var out = [(ground: BattleGround, total: Float)]()
         for (province, members) in byProvince {
             var troops = [Int: Float](), sum = [Int: SIMD2<Float>]()
-            for i in members { let a = s.armies[i]; let t = Float(max(1, a.troops)); troops[a.nation, default: 0] += t; sum[a.nation, default: .zero] += SIMD2(a.x, a.y) * t }
+            for i in members { let a = s.armies[i]; let t = Float(max(1, a.troops)); troops[a.nation, default: 0] += t; sum[a.nation, default: SIMD2<Float>(0, 0)] += SIMD2<Float>(a.x, a.y) * t }
             var camps = [(lead: Int, members: [Int])]()
             for n in troops.keys.sorted(by: { troops[$0]! != troops[$1]! ? troops[$0]! > troops[$1]! : $0 < $1 }) {
                 if let k = camps.firstIndex(where: { camp in !camp.members.contains { s.atWar(n, $0) } }) { camps[k].members.append(n) }
@@ -1029,12 +1029,16 @@ import LieguojiCore
             }
             guard camps.count >= 2 else { continue }
             let list = camps.map { camp -> BattleGround.Camp in
-                let t = camp.members.reduce(Float(0)) { $0 + troops[$1]! }, at = camp.members.reduce(SIMD2<Float>.zero) { $0 + sum[$1]! } / max(1, t)
+                var t: Float = 0, weighted = SIMD2<Float>(0, 0)
+                for m in camp.members { t += troops[m] ?? 0; weighted += sum[m] ?? SIMD2<Float>(0, 0) }
+                let at: SIMD2<Float> = weighted / max(1, t)
                 return BattleGround.Camp(nation: camp.lead, toward: at, troops: t)
             }
-            out.append((BattleGround(province: province, camps: list), list.reduce(0) { $0 + $1.troops }))
+            let total: Float = list.reduce(Float(0)) { $0 + $1.troops }
+            out.append((BattleGround(province: province, camps: list), total))
         }
-        return out.sorted { $0.total != $1.total ? $0.total > $1.total : $0.ground.province < $1.ground.province }.map(.ground)
+        let ranked = out.sorted { a, b in a.total != b.total ? a.total > b.total : a.ground.province < b.ground.province }
+        return ranked.map { $0.ground }
     }
     /// 军队状态的一字标记（与军事页的分类一致）；驻扎不动的军队不标。
     static func stateMark(_ a: GameState.Army) -> String? {

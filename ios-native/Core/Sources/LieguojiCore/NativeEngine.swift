@@ -11,6 +11,8 @@ public final class NativeEngine {
     let statics: JS
     /// The statics' label grid as arrays (NativeView.labels).
     var labelGridCache: (points: [Double], cells: [Int])?
+    /// 同盟图：每个同盟用过的墨色序号（只供显示，不入存档）。同一局里同盟颜色不因别的同盟解散或成立而改变。
+    var allianceInk = [String: Int]()
 
     /// Catalogs shared by every world: native character traits, family naming by culture and the
     /// opening cultures (Resources/Catalog, Resources/World/cultures.json).

@@ -3,6 +3,10 @@ import Foundation
 /// The original's colour views (ViewManager.ColorViewMode, culture47-views viewGroups47 /
 /// provinceColors47) and statistics panel (StatisticsInfoUI, statistics47), from the Swift run.
 extension NativeEngine {
+    /// 同盟墨色：朱、靛、石绿、藤黄、紫、青、赭、群青、胭脂、橄榄——彼此分明，压在淡纸色上一眼可辨。
+    static let allianceInks = ["#b5442f", "#2f6f8f", "#5c8a3a", "#c68a1d", "#7a4a8c", "#2f8a7a", "#a35a2a", "#4a5a9a", "#8a2f4f", "#6a7a2a"]
+    /// 不在同盟的国家：淡纸色。
+    static let unaligned = "#e6ddca"
     static let familyPalette = ["#dababf", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#c6b9c1", "#bc80bd", "#ccebc5", "#ffed6f", "#8dd3c7", "#eb8de7", "#FF9FAF", "#68C3DB", "#F7C3C7", "#F5E14D", "#FC61B3", "#A7A7FF", "#70DB8E", "#E6B03F", "#8AB821", "#C19D83", "#ACDEC4", "#E3CDA5", "#BA7AE2", "#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f", "#e5c494", "#b3b3b3"]
     static let cultureIds = ["chinese", "japanese", "english", "arab", "roman", "french", "german", "greek", "persian", "slavic", "norse", "indian", "korean", "mongol", "turkic", "egyptian", "spanish", "italian", "vietnamese", "tibetan", "hungarian", "polish", "portuguese", "dutch", "aztec", "inca"]
     static let cultureNames = ["chinese": "中华", "japanese": "日本", "english": "英格兰", "arab": "阿拉伯", "roman": "罗马", "french": "法兰西", "german": "日耳曼", "greek": "希腊", "persian": "波斯", "slavic": "斯拉夫", "norse": "北欧", "indian": "印度", "korean": "朝鲜", "mongol": "蒙古", "turkic": "突厥", "egyptian": "埃及", "spanish": "西班牙", "italian": "意大利", "vietnamese": "越南", "tibetan": "吐蕃", "hungarian": "匈牙利", "polish": "波兰", "portuguese": "葡萄牙", "dutch": "尼德兰", "aztec": "阿兹特克", "inca": "印加"]
@@ -34,7 +38,6 @@ extension NativeEngine {
         var cityOf = [String: String](); for c in w.cities.asArray { cityOf[c.provinceId.asString] = c.id.asString }
         var holder = [String: String]()
         if !r.nobility.isNull { for (id, fam) in r.nobility.families.objectEntries { for p in fam.controlledProvinces.asArray { holder[p.asString] = id } } }
-        var owned = [String: Int](); for p in provinces { owned[p.controller.optionalString ?? "", default: 0] += 1 }
         var fills = [String](), legend = [(key: String, name: String, color: String, count: Int)](), groupOf = [Int]()
         func add(_ key: String?, _ name: @autoclosure () -> String, _ c: @autoclosure () -> String) -> String {
             guard let key else { groupOf.append(-1); return "#ffffff" }
@@ -50,6 +53,31 @@ extension NativeEngine {
         func band(_ v: Double) -> Int { guard !sortedPop.isEmpty else { return 0 }; let rank = sortedPop.firstIndex { $0 >= v } ?? sortedPop.count - 1; return min(4, rank * 5 / max(1, sortedPop.count)) }
         let bandNames = ["人烟稀少", "人口疏落", "人口中等", "人口稠密", "繁华富庶"], bandColors = ["#f3ead2", "#e8d29a", "#d9b25f", "#c08a3a", "#8f5a22"]
         if mode == "region" { Districts.ensure(r) }
+        // 同盟图：先收齐在世的同盟（按 ID 排序），各取一种互不相同、按 ID 稳定的墨色；成员进出不改颜色。
+        var pacts = [(id: String, name: String, color: String, members: [Int])](), pactOf = [String: Int]()
+        if mode == "alliance" {
+            var index = [String: Int](); for (i, n) in nations.enumerated() { index[n.id.asString] = i }
+            var seen = [String: JS]()
+            for n in nations { if let a = Vassals.allianceOf(r, n.id.asString), let id = a.id.optionalString ?? a.id.optionalNumber.map({ String(Int($0)) }) { seen[id] = a } }
+            // 已有墨色的同盟先保留原色，新同盟再从空着的颜色里按 ID 取。
+            allianceInk = allianceInk.filter { seen[$0.key] != nil }
+            var used = Set(allianceInk.values), slots = allianceInk
+            for id in seen.keys.sorted() where slots[id] == nil {
+                var slot = Int(Opening.hash("alliance/" + id) % UInt32(Self.allianceInks.count))
+                if used.count < Self.allianceInks.count { while used.contains(slot) { slot = (slot + 1) % Self.allianceInks.count } }
+                used.insert(slot); slots[id] = slot
+            }
+            allianceInk = slots
+            for id in seen.keys.sorted() {
+                let a = seen[id]!, slot = slots[id]!
+                let members = a.members.asArray.compactMap { $0.optionalString.flatMap { index[$0] } }
+                let custom = a.color.optionalString.flatMap { $0.isEmpty ? nil : $0 }
+                pactOf[id] = pacts.count
+                pacts.append((id, a.name.optionalString.flatMap { $0.isEmpty ? nil : $0 } ?? "同盟", custom ?? Self.allianceInks[slot], members))
+                for m in members { pactOf["nation:" + nations[m].id.asString] = pacts.count - 1 }
+            }
+        }
+        var pactGroup = [Int]()
         for p in provinces {
             let controller = p.controller.optionalString ?? ""
             switch mode {
@@ -59,13 +87,14 @@ extension NativeEngine {
                 let name = rid.flatMap { i in i < r.regimes.regions.list.length ? r.regimes.regions.list[i].name.optionalString : nil } ?? ""
                 fills.append(add(rid.map { "region:\($0)" }, name, Self.familyPalette[(rid ?? 0) % Self.familyPalette.count]))
             case "alliance":
-                // The alliance colour is its strongest member's; every state keeps its own name.
-                if let a = Vassals.allianceOf(r, controller) {
-                    // The strongest member (most provinces; the first listed on a tie).
-                    var strongest = controller, most = -1
-                    for m in a.members.asArray { let id = m.optionalString ?? "", n = owned[id] ?? 0; if n > most { most = n; strongest = id } }
-                    fills.append(add("alliance:" + (a.id.optionalString ?? ""), a.name.optionalString ?? "同盟", (a.color.optionalString.flatMap { $0.isEmpty ? nil : $0 }) ?? color[strongest] ?? "#999999"))
-                } else { fills.append(add("state:" + controller, nameOf(controller), color[controller] ?? "#999999")) }
+                // 同盟各用其墨色；不在同盟的国家一律淡纸色（只为衬托阵营），名字仍写在各自国土上。
+                if let k = pactOf["nation:" + controller] {
+                    let a = pacts[k]
+                    fills.append(add("alliance:" + a.id, a.name, a.color)); pactGroup.append(k)
+                } else {
+                    fills.append(add("none", "不在同盟", Self.unaligned))
+                    pactGroup.append(controller.isEmpty ? -1 : pacts.count + (nations.firstIndex { $0.id.asString == controller } ?? -pacts.count - 1))
+                }
             case "culture":
                 let c = cityOf[p.id.asString].flatMap { r.civilization.cities[$0].cultureId.optionalString } ?? r.civilization.nations[controller].cultureId.optionalString
                 fills.append(add(c.map { "culture:" + $0 }, r.regimes.cultures[c ?? ""].name.optionalString ?? Self.cultureNames[c ?? ""] ?? c ?? "", Self.familyPalette[(Self.cultureIds.firstIndex(of: c ?? "") ?? 0) % Self.familyPalette.count]))
@@ -104,6 +133,25 @@ extension NativeEngine {
                 guard legend.indices.contains(g), !legend[g].name.isEmpty else { return nil }
                 box.name = JS(legend[g].name); box.color = JS(legend[g].color); return box
             })
+        }
+        if mode == "alliance" {
+            // 地图上：同盟区域写同盟名，其余国家写本国名；图例只列同盟（附成员），末尾一行「不在同盟」。
+            o.labels = .array(labels(pactGroup).asArray.compactMap { box -> JS? in
+                let g = box.nation.asInt
+                if g >= 0 && g < pacts.count { box.name = JS(pacts[g].name); box.color = JS(pacts[g].color); return box }
+                let n = g - pacts.count
+                guard nations.indices.contains(n), let name = nations[n].name.optionalString, !name.isEmpty else { return nil }
+                box.name = JS(name); box.color = JS(color[nations[n].id.asString] ?? "#999999"); return box
+            })
+            let counted = legend.filter { $0.key.hasPrefix("alliance:") }.sorted { $0.count != $1.count ? $0.count > $1.count : $0.key < $1.key }
+            var rows = counted.map { e -> JS in
+                let x = JS.object(); x.name = JS(e.name); x.color = JS(e.color); x.count = JS(e.count); x.key = JS(e.key)
+                if let k = pactOf[String(e.key.dropFirst("alliance:".count))] { x.members = .array(pacts[k].members.map { JS($0) }) }
+                return x
+            }
+            if let none = legend.first(where: { $0.key == "none" }) { let x = JS.object(); x.name = JS(none.name); x.color = JS(none.color); x.count = JS(none.count); x.key = JS("none"); rows.append(x) }
+            o.legend = .array(rows)
+            return Data(o.json.utf8)
         }
         o.legend = .array(legend.sorted { $0.count != $1.count ? $0.count > $1.count : $0.name < $1.name }.map { e in let x = JS.object(); x.name = JS(e.name); x.color = JS(e.color); x.count = JS(e.count); return x })
         return Data(o.json.utf8)

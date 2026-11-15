@@ -355,6 +355,9 @@ struct MapView: UIViewRepresentable {
             mtk.clearColor = MTLClearColor(red: 0.87, green: 0.82, blue: 0.77, alpha: 1)
             mtk.isPaused = true
             mtk.enableSetNeedsDisplay = true
+            // 与国名、军队字、特效等 UIKit 图层同一事务呈现：以前 Metal 画面晚一帧上屏，缩放、拖动时
+            // 名字与边界、军旗与兵力字相互错开（割裂）。现在同一次相机变更的各层在同一帧出现。
+            mtk.presentsWithTransaction = true
             mtk.preferredFramesPerSecond = 120
             mtk.autoResizeDrawable = true
             // 地图清晰度 (default 2×): on a 3× screen the map (drawn with 4× multisampling) cost more than twice
@@ -600,13 +603,17 @@ struct MapView: UIViewRepresentable {
                 if let province { impact.impactOccurred(); controller.onGroupTarget?(province) }
                 return
             }
-            // An army icon under the finger (14 points) takes the tap before the province.
-            if controller.armies != nil, let placed = renderer?.placedSprites() {
+            // An army icon under the finger takes the tap before the province. 命中检测与绘制同一位置：
+            // 同处多军排成小圆环时按各自的座位偏移（以前用未偏移的中心，密集时点到的不是看到的那支）；
+            // 半径随图标屏幕尺寸，至少 16 点。
+            if controller.armies != nil, let renderer {
+                let placed = renderer.placedSprites()
+                let icon = MapRenderer.iconPoints(camera.scale, iconScale: controller.play.iconScale), reach = max(16, icon * 0.6)
                 var best: (army: Int, d: Double)?
                 for a in placed where a.sprite.army > -100_000 {
-                    let s = camera.toScreen(x: Double(a.x), y: Double(a.y), viewport: viewport)
-                    let d = hypot(s.x - Double(p.x), s.y - Double(p.y))
-                    if d < 16, best == nil || d < best!.d { best = (a.sprite.army, d) }
+                    let s = camera.toScreen(x: Double(a.x), y: Double(a.y), viewport: viewport), o = renderer.spread[a.sprite.key] ?? .zero
+                    let d = hypot(s.x + Double(o.x) * icon - Double(p.x), s.y + Double(o.y) * icon - Double(p.y))
+                    if d < reach, best == nil || d < best!.d { best = (a.sprite.army, d) }
                 }
                 if let best { selection.selectionChanged(); if best.army < 0 { controller.selectedFleet = -best.army - 1 } else { controller.selectedArmy = best.army }; return }
             }
@@ -1186,11 +1193,11 @@ final class TroopLabelsView: UIView {
     var iconScale = 1.0
     var isEmpty: Bool { layers.isEmpty }
     /// Whether banners are large enough at this zoom to carry a mark.
-    func shows(_ camera: MapCamera) -> Bool { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * max(camera.scale, 14.0 / 3.01) >= 22 }
+    func shows(_ camera: MapCamera) -> Bool { MapRenderer.iconPoints(camera.scale, iconScale: iconScale) >= 22 }
     func update(_ placed: [(sprite: MapRenderer.ArmySprite, x: Float, y: Float)], camera: MapCamera, viewport: CGSize, spread: [String: SIMD2<Float>] = [:]) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // Icon size on screen (the renderer's icon size in map units × scale).
-        let icon = 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * max(camera.scale, 14.0 / 3.01)
+        let icon = MapRenderer.iconPoints(camera.scale, iconScale: iconScale)
         var seen = Set<String>()
         CATransaction.begin(); CATransaction.setDisableActions(true)
         // Banner marks only when the banner is big enough to carry a character.

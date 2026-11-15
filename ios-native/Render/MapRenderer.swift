@@ -216,7 +216,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         return true
     }
 
-    /// A small battlement beside each fortified city (above right of its mark), in ink with a light inner wall.
+    /// 手绘河流（玩家在编辑器里画的）。
     private var extraRivers: (buffer: MTLBuffer, count: Int)?
     /// 舆图细节 (MapDetail.swift): the chart ornaments, and what shows only when zoomed in.
     private var ornaments: (buffer: MTLBuffer, count: Int)?
@@ -501,6 +501,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Where every icon is drawn right now (mid-walk included), for taps and troop labels.
+    /// 军队图标的缩放系数（屏幕点 / 图标基准尺寸），与着色器 spriteVertex 同一规则。
+    static func iconZoom(_ scale: Double) -> Double { min(26 / 3.0112, max(11 / 3.0112, scale * 0.8)) }
+    /// 一支军队主图标在屏幕上的边长（点）。
+    static func iconPoints(_ scale: Double, iconScale: Double) -> Double { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * iconZoom(scale) }
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
         armySprites.map { s in let p = displayed(s); return (s, p.x, p.y) }
     }
@@ -792,6 +796,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
         }
+        // 手绘河流与天然河流同层（以前画在最后，压在国界、城池和军队上面）。
+        if reveal > 0.42 { colored(extraRivers, alpha: ramp(0.42)) }
         if display.seaRoutes { colored(seaLanes, alpha: ramp(0.7)) }
         if display.gridLines == true && reveal >= 1 { colored(gridLines) }
         let chart = display.mapDetail ?? true
@@ -814,7 +820,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
         }
         }
-        colored(extraRivers)
         // The original's mounting (a paper band and black rules along the edge) read as a hard brown frame
         // on a phone screen; the scroll edge below (a soft aged wash) frames the map instead.
         _ = mount
@@ -825,8 +830,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         if display.darkEdges { colored(frame) }
         encoder.endEncoding()
-        buffer.present(drawable)
-        buffer.commit()
+        if view.presentsWithTransaction {
+            // 同事务呈现：提交后等到排入 GPU 再呈现，画面与同一事务里的 UIKit 图层一起上屏。
+            buffer.commit()
+            buffer.waitUntilScheduled()
+            drawable.present()
+        } else {
+            buffer.present(drawable)
+            buffer.commit()
+        }
         onDraw?(CACurrentMediaTime())
     }
 
@@ -924,7 +936,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // Marks at least 22 points tall (an army mark is 5 map units), so whose army it is reads at
         // every zoom; banner and pips keep their proportions. The shift (in the quad's own size)
         // places the banner and the pips around the army's point.
-        float pixels = s.size * max(u.scale, 14.0 / 3.01);
+        // 屏幕尺寸规则（与 MapRenderer.iconZoom 一致）：远景 11 点、随缩放增长、近景封顶 26 点，
+        // 远看不再盖住战线与地名，近看不会大到遮住整州。
+        float pixels = s.size * clamp(u.scale * 0.8, 11.0 / 3.0112, 26.0 / 3.0112);
         // Alpha below zero: the icon fades in over the leg (new and re-formed armies).
         // Alpha −2: an army that fell fades out over the leg.
         float4 tint = float4(s.tint); if (tint.a < -1.5) tint.a = 1.0 - progress; else if (tint.a < 0.0) tint.a = progress;

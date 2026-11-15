@@ -163,6 +163,8 @@ enum ShotTour {
         model.pause(saving: false)
         await profilePausedPanels(model, show: show)
         views(true); await wait(1); await shoot("07-views"); views(false)
+        // 同盟图：同盟墨色、淡纸色底、同盟名与图例。
+        model.mapView = .alliance; await wait(2.2); await shoot("07b-alliance-view"); model.mapView = .state; await wait(0.8)
         let nation = model.state?.nations.indices.max { (model.state?.nations[$0].provinces ?? 0) < (model.state?.nations[$1].provinces ?? 0) } ?? 0
         let panels: [(String, Panel)] = [("10-nations", .nations), ("11-nation", .nation(nation)),
                                          ("12-military", .military), ("13-army", .army(0)), ("14-diplomacy", .diplomacy), ("15-chronicle", .chronicle),

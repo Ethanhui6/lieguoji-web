@@ -243,6 +243,8 @@ struct MapViewSwitcher: View {
 struct MapViewLegend: View {
     let mode: MapViewMode
     let legend: [MapViewData.Entry]
+    /// 点一行（带成员的同盟）：查看成员。
+    var open: ((MapViewData.Entry) -> Void)? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
@@ -258,7 +260,10 @@ struct MapViewLegend: View {
                     Text(e.name.isEmpty ? "—" : e.name).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(1)
                     Spacer(minLength: 4)
                     Text("\(e.count)省").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    if e.members != nil && open != nil { Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.ink2.opacity(0.6)) }
                 }
+                .frame(minHeight: 22).contentShape(Rectangle())
+                .onTapGesture { if e.members != nil { open?(e) } }
                 .transition(.opacity.combined(with: .move(edge: .leading)))
             }
         }
@@ -270,7 +275,8 @@ struct MapViewLegend: View {
 }
 
 struct MapViewData: Decodable {
-    struct Entry: Decodable, Equatable { let name: String; let color: String; let count: Int }
+    /// key：「alliance:ID」「none」等；members：同盟成员的国家序号（同盟图）。
+    struct Entry: Decodable, Equatable { let name: String; let color: String; let count: Int; var key: String? = nil; var members: [Int]? = nil }
     let fills: [String]
     let legend: [Entry]
     /// Group name boxes (culture, family, religion views); nil keeps the state names.

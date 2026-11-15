@@ -63,6 +63,8 @@ struct GameView: View {
     @ObservedObject var model: GameModel
     @ObservedObject private var controller: MapController
     @State private var panel: Panel?
+    /// 同盟图例点开的成员表。
+    @State private var legendMenu: PressMenu?
     /// Pages the open sheet came from: one sheet stays up and its pages slide in place (返回 goes back).
     @State private var trail: [Panel] = []
     /// The last page shown, kept while the sheet slides away so it does not go blank.
@@ -173,11 +175,12 @@ struct GameView: View {
         }
         .overlay(alignment: .bottomLeading) {
             if !model.viewLegend.isEmpty {
-                MapViewLegend(mode: model.mapView, legend: model.viewLegend).padding(.leading, landscape ? 84 : 14).padding(.bottom, landscape ? 40 : model.state?.events.isEmpty == false ? 120 : 80)
+                MapViewLegend(mode: model.mapView, legend: model.viewLegend, open: { allianceMenu($0) }).padding(.leading, landscape ? 84 : 14).padding(.bottom, landscape ? 40 : model.state?.events.isEmpty == false ? 120 : 80)
                     .transition(.asymmetric(insertion: .scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity), removal: .opacity))
             }
         }
         .animation(Motion.panel, value: model.viewLegend)
+        .pressMenuHost($legendMenu)
         .overlay(alignment: .topTrailing) {
             MapViewSwitcher(mode: $model.mapView, open: $viewsOpen).allowsHitTesting(viewsOpen).padding(.top, 52).padding(.trailing, 14)
         }
@@ -318,6 +321,15 @@ struct GameView: View {
             if let panel { trail.append(panel); if trail.count > 8 { trail.removeFirst() } }
             panel = next
         }
+    }
+    /// 同盟图例：列出同盟成员，点成员看其国家页，末项看外交总览。
+    private func allianceMenu(_ e: MapViewData.Entry) {
+        guard let members = e.members, let map = model.map else { return }
+        var items = members.filter { map.meta.nations.indices.contains($0) }.map { n in
+            PressMenuItem(title: map.meta.nations[n].name, symbol: "flag") { show(.nation(n)) }
+        }
+        items.append(PressMenuItem(title: "外交总览", symbol: "globe.asia.australia") { show(.diplomacy) })
+        legendMenu = PressMenu(title: e.name, subtitle: "\(members.count) 国 · \(e.count) 州", items: items)
     }
     /// A map pick or a bottom tab starts a fresh docket (no trail); an open sheet slides to it.
     private func show(_ next: Panel) {

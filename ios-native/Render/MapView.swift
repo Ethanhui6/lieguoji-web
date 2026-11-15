@@ -988,11 +988,11 @@ final class MapLabelsView: UIView {
     /// Where the capitals stand: their marks (the original's rings, MapLayers.cityIcons) are kept clear
     /// of every name, and their own names are placed before the state names, so a state's name never
     /// covers its capital.
-    private var capitals: [(x: Double, y: Double)] = []
+    private var capitals: [(x: Double, y: Double, nation: Int)] = []
     /// The capital names' vermilion (one instance, so the layout can tell those names apart).
     static let capitalInk = UIColor(red: 0.62, green: 0.1, blue: 0.07, alpha: 1)
     private func setSeals(_ map: WorldMap) {
-        capitals = zip(map.meta.cities, MapLayers.cityMarks(map)).filter { $0.1 == .capital }.map { c, _ in (Double(c.x), Double(c.y)) }
+        capitals = zip(map.meta.cities, MapLayers.cityMarks(map)).filter { $0.1 == .capital }.map { c, _ in (Double(c.x), Double(c.y), map.meta.provinces.indices.contains(c.province) ? map.meta.provinces[c.province].nation : -1) }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
@@ -1137,7 +1137,7 @@ final class MapLabelsView: UIView {
                 let p = camera.toScreen(x: c.x, y: c.y, viewport: vp)
                 guard p.x > -40, p.y > -40, p.x < vp.width + 40, p.y < vp.height + 40 else { continue }
                 let half = CGFloat(max(ring, 3) + 3)
-                taken.append(NameFit.Box(x: p.x, y: p.y, halfW: Double(half), halfH: Double(half), angle: 0, nation: false, text: ""))
+                taken.append(NameFit.Box(x: p.x, y: p.y, halfW: Double(half), halfH: Double(half), angle: 0, nation: false, text: "capital:\(c.nation)"))
             }
         }
         let capitalNames = showCities ? cities.filter { $0.fill === Self.capitalInk } : []
@@ -1186,7 +1186,10 @@ final class MapLabelsView: UIView {
                 }
                 // 字号下限：缩小后的字仍要看得清（国名约 6 pt，分组名同）。
                 if l.view.isHidden && CACurrentMediaTime() - l.gaveWayAt < 1.0 { continue }
-                guard let fit = NameFit.place(box, taken: taken, margin: margin, minHalfH: max(l.minPoints, 6) * 0.62, preferred: l.slot, inside: inside) else {
+                // 最后一招：单州小国的名字压在自己的首都标记上也比看不到好（别国的首都圈仍要避让）。
+                let own = l.nation.map { "capital:\($0)" }
+                guard let fit = NameFit.place(box, taken: taken, margin: margin, minHalfH: max(l.minPoints, 6) * 0.62, preferred: l.slot, inside: inside)
+                        ?? own.flatMap({ o in NameFit.place(box, taken: taken.filter { $0.text != o }, margin: margin, minHalfH: max(l.minPoints, 6) * 0.62, preferred: l.slot, inside: inside) }) else {
                     if !l.view.isHidden { l.gaveWayAt = CACurrentMediaTime(); recheckSoon() }
                     l.view.isHidden = true; l.slot = nil; continue
                 }

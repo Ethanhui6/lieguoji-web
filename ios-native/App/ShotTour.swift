@@ -386,7 +386,11 @@ enum ShotTour {
             var seen = shown().contains(label(n))
             // 小国要放大才放得下名字，大国要缩小才不出屏：先放大一档，再依次缩小。
             for factor in [2.5, 0.18, 0.45] where !seen { model.controller.zoom(factor); await wait(1.2); seen = shown().contains(label(n)) }
-            if seen { closeUp.append(label(n)); if closeUp.count == 1 { await shoot("03d-names-close") } } else { missing.append(label(n)) }
+            if seen { closeUp.append(label(n)); if closeUp.count == 1 { await shoot("03d-names-close") } } else {
+                missing.append(label(n))
+                // 仍看不到：放大到最近处留一张图，便于看清是被什么挡住。
+                if missing.count == 1 { model.controller.zoom(6); await wait(1.2); await shoot("03e-name-missing") }
+            }
         }
         let report: [String: Any] = ["alive": alive.count, "overview": alive.filter { overview.contains(label($0)) }.count, "closeUp": closeUp, "missing": missing]
         if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {

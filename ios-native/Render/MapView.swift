@@ -910,6 +910,8 @@ final class MapLabelsView: UIView {
         var nation: Int?
         /// 上一帧所用的排布候选（NameFit.candidates 的序号）：先试它，名字不来回跳。
         var slot: Int?
+        /// 国名因相撞让位的时刻：让位后至少隐去 1 秒才重新排（不在边界变动时一隐一现地闪）。
+        var gaveWayAt: CFTimeInterval = -10
         init(text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?) {
             self.text = text; self.x = x; self.y = y; self.mapEm = mapEm; self.fill = fill; self.stroke = stroke; self.strokeWidth = strokeWidth; self.minPoints = minPoints; self.province = province
         }
@@ -1101,7 +1103,21 @@ final class MapLabelsView: UIView {
     }
 
     /// 名字的屏幕框与相撞判定见 LieguojiCore.NameFit（与测试共用）。
+    private var lastLayout: (camera: MapCamera, viewport: CGSize)?
+    private var recheckPending = false
+    /// 有国名刚让位：1 秒后按当时的镜头再排一次，让位的名字在空出来时回来（镜头不动、推演暂停时也一样）。
+    private func recheckSoon() {
+        guard !recheckPending else { return }
+        recheckPending = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.05) { [weak self] in
+            guard let self else { return }
+            self.recheckPending = false
+            if let l = self.lastLayout { self.update(camera: l.camera, viewport: l.viewport) }
+        }
+    }
+
     func update(camera: MapCamera, viewport: CGSize) {
+        lastLayout = (camera, viewport)
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // 避让: the biggest names first; a name that would land on one already placed waits until the
         // player zooms in. One already showing gets a little slack, so names do not flicker at the limit.
@@ -1169,7 +1185,11 @@ final class MapLabelsView: UIView {
                     }
                 }
                 // 字号下限：缩小后的字仍要看得清（国名约 6 pt，分组名同）。
-                guard let fit = NameFit.place(box, taken: taken, margin: margin, minHalfH: max(l.minPoints, 6) * 0.62, preferred: l.slot, inside: inside) else { l.view.isHidden = true; l.slot = nil; continue }
+                if l.view.isHidden && CACurrentMediaTime() - l.gaveWayAt < 1.0 { continue }
+                guard let fit = NameFit.place(box, taken: taken, margin: margin, minHalfH: max(l.minPoints, 6) * 0.62, preferred: l.slot, inside: inside) else {
+                    if !l.view.isHidden { l.gaveWayAt = CACurrentMediaTime(); recheckSoon() }
+                    l.view.isHidden = true; l.slot = nil; continue
+                }
                 l.slot = fit.index; box = fit.box
                 k *= NameFit.candidates[fit.index].scale
                 p = (x: box.x, y: box.y)

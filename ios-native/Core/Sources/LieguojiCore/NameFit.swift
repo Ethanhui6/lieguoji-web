@@ -47,6 +47,8 @@ public enum NameFit {
         .init(scale: 0.82, along: 0, across: -2.3), .init(scale: 0.82, along: 0, across: 2.3),
         .init(scale: 0.82, along: -0.7, across: 0), .init(scale: 0.82, along: 0.7, across: 0),
         .init(scale: 0.68, along: 0, across: -3.2), .init(scale: 0.68, along: 0, across: 3.2),
+        // 单州小国：刚好越过自己的首都圈、又不出州的一小步。
+        .init(scale: 0.82, along: 0, across: -1.9), .init(scale: 0.82, along: 0, across: 1.9),
     ]
 
     /// 为一个名字选位置：`base` 是原位原大的框，`minHalfH` 是还能看清的最小半高；`inside(x, y)` 判断屏幕点

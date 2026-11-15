@@ -35,6 +35,17 @@ final class NameFitTests: XCTestCase {
         XCTAssertNil(NameFit.place(box(100, 100, 24, 8, "小国"), taken: [cover], margin: 0, minHalfH: 3, preferred: nil, inside: { _, y in abs(y - 100) < 9 }))
     }
 
+    func testOneProvinceStateIsNotHiddenByItsOwnCapital() {
+        // 单州小国：首都圈占住名字原位（缩小也躲不开），国境只够放下名字中心，放不下整个名字。
+        // 宁可略出国境也要显示，且名字中心仍在本国境内。
+        let ring = NameFit.Box(x: 100, y: 100, halfW: 9, halfH: 9, angle: 0, nation: false, text: "")
+        let inside: (Double, Double) -> Bool = { _, y in abs(y - 100) < 22 }
+        let fit = NameFit.place(box(100, 100, 30, 8, "丰后帝国"), taken: [ring], margin: 0, minHalfH: 3, preferred: nil, inside: inside)
+        XCTAssertNotNil(fit, "单州小国的名字不能在任何缩放下都看不到")
+        XCTAssertTrue(inside(fit!.box.x, fit!.box.y))
+        XCTAssertFalse(NameFit.clash(ring, fit!.box, margin: 0))
+    }
+
     func testPreviousSlotIsTriedFirst() {
         // 原位此时也放得下，但上一帧用的是挪开的位置：仍用它，名字不来回跳。
         let fit = NameFit.place(box(100, 100, 24, 8, "小国"), taken: [], margin: 0, minHalfH: 3, preferred: 3, inside: { _, _ in true })

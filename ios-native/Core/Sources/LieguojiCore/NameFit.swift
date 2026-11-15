@@ -55,6 +55,9 @@ public enum NameFit {
     public static func place(_ base: Box, taken: [Box], margin: Double, minHalfH: Double, preferred: Int?, inside: ((Double, Double) -> Bool)?) -> (index: Int, box: Box)? {
         var order = Array(candidates.indices)
         if let p = preferred, order.contains(p) { order.removeAll { $0 == p }; order.insert(p, at: 0) }
+        // 先严格（挪开后四角都在本国境内）；单州小国常容不下整个名字，又被自己的首都圈占住原位，
+        // 这时放宽为名字中心在境内即可——宁可略出国境，也不让一个国家的名字在任何缩放下都看不到。
+        for strict in [true, false] {
         for i in order {
             let c = candidates[i]
             let moved = c.along != 0 || c.across != 0
@@ -65,8 +68,10 @@ public enum NameFit {
             let oy = c.along * base.halfW * base.sine + c.across * base.halfH * base.cosine
             let box = Box(x: base.x + ox, y: base.y + oy, halfW: hw, halfH: hh, cosine: base.cosine, sine: base.sine, nation: base.nation, text: base.text)
             if taken.contains(where: { clash($0, box, margin: margin) }) { continue }
-            if moved, let inside, !(inside(box.x, box.y) && box.corners().allSatisfy { inside($0.x, $0.y) }) { continue }
+            if moved, let inside, !(inside(box.x, box.y) && (!strict || box.corners().allSatisfy { inside($0.x, $0.y) })) { continue }
+            if !strict && !moved { continue }
             return (i, box)
+        }
         }
         return nil
     }

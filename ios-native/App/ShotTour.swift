@@ -166,10 +166,10 @@ enum ShotTour {
         await shoot("24-stress-ranking-" + meter.stop())
         // 行军静看：镜头不动、1× 推演 8 秒（玩家最常见的状态）。量主线程帧间隔与底图缓存复用率，结果写进截图名。
         model.speed = 1
-        let before = model.controller.baseStats?() ?? (0, 0, 0)
+        let before = model.controller.baseStats?() ?? (reuses: 0, renders: 0, vertices: 0)
         meter.start()
         await wait(8)
-        let glide = meter.stop(), after = model.controller.baseStats?() ?? (0, 0, 0)
+        let glide = meter.stop(), after = model.controller.baseStats?() ?? (reuses: 0, renders: 0, vertices: 0)
         let reused = after.reuses - before.reuses, redrawn = after.renders - before.renders
         await shoot("25-stress-glide-" + glide + "-base\(reused)of\(reused + redrawn)-verts\(after.vertices)")
         model.speed = speed

@@ -1142,7 +1142,9 @@ final class MapLabelsView: UIView {
                 p = (x: at.x, y: min(p.y, at.y - (max(ring, 3) + 3 + 7 + points * 0.78)))
             }
             // A name larger than the screen can show is hidden (a continent-wide group zoomed in close).
-            guard points.isFinite, points >= l.minPoints, points < 900, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }
+            // 滞回：已显示的名字在下限的 88% 以下才隐藏，免得缩放停在临界处时名字反复出没。
+            let minimum = l.view.isHidden ? l.minPoints : l.minPoints * 0.88
+            guard points.isFinite, points >= minimum, points < 900, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }
             // Rendered at most 96 pt and scaled beyond: a label image never grows to thousands of pixels
             // (that ran memory out and closed the app when a big group label was zoomed in).
             let wanted = min(96, points)

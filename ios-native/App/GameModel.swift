@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import simd
 import LieguojiCore
 
 /// The whole app's state: the launch sequence, the title screen, world generation and the running
@@ -1005,7 +1006,7 @@ import LieguojiCore
             counts[a.id] = Self.stateMark(a).map { $0 + " " + n } ?? n
         }
         controller.troopTexts = counts
-        if !controller.groundDemo { controller.battleGrounds = Self.battleGrounds(state) }
+        if !controller.groundDemo { controller.battleGrounds = Self.battleGrounds(state, centers: map?.meta.provinces.map { SIMD2<Float>($0.x, $0.y) } ?? []) }
         controller.armies = sprites
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
             let id = state.armies[selected].id
@@ -1020,7 +1021,7 @@ import LieguojiCore
     /// and a column marching together keeps its order instead of reshuffling every step.
     /// 战场地面：按州聚合正在接战的军队；不互为敌国的参战国并为一营（盟军同色块），按兵力定面积，
     /// 按各营军队所在位置定颜色进来的方向。海上接战不画地面（海战另有炮火特效）。
-    static func battleGrounds(_ s: GameState) -> [BattleGround] {
+    static func battleGrounds(_ s: GameState, centers: [SIMD2<Float>] = []) -> [BattleGround] {
         var byProvince = [Int: Set<Int>]()
         for pair in s.contacts ?? [] where pair.count == 2 {
             for i in pair where s.armies.indices.contains(i) && s.armies[i].province >= 0 { byProvince[s.armies[i].province, default: []].insert(i) }
@@ -1047,7 +1048,40 @@ import LieguojiCore
             out.append((BattleGround(province: province, camps: list), total))
         }
         let ranked = out.sorted { a, b in a.total != b.total ? a.total > b.total : a.ground.province < b.ground.province }
-        return ranked.map { $0.ground }
+        return ranked.map { $0.ground } + occupationGrounds(s, centers: centers, fought: Set(out.map { $0.ground.province }))
+    }
+    /// 占领晕染：没有接战、正被占领的州，进攻方的颜色从其军队实际所在的一侧（军队就在州心时，取最近的
+    /// 本方州郡方向，即进军方向）洇入，面积等于占领进度；守方颜色在对侧。解围时守方铺回、易主时进攻方
+    /// 铺满后淡去（GroundBook 的收尾规则）。只认推演给出的权威状态：州里没有进攻方军队就不画。
+    /// 按进度取前 24 处（绘制预算），同进度按州序号，结果稳定。
+    static func occupationGrounds(_ s: GameState, centers: [SIMD2<Float>], fought: Set<Int>) -> [BattleGround] {
+        var list = [(ground: BattleGround, progress: Double)]()
+        for siege in s.sieges where siege.progress > 0.01 && !fought.contains(siege.province) && centers.indices.contains(siege.province) && s.owners.indices.contains(siege.province) {
+            let owner = s.owners[siege.province]
+            guard owner >= 0, owner != siege.nation else { continue }
+            var troops: Float = 0, weighted = SIMD2<Float>(0, 0)
+            for a in s.armies where a.nation == siege.nation && a.province == siege.province && a.troops > 0 {
+                let t = Float(a.troops); troops += t; weighted += SIMD2<Float>(a.x, a.y) * t
+            }
+            guard troops > 0 else { continue }
+            let c = centers[siege.province]
+            var direction = weighted / troops - c
+            if simd_length(direction) < 0.5 {
+                // 军队站在州心：从最近的进攻方州郡方向进来。
+                var best: (d: Float, at: SIMD2<Float>)?
+                for (i, o) in s.owners.enumerated() where o == siege.nation && centers.indices.contains(i) {
+                    let d = simd_length(centers[i] - c)
+                    if d > 0.01, best == nil || d < best!.d { best = (d, centers[i]) }
+                }
+                direction = best.map { $0.at - c } ?? SIMD2<Float>(0, -1)
+            }
+            direction = simd_normalize(direction) * 10
+            let p = Float(min(1, max(0, siege.progress)))
+            let camps = [BattleGround.Camp(nation: siege.nation, toward: c + direction, troops: max(0.02, p)),
+                         BattleGround.Camp(nation: owner, toward: c - direction, troops: max(0.02, 1 - p))]
+            list.append((BattleGround(province: siege.province, camps: camps), siege.progress))
+        }
+        return list.sorted { $0.progress != $1.progress ? $0.progress > $1.progress : $0.ground.province < $1.ground.province }.prefix(24).map { $0.ground }
     }
     /// 军队状态的一字标记（与军事页的分类一致）；驻扎不动的军队不标。
     static func stateMark(_ a: GameState.Army) -> String? {

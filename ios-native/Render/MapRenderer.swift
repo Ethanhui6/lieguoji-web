@@ -978,9 +978,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float line = 1.0 - smoothstep(0.0, radius * 0.04, edge);
         float grain = detail > 0.5 ? fbm(q * 0.1 + float2(13.1, 7.7)) : 0.5;
         c = mix(c, c * 0.8, (grain - 0.5) * 0.9);
-        c = mix(c, float3(0.16, 0.12, 0.09), line * 0.5 * detail);
-        float a = alpha * (0.4 + 0.1 * grain);
-        a = max(a, alpha * 0.65 * line * detail);
+        c = mix(c, float3(0.16, 0.12, 0.09), line * 0.6 * detail);
+        float a = alpha * (0.5 + 0.1 * grain);
+        a = max(a, alpha * 0.75 * line * detail);
         return float4(c, a);
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {

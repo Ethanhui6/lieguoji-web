@@ -133,7 +133,7 @@ enum ShotTour {
             // 军情小图：兵力标签只在棋子够大时显示，再放大两档看一支在行军或交战的军队。
             if let a = state.armies.first(where: { $0.status == "fighting" }) ?? state.armies.first(where: { $0.travel == "moving" }) {
                 model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(1.8)
-                model.controller.zoom(2.6); await wait(0.8)
+                model.controller.zoom(4.5); await wait(0.8)
                 model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(1.4); await shoot("06d-army-marks")
                 model.controller.resetRequest = UUID(); await wait(0.9)
             }

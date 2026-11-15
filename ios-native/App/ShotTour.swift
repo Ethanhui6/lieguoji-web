@@ -91,7 +91,11 @@ enum ShotTour {
             await wait(2); await shoot("05-battle-close")
             await wait(4); await shoot("06-battle-close-later")
             // 墨晕关键帧（在这场战斗所在的州）：西侧入境 0.3 秒、占领过半、铺满；两方交战、优势一方推进、三方、结束淡出。
-            if a.province >= 0, state.nations.count >= 5 {
+            // 选一个陆上的州（巡游选中的那支军队常在海上或两州之间，以前整段演示因此从未截到）。
+            let landArmy: GameState.Army? = a.province >= 0 ? a : state.armies.filter { $0.province >= 0 }.max { $0.troops < $1.troops }
+            if let province = landArmy?.province, let map = model.map, map.meta.provinces.indices.contains(province), state.nations.count >= 3 {
+                let center = map.meta.provinces[province]
+                model.controller.fly(x: Double(center.x), y: Double(center.y)); await wait(1.6)
                 func camp(_ n: Int, _ dx: Float, _ dy: Float, _ t: Float, _ reach: Float = 1) -> BattleGround.Camp {
                     let len = max(0.001, (dx * dx + dy * dy).squareRoot())
                     return BattleGround.Camp(nation: n, direction: SIMD2(dx / len, dy / len), troops: t, reach: reach)
@@ -107,7 +111,7 @@ enum ShotTour {
                 model.controller.groundDemo = true
                 model.controller.battleGrounds = []; model.controller.objectWillChange.send(); await wait(1.2)
                 for (name, camps, after) in frames {
-                    model.controller.battleGrounds = [BattleGround(province: a.province, camps: camps)]
+                    model.controller.battleGrounds = [BattleGround(province: province, camps: camps)]
                     model.controller.objectWillChange.send()
                     await wait(after); await shoot(name)
                 }

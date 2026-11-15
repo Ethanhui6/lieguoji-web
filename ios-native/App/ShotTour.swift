@@ -130,6 +130,12 @@ enum ShotTour {
             if let a = state.armies.first(where: { $0.banner != nil }) {
                 model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(2.5); await shoot("06c-banner-close")
             }
+            // 军情小图：兵力标签只在棋子够大时显示，再放大两档看一支在行军或交战的军队。
+            if let a = state.armies.first(where: { $0.status == "fighting" }) ?? state.armies.first(where: { $0.travel == "moving" }) {
+                model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(1.8)
+                model.controller.zoom(2.2); await wait(1.0); await shoot("06d-army-marks")
+                model.controller.resetRequest = UUID(); await wait(0.9)
+            }
         }
         // A burst on a marching army, one shot a second, to see how it walks and meets the enemy.
         if let state = model.state, let a = state.armies.first(where: { $0.travel == "moving" && $0.destination != nil }) {
@@ -369,12 +375,16 @@ enum ShotTour {
         var closeUp = [String](), missing = [String]()
         for n in alive where !overview.contains(label(n)) {
             if closeUp.count + missing.count >= 12 { break }
+            // 飞到该国国名框（没有框才用都城）；看不到时缩小一档再看——大国的名字放得太大会超出屏幕。
+            let box = model.controller.world?.meta.labels.first { $0.nation == n }
             let capital = map.meta.nations[n].capital
-            let at: (Double, Double)? = map.meta.cities.indices.contains(capital) ? (Double(map.meta.cities[capital].x), Double(map.meta.cities[capital].y))
-                : state.owners.firstIndex(of: n).map { (Double(map.meta.provinces[$0].x), Double(map.meta.provinces[$0].y)) }
+            var at: (Double, Double)? = box.map { (Double($0.x), Double($0.y)) }
+            if at == nil, map.meta.cities.indices.contains(capital) { at = (Double(map.meta.cities[capital].x), Double(map.meta.cities[capital].y)) }
             guard let at else { missing.append(label(n)); continue }
             model.controller.fly(x: at.0, y: at.1); await wait(1.6)
-            if shown().contains(label(n)) { closeUp.append(label(n)); if closeUp.count == 1 { await shoot("03d-names-close") } } else { missing.append(label(n)) }
+            var seen = shown().contains(label(n))
+            for _ in 0..<2 where !seen { model.controller.zoom(0.45); await wait(1.0); seen = shown().contains(label(n)) }
+            if seen { closeUp.append(label(n)); if closeUp.count == 1 { await shoot("03d-names-close") } } else { missing.append(label(n)) }
         }
         let report: [String: Any] = ["alive": alive.count, "overview": alive.filter { overview.contains(label($0)) }.count, "closeUp": closeUp, "missing": missing]
         if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {

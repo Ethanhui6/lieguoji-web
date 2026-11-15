@@ -193,7 +193,7 @@ struct RelationWeb: View {
         let edges = makeEdges(Set(nodes))
         VStack(alignment: .leading, spacing: 10) {
             GeometryReader { g in
-                let side = min(g.size.width, g.size.height), center = CGPoint(x: g.size.width / 2, y: g.size.height / 2), radius = side / 2 - 26
+                let side = min(g.size.width, g.size.height), center = CGPoint(x: g.size.width / 2, y: g.size.height / 2), radius = side / 2 - 46
                 let at: [Int: CGPoint] = Dictionary(uniqueKeysWithValues: nodes.enumerated().map { i, n in
                     let a = -Double.pi / 2 + Double(i) / Double(max(1, nodes.count)) * 2 * .pi
                     return (n, CGPoint(x: center.x + cos(a) * radius, y: center.y + sin(a) * radius))
@@ -220,15 +220,19 @@ struct RelationWeb: View {
                     ForEach(nodes, id: \.self) { n in
                         let p = at[n] ?? center
                         let d = 10 + 16 * sqrt(CGFloat(state.nations[n].provinces) / CGFloat(largest))
+                        // 国名沿半径排在圆外，不压节点与连线。
+                        let ux = (p.x - center.x) / max(1, radius), uy = (p.y - center.y) / max(1, radius)
                         Button { choose(n) } label: {
-                            VStack(spacing: 2) {
+                            ZStack {
                                 Circle().fill(Names.color(map.meta.nations[n].color)).frame(width: d, height: d)
                                     .overlay(Circle().stroke(Theme.ink.opacity(0.55), lineWidth: 1))
                                 Text(MapLayers.stateLabel(map.meta.nations[n].name, full: false)).font(Theme.kai(11)).foregroundStyle(Theme.ink).lineLimit(1).fixedSize()
+                                    .padding(.horizontal, 2).background(Theme.paper2.opacity(0.85), in: Capsule())
+                                    .offset(x: ux * (d / 2 + 24), y: uy * (d / 2 + 10))
                             }
                         }
                         .buttonStyle(PressStyle())
-                        .position(x: p.x, y: p.y + 6)
+                        .position(x: p.x, y: p.y)
                     }
                 }
             }

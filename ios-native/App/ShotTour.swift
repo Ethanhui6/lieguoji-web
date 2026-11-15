@@ -179,6 +179,15 @@ enum ShotTour {
             show(nil); await wait(0.6); show(.nation(nation)); await wait(1.8); await shoot(name)
         }
         NationSheet.tourTab = nil
+        // 族谱：从国家页的世家进入，换几个国家连续开合（闪退回归），第一次留图。
+        NationSheet.tourFamily = true
+        let byLand = (model.state?.nations.indices ?? 0..<0).sorted { (model.state?.nations[$0].provinces ?? 0) > (model.state?.nations[$1].provinces ?? 0) }
+        for (k, n) in byLand.prefix(4).enumerated() {
+            show(nil); await wait(0.5); show(.nation(n)); await wait(k == 0 ? 2.4 : 1.2)
+            if k == 0 { await shoot("11g-family-tree") }
+        }
+        NationSheet.tourFamily = false
+        show(nil); await wait(0.6)
         // 战局: the wars at a glance.
         MilitarySheet.tourFilter = "wars"
         show(nil); await wait(0.6); show(.military); await wait(1.8); await shoot("12b-wars")

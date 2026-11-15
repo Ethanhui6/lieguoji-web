@@ -223,12 +223,33 @@ struct NumberEditSheet: View {
             .padding(.horizontal, 22)
             .onChange(of: slide) { _, v in let s = Self.format(snap(v)); if s != text { text = s } }
             .onChange(of: text) { _, t in if let v = Double(t), bounds.contains(v), abs(v - slide) > 0.5 { slide = v } }
-            SealButton(title: "颁行", disabled: Double(text) == nil) { if let v = Double(text) { save(v) } }.padding(.horizontal, 22)
+            if let why = Self.rejection(text, range) {
+                Text(why).font(Theme.kai(13)).foregroundStyle(Theme.seal).padding(.horizontal, 22)
+            }
+            SealButton(title: "颁行", disabled: Self.accepted(text, range) == nil) { if let v = Self.accepted(text, range) { save(v) } }.padding(.horizontal, 22)
         }
         .padding(.bottom, 16)
-        .onAppear { slide = min(bounds.upperBound, max(bounds.lowerBound, value)) }
+        .onAppear { slide = min(bounds.upperBound, max(bounds.lowerBound, value.isFinite ? value : bounds.lowerBound)) }
     }
-    static func format(_ v: Double) -> String { v.rounded() == v ? String(Int(v)) : String(format: "%.1f", v) }
+    /// 可颁行的数：有限、不超出显式范围、绝对值不超过一万亿（调用方会转成整数，`1e20`、`nan`、`inf` 曾使其闪退）。
+    static let limit = 1e12
+    static func accepted(_ text: String, _ range: ClosedRange<Double>?) -> Double? {
+        guard let v = Double(text.trimmingCharacters(in: .whitespaces)), v.isFinite, abs(v) <= limit else { return nil }
+        if let range, !range.contains(v) { return nil }
+        return v
+    }
+    /// 输入无效时给出原因（空输入不提示）。
+    static func rejection(_ text: String, _ range: ClosedRange<Double>?) -> String? {
+        let t = text.trimmingCharacters(in: .whitespaces)
+        guard !t.isEmpty, accepted(t, range) == nil else { return nil }
+        guard let v = Double(t), v.isFinite else { return "请输入数字。" }
+        if let range, !range.contains(v) { return "须在 \(format(range.lowerBound))–\(format(range.upperBound)) 之间。" }
+        return "数值过大。"
+    }
+    static func format(_ v: Double) -> String {
+        guard v.isFinite else { return "—" }
+        return v.rounded() == v && abs(v) < 1e15 ? String(Int(v)) : abs(v) >= 1e15 ? String(format: "%.3g", v) : String(format: "%.1f", v)
+    }
 }
 
 /// 改党派: a party's name and its seats.

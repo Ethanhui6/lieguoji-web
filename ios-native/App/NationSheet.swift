@@ -126,6 +126,7 @@ struct NationSheet: View {
     @State private var cedeProvince = -1
     @State private var religionChoice = ""
     @State private var info: NationInfo?
+    @State private var failed = false
     /// 分类: the page's tabs.
     enum Tab: String, CaseIterable { case overview = "概览", court = "朝政", military = "军事", diplomacy = "外交", custom = "自定义" }
     @State private var tab: Tab = .overview
@@ -133,6 +134,8 @@ struct NationSheet: View {
     @State private var flash: String?
     /// The screenshot tour opens the page on a given tab.
     static var tourTab: Tab?
+    /// CI 巡游：载入后直接打开第一个世家的族谱（从真实入口进出族谱）。
+    static var tourFamily = false
     @State private var nameText = ""
     @State private var capitalProvince = -1
     @State private var customColor = Color(red: 0.6, green: 0.3, blue: 0.2)
@@ -200,7 +203,7 @@ struct NationSheet: View {
                             .transition(.opacity.combined(with: .offset(y: 8)))
                             .animation(Motion.fade, value: tab)
                     } else {
-                        InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40)
+                        PanelPending(failed: failed, busy: true) { Task { await reload() } }
                     }
                     }
                 }
@@ -208,7 +211,10 @@ struct NationSheet: View {
             }
             .pressMenuHost($pressMenu)
             .paperToast($flash)
-            .task(id: state.day / 30) { await reload() }
+            .task(id: state.day / 30) {
+                await reload()
+                if Self.tourFamily, tree == nil, let h = info?.court?.houses.first(where: { $0.id != nil }), let id = h.id { tree = TreePick(id: id, name: h.name) }
+            }
             .onAppear { if let t = Self.tourTab { tab = t }; model.controller.relationsNation = nation; model.controller.relations = relationColors(); if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
@@ -267,7 +273,7 @@ struct NationSheet: View {
             case .talks: diplomacyTab(info, map, state, startExpanded: true)
             }
         } else {
-            InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40)
+            PanelPending(failed: failed, busy: true) { Task { await reload() } }
         }
     }
     /// 人物: five identity groups, each open. Extra roles already in the data (总督、战时统帅) open the same way.
@@ -962,7 +968,7 @@ struct NationSheet: View {
     }
 
     private func reload() async {
-        info = await model.nationInfo(nation)
+        info = await model.nationInfo(nation); failed = info == nil
         history = await model.nationHistory(nation)
         regime = await model.regime(nation)
         postList = await model.posts(nation)

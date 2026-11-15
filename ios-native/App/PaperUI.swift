@@ -631,6 +631,31 @@ struct PaperMenu<T: Hashable>: View {
     }
 }
 
+/// 详情数据未到时的占位：载入中写「载入……」；载入失败写明原因并给「重试」（以前失败也一直停在载入中）。
+struct PanelPending: View {
+    let failed: Bool
+    var reason = "未能载入：世界可能已切换，或此项已不存在。"
+    var busy = false
+    let retry: () -> Void
+    var body: some View {
+        if failed {
+            VStack(spacing: 10) {
+                Text(reason).font(Theme.kai(14)).foregroundStyle(Theme.ink2).multilineTextAlignment(.center)
+                Button(action: retry) {
+                    Text("重试").font(Theme.kai(15)).foregroundStyle(Theme.seal).padding(.horizontal, 16).padding(.vertical, 6)
+                        .overlay(Capsule().stroke(Theme.seal.opacity(0.6), lineWidth: 1))
+                }
+                .buttonStyle(PressStyle())
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 14).padding(.horizontal, 12)
+        } else if busy {
+            InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40)
+        } else {
+            Text("载入……").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
+        }
+    }
+}
+
 /// The founding progress bar when the fraction is not known yet: an ink track and a vermilion segment.
 struct InkBusy: View {
     var text: String? = nil

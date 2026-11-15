@@ -1075,7 +1075,17 @@ extension NativeEngine {
         guard let p = People.person(run, id) else { return (false, "人物不存在。") }
         if let first { let t = first.trimmingCharacters(in: .whitespaces); if !t.isEmpty { p.firstName = JS(String(t.prefix(8))) } }
         if let last { p.lastName = JS(String(last.trimmingCharacters(in: .whitespaces).prefix(8))) }
-        if let age { p.age = JS(min(110, max(0, age))) }
+        if let age {
+            let a = min(110, max(0, age))
+            // 生年随之移动（取所设岁数再加半年），否则下个月按生年重算年龄时改动就被冲掉了。
+            let life = run.life
+            if let now = life.gameTime.optionalNumber, let spd = life.secondsPerDay.optionalNumber, spd > 0, p.birthTime.optionalNumber != nil {
+                p.birthTime = JS(Native.fr(now - (Double(a) + 0.5) * 365.25 * spd))
+                let lp = life.persons[String(id)]
+                if case .object = lp.storage { lp.birthTime = p.birthTime.clone(); lp.age = JS(a) }
+            }
+            p.age = JS(a)
+        }
         return (true, "人物已修改。")
     }
 

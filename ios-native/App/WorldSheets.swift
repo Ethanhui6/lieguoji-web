@@ -280,6 +280,8 @@ struct DiplomacyOverviewView: View {
     @ObservedObject var model: GameModel
     let map: WorldMap; let nation: Int; let day: Int; let troops: Int
     @State private var info: DiplomacyOverview?
+    @State private var failed = false
+    @State private var attempt = 0
     var body: some View {
         Group2 {
             if let info {
@@ -299,10 +301,10 @@ struct DiplomacyOverviewView: View {
                     return (n.nation, "\(Names.wan(n.troops)) 兵" + (troops > 0 ? (ratio > 1.5 ? " · 强于我" : ratio < 0.67 ? " · 弱于我" : " · 相当") : ""))
                 }, empty: "无接壤国")
             } else {
-                Text("载入……").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
+                PanelPending(failed: failed) { attempt += 1 }
             }
         }
-        .task(id: "\(nation)-\(day)") { info = await model.diplomacyInfo(nation) }
+        .task(id: "\(nation)-\(day)-\(attempt)") { info = await model.diplomacyInfo(nation); failed = info == nil }
     }
     private func name(_ n: Int) -> String { n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].name : "无主" }
     private func color(_ n: Int) -> Color { n >= 0 && n < map.meta.nations.count ? Names.color(map.meta.nations[n].color) : .gray }

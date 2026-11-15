@@ -25,6 +25,8 @@ struct FinanceSection: View {
     let nation: Int; let day: Int
     var say: (String) -> Void = { _ in }
     @State private var info: FinanceOverview?
+    @State private var failed = false
+    @State private var attempt = 0
     var body: some View {
         Group2 {
             if let f = info {
@@ -97,11 +99,11 @@ struct FinanceSection: View {
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
             } else {
-                Text("载入……").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
+                PanelPending(failed: failed) { attempt += 1 }
             }
         }
         .padding(.horizontal, 16)
-        .task(id: "\(nation)-\(day)") { info = await model.financeInfo(nation) }
+        .task(id: "\(nation)-\(day)-\(attempt)") { info = await model.financeInfo(nation); failed = info == nil }
     }
     @State private var note: String?
     private func corruption(lower: Bool) async {
@@ -171,6 +173,8 @@ struct TradeSection: View {
     @ObservedObject var model: GameModel
     let map: WorldMap; let nation: Int; let day: Int
     @State private var info: TradeOverview?
+    @State private var failed = false
+    @State private var attempt = 0
     var body: some View {
         Group2 {
             if let info {
@@ -206,126 +210,134 @@ struct TradeSection: View {
                     }
                 }
             } else {
-                Text("载入……").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
+                PanelPending(failed: failed) { attempt += 1 }
             }
         }
         .padding(.horizontal, 16)
-        .task(id: "\(nation)-\(day)") { info = await model.tradeInfo(nation) }
+        .task(id: "\(nation)-\(day)-\(attempt)") { info = await model.tradeInfo(nation); failed = info == nil }
     }
 }
 
-/// One house's members (engine familyTree).
-struct FamilyTree: Decodable {
-    struct Member: Decodable, Identifiable { let id: Int; let name: String; let female: Bool; let age: Double; let alive: Bool; let father: Int; let mother: Int; let spouse: Int; let title: String; var traits: [String]? = nil; var skills: [Double]? = nil }
-    let surname: String; let head: Int; let members: [Member]
-}
-
 /// 族谱: a house by generations — each member with spouse, the head marked, the dead in grey.
+/// 数据与分代在 LieguojiCore.FamilyTree（宽容解码、去重、防环），此处只负责展示与操作。
 struct FamilyTreeSheet: View {
     @ObservedObject var model: GameModel
     let family: String; let name: String
-    @State private var tree: FamilyTree?
+    /// 载入中 / 载入失败（可重试）/ 已载入。
+    private enum Load { case loading, failed, loaded(FamilyTree) }
+    @State private var load = Load.loading
+    /// 每次请求的序号：只采用最后一次请求的结果，先发后到的旧结果不覆盖新结果。
+    @State private var request = 0
+    /// 正在执行的成员操作：执行期间不再接受新的操作，避免连点重复婚配、重复添丁。
+    @State private var busy = false
     /// 族谱操作: the member whose actions are offered.
     @State private var pressMenu: PressMenu?
     @State private var flash: String?
     @State private var editing: NationInfo.Person?
     @State private var ageEdit: FamilyTree.Member?
+    private var tree: FamilyTree? { if case .loaded(let t) = load { return t }; return nil }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 SheetHeader(title: name, subtitle: tree.map { "族谱 · \($0.members.count) 人" } ?? "族谱", seal: "谱")
-                if let tree {
-                    let byId = Dictionary(tree.members.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-                    let generations = Self.generations(tree.members, byId)
-                    ForEach(generations.indices, id: \.self) { g in
-                        SectionLabel("第\(Self.numeral(g + 1))代")
+                switch load {
+                case .loading:
+                    InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(30)
+                case .failed:
+                    VStack(spacing: 12) {
+                        Text("族谱未能载入：这一家族可能已不存在，或世界已切换。").font(Theme.kai(15)).foregroundStyle(Theme.ink2).multilineTextAlignment(.center)
+                        Button { Task { await reload() } } label: {
+                            Text("重试").font(Theme.kai(16)).foregroundStyle(Theme.seal).padding(.horizontal, 18).padding(.vertical, 8)
+                                .overlay(Capsule().stroke(Theme.seal.opacity(0.6), lineWidth: 1))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                    .frame(maxWidth: .infinity).padding(24)
+                case .loaded(let tree) where tree.members.isEmpty:
+                    Text("族中已无可考之人。").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(24)
+                case .loaded(let tree):
+                    ForEach(tree.generations.indices, id: \.self) { g in
+                        SectionLabel("第\(FamilyTree.numeral(g + 1))代")
                         Group2 {
-                            ForEach(generations[g].indices, id: \.self) { i in
-                                let m = generations[g][i]
-                                HStack(spacing: 8) {
-                                    Text(m.name).font(Theme.kai(17)).foregroundStyle(m.alive ? Theme.ink : Theme.ink2.opacity(0.6))
-                                    if m.id == tree.head { Text("家主").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
-                                    if !m.title.isEmpty { Text(m.title).font(Theme.kai(12)).foregroundStyle(Theme.seal) }
-                                    Spacer()
-                                    if m.spouse > 0, let s = byId[m.spouse] { Text("配 \(s.name)").font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
-                                    Text(m.alive ? "\(m.female ? "女" : "男") · \(Int(m.age))" : "已故").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-                                    if m.alive { Image(systemName: "ellipsis.circle").font(.system(size: 13)).foregroundStyle(Theme.seal.opacity(0.7)) }
-                                }
-                                .padding(.horizontal, 16).padding(.vertical, 8)
-                                .contentShape(Rectangle())
-                                .onTapGesture { if m.alive { pressMenu = actions(m) } }
-                                if i < generations[g].count - 1 { Divider2() }
+                            ForEach(tree.generations[g]) { m in
+                                row(m, tree)
+                                if m.id != tree.generations[g].last?.id { Divider2() }
                             }
                         }
                         .padding(.horizontal, 16)
                     }
-                } else {
-                    InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(30)
                 }
             }
             .padding(.bottom, 24)
         }
-        .task { tree = await model.familyTree(family) }
+        .task { await reload() }
         .pressMenuHost($pressMenu)
         .paperToast($flash)
         .sheet(item: $editing) { p in
             PersonEditor(person: p) { skills, traits, first, last, age in
                 editing = nil
-                Task {
+                perform {
                     let e = await model.renamePerson(p.key, first: first, last: last, age: age)
-                    let e2 = e == nil ? await model.editPerson(p.key, skills: skills, traits: traits) : e
-                    flash = e2 ?? "\(p.name)已修改"; GameFeel.shared.notify(e2 == nil ? .success : .error)
-                    tree = await model.familyTree(family)
+                    return (e == nil ? await model.editPerson(p.key, skills: skills, traits: traits) : e, "\(p.name)已修改")
                 }
             }
             .presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
         }
         .sheet(item: $ageEdit) { m in
-            NumberEditSheet(title: m.name + "的年龄", unit: "岁", value: m.age) { v in
+            NumberEditSheet(title: m.name + "的年龄", unit: "岁", value: m.age, range: 0...110) { v in
                 ageEdit = nil
-                Task {
-                    let e = await model.renamePerson(m.id, first: nil, last: nil, age: Int(v))
-                    flash = e ?? "\(m.name)已改为\(Int(v))岁"; GameFeel.shared.notify(e == nil ? .success : .error)
-                    tree = await model.familyTree(family)
-                }
+                let age = Int(v.rounded())
+                perform { (await model.renamePerson(m.id, first: nil, last: nil, age: age), "\(m.name)已改为\(age)岁") }
             }
             .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
         }
     }
+    private func row(_ m: FamilyTree.Member, _ tree: FamilyTree) -> some View {
+        HStack(spacing: 8) {
+            Text(m.name).font(Theme.kai(17)).foregroundStyle(m.alive ? Theme.ink : Theme.ink2.opacity(0.6)).lineLimit(1)
+            if m.id == tree.head { Text("家主").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+            if !m.title.isEmpty { Text(m.title).font(Theme.kai(12)).foregroundStyle(Theme.seal).lineLimit(1) }
+            Spacer(minLength: 4)
+            if let s = tree.spouse(of: m) { Text("配 \(s.name)").font(Theme.kai(13)).foregroundStyle(Theme.ink2).lineLimit(1) }
+            Text(m.alive ? "\(m.female ? "女" : "男") · \(Int(m.age))" : "已故").font(Theme.kai(13)).foregroundStyle(Theme.ink2).fixedSize()
+            if m.alive { Image(systemName: "ellipsis.circle").font(.system(size: 13)).foregroundStyle(Theme.seal.opacity(busy ? 0.3 : 0.7)) }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .onTapGesture { if m.alive && !busy { pressMenu = actions(m, tree) } }
+    }
+    /// 重新读取族谱；只有最后一次请求的结果会被采用。
+    private func reload() async {
+        request &+= 1
+        let mine = request
+        if tree == nil { load = .loading }
+        let t = await model.familyTree(family)
+        guard mine == request, !Task.isCancelled else { return }
+        load = t.map { .loaded($0) } ?? .failed
+    }
     /// 族谱操作 on a living member.
-    private func actions(_ m: FamilyTree.Member) -> PressMenu {
+    private func actions(_ m: FamilyTree.Member, _ tree: FamilyTree) -> PressMenu {
         var items = [PressMenuItem(title: "修改能力与天赋", symbol: "slider.horizontal.3") {
-            editing = NationInfo.Person(id: m.id, role: m.title.isEmpty ? (m.id == tree?.head ? "家主" : "族人") : m.title, name: m.name, age: m.age, female: m.female, traits: m.traits ?? [], skills: m.skills ?? [50, 50, 50, 50])
+            editing = NationInfo.Person(id: m.id, role: m.title.isEmpty ? (m.id == tree.head ? "家主" : "族人") : m.title, name: m.name, age: m.age, female: m.female, traits: m.traits, skills: m.skills)
         }, PressMenuItem(title: "设定年龄", symbol: "calendar") { ageEdit = m }]
-        if m.spouse == 0 || tree?.members.first(where: { $0.id == m.spouse })?.alive != true { items.append(PressMenuItem(title: "为其婚配", symbol: "heart") { act(m, "spouse", "婚配已成") }) }
+        // 配偶不在族谱里（外嫁、记录缺失）时，交给引擎判定能否添丁。
+        if m.spouse == 0 || tree.spouse(of: m)?.alive == false { items.append(PressMenuItem(title: "为其婚配", symbol: "heart") { act(m, "spouse", "婚配已成") }) }
         else { items.append(PressMenuItem(title: "添一子女", symbol: "figure.and.child.holdinghands") { act(m, "child", "家添新丁") }) }
         items.append(PressMenuItem(title: "处死", symbol: "xmark.seal", destructive: true) { act(m, "kill", "\(m.name)已被处死") })
         return PressMenu(title: m.name, subtitle: "\(m.female ? "女" : "男") · \(Int(m.age)) 岁", items: items)
     }
     private func act(_ m: FamilyTree.Member, _ action: String, _ success: String) {
-        Task {
-            let e = await model.familyAction(m.id, action: action)
+        perform { (await model.familyAction(m.id, action: action), success) }
+    }
+    /// 执行一项操作：返回（错误原因或 nil，成功提示），结束后重读族谱。
+    private func perform(_ op: @escaping @MainActor () async -> (String?, String)) {
+        guard !busy else { return }
+        busy = true
+        Task { @MainActor in
+            let (e, success) = await op()
             flash = e ?? success; GameFeel.shared.notify(e == nil ? .success : .error)
-            tree = await model.familyTree(family)
+            await reload()
+            busy = false
         }
     }
-    /// Generations by descent inside the house: those with no parent in it first, then their children.
-    static func generations(_ members: [FamilyTree.Member], _ byId: [Int: FamilyTree.Member]) -> [[FamilyTree.Member]] {
-        var depth = [Int: Int]()
-        func level(_ m: FamilyTree.Member, _ guardDepth: Int = 0) -> Int {
-            if let d = depth[m.id] { return d }
-            if guardDepth > 30 { return 0 }
-            let parent = byId[m.father] ?? byId[m.mother]
-            let d = parent.map { level($0, guardDepth + 1) + 1 } ?? 0
-            depth[m.id] = d; return d
-        }
-        var out = [[FamilyTree.Member]]()
-        for m in members.sorted(by: { $0.age > $1.age }) {
-            let d = level(m)
-            while out.count <= d { out.append([]) }
-            out[d].append(m)
-        }
-        return out.filter { !$0.isEmpty }
-    }
-    static func numeral(_ n: Int) -> String { let d = Array("零一二三四五六七八九"); return n < 10 ? String(d[n]) : n < 20 ? "十" + (n % 10 == 0 ? "" : String(d[n % 10])) : String(n) }
 }

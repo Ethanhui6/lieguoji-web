@@ -17,6 +17,8 @@ struct DiplomacyBoard: View {
     let openWars: () -> Void
     let openChronicle: (Int) -> Void
     @State private var info: DiplomacyOverview?
+    @State private var failed = false
+    @State private var attempt = 0
     @State private var alliances: [GameModel.AllianceRow] = []
 
     struct Relation: Identifiable {
@@ -86,13 +88,13 @@ struct DiplomacyBoard: View {
                         if r.id != rows.last?.id { Divider2() }
                     }
                 } else {
-                    Text("载入……").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
+                    PanelPending(failed: failed) { attempt += 1 }
                 }
             }
             .padding(.horizontal, 16)
         }
-        .task(id: "\(nation)-\(state.day / 30)") {
-            info = await model.diplomacyInfo(nation)
+        .task(id: "\(nation)-\(state.day / 30)-\(attempt)") {
+            info = await model.diplomacyInfo(nation); failed = info == nil
             alliances = await model.allianceList()
         }
     }

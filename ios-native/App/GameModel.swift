@@ -463,6 +463,15 @@ import LieguojiCore
     nonisolated static func decode<T: Decodable>(_ type: T.Type, from data: Data) async -> T? {
         await Task.detached(priority: .userInitiated) { try? JSONDecoder().decode(T.self, from: data) }.value
     }
+    /// 详情页只读查询：请求或解码期间若已换了世界（读档、新建、回标题），丢弃旧世界的结果，
+    /// 免得族谱、国家页把上一个世界的人物与 ID 交给新世界的操作。
+    func query<T: Decodable>(_ type: T.Type, _ fetch: () async -> Data?) async -> T? {
+        guard state != nil else { return nil }
+        let epoch = worldEpoch
+        guard let data = await fetch(), epoch == worldEpoch else { return nil }
+        let value = await Self.decode(T.self, from: data)
+        return epoch == worldEpoch ? value : nil
+    }
     func togglePlay() { playing ? pause() : play() }
     private func owns(_ ticket: AdvanceOwnership.Ticket) -> Bool {
         phase == .playing && advanceOwnership.owns(ticket, world: worldEpoch)
@@ -1292,8 +1301,7 @@ import LieguojiCore
     }
 
     func financeInfo(_ index: Int) async -> FinanceOverview? {
-        guard state != nil, let data = await native.financeInfo(index) else { return nil }
-        return await Self.decode(FinanceOverview.self, from: data)
+        await query(FinanceOverview.self) { await native.financeInfo(index) }
     }
     func changeDebt(_ n: Int, borrow: Bool) async -> String? { finish(await native.changeDebt(n, borrow: borrow)) }
     func changeCorruption(_ n: Int, lower: Bool) async -> String? { finish(await native.changeCorruption(n, lower: lower)) }
@@ -1303,44 +1311,36 @@ import LieguojiCore
     func familyAction(_ id: Int, action: String) async -> String? { finish(await native.familyAction(id, action: action)) }
     func setTax(_ n: Int, _ value: String) async -> String? { finish(await native.setTax(n, value)) }
     func regionInfo(_ province: Int) async -> RegionInfo? {
-        guard state != nil, let data = await native.regionInfo(province) else { return nil }
-        return await Self.decode(RegionInfo.self, from: data)
+        await query(RegionInfo.self) { await native.regionInfo(province) }
     }
     func renameRegion(_ province: Int, _ name: String) async -> String? { finish(await native.renameRegion(province, name)) }
     func setRegionCenter(_ province: Int) async -> String? { finish(await native.setRegionCenter(province)) }
     /// 大事记 by category, newest first.
     /// 名将谱: the commanders who earned a rank, the most merit first.
     func generals() async -> [GeneralEntry] {
-        guard state != nil, let data = await native.generals() else { return [] }
-        return (await Self.decode([GeneralEntry].self, from: data)) ?? []
+        await query([GeneralEntry].self) { await native.generals() } ?? []
     }
     func chronicle(_ category: String) async -> [ChronicleEntry] {
-        guard state != nil, let data = await native.chronicle(category) else { return [] }
-        return (await Self.decode([ChronicleEntry].self, from: data)) ?? []
+        await query([ChronicleEntry].self) { await native.chronicle(category) } ?? []
     }
     func setCalendar(era: String, year: Int?) async -> String? { finish(await native.setCalendar(era: era, year: year)) }
     func setCityCulture(_ province: Int, _ culture: String) async -> String? { finish(await native.setCityCulture(province, culture)) }
     func tradeInfo(_ index: Int) async -> TradeOverview? {
-        guard state != nil, let data = await native.tradeInfo(index) else { return nil }
-        return await Self.decode(TradeOverview.self, from: data)
+        await query(TradeOverview.self) { await native.tradeInfo(index) }
     }
     func familyTree(_ family: String) async -> FamilyTree? {
-        guard state != nil, let data = await native.familyTree(family) else { return nil }
-        return await Self.decode(FamilyTree.self, from: data)
+        await query(FamilyTree.self) { await native.familyTree(family) }
     }
     func setLivelihood(_ n: Int, _ value: String) async -> String? { finish(await native.setLivelihood(n, value)) }
     func setSpecialty(_ province: Int, _ good: Int?) async -> String? { finish(await native.setSpecialty(province, good)) }
     func armyRecord(_ id: String) async -> ArmyService? {
-        guard state != nil, let data = await native.armyRecord(id) else { return nil }
-        return await Self.decode(ArmyService.self, from: data)
+        await query(ArmyService.self) { await native.armyRecord(id) }
     }
     func diplomacyInfo(_ index: Int) async -> DiplomacyOverview? {
-        guard state != nil, let data = await native.diplomacyInfo(index) else { return nil }
-        return await Self.decode(DiplomacyOverview.self, from: data)
+        await query(DiplomacyOverview.self) { await native.diplomacyInfo(index) }
     }
     func nationInfo(_ index: Int) async -> NationInfo? {
-        guard state != nil, let data = await native.nationInfo(index) else { return nil }
-        return await Self.decode(NationInfo.self, from: data)
+        await query(NationInfo.self) { await native.nationInfo(index) }
     }
     /// Alliance with another state, or leaving the current one (b < 0).
     func alliance(_ a: Int, with b: Int) async -> String? { finish(await native.alliance(a, with: b)) }
@@ -1350,7 +1350,6 @@ import LieguojiCore
     func setAutoDiplomacy(_ n: Int, _ enabled: Bool) async -> String? { finish(await native.setAutoDiplomacy(n, enabled)) }
 
     func provinceInfo(_ index: Int) async -> ProvinceInfo? {
-        guard state != nil, let data = await native.province(index) else { return nil }
-        return await Self.decode(ProvinceInfo.self, from: data)
+        await query(ProvinceInfo.self) { await native.province(index) }
     }
 }

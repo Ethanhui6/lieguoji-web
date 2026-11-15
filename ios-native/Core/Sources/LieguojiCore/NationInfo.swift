@@ -227,10 +227,13 @@ extension NativeEngine {
         let v = JS.object()
         v.role = JS(role); v.id = JS(p.id.optionalNumber ?? -1)
         v.name = JS(p.identity.name.optionalString ?? (familyFirst ? last + first : last.isEmpty ? first : first + "·" + last))
-        v.age = JS(p.age.optionalNumber ?? 0); v.female = JS(p.gender.optionalNumber == 1)
-        v.traits = .array((p.traits.isNull ? [] : p.traits.asArray).map { JS(Self.traitLabels[$0.asString] ?? $0.asString) })
+        let age = p.age.optionalNumber ?? 0
+        v.age = JS(age.isFinite ? min(200, max(0, age)) : 0); v.female = JS(p.gender.optionalNumber == 1)
+        // 容错：特质表只取字符串项，能力值只取有限数（异常存档不应让人物页、族谱闪退）。
+        let traits: [JS] = { if case .array(let a) = p.traits.storage { return a }; return [] }()
+        v.traits = .array(traits.compactMap(\.optionalString).map { JS(Self.traitLabels[$0] ?? $0) })
         let b = p.base
-        v.skills = .array(["charisma", "military", "diplomatic", "administrative"].map { JS((b[$0].optionalNumber ?? 0).rounded()) })
+        v.skills = .array(["charisma", "military", "diplomatic", "administrative"].map { k in let s = b[k].optionalNumber ?? 0; return JS(s.isFinite ? s.rounded() : 0) })
         return v
     }
     /// The 人物 section: monarch, heir of the ruling family, office holders (offices47 assignments).

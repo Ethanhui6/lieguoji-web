@@ -73,23 +73,35 @@ extension NativeEngine {
     }
 
     /// 族谱: one noble house's members — name, sex, age, alive, parents, spouse, children, the head.
+    /// 只读、容错：任何字段缺失或类型不符都不会中止（旧存档、手改存档、半途中断的操作都可能留下这类记录），
+    /// 成员 ID 去重、无对应人物者略去，数值一律为有限整数/小数。
     public func familyTree(_ familyId: String) -> Data? {
         let r = run, fam = r.kin.families[familyId]
-        guard !fam.isNull else { return nil }
+        guard case .object = fam.storage else { return nil }
         let o = JS.object()
-        o.surname = fam.surname.isNull ? JS("") : fam.surname
-        o.head = fam.headId.isNull ? JS(0) : fam.headId
-        o.members = .array((fam.memberIds.isNull ? [] : fam.memberIds.asArray).compactMap { m -> JS? in
-            guard let p = People.person(r, m.asInt) else { return nil }
+        o.surname = JS(fam.surname.optionalString ?? "")
+        o.head = JS(Self.personId(fam.headId))
+        var seen = Set<Int>()
+        let ids: [JS] = { if case .array(let a) = fam.memberIds.storage { return a }; return [] }()
+        o.members = .array(ids.compactMap { m -> JS? in
+            let id = Self.personId(m)
+            guard id > 0, seen.insert(id).inserted, let p = People.person(r, id), case .object = p.storage else { return nil }
             let v = personView(p, role: "")
             let x = JS.object()
-            x.id = p.id; x.name = v.name; x.female = v.female; x.age = v.age; x.alive = JS(p.isAlive.asBool)
-            x.father = JS(p.fatherId.optionalNumber ?? 0); x.mother = JS(p.motherId.optionalNumber ?? 0); x.spouse = JS(p.spouseId.optionalNumber ?? 0)
-            x.title = JS((p.roles.isNull ? [] : p.roles.asArray).first?.title.optionalString ?? "")
+            x.id = JS(id); x.name = v.name; x.female = v.female; x.age = v.age
+            x.alive = JS(p.isAlive.optionalBool ?? ((p.deathTime.optionalNumber ?? 0) <= 0))
+            x.father = JS(Self.personId(p.fatherId)); x.mother = JS(Self.personId(p.motherId)); x.spouse = JS(Self.personId(p.spouseId))
+            let roles: [JS] = { if case .array(let a) = p.roles.storage { return a }; return [] }()
+            x.title = JS(roles.first?.title.optionalString ?? "")
             x.traits = v.traits; x.skills = v.skills
             return x
         })
         return Data(o.json.utf8)
+    }
+    /// 人物 ID：有限的正整数，其余（缺失、非数、越界）记为 0。
+    static func personId(_ v: JS) -> Int {
+        guard let n = v.optionalNumber, n.isFinite, n >= 1, n < 1e15 else { return 0 }
+        return Int(n)
     }
 
     /// 生计 (民族特性): Agriculture, Nomadic, Maritime, FishAndHunting, Commercial or Other; it sets the

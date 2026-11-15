@@ -1157,7 +1157,8 @@ final class MapLabelsView: UIView {
             var k = points / l.rendered
             let image = l.view.image?.size ?? .zero
             var box = NameFit.Box(x: p.x, y: p.y, halfW: Double(image.width) * k / 2, halfH: Double(image.height) * k / 2, angle: l.angle, nation: l.province == nil, text: l.text)
-            let margin: Double = l.view.isHidden ? 6 : 0
+            // 已显示的名字留 3 点容差（交界轻微相撞不让位），隐去的名字要多空出 6 点才回来：边界变动时不来回隐现。
+            let margin: Double = l.view.isHidden ? 6 : -3
             if l.anchorY == nil && l.province == nil {
                 // 国名：相撞时先原位缩小，再在本国境内挪开（NameFit），都放不下才等放大后再显示。
                 var inside: ((Double, Double) -> Bool)?

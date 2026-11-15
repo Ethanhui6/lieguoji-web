@@ -174,6 +174,17 @@ extension NativeEngine {
             o.width = JS(labelWidth); o.height = JS(labelHeight); o.fontMax = JS(25 + 15 * min(1, max(0, scale))); o.fontMin = JS(labelMin)
             out.append(o)
         }
+        // 国名不缺：领土里一个国名网格点都没有的国家（小岛上的国家），在其第一个州的中心补一个小框，字号 6–9。
+        var named = Set(out.map { $0.nation.asInt })
+        let sc = run.scale.asNumber, provinces = run.world.provinces.asArray
+        for (p, k) in owners.enumerated() where k >= 0 && p < provinces.count && named.insert(k).inserted {
+            let c = provinces[p].center
+            let letters = Double(max(1, MapLayers.stateLabel(run.world.nations[k].name.optionalString ?? "", full: true).count))
+            let o = JS.object()
+            o.nation = JS(k); o.x = JS(c.x.asNumber / sc); o.y = JS(c.y.asNumber / sc); o.angle = JS(0)
+            o.width = JS(0.6 * letters); o.height = JS(1.5); o.fontMax = JS(9); o.fontMin = JS(6)
+            out.append(o)
+        }
         return .array(out)
     }
 

@@ -148,6 +148,9 @@ export function state(){
     const li=labelInput;
     labels=stateLabelBoxes47({cellsX:li.cellsX,points:li.points},c=>li.heights[c]>=20&&li.cells[c]>=0?ids[li.cells[c]]:null,()=>false)
       .map(b=>({nation:ni.get(b.key)!,x:b.x,y:b.y,width:b.width,height:b.height,fontMax:b.fontMax,fontMin:b.fontMin}));
+    // 领土里没有国名网格点的国家（小岛）：在其第一个州的中心补一个小框，字号 6–9。
+    const boxes=labels as {nation:number;x:number;y:number;width:number;height:number;fontMax:number;fontMin:number}[],named=new Set(boxes.map(l=>l.nation));
+    for(const p of w.provinces){const n=ni.get(p.controller);if(n===undefined||named.has(n))continue;named.add(n);boxes.push({nation:n,x:p.center.x/sc,y:p.center.y/sc,width:0.6*Math.max(1,[...w.nations[n].name].length),height:1.5,fontMax:9,fontMin:6});}
     labelOwners=ownerKey;
   }
   const stock=new Map(w.statecraft!.provinces.map(p=>[p.provinceId,p]));

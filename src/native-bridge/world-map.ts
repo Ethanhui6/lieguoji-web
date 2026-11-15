@@ -60,6 +60,9 @@ export async function buildWorldMap(terrain:FmsDocument,run:FoundingForces47,opt
   const owners=world.provinces.map(p=>p.controller);
   const labels=stateLabelBoxes47({cellsX:grid.cellsX,points:grid.points},c=>heights[c]>=20&&province[c]>=0?owners[province[c]]:null,()=>false)
     .map(b=>({nation:world.nations.findIndex(n=>n.id===b.key),x:b.x,y:b.y,width:b.width,height:b.height,fontMax:b.fontMax,fontMin:b.fontMin}));
+  // 领土里没有国名网格点的国家（小岛）：在其第一个州的中心补一个小框，字号 6–9。
+  const named=new Set(labels.map(l=>l.nation));
+  for(const p of world.provinces){const n=world.nations.findIndex(x=>x.id===p.controller);if(n<0||named.has(n))continue;named.add(n);labels.push({nation:n,x:p.center.x/sc,y:p.center.y/sc,width:0.6*Math.max(1,[...world.nations[n].name].length),height:1.5,fontMax:9,fontMin:6});}
   const meta={format:'lieguoji-native-world',version:1,seed:options.seed,template:options.template,grid:grid.id,
     provinces:world.provinces.map(p=>({id:p.id,name:p.name,x:p.center.x/sc,y:p.center.y/sc,nation:world.nations.findIndex(n=>n.id===p.controller),terrain:p.terrain})),
     nations:world.nations.map(n=>({id:n.id,name:n.name,color:nationColor(n),line:'#'+fmsStateLineColor(nationColor(n)).toString(16).padStart(6,'0'),capital:world.cities.findIndex(c=>c.id===n.capitalId),

@@ -294,7 +294,7 @@ struct FamilyTreeSheet: View {
     }
     private func row(_ m: FamilyTree.Member, _ tree: FamilyTree) -> some View {
         HStack(spacing: 8) {
-            Text(m.name).font(Theme.kai(17)).foregroundStyle(m.alive ? Theme.ink : Theme.ink2.opacity(0.6)).lineLimit(1)
+            Text(m.name).font(Theme.kai(17)).foregroundStyle(m.alive ? Theme.ink : Theme.ink2.opacity(0.6)).lineLimit(1).layoutPriority(1)
             if m.id == tree.head { Text("家主").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
             if !m.title.isEmpty { Text(m.title).font(Theme.kai(12)).foregroundStyle(Theme.seal).lineLimit(1) }
             Spacer(minLength: 4)

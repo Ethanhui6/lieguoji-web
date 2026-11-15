@@ -128,7 +128,7 @@ extension NativeEngine {
         // The original names each group of the view instead of the states (ViewManager
         // Update*LabelsAndBorderVisibility); the alliance view keeps every state's own name.
         if mode == "culture" || mode == "family" || mode == "religion" || mode == "polity" || mode == "region" {
-            o.labels = .array(labels(groupOf).asArray.compactMap { box -> JS? in
+            o.labels = .array(labels(groupOf, name: { legend.indices.contains($0) ? legend[$0].name : "" }).asArray.compactMap { box -> JS? in
                 let g = box.nation.asInt
                 guard legend.indices.contains(g), !legend[g].name.isEmpty else { return nil }
                 box.name = JS(legend[g].name); box.color = JS(legend[g].color); return box
@@ -136,7 +136,7 @@ extension NativeEngine {
         }
         if mode == "alliance" {
             // 地图上：同盟区域写同盟名，其余国家写本国名；图例只列同盟（附成员），末尾一行「不在同盟」。
-            o.labels = .array(labels(pactGroup).asArray.compactMap { box -> JS? in
+            o.labels = .array(labels(pactGroup, name: { g in g >= 0 && g < pacts.count ? pacts[g].name : nations.indices.contains(g - pacts.count) ? nations[g - pacts.count].name.optionalString ?? "" : "" }).asArray.compactMap { box -> JS? in
                 let g = box.nation.asInt
                 if g >= 0 && g < pacts.count { box.name = JS(pacts[g].name); box.color = JS(pacts[g].color); return box }
                 let n = g - pacts.count

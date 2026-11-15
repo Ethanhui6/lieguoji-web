@@ -29,7 +29,9 @@ extension NativeEngine {
         return String(format: "#%02x%02x%02x", Int((c.0 * 255).rounded()), Int((c.1 * 255).rounded()), Int((c.2 * 255).rounded()))
     }
     /// original-labels47 stateLabelBoxes47 over the label grid of the statics (cell → land province).
-    func labels(_ owners: [Int]) -> JS {
+    /// `owners`：每州所属分组（国家图为国家序号；文化、家族等视图为图例序号）。`name` 给出分组名用于估算字数；
+    /// 不给时按国家序号取国名（序号越界则按空名）。以前视图分组直接拿去取国家数组，分组多于国家时越界闪退。
+    func labels(_ owners: [Int], name: ((Int) -> String)? = nil) -> JS {
         let grid = statics.labelGrid
         if grid.isNull { return .array() }
         // The label grid is fixed for a world: read into arrays once.
@@ -131,7 +133,7 @@ extension NativeEngine {
                 let inner = list.filter { depth[$0] * 10 >= deepestDepth * 6 }.sorted { depth[$0] != depth[$1] ? depth[$0] > depth[$1] : $0 < $1 }
                 let stride = max(1, inner.count / 8)
                 let places = Swift.stride(from: 0, to: inner.count, by: stride).prefix(8).map { inner[$0] }
-                let letters = Double(max(1, MapLayers.stateLabel(run.world.nations[k].name.optionalString ?? "", full: true).count))
+                let letters = Double(max(1, MapLayers.stateLabel(name?(k) ?? (k >= 0 && k < run.world.nations.length ? run.world.nations[k].name.optionalString ?? "" : ""), full: true).count))
                 let step = min(dx, dy) * 0.6
                 var bestScore = -Double.infinity
                 for place in places {

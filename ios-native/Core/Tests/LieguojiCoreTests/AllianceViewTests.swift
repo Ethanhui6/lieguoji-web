@@ -63,4 +63,26 @@ final class AllianceViewTests: XCTestCase {
         XCTAssertEqual(fill(v, of: c, e), second)
         XCTAssertEqual(v.legend.asArray.filter { $0.key.asString.hasPrefix("alliance:") }.count, 1)
     }
+
+    /// 地图着色视图闪退回归：分组（家族、文化、宗教……）多于国家时，名字框排布曾按分组号取国家数组而越界闪退
+    /// （切到「家族」视图时最常见）。这里逐个视图打开，并在分组多于国家时确认名字框照常给出。
+    func testEveryColourViewOpensWhenGroupsOutnumberStates() throws {
+        let e = try world(); defer { cleanup() }
+        Regimes.enable(e.run)
+        e.advance(days: 30)
+        let states = e.run.world.nations.length, provinces = e.run.world.provinces.length
+        // 名字栅格：每州占一条 6 列 × 40 行的连片格子（测试世界自带的栅格为空，排名字的代码走不到）。
+        let rows = 40, cellsX = provinces * 6
+        var points = [JS](), cells = [JS]()
+        for row in 0..<rows { for column in 0..<cellsX { points += [JS(Double(column) * 2), JS(Double(row) * 2)]; cells.append(JS(column / 6)) } }
+        let grid = JS.object(); grid.cellsX = JS(cellsX); grid.points = .array(points); grid.cells = .array(cells)
+        e.statics.labelGrid = grid
+        var outnumbered = 0
+        for mode in ["state", "alliance", "culture", "family", "religion", "polity", "economy", "goods", "region"] {
+            let v = try JS.parse(e.view(mode))
+            XCTAssertEqual(v.fills.length, e.run.world.provinces.length, mode)
+            if !v.labels.isNull, v.legend.length > states { outnumbered += 1; XCTAssertGreaterThan(v.labels.length, 0, mode) }
+        }
+        XCTAssertGreaterThan(outnumbered, 0, "至少一个视图的分组多于国家（覆盖越界路径）")
+    }
 }

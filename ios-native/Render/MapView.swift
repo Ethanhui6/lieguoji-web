@@ -1249,11 +1249,11 @@ final class TroopLabelsView: UIView {
                 if (l.string as? String) != text || shownMarks[p.sprite.key] != mark {
                     l.string = text
                     let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 6
-                    // 有军情小图时左侧留出 13 pt，文字靠右；小图层只建一次。
-                    let icon = (l.sublayers?.first as CALayer?) ?? { let c = CALayer(); c.frame = CGRect(x: 1, y: 2, width: 12, height: 12); l.addSublayer(c); return c }()
+                    // 有军情小图时左侧留出 17 pt（CATextLayer 实排比测量略宽），文字靠右；小图层只建一次。
+                    let icon = (l.sublayers?.first as CALayer?) ?? { let c = CALayer(); c.frame = CGRect(x: 0, y: 1.5, width: 12, height: 12); l.addSublayer(c); return c }()
                     icon.contents = mark?.image; icon.isHidden = mark == nil
                     l.alignmentMode = mark == nil ? .center : .right
-                    l.bounds = CGRect(x: 0, y: 0, width: w + (mark == nil ? 0 : 13), height: 15)
+                    l.bounds = CGRect(x: 0, y: 0, width: w + (mark == nil ? 0 : 17), height: 15)
                     shownMarks[p.sprite.key] = mark
                 }
                 // Under the plaque (rebuildArmies: the plaque sits 0.16 below the point, half an icon tall),

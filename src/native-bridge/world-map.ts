@@ -56,9 +56,9 @@ export async function buildWorldMap(terrain:FmsDocument,run:FoundingForces47,opt
   u32(rivers.length/2);for(const v of rivers)f32(v);
   if(o!==size)throw Error('地图数据长度不一致。');
   const sc=run.scale,world=run.world;
-  // Nation name boxes as the web lays them out (map.ts: one box per state, single-province states under 30 cells hidden).
-  const owners=world.provinces.map(p=>p.controller),singles=new Map<string,number>();for(const id of owners)singles.set(id,(singles.get(id)??0)+1);
-  const labels=stateLabelBoxes47({cellsX:grid.cellsX,points:grid.points},c=>heights[c]>=20&&province[c]>=0?owners[province[c]]:null,(key,cellCount)=>singles.get(key)===1&&cellCount<30)
+  // 国名框：每个国家都有（以前单州且不足 30 格的小国不起框，地图上完全看不到它的名字）。
+  const owners=world.provinces.map(p=>p.controller);
+  const labels=stateLabelBoxes47({cellsX:grid.cellsX,points:grid.points},c=>heights[c]>=20&&province[c]>=0?owners[province[c]]:null,()=>false)
     .map(b=>({nation:world.nations.findIndex(n=>n.id===b.key),x:b.x,y:b.y,width:b.width,height:b.height,fontMax:b.fontMax,fontMin:b.fontMin}));
   const meta={format:'lieguoji-native-world',version:1,seed:options.seed,template:options.template,grid:grid.id,
     provinces:world.provinces.map(p=>({id:p.id,name:p.name,x:p.center.x/sc,y:p.center.y/sc,nation:world.nations.findIndex(n=>n.id===p.controller),terrain:p.terrain})),

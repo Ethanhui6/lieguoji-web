@@ -144,9 +144,9 @@ export function state(){
   const owners=w.provinces.map(p=>ni.get(p.controller)??-1),ownerKey=owners.join(',');
   let labels:unknown=undefined;
   if(labelInput&&ownerKey!==labelOwners){
-    const ids=w.provinces.map(p=>p.controller),singles=new Map<string,number>();for(const id of ids)singles.set(id,(singles.get(id)??0)+1);
+    const ids=w.provinces.map(p=>p.controller);
     const li=labelInput;
-    labels=stateLabelBoxes47({cellsX:li.cellsX,points:li.points},c=>li.heights[c]>=20&&li.cells[c]>=0?ids[li.cells[c]]:null,(key,cellCount)=>singles.get(key)===1&&cellCount<30)
+    labels=stateLabelBoxes47({cellsX:li.cellsX,points:li.points},c=>li.heights[c]>=20&&li.cells[c]>=0?ids[li.cells[c]]:null,()=>false)
       .map(b=>({nation:ni.get(b.key)!,x:b.x,y:b.y,width:b.width,height:b.height,fontMax:b.fontMax,fontMin:b.fontMin}));
     labelOwners=ownerKey;
   }

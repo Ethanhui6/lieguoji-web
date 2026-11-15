@@ -39,7 +39,6 @@ extension NativeEngine {
         func group(_ c: Int) -> Int? { cells[c] >= 0 && owners[cells[c]] >= 0 ? owners[cells[c]] : nil }
         var order = [Int](), groups = [Int: [Int]]()
         for c in 0..<n { guard let k = group(c) else { continue }; if groups[k] == nil { order.append(k) }; groups[k, default: []].append(c) }
-        var singles = [Int: Int](); for o in owners { singles[o, default: 0] += 1 }
         var out = [JS]()
         // 国名分块 (as the original labels a state): each connected piece of a state's land gets its own
         // name — a state with land in the east and the west is named in both, not once in the gap
@@ -83,8 +82,9 @@ extension NativeEngine {
             default: return c + cellsX < n ? c + cellsX : -1
             }
         }
+        // 国名不缺：每个国家至少有一块国名框（单州小国以前不足 30 格就不起框，地图上完全看不到它的名字）；
+        // 小国的框小、字小，远看时由界面按字号隐去，放大到合适的缩放就会出现。
         for (k, list) in parts {
-            if singles[k] == 1 && list.count < 30 { continue }
             var cx = 0.0, cy = 0.0; for c in list { cx += pts[2 * c]; cy += pts[2 * c + 1] }; cx /= Double(list.count); cy /= Double(list.count)
             var pole = list[0], best = Double.infinity
             for c in list { let d = pow(pts[2 * c] - cx, 2) + pow(pts[2 * c + 1] - cy, 2); if d < best { best = d; pole = c } }

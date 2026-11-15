@@ -47,6 +47,7 @@ enum ShotTour {
         await wait(3)
         await shoot("03-world")
         await checkColors(model)
+        await checkNames(model)
         await checkAdvanceOwnership(model)
         // 国名稳定: while the war redraws the borders and the camera stands still, every frame is compared
         // with the one before. A name that dips (hidden or fading) and is back within 45 frames blinked.
@@ -89,27 +90,31 @@ enum ShotTour {
             model.controller.fly(x: Double(a.x), y: Double(a.y))
             await wait(2); await shoot("05-battle-close")
             await wait(4); await shoot("06-battle-close-later")
-            // 战场地面关键帧：在这场战斗所在的州演示两方左右、优势一方推进、上下方向、三方、五方、战斗结束。
+            // 墨晕关键帧（在这场战斗所在的州）：西侧入境 0.3 秒、占领过半、铺满；两方交战、优势一方推进、三方、结束淡出。
             if a.province >= 0, state.nations.count >= 5 {
-                let c = SIMD2<Float>(a.x, a.y)
-                func camp(_ n: Int, _ dx: Float, _ dy: Float, _ t: Float) -> BattleGround.Camp { BattleGround.Camp(nation: n, toward: c + SIMD2(dx, dy) * 20, troops: t) }
-                let frames: [(String, [BattleGround.Camp])] = [
-                    ("07a-ground-two", [camp(0, -1, 0, 5000), camp(1, 1, 0, 5000)]),
-                    ("07b-ground-push", [camp(0, -1, 0, 2500), camp(1, 1, 0, 7500)]),
-                    ("07c-ground-vertical", [camp(2, 0, -1, 6000), camp(3, 0, 1, 4000)]),
-                    ("07d-ground-three", [camp(0, -1, 0.4, 5000), camp(1, 1, 0.4, 3000), camp(2, 0, -1, 2000)]),
-                    ("07e-ground-five", [camp(0, -1, 0, 4000), camp(1, 1, 0, 3000), camp(2, 0, -1, 2000), camp(3, 0, 1, 1500), camp(4, 0.7, 0.7, 600)]),
+                func camp(_ n: Int, _ dx: Float, _ dy: Float, _ t: Float, _ reach: Float = 1) -> BattleGround.Camp {
+                    let len = max(0.001, (dx * dx + dy * dy).squareRoot())
+                    return BattleGround.Camp(nation: n, direction: SIMD2(dx / len, dy / len), troops: t, reach: reach)
+                }
+                let frames: [(String, [BattleGround.Camp], Double)] = [
+                    ("07a-ink-enter", [camp(0, -1, 0, 5000, InkFront.entryReach)], 0.3),
+                    ("07b-ink-half", [camp(0, -1, 0, 5000, 0.6)], 1.2),
+                    ("07c-ink-full", [camp(0, -1, 0, 5000, 1)], 1.4),
+                    ("07d-ground-two", [camp(0, -1, 0, 5000), camp(1, 1, 0, 5000)], 1.6),
+                    ("07e-ground-push", [camp(0, -1, 0, 2500), camp(1, 1, 0, 7500)], 1.6),
+                    ("07f-ground-three", [camp(0, -1, 0.4, 5000), camp(1, 1, 0.4, 3000), camp(2, 0, -1, 2000)], 1.6),
                 ]
                 model.controller.groundDemo = true
-                for (name, camps) in frames {
+                model.controller.battleGrounds = []; model.controller.objectWillChange.send(); await wait(1.2)
+                for (name, camps, after) in frames {
                     model.controller.battleGrounds = [BattleGround(province: a.province, camps: camps)]
                     model.controller.objectWillChange.send()
-                    await wait(1.6); await shoot(name)
+                    await wait(after); await shoot(name)
                 }
                 // 战斗结束：份额最大的一方铺满，随后淡出。
                 model.controller.battleGrounds = []
                 model.controller.objectWillChange.send()
-                await wait(0.7); await shoot("07f-ground-end")
+                await wait(0.7); await shoot("07g-ground-end")
                 model.controller.groundDemo = false
             }
         }
@@ -159,6 +164,14 @@ enum ShotTour {
         meter.start()
         for _ in 0..<5 { show(.statistics); await wait(0.8); show(nil); await wait(0.5) }
         await shoot("24-stress-ranking-" + meter.stop())
+        // 行军静看：镜头不动、1× 推演 8 秒（玩家最常见的状态）。量主线程帧间隔与底图缓存复用率，结果写进截图名。
+        model.speed = 1
+        let before = model.controller.baseStats?() ?? (0, 0, 0)
+        meter.start()
+        await wait(8)
+        let glide = meter.stop(), after = model.controller.baseStats?() ?? (0, 0, 0)
+        let reused = after.reuses - before.reuses, redrawn = after.renders - before.renders
+        await shoot("25-stress-glide-" + glide + "-base\(reused)of\(reused + redrawn)-verts\(after.vertices)")
         model.speed = speed
         model.pause(saving: false)
         await profilePausedPanels(model, show: show)
@@ -337,6 +350,33 @@ enum ShotTour {
             await wait(2.2); await shoot("03b-colors-dense")
             model.controller.resetRequest = UUID(); await wait(0.9)
         }
+    }
+
+    /// 国名覆盖：全图总览时显示了哪些国家的名字；没显示的逐个飞到其都城近看，确认能看到。
+    /// 结果写入 name-coverage.json（alive 现存国数、overview 总览可见数、closeUp 近看补上的、missing 仍看不到的）。
+    @MainActor static func checkNames(_ model: GameModel) async {
+        guard let state = model.state, let map = model.map else { return }
+        func shown() -> Set<String> { Set((model.controller.nameFrame?() ?? [:]).keys.map { String($0.split(separator: "#").first ?? "") }) }
+        let alive = state.nations.indices.filter { state.nations[$0].alive && $0 < map.meta.nations.count && state.nations[$0].provinces > 0 }
+        func label(_ n: Int) -> String { MapLayers.stateLabel(map.meta.nations[n].name, full: model.controller.display.fullNationNames) }
+        model.controller.resetRequest = UUID(); await wait(1.2)
+        let overview = shown()
+        await shoot("03c-names-overview")
+        var closeUp = [String](), missing = [String]()
+        for n in alive where !overview.contains(label(n)) {
+            if closeUp.count + missing.count >= 12 { break }
+            let capital = map.meta.nations[n].capital
+            let at: (Double, Double)? = map.meta.cities.indices.contains(capital) ? (Double(map.meta.cities[capital].x), Double(map.meta.cities[capital].y))
+                : state.owners.firstIndex(of: n).map { (Double(map.meta.provinces[$0].x), Double(map.meta.provinces[$0].y)) }
+            guard let at else { missing.append(label(n)); continue }
+            model.controller.fly(x: at.0, y: at.1); await wait(1.6)
+            if shown().contains(label(n)) { closeUp.append(label(n)); if closeUp.count == 1 { await shoot("03d-names-close") } } else { missing.append(label(n)) }
+        }
+        let report: [String: Any] = ["alive": alive.count, "overview": alive.filter { overview.contains(label($0)) }.count, "closeUp": closeUp, "missing": missing]
+        if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {
+            try? data.write(to: dir.appendingPathComponent("name-coverage.json"), options: .atomic)
+        }
+        model.controller.resetRequest = UUID(); await wait(0.9)
     }
 
     /// 连续帧对比: samples the state names of every displayed frame (MapLabelsView.nameFrame).

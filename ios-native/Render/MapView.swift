@@ -57,6 +57,8 @@ import LieguojiCore
     var tween: Double = 0.3
     /// Troop / ship counts by army or fleet id, shown under the icons when zoomed in.
     var troopTexts: [String: String] = [:]
+    /// 兵力前的军情小图（按军队 id）。
+    var troopMarks: [String: ArmyGlyph] = [:]
     /// 战场地面：每场陆战的州与各营兵力（每步更新）。
     var battleGrounds: [BattleGround] = []
     /// CI 巡览演示战场地面时为真：推演不覆盖演示用的战况。
@@ -65,6 +67,8 @@ import LieguojiCore
     var placed: ((String) -> (Double, Double)?)?
     /// CI 连续帧对比: the state names on screen in this frame and how opaque each is drawn.
     var nameFrame: (() -> [String: Float])?
+    /// 底图缓存的复用与重画次数（CI 性能体检读取）。
+    var baseStats: (() -> (reuses: Int, renders: Int, vertices: Int))?
     /// Harbour points in map units. The sea-route layer is rebuilt when this changes.
     @Published var seaPorts: [SIMD2<Float>] = []
     /// 要塞 marks: the cities of fortified provinces, in map units.
@@ -195,7 +199,7 @@ struct PlaySettings: Codable, Equatable {
     /// Pixels per point the map is drawn at (capped at the screen's own; the names stay sharp).
     var renderScale = 2.0
     /// The share of real time the simulation may keep a core busy, in percent.
-    var simLoad = 65
+    var simLoad = 50
     /// Lower the frames and rest the simulation when the phone runs hot or in Low Power Mode.
     var autoCool = true
     /// 可回退: the entry camera (eases out to the whole world) and the reveal's ease (else linear, as before).
@@ -206,8 +210,10 @@ struct PlaySettings: Codable, Equatable {
     /// 大事暂停: a declaration of war, a rising or a state's end stops the clock.
     var pauseOnNews = false
     static let key = "playSettings.v1"
+    /// 设置格式版本：17 起“均衡”为 50%。
+    static let revision = 17
     init() {}
-    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave, pauseOnNews }
+    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave, pauseOnNews, revision }
     // Every field is optional in a stored setting: older versions saved fewer (and a 高帧率 switch).
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -218,7 +224,7 @@ struct PlaySettings: Codable, Equatable {
         marchFPS = try c.decodeIfPresent(Int.self, forKey: .marchFPS) ?? 30
         effectFPS = try c.decodeIfPresent(Int.self, forKey: .effectFPS) ?? 30
         renderScale = try c.decodeIfPresent(Double.self, forKey: .renderScale) ?? 2
-        simLoad = try c.decodeIfPresent(Int.self, forKey: .simLoad) ?? 65
+        simLoad = try c.decodeIfPresent(Int.self, forKey: .simLoad) ?? 50
         autoCool = try c.decodeIfPresent(Bool.self, forKey: .autoCool) ?? true
         introCamera = try c.decodeIfPresent(Bool.self, forKey: .introCamera) ?? true
         easeReveal = try c.decodeIfPresent(Bool.self, forKey: .easeReveal) ?? true
@@ -227,6 +233,13 @@ struct PlaySettings: Codable, Equatable {
         // 1.12: the old 均衡 (marching at 60 frames, the simulation at 80 %) kept the phone hot; who had it
         // takes the new 均衡. A setting chosen one by one is left as it was.
         if mapFPS == 60 && marchFPS == 60 && effectFPS == 30 && renderScale == 2 && simLoad == 80 { marchFPS = 30; simLoad = 65 }
+        // 1.17：大世界在 1× 下推演总是跑满“推演占用”，发热由它决定。仍用旧“均衡”(65%)、旧“省电”(50%)的降为 50%、40%；
+        // 推演提速后日速大致不变而发热下降。逐项自定的设置不动。
+        // 只迁移一次（存过 revision 的设置是新版本存的，用户之后再选 65% 不会被改回）。
+        if (try c.decodeIfPresent(Int.self, forKey: .revision) ?? 0) < Self.revision {
+            if mapFPS == 60 && marchFPS == 30 && effectFPS == 30 && renderScale == 2 && simLoad == 65 { simLoad = 50 }
+            if mapFPS == 60 && marchFPS == 30 && effectFPS == 15 && renderScale == 1.5 && simLoad == 50 { simLoad = 40 }
+        }
     }
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: Keys.self)
@@ -235,10 +248,11 @@ struct PlaySettings: Codable, Equatable {
         try c.encode(renderScale, forKey: .renderScale); try c.encode(simLoad, forKey: .simLoad); try c.encode(autoCool, forKey: .autoCool)
         try c.encode(introCamera, forKey: .introCamera); try c.encode(easeReveal, forKey: .easeReveal)
         try c.encode(autosave, forKey: .autosave); try c.encode(pauseOnNews, forKey: .pauseOnNews)
+        try c.encode(Self.revision, forKey: .revision)
     }
     /// 画面档位: 省电, 均衡, 流畅 (nil: the values were set one by one).
     static let presets: [(key: String, name: String, mapFPS: Int, marchFPS: Int, effectFPS: Int, renderScale: Double, simLoad: Int)] = [
-        ("saver", "省电", 60, 30, 15, 1.5, 50), ("balanced", "均衡", 60, 30, 30, 2, 65), ("smooth", "流畅", 120, 120, 60, 3, 100),
+        ("saver", "省电", 60, 30, 15, 1.5, 40), ("balanced", "均衡", 60, 30, 30, 2, 50), ("smooth", "流畅", 120, 120, 60, 3, 100),
     ]
     var preset: String {
         get { Self.presets.first { $0.mapFPS == mapFPS && $0.marchFPS == marchFPS && $0.effectFPS == effectFPS && $0.renderScale == renderScale && $0.simLoad == simLoad }?.key ?? "custom" }
@@ -360,8 +374,7 @@ struct MapView: UIViewRepresentable {
             // 地图清晰度 (default 2×): on a 3× screen the map (drawn with 4× multisampling) cost more than twice
             // the GPU work for no visible gain; the names and labels above it stay at full resolution.
             mtk.contentScaleFactor = min(UIScreen.main.scale, controller.play.renderScale)
-            renderer = MapRenderer(view: mtk, map: map, parchmentURL: Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"),
-                                   unitURL: { Bundle.main.url(forResource: "unit-\($0)", withExtension: "png", subdirectory: "World") })
+            renderer = MapRenderer(view: mtk, map: map, parchmentURL: Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"))
             mtk.delegate = renderer
             renderer?.onDraw = { [weak self] t in self?.frameDrawn(t) }
             renderer?.onOutlines = { [weak self] in self?.startLink(); self?.mtk.setNeedsDisplay() }
@@ -376,6 +389,11 @@ struct MapView: UIViewRepresentable {
                 }
             }
             labels = MapLabelsView(map: map)
+            labels.ownerAt = { [weak self] x, y in
+                guard let self, let c = self.picker.cell(atX: Float(x), y: Float(y)), self.map.isLand(c) else { return -1 }
+                let p = Int(self.map.province[c])
+                return p >= 0 && p < self.map.meta.provinces.count ? self.map.meta.provinces[p].nation : -1
+            }
             for v in [mtk!, labels!] as [UIView] { v.frame = container.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(v) }
             labels.isUserInteractionEnabled = false
             effects.frame = container.bounds; effects.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(effects)
@@ -399,6 +417,7 @@ struct MapView: UIViewRepresentable {
                 return (self.camera.scale, self.bounds.lowerBound)
             }
             controller.nameFrame = { [weak self] in self?.labels?.nameFrame() ?? [:] }
+            controller.baseStats = { [weak self] in (self?.renderer?.baseReuses ?? 0, self?.renderer?.baseRenders ?? 0, self?.renderer?.baseVertices ?? 0) }
             controller.placed = { [weak self] key in
                 guard let p = self?.renderer?.placedSprites().first(where: { $0.sprite.key == key }) else { return nil }
                 return (Double(p.x), Double(p.y))
@@ -462,6 +481,7 @@ struct MapView: UIViewRepresentable {
             // Zoomed out the banners carry no marks: skip collecting every army's position each frame.
             if !troops.shows(renderer.camera) && troops.isEmpty { return }
             troops.texts = controller.troopTexts
+            troops.marks = controller.troopMarks
             troops.update(renderer.placedSprites(), camera: renderer.camera, viewport: mtk.bounds.size, spread: renderer.spread)
         }
         private var camera: MapCamera { renderer?.camera ?? MapCamera(centerX: 0, centerY: 0, scale: 1) }
@@ -839,6 +859,7 @@ struct MapView: UIViewRepresentable {
                 lastReport = t
                 metrics.text = String(format: "  平均 %.2f ms · 1%% low %.0f fps  \n  绘制间隔（按需重绘，非 GPU 耗时）  ", stats.averageMilliseconds, stats.onePercentLow)
                     + (controller.simText.isEmpty ? "" : "\n" + controller.simText)
+                    + (renderer.map { String(format: "\n  底图缓存：复用 %d 帧 · 重画 %d 次  ", $0.baseReuses, $0.baseRenders) } ?? "")
                 PerfLog.record(frameMs: stats.averageMilliseconds, lowFPS: stats.onePercentLow, sim: controller.simText)
             }
         }
@@ -885,6 +906,10 @@ final class MapLabelsView: UIView {
         /// The smallest size on screen (a capital's name), and the city's own place the enlarged name stands above.
         var floorPoints: Double = 0
         var anchorY: Double?
+        /// 国名所属的国家（挪位时只挪到本国境内）；分组名、城名为 nil。
+        var nation: Int?
+        /// 上一帧所用的排布候选（NameFit.candidates 的序号）：先试它，名字不来回跳。
+        var slot: Int?
         init(text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?) {
             self.text = text; self.x = x; self.y = y; self.mapEm = mapEm; self.fill = fill; self.stroke = stroke; self.strokeWidth = strokeWidth; self.minPoints = minPoints; self.province = province
         }
@@ -977,9 +1002,12 @@ final class MapLabelsView: UIView {
             let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
             let l = Label(text: shown, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
             l.angle = Double(box.angle ?? 0)
+            l.nation = box.nation
             return l
         }.sorted { $0.mapEm != $1.mapEm ? $0.mapEm > $1.mapEm : $0.text < $1.text }
     }
+    /// 地图坐标处陆地的归属国（-1 为海或无主）：国名挪位时用来确认仍在本国境内。
+    var ownerAt: ((Double, Double) -> Int)?
     /// Ownership changed: replace the state names, keep every city label and its rendered image.
     /// A colour view names its groups (culture, family, religion) where the state names were.
     func setGroups(_ groups: [GroupLabel], animated: Bool = true) {
@@ -1014,6 +1042,7 @@ final class MapLabelsView: UIView {
             }
             let o = old[i]; kept.insert(i)
             if !m.keep { o.x = f.x; o.y = f.y; o.mapEm = f.mapEm; o.angle = f.angle; Self.namesMoved += 1 }
+            o.nation = f.nation
             next.append(o)
         }
         for (i, o) in old.enumerated() where !kept.contains(i) { o.view.removeFromSuperview() }
@@ -1071,31 +1100,12 @@ final class MapLabelsView: UIView {
         }
     }
 
-    /// A name on the screen: its centre, half size and tilt.
-    private struct Box {
-        let x, y, halfW, halfH, cosine, sine: CGFloat; let nation: Bool; let text: String
-        var reach: CGFloat { (halfW * halfW + halfH * halfH).squareRoot() }
-    }
-    /// Separating-axis test for two tilted names; the same state's name is also kept well apart from itself.
-    private static func clash(_ a: Box, _ b: Box, margin: CGFloat) -> Bool {
-        let dx = b.x - a.x, dy = b.y - a.y, far = a.reach + b.reach + margin, gap = dx * dx + dy * dy
-        if a.nation && b.nation && a.text == b.text {
-            let apart = (a.halfW + b.halfW) * 1.6
-            if gap < apart * apart { return true }
-        }
-        if gap > far * far { return false }
-        for (ux, uy) in [(a.cosine, a.sine), (-a.sine, a.cosine), (b.cosine, b.sine), (-b.sine, b.cosine)] {
-            func radius(_ q: Box) -> CGFloat { q.halfW * abs(q.cosine * ux + q.sine * uy) + q.halfH * abs(-q.sine * ux + q.cosine * uy) }
-            if abs(dx * ux + dy * uy) > radius(a) + radius(b) + margin { return false }
-        }
-        return true
-    }
-
+    /// 名字的屏幕框与相撞判定见 LieguojiCore.NameFit（与测试共用）。
     func update(camera: MapCamera, viewport: CGSize) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // 避让: the biggest names first; a name that would land on one already placed waits until the
         // player zooms in. One already showing gets a little slack, so names do not flicker at the limit.
-        var taken = [Box](); taken.reserveCapacity(nations.count + 64)
+        var taken = [NameFit.Box](); taken.reserveCapacity(nations.count + 64)
         for p in pictures {
             let at = camera.toScreen(x: p.x, y: p.y, viewport: vp), w = p.width * camera.scale, size = p.view.bounds.width
             guard size > 0, w > 2, at.x > -w, at.y > -w, at.x < vp.width + w, at.y < vp.height + w else { p.view.isHidden = true; continue }
@@ -1111,17 +1121,13 @@ final class MapLabelsView: UIView {
                 let p = camera.toScreen(x: c.x, y: c.y, viewport: vp)
                 guard p.x > -40, p.y > -40, p.x < vp.width + 40, p.y < vp.height + 40 else { continue }
                 let half = CGFloat(max(ring, 3) + 3)
-                taken.append(Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: half, halfH: half, cosine: 1, sine: 0, nation: false, text: ""))
+                taken.append(NameFit.Box(x: p.x, y: p.y, halfW: Double(half), halfH: Double(half), angle: 0, nation: false, text: ""))
             }
         }
         let capitalNames = showCities ? cities.filter { $0.fill === Self.capitalInk } : []
         let otherCities = showCities ? cities.filter { $0.fill !== Self.capitalInk } : []
-        // Enlarged capital names (the map seen from afar) give way to the state names; at their own size
-        // (close up) they come first, as before.
-        let enlarged = capitalNames.first.map { $0.mapEm * camera.scale < $0.floorPoints } ?? false
         // 国名先排、都城名其次：首都圈已最先占位，国名不会盖住首都标记；都城名若与国名相撞，先换到圈下方再试。
         // （都城名排在国名前时，近看能显示的都城名会把附近的大国名挤掉，边界一动国名就时隐时现。）
-        _ = enlarged
         let order = custom + nations + capitalNames + otherCities
         for l in order {
             var points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)
@@ -1148,20 +1154,35 @@ final class MapLabelsView: UIView {
                 else { let image = Self.render(l.text, size: CGFloat(l.rendered), fill: l.fill, stroke: l.stroke, strokeEm: CGFloat(l.strokeWidth)); Self.images.setObject(image, forKey: key); l.view.image = image }
                 l.view.sizeToFit()
             }
-            let k = CGFloat(points / l.rendered), image = l.view.image?.size ?? .zero
-            var box = Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: image.width * k / 2, halfH: image.height * k / 2, cosine: CGFloat(cos(l.angle)), sine: CGFloat(sin(l.angle)), nation: l.province == nil, text: l.text)
-            let margin: CGFloat = l.view.isHidden ? 6 : 0
-            if taken.contains(where: { Self.clash($0, box, margin: margin) }) {
+            var k = points / l.rendered
+            let image = l.view.image?.size ?? .zero
+            var box = NameFit.Box(x: p.x, y: p.y, halfW: Double(image.width) * k / 2, halfH: Double(image.height) * k / 2, angle: l.angle, nation: l.province == nil, text: l.text)
+            let margin: Double = l.view.isHidden ? 6 : 0
+            if l.anchorY == nil && l.province == nil {
+                // 国名：相撞时先原位缩小，再在本国境内挪开（NameFit），都放不下才等放大后再显示。
+                var inside: ((Double, Double) -> Bool)?
+                if let n = l.nation, let owner = ownerAt {
+                    inside = { sx, sy in
+                        let w = camera.toWorld(x: sx, y: sy, viewport: vp)
+                        return owner(w.x, w.y) == n
+                    }
+                }
+                // 字号下限：缩小后的字仍要看得清（国名约 6 pt，分组名同）。
+                guard let fit = NameFit.place(box, taken: taken, margin: margin, minHalfH: max(l.minPoints, 6) * 0.62, preferred: l.slot, inside: inside) else { l.view.isHidden = true; l.slot = nil; continue }
+                l.slot = fit.index; box = fit.box
+                k *= NameFit.candidates[fit.index].scale
+                p = (x: box.x, y: box.y)
+            } else if taken.contains(where: { NameFit.clash($0, box, margin: margin) }) {
                 // 都城名：上方被占时改写在首都圈下方。
                 guard let anchor = l.anchorY else { l.view.isHidden = true; continue }
                 let at = camera.toScreen(x: l.x, y: anchor, viewport: vp)
                 let below = at.y + (max(ring, 3) + 3 + 7 + points * 0.78)
-                box = Box(x: CGFloat(p.x), y: CGFloat(below), halfW: box.halfW, halfH: box.halfH, cosine: box.cosine, sine: box.sine, nation: box.nation, text: box.text)
-                if taken.contains(where: { Self.clash($0, box, margin: margin) }) { l.view.isHidden = true; continue }
+                box = NameFit.Box(x: p.x, y: below, halfW: box.halfW, halfH: box.halfH, angle: l.angle, nation: box.nation, text: box.text)
+                if taken.contains(where: { NameFit.clash($0, box, margin: margin) }) { l.view.isHidden = true; continue }
                 p = (x: p.x, y: below)
             }
             taken.append(box)
-            l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: k, y: k)
+            l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: CGFloat(k), y: CGFloat(k))
             l.view.center = CGPoint(x: p.x, y: p.y)
             if l.view.isHidden {
                 // A name that gave way comes back softly.
@@ -1177,7 +1198,10 @@ final class MapLabelsView: UIView {
 /// strength up close); they follow the icons while they glide.
 final class TroopLabelsView: UIView {
     var texts: [String: String] = [:]
+    /// 兵力前的军情小图：作为文字层的子层画在左侧，随文字一起栅格化。
+    var marks: [String: ArmyGlyph] = [:]
     private var layers = [String: CATextLayer]()
+    private var shownMarks = [String: ArmyGlyph]()
     private static let font = UIFont(name: "TW-Kai-98_1", size: 11) ?? .systemFont(ofSize: 11, weight: .semibold)
     override init(frame: CGRect) { super.init(frame: frame); isUserInteractionEnabled = false }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
@@ -1200,10 +1224,16 @@ final class TroopLabelsView: UIView {
                 let s = camera.toScreen(x: Double(p.x), y: Double(p.y), viewport: vp)
                 guard s.x > -40, s.y > -40, s.x < vp.width + 40, s.y < vp.height + 40 else { continue }
                 let l = layers[p.sprite.key] ?? make(p.sprite.key)
-                if (l.string as? String) != text {
+                let mark = marks[p.sprite.key]
+                if (l.string as? String) != text || shownMarks[p.sprite.key] != mark {
                     l.string = text
                     let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 6
-                    l.bounds = CGRect(x: 0, y: 0, width: w, height: 15)
+                    // 有军情小图时左侧留出 13 pt，文字靠右；小图层只建一次。
+                    let icon = (l.sublayers?.first as CALayer?) ?? { let c = CALayer(); c.frame = CGRect(x: 1, y: 2, width: 12, height: 12); l.addSublayer(c); return c }()
+                    icon.contents = mark?.image; icon.isHidden = mark == nil
+                    l.alignmentMode = mark == nil ? .center : .right
+                    l.bounds = CGRect(x: 0, y: 0, width: w + (mark == nil ? 0 : 13), height: 15)
+                    shownMarks[p.sprite.key] = mark
                 }
                 // Under the plaque (rebuildArmies: the plaque sits 0.16 below the point, half an icon tall),
                 // following the army's seat in a ring of armies on one spot.
@@ -1212,7 +1242,7 @@ final class TroopLabelsView: UIView {
                 seen.insert(p.sprite.key)
             }
         }
-        for (k, l) in layers where !seen.contains(k) { l.removeFromSuperlayer(); layers[k] = nil }
+        for (k, l) in layers where !seen.contains(k) { l.removeFromSuperlayer(); layers[k] = nil; shownMarks[k] = nil }
         CATransaction.commit()
     }
     private func make(_ key: String) -> CATextLayer {

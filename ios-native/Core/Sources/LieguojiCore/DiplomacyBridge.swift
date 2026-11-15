@@ -68,6 +68,7 @@ public enum DiplomacyBridge {
         let alliances = r.alliances.records.asArray
         let start = r.life.startDate
         let cargo = r.transports.cargo.isNull ? [] : r.transports.cargo.asArray.map(\.army)
+        let strengths = PeaceBridge.strengths(r)
         let nations = w.nations.asArray.map { n -> DiplomacyWorld.Nation in
             let id = n.id.asString, d = s.nations[id], leaderId = r.people.nations[id].leaderId
             let p = leaderId.isNull ? nil : r.people.persons[leaderId.asInt.description]
@@ -85,7 +86,7 @@ public enum DiplomacyBridge {
                                          polity: polities.firstIndex(of: r.upperCombat.nations[id].polity.asString) ?? -1, alliance: alliance, leader: leader,
                                          activeTime: d.activeTime.optionalNumber, passiveTime: d.passiveTime.optionalNumber,
                                          pools: DiplomacyWorld.Pools(power: d.pools.power.asNumber, startWar: d.pools.startWar.asNumber, endWar: d.pools.endWar.asNumber, efficiency: d.pools.efficiency.asNumber),
-                                         strength: PeaceBridge.strength(r, id),
+                                         strength: strengths[id] ?? PeaceBridge.strength(r, id),
                                          troops: (w.armies.asArray + cargo).filter { $0.nationId.asString == id && $0.status.asString != "destroyed" }.map(\.troops.asInt),
                                          ships: (r.navy.fleets.isNull ? [] : r.navy.fleets.asArray).filter { $0.nationId.asString == id && $0.status.asString != "lost" }.map(\.ships.asInt))
         }

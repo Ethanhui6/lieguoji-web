@@ -53,10 +53,6 @@ final class EffectsView: UIView {
         return a
     }
     private var battleLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
-    /// Who fights whom, without text: a line from each army to the clash, in its state's colour.
-    private var clashLayers: [String: (a: CAShapeLayer, b: CAShapeLayer, battle: MapEffects.Battle)] = [:]
-    /// Off since the icons are drawn meeting at the clash.
-    var showClashLines = false
     /// 显示战争箭头 (推演与画面).
     var showArrows = true
     private var siegeLayers: [String: (layer: CALayer, ring: CAShapeLayer, x: Double, y: Double)] = [:]
@@ -65,8 +61,8 @@ final class EffectsView: UIView {
     private var claimLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var peaceLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
     private var burstLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
-    /// 正在显示的事件印（同屏最多三方，不抢视线）。
-    private var sealIDs = Set<String>()
+    /// 正在显示的事件图（同屏最多三处，不抢视线）。
+    private var glyphIDs = Set<String>()
     private var battleArrows: [String: (root: CALayer, fill: CAShapeLayer, gradient: CAGradientLayer, outline: CAShapeLayer, head: CAShapeLayer, reveal: CAShapeLayer, a: MapEffects.Arrow)] = [:]
     private var seen = Set<String>()
     private var seenOrder: [String] = []
@@ -433,62 +429,28 @@ final class EffectsView: UIView {
                 mark.add(g, forKey: "fall"); root.addSublayer(mark)
             }
         default:
-            // 统一的事件语言：一圈墨晕洇开，一方一字印落下（立、战、丰、商、才、灾、疫、革、篡），节奏一致。
-            let look = Self.stampLook(b.kind, nation: color)
-            root.addSublayer(inkRing(look.ring))
-            root.addSublayer(stamp(look.mark, fill: look.fill))
+            // 统一的事件语言：一团淡墨洇开，其上几笔毛笔画出事件本身（旗、交戟、禾穗、铜钱、光芒、雨云、
+            // 疫气、轮转、斩痕），不用文字与印章；画、停、淡出的节奏一致（EventGlyph.duration）。
+            root.addSublayer(inkWash(EventGlyph.tint(b.kind, nation: color)))
+            root.addSublayer(EventGlyph.figure(b.kind, nation: color))
+            root.opacity = 0
+            let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.08, 0.72, 1]
+            fade.duration = EventGlyph.duration; fade.fillMode = .forwards; fade.isRemovedOnCompletion = false
+            root.add(fade, forKey: "life")
         }
         return root
     }
 
-    /// 各类事件的印文与颜色：建国用该国国色，宣战与革命用朱，天灾、瘟疫用墨与秋香，丰收、通商、名臣用赭黄。
-    static func stampLook(_ kind: MapEffects.Burst.Kind, nation: UIColor) -> (mark: String, fill: UIColor, ring: UIColor) {
-        let vermilion = UIColor(red: 0.72, green: 0.18, blue: 0.12, alpha: 1), ochre = UIColor(red: 0.72, green: 0.52, blue: 0.2, alpha: 1)
-        switch kind {
-        case .founded: return ("立", nation, nation)
-        case .shock: return ("战", vermilion, vermilion)
-        case .harvest: return ("丰", ochre, ochre)
-        case .trade: return ("商", ochre, ochre)
-        case .talent: return ("才", ochre, ochre)
-        case .disaster: return ("灾", UIColor(red: 0.22, green: 0.2, blue: 0.18, alpha: 1), UIColor(white: 0.2, alpha: 1))
-        case .plague: return ("疫", UIColor(red: 0.4, green: 0.45, blue: 0.22, alpha: 1), UIColor(red: 0.4, green: 0.45, blue: 0.22, alpha: 1))
-        case .regime: return ("革", vermilion, vermilion)
-        case .coup: return ("篡", UIColor(red: 0.42, green: 0.08, blue: 0.08, alpha: 1), vermilion)
-        case .destroyed: return ("亡", UIColor(white: 0.2, alpha: 1), UIColor(white: 0.2, alpha: 1))
-        }
+    /// 事件下的一团淡墨：由小洇大并淡去（无阴影，开销小）。
+    private func inkWash(_ color: UIColor) -> CALayer {
+        let g = CAGradientLayer(); g.type = .radial; g.frame = CGRect(x: 26, y: 24, width: 68, height: 68)
+        g.colors = [color.withAlphaComponent(0.3).cgColor, color.withAlphaComponent(0.12).cgColor, color.withAlphaComponent(0).cgColor]
+        g.locations = [0, 0.55, 1]; g.startPoint = CGPoint(x: 0.5, y: 0.5); g.endPoint = CGPoint(x: 1, y: 1)
+        let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.55; grow.toValue = 1.25
+        grow.duration = EventGlyph.duration; grow.timingFunction = CAMediaTimingFunction(name: .easeOut); grow.fillMode = .forwards; grow.isRemovedOnCompletion = false
+        g.add(grow, forKey: "wash")
+        return g
     }
-    /// 一圈墨晕：由小到大洇开并淡去（1.4 秒）。
-    private func inkRing(_ color: UIColor) -> CALayer {
-        let ring = CAShapeLayer(); ring.frame = CGRect(x: 0, y: 0, width: 120, height: 120)
-        ring.path = UIBezierPath(ovalIn: CGRect(x: 34, y: 34, width: 52, height: 52)).cgPath
-        ring.fillColor = color.withAlphaComponent(0.12).cgColor; ring.strokeColor = color.withAlphaComponent(0.55).cgColor; ring.lineWidth = 2.5; ring.opacity = 0
-        ring.shadowColor = color.cgColor; ring.shadowOpacity = 0.5; ring.shadowRadius = 3; ring.shadowOffset = .zero
-        let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.5; grow.toValue = 1.6
-        let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 0.9, 0]; fade.keyTimes = [0, 0.25, 1]
-        let g = CAAnimationGroup(); g.animations = [grow, fade]; g.duration = 1.4; g.timingFunction = CAMediaTimingFunction(name: .easeOut); g.fillMode = .both; g.isRemovedOnCompletion = false
-        ring.add(g, forKey: "ink"); return ring
-    }
-    /// 一字印：与界面朱印同一印面（方形、内框细线），按下、停留、淡去（2.2 秒）。
-    private func stamp(_ mark: String, fill: UIColor) -> CALayer {
-        let size: CGFloat = 30
-        let seal = CALayer(); seal.frame = CGRect(x: 60 - size / 2, y: 58 - size / 2, width: size, height: size)
-        seal.backgroundColor = fill.withAlphaComponent(0.94).cgColor; seal.cornerRadius = size * 0.12
-        let frame = CALayer(); frame.frame = seal.bounds.insetBy(dx: size * 0.07, dy: size * 0.07); frame.cornerRadius = size * 0.08
-        frame.borderColor = UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 0.75).cgColor; frame.borderWidth = 1
-        seal.addSublayer(frame)
-        let text = CATextLayer(); text.string = mark
-        text.font = UIFont(name: "TW-Kai-98_1", size: size * 0.6) ?? UIFont.systemFont(ofSize: size * 0.6); text.fontSize = size * 0.6
-        text.alignmentMode = .center; text.contentsScale = UIScreen.main.scale
-        text.foregroundColor = UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 1).cgColor
-        text.frame = CGRect(x: 0, y: (size - size * 0.74) / 2, width: size, height: size * 0.74)
-        seal.addSublayer(text)
-        let press = CAKeyframeAnimation(keyPath: "transform.scale"); press.values = [1.6, 0.94, 1.0, 1.0]; press.keyTimes = [0, 0.16, 0.24, 1]
-        let tilt = CABasicAnimation(keyPath: "transform.rotation.z"); tilt.fromValue = -0.12; tilt.toValue = -0.07
-        let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.1, 0.75, 1]
-        let g = CAAnimationGroup(); g.animations = [press, tilt, fade]; g.duration = 2.2; g.fillMode = .forwards; g.isRemovedOnCompletion = false
-        seal.add(g, forKey: "stamp"); return seal
-    }
-
 
     /// The army's figure (UnitArt) tinted in a state's colour.
     private static var unitImages = [String: CGImage]()
@@ -523,23 +485,6 @@ final class EffectsView: UIView {
         CATransaction.begin(); CATransaction.setDisableActions(true)
         let battles = Set(effects.battles.map(\.key))
         for (key, v) in battleLayers where !battles.contains(key) { v.layer.removeFromSuperlayer(); battleLayers[key] = nil }
-        for (key, v) in clashLayers where !battles.contains(key) { v.a.removeFromSuperlayer(); v.b.removeFromSuperlayer(); clashLayers[key] = nil }
-        for b in effects.battles {
-            guard showClashLines, let l = b.left, let r = b.right, b.ax != b.bx || b.ay != b.by else { continue }
-            if let old = clashLayers[b.key] { clashLayers[b.key] = (old.a, old.b, b); continue }
-            func line(_ s: MapEffects.Side) -> CAShapeLayer {
-                let c = CAShapeLayer()
-                c.strokeColor = UIColor(red: s.r, green: s.g, blue: s.b, alpha: 0.95).cgColor; c.fillColor = nil
-                c.lineWidth = 1.4; c.lineCap = .round; c.lineDashPattern = [3, 4]
-                c.opacity = 0.75
-                // The dashes run towards the clash.
-                let flow = CABasicAnimation(keyPath: "lineDashPhase"); flow.fromValue = 9; flow.toValue = 0; flow.duration = 0.45; flow.repeatCount = .infinity
-                c.add(Self.calm(flow), forKey: "flow")
-                layer.insertSublayer(c, at: 0)
-                return c
-            }
-            clashLayers[b.key] = (line(l), line(r), b)
-        }
         for b in effects.battles {
             if let old = battleLayers[b.key] { battleLayers[b.key] = (old.layer, b.x, b.y); setStrength(old.layer, b) }
             else {
@@ -574,10 +519,10 @@ final class EffectsView: UIView {
         }
         for b in effects.bursts where !seen.contains(b.id) {
             guard burstLayers.count < 24 else { continue }
-            if b.kind != .destroyed { if sealIDs.count >= 3 { continue }; sealIDs.insert(b.id) }
+            if b.kind != .destroyed { if glyphIDs.count >= 3 { continue }; glyphIDs.insert(b.id) }
             let l = burstLayer(b); layer.addSublayer(l); burstLayers[b.id] = (l, b.x, b.y)
             let id = b.id
-            once(id, after: 2.6) { [weak self] in self?.burstLayers[id]?.layer.removeFromSuperlayer(); self?.burstLayers[id] = nil; self?.sealIDs.remove(id) }
+            once(id, after: EventGlyph.duration + 0.4) { [weak self] in self?.burstLayers[id]?.layer.removeFromSuperlayer(); self?.burstLayers[id] = nil; self?.glyphIDs.remove(id) }
         }
         for d in effects.declarations where !seen.contains(d.id) {
             guard arrowLayers.count < 8 else { continue }
@@ -639,12 +584,6 @@ final class EffectsView: UIView {
             v.layer.position = p; v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k))
             v.layer.isHidden = crowded
         }
-        for v in clashLayers.values {
-            let a = screen(v.battle.ax, v.battle.ay), b = screen(v.battle.bx, v.battle.by), m = screen(v.battle.x, v.battle.y)
-            let pa = UIBezierPath(); pa.move(to: a); pa.addLine(to: m); v.a.path = pa.cgPath
-            let pb = UIBezierPath(); pb.move(to: b); pb.addLine(to: m); v.b.path = pb.cgPath
-            v.a.lineWidth = 1 + k * 0.6; v.b.lineWidth = 1 + k * 0.6
-        }
         for v in siegeLayers.values { var p = screen(v.x, v.y); p.y -= 16 * k; v.layer.position = p; v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k)) }
         for v in flashLayers.values { v.layer.position = screen(v.x, v.y) }
         for v in claimLayers.values { v.layer.position = screen(v.x, v.y) }
@@ -664,10 +603,6 @@ final class EffectsView: UIView {
         let visibleRect = CGRect(origin: .zero, size: viewport).insetBy(dx: -80, dy: -80)
         for v in battleLayers.values where !v.layer.isHidden { visibility(v.layer, visible: visibleRect.contains(v.layer.position)) }
         for v in siegeLayers.values { visibility(v.layer, visible: visibleRect.contains(v.layer.position)) }
-        for v in clashLayers.values {
-            let visible = visibleRect.contains(screen(v.battle.x, v.battle.y))
-            visibility(v.a, visible: visible); visibility(v.b, visible: visible)
-        }
         CATransaction.commit()
     }
 }

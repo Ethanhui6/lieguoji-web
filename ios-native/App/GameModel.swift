@@ -100,6 +100,9 @@ import LieguojiCore
     struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital } }
     @Published var herald: Herald?
     private var heraldQueue: [Herald] = []
+    /// 墨晕追踪（各军入境点）与各州的中心、半径。
+    private let ink = InkFront()
+    private var inkDisks: [InkFront.Disk] = [], inkEpoch = -1
     private var heraldTask: Task<Void, Never>?
     /// Bumped whenever a different world is opened, so the map view rebuilds.
     @Published private(set) var worldID = UUID() { didSet { Task { await refreshCustom() } } }
@@ -990,13 +993,20 @@ import LieguojiCore
         Self.offset(&sprites)
         // 兵力 under each army's plaque (the original's army label), shown once zoomed in enough.
         var counts = [String: String]()
-        // 兵力前加一字军情：战（交战）、退（撤退）、集（集结待发）、守（驻防）、援（回援本土）、征（出征）、行（行军）；驻扎不标。
+        // 兵力前加一枚军情小图（交戟、回撤、集结、盾、回援、出征、行军；ArmyGlyph），不用文字；驻扎不标。
+        var marks = [String: ArmyGlyph]()
         for a in state.armies where a.troops > 0 {
             let n = a.troops >= 10000 ? String(format: "%.1f万", Double(a.troops) / 10000) : "\(a.troops)"
-            counts[a.id] = Self.stateMark(a).map { $0 + " " + n } ?? n
+            counts[a.id] = n
+            if let m = Self.stateMark(a) { marks[a.id] = m }
         }
         controller.troopTexts = counts
-        if !controller.groundDemo { controller.battleGrounds = Self.battleGrounds(state) }
+        controller.troopMarks = marks
+        // 占领与战场墨晕：按军队实际位置与入境方向（InkFront），入境当步即开始晕染。
+        if !controller.groundDemo, let map {
+            if inkDisks.count != map.meta.provinces.count || inkEpoch != worldEpoch { inkDisks = InkFront.disks(map); ink.reset(); inkEpoch = worldEpoch }
+            controller.battleGrounds = ink.update(state, disks: inkDisks)
+        }
         controller.armies = sprites
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
             let id = state.armies[selected].id
@@ -1007,51 +1017,20 @@ import LieguojiCore
         } else { controller.route = [] }
     }
 
+    /// 军队状态的小图（与军事页的分类一致）；驻扎不动的军队不标。
+    static func stateMark(_ a: GameState.Army) -> ArmyGlyph? {
+        if a.status == "fighting" { return .fighting }
+        if a.status == "retreating" { return .retreating }
+        switch a.duty {
+        case "staging": return .staging
+        case "guarding": return .guarding
+        case "supporting": return .relieving
+        case "attacking": return .attacking
+        default: return a.travel == "moving" ? .marching : nil
+        }
+    }
     /// Each icon keeps one small fixed offset from its army's point (by its id): stacked armies fan out
     /// and a column marching together keeps its order instead of reshuffling every step.
-    /// 战场地面：按州聚合正在接战的军队；不互为敌国的参战国并为一营（盟军同色块），按兵力定面积，
-    /// 按各营军队所在位置定颜色进来的方向。海上接战不画地面（海战另有炮火特效）。
-    static func battleGrounds(_ s: GameState) -> [BattleGround] {
-        var byProvince = [Int: Set<Int>]()
-        for pair in s.contacts ?? [] where pair.count == 2 {
-            for i in pair where s.armies.indices.contains(i) && s.armies[i].province >= 0 { byProvince[s.armies[i].province, default: []].insert(i) }
-        }
-        // 同州里也在交战状态、但这一步没有接触对的军队一并计入（援军中途加入）。
-        for (i, a) in s.armies.enumerated() where a.status == "fighting" && a.province >= 0 && byProvince[a.province] != nil { byProvince[a.province]!.insert(i) }
-        var out = [(ground: BattleGround, total: Float)]()
-        for (province, members) in byProvince {
-            var troops = [Int: Float](), sum = [Int: SIMD2<Float>]()
-            for i in members { let a = s.armies[i]; let t = Float(max(1, a.troops)); troops[a.nation, default: 0] += t; sum[a.nation, default: SIMD2<Float>(0, 0)] += SIMD2<Float>(a.x, a.y) * t }
-            var camps = [(lead: Int, members: [Int])]()
-            for n in troops.keys.sorted(by: { troops[$0]! != troops[$1]! ? troops[$0]! > troops[$1]! : $0 < $1 }) {
-                if let k = camps.firstIndex(where: { camp in !camp.members.contains { s.atWar(n, $0) } }) { camps[k].members.append(n) }
-                else { camps.append((n, [n])) }
-            }
-            guard camps.count >= 2 else { continue }
-            let list = camps.map { camp -> BattleGround.Camp in
-                var t: Float = 0, weighted = SIMD2<Float>(0, 0)
-                for m in camp.members { t += troops[m] ?? 0; weighted += sum[m] ?? SIMD2<Float>(0, 0) }
-                let at: SIMD2<Float> = weighted / max(1, t)
-                return BattleGround.Camp(nation: camp.lead, toward: at, troops: t)
-            }
-            let total: Float = list.reduce(Float(0)) { $0 + $1.troops }
-            out.append((BattleGround(province: province, camps: list), total))
-        }
-        let ranked = out.sorted { a, b in a.total != b.total ? a.total > b.total : a.ground.province < b.ground.province }
-        return ranked.map { $0.ground }
-    }
-    /// 军队状态的一字标记（与军事页的分类一致）；驻扎不动的军队不标。
-    static func stateMark(_ a: GameState.Army) -> String? {
-        if a.status == "fighting" { return "战" }
-        if a.status == "retreating" { return "退" }
-        switch a.duty {
-        case "staging": return "集"
-        case "guarding": return "守"
-        case "supporting": return "援"
-        case "attacking": return "征"
-        default: return a.travel == "moving" ? "行" : nil
-        }
-    }
     static func offset(_ sprites: inout [MapRenderer.ArmySprite]) {
         // Always applied (an offset switched on only when crowded made icons hop as columns passed).
         for i in sprites.indices where sprites[i].army > -100_000 {

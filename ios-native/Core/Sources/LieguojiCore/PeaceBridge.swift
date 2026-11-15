@@ -22,6 +22,21 @@ public enum PeaceBridge {
         let land = Double(r.world.provinces.asArray.filter { $0.controller.asString == nation }.count)
         return f(f(f(f(navy + navy) + f(army + army)) + f(f(land) * f(5))) + f(1))
     }
+    /// 所有国家的 strength 一次算出（每国的累加顺序与逐国计算相同，结果逐位一致）。
+    /// 外交每月对每国评估时都要全体国家的实力，逐国计算是“国家数 × 军队数”次遍历。
+    public static func strengths(_ r: JS) -> [String: Double] {
+        var army = [String: Double](), navy = [String: Double](), land = [String: Int]()
+        let cargo = r.transports.cargo.isNull ? [] : r.transports.cargo.asArray.map(\.army)
+        for a in r.world.armies.asArray + cargo where a.status.asString != "destroyed" { let n = a.nationId.asString; army[n] = f((army[n] ?? 0) + f(f(max(0, a.troops.asNumber)) / f(2000))) }
+        for n in (r.navy.fleets.isNull ? [] : r.navy.fleets.asArray) where n.status.asString != "lost" { let id = n.nationId.asString; navy[id] = f((navy[id] ?? 0) + f(f(max(0, min(5, n.ships.asNumber))) / f(5))) }
+        for p in r.world.provinces.asArray { land[p.controller.asString, default: 0] += 1 }
+        var out = [String: Double]()
+        for n in r.world.nations.asArray {
+            let id = n.id.asString, a = army[id] ?? 0, v = navy[id] ?? 0
+            out[id] = f(f(f(f(v + v) + f(a + a)) + f(f(Double(land[id] ?? 0)) * f(5))) + f(1))
+        }
+        return out
+    }
     static func pairs(_ list: JS) -> [[Int]] { list.asArray.map { [$0[0].asInt, $0[1].asInt] } }
     /// nativeWar46 as the typed peace war.
     static func war(_ c: JS) -> PeaceWar {

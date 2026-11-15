@@ -63,7 +63,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 卷轴边缘: the map's paper edge darkens like an old scroll and a double ink rule frames it.
     private var frame: (buffer: MTLBuffer, count: Int)?
     /// The paper band and rules round the map (always drawn).
-    private var mount: (buffer: MTLBuffer, count: Int)?
     private let sea: MTLTexture?
     private let parchment: MTLTexture?
     private let sampler: MTLSamplerState?
@@ -83,7 +82,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     static let paper = RGB(hex: 0xEDE3CC)
     struct QuadUniforms { var origin: SIMD2<Float>; var size: SIMD2<Float> }
 
-    init?(view: MTKView, map: WorldMap, parchmentURL: URL?, unitURL: (String) -> URL? = { _ in nil }) {
+    init?(view: MTKView, map: WorldMap, parchmentURL: URL?) {
         guard let device = view.device, let queue = device.makeCommandQueue() else { return nil }
         self.device = device; self.queue = queue; self.map = map
         nationColors = map.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
@@ -160,7 +159,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         fineDetail = buffer(ready?.fine ?? MapLayers.fineDetail(map).vertices, stride: 6)
         seaMask = ready?.sea ?? MapLayers.waterlines(map)
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
-        mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
         // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
         // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
@@ -268,6 +266,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         bytes.withUnsafeBytes { raw in
             if let base = raw.baseAddress {
                 sea.replace(region: MTLRegionMake2D(0, 0, map.seaWidth, map.seaHeight), mipmapLevel: 0, withBytes: base, bytesPerRow: map.seaWidth * 4)
+                seaRevision &+= 1
             }
         }
     }
@@ -707,36 +706,63 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
-    func draw(in view: MTKView) {
-        guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable,
-              let buffer = queue.makeCommandBuffer(), let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
-        var spriteProgress: Float = advanceChase()
-        let size = view.bounds.size
-        var u = Uniforms(viewport: SIMD2(Float(size.width), Float(size.height)), center: SIMD2(Float(camera.centerX), Float(camera.centerY)), scale: Float(camera.scale), halfWidth: 0)
+    // MARK: 静止底图缓存
+    /// 地图本身（海、陆地颜色、各层线条、城池图标）只随镜头与数据变化。镜头静止、只有军队与墨晕在动时
+    /// （推演时几乎每一帧），底图画进一张纹理一次，之后每帧只贴这张图，再画墨晕、军队与纸面——
+    /// 不再每帧重画上万个格子与全部线条（以前行军时每帧都要整图重画一遍，是持续发热的一大来源）。
+    private struct BaseKey: Equatable {
+        let cx: Double, cy: Double, scale: Double, width: Int, height: Int
+        let buffers: [ObjectIdentifier?]
+        let display: DisplaySettings
+        let sea: Int
+    }
+    private var baseTexture: MTLTexture?, baseSamples: MTLTexture?
+    private var baseKey: BaseKey?, lastKey: BaseKey?
+    private var seaRevision = 0
+    /// 底图重画与复用的次数（性能面板与测试读取）。
+    private(set) var baseRenders = 0, baseReuses = 0
+    /// 底图一次完整绘制要处理的顶点数（不缓存时行军的每一帧都要画这么多；缓存后只画 6 个顶点的贴图）。
+    var baseVertices: Int {
+        [provinceLines, rivers, relief, outlines, icons, ornaments, fineDetail, seaLanes, forts].reduce(indexCount) { $0 + ($1?.count ?? 0) }
+    }
+    private func currentKey(_ size: CGSize) -> BaseKey {
+        func id(_ b: (buffer: MTLBuffer, count: Int)?) -> ObjectIdentifier? { b.map { ObjectIdentifier($0.buffer) } }
+        return BaseKey(cx: camera.centerX, cy: camera.centerY, scale: camera.scale, width: Int(size.width), height: Int(size.height),
+                       buffers: [ObjectIdentifier(colors), ObjectIdentifier(indices), id(provinceLines), id(rivers), id(seaLanes), display.gridLines == true ? id(gridLines) : nil, id(ornaments), id(fineDetail), id(relief), id(outlines), id(icons), id(forts)],
+                       display: display, sea: seaRevision)
+    }
+
+    private func uniforms(_ size: CGSize) -> Uniforms {
+        Uniforms(viewport: SIMD2(Float(size.width), Float(size.height)), center: SIMD2(Float(camera.centerX), Float(camera.centerY)), scale: Float(camera.scale), halfWidth: 0)
+    }
+    private func quad(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms, _ texture: MTLTexture?, _ pipeline: MTLRenderPipelineState, x: Float, y: Float, width: Float, height: Float) {
+        guard let texture else { return }
+        var q = QuadUniforms(origin: SIMD2(x, y), size: SIMD2(width, height))
+        encoder.setRenderPipelineState(pipeline)
+        encoder.setVertexBytes(&u, length: MemoryLayout<Uniforms>.stride, index: 2)
+        encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
+        encoder.setFragmentTexture(texture, index: 0)
+        encoder.setFragmentSamplerState(sampler, index: 0)
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+    }
+    private func colored(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms, _ layer: (buffer: MTLBuffer, count: Int)?, alpha: Float = 1) {
+        guard let layer, alpha > 0 else { return }
+        u.alpha = alpha
+        encoder.setRenderPipelineState(coloredPipeline)
+        encoder.setVertexBuffer(layer.buffer, offset: 0, index: 0)
+        encoder.setVertexBytes(&u, length: MemoryLayout<Uniforms>.stride, index: 2)
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
+        u.alpha = 1
+    }
+
+    /// 底图：海、陆地、（开卷时）墨线与晕染、州界、河流、海路、网格、地图细节、植被、国界、城池。
+    /// `grounds` 为真时墨晕夹在陆地与州界之间（直接绘制时）；缓存底图时墨晕改在贴图之后画。
+    private func drawBase(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms, grounds: Bool) {
         let uniformLength = MemoryLayout<Uniforms>.stride
-        func quad(_ texture: MTLTexture?, _ pipeline: MTLRenderPipelineState, x: Float, y: Float, width: Float, height: Float) {
-            guard let texture else { return }
-            var q = QuadUniforms(origin: SIMD2(x, y), size: SIMD2(width, height))
-            encoder.setRenderPipelineState(pipeline)
-            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-            encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
-            encoder.setFragmentTexture(texture, index: 0)
-            encoder.setFragmentSamplerState(sampler, index: 0)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
-        }
-        func colored(_ layer: (buffer: MTLBuffer, count: Int)?, alpha: Float = 1) {
-            guard let layer, alpha > 0 else { return }
-            u.alpha = alpha
-            encoder.setRenderPipelineState(coloredPipeline)
-            encoder.setVertexBuffer(layer.buffer, offset: 0, index: 0)
-            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
-            u.alpha = 1
-        }
         // 开卷: each layer is brushed in over a moment at its turn, none pops up whole.
         let stage = reveal
         func ramp(_ from: Float) -> Float { min(1, max(0, (stage - from) / 0.07)) }
-        quad(sea, texturePipeline, x: 0, y: 0, width: map.width, height: map.height)
+        quad(encoder, &u, sea, texturePipeline, x: 0, y: 0, width: map.width, height: map.height)
         if reveal < 0.2 {
             // Blank paper over the sea, soaked through from the middle of the sheet outwards.
             var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
@@ -772,18 +798,16 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
-        // 战场地面：在陆地颜色之上、州界与军队之下（地面层）。
-        if reveal >= 1 && (display.battleGround ?? true) { drawGrounds(encoder, &u) }
-        // Province lines: 0.55 screen px once zoomed in. Colour is the measured #B2B2B2.
-        // The screen width is the previous client choice; it is not a measured original width.
+        // 墨晕：在陆地颜色之上、州界与军队之下（地面层）。
+        if grounds && reveal >= 1 && (display.battleGround ?? true) { drawGrounds(encoder, &u) }
         // Province borders: smoothed ink lines at every zoom (MapLayers.provinceLines), so each
         // province reads as clearly as in the original.
         if reveal < 0.82 {
             // The shore is outlined first and gives way to the finished borders.
             if coastInk == nil { coastInk = self.buffer(MapLayers.coastInk(map).vertices, stride: 6) }
-            colored(coastInk, alpha: ramp(0.1) * (1 - ramp(0.75)))
+            colored(encoder, &u, coastInk, alpha: ramp(0.1) * (1 - ramp(0.75)))
         } else if coastInk != nil { coastInk = nil }
-        if display.provinceLines { colored(provinceLines, alpha: ramp(0.5)) }
+        if display.provinceLines { colored(encoder, &u, provinceLines, alpha: ramp(0.5)) }
         if let rivers, reveal > 0.42 {
             var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, ramp(0.42))
             encoder.setRenderPipelineState(flatPipeline)
@@ -792,38 +816,97 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
         }
-        if display.seaRoutes { colored(seaLanes, alpha: ramp(0.7)) }
-        if display.gridLines == true && reveal >= 1 { colored(gridLines) }
+        if display.seaRoutes { colored(encoder, &u, seaLanes, alpha: ramp(0.7)) }
+        if display.gridLines == true && reveal >= 1 { colored(encoder, &u, gridLines) }
         let chart = display.mapDetail ?? true
-        if chart { colored(ornaments, alpha: ramp(0.44)) }
-        if chart && camera.scale >= 1.5 { colored(fineDetail, alpha: ramp(0.44)) }
-        if display.vegetation { colored(relief, alpha: ramp(0.44)) }
-        if display.borders { colored(outlines, alpha: ramp(0.75)) }
-        if display.cityIcons { colored(icons, alpha: ramp(0.85)); colored(forts, alpha: ramp(0.85)) }
+        if chart { colored(encoder, &u, ornaments, alpha: ramp(0.44)) }
+        if chart && camera.scale >= 1.5 { colored(encoder, &u, fineDetail, alpha: ramp(0.44)) }
+        if display.vegetation { colored(encoder, &u, relief, alpha: ramp(0.44)) }
+        if display.borders { colored(encoder, &u, outlines, alpha: ramp(0.75)) }
+        if display.cityIcons { colored(encoder, &u, icons, alpha: ramp(0.85)); colored(encoder, &u, forts, alpha: ramp(0.85)) }
+    }
+
+    /// 底图画进纹理（与屏幕同尺寸、同为 4 倍采样后解析）。
+    private func renderBase(_ buffer: MTLCommandBuffer, _ view: MTKView, _ size: CGSize) -> Bool {
+        let w = Int(view.drawableSize.width), h = Int(view.drawableSize.height)
+        guard w > 0, h > 0 else { return false }
+        if baseTexture?.width != w || baseTexture?.height != h {
+            let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: view.colorPixelFormat, width: w, height: h, mipmapped: false)
+            d.usage = [.renderTarget, .shaderRead]; d.storageMode = .private
+            baseTexture = device.makeTexture(descriptor: d)
+            let m = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: view.colorPixelFormat, width: w, height: h, mipmapped: false)
+            m.textureType = .type2DMultisample; m.sampleCount = view.sampleCount; m.usage = .renderTarget
+            #if os(iOS) && !targetEnvironment(simulator)
+            m.storageMode = .memoryless
+            #else
+            m.storageMode = .private
+            #endif
+            baseSamples = device.makeTexture(descriptor: m)
+        }
+        guard let target = baseTexture, let samples = baseSamples else { return false }
+        let pass = MTLRenderPassDescriptor()
+        pass.colorAttachments[0].texture = samples
+        pass.colorAttachments[0].resolveTexture = target
+        pass.colorAttachments[0].loadAction = .clear
+        pass.colorAttachments[0].clearColor = view.clearColor
+        pass.colorAttachments[0].storeAction = .multisampleResolve
+        guard let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
+        var u = uniforms(size)
+        drawBase(encoder, &u, grounds: false)
+        encoder.endEncoding()
+        baseRenders += 1
+        return true
+    }
+
+    func draw(in view: MTKView) {
+        guard let buffer = queue.makeCommandBuffer() else { return }
+        let size = view.bounds.size
+        // 底图可缓存：开卷与换色渐变已结束，且这一帧的镜头与数据和上一帧相同（镜头在动时直接画，不多一次贴图）。
+        let key = currentKey(size)
+        let still = reveal >= 1 && !fading && key == lastKey
+        lastKey = key
+        var cached = false
+        if still {
+            if baseKey == key, baseTexture != nil { cached = true; baseReuses += 1 }
+            else if renderBase(buffer, view, size) { baseKey = key; cached = true }
+        } else { baseKey = nil }
+        guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable,
+              let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
+        var spriteProgress: Float = advanceChase()
+        var u = uniforms(size)
+        let uniformLength = MemoryLayout<Uniforms>.stride
+        if cached, let base = baseTexture {
+            // 贴回底图：屏幕四角对应的地图范围，与绘制底图时的镜头完全相同，逐像素对齐。
+            let a = camera.toWorld(x: 0, y: 0, viewport: (Double(size.width), Double(size.height)))
+            let b = camera.toWorld(x: Double(size.width), y: Double(size.height), viewport: (Double(size.width), Double(size.height)))
+            quad(encoder, &u, base, texturePipeline, x: Float(a.x), y: Float(a.y), width: Float(b.x - a.x), height: Float(b.y - a.y))
+            if reveal >= 1 && (display.battleGround ?? true) { drawGrounds(encoder, &u) }
+        } else {
+            drawBase(encoder, &u, grounds: true)
+        }
         if reveal >= 1 {
-        colored(route)
-        encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
-        var clock = Float(CACurrentMediaTime().truncatingRemainder(dividingBy: 600))
-        encoder.setVertexBytes(&clock, length: MemoryLayout<Float>.stride, index: 5)
-        for unit in units where showArmies {
-            encoder.setRenderPipelineState(spritePipeline)
-            encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
-            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-            encoder.setFragmentTexture(unit.texture, index: 0)
-            encoder.setFragmentSamplerState(sampler, index: 0)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
+            colored(encoder, &u, route)
+            encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
+            var clock = Float(CACurrentMediaTime().truncatingRemainder(dividingBy: 600))
+            encoder.setVertexBytes(&clock, length: MemoryLayout<Float>.stride, index: 5)
+            for unit in units where showArmies {
+                encoder.setRenderPipelineState(spritePipeline)
+                encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
+                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentTexture(unit.texture, index: 0)
+                encoder.setFragmentSamplerState(sampler, index: 0)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
+            }
         }
-        }
-        colored(extraRivers)
+        colored(encoder, &u, extraRivers)
         // The original's mounting (a paper band and black rules along the edge) read as a hard brown frame
         // on a phone screen; the scroll edge below (a soft aged wash) frames the map instead.
-        _ = mount
         if display.parchment {
             // A little past the map: the parchment lies over the paper mounting too.
             let r = map.meta.parchment
-            quad(parchment, multiplyPipeline, x: r.x - 70, y: r.y - 70, width: r.width + 140, height: r.height + 140)
+            quad(encoder, &u, parchment, multiplyPipeline, x: r.x - 70, y: r.y - 70, width: r.width + 140, height: r.height + 140)
         }
-        if display.darkEdges { colored(frame) }
+        if display.darkEdges { colored(encoder, &u, frame) }
         encoder.endEncoding()
         buffer.present(drawable)
         buffer.commit()
@@ -955,8 +1038,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float3 c = mix(rim, fill, smoothstep(0.45, 0.95, lum));
         return float4(c, p.a * in.tint.a);
     }
-    // 战场地面：交战州内按各方“进入方向的锚点＋兵力权重”加权分区，每块填该方国色；
-    // 分界随兵力缓动，近看时分界带墨晕抖动与一道淡墨线，地面带笔触浓淡（复用开卷晕染的 fbm）。
+    // 占领与战场墨晕：每方从入境点（anchor.xy）向州内铺开，只铺到自己的覆盖面（anchor.z × 州径），
+    // 多方时按“锚点距离 − 兵力权重”加权分区；前沿与开卷晕染同一手法（fbm 扰动的墨边、湿墨更深），
+    // 近看时分界带一道淡墨线与笔触浓淡。
     struct GroundOut { float4 position [[position]]; float2 world; };
     vertex GroundOut groundVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
         GroundOut o; o.position = clip(positions[id], u, float2(0.0)); o.world = positions[id]; return o;
@@ -966,21 +1050,30 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float2 q = in.world;
         int n = int(g.info.x);
         float alpha = g.info.y, detail = g.info.z, radius = max(g.info.w, 0.001);
-        float2 jitter = detail > 0.5 ? (float2(fbm(q * 0.05), fbm(q * 0.05 + float2(5.2, 1.3))) - 0.5) * radius * 0.3 : float2(0.0);
+        float2 jitter = (float2(fbm(q * 0.05), fbm(q * 0.05 + float2(5.2, 1.3))) - 0.5) * radius * (detail > 0.5 ? 0.3 : 0.12);
         float best = 1e9, second = 1e9; int k = 0;
         for (int i = 0; i < 4; i++) {
             if (i >= n) break;
             float d = distance(q + jitter, g.anchor[i].xy) - g.weight[i];
             if (d < best) { second = best; best = d; k = i; } else if (d < second) { second = d; }
         }
+        // 覆盖面：从入境点量起，铺满时要越过整个州（直径再多一点）。墨边由 fbm 扰动，像墨在纸上洇开。
+        float span = radius * 2.2, wash = fbm(q * 0.03 + float2(31.7, 11.3));
+        float front = g.anchor[k].z * span - (distance(q, g.anchor[k].xy) + (wash - 0.5) * radius * 0.7);
+        float soft = radius * 0.08;
+        float shown = smoothstep(-soft, soft, front);
+        if (shown <= 0.001) discard_fragment();
         float3 c = g.color[k].rgb;
         float edge = n > 1 ? second - best : 1e9;
         float line = 1.0 - smoothstep(0.0, radius * 0.04, edge);
         float grain = detail > 0.5 ? fbm(q * 0.1 + float2(13.1, 7.7)) : 0.5;
         c = mix(c, c * 0.8, (grain - 0.5) * 0.9);
+        // 湿墨：前沿一带更深，铺开后渐干。
+        float wet = clamp(1.0 - front / (radius * 0.35), 0.0, 1.0) * shown;
+        c = mix(c, c * 0.7, wet * 0.55);
         c = mix(c, float3(0.16, 0.12, 0.09), line * 0.6 * detail);
-        float a = alpha * (0.5 + 0.1 * grain);
-        a = max(a, alpha * 0.75 * line * detail);
+        float a = alpha * (0.5 + 0.1 * grain) * shown;
+        a = max(a, alpha * 0.75 * line * detail * shown);
         return float4(c, a);
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {

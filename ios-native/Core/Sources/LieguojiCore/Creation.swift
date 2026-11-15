@@ -11,7 +11,7 @@ public enum Creation {
 
     static func object(_ pairs: [(String, JS)]) -> JS { let o = JS.object(); for (k, v) in pairs { o[k] = v }; return o }
     static func point(_ x: Double, _ y: Double, _ scale: Double) -> JS { object([("x", JS(x * scale)), ("y", JS(y * scale))]) }
-    static func less(_ a: String, _ b: String) -> Bool { Array(a.utf16).lexicographicallyPrecedes(Array(b.utf16)) }
+    static func less(_ a: String, _ b: String) -> Bool { a.utf16.lexicographicallyPrecedes(b.utf16) }
 
     /// statecraft area and capacity (shoelace on the scaled polygon, then the terrain factor).
     static func capacity(_ polygon: [(Double, Double)], terrain: String) -> Double {

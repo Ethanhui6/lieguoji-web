@@ -212,7 +212,7 @@ public enum Founding {
         w.nations.push(nation)
         let policy = JS.object(); policy.nationId = JS(id); policy.priority = JS("balanced"); policy.lastLedger = .null; policy.lastDecision = .null; w.statecraft.nations.push(policy)
         for n in w.nations.asArray where n.id.asString != id {
-            let pair = [n.id.asString, id].sorted { Array($0.utf16).lexicographicallyPrecedes(Array($1.utf16)) }
+            let pair = [n.id.asString, id].sorted { $0.utf16.lexicographicallyPrecedes($1.utf16) }
             let rel = JS.object(); rel.a = JS(pair[0]); rel.b = JS(pair[1]); rel.status = JS("peace"); rel.sinceDay = JS(day); rel.truceUntilDay = JS(0); w.statecraft.relations.push(rel)
         }
         // Ruler identity and the chronicle reign.

@@ -393,27 +393,6 @@ public enum MapLayers {
         return m
     }
 
-    /// The original's World.InitMapFrame on a map of up to 60000 cells: a paper band #DED1C5 of 6.96 world
-    /// units along the map's edge and, outside it, black rules at 24 (0.15 thick), 25 and 30 (0.3 thick).
-    /// One world unit is 1600/240 map units.
-    public static func mapMount(width w: Float, height h: Float) -> ColoredMesh {
-        var m = ColoredMesh()
-        let unit: Float = 1600.0 / 240.0, paper = RGB(hex: 0xDED1C5), ink = RGB(hex: 0x4A3A28)
-        func ring(_ offset: Float, _ thickness: Float, _ color: RGB) {
-            let out = offset + thickness / 2, inn = offset - thickness / 2
-            let a0 = SIMD2<Float>(-out, -out), a1 = SIMD2<Float>(w + out, -out), a2 = SIMD2<Float>(w + out, h + out), a3 = SIMD2<Float>(-out, h + out)
-            let b0 = SIMD2<Float>(-inn, -inn), b1 = SIMD2<Float>(w + inn, -inn), b2 = SIMD2<Float>(w + inn, h + inn), b3 = SIMD2<Float>(-inn, h + inn)
-            m.band(a0, a1, b1, b0, color, outer: 1, inner: 1)
-            m.band(a1, a2, b2, b1, color, outer: 1, inner: 1)
-            m.band(a2, a3, b3, b2, color, outer: 1, inner: 1)
-            m.band(a3, a0, b0, b3, color, outer: 1, inner: 1)
-        }
-        ring(0, 6.96 * unit, paper)
-        ring(25, 0.3 * unit, ink)
-        ring(30, 0.3 * unit, ink)
-        ring(24, 0.15 * unit, ink)
-        return m
-    }
 
     public enum CityMark: Equatable, Sendable { case capital, provinceSeat, city }
     /// The capital's outer ring in capital units (1.5 × cityUnit); the labels keep clear of it.

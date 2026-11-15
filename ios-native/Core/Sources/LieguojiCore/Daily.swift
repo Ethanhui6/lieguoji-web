@@ -125,7 +125,7 @@ public enum Daily {
     public static func reconcileAttackClock(_ r: JS, _ eligible: Set<String>, now: Double) {
         let c = r.forceClock, frame = frameTicks(r)
         for k in c.deadlines.objectKeys where !eligible.contains(k) { c.deadlines.delete(k) }
-        for k in eligible.sorted(by: { Array($0.utf16).lexicographicallyPrecedes(Array($1.utf16)) }) where !c.deadlines.has(k) {
+        for k in eligible.sorted(by: { $0.utf16.lexicographicallyPrecedes($1.utf16) }) where !c.deadlines.has(k) {
             c.deadlines[k] = JS(align(now + 2 / c.secondsPerTick.asNumber, frame))
         }
     }
@@ -265,7 +265,7 @@ public enum Daily {
         if r.armyRecovery.isNull { return }
         let space = Armies.space(r)
         var stock = [String: JS](); for p in r.world.statecraft.provinces.asArray { stock[p.provinceId.asString] = p }
-        for v in space.sorted(by: { Array($0.army.id.asString.utf16).lexicographicallyPrecedes(Array($1.army.id.asString.utf16)) }) {
+        for v in space.sorted(by: { $0.army.id.asString.utf16.lexicographicallyPrecedes($1.army.id.asString.utf16) }) {
             let a = v.army, id = a.id.asString, formation = r.tactics.forces[id]
             guard !formation.isNull, formation.kind.asString == "regular", canRefill(v), let province = v.province,
                   province.controller.asString == a.nationId.asString, province.legalOwner.asString == a.nationId.asString,

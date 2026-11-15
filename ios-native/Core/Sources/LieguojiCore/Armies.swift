@@ -66,7 +66,7 @@ public enum Armies {
         return d.isNull ? [] : d.asArray.map(\.asString)
     }
     static func speed(seed: String, armyId: String, nationId: String, tick: Int, cavalry: Bool) -> Double {
-        func json(_ s: String) -> String { "\"" + s.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\"" }
+        func json(_ s: String) -> String { ContactMotion.quoted(s) }
         let h = People.nameSeed("[\(json(seed)),\(json(armyId)),\(json(nationId)),\(tick),\"army-speed47\"]")
         let draw = f(Double(h) / 4294967296), ordinary = f(f(f(0.7) + f(f(f(1.1) - f(0.7)) * draw)) * f(1.5))
         return cavalry ? f(1.9499999284744263) : ordinary

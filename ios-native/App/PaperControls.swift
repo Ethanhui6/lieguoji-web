@@ -120,7 +120,7 @@ struct NationGrid: View {
     }
 }
 
-/// A war declared, a peace made or a city taken: a seal and the text, dropped in from the top.
+/// 大事传报（宣战、议和、攻克等）：一枚画出这件事的图与说明，从顶部落下。
 struct HeraldBanner: View {
     let herald: GameModel.Herald
     let map: WorldMap
@@ -137,8 +137,8 @@ struct HeraldBanner: View {
             }
         }()
         HStack(spacing: 12) {
-            // The pages' own vermilion seal (SheetHeader), pressed in the same way.
-            Seal(text: word, size: 40)
+            // 一枚画出这件事的图（HeraldEmblem），不用文字印章。
+            HeraldEmblem(kind: herald.kind, color: color, size: 44).accessibilityLabel(word)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     ForEach(Array(herald.nations.enumerated()), id: \.offset) { pair in

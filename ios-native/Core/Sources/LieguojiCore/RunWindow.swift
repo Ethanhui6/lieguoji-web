@@ -292,7 +292,6 @@ public enum RunWindow {
     }
     static func motion(_ r: JS, seconds: Double) -> ContactMotion.Result {
         let bridge = Armies.bridge!, g = bridge.graph
-        var armies = [String: JS](); for a in r.world.armies.asArray { armies[a.id.asString] = a }
         let anchors = r.originalArmy47.isNull ? false : r.originalArmy47.paths.optionalNumber == 1
         let index = provinceIndexById(r)
         let seconds0 = r.forceClock.secondsPerTick.asNumber
@@ -313,7 +312,6 @@ public enum RunWindow {
                          r.reorganization.active[id].isNull, r.forceSpeed.armies[id].base.optionalNumber ?? 0,
                          CombatReader.unitSpeed(r.units[id].optionalString ?? "") * Regimes.unitSpeed(r, a.nationId.asString, r.units[id].optionalString ?? "") * Regimes.armySpeed(r, id) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1))
         }
-        _ = armies
         Profile.since("m.entry", tEntry)
         let rules = bridge.rules(r, canEnter: { force, cell in
             let q = Int(g.provinces[cell])

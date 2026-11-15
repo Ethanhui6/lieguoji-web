@@ -86,11 +86,20 @@ public struct ContactMotion {
         let q = Int(graph.provinces[cell])
         return q >= 0 ? "land/" + rules.provinceID(q) : "sea/\(rules.seaRegion(Int(graph.faces[cell])))"
     }
+    /// JSON.stringify 的字符串引号：没有反斜杠与引号（几乎所有编号）时直接拼接，输出与转义版逐字节相同
+    /// （以前每次都走 Foundation 的 replacingOccurrences，占推演 CPU 约 4%）。
+    static func quoted(_ s: String) -> String {
+        if !s.utf8.contains(where: { $0 == 92 || $0 == 34 }) { return "\"" + s + "\"" }
+        return "\"" + s.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\""
+    }
     static func pairKey(_ a: String, _ b: String) -> String {
-        let s = [a, b].sorted { $0.utf16.lexicographicallyPrecedes($1.utf16) }
-        func json(_ x: String) -> String { "\"" + x.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\"" }
+        let s = a.utf16.lexicographicallyPrecedes(b.utf16) || a == b ? [a, b] : [b, a]
+        func json(_ x: String) -> String { quoted(x) }
         return "[" + json(s[0]) + "," + json(s[1]) + "]"
     }
+    /// 一对军队（按 UTF-16 序排好）：字典里用它作键，只在最后排序时才拼成 pairKey 字符串。
+    struct Pair: Hashable { let a: String; let b: String }
+    static func pair(key a: String, _ b: String) -> Pair { a.utf16.lexicographicallyPrecedes(b.utf16) || a == b ? Pair(a: a, b: b) : Pair(a: b, b: a) }
     func pair(_ a0: String, _ b0: String, _ p: [String: Position], _ area: String) -> ForceContact {
         var a = a0, b = b0
         if b.utf16.lexicographicallyPrecedes(a.utf16) { swap(&a, &b) }
@@ -102,8 +111,8 @@ public struct ContactMotion {
     func contacts(_ forces: [MovingForce], _ old: [ForceContact], _ rules: Rules, _ ready: [String: Position]? = nil) -> (contacts: [ForceContact], held: Set<String>, positions: [String: Position]) {
         let p = ready ?? positions(forces)
         var byKey = [String: MovingForce](); for f in forces { byKey[f.key] = f }
-        var pairs = [String: ForceContact](), order = [String]()
-        func put(_ c: ForceContact) { let k = ContactMotion.pairKey(c.a, c.b); if pairs[k] == nil { order.append(k) }; pairs[k] = c }
+        var pairs = [Pair: ForceContact](), order = [Pair]()
+        func put(_ c: ForceContact) { let k = ContactMotion.pair(key: c.a, c.b); if pairs[k] == nil { order.append(k) }; pairs[k] = c }
         func eligible(_ a: MovingForce, _ b: MovingForce, sea: Bool) -> Bool {
             rules.enemy(a.nation, b.nation) && (sea || !a.withdrawing && !b.withdrawing)
                 && (!rules.physicalContact || EncounterGeometry.touching(p[a.key]!.point, p[b.key]!.point, reach: rules.reach))
@@ -130,7 +139,7 @@ public struct ContactMotion {
             if war && !rules.physicalContact && sea { for id in group where !byKey[id]!.withdrawing { held.insert(id) } }
         }
         for k in order { let c = pairs[k]!; for id in [c.a, c.b] where !(byKey[id]?.withdrawing ?? true) { held.insert(id) } }
-        let sorted = order.sorted { Collate.less($0, $1) }.map { pairs[$0]! }
+        let sorted = order.map { (ContactMotion.pairKey($0.a, $0.b), $0) }.sorted { Collate.less($0.0, $1.0) }.map { pairs[$0.1]! }
         return (sorted, held, p)
     }
 
@@ -332,9 +341,12 @@ public struct ContactMotion {
             let oldArea = movers.map { areaOf[$0.f] }
             for m in movers { if let p = after[forces[m.f].key] { areaOf[m.f] = areaKey(p.cell, rules) } }
             var merged = book
+            // 每对的键只算一次（以前每次相遇都把已有各对的键重算一遍）；替换与追加的顺序不变。
+            var mergedAt = [Pair: Int]()
+            if !meetings.isEmpty { for (i, c) in merged.enumerated() { let k = ContactMotion.pair(key: c.a, c.b); if mergedAt[k] == nil { mergedAt[k] = i } } }
             for m in meetings {
-                let c = pair(m.a, m.b, after, m.area), k = ContactMotion.pairKey(c.a, c.b)
-                if let i = merged.firstIndex(where: { ContactMotion.pairKey($0.a, $0.b) == k }) { merged[i] = c } else { merged.append(c) }
+                let c = pair(m.a, m.b, after, m.area), k = ContactMotion.pair(key: c.a, c.b)
+                if let i = mergedAt[k] { merged[i] = c } else { mergedAt[k] = merged.count; merged.append(c) }
             }
             // App worlds: with no contact standing or met this step and no two hostile forces sharing an
             // area, no engagement can begin — skip the whole contact rebuild (the bulk of a busy day: it ran

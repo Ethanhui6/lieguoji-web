@@ -349,12 +349,23 @@ struct DiplomacySheet: View {
     var openChronicle: (Int) -> Void = { _ in }
     @State private var attacker = 0
     @State private var defender = 1
+    /// 外交视角：nil 为天下（上帝视角）；打开时默认取地图上所选州郡的归属国。
+    @State private var viewpoint: Int?
+    @State private var viewpointReady = false
+    /// 地图上所选州郡的归属国。
+    private var picked: Int? {
+        guard let p = model.controller.selectedProvince, let map = model.map, map.meta.provinces.indices.contains(p) else { return nil }
+        let n = model.state.map { $0.owners.indices.contains(p) ? $0.owners[p] : -1 } ?? map.meta.provinces[p].nation
+        return n >= 0 ? n : nil
+    }
     var body: some View {
         if let map = model.map, let state = model.state {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "外交", subtitle: state.wars.isEmpty ? "天下太平" : "\(state.wars.count) 场战争进行中")
-                    DiplomacyBoard(model: model, map: map, state: state, nation: attacker, fly: fly, openNation: openNation, openWars: openWars, openChronicle: openChronicle)
+                    DiplomacyViewpointBar(map: map, state: state, viewpoint: $viewpoint, picked: picked, onPick: { n in if let n { fly(n) } })
+                    DiplomacyBoard(model: model, map: map, state: state, nation: viewpoint, fly: fly, openNation: openNation, openWars: openWars, openChronicle: openChronicle,
+                                   choose: { n in withAnimation(Motion.tap) { viewpoint = n }; fly(n) })
                     if !state.wars.isEmpty {
                         SectionLabel("战事")
                         Group2 {
@@ -402,11 +413,16 @@ struct DiplomacySheet: View {
                     .padding(.horizontal, 16)
                     SectionLabel("条约与邦交")
                     DiplomaticActions(model: model, source: attacker, target: defender, say: say).padding(.horizontal, 16)
-                    SectionLabel("邦交总览")
-                    DiplomacyOverviewView(model: model, map: map, nation: attacker, day: state.day / 30, troops: state.nations.indices.contains(attacker) ? state.nations[attacker].troops : 0)
-                        .padding(.horizontal, 16)
+                    if let v = viewpoint {
+                        SectionLabel("邦交总览 · " + MapLayers.stateLabel(map.meta.nations.indices.contains(v) ? map.meta.nations[v].name : "", full: false))
+                        DiplomacyOverviewView(model: model, map: map, nation: v, day: state.day / 30, troops: state.nations.indices.contains(v) ? state.nations[v].troops : 0)
+                            .padding(.horizontal, 16)
+                    }
                 }
                 .padding(.bottom, 24)
+                .onAppear { if !viewpointReady { viewpointReady = true; viewpoint = picked } }
+                // 换视角时宣战与条约的发起国随之改为该国；手动选视角时镜头飞到该国都城（与地图定位联动）。
+                .onChange(of: viewpoint) { _, value in if let value { attacker = value } }
                 .onChange(of: attacker) { _, value in
                     if defender == value { defender = state.nations.indices.first { $0 != value && state.nations[$0].alive } ?? -1 }
                 }

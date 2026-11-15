@@ -28,7 +28,7 @@ public enum Government {
             guard let own = war.participants.asArray.first(where: { $0.stateId.asInt == state }) else { continue }
             for m in war.participants.asArray where m.side.asInt != own.side.asInt { result.insert(Wars.nationOf(r.nativeWars, m.stateId.asInt)) }
         }
-        return result.sorted { Array($0.utf16).lexicographicallyPrecedes(Array($1.utf16)) }
+        return result.sorted { $0.utf16.lexicographicallyPrecedes($1.utf16) }
     }
     public static func refreshLeaderCombat(_ r: JS) {
         for n in r.world.nations.asArray {
@@ -51,9 +51,14 @@ public enum Government {
     public static func relocateLostCapitals(_ r: JS) {
         var provinces = [String: JS](); for p in r.world.provinces.asArray { provinces[p.id.asString] = p }
         var changed = false
+        // 城市按编号一次索引（以前每国都把全部城市找一遍）；取同编号的第一座，与 first(where:) 相同。
+        let cities = r.world.cities.asArray
+        var cityById = [String: JS]()
+        for c in cities { if let cid = c.id.optionalString, cityById[cid] == nil { cityById[cid] = c } }
         for nation in r.world.nations.asArray {
             let id = nation.id.asString
-            guard let previous = r.world.cities.asArray.first(where: { $0.id.optionalString == nation.capitalId.optionalString }), provinces[previous.provinceId.asString]?.controller.asString != id else { continue }
+            let capital = nation.capitalId.optionalString
+            guard let previous = capital.map({ cityById[$0] }) ?? cities.first(where: { $0.id.optionalString == nil }), provinces[previous.provinceId.asString]?.controller.asString != id else { continue }
             let owned = r.world.provinces.asArray.filter { $0.controller.asString == id }
             if owned.isEmpty { continue }
             var sizes = [String: Int](), seen = Set<String>()
@@ -94,8 +99,11 @@ public enum Government {
     }
     public static func reconcileContinuity(_ r: JS) {
         var changed = false
+        // 各国的第一块领土（按州序）一次查好；以前每国都把全部州过滤一遍（每帧两次 × 国家数 × 州数）。
+        var firstLand = [String: JS]()
+        for p in r.world.provinces.asArray { let c = p.controller.asString; if firstLand[c] == nil { firstLand[c] = p } }
         for n in r.world.nations.asArray {
-            let id = n.id.asString, land = r.world.provinces.asArray.filter { $0.controller.asString == id }, ended = r.chronicle.ended.has(id)
+            let id = n.id.asString, land = firstLand[id].map { [$0] } ?? [], ended = r.chronicle.ended.has(id)
             let history = r.chronicle.leaders[id], last = history.asArray.last!
             if land.isEmpty && !ended {
                 closeLeaderRole(r, id, "extinction"); r.chronicle.ended[id] = r.world.day.clone()

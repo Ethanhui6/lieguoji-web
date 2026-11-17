@@ -163,7 +163,11 @@ public enum ArmyOrders {
         let ids = r.nativeWars.nationIds.asArray
         guard let own = ids.first(where: { $0[1].asString == nation })?[0].asInt else { return [] }
         var out = [(nation: String, campaign: Int)]()
-        for c in r.nativeWars.campaigns.asArray where c.endedTick.isNull && !c.internal.isTruthy {
+        // 平叛 (本作规则，对应原作 Army.FindRebelProvinceWithHighPriority)：本作世界里内战（叛乱、独立）的
+        // 敌国同样是军队的作战目标。原先只算常规战争，叛军与母国的军队互不进攻，内战永不结束；
+        // 到第十余年几乎每个大国都挂着几场打不完的内战，又因“在战”与“兵力被牵制”不再对外宣战，全图停摆。
+        let rebels = !r.regimes.isNull && r.regimes.enabled.isTruthy
+        for c in r.nativeWars.campaigns.asArray where c.endedTick.isNull && (rebels || !c.internal.isTruthy) {
             guard let p = c.participants.asArray.first(where: { $0.stateId.asInt == own }) else { continue }
             for e in c.participants.asArray where e.side.asInt != p.side.asInt {
                 guard let id = ids.first(where: { $0[0].asInt == e.stateId.asInt })?[1].asString else { continue }

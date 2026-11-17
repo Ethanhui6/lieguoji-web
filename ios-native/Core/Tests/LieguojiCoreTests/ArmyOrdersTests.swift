@@ -99,3 +99,24 @@ extension ArmyOrdersTests {
         XCTAssertNotEqual(r.armyPositions.records[id].status.asString, "moving")
     }
 }
+
+extension ArmyOrdersTests {
+    /// 平叛：本作世界里内战（叛乱、独立）的敌国也是军队的作战目标；原作规则（web 对照）仍只认常规战争。
+    /// 原先内战两边的军队互不进攻，内战永不结束，十余年后各国挂满内战、不再对外宣战，全图军队停摆。
+    func testAppWorldsFightInternalWars() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let golden = try JS.parse(Data(contentsOf: dir.appendingPathComponent("Golden/army-orders.json")))
+        let r = golden.samples[0].input.clone()
+        let nation = try XCTUnwrap(r.world.nations.asArray.first { !ArmyOrders.enemies(r, $0.id.asString).isEmpty }).id.asString
+        let war = try XCTUnwrap(ArmyOrders.enemies(r, nation).first)
+        let campaign = try XCTUnwrap(r.nativeWars.campaigns.asArray.first { $0.id.asInt == war.campaign })
+        let internalWar = JS.object(); internalWar.casusBelliId = JS(14); internalWar.legacyType = JS(2)
+        campaign.internal = internalWar
+        // 原作规则：内战不在常规战争之列。
+        r.regimes = .null
+        XCTAssertFalse(ArmyOrders.enemies(r, nation).contains { $0.nation == war.nation && $0.campaign == war.campaign })
+        // 本作世界：内战敌国照样出兵。
+        r.regimes = .object(); r.regimes.enabled = JS(true)
+        XCTAssertTrue(ArmyOrders.enemies(r, nation).contains { $0.nation == war.nation && $0.campaign == war.campaign })
+    }
+}

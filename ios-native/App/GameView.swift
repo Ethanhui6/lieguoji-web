@@ -127,8 +127,8 @@ struct GameView: View {
                 if let prompt = controller.pickPrompt {
                     HStack(spacing: 10) {
                         Image(systemName: "hand.tap").foregroundStyle(Theme.seal)
-                        Text(prompt).font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
-                        Button("取消") { controller.pickPrompt = nil; controller.onPick = nil; if controller.onTerrainStrokeEnd != nil && controller.brushName == nil && model.controller.terrainBrush { controller.terrainBrush = false; controller.onTerrainStroke = nil; controller.onTerrainStrokeEnd = nil } }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+                        Text(prompt).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                        Button("取消") { controller.pickPrompt = nil; controller.onPick = nil; if controller.onTerrainStrokeEnd != nil && controller.brushName == nil && model.controller.terrainBrush { controller.terrainBrush = false; controller.onTerrainStroke = nil; controller.onTerrainStrokeEnd = nil } }.font(Theme.body).foregroundStyle(Theme.seal)
                     }
                     .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -170,7 +170,7 @@ struct GameView: View {
             if wallpaper {
                 Color.clear.contentShape(Rectangle()).ignoresSafeArea()
                     .onTapGesture { withAnimation(Motion.reveal) { wallpaper = false }; controller.drifting = false }
-                    .overlay(alignment: .bottom) { Text("轻点返回").font(Theme.kai(13)).foregroundStyle(Theme.paper2.opacity(0.7)).padding(.bottom, 30) }
+                    .overlay(alignment: .bottom) { Text("轻点返回").font(Theme.label).foregroundStyle(Theme.paper2.opacity(0.7)).padding(.bottom, 30) }
             }
         }
         .overlay(alignment: .bottomLeading) {
@@ -188,7 +188,7 @@ struct GameView: View {
             if let toast {
                 HStack(spacing: 10) {
                     Seal(text: "令", size: 22)
-                    Text(toast).font(Theme.kai(16)).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                    Text(toast).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.leading, 10).padding(.trailing, 16).padding(.vertical, 10)
                 .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous)))
@@ -308,7 +308,7 @@ struct GameView: View {
                     .transition(.asymmetric(insertion: .move(edge: backward ? .leading : .trailing).combined(with: .opacity),
                                             removal: .move(edge: backward ? .trailing : .leading).combined(with: .opacity)))
                     .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
-                    .presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(28).font(Theme.kai(17))
+                    .presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(28).font(Theme.section)
             }
         }
     }
@@ -348,7 +348,7 @@ struct GameView: View {
             Button { back() } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left").font(.system(size: 13, weight: .regular))
-                    Text("返回" + last.title).font(Theme.kai(15))
+                    Text("返回" + last.title).font(Theme.body)
                 }
                 .foregroundStyle(Theme.seal).padding(.horizontal, 12).frame(height: 30)
                 .background(Theme.seal.opacity(0.08), in: Capsule())
@@ -461,7 +461,7 @@ struct GameView: View {
     private var topBar: some View {
         HStack(spacing: 10) {
             HStack(spacing: 8) {
-                Text(model.state?.dateText ?? "").font(Theme.kai(17)).foregroundStyle(Theme.ink).monospacedDigit()
+                Text(model.state?.dateText ?? "").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
                     .lineLimit(1).minimumScaleFactor(0.7)
                     .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
                 if let wars = model.state?.wars.count, wars > 0 {
@@ -490,11 +490,11 @@ struct GameView: View {
     /// 即时战略 banner: the selected count, 进攻/防御 mode and cancel.
     private var rtsBanner: some View {
         HStack(spacing: 10) {
-            Text("已选 \(controller.groupArmies.count) 支军团 · 点选目的地").font(Theme.kai(15)).foregroundStyle(Theme.ink)
+            Text("已选 \(controller.groupArmies.count) 支军团 · 点选目的地").font(Theme.body).foregroundStyle(Theme.ink)
             HStack(spacing: 0) {
                 ForEach([false, true], id: \.self) { defend in
                     Button { withAnimation(Motion.tap) { rtsDefend = defend } } label: {
-                        Text(defend ? "防御" : "进攻").font(Theme.kai(14)).foregroundStyle(rtsDefend == defend ? Theme.paper2 : Theme.ink)
+                        Text(defend ? "防御" : "进攻").font(Theme.label).foregroundStyle(rtsDefend == defend ? Theme.paper2 : Theme.ink)
                             .padding(.horizontal, 10).padding(.vertical, 5).background(rtsDefend == defend ? Theme.seal : Color.clear, in: Capsule())
                     }
                     .buttonStyle(.plain)
@@ -505,8 +505,8 @@ struct GameView: View {
             Button("交AI") {
                 let armies = controller.groupArmies
                 Task { let out = await model.releaseToAI(armies: armies); say(out.reason); if out.ok { controller.groupArmies = [] }; model.refreshArmies() }
-            }.font(Theme.kai(15)).foregroundStyle(Theme.jade)
-            Button("取消") { controller.groupArmies = []; model.refreshArmies() }.font(Theme.kai(15)).foregroundStyle(Theme.seal)
+            }.font(Theme.body).foregroundStyle(Theme.jade)
+            Button("取消") { controller.groupArmies = []; model.refreshArmies() }.font(Theme.body).foregroundStyle(Theme.seal)
         }
         .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
     }
@@ -516,8 +516,8 @@ struct GameView: View {
             HStack(spacing: 10) {
                 let n = controller.paintNation ?? -1, nation = model.map.flatMap { $0.meta.nations.indices.contains(n) ? $0.meta.nations[n] : nil }
                 RoundedRectangle(cornerRadius: 3).fill(nation.map { Names.color($0.color) } ?? Theme.ink2).frame(width: 14, height: 14)
-                Text(controller.brushName ?? (controller.placingArmy ? "在地图上点按或划过州郡放置" : "绘制\(nation?.name ?? "")疆域")).font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1)
-                Button("完成") { controller.paintNation = nil; controller.placingArmy = false; controller.placeCount = 1; controller.brushName = nil; controller.brushAction = nil }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+                Text(controller.brushName ?? (controller.placingArmy ? "在地图上点按或划过州郡放置" : "绘制\(nation?.name ?? "")疆域")).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                Button("完成") { controller.paintNation = nil; controller.placingArmy = false; controller.placeCount = 1; controller.brushName = nil; controller.brushAction = nil }.font(Theme.body).foregroundStyle(Theme.seal)
             }
             if controller.placingArmy {
                 // 拖动选择一次放多少支军队.
@@ -526,7 +526,7 @@ struct GameView: View {
                     Slider(value: Binding(get: { Double(controller.placeCount) }, set: { v in
                         let k = Int(v.rounded()); if k != controller.placeCount { controller.placeCount = k; GameFeel.shared.tap() }
                     }), in: 1...30, step: 1).tint(Theme.seal)
-                    Text("\(controller.placeCount) 军").font(Theme.kai(16)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 48, alignment: .trailing).contentTransition(.numericText())
+                    Text("\(controller.placeCount) 军").font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 48, alignment: .trailing).contentTransition(.numericText())
                 }
                 .frame(width: 270)
             }
@@ -537,8 +537,8 @@ struct GameView: View {
     private var fleetBanner: some View {
         HStack(spacing: 10) {
             Image(systemName: "anchor").foregroundStyle(Theme.seal)
-            Text("舰队：点选停留的港口").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-            Button("取消") { controller.marchingFleet = nil; model.refreshArmies() }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+            Text("舰队：点选停留的港口").font(Theme.body).foregroundStyle(Theme.ink)
+            Button("取消") { controller.marchingFleet = nil; model.refreshArmies() }.font(Theme.body).foregroundStyle(Theme.seal)
         }
         .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
     }
@@ -546,8 +546,8 @@ struct GameView: View {
     private var marchBanner: some View {
         HStack(spacing: 10) {
             Image(systemName: "arrow.triangle.turn.up.right.diamond.fill").foregroundStyle(Theme.seal)
-            Text(marchRetreat ? "撤退：点选目的地" : "调兵：点选目的地").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-            Button("取消") { controller.marchingArmy = nil; controller.selectedArmy = nil; model.refreshArmies() }.font(Theme.kai(16)).foregroundStyle(Theme.seal)
+            Text(marchRetreat ? "撤退：点选目的地" : "调兵：点选目的地").font(Theme.body).foregroundStyle(Theme.ink)
+            Button("取消") { controller.marchingArmy = nil; controller.selectedArmy = nil; model.refreshArmies() }.font(Theme.body).foregroundStyle(Theme.seal)
         }
         .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
     }
@@ -561,7 +561,7 @@ struct GameView: View {
     }
     private var transport: some View {
         HStack(spacing: 2) {
-            Button { model.cycleSpeed() } label: { Text("\(model.speed)×").font(Theme.kai(18)).foregroundStyle(Theme.ink).frame(width: 40, height: 50).contentTransition(.numericText()) }
+            Button { model.cycleSpeed() } label: { Text("\(model.speed)×").font(Theme.section).foregroundStyle(Theme.ink).frame(width: 40, height: 50).contentTransition(.numericText()) }
                 .buttonStyle(PressStyle())
             Button { model.togglePlay() } label: {
                 Image(systemName: model.playing ? "pause.fill" : "play.fill").font(.system(size: 18, weight: .regular))
@@ -586,7 +586,7 @@ struct GameView: View {
             sheet(for: panel)
                 .id(panel.id)
                 .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
-                .font(Theme.kai(17))
+                .font(Theme.section)
                 .frame(width: min(480, UIScreen.main.bounds.width * 0.52))
                 .frame(maxHeight: .infinity)
                 // The paper runs on past the safe area to the screen's edge; the text stays inside it.

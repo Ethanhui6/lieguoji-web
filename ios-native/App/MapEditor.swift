@@ -323,8 +323,8 @@ struct EditorView: View {
             HStack(spacing: 10) {
                 Button { leaving = true } label: { CircleIcon(glyph: .close) }.buttonStyle(PressStyle())
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(editor.step == .terrain ? "绘制山川" : editor.step == .provinces ? "划分州郡" : "划定列国").font(Theme.kai(18)).foregroundStyle(Theme.ink)
-                    Text(editor.step == .terrain ? "单指绘制 · 双指移动缩放 · 陆地 \(Int(editor.landShare * 100))%" : editor.step == .provinces ? "\(editor.provinces) 州 · \(editor.nations) 国" : "单指涂抹州郡 · 双指移动缩放 · \(editor.seeds.count) 国").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Text(editor.step == .terrain ? "绘制山川" : editor.step == .provinces ? "划分州郡" : "划定列国").font(Theme.section).foregroundStyle(Theme.ink)
+                    Text(editor.step == .terrain ? "单指绘制 · 双指移动缩放 · 陆地 \(Int(editor.landShare * 100))%" : editor.step == .provinces ? "\(editor.provinces) 州 · \(editor.nations) 国" : "单指涂抹州郡 · 双指移动缩放 · \(editor.seeds.count) 国").font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
                 Spacer()
@@ -336,7 +336,7 @@ struct EditorView: View {
             }
             .padding(.horizontal, 14).padding(.top, 4)
             if !editor.message.isEmpty {
-                Text(editor.message).font(Theme.kai(14)).foregroundStyle(Theme.seal).padding(.horizontal, 14).padding(.vertical, 6).glass(Capsule()).padding(.top, 8)
+                Text(editor.message).font(Theme.label).foregroundStyle(Theme.seal).padding(.horizontal, 14).padding(.vertical, 6).glass(Capsule()).padding(.top, 8)
             }
             Spacer()
             VStack(spacing: 12) {
@@ -356,7 +356,7 @@ struct EditorView: View {
                 Button { leaving = false } label: { SecondaryLabel(title: "继续绘制", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle()).padding(.horizontal, 22)
             }
             .padding(.bottom, 24)
-            .presentationDetents([.height(320)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+            .presentationDetents([.height(320)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
         .sheet(isPresented: $pickingBase) {
             ScrollView {
@@ -377,7 +377,7 @@ struct EditorView: View {
                 }
                 .padding(.bottom, 24)
             }
-            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
     }
 
@@ -390,7 +390,7 @@ struct EditorView: View {
                         VStack(spacing: 4) {
                             InkIcon(glyph: t.glyph, size: 20).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                                 .frame(height: 22)
-                            Text(t.title).font(Theme.kai(14)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                            Text(t.title).font(Theme.label).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                         }
                         .frame(maxWidth: .infinity).frame(height: 50)
                         .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -408,7 +408,7 @@ struct EditorView: View {
                         PaperSlider(title: "目标高", value: $editor.targetHeight, range: editor.tool == .sea ? 0...19 : 20...100, step: 1) { "\(Int($0))" }
                     }
                     PaperSwitch(title: "保护现有海岸", on: $editor.protectCoast).padding(.horizontal, -16)
-                    Text("保护海岸时，陆地不会沉入海中，海洋不会升成陆地。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)
+                    Text("保护海岸时，陆地不会沉入海中，海洋不会升成陆地。").font(Theme.caption).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             HStack(spacing: 10) {
@@ -426,7 +426,7 @@ struct EditorView: View {
                 PaperSlider(title: "州郡", value: Binding(get: { Double(editor.provinces) }, set: { editor.provinces = max(editor.nations, Int($0)) }), range: 10...480, step: 5, onEditingChanged: { editing in if !editing { editor.recompute() } }) { "\(Int($0))" }
                 PaperSlider(title: "国家", value: Binding(get: { Double(editor.nations) }, set: { editor.nations = Int($0); if editor.provinces < editor.nations { editor.provinces = editor.nations } }), range: 2...24, step: 1, onEditingChanged: { editing in if !editing { editor.recompute() } }) { "\(Int($0))" }
             }
-            Text("州郡按原作的定居分区算法划分：平原州小而密，山地、荒原州大而疏；各国从相隔最远的都城起家。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+            Text("州郡按原作的定居分区算法划分：平原州小而密，山地、荒原州大而疏；各国从相隔最远的都城起家。").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {
                 Button { editor.toTerrain() } label: { SecondaryLabel(title: "返回改地形", symbol: "paintbrush.pointed") }
                 Button { editor.toNations() } label: { SecondaryLabel(title: "划定列国", symbol: "flag.2.crossed") }
@@ -447,7 +447,7 @@ struct EditorView: View {
                         Button { editor.select(i) } label: {
                             HStack(spacing: 5) {
                                 Circle().fill(Names.color(PreviewWorld.palette[i % PreviewWorld.palette.count])).frame(width: 14, height: 14)
-                                Text("\(i + 1)号国 · \(count)州").font(Theme.kai(14)).foregroundStyle(Theme.ink)
+                                Text("\(i + 1)号国 · \(count)州").font(Theme.label).foregroundStyle(Theme.ink)
                             }
                             .padding(.horizontal, 10).frame(height: 32)
                             .background(editor.selected == i ? Theme.seal.opacity(0.14) : Theme.paper2, in: Capsule())
@@ -460,7 +460,7 @@ struct EditorView: View {
             HStack(spacing: 8) {
                 ForEach([(MapEditor.NationTool.paint, "涂抹领土", "paintbrush.pointed"), (.capital, "移都城", "building.columns"), (.found, "新建国家", "plus.circle")], id: \.0) { t in
                     Button { editor.nationTool = t.0 } label: {
-                        Label(t.1, systemImage: t.2).font(Theme.kai(14)).foregroundStyle(editor.nationTool == t.0 ? Theme.paper2 : Theme.ink)
+                        Label(t.1, systemImage: t.2).font(Theme.label).foregroundStyle(editor.nationTool == t.0 ? Theme.paper2 : Theme.ink)
                             .padding(.horizontal, 8).frame(height: 34).frame(maxWidth: .infinity)
                             .background(editor.nationTool == t.0 ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 9))
                     }
@@ -470,7 +470,7 @@ struct EditorView: View {
                     .buttonStyle(.plain).disabled(editor.seeds.count <= 2).opacity(editor.seeds.count <= 2 ? 0.4 : 1)
             }
             Text(editor.nationTool == .paint ? "选一国，在地图上涂抹州郡划入该国；都城不可涂走。" : editor.nationTool == .capital ? "点一个州郡，设为所选国家的都城。" : "点一个州郡，在此建立新国家（最多 24 国）。")
-                .font(Theme.kai(12)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {
                 Button { editor.backToProvinces() } label: { SecondaryLabel(title: "返回分州郡", symbol: "square.grid.3x3") }
                 Button { Task { await model.foundCustomWorld(editor) } } label: { PrimaryLabel(title: "开辟天下", symbol: "flag.fill") }

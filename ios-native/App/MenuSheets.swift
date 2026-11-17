@@ -52,7 +52,7 @@ struct MenuSheet: View {
                     PaperSwitch(title: "大事自动暂停（宣战、起义、亡国）", on: $controller.play.pauseOnNews)
                     Divider2()
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("自动存档").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                        Text("自动存档").font(Theme.body).foregroundStyle(Theme.ink)
                         ChipPicker(items: [(60, "1分钟"), (120, "2分钟"), (300, "5分钟"), (0, "关闭")], selection: $controller.play.autosave)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
@@ -121,9 +121,9 @@ struct MenuSheet: View {
         .sheet(isPresented: $calendar) {
             VStack(alignment: .leading, spacing: 14) {
                 SheetHeader(title: "纪年与日期", subtitle: model.state?.dateText ?? "", seal: "历")
-                HStack { Text("年号").font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 70, alignment: .leading); TextField("公元", text: $eraText).paperField() }.padding(.horizontal, 22)
-                HStack { Text("今年为").font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 70, alignment: .leading); TextField("\(model.state?.displayYear ?? 1)", text: $yearText).keyboardType(.numbersAndPunctuation).paperField(); Text("年").font(Theme.kai(16)).foregroundStyle(Theme.ink2) }.padding(.horizontal, 22)
-                Text("只改纪年的显示（年号与年份），推演的时间不变；留空年号即用「公元」。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                HStack { Text("年号").font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 70, alignment: .leading); TextField("公元", text: $eraText).paperField() }.padding(.horizontal, 22)
+                HStack { Text("今年为").font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 70, alignment: .leading); TextField("\(model.state?.displayYear ?? 1)", text: $yearText).keyboardType(.numbersAndPunctuation).paperField(); Text("年").font(Theme.body).foregroundStyle(Theme.ink2) }.padding(.horizontal, 22)
+                Text("只改纪年的显示（年号与年份），推演的时间不变；留空年号即用「公元」。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
                 SealButton(title: "颁行", disabled: false) {
                     calendar = false
                     Task { if let e = await model.setCalendar(era: eraText, year: Int(yearText)) { say(e) } else { say("纪年已改") } }
@@ -185,7 +185,7 @@ struct MapDisplaySettings: View {
                     .padding(.horizontal, 16).padding(.vertical, 10)
                 Divider2()
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("海色").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                    Text("海色").font(Theme.body).foregroundStyle(Theme.ink)
                     ChipPicker(items: [("original", "原作海蓝"), ("warm", "暖纸海色")], selection: $controller.display.ocean)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
@@ -209,7 +209,7 @@ struct MenuRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: symbol).frame(width: 24).foregroundStyle(Theme.seal)
-            Text(title).font(Theme.kai(18)).foregroundStyle(Theme.ink)
+            Text(title).font(Theme.section).foregroundStyle(Theme.ink)
             Spacer()
             Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
         }
@@ -236,7 +236,7 @@ struct ResetSettingsRow: View {
     var body: some View {
         Button { asking = true } label: {
             HStack {
-                Text("恢复默认设置").font(Theme.kai(18)).foregroundStyle(Theme.seal)
+                Text("恢复默认设置").font(Theme.section).foregroundStyle(Theme.seal)
                 Spacer()
                 Image(systemName: "arrow.counterclockwise").font(.system(size: 14, weight: .regular)).foregroundStyle(Theme.seal)
             }
@@ -258,9 +258,9 @@ struct FrameSettings: View {
     private func row<T: Hashable>(_ title: String, _ note: String, _ items: [(T, String)], _ value: Binding<T>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                Text(title).font(Theme.body).foregroundStyle(Theme.ink)
                 Spacer()
-                Text(note).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                Text(note).font(Theme.caption).foregroundStyle(Theme.ink2)
             }
             ChipPicker(items: items, selection: value)
         }
@@ -282,7 +282,7 @@ struct FrameSettings: View {
             Divider2()
             PaperSwitch(title: "发热时自动降档", on: $play.autoCool)
             Text("手机变热或开启低电量模式时，帧率降到 30、推演多休息、暂停海浪和战场烟雾，降温后恢复。")
-                .font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 9)
+                .font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 9)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

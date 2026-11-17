@@ -16,7 +16,7 @@ struct ChipPicker<T: Hashable>: View {
                     // Every tab and choice row in the game: a small picture over the word where one fits.
                     VStack(spacing: 2) {
                         if let g = Glyph.of(item.1) { Image(systemName: g).font(.system(size: 13, weight: .regular)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85)).frame(height: 18) }
-                        Text(item.1).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                        Text(item.1).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity).frame(height: tall ? 50 : 40)
                     .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -39,7 +39,7 @@ struct PaperStepper: View {
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 12) {
-                HStack(spacing: 8) { Glyph.icon(title, size: 15); Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2) }
+                HStack(spacing: 8) { Glyph.icon(title, size: 15); Text(title).font(Theme.section).foregroundStyle(Theme.ink2) }
                 Spacer()
                 stepButton("minus", -1)
                 Text("\(value) \(unit)").font(Theme.kai(20)).foregroundStyle(Theme.ink).frame(minWidth: 64)
@@ -83,7 +83,7 @@ struct PaperSwitch: View {
         Button { withAnimation(Motion.tap) { on.toggle() } } label: {
             HStack(spacing: 10) {
                 Glyph.icon(title, size: 15)
-                Text(title).font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                Text(title).font(Theme.section).foregroundStyle(Theme.ink)
                 Spacer()
                 ZStack(alignment: on ? .trailing : .leading) {
                     Capsule().fill(on ? Theme.seal : Theme.wash).frame(width: 50, height: 30)
@@ -108,7 +108,7 @@ struct NationGrid: View {
                 Button { withAnimation(Motion.tap) { selection = n } } label: {
                     HStack(spacing: 6) {
                         RoundedRectangle(cornerRadius: 3).fill(Names.color(map.meta.nations[n].color)).frame(width: 12, height: 12)
-                        Text(map.meta.nations[n].name).font(Theme.kai(16)).lineLimit(1).minimumScaleFactor(0.7)
+                        Text(map.meta.nations[n].name).font(Theme.body).lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .foregroundStyle(Theme.ink).frame(maxWidth: .infinity).frame(height: 38)
                     .background(on ? Theme.wash : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -148,7 +148,7 @@ struct StatTile: View {
     }
     private var content: some View {
         VStack(alignment: .leading, spacing: 5) {
-            GlyphLabel(text: label).font(Theme.kai(13)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
+            GlyphLabel(text: label).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
             Text(value).font(Theme.kai(20)).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.6).monospacedDigit()
                 .contentTransition(.numericText()).animation(Motion.tap, value: value)
             if let fraction {

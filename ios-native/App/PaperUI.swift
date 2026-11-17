@@ -165,7 +165,7 @@ struct MemorialHeader: View {
                 Text(title).font(Theme.kai(30)).foregroundStyle(Theme.ink).tracking(4)
                 Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.75), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
                     .frame(height: 1.5).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
-                if let subtitle { Text(subtitle).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
+                if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2) }
             }
             Spacer(minLength: 8)
             Seal(text: seal, size: 32)
@@ -226,7 +226,7 @@ struct MapViewSwitcher: View {
             } label: {
                 VStack(spacing: 3) {
                     Image(systemName: m.symbol).font(.system(size: 13, weight: .regular))
-                    Text(m.title).font(Theme.kai(13))
+                    Text(m.title).font(Theme.label)
                 }
                 .foregroundStyle(mode == m ? Theme.paper2 : Theme.ink)
                 .frame(width: 50, height: 46)
@@ -248,18 +248,18 @@ struct MapViewLegend: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(mode.title + "图").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                Text(mode.title + "图").font(Theme.body).foregroundStyle(Theme.ink)
                 Spacer(minLength: 4)
-                Text("\(legend.count)").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                Text("\(legend.count)").font(Theme.caption).foregroundStyle(Theme.ink2)
             }
             Rectangle().fill(Theme.ink.opacity(0.25)).frame(height: 0.8)
             ForEach(Array(legend.prefix(6).enumerated()), id: \.offset) { i, e in
                 HStack(spacing: 7) {
                     RoundedRectangle(cornerRadius: 2).fill(Names.color(e.color)).frame(width: 12, height: 12)
                         .overlay(RoundedRectangle(cornerRadius: 2).stroke(Theme.ink.opacity(0.25), lineWidth: 0.5))
-                    Text(e.name.isEmpty ? "—" : e.name).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text(e.name.isEmpty ? "—" : e.name).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1)
                     Spacer(minLength: 4)
-                    Text("\(e.count)省").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Text("\(e.count)省").font(Theme.caption).foregroundStyle(Theme.ink2)
                     if e.members != nil && open != nil { Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.ink2.opacity(0.6)) }
                 }
                 .frame(minHeight: 22).contentShape(Rectangle())
@@ -337,7 +337,7 @@ struct StatisticsSheet: View {
                                 Button { withAnimation(Motion.tap) { category = c.id } } label: {
                                     HStack(spacing: 5) {
                                         Image(systemName: Self.categoryIcon[c.id] ?? "list.number").font(.system(size: 13)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
-                                        Text(c.title).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                        Text(c.title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                                     }
                                     .padding(.horizontal, 14).frame(height: 40)
                                     .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -357,9 +357,9 @@ struct StatisticsSheet: View {
                                     VStack(alignment: .leading, spacing: 5) {
                                         HStack {
                                             if let c = row.color { RoundedRectangle(cornerRadius: 2).fill(Names.color(c)).frame(width: 10, height: 10) }
-                                            Text(row.name).font(Theme.kai(18)).foregroundStyle(Theme.ink).lineLimit(1)
+                                            Text(row.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
                                             Spacer(minLength: 6)
-                                            Text(row.text).font(Theme.kai(14)).foregroundStyle(row.value < 0 ? Theme.seal : Theme.ink2).monospacedDigit()
+                                            Text(row.text).font(Theme.label).foregroundStyle(row.value < 0 ? Theme.seal : Theme.ink2).monospacedDigit()
                                         }
                                         // The ink bar brushes in, staggered by rank.
                                         GeometryReader { g in
@@ -375,7 +375,7 @@ struct StatisticsSheet: View {
                             .buttonStyle(.plain)
                             if i < rows.count - 1 { Rectangle().fill(Theme.ink.opacity(0.1)).frame(height: 0.7).padding(.leading, 64) }
                         }
-                        if rows.isEmpty { Text(category == "war" || category == "wars" || category == "campaigns" ? "天下无战事" : "暂无记录").font(Theme.kai(17)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(30) }
+                        if rows.isEmpty { Text(category == "war" || category == "wars" || category == "campaigns" ? "天下无战事" : "暂无记录").font(Theme.section).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(30) }
                     }
                     .background(Theme.paper2.opacity(0.45), in: RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.ink.opacity(0.12), lineWidth: 1))
@@ -471,7 +471,7 @@ struct EdictSheet: View {
                                 ruleStepper("事件频率", "event", 25)
                             }
                             Text("以常态为 100%。战争频率影响各国宣战意愿，战斗烈度影响交战伤亡，征兵规模影响新征军队的兵力，造舰速度影响舰队重建与扩编。")
-                                .font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 26)
+                                .font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 26)
                         }
                         Text("钦此。").font(Theme.kai(20)).foregroundStyle(Theme.ink).frame(maxWidth: .infinity, alignment: .trailing).padding(.horizontal, 26)
                     } else { InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40) }
@@ -488,8 +488,8 @@ struct EdictSheet: View {
         Button { confirming = (title, key) } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(Theme.kai(17)).foregroundStyle(Theme.seal)
-                    Text(note).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Text(title).font(Theme.section).foregroundStyle(Theme.seal)
+                    Text(note).font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 Spacer()
                 Image(systemName: "chevron.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
@@ -508,11 +508,11 @@ struct EdictSheet: View {
         let value = rules[key] ?? 100
         let range = WorldRuleRange.of(key)
         return HStack(spacing: 10) {
-            Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+            Text(title).font(Theme.section).foregroundStyle(Theme.ink2)
             Spacer()
             Button { setRule(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value <= range.lowerBound)
-            Text(value == 0 && zero != nil ? zero! : "\(value)%").font(Theme.kai(18)).foregroundStyle(value == 100 ? Theme.ink : Theme.seal).frame(minWidth: 64).contentTransition(.numericText())
+            Text(value == 0 && zero != nil ? zero! : "\(value)%").font(Theme.section).foregroundStyle(value == 100 ? Theme.ink : Theme.seal).frame(minWidth: 64).contentTransition(.numericText())
             Button { setRule(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value >= range.upperBound)
         }
@@ -535,11 +535,11 @@ struct EdictSheet: View {
     private func stepper(_ title: String, _ value: Int, _ range: ClosedRange<Int>, _ step: Int, _ unit: String, _ key: String, zero: String? = nil) -> some View {
         HStack(spacing: 10) {
             Glyph.icon(title, size: 15)
-            Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+            Text(title).font(Theme.section).foregroundStyle(Theme.ink2)
             Spacer()
             Button { apply(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value <= range.lowerBound)
-            Text(value == 0 && zero != nil ? zero! : "\(value) \(unit)").font(Theme.kai(18)).foregroundStyle(Theme.ink).frame(minWidth: 64).contentTransition(.numericText())
+            Text(value == 0 && zero != nil ? zero! : "\(value) \(unit)").font(Theme.section).foregroundStyle(Theme.ink).frame(minWidth: 64).contentTransition(.numericText())
             Button { apply(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value >= range.upperBound)
         }
@@ -568,7 +568,7 @@ struct SectionLabel: View {
     var body: some View {
         HStack(spacing: 8) {
             RoundedRectangle(cornerRadius: 1).fill(Theme.seal).frame(width: 3, height: 15)
-            Text(title).font(Theme.kai(17)).foregroundStyle(Theme.ink)
+            Text(title).font(Theme.section).foregroundStyle(Theme.ink)
         }
         .frame(maxWidth: inset ? .infinity : nil, alignment: .leading)
         .padding(.horizontal, inset ? 22 : 0)
@@ -581,7 +581,7 @@ struct SectionLabel: View {
 extension View {
     /// A paper input field: a cream capsule with a fine ink rule.
     func paperField(width: CGFloat? = nil) -> some View {
-        self.font(Theme.kai(17)).foregroundStyle(Theme.ink).tint(Theme.seal)
+        self.font(Theme.section).foregroundStyle(Theme.ink).tint(Theme.seal)
             .padding(.horizontal, 14).frame(width: width, height: 40)
             .frame(maxWidth: width == nil ? .infinity : nil)
             .background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
@@ -598,9 +598,9 @@ struct PaperMenu<T: Hashable>: View {
     var body: some View {
         Button { open = true } label: {
             HStack(spacing: 10) {
-                Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                Text(title).font(Theme.body).foregroundStyle(Theme.ink2)
                 Spacer(minLength: 12)
-                Text(items.first { $0.0 == selection }?.1 ?? "请选择").font(Theme.kai(17)).foregroundStyle(Theme.ink).lineLimit(1)
+                Text(items.first { $0.0 == selection }?.1 ?? "请选择").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
                 Image(systemName: "chevron.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
             }
             .padding(.horizontal, 16).frame(minHeight: 46).contentShape(Rectangle())
@@ -618,7 +618,7 @@ struct PaperMenu<T: Hashable>: View {
                                 open = false
                             } label: {
                                 HStack(spacing: 10) {
-                                    Text(items[i].1).font(Theme.kai(17)).foregroundStyle(items[i].0 == selection ? Theme.seal : Theme.ink).lineLimit(1)
+                                    Text(items[i].1).font(Theme.section).foregroundStyle(items[i].0 == selection ? Theme.seal : Theme.ink).lineLimit(1)
                                     Spacer()
                                     if items[i].0 == selection { Image(systemName: "checkmark").font(.system(size: 13, weight: .regular)).foregroundStyle(Theme.seal) }
                                 }
@@ -632,7 +632,7 @@ struct PaperMenu<T: Hashable>: View {
                 }
                 .padding(.bottom, 24)
             }
-            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
     }
 }
@@ -646,9 +646,9 @@ struct PanelPending: View {
     var body: some View {
         if failed {
             VStack(spacing: 10) {
-                Text(reason).font(Theme.kai(14)).foregroundStyle(Theme.ink2).multilineTextAlignment(.center)
+                Text(reason).font(Theme.label).foregroundStyle(Theme.ink2).multilineTextAlignment(.center)
                 Button(action: retry) {
-                    Text("重试").font(Theme.kai(15)).foregroundStyle(Theme.seal).padding(.horizontal, 16).padding(.vertical, 6)
+                    Text("重试").font(Theme.body).foregroundStyle(Theme.seal).padding(.horizontal, 16).padding(.vertical, 6)
                         .overlay(Capsule().stroke(Theme.seal.opacity(0.6), lineWidth: 1))
                 }
                 .buttonStyle(PressStyle())
@@ -657,7 +657,7 @@ struct PanelPending: View {
         } else if busy {
             InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40)
         } else {
-            Text("载入……").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
+            Text("载入……").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
         }
     }
 }
@@ -671,7 +671,7 @@ struct InkBusy: View {
     @State private var slide = false
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if let text { Text(text).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
+            if let text { Text(text).font(Theme.label).foregroundStyle(Theme.ink2) }
             GeometryReader { g in
                 let span = max(18, g.size.width * 0.35)
                 ZStack(alignment: .leading) {
@@ -698,7 +698,7 @@ struct SealButton: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 if busy { InkBusy(tint: Theme.paper2, track: Theme.paper2.opacity(0.35)).frame(width: 44) }
-                Text(title).font(Theme.kai(18))
+                Text(title).font(Theme.section)
             }
             .foregroundStyle(Theme.paper2).frame(maxWidth: .infinity).frame(height: 48)
             .background(Theme.seal.opacity(disabled ? 0.35 : 1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -717,9 +717,9 @@ struct PaperSlider: View {
     let format: (Double) -> String
     var body: some View {
         HStack(spacing: 12) {
-            Text(title).font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 68, alignment: .leading)
+            Text(title).font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 68, alignment: .leading)
             PaperTrack(value: $value, range: range, step: step, onEditingChanged: onEditingChanged)
-            Text(format(value)).font(Theme.kai(16)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 52, alignment: .trailing)
+            Text(format(value)).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 52, alignment: .trailing)
         }
         .accessibilityElement(children: .combine)
         .accessibilityAdjustableAction { direction in
@@ -843,7 +843,7 @@ private struct PressMenuCard: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(menu.title).font(Theme.kai(19)).foregroundStyle(Theme.ink).lineLimit(1)
-                if let s = menu.subtitle { Text(s).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(2) }
+                if let s = menu.subtitle { Text(s).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2) }
             }
             .padding(.horizontal, 18).padding(.vertical, 12)
             ForEach(Array(menu.items.enumerated()), id: \.element.id) { i, item in
@@ -851,7 +851,7 @@ private struct PressMenuCard: View {
                 Button { GameFeel.shared.tap(); close(); item.action() } label: {
                     HStack(spacing: 12) {
                         Image(systemName: item.symbol).font(.system(size: 15)).foregroundStyle(Theme.seal).frame(width: 22)
-                        Text(item.title).font(Theme.kai(17)).foregroundStyle(item.destructive ? Theme.seal : Theme.ink)
+                        Text(item.title).font(Theme.section).foregroundStyle(item.destructive ? Theme.seal : Theme.ink)
                         Spacer()
                     }
                     .padding(.horizontal, 18).padding(.vertical, 13).contentShape(Rectangle())
@@ -895,7 +895,7 @@ private struct PaperToastHost: ViewModifier {
                     if let text {
                         HStack(spacing: 8) {
                             Seal(text: "令", size: 20)
-                            Text(text).font(Theme.kai(15)).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                            Text(text).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(.horizontal, 12).padding(.vertical, 9)
                         .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous)))

@@ -67,15 +67,30 @@ struct NationInfo: Decodable {
 struct FoldSection<Content: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let title: String
+    var summary: String?
+    private let key: String
     @State var expanded: Bool
     @ViewBuilder let content: () -> Content
-    init(_ title: String, expanded: Bool, @ViewBuilder content: @escaping () -> Content) { self.title = title; _expanded = State(initialValue: expanded); self.content = content }
+    /// 展开与否按标题（去掉括号里的数目）记住，下次打开还是玩家上次的样子；收起时标题右侧给一行摘要，
+    /// 不展开也知道大概，页面不用一路往下翻。
+    init(_ title: String, expanded: Bool, summary: String? = nil, @ViewBuilder content: @escaping () -> Content) {
+        self.title = title; self.summary = summary; self.content = content
+        key = "fold." + (title.components(separatedBy: "（").first ?? title)
+        _expanded = State(initialValue: (UserDefaults.standard.object(forKey: key) as? Bool) ?? expanded)
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button { withAnimation(reduceMotion ? nil : Motion.fade) { expanded.toggle() } } label: {
-                HStack {
-                    SectionLabel(title, inset: false)
-                    Spacer()
+            Button {
+                GameFeel.shared.tap()
+                withAnimation(reduceMotion ? nil : Motion.fade) { expanded.toggle() }
+                UserDefaults.standard.set(expanded, forKey: key)
+            } label: {
+                HStack(spacing: 8) {
+                    SectionLabel(title, inset: false).fixedSize()
+                    Spacer(minLength: 6)
+                    if !expanded, let summary, !summary.isEmpty {
+                        Text(summary).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8).transition(.opacity)
+                    }
                     Image(systemName: "chevron.down").font(.system(size: 14, weight: .regular)).foregroundStyle(Theme.ink2).rotationEffect(.degrees(expanded ? 180 : 0))
                 }
                 .padding(.horizontal, 22).frame(minHeight: 44).contentShape(Rectangle())
@@ -143,6 +158,11 @@ struct NationSheet: View {
     @State private var temperSet = false
     @State private var provinceChoice = -1
     @State private var populationText = ""
+    /// 自定义的分类（nil 为总览）与等待确认的政体。
+    @State private var customPane: CustomPane?
+    @State private var styleConfirm: String?
+    /// CI 巡游：自定义页直接打开某一类。
+    static var tourPane: CustomPane?
     /// 点数字即改: the value being edited.
     @State private var numberEdit: NumberEdit?
     struct NumberEdit: Identifiable { let id = UUID(); let title: String; let unit: String; let value: Double; let apply: (Double) async -> String? }
@@ -215,7 +235,7 @@ struct NationSheet: View {
                 await reload()
                 if Self.tourFamily, tree == nil, let h = info?.court?.houses.first(where: { $0.id != nil }), let id = h.id { tree = TreePick(id: id, name: h.name) }
             }
-            .onAppear { if let t = Self.tourTab { tab = t }; model.controller.relationsNation = nation; model.controller.relations = relationColors(); if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
+            .onAppear { if let t = Self.tourTab { tab = t; customPane = Self.tourPane }; model.controller.relationsNation = nation; model.controller.relations = relationColors(); if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
             .sheet(item: $appointing) { target in
@@ -346,7 +366,7 @@ struct NationSheet: View {
                             Row(label: h.premierTitle, value: (h.premierName ?? "出缺") + (h.premierRules ? " · 掌国政" : "") + (h.elected ? " · 大选组阁" : ""))
                             Divider2()
                         }
-                        EditRow(label: "政体", value: info.styleLabel ?? Names.polity[info.polity] ?? info.polity) { tab = .custom }; Divider2()
+                        EditRow(label: "政体", value: info.styleLabel ?? Names.polity[info.polity] ?? info.polity) { customPane = .polity; tab = .custom }; Divider2()
                         // 都城: tap to see it on the map, and to move it by tapping the map.
                         EditRow(label: "都城", value: capitalName(map, nation < map.meta.nations.count ? map.meta.nations[nation] : nil) ?? "—") {
                             let owned = state.owners.indices.filter { state.owners[$0] == nation }
@@ -367,7 +387,7 @@ struct NationSheet: View {
                             .buttonStyle(.plain)
                         }
                         Divider2()
-                        EditRow(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)") { tab = .custom }; Divider2()
+                        EditRow(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)") { customPane = .faith; tab = .custom }; Divider2()
                         ReformCard(model: model, nation: nation, info: info, say: { flash = $0 }, reload: { await reload() })
                         if Faith.catalog[info.religion] != nil { FaithCard(religion: info.religion, state: model.state, map: map, effect: info.creedEffect, shares: info.faiths); Divider2() }
                         EditRow(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金" + Self.percent(info.bonus?["income"])) {
@@ -387,8 +407,8 @@ struct NationSheet: View {
                         }
                     }
                 }
-                FoldSection("财政", expanded: true) { FinanceSection(model: model, nation: nation, day: state.day / 30, say: { flash = $0 }) }
-                FoldSection("特产与贸易", expanded: true) { TradeSection(model: model, map: map, nation: nation, day: state.day / 30) }
+                FoldSection("财政", expanded: false, summary: "月入 \(Int(info.goldPerMonth).formatted()) 金 · 国库 \(Names.wan(Int(info.gold)))") { FinanceSection(model: model, nation: nation, day: state.day / 30, say: { flash = $0 }) }
+                FoldSection("特产与贸易", expanded: false, summary: "特产、商路与贸易伙伴") { TradeSection(model: model, map: map, nation: nation, day: state.day / 30) }
                 Group2 {
                     Button(action: openPeople) { MenuRow(symbol: "person.2", title: "人物") }.buttonStyle(.plain)
                     Divider2()
@@ -411,7 +431,7 @@ struct NationSheet: View {
                     .padding(.horizontal, 24)
                 }
                 // 国史: the chronicle entries naming this state, newest first.
-                FoldSection("国史", expanded: true) {
+                FoldSection("国史", expanded: false, summary: history.first.map { "第\($0.day + 1)日 · " + $0.text } ?? "尚无记载") {
                     Group2 {
                         if history.isEmpty { Row(label: "国史", value: "尚无记载") }
                         ForEach(Array(history.prefix(20).enumerated()), id: \.offset) { i, e in
@@ -573,7 +593,7 @@ struct NationSheet: View {
                 let byUnit = Dictionary(grouping: mine, by: { state.armies[$0].unit })
                     .map { (unit: $0.key, troops: $0.value.reduce(0) { $0 + state.armies[$1].troops }, count: $0.value.count) }
                     .sorted { $0.troops != $1.troops ? $0.troops > $1.troops : $0.unit < $1.unit }
-                FoldSection("兵种构成", expanded: true) {
+                FoldSection("兵种构成", expanded: false) {
                     VStack(alignment: .leading, spacing: 10) {
                         GeometryReader { g in
                             HStack(spacing: 1.5) {
@@ -839,7 +859,7 @@ struct NationSheet: View {
                 }),
                 StatTile(label: "中枢增收", value: String(format: "%+.0f%%", (c.centralIncome - 1) * 100), warn: c.centralIncome < 1),
                 StatTile(label: "地方官", value: "\(c.governors)/\(c.provinces)", fraction: c.provinces > 0 ? Double(c.governors) / Double(c.provinces) : 0),
-                StatTile(label: "国策", value: Self.temperName(c.temper ?? 1), warn: (c.temper ?? 1) > 1.25, edit: { tab = .custom }),
+                StatTile(label: "国策", value: Self.temperName(c.temper ?? 1), warn: (c.temper ?? 1) > 1.25, edit: { customPane = .temper; tab = .custom }),
             ])
             if let traits = c.traits, !traits.isEmpty {
                 // 国家特性 (the original's state traits), each with what it does.
@@ -1076,111 +1096,210 @@ struct NationSheet: View {
             if info.alive { customView(info, map, state) } else { Text("此国已亡，无可设定。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
         }
     }
+    /// 自定义：以前十几节设置从上到下排成一长条，要一直往下翻；现在先是一屏放得下的分类格（每格写着现状），
+    /// 点进去只显示这一类，顶部一排分类签可直接跳到别的类，左上“自定义”回到总览。
+    enum CustomPane: String, CaseIterable, Identifiable {
+        case identity = "国号国色", capital = "都城疆域", treasury = "国库国运", bonus = "国家加成", polity = "政体"
+        case faith = "文化宗教", temper = "国策性情", traits = "国家特性", army = "军队兵种", offices = "官职称号"
+        var id: String { rawValue }
+        var symbol: String {
+            switch self {
+            case .identity: return "paintpalette"; case .capital: return "building.columns"; case .treasury: return "banknote"
+            case .bonus: return "chart.line.uptrend.xyaxis"; case .polity: return "crown"; case .faith: return "books.vertical"
+            case .temper: return "flame"; case .traits: return "seal"; case .army: return "shield.lefthalf.filled"; case .offices: return "person.text.rectangle"
+            }
+        }
+    }
     @ViewBuilder private func customView(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
         let current = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation] : nil
-        VStack(spacing: 10) {
-            SectionLabel("国号与国色")
-            Group2 {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 10) {
-                        TextField("", text: $nameText, prompt: Text(current?.name ?? "国号").foregroundColor(Theme.ink2.opacity(0.6))).paperField()
-                        Button {
-                            let t = nameText
-                            Task { await run(success: "国号改为\(t)") { await model.editIdentity(nation, name: t, color: nil) } }
-                            nameText = ""
-                        } label: { Text("更名").font(Theme.body).foregroundStyle(nameText.isEmpty ? Theme.ink2 : Theme.seal).frame(width: 56, height: 40) }
-                        .buttonStyle(.plain).disabled(nameText.isEmpty)
-                    }
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 8), spacing: 8) {
-                        ForEach(Self.palette, id: \.self) { hex in
-                            let on = current?.color.uppercased() == hex
-                            Button { Task { await run(success: "国色已更改") { await model.editIdentity(nation, name: nil, color: hex) } } } label: {
-                                Circle().fill(Names.color(hex)).frame(height: 30)
-                                    .overlay(Circle().stroke(on ? Theme.ink : Theme.line, lineWidth: on ? 2.5 : 1))
+        if let pane = customPane {
+            VStack(alignment: .leading, spacing: 12) {
+                customBar(pane)
+                customPaneBody(pane, info, map, state, owned: owned, current: current)
+                    .id(pane)
+                    .transition(.opacity.combined(with: .offset(x: 10)))
+            }
+            .animation(Motion.fade, value: pane)
+        } else {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("点一类进入修改；改动立即生效。").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    ForEach(CustomPane.allCases) { p in customCard(p, summary: customSummary(p, info, map, current: current, owned: owned.count), tint: p == .identity ? current.map { Names.color($0.color) } : nil) }
+                }
+                .padding(.horizontal, 16)
+            }
+        }
+    }
+    /// 每格的现状（一行）。
+    private func customSummary(_ p: CustomPane, _ info: NationInfo, _ map: WorldMap, current: WorldMeta.Nation?, owned: Int) -> String {
+        switch p {
+        case .identity: return current?.name ?? info.name
+        case .capital: return "\(capitalName(map, current) ?? "无都城") · \(owned)州"
+        case .treasury: return "国库\(Names.wan(Int(info.gold))) · 国运\(Int(info.destiny))"
+        case .bonus:
+            let set = Self.bonuses.filter { (info.bonus?[$0.key] ?? 0) != 0 }.count
+            return set == 0 ? "未设加成" : "已设 \(set) 项"
+        case .polity: return Self.styles.first { $0.id == (info.style ?? "") }?.label ?? info.styleLabel ?? "—"
+        case .faith: return "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)"
+        case .temper: return Self.temperName(info.court?.temper ?? 1)
+        case .traits:
+            let on = (info.allTraits ?? []).filter { $0.on }.count
+            return "已开 \(on)/\((info.allTraits ?? []).count) 项"
+        case .army: return "放置新军 · 征兵 · 兵种"
+        case .offices: return "宰辅与将帅的称号"
+        }
+    }
+    private func customCard(_ p: CustomPane, summary: String, tint: Color?) -> some View {
+        Button { GameFeel.shared.tap(); withAnimation(Motion.fade) { customPane = p } } label: {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle().fill((tint ?? Theme.seal).opacity(tint == nil ? 0.09 : 0.9))
+                    Image(systemName: p.symbol).font(.system(size: 15, weight: .regular)).foregroundStyle(tint == nil ? Theme.seal : Theme.paper2)
+                }
+                .frame(width: 32, height: 32)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(p.rawValue).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text(summary).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+            .background(Theme.paper2.opacity(0.75), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.line))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressStyle())
+    }
+    /// 分类页顶栏：返回总览，与一排可横滑的分类签（直接跳到别的类，不用退回去再找）。
+    private func customBar(_ pane: CustomPane) -> some View {
+        HStack(spacing: 10) {
+            Button { GameFeel.shared.tap(); withAnimation(Motion.fade) { customPane = nil } } label: {
+                HStack(spacing: 3) { Image(systemName: "chevron.left").font(.system(size: 13, weight: .semibold)); Text("总览").font(Theme.body) }
+                    .foregroundStyle(Theme.seal).frame(height: 32).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            ScrollViewReader { reader in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(CustomPane.allCases) { p in
+                            Button { GameFeel.shared.tap(); withAnimation(Motion.fade) { customPane = p } } label: {
+                                Text(p.rawValue).font(Theme.label).foregroundStyle(p == pane ? Theme.paper2 : Theme.ink)
+                                    .padding(.horizontal, 10).frame(height: 30)
+                                    .background(p == pane ? Theme.seal : Theme.paper2.opacity(0.75), in: Capsule())
+                                    .overlay(Capsule().stroke(p == pane ? Theme.seal : Theme.line))
                             }
-                            .buttonStyle(PressStyle())
+                            .buttonStyle(PressStyle()).id(p)
                         }
                     }
-                    // 自选国色: the system colour picker, applied with one tap.
-                    HStack(spacing: 10) {
-                        ColorPicker("自选颜色", selection: $customColor, supportsOpacity: false).font(Theme.body).foregroundStyle(Theme.ink)
-                        Button {
-                            let hex = Self.hex(customColor)
-                            Task { await run(success: "国色已更改") { await model.editIdentity(nation, name: nil, color: hex) } }
-                        } label: { Text("用此色").font(Theme.body).foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 32).background(customColor, in: Capsule()).overlay(Capsule().stroke(Theme.ink.opacity(0.25))) }
+                    .padding(.vertical, 1)
+                }
+                .onAppear { reader.scrollTo(pane, anchor: .center) }
+                .onChange(of: pane) { _, p in withAnimation(Motion.fade) { reader.scrollTo(p, anchor: .center) } }
+            }
+        }
+        .padding(.leading, 18).padding(.trailing, 6)
+    }
+    /// 一个分类里的卡片：统一内边距与行距。
+    private func paneCard<C: View>(@ViewBuilder _ content: () -> C) -> some View {
+        Group2 { VStack(alignment: .leading, spacing: 12) { content() }.padding(14) }.padding(.horizontal, 16)
+    }
+    private func paneNote(_ text: String) -> some View {
+        Text(text).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+    }
+    @ViewBuilder private func customPaneBody(_ pane: CustomPane, _ info: NationInfo, _ map: WorldMap, _ state: GameState, owned: [Int], current: WorldMeta.Nation?) -> some View {
+        switch pane {
+        case .identity:
+            paneCard {
+                HStack(spacing: 10) {
+                    TextField("", text: $nameText, prompt: Text(current?.name ?? "国号").foregroundColor(Theme.ink2.opacity(0.6))).paperField()
+                    Button {
+                        let t = nameText
+                        Task { await run(success: "国号改为\(t)") { await model.editIdentity(nation, name: t, color: nil) } }
+                        nameText = ""
+                    } label: { Text("更名").font(Theme.body).foregroundStyle(nameText.isEmpty ? Theme.ink2 : Theme.seal).frame(width: 52, height: 40) }
+                    .buttonStyle(.plain).disabled(nameText.isEmpty)
+                }
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 8), spacing: 8) {
+                    ForEach(Self.palette, id: \.self) { hex in
+                        let on = current?.color.uppercased() == hex
+                        Button { GameFeel.shared.tap(); Task { await run(success: "国色已更改") { await model.editIdentity(nation, name: nil, color: hex) } } } label: {
+                            Circle().fill(Names.color(hex)).frame(height: 30)
+                                .overlay(Circle().stroke(on ? Theme.ink : Theme.line, lineWidth: on ? 2.5 : 1))
+                        }
                         .buttonStyle(PressStyle())
                     }
                 }
-                .padding(14)
-                .onAppear { if let c = current?.color { customColor = Names.color(c) } }
-            }
-            .padding(.horizontal, 16)
-            SectionLabel("都城")
-            Group2 {
-                Row(label: "现今都城", value: capitalName(map, current) ?? "—")
-                Divider2()
-                // 迁都 on the map: the page steps aside, the player taps a province of the state that has a city.
-                Button {
-                    pickProvince("点选新都城：本国有城池的州郡") { p in
-                        guard owned.contains(p), map.meta.cities.contains(where: { $0.province == p }) else { say("只能迁都到本国有城池的州郡"); GameFeel.shared.notify(.error); return }
-                        Task { await run(success: "迁都\(map.meta.provinces[p].name)") { await model.setCapital(nation, province: p) } }
-                    }
-                } label: { MenuRow(symbol: "hand.tap", title: "在地图上点选新都城") }.buttonStyle(.plain)
-            }
-            .padding(.horizontal, 16)
-            SectionLabel("国策与性情")
-            Group2 {
-                VStack(alignment: .leading, spacing: 10) {
-                    PaperSwitch(title: "自定义好战程度", on: Binding(get: { temperSet }, set: { on in
-                        temperSet = on
-                        let v = temperValue
-                        Task { await run { await model.setTemper(nation, on ? v : nil) } }
-                    })).padding(.horizontal, -16)
-                    if temperSet {
-                        PaperSlider(title: Self.temperName(temperValue), value: $temperValue, range: 0.6...1.6, step: 0.05) { String(format: "%.2f", $0) }
-                        SealButton(title: "定下国策") { let v = temperValue; Task { await run(success: "国策已定：\(Self.temperName(v))") { await model.setTemper(nation, v) } } }
-                    } else {
-                        Text("现由君主性情与政体决定：\(Self.temperName(info.court?.temper ?? 1))").font(Theme.label).foregroundStyle(Theme.ink2)
-                    }
+                // 自选国色：系统调色板，选好后点“用此色”。
+                HStack(spacing: 10) {
+                    ColorPicker("自选颜色", selection: $customColor, supportsOpacity: false).font(Theme.body).foregroundStyle(Theme.ink)
+                    Button {
+                        let hex = Self.hex(customColor)
+                        Task { await run(success: "国色已更改") { await model.editIdentity(nation, name: nil, color: hex) } }
+                    } label: { Text("用此色").font(Theme.label).foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 32).background(customColor, in: Capsule()).overlay(Capsule().stroke(Theme.ink.opacity(0.25))) }
+                    .buttonStyle(PressStyle())
                 }
-                .padding(14)
             }
-            .padding(.horizontal, 16)
-            .onAppear { temperValue = info.court?.temper ?? 1 }
-            SectionLabel("州郡")
-            Group2 {
-                PaperMenu(title: "州郡", items: [(-1, "选择州郡")] + owned.map { ($0, map.meta.provinces[$0].name) }, selection: $provinceChoice)
+            .onAppear { if let c = current?.color { customColor = Names.color(c) } }
+            NationExtrasView(model: model, nation: nation, info: info, who: info, part: .naming, say: { flash = $0 }, reload: { await reload() })
+        case .capital:
+            paneCard {
+                Row(label: "现今都城", value: capitalName(map, current) ?? "—").font(Theme.body).padding(.horizontal, -16)
+                // 迁都在地图上点选：页面让开，玩家点本国有城池的州郡后回到这里。
+                HStack(spacing: 10) {
+                    Button {
+                        pickProvince("点选新都城：本国有城池的州郡") { p in
+                            guard owned.contains(p), map.meta.cities.contains(where: { $0.province == p }) else { say("只能迁都到本国有城池的州郡"); GameFeel.shared.notify(.error); return }
+                            Task { await run(success: "迁都\(map.meta.provinces[p].name)") { await model.setCapital(nation, province: p) } }
+                        }
+                    } label: { paneAction("地图上选新都城", "hand.tap") }.buttonStyle(PressStyle())
+                    Button { paint(nation) } label: { paneAction("绘制疆域", "paintbrush.pointed") }.buttonStyle(PressStyle())
+                }
+            }
+            paneCard {
+                PaperMenu(title: "州郡", items: [(-1, "选择本国州郡")] + owned.map { ($0, map.meta.provinces[$0].name) }, selection: $provinceChoice).padding(.horizontal, -16)
                 if provinceChoice >= 0 {
-                    Divider2()
-                    VStack(spacing: 10) {
-                        HStack(spacing: 10) {
-                            Text("人口").font(Theme.body).foregroundStyle(Theme.ink2)
-                            TextField("", text: $populationText, prompt: Text("例如 50000").foregroundColor(Theme.ink2.opacity(0.6))).keyboardType(.numberPad).multilineTextAlignment(.trailing).paperField()
-                            Text("人").font(Theme.body).foregroundStyle(Theme.ink2)
-                        }
-                        HStack(spacing: 10) {
-                            SealButton(title: "定人口", disabled: Double(populationText) == nil) {
-                                let p = provinceChoice, v = Double(populationText)
-                                Task { await run(success: "人口已改") { await model.editProvince(p, population: v, fortress: nil) } }
-                                populationText = ""
-                            }
-                            SealButton(title: "筑要塞") { let p = provinceChoice; Task { await run(success: "已筑要塞") { await model.editProvince(p, population: nil, fortress: true) } } }
-                            SealButton(title: "拆要塞") { let p = provinceChoice; Task { await run(success: "已拆要塞") { await model.editProvince(p, population: nil, fortress: false) } } }
-                        }
-                        SealButton(title: "绘制疆域（在地图上划入或割出州郡）") { paint(nation) }
+                    HStack(spacing: 10) {
+                        Text("人口").font(Theme.body).foregroundStyle(Theme.ink2)
+                        TextField("", text: $populationText, prompt: Text("例如 50000").foregroundColor(Theme.ink2.opacity(0.6))).keyboardType(.numberPad).multilineTextAlignment(.trailing).paperField()
+                        Text("人").font(Theme.body).foregroundStyle(Theme.ink2)
                     }
-                    .padding(12)
+                    HStack(spacing: 8) {
+                        SealButton(title: "定人口", disabled: Double(populationText) == nil) {
+                            let p = provinceChoice, v = Double(populationText)
+                            Task { await run(success: "人口已改") { await model.editProvince(p, population: v, fortress: nil) } }
+                            populationText = ""
+                        }
+                        SealButton(title: "筑要塞") { let p = provinceChoice; Task { await run(success: "已筑要塞") { await model.editProvince(p, population: nil, fortress: true) } } }
+                        SealButton(title: "拆要塞") { let p = provinceChoice; Task { await run(success: "已拆要塞") { await model.editProvince(p, population: nil, fortress: false) } } }
+                    }
+                } else {
+                    paneNote("选一个州郡后可改人口、筑或拆要塞。")
                 }
             }
-            .padding(.horizontal, 16)
-            NationExtrasView(model: model, nation: nation, info: info, who: info, say: { flash = $0 }, reload: { await reload() })
-            SectionLabel("国家加成")
+        case .treasury:
+            paneCard {
+                HStack {
+                    Text("国库").font(Theme.body).foregroundStyle(Theme.ink)
+                    Spacer()
+                    TextField("", text: $goldText, prompt: Text("\(Int(info.gold))").foregroundColor(Theme.ink2.opacity(0.6)))
+                        .keyboardType(.numberPad).multilineTextAlignment(.trailing).paperField(width: 130)
+                    Text("金").font(Theme.body).foregroundStyle(Theme.ink2)
+                }
+                PaperSlider(title: "国运", value: $destinyValue, range: 0...100, step: 1) { "\(Int($0))" }
+                SealButton(title: "颁行") {
+                    let gold = Double(goldText)
+                    Task { await run(success: "国库与国运已修改") { await model.editNation(nation, gold: gold, destiny: destinyValue, polity: nil) } }
+                    goldText = ""
+                }
+            }
+            .onAppear { destinyValue = info.destiny }
+        case .bonus:
             Group2 {
                 VStack(spacing: 0) {
                     ForEach(Array(Self.bonuses.enumerated()), id: \.offset) { i, b in
                         EditRow(label: b.label, value: Self.percent(info.bonus?[b.key], zero: "无") + " · " + b.note) {
-                            // The engine's own range for each (Regimes.setBonus), so the slider spans exactly it.
+                            // 引擎自己的范围（Regimes.setBonus），滑条正好覆盖它。
                             let r = b.key == "income" ? "-50–200" : b.key == "growth" ? "-20–50" : "-50–100"
                             numberEdit = NumberEdit(title: b.label + "（\(r)%）", unit: "%", value: info.bonus?[b.key] ?? 0) { v in await model.setBonus(nation, key: b.key, value: v) }
                         }
@@ -1189,78 +1308,83 @@ struct NationSheet: View {
                 }
             }
             .padding(.horizontal, 16)
-            SectionLabel("国库与国运")
-            Group2 {
-                HStack {
-                    Text("国库").font(Theme.body).foregroundStyle(Theme.ink)
-                    Spacer()
-                    TextField("", text: $goldText, prompt: Text("\(Int(info.gold))").foregroundColor(Theme.ink2.opacity(0.6)))
-                        .keyboardType(.numberPad).multilineTextAlignment(.trailing).paperField(width: 120)
-                    Text("金").font(Theme.body).foregroundStyle(Theme.ink2)
-                }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-                Divider2()
-                PaperSlider(title: "国运", value: $destinyValue, range: 0...100, step: 1) { "\(Int($0))" }
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                Divider2()
-                Button {
-                    let gold = Double(goldText)
-                    Task { await run(success: "国库与国运已修改") { await model.editNation(nation, gold: gold, destiny: destinyValue, polity: nil) } }
-                    goldText = ""
-                } label: { Text("颁行").font(Theme.section).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 16)
-            .onAppear { destinyValue = info.destiny }
-            SectionLabel("文化与宗教")
-            Group2 {
-                PaperMenu(title: "文化", items: Names.cultureIds.map { ($0, Names.culture[$0] ?? $0) }, selection: $cultureChoice)
-                Divider2()
-                PaperMenu(title: "宗教", items: Names.religion.keys.sorted().map { ($0, Names.religion[$0] ?? $0) }, selection: $religionChoice)
-                Divider2()
-                Button {
-                    let c = cultureChoice, r = religionChoice
-                    Task { await run(success: "文化与宗教已更改") { await model.editNation(nation, gold: nil, destiny: nil, polity: nil, culture: c, religion: r) } }
-                } label: { Text("颁行").font(Theme.section).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 16)
-            .onAppear { cultureChoice = info.culture; religionChoice = info.religion }
-            // 政体: folded to the one in force; open, the forms as a two-column grid of cards.
-            FoldSection("政体 · \(Self.styles.first { $0.id == (info.style ?? "") }?.label ?? info.styleLabel ?? "")", expanded: false) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("改行后国号与元首称号随之改变；改变基本政体如同革命，国库与国运受损。").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                        ForEach(Self.styles, id: \.id) { s in
-                            let on = s.id == (info.style ?? "")
-                            Button { if !on { Task { await run(success: "已改行\(s.label)") { await model.setStyle(nation, style: s.id) } } } } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(s.label).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
-                                    Text(s.note).font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.6)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 8)
-                                .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Theme.seal : Theme.line))
+            paneNote("点一项用滑条调整；加成直接改变推演里的收入、战力、人口增长与行军。").padding(.horizontal, 22)
+        case .polity:
+            paneCard {
+                paneNote("改行后国号与元首称号随之改变；改变基本政体如同革命，国库与国运受损，会先问一次。")
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    ForEach(Self.styles, id: \.id) { s in
+                        let on = s.id == (info.style ?? "")
+                        Button { if !on { GameFeel.shared.tap(); styleConfirm = s.id } } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(s.label).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                                Text(s.note).font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.6)
                             }
-                            .buttonStyle(PressStyle())
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 8)
+                            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Theme.seal : Theme.line))
                         }
+                        .buttonStyle(PressStyle())
                     }
                 }
-                .padding(.horizontal, 16)
             }
-            Button { placeArmy(nation) } label: { SecondaryLabel(title: "在地图上放置新军", symbol: "plus.circle") }.buttonStyle(PressStyle()).padding(.horizontal, 16)
-            SectionLabel("征募新军")
-            Group2 {
-                PaperMenu(title: "驻地", items: [(-1, "选择州郡")] + owned.map { ($0, map.meta.provinces[$0].name) }, selection: $levyProvince)
-                Divider2()
-                Button {
-                    let p = levyProvince
-                    Task { await run(success: "已征募新军") { await model.addArmy(nation, province: p) } }
-                } label: { Label("征兵", systemImage: "plus.circle").font(Theme.section).foregroundStyle(levyProvince < 0 ? Theme.ink2 : Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
-                .buttonStyle(.plain).disabled(levyProvince < 0)
+            .confirmationDialog("改行\(Self.styles.first { $0.id == styleConfirm }?.label ?? "")？", isPresented: Binding(get: { styleConfirm != nil }, set: { if !$0 { styleConfirm = nil } }), titleVisibility: .visible) {
+                Button("改行", role: .destructive) {
+                    if let id = styleConfirm, let s = Self.styles.first(where: { $0.id == id }) { Task { await run(success: "已改行\(s.label)") { await model.setStyle(nation, style: id) } } }
+                    styleConfirm = nil
+                }
+                Button("取消", role: .cancel) { styleConfirm = nil }
+            } message: { Text("国号与元首称号随之改变；改变基本政体国库与国运受损。") }
+        case .faith:
+            paneCard {
+                PaperMenu(title: "文化", items: Names.cultureIds.map { ($0, Names.culture[$0] ?? $0) }, selection: $cultureChoice).padding(.horizontal, -16)
+                PaperMenu(title: "宗教", items: Names.religion.keys.sorted().map { ($0, Names.religion[$0] ?? $0) }, selection: $religionChoice).padding(.horizontal, -16)
+                SealButton(title: "颁行", disabled: cultureChoice == info.culture && religionChoice == info.religion) {
+                    let c = cultureChoice, r = religionChoice
+                    Task { await run(success: "文化与宗教已更改") { await model.editNation(nation, gold: nil, destiny: nil, polity: nil, culture: c, religion: r) } }
+                }
             }
-            .padding(.horizontal, 16)
+            .onAppear { cultureChoice = info.culture; religionChoice = info.religion }
+        case .temper:
+            paneCard {
+                PaperSwitch(title: "自定义好战程度", on: Binding(get: { temperSet }, set: { on in
+                    temperSet = on
+                    let v = temperValue
+                    Task { await run { await model.setTemper(nation, on ? v : nil) } }
+                })).padding(.horizontal, -16)
+                if temperSet {
+                    PaperSlider(title: Self.temperName(temperValue), value: $temperValue, range: 0.6...1.6, step: 0.05) { String(format: "%.2f", $0) }
+                    SealButton(title: "定下国策") { let v = temperValue; Task { await run(success: "国策已定：\(Self.temperName(v))") { await model.setTemper(nation, v) } } }
+                } else {
+                    paneNote("现由君主性情与政体决定：\(Self.temperName(info.court?.temper ?? 1))。打开后可自己定下好战程度，影响宣战与出兵的积极程度。")
+                }
+            }
+            .onAppear { temperValue = info.court?.temper ?? 1 }
+        case .traits:
+            NationExtrasView(model: model, nation: nation, info: info, who: info, part: .traits, say: { flash = $0 }, reload: { await reload() })
+        case .army:
+            paneCard {
+                Button { placeArmy(nation) } label: { paneAction("在地图上放置新军", "plus.circle") }.buttonStyle(PressStyle())
+                HStack(spacing: 10) {
+                    PaperMenu(title: "征兵于", items: [(-1, "选择州郡")] + owned.map { ($0, map.meta.provinces[$0].name) }, selection: $levyProvince).padding(.horizontal, -16)
+                    SealButton(title: "征兵", disabled: levyProvince < 0) {
+                        let p = levyProvince
+                        Task { await run(success: "已征募新军") { await model.addArmy(nation, province: p) } }
+                    }
+                    .frame(width: 84)
+                }
+            }
+            NationExtrasView(model: model, nation: nation, info: info, who: info, part: .units, say: { flash = $0 }, reload: { await reload() })
+        case .offices:
+            NationExtrasView(model: model, nation: nation, info: info, who: info, part: .titles, say: { flash = $0 }, reload: { await reload() })
         }
+    }
+    /// 分类页里的主要操作（图标 + 字，等宽两格）。
+    private func paneAction(_ title: String, _ symbol: String) -> some View {
+        HStack(spacing: 6) { Image(systemName: symbol).font(.system(size: 15)); Text(title).font(Theme.body).lineLimit(1).minimumScaleFactor(0.8) }
+            .foregroundStyle(Theme.seal).frame(maxWidth: .infinity).frame(height: 44)
+            .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Theme.seal.opacity(0.3)))
     }
     /// 国家行为 (CultureNationActions47).
     private func actions(_ info: NationInfo, _ map: WorldMap) -> some View {

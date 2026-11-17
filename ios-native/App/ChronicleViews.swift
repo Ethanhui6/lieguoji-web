@@ -113,7 +113,7 @@ struct ChronicleDigest: View {
         let peak = max(1, rows.map(\.total).max() ?? 1)
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                Text("岁纪").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                Text("岁纪").font(Theme.section).foregroundStyle(Theme.ink)
                 Spacer()
                 DigestKey(color: Theme.seal, text: "战")
                 DigestKey(color: Theme.ink, text: "政")
@@ -121,7 +121,7 @@ struct ChronicleDigest: View {
                 DigestKey(color: Theme.ink2.opacity(0.45), text: "余")
             }
             if rows.isEmpty {
-                Text("尚无记载").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                Text("尚无记载").font(Theme.label).foregroundStyle(Theme.ink2)
             } else {
                 HStack(alignment: .bottom, spacing: 6) {
                     ForEach(rows) { row in
@@ -131,7 +131,7 @@ struct ChronicleDigest: View {
                 .frame(height: 96)
                 if let now = rows.last {
                     Text(note(now, rows.count > 1 ? rows[rows.count - 2] : nil))
-                        .font(Theme.kai(13)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                        .font(Theme.label).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -146,7 +146,7 @@ private struct DigestKey: View {
     var body: some View {
         HStack(spacing: 3) {
             RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 9, height: 9)
-            Text(text).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+            Text(text).font(Theme.caption).foregroundStyle(Theme.ink2)
         }
     }
 }
@@ -159,7 +159,7 @@ private struct DigestBar: View {
     private func height(_ count: Int) -> CGFloat { CGFloat(count) / CGFloat(peak) * 58 }
     var body: some View {
         VStack(spacing: 3) {
-            Text("\(year.total)").font(Theme.kai(11)).foregroundStyle(latest ? Theme.seal : Theme.ink2).monospacedDigit()
+            Text("\(year.total)").font(Theme.caption).foregroundStyle(latest ? Theme.seal : Theme.ink2).monospacedDigit()
             VStack(spacing: 0) {
                 Rectangle().fill(Theme.ink2.opacity(0.45)).frame(height: height(year.other))
                 Rectangle().fill(Theme.jade).frame(height: height(year.pact))
@@ -168,7 +168,7 @@ private struct DigestBar: View {
             }
             .frame(maxWidth: 22)
             .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
-            Text(label).font(Theme.kai(11)).foregroundStyle(latest ? Theme.seal : Theme.ink2).lineLimit(1).minimumScaleFactor(0.6)
+            Text(label).font(Theme.caption).foregroundStyle(latest ? Theme.seal : Theme.ink2).lineLimit(1).minimumScaleFactor(0.6)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
     }
@@ -185,7 +185,7 @@ struct ChronicleFilterBar: View {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass").font(.system(size: 13)).foregroundStyle(Theme.ink2)
                 TextField("", text: $keyword, prompt: Text("搜寻纪事").foregroundColor(Theme.ink2.opacity(0.7)))
-                    .font(Theme.kai(15)).foregroundStyle(Theme.ink).tint(Theme.seal)
+                    .font(Theme.body).foregroundStyle(Theme.ink).tint(Theme.seal)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !keyword.isEmpty {
                     Button { keyword = "" } label: {
@@ -199,7 +199,7 @@ struct ChronicleFilterBar: View {
             if let nation {
                 Button(action: clearNation) {
                     HStack(spacing: 4) {
-                        Text("只看 " + nation).font(Theme.kai(14)).lineLimit(1)
+                        Text("只看 " + nation).font(Theme.label).lineLimit(1)
                         Image(systemName: "xmark").font(.system(size: 10))
                     }
                     .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 40)
@@ -229,7 +229,7 @@ struct ChronicleEntryMeta: View {
     }
     var body: some View {
         HStack(spacing: 6) {
-            Text(ChronicleKind.of(entry.kind).label + " · " + age).font(Theme.kai(12)).foregroundStyle(Theme.ink2).fixedSize()
+            Text(ChronicleKind.of(entry.kind).label + " · " + age).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize()
             ForEach(involved, id: \.self) { n in
                 Button { pick(n) } label: { NationTag(map: map, nation: n) }.buttonStyle(.plain)
             }
@@ -246,7 +246,7 @@ private struct NationTag: View {
             let n = map.meta.nations[nation]
             HStack(spacing: 3) {
                 RoundedRectangle(cornerRadius: 2).fill(Names.color(n.color)).frame(width: 8, height: 8)
-                Text(MapLayers.stateLabel(n.name, full: false)).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1)
+                Text(MapLayers.stateLabel(n.name, full: false)).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
             }
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(Theme.paper2, in: Capsule())

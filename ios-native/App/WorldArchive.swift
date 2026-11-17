@@ -96,7 +96,7 @@ struct WorldArchiveSheet: View {
                 if worlds.isEmpty {
                     if loaded {
                         Text("架上尚空。推演满一个月的世界，会在开创新世界时收进这里。")
-                            .font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22).padding(.top, 8)
+                            .font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22).padding(.top, 8)
                     }
                 } else {
                     Group2 {
@@ -126,8 +126,8 @@ struct WorldArchiveSheet: View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 2).fill(Theme.seal).frame(width: 4, height: 38)
             VStack(alignment: .leading, spacing: 3) {
-                Text(w.title).font(Theme.kai(18)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
-                Text(subtitle(w)).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7).monospacedDigit()
+                Text(w.title).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                Text(subtitle(w)).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7).monospacedDigit()
             }
             Spacer(minLength: 8)
             Button { burning = w } label: {
@@ -135,7 +135,7 @@ struct WorldArchiveSheet: View {
             }
             .buttonStyle(PressStyle())
             Button { open(w) } label: {
-                Text("展卷").font(Theme.kai(15)).foregroundStyle(Theme.paper2).padding(.horizontal, 14).frame(height: 34)
+                Text("展卷").font(Theme.body).foregroundStyle(Theme.paper2).padding(.horizontal, 14).frame(height: 34)
                     .background(Theme.seal, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             }
             .buttonStyle(PressStyle())

@@ -58,7 +58,7 @@ struct WorldEditorSheet: View {
                 ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 8) {
                     ForEach(Tab.allCases, id: \.self) { t in
                         Button { withAnimation(Motion.tap) { tab = t } } label: {
-                            Text(t.rawValue).font(Theme.kai(15)).foregroundStyle(tab == t ? Theme.paper2 : Theme.ink)
+                            Text(t.rawValue).font(Theme.body).foregroundStyle(tab == t ? Theme.paper2 : Theme.ink)
                                 .padding(.horizontal, 14).frame(height: 38)
                                 .background(tab == t ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                                 .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(tab == t ? Color.clear : Theme.line))
@@ -90,7 +90,7 @@ struct WorldEditorSheet: View {
                         ForEach(Array(c.items.enumerated()), id: \.offset) { i, item in
                             if i > 0 { Divider2() }
                             Button { choice = nil; item.1() } label: {
-                                HStack { Text(item.0).font(Theme.kai(17)).foregroundStyle(Theme.ink); Spacer() }.padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                HStack { Text(item.0).font(Theme.section).foregroundStyle(Theme.ink); Spacer() }.padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                         }
@@ -162,7 +162,7 @@ struct WorldEditorSheet: View {
                     quickTile("平息", "cross.case") { brush("平息灾情") { p in await model.provinceDisaster(p, kind: nil) } }
                 }
             }
-            Text("选好笔刷后，一指点按或划过州郡即可落笔，两指移动地图，点顶部「完成」结束。").font(Theme.kai(13)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+            Text("选好笔刷后，一指点按或划过州郡即可落笔，两指移动地图，点顶部「完成」结束。").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
         }
     }
     private func scale(_ p: Int, _ k: Double) async -> String? {
@@ -177,7 +177,7 @@ struct WorldEditorSheet: View {
                 TextField("写在地图上的文字", text: $labelText).paperField()
                 quickSlider("字号", value: $labelSize, 6...160, text: "\(Int(labelSize))")
                 quickSlider("倾斜", value: $labelAngle, -60...60, text: "\(Int(labelAngle))°")
-                ColorPicker("颜色", selection: $labelColor, supportsOpacity: false).font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                ColorPicker("颜色", selection: $labelColor, supportsOpacity: false).font(Theme.body).foregroundStyle(Theme.ink2)
                 quickGrid {
                     quickTile(labelId >= 0 ? "移到新位置" : "点地图放置", "mappin.and.ellipse") { place() }
                     if labelId >= 0 {
@@ -200,7 +200,7 @@ struct WorldEditorSheet: View {
                         } label: {
                             HStack {
                                 Circle().fill(Names.color(l.color)).frame(width: 12, height: 12)
-                                Text(l.text).font(Theme.kai(16)).foregroundStyle(labelId == l.id ? Theme.seal : Theme.ink).lineLimit(1)
+                                Text(l.text).font(Theme.body).foregroundStyle(labelId == l.id ? Theme.seal : Theme.ink).lineLimit(1)
                                 Spacer()
                                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
                             }
@@ -283,12 +283,14 @@ struct WorldEditorSheet: View {
     }
 }
 
-/// 特性、官职称号与兵种档案, in the nation page's custom tab.
+/// 国家页自定义里的特性、官职称号、兵种档案与国名模板：每次只显示一类（自定义按分类分页）。
 struct NationExtrasView: View {
+    enum Part { case traits, titles, units, naming }
     @ObservedObject var model: GameModel
     let nation: Int
     let info: NationInfo
     let who: NationInfo?
+    let part: Part
     let say: (String) -> Void
     let reload: () async -> Void
 
@@ -309,11 +311,13 @@ struct NationExtrasView: View {
     }
     var body: some View {
         VStack(spacing: 12) {
+            switch part {
+            case .traits:
             quickSection("国家特性") {
                 HStack(spacing: 8) {
-                    Button("全部开启") { run("特性已全部开启") { await model.setStateTrait(nation, trait: nil, on: true) } }.font(Theme.kai(15)).foregroundStyle(Theme.seal)
+                    Button("全部开启") { run("特性已全部开启") { await model.setStateTrait(nation, trait: nil, on: true) } }.font(Theme.body).foregroundStyle(Theme.seal)
                     Spacer()
-                    Button("全部关闭") { run("特性已全部关闭") { await model.setStateTrait(nation, trait: nil, on: false) } }.font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                    Button("全部关闭") { run("特性已全部关闭") { await model.setStateTrait(nation, trait: nil, on: false) } }.font(Theme.body).foregroundStyle(Theme.ink2)
                 }
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
                     ForEach(info.allTraits ?? [], id: \.key) { t in
@@ -321,9 +325,9 @@ struct NationExtrasView: View {
                             VStack(alignment: .leading, spacing: 3) {
                                 HStack(spacing: 5) {
                                     Image(systemName: t.on ? "checkmark.seal.fill" : "seal").font(.system(size: 13)).foregroundStyle(t.on ? Theme.seal : Theme.ink2)
-                                    Text(t.name).font(Theme.kai(15)).foregroundStyle(t.on ? Theme.seal : Theme.ink).lineLimit(1)
+                                    Text(t.name).font(Theme.body).foregroundStyle(t.on ? Theme.seal : Theme.ink).lineLimit(1)
                                 }
-                                Text(t.text).font(Theme.kai(11)).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).frame(maxWidth: .infinity, alignment: .leading)
+                                Text(t.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .padding(9).frame(maxWidth: .infinity, minHeight: 62, alignment: .topLeading)
                             .background(t.on ? Theme.seal.opacity(0.08) : Theme.paper2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
@@ -333,17 +337,18 @@ struct NationExtrasView: View {
                     }
                 }
             }
+            case .titles:
             quickSection("官职称号") {
                 ForEach(posts, id: \.id) { p in
                     Button { titleEdit = Edit(id: p.id, label: p.title, text: p.title) } label: {
-                        HStack { Text(p.title).font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Image(systemName: "pencil").font(.system(size: 12)).foregroundStyle(Theme.seal) }.contentShape(Rectangle())
+                        HStack { Text(p.title).font(Theme.body).foregroundStyle(Theme.ink); Spacer(); Image(systemName: "pencil").font(.system(size: 12)).foregroundStyle(Theme.seal) }.contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
                 ForEach(["Chancellor", "Steward", "Marshal"], id: \.self) { o in
                     Button { titleEdit = Edit(id: o, label: NationSheet.title(o, who), text: NationSheet.title(o, who)) } label: {
                         HStack {
-                            Text(NationSheet.title(o, who)).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                            Text(NationSheet.title(o, who)).font(Theme.body).foregroundStyle(Theme.ink)
                             Spacer()
                             Image(systemName: "pencil").font(.system(size: 12)).foregroundStyle(Theme.seal)
                         }
@@ -352,13 +357,14 @@ struct NationExtrasView: View {
                     .buttonStyle(.plain)
                 }
             }
+            case .units:
             quickSection("兵种档案") {
                 ForEach(units) { u in
                     Button { unitEdit = u } label: {
                         HStack(spacing: 8) {
-                            Text(u.name).font(Theme.kai(16)).foregroundStyle(u.weight > 0 ? Theme.ink : Theme.ink2).lineLimit(1)
+                            Text(u.name).font(Theme.body).foregroundStyle(u.weight > 0 ? Theme.ink : Theme.ink2).lineLimit(1)
                             Spacer()
-                            Text("战力\(Int(u.power))% · 行速\(Int(u.speed))% · 征募\(Int(u.weight))").font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
+                            Text("战力\(Int(u.power))% · 行速\(Int(u.speed))% · 征募\(Int(u.weight))").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
                             Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
                         }
                         .contentShape(Rectangle())
@@ -369,9 +375,9 @@ struct NationExtrasView: View {
             quickSection("新增兵种") {
                 ForEach(Array(extras.enumerated()), id: \.offset) { i, e in
                     HStack {
-                        Text("\(e.name)（基于\(UnitKinds.name(e.base))）").font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
+                        Text("\(e.name)（基于\(UnitKinds.name(e.base))）").font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
                         Spacer()
-                        Button("删除") { run("兵种已删除") { let r = await model.edit("removeExtraUnit", ["n": nation, "i": i]); extras = await model.extraUnits(nation); return r } }.font(Theme.kai(14)).foregroundStyle(Theme.seal)
+                        Button("删除") { run("兵种已删除") { let r = await model.edit("removeExtraUnit", ["n": nation, "i": i]); extras = await model.extraUnits(nation); return r } }.font(Theme.label).foregroundStyle(Theme.seal)
                     }
                 }
                 quickGrid {
@@ -380,18 +386,23 @@ struct NationExtrasView: View {
                     quickTile("导入档案", "square.and.arrow.down") { importing = true }
                 }
             }
-            quickSection("国名") {
+            case .naming:
+            quickSection("国名模板") {
                 TextField("模板：用 {名} 和 {号}，留空恢复", text: $template).paperField()
                 quickGrid {
                     quickTile("应用模板", "textformat") { let t = template; run("国名已更改") { await model.edit("setNameTemplate", ["n": nation, "template": t.isEmpty ? NSNull() as Any : t as Any]) } }
                     quickTile("随机国名", "dice") { run("国名已更改") { await model.edit("randomNationName", ["n": nation]) } }
                 }
             }
-            quickSection("同盟") {
-                quickGrid { quickTile("强制退出同盟", "person.2.slash", destructive: true) { run("已退出同盟") { await model.leaveAlliance(nation) } } }
             }
         }
-        .task { units = await model.unitProfile(nation); extras = await model.extraUnits(nation); posts = await model.posts(nation) }
+        .task(id: part == .units ? 1 : part == .titles ? 2 : 0) {
+            switch part {
+            case .units: units = await model.unitProfile(nation); extras = await model.extraUnits(nation)
+            case .titles: posts = await model.posts(nation)
+            default: break
+            }
+        }
         .sheet(item: Binding(get: { exported.map(SharedFile.init) }, set: { exported = $0?.url })) { ShareSheet(items: [$0.url]) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
             if case .success(let url) = result { run("军事档案已导入") { let e = await model.importPackage(nation, from: url); units = await model.unitProfile(nation); extras = await model.extraUnits(nation); return e } }
@@ -458,7 +469,7 @@ private struct TitleEditor: View {
             SheetHeader(title: "官职称号", subtitle: "现称 \(label)", seal: "官")
             TextField("新称号", text: $edit).paperField().padding(.horizontal, 22)
             SealButton(title: "颁行", disabled: edit.trimmingCharacters(in: .whitespaces).isEmpty) { done(edit) }.padding(.horizontal, 22)
-            Button("恢复默认") { done(nil) }.font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity)
+            Button("恢复默认") { done(nil) }.font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity)
         }
         .padding(.bottom, 16)
         .presentationDetents([.height(320)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
@@ -484,7 +495,7 @@ private struct UnitEditor: View {
                 }
                 .padding(.horizontal, 22)
                 SealButton(title: "颁行") { done(name, power, speed, weight, false) }.padding(.horizontal, 22)
-                Button("恢复默认") { done("", 0, 0, 0, true) }.font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity)
+                Button("恢复默认") { done("", 0, 0, 0, true) }.font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity)
             }
             .padding(.bottom, 16)
         }

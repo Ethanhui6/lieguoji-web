@@ -33,13 +33,13 @@ struct DiplomaticActions: View {
                     ChipPicker(items: [(5, "五年"), (10, "十年"), (20, "二十年")], selection: $years)
                 } else if action == "gift" {
                     HStack(spacing: 10) {
-                        Text("赠金").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                        Text("赠金").font(Theme.body).foregroundStyle(Theme.ink2)
                         TextField("", text: $gold, prompt: Text("100").foregroundColor(Theme.ink2.opacity(0.6)))
                             .keyboardType(.decimalPad).multilineTextAlignment(.trailing).paperField()
-                        Text("金").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                        Text("金").font(Theme.body).foregroundStyle(Theme.ink2)
                     }
                 }
-                Text(note).font(Theme.kai(13)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                Text(note).font(Theme.label).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                 SealButton(title: sending ? "正在传达…" : "遣使", busy: sending,
                            disabled: !valid || (action == "gift" && !(Double(gold).map { $0.isFinite && $0 > 0 } ?? false))) {
                     let a = source, b = target, selected = action, duration = years, amount = Double(gold) ?? 0
@@ -56,7 +56,7 @@ struct DiplomaticActions: View {
                         say(feedback)
                     }
                 }
-                if !feedback.isEmpty { Text(feedback).font(Theme.kai(13)).foregroundStyle(Theme.ink).accessibilityLabel("执行结果：" + feedback) }
+                if !feedback.isEmpty { Text(feedback).font(Theme.label).foregroundStyle(Theme.ink).accessibilityLabel("执行结果：" + feedback) }
             }
             .padding(14)
         }

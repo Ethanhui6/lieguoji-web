@@ -138,7 +138,7 @@ struct MilitaryOverview: View {
                 armyList(troubled)
             }
             if state.armies.isEmpty {
-                Text("天下无兵").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                Text("天下无兵").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
             }
         }
     }
@@ -165,7 +165,7 @@ struct CountTile: View {
     var body: some View {
         VStack(spacing: 2) {
             Text("\(value)").font(Theme.kai(22)).foregroundStyle(hot ? Theme.seal : Theme.ink).monospacedDigit()
-            Text(title).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+            Text(title).font(Theme.label).foregroundStyle(Theme.ink2)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 10)
         .paperCard(tint: hot ? Theme.seal : nil)
@@ -182,9 +182,9 @@ private struct ShareBar: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 10, height: 10)
-                Text(title).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
+                Text(title).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
                 Spacer(minLength: 6)
-                Text(value).font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
+                Text(value).font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
             }
             GeometryReader { g in
                 ZStack(alignment: .leading) {
@@ -209,10 +209,10 @@ private struct SiegeRow: View {
             RoundedRectangle(cornerRadius: 3).fill(color).frame(width: 10, height: 30)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(place).font(Theme.kai(17)).foregroundStyle(Theme.ink).lineLimit(1)
-                    Text(by + "围攻").font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1)
+                    Text(place).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text(by + "围攻").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                     Spacer(minLength: 4)
-                    Text("\(Int((share * 100).rounded()))%").font(Theme.kai(14)).foregroundStyle(Theme.seal).monospacedDigit()
+                    Text("\(Int((share * 100).rounded()))%").font(Theme.label).foregroundStyle(Theme.seal).monospacedDigit()
                 }
                 GeometryReader { g in
                     ZStack(alignment: .leading) {
@@ -243,18 +243,18 @@ private struct GeneralRow: View {
             PaperTag(text: entry.rank, color: entry.fallen ? Theme.ink2 : Theme.seal)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(entry.name).font(Theme.kai(17)).foregroundStyle(entry.fallen ? Theme.ink2 : Theme.ink).lineLimit(1)
-                    if entry.fallen { Text("已故").font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
+                    Text(entry.name).font(Theme.section).foregroundStyle(entry.fallen ? Theme.ink2 : Theme.ink).lineLimit(1)
+                    if entry.fallen { Text("已故").font(Theme.caption).foregroundStyle(Theme.ink2) }
                 }
                 HStack(spacing: 5) {
                     RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 8, height: 8)
-                    Text(service).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1)
+                    Text(service).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                 }
             }
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 1) {
-                Text(String(Int(entry.merit))).font(Theme.kai(17)).foregroundStyle(Theme.ink).monospacedDigit()
-                Text("战功").font(Theme.kai(11)).foregroundStyle(Theme.ink2)
+                Text(String(Int(entry.merit))).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
+                Text("战功").font(Theme.caption).foregroundStyle(Theme.ink2)
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 9)
@@ -273,18 +273,18 @@ private struct ClashRow: View {
         HStack(spacing: 8) {
             RoundedRectangle(cornerRadius: 2).fill(leftColor).frame(width: 8, height: 22)
             VStack(alignment: .leading, spacing: 1) {
-                Text(left).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
-                Text(Names.wan(leftTroops)).font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
+                Text(left).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                Text(Names.wan(leftTroops)).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
             }
             Spacer(minLength: 4)
             VStack(spacing: 1) {
-                Text("战").font(Theme.kai(15)).foregroundStyle(Theme.seal)
-                Text(place).font(Theme.kai(11)).foregroundStyle(Theme.ink2).lineLimit(1)
+                Text("战").font(Theme.body).foregroundStyle(Theme.seal)
+                Text(place).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
             }
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 1) {
-                Text(right).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
-                Text(Names.wan(rightTroops)).font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
+                Text(right).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                Text(Names.wan(rightTroops)).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
             }
             RoundedRectangle(cornerRadius: 2).fill(rightColor).frame(width: 8, height: 22)
         }

@@ -80,7 +80,7 @@ struct DiplomacyBoard: View {
                 if let info {
                     let rows = relations(info)
                     if rows.isEmpty {
-                        Text("与各国素无往来").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
+                        Text("与各国素无往来").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
                     }
                     ForEach(rows) { r in
                         RelationRow(relation: r, name: name(r.id), color: color(r.id), fly: { fly(r.id) }, openNation: { openNation(r.id) },
@@ -110,10 +110,10 @@ private struct AllianceCard: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 RoundedRectangle(cornerRadius: 2).fill(Names.color(alliance.color)).frame(width: 10, height: 10)
-                Text(alliance.name).font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1)
+                Text(alliance.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
                 if alliance.unbreakable { PaperTag(text: "铁盟", color: Theme.ink) }
                 Spacer(minLength: 4)
-                Text("\(alliance.members.count) 国").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                Text("\(alliance.members.count) 国").font(Theme.label).foregroundStyle(Theme.ink2)
             }
             FlowChips(items: alliance.members.map { n -> (Int, String, Color, String?) in (n, name(n), color(n), nil) }) { n in fly(n) }
         }
@@ -139,10 +139,10 @@ private struct RelationRow: View {
                     RoundedRectangle(cornerRadius: 3).fill(color).frame(width: 10, height: 30)
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 5) {
-                            Text(name).font(Theme.kai(17)).foregroundStyle(Theme.ink).lineLimit(1)
+                            Text(name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
                             ForEach(Array(relation.tags.enumerated()), id: \.offset) { _, t in PaperTag(text: t.text, color: t.color) }
                         }
-                        if !relation.note.isEmpty { Text(relation.note).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(1) }
+                        if !relation.note.isEmpty { Text(relation.note).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1) }
                     }
                     Spacer(minLength: 4)
                 }

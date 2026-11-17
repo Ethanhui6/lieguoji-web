@@ -102,8 +102,8 @@ struct RemoteSettings: View {
             HStack(spacing: 10) {
                 Circle().fill(model.remoteAddress != nil ? Theme.jade : model.autoRemote ? Color.orange.opacity(0.7) : Theme.ink.opacity(0.25)).frame(width: 9, height: 9)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(model.remoteAddress != nil ? "已连接你的电脑" : model.autoRemote ? "正在等你的电脑上线" : "本机计算").font(Theme.kai(16)).foregroundStyle(Theme.ink)
-                    Text(model.remoteAddress ?? (model.autoRemote ? "电脑开着就会自动接上，不用填写任何东西" : "推演由手机完成")).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Text(model.remoteAddress != nil ? "已连接你的电脑" : model.autoRemote ? "正在等你的电脑上线" : "本机计算").font(Theme.body).foregroundStyle(Theme.ink)
+                    Text(model.remoteAddress ?? (model.autoRemote ? "电脑开着就会自动接上，不用填写任何东西" : "推演由手机完成")).font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 Spacer()
                 if busy { InkBusy().frame(width: 56) }
@@ -112,21 +112,21 @@ struct RemoteSettings: View {
                         busy = true; message = ""
                         Task { let ok = await model.findComputerNow(); busy = false; message = ok ? "" : "没找到电脑：请确认电脑上的「列国纪远程计算」在运行。"; GameFeel.shared.notify(ok ? .success : .warning) }
                     }
-                    .font(Theme.kai(15)).foregroundStyle(Theme.seal)
+                    .font(Theme.body).foregroundStyle(Theme.seal)
                 } else if model.remoteAddress != nil {
-                    Button("断开") { busy = true; Task { await model.disconnectRemote(); busy = false } }.font(Theme.kai(15)).foregroundStyle(Theme.seal)
+                    Button("断开") { busy = true; Task { await model.disconnectRemote(); busy = false } }.font(Theme.body).foregroundStyle(Theme.seal)
                 }
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
-            if !message.isEmpty { Text(message).font(Theme.kai(13)).foregroundStyle(Theme.seal).padding(.horizontal, 16).padding(.bottom, 10).frame(maxWidth: .infinity, alignment: .leading) }
+            if !message.isEmpty { Text(message).font(Theme.label).foregroundStyle(Theme.seal).padding(.horizontal, 16).padding(.bottom, 10).frame(maxWidth: .infinity, alignment: .leading) }
             Divider2()
             PaperSwitch(title: "用我的电脑计算（自动）", on: Binding(get: { model.autoRemote }, set: { model.autoRemote = $0 }))
             Divider2()
-            Text("只需在电脑上运行一次「列国纪远程计算」（之后开机自动运行），手机进入世界就会自动接上：同一 Wi-Fi 直连，在外面经中转。").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+            Text("只需在电脑上运行一次「列国纪远程计算」（之后开机自动运行），手机进入世界就会自动接上：同一 Wi-Fi 直连，在外面经中转。").font(Theme.caption).foregroundStyle(Theme.ink2)
                 .padding(.horizontal, 16).padding(.vertical, 10).fixedSize(horizontal: false, vertical: true)
             Divider2()
             Button { withAnimation(Motion.tap) { advanced.toggle() } } label: {
-                HStack { Text("高级：手动连接（一般不需要）").font(Theme.kai(14)).foregroundStyle(Theme.ink2); Spacer(); Image(systemName: advanced ? "chevron.up" : "chevron.down").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.ink2) }
+                HStack { Text("高级：手动连接（一般不需要）").font(Theme.label).foregroundStyle(Theme.ink2); Spacer(); Image(systemName: advanced ? "chevron.up" : "chevron.down").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.ink2) }
                     .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -138,7 +138,7 @@ struct RemoteSettings: View {
                         busy = true; message = ""
                         Task { let error = await model.connectRemote(address); busy = false; message = error ?? ""; GameFeel.shared.notify(error == nil ? .success : .error) }
                     }
-                    .font(Theme.kai(15)).foregroundStyle(Theme.seal).disabled(busy || address.isEmpty)
+                    .font(Theme.body).foregroundStyle(Theme.seal).disabled(busy || address.isEmpty)
                 }
                 .padding(.horizontal, 16).padding(.bottom, 10)
             }
@@ -156,7 +156,7 @@ struct FeelSettings: View {
             Divider2()
             VStack(alignment: .leading, spacing: 8) {
                 if feel.music && !feel.track.isEmpty {
-                    Button { feel.next() } label: { Label(feel.track, systemImage: "forward.fill").font(Theme.kai(13)).foregroundStyle(Theme.seal).lineLimit(1) }
+                    Button { feel.next() } label: { Label(feel.track, systemImage: "forward.fill").font(Theme.label).foregroundStyle(Theme.seal).lineLimit(1) }
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 PaperSlider(title: "音量", value: $feel.volume, range: 0...1, step: 0.05) { "\(Int($0 * 100))%" }

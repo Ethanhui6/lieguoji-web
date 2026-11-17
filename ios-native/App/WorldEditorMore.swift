@@ -37,7 +37,7 @@ struct EditorLandTab: View {
                         close()
                     }
                 }
-                Text("划定后在「笔刷 · 绘制国家」里选它，可以继续向外扩张。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)
+                Text("划定后在「笔刷 · 绘制国家」里选它，可以继续向外扩张。").font(Theme.caption).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)
             }
             quickSection("行政区") {
                 TextField("新行政区名称", text: $districtName).paperField()
@@ -98,7 +98,7 @@ struct EditorChoiceList: View {
                     ForEach(Array(items.enumerated()), id: \.offset) { i, item in
                         if i > 0 { Divider2() }
                         Button { dismiss(); item.1() } label: {
-                            HStack { Text(item.0).font(Theme.kai(17)).foregroundStyle(Theme.ink).lineLimit(1); Spacer() }.padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                            HStack { Text(item.0).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1); Spacer() }.padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
@@ -124,17 +124,17 @@ struct EditorAllianceTab: View {
     private func reload() async { list = await model.allianceList() }
     var body: some View {
         VStack(spacing: 12) {
-            if list.isEmpty { Text("天下暂无同盟").font(Theme.kai(15)).foregroundStyle(Theme.ink2).padding(30) }
+            if list.isEmpty { Text("天下暂无同盟").font(Theme.body).foregroundStyle(Theme.ink2).padding(30) }
             ForEach(list) { a in
                 quickSection(a.name) {
                     if open == a.id, let map = model.map {
                         TextField("同盟名称", text: $name).paperField()
-                        ColorPicker("同盟颜色", selection: $color, supportsOpacity: false).font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                        ColorPicker("同盟颜色", selection: $color, supportsOpacity: false).font(Theme.body).foregroundStyle(Theme.ink2)
                         ForEach(a.members, id: \.self) { n in
                             HStack {
-                                Text(n < map.meta.nations.count ? map.meta.nations[n].name : "—").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                Text(n < map.meta.nations.count ? map.meta.nations[n].name : "—").font(Theme.body).foregroundStyle(Theme.ink)
                                 Spacer()
-                                Button("逐出") { Task { say(await model.edit("allianceMember", ["i": a.id, "n": n, "join": 0]), "已逐出"); await reload() } }.font(Theme.kai(14)).foregroundStyle(Theme.seal)
+                                Button("逐出") { Task { say(await model.edit("allianceMember", ["i": a.id, "n": n, "join": 0]), "已逐出"); await reload() } }.font(Theme.label).foregroundStyle(Theme.seal)
                             }
                         }
                         quickGrid {
@@ -149,7 +149,7 @@ struct EditorAllianceTab: View {
                     } else {
                         Button { open = a.id; name = a.name; color = a.color.isEmpty ? .gray : Names.color(a.color) } label: {
                             HStack {
-                                Text("\(a.members.count) 国\(a.unbreakable ? " · 铁盟" : "")").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                                Text("\(a.members.count) 国\(a.unbreakable ? " · 铁盟" : "")").font(Theme.body).foregroundStyle(Theme.ink2)
                                 Spacer()
                                 Image(systemName: "chevron.down").font(.caption).foregroundStyle(Theme.ink2)
                             }
@@ -267,7 +267,7 @@ struct EditorMapTab: View {
             }
             quickSection(imageId >= 0 ? "修改图片" : "地图图片") {
                 PhotosPicker(selection: $photo, matching: .images) {
-                    HStack { Image(systemName: "photo"); Text(imageData == nil ? "从相册选图" : "已选图片，可更换"); Spacer() }.font(Theme.kai(16)).foregroundStyle(Theme.seal).contentShape(Rectangle())
+                    HStack { Image(systemName: "photo"); Text(imageData == nil ? "从相册选图" : "已选图片，可更换"); Spacer() }.font(Theme.body).foregroundStyle(Theme.seal).contentShape(Rectangle())
                 }
                 TextField("名称", text: $imageName).paperField()
                 quickSlider("宽度", value: $width, 20...1600, step: 10, text: "\(Int(width))")
@@ -289,7 +289,7 @@ struct EditorMapTab: View {
                         Button {
                             imageId = m.id; imageName = m.name; imageData = nil; width = m.width; angle = m.angle * 180 / .pi; alpha = m.alpha; front = m.front; visible = m.visible; imageX = m.x; imageY = m.y
                         } label: {
-                            HStack { Text(m.name).font(Theme.kai(16)).foregroundStyle(imageId == m.id ? Theme.seal : Theme.ink).lineLimit(1); Spacer(); Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2) }.contentShape(Rectangle())
+                            HStack { Text(m.name).font(Theme.body).foregroundStyle(imageId == m.id ? Theme.seal : Theme.ink).lineLimit(1); Spacer(); Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2) }.contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }

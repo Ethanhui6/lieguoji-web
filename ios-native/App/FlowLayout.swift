@@ -11,8 +11,8 @@ struct FlowChips: View {
                 Button { tap(it.0) } label: {
                     HStack(spacing: 5) {
                         RoundedRectangle(cornerRadius: 3).fill(it.2).frame(width: 11, height: 11)
-                        Text(it.1).font(Theme.kai(14)).foregroundStyle(Theme.ink).lineLimit(1)
-                        if let note = it.3 { Text(note).font(Theme.kai(11)).foregroundStyle(Theme.ink2) }
+                        Text(it.1).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1)
+                        if let note = it.3 { Text(note).font(Theme.caption).foregroundStyle(Theme.ink2) }
                     }
                     .padding(.horizontal, 9).frame(height: 28)
                     .background(Theme.paper2, in: Capsule())

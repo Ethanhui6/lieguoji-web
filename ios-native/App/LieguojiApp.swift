@@ -13,7 +13,7 @@ import LieguojiCore
         UISegmentedControl.appearance().setTitleTextAttributes([.font: kai.withSize(14)], for: .normal)
         UINavigationBar.appearance().titleTextAttributes = [.font: kai]
     }
-    var body: some Scene { WindowGroup { RootView().font(Theme.kai(17)).preferredColorScheme(.light).environment(\.colorScheme, .light) } }
+    var body: some Scene { WindowGroup { RootView().font(Theme.section).preferredColorScheme(.light).environment(\.colorScheme, .light) } }
 }
 
 /// Warm paper and ink, one vermilion seal colour and the jade of the web game.
@@ -112,7 +112,7 @@ struct RootView: View {
                 SealButton(title: "知道了") { model.failure = nil }.padding(.horizontal, 22)
             }
             .padding(.bottom, 24)
-            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+            .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
     }
 
@@ -159,14 +159,14 @@ struct VerticalText: View {
 struct PrimaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
-        GameActionLabel(title: title, symbol: symbol).font(Theme.kai(18)).frame(maxWidth: .infinity).frame(minHeight: 54).padding(.horizontal, 10)
+        GameActionLabel(title: title, symbol: symbol).font(Theme.section).frame(maxWidth: .infinity).frame(minHeight: 54).padding(.horizontal, 10)
             .foregroundStyle(Theme.paper2).background(Theme.seal, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 struct SecondaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
-        GameActionLabel(title: title, symbol: symbol).font(Theme.kai(18)).frame(maxWidth: .infinity).frame(minHeight: 54).padding(.horizontal, 10)
+        GameActionLabel(title: title, symbol: symbol).font(Theme.section).frame(maxWidth: .infinity).frame(minHeight: 54).padding(.horizontal, 10)
             .foregroundStyle(Theme.ink).background(Theme.paper2.opacity(0.9), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.line))
     }
@@ -233,7 +233,7 @@ struct WarCount: View {
             InkIcon(glyph: .war, size: 14, weight: 2.1)
                 .scaleEffect(bump ? 1.35 : 1).rotationEffect(.degrees(bump ? -10 : 0))
                 .background { Circle().stroke(Theme.seal.opacity(ring ? 0 : 0.6), lineWidth: 1.2).scaleEffect(ring ? 2.2 : 0.6) }
-            Text("\(count)场战争").font(Theme.kai(13)).lineLimit(1).fixedSize()
+            Text("\(count)场战争").font(Theme.label).lineLimit(1).fixedSize()
                 .contentTransition(.numericText()).animation(Motion.tap, value: count)
         }
         .foregroundStyle(Theme.seal)
@@ -260,7 +260,7 @@ struct TabButton: View {
                 if let glyph { InkIcon(glyph: glyph, size: 23, weight: active ? 2.1 : 1.7) }
                 else if let icon { Image(uiImage: icon).resizable().interpolation(.high).scaledToFit().frame(width: 22, height: 22) }
                 else { Image(systemName: symbol).font(.system(size: 18, weight: .medium)).symbolVariant(active ? .fill : .none) }
-                Text(title).font(Theme.kai(12))
+                Text(title).font(Theme.caption)
             }
             .foregroundStyle(active ? Theme.seal : Theme.ink).frame(width: 50, height: 50).contentShape(Rectangle())
             .overlay(alignment: .bottom) {
@@ -294,7 +294,7 @@ struct SheetHeader: View {
                 Text(title).font(Theme.kai(28)).foregroundStyle(Theme.ink).tracking(2).lineLimit(1).minimumScaleFactor(0.7)
                 Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.7), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
                     .frame(height: 1.2).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
-                if let subtitle { Text(subtitle).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
+                if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2) }
             }
             Spacer(minLength: 6)
             Seal(text: seal, size: 32)
@@ -336,7 +336,7 @@ struct Row: View {
                 Text(value).foregroundStyle(Theme.ink).monospacedDigit().fixedSize(horizontal: false, vertical: true)
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
-        .font(Theme.kai(17)).frame(minHeight: 22).padding(.horizontal, 16).padding(.vertical, 12)
+        .font(Theme.section).frame(minHeight: 22).padding(.horizontal, 16).padding(.vertical, 12)
         .accessibilityElement(children: .combine)
     }
 }
@@ -348,7 +348,7 @@ struct NationChip: View {
     var body: some View {
         HStack(spacing: 6) {
             RoundedRectangle(cornerRadius: 3).fill(nation >= 0 && nation < map.meta.nations.count ? Names.color(map.meta.nations[nation].color) : .gray).frame(width: 12, height: 12)
-            Text(nation >= 0 && nation < map.meta.nations.count ? map.meta.nations[nation].name : "无主").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+            Text(nation >= 0 && nation < map.meta.nations.count ? map.meta.nations[nation].name : "无主").font(Theme.section).foregroundStyle(Theme.ink)
         }
     }
 }
@@ -986,7 +986,7 @@ struct ReleaseNotesSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(note.version).font(Theme.kai(20)).foregroundStyle(Theme.seal)
                             ForEach(note.lines, id: \.self) { line in
-                                HStack(alignment: .top, spacing: 8) { Text("·").foregroundStyle(Theme.ink2); Text(line).font(Theme.kai(16)).foregroundStyle(Theme.ink) }
+                                HStack(alignment: .top, spacing: 8) { Text("·").foregroundStyle(Theme.ink2); Text(line).font(Theme.body).foregroundStyle(Theme.ink) }
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading).padding(16)

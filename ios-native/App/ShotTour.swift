@@ -185,6 +185,12 @@ enum ShotTour {
             NationSheet.tourTab = t
             show(nil); await wait(0.6); show(.nation(nation)); await wait(1.8); await shoot(name)
         }
+        // 自定义的分类页：国号国色与政体。
+        for (name, p) in [("11f2-custom-identity", NationSheet.CustomPane.identity), ("11f3-custom-army", .army)] {
+            NationSheet.tourTab = .custom; NationSheet.tourPane = p
+            show(nil); await wait(0.6); show(.nation(nation)); await wait(1.8); await shoot(name)
+        }
+        NationSheet.tourPane = nil
         NationSheet.tourTab = nil
         // 族谱：从国家页的世家进入，换几个国家连续开合（闪退回归），第一次留图。
         NationSheet.tourFamily = true

@@ -37,7 +37,7 @@ struct ProvinceSheet: View {
                             ForEach(Array(info.kinds.enumerated()), id: \.offset) { _, k in
                                 HStack(spacing: 6) {
                                     PaperTag(text: k.0, color: k.0 == "边地" ? Theme.ink2 : k.0 == "封锁" || k.0 == "民变" ? Color(red: 0.45, green: 0.08, blue: 0.08) : Theme.seal, size: 13)
-                                    Text(k.1).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).fixedSize(horizontal: false, vertical: true)
+                                    Text(k.1).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).fixedSize(horizontal: false, vertical: true)
                                 }
                             }
                         }
@@ -46,15 +46,15 @@ struct ProvinceSheet: View {
                             // 地利: how this land favours each arm (attacking into it / holding it).
                             Group2 {
                                 HStack {
-                                    Text("地利").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+                                    Text("地利").font(Theme.body).foregroundStyle(Theme.ink2)
                                     Spacer()
-                                    Text("进攻").font(Theme.kai(13)).foregroundStyle(Theme.ink2).frame(width: 58, alignment: .trailing)
-                                    Text("防守").font(Theme.kai(13)).foregroundStyle(Theme.ink2).frame(width: 58, alignment: .trailing)
+                                    Text("进攻").font(Theme.label).foregroundStyle(Theme.ink2).frame(width: 58, alignment: .trailing)
+                                    Text("防守").font(Theme.label).foregroundStyle(Theme.ink2).frame(width: 58, alignment: .trailing)
                                 }
                                 .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 4)
                                 ForEach(arms.indices, id: \.self) { i in
                                     HStack {
-                                        Text(arms[i].unit).font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                        Text(arms[i].unit).font(Theme.body).foregroundStyle(Theme.ink)
                                         Spacer()
                                         Self.percent(arms[i].attack).frame(width: 58, alignment: .trailing)
                                         Self.percent(arms[i].defense).frame(width: 58, alignment: .trailing)
@@ -75,7 +75,7 @@ struct ProvinceSheet: View {
                             if let good = info.specialty {
                                 Button { pickingGood = true } label: {
                                     HStack { Text("特产").foregroundStyle(Theme.ink2); Spacer(); Text(good).foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7)) }
-                                        .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                        .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
                                 .confirmationDialog("特产", isPresented: $pickingGood, titleVisibility: .visible) {
@@ -89,7 +89,7 @@ struct ProvinceSheet: View {
                             if let g = region {
                                 Button { regionActions = true } label: {
                                     HStack { Text("区域").foregroundStyle(Theme.ink2); Spacer(); Text("\(g.name) · \(g.provinces.count)州 · \(Names.wan(Int(g.population)))人").foregroundStyle(Theme.ink).lineLimit(1); Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7)) }
-                                        .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                        .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
                                 .confirmationDialog(g.name, isPresented: $regionActions, titleVisibility: .visible) {
@@ -113,7 +113,7 @@ struct ProvinceSheet: View {
                             }
                             Button { pickingCulture = true } label: {
                                 HStack { Text("本地文化").foregroundStyle(Theme.ink2); Spacer(); Text(Names.culture[info.cityCulture ?? ""] ?? info.cityCulture ?? "—").foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7)) }
-                                    .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                    .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .confirmationDialog("本地文化", isPresented: $pickingCulture, titleVisibility: .visible) {
@@ -128,13 +128,13 @@ struct ProvinceSheet: View {
                             Row(label: "政体", value: Names.polity[n.polity] ?? n.polity); Divider2(); Row(label: "文化", value: Names.culture[n.culture] ?? n.culture); Divider2()
                             Button { openNation(owner) } label: {
                                 HStack { Text("国家详情").foregroundStyle(Theme.ink); Spacer(); Text(n.name).foregroundStyle(Theme.ink2); Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2) }
-                                    .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                    .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             Divider2()
                             Button { grantTarget = -1; granting = true } label: {
                                 HStack { Text("划入他国（绘制国家）").foregroundStyle(Theme.ink); Spacer(); Image(systemName: "paintbrush.pointed").font(.caption).foregroundStyle(Theme.seal) }
-                                    .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                    .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             Divider2()
@@ -146,7 +146,7 @@ struct ProvinceSheet: View {
                                 ])
                             } label: {
                                 HStack { Text("在此立国").foregroundStyle(Theme.ink); Spacer(); Image(systemName: "flag.fill").font(.caption).foregroundStyle(Theme.seal) }
-                                    .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                    .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             Divider2()
@@ -157,7 +157,7 @@ struct ProvinceSheet: View {
                             } else {
                                 Button { Task { report(await model.setHolyProvince(province), "已定为圣地") } } label: {
                                     HStack { Text("设为" + (Names.religion[n.religion] ?? "本教") + "圣地").foregroundStyle(Theme.ink); Spacer(); Image(systemName: "sparkle").font(.caption).foregroundStyle(Theme.seal) }
-                                        .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                        .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -212,7 +212,7 @@ struct ProvinceSheet: View {
                                 Button {
                                     let t = grantTarget; granting = false
                                     Task { report(await model.grant(province: province, to: t), "已划入他国"); self.info = await model.provinceInfo(province) }
-                                } label: { Label("确认划入", systemImage: "paintbrush.pointed.fill").font(Theme.kai(18)).frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(grantTarget < 0 ? Theme.ink2 : Theme.seal) }
+                                } label: { Label("确认划入", systemImage: "paintbrush.pointed.fill").font(Theme.section).frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(grantTarget < 0 ? Theme.ink2 : Theme.seal) }
                                 .buttonStyle(.plain).disabled(grantTarget < 0)
                             }
                             .padding(.horizontal, 16)
@@ -220,7 +220,7 @@ struct ProvinceSheet: View {
                     }
                     .padding(.bottom, 24)
                 }
-                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
     }
@@ -237,7 +237,7 @@ extension ProvinceSheet {
     /// A terrain multiplier as a signed percent: seal red when it helps, faded when it hurts.
     static func percent(_ v: Double) -> some View {
         let p = Int(((v - 1) * 100).rounded())
-        return Text(p == 0 ? "—" : (p > 0 ? "+\(p)%" : "\(p)%")).font(Theme.kai(15)).monospacedDigit()
+        return Text(p == 0 ? "—" : (p > 0 ? "+\(p)%" : "\(p)%")).font(Theme.body).monospacedDigit()
             .foregroundStyle(p > 0 ? Theme.seal : p < 0 ? Theme.ink2 : Theme.ink)
     }
 }

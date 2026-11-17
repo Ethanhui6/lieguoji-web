@@ -45,7 +45,7 @@ struct ArmyServiceView: View {
                     Row(label: "折损", value: "\(Names.wan(Int(r.losses))) 人")
                     if !r.reason.isEmpty && !army.manual {
                         Divider2()
-                        Text(r.reason).font(Theme.kai(13)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(r.reason).font(Theme.label).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 16).padding(.vertical, 9)
                     }
                 }
@@ -113,20 +113,20 @@ struct BattleBoard: View {
             HStack(spacing: 8) {
                 Image(systemName: "flag.2.crossed.fill").font(.system(size: 15, weight: .regular)).foregroundStyle(Theme.seal)
                     .symbolEffect(.pulse, isActive: fighting)
-                Text(c.owner ? "对阵" : "遭遇").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                Text(c.owner ? "对阵" : "遭遇").font(Theme.section).foregroundStyle(Theme.ink)
                 Spacer()
                 PaperTag(text: fighting ? "交战中" : c.owner && defenders.isEmpty ? "围城中" : "对峙中", color: fighting ? Theme.seal : Theme.ink2, size: 13)
             }
             // Each side's name and strength, and the balance between them.
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text((c.owner ? "守 · " : "") + name(c.anchor) + (allies > 0 ? "与盟军" : "")).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
-                    Text(defenders.isEmpty ? "仅余城防" : "\(Names.wan(d)) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit()
+                    Text((c.owner ? "守 · " : "") + name(c.anchor) + (allies > 0 ? "与盟军" : "")).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text(defenders.isEmpty ? "仅余城防" : "\(Names.wan(d)) 兵").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text((c.owner ? "攻 · " : "") + name(attackerNation) + (Set(attackers.map(\.element.nation)).count > 1 ? "等" : "")).font(Theme.kai(15)).foregroundStyle(Theme.ink).lineLimit(1)
-                    Text("\(Names.wan(a)) 兵").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit()
+                    Text((c.owner ? "攻 · " : "") + name(attackerNation) + (Set(attackers.map(\.element.nation)).count > 1 ? "等" : "")).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text("\(Names.wan(a)) 兵").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
                 }
             }
             GeometryReader { g in
@@ -153,16 +153,16 @@ struct BattleBoard: View {
     }
     private func column(_ list: [EnumeratedSequence<[GameState.Army]>.Element], empty: String) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            if list.isEmpty { Text(empty).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+            if list.isEmpty { Text(empty).font(Theme.label).foregroundStyle(Theme.ink2) }
             ForEach(list.prefix(6), id: \.element.id) { item in
                 let x = item.element
                 Button { openArmy?(item.offset) } label: {
                     HStack(spacing: 7) {
                         UnitMark(unit: x.unit, color: tint(x.nation)).frame(width: 24, height: 24)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(x.name).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(1)
+                            Text(x.name).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1)
                             HStack(spacing: 4) {
-                                Text(Names.wan(x.troops)).font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
+                                Text(Names.wan(x.troops)).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
                                 Capsule().fill(Theme.ink.opacity(0.12)).frame(width: 34, height: 3)
                                     .overlay(alignment: .leading) { Capsule().fill(x.morale < 30 ? Theme.seal : Theme.jade).frame(width: 34 * CGFloat(min(100, max(0, x.morale))) / 100, height: 3) }
                             }
@@ -172,7 +172,7 @@ struct BattleBoard: View {
                 }
                 .buttonStyle(.plain).disabled(openArmy == nil)
             }
-            if list.count > 6 { Text("另有 \(list.count - 6) 军").font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
+            if list.count > 6 { Text("另有 \(list.count - 6) 军").font(Theme.caption).foregroundStyle(Theme.ink2) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -196,9 +196,9 @@ struct ProvinceWarView: View {
                 let done = s.maximum > 0 ? max(0, min(1, 1 - s.resistance / s.maximum)) : 0
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("\(who)围城 · 占领进度").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                        Text("\(who)围城 · 占领进度").font(Theme.body).foregroundStyle(Theme.ink2)
                         Spacer()
-                        Text("\(Int((done * 100).rounded()))%").font(Theme.kai(16)).foregroundStyle(Theme.seal).monospacedDigit()
+                        Text("\(Int((done * 100).rounded()))%").font(Theme.body).foregroundStyle(Theme.seal).monospacedDigit()
                     }
                     GeometryReader { g in
                         ZStack(alignment: .leading) {
@@ -207,7 +207,7 @@ struct ProvinceWarView: View {
                         }
                     }
                     .frame(height: 5)
-                    Text("城防余 \(Int(s.resistance.rounded()))／\(Int(s.maximum.rounded()))").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Text("城防余 \(Int(s.resistance.rounded()))／\(Int(s.maximum.rounded()))").font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 9)
             }
@@ -215,12 +215,12 @@ struct ProvinceWarView: View {
             if !biomes.isEmpty {
                 Divider2()
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("生物群系分布").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                    Text("生物群系分布").font(Theme.body).foregroundStyle(Theme.ink2)
                     ForEach(biomes, id: \.offset) { b in
                         HStack(spacing: 8) {
-                            Text(b.offset < Self.biomeNames.count ? Self.biomeNames[b.offset] : "其他").font(Theme.kai(14)).foregroundStyle(Theme.ink).frame(width: 78, alignment: .leading)
+                            Text(b.offset < Self.biomeNames.count ? Self.biomeNames[b.offset] : "其他").font(Theme.label).foregroundStyle(Theme.ink).frame(width: 78, alignment: .leading)
                             GeometryReader { g in Capsule().fill(Theme.ink.opacity(0.55)).frame(width: max(2, g.size.width * CGFloat(min(1, b.element)))) }.frame(height: 5)
-                            Text("\(Int((b.element * 100).rounded()))%").font(Theme.kai(13)).foregroundStyle(Theme.ink2).monospacedDigit().frame(width: 40, alignment: .trailing)
+                            Text("\(Int((b.element * 100).rounded()))%").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit().frame(width: 40, alignment: .trailing)
                         }
                     }
                 }
@@ -328,20 +328,20 @@ struct FaithCard: View {
             let followers = (state?.nations ?? []).filter { $0.alive && $0.religion == religion }
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(Names.religion[religion] ?? religion).font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                    Text(Names.religion[religion] ?? religion).font(Theme.section).foregroundStyle(Theme.ink)
                     Spacer()
-                    Text("圣书《\(f.book)》").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                    Text("圣书《\(f.book)》").font(Theme.label).foregroundStyle(Theme.ink2)
                 }
                 HStack(spacing: 6) {
-                    Text("教规").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                    Text("教规").font(Theme.label).foregroundStyle(Theme.ink2)
                     ForEach(f.practices, id: \.self) { p in
-                        Text(p).font(Theme.kai(13)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                        Text(p).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                             .padding(.horizontal, 7).padding(.vertical, 3).background(Theme.paper2, in: RoundedRectangle(cornerRadius: 5))
                             .overlay(RoundedRectangle(cornerRadius: 5).stroke(Theme.line))
                     }
                 }
-                Text("信徒约 \(Names.wan(followers.reduce(0) { $0 + $1.population })) · 奉行国家 \(followers.count) 个").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
-                if let effect, !effect.isEmpty { Text("国教之效：" + effect).font(Theme.kai(12)).foregroundStyle(Theme.seal.opacity(0.9)).fixedSize(horizontal: false, vertical: true) }
+                Text("信徒约 \(Names.wan(followers.reduce(0) { $0 + $1.population })) · 奉行国家 \(followers.count) 个").font(Theme.label).foregroundStyle(Theme.ink2)
+                if let effect, !effect.isEmpty { Text("国教之效：" + effect).font(Theme.caption).foregroundStyle(Theme.seal.opacity(0.9)).fixedSize(horizontal: false, vertical: true) }
                 // 信仰构成: the realm's provinces by faith, as one bar and its legend.
                 if let shares, shares.count > 1 {
                     let total = max(1, shares.reduce(0) { $0 + $1.provinces })
@@ -356,7 +356,7 @@ struct FaithCard: View {
                     .frame(height: 7)
                     WrapLayout(spacing: 6) {
                         ForEach(Array(shares.enumerated()), id: \.offset) { _, s in
-                            Text("\(s.name) \(s.provinces)州").font(Theme.kai(11)).foregroundStyle(s.heresy ? Color(red: 0.45, green: 0.08, blue: 0.08) : Theme.ink2)
+                            Text("\(s.name) \(s.provinces)州").font(Theme.caption).foregroundStyle(s.heresy ? Color(red: 0.45, green: 0.08, blue: 0.08) : Theme.ink2)
                         }
                     }
                 }
@@ -365,8 +365,8 @@ struct FaithCard: View {
                     let owner = state?.owners.indices.contains(h.province) == true ? state!.owners[h.province] : -1
                     HStack(spacing: 6) {
                         Image(systemName: "sparkle").font(.system(size: 12)).foregroundStyle(Color(red: 0.72, green: 0.52, blue: 0.14))
-                        Text("圣地 \(map.meta.provinces[h.province].name)").font(Theme.kai(14)).foregroundStyle(Theme.ink)
-                        if owner >= 0, owner < map.meta.nations.count { Text("今属\(map.meta.nations[owner].name)").font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+                        Text("圣地 \(map.meta.provinces[h.province].name)").font(Theme.label).foregroundStyle(Theme.ink)
+                        if owner >= 0, owner < map.meta.nations.count { Text("今属\(map.meta.nations[owner].name)").font(Theme.label).foregroundStyle(Theme.ink2) }
                     }
                 }
             }

@@ -22,18 +22,18 @@ struct ArmyRow: View {
             RoundedRectangle(cornerRadius: 3).fill(army.nation >= 0 && army.nation < map.meta.nations.count ? Names.color(map.meta.nations[army.nation].color) : .gray).frame(width: 10, height: 30)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(army.name).font(Theme.kai(18)).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text(army.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
                     Text(Echelon.name(troops: army.troops, culture: map.meta.nations.indices.contains(army.nation) ? map.meta.nations[army.nation].culture : ""))
-                        .font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule())
+                        .font(Theme.caption).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule())
                     if let duty = army.duty.flatMap({ Self.duties[$0] }) {
-                        Text(duty).font(Theme.kai(12)).foregroundStyle(Theme.seal).padding(.horizontal, 5).padding(.vertical, 1)
+                        Text(duty).font(Theme.caption).foregroundStyle(Theme.seal).padding(.horizontal, 5).padding(.vertical, 1)
                             .overlay(Capsule().stroke(Theme.seal.opacity(0.55), lineWidth: 0.8))
                     }
                 }
-                Text("\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "途中") · \(Names.status(army.status))\(Self.dest(map, army))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                Text("\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "途中") · \(Names.status(army.status))\(Self.dest(map, army))").font(Theme.label).foregroundStyle(Theme.ink2)
             }
             Spacer()
-            Text(Names.wan(army.troops)).font(Theme.kai(18)).foregroundStyle(Theme.ink)
+            Text(Names.wan(army.troops)).font(Theme.section).foregroundStyle(Theme.ink)
             Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
         }
         .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
@@ -71,7 +71,7 @@ struct ArmySheet: View {
                             Text(a.name).font(Theme.kai(26)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                             HStack(spacing: 6) {
                                 RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 10, height: 10)
-                                Text("\(nation?.name ?? "") · \(model.state.map { Echelon.designation($0, map, army: army) } ?? "") · \(Names.unit[a.unit] ?? a.unit)").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                                Text("\(nation?.name ?? "") · \(model.state.map { Echelon.designation($0, map, army: army) } ?? "") · \(Names.unit[a.unit] ?? a.unit)").font(Theme.label).foregroundStyle(Theme.ink2)
                             }
                         }
                         Spacer()
@@ -81,8 +81,8 @@ struct ArmySheet: View {
                     .padding(.horizontal, 22).padding(.top, 22)
                     // The arm's strengths and weaknesses, and who leads it.
                     VStack(alignment: .leading, spacing: 4) {
-                        if let k = UnitKinds.byKey[a.unit] { Text(k.note).font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
-                        if let c = a.commander { Text(a.banner == "ruler" ? "御驾亲征：\(c)" : "主将：\(c)").font(Theme.kai(14)).foregroundStyle(a.banner == "ruler" ? Theme.seal : Theme.ink) }
+                        if let k = UnitKinds.byKey[a.unit] { Text(k.note).font(Theme.label).foregroundStyle(Theme.ink2) }
+                        if let c = a.commander { Text(a.banner == "ruler" ? "御驾亲征：\(c)" : "主将：\(c)").font(Theme.label).foregroundStyle(a.banner == "ruler" ? Theme.seal : Theme.ink) }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 22)
                     StatStrip(tiles: [
@@ -93,15 +93,15 @@ struct ArmySheet: View {
                     ])
                     // Status as one plain line instead of a table.
                     HStack(spacing: 8) {
-                        Text(fighting ? "交战中" : a.travel == "moving" ? "行军中" : Names.status(a.status)).font(Theme.kai(14)).foregroundStyle(Theme.paper2)
+                        Text(fighting ? "交战中" : a.travel == "moving" ? "行军中" : Names.status(a.status)).font(Theme.label).foregroundStyle(Theme.paper2)
                             .padding(.horizontal, 8).padding(.vertical, 3).background(fighting ? Theme.seal : Theme.ink2, in: Capsule())
-                        Text(map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "途中").font(Theme.kai(15)).foregroundStyle(Theme.ink)
+                        Text(map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "途中").font(Theme.body).foregroundStyle(Theme.ink)
                         if let d = a.destination, d >= 0, d < map.meta.provinces.count {
                             Image(systemName: "arrow.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
-                            Text(map.meta.provinces[d].name).font(Theme.kai(15)).foregroundStyle(Theme.seal)
+                            Text(map.meta.provinces[d].name).font(Theme.body).foregroundStyle(Theme.seal)
                         }
                         Spacer()
-                        Text(ArmyRow.command(a)).font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                        Text(ArmyRow.command(a)).font(Theme.label).foregroundStyle(Theme.ink2)
                     }
                     .padding(.horizontal, 22)
                     HStack(spacing: 10) {
@@ -133,7 +133,7 @@ struct ArmySheet: View {
                             Group2 {
                                 ForEach(peers, id: \.element.id) { p in
                                     Button { merging = false; act("mergeArmy", a, text: p.element.id) } label: {
-                                        HStack { Text(p.element.name).font(Theme.kai(17)).foregroundStyle(Theme.ink); Spacer(); Text("\(Names.wan(p.element.troops)) 兵").font(Theme.kai(14)).foregroundStyle(Theme.ink2) }
+                                        HStack { Text(p.element.name).font(Theme.section).foregroundStyle(Theme.ink); Spacer(); Text("\(Names.wan(p.element.troops)) 兵").font(Theme.label).foregroundStyle(Theme.ink2) }
                                             .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
                                     }
                                     .buttonStyle(.plain)
@@ -159,18 +159,18 @@ struct ArmySheet: View {
                     ArmyServiceView(model: model, army: a)
                     // 整编 (custom): strength, arm and morale.
                     Button { withAnimation(Motion.panel) { editing.toggle() } } label: {
-                        HStack { Text("整编（自定义）").font(Theme.kai(16)).foregroundStyle(Theme.ink); Spacer(); Image(systemName: editing ? "chevron.up" : "chevron.down").font(.system(size: 13, weight: .regular)).foregroundStyle(Theme.ink2) }
+                        HStack { Text("整编（自定义）").font(Theme.body).foregroundStyle(Theme.ink); Spacer(); Image(systemName: editing ? "chevron.up" : "chevron.down").font(.system(size: 13, weight: .regular)).foregroundStyle(Theme.ink2) }
                             .padding(.horizontal, 24).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     if editing {
                         Group2 {
                             HStack(spacing: 8) {
-                                Text("兵力").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                Text("兵力").font(Theme.body).foregroundStyle(Theme.ink)
                                 Spacer()
                                 ForEach([-5000, -1000], id: \.self) { d in stepButton(d, a.troops) }
                                 TextField("", text: $troopsText, prompt: Text("\(a.troops)").foregroundColor(Theme.ink2.opacity(0.6)))
-                                    .font(Theme.kai(17)).keyboardType(.numberPad).multilineTextAlignment(.center).frame(width: 84)
+                                    .font(Theme.section).keyboardType(.numberPad).multilineTextAlignment(.center).frame(width: 84)
                                     .padding(.vertical, 5).background(Theme.paper2, in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.line))
                                 ForEach([1000, 5000], id: \.self) { d in stepButton(d, a.troops) }
                             }
@@ -188,7 +188,7 @@ struct ArmySheet: View {
                                     say(error ?? "\(a.name)已整编"); GameFeel.shared.notify(error == nil ? .success : .error)
                                     if error == nil { troopsText = "" }
                                 }
-                            } label: { Text("颁行").font(Theme.kai(17)).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
+                            } label: { Text("颁行").font(Theme.section).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 11) }
                             .buttonStyle(.plain)
                         }
                         .padding(.horizontal, 16)
@@ -212,7 +212,7 @@ struct ArmySheet: View {
             let base = Int(troopsText) ?? current
             troopsText = String(max(1, base + delta))
         } label: {
-            Text(delta > 0 ? "+\(delta / 1000)k" : "\(delta / 1000)k").font(Theme.kai(13)).foregroundStyle(Theme.ink)
+            Text(delta > 0 ? "+\(delta / 1000)k" : "\(delta / 1000)k").font(Theme.label).foregroundStyle(Theme.ink)
                 .frame(width: 38, height: 30).background(Theme.paper2, in: RoundedRectangle(cornerRadius: 7)).overlay(RoundedRectangle(cornerRadius: 7).stroke(Theme.line))
         }
         .buttonStyle(PressStyle())
@@ -247,11 +247,11 @@ struct FleetRow: View {
         HStack(spacing: 12) {
             Image(systemName: "sailboat.fill").foregroundStyle(fleet.nation >= 0 && fleet.nation < map.meta.nations.count ? Names.color(map.meta.nations[fleet.nation].color) : Theme.ink2)
             VStack(alignment: .leading, spacing: 3) {
-                Text(fleet.name).font(Theme.kai(18)).foregroundStyle(Theme.ink)
-                Text("\(FleetText.status(fleet.status)) · \(FleetText.decision(fleet.decision))").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                Text(fleet.name).font(Theme.section).foregroundStyle(Theme.ink)
+                Text("\(FleetText.status(fleet.status)) · \(FleetText.decision(fleet.decision))").font(Theme.label).foregroundStyle(Theme.ink2)
             }
             Spacer()
-            Text("\(fleet.ships) 船 · \(fleet.crew) 人").font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+            Text("\(fleet.ships) 船 · \(fleet.crew) 人").font(Theme.body).foregroundStyle(Theme.ink2)
         }
         .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
     }
@@ -290,35 +290,35 @@ struct FleetSheet: View {
                     ])
                     Group2 {
                         Button { newName = f.name; renaming = true } label: {
-                            HStack { Text("舰队名").font(Theme.kai(16)).foregroundStyle(Theme.ink2); Spacer(); Text(f.name).font(Theme.kai(16)).foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.seal) }
+                            HStack { Text("舰队名").font(Theme.body).foregroundStyle(Theme.ink2); Spacer(); Text(f.name).font(Theme.body).foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.seal) }
                                 .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
                         }
                         .buttonStyle(.plain).disabled(f.status == "lost"); Divider2()
                         Row(label: "指挥", value: f.manual || !f.patrol ? "玩家指挥" : "AI · " + FleetText.decision(f.decision)); Divider2()
                         if f.port >= 0, f.port < map.meta.provinces.count { Row(label: "停留港口", value: map.meta.provinces[f.port].name + "港"); Divider2() }
-                        if !f.reason.isEmpty { Text(f.reason).font(Theme.kai(14)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 10) }
+                        if !f.reason.isEmpty { Text(f.reason).font(Theme.label).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 10) }
                     }
                     .padding(.horizontal, 16)
 
                     HStack {
-                        Text("停留港口").font(Theme.kai(18)).foregroundStyle(Theme.ink)
+                        Text("停留港口").font(Theme.section).foregroundStyle(Theme.ink)
                         Spacer()
-                        Button(action: pickOnMap) { Label("地图选港", systemImage: "hand.tap").font(Theme.kai(14)).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle()).disabled(busy)
+                        Button(action: pickOnMap) { Label("地图选港", systemImage: "hand.tap").font(Theme.label).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle()).disabled(busy)
                     }
                     .padding(.horizontal, 24)
                     Group2 {
                         if ports.isEmpty {
-                            Text("本国没有可停留的港口").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16)
+                            Text("本国没有可停留的港口").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16)
                         }
                         ForEach(shown, id: \.port.province) { item in
                             let on = target == item.port.province
                             Button { withAnimation(Motion.tap) { target = on ? -1 : item.port.province } } label: {
                                 HStack(spacing: 10) {
                                     Image(systemName: "anchor").font(.system(size: 14, weight: .regular)).foregroundStyle(on ? Theme.seal : Theme.ink2).frame(width: 22)
-                                    Text(map.meta.provinces[item.port.province].name + "港").font(Theme.kai(17)).foregroundStyle(Theme.ink)
-                                    if item.port.province == f.port { Text("现泊").font(Theme.kai(12)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule()) }
+                                    Text(map.meta.provinces[item.port.province].name + "港").font(Theme.section).foregroundStyle(Theme.ink)
+                                    if item.port.province == f.port { Text("现泊").font(Theme.caption).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule()) }
                                     Spacer()
-                                    Text("\(Int(item.distance)) 里").font(Theme.kai(14)).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    Text("\(Int(item.distance)) 里").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
                                     Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Theme.seal : Theme.ink.opacity(0.25))
                                 }
                                 .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
@@ -330,7 +330,7 @@ struct FleetSheet: View {
                         if ports.count > 6 {
                             Divider2()
                             Button { withAnimation(Motion.panel) { allPorts.toggle() } } label: {
-                                Text(allPorts ? "收起" : "展开全部 \(ports.count) 港").font(Theme.kai(15)).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 10)
+                                Text(allPorts ? "收起" : "展开全部 \(ports.count) 港").font(Theme.body).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 10)
                             }
                             .buttonStyle(.plain)
                         }
@@ -359,9 +359,9 @@ struct FleetSheet: View {
                         .buttonStyle(.plain).padding(.horizontal, 16)
                     }
                     if !feedback.isEmpty {
-                        Text(feedback).font(Theme.kai(14)).foregroundStyle(Theme.seal).transition(.opacity)
+                        Text(feedback).font(Theme.label).foregroundStyle(Theme.seal).transition(.opacity)
                     }
-                    Text(busy ? "交战或撤退中的舰队不能改令" : "只能停留本国港口；目标须有连通海路").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                    Text(busy ? "交战或撤退中的舰队不能改令" : "只能停留本国港口；目标须有连通海路").font(Theme.label).foregroundStyle(Theme.ink2)
                 }
                 .padding(.bottom, 24)
                 .animation(Motion.fade, value: feedback)
@@ -371,7 +371,7 @@ struct FleetSheet: View {
                     shipsEdit = false
                     Task { feedback = await model.editFleet(f.id, ships: Int(v.rounded()), name: nil) ?? "已整编为 \(min(10, max(1, Int(v.rounded())))) 艘" }
                 }
-                .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+                .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $renaming) {
                 VStack(alignment: .leading, spacing: 14) {
@@ -384,7 +384,7 @@ struct FleetSheet: View {
                     .padding(.horizontal, 22)
                 }
                 .padding(.bottom, 16)
-                .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+                .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
     }
@@ -400,7 +400,7 @@ struct ArmyChip: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Image(systemName: symbol).font(.system(size: 15, weight: .regular))
-                Text(title).font(Theme.kai(14)).lineLimit(1).minimumScaleFactor(0.7)
+                Text(title).font(Theme.label).lineLimit(1).minimumScaleFactor(0.7)
             }
             .foregroundStyle(danger ? Theme.seal : Theme.ink)
             .frame(maxWidth: .infinity, minHeight: 56)
@@ -421,7 +421,7 @@ struct UnitGrid: View {
                 ForEach(UnitKinds.kinds, id: \.key) { k in
                     let on = k.key == selection
                     Button { selection = k.key } label: {
-                        Text(k.name).font(Theme.kai(14)).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                        Text(k.name).font(Theme.label).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                             .frame(maxWidth: .infinity).frame(height: 34)
                             .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(on ? Color.clear : Theme.line))
@@ -429,7 +429,7 @@ struct UnitGrid: View {
                     .buttonStyle(PressStyle())
                 }
             }
-            if let k = UnitKinds.byKey[selection] { Text(k.note).font(Theme.kai(13)).foregroundStyle(Theme.ink2) }
+            if let k = UnitKinds.byKey[selection] { Text(k.note).font(Theme.label).foregroundStyle(Theme.ink2) }
         }
     }
 }

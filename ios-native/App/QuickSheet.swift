@@ -55,9 +55,9 @@ struct ProvinceQuickSheet: View {
                     section("放置军队") {
                         HStack(spacing: 10) {
                             Glyph.icon("军队", size: 16)
-                            Text(armyNation >= 0 && map.meta.nations.indices.contains(armyNation) ? map.meta.nations[armyNation].name : nation?.name ?? "—").font(Theme.kai(16)).foregroundStyle(Theme.ink).lineLimit(1)
+                            Text(armyNation >= 0 && map.meta.nations.indices.contains(armyNation) ? map.meta.nations[armyNation].name : nation?.name ?? "—").font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
                             Spacer()
-                            Button("换国家") { target = -1; picking = .army }.font(Theme.kai(15)).foregroundStyle(Theme.seal)
+                            Button("换国家") { target = -1; picking = .army }.font(Theme.body).foregroundStyle(Theme.seal)
                         }
                         slider("数量", value: Binding(get: { Double(count) }, set: { count = Int($0) }), 1...30, text: "\(count) 支")
                         tiles {
@@ -213,7 +213,7 @@ struct ProvinceQuickSheet: View {
                             ForEach(Array(c.items.enumerated()), id: \.offset) { i, item in
                                 if i > 0 { Divider2() }
                                 Button { choice = nil; item.1() } label: {
-                                    HStack { Text(item.0).font(Theme.kai(17)).foregroundStyle(Theme.ink); Spacer() }.padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+                                    HStack { Text(item.0).font(Theme.section).foregroundStyle(Theme.ink); Spacer() }.padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -299,10 +299,10 @@ struct ReformCard: View {
                 ForEach(info.sway ?? [], id: \.name) { row in
                     HStack(spacing: 8) {
                         Glyph.icon(row.name, size: 15)
-                        Text(row.name).font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(width: 48, alignment: .leading)
-                        Text(row.value).font(Theme.kai(16)).foregroundStyle(Theme.ink).monospacedDigit()
+                        Text(row.name).font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 48, alignment: .leading)
+                        Text(row.value).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit()
                         Spacer(minLength: 4)
-                        Text(row.text).font(Theme.kai(12)).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.trailing)
+                        Text(row.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.trailing)
                     }
                 }
             }
@@ -321,9 +321,9 @@ struct ReformCard: View {
                         VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 5) {
                                 Image(systemName: f.on ? "checkmark.seal.fill" : "seal").font(.system(size: 13)).foregroundStyle(f.on ? Theme.seal : Theme.ink2)
-                                Text(f.name).font(Theme.kai(15)).foregroundStyle(f.on ? Theme.seal : Theme.ink).lineLimit(1)
+                                Text(f.name).font(Theme.body).foregroundStyle(f.on ? Theme.seal : Theme.ink).lineLimit(1)
                             }
-                            Text(f.text).font(Theme.kai(11)).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).frame(maxWidth: .infinity, alignment: .leading)
+                            Text(f.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(9).frame(maxWidth: .infinity, minHeight: 62, alignment: .topLeading)
                         .background(f.on ? Theme.seal.opacity(0.08) : Theme.paper2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
@@ -352,14 +352,14 @@ struct PressRipple: View {
 func quickSection<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
     VStack(alignment: .leading, spacing: 8) {
         SectionLabel(title)
-        VStack(spacing: 10) { content() }.padding(12).paperCard().padding(.horizontal, 14)
+        VStack(spacing: 10) { content() }.padding(14).paperCard().padding(.horizontal, 16)
     }
 }
 func quickSlider(_ title: String, value: Binding<Double>, _ range: ClosedRange<Double>, step: Double = 1, text: String) -> some View {
     HStack(spacing: 10) {
-        Text(title).font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(width: 64, alignment: .leading)
+        Text(title).font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 64, alignment: .leading)
         PaperTrack(value: value, range: range, step: step, onEditingChanged: nil)
-        Text(text).font(Theme.kai(15)).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 72, alignment: .trailing).lineLimit(1).minimumScaleFactor(0.7)
+        Text(text).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 72, alignment: .trailing).lineLimit(1).minimumScaleFactor(0.7)
     }
 }
 func quickGrid<C: View>(@ViewBuilder _ content: () -> C) -> some View {
@@ -369,7 +369,7 @@ func quickTile(_ title: String, _ symbol: String, destructive: Bool = false, _ a
     Button(action: action) {
         VStack(spacing: 5) {
             Image(systemName: symbol).font(.system(size: 19, weight: .regular)).frame(height: 24)
-            Text(title).font(Theme.kai(13)).lineLimit(1).minimumScaleFactor(0.7)
+            Text(title).font(Theme.label).lineLimit(1).minimumScaleFactor(0.7)
         }
         .foregroundStyle(destructive ? Theme.seal : Theme.ink).frame(maxWidth: .infinity).frame(height: 66)
         .background(Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))

@@ -90,4 +90,11 @@ public enum MapPalette {
         func mix(_ s: Float) -> Float { linearToSrgb(gray + (srgbToLinear(s) - gray) * stateAlpha) }
         return RGB(mix(state.r), mix(state.g), mix(state.b))
     }
+    /// 陆地格若归属于国色为 state 的一方时，政治地图上的颜色（与 cellColor 同一算法；占领晕染用来画进攻色，
+    /// 易主时与新底色一致、不跳）。
+    public static func stateColor(map: WorldMap, cell: Int, state: RGB) -> RGB {
+        let gray = heightGray(map.elevation[cell])
+        func mix(_ s: Float) -> Float { linearToSrgb(gray + (srgbToLinear(s) - gray) * stateAlpha) }
+        return RGB(mix(state.r), mix(state.g), mix(state.b))
+    }
 }

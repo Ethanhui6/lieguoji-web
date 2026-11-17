@@ -128,6 +128,11 @@ jobs:
             for f in "$DATA"/Documents/shot-*.ready; do
               [ -e "$f" ] || continue
               n=$(basename "$f" .ready); n=${n#shot-}
+              # 视频片段：rec-<名>-start 到 rec-<名>-stop 之间录屏（占领晕染前后对照）。
+              case "$n" in
+                rec-*-start) r=${n#rec-}; r=${r%-start}; xcrun simctl io "$UDID" recordVideo --codec=h264 --force "shots/$r.mp4" > /dev/null 2>&1 & echo $! > /tmp/rec.pid; sleep 1; rm -f "$f"; continue ;;
+                rec-*-stop) [ -f /tmp/rec.pid ] && kill -INT "$(cat /tmp/rec.pid)" && sleep 2; rm -f /tmp/rec.pid "$f"; continue ;;
+              esac
               sleep 0.6
               [ "$n" = done ] && finished=1 || xcrun simctl io "$UDID" screenshot "shots/$n.png"
               rm -f "$f"
@@ -136,7 +141,7 @@ jobs:
           done
           xcrun simctl io "$UDID" screenshot shots/zz-last.png || true
           [ "$finished" = 1 ] && printf '{"finished":true}\n' > shots/tour-status.json || printf '{"finished":false}\n' > shots/tour-status.json
-          for name in name-stability.json color-contrast.json map-unrolled.json advance-ownership.json ci-control-world.lgj ci-control-tuning.json panel-profile.json ci-panel-world.lgj; do
+          for name in wash-demo.json name-stability.json color-contrast.json map-unrolled.json advance-ownership.json ci-control-world.lgj ci-control-tuning.json panel-profile.json ci-panel-world.lgj; do
             [ ! -f "$DATA/Documents/$name" ] || cp "$DATA/Documents/$name" shots/
           done
           node scripts/check-native-tour.mjs shots

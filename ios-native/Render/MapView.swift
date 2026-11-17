@@ -31,6 +31,8 @@ import LieguojiCore
     @Published var unrollRequest = UUID()
     /// The camera's scale now and the scale at which the whole map fits (CI checks the map can be unrolled).
     var cameraScale: (() -> (scale: Double, fit: Double))?
+    /// CI 测量：当前的地图渲染器。
+    var renderer: (() -> MapRenderer?)?
     /// Zoom by a factor around the screen centre (the + / − buttons).
     @Published var zoomRequest: (factor: Double, id: UUID)?
     /// Army icons and the selected army's remaining route, from the simulation (nil keeps the opening icons).
@@ -61,6 +63,13 @@ import LieguojiCore
     var battleGrounds: [BattleGround] = []
     /// CI 巡览演示战场地面时为真：推演不覆盖演示用的战况。
     var groundDemo = false
+    /// 占领晕染：本步的围城与最近的攻占（GameModel.refreshWashes），与世界代次（读档、换世界时变）。
+    var washes: [WashInput] = []
+    var washEpoch = 0
+    /// CI 巡览演示占领晕染时为真：推演不覆盖演示输入。
+    var washDemo = false
+    /// 当前着色视图的标识（同一视图里填色随推演刷新时渐变，换视图时瞬切）。
+    var viewKey = ""
     /// Where the icon with this key is drawn now (set by the map view).
     var placed: ((String) -> (Double, Double)?)?
     /// CI 连续帧对比: the state names on screen in this frame and how opaque each is drawn.
@@ -402,6 +411,7 @@ struct MapView: UIViewRepresentable {
                 return (self.camera.scale, self.bounds.lowerBound)
             }
             controller.nameFrame = { [weak self] in self?.labels?.nameFrame() ?? [:] }
+            controller.renderer = { [weak self] in self?.renderer }
             controller.placed = { [weak self] key in
                 guard let p = self?.renderer?.placedSprites().first(where: { $0.sprite.key == key }) else { return nil }
                 return (Double(p.x), Double(p.y))
@@ -649,6 +659,8 @@ struct MapView: UIViewRepresentable {
         }
         private var gliding = false
         private var shownGrounds: [BattleGround] = []
+        private var shownWashes: [WashInput] = []
+        private var shownWashEpoch = -1
         private var appliedPlay: PlaySettings?
         private func pace(_ l: CADisplayLink, glide: Bool) {
             guard glide != gliding else { return }
@@ -729,7 +741,7 @@ struct MapView: UIViewRepresentable {
             if controller.drifting { startDrift() }
             // No sea waves behind the title (they kept spawning animated layers over the drifting map).
             if controller.drifting { effects.stopWaves() } else if controller.reveal >= 1 { effects.startWaves() }
-            renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills)
+            renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills, view: controller.viewKey)
             if controller.worldRevision != shownRevision { shownRevision = controller.worldRevision }
             if controller.editorRevision != shownEditorRevision, let next = controller.editorMap {
                 shownEditorRevision = controller.editorRevision
@@ -748,6 +760,10 @@ struct MapView: UIViewRepresentable {
                 renderer?.setArmies(armies, route: controller.route, snap: controller.snapArmies)
                 controller.snapArmies = false
                 if controller.battleGrounds != shownGrounds { shownGrounds = controller.battleGrounds; renderer?.setBattleGrounds(shownGrounds) }
+                if controller.washes != shownWashes || controller.washEpoch != shownWashEpoch {
+                    shownWashes = controller.washes; shownWashEpoch = controller.washEpoch
+                    renderer?.setWashes(shownWashes, epoch: shownWashEpoch)
+                }
                 updateTroops()
                 if renderer?.isAnimating == true { startLink() }
             }

@@ -113,6 +113,8 @@ enum ShotTour {
                 model.controller.groundDemo = false
             }
         }
+        // 占领晕染：前后对照的演示、逐帧记录与压力测量（App/WashTour.swift）。
+        await washTour(model)
         // Up close on a resting army and on the one under the commander's banner (the figures).
         if let state = model.state {
             if let a = state.armies.filter({ $0.status != "fighting" && $0.status != "sieging" }).max(by: { $0.troops < $1.troops }) {

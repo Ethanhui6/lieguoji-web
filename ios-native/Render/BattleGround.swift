@@ -76,7 +76,14 @@ extension MapRenderer {
     /// 新的战况：每场战斗的各营与兵力。已有的战场平滑过渡到新目标；消失的战场进入“胜方铺满后淡出”。
     func setBattleGrounds(_ incoming: [BattleGround]) {
         var seen = Set<Int>()
-        for b in incoming.prefix(GroundBook.limit) {
+        // 预算内保持已在显示的战场优先：以前按兵力排名截前 10，第 10 名上下的州每步进出名单，
+        // 淡出、又淡入、胜方铺满又退回 —— 持续闪动。
+        let ranked = incoming.enumerated().sorted { a, b in
+            let ka = grounds.list[a.element.province].map { !$0.ending } ?? false
+            let kb = grounds.list[b.element.province].map { !$0.ending } ?? false
+            return ka != kb ? ka : a.offset < b.offset
+        }.map(\.element)
+        for b in ranked.prefix(GroundBook.limit) {
             guard let mesh = groundMesh(b.province) else { continue }
             seen.insert(b.province)
             var g = grounds.list[b.province] ?? GroundBook.Ground(province: b.province, center: mesh.2, radius: mesh.3, index: mesh.0, count: mesh.1, slots: [])
@@ -123,12 +130,13 @@ extension MapRenderer {
     /// 每帧：缓动插值后绘制。份额与锚点以约 0.6 秒的时间常数逼近目标，兵力小幅波动只会让分界缓慢移动。
     func drawGrounds(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms) {
         guard !grounds.list.isEmpty else { grounds.animating = false; return }
-        let now = CACurrentMediaTime()
-        let dt = Float(grounds.lastFrame == 0 ? 0.016 : min(0.1, now - grounds.lastFrame)); grounds.lastFrame = now
+        // 与易主渐变、占领晕染共用本帧时刻（统一单调时钟）。
+        let now = frameTime
+        let dt = Float(grounds.lastFrame == 0 ? 0.016 : min(0.1, max(0, now - grounds.lastFrame))); grounds.lastFrame = now
         let k = 1 - exp(-dt / 0.6), fadeK = 1 - exp(-dt / 0.35)
         var moving = false
-        // 缩得很小时只保留主色分界（不加墨晕与笔触），放大时显示完整细节。
-        let detail: Float = camera.scale >= 1.0 ? 1 : 0
+        // 缩得很小时只保留主色分界，放大时渐显墨晕与笔触（连续过渡：以前在比例 1.0 处硬切，缩放停在附近时边缘反复跳）。
+        let detail = Float(min(1, max(0, (camera.scale - 0.7) / 0.6)))
         for (p, var g) in grounds.list {
             for i in g.slots.indices {
                 g.slots[i].share += (g.slots[i].shareTarget - g.slots[i].share) * k

@@ -39,6 +39,15 @@ export function checkNativeTour(directory) {
   if(names.version !== 1 || names.passed !== true || !(names.frames >= 300) || !(names.names >= 1) || !(names.blinks <= 4)) {
     throw Error(`国名稳定回归失败：镜头静止推演 ${names.frames} 帧里国名闪烁 ${names.blinks} 次（易主 ${names.provincesChanged} 州，新建 ${names.created}，移位 ${names.moved}）。`);
   }
+  // 占领晕染前后对照（只报告不拦截：结论由人看视频与数据确认）。
+  try {
+    const wash = JSON.parse(readFileSync(join(directory,'wash-demo.json'),'utf8'));
+    const row = side => { const s = wash[side] || {}, g = s.callbackGapMs || {}, st = (s.stress || {}).callbackGapMs || {};
+      return `${side}: 反复变色 ${s.colourReversals} 次，前沿倒退 ${s.coverageBacksteps} 次，回调间隔 p95 ${Number(g.p95).toFixed(1)} / p99 ${Number(g.p99).toFixed(1)} / 最长 ${Number(g.max).toFixed(0)} ms，`
+        + `>50ms ${g.over50ms} 次；压力 ${(wash[side].stress || {}).provinces} 州 p95 ${Number(st.p95).toFixed(1)} / p99 ${Number(st.p99).toFixed(1)} / 最长 ${Number(st.max).toFixed(0)} ms`; };
+    console.log('占领晕染 ' + row('before'));
+    console.log('占领晕染 ' + row('after'));
+  } catch { console.log('占领晕染：没有 wash-demo.json'); }
   for(const name of requiredShots) {
     let bytes;
     try { bytes = readFileSync(join(directory,`${name}.png`)); }

@@ -53,4 +53,28 @@ final class MapWorkRevisionTests: XCTestCase {
         XCTAssertTrue(revisions.acceptsAppearance(tint))
         XCTAssertTrue(revisions.acceptsOutlines(border))
     }
+
+    /// 高倍速时归属每半秒变一次而后台重算更慢：旧一点的地图结果也要能先装上（不比屏幕上的旧），
+    /// 但不能盖掉已经装上的更新结果，也不能用切换视图之前的颜色。
+    func testOlderMapColoursInstallUntilANewerOneArrives() {
+        var revisions = MapWorkRevision()
+        let first = revisions.replaceMap()
+        let second = revisions.replaceMap()
+        XCTAssertTrue(revisions.acceptsColours(first))
+        revisions.installColours(first)
+        XCTAssertTrue(revisions.acceptsColours(second))
+        revisions.installColours(second)
+        XCTAssertFalse(revisions.acceptsColours(first), "旧结果不能盖掉更新的")
+        let third = revisions.replaceMap()
+        _ = revisions.changeAppearance()
+        XCTAssertFalse(revisions.acceptsColours(third), "视图换了，按旧视图算的颜色作废")
+        let view = revisions.changeAppearance()
+        XCTAssertTrue(revisions.acceptsColours(view))
+        XCTAssertTrue(revisions.acceptsGeometry(third))
+        revisions.installGeometry(third)
+        XCTAssertFalse(revisions.acceptsGeometry(second))
+        let border = revisions.changeOutlines()
+        XCTAssertFalse(revisions.acceptsOutlineGeometry(third))
+        XCTAssertTrue(revisions.acceptsOutlineGeometry(border))
+    }
 }

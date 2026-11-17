@@ -452,7 +452,7 @@ final class EffectsView: UIView {
                 let r = (1.2 + 1.8 * rnd()) * min(1.4, grow)
                 dot.path = UIBezierPath(ovalIn: CGRect(x: 60 - r, y: 62 - r, width: r * 2, height: r * 2)).cgPath
                 dot.fillColor = ink.withAlphaComponent(0.75).cgColor; dot.opacity = 0
-                let angle = rnd() * .pi * 2, dist = (14 + 16 * rnd()) * grow
+                let angle = rnd() * CGFloat.pi * 2, dist = (14 + 16 * rnd()) * grow
                 let fly = CABasicAnimation(keyPath: "transform.translation"); fly.fromValue = NSValue(cgSize: .zero)
                 fly.toValue = NSValue(cgSize: CGSize(width: cos(angle) * dist, height: sin(angle) * dist * 0.7)); fly.duration = 0.32
                 fly.timingFunction = CAMediaTimingFunction(controlPoints: 0.1, 0.8, 0.3, 1); fly.fillMode = .forwards; fly.isRemovedOnCompletion = false

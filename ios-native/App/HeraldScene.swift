@@ -250,7 +250,7 @@ struct HeraldBanner: View {
         ctx.fill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)), with: .color(Color(red: 0.8, green: 0.5, blue: 0.18)))
         let rays = Self.span(t, 0.8, 1.3)
         for i in 0..<8 {
-            let a = Double(i) / 8 * .pi * 2
+            let a = Double(i) / 8 * Double.pi * 2
             var ray = Path()
             ray.move(to: CGPoint(x: c.x + CGFloat(cos(a)) * (r + 3), y: c.y + CGFloat(sin(a)) * (r + 3)))
             ray.addLine(to: CGPoint(x: c.x + CGFloat(cos(a)) * (r + 3 + 8 * CGFloat(rays)), y: c.y + CGFloat(sin(a)) * (r + 3 + 8 * CGFloat(rays))))

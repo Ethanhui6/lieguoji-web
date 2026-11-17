@@ -106,7 +106,7 @@ enum Brush {
 
     /// 毛笔的轻重：起笔略顿（0.85）、行笔饱满（1）、收笔出锋（0.45）。
     static func profile(_ t: CGFloat) -> CGFloat {
-        let body = pow(sin(.pi * min(1, max(0, t))), 0.45)
+        let body = pow(sin(CGFloat.pi * min(1, max(0, t))), 0.45)
         return max(0.42, min(1.05, 0.42 + 0.58 * body + 0.28 * max(0, 0.25 - t) / 0.25))
     }
 
@@ -137,7 +137,7 @@ enum Brush {
                 // 闭合的形：沿边轻重起伏（不出锋），外缘与内缘围成一圈。
                 var outer = [CGPoint](), inner = [CGPoint]()
                 for i in 0..<n {
-                    let t = len[i] / total, w = width * (0.82 + 0.18 * sin(.pi * 2 * t + 0.6)) / 2
+                    let t = len[i] / total, w = width * (0.82 + 0.18 * sin(CGFloat.pi * 2 * t + 0.6)) / 2
                     let nm = normal(i)
                     outer.append(CGPoint(x: pts[i].x + nm.x * w, y: pts[i].y + nm.y * w))
                     inner.append(CGPoint(x: pts[i].x - nm.x * w, y: pts[i].y - nm.y * w))

@@ -252,7 +252,7 @@ enum Glyph {
         ("自动存档", "clock.arrow.circlepath"), ("存档", "tray.and.arrow.down"), ("开场", "film"), ("镜头", "camera.viewfinder"), ("动画", "sparkles.rectangle.stack"),
         ("箭头", "arrow.up.right"), ("军旗", "flag"), ("军队图标", "shield"), ("显示军队", "eye"), ("兵力数字", "number"),
         ("战争期限", "hourglass"), ("间隔", "timer"), ("自主结盟", "person.2"), ("允许", "checkmark.seal"), ("附庸叛变", "crown"), ("自动", "gearshape.2"), ("外交", "scroll"), ("同盟", "person.2"), ("附庸", "crown"), ("停战", "hand.raised"), ("条约", "doc.text"), ("宣战", "flag.2.crossed"), ("战争", "flag.2.crossed"),
-        ("叛乱", "flame"), ("内战", "flame"), ("家族", "person.3"), ("世家", "person.3"), ("继承", "person.badge.clock"), ("君主", "crown"), ("年龄", "calendar"), ("纪年", "calendar"),
+        ("叛乱", "flame"), ("内战", "flame"), ("天灾", "cloud.bolt.rain"), ("家族", "person.3"), ("世家", "person.3"), ("继承", "person.badge.clock"), ("君主", "crown"), ("年龄", "calendar"), ("纪年", "calendar"),
         ("都城", "star"), ("性格", "theatermasks"), ("好战", "bolt"), ("生计", "leaf"), ("国家", "flag"), ("州", "map"), ("省", "map"), ("种子", "dice"),
         ("疆域", "map"), ("现存", "flag"), ("人口上限", "person.3.sequence"), ("人口", "person.3"), ("信徒", "person.3"),
         ("战役", "flag.2.crossed"), ("参战", "flag.2.crossed"), ("歼灭", "scope"), ("折损", "cross.case"),

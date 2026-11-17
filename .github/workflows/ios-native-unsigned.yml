@@ -109,7 +109,8 @@ jobs:
           xcodegen generate
       - name: Build for the simulator
         run: |
-          xcodebuild -project ios-native/LieguojiNative.xcodeproj -scheme LieguojiNative -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-native/build/sim CODE_SIGNING_ALLOWED=NO build | tail -5
+          xcodebuild -project ios-native/LieguojiNative.xcodeproj -scheme LieguojiNative -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-native/build/sim CODE_SIGNING_ALLOWED=NO build > sim-build.log 2>&1             || { grep -E "error:|fatal error|Segmentation|Stack dump" -A4 sim-build.log | head -80; tail -20 sim-build.log; exit 1; }
+          tail -5 sim-build.log
       - name: Tour and screenshot
         run: |
           set -x

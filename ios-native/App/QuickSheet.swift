@@ -24,6 +24,13 @@ struct ProvinceQuickSheet: View {
     @State private var picking: NationAction?
     @State private var target = -1
     @State private var defense = 1
+    /// 分类（记住上次停的那一类）。
+    enum QuickTab: String, CaseIterable { case army = "军队", land = "疆域", revolt = "叛乱", people = "民生", culture = "文化", disaster = "天灾", nation = "国家" }
+    @AppStorage("quick.tab") private var tabRaw = QuickTab.army.rawValue
+    private var tab: QuickTab { QuickTab(rawValue: tabRaw) ?? .army }
+    /// 不可撤回的一键操作先问一次。
+    private struct Confirm { let title: String; let verb: String; let run: () -> Void }
+    @State private var confirm: Confirm?
 
     private func report(_ e: String?, _ ok: String) { flash = e ?? ok; GameFeel.shared.notify(e == nil ? .success : .error) }
     private func reload() async {
@@ -52,6 +59,12 @@ struct ProvinceQuickSheet: View {
             ScrollView {
                 VStack(spacing: 12) {
                     SheetHeader(title: p.name, subtitle: [nation?.name, isCapital ? "都城" : nil, "\(here.count)支军队"].compactMap { $0 }.joined(separator: " · "), color: nation.map { Names.color($0.color) }, seal: "令")
+                    // 分类签：以前八节从上到下一长条；现在一次只显示一类，上次停在哪类下次还在哪类。
+                    ChipPicker(items: QuickTab.allCases.map { ($0, $0.rawValue) }, selection: Binding(get: { tab }, set: { GameFeel.shared.tap(); tabRaw = $0.rawValue }))
+                        .padding(.horizontal, 16)
+                    Group {
+                    switch tab {
+                    case .army:
                     section("放置军队") {
                         HStack(spacing: 10) {
                             Glyph.icon("军队", size: 16)
@@ -69,7 +82,7 @@ struct ProvinceQuickSheet: View {
                                     report(e, "\(c) 支军队已集结")
                                 }
                             }
-                            tile("遣散本州军队", "xmark.shield", destructive: true) { act("本州军队已遣散") { await model.clearArmies(province) } }
+                            tile("遣散本州军队", "xmark.shield", destructive: true) { confirm = Confirm(title: "遣散\(p.name)的全部军队？", verb: "遣散") { act("本州军队已遣散") { await model.clearArmies(province) } } }
                             tile("连续放置", "hand.draw") {
                                 model.controller.placeCount = count
                                 model.controller.placingArmy = true
@@ -93,13 +106,14 @@ struct ProvinceQuickSheet: View {
                             }
                         }
                     }
+                    case .land:
                     section("疆域") {
                         tiles {
                             tile("划入他国", "paintbrush.pointed") { target = -1; picking = .grant }
                             tile("连片划入", "square.dashed") { target = -1; picking = .region }
                             tile("定为都城", "star") { act("已迁都\(p.name)") { await model.setCapital(owner, province: province) } }
                             tile("和平立国", "leaf") { act("新国已立") { await model.foundNation(province, war: false) } }
-                            tile("举兵立国", "flag.2.crossed", destructive: true) { act("新国已立") { await model.foundNation(province, war: true) } }
+                            tile("举兵立国", "flag.2.crossed", destructive: true) { confirm = Confirm(title: "在\(p.name)举兵立国？", verb: "举兵") { act("新国已立") { await model.foundNation(province, war: true) } } }
                             tile(info?.kinds.contains { $0.0 == "要塞" } == true ? "拆除要塞" : "筑要塞", "building.columns") {
                                 let on = info?.kinds.contains { $0.0 == "要塞" } != true
                                 act(on ? "要塞已筑" : "要塞已拆") { await model.editProvince(province, population: nil, fortress: on) }
@@ -111,6 +125,7 @@ struct ProvinceQuickSheet: View {
                             tile("人口解锁", "lock.open.display") { act("人口已解锁") { await model.edit("lockPopulation", ["province": province, "lock": 0]) } }
                         }
                     }
+                    case .revolt:
                     section("叛乱与复国") {
                         slider("波及州数", value: Binding(get: { Double(size) }, set: { size = Int($0) }), 1...40, text: "\(size) 州")
                         tiles {
@@ -120,9 +135,10 @@ struct ProvinceQuickSheet: View {
                             tile("藩镇独立", "flag", destructive: true) { rise("secession") }
                             tile("旧邦复国", "arrow.uturn.backward.circle") { target = -1; picking = .restore }
                             tile("随机起事", "dice") { rise(nil) }
-                            tile("全国煽动", "megaphone", destructive: true) { act("叛乱已煽动") { await model.inciteRebellion(owner) } }
+                            tile("全国煽动", "megaphone", destructive: true) { confirm = Confirm(title: "在\(nation?.name ?? "该国")全国煽动叛乱？", verb: "煽动") { act("叛乱已煽动") { await model.inciteRebellion(owner) } } }
                         }
                     }
+                    case .people:
                     section("民生") {
                         slider("人口", value: $population, 100...5_000_000, step: 10_000, text: Names.wan(Int(population)))
                         slider("存粮", value: $grain, 0...5_000_000, step: 10_000, text: Names.wan(Int(grain)))
@@ -141,6 +157,7 @@ struct ProvinceQuickSheet: View {
                             }
                         }
                     }
+                    case .culture:
                     section("文化与信仰") {
                         tiles {
                             tile("更改文化", "text.book.closed") {
@@ -151,6 +168,7 @@ struct ProvinceQuickSheet: View {
                             }
                         }
                     }
+                    case .disaster:
                     section("天灾") {
                         tiles {
                             tile("降下瘟疫", "allergens", destructive: true) { act("瘟疫已降") { await model.provinceDisaster(province, kind: "plague") } }
@@ -158,6 +176,7 @@ struct ProvinceQuickSheet: View {
                             tile("平息灾情", "cross.case") { act("灾情已平") { await model.provinceDisaster(province, kind: nil) } }
                         }
                     }
+                    case .nation:
                     if owner >= 0, let nation {
                         section("所属国家 · \(nation.name)") {
                             tiles {
@@ -173,7 +192,7 @@ struct ProvinceQuickSheet: View {
                                     }
                                 }
                                 tile("与他国结盟", "link") { target = -1; picking = .ally }
-                                tile("退出同盟", "person.2.slash", destructive: true) { act("已退出同盟") { await model.leaveAlliance(owner) } }
+                                tile("退出同盟", "person.2.slash", destructive: true) { confirm = Confirm(title: "\(nation.name)退出同盟？", verb: "退出") { act("已退出同盟") { await model.leaveAlliance(owner) } } }
                                 tile("归附他国", "person.2") { target = -1; picking = .vassal }
                                 tile("被他国吞并", "arrow.triangle.merge", destructive: true) { target = -1; picking = .annex }
                                 tile("更改政体", "building.2") {
@@ -199,11 +218,22 @@ struct ProvinceQuickSheet: View {
                                 }
                             }
                         }
+                    } else {
+                        Text("无主之地，没有所属国家。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
                     }
+                    }
+                    }
+                    .id(tab)
+                    .transition(.opacity.combined(with: .offset(y: 6)))
+                    .animation(Motion.fade, value: tab)
                 }
                 .padding(.bottom, 24)
             }
             .paperToast($flash)
+            .confirmationDialog(confirm?.title ?? "", isPresented: Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } }), titleVisibility: .visible) {
+                Button(confirm?.verb ?? "确定", role: .destructive) { let c = confirm; confirm = nil; c?.run() }
+                Button("取消", role: .cancel) { confirm = nil }
+            }
             .task { await reload() }
             .sheet(item: $choice) { c in
                 ScrollView {

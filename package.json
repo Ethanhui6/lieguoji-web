@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck && node --test scripts/check-native-tour.test.mjs && npm test",
-    "secret-scan": "node scripts/secret-scan.mjs"
+    "secret-scan": "node scripts/secret-scan.mjs",
+    "build:cf": "npm run lint && npm run typecheck"
   },
   "dependencies": {
     "d3-delaunay": "6.0.4",

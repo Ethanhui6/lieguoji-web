@@ -180,14 +180,12 @@ public struct WashFrame: Equatable, Sendable {
         var contested = Set<Int>()
         for a in next.armies where a.troops > 0 { let o = owner(a.province); if o >= 0, next.atWar(a.nation, o) { contested.insert(a.province) } }
         for s in next.sieges where s.progress > 0.005 { contested.insert(s.province) }
-        var marchers = Set<Int>()
         for a in next.armies where a.troops > 0 && a.province >= 0 {
             let o = owner(a.province), at = SIMD2(a.x, a.y)
             if o >= 0, o != a.nation, next.atWar(a.nation, o) {
                 var from = at
                 if let b = before[a.id], washDistance(SIMD2(b.x, b.y), at) <= jump { from = SIMD2(b.x, b.y) }
                 inputs.append(WashInput(province: a.province, attacker: a.nation, kind: .march, day: next.day, armies: [from, at], troops: Float(a.troops), key: a.id))
-                marchers.insert(a.nation)
             } else if o == a.nation, contested.contains(a.province) {
                 inputs.append(WashInput(province: a.province, attacker: a.nation, kind: .hold, day: next.day, armies: [at], troops: Float(a.troops), key: a.id))
             }
@@ -199,7 +197,6 @@ public struct WashFrame: Equatable, Sendable {
             let o = owner(s.province)
             guard o >= 0, o != s.nation else { continue }
             inputs.append(WashInput(province: s.province, attacker: s.nation, kind: .siege, progress: Float(min(1, s.progress)), day: next.day, armies: armies(next, s.nation, s.province)))
-            marchers.insert(s.nation)
         }
         if let previous, previous.owners.count == owners.count {
             for p in owners.indices where previous.owners[p] != owners[p] && owners[p] >= 0 {
@@ -211,7 +208,8 @@ public struct WashFrame: Equatable, Sendable {
             }
         }
         var enemies = [Int: [Int]]()
-        for n in marchers.sorted() where next.nations.indices.contains(n) { enemies[n] = next.nations[n].enemies.sorted() }
+        // 所有在战国家（不只这一步在敌境的）：军队撤回本国后，它留在敌境的墨照样显示、按天褪去；议和后立即不显示。
+        for n in next.nations.indices where !next.nations[n].enemies.isEmpty { enemies[n] = next.nations[n].enemies.sorted() }
         return WashFrame(day: next.day, inputs: inputs.sorted(by: WashFrame.order), enemies: enemies)
     }
 }
@@ -244,9 +242,12 @@ public enum InkPlan {
         guard raw >= 0, raw < 1 else { return 0 }
         return alpha * falloff(washLength(p - (a + ab * raw)), r)
     }
-    /// 驻留：中心每推演一天洇开的速率；dwellAlpha(days) 为这一帧的不透明度。
-    public static let dwellRate: Float = 0.22
-    public static func dwellAlpha(days: Float) -> Float { 1 - exp(-dwellRate * max(0, days)) }
+    /// 墨场的混合：取较浓者（着色器 inkStamp 用 max 混合）。同一处反复落墨不会越积越宽，墨迹的范围
+    /// 由笔触半径决定、有界（以前“叠加”混合下驻留几十天的墨洇到一个多州宽）。
+    @inline(__always) public static func blend(_ old: Float, _ s: Float) -> Float { max(old, s) }
+    /// 驻留：军队在敌境原地停了 dwelt 天（推演天数），浓度与半径随之长大，二十天封顶。
+    public static func dwellAlpha(dwelt: Float) -> Float { dwelt <= 0 ? 0 : min(0.9, 0.5 + 0.02 * dwelt) }
+    public static func dwellGrowth(dwelt: Float) -> Float { 0.5 + 0.5 * min(1, max(0, dwelt) / 20) }
     /// 褪色：每天乘以 decay(1)。
     public static let decayRate: Float = 0.03
     public static func decay(days: Float) -> Float { exp(-decayRate * max(0, days)) }
@@ -258,8 +259,9 @@ public enum InkPlan {
     public static func siegeCover(distance d: Float, radius: Float, scale: Float) -> Float { min(0.9, max(0, 0.5 + (radius - d) / (scale * 0.45))) }
     /// 兵力系数（墨的宽窄）与半径。
     public static func width(troops: Float) -> Float { min(1.3, max(0.8, (max(100, troops) / 4000).squareRoot())) }
-    public static func trailRadius(scale: Float, troops: Float) -> Float { scale * 0.55 * width(troops: troops) }
-    public static func dwellRadius(scale: Float, troops: Float) -> Float { scale * 1.0 * width(troops: troops) }
+    // 1.21.0 加宽后范围过大（行军 0.55、驻留 1.0 倍格距，外加一圈水痕）：收回到一条路宽，驻留最多约半个州。
+    public static func trailRadius(scale: Float, troops: Float) -> Float { scale * 0.4 * width(troops: troops) }
+    public static func dwellRadius(scale: Float, troops: Float, dwelt: Float) -> Float { scale * 0.6 * width(troops: troops) * dwellGrowth(dwelt: dwelt) }
     public static func holdRadius(scale: Float) -> Float { scale * 0.8 }
     /// 显示阈值：浓度过此值才见色（着色器 inkComposite）。
     public static let visible: Float = 0.3

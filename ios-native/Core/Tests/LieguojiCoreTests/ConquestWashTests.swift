@@ -96,7 +96,7 @@ final class ConquestWashTests: XCTestCase {
         mutating func stamp(_ a: SIMD2<Float>, _ b: SIMD2<Float>, r: Float, alpha: Float, offset: Float = 0) {
             for i in xs.indices {
                 let s = InkPlan.stroke(SIMD2(xs[i], offset), a, b, radius: r, alpha: alpha)
-                cover[i] = s + cover[i] * (1 - s)
+                cover[i] = InkPlan.blend(cover[i], s)
             }
         }
     }
@@ -138,21 +138,24 @@ final class ConquestWashTests: XCTestCase {
     func testStandingStillOnlySpreadsWithSimulatedDays() {
         // 原地不动：没有行军墨（暂停时不长）；推演天数在走才洇开，越久越开。
         XCTAssertEqual(InkPlan.trailAlpha(len: 0, radius: 12), 0)
-        XCTAssertEqual(InkPlan.dwellAlpha(days: 0), 0)
+        XCTAssertEqual(InkPlan.dwellAlpha(dwelt: 0), 0)
         var line = InkLine(from: -60, to: 60, step: 1)
         var clock = InkPlan.Clock()
-        var reach = [Float]()
-        for _ in 0..<20 {
+        var reach = [Float](), dwelt: Float = 0
+        for _ in 0..<120 {
             clock.add(days: 1, over: 0.5)                 // 每步一天、动画 0.5 秒
             for _ in 0..<30 {                             // 60 帧下这一步的 30 帧
-                let days = clock.take(1 / 60)
-                line.stamp(.zero, .zero, r: InkPlan.dwellRadius(scale: 30, troops: 4000), alpha: InkPlan.dwellAlpha(days: days))
+                dwelt += clock.take(1 / 60)
+                line.stamp(.zero, .zero, r: InkPlan.dwellRadius(scale: 30, troops: 4000, dwelt: dwelt), alpha: InkPlan.dwellAlpha(dwelt: dwelt))
             }
             reach.append(Float(line.cover.filter { $0 > InkPlan.visible }.count))
         }
         XCTAssertEqual(clock.left, 0, accuracy: 1e-4, "一步的天数在这一步的动画里用完")
         for i in 1..<reach.count { XCTAssertGreaterThanOrEqual(reach[i], reach[i - 1]) }
-        XCTAssertGreaterThan(reach.last!, reach[2] + 10, "驻留越久洇得越开")
+        XCTAssertGreaterThan(reach[19], reach[2] + 6, "驻留越久洇得越开")
+        // 有界：停四个月也只洇开约一个格距宽（取较浓者混合，不越积越宽；以前叠加混合会洇到一个多州）。
+        XCTAssertEqual(reach.last!, reach[25], "二十天后不再变大")
+        XCTAssertLessThan(reach.last!, 30 * 1.0, "驻留的墨不超过一个格距宽")
         // 时钟：暂停（不再加天数）后不再落墨。
         XCTAssertEqual(clock.take(1), 0)
     }

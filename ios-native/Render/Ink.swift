@@ -6,7 +6,8 @@ import LieguojiCore
 
 /// GPU 墨场（战争晕染的军队墨迹）：一张世界坐标的纹理，存预乘的国色与浓度。每帧（推演在走、军队在动时）：
 /// 先按推演天数整体褪色，再画行军笔触（从上一帧落墨处到图标此刻画出的位置）、驻留洇开、守军擦墨、围城铺开。
-/// 合成时沿陆地三角形采样，墨落在本国领土上不显示（底色已是同一种颜色），浓度过阈值处见色，边缘有纸纹起伏与一道湿边。
+/// 合成时沿陆地三角形采样：墨只显示在与落墨方交战的敌国领土上（本国、友邦、第三国、议和后的旧敌一律不显示），
+/// 浓度过阈值处见色，颜色按与陆地完全相同的算法从落墨方国色算出（高度灰、国色浓度、山影），与该国领土一模一样。
 /// 强度公式见 LieguojiCore 的 InkPlan（测试用同样的公式在 CPU 上验证连续、与帧率无关）。
 struct InkPipelines {
     let over: MTLRenderPipelineState
@@ -50,7 +51,8 @@ struct InkPipelines {
         c.colorAttachments[0].isBlendingEnabled = true
         c.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha; c.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
         c.colorAttachments[0].sourceAlphaBlendFactor = .one; c.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
-        return InkPipelines(over: try pipe("inkStampVertex", "inkStampFragment", .over),
+        // 落墨取较浓者（InkPlan.blend）：同一处反复落墨不越积越宽。
+        return InkPipelines(over: try pipe("inkStampVertex", "inkStampFragment", .max),
                             erase: try pipe("inkStampVertex", "inkEraseFragment", .erase),
                             siege: try pipe("inkWorldVertex", "inkSiegeFragment", .max),
                             decay: try pipe("inkFullVertex", "inkDecayFragment", .multiply),
@@ -109,38 +111,42 @@ struct InkPipelines {
         return float4(p, 0.0, 1.0);
     }
     fragment float4 inkDecayFragment(constant float& k [[buffer(0)]]) { return float4(k); }
-    // 合成：沿陆地三角形采样墨场。本国领土上的墨不显示；浓度过阈值处见色，纸纹起伏、近看有浓淡，前沿一道湿边。
-    struct InkCompositeOut { float4 position [[position]]; float2 world; float4 owner [[flat]]; };
-    vertex InkCompositeOut inkCompositeVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* owners [[buffer(1)]], constant Uniforms& u [[buffer(2)]]) {
-        InkCompositeOut o; o.world = positions[id]; o.position = clip(o.world, u, float2(0.0)); o.owner = owners[id]; return o;
+    // 合成：沿陆地三角形采样墨场。墨的颜色先就近对到“与本州主人交战的国家”之一（最多 8 个），对不上的不显示：
+    // 本国、友邦、第三国、议和后的旧敌上都不晕开。对上后按陆地同一算法上色：国色在线性空间向高度灰混 stateAlpha，
+    // 政治图再按国色浓度向地形色混，最后乘山影——与该国自己的领土颜色完全一致。
+    struct InkCompositeOut { float4 position [[position]]; float2 world; int nation [[flat]]; float gray [[flat]]; float shade; float3 terrain; };
+    vertex InkCompositeOut inkCompositeVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* owners [[buffer(1)]], constant Uniforms& u [[buffer(2)]], const device float4* terrain [[buffer(3)]]) {
+        InkCompositeOut o; o.world = positions[id]; o.position = clip(o.world, u, float2(0.0));
+        float4 w = owners[id]; o.nation = w.w > 0.5 ? int(w.x + 0.5) : -1; o.gray = w.y; o.shade = w.z; o.terrain = terrain[id].rgb;
+        return o;
     }
-    struct InkLook { float2 size; float tint; float visible; float soft; float noise; float freq; float detail; };
-    fragment float4 inkCompositeFragment(InkCompositeOut in [[stage_in]], texture2d<float> ink [[texture(0)]], sampler s [[sampler(0)]], constant InkLook& k [[buffer(0)]]) {
+    struct InkLook { float2 size; float visible; float soft; float noise; float freq; float stateAlpha; float density; float nations; float pad; };
+    static float inkToLinear(float c) { return c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4); }
+    static float inkToSrgb(float c) { return c <= 0.0031308 ? 12.92 * c : 1.055 * pow(max(c, 0.0), 1.0 / 2.4) - 0.055; }
+    fragment float4 inkCompositeFragment(InkCompositeOut in [[stage_in]], texture2d<float> ink [[texture(0)]], sampler s [[sampler(0)]], constant InkLook& k [[buffer(0)]], const device float4* enemies [[buffer(1)]]) {
         float4 v = ink.sample(s, in.world / k.size);
-        if (v.a < 0.015) discard_fragment();
+        if (v.a < 0.015 || in.nation < 0 || float(in.nation) >= k.nations) discard_fragment();
         float3 c = v.rgb / v.a;
-        float own = smoothstep(0.05, 0.13, length(c - in.owner.rgb));
-        if (own < 0.01) discard_fragment();
+        float best = 0.16; float3 e = float3(0.0); bool hit = false;
+        for (int i = 0; i < 8; i++) {
+            float4 q = enemies[in.nation * 8 + i];
+            if (q.w <= 0.0) break;
+            float d = length(c - q.rgb);
+            if (d < best) { best = d; e = q.rgb; hit = true; }
+        }
+        if (!hit) discard_fragment();
+        // 阈值受纸纹扰动（大尺度起伏 + 细碎毛口），墨边不是光滑的圆管；边缘只做抗锯齿，不另加深色湿边或水痕。
         float2 q = in.world;
-        // 阈值受纸纹扰动（大尺度起伏 + 细碎毛口），墨边不是光滑的圆管。
         float n1 = fbm(q * k.freq), n2 = fbm(q * k.freq * 3.3 + float2(5.1, 1.7));
-        float level = v.a + (n1 - 0.5) * 2.0 * k.noise + (n2 - 0.5) * 0.1;
-        float sx = level - k.visible;
-        float reached = smoothstep(-k.soft, k.soft, sx);
-        // 墨色：国色压深三分（掺墨），在相近颜色的敌国底色上也分得出；新落的墨更浓，旧墨随褪色变淡。
-        float3 deep = mix(c, c * c * 0.85, 0.4);
-        float fresh = smoothstep(0.35, 0.95, v.a);
-        float grain = fbm(q * k.freq * 2.7 + float2(7.3, 2.9));
-        float body = k.tint * reached * (0.74 + 0.26 * fresh + 0.2 * (grain - 0.5) * k.detail);
-        // 洇：墨迹之外还有一圈淡水痕（浓度 0.06 起渐显），走过的地方向外晕开，不是一条硬管子。
-        float halo = smoothstep(0.06, k.visible, level) * (1.0 - reached) * 0.24;
-        // 湿边：前沿一道深墨线（宣纸上墨干后留下的水痕边），缩小时略淡。
-        float rim = exp(-(sx * sx) / max(k.soft * k.soft * 0.35, 1e-6)) * (0.3 + 0.16 * k.detail);
-        float a = body + halo * (1.0 - body);
-        float r = rim * (1.0 - 0.45 * body);
-        float total = a + r * (1.0 - a);
-        float3 rgb = mix(deep, float3(0.15, 0.11, 0.08), r / max(total, 1e-4));
-        return float4(rgb, total * own);
+        float level = v.a + (n1 - 0.5) * 2.0 * k.noise + (n2 - 0.5) * 0.08;
+        float reached = smoothstep(k.visible - k.soft, k.visible + k.soft, level);
+        if (reached < 0.004) discard_fragment();
+        float3 lin = float3(inkToLinear(e.r), inkToLinear(e.g), inkToLinear(e.b));
+        lin = in.gray + (lin - in.gray) * k.stateAlpha;
+        float3 col = float3(inkToSrgb(lin.r), inkToSrgb(lin.g), inkToSrgb(lin.b));
+        col = in.terrain + (col - in.terrain) * k.density;
+        col = min(float3(1.0), col * in.shade);
+        return float4(col, reached);
     }
     """
 }
@@ -150,7 +156,7 @@ final class InkField {
     struct Stamp { var a: SIMD2<Float>; var b: SIMD2<Float>; var radius: Float; var alpha: Float; var pad = SIMD2<Float>(0, 0); var colour: SIMD4<Float> }
     struct World { var size: SIMD2<Float>; var pad = SIMD2<Float>(0, 0) }
     struct Siege { var center: SIMD2<Float>; var radius: Float; var scale: Float; var colour: SIMD4<Float> }
-    struct Look { var size: SIMD2<Float>; var tint: Float; var visible: Float; var soft: Float; var noise: Float; var freq: Float; var detail: Float }
+    struct Look { var size: SIMD2<Float>; var visible: Float; var soft: Float; var noise: Float; var freq: Float; var stateAlpha: Float; var density: Float; var nations: Float; var pad: Float = 0 }
 
     let texture: MTLTexture
     let world: SIMD2<Float>
@@ -161,8 +167,9 @@ final class InkField {
     var used = false
     var clock = InkPlan.Clock()
     var lastTick: CFTimeInterval = 0
-    /// 每支军队上一次落墨的位置。
+    /// 每支军队上一次落墨的位置，与它在敌境原地停了几天（驻留洇开随之长大，二十天封顶）。
     var lastStamp: [String: SIMD2<Float>] = [:]
+    var dwelt: [String: Float] = [:]
     var lastDay: Int?
     /// 围城：州 → 中心、到最远点的距离、进度（上一步显示值 → 这一步）、进攻方。
     struct Besieged { var center: SIMD2<Float>; var far: Float; var from: Float; var to: Float; var nation: Int }
@@ -172,8 +179,13 @@ final class InkField {
     /// 各州的三角形索引（围城只画在州内）。
     var provinceIndex: [Int: (buffer: MTLBuffer, count: Int)] = [:]
     var stampBuffer: MTLBuffer?
-    /// 每个顶点的主人国色（rgb）与陆地标记：合成时本国领土上的墨不显示。
+    /// 每个顶点：主人国号、高度灰（线性）、山影、陆地标记；地形色（未加山影）。合成时按陆地同一算法上色。
     var owners: MTLBuffer?
+    var terrain: MTLBuffer?
+    /// 每个国家（8 格一组）：与它交战的国家的国色；墨只在这些颜色对得上时显示。
+    var enemies: MTLBuffer?
+    var enemyKey: [Int: [Int]]?
+    var enemyNations = 0
 
     init?(device: MTLDevice, map: WorldMap) {
         let w = max(1, Double(map.width)), h = max(1, Double(map.height))
@@ -199,18 +211,45 @@ extension MapRenderer {
         return SIMD4(c.r, c.g, c.b, 1)
     }
 
-    /// 每个顶点的主人国色：与陆地颜色同一时刻安装（易主扫色开始时墨的显隐跟着换）。
+    /// 每个顶点的主人国号、高度灰、山影与地形色：与陆地颜色同一时刻安装（易主扫色开始时墨的显隐跟着换）。
     func rebuildInkOwners() {
         guard let ink else { return }
-        var data = [Float](repeating: 0, count: map.vertices.count / 2 * 4)
-        let provinces = map.meta.provinces
+        let count = map.vertices.count / 2
+        var data = [Float](repeating: 0, count: count * 4), ground = [Float](repeating: 0, count: count * 4)
+        let provinces = map.meta.provinces, terrain = terrainBase, shades = shade
         for c in 0..<map.cellCount where map.isLand(c) {
             let p = Int(map.province[c])
             let n = provinces.indices.contains(p) ? provinces[p].nation : -1
-            let col = n >= 0 ? inkColour(n) : SIMD4<Float>(-1, -1, -1, 0)
-            for v in Int(map.offsets[c])..<Int(map.offsets[c + 1]) { data[v * 4] = col.x; data[v * 4 + 1] = col.y; data[v * 4 + 2] = col.z; data[v * 4 + 3] = 1 }
+            let gray = MapPalette.heightGray(map.elevation[c])
+            for v in Int(map.offsets[c])..<Int(map.offsets[c + 1]) {
+                data[v * 4] = Float(max(0, n)); data[v * 4 + 1] = gray; data[v * 4 + 2] = shades.count == count ? shades[v] : 1; data[v * 4 + 3] = n >= 0 ? 1 : 0
+                if let terrain, terrain.count == count * 4 { for j in 0..<3 { ground[v * 4 + j] = terrain[v * 4 + j] } }
+                else { for j in 0..<3 { ground[v * 4 + j] = MapPalette.linearToSrgb(gray) } }
+            }
         }
         ink.owners = device.makeBuffer(bytes: data, length: max(16, data.count * 4), options: .storageModeShared)
+        ink.terrain = device.makeBuffer(bytes: ground, length: max(16, ground.count * 4), options: .storageModeShared)
+        ink.enemyKey = nil
+        rebuildInkEnemies()
+    }
+
+    /// 交战表：每个国家与之交战的国家国色（8 个一组）；每步的敌对关系变了、或国色变了时重建。
+    func rebuildInkEnemies() {
+        guard let ink else { return }
+        let n = nationColors.count
+        var table = [Int: Set<Int>]()
+        for (a, list) in washFrame.enemies { for b in list where a != b { table[a, default: []].insert(b); table[b, default: []].insert(a) } }
+        let key = table.mapValues { $0.sorted() }
+        if ink.enemyKey == key && ink.enemyNations == n && ink.enemies != nil { return }
+        var data = [Float](repeating: 0, count: max(1, n) * 8 * 4)
+        for (owner, list) in key where owner >= 0 && owner < n {
+            for (i, e) in list.prefix(8).enumerated() {
+                let c = inkColour(e), o = (owner * 8 + i) * 4
+                data[o] = c.x; data[o + 1] = c.y; data[o + 2] = c.z; data[o + 3] = 1
+            }
+        }
+        ink.enemies = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared)
+        ink.enemyKey = key; ink.enemyNations = n
     }
 
     /// 新的一步：推演天数交给墨场时钟（在这一步的动画时长里用掉），围城目标更新。
@@ -276,12 +315,16 @@ extension MapRenderer {
             let r = InkPlan.trailRadius(scale: scale, troops: i.troops)
             let a = InkPlan.trailAlpha(len: simd_distance(last, p), radius: r)
             if a > 0.0005 { stamps.append(.init(a: last, b: p, radius: r, alpha: a, colour: colour)) }
-            let dwell = InkPlan.dwellAlpha(days: days)
-            if dwell > 0.0005 { stamps.append(.init(a: p, b: p, radius: InkPlan.dwellRadius(scale: scale, troops: i.troops), alpha: dwell, colour: colour)) }
+            // 驻留：在敌境原地停着（这一帧几乎没走）才按推演天数累计，一走动就从头算。
+            var dwelt = ink.dwelt[key] ?? 0
+            dwelt = simd_distance(last, p) < scale * 0.15 ? dwelt + days : 0
+            ink.dwelt[key] = dwelt
+            let dwell = InkPlan.dwellAlpha(dwelt: dwelt)
+            if dwell > 0.0005 { stamps.append(.init(a: p, b: p, radius: InkPlan.dwellRadius(scale: scale, troops: i.troops, dwelt: dwelt), alpha: dwell, colour: colour)) }
             ink.lastStamp[key] = p
         }
         // 离开敌境（或覆灭）的军队：下次进入时从新位置起笔。
-        if ink.lastStamp.count != seen.count { ink.lastStamp = ink.lastStamp.filter { seen.contains($0.key) } }
+        if ink.lastStamp.count != seen.count { ink.lastStamp = ink.lastStamp.filter { seen.contains($0.key) }; ink.dwelt = ink.dwelt.filter { seen.contains($0.key) } }
         if days > 0 {
             for i in washFrame.inputs where i.kind == .hold && !i.armies.isEmpty {
                 let p = placed[i.key] ?? i.armies[0]
@@ -339,18 +382,22 @@ extension MapRenderer {
 
     /// 主画面里（陆地之上、州界之下）合成墨场。
     func drawInk(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms) {
-        guard let ink, ink.used, let owners = ink.owners, indexCount > 0 else { return }
-        let detail = Float(min(1, max(0, (camera.scale - 0.7) / 0.6)))
+        guard let ink, ink.used, let owners = ink.owners, let terrain = ink.terrain, indexCount > 0 else { return }
+        rebuildInkEnemies()
+        guard let enemies = ink.enemies, ink.enemyKey?.isEmpty == false else { return }
         let scale = washTopology?.scale ?? 30
-        // 墨身 0.72（以前 0.5，叠在敌国底色上几乎看不出），柔边收窄让湿边成一道线。
-        var look = InkField.Look(size: ink.world, tint: 0.72, visible: InkPlan.visible, soft: 0.07, noise: 0.15, freq: 1 / (scale * 0.9), detail: detail)
+        let density = mode == .political ? Float(max(0, min(1, display.colorDensity))) : 1
+        var look = InkField.Look(size: ink.world, visible: InkPlan.visible, soft: 0.04, noise: 0.12, freq: 1 / (scale * 0.9),
+                                 stateAlpha: MapPalette.stateAlpha, density: density, nations: Float(ink.enemyNations))
         encoder.setRenderPipelineState(inkPipes.composite)
         encoder.setVertexBuffer(positions, offset: 0, index: 0)
         encoder.setVertexBuffer(owners, offset: 0, index: 1)
         encoder.setVertexBytes(&u, length: MemoryLayout<Uniforms>.stride, index: 2)
+        encoder.setVertexBuffer(terrain, offset: 0, index: 3)
         encoder.setFragmentTexture(ink.texture, index: 0)
         encoder.setFragmentSamplerState(ink.sampler, index: 0)
         encoder.setFragmentBytes(&look, length: MemoryLayout<InkField.Look>.stride, index: 0)
+        encoder.setFragmentBuffer(enemies, offset: 0, index: 1)
         encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0)
     }
 }

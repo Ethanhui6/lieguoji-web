@@ -188,7 +188,10 @@ extension ShotTour {
                     inputs.append(WashInput(province: x.province, attacker: x.attacker, kind: .siege, progress: Float(phase), day: day, armies: [at]))
                 }
             }
-            c.washes = WashFrame(day: day, inputs: inputs)
+            // 墨只显示在交战敌国的领土上：每路进攻方与它所攻之州的原主人交战。
+            var enemies = [Int: [Int]]()
+            for x in crowd { let o = world.meta.provinces[x.province].nation; if o >= 0 && o != x.attacker && !(enemies[x.attacker] ?? []).contains(o) { enemies[x.attacker, default: []].append(o) } }
+            c.washes = WashFrame(day: day, inputs: inputs, enemies: enemies)
             c.objectWillChange.send()
             await wait(0.1)
         }

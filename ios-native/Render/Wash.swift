@@ -58,7 +58,7 @@ extension MapRenderer {
         if epoch != washEpoch {
             washEpoch = epoch
             sweep?.clear(); sweepMeshCache = nil
-            if let ink { ink.clearPending = true; ink.lastStamp = [:]; ink.clock.reset(); ink.sieges = [:]; ink.lastDay = nil }
+            if let ink { ink.clearPending = true; ink.lastStamp = [:]; ink.dwelt = [:]; ink.clock.reset(); ink.sieges = [:]; ink.lastDay = nil }
             washCaptures = [:]; washRegimes = [:]; washOwners = []
         }
         washFrame = frame

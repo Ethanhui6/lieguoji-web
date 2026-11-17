@@ -962,19 +962,21 @@ import LieguojiCore
         }
     }
 
-    /// 占领晕染的输入：本步的围城（权威进度）与攻占。攻占保留约两秒（界面合并几步时也不漏），
-    /// 期间若又易手就作废。读档、换世界（没有上一步状态）时换代，渲染端清空旧晕染。
+    /// 战争晕染（墨场）的输入：本步的行军、守军、围城（权威进度）与攻占。攻占保留约两秒（界面合并几步时也不漏），
+    /// 期间若又易手就作废。读档、换世界（没有上一步状态）时换代，渲染端清空旧墨。
     private var washSerial = 0
     private var recentCaptures: [Int: (input: WashInput, time: CFTimeInterval)] = [:]
     private func refreshWashes(previous: GameState?, next: GameState) {
         if previous == nil { washSerial &+= 1; recentCaptures = [:] }
-        let found = WashInput.from(previous: previous, next: next)
+        var frame = WashFrame.from(previous: previous, next: next)
         let now = CACurrentMediaTime()
-        for c in found.captures { recentCaptures[c.province] = (c, now) }
+        for c in frame.inputs where c.kind == .capture { recentCaptures[c.province] = (c, now) }
         recentCaptures = recentCaptures.filter { now - $0.value.time < 2 && next.owners.indices.contains($0.key) && next.owners[$0.key] == $0.value.input.attacker }
+        let fresh = Set(frame.inputs.filter { $0.kind == .capture }.map(\.province))
+        frame.inputs += recentCaptures.keys.sorted().filter { !fresh.contains($0) }.map { recentCaptures[$0]!.input }
         guard !controller.washDemo else { return }
         controller.washEpoch = washSerial
-        controller.washes = found.sieges + recentCaptures.keys.sorted().map { recentCaptures[$0]!.input }
+        controller.washes = frame
     }
 
     func refreshArmies() {
@@ -1022,7 +1024,6 @@ import LieguojiCore
             counts[a.id] = Self.stateMark(a).map { $0 + " " + n } ?? n
         }
         controller.troopTexts = counts
-        if !controller.groundDemo { controller.battleGrounds = Self.battleGrounds(state) }
         controller.armies = sprites
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
             let id = state.armies[selected].id
@@ -1033,39 +1034,6 @@ import LieguojiCore
         } else { controller.route = [] }
     }
 
-    /// Each icon keeps one small fixed offset from its army's point (by its id): stacked armies fan out
-    /// and a column marching together keeps its order instead of reshuffling every step.
-    /// 战场地面：按州聚合正在接战的军队；不互为敌国的参战国并为一营（盟军同色块），按兵力定面积，
-    /// 按各营军队所在位置定颜色进来的方向。海上接战不画地面（海战另有炮火特效）。
-    static func battleGrounds(_ s: GameState) -> [BattleGround] {
-        var byProvince = [Int: Set<Int>]()
-        for pair in s.contacts ?? [] where pair.count == 2 {
-            for i in pair where s.armies.indices.contains(i) && s.armies[i].province >= 0 { byProvince[s.armies[i].province, default: []].insert(i) }
-        }
-        // 同州里也在交战状态、但这一步没有接触对的军队一并计入（援军中途加入）。
-        for (i, a) in s.armies.enumerated() where a.status == "fighting" && a.province >= 0 && byProvince[a.province] != nil { byProvince[a.province]!.insert(i) }
-        var out = [(ground: BattleGround, total: Float)]()
-        for (province, members) in byProvince {
-            var troops = [Int: Float](), sum = [Int: SIMD2<Float>]()
-            for i in members { let a = s.armies[i]; let t = Float(max(1, a.troops)); troops[a.nation, default: 0] += t; sum[a.nation, default: SIMD2<Float>(0, 0)] += SIMD2<Float>(a.x, a.y) * t }
-            var camps = [(lead: Int, members: [Int])]()
-            for n in troops.keys.sorted(by: { troops[$0]! != troops[$1]! ? troops[$0]! > troops[$1]! : $0 < $1 }) {
-                if let k = camps.firstIndex(where: { camp in !camp.members.contains { s.atWar(n, $0) } }) { camps[k].members.append(n) }
-                else { camps.append((n, [n])) }
-            }
-            guard camps.count >= 2 else { continue }
-            let list = camps.map { camp -> BattleGround.Camp in
-                var t: Float = 0, weighted = SIMD2<Float>(0, 0)
-                for m in camp.members { t += troops[m] ?? 0; weighted += sum[m] ?? SIMD2<Float>(0, 0) }
-                let at: SIMD2<Float> = weighted / max(1, t)
-                return BattleGround.Camp(nation: camp.lead, toward: at, troops: t)
-            }
-            let total: Float = list.reduce(Float(0)) { $0 + $1.troops }
-            out.append((BattleGround(province: province, camps: list), total))
-        }
-        let ranked = out.sorted { a, b in a.total != b.total ? a.total > b.total : a.ground.province < b.ground.province }
-        return ranked.map { $0.ground }
-    }
     /// 军队状态的一字标记（与军事页的分类一致）；驻扎不动的军队不标。
     static func stateMark(_ a: GameState.Army) -> String? {
         if a.status == "fighting" { return "战" }

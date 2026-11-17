@@ -16,40 +16,31 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let revealPipeline: MTLRenderPipelineState
     private let veilPipeline: MTLRenderPipelineState
     /// 易主渐变（逐顶点，LieguojiCore 的 LandFade）：每个顶点从自己当时显示的颜色渐变到新颜色，
-    /// 连续几次易主互不打断；由占领晕染接手的州底色立即换，过渡由晕染画（Render/Wash.swift）。
+    /// 连续几次易主互不打断；由战争晕染接手的州底色立即换，过渡由墨场扫满（Render/Wash.swift）。
     private let fadePipeline: MTLRenderPipelineState
     private var previousColors: MTLBuffer?
     private(set) var landFade = LandFade()
     private var fadeOnRecolor = false
-    /// 统一的单调渲染时钟（秒）：易主渐变、战场地面与占领晕染都按同一帧时刻推进，帧率不同表现一致。
+    /// 统一的单调渲染时钟（秒）：易主渐变与战争晕染都按同一帧时刻推进，帧率不同表现一致。
     let clockStart = CACurrentMediaTime()
     func clock(_ t: CFTimeInterval = CACurrentMediaTime()) -> Float { Float(t - clockStart) }
     /// 本帧的时刻（draw 开头取一次，各图层共用）。
     private(set) var frameTime: CFTimeInterval = CACurrentMediaTime()
-    private var fading: Bool { previousColors != nil && (landFade.fading(at: clock()) || (Self.legacyLandFade && clock() < legacyUntil)) }
-    /// CI 回归对照（巡览前后对比）：旧的易主渐变——全图一个起点、渐变未完又来新颜色时“上一版”不更新而起点重置。
-    static var legacyLandFade = false
-    private var legacyPrevious: [Float]?
-    private var legacyStart: Float = -1e9, legacyUntil: Float = -1e9
-    /// 某顶点此刻显示的陆地颜色（CI 逐帧记录用；旧做法时按旧算法算）。
-    func displayedLand(_ v: Int, at t: Float) -> SIMD3<Float> {
-        if Self.legacyLandFade, let p = legacyPrevious, t < legacyUntil, p.count > v * 4 + 2, landFade.to.count > v * 4 + 2 {
-            let a = SIMD3(p[v * 4], p[v * 4 + 1], p[v * 4 + 2]), b = SIMD3(landFade.to[v * 4], landFade.to[v * 4 + 1], landFade.to[v * 4 + 2])
-            return a + (b - a) * LandFade.ease((t - legacyStart) / LandFade.duration)
-        }
-        return landFade.shown(v, at: t)
-    }
-    /// CI 测量：整帧编码、晕染与战场地面编码、GPU 执行、实际上屏间隔、易主重着色（毫秒）。
+    private var fading: Bool { previousColors != nil && landFade.fading(at: clock()) }
+    /// 某顶点此刻显示的陆地颜色（CI 逐帧记录用）。
+    func displayedLand(_ v: Int, at t: Float) -> SIMD3<Float> { landFade.shown(v, at: t) }
+    /// CI 测量：整帧编码、战争晕染编码、GPU 执行、实际上屏间隔、易主重着色（毫秒）。
     final class FrameProbe { var encode = [Double](), wash = [Double](), gpu = [Double](), presented = [Double](), recolor = [Double](); var lastPresent: CFTimeInterval = 0 }
     static var frameProbe: FrameProbe?
-    /// 占领晕染（Render/Wash.swift）。
+    /// 战争晕染（沙盘墨场，Render/Wash.swift）。
     let washPipeline: MTLRenderPipelineState
     var washBook: WashBook?
     var washBuilding = 0
-    var washPending: [WashInput] = []
+    var washPending = WashFrame.empty
     var washEpoch = 0
-    var washBuffers: [Int: (revision: Int, colours: Int, buffer: MTLBuffer, count: Int)] = [:]
-    var washOld: [Int: [Float]] = [:]
+    var washMeshCache: (revision: Int, colours: Int, vertices: MTLBuffer, indices: MTLBuffer, count: Int)?
+    /// 易主扫满时各顶点的旧色（rgb，按顶点号）。
+    var washOld: [Float] = []
     var washColourEpoch = 0
     var washAnimating = false
     private let linePipeline: MTLRenderPipelineState
@@ -58,8 +49,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let texturePipeline: MTLRenderPipelineState
     private let multiplyPipeline: MTLRenderPipelineState
     private let spritePipeline: MTLRenderPipelineState
-    /// 战场地面（BattleGround.swift）。
-    let groundPipeline: MTLRenderPipelineState
     /// Army icons grouped by unit type: the texture and its quads.
     private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int)] = []
     private let positions: MTLBuffer
@@ -156,7 +145,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             texturePipeline = try pipeline("quadVertex", "textureFragment", .none)
             multiplyPipeline = try pipeline("quadVertex", "textureFragment", .multiply)
             spritePipeline = try pipeline("spriteVertex", "spriteFragment", .alpha)
-            groundPipeline = try pipeline("groundVertex", "groundFragment", .alpha)
             washPipeline = try pipeline("washVertex", "washFragment", .alpha)
         } catch { return nil }
         let mesh = CellMesh(map: map)
@@ -324,8 +312,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         map = next
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         let wide = borderWide
-        // 归属变了：晕染区域的进入边界跟着变（新占的州成了进攻方领土）。
-        washRegroup()
         // Everything an ownership change redraws — every vertex's colour, the state outlines and the
         // city marks — is computed off the main thread and swapped in together (the colours used to be
         // recomputed for the whole map on the main thread at each conquest).
@@ -461,16 +447,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let now = clock(), began = CACurrentMediaTime()
             defer { if let probe = Self.frameProbe, fadeOnRecolor { probe.recolor.append((CACurrentMediaTime() - began) * 1000) } }
             let fade = fadeOnRecolor && reveal >= 1 && colors.length == b.length
-            if Self.legacyLandFade && fade {
-                let old = legacyPrevious != nil && now < legacyUntil ? legacyPrevious! : landFade.to
-                legacyPrevious = old; legacyStart = now; legacyUntil = now + LandFade.duration
-                landFade.set(c, at: now, fade: false)
-                var p = old
-                for v in 0..<(p.count / 4) { p[v * 4 + 3] = now }
-                previousColors = p.count == c.count ? device.makeBuffer(bytes: p, length: p.count * 4, options: .storageModeShared) : nil
-                colors = b
-                return
-            }
             let handed = fade ? washHandover(next: c, now: now) : []
             let vp = washBook?.topology.vertexProvince
             landFade.set(c, at: now, fade: fade, instant: { v in
@@ -527,15 +503,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var legLength: CFTimeInterval = 0.3
     /// Icons that fade in over this leg (new armies, re-formed ones).
     private var fresh = Set<String>()
-    /// 战场地面的动画状态（BattleGround.swift）。
-    let grounds = GroundBook()
     private var chasing = false
     /// The play step interval (seconds); a leg lasts a little longer so the next one starts before it ends.
     var tweenDuration: CFTimeInterval = 0.3
     var tweenEase = true
-    /// 陆地顶点（战场地面复用同一份）。
-    var positionBuffer: MTLBuffer { positions }
-    var isAnimating: Bool { chasing || fading || groundsAnimating || washesAnimating }
+    var isAnimating: Bool { chasing || fading || washesAnimating }
     private func progress(_ now: CFTimeInterval) -> Float {
         legLength <= 0 ? 1 : Float(min(1, max(0, (now - legStart) / legLength)))
     }
@@ -848,11 +820,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
-        // 战场地面：在陆地颜色之上、州界与军队之下（地面层）。
-        // 占领晕染在陆地之上、战场地面之下（同一州在交战时让位给战场地面）。
+        // 战争晕染（墨场）：在陆地颜色之上、州界与军队之下。
         if reveal >= 1 && (display.battleGround ?? true) {
             let t0 = CACurrentMediaTime()
-            drawWashes(encoder, &u); drawGrounds(encoder, &u)
+            drawWashes(encoder, &u)
             probe?.wash.append((CACurrentMediaTime() - t0) * 1000)
         }
         // Province lines: 0.55 screen px once zoomed in. Colour is the measured #B2B2B2.
@@ -1063,58 +1034,31 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float3 c = mix(rim, fill, smoothstep(0.45, 0.95, lum));
         return float4(c, p.a * in.tint.a);
     }
-    // 战场地面：交战州内按各方“进入方向的锚点＋兵力权重”加权分区，每块填该方国色；
-    // 分界随兵力缓动，近看时分界带墨晕抖动与一道淡墨线，地面带笔触浓淡（复用开卷晕染的 fbm）。
-    struct GroundOut { float4 position [[position]]; float2 world; };
-    vertex GroundOut groundVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
-        GroundOut o; o.position = clip(positions[id], u, float2(0.0)); o.world = positions[id]; return o;
-    }
-    struct GroundUniforms { float4 anchor[4]; float4 color[4]; float4 weight; float4 info; };
-    fragment float4 groundFragment(GroundOut in [[stage_in]], constant GroundUniforms& g [[buffer(0)]]) {
-        float2 q = in.world;
-        int n = int(g.info.x);
-        float alpha = g.info.y, detail = g.info.z, radius = max(g.info.w, 0.001);
-        float2 jitter = (float2(fbm(q * 0.05), fbm(q * 0.05 + float2(5.2, 1.3))) - 0.5) * radius * 0.3 * detail;
-        float best = 1e9, second = 1e9; int k = 0;
-        for (int i = 0; i < 4; i++) {
-            if (i >= n) break;
-            float d = distance(q + jitter, g.anchor[i].xy) - g.weight[i];
-            if (d < best) { second = best; best = d; k = i; } else if (d < second) { second = d; }
-        }
-        float3 c = g.color[k].rgb;
-        float edge = n > 1 ? second - best : 1e9;
-        float line = 1.0 - smoothstep(0.0, radius * 0.04, edge);
-        float grain = mix(0.5, fbm(q * 0.1 + float2(13.1, 7.7)), detail);
-        c = mix(c, c * 0.8, (grain - 0.5) * 0.9);
-        c = mix(c, float3(0.16, 0.12, 0.09), line * 0.6 * detail);
-        float a = alpha * (0.5 + 0.1 * grain);
-        a = max(a, alpha * 0.75 * line * detail);
-        return float4(c, a);
-    }
-    // 占领晕染：区域距离场驱动的前沿。每个顶点：位置、抵达距离、旧形状（有符号距离）、进攻色、旧色。
-    // 前沿 = 抵达距离（加世界坐标里静止的纸纹起伏）小于阈值处；旧形状与新场之间按 morph 形变过渡。
-    struct WashOut { float4 position [[position]]; float2 world; float arrival; float before; float3 tint; float3 old; };
+    // 战争晕染（墨场）：每个顶点带起止浓度与开始时刻、时长，按本帧时刻插值；浓度加世界坐标里静止的纸纹起伏，
+    // 在 0.5 附近柔和过渡，前沿一道淡墨湿边。易主扫满中的顶点：底色已是墨主，未到达处盖旧色，已到达处旧色余韵淡去。
+    struct WashOut { float4 position [[position]]; float2 world; float from; float to; float start; float span; float3 tint; float3 old; float flip; };
     vertex WashOut washVertex(uint id [[vertex_id]], const device float* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
-        const device float* p = v + id * 10;
+        const device float* p = v + id * 14;
         WashOut o; o.world = float2(p[0], p[1]); o.position = clip(o.world, u, float2(0.0));
-        o.arrival = p[2]; o.before = p[3]; o.tint = float3(p[4], p[5], p[6]); o.old = float3(p[7], p[8], p[9]);
+        o.from = p[2]; o.to = p[3]; o.start = p[4]; o.span = p[5]; o.tint = float3(p[6], p[7], p[8]); o.old = float3(p[9], p[10], p[11]); o.flip = p[12];
         return o;
     }
-    struct WashUniforms { float threshold; float soft; float noise; float freq; float morph; float tint; float flipped; float flipFade; float alpha; float detail; float pad0; float pad1; };
+    struct WashUniforms { float now; float soft; float noise; float freq; float tint; float detail; float alpha; float pad0; };
     fragment float4 washFragment(WashOut in [[stage_in]], constant WashUniforms& w [[buffer(0)]]) {
         float2 q = in.world;
+        float k = in.span > 0.0 ? clamp((w.now - in.start) / in.span, 0.0, 1.0) : 1.0;
+        float level = mix(in.from, in.to, k * k * (3.0 - 2.0 * k));
         float rough = (fbm(q * w.freq) - 0.5) * 2.0 * w.noise;
-        float s = mix(in.before, in.arrival - w.threshold, w.morph) + rough;
-        float reached = 1.0 - smoothstep(-w.soft, w.soft, s);
+        float s = level + rough - 0.5;
+        float reached = smoothstep(-w.soft, w.soft, s);
         float grain = fbm(q * w.freq * 2.7 + float2(7.3, 2.9));
         float3 c; float a;
-        if (w.flipped > 0.5) {
-            // 底色已是新主人：未到达处盖旧色，已到达处的旧色余韵淡去。
-            c = in.old; a = mix(1.0, w.flipFade, reached);
+        if (in.flip > -1.0e8) {
+            float fade = (1.0 - w.tint) * clamp(1.0 - (w.now - in.flip) / 0.6, 0.0, 1.0);
+            c = in.old; a = mix(1.0, fade, reached);
         } else {
             c = in.tint; a = w.tint * reached * (0.88 + 0.24 * grain * w.detail);
         }
-        // 湿边：前沿处一道很淡的墨，远看只剩干净的分界。
         float band = exp(-(s * s) / max(w.soft * w.soft * 0.6, 1e-6));
         float ink = band * (0.1 + 0.12 * w.detail);
         float total = a + ink * (1.0 - a);

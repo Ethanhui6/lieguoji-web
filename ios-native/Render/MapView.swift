@@ -59,12 +59,8 @@ import LieguojiCore
     var tween: Double = 0.3
     /// Troop / ship counts by army or fleet id, shown under the icons when zoomed in.
     var troopTexts: [String: String] = [:]
-    /// 战场地面：每场陆战的州与各营兵力（每步更新）。
-    var battleGrounds: [BattleGround] = []
-    /// CI 巡览演示战场地面时为真：推演不覆盖演示用的战况。
-    var groundDemo = false
-    /// 占领晕染：本步的围城与最近的攻占（GameModel.refreshWashes），与世界代次（读档、换世界时变）。
-    var washes: [WashInput] = []
+    /// 战争晕染（墨场）：本步的行军、守军、围城与最近的攻占（GameModel.refreshWashes），与世界代次（读档、换世界时变）。
+    var washes = WashFrame.empty
     var washEpoch = 0
     /// CI 巡览演示占领晕染时为真：推演不覆盖演示输入。
     var washDemo = false
@@ -181,7 +177,7 @@ struct DisplaySettings: Codable, Equatable {
     var ocean = "original"
     /// 经纬线 (the original's GridLines). Optional so settings saved before it still load.
     var gridLines: Bool? = nil
-    /// 战场地面：交战州按各方兵力分色的墨晕（nil：旧设置，默认开）。
+    /// 战争晕染：军队在敌境走过、驻留、围城处洇开进攻方颜色（nil：旧设置，默认开）。
     var battleGround: Bool? = nil
     static let key = "displaySettings.v3"
     static func load() -> DisplaySettings {
@@ -658,8 +654,7 @@ struct MapView: UIViewRepresentable {
             controller.sheetOpen ? Self.range(30) : Self.range(Energy.hot ? min(20, controller.play.marchFPS) : Energy.level >= 1 ? min(30, controller.play.marchFPS) : controller.play.marchFPS)
         }
         private var gliding = false
-        private var shownGrounds: [BattleGround] = []
-        private var shownWashes: [WashInput] = []
+        private var shownWashes = WashFrame.empty
         private var shownWashEpoch = -1
         private var appliedPlay: PlaySettings?
         private func pace(_ l: CADisplayLink, glide: Bool) {
@@ -759,7 +754,6 @@ struct MapView: UIViewRepresentable {
                 renderer?.tweenEase = controller.tween <= 0.3
                 renderer?.setArmies(armies, route: controller.route, snap: controller.snapArmies)
                 controller.snapArmies = false
-                if controller.battleGrounds != shownGrounds { shownGrounds = controller.battleGrounds; renderer?.setBattleGrounds(shownGrounds) }
                 if controller.washes != shownWashes || controller.washEpoch != shownWashEpoch {
                     shownWashes = controller.washes; shownWashEpoch = controller.washEpoch
                     renderer?.setWashes(shownWashes, epoch: shownWashEpoch)

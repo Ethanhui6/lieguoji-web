@@ -120,42 +120,7 @@ struct NationGrid: View {
     }
 }
 
-/// A war declared, a peace made or a city taken: a seal and the text, dropped in from the top.
-struct HeraldBanner: View {
-    let herald: GameModel.Herald
-    let map: WorldMap
-    var body: some View {
-        let (word, color): (String, Color) = {
-            switch herald.kind {
-            case .war: return ("宣战", Theme.seal)
-            case .peace: return ("议和", Theme.jade)
-            case .capture: return ("攻克", Theme.ink)
-            case .uprising: return ("起义", Color(red: 0.55, green: 0.12, blue: 0.1))
-            case .restoration: return ("复辟", Color(red: 0.62, green: 0.45, blue: 0.12))
-            case .extinction: return ("绝嗣", Theme.ink2)
-            case .capital: return ("迁都", Theme.jade)
-            }
-        }()
-        HStack(spacing: 12) {
-            // The pages' own vermilion seal (SheetHeader), pressed in the same way.
-            Seal(text: word, size: 40)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    ForEach(Array(herald.nations.enumerated()), id: \.offset) { pair in
-                        if pair.offset > 0 { Text(herald.kind == .peace ? "与" : "对").font(Theme.kai(14)).foregroundStyle(color) }
-                        NationChip(map: map, nation: pair.element)
-                    }
-                }
-                Text(herald.text).font(Theme.kai(15)).foregroundStyle(Theme.ink2).lineLimit(2)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .frame(maxWidth: 440)
-        .glass(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .padding(.horizontal, 14)
-    }
-}
+// 大事传报（宣战、议和、攻克……）见 HeraldScene.swift。
 
 // MARK: - fleets (open-sea worlds)
 

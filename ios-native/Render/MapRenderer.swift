@@ -32,17 +32,22 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// CI 测量：整帧编码、战争晕染编码、GPU 执行、实际上屏间隔、易主重着色（毫秒）。
     final class FrameProbe { var encode = [Double](), wash = [Double](), gpu = [Double](), presented = [Double](), recolor = [Double](); var lastPresent: CFTimeInterval = 0 }
     static var frameProbe: FrameProbe?
-    /// 战争晕染（沙盘墨场，Render/Wash.swift）。
-    let washPipeline: MTLRenderPipelineState
-    var washBook: WashBook?
+    /// 战争晕染：GPU 墨场（Render/Ink.swift）与易主扫色（Render/Wash.swift）。
+    let sweepPipeline: MTLRenderPipelineState
+    let inkPipes: InkPipelines
+    var ink: InkField?
+    var sweep: FlipSweep?
+    var washTopology: WashTopology?
     var washBuilding = 0
-    var washPending = WashFrame.empty
+    var washFrame = WashFrame.empty
     var washEpoch = 0
-    var washMeshCache: (revision: Int, colours: Int, vertices: MTLBuffer, indices: MTLBuffer, count: Int)?
+    var sweepMeshCache: (revision: Int, vertices: MTLBuffer, indices: MTLBuffer, count: Int)?
+    /// 最近的攻占（州 → 进攻方、军队位置、登记时刻）、刚有大事的国家、上次安装颜色时各州的主人。
+    var washCaptures: [Int: (nation: Int, armies: [SIMD2<Float>], time: Float)] = [:]
+    var washRegimes: [Int: Float] = [:]
+    var washOwners: [Int] = []
     /// 易主扫满时各顶点的旧色（rgb，按顶点号）。
     var washOld: [Float] = []
-    var washColourEpoch = 0
-    var washAnimating = false
     private let linePipeline: MTLRenderPipelineState
     private let flatPipeline: MTLRenderPipelineState
     private let coloredPipeline: MTLRenderPipelineState
@@ -51,9 +56,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let spritePipeline: MTLRenderPipelineState
     /// Army icons grouped by unit type: the texture and its quads.
     private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int)] = []
-    private let positions: MTLBuffer
-    private var indices: MTLBuffer
-    private var indexCount: Int
+    let positions: MTLBuffer
+    private(set) var indices: MTLBuffer
+    private(set) var indexCount: Int
     private var colors: MTLBuffer
     private var provinceLines: (buffer: MTLBuffer, count: Int)?
     private var rivers: (buffer: MTLBuffer, count: Int)?
@@ -113,7 +118,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // Colours are sRGB as the web draws them; blend and store them unconverted, like Pixi.
         view.colorPixelFormat = .bgra8Unorm
         do {
-            let library = try device.makeLibrary(source: MapRenderer.shaders, options: nil)
+            let library = try device.makeLibrary(source: MapRenderer.shaders + MapRenderer.sweepShaders + InkPipelines.shaders, options: nil)
             enum Blend { case none, alpha, multiply }
             func pipeline(_ vertex: String, _ fragment: String, _ blend: Blend) throws -> MTLRenderPipelineState {
                 let d = MTLRenderPipelineDescriptor()
@@ -145,7 +150,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             texturePipeline = try pipeline("quadVertex", "textureFragment", .none)
             multiplyPipeline = try pipeline("quadVertex", "textureFragment", .multiply)
             spritePipeline = try pipeline("spriteVertex", "spriteFragment", .alpha)
-            washPipeline = try pipeline("washVertex", "washFragment", .alpha)
+            sweepPipeline = try pipeline("sweepVertex", "sweepFragment", .alpha)
+            inkPipes = try InkPipelines.make(device: device, library: library, mainFormat: view.colorPixelFormat, sampleCount: view.sampleCount)
         } catch { return nil }
         let mesh = CellMesh(map: map)
         guard let p = device.makeBuffer(bytes: mesh.positions, length: mesh.positions.count * 4, options: .storageModeShared),
@@ -415,7 +421,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let seaChanged = d.ocean != display.ocean, detailChanged = d.mapDetail != display.mapDetail
         display = d
         if seaChanged || detailChanged { uploadSea() }
-        if recolour { washColourEpoch &+= 1; rebuildAppearance() }
+        if recolour { rebuildAppearance() }
     }
     private func recolor() {
         if base == nil {
@@ -448,12 +454,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             defer { if let probe = Self.frameProbe, fadeOnRecolor { probe.recolor.append((CACurrentMediaTime() - began) * 1000) } }
             let fade = fadeOnRecolor && reveal >= 1 && colors.length == b.length
             let handed = fade ? washHandover(next: c, now: now) : []
-            let vp = washBook?.topology.vertexProvince
+            let vp = washTopology?.vertexProvince
             landFade.set(c, at: now, fade: fade, instant: { v in
                 guard !handed.isEmpty, let vp, v < vp.count else { return false }
                 return handed.contains(Int(vp[v]))
             })
             if !fade && reveal >= 1 && washViewSwitch { washViewChanged() }
+            rebuildInkOwners()
             if landFade.fading(at: now) {
                 previousColors = device.makeBuffer(bytes: landFade.from, length: landFade.from.count * 4, options: .storageModeShared)
             } else { previousColors = nil }
@@ -483,9 +490,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         var retreating = false }
     private var unitTextures: [String: MTLTexture] = [:]
     private var route: (buffer: MTLBuffer, count: Int)?
-    private var armySprites: [ArmySprite] = []
+    private(set) var armySprites: [ArmySprite] = []
     /// 溃散: armies gone since the last snapshot, fading out where they fell over one leg (drawn only).
     private var dying: [ArmySprite] = []
+    /// 本步阵亡军队的阵亡时刻（秒，自本步动画开始；GameModel 按先后错开），图标停在原处到那一刻再淡去。
+    var deathDelays: [String: Double] = [:]
     private var routePoints: [SIMD2<Float>] = []
 
     /// Army icons at their current points (moving armies follow their journey) and the selected
@@ -511,6 +520,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private func progress(_ now: CFTimeInterval) -> Float {
         legLength <= 0 ? 1 : Float(min(1, max(0, (now - legStart) / legLength)))
     }
+    /// 军队图标此刻画出的位置（墨场按它落墨）。
+    func displayedPoint(_ s: ArmySprite) -> SIMD2<Float> { displayed(s) }
     private func displayed(_ s: ArmySprite) -> SIMD2<Float> {
         guard !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] else { return SIMD2(s.x, s.y) }
         return Self.hermite(a, b, legLead[s.key] ?? (b - a), progress(CACurrentMediaTime()))
@@ -667,7 +678,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             self.spread = spread
             for a in sprites {
                 // Harbours (and merchantmen) keep still: alpha 0.99 tells the shader not to let them drift.
-                fade = ghosts.contains(a.key) ? -2 : fresh.contains(a.key) ? -1 : a.fighting ? 2 : a.retreating ? 0.55 : a.army <= -100_000 ? 0.99 : 1
+                fade = ghosts.contains(a.key) ? -2 - Float(min(0.85, max(0, (deathDelays[String(a.key.dropFirst())] ?? 0) / max(0.05, legLength)))) : fresh.contains(a.key) ? -1 : a.fighting ? 2 : a.retreating ? 0.55 : a.army <= -100_000 ? 0.99 : 1
                 let o = spread[a.key] ?? SIMD2<Float>(0, 0)
                 let c = a.selected ? RGB(1, 0.93, 0.55) : nationColors.indices.contains(a.nation) ? nationColors[a.nation] : RGB(1, 1, 1)
                 let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)
@@ -722,7 +733,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // 只换了选中的州（高亮）：不算换视图，正在进行的晕染不收尾。
         let highlightOnly = mode == self.mode && tint == self.tint && fills == self.fills && view == viewKey
         self.mode = mode; self.highlight = highlight; self.tint = tint; self.fills = fills; viewKey = view
-        if !data && !highlightOnly { washColourEpoch &+= 1 }
         rebuildAppearance(fade: data, viewSwitch: !data && !highlightOnly)
     }
     /// 下一次重着色是换视图（颜色含义变了）：已换底的晕染收尾。
@@ -755,9 +765,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
     func draw(in view: MTKView) {
-        guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable,
-              let buffer = queue.makeCommandBuffer(), let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
+        guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable, let buffer = queue.makeCommandBuffer() else { return }
         frameTime = CACurrentMediaTime()
+        // 墨场先在自己的纹理里落墨（军队此刻的位置、本帧经过的推演天数），主画面再合成。
+        encodeInk(buffer)
+        guard let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
         let probe = Self.frameProbe
         var spriteProgress: Float = advanceChase()
         let size = view.bounds.size
@@ -884,12 +896,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 let g = (b.gpuEndTime - b.gpuStartTime) * 1000
                 DispatchQueue.main.async { probe.gpu.append(g) }
             }
+            // 上屏回调只有真机 SDK 有（模拟器 SDK 的 CAMetalDrawable 没有 addPresentedHandler）。
+            #if !targetEnvironment(simulator)
             drawable.addPresentedHandler { d in
                 let t = d.presentedTime
                 DispatchQueue.main.async {
                     if t > 0 { if probe.lastPresent > 0 { probe.presented.append((t - probe.lastPresent) * 1000) }; probe.lastPresent = t }
                 }
             }
+            #endif
         }
         if view.presentsWithTransaction {
             // 同事务呈现：提交后等到排入 GPU 再呈现，画面与同一事务里的 UIKit 图层一起上屏。
@@ -1006,7 +1021,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float pixels = s.size * clamp(u.scale * 0.8, 11.0 / 3.0112, 26.0 / 3.0112);
         // Alpha below zero: the icon fades in over the leg (new and re-formed armies).
         // Alpha −2: an army that fell fades out over the leg.
-        float4 tint = float4(s.tint); if (tint.a < -1.5) tint.a = 1.0 - progress; else if (tint.a < 0.0) tint.a = progress;
+        float4 tint = float4(s.tint);
+        // 阵亡的图标（标记 −2 − d）：在原处停到自己的阵亡时刻 d（本步动画进度），再在 0.15 内淡去——与阵亡动画同时开始。
+        if (tint.a < -1.5) { float d = -tint.a - 2.0; tint.a = 1.0 - clamp((progress - d) / 0.15, 0.0, 1.0); }
+        else if (tint.a < 0.0) tint.a = progress;
         // Alpha 2: an army in battle. Its pieces lunge and recoil, each army on its own beat.
         float2 jab = float2(0.0);
         if (tint.a > 1.5) {
@@ -1033,37 +1051,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float3 rim = mix(float3(0.14, 0.11, 0.08), in.tint.rgb, 0.3);
         float3 c = mix(rim, fill, smoothstep(0.45, 0.95, lum));
         return float4(c, p.a * in.tint.a);
-    }
-    // 战争晕染（墨场）：每个顶点带起止浓度与开始时刻、时长，按本帧时刻插值；浓度加世界坐标里静止的纸纹起伏，
-    // 在 0.5 附近柔和过渡，前沿一道淡墨湿边。易主扫满中的顶点：底色已是墨主，未到达处盖旧色，已到达处旧色余韵淡去。
-    struct WashOut { float4 position [[position]]; float2 world; float from; float to; float start; float span; float3 tint; float3 old; float flip; };
-    vertex WashOut washVertex(uint id [[vertex_id]], const device float* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
-        const device float* p = v + id * 14;
-        WashOut o; o.world = float2(p[0], p[1]); o.position = clip(o.world, u, float2(0.0));
-        o.from = p[2]; o.to = p[3]; o.start = p[4]; o.span = p[5]; o.tint = float3(p[6], p[7], p[8]); o.old = float3(p[9], p[10], p[11]); o.flip = p[12];
-        return o;
-    }
-    struct WashUniforms { float now; float soft; float noise; float freq; float tint; float detail; float alpha; float pad0; };
-    fragment float4 washFragment(WashOut in [[stage_in]], constant WashUniforms& w [[buffer(0)]]) {
-        float2 q = in.world;
-        float k = in.span > 0.0 ? clamp((w.now - in.start) / in.span, 0.0, 1.0) : 1.0;
-        float level = mix(in.from, in.to, k * k * (3.0 - 2.0 * k));
-        float rough = (fbm(q * w.freq) - 0.5) * 2.0 * w.noise;
-        float s = level + rough - 0.5;
-        float reached = smoothstep(-w.soft, w.soft, s);
-        float grain = fbm(q * w.freq * 2.7 + float2(7.3, 2.9));
-        float3 c; float a;
-        if (in.flip > -1.0e8) {
-            float fade = (1.0 - w.tint) * clamp(1.0 - (w.now - in.flip) / 0.6, 0.0, 1.0);
-            c = in.old; a = mix(1.0, fade, reached);
-        } else {
-            c = in.tint; a = w.tint * reached * (0.88 + 0.24 * grain * w.detail);
-        }
-        float band = exp(-(s * s) / max(w.soft * w.soft * 0.6, 1e-6));
-        float ink = band * (0.1 + 0.12 * w.detail);
-        float total = a + ink * (1.0 - a);
-        float3 rgb = total > 0.0001 ? (c * a * (1.0 - ink) + float3(0.16, 0.12, 0.09) * ink) / total : c;
-        return float4(rgb, total * w.alpha);
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         return float4(t.sample(s, in.uv).rgb, 1.0);

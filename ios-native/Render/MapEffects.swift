@@ -20,7 +20,14 @@ struct MapEffects: Equatable {
         /// Troops on each side, for the strength bar over the fight.
         var leftTroops = 0, rightTroops = 0
     }
-    struct Burst: Equatable { enum Kind { case destroyed, founded, shock, harvest, disaster, talent, plague, trade, regime, coup }; let id: String; let x: Double; let y: Double; let kind: Kind; let r: Double; let g: Double; let b: Double; var unit = "" }
+    struct Burst: Equatable {
+        enum Kind { case destroyed, founded, shock, harvest, disaster, talent, plague, trade, regime, coup }
+        let id: String; let x: Double; let y: Double; let kind: Kind; let r: Double; let g: Double; let b: Double; var unit = ""
+        /// 何时开始（秒，自收到这一步起）：一步里相继阵亡的军队错开播放。
+        var delay = 0.0
+        /// 同处合并的数量（阵亡几支合为一处）。
+        var count = 1
+    }
     struct Siege: Equatable { let key: String; let x: Double; let y: Double; let progress: Double; let r: Double; let g: Double; let b: Double }
     struct Flash: Equatable { let id: String; let x: Double; let y: Double; let r: Double; let g: Double; let b: Double }
     struct Declaration: Equatable { let id: String; let fromX: Double; let fromY: Double; let toX: Double; let toY: Double }
@@ -71,6 +78,8 @@ final class EffectsView: UIView {
     private var seen = Set<String>()
     private var seenOrder: [String] = []
     private var camera: MapCamera?
+    /// 地图上军队图标此刻的边长（点）：阵亡动画里倒下的军旗与之同大。
+    private var iconPoints: CGFloat { CGFloat(MapRenderer.iconPoints(camera?.scale ?? 1, iconScale: 1)) }
     private var viewport: CGSize = .zero
 
     override init(frame: CGRect) { super.init(frame: frame); isUserInteractionEnabled = false }
@@ -410,27 +419,68 @@ final class EffectsView: UIView {
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 120, height: 120)
         switch b.kind {
         case .destroyed:
-            // An army falls in ink: its unit mark sinks and fades while a blot of ink spreads beneath it
-            // and dries away — the map's own brush, not an explosion.
+            // 阵亡：这支军队在它倒下的地方被墨吞没——一团墨（掺本国色）由小洇大、边缘几处飞溅，一圈本国色的震痕荡开，
+            // 军旗（兵种图标）向一侧倾倒、下沉、褪色。几支同处倒下时墨团随数量变大、飞溅更多。
+            let count = CGFloat(max(1, b.count)), grow = min(2.0, 1 + 0.28 * (count - 1))
+            let ink = UIColor(red: 0.14 + 0.22 * b.r, green: 0.11 + 0.22 * b.g, blue: 0.09 + 0.22 * b.b, alpha: 1)
+            var seed = UInt64(truncatingIfNeeded: b.id.hashValue)
+            func rnd() -> CGFloat { seed = seed &* 6364136223846793005 &+ 1442695040888963407; return CGFloat((seed >> 33) % 10_000) / 10_000 }
+            let begin = CACurrentMediaTime() + b.delay
+            func play(_ l: CALayer, _ animations: [CAAnimation], duration: Double, ease: CAMediaTimingFunctionName = .easeOut) {
+                let g = CAAnimationGroup(); g.animations = animations; g.duration = duration; g.beginTime = begin
+                g.timingFunction = CAMediaTimingFunction(name: ease); g.fillMode = .forwards; g.isRemovedOnCompletion = false
+                l.add(g, forKey: "fall")
+            }
+            // 墨团：三团不规则的墨叠成一块，洇开后慢慢干去。
             let blot = CAShapeLayer(); blot.frame = root.bounds
-            blot.path = UIBezierPath(ovalIn: CGRect(x: 48, y: 52, width: 24, height: 16)).cgPath
-            blot.fillColor = UIColor(red: 0.16, green: 0.13, blue: 0.1, alpha: 0.55).cgColor
-            blot.shadowColor = blot.fillColor; blot.shadowOpacity = 1; blot.shadowRadius = 4; blot.shadowOffset = .zero
-            let spread = CABasicAnimation(keyPath: "transform.scale"); spread.fromValue = 0.2; spread.toValue = 1.5
-            spread.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            let dry = CAKeyframeAnimation(keyPath: "opacity"); dry.values = [0, 0.85, 0.6, 0]; dry.keyTimes = [0, 0.15, 0.6, 1]
-            let blotGroup = CAAnimationGroup(); blotGroup.animations = [spread, dry]; blotGroup.duration = 2.2; blotGroup.fillMode = .forwards; blotGroup.isRemovedOnCompletion = false
-            blot.add(blotGroup, forKey: "ink"); root.addSublayer(blot)
+            let path = UIBezierPath()
+            for k in 0..<3 {
+                let w = (18 + 10 * rnd()) * grow, h = (12 + 6 * rnd()) * grow
+                let cx = 60 + (rnd() - 0.5) * 10 * grow, cy = 62 + (rnd() - 0.5) * 6 * grow
+                path.append(UIBezierPath(ovalIn: CGRect(x: cx - w / 2, y: cy - h / 2, width: w, height: h)))
+                if k == 0 { path.append(UIBezierPath(ovalIn: CGRect(x: cx - w * 0.15, y: cy - h * 0.2, width: w * 0.3, height: h * 0.25))) }
+            }
+            blot.path = path.cgPath; blot.fillColor = ink.withAlphaComponent(0.62).cgColor
+            blot.shadowColor = ink.cgColor; blot.shadowOpacity = 0.9; blot.shadowRadius = 3.5; blot.shadowOffset = .zero; blot.opacity = 0
+            let spread = CAKeyframeAnimation(keyPath: "transform.scale"); spread.values = [0.15, 1.0, 1.08]; spread.keyTimes = [0, 0.3, 1]
+            let dry = CAKeyframeAnimation(keyPath: "opacity"); dry.values = [0, 0.95, 0.7, 0]; dry.keyTimes = [0, 0.12, 0.55, 1]
+            play(blot, [spread, dry], duration: 2.3)
+            root.addSublayer(blot)
+            // 飞溅：几点墨沿各方向甩出、落定、淡去。
+            for _ in 0..<min(10, 4 + Int(count) * 2) {
+                let dot = CAShapeLayer(); dot.frame = root.bounds
+                let r = (1.2 + 1.8 * rnd()) * min(1.4, grow)
+                dot.path = UIBezierPath(ovalIn: CGRect(x: 60 - r, y: 62 - r, width: r * 2, height: r * 2)).cgPath
+                dot.fillColor = ink.withAlphaComponent(0.75).cgColor; dot.opacity = 0
+                let angle = rnd() * .pi * 2, dist = (14 + 16 * rnd()) * grow
+                let fly = CABasicAnimation(keyPath: "transform.translation"); fly.fromValue = NSValue(cgSize: .zero)
+                fly.toValue = NSValue(cgSize: CGSize(width: cos(angle) * dist, height: sin(angle) * dist * 0.7)); fly.duration = 0.32
+                fly.timingFunction = CAMediaTimingFunction(controlPoints: 0.1, 0.8, 0.3, 1); fly.fillMode = .forwards; fly.isRemovedOnCompletion = false
+                let show = CAKeyframeAnimation(keyPath: "opacity"); show.values = [0, 0.9, 0.7, 0]; show.keyTimes = [0, 0.08, 0.5, 1]; show.duration = 1.9
+                play(dot, [fly, show], duration: 1.9)
+                root.addSublayer(dot)
+            }
+            // 震痕：一圈本国色的细环荡开。
+            let ring = CAShapeLayer(); ring.frame = root.bounds
+            ring.path = UIBezierPath(ovalIn: CGRect(x: 44, y: 50, width: 32, height: 24)).cgPath
+            ring.fillColor = UIColor.clear.cgColor; ring.strokeColor = color.withAlphaComponent(0.85).cgColor; ring.lineWidth = 1.6; ring.opacity = 0
+            let wave = CABasicAnimation(keyPath: "transform.scale"); wave.fromValue = 0.5; wave.toValue = 2.0 * grow
+            let waveFade = CAKeyframeAnimation(keyPath: "opacity"); waveFade.values = [0, 0.9, 0]; waveFade.keyTimes = [0, 0.15, 1]
+            let thin = CABasicAnimation(keyPath: "lineWidth"); thin.fromValue = 2.4; thin.toValue = 0.4
+            play(ring, [wave, waveFade, thin], duration: 0.85)
+            root.addSublayer(ring)
+            // 军旗：图标倾倒、下沉、褪色（与地图上的图标同大）。
             if let icon = Self.unitImage(b.unit, tint: color) {
+                let side: CGFloat = rnd() < 0.5 ? -1 : 1
+                let size = max(12, min(28, iconPoints))
                 let mark = CALayer(); mark.contents = icon; mark.contentsGravity = .resizeAspect
-                mark.bounds = CGRect(x: 0, y: 0, width: 22, height: 22); mark.position = CGPoint(x: 60, y: 58)
-                let sink = CABasicAnimation(keyPath: "transform.translation.y"); sink.fromValue = 0; sink.toValue = 6
-                let shrink = CABasicAnimation(keyPath: "transform.scale"); shrink.fromValue = 1; shrink.toValue = 0.7
-                let tilt = CABasicAnimation(keyPath: "transform.rotation.z"); tilt.fromValue = 0; tilt.toValue = 0.35
-                let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [1, 0.9, 0]; fade.keyTimes = [0, 0.3, 1]
-                let g = CAAnimationGroup(); g.animations = [sink, shrink, tilt, fade]; g.duration = 1.6
-                g.timingFunction = CAMediaTimingFunction(name: .easeIn); g.fillMode = .forwards; g.isRemovedOnCompletion = false
-                mark.add(g, forKey: "fall"); root.addSublayer(mark)
+                mark.bounds = CGRect(x: 0, y: 0, width: size, height: size); mark.position = CGPoint(x: 60, y: 60); mark.opacity = 0
+                mark.anchorPoint = CGPoint(x: 0.5, y: 0.85); mark.position = CGPoint(x: 60, y: 60 + size * 0.35)
+                let tilt = CAKeyframeAnimation(keyPath: "transform.rotation.z"); tilt.values = [0, side * 0.12, side * 1.2]; tilt.keyTimes = [0, 0.18, 1]
+                let sink = CAKeyframeAnimation(keyPath: "transform.translation.y"); sink.values = [0, -2, 7]; sink.keyTimes = [0, 0.18, 1]
+                let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [1, 1, 0.55, 0]; fade.keyTimes = [0, 0.2, 0.6, 1]
+                play(mark, [tilt, sink, fade], duration: 1.3, ease: .easeIn)
+                root.addSublayer(mark)
             }
         default:
             // 统一的事件语言：一圈墨晕洇开，一方一字印落下（立、战、丰、商、才、灾、疫、革、篡），节奏一致。
@@ -577,7 +627,7 @@ final class EffectsView: UIView {
             if b.kind != .destroyed { if sealIDs.count >= 3 { continue }; sealIDs.insert(b.id) }
             let l = burstLayer(b); layer.addSublayer(l); burstLayers[b.id] = (l, b.x, b.y)
             let id = b.id
-            once(id, after: 2.6) { [weak self] in self?.burstLayers[id]?.layer.removeFromSuperlayer(); self?.burstLayers[id] = nil; self?.sealIDs.remove(id) }
+            once(id, after: 2.6 + b.delay) { [weak self] in self?.burstLayers[id]?.layer.removeFromSuperlayer(); self?.burstLayers[id] = nil; self?.sealIDs.remove(id) }
         }
         for d in effects.declarations where !seen.contains(d.id) {
             guard arrowLayers.count < 8 else { continue }

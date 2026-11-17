@@ -92,6 +92,32 @@ enum ShotTour {
         }
         // 战争晕染（墨场）：行军、围城、守军、攻占的演示，逐帧记录与压力测量（App/WashTour.swift）。
         await washTour(model)
+        // 大事传报（宣战、议和）的关键帧与阵亡动画（图标此刻的位置、错开与合并）。
+        if let state = model.state, state.nations.count >= 2 {
+            let wasPlaying = model.playing
+            model.pause(saving: false)
+            model.herald = GameModel.Herald(kind: .war, text: "演示：以边境争端为由宣战", nations: [0, 1])
+            await wait(0.4); await shoot("41a-herald-war-unroll")
+            await wait(0.6); await shoot("41b-herald-war-cross")
+            await wait(0.9); await shoot("41c-herald-war-full")
+            model.herald = nil; await wait(0.6)
+            model.herald = GameModel.Herald(kind: .peace, text: "演示：两国议和", nations: [0, 1])
+            await wait(1.6); await shoot("41d-herald-peace")
+            model.herald = nil; await wait(0.6)
+            if let r = model.controller.renderer?(), let s = r.placedSprites().first(where: { $0.sprite.army >= 0 }) {
+                model.controller.fly(x: Double(s.x), y: Double(s.y)); await wait(1.6)
+                var e = model.controller.effects
+                e.bursts.append(.init(id: "demo-fall-1", x: Double(s.x), y: Double(s.y), kind: .destroyed, r: 0.7, g: 0.2, b: 0.15, unit: s.sprite.unit))
+                var merged = MapEffects.Burst(id: "demo-fall-2", x: Double(s.x) + 26, y: Double(s.y) + 8, kind: .destroyed, r: 0.2, g: 0.3, b: 0.6, unit: s.sprite.unit)
+                merged.delay = 0.4; merged.count = 3
+                e.bursts.append(merged)
+                model.controller.effects = e; model.controller.objectWillChange.send()
+                await wait(0.3); await shoot("42a-fall-early")
+                await wait(0.5); await shoot("42b-fall-spread")
+                await wait(2.4)
+            }
+            if wasPlaying { model.play() }
+        }
         // Up close on a resting army and on the one under the commander's banner (the figures).
         if let state = model.state {
             if let a = state.armies.filter({ $0.status != "fighting" && $0.status != "sieging" }).max(by: { $0.troops < $1.troops }) {

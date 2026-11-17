@@ -465,7 +465,7 @@ struct GameView: View {
                     .lineLimit(1).minimumScaleFactor(0.7)
                     .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
                 if let wars = model.state?.wars.count, wars > 0 {
-                    HStack(spacing: 3) { Circle().fill(Theme.seal).frame(width: 6, height: 6); Text("\(wars)场战争").font(Theme.kai(13)).foregroundStyle(Theme.seal).lineLimit(1).fixedSize() }
+                    WarCount(count: wars).transition(.scale(scale: 0.6).combined(with: .opacity))
                 }
                 // 远程计算: the computer simulates.
                 if model.remoteAddress != nil {
@@ -476,13 +476,13 @@ struct GameView: View {
             .padding(.horizontal, 16).frame(height: 42).glass(Capsule())
             if landscape { transport.padding(.horizontal, 6).frame(height: 50).glass(Capsule()) }
             Spacer()
-            Button { withAnimation { viewsOpen.toggle() } } label: { CircleIcon(glyph: viewsOpen ? .close : .views) }
-                .buttonStyle(PressStyle())
+            Button { withAnimation(Motion.panel) { viewsOpen.toggle() } } label: { CircleIcon(glyph: viewsOpen ? .close : .views, active: viewsOpen) }
+                .buttonStyle(InkPressStyle())
             Button {
                 if controller.boxSelecting || !controller.groupArmies.isEmpty { controller.boxSelecting = false; controller.groupArmies = []; model.refreshArmies() }
                 else { controller.boxSelecting = true; say("即时战略：在地图上拖出方框选择军队") }
-            } label: { CircleIcon(glyph: controller.boxSelecting || !controller.groupArmies.isEmpty ? .close : .command) }.buttonStyle(PressStyle())
-            Button { show(.menu) } label: { CircleIcon(glyph: .menu) }.buttonStyle(PressStyle())
+            } label: { CircleIcon(glyph: controller.boxSelecting || !controller.groupArmies.isEmpty ? .close : .command, active: controller.boxSelecting || !controller.groupArmies.isEmpty) }.buttonStyle(InkPressStyle())
+            Button { show(.menu) } label: { CircleIcon(glyph: .menu) }.buttonStyle(InkPressStyle())
         }
         .padding(.horizontal, 14).padding(.top, 2)
     }

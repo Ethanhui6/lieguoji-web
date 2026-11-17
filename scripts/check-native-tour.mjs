@@ -43,7 +43,7 @@ export function checkNativeTour(directory) {
   try {
     const wash = JSON.parse(readFileSync(join(directory,'wash-demo.json'),'utf8'));
     const row = side => { const s = wash[side] || {}, g = s.callbackGapMs || {}, st = (s.stress || {}).callbackGapMs || {};
-      return `反复变色 ${s.colourReversals} 次，有墨格子最多 ${s.inkedCellsMax}，回调间隔 p95 ${Number(g.p95).toFixed(1)} / p99 ${Number(g.p99).toFixed(1)} / 最长 ${Number(g.max).toFixed(0)} ms，`
+      return `反复变色 ${s.colourReversals} 次，扫色格子最多 ${s.inkedCellsMax}，回调间隔 p95 ${Number(g.p95).toFixed(1)} / p99 ${Number(g.p99).toFixed(1)} / 最长 ${Number(g.max).toFixed(0)} ms，`
         + `>50ms ${g.over50ms} 次；压力 ${(wash[side].stress || {}).provinces} 州 p95 ${Number(st.p95).toFixed(1)} / p99 ${Number(st.p99).toFixed(1)} / 最长 ${Number(st.max).toFixed(0)} ms`; };
     console.log('战争晕染 ' + row('after'));
   } catch { console.log('战争晕染：没有 wash-demo.json'); }

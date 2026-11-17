@@ -1,12 +1,17 @@
 import SwiftUI
 
-/// One hand-drawn line icon set for the whole chrome (bottom tabs and top buttons): the same round
-/// brush line, the same 24-unit grid, motifs of the period — a gate tower for the state, crossed
-/// halberds for the army, a sealed scroll for diplomacy, a bound book for the chronicle, a stepped
-/// stand for rankings, layered hills for the map views, a command banner for the box order.
+/// One hand-drawn icon set for the whole chrome (bottom tabs and top buttons): the same 24-unit grid,
+/// motifs of the period — a gate tower for the state, crossed halberds for the army, a sealed scroll for
+/// diplomacy, a bound book for the chronicle, a stepped stand for rankings, layered hills for the map
+/// views, a command banner for the box order.
+///
+/// 笔触：每一笔按毛笔写——起笔略顿、行笔饱满、收笔出锋，闭合的形（印、书、卷）沿边有轻重；底下一层淡墨洇开。
+/// 图标换形（开/合、选中/取消）时新笔画由左向右写出，旧的淡去。
 enum InkGlyph: String {
     case nation, military, diplomacy, chronicle, ranking, views, command, menu, close
     case sea, plain, mountain, raise, lower, smooth
+    /// 战事（顶栏的战争数）：两杆交叉的戈。
+    case war
 }
 
 struct InkIcon: View {
@@ -15,10 +20,148 @@ struct InkIcon: View {
     var weight: CGFloat = 1.7
     var filled = false
     var body: some View {
-        InkPath(glyph: glyph)
-            .stroke(style: StrokeStyle(lineWidth: weight * size / 22, lineCap: .round, lineJoin: .round))
-            .background { if filled { InkPath(glyph: glyph, fillOnly: true).fill(.tint.opacity(0.18)) } }
-            .frame(width: size, height: size)
+        let w = weight * size / 22
+        ZStack {
+            if filled { InkPath(glyph: glyph, fillOnly: true).fill(.tint.opacity(0.18)) }
+            // 洇墨：同一笔画放宽、模糊、很淡。
+            BrushShape(glyph: glyph, width: w * 1.7).fill(.foreground.opacity(0.16)).blur(radius: w * 0.45)
+            BrushShape(glyph: glyph, width: w * 1.25).fill(.foreground)
+        }
+        .frame(width: size, height: size)
+        .drawingGroup()
+    }
+}
+
+/// 换形时的写出：新图标由左向右显出（像一笔写过去），旧图标淡去。
+struct BrushReveal: ViewModifier {
+    let progress: CGFloat
+    func body(content: Content) -> some View {
+        content.mask(alignment: .leading) {
+            GeometryReader { g in
+                LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: max(0, progress - 0.15)), .init(color: .clear, location: progress)],
+                               startPoint: .leading, endPoint: .trailing)
+                    .frame(width: g.size.width * 1.2, height: g.size.height).offset(x: -g.size.width * 0.1)
+            }
+        }
+    }
+}
+extension AnyTransition {
+    static var brushWrite: AnyTransition {
+        .asymmetric(insertion: .modifier(active: BrushReveal(progress: 0), identity: BrushReveal(progress: 1.15)),
+                    removal: .opacity.combined(with: .scale(scale: 0.86)))
+    }
+}
+
+/// 笔画的形：把 InkPath 的每一笔拆成折线，按毛笔的轻重沿法线左右展开成面。
+struct BrushShape: Shape {
+    let glyph: InkGlyph
+    let width: CGFloat
+    func path(in rect: CGRect) -> Path {
+        let base = InkPath(glyph: glyph).path(in: rect)
+        return Brush.stroke(base.cgPath, width: width)
+    }
+}
+
+enum Brush {
+    /// 折线：一笔的点列与是否闭合。
+    struct Run { var points: [CGPoint]; var closed: Bool }
+
+    /// 把路径拆成折线（曲线按 10 段采样）。
+    static func runs(_ path: CGPath) -> [Run] {
+        var runs = [Run](), current = [CGPoint](), start = CGPoint.zero
+        func finish(closed: Bool) {
+            if current.count >= 2 { runs.append(Run(points: current, closed: closed)) }
+            current = []
+        }
+        path.applyWithBlock { e in
+            let el = e.pointee, p = el.points
+            switch el.type {
+            case .moveToPoint:
+                finish(closed: false); start = p[0]; current = [p[0]]
+            case .addLineToPoint:
+                current.append(p[0])
+            case .addQuadCurveToPoint:
+                let a = current.last ?? start
+                for i in 1...10 {
+                    let t = CGFloat(i) / 10, u = 1 - t
+                    current.append(CGPoint(x: u * u * a.x + 2 * u * t * p[0].x + t * t * p[1].x, y: u * u * a.y + 2 * u * t * p[0].y + t * t * p[1].y))
+                }
+            case .addCurveToPoint:
+                let a = current.last ?? start
+                for i in 1...10 {
+                    let t = CGFloat(i) / 10, u = 1 - t
+                    let x = u * u * u * a.x + 3 * u * u * t * p[0].x + 3 * u * t * t * p[1].x + t * t * t * p[2].x
+                    let y = u * u * u * a.y + 3 * u * u * t * p[0].y + 3 * u * t * t * p[1].y + t * t * t * p[2].y
+                    current.append(CGPoint(x: x, y: y))
+                }
+            case .closeSubpath:
+                if let last = current.last, hypot(last.x - start.x, last.y - start.y) < 0.01 { current.removeLast() }
+                finish(closed: true); current = []
+            @unknown default: break
+            }
+        }
+        finish(closed: false)
+        return runs
+    }
+
+    /// 毛笔的轻重：起笔略顿（0.85）、行笔饱满（1）、收笔出锋（0.45）。
+    static func profile(_ t: CGFloat) -> CGFloat {
+        let body = pow(sin(.pi * min(1, max(0, t))), 0.45)
+        return max(0.42, min(1.05, 0.42 + 0.58 * body + 0.28 * max(0, 0.25 - t) / 0.25))
+    }
+
+    static func stroke(_ path: CGPath, width: CGFloat) -> Path {
+        var out = Path()
+        for run in runs(path) {
+            let pts = run.points
+            let n = pts.count
+            guard n >= 2 else { continue }
+            // 累计长度（定轻重）。
+            var len = [CGFloat](repeating: 0, count: n)
+            for i in 1..<n { len[i] = len[i - 1] + hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y) }
+            let total = max(len[n - 1] + (run.closed ? hypot(pts[0].x - pts[n - 1].x, pts[0].y - pts[n - 1].y) : 0), 0.001)
+            func normal(_ i: Int) -> CGPoint {
+                func dir(_ a: CGPoint, _ b: CGPoint) -> CGPoint { let d = hypot(b.x - a.x, b.y - a.y); return d > 1e-6 ? CGPoint(x: (b.x - a.x) / d, y: (b.y - a.y) / d) : .zero }
+                let prev = run.closed ? pts[(i - 1 + n) % n] : pts[max(0, i - 1)]
+                let next = run.closed ? pts[(i + 1) % n] : pts[min(n - 1, i + 1)]
+                let a = i == 0 && !run.closed ? dir(pts[0], pts[1]) : dir(prev, pts[i])
+                let b = i == n - 1 && !run.closed ? dir(pts[n - 2], pts[n - 1]) : dir(pts[i], next)
+                var m = CGPoint(x: a.x + b.x, y: a.y + b.y)
+                let ml = hypot(m.x, m.y)
+                m = ml > 1e-6 ? CGPoint(x: m.x / ml, y: m.y / ml) : a
+                // 斜接：拐角处按夹角放宽，最多两倍。
+                let cos = max(0.5, m.x * a.x + m.y * a.y)
+                return CGPoint(x: -m.y / cos, y: m.x / cos)
+            }
+            if run.closed {
+                // 闭合的形：沿边轻重起伏（不出锋），外缘与内缘围成一圈。
+                var outer = [CGPoint](), inner = [CGPoint]()
+                for i in 0..<n {
+                    let t = len[i] / total, w = width * (0.82 + 0.18 * sin(.pi * 2 * t + 0.6)) / 2
+                    let nm = normal(i)
+                    outer.append(CGPoint(x: pts[i].x + nm.x * w, y: pts[i].y + nm.y * w))
+                    inner.append(CGPoint(x: pts[i].x - nm.x * w, y: pts[i].y - nm.y * w))
+                }
+                var ring = Path(); ring.addLines(outer); ring.closeSubpath(); ring.addLines(inner.reversed()); ring.closeSubpath()
+                out.addPath(ring)
+            } else {
+                var left = [CGPoint](), right = [CGPoint]()
+                for i in 0..<n {
+                    let w = width * profile(len[i] / total) / 2
+                    let nm = normal(i)
+                    left.append(CGPoint(x: pts[i].x + nm.x * w, y: pts[i].y + nm.y * w))
+                    right.append(CGPoint(x: pts[i].x - nm.x * w, y: pts[i].y - nm.y * w))
+                }
+                var band = Path(); band.addLines(left + right.reversed()); band.closeSubpath()
+                out.addPath(band)
+                // 圆头：起笔、收笔各一个与该处笔宽相同的圆。
+                for (i, t) in [(0, CGFloat(0)), (n - 1, CGFloat(1))] {
+                    let r = width * profile(t) / 2
+                    out.addEllipse(in: CGRect(x: pts[i].x - r, y: pts[i].y - r, width: r * 2, height: r * 2))
+                }
+            }
+        }
+        return out
     }
 }
 
@@ -58,12 +201,12 @@ struct InkPath: Shape {
             p.move(to: pt(6, 9)); p.addLine(to: pt(6, 13)); p.addLine(to: pt(18, 13)); p.addLine(to: pt(18, 9))
             p.move(to: pt(3, 20)); p.addLine(to: pt(3, 13)); p.addLine(to: pt(21, 13)); p.addLine(to: pt(21, 20)); p.addLine(to: pt(3, 20))
             p.move(to: pt(9.5, 20)); p.addLine(to: pt(9.5, 17)); p.addQuadCurve(to: pt(14.5, 17), control: pt(12, 14)); p.addLine(to: pt(14.5, 20))
-        case .military:
+        case .military, .war:
             // Crossed halberds over a shield line.
             p.move(to: pt(4, 20)); p.addLine(to: pt(18, 6)); p.move(to: pt(20, 20)); p.addLine(to: pt(6, 6))
             p.move(to: pt(15, 4)); p.addQuadCurve(to: pt(20, 9), control: pt(20, 4)); p.addLine(to: pt(18, 6))
             p.move(to: pt(9, 4)); p.addQuadCurve(to: pt(4, 9), control: pt(4, 4)); p.addLine(to: pt(6, 6))
-            p.move(to: pt(9, 15)); p.addLine(to: pt(15, 15))
+            if glyph == .military { p.move(to: pt(9, 15)); p.addLine(to: pt(15, 15)) }
         case .diplomacy:
             // A scroll rolled at both ends, tied with a sealed cord.
             p.addRoundedRect(in: CGRect(origin: pt(5, 4), size: CGSize(width: 14 * k, height: 16 * k)), cornerSize: CGSize(width: 2 * k, height: 2 * k))

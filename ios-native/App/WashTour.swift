@@ -30,7 +30,7 @@ extension ShotTour {
         return nil
     }
 
-    /// 逐帧记录：固定世界坐标（每州一个顶点）显示的陆地颜色；帧间隔、绘制与 GPU 耗时、有墨格子数。
+    /// 逐帧记录：固定世界坐标（每州一个顶点）显示的陆地颜色；帧间隔、绘制与 GPU 耗时、扫色中的格子数。
     @MainActor final class WashRecorder: NSObject {
         private var link: CADisplayLink?
         private var last: CFTimeInterval = 0
@@ -54,7 +54,7 @@ extension ShotTour {
                 let c = r.displayedLand(v, at: now)
                 colours[p, default: []].append(c.x * 0.3 + c.y * 0.59 + c.z * 0.11)
             }
-            inked = max(inked, r.washBook?.active.count ?? 0)
+            inked = max(inked, r.sweep?.active.count ?? 0)
         }
         /// 反复变色：一个固定点的亮度变化方向在一秒内来回翻转（超过 1% 的变化才算）。
         static func reversals(_ series: [Float]) -> Int {
@@ -115,15 +115,15 @@ extension ShotTour {
         var sieges = [Int: Float](), captured = [Int](), holding: SIMD2<Float>? = nil
         func send() {
             var inputs = [WashInput]()
-            for (from, at, p) in [(lastA, armyA, chain[1]), (lastB, armyB, chain[3])] {
-                inputs.append(WashInput(province: p, attacker: a, kind: .march, day: day, armies: [from, at], troops: 6000))
+            for (from, at, p, key) in [(lastA, armyA, chain[1], "demo-a"), (lastB, armyB, chain[3], "demo-b")] {
+                inputs.append(WashInput(province: p, attacker: a, kind: .march, day: day, armies: [from, at], troops: 6000, key: key))
             }
             for (p, v) in sieges.sorted(by: { $0.key < $1.key }) where !captured.contains(p) {
                 let at = p == chain[1] ? [armyA] : p == chain[3] ? [armyB] : []
                 inputs.append(WashInput(province: p, attacker: a, kind: .siege, progress: v, day: day, armies: at))
             }
             for p in captured { inputs.append(WashInput(province: p, attacker: a, kind: .capture, progress: 1, day: day, armies: [armyA])) }
-            if let h = holding { inputs.append(WashInput(province: chain[2], attacker: d, kind: .hold, day: day, armies: [h], troops: 5000)) }
+            if let h = holding { inputs.append(WashInput(province: chain[2], attacker: d, kind: .hold, day: day, armies: [h], troops: 5000, key: "demo-d")) }
             lastA = armyA; lastB = armyB
             c.washes = WashFrame(day: day, inputs: inputs, enemies: [a: [d], d: [a]])
             c.objectWillChange.send()
@@ -169,7 +169,7 @@ extension ShotTour {
         await shoot("40f-wash-settled")
         await shoot("rec-wash-stop")
         var out = recorder.stop()
-        out["washActiveLeft"] = c.renderer?()?.washBook?.active.count ?? -1
+        out["sweepActiveLeft"] = c.renderer?()?.sweep?.active.count ?? -1
         // 压力：几十个州同时被邻国从邻州打进来、分批攻占，镜头拉远。
         c.resetRequest = UUID(); await wait(1)
         let stress = WashRecorder(renderer: { c.renderer?() }, probes: [:])
@@ -184,7 +184,7 @@ extension ShotTour {
                 let at = along(path, min(1, max(0, phase * 2))), from = along(path, min(1, max(0, phase * 2 - 0.1)))
                 if phase > 1 { inputs.append(WashInput(province: x.province, attacker: x.attacker, kind: .capture, progress: 1, day: day, armies: [at])) }
                 else if phase > 0 {
-                    inputs.append(WashInput(province: x.province, attacker: x.attacker, kind: .march, day: day, armies: [from, at], troops: 4000))
+                    inputs.append(WashInput(province: x.province, attacker: x.attacker, kind: .march, day: day, armies: [from, at], troops: 4000, key: "crowd-\(i)"))
                     inputs.append(WashInput(province: x.province, attacker: x.attacker, kind: .siege, progress: Float(phase), day: day, armies: [at]))
                 }
             }

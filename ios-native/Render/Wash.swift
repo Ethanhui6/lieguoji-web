@@ -4,22 +4,37 @@ import QuartzCore
 import simd
 import LieguojiCore
 
-/// 战争晕染（沙盘墨场）的渲染端：状态机在 LieguojiCore（ConquestWash.swift），这里只负责拓扑的后台构建、
-/// 有墨格子的一份顶点缓冲（只在墨场改动、易主、换视图时重建）与每帧一次绘制；浓度动画在着色器里按时刻插值。
+/// 战争晕染的渲染端调度：每步的输入交给 GPU 墨场（Render/Ink.swift），颜色真的变了的州交给易主扫色（FlipSweep），
+/// 政变、复辟等大事从首都扫一道墨圈。拓扑在后台建一次（换世界、自绘地形后重建）。
 extension MapRenderer {
-    /// 只在墨还在动（落墨、褪墨、易主扫满）时要求连续重绘；静止的墨不占显示链路。关掉战争晕染时不画。
-    var washesAnimating: Bool { washAnimating && (display.battleGround ?? true) && reveal >= 1 }
+    /// 墨还在落、扫色还在走时要求连续重绘；静止时不占显示链路。关掉战争晕染时不画。
+    var washesAnimating: Bool {
+        guard (display.battleGround ?? true) && reveal >= 1 else { return false }
+        return (sweep?.animating(at: clock(frameTime)) ?? false) || (ink?.busy(CACurrentMediaTime()) ?? false)
+    }
 
     private func washOwner() -> (Int) -> Int {
         let provinces = map.meta.provinces
         return { p in provinces.indices.contains(p) ? provinces[p].nation : -1 }
     }
 
-    /// 地图几何对应的墨场；拓扑在后台建一次（换世界、自绘地形后重建），建好之前的输入先存着。
-    private func readyBook() -> WashBook? {
+    /// 某国首都所在城的位置。
+    func capitalPoint(_ nation: Int) -> SIMD2<Float>? {
+        guard map.meta.nations.indices.contains(nation) else { return nil }
+        let cap = map.meta.nations[nation].capital
+        guard map.meta.cities.indices.contains(cap) else { return nil }
+        return SIMD2(map.meta.cities[cap].x, map.meta.cities[cap].y)
+    }
+
+    /// 地图几何对应的拓扑；在后台建，建好之前的输入先存着。
+    private func readyTopology() -> WashTopology? {
+        if ink == nil || ink!.world != SIMD2(Float(max(1, map.width)), Float(max(1, map.height))) {
+            ink = InkField(device: device, map: map)
+            rebuildInkOwners()
+        }
         let key = WashTopology.key(of: map)
-        if let book = washBook, book.topology.key == key { return book }
-        if washBook != nil { washBook = nil; washMeshCache = nil; washOld = [] }
+        if let t = washTopology, t.key == key { return t }
+        if washTopology != nil { washTopology = nil; sweep = nil; sweepMeshCache = nil; ink?.provinceIndex = [:] }
         guard washBuilding != key else { return nil }
         washBuilding = key
         let source = map
@@ -28,122 +43,106 @@ extension MapRenderer {
             DispatchQueue.main.async {
                 guard let self, WashTopology.key(of: self.map) == topology.key else { return }
                 self.washBuilding = 0
-                let book = WashBook(topology: topology)
-                self.washBook = book
+                self.washTopology = topology
+                self.sweep = FlipSweep(topology: topology)
                 self.washOld = [Float](repeating: 0, count: topology.vertexCount * 3)
-                book.update(self.washPending, owner: self.washOwner(), now: self.clock())
-                self.washAnimating = true
+                self.inkFrame(self.washFrame, topology: topology)
                 self.onOutlines?()
             }
         }
         return nil
     }
 
-    /// 每步推演的墨场输入。`epoch` 变了（读档、换世界、重开）就清空，不带旧世界的墨。
+    /// 每步推演的输入。`epoch` 变了（读档、换世界、重开）就清空，不带旧世界的墨。
     func setWashes(_ frame: WashFrame, epoch: Int) {
-        if epoch != washEpoch { washEpoch = epoch; washBook?.reset(); washMeshCache = nil }
-        washPending = frame
-        guard let book = readyBook() else { return }
-        book.update(frame, owner: washOwner(), now: clock())
-        washAnimating = true
+        if epoch != washEpoch {
+            washEpoch = epoch
+            sweep?.clear(); sweepMeshCache = nil
+            if let ink { ink.clearPending = true; ink.lastStamp = [:]; ink.clock.reset(); ink.sieges = [:]; ink.lastDay = nil }
+            washCaptures = [:]; washRegimes = [:]; washOwners = []
+        }
+        washFrame = frame
+        let now = clock()
+        washCaptures = washCaptures.filter { now - $0.value.time < 3 }
+        washRegimes = washRegimes.filter { now - $0.value < 4 }
+        for i in frame.inputs where i.kind == .capture { washCaptures[i.province] = (i.attacker, i.armies, now) }
+        let topology = readyTopology()
+        inkFrame(frame, topology: topology)
+        // 政变、复辟、改制：从首都扫过全国的一道墨圈（颜色若因此变了，安装颜色时按换色扫）。
+        if let sweep, !frame.ripples.isEmpty, reveal >= 1 {
+            var groups = [(provinces: [Int], seeds: [SIMD2<Float>])]()
+            for n in frame.ripples {
+                washRegimes[n] = now
+                let list = map.meta.provinces.indices.filter { map.meta.provinces[$0].nation == n }
+                if !list.isEmpty { groups.append((list, capitalPoint(n).map { [$0] } ?? [])) }
+            }
+            sweep.start(groups, recolour: false, now: now)
+        }
     }
 
-    /// 新的陆地颜色即将安装：刚攻占（或州里已有新主人的墨）且颜色确实变了的州交给墨场扫满
-    /// （底色立即换，未到达处盖旧色）。记下这些州每个顶点此刻显示的颜色作为旧色。返回接手的州。
+    /// 新的陆地颜色即将安装：归属变了（攻占、反叛、割地、新立国）或刚有大事的国家颜色变了（改朝换代在家族等视图里换色）
+    /// 的州交给扫色——底色立即换，新颜色从攻占的军队或新主人的首都扫过去。记下这些州每个顶点此刻显示的颜色作为旧色。
     func washHandover(next: [Float], now: Float) -> Set<Int> {
-        guard let book = washBook, display.battleGround ?? true, landFade.to.count == next.count else { return [] }
-        let owner = washOwner(), shown = landFade.to, t = book.topology
-        var changed = Set<Int>()
-        for p in book.flipCandidates(owner: owner) where t.provinceCells.indices.contains(p) {
+        guard let sweep, let t = washTopology, display.battleGround ?? true, landFade.to.count == next.count else { return [] }
+        let owner = washOwner(), shown = landFade.to
+        let owners = map.meta.provinces.map(\.nation)
+        defer { washOwners = owners }
+        var captured = [(provinces: [Int], seeds: [SIMD2<Float>])](), byOwner = [Int: [Int]]()
+        for p in t.provinceCells.indices where !t.provinceCells[p].isEmpty {
+            let n = owner(p)
+            guard n >= 0 else { continue }
+            let moved = washOwners.indices.contains(p) && washOwners[p] != n
+            guard moved || washRegimes[n] != nil else { continue }
+            var changed = false
             search: for c in t.provinceCells[p] {
                 for v in t.vertexRange(Int(c)) {
                     let i = v * 4
                     guard i + 2 < next.count else { continue }
-                    if next[i] != shown[i] || next[i + 1] != shown[i + 1] || next[i + 2] != shown[i + 2] { changed.insert(p); break search }
+                    if next[i] != shown[i] || next[i + 1] != shown[i + 1] || next[i + 2] != shown[i + 2] { changed = true; break search }
                 }
             }
+            guard changed else { continue }
+            if let cap = washCaptures[p], cap.nation == n, !cap.armies.isEmpty { captured.append(([p], cap.armies)) }
+            else { byOwner[n, default: []].append(p) }
         }
-        guard !changed.isEmpty else { return [] }
-        let taken = book.landFlipped(changed, owner: owner, now: now)
+        var groups = captured
+        for n in byOwner.keys.sorted() { groups.append((byOwner[n]!, capitalPoint(n).map { [$0] } ?? [])) }
+        guard !groups.isEmpty else { return [] }
+        let taken = sweep.start(groups, recolour: true, now: now)
         if washOld.count != t.vertexCount * 3 { washOld = [Float](repeating: 0, count: t.vertexCount * 3) }
         for p in taken {
+            washCaptures[p] = nil
             for c in t.provinceCells[p] {
                 for v in t.vertexRange(Int(c)) { let col = landFade.shown(v, at: now); washOld[v * 3] = col.x; washOld[v * 3 + 1] = col.y; washOld[v * 3 + 2] = col.z }
             }
         }
-        washAnimating = true
         return Set(taken)
     }
 
-    /// 换视图（颜色含义变了）：易主扫满中的州收尾，墨色按新视图重取。
+    /// 换视图（颜色含义变了）：扫色收尾。
     func washViewChanged() {
-        washBook?.viewChanged()
-        washColourEpoch &+= 1
+        sweep?.clear()
+        sweepMeshCache = nil
     }
 
-    /// 各国在当前视图里的“国色”：联盟、家族等视图取其某一州的填色，否则取国色。
-    private func washStates() -> [Int: RGB] {
-        var out = [Int: RGB]()
-        if mode == .political, let fills {
-            for (p, province) in map.meta.provinces.enumerated() where out[province.nation] == nil && fills.indices.contains(p) { out[province.nation] = fills[p] }
-        }
-        return out
-    }
-
-    /// 某格若归墨主时的陆地底色：与底色同一算法（政治色按高度灰调和）；地形视图里取国色本身。
-    private func washBase(_ state: RGB, cell c: Int) -> SIMD3<Float> {
-        guard mode == .political, map.cellCount > c, c >= 0 else { return SIMD3(state.r, state.g, state.b) }
-        let s = MapPalette.stateColor(map: map, cell: c, state: state)
-        return SIMD3(s.r, s.g, s.b)
-    }
-    /// 底色到顶点：颜色浓度（与地形调和）与地形明暗，易主换底时已到达处的颜色不跳。
-    private func washFinish(_ base: SIMD3<Float>, vertex v: Int) -> SIMD3<Float> {
-        var rgb = base
-        if mode == .political, display.colorDensity < 1, let t = terrainBase, t.count > v * 4 + 2 {
-            let k = Float(max(0, display.colorDensity)), g = SIMD3(t[v * 4], t[v * 4 + 1], t[v * 4 + 2])
-            rgb = g + (rgb - g) * k
-        }
-        if shade.count > v { rgb = simd_min(rgb * shade[v], SIMD3(repeating: 1)) }
-        return rgb
-    }
-
-    /// 墨场顶点缓冲：每个有墨格子的顶点拷贝 14 个数（x, y, 起始浓度, 目标浓度, 开始时刻, 时长, 墨色 rgb, 旧色 rgb,
-    /// 易主时刻, 备用）与扇形三角形索引。一次分配，底色每格只算一次。
-    private func washMesh(_ book: WashBook) -> (vertices: MTLBuffer, indices: MTLBuffer, count: Int)? {
-        if let m = washMeshCache, m.revision == book.revision, m.colours == washColourEpoch { return m.count > 0 ? (m.vertices, m.indices, m.count) : nil }
-        let t = book.topology
-        var states = washStates()
-        func state(_ n: Int) -> RGB {
-            if let s = states[n] { return s }
-            let s = nationColors.indices.contains(n) ? nationColors[n] : RGB(0.6, 0.6, 0.6)
-            states[n] = s; return s
-        }
+    /// 扫色顶点缓冲：每个正在扫的格子的顶点拷贝 8 个数（x, y, 到达时刻, 模式, 旧色 rgb, 备用）与扇形索引。
+    private func sweepMesh(_ sweep: FlipSweep) -> (vertices: MTLBuffer, indices: MTLBuffer, count: Int)? {
+        if let m = sweepMeshCache, m.revision == sweep.revision { return m.count > 0 ? (m.vertices, m.indices, m.count) : nil }
+        let t = sweep.topology
         var vertexTotal = 0, triangleTotal = 0
-        for c in book.active { let n = t.vertexRange(Int(c)).count; if n >= 3 { vertexTotal += n; triangleTotal += n - 2 } }
-        guard triangleTotal > 0 else { washMeshCache = nil; return nil }
-        var data = [Float](repeating: 0, count: vertexTotal * 14), index = [UInt32](repeating: 0, count: triangleTotal * 3)
+        for c in sweep.active { let n = t.vertexRange(Int(c)).count; if n >= 3 { vertexTotal += n; triangleTotal += n - 2 } }
+        guard triangleTotal > 0 else { sweepMeshCache = nil; return nil }
+        var data = [Float](repeating: 0, count: vertexTotal * 8), index = [UInt32](repeating: 0, count: triangleTotal * 3)
         var vertexCount = 0, indexCount = 0
-        let oldColours = washOld
-        for c32 in book.active {
-            let c = Int(c32), range = t.vertexRange(c)
+        let old = washOld
+        for c in sweep.active {
+            let range = t.vertexRange(Int(c))
             guard range.count >= 3 else { continue }
-            // 没有自己墨主的顶点（墨没洇到）取本格最浓的墨主，免得前沿处颜色被插值拉偏。
-            var dominant: Int32 = -1, best: Float = -1
-            for v in range where book.stain[v] >= 0 && max(book.to[v], book.from[v]) > best { best = max(book.to[v], book.from[v]); dominant = book.stain[v] }
-            guard dominant >= 0 else { continue }
-            let dominantBase = washBase(state(Int(dominant)), cell: c)
             let base = UInt32(vertexCount)
             for v in range {
-                let n = book.stain[v] >= 0 ? book.stain[v] : dominant
-                let tint = washFinish(n == dominant ? dominantBase : washBase(state(Int(n)), cell: c), vertex: v)
-                let flipped = book.flipAt[v] != LandFade.idle && oldColours.count >= v * 3 + 3
-                let p = t.position(v), o = vertexCount * 14
-                data[o] = p.x; data[o + 1] = p.y
-                data[o + 2] = book.from[v]; data[o + 3] = book.to[v]; data[o + 4] = book.start[v]; data[o + 5] = book.length[v]
-                data[o + 6] = tint.x; data[o + 7] = tint.y; data[o + 8] = tint.z
-                if flipped { data[o + 9] = oldColours[v * 3]; data[o + 10] = oldColours[v * 3 + 1]; data[o + 11] = oldColours[v * 3 + 2] }
-                else { data[o + 9] = tint.x; data[o + 10] = tint.y; data[o + 11] = tint.z }
-                data[o + 12] = book.flipAt[v]
+                let p = t.position(v), o = vertexCount * 8
+                data[o] = p.x; data[o + 1] = p.y; data[o + 2] = sweep.arrive[v]; data[o + 3] = sweep.mode[v]
+                if old.count >= v * 3 + 3 { data[o + 4] = old[v * 3]; data[o + 5] = old[v * 3 + 1]; data[o + 6] = old[v * 3 + 2] }
                 vertexCount += 1
             }
             for j in 1..<(range.count - 1) {
@@ -151,28 +150,59 @@ extension MapRenderer {
                 indexCount += 3
             }
         }
-        guard indexCount > 0, let vb = device.makeBuffer(bytes: data, length: vertexCount * 14 * 4, options: .storageModeShared),
-              let ib = device.makeBuffer(bytes: index, length: indexCount * 4, options: .storageModeShared) else {
-            washMeshCache = nil; return nil
-        }
-        washMeshCache = (book.revision, washColourEpoch, vb, ib, indexCount)
+        guard indexCount > 0, let vb = device.makeBuffer(bytes: data, length: vertexCount * 8 * 4, options: .storageModeShared),
+              let ib = device.makeBuffer(bytes: index, length: indexCount * 4, options: .storageModeShared) else { sweepMeshCache = nil; return nil }
+        sweepMeshCache = (sweep.revision, vb, ib, indexCount)
         return (vb, ib, indexCount)
     }
 
-    /// 每帧：收尾检查后一次绘制（浓度、易主扫满在着色器里按本帧时刻插值）。
+    /// 每帧：扫色（盖旧色、湿边）在墨场之下，二者都在陆地之上、州界之下。
     func drawWashes(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms) {
-        guard let book = washBook else { washAnimating = false; return }
         let now = clock(frameTime)
-        book.tick(now)
-        washAnimating = book.animating(at: now)
-        guard !book.isEmpty, let mesh = washMesh(book) else { return }
-        // 远看只留干净的墨块，近看才有纸纹浓淡（连续过渡，缩放时不跳）。
-        let detail = Float(min(1, max(0, (camera.scale - 0.7) / 0.6)))
-        let w: [Float] = [now, WashBook.soft, WashBook.noise, 1 / (book.topology.scale * 0.9), WashBook.tint, detail, 1, 0]
-        encoder.setRenderPipelineState(washPipeline)
-        encoder.setVertexBuffer(mesh.vertices, offset: 0, index: 0)
-        encoder.setVertexBytes(&u, length: MemoryLayout<Uniforms>.stride, index: 2)
-        encoder.setFragmentBytes(w, length: w.count * MemoryLayout<Float>.stride, index: 0)
-        encoder.drawIndexedPrimitives(type: .triangle, indexCount: mesh.count, indexType: .uint32, indexBuffer: mesh.indices, indexBufferOffset: 0)
+        if let sweep {
+            sweep.tick(now)
+            if !sweep.isEmpty, let mesh = sweepMesh(sweep) {
+                let detail = Float(min(1, max(0, (camera.scale - 0.7) / 0.6)))
+                let scale = sweep.topology.scale
+                let w: [Float] = [now, FlipSweep.edge, FlipSweep.after, 0.5, 0.9, 1 / (scale * 0.9), detail, 0]
+                encoder.setRenderPipelineState(sweepPipeline)
+                encoder.setVertexBuffer(mesh.vertices, offset: 0, index: 0)
+                encoder.setVertexBytes(&u, length: MemoryLayout<Uniforms>.stride, index: 2)
+                encoder.setFragmentBytes(w, length: w.count * MemoryLayout<Float>.stride, index: 0)
+                encoder.drawIndexedPrimitives(type: .triangle, indexCount: mesh.count, indexType: .uint32, indexBuffer: mesh.indices, indexBufferOffset: 0)
+            }
+        }
+        drawInk(encoder, &u)
     }
+
+    /// 扫色着色器（拼在 MapRenderer.shaders 之后）。
+    static let sweepShaders = """
+    // —— 易主扫色 ——
+    struct SweepOut { float4 position [[position]]; float2 world; float arrive; float mode; float3 old; };
+    vertex SweepOut sweepVertex(uint id [[vertex_id]], const device float* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
+        const device float* p = v + id * 8;
+        SweepOut o; o.world = float2(p[0], p[1]); o.position = clip(o.world, u, float2(0.0));
+        o.arrive = p[2]; o.mode = p[3]; o.old = float3(p[4], p[5], p[6]);
+        return o;
+    }
+    struct SweepLook { float now; float edge; float after; float tint; float noise; float freq; float detail; float pad; };
+    fragment float4 sweepFragment(SweepOut in [[stage_in]], constant SweepLook& k [[buffer(0)]]) {
+        if (in.mode < -0.5) discard_fragment();
+        float2 q = in.world;
+        float rough = (fbm(q * k.freq) - 0.5) * 2.0 * k.noise;
+        float s = (k.now - in.arrive) / k.edge + rough;
+        float reached = smoothstep(-1.0, 1.0, s);
+        float a = 0.0;
+        if (in.mode > 0.5) {
+            // 未到达处盖旧色；到达处旧色余韵（与进攻色压旧色的晕染同浓度）随后淡去。
+            float fade = (1.0 - k.tint) * clamp(1.0 - (k.now - in.arrive) / k.after, 0.0, 1.0);
+            a = mix(1.0, fade, reached);
+        }
+        float rim = exp(-s * s * 0.8) * (in.mode > 0.5 ? 0.14 + 0.12 * k.detail : 0.2 + 0.12 * k.detail);
+        float total = a + rim * (1.0 - a);
+        if (total < 0.003) discard_fragment();
+        float3 rgb = (in.old * a * (1.0 - rim) + float3(0.16, 0.12, 0.09) * rim) / max(total, 1e-4);
+        return float4(rgb, total);
+    }
+    """
 }

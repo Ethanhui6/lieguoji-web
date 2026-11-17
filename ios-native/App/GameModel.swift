@@ -751,7 +751,9 @@ import LieguojiCore
                 let h = self.heraldQueue.removeFirst()
                 self.herald = h
                 switch h.kind { case .war, .uprising: GameFeel.shared.news(.warning); case .peace, .restoration: GameFeel.shared.news(.success); case .capture, .extinction, .capital: GameFeel.shared.newsTap() }
-                try? await Task.sleep(nanoseconds: h.kind == .capture ? 1_600_000_000 : 2_600_000_000)
+                // 场景时长：宣战 3.4 秒（展卷、旗出、长戈交叉、朱墨溅开、注脚），议和 3.2，攻克 2.0，其余 2.8。
+                let seconds: Double = h.kind == .war ? 3.4 : h.kind == .peace ? 3.2 : h.kind == .capture ? 2.0 : 2.8
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
                 self.herald = nil
                 try? await Task.sleep(nanoseconds: 350_000_000)
             }
@@ -812,22 +814,38 @@ import LieguojiCore
         // One-shot bursts: an army destroyed, a state founded, a war declared (shockwave at the defender).
         e.bursts = controller.effects.bursts
         if let previous {
+            // 阵亡：每支被消灭的军队（覆灭离场，或打光后回本土重整）在它的图标此刻画出的位置倒下——不是引擎上一步的坐标
+            // （图标正走在半路、或在城下排成小圆环时差得很远）。引擎按天结算，一步里相继覆灭的几支按兵力由弱到强错开，
+            // 图标停在原处到自己的那一刻、与动画同时消失；同处扎堆的几支合为一处，墨团随之变大，不满屏乱炸。
             let alive = Set(state.armies.map(\.id))
-            // Every army that leaves the map falls: its banner topples in its colour, smoke rises.
-            for a in previous.armies where !alive.contains(a.id) {
-                let c = rgb(a.nation)
-                e.bursts.append(.init(id: "d\(a.id)", x: Double(a.x), y: Double(a.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: a.unit))
-            }
-            // An army beaten to nothing re-forms at home under the same banner (the original's
-            // reorganisation): it falls where it fought and rises again at home, instead of its icon
-            // sliding across the map.
             let prior = Dictionary(previous.armies.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+            var placed = [String: SIMD2<Float>]()
+            for p in controller.renderer?()?.placedSprites() ?? [] where !p.sprite.key.isEmpty { placed[p.sprite.key] = SIMD2(p.x, p.y) }
+            var fallen = [(army: GameState.Army, id: String, at: SIMD2<Float>)]()
+            for a in previous.armies where !alive.contains(a.id) { fallen.append((a, "d\(a.id)", placed[a.id] ?? SIMD2(a.x, a.y))) }
             for a in state.armies {
-                guard let old = prior[a.id] else { continue }
-                guard a.reorganizing == true, old.reorganizing != true else { continue }
-                let c = rgb(a.nation)
-                e.bursts.append(.init(id: "d\(a.id)-\(state.day)", x: Double(old.x), y: Double(old.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: old.unit))
+                guard let old = prior[a.id], a.reorganizing == true, old.reorganizing != true else { continue }
+                fallen.append((old, "d\(a.id)-\(state.day)", placed[a.id] ?? SIMD2(old.x, old.y)))
             }
+            fallen.sort { $0.army.troops != $1.army.troops ? $0.army.troops < $1.army.troops : $0.id < $1.id }
+            var groups = [(key: SIMD2<Int32>, members: [Int])]()
+            for (i, f) in fallen.enumerated() {
+                let key = SIMD2(Int32((f.at.x / 24).rounded(.down)), Int32((f.at.y / 24).rounded(.down)))
+                if let k = groups.firstIndex(where: { $0.key == key }) { groups[k].members.append(i) } else { groups.append((key, [i])) }
+            }
+            let span = min(0.8, max(0, controller.tween * 0.8))
+            var delays = [String: Double]()
+            for (g, group) in groups.enumerated() {
+                let delay = groups.count > 1 ? span * Double(g) / Double(groups.count - 1) : 0
+                let lead = fallen[group.members[0]]
+                let at = group.members.reduce(SIMD2<Float>(0, 0)) { $0 + fallen[$1].at } / Float(group.members.count)
+                let c = rgb(lead.army.nation)
+                var burst = MapEffects.Burst(id: lead.id, x: Double(at.x), y: Double(at.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: lead.army.unit)
+                burst.delay = delay; burst.count = group.members.count
+                e.bursts.append(burst)
+                for m in group.members { delays[fallen[m].army.id] = delay }
+            }
+            controller.deathDelays = delays
             for n in previous.nations.count..<max(previous.nations.count, state.nations.count) where n < map.meta.nations.count {
                 let c = rgb(n), cap = map.meta.nations[n].capital
                 if cap >= 0, cap < map.meta.cities.count { e.bursts.append(.init(id: "n\(n)-\(state.day)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: .founded, r: c.0, g: c.1, b: c.2)) }
@@ -841,12 +859,14 @@ import LieguojiCore
             }
             // The chronicle's happenings play at the capital of the state they name.
             let seenText = Set(previous.events.map(\.text))
+            var ripples = [Int]()
             let kinds: [(String, MapEffects.Burst.Kind)] = [("农民起义", .shock), ("军阀割据", .coup), ("藩镇独立", .coup), ("神国起义", .regime), ("复国运动", .founded), ("复辟", .regime), ("改制", .regime), ("禅位", .regime), ("改建", .regime), ("推行", .talent), ("诗文", .talent), ("书院", .talent), ("文艺复兴", .talent), ("寺观", .talent), ("五谷丰登", .harvest), ("人丁兴旺", .harvest), ("婴戏盈门", .harvest), ("天灾", .disaster), ("大旱", .disaster), ("水患", .disaster), ("大雪", .disaster), ("蝗灾", .disaster), ("地震", .disaster), ("洪水", .disaster), ("大火", .disaster), ("名臣辈出", .talent), ("开科", .talent), ("名医", .talent), ("学者", .talent), ("瘟疫", .plague), ("商路大开", .trade), ("互市", .trade), ("宝藏", .trade), ("矿藏", .trade), ("万国来朝", .trade), ("篡位", .coup), ("政变", .coup), ("夺权", .coup), ("革命", .coup), ("倒台", .regime), ("改称", .regime), ("改行", .regime), ("改奉", .regime), ("破产", .regime), ("总罢工", .shock), ("街头冲突", .shock), ("学潮", .shock)]
             for ev in state.events where !seenText.contains(ev.text) {
                 guard let kind = kinds.first(where: { ev.text.contains($0.0) })?.1 else { continue }
                 // Where it happened, when the chronicle knows the place.
                 if let p = ev.province, let city = map.meta.cities.first(where: { $0.province == p }) {
                     e.bursts.append(.init(id: "e\(ev.day)-\(ev.text.hashValue)", x: Double(city.x), y: Double(city.y), kind: kind, r: 0.86, g: 0.2, b: 0.12))
+                    if kind == .regime || kind == .coup, state.owners.indices.contains(p), state.owners[p] >= 0, !ripples.contains(state.owners[p]) { ripples.append(state.owners[p]) }
                     continue
                 }
                 let named = map.meta.nations.indices.filter { !map.meta.nations[$0].name.isEmpty && ev.text.hasPrefix(map.meta.nations[$0].name) }
@@ -855,7 +875,10 @@ import LieguojiCore
                 guard map.meta.cities.indices.contains(cap) else { continue }
                 let c = rgb(n)
                 e.bursts.append(.init(id: "e\(ev.day)-\(ev.text.hashValue)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: kind, r: c.0, g: c.1, b: c.2))
+                // 改朝换代、政变、篡位：从首都扫过全国的一道墨圈（颜色因此变了的州按换色扫）。
+                if kind == .regime || kind == .coup, !ripples.contains(n) { ripples.append(n) }
             }
+            if !ripples.isEmpty, !controller.washDemo { controller.washes.ripples = ripples.sorted() }
             e.bursts = Array(e.bursts.suffix(30))
         }
         // Declarations, claimed provinces and peace (WarEffects47): one-shot, keyed by war.

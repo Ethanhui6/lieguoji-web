@@ -2,7 +2,7 @@ import XCTest
 import Foundation
 @testable import LieguojiCore
 
-/// 战争晕染（墨场）：行军留痕、相邻战区同场、围城与攻占扫满、褪墨回收，以及逐顶点易主渐变。
+/// 战争晕染：GPU 墨场的落墨公式（CPU 复算验证连续、与帧率无关）、易主扫色、推演状态 → 输入，以及逐顶点易主渐变。
 final class ConquestWashTests: XCTestCase {
     /// 方格地图：w × h 个单位方格，每格四个顶点（各格自己的拷贝），横竖相邻的格子共享一条边。
     /// `province(x, y)` 给出每格的州（−1 为海）。
@@ -85,23 +85,107 @@ final class ConquestWashTests: XCTestCase {
         XCTAssertEqual(fade.shown(0, at: 2).x, 1)
     }
 
-    // MARK: 墨场
+    // MARK: GPU 墨场（CPU 复算：与着色器同一公式）
 
-    /// 一行：州 2（进攻方 9 的领土）x 0…3，州 0 x 4…11，州 1 x 12…19（守方 5）；高 6 格。
-    static func wide() -> WashTopology { grid(20, 6) { x, _ in x < 4 ? 2 : x < 12 ? 0 : 1 } }
-    static let wideOwners = [0: 5, 1: 5, 2: 9]
-    static func wideOwner(_ p: Int) -> Int { wideOwners[p] ?? -1 }
-
-    /// 动画走完之后（远处的时刻）某些顶点的浓度。
-    static func final(_ book: WashBook, _ v: Int) -> Float { book.shown(v, at: 1e6) }
-    /// 某州里浓度过半（着色器里大致见色）的顶点占比。
-    static func covered(_ book: WashBook, _ p: Int, at t: Float = 1e6) -> Float {
-        let topo = book.topology
-        var all = 0, hit = 0
-        for c in topo.provinceCells[p] { for v in topo.vertexRange(Int(c)) { all += 1; if book.shown(v, at: t) >= 0.5 { hit += 1 } } }
-        return all == 0 ? 0 : Float(hit) / Float(all)
+    /// CPU 上的墨场：一行采样点（沿行军线 y = 0），按着色器的笔触（胶囊、横向衰减 falloff、预乘“叠加”混合）累计浓度。
+    struct InkLine {
+        var cover: [Float]
+        let xs: [Float]
+        init(from: Float, to: Float, step: Float) { xs = Array(stride(from: from, through: to, by: step)); cover = Array(repeating: 0, count: xs.count) }
+        /// 一笔：a → b（两端齐平；a = b 为圆点），半径 r，不透明度 alpha；采样点在 (x, offset)。与着色器同一算法（InkPlan.stroke）。
+        mutating func stamp(_ a: SIMD2<Float>, _ b: SIMD2<Float>, r: Float, alpha: Float, offset: Float = 0) {
+            for i in xs.indices {
+                let s = InkPlan.stroke(SIMD2(xs[i], offset), a, b, radius: r, alpha: alpha)
+                cover[i] = s + cover[i] * (1 - s)
+            }
+        }
     }
-    /// 离某点最近的顶点。
+
+    /// 军队以 speed（世界单位/秒）从 x = 0 走到 x = length，按 fps 逐帧落墨（与 encodeInk 相同：上一帧落墨处 → 此刻位置）。
+    static func walk(fps: Float, speed: Float, length: Float = 200, radius: Float = 12, offset: Float = 0) -> InkLine {
+        var line = InkLine(from: 20, to: length - 20, step: 1)
+        let dt = 1 / fps
+        var x: Float = 0, last = SIMD2<Float>(0, 0)
+        while x < length {
+            x = min(length, x + speed * dt)
+            let p = SIMD2(x, 0)
+            line.stamp(last, p, r: radius, alpha: InkPlan.trailAlpha(len: (p - last).x, radius: radius), offset: offset)
+            last = p
+        }
+        return line
+    }
+
+    func testTrailIsContinuousAtAnyFrameRateAndSpeed() {
+        // 手机上 30/60/120 帧、慢走与急行军（一帧走过半个墨迹宽到三个墨迹宽）：路线中心处处见色，没有断档。
+        for fps: Float in [30, 60, 120] {
+            for speed: Float in [20, 120, 600, 2000] {
+                let line = Self.walk(fps: fps, speed: speed)
+                let lo = line.cover.min()!, hi = line.cover.max()!
+                XCTAssertGreaterThan(lo, InkPlan.visible + 0.25, "\(fps) 帧、速度 \(speed)：路线上最淡处 \(lo) 不见色（断档）")
+                XCTAssertLessThan(hi - lo, 0.03, "\(fps) 帧、速度 \(speed)：浓淡起伏 \(hi - lo) 过大（一段一段）")
+            }
+        }
+        // 与帧率无关：同样的路，30 帧与 120 帧的浓度差很小。
+        let a = Self.walk(fps: 30, speed: 120), b = Self.walk(fps: 120, speed: 120)
+        for i in a.cover.indices { XCTAssertEqual(a.cover[i], b.cover[i], accuracy: 0.06) }
+        // 横向有宽度、有边：离路线一个半半径处已看不见。
+        let side = Self.walk(fps: 60, speed: 120, offset: 18)
+        XCTAssertLessThan(side.cover.max()!, InkPlan.visible, "墨迹是一条有宽度的路，不是一整片")
+        let near = Self.walk(fps: 60, speed: 120, offset: 6)
+        XCTAssertGreaterThan(near.cover.min()!, InkPlan.visible)
+    }
+
+    func testStandingStillOnlySpreadsWithSimulatedDays() {
+        // 原地不动：没有行军墨（暂停时不长）；推演天数在走才洇开，越久越开。
+        XCTAssertEqual(InkPlan.trailAlpha(len: 0, radius: 12), 0)
+        XCTAssertEqual(InkPlan.dwellAlpha(days: 0), 0)
+        var line = InkLine(from: -60, to: 60, step: 1)
+        var clock = InkPlan.Clock()
+        var reach = [Float]()
+        for _ in 0..<20 {
+            clock.add(days: 1, over: 0.5)                 // 每步一天、动画 0.5 秒
+            for _ in 0..<30 {                             // 60 帧下这一步的 30 帧
+                let days = clock.take(1 / 60)
+                line.stamp(.zero, .zero, r: InkPlan.dwellRadius(scale: 30, troops: 4000), alpha: InkPlan.dwellAlpha(days: days))
+            }
+            reach.append(Float(line.cover.filter { $0 > InkPlan.visible }.count))
+        }
+        XCTAssertEqual(clock.left, 0, accuracy: 1e-4, "一步的天数在这一步的动画里用完")
+        for i in 1..<reach.count { XCTAssertGreaterThanOrEqual(reach[i], reach[i - 1]) }
+        XCTAssertGreaterThan(reach.last!, reach[2] + 10, "驻留越久洇得越开")
+        // 时钟：暂停（不再加天数）后不再落墨。
+        XCTAssertEqual(clock.take(1), 0)
+    }
+
+    func testDayClockSpendsEachStepOverItsAnimation() {
+        var clock = InkPlan.Clock()
+        clock.add(days: 5, over: 0.5)
+        var spent: Float = 0
+        for _ in 0..<15 { spent += clock.take(1 / 60) }    // 0.25 秒
+        XCTAssertEqual(spent, 2.5, accuracy: 0.05, "匀速：半个动画时长用掉一半天数")
+        clock.add(days: 5, over: 0.5)                       // 下一步提前到来：剩下的与新来的一起在新的时长里用完
+        for _ in 0..<40 { spent += clock.take(1 / 60) }
+        XCTAssertEqual(spent, 10, accuracy: 1e-3)
+        XCTAssertEqual(InkPlan.decay(days: 0), 1)
+        XCTAssertLessThan(InkPlan.decay(days: 30), 0.45, "一个月后墨褪去一大半")
+    }
+
+    func testSiegeFillsFromTheArmyToTheWholeProvince() {
+        let far: Float = 100, scale: Float = 30
+        var last: Float = -1
+        for q in stride(from: Float(0), through: 1, by: 0.1) {
+            let r = InkPlan.siegeRadius(progress: q, far: far, scale: scale)
+            XCTAssertGreaterThanOrEqual(r, last); last = r
+        }
+        XCTAssertGreaterThan(InkPlan.siegeCover(distance: far, radius: InkPlan.siegeRadius(progress: 1, far: far, scale: scale), scale: scale), InkPlan.visible + 0.3, "进度满时最远处也铺满")
+        XCTAssertLessThan(InkPlan.siegeCover(distance: far, radius: InkPlan.siegeRadius(progress: 0.3, far: far, scale: scale), scale: scale), InkPlan.visible, "进度低时远处还没到")
+        XCTAssertGreaterThan(InkPlan.siegeCover(distance: 0, radius: InkPlan.siegeRadius(progress: 0.05, far: far, scale: scale), scale: scale), InkPlan.visible, "军队脚下先见色")
+    }
+
+    // MARK: 易主扫色
+
+    /// 一行：州 2（新主人 9 的领土）x 0…3，州 0 x 4…11，州 1 x 12…19；高 6 格。
+    static func wide() -> WashTopology { grid(20, 6) { x, _ in x < 4 ? 2 : x < 12 ? 0 : 1 } }
     static func vertex(_ t: WashTopology, near p: SIMD2<Float>, in province: Int? = nil) -> Int {
         var best = (0, Float.infinity)
         for v in 0..<t.vertexCount where province == nil || Int(t.vertexProvince[v]) == province! {
@@ -110,149 +194,41 @@ final class ConquestWashTests: XCTestCase {
         }
         return best.0
     }
-    static func march(_ from: SIMD2<Float>, _ to: SIMD2<Float>, day: Int, province: Int = 0, troops: Float = 6000) -> WashInput {
-        WashInput(province: province, attacker: 9, kind: .march, day: day, armies: [from, to], troops: troops)
+
+    func testSweepRunsFromTheSeedAcrossTheGroupAsOneFront() {
+        let t = Self.wide(), sweep = FlipSweep(topology: t)
+        // 反叛：州 0、1 一起归新国，从首都（州 1 东端）扫起；同组共用一条前沿，从离种子最近处起。
+        let taken = sweep.start([([0, 1], [SIMD2(19.5, 3)])], recolour: true, now: 10)
+        XCTAssertEqual(taken, [0, 1])
+        let east = Self.vertex(t, near: SIMD2(19, 3), in: 1), border1 = Self.vertex(t, near: SIMD2(12, 3), in: 1), border0 = Self.vertex(t, near: SIMD2(12, 3), in: 0), west = Self.vertex(t, near: SIMD2(4, 3), in: 0)
+        XCTAssertLessThan(sweep.arrive[east], sweep.arrive[border1])
+        XCTAssertEqual(sweep.arrive[border1], sweep.arrive[border0], accuracy: 1e-5, "州界两侧同一位置同时到达（跨州连续）")
+        XCTAssertLessThan(sweep.arrive[border0], sweep.arrive[west])
+        XCTAssertEqual(sweep.arrive[east], 10, accuracy: 0.05, "从离种子最近处立即起")
+        XCTAssertLessThanOrEqual(sweep.arrive[west] - 10, FlipSweep.maxSeconds + 1e-4, "一组总时长有上限")
+        XCTAssertLessThan(sweep.reached(west, at: 10), 0.01)
+        XCTAssertGreaterThan(sweep.reached(west, at: sweep.arrive[west] + FlipSweep.edge), 0.99)
+        // 墨圈不打断正在换色的州；扫完收尾回收。
+        XCTAssertEqual(sweep.start([([0], [])], recolour: false, now: 10.5), [])
+        XCTAssertTrue(sweep.animating(at: 11))
+        sweep.tick(30)
+        XCTAssertTrue(sweep.isEmpty)
+        XCTAssertTrue(sweep.active.isEmpty)
+        XCTAssertEqual(sweep.mode[west], -1)
     }
 
-    func testMarchLeavesATrailAlongItsPathOnly() {
-        let t = Self.wide(), book = WashBook(topology: t)
-        // 从本国（x≈2）沿 y = 3 走到敌州深处（x≈18）。
-        book.update(WashFrame(day: 1, inputs: [Self.march(SIMD2(2, 3), SIMD2(18, 3), day: 1)], enemies: [9: [5]]), owner: Self.wideOwner, now: 0)
-        for x in stride(from: Float(5), through: 17, by: 2) {
-            XCTAssertGreaterThan(Self.final(book, Self.vertex(t, near: SIMD2(x, 3))), 0.5, "路线上 x = \(x) 应留墨")
-        }
-        XCTAssertEqual(Self.final(book, Self.vertex(t, near: SIMD2(8, 0))), 0, "离路线远的地方不着墨（不是整州一片）")
-        XCTAssertEqual(Self.final(book, Self.vertex(t, near: SIMD2(2, 3), in: 2)), 0, "本国领土不着墨")
-        XCTAssertLessThan(Self.covered(book, 0), 0.8, "走过一趟只是一道墨痕")
-        // 沿路线按经过先后显现：远端的顶点开始得晚。
-        let near = Self.vertex(t, near: SIMD2(5, 3)), far = Self.vertex(t, near: SIMD2(17, 3))
-        XCTAssertLessThan(book.start[near], book.start[far])
-        XCTAssertLessThan(book.shown(far, at: 0.05), book.shown(near, at: book.start[near] + book.length[near]))
-    }
-
-    func testTrailOnlyInksEnemyLand() {
-        // 州 0 是敌国 5，州 1 是友邦 7（借道）：穿过友邦的路段不着墨。
-        let t = Self.wide(), book = WashBook(topology: t)
-        book.update(WashFrame(day: 1, inputs: [Self.march(SIMD2(6, 3), SIMD2(18, 3), day: 1)], enemies: [9: [5]]), owner: { [0: 5, 1: 7, 2: 9][$0] ?? -1 }, now: 0)
-        XCTAssertGreaterThan(Self.final(book, Self.vertex(t, near: SIMD2(8, 3))), 0.5)
-        XCTAssertEqual(Self.final(book, Self.vertex(t, near: SIMD2(16, 3))), 0, "友邦领土不着墨")
-    }
-
-    func testNeighbouringFrontsAreOneFieldWithoutEmptyProvinces() {
-        // 复现 1.18.0 的“空”：两相邻州都在打，州 1 的军队站在州中间、进度还低。旧做法里州 1 的前沿要从区域边界
-        // （x = 4）推过来，进度 10% 时阈值还没到州 1，军队脚下是空的；交战的州又整块让位给战场地面。
-        let t = Self.wide(), book = WashBook(topology: t)
-        let army = SIMD2<Float>(16, 3)
-        var inputs = [Self.march(SIMD2(2, 3), army, day: 1, province: 1),
-                      WashInput(province: 0, attacker: 9, kind: .siege, progress: 0.4, day: 1, armies: [SIMD2(7, 3)]),
-                      WashInput(province: 1, attacker: 9, kind: .siege, progress: 0.1, day: 1, armies: [army])]
-        book.update(WashFrame(day: 1, inputs: inputs, enemies: [9: [5]]), owner: Self.wideOwner, now: 0)
-        XCTAssertGreaterThan(Self.final(book, Self.vertex(t, near: army)), 0.5, "军队脚下必须有墨")
-        XCTAssertGreaterThan(Self.covered(book, 0), 0.1)
-        XCTAssertGreaterThan(Self.covered(book, 1), 0.05, "相邻同时打仗的州都不空")
-        // 跨州界连续：州界两侧同一位置的顶点（各格自己的拷贝）浓度相同。
-        let left = Self.vertex(t, near: SIMD2(12, 3), in: 0), right = Self.vertex(t, near: SIMD2(12, 3), in: 1)
-        XCTAssertEqual(t.position(left), t.position(right))
-        XCTAssertEqual(Self.final(book, left), Self.final(book, right), accuracy: 1e-5)
-        // 输入顺序不影响结果。
-        inputs.reverse()
-        let other = WashBook(topology: t)
-        other.update(WashFrame(day: 1, inputs: inputs, enemies: [9: [5]]), owner: Self.wideOwner, now: 0)
-        XCTAssertEqual(other.to, book.to)
-        XCTAssertEqual(other.stain, book.stain)
-    }
-
-    func testSiegeGrowsFromTheArmyUntilTheProvinceIsFull() {
-        let t = Self.wide(), book = WashBook(topology: t)
-        let army = SIMD2<Float>(10, 3)
-        var last: Float = 0
-        for (day, q) in [(1, Float(0.2)), (2, 0.5), (3, 0.8), (4, 1.0)] {
-            book.update(WashFrame(day: day, inputs: [WashInput(province: 0, attacker: 9, kind: .siege, progress: q, day: day, armies: [army])]), owner: Self.wideOwner, now: Float(day))
-            let c = Self.covered(book, 0)
-            XCTAssertGreaterThanOrEqual(c, last, "覆盖随进度只增不减")
-            last = c
-            XCTAssertGreaterThan(Self.final(book, Self.vertex(t, near: army)), 0.5)
-            if q < 0.6 { XCTAssertLessThan(c, 0.85, "进度 \(q) 不该铺满") }
-        }
-        XCTAssertEqual(last, 1, "进度满时全州着墨")
-        // 先铺军队这一侧（x = 10），远端（x = 4）最后。
-        let book2 = WashBook(topology: t)
-        book2.update(WashFrame(day: 1, inputs: [WashInput(province: 0, attacker: 9, kind: .siege, progress: 0.4, day: 1, armies: [army])]), owner: Self.wideOwner, now: 0)
-        XCTAssertGreaterThan(Self.final(book2, Self.vertex(t, near: SIMD2(11, 3), in: 0)), Self.final(book2, Self.vertex(t, near: SIMD2(4, 3), in: 0)))
-    }
-
-    func testDwellingSpreadsAndLeavingFades() {
-        let t = Self.wide(), book = WashBook(topology: t)
-        let at = SIMD2<Float>(8, 3)
-        var covers = [Float]()
-        for day in 1...12 {
-            book.update(WashFrame(day: day, inputs: [Self.march(at, at, day: day, troops: 3000)]), owner: Self.wideOwner, now: Float(day))
-            covers.append(Self.covered(book, 0))
-        }
-        XCTAssertGreaterThan(covers.last!, covers.first! + 0.05, "驻留越久洇得越开")
-        for i in 1..<covers.count { XCTAssertGreaterThanOrEqual(covers[i], covers[i - 1]) }
-        // 军队离开：墨按天褪去，最后格子移出。
-        var day = 12, now: Float = 12
-        while day < 200 && !book.isEmpty {
-            day += 5; now += 1
-            book.update(WashFrame(day: day, inputs: []), owner: Self.wideOwner, now: now)
-            book.tick(now + 5)
-        }
-        XCTAssertTrue(book.isEmpty, "军队走后墨会褪尽并回收")
-    }
-
-    func testHoldingDefenderPushesTheInkBack() {
-        let t = Self.wide(), book = WashBook(topology: t)
-        let at = SIMD2<Float>(8, 3)
-        book.update(WashFrame(day: 1, inputs: [Self.march(SIMD2(5, 3), at, day: 1)], enemies: [9: [5]]), owner: Self.wideOwner, now: 0)
-        let before = Self.final(book, Self.vertex(t, near: at))
-        book.update(WashFrame(day: 4, inputs: [WashInput(province: 0, attacker: 5, kind: .hold, day: 4, armies: [at], troops: 5000)]), owner: Self.wideOwner, now: 1)
-        XCTAssertLessThan(Self.final(book, Self.vertex(t, near: at)), before - 0.3, "守军把周围的敌墨推回")
-    }
-
-    func testRetargetStartsFromTheShownValue() {
-        let t = Self.wide(), book = WashBook(topology: t)
-        let army = SIMD2<Float>(10, 3)
-        book.update(WashFrame(day: 1, inputs: [WashInput(province: 0, attacker: 9, kind: .siege, progress: 0.3, day: 1, armies: [army])]), owner: Self.wideOwner, now: 0)
-        let v = Self.vertex(t, near: SIMD2(7, 1), in: 0)
-        let mid = book.start[v] + book.length[v] * 0.5
-        let shown = book.shown(v, at: mid)
-        book.update(WashFrame(day: 2, inputs: [WashInput(province: 0, attacker: 9, kind: .siege, progress: 0.9, day: 2, armies: [army])]), owner: Self.wideOwner, now: mid)
-        XCTAssertEqual(book.shown(v, at: mid), shown, accuracy: 1e-5, "新目标从当前显示值接着走，不跳")
-    }
-
-    func testCaptureSweepsFromTheInkedSideThenRetires() {
-        let t = Self.wide(), book = WashBook(topology: t)
-        let army = SIMD2<Float>(6, 3)
-        book.update(WashFrame(day: 1, inputs: [WashInput(province: 0, attacker: 9, kind: .siege, progress: 0.35, day: 1, armies: [army])]), owner: Self.wideOwner, now: 0)
-        // 攻占：这一步归属已变（州 0 归 9），墨不能按“已成本国领土”清掉，等底色换过来再扫满。
-        let owned: (Int) -> Int = { [0: 9, 1: 5, 2: 9][$0] ?? -1 }
-        book.update(WashFrame(day: 2, inputs: [WashInput(province: 0, attacker: 9, kind: .capture, progress: 1, day: 2, armies: [army])]), owner: owned, now: 1)
-        XCTAssertGreaterThan(Self.final(book, Self.vertex(t, near: army)), 0.5)
-        XCTAssertEqual(book.flipCandidates(owner: owned), [0])
-        XCTAssertEqual(book.landFlipped([0], owner: owned, now: 2), [0])
-        let near = Self.vertex(t, near: SIMD2(7, 3), in: 0), far = Self.vertex(t, near: SIMD2(11, 5), in: 0)
-        XCTAssertLessThan(book.start[near], book.start[far], "从已染处向外扫")
-        XCTAssertEqual(book.flipAt[far], 2)
-        XCTAssertEqual(Self.covered(book, 0), 1)
-        // 扫满之后收尾：顶点清空，格子回收（底色已是新主人）。
-        let end = book.flipping[0]!
-        book.tick(end + 0.01)
-        book.tick(end + 10)
-        XCTAssertTrue(book.isEmpty)
-        XCTAssertFalse(book.animating(at: end + 10))
-        // 和约割地（没有军队、没有墨）不接手。
-        XCTAssertEqual(book.landFlipped([1], owner: { _ in 9 }, now: 30), [])
-    }
-
-    func testViewChangeFinishesSweeps() {
-        let t = Self.wide(), book = WashBook(topology: t)
-        let owned: (Int) -> Int = { [0: 9, 1: 5, 2: 9][$0] ?? -1 }
-        book.update(WashFrame(day: 1, inputs: [WashInput(province: 0, attacker: 9, kind: .capture, progress: 1, day: 1, armies: [SIMD2(6, 3)])]), owner: owned, now: 0)
-        XCTAssertEqual(book.landFlipped([0], owner: owned, now: 0), [0])
-        book.viewChanged()
-        book.tick(100)
-        XCTAssertTrue(book.isEmpty)
+    func testSeparateCapturesSweepFromTheirOwnArmies() {
+        let t = Self.wide(), sweep = FlipSweep(topology: t)
+        sweep.start([([0], [SIMD2(5, 3)]), ([1], [SIMD2(18, 3)])], recolour: true, now: 0)
+        let a = Self.vertex(t, near: SIMD2(5, 3), in: 0), b = Self.vertex(t, near: SIMD2(18, 3), in: 1)
+        XCTAssertEqual(sweep.arrive[a], 0, accuracy: 0.05)
+        XCTAssertEqual(sweep.arrive[b], 0, accuracy: 0.05, "各自从自己的军队起扫，不等另一处")
+        XCTAssertLessThan(sweep.arrive[a], sweep.arrive[Self.vertex(t, near: SIMD2(11, 0), in: 0)])
+        // 再次易手：重新从新种子扫起。
+        sweep.start([([0], [SIMD2(11, 5)])], recolour: true, now: 1)
+        XCTAssertGreaterThan(sweep.arrive[a], sweep.arrive[Self.vertex(t, near: SIMD2(11, 5), in: 0)])
+        sweep.clear()
+        XCTAssertTrue(sweep.isEmpty)
     }
 
     // MARK: 推演状态 → 输入
@@ -296,36 +272,25 @@ final class ConquestWashTests: XCTestCase {
 
     // MARK: 真实地图
 
-    func testRealMapCost() throws {
+    func testRealMapSweepCost() throws {
         let map = WorldMapTests.map
         let clock = Date()
         let t = WashTopology(map: map)
         let built = Date().timeIntervalSince(clock)
         XCTAssertEqual(t.cellCount, map.cellCount)
         XCTAssertGreaterThan(t.scale, 1)
-        // 后期大战：300 支军队在敌境行军（每支每步走半个州），30 天里每天一步。
-        let owners = map.meta.provinces.map(\.nation)
-        func owner(_ p: Int) -> Int { owners.indices.contains(p) ? (owners[p] == 0 ? 1 : owners[p]) : -1 }
-        let book = WashBook(topology: t)
+        // 后期大反叛：三分之二的州同时归新国、从首都扫过；其余各州各自被攻占。
         let provinces = map.meta.provinces.indices.filter { !t.provinceCells[$0].isEmpty }
-        var armies = (0..<300).map { k -> SIMD2<Float> in let p = provinces[(k * 7919) % provinces.count]; return t.centroid(p) }
-        var worst: Double = 0, total: Double = 0
-        for day in 1...30 {
-            var inputs = [WashInput]()
-            for k in armies.indices {
-                let from = armies[k]
-                let angle = Float(k) * 0.7 + Float(day) * 0.1
-                armies[k] = from + SIMD2(cos(angle), sin(angle)) * t.scale * 0.5
-                inputs.append(WashInput(province: Int(t.province[Int(t.cells(near: armies[k], armies[k], radius: t.scale).first ?? 0)]), attacker: 0, kind: .march, day: day, armies: [from, armies[k]], troops: 5000))
-            }
-            let start = Date()
-            book.update(WashFrame(day: day, inputs: inputs), owner: owner, now: Float(day) * 0.5)
-            book.tick(Float(day) * 0.5)
-            let spent = Date().timeIntervalSince(start)
-            worst = max(worst, spent); total += spent
-        }
-        print(String(format: "墨场测量：拓扑 %.1f ms（%d 格，%d 顶点），300 军每步平均 %.2f ms、最慢 %.2f ms，有墨格子 %d", built * 1000, t.cellCount, t.vertexCount, total / 30 * 1000, worst * 1000, book.active.count))
-        XCTAssertFalse(book.isEmpty)
-        XCTAssertLessThan(worst, 0.08, "一步落墨应远低于一帧预算之外的后台节拍")
+        let sweep = FlipSweep(topology: t)
+        let start = Date()
+        let rebels = Array(provinces.prefix(provinces.count * 2 / 3))
+        var groups: [(provinces: [Int], seeds: [SIMD2<Float>])] = [(rebels, [t.centroid(rebels[0])])]
+        for p in provinces.dropFirst(rebels.count) { groups.append(([p], [t.centroid(p)])) }
+        let taken = sweep.start(groups, recolour: true, now: 0)
+        let spent = Date().timeIntervalSince(start)
+        XCTAssertEqual(taken.count, provinces.count)
+        print(String(format: "扫色测量：拓扑 %.1f ms（%d 格，%d 顶点），全图各州起扫 %.2f ms，扫色格子 %d", built * 1000, t.cellCount, t.vertexCount, spent * 1000, sweep.active.count))
+        XCTAssertLessThan(spent, 0.03)
+        XCTAssertLessThanOrEqual(sweep.ends.values.max()!, FlipSweep.maxSeconds + FlipSweep.edge + FlipSweep.after + 0.1)
     }
 }

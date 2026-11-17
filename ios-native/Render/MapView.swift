@@ -61,6 +61,8 @@ import LieguojiCore
     var troopTexts: [String: String] = [:]
     /// 战争晕染（墨场）：本步的行军、守军、围城与最近的攻占（GameModel.refreshWashes），与世界代次（读档、换世界时变）。
     var washes = WashFrame.empty
+    /// 本步阵亡军队（军队标识 → 阵亡时刻，秒，自本步动画开始）：图标停到那一刻，阵亡动画同时开始。
+    var deathDelays: [String: Double] = [:]
     var washEpoch = 0
     /// CI 巡览演示占领晕染时为真：推演不覆盖演示输入。
     var washDemo = false
@@ -752,6 +754,7 @@ struct MapView: UIViewRepresentable {
                 // Playing: glide linearly over one step so marching does not pulse; a single move eases.
                 renderer?.tweenDuration = controller.tween
                 renderer?.tweenEase = controller.tween <= 0.3
+                renderer?.deathDelays = controller.deathDelays
                 renderer?.setArmies(armies, route: controller.route, snap: controller.snapArmies)
                 controller.snapArmies = false
                 if controller.washes != shownWashes || controller.washEpoch != shownWashEpoch {

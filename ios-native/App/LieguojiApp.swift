@@ -178,14 +178,65 @@ extension View {
     }
 }
 
+/// 顶栏的圆钮：毛笔图标在一枚纸面圆章里，内圈一道细墨线；选中时笔色与内圈转朱。
+/// 图标换形（开/合）时新笔画由左向右写出；按下时一圈淡墨洇开（InkPressStyle）。
 struct CircleIcon: View {
     var symbol: String = ""
     var glyph: InkGlyph? = nil
+    var active = false
     var body: some View {
-        Group {
-            if let glyph { InkIcon(glyph: glyph, size: 20) } else { Image(systemName: symbol).font(.system(size: 16, weight: .medium)) }
+        ZStack {
+            if let glyph {
+                InkIcon(glyph: glyph, size: 21, weight: active ? 1.95 : 1.7).id(glyph).transition(.brushWrite)
+            } else {
+                Image(systemName: symbol).font(.system(size: 16, weight: .medium))
+            }
         }
-        .foregroundStyle(Theme.ink).frame(width: 42, height: 42).glass(Circle())
+        .foregroundStyle(active ? Theme.seal : Theme.ink)
+        .frame(width: 42, height: 42)
+        .glass(Circle())
+        .overlay(Circle().strokeBorder(active ? Theme.seal.opacity(0.6) : Theme.ink.opacity(0.12), lineWidth: active ? 1.1 : 0.6).padding(3.5))
+        .animation(Motion.panel, value: glyph)
+        .animation(Motion.tap, value: active)
+    }
+}
+
+/// 顶栏圆钮的按下反馈：微微下沉，一圈淡墨从中心洇开；松手后墨圈淡去。
+struct InkPressStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.93 : 1)
+            .overlay {
+                Circle().fill(Theme.ink.opacity(configuration.isPressed ? 0.1 : 0))
+                    .scaleEffect(configuration.isPressed ? 1 : 0.55)
+                    .allowsHitTesting(false)
+            }
+            .animation(reduceMotion ? nil : (configuration.isPressed ? .easeOut(duration: 0.18) : .easeOut(duration: 0.45)), value: configuration.isPressed)
+    }
+}
+
+/// 顶栏的战事：交叉的戈与战争数。新开一场战争时戈一跳、朱圈一荡。
+struct WarCount: View {
+    let count: Int
+    @State private var bump = false
+    @State private var ring = false
+    var body: some View {
+        HStack(spacing: 3) {
+            InkIcon(glyph: .war, size: 14, weight: 2.1)
+                .scaleEffect(bump ? 1.35 : 1).rotationEffect(.degrees(bump ? -10 : 0))
+                .background { Circle().stroke(Theme.seal.opacity(ring ? 0 : 0.6), lineWidth: 1.2).scaleEffect(ring ? 2.2 : 0.6) }
+            Text("\(count)场战争").font(Theme.kai(13)).lineLimit(1).fixedSize()
+                .contentTransition(.numericText()).animation(Motion.tap, value: count)
+        }
+        .foregroundStyle(Theme.seal)
+        .onChange(of: count) { old, new in
+            guard new > old else { return }
+            ring = false
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.45)) { bump = true }
+            withAnimation(.easeOut(duration: 0.8)) { ring = true }
+            Task { try? await Task.sleep(nanoseconds: 220_000_000); withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { bump = false } }
+        }
     }
 }
 
@@ -306,6 +357,13 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("1.20.0", ["【墨迹跟着军队走】军队墨迹改在显卡上逐帧落墨：按军队图标此刻画出的位置一笔一笔落下，紧跟图标、没有断档；相邻两笔首尾相接，慢走、急行军、30 帧或 120 帧都一样连贯。驻扎时按推演天数向四周洇开（暂停不长），守军把身边的敌墨推淡，围城时墨在州界之内从进攻军处铺开；几路军队、几处战场的墨落在同一张纸上，自然连成一片。",
+                    "【易主统一扫色】攻占、反叛、割地、新立国，以及改朝换代在家族等视图里的换色，都从种子点扫过去：攻占从入城的军队起，其余从新主人的首都起；同一批换主的州共用一条前沿、跨州连续，一批最长约 2.4 秒。未到处仍是旧色，前沿一道淡墨湿边。攻占后敌军仍在州里交战时，敌军在这片新占的土地上落自己的墨，画面不再打架。",
+                    "【改朝换代的墨圈】政变、篡位、复辟、改制等大事，从首都扫过全国一道墨圈。",
+                    "【阵亡动画】在军队图标此刻所在的位置倒下（以前用上一步的引擎坐标，图标走在半路或在城下排成圆环时差得很远）；一步里相继覆灭的几支按先后错开，图标在原处停到自己的那一刻、与动画同时消失；动画是一团掺着本国色的墨洇开、几点飞溅、一圈震痕、军旗向一侧倾倒下沉。同处扎堆的几支合为一处，墨团随之变大。",
+                    "【宣战与传报】宣战改为一段画面：一卷纸从中间展开，两国国色的燕尾旗从卷轴两端擎出、迎风招展，两杆长戈一笔一笔写出、交叉，交点溅开一团朱墨，然后两国国名与事由入场。议和是两旗相向靠拢、一条绶带系起、中间一枚玉璧；攻克是一面旗从天而降插下、国色洇开；起义、复辟、绝嗣、迁都各有自己的画面。",
+                    "【顶栏图标】图标改为毛笔笔触：起笔略顿、行笔饱满、收笔出锋，底下一层淡墨；开合时新笔画由左向右写出；按下有一圈淡墨洇开，选中时笔色与内圈转朱。战争数前是一对交叉的戈，新开战时戈一跳、朱圈一荡。",
+                    "【修复】CI 模拟器构建从 1.18.0 起失败（真机才有的上屏回调），截图巡览恢复。"]),
         ("1.19.0", ["【沙盘墨场】战争晕染改为全图一张墨场：军队在敌境走过的路线落下一道墨，按军队实际经过的先后显现，宽窄随兵力；停下驻扎的地方随天数向四周洇开；围城时以进攻军为中心，墨的范围随占领进度长到铺满全州。不再整州整片地换色。",
                     "【相邻战区一起算】行军、驻留、围城、守军相持都落在同一张墨场上，相邻几处同时打仗时墨自然连成一片；以前交战的州整块让位给“战场地面”、军队已进州但还没开始围城的州没有颜色、区域内部的州要等前沿从边界推过来才见色，所以会出现某州莫名空着。“战场地面”已并入墨场。",
                     "【守军推回、撤军褪墨】守方军队在本土与敌相持时，把身边的敌墨一点点推回；进攻军撤走或解围后，墨按天慢慢褪去；借道友邦、本国领土不着墨。",

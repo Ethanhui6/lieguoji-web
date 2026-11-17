@@ -4,28 +4,21 @@ import Foundation
 @inline(__always) func washLength(_ v: SIMD2<Float>) -> Float { (v.x * v.x + v.y * v.y).squareRoot() }
 @inline(__always) func washDistance(_ a: SIMD2<Float>, _ b: SIMD2<Float>) -> Float { washLength(a - b) }
 @inline(__always) func washDistance2(_ a: SIMD2<Float>, _ b: SIMD2<Float>) -> Float { let d = a - b; return d.x * d.x + d.y * d.y }
-@inline(__always) func washDot(_ a: SIMD2<Float>, _ b: SIMD2<Float>) -> Float { a.x * b.x + a.y * b.y }
 
 // 战争晕染（沙盘墨场）：进攻方的颜色像墨落在宣纸上，跟着军队走。
 //
-// 1.18.0 以前按州算：每个被围的州一块“进度前沿”，交战的州另画一块“战场地面”，两套各算各的；
-// 交战州的晕染整块让位给战场地面、军队已进州但还没开始围城的州没有颜色、区域内部的州前沿要从区域边界
-// 推过来才见色 —— 相邻几处同时打仗时，有的州有色、有的州空着，颜色铺得像一整片一整片地换。
+// 1.18.0 按州算“进度前沿”，交战州另画“战场地面”，两套各算各的，相邻战区有的州空着；1.19.0 改成全图逐顶点的墨场，
+// 但墨按推演步落在格子顶点上（顶点间距与墨迹宽度相近），手机上墨迹一段一段、跟不上军队图标。
 //
-// 现在全图只有一张逐顶点的“墨场”：
-// - 行军：军队在敌境走过的路线落下一道墨（宽度随兵力），沿路线按军队实际经过的先后显现；
-// - 驻留：军队停在敌境，墨以它为中心随天数洇开；
-// - 围城：被围州里以进攻方军队为中心，墨的半径随占领进度长到铺满全州；
-// - 守军：在本土与敌军相持的军队把周围的敌墨推回去；
-// - 攻占：底色换成进攻方的那一刻，从已染处沿州内扫满全州（未到处盖旧色），然后收尾；
-// - 墨随时间慢慢褪去，同一顶点上别国更浓的墨会接手。
-// 所有输入落在同一张场上，相邻战区的墨自然连成一片，不再有某州单独空着。
+// 现在：
+// - 军队墨迹在 GPU 上逐帧落墨（Render/Ink.swift，强度公式见 InkPlan）：按图标此刻画出的位置画胶囊笔触，
+//   驻留按推演天数洇开，围城在州内从进攻军处铺开，守军擦淡敌墨，整张按天褪色；几处战场落在同一张纹理上。
+// - 颜色真的变了的州（攻占、反叛、割地、改朝换代在着色视图里的换色）由 FlipSweep 从种子点扫色；
+//   政变、复辟等大事另有一道从首都扫过全国的墨圈。
 //
-// 纯数据与状态机放在 Core（可测试、确定性），渲染端（Render/Wash.swift）上传顶点与动画参数，
-// 每帧只在着色器里按时刻插值，不做逐帧 CPU 工作。
+// 纯数据与公式放在 Core（可测试、确定性），渲染端只上传顶点与每帧几个参数。
 
-/// 地图的格子拓扑：陆地格子的邻接（只认共享一段真实边，角点接触不算）、每州格子、每州邻州，
-/// 以及按格心分桶的空间索引（查一段路线附近的格子）。
+/// 地图的格子拓扑：陆地格子的邻接（只认共享一段真实边，角点接触不算）、每州格子、每州邻州、顶点所属的州。
 public final class WashTopology: @unchecked Sendable {
     public let cellCount: Int
     let offsets: [UInt32]
@@ -42,11 +35,6 @@ public final class WashTopology: @unchecked Sendable {
     public let vertexProvince: [Int32]
     /// 尺度：各州等效半径的中位数（世界单位）。墨的宽度、柔边、纹理与扩散速度都按它取，整张图统一。
     public let scale: Float
-    /// 格心到自身最远顶点的距离的最大值（空间查询的余量）。
-    let reach: Float
-    /// 空间索引：陆地格按格心分桶（CSR）。
-    let gridOrigin: SIMD2<Float>, gridSize: Float, gridW: Int, gridH: Int
-    let bucketStart: [Int32], bucketCells: [Int32]
     /// 几何指纹：地图几何不变时拓扑可复用。
     public let key: Int
 
@@ -101,16 +89,10 @@ public final class WashTopology: @unchecked Sendable {
         var cells = [[Int32]](repeating: [], count: provinceCount)
         for c in 0..<n where land[c] { let p = Int(province[c]); if p >= 0 && p < provinceCount { cells[p].append(Int32(c)) } }
         provinceCells = cells
-        // 顶点所属的州，格心到顶点的最远距离。
+        // 顶点所属的州。
         var vp = [Int32](repeating: -1, count: vertices.count / 2)
-        var reach: Float = 0
-        for c in 0..<n {
-            for v in Int(offsets[c])..<Int(offsets[c + 1]) {
-                vp[v] = land[c] && Int(province[c]) < provinceCount ? province[c] : -1
-                if land[c] { reach = max(reach, washDistance(site[c], SIMD2(vertices[v * 2], vertices[v * 2 + 1]))) }
-            }
-        }
-        vertexProvince = vp; self.reach = reach
+        for c in 0..<n { for v in Int(offsets[c])..<Int(offsets[c + 1]) { vp[v] = land[c] && Int(province[c]) < provinceCount ? province[c] : -1 } }
+        vertexProvince = vp
         // 尺度：各州等效半径 √(面积/π) 的中位数。
         var radii = cells.compactMap { list -> Float? in
             guard !list.isEmpty else { return nil }
@@ -119,50 +101,11 @@ public final class WashTopology: @unchecked Sendable {
         }
         radii.sort()
         scale = radii.isEmpty ? 10 : max(0.5, radii[radii.count / 2])
-        // 空间索引：桶边长取尺度的一半（一次查询只看几十个桶）。
-        var lo = SIMD2<Float>(.infinity, .infinity), hi = SIMD2<Float>(-.infinity, -.infinity)
-        for c in 0..<n where land[c] { lo = SIMD2(min(lo.x, site[c].x), min(lo.y, site[c].y)); hi = SIMD2(max(hi.x, site[c].x), max(hi.y, site[c].y)) }
-        if !lo.x.isFinite { lo = .zero; hi = .zero }
-        let size = max(0.25, scale * 0.5)
-        let gw = max(1, min(4096, Int((hi.x - lo.x) / size) + 1)), gh = max(1, min(4096, Int((hi.y - lo.y) / size) + 1))
-        gridOrigin = lo; gridSize = size; gridW = gw; gridH = gh
-        var bdeg = [Int32](repeating: 0, count: gw * gh + 1)
-        func bucket(_ p: SIMD2<Float>) -> Int {
-            let x = min(gw - 1, max(0, Int((p.x - lo.x) / size))), y = min(gh - 1, max(0, Int((p.y - lo.y) / size)))
-            return y * gw + x
-        }
-        for c in 0..<n where land[c] { bdeg[bucket(site[c])] += 1 }
-        var bstart = [Int32](repeating: 0, count: gw * gh + 1)
-        for k in 0..<(gw * gh) { bstart[k + 1] = bstart[k] + bdeg[k] }
-        var bfill = bstart, blist = [Int32](repeating: 0, count: Int(bstart[gw * gh]))
-        for c in 0..<n where land[c] { let k = bucket(site[c]); blist[Int(bfill[k])] = Int32(c); bfill[k] += 1 }
-        bucketStart = bstart; bucketCells = blist
     }
 
     @inline(__always) func neighbors(_ c: Int) -> ArraySlice<Int32> { nbList[Int(nbStart[c])..<Int(nbStart[c + 1])] }
     @inline(__always) public func position(_ v: Int) -> SIMD2<Float> { SIMD2(vertices[v * 2], vertices[v * 2 + 1]) }
     @inline(__always) public func vertexRange(_ c: Int) -> Range<Int> { Int(offsets[c])..<Int(offsets[c + 1]) }
-
-    /// 格心离线段 a→b 不超过 radius + reach 的陆地格（按格子号升序，结果确定）。
-    func cells(near a: SIMD2<Float>, _ b: SIMD2<Float>, radius: Float) -> [Int32] {
-        let r = radius + reach
-        let x0 = max(0, Int((min(a.x, b.x) - r - gridOrigin.x) / gridSize)), x1 = min(gridW - 1, Int((max(a.x, b.x) + r - gridOrigin.x) / gridSize))
-        let y0 = max(0, Int((min(a.y, b.y) - r - gridOrigin.y) / gridSize)), y1 = min(gridH - 1, Int((max(a.y, b.y) + r - gridOrigin.y) / gridSize))
-        guard x0 <= x1, y0 <= y1 else { return [] }
-        var out = [Int32]()
-        let seg = b - a, len2 = washDot(seg, seg)
-        for y in y0...y1 {
-            for x in x0...x1 {
-                let k = y * gridW + x
-                for i in Int(bucketStart[k])..<Int(bucketStart[k + 1]) {
-                    let c = bucketCells[i], s = site[Int(c)]
-                    let u = len2 > 1e-9 ? min(1, max(0, washDot(s - a, seg) / len2)) : 0
-                    if washDistance2(s, a + seg * u) <= r * r { out.append(c) }
-                }
-            }
-        }
-        return out.sorted()
-    }
 
     /// 州心（格心按面积加权）。
     public func centroid(_ p: Int) -> SIMD2<Float> {
@@ -193,8 +136,10 @@ public struct WashInput: Equatable, Sendable {
     public var day: Int
     public var armies: [SIMD2<Float>]
     public var troops: Float
-    public init(province: Int, attacker: Int, kind: Kind, progress: Float = 0, day: Int, armies: [SIMD2<Float>] = [], troops: Float = 0) {
-        self.province = province; self.attacker = attacker; self.kind = kind; self.progress = progress; self.day = day; self.armies = armies; self.troops = troops
+    /// 军队标识（行军、守军）：渲染端按它取图标此刻画出的位置。
+    public var key: String
+    public init(province: Int, attacker: Int, kind: Kind, progress: Float = 0, day: Int, armies: [SIMD2<Float>] = [], troops: Float = 0, key: String = "") {
+        self.province = province; self.attacker = attacker; self.kind = kind; self.progress = progress; self.day = day; self.armies = armies; self.troops = troops; self.key = key
     }
 }
 
@@ -204,8 +149,21 @@ public struct WashFrame: Equatable, Sendable {
     public var inputs: [WashInput]
     /// 落墨方 → 它的敌国：行军与驻留只染敌国领土（借道友邦、本国领土不染）。
     public var enemies: [Int: [Int]]
-    public init(day: Int, inputs: [WashInput], enemies: [Int: [Int]] = [:]) { self.day = day; self.inputs = inputs; self.enemies = enemies }
+    /// 政变、复辟、改制等不换颜色的大事：从这些国家的首都扫过全国的墨圈。
+    public var ripples: [Int] = []
+    public init(day: Int, inputs: [WashInput], enemies: [Int: [Int]] = [:], ripples: [Int] = []) { self.day = day; self.inputs = inputs; self.enemies = enemies; self.ripples = ripples }
     public static let empty = WashFrame(day: 0, inputs: [])
+
+    /// 输入的确定顺序（与传入顺序无关）。
+    public static func order(_ a: WashInput, _ b: WashInput) -> Bool {
+        if a.kind != b.kind { return a.kind.rawValue < b.kind.rawValue }
+        if a.province != b.province { return a.province < b.province }
+        if a.attacker != b.attacker { return a.attacker < b.attacker }
+        if a.key != b.key { return a.key < b.key }
+        let pa = a.armies.last ?? .zero, pb = b.armies.last ?? .zero
+        if pa.x != pb.x { return pa.x < pb.x }
+        return pa.y < pb.y
+    }
 
     /// 由相邻两步推演状态得出输入。
     /// - 行军：军队所在州的主人是它的敌国；上一步位置取同一支军队（离得太远视为调动/新编，只落这一步的点）。
@@ -228,10 +186,10 @@ public struct WashFrame: Equatable, Sendable {
             if o >= 0, o != a.nation, next.atWar(a.nation, o) {
                 var from = at
                 if let b = before[a.id], washDistance(SIMD2(b.x, b.y), at) <= jump { from = SIMD2(b.x, b.y) }
-                inputs.append(WashInput(province: a.province, attacker: a.nation, kind: .march, day: next.day, armies: [from, at], troops: Float(a.troops)))
+                inputs.append(WashInput(province: a.province, attacker: a.nation, kind: .march, day: next.day, armies: [from, at], troops: Float(a.troops), key: a.id))
                 marchers.insert(a.nation)
             } else if o == a.nation, contested.contains(a.province) {
-                inputs.append(WashInput(province: a.province, attacker: a.nation, kind: .hold, day: next.day, armies: [at], troops: Float(a.troops)))
+                inputs.append(WashInput(province: a.province, attacker: a.nation, kind: .hold, day: next.day, armies: [at], troops: Float(a.troops), key: a.id))
             }
         }
         func armies(_ s: GameState?, _ nation: Int, _ p: Int) -> [SIMD2<Float>] {
@@ -254,340 +212,169 @@ public struct WashFrame: Equatable, Sendable {
         }
         var enemies = [Int: [Int]]()
         for n in marchers.sorted() where next.nations.indices.contains(n) { enemies[n] = next.nations[n].enemies.sorted() }
-        return WashFrame(day: next.day, inputs: inputs.sorted(by: WashBook.order), enemies: enemies)
+        return WashFrame(day: next.day, inputs: inputs.sorted(by: WashFrame.order), enemies: enemies)
     }
 }
 
-/// 墨场状态机。逐顶点（地图顶点，各格自己的拷贝）记：哪国的墨（stain）、逻辑浓度（level，0…maxLevel，
-/// 着色在 0.5 附近过渡）与显示动画（from → to，自 start 起历时 length，平滑插值）。
-/// 输入每步来一次；显示由着色器按时刻插值，状态机只在输入、易主、收尾时改动顶点。
-public final class WashBook {
-    public let topology: WashTopology
-    public private(set) var stain: [Int32]
-    public private(set) var level: [Float]
-    public private(set) var from: [Float]
-    public private(set) var to: [Float]
-    public private(set) var start: [Float]
-    public private(set) var length: [Float]
-    /// 易主时刻（该州底色已换成墨的主人；未到达处盖旧色）。未易主为 LandFade.idle。
-    public private(set) var flipAt: [Float]
-    /// 有墨（或墨正在褪去、正在易主扫满）的格子，升序。
-    public private(set) var active: [Int32] = []
-    private var isActive: [Bool]
-    /// 顶点数据变了：渲染端据此重建缓冲。
-    public private(set) var revision = 0
-    /// 最后一段动画结束的时刻：之后画面静止，不必连续重绘。
-    public private(set) var busyUntil: Float = -.infinity
-    /// 输入间隔（渲染时钟秒）：一步的落墨按它铺开，跟上军队图标的插值移动。
-    public private(set) var stepSeconds: Float = 0.6
-    private var lastDay: Int?
-    private var lastNow: Float?
-    /// 刚攻占、等底色换过来的州：进攻方、军队位置、登记时刻。
-    private var pending: [Int: (attacker: Int, at: SIMD2<Float>?, time: Float)] = [:]
-    /// 正在易主扫满的州 → 收尾时刻。
-    public private(set) var flipping: [Int: Float] = [:]
-    /// 被围州最近一次的进攻方军队位置（军队暂离时围城仍从这里长）。
-    private var siegeCenter: [Int: SIMD2<Float>] = [:]
-    private var sweep = false
-    private var added = [Int32]()
-    private var delays = [Float]()
+/// GPU 墨场每帧落墨的强度公式。渲染端（Render/Ink.swift）按它算每一笔的不透明度，着色器里的横向衰减曲线与
+/// `falloff` 相同；测试用同样的公式在 CPU 上复算，验证墨迹连续、与帧率无关。
+///
+/// 墨场是一张世界坐标的纹理（预乘的国色 + 浓度），每帧：
+/// - 行军：从上一帧落墨处到军队此刻画出的位置画一段笔触（跟着图标走，不按推演步一段一段地落）。
+///   行军笔触两端齐平（只画线段投影 0…1 之内），相邻两帧首尾相接、不重叠，路上每一点恰好被一笔盖到，
+///   所以浓度与帧率、行军速度都无关；原地驻留的笔触（a = b）是圆的；
+/// - 驻留：以军队为中心按推演天数洇开（暂停时不长）；
+/// - 守军：按天把身边的墨擦淡；
+/// - 围城：在被围州的三角形里，以进攻军为中心、半径随进度长到铺满（只画在州内，取较浓者）；
+/// - 整张按天褪色。
+/// 几路军队、几处战场的墨落在同一张纹理上，叠在一起自然连成一片。
+public enum InkPlan {
+    /// 墨迹的横向衰减：距中心线 d、半径 r（着色器 inkStampFragment 用同一条曲线）。
+    @inline(__always) public static func falloff(_ d: Float, _ r: Float) -> Float { let q = d / max(r, 1e-4); return exp(-2.5 * q * q) }
+    /// 行军墨迹中心的浓度。
+    public static let trailCore: Float = 0.72
+    /// 这一帧走了 len（世界单位）：每笔的不透明度。笔触两端齐平、首尾相接，每一点只被一笔盖到，
+    /// 所以就是 trailCore；原地不动不落行军墨。
+    public static func trailAlpha(len: Float, radius r: Float) -> Float { len > 1e-4 ? trailCore : 0 }
+    /// 笔触在采样点 p 处的强度：a → b 两端齐平（a = b 时为圆点），横向按 falloff。着色器 inkStrength 同一算法。
+    public static func stroke(_ p: SIMD2<Float>, _ a: SIMD2<Float>, _ b: SIMD2<Float>, radius r: Float, alpha: Float) -> Float {
+        let ab = b - a, l2 = ab.x * ab.x + ab.y * ab.y
+        if l2 <= 1e-8 { return alpha * falloff(washLength(p - a), r) }
+        let ap = p - a, raw = (ap.x * ab.x + ap.y * ab.y) / l2
+        guard raw >= 0, raw < 1 else { return 0 }
+        return alpha * falloff(washLength(p - (a + ab * raw)), r)
+    }
+    /// 驻留：中心每推演一天洇开的速率；dwellAlpha(days) 为这一帧的不透明度。
+    public static let dwellRate: Float = 0.22
+    public static func dwellAlpha(days: Float) -> Float { 1 - exp(-dwellRate * max(0, days)) }
+    /// 褪色：每天乘以 decay(1)。
+    public static let decayRate: Float = 0.03
+    public static func decay(days: Float) -> Float { exp(-decayRate * max(0, days)) }
+    /// 守军擦墨。
+    public static func holdAlpha(days: Float) -> Float { 1 - exp(-0.45 * max(0, days)) }
+    /// 围城：以军队为中心、半径随进度长到铺满（far：中心到本州最远点）。
+    public static func siegeRadius(progress q: Float, far: Float, scale: Float) -> Float { q >= 0.98 ? far + scale : max(0, q) * (far + scale * 0.3) }
+    /// 围城处的浓度（距中心 d）。
+    public static func siegeCover(distance d: Float, radius: Float, scale: Float) -> Float { min(0.9, max(0, 0.5 + (radius - d) / (scale * 0.45))) }
+    /// 兵力系数（墨的宽窄）与半径。
+    public static func width(troops: Float) -> Float { min(1.3, max(0.8, (max(100, troops) / 4000).squareRoot())) }
+    public static func trailRadius(scale: Float, troops: Float) -> Float { scale * 0.4 * width(troops: troops) }
+    public static func dwellRadius(scale: Float, troops: Float) -> Float { scale * 0.85 * width(troops: troops) }
+    public static func holdRadius(scale: Float) -> Float { scale * 0.8 }
+    /// 显示阈值：浓度过此值才见色（着色器 inkComposite）。
+    public static let visible: Float = 0.3
 
-    /// 视觉参数（浓度单位）：柔边半宽、纸纹起伏。
-    public static let soft: Float = 0.12
-    public static let noise: Float = 0.3
-    /// 晕染着色浓度（进攻方颜色压在原色上的不透明度）。
-    public static let tint: Float = 0.5
-    /// 浓度上限、每天褪去、驻留每天洇开的量。
-    public static let maxLevel: Float = 1.6
-    public static let decayPerDay: Float = 0.03
-    public static let dwellPerDay: Float = 0.11
-    /// 易主扫满的速度（世界单位/秒）与每个顶点的过渡时长。
-    public var spreadSpeed: Float { topology.scale * 2.4 }
-    public static let sweepSeconds: Float = 0.35
+    /// 推演天数的消耗：一步来了几天，就在这一步的动画时长里匀速用掉；暂停后用完即停，不再落墨。
+    public struct Clock: Sendable {
+        public private(set) var left: Float = 0
+        public private(set) var rate: Float = 0
+        public init() {}
+        public mutating func add(days: Float, over seconds: Float) {
+            guard days > 0 else { return }
+            left = min(left + days, 120); rate = left / max(0.1, seconds)
+        }
+        public mutating func take(_ dt: Float) -> Float {
+            guard left > 0, dt > 0 else { return 0 }
+            let d = min(left, rate * dt); left -= d; return d
+        }
+        public mutating func reset() { left = 0; rate = 0 }
+    }
+}
+
+/// 易主扫色（逐顶点）：攻占、反叛、割地、改朝换代等让某些州换了颜色时，新颜色从种子点（攻占的军队、新主人的首都）
+/// 沿距离扫过去：底色立即换成新色，未到达处盖旧色，前沿一道淡墨湿边，到达处旧色余韵淡去。
+/// 同一组种子的州共用一条前沿（从离种子最近处起），一组总时长不超过 maxSeconds。
+/// “墨圈”模式（政变、复辟等不换颜色的大事）：颜色不变，只有一道湿边从首都扫过全国。
+public final class FlipSweep {
+    public let topology: WashTopology
+    /// 每个顶点新色到达的时刻（渲染时钟秒）。
+    public private(set) var arrive: [Float]
+    /// 每个顶点的模式：1 换色，0 墨圈，−1 不在扫。
+    public private(set) var mode: [Float]
+    /// 正在扫的格子（升序）。
+    public private(set) var active: [Int32] = []
+    /// 正在扫的州 → 收尾时刻。
+    public private(set) var ends: [Int: Float] = [:]
+    public private(set) var revision = 0
+    /// 一组最长时长、前沿柔边（秒）、到达后旧色余韵（秒）。
+    public static let maxSeconds: Float = 2.4
+    public static let edge: Float = 0.22
+    public static let after: Float = 0.6
+    /// 基本扫速（世界单位/秒）。
+    public var speed: Float { topology.scale * 2.4 }
 
     public init(topology: WashTopology) {
         self.topology = topology
-        let n = topology.vertexCount
-        stain = Array(repeating: -1, count: n); level = Array(repeating: 0, count: n)
-        from = Array(repeating: 0, count: n); to = Array(repeating: 0, count: n)
-        start = Array(repeating: 0, count: n); length = Array(repeating: 0, count: n)
-        flipAt = Array(repeating: LandFade.idle, count: n)
-        isActive = Array(repeating: false, count: topology.cellCount)
+        arrive = Array(repeating: 0, count: topology.vertexCount)
+        mode = Array(repeating: -1, count: topology.vertexCount)
     }
 
-    public var isEmpty: Bool { active.isEmpty }
-    public func animating(at now: Float) -> Bool { now < busyUntil || !flipping.isEmpty || sweep }
+    public var isEmpty: Bool { ends.isEmpty }
+    public func animating(at now: Float) -> Bool { !ends.isEmpty }
 
-    /// 顶点 v 在时刻 t 显示的浓度。
-    @inline(__always) public func shown(_ v: Int, at t: Float) -> Float {
-        let k = length[v] > 0 ? LandFade.ease((t - start[v]) / length[v]) : 1
-        return from[v] + (to[v] - from[v]) * k
+    /// 顶点 v 在时刻 t 被新色覆盖的程度（0…1，与着色器同一曲线，不含纸纹）。
+    public func reached(_ v: Int, at t: Float) -> Float {
+        guard mode[v] >= 0 else { return 1 }
+        let x = min(1, max(0, ((t - arrive[v]) / Self.edge + 1) / 2))
+        return x * x * (3 - 2 * x)
     }
 
-    /// 输入的确定顺序（与传入顺序无关）。
-    static func order(_ a: WashInput, _ b: WashInput) -> Bool {
-        if a.kind != b.kind { return a.kind.rawValue < b.kind.rawValue }
-        if a.province != b.province { return a.province < b.province }
-        if a.attacker != b.attacker { return a.attacker < b.attacker }
-        let pa = a.armies.last ?? .zero, pb = b.armies.last ?? .zero
-        if pa.x != pb.x { return pa.x < pb.x }
-        if pa.y != pb.y { return pa.y < pb.y }
-        return a.troops < b.troops
-    }
-
-    /// 读档、换世界：清空，不留旧世界的墨。
-    public func reset() {
-        let n = topology.vertexCount
-        stain = Array(repeating: -1, count: n); level = Array(repeating: 0, count: n)
-        from = Array(repeating: 0, count: n); to = Array(repeating: 0, count: n)
-        start = Array(repeating: 0, count: n); length = Array(repeating: 0, count: n)
-        flipAt = Array(repeating: LandFade.idle, count: n)
-        isActive = Array(repeating: false, count: topology.cellCount)
-        active = []; pending = [:]; flipping = [:]; siegeCenter = [:]; lastDay = nil; lastNow = nil
-        busyUntil = -.infinity; sweep = false; revision += 1
-    }
-
-    // MARK: 输入
-
-    /// 新的一步：褪墨、按输入落墨，改动的顶点从当前显示值平滑过渡到新浓度。
-    public func update(_ frame: WashFrame, owner: (Int) -> Int, now: Float) {
-        let t = topology
-        let days = lastDay.map { Float(min(60, max(0, frame.day - $0))) } ?? 0
-        if let last = lastNow, now > last { stepSeconds = min(1.2, max(0.25, stepSeconds * 0.5 + (now - last) * 0.5)) }
-        lastDay = frame.day; lastNow = now
-        pending = pending.filter { now - $0.value.time < 3 }
-        let inputs = frame.inputs.sorted(by: Self.order)
-        // 攻占先登记（等底色换过来时扫满）：这一步里该州的墨不按“已成本国领土”清掉。
-        for i in inputs where i.kind == .capture && t.provinceCells.indices.contains(i.province) {
-            let at = i.armies.isEmpty ? nil : i.armies.reduce(SIMD2<Float>(0, 0), +) / Float(i.armies.count)
-            if pending[i.province]?.attacker != i.attacker && flipping[i.province] == nil { pending[i.province] = (i.attacker, at, now) }
-        }
-        var next = level, nextStain = stain
-        var dirty = [Int]()
-        // 顶点 → 显现延迟（复用的稠密数组，−1 为未改动）。
-        if delays.count != level.count { delays = Array(repeating: -1, count: level.count) }
-        func touch(_ v: Int, _ delay: Float) {
-            if delays[v] < 0 { delays[v] = delay; dirty.append(v) } else { delays[v] = min(delays[v], delay) }
-        }
-        var ownerCache = [Int32: Int]()
-        func ownerOf(_ v: Int) -> Int {
-            let p = t.vertexProvince[v]
-            guard p >= 0 else { return -1 }
-            if let o = ownerCache[p] { return o }
-            let o = owner(Int(p)); ownerCache[p] = o; return o
-        }
-        // 1. 褪墨；已成墨主本国领土（和约割地等，不经攻占）的墨淡去。正在易主扫满、等待易主的州不动。
-        for c in active {
-            for v in t.vertexRange(Int(c)) where next[v] > 0 && nextStain[v] >= 0 {
-                let p = Int(t.vertexProvince[v])
-                if flipping[p] != nil || pending[p] != nil { continue }
-                let before = next[v]
-                if ownerOf(v) == Int(nextStain[v]) { next[v] = 0 } else { next[v] = max(0, next[v] - Self.decayPerDay * days) }
-                if next[v] != before { touch(v, 0) }
-            }
-        }
-        // 落墨：同国取浓者；别国的墨更浓则接手，否则被削弱。
-        func apply(_ v: Int, _ nation: Int, floor: Float, add: Float, delay: Float) {
-            let push = min(Self.maxLevel, floor + add)
-            guard push > 1e-4 else { return }
-            if nextStain[v] == Int32(nation) || nextStain[v] < 0 || next[v] <= 0 {
-                let base = nextStain[v] == Int32(nation) ? next[v] : 0
-                let value = min(Self.maxLevel, max(base, floor) + add)
-                if value > base + 1e-4 || nextStain[v] != Int32(nation) { nextStain[v] = Int32(nation); next[v] = max(base, value); touch(v, delay) }
-            } else if push > next[v] {
-                nextStain[v] = Int32(nation); next[v] = push; touch(v, delay)
-            } else {
-                next[v] = max(0, next[v] - push * 0.5); touch(v, delay)
-            }
-        }
-        // 2. 行军与驻留。
-        for i in inputs where i.kind == .march && i.armies.count == 2 {
-            let a = i.armies[0], b = i.armies[1]
-            let w = min(1.35, max(0.75, (max(100, i.troops) / 4000).squareRoot()))
-            let r = t.scale * 0.55 * w, R = t.scale * 1.05 * w
-            let hostile = Set(frame.enemies[i.attacker] ?? [])
-            let seg = b - a, len2 = washDot(seg, seg)
-            for c in t.cells(near: a, b, radius: R) {
-                let p = Int(t.province[Int(c)])
-                guard p >= 0 else { continue }
-                let o = owner(p)
-                guard o >= 0, o != i.attacker, hostile.isEmpty || hostile.contains(o) else { continue }
-                for v in t.vertexRange(Int(c)) {
-                    let x = t.position(v)
-                    let u = len2 > 1e-9 ? min(1, max(0, washDot(x - a, seg) / len2)) : 1
-                    let d = washDistance(x, a + seg * u)
-                    let q = d / r
-                    let core: Float = q < 1 ? 1.15 * (1 - q * q) : 0
-                    let dwell = days * Self.dwellPerDay * max(0, 1 - washDistance(x, b) / R)
-                    apply(v, i.attacker, floor: core, add: dwell, delay: u * stepSeconds)
-                }
-            }
-        }
-        // 3. 守军推回敌墨。
-        for i in inputs where i.kind == .hold && !i.armies.isEmpty {
-            let at = i.armies[0]
-            let R = t.scale * 0.9
-            for c in t.cells(near: at, at, radius: R) where Int(t.province[Int(c)]) >= 0 && owner(Int(t.province[Int(c)])) == i.attacker {
-                for v in t.vertexRange(Int(c)) where nextStain[v] >= 0 && nextStain[v] != Int32(i.attacker) && next[v] > 0 {
-                    let f = max(0, 1 - washDistance(t.position(v), at) / R)
-                    guard f > 0 else { continue }
-                    next[v] = max(0, next[v] - (0.08 + 0.2 * days) * f); touch(v, 0)
-                }
-            }
-        }
-        // 4. 围城：以进攻方军队为中心，半径随进度长到铺满全州（权威进度，压过褪墨与守军）。
-        for i in inputs where i.kind == .siege && t.provinceCells.indices.contains(i.province) && !t.provinceCells[i.province].isEmpty {
-            let p = i.province
-            let center: SIMD2<Float>
-            if !i.armies.isEmpty {
-                let mean = i.armies.reduce(SIMD2<Float>(0, 0), +) / Float(i.armies.count)
-                if let old = siegeCenter[p], washDistance(old, mean) < t.scale * 0.3 { center = old } else { center = mean }
-            } else {
-                center = siegeCenter[p] ?? entry(p, i.attacker, owner: owner) ?? t.centroid(p)
-            }
-            siegeCenter[p] = center
-            var far: Float = 0
-            for c in t.provinceCells[p] { for v in t.vertexRange(Int(c)) { far = max(far, washDistance(t.position(v), center)) } }
-            let q = min(1, max(0, i.progress))
-            let radius = q >= 0.98 ? far + t.scale : q * (far + t.scale * 0.3)
-            for c in t.provinceCells[p] {
-                for v in t.vertexRange(Int(c)) {
-                    let d = washDistance(t.position(v), center)
-                    let floor = min(1.25, max(0, 0.5 + (radius - d) / (t.scale * 0.45)))
-                    apply(v, i.attacker, floor: floor, add: 0, delay: 0)
-                }
-            }
-        }
-        let sieged = Set(inputs.filter { $0.kind == .siege }.map { $0.province })
-        siegeCenter = siegeCenter.filter { sieged.contains($0.key) }
-        // 提交：改动的顶点从当前显示值过渡到新浓度。
-        for v in dirty where next[v] != level[v] || nextStain[v] != stain[v] {
-            let s = shown(v, at: now)
-            from[v] = nextStain[v] == stain[v] || stain[v] < 0 ? s : 0
-            to[v] = next[v]; level[v] = next[v]; stain[v] = nextStain[v]
-            start[v] = now + max(0, delays[v]); length[v] = stepSeconds
-            busyUntil = max(busyUntil, start[v] + length[v])
-            activate(cell(of: v))
-        }
-        for v in dirty { delays[v] = -1 }
-        commitActive()
-        if !dirty.isEmpty { revision += 1; sweep = true }
-    }
-
-    // 顶点 → 格子：按 offsets 二分。
-    private func cell(of v: Int) -> Int {
-        var lo = 0, hi = topology.cellCount - 1
-        while lo < hi {
-            let mid = (lo + hi + 1) / 2
-            if Int(topology.offsets[mid]) <= v { lo = mid } else { hi = mid - 1 }
-        }
-        return lo
-    }
-
-    private func activate(_ c: Int) {
-        guard !isActive[c] else { return }
-        isActive[c] = true
-        added.append(Int32(c))
-    }
-    private func commitActive() {
-        guard !added.isEmpty else { return }
-        active = (active + added).sorted(); added = []
-    }
-
-    /// 没有军队位置时的进入点：本州挨着进攻方领土的格心平均；没有陆上接壤为 nil。
-    private func entry(_ p: Int, _ attacker: Int, owner: (Int) -> Int) -> SIMD2<Float>? {
-        let t = topology
-        var sum = SIMD2<Float>(0, 0), k: Float = 0
-        for c in t.provinceCells[p] {
-            if t.neighbors(Int(c)).contains(where: { let q = Int(t.province[Int($0)]); return q >= 0 && q != p && owner(q) == attacker }) { sum += t.site[Int(c)]; k += 1 }
-        }
-        return k > 0 ? sum / k : nil
-    }
-
-    // MARK: 易主
-
-    /// 底色换了的州里，可能交给墨场接手的（刚攻占待易主、或州里已有新主人的墨）。
-    public func flipCandidates(owner: (Int) -> Int) -> [Int] {
-        var out = Set(pending.keys.filter { owner($0) == pending[$0]!.attacker })
-        for c in active {
-            let p = Int(topology.province[Int(c)])
-            guard p >= 0, flipping[p] == nil, !out.contains(p) else { continue }
-            let o = owner(p)
-            if topology.vertexRange(Int(c)).contains(where: { stain[$0] == Int32(o) && to[$0] > 0.05 }) { out.insert(p) }
-        }
-        return out.sorted()
-    }
-
-    /// 底下陆地换成了新主人的颜色（渲染端在颜色安装时发现）：从已染处（没有就从攻占军队、进入边界）沿州内扫满，
-    /// 未到达处盖旧色。返回接手的州：渲染端为它们记下旧色。
-    public func landFlipped(_ provinces: Set<Int>, owner: (Int) -> Int, now: Float) -> [Int] {
+    /// 开始扫。每组：这些州、种子点（空则取第一州的州心）。`recolour` 为假是墨圈模式（正在换色的州不被墨圈打断）。
+    /// 返回接手的州。
+    @discardableResult
+    public func start(_ groups: [(provinces: [Int], seeds: [SIMD2<Float>])], recolour: Bool, now: Float) -> [Int] {
         let t = topology
         var taken = [Int]()
-        for p in provinces.sorted() where t.provinceCells.indices.contains(p) && !t.provinceCells[p].isEmpty && flipping[p] == nil {
-            let n = owner(p)
-            guard n >= 0 else { continue }
-            var verts = [Int]()
-            for c in t.provinceCells[p] { verts += t.vertexRange(Int(c)) }
-            let inked = verts.contains { stain[$0] == Int32(n) && shown($0, at: now) > 0.05 }
-            guard pending[p]?.attacker == n || inked else { continue }
-            var seeds = verts.filter { stain[$0] == Int32(n) && shown($0, at: now) >= 0.5 }.map { t.position($0) }
-            if seeds.isEmpty { seeds = [pending[p]?.at ?? entry(p, n, owner: owner) ?? t.centroid(p)] }
-            if seeds.count > 256 { let step = seeds.count / 256 + 1; seeds = stride(from: 0, to: seeds.count, by: step).map { seeds[$0] } }
-            var end = now
-            for v in verts {
-                let x = t.position(v)
-                var d = Float.infinity
-                for s in seeds { d = min(d, washDistance2(x, s)) }
-                let delay = stain[v] == Int32(n) && shown(v, at: now) >= 0.5 ? 0 : d.squareRoot() / spreadSpeed
-                let s0 = stain[v] == Int32(n) ? shown(v, at: now) : 0
-                stain[v] = Int32(n); level[v] = 1.3
-                from[v] = s0; to[v] = 1.3; start[v] = now + delay; length[v] = Self.sweepSeconds
-                flipAt[v] = now
-                end = max(end, start[v] + length[v])
+        for g in groups {
+            let list = g.provinces.filter { t.provinceCells.indices.contains($0) && !t.provinceCells[$0].isEmpty }.filter { recolour || ends[$0] == nil }
+            guard !list.isEmpty else { continue }
+            let seeds = g.seeds.isEmpty ? [t.centroid(list[0])] : g.seeds
+            var dist = [(Int, Float)](), lo = Float.infinity, hi: Float = 0
+            for p in list {
+                for c in t.provinceCells[p] {
+                    for v in t.vertexRange(Int(c)) {
+                        let x = t.position(v)
+                        var d = Float.infinity
+                        for s in seeds { d = min(d, washDistance2(x, s)) }
+                        d = d.squareRoot()
+                        dist.append((v, d)); lo = min(lo, d); hi = max(hi, d)
+                    }
+                }
             }
-            for c in t.provinceCells[p] { activate(Int(c)) }
-            commitActive()
-            flipping[p] = max(end, now + 0.6) + 0.1
-            busyUntil = max(busyUntil, flipping[p]!)
-            pending[p] = nil; siegeCenter[p] = nil
-            taken.append(p)
+            let speed = max(self.speed, (hi - lo) / Self.maxSeconds)
+            for (v, d) in dist { arrive[v] = now + (d - lo) / speed; mode[v] = recolour ? 1 : 0 }
+            let end = now + (hi - lo) / speed + Self.edge + Self.after + 0.05
+            for p in list { ends[p] = end; taken.append(p) }
         }
-        if !taken.isEmpty { revision += 1 }
+        guard !taken.isEmpty else { return [] }
+        var cells = Set(active)
+        for p in taken { for c in t.provinceCells[p] { cells.insert(c) } }
+        active = cells.sorted()
+        revision += 1
         return taken
     }
 
-    /// 地图视图切换（颜色含义变了）：易主扫满中的州直接收尾。
-    public func viewChanged() {
-        for p in flipping.keys.sorted() { finish(p) }
-        flipping = [:]
+    /// 每帧：扫完的州收尾。返回顶点数据是否变了。
+    @discardableResult public func tick(_ now: Float) -> Bool {
+        let done = ends.filter { now >= $0.value }.map(\.key)
+        guard !done.isEmpty else { return false }
+        for p in done { finish(p) }
+        let gone = Set(done)
+        active.removeAll { gone.contains(Int(topology.province[Int($0)])) }
+        revision += 1
+        return true
+    }
+
+    /// 地图视图切换（颜色含义变了）：全部收尾。
+    public func clear() {
+        for p in ends.keys { finish(p) }
+        active = []
         revision += 1
     }
 
     private func finish(_ p: Int) {
-        for c in topology.provinceCells[p] {
-            for v in topology.vertexRange(Int(c)) {
-                stain[v] = -1; level[v] = 0; from[v] = 0; to[v] = 0; length[v] = 0; flipAt[v] = LandFade.idle
-            }
-        }
-        sweep = true
-    }
-
-    /// 每帧调用：易主扫满结束的州收尾；动画都走完后把没墨的格子移出。返回顶点数据是否变了。
-    @discardableResult public func tick(_ now: Float) -> Bool {
-        var changed = false
-        for (p, end) in flipping.sorted(by: { $0.key < $1.key }) where now >= end { finish(p); flipping[p] = nil; changed = true }
-        if sweep && now >= busyUntil && flipping.isEmpty {
-            sweep = false
-            let before = active.count
-            active.removeAll { c in
-                let live = topology.vertexRange(Int(c)).contains { to[$0] > 0 || flipAt[$0] != LandFade.idle }
-                if !live { isActive[Int(c)] = false; for v in topology.vertexRange(Int(c)) where level[v] <= 0 { stain[v] = -1 } }
-                return !live
-            }
-            if active.count != before { changed = true }
-        }
-        if changed { revision += 1 }
-        return changed
+        for c in topology.provinceCells[p] { for v in topology.vertexRange(Int(c)) { mode[v] = -1 } }
+        ends[p] = nil
     }
 }
 

@@ -11,8 +11,8 @@ import Foundation
 // 但墨按推演步落在格子顶点上（顶点间距与墨迹宽度相近），手机上墨迹一段一段、跟不上军队图标。
 //
 // 现在：
-// - 军队墨迹在 GPU 上逐帧落墨（Render/Ink.swift，强度公式见 InkPlan）：按图标此刻画出的位置画胶囊笔触，
-//   驻留按推演天数洇开，围城在州内从进攻军处铺开，守军擦淡敌墨，整张按天褪色；几处战场落在同一张纹理上。
+// - 军队墨迹在 GPU 上逐帧落墨（Render/Ink.swift，公式见 InkPlan）：每帧把各军的墨团与围城相加成“场”，
+//   挨近的墨团相融变大；场过阈值处落到纸上，走过的地方留下、很慢才褪；守军擦淡敌墨，议和与易主时清除。
 // - 颜色真的变了的州（攻占、反叛、割地、改朝换代在着色视图里的换色）由 FlipSweep 从种子点扫色；
 //   政变、复辟等大事另有一道从首都扫过全国的墨圈。
 //
@@ -214,56 +214,51 @@ public struct WashFrame: Equatable, Sendable {
     }
 }
 
-/// GPU 墨场每帧落墨的强度公式。渲染端（Render/Ink.swift）按它算每一笔的不透明度，着色器里的横向衰减曲线与
-/// `falloff` 相同；测试用同样的公式在 CPU 上复算，验证墨迹连续、与帧率无关。
+/// GPU 墨场的公式。渲染端（Render/Ink.swift）的着色器用同一套曲线；测试在 CPU 上复算。
 ///
-/// 墨场是一张世界坐标的纹理（预乘的国色 + 浓度），每帧：
-/// - 行军：从上一帧落墨处到军队此刻画出的位置画一段笔触（跟着图标走，不按推演步一段一段地落）。
-///   行军笔触两端齐平（只画线段投影 0…1 之内），相邻两帧首尾相接、不重叠，路上每一点恰好被一笔盖到，
-///   所以浓度与帧率、行军速度都无关；原地驻留的笔触（a = b）是圆的；
-/// - 驻留：以军队为中心按推演天数洇开（暂停时不长）；
-/// - 守军：按天把身边的墨擦淡；
-/// - 围城：在被围州的三角形里，以进攻军为中心、半径随进度长到铺满（只画在州内，取较浓者）；
-/// - 整张按天褪色。
-/// 几路军队、几处战场的墨落在同一张纹理上，叠在一起自然连成一片。
+/// 1.19–1.21 的墨场每支军队各画各的笔触、取较浓者，墨按天很快褪去（一个月就没了）：军队走开，走过的地方随之消失；
+/// 几支军队挨在一起也只是几个互不相干的圆圈。现在分两张纹理：
+/// - 场（live，每帧清空重算）：每支在敌境的军队是一团高斯“墨团”（上一帧位置到此刻位置的圆头胶囊），
+///   围城州按进度铺一片，全部**相加**。几团挨近时场值相加，过阈值的范围随之变大并连成一体（像水墨里两滴墨相融），
+///   同处扎堆的军队越多，墨团越大，但只按对数长大、有界。
+/// - 墨（persistent，逐帧演进）：墨 = max(旧墨 × 褪色, level(场))。军队走过、驻扎、围过的地方都留在纸上，
+///   褪得很慢（约一年半才看不见）；守军按天把身边的敌墨擦淡；议和、易主（攻占后那片地本来就是攻方颜色）时
+///   那片土地上不再与主人交战的墨当帧清除——下次再开战不会冒出旧墨。
+/// 两张纹理都只在交战敌国领土上显示，颜色与该国领土同一算法（合成见 Ink.swift）。
 public enum InkPlan {
-    /// 墨迹的横向衰减：距中心线 d、半径 r（着色器 inkStampFragment 用同一条曲线）。
-    @inline(__always) public static func falloff(_ d: Float, _ r: Float) -> Float { let q = d / max(r, 1e-4); return exp(-2.5 * q * q) }
-    /// 行军墨迹中心的浓度。
-    public static let trailCore: Float = 0.72
-    /// 这一帧走了 len（世界单位）：每笔的不透明度。笔触两端齐平、首尾相接，每一点只被一笔盖到，
-    /// 所以就是 trailCore；原地不动不落行军墨。
-    public static func trailAlpha(len: Float, radius r: Float) -> Float { len > 1e-4 ? trailCore : 0 }
-    /// 笔触在采样点 p 处的强度：a → b 两端齐平（a = b 时为圆点），横向按 falloff。着色器 inkStrength 同一算法。
-    public static func stroke(_ p: SIMD2<Float>, _ a: SIMD2<Float>, _ b: SIMD2<Float>, radius r: Float, alpha: Float) -> Float {
+    /// 墨团的场：距中心线（线段 a→b，圆头）d、半径 r。着色器 inkBlobFragment 同一曲线。
+    @inline(__always) public static func falloff(_ d: Float, _ r: Float) -> Float { let q = d / max(r, 1e-4); return exp(-q * q) }
+    /// 圆头胶囊 a→b 在 p 处的场值（a = b 为圆）。
+    public static func blob(_ p: SIMD2<Float>, _ a: SIMD2<Float>, _ b: SIMD2<Float>, radius r: Float) -> Float {
         let ab = b - a, l2 = ab.x * ab.x + ab.y * ab.y
-        if l2 <= 1e-8 { return alpha * falloff(washLength(p - a), r) }
-        let ap = p - a, raw = (ap.x * ab.x + ap.y * ab.y) / l2
-        guard raw >= 0, raw < 1 else { return 0 }
-        return alpha * falloff(washLength(p - (a + ab * raw)), r)
+        var t: Float = 0
+        if l2 > 1e-8 { let ap = p - a; t = min(1, max(0, (ap.x * ab.x + ap.y * ab.y) / l2)) }
+        return falloff(washLength(p - (a + ab * t)), r)
     }
-    /// 墨场的混合：取较浓者（着色器 inkStamp 用 max 混合）。同一处反复落墨不会越积越宽，墨迹的范围
-    /// 由笔触半径决定、有界（以前“叠加”混合下驻留几十天的墨洇到一个多州宽）。
-    @inline(__always) public static func blend(_ old: Float, _ s: Float) -> Float { max(old, s) }
-    /// 驻留：军队在敌境原地停了 dwelt 天（推演天数），浓度与半径随之长大，二十天封顶。
-    public static func dwellAlpha(dwelt: Float) -> Float { dwelt <= 0 ? 0 : min(0.9, 0.5 + 0.02 * dwelt) }
-    public static func dwellGrowth(dwelt: Float) -> Float { 0.5 + 0.5 * min(1, max(0, dwelt) / 20) }
-    /// 褪色：每天乘以 decay(1)。
-    public static let decayRate: Float = 0.03
+    /// 场值 → 落到纸上的浓度：低于 fieldLow 不落墨，到 fieldHigh 达到 core。单团中心场值为 1。
+    public static let core: Float = 0.85
+    public static let fieldLow: Float = 0.25
+    public static let fieldHigh: Float = 0.75
+    @inline(__always) public static func level(_ s: Float) -> Float { core * min(1, max(0, (s - fieldLow) / (fieldHigh - fieldLow))) }
+    /// 墨的演进：旧墨按天褪色，与这一帧的场取较浓者（着色器 inkEvolveFragment 同一算法）。
+    @inline(__always) public static func evolve(_ old: Float, field s: Float, days: Float) -> Float { max(old * decay(days: days), level(s)) }
+    /// 兵力系数（墨团大小）。
+    public static func width(troops: Float) -> Float { min(1.3, max(0.8, (max(100, troops) / 4000).squareRoot())) }
+    /// 墨团半径：四千兵约 0.42 个格距（单团看得见的半宽约 0.37 格距）；在敌境原地驻扎随推演天数长大，二十天到 1.5 倍封顶。
+    public static func blobRadius(scale: Float, troops: Float, dwelt: Float = 0) -> Float {
+        scale * 0.42 * width(troops: troops) * (1 + 0.5 * min(1, max(0, dwelt) / 20))
+    }
+    /// 褪色：每天乘以 decay(1)。走过的墨约一年半后才淡到看不见。
+    public static let decayRate: Float = 0.0015
     public static func decay(days: Float) -> Float { exp(-decayRate * max(0, days)) }
     /// 守军擦墨。
     public static func holdAlpha(days: Float) -> Float { 1 - exp(-0.45 * max(0, days)) }
-    /// 围城：以军队为中心、半径随进度长到铺满（far：中心到本州最远点）。
-    public static func siegeRadius(progress q: Float, far: Float, scale: Float) -> Float { q >= 0.98 ? far + scale : max(0, q) * (far + scale * 0.3) }
-    /// 围城处的浓度（距中心 d）。
-    public static func siegeCover(distance d: Float, radius: Float, scale: Float) -> Float { min(0.9, max(0, 0.5 + (radius - d) / (scale * 0.45))) }
-    /// 兵力系数（墨的宽窄）与半径。
-    public static func width(troops: Float) -> Float { min(1.3, max(0.8, (max(100, troops) / 4000).squareRoot())) }
-    // 1.21.0 加宽后范围过大（行军 0.55、驻留 1.0 倍格距，外加一圈水痕）：收回到一条路宽，驻留最多约半个州。
-    public static func trailRadius(scale: Float, troops: Float) -> Float { scale * 0.4 * width(troops: troops) }
-    public static func dwellRadius(scale: Float, troops: Float, dwelt: Float) -> Float { scale * 0.6 * width(troops: troops) * dwellGrowth(dwelt: dwelt) }
     public static func holdRadius(scale: Float) -> Float { scale * 0.8 }
-    /// 显示阈值：浓度过此值才见色（着色器 inkComposite）。
+    /// 围城：以军队为中心、半径随进度长到铺满（far：中心到本州最远点）。围城在场里的值 = siegeCover。
+    public static func siegeRadius(progress q: Float, far: Float, scale: Float) -> Float { q >= 0.98 ? far + scale : max(0, q) * (far + scale * 0.3) }
+    /// 围城处的场值（距中心 d）。
+    public static func siegeCover(distance d: Float, radius: Float, scale: Float) -> Float { min(0.9, max(0, 0.5 + (radius - d) / (scale * 0.45))) }
+    /// 显示阈值：墨的浓度过此值才见色（着色器 inkComposite）。
     public static let visible: Float = 0.3
 
     /// 推演天数的消耗：一步来了几天，就在这一步的动画时长里匀速用掉；暂停后用完即停，不再落墨。

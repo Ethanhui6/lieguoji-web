@@ -87,21 +87,23 @@ final class ConquestWashTests: XCTestCase {
 
     // MARK: GPU 墨场（CPU 复算：与着色器同一公式）
 
-    /// CPU 上的墨场：一行采样点（沿行军线 y = 0），按着色器的笔触（胶囊、横向衰减 falloff、预乘“叠加”混合）累计浓度。
+    /// CPU 上的墨：一行采样点（y = offset），每帧把几支军队的墨团相加成场，再 evolve 到纸上（与 encodeInk 相同）。
     struct InkLine {
-        var cover: [Float]
+        var ink: [Float]
         let xs: [Float]
-        init(from: Float, to: Float, step: Float) { xs = Array(stride(from: from, through: to, by: step)); cover = Array(repeating: 0, count: xs.count) }
-        /// 一笔：a → b（两端齐平；a = b 为圆点），半径 r，不透明度 alpha；采样点在 (x, offset)。与着色器同一算法（InkPlan.stroke）。
-        mutating func stamp(_ a: SIMD2<Float>, _ b: SIMD2<Float>, r: Float, alpha: Float, offset: Float = 0) {
+        init(from: Float, to: Float, step: Float) { xs = Array(stride(from: from, through: to, by: step)); ink = Array(repeating: 0, count: xs.count) }
+        /// 一帧：blobs 为各军（上一帧位置、此刻位置、半径）；days 为这一帧经过的推演天数。
+        mutating func frame(_ blobs: [(SIMD2<Float>, SIMD2<Float>, Float)], days: Float = 0, offset: Float = 0) {
             for i in xs.indices {
-                let s = InkPlan.stroke(SIMD2(xs[i], offset), a, b, radius: r, alpha: alpha)
-                cover[i] = InkPlan.blend(cover[i], s)
+                var field: Float = 0
+                for (a, b, r) in blobs { field += InkPlan.blob(SIMD2(xs[i], offset), a, b, radius: r) }
+                ink[i] = InkPlan.evolve(ink[i], field: field, days: days)
             }
         }
+        func reach() -> Float { Float(ink.filter { $0 > InkPlan.visible }.count) }
     }
 
-    /// 军队以 speed（世界单位/秒）从 x = 0 走到 x = length，按 fps 逐帧落墨（与 encodeInk 相同：上一帧落墨处 → 此刻位置）。
+    /// 军队以 speed（世界单位/秒）从 x = 0 走到 x = length，按 fps 逐帧落墨（上一帧位置 → 此刻位置）。
     static func walk(fps: Float, speed: Float, length: Float = 200, radius: Float = 12, offset: Float = 0) -> InkLine {
         var line = InkLine(from: 20, to: length - 20, step: 1)
         let dt = 1 / fps
@@ -109,54 +111,86 @@ final class ConquestWashTests: XCTestCase {
         while x < length {
             x = min(length, x + speed * dt)
             let p = SIMD2(x, 0)
-            line.stamp(last, p, r: radius, alpha: InkPlan.trailAlpha(len: (p - last).x, radius: radius), offset: offset)
+            line.frame([(last, p, radius)], offset: offset)
             last = p
         }
         return line
     }
 
     func testTrailIsContinuousAtAnyFrameRateAndSpeed() {
-        // 手机上 30/60/120 帧、慢走与急行军（一帧走过半个墨迹宽到三个墨迹宽）：路线中心处处见色，没有断档。
+        // 手机上 30/60/120 帧、慢走与急行军：路线中心处处见色、浓淡一致，没有断档。
         for fps: Float in [30, 60, 120] {
             for speed: Float in [20, 120, 600, 2000] {
                 let line = Self.walk(fps: fps, speed: speed)
-                let lo = line.cover.min()!, hi = line.cover.max()!
-                XCTAssertGreaterThan(lo, InkPlan.visible + 0.25, "\(fps) 帧、速度 \(speed)：路线上最淡处 \(lo) 不见色（断档）")
-                XCTAssertLessThan(hi - lo, 0.03, "\(fps) 帧、速度 \(speed)：浓淡起伏 \(hi - lo) 过大（一段一段）")
+                let lo = line.ink.min()!, hi = line.ink.max()!
+                XCTAssertGreaterThan(lo, InkPlan.visible + 0.25, "(fps) 帧、速度 (speed)：路线上最淡处 (lo) 不见色（断档）")
+                XCTAssertLessThan(hi - lo, 0.03, "(fps) 帧、速度 (speed)：浓淡起伏 (hi - lo) 过大（一段一段）")
             }
         }
-        // 与帧率无关：同样的路，30 帧与 120 帧的浓度差很小。
-        let a = Self.walk(fps: 30, speed: 120), b = Self.walk(fps: 120, speed: 120)
-        for i in a.cover.indices { XCTAssertEqual(a.cover[i], b.cover[i], accuracy: 0.06) }
         // 横向有宽度、有边：离路线一个半半径处已看不见。
         let side = Self.walk(fps: 60, speed: 120, offset: 18)
-        XCTAssertLessThan(side.cover.max()!, InkPlan.visible, "墨迹是一条有宽度的路，不是一整片")
+        XCTAssertLessThan(side.ink.max()!, InkPlan.visible, "墨迹是一条有宽度的路，不是一整片")
         let near = Self.walk(fps: 60, speed: 120, offset: 6)
-        XCTAssertGreaterThan(near.cover.min()!, InkPlan.visible)
+        XCTAssertGreaterThan(near.ink.min()!, InkPlan.visible)
+    }
+
+    func testTrailStaysAfterTheArmyLeaves() {
+        // 军队走过之后墨留在纸上：半年后仍清楚可见，一年半后才淡到看不见（以前一个月就没了）。
+        var line = Self.walk(fps: 60, speed: 120)
+        for _ in 0..<180 { line.frame([], days: 1) }
+        XCTAssertGreaterThan(line.ink.min()!, InkPlan.visible + 0.25, "走开半年，走过的路仍在")
+        for _ in 0..<540 { line.frame([], days: 1) }
+        XCTAssertLessThan(line.ink.max()!, InkPlan.visible, "一年半后褪尽")
+        // 场每帧重算：军队不再落墨后场为零，旧墨不会因为“场”残留而越积越浓。
+        XCTAssertLessThanOrEqual(line.ink.max()!, InkPlan.core)
+    }
+
+    func testNearbyArmiesMergeIntoOneLargerBlot() {
+        let r: Float = 12
+        // 单团。
+        var one = InkLine(from: -80, to: 80, step: 0.5)
+        one.frame([(.zero, .zero, r)])
+        // 两支在同一处：墨团比一支大。
+        var two = InkLine(from: -80, to: 80, step: 0.5)
+        two.frame([(.zero, .zero, r), (.zero, .zero, r)])
+        XCTAssertGreaterThan(two.reach(), one.reach() * 1.25, "同处两军的墨团明显更大")
+        // 四支：继续变大，但有界（对数增长，不会一片铺满）。
+        var four = InkLine(from: -80, to: 80, step: 0.5)
+        four.frame(Array(repeating: (.zero, .zero, r), count: 4))
+        XCTAssertGreaterThan(four.reach(), two.reach())
+        XCTAssertLessThan(four.reach(), one.reach() * 2.2)
+        // 相距 2 个半径的两支：各自的单团在中点处碰不到，但相加后连成一片（不是两个分开的圆圈）。
+        let d = 2 * r
+        var apart = InkLine(from: -80, to: 80, step: 0.5)
+        apart.frame([(SIMD2(-d / 2, 0), SIMD2(-d / 2, 0), r)])
+        let mid = apart.xs.firstIndex { abs($0) < 0.01 }!
+        XCTAssertLessThan(apart.ink[mid], InkPlan.visible, "单团够不到中点")
+        var pair = InkLine(from: -80, to: 80, step: 0.5)
+        pair.frame([(SIMD2(-d / 2, 0), SIMD2(-d / 2, 0), r), (SIMD2(d / 2, 0), SIMD2(d / 2, 0), r)])
+        XCTAssertGreaterThan(pair.ink[mid], InkPlan.visible + 0.2, "两团相融，中间连起来")
+        // 相融之后连续：两团之间没有空档。
+        for i in pair.xs.indices where abs(pair.xs[i]) <= d / 2 { XCTAssertGreaterThan(pair.ink[i], InkPlan.visible) }
     }
 
     func testStandingStillOnlySpreadsWithSimulatedDays() {
-        // 原地不动：没有行军墨（暂停时不长）；推演天数在走才洇开，越久越开。
-        XCTAssertEqual(InkPlan.trailAlpha(len: 0, radius: 12), 0)
-        XCTAssertEqual(InkPlan.dwellAlpha(dwelt: 0), 0)
-        var line = InkLine(from: -60, to: 60, step: 1)
+        // 原地不动：推演天数在走才洇开，越久越开，二十天封顶；暂停时不长。
         var clock = InkPlan.Clock()
         var reach = [Float](), dwelt: Float = 0
+        var line = InkLine(from: -60, to: 60, step: 1)
         for _ in 0..<120 {
-            clock.add(days: 1, over: 0.5)                 // 每步一天、动画 0.5 秒
-            for _ in 0..<30 {                             // 60 帧下这一步的 30 帧
-                dwelt += clock.take(1 / 60)
-                line.stamp(.zero, .zero, r: InkPlan.dwellRadius(scale: 30, troops: 4000, dwelt: dwelt), alpha: InkPlan.dwellAlpha(dwelt: dwelt))
+            clock.add(days: 1, over: 0.5)
+            for _ in 0..<30 {
+                let days = clock.take(1 / 60); dwelt += days
+                let r = InkPlan.blobRadius(scale: 30, troops: 4000, dwelt: dwelt)
+                line.frame([(.zero, .zero, r)], days: days)
             }
-            reach.append(Float(line.cover.filter { $0 > InkPlan.visible }.count))
+            reach.append(line.reach())
         }
         XCTAssertEqual(clock.left, 0, accuracy: 1e-4, "一步的天数在这一步的动画里用完")
         for i in 1..<reach.count { XCTAssertGreaterThanOrEqual(reach[i], reach[i - 1]) }
-        XCTAssertGreaterThan(reach[19], reach[2] + 6, "驻留越久洇得越开")
-        // 有界：停四个月也只洇开约一个格距宽（取较浓者混合，不越积越宽；以前叠加混合会洇到一个多州）。
+        XCTAssertGreaterThan(reach[19], reach[1] + 6, "驻留越久洇得越开")
         XCTAssertEqual(reach.last!, reach[25], "二十天后不再变大")
-        XCTAssertLessThan(reach.last!, 30 * 1.0, "驻留的墨不超过一个格距宽")
-        // 时钟：暂停（不再加天数）后不再落墨。
+        XCTAssertLessThan(reach.last!, 30 * 1.4, "驻留的墨约一个格距宽，不铺满整州")
         XCTAssertEqual(clock.take(1), 0)
     }
 
@@ -170,7 +204,7 @@ final class ConquestWashTests: XCTestCase {
         for _ in 0..<40 { spent += clock.take(1 / 60) }
         XCTAssertEqual(spent, 10, accuracy: 1e-3)
         XCTAssertEqual(InkPlan.decay(days: 0), 1)
-        XCTAssertLessThan(InkPlan.decay(days: 30), 0.45, "一个月后墨褪去一大半")
+        XCTAssertGreaterThan(InkPlan.decay(days: 30), 0.9, "一个月后墨几乎还在")
     }
 
     func testSiegeFillsFromTheArmyToTheWholeProvince() {

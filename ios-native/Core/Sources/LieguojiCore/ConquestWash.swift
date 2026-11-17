@@ -258,8 +258,8 @@ public enum InkPlan {
     public static func siegeCover(distance d: Float, radius: Float, scale: Float) -> Float { min(0.9, max(0, 0.5 + (radius - d) / (scale * 0.45))) }
     /// 兵力系数（墨的宽窄）与半径。
     public static func width(troops: Float) -> Float { min(1.3, max(0.8, (max(100, troops) / 4000).squareRoot())) }
-    public static func trailRadius(scale: Float, troops: Float) -> Float { scale * 0.4 * width(troops: troops) }
-    public static func dwellRadius(scale: Float, troops: Float) -> Float { scale * 0.85 * width(troops: troops) }
+    public static func trailRadius(scale: Float, troops: Float) -> Float { scale * 0.55 * width(troops: troops) }
+    public static func dwellRadius(scale: Float, troops: Float) -> Float { scale * 1.0 * width(troops: troops) }
     public static func holdRadius(scale: Float) -> Float { scale * 0.8 }
     /// 显示阈值：浓度过此值才见色（着色器 inkComposite）。
     public static let visible: Float = 0.3

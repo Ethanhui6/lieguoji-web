@@ -279,6 +279,7 @@ struct MapView: UIViewRepresentable {
         private var renderer: MapRenderer?
         private var labels: MapLabelsView!
         private let effects = EffectsView()
+        private let floats = UIView()
         private let troops = TroopLabelsView()
         private var shownEffects = MapEffects()
         private var shownRevision = -1
@@ -388,7 +389,11 @@ struct MapView: UIViewRepresentable {
             labels = MapLabelsView(map: map)
             for v in [mtk!, labels!] as [UIView] { v.frame = container.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(v) }
             labels.isUserInteractionEnabled = false
-            effects.frame = container.bounds; effects.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(effects)
+            // 战争特效在地名之下（地图之上）：交战、围城、攻占、事件印都不盖住国名与城名；
+            // 战况飘字是文字，另放在地名之上的一层。
+            effects.frame = container.bounds; effects.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.insertSubview(effects, aboveSubview: mtk)
+            floats.frame = container.bounds; floats.autoresizingMask = [.flexibleWidth, .flexibleHeight]; floats.isUserInteractionEnabled = false
+            container.addSubview(floats); effects.floatHost = floats.layer
             // Sea points for the waves: open-sea cell centres, thinned to a few thousand.
             var spots = [CGPoint]()
             let cells = map.cellCount, stride = max(1, cells / 3000)

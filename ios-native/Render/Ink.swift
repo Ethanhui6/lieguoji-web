@@ -117,20 +117,30 @@ struct InkPipelines {
     struct InkLook { float2 size; float tint; float visible; float soft; float noise; float freq; float detail; };
     fragment float4 inkCompositeFragment(InkCompositeOut in [[stage_in]], texture2d<float> ink [[texture(0)]], sampler s [[sampler(0)]], constant InkLook& k [[buffer(0)]]) {
         float4 v = ink.sample(s, in.world / k.size);
-        if (v.a < 0.02) discard_fragment();
+        if (v.a < 0.015) discard_fragment();
         float3 c = v.rgb / v.a;
         float own = smoothstep(0.05, 0.13, length(c - in.owner.rgb));
         if (own < 0.01) discard_fragment();
         float2 q = in.world;
-        float level = v.a + (fbm(q * k.freq) - 0.5) * 2.0 * k.noise;
+        // 阈值受纸纹扰动（大尺度起伏 + 细碎毛口），墨边不是光滑的圆管。
+        float n1 = fbm(q * k.freq), n2 = fbm(q * k.freq * 3.3 + float2(5.1, 1.7));
+        float level = v.a + (n1 - 0.5) * 2.0 * k.noise + (n2 - 0.5) * 0.1;
         float sx = level - k.visible;
         float reached = smoothstep(-k.soft, k.soft, sx);
+        // 墨色：国色压深三分（掺墨），在相近颜色的敌国底色上也分得出；新落的墨更浓，旧墨随褪色变淡。
+        float3 deep = mix(c, c * c * 0.85, 0.4);
+        float fresh = smoothstep(0.35, 0.95, v.a);
         float grain = fbm(q * k.freq * 2.7 + float2(7.3, 2.9));
-        float body = k.tint * reached * (0.82 + 0.2 * smoothstep(0.55, 0.95, v.a) + 0.22 * (grain - 0.5) * k.detail);
-        float rim = exp(-(sx * sx) / max(k.soft * k.soft * 0.6, 1e-6)) * (0.1 + 0.1 * k.detail);
-        float total = (body + rim * (1.0 - body)) * own;
-        float3 rgb = mix(c, float3(0.16, 0.12, 0.09), rim * (1.0 - body) / max(body + rim * (1.0 - body), 1e-4));
-        return float4(rgb, total);
+        float body = k.tint * reached * (0.74 + 0.26 * fresh + 0.2 * (grain - 0.5) * k.detail);
+        // 洇：墨迹之外还有一圈淡水痕（浓度 0.06 起渐显），走过的地方向外晕开，不是一条硬管子。
+        float halo = smoothstep(0.06, k.visible, level) * (1.0 - reached) * 0.24;
+        // 湿边：前沿一道深墨线（宣纸上墨干后留下的水痕边），缩小时略淡。
+        float rim = exp(-(sx * sx) / max(k.soft * k.soft * 0.35, 1e-6)) * (0.3 + 0.16 * k.detail);
+        float a = body + halo * (1.0 - body);
+        float r = rim * (1.0 - 0.45 * body);
+        float total = a + r * (1.0 - a);
+        float3 rgb = mix(deep, float3(0.15, 0.11, 0.08), r / max(total, 1e-4));
+        return float4(rgb, total * own);
     }
     """
 }
@@ -332,7 +342,8 @@ extension MapRenderer {
         guard let ink, ink.used, let owners = ink.owners, indexCount > 0 else { return }
         let detail = Float(min(1, max(0, (camera.scale - 0.7) / 0.6)))
         let scale = washTopology?.scale ?? 30
-        var look = InkField.Look(size: ink.world, tint: 0.5, visible: InkPlan.visible, soft: 0.09, noise: 0.16, freq: 1 / (scale * 0.9), detail: detail)
+        // 墨身 0.72（以前 0.5，叠在敌国底色上几乎看不出），柔边收窄让湿边成一道线。
+        var look = InkField.Look(size: ink.world, tint: 0.72, visible: InkPlan.visible, soft: 0.07, noise: 0.15, freq: 1 / (scale * 0.9), detail: detail)
         encoder.setRenderPipelineState(inkPipes.composite)
         encoder.setVertexBuffer(positions, offset: 0, index: 0)
         encoder.setVertexBuffer(owners, offset: 0, index: 1)

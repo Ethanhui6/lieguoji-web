@@ -751,8 +751,8 @@ import LieguojiCore
                 let h = self.heraldQueue.removeFirst()
                 self.herald = h
                 switch h.kind { case .war, .uprising: GameFeel.shared.news(.warning); case .peace, .restoration: GameFeel.shared.news(.success); case .capture, .extinction, .capital: GameFeel.shared.newsTap() }
-                // 场景时长：宣战 3.4 秒（展卷、旗出、长戈交叉、朱墨溅开、注脚），议和 3.2，攻克 2.0，其余 2.8。
-                let seconds: Double = h.kind == .war ? 3.4 : h.kind == .peace ? 3.2 : h.kind == .capture ? 2.0 : 2.8
+                // 场景时长：宣战 3.0 秒、议和 2.8、攻克 1.8，其余 2.4（窄条传报，读完即收）。
+                let seconds: Double = h.kind == .war ? 3.0 : h.kind == .peace ? 2.8 : h.kind == .capture ? 1.8 : 2.4
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
                 self.herald = nil
                 try? await Task.sleep(nanoseconds: 350_000_000)

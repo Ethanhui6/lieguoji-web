@@ -29,8 +29,9 @@ struct HeraldBanner: View {
             let t = reduceMotion ? 3 : context.date.timeIntervalSince(start)
             scene(t)
         }
-        .frame(maxWidth: 440).frame(height: 116)
-        .padding(.horizontal, 14)
+        // 窄条：高 58 点、最宽 340 点，挂在顶栏下，不遮地图中部。
+        .frame(maxWidth: 340).frame(height: 58)
+        .padding(.horizontal, 24)
         .onAppear { start = Date() }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(herald.text)
@@ -44,53 +45,56 @@ struct HeraldBanner: View {
         GeometryReader { g in
             let w = g.size.width, h = g.size.height
             let paperW = max(24, w * (0.08 + 0.92 * unroll))
+            let content = Self.span(t, 0.28, 0.6)
             ZStack {
-                // 纸卷：纸面、两端卷轴。
-                RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.paper2)
-                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.ink.opacity(0.12), lineWidth: 0.8))
-                    .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(accent.opacity(0.28), lineWidth: 0.8).padding(5))
-                    .shadow(color: Theme.ink.opacity(0.18), radius: 8, y: 3)
-                    .frame(width: paperW, height: h - 8)
+                // 纸卷：纸面、两端细轴。
+                RoundedRectangle(cornerRadius: 5, style: .continuous).fill(Theme.paper2)
+                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Theme.ink.opacity(0.12), lineWidth: 0.7))
+                    .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).strokeBorder(accent.opacity(0.26), lineWidth: 0.7).padding(3.5))
+                    .shadow(color: Theme.ink.opacity(0.14), radius: 5, y: 2)
+                    .frame(width: paperW, height: h - 4)
                 ForEach([-1.0, 1.0], id: \.self) { side in
                     Capsule().fill(LinearGradient(colors: [Color(red: 0.33, green: 0.22, blue: 0.14), Color(red: 0.52, green: 0.36, blue: 0.22), Color(red: 0.3, green: 0.2, blue: 0.12)], startPoint: .leading, endPoint: .trailing))
-                        .frame(width: 9, height: h)
-                        .offset(x: side * (paperW / 2 + 2))
+                        .frame(width: 6, height: h)
+                        .offset(x: side * (paperW / 2 + 1.5))
                 }
-                // 画面。
-                Canvas { ctx, size in draw(ctx, size: size, t: t) }
-                    .frame(width: paperW - 16, height: h - 8)
-                    .clipped()
-                // 注脚：双方国名与一句事由。
-                captions(t, width: paperW)
+                // 左侧一幅小画（场景按 208 × 100 的画面绘制、缩到一半），右侧事由。
+                HStack(spacing: 8) {
+                    Canvas { ctx, size in
+                        var c = ctx; c.scaleBy(x: size.width / 208, y: size.height / 100)
+                        // 单主体的画面原本画在中线左侧 46 处（给注脚让位），小画里居中。
+                        if herald.kind != .war && herald.kind != .peace { c.translateBy(x: 46, y: 0) }
+                        draw(c, size: CGSize(width: 208, height: 100), t: t)
+                    }
+                    .frame(width: 96, height: 46)
+                    Rectangle().fill(Theme.ink.opacity(0.12)).frame(width: 0.7, height: 30)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(title).font(Theme.kai(12)).foregroundStyle(accent).lineLimit(1)
+                        Text(herald.text).font(Theme.kai(14)).foregroundStyle(Theme.ink).lineLimit(2).minimumScaleFactor(0.72)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .opacity(Self.span(t, 0.5, 0.85)).offset(x: (1 - Self.span(t, 0.5, 0.85)) * 6)
+                    Spacer(minLength: 0)
+                }
+                .padding(.leading, 12).padding(.trailing, 14)
+                .frame(width: max(24, paperW), height: h)
+                .clipped()
+                .opacity(content)
             }
             .frame(width: w, height: h)
         }
     }
 
-    @ViewBuilder private func captions(_ t: Double, width: CGFloat) -> some View {
-        let names = Self.span(t, 0.75, 1.1), line = Self.span(t, 1.0, 1.4)
-        VStack(spacing: 2) {
-            Spacer(minLength: 0)
-            Text(herald.text).font(Theme.kai(14)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
-                .opacity(line).offset(y: (1 - line) * 4)
-                .padding(.horizontal, 22)
-        }
-        .padding(.bottom, 10)
-        .frame(width: width)
-        .overlay(alignment: .top) {
-            if herald.nations.count >= 2 {
-                HStack {
-                    Text(name(herald.nations[0])).font(Theme.kai(17)).foregroundStyle(Theme.ink)
-                    Spacer()
-                    Text(name(herald.nations[1])).font(Theme.kai(17)).foregroundStyle(Theme.ink)
-                }
-                .lineLimit(1).minimumScaleFactor(0.6)
-                .padding(.horizontal, 70).padding(.top, 14)
-                .opacity(names)
-            } else if herald.nations.count == 1 {
-                Text(name(herald.nations[0])).font(Theme.kai(17)).foregroundStyle(Theme.ink).padding(.top, 14).opacity(names)
-                    .offset(x: 46)
-            }
+    /// 传报的类别名（右栏上方一行小字，按事件着色）。
+    private var title: String {
+        switch herald.kind {
+        case .war: return "宣战"
+        case .peace: return "议和"
+        case .capture: return "攻克"
+        case .uprising: return "起义"
+        case .restoration: return "复辟"
+        case .extinction: return "绝嗣"
+        case .capital: return "迁都"
         }
     }
 

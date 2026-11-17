@@ -32,8 +32,8 @@ struct FinanceSection: View {
             if let f = info {
                 HStack(alignment: .center, spacing: 12) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("国库").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
-                        Text(Names.wan(Int(f.gold))).font(Theme.kai(22)).foregroundStyle(f.gold < 0 ? Theme.seal : Theme.ink)
+                        Text("国库").font(Theme.label).foregroundStyle(Theme.ink2)
+                        Text(Names.wan(Int(f.gold))).font(Theme.title).foregroundStyle(f.gold < 0 ? Theme.seal : Theme.ink)
                     }
                     Spacer()
                     Sparkline(values: f.record).frame(width: 120, height: 34)
@@ -52,9 +52,9 @@ struct FinanceSection: View {
                     // 腐化度: the original's four levels, its cost to the income, and the two orders.
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("腐化度").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                            Text("腐化度").font(Theme.label).foregroundStyle(Theme.ink2)
                             Spacer()
-                            Text("\(f.corruptionLevel ?? "") · \(Int(c))").font(Theme.kai(15)).foregroundStyle(c >= 40 ? Theme.seal : Theme.ink)
+                            Text("\(f.corruptionLevel ?? "") · \(Int(c))").font(Theme.body).foregroundStyle(c >= 40 ? Theme.seal : Theme.ink)
                         }
                         GeometryReader { g in
                             ZStack(alignment: .leading) {
@@ -64,7 +64,7 @@ struct FinanceSection: View {
                         }
                         .frame(height: 5).animation(Motion.panel, value: c)
                         Text(c > 15 ? "每月收入约 −\(Int(c / 2.5))%" + (c >= 65 ? "，国运逐月下降" : "") + "。国土越大、税越重、施政越差，腐化越深。" : "吏治清明，收入不受影响。")
-                            .font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                            .font(Theme.caption).foregroundStyle(Theme.ink2)
                         HStack(spacing: 10) {
                             Button { Task { await corruption(lower: true) } } label: { SecondaryLabel(title: "降低腐败", symbol: "checkmark.seal") }
                             Button { Task { await corruption(lower: false) } } label: { SecondaryLabel(title: "加深腐败", symbol: "exclamationmark.triangle") }
@@ -78,12 +78,12 @@ struct FinanceSection: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         Image(systemName: "building.columns").font(.system(size: 14)).foregroundStyle(Theme.seal.opacity(0.8))
-                        Text("国债").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                        Text("国债").font(Theme.label).foregroundStyle(Theme.ink2)
                         PaperTag(text: ["信用良好", "负债尚可", "债务沉重", "濒临破产"][min(3, max(0, f.debtLevel ?? 0))], color: (f.debtLevel ?? 0) >= 2 ? Theme.seal : (f.debtLevel ?? 0) == 1 ? Theme.ink2 : Theme.jade)
                         Spacer()
-                        Text(Names.wan(Int(f.debt ?? 0))).font(Theme.kai(15)).foregroundStyle(Theme.ink).monospacedDigit().contentTransition(.numericText())
+                        Text(Names.wan(Int(f.debt ?? 0))).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().contentTransition(.numericText())
                     }
-                    if (f.debt ?? 0) > 0 { Text("每月利息 \(Int(f.interest ?? 0)) 金，相当于 \(Int(f.debtMonths ?? 0)) 个月收入；超过 48 个月将国家破产。").font(Theme.kai(12)).foregroundStyle(Theme.ink2) }
+                    if (f.debt ?? 0) > 0 { Text("每月利息 \(Int(f.interest ?? 0)) 金，相当于 \(Int(f.debtMonths ?? 0)) 个月收入；超过 48 个月将国家破产。").font(Theme.caption).foregroundStyle(Theme.ink2) }
                     HStack(spacing: 10) {
                         Button { Task { await debt(borrow: true) } } label: { SecondaryLabel(title: "举债一年岁入", symbol: "arrow.down.circle") }
                         Button { Task { await debt(borrow: false) } } label: { SecondaryLabel(title: "偿还国债", symbol: "arrow.up.circle") }
@@ -93,9 +93,9 @@ struct FinanceSection: View {
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 Divider2()
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("税制").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                    Text("税制").font(Theme.label).foregroundStyle(Theme.ink2)
                     ChipPicker(items: Self.policies.map { ($0.0, $0.1) }, selection: Binding(get: { f.policy }, set: { v in choose(v) }))
-                    Text(Self.policies.first { $0.0 == f.policy }?.2 ?? "").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Text(Self.policies.first { $0.0 == f.policy }?.2 ?? "").font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
             } else {
@@ -131,9 +131,9 @@ struct FinanceSection: View {
     static let policies = [("light", "轻徭薄赋", "收入 −20%，国运每月 +0.1，人口增长加快"), ("normal", "常税", "按原作税收"), ("heavy", "重税", "收入 +30%，国运每月 −0.15，人口缓慢流失")]
     private func line(_ label: String, _ value: String, warn: Bool = false, strong: Bool = false) -> some View {
         HStack {
-            Text(label).font(Theme.kai(15)).foregroundStyle(Theme.ink2)
+            Text(label).font(Theme.body).foregroundStyle(Theme.ink2)
             Spacer()
-            Text(value).font(Theme.kai(strong ? 17 : 15)).foregroundStyle(warn ? Theme.seal : Theme.ink).monospacedDigit()
+            Text(value).font((strong ? Theme.section : Theme.body)).foregroundStyle(warn ? Theme.seal : Theme.ink).monospacedDigit()
         }
         .padding(.horizontal, 16).padding(.vertical, 6)
     }
@@ -154,7 +154,7 @@ struct Sparkline: View {
                 }
                 .stroke((values.last ?? 0) >= (values.first ?? 0) ? Theme.jade : Theme.seal, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
             } else {
-                Text("记录中").font(Theme.kai(12)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, maxHeight: .infinity)
+                Text("记录中").font(Theme.caption).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
     }
@@ -179,18 +179,18 @@ struct TradeSection: View {
         Group2 {
             if let info {
                 HStack {
-                    Text("贸易增收").font(Theme.kai(16)).foregroundStyle(Theme.ink2)
+                    Text("贸易增收").font(Theme.body).foregroundStyle(Theme.ink2)
                     Spacer()
-                    Text("每月 +\(Int(info.income)) 金（+\(String(format: "%.1f", info.rate))%）").font(Theme.kai(16)).foregroundStyle(Theme.seal)
+                    Text("每月 +\(Int(info.income)) 金（+\(String(format: "%.1f", info.rate))%）").font(Theme.body).foregroundStyle(Theme.seal)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 Divider2()
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("本国特产").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                    Text("本国特产").font(Theme.label).foregroundStyle(Theme.ink2)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 5) {
                             ForEach(info.goods.indices, id: \.self) { i in
-                                Text("\(info.goods[i].name) \(info.goods[i].provinces)").font(Theme.kai(13)).foregroundStyle(Theme.ink)
+                                Text("\(info.goods[i].name) \(info.goods[i].provinces)").font(Theme.label).foregroundStyle(Theme.ink)
                                     .padding(.horizontal, 7).padding(.vertical, 2).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
                             }
                         }
@@ -202,9 +202,9 @@ struct TradeSection: View {
                     ForEach(info.partners.indices, id: \.self) { i in
                         let p = info.partners[i]
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(p.nation >= 0 && p.nation < map.meta.nations.count ? map.meta.nations[p.nation].name : "").font(Theme.kai(15)).foregroundStyle(Theme.ink)
+                            Text(p.nation >= 0 && p.nation < map.meta.nations.count ? map.meta.nations[p.nation].name : "").font(Theme.body).foregroundStyle(Theme.ink)
                             Spacer()
-                            Text(p.goods.isEmpty ? "无新货" : p.goods.joined(separator: "、")).font(Theme.kai(13)).foregroundStyle(Theme.ink2).lineLimit(1)
+                            Text(p.goods.isEmpty ? "无新货" : p.goods.joined(separator: "、")).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
                         }
                         .padding(.horizontal, 16).padding(.vertical, 7)
                     }
@@ -245,16 +245,16 @@ struct FamilyTreeSheet: View {
                     InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(30)
                 case .failed:
                     VStack(spacing: 12) {
-                        Text("族谱未能载入：这一家族可能已不存在，或世界已切换。").font(Theme.kai(15)).foregroundStyle(Theme.ink2).multilineTextAlignment(.center)
+                        Text("族谱未能载入：这一家族可能已不存在，或世界已切换。").font(Theme.body).foregroundStyle(Theme.ink2).multilineTextAlignment(.center)
                         Button { Task { await reload() } } label: {
-                            Text("重试").font(Theme.kai(16)).foregroundStyle(Theme.seal).padding(.horizontal, 18).padding(.vertical, 8)
+                            Text("重试").font(Theme.body).foregroundStyle(Theme.seal).padding(.horizontal, 18).padding(.vertical, 8)
                                 .overlay(Capsule().stroke(Theme.seal.opacity(0.6), lineWidth: 1))
                         }
                         .buttonStyle(PressStyle())
                     }
                     .frame(maxWidth: .infinity).padding(24)
                 case .loaded(let tree) where tree.members.isEmpty:
-                    Text("族中已无可考之人。").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(24)
+                    Text("族中已无可考之人。").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(24)
                 case .loaded(let tree):
                     ForEach(tree.generations.indices, id: \.self) { g in
                         SectionLabel("第\(FamilyTree.numeral(g + 1))代")
@@ -281,7 +281,7 @@ struct FamilyTreeSheet: View {
                     return (e == nil ? await model.editPerson(p.key, skills: skills, traits: traits) : e, "\(p.name)已修改")
                 }
             }
-            .presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+            .presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
         .sheet(item: $ageEdit) { m in
             NumberEditSheet(title: m.name + "的年龄", unit: "岁", value: m.age, range: 0...110) { v in
@@ -289,17 +289,17 @@ struct FamilyTreeSheet: View {
                 let age = Int(v.rounded())
                 perform { (await model.renamePerson(m.id, first: nil, last: nil, age: age), "\(m.name)已改为\(age)岁") }
             }
-            .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.kai(17))
+            .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
     }
     private func row(_ m: FamilyTree.Member, _ tree: FamilyTree) -> some View {
         HStack(spacing: 8) {
-            Text(m.name).font(Theme.kai(17)).foregroundStyle(m.alive ? Theme.ink : Theme.ink2.opacity(0.6)).lineLimit(1).layoutPriority(1)
-            if m.id == tree.head { Text("家主").font(Theme.kai(11)).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
-            if !m.title.isEmpty { Text(m.title).font(Theme.kai(12)).foregroundStyle(Theme.seal).lineLimit(1) }
+            Text(m.name).font(Theme.section).foregroundStyle(m.alive ? Theme.ink : Theme.ink2.opacity(0.6)).lineLimit(1).layoutPriority(1)
+            if m.id == tree.head { Text("家主").font(Theme.caption).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule()) }
+            if !m.title.isEmpty { Text(m.title).font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1) }
             Spacer(minLength: 4)
-            if let s = tree.spouse(of: m) { Text("配 \(s.name)").font(Theme.kai(13)).foregroundStyle(Theme.ink2).lineLimit(1) }
-            Text(m.alive ? "\(m.female ? "女" : "男") · \(Int(m.age))" : "已故").font(Theme.kai(13)).foregroundStyle(Theme.ink2).fixedSize()
+            if let s = tree.spouse(of: m) { Text("配 \(s.name)").font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1) }
+            Text(m.alive ? "\(m.female ? "女" : "男") · \(Int(m.age))" : "已故").font(Theme.label).foregroundStyle(Theme.ink2).fixedSize()
             if m.alive { Image(systemName: "ellipsis.circle").font(.system(size: 13)).foregroundStyle(Theme.seal.opacity(busy ? 0.3 : 0.7)) }
         }
         .padding(.horizontal, 16).padding(.vertical, 8)

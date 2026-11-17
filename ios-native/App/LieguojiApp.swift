@@ -33,6 +33,13 @@ enum Theme {
         return Color(red: Double(c.r), green: Double(c.g), blue: Double(c.b))
     }
     static func kai(_ size: CGFloat) -> Font { .custom(fontName, size: size) }
+    /// 字号五级（国家页等信息页统一用这几级，不再各写各的号数）：
+    /// 标题 22（页名、国名）、分节 17（分节标题、主按钮）、正文 15（名称、数值、行内容）、标注 13（次要说明、单位）、注释 12（小注、标签）。
+    static let title = kai(22)
+    static let section = kai(17)
+    static let body = kai(15)
+    static let label = kai(13)
+    static let caption = kai(12)
 }
 
 enum Names {

@@ -57,9 +57,9 @@ struct PersonEditor: View {
                 Group2 {
                     VStack(spacing: 10) {
                         HStack(spacing: 10) {
-                            Text("姓").font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 22)
+                            Text("姓").font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 22)
                             TextField("", text: $last, prompt: Text("不改").foregroundColor(Theme.ink2.opacity(0.6))).paperField()
-                            Text("名").font(Theme.kai(16)).foregroundStyle(Theme.ink2).frame(width: 22)
+                            Text("名").font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 22)
                             TextField("", text: $first, prompt: Text("不改").foregroundColor(Theme.ink2.opacity(0.6))).paperField()
                         }
                         PaperSlider(title: "年岁", value: $age, range: 0...100, step: 1) { "\(Int($0)) 岁" }
@@ -76,7 +76,7 @@ struct PersonEditor: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                Text("天赋（最多四项，影响实际能力）").font(Theme.kai(14)).foregroundStyle(Theme.ink2).padding(.horizontal, 24)
+                Text("天赋（最多四项，影响实际能力）").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 24)
                 Group2 {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 82), spacing: 8)], spacing: 8) {
                         ForEach(Self.allTraits, id: \.self) { t in
@@ -86,7 +86,7 @@ struct PersonEditor: View {
                                     if on { traits.removeAll { $0 == t } } else if traits.count < 4 { traits.append(t) }
                                 }
                             } label: {
-                                Text(t).font(Theme.kai(14)).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                                Text(t).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                                     .frame(maxWidth: .infinity).frame(height: 32)
                                     .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 8))
                                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(on ? Color.clear : Theme.line))
@@ -96,7 +96,7 @@ struct PersonEditor: View {
                     }
                     .padding(12)
                     ForEach(traits, id: \.self) { t in
-                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.caption(t)).foregroundStyle(Theme.ink2)).font(Theme.kai(13))
+                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.caption(t)).foregroundStyle(Theme.ink2)).font(Theme.label)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.horizontal, 12).padding(.bottom, traits.isEmpty ? 0 : 10)
@@ -127,19 +127,19 @@ struct AppointSheet: View {
             VStack(alignment: .leading, spacing: 14) {
                 SheetHeader(title: "任命" + (post?.title ?? (office.hasPrefix("WarCommander") ? "征伐主将" : NationSheet.title(String(office.split(separator: ":").first ?? ""), who))), subtitle: post.map { ["按魅力", "按军事", "按外交", "按行政"][min(3, max(0, $0.skill))] + "择优" } ?? NationSheet.officeDuty[office], seal: "任")
                 Group2 {
-                    if loaded && people.isEmpty { Text("本国暂无合适人选").font(Theme.kai(15)).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16) }
+                    if loaded && people.isEmpty { Text("本国暂无合适人选").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16) }
                     if !loaded { InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(20) }
                     ForEach(Array(people.enumerated()), id: \.offset) { i, p in
                         Button { if let id = p.id { appoint(id, p.name) } } label: {
                             HStack(spacing: 10) {
-                                Text(ChineseNumeral.of(i + 1)).font(Theme.kai(13)).foregroundStyle(Theme.seal).frame(width: 22)
+                                Text(ChineseNumeral.of(i + 1)).font(Theme.label).foregroundStyle(Theme.seal).frame(width: 22)
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text("\(p.name)（\(p.female ? "女" : "男")，\(Int(p.age)) 岁）").font(Theme.kai(16)).foregroundStyle(Theme.ink)
+                                    Text("\(p.name)（\(p.female ? "女" : "男")，\(Int(p.age)) 岁）").font(Theme.body).foregroundStyle(Theme.ink)
                                     if p.skills.count == 4 {
-                                        Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                                        Text("魅力 \(Int(p.skills[0])) · 军事 \(Int(p.skills[1])) · 外交 \(Int(p.skills[2])) · 行政 \(Int(p.skills[3]))").font(Theme.caption).foregroundStyle(Theme.ink2)
                                     }
                                     ForEach(p.traits, id: \.self) { t in
-                                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.caption(t)).foregroundStyle(Theme.ink2)).font(Theme.kai(12))
+                                        (Text(t).foregroundStyle(Theme.ink) + Text(TraitText.caption(t)).foregroundStyle(Theme.ink2)).font(Theme.caption)
                                     }
                                 }
                                 Spacer()
@@ -173,7 +173,7 @@ struct EditRow: View {
                 Text(value).foregroundStyle(Theme.ink).monospacedDigit().multilineTextAlignment(.trailing).lineLimit(2)
                 Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7))
             }
-            .font(Theme.kai(17)).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+            .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -209,22 +209,22 @@ struct NumberEditSheet: View {
             HStack(spacing: 10) {
                 TextField("", text: $text, prompt: Text(Self.format(value)).foregroundColor(Theme.ink2.opacity(0.6)))
                     .keyboardType(.numbersAndPunctuation).multilineTextAlignment(.trailing).paperField()
-                if !unit.isEmpty { Text(unit).font(Theme.kai(17)).foregroundStyle(Theme.ink2) }
+                if !unit.isEmpty { Text(unit).font(Theme.section).foregroundStyle(Theme.ink2) }
             }
             .padding(.horizontal, 22)
             VStack(spacing: 4) {
                 Slider(value: $slide, in: bounds).tint(Theme.seal)
                 HStack {
-                    Text(Self.format(bounds.lowerBound) + unit).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Text(Self.format(bounds.lowerBound) + unit).font(Theme.caption).foregroundStyle(Theme.ink2)
                     Spacer()
-                    Text(Self.format(bounds.upperBound) + unit).font(Theme.kai(12)).foregroundStyle(Theme.ink2)
+                    Text(Self.format(bounds.upperBound) + unit).font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
             }
             .padding(.horizontal, 22)
             .onChange(of: slide) { _, v in let s = Self.format(snap(v)); if s != text { text = s } }
             .onChange(of: text) { _, t in if let v = Double(t), bounds.contains(v), abs(v - slide) > 0.5 { slide = v } }
             if let why = Self.rejection(text, range) {
-                Text(why).font(Theme.kai(13)).foregroundStyle(Theme.seal).padding(.horizontal, 22)
+                Text(why).font(Theme.label).foregroundStyle(Theme.seal).padding(.horizontal, 22)
             }
             SealButton(title: "颁行", disabled: Self.accepted(text, range) == nil) { if let v = Self.accepted(text, range) { save(v) } }.padding(.horizontal, 22)
         }

@@ -658,7 +658,7 @@ public struct LandFade: Sendable {
     public private(set) var until: Float = -.infinity
     public init() {}
 
-    @inline(__always) static func ease(_ x: Float) -> Float { let t = min(1, max(0, x)); return t * t * (3 - 2 * t) }
+    @inline(__always) public static func ease(_ x: Float) -> Float { let t = min(1, max(0, x)); return t * t * (3 - 2 * t) }
 
     /// 顶点 v 在时刻 t 显示的颜色。
     public func shown(_ v: Int, at t: Float) -> SIMD3<Float> {

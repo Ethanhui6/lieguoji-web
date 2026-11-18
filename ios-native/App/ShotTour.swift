@@ -38,8 +38,31 @@ enum ShotTour {
         await wait(0.4)
         var options = GameModel.NewWorld()
         options.seed = "20261101"; options.nations = 12; options.provinces = "140"; options.relations = "war"
+        await timeWebFounding(model, options)
         // 02-founding and 02b-rise are taken inside the rise itself, while those lines are on screen.
         await model.generate(options)
+    }
+
+    /// 改前对照：同一世界用网页引擎建一次（WebKit 启动、generate、nativeWorld 交接、Swift 解析各计时），写进
+    /// founding-time.json；随后 model.generate 走 Swift 并写入 swift 一项。
+    @MainActor static func timeWebFounding(_ model: GameModel, _ options: GameModel.NewWorld) async {
+        let json: [String: Any] = ["climate": options.climate.json, "template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": options.seed,
+                                   "relations": options.relations, "naming": options.naming, "cultures": Names.cultureIds.filter { options.cultures.contains($0) }]
+        guard let text = String(data: (try? JSONSerialization.data(withJSONObject: json)) ?? Data(), encoding: .utf8) else { return }
+        var t = Date()
+        do { try await model.engine.start() } catch { model.noteFounding("web-startup", Date().timeIntervalSince(t), cityCount: nil, error: error.localizedDescription); return }
+        model.noteFounding("web-startup", Date().timeIntervalSince(t), cityCount: nil, error: nil)
+        t = Date()
+        do {
+            _ = try await model.engine.call("generate(options)", ["options": text], timeout: 180)
+            model.noteFounding("web-generate", Date().timeIntervalSince(t), cityCount: nil, error: nil)
+            t = Date()
+            let world = try await model.engine.call("nativeWorld()", timeout: 90)
+            model.noteFounding("web-handover", Date().timeIntervalSince(t), cityCount: nil, error: nil)
+            t = Date()
+            let parsed = await Task.detached(priority: .userInitiated) { (try? JS.parse(Data(world.utf8))) != nil }.value
+            model.noteFounding("web-handover-parse", Date().timeIntervalSince(t), cityCount: nil, error: parsed ? nil : "解析失败")
+        } catch { model.noteFounding("web-generate", Date().timeIntervalSince(t), cityCount: nil, error: error.localizedDescription) }
     }
 
     /// In the world: let the war run, look at the fronts up close, then open each panel.

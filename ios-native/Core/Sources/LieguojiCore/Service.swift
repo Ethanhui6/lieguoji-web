@@ -63,6 +63,12 @@ public final class EngineService {
         return e.gameState(includeLabels: labelsDue(e, stepping: true))
     }
 
+    /// 采用本机刚建好的世界（NativeCreation，不经 JSON），回复与 "open" 相同：首个状态与地图。
+    public func adopt(_ e: NativeEngine) -> Reply {
+        engine = e; lastOwners = []
+        var r = Reply(data: state()); r.map = e.mapJSON; return r
+    }
+
     /// Runs one request. `payload` carries the world for `open` and the catalogues for `catalogs`.
     public func handle(_ call: String, _ args: [String: Any], payload: Data? = nil) -> Reply {
         func int(_ k: String) -> Int { (args[k] as? NSNumber)?.intValue ?? (args[k] as? Int) ?? -1 }

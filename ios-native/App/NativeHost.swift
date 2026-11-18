@@ -141,6 +141,48 @@ actor NativeHost {
         guard r.ok else { throw EngineError.message(r.reason) }
         return (r.map, r.data ?? Data(), revision)
     }
+    /// 纯 Swift 建世界的固定输入（随包格网、原作格网邻接与边、绘图网格、群系资源），首次使用时载入一次。
+    private static var creationInputs: CreationMap.Inputs?
+    static func loadCreationInputs() throws -> CreationMap.Inputs {
+        if let creationInputs { return creationInputs }
+        try loadCatalogs()
+        guard let world = Bundle.main.url(forResource: "World", withExtension: nil),
+              let resources = Bundle.main.url(forResource: "biome-resources", withExtension: "json", subdirectory: "Catalog") else { throw EngineError.message("安装包缺少建世界数据") }
+        try OpeningGovernment.loadResources(Data(contentsOf: resources))
+        let x = CreationMap.Inputs(base: try WorldMap.load(directory: world), grid: try TerrainGraph(data: Data(contentsOf: world.appendingPathComponent("grid20k.bin"))),
+                                   edges: try CreationMap.GridEdges(data: Data(contentsOf: world.appendingPathComponent("edges20k.bin"))),
+                                   document: try TerrainDocument(data: Data(contentsOf: world.appendingPathComponent("doc20k.bin"))))
+        creationInputs = x
+        return x
+    }
+    /// 新世界在本机由 Swift 建成（与网页引擎逐位相同，不经 WebKit），然后直接成为运行中的世界；连着电脑时
+    /// 把建好的世界送过去。返回与 `open` 相同的地图与首个状态，以及实际州数。
+    typealias Made = (map: Data?, state: Data, revision: UInt64, cityCount: Int)
+    func create(_ options: NativeCreation.Options, world: Int, progress: @escaping @Sendable (String) -> Void) async throws -> Made {
+        guard let revision = advances.replaceWorld(world: world) else { throw EngineError.message("世界已经切换，忽略旧的建世界请求") }
+        let x = try Self.loadCreationInputs()
+        let built = try NativeCreation.generate(options, inputs: x, worldId: UUID().uuidString.lowercased(), runId: "fms-" + UUID().uuidString.lowercased(), progress: progress)
+        guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的建世界结果") }
+        let r: EngineService.Reply
+        if remote != nil {
+            let data = Data(built.json.utf8)
+            lastWorld = data
+            r = await call("open", payload: data)
+        } else {
+            r = service.adopt(try NativeEngine(created: built))
+        }
+        guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的建世界结果") }
+        guard r.ok else { throw EngineError.message(r.reason) }
+        return (r.map, r.data ?? Data(), revision, built.cityCount)
+    }
+    /// 重算气候（本机世界）：返回新地图的二进制。
+    func reclimate(precipitation: Double, temperatureOffset: Double, north: Double, south: Double) async throws -> Data {
+        guard remote == nil, let e = service.engine else { throw EngineError.message("世界尚未载入。") }
+        let json = try e.reclimate(try Self.loadCreationInputs(), precipitation: precipitation, temperatureOffset: temperatureOffset, north: north, south: south)
+        struct Map: Decodable { let bin: String }
+        guard let bin = Data(base64Encoded: try JSONDecoder().decode(Map.self, from: json).bin) else { throw EngineError.message("地图数据损坏") }
+        return bin
+    }
     func close(world: Int) async {
         guard advances.replaceWorld(world: world) != nil else { return }
         _ = await call("close")

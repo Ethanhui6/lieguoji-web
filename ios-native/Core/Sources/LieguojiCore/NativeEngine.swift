@@ -35,6 +35,8 @@ public final class NativeEngine {
     }
     /// A run whose statics are already installed (module tests).
     init(run: JS) { self.run = run; statics = .object() }
+    /// 纯 Swift 建好的新世界（NativeCreation.generate）。
+    public convenience init(created world: NativeCreation.World) throws { try self.init(created: world.run, statics: world.statics) }
     /// 建新世界：Swift 刚生成的整局与静态几何（NativeCreation）。
     init(created run: JS, statics: JS) throws {
         self.run = run; self.statics = statics
@@ -56,6 +58,18 @@ public final class NativeEngine {
     }
     /// The world map (`{bin, meta}` of the bridge) the statics carry, as JSON.
     public var mapJSON: Data? { statics.map.isNull ? nil : Data(statics.map.json.utf8) }
+    /// 重算气候：同一片陆地按新的气候重画生物群系、群系色与河流（网页 engine.ts reclimate）；国家与规则不动。
+    /// 新地图写回静态几何（存档带新地图），返回 `{bin, meta}` JSON。
+    public func reclimate(_ x: CreationMap.Inputs, precipitation: Double, temperatureOffset: Double, north: Double, south: Double) throws -> Data {
+        guard !statics.map.isNull, let bin = Data(base64Encoded: statics.map.bin.asString) else { throw NativeEngineError.message("这局没有地图数据，无法重算气候。") }
+        let meta = statics.map.meta
+        let old = try WorldMap(binary: bin, meta: try JSONDecoder().decode(WorldMeta.self, from: Data(meta.json.utf8)))
+        Climate.precipitationInput = precipitation; Climate.temperatureOffset = temperatureOffset; Climate.north = north; Climate.south = south
+        let built = CreationMap.build(x, run: run, elevations: old.elevation.map(Int.init), seed: meta.seed.optionalString ?? "", template: meta.template.optionalString ?? "")
+        let map = JS.object(); map.bin = built.map.bin; map.meta = meta
+        statics.map = map
+        return Data(map.json.utf8)
+    }
     /// Whole days.
     public func advance(days: Int) { for _ in 0..<max(1, days) { Session.advance(run, ticks: 120); Regimes.day(run) } }
     public func save() -> Data {

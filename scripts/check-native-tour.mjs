@@ -14,6 +14,9 @@ export const requiredShots = [
 export function checkNativeTour(directory) {
   const status = JSON.parse(readFileSync(join(directory,'tour-status.json'),'utf8'));
   if(status.finished !== true) throw Error('原生试玩巡览未到达 done；可能在创建世界、推演或面板中卡住。');
+  // 原生建世界：CI 世界须由 Swift 建成（不退回网页引擎），耗时另有网页引擎的对照。
+  const founding = JSON.parse(readFileSync(join(directory,'founding-time.json'),'utf8'));
+  if(!founding.swift || founding.swift.error || !(founding.swift.seconds > 0) || founding.web) throw Error('新世界没有由 Swift 建成：' + JSON.stringify(founding));
   const ownership = JSON.parse(readFileSync(join(directory,'advance-ownership.json'),'utf8'));
   if(ownership.version !== 2 || ownership.passed !== true || ownership.manualDrain !== true || ownership.controls < 20 || ownership.samples < 1
     || ownership.backwards !== 0 || !(ownership.endDay > ownership.startDay) || ownership.endDay !== ownership.authoritativeDay) {

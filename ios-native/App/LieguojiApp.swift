@@ -98,14 +98,8 @@ struct RootView: View {
         .task { GameFeel.shared.start() }
         // 云更新: the latest balance numbers and notice; a running world takes them at once.
         .task { if await CloudConfig.shared.refresh() { await model.applyCloud() } }
-        .task {
-            await model.loadBackdrop()
-            // The world-building engine starts once the launch and the title reveal have played: starting
-            // it during them made both stutter. 新世界 waits for it if pressed earlier.
-            var waited = 0
-            while (model.phase == .splash || model.controller.revealClock != nil) && waited < 60 { try? await Task.sleep(nanoseconds: 100_000_000); waited += 1 }
-            try? await model.engine.start()
-        }
+        // 新世界由 Swift 在本机建成，网页引擎只在 Swift 建世界失败、读旧版存档时才按需启动（不再开机预热）。
+        .task { await model.loadBackdrop() }
         .sheet(isPresented: Binding(get: { model.failure != nil }, set: { if !$0 { model.failure = nil } })) {
             VStack(alignment: .leading, spacing: 16) {
                 SheetHeader(title: "出了点问题", subtitle: model.failure, seal: "误")

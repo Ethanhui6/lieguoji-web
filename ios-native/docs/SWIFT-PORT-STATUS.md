@@ -1,7 +1,9 @@
-# Swift 移植进度（0.9.5 起游戏由 Swift 引擎运行，网页引擎只生成新世界）
+# Swift 移植进度（0.9.5 起游戏由 Swift 引擎运行；2026-11-17 起新世界也由 Swift 建成）
 
 更新：2026-10-31
 
+> 2026-11-17：纯 Swift 建新世界已完成（NativeCreation.generate），与网页 generate(options) + nativeWorld() 整份逐字节一致；App 默认走 Swift，网页引擎只在 Swift 失败、读旧版存档时按需启动。见下方“新世界创建（纯 Swift）”。
+>
 > 2026-11-10 续接说明：表格保留逐位移植证据。当前版本与未完成工作以 [当前补全记录](../../docs/CODEX_COMPLETION_2026-11-10.md) 为准。`OpeningGovernment.attach` 已有四地形黄金对照；下方“尚未移植”中的政府部分准确状态是“已有分段实现，尚未连成完整原生建世入口”，不能重复从头移植。App 的 `GameModel.generate` 仍调用 `EngineHost.generate`，随后 `handOver` 给 Swift。
 
 ## 方法
@@ -32,6 +34,17 @@
 | 新世界政府段（地貌、财政格子、省防御；人口、资源、经济方式、首批征兵、首月国库、开局国运；军队位置待移植） | settlement25-terrain、-cells、-combat、civilization47-government、-economy、-muster、native-economy population/resources | OpeningGovernment.swift | opening-government.json（4 种地形） |
 | 新世界创建（createCivilizationWorld47 全段）：省份、城市、国家，人口与粮食，首任君主与编年史，人物与生日；统治家族、主权账；开篇国龄与在位；原作贵族家族、领地与成员 | civilization47-world、statecraft initializeManagement、initialCivilizationChronicle47、life22-people、civilization47-family、-origins、-nobility、native-economy/noble-families | Creation.swift（家族成员内核与 Founding 共用） | creation.json（4 种地形 × 2 种命名，三段逐位含键序） |
 
+## 新世界创建（纯 Swift，逐位对照）
+| 段 | 网页源 | Swift | 黄金对照 |
+|---|---|---|---|
+| 行军图、地理绑定散列、开局军队位置 | army-travel47-graph、war30-geography geographyBinding、army-presence47 | CreationGeography.swift | opening-government.json（armyPositions 4 种地形） |
+| 初始海陆编制（港湾 v2、首支舰队与扣粮凭据、外交海域、各军事账本） | civilization47-forces attachFoundingForces47、war30-geography buildDiplomaticGeography、force-biomes47 | CreationForces.swift | native-founding.json forces 段 |
+| 外交初始化与战乱开局 | civilization47-political-owner attachPolitics47、initializeOpeningWars47 | CreationPolitics.swift | native-founding.json politics、wars 段 |
+| 七个规则启用动作 | engine.ts ENABLE | CreationRules.swift | native-founding.json enable 段 |
+| 静态几何（travel、borders、homeCells、diplomacy、seaPorts、sea、labelGrid） | native-statics、original-politics originalCellProvinces、diplomacy-state | CreationStatics.swift、CreationMap.labelGrid | native-creation.json |
+| 地名变化、地图（气候群系、群系色、海岸曲线、海面、河流、国名框、元数据） | extra-places varyPlaceNames、world-map buildWorldMap 及 original-* | CreationNames.swift、CreationMap.swift（随包 edges20k.bin） | native-creation.json |
+| 统一入口（含陆地太碎加州数重试） | engine.ts generate + nativeWorld | NativeCreation.swift | native-creation.json：4 地形 × 2 命名 + 加州数群岛，整份 JSON 逐字节 |
+
 ## 运行编排（逐位对照）
 | 模块 | 网页源 | Swift | 黄金对照 |
 |---|---|---|---|
@@ -47,7 +60,7 @@
 | 舰队军令、海军自主部署、港口归属与争夺、舰队日粮、海战舰体损失、统帅海战特质 | fleet-commands47、civilization47-naval-ai、civilization47-ports、civilization47-upkeep settleFleetFood47、force-losses47、civilization47-combat volley.navy | Naval.swift、RunWindow.swift | navy-day.json（和平 120 天）、navy-war-day.json（开战 120 天） |
 
 ## 尚未移植（仍由网页引擎负责）
-- 新世界创建后续段（attachGovernment47：地形格与资源、开局人口、财政、首批征兵、国运；attachFoundingForces47：初始海陆编制；规则启用动作）。App 仍用网页引擎建世界后交给 Swift。
+- （已完成 2026-11-17）新世界创建：见上方“新世界创建（纯 Swift）”。
 - 说明：Creation.swift 只照搬网页现行规则，未新增任何数值。其中按面积与地形的人口粮食系数（2.5/2/1.3、×0.7、×20）和开篇国龄是网页自己的规则，网页事件文本已注明"模拟参数，不代表正式设定"，并非原作核实值；开篇国龄同样是网页开篇规则。
 - 港口与海军：已移植（见上表）。2026-10-31 核查发现原规则（v1）在 20k 网格上没有外海、港口和舰队；经 Bob 确认，新世界开局参数 harbors:'capital-neighbor-v2' 以网格外缘三角形（只被一个三角形使用的边）所在水域为外海，记录在 harbors.method；老存档与未带该参数的开局仍按 v1，行为不变。网页新世界界面与 App 新世界都带此参数。
 - 造舰（war46-shipbuilding）不在现行 47 规则中，因此「造船大师」造舰时间 ×0.5 在网页与 Swift 中都没有作用对象（简化，未编造）。0.9.18 接入 App 手动航行/停航按钮，复用 Naval.resolve/issue；真机交互待验证。

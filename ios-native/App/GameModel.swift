@@ -118,12 +118,11 @@ import LieguojiCore
     private var lastSaveTime = Date()
     private var lastMapUpdate: CFTimeInterval = 0
     private var pendingLabels: [WorldMeta.LabelBox]?
+    /// 上一次建世界所走的路（swift / web）与耗时（秒）。
+    private(set) var lastFounding: (path: String, seconds: Double)?
 
     init() {
-        engine.onProgress = { [weak self] stage in
-            guard let self, let index = ["people": 0, "armies": 1, "map": 2][stage] else { return }
-            self.controller.foundingStage = index
-        }
+        engine.onProgress = { [weak self] stage in self?.noteFoundingStage(stage) }
     }
 
     /// The bundled world, used as the title backdrop before a game exists.
@@ -177,15 +176,26 @@ import LieguojiCore
         controller.reveal = 1
         phase = .founding
         let settled = Date()
+        var made = Self.nativeOptions(seed: ed.seed, template: ed.template, nations: ed.nations, provinces: max(ed.nations, ed.provinces), relations: o.relations,
+                                      naming: o.naming, cultures: o.cultures, climate: o.climate)
+        made.heights = ed.heights
+        if let layout = ed.layout, let seeds = layout["seeds"], let owners = layout["owners"] { made.layout = (seeds, owners); made.count = seeds.count }
         do {
-            let built = try await engine.call("generate(options)", ["options": text], timeout: Self.foundingLimit)
+            let founded = try await found(made, webOptions: text, epoch: epoch)
             guard epoch == worldEpoch else { return }
-            let world = try await open(built)
-            try checkWorld(epoch)
-            // The engine's world (rivers, cities, names) replaces the drawn preview in place.
-            controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
-            controller.foundingStage = 3
-            try await handOver()
+            let world: WorldMap
+            switch founded {
+            case .native(let made):
+                world = try await adoptNative(made)
+                controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
+            case .web(let built):
+                world = try await open(built)
+                try checkWorld(epoch)
+                // The engine's world (rivers, cities, names) replaces the drawn preview in place.
+                controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
+                controller.foundingStage = 3
+                try await handOver()
+            }
             guard epoch == worldEpoch else { return }
             let wait = 2.6 - Date().timeIntervalSince(settled)
             if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
@@ -255,9 +265,16 @@ import LieguojiCore
     func reclimate(_ c: ClimateSettings) async -> String? {
         guard let text = String(data: (try? JSONSerialization.data(withJSONObject: c.json)) ?? Data(), encoding: .utf8), let current = controller.world ?? map else { return "世界尚未载入" }
         do {
-            let out = try await engine.call("reclimate(options)", ["options": text])
-            let decoded = try JSONDecoder().decode(WorldBinary.self, from: Data(out.utf8))
-            guard let bin = Data(base64Encoded: decoded.bin) else { return "地图数据损坏" }
+            // 本机世界由 Swift 重算；不行（远程计算等）再交给网页引擎。
+            let bin: Data
+            if let local = try? await native.reclimate(precipitation: Double(c.rain), temperatureOffset: Double(c.temperature), north: Double(c.north) / 100, south: Double(min(c.south, c.north - 10)) / 100) {
+                bin = local
+            } else {
+                let out = try await engine.call("reclimate(options)", ["options": text])
+                let decoded = try JSONDecoder().decode(WorldBinary.self, from: Data(out.utf8))
+                guard let web = Data(base64Encoded: decoded.bin) else { return "地图数据损坏" }
+                bin = web
+            }
             let next = try WorldMap(binary: bin, meta: current.meta)
             c.apply(); map = next; controller.world = next
             // New land colours, rivers and sea: the terrain path, not the ownership one.
@@ -296,8 +313,10 @@ import LieguojiCore
             let json: [String: Any] = ["climate": options.climate.json, "template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed,
                                        "relations": options.relations, "naming": options.naming, "cultures": Names.cultureIds.filter { options.cultures.contains($0) }]
             let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
-            let engine = self.engine
-            let full = Task { try await engine.call("generate(options)", ["options": text], timeout: Self.foundingLimit) }
+            // 新世界由 Swift 在本机建成（与网页引擎逐位相同）；Swift 失败时才交给网页引擎。
+            let made = Self.nativeOptions(seed: seed, template: options.template, nations: options.nations, provinces: options.provinceCount, relations: options.relations,
+                                          naming: options.naming, cultures: options.cultures, climate: options.climate)
+            let full = Task { try await self.found(made, webOptions: text, epoch: epoch) }
             if let inputs = previewInputs {
                 let nations = options.nations, provinceCount = options.provinceCount
                 // The world and its map layers are built off the main thread, so the map appears
@@ -316,12 +335,17 @@ import LieguojiCore
                 guard epoch == worldEpoch else { return }
             }
             let settled = Date()
-            let built = try await full.value
+            let founded = try await full.value
             guard epoch == worldEpoch else { return }
-            let world = try await open(built)
-            try checkWorld(epoch)
-            controller.foundingStage = 3
-            try await handOver()
+            let world: WorldMap
+            switch founded {
+            case .native(let made): world = try await adoptNative(made)
+            case .web(let built):
+                world = try await open(built)
+                try checkWorld(epoch)
+                controller.foundingStage = 3
+                try await handOver()
+            }
             guard epoch == worldEpoch else { return }
             // The founding captions after the map (houses, armies, relations) each get their moment.
             let wait = 2.6 - Date().timeIntervalSince(settled)
@@ -415,7 +439,31 @@ import LieguojiCore
             return (world, decoded.state, keeps ? nil : MapLayers.prepare(world))
         }.value
         try checkWorld(epoch)
-        if let layers = loaded.2 { MapRenderer.prepared = layers }
+        return show(loaded.0, loaded.1, layers: loaded.2)
+    }
+    /// 本机 Swift 建好的世界（NativeHost.create）：地图与首个状态同 open，再做交接的后半段。
+    private func adoptNative(_ made: NativeHost.Made) async throws -> WorldMap {
+        let epoch = worldEpoch
+        guard let mapData = made.map else { throw EngineError.message("新世界缺少地图") }
+        let keeps = phase == .founding
+        let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared?) in
+            struct Saved: Decodable { let bin: String; let meta: WorldMeta }
+            let m = try JSONDecoder().decode(Saved.self, from: mapData)
+            guard let bin = Data(base64Encoded: m.bin) else { throw EngineError.message("地图数据损坏") }
+            let world = try WorldMap(binary: bin, meta: m.meta)
+            return (world, try JSONDecoder().decode(GameState.self, from: made.state), keeps ? nil : MapLayers.prepare(world))
+        }.value
+        try checkWorld(epoch)
+        let world = show(loaded.0, loaded.1, layers: loaded.2)
+        controller.foundingStage = 3
+        nativeRevision = made.revision
+        try await finishHandOver(epoch)
+        return world
+    }
+    /// The decoded world on screen (shared by open and adoptNative).
+    private func show(_ world: WorldMap, _ first: GameState, layers: MapLayers.Prepared?) -> WorldMap {
+        let loaded = (world, first)
+        if let layers { MapRenderer.prepared = layers }
         if phase == .founding, let shown = map, shown.province.count == loaded.0.province.count, shown.meta.provinces.count == loaded.0.meta.provinces.count {
             // The device-built preview has the same geometry: keep its map view (rebuilding the Metal
             // map and every label here was the hitch before entering the world); only states and names update.
@@ -578,6 +626,10 @@ import LieguojiCore
         let opened = try await native.open(Data(text.utf8), world: epoch)
         try checkWorld(epoch)
         nativeRevision = opened.revision
+        try await finishHandOver(epoch)
+    }
+    /// 交接的后半段（网页世界交给 Swift 之后，或 Swift 建好之后）：云端调校、本作规则与 Swift 引擎的首个状态。
+    private func finishHandOver(_ epoch: Int) async throws {
         await applyCloud()
         try checkWorld(epoch)
         await native.enableAppRules()
@@ -1361,5 +1413,47 @@ import LieguojiCore
 
     func provinceInfo(_ index: Int) async -> ProvinceInfo? {
         await query(ProvinceInfo.self) { await native.province(index) }
+    }
+}
+
+extension GameModel {
+    /// 建世界进度（people、armies、map）→ 开创画面的阶段说明。
+    func noteFoundingStage(_ stage: String) {
+        guard let index = ["people": 0, "armies": 1, "map": 2][stage] else { return }
+        controller.foundingStage = index
+    }
+    /// 建好的世界：本机 Swift 建成，或（Swift 失败时）网页引擎建成后交接。
+    enum Founded { case native(NativeHost.Made), web(String) }
+    /// 先用 Swift 建世界；失败（且世界未切换）才退回网页引擎。记录耗时与所走的路。
+    func found(_ options: NativeCreation.Options, webOptions: String, epoch: Int) async throws -> Founded {
+        let started = Date()
+        do {
+            let made = try await native.create(options, world: epoch, progress: { stage in Task { @MainActor [weak self] in self?.noteFoundingStage(stage) } })
+            noteFounding("swift", Date().timeIntervalSince(started), cityCount: made.cityCount, error: nil)
+            return .native(made)
+        } catch {
+            guard epoch == worldEpoch else { throw error }
+            let reason = error.localizedDescription
+            let text = try await engine.call("generate(options)", ["options": webOptions], timeout: Self.foundingLimit)
+            noteFounding("web", Date().timeIntervalSince(started), cityCount: nil, error: reason)
+            return .web(text)
+        }
+    }
+    /// 建世界耗时（CI 巡游写到 Documents/founding-time.json，含同一世界用网页引擎建的对照耗时）。
+    func noteFounding(_ path: String, _ seconds: Double, cityCount: Int?, error: String?) {
+        lastFounding = (path, seconds)
+        guard ShotTour.on else { return }
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("founding-time.json")
+        var o = (try? JSONSerialization.jsonObject(with: Data(contentsOf: url))) as? [String: Any] ?? [:]
+        o[path] = ["seconds": (seconds * 1000).rounded() / 1000, "cityCount": cityCount.map { $0 as Any } ?? NSNull(), "error": error.map { $0 as Any } ?? NSNull()]
+        if let data = try? JSONSerialization.data(withJSONObject: o, options: [.sortedKeys, .prettyPrinted]) { try? data.write(to: url) }
+    }
+    /// NewWorld / 自绘地图选项 → NativeCreation.Options（与给网页引擎的 JSON 同义）。
+    static func nativeOptions(seed: String, template: String, nations: Int, provinces: Int, relations: String, naming: String, cultures: Set<String>, climate: ClimateSettings) -> NativeCreation.Options {
+        var o = NativeCreation.Options(seed: seed, template: template, count: nations, cityCount: provinces, relations: relations == "war" ? "war" : "peace",
+                                       naming: naming == "culture-generated" ? "culture-generated" : "historical-names", cultures: Names.cultureIds.filter { cultures.contains($0) })
+        o.precipitation = Double(climate.rain); o.temperatureOffset = Double(climate.temperature)
+        o.north = Double(climate.north) / 100; o.south = Double(min(climate.south, climate.north - 10)) / 100
+        return o
     }
 }

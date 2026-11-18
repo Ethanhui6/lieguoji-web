@@ -42,6 +42,28 @@ final class NativeFoundingTests: XCTestCase {
         }
     }
 
+    /// engine.ts 的七个规则启用动作，从网页开局段的整局出发；每段改动都须一致，整局键序取最后一段。
+    func testRuleActionsMatchTheWeb() throws {
+        let golden = try JS.parse(Data(contentsOf: Self.dir.appendingPathComponent("Golden/native-founding.json")))
+        for s in golden.samples.asArray {
+            let label = "\(s.seed.asString) \(s.template.asString) enable"
+            let r = s.input.clone()
+            for stage in [s.forces, s.politics, s.wars] where !stage.isNull {
+                for (k, v) in stage.changed.objectEntries { r[k] = v.clone() }
+                for (k, v) in stage.world.objectEntries { r.world[k] = v.clone() }
+            }
+            CreationRules.enable(r)
+            let all = JS.object(), world = JS.object()
+            for stage in s.enable.asArray {
+                for (k, v) in stage.changed.objectEntries { all[k] = v }
+                for (k, v) in stage.world.objectEntries { world[k] = v }
+            }
+            let last = s.enable.asArray.last!
+            let merged = JS.object(); merged.changed = all; merged.world = world; merged.keys = last.keys; merged.worldKeys = last.worldKeys
+            for m in Self.compare(r, merged, label) { XCTFail(m) }
+        }
+    }
+
     /// attachPolitics47（再换上局号），开战开局再 initializeOpeningWars47（先装上 Swift 建的静态几何）。
     func testPoliticsAndOpeningWarsMatchTheWeb() throws {
         try Self.setUpCatalogs()

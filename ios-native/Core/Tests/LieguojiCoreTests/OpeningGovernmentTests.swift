@@ -42,6 +42,11 @@ final class OpeningGovernmentTests: XCTestCase {
                 if let d = r[k].difference(s.out[k], path: k) { XCTFail("\(label): \(d)") } else if r[k].json != s.out[k].json { XCTFail("\(label): key order \(k)") }
             }
             if let d = r.world.armies.difference(s.world.armies, path: "armies") { XCTFail("\(label): \(d)") }
+            // 军队位置：行军图（陆面半三角 + 海面节点）上各军所在辖区中心的格子，及地形与辖区轮廓的绑定散列。
+            let provinces = r.world.provinces.asArray
+            let graph = CreationGeography.travelGraph(doc, elevations: h, provinces: provinces, sea: SeaGraph(doc, elevations: h, provinces: provinces))
+            let positions = CreationGeography.armyPositions(r, graph: graph, binding: CreationGeography.binding(doc, elevations: h, provinces: provinces))
+            if let d = positions.difference(s.out.armyPositions, path: "armyPositions") { XCTFail("\(label): \(d)") } else if positions.json != s.out.armyPositions.json { XCTFail("\(label): key order armyPositions") }
             if let d = r.world.statecraft.difference(s.world.statecraft, path: "statecraft") { XCTFail("\(label): \(d)") }
         }
     }

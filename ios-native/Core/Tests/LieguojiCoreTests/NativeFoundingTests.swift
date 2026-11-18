@@ -41,4 +41,29 @@ final class NativeFoundingTests: XCTestCase {
             for m in Self.compare(r, s.forces, label) { XCTFail(m) }
         }
     }
+
+    /// attachPolitics47（再换上局号），开战开局再 initializeOpeningWars47（先装上 Swift 建的静态几何）。
+    func testPoliticsAndOpeningWarsMatchTheWeb() throws {
+        try Self.setUpCatalogs()
+        let doc = try TerrainDocument(data: Data(contentsOf: Self.resources.appendingPathComponent("World/doc20k.bin")))
+        let golden = try JS.parse(Data(contentsOf: Self.dir.appendingPathComponent("Golden/native-founding.json")))
+        for s in golden.samples.asArray {
+            let label = "\(s.seed.asString) \(s.template.asString)"
+            let r = s.input.clone(), h = [UInt8](Data(base64Encoded: s.heights.asString)!).map(Int.init)
+            for (k, v) in s.forces.changed.objectEntries { r[k] = v.clone() }
+            for (k, v) in s.forces.world.objectEntries { r.world[k] = v.clone() }
+            CreationPolitics.attach(r)
+            r.id = JS("fms-00000000-0000-4000-8000-000000000047"); r.world.custom.id = r.id.clone()
+            for m in Self.compare(r, s.politics, "\(label) politics") { XCTFail(m) }
+            guard s.relations.asString == "war" else { continue }
+            let provinces = r.world.provinces.asArray
+            let sea = SeaGraph(doc, elevations: h, provinces: provinces)
+            let travel = CreationGeography.travelGraph(doc, elevations: h, provinces: provinces, sea: sea)
+            let engine = try NativeEngine(created: r, statics: CreationStatics.build(r, doc, elevations: h, sea: sea, travel: travel))
+            War26.install()
+            CreationPolitics.openingWars(r, engine: Session.engine!)
+            _ = engine
+            for m in Self.compare(r, s.wars, "\(label) wars") { XCTFail(m) }
+        }
+    }
 }

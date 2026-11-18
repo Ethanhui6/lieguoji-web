@@ -35,6 +35,13 @@ public final class NativeEngine {
     }
     /// A run whose statics are already installed (module tests).
     init(run: JS) { self.run = run; statics = .object() }
+    /// 建新世界：Swift 刚生成的整局与静态几何（NativeCreation）。
+    init(created run: JS, statics: JS) throws {
+        self.run = run; self.statics = statics
+        UnitKinds.enabled = false
+        DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil
+        try install()
+    }
     func install() throws {
         guard let bytes = Data(base64Encoded: statics.travel.asString) else { throw NativeEngineError.message("行军图数据损坏。") }
         Armies.bridge = ForceBridge(graph: try TravelGraph(data: bytes))

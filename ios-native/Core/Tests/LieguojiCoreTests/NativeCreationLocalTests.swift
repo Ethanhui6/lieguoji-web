@@ -26,6 +26,10 @@ final class NativeCreationLocalTests: XCTestCase {
             let bin = CreationGeography.travelBinary(graph, scale: r.scale.asNumber, mountain: provinces.map { ctx[$0.id.asString].mountain.asBool },
                                                      plateau: provinces.map { ctx[$0.id.asString].plateau.asBool }, targets: targets,
                                                      faceBiomes: r.forceSpeed.faceBiomes.asArray.map { UInt8($0.asInt) })
+            let statics = CreationStatics.build(r, doc, elevations: h, sea: SeaGraph(doc, elevations: h, provinces: provinces), travel: graph)
+            for k in ["travel", "borders", "homeCells", "diplomacy", "seaPorts", "sea"] where statics[k].json != w.statics[k].json {
+                XCTFail("case\(i): statics.\(k) 不同 \(statics[k].difference(w.statics[k], path: k) ?? "（键序）")")
+            }
             let want = Data(base64Encoded: w.statics.travel.asString)!
             if bin != want {
                 let k = zip(bin, want).enumerated().first { $0.element.0 != $0.element.1 }?.offset ?? min(bin.count, want.count)

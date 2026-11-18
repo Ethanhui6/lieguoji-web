@@ -149,6 +149,17 @@ enum ShotTour {
         meter.start()
         for a in (model.state?.armies ?? []).prefix(8) { model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(0.7) }
         await shoot("20-stress-pan-" + meter.stop())
+        // 缩放体检：4× 推演中在都城上空连续放大缩小；同一世界先走旧的地名路径、再走新的，各自从空字图缓存开始。
+        if let map = model.map, let cap = map.meta.nations.first.flatMap({ map.meta.cities.indices.contains($0.capital) ? map.meta.cities[$0.capital] : nil }) {
+            for (name, legacy) in [("20b-stress-zoom-old-", true), ("20c-stress-zoom-", false)] {
+                MapLabelsView.legacy = legacy; MapLabelsView.clearImages()
+                model.controller.fly(x: Double(cap.x), y: Double(cap.y)); await wait(1.2)
+                meter.start()
+                for i in 0..<20 { model.controller.zoom(i % 10 < 5 ? 1.5 : 1 / 1.5); await wait(0.3) }
+                await shoot(name + meter.stop())
+            }
+            MapLabelsView.legacy = false
+        }
         meter.start()
         for _ in 0..<5 { show(.nation(0)); await wait(0.8); show(nil); await wait(0.5) }
         await shoot("21-stress-panels-" + meter.stop())

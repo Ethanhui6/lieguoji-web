@@ -11,8 +11,9 @@ import Foundation
 // 但墨按推演步落在格子顶点上（顶点间距与墨迹宽度相近），手机上墨迹一段一段、跟不上军队图标。
 //
 // 现在：
-// - 军队墨迹在 GPU 上逐帧落墨（Render/Ink.swift，公式见 InkPlan）：每帧把各军的墨团与围城相加成“场”，
-//   挨近的墨团相融变大；场过阈值处落到纸上，走过的地方留下、很慢才褪；守军擦淡敌墨，议和与易主时清除。
+// - 军队墨迹（InkCells）：沿地图的格子洇开——军队在敌境走过、驻扎、围城的地方，墨按格子与地势向四周渗开，
+//   边缘随格子参差，不是圆；几支挨近的军队合算兵力，墨更宽并连成一片；攻占后那一州的墨全部收起（换成新主人的颜色），
+//   议和后淡去。每步只更新逐顶点的数据，显卡每帧按时间显出。
 // - 颜色真的变了的州（攻占、反叛、割地、改朝换代在着色视图里的换色）由 FlipSweep 从种子点扫色；
 //   政变、复辟等大事另有一道从首都扫过全国的墨圈。
 //
@@ -33,6 +34,13 @@ public final class WashTopology: @unchecked Sendable {
     public let provinceNeighbors: [[Int32]]
     /// 顶点所属的州（海上为 −1）。
     public let vertexProvince: [Int32]
+    /// 陆地格。
+    public let land: [Bool]
+    /// 顶点所在的位置组；每组的格子（在这一点相接的格子，含只在角点相接的）。
+    public let vertexGroup: [Int32]
+    public let groupCells: [[Int32]]
+    /// 与某格有公共顶点的格子（含角点相接）。
+    public let touching: [[Int32]]
     /// 尺度：各州等效半径的中位数（世界单位）。墨的宽度、柔边、纹理与扩散速度都按它取，整张图统一。
     public let scale: Float
     /// 几何指纹：地图几何不变时拓扑可复用。
@@ -93,6 +101,23 @@ public final class WashTopology: @unchecked Sendable {
         var vp = [Int32](repeating: -1, count: vertices.count / 2)
         for c in 0..<n { for v in Int(offsets[c])..<Int(offsets[c + 1]) { vp[v] = land[c] && Int(province[c]) < provinceCount ? province[c] : -1 } }
         vertexProvince = vp
+        self.land = land
+        // 顶点分组：各格自带顶点拷贝，位置相同（量化到千分之一）的拷贝归一组；同组的格子在这一点相接（含只在角点相接的）。
+        var groupOf = [Int32](repeating: 0, count: vertices.count / 2)
+        var ids = [UInt64: Int32](minimumCapacity: vertices.count / 4)
+        var groupCount: Int32 = 0
+        for v in 0..<(vertices.count / 2) {
+            let qx = UInt64(bitPattern: Int64((vertices[v * 2] * 1000).rounded())), qy = UInt64(bitPattern: Int64((vertices[v * 2 + 1] * 1000).rounded()))
+            let k = qx &* 0x9E37_79B9_7F4A_7C15 ^ qy
+            if let g = ids[k] { groupOf[v] = g } else { ids[k] = groupCount; groupOf[v] = groupCount; groupCount += 1 }
+        }
+        var members = [[Int32]](repeating: [], count: Int(groupCount))
+        for c in 0..<n { for v in Int(offsets[c])..<Int(offsets[c + 1]) { let g = Int(groupOf[v]); if members[g].last != Int32(c) { members[g].append(Int32(c)) } } }
+        vertexGroup = groupOf
+        groupCells = members
+        var touch = [[Int32]](repeating: [], count: n)
+        for list in members where list.count > 1 { for a in list { for b in list where b != a && !touch[Int(a)].contains(b) { touch[Int(a)].append(b) } } }
+        touching = touch
         // 尺度：各州等效半径 √(面积/π) 的中位数。
         var radii = cells.compactMap { list -> Float? in
             guard !list.isEmpty else { return nil }
@@ -211,70 +236,6 @@ public struct WashFrame: Equatable, Sendable {
         // 所有在战国家（不只这一步在敌境的）：军队撤回本国后，它留在敌境的墨照样显示、按天褪去；议和后立即不显示。
         for n in next.nations.indices where !next.nations[n].enemies.isEmpty { enemies[n] = next.nations[n].enemies.sorted() }
         return WashFrame(day: next.day, inputs: inputs.sorted(by: WashFrame.order), enemies: enemies)
-    }
-}
-
-/// GPU 墨场的公式。渲染端（Render/Ink.swift）的着色器用同一套曲线；测试在 CPU 上复算。
-///
-/// 1.19–1.21 的墨场每支军队各画各的笔触、取较浓者，墨按天很快褪去（一个月就没了）：军队走开，走过的地方随之消失；
-/// 几支军队挨在一起也只是几个互不相干的圆圈。现在分两张纹理：
-/// - 场（live，每帧清空重算）：每支在敌境的军队是一团高斯“墨团”（上一帧位置到此刻位置的圆头胶囊），
-///   围城州按进度铺一片，全部**相加**。几团挨近时场值相加，过阈值的范围随之变大并连成一体（像水墨里两滴墨相融），
-///   同处扎堆的军队越多，墨团越大，但只按对数长大、有界。
-/// - 墨（persistent，逐帧演进）：墨 = max(旧墨 × 褪色, level(场))。军队走过、驻扎、围过的地方都留在纸上，
-///   褪得很慢（约一年半才看不见）；守军按天把身边的敌墨擦淡；议和、易主（攻占后那片地本来就是攻方颜色）时
-///   那片土地上不再与主人交战的墨当帧清除——下次再开战不会冒出旧墨。
-/// 两张纹理都只在交战敌国领土上显示，颜色与该国领土同一算法（合成见 Ink.swift）。
-public enum InkPlan {
-    /// 墨团的场：距中心线（线段 a→b，圆头）d、半径 r。着色器 inkBlobFragment 同一曲线。
-    @inline(__always) public static func falloff(_ d: Float, _ r: Float) -> Float { let q = d / max(r, 1e-4); return exp(-q * q) }
-    /// 圆头胶囊 a→b 在 p 处的场值（a = b 为圆）。
-    public static func blob(_ p: SIMD2<Float>, _ a: SIMD2<Float>, _ b: SIMD2<Float>, radius r: Float) -> Float {
-        let ab = b - a, l2 = ab.x * ab.x + ab.y * ab.y
-        var t: Float = 0
-        if l2 > 1e-8 { let ap = p - a; t = min(1, max(0, (ap.x * ab.x + ap.y * ab.y) / l2)) }
-        return falloff(washLength(p - (a + ab * t)), r)
-    }
-    /// 场值 → 落到纸上的浓度：低于 fieldLow 不落墨，到 fieldHigh 达到 core。单团中心场值为 1。
-    public static let core: Float = 0.85
-    public static let fieldLow: Float = 0.25
-    public static let fieldHigh: Float = 0.75
-    @inline(__always) public static func level(_ s: Float) -> Float { core * min(1, max(0, (s - fieldLow) / (fieldHigh - fieldLow))) }
-    /// 墨的演进：旧墨按天褪色，与这一帧的场取较浓者（着色器 inkEvolveFragment 同一算法）。
-    @inline(__always) public static func evolve(_ old: Float, field s: Float, days: Float) -> Float { max(old * decay(days: days), level(s)) }
-    /// 兵力系数（墨团大小）。
-    public static func width(troops: Float) -> Float { min(1.3, max(0.8, (max(100, troops) / 4000).squareRoot())) }
-    /// 墨团半径：四千兵约 0.42 个格距（单团看得见的半宽约 0.37 格距）；在敌境原地驻扎随推演天数长大，二十天到 1.5 倍封顶。
-    public static func blobRadius(scale: Float, troops: Float, dwelt: Float = 0) -> Float {
-        scale * 0.42 * width(troops: troops) * (1 + 0.5 * min(1, max(0, dwelt) / 20))
-    }
-    /// 褪色：每天乘以 decay(1)。走过的墨约一年半后才淡到看不见。
-    public static let decayRate: Float = 0.0015
-    public static func decay(days: Float) -> Float { exp(-decayRate * max(0, days)) }
-    /// 守军擦墨。
-    public static func holdAlpha(days: Float) -> Float { 1 - exp(-0.45 * max(0, days)) }
-    public static func holdRadius(scale: Float) -> Float { scale * 0.8 }
-    /// 围城：以军队为中心、半径随进度长到铺满（far：中心到本州最远点）。围城在场里的值 = siegeCover。
-    public static func siegeRadius(progress q: Float, far: Float, scale: Float) -> Float { q >= 0.98 ? far + scale : max(0, q) * (far + scale * 0.3) }
-    /// 围城处的场值（距中心 d）。
-    public static func siegeCover(distance d: Float, radius: Float, scale: Float) -> Float { min(0.9, max(0, 0.5 + (radius - d) / (scale * 0.45))) }
-    /// 显示阈值：墨的浓度过此值才见色（着色器 inkComposite）。
-    public static let visible: Float = 0.3
-
-    /// 推演天数的消耗：一步来了几天，就在这一步的动画时长里匀速用掉；暂停后用完即停，不再落墨。
-    public struct Clock: Sendable {
-        public private(set) var left: Float = 0
-        public private(set) var rate: Float = 0
-        public init() {}
-        public mutating func add(days: Float, over seconds: Float) {
-            guard days > 0 else { return }
-            left = min(left + days, 120); rate = left / max(0.1, seconds)
-        }
-        public mutating func take(_ dt: Float) -> Float {
-            guard left > 0, dt > 0 else { return 0 }
-            let d = min(left, rate * dt); left -= d; return d
-        }
-        public mutating func reset() { left = 0; rate = 0 }
     }
 }
 

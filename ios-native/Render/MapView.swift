@@ -1066,7 +1066,11 @@ final class MapLabelsView: UIView {
         UIView.animate(withDuration: 0.3, delay: 0.08, options: [.allowUserInteraction], animations: { for l in new { l.view.alpha = 1 } })
     }
     /// Rendered label images by text, size and colours: zooming back and forth reuses them.
-    private static let images: NSCache<NSString, UIImage> = { let c = NSCache<NSString, UIImage>(); c.countLimit = 500; return c }()
+    /// 字图缓存：按像素字节计成本、上限约 48MB（以前只按 500 张计，四百多城在几档字号间来回缩放就不停被挤掉重画）。
+    private static let images: NSCache<NSString, UIImage> = { let c = NSCache<NSString, UIImage>(); c.countLimit = 6000; c.totalCostLimit = 48 << 20; return c }()
+    private static func store(_ image: UIImage, _ key: NSString) { images.setObject(image, forKey: key, cost: Int(image.size.width * image.size.height * image.scale * image.scale * 4)) }
+    /// CI：清空字图缓存（缩放对照前各自从空缓存开始）。
+    static func clearImages() { images.removeAllObjects() }
 
     static func color(_ css: String) -> UIColor {
         let c = RGB(css: css) ?? RGB(0.5, 0.5, 0.5)
@@ -1116,11 +1120,74 @@ final class MapLabelsView: UIView {
         return true
     }
 
+    /// CI 对照：true 时走旧路径（缩放跨档时在主线程同步重绘全部字图、避让两两相比、每个重现的名字各起一段淡入），
+    /// 巡览用它在同一世界测出缩放卡顿的改前改后。
+    static var legacy = false
+    private static let renderQueue = DispatchQueue(label: "lieguoji.map-labels", qos: .userInitiated)
+    private var rendering = Set<NSString>()
+    private var lastCamera: MapCamera?
+    private var lastViewport: CGSize = .zero
+    private var refreshQueued = false
+    /// 字图换档：缓存里有就直接换；第一次显示的名字同步画；其余在后台画，画好之前先把旧图按比例放缩顶着
+    /// （缩放跨档时以前一帧里同步重画几百个名字，是缩放卡一下的主因）。
+    private func resize(_ l: Label, to size: Double) {
+        let key = "\(l.text)|\(size)|\(l.fill.hashValue)|\(l.stroke.hashValue)" as NSString
+        func apply(_ image: UIImage) { l.rendered = size; l.view.transform = .identity; l.view.image = image; l.view.sizeToFit() }
+        if let cached = Self.images.object(forKey: key) { apply(cached); return }
+        if l.rendered == 0 || l.view.image == nil || Self.legacy {
+            let image = Self.render(l.text, size: CGFloat(size), fill: l.fill, stroke: l.stroke, strokeEm: CGFloat(l.strokeWidth))
+            Self.store(image, key); apply(image); return
+        }
+        guard !rendering.contains(key) else { return }
+        rendering.insert(key)
+        let text = l.text, fill = l.fill, stroke = l.stroke, em = CGFloat(l.strokeWidth)
+        Self.renderQueue.async { [weak self] in
+            let image = Self.render(text, size: CGFloat(size), fill: fill, stroke: stroke, strokeEm: em)
+            DispatchQueue.main.async {
+                Self.store(image, key)
+                guard let self else { return }
+                self.rendering.remove(key)
+                self.refreshSoon()
+            }
+        }
+    }
+    /// 后台字图画好后补排一次（同一轮里画好的合并成一次）。
+    private func refreshSoon() {
+        guard !refreshQueued else { return }
+        refreshQueued = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.refreshQueued = false
+            if let c = self.lastCamera { self.update(camera: c, viewport: self.lastViewport) }
+        }
+    }
+
     func update(camera: MapCamera, viewport: CGSize) {
+        lastCamera = camera; lastViewport = viewport
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // 避让: the biggest names first; a name that would land on one already placed waits until the
         // player zooms in. One already showing gets a little slack, so names do not flicker at the limit.
+        // 已占的框按屏幕网格分桶，只和附近的框比（以前每个名字与全部已排名字两两相比，几百个城名时每帧上万次）。
         var taken = [Box](); taken.reserveCapacity(nations.count + 64)
+        var grid = [Int: [Int]]()
+        let cell: CGFloat = 96
+        func cells(_ b: Box, _ pad: CGFloat) -> [Int] {
+            let r = b.reach * 1.6 + pad
+            let x0 = Int((b.x - r) / cell), x1 = Int((b.x + r) / cell), y0 = Int((b.y - r) / cell), y1 = Int((b.y + r) / cell)
+            var out = [Int](); out.reserveCapacity((x1 - x0 + 1) * (y1 - y0 + 1))
+            for x in x0...max(x0, x1) { for y in y0...max(y0, y1) { out.append(x &* 73_856_093 ^ y &* 19_349_663) } }
+            return out
+        }
+        func blocked(_ b: Box, margin: CGFloat) -> Bool {
+            if Self.legacy { return taken.contains { Self.clash($0, b, margin: margin) } }
+            for c in cells(b, margin) { for i in grid[c] ?? [] where Self.clash(taken[i], b, margin: margin) { return true } }
+            return false
+        }
+        func place(_ b: Box) {
+            taken.append(b)
+            if !Self.legacy { for c in cells(b, 0) { grid[c, default: []].append(taken.count - 1) } }
+        }
+        var appeared = 0
         for p in pictures {
             let at = camera.toScreen(x: p.x, y: p.y, viewport: vp), w = p.width * camera.scale, size = p.view.bounds.width
             guard size > 0, w > 2, at.x > -w, at.y > -w, at.x < vp.width + w, at.y < vp.height + w else { p.view.isHidden = true; continue }
@@ -1136,7 +1203,7 @@ final class MapLabelsView: UIView {
                 let p = camera.toScreen(x: c.x, y: c.y, viewport: vp)
                 guard p.x > -40, p.y > -40, p.x < vp.width + 40, p.y < vp.height + 40 else { continue }
                 let half = CGFloat(max(ring, 3) + 3)
-                taken.append(Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: half, halfH: half, cosine: 1, sine: 0, nation: false, text: ""))
+                place(Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: half, halfH: half, cosine: 1, sine: 0, nation: false, text: ""))
             }
         }
         let capitalNames = showCities ? cities.filter { $0.fill === Self.capitalInk } : []
@@ -1168,33 +1235,32 @@ final class MapLabelsView: UIView {
             let wanted = min(96, points)
             if l.rendered == 0 || wanted / l.rendered > 1.25 || wanted / l.rendered < 0.8 {
                 // Sizes on a ×1.25 ladder, so the cached images are reused while zooming.
-                l.rendered = min(96, pow(1.25, (log(wanted) / log(1.25)).rounded()))
-                l.view.transform = .identity
-                let key = "\(l.text)|\(l.rendered)|\(l.fill.hashValue)|\(l.stroke.hashValue)" as NSString
-                if let cached = Self.images.object(forKey: key) { l.view.image = cached }
-                else { let image = Self.render(l.text, size: CGFloat(l.rendered), fill: l.fill, stroke: l.stroke, strokeEm: CGFloat(l.strokeWidth)); Self.images.setObject(image, forKey: key); l.view.image = image }
-                l.view.sizeToFit()
+                resize(l, to: min(96, pow(1.25, (log(wanted) / log(1.25)).rounded())))
             }
             let k = CGFloat(points / l.rendered), image = l.view.image?.size ?? .zero
             var box = Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: image.width * k / 2, halfH: image.height * k / 2, cosine: CGFloat(cos(l.angle)), sine: CGFloat(sin(l.angle)), nation: l.province == nil, text: l.text)
             let margin: CGFloat = l.view.isHidden ? 6 : 0
-            if taken.contains(where: { Self.clash($0, box, margin: margin) }) {
+            if blocked(box, margin: margin) {
                 // 都城名：上方被占时改写在首都圈下方。
                 guard let anchor = l.anchorY else { l.view.isHidden = true; continue }
                 let at = camera.toScreen(x: l.x, y: anchor, viewport: vp)
                 let below = at.y + (max(ring, 3) + 3 + 7 + points * 0.78)
                 box = Box(x: CGFloat(p.x), y: CGFloat(below), halfW: box.halfW, halfH: box.halfH, cosine: box.cosine, sine: box.sine, nation: box.nation, text: box.text)
-                if taken.contains(where: { Self.clash($0, box, margin: margin) }) { l.view.isHidden = true; continue }
+                if blocked(box, margin: margin) { l.view.isHidden = true; continue }
                 p = (x: p.x, y: below)
             }
-            taken.append(box)
+            place(box)
             l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: k, y: k)
             l.view.center = CGPoint(x: p.x, y: p.y)
             if l.view.isHidden {
-                // A name that gave way comes back softly.
-                l.view.isHidden = false; l.view.alpha = 0
+                // A name that gave way comes back softly. 缩放时一帧里冒出很多名字：只给前十二个起淡入动画，其余直接显示。
+                l.view.isHidden = false
                 if l.province == nil { Self.namesFadedIn += 1 }
-                UIView.animate(withDuration: 0.22, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) { l.view.alpha = 1 }
+                appeared += 1
+                if appeared <= 12 || Self.legacy {
+                    l.view.alpha = 0
+                    UIView.animate(withDuration: 0.22, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) { l.view.alpha = 1 }
+                } else { l.view.alpha = 1 }
             }
         }
     }

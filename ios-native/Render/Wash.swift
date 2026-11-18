@@ -10,7 +10,7 @@ extension MapRenderer {
     /// 墨还在落、扫色还在走时要求连续重绘；静止时不占显示链路。关掉战争晕染时不画。
     var washesAnimating: Bool {
         guard (display.battleGround ?? true) && reveal >= 1 else { return false }
-        return (sweep?.animating(at: clock(frameTime)) ?? false) || (ink?.busy(CACurrentMediaTime()) ?? false)
+        return (sweep?.animating(at: clock(frameTime)) ?? false) || (ink?.busy(clock(frameTime)) ?? false)
     }
 
     private func washOwner() -> (Int) -> Int {
@@ -29,12 +29,12 @@ extension MapRenderer {
     /// 地图几何对应的拓扑；在后台建，建好之前的输入先存着。
     private func readyTopology() -> WashTopology? {
         if ink == nil || ink!.world != SIMD2(Float(max(1, map.width)), Float(max(1, map.height))) {
-            ink = InkField(device: device, map: map)
+            ink = InkField(map: map)
             rebuildInkOwners()
         }
         let key = WashTopology.key(of: map)
         if let t = washTopology, t.key == key { return t }
-        if washTopology != nil { washTopology = nil; sweep = nil; sweepMeshCache = nil; ink?.provinceIndex = [:] }
+        if washTopology != nil { washTopology = nil; sweep = nil; sweepMeshCache = nil; ink?.cells = nil }
         guard washBuilding != key else { return nil }
         washBuilding = key
         let source = map
@@ -58,7 +58,7 @@ extension MapRenderer {
         if epoch != washEpoch {
             washEpoch = epoch
             sweep?.clear(); sweepMeshCache = nil
-            if let ink { ink.clearPending = true; ink.lastStamp = [:]; ink.dwelt = [:]; ink.clock.reset(); ink.sieges = [:]; ink.lastDay = nil }
+            ink?.update(self) { $0.clear() }
             washCaptures = [:]; washRegimes = [:]; washOwners = []
         }
         washFrame = frame

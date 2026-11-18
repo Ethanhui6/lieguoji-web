@@ -767,8 +767,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func draw(in view: MTKView) {
         guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable, let buffer = queue.makeCommandBuffer() else { return }
         frameTime = CACurrentMediaTime()
-        // 墨场先在自己的纹理里落墨（军队此刻的位置、本帧经过的推演天数），主画面再合成。
-        encodeInk(buffer)
         guard let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
         let probe = Self.frameProbe
         var spriteProgress: Float = advanceChase()

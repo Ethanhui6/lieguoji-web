@@ -12,6 +12,7 @@ public enum CreationPolitics {
     }
 
     public static func attach(_ r: JS) {
+        Government.recordStateTraits(r)
         let w = r.world, tick = r.clock.tick.asNumber
         let diplomacy = JS.object()
         diplomacy.version = JS(1); diplomacy.revision = JS(0); diplomacy.worldAuto = JS(true); diplomacy.maximumMonths = JS(240)

@@ -130,30 +130,36 @@ public enum Climate {
         return (temps, precipitation)
     }
 
-    public struct Rivers: Sendable { public let flux: [UInt16]; public let riverIds: [UInt16]; public let segments: [(Int, Int)]; public let riverCount: Int }
+    public struct Rivers: Sendable { public let flux: [UInt16]; public let riverIds: [UInt16]; public let segments: [(Int, Int)]; public let riverCount: Int
+        /// 采用的河道（≥3 项，−1 为出图端）。
+        public var paths: [[Int]] = [] }
 
     /// settlementRiverData: coast distance, FIFO fill, then the flux walk from high to low.
     static func rivers(_ d: TerrainDocument, _ elevations: [Int], _ precipitation: [UInt8]) -> Rivers {
-        let count = d.points.count
+        rivers(points: d.points, triangles: d.triangles, neighbors: d.neighbors, elevations, precipitation)
+    }
+    /// 同上，邻接可换成原作格网的 Voronoi 邻接（original-biomes originalClimate）。
+    static func rivers(points: [(Double, Double)], triangles: [Int], neighbors: [[Int]], _ elevations: [Int], _ precipitation: [UInt8]) -> Rivers {
+        let count = points.count
         let height = elevations.map { UInt8(min(100, max(0, $0))) }
         var coast = [Int16](repeating: 0, count: count), haven = [Int](repeating: -1, count: count), queue = [Int]()
         for i in 0..<count {
             if height[i] >= 20 {
                 var nearest = Double.infinity
-                for j in d.neighbors[i] where height[j] < 20 {
+                for j in neighbors[i] where height[j] < 20 {
                     coast[i] = 1
-                    let dx = d.points[i].0 - d.points[j].0, dy = d.points[i].1 - d.points[j].1, dd = dx * dx + dy * dy
+                    let dx = points[i].0 - points[j].0, dy = points[i].1 - points[j].1, dd = dx * dx + dy * dy
                     if dd < nearest { nearest = dd; haven[i] = j }
                 }
                 if coast[i] != 0 { queue.append(i) }
             } else { coast[i] = -1 }
         }
         var head = 0
-        while head < queue.count { let i = queue[head]; head += 1; for j in d.neighbors[i] where coast[j] == 0 && height[j] >= 20 { coast[j] = Int16(min(127, Int(coast[i]) + 1)); queue.append(j) } }
+        while head < queue.count { let i = queue[head]; head += 1; for j in neighbors[i] where coast[j] == 0 && height[j] >= 20 { coast[j] = Int16(min(127, Int(coast[i]) + 1)); queue.append(j) } }
         var edgeCount = [Int64: Int](), border = [Bool](repeating: false, count: count)
         var t = 0
-        while t < d.triangles.count {
-            for k in 0..<3 { let a = min(d.triangles[t + k], d.triangles[t + (k + 1) % 3]), b = max(d.triangles[t + k], d.triangles[t + (k + 1) % 3]); edgeCount[Int64(a) << 32 | Int64(b), default: 0] += 1 }
+        while t < triangles.count {
+            for k in 0..<3 { let a = min(triangles[t + k], triangles[t + (k + 1) % 3]), b = max(triangles[t + k], triangles[t + (k + 1) % 3]); edgeCount[Int64(a) << 32 | Int64(b), default: 0] += 1 }
             t += 3
         }
         for (key, c) in edgeCount where c == 1 { border[Int(key >> 32)] = true; border[Int(key & 0xffffffff)] = true }
@@ -161,8 +167,8 @@ public enum Climate {
         for i in 0..<count {
             let h = Double(height[i])
             if height[i] < 20 || coast[i] < 1 { altered[i] = h; continue }
-            var s = 0.0; for j in d.neighbors[i] { s += Double(coast[j]) }
-            altered[i] = h + Double(coast[i]) / 100 + s / Double(d.neighbors[i].count) / 10000
+            var s = 0.0; for j in neighbors[i] { s += Double(coast[j]) }
+            altered[i] = h + Double(coast[i]) / 100 + s / Double(neighbors[i].count) / 10000
         }
         var routing = [Float](repeating: 100000, count: count), visited = [Bool](repeating: false, count: count)
         queue.removeAll()
@@ -173,7 +179,7 @@ public enum Climate {
         head = 0
         while head < queue.count {
             let i = queue[head]; head += 1
-            for j in d.neighbors[i] where height[j] >= 20 && !visited[j] { routing[j] = Float(max(Double(routing[i]) + 1e-5, altered[j])); visited[j] = true; queue.append(j) }
+            for j in neighbors[i] where height[j] >= 20 && !visited[j] { routing[j] = Float(max(Double(routing[i]) + 1e-5, altered[j])); visited[j] = true; queue.append(j) }
         }
         var flux = [UInt16](repeating: 0, count: count), active = [UInt16](repeating: 0, count: count), confluence = [UInt8](repeating: 0, count: count)
         var paths: [[Int]] = [[]]
@@ -186,7 +192,7 @@ public enum Climate {
             addFlux(i, Double(precipitation[i]) / quarter)
             if border[i] && active[i] != 0 { paths[Int(active[i])].append(-1); continue }
             var to = haven[i]
-            if to < 0 { to = d.neighbors[i][0]; for j in d.neighbors[i] where routing[j] < routing[to] { to = j } }
+            if to < 0 { to = neighbors[i][0]; for j in neighbors[i] where routing[j] < routing[to] { to = j } }
             if routing[i] <= routing[to] { continue }
             if flux[i] < 30 { if height[to] >= 20 { addFlux(to, Double(flux[i])) }; continue }
             if active[i] == 0 { active[i] = UInt16(truncatingIfNeeded: paths.count); paths.append([i]) }
@@ -198,10 +204,10 @@ public enum Climate {
             if height[to] >= 20 { addFlux(to, Double(flux[i])) }
             paths[Int(river)].append(to)
         }
-        var riverIds = [UInt16](repeating: 0, count: count), segments = [(Int, Int)](), seen = Set<Int64>(), riverCount = 0
+        var riverIds = [UInt16](repeating: 0, count: count), segments = [(Int, Int)](), seen = Set<Int64>(), riverCount = 0, accepted = [[Int]]()
         for id in 1..<paths.count {
             let path = paths[id]; if path.count < 3 { continue }
-            riverCount += 1
+            riverCount += 1; accepted.append(path)
             for cell in path where cell >= 0 && height[cell] >= 20 && riverIds[cell] == 0 { riverIds[cell] = UInt16(truncatingIfNeeded: id) }
             for n in 1..<path.count {
                 let a = path[n - 1], b = path[n]
@@ -209,7 +215,7 @@ public enum Climate {
                 if seen.insert(Int64(a) << 32 | Int64(b)).inserted { segments.append((a, b)) }
             }
         }
-        return Rivers(flux: flux, riverIds: riverIds, segments: segments, riverCount: riverCount)
+        return Rivers(flux: flux, riverIds: riverIds, segments: segments, riverCount: riverCount, paths: accepted)
     }
 
     public struct Surface: Sendable { public let ids: [UInt8]; public let precipitation: [UInt8]; public let temperatures: [Int8]; public let rivers: Rivers }
@@ -220,7 +226,8 @@ public enum Climate {
         let columns = max(2, Int(jsRound(d.width / longest * 192))), rows = max(2, Int(jsRound(d.height / longest * 192)))
         let heights = sampleHeights(d, elevations, columns, rows), climate = grid(heights, columns, rows)
         let precipitation = d.points.map { p in climate.precipitation[min(rows - 1, Int((p.1 / d.height * Double(rows)).rounded(.down))) * columns + min(columns - 1, Int((p.0 / d.width * Double(columns)).rounded(.down)))] }
-        let temperatures = elevations.indices.map { i in Int8(Climate.temperature(height: Double(min(100, max(0, elevations[i]))), latitude: north - d.points[i].1 / d.height * (north - south))) }
+        // 网页 deriveFmsBiomeSurface 逐点气温不带气温偏移（recoveredTemperature 默认 offset 0）。
+        let temperatures = elevations.indices.map { i in Int8(Climate.temperature(height: Double(min(100, max(0, elevations[i]))), latitude: north - d.points[i].1 / d.height * (north - south), offset: 0)) }
         let r = rivers(d, elevations, precipitation)
         let ids = elevations.indices.map { i -> UInt8 in
             var sum = Double(precipitation[i]) + (r.riverIds[i] != 0 ? max(Double(r.flux[i]) / 10, 2) : 0), n = 1.0

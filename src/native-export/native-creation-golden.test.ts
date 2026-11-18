@@ -2,7 +2,7 @@ import {it,expect,vi} from 'vitest';
 import {writeFile,mkdir} from 'node:fs/promises';
 
 /** 原生建世界端到端黄金数据：App 建新世界时网页引擎实际执行的 generate(options) 与 nativeWorld()，
- * 四种地形模板 × 两种命名。仓库里只存每段 JSON 的长度与两个散列（文件小），完整输出写到
+ * 四种地形模板 × 两种命名，另加一个要自动加州数的群岛。仓库里只存每段 JSON 的长度与两个散列（文件小），完整输出写到
  * NATIVE_CREATION_DUMP 指定的本机目录供逐键比对。世界编号固定。用 EXPORT_NATIVE_WORLD=1 运行。 */
 export const NATIVE_CREATION_CASES=[
   {seed:'421730',template:'continents',count:8,cityCount:80,relations:'peace',naming:'culture-generated',cultures:['chinese','japanese','english','arab','roman','german']},
@@ -13,6 +13,8 @@ export const NATIVE_CREATION_CASES=[
   {seed:'421730',template:'highIsland',count:5,cityCount:40,relations:'peace',naming:'historical-names',cultures:[]},
   {seed:'777',template:'archipelago',count:24,cityCount:80,relations:'war',naming:'culture-generated',cultures:[]},
   {seed:'777',template:'archipelago',count:24,cityCount:80,relations:'war',naming:'historical-names',cultures:['chinese','japanese','english','arab','roman','german']},
+  // 陆地支离破碎：3 州放不下，州数按 raisedCities 增加。
+  {seed:'5',template:'archipelago',count:3,cityCount:3,relations:'war',naming:'culture-generated',cultures:[]},
 ] as const;
 export const DEFAULT_CLIMATE={precipitation:80,temperatureOffset:0,north:0.9,south:-0.9};
 
@@ -37,9 +39,9 @@ it.skipIf(process.env.EXPORT_NATIVE_WORLD!=='1')('exports native creation end-to
     const generated=JSON.parse(await engine.generate(JSON.stringify(options))) as {bin:string;meta:unknown;state:unknown};
     const nativeText=engine.nativeWorld(),world=JSON.parse(nativeText) as {run:Record<string,unknown>;statics:Record<string,unknown>};
     const {map,...statics}=world.statics as {map:{bin:string;meta:unknown}}&Record<string,unknown>;
-    samples.push({options,
+    samples.push({options,runId:world.run.id,
       run:parts(world.run),runKeys:Object.keys(world.run),statics:parts(statics),staticKeys:Object.keys(world.statics),
-      map:{bin:digest(map.bin),meta:digest(JSON.stringify(map.meta))},state:digest(JSON.stringify(generated.state)),whole:digest(nativeText)});
+      map:{bin:digest(map.bin),meta:digest(JSON.stringify(map.meta))},cityCount:(map.meta as {provinces:unknown[]}).provinces.length,state:digest(JSON.stringify(generated.state)),whole:digest(nativeText)});
     if(dump){
       await writeFile(`${dump}/case${i}-native.json`,nativeText);
       await writeFile(`${dump}/case${i}-state.json`,JSON.stringify(generated.state));

@@ -79,7 +79,9 @@ public enum CreationGeography {
         return inside
     }
 
-    public static func travelGraph(_ d: TerrainDocument, elevations: [Int], provinces: [JS], sea: SeaGraph) -> Graph {
+    public static func travelGraph(_ d: TerrainDocument, elevations: [Int], provinces: [JS], sea: SeaGraph) -> Graph { buildTravel(d, elevations: elevations, provinces: provinces, sea: sea)! }
+    /// 同上；陆面无法唯一归属辖区或面积不符时为 nil（网页抛出含“辖区”的错误，建世界时加州数重试）。
+    public static func buildTravel(_ d: TerrainDocument, elevations: [Int], provinces: [JS], sea: SeaGraph) -> Graph? {
         let scale = 1000 / max(d.width, d.height)
         struct Group { let poly: [TravelPoint]; let minX: Double, maxX: Double, minY: Double, maxY: Double }
         let groups = provinces.map { p -> Group in
@@ -92,7 +94,7 @@ public enum CreationGeography {
         var sources = [[Int]: Int]()
         var t = 0
         while t < d.triangles.count { sources[[d.triangles[t], d.triangles[t + 1], d.triangles[t + 2]].sorted()] = t / 3; t += 3 }
-        var cells = [Int: Cell](), order = [Int](), byProvince = [[Int]](repeating: [], count: provinces.count)
+        var cells = [Int: Cell](), order = [Int](), byProvince = [[Int]](repeating: [], count: provinces.count), areas = [Double](repeating: 0, count: provinces.count)
         for face in Regions.landFaces(d, elevations) {
             let id = sources[face.source.sorted()]!
             let polygon = face.ring.map { TravelPoint(x: $0.x * scale, y: $0.y * scale) }
@@ -102,10 +104,12 @@ public enum CreationGeography {
                 let g = groups[k]; if center.x < g.minX || center.x > g.maxX || center.y < g.minY || center.y > g.maxY { return false }
                 return contains(g.poly, center)
             }
-            precondition(matches.count == 1, "行军陆面无法唯一匹配当前辖区。")
+            if matches.count != 1 { return nil }
+            areas[matches[0]] += CreationForces.polygonArea(polygon)
             let cell = Cell(id: id * 2, face: id, land: true, province: matches[0], center: center, polygon: polygon)
             cells[cell.id] = cell; order.append(cell.id); byProvince[matches[0]].append(cell.id)
         }
+        for (k, g) in groups.enumerated() where byProvince[k].isEmpty || abs(areas[k] - CreationForces.polygonArea(g.poly)) > max(1e-7, areas[k] * 1e-7) { return nil }
         for nid in sea.order {
             let n = sea.nodes[nid]!
             let cell = Cell(id: n.id * 2 + 1, face: n.id, land: false, province: -1, center: n.center, polygon: n.polygon)

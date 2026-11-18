@@ -8,6 +8,26 @@ final class NativeCreationLocalTests: XCTestCase {
     static var dumpDir: URL? { ProcessInfo.processInfo.environment["NATIVE_CREATION_DUMP"].map { URL(fileURLWithPath: $0) } }
     static var resources: URL { URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources") }
 
+    /// 整个建世界与转储逐键比对，给出第一处差异。
+    func testCreationMatchesTheDump() throws {
+        guard let dir = Self.dumpDir else { throw XCTSkip("没有 NATIVE_CREATION_DUMP") }
+        let x = try NativeCreationTests.inputs()
+        let golden = try JS.parse(Data(contentsOf: Self.resources.deletingLastPathComponent().appendingPathComponent("Core/Tests/LieguojiCoreTests/Golden/native-creation.json")))
+        let only = ProcessInfo.processInfo.environment["NATIVE_CREATION_CASE"].flatMap(Int.init)
+        for (i, s) in golden.samples.asArray.enumerated() where only == nil || only == i {
+            let w = try NativeCreation.generate(NativeCreationTests.options(s), inputs: x, worldId: NativeCreationTests.worldId, runId: s.runId.asString)
+            let want = try JS.parse(Data(contentsOf: dir.appendingPathComponent("case\(i)-native.json")))
+            for k in want.run.objectKeys { if let d = w.run[k].difference(want.run[k], path: k) { XCTFail("case\(i): \(d)") } else if w.run[k].json != want.run[k].json { XCTFail("case\(i): \(k) 键序") } }
+            for k in want.statics.objectKeys where k != "map" { if let d = w.statics[k].difference(want.statics[k], path: k) { XCTFail("case\(i): statics \(String(d.prefix(300)))") } }
+            if let d = w.statics.map.meta.difference(want.statics.map.meta, path: "meta") { XCTFail("case\(i): \(d)") }
+            let a = Data(base64Encoded: w.statics.map.bin.asString)!, b = Data(base64Encoded: want.statics.map.bin.asString)!
+            if a != b {
+                let k = zip(a, b).enumerated().first { $0.element.0 != $0.element.1 }?.offset ?? min(a.count, b.count)
+                XCTFail("case\(i): map.bin \(a.count) vs \(b.count) 字节，首个差异在 \(k)")
+            }
+        }
+    }
+
     func testTravelBinaryMatchesTheDump() throws {
         guard let dir = Self.dumpDir else { throw XCTSkip("没有 NATIVE_CREATION_DUMP") }
         let doc = try TerrainDocument(data: Data(contentsOf: Self.resources.appendingPathComponent("World/doc20k.bin")))

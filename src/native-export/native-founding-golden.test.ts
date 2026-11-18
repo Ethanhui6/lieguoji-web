@@ -24,8 +24,8 @@ import type {FmsDocument} from '../fms/model';
 type Run=Record<string,unknown>&{world:Record<string,unknown>};
 function changes(before:Run,after:Run){
   const out:Record<string,unknown>={},world:Record<string,unknown>={};
-  for(const [k,v] of Object.entries(after)){if(k==='terrain'||k==='world')continue;if(JSON.stringify(v)!==JSON.stringify(before[k]))out[k]=v;}
-  for(const [k,v] of Object.entries(after.world))if(JSON.stringify(v)!==JSON.stringify(before.world[k]))world[k]=v;
+  for(const [k,v] of Object.entries(after)){if(k==='terrain'||k==='world')continue;if(JSON.stringify(v)!==JSON.stringify(before[k]))out[k]=structuredClone(v);}
+  for(const [k,v] of Object.entries(after.world))if(JSON.stringify(v)!==JSON.stringify(before.world[k]))world[k]=structuredClone(v);
   return {keys:Object.keys(after).filter(k=>k!=='terrain'),worldKeys:Object.keys(after.world),changed:out,world};
 }
 const strip=(r:unknown)=>{const o={...r as Run};delete o.terrain;return structuredClone(o);};

@@ -209,7 +209,7 @@ enum MapViewMode: String, CaseIterable, Identifiable {
     }
 }
 
-/// A strip of paper tabs that unrolls from the button; the selected view is marked by a sliding seal.
+/// A strip of paper tabs that glides cleanly from the top-right button without squashing icons.
 struct MapViewSwitcher: View {
     @Binding var mode: MapViewMode
     @Binding var open: Bool
@@ -218,6 +218,7 @@ struct MapViewSwitcher: View {
     /// becomes a grid of four.
     @Environment(\.verticalSizeClass) private var vertical
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
         Group {
             if vertical == .compact {
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 2), count: 4), spacing: 2) { buttons }
@@ -226,11 +227,15 @@ struct MapViewSwitcher: View {
             }
         }
         .padding(5)
-        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 14)))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
-        .overlay(RoundedRectangle(cornerRadius: 11).stroke(Theme.seal.opacity(0.25), lineWidth: 0.6).padding(3))
-        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
-        .scaleEffect(x: 1, y: open ? 1 : 0.05, anchor: .top).opacity(open ? 1 : 0)
+        .background(
+            shape.fill(Theme.paper2.opacity(0.97))
+                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
+        )
+        .overlay(shape.stroke(Theme.ink.opacity(0.2), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Theme.seal.opacity(0.22), lineWidth: 0.6).padding(3))
+        .offset(y: open ? 0 : -14)
+        .scaleEffect(open ? 1 : 0.94, anchor: .topTrailing)
+        .opacity(open ? 1 : 0)
         .animation(Motion.panel, value: open)
     }
     @ViewBuilder private var buttons: some View {
@@ -339,39 +344,53 @@ struct StatisticsSheet: View {
     @State private var category = "power"
     @State private var rows: [StatisticsRow] = []
     @State private var brushed = false
+    @Namespace private var catPill
     var body: some View {
         ZStack {
             MemorialPaper()
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                LazyVStack(alignment: .leading, spacing: 14) {
                     MemorialHeader(title: Self.categories.first { $0.id == category }?.title ?? "", subtitle: model.state.map { "\($0.dateText) · 呈御览" }, seal: "奏折")
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(Self.categories, id: \.id) { c in
-                                // The same paper chips as the other pages' tabs (scrolling: five of them).
-                                let on = category == c.id
-                                Button { withAnimation(Motion.tap) { category = c.id } } label: {
-                                    HStack(spacing: 5) {
-                                        if let g = GameActionLabel.glyph(for: Self.categoryIcon[c.id] ?? "") {
-                                            InkIcon(glyph: g, size: 15, weight: on ? 1.85 : 1.55, filled: on,
-                                                    accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.26))
-                                                .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.9))
-                                        } else {
-                                            Image(systemName: Self.categoryIcon[c.id] ?? "list.number").font(.system(size: 13)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
+                    ScrollViewReader { proxy in
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(Self.categories, id: \.id) { c in
+                                    let on = category == c.id
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        withAnimation(Motion.tap) { category = c.id }
+                                    } label: {
+                                        HStack(spacing: 5) {
+                                            if let g = GameActionLabel.glyph(for: Self.categoryIcon[c.id] ?? "") {
+                                                InkIcon(glyph: g, size: 15, weight: on ? 1.85 : 1.55, filled: on,
+                                                        accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.26))
+                                                    .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.9))
+                                            } else {
+                                                Image(systemName: Self.categoryIcon[c.id] ?? "list.number").font(.system(size: 13)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
+                                            }
+                                            Text(c.title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                                         }
-                                        Text(c.title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                        .padding(.horizontal, 14).frame(height: 40)
+                                        .background {
+                                            if on {
+                                                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.seal)
+                                                    .matchedGeometryEffect(id: "stat-cat", in: catPill)
+                                            } else {
+                                                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.paper2)
+                                                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.2)))
+                                            }
+                                        }
                                     }
-                                    .padding(.horizontal, 14).frame(height: 40)
-                                    .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
+                                    .buttonStyle(PressStyle())
+                                    .id(c.id)
                                 }
-                                .buttonStyle(PressStyle())
                             }
+                            .padding(.horizontal, 16)
                         }
-                        .padding(.horizontal, 16)
+                        .onChange(of: category) { _, next in withAnimation(Motion.tap) { proxy.scrollTo(next, anchor: .center) } }
                     }
                     let top = max(1, rows.map { abs($0.value) }.max() ?? 1)
-                    VStack(spacing: 0) {
+                    LazyVStack(spacing: 0) {
                         ForEach(Array(rows.enumerated()), id: \.element.id) { i, row in
                             Button { if row.nation >= 0 { openNation(row.nation) } } label: {
                                 HStack(spacing: 12) {
@@ -383,25 +402,20 @@ struct StatisticsSheet: View {
                                             Spacer(minLength: 6)
                                             Text(row.text).font(Theme.label).foregroundStyle(row.value < 0 ? Theme.seal : Theme.ink2).monospacedDigit()
                                         }
-                                        // The ink bar brushes in, staggered by rank.
-                                        GeometryReader { g in
-                                            Capsule().fill(LinearGradient(colors: [(row.color.map { Names.color($0) } ?? Theme.ink).opacity(0.95), (row.color.map { Names.color($0) } ?? Theme.ink).opacity(0.45)], startPoint: .leading, endPoint: .trailing))
-                                                .frame(width: max(2, g.size.width * CGFloat(abs(row.value) / top)) * (brushed ? 1 : 0.001), height: 4)
-                                                .animation(Motion.reveal.delay(Double(i) * 0.05), value: brushed)
-                                        }
-                                        .frame(height: 4)
+                                        InkBar(fraction: brushed ? abs(row.value) / top : 0, color: row.color.map { Names.color($0) } ?? Theme.ink, height: 4, gradient: true)
+                                            .animation(Motion.reveal.delay(min(0.4, Double(i) * 0.035)), value: brushed)
                                     }
                                 }
-                                .padding(.horizontal, 18).padding(.vertical, 11).contentShape(Rectangle())
+                                .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            if i < rows.count - 1 { Rectangle().fill(Theme.ink.opacity(0.1)).frame(height: 0.7).padding(.leading, 64) }
+                            if i < rows.count - 1 { Rectangle().fill(Theme.ink.opacity(0.1)).frame(height: 0.7).padding(.leading, 62) }
                         }
                         if rows.isEmpty { Text(category == "war" || category == "wars" || category == "campaigns" ? "天下无战事" : "暂无记录").font(Theme.section).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(30) }
                     }
-                    .background(Theme.paper2.opacity(0.45), in: RoundedRectangle(cornerRadius: 14))
-                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.ink.opacity(0.12), lineWidth: 1))
-                    .padding(.horizontal, 14)
+                    .background(Theme.paper2.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 1))
+                    .padding(.horizontal, 16)
                 }
                 .padding(.bottom, 28)
             }
@@ -443,7 +457,7 @@ struct EdictSheet: View {
         ZStack {
             MemorialPaper()
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                LazyVStack(alignment: .leading, spacing: 14) {
                     MemorialHeader(title: "天下诏令", subtitle: "奉天承运，诏曰：", seal: "诏")
                     if let s {
                         section("外交") {
@@ -593,7 +607,7 @@ struct SectionLabel: View {
             Text(title).font(Theme.section).foregroundStyle(Theme.ink)
         }
         .frame(maxWidth: inset ? .infinity : nil, alignment: .leading)
-        .padding(.horizontal, inset ? 22 : 0)
+        .padding(.horizontal, inset ? Theme.Layout.sectionInset : 0)
     }
 }
 
@@ -802,18 +816,48 @@ struct PaperTrack: View {
     }
 }
 
-// MARK: 统一卡片与标签
+// MARK: 统一卡片、轻量进度条与标签
+
+/// 零 GeometryReader 的轻量墨条：用缩放矩形配胶囊裁剪，滚动列表内零二次布局抖动。
+struct InkBar: View {
+    let fraction: Double
+    var color: Color = Theme.ink.opacity(0.65)
+    var track: Color = Theme.ink.opacity(0.1)
+    var height: CGFloat = 5
+    var gradient = false
+    var body: some View {
+        let clamped = min(1, max(0, fraction.isFinite ? fraction : 0))
+        ZStack(alignment: .leading) {
+            Capsule().fill(track)
+            if clamped > 0.001 {
+                Group {
+                    if gradient {
+                        Rectangle().fill(LinearGradient(colors: [color.opacity(0.95), color.opacity(0.48)], startPoint: .leading, endPoint: .trailing))
+                    } else {
+                        Rectangle().fill(color)
+                    }
+                }
+                .scaleEffect(x: max(0.015, clamped), y: 1, anchor: .leading)
+            }
+        }
+        .frame(height: height)
+        .clipShape(Capsule())
+    }
+}
 
 extension View {
     /// The one card look of every page (Group2's): paper, an ink rim, a fine vermilion inner line and a
-    /// soft shadow. `tint` washes the paper faintly in a colour (a relation group, a side in battle).
+    /// path shadow on the background shape (zero offscreen pass during scroll).
     func paperCard(tint: Color? = nil) -> some View {
-        self
-            .background(Theme.paper2.opacity(0.62), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .background((tint ?? .clear).opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke((tint ?? Theme.ink).opacity(tint == nil ? 0.2 : 0.35), lineWidth: 1))
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        return self
+            .background(
+                shape.fill(Theme.paper2.opacity(0.64))
+                    .shadow(color: Color(red: 0.25, green: 0.18, blue: 0.08).opacity(0.08), radius: 5, y: 2)
+            )
+            .background((tint ?? .clear).opacity(0.07), in: shape)
+            .overlay(shape.stroke((tint ?? Theme.ink).opacity(tint == nil ? 0.2 : 0.35), lineWidth: 1))
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.16), lineWidth: 0.6).padding(3))
-            .shadow(color: Color(red: 0.25, green: 0.18, blue: 0.08).opacity(0.08), radius: 6, y: 2)
     }
 }
 

@@ -37,16 +37,14 @@ struct InkIcon: View {
             } else if filled {
                 InkAccentPath(glyph: glyph).fill(.foreground.opacity(0.24))
             }
-            // 淡墨洇晕：略宽、微糊、极淡，赋予宣纸落墨的温润质感。
-            BrushShape(glyph: glyph, width: w * 1.65)
-                .fill(.foreground.opacity(0.14))
-                .blur(radius: w * 0.42)
+            // 淡墨洇晕：纯矢量略宽淡墨底笔（去掉离屏 .blur/.drawingGroup，列表滚动零离屏合成开销且边缘更锐利）。
+            BrushShape(glyph: glyph, width: w * 1.56)
+                .fill(.foreground.opacity(0.11))
             // 主笔触：起顿行饱收锋。
             BrushShape(glyph: glyph, width: w * 1.24)
                 .fill(.foreground)
         }
         .frame(width: size, height: size)
-        .drawingGroup()
     }
 }
 

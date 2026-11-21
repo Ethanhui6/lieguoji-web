@@ -116,12 +116,12 @@ final class EffectsView: UIView {
         l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
         l.bounds = CGRect(x: 0, y: 0, width: 96, height: 18); l.position = p
         (floatHost ?? layer).addSublayer(l)
-        // 轻轻浮起、淡出：上升一小段，不放大抢眼。
-        let up = CABasicAnimation(keyPath: "position.y"); up.fromValue = p.y; up.toValue = p.y - 20
-        up.timingFunction = CAMediaTimingFunction(controlPoints: 0.2, 0.7, 0.3, 1)
-        let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 0.95, 0.95, 0]; fade.keyTimes = [0, 0.15, 0.65, 1]
-        let pop = CAKeyframeAnimation(keyPath: "transform.scale"); pop.values = [0.85, 1.04, 1, 1]; pop.keyTimes = [0, 0.2, 0.35, 1]
-        let g = CAAnimationGroup(); g.animations = [up, fade, pop]; g.duration = 1.4; g.fillMode = .forwards; g.isRemovedOnCompletion = false
+        // 轻轻浮起、淡出：柔和缓动上升一小段，清晰不抢眼。
+        let up = CABasicAnimation(keyPath: "position.y"); up.fromValue = p.y; up.toValue = p.y - 22
+        up.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 0.84, 0.3, 1)
+        let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 0.96, 0.96, 0]; fade.keyTimes = [0, 0.14, 0.68, 1]
+        let pop = CAKeyframeAnimation(keyPath: "transform.scale"); pop.values = [0.82, 1.06, 1, 0.98]; pop.keyTimes = [0, 0.18, 0.36, 1]
+        let g = CAAnimationGroup(); g.animations = [up, fade, pop]; g.duration = 1.45; g.fillMode = .forwards; g.isRemovedOnCompletion = false
         l.opacity = 0
         l.add(Self.calm(g), forKey: "float")
         floats += 1
@@ -277,7 +277,15 @@ final class EffectsView: UIView {
         let breathe = CAKeyframeAnimation(keyPath: "opacity"); breathe.values = [0.55, 1, 0.55]; breathe.duration = 1.8; breathe.repeatCount = .infinity
         breathe.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         core.add(Self.calm(breathe), forKey: "breathe")
-        root.addSublayer(paper); root.addSublayer(track); root.addSublayer(ring); root.addSublayer(core)
+        // 细微外圈墨波：轻缓扩散提示围城进行中，不遮地名。
+        let pulse = CAShapeLayer(); pulse.frame = root.bounds; pulse.path = circle.cgPath
+        pulse.fillColor = nil; pulse.strokeColor = color.withAlphaComponent(0.55).cgColor; pulse.lineWidth = 0.9
+        let pScale = CABasicAnimation(keyPath: "transform.scale"); pScale.fromValue = 1.0; pScale.toValue = 1.55
+        let pFade = CABasicAnimation(keyPath: "opacity"); pFade.fromValue = 0.55; pFade.toValue = 0.0
+        let pGroup = CAAnimationGroup(); pGroup.animations = [pScale, pFade]; pGroup.duration = 2.0; pGroup.repeatCount = .infinity
+        pGroup.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        pulse.add(Self.calm(pGroup), forKey: "pulse")
+        root.addSublayer(pulse); root.addSublayer(paper); root.addSublayer(track); root.addSublayer(ring); root.addSublayer(core)
         return (root, ring)
     }
 

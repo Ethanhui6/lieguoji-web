@@ -68,6 +68,9 @@ struct InkPipelines {
         float3 col = float3(inkToSrgb(lin.r), inkToSrgb(lin.g), inkToSrgb(lin.b));
         col = in.terrain + (col - in.terrain) * k.density;
         col = min(float3(1.0), col * in.shade);
+        // 细微宣纸湿墨边缘：前沿处略微聚墨收深，保留原色清透质感，不抢国色。
+        float capillary = reached * (1.0 - reached) * 4.0 * (1.0 - show * 0.45);
+        col *= (1.0 - 0.13 * capillary);
         // 刚显出时略淡，像墨刚落下还在洇。
         return float4(col, reached * (0.82 + 0.18 * show));
     }

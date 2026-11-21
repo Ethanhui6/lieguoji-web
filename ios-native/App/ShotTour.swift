@@ -50,14 +50,16 @@ enum ShotTour {
                                    "relations": options.relations, "naming": options.naming, "cultures": Names.cultureIds.filter { options.cultures.contains($0) }]
         guard let text = String(data: (try? JSONSerialization.data(withJSONObject: json)) ?? Data(), encoding: .utf8) else { return }
         var t = Date()
-        do { try await model.engine.start() } catch { model.noteFounding("web-startup", Date().timeIntervalSince(t), cityCount: nil, error: error.localizedDescription); return }
+        let webHost = model.ensureLegacyEngine()
+        await wait(0.1)
+        do { try await webHost.start() } catch { model.noteFounding("web-startup", Date().timeIntervalSince(t), cityCount: nil, error: error.localizedDescription); return }
         model.noteFounding("web-startup", Date().timeIntervalSince(t), cityCount: nil, error: nil)
         t = Date()
         do {
-            _ = try await model.engine.call("generate(options)", ["options": text], timeout: 180)
+            _ = try await webHost.call("generate(options)", ["options": text], timeout: 180)
             model.noteFounding("web-generate", Date().timeIntervalSince(t), cityCount: nil, error: nil)
             t = Date()
-            let world = try await model.engine.call("nativeWorld()", timeout: 90)
+            let world = try await webHost.call("nativeWorld()", timeout: 90)
             model.noteFounding("web-handover", Date().timeIntervalSince(t), cityCount: nil, error: nil)
             t = Date()
             let parsed = await Task.detached(priority: .userInitiated) { (try? JS.parse(Data(world.utf8))) != nil }.value

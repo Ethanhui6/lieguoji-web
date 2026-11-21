@@ -5,7 +5,7 @@ import LieguojiCore
 /// relations, the state's wars, and the state-level actions (国家行为). While open, the map shows
 /// the state's relations: enemies red, allies blue, vassals green, the overlord magenta.
 struct NationInfo: Decodable {
-    struct Ruler: Decodable { let name: String; let title: String; let age: Double; var id: Int? = nil; var traits: [String]? = nil; var skills: [Double]? = nil }
+    struct Ruler: Decodable { let name: String; let title: String; let age: Double; var female: Bool? = nil; var id: Int? = nil; var traits: [String]? = nil; var skills: [Double]? = nil }
     /// 国家加成 (自定义) in percent: income, attack, defense, growth, speed.
     var bonus: [String: Double]? = nil
     /// 生计 (民族特性): Agriculture, Nomadic, Maritime, FishAndHunting, Commercial, Other.
@@ -94,7 +94,7 @@ struct FoldSection<Content: View>: View {
                     }
                     Image(systemName: "chevron.down").font(.system(size: 14, weight: .regular)).foregroundStyle(Theme.ink2).rotationEffect(.degrees(expanded ? 180 : 0))
                 }
-                .padding(.horizontal, 22).frame(minHeight: 44).contentShape(Rectangle())
+                .padding(.horizontal, Theme.Layout.sectionInset).frame(minHeight: 44).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityValue(expanded ? "已展开" : "已收起")
@@ -143,9 +143,11 @@ struct NationSheet: View {
     @State private var religionChoice = ""
     @State private var info: NationInfo?
     @State private var failed = false
-    /// 分类: the page's tabs.
-    enum Tab: String, CaseIterable { case overview = "概览", court = "朝政", military = "军事", diplomacy = "外交", custom = "自定义" }
+    /// 分类: the page's tabs（超过 4 项时由 ChipPicker 自动横滑并带滑动朱印）。
+    enum Tab: String, CaseIterable { case overview = "概览", decrees = "政令", territory = "疆土", court = "朝政", military = "军事", diplomacy = "外交", custom = "自定义" }
     @State private var tab: Tab = .overview
+    @State private var enthroning = false
+    @State private var confirmWarNeighbors = false
     @State private var pressMenu: PressMenu?
     @State private var flash: String?
     /// The screenshot tour opens the page on a given tab.
@@ -200,7 +202,7 @@ struct NationSheet: View {
             let meta = nation < map.meta.nations.count ? map.meta.nations[nation] : nil
             let s = state.nations[nation]
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                LazyVStack(alignment: .leading, spacing: 14) {
                     if let focus {
                         focusPage(focus, info: info, map: map, state: state, meta: meta)
                     } else {
@@ -221,11 +223,22 @@ struct NationSheet: View {
                                 numberEdit = NumberEdit(title: "国库", unit: "金", value: info.gold) { v in await model.editNation(nation, gold: v, destiny: nil, polity: nil) }
                             } : nil),
                         ])
+                        if info.alive {
+                            NationQuickBar(
+                                onPaint: { paint(nation) },
+                                onPlaceArmy: { placeArmy(nation) },
+                                onDecrees: { withAnimation(Motion.tap) { tab = .decrees } },
+                                onTerritory: { withAnimation(Motion.tap) { tab = .territory } },
+                                onCapital: {
+                                    if nation < map.meta.nations.count, map.meta.cities.indices.contains(map.meta.nations[nation].capital) {
+                                        let c = map.meta.cities[map.meta.nations[nation].capital]
+                                        lower(); model.controller.showPlace(x: Double(c.x), y: Double(c.y))
+                                    }
+                                }
+                            )
+                        }
                         NationTabs(tab: $tab)
                         tabContent(info, map, state)
-                            .id(tab)
-                            .transition(.opacity.combined(with: .offset(y: 8)))
-                            .animation(Motion.fade, value: tab)
                     } else {
                         PanelPending(failed: failed, busy: true) { Task { await reload() } }
                     }
@@ -309,6 +322,13 @@ struct NationSheet: View {
                 .padding(.bottom, 22)
                 .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
+            .sheet(isPresented: $enthroning) {
+                EnthroneSheet(model: model, nation: nation, stateName: meta?.name ?? info?.name ?? "") { personId, name in
+                    enthroning = false
+                    Task { await run(success: "已拥立\(name)即位") { await model.enthronePerson(nation, person: personId) } }
+                }
+                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            }
         }
     }
 
@@ -386,7 +406,7 @@ struct NationSheet: View {
                     Group2 {
                         if let r = info.ruler {
                             EditRow(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）" + (info.heads?.premierRules == true ? " · 虚位" : "")) {
-                                if let id = r.id { editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50]) }
+                                if let id = r.id { editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: r.female ?? false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50]) }
                             }
                             Divider2()
                         }
@@ -478,9 +498,26 @@ struct NationSheet: View {
     }
     @ViewBuilder private func courtTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         VStack(alignment: .leading, spacing: 14) {
+                if info.alive {
+                    HStack(spacing: 10) {
+                        Button {
+                            GameFeel.shared.tap()
+                            Task { await run(success: "已为各州补齐总督") { await model.edit("nationDiplomacyOrder", ["n": nation, "kind": "fillGovernors"]) } }
+                        } label: { paneAction("一键补齐总督", "person.badge.plus") }.buttonStyle(PressStyle())
+                        Button {
+                            GameFeel.shared.tap()
+                            enthroning = true
+                        } label: { paneAction("禅位择君", "crown") }.buttonStyle(PressStyle())
+                    }
+                    .padding(.horizontal, 16)
+                }
                 if let court = info.court, info.alive { FoldSection("朝堂", expanded: true) { courtView(court, map) } }
+                if let court = info.court, info.alive, !court.houses.isEmpty {
+                    FoldSection("朝堂世家（\(court.houses.count)）", expanded: true, summary: "\(court.houses.count) 家门阀") { housesSection(court) }
+                }
                 if let list = info.court?.governorList, !list.isEmpty, info.alive {
-                    FoldSection("各州总督（\(list.filter { $0.holder != nil }.count)/\(list.count)）", expanded: list.count <= 12) {
+                    let filled = list.filter { $0.holder != nil }.count
+                    FoldSection("各州总督（\(filled)/\(list.count)）", expanded: list.count <= 6, summary: filled == list.count ? "全部满员" : "空缺 \(list.count - filled) 州") {
                         Group2 {
                             ForEach(Array(list.enumerated()), id: \.offset) { i, g in
                                 Button { appointing = AppointTarget(office: "Governor:\(g.province)") } label: {
@@ -505,7 +542,7 @@ struct NationSheet: View {
                     }
                 }
                 if let u = info.court?.rebellion, info.alive {
-                    FoldSection("叛乱形势", expanded: true) {
+                    FoldSection("叛乱形势", expanded: u.open, summary: u.open ? "有起事之虞" : "尚属安定") {
                         Group2 {
                             HStack(spacing: 10) {
                                 Image(systemName: u.open ? "flame" : "checkmark.shield").font(.system(size: 15)).foregroundStyle(u.open ? Theme.seal : Theme.jade)
@@ -534,7 +571,8 @@ struct NationSheet: View {
                     }
                 }
                 if let parties = info.parties, !parties.isEmpty {
-                    FoldSection("议会（\(info.styleLabel ?? "")）", expanded: true) {
+                    let topParty = parties.max(by: { $0.seats < $1.seats })
+                    FoldSection("议会（\(info.styleLabel ?? "")）", expanded: false, summary: topParty.map { "执政：\($0.name)（\($0.seats)席）" }) {
                         Group2 {
                             // Seats in one band, then each party.
                             GeometryReader { g in
@@ -564,7 +602,7 @@ struct NationSheet: View {
                                 // 党纲: what the party would do.
                                 if let policies = p.policies { Text(policies.joined(separator: " · ")).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8).padding(.leading, 34).padding(.trailing, 16).frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 6) }
                             }
-                            if let top = parties.max(by: { $0.seats < $1.seats }), let effect = top.effect {
+                            if let top = topParty, let effect = top.effect {
                                 Text("执政 · \(top.name)（\(top.line ?? "")）：\(effect)。每四年改选。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10).fixedSize(horizontal: false, vertical: true)
                             }
                         }
@@ -572,7 +610,8 @@ struct NationSheet: View {
                     }
                 }
                 if !postList.isEmpty {
-                    FoldSection("朝廷百官（\(postList.filter { $0.holder != nil }.count)/\(postList.count)）", expanded: postList.count <= 12) {
+                    let filledPosts = postList.filter { $0.holder != nil }.count
+                    FoldSection("朝廷百官（\(filledPosts)/\(postList.count)）", expanded: false, summary: "在任 \(filledPosts) 席") {
                         Group2 {
                             ForEach(Array(postList.enumerated()), id: \.offset) { i, p in
                                 Button { appointing = AppointTarget(office: "post-" + p.id, post: p) } label: {
@@ -596,9 +635,6 @@ struct NationSheet: View {
                         .padding(.horizontal, 16)
                     }
                 }
-                if let court = info.court, info.alive, !court.houses.isEmpty {
-                    FoldSection("世家（\(court.houses.count)）", expanded: false) { housesSection(court) }
-                }
         }
     }
     @ViewBuilder private func militaryTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
@@ -617,6 +653,14 @@ struct NationSheet: View {
                 StatTile(label: "交战", value: "\(fighting)支", warn: fighting > 0),
                 StatTile(label: "士气", value: "\(morale)", fraction: Double(morale) / 100, warn: morale < 40),
             ])
+            NationMilitaryControlBar(
+                model: model,
+                nation: nation,
+                alive: info.alive,
+                onPlaceArmy: { placeArmy(nation) },
+                onToast: { flash = $0 },
+                onReload: { await reload() }
+            )
             if !mine.isEmpty {
                 // 兵种构成: troops by arm, as one bar and a legend with each arm's piece.
                 let byUnit = Dictionary(grouping: mine, by: { state.armies[$0].unit })
@@ -735,6 +779,27 @@ struct NationSheet: View {
         ]
         let shown = groups.filter { !$0.nations.isEmpty }
         VStack(alignment: .leading, spacing: 14) {
+            if info.alive {
+                HStack(spacing: 10) {
+                    if !info.enemies.isEmpty {
+                        Button {
+                            GameFeel.shared.tap()
+                            Task { await run(success: "已与全部敌国停战") { await model.edit("nationDiplomacyOrder", ["n": nation, "kind": "peaceAll"]) } }
+                        } label: { paneAction("全面停战（\(info.enemies.count)）", "hand.raised") }.buttonStyle(PressStyle())
+                    }
+                    Button {
+                        GameFeel.shared.tap()
+                        confirmWarNeighbors = true
+                    } label: { paneAction("向周边邻国宣战", "flag.2.crossed") }.buttonStyle(PressStyle())
+                }
+                .padding(.horizontal, 16)
+                .confirmationDialog("向周边邻国四面出击？", isPresented: $confirmWarNeighbors, titleVisibility: .visible) {
+                    Button("即刻向至多 4 个邻国宣战", role: .destructive) {
+                        Task { await run(success: "已向周边邻国宣战") { await model.edit("nationDiplomacyOrder", ["n": nation, "kind": "warNeighbors"]) } }
+                    }
+                    Button("取消", role: .cancel) {}
+                } message: { Text("不会攻击盟友、宗主、附庸或停战期内国家。") }
+            }
             FoldSection("外交关系", expanded: startExpanded) {
                 VStack(alignment: .leading, spacing: 10) {
                     if shown.isEmpty {
@@ -750,7 +815,26 @@ struct NationSheet: View {
                             }
                             FlowChips(items: g.nations.filter { $0 >= 0 && $0 < map.meta.nations.count }.map { n in
                                 (n, map.meta.nations[n].name, Names.color(map.meta.nations[n].color), g.note(n))
-                            }) { n in fly(map.meta.cities.indices.contains(map.meta.nations[n].capital) ? map.meta.cities[map.meta.nations[n].capital].province : 0) }
+                            }) { other in
+                                let otherName = map.meta.nations[other].name
+                                let capProv = map.meta.cities.indices.contains(map.meta.nations[other].capital) ? map.meta.cities[map.meta.nations[other].capital].province : 0
+                                let isEnemy = info.enemies.contains(other)
+                                var items: [PressMenuItem] = [
+                                    PressMenuItem(title: "飞往\(otherName)都城", symbol: "map") { lower(); fly(capProv) },
+                                ]
+                                if info.alive {
+                                    if isEnemy {
+                                        items.append(PressMenuItem(title: "与\(otherName)立即议和", symbol: "scroll") {
+                                            Task { await run(success: "已与\(otherName)议和") { await model.makePeace(nation, other) } }
+                                        })
+                                    } else if info.overlord < 0 {
+                                        items.append(PressMenuItem(title: "向\(otherName)宣战", symbol: "flag.2.crossed", destructive: true) {
+                                            Task { await run(success: "已向\(otherName)宣战") { await model.declareWar(nation, on: other) } }
+                                        })
+                                    }
+                                }
+                                pressMenu = PressMenu(title: otherName, subtitle: g.note(other) ?? g.title, items: items)
+                            }
                         }
                         .padding(12)
                         .paperCard(tint: g.color)
@@ -1052,10 +1136,15 @@ struct NationSheet: View {
     }
 
     private func reload() async {
-        info = await model.nationInfo(nation); failed = info == nil
-        history = await model.nationHistory(nation)
-        regime = await model.regime(nation)
-        postList = await model.posts(nation)
+        async let infoTask = model.nationInfo(nation)
+        async let historyTask = model.nationHistory(nation)
+        async let regimeTask = model.regime(nation)
+        async let postsTask = model.posts(nation)
+        let (loadedInfo, loadedHistory, loadedRegime, loadedPosts) = await (infoTask, historyTask, regimeTask, postsTask)
+        info = loadedInfo; failed = loadedInfo == nil
+        history = loadedHistory
+        regime = loadedRegime
+        postList = loadedPosts
         if model.controller.relationsNation == nation { model.controller.relations = relationColors() }
     }
     /// StateRelationsHighlighter colours.
@@ -1085,12 +1174,7 @@ struct NationSheet: View {
                 let mine = war.side == 1 ? -score : score
                 HStack(spacing: 8) {
                     Text("战争分数").font(Theme.label).foregroundStyle(Theme.ink2)
-                    GeometryReader { g in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Theme.ink.opacity(0.08))
-                            Capsule().fill(mine >= 0 ? Theme.jade : Theme.seal).frame(width: g.size.width * min(1, abs(mine) / 100))
-                        }
-                    }.frame(height: 6)
+                    InkBar(fraction: min(1, abs(mine) / 100), color: mine >= 0 ? Theme.jade : Theme.seal, track: Theme.ink.opacity(0.08), height: 6)
                     Text("\(mine >= 0 ? "+" : "")\(Int(mine))").font(Theme.body).foregroundStyle(mine >= 0 ? Theme.jade : Theme.seal).monospacedDigit()
                 }
             }
@@ -1153,11 +1237,32 @@ struct NationSheet: View {
     @ViewBuilder private func tabContent(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         switch tab {
         case .overview: overviewTab(info, map, state)
+        case .decrees:
+            NationDecreesTab(
+                model: model,
+                nation: nation,
+                info: info,
+                onToast: { flash = $0 },
+                onReload: { await reload() },
+                onEnthrone: { enthroning = true }
+            )
+        case .territory:
+            NationTerritoryTab(
+                model: model,
+                nation: nation,
+                alive: info.alive,
+                day: state.day / 30,
+                onFly: { p in lower(); fly(p) },
+                onAppointGovernor: { p in appointing = AppointTarget(office: "Governor:\(p)") },
+                onToast: { flash = $0 },
+                onReload: { await reload() },
+                onPresentMenu: { pressMenu = $0 }
+            )
         case .court: courtTab(info, map, state)
         case .military: militaryTab(info, map, state)
         case .diplomacy: diplomacyTab(info, map, state)
         case .custom:
-            if info.alive { customView(info, map, state) } else { Text("此国已亡，无可设定。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
+            if info.alive { customView(info, map, state) } else { Text("此国已亡，无可设定。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 20) }
         }
     }
     /// 自定义：以前十几节设置从上到下排成一长条，要一直往下翻；现在先是一屏放得下的分类格（每格写着现状），

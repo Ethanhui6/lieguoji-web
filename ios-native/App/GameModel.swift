@@ -104,9 +104,17 @@ import LieguojiCore
     private var heraldTask: Task<Void, Never>?
     /// Bumped whenever a different world is opened, so the map view rebuilds.
     @Published private(set) var worldID = UUID() { didSet { Task { await refreshCustom() } } }
-    let engine = EngineHost()
-    /// The Swift engine: after a world is built (or a Swift save opened) it runs every day,
-    /// command and save; the web engine only builds new worlds.
+    /// 后备网页引擎：纯 Swift 已接管全部建世、推演、指令与存档，启动与日常游玩零 WKWebView 实例；
+    /// 仅在读取极早期旧版 JSON 存档、远程气候回退或 CI 对照计时时按需创建并挂载。
+    @Published private(set) var legacyEngine: EngineHost?
+    func ensureLegacyEngine() -> EngineHost {
+        if let legacyEngine { return legacyEngine }
+        let host = EngineHost()
+        host.onProgress = { [weak self] stage in self?.noteFoundingStage(stage) }
+        legacyEngine = host
+        return host
+    }
+    /// 纯 Swift 核心引擎：建世、每日推演、指令、外交、政令与存档全部在本机 Swift（或远程 LieguojiServer）运行。
     let native = NativeHost()
     let controller = MapController()
     private var loop: Task<Void, Never>?
@@ -121,9 +129,7 @@ import LieguojiCore
     /// 上一次建世界所走的路（swift / web）与耗时（秒）。
     private(set) var lastFounding: (path: String, seconds: Double)?
 
-    init() {
-        engine.onProgress = { [weak self] stage in self?.noteFoundingStage(stage) }
-    }
+    init() {}
 
     /// The bundled world, used as the title backdrop before a game exists.
     /// The original grid geometry and the ported generators, for worlds built on the device.
@@ -222,7 +228,7 @@ import LieguojiCore
     /// 放弃: the founding is abandoned, the busy engine replaced, and the title comes back.
     func cancelGeneration() {
         worldEpoch &+= 1
-        engine.reset(EngineError.message("已放弃这次开创。"))
+        legacyEngine?.reset(EngineError.message("已放弃这次开创。"))
         controller.endReveal()
         toTitle()
     }
@@ -270,7 +276,9 @@ import LieguojiCore
             if let local = try? await native.reclimate(precipitation: Double(c.rain), temperatureOffset: Double(c.temperature), north: Double(c.north) / 100, south: Double(min(c.south, c.north - 10)) / 100) {
                 bin = local
             } else {
-                let out = try await engine.call("reclimate(options)", ["options": text])
+                let webHost = ensureLegacyEngine()
+                await Task.yield()
+                let out = try await webHost.call("reclimate(options)", ["options": text])
                 let decoded = try JSONDecoder().decode(WorldBinary.self, from: Data(out.utf8))
                 guard let web = Data(base64Encoded: decoded.bin) else { return "地图数据损坏" }
                 bin = web
@@ -414,7 +422,9 @@ import LieguojiCore
                 world = loaded.0
             } else {
                 let saved = String(decoding: data, as: UTF8.self)
-                let restored = try await engine.call("load(text)", ["text": saved])
+                let webHost = ensureLegacyEngine()
+                await Task.yield()
+                let restored = try await webHost.call("load(text)", ["text": saved])
                 try checkWorld(epoch)
                 world = try await open(restored)
                 try checkWorld(epoch)
@@ -621,7 +631,9 @@ import LieguojiCore
     /// The web engine's world goes to the Swift engine, which runs it from now on.
     private func handOver() async throws {
         let epoch = worldEpoch
-        let text = try await engine.call("nativeWorld()", timeout: 90)
+        let webHost = ensureLegacyEngine()
+        await Task.yield()
+        let text = try await webHost.call("nativeWorld()", timeout: 90)
         try checkWorld(epoch)
         let opened = try await native.open(Data(text.utf8), world: epoch)
         try checkWorld(epoch)
@@ -1410,6 +1422,24 @@ import LieguojiCore
     func nationInfo(_ index: Int) async -> NationInfo? {
         await query(NationInfo.self) { await native.nationInfo(index) }
     }
+    struct NationProvinceRow: Decodable, Identifiable {
+        var id: Int { index }
+        let index: Int; let name: String; let population: Int; let capacity: Int
+        let defense: Int; let fortress: Bool; let capital: Bool; let port: Bool
+        let specialty: String; let culture: String; let religion: String
+        var governor: String? = nil; var governorFit: Double? = nil
+        var familyId: String? = nil; var familyName: String? = nil
+        let armies: Int
+    }
+    func nationProvinces(_ index: Int) async -> [NationProvinceRow] {
+        await query([NationProvinceRow].self) { await native.nationProvinces(index) } ?? []
+    }
+    func throneCandidates(_ index: Int) async -> [NationInfo.Person] {
+        await query([NationInfo.Person].self) { await native.throneCandidates(index) } ?? []
+    }
+    func enthronePerson(_ index: Int, person: Int) async -> String? {
+        finish(await native.enthronePerson(index, person: person))
+    }
     /// Alliance with another state, or leaving the current one (b < 0).
     func alliance(_ a: Int, with b: Int) async -> String? { finish(await native.alliance(a, with: b)) }
     func releaseVassal(_ n: Int) async -> String? { finish(await native.releaseVassal(n)) }
@@ -1440,7 +1470,9 @@ extension GameModel {
         } catch {
             guard epoch == worldEpoch else { throw error }
             let reason = error.localizedDescription
-            let text = try await engine.call("generate(options)", ["options": webOptions], timeout: Self.foundingLimit)
+            let webHost = ensureLegacyEngine()
+            await Task.yield()
+            let text = try await webHost.call("generate(options)", ["options": webOptions], timeout: Self.foundingLimit)
             noteFounding("web", Date().timeIntervalSince(started), cityCount: nil, error: reason)
             return .web(text)
         }

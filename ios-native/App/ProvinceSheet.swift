@@ -21,13 +21,13 @@ struct ProvinceSheet: View {
     @State private var pressMenu: PressMenu?
     private func report(_ e: String?, _ ok: String) { flash = e ?? ok; GameFeel.shared.notify(e == nil ? .success : .error) }
     var body: some View {
-        if let map = model.map {
+        if let map = model.map, map.meta.provinces.indices.contains(province) {
             let p = map.meta.provinces[province]
             let owner = model.state.flatMap { $0.owners.indices.contains(province) ? $0.owners[province] : nil } ?? p.nation
             let nation = owner >= 0 && owner < map.meta.nations.count ? map.meta.nations[owner] : nil
             let armies = model.state?.armies.enumerated().filter { $0.element.province == province } ?? []
             ScrollView {
-                VStack(spacing: 14) {
+                LazyVStack(spacing: 14) {
                     SheetHeader(title: p.name, subtitle: nation.map { "\($0.name) · \(Self.terrainLine(info, p.terrain))" } ?? Self.terrainLine(info, p.terrain), color: nation.map { Names.color($0.color) })
                     if let s = model.state { BattleBoard(province: province, state: s, map: map, openArmy: openArmy) }
                     if let info {
@@ -167,14 +167,8 @@ struct ProvinceSheet: View {
                     if let siege = model.state?.sieges.first(where: { $0.province == province }) {
                         Group2 {
                             HStack { Text("围城").foregroundStyle(Theme.seal); Spacer(); NationChip(map: map, nation: siege.nation) }.padding(.horizontal, 16).padding(.top, 12)
-                            GeometryReader { g in
-                                let filled = min(1, max(0, siege.progress))
-                                ZStack(alignment: .leading) {
-                                    Capsule().fill(Theme.ink.opacity(0.08))
-                                    Capsule().fill(Theme.seal).frame(width: g.size.width * filled)
-                                }
-                            }
-                            .frame(height: 6).padding(.horizontal, 16).padding(.bottom, 14)
+                            InkBar(fraction: siege.progress, color: Theme.seal, track: Theme.ink.opacity(0.08), height: 6)
+                                .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 14)
                         }
                         .padding(.horizontal, 16)
                     }

@@ -40,6 +40,13 @@ enum Theme {
     static let body = kai(15)
     static let label = kai(13)
     static let caption = kai(12)
+    /// 全应用统一排版尺度：卡片外边距 16、分节标题边距 20、卡片内边距 14、模块间距 12。
+    enum Layout {
+        static let pageInset: CGFloat = 16
+        static let sectionInset: CGFloat = 20
+        static let cardPadding: CGFloat = 14
+        static let stackGap: CGFloat = 12
+    }
 }
 
 enum Names {
@@ -74,7 +81,9 @@ struct RootView: View {
     var body: some View {
         ZStack {
             Theme.seaColor(model.controller.display.ocean).ignoresSafeArea()
-            EngineView(host: model.engine).frame(width: 1, height: 1).opacity(0.01).allowsHitTesting(false)
+            if let legacy = model.legacyEngine {
+                EngineView(host: legacy).frame(width: 1, height: 1).opacity(0.01).allowsHitTesting(false)
+            }
             if let map = model.map {
                 MapView(map: map, controller: model.controller).id(model.worldID).ignoresSafeArea()
             }
@@ -179,16 +188,30 @@ extension View {
     }
 }
 
-/// 顶栏的圆钮：毛笔图标在一枚纸面圆章里，内圈一道细墨线；选中时笔色与内圈转朱。
-/// 图标换形（开/合）时新笔画由左向右写出；按下时一圈淡墨洇开（InkPressStyle）。
+/// 顶栏的圆钮：毛笔图标在一枚纸面圆章里，内圈一道细墨线；选中时笔色与内圈转朱并泛起柔和朱晕。
+/// 换形（开/合）采用清脆缩放淡入与轻旋，避免小尺寸圆钮遮罩闪烁。
 struct CircleIcon: View {
     var symbol: String = ""
     var glyph: InkGlyph? = nil
     var active = false
+    @State private var halo = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         ZStack {
+            if active && !reduceMotion {
+                Circle()
+                    .stroke(Theme.seal.opacity(halo ? 0 : 0.42), lineWidth: 1.4)
+                    .scaleEffect(halo ? 1.32 : 0.96)
+                    .allowsHitTesting(false)
+            }
             if let glyph {
-                InkIcon(glyph: glyph, size: 21, weight: active ? 1.95 : 1.7).id(glyph).transition(.brushWrite)
+                InkIcon(glyph: glyph, size: 21, weight: active ? 1.95 : 1.7, filled: active,
+                        accent: active ? Theme.seal.opacity(0.28) : nil)
+                    .id(glyph)
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.68).combined(with: .opacity),
+                        removal: .scale(scale: 0.78).combined(with: .opacity)
+                    ))
             } else {
                 Image(systemName: symbol).font(.system(size: 16, weight: .medium))
             }
@@ -196,24 +219,29 @@ struct CircleIcon: View {
         .foregroundStyle(active ? Theme.seal : Theme.ink)
         .frame(width: 42, height: 42)
         .glass(Circle())
-        .overlay(Circle().strokeBorder(active ? Theme.seal.opacity(0.6) : Theme.ink.opacity(0.12), lineWidth: active ? 1.1 : 0.6).padding(3.5))
-        .animation(Motion.panel, value: glyph)
+        .overlay(Circle().strokeBorder(active ? Theme.seal.opacity(0.65) : Theme.ink.opacity(0.12), lineWidth: active ? 1.2 : 0.6).padding(3.5))
+        .animation(Motion.tap, value: glyph)
         .animation(Motion.tap, value: active)
+        .onChange(of: active) { _, on in
+            guard on, !reduceMotion else { halo = false; return }
+            halo = false
+            withAnimation(.easeOut(duration: 0.52)) { halo = true }
+        }
     }
 }
 
-/// 顶栏圆钮的按下反馈：微微下沉，一圈淡墨从中心洇开；松手后墨圈淡去。
+/// 顶栏圆钮的按下反馈：利落下沉、淡墨晕圈外扩，松手回弹。
 struct InkPressStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.93 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.91 : 1)
             .overlay {
-                Circle().fill(Theme.ink.opacity(configuration.isPressed ? 0.1 : 0))
-                    .scaleEffect(configuration.isPressed ? 1 : 0.55)
+                Circle().fill(Theme.seal.opacity(configuration.isPressed ? 0.12 : 0))
+                    .scaleEffect(configuration.isPressed ? 1.04 : 0.6)
                     .allowsHitTesting(false)
             }
-            .animation(reduceMotion ? nil : (configuration.isPressed ? .easeOut(duration: 0.18) : .easeOut(duration: 0.45)), value: configuration.isPressed)
+            .animation(reduceMotion ? nil : (configuration.isPressed ? .easeOut(duration: 0.14) : Motion.tap), value: configuration.isPressed)
     }
 }
 
@@ -312,20 +340,19 @@ struct SheetHeader: View {
     }
 }
 
-/// A folded memorial page: translucent rice paper, an ink outer rule and a vermilion inner rule;
-/// it unfolds when it first appears.
+/// A folded memorial page: translucent rice paper, an ink outer rule and a vermilion inner rule.
+/// 阴影落于底图形状路径上（避免整卡片离屏渲染），并移除滚动入屏时的纵向缩放跳动，长列表滑动顺滑不卡顿。
 struct Group2<Content: View>: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ViewBuilder let content: Content
-    @State private var unfolded = false
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
         VStack(spacing: 0) { content }
-            .background(Theme.paper2.opacity(0.62), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.2), lineWidth: 1))
+            .background(
+                shape.fill(Theme.paper2.opacity(0.64))
+                    .shadow(color: Color(red: 0.25, green: 0.18, blue: 0.08).opacity(0.08), radius: 5, y: 2)
+            )
+            .overlay(shape.stroke(Theme.ink.opacity(0.2), lineWidth: 1))
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.16), lineWidth: 0.6).padding(3))
-            .shadow(color: Color(red: 0.25, green: 0.18, blue: 0.08).opacity(0.08), radius: 6, y: 2)
-            .scaleEffect(x: 1, y: unfolded ? 1 : 0.94, anchor: .top).opacity(unfolded ? 1 : 0)
-            .onAppear { withAnimation(reduceMotion ? nil : Motion.fade) { unfolded = true } }
     }
 }
 
@@ -372,6 +399,13 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("2.0.0", ["【全纯 Swift 运行时完成】启动与常规游玩不再初始化、不再挂载隐藏的网页引擎（WKWebView 零开销），地形、建世、推演、指令、外交、政令与存档全部由本机 Swift 引擎独立完成；仅在读取极早期旧版 JSON 存档或远程气候回退时才按需按次载入后备引擎，内存占用更低、启动更轻快。",
+                   "【国家页面 2.0 深度操控重做】国家页顶栏新增五键快捷操控条（划疆、放兵、颁诏、疆土、都城）；新增「政令」页，提供八大御批国策（休养生息、全国大征兵、犒赏三军、整顿吏治、加固边防、推行文教、统一国教、大赦世家）及「禅位择君」拥立指定在世宗亲／贤臣登基；新增「疆土」总管页，支持全境州郡搜索、按人口／城防／州名排序、批量施政与逐州快捷操控（飞看舆图、委任总督、本州征兵、筑拆要塞、提升城防、迁都、立圣地）。",
+                   "【军事、朝政与外交页统筹升级】国家「军事」新增全军统筹指令栏（全军补员、回防都城、全军交 AI、船坞下水新舰队、地图放兵）；「朝政」新增一键补齐空缺总督与禅位择君入口，默认展开朝堂与朝堂世家、精简折叠总督／议会／百官并展示实时摘要；「外交」新增全面停战与四面出击，点击邦交国签可弹出快捷操控菜单（飞往都城、立即议和／宣战）；全局外交页拆分为「邦交总览 / 外交施令 / 当前战事」三标签并移除重复的旧总览区块，大幅消除界面臃肿。",
+                   "【顶部与全作交互动效重做】修复地图视图切换栏展开时纵向橡皮压扁变形，改为自右上角平滑微移展开；顶栏圆钮告别遮罩闪烁，改用利落缩放切换与选中朱砂扩散光环；顶栏日期胶囊可点直达纪事、战争数可点直达战局；多标签页 `ChipPicker` 全面升级为可横滑、带 `matchedGeometryEffect` 滑动朱印底衬，五至七个标签永不挤压截断。",
+                   "【长页面滚动流畅度与统一排版】彻底排查并修复页面滑动卡顿根因：移除 `InkIcon` 的每图标离屏模糊与 `.drawingGroup()`（改为纯矢量双层水墨笔触，更锐利且零离屏渲染）；将 `Group2` 与 `paperCard` 阴影下沉至纯底图路径并取消入屏纵向弹跳；国家页、族谱、排行、纪事、州郡、军团、诏令全面改用 `LazyVStack`；用零 `GeometryReader` 的轻量 `InkBar` 替换行内进度条；移除纪事卷外层破坏懒加载的纵向缩放包装；国家页加载改为并行 `async let`；统一全应用卡片边距（16pt）与分节标题边距（20pt）。",
+                   "【水墨与战场细节微调】在保持既有墨场核心不变的前提下，为战争墨迹前沿加入细腻的宣纸毛细湿墨暗边，温润化易主扫色前沿色调，为围城圈补充轻缓外扩波纹，并柔化战况飘字上浮缓动曲线。",
+                   "【问题修复】修复军事页默认「军情」底部误显「暂无符合条件的陆军」；修复点击君主编辑时将女皇／女王性别硬编码为男性的问题（引擎同步导出 `ruler.female`）；修复州郡页在世界切换瞬间潜在数组越界风险；修复外交页默认发起／目标国已亡时未自动重置为现存国家的问题。"]),
         ("1.25.0", ["【国名与命名规则重做】整理全部 26 种文化的历史国名、架空国名、男女名与家族姓氏库，剔除错性别、错年代、姓名混入及“家/人/氏”脏尾缀；彻底杜绝「波兰王国王国」「安安」等拼接怪名。新建世界（含历史与架空模式）及中途立国均自动匹配地道政体称谓与纯净国名，地图简名完整剥离苏丹国、公国、汗国、社会主义共和国及单字朝代冠字「大」（保留大理、大越等专名）。",
                     "【国名基名与模板升级】国家自定义「国号国色」支持单独修改基名（保留当前政体与模板）、8 套预设命名模板及 `{名} {号} {序} {姓}` 占位符实时预览；宗室更迭或改姓时含 `{姓}` 的国号自动刷新；修复暂停状态下连点「随机国名/随机地名」不换名的问题。",
                     "【家族系统与世家政治全面丰富】同国世家开局不再撞姓，已婚配偶与新婚配对象保留独立本姓（族谱标明出身世家，不再出现同姓成婚）；人物改名与家族改姓同步刷新全谱、朝堂与君主史册；族谱页新增家族概览、旁系宗亲、立为家主、指定继承人与允许女性继承开关。",

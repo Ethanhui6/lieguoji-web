@@ -147,6 +147,8 @@ struct GameView: View {
                 .animation(Motion.panel, value: controller.marchingArmy)
                 .animation(Motion.panel, value: controller.marchingFleet)
                 .animation(Motion.panel, value: controller.paintNation)
+                .animation(Motion.panel, value: controller.pickPrompt)
+                .animation(Motion.panel, value: controller.groupArmies.count)
         }
     }
 
@@ -461,11 +463,27 @@ struct GameView: View {
     private var topBar: some View {
         HStack(spacing: 10) {
             HStack(spacing: 8) {
-                Text(model.state?.dateText ?? "").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
+                Button {
+                    GameFeel.shared.tap()
+                    show(.chronicle)
+                } label: {
+                    Text(model.state?.dateText ?? "").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                        .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
+                }
+                .buttonStyle(PressStyle())
                 if let wars = model.state?.wars.count, wars > 0 {
-                    WarCount(count: wars).transition(.scale(scale: 0.6).combined(with: .opacity))
+                    Rectangle().fill(Theme.ink.opacity(0.16)).frame(width: 0.8, height: 14)
+                        .transition(.opacity)
+                    Button {
+                        GameFeel.shared.tap()
+                        MilitarySheet.openOn = "wars"
+                        show(.military)
+                    } label: {
+                        WarCount(count: wars)
+                    }
+                    .buttonStyle(PressStyle())
+                    .transition(.scale(scale: 0.72).combined(with: .opacity))
                 }
                 // 远程计算: the computer simulates.
                 if model.remoteAddress != nil {
@@ -473,16 +491,18 @@ struct GameView: View {
                         .transition(.scale.combined(with: .opacity))
                 }
             }
-            .padding(.horizontal, 16).frame(height: 42).glass(Capsule())
+            .padding(.horizontal, 15).frame(height: 42).glass(Capsule())
+            .animation(Motion.panel, value: (model.state?.wars.count ?? 0) > 0)
             if landscape { transport.padding(.horizontal, 6).frame(height: 50).glass(Capsule()) }
             Spacer()
-            Button { withAnimation(Motion.panel) { viewsOpen.toggle() } } label: { CircleIcon(glyph: viewsOpen ? .close : .views, active: viewsOpen) }
+            Button { GameFeel.shared.tap(); withAnimation(Motion.panel) { viewsOpen.toggle() } } label: { CircleIcon(glyph: viewsOpen ? .close : .views, active: viewsOpen) }
                 .buttonStyle(InkPressStyle())
             Button {
+                GameFeel.shared.tap()
                 if controller.boxSelecting || !controller.groupArmies.isEmpty { controller.boxSelecting = false; controller.groupArmies = []; model.refreshArmies() }
                 else { controller.boxSelecting = true; say("即时战略：在地图上拖出方框选择军队") }
             } label: { CircleIcon(glyph: controller.boxSelecting || !controller.groupArmies.isEmpty ? .close : .command, active: controller.boxSelecting || !controller.groupArmies.isEmpty) }.buttonStyle(InkPressStyle())
-            Button { show(.menu) } label: { CircleIcon(glyph: .menu) }.buttonStyle(InkPressStyle())
+            Button { GameFeel.shared.tap(); show(.menu) } label: { CircleIcon(glyph: .menu) }.buttonStyle(InkPressStyle())
         }
         .padding(.horizontal, 14).padding(.top, 2)
     }

@@ -219,6 +219,9 @@ actor NativeHost {
     func fleetOrder(id: String, province: Int?) async -> (ok: Bool, reason: String, state: Data?) { await command("fleetOrder", ["id": id, "province": Self.opt(province)]) }
     func province(_ index: Int) async -> Data? { await call("province", ["index": index]).data }
     func nationInfo(_ index: Int) async -> Data? { await call("nationInfo", ["index": index]).data }
+    func nationProvinces(_ index: Int) async -> Data? { await call("nationProvinces", ["n": index]).data }
+    func throneCandidates(_ index: Int) async -> Data? { await call("throneCandidates", ["n": index]).data }
+    func enthronePerson(_ index: Int, person: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("enthronePerson", ["n": index, "person": person]) }
     func diplomacyInfo(_ index: Int) async -> Data? { await call("diplomacyInfo", ["index": index]).data }
     /// 云端调校 (Tuning) for the engine, here or on the computer.
     func setTuning(_ data: Data) async { _ = await call("tuning", [:], payload: data) }

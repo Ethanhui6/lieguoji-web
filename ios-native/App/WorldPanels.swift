@@ -236,7 +236,9 @@ struct ProvinceWarView: View {
 enum Glyph {
     static let table: [(String, String)] = [
         // 分页 (every tab bar).
-        ("概览", "doc.text.magnifyingglass"), ("朝政", "building.columns"), ("军事", "shield.lefthalf.filled"), ("自定义", "slider.horizontal.3"),
+        ("概览", "doc.text.magnifyingglass"), ("政令", "seal"), ("疆土", "square.grid.3x3"), ("朝政", "building.columns"), ("军事", "shield.lefthalf.filled"), ("自定义", "slider.horizontal.3"),
+        ("邦交总览", "person.2"), ("外交施令", "scroll"), ("当前战事", "flag.2.crossed"),
+        ("按人口", "person.3"), ("按城防", "building.2"), ("按州名", "map"),
         ("游戏", "gamecontroller"), ("地图显示", "map"), ("声音与其他", "speaker.wave.2"), ("全部", "square.grid.2x2"), ("交战围城", "flag.2.crossed"), ("战局", "map"),
         ("亲自指挥", "hand.point.up.left"), ("舰队", "sailboat"), ("排行", "list.number"), ("统计", "chart.bar"), ("纪事", "book.pages"), ("国史", "book.pages"),
         ("军情", "binoculars"),

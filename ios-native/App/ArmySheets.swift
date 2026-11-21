@@ -63,7 +63,7 @@ struct ArmySheet: View {
             let tint = nation.map { Names.color($0.color) } ?? Theme.ink2
             let fighting = a.status == "fighting"
             ScrollView {
-                VStack(spacing: 14) {
+                LazyVStack(spacing: 14) {
                     // 军牌: the unit's mark in its state's colour beside the name.
                     HStack(spacing: 14) {
                         UnitMark(unit: a.unit, color: tint).frame(width: 46, height: 46)
@@ -280,7 +280,7 @@ struct FleetSheet: View {
                 .map { (port: $0, distance: hypot(Double($0.x - f.x), Double($0.y - f.y))) }.sorted { $0.distance < $1.distance }
             let shown = allPorts ? ports : Array(ports.prefix(6))
             ScrollView {
-                VStack(spacing: 14) {
+                LazyVStack(spacing: 14) {
                     SheetHeader(title: f.name, subtitle: nation.map { "\($0.name) · 舰队 · \(FleetText.status(f.status))" }, color: nation.map { Names.color($0.color) }, seal: "舟")
                     StatStrip(tiles: [
                         StatTile(label: "船只", value: "\(f.ships)", edit: f.status == "lost" ? nil : { shipsEdit = true }),

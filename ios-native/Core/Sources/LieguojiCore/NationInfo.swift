@@ -121,6 +121,7 @@ extension NativeEngine {
             ruler.name = JS(Self.displayPersonName(p))
             ruler.title = JS(People.rulerTitle(culture: civ.cultureId.optionalString ?? "", polity: civ.polity.optionalString ?? "", religion: civ.religionId.optionalString ?? "", gender: p.gender.optionalNumber.map { Int($0) } ?? 0))
             ruler.age = JS(p.age.optionalNumber ?? 0)
+            ruler.female = JS(p.gender.optionalNumber == 1)
             // For the editor (tap the ruler): id, traits and base skills.
             ruler.id = JS(leaderId.asInt)
             ruler.traits = p.traits.isNull ? .array() : .array(p.traits.asArray.map { JS(Self.traitLabels[$0.asString] ?? $0.asString) })

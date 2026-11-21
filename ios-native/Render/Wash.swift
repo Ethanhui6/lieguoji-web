@@ -198,10 +198,10 @@ extension MapRenderer {
             float fade = (1.0 - k.tint) * clamp(1.0 - (k.now - in.arrive) / k.after, 0.0, 1.0);
             a = mix(1.0, fade, reached);
         }
-        float rim = exp(-s * s * 0.8) * (in.mode > 0.5 ? 0.14 + 0.12 * k.detail : 0.2 + 0.12 * k.detail);
+        float rim = exp(-s * s * 0.72) * (in.mode > 0.5 ? 0.13 + 0.11 * k.detail : 0.19 + 0.12 * k.detail);
         float total = a + rim * (1.0 - a);
         if (total < 0.003) discard_fragment();
-        float3 rgb = (in.old * a * (1.0 - rim) + float3(0.16, 0.12, 0.09) * rim) / max(total, 1e-4);
+        float3 rgb = (in.old * a * (1.0 - rim) + float3(0.20, 0.14, 0.10) * rim) / max(total, 1e-4);
         return float4(rgb, total);
     }
     """

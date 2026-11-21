@@ -6,34 +6,71 @@ import LieguojiCore
 struct ChipPicker<T: Hashable>: View {
     let items: [(T, String)]
     @Binding var selection: T
+    @Namespace private var pill
     var body: some View {
-        // One height for the whole row: pictured if any choice has a picture.
         let tall = items.contains { Glyph.of($0.1) != nil }
-        HStack(spacing: 8) {
-            ForEach(items.indices, id: \.self) { i in
-                let item = items[i], on = item.0 == selection
-                Button { withAnimation(Motion.tap) { selection = item.0 } } label: {
-                    // Every tab and choice row in the game: a small picture over the word where one fits.
-                    VStack(spacing: 2) {
-                        if let s = Glyph.of(item.1) {
-                            if let g = GameActionLabel.glyph(for: s) {
-                                InkIcon(glyph: g, size: 15, weight: on ? 1.85 : 1.55, filled: on,
-                                        accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.25))
-                                    .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.88))
-                                    .frame(height: 18)
-                            } else {
-                                Image(systemName: s).font(.system(size: 13, weight: .regular)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85)).frame(height: 18)
-                            }
+        if items.count > 4 {
+            // 超过四项自动改为横滑签条，避免文字挤压折行，选中朱印平滑跟随并自动居中。
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 7) {
+                        ForEach(items.indices, id: \.self) { i in
+                            chip(items[i], tall: tall, compact: true)
+                                .id(items[i].0)
                         }
-                        Text(item.1).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                     }
-                    .frame(maxWidth: .infinity).frame(height: tall ? 50 : 40)
-                    .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
+                    .padding(.vertical, 1)
                 }
-                .buttonStyle(PressStyle())
+                .onAppear { proxy.scrollTo(selection, anchor: .center) }
+                .onChange(of: selection) { _, next in
+                    withAnimation(Motion.tap) { proxy.scrollTo(next, anchor: .center) }
+                }
+            }
+        } else {
+            HStack(spacing: 8) {
+                ForEach(items.indices, id: \.self) { i in
+                    chip(items[i], tall: tall, compact: false)
+                }
             }
         }
+    }
+    private func chip(_ item: (T, String), tall: Bool, compact: Bool) -> some View {
+        let on = item.0 == selection
+        return Button {
+            GameFeel.shared.tap()
+            withAnimation(Motion.tap) { selection = item.0 }
+        } label: {
+            VStack(spacing: 2) {
+                if let s = Glyph.of(item.1) {
+                    if let g = GameActionLabel.glyph(for: s) {
+                        InkIcon(glyph: g, size: 15, weight: on ? 1.85 : 1.55, filled: on,
+                                accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.25))
+                            .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.88))
+                            .frame(height: 18)
+                    } else {
+                        Image(systemName: s).font(.system(size: 13, weight: .regular))
+                            .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
+                            .frame(height: 18)
+                    }
+                }
+                Text(item.1).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+            }
+            .padding(.horizontal, compact ? 13 : 4)
+            .frame(minWidth: compact ? 62 : nil, maxWidth: compact ? nil : .infinity)
+            .frame(height: tall ? 48 : 38)
+            .background {
+                let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+                if on {
+                    shape.fill(Theme.seal)
+                        .matchedGeometryEffect(id: "chip-pill", in: pill)
+                        .shadow(color: Theme.seal.opacity(0.28), radius: 4, y: 2)
+                } else {
+                    shape.fill(Theme.paper2.opacity(0.92))
+                        .overlay(shape.stroke(Theme.ink.opacity(0.18), lineWidth: 1))
+                }
+            }
+        }
+        .buttonStyle(PressStyle())
     }
 }
 
@@ -161,13 +198,8 @@ struct StatTile: View {
             Text(value).font(Theme.kai(20)).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.6).monospacedDigit()
                 .contentTransition(.numericText()).animation(Motion.tap, value: value)
             if let fraction {
-                GeometryReader { g in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Theme.ink.opacity(0.1))
-                        Capsule().fill(warn ? Theme.seal : Theme.ink.opacity(0.65)).frame(width: g.size.width * min(1, max(0, fraction)))
-                    }
-                }
-                .frame(height: 4).animation(Motion.panel, value: fraction)
+                InkBar(fraction: fraction, color: warn ? Theme.seal : Theme.ink.opacity(0.65), height: 4)
+                    .animation(Motion.panel, value: fraction)
             } else if reserveBar { Color.clear.frame(height: 4) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

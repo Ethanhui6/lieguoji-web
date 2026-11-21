@@ -138,7 +138,7 @@ struct MilitarySheet: View {
                         if state.wars.isEmpty { Text("天下暂无战事").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
                         ForEach(state.wars) { war in warCard(map, state, war) }
                     }
-                    if byNation.isEmpty && filter != "navy" && filter != "wars" { Text("暂无符合条件的陆军").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
+                    if byNation.isEmpty && filter != "navy" && filter != "wars" && filter != "overview" { Text("暂无符合条件的陆军").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 20) }
                     ForEach(state.nations.indices, id: \.self) { n in
                         let rows = (byNation[n] ?? []).sorted { state.armies[$0].troops > state.armies[$1].troops }
                         if !rows.isEmpty {
@@ -353,17 +353,52 @@ struct DiplomacySheet: View {
     var openNation: (Int) -> Void = { _ in }
     var openWars: () -> Void = {}
     var openChronicle: (Int) -> Void = { _ in }
+    @State private var tab = "board"
     @State private var attacker = 0
     @State private var defender = 1
     var body: some View {
         if let map = model.map, let state = model.state {
+            let alive = state.nations.indices.filter { state.nations[$0].alive && $0 < map.meta.nations.count }
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "外交", subtitle: state.wars.isEmpty ? "天下太平" : "\(state.wars.count) 场战争进行中")
-                    DiplomacyBoard(model: model, map: map, state: state, nation: attacker, fly: fly, openNation: openNation, openWars: openWars, openChronicle: openChronicle)
-                    if !state.wars.isEmpty {
-                        SectionLabel("战事")
+                    ChipPicker(items: [("board", "邦交总览"), ("actions", "外交施令"), ("wars", "当前战事")], selection: $tab)
+                        .padding(.horizontal, Theme.Layout.pageInset)
+
+                    if tab == "board" {
+                        // 快速切换查看哪国的邦交（无需拉到最底找列表）
+                        if alive.count > 1 {
+                            Group2 {
+                                PaperMenu(title: "观察国家", items: alive.map { ($0, map.meta.nations[$0].name) }, selection: $attacker)
+                            }
+                            .padding(.horizontal, Theme.Layout.pageInset)
+                        }
+                        DiplomacyBoard(model: model, map: map, state: state, nation: attacker, fly: fly, openNation: openNation, openWars: openWars, openChronicle: openChronicle)
+                    } else if tab == "actions" {
+                        SectionLabel("往来国与目标国")
                         Group2 {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("发起国").font(Theme.body).foregroundStyle(Theme.ink2)
+                                NationGrid(map: map, nations: alive, selection: $attacker)
+                                Text("目标国").font(Theme.body).foregroundStyle(Theme.ink2).padding(.top, 6)
+                                NationGrid(map: map, nations: alive.filter { $0 != attacker }, selection: $defender)
+                            }
+                            .padding(Theme.Layout.cardPadding)
+                            Divider2()
+                            Button {
+                                Task { if let e = await model.declareWar(attacker, on: defender) { say(e) } else { say(model.state?.events.last?.text ?? "已宣战") } }
+                            } label: { Label("宣战", systemImage: "flag.2.crossed").font(Theme.section).frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(Theme.seal) }
+                            .buttonStyle(.plain).disabled(attacker == defender || !state.nations.indices.contains(attacker) || !state.nations.indices.contains(defender) || !state.nations[attacker].alive || !state.nations[defender].alive)
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+                        SectionLabel("条约与邦交")
+                        DiplomaticActions(model: model, source: attacker, target: defender, say: say).padding(.horizontal, Theme.Layout.pageInset)
+                    } else {
+                        SectionLabel(state.wars.isEmpty ? "当前战事" : "当前战事（\(state.wars.count) 场）")
+                        Group2 {
+                            if state.wars.isEmpty {
+                                Row(label: "战事", value: "天下太平，暂无交战")
+                            }
                             ForEach(state.wars) { war in
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack(spacing: 8) {
@@ -388,33 +423,16 @@ struct DiplomacySheet: View {
                                 if war.id != state.wars.last?.id { Divider2() }
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, Theme.Layout.pageInset)
                     }
-                    SectionLabel("往来国与目标国")
-                    Group2 {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("发起国").font(Theme.body).foregroundStyle(Theme.ink2)
-                            NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive }, selection: $attacker)
-                            Text("目标国").font(Theme.body).foregroundStyle(Theme.ink2).padding(.top, 6)
-                            NationGrid(map: map, nations: state.nations.indices.filter { state.nations[$0].alive && $0 != attacker }, selection: $defender)
-                        }
-                        .padding(14)
-                        Divider2()
-                        Button {
-                            Task { if let e = await model.declareWar(attacker, on: defender) { say(e) } else { say(model.state?.events.last?.text ?? "已宣战") } }
-                        } label: { Label("宣战", systemImage: "flag.2.crossed").font(Theme.section).frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(Theme.seal) }
-                        .buttonStyle(.plain).disabled(attacker == defender || !state.nations.indices.contains(attacker) || !state.nations.indices.contains(defender) || !state.nations[attacker].alive || !state.nations[defender].alive)
-                    }
-                    .padding(.horizontal, 16)
-                    SectionLabel("条约与邦交")
-                    DiplomaticActions(model: model, source: attacker, target: defender, say: say).padding(.horizontal, 16)
-                    SectionLabel("邦交总览")
-                    DiplomacyOverviewView(model: model, map: map, nation: attacker, day: state.day / 30, troops: state.nations.indices.contains(attacker) ? state.nations[attacker].troops : 0)
-                        .padding(.horizontal, 16)
                 }
                 .padding(.bottom, 24)
+                .onAppear {
+                    if !alive.contains(attacker), let first = alive.first { attacker = first }
+                    if !alive.contains(defender) || defender == attacker { defender = alive.first { $0 != attacker } ?? -1 }
+                }
                 .onChange(of: attacker) { _, value in
-                    if defender == value { defender = state.nations.indices.first { $0 != value && state.nations[$0].alive } ?? -1 }
+                    if defender == value || !alive.contains(defender) { defender = alive.first { $0 != value } ?? -1 }
                 }
             }
         }
@@ -501,7 +519,7 @@ struct ChronicleSheet: View {
         ZStack {
             MemorialPaper()
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: 12) {
                     MemorialHeader(title: "纪事", subtitle: model.state?.dateText, seal: "史")
                     WorldSummary(model: model).padding(.horizontal, 16)
                     ChronicleDigest(entries: digest, yearOf: yearOf, yearText: yearLabel).padding(.horizontal, 16)
@@ -570,17 +588,17 @@ struct ChronicleSheet: View {
                         .background(Theme.paper2.opacity(0.55))
                         .overlay(Rectangle().stroke(Theme.ink.opacity(0.12), lineWidth: 0.8))
                         .padding(.horizontal, 16)
-                        .scaleEffect(x: 1, y: unrolled ? 1 : 0.02, anchor: .top)
                         ScrollRod().padding(.horizontal, 6)
                     }
                     .padding(.horizontal, 10)
+                    .opacity(unrolled ? 1 : 0)
                 }
                 .padding(.bottom, 28)
             }
         }
         .onAppear {
             if let n = Self.openNation { nationFilter = n; Self.openNation = nil }
-            withAnimation(Motion.drift) { unrolled = true }
+            withAnimation(Motion.fade) { unrolled = true }
         }
         .task(id: "\(category)-\((model.state?.day ?? 0) / 30)") { entries = await model.chronicle(category) }
         .task(id: (model.state?.day ?? 0) / 30) { digest = await model.chronicle("all") }

@@ -72,7 +72,7 @@ struct DiplomacyBoard: View {
                 VStack(spacing: 8) {
                     ForEach(alliances) { a in AllianceCard(alliance: a, name: name, color: color, fly: fly) }
                 }
-                .padding(.horizontal, 14)
+                .padding(.horizontal, Theme.Layout.pageInset)
             }
 
             SectionLabel(name(nation) + "的邦交")

@@ -76,7 +76,7 @@ struct MilitaryOverview: View {
                                  share: Double(p.troops) / Double(max(1, powers[0].troops)))
                     }
                 }
-                .padding(12).paperCard().padding(.horizontal, 14)
+                .padding(12).paperCard().padding(.horizontal, Theme.Layout.pageInset)
             }
 
             if !state.sieges.isEmpty {
@@ -114,7 +114,7 @@ struct MilitaryOverview: View {
                         ShareBar(color: Theme.ink2, title: k.id, value: Names.wan(k.troops), share: Double(k.troops) / Double(max(1, kinds[0].troops)))
                     }
                 }
-                .padding(12).paperCard().padding(.horizontal, 14)
+                .padding(12).paperCard().padding(.horizontal, Theme.Layout.pageInset)
             }
 
             if !generals.isEmpty {
@@ -186,13 +186,7 @@ private struct ShareBar: View {
                 Spacer(minLength: 6)
                 Text(value).font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
             }
-            GeometryReader { g in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Theme.ink.opacity(0.08))
-                    Capsule().fill(color.opacity(0.9)).frame(width: max(3, g.size.width * CGFloat(min(1, max(0, share)))))
-                }
-            }
-            .frame(height: 6)
+            InkBar(fraction: share, color: color.opacity(0.9), track: Theme.ink.opacity(0.08), height: 6)
         }
     }
 }
@@ -214,13 +208,7 @@ private struct SiegeRow: View {
                     Spacer(minLength: 4)
                     Text("\(Int((share * 100).rounded()))%").font(Theme.label).foregroundStyle(Theme.seal).monospacedDigit()
                 }
-                GeometryReader { g in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Theme.ink.opacity(0.08))
-                        Capsule().fill(Theme.seal.opacity(0.85)).frame(width: max(3, g.size.width * CGFloat(share)))
-                    }
-                }
-                .frame(height: 5)
+                InkBar(fraction: share, color: Theme.seal.opacity(0.85), track: Theme.ink.opacity(0.08), height: 5)
             }
             Image(systemName: "scope").font(.system(size: 13)).foregroundStyle(Theme.seal)
         }

@@ -56,13 +56,8 @@ struct FinanceSection: View {
                             Spacer()
                             Text("\(f.corruptionLevel ?? "") · \(Int(c))").font(Theme.body).foregroundStyle(c >= 40 ? Theme.seal : Theme.ink)
                         }
-                        GeometryReader { g in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Theme.ink.opacity(0.1))
-                                Capsule().fill(c >= 65 ? Theme.seal : c >= 40 ? Theme.seal.opacity(0.65) : Theme.jade).frame(width: g.size.width * CGFloat(min(100, c)) / 100)
-                            }
-                        }
-                        .frame(height: 5).animation(Motion.panel, value: c)
+                        InkBar(fraction: min(100, c) / 100, color: c >= 65 ? Theme.seal : c >= 40 ? Theme.seal.opacity(0.65) : Theme.jade, height: 5)
+                            .animation(Motion.panel, value: c)
                         Text(c > 15 ? "每月收入约 −\(Int(c / 2.5))%" + (c >= 65 ? "，国运逐月下降" : "") + "。国土越大、税越重、施政越差，腐化越深。" : "吏治清明，收入不受影响。")
                             .font(Theme.caption).foregroundStyle(Theme.ink2)
                         HStack(spacing: 10) {
@@ -257,7 +252,7 @@ struct FamilyTreeSheet: View {
     }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: 12) {
                 if activeFamily != family {
                     Button {
                         GameFeel.shared.tap()

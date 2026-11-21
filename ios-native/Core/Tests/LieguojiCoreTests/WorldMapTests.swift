@@ -71,7 +71,7 @@ final class WorldMapTests: XCTestCase {
         XCTAssertGreaterThan(relief.vertexCount, 1000); XCTAssertEqual(relief.vertexCount % 3, 0)
         XCTAssertGreaterThan(outlines.vertexCount, 11108 * 6 - 1)
         let wide = MapLayers.outlines(map, wide: [0])
-        XCTAssertEqual(wide.vertexCount, outlines.vertexCount)
+        XCTAssertGreaterThan(wide.vertexCount, outlines.vertexCount)
         XCTAssertNotEqual(wide.vertices, outlines.vertices)
         let marks = MapLayers.cityMarks(map)
         XCTAssertEqual(marks.filter { $0 == .capital }.count, 8)

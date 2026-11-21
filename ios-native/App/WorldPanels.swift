@@ -35,14 +35,19 @@ struct ArmyServiceView: View {
             Group2 {
                 Row(label: "当前状态", value: Self.status(army, model.state, map)); Divider2()
                 if let r = record {
+                    let safeDays = r.days.isFinite ? max(0, r.days) : 0
+                    let safeFull = max(army.troops, r.full.isFinite ? Int(r.full.rounded()) : army.troops)
+                    let fillPct = safeFull > 0 ? min(100, max(0, Int((Double(army.troops) / Double(safeFull) * 100).rounded()))) : 100
+                    let safeKills = r.kills.isFinite ? max(0, Int(r.kills.rounded())) : 0
+                    let safeLosses = r.losses.isFinite ? max(0, Int(r.losses.rounded())) : 0
                     Row(label: "征召于", value: map.meta.provinces.indices.contains(r.home) ? map.meta.provinces[r.home].name + (r.levy ? "（动员）" : "") : "—"); Divider2()
-                    Row(label: "服役", value: Self.served(r.days)); Divider2()
-                    Row(label: "满编", value: Names.wan(Int(r.full))); Divider2()
+                    Row(label: "服役", value: Self.served(safeDays)); Divider2()
+                    Row(label: "满编", value: "\(Names.wan(army.troops)) / \(Names.wan(safeFull))（\(fillPct)%）"); Divider2()
                     if let c = r.campaign, !c.isEmpty { Row(label: "当前战役", value: c); Divider2() }
                     Row(label: "军功", value: ["新军", "劲旅 · 攻+6% 受伤−4%", "精锐 · 攻+12% 受伤−8%", "百战之师 · 攻+18% 受伤−12%"][min(3, max(0, r.rank ?? 0))]); Divider2()
-                    Row(label: "参战", value: "\(Int(r.battles)) 次 · 战役 \(Int(r.campaigns ?? 0)) 场"); Divider2()
-                    Row(label: "战史共歼灭敌军", value: "\(Names.wan(Int(r.kills))) 人"); Divider2()
-                    Row(label: "折损", value: "\(Names.wan(Int(r.losses))) 人")
+                    Row(label: "参战", value: "\(max(0, Int(r.battles))) 次 · 战役 \(max(0, Int(r.campaigns ?? 0))) 场"); Divider2()
+                    Row(label: "战史共歼灭敌军", value: "\(Names.wan(safeKills)) 人"); Divider2()
+                    Row(label: "折损", value: "\(Names.wan(safeLosses)) 人")
                     if !r.reason.isEmpty && !army.manual {
                         Divider2()
                         Text(r.reason).font(Theme.label).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)

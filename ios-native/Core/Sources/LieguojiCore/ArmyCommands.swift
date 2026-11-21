@@ -105,9 +105,12 @@ extension NativeEngine {
             table[nid] = table[id].clone()
         }
         if !r.armyPositions.records[nid].isNull { r.armyPositions.records[nid].armyId = JS(nid) }
-        let full = r.tactics.forces[id].fullStrength.optionalNumber ?? Double(half * 2)
-        if !r.tactics.forces[nid].isNull { r.tactics.forces[nid].fullStrength = JS((full / 2).rounded()) }
-        if !r.tactics.forces[id].isNull { r.tactics.forces[id].fullStrength = JS(full - (full / 2).rounded()) }
+        let full = max(Double(half * 2), r.tactics.forces[id].fullStrength.optionalNumber ?? Double(half * 2))
+        let halfFull = max(Double(half), (full / 2).rounded())
+        let remFull = max(Double(a.troops.asInt), full - halfFull)
+        if !r.tactics.forces[nid].isNull { r.tactics.forces[nid].fullStrength = JS(halfFull) }
+        if !r.tactics.forces[id].isNull { r.tactics.forces[id].fullStrength = JS(remFull) }
+        if !r.forceSpeed.armies[nid].isNull { r.forceSpeed.armies[nid].initializedTick = JS(r.clock.tick.asNumber) }
         if isManual(id) { r.voyages.manualArmies.push(JS(nid)) }
         Vassals.bump(r.armyPositions); Vassals.bump(r.armyAutonomy)
         Daily.reconcileMilitaryClock(r)
@@ -121,11 +124,18 @@ extension NativeEngine {
         guard a.status.asString != "fighting", b.status.asString != "fighting" else { return (false, "交战中无法合兵。") }
         guard let here = Armies.space(r).first(where: { $0.army.id.asString == id })?.province?.id.asString,
               Armies.space(r).first(where: { $0.army.id.asString == target })?.province?.id.asString == here else { return (false, "两军须在同一州郡。") }
-        let ta = a.troops.asNumber, tb = b.troops.asNumber
-        b.morale = JS(((a.morale.asNumber * ta + b.morale.asNumber * tb) / max(1, ta + tb)).rounded())
-        b.troops = JS(Int(ta + tb))
+        let ta = max(0, a.troops.asNumber), tb = max(0, b.troops.asNumber)
+        let mergedTroops = Int((ta + tb).rounded())
+        let ma = min(100, max(0, a.morale.asNumber)), mb = min(100, max(0, b.morale.asNumber))
+        let sa = min(100, max(0, a.supplies.asNumber)), sb = min(100, max(0, b.supplies.asNumber))
+        b.morale = JS(min(100, max(0, ((ma * ta + mb * tb) / max(1, ta + tb)).rounded())))
+        b.supplies = JS(min(100, max(0, ((sa * ta + sb * tb) / max(1, ta + tb)).rounded())))
+        b.troops = JS(mergedTroops)
         let fb = r.tactics.forces[target], fa = r.tactics.forces[id]
-        if !fb.isNull { fb.fullStrength = JS((fb.fullStrength.optionalNumber ?? tb) + (fa.fullStrength.optionalNumber ?? ta)) }
+        if !fb.isNull {
+            let newFull = max(Double(mergedTroops), (fb.fullStrength.optionalNumber ?? tb) + (fa.fullStrength.optionalNumber ?? ta))
+            fb.fullStrength = JS(newFull)
+        }
         retire(a)
         return (true, "\(a.name.asString)并入\(b.name.asString)，合兵 \(Int(ta + tb)) 人。")
     }

@@ -171,6 +171,8 @@ struct DisplaySettings: Codable, Equatable {
     var seaRoutes = true
     /// Scroll-edge darkening. Default on (IsEnableDarkBorder).
     var darkEdges = true
+    /// 皇帝诏书卷轴装裱（左右檀木滚轴、鎏金碧玉轴头与四角回纹，nil 沿用 darkEdges 默认开启）。
+    var scrollMount: Bool? = nil
     /// 舆图细节 (nil in older settings: on).
     var mapDetail: Bool? = nil
     /// Parchment multiply. Preset 0 has it on; the serialized toggle's runtime winner is unresolved,
@@ -202,12 +204,12 @@ struct PlaySettings: Codable, Equatable {
     /// Frames a second while the map is dragged or zoomed, while only the armies march, and for the
     /// looping effects (waves, battle marks, flags, arrows).
     var mapFPS = 60
-    var marchFPS = 30
-    var effectFPS = 30
+    var marchFPS = 24
+    var effectFPS = 20
     /// Pixels per point the map is drawn at (capped at the screen's own; the names stay sharp).
     var renderScale = 2.0
     /// The share of real time the simulation may keep a core busy, in percent.
-    var simLoad = 65
+    var simLoad = 55
     /// Lower the frames and rest the simulation when the phone runs hot or in Low Power Mode.
     var autoCool = true
     /// 可回退: the entry camera (eases out to the whole world) and the reveal's ease (else linear, as before).
@@ -217,9 +219,15 @@ struct PlaySettings: Codable, Equatable {
     var autosave = 120
     /// 大事暂停: a declaration of war, a rising or a state's end stops the clock.
     var pauseOnNews = false
+    /// 界面与看海偏好：局势快控浮印、大事传报横幅、战况飘字、海面波浪、打开面板自动暂停。
+    var showTacticalPill = true
+    var showHeralds = true
+    var showBattleFloats = true
+    var seaWaves = true
+    var pauseOnSheet = true
     static let key = "playSettings.v1"
     init() {}
-    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave, pauseOnNews }
+    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave, pauseOnNews, showTacticalPill, showHeralds, showBattleFloats, seaWaves, pauseOnSheet }
     // Every field is optional in a stored setting: older versions saved fewer (and a 高帧率 switch).
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -227,18 +235,24 @@ struct PlaySettings: Codable, Equatable {
         warArrows = try c.decodeIfPresent(Bool.self, forKey: .warArrows) ?? true
         iconScale = try c.decodeIfPresent(Double.self, forKey: .iconScale) ?? 1
         mapFPS = try c.decodeIfPresent(Int.self, forKey: .mapFPS) ?? ((try c.decodeIfPresent(Bool.self, forKey: .highFrameRate)) == true ? 120 : 60)
-        marchFPS = try c.decodeIfPresent(Int.self, forKey: .marchFPS) ?? 30
-        effectFPS = try c.decodeIfPresent(Int.self, forKey: .effectFPS) ?? 30
+        marchFPS = try c.decodeIfPresent(Int.self, forKey: .marchFPS) ?? 24
+        effectFPS = try c.decodeIfPresent(Int.self, forKey: .effectFPS) ?? 20
         renderScale = try c.decodeIfPresent(Double.self, forKey: .renderScale) ?? 2
-        simLoad = try c.decodeIfPresent(Int.self, forKey: .simLoad) ?? 65
+        simLoad = try c.decodeIfPresent(Int.self, forKey: .simLoad) ?? 55
         autoCool = try c.decodeIfPresent(Bool.self, forKey: .autoCool) ?? true
         introCamera = try c.decodeIfPresent(Bool.self, forKey: .introCamera) ?? true
         easeReveal = try c.decodeIfPresent(Bool.self, forKey: .easeReveal) ?? true
         autosave = try c.decodeIfPresent(Int.self, forKey: .autosave) ?? 120
         pauseOnNews = try c.decodeIfPresent(Bool.self, forKey: .pauseOnNews) ?? false
-        // 1.12: the old 均衡 (marching at 60 frames, the simulation at 80 %) kept the phone hot; who had it
-        // takes the new 均衡. A setting chosen one by one is left as it was.
-        if mapFPS == 60 && marchFPS == 60 && effectFPS == 30 && renderScale == 2 && simLoad == 80 { marchFPS = 30; simLoad = 65 }
+        showTacticalPill = try c.decodeIfPresent(Bool.self, forKey: .showTacticalPill) ?? true
+        showHeralds = try c.decodeIfPresent(Bool.self, forKey: .showHeralds) ?? true
+        showBattleFloats = try c.decodeIfPresent(Bool.self, forKey: .showBattleFloats) ?? true
+        seaWaves = try c.decodeIfPresent(Bool.self, forKey: .seaWaves) ?? true
+        pauseOnSheet = try c.decodeIfPresent(Bool.self, forKey: .pauseOnSheet) ?? true
+        // 自动迁移旧版偏热默认档位到更清凉的均衡档；用户手动单调的档位保留不动。
+        if mapFPS == 60 && (marchFPS == 60 || marchFPS == 30) && effectFPS == 30 && renderScale == 2 && (simLoad == 80 || simLoad == 65) {
+            marchFPS = 24; effectFPS = 20; simLoad = 55
+        }
     }
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: Keys.self)
@@ -247,10 +261,16 @@ struct PlaySettings: Codable, Equatable {
         try c.encode(renderScale, forKey: .renderScale); try c.encode(simLoad, forKey: .simLoad); try c.encode(autoCool, forKey: .autoCool)
         try c.encode(introCamera, forKey: .introCamera); try c.encode(easeReveal, forKey: .easeReveal)
         try c.encode(autosave, forKey: .autosave); try c.encode(pauseOnNews, forKey: .pauseOnNews)
+        try c.encode(showTacticalPill, forKey: .showTacticalPill); try c.encode(showHeralds, forKey: .showHeralds)
+        try c.encode(showBattleFloats, forKey: .showBattleFloats); try c.encode(seaWaves, forKey: .seaWaves)
+        try c.encode(pauseOnSheet, forKey: .pauseOnSheet)
     }
-    /// 画面档位: 省电, 均衡, 流畅 (nil: the values were set one by one).
+    /// 画面档位: 极省电看海, 省电, 均衡, 流畅 (nil: the values were set one by one).
     static let presets: [(key: String, name: String, mapFPS: Int, marchFPS: Int, effectFPS: Int, renderScale: Double, simLoad: Int)] = [
-        ("saver", "省电", 60, 30, 15, 1.5, 50), ("balanced", "均衡", 60, 30, 30, 2, 65), ("smooth", "流畅", 120, 120, 60, 3, 100),
+        ("cool", "极省电", 30, 15, 12, 1.5, 40),
+        ("saver", "省电", 60, 20, 15, 1.5, 50),
+        ("balanced", "均衡", 60, 24, 20, 2, 55),
+        ("smooth", "流畅", 120, 60, 30, 3, 85),
     ]
     var preset: String {
         get { Self.presets.first { $0.mapFPS == mapFPS && $0.marchFPS == marchFPS && $0.effectFPS == effectFPS && $0.renderScale == renderScale && $0.simLoad == simLoad }?.key ?? "custom" }
@@ -290,6 +310,18 @@ struct MapView: UIViewRepresentable {
         private var shownRevision = -1
         private var shownEditorRevision = 0
         private var shownViewLabels: [GroupLabel]?
+        private var lastAppearanceKey: (mode: MapMode, highlight: Int?, relations: [Int: UInt32], fills: [RGB]?, view: String)?
+        private var lastBorderWide: Set<Int> = []
+        private var scrollEdgeMargin: Double { (controller.display.scrollMount ?? controller.display.darkEdges) ? 24 : 0 }
+        /// 仅在手指拖拽、双指缩放或镜头飞行期间启用同事务呈现，其余看海行军帧改用异步提交，彻底解除主线程 waitUntilScheduled 阻塞与发热。
+        private func setSyncPresent(_ sync: Bool) {
+            guard mtk != nil, mtk.presentsWithTransaction != sync else { return }
+            mtk.presentsWithTransaction = sync
+        }
+        private func syncWaves() {
+            let want = !controller.drifting && !controller.sheetOpen && controller.reveal >= 1 && controller.play.seaWaves
+            if want { effects.startWaves() } else { effects.stopWaves() }
+        }
         private let metrics = UILabel()
         private var stats = FrameStatistics()
         private var lastFrame: CFTimeInterval = 0
@@ -368,10 +400,9 @@ struct MapView: UIViewRepresentable {
             mtk.clearColor = MTLClearColor(red: 0.87, green: 0.82, blue: 0.77, alpha: 1)
             mtk.isPaused = true
             mtk.enableSetNeedsDisplay = true
-            // 与国名、军队字、特效等 UIKit 图层同一事务呈现：以前 Metal 画面晚一帧上屏，缩放、拖动时
-            // 名字与边界、军旗与兵力字相互错开（割裂）。现在同一次相机变更的各层在同一帧出现。
-            mtk.presentsWithTransaction = true
-            mtk.preferredFramesPerSecond = 120
+            // 默认关闭同事务阻塞；仅在拖拽/缩放/镜头飞行时由 setSyncPresent(true) 临时开启，防止看海与开页时主线程被 waitUntilScheduled 拖卡发烫。
+            mtk.presentsWithTransaction = false
+            mtk.preferredFramesPerSecond = 60
             mtk.autoResizeDrawable = true
             // 地图清晰度 (default 2×): on a 3× screen the map (drawn with 4× multisampling) cost more than twice
             // the GPU work for no visible gain; the names and labels above it stay at full resolution.
@@ -383,7 +414,7 @@ struct MapView: UIViewRepresentable {
             renderer?.onOutlines = { [weak self] in self?.startLink(); self?.mtk.setNeedsDisplay() }
             controller.onRevealClock = { [weak self] in self?.revealStarted() }
             controller.onHits = { [weak self] hits in
-                guard let self, let renderer = self.renderer else { return }
+                guard let self, self.controller.play.showBattleFloats, !self.controller.sheetOpen, let renderer = self.renderer else { return }
                 let size = self.mtk.bounds.size, vp = (width: Double(size.width), height: Double(size.height))
                 for h in hits {
                     let s = renderer.camera.toScreen(x: Double(h.x), y: Double(h.y), viewport: vp)
@@ -406,13 +437,22 @@ struct MapView: UIViewRepresentable {
                 spots.append(CGPoint(x: CGFloat(map.sites[2 * c]), y: CGFloat(map.sites[2 * c + 1])))
             }
             effects.seaSpots = spots
-            effects.startWaves()
+            syncWaves()
             troops.frame = container.bounds; troops.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(troops)
             controller.onSheet = { [weak self] in
                 guard let self else { return }
                 self.gliding = false
+                self.syncWaves()
+                if self.controller.sheetOpen {
+                    self.mtk.preferredFramesPerSecond = 30
+                    if self.animation == nil && self.controller.revealClock == nil {
+                        self.link?.invalidate(); self.link = nil
+                    }
+                } else {
+                    self.mtk.preferredFramesPerSecond = self.controller.play.mapFPS
+                    if self.renderer?.isAnimating == true { self.startLink() }
+                }
                 self.link?.preferredFrameRateRange = self.frameRange
-                self.mtk.preferredFramesPerSecond = self.controller.sheetOpen ? 30 : 120
             }
             controller.cameraScale = { [weak self] in
                 guard let self else { return (0, 0) }
@@ -466,12 +506,13 @@ struct MapView: UIViewRepresentable {
             if !placed { renderer.camera = MapCamera.cover(map: mapSize, viewport: viewport); placed = true }
             set(renderer.camera)
         }
-        private func set(_ camera: MapCamera) {
+        private func set(_ camera: MapCamera, sync: Bool = false) {
             guard let renderer else { return }
             let b = bounds
             var c = camera.isValid ? camera : MapCamera.cover(map: mapSize, viewport: viewport)
             c.scale = min(b.upperBound, max(b.lowerBound, c.scale))
-            renderer.camera = c.clamped(map: mapSize, viewport: viewport, margin: 0)
+            setSyncPresent(sync)
+            renderer.camera = c.clamped(map: mapSize, viewport: viewport, margin: scrollEdgeMargin)
             labels.update(camera: renderer.camera, viewport: mtk.bounds.size)
             effects.update(camera: renderer.camera, viewport: mtk.bounds.size)
             updateTroops()
@@ -554,11 +595,11 @@ struct MapView: UIViewRepresentable {
             // finger left after a pinch does not fling.
             if pinching { g.setTranslation(.zero, in: mtk); return }
             let t = g.translation(in: mtk)
-            set(camera.panned(dx: Double(t.x), dy: Double(t.y)))
+            set(camera.panned(dx: Double(t.x), dy: Double(t.y)), sync: true)
             g.setTranslation(.zero, in: mtk)
             if g.state == .ended {
                 velocity = g.velocity(in: mtk)
-                if hypot(velocity.x, velocity.y) > 60 { startLink() }
+                if hypot(velocity.x, velocity.y) > 60 { startLink() } else { setSyncPresent(false) }
             }
         }
         @objc private func handlePinch(_ g: UIPinchGestureRecognizer) {
@@ -570,9 +611,9 @@ struct MapView: UIViewRepresentable {
                 if g.numberOfTouches != pinchTouches { pinchTouches = g.numberOfTouches; lastPinch = p; g.scale = 1; return }
                 // The fingers both zoom and drag the map.
                 let moved = camera.panned(dx: Double(p.x - lastPinch.x), dy: Double(p.y - lastPinch.y))
-                set(moved.zoomed(by: Double(g.scale), anchorX: Double(p.x), anchorY: Double(p.y), viewport: viewport, bounds: bounds))
+                set(moved.zoomed(by: Double(g.scale), anchorX: Double(p.x), anchorY: Double(p.y), viewport: viewport, bounds: bounds), sync: true)
                 g.scale = 1; lastPinch = p
-            default: pinching = false; pinchTouches = 2
+            default: pinching = false; pinchTouches = 2; setSyncPresent(false)
             }
         }
         @objc private func handleDoubleTap(_ g: UITapGestureRecognizer) {
@@ -656,7 +697,7 @@ struct MapView: UIViewRepresentable {
             var t = target
             t.scale = min(bounds.upperBound, max(bounds.lowerBound, t.scale))
             let start = camera.isValid ? camera : MapCamera.cover(map: mapSize, viewport: viewport)
-            animation = (start, t.clamped(map: mapSize, viewport: viewport, margin: 0), CACurrentMediaTime(), max(0.05, duration))
+            animation = (start, t.clamped(map: mapSize, viewport: viewport, margin: scrollEdgeMargin), CACurrentMediaTime(), max(0.05, duration))
             velocity = .zero
             startLink()
         }
@@ -712,34 +753,50 @@ struct MapView: UIViewRepresentable {
         @objc private func step(_ l: CADisplayLink) {
             let dt = min(0.05, l.targetTimestamp - l.timestamp)
             let revealing = advanceReveal()
-            pace(l, glide: animation == nil && hypot(velocity.x, velocity.y) <= 8)
+            let cameraMoving = animation != nil || hypot(velocity.x, velocity.y) > 8
+            pace(l, glide: !cameraMoving)
             if let a = animation {
                 let x = min(1, (CACurrentMediaTime() - a.start) / a.duration)
                 let eased = x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2
-                set(MapCamera.interpolate(a.from, a.to, eased))
-                if x >= 1 { animation = nil }
+                set(MapCamera.interpolate(a.from, a.to, eased), sync: true)
+                if x >= 1 { animation = nil; setSyncPresent(false) }
             } else if hypot(velocity.x, velocity.y) > 8 {
                 // Exponential deceleration close to UIScrollView's normal rate.
-                set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt))
+                set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt), sync: true)
                 let decay = CGFloat(pow(0.998, dt * 1000))
                 velocity = CGPoint(x: velocity.x * decay, y: velocity.y * decay)
-            } else if renderer?.isAnimating == true {
+            } else if !controller.sheetOpen && renderer?.isAnimating == true {
+                setSyncPresent(false)
                 velocity = .zero
                 updateTroops()
                 mtk.setNeedsDisplay()
             } else if !revealing {
+                setSyncPresent(false)
                 velocity = .zero
-                mtk.setNeedsDisplay()
+                if !controller.sheetOpen { mtk.setNeedsDisplay() }
                 link?.invalidate(); link = nil
             }
         }
 
         // MARK: SwiftUI → map
 
+        private static func worldChanged(_ a: WorldMap, _ b: WorldMap) -> Bool {
+            if a.meta.provinces.count != b.meta.provinces.count || a.meta.labels.count != b.meta.labels.count || a.meta.nations.count != b.meta.nations.count { return true }
+            for i in a.meta.provinces.indices where a.meta.provinces[i].nation != b.meta.provinces[i].nation { return true }
+            for i in a.meta.labels.indices {
+                let l = a.meta.labels[i], r = b.meta.labels[i]
+                if l.nation != r.nation || l.x != r.x || l.y != r.y { return true }
+            }
+            for i in a.meta.nations.indices {
+                let l = a.meta.nations[i], r = b.meta.nations[i]
+                if l.name != r.name || l.color != r.color { return true }
+            }
+            return false
+        }
+
         func sync() {
-            if controller.worldRevision != shownRevision, let next = controller.world, next.meta.provinces.map(\.nation) != map.meta.provinces.map(\.nation) || next.meta.labels.count != map.meta.labels.count
-                || zip(next.meta.labels, map.meta.labels).contains(where: { p in p.0.nation != p.1.nation || p.0.x != p.1.x || p.0.y != p.1.y })
-                || next.meta.nations.count != map.meta.nations.count || zip(next.meta.nations, map.meta.nations).contains(where: { $0.0.name != $0.1.name || $0.0.color != $0.1.color }) {
+            var dirty = false
+            if controller.worldRevision != shownRevision, let next = controller.world, Self.worldChanged(next, map) {
                 shownRevision = controller.worldRevision
                 map = next
                 renderer?.setMap(next, replayFast: controller.replayLocked)
@@ -748,21 +805,29 @@ struct MapView: UIViewRepresentable {
                 // Daily border changes swap the names in place; only a view switch cross-fades.
                 if let groups = controller.viewLabels { labels.setGroups(groups, animated: false) } else { labels.setNations(map: next, animated: false) }
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
-                mtk.setNeedsDisplay()
+                dirty = true
             }
             // While a reveal clock runs the display link draws it; the published value is only coarse.
             if controller.revealClock != nil && !controller.revealDone && link == nil { startLink() }
             if controller.revealClock == nil {
-                if let renderer, renderer.reveal != controller.reveal { renderer.setReveal(controller.reveal) }
+                if let renderer, renderer.reveal != controller.reveal { renderer.setReveal(controller.reveal); dirty = true }
                 // Names ink in last, with the cities.
                 labels?.alpha = CGFloat(max(0, min(1, (controller.reveal - 0.85) / 0.15)))
                 effects.alpha = CGFloat(max(0, min(1, (controller.reveal - 0.9) / 0.1)))
             }
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
-            // No sea waves behind the title (they kept spawning animated layers over the drifting map).
-            if controller.drifting { effects.stopWaves() } else if controller.reveal >= 1 { effects.startWaves() }
-            renderer?.setAppearance(mode: controller.mode, highlight: controller.selectedProvince, tint: controller.relations.mapValues { RGB(hex: $0) }, fills: controller.viewFills, view: controller.viewKey)
+            syncWaves()
+            let nextApp = (mode: controller.mode, highlight: controller.selectedProvince, relations: controller.relations, fills: controller.viewFills, view: controller.viewKey)
+            let appChanged: Bool = {
+                guard let prev = lastAppearanceKey else { return true }
+                return prev.mode != nextApp.mode || prev.highlight != nextApp.highlight || prev.relations != nextApp.relations || prev.fills != nextApp.fills || prev.view != nextApp.view
+            }()
+            if appChanged {
+                lastAppearanceKey = nextApp
+                renderer?.setAppearance(mode: nextApp.mode, highlight: nextApp.highlight, tint: nextApp.relations.mapValues { RGB(hex: $0) }, fills: nextApp.fills, view: nextApp.view)
+                dirty = true
+            }
             if controller.worldRevision != shownRevision { shownRevision = controller.worldRevision }
             if controller.editorRevision != shownEditorRevision, let next = controller.editorMap {
                 shownEditorRevision = controller.editorRevision
@@ -772,29 +837,35 @@ struct MapView: UIViewRepresentable {
                 labels.setNations(map: next, animated: false)
                 labels.setCities(map: next)
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
-                mtk.setNeedsDisplay()
+                dirty = true
             }
             if let armies = controller.armies {
                 // Playing: glide linearly over one step so marching does not pulse; a single move eases.
+                let snapped = controller.snapArmies
                 renderer?.tweenDuration = controller.tween
                 renderer?.tweenEase = controller.tween <= 0.3
                 renderer?.deathDelays = controller.deathDelays
-                renderer?.setArmies(armies, route: controller.route, snap: controller.snapArmies)
+                renderer?.setArmies(armies, route: controller.route, snap: snapped)
                 controller.snapArmies = false
+                if snapped || !controller.route.isEmpty { dirty = true }
                 if controller.washes != shownWashes || controller.washEpoch != shownWashEpoch {
                     shownWashes = controller.washes; shownWashEpoch = controller.washEpoch
                     renderer?.setWashes(shownWashes, epoch: shownWashEpoch)
+                    dirty = true
                 }
-                updateTroops()
-                if renderer?.isAnimating == true { startLink() }
+                if !controller.sheetOpen {
+                    updateTroops()
+                    if renderer?.isAnimating == true { startLink() }
+                }
             }
             if controller.viewLabels != shownViewLabels {
                 let animated = controller.viewLabels?.map(\.name) != shownViewLabels?.map(\.name)
                 shownViewLabels = controller.viewLabels
                 if let groups = shownViewLabels { labels.setGroups(groups, animated: animated) } else { labels.setNations(map: map, animated: animated) }
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                dirty = true
             }
-            if controller.effects != shownEffects { shownEffects = controller.effects; effects.set(shownEffects); effects.alpha = controller.reveal >= 1 ? 1 : 0 }
+            if controller.effects != shownEffects { shownEffects = controller.effects; effects.set(shownEffects); effects.alpha = controller.reveal >= 1 ? 1 : 0; dirty = true }
             labels?.setSelected(controller.selectedProvince)
             if let renderer {
                 var wide = Set<Int>()
@@ -803,45 +874,53 @@ struct MapView: UIViewRepresentable {
                     let owner = map.meta.provinces[p].nation
                     if owner >= 0 { wide.insert(owner) }
                 }
-                renderer.setBorderEmphasis(wide)
+                if wide != lastBorderWide {
+                    lastBorderWide = wide
+                    renderer.setBorderEmphasis(wide)
+                    dirty = true
+                }
             }
             if let renderer {
+                if renderer.showArmies != controller.play.showArmies || renderer.iconScale != Float(controller.play.iconScale) { dirty = true }
                 renderer.showArmies = controller.play.showArmies
                 renderer.iconScale = Float(controller.play.iconScale)
                 effects.showArrows = controller.play.warArrows
                 troops.iconScale = controller.play.iconScale
-                if mtk.preferredFramesPerSecond > 30 { mtk.preferredFramesPerSecond = controller.play.mapFPS }
+                if !controller.sheetOpen { mtk.preferredFramesPerSecond = controller.play.mapFPS }
                 // 画面 settings: the simulation's share, cooling, the effects' frames and the map's pixels.
                 Energy.autoCool = controller.play.autoCool
                 Energy.load = Double(controller.play.simLoad) / 100
                 EffectsView.fps = controller.play.effectFPS
                 let scale = min(UIScreen.main.scale, controller.play.renderScale)
-                if mtk.contentScaleFactor != scale { mtk.contentScaleFactor = scale; mtk.setNeedsDisplay() }
+                if mtk.contentScaleFactor != scale { mtk.contentScaleFactor = scale; dirty = true }
                 if controller.play != appliedPlay {
                     appliedPlay = controller.play
+                    syncWaves()
                     gliding = false; link?.preferredFrameRateRange = frameRange
+                    dirty = true
                 }
             }
             if let renderer, renderer.display != controller.display {
-                let oceanChanged = renderer.display.ocean != controller.display.ocean
                 renderer.setDisplay(controller.display)
-                mtk.setNeedsDisplay()
+                dirty = true
             }
-            if renderer?.setSeaPorts(controller.seaPorts) == true { mtk.setNeedsDisplay() }
-            if renderer?.setForts(controller.forts, holy: controller.holy) == true { mtk.setNeedsDisplay() }
-            if labels.setCustom(controller.customLabels) { mtk.setNeedsDisplay() }
-            if labels.setImages(controller.customImages) { mtk.setNeedsDisplay() }
-            if renderer?.setExtraRivers(controller.customRivers) == true { mtk.setNeedsDisplay() }
+            if renderer?.setSeaPorts(controller.seaPorts) == true { dirty = true }
+            if renderer?.setForts(controller.forts, holy: controller.holy) == true { dirty = true }
+            if labels.setCustom(controller.customLabels) { dirty = true }
+            if labels.setImages(controller.customImages) { dirty = true }
+            if renderer?.setExtraRivers(controller.customRivers) == true { dirty = true }
             if labels.nameScale != controller.display.nationNameScale || labels.fullNames != controller.display.fullNationNames {
                 labels.nameScale = controller.display.nationNameScale
                 let namesChanged = labels.fullNames != controller.display.fullNationNames
                 labels.fullNames = controller.display.fullNationNames
                 if namesChanged, controller.viewLabels == nil { labels.setNations(map: map, animated: false) }
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                dirty = true
             }
             if let labels, labels.showCities != controller.display.cityNames {
                 labels.showCities = controller.display.cityNames
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                dirty = true
             }
             metrics.isHidden = !controller.showMetrics
             if let f = controller.focus, f.id != focusID {
@@ -881,7 +960,7 @@ struct MapView: UIViewRepresentable {
                 resetID = controller.resetRequest
                 animate(to: MapCamera.cover(map: mapSize, viewport: viewport), duration: 0.45)
             }
-            mtk?.setNeedsDisplay()
+            if dirty { setSyncPresent(false); mtk?.setNeedsDisplay() }
         }
 
         private func frameDrawn(_ t: CFTimeInterval) {

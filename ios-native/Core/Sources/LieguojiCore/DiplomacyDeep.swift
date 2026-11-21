@@ -190,6 +190,13 @@ public enum DiplomacyDeep {
         let cultA = ca.cultureId.optionalString ?? "", cultB = cb.cultureId.optionalString ?? ""
         if !cultA.isEmpty && cultA == cultB { add("同文同源", 12) }
 
+        // 掌权者外交手腕与人物性格特质（让「纵横捭阖」「仁德宽厚」「苛政暴戾」等真实影响天下邦交！）
+        let rulerB = Regimes.governor(r, b) ?? Regimes.ruler(r, b)
+        let rulerBOp = MonarchLore.traitEffects(of: rulerB).opinion
+        if rulerBOp != 0 {
+            add(rulerBOp > 0 ? "对方主政贤明声望" : "对方主政苛暴失德", rulerBOp)
+        }
+
         // 战事、同盟、宗属
         let atWar = Regimes.atWar(r, a, b)
         if atWar { add("兵戎相见", -65) }

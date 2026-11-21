@@ -27,20 +27,24 @@ extension Regimes {
         // 实际掌权者: where the head of government rules, the state is run by his abilities; the head of
         // state's charisma still counts for stability (legitimacy).
         let crown = cha
+        let leaderPerson = r.people.nations[id].leaderId.optionalNumber.flatMap { People.person(r, Int($0)) }
+        let activePerson = governor(r, id) ?? leaderPerson
         if let g = governor(r, id) { let s = People.skills(g); mil = s.military; adm = s.administrative; cha = s.charisma }
         let fortune = r.destiny.nations[id].destiny.optionalNumber ?? 50, graft = Finance.corruption(r, id), sum = reformSum(r, id)
         let prof = styleProfile(r, id)
+        let pTrait = MonarchLore.traitEffects(of: activePerson)
+        let goodsBonus = Trade.nationalBonuses(r, id)
         var l = Leverage()
-        l.attack = (mil - 50) * 0.8 + (fortune - 50) * 0.25 - graft * 0.15 + sum.attack + prof.attack
-        l.defense = (mil - 50) * 0.4 + (cha - 50) * 0.2 + (fortune - 50) * 0.25 - graft * 0.1 + sum.defense + prof.defense
-        l.income = (adm - 50) * 0.8 - graft * 0.3 + sum.income + prof.income
-        l.growth = (adm - 50) * 0.1 + (cha - 50) * 0.1 + sum.growth
-        l.corruption = sum.corruption + prof.corruption
+        l.attack = (mil - 50) * 0.8 + (fortune - 50) * 0.25 - graft * 0.15 + sum.attack + prof.attack + pTrait.attack + goodsBonus.attack
+        l.defense = (mil - 50) * 0.4 + (cha - 50) * 0.2 + (fortune - 50) * 0.25 - graft * 0.1 + sum.defense + prof.defense + pTrait.defense + goodsBonus.defense
+        l.income = (adm - 50) * 0.8 - graft * 0.3 + sum.income + prof.income + pTrait.income + goodsBonus.income
+        l.growth = (adm - 50) * 0.1 + (cha - 50) * 0.1 + sum.growth + pTrait.growth + goodsBonus.growth
+        l.corruption = sum.corruption + prof.corruption + pTrait.corruption
         _ = grit(r, id)
         let land = Double(gritCache?.counts[id] ?? 0), total = max(1, Double(gritCache?.counts.values.reduce(0, +) ?? 1))
         var owed = 0.0
         if !r.finance.nations[id].isNull { let income = max(1, monthlyIncome(r, id)); owed = min(15, debt(r, id) / income / 12 * 10) }
-        l.stability = 60 + (adm - 50) * 0.35 + (crown - 50) * 0.35 + (fortune - 50) * 0.4 - graft * 0.4 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability
+        l.stability = 60 + (adm - 50) * 0.35 + (crown - 50) * 0.35 + (fortune - 50) * 0.4 - graft * 0.4 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability + pTrait.stability + goodsBonus.stability
         return l
     }
     static func attributeMonth(_ r: JS, _ id: String, addGold: (Double) -> Void) {
@@ -85,6 +89,10 @@ extension Regimes {
         Reform(id: "seaopen", name: "开海通商", polities: nil, conflicts: ["sealock"], effect: Leverage(income: 9, corruption: 3)),
         Reform(id: "stateChurch", name: "国教制度", polities: nil, conflicts: ["secular"], effect: Leverage(defense: 4, stability: 5)),
         Reform(id: "secular", name: "政教分离", polities: ["Republic", "Federation", "Kingdom"], conflicts: ["stateChurch"], effect: Leverage(income: 4, stability: 2)),
+        Reform(id: "minting", name: "统一币制", polities: nil, conflicts: [], effect: Leverage(income: 7, stability: 3, corruption: -3)),
+        Reform(id: "navyAct", name: "航海条例", polities: nil, conflicts: ["sealock"], effect: Leverage(attack: 4, income: 8)),
+        Reform(id: "audit", name: "御史监察", polities: nil, conflicts: [], effect: Leverage(income: 2, stability: 5, corruption: -8)),
+        Reform(id: "conscription", name: "义务兵役", polities: nil, conflicts: ["fubing"], effect: Leverage(attack: 8, defense: 6, growth: -2)),
     ]
     static func heldReforms(_ r: JS, _ id: String) -> [Reform] {
         guard !r.regimes.isNull, !r.regimes.nations[id].reforms.isNull else { return [] }

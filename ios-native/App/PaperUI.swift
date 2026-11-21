@@ -1077,13 +1077,13 @@ struct StabilityRiskMeter: View {
     }
 }
 
-/// Emil Kowalski `/gestures` 四角物理速度投影吸附悬浮珠（局势快控浮印）：
-/// 可随手拖甩至屏幕四角任意安全角落，依据松手初速度自动物理投影并弹簧吸附；轻点展开快捷操作（战况/外交/回放/倍速）。
+/// 精致可隐藏的四角吸附局势浮印：收起时为一枚小巧朱墨印章（战事时亮出微徽），轻点展开战况/外交/回放/启停/倍速与一键隐藏。
 struct FloatingTacticalPill: View {
     @ObservedObject var model: GameModel
     let openWars: () -> Void
     let openDiplomacy: () -> Void
     let openReplay: () -> Void
+    let onHide: () -> Void
     let landscape: Bool
 
     private enum Corner: Int { case topLeading, topTrailing, bottomLeading, bottomTrailing }
@@ -1093,12 +1093,12 @@ struct FloatingTacticalPill: View {
     @State private var dragging = false
 
     private func anchor(in size: CGSize, safe: EdgeInsets) -> CGPoint {
-        let padX: CGFloat = landscape ? 88 : 16
-        let topY: CGFloat = safe.top + 68
-        let botY: CGFloat = max(topY + 80, size.height - safe.bottom - (landscape ? 64 : 136))
-        let pillW: CGFloat = expanded ? 196 : 86
+        let padX: CGFloat = landscape ? 86 : 14
+        let topY: CGFloat = safe.top + 64
+        let botY: CGFloat = max(topY + 80, size.height - safe.bottom - (landscape ? 60 : 138))
+        let pillW: CGFloat = expanded ? 232 : 42
         let leftX = padX + pillW / 2
-        let rightX = max(leftX, size.width - 16 - pillW / 2)
+        let rightX = max(leftX, size.width - 14 - pillW / 2)
         switch corner {
         case .topLeading: return CGPoint(x: leftX, y: topY)
         case .topTrailing: return CGPoint(x: rightX, y: topY)
@@ -1111,70 +1111,73 @@ struct FloatingTacticalPill: View {
         GeometryReader { g in
             let wars = model.state?.wars.count ?? 0
             let pos = anchor(in: g.size, safe: g.safeAreaInsets)
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 Button {
                     GameFeel.shared.tap()
                     withAnimation(Motion.panel) { expanded.toggle() }
                 } label: {
-                    HStack(spacing: 5) {
-                        SealFace(text: wars > 0 ? "战" : "局", size: 22, color: wars > 0 ? Theme.seal : Theme.ink)
-                        if !expanded {
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(wars > 0 ? "\(wars)战" : "太平").font(Theme.caption).foregroundStyle(wars > 0 ? Theme.seal : Theme.ink).monospacedDigit()
-                                Text(model.playing ? "\(model.speed)×" : "已停").font(Theme.kai(10)).foregroundStyle(Theme.ink2).monospacedDigit()
-                            }
+                    ZStack(alignment: .topTrailing) {
+                        SealFace(text: wars > 0 ? "战" : "印", size: 28, color: wars > 0 ? Theme.seal : Theme.ink)
+                            .rotationEffect(.degrees(expanded ? -12 : 0))
+                        if !expanded && wars > 0 {
+                            Text("\(min(99, wars))")
+                                .font(Theme.kai(9)).foregroundStyle(Theme.paper2).monospacedDigit()
+                                .padding(.horizontal, 4).frame(minWidth: 15, height: 14)
+                                .background(Theme.seal, in: Capsule())
+                                .overlay(Capsule().stroke(Theme.paper2, lineWidth: 1))
+                                .offset(x: 5, y: -4)
                         }
                     }
+                    .frame(width: 30, height: 30)
                 }
                 .buttonStyle(.plain)
 
                 if expanded {
-                    Divider().frame(height: 18)
-                    Button {
-                        GameFeel.shared.tap()
+                    Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 18).padding(.horizontal, 2)
+                    pillButton(tint: Theme.seal) {
                         if model.playing { model.pause() } else { model.play() }
-                    } label: {
-                        InkIcon(glyph: model.playing ? .pause : .play, size: 14, weight: 1.85).foregroundStyle(Theme.seal)
-                            .frame(width: 28, height: 28)
-                    }.buttonStyle(PressStyle())
-                    Button {
-                        GameFeel.shared.tap()
+                    } content: {
+                        InkIcon(glyph: model.playing ? .pause : .play, size: 13, weight: 1.9)
+                    }
+                    pillButton(tint: model.speed > 1 ? Theme.seal : Theme.ink) {
                         model.cycleSpeed()
-                    } label: {
-                        Text("\(model.speed)×").font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit()
-                            .frame(width: 26, height: 28)
-                    }.buttonStyle(PressStyle())
-                    Button {
-                        GameFeel.shared.tap()
+                    } content: {
+                        Text("\(model.speed)×").font(Theme.caption).monospacedDigit()
+                    }
+                    pillButton(tint: wars > 0 ? Theme.seal : Theme.ink) {
                         withAnimation(Motion.tap) { expanded = false }
                         openWars()
-                    } label: {
-                        InkIcon(glyph: .war, size: 15, weight: 1.75).foregroundStyle(wars > 0 ? Theme.seal : Theme.ink)
-                            .frame(width: 28, height: 28)
-                    }.buttonStyle(PressStyle())
-                    Button {
-                        GameFeel.shared.tap()
+                    } content: {
+                        InkIcon(glyph: .war, size: 14, weight: 1.75)
+                    }
+                    pillButton(tint: Theme.jade) {
                         withAnimation(Motion.tap) { expanded = false }
                         openDiplomacy()
-                    } label: {
-                        InkIcon(glyph: .diplomacy, size: 15, weight: 1.75).foregroundStyle(Theme.jade)
-                            .frame(width: 28, height: 28)
-                    }.buttonStyle(PressStyle())
-                    Button {
-                        GameFeel.shared.tap()
+                    } content: {
+                        InkIcon(glyph: .diplomacy, size: 14, weight: 1.75)
+                    }
+                    pillButton(tint: Theme.ink) {
                         withAnimation(Motion.tap) { expanded = false }
                         openReplay()
-                    } label: {
-                        InkIcon(glyph: .replay, size: 15, weight: 1.75).foregroundStyle(Theme.ink)
-                            .frame(width: 28, height: 28)
-                    }.buttonStyle(PressStyle())
+                    } content: {
+                        InkIcon(glyph: .replay, size: 14, weight: 1.75)
+                    }
+                    Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 18).padding(.horizontal, 1)
+                    pillButton(tint: Theme.ink2) {
+                        withAnimation(Motion.tap) { expanded = false }
+                        onHide()
+                    } content: {
+                        Image(systemName: "eye.slash").font(.system(size: 12, weight: .regular))
+                    }
+                    .accessibilityLabel("隐藏局势浮印")
                 }
             }
-            .padding(.horizontal, 9).padding(.vertical, 6)
+            .padding(.horizontal, expanded ? 8 : 6).padding(.vertical, 6)
             .background(MemorialPaper(rules: false, fullBleed: false).clipShape(Capsule()))
-            .overlay(Capsule().stroke(wars > 0 ? Theme.seal.opacity(0.42) : Theme.ink.opacity(0.22), lineWidth: 1))
-            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(dragging ? 0.28 : 0.18), radius: dragging ? 14 : 8, y: dragging ? 6 : 3)
-            .scaleEffect(dragging ? 1.05 : 1.0)
+            .overlay(Capsule().stroke(wars > 0 ? Theme.seal.opacity(0.42) : Theme.ink.opacity(0.2), lineWidth: 0.9))
+            .overlay(Capsule().stroke(Theme.seal.opacity(0.16), lineWidth: 0.5).padding(2.5))
+            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(dragging ? 0.28 : 0.16), radius: dragging ? 12 : 6, y: dragging ? 5 : 2.5)
+            .scaleEffect(dragging ? 1.06 : 1.0)
             .contentShape(Capsule())
             .gesture(
                 DragGesture(minimumDistance: 6, coordinateSpace: .named("tacticalPillSpace"))
@@ -1183,7 +1186,6 @@ struct FloatingTacticalPill: View {
                         dragOffset = v.translation
                     }
                     .onEnded { v in
-                        // Emil Kowalski 物理速度投影：按 predictedEndTranslation 投射到最近的屏幕角落
                         let projectedX = pos.x + v.predictedEndTranslation.width
                         let projectedY = pos.y + v.predictedEndTranslation.height
                         let isRight = projectedX >= g.size.width / 2
@@ -1202,6 +1204,16 @@ struct FloatingTacticalPill: View {
         }
         .coordinateSpace(name: "tacticalPillSpace")
         .ignoresSafeArea()
+    }
+
+    private func pillButton<C: View>(tint: Color, action: @escaping () -> Void, @ViewBuilder content: () -> C) -> some View {
+        Button {
+            GameFeel.shared.tap()
+            action()
+        } label: {
+            content().foregroundStyle(tint).frame(width: 26, height: 28).contentShape(Rectangle())
+        }
+        .buttonStyle(PressStyle())
     }
 }
 /// A message inside a page (the game's own toast sits under a full-height sheet, where nothing showed).

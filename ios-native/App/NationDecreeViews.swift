@@ -36,7 +36,7 @@ struct NationQuickBar: View {
     }
 }
 
-/// 国家页「政令」标签：八大御批国策 + 禅位择君入口。
+/// 国家页「政令」标签：分类整洁排版（长期国策 + 内政民生 / 军事整备 / 文教宗教 12 项御批政令 + 禅位择君），告别满屏零乱按钮。
 struct NationDecreesTab: View {
     @ObservedObject var model: GameModel
     let nation: Int
@@ -45,9 +45,18 @@ struct NationDecreesTab: View {
     let onReload: () async -> Void
     let onEnthrone: () -> Void
     @State private var busy = false
+    @State private var category: Category = .reforms
+
+    enum Category: String, CaseIterable {
+        case reforms = "长期国策"
+        case domestic = "内政民生"
+        case military = "军事整备"
+        case culture = "文教宗教"
+    }
 
     struct DecreeItem: Identifiable {
         let id: String
+        let category: Category
         let title: String
         let note: String
         let glyph: InkGlyph
@@ -55,77 +64,149 @@ struct NationDecreesTab: View {
     }
 
     static let decrees: [DecreeItem] = [
-        DecreeItem(id: "prosper", title: "休养生息", note: "全国增丁 3% · 存粮 +20% · 国运 +5", glyph: .goods, tone: Theme.jade),
-        DecreeItem(id: "mobilize", title: "全国大征兵", note: "择都城与大州急征至多 3 军 · 国运 −4", glyph: .military, tone: Theme.seal),
-        DecreeItem(id: "rewardArmies", title: "犒赏三军", note: "全军士气 +35 · 军粮补满", glyph: .command, tone: Theme.seal),
-        DecreeItem(id: "antiCorruption", title: "整顿吏治", note: "腐化度 −15 · 国运 +4", glyph: .polity, tone: Theme.jade),
-        DecreeItem(id: "fortifyBorder", title: "加固边防", note: "边塞至多 12 州城防 +1 级", glyph: .nation, tone: Theme.ink),
-        DecreeItem(id: "assimilateCulture", title: "推行文教", note: "境内城池归入本国主体文化", glyph: .culture, tone: Theme.ink),
-        DecreeItem(id: "convertFaith", title: "统一国教", note: "境内诸州与世家归奉国教", glyph: .religion, tone: Theme.ink),
-        DecreeItem(id: "amnesty", title: "大赦世家", note: "本国诸世家与宗室情谊各 +20", glyph: .house, tone: Theme.jade),
+        // 内政民生
+        DecreeItem(id: "prosper", category: .domestic, title: "休养生息", note: "全国增丁 3% · 存粮 +20% · 国运 +5", glyph: .goods, tone: Theme.jade),
+        DecreeItem(id: "antiCorruption", category: .domestic, title: "整顿吏治", note: "腐化度 −15 · 国运 +4", glyph: .polity, tone: Theme.jade),
+        DecreeItem(id: "relief", category: .domestic, title: "开仓赈灾", note: "斥资 200 金普赈诸州 · 存粮 +35% · 国运 +7", glyph: .economy, tone: Theme.jade),
+        DecreeItem(id: "landSurvey", category: .domestic, title: "清丈田亩", note: "厘清税籍 · 即得半岁税收 · 腐化度 −8", glyph: .region, tone: Theme.ink),
+        // 军事整备
+        DecreeItem(id: "mobilize", category: .military, title: "全国大征兵", note: "择都城与大州急征至多 3 军 · 国运 −4", glyph: .military, tone: Theme.seal),
+        DecreeItem(id: "rewardArmies", category: .military, title: "犒赏三军", note: "全军士气 +35 · 军粮补满", glyph: .command, tone: Theme.seal),
+        DecreeItem(id: "fortifyBorder", category: .military, title: "加固边防", note: "边塞至多 12 州城防 +1 级", glyph: .nation, tone: Theme.ink),
+        DecreeItem(id: "armsUpgrade", category: .military, title: "军械改良", note: "斥资 260 金焕新兵甲 · 全军士气 +25 · 补员", glyph: .war, tone: Theme.seal),
+        // 文教宗教
+        DecreeItem(id: "assimilateCulture", category: .culture, title: "推行文教", note: "境内城池归入本国主体文化", glyph: .culture, tone: Theme.ink),
+        DecreeItem(id: "convertFaith", category: .culture, title: "统一国教", note: "境内诸州与世家归奉国教", glyph: .religion, tone: Theme.ink),
+        DecreeItem(id: "amnesty", category: .culture, title: "大赦世家", note: "本国诸世家与宗室情谊各 +20", glyph: .house, tone: Theme.jade),
+        DecreeItem(id: "academy", category: .culture, title: "兴办太学", note: "斥资 180 金兴建学宫 · 腐化度 −6 · 国运 +5", glyph: .chronicle, tone: Theme.jade),
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        LazyVStack(alignment: .leading, spacing: 12) {
             if !info.alive {
                 Text("此国已亡，无法颁布政令。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
             } else {
-                // 禅位择君：主动更换君主与宗室。
+                // 禅位择君：紧凑顶部条目
                 Group2 {
                     Button {
                         GameFeel.shared.tap()
                         onEnthrone()
                     } label: {
-                        HStack(spacing: 12) {
-                            InkIcon(glyph: .crown, size: 22, weight: 1.85, accent: Theme.seal.opacity(0.28))
+                        HStack(spacing: 10) {
+                            InkIcon(glyph: .crown, size: 19, weight: 1.85, accent: Theme.seal.opacity(0.28))
                                 .foregroundStyle(Theme.seal)
-                                .frame(width: 34, height: 34)
+                                .frame(width: 30, height: 30)
                                 .background(Theme.seal.opacity(0.09), in: Circle())
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("禅位择君").font(Theme.section).foregroundStyle(Theme.ink)
-                                Text(info.ruler.map { "现任：\($0.title)\($0.name) · 择本国在世宗亲或贤臣即位" } ?? "择本国在世贤能登基执政")
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("禅位择君").font(Theme.body).foregroundStyle(Theme.ink)
+                                Text(info.ruler.map { "现任：\($0.styledName ?? ($0.title + $0.name))" } ?? "择本国在世贤能登基执政")
                                     .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                             }
                             Spacer(minLength: 4)
-                            Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.seal)
+                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.seal)
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 11).contentShape(Rectangle())
+                        .padding(.horizontal, 14).padding(.vertical, 9).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
 
-                SectionLabel("御批政令")
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                    ForEach(Self.decrees) { item in
-                        Button { issue(item) } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack(spacing: 8) {
-                                    InkIcon(glyph: item.glyph, size: 19, weight: 1.8, accent: item.tone.opacity(0.25))
-                                        .foregroundStyle(item.tone)
-                                        .frame(width: 30, height: 30)
-                                        .background(item.tone.opacity(0.09), in: Circle())
-                                    Text(item.title).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                                    Spacer(minLength: 0)
-                                }
-                                Text(item.note).font(Theme.caption).foregroundStyle(Theme.ink2)
-                                    .multilineTextAlignment(.leading).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                            }
-                            .padding(12).frame(maxWidth: .infinity, minHeight: 84, alignment: .topLeading)
-                            .paperCard(tint: item.tone == Theme.ink ? nil : item.tone)
-                            .opacity(busy ? 0.55 : 1)
-                        }
-                        .buttonStyle(PressStyle())
-                        .disabled(busy)
-                    }
-                }
-                .padding(.horizontal, Theme.Layout.pageInset)
+                // 分类筛选签：一屏只聚焦一类，清爽不杂乱
+                ChipPicker(items: Category.allCases.map { ($0, $0.rawValue) }, selection: $category)
+                    .padding(.horizontal, Theme.Layout.pageInset)
 
-                Text("政令立即生效并载入国史；若需调整国号、政体、税制、国家加成与兵种，可切换至「自定义」或「概览 › 财政」。")
-                    .font(Theme.caption).foregroundStyle(Theme.ink2)
-                    .padding(.horizontal, Theme.Layout.sectionInset)
-                    .fixedSize(horizontal: false, vertical: true)
+                if category == .reforms {
+                    let list = info.reforms ?? []
+                    let activeCount = list.filter(\.on).count
+                    SectionLabel("长期国策（已行 \(activeCount)/\(list.count) 项）")
+                    if list.isEmpty {
+                        Group2 { Row(label: "国策", value: "暂无可选国策") }
+                            .padding(.horizontal, Theme.Layout.pageInset)
+                    } else {
+                        Group2 {
+                            LazyVStack(spacing: 0) {
+                                ForEach(Array(list.enumerated()), id: \.element.id) { idx, r in
+                                    Button { toggleReform(r) } label: {
+                                        HStack(spacing: 10) {
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                HStack(spacing: 6) {
+                                                    Text(r.name).font(Theme.body).foregroundStyle(r.on ? Theme.seal : Theme.ink)
+                                                    if r.on { PaperTag(text: "施行中", color: Theme.seal, size: 10) }
+                                                }
+                                                Text(r.text).font(Theme.caption).foregroundStyle(Theme.ink2)
+                                                    .fixedSize(horizontal: false, vertical: true)
+                                            }
+                                            Spacer(minLength: 8)
+                                            Image(systemName: r.on ? "checkmark.seal.fill" : "circle")
+                                                .font(.system(size: 18))
+                                                .foregroundStyle(r.on ? Theme.seal : Theme.ink2.opacity(0.45))
+                                        }
+                                        .padding(.horizontal, 14).padding(.vertical, 10)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(busy)
+                                    if idx < list.count - 1 { Divider2() }
+                                }
+                            }
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+                        Text("长期国策持续影响全军战力、财政税负、人口与安定；互斥国策（如重农/重商、募兵/征兵）开启新项会自动替下旧项。")
+                            .font(Theme.caption).foregroundStyle(Theme.ink2)
+                            .padding(.horizontal, Theme.Layout.sectionInset)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } else {
+                    let items = Self.decrees.filter { $0.category == category }
+                    SectionLabel("御批\(category.rawValue)（\(items.count) 项）")
+                    Group2 {
+                        ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
+                            Button { issue(item) } label: {
+                                HStack(spacing: 12) {
+                                    InkIcon(glyph: item.glyph, size: 19, weight: 1.8, accent: item.tone.opacity(0.24))
+                                        .foregroundStyle(item.tone)
+                                        .frame(width: 32, height: 32)
+                                        .background(item.tone.opacity(0.09), in: Circle())
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.title).font(Theme.section).foregroundStyle(Theme.ink)
+                                        Text(item.note).font(Theme.caption).foregroundStyle(Theme.ink2)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    Spacer(minLength: 6)
+                                    Text("颁行").font(Theme.caption).foregroundStyle(item.tone)
+                                        .padding(.horizontal, 10).frame(height: 28)
+                                        .background(item.tone.opacity(0.09), in: Capsule())
+                                        .overlay(Capsule().stroke(item.tone.opacity(0.32), lineWidth: 0.8))
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                                .opacity(busy ? 0.55 : 1)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(busy)
+                            if idx < items.count - 1 { Divider2() }
+                        }
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                }
             }
+        }
+    }
+
+    private func toggleReform(_ r: NationInfo.ReformRow) {
+        guard !busy else { return }
+        busy = true
+        Task {
+            let err = await model.setReform(nation, reform: r.id, on: !r.on)
+            await onReload()
+            if let err {
+                onToast(err)
+                GameFeel.shared.notify(.error)
+            } else {
+                onToast(r.on ? "已废止「\(r.name)」" : "已施行「\(r.name)」")
+                GameFeel.shared.notify(.success)
+            }
+            busy = false
         }
     }
 

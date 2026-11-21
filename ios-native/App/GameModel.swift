@@ -839,13 +839,20 @@ import LieguojiCore
             enqueue(Herald(kind: .capture, text: "\(name(owner))攻下\(map.meta.provinces[p].name)", nations: [owner]))
         }
     }
+    func dismissHerald() {
+        herald = nil
+        heraldQueue.removeAll()
+        heraldTask?.cancel()
+        heraldTask = nil
+    }
     private func enqueue(_ h: Herald) {
         if controller.play.pauseOnNews, playing, [Herald.Kind.war, .uprising, .extinction].contains(h.kind) { pause(saving: false) }
+        guard controller.play.showHeralds else { return }
         heraldQueue.append(h)
         if heraldQueue.count > 4 { heraldQueue.removeFirst(heraldQueue.count - 4) }
         guard heraldTask == nil else { return }
         heraldTask = Task { [weak self] in
-            while let self, !self.heraldQueue.isEmpty {
+            while let self, !Task.isCancelled, !self.heraldQueue.isEmpty {
                 let h = self.heraldQueue.removeFirst()
                 self.herald = h
                 switch h.kind {
@@ -856,6 +863,7 @@ import LieguojiCore
                 // 场景时长：宣战/政变/通牒 2.9 秒、议和/改制/邦交 2.6 秒、攻克 1.8 秒，其余 2.4 秒。
                 let seconds: Double = (h.kind == .war || h.kind == .coup || h.kind == .ultimatum) ? 2.9 : (h.kind == .peace || h.kind == .regime || h.kind == .treaty) ? 2.6 : h.kind == .capture ? 1.8 : 2.4
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                if Task.isCancelled { break }
                 self.herald = nil
                 try? await Task.sleep(nanoseconds: 350_000_000)
             }
@@ -1494,6 +1502,7 @@ import LieguojiCore
     func annex(_ target: Int, by annexer: Int) async -> String? { finish(await native.annex(target, by: annexer)) }
     func setAutoDiplomacy(_ n: Int, _ enabled: Bool) async -> String? { finish(await native.setAutoDiplomacy(n, enabled)) }
     func regimeTransition(_ n: Int, action: String) async -> String? { await edit("regimeTransition", ["n": n, "action": action]) }
+    func partyAction(_ n: Int, party: Int, action: String) async -> String? { await edit("partyAction", ["n": n, "party": party, "action": action]) }
     func sendUltimatum(_ from: Int, to: Int, demand: String) async -> String? { await edit("sendUltimatum", ["from": from, "to": to, "demand": demand]) }
     func formCoalition(_ caller: Int, against target: Int) async -> String? { await edit("formCoalition", ["caller": caller, "target": target]) }
     func covertAction(_ from: Int, target: Int, kind: String) async -> String? { await edit("covertAction", ["from": from, "target": target, "kind": kind]) }

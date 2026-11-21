@@ -114,7 +114,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         self.device = device; self.queue = queue; self.map = map
         nationColors = map.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         camera = MapCamera.fit(map: (Double(map.width), Double(map.height)), viewport: (390, 844))
-        view.sampleCount = 4
+        // 2× MSAA 在高分 Retina 屏上观感清晰且显存带宽与发热减半（较 4× MSAA 显著降温省电）。
+        view.sampleCount = 2
         // Colours are sRGB as the web draws them; blend and store them unconverted, like Pixi.
         view.colorPixelFormat = .bgra8Unorm
         do {
@@ -901,7 +902,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let r = map.meta.parchment
             quad(parchment, multiplyPipeline, x: r.x - 70, y: r.y - 70, width: r.width + 140, height: r.height + 140)
         }
-        if display.darkEdges { colored(frame) }
+        if display.scrollMount ?? display.darkEdges { colored(frame) }
         encoder.endEncoding()
         if let probe {
             probe.encode.append((CACurrentMediaTime() - frameTime) * 1000)

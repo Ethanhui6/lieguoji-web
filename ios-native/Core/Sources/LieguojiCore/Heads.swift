@@ -37,6 +37,16 @@ extension Regimes {
         case "constitutional":
             // 君主立宪: the crown reigns, the prime minister governs.
             return Seats(head: sovereign(r, id, culture == "japanese" ? "天皇" : crown("Kingdom")), premier: culture == "chinese" ? "内阁总理" : culture == "german" ? "宰相" : "首相", premierRules: true, elected: true)
+        case "dualMonarchy":
+            // 二元君主立宪：君主握实权兼设议会宰相（如德意志帝国、明治维新体制）
+            return Seats(head: sovereign(r, id, culture == "japanese" ? "天皇" : crown("Empire")), premier: culture == "chinese" ? "内阁总理大臣" : culture == "german" ? "帝国宰相" : "首相", premierRules: false, elected: true)
+        case "semiPresidential":
+            // 半总统共和：民选总统掌外交国防，总理主内政
+            return Seats(head: "总统", premier: "总理", premierRules: false, elected: true)
+        case "technocracy":
+            return Seats(head: "首席执政", premier: "国务总监", premierRules: false, elected: false)
+        case "directorate":
+            return Seats(head: "第一执政", premier: "执政秘书长", premierRules: false, elected: true)
         case "union":
             return Seats(head: crown("Kingdom"), premier: "首相", premierRules: true, elected: true)
         case "parliamentary":

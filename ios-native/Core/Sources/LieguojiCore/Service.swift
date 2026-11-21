@@ -270,6 +270,7 @@ public final class EngineService {
         case "mediatePeace": return command(engine?.mediatePeace(int("mediator"), between: int("a"), and: int("b")))
         case "grantFief": return command(engine?.grantFief(int("n"), familyId: str("family"), provinceIndex: optInt("province")))
         case "revokeFief": lastOwners = []; return command(engine?.revokeFief(int("n"), familyId: str("family")))
+        case "partyAction": return command(engine?.partyAction(int("n"), partyIndex: int("party"), action: str("action")))
         default: return Reply(ok: false, reason: "未知请求 \(call)。")
         }
     }

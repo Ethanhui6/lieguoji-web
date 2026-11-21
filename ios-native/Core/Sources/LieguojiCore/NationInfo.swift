@@ -82,34 +82,42 @@ extension NativeEngine {
                 officeCounts[p.familyId.asInt, default: 0] += 1
             }
         }
+        let isJPImperialRuler: Bool = {
+            let lid = r.people.nations[id].leaderId.optionalNumber.map(Int.init) ?? -1
+            let pol = r.civilization.nations[id].polity.optionalString ?? ""
+            let cult = r.civilization.nations[id].cultureId.optionalString ?? ""
+            let stTitle = r.regimes.isNull ? "" : (Regimes.seats(r, id).head ?? Regimes.style(r, id).title ?? "")
+            return lid > 0 && MonarchLore.isJapaneseEmperor(culture: cult, title: stTitle, polity: pol)
+        }()
         let houses = r.nobility.isNull || r.nobility.families.isNull ? [] : r.nobility.families.objectEntries.filter { $0.1.nationId.optionalString == id }
         c.houses = .array(houses.sorted { ($0.1.influence.optionalNumber ?? 0) > ($1.1.influence.optionalNumber ?? 0) }.prefix(8).map { key, fam in
             let e = JS.object()
             let kFam = r.kin.families[key]
             let surname = NamingCatalog.cleanSurname(kFam.surname.optionalString ?? "")
-            e.name = JS(NamingCatalog.houseLabel(surname))
-            e.surname = JS(surname)
+            let fidInt = Int(key) ?? -1
+            let isRuling = fidInt == ruling
+            let imperialNoSurname = isRuling && isJPImperialRuler
+            e.name = JS(imperialNoSurname ? "皇室（无姓）" : NamingCatalog.houseLabel(surname))
+            e.surname = JS(imperialNoSurname ? "" : surname)
             e.id = JS(key)
             var headLabel = ""
             if let hid = kFam.headId.optionalNumber, hid > 0, let head = People.person(r, Int(hid)) {
-                headLabel = Self.displayPersonName(head)
+                headLabel = imperialNoSurname ? (head.firstName.optionalString ?? Self.displayPersonName(head)) : Self.displayPersonName(head)
                 e.headName = JS(headLabel)
             }
             var heirLabel = ""
             if let hid = kFam.heirId.optionalNumber, hid > 0, let heir = People.person(r, Int(hid)), heir.isAlive.asBool {
-                heirLabel = Self.displayPersonName(heir)
+                heirLabel = imperialNoSurname ? (heir.firstName.optionalString ?? Self.displayPersonName(heir)) : Self.displayPersonName(heir)
             }
-            let fidInt = Int(key) ?? -1
             let offCnt = officeCounts[fidInt] ?? 0
             var summaryParts = [String]()
-            if !headLabel.isEmpty { summaryParts.append("家主 \(headLabel)") }
-            if !heirLabel.isEmpty { summaryParts.append("继承人 \(heirLabel)") }
+            if !headLabel.isEmpty { summaryParts.append(imperialNoSurname ? "天皇 \(headLabel)" : "家主 \(headLabel)") }
+            if !heirLabel.isEmpty { summaryParts.append(imperialNoSurname ? "皇储 \(heirLabel)" : "继承人 \(heirLabel)") }
             if offCnt > 0 { summaryParts.append("在任 \(offCnt) 官") }
             e.keyMembers = JS(summaryParts.joined(separator: " · "))
             e.allowFemale = JS(kFam.allowFemaleInheritance.isTruthy)
             e.influence = JS(fam.influence.optionalNumber ?? 0)
             e.provinces = JS(fam.controlledProvinces.isNull ? 0 : fam.controlledProvinces.length)
-            let isRuling = fidInt == ruling
             let isGoverning = prof.fiefRule == .regent && govFamilyId > 0 && fidInt == govFamilyId
             e.ruling = JS(isRuling)
             e.governing = JS(isGoverning)
@@ -181,6 +189,37 @@ extension NativeEngine {
             if p.gender.optionalNumber == 1 { let t = ruler.title.asString; ruler.title = JS(Self.femaleTitles[t] ?? t) }
             // 元首与掌权者 (Heads.swift): the form of government may set the head of state's title.
             if !r.regimes.isNull, let t = Regimes.seats(r, id).head { ruler.title = JS(p.gender.optionalNumber == 1 ? (Self.femaleTitles[t] ?? t) : t) }
+            // 真实历史年号、世数、尊号与无姓氏日本天皇展示 + 在位特质实际加成汇总
+            if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+                MonarchLore.ensurePersonalityTraits(r, person: p)
+                ruler.traits = p.traits.isNull ? .array() : .array(p.traits.asArray.map { JS(Self.traitLabels[$0.asString] ?? $0.asString) })
+                let latestReign = (r.chronicle.isNull || r.chronicle.leaders.isNull || r.chronicle.leaders[id].isNull) ? nil : r.chronicle.leaders[id].asArray.last
+                let rid = latestReign?.id.optionalString ?? "ruler-\(id)-\(leaderId.asInt)"
+                let order = latestReign?.order.optionalNumber.map(Int.init) ?? 1
+                let startDay = latestReign?.ascendedDay.optionalNumber ?? r.world.day.asNumber
+                let reignYears = max(0, (r.world.day.asNumber - startDay) / 365.25)
+                let sk = People.skills(p)
+                let avgSk = (sk.charisma + sk.military + sk.diplomatic + sk.administrative) / 4.0
+                let row47 = r.reigns47.isNull ? JS.null : r.reigns47[rid]
+                let curProvs = r.world.provinces.asArray.reduce(0) { $1.controller.optionalString == id ? $0 + 1 : $0 }
+                let startArr = row47.isNull || row47.start.isNull ? [] : row47.start.asArray
+                let startProvs = startArr.first?.optionalNumber.map(Int.init) ?? curProvs
+                let honor = MonarchLore.honor(
+                    r, nationId: id, reignId: rid, order: order,
+                    culture: civ.cultureId.optionalString ?? "", polity: civ.polity.optionalString ?? "",
+                    title: ruler.title.asString, person: p, fallbackName: ruler.name.asString,
+                    reignYears: reignYears, deltaProvs: curProvs - startProvs, avgSkill: avgSk, isActive: true
+                )
+                ruler.name = JS(honor.cleanPersonalName)
+                ruler.styledName = JS(honor.styledName)
+                ruler.eraName = JS(honor.eraName)
+                ruler.eraYearText = JS(honor.eraYearText)
+                ruler.honorific = JS(honor.honorific)
+                ruler.surnameLessImperial = JS(honor.surnameLessImperial)
+                let activeRuler = Regimes.governor(r, id) ?? p
+                let eff = MonarchLore.traitEffects(of: activeRuler)
+                ruler.traitSummary = .array(eff.summary.map { JS($0) })
+            }
             o.ruler = ruler
         } else { o.ruler = .null }
         if !r.regimes.isNull {
@@ -312,7 +351,11 @@ extension NativeEngine {
     }
 
     /// character-trait-labels.json (web).
-    static let traitLabels = ["Genius": "天才", "Brave": "勇敢", "Charismatic": "魅力超凡", "Administrator": "行政天才", "Diplomatic": "外交家", "Just": "公正", "Strategist": "战略家", "Merciful": "仁慈", "Patient": "耐心", "Craven": "懦弱", "Cruel": "残暴", "Incompetent": "无能", "Greedy": "贪婪", "Paranoid": "偏执", "Wrathful": "易怒", "Ambitious": "雄心勃勃", "SocialButterfly": "长袖善舞", "Hawkish": "鹰派", "Dovish": "鸽派", "Unifier": "统一者", "BattleHardened": "越战越勇", "WarWeary": "厌战", "NavalMastery": "海军精通", "ShipMaster": "船舶大师", "Reformer": "改革家", "NaturalLeader": "天生领袖", "Unconvincing": "难以服众"]
+    static let traitLabels: [String: String] = {
+        var m = ["Genius": "天才", "Brave": "勇敢", "Charismatic": "魅力超凡", "Administrator": "行政天才", "Diplomatic": "外交家", "Just": "公正", "Strategist": "战略家", "Merciful": "仁慈", "Patient": "耐心", "Craven": "懦弱", "Cruel": "残暴", "Incompetent": "无能", "Greedy": "贪婪", "Paranoid": "偏执", "Wrathful": "易怒", "Ambitious": "雄心勃勃", "SocialButterfly": "长袖善舞", "Hawkish": "鹰派", "Dovish": "鸽派", "Unifier": "统一者", "BattleHardened": "越战越勇", "WarWeary": "厌战", "NavalMastery": "海军精通", "ShipMaster": "船舶大师", "Reformer": "改革家", "NaturalLeader": "天生领袖", "Unconvincing": "难以服众"]
+        for ex in MonarchLore.extraTraits { m[ex.key] = ex.label }
+        return m
+    }()
     /// Female forms of the rulers' titles.
     static let femaleTitles = ["国王": "女王", "皇帝": "女皇", "酋长": "女酋长", "教宗": "女教宗", "教皇": "女教皇", "可汗": "可敦", "大汗": "女大汗", "汗": "女汗",
                                       "沙皇": "女沙皇", "天皇": "女天皇", "法老": "女法老", "苏丹": "苏丹娜", "雅尔": "女雅尔", "牧首": "女牧首", "法王": "女法王", "祭主": "女祭主"]

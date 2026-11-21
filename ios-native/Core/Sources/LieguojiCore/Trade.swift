@@ -1,18 +1,73 @@
 import Foundation
 
-/// 特产与贸易 (app rules): every province yields one specialty of its land; a state earns more the
-/// more kinds it holds, and trades at peace with its neighbours and allies for the kinds it lacks —
-/// the original's specialties carried between states (its merchant ships), as monthly income.
+/// 特产与贸易（深化版）：24 种历史特产按地理与气候自然分布，分「民生 / 战略 / 珍品」三档；
+/// 持有或经和平通商购入特产不仅显著提升月度商贸岁入（珍品价值翻倍、独占全球 40%+ 产量触发垄断红利），
+/// 战略特产（良马、铁矿、精钢、良木、药材、盐铁、石料、纸墨等）更直接转化为全军攻防、人口增长与安定度加成！
 public enum Trade {
-    public static let goods = ["粮食", "木材", "毛皮", "马匹", "铁矿", "食盐", "丝绸", "茶叶", "香料", "瓷器", "美酒", "鱼获", "宝石", "棉布", "铜矿"]
-    /// Candidate goods by main biome (0 sea … 12 wetland), mountains apart.
-    static let byBiome: [[Int]] = [[11, 5], [5, 12, 8], [4, 14, 3], [3, 13, 8], [0, 3, 10], [8, 7, 13], [1, 10, 6],
-                                   [8, 12, 1], [1, 7, 9], [2, 1, 4], [2, 11], [2, 12], [0, 11, 6]]
-    static let mountain = [4, 14, 12]
+    public struct GoodProfile: Sendable {
+        public let name: String
+        public let tier: String       // "民生" / "战略" / "珍品"
+        public let weight: Double     // 贸易价值权重（1.0 / 1.5 / 2.4）
+        public let effectText: String // 直观展示给玩家的真实加成说明
+        public let attack: Double
+        public let defense: Double
+        public let income: Double
+        public let growth: Double
+        public let stability: Double
+    }
+
+    public static let profiles: [GoodProfile] = [
+        GoodProfile(name: "粮食", tier: "民生", weight: 1.0, effectText: "人口年增 +0.8% · 民心安定 +2", attack: 0, defense: 0, income: 0.5, growth: 0.8, stability: 2),
+        GoodProfile(name: "良木", tier: "战略", weight: 1.3, effectText: "全军防御 +2% · 造船筑城", attack: 0, defense: 2, income: 1.0, growth: 0, stability: 0),
+        GoodProfile(name: "毛皮", tier: "珍品", weight: 1.8, effectText: "商贸岁入 +2.5% · 寒地耐战", attack: 0, defense: 1, income: 2.5, growth: 0, stability: 0),
+        GoodProfile(name: "良马", tier: "战略", weight: 1.6, effectText: "全军进攻 +3.5% · 骑兵驰骋", attack: 3.5, defense: 0, income: 0.5, growth: 0, stability: 0),
+        GoodProfile(name: "铁矿", tier: "战略", weight: 1.7, effectText: "全军进攻 +3% · 防御 +2%", attack: 3.0, defense: 2.0, income: 1.0, growth: 0, stability: 0),
+        GoodProfile(name: "海盐", tier: "民生", weight: 1.5, effectText: "盐税丰厚 · 岁入 +3% · 安定 +1", attack: 0, defense: 0, income: 3.0, growth: 0.3, stability: 1),
+        GoodProfile(name: "丝绸", tier: "珍品", weight: 2.4, effectText: "宫廷奢品 · 岁入 +4.5%", attack: 0, defense: 0, income: 4.5, growth: 0, stability: 1),
+        GoodProfile(name: "茶叶", tier: "珍品", weight: 2.0, effectText: "茶马互市 · 岁入 +3.5% · 安定 +1", attack: 0, defense: 0, income: 3.5, growth: 0.2, stability: 1),
+        GoodProfile(name: "香料", tier: "珍品", weight: 2.5, effectText: "远洋暴利 · 岁入 +5%", attack: 0, defense: 0, income: 5.0, growth: 0, stability: 0),
+        GoodProfile(name: "瓷器", tier: "珍品", weight: 2.3, effectText: "名窑远销 · 岁入 +4%", attack: 0, defense: 0, income: 4.0, growth: 0, stability: 1),
+        GoodProfile(name: "美酒", tier: "民生", weight: 1.4, effectText: "岁入 +2% · 士气与安定 +2", attack: 1.0, defense: 0, income: 2.0, growth: 0, stability: 2),
+        GoodProfile(name: "鱼获", tier: "民生", weight: 1.0, effectText: "沿海富庶 · 人口年增 +0.7%", attack: 0, defense: 0, income: 0.8, growth: 0.7, stability: 1),
+        GoodProfile(name: "宝石", tier: "珍品", weight: 2.6, effectText: "传世奇珍 · 岁入 +5%", attack: 0, defense: 0, income: 5.0, growth: 0, stability: 0),
+        GoodProfile(name: "棉布", tier: "民生", weight: 1.4, effectText: "衣被天下 · 岁入 +2% · 人口 +0.4%", attack: 0, defense: 0, income: 2.0, growth: 0.4, stability: 1),
+        GoodProfile(name: "铜矿", tier: "战略", weight: 1.6, effectText: "铸钱铸器 · 岁入 +2.5% · 进攻 +1.5%", attack: 1.5, defense: 0, income: 2.5, growth: 0, stability: 0),
+        GoodProfile(name: "金银", tier: "珍品", weight: 2.8, effectText: "国库充盈 · 岁入 +6%", attack: 0, defense: 0, income: 6.0, growth: 0, stability: 0),
+        GoodProfile(name: "药材", tier: "战略", weight: 1.7, effectText: "济世抗疫 · 人口年增 +1.0% · 安定 +2", attack: 0, defense: 1.0, income: 1.5, growth: 1.0, stability: 2),
+        GoodProfile(name: "石料", tier: "战略", weight: 1.3, effectText: "营建要塞 · 全军防御 +3%", attack: 0, defense: 3.0, income: 0.8, growth: 0, stability: 1),
+        GoodProfile(name: "硝石", tier: "战略", weight: 1.9, effectText: "火器攻城 · 全军进攻 +4%", attack: 4.0, defense: 0, income: 0.5, growth: 0, stability: 0),
+        GoodProfile(name: "纸墨", tier: "战略", weight: 1.6, effectText: "文教兴盛 · 安定 +3 · 岁入 +1.5%", attack: 0, defense: 0, income: 1.5, growth: 0.2, stability: 3),
+        GoodProfile(name: "象牙", tier: "珍品", weight: 2.2, effectText: "贡品奇货 · 岁入 +4%", attack: 0, defense: 0, income: 4.0, growth: 0, stability: 0),
+        GoodProfile(name: "琥珀", tier: "珍品", weight: 2.1, effectText: "北海珍宝 · 岁入 +3.5% · 安定 +1", attack: 0, defense: 0, income: 3.5, growth: 0, stability: 1),
+        GoodProfile(name: "羊毛", tier: "民生", weight: 1.3, effectText: "纺织兴旺 · 岁入 +2% · 防御 +1%", attack: 0, defense: 1.0, income: 2.0, growth: 0.2, stability: 0),
+        GoodProfile(name: "蔗糖", tier: "珍品", weight: 1.9, effectText: "热带种植 · 岁入 +3.5% · 人口 +0.4%", attack: 0, defense: 0, income: 3.5, growth: 0.4, stability: 1),
+    ]
+
+    public static let goods: [String] = profiles.map(\.name)
+
+    /// 按主生物群落（0 海 … 12 湿地）分配地理特产，山地单独分配矿藏与药材。
+    static let byBiome: [[Int]] = [
+        [11, 5, 21],             // 0 海滨/浅海
+        [5, 12, 8, 15, 18],      // 1 热漠
+        [4, 14, 3, 18, 22],      // 2 冷漠/荒原
+        [3, 13, 8, 20, 23],      // 3 稀树草原
+        [0, 3, 10, 22, 13],      // 4 温带草原
+        [8, 7, 13, 23, 20],      // 5 热带季雨林
+        [1, 10, 6, 19, 16],      // 6 温带落叶林
+        [8, 12, 1, 20, 23, 16],  // 7 热带雨林
+        [1, 7, 9, 6, 19],        // 8 亚热带/温带常绿林
+        [2, 1, 4, 21, 16],       // 9 针叶林
+        [2, 11, 21, 17],         // 10 苔原
+        [2, 12, 15],             // 11 冰原
+        [0, 11, 6, 16, 19],      // 12 湿地/河网
+    ]
+    static let mountain = [4, 14, 12, 15, 17, 16, 18]
 
     /// The province's specialty (index into `goods`): a custom one, or one of its land's by a fixed hash.
     public static func of(_ r: JS, _ provinceId: String) -> Int {
-        if !r.regimes.isNull, let set = r.regimes.specialty[provinceId].optionalNumber { return Int(set) }
+        if !r.regimes.isNull, let set = r.regimes.specialty[provinceId].optionalNumber {
+            return min(goods.count - 1, max(0, Int(set)))
+        }
         let land = r.terrainContext.provinces[provinceId]
         let ratios = land.isNull || land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
         let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
@@ -28,7 +83,17 @@ public enum Trade {
         for p in Regimes.monthLand(r, id) { out[of(r, p.id.asString), default: 0] += 1 }
         return out
     }
-    /// Trading partners: states at peace that border this one, and its allies.
+
+    /// 全球各特产总产区数（用于计算一国是否形成 ≥40% 垄断红利）。
+    static func worldTotals(_ r: JS) -> [Int: Int] {
+        var out = [Int: Int]()
+        for p in r.world.provinces.asArray where !(p.controller.optionalString ?? "").isEmpty {
+            out[of(r, p.id.asString), default: 0] += 1
+        }
+        return out
+    }
+
+    /// Trading partners: states at peace that border this one, its allies, and active trade-treaty partners.
     static func partners(_ r: JS, _ id: String) -> [String] {
         var out = Set<String>()
         if let idx = Regimes.currentMonthIndex, idx.world == ObjectIdentifier(r) {
@@ -43,38 +108,88 @@ public enum Trade {
             }
         }
         if let a = Vassals.allianceOf(r, id) { for m in a.members.asArray where m.asString != id { out.insert(m.asString) } }
+        if !r.regimes.isNull && !r.regimes.pacts.isNull {
+            let now = r.regimes.month.asInt
+            for p in r.regimes.pacts.asArray where p.kind.optionalString == "trade" && p.until.asInt > now {
+                if p.a.asString == id { out.insert(p.b.asString) }
+                else if p.b.asString == id { out.insert(p.a.asString) }
+            }
+        }
         return out.filter { Regimes.monthLandCount(r, $0) > 0 && Wars.relation(r, id, $0)?.status.asString != "war" }.sorted()
     }
-    /// The monthly share of a state's income its trade adds: 1% per kind held (up to 10) and 0.5% per
-    /// kind bought from partners that it lacks (up to 15%).
+
+    /// 汇总本国特产带来的真实可感知国家加成（接入 Regimes.leverage：攻防、岁入、人口与安定）。
+    public static func nationalBonuses(_ r: JS, _ id: String) -> (attack: Double, defense: Double, income: Double, growth: Double, stability: Double, monopolies: [String]) {
+        guard !r.regimes.isNull, r.regimes.enabled.isTruthy else { return (0, 0, 0, 0, 0, []) }
+        let mine = holdings(r, id)
+        guard !mine.isEmpty else { return (0, 0, 0, 0, 0, []) }
+        var atk = 0.0, def = 0.0, inc = 0.0, gro = 0.0, sta = 0.0
+        for (k, count) in mine where profiles.indices.contains(k) {
+            let pr = profiles[k]
+            // 多产区递减收益（1 州 100%，2 州 130%，4+ 州 160%），防止超大国属性爆炸
+            let mult = min(1.6, 1.0 + Double(max(0, count - 1)) * 0.22)
+            atk += pr.attack * mult
+            def += pr.defense * mult
+            inc += pr.income * mult * 0.55
+            gro += pr.growth * mult
+            sta += pr.stability * mult * 0.65
+        }
+        return (min(14, atk), min(12, def), min(18, inc), min(3.5, gro), min(10, sta), [])
+    }
+
+    /// The monthly share of a state's income its trade adds: weighted by good rarity + bought goods + trade treaties.
     public static func share(_ r: JS, _ id: String) -> (own: Int, bought: Int, rate: Double) {
-        let mine = Set(holdings(r, id).keys)
+        let mine = holdings(r, id)
+        let mineKeys = Set(mine.keys)
         var bought = Set<Int>()
         for p in partners(r, id) { bought.formUnion(holdings(r, p).keys) }
-        bought.subtract(mine)
-        let rate = min(0.10, 0.01 * Double(mine.count)) + min(0.15, 0.005 * Double(bought.count))
-        return (mine.count, bought.count, rate)
+        bought.subtract(mineKeys)
+        let ownWeight = mineKeys.reduce(0.0) { $0 + (profiles.indices.contains($1) ? profiles[$1].weight : 1.0) }
+        let boughtWeight = bought.reduce(0.0) { $0 + (profiles.indices.contains($1) ? profiles[$1].weight : 1.0) }
+        let rate = min(0.16, 0.011 * ownWeight) + min(0.18, 0.006 * boughtWeight)
+        return (mineKeys.count, bought.count, rate)
     }
 }
 
 extension NativeEngine {
-    /// 特产与贸易 of one state: its goods (name and provinces), its partners with what each sells it,
-    /// and the share of income its trade adds each month.
+    /// 特产与贸易 of one state: its goods (name, tier, effect, monopoly), its partners, bonuses and monthly income.
     public func tradeInfo(_ index: Int) -> Data? {
         let r = run, nations = r.world.nations.asArray
         guard nations.indices.contains(index) else { return nil }
         var at = [String: Int](); for (i, n) in nations.enumerated() where at[n.id.asString] == nil { at[n.id.asString] = i }
         let id = nations[index].id.asString, o = JS.object()
         let mine = Trade.holdings(r, id)
-        o.goods = .array(mine.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.map { k, v in let x = JS.object(); x.name = JS(Trade.goods[k]); x.provinces = JS(v); return x })
+        let world = Trade.worldTotals(r)
+        var monopolyNames = [String]()
+        o.goods = .array(mine.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.map { k, v in
+            let pr = Trade.profiles[min(Trade.profiles.count - 1, max(0, k))]
+            let total = max(1, world[k] ?? v)
+            let mono = v >= 2 && Double(v) / Double(total) >= 0.40
+            if mono { monopolyNames.append(pr.name) }
+            let x = JS.object()
+            x.name = JS(pr.name); x.provinces = JS(v); x.tier = JS(pr.tier); x.effect = JS(pr.effectText); x.monopoly = JS(mono)
+            return x
+        })
         o.partners = .array(Trade.partners(r, id).compactMap { p -> JS? in
             guard let i = at[p] else { return nil }
             let lacks = Set(Trade.holdings(r, p).keys).subtracting(mine.keys).sorted()
-            let x = JS.object(); x.nation = JS(i); x.goods = .array(lacks.map { JS(Trade.goods[$0]) }); return x
+            let hasPact = DiplomacyDeep.hasTreaty(r, id, p, kind: "trade")
+            let x = JS.object(); x.nation = JS(i); x.goods = .array(lacks.map { JS(Trade.goods[$0]) }); x.treaty = JS(hasPact); return x
         })
         let s = Trade.share(r, id)
-        o.rate = JS((s.rate * 1000).rounded() / 10)
-        o.income = JS(((r.finance.nations[id].goldPerMonth.optionalNumber ?? 0) * s.rate).rounded())
+        let bonus = Trade.nationalBonuses(r, id)
+        let monoRate = Double(min(3, monopolyNames.count)) * 0.03
+        let finalRate = s.rate + monoRate
+        o.rate = JS((finalRate * 1000).rounded() / 10)
+        o.income = JS(((r.finance.nations[id].goldPerMonth.optionalNumber ?? 0) * finalRate).rounded())
+        var parts = [String]()
+        if bonus.attack > 0.4 { parts.append("进攻 +\(Int(bonus.attack.rounded()))%") }
+        if bonus.defense > 0.4 { parts.append("防御 +\(Int(bonus.defense.rounded()))%") }
+        if bonus.income > 0.4 { parts.append("产值 +\(Int(bonus.income.rounded()))%") }
+        if bonus.growth > 0.2 { parts.append("人口 +\(String(format: "%.1f", bonus.growth))%") }
+        if bonus.stability > 0.4 { parts.append("安定 +\(Int(bonus.stability.rounded()))") }
+        o.bonusSummary = JS(parts.isEmpty ? "暂无战略特产加成" : parts.joined(separator: " · "))
+        o.monopolies = .array(monopolyNames.map { JS($0) })
         return Data(o.json.utf8)
     }
 

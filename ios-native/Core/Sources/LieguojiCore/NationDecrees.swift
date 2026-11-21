@@ -181,6 +181,73 @@ extension NativeEngine {
                             nations: [id], province: nil)
             return (true, "大赦安抚 \(touched) 家门阀，与宗室关系各 +20。")
 
+        case "relief":
+            // 开仓赈灾：平抑饥荒、全国存粮保底充盈、叛乱风险骤降、国运 +4。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(180, (gold * 0.1).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
+            for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
+                let g = s.grain.optionalNumber ?? 0
+                s.grain = JS(min(50_000_000, max(g + 2500, (g * 1.3).rounded())))
+            }
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+            People.announce(r, kind: "event", text: "\(stateName)开仓放粮赈济万民",
+                            reason: "调拨官仓粮秣赈济饥民，全境存粮大增 30%，国运 +4。",
+                            nations: [id], province: nil)
+            return (true, "开仓赈灾完成：全国存粮 +30%，国运 +4。")
+
+        case "landSurvey":
+            // 清丈田亩：核实隐田、腐化 -10、即得一月半额外岁入。
+            let before = Finance.corruption(r, id)
+            Finance.setCorruption(r, id, max(0, before - 10))
+            let gain = max(120, (fin.goldPerMonth.optionalNumber ?? 100) * 1.5).rounded()
+            if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + gain) }
+            People.announce(r, kind: "politics", text: "\(stateName)下诏清丈天下田亩",
+                            reason: "清查豪强隐匿田产、均平税负：国库进项 +\(Int(gain)) 金，腐化 −10。",
+                            nations: [id], province: nil)
+            return (true, "清丈田亩完成：国库 +\(Int(gain)) 金，腐化 −10。")
+
+        case "armsUpgrade":
+            // 军械改良：为现役各军更新甲胄兵刃，士气 +20、补给补满、兵力小幅整补 +6%（不超满编）。
+            let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
+            guard !armies.isEmpty else { return (false, "该国暂无现役陆军。") }
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(260, (gold * 0.14).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            for a in armies {
+                let aid = a.id.asString
+                let cur = a.troops.asNumber
+                let full = max(cur, r.tactics.forces[aid].fullStrength.optionalNumber ?? cur)
+                let next = min(full, (cur * 1.06).rounded())
+                a.troops = JS(next)
+                a.morale = JS(min(100, (a.morale.optionalNumber ?? 60) + 20))
+                a.supplies = JS(100)
+            }
+            People.recordHistory(r, kind: "event", text: "\(stateName)颁行军械改良令",
+                                 reason: "拨银 \(Int(cost)) 打造新式甲械，\(armies.count) 支军队兵员整补且士气 +20。",
+                                 nations: [id], province: nil)
+            return (true, "军械改良完成：\(armies.count) 支军队补给满额、士气 +20。")
+
+        case "academy":
+            // 兴办太学／国立学院：提升在位君主与核心大臣能力 +3，国运 +3，腐化 -4。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(200, (gold * 0.12).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            if let ldr = Regimes.ruler(r, id) {
+                ldr.base.administrative = JS(min(100, (ldr.base.administrative.optionalNumber ?? 50) + 3))
+                ldr.base.diplomatic = JS(min(100, (ldr.base.diplomatic.optionalNumber ?? 50) + 3))
+            }
+            if let prem = Regimes.premier(r, id) {
+                prem.base.administrative = JS(min(100, (prem.base.administrative.optionalNumber ?? 50) + 4))
+            }
+            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 4))
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 3)) }
+            People.announce(r, kind: "culture", text: "\(stateName)兴办太学、广育英才",
+                            reason: "开设国立学馆、举荐贤能：中枢政略与外交能力精进，腐化 −4，国运 +3。",
+                            nations: [id], province: nil)
+            return (true, "太学兴办完成：中枢能力精进，腐化 −4，国运 +3。")
+
         default:
             return (false, "未知政令：\(kind)。")
         }

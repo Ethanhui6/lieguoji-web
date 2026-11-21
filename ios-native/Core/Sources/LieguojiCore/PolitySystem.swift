@@ -140,6 +140,15 @@ extension Regimes {
                          summary: "山林酋邦团结悍勇，易守难攻、少官僚积弊。", traitLine: "进攻+7% · 守御+5% · 腐化−4"),
             StyleProfile(id: "peasant", camp: .tribal, fiefRule: .republican, attack: 9, defense: 4, income: -10, stability: -6, corruption: -5, temper: 0.20,
                          summary: "揭竿而起的农民义师，锐气逼人但亟待开国建制。", traitLine: "进攻+9% · 岁入−10% · 急待建制"),
+            // 现实扩展柔性政体
+            StyleProfile(id: "dualMonarchy", camp: .constitutional, fiefRule: .dynastic, attack: 7, defense: 5, income: 8, stability: 6, corruption: -4, temper: 0.10,
+                         summary: "皇权与议会并立（如德意志帝国、明治维新），兼顾君主决断力与立宪财政效能。", traitLine: "进攻+7% 守御+5% · 岁入+8% · 君相共治"),
+            StyleProfile(id: "semiPresidential", camp: .republic, fiefRule: .republican, attack: 5, defense: 4, income: 9, stability: 6, corruption: -4, temper: 0.02,
+                         summary: "民选总统掌外交国防、总理率议会内阁治内政，危机应变与财政均衡俱佳。", traitLine: "攻+5% 守+4% · 岁入+9% · 双首脑制"),
+            StyleProfile(id: "technocracy", camp: .republic, fiefRule: .republican, attack: 2, defense: 5, income: 14, stability: 4, corruption: -10, temper: -0.04,
+                         summary: "精干官僚与学者治国，财税效率极高、腐败骤降，然缺乏群众动员热忱。", traitLine: "岁入+14% · 腐化−10 · 高效行政"),
+            StyleProfile(id: "directorate", camp: .republic, fiefRule: .republican, attack: 6, defense: 4, income: 6, stability: 2, corruption: -2, temper: 0.08,
+                         summary: "数位执政官合议分权（法兰西督政府式），防单人独裁却多派系纵横。", traitLine: "进攻+6% · 岁入+6% · 执政合议"),
         ]
         var dict = [String: StyleProfile]()
         for p in list { dict[p.id] = p }
@@ -473,7 +482,10 @@ extension Regimes {
         var out = [TransitionOption]()
         if prof.camp == .monarchy {
             if prof.id != "constitutional" {
-                out.append(TransitionOption(id: "constitutional", title: "推行立宪维新", subtitle: "颁行宪法设议会 · 腐化 −8 · 安定大幅提升", targetStyle: "constitutional", dramatic: false))
+                out.append(TransitionOption(id: "constitutional", title: "推行虚君立宪", subtitle: "颁行宪法设议会 · 腐化 −8 · 安定大幅提升", targetStyle: "constitutional", dramatic: false))
+            }
+            if prof.id != "dualMonarchy" {
+                out.append(TransitionOption(id: "dualMonarchy", title: "二元君主维新", subtitle: "君主保留军政大权兼设议会宰相 · 强军富国", targetStyle: "dualMonarchy", dramatic: false))
             }
             if prof.id != "regency" && prof.id != "shogunate" {
                 let isJP = culture == "japanese"
@@ -486,11 +498,25 @@ extension Regimes {
             out.append(TransitionOption(id: "socialistRev", title: "爆发社会革命", subtitle: "废除门阀特权，建立人民／社会主义政权", targetStyle: "socialist", dramatic: true))
         } else if prof.camp == .constitutional {
             out.append(TransitionOption(id: "snapElection", title: "解散议会提前大选", subtitle: "重洗议会席位，由胜出党派重新组阁", targetStyle: prof.id, dramatic: false))
+            if prof.id != "dualMonarchy" {
+                out.append(TransitionOption(id: "dualMonarchy", title: "强化皇权二元立宪", subtitle: "由虚君转向二元立宪，君相并重 · 攻+7%", targetStyle: "dualMonarchy", dramatic: false))
+            } else {
+                out.append(TransitionOption(id: "constitutional", title: "过渡为完全议会立宪", subtitle: "君主退居虚位，内阁完全对议会负责", targetStyle: "constitutional", dramatic: false))
+            }
             out.append(TransitionOption(id: "directRule", title: "收回宪政恢复专制", subtitle: "解散议会，由君主直接乾纲独断", targetStyle: culture == "chinese" ? "dynasty" : "absolute", dramatic: true))
             out.append(TransitionOption(id: "revolution", title: "废除君主改立共和", subtitle: "彻底告别王室，改建议会共和国", targetStyle: "parliamentary", dramatic: true))
             out.append(TransitionOption(id: "militaryCoup", title: "发动军事政变", subtitle: "军方接管政权建立军政府", targetStyle: "junta", dramatic: true))
         } else if prof.camp == .republic {
             out.append(TransitionOption(id: "snapElection", title: "提前举行全国大选", subtitle: "重选总统／议会多数党，刷新执政纲领", targetStyle: prof.id, dramatic: false))
+            if prof.id != "semiPresidential" {
+                out.append(TransitionOption(id: "semiPresidential", title: "修宪改行半总统制", subtitle: "民选总统掌外交国防、总理治内政", targetStyle: "semiPresidential", dramatic: false))
+            }
+            if prof.id != "technocracy" {
+                out.append(TransitionOption(id: "technocracy", title: "设立专家官僚执政府", subtitle: "学者与技术官僚治国 · 岁入 +14% · 腐化 −10", targetStyle: "technocracy", dramatic: false))
+            }
+            if prof.id != "directorate" {
+                out.append(TransitionOption(id: "directorate", title: "改组多头督政府", subtitle: "多位执政官合议施政、兼顾军政效率", targetStyle: "directorate", dramatic: false))
+            }
             out.append(TransitionOption(id: "authoritarian", title: "强人集权独裁", subtitle: "宣布紧急状态解散议会 · 进攻 +10%", targetStyle: "dictatorship", dramatic: true))
             out.append(TransitionOption(id: "militaryCoup", title: "发动军事政变", subtitle: "统帅率军推翻文官政府，改建军政府", targetStyle: "junta", dramatic: true))
             out.append(TransitionOption(id: "socialistRev", title: "左翼社会革命", subtitle: "转向社会主义统筹动员体制", targetStyle: "socialist", dramatic: true))
@@ -627,7 +653,27 @@ extension NativeEngine {
 
         switch action {
         case "constitutional":
-            let res = Regimes.executeTransition(r, id: id, toStyle: "constitutional", kind: "reform", actorName: nil, detail: "朝廷颁行宪法、开设议会并组阁，和平步入君主立宪体制。")
+            let res = Regimes.executeTransition(r, id: id, toStyle: "constitutional", kind: "reform", actorName: nil, detail: "朝廷颁行宪法、开设议会并组阁，和平步入虚君立宪体制。")
+            afterGlobalOrder()
+            return res
+
+        case "dualMonarchy":
+            let res = Regimes.executeTransition(r, id: id, toStyle: "dualMonarchy", kind: "reform", actorName: nil, detail: "颁布帝国宪法设立议会与内阁宰相，同时保留皇室军政实权，步入二元君主立宪制。")
+            afterGlobalOrder()
+            return res
+
+        case "semiPresidential":
+            let res = Regimes.executeTransition(r, id: id, toStyle: "semiPresidential", kind: "reform", actorName: nil, detail: "修宪确立民选总统与议会总理双轨分权体制，兼顾国防决断与议会问责。")
+            afterGlobalOrder()
+            return res
+
+        case "technocracy":
+            let res = Regimes.executeTransition(r, id: id, toStyle: "technocracy", kind: "reform", actorName: nil, detail: "解散党争僵局，由顶尖学者与技术官僚接掌国务行政，整饬财税与法度。")
+            afterGlobalOrder()
+            return res
+
+        case "directorate":
+            let res = Regimes.executeTransition(r, id: id, toStyle: "directorate", kind: "reform", actorName: nil, detail: "改组执政委员会为五人督政府，合议分权并维持多党立法议会。")
             afterGlobalOrder()
             return res
 
@@ -714,6 +760,97 @@ extension NativeEngine {
 
         default:
             return (false, "未知政体演变指令：\(action)。")
+        }
+    }
+
+    /// 议会党派主动操控：扶持该党（boost）、任命组阁（appoint）、查禁该党（ban）、扶立新党（found）。
+    public func partyAction(_ index: Int, partyIndex: Int, action: String) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(index) else { return (false, "国家不存在。") }
+        let n = nations[index], id = n.id.asString
+        guard Vassals.alive(r, id) else { return (false, "该国已亡。") }
+        Regimes.enable(r)
+        let st = Regimes.style(r, id), b = Regimes.book(r, id)
+        guard st.parties else { return (false, "当前政体未开设议会党派，请先推行立宪或改立共和。") }
+        if b.parties.isNull { b.parties = Regimes.parties(r, id, st, seed: max(1, r.regimes.month.asInt)) }
+        var list = b.parties.asArray
+        let stateName = n.name.asString
+
+        switch action {
+        case "found":
+            guard st.single == nil else { return (false, "一党执政体制下无法新增合法政党。") }
+            guard list.count < 8 else { return (false, "议会党派已达上限（8 党）。") }
+            let existing = Set(list.map { $0.name.asString })
+            let pool = Regimes.partyPool(r, id).filter { !existing.contains($0) } + Regimes.genericParties.filter { !existing.contains($0) }
+            guard let fresh = pool.first else { return (false, "暂无可新建的党派名称。") }
+            let grant = 12
+            if let topIdx = list.indices.max(by: { list[$0].seats.asInt < list[$1].seats.asInt }) {
+                let take = min(grant, max(0, list[topIdx].seats.asInt - 5))
+                list[topIdx].seats = JS(list[topIdx].seats.asInt - take)
+                let p = JS.object(); p.name = JS(fresh); p.seats = JS(max(1, take))
+                list.append(p)
+                b.parties = .array(list)
+                let line = Regimes.platform(fresh)
+                let text = "\(stateName)新设政党「\(fresh)」进入议会"
+                _ = People.announce(r, kind: "politics", text: text, reason: "新党持「\(line.name)」纲领（\(line.text)），初获 \(max(1, take)) 席。", nations: [id], province: nil)
+                return (true, text)
+            }
+            return (false, "议会席位不足。")
+
+        case "boost":
+            guard list.indices.contains(partyIndex), list.count >= 2 else { return (false, "所选党派无效。") }
+            var gained = 0
+            for i in list.indices where i != partyIndex && gained < 12 {
+                let cur = list[i].seats.asInt
+                let take = min(12 - gained, max(0, cur - 2))
+                if take > 0 { list[i].seats = JS(cur - take); gained += take }
+            }
+            guard gained > 0 else { return (false, "该党已几乎独占全部议席。") }
+            list[partyIndex].seats = JS(list[partyIndex].seats.asInt + gained)
+            b.parties = .array(list)
+            let pName = list[partyIndex].name.asString
+            return (true, "已扶持\(pName)增席 +\(gained)（现占 \(list[partyIndex].seats.asInt) 席）。")
+
+        case "appoint":
+            guard list.indices.contains(partyIndex) else { return (false, "所选党派无效。") }
+            let pName = list[partyIndex].name.asString
+            let topSeats = list.map { $0.seats.asInt }.max() ?? 0
+            let cur = list[partyIndex].seats.asInt
+            if cur <= topSeats {
+                let need = min(35, topSeats - cur + 4)
+                var pulled = 0
+                for i in list.indices where i != partyIndex && pulled < need {
+                    let s = list[i].seats.asInt
+                    let take = min(need - pulled, max(0, s - 2))
+                    if take > 0 { list[i].seats = JS(s - take); pulled += take }
+                }
+                list[partyIndex].seats = JS(cur + pulled)
+                b.parties = .array(list)
+            }
+            Regimes.ensurePremier(r, id)
+            let line = Regimes.platform(pName)
+            let text = "\(stateName)任命\(pName)组阁执政"
+            _ = People.announce(r, kind: "politics", text: text, reason: "新内阁推行「\(line.name)」路线：\(line.text)。", nations: [id], province: nil)
+            return (true, text)
+
+        case "ban":
+            guard st.single == nil else { return (false, "执政一党无法查禁。") }
+            guard list.indices.contains(partyIndex), list.count >= 2 else { return (false, "议会至少需保留 1 个政党。") }
+            let banned = list[partyIndex].name.asString
+            let freed = list[partyIndex].seats.asInt
+            list.remove(at: partyIndex)
+            if let topIdx = list.indices.max(by: { list[$0].seats.asInt < list[$1].seats.asInt }) {
+                list[topIdx].seats = JS(list[topIdx].seats.asInt + freed)
+            }
+            b.parties = .array(list)
+            let d = r.destiny.nations[id]
+            if !d.isNull { d.destiny = JS(max(0, (d.destiny.optionalNumber ?? 50) - 3)) }
+            let text = "\(stateName)下令查禁\(banned)"
+            _ = People.announce(r, kind: "politics", text: text, reason: "反对党\(banned)遭取缔，其 \(freed) 席并入最大党；国运 −3。", nations: [id], province: nil)
+            return (true, text)
+
+        default:
+            return (false, "未知党派指令：\(action)。")
         }
     }
 }

@@ -182,34 +182,54 @@ extension MapLayers {
             let dx = Float(h % 9) / 4 - 1, dy = Float(h / 9 % 9) / 4 - 1
             m.segment(x + dx - 0.9, y + dy, x + dx + 0.9, y + dy, width: 0.42, sand, alpha: 0.5)
         }
-        // The compass stands in the emptiest corner of the sea.
+        // 精致十六向鎏金罗盘（含外圈刻度环、朱砂北针、八大主向与八小副向指针）
         let (cx, cy) = compassCorner(map)
-        let radius: Float = 52
-        func ring(_ r: Float, _ width: Float, _ alpha: Float) {
+        let radius: Float = 56
+        let gold = RGB(hex: 0xB88B3B), seal = RGB(hex: 0xA63628)
+        func ring(_ r: Float, _ width: Float, _ alpha: Float, _ col: RGB = ink) {
             var p = [Float]()
             for k in 0...64 { let a = Float(k) / 64 * 2 * .pi; p += [cx + cos(a) * r, cy + sin(a) * r] }
-            m.polyline(p, width: width, ink, alpha: alpha)
+            m.polyline(p, width: width, col, alpha: alpha)
         }
-        ring(radius * 0.74, 0.7, 0.7); ring(radius * 0.68, 0.4, 0.6)
-        func spike(_ angle: Float, _ length: Float, _ waist: Float) {
+        ring(radius * 0.86, 0.9, 0.72, gold); ring(radius * 0.76, 0.75, 0.75); ring(radius * 0.66, 0.45, 0.55)
+        // 外圈 32 等分航海刻度线
+        for k in 0..<32 {
+            let a = Float(k) / 32 * 2 * .pi
+            let r0 = radius * (k % 4 == 0 ? 0.66 : 0.72), r1 = radius * 0.86
+            m.segment(cx + cos(a) * r0, cy + sin(a) * r0, cx + cos(a) * r1, cy + sin(a) * r1, width: k % 4 == 0 ? 0.65 : 0.35, ink, alpha: 0.55)
+        }
+        func spike(_ angle: Float, _ length: Float, _ waist: Float, _ darkCol: RGB = ink) {
             let tip = (cx + cos(angle) * length, cy + sin(angle) * length)
             let l = (cx + cos(angle - .pi / 2) * waist, cy + sin(angle - .pi / 2) * waist), r = (cx + cos(angle + .pi / 2) * waist, cy + sin(angle + .pi / 2) * waist)
-            m.fill([tip.0, tip.1, l.0, l.1, cx, cy], ink, alpha: 0.82)
-            m.fill([tip.0, tip.1, cx, cy, r.0, r.1], paper, alpha: 0.9)
-            m.polyline([l.0, l.1, tip.0, tip.1, r.0, r.1], width: 0.4, ink, alpha: 0.75)
+            m.fill([tip.0, tip.1, l.0, l.1, cx, cy], darkCol, alpha: 0.86)
+            m.fill([tip.0, tip.1, cx, cy, r.0, r.1], paper, alpha: 0.92)
+            m.polyline([l.0, l.1, tip.0, tip.1, r.0, r.1], width: 0.42, ink, alpha: 0.75)
         }
-        for k in 0..<8 where k % 2 == 1 { spike(Float(k) * .pi / 4, radius * 0.56, 6) }
-        for k in 0..<8 where k % 2 == 0 { spike(Float(k) * .pi / 4, radius, 8) }
-        m.disc(cx, cy, radius: 3, ink, alpha: 0.9)
-        // A pointer past the north tip.
-        m.fill([cx, cy - radius - 11, cx - 4, cy - radius - 3, cx + 4, cy - radius - 3], ink, alpha: 0.85)
+        for k in 0..<16 where k % 2 == 1 { spike(Float(k) * .pi / 8, radius * 0.42, 3.6, gold) }
+        for k in 0..<8 where k % 2 == 1 { spike(Float(k) * .pi / 4, radius * 0.62, 6) }
+        for k in 0..<8 where k % 2 == 0 { spike(Float(k) * .pi / 4, radius, 8.2, k == 6 ? seal : ink) }
+        m.disc(cx, cy, radius: 4.5, gold, alpha: 0.95)
+        m.disc(cx, cy, radius: 2.2, seal, alpha: 0.95)
+        // 北向朱砂指尖与外海祥云纹饰
+        m.fill([cx, cy - radius - 13, cx - 4.8, cy - radius - 3, cx + 4.8, cy - radius - 3], seal, alpha: 0.9)
+        // 古图祥云角纹（点缀在罗盘两侧开阔海面）
+        for side in [Float(-1), 1] {
+            let qx = cx + side * (radius + 20), qy = cy + 6
+            var curl = [Float]()
+            for s in 0...14 {
+                let t = Float(s) / 14 * 1.8 * .pi
+                let rr = 4.5 + t * 1.4
+                curl += [qx + side * cos(t) * rr, qy + sin(t) * rr * 0.65]
+            }
+            m.polyline(curl, width: 0.65, gold, alpha: 0.52)
+        }
         // The scale bar below it, its parts ink and paper in turn.
-        let bar: Float = 18, x0 = cx - bar * 2.5, y0 = cy + radius + 12
+        let bar: Float = 18, x0 = cx - bar * 2.5, y0 = cy + radius + 13
         for k in 0..<5 {
             let x = x0 + Float(k) * bar
-            m.fill([x, y0, x + bar, y0, x + bar, y0 + 3.6, x, y0 + 3.6], k % 2 == 0 ? ink : paper, alpha: 0.88)
+            m.fill([x, y0, x + bar, y0, x + bar, y0 + 3.8, x, y0 + 3.8], k % 2 == 0 ? ink : paper, alpha: 0.9)
         }
-        m.polyline([x0, y0, x0 + bar * 5, y0, x0 + bar * 5, y0 + 3.6, x0, y0 + 3.6, x0, y0], width: 0.45, ink, alpha: 0.8)
+        m.polyline([x0, y0, x0 + bar * 5, y0, x0 + bar * 5, y0 + 3.8, x0, y0 + 3.8, x0, y0], width: 0.5, gold, alpha: 0.85)
         return m
     }
 
@@ -217,6 +237,7 @@ extension MapLayers {
     public static func fineDetail(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
         let grass = RGB(hex: 0x4F5F36), dune = RGB(hex: 0x876C3C), hill = RGB(hex: 0x57503A), field = RGB(hex: 0xC9B27A), furrow = RGB(hex: 0x74633A), road = RGB(hex: 0x5C4728)
+        let snow = RGB(hex: 0xF5EFE0), peakInk = RGB(hex: 0x3D352A), milestone = RGB(hex: 0x8E3B2B)
         let shore = shoreCells(map)
         var cityGrid = [Int64: [(Float, Float)]]()
         func cell(_ x: Float, _ y: Float) -> Int64 { Int64(floor(x / 24)) << 32 | Int64(Int32(floor(y / 24))) & 0xFFFF_FFFF }
@@ -234,8 +255,19 @@ extension MapLayers {
         var taken = Set<Int64>()
         for c in 0..<map.cellCount where map.isLand(c) && !shore[c] {
             let h = Float(map.elevation[c]), biome = map.biome[c], x = map.sites[c * 2], y = map.sites[c * 2 + 1], pick = hash(c) % 100
-            if h >= 55 || (biome >= 5 && biome <= 9) { continue }
             let key = Int64(floor(x / 13)) << 32 | Int64(Int32(floor(y / 13))) & 0xFFFF_FFFF
+            if h >= 58 {
+                // 高峰雪冠与水墨山脊皴笔（拉近山脉可见细致山峰层次）
+                if pick < 36 && taken.insert(key).inserted {
+                    let span: Float = 5.2 + Float(hash(c &+ 7) % 3)
+                    let ht: Float = 4.6 + Float(hash(c &+ 13) % 3)
+                    m.fill([x, y - ht, x - span * 0.42, y - ht * 0.35, x + span * 0.42, y - ht * 0.35], snow, alpha: 0.72)
+                    m.polyline([x - span, y, x, y - ht, x + span, y], width: 0.55, peakInk, alpha: 0.52)
+                    m.segment(x + span * 0.12, y - ht * 0.8, x + span * 0.65, y - ht * 0.1, width: 0.4, peakInk, alpha: 0.35)
+                }
+                continue
+            }
+            if h >= 55 || (biome >= 5 && biome <= 9) { continue }
             if h < 40 && pick < 32 && nearCity(x, y) {
                 if !taken.insert(key).inserted { continue }
                 // Ploughed strips, each patch lying its own way.
@@ -303,6 +335,11 @@ extension MapLayers {
                 for k in stride(from: 1, to: steps - 1, by: 2) {
                     let p = at(Float(k) / Float(steps)), q = at(Float(k + 1) / Float(steps))
                     m.segment(p.0, p.1, q.0, q.1, width: 0.7, road, alpha: 0.5)
+                }
+                // 驿道中途朱点驿站标记（长驿道设驿）
+                if steps >= 10 {
+                    let mid = at(0.5)
+                    m.disc(mid.0, mid.1, radius: 0.85, milestone, alpha: 0.62, sides: 8)
                 }
             }
         }

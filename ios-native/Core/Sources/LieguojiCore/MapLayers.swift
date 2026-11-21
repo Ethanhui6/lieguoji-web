@@ -388,26 +388,109 @@ public enum MapLayers {
         return result
     }
 
-    /// 卷轴边缘 (the original's mapframes and dark border): the paper browns towards the map's edge
-    /// like an old scroll, and a thick and a thin ink rule frame it.
+    /// 皇帝诏书式卷轴装裱边缘：
+    /// 1. 左右两侧呈现立体圆柱卷轴杆（深檀暗影 → 暖木高光脊 → 宣纸内卷投影），上下端配鎏金碧玉轴头；
+    /// 2. 上下边缘饰御制黄绫朱锦装裱带、鎏金细线与传统四角回纹角花；
+    /// 3. 内侧边缘柔和宣纸卷曲暗晕，拉远看海宛如一卷徐徐展开的御批圣旨舆图。
     public static func scrollFrame(width w: Float, height h: Float) -> ColoredMesh {
         var m = ColoredMesh()
-        let brown = RGB(hex: 0x4A3418), ink = RGB(hex: 0x2B2116)
-        func ring(_ inset: Float, _ depth: Float, _ color: RGB, outer: Float, inner: Float) {
-            let a0 = SIMD2<Float>(inset, inset), a1 = SIMD2<Float>(w - inset, inset), a2 = SIMD2<Float>(w - inset, h - inset), a3 = SIMD2<Float>(inset, h - inset)
-            let i = inset + depth
-            let b0 = SIMD2<Float>(i, i), b1 = SIMD2<Float>(w - i, i), b2 = SIMD2<Float>(w - i, h - i), b3 = SIMD2<Float>(i, h - i)
-            m.band(a0, a1, b1, b0, color, outer: outer, inner: inner)
-            m.band(a1, a2, b2, b1, color, outer: outer, inner: inner)
-            m.band(a2, a3, b3, b2, color, outer: outer, inner: inner)
-            m.band(a3, a0, b0, b3, color, outer: outer, inner: inner)
+        let shadow = RGB(hex: 0x3A2512)
+        let paperCurl = RGB(hex: 0x5A3F22)
+        let silkGold = RGB(hex: 0xC99F4F)
+        let silkDeep = RGB(hex: 0x8F682B)
+        let brocadeRed = RGB(hex: 0x7A241A)
+        let woodDark = RGB(hex: 0x2F1A0E)
+        let woodMid = RGB(hex: 0x623B20)
+        let woodLight = RGB(hex: 0x9B6D41)
+        let jade = RGB(hex: 0x4A7766)
+        let jadeLight = RGB(hex: 0x7AA694)
+        let goldBright = RGB(hex: 0xE2C174)
+        let ink = RGB(hex: 0x2B2116)
+
+        func rect(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ c: RGB, alpha: Float = 1) {
+            m.fill([x0, y0, x1, y0, x1, y1, x0, y1], c, alpha: alpha)
         }
-        // Aged paper at the very edge of the sheet, fading to nothing a little way in: a soft vignette in
-        // the paper's own warm brown, with no hard band or rule (the screen's edge is the sheet's edge).
-        let depth = min(w, h) * 0.06
-        ring(0, depth * 0.3, brown, outer: 0.22, inner: 0.08)
-        ring(depth * 0.3, depth * 0.7, brown, outer: 0.08, inner: 0)
-        _ = ink
+        func vBand(_ x0: Float, _ x1: Float, _ y0: Float, _ y1: Float, _ c: RGB, left: Float, right: Float) {
+            m.band(SIMD2(x0, y0), SIMD2(x0, y1), SIMD2(x1, y1), SIMD2(x1, y0), c, outer: left, inner: right)
+        }
+        func hBand(_ x0: Float, _ x1: Float, _ y0: Float, _ y1: Float, _ c: RGB, top: Float, bottom: Float) {
+            m.band(SIMD2(x0, y0), SIMD2(x1, y0), SIMD2(x1, y1), SIMD2(x0, y1), c, outer: top, inner: bottom)
+        }
+
+        let unit = min(w, h)
+        let curlShadow = unit * 0.045
+        let trimH = unit * 0.015
+        let rollerW = unit * 0.026
+        let capOut = unit * 0.014
+
+        // 1. 宣纸四边柔和内卷投影（左右更深，模拟圣旨左右卷起的立体弧面阴影）
+        vBand(0, curlShadow * 0.35, 0, h, shadow, left: 0.36, right: 0.14)
+        vBand(curlShadow * 0.35, curlShadow * 1.15, 0, h, paperCurl, left: 0.14, right: 0)
+        vBand(w - curlShadow * 0.35, w, 0, h, shadow, left: 0.14, right: 0.36)
+        vBand(w - curlShadow * 1.15, w - curlShadow * 0.35, 0, h, paperCurl, left: 0, right: 0.14)
+        hBand(0, w, 0, curlShadow * 0.65, paperCurl, top: 0.22, bottom: 0)
+        hBand(0, w, h - curlShadow * 0.65, h, paperCurl, top: 0, bottom: 0.22)
+
+        // 2. 上下御制黄绫朱锦装裱边（紧贴地图外缘，不侵占大陆视野）
+        rect(-rollerW * 0.2, -trimH, w + rollerW * 0.2, 0, silkGold, alpha: 0.92)
+        rect(-rollerW * 0.2, -trimH, w + rollerW * 0.2, -trimH * 0.66, brocadeRed, alpha: 0.94)
+        rect(-rollerW * 0.2, h, w + rollerW * 0.2, h + trimH, silkGold, alpha: 0.92)
+        rect(-rollerW * 0.2, h + trimH * 0.66, w + rollerW * 0.2, h + trimH, brocadeRed, alpha: 0.94)
+        // 内外双层鎏金与墨线框
+        let ruleIn = unit * 0.008
+        m.polyline([ruleIn, ruleIn, w - ruleIn, ruleIn, w - ruleIn, h - ruleIn, ruleIn, h - ruleIn, ruleIn, ruleIn], width: max(1.0, unit * 0.0018), silkDeep, alpha: 0.68)
+        let ruleOut = unit * 0.004
+        m.polyline([ruleOut, ruleOut, w - ruleOut, ruleOut, w - ruleOut, h - ruleOut, ruleOut, h - ruleOut, ruleOut, ruleOut], width: max(0.7, unit * 0.0012), ink, alpha: 0.45)
+
+        // 3. 四角传统回纹云角饰（精致细节，放大缩小皆清晰）
+        let cLen = unit * 0.036, cStep = unit * 0.011, cw = max(1.2, unit * 0.0022)
+        for (sx, sy, ox, oy) in [(Float(1), Float(1), ruleIn, ruleIn), (-1, 1, w - ruleIn, ruleIn), (1, -1, ruleIn, h - ruleIn), (-1, -1, w - ruleIn, h - ruleIn)] {
+            m.polyline([ox, oy + sy * cLen, ox, oy, ox + sx * cLen, oy], width: cw * 1.35, brocadeRed, alpha: 0.85)
+            m.polyline([ox + sx * cStep, oy + sy * (cLen * 0.72), ox + sx * cStep, oy + sy * cStep, ox + sx * (cLen * 0.72), oy + sy * cStep], width: cw * 0.9, silkGold, alpha: 0.9)
+            m.disc(ox + sx * cStep * 1.45, oy + sy * cStep * 1.45, radius: cw * 1.2, brocadeRed, alpha: 0.82)
+        }
+
+        // 4. 左右立体卷轴木杆 + 卷纸高光卷边 + 四端鎏金碧玉轴头（皇帝圣旨标志性外观）
+        func drawRoller(x0: Float, x1: Float, inwardRight: Bool) {
+            let rw = x1 - x0
+            let yTop = -trimH - capOut * 0.25, yBot = h + trimH + capOut * 0.25
+            // 卷轴底座暗影
+            rect(x0, yTop, x1, yBot, woodDark, alpha: 0.98)
+            // 圆柱明暗渐变（暗边 → 暖檀木 → 柱面高光脊 → 次暗面）
+            let hiA = inwardRight ? x0 + rw * 0.28 : x0 + rw * 0.48
+            let hiB = inwardRight ? x0 + rw * 0.56 : x0 + rw * 0.72
+            rect(x0 + rw * 0.12, yTop, x1 - rw * 0.12, yBot, woodMid, alpha: 0.95)
+            rect(hiA, yTop, hiB, yBot, woodLight, alpha: 0.92)
+            let specX = (hiA + hiB) * 0.5
+            m.segment(specX, yTop, specX, yBot, width: max(1.0, rw * 0.11), goldBright, alpha: 0.55)
+            // 纸张卷入木杆的窄白金卷边
+            let curlEdgeX = inwardRight ? x1 - rw * 0.08 : x0 + rw * 0.08
+            m.segment(curlEdgeX, 0, curlEdgeX, h, width: max(1.2, rw * 0.14), RGB(hex: 0xE9DCBE), alpha: 0.88)
+            // 轴杆上下鎏金箍环
+            let ringH = trimH * 0.72
+            for ry in [-trimH, h + trimH - ringH] {
+                rect(x0 - rw * 0.08, ry, x1 + rw * 0.08, ry + ringH, silkGold, alpha: 0.98)
+                rect(hiA, ry, hiB, ry + ringH, goldBright, alpha: 0.9)
+                m.polyline([x0 - rw * 0.08, ry, x1 + rw * 0.08, ry], width: max(0.8, unit * 0.0014), ink, alpha: 0.55)
+                m.polyline([x0 - rw * 0.08, ry + ringH, x1 + rw * 0.08, ry + ringH], width: max(0.8, unit * 0.0014), ink, alpha: 0.55)
+            }
+            // 上下两端碧玉轴头（带鎏金端帽）
+            let capW = rw * 0.78, cx = (x0 + x1) * 0.5
+            let topCapY0 = yTop - capOut, topCapY1 = yTop
+            rect(cx - capW * 0.5, topCapY0, cx + capW * 0.5, topCapY1, jade, alpha: 0.98)
+            rect(cx - capW * 0.18, topCapY0, cx + capW * 0.16, topCapY1, jadeLight, alpha: 0.9)
+            rect(cx - capW * 0.56, topCapY0 - capOut * 0.22, cx + capW * 0.56, topCapY0 + capOut * 0.12, goldBright, alpha: 0.98)
+
+            let botCapY0 = yBot, botCapY1 = yBot + capOut
+            rect(cx - capW * 0.5, botCapY0, cx + capW * 0.5, botCapY1, jade, alpha: 0.98)
+            rect(cx - capW * 0.18, botCapY0, cx + capW * 0.16, botCapY1, jadeLight, alpha: 0.9)
+            rect(cx - capW * 0.56, botCapY1 - capOut * 0.12, cx + capW * 0.56, botCapY1 + capOut * 0.22, goldBright, alpha: 0.98)
+        }
+        // 4. 左右立体卷轴木杆 + 卷纸高光卷边 + 四端鎏金碧玉轴头（皇帝圣旨标志性外观）
+        // 卷杆内缘微微压过画纸左右 0.42×rollerW，使全图展开与滑至边沿时均可清晰看见卷起的圣旨木轴与碧玉轴头
+        drawRoller(x0: -rollerW * 0.72, x1: rollerW * 0.42, inwardRight: true)
+        drawRoller(x0: w - rollerW * 0.42, x1: w + rollerW * 0.72, inwardRight: false)
+
         return m
     }
 

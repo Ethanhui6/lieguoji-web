@@ -17,6 +17,11 @@ struct NationReignsReport: Decodable {
         let id: String
         let name: String
         let title: String
+        var styledName: String? = nil
+        var eraName: String? = nil
+        var eraYearText: String? = nil
+        var honorific: String? = nil
+        var surnameLessImperial: Bool? = nil
         let house: String
         let familyId: Int
         let personId: Int
@@ -98,7 +103,7 @@ struct NationHistoryTab: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        LazyVStack(alignment: .leading, spacing: 14) {
             if let report {
                 // 史册总览卡
                 summaryCard(report)
@@ -302,7 +307,7 @@ struct NationHistoryTab: View {
                         SealFace(text: reign.order <= 99 ? String(ChineseNumeral.of(reign.order).prefix(2)) : "\(reign.order)", size: 28, color: reign.active ? Theme.seal : Theme.ink.opacity(0.75))
                         VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 6) {
-                                Text("\(reign.title) · \(reign.name)").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                                Text(reign.styledName ?? "\(reign.title) · \(reign.name)").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
                                 if reign.active {
                                     PaperTag(text: "在位", color: Theme.seal)
                                 } else if strongest {
@@ -311,6 +316,13 @@ struct NationHistoryTab: View {
                             }
                             HStack(spacing: 6) {
                                 Text("第 \(reign.order) 世 · \(reign.house)").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                if let era = reign.eraYearText, !era.isEmpty {
+                                    Text("·").foregroundStyle(Theme.ink2.opacity(0.5))
+                                    Text(era).font(Theme.caption).foregroundStyle(Theme.seal)
+                                } else if let hon = reign.honorific, !hon.isEmpty {
+                                    Text("·").foregroundStyle(Theme.ink2.opacity(0.5))
+                                    Text(hon).font(Theme.caption).foregroundStyle(Theme.seal)
+                                }
                                 Text("·").foregroundStyle(Theme.ink2.opacity(0.5))
                                 Text(span).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
                             }

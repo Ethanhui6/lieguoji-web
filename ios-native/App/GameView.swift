@@ -134,10 +134,13 @@ struct GameView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 if !controller.groupArmies.isEmpty { rtsBanner.transition(.move(edge: .top).combined(with: .opacity)) }
-                if let h = model.herald, let map = model.map {
-                    // Slides down and fades like the other top banners (调兵、绘制、即时战略).
-                    HeraldBanner(herald: h, map: map).id(h.id)
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                if controller.play.showHeralds, let h = model.herald, let map = model.map {
+                    // Slides down and fades like the other top banners (调兵、绘制、即时战略)；轻点可立即收卷。
+                    HeraldBanner(herald: h, map: map, onDismiss: { model.dismissHerald() }).id(h.id)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .top).combined(with: .scale(scale: 0.94, anchor: .top)).combined(with: .opacity),
+                            removal: .move(edge: .top).combined(with: .opacity)
+                        ))
                 }
             }
             .animation(Motion.panel, value: model.herald)
@@ -190,8 +193,8 @@ struct GameView: View {
                 .padding(.top, 52).padding(.trailing, 14)
         }
         .overlay {
-            // 四角物理速度投影吸附悬浮局势珠（Emil Kowalski /gestures）：游览地图时随时甩至四角并展开战况/外交/回放/倍速。
-            if chromeIn && !ShotTour.on && !wallpaper && !model.replayActive && panel == nil
+            // 可隐藏的精致四角吸附局势浮印：收起为小巧印章，展开含战况/外交/回放/启停/倍速与一键隐藏。
+            if controller.play.showTacticalPill && chromeIn && !ShotTour.on && !wallpaper && !model.replayActive && panel == nil
                 && controller.paintNation == nil && controller.marchingArmy == nil
                 && controller.marchingFleet == nil && controller.pickPrompt == nil && controller.groupArmies.isEmpty {
                 FloatingTacticalPill(
@@ -199,6 +202,10 @@ struct GameView: View {
                     openWars: { MilitarySheet.openOn = "wars"; show(.military) },
                     openDiplomacy: { show(.diplomacy) },
                     openReplay: { Task { await model.enterReplay() } },
+                    onHide: {
+                        controller.play.showTacticalPill = false
+                        say("已隐藏局势浮印，可在菜单 › 声音与其他重新开启")
+                    },
                     landscape: landscape
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.85)))
@@ -270,10 +277,14 @@ struct GameView: View {
             // All inspection pages share one pause policy, including map picks.
             // 山河回放开启期间关闭旧弹窗时，严禁恢复实时推演覆盖回放画面。
             controller.sheetOpen = p != nil
-            if p != nil, model.playing { pausedByPanel = true; model.pause(saving: false) }
-            if p == nil, pausedByPanel {
+            if controller.play.pauseOnSheet {
+                if p != nil, model.playing { pausedByPanel = true; model.pause(saving: false) }
+                if p == nil, pausedByPanel {
+                    pausedByPanel = false
+                    if !model.replayActive { model.play() }
+                }
+            } else if p == nil {
                 pausedByPanel = false
-                if !model.replayActive { model.play() }
             }
             _ = old
         }
@@ -537,9 +548,16 @@ struct GameView: View {
                     GameFeel.shared.tap()
                     show(.chronicle)
                 } label: {
-                    Text(model.state?.dateText ?? "").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                        .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(model.playing ? Theme.jade : Theme.ink2.opacity(0.45))
+                            .frame(width: 6.5, height: 6.5)
+                            .scaleEffect(model.playing ? 1.05 : 0.85)
+                            .animation(Motion.panel, value: model.playing)
+                        Text(model.state?.dateText ?? "").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                            .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
+                    }
                 }
                 .buttonStyle(PressStyle())
                 if let wars = model.state?.wars.count, wars > 0 {

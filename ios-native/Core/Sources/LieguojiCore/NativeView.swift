@@ -255,7 +255,9 @@ extension NativeEngine {
             if let s = stock[provinces[p].id.asString] { population[owner] += s.population.optionalNumber ?? 0; grain[owner] += s.grain.optionalNumber ?? 0 }
         }
         for c in cities { if let p = pi[c.provinceId.asString], owners[p] >= 0 { cityCount[owners[p]] += 1 } }
-        for a in w.armies.asArray where a.status.asString != "destroyed" { if let n = ni[a.nationId.asString] { troops[n] += a.troops.asNumber } }
+        for a in w.armies.asArray where a.status.asString != "destroyed" && a.troops.asNumber > 0 {
+            if let n = ni[a.nationId.asString], a.troops.asNumber.isFinite { troops[n] += max(0, a.troops.asNumber) }
+        }
         var enemies = [[Int]](repeating: [], count: nations.count)
         for rel in w.statecraft.relations.asArray where rel.status.asString == "war" {
             if let x = ni[rel.a.asString], let y = ni[rel.b.asString], x != y { enemies[x].append(y); enemies[y].append(x) }
@@ -347,9 +349,12 @@ extension NativeEngine {
             if moving, let bridge, let last = v.travel.nodes.asArray.last, let cell = bridge.graph.cell(id: last.asInt) {
                 let q = Int(bridge.graph.provinces[cell]); if q >= 0 && q < provinces.count { dest = q }
             }
-            var x = GameState.Army(id: id, name: a.name.asString, nation: ni[a.nationId.asString] ?? -1, troops: Int(a.troops.asNumber), unit: r.units[id].optionalString ?? "Infantry",
+            let safeTroops = a.troops.asNumber.isFinite ? max(0, Int(a.troops.asNumber.rounded())) : 0
+            let safeSupplies = a.supplies.asNumber.isFinite ? min(100, max(0, Int(a.supplies.asNumber.rounded()))) : 100
+            let safeMorale = a.morale.asNumber.isFinite ? min(100, max(0, Int(a.morale.asNumber.rounded()))) : 80
+            var x = GameState.Army(id: id, name: a.name.asString, nation: ni[a.nationId.asString] ?? -1, troops: safeTroops, unit: r.units[id].optionalString ?? "Infantry",
                                    status: a.status.asString, travel: v.travel.status.asString, province: v.province.flatMap { pi[$0.id.asString] } ?? -1,
-                                   supplies: Int(a.supplies.asNumber.rounded()), morale: Int(a.morale.asNumber.rounded()), x: Float(rx), y: Float(ry),
+                                   supplies: safeSupplies, morale: safeMorale, x: Float(rx), y: Float(ry),
                                    manual: manualArmies.contains(id), destination: dest, mission: missionOf[id] ?? "")
             x.reorganizing = !r.reorganization.active[id].isNull
             let order = r.armyAutonomy.armies[id].decision.optionalString ?? ""

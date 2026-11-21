@@ -43,7 +43,10 @@ public enum Regimes {
         if let p = Regimes.governor(r, id) ?? r.people.nations[id].leaderId.optionalNumber.flatMap({ People.person(r, Int($0)) }), !p.traits.isNull {
             let w: [String: Double] = ["Hawkish": 1.35, "Ambitious": 1.2, "Wrathful": 1.15, "Cruel": 1.1, "Brave": 1.08, "Unifier": 1.15, "Strategist": 1.05,
                                        "Dovish": 0.72, "Merciful": 0.85, "Patient": 0.88, "WarWeary": 0.75, "Craven": 0.8, "Just": 0.92]
-            for trait in p.traits.asArray { t *= w[trait.asString] ?? 1 }
+            for trait in p.traits.asArray {
+                let k = trait.asString
+                t *= w[k] ?? MonarchLore.extraByKey[k]?.temper ?? 1
+            }
         }
         // 自定义好战程度 overrides the ruler's and the polity's temper.
         if !r.regimes.isNull, let set = r.regimes.temper[id].optionalNumber { return min(1.6, max(0.6, set)) }
@@ -107,6 +110,10 @@ public enum Regimes {
         Style(id: "warlord", base: "Empire", label: "军阀割据", suffix: "军政府", title: "大帅", parties: false, single: nil),
         Style(id: "peasant", base: "Tribal", label: "义军", suffix: "义军", title: "大元帅", parties: false, single: nil),
         Style(id: "holy", base: "Theocracy", label: "神国", suffix: "神国", title: "天王", parties: false, single: nil),
+        Style(id: "dualMonarchy", base: "Empire", label: "二元君主立宪", suffix: "帝国", title: nil, parties: true, single: nil),
+        Style(id: "semiPresidential", base: "Republic", label: "半总统共和", suffix: "共和国", title: "总统", parties: true, single: nil),
+        Style(id: "technocracy", base: "Republic", label: "专家官僚制", suffix: "执政府", title: "首席执政", parties: false, single: nil),
+        Style(id: "directorate", base: "Republic", label: "督政府", suffix: "督政府", title: "第一执政", parties: true, single: nil),
     ]
     static let defaultStyle = ["Kingdom": "absolute", "Empire": "empire", "Republic": "democratic", "Federation": "federal", "Theocracy": "theocracy", "Tribal": "tribal"]
     public static func style(_ r: JS, _ id: String) -> Style {
@@ -245,7 +252,8 @@ public enum Regimes {
         else if s.id == "oligarchic" { names = oligarchs }
         else {
             var pool = partyPool(r, id); names = []
-            for _ in 0..<(3 + Int(next() % 2)) { names.append(pool.remove(at: Int(next() % UInt32(pool.count)))) }
+            let count = min(pool.count, 4 + Int(next() % 3))
+            for _ in 0..<count { names.append(pool.remove(at: Int(next() % UInt32(pool.count)))) }
         }
         var weights = names.map { _ in Double(10 + next() % 40) }
         if s.single != nil { weights = [100] }
@@ -436,6 +444,10 @@ public enum Regimes {
         // 税制 and the treasury record (财政).
         Finance.month(r, id, addGold: addGold, addDestiny: addDestiny)
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
+        // 为在位君主与实权掌权者补齐鲜明历史个性特质 + 24 项深度动态历史事件
+        if let ldr = Regimes.ruler(r, id) { MonarchLore.ensurePersonalityTraits(r, person: ldr) }
+        if let gov = Regimes.governor(r, id) { MonarchLore.ensurePersonalityTraits(r, person: gov) }
+        MonarchLore.dynamicEventMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         // 党派对抗、家族对抗、国债.
         eventsMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         faithMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
@@ -885,7 +897,7 @@ extension NativeEngine {
         guard let p = People.person(run, id) else { return (false, "人物不存在。") }
         guard skills.count == 4 else { return (false, "属性不完整。") }
         let keys = Array(NativeEngine.traitLabels.keys)
-        let chosen = traits.compactMap { t in NativeEngine.traitLabels.first { $0.value == t }?.key ?? (keys.contains(t) ? t : nil) }.filter { People.traits[$0] != nil }
+        let chosen = traits.compactMap { t in NativeEngine.traitLabels.first { $0.value == t }?.key ?? (keys.contains(t) ? t : nil) }.filter { People.traits[$0] != nil || MonarchLore.extraByKey[$0] != nil }
         let base = p.base.isNull ? JS.object() : p.base
         for (k, v) in zip(["charisma", "military", "diplomatic", "administrative"], skills) { base[k] = JS(min(100, max(0, v.rounded()))) }
         p.base = base

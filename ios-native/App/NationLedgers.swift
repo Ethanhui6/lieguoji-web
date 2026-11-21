@@ -157,52 +157,100 @@ struct Sparkline: View {
 
 /// One state's specialties and trade (engine tradeInfo).
 struct TradeOverview: Decodable {
-    struct Good: Decodable { let name: String; let provinces: Int }
-    struct Partner: Decodable { let nation: Int; let goods: [String] }
+    struct Good: Decodable {
+        let name: String
+        let provinces: Int
+        var tier: String? = nil
+        var effect: String? = nil
+        var monopoly: Bool? = nil
+    }
+    struct Partner: Decodable {
+        let nation: Int
+        let goods: [String]
+        var treaty: Bool? = nil
+    }
     let goods: [Good]; let partners: [Partner]; let rate: Double; let income: Double
+    var bonusSummary: String? = nil
+    var monopolies: [String]? = nil
 }
 
-/// 特产与贸易: the kinds of goods the state yields, its partners at peace and what each sells it,
-/// and what the trade adds to the monthly income.
+/// 特产与贸易: 分级物产（民生/战略/珍品）、垄断红利、实质国力加成与商约往来。
 struct TradeSection: View {
     @ObservedObject var model: GameModel
     let map: WorldMap; let nation: Int; let day: Int
     @State private var info: TradeOverview?
     @State private var failed = false
     @State private var attempt = 0
+    private func tierColor(_ tier: String?) -> Color {
+        switch tier {
+        case "珍品": return Color(red: 0.72, green: 0.5, blue: 0.14)
+        case "战略": return Theme.seal
+        default: return Theme.jade
+        }
+    }
     var body: some View {
         Group2 {
             if let info {
                 HStack {
                     Text("贸易增收").font(Theme.body).foregroundStyle(Theme.ink2)
                     Spacer()
-                    Text("每月 +\(Int(info.income)) 金（+\(String(format: "%.1f", info.rate))%）").font(Theme.body).foregroundStyle(Theme.seal)
+                    Text("每月 +\(Int(info.income)) 金（+\(String(format: "%.1f", info.rate))%）").font(Theme.body).foregroundStyle(Theme.seal).monospacedDigit()
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
+                if let summary = info.bonusSummary, !summary.isEmpty {
+                    Divider2()
+                    HStack(spacing: 8) {
+                        PaperTag(text: "特产国力", color: Theme.jade, size: 10)
+                        Text(summary).font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 8)
+                }
+                if let monos = info.monopolies, !monos.isEmpty {
+                    Divider2()
+                    HStack(spacing: 8) {
+                        PaperTag(text: "天下垄断", color: Theme.seal, size: 10)
+                        Text(monos.joined(separator: "、") + "（占天下 40%+ 产区，每项额外 +3% 商税）")
+                            .font(Theme.caption).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 8)
+                }
                 Divider2()
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("本国特产").font(Theme.label).foregroundStyle(Theme.ink2)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 5) {
-                            ForEach(info.goods.indices, id: \.self) { i in
-                                Text("\(info.goods[i].name) \(info.goods[i].provinces)").font(Theme.label).foregroundStyle(Theme.ink)
-                                    .padding(.horizontal, 7).padding(.vertical, 2).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("本国物产（\(info.goods.count) 类）").font(Theme.label).foregroundStyle(Theme.ink2)
+                    ForEach(info.goods.prefix(10).indices, id: \.self) { i in
+                        let g = info.goods[i]
+                        let tone = tierColor(g.tier)
+                        HStack(spacing: 8) {
+                            Text(g.name).font(Theme.body).foregroundStyle(Theme.ink)
+                            if let tier = g.tier { PaperTag(text: tier, color: tone, size: 10) }
+                            if g.monopoly == true { PaperTag(text: "垄断", color: Theme.seal, size: 10) }
+                            Spacer(minLength: 4)
+                            if let eff = g.effect, !eff.isEmpty {
+                                Text(eff).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                             }
+                            Text("\(g.provinces)州").font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit()
                         }
                     }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
                 if !info.partners.isEmpty {
                     Divider2()
-                    ForEach(info.partners.indices, id: \.self) { i in
-                        let p = info.partners[i]
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(p.nation >= 0 && p.nation < map.meta.nations.count ? map.meta.nations[p.nation].name : "").font(Theme.body).foregroundStyle(Theme.ink)
-                            Spacer()
-                            Text(p.goods.isEmpty ? "无新货" : p.goods.joined(separator: "、")).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("通商邻邦与商约伙伴").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.top, 8)
+                        ForEach(info.partners.indices, id: \.self) { i in
+                            let p = info.partners[i]
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text(p.nation >= 0 && p.nation < map.meta.nations.count ? map.meta.nations[p.nation].name : "").font(Theme.body).foregroundStyle(Theme.ink)
+                                if p.treaty == true { PaperTag(text: "商约", color: Theme.jade, size: 10) }
+                                Spacer()
+                                Text(p.goods.isEmpty ? "互通有无" : p.goods.joined(separator: "、")).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 6)
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 7)
                     }
+                    .padding(.bottom, 6)
                 }
             } else {
                 PanelPending(failed: failed) { attempt += 1 }

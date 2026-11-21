@@ -16,8 +16,16 @@ public enum People {
     }
     static func skills(_ p: JS) -> Persona.Skills {
         let b = p.base
+        let traitList: [Persona.TraitModifiers] = p.traits.isNull ? [] : p.traits.asArray.compactMap { raw in
+            let k = raw.asString
+            if let t = traits[k] { return t }
+            if UnitKinds.enabled, let ex = MonarchLore.extraByKey[k] {
+                return Persona.TraitModifiers(administrative: ex.administrative, military: ex.military, diplomatic: ex.diplomatic, charisma: ex.charisma)
+            }
+            return nil
+        }
         return Persona.skills(base: Persona.Skills(administrative: b.administrative.asNumber, military: b.military.asNumber, diplomatic: b.diplomatic.asNumber, charisma: b.charisma.asNumber),
-                              traits: p.traits.isNull ? [] : p.traits.asArray.compactMap { traits[$0.asString] })
+                              traits: traitList)
     }
     static func person(_ r: JS, _ id: Int) -> JS? { let p = r.kin.persons[String(id)]; return p.isNull ? nil : p }
     static func ids(_ list: JS) -> [Int] { list.isNull ? [] : list.asArray.map(\.asInt) }
@@ -104,7 +112,13 @@ public enum People {
     static let numberedMonarchies: Set<String> = ["english", "french", "german", "slavic", "norse", "greek", "persian"]
     static func rulerDisplayName(culture: String, polity: String, name: String, regnalName: String, ordinal: Int, given: String, title: String) -> String {
         let hereditary = ["Kingdom", "Empire", "Tribal"].contains(polity)
-        let label = (polity == "Kingdom" || polity == "Empire") && numberedMonarchies.contains(culture) ? regnalLabel(regnalName, ordinal) : hereditary && regnalName != given ? regnalName : name
+        if UnitKinds.enabled && MonarchLore.isJapaneseEmperor(culture: culture, title: title, polity: polity) {
+            // 日本天皇无姓氏：仅显名讳＋天皇
+            let cleanGiven = given.isEmpty ? name : given
+            return cleanGiven + title
+        }
+        let useNumbered = UnitKinds.enabled ? MonarchLore.regnalNumberCultures.contains(culture) : numberedMonarchies.contains(culture)
+        let label = (polity == "Kingdom" || polity == "Empire") && useNumbered ? regnalLabel(regnalName, ordinal) : hereditary && regnalName != given ? regnalName : name
         return label + title
     }
 

@@ -199,8 +199,9 @@ enum Echelon {
     static let thresholds = [40_000, 20_000, 10_000, 5_000, 2_000, 0]
     static func names(_ culture: String) -> [String] {
         switch culture {
+        case "chinese": return ["大军", "军", "师", "旅", "团", "营"]
         case "roman", "greek": return ["方面军", "军团群", "双军团", "军团", "大队", "百人队"]
-        case "mongol", "turkic": return ["大军", "双万户", "万户", "千户", "千户", "百户"]
+        case "mongol", "turkic": return ["大军", "双万户", "万户", "五千户", "千户", "百户"]
         case "japanese": return ["方面军", "军", "师团", "旅团", "联队", "大队"]
         case "arab", "persian", "egyptian": return ["大军", "军", "师", "旅", "团", "营"]
         default: return ["集团军", "军", "师", "旅", "团", "营"]

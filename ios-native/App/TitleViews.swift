@@ -40,18 +40,18 @@ struct SplashView: View {
                     .frame(width: 240, height: 240).offset(x: 40, y: -30).scaleEffect(soaked ? 1 : 0.3)
             }
             .opacity(soaked && !dried ? 1 : 0).offset(y: -40)
-            // Far and near hills in two washes along the bottom of the sheet (radial mist avoids horizontal edge lines).
+            // 远近两重水墨远山：底部采用竖向柔化墨韵渐变，彻底消除椭圆白块与横线断层。
             VStack(spacing: 0) {
                 Spacer()
                 ZStack(alignment: .bottom) {
-                    InkHills(seed: 11).fill(Theme.ink.opacity(0.06)).frame(height: 195)
-                    Ellipse()
-                        .fill(RadialGradient(colors: [Theme.paper.opacity(0.5), Theme.paper.opacity(0.18), .clear], center: .center, startRadius: 0, endRadius: 210))
-                        .frame(width: 440, height: 110)
-                        .offset(x: hills ? 22 : -36, y: -64)
-                    InkHills(seed: 4).fill(Theme.ink.opacity(0.10)).frame(height: 125)
+                    InkHills(seed: 11)
+                        .fill(LinearGradient(colors: [Theme.ink.opacity(0.085), Theme.ink.opacity(0.03), .clear], startPoint: .top, endPoint: .bottom))
+                        .frame(height: 195)
+                    InkHills(seed: 4)
+                        .fill(LinearGradient(colors: [Theme.ink.opacity(0.13), Theme.ink.opacity(0.06), Theme.ink.opacity(0.02)], startPoint: .top, endPoint: .bottom))
+                        .frame(height: 122)
                 }
-                .offset(y: hills ? 0 : 44).opacity(hills && !dried ? 1 : 0)
+                .offset(y: hills ? 0 : 38).opacity(hills && !dried ? 1 : 0)
             }
             .ignoresSafeArea()
             HStack(alignment: .top, spacing: 18) {

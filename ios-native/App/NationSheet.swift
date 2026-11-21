@@ -5,7 +5,12 @@ import LieguojiCore
 /// relations, the state's wars, and the state-level actions (国家行为). While open, the map shows
 /// the state's relations: enemies red, allies blue, vassals green, the overlord magenta.
 struct NationInfo: Decodable {
-    struct Ruler: Decodable { let name: String; let title: String; let age: Double; var female: Bool? = nil; var id: Int? = nil; var traits: [String]? = nil; var skills: [Double]? = nil }
+    struct Ruler: Decodable {
+        let name: String; let title: String; let age: Double
+        var female: Bool? = nil; var id: Int? = nil; var traits: [String]? = nil; var skills: [Double]? = nil
+        var styledName: String? = nil; var eraName: String? = nil; var eraYearText: String? = nil
+        var honorific: String? = nil; var surnameLessImperial: Bool? = nil; var traitSummary: [String]? = nil
+    }
     /// 国家加成 (自定义) in percent: income, attack, defense, growth, speed.
     var bonus: [String: Double]? = nil
     /// 生计 (民族特性): Agriculture, Nomadic, Maritime, FishAndHunting, Commercial, Other.
@@ -281,7 +286,14 @@ struct NationSheet: View {
                 await reload()
                 if Self.tourFamily, tree == nil, let h = info?.court?.houses.first(where: { $0.id != nil }), let id = h.id { tree = TreePick(id: id, name: h.name) }
             }
-            .onAppear { if let t = Self.tourTab { tab = t; customPane = Self.tourPane }; model.controller.relationsNation = nation; model.controller.relations = relationColors(); if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) } }
+            .onAppear {
+                if let t = Self.tourTab { tab = t; customPane = Self.tourPane }
+                model.controller.relationsNation = nation
+                if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count {
+                    let capProv = map.meta.cities[p].province
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) { fly(capProv) }
+                }
+            }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
             .onDisappear { if model.controller.relationsNation == nation { model.controller.relationsNation = nil; model.controller.relations = [:] } }
             .sheet(item: $appointing) { target in
@@ -414,7 +426,7 @@ struct NationSheet: View {
         }
     }
     @ViewBuilder private func overviewTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
+        LazyVStack(alignment: .leading, spacing: 14) {
                 if let p = info.power, p.count >= 2 {
                     // 国力走势: rise and fall at a glance.
                     HStack(spacing: 12) {
@@ -434,8 +446,24 @@ struct NationSheet: View {
                 FoldSection("基本信息", expanded: true) {
                     Group2 {
                         if let r = info.ruler {
-                            EditRow(label: r.title, value: "\(r.name)（\(Int(r.age)) 岁）" + (info.heads?.premierRules == true ? " · 虚位" : "")) {
+                            let eraSuffix: String = {
+                                if let e = r.eraYearText, !e.isEmpty { return " · \(e)" }
+                                if let h = r.honorific, !h.isEmpty { return " · \(h)" }
+                                return ""
+                            }()
+                            let baseRuler = (r.styledName.flatMap { $0.isEmpty ? nil : $0 }) ?? r.name
+                            let displayRuler = baseRuler + "（\(Int(r.age))岁）" + eraSuffix + (info.heads?.premierRules == true ? " · 虚位" : "")
+                            EditRow(label: r.title, value: displayRuler) {
                                 if let id = r.id { editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: r.female ?? false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50]) }
+                            }
+                            if let summary = r.traitSummary, !summary.isEmpty {
+                                HStack(alignment: .top, spacing: 6) {
+                                    PaperTag(text: "在位加成", color: Theme.jade, size: 10)
+                                    Text(summary.joined(separator: " · ")).font(Theme.caption).foregroundStyle(Theme.ink)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(.horizontal, 16).padding(.bottom, 10)
                             }
                             Divider2()
                         }
@@ -553,52 +581,70 @@ struct NationSheet: View {
         }
     }
     @ViewBuilder private func courtTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-                // 中枢元首与实际掌权者统一卡片（落实多政体双轨掌权展示）
+        LazyVStack(alignment: .leading, spacing: 14) {
+                // 中枢元首与实际掌权者统一卡片（落实多政体双轨掌权展示 + 年号尊号与在位性格实效）
                 if info.alive {
                     Group2 {
-                        HStack(spacing: 12) {
-                            // 国家元首
-                            Button {
-                                if let r = info.ruler, let id = r.id {
-                                    editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: r.female ?? false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50])
-                                }
-                            } label: {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    HStack(spacing: 5) {
-                                        Text(info.ruler?.title ?? "君主").font(Theme.caption).foregroundStyle(Theme.seal)
-                                        if info.heads?.premierRules == true { PaperTag(text: "虚位", color: Theme.ink2, size: 10) }
-                                    }
-                                    Text(info.ruler?.name ?? "空缺").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                                    if let r = info.ruler { Text("\(Int(r.age))岁 · 点按编辑").font(Theme.caption).foregroundStyle(Theme.ink2) }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-
-                            if let h = info.heads {
-                                Divider().frame(height: 36)
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 12) {
+                                // 国家元首
                                 Button {
-                                    if let hid = h.premierHouseId, !hid.isEmpty {
-                                        tree = TreePick(id: hid, name: info.court?.actualRuler?.houseName ?? "掌权世家")
-                                    } else {
-                                        appointing = AppointTarget(office: "Chancellor")
+                                    if let r = info.ruler, let id = r.id {
+                                        editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: r.female ?? false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50])
                                     }
                                 } label: {
                                     VStack(alignment: .leading, spacing: 3) {
                                         HStack(spacing: 5) {
-                                            Text(h.premierTitle).font(Theme.caption).foregroundStyle(h.premierRules ? Theme.seal : Theme.jade)
-                                            if h.premierRules { PaperTag(text: "实权", color: Theme.seal, size: 10) }
+                                            Text(info.ruler?.title ?? "君主").font(Theme.caption).foregroundStyle(Theme.seal)
+                                            if let era = info.ruler?.eraYearText, !era.isEmpty {
+                                                PaperTag(text: era, color: Theme.seal, size: 10)
+                                            } else if let hon = info.ruler?.honorific, !hon.isEmpty {
+                                                PaperTag(text: hon, color: Theme.jade, size: 10)
+                                            }
+                                            if info.heads?.premierRules == true { PaperTag(text: "虚位", color: Theme.ink2, size: 10) }
                                         }
-                                        Text(h.premierName ?? "出缺").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                                        Text(info.court?.actualRuler?.houseName.map { "\($0) · 点看族谱" } ?? (h.elected ? "议会推举" : "中枢辅政"))
-                                            .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                        Text(info.ruler?.styledName ?? info.ruler?.name ?? "空缺").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                                        if let r = info.ruler {
+                                            let houseNote = r.surnameLessImperial == true ? "皇室（无姓）" : "点按编辑"
+                                            Text("\(Int(r.age))岁 · \(houseNote)").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                        }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
+
+                                if let h = info.heads {
+                                    Divider().frame(height: 36)
+                                    Button {
+                                        if let hid = h.premierHouseId, !hid.isEmpty {
+                                            tree = TreePick(id: hid, name: info.court?.actualRuler?.houseName ?? "掌权世家")
+                                        } else {
+                                            appointing = AppointTarget(office: "Chancellor")
+                                        }
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            HStack(spacing: 5) {
+                                                Text(h.premierTitle).font(Theme.caption).foregroundStyle(h.premierRules ? Theme.seal : Theme.jade)
+                                                if h.premierRules { PaperTag(text: "实权", color: Theme.seal, size: 10) }
+                                            }
+                                            Text(h.premierName ?? "出缺").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
+                                            Text(info.court?.actualRuler?.houseName.map { "\($0) · 点看族谱" } ?? (h.elected ? "议会推举" : "中枢辅政"))
+                                                .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            if let summary = info.ruler?.traitSummary, !summary.isEmpty {
+                                Divider2()
+                                HStack(alignment: .top, spacing: 6) {
+                                    PaperTag(text: "掌权实效", color: Theme.jade, size: 10)
+                                    Text(summary.joined(separator: " · ")).font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                                    Spacer(minLength: 0)
+                                }
                             }
                         }
                         .padding(14)
@@ -740,9 +786,9 @@ struct NationSheet: View {
                 }
                 if let parties = info.parties, !parties.isEmpty {
                     let topParty = parties.max(by: { $0.seats < $1.seats })
-                    FoldSection("议会（\(info.styleLabel ?? "")）", expanded: false, summary: topParty.map { "执政：\($0.name)（\($0.seats)席）" }) {
+                    FoldSection("议会（\(parties.count) 党 · \(info.styleLabel ?? "")）", expanded: false, summary: topParty.map { "执政：\($0.name)（\($0.seats)席）" }) {
                         Group2 {
-                            // Seats in one band, then each party.
+                            // 议席分布条
                             GeometryReader { g in
                                 HStack(spacing: 1) {
                                     ForEach(Array(parties.enumerated()), id: \.offset) { i, p in
@@ -752,9 +798,59 @@ struct NationSheet: View {
                                 .clipShape(Capsule())
                             }
                             .frame(height: 10).padding(.horizontal, 16).padding(.top, 12)
+                            if info.alive {
+                                HStack(spacing: 8) {
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        Task { await run { await model.regimeTransition(nation, action: "snapElection") } }
+                                    } label: {
+                                        Text("提前大选").font(Theme.caption).foregroundStyle(Theme.seal)
+                                            .padding(.horizontal, 10).frame(height: 28)
+                                            .background(Theme.seal.opacity(0.08), in: Capsule())
+                                            .overlay(Capsule().stroke(Theme.seal.opacity(0.28), lineWidth: 0.8))
+                                    }
+                                    .buttonStyle(PressStyle())
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        Task { await run { await model.partyAction(nation, party: -1, action: "found") } }
+                                    } label: {
+                                        Text("扶立新党").font(Theme.caption).foregroundStyle(Theme.jade)
+                                            .padding(.horizontal, 10).frame(height: 28)
+                                            .background(Theme.jade.opacity(0.08), in: Capsule())
+                                            .overlay(Capsule().stroke(Theme.jade.opacity(0.28), lineWidth: 0.8))
+                                    }
+                                    .buttonStyle(PressStyle())
+                                    Spacer()
+                                    Text("点按操控政党").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                }
+                                .padding(.horizontal, 16).padding(.top, 8)
+                            }
                             ForEach(Array(parties.sorted { $0.seats > $1.seats }.enumerated()), id: \.offset) { i, p in
                                 let index = parties.firstIndex { $0.name == p.name } ?? 0
-                                Button { partyEdit = PartyEdit(id: index, name: p.name, seats: p.seats) } label: {
+                                Button {
+                                    if info.alive {
+                                        pressMenu = PressMenu(
+                                            title: p.name,
+                                            subtitle: "\(p.line ?? "议会政党") · 现占 \(p.seats) 席",
+                                            items: [
+                                                PressMenuItem(title: "扶持增席（+12 席）", symbol: "arrow.up.circle") {
+                                                    Task { await run { await model.partyAction(nation, party: index, action: "boost") } }
+                                                },
+                                                PressMenuItem(title: "任命组阁执政", symbol: "crown") {
+                                                    Task { await run { await model.partyAction(nation, party: index, action: "appoint") } }
+                                                },
+                                                PressMenuItem(title: "自定义党名与议席", symbol: "pencil") {
+                                                    partyEdit = PartyEdit(id: index, name: p.name, seats: p.seats)
+                                                },
+                                                PressMenuItem(title: "查禁此党（国运 −3）", symbol: "xmark.octagon", destructive: true) {
+                                                    Task { await run { await model.partyAction(nation, party: index, action: "ban") } }
+                                                },
+                                            ]
+                                        )
+                                    } else {
+                                        partyEdit = PartyEdit(id: index, name: p.name, seats: p.seats)
+                                    }
+                                } label: {
                                     HStack(spacing: 8) {
                                         RoundedRectangle(cornerRadius: 2).fill(Self.partyColor(index)).frame(width: 10, height: 10)
                                         Text(p.name).font(Theme.body).foregroundStyle(Theme.ink)
@@ -762,16 +858,16 @@ struct NationSheet: View {
                                         if i == 0 { PaperTag(text: "执政") }
                                         Spacer()
                                         Text("\(p.seats) 席").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
-                                        Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7))
+                                        Image(systemName: "ellipsis.circle").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.75))
                                     }
-                                    .padding(.horizontal, 16).padding(.top, 6).contentShape(Rectangle())
+                                    .padding(.horizontal, 16).padding(.top, 7).contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
                                 // 党纲: what the party would do.
                                 if let policies = p.policies { Text(policies.joined(separator: " · ")).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8).padding(.leading, 34).padding(.trailing, 16).frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 6) }
                             }
                             if let top = topParty, let effect = top.effect {
-                                Text("执政 · \(top.name)（\(top.line ?? "")）：\(effect)。每四年改选。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10).fixedSize(horizontal: false, vertical: true)
+                                Text("执政 · \(top.name)（\(top.line ?? "")）：\(effect)。每四年改选，可随时扶持、组阁、查禁或扶立新党。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10).fixedSize(horizontal: false, vertical: true)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -814,7 +910,7 @@ struct NationSheet: View {
         let fighting = mine.filter { state.armies[$0].status == "fighting" }.count
         let fleets = (state.fleets ?? []).filter { $0.nation == nation }
         let tint = nation < map.meta.nations.count ? Names.color(map.meta.nations[nation].color) : Theme.ink2
-        VStack(alignment: .leading, spacing: 14) {
+        LazyVStack(alignment: .leading, spacing: 14) {
             StatStrip(tiles: [
                 StatTile(label: "总兵力", value: Names.wan(troops)),
                 StatTile(label: "军队", value: "\(mine.count)支"),
@@ -947,7 +1043,7 @@ struct NationSheet: View {
             ("王位宣称", "crown.fill", Color(red: 0.68, green: 0.44, blue: 0.12), (info.claims ?? []).map(\.nation), { n in (info.claims ?? []).first { $0.nation == n }.map { "宣称 · 余\($0.years)年" } }),
         ]
         let shown = groups.filter { !$0.nations.isEmpty }
-        VStack(alignment: .leading, spacing: 14) {
+        LazyVStack(alignment: .leading, spacing: 14) {
             if info.alive {
                 HStack(spacing: 10) {
                     if !info.enemies.isEmpty {
@@ -1039,10 +1135,14 @@ struct NationSheet: View {
     /// The forms of government (engine Regimes.styles): label, and what they bring.
     static let styles: [(id: String, label: String, note: String)] = [
         ("absolute", "君主专制", "王国 · 国王独断"), ("constitutional", "君主立宪", "王国 · 议会与党派"),
+        ("dualMonarchy", "二元君主立宪", "王国 · 君主握实权、议会参政"),
         ("empire", "帝制", "帝国 · 皇帝"), ("junta", "军政府", "国 · 最高统帅"),
         ("fascist", "法西斯", "国 · 领袖 · 国家法西斯党"), ("nazi", "国家社会主义", "国 · 元首 · 纳粹党"),
-        ("democratic", "民主共和", "共和国 · 总统 · 多党选举"), ("communist", "人民共和（共产主义）", "人民共和国 · 主席 · 一党执政"),
-        ("oligarchic", "寡头共和", "共和国 · 执政官 · 元老与商会"), ("federal", "联邦共和", "联邦 · 联邦主席 · 多党"),
+        ("democratic", "民主共和", "共和国 · 总统 · 多党选举"), ("semiPresidential", "半总统共和", "共和国 · 总统与总理共治"),
+        ("communist", "人民共和（共产主义）", "人民共和国 · 主席 · 一党执政"),
+        ("oligarchic", "寡头共和", "共和国 · 执政官 · 元老与商会"), ("technocracy", "专家官僚制", "共和国 · 首席执政官 · 精英治国"),
+        ("directorate", "督政府", "共和国 · 首席督政官 · 委员会"),
+        ("federal", "联邦共和", "联邦 · 联邦主席 · 多党"),
         ("theocracy", "神权", "神权国 · 宗教领袖"), ("tribal", "部落联盟", "部族 · 酋长或可汗"),
         ("feudal", "封建王国", "王国 · 君主"),
         ("elective", "选侯君主", "王国 · 选王"),
@@ -1097,6 +1197,10 @@ struct NationSheet: View {
         "order": ["Chancellor": "副团长", "Steward": "司库骑士", "Marshal": "元帅骑士", "Governor": "分团长"],
         "merchant": ["Chancellor": "首席议员", "Steward": "财务官", "Marshal": "舰队统帅", "Governor": "商站总督"],
         "citystate": ["Chancellor": "首席执政", "Steward": "财务官", "Marshal": "将军", "Governor": "督政"],
+        "dualMonarchy": ["Chancellor": "帝国首相", "Steward": "财政大臣", "Marshal": "皇家元帅", "Governor": "省督"],
+        "semiPresidential": ["Chancellor": "内阁总理", "Steward": "财政部长", "Marshal": "国防部长", "Governor": "州长"],
+        "technocracy": ["Chancellor": "首席委员", "Steward": "计委主任", "Marshal": "防务总监", "Governor": "行政专员"],
+        "directorate": ["Chancellor": "首席督政", "Steward": "财政督政", "Marshal": "军务督政", "Governor": "地方督政"],
     ]
     static let titlesByCulture: [String: [String: String]] = [
         "japanese": ["Chancellor": "关白", "Steward": "勘定奉行", "Marshal": "征夷大将军", "Governor": "国守"],
@@ -1337,7 +1441,10 @@ struct NationSheet: View {
         history = loadedHistory
         regime = loadedRegime
         postList = loadedPosts
-        if model.controller.relationsNation == nation { model.controller.relations = relationColors() }
+        let nextRel = relationColors()
+        if model.controller.relationsNation == nation && model.controller.relations != nextRel {
+            model.controller.relations = nextRel
+        }
     }
     /// StateRelationsHighlighter colours.
     private func relationColors() -> [Int: UInt32] {

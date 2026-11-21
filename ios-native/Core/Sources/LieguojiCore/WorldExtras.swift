@@ -52,13 +52,19 @@ extension NativeEngine {
         let home = r.tactics.forces[id].homeId.optionalString ?? a.originId.optionalString ?? ""
         o.home = JS(provinces.firstIndex { $0.id.asString == home } ?? -1)
         let since = r.forceSpeed.armies[id].initializedTick.optionalNumber
-        o.days = JS(since.map { max(0, ((r.clock.tick.asNumber - $0) / 120).rounded(.down)) } ?? 0)
-        o.full = JS(r.tactics.forces[id].fullStrength.optionalNumber ?? a.troops.asNumber)
+        let rawDays = since.map { max(0, ((r.clock.tick.asNumber - $0) / 120).rounded(.down)) } ?? 0
+        o.days = JS(rawDays.isFinite ? max(0, rawDays) : 0)
+        let curTroops = a.troops.asNumber.isFinite ? max(0, a.troops.asNumber) : 0
+        let rawFull = r.tactics.forces[id].fullStrength.optionalNumber ?? curTroops
+        o.full = JS(max(curTroops, rawFull.isFinite ? rawFull : curTroops).rounded())
         o.levy = JS(r.tactics.forces[id].kind.optionalString == "emergency")
         let rec = r.regimes.isNull || r.regimes.record.isNull ? JS.null : r.regimes.record[id]
-        o.kills = JS((rec.isNull ? 0 : rec.kills.optionalNumber ?? 0).rounded())
-        o.losses = JS((rec.isNull ? 0 : rec.losses.optionalNumber ?? 0).rounded())
-        o.battles = JS(rec.isNull ? 0 : rec.battles.optionalNumber ?? 0)
+        let kills = rec.isNull ? 0 : (rec.kills.optionalNumber ?? 0)
+        let losses = rec.isNull ? 0 : (rec.losses.optionalNumber ?? 0)
+        let battles = rec.isNull ? 0 : (rec.battles.optionalNumber ?? 0)
+        o.kills = JS(kills.isFinite ? max(0, kills).rounded() : 0)
+        o.losses = JS(losses.isFinite ? max(0, losses).rounded() : 0)
+        o.battles = JS(battles.isFinite ? max(0, battles).rounded() : 0)
         o.rank = JS(ArmyLedger.rank(r, id))
         o.reason = JS(r.armyAutonomy.armies[id].reason.optionalString ?? "")
         // 当前战役 and the campaigns it has fought in.

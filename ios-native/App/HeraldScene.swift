@@ -10,6 +10,7 @@ import LieguojiCore
 struct HeraldBanner: View {
     let herald: GameModel.Herald
     let map: WorldMap
+    var onDismiss: (() -> Void)? = nil
     @State private var start = Date()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -26,13 +27,18 @@ struct HeraldBanner: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 60, paused: reduceMotion)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
             let t = reduceMotion ? 3 : context.date.timeIntervalSince(start)
             scene(t)
         }
-        // 窄条：高 58 点、最宽 340 点，挂在顶栏下，不遮地图中部。
+        // 窄条：高 58 点、最宽 340 点，挂在顶栏下，不遮地图中部；轻点可立即收卷。
         .frame(maxWidth: 340).frame(height: 58)
         .padding(.horizontal, 24)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            GameFeel.shared.tap()
+            onDismiss?()
+        }
         .onAppear { start = Date() }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(herald.text)

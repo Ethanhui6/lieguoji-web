@@ -102,10 +102,12 @@ extension NativeEngine {
             let avgSkill = skillsArr.reduce(0, +) / 4.0
 
             // 疆域规模与巅峰
-            let startProvs = row.start[0].optionalNumber.map(Int.init) ?? (active ? currentProvinces : 0)
-            let startVassals = row.start[1].optionalNumber.map(Int.init) ?? 0
-            let endProvs = active ? currentProvinces : (row.end[0].optionalNumber.map(Int.init) ?? startProvs)
-            let endVassals = active ? currentVassals : (row.end[1].optionalNumber.map(Int.init) ?? startVassals)
+            let startArr = row.isNull || row.start.isNull ? [] : row.start.asArray
+            let endArr = row.isNull || row.end.isNull ? [] : row.end.asArray
+            let startProvs = startArr.first?.optionalNumber.map(Int.init) ?? (active ? currentProvinces : 0)
+            let startVassals = (startArr.count > 1 ? startArr[1].optionalNumber.map(Int.init) : nil) ?? 0
+            let endProvs = active ? currentProvinces : (endArr.first?.optionalNumber.map(Int.init) ?? startProvs)
+            let endVassals = active ? currentVassals : ((endArr.count > 1 ? endArr[1].optionalNumber.map(Int.init) : nil) ?? startVassals)
             let recordedPeak = row.peak.optionalNumber.map(Int.init) ?? max(startProvs, endProvs)
             let peakProvs = max(recordedPeak, max(startProvs, endProvs))
             let deltaProvs = endProvs - startProvs
@@ -172,12 +174,23 @@ extension NativeEngine {
                 return ev
             }
 
+            let honor = MonarchLore.honor(
+                r, nationId: id, reignId: rid, order: order,
+                culture: culture, polity: reignPolity, title: title,
+                person: person, fallbackName: displayName,
+                reignYears: reignYears, deltaProvs: deltaProvs, avgSkill: avgSkill, isActive: active
+            )
+
             let item = JS.object()
             item.order = JS(order)
             item.id = JS(rid)
-            item.name = JS(displayName)
+            item.name = JS(honor.styledName.isEmpty ? honor.cleanPersonalName : honor.styledName)
+            item.personalName = JS(honor.cleanPersonalName)
+            item.eraName = JS(honor.eraName)
+            item.eraYearText = JS(honor.eraYearText)
+            item.honorific = JS(honor.honorific)
             item.title = JS(title)
-            item.house = JS(house.isEmpty ? "无" : NamingCatalog.houseLabel(house))
+            item.house = JS(honor.surnameLessImperial ? "皇室（无姓）" : (house.isEmpty ? "无" : NamingCatalog.houseLabel(house)))
             item.familyId = JS(familyId)
             item.personId = JS(pid)
             item.stateName = JS(row.stateName.optionalString ?? n.name.asString)

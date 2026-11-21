@@ -259,4 +259,119 @@ final class PolityDiplomacyNamingTests: XCTestCase {
         let frames = engine.run.regimes.replay.frames.asArray
         XCTAssertGreaterThanOrEqual(frames.count, 5)
     }
+
+    /// v2.2.0 深度回归：真实君主年号/世数/无姓氏天皇、43 政体与全 26 文化党派操控、24 分级特产国力联动、16 新增人物个性实效、12 御批政令、军队数据一致性与诏书卷轴装裱。
+    func testV22MonarchLoreSpecialtiesPartiesDecreesAndArmyInvariants() throws {
+        let engine = try loadWorld(); defer { cleanup() }
+        let r = engine.run
+        let id0 = r.world.nations[0].id.asString
+        r.finance.nations[id0].gold = JS(3000)
+
+        // 1. 43 种政体完备性 & 全 26 文化党派库
+        XCTAssertGreaterThanOrEqual(Regimes.styles.count, 42)
+        for s in Regimes.styles {
+            XCTAssertNotNil(Regimes.styleProfiles[s.id], "缺少政体画像：\(s.id)")
+        }
+        for c in NativeEngine.cultureIds {
+            XCTAssertGreaterThanOrEqual((Regimes.partyPools[c] ?? []).count, 6, "文化 \(c) 党派库不足")
+        }
+
+        // 2. 日本天皇无姓氏 + 年号 + 「皇室（无姓）」
+        r.civilization.nations[id0].cultureId = JS("japanese")
+        r.civilization.nations[id0].polity = JS("Empire")
+        XCTAssertTrue(engine.setStyle(0, style: "empire").ok)
+        if let leaderId = r.people.nations[id0].leaderId.optionalNumber.map(Int.init), let p = People.person(r, leaderId) {
+            p.firstName = JS("睦仁"); p.lastName = JS("藤原")
+            let display = People.rulerDisplayName(culture: "japanese", polity: "Empire", name: "藤原睦仁", regnalName: "", ordinal: 1, given: "睦仁", title: "天皇")
+            XCTAssertEqual(display, "睦仁天皇", "日本天皇绝不可带姓氏")
+            XCTAssertFalse(display.contains("藤原"), "日本天皇不可包含姓氏")
+            let infoData = try XCTUnwrap(engine.nationInfo(0))
+            let infoJson = try XCTUnwrap(JSONSerialization.jsonObject(with: infoData) as? [String: Any])
+            let rulerJson = try XCTUnwrap(infoJson["ruler"] as? [String: Any])
+            XCTAssertEqual(rulerJson["name"] as? String, "睦仁")
+            XCTAssertEqual(rulerJson["surnameLessImperial"] as? Bool, true)
+            XCTAssertFalse((rulerJson["eraName"] as? String ?? "").isEmpty, "日本天皇应有年号")
+            XCTAssertTrue((rulerJson["styledName"] as? String ?? "").contains("天皇"))
+        }
+
+        // 3. 中华皇帝年号 + 庙号；西方君主世数（如 伊丽莎白二世）
+        r.civilization.nations[id0].cultureId = JS("chinese")
+        let cnHonor = MonarchLore.honor(r, nationId: id0, reignId: "test-cn-1", order: 1, culture: "chinese", polity: "Empire", title: "皇帝", person: nil, fallbackName: "李世民", reignYears: 12, deltaProvs: 5, avgSkill: 80, isActive: false)
+        XCTAssertFalse(cnHonor.eraName.isEmpty)
+        XCTAssertEqual(cnHonor.honorific, "太祖")
+        XCTAssertTrue(cnHonor.styledName.contains("太祖"))
+
+        let ukHonor1 = MonarchLore.honor(r, nationId: id0, reignId: "test-uk-1", order: 1, culture: "english", polity: "Kingdom", title: "女王", person: nil, fallbackName: "伊丽莎白", reignYears: 20, deltaProvs: 7, avgSkill: 82, isActive: false)
+        XCTAssertTrue(ukHonor1.styledName.contains("一世"))
+        XCTAssertEqual(ukHonor1.honorific, "大帝")
+
+        // 4. 16 新增性格特质对四维、国势与外交的真实加成
+        XCTAssertEqual(MonarchLore.extraTraits.count, 16)
+        if let leaderId = r.people.nations[id0].leaderId.optionalNumber.map(Int.init), let p = People.person(r, leaderId) {
+            p.traits = .array([])
+            let baseSkills = People.skills(p)
+            Regimes.leverageCache = nil
+            let baseLev = Regimes.leverage(r, id0)
+            p.traits = .array([JS("Tactician"), JS("Financier")])
+            let boostedSkills = People.skills(p)
+            Regimes.leverageCache = nil
+            let boostedLev = Regimes.leverage(r, id0)
+            XCTAssertGreaterThan(boostedSkills.military, baseSkills.military)
+            XCTAssertGreaterThan(boostedSkills.administrative, baseSkills.administrative)
+            XCTAssertGreaterThan(boostedLev.attack, baseLev.attack)
+            XCTAssertGreaterThan(boostedLev.income, baseLev.income)
+        }
+
+        // 5. 议会多党与主动操控（扶立新党、扶持增席、任命组阁、查禁）
+        XCTAssertTrue(engine.setStyle(0, style: "dualMonarchy").ok)
+        XCTAssertTrue(engine.partyAction(0, partyIndex: -1, action: "found").ok)
+        XCTAssertTrue(engine.partyAction(0, partyIndex: 0, action: "boost").ok)
+        XCTAssertTrue(engine.partyAction(0, partyIndex: 1, action: "appoint").ok)
+        XCTAssertTrue(engine.partyAction(0, partyIndex: 0, action: "ban").ok)
+
+        // 6. 24 分级特产与贸易国力联动
+        XCTAssertEqual(Trade.profiles.count, 24)
+        let tradeData = try XCTUnwrap(engine.tradeInfo(0))
+        let tradeJson = try XCTUnwrap(JSONSerialization.jsonObject(with: tradeData) as? [String: Any])
+        let goods = try XCTUnwrap(tradeJson["goods"] as? [[String: Any]])
+        XCTAssertFalse(goods.isEmpty)
+        XCTAssertNotNil(goods.first?["tier"])
+        XCTAssertNotNil(goods.first?["effect"])
+
+        // 7. 4 项新增御批政令（12 项完整可用）
+        for kind in ["relief", "landSurvey", "armsUpgrade", "academy"] {
+            let res = engine.nationDecree(0, kind: kind)
+            XCTAssertTrue(res.ok, "政令 \(kind) 失败：\(res.reason)")
+        }
+
+        // 8. 军队数据一致性（国家总兵力 == 活跃军队之和；满编 >= 当前兵力；士气/补给 0...100）
+        let stateData = engine.state(includeLabels: false)
+        let stateJson = try XCTUnwrap(JSONSerialization.jsonObject(with: stateData) as? [String: Any])
+        let nationsArr = try XCTUnwrap(stateJson["nations"] as? [[String: Any]])
+        let armiesArr = try XCTUnwrap(stateJson["armies"] as? [[String: Any]])
+        var troopSums = [Int: Int]()
+        for a in armiesArr {
+            let nIdx = a["nation"] as? Int ?? -1
+            let tr = a["troops"] as? Int ?? -1
+            let mor = a["morale"] as? Int ?? -1
+            let sup = a["supplies"] as? Int ?? -1
+            XCTAssertGreaterThanOrEqual(tr, 0)
+            XCTAssertTrue((0...100).contains(mor), "士气越界：\(mor)")
+            XCTAssertTrue((0...100).contains(sup), "粮草越界：\(sup)")
+            troopSums[nIdx, default: 0] += tr
+            if let aid = a["id"] as? String, let recData = engine.armyRecord(aid),
+               let recJson = try? JSONSerialization.jsonObject(with: recData) as? [String: Any] {
+                let full = recJson["full"] as? Double ?? 0
+                XCTAssertGreaterThanOrEqual(full + 0.5, Double(tr), "满编 \(full) 小于现兵力 \(tr)")
+            }
+        }
+        for (idx, n) in nationsArr.enumerated() {
+            let reported = n["troops"] as? Int ?? 0
+            XCTAssertEqual(reported, troopSums[idx] ?? 0, "国家 \(idx) 汇总兵力与活跃军队之和不符")
+        }
+
+        // 9. 皇帝诏书卷轴装裱网格完好
+        let scrollMesh = MapLayers.scrollFrame(width: 1600, height: 900)
+        XCTAssertGreaterThan(scrollMesh.vertices.count, 400)
+    }
 }

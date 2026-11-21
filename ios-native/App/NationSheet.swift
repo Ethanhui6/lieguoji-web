@@ -83,7 +83,7 @@ struct FoldSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Button {
                 GameFeel.shared.tap()
-                withAnimation(reduceMotion ? nil : Motion.fade) { expanded.toggle() }
+                withAnimation(reduceMotion ? nil : Motion.panel) { expanded.toggle() }
                 UserDefaults.standard.set(expanded, forKey: key)
             } label: {
                 HStack(spacing: 8) {
@@ -1088,7 +1088,7 @@ struct NationSheet: View {
     @ViewBuilder private func housesSection(_ c: NationInfo.Court) -> some View {
         VStack(spacing: 8) {
             Text("世家子弟出任官职、执掌封地；与宗室关系 ≤ −35 且势力 ≥ 120、有封地者可能举兵（谋逆）。点家族看族谱，长按改拥戴关系。")
-                .font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
             if !c.houses.isEmpty {
                 Group2 {
                     ForEach(Array(c.houses.enumerated()), id: \.offset) { i, h in
@@ -1330,7 +1330,7 @@ struct NationSheet: View {
             .animation(Motion.fade, value: pane)
         } else {
             VStack(alignment: .leading, spacing: 10) {
-                Text("点一类进入修改；改动立即生效。").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+                Text("点一类进入修改；改动立即生效。").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                     ForEach(CustomPane.allCases) { p in customCard(p, summary: customSummary(p, info, map, current: current, owned: owned.count), tint: p == .identity ? current.map { Names.color($0.color) } : nil) }
                 }
@@ -1520,7 +1520,7 @@ struct NationSheet: View {
                 }
             }
             .padding(.horizontal, 16)
-            paneNote("点一项用滑条调整；加成直接改变推演里的收入、战力、人口增长与行军。").padding(.horizontal, 22)
+            paneNote("点一项用滑条调整；加成直接改变推演里的收入、战力、人口增长与行军。").padding(.horizontal, Theme.Layout.sectionInset)
         case .polity:
             paneCard {
                 paneNote("改行后国号与元首称号随之改变；改变基本政体如同革命，国库与国运受损，会先问一次。")
@@ -1593,7 +1593,11 @@ struct NationSheet: View {
     }
     /// 分类页里的主要操作（图标 + 字，等宽两格）。
     private func paneAction(_ title: String, _ symbol: String) -> some View {
-        HStack(spacing: 6) { Image(systemName: symbol).font(.system(size: 15)); Text(title).font(Theme.body).lineLimit(1).minimumScaleFactor(0.8) }
+        HStack(spacing: 6) {
+            if let g = GameActionLabel.glyph(for: symbol) { InkIcon(glyph: g, size: 16, weight: 1.7) }
+            else { Image(systemName: symbol).font(.system(size: 15)) }
+            Text(title).font(Theme.body).lineLimit(1).minimumScaleFactor(0.8)
+        }
             .foregroundStyle(Theme.seal).frame(maxWidth: .infinity).frame(height: 44)
             .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Theme.seal.opacity(0.3)))
@@ -1623,7 +1627,7 @@ struct NationSheet: View {
                 PaperSwitch(title: "自主外交\(info.worldAuto ? "" : "（全局已关闭）")", on: Binding(get: { info.auto }, set: { on in Task { await run { await model.setAutoDiplomacy(nation, on) } } }))
             }
             .padding(.horizontal, 16)
-            if vassal { Text("附庸国无法自主行使外交权力，需独立").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
+            if vassal { Text("附庸国无法自主行使外交权力，需独立").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset) }
         }
     }
     private func action(_ title: String, _ icon: String, _ color: Color, disabled: Bool, _ perform: @escaping () -> Void) -> some View {

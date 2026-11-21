@@ -40,12 +40,14 @@ enum Theme {
     static let body = kai(15)
     static let label = kai(13)
     static let caption = kai(12)
-    /// 全应用统一排版尺度：卡片外边距 16、分节标题边距 20、卡片内边距 14、模块间距 12。
+    /// 全应用统一排版尺度：卡片外边距 16、分节与页头边距 20、卡片内边距 14、模块间距 12、左侧图标对齐通道 22。
     enum Layout {
         static let pageInset: CGFloat = 16
         static let sectionInset: CGFloat = 20
         static let cardPadding: CGFloat = 14
         static let stackGap: CGFloat = 12
+        static let iconGutter: CGFloat = 22
+        static let headerTop: CGFloat = 10
     }
 }
 
@@ -112,7 +114,7 @@ struct RootView: View {
         .sheet(isPresented: Binding(get: { model.failure != nil }, set: { if !$0 { model.failure = nil } })) {
             VStack(alignment: .leading, spacing: 16) {
                 SheetHeader(title: "出了点问题", subtitle: model.failure, seal: "误")
-                SealButton(title: "知道了") { model.failure = nil }.padding(.horizontal, 22)
+                SealButton(title: "知道了") { model.failure = nil }.padding(.horizontal, Theme.Layout.pageInset)
             }
             .padding(.bottom, 24)
             .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
@@ -225,7 +227,7 @@ struct CircleIcon: View {
         .onChange(of: active) { _, on in
             guard on, !reduceMotion else { halo = false; return }
             halo = false
-            withAnimation(.easeOut(duration: 0.52)) { halo = true }
+            withAnimation(Motion.reveal) { halo = true }
         }
     }
 }
@@ -270,9 +272,9 @@ struct WarCount: View {
         .onChange(of: count) { old, new in
             guard new > old else { return }
             ring = false
-            withAnimation(.spring(response: 0.22, dampingFraction: 0.45)) { bump = true }
-            withAnimation(.easeOut(duration: 0.8)) { ring = true }
-            Task { try? await Task.sleep(nanoseconds: 220_000_000); withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { bump = false } }
+            withAnimation(Motion.stamp) { bump = true }
+            withAnimation(Motion.reveal) { ring = true }
+            Task { try? await Task.sleep(nanoseconds: 220_000_000); withAnimation(Motion.tap) { bump = false } }
         }
     }
 }
@@ -312,6 +314,18 @@ struct TabButton: View {
 
 // MARK: - panels
 
+/// 宣纸面板顶部拖拽手柄（隐藏系统指示条后的统一物理暗示，居中暖墨细条）。
+struct SheetGrabber: View {
+    var body: some View {
+        Capsule()
+            .fill(Theme.ink.opacity(0.22))
+            .frame(width: 38, height: 4)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 9).padding(.bottom, 2)
+            .accessibilityHidden(true)
+    }
+}
+
 /// Memorial heading: a colour tab (签条) for a state, the brush title, an ink rule that draws
 /// itself, the docket line, and a small seal.
 struct SheetHeader: View {
@@ -319,23 +333,29 @@ struct SheetHeader: View {
     var subtitle: String?
     var color: Color?
     var seal: String = "阅"
+    var showGrabber = true
     @State private var inked = false
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            if let color {
-                RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 8, height: 46)
-                    .shadow(color: Theme.ink.opacity(0.15), radius: 1, y: 1)
+        VStack(spacing: 0) {
+            if showGrabber { SheetGrabber() }
+            HStack(alignment: .center, spacing: 12) {
+                if let color {
+                    RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 7, height: 44)
+                        .shadow(color: Theme.ink.opacity(0.15), radius: 1, y: 1)
+                }
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(title).font(Theme.kai(26)).foregroundStyle(Theme.ink).tracking(2).lineLimit(1).minimumScaleFactor(0.72)
+                    Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.7), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
+                        .frame(height: 1.2).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
+                    if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2) }
+                }
+                Spacer(minLength: 6)
+                Seal(text: seal, size: 32)
             }
-            VStack(alignment: .leading, spacing: 5) {
-                Text(title).font(Theme.kai(28)).foregroundStyle(Theme.ink).tracking(2).lineLimit(1).minimumScaleFactor(0.7)
-                Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.7), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
-                    .frame(height: 1.2).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
-                if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2) }
-            }
-            Spacer(minLength: 6)
-            Seal(text: seal, size: 32)
+            .padding(.horizontal, Theme.Layout.sectionInset)
+            .padding(.top, showGrabber ? Theme.Layout.headerTop : 18)
+            .padding(.bottom, 10)
         }
-        .padding(.horizontal, 22).padding(.top, 22).padding(.bottom, 10)
         .onAppear { withAnimation(Motion.reveal) { inked = true } }
     }
 }
@@ -399,6 +419,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("2.0.2", ["【全作 UI 视觉统一、光学对齐与字体一致性（融合四篇交互设计准则）】全面审查并统一整局 UI 界面：彻底清除残余系统字体泄漏，全应用 100% 统一为全字库正楷（`TW-Kai`）五阶字号体系；严格执行光学对齐（Optical Alignment），统一全作页面卡片外边距（16pt）、分节与页头基准线（20pt）及行内图标通道（22pt），并为播放三角、倒放、定位准星与冠冕加入几何中心微调；遵循渐进式披露（Progressive Disclosure）将「新世界」气候与纬度等进阶滑杆收纳为带实时摘要的折叠节，首屏更清爽；所有自定义宣纸半屏/全屏面板顶部补齐暖墨拖拽手柄（`SheetGrabber`）；建立长期复用的《列国纪 UI/交互设计规范与开发审查提示词》（`docs/UI_DESIGN_SPEC.md`）。",
+                   "【补全 16 枚手绘水墨功能图标】在 `InkIcons.swift` 中新绘舆图准星（定位）、时光回溯（回放）、倒放双刃、单步回退/前进、检索镜、巧匠调尺（设置）、双弧换图、典籍书函（卷宗）、纳卷归匣（导入）、绘疆画笔、关隘盾徽（要塞）、海港铁锚、边关烽火、鸣金收兵（撤退）与行军锋箭共 16 枚工笔水墨图标，全面接入标题页、国家页、军事页、快捷菜单、纪事与回放控制台。",
+                   "【山河回放全面修复与功能补完】彻底修复从纪事/国家页进入「山河回放」时因面板关闭自动恢复实时推演覆盖回放画面的 Bug；修复回放浮层层级过低及点击舆图误弹州郡/军团面板的问题（回放置于最高层级并锁定底层点选，保留双指自由缩放平移）；将关键帧采样加密为每 30 天及任意疆域易主即录制，修复新开局单帧下正放/倒放/步进按钮无响应的问题（新增单帧引导与一键返回推演录制）；拖动进度滑条时自动暂停计时器防止抢占；顶部新增「实时大国疆域占比条」动态展示列国兴衰份额，底部控制台支持下划或点按手柄折叠为紧凑悬浮胶囊。",
+                   "【国名舆图排布优化】升级 App 规则国名内点采样算法：在领土腹地按最深极点、质心最近点与四象限腹心均匀选取最多 16 处候选锚点，大幅改善弧形、沿海与狭长帝国的国名落位；将最大倾角收敛至 ±20° 以内并给予水平排版清晰度加权，同时自动避让本国都城坐标，减少国名压盖首都圈。",
+                   "【军队 AI 军机逻辑大幅升级】军机处新增围城危急度感知（优先驰援危城与都城）、多轴进攻防扎堆（主攻轴线兵力充裕后自动分兵开辟副攻包抄轴线，不再全军挤向同一敌州）、战略目标加权（直捣敌都、乘胜攻克已围之城、避实击虚突破空虚防线）；新增敌境兵疲粮尽（士气过低或断粮）自动撤回休整、行军途中前方敌势骤增（>1.85× 我方合围兵力）自动中止孤军送死，以及和平时期面向强邻边境最高 3.2× 的屯兵警觉权重。",
+                   "【临界阻尼弹簧动效、战场特效与性能优化】将全局交互动画升级为 WWDC23 临界阻尼弹簧（`Motion.tap / panel / drift` 默认不回弹、跟手利落，印章落印保留克制弹性）；升级交锋暖金微芒与宣纸镶边兵力条、攻占双层国色余波与双圈事件印晕；移除 `HeraldScene` 60fps Canvas 离屏高斯模糊与阵亡墨团 `CAShapeLayer` 离屏阴影，并为回放跳帧启用快速重绘路径（跳过静态城标与省界重建）及驻军计数 O(1) 预索引，显著降低帧耗时与发热。"]),
         ("2.0.1", ["【后期闪退彻底加固】全面清查并移除引擎推演、立国、内战、叛乱、迁都与人物生死中的强制解包（`!`）与自定义文化缺失崩溃点，同时为 `MapCamera`、`MapRenderer` 与点击坐标加入全链路 `NaN` / 无穷值免疫，大幅提升后期长期推演稳定性。",
                    "【根治中华后期反复出现「大金」与国名/政体失真】彻底修复「大金」循环根因（规范化基名去重使「大金 / 金 / 金帝国」共享唯一键值，防止字库耗尽反复命中「金」，并封顶旧邦无限复国循环）；大幅扩充全部 26 种文化的历史国名库（中华扩至 120+ 朝代/古国、欧亚各主流文化大幅扩充）及中华男女名与姓氏库；重修政体与国名契合规则：选定政体后再挑适配基名，改制共和/联邦/社会主义等现代政体自动转为「中原共和国」「江南联邦」等地理国名，杜绝「大金共和国」「大汉民主国」「第二大金」「西凉王国」等失真怪名，历史复国改采「后秦 / 南宋 / 续明」与「法兰西第二共和国」等自然序数格式。",
                    "【修复点军队报错与满屏白色 Bug】点击军队与舰队改为按稳定 ID 追踪，军团在推演中合编或覆灭时显示清晰的宣纸提示页而非空白视图；彻底堵死相机飞往军团时 `NaN` 坐标污染 `MapCamera` 导致的 Metal 满屏白屏问题，并修复密集驻军聚类时潜在的整数溢出陷阱。",

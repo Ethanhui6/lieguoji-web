@@ -240,7 +240,7 @@ enum Glyph {
         ("邦交总览", "person.2"), ("外交施令", "scroll"), ("当前战事", "flag.2.crossed"),
         ("按人口", "person.3"), ("按城防", "building.2"), ("按州名", "map"),
         ("游戏", "gamecontroller"), ("地图显示", "map"), ("声音与其他", "speaker.wave.2"), ("全部", "square.grid.2x2"), ("交战围城", "flag.2.crossed"), ("战局", "map"),
-        ("亲自指挥", "hand.point.up.left"), ("舰队", "sailboat"), ("排行", "list.number"), ("统计", "chart.bar"), ("纪事", "book.pages"), ("国史", "book.pages"),
+        ("亲自指挥", "hand.point.up.left"), ("舰队", "sailboat"), ("排行", "list.number"), ("统计", "chart.bar"), ("纪事", "book.pages"), ("史册", "book.pages"), ("国史", "book.pages"), ("回放", "clock.arrow.circlepath"),
         ("军情", "binoculars"),
         // 国势 (the nation page's five rows: every row carries its icon, not 财政 alone).
         ("军略", "flag.2.crossed"), ("守御", "shield.lefthalf.filled"), ("财政", "banknote"), ("民生", "leaf"), ("安定", "house"),

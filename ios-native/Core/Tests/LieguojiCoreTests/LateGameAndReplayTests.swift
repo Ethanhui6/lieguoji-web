@@ -145,16 +145,53 @@ final class LateGameAndReplayTests: XCTestCase {
         let rle = ReplayEngine.encodeRLE(sample)
         XCTAssertEqual(ReplayEngine.decodeRLE(rle, count: sample.count), sample)
 
-        // 3. 山河回放时间轴导出（至少包含开局帧与推进帧）
+        // 3. 山河回放时间轴导出（月度加密采样：400 天至少产生 10 帧且每帧含大国占比 topPowers）
         let tlData = try XCTUnwrap(engine.replayTimeline())
         let tl = try XCTUnwrap(try JSONSerialization.jsonObject(with: tlData) as? [String: Any])
         let frames = try XCTUnwrap(tl["frames"] as? [[String: Any]])
-        XCTAssertGreaterThanOrEqual(frames.count, 2, "推进 400 天应至少采集 2 帧山河关键帧")
+        XCTAssertGreaterThanOrEqual(frames.count, 10, "月度采样 400 天应至少采集 10 帧山河关键帧")
         let provCount = try XCTUnwrap(tl["provinceCount"] as? Int)
         for frame in frames {
             let encoded = try XCTUnwrap(frame["rle"] as? [Int])
             let decoded = ReplayEngine.decodeRLE(encoded, count: provCount)
             XCTAssertEqual(decoded.count, provCount)
+            let powers = try XCTUnwrap(frame["topPowers"] as? [[String: Any]])
+            XCTAssertFalse(powers.isEmpty, "每帧应附带 topPowers 大国占比")
         }
+    }
+
+    /// 2.0.2 验证：App 规则国名排布倾角柔和（≤ ±20°）且多轴进攻自动分兵不扎堆。
+    func testLabelCalmAngleAndMultiAxisArmyFlanking() throws {
+        let engine = try appWorld(); defer { cleanup() }
+        // bridge-world.json 不含离线 labelGrid，构造一块 16×12 合成格网归属第 0 州以直接检验 App 规则排布算法
+        let cols = 16, rows = 12
+        var pts = [JS](), cells = [JS]()
+        for y in 0..<rows {
+            for x in 0..<cols {
+                pts.append(JS(Double(x) * 10 + 100))
+                pts.append(JS(Double(y) * 10 + 100))
+                cells.append(JS(0))
+            }
+        }
+        let grid = JS.object()
+        grid.cellsX = JS(cols); grid.points = .array(pts); grid.cells = .array(cells)
+        engine.statics.labelGrid = grid
+        let state = engine.gameState(includeLabels: true)
+        let boxes = try XCTUnwrap(state.labels)
+        XCTAssertFalse(boxes.isEmpty)
+        for b in boxes {
+            XCTAssertTrue(b.x.isFinite && b.y.isFinite && b.width > 0 && b.height > 0)
+            XCTAssertLessThanOrEqual(abs(b.angle ?? 0), 0.36, "2.0.2 App 规则国名倾角应收敛在 ±20° 以内")
+        }
+
+        // 6 支 2000 兵力进攻两个各需 2000 兵力的相邻敌州（都在 x=0 附近出发），多余兵力不应全堆到同一个州
+        let forces = (0..<6).map { WarCouncil.Force(id: "a\($0)", troops: 2000, x: Double($0), y: 0, feature: 1, target: nil, movable: true) }
+        let p1 = WarCouncil.Post(province: 10, x: 5, y: 0, feature: 1, need: 2000)
+        let p2 = WarCouncil.Post(province: 11, x: 25, y: 0, feature: 1, need: 2000)
+        let duties = WarCouncil.assign(forces: forces, defend: [], hold: [], holdBudget: 0, attack: [p1, p2])
+        let onP1 = duties.values.filter { $0 == .attack(10) }.count
+        let onP2 = duties.values.filter { $0 == .attack(11) }.count
+        XCTAssertGreaterThanOrEqual(onP2, 2, "副攻轴线应分得足够兵力以形成多路包抄，实际 p1=\(onP1) p2=\(onP2)")
+        XCTAssertLessThanOrEqual(onP1, 4, "主攻轴线不应过度堆兵溢出")
     }
 }

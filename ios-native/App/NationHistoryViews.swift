@@ -226,7 +226,7 @@ struct NationHistoryTab: View {
                     onOpenReplay()
                 } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: "clock.arrow.circlepath").font(.system(size: 14, weight: .medium))
+                        InkIcon(glyph: .replay, size: 15, weight: 1.8)
                         Text("开启山河回放 · 追溯历代疆域演变").font(Theme.label)
                         Spacer()
                         Image(systemName: "chevron.right").font(.system(size: 11))
@@ -257,7 +257,7 @@ struct NationHistoryTab: View {
                     let h = max(8, CGFloat(r.peakProvinces) / CGFloat(maxPeak) * 58)
                     let isStrong = r.order == report.strongestOrder
                     Button {
-                        withAnimation(Motion.fade) { expandedReign = r.id }
+                        withAnimation(Motion.panel) { expandedReign = r.id }
                         if r.capitalProvince >= 0 { locateProvince(r.capitalProvince) }
                     } label: {
                         VStack(spacing: 3) {
@@ -265,7 +265,7 @@ struct NationHistoryTab: View {
                             RoundedRectangle(cornerRadius: 3, style: .continuous)
                                 .fill(r.active ? Theme.seal : isStrong ? Theme.jade : Theme.ink.opacity(0.45))
                                 .frame(maxWidth: 20).frame(height: h)
-                            Text("第\(r.order)世").font(.system(size: 9)).foregroundStyle(r.active ? Theme.seal : Theme.ink2).lineLimit(1).minimumScaleFactor(0.6)
+                            Text("第\(r.order)世").font(Theme.caption).foregroundStyle(r.active ? Theme.seal : Theme.ink2).lineLimit(1).minimumScaleFactor(0.62)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                     }
@@ -295,7 +295,7 @@ struct NationHistoryTab: View {
             // 卡片头部：世次、尊号、姓名、强势等级、一键定位
             Button {
                 GameFeel.shared.tap()
-                withAnimation(Motion.fade) { expandedReign = isOpen ? nil : reign.id }
+                withAnimation(Motion.panel) { expandedReign = isOpen ? nil : reign.id }
             } label: {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .top, spacing: 10) {
@@ -355,7 +355,7 @@ struct NationHistoryTab: View {
                         if reign.capitalProvince >= 0 {
                             Button { locateProvince(reign.capitalProvince) } label: {
                                 HStack(spacing: 4) {
-                                    Image(systemName: "scope").font(.system(size: 11))
+                                    InkIcon(glyph: .locate, size: 13, weight: 1.7)
                                     Text(reign.capitalName.isEmpty ? "定位都城" : "定位·\(reign.capitalName)").font(Theme.caption).lineLimit(1)
                                 }
                                 .foregroundStyle(Theme.seal)
@@ -402,8 +402,9 @@ struct NationHistoryTab: View {
                                     Spacer(minLength: 4)
                                     if let p = ev.province, map.meta.provinces.indices.contains(p) {
                                         Button { locateProvince(p) } label: {
-                                            Image(systemName: "scope").font(.system(size: 12)).foregroundStyle(Theme.seal)
-                                                .frame(width: 24, height: 24)
+                                            InkIcon(glyph: .locate, size: 13, weight: 1.7)
+                                                .foregroundStyle(Theme.seal)
+                                                .frame(width: 26, height: 26)
                                                 .background(Theme.seal.opacity(0.08), in: Circle())
                                         }
                                         .buttonStyle(PressStyle())
@@ -427,7 +428,7 @@ struct NationHistoryTab: View {
         let c: Color = v >= 75 ? Theme.jade : v <= 35 ? Theme.seal : Theme.ink
         return VStack(spacing: 2) {
             Text("\(v)").font(Theme.body).foregroundStyle(c).monospacedDigit()
-            Text(label).font(.system(size: 10)).foregroundStyle(Theme.ink2)
+            Text(label).font(Theme.caption).foregroundStyle(Theme.ink2)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 5)
         .background(Theme.paper.opacity(0.7), in: RoundedRectangle(cornerRadius: 8, style: .continuous))

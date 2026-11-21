@@ -68,6 +68,7 @@ struct ArmySheet: View {
             let fighting = a.status == "fighting"
             ScrollView {
                 LazyVStack(spacing: 14) {
+                    SheetGrabber()
                     // 军牌: the unit's mark in its state's colour beside the name.
                     HStack(spacing: 14) {
                         UnitMark(unit: a.unit, color: tint).frame(width: 46, height: 46)
@@ -79,16 +80,16 @@ struct ArmySheet: View {
                             }
                         }
                         Spacer()
-                        Button(action: locate) { InkIcon(glyph: .views, size: 20).foregroundStyle(Theme.seal).frame(width: 40, height: 40).background(Theme.seal.opacity(0.08), in: Circle()) }
+                        Button(action: locate) { InkIcon(glyph: .locate, size: 19, weight: 1.75, accent: Theme.seal.opacity(0.24)).foregroundStyle(Theme.seal).frame(width: 42, height: 42).background(Theme.seal.opacity(0.08), in: Circle()) }
                             .buttonStyle(PressStyle()).accessibilityLabel("定位")
                     }
-                    .padding(.horizontal, 22).padding(.top, 22)
+                    .padding(.horizontal, Theme.Layout.sectionInset).padding(.top, 2)
                     // The arm's strengths and weaknesses, and who leads it.
                     VStack(alignment: .leading, spacing: 4) {
                         if let k = UnitKinds.byKey[a.unit] { Text(k.note).font(Theme.label).foregroundStyle(Theme.ink2) }
                         if let c = a.commander { Text(a.banner == "ruler" ? "御驾亲征：\(c)" : "主将：\(c)").font(Theme.label).foregroundStyle(a.banner == "ruler" ? Theme.seal : Theme.ink) }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 22)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, Theme.Layout.sectionInset)
                     StatStrip(tiles: [
                         StatTile(label: "编制", value: Echelon.name(troops: a.troops, culture: nation?.culture ?? "")),
                         StatTile(label: "兵力", value: Names.wan(a.troops)),
@@ -107,7 +108,7 @@ struct ArmySheet: View {
                         Spacer()
                         Text(ArmyRow.command(a)).font(Theme.label).foregroundStyle(Theme.ink2)
                     }
-                    .padding(.horizontal, 22)
+                    .padding(.horizontal, Theme.Layout.sectionInset)
                     HStack(spacing: 10) {
                         Button(action: onMarch) { PrimaryLabel(title: "调兵", symbol: "arrow.triangle.turn.up.right.diamond") }.disabled(fighting).opacity(fighting ? 0.5 : 1)
                         Button(action: onRetreat) { SecondaryLabel(title: "撤退", symbol: "arrow.uturn.backward") }
@@ -152,9 +153,9 @@ struct ArmySheet: View {
                     .sheet(isPresented: $renaming) {
                         VStack(alignment: .leading, spacing: 14) {
                             SheetHeader(title: "军队更名", subtitle: "现名 \(a.name)", seal: "改")
-                            TextField("", text: $newName).paperField().padding(.horizontal, 22)
+                            TextField("", text: $newName).paperField().padding(.horizontal, Theme.Layout.pageInset)
                             SealButton(title: "颁行", disabled: newName.trimmingCharacters(in: .whitespaces).isEmpty) { renaming = false; act("renameArmy", a, text: newName) }
-                                .padding(.horizontal, 22)
+                                .padding(.horizontal, Theme.Layout.pageInset)
                         }
                         .padding(.bottom, 16)
                         .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
@@ -164,7 +165,7 @@ struct ArmySheet: View {
                     // 整编 (custom): strength, arm and morale.
                     Button { withAnimation(Motion.panel) { editing.toggle() } } label: {
                         HStack { Text("整编（自定义）").font(Theme.body).foregroundStyle(Theme.ink); Spacer(); Image(systemName: editing ? "chevron.up" : "chevron.down").font(.system(size: 13, weight: .regular)).foregroundStyle(Theme.ink2) }
-                            .padding(.horizontal, 24).contentShape(Rectangle())
+                            .padding(.horizontal, Theme.Layout.sectionInset).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     if editing {
@@ -323,7 +324,7 @@ struct FleetSheet: View {
                         Spacer()
                         Button(action: pickOnMap) { Label("地图选港", systemImage: "hand.tap").font(Theme.label).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle()).disabled(busy)
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, Theme.Layout.sectionInset)
                     Group2 {
                         if ports.isEmpty {
                             Text("本国没有可停留的港口").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16)
@@ -332,7 +333,7 @@ struct FleetSheet: View {
                             let on = target == item.port.province
                             Button { withAnimation(Motion.tap) { target = on ? -1 : item.port.province } } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "anchor").font(.system(size: 14, weight: .regular)).foregroundStyle(on ? Theme.seal : Theme.ink2).frame(width: 22)
+                                    InkIcon(glyph: .anchor, size: 15, weight: 1.7).foregroundStyle(on ? Theme.seal : Theme.ink2).frame(width: Theme.Layout.iconGutter)
                                     Text(map.meta.provinces[item.port.province].name + "港").font(Theme.section).foregroundStyle(Theme.ink)
                                     if item.port.province == f.port { Text("现泊").font(Theme.caption).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.ink2, in: Capsule()) }
                                     Spacer()
@@ -394,12 +395,12 @@ struct FleetSheet: View {
             .sheet(isPresented: $renaming) {
                 VStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "舰队更名", subtitle: "现名 \(f.name)", seal: "改")
-                    TextField("", text: $newName).paperField().padding(.horizontal, 22)
+                    TextField("", text: $newName).paperField().padding(.horizontal, Theme.Layout.pageInset)
                     SealButton(title: "颁行", disabled: newName.trimmingCharacters(in: .whitespaces).isEmpty) {
                         renaming = false
                         Task { feedback = await model.editFleet(f.id, ships: nil, name: newName) ?? "已更名为\(newName)" }
                     }
-                    .padding(.horizontal, 22)
+                    .padding(.horizontal, Theme.Layout.pageInset)
                 }
                 .padding(.bottom, 16)
                 .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
@@ -425,7 +426,14 @@ struct ArmyChip: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 4) {
-                Image(systemName: symbol).font(.system(size: 15, weight: .regular))
+                Group {
+                    if let g = GameActionLabel.glyph(for: symbol) {
+                        InkIcon(glyph: g, size: 17, weight: 1.7)
+                    } else {
+                        Image(systemName: symbol).font(.system(size: 15, weight: .regular))
+                    }
+                }
+                .frame(height: 19)
                 Text(title).font(Theme.label).lineLimit(1).minimumScaleFactor(0.7)
             }
             .foregroundStyle(danger ? Theme.seal : Theme.ink)

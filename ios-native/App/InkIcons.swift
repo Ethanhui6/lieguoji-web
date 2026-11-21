@@ -13,6 +13,10 @@ enum InkGlyph: String, CaseIterable {
     case war
     case house, crown, alliance, culture, religion, polity, economy, goods, region
     case play, pause, marriage, edict
+    // 2.0.2 补全高频水墨功能图标（定位、回放、倒放、步进、检索、设置、重绘、卷宗、导入、画笔、要塞、锚泊、烽火、撤军、行军）
+    case locate, replay, rewind, stepBack, stepForward
+    case search, settings, refresh, archive, importSave
+    case brush, fortress, anchor, fire, retreat, march
 }
 
 struct InkIcon: View {
@@ -23,6 +27,16 @@ struct InkIcon: View {
     /// 可选点缀色；为空时在选中态用柔和前景色晕染焦点部件，平时不抢主笔。
     var accent: Color? = nil
 
+    /// 视觉对齐（Optical Alignment）：非对称三角与上重下轻图标做几何中心微调，视觉上严格居中。
+    private var opticalOffset: CGSize {
+        switch glyph {
+        case .play: return CGSize(width: size * 0.055, height: 0)
+        case .rewind: return CGSize(width: -size * 0.04, height: 0)
+        case .crown, .locate, .fortress: return CGSize(width: 0, height: -size * 0.02)
+        default: return .zero
+        }
+    }
+
     var body: some View {
         let w = weight * size / 22
         ZStack {
@@ -32,17 +46,20 @@ struct InkIcon: View {
                     .fill(RadialGradient(colors: [Theme.seal.opacity(0.14), .clear], center: .center, startRadius: 0, endRadius: size * 0.56))
                     .scaleEffect(1.15)
             }
-            if let accent {
-                InkAccentPath(glyph: glyph).fill(accent)
-            } else if filled {
-                InkAccentPath(glyph: glyph).fill(.foreground.opacity(0.24))
+            Group {
+                if let accent {
+                    InkAccentPath(glyph: glyph).fill(accent)
+                } else if filled {
+                    InkAccentPath(glyph: glyph).fill(.foreground.opacity(0.24))
+                }
+                // 淡墨洇晕：纯矢量略宽淡墨底笔（去掉离屏 .blur/.drawingGroup，列表滚动零离屏合成开销且边缘更锐利）。
+                BrushShape(glyph: glyph, width: w * 1.56)
+                    .fill(.foreground.opacity(0.11))
+                // 主笔触：起顿行饱收锋。
+                BrushShape(glyph: glyph, width: w * 1.24)
+                    .fill(.foreground)
             }
-            // 淡墨洇晕：纯矢量略宽淡墨底笔（去掉离屏 .blur/.drawingGroup，列表滚动零离屏合成开销且边缘更锐利）。
-            BrushShape(glyph: glyph, width: w * 1.56)
-                .fill(.foreground.opacity(0.11))
-            // 主笔触：起顿行饱收锋。
-            BrushShape(glyph: glyph, width: w * 1.24)
-                .fill(.foreground)
+            .offset(opticalOffset)
         }
         .frame(width: size, height: size)
     }
@@ -247,7 +264,27 @@ struct InkAccentPath: Shape {
             p.addEllipse(in: CGRect(origin: pt(9.8, 9.5), size: CGSize(width: 4.4 * k, height: 4.4 * k)))
         case .edict:
             p.addRoundedRect(in: CGRect(origin: pt(9.5, 13.0), size: CGSize(width: 5.0 * k, height: 4.8 * k)), cornerSize: CGSize(width: 0.9 * k, height: 0.9 * k))
-        case .sea, .plain, .mountain, .raise, .lower, .smooth, .menu, .close:
+        case .locate:
+            p.addEllipse(in: CGRect(origin: pt(9.8, 9.8), size: CGSize(width: 4.4 * k, height: 4.4 * k)))
+        case .replay:
+            p.addEllipse(in: CGRect(origin: pt(9.6, 9.6), size: CGSize(width: 4.8 * k, height: 4.8 * k)))
+        case .rewind:
+            p.move(to: pt(12.2, 6.4)); p.addLine(to: pt(4.6, 12.0)); p.addLine(to: pt(12.2, 17.6)); p.closeSubpath()
+            p.move(to: pt(19.4, 6.4)); p.addLine(to: pt(11.8, 12.0)); p.addLine(to: pt(19.4, 17.6)); p.closeSubpath()
+        case .stepBack:
+            p.move(to: pt(18.5, 6.0)); p.addLine(to: pt(9.5, 12.0)); p.addLine(to: pt(18.5, 18.0)); p.closeSubpath()
+        case .stepForward:
+            p.move(to: pt(5.5, 6.0)); p.addLine(to: pt(14.5, 12.0)); p.addLine(to: pt(5.5, 18.0)); p.closeSubpath()
+        case .fortress:
+            p.move(to: pt(12, 5.0)); p.addLine(to: pt(18.2, 7.6)); p.addLine(to: pt(17.2, 14.2)); p.addQuadCurve(to: pt(12, 19.6), control: pt(15.2, 17.8))
+            p.addQuadCurve(to: pt(6.8, 14.2), control: pt(8.8, 17.8)); p.addLine(to: pt(5.8, 7.6)); p.closeSubpath()
+        case .fire:
+            p.move(to: pt(12, 7.2)); p.addQuadCurve(to: pt(16.4, 14.6), control: pt(17.4, 11.2)); p.addQuadCurve(to: pt(12, 19.4), control: pt(15.5, 18.8))
+            p.addQuadCurve(to: pt(7.6, 14.6), control: pt(8.5, 18.8)); p.addQuadCurve(to: pt(12, 7.2), control: pt(6.6, 11.2)); p.closeSubpath()
+        case .archive:
+            p.addRoundedRect(in: CGRect(origin: pt(9.8, 5.2), size: CGSize(width: 4.4 * k, height: 14.4 * k)), cornerSize: CGSize(width: 0.8 * k, height: 0.8 * k))
+        case .sea, .plain, .mountain, .raise, .lower, .smooth, .menu, .close,
+             .search, .settings, .refresh, .importSave, .brush, .anchor, .retreat, .march:
             break
         }
         return p
@@ -401,6 +438,99 @@ struct InkPath: Shape {
             p.move(to: pt(9.8, 5.2)); p.addQuadCurve(to: pt(14.2, 5.2), control: pt(12, 2.4))
             p.move(to: pt(12, 8.2)); p.addLine(to: pt(12, 11.4))
             p.addRoundedRect(in: CGRect(origin: pt(9.5, 13.0), size: CGSize(width: 5 * k, height: 4.8 * k)), cornerSize: CGSize(width: 0.9 * k, height: 0.9 * k))
+        case .locate:
+            // 舆图准星：同心环与四向刻度。
+            p.addEllipse(in: CGRect(origin: pt(5.8, 5.8), size: CGSize(width: 12.4 * k, height: 12.4 * k)))
+            p.move(to: pt(12, 2.4)); p.addLine(to: pt(12, 6.2))
+            p.move(to: pt(12, 17.8)); p.addLine(to: pt(12, 21.6))
+            p.move(to: pt(2.4, 12)); p.addLine(to: pt(6.2, 12))
+            p.move(to: pt(17.8, 12)); p.addLine(to: pt(21.6, 12))
+            p.addEllipse(in: CGRect(origin: pt(10.6, 10.6), size: CGSize(width: 2.8 * k, height: 2.8 * k)))
+        case .replay:
+            // 山河回溯：逆向时轮与表针。
+            p.addArc(center: pt(12, 12), radius: 7.8 * k, startAngle: .degrees(-130), endAngle: .degrees(190), clockwise: false)
+            p.move(to: pt(4.4, 6.2)); p.addLine(to: pt(5.2, 10.6)); p.addLine(to: pt(9.6, 9.6))
+            p.move(to: pt(12, 7.6)); p.addLine(to: pt(12, 12.2)); p.addLine(to: pt(15.4, 14.0))
+        case .rewind:
+            // 倒放双刃三角。
+            p.move(to: pt(12.2, 6.4)); p.addLine(to: pt(4.6, 12.0)); p.addLine(to: pt(12.2, 17.6)); p.closeSubpath()
+            p.move(to: pt(19.4, 6.4)); p.addLine(to: pt(11.8, 12.0)); p.addLine(to: pt(19.4, 17.6)); p.closeSubpath()
+        case .stepBack:
+            // 单步回退：竖闸加左三角。
+            p.move(to: pt(6.2, 6.0)); p.addLine(to: pt(6.2, 18.0))
+            p.move(to: pt(18.2, 6.2)); p.addLine(to: pt(9.8, 12.0)); p.addLine(to: pt(18.2, 17.8)); p.closeSubpath()
+        case .stepForward:
+            // 单步前进：右三角加竖闸。
+            p.move(to: pt(5.8, 6.2)); p.addLine(to: pt(14.2, 12.0)); p.addLine(to: pt(5.8, 17.8)); p.closeSubpath()
+            p.move(to: pt(17.8, 6.0)); p.addLine(to: pt(17.8, 18.0))
+        case .search:
+            // 舆图检索镜。
+            p.addEllipse(in: CGRect(origin: pt(4.2, 4.2), size: CGSize(width: 11.4 * k, height: 11.4 * k)))
+            p.move(to: pt(14.2, 14.2)); p.addLine(to: pt(20.0, 20.0))
+        case .settings:
+            // 巧匠调尺：三道横轨与滑珠。
+            p.move(to: pt(3.5, 6.5)); p.addLine(to: pt(20.5, 6.5))
+            p.addEllipse(in: CGRect(origin: pt(7.2, 4.7), size: CGSize(width: 3.6 * k, height: 3.6 * k)))
+            p.move(to: pt(3.5, 12.0)); p.addLine(to: pt(20.5, 12.0))
+            p.addEllipse(in: CGRect(origin: pt(13.2, 10.2), size: CGSize(width: 3.6 * k, height: 3.6 * k)))
+            p.move(to: pt(3.5, 17.5)); p.addLine(to: pt(20.5, 17.5))
+            p.addEllipse(in: CGRect(origin: pt(8.5, 15.7), size: CGSize(width: 3.6 * k, height: 3.6 * k)))
+        case .refresh:
+            // 重绘换图：双弧循环箭。
+            p.addArc(center: pt(12, 12), radius: 7.4 * k, startAngle: .degrees(-150), endAngle: .degrees(-20), clockwise: false)
+            p.move(to: pt(16.6, 5.2)); p.addLine(to: pt(19.2, 9.2)); p.addLine(to: pt(14.8, 9.6))
+            p.addArc(center: pt(12, 12), radius: 7.4 * k, startAngle: .degrees(30), endAngle: .degrees(160), clockwise: false)
+            p.move(to: pt(7.4, 18.8)); p.addLine(to: pt(4.8, 14.8)); p.addLine(to: pt(9.2, 14.4))
+        case .archive:
+            // 典籍书函：三卷立册。
+            p.addRoundedRect(in: CGRect(origin: pt(4.0, 4.4), size: CGSize(width: 4.5 * k, height: 15.6 * k)), cornerSize: CGSize(width: 0.9 * k, height: 0.9 * k))
+            p.addRoundedRect(in: CGRect(origin: pt(9.8, 4.4), size: CGSize(width: 4.5 * k, height: 15.6 * k)), cornerSize: CGSize(width: 0.9 * k, height: 0.9 * k))
+            p.move(to: pt(15.6, 5.2)); p.addLine(to: pt(19.8, 4.4)); p.addLine(to: pt(21.0, 19.6)); p.addLine(to: pt(16.8, 20.2)); p.closeSubpath()
+        case .importSave:
+            // 纳卷归匣：下落箭与纸匣。
+            p.move(to: pt(12, 3.6)); p.addLine(to: pt(12, 14.2))
+            p.move(to: pt(8.2, 10.6)); p.addLine(to: pt(12, 14.6)); p.addLine(to: pt(15.8, 10.6))
+            p.move(to: pt(4.2, 13.8)); p.addLine(to: pt(4.2, 19.6)); p.addLine(to: pt(19.8, 19.6)); p.addLine(to: pt(19.8, 13.8))
+        case .brush:
+            // 绘疆画笔：笔杆与饱满笔锋。
+            p.move(to: pt(18.8, 4.2)); p.addLine(to: pt(10.0, 13.0))
+            p.move(to: pt(10.0, 13.0)); p.addQuadCurve(to: pt(4.2, 19.8), control: pt(5.8, 13.8))
+            p.addQuadCurve(to: pt(11.2, 14.2), control: pt(10.2, 18.8))
+            p.move(to: pt(14.5, 8.5)); p.addLine(to: pt(16.0, 10.0))
+        case .fortress:
+            // 关隘盾徽：城垛护盾。
+            p.move(to: pt(12, 3.6)); p.addLine(to: pt(19.2, 6.6)); p.addLine(to: pt(18.2, 14.4))
+            p.addQuadCurve(to: pt(12, 20.6), control: pt(16.0, 18.4))
+            p.addQuadCurve(to: pt(5.8, 14.4), control: pt(8.0, 18.4))
+            p.addLine(to: pt(4.8, 6.6)); p.closeSubpath()
+            p.move(to: pt(12, 7.6)); p.addLine(to: pt(12, 16.4))
+        case .anchor:
+            // 海港铁锚。
+            p.addEllipse(in: CGRect(origin: pt(9.8, 3.4), size: CGSize(width: 4.4 * k, height: 4.4 * k)))
+            p.move(to: pt(12, 7.8)); p.addLine(to: pt(12, 19.8))
+            p.move(to: pt(7.2, 11.0)); p.addLine(to: pt(16.8, 11.0))
+            p.move(to: pt(5.2, 14.8)); p.addQuadCurve(to: pt(12, 20.2), control: pt(6.4, 20.0))
+            p.addQuadCurve(to: pt(18.8, 14.8), control: pt(17.6, 20.0))
+        case .fire:
+            // 边关烽火。
+            p.move(to: pt(12, 3.8)); p.addQuadCurve(to: pt(18.0, 13.8), control: pt(19.2, 9.6))
+            p.addQuadCurve(to: pt(12, 20.4), control: pt(17.2, 19.8))
+            p.addQuadCurve(to: pt(6.0, 13.8), control: pt(6.8, 19.8))
+            p.addQuadCurve(to: pt(12, 3.8), control: pt(4.8, 9.6)); p.closeSubpath()
+            p.move(to: pt(12, 11.5)); p.addQuadCurve(to: pt(14.2, 16.4), control: pt(14.8, 14.2))
+            p.addQuadCurve(to: pt(9.8, 16.4), control: pt(12, 18.6))
+        case .retreat:
+            // 鸣金收兵：回折箭。
+            p.move(to: pt(9.5, 5.4)); p.addLine(to: pt(4.6, 9.6)); p.addLine(to: pt(9.5, 13.8))
+            p.move(to: pt(5.4, 9.6)); p.addLine(to: pt(14.6, 9.6))
+            p.addQuadCurve(to: pt(19.2, 14.4), control: pt(19.2, 9.6))
+            p.addQuadCurve(to: pt(14.6, 19.2), control: pt(19.2, 19.2))
+            p.addLine(to: pt(7.5, 19.2))
+        case .march:
+            // 行军指路：斜向行军锋箭。
+            p.move(to: pt(4.8, 19.2)); p.addLine(to: pt(18.8, 5.2))
+            p.move(to: pt(10.8, 5.2)); p.addLine(to: pt(18.8, 5.2)); p.addLine(to: pt(18.8, 13.2))
+            p.move(to: pt(4.2, 11.8)); p.addLine(to: pt(8.6, 11.8)); p.addLine(to: pt(8.6, 15.8))
         }
         return p
     }
@@ -413,21 +543,39 @@ struct GameActionLabel: View {
     static func glyph(for symbol: String) -> InkGlyph? {
         switch symbol {
         case "flag.2.crossed", "flag.2.crossed.fill": return .military
-        case "map", "mountain.2", "mountain.2.fill": return .views
-        case "doc.text", "doc.text.fill", "scroll", "scroll.fill": return .diplomacy
+        case "map", "mountain.2", "mountain.2.fill", "globe.asia.australia": return .views
+        case "doc.text", "doc.text.fill", "scroll", "scroll.fill", "doc.text.magnifyingglass": return .diplomacy
         case "flag", "flag.fill": return .command
-        case "house", "house.fill", "person.3", "person.3.fill": return .house
+        case "house", "house.fill", "person.3", "person.3.fill", "person.3.sequence": return .house
         case "crown", "crown.fill": return .crown
         case "person.2", "person.2.fill": return .alliance
-        case "building.columns", "building.columns.fill": return .polity
-        case "book", "book.closed", "book.pages", "character.book.closed.fill": return .chronicle
+        case "building.columns", "building.columns.fill", "building.2": return .polity
+        case "book", "book.closed", "book.pages", "character.book.closed.fill", "list.bullet.rectangle": return .chronicle
         case "chart.bar", "chart.bar.fill", "chart.bar.xaxis", "list.number": return .ranking
         case "banknote", "dollarsign.circle": return .economy
         case "shippingbox", "shippingbox.fill": return .goods
-        case "square.grid.3x3", "square.grid.3x3.fill": return .region
+        case "square.grid.3x3", "square.grid.3x3.fill", "square.grid.2x2": return .region
         case "sun.max", "sun.max.fill": return .religion
         case "heart", "heart.circle": return .marriage
-        case "seal": return .edict
+        case "seal", "checkmark.seal": return .edict
+        case "scope", "location", "mappin", "mappin.and.ellipse", "star", "star.fill": return .locate
+        case "clock.arrow.circlepath", "arrow.counterclockwise", "arrow.counterclockwise.circle", "arrow.counterclockwise.circle.fill": return .replay
+        case "backward", "backward.fill": return .rewind
+        case "backward.frame.fill", "backward.end.fill": return .stepBack
+        case "forward.frame.fill", "forward.end.fill": return .stepForward
+        case "play", "play.fill": return .play
+        case "pause", "pause.fill": return .pause
+        case "magnifyingglass": return .search
+        case "slider.horizontal.3", "gearshape", "gearshape.fill", "gearshape.2": return .settings
+        case "arrow.triangle.2.circlepath", "arrow.clockwise", "dice", "dice.fill": return .refresh
+        case "books.vertical", "books.vertical.fill", "folder", "folder.fill", "archivebox": return .archive
+        case "tray.and.arrow.down", "square.and.arrow.down", "doc.badge.plus": return .importSave
+        case "paintbrush.pointed", "paintbrush.pointed.fill", "paintbrush", "pencil", "pencil.line", "paintpalette": return .brush
+        case "shield", "shield.fill", "shield.lefthalf.filled", "exclamationmark.shield": return .fortress
+        case "anchor", "ferry", "ferry.fill", "sailboat", "sailboat.fill": return .anchor
+        case "flame", "flame.fill", "bolt": return .fire
+        case "arrow.uturn.backward", "arrow.uturn.left": return .retreat
+        case "arrow.triangle.turn.up.right.diamond", "arrow.up.right", "figure.walk": return .march
         default: return nil
         }
     }

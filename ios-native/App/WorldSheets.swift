@@ -17,7 +17,7 @@ struct NationsSheet: View {
                     SheetHeader(title: "国家", subtitle: "\(state.nations.filter(\.alive).count) 国并立")
                     VStack(spacing: 10) {
                         HStack(spacing: 8) {
-                            Image(systemName: "magnifyingglass").font(.system(size: 14, weight: .regular)).foregroundStyle(Theme.ink2)
+                            InkIcon(glyph: .search, size: 15, weight: 1.65).foregroundStyle(Theme.ink2)
                             TextField("", text: $search, prompt: Text("搜索国名").foregroundColor(Theme.ink2.opacity(0.6)))
                         }
                         .paperField()
@@ -32,7 +32,7 @@ struct NationsSheet: View {
                                     RoundedRectangle(cornerRadius: 5).fill(Names.color(n.color)).frame(width: 22, height: 22)
                                     VStack(alignment: .leading, spacing: 3) {
                                         HStack(spacing: 6) {
-                                            Text(n.name).font(Theme.kai(20)).foregroundStyle(s.alive ? Theme.ink : Theme.ink2).lineLimit(1).minimumScaleFactor(0.65)
+                                            Text(n.name).font(Theme.section).foregroundStyle(s.alive ? Theme.ink : Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
                                             if !s.alive { Text("已亡").font(Theme.caption).foregroundStyle(Theme.ink2) }
                                         }
                                         HStack(spacing: 6) {
@@ -103,8 +103,8 @@ struct MilitarySheet: View {
                     Button { GameFeel.shared.tap(); openNation(war.defender) } label: { NationChip(map: map, nation: war.defender) }.buttonStyle(.plain)
                     Spacer(minLength: 4)
                     Button { GameFeel.shared.tap(); showFront(map, state, war) } label: {
-                        HStack(spacing: 3) {
-                            Image(systemName: "scope").font(.system(size: 12))
+                        HStack(spacing: 4) {
+                            InkIcon(glyph: .locate, size: 13, weight: 1.7)
                             Text("前线").font(Theme.caption)
                         }
                         .foregroundStyle(Theme.seal)
@@ -146,9 +146,9 @@ struct MilitarySheet: View {
                                 Task { let out = await model.releaseToAI(armies: []); released = out.reason }
                             } label: { SecondaryLabel(title: "全部交还 AI", symbol: "cpu") }.buttonStyle(.plain)
                         }
-                        .padding(.horizontal, 22)
+                        .padding(.horizontal, Theme.Layout.sectionInset)
                     }
-                    if let released { Text(released).font(Theme.label).foregroundStyle(Theme.jade).padding(.horizontal, 22).transition(.opacity) }
+                    if let released { Text(released).font(Theme.label).foregroundStyle(Theme.jade).padding(.horizontal, Theme.Layout.sectionInset).transition(.opacity) }
                     if filter == "overview" { MilitaryOverview(map: map, state: state, select: select, flyTo: flyTo, generals: generals) }
                     if filter == "wars" {
                         if !state.wars.isEmpty {
@@ -162,10 +162,10 @@ struct MilitarySheet: View {
                                 StatTile(label: "交锋/围城", value: "\(fightingNow)/\(state.sieges.count)"),
                             ])
                         }
-                        if state.wars.isEmpty { Text("天下暂无战事").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
+                        if state.wars.isEmpty { Text("天下暂无战事").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset) }
                         ForEach(state.wars) { war in warCard(map, state, war) }
                     }
-                    if byNation.isEmpty && filter != "navy" && filter != "wars" && filter != "overview" { Text("暂无符合条件的陆军").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 20) }
+                    if byNation.isEmpty && filter != "navy" && filter != "wars" && filter != "overview" { Text("暂无符合条件的陆军").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset) }
                     ForEach(state.nations.indices, id: \.self) { n in
                         let rows = (byNation[n] ?? []).sorted { state.armies[$0].troops > state.armies[$1].troops }
                         if !rows.isEmpty {
@@ -174,9 +174,9 @@ struct MilitarySheet: View {
                                 Spacer()
                                 Text("\(rows.count) 支 · \(Names.wan(rows.reduce(0) { $0 + state.armies[$1].troops })) 兵").font(Theme.label).foregroundStyle(Theme.ink2)
                             }
-                            .padding(.horizontal, 22)
+                            .padding(.horizontal, Theme.Layout.sectionInset)
                             let summary = dutySummary(state, rows)
-                            if !summary.isEmpty { Text(summary).font(Theme.caption).foregroundStyle(Theme.seal).padding(.horizontal, 22).padding(.top, -8) }
+                            if !summary.isEmpty { Text(summary).font(Theme.caption).foregroundStyle(Theme.seal).padding(.horizontal, Theme.Layout.sectionInset).padding(.top, -8) }
                             Group2 {
                                 ForEach(rows, id: \.self) { i in
                                     Button { select(i) } label: { ArmyRow(map: map, army: state.armies[i]) }.buttonStyle(.plain)
@@ -568,7 +568,7 @@ struct ChronicleSheet: View {
                             }
                             Spacer(minLength: 6)
                             HStack(spacing: 4) {
-                                Image(systemName: "clock.arrow.circlepath").font(.system(size: 13, weight: .semibold))
+                                InkIcon(glyph: .replay, size: 14, weight: 1.8)
                                 Text("回放").font(Theme.label)
                             }
                             .foregroundStyle(Theme.paper2)
@@ -635,7 +635,7 @@ struct ChronicleSheet: View {
                                         if let place = e.province {
                                             Button { fly(place) } label: {
                                                 HStack(spacing: 5) {
-                                                    Image(systemName: "scope").font(.system(size: 12))
+                                                    InkIcon(glyph: .locate, size: 13, weight: 1.7)
                                                     Text("在舆图上查看").font(Theme.label)
                                                 }
                                                 .foregroundStyle(Theme.seal)
@@ -649,7 +649,7 @@ struct ChronicleSheet: View {
                                             openReplay(e.day)
                                         } label: {
                                             HStack(spacing: 5) {
-                                                Image(systemName: "clock.arrow.circlepath").font(.system(size: 12))
+                                                InkIcon(glyph: .replay, size: 13, weight: 1.7)
                                                 Text("从此节点回放").font(Theme.label)
                                             }
                                             .foregroundStyle(Theme.jade)

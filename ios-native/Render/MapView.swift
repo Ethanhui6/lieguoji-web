@@ -140,6 +140,8 @@ import LieguojiCore
     func endReveal() { revealClock = nil }
     /// Title screen: the map is a backdrop and takes no gestures.
     @Published var interactive = true
+    /// 山河回放期间锁定地图单击与长按（允许自由拖拽缩放舆图，但不弹出州郡/军团/快捷面板干扰回放）。
+    @Published var replayLocked = false
     /// Slow drift of the title backdrop.
     @Published var drifting = false
     /// How far the engine has got once the map has risen (FoundingView.later).
@@ -586,6 +588,7 @@ struct MapView: UIViewRepresentable {
         private var pressing = false
         @objc private func handleLongPress(_ g: UILongPressGestureRecognizer) {
             if g.state == .ended || g.state == .cancelled || g.state == .failed { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in self?.pressing = false }; return }
+            guard !controller.replayLocked else { return }
             guard g.state == .began, controller.pickPrompt == nil, controller.marchingArmy == nil, controller.marchingFleet == nil, controller.paintNation == nil, !controller.boxSelecting, !controller.terrainBrush else { return }
             let p = g.location(in: mtk), w = camera.toWorld(x: Double(p.x), y: Double(p.y), viewport: viewport)
             guard let cell = picker.cell(atX: Float(w.x), y: Float(w.y)), map.province[cell] >= 0 else { return }
@@ -594,7 +597,7 @@ struct MapView: UIViewRepresentable {
             controller.onLongPress?(Int(map.province[cell]), p)
         }
         @objc private func handleTap(_ g: UITapGestureRecognizer) {
-            if pressing { return }
+            if pressing || controller.replayLocked { return }
             let p = g.location(in: mtk), w = camera.toWorld(x: Double(p.x), y: Double(p.y), viewport: viewport)
             if controller.terrainBrush { controller.onTerrainStroke?(w.x, w.y); controller.onTerrainStrokeEnd?(); return }
             var province: Int?
@@ -739,7 +742,7 @@ struct MapView: UIViewRepresentable {
                 || next.meta.nations.count != map.meta.nations.count || zip(next.meta.nations, map.meta.nations).contains(where: { $0.0.name != $0.1.name || $0.0.color != $0.1.color }) {
                 shownRevision = controller.worldRevision
                 map = next
-                renderer?.setMap(next)
+                renderer?.setMap(next, replayFast: controller.replayLocked)
                 // City names never change hands with a province: only the state names are rebuilt.
                 labels.setCities(map: next)
                 // Daily border changes swap the names in place; only a view switch cross-fades.

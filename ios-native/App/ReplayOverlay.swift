@@ -13,6 +13,11 @@ struct ReplayTimelineData: Decodable {
         let name: String
         let color: String
     }
+    struct PowerSlice: Decodable, Identifiable {
+        let i: Int
+        let p: Int
+        var id: Int { i }
+    }
     struct Frame: Decodable, Identifiable {
         let day: Int
         let year: Int
@@ -26,6 +31,7 @@ struct ReplayTimelineData: Decodable {
         let topNation: Int
         let topName: String
         let topProvinces: Int
+        var topPowers: [PowerSlice]? = nil
         var updates: [NationUpdate]? = nil
         var id: Int { day }
     }
@@ -148,8 +154,10 @@ extension GameModel {
     /// 进入「山河回放」模式：支持正放、倒放、进度条自由拖动与逐节点跳转。
     func enterReplay(atDay targetDay: Int? = nil) async {
         pause(saving: false)
+        controller.replayLocked = true
         loadCheckpoints()
         guard let timeline = await replayTimeline(), !timeline.frames.isEmpty else {
+            controller.replayLocked = false
             notice = "尚未积累足够的历史记录，推演片刻后再试"
             return
         }
@@ -173,6 +181,8 @@ extension GameModel {
         controller.relations = [:]
         controller.relationsNation = nil
         controller.selectedProvince = nil
+        controller.selectedArmy = nil
+        controller.selectedFleet = nil
         controller.mode = .political
 
         let initialIdx: Int
@@ -189,6 +199,7 @@ extension GameModel {
         replayTimer = nil
         replayPlaying = false
         replayReversing = false
+        controller.replayLocked = false
         guard replayActive else { return }
         replayActive = false
         if restoreLive {
@@ -201,6 +212,10 @@ extension GameModel {
         savedLiveWorld = nil
         savedLiveArmies = nil
         savedLiveEffects = nil
+    }
+
+    func pauseReplay() {
+        stopReplayTimer()
     }
 
     func seekReplay(to index: Int, focusEvent: Bool = false) {
@@ -218,13 +233,27 @@ extension GameModel {
     }
 
     func stepReplay(_ delta: Int) {
+        guard let timeline = replayTimelineData, timeline.frames.count > 1 else {
+            notice = "当前仅录制 1 帧，点下方「返回推演并录制」满 30 天即可逐帧回放"
+            GameFeel.shared.notify(.warning)
+            return
+        }
         stopReplayTimer()
-        seekReplay(to: replayIndex + delta, focusEvent: true)
+        let next = max(0, min(timeline.frames.count - 1, replayIndex + delta))
+        if next == replayIndex {
+            notice = delta < 0 ? "已到达时间轴起点" : "已到达最新历史帧"
+            return
+        }
+        seekReplay(to: next, focusEvent: true)
         GameFeel.shared.tap()
     }
 
     func toggleReplayPlay(reverse: Bool) {
-        guard let timeline = replayTimelineData, timeline.frames.count > 1 else { return }
+        guard let timeline = replayTimelineData, timeline.frames.count > 1 else {
+            notice = "当前仅录制 1 帧，点下方「返回推演并录制」满 30 天即可播放"
+            GameFeel.shared.notify(.warning)
+            return
+        }
         if replayPlaying && replayReversing == reverse {
             stopReplayTimer()
             return
@@ -327,23 +356,63 @@ extension GameModel {
     }
 }
 
-// MARK: - 山河回放交互浮层（挂载在可自由拖拽缩放的舆图之上）
+// MARK: - 山河回放交互浮层（挂载在可自由拖拽缩放的舆图最顶层）
 
 struct ReplayOverlay: View {
     @ObservedObject var model: GameModel
     @State private var showNodes = false
+    @State private var collapsed = false
+    @State private var deckDragY: CGFloat = 0
     @State private var confirmRollback: WorldCheckpoint?
+
+    private struct PowerDisplay: Identifiable {
+        let id: Int
+        let name: String
+        let color: Color
+        let provinces: Int
+        let share: Double
+    }
+
+    private func powerBreakdown(for frame: ReplayTimelineData.Frame, in timeline: ReplayTimelineData) -> [PowerDisplay] {
+        let total = max(1, timeline.provinceCount)
+        let slices: [ReplayTimelineData.PowerSlice]
+        if let explicit = frame.topPowers, !explicit.isEmpty {
+            slices = explicit
+        } else if frame.topNation >= 0 && frame.topProvinces > 0 {
+            slices = [ReplayTimelineData.PowerSlice(i: frame.topNation, p: frame.topProvinces)]
+        } else {
+            return []
+        }
+        let worldNations = model.controller.world?.meta.nations ?? model.map?.meta.nations ?? []
+        return slices.prefix(4).map { s in
+            let nm: String
+            let hex: String
+            if worldNations.indices.contains(s.i) {
+                nm = MapLayers.stateLabel(worldNations[s.i].name, full: false)
+                hex = worldNations[s.i].color
+            } else if timeline.nations.indices.contains(s.i) {
+                nm = MapLayers.stateLabel(timeline.nations[s.i].name, full: false)
+                hex = timeline.nations[s.i].color
+            } else {
+                nm = frame.topName
+                hex = "#7E7568"
+            }
+            return PowerDisplay(id: s.i, name: nm, color: Names.color(hex), provinces: s.p, share: Double(s.p) / Double(total))
+        }
+    }
 
     var body: some View {
         if let timeline = model.replayTimelineData, !timeline.frames.isEmpty {
             let idx = max(0, min(timeline.frames.count - 1, model.replayIndex))
             let frame = timeline.frames[idx]
             let nearCP = model.nearestCheckpoint(forDay: frame.day)
+            let powers = powerBreakdown(for: frame, in: timeline)
+            let multiFrame = timeline.frames.count > 1
 
             VStack(spacing: 0) {
-                // 顶部时间与事件播报条
+                // 顶部时间与事件播报条（外边距统一 Theme.Layout.pageInset = 16）
                 VStack(spacing: 8) {
-                    HStack(spacing: 10) {
+                    HStack(spacing: 8) {
                         Button {
                             GameFeel.shared.tap()
                             model.exitReplay()
@@ -353,7 +422,7 @@ struct ReplayOverlay: View {
                                 Text("返回当下").font(Theme.body)
                             }
                             .foregroundStyle(Theme.seal)
-                            .padding(.horizontal, 13).frame(height: 38)
+                            .padding(.horizontal, 12).frame(height: 40)
                             .glass(Capsule())
                         }
                         .buttonStyle(PressStyle())
@@ -363,173 +432,114 @@ struct ReplayOverlay: View {
                             Text(frame.dateText).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit().contentTransition(.numericText())
                             Text("· \(frame.aliveCount) 国").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
                         }
-                        .padding(.horizontal, 13).frame(height: 38)
+                        .padding(.horizontal, 12).frame(height: 40)
                         .glass(Capsule())
 
-                        Spacer()
+                        Spacer(minLength: 4)
 
                         Button {
                             GameFeel.shared.tap()
                             showNodes = true
                         } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "list.bullet.rectangle").font(.system(size: 13))
+                            HStack(spacing: 5) {
+                                InkIcon(glyph: .chronicle, size: 15, weight: 1.7)
                                 Text("节点").font(Theme.label)
                             }
                             .foregroundStyle(Theme.ink)
-                            .padding(.horizontal, 12).frame(height: 38)
+                            .padding(.horizontal, 12).frame(height: 40)
                             .glass(Capsule())
                         }
                         .buttonStyle(PressStyle())
                     }
 
-                    // 当帧大事横幅（可一键定位舆图）
-                    HStack(spacing: 8) {
-                        KindSeal(kind: .of(frame.kind), size: 20)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(frame.headline).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(2)
-                            if !frame.topName.isEmpty {
-                                Text("此时最强：\(frame.topName)（\(frame.topProvinces) 州） · 第 \(idx + 1)/\(timeline.frames.count) 帧")
-                                    .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                    // 当帧大事横幅 + 实时大国疆域占比条（可一键定位舆图）
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 10) {
+                            KindSeal(kind: .of(frame.kind), size: 22)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(frame.headline).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(2)
+                                Text("第 \(idx + 1)/\(timeline.frames.count) 帧\(frame.topName.isEmpty ? "" : " · 此时最强：\(frame.topName)（\(frame.topProvinces) 州）")")
+                                    .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
+                            }
+                            Spacer(minLength: 4)
+                            if frame.province >= 0, let m = model.map, m.meta.provinces.indices.contains(frame.province) {
+                                Button {
+                                    GameFeel.shared.tap()
+                                    let pr = m.meta.provinces[frame.province]
+                                    model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
+                                } label: {
+                                    InkIcon(glyph: .locate, size: 16, weight: 1.75, accent: Theme.seal.opacity(0.25))
+                                        .foregroundStyle(Theme.seal)
+                                        .frame(width: 36, height: 36).background(Theme.seal.opacity(0.1), in: Circle())
+                                }
+                                .buttonStyle(PressStyle())
                             }
                         }
-                        Spacer(minLength: 4)
-                        if frame.province >= 0, let m = model.map, m.meta.provinces.indices.contains(frame.province) {
-                            Button {
-                                GameFeel.shared.tap()
-                                let pr = m.meta.provinces[frame.province]
-                                model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
-                            } label: {
-                                Image(systemName: "scope").font(.system(size: 14)).foregroundStyle(Theme.seal)
-                                    .frame(width: 30, height: 30).background(Theme.seal.opacity(0.1), in: Circle())
+
+                        if !powers.isEmpty {
+                            VStack(alignment: .leading, spacing: 5) {
+                                GeometryReader { g in
+                                    HStack(spacing: 1.5) {
+                                        ForEach(powers) { pw in
+                                            let w = max(6, g.size.width * CGFloat(pw.share))
+                                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                                .fill(pw.color)
+                                                .frame(width: w)
+                                        }
+                                        Rectangle().fill(Theme.ink.opacity(0.12))
+                                    }
+                                    .clipShape(Capsule())
+                                }
+                                .frame(height: 6)
+                                .animation(Motion.drift, value: idx)
+
+                                HStack(spacing: 10) {
+                                    ForEach(powers.prefix(3)) { pw in
+                                        HStack(spacing: 4) {
+                                            Circle().fill(pw.color).frame(width: 7, height: 7)
+                                            Text("\(pw.name) \(Int((pw.share * 100).rounded()))%")
+                                                .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
+                                        }
+                                    }
+                                    Spacer(minLength: 0)
+                                }
                             }
-                            .buttonStyle(PressStyle())
                         }
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 9)
+                    .padding(.horizontal, Theme.Layout.cardPadding).padding(.vertical, 10)
                     .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous)))
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 0.9))
                     .shadow(color: .black.opacity(0.14), radius: 8, y: 3)
                 }
-                .padding(.horizontal, 14).padding(.top, 6)
+                .padding(.horizontal, Theme.Layout.pageInset).padding(.top, 6)
 
                 Spacer()
 
-                // 底部时间轴拖动与正放 / 倒放控制台
-                VStack(spacing: 10) {
-                    // 关键节点刻度条
-                    if timeline.frames.count > 1 {
-                        GeometryReader { g in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Theme.ink.opacity(0.1)).frame(height: 4)
-                                let frac = CGFloat(idx) / CGFloat(max(1, timeline.frames.count - 1))
-                                Capsule().fill(model.replayReversing ? Theme.jade : Theme.seal).frame(width: max(4, g.size.width * frac), height: 4)
-                                ForEach(Array(timeline.frames.enumerated()), id: \.offset) { i, f in
-                                    if f.major {
-                                        Circle()
-                                            .fill(i == idx ? Theme.seal : Theme.ink.opacity(0.38))
-                                            .frame(width: i == idx ? 7 : 4, height: i == idx ? 7 : 4)
-                                            .offset(x: g.size.width * CGFloat(i) / CGFloat(max(1, timeline.frames.count - 1)) - 2)
+                // 底部时间轴控制台（支持点击手柄或下划收起为迷你胶囊，留出整片舆图视野）
+                if collapsed {
+                    compactDeck(timeline: timeline, idx: idx, frame: frame, multiFrame: multiFrame)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else {
+                    fullDeck(timeline: timeline, idx: idx, frame: frame, nearCP: nearCP, multiFrame: multiFrame)
+                        .offset(y: max(0, deckDragY))
+                        .gesture(
+                            DragGesture(minimumDistance: 12)
+                                .onChanged { g in
+                                    deckDragY = g.translation.height > 0 ? g.translation.height : g.translation.height * 0.2
+                                }
+                                .onEnded { g in
+                                    if g.translation.height > 48 || g.predictedEndTranslation.height > 90 {
+                                        GameFeel.shared.tap()
+                                        withAnimation(Motion.panel) { collapsed = true; deckDragY = 0 }
+                                    } else {
+                                        withAnimation(Motion.panel) { deckDragY = 0 }
                                     }
                                 }
-                            }
-                        }
-                        .frame(height: 8)
-
-                        Slider(
-                            value: Binding(
-                                get: { Double(model.replayIndex) },
-                                set: { v in
-                                    let target = Int(v.rounded())
-                                    if target != model.replayIndex { model.seekReplay(to: target) }
-                                }
-                            ),
-                            in: 0...Double(timeline.frames.count - 1),
-                            step: 1
                         )
-                        .tint(model.replayReversing ? Theme.jade : Theme.seal)
-                    }
-
-                    // 播放 / 倒放 / 步进 / 倍速按钮排
-                    HStack(spacing: 12) {
-                        Button { model.stepReplay(-1) } label: {
-                            Image(systemName: "backward.frame.fill").font(.system(size: 16)).foregroundStyle(Theme.ink)
-                                .frame(width: 40, height: 40).background(Theme.paper2, in: Circle())
-                                .overlay(Circle().stroke(Theme.line))
-                        }
-                        .buttonStyle(PressStyle()).disabled(idx <= 0).opacity(idx <= 0 ? 0.4 : 1)
-
-                        // 倒放按钮
-                        Button {
-                            GameFeel.shared.tap()
-                            model.toggleReplayPlay(reverse: true)
-                        } label: {
-                            let activeRev = model.replayPlaying && model.replayReversing
-                            HStack(spacing: 4) {
-                                Image(systemName: activeRev ? "pause.fill" : "backward.fill").font(.system(size: 13))
-                                Text("倒放").font(Theme.body)
-                            }
-                            .foregroundStyle(activeRev ? Theme.paper2 : Theme.ink)
-                            .padding(.horizontal, 14).frame(height: 40)
-                            .background(activeRev ? Theme.jade : Theme.paper2, in: Capsule())
-                            .overlay(Capsule().stroke(activeRev ? Color.clear : Theme.line))
-                        }
-                        .buttonStyle(PressStyle())
-
-                        // 主正放/暂停朱印钮
-                        Button {
-                            GameFeel.shared.tap()
-                            model.toggleReplayPlay(reverse: false)
-                        } label: {
-                            let activeFwd = model.replayPlaying && !model.replayReversing
-                            Image(systemName: activeFwd ? "pause.fill" : "play.fill").font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(Theme.paper2)
-                                .frame(width: 48, height: 48)
-                                .background(Theme.seal, in: Circle())
-                                .shadow(color: Theme.seal.opacity(0.32), radius: 5, y: 2)
-                        }
-                        .buttonStyle(PressStyle())
-
-                        Button { model.stepReplay(1) } label: {
-                            Image(systemName: "forward.frame.fill").font(.system(size: 16)).foregroundStyle(Theme.ink)
-                                .frame(width: 40, height: 40).background(Theme.paper2, in: Circle())
-                                .overlay(Circle().stroke(Theme.line))
-                        }
-                        .buttonStyle(PressStyle()).disabled(idx >= timeline.frames.count - 1).opacity(idx >= timeline.frames.count - 1 ? 0.4 : 1)
-
-                        Button { model.cycleReplaySpeed() } label: {
-                            Text("\(model.replaySpeed)×").font(Theme.section).foregroundStyle(model.replaySpeed > 1 ? Theme.seal : Theme.ink)
-                                .frame(width: 42, height: 40).background(Theme.paper2, in: Circle())
-                                .overlay(Circle().stroke(Theme.line))
-                                .contentTransition(.numericText())
-                        }
-                        .buttonStyle(PressStyle())
-                    }
-
-                    // 若当前附近存在可恢复推演的历史快照，一键回到此节点改写历史
-                    if let nearCP {
-                        Button {
-                            GameFeel.shared.tap()
-                            confirmRollback = nearCP
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "arrow.counterclockwise.circle.fill").font(.system(size: 14))
-                                Text("回到 \(nearCP.dateText) 继续推演（改写历史）").font(Theme.label)
-                            }
-                            .foregroundStyle(Theme.jade)
-                            .frame(maxWidth: .infinity).frame(height: 34)
-                            .background(Theme.jade.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.8))
-                        }
-                        .buttonStyle(PressStyle())
-                    }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                .padding(.horizontal, 16).padding(.vertical, 12)
-                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous)))
-                .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
-                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.22), radius: 14, y: 5)
-                .padding(.horizontal, 12).padding(.bottom, 8)
             }
+            .animation(Motion.panel, value: collapsed)
             .sheet(isPresented: $showNodes) {
                 ReplayNodesSheet(model: model, timeline: timeline, onPickFrame: { i in
                     showNodes = false
@@ -549,6 +559,219 @@ struct ReplayOverlay: View {
                 Text("将把当前世界状态恢复至该历史节点，之后的战局与王朝走向均可重新演绎。")
             }
         }
+    }
+
+    @ViewBuilder
+    private func compactDeck(timeline: ReplayTimelineData, idx: Int, frame: ReplayTimelineData.Frame, multiFrame: Bool) -> some View {
+        HStack(spacing: 10) {
+            Button {
+                GameFeel.shared.tap()
+                withAnimation(Motion.panel) { collapsed = false }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.up").font(.system(size: 12, weight: .semibold))
+                    Text("展开").font(Theme.label)
+                }
+                .foregroundStyle(Theme.ink2)
+                .padding(.horizontal, 10).frame(height: 36)
+                .background(Theme.wash, in: Capsule())
+            }
+            .buttonStyle(PressStyle())
+
+            Button {
+                GameFeel.shared.tap()
+                model.toggleReplayPlay(reverse: true)
+            } label: {
+                let activeRev = model.replayPlaying && model.replayReversing
+                InkIcon(glyph: activeRev ? .pause : .rewind, size: 16, weight: 1.8)
+                    .foregroundStyle(activeRev ? Theme.paper2 : Theme.ink)
+                    .frame(width: 38, height: 38)
+                    .background(activeRev ? Theme.jade : Theme.paper2, in: Circle())
+                    .overlay(Circle().stroke(activeRev ? Color.clear : Theme.line))
+            }
+            .buttonStyle(PressStyle())
+
+            Button {
+                GameFeel.shared.tap()
+                model.toggleReplayPlay(reverse: false)
+            } label: {
+                let activeFwd = model.replayPlaying && !model.replayReversing
+                InkIcon(glyph: activeFwd ? .pause : .play, size: 17, weight: 1.9)
+                    .foregroundStyle(Theme.paper2)
+                    .frame(width: 42, height: 42)
+                    .background(Theme.seal, in: Circle())
+            }
+            .buttonStyle(PressStyle())
+
+            Text("\(idx + 1)/\(timeline.frames.count)").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+
+            Button { model.cycleReplaySpeed() } label: {
+                Text("\(model.replaySpeed)×").font(Theme.label).foregroundStyle(model.replaySpeed > 1 ? Theme.seal : Theme.ink)
+                    .frame(width: 34, height: 34).background(Theme.paper2, in: Circle()).overlay(Circle().stroke(Theme.line))
+            }
+            .buttonStyle(PressStyle())
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .glass(Capsule())
+        .padding(.bottom, 10)
+    }
+
+    @ViewBuilder
+    private func fullDeck(timeline: ReplayTimelineData, idx: Int, frame: ReplayTimelineData.Frame, nearCP: WorldCheckpoint?, multiFrame: Bool) -> some View {
+        VStack(spacing: 10) {
+            // 顶部拖拽手柄：点击或下划收起为紧凑悬浮胶囊
+            Button {
+                GameFeel.shared.tap()
+                withAnimation(Motion.panel) { collapsed = true }
+            } label: {
+                HStack(spacing: 6) {
+                    Capsule().fill(Theme.ink.opacity(0.24)).frame(width: 36, height: 4)
+                }
+                .frame(maxWidth: .infinity).frame(height: 14).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // 关键节点刻度条 + 交互进度滑条（拖动时自动暂停计时器，避免互相抢占）
+            if multiFrame {
+                VStack(spacing: 4) {
+                    GeometryReader { g in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Theme.ink.opacity(0.1)).frame(height: 4)
+                            let frac = CGFloat(idx) / CGFloat(max(1, timeline.frames.count - 1))
+                            Capsule().fill(model.replayReversing ? Theme.jade : Theme.seal).frame(width: max(4, g.size.width * frac), height: 4)
+                            ForEach(Array(timeline.frames.enumerated()), id: \.offset) { i, f in
+                                if f.major {
+                                    Circle()
+                                        .fill(i == idx ? Theme.seal : Theme.ink.opacity(0.38))
+                                        .frame(width: i == idx ? 7 : 4, height: i == idx ? 7 : 4)
+                                        .offset(x: g.size.width * CGFloat(i) / CGFloat(max(1, timeline.frames.count - 1)) - 2)
+                                }
+                            }
+                        }
+                    }
+                    .frame(height: 8)
+
+                    Slider(
+                        value: Binding(
+                            get: { Double(model.replayIndex) },
+                            set: { v in
+                                let target = Int(v.rounded())
+                                if target != model.replayIndex { model.seekReplay(to: target) }
+                            }
+                        ),
+                        in: 0...Double(timeline.frames.count - 1),
+                        step: 1,
+                        onEditingChanged: { editing in
+                            if editing { model.pauseReplay() }
+                        }
+                    )
+                    .tint(model.replayReversing ? Theme.jade : Theme.seal)
+                }
+            } else {
+                // 单帧空态清晰引导：绝不留无响应死按钮
+                VStack(spacing: 8) {
+                    Text("目前仅有开局首帧，推演满 30 天或发生大事即自动录制历史帧。")
+                        .font(Theme.caption).foregroundStyle(Theme.ink2).multilineTextAlignment(.center)
+                    Button {
+                        GameFeel.shared.tap()
+                        model.exitReplay()
+                        model.play()
+                        model.notice = "已恢复推演，每 30 天及大事自动留存山河回放帧"
+                    } label: {
+                        HStack(spacing: 6) {
+                            InkIcon(glyph: .play, size: 14, weight: 1.9)
+                            Text("返回推演并自动录制").font(Theme.body)
+                        }
+                        .foregroundStyle(Theme.paper2)
+                        .frame(maxWidth: .infinity).frame(height: 40)
+                        .background(Theme.seal, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    }
+                    .buttonStyle(PressStyle())
+                }
+                .padding(.vertical, 2)
+            }
+
+            // 播放 / 倒放 / 步进 / 倍速按钮排（全部采用光学居中的手绘水墨图标）
+            HStack(spacing: 12) {
+                Button { model.stepReplay(-1) } label: {
+                    InkIcon(glyph: .stepBack, size: 17, weight: 1.75)
+                        .foregroundStyle(Theme.ink)
+                        .frame(width: 42, height: 42).background(Theme.paper2, in: Circle())
+                        .overlay(Circle().stroke(Theme.line))
+                }
+                .buttonStyle(PressStyle()).opacity(multiFrame && idx > 0 ? 1 : 0.42)
+
+                // 倒放按钮
+                Button {
+                    GameFeel.shared.tap()
+                    model.toggleReplayPlay(reverse: true)
+                } label: {
+                    let activeRev = model.replayPlaying && model.replayReversing
+                    HStack(spacing: 5) {
+                        InkIcon(glyph: activeRev ? .pause : .rewind, size: 14, weight: 1.8)
+                        Text("倒放").font(Theme.body)
+                    }
+                    .foregroundStyle(activeRev ? Theme.paper2 : Theme.ink)
+                    .padding(.horizontal, 14).frame(height: 42)
+                    .background(activeRev ? Theme.jade : Theme.paper2, in: Capsule())
+                    .overlay(Capsule().stroke(activeRev ? Color.clear : Theme.line))
+                }
+                .buttonStyle(PressStyle()).opacity(multiFrame ? 1 : 0.55)
+
+                // 主正放/暂停朱印钮
+                Button {
+                    GameFeel.shared.tap()
+                    model.toggleReplayPlay(reverse: false)
+                } label: {
+                    let activeFwd = model.replayPlaying && !model.replayReversing
+                    InkIcon(glyph: activeFwd ? .pause : .play, size: 20, weight: 1.95)
+                        .foregroundStyle(Theme.paper2)
+                        .frame(width: 50, height: 50)
+                        .background(Theme.seal, in: Circle())
+                        .shadow(color: Theme.seal.opacity(0.32), radius: 5, y: 2)
+                }
+                .buttonStyle(PressStyle()).opacity(multiFrame ? 1 : 0.55)
+
+                Button { model.stepReplay(1) } label: {
+                    InkIcon(glyph: .stepForward, size: 17, weight: 1.75)
+                        .foregroundStyle(Theme.ink)
+                        .frame(width: 42, height: 42).background(Theme.paper2, in: Circle())
+                        .overlay(Circle().stroke(Theme.line))
+                }
+                .buttonStyle(PressStyle()).opacity(multiFrame && idx < timeline.frames.count - 1 ? 1 : 0.42)
+
+                Button { model.cycleReplaySpeed() } label: {
+                    Text("\(model.replaySpeed)×").font(Theme.section).foregroundStyle(model.replaySpeed > 1 ? Theme.seal : Theme.ink)
+                        .frame(width: 42, height: 42).background(Theme.paper2, in: Circle())
+                        .overlay(Circle().stroke(Theme.line))
+                        .contentTransition(.numericText())
+                }
+                .buttonStyle(PressStyle())
+            }
+
+            // 若当前附近存在可恢复推演的历史快照，一键回到此节点改写历史
+            if let nearCP {
+                Button {
+                    GameFeel.shared.tap()
+                    confirmRollback = nearCP
+                } label: {
+                    HStack(spacing: 6) {
+                        InkIcon(glyph: .replay, size: 15, weight: 1.75)
+                        Text("回到 \(nearCP.dateText) 继续推演（改写历史）").font(Theme.label)
+                    }
+                    .foregroundStyle(Theme.jade)
+                    .frame(maxWidth: .infinity).frame(height: 36)
+                    .background(Theme.jade.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.8))
+                }
+                .buttonStyle(PressStyle())
+            }
+        }
+        .padding(.horizontal, Theme.Layout.pageInset).padding(.top, 6).padding(.bottom, 12)
+        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous)))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
+        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.22), radius: 14, y: 5)
+        .padding(.horizontal, Theme.Layout.pageInset).padding(.bottom, 8)
     }
 }
 

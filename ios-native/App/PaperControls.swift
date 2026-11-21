@@ -88,7 +88,7 @@ struct PaperStepper: View {
                 HStack(spacing: 8) { Glyph.icon(title, size: 15); Text(title).font(Theme.section).foregroundStyle(Theme.ink2) }
                 Spacer()
                 stepButton("minus", -1)
-                Text("\(value) \(unit)").font(Theme.kai(20)).foregroundStyle(Theme.ink).frame(minWidth: 64)
+                Text("\(value) \(unit)").font(Theme.title).foregroundStyle(Theme.ink).frame(minWidth: 64)
                     .monospacedDigit().contentTransition(.numericText()).animation(Motion.tap, value: value)
                 stepButton("plus", 1)
             }
@@ -195,7 +195,7 @@ struct StatTile: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: 5) {
             GlyphLabel(text: label).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
-            Text(value).font(Theme.kai(20)).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.6).monospacedDigit()
+            Text(value).font(Theme.title).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.62).monospacedDigit()
                 .contentTransition(.numericText()).animation(Motion.tap, value: value)
             if let fraction {
                 InkBar(fraction: fraction, color: warn ? Theme.seal : Theme.ink.opacity(0.65), height: 4)

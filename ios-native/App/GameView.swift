@@ -169,13 +169,6 @@ struct GameView: View {
             if landscape { landscapeRail.offset(x: chromeIn ? 0 : -120).animation(Motion.drift, value: chromeIn).opacity(wallpaper || model.replayActive ? 0 : 1).allowsHitTesting(!wallpaper && !model.replayActive) }
         }
         .overlay {
-            if model.replayActive {
-                ReplayOverlay(model: model)
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
-            }
-        }
-        .animation(Motion.panel, value: model.replayActive)
-        .overlay {
             if wallpaper {
                 Color.clear.contentShape(Rectangle()).ignoresSafeArea()
                     .onTapGesture { withAnimation(Motion.reveal) { wallpaper = false }; controller.drifting = false }
@@ -183,7 +176,7 @@ struct GameView: View {
             }
         }
         .overlay(alignment: .bottomLeading) {
-            if !model.viewLegend.isEmpty {
+            if !model.viewLegend.isEmpty && !model.replayActive {
                 MapViewLegend(mode: model.mapView, legend: model.viewLegend, open: { allianceMenu($0) }).padding(.leading, landscape ? 84 : 14).padding(.bottom, landscape ? 40 : model.state?.events.isEmpty == false ? 120 : 80)
                     .transition(.asymmetric(insertion: .scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity), removal: .opacity))
             }
@@ -191,27 +184,11 @@ struct GameView: View {
         .animation(Motion.panel, value: model.viewLegend)
         .pressMenuHost($legendMenu)
         .overlay(alignment: .topTrailing) {
-            MapViewSwitcher(mode: $model.mapView, open: $viewsOpen).allowsHitTesting(viewsOpen).padding(.top, 52).padding(.trailing, 14)
+            MapViewSwitcher(mode: $model.mapView, open: $viewsOpen)
+                .opacity(model.replayActive ? 0 : 1)
+                .allowsHitTesting(viewsOpen && !model.replayActive)
+                .padding(.top, 52).padding(.trailing, 14)
         }
-        .overlay(alignment: .bottom) {
-            if let toast {
-                HStack(spacing: 10) {
-                    Seal(text: "令", size: 22)
-                    Text(toast).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.leading, 10).padding(.trailing, 16).padding(.vertical, 10)
-                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous)))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.2), lineWidth: 1))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.22), lineWidth: 0.6).padding(3))
-                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 10, y: 4)
-                .padding(.horizontal, 32).padding(.bottom, 116)
-                .id(toastSerial)
-                .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.92, anchor: .bottom)), removal: .opacity.combined(with: .offset(y: -12))))
-                .onTapGesture { self.toast = nil }
-            }
-        }
-        .animation(Motion.panel, value: toastSerial)
-        .animation(Motion.fade, value: toast)
         .opacity(controller.reveal >= 1 ? 1 : 0)
         .animation(Motion.panel, value: controller.reveal >= 1)
         .onAppear {
@@ -276,23 +253,30 @@ struct GameView: View {
         .onChange(of: panel) { old, p in
             if let p { lastPanel = p }
             // All inspection pages share one pause policy, including map picks.
+            // 山河回放开启期间关闭旧弹窗时，严禁恢复实时推演覆盖回放画面。
             controller.sheetOpen = p != nil
             if p != nil, model.playing { pausedByPanel = true; model.pause(saving: false) }
-            if p == nil, pausedByPanel { pausedByPanel = false; model.play() }
+            if p == nil, pausedByPanel {
+                pausedByPanel = false
+                if !model.replayActive { model.play() }
+            }
             _ = old
         }
         .sensoryFeedback(.impact(weight: .light), trigger: panel?.id)
         .sensoryFeedback(.selection, trigger: controller.selectedProvince)
         .onChange(of: controller.selectedArmy) { _, army in
+            guard !model.replayActive else { return }
             model.refreshArmies()
             if let army { show(.army(army)) } else if case .army = panel { panel = nil }
         }
         .onChange(of: controller.selectedFleet) { _, fleet in
+            guard !model.replayActive else { return }
             model.refreshArmies()
             if let fleet { show(.fleet(fleet)) } else if case .fleet = panel { panel = nil }
         }
         .onChange(of: controller.selectedProvince) { _, province in
-            if province != nil { withAnimation { viewsOpen = false } }
+            guard !model.replayActive else { return }
+            if province != nil { withAnimation(Motion.tap) { viewsOpen = false } }
             if let province { show(.province(province)) } else if case .province = panel { panel = nil }
         }
     }
@@ -307,6 +291,36 @@ struct GameView: View {
         .overlay(alignment: .trailing) { sidePage }
         .animation(Motion.panel, value: sideKey)
         .overlay { if let ripple { PressRipple().position(ripple).ignoresSafeArea() } }
+        .overlay {
+            // 山河回放置于最顶层（高于图例、侧边页与常规浮层），确保所有按钮清晰可点、不被遮挡。
+            if model.replayActive {
+                ReplayOverlay(model: model)
+                    .transition(.opacity.combined(with: .scale(scale: 0.985)))
+                    .zIndex(100)
+            }
+        }
+        .animation(Motion.panel, value: model.replayActive)
+        .overlay(alignment: .bottom) {
+            // 提示条居于全层之上（回放期内亦可见），轻点可立即收起。
+            if let toast {
+                HStack(spacing: 10) {
+                    Seal(text: "令", size: 22)
+                    Text(toast).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.leading, 10).padding(.trailing, 16).padding(.vertical, 10)
+                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous)))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.2), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.22), lineWidth: 0.6).padding(3))
+                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 10, y: 4)
+                .padding(.horizontal, 32).padding(.bottom, model.replayActive ? 176 : 116)
+                .id(toastSerial)
+                .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.92, anchor: .bottom)), removal: .opacity.combined(with: .offset(y: -12))))
+                .onTapGesture { self.toast = nil }
+                .zIndex(120)
+            }
+        }
+        .animation(Motion.panel, value: toastSerial)
+        .animation(Motion.fade, value: toast)
         .sheet(isPresented: pageShown, onDismiss: {
             trail = []
             if panel == nil {
@@ -424,6 +438,7 @@ struct GameView: View {
                 controller.selectedArmy = a
                 open(.army(a))
             }, openPeople: { nationDetent = .fraction(0.38); open(.people(n)) }, openWars: { nationDetent = .fraction(0.38); open(.nationWars(n)) }, openTalks: { nationDetent = .fraction(0.38); open(.nationTalks(n)) }, openReplay: {
+                pausedByPanel = false
                 closePage()
                 Task { await model.enterReplay() }
             })
@@ -471,6 +486,7 @@ struct GameView: View {
                openChronicle: { n in ChronicleSheet.openNation = n; open(.chronicle) }).presentationDetents([.medium, .large])
         case .chronicle:
             ChronicleSheet(model: model, fly: { controller.fly(to: $0) }, openReplay: { targetDay in
+                pausedByPanel = false
                 closePage()
                 Task { await model.enterReplay(atDay: targetDay) }
             }).presentationDetents([.medium, .large])

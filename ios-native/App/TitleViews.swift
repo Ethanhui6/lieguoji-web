@@ -205,7 +205,7 @@ struct TitleView: View {
                         .background(Theme.paper2.opacity(0.95), in: Capsule()).overlay(Capsule().stroke(Theme.seal.opacity(0.3)))
                         .rise(shown, 0)
                     }
-                    Text("架空世界 · 列国兴衰").font(Theme.kai(14)).tracking(6).foregroundStyle(Theme.ink2)
+                    Text("架空世界 · 列国兴衰").font(Theme.body).tracking(6).foregroundStyle(Theme.ink2)
                     Button { creating = true } label: {
                         HeroAction(title: "开创新世界", detail: "生成山河 · 分封列国 · 自观兴衰", symbol: "globe.asia.australia")
                     }
@@ -220,14 +220,14 @@ struct TitleView: View {
                         Button { importing = true } label: { TileAction(title: "导入存档", symbol: "tray.and.arrow.down") }
                         Button { archive = true } label: { TileAction(title: "世界卷宗", symbol: "books.vertical") }
                         Button { settings = true } label: { TileAction(title: "设置", symbol: "slider.horizontal.3") }
-                        Button { notes = true } label: { TileAction(title: "更新", symbol: "sparkles") }
+                        Button { notes = true } label: { TileAction(title: "更新", symbol: "book.pages") }
                     }
                     .rise(shown, 0.16)
-                    Text(AppVersion.text + (cloud.version > 0 ? " · 云配置 \(cloud.version)" : "")).font(Theme.kai(11)).foregroundStyle(Theme.ink2.opacity(0.7)).padding(.top, 2)
+                    Text(AppVersion.text + (cloud.version > 0 ? " · 云配置 \(cloud.version)" : "")).font(Theme.caption).foregroundStyle(Theme.ink2.opacity(0.75)).padding(.top, 2)
                 }
                 .buttonStyle(PressStyle())
                 .frame(maxWidth: 440)
-                .padding(.horizontal, 22).padding(.bottom, 26)
+                .padding(.horizontal, Theme.Layout.sectionInset).padding(.bottom, 26)
             }
         }
         .statusBarHidden()
@@ -282,18 +282,24 @@ struct HeroAction: View {
     var primary = true
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: symbol).font(.system(size: 22, weight: .medium))
-                .foregroundStyle(primary ? Theme.seal : Theme.paper2)
-                .frame(width: 46, height: 46)
-                .background(primary ? Theme.paper2 : Theme.seal, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            Group {
+                if let g = GameActionLabel.glyph(for: symbol) {
+                    InkIcon(glyph: g, size: 22, weight: 1.85, accent: primary ? Theme.seal.opacity(0.26) : Theme.paper2.opacity(0.32))
+                } else {
+                    Image(systemName: symbol).font(.system(size: 22, weight: .medium))
+                }
+            }
+            .foregroundStyle(primary ? Theme.seal : Theme.paper2)
+            .frame(width: 46, height: 46)
+            .background(primary ? Theme.paper2 : Theme.seal, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(Theme.kai(21)).foregroundStyle(primary ? Theme.paper2 : Theme.ink)
-                Text(detail).font(Theme.kai(12)).foregroundStyle(primary ? Theme.paper2.opacity(0.8) : Theme.ink2).lineLimit(1)
+                Text(title).font(Theme.title).foregroundStyle(primary ? Theme.paper2 : Theme.ink)
+                Text(detail).font(Theme.caption).foregroundStyle(primary ? Theme.paper2.opacity(0.84) : Theme.ink2).lineLimit(1)
             }
             Spacer(minLength: 6)
             Image(systemName: "chevron.right").font(.system(size: 13, weight: .regular)).foregroundStyle(primary ? Theme.paper2.opacity(0.8) : Theme.ink2)
         }
-        .padding(.horizontal, 14).frame(height: 74)
+        .padding(.horizontal, Theme.Layout.cardPadding).frame(height: 74)
         .background((primary ? Theme.seal : Theme.paper2), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         // A seal's inner rule.
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(primary ? Theme.paper2.opacity(0.35) : Theme.seal.opacity(0.18), lineWidth: 0.8).padding(4))
@@ -307,8 +313,15 @@ struct TileAction: View {
     let title: String; let symbol: String
     var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: symbol).font(.system(size: 18, weight: .medium)).foregroundStyle(Theme.seal).frame(height: 22)
-            Text(title).font(Theme.kai(14)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
+            Group {
+                if let g = GameActionLabel.glyph(for: symbol) {
+                    InkIcon(glyph: g, size: 19, weight: 1.75, accent: Theme.seal.opacity(0.24))
+                } else {
+                    Image(systemName: symbol).font(.system(size: 18, weight: .medium))
+                }
+            }
+            .foregroundStyle(Theme.seal).frame(height: 22)
+            Text(title).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity).frame(height: 64)
         .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -378,9 +391,16 @@ struct NewWorldSheet: View {
                             }
                         } label: {
                             HStack(spacing: 8) {
-                                Image(systemName: p.symbol).font(.system(size: 17, weight: .medium)).foregroundStyle(on ? Theme.paper2 : Theme.seal)
+                                Group {
+                                    if let g = GameActionLabel.glyph(for: p.symbol) {
+                                        InkIcon(glyph: g, size: 17, weight: 1.75)
+                                    } else {
+                                        Image(systemName: p.symbol).font(.system(size: 17, weight: .medium))
+                                    }
+                                }
+                                .foregroundStyle(on ? Theme.paper2 : Theme.seal)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(p.title).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                    Text(p.title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                                     Text(p.note).font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2)
                                 }
                             }
@@ -391,7 +411,7 @@ struct NewWorldSheet: View {
                         .buttonStyle(PressStyle())
                     }
                 }
-                .padding(.horizontal, 22)
+                .padding(.horizontal, Theme.Layout.pageInset)
             }
             SectionLabel("地形")
             // 地形: a card each, with its picture.
@@ -400,10 +420,17 @@ struct NewWorldSheet: View {
                     let on = options.template == t.id, art = Self.templateArt[t.id]
                     Button { withAnimation(Motion.tap) { options.template = t.id } } label: {
                         HStack(spacing: 10) {
-                            Image(systemName: art?.symbol ?? "map").font(.system(size: 24, weight: .light)).foregroundStyle(on ? Theme.paper2 : Theme.seal).frame(width: 34)
+                            Group {
+                                if let g = GameActionLabel.glyph(for: art?.symbol ?? "map") {
+                                    InkIcon(glyph: g, size: 22, weight: 1.7)
+                                } else {
+                                    Image(systemName: art?.symbol ?? "map").font(.system(size: 22, weight: .light))
+                                }
+                            }
+                            .foregroundStyle(on ? Theme.paper2 : Theme.seal).frame(width: 30)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(t.name).font(Theme.kai(16)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                Text(art?.note ?? "").font(Theme.kai(11)).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
+                                Text(t.name).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                Text(art?.note ?? "").font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
                             }
                             Spacer(minLength: 0)
                         }
@@ -414,41 +441,45 @@ struct NewWorldSheet: View {
                     .buttonStyle(PressStyle())
                 }
             }
-            .padding(.horizontal, 22)
-            if inputs != nil { terrainCard.padding(.horizontal, 22) }
+            .padding(.horizontal, Theme.Layout.pageInset)
+            if inputs != nil { terrainCard.padding(.horizontal, Theme.Layout.pageInset) }
             SectionLabel("规模")
             VStack(alignment: .leading, spacing: 12) {
                 PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
                 PaperStepper(title: "州郡", value: Binding(get: { options.provinceCount }, set: { options.provinces = String($0) }), range: options.nations...480, unit: "州")
                 HStack(spacing: 10) {
-                    Image(systemName: "dice").font(.system(size: 16)).foregroundStyle(Theme.seal).frame(width: 22)
-                    Text("种子").font(Theme.kai(17)).foregroundStyle(Theme.ink2)
+                    InkIcon(glyph: .refresh, size: 16, weight: 1.7).foregroundStyle(Theme.seal).frame(width: Theme.Layout.iconGutter)
+                    Text("种子").font(Theme.section).foregroundStyle(Theme.ink2)
                     Spacer()
                     TextField("", text: $options.seed, prompt: Text("随机").foregroundColor(Theme.ink2.opacity(0.6)))
                         .paperField(width: 160).keyboardType(.numberPad).multilineTextAlignment(.trailing)
                 }
             }
-            .padding(.horizontal, 22)
-            SectionLabel("气候")
-            VStack(spacing: 10) {
-                PaperStepper(title: "降水", value: $options.climate.rain, range: 10...200, unit: "%")
-                PaperStepper(title: "气温修正", value: $options.climate.temperature, range: -30...30, unit: "°")
-                PaperStepper(title: "北界纬度", value: $options.climate.north, range: -80...90, unit: "")
-                PaperStepper(title: "南界纬度", value: $options.climate.south, range: -90...80, unit: "")
+            .padding(.horizontal, Theme.Layout.pageInset)
+            // 渐进式披露：低频气候与纬度微调默认收起为带实时摘要的折叠节，保持开局界面清爽直观
+            FoldSection("气候与纬度", expanded: false, summary: "降水 \(options.climate.rain)% · 气温 \(options.climate.temperature >= 0 ? "+" : "")\(options.climate.temperature)°") {
+                VStack(spacing: 10) {
+                    PaperStepper(title: "降水", value: $options.climate.rain, range: 10...200, unit: "%")
+                    PaperStepper(title: "气温修正", value: $options.climate.temperature, range: -30...30, unit: "°")
+                    PaperStepper(title: "北界纬度", value: $options.climate.north, range: -80...90, unit: "")
+                    PaperStepper(title: "南界纬度", value: $options.climate.south, range: -90...80, unit: "")
+                }
+                .padding(Theme.Layout.cardPadding)
+                .paperCard()
+                .padding(.horizontal, Theme.Layout.pageInset)
             }
-            .padding(.horizontal, 22)
             SectionLabel("开局")
             HStack(spacing: 10) {
                 choice("peace", "列国和平", "leaf", "各国相安，渐起争端", selection: $options.relations)
                 choice("war", "群雄混战", "flag.2.crossed", "开局即四面开战", selection: $options.relations)
             }
-            .padding(.horizontal, 22)
+            .padding(.horizontal, Theme.Layout.pageInset)
             SectionLabel("命名")
             HStack(spacing: 10) {
                 choice("historical-names", "历史真名", "book.closed", "取自史书的国名人名", selection: $options.naming)
                 choice("culture-generated", "按文化生成", "character.book.closed", "按各文化新造名字", selection: $options.naming)
             }
-            .padding(.horizontal, 22)
+            .padding(.horizontal, Theme.Layout.pageInset)
             HStack(spacing: 8) {
                 SectionLabel("文化（\(options.cultures.count)）", inset: false)
                 Spacer()
@@ -462,7 +493,7 @@ struct NewWorldSheet: View {
                     .background(options.cultures == g.list ? Theme.seal : Theme.seal.opacity(0.08), in: Capsule())
                 }
             }
-            .padding(.horizontal, 22)
+            .padding(.horizontal, Theme.Layout.sectionInset)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
                 ForEach(Names.cultureIds, id: \.self) { c in
                     let on = options.cultures.contains(c)
@@ -472,7 +503,7 @@ struct NewWorldSheet: View {
                             if on { if options.cultures.count > 1 { options.cultures.remove(c) } } else { options.cultures.insert(c) }
                         }
                     } label: {
-                        Text(Names.culture[c] ?? c).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                        Text(Names.culture[c] ?? c).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                             .frame(maxWidth: .infinity).frame(height: 36)
                             .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
@@ -480,15 +511,15 @@ struct NewWorldSheet: View {
                     .buttonStyle(PressStyle())
                 }
             }
-            .padding(.horizontal, 22)
-            Text("各国从所选文化中取名、宗教与政体。").font(Theme.kai(12)).foregroundStyle(Theme.ink2).padding(.horizontal, 22)
+            .padding(.horizontal, Theme.Layout.pageInset)
+            Text("各国从所选文化中取名、宗教与政体。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
             VStack(spacing: 10) {
-                Button { start(chosen) } label: { PrimaryLabel(title: "生成地图", symbol: "wand.and.stars") }.buttonStyle(PressStyle())
+                Button { start(chosen) } label: { PrimaryLabel(title: "生成地图", symbol: "map") }.buttonStyle(PressStyle())
                 if let draw {
                     Button { draw(chosen) } label: { SecondaryLabel(title: "自己绘制地图", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle())
                 }
             }
-            .padding(.horizontal, 22).padding(.top, 4)
+            .padding(.horizontal, Theme.Layout.pageInset).padding(.top, 4)
         }
         .padding(.vertical, 18)
         }
@@ -531,8 +562,8 @@ struct NewWorldSheet: View {
                 options.seed = ""; rolled = String(UInt32.random(in: 0...UInt32.max))
             } label: {
                 HStack(spacing: 5) {
-                    Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 12, weight: .medium))
-                    Text("换一方山河").font(Theme.kai(13))
+                    InkIcon(glyph: .refresh, size: 13, weight: 1.8)
+                    Text("换一方山河").font(Theme.label)
                 }
                 .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 30)
                 .background(Theme.seal, in: Capsule())
@@ -554,9 +585,16 @@ struct NewWorldSheet: View {
         let on = selection.wrappedValue == id
         return Button { withAnimation(Motion.tap) { selection.wrappedValue = id } } label: {
             VStack(spacing: 4) {
-                Image(systemName: symbol).font(.system(size: 22, weight: .light)).foregroundStyle(on ? Theme.paper2 : Theme.seal)
-                Text(title).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                Text(note).font(Theme.kai(11)).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
+                Group {
+                    if let g = GameActionLabel.glyph(for: symbol) {
+                        InkIcon(glyph: g, size: 21, weight: 1.75)
+                    } else {
+                        Image(systemName: symbol).font(.system(size: 21, weight: .light))
+                    }
+                }
+                .foregroundStyle(on ? Theme.paper2 : Theme.seal)
+                Text(title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                Text(note).font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 10)
             .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))

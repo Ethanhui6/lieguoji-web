@@ -557,7 +557,7 @@ import LieguojiCore
         }
     }
     func play() {
-        guard loop == nil, state != nil, phase == .playing else { return }
+        guard !replayActive, loop == nil, state != nil, phase == .playing else { return }
         let epoch = worldEpoch, revision = nativeRevision
         let manual = singleStep?.world == worldEpoch ? singleStep?.task : nil
         playing = true
@@ -629,7 +629,7 @@ import LieguojiCore
     }
     func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : 1 }
     func stepOnce() {
-        guard !playing, phase == .playing, state != nil else { return }
+        guard !replayActive, !playing, phase == .playing, state != nil else { return }
         let ticket = advanceOwnership.begin(world: worldEpoch), revision = nativeRevision
         let previous = singleStep?.world == worldEpoch ? singleStep?.task : nil
         let task = Task { [weak self] in
@@ -730,6 +730,7 @@ import LieguojiCore
         if !hits.isEmpty { controller.onHits?(hits) }
     }
     func apply(_ next: GameState) {
+        if replayActive { return }
         let previous = state
         state = next
         if let previous { announce(previous, next); if playing { battleHits(previous, next) } }

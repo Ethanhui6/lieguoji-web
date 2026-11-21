@@ -192,17 +192,25 @@ public enum ArmyOrders {
     // MARK: Garrison (native-war army-deployment)
     static func chooseIdle(_ r: JS, _ a: JS, owned: [Int], home: Int, geo: Geography) -> Int? {
         let nation = a.nationId.asString, w = r.world
+        let app = !r.regimes.isNull && r.regimes.enabled.isTruthy
         let owner = { (q: Int) in w.provinces[q].controller.asString }
         let capitalId = w.nations.asArray.first { $0.id.asString == nation }?.capitalId.optionalString
         let cp = w.cities.asArray.first { $0.id.optionalString == capitalId }.flatMap { c in w.provinces.asArray.firstIndex { $0.id.asString == c.provinceId.asString } }
         var area = Set<Int>()
         if let cp, owner(cp) == nation { area.insert(cp); for id in w.provinces[cp].neighbors.asArray { if let q = index(r, id.asString), owner(q) == nation { area.insert(q) } } }
+        // 一次遍历统计各州现有驻军数及各国兵力，避免对每州重复扫描全图军队
+        var garrisonCount = [String: Int]()
+        var nationTroops = [String: Double]()
+        for x in w.armies.asArray where x.troops.asNumber > 0 {
+            if let gid = r.armyAutonomy.armies[x.id.asString].garrisonId.optionalString {
+                garrisonCount[gid, default: 0] += 1
+            }
+            if app { nationTroops[x.nationId.asString, default: 0] += x.troops.asNumber }
+        }
+        let myTroops = max(1.0, nationTroops[nation] ?? 1.0)
         var priority = [(Int, Double)](), secondary = [(Int, Double)]()
         func weight(_ p: Int) -> Double { geo.coasts.contains(p) ? 0.5 : 2 }
-        func targeting(_ p: Int) -> Int {
-            let id = w.provinces[p].id.asString
-            return w.armies.asArray.filter { $0.troops.asNumber > 0 && r.armyAutonomy.armies[$0.id.asString].garrisonId.optionalString == id }.count
-        }
+        func targeting(_ p: Int) -> Int { garrisonCount[w.provinces[p].id.asString] ?? 0 }
         for p in owned {
             let ns = w.provinces[p].neighbors.asArray.compactMap { index(r, $0.asString) }
             let border = geo.coasts.contains(p) || ns.contains { owner($0) != nation }
@@ -210,7 +218,21 @@ public enum ArmyOrders {
             let ally = ns.contains { owner($0) != nation && RunWindow.access(r, nation, owner($0)) }
             if targeting(p) >= (ally ? 1 : 4) { continue }
             let foreign = ns.contains { owner($0) != nation }
-            if foreign { priority.append((p, ally ? f(0.2) : weight(p))) } else { secondary.append((p, ally ? f(0.2) : weight(p))) }
+            var wVal = ally ? f(0.2) : weight(p)
+            // App 规则边防警觉：面向非盟友强邻的边境权重提至 2.5~3.2×，平时自动屯兵于主要威胁方向
+            if app && foreign && !ally {
+                var rivalPower = 0.0
+                for q in ns {
+                    let other = owner(q)
+                    if other != nation && !RunWindow.access(r, nation, other) {
+                        rivalPower = max(rivalPower, nationTroops[other] ?? 0)
+                    }
+                }
+                if rivalPower >= myTroops * 0.45 {
+                    wVal = f(wVal * (rivalPower >= myTroops * 0.9 ? 3.2 : 2.2))
+                }
+            }
+            if foreign { priority.append((p, wVal)) } else { secondary.append((p, wVal)) }
         }
         for p in owned where area.contains(p) && targeting(p) < 4 { priority.append((p, weight(p))) }
         let random = ArmyAutonomy.garrisonRandom("\(w.custom.seed.asString)/\(a.id.asString)/\(w.day.asInt)/garrison47")
@@ -319,10 +341,11 @@ public enum ArmyOrders {
             func enemyAt(_ pid: String) -> String? { presentAt[pid]?.first { $0.status.asString != "retreating" && enemySet.contains($0.nationId.asString) }?.nationId.asString }
             let target = row.targetId.isNull ? nil : provinceAt[row.targetId.asString].map { provinceList[$0] }
             let originalTargets = !r.regimes.isNull && r.regimes.enabled.isTruthy
-            // 敌众我寡 (app worlds): an army in enemy land that is not yet in the fight looks at what stands
-            // here and at its target. Against well over its own and its comrades' strength it falls back to
-            // our nearest land to gather again; it used to march on into a host several times its size.
-            if originalTargets, a.status.asString != "retreating", !en.isEmpty, let hp = here.province, enemySet.contains(hp.controller.asString) {
+            // 敌众我寡 / 兵疲粮尽 (app worlds): an army in enemy land that is not yet in the fight checks
+            // local odds as well as morale & supplies. Against overwhelming foes OR when exhausted/starving
+            // it falls back to our nearest land to resupply and rally instead of melting away.
+            if originalTargets, a.status.asString != "retreating", !held.contains(Daily.key("army", id)), a.status.asString != "fighting",
+               !en.isEmpty, let hp = here.province, enemySet.contains(hp.controller.asString) {
                 func troopsAt(_ pid: String, ours: Bool) -> Double {
                     var sum = 0.0
                     for x in presentAt[pid] ?? [] where x.status.asString != "retreating" {
@@ -337,7 +360,9 @@ public enum ArmyOrders {
                     foesNear += troopsAt(t.id.asString, ours: false)
                     friendsNear += troopsAt(t.id.asString, ours: true)
                 }
-                if foesNear > 1.6 * max(friendsNear, a.troops.asNumber) {
+                let outmatched = foesNear > 1.6 * max(friendsNear, a.troops.asNumber)
+                let exhausted = a.morale.asNumber < 24 || a.supplies.asNumber <= 0
+                if outmatched || exhausted {
                     let at = g.location(bridge.travel(here.travel)).point
                     func far(_ q: Int) -> Double { jsHypot(provinceList[q].center.x.asNumber - at.x, provinceList[q].center.y.asNumber - at.y) }
                     let homes = (ownedBy[nation] ?? []).sorted { x, y in
@@ -350,7 +375,7 @@ public enum ArmyOrders {
                         issue(r, id, .move(province: q, retreat: true))
                         row.targetId = provinceList[q].id.clone(); row.campaignId = .null; row.issuedTick = JS(tick)
                         row.pledge = .null; row.pledgeTick = .null
-                        note("returning", "敌众我寡，退回本国整顿后再战。")
+                        note("returning", outmatched ? "敌众我寡，退回本国整顿后再战。" : "兵疲粮尽，退回本国休整补给。")
                         fled = true
                         break
                     }
@@ -383,7 +408,26 @@ public enum ArmyOrders {
             // A new defensive post or a cancelled relief can replace a marching order. Normal
             // attacks retain their route; held, manual and withdrawing armies remain protected.
             let recalled = duty.map { $0.replaces(target: row.targetId.optionalString.flatMap { provinceAt[$0] }, decision: row.decision.asString) } ?? false
-            if ongoing && !recalled && (row.targetId.isNull || targetEnemy != nil || row.decision.asString == "returning" && targetOwned || row.decision.asString == "staging" && targetOwned && !en.isEmpty || row.decision.asString == "guarding" && targetOwned && !en.isEmpty
+            // App worlds: 行军途中若前方目标突然集结重兵（>1.85× 我方合围兵力），及时中止孤军送死，改交军机重算路线或集结
+            var trapAbort = false
+            if originalTargets, ongoing, !recalled, row.decision.asString == "attacking",
+               here.province?.controller.asString == nation, let t = target, enemySet.contains(t.controller.asString) {
+                let tid = t.id.asString
+                let foesThere = (presentAt[tid] ?? []).reduce(0.0) { $1.status.asString != "retreating" && enemySet.contains($1.nationId.asString) ? $0 + $1.troops.asNumber : $0 }
+                if foesThere > 0 {
+                    if headingOf[nation] == nil {
+                        var h = [String: Double]()
+                        for x in r.world.armies.asArray where x.nationId.asString == nation && x.troops.asNumber > 0 {
+                            let xt = state.armies[x.id.asString].targetId
+                            if !xt.isNull { h[xt.asString, default: 0] += x.troops.asNumber }
+                        }
+                        headingOf[nation] = h
+                    }
+                    let converging = max(a.troops.asNumber, headingOf[nation]?[tid] ?? a.troops.asNumber)
+                    if foesThere > 1.85 * converging { trapAbort = true }
+                }
+            }
+            if ongoing && !recalled && !trapAbort && (row.targetId.isNull || targetEnemy != nil || row.decision.asString == "returning" && targetOwned || row.decision.asString == "staging" && targetOwned && !en.isEmpty || row.decision.asString == "guarding" && targetOwned && !en.isEmpty
                            || garrisonIsTarget && targetOwned && en.isEmpty || a.status.asString == "retreating") {
                 if garrisonIsTarget && targetOwned && en.isEmpty { note("garrison", "正在沿原定路线前往驻地，保留既有行军进度。") } else { row.nextTick = JS(tick + retry) }
                 continue

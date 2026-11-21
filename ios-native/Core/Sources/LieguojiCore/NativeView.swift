@@ -73,6 +73,23 @@ extension NativeEngine {
         let rows = n / max(1, cellsX), x0 = pts[0], y0 = pts[1]
         let dx = cellsX > 1 ? (pts[2 * (cellsX - 1)] - x0) / Double(cellsX - 1) : unit, dy = rows > 1 ? (pts[2 * (n - cellsX) + 1] - y0) / Double(rows - 1) : unit
         var depth = [Int32](repeating: -1, count: fit ? n : 0)
+        // App 规则国家图预索引都城地图坐标，排布国名时避开本国都城印记
+        var capitalPos = [Int: (Double, Double)]()
+        if fit && name == nil {
+            let sc = run.scale.asNumber
+            let safeScale = sc.isFinite && sc > 1e-6 ? sc : 1.0
+            var cityPosById = [String: (Double, Double)]()
+            for c in run.world.cities.asArray {
+                if let cid = c.id.optionalString, !c.position.isNull {
+                    cityPosById[cid] = (c.position.x.asNumber / safeScale, c.position.y.asNumber / safeScale)
+                }
+            }
+            for (i, nation) in run.world.nations.asArray.enumerated() {
+                if let cid = nation.capitalId.optionalString, let pos = cityPosById[cid] {
+                    capitalPos[i] = pos
+                }
+            }
+        }
         func cell(_ x: Double, _ y: Double) -> Int? {
             let row = Int(((y - y0) / dy).rounded()), column = Int(((x - x0) / dx).rounded())
             return row >= 0 && row < rows && column >= 0 && column < cellsX ? row * cellsX + column : nil
@@ -124,19 +141,37 @@ extension NativeEngine {
                     let c = queue[head]; head += 1
                     for i in 0..<4 { let d = neighbour(c, i); if d >= 0 && d < n && depth[d] < 0 && group(d) == k { depth[d] = depth[c] + 1; queue.append(d) } }
                 }
-                // 国名居中 (1.14): not one candidate but the best of several. Among the deepest ground of the piece
-                // (at least 60 % as far from any border as its deepest point) eight places are tried, each along
-                // the land's own direction, half of it and level. A place is worth the size the name can be
-                // written there: as long as the straight run of own land through it allows, and as tall as the
-                // narrowest clearance to a border along the middle of that run. So the name sits where the
-                // land is broad, runs along it, and neither touches a border nor spills over one.
+                // 国名居中（2.0.2 舆图视觉优化）：在领土腹地（距离边界 >= 55% 最大纵深）选取最多 16 个空间均衡锚点
+                // （含最深点、质心最近点与四象限腹心），倾角收敛在 ±20° 内并优先水平排版，同时适度避让本国都城印记。
                 var deepestDepth: Int32 = 0
                 for c in list where depth[c] > deepestDepth { deepestDepth = depth[c] }
-                let inner = list.filter { depth[$0] * 10 >= deepestDepth * 6 }.sorted { depth[$0] != depth[$1] ? depth[$0] > depth[$1] : $0 < $1 }
-                let stride = max(1, inner.count / 8)
-                let places = Swift.stride(from: 0, to: inner.count, by: stride).prefix(8).map { inner[$0] }
+                let inner = list.filter { depth[$0] * 100 >= deepestDepth * 55 }.sorted { depth[$0] != depth[$1] ? depth[$0] > depth[$1] : $0 < $1 }
+                var places = [Int]()
+                var picked = Set<Int>()
+                func addPlace(_ c: Int) { if picked.insert(c).inserted { places.append(c) } }
+                if let first = inner.first { addPlace(first) }
+                if !inner.isEmpty {
+                    var nearCenter = inner[0], nearDist = Double.infinity
+                    var quadBest = [Int](repeating: -1, count: 4)
+                    for c in inner {
+                        let px = pts[2 * c], py = pts[2 * c + 1]
+                        let d2 = (px - cx) * (px - cx) + (py - cy) * (py - cy)
+                        if d2 < nearDist { nearDist = d2; nearCenter = c }
+                        let q = (px >= cx ? 1 : 0) + (py >= cy ? 2 : 0)
+                        if quadBest[q] < 0 { quadBest[q] = c }
+                    }
+                    addPlace(nearCenter)
+                    for q in quadBest where q >= 0 { addPlace(q) }
+                    let stride = max(1, inner.count / 12)
+                    for idx in Swift.stride(from: 0, to: inner.count, by: stride) where places.count < 16 {
+                        addPlace(inner[idx])
+                    }
+                }
                 let letters = Double(max(1, MapLayers.stateLabel(name?(k) ?? (k >= 0 && k < run.world.nations.length ? run.world.nations[k].name.optionalString ?? "" : ""), full: true).count))
                 let step = min(dx, dy) * 0.6
+                let calmTheta = max(-0.35, min(0.35, theta))
+                let candidateAngles: [Double] = abs(calmTheta) < 0.08 ? [0] : [0, calmTheta * 0.5, calmTheta]
+                let capPos = capitalPos[k]
                 var bestScore = -Double.infinity
                 for place in places {
                     let px = pts[2 * place], py = pts[2 * place + 1]
@@ -148,7 +183,7 @@ extension NativeEngine {
                         }
                         return end
                     }
-                    for angle in [theta, theta * 0.5, 0] {
+                    for angle in candidateAngles {
                         let ax = cos(angle), ay = sin(angle), a = reach(ax, ay), b = reach(-ax, -ay)
                         guard a + b > 0 else { continue }
                         // The clearance along the middle 70 % of the run: the name's band must fit inside it.
@@ -159,15 +194,23 @@ extension NativeEngine {
                             let d = cell(px + ax * t, py + ay * t).map { group($0) == k ? depth[$0] : 0 } ?? 0
                             clear = min(clear, max(0, d))
                         }
-                        let width = (a + b) / unit * 0.76
+                        let width = (a + b) / unit * 0.78
                         let across = Double(clear + 1) * min(dx, dy) * 2 / unit
-                        let height = min(max(width / 3, 1.5), max(1, across * 0.9))
+                        let height = min(max(width / 2.8, 1.6), max(1.1, across * 0.92))
                         let x = px + ax * mid, y = py + ay * mid
                         let away = ((x - cx) * (x - cx) + (y - cy) * (y - cy)).squareRoot() / unit
-                        // The size the name can take here, a little for running along the land, a little against straying from the middle.
-                        let size = min(width / letters, height) * (angle == theta ? 1.08 : 1) - away * 0.004
-                        if size > bestScore {
-                            bestScore = size
+                        // 水平排版优先（+12% 清晰度加权），仅当狭长斜向领土显著更宽时才温和倾斜
+                        let baseSize = min(width / letters, height)
+                        let orientationBonus: Double = angle == 0 ? 1.12 : (abs(angle) < 0.22 ? 1.04 : 1.0)
+                        var score = baseSize * orientationBonus - away * 0.006
+                        if let cap = capPos {
+                            let capDist = ((x - cap.0) * (x - cap.0) + (y - cap.1) * (y - cap.1)).squareRoot()
+                            if capDist < 22 {
+                                score -= (22 - capDist) / 22 * baseSize * 0.42
+                            }
+                        }
+                        if score > bestScore {
+                            bestScore = score
                             labelX = x; labelY = y; labelAngle = angle; labelWidth = width; labelHeight = height
                         }
                     }

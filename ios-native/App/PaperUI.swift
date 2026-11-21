@@ -69,21 +69,20 @@ struct MemorialPaper: View {
     }
 }
 
-/// 全作统一的动效：同一类动作用同一条曲线，节奏一致、不抢视线（原先散落着约 45 种时长与弹性）。
-/// 开场等一秒以上的整段演出不在此列，各自保留时长。
+/// 全作统一的动效（WWDC23 临界阻尼弹簧原则：常规位移/面板切换默认不回弹，利落跟手；仅落印仪式保留克制弹性）：
 enum Motion {
-    /// 点按、开关、小控件的反馈。
-    static let tap = Animation.spring(response: 0.3, dampingFraction: 0.82)
-    /// 面板切换、展开收起、布局变化。
-    static let panel = Animation.spring(response: 0.44, dampingFraction: 0.86)
-    /// 较大的位移（整页滑入、镜头相关的界面跟随）。
-    static let drift = Animation.spring(response: 0.65, dampingFraction: 0.86)
-    /// 淡入淡出、提示出现。
-    static let fade = Animation.easeOut(duration: 0.22)
-    /// 墨迹显现、数字与图表的生长。
-    static let reveal = Animation.easeOut(duration: 0.55)
-    /// 只表达一件事：落印确认（标题印、宣战印）。略带回弹，像印章按下去。
-    static let stamp = Animation.spring(response: 0.36, dampingFraction: 0.62)
+    /// 点按、开关、小控件的反馈（临界阻尼，干脆不晃）。
+    static let tap = Animation.spring(response: 0.26, dampingFraction: 0.96)
+    /// 面板切换、展开收起、布局变化（跟手无拖尾）。
+    static let panel = Animation.spring(response: 0.36, dampingFraction: 0.98)
+    /// 较大的位移（整页滑入、数据条生长、镜头相关的界面跟随）。
+    static let drift = Animation.spring(response: 0.52, dampingFraction: 0.98)
+    /// 纯透明度与颜色淡入淡出（非位移属性保持短促缓出）。
+    static let fade = Animation.easeOut(duration: 0.18)
+    /// 墨迹显现、细线展开与图表绘制。
+    static let reveal = Animation.easeOut(duration: 0.42)
+    /// 只表达一件事：落印确认（标题印、宣战印、警报跃动）。略带回弹，像印章按下去。
+    static let stamp = Animation.spring(response: 0.32, dampingFraction: 0.68)
 }
 
 /// 印面：全作统一的朱印。始终是正方形，按字数定版式，使一字印与多字印的视觉重量一致——
@@ -158,19 +157,24 @@ struct MemorialHeader: View {
     let title: String
     var subtitle: String?
     var seal: String = "御览"
+    var showGrabber = true
     @State private var inked = false
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(title).font(Theme.kai(30)).foregroundStyle(Theme.ink).tracking(4)
-                Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.75), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
-                    .frame(height: 1.5).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
-                if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2) }
+        VStack(spacing: 0) {
+            if showGrabber { SheetGrabber() }
+            HStack(alignment: .center, spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title).font(Theme.kai(28)).foregroundStyle(Theme.ink).tracking(3).lineLimit(1).minimumScaleFactor(0.75)
+                    Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.75), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
+                        .frame(height: 1.5).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
+                    if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2) }
+                }
+                Spacer(minLength: 8)
+                Seal(text: seal, size: 32)
             }
-            Spacer(minLength: 8)
-            Seal(text: seal, size: 32)
+            .padding(.horizontal, Theme.Layout.sectionInset)
+            .padding(.top, showGrabber ? Theme.Layout.headerTop : 18)
         }
-        .padding(.horizontal, 22).padding(.top, 22)
         .onAppear { withAnimation(Motion.reveal) { inked = true } }
     }
 }
@@ -508,9 +512,9 @@ struct EdictSheet: View {
                                 ruleStepper("事件频率", "event", 25)
                             }
                             Text("以常态为 100%。战争频率影响各国宣战意愿，战斗烈度影响交战伤亡，征兵规模影响新征军队的兵力，造舰速度影响舰队重建与扩编。")
-                                .font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 26)
+                                .font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
                         }
-                        Text("钦此。").font(Theme.kai(20)).foregroundStyle(Theme.ink).frame(maxWidth: .infinity, alignment: .trailing).padding(.horizontal, 26)
+                        Text("钦此。").font(Theme.title).foregroundStyle(Theme.ink).frame(maxWidth: .infinity, alignment: .trailing).padding(.horizontal, Theme.Layout.sectionInset)
                     } else { InkBusy(text: "载入……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(40) }
                 }
                 .padding(.bottom, 28)
@@ -909,7 +913,7 @@ private struct PressMenuCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(menu.title).font(Theme.kai(19)).foregroundStyle(Theme.ink).lineLimit(1)
+                Text(menu.title).font(Theme.section).foregroundStyle(Theme.ink).tracking(1).lineLimit(1)
                 if let s = menu.subtitle { Text(s).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2) }
             }
             .padding(.horizontal, 18).padding(.vertical, 12)

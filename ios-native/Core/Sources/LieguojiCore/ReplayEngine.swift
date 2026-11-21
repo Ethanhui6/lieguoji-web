@@ -4,9 +4,9 @@ import Foundation
 /// 在世界推演过程中以极小内存（RLE 行程编码）记录关键历史时刻的版图归属、存国概况与重大事件，
 /// 支持在「大事记 › 山河回放」中实现：正放、倒放、进度条自由拖动、逐节点跳转与焦点定位。
 public enum ReplayEngine {
-    static let maxFrames = 360
-    static let periodicIntervalDays = 180
-    static let eventMinGapDays = 15
+    static let maxFrames = 480
+    static let periodicIntervalDays = 30
+    static let eventMinGapDays = 5
 
     /// RLE 压缩州郡归属数组 `[owner0, owner1, ...]` -> `[count0, owner0, count1, owner1, ...]`。
     public static func encodeRLE(_ owners: [Int]) -> [Int] {
@@ -105,21 +105,29 @@ public enum ReplayEngine {
                 isMajor = true
             } else if let lastFrame = frames.last, !lastFrame.rle.isNull {
                 let prevOwners = decodeRLE(lastFrame.rle.asArray.map(\.asInt), count: owners.count)
-                if diffCount(prevOwners, owners) >= 3 {
+                if diffCount(prevOwners, owners) >= 1 {
                     shouldRecord = true
                 }
             }
         }
         guard shouldRecord else { return }
 
-        // 统计存国数与最大强国
+        // 统计存国数与大国疆域分布（前 4 强国用于回放大势占比条）
         var counts = [Int: Int]()
         for o in owners where o >= 0 { counts[o, default: 0] += 1 }
         let aliveCount = counts.count
-        let top = counts.max { a, b in a.value != b.value ? a.value < b.value : a.key > b.key }
+        let rankedPowers = counts.sorted { a, b in a.value != b.value ? a.value > b.value : a.key < b.key }
+        let top = rankedPowers.first
         let topNationIdx = top?.key ?? -1
         let topProvinces = top?.value ?? 0
         let topNationName = (topNationIdx >= 0 && nations.indices.contains(topNationIdx)) ? (nations[topNationIdx].name.optionalString ?? "") : ""
+        let topPowers = JS.array()
+        for entry in rankedPowers.prefix(4) {
+            let item = JS.object()
+            item.i = JS(entry.key)
+            item.p = JS(entry.value)
+            topPowers.push(item)
+        }
 
         let dl = dateLabel(r)
         let headline: String
@@ -182,6 +190,7 @@ public enum ReplayEngine {
         frame.topNation = JS(topNationIdx)
         frame.topName = JS(topNationName)
         frame.topProvinces = JS(topProvinces)
+        frame.topPowers = topPowers
         if !nameUpdates.isEmpty { frame.updates = .array(nameUpdates) }
 
         box.frames.push(frame)
@@ -197,13 +206,13 @@ public enum ReplayEngine {
     private static func compact(_ box: JS) {
         let arr = box.frames.asArray
         guard arr.count > maxFrames else { return }
-        let keepTail = 60
+        let keepTail = 90
         var kept = [JS]()
         kept.reserveCapacity(maxFrames)
         var carriedUpdates = [JS]()
         for i in 0..<arr.count {
             let f = arr[i]
-            let mustKeep = i == 0 || i >= arr.count - keepTail || (f.major.isTruthy && i % 2 == 0) || i % 2 == 0
+            let mustKeep = i == 0 || i >= arr.count - keepTail || f.major.isTruthy || i % 2 == 0
             if mustKeep {
                 if !carriedUpdates.isEmpty {
                     let merged = carriedUpdates + (f.updates.isNull ? [] : f.updates.asArray)
@@ -214,6 +223,29 @@ public enum ReplayEngine {
             } else if !f.updates.isNull {
                 carriedUpdates.append(contentsOf: f.updates.asArray)
             }
+        }
+        // 若重大帧过多仍超出上限，再对中段隔帧抽稀一次
+        if kept.count > maxFrames {
+            var slim = [JS]()
+            slim.reserveCapacity(maxFrames)
+            var carry = [JS]()
+            for i in 0..<kept.count {
+                let f = kept[i]
+                let keep = i == 0 || i >= kept.count - keepTail || i % 2 == 0
+                if keep {
+                    if !carry.isEmpty {
+                        f.updates = .array(carry + (f.updates.isNull ? [] : f.updates.asArray))
+                        carry.removeAll()
+                    }
+                    slim.append(f)
+                } else if !f.updates.isNull {
+                    carry.append(contentsOf: f.updates.asArray)
+                }
+            }
+            if !carry.isEmpty, let last = slim.last {
+                last.updates = .array((last.updates.isNull ? [] : last.updates.asArray) + carry)
+            }
+            kept = slim
         }
         if !carriedUpdates.isEmpty, let last = kept.last {
             last.updates = .array((last.updates.isNull ? [] : last.updates.asArray) + carriedUpdates)

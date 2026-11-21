@@ -302,7 +302,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// Ownership changed (conquest, rebellion): recolour the land and redraw the state outlines.
     /// The state outlines are rebuilt on a background queue (the whole map's border walk); the land
     /// is recoloured at once, and the new outlines replace the old ones when ready.
-    func setMap(_ next: WorldMap) {
+    func setMap(_ next: WorldMap, replayFast: Bool = false) {
         let work = workRevision.replaceMap()
         // The founded world brings the smoothed coast the preview lacked: the waterlines and sand follow it.
         if !coastRefined && !next.coast.isEmpty {
@@ -324,23 +324,23 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let vertices = MapLayers.outlines(next, wide: wide).vertices
-            let marks = MapLayers.cityIcons(next).vertices
-            let provinceLines = MapLayers.provinceLines(next).vertices
+            let marks = replayFast ? nil : MapLayers.cityIcons(next).vertices
+            let provinceLines = replayFast ? nil : MapLayers.provinceLines(next).vertices
             let colours = MapRenderer.baseColors(next, inputs)
             DispatchQueue.main.async {
                 // 按代次安装：不比屏幕上的旧就装（高倍速时旧一点的结果先顶上，不让颜色一直等），
                 // 更新的结果已装上则丢弃；切换视图之后的颜色由视图那一趟负责。
                 guard let self, self.workRevision.acceptsGeometry(work) else { return }
                 if self.workRevision.acceptsOutlineGeometry(work) { self.outlines = self.buffer(vertices, stride: 6) }
-                self.icons = self.buffer(marks, stride: 6)
-                self.provinceLines = self.buffer(provinceLines, stride: 6)
+                if let marks { self.icons = self.buffer(marks, stride: 6) }
+                if let provinceLines { self.provinceLines = self.buffer(provinceLines, stride: 6) }
                 self.workRevision.installGeometry(work)
                 if self.terrainBase == nil { self.terrainBase = colours.terrainBase }
                 if self.shade.isEmpty { self.shade = colours.shade }
                 if self.workRevision.acceptsColours(work) {
                     self.workRevision.installColours(work)
                     self.base = (colours.land, colours.terrain)
-                    self.fadeOnRecolor = true
+                    self.fadeOnRecolor = !replayFast
                     self.recolor()
                     self.fadeOnRecolor = false
                 }

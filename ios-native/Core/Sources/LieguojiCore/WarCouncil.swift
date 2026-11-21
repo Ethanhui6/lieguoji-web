@@ -135,18 +135,34 @@ public enum WarCouncil {
         }
 
         var open = Double.infinity
+        var assignedTroops = [Int: Double]()
+        func track(_ post: Post, budget: inout Double, make: (Int) -> Duty) {
+            let beforeCount = duties.count
+            fill(post, budget: &budget, make: make)
+            if duties.count > beforeCount {
+                var sum = 0.0
+                for f in forces where duties[f.id] == make(post.province) { sum += f.troops }
+                assignedTroops[post.province] = sum
+            }
+        }
         for post in defend { fill(post, budget: &open) { .defend($0) } }
         var reserve = holdBudget
         for post in hold { fill(post, budget: &reserve) { .hold($0) } }
-        for post in attack { fill(post, budget: &open) { .attack($0) } }
+        for post in attack { track(post, budget: &open) { .attack($0) } }
         if !attack.isEmpty {
             for f in free where f.movable {
-                var near = attack[0], nearest = distance(f, near)
-                for post in attack.dropFirst() {
+                // 多轴进攻防扎堆：优先补强尚未溢出（< 2× 需求）的最近进攻目标，避免多余兵力全挤在单一方向。
+                var near = attack[0], bestScore = Double.infinity
+                for post in attack {
+                    let cur = assignedTroops[post.province] ?? 0
+                    let overkill = cur >= post.need * 2.0 ? 1.0 : 0.0
+                    let ratio = cur / max(1, post.need)
                     let d = distance(f, post)
-                    if d < nearest { nearest = d; near = post }
+                    let score = overkill * 1_000_000 + d * (1 + min(2.0, ratio * 0.35))
+                    if score < bestScore { bestScore = score; near = post }
                 }
                 duties[f.id] = .attack(near.province)
+                assignedTroops[near.province, default: 0] += f.troops
             }
         }
         return duties
@@ -200,17 +216,40 @@ extension ArmyOrders {
             }
         }
 
-        // 守土: land an enemy stands on or has taken from us.
+        // 预读取当前围城进度：救危解围与乘胜追击共用
+        var enemySiegeOnUs = [String: Double]()
+        var ourSiegeOnEnemy = [String: Double]()
+        if !r.occupation.isNull && !r.occupation.sieges.isNull {
+            for sg in r.occupation.sieges.asArray {
+                let maxR = max(1.0, sg.maximum.optionalNumber ?? 100.0)
+                let rem = sg.resistance.optionalNumber ?? maxR
+                let prog = max(0.0, min(1.0, 1.0 - rem / maxR))
+                let pid = sg.provinceId.asString
+                let ctrl = sg.controller.asString
+                if ctrl == nation {
+                    enemySiegeOnUs[pid] = max(enemySiegeOnUs[pid] ?? 0, prog)
+                } else if enemySet.contains(ctrl) {
+                    ourSiegeOnEnemy[pid] = max(ourSiegeOnEnemy[pid] ?? 0, prog)
+                }
+            }
+        }
+
+        // 守土: land an enemy stands on or has taken from us (都城 > 危城围困 > 重兵来犯).
         let capital = Rebellion.capitalProvince(r, nation).flatMap { c.provinceAt[$0] }
         let invaded = owned.filter { foes($0) > 0 }
-        let ranked = invaded.map { (p: $0, foes: foes($0)) }.sorted { x, y in
+        let ranked = invaded.map { (p: $0, foes: foes($0), siege: enemySiegeOnUs[provinces[$0].id.asString] ?? 0) }.sorted { x, y in
             if (x.p == capital) != (y.p == capital) { return x.p == capital }
+            let xUrgent = x.siege >= 0.35, yUrgent = y.siege >= 0.35
+            if xUrgent != yUrgent { return xUrgent }
+            if xUrgent && abs(x.siege - y.siege) > 0.1 { return x.siege > y.siege }
             return x.foes != y.foes ? x.foes > y.foes : x.p < y.p
         }
-        var defend = ranked.map { post($0.p, need: max($0.foes * 1.25, 1), mustHold: $0.p == capital) }
-        // 收复失地: a column or two at a time, in strength, starting with what is nearest the host; one army
-        // sent to each lost province only fed them to the enemy one by one.
-        let columns = max(1, min(4, forces.count / 6)), siege = max(2500, average * 1.5)
+        var defend = ranked.map { item -> WarCouncil.Post in
+            let mult = item.siege >= 0.6 ? 1.38 : 1.25
+            return post(item.p, need: max(item.foes * mult, 1), mustHold: item.p == capital)
+        }
+        // 收复失地: a few coordinated columns in strength, starting with what is nearest the host.
+        let columns = max(1, min(5, (forces.count + 2) / 3)), siege = max(2500, average * 1.5)
         var hostX = 0.0, hostY = 0.0
         for f in forces { hostX += f.x * f.troops; hostY += f.y * f.troops }
         hostX /= max(1, mine); hostY /= max(1, mine)
@@ -296,15 +335,23 @@ extension ArmyOrders {
             var weight = 0.0, sumX = 0.0, sumY = 0.0
             for f in host { weight += f.troops; sumX += f.x * f.troops; sumY += f.y * f.troops }
             let cx: Double = sumX / max(1, weight), cy: Double = sumY / max(1, weight)
-            let heart = Rebellion.capitalProvince(r, enemy).flatMap { c.provinceAt[$0] }.map { center($0) }
+            let enemyCapitalIdx = Rebellion.capitalProvince(r, enemy).flatMap { c.provinceAt[$0] }
+            let heart = enemyCapitalIdx.map { center($0) }
             let targeted = Set(bound.compactMap(\.target))
             func value(_ p: Int) -> Double {
                 let at = center(p)
+                let pid = provinces[p].id.asString
                 var v = jsHypot(at.x - cx, at.y - cy)
                 if let heart { v += 0.7 * jsHypot(at.x - heart.x, at.y - heart.y) }
+                // 直捣黄龙：可直取敌都时大幅提权
+                if p == enemyCapitalIdx { v -= 140 }
+                // 乘胜追击：我军已在围困该州时持续加压至破城
+                if let prog = ourSiegeOnEnemy[pid], prog > 0.05 { v -= 85 + prog * 60 }
+                // 避实击虚：优先突破敌军空虚防线
+                if foes(p) <= 0 { v -= 55 }
                 if targeted.contains(p) { v -= 60 }
-                if CombatReader.protruding(r, p) { v -= 30 }
-                v -= 40 * min(2.5, (people[provinces[p].id.asString] ?? 0) / meanPopulation)
+                if CombatReader.protruding(r, p) { v -= 35 }
+                v -= 40 * min(2.5, (people[pid] ?? 0) / meanPopulation)
                 return v
             }
             let sorted = list.map { (p: $0, v: value($0)) }.sorted { x, y in x.v != y.v ? x.v < y.v : x.p < y.p }

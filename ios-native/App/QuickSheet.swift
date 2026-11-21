@@ -382,7 +382,7 @@ struct PressRipple: View {
             Circle().fill(Theme.seal).frame(width: 8, height: 8)
                 .scaleEffect(grown ? 0.3 : 1.15).opacity(grown ? 0 : 0.95)
         }
-        .onAppear { withAnimation(.easeOut(duration: 0.34)) { grown = true } }
+        .onAppear { withAnimation(Motion.panel) { grown = true } }
         .allowsHitTesting(false)
     }
 }
@@ -407,7 +407,14 @@ func quickGrid<C: View>(@ViewBuilder _ content: () -> C) -> some View {
 func quickTile(_ title: String, _ symbol: String, destructive: Bool = false, _ action: @escaping () -> Void) -> some View {
     Button(action: action) {
         VStack(spacing: 5) {
-            Image(systemName: symbol).font(.system(size: 19, weight: .regular)).frame(height: 24)
+            Group {
+                if let g = GameActionLabel.glyph(for: symbol) {
+                    InkIcon(glyph: g, size: 19, weight: 1.75)
+                } else {
+                    Image(systemName: symbol).font(.system(size: 19, weight: .regular))
+                }
+            }
+            .frame(height: 24)
             Text(title).font(Theme.label).lineLimit(1).minimumScaleFactor(0.7)
         }
         .foregroundStyle(destructive ? Theme.seal : Theme.ink).frame(maxWidth: .infinity).frame(height: 66)

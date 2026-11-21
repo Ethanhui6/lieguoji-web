@@ -82,8 +82,8 @@ struct HeraldBanner: View {
                     .frame(width: 96, height: 46)
                     Rectangle().fill(Theme.ink.opacity(0.12)).frame(width: 0.7, height: 30)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(title).font(Theme.kai(12)).foregroundStyle(accent).lineLimit(1)
-                        Text(herald.text).font(Theme.kai(14)).foregroundStyle(Theme.ink).lineLimit(2).minimumScaleFactor(0.72)
+                        Text(title).font(Theme.caption).foregroundStyle(accent).lineLimit(1)
+                        Text(herald.text).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(2).minimumScaleFactor(0.76)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .opacity(Self.span(t, 0.46, 0.82)).offset(x: (1 - Self.span(t, 0.46, 0.82)) * 7)
@@ -232,14 +232,15 @@ struct HeraldBanner: View {
         }
     }
 
-    /// 国色在纸上洇开。
+    /// 国色在纸上洇开（纯矢量三层半透墨晕，零离屏模糊开销）。
     private func spread(_ ctx: GraphicsContext, at p: CGPoint, t: Double, start: Double, color: Color) {
         let k = Self.span(t, start, start + 0.6)
         guard k > 0 else { return }
-        var c = ctx; c.opacity = 0.35
-        c.addFilter(.blur(radius: 4))
         let r = 30 * CGFloat(k)
-        c.fill(Path(ellipseIn: CGRect(x: p.x - r * 1.3, y: p.y - r * 0.6, width: r * 2.6, height: r * 1.2)), with: .color(color))
+        for (scale, alpha) in [(CGFloat(1.38), 0.10), (1.12, 0.18), (0.82, 0.28)] {
+            ctx.fill(Path(ellipseIn: CGRect(x: p.x - r * 1.3 * scale, y: p.y - r * 0.6 * scale, width: r * 2.6 * scale, height: r * 1.2 * scale)),
+                     with: .color(color.opacity(alpha)))
+        }
     }
 
     /// 绶带与玉璧：从一杆旗系到另一杆。

@@ -97,8 +97,8 @@ import LieguojiCore
     }
     @Published var failure: String?
     @Published var generationNote = ""
-    /// A war declared, a peace made, a royal marriage, house coup or a province taken: shown as a banner for a moment.
-    struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital, marriage, house } }
+    /// A war declared, a peace made, a royal marriage, house coup, regime shift, treaty or ultimatum: shown as a banner for a moment.
+    struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital, marriage, house, coup, regime, treaty, ultimatum } }
     @Published var herald: Herald?
     private var heraldQueue: [Herald] = []
     private var heraldTask: Task<Void, Never>?
@@ -761,21 +761,26 @@ import LieguojiCore
         if changed { controller.world = world }
         let ports = (next.ports ?? []).map { SIMD2<Float>($0.x, $0.y) }
         if ports != controller.seaPorts { controller.seaPorts = ports }
-        if let list = next.forts, let meta = map?.meta {
-            let forts = list.compactMap { p -> SIMD2<Float>? in
-                guard meta.provinces.indices.contains(p) else { return nil }
-                if let c = meta.cities.first(where: { $0.province == p }) { return SIMD2(c.x, c.y) }
-                return SIMD2(meta.provinces[p].x, meta.provinces[p].y)
+        if let meta = map?.meta, (next.forts != nil || next.holy != nil) {
+            var cityByProv = [Int: WorldMeta.City]()
+            cityByProv.reserveCapacity(meta.cities.count)
+            for c in meta.cities where cityByProv[c.province] == nil { cityByProv[c.province] = c }
+            if let list = next.forts {
+                let forts = list.compactMap { p -> SIMD2<Float>? in
+                    guard meta.provinces.indices.contains(p) else { return nil }
+                    if let c = cityByProv[p] { return SIMD2(c.x, c.y) }
+                    return SIMD2(meta.provinces[p].x, meta.provinces[p].y)
+                }
+                if forts != controller.forts { controller.forts = forts }
             }
-            if forts != controller.forts { controller.forts = forts }
-        }
-        if let list = next.holy, let meta = map?.meta {
-            let holy = list.compactMap { h -> SIMD2<Float>? in
-                guard meta.provinces.indices.contains(h.province) else { return nil }
-                if let c = meta.cities.first(where: { $0.province == h.province }) { return SIMD2(c.x, c.y) }
-                return SIMD2(meta.provinces[h.province].x, meta.provinces[h.province].y)
+            if let list = next.holy {
+                let holy = list.compactMap { h -> SIMD2<Float>? in
+                    guard meta.provinces.indices.contains(h.province) else { return nil }
+                    if let c = cityByProv[h.province] { return SIMD2(c.x, c.y) }
+                    return SIMD2(meta.provinces[h.province].x, meta.provinces[h.province].y)
+                }
+                if holy != controller.holy { controller.holy = holy }
             }
-            if holy != controller.holy { controller.holy = holy }
         }
         refreshLanes()
         refreshWashes(previous: previous, next: next)
@@ -799,15 +804,21 @@ import LieguojiCore
         for w in old.wars where !after.contains(w.id) {
             enqueue(Herald(kind: .peace, text: "\(name(w.attacker))与\(name(w.defender))议和", nations: [w.attacker, w.defender]))
         }
-        // Revolutions, restorations, coups and royal/noble marriages are proclaimed with bespoke ink animations.
+        // Revolutions, coups, regime shifts, treaties, ultimatums and royal marriages are proclaimed with bespoke ink animations.
         let seen = Set(old.events.map(\.text))
         for e in next.events where !seen.contains(e.text) {
-            if e.text.contains("篡位") {
+            if e.text.contains("最后通牒") {
+                enqueue(Herald(kind: .ultimatum, text: e.text, nations: []))
+            } else if e.text.contains("政变") || e.text.contains("兵变") || e.text.contains("夺权") {
+                enqueue(Herald(kind: .coup, text: e.text, nations: []))
+            } else if e.text.contains("篡位") || e.text.contains("削藩激变") {
                 enqueue(Herald(kind: .house, text: e.text, nations: []))
             } else if e.text.contains("联姻") || e.text.contains("结为秦晋之好") {
                 enqueue(Herald(kind: .marriage, text: e.text, nations: []))
-            } else if e.text.contains("改称") || e.text.contains("改制，建立") || e.text.contains("禅位") || e.text.contains("改建") {
-                enqueue(Herald(kind: .war, text: e.text, nations: []))
+            } else if e.text.contains("包围网") || e.text.contains("共同防御") || e.text.contains("通商协定") || e.text.contains("斡旋") {
+                enqueue(Herald(kind: .treaty, text: e.text, nations: []))
+            } else if e.text.contains("革命") || e.text.contains("立宪") || e.text.contains("改称") || e.text.contains("改制") || e.text.contains("禅位") || e.text.contains("改建") || e.text.contains("改行") || e.text.contains("复辟") || e.text.contains("还政于民") {
+                enqueue(Herald(kind: .regime, text: e.text, nations: []))
             }
         }
         // Rebellions, restorations, dynasties dying out and capitals moving: the original's big news.
@@ -837,9 +848,13 @@ import LieguojiCore
             while let self, !self.heraldQueue.isEmpty {
                 let h = self.heraldQueue.removeFirst()
                 self.herald = h
-                switch h.kind { case .war, .uprising, .house: GameFeel.shared.news(.warning); case .peace, .restoration, .marriage: GameFeel.shared.news(.success); case .capture, .extinction, .capital: GameFeel.shared.newsTap() }
-                // 场景时长：宣战 3.0 秒、议和 2.8、攻克 1.8，其余（联姻、世家、起义等）2.4（窄条传报，读完即收）。
-                let seconds: Double = h.kind == .war ? 3.0 : h.kind == .peace ? 2.8 : h.kind == .capture ? 1.8 : 2.4
+                switch h.kind {
+                case .war, .uprising, .house, .coup, .ultimatum: GameFeel.shared.news(.warning)
+                case .peace, .restoration, .marriage, .treaty, .regime: GameFeel.shared.news(.success)
+                case .capture, .extinction, .capital: GameFeel.shared.newsTap()
+                }
+                // 场景时长：宣战/政变/通牒 2.9 秒、议和/改制/邦交 2.6 秒、攻克 1.8 秒，其余 2.4 秒。
+                let seconds: Double = (h.kind == .war || h.kind == .coup || h.kind == .ultimatum) ? 2.9 : (h.kind == .peace || h.kind == .regime || h.kind == .treaty) ? 2.6 : h.kind == .capture ? 1.8 : 2.4
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
                 self.herald = nil
                 try? await Task.sleep(nanoseconds: 350_000_000)
@@ -1478,6 +1493,17 @@ import LieguojiCore
     func makeVassal(_ vassal: Int, of overlord: Int) async -> String? { finish(await native.makeVassal(vassal, of: overlord)) }
     func annex(_ target: Int, by annexer: Int) async -> String? { finish(await native.annex(target, by: annexer)) }
     func setAutoDiplomacy(_ n: Int, _ enabled: Bool) async -> String? { finish(await native.setAutoDiplomacy(n, enabled)) }
+    func regimeTransition(_ n: Int, action: String) async -> String? { await edit("regimeTransition", ["n": n, "action": action]) }
+    func sendUltimatum(_ from: Int, to: Int, demand: String) async -> String? { await edit("sendUltimatum", ["from": from, "to": to, "demand": demand]) }
+    func formCoalition(_ caller: Int, against target: Int) async -> String? { await edit("formCoalition", ["caller": caller, "target": target]) }
+    func covertAction(_ from: Int, target: Int, kind: String) async -> String? { await edit("covertAction", ["from": from, "target": target, "kind": kind]) }
+    func mediatePeace(_ mediator: Int, between a: Int, and b: Int) async -> String? { await edit("mediatePeace", ["mediator": mediator, "a": a, "b": b]) }
+    func grantFief(_ n: Int, family: String, province: Int? = nil) async -> String? {
+        var args: [String: Any] = ["n": n, "family": family]
+        if let province { args["province"] = province }
+        return await edit("grantFief", args)
+    }
+    func revokeFief(_ n: Int, family: String) async -> String? { await edit("revokeFief", ["n": n, "family": family]) }
 
     func provinceInfo(_ index: Int) async -> ProvinceInfo? {
         await query(ProvinceInfo.self) { await native.province(index) }

@@ -401,14 +401,61 @@ struct FamilyTreeSheet: View {
                     }
                     .buttonStyle(PressStyle()).disabled(busy)
                 }
-                HStack(spacing: 14) {
-                    Text("势力 \(Int(tree.influence))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
-                    Text("财富 \(Int(tree.wealth))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
-                    Text("封地 \(tree.provinces.count) 州").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 12) {
+                            Text("势力 \(Int(tree.influence))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                            Text("财富 \(Int(tree.wealth))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                            Text(tree.allowsFiefs ? "封地 \(tree.provinces.count) 州" : "无封建封地").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                        }
+                        if tree.governing && !tree.ruling {
+                            Text("当前为摄政／幕府实际掌权世家").font(Theme.caption).foregroundStyle(Theme.seal)
+                        } else if tree.fiefCooldown > 0 {
+                            Text("赐封／削藩冷却中（余 \(tree.fiefCooldown) 月）").font(Theme.caption).foregroundStyle(Theme.seal.opacity(0.85))
+                        }
+                    }
+                    Spacer(minLength: 4)
+                    if tree.influenceHistory.count >= 2 {
+                        Sparkline(values: tree.influenceHistory).frame(width: 82, height: 26)
+                    }
                 }
                 if !tree.provinces.isEmpty {
                     Text("所领：\(tree.provinces.prefix(6).joined(separator: "、"))\(tree.provinces.count > 6 ? "等" : "")")
                         .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
+                }
+                if tree.allowsFiefs, let natIdx = model.map?.meta.nations.firstIndex(where: { $0.id == tree.nationId }) {
+                    HStack(spacing: 8) {
+                        Button {
+                            GameFeel.shared.tap()
+                            perform { (await model.grantFief(natIdx, family: activeFamily), "已赐封一州封地") }
+                        } label: {
+                            HStack(spacing: 4) {
+                                InkIcon(glyph: .region, size: 13, weight: 1.8)
+                                Text(tree.fiefCooldown > 0 ? "封赏冷却(\(tree.fiefCooldown)月)" : "赐封一州").font(Theme.label)
+                            }
+                            .foregroundStyle(Theme.jade)
+                            .frame(maxWidth: .infinity).frame(height: 32)
+                            .background(Theme.jade.opacity(0.09), in: Capsule())
+                            .overlay(Capsule().stroke(Theme.jade.opacity(0.3)))
+                        }
+                        .buttonStyle(PressStyle()).disabled(busy || tree.fiefCooldown > 0)
+                        if !tree.ruling && !tree.provinces.isEmpty {
+                            Button {
+                                GameFeel.shared.tap()
+                                perform { (await model.revokeFief(natIdx, family: activeFamily), "已削藩收回封地") }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    InkIcon(glyph: .war, size: 13, weight: 1.8)
+                                    Text("削藩夺地").font(Theme.label)
+                                }
+                                .foregroundStyle(Theme.seal)
+                                .frame(maxWidth: .infinity).frame(height: 32)
+                                .background(Theme.seal.opacity(0.09), in: Capsule())
+                                .overlay(Capsule().stroke(Theme.seal.opacity(0.3)))
+                            }
+                            .buttonStyle(PressStyle()).disabled(busy)
+                        }
+                    }
                 }
                 if !tree.ruling {
                     HStack(spacing: 8) {

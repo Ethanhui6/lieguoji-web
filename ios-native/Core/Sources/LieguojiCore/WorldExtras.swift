@@ -216,15 +216,40 @@ extension NativeEngine {
             return (true, "\(name)已立为家主。")
         case "setHeir":
             guard p.familyId.asInt > 0 else { return (false, "此人不属任何家族。") }
-            let family = r.kin.families[p.familyId.asInt.description]
+            let famKey = p.familyId.asInt.description
+            let family = r.kin.families[famKey]
             guard !family.isNull else { return (false, "家族不存在。") }
             guard family.headId.asInt != p.id.asInt else { return (false, "家主本人不能兼作继承人。") }
+            let prevHeirId = family.heirId.asInt
+            let bypassed = prevHeirId > 0 && prevHeirId != p.id.asInt
             family.heirId = p.id.clone()
             p.isHistoricallyImportant = JS(true)
             Nobility.bump(r.kin)
+            var extraNote = ""
+            // 废长立幼／易储代价：若绕过原定继承人，原储君母族外戚与同国大族关系受挫。
+            if bypassed, !r.nobility.isNull, let prevHeir = People.person(r, prevHeirId), prevHeir.isAlive.asBool {
+                let nid = family.nationId.optionalString ?? ""
+                let motherNatal = People.person(r, prevHeir.motherId.asInt).flatMap { NamingCatalog.cleanSurname($0.natalSurname.optionalString ?? $0.lastName.optionalString ?? "") }
+                if let natal = motherNatal, !natal.isEmpty {
+                    for (otherId, otherFam) in r.nobility.families.objectEntries where otherFam.nationId.optionalString == nid && otherId != famKey {
+                        let s = NamingCatalog.cleanSurname(r.kin.families[otherId].surname.optionalString ?? "")
+                        if s == natal {
+                            FamilyPolitics.adjustRelation(r, otherId, famKey, delta: -20)
+                            extraNote = "；易储引发外戚\(NamingCatalog.houseLabel(s))强烈不满（关系 −20）"
+                            break
+                        }
+                    }
+                }
+                if extraNote.isEmpty {
+                    for (otherId, otherFam) in r.nobility.families.objectEntries where otherFam.nationId.optionalString == nid && otherId != famKey {
+                        FamilyPolitics.adjustRelation(r, otherId, famKey, delta: -6)
+                    }
+                    extraNote = "；易储之举引得朝中诸族议论（他族关系 −6）"
+                }
+            }
             let famName = NamingCatalog.houseLabel(family.surname.optionalString ?? "", long: true)
-            People.recordHistory(r, kind: "family", text: "\(famName)立\(name)为继承人", reason: "族谱中指定家族继承人。", nations: [family.nationId.asString], province: nil)
-            return (true, "已指定\(name)为继承人。")
+            People.recordHistory(r, kind: "family", text: "\(famName)立\(name)为继承人", reason: "族谱中指定家族继承人\(extraNote)。", nations: [family.nationId.asString], province: nil)
+            return (true, "已指定\(name)为继承人\(extraNote)。")
         default:
             return (false, "无此操作。")
         }

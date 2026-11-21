@@ -68,6 +68,20 @@ public enum DiplomacyBridge {
         let alliances = r.alliances.records.asArray
         let start = r.life.startDate
         let cargo = r.transports.cargo.isNull ? [] : r.transports.cargo.asArray.map(\.army)
+        // 性能优化：单次扫描预聚合各国陆军兵力与舰队船数，避免 O(N × (A + F)) 重复过滤（结果逐字节一致）。
+        var troopsByNation = [String: [Int]]()
+        for a in w.armies.asArray where a.status.asString != "destroyed" {
+            troopsByNation[a.nationId.asString, default: []].append(a.troops.asInt)
+        }
+        for a in cargo where a.status.asString != "destroyed" {
+            troopsByNation[a.nationId.asString, default: []].append(a.troops.asInt)
+        }
+        var shipsByNation = [String: [Int]]()
+        if !r.navy.fleets.isNull {
+            for fl in r.navy.fleets.asArray where fl.status.asString != "lost" {
+                shipsByNation[fl.nationId.asString, default: []].append(fl.ships.asInt)
+            }
+        }
         let nations = w.nations.asArray.map { n -> DiplomacyWorld.Nation in
             let id = n.id.asString, d = s.nations[id], leaderId = r.people.nations[id].leaderId
             let p = leaderId.isNull ? nil : r.people.persons[leaderId.asInt.description]
@@ -86,8 +100,8 @@ public enum DiplomacyBridge {
                                          activeTime: d.activeTime.optionalNumber, passiveTime: d.passiveTime.optionalNumber,
                                          pools: DiplomacyWorld.Pools(power: d.pools.power.asNumber, startWar: d.pools.startWar.asNumber, endWar: d.pools.endWar.asNumber, efficiency: d.pools.efficiency.asNumber),
                                          strength: PeaceBridge.strength(r, id),
-                                         troops: (w.armies.asArray + cargo).filter { $0.nationId.asString == id && $0.status.asString != "destroyed" }.map(\.troops.asInt),
-                                         ships: (r.navy.fleets.isNull ? [] : r.navy.fleets.asArray).filter { $0.nationId.asString == id && $0.status.asString != "lost" }.map(\.ships.asInt))
+                                         troops: troopsByNation[id] ?? [],
+                                         ships: shipsByNation[id] ?? [])
         }
         return DiplomacyWorld(gameTime: r.life.gameTime.asNumber, originTime: s.originTime.asNumber, secondsPerDay: r.life.secondsPerDay.asNumber,
                               start: DiplomacyWorld.Start(year: start.year.asInt, month: start.month.asInt, day: start.day.asInt), day: w.day.asInt, worldAuto: r.diplomacy.worldAuto.isTruthy,
@@ -122,6 +136,29 @@ public enum DiplomacyBridge {
         let a = r.world.nations[d.attacker].id.asString, b = r.world.nations[d.defender].id.asString
         let attackerId = Wars.stateNumber(r, a), defenderId = Wars.stateNumber(r, b)
         let members = Vassals.buildParticipants(r, attacker: a, defender: b)
+        // App 深度外交：共同防御条约伙伴自动出兵协防，且废除交战双方的旧和平条约。
+        if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy {
+            DiplomacyDeep.breakTreatiesOnWar(r, a, b)
+            var existingStates = Set(members.asArray.map(\.stateId.asInt))
+            let aAlliance = Vassals.allianceOf(r, a)
+            var defenseHelpers = [String]()
+            for partner in DiplomacyDeep.defensePartners(r, of: b) where partner != a && partner != b {
+                let psid = Wars.stateNumber(r, partner)
+                guard !existingStates.contains(psid), Vassals.overlord(r, partner) != a,
+                      !(aAlliance?.members.asArray.contains { $0.asString == partner } ?? false),
+                      !Regimes.atWar(r, partner, b) else { continue }
+                let row = JS.object(); row.stateId = JS(psid); row.side = JS(1); row.role = JS(2)
+                members.push(row)
+                existingStates.insert(psid)
+                defenseHelpers.append(Vassals.name(r, partner))
+            }
+            if !defenseHelpers.isEmpty {
+                _ = People.recordHistory(r, kind: "diplomacy",
+                                         text: "\(defenseHelpers.joined(separator: "、"))依共同防御条约驰援\(Vassals.name(r, b))",
+                                         reason: "\(Vassals.name(r, a))发兵进犯，共同防御缔约国履行协防义务加入防御阵营。",
+                                         nations: [a, b], province: nil)
+            }
+        }
         Vassals.openCoalitionRelations(r, members)
         let goals = JS.array(d.goals.map { g in
             let o = JS.object(); o.id = JS(g.id); o.type = JS(g.type); o.addedBy = JS(attackerId); o.target = JS(defenderId); o.beneficiary = JS(attackerId)

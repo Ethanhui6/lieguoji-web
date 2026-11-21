@@ -17,10 +17,10 @@ struct HeraldBanner: View {
     private func name(_ n: Int) -> String { map.meta.nations.indices.contains(n) ? map.meta.nations[n].name : "" }
     private var accent: Color {
         switch herald.kind {
-        case .war, .uprising, .house: return Theme.seal
-        case .peace, .capital: return Theme.jade
+        case .war, .uprising, .house, .coup, .ultimatum: return Theme.seal
+        case .peace, .capital, .treaty: return Theme.jade
         case .marriage: return Color(red: 0.78, green: 0.28, blue: 0.34)
-        case .restoration: return Color(red: 0.72, green: 0.52, blue: 0.2)
+        case .restoration, .regime: return Color(red: 0.72, green: 0.52, blue: 0.2)
         case .capture, .extinction: return Theme.ink
         }
     }
@@ -76,7 +76,7 @@ struct HeraldBanner: View {
                     Canvas { ctx, size in
                         var c = ctx; c.scaleBy(x: size.width / 208, y: size.height / 100)
                         // 单主体的画面原本画在中线左侧 46 处（给注脚让位），小画里居中。
-                        if herald.kind != .war && herald.kind != .peace && herald.kind != .marriage { c.translateBy(x: 46, y: 0) }
+                        if herald.kind != .war && herald.kind != .peace && herald.kind != .marriage && herald.kind != .treaty && herald.kind != .ultimatum { c.translateBy(x: 46, y: 0) }
                         draw(c, size: CGSize(width: 208, height: 100), t: t)
                     }
                     .frame(width: 96, height: 46)
@@ -110,6 +110,10 @@ struct HeraldBanner: View {
         case .capital: return "迁都"
         case .marriage: return "联姻"
         case .house: return "世家"
+        case .coup: return "政变"
+        case .regime: return "改制"
+        case .treaty: return "邦交"
+        case .ultimatum: return "通牒"
         }
     }
 
@@ -153,7 +157,106 @@ struct HeraldBanner: View {
             silkMarriage(ctx, size: size, base: base, t: t)
         case .house:
             houseSeal(ctx, at: CGPoint(x: cx - 46, y: base - 24), t: t)
+        case .coup:
+            coupSlash(ctx, at: CGPoint(x: cx - 46, y: base - 24), t: t)
+        case .regime:
+            regimeShift(ctx, at: CGPoint(x: cx - 46, y: base - 24), t: t)
+        case .treaty:
+            let a = herald.nations.first.map(color) ?? Theme.jade, b = herald.nations.dropFirst().first.map(color) ?? Color(red: 0.72, green: 0.52, blue: 0.2)
+            let close = Self.span(t, 0.45, 1.05) * 16
+            pennant(ctx, x: 30 + close + (1 - flags) * -30, base: base, color: a, t: t, facing: 1, alpha: flags)
+            pennant(ctx, x: size.width - 30 - close + (1 - flags) * 30, base: base, color: b, t: t, facing: -1, alpha: flags)
+            treatySeal(ctx, cx: cx, y: base - 34, t: t)
+        case .ultimatum:
+            ultimatumBolt(ctx, size: size, base: base, t: t)
         }
+    }
+
+    /// 政变：旧印现裂痕，一杆朱墨重戟斜劈而下，墨点与震波炸开。
+    private func coupSlash(_ ctx: GraphicsContext, at p: CGPoint, t: Double) {
+        let stamp = Self.span(t, 0.35, 0.72)
+        guard stamp > 0 else { return }
+        let s: CGFloat = 20
+        let rect = CGRect(x: p.x - s, y: p.y - s, width: s * 2, height: s * 2)
+        let split = CGFloat(Self.span(t, 0.85, 1.25)) * 4.5
+        var left = ctx; left.opacity = Double(stamp) * (1 - Double(split) * 0.08)
+        left.translateBy(x: -split, y: split * 0.4)
+        left.fill(Path(roundedRect: rect, cornerRadius: 4), with: .color(Theme.ink.opacity(0.22)))
+        left.stroke(Path(roundedRect: rect, cornerRadius: 4), with: .color(Theme.ink.opacity(0.6)), lineWidth: 1.8)
+        // 戟刃斜斩轨迹
+        let slash = Self.span(t, 0.65, 0.98)
+        if slash > 0 {
+            var cut = Path()
+            cut.move(to: CGPoint(x: p.x - 32, y: p.y + 24))
+            cut.addLine(to: CGPoint(x: p.x + 34, y: p.y - 28))
+            ctx.stroke(cut.trimmedPath(from: 0, to: slash), with: .color(Theme.seal), style: StrokeStyle(lineWidth: 3.6, lineCap: .round))
+            splash(ctx, at: p, t: t, start: 0.88, color: Theme.seal)
+        }
+    }
+
+    /// 改制／革命／立宪：旧玉印虚化退场，鎏金波纹扫过，新玺凌空盖下定鼎。
+    private func regimeShift(_ ctx: GraphicsContext, at p: CGPoint, t: Double) {
+        let gold = Color(red: 0.76, green: 0.56, blue: 0.2)
+        let oldFade = 1 - Self.span(t, 0.55, 0.95)
+        if oldFade > 0.01 {
+            var old = ctx; old.opacity = oldFade * 0.65
+            let r = CGRect(x: p.x - 16, y: p.y - 16, width: 32, height: 32)
+            old.stroke(Path(roundedRect: r, cornerRadius: 5), with: .color(Theme.ink2), style: StrokeStyle(lineWidth: 1.8, dash: [4, 3]))
+        }
+        let drop = Self.span(t, 0.75, 1.15)
+        if drop > 0 {
+            let scale = 1.45 - 0.45 * CGFloat(drop)
+            let s = 18 * scale
+            let rect = CGRect(x: p.x - s, y: p.y - s, width: s * 2, height: s * 2)
+            var c = ctx; c.opacity = drop
+            c.fill(Path(roundedRect: rect, cornerRadius: 5), with: .color(gold.opacity(0.9)))
+            c.stroke(Path(roundedRect: rect.insetBy(dx: 3.5, dy: 3.5), cornerRadius: 3), with: .color(Theme.paper2.opacity(0.85)), lineWidth: 1.4)
+            let wave = Self.span(t, 1.05, 1.75)
+            if wave > 0 && wave < 1 {
+                let rr = 16 + 26 * CGFloat(wave)
+                ctx.stroke(Path(ellipseIn: CGRect(x: p.x - rr, y: p.y - rr, width: rr * 2, height: rr * 2)),
+                           with: .color(gold.opacity(0.55 * (1 - wave))), lineWidth: 2)
+            }
+        }
+    }
+
+    /// 邦交／通商／包围网：两枚金青玉印在中央合符，光晕涟漪荡开。
+    private func treatySeal(_ ctx: GraphicsContext, cx: CGFloat, y: CGFloat, t: Double) {
+        let meet = Self.span(t, 0.65, 1.15)
+        guard meet > 0 else { return }
+        let gold = Color(red: 0.76, green: 0.56, blue: 0.2)
+        let offset = (1 - CGFloat(meet)) * 24
+        var c = ctx; c.opacity = meet
+        c.fill(Path(ellipseIn: CGRect(x: cx - 12 - offset, y: y - 12, width: 22, height: 22)), with: .color(Theme.jade.opacity(0.75)))
+        c.fill(Path(ellipseIn: CGRect(x: cx - 10 + offset, y: y - 12, width: 22, height: 22)), with: .color(gold.opacity(0.75)))
+        if meet > 0.9 {
+            let aura = Self.span(t, 1.05, 1.75)
+            if aura > 0 && aura < 1 {
+                let rr = 12 + 24 * CGFloat(aura)
+                ctx.stroke(Path(ellipseIn: CGRect(x: cx - rr, y: y - rr, width: rr * 2, height: rr * 2)),
+                           with: .color(gold.opacity(0.5 * (1 - aura))), lineWidth: 1.8)
+            }
+        }
+    }
+
+    /// 最后通牒：朱砂敕令羽箭横空掠过，命中靶心激起赤红冲击波。
+    private func ultimatumBolt(_ ctx: GraphicsContext, size: CGSize, base: CGFloat, t: Double) {
+        let fly = Self.span(t, 0.42, 0.95)
+        guard fly > 0 else { return }
+        let y = base - 32
+        let x0: CGFloat = 24, x1: CGFloat = size.width - 36
+        let tipX = x0 + (x1 - x0) * CGFloat(fly)
+        var shaft = Path()
+        shaft.move(to: CGPoint(x: max(x0, tipX - 52), y: y))
+        shaft.addLine(to: CGPoint(x: tipX, y: y))
+        ctx.stroke(shaft, with: .color(Theme.seal), style: StrokeStyle(lineWidth: 3.0, lineCap: .round))
+        var head = Path()
+        head.move(to: CGPoint(x: tipX + 8, y: y))
+        head.addLine(to: CGPoint(x: tipX - 4, y: y - 6))
+        head.addLine(to: CGPoint(x: tipX - 4, y: y + 6))
+        head.closeSubpath()
+        ctx.fill(head, with: .color(Theme.seal))
+        splash(ctx, at: CGPoint(x: x1, y: y), t: t, start: 0.92, color: Theme.seal)
     }
 
     /// 燕尾旗：旗杆、旗面（随风起伏，越近旗尾摆得越大）、杆头一点。facing：旗面朝向（1 向右）。

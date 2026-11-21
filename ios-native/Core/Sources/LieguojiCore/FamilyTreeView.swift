@@ -83,6 +83,14 @@ public struct FamilyTree: Decodable, Sendable {
     public let nationId: String
     public let nationName: String
     public let provinces: [String]
+    /// 政体是否允许封建封地（共和/社会主义为假）。
+    public let allowsFiefs: Bool
+    /// 近 12 个月世家势力历史曲线。
+    public let influenceHistory: [Double]
+    /// 封赏／削藩冷却剩余月数。
+    public let fiefCooldown: Int
+    /// 是否为摄政／幕府实际掌权世家。
+    public let governing: Bool
     /// 世家往来（同国各族与有姻亲/往来的外邦世家）。
     public let relations: [Relation]
     /// 本族近期大事记。
@@ -99,7 +107,9 @@ public struct FamilyTree: Decodable, Sendable {
     public init(surname: String, head: Int, members: [Member], heir: Int = 0, ruling: Bool = false,
                 influence: Double = 0, wealth: Double = 0, allowFemale: Bool = false,
                 culture: String = "", nationId: String = "", nationName: String = "",
-                provinces: [String] = [], relations: [Relation] = [], events: [Event] = [],
+                provinces: [String] = [], allowsFiefs: Bool = true, influenceHistory: [Double] = [],
+                fiefCooldown: Int = 0, governing: Bool = false,
+                relations: [Relation] = [], events: [Event] = [],
                 collaterals: [Member] = []) {
         var seen = Set<Int>(), unique = [Member](), uniqueCol = [Member]()
         for m in members where seen.insert(m.id).inserted { unique.append(m) }
@@ -110,13 +120,16 @@ public struct FamilyTree: Decodable, Sendable {
         self.wealth = wealth.isFinite ? wealth : 0
         self.allowFemale = allowFemale; self.culture = culture
         self.nationId = nationId; self.nationName = nationName
-        self.provinces = provinces; self.relations = relations; self.events = events
+        self.provinces = provinces; self.allowsFiefs = allowsFiefs
+        self.influenceHistory = influenceHistory.filter(\.isFinite)
+        self.fiefCooldown = max(0, fiefCooldown); self.governing = governing
+        self.relations = relations; self.events = events
         self.members = unique; self.collaterals = uniqueCol
         let byId = Dictionary((unique + uniqueCol).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         self.byId = byId
         self.generations = Self.generations(unique, byId)
     }
-    enum Keys: String, CodingKey { case surname, head, heir, ruling, influence, wealth, allowFemale, culture, nationId, nationName, provinces, relations, events, members, collaterals }
+    enum Keys: String, CodingKey { case surname, head, heir, ruling, influence, wealth, allowFemale, culture, nationId, nationName, provinces, allowsFiefs, influenceHistory, fiefCooldown, governing, relations, events, members, collaterals }
     private struct Lossy: Decodable {
         let member: Member?
         init(from decoder: Decoder) throws { member = try? Member(from: decoder) }
@@ -133,6 +146,10 @@ public struct FamilyTree: Decodable, Sendable {
         let nationId = (try? c.decodeIfPresent(String.self, forKey: .nationId)) ?? ""
         let nationName = (try? c.decodeIfPresent(String.self, forKey: .nationName)) ?? ""
         let provinces = (try? c.decodeIfPresent([String].self, forKey: .provinces)) ?? []
+        let allowsFiefs = (try? c.decodeIfPresent(Bool.self, forKey: .allowsFiefs)) ?? true
+        let influenceHistory = (try? c.decodeIfPresent([Double].self, forKey: .influenceHistory)) ?? []
+        let fiefCooldown = (try? c.decodeIfPresent(Int.self, forKey: .fiefCooldown)) ?? 0
+        let governing = (try? c.decodeIfPresent(Bool.self, forKey: .governing)) ?? false
         let relations = (try? c.decodeIfPresent([Relation].self, forKey: .relations)) ?? []
         let events = (try? c.decodeIfPresent([Event].self, forKey: .events)) ?? []
         let members = (try? c.decodeIfPresent([Lossy].self, forKey: .members))?.compactMap(\.member) ?? []
@@ -140,6 +157,7 @@ public struct FamilyTree: Decodable, Sendable {
         self.init(surname: (try? c.decodeIfPresent(String.self, forKey: .surname)) ?? "", head: head, members: members,
                   heir: heir, ruling: ruling, influence: influence, wealth: wealth, allowFemale: allowFemale,
                   culture: culture, nationId: nationId, nationName: nationName, provinces: provinces,
+                  allowsFiefs: allowsFiefs, influenceHistory: influenceHistory, fiefCooldown: fiefCooldown, governing: governing,
                   relations: relations, events: events, collaterals: collaterals)
     }
 

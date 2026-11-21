@@ -57,6 +57,9 @@ public enum Regimes {
         if let p = persona(r, id) { t *= p.temper }
         if let g = governing(r, id) { t *= g.temper }
         if let c = stateCreed(r, id) { t *= c.temper }
+        if !r.regimes.isNull && r.regimes.enabled.isTruthy {
+            t *= (1.0 + styleProfile(r, id).temper)
+        }
         return min(1.6, max(0.6, t))
     }
 
@@ -291,13 +294,15 @@ public enum Regimes {
     }
 
     // MARK: 条约 (treaties)
-    /// A live treaty between two states (pact or marriage), if any.
+    /// A live non-aggression treaty between two states (pact, marriage, defense or tribute), if any.
     public static func treaty(_ r: JS, _ a: String, _ b: String) -> JS? {
         guard !r.regimes.isNull, !r.regimes.pacts.isNull else { return nil }
         let now = r.regimes.month.asInt
         return r.regimes.pacts.asArray.first { p in
             let x = p.a.asString, y = p.b.asString
-            return ((x == a && y == b) || (x == b && y == a)) && p.until.asInt > now
+            let kind = p.kind.optionalString ?? "pact"
+            let blocksWar = kind == "pact" || kind == "marriage" || kind == "defense" || kind == "tribute"
+            return blocksWar && ((x == a && y == b) || (x == b && y == a)) && p.until.asInt > now
         }
     }
 
@@ -319,14 +324,19 @@ public enum Regimes {
         if DeclarationEngine.temper != nil { DeclarationEngine.nationIds = r.world.nations.asArray.map(\.id.asString) }
         // Treaties end in their month.
         if !r.regimes.pacts.isNull { r.regimes.pacts = .array(r.regimes.pacts.asArray.filter { $0.until.asInt > key }) }
+        // 性能优化：每月一次预索引全图州郡、存粮、军团、战态与世家，消除逐国循环内的数十次全图遍历。
+        beginMonthIndex(r, key: key)
+        defer { endMonthIndex() }
         for n in r.world.nations.asArray {
             let id = n.id.asString
-            guard Vassals.alive(r, id), !isBlank(r, id) else { continue }
+            guard monthLandCount(r, id) > 0, !isBlank(r, id) else { continue }
             month(r, n, id, key)
         }
+        disasterMonth(r, key)
         uprisingsMonth(r, key)
         editsMonth(r, key)
         FamilyPolitics.month(r, key)
+        DiplomacyDeep.month(r, key)
         ArmyAutonomy.noAllySupport = r.regimes.world.noAssist.isTruthy
         Shipyards.month(r)
     }
@@ -410,9 +420,10 @@ public enum Regimes {
         if let p = persona(r, id) { if p.income != 0 { addGold(p.income / 100) }; if p.destiny != 0 { addDestiny(p.destiny) } }
         if let g = governing(r, id) { if g.income != 0 { addGold(g.income / 100) }; if g.destiny != 0 { addDestiny(g.destiny) } }
         if let growth = bonus(r, id, "growth"), growth != 0 {
-            let owned = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
-            for s in r.world.statecraft.provinces.asArray where owned.contains(s.provinceId.asString) {
-                s.population = JS(max(100, ((s.population.optionalNumber ?? 0) * (1 + growth / 1200)).rounded()))
+            for p in monthLand(r, id) {
+                if let s = monthStock(r, p.id.asString) {
+                    s.population = JS(max(100, ((s.population.optionalNumber ?? 0) * (1 + growth / 1200)).rounded()))
+                }
             }
         }
         // 特产与贸易: the kinds of goods held and bought from partners at peace add to the income.
@@ -425,7 +436,7 @@ public enum Regimes {
         // 税制 and the treasury record (财政).
         Finance.month(r, id, addGold: addGold, addDestiny: addDestiny)
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
-        // 党派对抗、家族对抗、国债、持续性天灾.
+        // 党派对抗、家族对抗、国债.
         eventsMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         faithMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         unrestMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
@@ -433,7 +444,6 @@ public enum Regimes {
         seizure(r, n, id, key)
         generalsMonth(r, n, id, key)
         leagueMonth(r, n, id, key)
-        regimeDrift(r, n, id, key)
         orderMonth(r, n, id, key)
         maturityMonth(r, n, id, key, addDestiny: addDestiny)
         attributeMonth(r, id, addGold: addGold)
@@ -442,10 +452,10 @@ public enum Regimes {
         religionMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         feudMonth(r, n, id, key)
         debtMonth(r, n, id)
-        disasterMonth(r, key)
         if let g = governing(r, id), g.growth != 0 {
-            let owned = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
-            for s in r.world.statecraft.provinces.asArray where owned.contains(s.provinceId.asString) { s.population = JS((s.population.asNumber * (1 + g.growth / 1200)).rounded()) }
+            for p in monthLand(r, id) {
+                if let s = monthStock(r, p.id.asString) { s.population = JS((s.population.asNumber * (1 + g.growth / 1200)).rounded()) }
+            }
         }
         if !book(r, id).posts.isNull { fillPosts(r, id) }
         postEffects(r, id, addGold: addGold, addDestiny: addDestiny)
@@ -460,32 +470,8 @@ public enum Regimes {
         Regimes.cabinet(r, n, id, key)
         Regimes.watchPremier(r, n, id)
         reform(r, n, id, key)
-        let b = book(r, id)
-        b.calm = JS(b.calm.asInt + 1)
-        // Turmoil: weak government, lost land, a very old ruler; no revolution within two years of one.
-        guard b.calm.asInt >= 24 else { return }
-        let provinces = r.world.provinces.asArray
-        let held = provinces.filter { $0.controller.optionalString == id }.count
-        guard held >= 3 else { return }
-        let lost = provinces.filter { ($0.legalOwner.optionalString ?? $0.controller.optionalString) == id && $0.controller.optionalString != id }.count
-        let governance = Offices.governance(r, id)
-        var risk = 0.0015 + (governance < 0.3 ? 0.004 : 0) + Double(lost) / Double(held + lost) * 0.02
-        if let leader = r.people.nations[id].leaderId.optionalNumber, let p = People.person(r, Int(leader)), (p.age.optionalNumber ?? 0) > 70 { risk += 0.0015 }
-        if polity == "Federation" { risk *= 0.6 }
-        // A reformer on the throne channels unrest into reform: half the risk.
-        if rulerHas(r, id, { $0.isReformer.isTruthy }) { risk *= 0.5 }
-        var h: UInt32 = 0x811c9dc5
-        for u in "\(id)|\(key)|regime".utf8 { h = (h ^ UInt32(u)) &* 0x1000193 }
-        guard Double(h) / 4294967296 < risk else { return }
-        let next: String
-        switch polity {
-        case "Empire", "Kingdom": next = (h >> 7) % 3 == 0 ? "Federation" : "Republic"
-        case "Republic", "Federation": next = b.history.asArray.contains(where: { $0.asString == "Empire" || $0.asString == "Kingdom" }) ? "Empire" : "Kingdom"
-        default: next = "Kingdom"
-        }
-        change(r, id, to: next, reason: polity == "Republic" || polity == "Federation" ? "复辟" : "革命")
-        // The new order seats its own head: the fallen ruler does not stay on under another title.
-        Regimes.seat(r, id)
+        // 现实感政体更迭与政变引擎（由军变、权臣摄政、立宪维新、社会革命与复辟条件真实驱动）
+        realisticPoliticsMonth(r, n, id, key)
     }
 
     /// 纳贡 (app rule): a vassal sends a tenth of its monthly income to its overlord; each January the
@@ -722,19 +708,53 @@ extension NativeEngine {
         }
         return (true, "已改行\(s.label)")
     }
-    /// 外交: a non-aggression pact or a marriage between two states for some years (no war between them).
+    /// 外交条约：支持互不侵犯(pact)、王室联姻(marriage)、通商协定(trade)、共同防御(defense)、军事通行(access)、岁币纳贡(tribute)。
     public func treaty(_ a: Int, _ b: Int, years: Int, kind: String) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray
         guard nations.indices.contains(a), nations.indices.contains(b), a != b else { return (false, "国家不存在。") }
         let x = nations[a].id.asString, y = nations[b].id.asString
         if Wars.relation(r, x, y)?.status.asString == "war" { return (false, "两国正在交战，须先议和。") }
+        let validKind = DiplomacyDeep.treatyLabels[kind] != nil ? kind : "pact"
+        let dur = max(1, min(30, years))
         Regimes.enable(r)
-        if r.regimes.pacts.isNull { r.regimes.pacts = .array() }
-        let p = JS.object(); p.a = JS(x); p.b = JS(y); p.kind = JS(kind); p.until = JS(max(0, r.regimes.month.asInt) + max(1, years) * 12)
-        r.regimes.pacts.push(p)
+        DiplomacyDeep.upsertTreaty(r, a: x, b: y, kind: validKind, years: dur, payer: validKind == "tribute" ? x : nil)
         let an = nations[a].name.asString, bn = nations[b].name.asString
-        let text = kind == "marriage" ? "\(an)与\(bn)联姻" : "\(an)与\(bn)缔结\(years)年互不侵犯条约"
-        _ = People.announce(r, kind: "event", text: text, reason: kind == "marriage" ? "两国王室联姻，\(years)年内互不兴兵。" : "条约期内双方不得相互宣战。", nations: [x, y], province: nil)
+        let text: String
+        let reason: String
+        switch validKind {
+        case "marriage":
+            // 跨国联姻：尽力扣 150 金礼聘、联动双方宗室家族联姻、登记 25 年王位宣称、关系大增！
+            let finA = r.finance.nations[x]
+            if !finA.isNull, let g = finA.gold.optionalNumber, g >= 150 { finA.gold = JS(g - 150) }
+            let ra = People.rulingFamilyId(r, x), rb = People.rulingFamilyId(r, y)
+            if ra > 0 && rb > 0 && ra != rb { _ = marryHouses(String(ra), with: String(rb)) }
+            DiplomacyDeep.recordThroneClaim(r, claimant: x, target: y, years: 25)
+            DiplomacyDeep.recordThroneClaim(r, claimant: y, target: x, years: 25)
+            DiplomacyDeep.adjustOpinionMod(r, x, y, delta: 15)
+            text = "\(an)与\(bn)王室联姻"
+            reason = "两国宗室结为秦晋之好，\(dur)年内互不兴兵，双边关系大增并互留二十五年王位宣称。"
+        case "trade":
+            DiplomacyDeep.adjustOpinionMod(r, x, y, delta: 10)
+            text = "\(an)与\(bn)签署\(dur)年通商协定"
+            reason = "两国互开商埠，双方每月财政额外增收 6%，邦交升温。"
+        case "defense":
+            DiplomacyDeep.adjustOpinionMod(r, x, y, delta: 15)
+            text = "\(an)与\(bn)缔结\(dur)年共同防御条约"
+            reason = "条约期内任一方遭遇第三国宣战，另一方将自动出兵协防。"
+        case "access":
+            DiplomacyDeep.adjustOpinionMod(r, x, y, delta: 6)
+            text = "\(an)与\(bn)互予\(dur)年军事通行权"
+            reason = "两国约定开放关隘通道，允许彼此军团借道通行。"
+        case "tribute":
+            DiplomacyDeep.adjustOpinionMod(r, x, y, delta: 8)
+            text = "\(an)向\(bn)岁币纳贡\(dur)年"
+            reason = "\(an)每月向\(bn)进贡 8% 岁入，换取\(dur)年免战和平。"
+        default:
+            DiplomacyDeep.adjustOpinionMod(r, x, y, delta: 6)
+            text = "\(an)与\(bn)缔结\(dur)年互不侵犯条约"
+            reason = "条约期内双方不得相互宣战。"
+        }
+        _ = People.announce(r, kind: "diplomacy", text: text, reason: reason, nations: [x, y], province: nil)
         return (true, text)
     }
     /// 朝廷职位: the posts with their titles (by tradition), holders and the effect each brings.
@@ -787,8 +807,12 @@ extension NativeEngine {
         let amount = min(max(0, gold), a.gold.optionalNumber ?? 0)
         guard amount > 0 else { return (false, "国库空虚，无金可赠。") }
         a.gold = JS((a.gold.optionalNumber ?? 0) - amount); b.gold = JS((b.gold.optionalNumber ?? 0) + amount)
+        if !r.regimes.isNull {
+            let gain = min(25, max(5, (amount / 40.0).rounded()))
+            DiplomacyDeep.adjustOpinionMod(r, nations[from].id.asString, nations[to].id.asString, delta: gain)
+        }
         let text = "\(nations[from].name.asString)赠\(nations[to].name.asString)\(Int(amount))金"
-        _ = People.announce(r, kind: "event", text: text, reason: "国书往来，金帛相赠。", nations: [nations[from].id.asString, nations[to].id.asString], province: nil)
+        _ = People.announce(r, kind: "diplomacy", text: text, reason: "国书往来，金帛相赠，两国邦交好感随之升温。", nations: [nations[from].id.asString, nations[to].id.asString], province: nil)
         return (true, text)
     }
 
@@ -833,6 +857,12 @@ extension NativeEngine {
             guard ids.indices.contains(a), ids.indices.contains(b) else { return false }
             if Regimes.unconquerable(r, ids[a]) || Regimes.unconquerable(r, ids[b]) { return true }
             return Regimes.treaty(r, ids[a], ids[b]) != nil
+        }
+        DeclarationEngine.opinionBias = { a, b in
+            guard UnitKinds.enabled else { return 1.0 }
+            let ids = DeclarationEngine.nationIds
+            guard ids.indices.contains(a), ids.indices.contains(b) else { return 1.0 }
+            return DiplomacyDeep.warTemperBias(r, attacker: ids[a], defender: ids[b])
         }
         DeclarationEngine.stance = { id in Armies.stateTraits(r, id) }
         ArmyAutonomy.temper = { index in

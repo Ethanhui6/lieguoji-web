@@ -29,32 +29,52 @@ struct MemorialPaper: View {
             }
         }
     }()
-    var body: some View {
-        // The base colour takes exactly the offered size; the texture and folds are overlays clipped to
-        // it, so the paper never widens or lengthens the view it backs.
-        let paper = Theme.paper
-            .overlay { if let t = Self.texture { Image(uiImage: t).resizable().scaledToFill() } }
-            .overlay {
-                if rules {
-                    // A memorial folds like an accordion: alternate panels catch the light differently,
-                    // each crease a soft shadow line; faint vermilion column rules inside. One canvas draw.
-                    Canvas { ctx, size in
-                        let panel: CGFloat = 136
-                        var x: CGFloat = 0, i = 0
-                        while x < size.width {
-                            let colors: [Color] = i % 2 == 0 ? [Color.white.opacity(0.10), .clear] : [Color.black.opacity(0.035), .clear]
-                            ctx.fill(Path(CGRect(x: x, y: 0, width: panel, height: size.height)),
-                                     with: .linearGradient(Gradient(colors: colors), startPoint: CGPoint(x: x, y: 0), endPoint: CGPoint(x: x + panel, y: 0)))
-                            if x > 0 { ctx.stroke(Path { p in p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: size.height)) }, with: .color(Color(red: 0.4, green: 0.3, blue: 0.18).opacity(0.10)), lineWidth: 1) }
-                            x += panel; i += 1
-                        }
-                        var rule = Path(), c: CGFloat = 22
-                        while c < size.width { rule.move(to: CGPoint(x: c, y: 0)); rule.addLine(to: CGPoint(x: c, y: size.height)); c += 34 }
-                        ctx.stroke(rule, with: .color(Theme.seal.opacity(0.06)), lineWidth: 0.6)
-                    }
-                    .allowsHitTesting(false)
+    /// 性能优化：将奏折折页光影与朱红竖格预烘焙为静态纹理，彻底消除 Sheet 弹起／缩放动画期间逐帧 Canvas 重绘卡顿。
+    private static let ruledTexture: UIImage? = {
+        guard let base = texture else { return nil }
+        let size = base.size, rect = CGRect(origin: .zero, size: size)
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
+        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            base.draw(in: rect)
+            let cg = ctx.cgContext
+            let panel: CGFloat = 170
+            var x: CGFloat = 0, i = 0
+            let space = CGColorSpaceCreateDeviceRGB()
+            while x < size.width {
+                let c0 = (i % 2 == 0 ? UIColor.white.withAlphaComponent(0.10) : UIColor.black.withAlphaComponent(0.035)).cgColor
+                let c1 = UIColor.clear.cgColor
+                if let g = CGGradient(colorsSpace: space, colors: [c0, c1] as CFArray, locations: [0, 1]) {
+                    cg.saveGState()
+                    cg.clip(to: CGRect(x: x, y: 0, width: panel, height: size.height))
+                    cg.drawLinearGradient(g, start: CGPoint(x: x, y: 0), end: CGPoint(x: x + panel, y: 0), options: [])
+                    cg.restoreGState()
                 }
+                if x > 0 {
+                    cg.setStrokeColor(UIColor(red: 0.4, green: 0.3, blue: 0.18, alpha: 0.10).cgColor)
+                    cg.setLineWidth(1.2)
+                    cg.move(to: CGPoint(x: x, y: 0))
+                    cg.addLine(to: CGPoint(x: x, y: size.height))
+                    cg.strokePath()
+                }
+                x += panel; i += 1
             }
+            cg.setStrokeColor(UIColor(Theme.seal).withAlphaComponent(0.06).cgColor)
+            cg.setLineWidth(0.8)
+            var c: CGFloat = 28
+            while c < size.width {
+                cg.move(to: CGPoint(x: c, y: 0))
+                cg.addLine(to: CGPoint(x: c, y: size.height))
+                c += 42
+            }
+            cg.strokePath()
+        }
+    }()
+    var body: some View {
+        // The base colour takes exactly the offered size; the pre-baked image is an overlay clipped to
+        // it, so the paper never widens or lengthens the view it backs and costs near-zero CPU.
+        let image = rules ? (Self.ruledTexture ?? Self.texture) : Self.texture
+        let paper = Theme.paper
+            .overlay { if let t = image { Image(uiImage: t).resizable().scaledToFill() } }
             .overlay(alignment: .top) {
                 // The brocade binding of a memorial's cover: a deep red band edged in gold.
                 if rules && fullBleed {
@@ -909,14 +929,17 @@ private struct LongPressLift: ViewModifier {
 private struct PressMenuCard: View {
     let menu: PressMenu
     let close: () -> Void
+    @Binding var dragProgress: CGFloat
     @State private var shown = false
+    @State private var dragY: CGFloat = 0
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(menu.title).font(Theme.section).foregroundStyle(Theme.ink).tracking(1).lineLimit(1)
                 if let s = menu.subtitle { Text(s).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2) }
             }
-            .padding(.horizontal, 18).padding(.vertical, 12)
+            .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 12)
             ForEach(Array(menu.items.enumerated()), id: \.element.id) { i, item in
                 Divider2()
                 Button { GameFeel.shared.tap(); close(); item.action() } label: {
@@ -936,31 +959,250 @@ private struct PressMenuCard: View {
                 .buttonStyle(PressStyle())
                 // The rows settle in one after another with spring physics.
                 .opacity(shown ? 1 : 0).offset(y: shown ? 0 : 10)
-                .animation(Motion.panel.delay(0.03 * Double(i)), value: shown)
+                .animation(Motion.panel.delay(0.025 * Double(i)), value: shown)
             }
         }
         .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.ink.opacity(0.2), lineWidth: 1))
-        .overlay(alignment: .top) { Capsule().fill(Theme.seal).frame(width: 44, height: 3.5).padding(.top, 6) }
+        .overlay(alignment: .top) { Capsule().fill(Theme.seal.opacity(0.7)).frame(width: 40, height: 4).padding(.top, 7) }
         .shadow(color: .black.opacity(0.24), radius: 22, y: 10)
-        .padding(.horizontal, 36)
-        .onAppear { shown = true }
+        .padding(.horizontal, 32)
+        // 手势物理（Emil Kowalski /gestures）：下滑 1:1 跟手关闭，上拉橡皮筋阻尼回弹
+        .offset(y: dragY)
+        .scaleEffect(1 - min(0.06, max(0, dragY / 1400)))
+        .gesture(
+            DragGesture(minimumDistance: 6)
+                .onChanged { v in
+                    let dy = v.translation.height
+                    if dy >= 0 {
+                        dragY = dy
+                        dragProgress = min(1, dy / 180)
+                    } else {
+                        // 上拉橡皮筋阻力：平方根阻尼，既有弹性又不跑飞
+                        dragY = -sqrt(abs(dy)) * 3.4
+                        dragProgress = 0
+                    }
+                }
+                .onEnded { v in
+                    let projected = v.predictedEndTranslation.height
+                    if dragY > 85 || projected > 165 {
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.tap) { dragY = 260; dragProgress = 1 }
+                        close()
+                    } else {
+                        withAnimation(Motion.panel) { dragY = 0; dragProgress = 0 }
+                    }
+                }
+        )
+        .onAppear { shown = true; dragY = 0; dragProgress = 0 }
     }
 }
 private struct PressMenuHost: ViewModifier {
     @Binding var menu: PressMenu?
+    @State private var dragProgress: CGFloat = 0
     func body(content: Content) -> some View {
         content.overlay {
             ZStack {
                 if let m = menu {
-                    Color.black.opacity(0.32).ignoresSafeArea().onTapGesture { dismiss() }.transition(.opacity)
-                    PressMenuCard(menu: m, close: dismiss).id(m.id).transition(.scale(scale: 0.88).combined(with: .opacity))
+                    Color.black.opacity(max(0.04, 0.34 * (1 - Double(dragProgress) * 0.8))).ignoresSafeArea()
+                        .onTapGesture { dismiss() }.transition(.opacity)
+                    PressMenuCard(menu: m, close: dismiss, dragProgress: $dragProgress).id(m.id)
+                        .transition(.scale(scale: 0.90).combined(with: .opacity))
                 }
             }
             .animation(Motion.panel, value: menu?.id)
         }
     }
-    private func dismiss() { menu = nil; PressGuard.fired = false }
+    private func dismiss() { menu = nil; dragProgress = 0; PressGuard.fired = false }
+}
+
+// MARK: 深度数据动效组件（双边好感仪、政局风险仪、四角物理吸附悬浮局势珠）
+
+/// 双边外交好感仪（-100…+100）：中轴零点，亲善青玉向右伸展，敌视朱砂向左伸展，数值变动丝滑弹簧过渡。
+struct OpinionGauge: View {
+    let score: Int
+    var height: CGFloat = 6
+    var body: some View {
+        let clamped = max(-100, min(100, score))
+        let frac = CGFloat(abs(clamped)) / 100.0
+        let positive = clamped >= 0
+        GeometryReader { g in
+            let half = g.size.width / 2
+            ZStack(alignment: .center) {
+                Capsule().fill(Theme.ink.opacity(0.09))
+                if clamped != 0 {
+                    let barW = max(3, half * frac)
+                    RoundedRectangle(cornerRadius: height / 2, style: .continuous)
+                        .fill(positive ? Theme.jade : Theme.seal)
+                        .frame(width: barW, height: height)
+                        .offset(x: positive ? barW / 2 : -barW / 2)
+                        .animation(Motion.panel, value: clamped)
+                }
+                Rectangle().fill(Theme.ink.opacity(0.35)).frame(width: 1.2, height: height + 3)
+            }
+        }
+        .frame(height: height)
+    }
+}
+
+/// 政局安定与政变风险双态仪：低风险青玉沉稳，高风险朱砂脉动示警。
+struct StabilityRiskMeter: View {
+    let stability: Int
+    let risk: Int
+    let level: String
+    @State private var pulse = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private var tone: Color {
+        risk >= 68 ? Theme.seal : risk >= 44 ? Color(red: 0.78, green: 0.42, blue: 0.14) : Theme.jade
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                HStack(spacing: 5) {
+                    Circle().fill(tone).frame(width: 7, height: 7)
+                        .scaleEffect(risk >= 44 && pulse && !reduceMotion ? 1.38 : 1)
+                        .opacity(risk >= 44 && pulse && !reduceMotion ? 0.55 : 1)
+                    Text("政局 · \(level)").font(Theme.body).foregroundStyle(Theme.ink)
+                }
+                Spacer()
+                Text("安定 \(stability) · 变局风险 \(risk)%").font(Theme.caption).foregroundStyle(risk >= 44 ? tone : Theme.ink2).monospacedDigit()
+            }
+            InkBar(fraction: Double(max(0, min(100, risk))) / 100.0, color: tone, height: 5.5, gradient: true)
+                .animation(Motion.panel, value: risk)
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 1.15).repeatForever(autoreverses: true)) { pulse = true }
+        }
+    }
+}
+
+/// Emil Kowalski `/gestures` 四角物理速度投影吸附悬浮珠（局势快控浮印）：
+/// 可随手拖甩至屏幕四角任意安全角落，依据松手初速度自动物理投影并弹簧吸附；轻点展开快捷操作（战况/外交/回放/倍速）。
+struct FloatingTacticalPill: View {
+    @ObservedObject var model: GameModel
+    let openWars: () -> Void
+    let openDiplomacy: () -> Void
+    let openReplay: () -> Void
+    let landscape: Bool
+
+    private enum Corner: Int { case topLeading, topTrailing, bottomLeading, bottomTrailing }
+    @State private var corner: Corner = .bottomTrailing
+    @State private var expanded = false
+    @State private var dragOffset: CGSize = .zero
+    @State private var dragging = false
+
+    private func anchor(in size: CGSize, safe: EdgeInsets) -> CGPoint {
+        let padX: CGFloat = landscape ? 88 : 16
+        let topY: CGFloat = safe.top + 68
+        let botY: CGFloat = max(topY + 80, size.height - safe.bottom - (landscape ? 64 : 136))
+        let pillW: CGFloat = expanded ? 196 : 86
+        let leftX = padX + pillW / 2
+        let rightX = max(leftX, size.width - 16 - pillW / 2)
+        switch corner {
+        case .topLeading: return CGPoint(x: leftX, y: topY)
+        case .topTrailing: return CGPoint(x: rightX, y: topY)
+        case .bottomLeading: return CGPoint(x: leftX, y: botY)
+        case .bottomTrailing: return CGPoint(x: rightX, y: botY)
+        }
+    }
+
+    var body: some View {
+        GeometryReader { g in
+            let wars = model.state?.wars.count ?? 0
+            let pos = anchor(in: g.size, safe: g.safeAreaInsets)
+            HStack(spacing: 6) {
+                Button {
+                    GameFeel.shared.tap()
+                    withAnimation(Motion.panel) { expanded.toggle() }
+                } label: {
+                    HStack(spacing: 5) {
+                        SealFace(text: wars > 0 ? "战" : "局", size: 22, color: wars > 0 ? Theme.seal : Theme.ink)
+                        if !expanded {
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(wars > 0 ? "\(wars)战" : "太平").font(Theme.caption).foregroundStyle(wars > 0 ? Theme.seal : Theme.ink).monospacedDigit()
+                                Text(model.playing ? "\(model.speed)×" : "已停").font(Theme.kai(10)).foregroundStyle(Theme.ink2).monospacedDigit()
+                            }
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+
+                if expanded {
+                    Divider().frame(height: 18)
+                    Button {
+                        GameFeel.shared.tap()
+                        if model.playing { model.pause() } else { model.play() }
+                    } label: {
+                        InkIcon(glyph: model.playing ? .pause : .play, size: 14, weight: 1.85).foregroundStyle(Theme.seal)
+                            .frame(width: 28, height: 28)
+                    }.buttonStyle(PressStyle())
+                    Button {
+                        GameFeel.shared.tap()
+                        model.cycleSpeed()
+                    } label: {
+                        Text("\(model.speed)×").font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit()
+                            .frame(width: 26, height: 28)
+                    }.buttonStyle(PressStyle())
+                    Button {
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.tap) { expanded = false }
+                        openWars()
+                    } label: {
+                        InkIcon(glyph: .war, size: 15, weight: 1.75).foregroundStyle(wars > 0 ? Theme.seal : Theme.ink)
+                            .frame(width: 28, height: 28)
+                    }.buttonStyle(PressStyle())
+                    Button {
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.tap) { expanded = false }
+                        openDiplomacy()
+                    } label: {
+                        InkIcon(glyph: .diplomacy, size: 15, weight: 1.75).foregroundStyle(Theme.jade)
+                            .frame(width: 28, height: 28)
+                    }.buttonStyle(PressStyle())
+                    Button {
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.tap) { expanded = false }
+                        openReplay()
+                    } label: {
+                        InkIcon(glyph: .replay, size: 15, weight: 1.75).foregroundStyle(Theme.ink)
+                            .frame(width: 28, height: 28)
+                    }.buttonStyle(PressStyle())
+                }
+            }
+            .padding(.horizontal, 9).padding(.vertical, 6)
+            .background(MemorialPaper(rules: false, fullBleed: false).clipShape(Capsule()))
+            .overlay(Capsule().stroke(wars > 0 ? Theme.seal.opacity(0.42) : Theme.ink.opacity(0.22), lineWidth: 1))
+            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(dragging ? 0.28 : 0.18), radius: dragging ? 14 : 8, y: dragging ? 6 : 3)
+            .scaleEffect(dragging ? 1.05 : 1.0)
+            .contentShape(Capsule())
+            .gesture(
+                DragGesture(minimumDistance: 6, coordinateSpace: .named("tacticalPillSpace"))
+                    .onChanged { v in
+                        dragging = true
+                        dragOffset = v.translation
+                    }
+                    .onEnded { v in
+                        // Emil Kowalski 物理速度投影：按 predictedEndTranslation 投射到最近的屏幕角落
+                        let projectedX = pos.x + v.predictedEndTranslation.width
+                        let projectedY = pos.y + v.predictedEndTranslation.height
+                        let isRight = projectedX >= g.size.width / 2
+                        let isBottom = projectedY >= g.size.height / 2
+                        let next: Corner = isBottom ? (isRight ? .bottomTrailing : .bottomLeading) : (isRight ? .topTrailing : .topLeading)
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.panel) {
+                            corner = next
+                            dragOffset = .zero
+                            dragging = false
+                        }
+                    }
+            )
+            .position(x: pos.x + dragOffset.width, y: pos.y + dragOffset.height)
+            .animation(Motion.panel, value: expanded)
+        }
+        .coordinateSpace(name: "tacticalPillSpace")
+        .ignoresSafeArea()
+    }
 }
 /// A message inside a page (the game's own toast sits under a full-height sheet, where nothing showed).
 private struct PaperToastHost: ViewModifier {

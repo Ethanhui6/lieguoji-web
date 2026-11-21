@@ -309,7 +309,31 @@ struct DiplomacyOverview: Decodable {
     struct Pact: Decodable { let nation: Int; let kind: String; let months: Int }
     struct Truce: Decodable { let nation: Int; let days: Int }
     struct Neighbor: Decodable { let nation: Int; let troops: Int }
+    struct Reason: Decodable, Identifiable { let label: String; let delta: Int; var id: String { "\(label)-\(delta)" } }
+    struct TreatyTag: Decodable, Identifiable { let kind: String; let label: String; let months: Int; var id: String { "\(kind)-\(months)" } }
+    struct OpinionEntry: Decodable, Identifiable {
+        let nation: Int; let score: Int; let stance: String; let hegemonThreat: Int; let troops: Int
+        let neighbor: Bool; let claim: Bool; let claimedBy: Bool
+        let treaties: [TreatyTag]; let reasons: [Reason]
+        var id: Int { nation }
+    }
+    struct Hegemon: Decodable, Identifiable { let nation: Int; let threat: Int; var id: Int { nation } }
+    struct MediatableWar: Decodable, Identifiable { let a: Int; let b: Int; var id: String { "\(a)-\(b)" } }
     let allies: [Int]; let overlord: Int?; let vassals: [Int]; let pacts: [Pact]; let truces: [Truce]; let enemies: [Int]; let neighbors: [Neighbor]; let troops: Int
+    var opinions: [OpinionEntry]? = nil
+    var hegemons: [Hegemon]? = nil
+    var mediatableWars: [MediatableWar]? = nil
+
+    static func treatyLabel(_ kind: String) -> String {
+        switch kind {
+        case "marriage": return "联姻"
+        case "trade": return "通商"
+        case "defense": return "共防"
+        case "access": return "通行"
+        case "tribute": return "岁币"
+        default: return "互不侵犯"
+        }
+    }
 }
 
 /// 邦交总览: the chosen state's allies, overlord and vassals, treaties, truces, wars and neighbours.
@@ -329,7 +353,7 @@ struct DiplomacyOverviewView: View {
                 Divider2()
                 row("交战", info.enemies, empty: "无战事", warn: true)
                 Divider2()
-                labeled("条约", info.pacts.isEmpty ? [] : info.pacts.map { ($0.nation, ($0.kind == "marriage" ? "联姻" : "互不侵犯") + " · 余 \($0.months) 月") }, empty: "无条约")
+                labeled("条约", info.pacts.isEmpty ? [] : info.pacts.map { ($0.nation, DiplomacyOverview.treatyLabel($0.kind) + " · 余 \($0.months) 月") }, empty: "无条约")
                 Divider2()
                 labeled("停战", info.truces.map { ($0.nation, "余 \($0.days) 日") }, empty: "无停战期")
                 Divider2()

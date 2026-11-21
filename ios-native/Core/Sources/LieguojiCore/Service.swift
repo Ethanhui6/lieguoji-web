@@ -263,6 +263,13 @@ public final class EngineService {
         case "nationProvinces": return data(engine?.nationProvinces(int("n")))
         case "nationReigns": return data(engine?.nationReigns(int("n")))
         case "replayTimeline": return data(engine?.replayTimeline())
+        case "regimeTransition": lastOwners = []; return command(engine?.regimeTransition(int("n"), action: str("action")))
+        case "sendUltimatum": lastOwners = []; return command(engine?.sendUltimatum(int("from"), to: int("to"), demand: str("demand")))
+        case "formCoalition": return command(engine?.formCoalition(int("caller"), against: int("target")))
+        case "covertAction": lastOwners = []; return command(engine?.covertAction(int("from"), target: int("target"), kind: str("kind")))
+        case "mediatePeace": return command(engine?.mediatePeace(int("mediator"), between: int("a"), and: int("b")))
+        case "grantFief": return command(engine?.grantFief(int("n"), familyId: str("family"), provinceIndex: optInt("province")))
+        case "revokeFief": lastOwners = []; return command(engine?.revokeFief(int("n"), familyId: str("family")))
         default: return Reply(ok: false, reason: "未知请求 \(call)。")
         }
     }

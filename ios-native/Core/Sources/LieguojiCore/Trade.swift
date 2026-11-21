@@ -25,19 +25,25 @@ public enum Trade {
     /// The kinds a state holds, with how many provinces yield each.
     static func holdings(_ r: JS, _ id: String) -> [Int: Int] {
         var out = [Int: Int]()
-        for p in r.world.provinces.asArray where p.controller.asString == id { out[of(r, p.id.asString), default: 0] += 1 }
+        for p in Regimes.monthLand(r, id) { out[of(r, p.id.asString), default: 0] += 1 }
         return out
     }
     /// Trading partners: states at peace that border this one, and its allies.
     static func partners(_ r: JS, _ id: String) -> [String] {
-        let provinces = r.world.provinces.asArray
-        var owner = [String: String](); for p in provinces { owner[p.id.asString] = p.controller.asString }
         var out = Set<String>()
-        for p in provinces where p.controller.asString == id {
-            for q in p.neighbors.asArray { if let o = owner[q.asString], o != id, !o.isEmpty { out.insert(o) } }
+        if let idx = Regimes.currentMonthIndex, idx.world == ObjectIdentifier(r) {
+            for p in idx.provincesByNation[id] ?? [] {
+                for q in p.neighbors.asArray { if let o = idx.ownerByPid[q.asString], o != id, !o.isEmpty { out.insert(o) } }
+            }
+        } else {
+            let provinces = r.world.provinces.asArray
+            var owner = [String: String](); for p in provinces { owner[p.id.asString] = p.controller.asString }
+            for p in provinces where p.controller.asString == id {
+                for q in p.neighbors.asArray { if let o = owner[q.asString], o != id, !o.isEmpty { out.insert(o) } }
+            }
         }
         if let a = Vassals.allianceOf(r, id) { for m in a.members.asArray where m.asString != id { out.insert(m.asString) } }
-        return out.filter { Vassals.alive(r, $0) && Wars.relation(r, id, $0)?.status.asString != "war" }.sorted()
+        return out.filter { Regimes.monthLandCount(r, $0) > 0 && Wars.relation(r, id, $0)?.status.asString != "war" }.sorted()
     }
     /// The monthly share of a state's income its trade adds: 1% per kind held (up to 10) and 0.5% per
     /// kind bought from partners that it lacks (up to 15%).
@@ -103,8 +109,20 @@ extension NativeEngine {
             }
             let held: [JS] = { if case .array(let a) = noble.controlledProvinces.storage { return a }; return [] }()
             o.provinces = .array(held.compactMap(\.optionalString).map { JS(pNames[$0] ?? $0) })
+            let fiefAllowed = Regimes.allowsFiefs(r, nid)
+            o.allowsFiefs = JS(fiefAllowed)
+            if !r.regimes.isNull, !r.regimes.houseHistory.isNull, !r.regimes.houseHistory[familyId].isNull {
+                o.influenceHistory = r.regimes.houseHistory[familyId]
+            } else {
+                o.influenceHistory = .array([JS(inf.isFinite ? inf.rounded() : 0)])
+            }
+            let cd = (!r.regimes.isNull && !r.regimes.fiefCooldown.isNull) ? (r.regimes.fiefCooldown[familyId].optionalNumber.map(Int.init) ?? 0) : 0
+            o.fiefCooldown = JS(cd)
+            let gov = Regimes.governor(r, nid)
+            o.governing = JS(gov != nil && String(gov!.familyId.asInt) == familyId)
         } else {
             o.ruling = JS(false); o.influence = JS(0); o.wealth = JS(0); o.provinces = .array()
+            o.allowsFiefs = JS(true); o.influenceHistory = .array(); o.fiefCooldown = JS(0); o.governing = JS(false)
         }
         o.relations = FamilyPolitics.relationsView(r, familyId: familyId)
         o.events = FamilyPolitics.recentEvents(r, familyId: familyId)

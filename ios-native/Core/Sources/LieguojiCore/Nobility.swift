@@ -148,8 +148,32 @@ public enum Nobility {
     }
     static func updateInfluence(_ r: JS, _ id: String, _ fam: JS) {
         let k = r.kin.families[id]
-        var v = f(f(Double(k.collateralMemberIds.length * 2)) + f(f(f(Double(fam.controlledProvinces.length * 20)) + 10) + f(Double(k.memberIds.length * 5))))
+        let nid = fam.nationId.optionalString ?? ""
+        let fiefAllowed = !UnitKinds.enabled || Regimes.allowsFiefs(r, nid)
+        let landWeight = fiefAllowed ? Double(fam.controlledProvinces.length * 20) : 0
+        var v = f(f(Double(k.collateralMemberIds.length * 2)) + f(f(f(landWeight) + 10) + f(Double(k.memberIds.length * 5))))
         if fam.ruling.asBool { v = f(v + 100) }
+        if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+            let prof = Regimes.styleProfile(r, nid)
+            // 共和/社会主义/商邦（无封地政体）：世家势力来自家族在任官职与财富积累。
+            if !fiefAllowed {
+                let assignments = r.offices47.nations[nid].assignments
+                var officeCount = 0
+                if !assignments.isNull {
+                    let fidInt = Int(id) ?? -1
+                    for a in assignments.asArray {
+                        if let hid = a.holderId.optionalNumber, let p = People.person(r, Int(hid)), p.familyId.asInt == fidInt {
+                            officeCount += 1
+                        }
+                    }
+                }
+                v = f(v + f(Double(officeCount * 28)) + f(f(log(f(max(1, fam.wealth.asNumber)))) * 6))
+            }
+            // 摄政／幕府政体：实际掌权者所在世家享有执政加成。
+            if prof.fiefRule == .regent, let gov = Regimes.governor(r, nid), String(gov.familyId.asInt) == id, !fam.ruling.asBool {
+                v = f(v + 80)
+            }
+        }
         v = f(v + f(f(log(f(max(1, fam.wealth.asNumber)))) * 10))
         if k.headId.asInt > 0, let head = People.person(r, k.headId.asInt), head.isAlive.asBool, !head.traits.isNull {
             for name in head.traits.asArray.map(\.asString) { let m = f(trait(name)?.familyInfluenceModifier.optionalNumber ?? 0); if m != 0 { v = f(v + m) } }

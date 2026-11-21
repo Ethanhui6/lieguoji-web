@@ -75,29 +75,39 @@ public enum ReplayEngine {
         let box = r.regimes.replay
         let frames = box.frames.asArray
         let lastDay = box.lastDay.optionalNumber.map(Int.init) ?? -9999
+        let elapsed = day - lastDay
+        if !force && !frames.isEmpty {
+            // 性能优化：未到最小采样间隔（5 日）直接零分配返回，省去每日全图映射与 RLE 校验开销。
+            if elapsed < eventMinGapDays { return }
+        }
         if !force && day == lastDay { return }
 
         let nations = r.world.nations.asArray
         let provinces = r.world.provinces.asArray
         guard !provinces.isEmpty else { return }
-        var ni = [String: Int]()
-        for (i, n) in nations.enumerated() where ni[n.id.asString] == nil { ni[n.id.asString] = i }
-        var pi = [String: Int]()
-        for (i, p) in provinces.enumerated() where pi[p.id.asString] == nil { pi[p.id.asString] = i }
 
-        let owners = provinces.map { ni[$0.controller.asString] ?? -1 }
-
-        // 检查自上一帧以来是否有重大事件或大规模疆域易主
+        // 先轻量检查是否触发周期采样、重大史册事件或版图变动，无事则避免构造字典与 RLE 编码。
         let entries = r.chronicle.entries.asArray
         let prevEntryCount = box.lastEntryCount.optionalNumber.map(Int.init) ?? 0
-        let newEntries = prevEntryCount < entries.count ? Array(entries[prevEntryCount..<entries.count]) : []
-
         let majorKinds: Set<String> = ["extinction", "restoration", "uprising", "politics", "war", "peace", "capital"]
-        let majorEvent = newEntries.reversed().first { majorKinds.contains($0.kind.optionalString ?? "") }
+        var majorEvent: JS?
+        if prevEntryCount < entries.count {
+            for idx in stride(from: entries.count - 1, through: prevEntryCount, by: -1) {
+                if majorKinds.contains(entries[idx].kind.optionalString ?? "") {
+                    majorEvent = entries[idx]
+                    break
+                }
+            }
+        }
 
-        let elapsed = day - lastDay
         var shouldRecord = force || frames.isEmpty || elapsed >= periodicIntervalDays
         var isMajor = force || frames.isEmpty
+        var ni = [String: Int]()
+        ni.reserveCapacity(nations.count)
+        for (i, n) in nations.enumerated() where ni[n.id.asString] == nil { ni[n.id.asString] = i }
+        var owners = [Int]()
+        owners.reserveCapacity(provinces.count)
+        for p in provinces { owners.append(ni[p.controller.asString] ?? -1) }
 
         if !shouldRecord && elapsed >= eventMinGapDays {
             if majorEvent != nil {
@@ -111,6 +121,11 @@ public enum ReplayEngine {
             }
         }
         guard shouldRecord else { return }
+
+        var pi = [String: Int]()
+        pi.reserveCapacity(provinces.count)
+        for (i, p) in provinces.enumerated() where pi[p.id.asString] == nil { pi[p.id.asString] = i }
+        let newEntries = prevEntryCount < entries.count ? Array(entries[prevEntryCount..<entries.count]) : []
 
         // 统计存国数与大国疆域分布（前 4 强国用于回放大势占比条）
         var counts = [Int: Int]()

@@ -125,17 +125,40 @@ public enum FamilyPolitics {
         Double(Opening.hash(seed) % 100_000) / 100_000.0
     }
 
-    /// 每月一次的世家之间动态事件（App 规则专用，低频克制、不刷屏，却能让朝堂世家格局鲜活演变）。
+    /// 每月一次的世家之间动态事件 + 12 个月势力走势采集 + 赐封冷却递减（App 规则专用，复用月度预索引）。
     public static func month(_ r: JS, _ key: Int) {
         guard UnitKinds.enabled, !r.nobility.isNull, !r.nobility.families.isNull else { return }
+        // 1. 记录全部存活世家近 12 个月的势力走势并递减赐封冷却
+        if !r.regimes.isNull {
+            if r.regimes.houseHistory.isNull { r.regimes.houseHistory = .object() }
+            if r.regimes.fiefCooldown.isNull { r.regimes.fiefCooldown = .object() }
+            for (fid, fam) in r.nobility.families.objectEntries {
+                let nid = fam.nationId.optionalString ?? ""
+                guard Regimes.monthLandCount(r, nid) > 0 else { continue }
+                let inf = (fam.influence.optionalNumber ?? 0).rounded()
+                var arr = r.regimes.houseHistory[fid].isNull ? [JS]() : r.regimes.houseHistory[fid].asArray
+                arr.append(JS(inf))
+                if arr.count > 12 { arr = Array(arr.suffix(12)) }
+                r.regimes.houseHistory[fid] = .array(arr)
+                if let cd = r.regimes.fiefCooldown[fid].optionalNumber, cd > 0 {
+                    if cd <= 1 { r.regimes.fiefCooldown.delete(fid) } else { r.regimes.fiefCooldown[fid] = JS(cd - 1) }
+                }
+            }
+        }
+
         let seed = r.world.custom.seed.optionalString ?? ""
         for n in r.world.nations.asArray {
             let nid = n.id.asString
-            guard Vassals.alive(r, nid), !Regimes.isBlank(r, nid) else { continue }
-            let houses = r.nobility.families.objectEntries
-                .filter { $0.1.nationId.optionalString == nid && r.kin.families.has($0.0) }
-                .map(\.0)
-                .sorted { (Int($0) ?? 0) < (Int($1) ?? 0) }
+            guard Regimes.monthLandCount(r, nid) > 0, !Regimes.isBlank(r, nid) else { continue }
+            let rawHouses: [String]
+            if let idx = Regimes.currentMonthIndex, idx.world == ObjectIdentifier(r) {
+                rawHouses = idx.familiesByNation[nid] ?? []
+            } else {
+                rawHouses = r.nobility.families.objectEntries
+                    .filter { $0.1.nationId.optionalString == nid && r.kin.families.has($0.0) }
+                    .map(\.0)
+            }
+            let houses = rawHouses.sorted { (Int($0) ?? 0) < (Int($1) ?? 0) }
             guard houses.count >= 2 else { continue }
             // 每国每月约 8% 概率触发一件世家互动事件（约一年一件，有戏不吵）。
             let trigger = roll("\(seed)|fam-pol|\(nid)|\(key)")
@@ -313,20 +336,128 @@ extension NativeEngine {
             else if let a = ensureSingle(familyA, wantGender: 0), let b = ensureSingle(familyB, wantGender: 1) { pair = (a, b) }
         }
         guard let (a, b) = pair else { return (false, "两家暂无合适婚配人选。") }
+        let natA = r.kin.families[familyA].nationId.optionalString ?? ""
+        let natB = r.kin.families[familyB].nationId.optionalString ?? ""
+        let crossBorder = !natA.isEmpty && !natB.isEmpty && natA != natB
+        // 联姻礼聘开销（本国 50 金 / 跨国 150 金，国库充裕时自动扣减）
+        if !natA.isEmpty, !r.finance.nations[natA].isNull {
+            let fee = crossBorder ? 150.0 : 50.0
+            let cur = r.finance.nations[natA].gold.optionalNumber ?? 0
+            if cur >= fee { r.finance.nations[natA].gold = JS(cur - fee) }
+        }
+        func applyCrossBorderEffects() {
+            guard crossBorder, !r.regimes.isNull else { return }
+            DiplomacyDeep.adjustOpinionMod(r, natA, natB, delta: 20)
+            DiplomacyDeep.upsertTreaty(r, a: natA, b: natB, kind: "marriage", years: 10)
+            DiplomacyDeep.recordThroneClaim(r, claimant: natA, target: natB, years: 25)
+            DiplomacyDeep.recordThroneClaim(r, claimant: natB, target: natA, years: 25)
+        }
         guard Nobility.executeMarriage(r, r.nobility, a, b) else {
             // 若家主不可外嫁导致失败，直接结成不迁族的政治联姻并升温关系。
             a.spouseId = b.id.clone(); b.spouseId = a.id.clone()
             FamilyPolitics.adjustRelation(r, familyA, familyB, delta: 25)
+            applyCrossBorderEffects()
             let na = NamingCatalog.houseLabel(r.kin.families[familyA].surname.optionalString ?? "")
             let nb = NamingCatalog.houseLabel(r.kin.families[familyB].surname.optionalString ?? "")
-            let nations = Array(Set([r.kin.families[familyA].nationId.asString, r.kin.families[familyB].nationId.asString]))
-            People.recordHistory(r, kind: "family", text: "\(na)\(Self.displayPersonName(a))与\(nb)\(Self.displayPersonName(b))结为秦晋之好", reason: "世家联姻，两家关系 +25。", nations: nations, province: nil)
+            let nations = Array(Set([natA, natB].filter { !$0.isEmpty }))
+            People.recordHistory(r, kind: "family", text: "\(na)\(Self.displayPersonName(a))与\(nb)\(Self.displayPersonName(b))结为秦晋之好", reason: crossBorder ? "跨国世家联姻，两家关系 +25，两国邦交 +20 并互留王位宣称。" : "世家联姻，两家关系 +25。", nations: nations, province: nil)
             Nobility.bump(r.kin)
-            return (true, "\(na)与\(nb)联姻已成，关系 +25。")
+            return (true, crossBorder ? "\(na)与\(nb)跨国联姻已成，两国邦交 +20 并确立王位宣称。" : "\(na)与\(nb)联姻已成，关系 +25。")
         }
+        applyCrossBorderEffects()
         let na = NamingCatalog.houseLabel(r.kin.families[familyA].surname.optionalString ?? "")
         let nb = NamingCatalog.houseLabel(r.kin.families[familyB].surname.optionalString ?? "")
-        return (true, "\(na)与\(nb)联姻已成，关系 +25。")
+        return (true, crossBorder ? "\(na)与\(nb)跨国联姻已成，两国邦交 +20 并确立王位宣称。" : "\(na)与\(nb)联姻已成，关系 +25。")
+    }
+
+    /// 封赏封地（落实多政体家族博弈）：仅允许封地的政体可用，12 个月冷却；赐予本国一处非都城州郡，势力 +25、关系 +15、同国他族 −5。
+    public func grantFief(_ nationIndex: Int, familyId: String, provinceIndex: Int? = nil) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(nationIndex), !r.nobility.isNull else { return (false, "国家或世家系统不可用。") }
+        let n = nations[nationIndex], nid = n.id.asString
+        guard Vassals.alive(r, nid) else { return (false, "该国已亡。") }
+        Regimes.enable(r)
+        guard Regimes.allowsFiefs(r, nid) else { return (false, "当前政体（\(Regimes.style(r, nid).label)）不设封建封地。") }
+        let fam = r.nobility.families[familyId]
+        guard !fam.isNull, fam.nationId.optionalString == nid, r.kin.families.has(familyId) else { return (false, "所选世家不属于本国。") }
+        if !r.regimes.fiefCooldown.isNull, let cd = r.regimes.fiefCooldown[familyId].optionalNumber, cd > 0 {
+            return (false, "该世家刚刚受封／削藩，须待 \(Int(cd)) 个月后再议封赏。")
+        }
+        let provinces = r.world.provinces.asArray
+        let capPid = Rebellion.capitalProvince(r, nid)
+        let heldByTarget = Set(fam.controlledProvinces.asArray.map(\.asString))
+        let chosen: JS?
+        if let idx = provinceIndex, provinces.indices.contains(idx), provinces[idx].controller.optionalString == nid, !heldByTarget.contains(provinces[idx].id.asString) {
+            chosen = provinces[idx]
+        } else {
+            // 优先挑无主州或宗室非都城边州
+            let rulingId = String(People.rulingFamilyId(r, nid))
+            let candidates = provinces.filter { $0.controller.optionalString == nid && $0.id.asString != capPid && !heldByTarget.contains($0.id.asString) }
+            chosen = candidates.first(where: { Nobility.holder(r.nobility, $0.id.asString) == nil })
+                ?? candidates.first(where: { Nobility.holder(r.nobility, $0.id.asString) == rulingId })
+                ?? candidates.first
+        }
+        guard let prov = chosen else { return (false, "本国暂无可赐封的其余州郡。") }
+        let pid = prov.id.asString
+        for f in r.nobility.families.objectValues where !f.controlledProvinces.isNull {
+            f.controlledProvinces = .array(f.controlledProvinces.asArray.filter { $0.asString != pid })
+        }
+        fam.controlledProvinces.push(JS(pid))
+        fam.influence = JS(min(1000, (fam.influence.optionalNumber ?? 50) + 25))
+        let ruling = String(People.rulingFamilyId(r, nid))
+        if ruling != familyId && r.nobility.families.has(ruling) {
+            FamilyPolitics.adjustRelation(r, familyId, ruling, delta: 15)
+        }
+        // 同国其余世家略有嫉妒 (-5)
+        for (otherId, otherFam) in r.nobility.families.objectEntries where otherFam.nationId.optionalString == nid && otherId != familyId && otherId != ruling {
+            FamilyPolitics.adjustRelation(r, otherId, ruling, delta: -5)
+        }
+        if r.regimes.fiefCooldown.isNull { r.regimes.fiefCooldown = .object() }
+        r.regimes.fiefCooldown[familyId] = JS(12)
+        let label = NamingCatalog.houseLabel(r.kin.families[familyId].surname.optionalString ?? "")
+        _ = People.announce(r, kind: "family", text: "\(n.name.asString)赐封\(prov.name.asString)予\(label)",
+                            reason: "朝廷加恩封地：\(label)势力 +25、对宗室关系 +15（余家略生嫉意 −5，12 个月冷却）。",
+                            nations: [nid], province: pid)
+        return (true, "已赐封\(prov.name.asString)予\(label)（势力 +25，关系 +15）")
+    }
+
+    /// 削藩夺地：收回目标世家一处封地（势力 −35，关系 −30）；若关系 ≤ −50 且势力 ≥ 200 则有极高风险当场激变举兵！
+    public func revokeFief(_ nationIndex: Int, familyId: String) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(nationIndex), !r.nobility.isNull else { return (false, "国家或世家系统不可用。") }
+        let n = nations[nationIndex], nid = n.id.asString
+        guard Vassals.alive(r, nid) else { return (false, "该国已亡。") }
+        Regimes.enable(r)
+        let fam = r.nobility.families[familyId]
+        guard !fam.isNull, fam.nationId.optionalString == nid, r.kin.families.has(familyId) else { return (false, "所选世家不属于本国。") }
+        let ruling = String(People.rulingFamilyId(r, nid))
+        guard familyId != ruling else { return (false, "不能对宗室自身削藩。") }
+        guard !fam.controlledProvinces.isNull, fam.controlledProvinces.length > 0 else { return (false, "该世家名下已无封地可削。") }
+        let removedPid = fam.controlledProvinces.asArray.last!.asString
+        fam.controlledProvinces.asArray.removeLast()
+        let provName = r.world.provinces.asArray.first(where: { $0.id.asString == removedPid })?.name.optionalString ?? "封地"
+        fam.influence = JS(max(0, (fam.influence.optionalNumber ?? 50) - 35))
+        if r.nobility.families.has(ruling) { FamilyPolitics.adjustRelation(r, familyId, ruling, delta: -30) }
+        if r.regimes.fiefCooldown.isNull { r.regimes.fiefCooldown = .object() }
+        r.regimes.fiefCooldown[familyId] = JS(12)
+        let label = NamingCatalog.houseLabel(r.kin.families[familyId].surname.optionalString ?? "")
+        let relAfter = r.nobility.families.has(ruling) ? FamilyPolitics.relationScore(r, familyId, ruling) : 0
+        let infAfter = fam.influence.optionalNumber ?? 0
+
+        // 削藩激变检定：关系 <= -50 且势力 >= 200 且仍有地可起事 → 当场起兵谋逆！
+        if relAfter <= -50 && infAfter >= 200,
+           let seedPid = fam.controlledProvinces.asArray.first?.optionalString ?? (removedPid != Rebellion.capitalProvince(r, nid) ? removedPid : nil),
+           let raised = Regimes.raise(r, owner: nid, seed: seedPid, size: max(2, min(6, fam.controlledProvinces.length + 1)), kind: "secession") {
+            _ = People.announce(r, kind: "uprising", text: "\(n.name.asString)削藩激变！\(label)于\(provName)举兵反叛",
+                                reason: "强行收回\(provName)激怒\(label)（关系 \(Int(relAfter))、势力 \(Int(infAfter))），世家揭竿而起！",
+                                nations: [nid, raised.rebel], province: seedPid)
+            afterGlobalOrder()
+            return (true, "削藩激怒\(label)，竟于\(provName)举兵反叛！")
+        }
+        _ = People.announce(r, kind: "family", text: "\(n.name.asString)削夺\(label)之\(provName)封地",
+                            reason: "朝廷行削藩之策：\(label)失去\(provName)，势力 −35、与宗室关系 −30。",
+                            nations: [nid], province: removedPid)
+        return (true, "已削夺\(label)封地「\(provName)」（势力 −35，关系 −30）")
     }
 
     /// 世家政治操作：`befriend`（撮合结好）、`estrange`（挑拨离间）、`favor`（赏赐安抚）、`suppress`（削夺权柄）。

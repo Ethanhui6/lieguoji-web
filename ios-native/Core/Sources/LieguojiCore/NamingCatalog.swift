@@ -85,9 +85,9 @@ public enum NamingCatalog {
 
     /// 全部已知政体后缀（按长度降序排列，避免「社会主义共和国」只剥掉「共和国」留下「社会主义」）。
     public static let politySuffixes: [String] = [
-        "社会主义共和国", "人民共和国", "联合王国", "骑士团国", "哈里发国",
-        "苏丹国", "沙皇国", "教宗国", "神权国", "共和国", "军政府",
-        "王国", "帝国", "公国", "汗国", "联邦", "邦联", "城邦", "幕府", "酋邦", "义军", "神国", "部族", "部落", "王朝",
+        "社会主义共和国", "社会共和国", "人民共和国", "立宪王国", "联合王国", "骑士团国", "哈里发国",
+        "苏丹国", "沙皇国", "教宗国", "神权国", "共和国", "军政府", "执政府", "法王国", "立宪国", "独裁国", "民族国",
+        "王国", "帝国", "公国", "汗国", "联邦", "邦联", "城邦", "幕府", "公社", "酋邦", "义军", "神国", "部族", "部落", "王朝",
     ]
 
     /// 已知带前缀「大」的真实双字国号/地名（简写时不可误剥「大」字）。
@@ -142,15 +142,15 @@ public enum NamingCatalog {
         "chinese": [
             "中华", "华夏", "中原", "江南", "江淮", "巴蜀", "关中", "关陇", "燕云", "齐鲁",
             "岭南", "河洛", "荆楚", "吴越", "三晋", "陇右", "河西", "湖湘", "闽越", "滇黔",
-            "辽东", "幽燕", "淮海", "江东", "江汉", "剑南", "山南", "朔方", "海东", "胶东",
-            "黔中", "云贵", "河朔", "淮南", "浙东", "粤海", "闽海", "川蜀", "秦陇", "晋冀",
-            "冀鲁", "皖南", "赣江", "湘楚", "陕甘", "江左", "西域", "东海", "南海", "燕赵",
-            "两广", "两湖", "两浙", "河东", "河北", "河南", "山左", "山右", "关东", "辽西",
+            "辽东", "幽燕", "淮海", "江东", "江汉", "剑南", "山南", "朔方", "胶东",
+            "黔中", "云贵", "河朔", "淮南", "浙东", "川蜀", "秦陇", "晋冀",
+            "冀鲁", "湘楚", "陕甘", "西域", "燕赵", "两广", "两湖", "两浙",
+            "河东", "河北", "河南", "关东", "辽西", "南粤", "八闽", "三秦", "三楚", "天府",
         ],
         "japanese": [
-            "日本", "扶桑", "关东", "关西", "九州", "四国", "东北", "北陆", "东海", "畿内",
-            "山阳", "山阴", "南海", "西海", "北海道", "琉球", "本州", "大和", "近畿", "中国地方",
-            "信越", "奥羽", "东国", "西国", "筑紫", "日向", "尾张", "萨摩", "长州", "土佐",
+            "日本", "扶桑", "关东", "关西", "九州", "四国", "东北", "北陆", "东海", "近畿",
+            "山阳", "山阴", "北海道", "琉球", "大和", "信越", "奥羽", "筑紫", "日向",
+            "甲信", "骏远", "尾张", "萨摩", "长州", "土佐", "肥前", "越后", "加贺", "备前", "纪伊",
         ],
         "english": [
             "英格兰", "不列颠", "阿尔比恩", "苏格兰", "威尔士", "爱尔兰", "威塞克斯", "麦西亚",
@@ -336,18 +336,37 @@ public enum NamingCatalog {
                 return pool[start]
             }
         }
-        // 反向：由现代区域名如「中华」「华夏」改为中华「新朝」时，保留雅称或选未用朝代号
-        if style.id == "dynasty", culture == "chinese", base.count >= 3 {
-            let pool = dynastyPool(culture: culture)
-            if !pool.isEmpty {
-                let start = Int(Opening.hash(seed + "|dyn") % UInt32(pool.count))
-                if let pick = (0..<pool.count).lazy.map({ pool[(start + $0) % pool.count] })
-                    .first(where: { !used.contains($0) && !used.contains(canonicalStateKey($0)) }) {
-                    return pick
+        // 反向：由现代地理区名如「中华」「江南」「两广」改为中华王朝/帝制时，优先换为未用的真实朝代国号，杜绝「江南帝国」「两广帝国」。
+        if ["dynasty", "empire", "despotism"].contains(style.id), culture == "chinese" {
+            let modernSet = Set(modernRegionStates["chinese"] ?? [])
+            if base.count >= 3 || (modernSet.contains(base) && !chineseCompleteMonarchyTitles.contains(base)) {
+                let pool = dynastyPool(culture: culture)
+                if !pool.isEmpty {
+                    let start = Int(Opening.hash(seed + "|dyn") % UInt32(pool.count))
+                    if let pick = (0..<pool.count).lazy.map({ pool[(start + $0) % pool.count] })
+                        .first(where: { !used.contains($0) && !used.contains(canonicalStateKey($0)) }) {
+                        return pick
+                    }
                 }
             }
         }
         return base
+    }
+
+    /// 校验某细分政体是否符合该文化与宗教的现实历史传统（供 AI 演进与建国校验，杜绝「法兰西沙皇国」「中华教宗国」）。
+    public static func isStyleAuthentic(_ styleId: String, culture: String, religion: String) -> Bool {
+        switch styleId {
+        case "tsardom": return culture == "slavic" || religion == "orthodox"
+        case "shogunate": return culture == "japanese"
+        case "sultanate": return religion == "islam" || ["arab", "turkic", "persian", "indian"].contains(culture)
+        case "caliphate": return religion == "islam"
+        case "papacy": return religion == "catholic"
+        case "order": return religion == "catholic" || ["german", "french", "english", "spanish", "italian", "polish", "hungarian", "portuguese"].contains(culture)
+        case "lamaism": return ["tantric", "buddhism", "chan", "pureLand", "tiantai"].contains(religion) || culture == "tibetan"
+        case "khanate": return ["mongol", "turkic"].contains(culture)
+        case "dynasty": return ["chinese", "korean", "vietnamese"].contains(culture)
+        default: return true
+        }
     }
 
     /// 各文化起义建朝/禅让专用朝代名池（完全取代 `Uprisings` 旧版狭小硬编码表）。
@@ -435,6 +454,11 @@ public enum NamingCatalog {
                 return religion == "islam" ? "哈里发国" : religion == "catholic" ? "教宗国" : "神权国"
             }
             if style.id == "dynasty" { return "朝" }
+            if style.id == "junta" { return "军政府" }
+            if style.id == "dictatorship" { return culture == "chinese" ? "执政府" : "独裁国" }
+            if style.id == "fascist" { return culture == "italian" ? "社会共和国" : "民族国" }
+            if style.id == "nazi" { return culture == "german" ? "帝国" : "民族国" }
+            if style.id == "lamaism" { return "法王国" }
             if style.suffix.isEmpty {
                 return Regimes.titles[style.base] ?? ""
             }
@@ -456,7 +480,7 @@ public enum NamingCatalog {
 
         // 1. 中华/东亚王朝与封建君主称谓：严格贴近真实史书称法
         if culture == "chinese" {
-            let isMonarchy = ["dynasty", "empire", "despotism", "absolute", "feudal", "regency", "principality", "elective"].contains(style.id)
+            let isMonarchy = ["dynasty", "empire", "despotism", "absolute", "feudal", "regency", "principality", "elective", "constitutional"].contains(style.id)
             if style.id == "dynasty" {
                 let core = canonicalStateKey(base)
                 if core.count == 1 && (base.count == 1 || (base.hasPrefix("大") && base.count == 2)) {
@@ -473,27 +497,46 @@ public enum NamingCatalog {
             if isMonarchy {
                 // 双字完整朝代号（如 北魏、南唐、蜀汉、吴越、西夏、大理、大顺、南明）：绝不乱加「王国/帝国」
                 if chineseCompleteMonarchyTitles.contains(base) {
+                    if style.id == "constitutional" { return base + "立宪国" }
                     if ordinal.isEmpty { return base }
                     let stripped = base.hasPrefix("大") ? String(base.dropFirst()) : base
                     return (ordinal == "第二" ? "后" : "续") + stripped
                 }
-                // 单字国号：王制/公国称「齐国/楚国/晋公国」，帝制称「大秦/秦帝国」
+                // 单字国号：王制/公国称「齐国/楚国/晋公国」，帝制称「大秦/大汉」，立宪称「大齐立宪国」
                 if base.count == 1 {
                     if style.id == "principality" { return (ordinal.isEmpty ? "" : "后") + base + "公国" }
+                    if style.id == "constitutional" { return (ordinal.isEmpty ? "大" : "后") + base + "立宪国" }
                     if style.base == "Kingdom" { return (ordinal.isEmpty ? "" : "后") + base + "国" }
                     if style.base == "Empire" { return ordinal.isEmpty ? "大" + base : "后" + base }
                 }
-                // 地理双字名（如 江南、关中、巴蜀、岭南）：君主立宪/封建王国可称「江南王国」「巴蜀公国」
-                if style.id == "principality" { return base + (ordinal.isEmpty ? "" : ordinal) + "公国" }
-                if style.base == "Empire" { return base + ordinal + "帝国" }
+                // 地理双字名（如 江南、关中、巴蜀、岭南）：称「江南王府/王国」「巴蜀公国」「中华帝国」，避免生硬拼接
+                if style.id == "principality" { return base + ordinal + "公国" }
+                if style.id == "constitutional" { return base + ordinal + "立宪王国" }
+                if style.base == "Empire" { return (base == "中华" || base == "华夏") ? base + ordinal + "帝国" : base + ordinal + "王朝" }
                 if style.base == "Kingdom" { return base + ordinal + "王国" }
             }
-            if style.id == "warlord" { return base + "军政府" }
+            if style.id == "warlord" || style.id == "junta" { return base + "军政府" }
+            if style.id == "dictatorship" { return base + "执政府" }
             if style.id == "peasant" { return base + "义军" }
             if style.id == "holy" { return base + "神国" }
             if style.id == "tribal" || style.id == "chiefdom" { return base + "部" }
             if style.id == "khanate" { return base + "汗国" }
+            if style.id == "democratic" || style.id == "presidential" || style.id == "parliamentary" {
+                if base == "中华" && ordinal.isEmpty { return "中华民国" }
+                return base + ordinal + "共和国"
+            }
+            if style.id == "communist" { return base + ordinal + "人民共和国" }
+            if style.id == "socialist" { return base + ordinal + "社会主义共和国" }
         }
+
+        // 1b. 日本幕府/帝国与经典文化特例
+        if culture == "japanese" {
+            if style.id == "shogunate" { return base.hasSuffix("幕府") ? base : base + "幕府" }
+            if style.id == "empire" && base == "日本" && ordinal.isEmpty { return "大日本帝国" }
+        }
+        if culture == "french" && style.id == "anarchist" && (base == "法兰西" || base == "巴黎") && ordinal.isEmpty { return "\(base)公社" }
+        if culture == "english" && style.id == "union" && (base == "不列颠" || base == "英格兰") && ordinal.isEmpty { return "大不列颠联合王国" }
+        if culture == "german" && (style.id == "nazi" || style.id == "fascist") && base == "德意志" { return "德意志\(ordinal.isEmpty ? "第三" : ordinal)帝国" }
 
         // 2. 其余文化「新朝/王朝」政体
         if style.id == "dynasty" {
@@ -548,7 +591,6 @@ public enum NamingCatalog {
             "西凉", "北凉", "南燕", "后燕", "成汉", "前燕", "前凉", "南凉", "西秦", "胡夏", "北燕", "高昌", "吐谷浑",
             "前赵", "后赵", "后凉", "东夏", "西辽", "北辽", "南平", "荆南", "清源", "定难", "归义", "南越", "闽越", "东瓯",
             "西楚", "且兰", "句町", "滕", "薛", "杞", "申", "吕", "邢", "樊", "莱", "虞", "雍", "岐", "滑", "纪", "沈", "黄", "江", "舒",
-            "关中", "巴蜀", "荆楚", "燕云", "齐鲁", "岭南", "河洛", "三晋", "江淮", "湖湘", "河西", "陇右", "幽燕", "辽东", "剑南", "河朔",
         ],
         "japanese": [
             "尾张", "甲斐", "越后", "相模", "骏河", "安艺", "萨摩", "土佐", "出羽", "陆奥",
@@ -701,13 +743,14 @@ public enum NamingCatalog {
         "昭", "宁", "安", "康", "昌", "泰", "和", "兴", "隆", "盛", "贞", "嘉", "熙", "乾", "坤", "靖",
     ]
 
-    /// 各文化地道架空国名池（按文化音韵整词设计，替代原有腰斩拼接词）。
+    /// 各文化地道架空国名池（按文化音韵整词设计，剔除年号与域外词，替代原有腰斩拼接词）。
     public static let fantasyStates: [String: [String]] = [
         "chinese": chineseFantasySingles + [
-            "景华", "宁安", "昭明", "永昌", "承平", "元熙", "建安", "广德", "隆庆", "兴和",
-            "崇祯", "弘光", "天顺", "泰和", "嘉靖", "贞观", "开元", "乾元", "咸康", "太宁",
-            "云梦", "沧溟", "昆仑", "蓬莱", "扶桑", "赤壁", "苍梧", "潇湘", "河洛", "关中",
-            "幽燕", "青齐", "荆楚", "巴蜀", "吴越", "三晋", "陇右", "河西", "岭南", "剑南",
+            "琅琊", "广陵", "彭城", "姑苏", "会稽", "汉中", "敦煌", "襄阳", "寿春", "临淄",
+            "晋阳", "邺城", "上党", "江陵", "番禺", "建康", "金陵", "武昌", "姑臧", "朔方",
+            "云中", "宛陵", "南阳", "河内", "东平", "淮阳", "陈留", "颍川", "汝南", "弘农",
+            "京兆", "天水", "安定", "北地", "云梦", "苍梧", "潇湘", "河洛", "关中", "青齐",
+            "荆楚", "巴蜀", "吴越", "三晋", "陇右", "河西", "岭南", "剑南", "幽燕", "辽东",
         ],
         "japanese": [
             "瑞穗", "丰苇", "秋津", "扶桑", "朝阳", "青原", "春野", "白川", "松风", "藤原",
@@ -1492,20 +1535,27 @@ public enum NamingCatalog {
             let key = canonicalStateKey(s)
             if !s.isEmpty && !key.isEmpty && seen.insert(key).inserted { out.append(s) }
         }
-        if let styleId, modernPolityStyles.contains(styleId) {
+        let isModern = styleId.map { modernPolityStyles.contains($0) } ?? false
+        let isMonarchy = styleId.map { ["dynasty", "empire", "despotism", "absolute", "feudal", "principality", "elective", "regency"].contains($0) } ?? false
+        if isModern {
             for s in modernRegionStates[culture] ?? [] { append(s) }
-        } else if styleId == "dynasty" {
+        } else if styleId == "dynasty" || (culture == "chinese" && isMonarchy) {
             for s in dynastyPool(culture: culture) { append(s) }
         }
         if mode == "historical-names" {
             if let profile = Founding.cultures.first(where: { $0.id == culture }) {
-                for s in profile.historicalStates { append(s) }
+                for s in profile.historicalStates where !(isModern && isDynasticBase(s, culture: culture)) { append(s) }
             }
-            for s in historicalExtraStates[culture] ?? [] { append(s) }
-            for s in modernRegionStates[culture] ?? [] { append(s) }
-            for s in fantasyStates[culture] ?? [] { append(s) }
+            for s in historicalExtraStates[culture] ?? [] where !(isModern && isDynasticBase(s, culture: culture)) { append(s) }
+            if !isMonarchy || culture != "chinese" {
+                for s in modernRegionStates[culture] ?? [] { append(s) }
+            }
+            for s in fantasyStates[culture] ?? [] where !(isModern && isDynasticBase(s, culture: culture)) { append(s) }
+            if isMonarchy && culture == "chinese" {
+                for s in modernRegionStates[culture] ?? [] { append(s) }
+            }
         } else {
-            for s in fantasyStates[culture] ?? [] { append(s) }
+            for s in fantasyStates[culture] ?? [] where !(isModern && isDynasticBase(s, culture: culture)) { append(s) }
             for s in modernRegionStates[culture] ?? [] { append(s) }
             if out.isEmpty, let profile = Founding.cultures.first(where: { $0.id == culture }) {
                 for r in profile.stateRoots {

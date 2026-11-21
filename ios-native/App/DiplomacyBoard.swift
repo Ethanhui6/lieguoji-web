@@ -1,17 +1,12 @@
 import SwiftUI
 import LieguojiCore
 
-/// 邦交 at a glance, the diplomacy page's first part: how many wars, alliances, truces and neighbours;
-/// every alliance with its members; and the chosen state's relation to every state it has one with
-/// (at war, allied, overlord, vassal, treaty, truce, neighbour and how strong), each a row that takes
-/// the camera to that state's capital and leads on to its page, to the wars and to its records.
-/// Only what the engine already keeps is shown: no new mechanism.
+/// 深度邦交总览：双边好感仪（-100…+100）、渐进披露逐项关系原因、六大条约胶囊、反霸权包围网与第三方斡旋停战。
 struct DiplomacyBoard: View {
     @ObservedObject var model: GameModel
     let map: WorldMap
     let state: GameState
     let nation: Int
-    /// The camera to a state's capital.
     let fly: (Int) -> Void
     let openNation: (Int) -> Void
     let openWars: () -> Void
@@ -20,24 +15,31 @@ struct DiplomacyBoard: View {
     @State private var failed = false
     @State private var attempt = 0
     @State private var alliances: [GameModel.AllianceRow] = []
+    @State private var expandedNation: Int? = nil
+    @State private var busy = false
+    @State private var flash: String?
 
     struct Relation: Identifiable {
+        struct Tag: Identifiable { let id: String; let text: String; let color: Color }
         let id: Int
-        var tags: [(text: String, color: Color)] = []
+        var tags: [Tag] = []
         var note = ""
         var rank = 9
         var atWar = false
+        var opinion: DiplomacyOverview.OpinionEntry? = nil
     }
     private func name(_ n: Int) -> String { map.meta.nations.indices.contains(n) ? MapLayers.stateLabel(map.meta.nations[n].name, full: false) : "无主" }
     private func color(_ n: Int) -> Color { map.meta.nations.indices.contains(n) ? Names.color(map.meta.nations[n].color) : Theme.ink2 }
 
-    /// One row per state the chosen state has anything to do with, the gravest relation first.
     private func relations(_ info: DiplomacyOverview) -> [Relation] {
         var rows = [Int: Relation]()
         func add(_ n: Int, _ text: String, _ color: Color, rank: Int, note: String = "", war: Bool = false) {
             guard n != nation, n >= 0, n < state.nations.count, state.nations[n].alive else { return }
             var r = rows[n] ?? Relation(id: n)
-            r.tags.append((text, color)); r.rank = min(r.rank, rank)
+            if !r.tags.contains(where: { $0.text == text }) {
+                r.tags.append(Relation.Tag(id: "\(n)-\(text)", text: text, color: color))
+            }
+            r.rank = min(r.rank, rank)
             if !note.isEmpty { r.note = r.note.isEmpty ? note : r.note + " · " + note }
             if war { r.atWar = true }
             rows[n] = r
@@ -46,15 +48,31 @@ struct DiplomacyBoard: View {
         for n in info.allies { add(n, "同盟", Theme.jade, rank: 1) }
         if let lord = info.overlord { add(lord, "宗主", Theme.ink, rank: 2) }
         for n in info.vassals { add(n, "附庸", Theme.ink, rank: 2) }
-        for p in info.pacts { add(p.nation, p.kind == "marriage" ? "联姻" : "互不侵犯", Theme.jade, rank: 3, note: "余 \(p.months) 月") }
-        for t in info.truces { add(t.nation, "停战", Theme.ink2, rank: 4, note: "余 \(max(1, t.days / 30)) 月") }
-        for n in info.neighbors {
-            let ratio = info.troops > 0 ? Double(n.troops) / Double(info.troops) : 0
-            var strength: String = Names.wan(n.troops) + " 兵"
-            if info.troops > 0 { strength += ratio > 1.5 ? "，强于我" : ratio < 0.67 ? "，弱于我" : "，相当" }
-            add(n.nation, "接壤", Theme.ink2.opacity(0.75), rank: 5, note: strength)
+        for p in info.pacts {
+            let lbl = DiplomacyOverview.treatyLabel(p.kind)
+            let tone: Color = (p.kind == "defense" || p.kind == "trade" || p.kind == "marriage") ? Theme.jade : Color(red: 0.68, green: 0.48, blue: 0.14)
+            add(p.nation, lbl, tone, rank: 3, note: "余 \(max(1, p.months)) 月")
         }
-        return rows.values.sorted { $0.rank != $1.rank ? $0.rank < $1.rank : $0.id < $1.id }
+        for t in info.truces { add(t.nation, "停战", Theme.ink2, rank: 4, note: "余 \(max(1, t.days / 30)) 月") }
+        for op in info.opinions ?? [] {
+            guard op.nation != nation, op.nation >= 0, op.nation < state.nations.count, state.nations[op.nation].alive else { continue }
+            var r = rows[op.nation] ?? Relation(id: op.nation)
+            r.opinion = op
+            if op.claim { add(op.nation, "王位宣称", Color(red: 0.72, green: 0.48, blue: 0.12), rank: 3) }
+            if op.neighbor && r.note.isEmpty {
+                let ratio = info.troops > 0 ? Double(op.troops) / Double(info.troops) : 0
+                let relStr = info.troops > 0 ? (ratio > 1.5 ? "强于我" : ratio < 0.67 ? "弱于我" : "势均") : ""
+                r.note = "接壤 · \(Names.wan(op.troops))兵" + (relStr.isEmpty ? "" : "（\(relStr)）")
+            }
+            if r.rank == 9 { r.rank = op.neighbor ? 5 : 6 }
+            rows[op.nation] = r
+        }
+        return rows.values.sorted { a, b in
+            if a.rank != b.rank { return a.rank < b.rank }
+            let sa = a.opinion?.score ?? 0, sb = b.opinion?.score ?? 0
+            if abs(sa) != abs(sb) { return abs(sa) > abs(sb) }
+            return a.id < b.id
+        }
     }
 
     var body: some View {
@@ -62,10 +80,40 @@ struct DiplomacyBoard: View {
             HStack(spacing: 8) {
                 CountTile(title: "战争", value: state.wars.count, hot: !state.wars.isEmpty)
                 CountTile(title: "同盟", value: alliances.count, hot: false)
-                CountTile(title: "停战", value: info?.truces.count ?? 0, hot: false)
+                CountTile(title: "条约", value: info?.pacts.count ?? 0, hot: false)
                 CountTile(title: "接壤", value: info?.neighbors.count ?? 0, hot: false)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Theme.Layout.pageInset)
+
+            // 霸权威胁警示与反霸包围网
+            if let hegemons = info?.hegemons, !hegemons.isEmpty {
+                SectionLabel("天下霸主 · 合纵遏霸")
+                VStack(spacing: 8) {
+                    ForEach(hegemons) { h in
+                        HStack(spacing: 10) {
+                            RoundedRectangle(cornerRadius: 3).fill(color(h.nation)).frame(width: 8, height: 32)
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text(name(h.nation)).font(Theme.section).foregroundStyle(Theme.ink)
+                                    PaperTag(text: "霸权威胁 \(h.threat)", color: Theme.seal, size: 11)
+                                }
+                                Text("疆域炽盛、震慑四邻，可号召诸邦结成共同防御包围网").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                            }
+                            Spacer(minLength: 4)
+                            Button {
+                                runQuick("已发起反\(name(h.nation))包围网") { await model.formCoalition(nation, against: h.nation) }
+                            } label: {
+                                Text("结包围网").font(Theme.label).foregroundStyle(Theme.paper2)
+                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .background(Theme.seal, in: Capsule())
+                            }
+                            .buttonStyle(PressStyle()).disabled(busy)
+                        }
+                        .padding(12).paperCard(tint: Theme.seal)
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
 
             if !alliances.isEmpty {
                 SectionLabel("同盟一览")
@@ -75,7 +123,32 @@ struct DiplomacyBoard: View {
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
 
-            SectionLabel(name(nation) + "的邦交")
+            // 第三方大国斡旋停战
+            if let wars = info?.mediatableWars, !wars.isEmpty {
+                SectionLabel("大国斡旋停战")
+                Group2 {
+                    ForEach(Array(wars.prefix(4).enumerated()), id: \.element.id) { idx, w in
+                        HStack(spacing: 8) {
+                            Text("\(name(w.a)) ⚔ \(name(w.b))").font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                            Spacer()
+                            Button {
+                                runQuick("已斡旋\(name(w.a))与\(name(w.b))停火") { await model.mediatePeace(nation, between: w.a, and: w.b) }
+                            } label: {
+                                Text("出面调停").font(Theme.label).foregroundStyle(Theme.jade)
+                                    .padding(.horizontal, 10).padding(.vertical, 5)
+                                    .background(Theme.jade.opacity(0.1), in: Capsule())
+                                    .overlay(Capsule().stroke(Theme.jade.opacity(0.35), lineWidth: 0.8))
+                            }
+                            .buttonStyle(PressStyle()).disabled(busy)
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 9)
+                        if idx < min(wars.count, 4) - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+
+            SectionLabel(name(nation) + "的双边邦交（点开看理由与博弈）")
             Group2 {
                 if let info {
                     let rows = relations(info)
@@ -83,24 +156,58 @@ struct DiplomacyBoard: View {
                         Text("与各国素无往来").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 14)
                     }
                     ForEach(rows) { r in
-                        RelationRow(relation: r, name: name(r.id), color: color(r.id), fly: { fly(r.id) }, openNation: { openNation(r.id) },
-                                    openWars: openWars, openChronicle: { openChronicle(r.id) })
+                        RelationRow(
+                            relation: r,
+                            name: name(r.id),
+                            color: color(r.id),
+                            expanded: expandedNation == r.id,
+                            busy: busy,
+                            toggleExpand: {
+                                GameFeel.shared.tap()
+                                withAnimation(Motion.panel) { expandedNation = expandedNation == r.id ? nil : r.id }
+                            },
+                            fly: { fly(r.id) },
+                            openNation: { openNation(r.id) },
+                            openWars: openWars,
+                            openChronicle: { openChronicle(r.id) },
+                            onAction: { actionKind in
+                                switch actionKind {
+                                case "trade": runQuick("已与\(name(r.id))签署通商协定") { await model.treaty(nation, r.id, years: 10, kind: "trade") }
+                                case "defense": runQuick("已与\(name(r.id))缔结共同防御条约") { await model.treaty(nation, r.id, years: 10, kind: "defense") }
+                                case "ultimatum": runQuick("已向\(name(r.id))发出最后通牒") { await model.sendUltimatum(nation, to: r.id, demand: "tribute") }
+                                case "covert": runQuick("已派密使资助\(name(r.id))反对派") { await model.covertAction(nation, target: r.id, kind: "fundRebels") }
+                                default: break
+                                }
+                            }
+                        )
                         if r.id != rows.last?.id { Divider2() }
                     }
                 } else {
                     PanelPending(failed: failed) { attempt += 1 }
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Theme.Layout.pageInset)
         }
+        .paperToast($flash)
         .task(id: "\(nation)-\(state.day / 30)-\(attempt)") {
             info = await model.diplomacyInfo(nation); failed = info == nil
             alliances = await model.allianceList()
         }
     }
+
+    private func runQuick(_ fallback: String, _ op: @escaping () async -> String?) {
+        guard !busy else { return }
+        busy = true
+        Task {
+            let err = await op()
+            flash = err ?? (model.state?.events.last?.text ?? fallback)
+            GameFeel.shared.notify(err == nil ? .success : .error)
+            attempt += 1
+            busy = false
+        }
+    }
 }
 
-/// One alliance: its name, 铁盟 when it cannot be left, and its members (tap one to go to its capital).
 private struct AllianceCard: View {
     let alliance: GameModel.AllianceRow
     let name: (Int) -> String
@@ -122,49 +229,109 @@ private struct AllianceCard: View {
     }
 }
 
-/// A state and what it is to the chosen one. The row itself goes to its capital; the small buttons
-/// lead to its page, to the wars (when at war) and to its records.
+/// 渐进披露式双边关系行：首层一眼看国名、好感分值、立场与条约；点击展开第二层看逐项原因拆解条与快捷外交操作。
 private struct RelationRow: View {
     let relation: DiplomacyBoard.Relation
     let name: String
     let color: Color
+    let expanded: Bool
+    let busy: Bool
+    let toggleExpand: () -> Void
     let fly: () -> Void
     let openNation: () -> Void
     let openWars: () -> Void
     let openChronicle: () -> Void
+    let onAction: (String) -> Void
+
+    private var stanceColor: Color {
+        guard let op = relation.opinion else { return Theme.ink2 }
+        if relation.atWar || op.score <= -22 { return Theme.seal }
+        if op.score >= 25 { return Theme.jade }
+        return Theme.ink2
+    }
+
     var body: some View {
-        HStack(spacing: 8) {
-            Button(action: fly) {
-                HStack(spacing: 10) {
-                    RoundedRectangle(cornerRadius: 3).fill(color).frame(width: 10, height: 30)
-                    VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: 5) {
-                            Text(name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                            ForEach(Array(relation.tags.enumerated()), id: \.offset) { _, t in PaperTag(text: t.text, color: t.color) }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Button(action: toggleExpand) {
+                    HStack(spacing: 10) {
+                        RoundedRectangle(cornerRadius: 3).fill(color).frame(width: 9, height: 34)
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: 5) {
+                                Text(name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
+                                if let op = relation.opinion {
+                                    PaperTag(text: "\(op.stance) \(op.score > 0 ? "+" : "")\(op.score)", color: stanceColor, size: 11)
+                                }
+                                ForEach(relation.tags.prefix(2)) { t in PaperTag(text: t.text, color: t.color, size: 11) }
+                            }
+                            if let op = relation.opinion {
+                                OpinionGauge(score: op.score, height: 5).frame(maxWidth: 165)
+                            } else if !relation.note.isEmpty {
+                                Text(relation.note).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                            }
                         }
-                        if !relation.note.isEmpty { Text(relation.note).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1) }
+                        Spacer(minLength: 4)
                     }
-                    Spacer(minLength: 4)
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                if relation.atWar { LinkSeal(mark: "战", color: Theme.seal, action: openWars) }
+                LinkSeal(mark: "都", color: Theme.ink2, action: fly)
+                LinkSeal(mark: "国", color: Theme.jade, action: openNation)
             }
-            .buttonStyle(.plain)
-            if relation.atWar { LinkSeal(mark: "战", color: Theme.seal, action: openWars) }
-            LinkSeal(mark: "史", color: Theme.ink2, action: openChronicle)
-            LinkSeal(mark: "国", color: Theme.jade, action: openNation)
+
+            if expanded {
+                VStack(alignment: .leading, spacing: 8) {
+                    if !relation.note.isEmpty {
+                        Text(relation.note).font(Theme.caption).foregroundStyle(Theme.ink2)
+                    }
+                    if let reasons = relation.opinion?.reasons, !reasons.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(reasons.prefix(6)) { r in
+                                HStack {
+                                    Text(r.label).font(Theme.caption).foregroundStyle(Theme.ink2)
+                                    Spacer()
+                                    Text("\(r.delta > 0 ? "+" : "")\(r.delta)").font(Theme.caption)
+                                        .foregroundStyle(r.delta > 0 ? Theme.jade : Theme.seal).monospacedDigit()
+                                }
+                            }
+                        }
+                        .padding(10)
+                        .background(Theme.paper.opacity(0.65), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                    if !relation.atWar {
+                        HStack(spacing: 7) {
+                            quickDipBtn("通商", color: Theme.jade) { onAction("trade") }
+                            quickDipBtn("共防", color: Theme.jade) { onAction("defense") }
+                            quickDipBtn("通牒", color: Theme.seal) { onAction("ultimatum") }
+                            quickDipBtn("资敌", color: Theme.ink) { onAction("covert") }
+                        }
+                    }
+                }
+                .padding(.leading, 19)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
     }
+
+    private func quickDipBtn(_ title: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).font(Theme.label).foregroundStyle(color)
+                .frame(maxWidth: .infinity).frame(height: 30)
+                .background(color.opacity(0.09), in: Capsule())
+                .overlay(Capsule().stroke(color.opacity(0.32), lineWidth: 0.8))
+        }
+        .buttonStyle(PressStyle()).disabled(busy)
+    }
 }
 
-/// A small round seal that leads to another page.
 private struct LinkSeal: View {
     let mark: String
     let color: Color
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            // 可点的链接印：与全作同一印面，朱文描边（不实填，表示可点而非落款）。
             SealFace(text: mark, size: 28, color: color, filled: false)
         }
         .buttonStyle(PressStyle())

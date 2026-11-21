@@ -29,26 +29,28 @@ extension Regimes {
         let crown = cha
         if let g = governor(r, id) { let s = People.skills(g); mil = s.military; adm = s.administrative; cha = s.charisma }
         let fortune = r.destiny.nations[id].destiny.optionalNumber ?? 50, graft = Finance.corruption(r, id), sum = reformSum(r, id)
+        let prof = styleProfile(r, id)
         var l = Leverage()
-        l.attack = (mil - 50) * 0.8 + (fortune - 50) * 0.25 - graft * 0.15 + sum.attack
-        l.defense = (mil - 50) * 0.4 + (cha - 50) * 0.2 + (fortune - 50) * 0.25 - graft * 0.1 + sum.defense
-        l.income = (adm - 50) * 0.8 - graft * 0.3 + sum.income
+        l.attack = (mil - 50) * 0.8 + (fortune - 50) * 0.25 - graft * 0.15 + sum.attack + prof.attack
+        l.defense = (mil - 50) * 0.4 + (cha - 50) * 0.2 + (fortune - 50) * 0.25 - graft * 0.1 + sum.defense + prof.defense
+        l.income = (adm - 50) * 0.8 - graft * 0.3 + sum.income + prof.income
         l.growth = (adm - 50) * 0.1 + (cha - 50) * 0.1 + sum.growth
-        l.corruption = sum.corruption
+        l.corruption = sum.corruption + prof.corruption
         _ = grit(r, id)
         let land = Double(gritCache?.counts[id] ?? 0), total = max(1, Double(gritCache?.counts.values.reduce(0, +) ?? 1))
         var owed = 0.0
         if !r.finance.nations[id].isNull { let income = max(1, monthlyIncome(r, id)); owed = min(15, debt(r, id) / income / 12 * 10) }
-        l.stability = 60 + (adm - 50) * 0.35 + (crown - 50) * 0.35 + (fortune - 50) * 0.4 - graft * 0.4 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability
+        l.stability = 60 + (adm - 50) * 0.35 + (crown - 50) * 0.35 + (fortune - 50) * 0.4 - graft * 0.4 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability
         return l
     }
     static func attributeMonth(_ r: JS, _ id: String, addGold: (Double) -> Void) {
         let l = leverage(r, id)
         if l.income != 0 { addGold(l.income / 100) }
         guard l.growth != 0 else { return }
-        let owned = Set(r.world.provinces.asArray.filter { $0.controller.optionalString == id }.map(\.id.asString))
-        for s in r.world.statecraft.provinces.asArray where owned.contains(s.provinceId.asString) {
-            s.population = JS(max(100, (s.population.asNumber * (1 + l.growth / 1200)).rounded()))
+        for p in monthLand(r, id) {
+            if let s = monthStock(r, p.id.asString) {
+                s.population = JS(max(100, (s.population.asNumber * (1 + l.growth / 1200)).rounded()))
+            }
         }
     }
 
@@ -123,12 +125,13 @@ extension Regimes {
 
     static func cultureMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
         let name = n.name.asString, tag = "\(id)|\(key)|culture"
-        let land = r.world.provinces.asArray.filter { $0.controller.asString == id }
+        let land = monthLand(r, id)
         guard !land.isEmpty else { return }
         // 涵化: a province of another culture slowly takes the state's ways.
         let own = r.civilization.nations[id].cultureId.optionalString ?? ""
         if chance(tag + "|blend") < 0.06 {
-            let cities = r.world.cities.asArray.filter { c in land.contains { $0.id.asString == c.provinceId.asString } && r.civilization.cities[c.id.asString].cultureId.optionalString != own }
+            let ownedPids = Set(land.map(\.id.asString))
+            let cities = r.world.cities.asArray.filter { c in ownedPids.contains(c.provinceId.asString) && r.civilization.cities[c.id.asString].cultureId.optionalString != own }
             if !cities.isEmpty {
                 let c = cities[Int(draw(tag + "|city") % UInt32(cities.count))]
                 r.civilization.cities[c.id.asString].cultureId = JS(own)
@@ -149,7 +152,7 @@ extension Regimes {
         case 7: addGold(1); addDestiny(1); say("\(name)改革文字", "书同文，政令通达：国库增一月岁入，国运 +1。")
         case 8: addDestiny(2); say("\(name)礼乐复兴", "重定礼制，朝会肃然：国运 +2。")
         case 9:
-            for a in r.world.armies.asArray where a.nationId.asString == id && a.troops.asNumber > 0 { a.morale = JS(min(100, a.morale.asNumber + 5)) }
+            for a in monthArmies(r, id) { a.morale = JS(min(100, a.morale.asNumber + 5)) }
             say("\(name)胡服骑射", "移风易俗，习练骑射：全军士气 +5。")
         case 10: addDestiny(-2); corrupt(3); say("\(name)奢靡成风", "竞相夸富，世风日下：国运 −2，腐化 +3。")
         default: addGold(2); addDestiny(1); say("\(name)文艺复兴", "巨匠云集，城邦争相延揽：国库增两月岁入，国运 +1。")
@@ -159,7 +162,7 @@ extension Regimes {
     static func religionMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
         let tag = "\(id)|\(key)|religion", name = n.name.asString
         guard chance(tag) < 0.04, let faith = r.civilization.nations[id].religionId.optionalString else { return }
-        let land = r.world.provinces.asArray.filter { $0.controller.asString == id }, creed = creeds[faith]?.name ?? "本教"
+        let land = monthLand(r, id), creed = creeds[faith]?.name ?? "本教"
         guard !land.isEmpty else { return }
         if r.regimes.faith.isNull { r.regimes.faith = .object() }
         func say(_ text: String, _ reason: String, _ p: JS? = nil) { _ = People.announce(r, kind: "religion", text: text, reason: reason, nations: [id], province: p?.id.optionalString) }
@@ -313,8 +316,13 @@ extension Regimes {
                     let dynPick = unusedName(r, NamingCatalog.dynastyPool(culture: "chinese"), tag + "|name")
                         ?? NamingCatalog.pickStateBase(culture: "chinese", mode: c.mode.optionalString ?? "historical-names", seed: tag + "|peasant", used: NamingCatalog.usedStateKeys(r), styleId: "dynasty")
                     retitle(r, rebel, base: dynPick, style: "dynasty")
-                } else { retitle(r, rebel, base: p.name.asString, style: "peasant") }
-            case "warlord": retitle(r, rebel, base: p.name.asString, style: "warlord")
+                } else {
+                    let regPick = unusedName(r, NamingCatalog.modernRegionStates[cityCulture] ?? [], tag + "|peasant-reg") ?? NamingCatalog.cleanStateBase(p.name.asString)
+                    retitle(r, rebel, base: regPick, style: "peasant")
+                }
+            case "warlord":
+                let regPick = unusedName(r, NamingCatalog.modernRegionStates[cityCulture] ?? [], tag + "|warlord-reg") ?? NamingCatalog.cleanStateBase(p.name.asString)
+                retitle(r, rebel, base: regPick, style: "warlord")
             case "holy":
                 let creed = heretic ? faith : stateFaith
                 if !creed.isEmpty { c.nations[rebel].religionId = JS(creed) }
@@ -335,20 +343,20 @@ extension Regimes {
     /// Once a world-month: states that have lost the people's trust come apart.
     static func uprisingsMonth(_ r: JS, _ key: Int) {
         guard !r.foundings.isNull, r.foundings.enabled.isTruthy, Rebellion.monthsSince(r, Rebellion.never) >= Tuning.current.calmMonths else { return }
+        let cityPids = Set(r.world.cities.asArray.map(\.provinceId.asString))
         for n in r.world.nations.asArray {
             let id = n.id.asString
-            guard Vassals.alive(r, id), !isBlank(r, id) else { continue }
-            let owned = r.world.provinces.asArray.filter { $0.controller.asString == id }
-            guard owned.count >= 5 else { continue }
+            guard monthLandCount(r, id) >= 5, !isBlank(r, id) else { continue }
+            let owned = monthLand(r, id)
             let b = book(r, id)
             if let last = b.lastUprising.optionalNumber, Double(key) - last < 8 { continue }
             var calm = leverage(r, id).stability
-            if r.world.statecraft.relations.asArray.contains(where: { ($0.a.asString == id || $0.b.asString == id) && $0.status.asString == "war" }) { calm -= 6 }
+            if isAtWar(r, id) { calm -= 6 }
             let tag = "\(id)|\(key)|uprising", risk = (max(0, 55 - calm) / 100 * 0.35 * Tuning.current.unrest + (owned.count > 20 ? 0.004 : 0)) * rule(r, "rebel")
             guard chance(tag) < risk else { continue }
             let capital = Rebellion.capitalProvince(r, id)
             var weighted = [(String, UInt32)]()
-            for p in owned where p.id.asString != capital && r.world.cities.asArray.contains(where: { $0.provinceId.asString == p.id.asString }) {
+            for p in owned where p.id.asString != capital && cityPids.contains(p.id.asString) {
                 let distance = r.upperCombat.provinces[p.id.asString].distance.optionalNumber ?? 1
                 weighted.append((p.id.asString, UInt32(max(1, distance + 2 + Double(faithUnrest(r, p))))))
             }
@@ -367,7 +375,7 @@ extension Regimes {
     static func maturityMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int, addDestiny: (Double) -> Void) {
         let current = style(r, id).id
         guard ["peasant", "warlord", "holy"].contains(current) else { return }
-        let c = r.civilization.nations[id], tag = "\(id)|\(key)|mature", land = r.world.provinces.asArray.reduce(0) { $1.controller.optionalString == id ? $0 + 1 : $0 }
+        let c = r.civilization.nations[id], tag = "\(id)|\(key)|mature", land = monthLandCount(r, id)
         let months = Rebellion.monthsSince(r, Rebellion.bornTime(r, id)), atWar = Rebellion.rebelWar(r, id) != nil
         let parent = c.parentId.optionalString, fallen = parent.map { !Vassals.alive(r, $0) } ?? false
         guard months >= 6, !atWar || land >= 8 else { return }
@@ -408,21 +416,9 @@ extension Regimes {
         // The throne itself passes to another house (Handover.swift); with no other house there is no 禅让.
         _ = abdicate(r, n, id, base: base, style: culture == "chinese" ? "dynasty" : nil)
     }
-    /// 复辟 and 神权: a republic that once had a crown may take it back; a devout state may become a holy kingdom.
+    /// 禅让：王朝失道衰微时由权臣受禅改朝（其余政体复辟／神权转向均已交由 `realisticPoliticsMonth` 按现实危机条件触发）。
     static func orderMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
         dynastyMonth(r, n, id, key)
-        let polity = r.civilization.nations[id].polity.optionalString ?? "Kingdom", tag = "\(id)|\(key)|order", b = book(r, id)
-        if polity == "Republic" || polity == "Federation", chance(tag) < 0.006 {
-            guard let old = b.history.asArray.last(where: { $0.asString == "Empire" || $0.asString == "Kingdom" })?.asString else { return }
-            change(r, id, to: old, reason: "复辟")
-            seat(r, id)
-            return
-        }
-        if polity != "Theocracy", chance(tag + "|holy") < 0.002 {
-            let was = n.name.asString
-            applyStyle(r, id, "holy", reason: "神权")
-            _ = People.announce(r, kind: "religion", text: "\(was)改建\(n.name.asString)", reason: "教门掌权，神职治国，君主自称受命于天。", nations: [id], province: nil)
-        }
     }
 }
 

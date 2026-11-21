@@ -131,6 +131,14 @@ public enum People {
         return Native.iadd(Native.iadd(score, -c.age.asInt), 100)
     }
     static func findSuccessor(_ r: JS, _ family: JS, _ deceased: JS) -> JS? {
+        // App 规则：尊重玩家或家主已明确立定的储君／继承人（setHeir）。
+        if UnitKinds.enabled {
+            let designated = family.heirId.asInt
+            if designated > 0 && designated != deceased.id.asInt,
+               let chosen = person(r, designated), chosen.isAlive.asBool, chosen.familyId.asInt == family.id.asInt {
+                return chosen
+            }
+        }
         func stage(_ list: [Int], _ tier: Int) -> JS? {
             var best: JS?, bestScore = 0
             for id in list {
@@ -272,6 +280,40 @@ public enum People {
     static func knownSuccessor(_ r: JS, _ nationId: String, _ previous: JS) -> JS? {
         let family = r.kin.families[previous.familyId.asInt.description], polity = r.civilization.nations[nationId].polity.asString
         let nobles = !r.nobility.isNull
+        // App 规则：选侯君主制（elective）与部族汗国（khanate/tribal）由境内势力前三世家公推新君。
+        if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy, nobles {
+            let stId = Regimes.style(r, nationId).id
+            if stId == "elective" || stId == "khanate" {
+                let stateId = r.people.nations[nationId].id.asInt
+                let houses = electionFamilies(r, nationId)
+                    .filter { $0.k.stateId.asInt == stateId }
+                    .sorted { $0.influence != $1.influence ? $0.influence > $1.influence : $0.k.id.asInt < $1.k.id.asInt }
+                let electors = Array(houses.prefix(3))
+                if electors.count >= 2 {
+                    var best: JS?, bestVotes = -1e9
+                    for h in houses {
+                        let hid = String(h.k.id.asInt)
+                        guard let cand = livingOwn(r, h.k).filter({ $0.id.asInt != previous.id.asInt && $0.age.asInt >= 18 })
+                            .max(by: { let a = skills($0), b = skills($1); return a.charisma + a.military + a.administrative < b.charisma + b.military + b.administrative }) else { continue }
+                        let s = skills(cand)
+                        var votes = (s.charisma + s.diplomatic + (stId == "khanate" ? s.military : s.administrative)) * 0.5 + h.influence * 0.08
+                        for e in electors {
+                            let eid = String(e.k.id.asInt)
+                            votes += eid == hid ? 40 : FamilyPolitics.relationScore(r, eid, hid) * 0.6
+                        }
+                        if votes > bestVotes { bestVotes = votes; best = cand }
+                    }
+                    if let chosen = best {
+                        let electorNames = electors.map { NamingCatalog.houseLabel($0.k.surname.optionalString ?? "") }.joined(separator: "、")
+                        _ = recordHistory(r, kind: "family",
+                                          text: "\(Vassals.name(r, nationId))\(stId == "khanate" ? "诸部忽里勒台" : "选侯议会")公推\(NativeEngine.displayPersonName(chosen))即位",
+                                          reason: "由势力居前的\(electorNames)共同投票公选出新任\(stId == "khanate" ? "大汗" : "选王")。",
+                                          nations: [nationId], province: nil)
+                        return chosen
+                    }
+                }
+            }
+        }
         if nobles && (polity == "Kingdom" || polity == "Empire") { return nobleMonarchySuccessor(r, nationId, previous) }
         if polity == "Kingdom" || polity == "Empire" {
             if family.isNull { return nil }

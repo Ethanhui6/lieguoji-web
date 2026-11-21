@@ -103,6 +103,20 @@ extension Regimes {
     /// The head of government: the Chancellor's holder.
     static func premier(_ r: JS, _ id: String) -> JS? { Offices.holder(r, id, "Chancellor", Offices.stateId(r, id)) }
 
+    /// 政体切换或提前大选后，立即为需要内阁首脑／摄政／幕府将军的国家补位（优先非宗室能臣）。
+    static func ensurePremier(_ r: JS, _ id: String) {
+        let seat = seats(r, id)
+        guard seat.premier != nil else { return }
+        if let cur = premier(r, id), cur.isAlive.asBool { return }
+        let sid = Offices.stateId(r, id), head = ruler(r, id)
+        let all = People.electionFamilies(r, id).filter { $0.k.stateId.asInt == sid }
+        let commons = all.filter { $0.k.id.asInt != (head?.familyId.asInt ?? -1) }
+        if let next = People.republicLeader(r, families: commons.isEmpty ? all : commons, excluding: head?.id.asInt ?? 0) {
+            Offices.appoint(Offices.context(r, id), "Chancellor", 0, sid, next.id.asInt)
+            book(r, id).premierSeen = next.id.clone()
+        }
+    }
+
     static func personName(_ p: JS) -> String {
         if let name = p.identity.name.optionalString, !name.isEmpty { return name }
         let culture = p.cultureName.optionalString ?? "", first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? ""

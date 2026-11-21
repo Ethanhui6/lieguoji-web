@@ -57,6 +57,31 @@ extension NativeEngine {
         })
         // Noble houses of this state, by influence (0…1000).
         let ruling = People.rulingFamilyId(r, id)
+        let prof = Regimes.styleProfile(r, id)
+        let fiefAllowed = prof.fiefRule.allowsFiefs
+        let govPerson = Regimes.governor(r, id)
+        let govFamilyId = govPerson?.familyId.asInt ?? 0
+        c.fiefRule = JS(prof.fiefRule.rawValue)
+        c.allowsFiefs = JS(fiefAllowed)
+        if let gp = govPerson {
+            let ar = JS.object()
+            ar.id = JS(gp.id.asInt)
+            ar.name = JS(Self.displayPersonName(gp))
+            ar.title = JS(Regimes.seats(r, id).premier ?? "掌权者")
+            ar.houseId = JS(govFamilyId > 0 ? String(govFamilyId) : "")
+            if govFamilyId > 0 {
+                let s = NamingCatalog.cleanSurname(r.kin.families[String(govFamilyId)].surname.optionalString ?? "")
+                ar.houseName = JS(NamingCatalog.houseLabel(s))
+            }
+            c.actualRuler = ar
+        }
+        // 统计每个世家在任官职人数，供朝政世家行摘要展示
+        var officeCounts = [Int: Int]()
+        for a in assignments {
+            if let hid = a.holderId.optionalNumber, let p = People.person(r, Int(hid)), p.isAlive.asBool {
+                officeCounts[p.familyId.asInt, default: 0] += 1
+            }
+        }
         let houses = r.nobility.isNull || r.nobility.families.isNull ? [] : r.nobility.families.objectEntries.filter { $0.1.nationId.optionalString == id }
         c.houses = .array(houses.sorted { ($0.1.influence.optionalNumber ?? 0) > ($1.1.influence.optionalNumber ?? 0) }.prefix(8).map { key, fam in
             let e = JS.object()
@@ -65,22 +90,47 @@ extension NativeEngine {
             e.name = JS(NamingCatalog.houseLabel(surname))
             e.surname = JS(surname)
             e.id = JS(key)
+            var headLabel = ""
             if let hid = kFam.headId.optionalNumber, hid > 0, let head = People.person(r, Int(hid)) {
-                e.headName = JS(Self.displayPersonName(head))
+                headLabel = Self.displayPersonName(head)
+                e.headName = JS(headLabel)
             }
+            var heirLabel = ""
+            if let hid = kFam.heirId.optionalNumber, hid > 0, let heir = People.person(r, Int(hid)), heir.isAlive.asBool {
+                heirLabel = Self.displayPersonName(heir)
+            }
+            let fidInt = Int(key) ?? -1
+            let offCnt = officeCounts[fidInt] ?? 0
+            var summaryParts = [String]()
+            if !headLabel.isEmpty { summaryParts.append("家主 \(headLabel)") }
+            if !heirLabel.isEmpty { summaryParts.append("继承人 \(heirLabel)") }
+            if offCnt > 0 { summaryParts.append("在任 \(offCnt) 官") }
+            e.keyMembers = JS(summaryParts.joined(separator: " · "))
             e.allowFemale = JS(kFam.allowFemaleInheritance.isTruthy)
             e.influence = JS(fam.influence.optionalNumber ?? 0)
             e.provinces = JS(fam.controlledProvinces.isNull ? 0 : fam.controlledProvinces.length)
-            e.ruling = JS(Int(key) == ruling)
+            let isRuling = fidInt == ruling
+            let isGoverning = prof.fiefRule == .regent && govFamilyId > 0 && fidInt == govFamilyId
+            e.ruling = JS(isRuling)
+            e.governing = JS(isGoverning)
+            e.nominalRoyal = JS(isRuling && prof.fiefRule == .regent && govFamilyId > 0 && govFamilyId != ruling)
+            // 12 个月势力走势 + 封地冷却
+            if !r.regimes.isNull, !r.regimes.houseHistory.isNull, !r.regimes.houseHistory[key].isNull {
+                e.history = r.regimes.houseHistory[key]
+            } else {
+                e.history = .array([JS((fam.influence.optionalNumber ?? 0).rounded())])
+            }
+            let cd = (!r.regimes.isNull && !r.regimes.fiefCooldown.isNull) ? (r.regimes.fiefCooldown[key].optionalNumber.map(Int.init) ?? 0) : 0
+            e.fiefCooldown = JS(cd)
             // 派系: loyal (≥ 20), neutral, estranged (< −20), plotting (≤ −50 with 200+ influence and land:
             // the original's family-rebellion threshold).
-            let isRuling = Int(key) == ruling
             var rel = 100.0
             if !isRuling && ruling != 0 && r.nobility.families.has(String(ruling)) { rel = Nobility.relation(r, key, String(ruling)) }
             let influence = fam.influence.optionalNumber ?? 0
-            let landed = !fam.controlledProvinces.isNull && fam.controlledProvinces.length > 0
+            let landed = fiefAllowed && !fam.controlledProvinces.isNull && fam.controlledProvinces.length > 0
             var stance = "中立"
-            if isRuling { stance = "宗室" }
+            if isGoverning && !isRuling { stance = "掌权" }
+            else if isRuling { stance = (prof.fiefRule == .regent && govFamilyId > 0 && govFamilyId != ruling) ? "名义宗室" : "宗室" }
             else if rel <= -50 && influence >= 200 && landed { stance = "谋逆" }
             else if rel < -20 { stance = "离心" }
             else if rel >= 20 { stance = "拥戴" }
@@ -138,7 +188,11 @@ extension NativeEngine {
             if let title = seat.premier {
                 let h = JS.object()
                 h.premierTitle = JS(title); h.premierRules = JS(seat.premierRules); h.elected = JS(seat.elected)
-                if let p = Regimes.premier(r, id) { h.premierName = JS(Regimes.personName(p)) }
+                if let p = Regimes.premier(r, id) {
+                    h.premierName = JS(Regimes.personName(p))
+                    h.premierId = JS(p.id.asInt)
+                    if p.familyId.asInt > 0 { h.premierHouseId = JS(String(p.familyId.asInt)) }
+                }
                 o.heads = h
             }
         }
@@ -146,6 +200,40 @@ extension NativeEngine {
         o.court = court(id)
         let st = Regimes.style(r, id)
         o.style = JS(st.id); o.styleLabel = JS(st.label)
+        // 政体深度画像、政局安定／政变风险仪与可执行现实政体演变列表
+        if !r.regimes.isNull, r.regimes.enabled.isTruthy {
+            let prof = Regimes.styleProfile(r, id)
+            let outlook = Regimes.coupOutlook(r, id)
+            let pd = JS.object()
+            pd.camp = JS(prof.camp.rawValue)
+            pd.fiefRule = JS(prof.fiefRule.rawValue)
+            pd.allowsFiefs = JS(prof.fiefRule.allowsFiefs)
+            pd.summary = JS(prof.summary)
+            pd.traitLine = JS(prof.traitLine)
+            pd.stability = JS(outlook.stability)
+            pd.coupRisk = JS(outlook.risk)
+            pd.coupLevel = JS(outlook.level)
+            pd.pressure = JS(outlook.pressure)
+            pd.likelyPath = JS(outlook.likelyPath)
+            pd.transitions = .array(Regimes.availableTransitions(r, id).map { tr in
+                let x = JS.object()
+                x.id = JS(tr.id); x.title = JS(tr.title); x.subtitle = JS(tr.subtitle)
+                x.targetStyle = JS(tr.targetStyle); x.dramatic = JS(tr.dramatic)
+                return x
+            })
+            o.polityDetail = pd
+            // 王位宣称（来自跨国王室联姻）
+            if !r.regimes.claims.isNull {
+                let nowM = r.regimes.month.asInt
+                let myClaims = r.regimes.claims.asArray.filter { $0.claimant.asString == id && $0.until.asInt > nowM }
+                    .compactMap { row -> JS? in
+                        let idx = nationIndex(row.target.asString)
+                        guard idx >= 0 else { return nil }
+                        let x = JS.object(); x.nation = JS(idx); x.years = JS(max(1, (row.until.asInt - nowM) / 12)); return x
+                    }
+                o.claims = .array(myClaims)
+            }
+        }
         // 宗教: the state faith's effect and the provinces by faith.
         o.creedEffect = JS(Regimes.stateCreed(r, id)?.text ?? "")
         // 编辑: every state trait, and the titles the player set.

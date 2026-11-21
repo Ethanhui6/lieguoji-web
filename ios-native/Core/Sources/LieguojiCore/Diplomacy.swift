@@ -222,6 +222,8 @@ public struct DeclarationEngine: Sendable {
     public static var nationIds: [String] = []
     /// App rule: whether a treaty forbids the first state (index) from declaring on the second.
     public static var pact: ((Int, Int) -> Bool)?
+    /// App rule: bilateral opinion multiplier for war willingness (>1 rival/threat, <1 friendly); nil keeps original.
+    public static var opinionBias: ((Int, Int) -> Double)?
     /// App rule: a state's traits by id; the original's 欺凌弱小, 不畏强权 and 全面战争 steer its wars.
     public static var stance: ((String) -> [String])?
 
@@ -619,7 +621,9 @@ public struct DeclarationEngine: Sendable {
             let bully = stance.contains("BullyTheWeak"), defy = stance.contains("DefyTheStrong")
             let weakest = bully ? list.min { strength($0) < strength($1) } : nil, strongest = defy ? list.max { strength($0) < strength($1) } : nil
             for candidate in list {
-                let bias = bully ? (candidate == weakest ? 1.6 : 0.8) : defy ? (candidate == strongest ? 1.6 : 0.8) : 1
+                let stanceBias = bully ? (candidate == weakest ? 1.6 : 0.8) : defy ? (candidate == strongest ? 1.6 : 0.8) : 1.0
+                let opBias = DeclarationEngine.opinionBias?(states[a].index, states[candidate].index) ?? 1.0
+                let bias = stanceBias * opBias
                 let usableList = DeclarationEngine.supported.filter { canUse($0, a, candidate) }
                 for cb in usableList { let v = Native.fr(weight(cb, a, candidate) * bias); if v > best { best = v; target = candidate; chosenCB = cb } }
             }

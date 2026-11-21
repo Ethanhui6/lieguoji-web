@@ -189,6 +189,21 @@ struct GameView: View {
                 .allowsHitTesting(viewsOpen && !model.replayActive)
                 .padding(.top, 52).padding(.trailing, 14)
         }
+        .overlay {
+            // 四角物理速度投影吸附悬浮局势珠（Emil Kowalski /gestures）：游览地图时随时甩至四角并展开战况/外交/回放/倍速。
+            if chromeIn && !ShotTour.on && !wallpaper && !model.replayActive && panel == nil
+                && controller.paintNation == nil && controller.marchingArmy == nil
+                && controller.marchingFleet == nil && controller.pickPrompt == nil && controller.groupArmies.isEmpty {
+                FloatingTacticalPill(
+                    model: model,
+                    openWars: { MilitarySheet.openOn = "wars"; show(.military) },
+                    openDiplomacy: { show(.diplomacy) },
+                    openReplay: { Task { await model.enterReplay() } },
+                    landscape: landscape
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.85)))
+            }
+        }
         .opacity(controller.reveal >= 1 ? 1 : 0)
         .animation(Motion.panel, value: controller.reveal >= 1)
         .onAppear {

@@ -367,14 +367,23 @@ struct ReformCard: View {
     }
 }
 
-/// The ink ring that grows under the finger before the long-press page opens.
+/// 长按地图时指下晕开的双重水墨朱砂涟漪：外圈朱印波纹、内圈淡墨晕开与朱砂落点。
 struct PressRipple: View {
     @State private var grown = false
     var body: some View {
-        Circle().stroke(Theme.seal, lineWidth: 3).frame(width: 96, height: 96)
-            .scaleEffect(grown ? 1 : 0.2).opacity(grown ? 0 : 0.9)
-            .onAppear { withAnimation(Motion.fade) { grown = true } }
-            .allowsHitTesting(false)
+        ZStack {
+            Circle().fill(RadialGradient(colors: [Theme.ink.opacity(0.18), Theme.seal.opacity(0.06), .clear], center: .center, startRadius: 0, endRadius: 48))
+                .frame(width: 96, height: 96)
+                .scaleEffect(grown ? 1.15 : 0.25).opacity(grown ? 0 : 0.9)
+            Circle().stroke(Theme.seal, lineWidth: 2.6).frame(width: 96, height: 96)
+                .scaleEffect(grown ? 1.05 : 0.22).opacity(grown ? 0 : 0.92)
+            Circle().stroke(Theme.ink.opacity(0.45), lineWidth: 1.2).frame(width: 68, height: 68)
+                .scaleEffect(grown ? 1.25 : 0.18).opacity(grown ? 0 : 0.75)
+            Circle().fill(Theme.seal).frame(width: 8, height: 8)
+                .scaleEffect(grown ? 0.3 : 1.15).opacity(grown ? 0 : 0.95)
+        }
+        .onAppear { withAnimation(.easeOut(duration: 0.34)) { grown = true } }
+        .allowsHitTesting(false)
     }
 }
 

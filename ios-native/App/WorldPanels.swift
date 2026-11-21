@@ -266,9 +266,16 @@ enum Glyph {
         ("当前状态", "figure.walk"), ("征召", "house"), ("服役", "hourglass"), ("首都", "star"),
     ]
     static func of(_ label: String) -> String? { table.first { label.contains($0.0) }?.1 }
-    /// A small line icon in the seal colour, the same at every row.
-    static func icon(_ label: String, size: CGFloat = 14) -> some View {
-        Group { if let g = of(label) { Image(systemName: g).font(.system(size: size, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.8)).frame(width: size + 8) } }
+    /// A small line icon in the seal colour, the same at every row (手绘水墨图标优先).
+    @ViewBuilder static func icon(_ label: String, size: CGFloat = 14) -> some View {
+        if let s = of(label) {
+            if let g = GameActionLabel.glyph(for: s) {
+                InkIcon(glyph: g, size: size + 2, weight: 1.65, accent: Theme.seal.opacity(0.22))
+                    .foregroundStyle(Theme.seal.opacity(0.85)).frame(width: size + 8)
+            } else {
+                Image(systemName: s).font(.system(size: size, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.8)).frame(width: size + 8)
+            }
+        }
     }
 }
 
@@ -277,7 +284,14 @@ struct GlyphLabel: View {
     let text: String
     var body: some View {
         HStack(spacing: 5) {
-            if let g = Glyph.of(text) { Image(systemName: g).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.seal.opacity(0.75)).frame(width: 16) }
+            if let s = Glyph.of(text) {
+                if let g = GameActionLabel.glyph(for: s) {
+                    InkIcon(glyph: g, size: 14, weight: 1.6, accent: Theme.seal.opacity(0.22))
+                        .foregroundStyle(Theme.seal.opacity(0.8)).frame(width: 16)
+                } else {
+                    Image(systemName: s).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.seal.opacity(0.75)).frame(width: 16)
+                }
+            }
             Text(text)
         }
     }

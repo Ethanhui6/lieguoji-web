@@ -561,15 +561,14 @@ struct GameView: View {
     }
     private var transport: some View {
         HStack(spacing: 2) {
-            Button { model.cycleSpeed() } label: { Text("\(model.speed)×").font(Theme.section).foregroundStyle(Theme.ink).frame(width: 40, height: 50).contentTransition(.numericText()) }
-                .buttonStyle(PressStyle())
-            Button { model.togglePlay() } label: {
-                Image(systemName: model.playing ? "pause.fill" : "play.fill").font(.system(size: 18, weight: .regular))
-                    .foregroundStyle(Theme.paper2).frame(width: 46, height: 46).background(Theme.seal, in: Circle())
-                    .contentTransition(.symbolEffect(.replace))
+            Button { model.cycleSpeed() } label: {
+                Text("\(model.speed)×").font(Theme.section).foregroundStyle(model.speed > 1 ? Theme.seal : Theme.ink)
+                    .frame(width: 40, height: 50).contentTransition(.numericText())
+                    .animation(Motion.tap, value: model.speed)
             }
             .buttonStyle(PressStyle())
-            .sensoryFeedback(.impact(weight: .light), trigger: model.playing)
+            PlaySealButton(playing: model.playing) { model.togglePlay() }
+                .sensoryFeedback(.impact(weight: .light), trigger: model.playing)
         }
     }
     /// 横屏: the tabs stand down the left edge, so the map keeps its full height.
@@ -644,5 +643,43 @@ struct GameView: View {
             }
         }
         .padding(.horizontal, 12).padding(.bottom, 4)
+    }
+}
+
+/// 推演启停朱印钮：毛笔手绘播放/暂停符号，推演进行时外围泛起一圈柔和的朱砂光晕呼吸。
+private struct PlaySealButton: View {
+    let playing: Bool
+    let action: () -> Void
+    @State private var halo = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                if playing && !reduceMotion {
+                    Circle()
+                        .stroke(Theme.seal.opacity(halo ? 0 : 0.45), lineWidth: 1.6)
+                        .frame(width: 46, height: 46)
+                        .scaleEffect(halo ? 1.32 : 1.0)
+                }
+                Circle().fill(Theme.seal)
+                    .overlay(Circle().strokeBorder(Theme.paper2.opacity(0.32), lineWidth: 0.9).padding(2.5))
+                    .shadow(color: Theme.seal.opacity(0.32), radius: 5, y: 2)
+                    .frame(width: 46, height: 46)
+                InkIcon(glyph: playing ? .pause : .play, size: 18, weight: 1.9, accent: Theme.paper2.opacity(0.88))
+                    .foregroundStyle(Theme.paper2)
+                    .offset(x: playing ? 0 : 1)
+                    .id(playing)
+                    .transition(.scale(scale: 0.72).combined(with: .opacity))
+            }
+            .animation(Motion.tap, value: playing)
+        }
+        .buttonStyle(PressStyle())
+        .onAppear { syncHalo(playing) }
+        .onChange(of: playing) { _, on in syncHalo(on) }
+    }
+    private func syncHalo(_ on: Bool) {
+        guard on, !reduceMotion else { halo = false; return }
+        halo = false
+        withAnimation(.easeOut(duration: 1.7).repeatForever(autoreverses: false)) { halo = true }
     }
 }

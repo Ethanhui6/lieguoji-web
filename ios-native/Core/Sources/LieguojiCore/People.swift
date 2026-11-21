@@ -178,11 +178,27 @@ public enum People {
     // MARK: Noble houses (civilization47-nobility-territory, -nobility-succession)
     static func warMerit(_ fam: JS) -> Double { f(f(f(Double(fam.controlledProvinces.length * 10)) + f(fam.totalEnemyDestroyed.asNumber * f(0.1))) + f(fam.totalProvincesConquered.asNumber * 5)) }
     static func strength(_ fam: JS) -> Double { f(f(f(Double(fam.controlledProvinces.length * 10)) * f(0.4)) + f(fam.wealth.asNumber * f(0.6))) }
+    /// 某国当前宗室家族 ID：优先读 `nobility.rulingFamilies`，开局未写入时回退查找 `ruling == true` 的世家或 `people.nations[id].id`。
+    public static func rulingFamilyId(_ r: JS, _ nationId: String) -> Int {
+        if !r.nobility.isNull {
+            if let v = r.nobility.rulingFamilies[nationId].optionalNumber, v > 0 { return Int(v) }
+            for (k, fam) in r.nobility.families.objectEntries where fam.nationId.optionalString == nationId && fam.ruling.isTruthy {
+                if let id = Int(k), id > 0 { return id }
+            }
+        }
+        if !r.people.isNull, let sid = r.people.nations[nationId].id.optionalNumber, sid > 0 { return Int(sid) }
+        return 0
+    }
     static func setRulingFamily(_ r: JS, _ nationId: String, _ familyId: Int) {
         let n = r.nobility
         guard !n.isNull, n.families.has(String(familyId)) else { return }
         n.rulingFamilies[nationId] = JS(familyId)
         for (id, fam) in n.families.objectEntries where fam.nationId.asString == nationId { fam.ruling = JS(id == String(familyId)) }
+        if UnitKinds.enabled, !r.regimes.isNull, let t = r.regimes.nations[nationId].nameTemplate.optionalString, t.contains("{姓}"),
+           let nation = r.world.nations.asArray.first(where: { $0.id.asString == nationId }) {
+            let base = r.civilization.nations[nationId].name.value.optionalString ?? MapLayers.stateLabel(nation.name.asString, full: false)
+            nation.name = JS(Regimes.title(r, nationId, base: base, style: Regimes.style(r, nationId)))
+        }
     }
     static func familiesOf(_ r: JS, _ nationId: String) -> [(id: String, k: JS, fam: JS)] {
         r.nobility.families.objectEntries.filter { $0.1.nationId.asString == nationId && r.kin.families.has($0.0) }.map { ($0.0, r.kin.families[$0.0], $0.1) }

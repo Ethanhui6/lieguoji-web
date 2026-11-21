@@ -12,9 +12,11 @@ import LieguojiCore
 struct SplashView: View {
     let done: () -> Void
     @State private var soaked = false
+    @State private var contours = false
     @State private var hills = false
     @State private var brushed = 0
     @State private var stamped = false
+    @State private var stampRing = false
     @State private var motto = false
     @State private var dried = false
     static let title = ["列", "國", "紀"]
@@ -24,11 +26,17 @@ struct SplashView: View {
     var body: some View {
         ZStack {
             MemorialPaper(rules: false).ignoresSafeArea()
+            // 舆图金墨等高线：在宣纸上轻轻铺展，不耗离屏渲染。
+            InkContours()
+                .trim(from: 0, to: contours ? 1 : 0)
+                .stroke(Self.gold.opacity(0.32), style: StrokeStyle(lineWidth: 1.1, lineCap: .round))
+                .ignoresSafeArea()
+                .opacity(dried ? 0 : 1)
             // The ink drop: two soft rings spreading behind the title.
             ZStack {
                 Circle().fill(RadialGradient(colors: [Theme.ink.opacity(0.13), Theme.ink.opacity(0.05), .clear], center: .center, startRadius: 0, endRadius: 190))
                     .frame(width: 380, height: 380).scaleEffect(soaked ? 1 : 0.15)
-                Circle().fill(RadialGradient(colors: [Theme.seal.opacity(0.07), .clear], center: .center, startRadius: 0, endRadius: 120))
+                Circle().fill(RadialGradient(colors: [Theme.seal.opacity(0.08), .clear], center: .center, startRadius: 0, endRadius: 120))
                     .frame(width: 240, height: 240).offset(x: 40, y: -30).scaleEffect(soaked ? 1 : 0.3)
             }
             .opacity(soaked && !dried ? 1 : 0).offset(y: -40)
@@ -36,8 +44,10 @@ struct SplashView: View {
             VStack(spacing: 0) {
                 Spacer()
                 ZStack(alignment: .bottom) {
-                    InkHills(seed: 11).fill(Theme.ink.opacity(0.06)).frame(height: 190)
-                    InkHills(seed: 4).fill(Theme.ink.opacity(0.10)).frame(height: 120)
+                    InkHills(seed: 11).fill(Theme.ink.opacity(0.06)).frame(height: 195)
+                    LinearGradient(colors: [.clear, Theme.paper.opacity(0.55), .clear], startPoint: .leading, endPoint: .trailing)
+                        .frame(height: 28).offset(x: hills ? 24 : -48, y: -76)
+                    InkHills(seed: 4).fill(Theme.ink.opacity(0.10)).frame(height: 125)
                 }
                 .offset(y: hills ? 0 : 50).opacity(hills && !dried ? 1 : 0)
             }
@@ -53,8 +63,14 @@ struct SplashView: View {
                     }
                 }
                 VStack(spacing: 14) {
-                    SealMark(size: 42).rotationEffect(.degrees(-6))
-                        .scaleEffect(stamped ? 1 : 1.7).opacity(stamped ? 1 : 0)
+                    ZStack {
+                        Circle()
+                            .stroke(Theme.seal.opacity(stampRing ? 0 : (stamped ? 0.55 : 0)), lineWidth: 2)
+                            .frame(width: 52, height: 52)
+                            .scaleEffect(stampRing ? 2.1 : 0.75)
+                        SealMark(size: 42).rotationEffect(.degrees(-6))
+                            .scaleEffect(stamped ? 1 : 1.75).opacity(stamped ? 1 : 0)
+                    }
                     VerticalText("架空世界列国兴衰", size: 14).foregroundStyle(Theme.ink2)
                         .opacity(motto ? 1 : 0).offset(y: motto ? 0 : -8)
                 }
@@ -65,6 +81,7 @@ struct SplashView: View {
         }
         .task {
             withAnimation(.easeOut(duration: 1.4)) { soaked = true }
+            withAnimation(.easeOut(duration: 1.8)) { contours = true }
             withAnimation(.easeOut(duration: 1.6).delay(0.2)) { hills = true }
             try? await Task.sleep(nanoseconds: 350_000_000)
             for i in 1...3 {
@@ -72,7 +89,8 @@ struct SplashView: View {
                 try? await Task.sleep(nanoseconds: 300_000_000)
             }
             try? await Task.sleep(nanoseconds: 150_000_000)
-            withAnimation(Motion.tap) { stamped = true }
+            withAnimation(Motion.stamp) { stamped = true }
+            withAnimation(.easeOut(duration: 0.7)) { stampRing = true }
             GameFeel.shared.tap()
             withAnimation(Motion.reveal.delay(0.15)) { motto = true }
             try? await Task.sleep(nanoseconds: 1_300_000_000)
@@ -80,6 +98,22 @@ struct SplashView: View {
             try? await Task.sleep(nanoseconds: 450_000_000)
             done()
         }
+    }
+}
+
+/// 宣纸背后的舆图等高波线（纯矢量路径，零离屏模糊，保持开场 60 帧）。
+private struct InkContours: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        for i in 0..<4 {
+            let y = rect.height * (0.24 + CGFloat(i) * 0.14)
+            let amp = CGFloat(14 + i * 6)
+            p.move(to: CGPoint(x: -10, y: y))
+            p.addCurve(to: CGPoint(x: rect.width + 10, y: y - amp * 0.4),
+                       control1: CGPoint(x: rect.width * 0.32, y: y - amp),
+                       control2: CGPoint(x: rect.width * 0.68, y: y + amp))
+        }
+        return p
     }
 }
 

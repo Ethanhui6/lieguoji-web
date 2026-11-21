@@ -15,7 +15,16 @@ struct ChipPicker<T: Hashable>: View {
                 Button { withAnimation(Motion.tap) { selection = item.0 } } label: {
                     // Every tab and choice row in the game: a small picture over the word where one fits.
                     VStack(spacing: 2) {
-                        if let g = Glyph.of(item.1) { Image(systemName: g).font(.system(size: 13, weight: .regular)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85)).frame(height: 18) }
+                        if let s = Glyph.of(item.1) {
+                            if let g = GameActionLabel.glyph(for: s) {
+                                InkIcon(glyph: g, size: 15, weight: on ? 1.85 : 1.55, filled: on,
+                                        accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.25))
+                                    .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.88))
+                                    .frame(height: 18)
+                            } else {
+                                Image(systemName: s).font(.system(size: 13, weight: .regular)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85)).frame(height: 18)
+                            }
+                        }
                         Text(item.1).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity).frame(height: tall ? 50 : 40)

@@ -217,20 +217,28 @@ struct InkPressStyle: ButtonStyle {
     }
 }
 
-/// 顶栏的战事：交叉的戈与战争数。新开一场战争时戈一跳、朱圈一荡。
+/// 顶栏的战事：交叉的戈与战争数。新开一场战争时戈一跳、朱圈一荡，战时轻缓呼吸。
 struct WarCount: View {
     let count: Int
     @State private var bump = false
     @State private var ring = false
+    @State private var pulse = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         HStack(spacing: 3) {
-            InkIcon(glyph: .war, size: 14, weight: 2.1)
-                .scaleEffect(bump ? 1.35 : 1).rotationEffect(.degrees(bump ? -10 : 0))
-                .background { Circle().stroke(Theme.seal.opacity(ring ? 0 : 0.6), lineWidth: 1.2).scaleEffect(ring ? 2.2 : 0.6) }
+            InkIcon(glyph: .war, size: 15, weight: 2.0, accent: Theme.seal.opacity(0.55))
+                .scaleEffect(bump ? 1.35 : (pulse ? 1.07 : 1)).rotationEffect(.degrees(bump ? -10 : 0))
+                .background {
+                    Circle().stroke(Theme.seal.opacity(ring ? 0 : 0.6), lineWidth: 1.2).scaleEffect(ring ? 2.2 : 0.6)
+                }
             Text("\(count)场战争").font(Theme.label).lineLimit(1).fixedSize()
                 .contentTransition(.numericText()).animation(Motion.tap, value: count)
         }
         .foregroundStyle(Theme.seal)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { pulse = true }
+        }
         .onChange(of: count) { old, new in
             guard new > old else { return }
             ring = false
@@ -251,7 +259,13 @@ struct TabButton: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                if let glyph { InkIcon(glyph: glyph, size: 23, weight: active ? 2.1 : 1.7) }
+                if let glyph {
+                    InkIcon(glyph: glyph, size: 23, weight: active ? 2.05 : 1.65, filled: active,
+                            accent: active ? Theme.seal.opacity(0.32) : Theme.seal.opacity(0.18))
+                        .scaleEffect(active ? 1.07 : 1)
+                        .offset(y: active ? -1.5 : 0)
+                        .animation(Motion.tap, value: active)
+                }
                 else if let icon { Image(uiImage: icon).resizable().interpolation(.high).scaledToFit().frame(width: 22, height: 22) }
                 else { Image(systemName: symbol).font(.system(size: 18, weight: .medium)).symbolVariant(active ? .fill : .none) }
                 Text(title).font(Theme.caption)
@@ -260,7 +274,7 @@ struct TabButton: View {
             .overlay(alignment: .bottom) {
                 // The vermilion mark under the open tab slides between tabs.
                 if active, let marker {
-                    Capsule().fill(Theme.seal).frame(width: 16, height: 2.5).offset(y: 1).matchedGeometryEffect(id: "tab", in: marker)
+                    Capsule().fill(Theme.seal).frame(width: 18, height: 2.6).offset(y: 1).matchedGeometryEffect(id: "tab", in: marker)
                 }
             }
         }
@@ -358,6 +372,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("1.25.0", ["【国名与命名规则重做】整理全部 26 种文化的历史国名、架空国名、男女名与家族姓氏库，剔除错性别、错年代、姓名混入及“家/人/氏”脏尾缀；彻底杜绝「波兰王国王国」「安安」等拼接怪名。新建世界（含历史与架空模式）及中途立国均自动匹配地道政体称谓与纯净国名，地图简名完整剥离苏丹国、公国、汗国、社会主义共和国及单字朝代冠字「大」（保留大理、大越等专名）。",
+                    "【国名基名与模板升级】国家自定义「国号国色」支持单独修改基名（保留当前政体与模板）、8 套预设命名模板及 `{名} {号} {序} {姓}` 占位符实时预览；宗室更迭或改姓时含 `{姓}` 的国号自动刷新；修复暂停状态下连点「随机国名/随机地名」不换名的问题。",
+                    "【家族系统与世家政治全面丰富】同国世家开局不再撞姓，已婚配偶与新婚配对象保留独立本姓（族谱标明出身世家，不再出现同姓成婚）；人物改名与家族改姓同步刷新全谱、朝堂与君主史册；族谱页新增家族概览、旁系宗亲、立为家主、指定继承人与允许女性继承开关。",
+                    "【世家往来与门阀博弈】族谱页新增「世家往来」与「本族纪事」：开局生成差异化朝堂世家格局，推演中每月演绎姻亲援手、通好结盟、门阀倾轧、言归于好、输财助国等动态；玩家可随时撮合两家联姻（关系 +25）、斡旋修好、挑拨离间、赏赐安抚、削夺权柄，并可在朝堂「扶立新世家」赐封州郡。",
+                    "【全新应用图标与手绘水墨 UI 图标】重绘应用图标为宣纸青绿山水舆图配朱砂鎏金城楼印章；重做游戏内全套毛笔水墨图标，彻底消除选中态生硬方框底色，新增宗祠、玉璧连环、礼器九鼎、方孔铜钱、文房笔墨、圣光法轮、商贸货箱、九州井田、冠冕、诏书、同心结与朱印启停钮，统一地图视图切换条、排行榜、底栏与操作菜单视觉。",
+                    "【动效细化】升级开场动画（舆图金墨等高线铺展、印章落印朱砂气波与山水云岚）、大事传报（鎏金木轴弹性展卷，新增世家联姻红绸双玉佩与世家大变朱印动画，丰富宣战气波与议和玉环）、推演启停朱印呼吸光环、底栏微弹切换及长按地图双重水墨朱砂涟漪。"]),
         ("1.24.0", ["【新世界在手机上直接建成】新世界不再交给隐藏的网页引擎去建，而是由手机上的 Swift 引擎直接建成：地形、州郡、各国、人物与家族、财政与征兵、首批军队与舰队、外交与开局战争、地图（河流、海岸、海面、国名）一次完成，建好就是运行中的世界。与以前的网页引擎在同一种子下逐字节相同，规则与数值没有改动，旧存档照常读取。",
                     "【快了约十倍】模拟器上同一世界（12 国 140 州、开局即战乱）：以前网页引擎建世界 20.6 秒、交接 2.1 秒，另需约 1 秒启动；现在 2.4 秒建成。开创动画结束时世界就已备好。",
                     "【不再开机预热网页引擎】启动时不再在后台加载网页引擎，开机更轻；只有读取很早的旧版存档、或 Swift 建世界意外失败时才按需启动它作为后备。",

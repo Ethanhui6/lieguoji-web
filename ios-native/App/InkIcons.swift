@@ -1,17 +1,18 @@
 import SwiftUI
 
-/// One hand-drawn icon set for the whole chrome (bottom tabs and top buttons): the same 24-unit grid,
-/// motifs of the period — a gate tower for the state, crossed halberds for the army, a sealed scroll for
-/// diplomacy, a bound book for the chronicle, a stepped stand for rankings, layered hills for the map
-/// views, a command banner for the box order.
+/// 全作统一的手绘水墨图标集（24×24 统一画格）：
+/// 以宋代木刻与毛笔意趣描绘——城楼（国家）、双戈（军事/战事）、锦轴国书（外交）、线装史册（纪事）、
+/// 玉阶（排行）、青绿叠嶂（地图视图）、帅旗（即时战略）、宗祠（家族）、玉璧连环（联盟）、
+/// 礼器九鼎（政体）、方孔铜钱（经济）、文房笔墨（文化）、圣光莲轮（宗教）、商贸货箱（特产）、九州井田（区域）等。
 ///
-/// 笔触：每一笔按毛笔写——起笔略顿、行笔饱满、收笔出锋，闭合的形（印、书、卷）沿边有轻重；底下一层淡墨洇开。
-/// 图标换形（开/合、选中/取消）时新笔画由左向右写出，旧的淡去。
-enum InkGlyph: String {
+/// 笔触：每笔模拟毛笔起顿、行饱、收锋；底下衬以淡墨洇晕，并在核心处点缀克制的朱砂/浅墨焦点层，
+/// 彻底告别生硬方框底色。图标换形时支持「自左向右一笔写出」的 `brushWrite` 过渡。
+enum InkGlyph: String, CaseIterable {
     case nation, military, diplomacy, chronicle, ranking, views, command, menu, close
     case sea, plain, mountain, raise, lower, smooth
-    /// 战事（顶栏的战争数）：两杆交叉的戈。
     case war
+    case house, crown, alliance, culture, religion, polity, economy, goods, region
+    case play, pause, marriage, edict
 }
 
 struct InkIcon: View {
@@ -19,13 +20,30 @@ struct InkIcon: View {
     var size: CGFloat = 22
     var weight: CGFloat = 1.7
     var filled = false
+    /// 可选点缀色；为空时在选中态用柔和前景色晕染焦点部件，平时不抢主笔。
+    var accent: Color? = nil
+
     var body: some View {
         let w = weight * size / 22
         ZStack {
-            if filled { InkPath(glyph: glyph, fillOnly: true).fill(.tint.opacity(0.18)) }
-            // 洇墨：同一笔画放宽、模糊、很淡。
-            BrushShape(glyph: glyph, width: w * 1.7).fill(.foreground.opacity(0.16)).blur(radius: w * 0.45)
-            BrushShape(glyph: glyph, width: w * 1.25).fill(.foreground)
+            if filled {
+                // 选中态的柔和墨/朱砂圆形水晕，替代生硬矩形框。
+                Circle()
+                    .fill(RadialGradient(colors: [Theme.seal.opacity(0.14), .clear], center: .center, startRadius: 0, endRadius: size * 0.56))
+                    .scaleEffect(1.15)
+            }
+            if let accent {
+                InkAccentPath(glyph: glyph).fill(accent)
+            } else if filled {
+                InkAccentPath(glyph: glyph).fill(.foreground.opacity(0.24))
+            }
+            // 淡墨洇晕：略宽、微糊、极淡，赋予宣纸落墨的温润质感。
+            BrushShape(glyph: glyph, width: w * 1.65)
+                .fill(.foreground.opacity(0.14))
+                .blur(radius: w * 0.42)
+            // 主笔触：起顿行饱收锋。
+            BrushShape(glyph: glyph, width: w * 1.24)
+                .fill(.foreground)
         }
         .frame(width: size, height: size)
         .drawingGroup()
@@ -116,7 +134,6 @@ enum Brush {
             let pts = run.points
             let n = pts.count
             guard n >= 2 else { continue }
-            // 累计长度（定轻重）。
             var len = [CGFloat](repeating: 0, count: n)
             for i in 1..<n { len[i] = len[i - 1] + hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y) }
             let total = max(len[n - 1] + (run.closed ? hypot(pts[0].x - pts[n - 1].x, pts[0].y - pts[n - 1].y) : 0), 0.001)
@@ -129,12 +146,10 @@ enum Brush {
                 var m = CGPoint(x: a.x + b.x, y: a.y + b.y)
                 let ml = hypot(m.x, m.y)
                 m = ml > 1e-6 ? CGPoint(x: m.x / ml, y: m.y / ml) : a
-                // 斜接：拐角处按夹角放宽，最多两倍。
                 let cos = max(0.5, m.x * a.x + m.y * a.y)
                 return CGPoint(x: -m.y / cos, y: m.x / cos)
             }
             if run.closed {
-                // 闭合的形：沿边轻重起伏（不出锋），外缘与内缘围成一圈。
                 var outer = [CGPoint](), inner = [CGPoint]()
                 for i in 0..<n {
                     let t = len[i] / total, w = width * (0.82 + 0.18 * sin(CGFloat.pi * 2 * t + 0.6)) / 2
@@ -154,7 +169,6 @@ enum Brush {
                 }
                 var band = Path(); band.addLines(left + right.reversed()); band.closeSubpath()
                 out.addPath(band)
-                // 圆头：起笔、收笔各一个与该处笔宽相同的圆。
                 for (i, t) in [(0, CGFloat(0)), (n - 1, CGFloat(1))] {
                     let r = width * profile(t) / 2
                     out.addEllipse(in: CGRect(x: pts[i].x - r, y: pts[i].y - r, width: r * 2, height: r * 2))
@@ -165,9 +179,85 @@ enum Brush {
     }
 }
 
+/// 每个图标的核心填充点缀面（城门拱洞、印章圆印、题签、令旗面、玉璧、日轮、铜钱等），
+/// 彻底取代旧版 `Path(p.boundingRect)` 丑陋矩形底色。
+struct InkAccentPath: Shape {
+    let glyph: InkGlyph
+    func path(in rect: CGRect) -> Path {
+        let k = min(rect.width, rect.height) / 24
+        func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * k, y: rect.minY + y * k) }
+        var p = Path()
+        switch glyph {
+        case .nation:
+            // 城门朱拱
+            p.move(to: pt(9.5, 20)); p.addLine(to: pt(9.5, 16.6))
+            p.addQuadCurve(to: pt(14.5, 16.6), control: pt(12, 13.8))
+            p.addLine(to: pt(14.5, 20)); p.closeSubpath()
+        case .military, .war:
+            // 双戈红缨
+            p.addEllipse(in: CGRect(origin: pt(15.2, 6.2), size: CGSize(width: 3.0 * k, height: 3.0 * k)))
+            p.addEllipse(in: CGRect(origin: pt(5.8, 6.2), size: CGSize(width: 3.0 * k, height: 3.0 * k)))
+        case .diplomacy:
+            // 国书圆印
+            p.addEllipse(in: CGRect(origin: pt(13.0, 13.2), size: CGSize(width: 4.2 * k, height: 4.2 * k)))
+        case .chronicle:
+            // 线装书题签
+            p.addRoundedRect(in: CGRect(origin: pt(12.2, 6.0), size: CGSize(width: 4.0 * k, height: 9.0 * k)), cornerSize: CGSize(width: 0.8 * k, height: 0.8 * k))
+        case .ranking:
+            // 榜首玉阶与顶珠
+            p.addRect(CGRect(origin: pt(9.5, 7.5), size: CGSize(width: 5.0 * k, height: 12.5 * k)))
+            p.addEllipse(in: CGRect(origin: pt(10.6, 2.2), size: CGSize(width: 2.8 * k, height: 2.8 * k)))
+        case .views:
+            // 山水红日
+            p.addEllipse(in: CGRect(origin: pt(15.8, 3.2), size: CGSize(width: 4.2 * k, height: 4.2 * k)))
+        case .command:
+            // 燕尾令旗面
+            p.move(to: pt(7, 4.2)); p.addLine(to: pt(18.5, 4.2)); p.addLine(to: pt(15.2, 7.8)); p.addLine(to: pt(18.5, 11.4)); p.addLine(to: pt(7, 11.4)); p.closeSubpath()
+        case .house:
+            // 宗祠正门牌匾
+            p.addRect(CGRect(origin: pt(9.5, 13.8), size: CGSize(width: 5.0 * k, height: 6.2 * k)))
+        case .crown:
+            // 冕冠正中玉珠
+            p.addEllipse(in: CGRect(origin: pt(10.3, 6.5), size: CGSize(width: 3.4 * k, height: 3.4 * k)))
+        case .alliance:
+            // 玉璧相交处结
+            p.addEllipse(in: CGRect(origin: pt(9.8, 9.8), size: CGSize(width: 4.4 * k, height: 4.4 * k)))
+        case .culture:
+            // 文房印章
+            p.addRoundedRect(in: CGRect(origin: pt(15.5, 14.5), size: CGSize(width: 4.2 * k, height: 4.2 * k)), cornerSize: CGSize(width: 0.9 * k, height: 0.9 * k))
+        case .religion:
+            // 圣光核心日轮
+            p.addEllipse(in: CGRect(origin: pt(9.2, 9.2), size: CGSize(width: 5.6 * k, height: 5.6 * k)))
+        case .polity:
+            // 礼鼎鼎腹
+            p.addRoundedRect(in: CGRect(origin: pt(6.5, 9.2), size: CGSize(width: 11.0 * k, height: 6.2 * k)), cornerSize: CGSize(width: 2.2 * k, height: 2.2 * k))
+        case .economy:
+            // 铜钱方孔
+            p.addRect(CGRect(origin: pt(9.6, 9.6), size: CGSize(width: 4.8 * k, height: 4.8 * k)))
+        case .goods:
+            // 商货捆绳十字印
+            p.addRect(CGRect(origin: pt(10.4, 7.0), size: CGSize(width: 3.2 * k, height: 12.0 * k)))
+        case .region:
+            // 九州中州
+            p.addRect(CGRect(origin: pt(9.2, 9.2), size: CGSize(width: 5.6 * k, height: 5.6 * k)))
+        case .play:
+            p.move(to: pt(7.2, 5.2)); p.addLine(to: pt(19.2, 12.0)); p.addLine(to: pt(7.2, 18.8)); p.closeSubpath()
+        case .pause:
+            p.addRoundedRect(in: CGRect(origin: pt(6.8, 5.2), size: CGSize(width: 3.4 * k, height: 13.6 * k)), cornerSize: CGSize(width: 1.0 * k, height: 1.0 * k))
+            p.addRoundedRect(in: CGRect(origin: pt(13.8, 5.2), size: CGSize(width: 3.4 * k, height: 13.6 * k)), cornerSize: CGSize(width: 1.0 * k, height: 1.0 * k))
+        case .marriage:
+            p.addEllipse(in: CGRect(origin: pt(9.8, 9.5), size: CGSize(width: 4.4 * k, height: 4.4 * k)))
+        case .edict:
+            p.addRoundedRect(in: CGRect(origin: pt(9.5, 13.0), size: CGSize(width: 5.0 * k, height: 4.8 * k)), cornerSize: CGSize(width: 0.9 * k, height: 0.9 * k))
+        case .sea, .plain, .mountain, .raise, .lower, .smooth, .menu, .close:
+            break
+        }
+        return p
+    }
+}
+
 struct InkPath: Shape {
     let glyph: InkGlyph
-    var fillOnly = false
     func path(in rect: CGRect) -> Path {
         let k = min(rect.width, rect.height) / 24
         func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * k, y: rect.minY + y * k) }
@@ -196,76 +286,158 @@ struct InkPath: Shape {
             p.move(to: pt(3, 7)); p.addLine(to: pt(7, 4)); p.addLine(to: pt(12, 9)); p.addLine(to: pt(17, 5)); p.addLine(to: pt(21, 7))
             p.move(to: pt(3, 17)); p.addCurve(to: pt(21, 17), control1: pt(9, 12), control2: pt(15, 12))
         case .nation:
-            // Gate tower: a sweeping roof, the hall, the gate arch and the wall.
-            p.move(to: pt(3, 9)); p.addQuadCurve(to: pt(12, 4), control: pt(8, 8)); p.addQuadCurve(to: pt(21, 9), control: pt(16, 8))
-            p.move(to: pt(6, 9)); p.addLine(to: pt(6, 13)); p.addLine(to: pt(18, 13)); p.addLine(to: pt(18, 9))
-            p.move(to: pt(3, 20)); p.addLine(to: pt(3, 13)); p.addLine(to: pt(21, 13)); p.addLine(to: pt(21, 20)); p.addLine(to: pt(3, 20))
-            p.move(to: pt(9.5, 20)); p.addLine(to: pt(9.5, 17)); p.addQuadCurve(to: pt(14.5, 17), control: pt(12, 14)); p.addLine(to: pt(14.5, 20))
+            // 重檐城楼：飞檐、殿柱、城台与门拱。
+            p.move(to: pt(2.5, 8.6)); p.addQuadCurve(to: pt(12, 3.6), control: pt(8, 7.6)); p.addQuadCurve(to: pt(21.5, 8.6), control: pt(16, 7.6))
+            p.move(to: pt(5.8, 8.6)); p.addLine(to: pt(5.8, 12.6)); p.move(to: pt(18.2, 8.6)); p.addLine(to: pt(18.2, 12.6))
+            p.move(to: pt(9.5, 8.6)); p.addLine(to: pt(9.5, 12.6)); p.move(to: pt(14.5, 8.6)); p.addLine(to: pt(14.5, 12.6))
+            p.move(to: pt(3, 12.8)); p.addLine(to: pt(21, 12.8))
+            p.move(to: pt(3.5, 12.8)); p.addLine(to: pt(3.5, 20)); p.addLine(to: pt(20.5, 20)); p.addLine(to: pt(20.5, 12.8))
+            p.move(to: pt(9.5, 20)); p.addLine(to: pt(9.5, 16.6)); p.addQuadCurve(to: pt(14.5, 16.6), control: pt(12, 13.8)); p.addLine(to: pt(14.5, 20))
         case .military, .war:
-            // Crossed halberds over a shield line.
-            p.move(to: pt(4, 20)); p.addLine(to: pt(18, 6)); p.move(to: pt(20, 20)); p.addLine(to: pt(6, 6))
-            p.move(to: pt(15, 4)); p.addQuadCurve(to: pt(20, 9), control: pt(20, 4)); p.addLine(to: pt(18, 6))
-            p.move(to: pt(9, 4)); p.addQuadCurve(to: pt(4, 9), control: pt(4, 4)); p.addLine(to: pt(6, 6))
-            if glyph == .military { p.move(to: pt(9, 15)); p.addLine(to: pt(15, 15)) }
+            // 交叉双戈：斜杆、月牙戈刃，军事加底部盾衡。
+            p.move(to: pt(4, 20.5)); p.addLine(to: pt(18.2, 6.2))
+            p.move(to: pt(20, 20.5)); p.addLine(to: pt(5.8, 6.2))
+            p.move(to: pt(14.6, 3.8)); p.addQuadCurve(to: pt(20.4, 9.2), control: pt(20.4, 3.8)); p.addLine(to: pt(17.8, 6.6))
+            p.move(to: pt(9.4, 3.8)); p.addQuadCurve(to: pt(3.6, 9.2), control: pt(3.6, 3.8)); p.addLine(to: pt(6.2, 6.6))
+            if glyph == .military { p.move(to: pt(8.5, 16.2)); p.addLine(to: pt(15.5, 16.2)) }
         case .diplomacy:
-            // A scroll rolled at both ends, tied with a sealed cord.
+            // 锦轴国书：卷轴、轴头、行文与圆印。
             p.addRoundedRect(in: CGRect(origin: pt(5, 4), size: CGSize(width: 14 * k, height: 16 * k)), cornerSize: CGSize(width: 2 * k, height: 2 * k))
-            p.move(to: pt(3, 4)); p.addLine(to: pt(21, 4)); p.move(to: pt(3, 20)); p.addLine(to: pt(21, 20))
-            p.move(to: pt(8, 9)); p.addLine(to: pt(16, 9)); p.move(to: pt(8, 12)); p.addLine(to: pt(13, 12))
-            p.addEllipse(in: CGRect(origin: pt(13, 13.5), size: CGSize(width: 4 * k, height: 4 * k)))
+            p.move(to: pt(2.8, 4)); p.addLine(to: pt(21.2, 4)); p.move(to: pt(2.8, 20)); p.addLine(to: pt(21.2, 20))
+            p.move(to: pt(8, 8.6)); p.addLine(to: pt(16, 8.6)); p.move(to: pt(8, 11.8)); p.addLine(to: pt(13.2, 11.8))
+            p.addEllipse(in: CGRect(origin: pt(13, 13.2), size: CGSize(width: 4.2 * k, height: 4.2 * k)))
         case .chronicle:
-            // A thread-bound book: cover, spine stitches, a title slip.
-            p.addRoundedRect(in: CGRect(origin: pt(5, 3), size: CGSize(width: 15 * k, height: 18 * k)), cornerSize: CGSize(width: 1.5 * k, height: 1.5 * k))
-            for y in [6.0, 10.5, 15.0, 19.0] { p.move(to: pt(5, CGFloat(y))); p.addLine(to: pt(8, CGFloat(y))) }
-            p.move(to: pt(8, 3)); p.addLine(to: pt(8, 21))
-            p.addRect(CGRect(origin: pt(12, 6), size: CGSize(width: 4 * k, height: 9 * k)))
+            // 线装史册：封面、四针装订线与题签。
+            p.addRoundedRect(in: CGRect(origin: pt(4.8, 3), size: CGSize(width: 15.2 * k, height: 18 * k)), cornerSize: CGSize(width: 1.5 * k, height: 1.5 * k))
+            for y in [6.2, 10.4, 14.6, 18.6] { p.move(to: pt(4.8, CGFloat(y))); p.addLine(to: pt(8.2, CGFloat(y))) }
+            p.move(to: pt(8.2, 3)); p.addLine(to: pt(8.2, 21))
+            p.addRect(CGRect(origin: pt(12.2, 6), size: CGSize(width: 4 * k, height: 9 * k)))
         case .ranking:
-            // A stepped stand: second, first, third.
+            // 玉阶三甲与冠珠。
             p.move(to: pt(3, 20)); p.addLine(to: pt(21, 20))
-            p.addRect(CGRect(origin: pt(4, 12), size: CGSize(width: 5 * k, height: 8 * k)))
-            p.addRect(CGRect(origin: pt(9.5, 7), size: CGSize(width: 5 * k, height: 13 * k)))
-            p.addRect(CGRect(origin: pt(15, 14), size: CGSize(width: 5 * k, height: 6 * k)))
-            p.move(to: pt(12, 2.5)); p.addLine(to: pt(12, 4.5))
+            p.addRect(CGRect(origin: pt(4, 12.2), size: CGSize(width: 5.5 * k, height: 7.8 * k)))
+            p.addRect(CGRect(origin: pt(9.5, 7.5), size: CGSize(width: 5.0 * k, height: 12.5 * k)))
+            p.addRect(CGRect(origin: pt(14.5, 14.0), size: CGSize(width: 5.5 * k, height: 6.0 * k)))
+            p.addEllipse(in: CGRect(origin: pt(10.6, 2.2), size: CGSize(width: 2.8 * k, height: 2.8 * k)))
         case .views:
-            // Layered hills under a sun: the map's faces.
-            p.move(to: pt(2, 19)); p.addQuadCurve(to: pt(10, 9), control: pt(6, 9)); p.addQuadCurve(to: pt(16, 15), control: pt(13, 10))
-            p.move(to: pt(11, 19)); p.addQuadCurve(to: pt(17, 12), control: pt(14, 12)); p.addQuadCurve(to: pt(22, 19), control: pt(20, 12))
-            p.move(to: pt(2, 19)); p.addLine(to: pt(22, 19))
-            p.addEllipse(in: CGRect(origin: pt(16, 3), size: CGSize(width: 4 * k, height: 4 * k)))
+            // 青绿叠嶂与红日。
+            p.move(to: pt(2, 19.2)); p.addQuadCurve(to: pt(9.5, 8.6), control: pt(5.8, 8.6)); p.addQuadCurve(to: pt(15.5, 15.2), control: pt(12.8, 9.6))
+            p.move(to: pt(10.8, 19.2)); p.addQuadCurve(to: pt(16.8, 11.8), control: pt(13.8, 11.8)); p.addQuadCurve(to: pt(22, 19.2), control: pt(19.6, 12.2))
+            p.move(to: pt(2, 19.2)); p.addLine(to: pt(22, 19.2))
+            p.addEllipse(in: CGRect(origin: pt(15.8, 3.2), size: CGSize(width: 4.2 * k, height: 4.2 * k)))
         case .command:
-            // A command banner on its pole over a dashed field.
+            // 帅字令旗与虚线阵列。
             p.move(to: pt(7, 21)); p.addLine(to: pt(7, 3))
-            p.move(to: pt(7, 4)); p.addLine(to: pt(18, 4)); p.addLine(to: pt(15, 7.5)); p.addLine(to: pt(18, 11)); p.addLine(to: pt(7, 11))
-            for x in stride(from: 3.0, to: 22.0, by: 4.0) { p.move(to: pt(CGFloat(x), 21)); p.addLine(to: pt(CGFloat(x) + 2, 21)) }
+            p.move(to: pt(7, 4.2)); p.addLine(to: pt(18.5, 4.2)); p.addLine(to: pt(15.2, 7.8)); p.addLine(to: pt(18.5, 11.4)); p.addLine(to: pt(7, 11.4))
+            for x in stride(from: 3.0, to: 21.5, by: 4.2) { p.move(to: pt(CGFloat(x), 21)); p.addLine(to: pt(CGFloat(x) + 2.2, 21)) }
         case .menu:
-            p.move(to: pt(5, 7)); p.addLine(to: pt(19, 7)); p.move(to: pt(5, 12)); p.addLine(to: pt(16, 12)); p.move(to: pt(5, 17)); p.addLine(to: pt(19, 17))
+            p.move(to: pt(4.5, 7)); p.addLine(to: pt(19.5, 7)); p.move(to: pt(4.5, 12)); p.addLine(to: pt(16.5, 12)); p.move(to: pt(4.5, 17)); p.addLine(to: pt(19.5, 17))
         case .close:
             p.move(to: pt(6, 6)); p.addLine(to: pt(18, 18)); p.move(to: pt(18, 6)); p.addLine(to: pt(6, 18))
+        case .house:
+            // 世家宗祠：歇山屋顶、双柱、正门与石阶。
+            p.move(to: pt(3, 10.5)); p.addQuadCurve(to: pt(12, 4.0), control: pt(7.8, 7.6)); p.addQuadCurve(to: pt(21, 10.5), control: pt(16.2, 7.6))
+            p.move(to: pt(5.5, 10.2)); p.addLine(to: pt(5.5, 20)); p.move(to: pt(18.5, 10.2)); p.addLine(to: pt(18.5, 20))
+            p.move(to: pt(9.5, 20)); p.addLine(to: pt(9.5, 13.8)); p.addLine(to: pt(14.5, 13.8)); p.addLine(to: pt(14.5, 20))
+            p.move(to: pt(3.2, 20)); p.addLine(to: pt(20.8, 20))
+        case .crown:
+            // 帝王冠冕：三峰冠体与底箍。
+            p.move(to: pt(3.5, 17.5)); p.addLine(to: pt(20.5, 17.5))
+            p.move(to: pt(4.5, 15.2)); p.addLine(to: pt(3.5, 8.0)); p.addLine(to: pt(8.5, 11.5)); p.addLine(to: pt(12, 5.5))
+            p.addLine(to: pt(15.5, 11.5)); p.addLine(to: pt(20.5, 8.0)); p.addLine(to: pt(19.5, 15.2)); p.closeSubpath()
+        case .alliance:
+            // 玉璧连环：双环相扣，象征盟约。
+            p.addEllipse(in: CGRect(origin: pt(3.2, 6.2), size: CGSize(width: 11.6 * k, height: 11.6 * k)))
+            p.addEllipse(in: CGRect(origin: pt(9.2, 6.2), size: CGSize(width: 11.6 * k, height: 11.6 * k)))
+        case .culture:
+            // 文房笔墨：斜倚毛笔与纸卷墨印。
+            p.move(to: pt(5, 19)); p.addLine(to: pt(17, 5))
+            p.move(to: pt(4, 20)); p.addQuadCurve(to: pt(8, 18.2), control: pt(5.2, 16.5))
+            p.move(to: pt(11.5, 19.2)); p.addLine(to: pt(20.2, 19.2))
+            p.addRoundedRect(in: CGRect(origin: pt(15.5, 14.2), size: CGSize(width: 4.4 * k, height: 4.4 * k)), cornerSize: CGSize(width: 0.8 * k, height: 0.8 * k))
+        case .religion:
+            // 圣光法轮：日轮与八方芒线。
+            p.addEllipse(in: CGRect(origin: pt(8.2, 8.2), size: CGSize(width: 7.6 * k, height: 7.6 * k)))
+            for i in 0..<8 {
+                let a = CGFloat(i) * .pi / 4
+                p.move(to: pt(12 + cos(a) * 5.6, 12 + sin(a) * 5.6))
+                p.addLine(to: pt(12 + cos(a) * 9.2, 12 + sin(a) * 9.2))
+            }
+        case .polity:
+            // 礼器青铜鼎：双耳、圆腹、三足，代表国体政制。
+            p.move(to: pt(6.5, 8.5)); p.addLine(to: pt(6.5, 5.2)); p.addLine(to: pt(8.8, 5.2)); p.addLine(to: pt(8.8, 8.5))
+            p.move(to: pt(15.2, 8.5)); p.addLine(to: pt(15.2, 5.2)); p.addLine(to: pt(17.5, 5.2)); p.addLine(to: pt(17.5, 8.5))
+            p.addRoundedRect(in: CGRect(origin: pt(5.2, 8.5), size: CGSize(width: 13.6 * k, height: 7.2 * k)), cornerSize: CGSize(width: 2.8 * k, height: 2.8 * k))
+            p.move(to: pt(7.5, 15.8)); p.addLine(to: pt(6.2, 20.5))
+            p.move(to: pt(12.0, 15.8)); p.addLine(to: pt(12.0, 20.5))
+            p.move(to: pt(16.5, 15.8)); p.addLine(to: pt(17.8, 20.5))
+        case .economy:
+            // 古铜钱：外圆内方。
+            p.addEllipse(in: CGRect(origin: pt(3.5, 3.5), size: CGSize(width: 17 * k, height: 17 * k)))
+            p.addRect(CGRect(origin: pt(9.2, 9.2), size: CGSize(width: 5.6 * k, height: 5.6 * k)))
+        case .goods:
+            // 商贸货箱：方匣与系带。
+            p.addRoundedRect(in: CGRect(origin: pt(4.2, 6.8), size: CGSize(width: 15.6 * k, height: 13.0 * k)), cornerSize: CGSize(width: 2.0 * k, height: 2.0 * k))
+            p.move(to: pt(4.2, 11.2)); p.addLine(to: pt(19.8, 11.2))
+            p.move(to: pt(12, 6.8)); p.addLine(to: pt(12, 19.8))
+            p.move(to: pt(8.5, 6.8)); p.addQuadCurve(to: pt(15.5, 6.8), control: pt(12, 3.2))
+        case .region:
+            // 九州井田：三乘三区划。
+            p.addRoundedRect(in: CGRect(origin: pt(4, 4), size: CGSize(width: 16 * k, height: 16 * k)), cornerSize: CGSize(width: 1.8 * k, height: 1.8 * k))
+            p.move(to: pt(9.3, 4)); p.addLine(to: pt(9.3, 20)); p.move(to: pt(14.7, 4)); p.addLine(to: pt(14.7, 20))
+            p.move(to: pt(4, 9.3)); p.addLine(to: pt(20, 9.3)); p.move(to: pt(4, 14.7)); p.addLine(to: pt(20, 14.7))
+        case .play:
+            p.move(to: pt(7.2, 5.2)); p.addLine(to: pt(19.2, 12.0)); p.addLine(to: pt(7.2, 18.8)); p.closeSubpath()
+        case .pause:
+            p.move(to: pt(8.4, 5.4)); p.addLine(to: pt(8.4, 18.6))
+            p.move(to: pt(15.6, 5.4)); p.addLine(to: pt(15.6, 18.6))
+        case .marriage:
+            // 结发同心：双环相牵与垂带。
+            p.addEllipse(in: CGRect(origin: pt(3.5, 6.5), size: CGSize(width: 9.2 * k, height: 9.2 * k)))
+            p.addEllipse(in: CGRect(origin: pt(11.3, 6.5), size: CGSize(width: 9.2 * k, height: 9.2 * k)))
+            p.move(to: pt(10.5, 15.2)); p.addLine(to: pt(8.2, 20.5))
+            p.move(to: pt(13.5, 15.2)); p.addLine(to: pt(15.8, 20.5))
+        case .edict:
+            // 诏书令牌：竖简、吊环与朱印。
+            p.addRoundedRect(in: CGRect(origin: pt(6.5, 5.2), size: CGSize(width: 11 * k, height: 15.5 * k)), cornerSize: CGSize(width: 2 * k, height: 2 * k))
+            p.move(to: pt(9.8, 5.2)); p.addQuadCurve(to: pt(14.2, 5.2), control: pt(12, 2.4))
+            p.move(to: pt(12, 8.2)); p.addLine(to: pt(12, 11.4))
+            p.addRoundedRect(in: CGRect(origin: pt(9.5, 13.0), size: CGSize(width: 5 * k, height: 4.8 * k)), cornerSize: CGSize(width: 0.9 * k, height: 0.9 * k))
         }
-        return fillOnly ? Path(p.boundingRect) : p
+        return p
     }
 }
 
-/// Gameplay symbols share the navigation glyphs; utility actions keep familiar system symbols.
+/// 游戏主按钮与操作标签：优先映射为全作统一的毛笔手绘水墨图标，其余工具操作沿用系统符号。
 struct GameActionLabel: View {
     let title: String
     let symbol: String
-    private var glyph: InkGlyph? {
+    static func glyph(for symbol: String) -> InkGlyph? {
         switch symbol {
-        case "flag.2.crossed": return .military
-        case "map", "mountain.2": return .views
-        case "doc.text", "scroll", "scroll.fill": return .diplomacy
+        case "flag.2.crossed", "flag.2.crossed.fill": return .military
+        case "map", "mountain.2", "mountain.2.fill": return .views
+        case "doc.text", "doc.text.fill", "scroll", "scroll.fill": return .diplomacy
         case "flag", "flag.fill": return .command
+        case "house", "house.fill", "person.3", "person.3.fill": return .house
+        case "crown", "crown.fill": return .crown
+        case "person.2", "person.2.fill": return .alliance
+        case "building.columns", "building.columns.fill": return .polity
+        case "book", "book.closed", "book.pages", "character.book.closed.fill": return .chronicle
+        case "chart.bar", "chart.bar.fill", "chart.bar.xaxis", "list.number": return .ranking
+        case "banknote", "dollarsign.circle": return .economy
+        case "shippingbox", "shippingbox.fill": return .goods
+        case "square.grid.3x3", "square.grid.3x3.fill": return .region
+        case "sun.max", "sun.max.fill": return .religion
+        case "heart", "heart.circle": return .marriage
+        case "seal": return .edict
         default: return nil
         }
     }
     var body: some View {
-        HStack(spacing: 8) {
-            Group {
-                if let glyph { InkIcon(glyph: glyph, size: 20) }
-                else { Image(systemName: symbol).font(.system(size: 18, weight: .medium)) }
-            }.frame(width: 22, height: 22).accessibilityHidden(true)
-            Text(title).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 7) {
+            if let g = Self.glyph(for: symbol) { InkIcon(glyph: g, size: 17, weight: 1.65) }
+            else { Image(systemName: symbol).font(.system(size: 16, weight: .regular)) }
+            Text(title)
         }
     }
 }

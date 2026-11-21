@@ -97,8 +97,8 @@ import LieguojiCore
     }
     @Published var failure: String?
     @Published var generationNote = ""
-    /// A war declared, a peace made or a province taken: shown as a banner for a moment.
-    struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital } }
+    /// A war declared, a peace made, a royal marriage, house coup or a province taken: shown as a banner for a moment.
+    struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital, marriage, house } }
     @Published var herald: Herald?
     private var heraldQueue: [Herald] = []
     private var heraldTask: Task<Void, Never>?
@@ -770,10 +770,16 @@ import LieguojiCore
         for w in old.wars where !after.contains(w.id) {
             enqueue(Herald(kind: .peace, text: "\(name(w.attacker))与\(name(w.defender))议和", nations: [w.attacker, w.defender]))
         }
-        // Revolutions, restorations and coups are proclaimed like wars.
+        // Revolutions, restorations, coups and royal/noble marriages are proclaimed with bespoke ink animations.
         let seen = Set(old.events.map(\.text))
-        for e in next.events where !seen.contains(e.text) && (e.text.contains("篡位") || e.text.contains("改称") || e.text.contains("改制，建立") || e.text.contains("禅位") || e.text.contains("改建")) {
-            enqueue(Herald(kind: .war, text: e.text, nations: []))
+        for e in next.events where !seen.contains(e.text) {
+            if e.text.contains("篡位") {
+                enqueue(Herald(kind: .house, text: e.text, nations: []))
+            } else if e.text.contains("联姻") || e.text.contains("结为秦晋之好") {
+                enqueue(Herald(kind: .marriage, text: e.text, nations: []))
+            } else if e.text.contains("改称") || e.text.contains("改制，建立") || e.text.contains("禅位") || e.text.contains("改建") {
+                enqueue(Herald(kind: .war, text: e.text, nations: []))
+            }
         }
         // Rebellions, restorations, dynasties dying out and capitals moving: the original's big news.
         for e in next.events where !seen.contains(e.text) {
@@ -802,8 +808,8 @@ import LieguojiCore
             while let self, !self.heraldQueue.isEmpty {
                 let h = self.heraldQueue.removeFirst()
                 self.herald = h
-                switch h.kind { case .war, .uprising: GameFeel.shared.news(.warning); case .peace, .restoration: GameFeel.shared.news(.success); case .capture, .extinction, .capital: GameFeel.shared.newsTap() }
-                // 场景时长：宣战 3.0 秒、议和 2.8、攻克 1.8，其余 2.4（窄条传报，读完即收）。
+                switch h.kind { case .war, .uprising, .house: GameFeel.shared.news(.warning); case .peace, .restoration, .marriage: GameFeel.shared.news(.success); case .capture, .extinction, .capital: GameFeel.shared.newsTap() }
+                // 场景时长：宣战 3.0 秒、议和 2.8、攻克 1.8，其余（联姻、世家、起义等）2.4（窄条传报，读完即收）。
                 let seconds: Double = h.kind == .war ? 3.0 : h.kind == .peace ? 2.8 : h.kind == .capture ? 1.8 : 2.4
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
                 self.herald = nil

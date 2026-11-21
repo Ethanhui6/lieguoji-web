@@ -106,7 +106,7 @@ extension NativeEngine {
             case "family":
                 let id = holder[p.id.asString]
                 let surname = id.flatMap { r.kin.families[$0].surname.optionalString }
-                fills.append(add(id.map { "family:" + $0 }, surname.map { $0 + "家族" } ?? "", Self.familyColor(Int(id ?? "0") ?? 0)))
+                fills.append(add(id.map { "family:" + $0 }, surname.map { NamingCatalog.houseLabel($0, long: true) } ?? "", Self.familyColor(Int(id ?? "0") ?? 0)))
             case "economy":
                 let b = band(population[p.id.asString] ?? 0)
                 fills.append(add("band:\(b)", bandNames[b], bandColors[b]))

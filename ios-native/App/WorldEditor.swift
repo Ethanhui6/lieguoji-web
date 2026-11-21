@@ -301,7 +301,9 @@ struct NationExtrasView: View {
     @State private var extras: [GameModel.ExtraUnit] = []
     @State private var posts: [GameModel.PostInfo] = []
     @State private var addingUnit = false
+    @State private var baseInput = ""
     @State private var template = ""
+    @State private var templateLoaded = false
     @State private var exported: URL?
     @State private var importing = false
     private struct SharedFile: Identifiable { let url: URL; var id: URL { url } }
@@ -387,13 +389,7 @@ struct NationExtrasView: View {
                 }
             }
             case .naming:
-            quickSection("国名模板") {
-                TextField("模板：用 {名} 和 {号}，留空恢复", text: $template).paperField()
-                quickGrid {
-                    quickTile("应用模板", "textformat") { let t = template; run("国名已更改") { await model.edit("setNameTemplate", ["n": nation, "template": t.isEmpty ? NSNull() as Any : t as Any]) } }
-                    quickTile("随机国名", "dice") { run("国名已更改") { await model.edit("randomNationName", ["n": nation]) } }
-                }
-            }
+            namingSection()
             }
         }
         .task(id: part == .units ? 1 : part == .titles ? 2 : 0) {
@@ -428,6 +424,74 @@ struct NationExtrasView: View {
                     say(e ?? "兵种档案已修改")
                     units = await model.unitProfile(nation)
                 }
+            }
+        }
+    }
+
+    @ViewBuilder private func namingSection() -> some View {
+        let curBase = info.baseName ?? MapLayers.stateLabel(info.name, full: false)
+        let curStyle = Regimes.styles.first(where: { $0.id == info.style }) ?? Regimes.styles[0]
+        let trimmedBase = baseInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedTpl = template.trimmingCharacters(in: .whitespacesAndNewlines)
+        let preview = NamingCatalog.formatStateTitle(
+            base: trimmedBase.isEmpty ? curBase : trimmedBase,
+            style: curStyle,
+            religion: info.religion,
+            culture: info.culture,
+            ordinal: info.restorationOrdinal ?? "",
+            rulingSurname: info.rulingSurname ?? "",
+            template: trimmedTpl.isEmpty ? nil : trimmedTpl
+        )
+        quickSection("国名基名（{名}）") {
+            HStack(spacing: 8) {
+                TextField("基名：\(curBase)", text: $baseInput).paperField()
+                Button {
+                    let b = baseInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !b.isEmpty else { return }
+                    run("基名已更改") { await model.edit("setBaseName", ["n": nation, "base": b]) }
+                    baseInput = ""
+                } label: {
+                    Text("定基名").font(Theme.body).foregroundStyle(trimmedBase.isEmpty ? Theme.ink2 : Theme.seal).frame(width: 58, height: 40)
+                }
+                .buttonStyle(.plain).disabled(trimmedBase.isEmpty)
+            }
+            let houseNote = info.rulingSurname.flatMap { $0.isEmpty ? nil : " · 宗室：\(NamingCatalog.houseLabel($0))" } ?? ""
+            Text("只改基名，自动保留政体与国名模板。现基名：\(curBase)\(houseNote)")
+                .font(Theme.caption).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)
+        }
+        quickSection("国名模板与命名规则") {
+            TextField("留空按政体默认；可用 {名} {号} {序} {姓}", text: $template).paperField()
+            HStack(spacing: 6) {
+                Text("预览").font(Theme.caption).foregroundStyle(Theme.ink2)
+                Text(preview).font(Theme.section).foregroundStyle(Theme.seal).lineLimit(1)
+                Spacer()
+            }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 6)], spacing: 6) {
+                ForEach(NamingCatalog.templatePresets) { preset in
+                    let on = template == preset.template
+                    Button {
+                        GameFeel.shared.tap()
+                        template = preset.template
+                    } label: {
+                        Text(preset.label).font(Theme.caption).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                            .padding(.horizontal, 8).frame(maxWidth: .infinity, minHeight: 30)
+                            .background(on ? Theme.seal : Theme.paper2, in: Capsule())
+                            .overlay(Capsule().stroke(on ? Theme.seal : Theme.line))
+                    }
+                    .buttonStyle(PressStyle())
+                }
+            }
+            quickGrid {
+                quickTile("应用模板", "textformat") { let t = template; run("国名已更改") { await model.edit("setNameTemplate", ["n": nation, "template": t.isEmpty ? NSNull() as Any : t as Any]) } }
+                quickTile("随机国名", "dice") { run("国名已更改") { await model.edit("randomNationName", ["n": nation]) } }
+            }
+            Text("占位符：{名}=基名，{号}=政体称谓，{序}=复国序号，{姓}=统治家族姓氏。政体更迭或换代时自动刷新。")
+                .font(Theme.caption).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .onAppear {
+            if !templateLoaded {
+                template = info.nameTemplate ?? ""
+                templateLoaded = true
             }
         }
     }

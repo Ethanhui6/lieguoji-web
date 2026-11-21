@@ -72,18 +72,43 @@ extension NativeEngine {
         return Data(o.json.utf8)
     }
 
-    /// 族谱: one noble house's members — name, sex, age, alive, parents, spouse, children, the head.
+    /// 族谱: one noble house's members — name, sex, age, alive, parents, spouse, children, the head,
+    /// heir, estate metadata, and collateral branches.
     /// 只读、容错：任何字段缺失或类型不符都不会中止（旧存档、手改存档、半途中断的操作都可能留下这类记录），
     /// 成员 ID 去重、无对应人物者略去，数值一律为有限整数/小数。
     public func familyTree(_ familyId: String) -> Data? {
         let r = run, fam = r.kin.families[familyId]
         guard case .object = fam.storage else { return nil }
         let o = JS.object()
-        o.surname = JS(fam.surname.optionalString ?? "")
+        let famSurname = NamingCatalog.cleanSurname(fam.surname.optionalString ?? "")
+        o.surname = JS(famSurname)
         o.head = JS(Self.personId(fam.headId))
-        var seen = Set<Int>()
-        let ids: [JS] = { if case .array(let a) = fam.memberIds.storage { return a }; return [] }()
-        o.members = .array(ids.compactMap { m -> JS? in
+        o.heir = JS(Self.personId(fam.heirId))
+        o.allowFemale = JS(fam.allowFemaleInheritance.optionalBool ?? false)
+        o.culture = JS(fam.cultureName.optionalString ?? "")
+        let nid = fam.nationId.optionalString ?? ""
+        o.nationId = JS(nid)
+        o.nationName = JS(r.world.nations.isNull ? "" : (r.world.nations.asArray.first(where: { $0.id.asString == nid })?.name.optionalString ?? ""))
+        let noble = r.nobility.isNull ? JS.null : r.nobility.families[familyId]
+        if case .object = noble.storage {
+            let rulingById = !nid.isEmpty && String(People.rulingFamilyId(r, nid)) == familyId
+            o.ruling = JS((noble.ruling.optionalBool ?? false) || rulingById)
+            let inf = noble.influence.optionalNumber ?? 0
+            let wlt = noble.wealth.optionalNumber ?? 0
+            o.influence = JS(inf.isFinite ? inf.rounded() : 0)
+            o.wealth = JS(wlt.isFinite ? wlt.rounded() : 0)
+            var pNames = [String: String]()
+            if !r.world.provinces.isNull {
+                for p in r.world.provinces.asArray { pNames[p.id.asString] = p.name.optionalString ?? p.id.asString }
+            }
+            let held: [JS] = { if case .array(let a) = noble.controlledProvinces.storage { return a }; return [] }()
+            o.provinces = .array(held.compactMap(\.optionalString).map { JS(pNames[$0] ?? $0) })
+        } else {
+            o.ruling = JS(false); o.influence = JS(0); o.wealth = JS(0); o.provinces = .array()
+        }
+        o.relations = FamilyPolitics.relationsView(r, familyId: familyId)
+        o.events = FamilyPolitics.recentEvents(r, familyId: familyId)
+        func makeMember(_ m: JS, seen: inout Set<Int>, collateral: Bool) -> JS? {
             let id = Self.personId(m)
             guard id > 0, seen.insert(id).inserted, let p = People.person(r, id), case .object = p.storage else { return nil }
             let v = personView(p, role: "")
@@ -94,8 +119,17 @@ extension NativeEngine {
             let roles: [JS] = { if case .array(let a) = p.roles.storage { return a }; return [] }()
             x.title = JS(roles.first?.title.optionalString ?? "")
             x.traits = v.traits; x.skills = v.skills
+            let last = NamingCatalog.cleanSurname(p.lastName.optionalString ?? "")
+            let natal = NamingCatalog.cleanSurname(p.natalSurname.optionalString ?? (last != famSurname ? last : ""))
+            x.natalHouse = JS(natal != famSurname ? natal : "")
+            x.collateral = JS(collateral)
             return x
-        })
+        }
+        var seen = Set<Int>()
+        let ids: [JS] = { if case .array(let a) = fam.memberIds.storage { return a }; return [] }()
+        o.members = .array(ids.compactMap { makeMember($0, seen: &seen, collateral: false) })
+        let colIds: [JS] = { if case .array(let a) = fam.collateralMemberIds.storage { return a }; return [] }()
+        o.collaterals = .array(colIds.compactMap { makeMember($0, seen: &seen, collateral: true) })
         return Data(o.json.utf8)
     }
     /// 人物 ID：有限的正整数，其余（缺失、非数、越界）记为 0。

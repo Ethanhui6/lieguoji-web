@@ -466,9 +466,7 @@ public enum MapLayers {
     /// in one of those suffixes are left as written (a custom title is not trimmed).
     public static func stateLabel(_ name: String, full: Bool) -> String {
         guard !full else { return name }
-        let suffixes = ["人民共和国", "哈里发国", "教宗国", "神权国", "共和国", "王国", "帝国", "联邦", "部族", "部落"]
-        for suffix in suffixes where name.hasSuffix(suffix) && name.count > suffix.count { return String(name.dropLast(suffix.count)) }
-        return name
+        return NamingCatalog.stripStateTitle(name)
     }
 
     /// Lanes between harbour points, walking sea cells so the line stays on water. Colour is the

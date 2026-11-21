@@ -246,11 +246,15 @@ struct EventTicker: View {
         VStack {
             if let text = shown {
                 Button(action: open) {
-                    Text(text).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1)
-                        .padding(.horizontal, 14).frame(height: 32).glass(Capsule())
+                    HStack(spacing: 7) {
+                        Circle().fill(Theme.seal).frame(width: 6, height: 6)
+                            .overlay(Circle().stroke(Theme.seal.opacity(0.3), lineWidth: 2.5))
+                        Text(text).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1)
+                    }
+                    .padding(.horizontal, 14).frame(height: 32).glass(Capsule())
                 }
-                .buttonStyle(.plain).padding(.horizontal, 30)
-                .id(text).transition(.push(from: .bottom))
+                .buttonStyle(PressStyle()).padding(.horizontal, 30)
+                .id(text).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .move(edge: .top).combined(with: .opacity)))
             }
         }
         .onAppear { shown = latest; changed = Date() }

@@ -82,9 +82,18 @@ public enum Founding {
             return a.surname.optionalString ?? b.surname.optionalString ?? p.lastName.asString
         }
         func generateInit(_ culture: String, _ gender: Int, _ father: JS?) -> JS {
-            let profile = Nobility.cultures[culture], pool = (gender == 0 ? profile.givenMale : profile.givenFemale).asArray, houses = profile.houses.asArray
-            let first = pool[random.intRange(0, pool.count)].asString
-            var last = houses[random.intRange(0, houses.count)].asString
+            let profile = Nobility.cultures[culture]
+            let first: String, lastPool: [String]
+            if UnitKinds.enabled {
+                let gPool = NamingCatalog.givenNames(r, culture: culture, gender: gender)
+                first = gPool[random.intRange(0, gPool.count)]
+                lastPool = NamingCatalog.houseNames(culture: culture)
+            } else {
+                let pool = (gender == 0 ? profile.givenMale : profile.givenFemale).asArray
+                first = pool[random.intRange(0, pool.count)].asString
+                lastPool = profile.houses.asArray.map(\.asString)
+            }
+            var last = lastPool[random.intRange(0, lastPool.count)]
             if let father, father.familyId.asInt > 0 { let checked = lastName(father); if !checked.isEmpty { last = checked } }
             let identity = Nobility.personName(culture, given: first, house: last, gender: gender)
             let p = person(r, id: nextId, first: first, last: last, gender: gender, culture: culture, source: "initial-family", religionId: religionId, identity: identity, random: random)
@@ -107,7 +116,17 @@ public enum Founding {
             let culture = family.cultureName.asString, spouse = generateInit(culture, m.gender.asInt == 0 ? 1 : 0, nil)
             var age = f(f(m.age.asNumber) + random.floatRange(-10, 10)); if age < 16 { age = random.floatRange(16, 20) }
             setBirth(spouse, age)
-            spouse.familyId = family.id.clone(); spouse.stateId = family.stateId.clone(); spouse.lastName = JS(lastName(m))
+            spouse.familyId = family.id.clone(); spouse.stateId = family.stateId.clone()
+            if UnitKinds.enabled {
+                let famHouse = NamingCatalog.cleanSurname(lastName(m))
+                if spouse.lastName.asString == famHouse {
+                    let houses = NamingCatalog.houseNames(culture: culture).filter { $0 != famHouse }
+                    if !houses.isEmpty { spouse.lastName = JS(houses[random.intRange(0, houses.count)]) }
+                }
+                spouse.natalSurname = spouse.lastName.clone()
+            } else {
+                spouse.lastName = JS(lastName(m))
+            }
             m.spouseId = spouse.id.clone(); spouse.spouseId = m.id.clone(); family.memberIds.push(spouse.id.clone())
             let count = random.intRange(0, isCousin ? 3 : 2)
             for _ in 0..<count {
@@ -147,7 +166,18 @@ public enum Founding {
         var age = f(f(leader.age.asNumber) + random.floatRange(-10, 10)); if age < 16 { age = random.floatRange(16, 20) }
         k.setBirth(spouse, age)
         leader.spouseId = spouse.id.clone(); spouse.spouseId = leader.id.clone(); leader.marriageType = JS(0); spouse.marriageType = JS(0)
-        spouse.familyId = leader.familyId.clone(); spouse.lastName = JS(k.lastName(leader)); family.memberIds.push(spouse.id.clone()); spouse.stateId = family.stateId.clone()
+        spouse.familyId = leader.familyId.clone()
+        if UnitKinds.enabled {
+            let famHouse = NamingCatalog.cleanSurname(k.lastName(leader))
+            if spouse.lastName.asString == famHouse {
+                let houses = NamingCatalog.houseNames(culture: family.cultureName.asString).filter { $0 != famHouse }
+                if !houses.isEmpty { spouse.lastName = JS(houses[random.intRange(0, houses.count)]) }
+            }
+            spouse.natalSurname = spouse.lastName.clone()
+        } else {
+            spouse.lastName = JS(k.lastName(leader))
+        }
+        family.memberIds.push(spouse.id.clone()); spouse.stateId = family.stateId.clone()
         let role = JS.object()
         role.roleType = JS("Spouse"); role.holderId = JS(0); role.startTime = JS(0); role.spouseOfId = JS(0); role.stateId = JS(0); role.nativeKind = JS("spouse")
         role.spouseOfId = leader.id.clone(); role.stateId = family.stateId.clone(); role.holderId = spouse.id.clone(); role.startTime = JS(f(life.gameTime.asNumber)); spouse.roles.push(role)
@@ -199,15 +229,29 @@ public enum Founding {
         let seed = w.custom.seed.asString, day = w.day.asNumber, tick = r.clock.tick
         let cultureId = family.map { r.kin.families[String($0.familyId)].cultureName.asString } ?? c.cities[capital.id.asString].cultureId.asString
         let profile = cultures.first { $0.id == cultureId }!
-        let used = Set(c.nations.objectValues.map { $0.name.value.asString })
-        let fresh = Opening.freshName(profile, c.mode.asString, "state", "\(seed)/rebel-state/\(id)", used)!
+        let used = Set(c.nations.objectValues.map { NamingCatalog.cleanStateBase($0.name.value.asString) })
+        let fresh: (value: String, sourceKey: String)
+        if UnitKinds.enabled, let pick = NamingCatalog.pickStateBase(culture: cultureId, mode: c.mode.asString, seed: "\(seed)/rebel-state/\(id)", used: used) {
+            fresh = (pick, "state/\(cultureId)/\(c.mode.asString)/app")
+        } else {
+            fresh = Opening.freshName(profile, c.mode.asString, "state", "\(seed)/rebel-state/\(id)", used)!
+        }
         let identity = JS.object()
         identity.cultureId = JS(cultureId); identity.religionId = c.nations[parent].religionId.clone(); identity.polity = JS(profile.suggestedPolity)
         let name = JS.object(); name.value = JS(fresh.value); name.mode = c.mode.clone(); name.sourceKey = JS(fresh.sourceKey); name.custom = .null; identity.name = name
         identity.origin = JS("secession"); identity.parentId = JS(parent)
         c.nations[id] = identity; Vassals.bump(c)
         let nation = JS.object()
-        nation.id = JS(id); nation.name = JS(Opening.stateTitle(fresh.value, polity: profile.suggestedPolity, religion: identity.religionId.asString)); nation.color = JS(color(r, index, provinces: provinces))
+        let fullTitle: String
+        if UnitKinds.enabled, !r.regimes.isNull {
+            if let st = NameVariety.pickStyle(seed: seed, key: "form/\(id)", polity: profile.suggestedPolity, culture: cultureId, religion: identity.religionId.asString) {
+                let b = Regimes.book(r, id); b.style = JS(st.id); b.parties = .null
+            }
+            fullTitle = Regimes.title(r, id, base: fresh.value, style: Regimes.style(r, id))
+        } else {
+            fullTitle = Opening.stateTitle(fresh.value, polity: profile.suggestedPolity, religion: identity.religionId.asString)
+        }
+        nation.id = JS(id); nation.name = JS(fullTitle); nation.color = JS(color(r, index, provinces: provinces))
         nation.capitalId = capital.id.clone(); nation.regimeId = JS("regime-\(index)"); nation.dynastyId = JS("dynasty-\(index)")
         w.nations.push(nation)
         let policy = JS.object(); policy.nationId = JS(id); policy.priority = JS("balanced"); policy.lastLedger = .null; policy.lastDecision = .null; w.statecraft.nations.push(policy)
@@ -220,8 +264,18 @@ public enum Founding {
         let ruler: JS
         if let family { ruler = rulerFrom(r.kin.persons[String(family.leaderId)].identity, identity) }
         else {
-            let gender = Int(hash("\(seed)/\(reignId)") % 2), names = gender == 0 ? Nobility.cultures[cultureId].givenMale : Nobility.cultures[cultureId].givenFemale, houses = Nobility.cultures[cultureId].houses
-            let given = names[Int(hash("\(seed)/\(reignId)/given") % UInt32(names.length))].asString, house = houses[Int(hash("\(seed)/\(reignId)/house") % UInt32(houses.length))].asString
+            let gender = Int(hash("\(seed)/\(reignId)") % 2)
+            let given: String, house: String
+            if UnitKinds.enabled {
+                let gPool = NamingCatalog.givenNames(r, culture: cultureId, gender: gender)
+                let hPool = NamingCatalog.houseNames(culture: cultureId)
+                given = gPool[Int(hash("\(seed)/\(reignId)/given") % UInt32(gPool.count))]
+                house = hPool[Int(hash("\(seed)/\(reignId)/house") % UInt32(hPool.count))]
+            } else {
+                let names = gender == 0 ? Nobility.cultures[cultureId].givenMale : Nobility.cultures[cultureId].givenFemale, houses = Nobility.cultures[cultureId].houses
+                given = names[Int(hash("\(seed)/\(reignId)/given") % UInt32(names.length))].asString
+                house = houses[Int(hash("\(seed)/\(reignId)/house") % UInt32(houses.length))].asString
+            }
             ruler = rulerFrom(Nobility.personName(cultureId, given: given, house: house, gender: gender), identity)
         }
         c.rulers[reignId] = ruler

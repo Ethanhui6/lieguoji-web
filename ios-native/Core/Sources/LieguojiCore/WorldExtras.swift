@@ -166,11 +166,15 @@ extension NativeEngine {
             guard !family.isNull else { return (false, "此人不属任何家族。") }
             let random = Nobility.Random(n: r.nobility), gender = p.gender.asInt == 0 ? 1 : 0
             let culture = p.cultureName.optionalString ?? family.cultureName.asString, profile = Nobility.cultures[culture]
-            guard !profile.isNull else { return (false, "此人的文化没有人名表。") }
-            let pool = (gender == 0 ? profile.givenMale : profile.givenFemale).asArray, houses = profile.houses.asArray
-            guard !pool.isEmpty, !houses.isEmpty else { return (false, "此人的文化没有人名表。") }
-            let first = pool[random.intRange(0, pool.count)].asString, last = houses[random.intRange(0, houses.count)].asString
+            let givenPool = UnitKinds.enabled ? NamingCatalog.givenNames(r, culture: culture, gender: gender) : (gender == 0 ? profile.givenMale : profile.givenFemale).asArray.map(\.asString)
+            let rawHouses = UnitKinds.enabled ? NamingCatalog.houseNames(culture: culture) : profile.houses.asArray.map(\.asString)
+            guard !givenPool.isEmpty, !rawHouses.isEmpty else { return (false, "此人的文化没有人名表。") }
+            let famHouse = NamingCatalog.cleanSurname(family.surname.optionalString ?? p.lastName.optionalString ?? "")
+            let otherHouses = rawHouses.filter { $0 != famHouse }
+            let housePool = otherHouses.isEmpty ? rawHouses : otherHouses
+            let first = givenPool[random.intRange(0, givenPool.count)], last = housePool[random.intRange(0, housePool.count)]
             let s = Nobility.createNamed(r, first: first, last: last, gender: gender, culture: culture, source: "spouse", religionId: p.religionId, identity: Nobility.personName(culture, given: first, house: last, gender: gender), random: random)
+            s.natalSurname = JS(last)
             var age = Native.fr(p.age.asNumber + random.floatRange(-6, 6)); if age < 16 { age = random.floatRange(16, 20) }
             let life = r.life
             s.birthTime = JS(Native.fr(life.gameTime.asNumber - age * 365.25 * life.secondsPerDay.asNumber))
@@ -197,6 +201,30 @@ extension NativeEngine {
             guard mother.childrenIds.length > before, let child = People.person(r, mother.childrenIds.asArray.last!.asInt) else { return (false, "未能添子。") }
             let childName = child.identity.name.optionalString ?? child.firstName.optionalString ?? ""
             return (true, "\(name)家添\(child.gender.asInt == 1 ? "女" : "子")\(childName)。")
+        case "promoteHead":
+            guard p.familyId.asInt > 0 else { return (false, "此人不属任何家族。") }
+            let family = r.kin.families[p.familyId.asInt.description]
+            guard !family.isNull else { return (false, "家族不存在。") }
+            guard family.headId.asInt != p.id.asInt else { return (false, "\(name)已是家主。") }
+            family.headId = p.id.clone()
+            p.isHistoricallyImportant = JS(true)
+            let nextHeir = People.findSuccessor(r, family, p)
+            family.heirId = JS(nextHeir != nil && nextHeir!.id.asInt != p.id.asInt ? nextHeir!.id.asNumber : 0)
+            Nobility.bump(r.kin)
+            let famName = NamingCatalog.houseLabel(family.surname.optionalString ?? "", long: true)
+            People.recordHistory(r, kind: "family", text: "\(name)出任\(famName)家主", reason: "族谱中立为新任家主。", nations: [family.nationId.asString], province: nil)
+            return (true, "\(name)已立为家主。")
+        case "setHeir":
+            guard p.familyId.asInt > 0 else { return (false, "此人不属任何家族。") }
+            let family = r.kin.families[p.familyId.asInt.description]
+            guard !family.isNull else { return (false, "家族不存在。") }
+            guard family.headId.asInt != p.id.asInt else { return (false, "家主本人不能兼作继承人。") }
+            family.heirId = p.id.clone()
+            p.isHistoricallyImportant = JS(true)
+            Nobility.bump(r.kin)
+            let famName = NamingCatalog.houseLabel(family.surname.optionalString ?? "", long: true)
+            People.recordHistory(r, kind: "family", text: "\(famName)立\(name)为继承人", reason: "族谱中指定家族继承人。", nations: [family.nationId.asString], province: nil)
+            return (true, "已指定\(name)为继承人。")
         default:
             return (false, "无此操作。")
         }

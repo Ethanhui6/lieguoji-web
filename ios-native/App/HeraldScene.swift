@@ -17,8 +17,9 @@ struct HeraldBanner: View {
     private func name(_ n: Int) -> String { map.meta.nations.indices.contains(n) ? map.meta.nations[n].name : "" }
     private var accent: Color {
         switch herald.kind {
-        case .war, .uprising: return Theme.seal
+        case .war, .uprising, .house: return Theme.seal
         case .peace, .capital: return Theme.jade
+        case .marriage: return Color(red: 0.78, green: 0.28, blue: 0.34)
         case .restoration: return Color(red: 0.72, green: 0.52, blue: 0.2)
         case .capture, .extinction: return Theme.ink
         }
@@ -38,32 +39,44 @@ struct HeraldBanner: View {
     }
 
     private static func ease(_ x: Double) -> Double { let t = min(1, max(0, x)); return t * t * (3 - 2 * t) }
+    private static func easeOutBack(_ x: Double) -> Double {
+        let t = min(1, max(0, x)) - 1
+        let c = 1.15
+        return 1 + (c + 1) * t * t * t + c * t * t
+    }
     private static func span(_ t: Double, _ a: Double, _ b: Double) -> Double { ease((t - a) / (b - a)) }
 
     @ViewBuilder private func scene(_ t: Double) -> some View {
-        let unroll = Self.span(t, 0, 0.45)
+        let unroll = min(1.02, Self.easeOutBack(min(1, max(0, t / 0.48))))
         GeometryReader { g in
             let w = g.size.width, h = g.size.height
-            let paperW = max(24, w * (0.08 + 0.92 * unroll))
-            let content = Self.span(t, 0.28, 0.6)
+            let paperW = max(24, min(w, w * (0.08 + 0.92 * unroll)))
+            let content = Self.span(t, 0.28, 0.58)
             ZStack {
-                // 纸卷：纸面、两端细轴。
+                // 纸卷：宣纸卷面、朱金内框、两端鎏金木轴。
                 RoundedRectangle(cornerRadius: 5, style: .continuous).fill(Theme.paper2)
-                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Theme.ink.opacity(0.12), lineWidth: 0.7))
-                    .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).strokeBorder(accent.opacity(0.26), lineWidth: 0.7).padding(3.5))
-                    .shadow(color: Theme.ink.opacity(0.14), radius: 5, y: 2)
+                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Theme.ink.opacity(0.14), lineWidth: 0.7))
+                    .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).strokeBorder(accent.opacity(0.28), lineWidth: 0.8).padding(3.5))
+                    .shadow(color: Theme.ink.opacity(0.16), radius: 6, y: 2.5)
                     .frame(width: paperW, height: h - 4)
                 ForEach([-1.0, 1.0], id: \.self) { side in
-                    Capsule().fill(LinearGradient(colors: [Color(red: 0.33, green: 0.22, blue: 0.14), Color(red: 0.52, green: 0.36, blue: 0.22), Color(red: 0.3, green: 0.2, blue: 0.12)], startPoint: .leading, endPoint: .trailing))
-                        .frame(width: 6, height: h)
-                        .offset(x: side * (paperW / 2 + 1.5))
+                    VStack(spacing: 0) {
+                        Capsule().fill(LinearGradient(colors: [Color(red: 0.82, green: 0.68, blue: 0.36), Color(red: 0.56, green: 0.42, blue: 0.16)], startPoint: .leading, endPoint: .trailing))
+                            .frame(width: 7, height: 4.5)
+                        Rectangle().fill(LinearGradient(colors: [Color(red: 0.34, green: 0.22, blue: 0.14), Color(red: 0.54, green: 0.38, blue: 0.24), Color(red: 0.28, green: 0.18, blue: 0.11)], startPoint: .leading, endPoint: .trailing))
+                            .frame(width: 6, height: max(10, h - 9))
+                        Capsule().fill(LinearGradient(colors: [Color(red: 0.82, green: 0.68, blue: 0.36), Color(red: 0.56, green: 0.42, blue: 0.16)], startPoint: .leading, endPoint: .trailing))
+                            .frame(width: 7, height: 4.5)
+                    }
+                    .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+                    .offset(x: side * (paperW / 2 + 1.5))
                 }
                 // 左侧一幅小画（场景按 208 × 100 的画面绘制、缩到一半），右侧事由。
                 HStack(spacing: 8) {
                     Canvas { ctx, size in
                         var c = ctx; c.scaleBy(x: size.width / 208, y: size.height / 100)
                         // 单主体的画面原本画在中线左侧 46 处（给注脚让位），小画里居中。
-                        if herald.kind != .war && herald.kind != .peace { c.translateBy(x: 46, y: 0) }
+                        if herald.kind != .war && herald.kind != .peace && herald.kind != .marriage { c.translateBy(x: 46, y: 0) }
                         draw(c, size: CGSize(width: 208, height: 100), t: t)
                     }
                     .frame(width: 96, height: 46)
@@ -73,7 +86,7 @@ struct HeraldBanner: View {
                         Text(herald.text).font(Theme.kai(14)).foregroundStyle(Theme.ink).lineLimit(2).minimumScaleFactor(0.72)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .opacity(Self.span(t, 0.5, 0.85)).offset(x: (1 - Self.span(t, 0.5, 0.85)) * 6)
+                    .opacity(Self.span(t, 0.46, 0.82)).offset(x: (1 - Self.span(t, 0.46, 0.82)) * 7)
                     Spacer(minLength: 0)
                 }
                 .padding(.leading, 12).padding(.trailing, 14)
@@ -95,6 +108,8 @@ struct HeraldBanner: View {
         case .restoration: return "复辟"
         case .extinction: return "绝嗣"
         case .capital: return "迁都"
+        case .marriage: return "联姻"
+        case .house: return "世家"
         }
     }
 
@@ -134,6 +149,10 @@ struct HeraldBanner: View {
             var c = ctx; c.translateBy(x: cx - 66, y: base - 46)
             let p = InkPath(glyph: .nation).path(in: CGRect(x: 0, y: 0, width: 40, height: 40))
             c.stroke(p.trimmedPath(from: 0, to: Self.span(t, 0.4, 1.1)), with: .color(Theme.jade), style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+        case .marriage:
+            silkMarriage(ctx, size: size, base: base, t: t)
+        case .house:
+            houseSeal(ctx, at: CGPoint(x: cx - 46, y: base - 24), t: t)
         }
     }
 
@@ -204,6 +223,13 @@ struct HeraldBanner: View {
             let a = Double(i) * 0.7 + 0.3, d = CGFloat(18 + (i % 3) * 7) * CGFloat(fly), r = CGFloat(1.2 + Double(i % 3) * 0.8)
             c.fill(Path(ellipseIn: CGRect(x: p.x + CGFloat(cos(a)) * d - r, y: p.y + CGFloat(sin(a)) * d * 0.7 - r, width: r * 2, height: r * 2)), with: .color(color.opacity(0.8 * (1 - 0.6 * fly))))
         }
+        // 兵戈相击的朱砂气波环。
+        let ring = Self.span(t, start, start + 0.55)
+        if ring > 0 && ring < 1 {
+            let rr = 12 + 28 * CGFloat(ring)
+            c.stroke(Path(ellipseIn: CGRect(x: p.x - rr, y: p.y - rr * 0.78, width: rr * 2, height: rr * 1.56)),
+                     with: .color(color.opacity(0.5 * (1 - ring))), lineWidth: 2.2 * CGFloat(1 - 0.5 * ring))
+        }
     }
 
     /// 国色在纸上洇开。
@@ -225,8 +251,77 @@ struct HeraldBanner: View {
         let disc = Self.span(t, 1.1, 1.45)
         if disc > 0 {
             let m = CGPoint(x: (a.x + b.x) / 2, y: a.y + 13), r = 10 * CGFloat(disc)
+            let aura = Self.span(t, 1.15, 1.85)
+            if aura > 0 && aura < 1 {
+                let ar = r + 14 * CGFloat(aura)
+                ctx.stroke(Path(ellipseIn: CGRect(x: m.x - ar, y: m.y - ar, width: ar * 2, height: ar * 2)),
+                           with: .color(Theme.jade.opacity(0.42 * (1 - aura))), lineWidth: 1.8)
+            }
             ctx.fill(Path(ellipseIn: CGRect(x: m.x - r, y: m.y - r, width: r * 2, height: r * 2)), with: .color(Theme.jade.opacity(0.85)))
             ctx.fill(Path(ellipseIn: CGRect(x: m.x - r * 0.35, y: m.y - r * 0.35, width: r * 0.7, height: r * 0.7)), with: .color(Theme.paper2))
+        }
+    }
+
+    /// 联姻：两道朱金红绸自左右交织成同心结，双玉佩相扣，数片落花轻飘。
+    private func silkMarriage(_ ctx: GraphicsContext, size: CGSize, base: CGFloat, t: Double) {
+        let cx = size.width / 2, cy = base - 26
+        let draw = Self.span(t, 0.35, 0.95)
+        guard draw > 0 else { return }
+        var leftRibbon = Path()
+        leftRibbon.move(to: CGPoint(x: 18, y: cy + 12))
+        leftRibbon.addCurve(to: CGPoint(x: cx, y: cy), control1: CGPoint(x: 52, y: cy - 22), control2: CGPoint(x: cx - 22, y: cy + 20))
+        ctx.stroke(leftRibbon.trimmedPath(from: 0, to: draw), with: .color(Color(red: 0.78, green: 0.24, blue: 0.3)), style: StrokeStyle(lineWidth: 3.2, lineCap: .round))
+
+        var rightRibbon = Path()
+        rightRibbon.move(to: CGPoint(x: size.width - 18, y: cy + 12))
+        rightRibbon.addCurve(to: CGPoint(x: cx, y: cy), control1: CGPoint(x: size.width - 52, y: cy - 22), control2: CGPoint(x: cx + 22, y: cy + 20))
+        ctx.stroke(rightRibbon.trimmedPath(from: 0, to: draw), with: .color(Color(red: 0.82, green: 0.56, blue: 0.22)), style: StrokeStyle(lineWidth: 2.8, lineCap: .round))
+
+        let rings = Self.span(t, 0.72, 1.15)
+        if rings > 0 {
+            let r = 12 * CGFloat(rings)
+            for dx in [CGFloat(-7), 7] {
+                ctx.stroke(Path(ellipseIn: CGRect(x: cx + dx - r, y: cy - r, width: r * 2, height: r * 2)),
+                           with: .color(dx < 0 ? Theme.seal : Color(red: 0.76, green: 0.56, blue: 0.2)), lineWidth: 2.8)
+            }
+        }
+        let petals = Self.span(t, 0.6, 1.9)
+        if petals > 0 {
+            for i in 0..<7 {
+                let px = cx + CGFloat([-46, -24, -8, 12, 30, 48, 2][i]) + CGFloat(sin(t * 3 + Double(i))) * 4
+                let py = cy - 24 + CGFloat((Double(i) * 7 + t * 22).truncatingRemainder(dividingBy: 56))
+                ctx.fill(Path(ellipseIn: CGRect(x: px - 2.4, y: py - 1.5, width: 4.8, height: 3.0)),
+                         with: .color(Color(red: 0.86, green: 0.42, blue: 0.46).opacity(0.65 * (1 - 0.35 * petals))))
+            }
+        }
+    }
+
+    /// 世家大变：金墨笔锋横扫，朱印自上落下盖定，四周微尘散开。
+    private func houseSeal(_ ctx: GraphicsContext, at p: CGPoint, t: Double) {
+        let sweep = Self.span(t, 0.35, 0.75)
+        if sweep > 0 {
+            var slash = Path()
+            slash.move(to: CGPoint(x: p.x - 42, y: p.y + 18))
+            slash.addQuadCurve(to: CGPoint(x: p.x + 42, y: p.y - 18), control: CGPoint(x: p.x, y: p.y + 4))
+            ctx.stroke(slash.trimmedPath(from: 0, to: sweep), with: .color(Color(red: 0.76, green: 0.56, blue: 0.22).opacity(0.85)),
+                       style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+        }
+        let drop = Self.span(t, 0.55, 0.92)
+        if drop > 0 {
+            let scale = 1.65 - 0.65 * CGFloat(drop)
+            let s: CGFloat = 28 * scale
+            let rect = CGRect(x: p.x - s / 2, y: p.y - s / 2, width: s, height: s)
+            var c = ctx; c.opacity = drop
+            c.fill(Path(roundedRect: rect, cornerRadius: 4), with: .color(Theme.seal))
+            c.stroke(Path(roundedRect: rect.insetBy(dx: 3, dy: 3), cornerRadius: 2), with: .color(Theme.paper2.opacity(0.8)), lineWidth: 1.3)
+            let inner = InkPath(glyph: .house).path(in: rect.insetBy(dx: 5, dy: 5))
+            c.stroke(inner, with: .color(Theme.paper2), style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+        }
+        let ring = Self.span(t, 0.85, 1.35)
+        if ring > 0 && ring < 1 {
+            let rr = 14 + 26 * CGFloat(ring)
+            ctx.stroke(Path(ellipseIn: CGRect(x: p.x - rr, y: p.y - rr, width: rr * 2, height: rr * 2)),
+                       with: .color(Theme.seal.opacity(0.45 * (1 - ring))), lineWidth: 1.8)
         }
     }
 

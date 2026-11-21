@@ -3,16 +3,19 @@ import Foundation
 /// The nation panel (original StateInfoUI, web CultureNationRelations47 / campaign-card47) and the
 /// state-level diplomatic actions of the web's global orders (civilization47-global-orders).
 extension NativeEngine {
+    /// 统一的人物全名读取：优先已格式化的 identity.name，否则按文化命名规则拼合。
+    static func displayPersonName(_ p: JS) -> String {
+        if let name = p.identity.name.optionalString, !name.isEmpty { return name }
+        let culture = p.cultureName.optionalString ?? ""
+        let first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? ""
+        return NamingCatalog.formatPerson(culture: culture, given: first, house: last, gender: p.gender.asInt)
+    }
+
     /// 朝堂 (state-offices47 + nobility47): governance, the central offices and their holders' fit,
     /// governors and war commanders, the noble houses by influence, held and occupied land.
     func court(_ id: String) -> JS {
         let r = run, c = JS.object(), sid = Offices.stateId(r, id)
-        func name(_ p: JS) -> String {
-            let culture = p.cultureName.optionalString ?? ""
-            let first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? ""
-            let familyFirst = Nobility.cultures[culture].familyFirst.optionalBool ?? (culture == "chinese" || culture == "japanese")
-            return familyFirst ? last + first : last.isEmpty ? first : first + "·" + last
-        }
+        func name(_ p: JS) -> String { Self.displayPersonName(p) }
         c.governance = JS(Offices.governance(r, id))
         c.manual = JS(r.offices47.nations[id].manual.isTruthy)
         c.temper = JS(DeclarationEngine.temper?(id) ?? 1)
@@ -53,13 +56,19 @@ extension NativeEngine {
             e.enemy = JS(nationIndex(enemy)); e.person = JS(p.id.asInt); return e
         })
         // Noble houses of this state, by influence (0…1000).
-        let ruling = r.nobility.rulingFamilies[id].optionalNumber.map { Int($0) } ?? 0
+        let ruling = People.rulingFamilyId(r, id)
         let houses = r.nobility.isNull || r.nobility.families.isNull ? [] : r.nobility.families.objectEntries.filter { $0.1.nationId.optionalString == id }
         c.houses = .array(houses.sorted { ($0.1.influence.optionalNumber ?? 0) > ($1.1.influence.optionalNumber ?? 0) }.prefix(8).map { key, fam in
             let e = JS.object()
-            let surname = r.kin.families[key].surname.optionalString ?? ""
-            e.name = JS(surname.isEmpty ? "无名氏" : surname + "氏")
+            let kFam = r.kin.families[key]
+            let surname = NamingCatalog.cleanSurname(kFam.surname.optionalString ?? "")
+            e.name = JS(NamingCatalog.houseLabel(surname))
+            e.surname = JS(surname)
             e.id = JS(key)
+            if let hid = kFam.headId.optionalNumber, hid > 0, let head = People.person(r, Int(hid)) {
+                e.headName = JS(Self.displayPersonName(head))
+            }
+            e.allowFemale = JS(kFam.allowFemaleInheritance.isTruthy)
             e.influence = JS(fam.influence.optionalNumber ?? 0)
             e.provinces = JS(fam.controlledProvinces.isNull ? 0 : fam.controlledProvinces.length)
             e.ruling = JS(Int(key) == ruling)
@@ -76,10 +85,10 @@ extension NativeEngine {
             else if rel < -20 { stance = "离心" }
             else if rel >= 20 { stance = "拥戴" }
             e.relation = JS(rel); e.stance = JS(stance)
-            e.members = JS(r.kin.families[key].isNull ? 0 : Nobility.living(r, key).count)
+            e.members = JS(kFam.isNull ? 0 : Nobility.living(r, key).count)
             // 宿敌: the house it is on the worst terms with, if they are bad.
             let foes = houses.filter { $0.0 != key }.map { (k: $0.0, rel: r.nobility.relations[key][$0.0].optionalNumber ?? 0) }.filter { $0.rel <= -20 }
-            if let foe = foes.min(by: { $0.rel < $1.rel }), let surname = r.kin.families[foe.k].surname.optionalString { e.rival = JS(surname + "氏") }
+            if let foe = foes.min(by: { $0.rel < $1.rel }), let foeSurname = r.kin.families[foe.k].surname.optionalString { e.rival = JS(NamingCatalog.houseLabel(foeSurname)) }
             return e
         })
         return c
@@ -95,6 +104,10 @@ extension NativeEngine {
         let id = nations[index].id.asString, civ = r.civilization.nations[id]
         let o = JS.object()
         o.name = nations[index].name
+        o.baseName = JS(NamingCatalog.cleanStateBase(civ.name.value.optionalString ?? MapLayers.stateLabel(nations[index].name.asString, full: false)))
+        o.nameTemplate = r.regimes.isNull ? .null : r.regimes.nations[id].nameTemplate
+        o.rulingSurname = JS(Regimes.rulingSurname(r, id))
+        o.restorationOrdinal = JS(Regimes.restorationOrdinal(r, id))
         o.culture = civ.cultureId.isNull ? JS("") : civ.cultureId; o.religion = civ.religionId.isNull ? JS("") : civ.religionId; o.polity = civ.polity.isNull ? JS("") : civ.polity
         o.gold = JS(r.finance.nations[id].gold.optionalNumber ?? 0); o.goldPerMonth = JS(r.finance.nations[id].goldPerMonth.optionalNumber ?? 0)
         o.destiny = JS(r.destiny.nations[id].destiny.optionalNumber ?? 0)
@@ -104,11 +117,8 @@ extension NativeEngine {
         // Ruler.
         let leaderId = r.people.nations[id].leaderId
         if !leaderId.isNull, let p = People.person(r, leaderId.asInt) {
-            let culture = p.cultureName.optionalString ?? civ.cultureId.optionalString ?? ""
-            let first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? ""
-            let familyFirst = Nobility.cultures[culture].familyFirst.optionalBool ?? (culture == "chinese" || culture == "japanese")
             let ruler = JS.object()
-            ruler.name = JS(familyFirst ? last + first : last.isEmpty ? first : first + "·" + last)
+            ruler.name = JS(Self.displayPersonName(p))
             ruler.title = JS(People.rulerTitle(culture: civ.cultureId.optionalString ?? "", polity: civ.polity.optionalString ?? "", religion: civ.religionId.optionalString ?? "", gender: p.gender.optionalNumber.map { Int($0) } ?? 0))
             ruler.age = JS(p.age.optionalNumber ?? 0)
             // For the editor (tap the ruler): id, traits and base skills.
@@ -221,12 +231,9 @@ extension NativeEngine {
     static let officeLabels = ["Chancellor": "行政首脑", "Steward": "财政主管", "Marshal": "常备军统帅", "Governor": "总督", "WarCommander": "战时统帅"]
 
     func personView(_ p: JS, role: String) -> JS {
-        let culture = p.cultureName.optionalString ?? ""
-        let first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? ""
-        let familyFirst = Nobility.cultures[culture].familyFirst.optionalBool ?? (culture == "chinese" || culture == "japanese")
         let v = JS.object()
         v.role = JS(role); v.id = JS(p.id.optionalNumber ?? -1)
-        v.name = JS(p.identity.name.optionalString ?? (familyFirst ? last + first : last.isEmpty ? first : first + "·" + last))
+        v.name = JS(Self.displayPersonName(p))
         let age = p.age.optionalNumber ?? 0
         v.age = JS(age.isFinite ? min(200, max(0, age)) : 0); v.female = JS(p.gender.optionalNumber == 1)
         // 容错：特质表只取字符串项，能力值只取有限数（异常存档不应让人物页、族谱闪退）。

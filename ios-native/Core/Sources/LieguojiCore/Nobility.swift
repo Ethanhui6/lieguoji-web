@@ -25,7 +25,17 @@ public enum Nobility {
     // MARK: Names and characters
     static func personName(_ culture: String, given: String, house: String, gender: Int) -> JS {
         let p = cultures[culture], names = (gender == 0 ? p.givenMale : p.givenFemale).asArray.map(\.asString), houses = p.houses.asArray.map(\.asString)
-        let extra = (gender == 0 ? moreMale : moreFemale)[culture] ?? [], index = names.firstIndex(of: given) ?? (names.count + (extra.firstIndex(of: given) ?? 0)), family = houses.firstIndex(of: house)!
+        let extra = (gender == 0 ? moreMale : moreFemale)[culture] ?? [], index = names.firstIndex(of: given) ?? (names.count + (extra.firstIndex(of: given) ?? 0))
+        if UnitKinds.enabled {
+            let cleanedHouse = NamingCatalog.cleanSurname(house)
+            let family = houses.firstIndex(of: cleanedHouse) ?? houses.firstIndex(of: house) ?? 0
+            let name = NamingCatalog.formatPerson(culture: culture, given: given, house: cleanedHouse, gender: gender)
+            let o = JS.object()
+            o.cultureId = JS(culture); o.given = JS(given); o.house = JS(cleanedHouse); o.gender = JS(gender); o.name = JS(name); o.mode = JS("culture-generated")
+            o.sourceKey = JS("person/\(culture)/culture-generated/\(gender)/\(index)/\(family)")
+            return o
+        }
+        let family = houses.firstIndex(of: house) ?? 0
         let name: String
         if culture == "roman" && gender == 1 { name = p.romanFemale[family].asString + "·" + given }
         else if ["arab", "greek", "norse", "indian", "mongol", "turkic", "egyptian", "tibetan", "aztec", "inca"].contains(culture) { name = given }
@@ -252,14 +262,18 @@ public enum Nobility {
         var male = 0, female = 0
         for c in mother.childrenIds.asArray.compactMap({ People.person(r, $0.asInt) }) where c.isAlive.asBool { if c.gender.asInt == 0 { male += 1 } else { female += 1 } }
         let gender = male > female ? 1 : male < female ? 0 : random.value() <= f(0.5) ? 1 : 0
+        let matrilineal = UnitKinds.enabled && mother.marriageType.asInt == 1
+        let motherFamily = r.kin.families[mother.familyId.asInt.description]
         let fatherFamily = r.kin.families[father.familyId.asInt.description]
-        let k = fatherFamily.isNull ? r.kin.families[id] : fatherFamily, last = fatherFamily.isNull ? k.surname.asString : fatherFamily.surname.asString
+        let primaryFamily = matrilineal ? (motherFamily.isNull ? fatherFamily : motherFamily) : (fatherFamily.isNull ? motherFamily : fatherFamily)
+        let k = primaryFamily.isNull ? r.kin.families[id] : primaryFamily, last = primaryFamily.isNull ? k.surname.asString : primaryFamily.surname.asString
         let life = r.life, noble = n.families[k.id.asInt.description]
         let religionId = noble.isNull ? r.civilization.nations[k.nationId.asString].religionId : noble.religionId
         let culture = k.cultureName.asString, profile = cultures[culture]
         let pool = givenPool(r, profile, culture, gender: gender), first = pool[random.intRange(0, pool.count)].asString
         let houses = profile.houses.asArray; var surname = houses[random.intRange(0, houses.count)].asString
-        if father.familyId.asInt > 0 && !last.isEmpty { surname = last }
+        if (matrilineal ? mother.familyId.asInt : father.familyId.asInt) > 0 && !last.isEmpty { surname = last }
+        else if !last.isEmpty { surname = last }
         let identity = personName(culture, given: first, house: surname, gender: gender)
         let child = createNamed(r, first: first, last: surname, gender: gender, culture: culture, source: "newborn", religionId: religionId, identity: identity, random: random)
         child.familyId = k.id.clone(); child.originalFamilyId = k.id.clone(); child.stateId = k.stateId.clone(); child.fatherId = father.id.clone(); child.motherId = mother.id.clone()
@@ -380,13 +394,22 @@ public enum Nobility {
             if mover.originalFamilyId.asInt == 0 { mover.originalFamilyId = from.id.clone() }
             mover.familyId = to.id.clone(); mover.stateId = to.stateId.clone(); to.memberIds.push(mover.id.clone())
             let culture = mover.cultureName.asString
-            if cultures[culture].houses.asArray.contains(where: { $0.asString == to.surname.asString }) {
+            if UnitKinds.enabled {
+                // 本作规则：外嫁/入赘保留原本姓氏，便于在族谱与史册中看清联姻世家，不再出现同姓成婚。
+                if mover.natalSurname.isNull {
+                    let orig = NamingCatalog.cleanSurname(birthFamily.surname.optionalString ?? mover.lastName.asString)
+                    if !orig.isEmpty { mover.natalSurname = JS(orig) }
+                }
+            } else if cultures[culture].houses.asArray.contains(where: { $0.asString == to.surname.asString }) {
                 mover.lastName = to.surname.clone(); mover.identity = personName(culture, given: mover.firstName.asString, house: to.surname.asString, gender: mover.gender.asInt)
             }
         }
         let m = JS.object()
         m.aId = a.id.clone(); m.bId = b.id.clone(); m.moverId = moves ? mover.id.clone() : JS(0); m.fromFamilyId = moves ? from.id.clone() : JS(0); m.toFamilyId = moves ? to.id.clone() : JS(0)
         m.matrilineal = JS(matrilineal); m.day = r.world.day.clone(); n.marriages.push(m)
+        if UnitKinds.enabled && !fa.isNull && !fb.isNull {
+            FamilyPolitics.onMarriage(r, fa.id.asInt, fb.id.asInt)
+        }
         bump(r.kin)
         let nfa = fa.isNull ? JS.null : n.families[fa.id.asInt.description], nfb = fb.isNull ? JS.null : n.families[fb.id.asInt.description]
         let notable = nfa.ruling.isTruthy || nfb.ruling.isTruthy || isHead(fa, a) || isHead(fb, b) || (nfa.influence.optionalNumber ?? 0) > 300 || (nfb.influence.optionalNumber ?? 0) > 300

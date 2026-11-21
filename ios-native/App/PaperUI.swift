@@ -193,6 +193,20 @@ enum MapViewMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String { ["state": "国家", "alliance": "联盟", "culture": "文化", "family": "家族", "religion": "宗教", "polity": "政体", "economy": "经济", "goods": "特产", "region": "区域", "terrain": "地形"][rawValue]! }
     var symbol: String { ["state": "flag.fill", "alliance": "person.3.fill", "culture": "character.book.closed.fill", "family": "house.fill", "religion": "sun.max.fill", "polity": "building.columns.fill", "economy": "chart.bar.fill", "goods": "shippingbox.fill", "region": "square.grid.3x3.fill", "terrain": "mountain.2.fill"][rawValue]! }
+    var glyph: InkGlyph {
+        switch self {
+        case .state: return .nation
+        case .alliance: return .alliance
+        case .culture: return .culture
+        case .family: return .house
+        case .religion: return .religion
+        case .polity: return .polity
+        case .economy: return .economy
+        case .goods: return .goods
+        case .region: return .region
+        case .terrain: return .views
+        }
+    }
 }
 
 /// A strip of paper tabs that unrolls from the button; the selected view is marked by a sliding seal.
@@ -225,11 +239,13 @@ struct MapViewSwitcher: View {
                 withAnimation(Motion.tap) { mode = m }
             } label: {
                 VStack(spacing: 3) {
-                    Image(systemName: m.symbol).font(.system(size: 13, weight: .regular))
+                    InkIcon(glyph: m.glyph, size: 17, weight: mode == m ? 1.9 : 1.55, filled: mode == m,
+                            accent: mode == m ? Theme.paper2.opacity(0.32) : Theme.seal.opacity(0.28))
+                        .scaleEffect(mode == m ? 1.06 : 1)
                     Text(m.title).font(Theme.label)
                 }
                 .foregroundStyle(mode == m ? Theme.paper2 : Theme.ink)
-                .frame(width: 50, height: 46)
+                .frame(width: 50, height: 48)
                 .background {
                     if mode == m { RoundedRectangle(cornerRadius: 9).fill(Theme.seal).matchedGeometryEffect(id: "seal", in: marker).shadow(color: Theme.seal.opacity(0.35), radius: 4, y: 2) }
                 }
@@ -336,7 +352,13 @@ struct StatisticsSheet: View {
                                 let on = category == c.id
                                 Button { withAnimation(Motion.tap) { category = c.id } } label: {
                                     HStack(spacing: 5) {
-                                        Image(systemName: Self.categoryIcon[c.id] ?? "list.number").font(.system(size: 13)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
+                                        if let g = GameActionLabel.glyph(for: Self.categoryIcon[c.id] ?? "") {
+                                            InkIcon(glyph: g, size: 15, weight: on ? 1.85 : 1.55, filled: on,
+                                                    accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.26))
+                                                .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.9))
+                                        } else {
+                                            Image(systemName: Self.categoryIcon[c.id] ?? "list.number").font(.system(size: 13)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
+                                        }
                                         Text(c.title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                                     }
                                     .padding(.horizontal, 14).frame(height: 40)
@@ -850,7 +872,12 @@ private struct PressMenuCard: View {
                 Divider2()
                 Button { GameFeel.shared.tap(); close(); item.action() } label: {
                     HStack(spacing: 12) {
-                        Image(systemName: item.symbol).font(.system(size: 15)).foregroundStyle(Theme.seal).frame(width: 22)
+                        if let g = GameActionLabel.glyph(for: item.symbol) {
+                            InkIcon(glyph: g, size: 16, weight: 1.75, accent: Theme.seal.opacity(0.28))
+                                .foregroundStyle(Theme.seal).frame(width: 22)
+                        } else {
+                            Image(systemName: item.symbol).font(.system(size: 15)).foregroundStyle(Theme.seal).frame(width: 22)
+                        }
                         Text(item.title).font(Theme.section).foregroundStyle(item.destructive ? Theme.seal : Theme.ink)
                         Spacer()
                     }

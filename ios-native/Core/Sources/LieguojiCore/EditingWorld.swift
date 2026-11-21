@@ -165,11 +165,68 @@ extension NativeEngine {
         if let family { guard !r.nobility.families[family].isNull else { return (false, "家族不存在。") }; r.nobility.families[family].controlledProvinces.push(JS(pid)) }
         return (true, "封地已修改")
     }
-    public func editFamily(_ family: String, surname: String?, influence: Double?, strip: Bool) -> (ok: Bool, reason: String) {
+    public func editFamily(_ family: String, surname: String?, influence: Double?, strip: Bool, allowFemale: Bool? = nil) -> (ok: Bool, reason: String) {
         let r = run
-        guard !r.nobility.families[family].isNull else { return (false, "家族不存在。") }
-        if let surname, !surname.isEmpty { r.kin.families[family].surname = JS(surname) }
-        if let influence { r.nobility.families[family].influence = JS(max(0, influence)) }
+        guard !r.nobility.families[family].isNull, !r.kin.families[family].isNull else { return (false, "家族不存在。") }
+        let kinFam = r.kin.families[family]
+        if let surname {
+            let cleaned = NamingCatalog.cleanSurname(surname)
+            guard (1...10).contains(cleaned.count) else { return (false, "族姓须为 1 到 10 个字。") }
+            let oldSurname = NamingCatalog.cleanSurname(kinFam.surname.optionalString ?? "")
+            kinFam.surname = JS(cleaned)
+            // 同步更新本家血脉成员（不改外姓配偶）的全名、朝堂记录与君主史册。
+            let allIds = (kinFam.memberIds.isNull ? [] : kinFam.memberIds.asArray).map(\.asInt)
+                + (kinFam.collateralMemberIds.isNull ? [] : kinFam.collateralMemberIds.asArray).map(\.asInt)
+            var seen = Set<Int>()
+            for pid in allIds where seen.insert(pid).inserted {
+                guard let p = People.person(r, pid) else { continue }
+                let curLast = NamingCatalog.cleanSurname(p.lastName.optionalString ?? "")
+                // 若此人有独立娘家本姓且不等于旧族姓，视为外姓配偶，不强行改姓。
+                let isInLaw = !p.natalSurname.isNull && curLast != oldSurname
+                guard !isInLaw && (curLast.isEmpty || curLast == oldSurname) else { continue }
+                p.lastName = JS(cleaned)
+                let culture = p.cultureName.optionalString ?? kinFam.cultureName.optionalString ?? ""
+                let given = p.firstName.optionalString ?? ""
+                let full = NamingCatalog.formatPerson(culture: culture, given: given, house: cleaned, gender: p.gender.asInt)
+                if case .object = p.identity.storage {
+                    p.identity.house = JS(cleaned); p.identity.name = JS(full)
+                } else {
+                    p.identity = Nobility.personName(culture, given: given, house: cleaned, gender: p.gender.asInt)
+                }
+                let pKey = String(pid)
+                let court = r.people.persons[pKey]
+                if case .object = court.storage {
+                    court.name = JS(full); court.family = JS(cleaned)
+                    if let rulerId = court.rulerId.optionalString {
+                        let rc = r.civilization.rulers[rulerId]
+                        if case .object = rc.storage { rc.house = JS(cleaned); rc.name = JS(full) }
+                        if let nid = court.nationId.optionalString, !r.chronicle.leaders[nid].isNull {
+                            for reign in r.chronicle.leaders[nid].asArray where reign.id.optionalString == rulerId {
+                                reign.name = JS(full); reign.family = JS(cleaned)
+                            }
+                        }
+                    }
+                }
+            }
+            // 若该家族为某国宗室且国名模板含 {姓}，即时刷新国号。
+            if let nid = r.nobility.families[family].nationId.optionalString,
+               String(People.rulingFamilyId(r, nid)) == family,
+               !r.regimes.isNull, let t = r.regimes.nations[nid].nameTemplate.optionalString, t.contains("{姓}"),
+               let nation = r.world.nations.asArray.first(where: { $0.id.asString == nid }) {
+                let base = r.civilization.nations[nid].name.value.optionalString ?? MapLayers.stateLabel(nation.name.asString, full: false)
+                nation.name = JS(Regimes.title(r, nid, base: base, style: Regimes.style(r, nid)))
+            }
+            Nobility.bump(r.kin)
+        }
+        if let influence { r.nobility.families[family].influence = JS(min(1000, max(0, influence))) }
+        if let allowFemale {
+            kinFam.allowFemaleInheritance = JS(allowFemale)
+            if let head = People.person(r, kinFam.headId.asInt), head.isAlive.asBool {
+                let heir = People.findSuccessor(r, kinFam, head)
+                kinFam.heirId = JS(heir != nil && heir!.id.asInt != head.id.asInt ? heir!.id.asNumber : 0)
+            }
+            Nobility.bump(r.kin)
+        }
         if strip { r.nobility.families[family].controlledProvinces = .array([]); r.nobility.families[family].influence = JS(0) }
         return (true, strip ? "已除爵" : "家族已修改")
     }
@@ -217,31 +274,57 @@ extension NativeEngine {
         }
         return (true, "\(done) 座城市已按文化重命名")
     }
+    private func nextNameNonce() -> Int {
+        if !run.regimes.isNull {
+            let n = (run.regimes.nameDrawNonce.optionalNumber.map { Int($0) } ?? 0) + 1
+            run.regimes.nameDrawNonce = JS(n)
+            return n
+        }
+        return Int(run.clock.tick.asNumber)
+    }
     public func randomProvinceName(_ index: Int) -> (ok: Bool, reason: String) {
         let r = run
         guard let p = at(index), let c = r.world.cities.asArray.first(where: { $0.provinceId.asString == p.id.asString }) else { return (false, "此州没有城池。") }
         let civ = r.civilization.cities[c.id.asString]
-        guard let culture = civ.cultureId.optionalString, let next = freshPlace(culture, "\(c.id.asString)/\(Int(r.clock.tick.asNumber))/r", Set(r.world.cities.asArray.map(\.name.asString))) else { return (false, "没有可用的地名。") }
+        let nonce = nextNameNonce()
+        guard let culture = civ.cultureId.optionalString, let next = freshPlace(culture, "\(c.id.asString)/\(Int(r.clock.tick.asNumber))/\(nonce)/r", Set(r.world.cities.asArray.map(\.name.asString))) else { return (false, "没有可用的地名。") }
         if p.name.asString == c.name.asString { p.name = JS(next) }
         c.name = JS(next); civ.name.value = JS(next)
         return (true, "改名\(next)")
     }
     public func randomNationName(_ index: Int) -> (ok: Bool, reason: String) {
         let r = run
-        guard let id = nid(index), let n = r.world.nations.asArray.first(where: { $0.id.asString == id }), let profile = Founding.cultures.first(where: { $0.id == r.civilization.nations[id].cultureId.optionalString }) else { return (false, "国家不存在。") }
-        let used = Set(r.civilization.nations.objectValues.compactMap { $0.name.value.optionalString })
-        guard let fresh = Opening.freshName(profile, r.civilization.mode.asString, "state", "\(id)/\(Int(r.clock.tick.asNumber))/r", used) else { return (false, "没有可用的国名。") }
-        r.civilization.nations[id].name.value = JS(fresh.value)
-        n.name = JS(Regimes.title(r, id, base: fresh.value, style: Regimes.style(r, id)))
+        guard let id = nid(index), let n = r.world.nations.asArray.first(where: { $0.id.asString == id }) else { return (false, "国家不存在。") }
+        let culture = r.civilization.nations[id].cultureId.optionalString ?? "chinese"
+        let mode = r.civilization.mode.optionalString ?? "historical-names"
+        var used = Set(r.civilization.nations.objectValues.compactMap { $0.name.value.optionalString.map(NamingCatalog.cleanStateBase) })
+        let currentBase = NamingCatalog.cleanStateBase(r.civilization.nations[id].name.value.optionalString ?? MapLayers.stateLabel(n.name.asString, full: false))
+        used.insert(currentBase)
+        let nonce = nextNameNonce()
+        let seed = "\(r.world.custom.seed.optionalString ?? "")/\(id)/\(Int(r.clock.tick.asNumber))/\(nonce)/r"
+        let picked: String
+        if let p = NamingCatalog.pickStateBase(culture: culture, mode: mode, seed: seed, used: used) {
+            picked = p
+        } else if let profile = Founding.cultures.first(where: { $0.id == culture }), let fresh = Opening.freshName(profile, mode, "state", seed, used) {
+            picked = NamingCatalog.cleanStateBase(fresh.value)
+        } else {
+            return (false, "没有可用的国名。")
+        }
+        r.civilization.nations[id].name.value = JS(picked)
+        r.civilization.nations[id].name.custom = .null
+        n.name = JS(Regimes.title(r, id, base: picked, style: Regimes.style(r, id)))
         return (true, "改称\(n.name.asString)")
     }
-    /// 国名模板: {名} is the state's name, {号} its form of state. Nil goes back to the normal title.
+    /// 国名模板: `{名}` 基名、`{号}` 政体、`{序}` 复国序号、`{姓}` 宗室姓氏。Nil 或空串恢复默认称谓。
     public func setNameTemplate(_ index: Int, template: String?) -> (ok: Bool, reason: String) {
         let r = run
         guard let id = nid(index), let n = r.world.nations.asArray.first(where: { $0.id.asString == id }), !r.regimes.isNull else { return (false, "国家不存在。") }
         let b = Regimes.book(r, id)
-        b.nameTemplate = template?.isEmpty == false ? JS(template!) : .null
-        n.name = JS(Regimes.title(r, id, base: r.civilization.nations[id].name.value.asString, style: Regimes.style(r, id)))
+        let trimmed = template?.trimmingCharacters(in: .whitespacesAndNewlines)
+        b.nameTemplate = (trimmed?.isEmpty == false) ? JS(trimmed!) : .null
+        r.civilization.nations[id].name.custom = .null
+        let base = NamingCatalog.cleanStateBase(r.civilization.nations[id].name.value.optionalString ?? MapLayers.stateLabel(n.name.asString, full: false))
+        n.name = JS(Regimes.title(r, id, base: base, style: Regimes.style(r, id)))
         return (true, "改称\(n.name.asString)")
     }
 

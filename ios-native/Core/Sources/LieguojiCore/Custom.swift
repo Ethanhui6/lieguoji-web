@@ -112,14 +112,24 @@ public enum Regimes {
         if let chosen, let s = styles.first(where: { $0.id == chosen && $0.base == polity }) { return s }
         return styles.first { $0.id == defaultStyle[polity] } ?? styles[0]
     }
-    /// The state's name for its base name and style (a restored empire's ordinal kept by the caller).
+    /// 当前统治家族的清洗后姓氏（用于 `{姓}` 模板与国家页回显）。
+    public static func rulingSurname(_ r: JS, _ id: String) -> String {
+        let fid = People.rulingFamilyId(r, id)
+        if fid > 0, let s = r.kin.families[String(fid)].surname.optionalString, !s.isEmpty {
+            return NamingCatalog.cleanSurname(s)
+        }
+        return ""
+    }
+    /// The state's name for its base name and style (supports `{名}` `{号}` `{序}` `{姓}` and avoids duplicate suffixes).
     static func title(_ r: JS, _ id: String, base: String, style s: Style) -> String {
-        // 复国序号: the original's full-name template puts {RestorationOrdinal} (第{0}) before {Name}.
         let ordinal = restorationOrdinal(r, id)
-        // 国名模板 (自定义命名).
-        if !r.regimes.isNull, let t = r.regimes.nations[id].nameTemplate.optionalString { return t.replacingOccurrences(of: "{名}", with: ordinal + base).replacingOccurrences(of: "{号}", with: s.suffix) }
-        if s.id == "theocracy" || (s.suffix.isEmpty && s.id != "dynasty") { return ordinal + Opening.stateTitle(base, polity: s.base, religion: r.civilization.nations[id].religionId.optionalString ?? "") }
-        return ordinal + base + s.suffix
+        let religion = r.civilization.nations[id].religionId.optionalString ?? ""
+        let culture = r.civilization.nations[id].cultureId.optionalString ?? ""
+        let template = r.regimes.isNull ? nil : r.regimes.nations[id].nameTemplate.optionalString
+        return NamingCatalog.formatStateTitle(
+            base: base, style: s, religion: religion, culture: culture,
+            ordinal: ordinal, rulingSurname: rulingSurname(r, id), template: template
+        )
     }
     /// The original's restoration ordinal (StateNameFormatUtility, "第{0}", RestorationOrdinal): a state
     /// restored once is 第二, twice 第三… App-rule worlds only; the founding states have none.
@@ -314,6 +324,7 @@ public enum Regimes {
         }
         uprisingsMonth(r, key)
         editsMonth(r, key)
+        FamilyPolitics.month(r, key)
         ArmyAutonomy.noAllySupport = r.regimes.world.noAssist.isTruthy
         Shipyards.month(r)
     }
@@ -494,7 +505,8 @@ public enum Regimes {
     /// through the engine's own appointment (chronicle, roles, ruling house), the old reign closes.
     static func coup(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
         guard !r.nobility.isNull, !r.nobility.families.isNull, Offices.governance(r, id) < 0.4 else { return }
-        let ruling = r.nobility.rulingFamilies[id].optionalNumber.map { String(Int($0)) } ?? ""
+        let rid = People.rulingFamilyId(r, id)
+        let ruling = rid > 0 ? String(rid) : ""
         guard !ruling.isEmpty, r.nobility.families.has(ruling) else { return }
         let rulingInfluence = r.nobility.families[ruling].influence.optionalNumber ?? 0
         var h: UInt32 = 0x811c9dc5
@@ -650,10 +662,15 @@ public enum Regimes {
             if b.empires.asInt >= 2 { prefix = ordinals[min(ordinals.count - 1, b.empires.asInt)] }
         }
         if let b { b.history.push(JS(polity)); b.calm = JS(0) }
-        let base = civ.name.value.optionalString ?? oldName
+        let base = NamingCatalog.cleanStateBase(civ.name.value.optionalString ?? MapLayers.stateLabel(oldName, full: false))
         if let b { b.parties = .null }
         let s = style(r, id)
-        n.name = JS(prefix.isEmpty ? title(r, id, base: base, style: s) : base + prefix + (titles[polity] ?? ""))
+        if !prefix.isEmpty && (b?.nameTemplate.optionalString == nil) {
+            let suffix = s.id == "dynasty" ? "朝" : (s.suffix.isEmpty ? (titles[polity] ?? "") : s.suffix)
+            n.name = JS(base + prefix + suffix)
+        } else {
+            n.name = JS(title(r, id, base: base, style: s))
+        }
         // Turmoil costs: a fifth of the treasury and ten points of destiny.
         let fin = r.finance.nations[id]
         if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) * 0.8) }
@@ -854,7 +871,9 @@ extension NativeEngine {
             return (true, "施政已更新。")
         }
         guard key.hasPrefix("house:"), !run.nobility.isNull else { return (false, "设置不存在。") }
-        let family = String(key.dropFirst(6)), ruling = run.nobility.rulingFamilies[id].optionalNumber.map { String(Int($0)) }
+        let family = String(key.dropFirst(6))
+        let rid = People.rulingFamilyId(run, id)
+        let ruling = rid > 0 ? String(rid) : nil
         guard run.nobility.families[family].nationId.optionalString == id, let ruling, family != ruling,
               !run.nobility.families[ruling].isNull else { return (false, "只能修改本国非宗室家族对宗室的关系。") }
         if run.nobility.relations[family].isNull { run.nobility.relations[family] = .object() }
@@ -933,15 +952,22 @@ extension NativeEngine {
     }
 
     /// 自定义国名、国色: the state's name and colour (its border line follows the colour).
+    /// 同时把新国号同步写入 `civilization.nations[id].name`（保留自定义全称并更新基名），改制或套模板时不会跳回旧名。
     public func editIdentity(_ index: Int, name: String?, color: String?) -> (ok: Bool, reason: String) {
         let nations = run.world.nations.asArray
         guard nations.indices.contains(index) else { return (false, "国家不存在。") }
-        let n = nations[index]
+        let n = nations[index], id = n.id.asString
         if let name {
             let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard (1...12).contains(t.count) else { return (false, "国名须为 1 到 12 个字。") }
+            guard (1...16).contains(t.count) else { return (false, "国名须为 1 到 16 个字。") }
             guard !nations.enumerated().contains(where: { $0.offset != index && $0.element.name.optionalString == t }) else { return (false, "已有同名国家。") }
             n.name = JS(t)
+            let civ = run.civilization.nations[id]
+            if case .object = civ.storage, case .object = civ.name.storage {
+                let stripped = NamingCatalog.stripStateTitle(t)
+                civ.name.value = JS(stripped.isEmpty ? t : stripped)
+                civ.name.custom = JS(t)
+            }
         }
         if let color {
             let hex = color.hasPrefix("#") ? String(color.dropFirst()) : color
@@ -949,6 +975,23 @@ extension NativeEngine {
             n.color = JS("#" + hex.uppercased())
         }
         return (true, "国号与国色已更改。")
+    }
+    /// 修改国家基名（{名}）：保留当前政体后缀与国名模板，自动重新拼合全称。
+    public func setBaseName(_ index: Int, base: String) -> (ok: Bool, reason: String) {
+        let nations = run.world.nations.asArray
+        guard nations.indices.contains(index) else { return (false, "国家不存在。") }
+        let t = NamingCatalog.cleanStateBase(base)
+        guard (1...12).contains(t.count) else { return (false, "国名基名须为 1 到 12 个字。") }
+        let n = nations[index], id = n.id.asString
+        let civ = run.civilization.nations[id]
+        if case .object = civ.storage, case .object = civ.name.storage {
+            civ.name.value = JS(t)
+            civ.name.custom = .null
+        }
+        let full = Regimes.title(run, id, base: t, style: Regimes.style(run, id))
+        guard !nations.enumerated().contains(where: { $0.offset != index && $0.element.name.optionalString == full }) else { return (false, "已有同名国家。") }
+        n.name = JS(full)
+        return (true, "改称\(full)")
     }
     /// 迁都: the capital moves to a city the state controls (core distances follow).
     public func setCapital(_ index: Int, province: Int) -> (ok: Bool, reason: String) {
@@ -1070,11 +1113,43 @@ extension NativeEngine {
         }
         return (true, "总兵力已改。")
     }
-    /// 自定义人物: name and age.
+    /// 自定义人物: name and age（同步刷新 identity、朝堂与君主史册，改名立即可见）。
     public func renamePerson(_ id: Int, first: String?, last: String?, age: Int?) -> (ok: Bool, reason: String) {
         guard let p = People.person(run, id) else { return (false, "人物不存在。") }
-        if let first { let t = first.trimmingCharacters(in: .whitespaces); if !t.isEmpty { p.firstName = JS(String(t.prefix(8))) } }
-        if let last { p.lastName = JS(String(last.trimmingCharacters(in: .whitespaces).prefix(8))) }
+        var nameChanged = false
+        if let first {
+            let t = first.trimmingCharacters(in: .whitespaces)
+            if !t.isEmpty { p.firstName = JS(String(t.prefix(8))); nameChanged = true }
+        }
+        if let last {
+            p.lastName = JS(String(NamingCatalog.cleanSurname(last).prefix(8)))
+            nameChanged = true
+        }
+        if nameChanged {
+            let culture = p.cultureName.optionalString ?? ""
+            let given = p.firstName.optionalString ?? ""
+            let house = p.lastName.optionalString ?? ""
+            let full = NamingCatalog.formatPerson(culture: culture, given: given, house: house, gender: p.gender.asInt)
+            if case .object = p.identity.storage {
+                p.identity.given = JS(given); p.identity.house = JS(house); p.identity.name = JS(full)
+            } else {
+                p.identity = Nobility.personName(culture, given: given, house: house, gender: p.gender.asInt)
+            }
+            let key = String(id)
+            let court = run.people.persons[key]
+            if case .object = court.storage {
+                court.name = JS(full); court.family = JS(house)
+                if let rulerId = court.rulerId.optionalString {
+                    let rc = run.civilization.rulers[rulerId]
+                    if case .object = rc.storage { rc.given = JS(given); rc.house = JS(house); rc.name = JS(full); rc.regnalName = JS(given) }
+                    if let nid = court.nationId.optionalString, !run.chronicle.leaders[nid].isNull {
+                        for reign in run.chronicle.leaders[nid].asArray where reign.id.optionalString == rulerId {
+                            reign.name = JS(full); reign.family = JS(house); reign.regnalName = JS(given)
+                        }
+                    }
+                }
+            }
+        }
         if let age {
             let a = min(110, max(0, age))
             // 生年随之移动（取所设岁数再加半年），否则下个月按生年重算年龄时改动就被冲掉了。

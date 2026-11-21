@@ -104,9 +104,9 @@ extension Regimes {
     static func premier(_ r: JS, _ id: String) -> JS? { Offices.holder(r, id, "Chancellor", Offices.stateId(r, id)) }
 
     static func personName(_ p: JS) -> String {
-        if let name = p.identity.name.optionalString { return name }
+        if let name = p.identity.name.optionalString, !name.isEmpty { return name }
         let culture = p.cultureName.optionalString ?? "", first = p.firstName.optionalString ?? "", last = p.lastName.optionalString ?? ""
-        return culture == "chinese" || culture == "japanese" || culture == "korean" || culture == "vietnamese" ? last + first : last.isEmpty ? first : first + "·" + last
+        return NamingCatalog.formatPerson(culture: culture, given: first, house: last, gender: p.gender.asInt)
     }
 
     /// 更替必书: every change of the head of government is written in the chronicle with its reason, also

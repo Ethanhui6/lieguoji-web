@@ -16,6 +16,7 @@ struct NationInfo: Decodable {
     struct Person: Decodable, Identifiable { let id: Int?; let role: String; let name: String; let age: Double; let female: Bool; let traits: [String]; let skills: [Double]
         var key: Int { id ?? -1 } }
     let name: String; let culture: String; let religion: String; let polity: String
+    var baseName: String? = nil; var nameTemplate: String? = nil; var rulingSurname: String? = nil; var restorationOrdinal: String? = nil
     let gold: Double; let goldPerMonth: Double; let destiny: Double
     let alive: Bool; let auto: Bool; let worldAuto: Bool
     let ruler: Ruler?
@@ -30,7 +31,7 @@ struct NationInfo: Decodable {
     let people: [Person]?
     struct Office: Decodable { let office: String; let name: String; let age: Double; let fit: Double; let person: Int? }
     struct Commander: Decodable { let name: String; let age: Double; let enemy: Int; let person: Int? }
-    struct House: Decodable { let id: String?; let name: String; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int; let stance: String?; let relation: Double?; var rival: String? = nil }
+    struct House: Decodable { let id: String?; let name: String; var surname: String? = nil; var headName: String? = nil; var allowFemale: Bool? = nil; let influence: Double; let provinces: Int; let ruling: Bool; let members: Int; let stance: String?; let relation: Double?; var rival: String? = nil }
     struct Court: Decodable {
         let governance: Double; let centralIncome: Double; let offices: [Office]; let temper: Double?; let manual: Bool?
         struct Trait: Decodable { let name: String; let text: String }
@@ -168,6 +169,9 @@ struct NationSheet: View {
     struct NumberEdit: Identifiable { let id = UUID(); let title: String; let unit: String; let value: Double; let apply: (Double) async -> String? }
     @State private var partyEdit: PartyEdit?
     struct PartyEdit: Identifiable { let id: Int; let name: String; let seats: Int }
+    @State private var creatingHouse = false
+    @State private var newHouseProvince = -1
+    @State private var newHouseSurname = ""
     @State private var history: [GameState.Event] = []
     @State private var picking: Pick?
     @State private var target = -1
@@ -262,7 +266,7 @@ struct NationSheet: View {
                 .presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section) }
-            .sheet(item: $tree) { t in
+            .sheet(item: $tree, onDismiss: { Task { await reload() } }) { t in
                 FamilyTreeSheet(model: model, family: t.id, name: t.name)
                     .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
             }
@@ -278,6 +282,31 @@ struct NationSheet: View {
                     partyEdit = nil
                     Task { await run(success: "\(name)已修改") { await model.editParty(nation, party: p.id, name: name, seats: seats) } }
                 }
+                .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            }
+            .sheet(isPresented: $creatingHouse) {
+                let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
+                VStack(alignment: .leading, spacing: 14) {
+                    SheetHeader(title: "扶立新世家", subtitle: "赐封州郡，册立新门阀", seal: "封")
+                    Group2 {
+                        PaperMenu(title: "封地州郡", items: owned.map { ($0, map.meta.provinces[$0].name) }, selection: $newHouseProvince)
+                    }
+                    .padding(.horizontal, 16)
+                    TextField("", text: $newHouseSurname, prompt: Text("族姓（留空按本国文化自动取姓）").foregroundColor(Theme.ink2.opacity(0.6)))
+                        .paperField().padding(.horizontal, 16)
+                    SealButton(title: "颁诏册立", disabled: !owned.contains(newHouseProvince)) {
+                        let p = newHouseProvince
+                        let s = newHouseSurname.trimmingCharacters(in: .whitespacesAndNewlines)
+                        creatingHouse = false
+                        Task {
+                            await run(success: "新世家已册立") {
+                                await model.edit("createHouse", ["n": nation, "province": p, "surname": s.isEmpty ? NSNull() as Any : s as Any])
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+                .padding(.bottom, 22)
                 .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
@@ -951,28 +980,41 @@ struct NationSheet: View {
             if !c.houses.isEmpty {
                 Group2 {
                     ForEach(Array(c.houses.enumerated()), id: \.offset) { i, h in
-                        HStack(spacing: 10) {
-                            Text(h.name).font(Theme.body).foregroundStyle(Theme.ink)
-                            if let stance = h.stance ?? (h.ruling ? "宗室" : nil) {
-                                PaperTag(text: stance, color: Self.stanceColor(stance))
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: 8) {
+                                Text(h.name).font(Theme.body).foregroundStyle(Theme.ink)
+                                if let stance = h.stance ?? (h.ruling ? "宗室" : nil) {
+                                    PaperTag(text: stance, color: Self.stanceColor(stance))
+                                }
+                                if let foe = h.rival { Text("宿敌 " + foe).font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1) }
+                                Spacer()
+                                Text("\(h.members)人 · \(h.provinces)州").font(Theme.label).foregroundStyle(Theme.ink2)
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(Theme.ink.opacity(0.1))
+                                    Capsule().fill(h.ruling ? Theme.seal : Theme.ink.opacity(0.6)).frame(width: 54 * min(1, max(0, h.influence / 1000)))
+                                }
+                                .frame(width: 54, height: 4)
                             }
-                            if let foe = h.rival { Text("宿敌 " + foe).font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1) }
-                            Spacer()
-                            Text("\(h.members)人 · \(h.provinces)州").font(Theme.label).foregroundStyle(Theme.ink2)
-                            // Influence 0…1000 as a short gauge.
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Theme.ink.opacity(0.1))
-                                Capsule().fill(h.ruling ? Theme.seal : Theme.ink.opacity(0.6)).frame(width: 54 * min(1, max(0, h.influence / 1000)))
+                            if let head = h.headName, !head.isEmpty {
+                                HStack(spacing: 8) {
+                                    Text("家主：\(head)").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                    if h.allowFemale == true { Text("男女平等继承").font(Theme.caption).foregroundStyle(Theme.jade) }
+                                }
                             }
-                            .frame(width: 54, height: 4)
                         }
                         .padding(.horizontal, 16).padding(.vertical, 9)
                         .contentShape(Rectangle())
                         .onTapGesture { if let id = h.id { tree = TreePick(id: id, name: h.name) } }
                         .pressMenu({
                             guard let id = h.id else { return nil }
-                            var items = [PressMenuItem(title: "查看族谱", symbol: "person.3") { tree = TreePick(id: id, name: h.name) }]
+                            var items = [PressMenuItem(title: "查看族谱、世家往来与改姓", symbol: "person.3") { tree = TreePick(id: id, name: h.name) }]
                             if !h.ruling {
+                                items.append(PressMenuItem(title: "赏赐安抚（势力 +40，关系 +20）", symbol: "seal") {
+                                    Task { await run(success: "已赏赐\(h.name)") { await model.edit("houseDiplomacy", ["a": id, "b": NSNull(), "kind": "favor"]) } }
+                                })
+                                items.append(PressMenuItem(title: "削夺权柄（势力 −60，关系 −25）", symbol: "bolt.slash", destructive: true) {
+                                    Task { await run(success: "已削夺\(h.name)权柄") { await model.edit("houseDiplomacy", ["a": id, "b": NSNull(), "kind": "suppress"]) } }
+                                })
                                 items.append(PressMenuItem(title: "修改拥戴关系（现 \(Int(h.relation ?? 0))）", symbol: "slider.horizontal.3") {
                                     numberEdit = NumberEdit(title: h.name + "对宗室关系（-100–100）", unit: "", value: h.relation ?? 0) { v in await model.editCourt(nation, key: "house:" + id, value: v) }
                                 })
@@ -983,6 +1025,28 @@ struct NationSheet: View {
                     }
                 }
                 .padding(.horizontal, 16)
+            }
+            if info?.alive == true, let state = model.state, let map = model.map {
+                let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
+                if let firstOwned = owned.first {
+                    Button {
+                        GameFeel.shared.tap()
+                        newHouseProvince = firstOwned
+                        newHouseSurname = ""
+                        creatingHouse = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            InkIcon(glyph: .house, size: 15, weight: 1.8)
+                            Text("扶立新世家").font(Theme.body)
+                        }
+                        .foregroundStyle(Theme.seal)
+                        .frame(maxWidth: .infinity).frame(height: 38)
+                        .background(Theme.paper2.opacity(0.85), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.seal.opacity(0.35)))
+                    }
+                    .buttonStyle(PressStyle())
+                    .padding(.horizontal, 16)
+                }
             }
         }
     }
@@ -1155,7 +1219,12 @@ struct NationSheet: View {
             HStack(spacing: 10) {
                 ZStack {
                     Circle().fill((tint ?? Theme.seal).opacity(tint == nil ? 0.09 : 0.9))
-                    Image(systemName: p.symbol).font(.system(size: 15, weight: .regular)).foregroundStyle(tint == nil ? Theme.seal : Theme.paper2)
+                    if let g = GameActionLabel.glyph(for: p.symbol) {
+                        InkIcon(glyph: g, size: 17, weight: 1.7, accent: (tint == nil ? Theme.seal : Theme.paper2).opacity(0.26))
+                            .foregroundStyle(tint == nil ? Theme.seal : Theme.paper2)
+                    } else {
+                        Image(systemName: p.symbol).font(.system(size: 15, weight: .regular)).foregroundStyle(tint == nil ? Theme.seal : Theme.paper2)
+                    }
                 }
                 .frame(width: 32, height: 32)
                 VStack(alignment: .leading, spacing: 3) {

@@ -121,6 +121,7 @@ struct NationSheet: View {
     var openPeople: () -> Void = {}
     var openWars: () -> Void = {}
     var openTalks: () -> Void = {}
+    var openReplay: (() -> Void)? = nil
     /// A secondary page opened from the nation sheet. Nil is the nation sheet itself.
     var focus: Focus? = nil
     enum Focus { case people, wars, talks }
@@ -144,7 +145,7 @@ struct NationSheet: View {
     @State private var info: NationInfo?
     @State private var failed = false
     /// 分类: the page's tabs（超过 4 项时由 ChipPicker 自动横滑并带滑动朱印）。
-    enum Tab: String, CaseIterable { case overview = "概览", decrees = "政令", territory = "疆土", court = "朝政", military = "军事", diplomacy = "外交", custom = "自定义" }
+    enum Tab: String, CaseIterable { case overview = "概览", history = "史册", decrees = "政令", territory = "疆土", court = "朝政", military = "军事", diplomacy = "外交", custom = "自定义" }
     @State private var tab: Tab = .overview
     @State private var enthroning = false
     @State private var confirmWarNeighbors = false
@@ -479,14 +480,41 @@ struct NationSheet: View {
                     }
                     .padding(.horizontal, 24)
                 }
-                // 国史: the chronicle entries naming this state, newest first.
+                // 国史: the chronicle entries naming this state, newest first (each locatable on the map).
                 FoldSection("国史", expanded: false, summary: history.first.map { "第\($0.day + 1)日 · " + $0.text } ?? "尚无记载") {
                     Group2 {
+                        Button { withAnimation(Motion.tap) { tab = .history } } label: {
+                            HStack(spacing: 8) {
+                                SealFace(text: "纪", size: 20)
+                                Text("查看历代君主世系、强势评级与完整史册").font(Theme.body).foregroundStyle(Theme.seal)
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(Theme.seal)
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if !history.isEmpty { Divider2() }
                         if history.isEmpty { Row(label: "国史", value: "尚无记载") }
                         ForEach(Array(history.prefix(20).enumerated()), id: \.offset) { i, e in
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("第\(e.day + 1)日").font(Theme.caption).foregroundStyle(Theme.ink2)
-                                Text(e.text).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                            HStack(alignment: .top, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("第\(e.day + 1)日").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                    Text(e.text).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer(minLength: 6)
+                                if let p = e.province, map.meta.provinces.indices.contains(p) {
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        lower()
+                                        let pr = map.meta.provinces[p]
+                                        model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
+                                        fly(p)
+                                    } label: {
+                                        Image(systemName: "scope").font(.system(size: 12)).foregroundStyle(Theme.seal)
+                                            .frame(width: 26, height: 26).background(Theme.seal.opacity(0.08), in: Circle())
+                                    }
+                                    .buttonStyle(PressStyle())
+                                }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 9)
                             if i < min(history.count, 20) - 1 { Divider2() }
@@ -1237,6 +1265,16 @@ struct NationSheet: View {
     @ViewBuilder private func tabContent(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         switch tab {
         case .overview: overviewTab(info, map, state)
+        case .history:
+            NationHistoryTab(
+                model: model,
+                nation: nation,
+                map: map,
+                history: history,
+                fly: fly,
+                lower: lower,
+                onOpenReplay: openReplay
+            )
         case .decrees:
             NationDecreesTab(
                 model: model,

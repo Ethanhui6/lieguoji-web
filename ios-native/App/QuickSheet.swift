@@ -50,7 +50,7 @@ struct ProvinceQuickSheet: View {
     }
 
     var body: some View {
-        if let map = model.map, let state = model.state {
+        if let map = model.map, let state = model.state, map.meta.provinces.indices.contains(province) {
             let p = map.meta.provinces[province]
             let owner = state.owners.indices.contains(province) ? state.owners[province] : p.nation
             let nation = map.meta.nations.indices.contains(owner) ? map.meta.nations[owner] : nil

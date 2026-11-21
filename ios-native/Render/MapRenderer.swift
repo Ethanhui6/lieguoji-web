@@ -523,13 +523,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 军队图标此刻画出的位置（墨场按它落墨）。
     func displayedPoint(_ s: ArmySprite) -> SIMD2<Float> { displayed(s) }
     private func displayed(_ s: ArmySprite) -> SIMD2<Float> {
-        guard !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] else { return SIMD2(s.x, s.y) }
+        guard !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] else {
+            return (s.x.isFinite && s.y.isFinite) ? SIMD2(s.x, s.y) : .zero
+        }
         return Self.hermite(a, b, legLead[s.key] ?? (b - a), progress(CACurrentMediaTime()))
     }
     /// The leg's curve (as spriteVertex draws it): from a leaving along m0, arriving at b along b − a.
     static func hermite(_ a: SIMD2<Float>, _ b: SIMD2<Float>, _ m0: SIMD2<Float>, _ t: Float) -> SIMD2<Float> {
-        let t2 = t * t, t3 = t2 * t
-        return a * (2 * t3 - 3 * t2 + 1) + m0 * (t3 - 2 * t2 + t) + b * (3 * t2 - 2 * t3) + (b - a) * (t3 - t2)
+        let fallback = (b.x.isFinite && b.y.isFinite) ? b : ((a.x.isFinite && a.y.isFinite) ? a : SIMD2<Float>(0, 0))
+        guard a.x.isFinite, a.y.isFinite, b.x.isFinite, b.y.isFinite, m0.x.isFinite, m0.y.isFinite, t.isFinite else { return fallback }
+        let clamped = min(1, max(0, t))
+        let t2 = clamped * clamped, t3 = t2 * clamped
+        let p = a * (2 * t3 - 3 * t2 + 1) + m0 * (t3 - 2 * t2 + clamped) + b * (3 * t2 - 2 * t3) + (b - a) * (t3 - t2)
+        return (p.x.isFinite && p.y.isFinite) ? p : fallback
     }
     /// Each army's leaving tangent for this leg (map units over the leg).
     private var legLead: [String: SIMD2<Float>] = [:]
@@ -551,7 +557,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         armySprites.map { s in let p = displayed(s); return (s, p.x, p.y) }
     }
 
-    func setArmies(_ sprites: [ArmySprite], route points: [SIMD2<Float>], snap: Bool = false) {
+    func setArmies(_ rawSprites: [ArmySprite], route rawPoints: [SIMD2<Float>], snap: Bool = false) {
+        let sprites = rawSprites.filter { $0.x.isFinite && $0.y.isFinite }
+        let points = rawPoints.filter { $0.x.isFinite && $0.y.isFinite }
         if snap || sprites != armySprites {
             let now = CACurrentMediaTime(), t = progress(now)
             let previous = Dictionary(armySprites.map { ($0.key, $0.reorganizing) }, uniquingKeysWith: { a, _ in a })
@@ -561,7 +569,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 let target = SIMD2(s.x, s.y)
                 // Where the icon stands now, mid-walk included (nil: a new army, or a world just opened).
                 let here: SIMD2<Float>? = snap ? nil : legFrom[s.key].flatMap { a in legTo[s.key].map { b in Self.hermite(a, b, legLead[s.key] ?? (b - a), t) } }
-                guard let p = here else {
+                guard let p = here, p.x.isFinite, p.y.isFinite else {
                     // A new army fades in where it stands (no walk from nowhere); none on a fresh world.
                     from[s.key] = target; to[s.key] = target
                     if !snap && !armySprites.isEmpty { fading.insert(s.key) }
@@ -587,19 +595,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                         // a reversal (a column halted, sent back or re-routed) starts the new leg straight at
                         // its target, and the heading never exceeds 0.6 of the leg — longer ones bowed the path
                         // outwards and the icon swayed side to side.
-                        if along < 0.001 || k < 0.0001 { m = .zero }
+                        if along < 0.001 || k < 0.0001 || !along.isFinite || !k.isFinite { m = .zero }
                         else {
                             let cos = (m.x * chord.x + m.y * chord.y) / (k * along)
-                            if cos < 0.7 { m = chord }
+                            if !cos.isFinite || cos < 0.7 { m = chord }
                             else {
                                 // Lean towards the chord the more the two differ.
                                 let w = (cos - 0.7) / 0.3
                                 m = m * w + chord * (1 - w)
                                 let k2 = (m.x * m.x + m.y * m.y).squareRoot()
-                                if k2 > along * 0.6 { m *= (along * 0.6) / k2 }
+                                if k2.isFinite && k2 > along * 0.6 { m *= (along * 0.6) / k2 }
                             }
                         }
-                        lead[s.key] = m
+                        if m.x.isFinite && m.y.isFinite { lead[s.key] = m }
                     }
                 }
             }
@@ -658,7 +666,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 var cluster = [SIMD2<Int32>: [Int]]()
                 for (i, a) in sprites.enumerated() where a.army >= 0 && !ghosts.contains(a.key) && (legFrom[a.key] ?? SIMD2(a.x, a.y)) == (legTo[a.key] ?? SIMD2(a.x, a.y)) {
                     let e = legTo[a.key] ?? SIMD2(a.x, a.y)
-                    cluster[SIMD2(Int32((e.x / cell).rounded()), Int32((e.y / cell).rounded())), default: []].append(i)
+                    guard e.x.isFinite && e.y.isFinite else { continue }
+                    let gx = max(-1_000_000, min(1_000_000, (e.x / cell).rounded()))
+                    let gy = max(-1_000_000, min(1_000_000, (e.y / cell).rounded()))
+                    cluster[SIMD2(Int32(gx), Int32(gy)), default: []].append(i)
                 }
                 for var list in cluster.values where list.count > 1 {
                     // A stable seat for each army in the ring (by its key), whatever the order of the state.
@@ -771,6 +782,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let probe = Self.frameProbe
         var spriteProgress: Float = advanceChase()
         let size = view.bounds.size
+        guard size.width > 0, size.height > 0 else { encoder.endEncoding(); return }
+        if !camera.isValid {
+            camera = MapCamera.cover(map: (Double(map.width), Double(map.height)), viewport: (Double(size.width), Double(size.height)))
+        }
         var u = Uniforms(viewport: SIMD2(Float(size.width), Float(size.height)), center: SIMD2(Float(camera.centerX), Float(camera.centerY)), scale: Float(camera.scale), halfWidth: 0)
         let uniformLength = MemoryLayout<Uniforms>.stride
         func quad(_ texture: MTLTexture?, _ pipeline: MTLRenderPipelineState, x: Float, y: Float, width: Float, height: Float) {

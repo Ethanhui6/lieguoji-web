@@ -156,28 +156,34 @@ public enum NobleRevolt {
         before()
         var keep = [String: JS](); for v in members { keep[v] = n.families[v].controlledProvinces.clone() }
         landOrder = provinces
-        let familyIds = members.map { Int($0)! }
+        let familyIds = members.compactMap { Int($0) }
+        guard !familyIds.isEmpty, let leadFamilyInt = Int(id) else { return nil }
         if let restore {
-            for v in members { Nobility.moveFamily(r, v, restore); n.families[v].controlledProvinces = keep[v]! }
-            for p in provinces { let q = r.world.provinces.asArray.first { $0.id.asString == p }!; PeaceBridge.transferEconomy(r, p, q.controller.asString, restore); q.controller = JS(restore); q.legalOwner = JS(restore) }
+            guard let restoreNation = r.world.nations.asArray.first(where: { $0.id.asString == restore }),
+                  let capCity = r.world.cities.asArray.first(where: { $0.provinceId.asString == provinces[0] }) else { return nil }
+            for v in members { Nobility.moveFamily(r, v, restore); if let k = keep[v] { n.families[v].controlledProvinces = k } }
+            for p in provinces {
+                guard let q = r.world.provinces.asArray.first(where: { $0.id.asString == p }) else { continue }
+                PeaceBridge.transferEconomy(r, p, q.controller.asString, restore); q.controller = JS(restore); q.legalOwner = JS(restore)
+            }
             let moved = Set(provinces); r.occupation.sieges.asArray = r.occupation.sieges.asArray.filter { !moved.contains($0.provinceId.asString) }
-            r.world.nations.asArray.first { $0.id.asString == restore }!.capitalId = r.world.cities.asArray.first { $0.provinceId.asString == provinces[0] }!.id.clone()
+            restoreNation.capitalId = capCity.id.clone()
             Government.relocateLostCapitals(r); Wars.reconcileCore(r); Founding.reconcilePorts?(r)
             r.chronicle.ended.delete(restore)
             r.sovereignty.restorations[restore] = JS((r.sovereignty.restorations[restore].optionalNumber ?? 0) + 1); Vassals.bump(r.sovereignty)
             Regimes.retitleRestored(r, restore)
-            let state = Vassals.name(r, restore), place = r.world.provinces.asArray.first { $0.id.asString == provinces[0] }!.name.asString
+            let state = Vassals.name(r, restore), place = r.world.provinces.asArray.first { $0.id.asString == provinces[0] }?.name.optionalString ?? provinces[0]
             People.announce(r, kind: "restoration", text: "\(r.kin.families[id].surname.asString)家族复国，恢复\(state)的统治", reason: "\(reason)\(state)于\(place)复国（第\(r.sovereignty.restorations[restore].asInt)次）。", nations: [restore], province: provinces[0])
             People.appointKnownPerson(r, restore, leader, cause: "restoration")
             transferArmies(r, mother: mother, rebel: restore, land: Set(provinces), families: familyIds)
             RebelWar.startInternalWar(r, rebel: restore, mother: mother, casusBelli: cb, legacyType: legacy, goalType: goal)
             return restore
         }
-        let founding = Founding.foundState(r, parent: mother, provinces: provinces, reason: reason, family: Founding.RebelFamily(familyId: Int(id)!, leaderId: leader.id.asInt, moveFamilies: { state in
-            for v in members { Nobility.moveFamily(r, v, state); n.families[v].controlledProvinces = keep[v]! }
-            People.setRulingFamily(r, state, Int(id)!)
+        let founding = Founding.foundState(r, parent: mother, provinces: provinces, reason: reason, family: Founding.RebelFamily(familyId: leadFamilyInt, leaderId: leader.id.asInt, moveFamilies: { state in
+            for v in members { Nobility.moveFamily(r, v, state); if let k = keep[v] { n.families[v].controlledProvinces = k } }
+            People.setRulingFamily(r, state, leadFamilyInt)
         }))
-        let rebel = founding.nationId.asString
+        guard let rebel = founding.nationId.optionalString, !rebel.isEmpty else { return nil }
         transferArmies(r, mother: mother, rebel: rebel, land: Set(provinces), families: familyIds)
         RebelWar.startInternalWar(r, rebel: rebel, mother: mother, casusBelli: cb, legacyType: legacy, goalType: goal)
         return rebel
@@ -219,9 +225,11 @@ public enum NobleRevolt {
         return n.families.objectKeys.filter { v in let fam = n.families[v]; return fam.nationId.asString == state && !fam.ruling.asBool && fam.controlledProvinces.length > 0 && -40 > Nobility.relation(r, v, ruling) && fam.influence.asNumber > 100 }
     }
     static func distanceFromCapital(_ r: JS, _ state: String, _ province: String) -> Double {
-        let capitalId = r.world.nations.asArray.first { $0.id.asString == state }!.capitalId.optionalString
-        let capital = r.world.cities.asArray.first { $0.id.optionalString == capitalId }, scale = r.scale.asNumber
-        let a = r.world.provinces.asArray.first { $0.id.optionalString == capital?.provinceId.optionalString }!.center, b = r.world.provinces.asArray.first { $0.id.asString == province }!.center
+        guard let capitalId = r.world.nations.asArray.first(where: { $0.id.asString == state })?.capitalId.optionalString,
+              let capital = r.world.cities.asArray.first(where: { $0.id.optionalString == capitalId }),
+              let a = r.world.provinces.asArray.first(where: { $0.id.optionalString == capital.provinceId.optionalString })?.center,
+              let b = r.world.provinces.asArray.first(where: { $0.id.asString == province })?.center else { return 0 }
+        let scale = max(1e-6, r.scale.asNumber)
         return f(jsHypot(f(a.x.asNumber / scale - b.x.asNumber / scale), f(a.y.asNumber / scale - b.y.asNumber / scale)))
     }
     static func determineType(_ r: JS, _ state: String, _ rebels: [String]) -> Int {
@@ -293,7 +301,8 @@ public enum NobleRevolt {
         var minimum = n.settings.civilWarMinMonths.asNumber
         if d.manifest.isTruthy && d.manifestCount.asNumber > 0 { minimum *= 4 }
         if minimum > Double(monthsSince(r, n.lastCivilWar[state].optionalNumber ?? -10000)) { return }
-        let rebels = discontented(r, state)!, destiny = d.destiny.optionalNumber ?? 0
+        guard let rebels = discontented(r, state) else { return }
+        let destiny = d.destiny.optionalNumber ?? 0
         if rebels.count < 2 || !(60 > destiny) { return }
         let chance = f(f(f(60 - destiny) * f(0.01)) + f(0.1))
         if chance > Nobility.Random(n: n).value() { startCivilWar(r, state, rebels) }

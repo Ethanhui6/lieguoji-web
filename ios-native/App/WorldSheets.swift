@@ -74,6 +74,7 @@ struct MilitarySheet: View {
     let select: (Int) -> Void
     var selectFleet: (Int) -> Void = { _ in }
     var flyTo: (Double, Double) -> Void = { _, _ in }
+    var openNation: (Int) -> Void = { _ in }
     /// 一国的军机: how many of its armies attack, relieve and guard.
     private func dutySummary(_ state: GameState, _ rows: [Int]) -> String {
         var counts = [String: Int]()
@@ -93,22 +94,37 @@ struct MilitarySheet: View {
         if let a = inField { flyTo(Double(a.x), Double(a.y)) }
     }
     private func warCard(_ map: WorldMap, _ state: GameState, _ war: GameState.War) -> some View {
-        Group2 {
-            Button { showFront(map, state, war) } label: {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        NationChip(map: map, nation: war.attacker)
-                        Text("伐").font(Theme.label).foregroundStyle(Theme.seal)
-                        NationChip(map: map, nation: war.defender)
-                        Spacer(minLength: 4)
-                        Image(systemName: "scope").font(.system(size: 14)).foregroundStyle(Theme.seal)
+        let alliesCount = max(0, war.participants.count - 2)
+        return Group2 {
+            VStack(alignment: .leading, spacing: 9) {
+                HStack(spacing: 8) {
+                    Button { GameFeel.shared.tap(); openNation(war.attacker) } label: { NationChip(map: map, nation: war.attacker) }.buttonStyle(.plain)
+                    SealFace(text: "伐", size: 20, color: Theme.seal)
+                    Button { GameFeel.shared.tap(); openNation(war.defender) } label: { NationChip(map: map, nation: war.defender) }.buttonStyle(.plain)
+                    Spacer(minLength: 4)
+                    Button { GameFeel.shared.tap(); showFront(map, state, war) } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: "scope").font(.system(size: 12))
+                            Text("前线").font(Theme.caption)
+                        }
+                        .foregroundStyle(Theme.seal)
+                        .padding(.horizontal, 9).frame(height: 26)
+                        .background(Theme.seal.opacity(0.09), in: Capsule())
+                        .overlay(Capsule().stroke(Theme.seal.opacity(0.3), lineWidth: 0.8))
                     }
-                    Text("\(war.casusBelli) · \(war.goal)").font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
-                    WarBalance(map: map, state: state, war: war)
+                    .buttonStyle(PressStyle())
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12).contentShape(Rectangle())
+                HStack(spacing: 6) {
+                    Text([war.casusBelli, war.goal].filter { !$0.isEmpty }.joined(separator: " · "))
+                        .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
+                    Spacer(minLength: 4)
+                    if alliesCount > 0 {
+                        PaperTag(text: "另 \(alliesCount) 国参战", color: Theme.ink2)
+                    }
+                }
+                WarBalance(map: map, state: state, war: war)
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 14).padding(.vertical, 12)
         }
         .padding(.horizontal, 16)
     }
@@ -135,6 +151,17 @@ struct MilitarySheet: View {
                     if let released { Text(released).font(Theme.label).foregroundStyle(Theme.jade).padding(.horizontal, 22).transition(.opacity) }
                     if filter == "overview" { MilitaryOverview(map: map, state: state, select: select, flyTo: flyTo, generals: generals) }
                     if filter == "wars" {
+                        if !state.wars.isEmpty {
+                            let involved = Set(state.wars.flatMap { [$0.attacker, $0.defender] + $0.participants.map(\.nation) })
+                            let frontTroops = state.armies.reduce(0) { involved.contains($1.nation) ? $0 + $1.troops : $0 }
+                            let fightingNow = state.armies.filter { $0.status == "fighting" }.count
+                            StatStrip(tiles: [
+                                StatTile(label: "战事", value: "\(state.wars.count)场", warn: true),
+                                StatTile(label: "参战国", value: "\(involved.count)国"),
+                                StatTile(label: "前线兵力", value: Names.wan(frontTroops)),
+                                StatTile(label: "交锋/围城", value: "\(fightingNow)/\(state.sieges.count)"),
+                            ])
+                        }
                         if state.wars.isEmpty { Text("天下暂无战事").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 22) }
                         ForEach(state.wars) { war in warCard(map, state, war) }
                     }
@@ -206,26 +233,32 @@ struct WarBalance: View {
         let at = state.armies.reduce(0) { a.contains($1.nation) ? $0 + $1.troops : $0 }
         let dt = state.armies.reduce(0) { d.contains($1.nation) ? $0 + $1.troops : $0 }
         let share = at + dt > 0 ? Double(at) / Double(at + dt) : 0.5
+        let attPct = Int((share * 100).rounded())
+        let defPct = 100 - attPct
         let days = max(0, state.day - war.startDay)
         let sieges = state.sieges.filter { s in (a.contains(s.nation) || d.contains(s.nation)) }.count
         VStack(alignment: .leading, spacing: 5) {
             GeometryReader { g in
-                HStack(spacing: 0) {
-                    Rectangle().fill(color(war.attacker)).frame(width: max(2, g.size.width * share))
-                    Rectangle().fill(color(war.defender))
+                ZStack {
+                    HStack(spacing: 0) {
+                        Rectangle().fill(color(war.attacker)).frame(width: max(2, g.size.width * share))
+                        Rectangle().fill(color(war.defender))
+                    }
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(Theme.ink.opacity(0.25), lineWidth: 0.8))
+                    // 中线刻度，便于一眼看出双方强弱优劣
+                    Rectangle().fill(Theme.paper2.opacity(0.9)).frame(width: 1.5, height: 10)
                 }
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(Theme.ink.opacity(0.25), lineWidth: 0.8))
             }
-            .frame(height: 8)
+            .frame(height: 10)
             .animation(Motion.reveal, value: share)
             HStack {
-                Text("\(Names.wan(at)) 兵").font(Theme.label).foregroundStyle(Theme.ink)
+                Text("攻 \(Names.wan(at))（\(attPct)%）").font(Theme.caption).foregroundStyle(Theme.ink)
                 Spacer()
-                Text((days >= 360 ? "历时 \(days / 360) 年 \(days % 360 / 30) 月" : "历时 \(max(1, days / 30)) 月") + (sieges > 0 ? " · 围城 \(sieges)" : ""))
-                    .font(Theme.caption).foregroundStyle(Theme.ink2)
+                Text((days >= 360 ? "\(days / 360)年\(days % 360 / 30)月" : "\(max(1, days / 30))月") + (sieges > 0 ? " · 围城\(sieges)" : ""))
+                    .font(Theme.caption).foregroundStyle(sieges > 0 ? Theme.seal : Theme.ink2)
                 Spacer()
-                Text("\(Names.wan(dt)) 兵").font(Theme.label).foregroundStyle(Theme.ink)
+                Text("守 \(Names.wan(dt))（\(defPct)%）").font(Theme.caption).foregroundStyle(Theme.ink)
             }
             .monospacedDigit()
         }
@@ -486,6 +519,7 @@ struct WorldSummary: View {
 struct ChronicleSheet: View {
     @ObservedObject var model: GameModel
     var fly: (Int) -> Void = { _ in }
+    var openReplay: (Int?) -> Void = { _ in }
     @State private var unrolled = false
     @State private var category = "all"
     @State private var entries: [ChronicleEntry] = []
@@ -521,6 +555,31 @@ struct ChronicleSheet: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     MemorialHeader(title: "纪事", subtitle: model.state?.dateText, seal: "史")
+                    // 山河回放入口卡：支持正放、倒放、进度条自由拖动与回到历史节点继续推演
+                    Button {
+                        GameFeel.shared.tap()
+                        openReplay(nil)
+                    } label: {
+                        HStack(spacing: 12) {
+                            SealFace(text: "溯", size: 36)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("山河回放 · 时光倒流").font(Theme.section).foregroundStyle(Theme.ink)
+                                Text("支持正放、倒放、进度条拖动与回到各历史节点").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                            }
+                            Spacer(minLength: 6)
+                            HStack(spacing: 4) {
+                                Image(systemName: "clock.arrow.circlepath").font(.system(size: 13, weight: .semibold))
+                                Text("回放").font(Theme.label)
+                            }
+                            .foregroundStyle(Theme.paper2)
+                            .padding(.horizontal, 12).frame(height: 32)
+                            .background(Theme.seal, in: Capsule())
+                        }
+                        .padding(13)
+                        .paperCard(tint: Theme.seal)
+                    }
+                    .buttonStyle(PressStyle())
+                    .padding(.horizontal, 16)
                     WorldSummary(model: model).padding(.horizontal, 16)
                     ChronicleDigest(entries: digest, yearOf: yearOf, yearText: yearLabel).padding(.horizontal, 16)
                     // 大事记 by category: the whole chronicle (not only the latest lines), grouped by year;
@@ -571,15 +630,36 @@ struct ChronicleSheet: View {
                                     withAnimation(Motion.fade) { nationFilter = nationFilter == n ? nil : n }
                                 }
                                 .padding(.leading, 48).padding(.trailing, 18).padding(.bottom, 7)
-                                if open == e.id, let place = e.province {
-                                    Button { fly(place) } label: {
-                                        HStack(spacing: 5) {
-                                            Image(systemName: "scope").font(.system(size: 12))
-                                            Text("在舆图上查看").font(Theme.label)
+                                if open == e.id {
+                                    HStack(spacing: 12) {
+                                        if let place = e.province {
+                                            Button { fly(place) } label: {
+                                                HStack(spacing: 5) {
+                                                    Image(systemName: "scope").font(.system(size: 12))
+                                                    Text("在舆图上查看").font(Theme.label)
+                                                }
+                                                .foregroundStyle(Theme.seal)
+                                                .padding(.horizontal, 10).frame(height: 28)
+                                                .background(Theme.seal.opacity(0.08), in: Capsule())
+                                            }
+                                            .buttonStyle(PressStyle())
                                         }
-                                        .foregroundStyle(Theme.seal).padding(.leading, 48).padding(.bottom, 8)
+                                        Button {
+                                            GameFeel.shared.tap()
+                                            openReplay(e.day)
+                                        } label: {
+                                            HStack(spacing: 5) {
+                                                Image(systemName: "clock.arrow.circlepath").font(.system(size: 12))
+                                                Text("从此节点回放").font(Theme.label)
+                                            }
+                                            .foregroundStyle(Theme.jade)
+                                            .padding(.horizontal, 10).frame(height: 28)
+                                            .background(Theme.jade.opacity(0.1), in: Capsule())
+                                        }
+                                        .buttonStyle(PressStyle())
+                                        Spacer(minLength: 0)
                                     }
-                                    .buttonStyle(PressStyle())
+                                    .padding(.leading, 48).padding(.trailing, 18).padding(.bottom, 8)
                                 }
                                 if i < entries.count - 1 { Rectangle().fill(Theme.ink.opacity(0.08)).frame(height: 0.7).padding(.leading, 48).padding(.trailing, 18) }
                             }

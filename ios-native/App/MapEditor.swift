@@ -152,8 +152,8 @@ import LieguojiCore
         recompute()
     }
 
-    func undoStroke() { guard let prev = undo.popLast() else { return }; redo.append(heights); heights = prev; canUndo = !undo.isEmpty; canRedo = true; measureLand(); recompute() }
-    func redoStroke() { guard let next = redo.popLast() else { return }; undo.append(heights); heights = next; canUndo = true; canRedo = !redo.isEmpty; measureLand(); recompute() }
+    func undoStroke() { guard let prev = undo.popLast() else { return }; redo.append(heights); heights = prev; canUndo = !undo.isEmpty; canRedo = true; GameFeel.shared.tap(); measureLand(); recompute() }
+    func redoStroke() { guard let next = redo.popLast() else { return }; undo.append(heights); heights = next; canUndo = true; canRedo = !redo.isEmpty; GameFeel.shared.tap(); measureLand(); recompute() }
 
     /// A new base: a terrain template, or open sea with one small island.
     func reset(template: String?, seed: String) {
@@ -323,10 +323,16 @@ struct EditorView: View {
             HStack(spacing: 10) {
                 Button { leaving = true } label: { CircleIcon(glyph: .close) }.buttonStyle(PressStyle())
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(editor.step == .terrain ? "绘制山川" : editor.step == .provinces ? "划分州郡" : "划定列国").font(Theme.section).foregroundStyle(Theme.ink)
+                    HStack(spacing: 6) {
+                        stepPill("1 山川", active: editor.step == .terrain)
+                        Image(systemName: "chevron.right").font(.system(size: 8)).foregroundStyle(Theme.ink2.opacity(0.6))
+                        stepPill("2 州郡", active: editor.step == .provinces)
+                        Image(systemName: "chevron.right").font(.system(size: 8)).foregroundStyle(Theme.ink2.opacity(0.6))
+                        stepPill("3 列国", active: editor.step == .nations)
+                    }
                     Text(editor.step == .terrain ? "单指绘制 · 双指移动缩放 · 陆地 \(Int(editor.landShare * 100))%" : editor.step == .provinces ? "\(editor.provinces) 州 · \(editor.nations) 国" : "单指涂抹州郡 · 双指移动缩放 · \(editor.seeds.count) 国").font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
-                .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
+                .padding(.horizontal, 14).frame(height: 46).glass(Capsule())
                 Spacer()
                 if editor.busy { InkBusy().frame(width: 56) }
                 if editor.step == .terrain {
@@ -399,7 +405,24 @@ struct EditorView: View {
                     .buttonStyle(PressStyle())
                 }
             }
-            PaperSlider(title: "笔刷", value: $editor.radius, range: 8...110) { "\(Int($0))" }
+            HStack(spacing: 8) {
+                PaperSlider(title: "笔刷", value: $editor.radius, range: 8...110) { "\(Int($0))" }
+                HStack(spacing: 4) {
+                    ForEach(Self.brushPresets) { preset in
+                        let near = abs(editor.radius - preset.radius) <= 6
+                        Button(preset.label) {
+                            GameFeel.shared.tap()
+                            withAnimation(Motion.tap) { editor.radius = preset.radius }
+                        }
+                        .font(Theme.caption)
+                        .foregroundStyle(near ? Theme.paper2 : Theme.ink)
+                        .frame(width: 28, height: 28)
+                        .background(near ? Theme.seal : Theme.paper2, in: Circle())
+                        .overlay(Circle().stroke(near ? Color.clear : Theme.line))
+                        .buttonStyle(PressStyle())
+                    }
+                }
+            }
             FoldSection("笔触与地貌", expanded: false) {
                 VStack(spacing: 8) {
                     PaperSlider(title: "强度", value: $editor.strength, range: 0.2...2) { String(format: "%.1f×", $0) }
@@ -477,6 +500,21 @@ struct EditorView: View {
             }
             .buttonStyle(PressStyle())
         }
+    }
+
+    private struct BrushPreset: Identifiable { let id: String; let radius: Double; let label: String }
+    private static let brushPresets: [BrushPreset] = [
+        BrushPreset(id: "s", radius: 16, label: "细"),
+        BrushPreset(id: "m", radius: 34, label: "中"),
+        BrushPreset(id: "l", radius: 62, label: "阔"),
+        BrushPreset(id: "xl", radius: 95, label: "巨"),
+    ]
+
+    private func stepPill(_ title: String, active: Bool) -> some View {
+        Text(title)
+            .font(Theme.caption)
+            .foregroundStyle(active ? Theme.seal : Theme.ink2)
+            .fontWeight(active ? .semibold : .regular)
     }
 
 }

@@ -180,6 +180,7 @@ enum ChineseNumeral {
     /// 1 → 一, 10 → 十, 12 → 十二, 21 → 二十一 (ranks up to 99).
     static func of(_ n: Int) -> String {
         if n < 10 { return digits[max(0, n)] }
+        if n >= 100 { return "\(n)" }
         let t = n / 10, u = n % 10
         return (t == 1 ? "" : digits[t]) + "十" + (u == 0 ? "" : digits[u])
     }
@@ -924,20 +925,21 @@ private struct PressMenuCard: View {
                         }
                         Text(item.title).font(Theme.section).foregroundStyle(item.destructive ? Theme.seal : Theme.ink)
                         Spacer()
+                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.ink2.opacity(0.5))
                     }
                     .padding(.horizontal, 18).padding(.vertical, 13).contentShape(Rectangle())
                 }
                 .buttonStyle(PressStyle())
-                // The rows settle in one after another.
-                .opacity(shown ? 1 : 0).offset(y: shown ? 0 : 8)
-                .animation(Motion.fade.delay(0.04 * Double(i)), value: shown)
+                // The rows settle in one after another with spring physics.
+                .opacity(shown ? 1 : 0).offset(y: shown ? 0 : 10)
+                .animation(Motion.panel.delay(0.03 * Double(i)), value: shown)
             }
         }
-        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.ink.opacity(0.22), lineWidth: 1))
-        .overlay(alignment: .top) { Rectangle().fill(Theme.seal).frame(height: 3).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)) }
-        .shadow(color: .black.opacity(0.25), radius: 18, y: 8)
-        .padding(.horizontal, 44)
+        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.ink.opacity(0.2), lineWidth: 1))
+        .overlay(alignment: .top) { Capsule().fill(Theme.seal).frame(width: 44, height: 3.5).padding(.top, 6) }
+        .shadow(color: .black.opacity(0.24), radius: 22, y: 10)
+        .padding(.horizontal, 36)
         .onAppear { shown = true }
     }
 }
@@ -947,11 +949,11 @@ private struct PressMenuHost: ViewModifier {
         content.overlay {
             ZStack {
                 if let m = menu {
-                    Color.black.opacity(0.3).ignoresSafeArea().onTapGesture { dismiss() }.transition(.opacity)
-                    PressMenuCard(menu: m, close: dismiss).id(m.id).transition(.scale(scale: 0.84).combined(with: .opacity))
+                    Color.black.opacity(0.32).ignoresSafeArea().onTapGesture { dismiss() }.transition(.opacity)
+                    PressMenuCard(menu: m, close: dismiss).id(m.id).transition(.scale(scale: 0.88).combined(with: .opacity))
                 }
             }
-            .animation(Motion.tap, value: menu?.id)
+            .animation(Motion.panel, value: menu?.id)
         }
     }
     private func dismiss() { menu = nil; PressGuard.fired = false }

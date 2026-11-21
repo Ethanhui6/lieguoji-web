@@ -45,10 +45,13 @@ public enum RebelWar {
         }
     }
     static func restore(_ r: JS, _ id: String, _ province: String) {
-        let p = r.world.provinces.asArray.first { $0.id.asString == province }!, from = p.controller.asString
+        guard let p = r.world.provinces.asArray.first(where: { $0.id.asString == province }),
+              let nation = r.world.nations.asArray.first(where: { $0.id.asString == id }),
+              let city = r.world.cities.asArray.first(where: { $0.provinceId.asString == province }) else { return }
+        let from = p.controller.asString
         PeaceBridge.transferEconomy(r, province, from, id); p.controller = JS(id); p.legalOwner = JS(id)
         r.occupation.sieges.asArray = r.occupation.sieges.asArray.filter { $0.provinceId.asString != province }
-        r.world.nations.asArray.first { $0.id.asString == id }!.capitalId = r.world.cities.asArray.first { $0.provinceId.asString == province }!.id.clone()
+        nation.capitalId = city.id.clone()
         Government.relocateLostCapitals(r); Wars.reconcileCore(r); Founding.reconcilePorts?(r)
         Government.reconcileContinuity(r)
         let tick = r.clock.tick.asNumber
@@ -60,7 +63,9 @@ public enum RebelWar {
     /// Installs the rebellion as Rebellion's success path.
     public static func install() {
         Rebellion.onRebel = { r, province, force in
-            let s = r.foundings, p = r.world.provinces.asArray.first { $0.id.asString == province }!, owner = p.controller.asString
+            let s = r.foundings
+            guard let p = r.world.provinces.asArray.first(where: { $0.id.asString == province }) else { return false }
+            let owner = p.controller.asString
             if blocked(r, province) { return false }
             // App worlds: a rising takes the country round it (大叛乱).
             if UnitKinds.enabled { return Regimes.raise(r, owner: owner, seed: province, size: Regimes.uprisingSize(r, owner)) != nil }

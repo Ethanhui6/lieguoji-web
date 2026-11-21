@@ -102,7 +102,11 @@ public struct WorldMeta: Codable, Sendable {
     /// LabelUtility name box of a nation, map units; font size between fontMin and fontMax.
     public struct LabelBox: Codable, Sendable, Equatable { public let nation: Int; public let x: Float; public let y: Float; public let width: Float; public let height: Float; public let fontMax: Float; public let fontMin: Float
         /// Tilt in radians along the land (absent in older worlds: level).
-        public var angle: Float? = nil }
+        public var angle: Float? = nil
+        public init(nation: Int, x: Float, y: Float, width: Float, height: Float, fontMax: Float, fontMin: Float, angle: Float? = nil) {
+            self.nation = nation; self.x = x; self.y = y; self.width = width; self.height = height; self.fontMax = fontMax; self.fontMin = fontMin; self.angle = angle
+        }
+    }
     public struct Event: Codable, Sendable { public let day: Int; public let text: String; public let reason: String }
     public struct Rect: Codable, Sendable { public let x: Float; public let y: Float; public let width: Float; public let height: Float }
     public struct City: Codable, Sendable { public let id: String; public var name: String; public let x: Float; public let y: Float; public let province: Int

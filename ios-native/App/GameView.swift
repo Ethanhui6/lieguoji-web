@@ -143,7 +143,7 @@ struct GameView: View {
             .animation(Motion.panel, value: model.herald)
                 .offset(y: chromeIn ? 0 : -90).opacity(chromeIn ? 1 : 0)
                 .animation(Motion.drift, value: chromeIn)
-                .opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper)
+                .opacity(wallpaper || model.replayActive ? 0 : 1).allowsHitTesting(!wallpaper && !model.replayActive)
                 .animation(Motion.panel, value: controller.marchingArmy)
                 .animation(Motion.panel, value: controller.marchingFleet)
                 .animation(Motion.panel, value: controller.paintNation)
@@ -162,12 +162,19 @@ struct GameView: View {
             }
             .offset(y: chromeIn ? 0 : 130).opacity(chromeIn ? 1 : 0)
             .animation(Motion.drift.delay(0.12), value: chromeIn)
-            .opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper)
+            .opacity(wallpaper || model.replayActive ? 0 : 1).allowsHitTesting(!wallpaper && !model.replayActive)
             .task { try? await Task.sleep(nanoseconds: 250_000_000); entered = true }
         }
         .overlay(alignment: .topLeading) {
-            if landscape { landscapeRail.offset(x: chromeIn ? 0 : -120).animation(Motion.drift, value: chromeIn).opacity(wallpaper ? 0 : 1).allowsHitTesting(!wallpaper) }
+            if landscape { landscapeRail.offset(x: chromeIn ? 0 : -120).animation(Motion.drift, value: chromeIn).opacity(wallpaper || model.replayActive ? 0 : 1).allowsHitTesting(!wallpaper && !model.replayActive) }
         }
+        .overlay {
+            if model.replayActive {
+                ReplayOverlay(model: model)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            }
+        }
+        .animation(Motion.panel, value: model.replayActive)
         .overlay {
             if wallpaper {
                 Color.clear.contentShape(Rectangle()).ignoresSafeArea()
@@ -302,7 +309,11 @@ struct GameView: View {
         .overlay { if let ripple { PressRipple().position(ripple).ignoresSafeArea() } }
         .sheet(isPresented: pageShown, onDismiss: {
             trail = []
-            if panel == nil { controller.selectedProvince = nil; controller.selectedFleet = nil; if controller.marchingArmy == nil { controller.selectedArmy = nil } }
+            if panel == nil {
+                controller.selectedProvince = nil
+                controller.selectedFleet = nil; controller.selectedFleetId = nil
+                if controller.marchingArmy == nil { controller.selectedArmy = nil; controller.selectedArmyId = nil }
+            }
         }) {
             if let panel = panel ?? lastPanel {
                 sheet(for: panel)
@@ -371,18 +382,29 @@ struct GameView: View {
             ProvinceQuickSheet(model: model, province: p, openProvince: { open(.province(p)) }, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)) }, close: { closePage() })
                 .presentationDetents([.medium, .large])
         case .province(let p):
-            ProvinceSheet(model: model, province: p, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)); controller.selectedArmy = a; locate(army: a) }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            ProvinceSheet(model: model, province: p, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in
+                unitDetent = .height(320)
+                controller.selectedArmyId = model.army(a)?.id
+                controller.selectedArmy = a
+                open(.army(a)); locate(army: a)
+            }).presentationDetents([.height(300), .medium, .large]).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .army(let a):
-            ArmySheet(model: model, army: a, say: say, locate: { locate(army: a) }, onMarch: {
-                marchRetreat = false; controller.marchingArmy = a; self.panel = nil; say("点选地图上的目的地")
-            }, onHalt: { Task { if let e = await model.order(army: a, to: nil) { say(e) } } }, onRetreat: {
-                marchRetreat = true; controller.marchingArmy = a; self.panel = nil; say("点选撤退的目的地（途中不主动接战）")
-            })
+            ArmySheet(model: model, army: a, armyId: controller.selectedArmyId, say: say, locate: { locate(army: a) }, onMarch: {
+                let targetIdx = model.resolveArmy(id: controller.selectedArmyId, fallback: a)?.index ?? a
+                marchRetreat = false; controller.marchingArmy = targetIdx; self.panel = nil; say("点选地图上的目的地")
+            }, onHalt: {
+                let targetIdx = model.resolveArmy(id: controller.selectedArmyId, fallback: a)?.index ?? a
+                Task { if let e = await model.order(army: targetIdx, to: nil) { say(e) } }
+            }, onRetreat: {
+                let targetIdx = model.resolveArmy(id: controller.selectedArmyId, fallback: a)?.index ?? a
+                marchRetreat = true; controller.marchingArmy = targetIdx; self.panel = nil; say("点选撤退的目的地（途中不主动接战）")
+            }, onClose: { closePage() })
             .presentationDetents([.height(320), .medium, .large], selection: $unitDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .fleet(let f):
-            FleetSheet(model: model, fleet: f, pickOnMap: {
-                controller.marchingFleet = f; self.panel = nil; say("点选地图上本国的港口州郡")
-            }).presentationDetents([.height(320), .medium, .large], selection: $unitDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            FleetSheet(model: model, fleet: f, fleetId: controller.selectedFleetId, pickOnMap: {
+                let targetIdx = model.resolveFleet(id: controller.selectedFleetId, fallback: f)?.index ?? f
+                controller.marchingFleet = targetIdx; self.panel = nil; say("点选地图上本国的港口州郡")
+            }, onClose: { closePage() }).presentationDetents([.height(320), .medium, .large], selection: $unitDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nation(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, lower: { nationDetent = .fraction(0.38) }, paint: { n in
                 controller.placingArmy = false; controller.paintNation = n; self.panel = nil
@@ -397,7 +419,14 @@ struct GameView: View {
                 controller.pickPrompt = prompt
                 controller.onPick = { p in controller.pickPrompt = nil; controller.onPick = nil; done(p); nationDetent = .medium; open(.nation(n)) }
                 self.panel = nil
-            }, openArmy: { a in open(.army(a)) }, openPeople: { nationDetent = .fraction(0.38); open(.people(n)) }, openWars: { nationDetent = .fraction(0.38); open(.nationWars(n)) }, openTalks: { nationDetent = .fraction(0.38); open(.nationTalks(n)) })
+            }, openArmy: { a in
+                controller.selectedArmyId = model.army(a)?.id
+                controller.selectedArmy = a
+                open(.army(a))
+            }, openPeople: { nationDetent = .fraction(0.38); open(.people(n)) }, openWars: { nationDetent = .fraction(0.38); open(.nationWars(n)) }, openTalks: { nationDetent = .fraction(0.38); open(.nationTalks(n)) }, openReplay: {
+                closePage()
+                Task { await model.enterReplay() }
+            })
                 .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
                 .onAppear { if NationSheet.tourTab != nil { nationDetent = .large } }
         case .people(let n):
@@ -420,13 +449,17 @@ struct GameView: View {
                 // The army's docket slides in over the roster (返回军事 goes back); the sheet drops low and
                 // the camera flies to the army itself.
                 unitDetent = .height(320)
+                controller.selectedArmyId = model.army(army)?.id
                 open(.army(army)); controller.selectedArmy = army
                 locate(army: army)
             }, selectFleet: { fleet in
                 unitDetent = .height(320)
+                controller.selectedFleetId = model.fleet(fleet)?.id
                 open(.fleet(fleet)); controller.selectedFleet = fleet
-                if let f = model.fleet(fleet) { controller.fly(x: Double(f.x), y: Double(f.y)) }
-            }, flyTo: { x, y in controller.fly(x: x, y: y) }).presentationDetents([.medium, .large])
+                if let f = model.fleet(fleet), f.x.isFinite, f.y.isFinite { controller.fly(x: Double(f.x), y: Double(f.y)) }
+            }, flyTo: { x, y in if x.isFinite && y.isFinite { controller.fly(x: x, y: y) } }, openNation: { n in
+                nationDetent = .fraction(0.38); open(.nation(n))
+            }).presentationDetents([.medium, .large])
         case .diplomacy:
             DiplomacySheet(model: model, say: say, fly: { n in
                 if let map = model.map, map.meta.nations.indices.contains(n), map.meta.cities.indices.contains(map.meta.nations[n].capital) {
@@ -437,7 +470,10 @@ struct GameView: View {
                openWars: { MilitarySheet.openOn = "wars"; open(.military) },
                openChronicle: { n in ChronicleSheet.openNation = n; open(.chronicle) }).presentationDetents([.medium, .large])
         case .chronicle:
-            ChronicleSheet(model: model, fly: { controller.fly(to: $0) }).presentationDetents([.medium, .large])
+            ChronicleSheet(model: model, fly: { controller.fly(to: $0) }, openReplay: { targetDay in
+                closePage()
+                Task { await model.enterReplay(atDay: targetDay) }
+            }).presentationDetents([.medium, .large])
         case .menu:
             MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }, openEditor: { open(.editor) },
                       wallpaper: { self.panel = nil; withAnimation(Motion.reveal) { wallpaper = true }; controller.drifting = true }, say: say) { self.panel = nil }.presentationDetents([.medium, .large])
@@ -446,9 +482,12 @@ struct GameView: View {
 
     /// The camera to where the army is drawn now.
     private func locate(army: Int) {
-        guard let a = model.army(army) else { return }
+        guard let a = model.resolveArmy(id: controller.selectedArmyId, fallback: army)?.army else { return }
         let drawn = controller.placed?(a.id)
-        controller.fly(x: drawn?.0 ?? Double(a.x), y: drawn?.1 ?? Double(a.y))
+        let x = drawn?.0 ?? Double(a.x)
+        let y = drawn?.1 ?? Double(a.y)
+        guard x.isFinite && y.isFinite else { return }
+        controller.fly(x: x, y: y)
     }
 
     private func say(_ text: String) {
@@ -645,8 +684,8 @@ struct GameView: View {
     private func closePage() {
         withAnimation(Motion.panel) { panel = nil }
         trail = []
-        controller.selectedProvince = nil; controller.selectedFleet = nil
-        if controller.marchingArmy == nil { controller.selectedArmy = nil }
+        controller.selectedProvince = nil; controller.selectedFleet = nil; controller.selectedFleetId = nil
+        if controller.marchingArmy == nil { controller.selectedArmy = nil; controller.selectedArmyId = nil }
     }
 
     private var bottomBar: some View {

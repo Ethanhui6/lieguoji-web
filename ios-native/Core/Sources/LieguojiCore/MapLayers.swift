@@ -259,7 +259,8 @@ public enum MapLayers {
 
     /// StateLineRenderer outlines on the shared cell edges: each state strokes its own outline in its
     /// adjusted colour (both sides of a border), then the smoothed coastline in grey.
-    /// `wide` nations are drawn at twice the line width. The app passes the open nation and the owner of the selected province.
+    /// `wide` nations（点击国家或打开国家详情页时）以暖金亮晕 + 醒目朱墨双层描边勾勒完整疆域轮廓，
+    /// 一眼就能看清所选国家的全部陆地、海岸与飞地国界线。
     public static func outlines(_ map: WorldMap, wide: Set<Int> = []) -> ColoredMesh {
         let colors = map.meta.nations.map { RGB(css: $0.line) ?? RGB(0.2, 0.2, 0.2) }
         var m = ColoredMesh()
@@ -269,14 +270,31 @@ public enum MapLayers {
         for s in stride(from: 0, to: map.coast.count, by: 4) {
             m.segment(map.coast[s], map.coast[s + 1], map.coast[s + 2], map.coast[s + 3], width: lineWidth, coastColor, alpha: 1)
         }
+        let allPairs = boundaries(map)
+        var emphasisLines: [(lines: [[Float]], color: RGB)] = []
         // The state borders are the shared province-pair curves whose two sides belong to different
         // states (or one side is water), so they lie exactly on the province lines.
-        for pair in boundaries(map) {
+        for pair in allPairs {
             let oa = owner(map, pair.a), ob = owner(map, pair.b)
             guard oa != ob else { continue }
             for n in [oa, ob].compactMap({ $0 }) where n < colors.count {
-                let width = wide.contains(n) ? lineWidth * 2 : lineWidth
-                for line in pair.lines { m.polyline(line, width: width, colors[n], alpha: 1) }
+                if wide.contains(n) {
+                    emphasisLines.append((pair.lines, colors[n]))
+                } else {
+                    for line in pair.lines { m.polyline(line, width: lineWidth, colors[n], alpha: 1) }
+                }
+            }
+        }
+        // 选中国家国界置于最顶层：先铺宣金亮边，再压深朱红/深色醒目实线，在任何底色下都轮廓分明。
+        if !emphasisLines.isEmpty {
+            let halo = RGB(0.99, 0.94, 0.72)
+            let seal = RGB(0.76, 0.17, 0.12)
+            for item in emphasisLines {
+                for line in item.lines { m.polyline(line, width: lineWidth * 4.8, halo, alpha: 0.78) }
+            }
+            for item in emphasisLines {
+                let c = RGB(item.color.r * 0.35 + seal.r * 0.65, item.color.g * 0.35 + seal.g * 0.65, item.color.b * 0.35 + seal.b * 0.65)
+                for line in item.lines { m.polyline(line, width: lineWidth * 2.5, c, alpha: 1) }
             }
         }
         return m

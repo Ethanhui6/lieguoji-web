@@ -223,33 +223,54 @@ public enum Founding {
     @discardableResult
     public static func foundState(_ r: JS, parent: String, provinces ids: [String], reason: String, family: RebelFamily? = nil) -> JS {
         let s = r.foundings, w = r.world, c = r.civilization
-        let provinces = ids.map { id in w.provinces.asArray.first { $0.id.asString == id }! }
+        let provinces = ids.compactMap { id in w.provinces.asArray.first { $0.id.asString == id } }
+        guard let firstProv = provinces.first else { return JS.object() }
         let index = w.nations.length, id = "n-\(index)"
-        let capital = w.cities.asArray.first { $0.provinceId.asString == provinces[0].id.asString }!
+        guard let capital = w.cities.asArray.first(where: { $0.provinceId.asString == firstProv.id.asString })
+                ?? provinces.lazy.compactMap({ p in w.cities.asArray.first { $0.provinceId.asString == p.id.asString } }).first else {
+            return JS.object()
+        }
         let seed = w.custom.seed.asString, day = w.day.asNumber, tick = r.clock.tick
-        let cultureId = family.map { r.kin.families[String($0.familyId)].cultureName.asString } ?? c.cities[capital.id.asString].cultureId.asString
-        let profile = cultures.first { $0.id == cultureId }!
-        let used = Set(c.nations.objectValues.map { NamingCatalog.cleanStateBase($0.name.value.asString) })
+        let rawCultureId = family.flatMap { r.kin.families[String($0.familyId)].cultureName.optionalString }
+            ?? c.cities[capital.id.asString].cultureId.optionalString
+            ?? c.nations[parent].cultureId.optionalString
+            ?? "chinese"
+        // 若为玩家自定义文化，沿用其 base 文化或兜底到首个内置文化，绝不因 force-unwrap 闪退。
+        let resolvedBaseCulture: String = {
+            if cultures.contains(where: { $0.id == rawCultureId }) { return rawCultureId }
+            if !r.regimes.isNull, let base = r.regimes.cultures[rawCultureId].base.optionalString, cultures.contains(where: { $0.id == base }) { return base }
+            return cultures.first?.id ?? "chinese"
+        }()
+        let cultureId = cultures.contains(where: { $0.id == rawCultureId }) ? rawCultureId : resolvedBaseCulture
+        let profile = cultures.first { $0.id == resolvedBaseCulture } ?? cultures[0]
+        let religionId = c.nations[parent].religionId.optionalString ?? profile.suggestedReligion
+        var chosenStyle: Regimes.Style?
+        if UnitKinds.enabled, !r.regimes.isNull {
+            chosenStyle = NameVariety.pickStyle(seed: seed, key: "form/\(id)", polity: profile.suggestedPolity, culture: cultureId, religion: religionId)
+        }
+        let used = UnitKinds.enabled ? NamingCatalog.usedStateKeys(r) : Set(c.nations.objectValues.compactMap { $0.name.value.optionalString })
         let fresh: (value: String, sourceKey: String)
-        if UnitKinds.enabled, let pick = NamingCatalog.pickStateBase(culture: cultureId, mode: c.mode.asString, seed: "\(seed)/rebel-state/\(id)", used: used) {
+        if UnitKinds.enabled, let pick = NamingCatalog.pickStateBase(culture: cultureId, mode: c.mode.optionalString ?? "historical-names", seed: "\(seed)/rebel-state/\(id)", used: used, styleId: chosenStyle?.id) {
             fresh = (pick, "state/\(cultureId)/\(c.mode.asString)/app")
+        } else if let opened = Opening.freshName(profile, c.mode.asString, "state", "\(seed)/rebel-state/\(id)", used) {
+            fresh = opened
         } else {
-            fresh = Opening.freshName(profile, c.mode.asString, "state", "\(seed)/rebel-state/\(id)", used)!
+            fresh = (firstProv.name.optionalString ?? "新邦\(index)", "state/\(cultureId)/fallback/\(index)")
         }
         let identity = JS.object()
-        identity.cultureId = JS(cultureId); identity.religionId = c.nations[parent].religionId.clone(); identity.polity = JS(profile.suggestedPolity)
+        identity.cultureId = JS(rawCultureId.isEmpty ? cultureId : rawCultureId); identity.religionId = JS(religionId); identity.polity = JS(profile.suggestedPolity)
         let name = JS.object(); name.value = JS(fresh.value); name.mode = c.mode.clone(); name.sourceKey = JS(fresh.sourceKey); name.custom = .null; identity.name = name
         identity.origin = JS("secession"); identity.parentId = JS(parent)
         c.nations[id] = identity; Vassals.bump(c)
         let nation = JS.object()
         let fullTitle: String
         if UnitKinds.enabled, !r.regimes.isNull {
-            if let st = NameVariety.pickStyle(seed: seed, key: "form/\(id)", polity: profile.suggestedPolity, culture: cultureId, religion: identity.religionId.asString) {
+            if let st = chosenStyle {
                 let b = Regimes.book(r, id); b.style = JS(st.id); b.parties = .null
             }
             fullTitle = Regimes.title(r, id, base: fresh.value, style: Regimes.style(r, id))
         } else {
-            fullTitle = Opening.stateTitle(fresh.value, polity: profile.suggestedPolity, religion: identity.religionId.asString)
+            fullTitle = Opening.stateTitle(fresh.value, polity: profile.suggestedPolity, religion: religionId)
         }
         nation.id = JS(id); nation.name = JS(fullTitle); nation.color = JS(color(r, index, provinces: provinces))
         nation.capitalId = capital.id.clone(); nation.regimeId = JS("regime-\(index)"); nation.dynastyId = JS("dynasty-\(index)")
@@ -269,12 +290,12 @@ public enum Founding {
             if UnitKinds.enabled {
                 let gPool = NamingCatalog.givenNames(r, culture: cultureId, gender: gender)
                 let hPool = NamingCatalog.houseNames(culture: cultureId)
-                given = gPool[Int(hash("\(seed)/\(reignId)/given") % UInt32(gPool.count))]
-                house = hPool[Int(hash("\(seed)/\(reignId)/house") % UInt32(hPool.count))]
+                given = gPool.isEmpty ? "元明" : gPool[Int(hash("\(seed)/\(reignId)/given") % UInt32(gPool.count))]
+                house = hPool.isEmpty ? "李" : hPool[Int(hash("\(seed)/\(reignId)/house") % UInt32(hPool.count))]
             } else {
                 let names = gender == 0 ? Nobility.cultures[cultureId].givenMale : Nobility.cultures[cultureId].givenFemale, houses = Nobility.cultures[cultureId].houses
-                given = names[Int(hash("\(seed)/\(reignId)/given") % UInt32(names.length))].asString
-                house = houses[Int(hash("\(seed)/\(reignId)/house") % UInt32(houses.length))].asString
+                given = names.length > 0 ? names[Int(hash("\(seed)/\(reignId)/given") % UInt32(names.length))].asString : "元明"
+                house = houses.length > 0 ? houses[Int(hash("\(seed)/\(reignId)/house") % UInt32(houses.length))].asString : "李"
             }
             ruler = rulerFrom(Nobility.personName(cultureId, given: given, house: house, gender: gender), identity)
         }

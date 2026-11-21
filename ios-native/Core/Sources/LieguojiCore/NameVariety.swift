@@ -13,39 +13,43 @@ enum NameVariety {
         switch polity {
         case "Kingdom":
             switch culture {
-            case "arab", "persian", "turkic": return [("sultanate", 0.6), ("absolute", 0.25), ("feudal", 0.15)]
-            case "german", "polish", "hungarian": return [("principality", 0.3), ("elective", 0.2), ("feudal", 0.3), ("absolute", 0.2)]
-            case "french", "italian", "slavic": return [("principality", 0.3), ("feudal", 0.35), ("absolute", 0.35)]
-            case "english", "dutch", "norse", "spanish", "portuguese": return [("constitutional", 0.25), ("feudal", 0.35), ("absolute", 0.4)]
-            default: return [("feudal", 0.4), ("absolute", 0.45), ("regency", 0.15)]
+            case "chinese": return [("feudal", 0.50), ("absolute", 0.35), ("principality", 0.15)]
+            case "korean", "vietnamese": return [("absolute", 0.55), ("feudal", 0.35), ("regency", 0.10)]
+            case "japanese": return [("feudal", 0.45), ("shogunate", 0.0), ("absolute", 0.40), ("regency", 0.15)]
+            case "arab", "persian", "turkic": return [("sultanate", 0.65), ("absolute", 0.25), ("feudal", 0.10)]
+            case "german", "polish", "hungarian": return [("principality", 0.35), ("elective", 0.20), ("feudal", 0.25), ("absolute", 0.20)]
+            case "french", "italian", "slavic": return [("principality", 0.30), ("feudal", 0.35), ("absolute", 0.35)]
+            case "english", "dutch", "norse", "spanish", "portuguese": return [("constitutional", 0.25), ("feudal", 0.35), ("absolute", 0.40)]
+            default: return [("feudal", 0.40), ("absolute", 0.45), ("regency", 0.15)]
             }
         case "Empire":
             switch culture {
             case "slavic": return [("tsardom", 0.65), ("empire", 0.35)]
-            case "japanese": return [("shogunate", 0.4), ("empire", 0.6)]
-            case "chinese", "vietnamese", "korean": return [("dynasty", 0.55), ("empire", 0.35), ("despotism", 0.10)]
-            case "mongol", "turkic": return [("empire", 0.7), ("despotism", 0.3)]
+            case "japanese": return [("shogunate", 0.45), ("empire", 0.55)]
+            case "chinese": return [("dynasty", 0.80), ("empire", 0.15), ("despotism", 0.05)]
+            case "vietnamese", "korean": return [("dynasty", 0.65), ("empire", 0.25), ("despotism", 0.10)]
+            case "mongol", "turkic": return [("empire", 0.70), ("despotism", 0.30)]
             default: return [("empire", 0.75), ("despotism", 0.25)]
             }
         case "Tribal":
             switch culture {
-            case "mongol", "turkic": return [("khanate", 0.7), ("tribal", 0.3)]
+            case "mongol", "turkic": return [("khanate", 0.75), ("tribal", 0.25)]
             default: return [("chiefdom", 0.35), ("tribal", 0.65)]
             }
         case "Republic":
             switch culture {
-            case "italian", "greek": return [("citystate", 0.4), ("merchant", 0.25), ("oligarchic", 0.2), ("democratic", 0.15)]
-            case "dutch": return [("merchant", 0.5), ("parliamentary", 0.25), ("democratic", 0.25)]
-            case "roman": return [("oligarchic", 0.5), ("citystate", 0.2), ("democratic", 0.3)]
-            default: return [("democratic", 0.45), ("parliamentary", 0.2), ("presidential", 0.2), ("oligarchic", 0.15)]
+            case "italian", "greek": return [("citystate", 0.40), ("merchant", 0.25), ("oligarchic", 0.20), ("democratic", 0.15)]
+            case "dutch": return [("merchant", 0.50), ("parliamentary", 0.25), ("democratic", 0.25)]
+            case "roman": return [("oligarchic", 0.50), ("citystate", 0.20), ("democratic", 0.30)]
+            default: return [("democratic", 0.45), ("parliamentary", 0.20), ("presidential", 0.20), ("oligarchic", 0.15)]
             }
-        case "Federation": return [("federal", 0.55), ("confederation", 0.3), ("union", 0.15)]
+        case "Federation": return [("federal", 0.55), ("confederation", 0.30), ("union", 0.15)]
         case "Theocracy":
             switch religion {
             case "islam": return [("caliphate", 1)]
-            case "catholic": return [("papacy", 0.7), ("order", 0.3)]
-            case "buddhism": return [("lamaism", 0.6), ("theocracy", 0.4)]
-            default: return [("theocracy", 0.8), ("holy", 0.2)]
+            case "catholic": return [("papacy", 0.70), ("order", 0.30)]
+            case "buddhism": return [("lamaism", 0.60), ("theocracy", 0.40)]
+            default: return [("theocracy", 0.80), ("holy", 0.20)]
             }
         default: return []
         }
@@ -82,18 +86,21 @@ enum NameVariety {
             }
             let culture = c.cultureId.optionalString ?? "", polity = c.polity.optionalString ?? "Kingdom"
             let religion = c.religionId.optionalString ?? ""
-            if let pick = NamingCatalog.pickStateBase(culture: culture, mode: mode, seed: "\(seed)/variety/\(id)", used: used) {
+            if let s = pickStyle(seed: seed, key: "form/\(id)", polity: polity, culture: culture, religion: religion) {
+                let b = Regimes.book(r, id); b.style = JS(s.id); b.parties = .null
+            }
+            let st = Regimes.style(r, id)
+            if let pick = NamingCatalog.pickStateBase(culture: culture, mode: mode, seed: "\(seed)/variety/\(id)", used: used, styleId: st.id) {
                 used.insert(pick)
+                used.insert(NamingCatalog.canonicalStateKey(pick))
                 c.name.value = JS(pick)
             } else if let raw = c.name.value.optionalString {
                 let cleaned = NamingCatalog.cleanStateBase(raw)
                 used.insert(cleaned)
+                used.insert(NamingCatalog.canonicalStateKey(cleaned))
                 c.name.value = JS(cleaned)
             }
-            if let s = pickStyle(seed: seed, key: "form/\(id)", polity: polity, culture: culture, religion: religion) {
-                let b = Regimes.book(r, id); b.style = JS(s.id); b.parties = .null
-            }
-            n.name = JS(Regimes.title(r, id, base: c.name.value.optionalString ?? MapLayers.stateLabel(n.name.asString, full: false), style: Regimes.style(r, id)))
+            n.name = JS(Regimes.title(r, id, base: c.name.value.optionalString ?? MapLayers.stateLabel(n.name.asString, full: false), style: st))
         }
         polishHousesAndPeople(r, seed: seed)
         FamilyPolitics.seedOpeningRelations(r, seed: seed)

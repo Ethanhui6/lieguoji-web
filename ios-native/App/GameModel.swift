@@ -103,7 +103,22 @@ import LieguojiCore
     private var heraldQueue: [Herald] = []
     private var heraldTask: Task<Void, Never>?
     /// Bumped whenever a different world is opened, so the map view rebuilds.
-    @Published private(set) var worldID = UUID() { didSet { Task { await refreshCustom() } } }
+    @Published private(set) var worldID = UUID() { didSet { Task { await refreshCustom(); loadCheckpoints() } } }
+    /// 山河回放状态（正放、倒放、时间轴拖动与可续推历史节点）
+    @Published var replayActive = false
+    @Published var replayTimelineData: ReplayTimelineData?
+    @Published var replayIndex = 0
+    @Published var replayPlaying = false
+    @Published var replayReversing = false
+    @Published var replaySpeed = 1
+    @Published var checkpoints: [WorldCheckpoint] = []
+    var lastCheckpointDay = -9999
+    var checkpointBusy = false
+    var savedLiveWorld: WorldMap?
+    var savedLiveArmies: [MapRenderer.ArmySprite]?
+    var savedLiveEffects: MapEffects?
+    var savedLiveMapView: MapViewMode = .state
+    var replayTimer: Task<Void, Never>?
     /// 后备网页引擎：纯 Swift 已接管全部建世、推演、指令与存档，启动与日常游玩零 WKWebView 实例；
     /// 仅在读取极早期旧版 JSON 存档、远程气候回退或 CI 对照计时时按需创建并挂载。
     @Published private(set) var legacyEngine: EngineHost?
@@ -118,8 +133,8 @@ import LieguojiCore
     let native = NativeHost()
     let controller = MapController()
     private var loop: Task<Void, Never>?
-    private var advanceOwnership = AdvanceOwnership()
-    private var nativeRevision: UInt64 = 0
+    var advanceOwnership = AdvanceOwnership()
+    var nativeRevision: UInt64 = 0
     private var singleStep: (world: Int, task: Task<Void, Never>)?
     var onAdvanceApplied: (@MainActor (Int) -> Void)?
     private var lastSavedDay = 0
@@ -221,7 +236,7 @@ import LieguojiCore
     /// Longest the engine may take to found a world before it is replaced (a phone needs well under a minute).
     private static let foundingLimit: Double = 180
     /// Bumped when another world is begun: whatever the last one still had under way is dropped.
-    private var worldEpoch = 0
+    var worldEpoch = 0
     private func checkWorld(_ epoch: Int) throws {
         guard epoch == worldEpoch else { throw CancellationError() }
     }
@@ -714,7 +729,7 @@ import LieguojiCore
         }
         if !hits.isEmpty { controller.onHits?(hits) }
     }
-    private func apply(_ next: GameState) {
+    func apply(_ next: GameState) {
         let previous = state
         state = next
         if let previous { announce(previous, next); if playing { battleHits(previous, next) } }
@@ -769,6 +784,7 @@ import LieguojiCore
             lastViewRefresh = CACurrentMediaTime()
             Task { await refreshView() }
         }
+        maybeRecordCheckpoint(next)
     }
 
     /// Wars declared or ended and provinces taken since the last state, as banners.
@@ -1075,9 +1091,11 @@ import LieguojiCore
     func refreshArmies() {
         guard let state else { controller.armies = []; return }
         let selected = controller.marchingArmy ?? controller.selectedArmy
-        var sprites: [MapRenderer.ArmySprite] = state.armies.enumerated().map { i, a in
-            MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: i == selected || controller.groupArmies.contains(i), key: a.id,
-                                   tier: a.troops < 2000 ? 1 : a.troops < 6000 ? 2 : 3, banner: a.banner == "ruler" ? 2 : a.banner == "general" ? 1 : 0, reorganizing: a.reorganizing ?? false, fighting: a.status == "fighting", retreating: a.status == "retreating")
+        var sprites: [MapRenderer.ArmySprite] = state.armies.enumerated().compactMap { i, a in
+            guard a.x.isFinite && a.y.isFinite else { return nil }
+            let isSel = i == selected || (controller.selectedArmyId != nil && a.id == controller.selectedArmyId) || controller.groupArmies.contains(i)
+            return MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: isSel, key: a.id,
+                                          tier: a.troops < 2000 ? 1 : a.troops < 6000 ? 2 : 3, banner: a.banner == "ruler" ? 2 : a.banner == "general" ? 1 : 0, reorganizing: a.reorganizing ?? false, fighting: a.status == "fighting", retreating: a.status == "retreating")
         }
         // Harbour anchors in the occupier's colour (not tappable; the province panel lists them), then fleets.
         let choosing = controller.marchingFleet ?? controller.selectedFleet
@@ -1152,6 +1170,19 @@ import LieguojiCore
 
     func fleet(_ index: Int?) -> GameState.Fleet? { index.flatMap { i in state?.fleets?.indices.contains(i) == true ? state!.fleets![i] : nil } }
     func army(_ index: Int?) -> GameState.Army? { index.flatMap { i in state?.armies.indices.contains(i) == true ? state!.armies[i] : nil } }
+    /// 按稳定 ID 找回军团（推演中数组顺序变更时不会错位，覆灭时返回 nil 以便界面优雅提示而非空白屏）。
+    func resolveArmy(id: String?, fallback index: Int?) -> (index: Int, army: GameState.Army)? {
+        guard let list = state?.armies else { return nil }
+        if let id, !id.isEmpty, let i = list.firstIndex(where: { $0.id == id }) { return (i, list[i]) }
+        if let index, list.indices.contains(index) { return (index, list[index]) }
+        return nil
+    }
+    func resolveFleet(id: String?, fallback index: Int?) -> (index: Int, fleet: GameState.Fleet)? {
+        guard let list = state?.fleets else { return nil }
+        if let id, !id.isEmpty, let i = list.firstIndex(where: { $0.id == id }) { return (i, list[i]) }
+        if let index, list.indices.contains(index) { return (index, list[index]) }
+        return nil
+    }
 
     // MARK: commands
 

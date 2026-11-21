@@ -43,11 +43,13 @@ struct ArmyRow: View {
 struct ArmySheet: View {
     @ObservedObject var model: GameModel
     let army: Int
+    var armyId: String? = nil
     var say: (String) -> Void = { _ in }
     var locate: () -> Void = {}
     let onMarch: () -> Void
     let onHalt: () -> Void
     var onRetreat: () -> Void = {}
+    var onClose: () -> Void = {}
     @State private var editing = false
     @State private var merging = false
     @State private var renaming = false
@@ -58,7 +60,9 @@ struct ArmySheet: View {
     @State private var morale = 100.0
     static let units = UnitKinds.kinds.map { ($0.key, $0.name) }
     var body: some View {
-        if let map = model.map, let a = model.army(army) {
+        if let map = model.map, let resolved = model.resolveArmy(id: armyId, fallback: army) {
+            let armyIndex = resolved.index
+            let a = resolved.army
             let nation = a.nation >= 0 && a.nation < map.meta.nations.count ? map.meta.nations[a.nation] : nil
             let tint = nation.map { Names.color($0.color) } ?? Theme.ink2
             let fighting = a.status == "fighting"
@@ -71,7 +75,7 @@ struct ArmySheet: View {
                             Text(a.name).font(Theme.kai(26)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                             HStack(spacing: 6) {
                                 RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 10, height: 10)
-                                Text("\(nation?.name ?? "") · \(model.state.map { Echelon.designation($0, map, army: army) } ?? "") · \(Names.unit[a.unit] ?? a.unit)").font(Theme.label).foregroundStyle(Theme.ink2)
+                                Text("\(nation?.name ?? "") · \(model.state.map { Echelon.designation($0, map, army: armyIndex) } ?? "") · \(Names.unit[a.unit] ?? a.unit)").font(Theme.label).foregroundStyle(Theme.ink2)
                             }
                         }
                         Spacer()
@@ -112,7 +116,7 @@ struct ArmySheet: View {
                     .buttonStyle(.plain).padding(.horizontal, 16)
                     .animation(Motion.tap, value: a.travel)
                     // 军令: command, stance and the army's own changes, in one grid of paper chips.
-                    let peers = (model.state?.armies ?? []).enumerated().filter { $0.offset != army && $0.element.nation == a.nation && $0.element.province == a.province && $0.element.province >= 0 && $0.element.status != "fighting" }
+                    let peers = (model.state?.armies ?? []).enumerated().filter { $0.element.id != a.id && $0.element.nation == a.nation && $0.element.province == a.province && $0.element.province >= 0 && $0.element.status != "fighting" }
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
                         ArmyChip(title: a.manual ? "交还AI" : "亲自指挥", symbol: a.manual ? "cpu" : "person.fill") { act("armyManual", a, flag: !a.manual) }
                         ArmyChip(title: "驻守", symbol: "flag.fill") { act("holdArmy", a) }
@@ -198,6 +202,17 @@ struct ArmySheet: View {
                 }
                 .padding(.bottom, 24)
             }
+        } else {
+            VStack(spacing: 16) {
+                SheetHeader(title: "军团已变动", subtitle: "该军团在推演中已覆灭、合编或遣散", seal: "军")
+                Text("当前点选的军团已不在战列之中，请返回舆图点选其他军队。")
+                    .font(Theme.body).foregroundStyle(Theme.ink2)
+                    .multilineTextAlignment(.center).padding(.horizontal, 28)
+                Button(action: onClose) { PrimaryLabel(title: "返回舆图", symbol: "map") }
+                    .buttonStyle(PressStyle()).padding(.horizontal, 28)
+                Spacer(minLength: 0)
+            }
+            .padding(.bottom, 24)
         }
     }
     /// Runs one army order and says what happened.
@@ -269,10 +284,13 @@ struct FleetSheet: View {
 
     @ObservedObject var model: GameModel
     let fleet: Int
+    var fleetId: String? = nil
     /// Pick the port on the map instead of the list.
     var pickOnMap: () -> Void = {}
+    var onClose: () -> Void = {}
     var body: some View {
-        if let map = model.map, let f = model.fleet(fleet) {
+        if let map = model.map, let resolved = model.resolveFleet(id: fleetId, fallback: fleet) {
+            let f = resolved.fleet
             let nation = f.nation >= 0 && f.nation < map.meta.nations.count ? map.meta.nations[f.nation] : nil
             let busy = f.decision == "busy" || f.status == "lost"
             // Ports this fleet may stay at: its own state's harbours (held by it), nearest first.
@@ -386,6 +404,14 @@ struct FleetSheet: View {
                 .padding(.bottom, 16)
                 .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
+        } else {
+            VStack(spacing: 16) {
+                SheetHeader(title: "舰队已变动", subtitle: "该舰队已沉没、返坞或解散", seal: "舟")
+                Button(action: onClose) { PrimaryLabel(title: "返回舆图", symbol: "map") }
+                    .buttonStyle(PressStyle()).padding(.horizontal, 28)
+                Spacer(minLength: 0)
+            }
+            .padding(.bottom, 24)
         }
     }
 }

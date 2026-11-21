@@ -86,7 +86,9 @@ extension NativeEngine {
             }
         }
         for (k, list) in parts {
-            if singles[k] == 1 && list.count < 30 { continue }
+            // 网页对照模式保留原过滤；App 规则下哪怕单州小国、海岛国也始终生成国名框，避免国名消失。
+            if !fit && singles[k] == 1 && list.count < 30 { continue }
+            guard !list.isEmpty else { continue }
             var cx = 0.0, cy = 0.0; for c in list { cx += pts[2 * c]; cy += pts[2 * c + 1] }; cx /= Double(list.count); cy /= Double(list.count)
             var pole = list[0], best = Double.infinity
             for c in list { let d = pow(pts[2 * c] - cx, 2) + pow(pts[2 * c + 1] - cy, 2); if d < best { best = d; pole = c } }
@@ -293,15 +295,18 @@ extension NativeEngine {
                 let cx = m.x / m.n, cy = m.y / m.n, dx = at.0 - cx, dy = at.1 - cy, d = (dx * dx + dy * dy).squareRoot()
                 at = d > halfIcon ? (cx + dx / d * halfIcon, cy + dy / d * halfIcon) : at
             }
-            armyPoint.append((at.0 / sc, at.1 / sc))
+            let safeScale = sc.isFinite && sc > 1e-6 ? sc : 1.0
+            let rx = (at.0 / safeScale).isFinite ? at.0 / safeScale : 0.0
+            let ry = (at.1 / safeScale).isFinite ? at.1 / safeScale : 0.0
+            armyPoint.append((rx, ry))
             // Destination province of a march (last travel node), for the army panel.
             var dest = -1
             if moving, let bridge, let last = v.travel.nodes.asArray.last, let cell = bridge.graph.cell(id: last.asInt) {
                 let q = Int(bridge.graph.provinces[cell]); if q >= 0 && q < provinces.count { dest = q }
             }
-            var x = GameState.Army(id: id, name: a.name.asString, nation: ni[a.nationId.asString]!, troops: Int(a.troops.asNumber), unit: r.units[id].optionalString ?? "Infantry",
-                                   status: a.status.asString, travel: v.travel.status.asString, province: v.province.map { pi[$0.id.asString]! } ?? -1,
-                                   supplies: Int(a.supplies.asNumber.rounded()), morale: Int(a.morale.asNumber.rounded()), x: Float(at.0 / sc), y: Float(at.1 / sc),
+            var x = GameState.Army(id: id, name: a.name.asString, nation: ni[a.nationId.asString] ?? -1, troops: Int(a.troops.asNumber), unit: r.units[id].optionalString ?? "Infantry",
+                                   status: a.status.asString, travel: v.travel.status.asString, province: v.province.flatMap { pi[$0.id.asString] } ?? -1,
+                                   supplies: Int(a.supplies.asNumber.rounded()), morale: Int(a.morale.asNumber.rounded()), x: Float(rx), y: Float(ry),
                                    manual: manualArmies.contains(id), destination: dest, mission: missionOf[id] ?? "")
             x.reorganizing = !r.reorganization.active[id].isNull
             let order = r.armyAutonomy.armies[id].decision.optionalString ?? ""

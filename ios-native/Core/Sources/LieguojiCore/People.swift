@@ -17,7 +17,7 @@ public enum People {
     static func skills(_ p: JS) -> Persona.Skills {
         let b = p.base
         return Persona.skills(base: Persona.Skills(administrative: b.administrative.asNumber, military: b.military.asNumber, diplomatic: b.diplomatic.asNumber, charisma: b.charisma.asNumber),
-                              traits: p.traits.isNull ? [] : p.traits.asArray.map { traits[$0.asString]! })
+                              traits: p.traits.isNull ? [] : p.traits.asArray.compactMap { traits[$0.asString] })
     }
     static func person(_ r: JS, _ id: Int) -> JS? { let p = r.kin.persons[String(id)]; return p.isNull ? nil : p }
     static func ids(_ list: JS) -> [Int] { list.isNull ? [] : list.asArray.map(\.asInt) }
@@ -295,16 +295,18 @@ public enum People {
     @discardableResult
     static func appointKnownPerson(_ r: JS, _ nationId: String, _ heir: JS, cause: String, requestedName: String? = nil) -> JS {
         let regnalName = requestedName ?? heir.identity.given.asString
-        let history = r.chronicle.leaders[nationId], old = history.asArray.last!, order = history.length + 1, id = "ruler-\(nationId)-\(order)", nation = r.civilization.nations[nationId]
+        let history = r.chronicle.leaders[nationId].isNull ? { let a = JS.array(); r.chronicle.leaders[nationId] = a; return a }() : r.chronicle.leaders[nationId]
+        let old = history.asArray.last
+        let order = history.length + 1, id = "ruler-\(nationId)-\(order)", nation = r.civilization.nations[nationId]
         let identity = heir.identity.clone()
         identity.religionId = nation.religionId.clone(); identity.polityAtAccession = nation.polity.clone(); identity.regnalName = JS(regnalName)
-        identity.titleAtAccession = JS(rulerTitle(culture: identity.cultureId.asString, polity: nation.polity.asString, religion: nation.religionId.asString, gender: identity.gender.asInt))
+        identity.titleAtAccession = JS(rulerTitle(culture: identity.cultureId.optionalString ?? "chinese", polity: nation.polity.optionalString ?? "Kingdom", religion: nation.religionId.optionalString ?? "", gender: identity.gender.asInt))
         let seed = nameSeed("\(r.world.custom.seed.asString)/\(nationId)/\(order)"), ordinal = history.asArray.filter { $0.regnalName.optionalString == regnalName }.count + 1
         let day = r.world.day.asNumber
         let reign = JS.object()
         reign.id = JS(id); reign.name = identity.name.clone(); reign.family = identity.house.clone(); reign.order = JS(order); reign.regnalName = JS(regnalName)
         reign.regnalOrdinal = JS(ordinal); reign.ascendedDay = JS(day); reign.endedDay = .null; reign.termEndDay = JS(day + Double((12 + Int(seed % 14)) * 365))
-        if old.endedDay.isNull { old.endedDay = JS(day) }
+        if let old, old.endedDay.isNull { old.endedDay = JS(day) }
         history.push(reign); r.civilization.rulers[id] = identity; r.civilization.revision = JS(r.civilization.revision.asNumber + 1)
         let key = heir.id.asInt.description
         if !r.people.persons.has(key) {
@@ -317,9 +319,9 @@ public enum People {
         heir.roles.push(leaderRole(r, heir, title: identity.titleAtAccession.asString)); r.kin.revision = JS(r.kin.revision.asNumber + 1)
         r.sovereignty.reigns[id] = heir.id.clone(); r.sovereignty.revision = JS(r.sovereignty.revision.asNumber + 1); r.kin.lifecycle.vacancies.delete(nationId)
         setRulingFamily(r, nationId, heir.familyId.asInt)
-        let polity = nation.polity.asString, title = identity.titleAtAccession.asString
-        let leaderName = rulerDisplayName(culture: nation.cultureId.asString, polity: polity, name: identity.name.asString, regnalName: regnalName, ordinal: ordinal, given: identity.given.asString, title: title)
-        let stateName = r.world.nations.asArray.first { $0.id.asString == nationId }!.name.asString, oldName = old.name.asString
+        let polity = nation.polity.optionalString ?? "Kingdom", title = identity.titleAtAccession.asString
+        let leaderName = rulerDisplayName(culture: nation.cultureId.optionalString ?? "chinese", polity: polity, name: identity.name.asString, regnalName: regnalName, ordinal: ordinal, given: identity.given.asString, title: title)
+        let stateName = r.world.nations.asArray.first { $0.id.asString == nationId }?.name.optionalString ?? nationId, oldName = old?.name.optionalString ?? "前任"
         let text: String
         if cause == "election" { text = "\(leaderName)在大选中当选为\(stateName)的领导人，前任\(oldName)卸任" }
         else if cause == "restoration" { text = "\(leaderName)恢复\(stateName)的统治，取代了\(oldName)" }
@@ -354,13 +356,18 @@ public enum People {
         var wasPatriarch = false
         if p.familyId.asInt > 0 { let family = r.kin.families[p.familyId.asInt.description]; wasPatriarch = !family.isNull && family.headId.asInt == p.id.asInt }
         if wasLeader, let nationId = leaderState {
-            let history = r.chronicle.leaders[nationId], old = history.asArray.last!
-            old.endedDay = r.world.day.clone(); r.people.nations[nationId].leaderId = .null
-            let nationName = r.world.nations.asArray.first { $0.id.asString == nationId }!.name.asString, age = p.age.asInt, name = p.identity.name.asString
-            let entry = announce(r, kind: "diplomacy", text: "\(nationName)\(name)\(cause == "executed" ? "被处死" : "逝世")",
-                                 reason: cause == "executed" ? "享年\(age)岁。被下令处死；终止实际任期，保留人物及其家谱履历。" : "享年\(age)岁。真实月检按原作年龄概率发生自然死亡；终止实际任期，保留人物及其家谱履历。",
-                                 nations: [nationId], province: nil, people: [old])
-            row.deathHistoryId = entry.id.clone()
+            let history = r.chronicle.leaders[nationId]
+            if let old = history.isNull ? nil : history.asArray.last {
+                old.endedDay = r.world.day.clone()
+                r.people.nations[nationId].leaderId = .null
+                let nationName = r.world.nations.asArray.first { $0.id.asString == nationId }?.name.optionalString ?? nationId, age = p.age.asInt, name = p.identity.name.optionalString ?? ""
+                let entry = announce(r, kind: "diplomacy", text: "\(nationName)\(name)\(cause == "executed" ? "被处死" : "逝世")",
+                                     reason: cause == "executed" ? "享年\(age)岁。被下令处死；终止实际任期，保留人物及其家谱履历。" : "享年\(age)岁。真实月检按原作年龄概率发生自然死亡；终止实际任期，保留人物及其家谱履历。",
+                                     nations: [nationId], province: nil, people: [old])
+                row.deathHistoryId = entry.id.clone()
+            } else {
+                r.people.nations[nationId].leaderId = .null
+            }
         }
         for role in roles {
             let past = pastRole(role, time: f(r.life.gameTime.asNumber), reason: "death")

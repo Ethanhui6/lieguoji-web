@@ -10,6 +10,7 @@ import Foundation
 public final class EngineService {
     public private(set) var engine: NativeEngine?
     private var lastOwners: [Int] = []
+    private var lastNationSig: [String] = []
     public init() {}
 
     public struct Reply {
@@ -47,13 +48,16 @@ public final class EngineService {
         guard let e = engine else { return Data() }
         return e.state(includeLabels: labelsDue(e, stepping: stepping))
     }
-    /// 这一步是否要带国名框（规则同上）。
+    /// 这一步是否要带国名框（领土易主、新国立国、或国名改称均触发刷新，避免改名或新独立小国漏掉国名）。
     private func labelsDue(_ e: NativeEngine, stepping: Bool) -> Bool {
-        var at = [String: Int](); for (i, n) in e.run.world.nations.asArray.enumerated() where at[n.id.asString] == nil { at[n.id.asString] = i }
+        let nations = e.run.world.nations.asArray
+        var at = [String: Int](); for (i, n) in nations.enumerated() where at[n.id.asString] == nil { at[n.id.asString] = i }
         let owners = e.run.world.provinces.asArray.map { at[$0.controller.asString] ?? -1 }
+        let sig = nations.map { $0.name.optionalString ?? "" }
         stepsSinceLabels += 1
-        let labels = owners != lastOwners && (!stepping || stepsSinceLabels >= 4)
-        if labels { lastOwners = owners; stepsSinceLabels = 0 }
+        let changed = owners != lastOwners || sig != lastNationSig
+        let labels = changed && (!stepping || stepsSinceLabels >= 4 || sig.count != lastNationSig.count)
+        if labels { lastOwners = owners; lastNationSig = sig; stepsSinceLabels = 0 }
         return labels
     }
     /// 本机推演一步并直接返回界面状态结构体（与 "step" 请求相同，只是不经 JSON）。
@@ -65,7 +69,7 @@ public final class EngineService {
 
     /// 采用本机刚建好的世界（NativeCreation，不经 JSON），回复与 "open" 相同：首个状态与地图。
     public func adopt(_ e: NativeEngine) -> Reply {
-        engine = e; lastOwners = []
+        engine = e; lastOwners = []; lastNationSig = []
         var r = Reply(data: state()); r.map = e.mapJSON; return r
     }
 
@@ -98,7 +102,7 @@ public final class EngineService {
             guard let payload else { return Reply(ok: false, reason: "缺少世界数据。") }
             do {
                 let e = try NativeEngine(world: payload)
-                engine = e; lastOwners = []
+                engine = e; lastOwners = []; lastNationSig = []
                 var r = Reply(data: state()); r.map = e.mapJSON; return r
             } catch { return Reply(ok: false, reason: error.localizedDescription) }
         case "isOpen": return Reply(ok: engine != nil)
@@ -257,6 +261,8 @@ public final class EngineService {
         case "throneCandidates": return data(engine?.throneCandidates(int("n")))
         case "enthronePerson": lastOwners = []; return command(engine?.enthronePerson(int("n"), personId: int("person")))
         case "nationProvinces": return data(engine?.nationProvinces(int("n")))
+        case "nationReigns": return data(engine?.nationReigns(int("n")))
+        case "replayTimeline": return data(engine?.replayTimeline())
         default: return Reply(ok: false, reason: "未知请求 \(call)。")
         }
     }

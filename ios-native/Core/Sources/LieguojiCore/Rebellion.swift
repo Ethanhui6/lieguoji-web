@@ -73,7 +73,7 @@ public enum Rebellion {
         return monthsSince(r, bornTime(r, id)) >= 15
     }
     static func provinceAtWar(_ r: JS, _ province: String) -> Bool {
-        let p = r.world.provinces.asArray.first { $0.id.asString == province }!
+        guard let p = r.world.provinces.asArray.first(where: { $0.id.asString == province }) else { return false }
         if r.occupation.sieges.asArray.contains(where: { $0.provinceId.asString == province }) { return true }
         return p.neighbors.asArray.contains { n in
             guard let q = r.world.provinces.asArray.first(where: { $0.id.asString == n.asString }) else { return false }
@@ -83,7 +83,9 @@ public enum Rebellion {
     /// tryRebel47's checks; true when the province rebels (the rebellion itself is `onRebel`).
     @discardableResult
     public static func tryRebel(_ r: JS, _ province: String, force: Bool) -> Bool {
-        let s = r.foundings, p = r.world.provinces.asArray.first { $0.id.asString == province }!, owner = p.controller.asString
+        let s = r.foundings
+        guard let p = r.world.provinces.asArray.first(where: { $0.id.asString == province }) else { return false }
+        let owner = p.controller.asString
         if !force {
             if !s.enabled.isTruthy || capitalProvince(r, owner) == province { return false }
             let c = r.upperCombat.provinces[province]
@@ -102,7 +104,8 @@ public enum Rebellion {
         return onRebel(r, province, force)
     }
     static func updateCoreMonths(_ r: JS, _ s: JS, _ province: String) {
-        let p = r.world.provinces.asArray.first { $0.id.asString == province }!, owner = p.controller.asString, core = isCore(r, province, owner)
+        guard let p = r.world.provinces.asArray.first(where: { $0.id.asString == province }) else { return }
+        let owner = p.controller.asString, core = isCore(r, province, owner)
         let m = s.coreMonths[province].isNull ? JS.object() : s.coreMonths[province]
         if core { m[owner] = JS(f((m[owner].optionalNumber ?? 0) + 1)) }
         let decay = f(core ? 0.7 : 0.3)

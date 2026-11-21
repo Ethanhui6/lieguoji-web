@@ -11,7 +11,7 @@ import LieguojiCore
     /// A colour view's province fills (nil: the state view).
     @Published var viewFills: [RGB]?
     /// The state whose relation colours are shown (its sheet page set them).
-    var relationsNation: Int?
+    @Published var relationsNation: Int?
     /// A colour view's group names, shown instead of the state names (nil: state names).
     @Published var viewLabels: [GroupLabel]?
     @Published var selectedProvince: Int?
@@ -39,8 +39,11 @@ import LieguojiCore
     @Published var armies: [MapRenderer.ArmySprite]?
     @Published var route: [SIMD2<Float>] = []
     @Published var selectedArmy: Int?
+    /// 选中军队的稳定 ID（推演中数组下标变化或军队覆灭时仍能准确找回，避免点军团出现空白页）。
+    @Published var selectedArmyId: String?
     /// A tapped fleet (index in the state's fleets); fleet sprites carry army −(index + 1).
     @Published var selectedFleet: Int?
+    @Published var selectedFleetId: String?
     /// While set, the next tap on land is the march destination of this army.
     @Published var marchingArmy: Int?
     var onMarchTarget: ((Int) -> Void)?
@@ -464,7 +467,7 @@ struct MapView: UIViewRepresentable {
         private func set(_ camera: MapCamera) {
             guard let renderer else { return }
             let b = bounds
-            var c = camera
+            var c = camera.isValid ? camera : MapCamera.cover(map: mapSize, viewport: viewport)
             c.scale = min(b.upperBound, max(b.lowerBound, c.scale))
             renderer.camera = c.clamped(map: mapSize, viewport: viewport, margin: 0)
             labels.update(camera: renderer.camera, viewport: mtk.bounds.size)
@@ -622,22 +625,35 @@ struct MapView: UIViewRepresentable {
             if controller.armies != nil, let renderer {
                 let placed = renderer.placedSprites()
                 let icon = MapRenderer.iconPoints(camera.scale, iconScale: controller.play.iconScale), reach = max(16, icon * 0.6)
-                var best: (army: Int, d: Double)?
-                for a in placed where a.sprite.army > -100_000 {
+                var best: (army: Int, key: String, d: Double)?
+                for a in placed where a.sprite.army > -100_000 && a.x.isFinite && a.y.isFinite {
                     let s = camera.toScreen(x: Double(a.x), y: Double(a.y), viewport: viewport), o = renderer.spread[a.sprite.key] ?? .zero
+                    guard s.x.isFinite && s.y.isFinite else { continue }
                     let d = hypot(s.x + Double(o.x) * icon - Double(p.x), s.y + Double(o.y) * icon - Double(p.y))
-                    if d < reach, best == nil || d < best!.d { best = (a.sprite.army, d) }
+                    if d < reach, best == nil || d < best!.d { best = (a.sprite.army, a.sprite.key, d) }
                 }
-                if let best { selection.selectionChanged(); if best.army < 0 { controller.selectedFleet = -best.army - 1 } else { controller.selectedArmy = best.army }; return }
+                if let best {
+                    selection.selectionChanged()
+                    if best.army < 0 {
+                        controller.selectedFleetId = best.key.isEmpty ? nil : best.key
+                        controller.selectedFleet = -best.army - 1
+                    } else {
+                        controller.selectedArmyId = best.key.isEmpty ? nil : best.key
+                        controller.selectedArmy = best.army
+                    }
+                    return
+                }
             }
             if province != controller.selectedProvince { selection.selectionChanged() }
             controller.selectedProvince = province
         }
 
         private func animate(to target: MapCamera, duration: Double = 0.38) {
+            guard target.isValid else { return }
             var t = target
             t.scale = min(bounds.upperBound, max(bounds.lowerBound, t.scale))
-            animation = (camera, t.clamped(map: mapSize, viewport: viewport, margin: 0), CACurrentMediaTime(), duration)
+            let start = camera.isValid ? camera : MapCamera.cover(map: mapSize, viewport: viewport)
+            animation = (start, t.clamped(map: mapSize, viewport: viewport, margin: 0), CACurrentMediaTime(), max(0.05, duration))
             velocity = .zero
             startLink()
         }
@@ -827,20 +843,28 @@ struct MapView: UIViewRepresentable {
             metrics.isHidden = !controller.showMetrics
             if let f = controller.focus, f.id != focusID {
                 focusID = f.id
-                let p = map.meta.provinces[f.province]
-                animate(to: MapCamera(centerX: Double(p.x), centerY: Double(p.y), scale: max(camera.scale, bounds.lowerBound * 4)), duration: 0.5)
+                if map.meta.provinces.indices.contains(f.province) {
+                    let p = map.meta.provinces[f.province]
+                    if p.x.isFinite && p.y.isFinite {
+                        animate(to: MapCamera(centerX: Double(p.x), centerY: Double(p.y), scale: max(camera.scale, bounds.lowerBound * 4)), duration: 0.5)
+                    }
+                }
             }
             if let f = controller.focusPoint, f.id != focusPointID {
                 focusPointID = f.id
-                let scale = max(camera.scale, bounds.lowerBound * 7)
-                // The sheet covers the lower part of the screen: the unit sits in the upper third.
-                animate(to: MapCamera(centerX: f.x, centerY: f.y + Double(viewport.height) * 0.2 / scale, scale: scale), duration: 0.55)
+                if f.x.isFinite && f.y.isFinite && viewport.width > 0 && viewport.height > 0 {
+                    let scale = max(0.05, max(camera.scale, bounds.lowerBound * 7))
+                    // The sheet covers the lower part of the screen: the unit sits in the upper third.
+                    animate(to: MapCamera(centerX: f.x, centerY: f.y + Double(viewport.height) * 0.2 / scale, scale: scale), duration: 0.55)
+                }
             }
             if let s = controller.spotlight, s.id != spotlightID {
                 spotlightID = s.id
-                // The sheet (dropped to its lowest stop) covers the lower part: the place sits at 30 % from the top.
-                animate(to: MapCamera.spotlight(x: s.x, y: s.y, from: camera, map: mapSize, viewport: viewport), duration: 0.75)
-                showSpot(x: s.x, y: s.y)
+                if s.x.isFinite && s.y.isFinite && viewport.width > 0 && viewport.height > 0 {
+                    // The sheet (dropped to its lowest stop) covers the lower part: the place sits at 30 % from the top.
+                    animate(to: MapCamera.spotlight(x: s.x, y: s.y, from: camera, map: mapSize, viewport: viewport), duration: 0.75)
+                    showSpot(x: s.x, y: s.y)
+                }
             }
             if let z = controller.zoomRequest, z.id != zoomID {
                 zoomID = z.id
@@ -1000,7 +1024,7 @@ final class MapLabelsView: UIView {
             let shown = MapLayers.stateLabel(n.name, full: full)
             let measured = (shown as NSString).size(withAttributes: [.font: font(1)])
             let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
-            let l = Label(text: shown, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
+            let l = Label(text: shown, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 3.2, province: nil)
             l.angle = Double(box.angle ?? 0)
             return l
         }.sorted { $0.mapEm != $1.mapEm ? $0.mapEm > $1.mapEm : $0.text < $1.text }
@@ -1038,6 +1062,8 @@ final class MapLabelsView: UIView {
                 f.view.isHidden = true; addSubview(f.view); next.append(f); Self.namesCreated += 1; continue
             }
             let o = old[i]; kept.insert(i)
+            // 若旧标签恰好在淡入/淡出动画中途被复用，强制恢复不透明，防止国名隐身。
+            if !o.view.isHidden && o.view.alpha < 0.99 { o.view.layer.removeAllAnimations(); o.view.alpha = 1 }
             if !m.keep { o.x = f.x; o.y = f.y; o.mapEm = f.mapEm; o.angle = f.angle; Self.namesMoved += 1 }
             next.append(o)
         }
@@ -1215,6 +1241,12 @@ final class MapLabelsView: UIView {
         // （都城名排在国名前时，近看能显示的都城名会把附近的大国名挤掉，边界一动国名就时隐时现。）
         _ = enlarged
         let order = custom + nations + capitalNames + otherCities
+        var placedNationTexts = Set<String>()
+        func blockedByTextOnly(_ b: Box, margin: CGFloat) -> Bool {
+            if Self.legacy { return taken.contains { !$0.text.isEmpty && Self.clash($0, b, margin: margin) } }
+            for c in cells(b, margin) { for i in grid[c] ?? [] where !taken[i].text.isEmpty && Self.clash(taken[i], b, margin: margin) { return true } }
+            return false
+        }
         for l in order {
             var points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)
             var p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
@@ -1229,7 +1261,7 @@ final class MapLabelsView: UIView {
             // A name larger than the screen can show is hidden (a continent-wide group zoomed in close).
             // 滞回：已显示的名字在下限的 88% 以下才隐藏，免得缩放停在临界处时名字反复出没。
             let minimum = l.view.isHidden ? l.minPoints : l.minPoints * 0.88
-            guard points.isFinite, points >= minimum, points < 900, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }
+            guard points.isFinite, p.x.isFinite, p.y.isFinite, points >= minimum, points < 900, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }
             // Rendered at most 96 pt and scaled beyond: a label image never grows to thousands of pixels
             // (that ran memory out and closed the app when a big group label was zoomed in).
             let wanted = min(96, points)
@@ -1237,18 +1269,48 @@ final class MapLabelsView: UIView {
                 // Sizes on a ×1.25 ladder, so the cached images are reused while zooming.
                 resize(l, to: min(96, pow(1.25, (log(wanted) / log(1.25)).rounded())))
             }
-            let k = CGFloat(points / l.rendered), image = l.view.image?.size ?? .zero
+            guard l.rendered > 0 else { l.view.isHidden = true; continue }
+            var k = CGFloat(points / l.rendered)
+            let image = l.view.image?.size ?? .zero
             var box = Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: image.width * k / 2, halfH: image.height * k / 2, cosine: CGFloat(cos(l.angle)), sine: CGFloat(sin(l.angle)), nation: l.province == nil, text: l.text)
             let margin: CGFloat = l.view.isHidden ? 6 : 0
             if blocked(box, margin: margin) {
-                // 都城名：上方被占时改写在首都圈下方。
-                guard let anchor = l.anchorY else { l.view.isHidden = true; continue }
-                let at = camera.toScreen(x: l.x, y: anchor, viewport: vp)
-                let below = at.y + (max(ring, 3) + 3 + 7 + points * 0.78)
-                box = Box(x: CGFloat(p.x), y: CGFloat(below), halfW: box.halfW, halfH: box.halfH, cosine: box.cosine, sine: box.sine, nation: box.nation, text: box.text)
-                if blocked(box, margin: margin) { l.view.isHidden = true; continue }
-                p = (x: p.x, y: below)
+                if let anchor = l.anchorY {
+                    // 都城名：上方被占时改写在首都圈下方。
+                    let at = camera.toScreen(x: l.x, y: anchor, viewport: vp)
+                    let below = at.y + (max(ring, 3) + 3 + 7 + points * 0.78)
+                    box = Box(x: CGFloat(p.x), y: CGFloat(below), halfW: box.halfW, halfH: box.halfH, cosine: box.cosine, sine: box.sine, nation: box.nation, text: box.text)
+                    if blocked(box, margin: margin) { l.view.isHidden = true; continue }
+                    p = (x: p.x, y: below)
+                } else if l.province == nil {
+                    // 国名避让补救：只蹭到首都圈或邻国字边时先微移避让，仍被挡且该国主名尚未出现则略缩再试，避免国名无故消失。
+                    let stepY = max(12.0, Double(box.halfH) + max(ring, 4) + 5)
+                    let stepX = max(14.0, Double(box.halfW) * 0.45)
+                    let shifts: [(Double, Double)] = [(0, -stepY), (0, stepY), (-stepX, 0), (stepX, 0), (0, -stepY * 1.6), (0, stepY * 1.6)]
+                    var placedFallback = false
+                    for (dx, dy) in shifts {
+                        let cand = Box(x: CGFloat(p.x + dx), y: CGFloat(p.y + dy), halfW: box.halfW, halfH: box.halfH, cosine: box.cosine, sine: box.sine, nation: true, text: l.text)
+                        if !blocked(cand, margin: 1) {
+                            box = cand; p = (x: p.x + dx, y: p.y + dy); placedFallback = true; break
+                        }
+                    }
+                    if !placedFallback && !placedNationTexts.contains(l.text) {
+                        let shrunkK = k * 0.82
+                        let sw = image.width * shrunkK / 2, sh = image.height * shrunkK / 2
+                        let rescues: [(Double, Double)] = [(0, 0), (0, -stepY), (0, stepY)]
+                        for (dx, dy) in rescues {
+                            let cand = Box(x: CGFloat(p.x + dx), y: CGFloat(p.y + dy), halfW: sw, halfH: sh, cosine: box.cosine, sine: box.sine, nation: true, text: l.text)
+                            if !blockedByTextOnly(cand, margin: 0) {
+                                k = shrunkK; box = cand; p = (x: p.x + dx, y: p.y + dy); placedFallback = true; break
+                            }
+                        }
+                    }
+                    if !placedFallback { l.view.isHidden = true; continue }
+                } else {
+                    l.view.isHidden = true; continue
+                }
             }
+            if l.province == nil { placedNationTexts.insert(l.text) }
             place(box)
             l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: k, y: k)
             l.view.center = CGPoint(x: p.x, y: p.y)
@@ -1261,6 +1323,8 @@ final class MapLabelsView: UIView {
                     l.view.alpha = 0
                     UIView.animate(withDuration: 0.22, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) { l.view.alpha = 1 }
                 } else { l.view.alpha = 1 }
+            } else if l.view.alpha < 0.99 && (l.view.layer.animationKeys()?.isEmpty ?? true) {
+                l.view.alpha = 1
             }
         }
     }

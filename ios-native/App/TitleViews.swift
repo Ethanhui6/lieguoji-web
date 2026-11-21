@@ -40,16 +40,18 @@ struct SplashView: View {
                     .frame(width: 240, height: 240).offset(x: 40, y: -30).scaleEffect(soaked ? 1 : 0.3)
             }
             .opacity(soaked && !dried ? 1 : 0).offset(y: -40)
-            // Far and near hills in two washes along the bottom of the sheet.
+            // Far and near hills in two washes along the bottom of the sheet (radial mist avoids horizontal edge lines).
             VStack(spacing: 0) {
                 Spacer()
                 ZStack(alignment: .bottom) {
                     InkHills(seed: 11).fill(Theme.ink.opacity(0.06)).frame(height: 195)
-                    LinearGradient(colors: [.clear, Theme.paper.opacity(0.55), .clear], startPoint: .leading, endPoint: .trailing)
-                        .frame(height: 28).offset(x: hills ? 24 : -48, y: -76)
+                    Ellipse()
+                        .fill(RadialGradient(colors: [Theme.paper.opacity(0.5), Theme.paper.opacity(0.18), .clear], center: .center, startRadius: 0, endRadius: 210))
+                        .frame(width: 440, height: 110)
+                        .offset(x: hills ? 22 : -36, y: -64)
                     InkHills(seed: 4).fill(Theme.ink.opacity(0.10)).frame(height: 125)
                 }
-                .offset(y: hills ? 0 : 50).opacity(hills && !dried ? 1 : 0)
+                .offset(y: hills ? 0 : 44).opacity(hills && !dried ? 1 : 0)
             }
             .ignoresSafeArea()
             HStack(alignment: .top, spacing: 18) {
@@ -122,7 +124,8 @@ struct InkHills: Shape {
     let seed: Int
     func path(in rect: CGRect) -> Path {
         var p = Path(), x: CGFloat = 0
-        p.move(to: CGPoint(x: 0, y: rect.maxY))
+        let bottom = rect.maxY + 60
+        p.move(to: CGPoint(x: 0, y: bottom))
         var s = UInt32(seed &* 2654435761 % 4294967291)
         func next() -> CGFloat { s = s &* 1664525 &+ 1013904223; return CGFloat(s >> 8) / CGFloat(1 << 24) }
         p.addLine(to: CGPoint(x: 0, y: rect.maxY - rect.height * 0.4))
@@ -131,7 +134,7 @@ struct InkHills: Shape {
             p.addQuadCurve(to: CGPoint(x: x + w, y: rect.maxY - rect.height * (0.25 + next() * 0.3)), control: CGPoint(x: x + w * 0.5, y: rect.maxY - peak * 1.3))
             x += w
         }
-        p.addLine(to: CGPoint(x: rect.width, y: rect.maxY)); p.closeSubpath()
+        p.addLine(to: CGPoint(x: rect.width, y: bottom)); p.closeSubpath()
         return p
     }
 }
@@ -325,8 +328,27 @@ struct NewWorldSheet: View {
     /// The seed used while the field is left blank, so the land shown is the land founded.
     @State private var rolled = String(UInt32.random(in: 0...UInt32.max))
     @State private var terrain: UIImage?
+    @State private var renderingTerrain = false
+    @State private var selectedPreset: String? = nil
     private var seed: String { options.seed.isEmpty ? rolled : options.seed }
     private var chosen: GameModel.NewWorld { var o = options; o.seed = seed; return o }
+    struct ScenarioPreset: Identifiable {
+        let id: String; let title: String; let note: String; let symbol: String
+        let template: String; let nations: Int; let provinces: Int; let relations: String; let cultures: Set<String>
+    }
+    static let presets: [ScenarioPreset] = [
+        ScenarioPreset(id: "huaxia", title: "华夏群雄", note: "中原大陆 · 诸侯并起", symbol: "crown", template: "pangea", nations: 12, provinces: 140, relations: "peace", cultures: ["chinese", "korean", "mongol", "vietnamese", "japanese"]),
+        ScenarioPreset(id: "warring", title: "列国争霸", note: "多陆交锋 · 开局即战", symbol: "flag.2.crossed", template: "continents", nations: 14, provinces: 160, relations: "war", cultures: Set(Names.cultureIds)),
+        ScenarioPreset(id: "voyage", title: "大航海群岛", note: "星罗海岛 · 舟师竞渡", symbol: "water.waves", template: "archipelago", nations: 10, provinces: 120, relations: "peace", cultures: ["british", "french", "spanish", "portuguese", "dutch", "italian", "japanese", "chinese", "southeastAsian"]),
+        ScenarioPreset(id: "silkroad", title: "丝路万邦", note: "高原群山 · 东西汇通", symbol: "mountain.2", template: "highIsland", nations: 12, provinces: 130, relations: "peace", cultures: ["chinese", "mongol", "turkish", "persian", "arab", "indian", "greek", "italian", "russian"]),
+    ]
+    struct CultureGroup: Identifiable { let id: String; let title: String; let list: Set<String> }
+    static let cultureGroups: [CultureGroup] = [
+        CultureGroup(id: "east", title: "东亚", list: ["chinese", "japanese", "korean", "vietnamese", "mongol"]),
+        CultureGroup(id: "euro", title: "欧洲", list: ["british", "french", "german", "italian", "spanish", "portuguese", "dutch", "polish", "russian", "scandinavian", "greek", "balkan", "celtic", "austrian"]),
+        CultureGroup(id: "silk", title: "亚非", list: ["arab", "persian", "turkish", "indian", "egyptian", "african", "southeastAsian"]),
+        CultureGroup(id: "all", title: "全选", list: Set(Names.cultureIds)),
+    ]
     /// Each terrain template's picture and one line of what it makes.
     static let templateArt: [String: (symbol: String, note: String)] = [
         "continents": ("globe.asia.australia", "数块大陆隔海相望"),
@@ -338,6 +360,39 @@ struct NewWorldSheet: View {
         ScrollView {
         VStack(alignment: .leading, spacing: 18) {
             SheetHeader(title: "新世界", subtitle: "开辟一方天下", seal: "新")
+            SectionLabel("精选开局")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(Self.presets) { p in
+                        let on = selectedPreset == p.id
+                        Button {
+                            GameFeel.shared.tap()
+                            withAnimation(Motion.panel) {
+                                selectedPreset = p.id
+                                options.template = p.template
+                                options.nations = p.nations
+                                options.provinces = String(p.provinces)
+                                options.relations = p.relations
+                                options.cultures = p.cultures
+                                options.naming = "historical-names"
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: p.symbol).font(.system(size: 17, weight: .medium)).foregroundStyle(on ? Theme.paper2 : Theme.seal)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(p.title).font(Theme.kai(15)).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                    Text(p.note).font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2)
+                                }
+                            }
+                            .padding(.horizontal, 12).padding(.vertical, 9)
+                            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
+                .padding(.horizontal, 22)
+            }
             SectionLabel("地形")
             // 地形: a card each, with its picture.
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
@@ -394,15 +449,18 @@ struct NewWorldSheet: View {
                 choice("culture-generated", "按文化生成", "character.book.closed", "按各文化新造名字", selection: $options.naming)
             }
             .padding(.horizontal, 22)
-            HStack {
-                SectionLabel("文化", inset: false)
+            HStack(spacing: 8) {
+                SectionLabel("文化（\(options.cultures.count)）", inset: false)
                 Spacer()
-                Button(options.cultures.count == Names.cultureIds.count ? "只留一种" : "全选") {
-                    withAnimation(Motion.tap) {
-                        options.cultures = options.cultures.count == Names.cultureIds.count ? ["chinese"] : Set(Names.cultureIds)
+                ForEach(Self.cultureGroups) { g in
+                    Button(g.title) {
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.tap) { options.cultures = g.list }
                     }
+                    .font(Theme.caption).foregroundStyle(options.cultures == g.list ? Theme.paper2 : Theme.seal)
+                    .padding(.horizontal, 8).frame(height: 24)
+                    .background(options.cultures == g.list ? Theme.seal : Theme.seal.opacity(0.08), in: Capsule())
                 }
-                .font(Theme.kai(14)).foregroundStyle(Theme.seal)
             }
             .padding(.horizontal, 22)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
@@ -441,13 +499,35 @@ struct NewWorldSheet: View {
     private var terrainCard: some View {
         ZStack(alignment: .bottomTrailing) {
             Group {
-                if let terrain { Image(uiImage: terrain).resizable() } else { Theme.paper2 }
+                if let terrain { Image(uiImage: terrain).resizable().transition(.opacity) } else { Theme.paper2 }
             }
             .aspectRatio(16.0 / 9.0, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.3), lineWidth: 1))
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.paper2.opacity(0.4), lineWidth: 0.6).padding(3))
+            .overlay(alignment: .topLeading) {
+                HStack(spacing: 6) {
+                    Text(Names.templates.first(where: { $0.id == options.template })?.name ?? options.template)
+                        .font(Theme.caption).foregroundStyle(Theme.paper2)
+                    Text("· \(options.nations)国 \(options.provinceCount)州")
+                        .font(Theme.caption).foregroundStyle(Theme.paper2.opacity(0.85)).monospacedDigit()
+                }
+                .padding(.horizontal, 9).padding(.vertical, 4)
+                .background(Theme.ink.opacity(0.68), in: Capsule())
+                .padding(9)
+            }
+            .overlay {
+                if renderingTerrain {
+                    ZStack {
+                        Theme.paper.opacity(0.35)
+                        InkBusy()
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .transition(.opacity)
+                }
+            }
             Button {
+                GameFeel.shared.tap()
                 options.seed = ""; rolled = String(UInt32.random(in: 0...UInt32.max))
             } label: {
                 HStack(spacing: 5) {
@@ -459,13 +539,15 @@ struct NewWorldSheet: View {
             }
             .buttonStyle(PressStyle()).padding(9)
         }
+        .animation(Motion.fade, value: renderingTerrain)
     }
     private func drawTerrain() async {
         guard let inputs else { return }
+        renderingTerrain = true
         let seed = self.seed, template = options.template
         let image = await Task.detached(priority: .userInitiated) { terrainThumbnail(inputs, seed: seed, template: template) }.value
         guard !Task.isCancelled else { return }
-        withAnimation(Motion.fade) { terrain = image }
+        withAnimation(Motion.fade) { terrain = image; renderingTerrain = false }
     }
     /// A two-way choice as an illustrated card.
     private func choice(_ id: String, _ title: String, _ symbol: String, _ note: String, selection: Binding<String>) -> some View {

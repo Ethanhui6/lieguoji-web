@@ -92,8 +92,280 @@ public enum NamingCatalog {
 
     /// 已知带前缀「大」的真实双字国号/地名（简写时不可误剥「大」字）。
     private static let keepLeadingDa: Set<String> = [
-        "大理", "大宛", "大和", "大越", "大南", "大顺", "大西", "大名", "大同", "大阪", "大邱", "大都", "大隅", "大友", "大内", "大秦",
+        "大理", "大宛", "大和", "大越", "大南", "大顺", "大西", "大名", "大同", "大阪", "大邱", "大都", "大隅", "大友", "大内", "大秦", "大夏", "大中", "大定", "大梁", "大金",
     ]
+
+    /// 不可把冠字「大」剥离为单字核的真实地名/非中原朝代（如 大理≠理、大和≠和、大宛≠宛）。
+    private static let preserveDaCore: Set<String> = [
+        "大理", "大宛", "大和", "大越", "大南", "大名", "大同", "大阪", "大邱", "大都", "大隅", "大友", "大内", "大安", "大宁", "大兴", "大通",
+    ]
+
+    /// 中华双字断代/定向朝代与独立古国名：在帝制、王朝、王制下本身即为完整典雅国号，不叠拼「王国/帝国」。
+    public static let chineseCompleteMonarchyTitles: Set<String> = [
+        "西周", "东周", "西汉", "东汉", "后汉", "曹魏", "蜀汉", "东吴", "西晋", "东晋",
+        "前秦", "后秦", "西秦", "北魏", "东魏", "西魏", "北齐", "北周", "南齐", "南梁", "南陈", "武周",
+        "后梁", "后唐", "后晋", "后周", "南唐", "吴越", "前蜀", "后蜀", "南汉", "北汉", "马楚",
+        "西夏", "大理", "南诏", "北宋", "南宋", "大顺", "南明", "大西", "天完", "新朝", "大中", "大定",
+        "西凉", "北凉", "前凉", "南凉", "前燕", "后燕", "南燕", "北燕", "成汉", "胡夏", "高昌", "吐谷浑",
+        "中山", "夜郎", "且兰", "句町", "南越", "闽越", "东瓯", "西楚", "北元", "后金", "前赵", "后赵",
+        "代北", "河西", "陇右", "西蜀", "东夏", "西辽", "北辽", "南汉", "南平", "荆南", "清源", "定难",
+        "归义", "大齐", "大燕", "大楚", "大汉", "大唐", "大宋", "大明", "大元", "大清", "大秦", "大周", "大晋", "大隋", "大金", "大辽", "大梁", "大赵", "大魏", "大蜀", "大吴", "大越", "大夏",
+    ]
+
+    /// 现代/共和/联邦/军政等非君主制细分政体 ID：这类政体不应沿用「大金」「北宋」「波旁」「阿拔斯」等王朝/皇室国号。
+    public static let modernPolityStyles: Set<String> = [
+        "democratic", "communist", "socialist", "oligarchic", "parliamentary", "presidential",
+        "council", "federal", "confederation", "junta", "warlord", "dictatorship", "fascist", "nazi",
+        "citystate", "merchant",
+    ]
+
+    /// 各文化中属于“纯皇室/王朝”而非地理区域的名字（切换为共和国/联邦/军政府时应换为地理/民族基名）。
+    private static let dynasticOnlyBases: [String: Set<String>] = [
+        "japanese": ["德川", "足利", "织田", "丰臣", "北条", "藤原", "源", "平", "武田", "上杉", "毛利", "岛津", "伊达", "今川"],
+        "french": ["卡佩", "瓦卢瓦", "波旁", "奥尔良", "墨洛温", "加洛林", "波拿巴"],
+        "german": ["霍亨斯陶芬", "霍亨索伦", "哈布斯堡", "维特尔斯巴赫", "韦尔夫", "奥托", "萨利安", "卢森堡"],
+        "english": ["金雀花", "都铎", "斯图亚特", "兰开斯特", "约克", "金雀", "汉诺威", "温莎"],
+        "arab": ["倭马亚", "阿拔斯", "法蒂玛", "阿尤布", "马穆鲁克", "阿格拉布", "伊德里斯", "图伦", "伊赫希德", "哈姆丹", "穆拉比特", "穆瓦希德", "哈夫斯", "马林", "宰亚尼", "拉苏勒"],
+        "persian": ["阿契美尼德", "萨珊", "萨法维", "阿夫沙尔", "赞德", "卡扎尔", "伽色尼", "萨曼", "布韦希", "塔希尔", "萨法尔", "齐亚尔", "穆扎法尔", "帖木儿", "黑羊", "白羊"],
+        "turkic": ["奥斯曼", "塞尔柱", "喀喇汗", "帖木儿", "白羊", "黑羊", "阿史那", "加兹尼", "达尼什曼德", "杜尔卡迪尔"],
+        "indian": ["孔雀", "笈多", "莫卧儿", "贵霜", "朱罗", "潘地亚", "帕拉瓦", "波罗", "遮娄其", "拉什特拉库塔", "巴赫曼尼"],
+        "polish": ["皮雅斯特", "雅盖隆", "瓦萨"],
+        "hungarian": ["阿尔帕德", "匈雅提", "安茹", "巴托里"],
+        "portuguese": ["阿维什", "阿维斯", "布拉干萨"],
+        "spanish": ["特拉斯塔马拉", "哈布斯堡", "波旁"],
+        "greek": ["塞琉古", "托勒密", "安提柯"],
+        "mongol": ["窝阔台", "察合台", "伊儿", "伊利", "金帐", "蓝帐", "白帐", "北元"],
+    ]
+
+    /// 26 种文化的地理/民族现代共和基名池：当政体变为共和国、人民共和国、联邦、军政府时优先选用，确保政体与国名符合现实。
+    public static let modernRegionStates: [String: [String]] = [
+        "chinese": [
+            "中华", "华夏", "中原", "江南", "江淮", "巴蜀", "关中", "关陇", "燕云", "齐鲁",
+            "岭南", "河洛", "荆楚", "吴越", "三晋", "陇右", "河西", "湖湘", "闽越", "滇黔",
+            "辽东", "幽燕", "淮海", "江东", "江汉", "剑南", "山南", "朔方", "海东", "胶东",
+            "黔中", "云贵", "河朔", "淮南", "浙东", "粤海", "闽海", "川蜀", "秦陇", "晋冀",
+            "冀鲁", "皖南", "赣江", "湘楚", "陕甘", "江左", "西域", "东海", "南海", "燕赵",
+            "两广", "两湖", "两浙", "河东", "河北", "河南", "山左", "山右", "关东", "辽西",
+        ],
+        "japanese": [
+            "日本", "扶桑", "关东", "关西", "九州", "四国", "东北", "北陆", "东海", "畿内",
+            "山阳", "山阴", "南海", "西海", "北海道", "琉球", "本州", "大和", "近畿", "中国地方",
+            "信越", "奥羽", "东国", "西国", "筑紫", "日向", "尾张", "萨摩", "长州", "土佐",
+        ],
+        "english": [
+            "英格兰", "不列颠", "阿尔比恩", "苏格兰", "威尔士", "爱尔兰", "威塞克斯", "麦西亚",
+            "诺森布里亚", "东盎格利亚", "康沃尔", "肯特", "萨塞克斯", "坎布里亚", "约克郡", "兰开夏",
+            "海峡群岛", "高地", "低地", "阿尔斯特", "伦斯特", "芒斯特", "康诺特",
+        ],
+        "french": [
+            "法兰西", "高卢", "阿基坦", "勃艮第", "诺曼底", "布列塔尼", "普罗旺斯", "洛林",
+            "香槟", "加斯科涅", "朗格多克", "奥弗涅", "皮卡第", "阿尔萨斯", "安茹", "萨伏依",
+            "弗朗什孔泰", "卢瓦尔", "罗讷", "莱茵兰", "法兰德斯", "科西嘉",
+        ],
+        "german": [
+            "德意志", "普鲁士", "巴伐利亚", "萨克森", "奥地利", "莱茵兰", "威斯特伐利亚", "汉诺威",
+            "符腾堡", "巴登", "黑森", "勃兰登堡", "石勒苏益格", "荷尔斯泰因", "波美拉尼亚", "西里西亚",
+            "图林根", "法兰克尼亚", "士瓦本", "蒂罗尔", "施蒂利亚", "卡林西亚", "梅克伦堡", "波西米亚",
+        ],
+        "roman": [
+            "罗马", "意大利", "拉丁", "高卢", "伊比利亚", "伊利里亚", "色雷斯", "达契亚",
+            "叙利亚", "阿非利加", "潘诺尼亚", "不列颠尼亚", "西西里", "撒丁尼亚", "坎帕尼亚", "伊特鲁里亚",
+        ],
+        "greek": [
+            "希腊", "海拉斯", "雅典", "斯巴达", "马其顿", "伊庇鲁斯", "色萨利", "伯罗奔尼撒",
+            "爱琴", "克里特", "塞浦路斯", "伊奥尼亚", "色雷斯", "阿提卡", "罗得", "特拉布宗",
+        ],
+        "arab": [
+            "阿拉伯", "叙利亚", "伊拉克", "埃及", "希贾兹", "内志", "也门", "阿曼",
+            "沙姆", "美索不达米亚", "马格里布", "黎凡特", "突尼斯", "巴林", "阿西尔", "哈德拉毛",
+            "努比亚", "的黎波里", "巴勒斯坦", "约旦", "黎巴嫩", "科威特",
+        ],
+        "persian": [
+            "伊朗", "波斯", "呼罗珊", "法尔斯", "米底", "埃兰", "锡斯坦", "吉兰",
+            "马赞达兰", "阿塞拜疆", "克尔曼", "花剌子模", "河中", "粟特", "巴克特里亚", "胡齐斯坦",
+        ],
+        "slavic": [
+            "俄罗斯", "罗斯", "乌克兰", "白罗斯", "诺夫哥罗德", "莫斯科", "西伯利亚", "乌拉尔",
+            "伏尔加", "塞尔维亚", "保加利亚", "克罗地亚", "斯洛文尼亚", "波斯尼亚", "捷克", "斯洛伐克",
+            "摩拉维亚", "鲁塞尼亚", "黑山", "加利西亚",
+        ],
+        "norse": [
+            "斯堪的纳维亚", "北欧", "丹麦", "挪威", "瑞典", "冰岛", "芬兰", "日德兰",
+            "斯堪尼亚", "哥得兰", "特伦德拉格", "西约特兰", "东约特兰", "拉普兰", "法罗",
+        ],
+        "indian": [
+            "印度", "婆罗多", "印度斯坦", "孟加拉", "旁遮普", "古吉拉特", "德干", "马哈拉施特拉",
+            "泰米尔", "喀拉拉", "卡纳塔克", "安得拉", "奥里萨", "阿萨姆", "拉贾斯坦", "克什米尔",
+            "迈索尔", "海得拉巴", "德里", "信德", "比哈尔",
+        ],
+        "korean": [
+            "朝鲜", "韩国", "三韩", "高丽", "半岛", "京畿", "庆尚", "全罗",
+            "忠清", "江原", "黄海", "平安", "咸镜", "济州", "渤海", "岭南", "湖南",
+        ],
+        "mongol": [
+            "蒙古", "喀尔喀", "漠北", "漠南", "卫拉特", "准噶尔", "察哈尔", "鄂尔多斯",
+            "呼伦贝尔", "阿尔泰", "布里亚特", "卡尔梅克", "图瓦", "科尔沁", "阿拉善",
+        ],
+        "turkic": [
+            "突厥", "安纳托利亚", "土耳其", "图兰", "西域", "河中", "哈萨克", "乌兹别克",
+            "吉尔吉斯", "土库曼", "阿塞拜疆", "克里米亚", "鞑靼斯坦", "巴什基尔", "伏尔加", "西伯利亚",
+        ],
+        "egyptian": [
+            "埃及", "尼罗", "上埃及", "下埃及", "三角洲", "努比亚", "苏丹", "法尤姆",
+            "底比斯", "孟斐斯", "亚历山大", "西奈", "红海", "利比亚",
+        ],
+        "spanish": [
+            "西班牙", "伊比利亚", "卡斯蒂利亚", "阿拉贡", "加泰罗尼亚", "安达卢西亚", "莱昂", "加利西亚",
+            "巴斯克", "纳瓦拉", "瓦伦西亚", "穆尔西亚", "阿斯图里亚斯", "巴利阿里", "埃斯特雷马杜拉",
+        ],
+        "italian": [
+            "意大利", "伦巴第", "威尼托", "托斯卡纳", "皮埃蒙特", "利古里亚", "艾米利亚", "罗马涅",
+            "坎帕尼亚", "西西里", "撒丁", "普利亚", "卡拉布里亚", "拉齐奥", "翁布里亚", "那不勒斯",
+        ],
+        "vietnamese": [
+            "越南", "交趾", "升龙", "安南", "顺化", "广南", "清化", "义安",
+            "南圻", "北圻", "中圻", "西原", "占婆", "红河", "湄公",
+        ],
+        "tibetan": [
+            "雪域", "卫藏", "康巴", "安多", "阿里", "羌塘", "雅砻", "吐蕃",
+            "拉萨", "日喀则", "昌都", "林芝", "山南", "多康",
+        ],
+        "hungarian": [
+            "匈牙利", "马扎尔", "潘诺尼亚", "多瑙", "蒂萨", "特兰西瓦尼亚", "外多瑙", "大平原", "巴纳特",
+        ],
+        "polish": [
+            "波兰", "维斯瓦", "大波兰", "小波兰", "马佐维亚", "西里西亚", "波美拉尼亚", "立陶宛", "库亚维亚", "喀尔巴阡",
+        ],
+        "portuguese": [
+            "葡萄牙", "卢西塔尼亚", "里斯本", "波尔图", "米尼奥", "阿连特茹", "阿尔加维", "贝拉", "马德拉", "亚速尔",
+        ],
+        "dutch": [
+            "尼德兰", "荷兰", "低地", "巴达维亚", "弗里斯兰", "泽兰", "布拉班特", "乌得勒支", "海尔德兰", "佛兰德",
+        ],
+        "aztec": [
+            "墨西哥", "阿纳瓦克", "阿兹特兰", "特斯科科", "特拉斯卡拉", "瓦哈卡", "尤卡坦", "玛雅", "米却肯",
+        ],
+        "inca": [
+            "安第斯", "秘鲁", "塔万廷苏尤", "库斯科", "基多", "玻利维亚", "智利", "阿雷基帕", "的的喀喀",
+        ],
+    ]
+
+    /// 供去重使用的规范核心键：把「大金」「金」「金帝国」「大金王朝」规约为同一核心「金」，
+    /// 避免 `Founding` 与 `Uprisings` 因带不带「大」或后缀而反复选中同一个朝代名（彻底修复中华后期无限大金）。
+    public static func canonicalStateKey(_ raw: String) -> String {
+        var s = cleanStateBase(raw)
+        if s.isEmpty { return s }
+        // 去掉开头的序数词（如 第二/第三/后/续）
+        for ord in ["第二", "第三", "第四", "第五", "第六", "第七", "第八"] where s.hasPrefix(ord) && s.count > ord.count {
+            s = String(s.dropFirst(ord.count))
+            break
+        }
+        if s.hasPrefix("大"), s.count == 2, !preserveDaCore.contains(s) {
+            return String(s.dropFirst())
+        }
+        if s.hasSuffix("朝"), s.count >= 2 {
+            let trimmed = String(s.dropLast())
+            if trimmed.hasPrefix("大"), trimmed.count == 2, !preserveDaCore.contains(trimmed) {
+                return String(trimmed.dropFirst())
+            }
+            return trimmed
+        }
+        return s
+    }
+
+    /// 收集当前世界中所有已被占用的国名规范键集合（同时包含 `civilization.nations` 与 `world.nations`）。
+    public static func usedStateKeys(_ r: JS) -> Set<String> {
+        var used = Set<String>()
+        if !r.civilization.isNull, !r.civilization.nations.isNull {
+            for v in r.civilization.nations.objectValues {
+                if let raw = v.name.value.optionalString, !raw.isEmpty {
+                    used.insert(cleanStateBase(raw))
+                    used.insert(canonicalStateKey(raw))
+                }
+                if let custom = v.name.custom.optionalString, !custom.isEmpty {
+                    used.insert(cleanStateBase(custom))
+                    used.insert(canonicalStateKey(custom))
+                }
+            }
+        }
+        for n in r.world.nations.asArray {
+            if let name = n.name.optionalString, !name.isEmpty {
+                used.insert(cleanStateBase(name))
+                used.insert(canonicalStateKey(name))
+            }
+        }
+        return used
+    }
+
+    /// 判断基名是否为纯王朝/皇室名（在现代共和/联邦/军政府政体下显得失真）。
+    public static func isDynasticBase(_ raw: String, culture: String) -> Bool {
+        let b = cleanStateBase(raw)
+        if b.isEmpty { return false }
+        if culture == "chinese" {
+            if b.count == 1 { return true }
+            if b.hasPrefix("大") && !preserveDaCore.contains(b) { return true }
+            if chineseCompleteMonarchyTitles.contains(b) {
+                // 吴越、荆楚、河西、陇右、南越、闽越、大理、中山 既是古国也是地理区名，共和体制可用
+                let alsoRegion: Set<String> = ["吴越", "河西", "陇右", "闽越", "大理", "中山", "南诏", "高昌"]
+                return !alsoRegion.contains(b)
+            }
+            return false
+        }
+        if let set = dynasticOnlyBases[culture], set.contains(b) { return true }
+        return false
+    }
+
+    /// 当国家切换政体风格时，检查当前基名是否与新政体现实冲突；若冲突（如「大金」改共和国、「波旁」改联邦），
+    /// 自动从该文化的对应现代地理池或王朝池挑选不重名的合理基名。
+    public static func adaptBaseForStyle(
+        base rawBase: String,
+        culture: String,
+        style: Regimes.Style,
+        seed: String,
+        used: Set<String>
+    ) -> String {
+        let base = cleanStateBase(rawBase)
+        if modernPolityStyles.contains(style.id), isDynasticBase(base, culture: culture) {
+            let pool = modernRegionStates[culture] ?? []
+            if !pool.isEmpty {
+                let start = Int(Opening.hash(seed + "|modern") % UInt32(pool.count))
+                if let pick = (0..<pool.count).lazy.map({ pool[(start + $0) % pool.count] })
+                    .first(where: { !used.contains($0) && !used.contains(canonicalStateKey($0)) }) {
+                    return pick
+                }
+                return pool[start]
+            }
+        }
+        // 反向：由现代区域名如「中华」「华夏」改为中华「新朝」时，保留雅称或选未用朝代号
+        if style.id == "dynasty", culture == "chinese", base.count >= 3 {
+            let pool = dynastyPool(culture: culture)
+            if !pool.isEmpty {
+                let start = Int(Opening.hash(seed + "|dyn") % UInt32(pool.count))
+                if let pick = (0..<pool.count).lazy.map({ pool[(start + $0) % pool.count] })
+                    .first(where: { !used.contains($0) && !used.contains(canonicalStateKey($0)) }) {
+                    return pick
+                }
+            }
+        }
+        return base
+    }
+
+    /// 各文化起义建朝/禅让专用朝代名池（完全取代 `Uprisings` 旧版狭小硬编码表）。
+    public static func dynastyPool(culture: String) -> [String] {
+        if culture == "chinese" {
+            return [
+                "汉", "唐", "宋", "明", "秦", "晋", "隋", "周", "齐", "楚", "燕", "赵", "魏", "吴", "越", "蜀", "梁", "陈", "夏", "商", "元", "辽", "金", "清",
+                "大顺", "大西", "天完", "大中", "大定", "新朝", "武周",
+                "西汉", "东汉", "曹魏", "蜀汉", "东吴", "西晋", "东晋",
+                "北魏", "东魏", "西魏", "北齐", "北周", "南齐", "南梁", "南陈",
+                "后梁", "后唐", "后晋", "后汉", "后周", "南唐", "吴越", "前蜀", "后蜀", "南汉", "北汉", "马楚", "闽",
+                "北宋", "南宋", "西夏", "南明", "大理", "南诏", "西楚",
+                "前秦", "后秦", "西秦", "前燕", "后燕", "南燕", "北燕", "前凉", "后凉", "西凉", "北凉", "南凉", "成汉", "胡夏",
+                "鲁", "郑", "韩", "卫", "蔡", "曹", "徐", "许", "滕", "薛", "杞", "申", "吕", "邢", "樊", "莱", "虞", "随", "邓", "虢", "岐", "雍", "代", "中山",
+            ]
+        }
+        return historicalExtraStates[culture] ?? fantasyStates[culture] ?? []
+    }
 
     /// 清洗历史/目录国名中误带的政体或爵位尾缀（如「波兰王国」→「波兰」、「科英布拉伯」→「科英布拉」、「宋国」→「宋」）。
     public static func cleanStateBase(_ raw: String) -> String {
@@ -113,6 +385,10 @@ public enum NamingCatalog {
             "教皇国": "罗马教廷",
         ]
         if let fixed = trimExact[s] { return fixed }
+        // 若是「单字+国」（如 齐国/楚国/燕国），还原为单字基名以便按政体重新拼合
+        if s.hasSuffix("国"), s.count == 2, s != "中国", s != "四国", s != "韩国", s != "法国", s != "德国", s != "英国", s != "俄国", s != "美国", s != "越国" {
+            return String(s.dropLast())
+        }
         return s
     }
 
@@ -122,23 +398,28 @@ public enum NamingCatalog {
         guard !s.isEmpty else { return s }
         for suffix in politySuffixes where s.hasSuffix(suffix) && s.count > suffix.count {
             s = String(s.dropLast(suffix.count))
+            // 同时去掉如「法兰西第二共和国」剥掉「共和国」后留下的尾随序数「第二」
+            for ord in ["第二", "第三", "第四", "第五", "第六"] where s.hasSuffix(ord) && s.count > ord.count {
+                s = String(s.dropLast(ord.count))
+                break
+            }
             return s
         }
         // 仅在「大+单字朝代」且不在保留地名表中时去掉冠字「大」（如 大汉→汉、大唐→唐、大宋→宋、大明→明）。
-        if s.hasPrefix("大"), s.count == 2, !keepLeadingDa.contains(s) {
+        if s.hasPrefix("大"), s.count == 2, !preserveDaCore.contains(s) {
             return String(s.dropFirst())
         }
-        // 特殊：大秦作为历史王朝简称「秦」。
-        if s == "大秦" { return "秦" }
-        // 单个“国”尾字（仅当长度 >= 3 或为“X国”式且非固定地名，如 宋国→宋、法西斯国式）。
-        if s.hasSuffix("国"), s.count >= 2, s != "中国", s != "四国" {
+        // 单个“国”尾字（仅当长度 >= 2 且非固定国名）
+        if s.hasSuffix("国"), s.count >= 2, s != "中国", s != "四国", s != "韩国" {
             return String(s.dropLast())
         }
         return s
     }
 
     /// 渲染国家完整称谓，支持模板占位符 `{名}`（基名）、`{号}`（政体后缀）、`{序}`（复国序号）、`{姓}`（统治家族姓氏）。
-    /// 无模板时按文化与政体自动给出最自然的称呼，并杜绝一切重复后缀（如「波兰王国王国」「西西里王国共和国」）。
+    /// 无模板时严格按文化与政体规律给出真实自然的称呼：
+    /// - 杜绝「大金共和国」「北宋王国」「大顺帝国」「波兰王国王国」「第二大金」等不合现实的拼接；
+    /// - 复辟/重建序数按中文史学习惯排布（如「法兰西第二共和国」「罗马第二帝国」，中华王朝复国称「后汉」「南宋」「续明」）。
     public static func formatStateTitle(
         base rawBase: String,
         style: Regimes.Style,
@@ -173,26 +454,68 @@ public enum NamingCatalog {
             if !out.isEmpty { return out }
         }
 
-        // 东亚「新朝/王朝」政体：单字国号冠「大」（大秦、大汉、大唐、大明），双字及以上保留典雅原称（北魏、南宋、西夏、大顺）。
-        if style.id == "dynasty" {
-            if base.count == 1 {
-                return ordinal.isEmpty ? "大" + base : ordinal + base + "朝"
+        // 1. 中华/东亚王朝与封建君主称谓：严格贴近真实史书称法
+        if culture == "chinese" {
+            let isMonarchy = ["dynasty", "empire", "despotism", "absolute", "feudal", "regency", "principality", "elective"].contains(style.id)
+            if style.id == "dynasty" {
+                let core = canonicalStateKey(base)
+                if core.count == 1 && (base.count == 1 || (base.hasPrefix("大") && base.count == 2)) {
+                    if ordinal.isEmpty { return "大" + core }
+                    return (ordinal == "第二" ? "后" : ordinal == "第三" ? "南" : "续") + core
+                }
+                if chineseCompleteMonarchyTitles.contains(base) {
+                    if ordinal.isEmpty { return base }
+                    let stripped = base.hasPrefix("大") ? String(base.dropFirst()) : base
+                    return (ordinal == "第二" ? "后" : "续") + stripped
+                }
+                return ordinal.isEmpty ? base + "朝" : "续" + base
             }
-            if base.hasPrefix("大") || ["东", "西", "南", "北", "前", "后", "蜀", "曹", "马", "武"].contains(where: { base.hasPrefix($0) }) {
-                return ordinal + base
+            if isMonarchy {
+                // 双字完整朝代号（如 北魏、南唐、蜀汉、吴越、西夏、大理、大顺、南明）：绝不乱加「王国/帝国」
+                if chineseCompleteMonarchyTitles.contains(base) {
+                    if ordinal.isEmpty { return base }
+                    let stripped = base.hasPrefix("大") ? String(base.dropFirst()) : base
+                    return (ordinal == "第二" ? "后" : "续") + stripped
+                }
+                // 单字国号：王制/公国称「齐国/楚国/晋公国」，帝制称「大秦/秦帝国」
+                if base.count == 1 {
+                    if style.id == "principality" { return (ordinal.isEmpty ? "" : "后") + base + "公国" }
+                    if style.base == "Kingdom" { return (ordinal.isEmpty ? "" : "后") + base + "国" }
+                    if style.base == "Empire" { return ordinal.isEmpty ? "大" + base : "后" + base }
+                }
+                // 地理双字名（如 江南、关中、巴蜀、岭南）：君主立宪/封建王国可称「江南王国」「巴蜀公国」
+                if style.id == "principality" { return base + (ordinal.isEmpty ? "" : ordinal) + "公国" }
+                if style.base == "Empire" { return base + ordinal + "帝国" }
+                if style.base == "Kingdom" { return base + ordinal + "王国" }
             }
-            return ordinal + base + "王朝"
+            if style.id == "warlord" { return base + "军政府" }
+            if style.id == "peasant" { return base + "义军" }
+            if style.id == "holy" { return base + "神国" }
+            if style.id == "tribal" || style.id == "chiefdom" { return base + "部" }
+            if style.id == "khanate" { return base + "汗国" }
         }
 
-        // 防止重复后缀：若基名已包含该政体后缀或完整政体词，不再叠拼。
+        // 2. 其余文化「新朝/王朝」政体
+        if style.id == "dynasty" {
+            if base.count == 1 {
+                return ordinal.isEmpty ? "大" + base : "后" + base
+            }
+            if base.hasPrefix("大") || ["东", "西", "南", "北", "前", "后"].contains(where: { base.hasPrefix($0) }) {
+                return ordinal.isEmpty ? base : "后" + base
+            }
+            return base + ordinal + "王朝"
+        }
+
+        // 3. 防止重复后缀：若基名已包含该政体后缀或完整政体词，不再叠拼。
         if !effectiveSuffix.isEmpty {
-            if base.hasSuffix(effectiveSuffix) { return ordinal + base }
-            if politySuffixes.contains(where: { base.hasSuffix($0) }) { return ordinal + base }
+            if base.hasSuffix(effectiveSuffix) { return base + ordinal }
+            if politySuffixes.contains(where: { base.hasSuffix($0) }) { return base }
             if effectiveSuffix == "国", (base.hasSuffix("国") || base.hasSuffix("朝") || base.hasSuffix("廷")) {
-                return ordinal + base
+                return base
             }
         }
-        return ordinal + base + effectiveSuffix
+        // 4. 通用史学序数顺序：「法兰西第二共和国」「罗马第二帝国」「德意志第二帝国」
+        return base + ordinal + effectiveSuffix
     }
 
     /// 供界面展示的国名模板预设（具名结构体，保证 Swift 5 `ForEach` 稳定编译）。
@@ -220,9 +543,12 @@ public enum NamingCatalog {
             "商", "殷", "西周", "东周", "新", "后汉", "曹魏", "蜀汉", "东吴", "西晋", "东晋",
             "前秦", "后秦", "北魏", "东魏", "西魏", "北齐", "北周", "南齐", "南梁", "南陈", "武周",
             "后梁", "后唐", "后晋", "后周", "南唐", "吴越", "前蜀", "后蜀", "南汉", "北汉", "闽", "马楚",
-            "西夏", "大理", "南诏", "北宋", "南宋", "大顺", "南明", "大西",
+            "西夏", "大理", "南诏", "北宋", "南宋", "大顺", "南明", "大西", "天完", "大中", "大定", "清",
             "中山", "巴", "滇", "夜郎", "徐", "莒", "邾", "曹", "虢", "随", "邓", "许", "息", "代",
             "西凉", "北凉", "南燕", "后燕", "成汉", "前燕", "前凉", "南凉", "西秦", "胡夏", "北燕", "高昌", "吐谷浑",
+            "前赵", "后赵", "后凉", "东夏", "西辽", "北辽", "南平", "荆南", "清源", "定难", "归义", "南越", "闽越", "东瓯",
+            "西楚", "且兰", "句町", "滕", "薛", "杞", "申", "吕", "邢", "樊", "莱", "虞", "雍", "岐", "滑", "纪", "沈", "黄", "江", "舒",
+            "关中", "巴蜀", "荆楚", "燕云", "齐鲁", "岭南", "河洛", "三晋", "江淮", "湖湘", "河西", "陇右", "幽燕", "辽东", "剑南", "河朔",
         ],
         "japanese": [
             "尾张", "甲斐", "越后", "相模", "骏河", "安艺", "萨摩", "土佐", "出羽", "陆奥",
@@ -230,118 +556,138 @@ public enum NamingCatalog {
             "若狭", "丹波", "但马", "因幡", "伯耆", "石见", "周防", "筑前", "筑后", "日向",
             "大隅", "琉球", "虾夷", "常陆", "下野", "上野", "飞驒", "纪伊", "肥后", "越中",
             "赞岐", "备中", "备后", "美作", "淡路", "和泉", "河内", "摄津", "伊贺", "志摩",
+            "长门", "播磨", "信浓", "武藏", "三河", "远江", "伊豆", "安房", "上总", "下总", "磐城", "岩代", "对马", "壹岐",
         ],
         "english": [
             "约克", "兰开斯特", "诺福克", "苏格兰", "威尔士", "格温内斯", "波伊斯", "德赫巴斯",
             "斯特拉思克莱德", "皮克特", "达尔里亚达", "林赛", "赫威赛", "德伊勒", "伯尼西亚",
             "爱尔兰", "康诺特", "阿尔斯特", "伦斯特", "芒斯特", "马恩", "麦西亚", "诺森布里亚", "苏塞克斯",
+            "萨里", "伯克郡", "德文", "萨默塞特", "多塞特", "汉普郡", "柴郡", "达勒姆", "诺森伯兰", "法夫", "洛锡安", "阿盖尔",
         ],
         "arab": [
             "法蒂玛", "阿尤布", "马穆鲁克", "阿格拉布", "伊德里斯", "图伦", "伊赫希德", "哈姆丹",
             "穆拉比特", "穆瓦希德", "哈夫斯", "马林", "宰亚尼", "拉苏勒", "齐亚德", "苏莱赫",
             "卡尔马特", "希拉", "巴林", "哈德拉毛", "科尔多瓦", "格拉纳达", "汉志", "叙利亚",
+            "阿曼", "内志", "也门", "的黎波里", "摩苏尔", "阿勒颇", "大马士革", "突尼斯", "非斯", "马拉喀什", "阿西尔", "赞吉",
         ],
         "roman": [
             "西罗马", "东罗马", "苏瓦松", "帕尔米拉", "高卢", "不列颠尼亚", "毛里塔尼亚", "努米底亚",
             "卡帕多细亚", "本都", "比提尼亚", "亚美尼亚", "加拉提亚", "色雷斯", "默西亚", "伊利里库姆",
             "诺里库姆", "雷蒂亚", "撒丁尼亚", "科西嘉", "阿奎塔尼亚", "纳博讷", "基里基亚",
+            "卢西塔尼亚", "贝提卡", "塔拉科", "比利时高卢", "日耳曼尼亚", "阿哈伊亚", "昔兰尼加", "犹太", "美索不达米亚",
         ],
         "french": [
             "卡佩", "瓦卢瓦", "波旁", "奥尔良", "阿基坦", "加斯科涅", "佛兰德", "皮卡第",
             "贝里", "奥弗涅", "多菲内", "萨伏依", "里昂", "阿图瓦", "利穆赞", "普瓦图",
             "朗格多克", "鲁西永", "法兰克", "纽斯特里亚", "奥斯特拉西亚", "阿尔萨斯", "曼恩", "图赖讷",
+            "波尔多", "布卢瓦", "尼韦尔奈", "波旁奈", "佩里戈尔", "阿尔马尼亚克", "富瓦", "贝阿恩", "弗朗什孔泰",
         ],
         "german": [
             "霍亨斯陶芬", "霍亨索伦", "哈布斯堡", "维特尔斯巴赫", "韦尔夫", "梅克伦堡", "波美拉尼亚",
             "荷尔斯泰因", "石勒苏益格", "不伦瑞克", "卢森堡", "科隆", "美因茨", "特里尔", "巴登",
             "安哈尔特", "奥尔登堡", "条顿", "汉萨", "东法兰克", "西里西亚", "卡林西亚", "施蒂利亚", "蒂罗尔",
-            "威斯特伐利亚", "拿骚", "马格德堡", "纽伦堡",
+            "威斯特伐利亚", "拿骚", "马格德堡", "纽伦堡", "莱茵", "瑞士", "吕贝克", "不来梅", "汉堡", "法兰克福", "乌尔姆",
         ],
         "greek": [
             "阿尔戈斯", "麦加拉", "叙拉古", "米利都", "以弗所", "萨摩斯", "开俄斯", "克里特",
             "塞浦路斯", "帕加马", "塞琉古", "托勒密", "安提柯", "本都", "博斯普鲁斯", "特拉布宗",
             "伊庇鲁斯", "尼西亚", "摩里亚", "阿卡迪亚", "福基斯", "皮洛斯", "罗得", "昔兰尼",
+            "哈尔基斯", "埃雷特里亚", "科孚", "莱斯博斯", "纳克索斯", "帕罗斯", "拉里萨", "色萨洛尼卡", "马萨利亚",
         ],
         "persian": [
             "萨法维", "阿夫沙尔", "赞德", "卡扎尔", "伽色尼", "萨曼", "布韦希", "塔希尔",
             "萨法尔", "齐亚尔", "卡库伊", "穆扎法尔", "帖木儿", "黑羊", "白羊", "贵霜",
             "阿兰", "达伊拉姆", "马赞达兰", "塔巴里斯坦", "阿塞拜疆", "克尔曼",
+            "伊斯法罕", "设拉子", "大不里士", "赫拉特", "巴尔赫", "内沙布尔", "梅尔夫", "胡齐斯坦", "洛雷斯坦",
         ],
         "slavic": [
             "弗拉基米尔", "苏兹达尔", "梁赞", "特维尔", "普斯科夫", "加利奇", "沃伦", "切尔尼戈夫",
             "斯摩棱斯克", "波洛茨克", "大摩拉维亚", "斯洛文尼亚", "杜克利亚", "波斯尼亚", "拉什卡", "泽塔",
             "莫斯科", "白罗斯", "鲁塞尼亚", "喀尔巴阡", "罗斯托夫", "佩列亚斯拉夫", "图罗夫",
+            "穆罗姆", "雅罗斯拉夫尔", "下诺夫哥罗德", "维亚特卡", "彼尔姆", "西伯利亚", "扎波罗热", "黑山", "斯洛伐克",
         ],
         "norse": [
             "卡尔马", "芬兰", "法罗", "设得兰", "马恩", "诺曼", "格陵兰", "赫布里底",
             "阿格德", "霍洛加兰", "乌普兰", "斯维阿", "约姆", "罗斯", "瓦良格",
-            "西约特兰", "东约特兰", "斯莫兰", "文兰", "奥普兰",
+            "西约特兰", "东约特兰", "斯莫兰", "文兰", "奥普兰", "博胡斯", "耶姆特兰", "达拉纳", "石勒苏益格", "斯科讷",
         ],
         "indian": [
             "孔雀", "笈多", "贵霜", "萨塔瓦哈纳", "遮娄其", "帕拉瓦", "拉什特拉库塔", "波罗",
             "普拉蒂哈拉", "毗奢耶那伽罗", "巴赫曼尼", "马拉塔", "拉其普特", "锡克", "莫卧儿", "德里",
             "孟加拉", "古吉拉特", "迈索尔", "海得拉巴", "旁遮普", "克什米尔", "阿萨姆", "奥里萨",
+            "梅瓦尔", "马尔瓦尔", "斋浦尔", "信德", "马尔瓦", "比贾布尔", "戈尔康达", "特拉凡哥尔", "尼泊尔", "兰卡",
         ],
         "korean": [
             "加耶", "金官", "大伽倻", "泰封", "摩震", "卒本", "北扶余", "马韩",
             "辰韩", "弁韩", "乐浪", "带方", "于山", "真番", "临屯", "箕子", "卫满", "后高句丽",
+            "南扶余", "东沃沮", "东濊", "庆尚", "全罗", "忠清", "江原", "平安", "咸镜",
         ],
         "mongol": [
             "大蒙古", "金帐", "蓝帐", "白帐", "窝阔台", "鞑靼", "科尔沁", "察哈尔",
             "喀尔喀", "土默特", "鄂尔多斯", "和硕特", "杜尔伯特", "土尔扈特", "辉特",
             "汪古", "弘吉剌", "斡亦剌", "札剌亦儿", "泰赤乌", "伊儿", "察合台",
+            "布里亚特", "卡尔梅克", "克烈", "乃蛮", "漠北", "漠南", "卫拉特", "阿拉善",
         ],
         "turkic": [
             "阿瓦尔", "可萨", "保加尔", "佩切涅格", "乌古斯", "葛逻禄", "黠戛斯", "沙陀",
             "高昌", "甘州", "加兹尼", "卡拉曼", "达尼什曼德", "杜尔卡迪尔", "黑羊", "喀山",
             "阿斯特拉罕", "克里米亚", "西伯利亚", "希瓦", "布哈拉", "浩罕", "塞尔柱", "鲁姆",
+            "诺盖", "哈萨克", "乌兹别克", "土库曼", "艾登", "门泰谢", "盖尔米扬", "萨鲁汗",
         ],
         "egyptian": [
             "阿玛尔纳", "赫利奥波利斯", "希克索斯", "塔尼斯", "纳帕塔", "阿克苏姆", "布托", "涅亨",
             "希拉孔波利斯", "阿拜多斯", "象岛", "法尤姆", "卢克索", "卡纳克", "萨卡拉", "锡瓦",
-            "菲莱", "丹德拉", "塞易斯", "阿斯旺",
+            "菲莱", "丹德拉", "塞易斯", "阿斯旺", "亚历山大", "达米埃塔", "罗塞塔", "孟斐斯", "努比亚",
         ],
         "spanish": [
             "西哥特", "苏维汇", "巴伦西亚", "穆尔西亚", "巴达霍斯", "塞维利亚", "托莱多", "潘普洛纳",
             "乌赫尔", "巴塞罗那", "加利西亚", "安达卢斯", "阿尔梅里亚", "马拉加", "莱昂", "比斯开",
-            "埃斯特雷马杜拉", "坎塔布里亚",
+            "埃斯特雷马杜拉", "坎塔布里亚", "科尔多瓦", "萨拉戈萨", "马略卡", "里奥哈", "卡迪斯", "萨拉曼卡",
         ],
         "italian": [
             "费拉拉", "摩德纳", "帕尔马", "比萨", "锡耶纳", "卢卡", "乌尔比诺", "拉韦纳",
             "阿马尔菲", "加埃塔", "贝内文托", "斯波莱托", "弗留利", "阿奎莱亚", "蒙费拉", "萨卢佐",
-            "伦巴第", "东哥特", "西西里", "那不勒斯", "皮埃蒙特", "卡拉布里亚", "翁布里亚",
+            "伦巴第", "东哥特", "西西里", "那不勒斯", "皮埃蒙特", "卡拉布里亚", "翁布里亚", "博洛尼亚", "维罗纳", "帕多瓦",
         ],
         "vietnamese": [
             "万春", "交趾", "九真", "日南", "林邑", "扶南", "真腊", "占婆",
             "南掌", "西山", "广南", "升龙", "顺化", "清化", "义安", "嘉定", "河仙", "北宁",
+            "安南", "高平", "谅山", "海阳", "山南", "宣光",
         ],
         "tibetan": [
             "雅隆", "古格", "阿里", "贡塘", "仁蚌", "辛厦", "藏巴", "甘丹",
             "德格", "囊谦", "江孜", "芒域", "工布", "达布", "羊同", "木雅", "拉萨", "萨迦",
+            "拉达克", "卫藏", "安多", "康巴", "日喀则", "昌都",
         ],
         "hungarian": [
             "阿尔帕德", "安茹", "匈雅提", "潘诺尼亚", "瓦拉几亚", "摩尔达维亚", "马扎尔",
             "外多瑙", "上蒂萨", "下蒂萨", "巴拉顿", "佩奇", "埃格尔", "德布勒森", "布达",
+            "斯拉沃尼亚", "达尔马提亚", "巴纳特", "特兰西瓦尼亚", "塞凯伊",
         ],
         "polish": [
             "皮雅斯特", "雅盖隆", "立陶宛", "西里西亚", "克拉科夫", "桑多梅日", "文奇察", "西拉兹",
             "普沃茨克", "格涅兹诺", "海乌姆", "鲁塞尼亚", "普鲁士", "利沃尼亚", "华沙", "波兹南",
+            "马佐维亚", "波美拉尼亚", "库亚维", "波德拉谢", "卢布林",
         ],
         "portuguese": [
             "阿维什", "布拉干萨", "加利西亚", "波尔图", "里斯本", "科英布拉", "埃武拉", "贝雅",
             "布拉加", "法鲁", "阿连特茹", "米尼奥", "贝拉", "马德拉", "亚速尔", "阿尔加维",
+            "圣塔伦", "莱里亚", "维塞乌", "吉马良斯",
         ],
         "dutch": [
             "海尔德", "林堡", "列日", "布拉邦", "佛兰德", "埃诺", "那慕尔", "卢森堡",
             "联省", "巴达维亚", "泽兰", "弗里斯兰", "乌得勒支", "格罗宁根", "德伦特", "上艾瑟尔",
+            "阿姆斯特丹", "鹿特丹", "安特卫普", "根特", "布鲁日",
         ],
         "aztec": [
             "奥尔梅克", "特奥蒂瓦坎", "托托纳克", "瓦斯特克", "塔拉斯坎", "奥托米", "乔卢拉", "韦霍钦科",
             "库尔瓦坎", "阿斯卡波察尔科", "霍奇米尔科", "查尔科", "玛雅潘", "奇琴伊察", "乌斯马尔", "蒂卡尔", "帕伦克", "科潘",
+            "特拉斯卡拉", "瓦哈卡", "米特拉", "特斯科科", "特拉科潘",
         ],
         "inca": [
             "瓦里", "蒂瓦纳科", "莫切", "纳斯卡", "帕拉卡斯", "查文", "卢帕卡", "科利亚",
             "钱卡", "瓦尔帕", "卡尼亚里", "帕尔塔", "马普切", "艾马拉", "孔蒂苏尤", "维尔卡班巴",
+            "基多", "奇穆", "卡哈马卡", "阿雷基帕", "钦查",
         ],
     ]
 
@@ -502,9 +848,16 @@ public enum NamingCatalog {
                 "允文", "善长", "遇春", "文忠", "继光", "大猷", "居正", "守仁", "廷弼", "崇焕",
                 "可法", "成功", "宗棠", "国藩", "鸿章", "宝桢", "之洞", "嗣同", "思远", "致远",
                 "安国", "定远", "广德", "守正", "敬之", "延年", "仲宣", "永叔", "鲁直", "少游",
+                "去病", "无忌", "德裕", "公权", "希文", "君实", "介甫", "子瞻", "子由", "弃疾",
+                "放翁", "天祥", "世杰", "伯温", "景隆", "于谦", "廷和", "清臣", "元辅", "应龙",
+                "承宗", "象升", "煌言", "定国", "廷玉", "敏中", "则徐", "铭传", "启超", "公度",
+                "维新", "仲淹", "道济", "子敬", "公瑾", "伯约", "文若", "奉孝", "仲谋", "元直",
+                "幼安", "士元", "文长", "伯符", "子龙", "翼德", "云长", "孟起", "汉升", "公明",
+                "文远", "妙才", "元让", "德谋", "公覆", "兴霸", "仲康", "子义", "伯言", "幼平",
                 "轩", "辰", "逸", "宸", "泽", "昊", "煜", "琰", "珏", "澈",
                 "渊", "瀚", "朗", "睿", "骁", "翰", "霖", "曦", "熙", "瑜",
                 "瑾", "珣", "恪", "恂", "惇", "恺", "靖", "达", "普", "基",
+                "珩", "琨", "琮", "璋", "琛", "琦", "璟", "璆", "玙", "瑨",
             ],
             female: [
                 "婉清", "令仪", "淑宁", "静姝", "明玥", "昭华", "若蘅", "清和", "思柔", "惠宁",
@@ -512,9 +865,14 @@ public enum NamingCatalog {
                 "徽音", "淑真", "清辉", "紫薇", "碧霞", "流云", "映月", "清音", "雅韵", "冰心",
                 "念慈", "静雅", "秋水", "明月", "素心", "雪莹", "采薇", "映雪", "锦瑟", "淑慎",
                 "惠娴", "瑞芝", "兰芷", "蕙心", "玉瑶", "凝霜", "琼华", "玉容", "舒窈", "知微",
+                "婉兮", "清扬", "嘉柔", "令娴", "明慧", "淑仪", "德音", "柔嘉", "端宁", "景仪",
+                "昭宁", "永宁", "安平", "长乐", "乐安", "华阳", "清平", "玉润", "冰清", "云舒",
+                "云溪", "竹韵", "松雪", "梅影", "荷风", "菊隐", "桂月", "烟霞", "星河", "朝露",
+                "暮云", "晴岚", "疏影", "暗香", "凌波", "飞燕", "惊鸿", "青鸾", "丹凤", "灵犀",
                 "瑶", "琪", "萱", "柔", "雪", "霜", "月", "云", "兰", "梅",
                 "竹", "菊", "莲", "荷", "燕", "凤", "嫣", "婷", "玲", "珠",
                 "环", "钰", "瑾", "璇", "媛", "蕊", "霞", "露", "翠", "素",
+                "芷", "若", "薇", "芸", "茜", "菱", "盈", "绾", "姝", "妍",
             ],
             houses: [
                 "李", "赵", "陈", "王", "刘", "杨", "朱", "萧", "谢", "顾",
@@ -529,8 +887,12 @@ public enum NamingCatalog {
                 "颜", "郭", "林", "钟", "徐", "邱", "高", "夏", "蔡", "田",
                 "樊", "胡", "霍", "虞", "卢", "莫", "房", "应", "宗", "丁",
                 "邓", "洪", "左", "石", "崔", "程", "裴", "荀", "武", "叶",
+                "白", "温", "柴", "季", "宁", "廖", "熊", "段", "谭", "毛",
+                "龚", "侯", "龙", "万", "易", "乔", "赖", "安", "倪", "连",
+                "辛", "詹", "耿", "曲", "舒", "梅", "盛", "童", "祝融", "席",
                 "司马", "上官", "欧阳", "夏侯", "诸葛", "东方", "皇甫", "尉迟", "公孙", "慕容",
-                "独孤", "宇文", "长孙", "轩辕", "令狐", "南宫", "司徒", "西门",
+                "独孤", "宇文", "长孙", "轩辕", "令狐", "南宫", "司徒", "西门", "拓跋", "呼延",
+                "端木", "澹台", "宗政", "濮阳", "淳于", "单于", "太叔", "申屠", "公冶", "百里",
             ]
         ),
         "japanese": CulturePeople(
@@ -1122,21 +1484,29 @@ public enum NamingCatalog {
         return out
     }
 
-    /// 供 App 世界取某文化国名候选池（历史模式 = 清洗后的历史库 + 纯净补充库；架空模式 = 地道架空国名池）。
-    public static func statePool(culture: String, mode: String) -> [String] {
+    /// 供 App 世界取某文化国名候选池（历史模式 = 清洗后的历史库 + 纯净补充库 + 现代地理库；架空模式 = 地道架空国名池）。
+    public static func statePool(culture: String, mode: String, styleId: String? = nil) -> [String] {
         var seen = Set<String>(), out = [String]()
         func append(_ raw: String) {
             let s = cleanStateBase(raw)
-            if !s.isEmpty && seen.insert(s).inserted { out.append(s) }
+            let key = canonicalStateKey(s)
+            if !s.isEmpty && !key.isEmpty && seen.insert(key).inserted { out.append(s) }
+        }
+        if let styleId, modernPolityStyles.contains(styleId) {
+            for s in modernRegionStates[culture] ?? [] { append(s) }
+        } else if styleId == "dynasty" {
+            for s in dynastyPool(culture: culture) { append(s) }
         }
         if mode == "historical-names" {
             if let profile = Founding.cultures.first(where: { $0.id == culture }) {
                 for s in profile.historicalStates { append(s) }
             }
             for s in historicalExtraStates[culture] ?? [] { append(s) }
-            if out.isEmpty { for s in fantasyStates[culture] ?? [] { append(s) } }
+            for s in modernRegionStates[culture] ?? [] { append(s) }
+            for s in fantasyStates[culture] ?? [] { append(s) }
         } else {
             for s in fantasyStates[culture] ?? [] { append(s) }
+            for s in modernRegionStates[culture] ?? [] { append(s) }
             if out.isEmpty, let profile = Founding.cultures.first(where: { $0.id == culture }) {
                 for r in profile.stateRoots {
                     for e in profile.stateEnds where r != e && !r.isEmpty { append(r + e) }
@@ -1146,14 +1516,27 @@ public enum NamingCatalog {
         return out
     }
 
-    /// 按确定性散列从候选池中挑一个未被 `used` 占用的国名基名。
-    public static func pickStateBase(culture: String, mode: String, seed: String, used: Set<String>) -> String? {
-        let pool = statePool(culture: culture, mode: mode)
+    /// 按确定性散列从候选池中挑一个未被 `used`（按规范核心键）占用的国名基名；池用尽时以雅致方位冠字派生，绝不重复。
+    public static func pickStateBase(culture: String, mode: String, seed: String, used: Set<String>, styleId: String? = nil) -> String? {
+        let pool = statePool(culture: culture, mode: mode, styleId: styleId)
         guard !pool.isEmpty else { return nil }
+        let usedKeys = Set(used.flatMap { [$0, cleanStateBase($0), canonicalStateKey($0)] })
         let start = Int(Opening.hash(seed) % UInt32(pool.count))
         for step in 0..<pool.count {
             let pick = pool[(start + step) % pool.count]
-            if !used.contains(pick) { return pick }
+            let key = canonicalStateKey(pick)
+            if !usedKeys.contains(pick) && !usedKeys.contains(key) { return pick }
+        }
+        // 极端长局（单文化超过 200 国）：以方位/新字雅致派生，绝不卡死在某一个旧名上。
+        let prefixes = culture == "chinese" ? ["新", "东", "西", "南", "北", "上", "下", "中", "古", "永"] : ["新", "东", "西", "南", "北", "上", "下"]
+        for p in prefixes {
+            for step in 0..<pool.count {
+                let raw = pool[(start + step) % pool.count]
+                guard !raw.hasPrefix(p), raw.count <= 4 else { continue }
+                let cand = p + raw
+                let key = canonicalStateKey(cand)
+                if !usedKeys.contains(cand) && !usedKeys.contains(key) { return cand }
+            }
         }
         return pool[start]
     }

@@ -257,6 +257,8 @@ actor NativeHost {
     }
     func releaseToAI(_ armyIds: [String]) async -> (ok: Bool, reason: String, state: Data?) { await command("releaseToAI", ["armyIds": armyIds]) }
     func nationHistory(_ n: Int) async -> Data? { await call("nationHistory", ["n": n]).data }
+    func nationReigns(_ n: Int) async -> Data? { await call("nationReigns", ["n": n]).data }
+    func replayTimeline() async -> Data? { await call("replayTimeline").data }
     func territory(_ provinces: [Int], to nation: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("territory", ["provinces": provinces, "nation": nation]) }
     func retreat(armyId: String, province: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("retreat", ["armyId": armyId, "province": province]) }
     func statistics(_ category: String) async -> Data? { await call("statistics", ["category": category]).data }

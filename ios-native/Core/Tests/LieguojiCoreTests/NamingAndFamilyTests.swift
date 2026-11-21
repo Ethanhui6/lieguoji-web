@@ -92,7 +92,7 @@ final class NamingAndFamilyTests: XCTestCase {
         // 不再出现「波兰王国王国」「西西里王国共和国」。
         XCTAssertEqual(NamingCatalog.formatStateTitle(base: "波兰王国", style: kingdom, religion: "catholic", culture: "polish", ordinal: "", rulingSurname: "皮雅斯特", template: nil), "波兰王国")
         XCTAssertEqual(NamingCatalog.formatStateTitle(base: "宋国", style: dynasty, religion: "chineseFolk", culture: "chinese", ordinal: "", rulingSurname: "赵", template: nil), "大宋")
-        XCTAssertEqual(NamingCatalog.formatStateTitle(base: "秦", style: dynasty, religion: "chineseFolk", culture: "chinese", ordinal: "第二", rulingSurname: "嬴", template: nil), "第二秦朝")
+        XCTAssertEqual(NamingCatalog.formatStateTitle(base: "秦", style: dynasty, religion: "chineseFolk", culture: "chinese", ordinal: "第二", rulingSurname: "嬴", template: nil), "后秦")
         XCTAssertEqual(NamingCatalog.formatStateTitle(base: "北魏", style: dynasty, religion: "chineseFolk", culture: "chinese", ordinal: "", rulingSurname: "拓跋", template: nil), "北魏")
         // 模板支持 {名} {号} {序} {姓}。
         XCTAssertEqual(NamingCatalog.formatStateTitle(base: "法兰西", style: Regimes.styles.first { $0.id == "empire" }!, religion: "catholic", culture: "french", ordinal: "第二", rulingSurname: "波拿巴", template: "{名}{序}{号}"), "法兰西第二帝国")

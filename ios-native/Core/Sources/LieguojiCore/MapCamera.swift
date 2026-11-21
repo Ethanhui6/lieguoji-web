@@ -9,19 +9,27 @@ public struct MapCamera: Equatable, Sendable {
     public var scale: Double
 
     public init(centerX: Double, centerY: Double, scale: Double) {
-        self.centerX = centerX; self.centerY = centerY; self.scale = scale
+        self.centerX = centerX.isFinite ? centerX : 0
+        self.centerY = centerY.isFinite ? centerY : 0
+        self.scale = (scale.isFinite && scale > 1e-6) ? scale : 1
     }
 
+    public var isValid: Bool { centerX.isFinite && centerY.isFinite && scale.isFinite && scale > 1e-6 }
+
     public func toScreen(x: Double, y: Double, viewport: (width: Double, height: Double)) -> (x: Double, y: Double) {
-        ((x - centerX) * scale + viewport.width / 2, (y - centerY) * scale + viewport.height / 2)
+        guard x.isFinite, y.isFinite, isValid else { return (viewport.width / 2, viewport.height / 2) }
+        return ((x - centerX) * scale + viewport.width / 2, (y - centerY) * scale + viewport.height / 2)
     }
     public func toWorld(x: Double, y: Double, viewport: (width: Double, height: Double)) -> (x: Double, y: Double) {
-        ((x - viewport.width / 2) / scale + centerX, (y - viewport.height / 2) / scale + centerY)
+        guard x.isFinite, y.isFinite, isValid else { return (centerX, centerY) }
+        return ((x - viewport.width / 2) / scale + centerX, (y - viewport.height / 2) / scale + centerY)
     }
 
     /// Whole map visible ("aspect fit") and the closest zoom allowed (about 8 cells across a phone).
     public static func scaleBounds(map: (width: Double, height: Double), viewport: (width: Double, height: Double)) -> ClosedRange<Double> {
-        let fit = min(viewport.width / map.width, viewport.height / map.height)
+        let mw = max(1, map.width.isFinite ? map.width : 1600), mh = max(1, map.height.isFinite ? map.height : 900)
+        let vw = max(1, viewport.width.isFinite ? viewport.width : 390), vh = max(1, viewport.height.isFinite ? viewport.height : 844)
+        let fit = max(1e-4, min(vw / mw, vh / mh))
         return fit...(fit * 40)
     }
     public static func fit(map: (width: Double, height: Double), viewport: (width: Double, height: Double)) -> MapCamera {
@@ -30,43 +38,55 @@ public struct MapCamera: Equatable, Sendable {
     /// Covers the viewport (no empty bands on a phone in portrait), which is how the game opens.
     public static func cover(map: (width: Double, height: Double), viewport: (width: Double, height: Double)) -> MapCamera {
         let bounds = scaleBounds(map: map, viewport: viewport)
-        let cover = max(viewport.width / map.width, viewport.height / map.height)
-        return MapCamera(centerX: map.width / 2, centerY: map.height / 2, scale: min(bounds.upperBound, max(bounds.lowerBound, cover)))
+        let mw = max(1, map.width), mh = max(1, map.height)
+        let cover = max(viewport.width / mw, viewport.height / mh)
+        let safeCover = cover.isFinite ? cover : bounds.lowerBound
+        return MapCamera(centerX: mw / 2, centerY: mh / 2, scale: min(bounds.upperBound, max(bounds.lowerBound, safeCover)))
     }
 
     /// Moves by a screen delta (finger motion): the map follows the finger.
     public func panned(dx: Double, dy: Double) -> MapCamera {
-        MapCamera(centerX: centerX - dx / scale, centerY: centerY - dy / scale, scale: scale)
+        guard dx.isFinite, dy.isFinite, isValid else { return self }
+        return MapCamera(centerX: centerX - dx / scale, centerY: centerY - dy / scale, scale: scale)
     }
     /// Zooms by a factor while the map point under the screen anchor stays under it.
     public func zoomed(by factor: Double, anchorX: Double, anchorY: Double, viewport: (width: Double, height: Double), bounds: ClosedRange<Double>) -> MapCamera {
-        guard factor.isFinite, factor > 0 else { return self }
+        guard factor.isFinite, factor > 0, anchorX.isFinite, anchorY.isFinite, isValid else { return self }
         let anchor = toWorld(x: anchorX, y: anchorY, viewport: viewport)
-        let next = min(bounds.upperBound, max(bounds.lowerBound, scale * factor))
+        let next = max(1e-4, min(bounds.upperBound, max(bounds.lowerBound, scale * factor)))
         return MapCamera(centerX: anchor.x - (anchorX - viewport.width / 2) / next,
                          centerY: anchor.y - (anchorY - viewport.height / 2) / next, scale: next)
     }
     /// Keeps the map on screen: the centre may not leave the map, and a map smaller than the
-    /// viewport stays centred on that axis.
+    /// viewport stays centred on that axis. Also guards against NaN/Inf so the renderer never blanks out.
     public func clamped(map: (width: Double, height: Double), viewport: (width: Double, height: Double), margin: Double = 0) -> MapCamera {
+        let mw = max(1, map.width.isFinite ? map.width : 1600), mh = max(1, map.height.isFinite ? map.height : 900)
+        let vw = max(1, viewport.width.isFinite ? viewport.width : 390), vh = max(1, viewport.height.isFinite ? viewport.height : 844)
+        let b = Self.scaleBounds(map: (mw, mh), viewport: (vw, vh))
+        let safeScale = (scale.isFinite && scale > 1e-6) ? min(b.upperBound, max(b.lowerBound, scale)) : b.lowerBound
         func axis(_ c: Double, _ size: Double, _ view: Double) -> Double {
-            let half = view / 2 / scale
-            return size + 2 * margin <= half * 2 ? size / 2 : min(size + margin - half, max(half - margin, c))
+            let safeC = c.isFinite ? c : size / 2
+            let half = view / 2 / safeScale
+            return size + 2 * margin <= half * 2 ? size / 2 : min(size + margin - half, max(half - margin, safeC))
         }
-        return MapCamera(centerX: axis(centerX, map.width, viewport.width), centerY: axis(centerY, map.height, viewport.height), scale: scale)
+        return MapCamera(centerX: axis(centerX, mw, vw), centerY: axis(centerY, mh, vh), scale: safeScale)
     }
     /// 查看都城: the camera that shows a place close up, the place `lift` of the screen's height above
     /// the centre (a page covers the lower part). It always zooms in to at least `closeness` × the
     /// whole-map scale, so the tap is seen even when the camera already looks at the place.
     public static func spotlight(x: Double, y: Double, from current: MapCamera, map: (width: Double, height: Double), viewport: (width: Double, height: Double),
                                  closeness: Double = 10, lift: Double = 0.2) -> MapCamera {
+        guard x.isFinite, y.isFinite else { return current.clamped(map: map, viewport: viewport) }
         let b = scaleBounds(map: map, viewport: viewport)
-        let scale = min(b.upperBound, max(current.scale, b.lowerBound * closeness))
+        let baseScale = current.scale.isFinite ? current.scale : b.lowerBound
+        let scale = max(1e-4, min(b.upperBound, max(baseScale, b.lowerBound * closeness)))
         return MapCamera(centerX: x, centerY: y + viewport.height * lift / scale, scale: scale).clamped(map: map, viewport: viewport)
     }
     public static func interpolate(_ a: MapCamera, _ b: MapCamera, _ t: Double) -> MapCamera {
+        let k = t.isFinite ? min(1, max(0, t)) : 1
+        guard a.isValid, b.isValid else { return b.isValid ? b : a }
         // Zoom interpolates in log space so a zoom animation feels uniform.
-        let s = a.scale > 0 && b.scale > 0 ? exp(log(a.scale) + (log(b.scale) - log(a.scale)) * t) : b.scale
-        return MapCamera(centerX: a.centerX + (b.centerX - a.centerX) * t, centerY: a.centerY + (b.centerY - a.centerY) * t, scale: s)
+        let s = a.scale > 0 && b.scale > 0 ? exp(log(a.scale) + (log(b.scale) - log(a.scale)) * k) : b.scale
+        return MapCamera(centerX: a.centerX + (b.centerX - a.centerX) * k, centerY: a.centerY + (b.centerY - a.centerY) * k, scale: s)
     }
 }

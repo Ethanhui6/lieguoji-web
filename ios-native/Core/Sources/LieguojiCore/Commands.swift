@@ -216,12 +216,26 @@ extension NativeEngine {
         return (true, "\(moved) 支军团\(defend ? "以防御模式撤往" : "以进攻模式前往")\(r.world.provinces[province].name.asString)。")
     }
 
-    /// The state's own history: chronicle entries naming it, newest first.
-    public func nationHistory(_ index: Int, limit: Int = 60) -> Data {
+    /// The state's own history: chronicle entries naming it, newest first (with province index for map locate).
+    public func nationHistory(_ index: Int, limit: Int = 80) -> Data {
         let r = run
         guard r.world.nations.asArray.indices.contains(index) else { return Data("[]".utf8) }
         let id = r.world.nations[index].id.asString
+        var pi = [String: Int]()
+        for (i, p) in r.world.provinces.asArray.enumerated() { pi[p.id.asString] = i }
+        var capProv: Int?
+        if let cid = r.world.nations[index].capitalId.optionalString,
+           let city = r.world.cities.asArray.first(where: { $0.id.optionalString == cid }) {
+            capProv = pi[city.provinceId.asString]
+        }
         let rows = r.chronicle.entries.asArray.reversed().filter { e in !e.nationIds.isNull && e.nationIds.asArray.contains { $0.asString == id } }.prefix(limit)
-        return Data(JS.array(rows.map { e in let o = JS.object(); o.day = e.day; o.text = e.text; o.kind = e.kind; return o }).json.utf8)
+        return Data(JS.array(rows.map { e in
+            let o = JS.object()
+            o.day = e.day; o.text = e.text; o.kind = e.kind
+            if let reason = e.reason.optionalString, !reason.isEmpty { o.reason = JS(reason) }
+            if let pid = e.provinceId.optionalString, let idx = pi[pid] { o.province = JS(idx) }
+            else if let capProv { o.province = JS(capProv) }
+            return o
+        }).json.utf8)
     }
 }

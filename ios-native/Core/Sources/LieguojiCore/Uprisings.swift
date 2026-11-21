@@ -189,42 +189,46 @@ extension Regimes {
     // MARK: 大叛乱
 
     static let rebelLabels = ["peasant": "农民起义", "warlord": "军阀割据", "holy": "神国起义", "secession": "藩镇独立", "restoration": "复国运动"]
-    static let dynastyNames = "大顺 大西 大汉 大楚 大齐 大夏 大周 大宋 大燕 大蜀 大赵 大梁 后汉 后周 后唐 后蜀 西楚 南唐 北汉 东吴 新朝 天完 大中 大明 大元 大金 大理 南诏".split(separator: " ").map(String.init)
     static let holyNames: [String: [String]] = [
-        "chineseFolk": ["太平", "黄天", "五斗米", "天师"], "daoism": ["太平", "黄天", "玄都", "天师"], "quanzhen": ["全真", "玄都"], "zhengyi": ["天师", "龙虎"],
-        "whiteLotus": ["白莲", "弥勒", "龙华", "无生"], "manichean": ["明尊", "光明", "摩尼"], "buddhism": ["佛", "净土", "弥勒"], "chan": ["禅林", "菩提"], "pureLand": ["净土", "极乐"], "tiantai": ["天台"], "tantric": ["金刚", "香巴拉"],
-        "islam": ["圣战", "马赫迪", "绿旗"], "catholic": ["圣殿", "千年", "圣约"], "protestant": ["再洗礼", "新耶路撒冷", "千禧"], "orthodox": ["第三罗马", "圣山"], "shinto": ["神风", "八幡"], "hinduism": ["梵天", "湿婆"], "zoroastrian": ["圣火"],
-    ]
-    static let moreStates: [String: [String]] = [
-        "chinese": "吴越 荆楚 巴蜀 关陇 河朔 燕云 岭南 江东 中山 代 鲁 卫 陈 蔡 曹 宋 郑 韩 魏 赵 秦 晋 齐 楚 燕 越 吴 夏 商 周".split(separator: " ").map(String.init),
-        "japanese": "甲斐 越后 尾张 萨摩 长州 土佐 陆奥 出羽 近江 美浓 肥后 丰后".split(separator: " ").map(String.init),
-        "english": "威塞克斯 麦西亚 诺森布里亚 东盎格利亚 肯特 苏塞克斯 康沃尔 约克 兰开斯特 苏格兰 威尔士 爱尔兰".split(separator: " ").map(String.init),
-        "arab": "倭马亚 阿拔斯 法蒂玛 阿尤布 马穆鲁克 穆瓦希德 穆拉比特 哈姆丹 塔希尔 萨法尔 布韦希 希贾兹".split(separator: " ").map(String.init),
-        "roman": "西罗马 东罗马 高卢 不列颠尼亚 伊利里亚 达契亚 叙利亚 潘诺尼亚 阿非利加 希斯帕尼亚".split(separator: " ").map(String.init),
-        "french": "勃艮第 阿基坦 诺曼底 布列塔尼 普罗旺斯 香槟 安茹 图卢兹 加斯科涅 洛林".split(separator: " ").map(String.init),
-        "german": "普鲁士 巴伐利亚 萨克森 士瓦本 法兰克尼亚 汉诺威 符腾堡 黑森 勃兰登堡 奥地利 波西米亚 蒂罗尔".split(separator: " ").map(String.init),
-        "greek": "马其顿 伊庇鲁斯 色雷斯 雅典 斯巴达 底比斯 尼西亚 特拉布宗 帕加马 本都".split(separator: " ").map(String.init),
-        "persian": "萨珊 帕提亚 萨法维 恺加 阿契美尼德 花剌子模 塞尔柱 呼罗珊 粟特 巴克特里亚".split(separator: " ").map(String.init),
-        "slavic": "基辅罗斯 莫斯科 诺夫哥罗德 弗拉基米尔 梁赞 特维尔 塞尔维亚 保加利亚 克罗地亚 摩拉维亚".split(separator: " ").map(String.init),
-        "mongol": "察合台 窝阔台 伊儿 钦察 瓦剌 鞑靼 准噶尔 喀尔喀 土默特 科尔沁".split(separator: " ").map(String.init),
-        "turkic": "奥斯曼 塞尔柱 葛逻禄 回鹘 突厥 哈喇 帖木儿 克里米亚 喀山 布哈拉".split(separator: " ").map(String.init),
-        "indian": "孔雀 笈多 莫卧儿 朱罗 马拉塔 维查耶纳伽尔 德里 孟加拉 拉其普特 锡克".split(separator: " ").map(String.init),
-        "korean": "高句丽 百济 新罗 高丽 朝鲜 渤海 加耶 后百济 泰封".split(separator: " ").map(String.init),
+        "chineseFolk": ["太平", "黄天", "五斗米", "天师", "玄元", "天道", "太清"],
+        "daoism": ["太平", "黄天", "玄都", "天师", "玉清", "紫微", "无极"],
+        "quanzhen": ["全真", "玄都", "重阳", "长春"], "zhengyi": ["天师", "龙虎", "正一"],
+        "whiteLotus": ["白莲", "弥勒", "龙华", "无生", "明王", "红巾"], "manichean": ["明尊", "光明", "摩尼", "明教"],
+        "buddhism": ["佛", "净土", "弥勒", "法王", "莲华"], "chan": ["禅林", "菩提", "曹溪"],
+        "pureLand": ["净土", "极乐", "莲邦"], "tiantai": ["天台", "法华"], "tantric": ["金刚", "香巴拉", "密宗"],
+        "islam": ["圣战", "马赫迪", "绿旗", "正统", "星月"], "catholic": ["圣殿", "千年", "圣约", "圣十字", "神圣"],
+        "protestant": ["再洗礼", "新耶路撒冷", "千禧", "圣约"], "orthodox": ["第三罗马", "圣山", "圣索菲亚"],
+        "shinto": ["神风", "八幡", "天照", "高天原"], "hinduism": ["梵天", "湿婆", "毗湿奴", "法轮"], "zoroastrian": ["圣火", "光明", "阿胡拉"],
     ]
     private static func unusedName(_ r: JS, _ pool: [String], _ tag: String) -> String? {
         guard !pool.isEmpty else { return nil }
-        let used = Set(r.civilization.nations.objectValues.compactMap { $0.name.value.optionalString })
+        let used = NamingCatalog.usedStateKeys(r)
         let start = Int(draw(tag) % UInt32(pool.count))
-        return (0..<pool.count).lazy.map { pool[(start + $0) % pool.count] }.first { !used.contains($0) }
+        return (0..<pool.count).lazy.map { pool[(start + $0) % pool.count] }.first {
+            let cleaned = NamingCatalog.cleanStateBase($0)
+            let key = NamingCatalog.canonicalStateKey(cleaned)
+            return !cleaned.isEmpty && !used.contains(cleaned) && !used.contains(key)
+        }
     }
     /// For Handover.swift (禅让): the same renaming.
     static func retitleState(_ r: JS, _ id: String, base: String?, style: String?) { retitle(r, id, base: base, style: style) }
     private static func retitle(_ r: JS, _ id: String, base: String?, style styleId: String?) {
         guard let n = r.world.nations.asArray.first(where: { $0.id.asString == id }) else { return }
         let c = r.civilization.nations[id], b = book(r, id)
-        if let base { c.name.value = JS(base) }
+        if let base, !base.isEmpty { c.name.value = JS(NamingCatalog.cleanStateBase(base)) }
         if let styleId, let s = styles.first(where: { $0.id == styleId }) { c.polity = JS(s.base); b.style = JS(styleId); b.parties = .null }
-        n.name = JS(title(r, id, base: c.name.value.asString, style: style(r, id)))
+        let finalStyle = style(r, id)
+        let culture = c.cultureId.optionalString ?? ""
+        var currentBase = NamingCatalog.cleanStateBase(c.name.value.optionalString ?? MapLayers.stateLabel(n.name.asString, full: false))
+        // 政体与基名现实校验：如改行现代共和/联邦/军政府而原名仍为纯朝代号，则自动更换为本文化地道地理名。
+        if base == nil && b.nameTemplate.optionalString == nil && c.name.custom.isNull {
+            let adapted = NamingCatalog.adaptBaseForStyle(base: currentBase, culture: culture, style: finalStyle, seed: "\(r.world.custom.seed.asString)|\(id)|\(finalStyle.id)|\(r.clock.tick.asInt)", used: NamingCatalog.usedStateKeys(r))
+            if adapted != currentBase && !adapted.isEmpty {
+                currentBase = adapted
+                c.name.value = JS(adapted)
+            }
+        }
+        n.name = JS(title(r, id, base: currentBase, style: finalStyle))
     }
     /// The rising's own notice says who rose and where: the routine founding line would only repeat it.
     private static func dropFoundingNotice(_ r: JS, _ name: String) {
@@ -261,14 +265,25 @@ extension Regimes {
               let city = r.world.cities.asArray.first(where: { $0.provinceId.asString == seed }) else { return nil }
         let land = region(r, owner, seed, max(1, size), byId), s = r.foundings, c = r.civilization
         let tag = "\(owner)|\(seed)|\(Int(r.clock.tick.asNumber))|rise", cityCulture = c.cities[city.id.asString].cultureId.optionalString ?? ""
-        // 潜在复国民族: a dead state with years on this land, or of this land's people.
+        // 潜在复国民族: 优先有真实历史法理（coreMonths）且复国未超过 3 次的旧邦；无历史法理时仅以较低概率复国，杜绝同一死国（如大金）无限反复复活。
         var heirs = [String]()
+        var coreHeir = false
         if restoring == nil, wanted == nil || wanted == "restoration" {
             let months = s.coreMonths[seed]
-            heirs = months.isNull ? [] : months.objectEntries.filter { $0.0 != owner && $0.1.asNumber > 3 && !Vassals.alive(r, $0.0) && !isBlank(r, $0.0) }.map(\.0).sorted()
-            if heirs.isEmpty { heirs = r.world.nations.asArray.map(\.id.asString).filter { !Vassals.alive(r, $0) && !isBlank(r, $0) && c.nations[$0].cultureId.optionalString == cityCulture }.sorted() }
+            let eligible: (String) -> Bool = { nid in
+                nid != owner && !Vassals.alive(r, nid) && !isBlank(r, nid) && (r.sovereignty.restorations[nid].optionalNumber ?? 0) < 3
+            }
+            heirs = months.isNull ? [] : months.objectEntries.filter { $0.1.asNumber > 6 && eligible($0.0) }.map(\.0).sorted()
+            if !heirs.isEmpty {
+                coreHeir = true
+            } else {
+                heirs = r.world.nations.asArray.map(\.id.asString).filter {
+                    eligible($0) && c.nations[$0].cultureId.optionalString == cityCulture
+                }.sorted()
+            }
         }
-        let heir = restoring ?? (!heirs.isEmpty && (wanted == "restoration" || chance(tag + "|restore") < 0.55) ? heirs[Int(draw(tag + "|heir") % UInt32(heirs.count))] : nil)
+        let restoreProb = coreHeir ? 0.45 : 0.22
+        let heir = restoring ?? (!heirs.isEmpty && (wanted == "restoration" || chance(tag + "|restore") < restoreProb) ? heirs[Int(draw(tag + "|heir") % UInt32(heirs.count))] : nil)
         if heir == nil && r.world.nations.length >= 160 { return nil }
         if wanted == "restoration" && heir == nil { return nil }
         let faith = provinceFaith(r, p) ?? "", stateFaith = c.nations[owner].religionId.optionalString ?? "", heretic = faith != stateFaith
@@ -294,15 +309,18 @@ extension Regimes {
             dropFoundingNotice(r, Vassals.name(r, rebel))
             switch kind {
             case "peasant":
-                if cityCulture == "chinese" { retitle(r, rebel, base: unusedName(r, dynastyNames, tag + "|name"), style: "dynasty") }
-                else { retitle(r, rebel, base: p.name.asString, style: "peasant") }
+                if cityCulture == "chinese" {
+                    let dynPick = unusedName(r, NamingCatalog.dynastyPool(culture: "chinese"), tag + "|name")
+                        ?? NamingCatalog.pickStateBase(culture: "chinese", mode: c.mode.optionalString ?? "historical-names", seed: tag + "|peasant", used: NamingCatalog.usedStateKeys(r), styleId: "dynasty")
+                    retitle(r, rebel, base: dynPick, style: "dynasty")
+                } else { retitle(r, rebel, base: p.name.asString, style: "peasant") }
             case "warlord": retitle(r, rebel, base: p.name.asString, style: "warlord")
             case "holy":
                 let creed = heretic ? faith : stateFaith
                 if !creed.isEmpty { c.nations[rebel].religionId = JS(creed) }
                 retitle(r, rebel, base: unusedName(r, holyNames[creed] ?? ["圣火", "天启", "神谕"], tag + "|name") ?? p.name.asString, style: "holy")
             default:
-                if let extra = unusedName(r, moreStates[cityCulture] ?? [], tag + "|name"), chance(tag + "|extra") < 0.6 { retitle(r, rebel, base: extra, style: nil) }
+                if let extra = unusedName(r, NamingCatalog.historicalExtraStates[cityCulture] ?? [], tag + "|name"), chance(tag + "|extra") < 0.6 { retitle(r, rebel, base: extra, style: nil) }
             }
         }
         let rebelName = Vassals.name(r, rebel), label = rebelLabels[kind] ?? "叛乱"
@@ -355,7 +373,10 @@ extension Regimes {
         guard months >= 6, !atWar || land >= 8 else { return }
         guard chance(tag) < (fallen ? 0.3 : land >= 8 ? 0.16 : 0.08) else { return }
         let culture = c.cultureId.optionalString ?? "", old = n.name.asString, pick = draw(tag + "|how") % 10
-        func dynasty() -> String? { culture == "chinese" ? unusedName(r, dynastyNames, tag + "|name") : unusedName(r, moreStates[culture] ?? [], tag + "|name") }
+        func dynasty() -> String? {
+            unusedName(r, NamingCatalog.dynastyPool(culture: culture), tag + "|name")
+                ?? NamingCatalog.pickStateBase(culture: culture, mode: c.mode.optionalString ?? "historical-names", seed: tag + "|mat", used: NamingCatalog.usedStateKeys(r), styleId: culture == "chinese" ? "dynasty" : nil)
+        }
         let crown = land >= 10 ? (culture == "chinese" ? "dynasty" : "empire") : land >= 4 ? (culture == "chinese" ? "dynasty" : "absolute") : "principality"
         var target = crown, base = dynasty(), how = "开国建制，设官分职，改元称帝。"
         switch current {
@@ -382,7 +403,8 @@ extension Regimes {
     static func dynastyMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
         let polity = r.civilization.nations[id].polity.optionalString ?? "", culture = r.civilization.nations[id].cultureId.optionalString ?? "", tag = "\(id)|\(key)|mandate"
         guard polity == "Empire" || polity == "Kingdom", leverage(r, id).stability < 45, chance(tag) < 0.008 else { return }
-        guard let base = culture == "chinese" ? unusedName(r, dynastyNames, tag + "|name") : unusedName(r, moreStates[culture] ?? [], tag + "|name") else { return }
+        guard let base = unusedName(r, NamingCatalog.dynastyPool(culture: culture), tag + "|name")
+                ?? NamingCatalog.pickStateBase(culture: culture, mode: r.civilization.mode.optionalString ?? "historical-names", seed: tag + "|abd", used: NamingCatalog.usedStateKeys(r), styleId: culture == "chinese" ? "dynasty" : nil) else { return }
         // The throne itself passes to another house (Handover.swift); with no other house there is no 禅让.
         _ = abdicate(r, n, id, base: base, style: culture == "chinese" ? "dynasty" : nil)
     }

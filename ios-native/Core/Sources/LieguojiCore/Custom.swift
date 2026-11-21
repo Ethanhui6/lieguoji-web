@@ -305,12 +305,14 @@ public enum Regimes {
         if r.regimes.isNull { let o = JS.object(); o.nations = JS.object(); o.month = JS(-1); r.regimes = o }
         r.regimes.enabled = JS(true)
         Shipyards.remember(r)
+        if r.regimes.replay.isNull { ReplayEngine.capture(r, force: true) }
     }
     static func monthKey(_ r: JS) -> Int { r.life.currentDate.year.asInt * 12 + r.life.currentDate.month.asInt }
 
     /// After each day: on a new month, every state's polity bonus and its revolution roll.
     public static func day(_ r: JS) {
         guard !r.regimes.isNull, r.regimes.enabled.isTruthy else { return }
+        ReplayEngine.capture(r)
         let key = monthKey(r)
         if r.regimes.month.asInt == key { return }
         r.regimes.month = JS(key)
@@ -661,16 +663,24 @@ public enum Regimes {
             b.empires = JS(b.empires.asInt + 1)
             if b.empires.asInt >= 2 { prefix = ordinals[min(ordinals.count - 1, b.empires.asInt)] }
         }
-        if let b { b.history.push(JS(polity)); b.calm = JS(0) }
-        let base = NamingCatalog.cleanStateBase(civ.name.value.optionalString ?? MapLayers.stateLabel(oldName, full: false))
-        if let b { b.parties = .null }
+        if let b { b.history.push(JS(polity)); b.calm = JS(0); b.parties = .null }
+        let culture = civ.cultureId.optionalString ?? ""
+        let religion = civ.religionId.optionalString ?? ""
         let s = style(r, id)
-        if !prefix.isEmpty && (b?.nameTemplate.optionalString == nil) {
-            let suffix = s.id == "dynasty" ? "朝" : (s.suffix.isEmpty ? (titles[polity] ?? "") : s.suffix)
-            n.name = JS(base + prefix + suffix)
-        } else {
-            n.name = JS(title(r, id, base: base, style: s))
+        var base = NamingCatalog.cleanStateBase(civ.name.value.optionalString ?? MapLayers.stateLabel(oldName, full: false))
+        // 政体更迭现实校验：革命建立共和/联邦/军政府时，若原名是王朝/皇室名且玩家未设自定义名，则换为本文化地理名（如大明→中华共和国）。
+        if b?.nameTemplate.optionalString == nil && civ.name.custom.isNull {
+            let adapted = NamingCatalog.adaptBaseForStyle(base: base, culture: culture, style: s, seed: "\(r.world.custom.seed.optionalString ?? "")|\(id)|\(polity)|\(s.id)|\(r.clock.tick.asInt)", used: NamingCatalog.usedStateKeys(r))
+            if !adapted.isEmpty && adapted != base {
+                base = adapted
+                if case .object = civ.storage, case .object = civ.name.storage { civ.name.value = JS(adapted) }
+            }
         }
+        let ord = prefix.isEmpty ? restorationOrdinal(r, id) : prefix
+        n.name = JS(NamingCatalog.formatStateTitle(
+            base: base, style: s, religion: religion, culture: culture,
+            ordinal: ord, rulingSurname: rulingSurname(r, id), template: b?.nameTemplate.optionalString
+        ))
         // Turmoil costs: a fifth of the treasury and ten points of destiny.
         let fin = r.finance.nations[id]
         if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) * 0.8) }
@@ -698,7 +708,17 @@ extension NativeEngine {
             Government.reconcileContinuity(r)
         } else {
             b.parties = .null
-            nations[index].name = JS(Regimes.title(r, id, base: r.civilization.nations[id].name.value.optionalString ?? nations[index].name.asString, style: s))
+            let civ = r.civilization.nations[id]
+            let culture = civ.cultureId.optionalString ?? ""
+            var base = NamingCatalog.cleanStateBase(civ.name.value.optionalString ?? nations[index].name.asString)
+            if b.nameTemplate.optionalString == nil && civ.name.custom.isNull {
+                let adapted = NamingCatalog.adaptBaseForStyle(base: base, culture: culture, style: s, seed: "\(r.world.custom.seed.optionalString ?? "")|\(id)|\(s.id)|\(r.clock.tick.asInt)", used: NamingCatalog.usedStateKeys(r))
+                if !adapted.isEmpty && adapted != base {
+                    base = adapted
+                    if case .object = civ.storage, case .object = civ.name.storage { civ.name.value = JS(adapted) }
+                }
+            }
+            nations[index].name = JS(Regimes.title(r, id, base: base, style: s))
         }
         return (true, "已改行\(s.label)")
     }

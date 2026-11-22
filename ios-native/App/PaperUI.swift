@@ -1111,99 +1111,116 @@ struct FloatingTacticalPill: View {
         GeometryReader { g in
             let wars = model.state?.wars.count ?? 0
             let pos = anchor(in: g.size, safe: g.safeAreaInsets)
-            HStack(spacing: 4) {
-                Button {
-                    GameFeel.shared.tap()
-                    withAnimation(Motion.panel) { expanded.toggle() }
-                } label: {
-                    ZStack(alignment: .topTrailing) {
-                        SealFace(text: wars > 0 ? "战" : "印", size: 28, color: wars > 0 ? Theme.seal : Theme.ink)
-                            .rotationEffect(.degrees(expanded ? -12 : 0))
-                        if !expanded && wars > 0 {
-                            Text("\(min(99, wars))")
-                                .font(Theme.kai(9)).foregroundStyle(Theme.paper2).monospacedDigit()
-                                .padding(.horizontal, 4).frame(minWidth: 15, height: 14)
-                                .background(Theme.seal, in: Capsule())
-                                .overlay(Capsule().stroke(Theme.paper2, lineWidth: 1))
-                                .offset(x: 5, y: -4)
-                        }
-                    }
-                    .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.plain)
-
-                if expanded {
-                    Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 18).padding(.horizontal, 2)
-                    pillButton(tint: Theme.seal) {
-                        if model.playing { model.pause() } else { model.play() }
-                    } content: {
-                        InkIcon(glyph: model.playing ? .pause : .play, size: 13, weight: 1.9)
-                    }
-                    pillButton(tint: model.speed > 1 ? Theme.seal : Theme.ink) {
-                        model.cycleSpeed()
-                    } content: {
-                        Text("\(model.speed)×").font(Theme.caption).monospacedDigit()
-                    }
-                    pillButton(tint: wars > 0 ? Theme.seal : Theme.ink) {
-                        withAnimation(Motion.tap) { expanded = false }
-                        openWars()
-                    } content: {
-                        InkIcon(glyph: .war, size: 14, weight: 1.75)
-                    }
-                    pillButton(tint: Theme.jade) {
-                        withAnimation(Motion.tap) { expanded = false }
-                        openDiplomacy()
-                    } content: {
-                        InkIcon(glyph: .diplomacy, size: 14, weight: 1.75)
-                    }
-                    pillButton(tint: Theme.ink) {
-                        withAnimation(Motion.tap) { expanded = false }
-                        openReplay()
-                    } content: {
-                        InkIcon(glyph: .replay, size: 14, weight: 1.75)
-                    }
-                    Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 18).padding(.horizontal, 1)
-                    pillButton(tint: Theme.ink2) {
-                        withAnimation(Motion.tap) { expanded = false }
-                        onHide()
-                    } content: {
-                        Image(systemName: "eye.slash").font(.system(size: 12, weight: .regular))
-                    }
-                    .accessibilityLabel("隐藏局势浮印")
-                }
-            }
-            .padding(.horizontal, expanded ? 8 : 6).padding(.vertical, 6)
-            .background(MemorialPaper(rules: false, fullBleed: false).clipShape(Capsule()))
-            .overlay(Capsule().stroke(wars > 0 ? Theme.seal.opacity(0.42) : Theme.ink.opacity(0.2), lineWidth: 0.9))
-            .overlay(Capsule().stroke(Theme.seal.opacity(0.16), lineWidth: 0.5).padding(2.5))
-            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(dragging ? 0.28 : 0.16), radius: dragging ? 12 : 6, y: dragging ? 5 : 2.5)
-            .scaleEffect(dragging ? 1.06 : 1.0)
-            .contentShape(Capsule())
-            .gesture(
-                DragGesture(minimumDistance: 6, coordinateSpace: .named("tacticalPillSpace"))
-                    .onChanged { v in
-                        dragging = true
-                        dragOffset = v.translation
-                    }
-                    .onEnded { v in
-                        let projectedX = pos.x + v.predictedEndTranslation.width
-                        let projectedY = pos.y + v.predictedEndTranslation.height
-                        let isRight = projectedX >= g.size.width / 2
-                        let isBottom = projectedY >= g.size.height / 2
-                        let next: Corner = isBottom ? (isRight ? .bottomTrailing : .bottomLeading) : (isRight ? .topTrailing : .topLeading)
-                        GameFeel.shared.tap()
-                        withAnimation(Motion.panel) {
-                            corner = next
-                            dragOffset = .zero
-                            dragging = false
-                        }
-                    }
-            )
-            .position(x: pos.x + dragOffset.width, y: pos.y + dragOffset.height)
-            .animation(Motion.panel, value: expanded)
+            pillContent(wars: wars)
+                .gesture(dragGesture(pos: pos, size: g.size))
+                .position(x: pos.x + dragOffset.width, y: pos.y + dragOffset.height)
+                .animation(Motion.panel, value: expanded)
         }
         .coordinateSpace(name: "tacticalPillSpace")
         .ignoresSafeArea()
+    }
+
+    private func pillContent(wars: Int) -> some View {
+        let strokeColor = wars > 0 ? Theme.seal.opacity(0.42) : Theme.ink.opacity(0.2)
+        let shadowColor = Color(red: 0.12, green: 0.09, blue: 0.05).opacity(dragging ? 0.28 : 0.16)
+        return HStack(spacing: 4) {
+            toggleSealButton(wars: wars)
+            if expanded {
+                expandedTools(wars: wars)
+            }
+        }
+        .padding(.horizontal, expanded ? 8 : 6).padding(.vertical, 6)
+        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(Capsule()))
+        .overlay(Capsule().stroke(strokeColor, lineWidth: 0.9))
+        .overlay(Capsule().stroke(Theme.seal.opacity(0.16), lineWidth: 0.5).padding(2.5))
+        .shadow(color: shadowColor, radius: dragging ? 12 : 6, y: dragging ? 5 : 2.5)
+        .scaleEffect(dragging ? 1.06 : 1.0)
+        .contentShape(Capsule())
+    }
+
+    private func toggleSealButton(wars: Int) -> some View {
+        let badgeText = "\(min(99, wars))"
+        return Button {
+            GameFeel.shared.tap()
+            withAnimation(Motion.panel) { expanded.toggle() }
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                SealFace(text: wars > 0 ? "战" : "印", size: 28, color: wars > 0 ? Theme.seal : Theme.ink)
+                    .rotationEffect(.degrees(expanded ? -12 : 0))
+                if !expanded && wars > 0 {
+                    Text(badgeText)
+                        .font(Theme.kai(9)).foregroundStyle(Theme.paper2).monospacedDigit()
+                        .padding(.horizontal, 4).frame(minWidth: 15, height: 14)
+                        .background(Theme.seal, in: Capsule())
+                        .overlay(Capsule().stroke(Theme.paper2, lineWidth: 1))
+                        .offset(x: 5, y: -4)
+                }
+            }
+            .frame(width: 30, height: 30)
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func expandedTools(wars: Int) -> some View {
+        Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 18).padding(.horizontal, 2)
+        pillButton(tint: Theme.seal) {
+            if model.playing { model.pause() } else { model.play() }
+        } content: {
+            InkIcon(glyph: model.playing ? .pause : .play, size: 13, weight: 1.9)
+        }
+        pillButton(tint: model.speed > 1 ? Theme.seal : Theme.ink) {
+            model.cycleSpeed()
+        } content: {
+            Text("\(model.speed)×").font(Theme.caption).monospacedDigit()
+        }
+        pillButton(tint: wars > 0 ? Theme.seal : Theme.ink) {
+            withAnimation(Motion.tap) { expanded = false }
+            openWars()
+        } content: {
+            InkIcon(glyph: .war, size: 14, weight: 1.75)
+        }
+        pillButton(tint: Theme.jade) {
+            withAnimation(Motion.tap) { expanded = false }
+            openDiplomacy()
+        } content: {
+            InkIcon(glyph: .diplomacy, size: 14, weight: 1.75)
+        }
+        pillButton(tint: Theme.ink) {
+            withAnimation(Motion.tap) { expanded = false }
+            openReplay()
+        } content: {
+            InkIcon(glyph: .replay, size: 14, weight: 1.75)
+        }
+        Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 18).padding(.horizontal, 1)
+        pillButton(tint: Theme.ink2) {
+            withAnimation(Motion.tap) { expanded = false }
+            onHide()
+        } content: {
+            Image(systemName: "eye.slash").font(.system(size: 12, weight: .regular))
+        }
+        .accessibilityLabel("隐藏局势浮印")
+    }
+
+    private func dragGesture(pos: CGPoint, size: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 6, coordinateSpace: .named("tacticalPillSpace"))
+            .onChanged { v in
+                dragging = true
+                dragOffset = v.translation
+            }
+            .onEnded { v in
+                let projectedX = pos.x + v.predictedEndTranslation.width
+                let projectedY = pos.y + v.predictedEndTranslation.height
+                let isRight = projectedX >= size.width / 2
+                let isBottom = projectedY >= size.height / 2
+                let next: Corner = isBottom ? (isRight ? .bottomTrailing : .bottomLeading) : (isRight ? .topTrailing : .topLeading)
+                GameFeel.shared.tap()
+                withAnimation(Motion.panel) {
+                    corner = next
+                    dragOffset = .zero
+                    dragging = false
+                }
+            }
     }
 
     private func pillButton<C: View>(tint: Color, action: @escaping () -> Void, @ViewBuilder content: () -> C) -> some View {

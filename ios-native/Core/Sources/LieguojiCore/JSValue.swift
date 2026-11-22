@@ -41,12 +41,14 @@ public final class JS: CustomStringConvertible {
 
     // MARK: Reading (names chosen not to collide with fields of the game data)
     public var isNull: Bool { if case .null = storage { return true }; return false }
+    public var isArray: Bool { if case .array = storage { return true }; return false }
     public var asNumber: Double { if case .number(let n) = storage { return n }; fatalError("not a number: \(self)") }
     public var asInt: Int { Int(asNumber) }
     public var asString: String { if case .string(let s) = storage { return s }; fatalError("not a string: \(self)") }
     public var asBool: Bool { if case .bool(let b) = storage { return b }; fatalError("not a bool: \(self)") }
     public var optionalNumber: Double? { if case .number(let n) = storage { return n }; return nil }
     public var optionalString: String? { if case .string(let s) = storage { return s }; return nil }
+    public var optionalArray: [JS]? { if case .array(let a) = storage { return a }; return nil }
     /// JavaScript truthiness.
     public var isTruthy: Bool {
         switch storage {

@@ -370,8 +370,15 @@ final class PolityDiplomacyNamingTests: XCTestCase {
             XCTAssertEqual(reported, troopSums[idx] ?? 0, "国家 \(idx) 汇总兵力与活跃军队之和不符")
         }
 
-        // 9. 皇帝诏书卷轴装裱网格完好
+        // 9. 皇帝诏书卷轴装裱网格完好 & 史册空值防御（缺失 reigns47 / isAlive / 重复 reignId 绝不闪退）
         let scrollMesh = MapLayers.scrollFrame(width: 1600, height: 900)
-        XCTAssertGreaterThan(scrollMesh.vertices.count, 400)
+        XCTAssertGreaterThan(scrollMesh.vertices.count, 500)
+        r.reigns47 = .null
+        if let leaderId = r.people.nations[id0].leaderId.optionalNumber.map(Int.init), let p = People.person(r, leaderId) {
+            p.isAlive = .null
+        }
+        let reignsData = try XCTUnwrap(engine.nationReigns(0))
+        let reignsJson = try XCTUnwrap(JSONSerialization.jsonObject(with: reignsData) as? [String: Any])
+        XCTAssertNotNil(reignsJson["reigns"])
     }
 }

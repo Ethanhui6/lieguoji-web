@@ -182,10 +182,19 @@ extension MapLayers {
             let dx = Float(h % 9) / 4 - 1, dy = Float(h / 9 % 9) / 4 - 1
             m.segment(x + dx - 0.9, y + dy, x + dx + 0.9, y + dy, width: 0.42, sand, alpha: 0.5)
         }
-        // 精致十六向鎏金罗盘（含外圈刻度环、朱砂北针、八大主向与八小副向指针）
+        // 精致十六向鎏金罗盘（含古航海方位射线、外圈 32 分刻度环、朱砂北针、八大主向与八小副向指针）
         let (cx, cy) = compassCorner(map)
         let radius: Float = 56
         let gold = RGB(hex: 0xB88B3B), seal = RGB(hex: 0xA63628)
+        // 古航海图方位射线（自罗盘轻柔向外延展，极低透明度衬托古舆图韵味）
+        let raySpan = min(map.width, map.height) * 0.26
+        for k in 0..<16 {
+            let a = Float(k) * .pi / 8
+            let len = k % 4 == 0 ? raySpan : raySpan * 0.72
+            let x1 = max(8, min(map.width - 8, cx + cos(a) * len))
+            let y1 = max(8, min(map.height - 8, cy + sin(a) * len))
+            m.segment(cx + cos(a) * (radius * 0.92), cy + sin(a) * (radius * 0.92), x1, y1, width: k % 4 == 0 ? 0.45 : 0.3, gold, alpha: k % 4 == 0 ? 0.22 : 0.13)
+        }
         func ring(_ r: Float, _ width: Float, _ alpha: Float, _ col: RGB = ink) {
             var p = [Float]()
             for k in 0...64 { let a = Float(k) / 64 * 2 * .pi; p += [cx + cos(a) * r, cy + sin(a) * r] }

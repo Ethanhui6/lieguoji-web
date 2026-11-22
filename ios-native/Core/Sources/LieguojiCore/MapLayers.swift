@@ -431,11 +431,29 @@ public enum MapLayers {
         hBand(0, w, 0, curlShadow * 0.65, paperCurl, top: 0.22, bottom: 0)
         hBand(0, w, h - curlShadow * 0.65, h, paperCurl, top: 0, bottom: 0.22)
 
-        // 2. 上下御制黄绫朱锦装裱边（紧贴地图外缘，不侵占大陆视野）
-        rect(-rollerW * 0.2, -trimH, w + rollerW * 0.2, 0, silkGold, alpha: 0.92)
-        rect(-rollerW * 0.2, -trimH, w + rollerW * 0.2, -trimH * 0.66, brocadeRed, alpha: 0.94)
-        rect(-rollerW * 0.2, h, w + rollerW * 0.2, h + trimH, silkGold, alpha: 0.92)
-        rect(-rollerW * 0.2, h + trimH * 0.66, w + rollerW * 0.2, h + trimH, brocadeRed, alpha: 0.94)
+        // 2. 上下御制黄绫朱锦装裱边（紧贴地图外缘，含御绫暗纹与双金丝线，不侵占大陆视野）
+        rect(-rollerW * 0.2, -trimH, w + rollerW * 0.2, 0, silkGold, alpha: 0.94)
+        rect(-rollerW * 0.2, -trimH, w + rollerW * 0.2, -trimH * 0.62, brocadeRed, alpha: 0.95)
+        rect(-rollerW * 0.2, h, w + rollerW * 0.2, h + trimH, silkGold, alpha: 0.94)
+        rect(-rollerW * 0.2, h + trimH * 0.62, w + rollerW * 0.2, h + trimH, brocadeRed, alpha: 0.95)
+        // 御绫细金丝分隔线与菱格云锦暗纹
+        let threadW = max(0.7, unit * 0.0012)
+        m.segment(0, -trimH * 0.62, w, -trimH * 0.62, width: threadW, goldBright, alpha: 0.85)
+        m.segment(0, h + trimH * 0.62, w, h + trimH * 0.62, width: threadW, goldBright, alpha: 0.85)
+        let brocadeStep = max(24, unit * 0.036)
+        let diamondR = trimH * 0.24
+        var bx: Float = brocadeStep * 0.5
+        while bx < w - brocadeStep * 0.3 {
+            for by in [-trimH * 0.31, h + trimH * 0.31] {
+                m.polyline([bx - diamondR, by, bx, by - diamondR * 0.72, bx + diamondR, by, bx, by + diamondR * 0.72, bx - diamondR, by], width: threadW * 0.85, silkDeep, alpha: 0.55)
+            }
+            bx += brocadeStep
+        }
+        // 卷首正中御制红绫锦结（圣旨装裱点睛之笔）
+        let midX = w * 0.5
+        rect(midX - trimH * 1.4, -trimH * 1.05, midX + trimH * 1.4, -trimH * 0.12, brocadeRed, alpha: 0.98)
+        m.polyline([midX - trimH * 1.32, -trimH * 0.95, midX + trimH * 1.32, -trimH * 0.95, midX + trimH * 1.32, -trimH * 0.2, midX - trimH * 1.32, -trimH * 0.2, midX - trimH * 1.32, -trimH * 0.95], width: threadW, goldBright, alpha: 0.9)
+        m.disc(midX, -trimH * 0.58, radius: trimH * 0.22, goldBright, alpha: 0.95)
         // 内外双层鎏金与墨线框
         let ruleIn = unit * 0.008
         m.polyline([ruleIn, ruleIn, w - ruleIn, ruleIn, w - ruleIn, h - ruleIn, ruleIn, h - ruleIn, ruleIn, ruleIn], width: max(1.0, unit * 0.0018), silkDeep, alpha: 0.68)

@@ -153,13 +153,14 @@ public enum MonarchLore {
         let givenKey = first.isEmpty ? personalName : first
         if ordinal <= 0 && regnalNumberCultures.contains(culture) {
             var count = 1
-            let leaders = r.chronicle.leaders[nationId].isNull ? [] : r.chronicle.leaders[nationId].asArray
+            let leadersRaw = (r.chronicle.isNull || r.chronicle.leaders.isNull) ? JS.null : r.chronicle.leaders[nationId]
+            let leaders = leadersRaw.isArray ? leadersRaw.asArray : []
             for lg in leaders {
                 let lgId = lg.id.optionalString ?? ""
                 if lgId == reignId { break }
-                let lgOrder = lg.order.optionalNumber.map(Int.init) ?? 0
+                let lgOrder = lg.order.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? 0
                 if lgOrder >= order && lgOrder > 0 { continue }
-                let pid = r.sovereignty.reigns[lgId].optionalNumber.map(Int.init) ?? -1
+                let pid = (r.sovereignty.isNull || r.sovereignty.reigns.isNull) ? -1 : (r.sovereignty.reigns[lgId].optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? -1)
                 let otherGiven: String = {
                     if pid > 0, let op = People.person(r, pid), let fn = op.firstName.optionalString, !fn.isEmpty { return fn }
                     let nm = lg.name.optionalString ?? ""
@@ -176,7 +177,7 @@ public enum MonarchLore {
         }
 
         // 3. 计算庙号或历史尊号/绰号（随战功、能力、特质真实动态显现）
-        let traits = Set((person?.traits.isNull == false ? person!.traits.asArray.compactMap(\.optionalString) : []))
+        let traits = Set((person?.traits.isArray == true ? person!.traits.asArray.compactMap(\.optionalString) : []))
         let honorific: String = {
             if isJPImperial {
                 return era.isEmpty ? "天皇" : "\(era)天皇"
@@ -207,7 +208,8 @@ public enum MonarchLore {
             return ""
         }()
 
-        let yr = max(1, Int(reignYears.rounded(.down)) + 1)
+        let safeReignYears = reignYears.isFinite ? max(0, reignYears) : 0
+        let yr = max(1, Int(safeReignYears.rounded(.down)) + 1)
         let eraYearText = era.isEmpty ? "" : "\(era)\(yr == 1 ? "元" : chineseNumeral(yr))年"
 
         let styledName: String

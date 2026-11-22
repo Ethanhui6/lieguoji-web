@@ -1,6 +1,19 @@
 name: iOS Native unsigned IPA
 on:
   workflow_dispatch:
+    inputs:
+      run_tests:
+        description: 'Run Linux Core swift test suite'
+        type: boolean
+        default: false
+      run_screenshots:
+        description: 'Run iOS Simulator screenshot tour'
+        type: boolean
+        default: false
+      run_server_windows:
+        description: 'Build Windows remote server'
+        type: boolean
+        default: false
   push:
     branches: ['main', 'claude/native-*']
     paths:
@@ -14,6 +27,7 @@ permissions:
   contents: read
 jobs:
   core-linux:
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.run_tests)
     runs-on: ubuntu-latest
     container: swift:5.10
     steps:
@@ -21,9 +35,9 @@ jobs:
       # Optimized build: the golden tests replay large run states through the JS model.
       - run: swift test -c release -Xswiftc -enable-testing --package-path ios-native/Core
       - run: swift build -c release --product LieguojiServer --package-path ios-native/Core
-  # 远程计算服务器 for Windows: the computer simulates, the phone draws.
+  # 远程计算服务器 for Windows: only built on manual workflow_dispatch when requested.
   server-windows:
-    needs: core-linux
+    if: github.event_name == 'workflow_dispatch' && inputs.run_server_windows
     # Swift 5.10 cannot build against the current MSVC headers; 6.1 can (the package stays in Swift 5 mode).
     runs-on: windows-2022
     timeout-minutes: 40
@@ -61,7 +75,6 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   archive:
-    needs: core-linux
     runs-on: macos-26
     timeout-minutes: 30
     steps:
@@ -95,9 +108,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   screenshots:
-    # The app tours itself in the simulator (LGJ_SHOT=1): title, founding, the war, close-ups and
-    # every panel; each stop leaves a marker that this job screenshots and clears.
-    needs: core-linux
+    # The app tours itself in the simulator (LGJ_SHOT=1); manual dispatch only so pushes ship IPA fast.
+    if: github.event_name == 'workflow_dispatch' && inputs.run_screenshots
     runs-on: macos-26
     timeout-minutes: 40
     steps:

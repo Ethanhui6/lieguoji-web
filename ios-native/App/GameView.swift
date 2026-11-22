@@ -318,10 +318,10 @@ struct GameView: View {
         .animation(Motion.panel, value: sideKey)
         .overlay { if let ripple { PressRipple().position(ripple).ignoresSafeArea() } }
         .overlay {
-            // 山河回放置于最顶层（高于图例、侧边页与常规浮层），确保所有按钮清晰可点、不被遮挡。
+            // 山河回放置于最顶层（纯透明度转场避免缩放破坏四角按钮命中框，所有按钮清晰可点）。
             if model.replayActive {
                 ReplayOverlay(model: model)
-                    .transition(.opacity.combined(with: .scale(scale: 0.985)))
+                    .transition(.opacity)
                     .zIndex(100)
             }
         }
@@ -466,7 +466,10 @@ struct GameView: View {
             }, openPeople: { nationDetent = .fraction(0.38); open(.people(n)) }, openWars: { nationDetent = .fraction(0.38); open(.nationWars(n)) }, openTalks: { nationDetent = .fraction(0.38); open(.nationTalks(n)) }, openReplay: {
                 pausedByPanel = false
                 closePage()
-                Task { await model.enterReplay() }
+                Task {
+                    try? await Task.sleep(nanoseconds: 180_000_000)
+                    await model.enterReplay()
+                }
             })
                 .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
                 .onAppear { if NationSheet.tourTab != nil { nationDetent = .large } }
@@ -514,7 +517,10 @@ struct GameView: View {
             ChronicleSheet(model: model, fly: { controller.fly(to: $0) }, openReplay: { targetDay in
                 pausedByPanel = false
                 closePage()
-                Task { await model.enterReplay(atDay: targetDay) }
+                Task {
+                    try? await Task.sleep(nanoseconds: 180_000_000)
+                    await model.enterReplay(atDay: targetDay)
+                }
             }).presentationDetents([.medium, .large])
         case .menu:
             MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }, openEditor: { open(.editor) },

@@ -141,8 +141,8 @@ struct NationHistoryTab: View {
                     .padding(.horizontal, Theme.Layout.pageInset)
                 } else {
                     let ordered = newestFirst ? Array(report.reigns.reversed()) : report.reigns
-                    VStack(spacing: 10) {
-                        ForEach(ordered) { reign in
+                    LazyVStack(spacing: 10) {
+                        ForEach(Array(ordered.enumerated()), id: \.offset) { _, reign in
                             reignCard(reign, era: report.era, strongest: reign.order == report.strongestOrder && report.reigns.count > 1)
                         }
                     }
@@ -258,8 +258,8 @@ struct NationHistoryTab: View {
                 Text("峰值 \(report.peakProvinces) 州（点击柱条定位）").font(Theme.caption).foregroundStyle(Theme.ink2)
             }
             HStack(alignment: .bottom, spacing: 5) {
-                ForEach(shown) { r in
-                    let h = max(8, CGFloat(r.peakProvinces) / CGFloat(maxPeak) * 58)
+                ForEach(Array(shown.enumerated()), id: \.offset) { _, r in
+                    let h = max(8, CGFloat(max(0, r.peakProvinces)) / CGFloat(maxPeak) * 58)
                     let isStrong = r.order == report.strongestOrder
                     Button {
                         withAnimation(Motion.panel) { expandedReign = r.id }
@@ -304,7 +304,7 @@ struct NationHistoryTab: View {
             } label: {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .top, spacing: 10) {
-                        SealFace(text: reign.order <= 99 ? String(ChineseNumeral.of(reign.order).prefix(2)) : "\(reign.order)", size: 28, color: reign.active ? Theme.seal : Theme.ink.opacity(0.75))
+                        SealFace(text: max(1, reign.order) <= 99 ? String(ChineseNumeral.of(max(1, reign.order)).prefix(2)) : "\(max(1, reign.order))", size: 28, color: reign.active ? Theme.seal : Theme.ink.opacity(0.75))
                         VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 6) {
                                 Text(reign.styledName ?? "\(reign.title) · \(reign.name)").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
@@ -333,7 +333,8 @@ struct NationHistoryTab: View {
                                 .font(Theme.caption).foregroundStyle(Theme.paper2)
                                 .padding(.horizontal, 8).padding(.vertical, 2)
                                 .background(rColor, in: Capsule())
-                            Text("强势 \(Int(reign.powerScore))").font(Theme.caption).foregroundStyle(rColor).monospacedDigit()
+                            let safePower = reign.powerScore.isFinite ? Int(reign.powerScore.rounded()) : 50
+                            Text("强势 \(safePower)").font(Theme.caption).foregroundStyle(rColor).monospacedDigit()
                         }
                     }
 
@@ -407,7 +408,7 @@ struct NationHistoryTab: View {
                     if !reign.events.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("在位纪要").font(Theme.caption).foregroundStyle(Theme.seal)
-                            ForEach(reign.events) { ev in
+                            ForEach(Array(reign.events.enumerated()), id: \.offset) { _, ev in
                                 HStack(alignment: .top, spacing: 8) {
                                     Text(yearText(era, ev.year)).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().frame(width: 68, alignment: .leading)
                                     Text(ev.text).font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)

@@ -5,34 +5,46 @@ import Foundation
 /// 登基/巅峰/退位国土州数与附庸数、当朝都城定位索引，以及在位期间的关键国史大事（均可一键定位地图）。
 extension NativeEngine {
     public func nationReigns(_ index: Int) -> Data? {
-        let r = run, nations = r.world.nations.asArray
+        let r = run, nations = r.world.nations.isArray ? r.world.nations.asArray : []
         guard nations.indices.contains(index) else { return nil }
-        let n = nations[index], id = n.id.asString, civ = r.civilization.nations[id]
+        let n = nations[index]
+        guard let id = n.id.optionalString, !id.isEmpty else { return nil }
+        let civ = r.civilization.isNull || r.civilization.nations.isNull ? JS.null : r.civilization.nations[id]
         let culture = civ.cultureId.optionalString ?? ""
         let curPolity = civ.polity.optionalString ?? "Kingdom"
         let curReligion = civ.religionId.optionalString ?? ""
-        let curDay = r.world.day.asNumber
+        let rawCurDay = r.world.day.optionalNumber ?? 0
+        let curDay = rawCurDay.isFinite ? rawCurDay : 0
 
-        // 计算游戏历法换算函数：day -> 公元/自定义纪年
-        let curDate = r.life.currentDate
-        let yearOffset = (!r.regimes.isNull && !r.regimes.calendar.isNull) ? (r.regimes.calendar.offset.optionalNumber.map(Int.init) ?? 0) : 0
+        // 计算游戏历法换算函数：day -> 公元/自定义纪年（全面防御 null / NaN，杜绝史册页闪退）
+        let curDate = (r.life.isNull || r.life.currentDate.isNull) ? JS.null : r.life.currentDate
+        let yearOffset = (!r.regimes.isNull && !r.regimes.calendar.isNull) ? (r.regimes.calendar.offset.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? 0) : 0
         let eraName = (!r.regimes.isNull && !r.regimes.calendar.isNull) ? (r.regimes.calendar.era.optionalString ?? "") : ""
-        let displayNowYear = curDate.year.asInt + yearOffset
-        let dayOfYear = Double(max(1, curDate.month.asInt) - 1) * 30.44 + Double(max(1, curDate.day.asInt) - 1)
+        let baseYear = curDate.year.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? 1
+        let baseMonth = curDate.month.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? 1
+        let baseDay = curDate.day.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? 1
+        let displayNowYear = baseYear + yearOffset
+        let dayOfYear = Double(max(1, min(12, baseMonth)) - 1) * 30.44 + Double(max(1, min(31, baseDay)) - 1)
         func yearOf(_ day: Double) -> Int {
-            displayNowYear + Int(((dayOfYear - (curDay - day)) / 365.25).rounded(.down))
+            guard day.isFinite && curDay.isFinite else { return displayNowYear }
+            let delta = ((dayOfYear - (curDay - day)) / 365.25).rounded(.down)
+            guard delta.isFinite && abs(delta) < 1e7 else { return displayNowYear }
+            return displayNowYear + Int(delta)
         }
 
         // 州郡与城池映射，供定位都城与事件发生地
-        let provinces = r.world.provinces.asArray
+        let provinces = r.world.provinces.isArray ? r.world.provinces.asArray : []
         var pi = [String: Int]()
-        for (i, p) in provinces.enumerated() { pi[p.id.asString] = i }
+        for (i, p) in provinces.enumerated() {
+            if let pid = p.id.optionalString { pi[pid] = i }
+        }
         var cityToProv = [String: Int]()
         var provCityName = [Int: String]()
-        for c in r.world.cities.asArray {
+        let cities = r.world.cities.isArray ? r.world.cities.asArray : []
+        for c in cities {
             if let pid = c.provinceId.optionalString, let idx = pi[pid] {
                 if let cid = c.id.optionalString { cityToProv[cid] = idx }
-                if provCityName[idx] == nil { provCityName[idx] = c.name.optionalString ?? provinces[idx].name.asString }
+                if provCityName[idx] == nil { provCityName[idx] = c.name.optionalString ?? (provinces[idx].name.optionalString ?? "") }
             }
         }
         let currentCapProv: Int = {
@@ -41,34 +53,41 @@ extension NativeEngine {
             return -1
         }()
         let currentProvinces = provinces.reduce(0) { $1.controller.optionalString == id ? $0 + 1 : $0 }
-        let currentVassals = r.vassals.records.asArray.reduce(0) { ($1.overlordId.optionalString == id && $1.endedTick.isNull) ? $0 + 1 : $0 }
+        let vassalRecords = (r.vassals.isNull || r.vassals.records.isNull || !r.vassals.records.isArray) ? [] : r.vassals.records.asArray
+        let currentVassals = vassalRecords.reduce(0) { ($1.overlordId.optionalString == id && $1.endedTick.isNull) ? $0 + 1 : $0 }
         let totalWorldProvinces = max(1, provinces.count)
 
         // 收集该国相关的大事记条目，按日期归属到每一任君主
-        let nationEntries = r.chronicle.entries.asArray.filter { e in
-            !e.nationIds.isNull && e.nationIds.asArray.contains { $0.asString == id }
+        let allEntries = (r.chronicle.isNull || r.chronicle.entries.isNull || !r.chronicle.entries.isArray) ? [] : r.chronicle.entries.asArray
+        let nationEntries = allEntries.filter { e in
+            e.nationIds.isArray && e.nationIds.asArray.contains { $0.optionalString == id }
         }
 
-        let leaders = r.chronicle.leaders[id].isNull ? [] : r.chronicle.leaders[id].asArray
+        let leadersRaw = (r.chronicle.isNull || r.chronicle.leaders.isNull) ? JS.null : r.chronicle.leaders[id]
+        let leaders = leadersRaw.isArray ? leadersRaw.asArray : []
         let outReigns = JS.array()
+        var seenReignIds = Set<String>()
         var peakAcrossHistory = max(1, currentProvinces)
         var strongestOrder = 0
         var strongestScore = -1.0
 
         for (idx, reign) in leaders.enumerated() {
-            let rid = reign.id.optionalString ?? "ruler-\(id)-\(idx + 1)"
-            let order = reign.order.optionalNumber.map(Int.init) ?? (idx + 1)
+            let baseRid = reign.id.optionalString ?? "ruler-\(id)-\(idx + 1)"
+            let rid = seenReignIds.insert(baseRid).inserted ? baseRid : "\(baseRid)#\(idx)"
+            let order = max(1, reign.order.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? (idx + 1))
             let active = reign.endedDay.isNull
-            let startDay = reign.ascendedDay.optionalNumber ?? 0
-            let endDay = active ? curDay : (reign.endedDay.optionalNumber ?? curDay)
+            let rawStart = reign.ascendedDay.optionalNumber ?? 0
+            let startDay = rawStart.isFinite ? rawStart : 0
+            let rawEnd = active ? curDay : (reign.endedDay.optionalNumber ?? curDay)
+            let endDay = rawEnd.isFinite ? rawEnd : curDay
             let reignYears = max(0.0, (endDay - startDay) / 365.25)
 
             // 关联真实人物档案（能力、特质、生死、年龄、家族）
-            let pid = r.sovereignty.reigns[rid].optionalNumber.map(Int.init) ?? -1
+            let pid = (r.sovereignty.isNull || r.sovereignty.reigns.isNull) ? -1 : (r.sovereignty.reigns[baseRid].optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? -1)
             let person = pid > 0 ? People.person(r, pid) : nil
-            let rulerCard = r.civilization.rulers[rid]
+            let rulerCard = (r.civilization.isNull || r.civilization.rulers.isNull) ? JS.null : r.civilization.rulers[baseRid]
             let isFemale = (person?.gender.optionalNumber ?? rulerCard.gender.optionalNumber ?? 0) == 1
-            let alive = person?.isAlive.asBool ?? active
+            let alive = person?.isAlive.optionalBool ?? active
 
             let displayName: String = {
                 if let p = person { return Self.displayPersonName(p) }
@@ -77,10 +96,10 @@ extension NativeEngine {
             }()
             let houseRaw = person?.lastName.optionalString ?? reign.family.optionalString ?? rulerCard.house.optionalString ?? ""
             let house = NamingCatalog.cleanSurname(houseRaw)
-            let familyId = person?.familyId.optionalNumber.map(Int.init) ?? -1
+            let familyId = person?.familyId.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? -1
 
             // 尊号（依据在位时的政体/文化/性别）
-            let row = r.reigns47.isNull ? JS.null : r.reigns47[rid]
+            let row = r.reigns47.isNull ? JS.null : r.reigns47[baseRid]
             let reignPolity = row.polity.optionalString ?? rulerCard.polityAtAccession.optionalString ?? curPolity
             let baseTitle: String = {
                 if active, !r.regimes.isNull, let t = Regimes.seats(r, id).head ?? Regimes.style(r, id).title { return t }
@@ -94,21 +113,26 @@ extension NativeEngine {
             var traitNames: [String] = []
             if let p = person {
                 let s = People.skills(p)
-                skillsArr = [s.charisma.rounded(), s.military.rounded(), s.diplomatic.rounded(), s.administrative.rounded()]
-                if !p.traits.isNull {
+                skillsArr = [
+                    s.charisma.isFinite ? s.charisma.rounded() : 50,
+                    s.military.isFinite ? s.military.rounded() : 50,
+                    s.diplomatic.isFinite ? s.diplomatic.rounded() : 50,
+                    s.administrative.isFinite ? s.administrative.rounded() : 50,
+                ]
+                if p.traits.isArray {
                     traitNames = p.traits.asArray.compactMap(\.optionalString).map { Self.traitLabels[$0] ?? $0 }
                 }
             }
             let avgSkill = skillsArr.reduce(0, +) / 4.0
 
             // 疆域规模与巅峰
-            let startArr = row.isNull || row.start.isNull ? [] : row.start.asArray
-            let endArr = row.isNull || row.end.isNull ? [] : row.end.asArray
-            let startProvs = startArr.first?.optionalNumber.map(Int.init) ?? (active ? currentProvinces : 0)
-            let startVassals = (startArr.count > 1 ? startArr[1].optionalNumber.map(Int.init) : nil) ?? 0
-            let endProvs = active ? currentProvinces : (endArr.first?.optionalNumber.map(Int.init) ?? startProvs)
-            let endVassals = active ? currentVassals : ((endArr.count > 1 ? endArr[1].optionalNumber.map(Int.init) : nil) ?? startVassals)
-            let recordedPeak = row.peak.optionalNumber.map(Int.init) ?? max(startProvs, endProvs)
+            let startArr = (row.isNull || !row.start.isArray) ? [] : row.start.asArray
+            let endArr = (row.isNull || !row.end.isArray) ? [] : row.end.asArray
+            let startProvs = startArr.first?.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? (active ? currentProvinces : 0)
+            let startVassals = (startArr.count > 1 ? startArr[1].optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } : nil) ?? 0
+            let endProvs = active ? currentProvinces : (endArr.first?.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? startProvs)
+            let endVassals = active ? currentVassals : ((endArr.count > 1 ? endArr[1].optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } : nil) ?? startVassals)
+            let recordedPeak = row.peak.optionalNumber.flatMap { $0.isFinite ? Int($0) : nil } ?? max(startProvs, endProvs)
             let peakProvs = max(recordedPeak, max(startProvs, endProvs))
             let deltaProvs = endProvs - startProvs
             peakAcrossHistory = max(peakAcrossHistory, peakProvs)
@@ -158,7 +182,7 @@ extension NativeEngine {
             }
             let capName: String = {
                 if capProv >= 0, provinces.indices.contains(capProv) {
-                    return provCityName[capProv] ?? provinces[capProv].name.asString
+                    return provCityName[capProv] ?? (provinces[capProv].name.optionalString ?? "")
                 }
                 return ""
             }()
@@ -166,8 +190,11 @@ extension NativeEngine {
             // 提炼本任期至多 8 条重要事件（优先战争/疆域/政变/制度/复国/迁都，均可定位）
             let keyEvents = reignEvents.reversed().prefix(8).map { e -> JS in
                 let ev = JS.object()
-                ev.day = e.day; ev.year = JS(yearOf(e.day.optionalNumber ?? startDay))
-                ev.text = e.text; ev.kind = e.kind
+                let evDay = e.day.optionalNumber ?? startDay
+                ev.day = JS(evDay.isFinite ? Int(evDay) : Int(startDay))
+                ev.year = JS(yearOf(evDay))
+                ev.text = JS(e.text.optionalString ?? "")
+                ev.kind = JS(e.kind.optionalString ?? "event")
                 if let reason = e.reason.optionalString, !reason.isEmpty { ev.reason = JS(reason) }
                 if let pStr = e.provinceId.optionalString, let pIdx = pi[pStr] { ev.province = JS(pIdx) }
                 else if capProv >= 0 { ev.province = JS(capProv) }
@@ -184,8 +211,9 @@ extension NativeEngine {
             let item = JS.object()
             item.order = JS(order)
             item.id = JS(rid)
-            item.name = JS(honor.styledName.isEmpty ? honor.cleanPersonalName : honor.styledName)
-            item.personalName = JS(honor.cleanPersonalName)
+            item.name = JS(honor.cleanPersonalName)
+            item.styledName = JS(honor.styledName.isEmpty ? honor.cleanPersonalName : honor.styledName)
+            item.surnameLessImperial = JS(honor.surnameLessImperial)
             item.eraName = JS(honor.eraName)
             item.eraYearText = JS(honor.eraYearText)
             item.honorific = JS(honor.honorific)
@@ -193,13 +221,13 @@ extension NativeEngine {
             item.house = JS(honor.surnameLessImperial ? "皇室（无姓）" : (house.isEmpty ? "无" : NamingCatalog.houseLabel(house)))
             item.familyId = JS(familyId)
             item.personId = JS(pid)
-            item.stateName = JS(row.stateName.optionalString ?? n.name.asString)
+            item.stateName = JS(row.stateName.optionalString ?? (n.name.optionalString ?? ""))
             item.polity = JS(Regimes.titles[reignPolity] ?? reignPolity)
-            item.ascendedDay = JS(Int(startDay))
-            item.endedDay = active ? .null : JS(Int(endDay))
+            item.ascendedDay = JS(Int(startDay.isFinite ? startDay : 0))
+            item.endedDay = active ? .null : JS(Int(endDay.isFinite ? endDay : 0))
             item.ascendedYear = JS(yearOf(startDay))
             item.endedYear = active ? .null : JS(yearOf(endDay))
-            item.reignYears = JS((reignYears * 10).rounded() / 10)
+            item.reignYears = JS(reignYears.isFinite ? (reignYears * 10).rounded() / 10 : 0)
             item.active = JS(active)
             item.alive = JS(alive)
             item.female = JS(isFemale)
@@ -221,7 +249,7 @@ extension NativeEngine {
         }
 
         let summary = JS.object()
-        summary.nationName = n.name
+        summary.nationName = JS(n.name.optionalString ?? "无名国")
         summary.era = JS(eraName.isEmpty ? "公元" : eraName)
         summary.totalReigns = JS(leaders.count)
         summary.peakProvinces = JS(peakAcrossHistory)

@@ -511,7 +511,7 @@ struct FleetSheet: View {
                         Spacer(minLength: 4)
                         Button {
                             GameFeel.shared.tap()
-                            model.controller.flyTo?(f.x, f.y)
+                            model.controller.fly(x: Double(f.x), y: Double(f.y))
                         } label: {
                             InkIcon(glyph: .locate, size: 18, weight: 1.8, accent: Theme.seal.opacity(0.24))
                                 .foregroundStyle(Theme.seal)
@@ -537,7 +537,7 @@ struct FleetSheet: View {
 
                     if !feedback.isEmpty {
                         HStack(spacing: 8) {
-                            InkIcon(glyph: .seal, size: 14, weight: 1.7).foregroundStyle(Theme.seal)
+                            InkIcon(glyph: .edict, size: 14, weight: 1.7).foregroundStyle(Theme.seal)
                             Text(feedback).font(Theme.label).foregroundStyle(Theme.seal)
                         }
                         .padding(.horizontal, Theme.Layout.sectionInset)
@@ -576,7 +576,7 @@ struct FleetSheet: View {
                                     let holderName = map.meta.nations.indices.contains(item.port.occupier) ? map.meta.nations[item.port.occupier].name : "敌军"
                                     Button { withAnimation(Motion.tap) { target = on ? -1 : item.port.province } } label: {
                                         HStack(spacing: 10) {
-                                            InkIcon(glyph: .sword, size: 15, weight: 1.7).foregroundStyle(on ? Theme.danger : Theme.seal).frame(width: Theme.Layout.iconGutter)
+                                            InkIcon(glyph: .war, size: 15, weight: 1.7).foregroundStyle(on ? Theme.danger : Theme.seal).frame(width: Theme.Layout.iconGutter)
                                             VStack(alignment: .leading, spacing: 2) {
                                                 HStack(spacing: 6) {
                                                     Text(pName).font(Theme.section).foregroundStyle(Theme.ink)
@@ -806,7 +806,7 @@ struct FleetSheet: View {
                                     Spacer()
                                     Button {
                                         GameFeel.shared.tap()
-                                        model.controller.flyTo?(p.x, p.y)
+                                        model.controller.fly(x: Double(p.x), y: Double(p.y))
                                     } label: {
                                         Text("查看").font(Theme.caption).foregroundStyle(Theme.seal)
                                             .padding(.horizontal, 8).padding(.vertical, 4)
@@ -826,7 +826,7 @@ struct FleetSheet: View {
                             Group2 {
                                 ForEach(Array(myYards.enumerated()), id: \.offset) { idx, y in
                                     HStack {
-                                        InkIcon(glyph: .hammer, size: 15, weight: 1.7).foregroundStyle(Theme.seal).frame(width: Theme.Layout.iconGutter)
+                                        InkIcon(glyph: .settings, size: 15, weight: 1.7).foregroundStyle(Theme.seal).frame(width: Theme.Layout.iconGutter)
                                         Text(y.name).font(Theme.section).foregroundStyle(Theme.ink)
                                         Spacer()
                                         PaperTag(text: "建造中 · 约 \(max(1, Int(y.months.rounded()))) 个月下水", color: Theme.gold, size: 10)

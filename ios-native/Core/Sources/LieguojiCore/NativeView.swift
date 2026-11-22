@@ -388,10 +388,22 @@ extension NativeEngine {
                     }
                 }
                 let etaDays = max(1, Int((ticks / 120.0).rounded(.up)))
-                let prefix = seaLegs > 0 ? "渡海航行" : mountainLegs > 0 ? "翻越山隘险阻" : plateauLegs > 0 ? "经高原要道行进" : landLegs > 0 ? "沿平地谷道行军" : "整军进发"
-                routeNote = "\(prefix) · 预计 \(etaDays) 日\(seaLegs > 0 ? "登陆" : "抵达")"
+                if a.status.asString == "retreating" {
+                    let prefix = seaLegs > 0 ? "渡海撤回" : "撤退休整"
+                    routeNote = "\(prefix) · 预计 \(etaDays) 日\(seaLegs > 0 ? "返港" : "抵达")"
+                } else {
+                    let prefix = seaLegs > 0 ? "渡海航行" : mountainLegs > 0 ? "翻越山隘险阻" : plateauLegs > 0 ? "经高原要道行进" : landLegs > 0 ? "沿平地谷道行军" : "整军进发"
+                    routeNote = "\(prefix) · 预计 \(etaDays) 日\(seaLegs > 0 ? "登陆" : "抵达")"
+                }
             } else if v.travel.status.asString == "blocked" {
-                routeNote = "前方受阻或无外交通行权，暂停待命"
+                let why = r.armyAutonomy.armies[id].reason.optionalString ?? ""
+                routeNote = why.isEmpty ? "前方受阻或无外交通行权，暂停待命" : "受阻停步 · \(why)"
+            } else {
+                let orderDec = r.armyAutonomy.armies[id].decision.optionalString ?? ""
+                let why = r.armyAutonomy.armies[id].reason.optionalString ?? ""
+                if orderDec == "staging" { routeNote = "边境集结待发，兵力齐备后出击" }
+                else if orderDec == "no-route" { routeNote = why.isEmpty ? "暂缺符合通行权的路线，原地待命" : why }
+                else if orderDec == "guarding", why.contains("都城") { routeNote = "都城告急，留守护卫都城" }
             }
             let safeTroops = a.troops.asNumber.isFinite ? max(0, Int(a.troops.asNumber.rounded())) : 0
             let safeSupplies = a.supplies.asNumber.isFinite ? min(100, max(0, Int(a.supplies.asNumber.rounded()))) : 100

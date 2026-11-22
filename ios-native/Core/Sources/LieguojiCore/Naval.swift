@@ -302,6 +302,18 @@ public enum Naval {
             s.nextRoleTick = JS(now + Double(scheduleTicks))
         }
         let speed = speed(r)
+        // 本作海防截击：记录各连通海域当前正在渡海的敌军坐标，供舰队主动出击封堵登陆航道。
+        var seaArmiesByComp = [Int: [(nation: String, point: TravelPoint)]]()
+        if UnitKinds.enabled, let bridge = Armies.bridge {
+            let g = bridge.graph
+            for v in space where v.province == nil && v.army.status.asString != "retreating" {
+                let face = Int(g.faces[v.cell])
+                let comp = sea.component(face)
+                if comp >= 0 {
+                    seaArmiesByComp[comp, default: []].append((v.army.nationId.asString, g.location(bridge.travel(v.travel)).point))
+                }
+            }
+        }
         for fl in all {
             let id = fl.id.asString, nation = fl.nationId.asString, row = s.fleets[id], order = r.portControl.fleets[id]
             let enemy = { (x: String) in atWar(r, nation, x) }, atWarNow = war(nation), actual = view.fleets.first { $0.fleet.id.asString == id }
@@ -335,7 +347,30 @@ public enum Naval {
             let homeLost = home.map { r.portControl.ports[$0.provinceId].occupierId.asString != nation } ?? false
             let rationNow = Double(ration(fl.crew.asInt)), food = fl.food.asNumber, crew = fl.crew.asNumber
             func days(_ d: Double) -> Double { (d / speed / 120).rounded(.up) }
-            if !low && atWarNow && (r.portControl.attackFleetIds.asArray.contains { $0.asString == id } || homeLost || goalAttack) {
+            if !low && atWarNow && (r.portControl.attackFleetIds.asArray.contains { $0.asString == id } || homeLost || goalAttack || (UnitKinds.enabled && (seaArmiesByComp[component]?.contains { enemy($0.nation) } ?? false))) {
+                // 本作海防截击：若有敌军正在本海域渡海，优先驰援最接近敌军航迹的己方/敌方海港截击登陆部队。
+                if UnitKinds.enabled, let threats = seaArmiesByComp[component]?.filter({ enemy($0.nation) }), !threats.isEmpty {
+                    var intercept: (port: Port, distToFoe: Double, sailDist: Double)?
+                    for port in candidates {
+                        let landCtrl = landById[port.provinceId]?.controller.asString ?? ""
+                        guard landCtrl == nation || enemy(landCtrl) else { continue }
+                        let df = threats.reduce(Double.infinity) { min($0, jsHypot(port.center.x - $1.point.x, port.center.y - $1.point.y)) }
+                        let sailD: Double
+                        if atAnchor(port) { sailD = 0 }
+                        else {
+                            let p = preview(r, id, .sail(port: port.id))
+                            guard p.valid && food >= rationNow * (days(p.distance) + 3) + crew * 30 else { continue }
+                            sailD = p.distance
+                        }
+                        if intercept == nil || df < intercept!.distToFoe { intercept = (port, df, sailD) }
+                    }
+                    if let intercept {
+                        order.targetId = enemy(landById[intercept.port.provinceId]?.controller.asString ?? "") ? JS(intercept.port.provinceId) : .null
+                        if atAnchor(intercept.port) { row.assignedPortId = JS(intercept.port.id); note("attacking", "守株待兔，在敌军渡海登陆口截击。") }
+                        else { start(intercept.port.id, "attacking", "敌军渡海来犯，沿真实海路驰援截击登陆航道。") }
+                        continue
+                    }
+                }
                 var best: (port: Port, control: JS, distance: Double)?
                 for port in candidates where portTarget(r.portControl.ports[port.provinceId], nation, enemy) {
                     let control = r.portControl.ports[port.provinceId]

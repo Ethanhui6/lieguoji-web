@@ -417,7 +417,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let terrainBase = i.terrain ?? CellMesh.colors(map: map, mode: .terrain, nationColors: i.nationColors)
         var terrain = terrainBase
         if i.mode == .political && i.density < 1 {
-            let k = max(0, i.density)
+            // 专题视图（联盟/文化/家族/宗教/政体等）须忠实呈现图例分色，避免低浓度被底图草地/沙漠漂淡撞色。
+            let k = i.fills != nil ? max(0.84, i.density) : max(0, i.density)
             for j in 0..<min(c.count, terrain.count) where j % 4 != 3 { c[j] = terrain[j] + (c[j] - terrain[j]) * k }
         }
         let shade = i.shade.count == map.vertices.count / 2 ? i.shade : MapLayers.vertexHillshade(map)
@@ -486,9 +487,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight, tint: tint, provinceColors: mode == .political ? fills : nil)
             if terrainBase == nil { terrainBase = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors) }
             var terrain = terrainBase!
-            // 国家颜色浓度: state colours blended toward the terrain colours.
+            // 国家颜色浓度: state colours blended toward the terrain colours; 专题视图保持高保真分色。
             if mode == .political && display.colorDensity < 1 {
-                let k = Float(max(0, display.colorDensity))
+                let k = fills != nil ? Float(max(0.84, display.colorDensity)) : Float(max(0, display.colorDensity))
                 for i in 0..<min(c.count, terrain.count) where i % 4 != 3 { c[i] = terrain[i] + (c[i] - terrain[i]) * k }
             }
             // Relief shading on the land (every map mode).
@@ -632,8 +633,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Where every icon is drawn right now (mid-walk included), for taps and troop labels.
-    /// 军队图标的缩放系数（屏幕点 / 图标基准尺寸），与着色器 spriteVertex 同一规则（收巧约 22%，不遮国界与战线）。
-    static func iconZoom(_ scale: Double) -> Double { min(21.0 / 3.0112, max(8.8 / 3.0112, scale * 0.66)) }
+    /// 军队图标的缩放系数（屏幕点 / 图标基准尺寸），与着色器 spriteVertex 同一规则（收巧约 22%，远景看海更清爽，不遮国界与战线）。
+    static func iconZoom(_ scale: Double) -> Double { min(21.0 / 3.0112, max(6.8 / 3.0112, scale * 0.66)) }
     /// 一支军队主图标在屏幕上的边长（点）。
     static func iconPoints(_ scale: Double, iconScale: Double) -> Double { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * iconZoom(scale) }
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
@@ -922,10 +923,28 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             u.alpha = 1
         }
         // 0. 全视口无缝「御案织锦」背景：统一西北来光书案聚光 + 细腻云锦暗纹，彻底消除拉远全图上下割裂。
+        let dw = drawable.texture.width, dh = drawable.texture.height
+        guard dw > 0, dh > 0 else { encoder.endEncoding(); return }
+        let fullScissor = MTLScissorRect(x: 0, y: 0, width: dw, height: dh)
+        encoder.setScissorRect(fullScissor)
         encoder.setRenderPipelineState(deskPipeline)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+
+        // 严格按画心 [0, map.width] × [0, map.height] 裁剪全部地图内层（海洋、地形、国界、军团、行军线、羊皮纸），
+        // 杜绝缩放或平移时任何底图瓦片、军团棋子或线框飞出卷轴画框覆盖上下留白区。
+        let vpW = Double(size.width), vpH = Double(size.height)
+        let mapTL = camera.toScreen(x: 0, y: 0, viewport: (vpW, vpH))
+        let mapBR = camera.toScreen(x: Double(map.width), y: Double(map.height), viewport: (vpW, vpH))
+        let pxScaleX = Double(dw) / max(1, vpW), pxScaleY = Double(dh) / max(1, vpH)
+        let sx0 = max(0, min(dw, Int(floor(mapTL.x * pxScaleX))))
+        let sy0 = max(0, min(dh, Int(floor(mapTL.y * pxScaleY))))
+        let sx1 = max(sx0, min(dw, Int(ceil(mapBR.x * pxScaleX))))
+        let sy1 = max(sy0, min(dh, Int(ceil(mapBR.y * pxScaleY))))
+        let mapScissor = MTLScissorRect(x: sx0, y: sy0, width: sx1 - sx0, height: sy1 - sy0)
+        if mapScissor.width > 0 && mapScissor.height > 0 {
+        encoder.setScissorRect(mapScissor)
 
         // 开卷: each layer is brushed in over a moment at its turn, none pops up whole.
         let stage = reveal
@@ -968,8 +987,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
-        // 战争晕染（墨场）：在陆地颜色之上、州界与军队之下。
-        if reveal >= 1 && (display.battleGround ?? true) {
+        // 战争晕染（墨场）：在陆地颜色之上、州界与军队之下；专题分色视图（联盟/文化/家族/宗教等）不叠绘国家占领墨色。
+        if reveal >= 1 && (display.battleGround ?? true) && fills == nil {
             let t0 = CACurrentMediaTime()
             drawWashes(encoder, &u)
             probe?.wash.append((CACurrentMediaTime() - t0) * 1000)
@@ -1054,6 +1073,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             // 严丝合缝裁切在地图画心 (0, 0, map.width, map.height) 内，彻底杜绝旧版羊皮纸外漏在画框下方的难看凸块！
             quad(parchment, multiplyPipeline, x: 0, y: 0, width: map.width, height: map.height)
         }
+        } // end mapScissor
+        encoder.setScissorRect(fullScissor)
         if display.scrollMount ?? display.darkEdges { colored(frame) }
         encoder.endEncoding()
         if let probe {
@@ -1225,9 +1246,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // Marks at least 22 points tall (an army mark is 5 map units), so whose army it is reads at
         // every zoom; banner and pips keep their proportions. The shift (in the quad's own size)
         // places the banner and the pips around the army's point.
-        // 屏幕尺寸规则（与 MapRenderer.iconZoom 一致）：远景 8.8 点、随缩放增长、近景封顶 21 点，
+        // 屏幕尺寸规则（与 MapRenderer.iconZoom 一致）：远景 6.8 点、随缩放增长、近景封顶 21 点，
         // 图标收巧约 22%，清晰露出国界与战线推进，触控区仍由 MapView 保持 ≥22pt。
-        float pixels = s.size * clamp(u.scale * 0.66, 8.8 / 3.0112, 21.0 / 3.0112);
+        float pixels = s.size * clamp(u.scale * 0.66, 6.8 / 3.0112, 21.0 / 3.0112);
         // Alpha below zero: the icon fades in over the leg (new and re-formed armies).
         // Alpha −2: an army that fell fades out over the leg.
         float4 tint = float4(s.tint);
@@ -1256,7 +1277,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     vertex SpriteOut spriteShadowVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
                                         constant float& time [[buffer(5)]]) {
         SpriteVertex s = v[id];
-        float pixels = s.size * clamp(u.scale * 0.66, 8.8 / 3.0112, 21.0 / 3.0112);
+        float pixels = s.size * clamp(u.scale * 0.66, 6.8 / 3.0112, 21.0 / 3.0112);
         float4 tint = float4(s.tint);
         if (tint.a < -1.5) { float d = -tint.a - 2.0; tint.a = 1.0 - clamp((progress - d) / 0.15, 0.0, 1.0); }
         else if (tint.a < 0.0) tint.a = progress;

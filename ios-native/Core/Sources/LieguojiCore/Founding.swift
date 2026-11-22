@@ -124,6 +124,7 @@ public enum Founding {
                     if !houses.isEmpty { spouse.lastName = JS(houses[random.intRange(0, houses.count)]) }
                 }
                 spouse.natalSurname = spouse.lastName.clone()
+                spouse.identity = Nobility.personName(culture, given: spouse.firstName.asString, house: spouse.lastName.asString, gender: spouse.gender.asInt)
             } else {
                 spouse.lastName = JS(lastName(m))
             }
@@ -174,6 +175,7 @@ public enum Founding {
                 if !houses.isEmpty { spouse.lastName = JS(houses[random.intRange(0, houses.count)]) }
             }
             spouse.natalSurname = spouse.lastName.clone()
+            spouse.identity = Nobility.personName(family.cultureName.asString, given: spouse.firstName.asString, house: spouse.lastName.asString, gender: spouse.gender.asInt)
         } else {
             spouse.lastName = JS(k.lastName(leader))
         }

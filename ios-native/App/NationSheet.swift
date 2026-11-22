@@ -288,6 +288,9 @@ struct NationSheet: View {
                 await reload()
                 if Self.tourFamily, tree == nil, let h = info?.court?.houses.first(where: { $0.id != nil }), let id = h.id { tree = TreePick(id: id, name: h.name) }
             }
+            .task(id: tab) {
+                if tab == .court, postList.isEmpty { postList = await model.posts(nation) }
+            }
             .onAppear {
                 if let t = Self.tourTab { tab = t; customPane = Self.tourPane }
                 model.controller.relationsNation = nation
@@ -1446,12 +1449,11 @@ struct NationSheet: View {
         async let infoTask = model.nationInfo(nation)
         async let historyTask = model.nationHistory(nation)
         async let regimeTask = model.regime(nation)
-        async let postsTask = model.posts(nation)
-        let (loadedInfo, loadedHistory, loadedRegime, loadedPosts) = await (infoTask, historyTask, regimeTask, postsTask)
+        let (loadedInfo, loadedHistory, loadedRegime) = await (infoTask, historyTask, regimeTask)
         info = loadedInfo; failed = loadedInfo == nil
         history = loadedHistory
         regime = loadedRegime
-        postList = loadedPosts
+        if tab == .court { postList = await model.posts(nation) }
         let nextRel = relationColors()
         if model.controller.relationsNation == nation && model.controller.relations != nextRel {
             model.controller.relations = nextRel
@@ -1673,6 +1675,7 @@ struct NationSheet: View {
                     .foregroundStyle(Theme.seal).frame(height: 32).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            Rectangle().fill(Theme.line).frame(width: 0.8, height: 18)
             ScrollViewReader { reader in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
@@ -1686,8 +1689,9 @@ struct NationSheet: View {
                             .buttonStyle(PressStyle()).id(p)
                         }
                     }
-                    .padding(.vertical, 1)
+                    .padding(.vertical, 1).padding(.trailing, 8)
                 }
+                .clipped()
                 .onAppear { reader.scrollTo(pane, anchor: .center) }
                 .onChange(of: pane) { _, p in withAnimation(Motion.fade) { reader.scrollTo(p, anchor: .center) } }
             }

@@ -1504,27 +1504,36 @@ public enum NamingCatalog {
         var list = (gender == 0 ? people[culture]?.male : people[culture]?.female) ?? []
         if list.isEmpty {
             let p = Nobility.cultures[culture]
-            list = (gender == 0 ? p.givenMale : p.givenFemale).asArray.map(\.asString)
+            let src = gender == 0 ? p.givenMale : p.givenFemale
+            if case .array = src.storage {
+                list = src.asArray.map(\.asString)
+            }
         }
         if !r.regimes.isNull {
             let added = r.regimes.cultures[culture][gender == 0 ? "male" : "female"]
-            if !added.isNull {
+            if case .array = added.storage {
                 for a in added.asArray.map(\.asString) where !a.isEmpty && !list.contains(a) { list.append(a) }
             }
+        }
+        if list.isEmpty {
+            let fallback = people["chinese"]
+            list = (gender == 0 ? fallback?.male : fallback?.female) ?? ["明远"]
         }
         return list
     }
 
-    /// 供 App 世界取某文化家族姓氏池（已清洗无重复）。
+    /// 供 App 世界取某文化家族姓氏池（已清洗无重复，自定义文化兜底绝不为空）。
     public static func houseNames(culture: String) -> [String] {
         if let list = people[culture]?.houses, !list.isEmpty { return list }
         let p = Nobility.cultures[culture]
         var seen = Set<String>(), out = [String]()
-        for raw in p.houses.asArray.map(\.asString) {
-            let s = cleanSurname(raw)
-            if !s.isEmpty && seen.insert(s).inserted { out.append(s) }
+        if case .array = p.houses.storage {
+            for raw in p.houses.asArray.map(\.asString) {
+                let s = cleanSurname(raw)
+                if !s.isEmpty && seen.insert(s).inserted { out.append(s) }
+            }
         }
-        return out
+        return out.isEmpty ? (people["chinese"]?.houses ?? ["林"]) : out
     }
 
     /// 供 App 世界取某文化国名候选池（历史模式 = 清洗后的历史库 + 纯净补充库 + 现代地理库；架空模式 = 地道架空国名池）。

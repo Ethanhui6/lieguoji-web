@@ -557,18 +557,18 @@ struct GameView: View {
 
     private var topBar: some View {
         HStack(spacing: Theme.Control.gap) {
-            HStack(spacing: 8) {
+            HStack(spacing: landscape ? 8 : 6) {
                 Button {
                     GameFeel.shared.tap()
                     show(.chronicle)
                 } label: {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         Circle()
                             .fill(model.playing ? Theme.jade : Theme.ink2.opacity(0.42))
                             .frame(width: 6.5, height: 6.5)
                             .animation(Motion.panel, value: model.playing)
-                        Text(model.state?.dateText ?? "").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
-                            .lineLimit(1).minimumScaleFactor(0.72)
+                        Text(model.state?.dateText ?? "").font(landscape ? Theme.section : Theme.body).foregroundStyle(Theme.ink).monospacedDigit()
+                            .lineLimit(1).minimumScaleFactor(0.70).layoutPriority(1)
                             .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
                     }
                     .frame(height: Theme.Control.topHeight)
@@ -583,7 +583,7 @@ struct GameView: View {
                         MilitarySheet.openOn = "wars"
                         show(.military)
                     } label: {
-                        WarCount(count: wars)
+                        WarCount(count: wars, compact: !landscape)
                             .frame(height: Theme.Control.topHeight)
                             .contentShape(Rectangle())
                     }
@@ -596,7 +596,7 @@ struct GameView: View {
                         .transition(.scale.combined(with: .opacity))
                 }
             }
-            .padding(.horizontal, 14).frame(height: Theme.Control.topHeight).glass(Capsule())
+            .padding(.horizontal, landscape ? 14 : 11).frame(height: Theme.Control.topHeight).glass(Capsule())
             .animation(Motion.panel, value: (model.state?.wars.count ?? 0) > 0)
             if landscape { transport.padding(.horizontal, 5).frame(height: Theme.Control.topHeight).glass(Capsule()) }
             Spacer(minLength: 6)

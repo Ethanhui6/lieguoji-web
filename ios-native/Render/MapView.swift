@@ -313,6 +313,8 @@ struct MapView: UIViewRepresentable {
         private var container: MapContainerView!
         private var mtk: MTKView!
         private var renderer: MapRenderer?
+        private let overlayHost = UIView()
+        private let overlayMask = CALayer()
         private var labels: MapLabelsView!
         private let effects = EffectsView()
         private let floats = UIView()
@@ -325,6 +327,19 @@ struct MapView: UIViewRepresentable {
         private var lastAppearanceKey: (mode: MapMode, highlight: Int?, relations: [Int: UInt32], fills: [RGB]?, view: String)?
         private var lastBorderWide: Set<Int> = []
         private var scrollEdgeMargin: Double { (controller.display.scrollMount ?? controller.display.darkEdges) ? 78 : 12 }
+        private var panning = false
+        private var cameraInteractive: Bool { pinching || panning || animation != nil || hypot(velocity.x, velocity.y) > 8 }
+        /// 地图画心 [0, map.width] × [0, map.height] 在屏幕坐标系里的精确裁剪框，确保国名、箭头与特效严守卷轴画框内缘。
+        private func mapScreenRect(camera: MapCamera, viewport: CGSize) -> CGRect {
+            guard viewport.width > 0, viewport.height > 0 else { return .zero }
+            let vp = (width: Double(viewport.width), height: Double(viewport.height))
+            let tl = camera.toScreen(x: 0, y: 0, viewport: vp)
+            let br = camera.toScreen(x: Double(map.width), y: Double(map.height), viewport: vp)
+            guard tl.x.isFinite, tl.y.isFinite, br.x.isFinite, br.y.isFinite else { return CGRect(origin: .zero, size: viewport) }
+            let raw = CGRect(x: tl.x, y: tl.y, width: max(0, br.x - tl.x), height: max(0, br.y - tl.y))
+            let clipped = raw.intersection(CGRect(origin: .zero, size: viewport))
+            return clipped.isNull ? .zero : clipped
+        }
         /// 仅在手指拖拽、双指缩放或镜头飞行期间启用同事务呈现，其余看海行军帧改用异步提交，彻底解除主线程 waitUntilScheduled 阻塞与发热。
         private func setSyncPresent(_ sync: Bool) {
             guard mtk != nil, mtk.presentsWithTransaction != sync else { return }
@@ -407,7 +422,9 @@ struct MapView: UIViewRepresentable {
 
         func build() -> MapContainerView {
             container = MapContainerView()
+            container.clipsToBounds = true
             mtk = MTKView(frame: .zero, device: MTLCreateSystemDefaultDevice())
+            mtk.clipsToBounds = true
             // Beyond the map: the paper of its mounting (#DED1C5).
             mtk.clearColor = MTLClearColor(red: 0.87, green: 0.82, blue: 0.77, alpha: 1)
             mtk.isPaused = true
@@ -435,13 +452,22 @@ struct MapView: UIViewRepresentable {
                 }
             }
             labels = MapLabelsView(map: map)
-            for v in [mtk!, labels!] as [UIView] { v.frame = container.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(v) }
-            labels.isUserInteractionEnabled = false
+            mtk.frame = container.bounds; mtk.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(mtk)
+            // 统一将全部地图覆盖层（战争特效、国名地名、飘字、兵力条）收入 overlayHost，并用 overlayMask 严格裁在卷轴画心内。
+            overlayHost.frame = container.bounds; overlayHost.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            overlayHost.isUserInteractionEnabled = false; overlayHost.clipsToBounds = true
+            overlayMask.backgroundColor = UIColor.white.cgColor
+            overlayMask.actions = ["bounds": NSNull(), "position": NSNull(), "frame": NSNull()]
+            overlayHost.layer.mask = overlayMask
+            container.addSubview(overlayHost)
             // 战争特效在地名之下（地图之上）：交战、围城、攻占、事件印都不盖住国名与城名；
-            // 战况飘字是文字，另放在地名之上的一层。
-            effects.frame = container.bounds; effects.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.insertSubview(effects, aboveSubview: mtk)
-            floats.frame = container.bounds; floats.autoresizingMask = [.flexibleWidth, .flexibleHeight]; floats.isUserInteractionEnabled = false
-            container.addSubview(floats); effects.floatHost = floats.layer
+            // 战况飘字与兵力条另放在地名之上。
+            for v in [effects, labels!, floats, troops] as [UIView] {
+                v.frame = overlayHost.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                v.isUserInteractionEnabled = false; v.clipsToBounds = true
+                overlayHost.addSubview(v)
+            }
+            effects.floatHost = floats.layer
             // Sea points for the waves: open-sea cell centres, thinned to a few thousand.
             var spots = [CGPoint]()
             let cells = map.cellCount, stride = max(1, cells / 3000)
@@ -450,7 +476,6 @@ struct MapView: UIViewRepresentable {
             }
             effects.seaSpots = spots
             syncWaves()
-            troops.frame = container.bounds; troops.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(troops)
             controller.onSheet = { [weak self] in
                 guard let self else { return }
                 self.gliding = false
@@ -515,23 +540,47 @@ struct MapView: UIViewRepresentable {
         // MARK: camera
 
         private func layoutChanged() {
-            guard let renderer, mtk.bounds.width > 0, mtk.bounds.height > 0 else { return }
+            let b = container.bounds
+            guard let renderer, b.width > 0, b.height > 0 else { return }
+            UIView.performWithoutAnimation {
+                if mtk.frame != b { mtk.frame = b }
+                if overlayHost.frame != b { overlayHost.frame = b }
+                for v in [effects, labels!, floats, troops] as [UIView] where v.frame != overlayHost.bounds {
+                    v.frame = overlayHost.bounds
+                }
+            }
             if !placed { renderer.camera = MapCamera.cover(map: mapSize, viewport: viewport); placed = true }
-            set(renderer.camera)
+            set(renderer.camera, sync: true)
             applyFramingRequests()
         }
         private func set(_ camera: MapCamera, sync: Bool = false) {
             guard let renderer else { return }
-            let b = bounds
-            var c = camera.isValid ? camera : MapCamera.cover(map: mapSize, viewport: viewport)
+            let vpSize = mtk.bounds.size
+            guard vpSize.width > 0, vpSize.height > 0 else { return }
+            let vp = (width: Double(vpSize.width), height: Double(vpSize.height))
+            let b = MapCamera.scaleBounds(map: mapSize, viewport: vp)
+            var c = camera.isValid ? camera : MapCamera.cover(map: mapSize, viewport: vp)
             c.scale = min(b.upperBound, max(b.lowerBound, c.scale))
-            setSyncPresent(sync)
-            renderer.camera = c.clamped(map: mapSize, viewport: viewport, margin: scrollEdgeMargin)
-            labels.update(camera: renderer.camera, viewport: mtk.bounds.size)
-            effects.update(camera: renderer.camera, viewport: mtk.bounds.size)
-            updateTroops()
-            placeSpot()
-            mtk.setNeedsDisplay()
+            let clamped = c.clamped(map: mapSize, viewport: vp, margin: scrollEdgeMargin)
+            let wantSync = sync || cameraInteractive
+            setSyncPresent(wantSync)
+            renderer.camera = clamped
+            let clipRect = mapScreenRect(camera: clamped, viewport: vpSize)
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            UIView.performWithoutAnimation {
+                overlayMask.frame = clipRect
+                labels.update(camera: clamped, viewport: vpSize, mapRect: clipRect)
+                effects.update(camera: clamped, viewport: vpSize)
+                updateTroops()
+                placeSpot()
+            }
+            if wantSync && mtk.window != nil {
+                mtk.draw()
+            } else {
+                mtk.setNeedsDisplay()
+            }
+            CATransaction.commit()
         }
         private func updateTroops() {
             guard let renderer else { return }
@@ -609,19 +658,28 @@ struct MapView: UIViewRepresentable {
             }
             // While two fingers pinch, the pinch alone moves the map (no double drag), and the
             // finger left after a pinch does not fling.
-            if pinching { g.setTranslation(.zero, in: mtk); return }
-            let t = g.translation(in: mtk)
-            set(camera.panned(dx: Double(t.x), dy: Double(t.y)), sync: true)
-            g.setTranslation(.zero, in: mtk)
-            if g.state == .ended {
+            if pinching { panning = false; g.setTranslation(.zero, in: mtk); return }
+            switch g.state {
+            case .began, .changed:
+                panning = true
+                let t = g.translation(in: mtk)
+                set(camera.panned(dx: Double(t.x), dy: Double(t.y)), sync: true)
+                g.setTranslation(.zero, in: mtk)
+            case .ended:
+                panning = false
+                let t = g.translation(in: mtk)
+                if t != .zero { set(camera.panned(dx: Double(t.x), dy: Double(t.y)), sync: true); g.setTranslation(.zero, in: mtk) }
                 velocity = g.velocity(in: mtk)
-                if hypot(velocity.x, velocity.y) > 60 { startLink() } else { setSyncPresent(false) }
+                if hypot(velocity.x, velocity.y) > 60 { startLink() } else { setSyncPresent(cameraInteractive) }
+            default:
+                panning = false
+                setSyncPresent(cameraInteractive)
             }
         }
         @objc private func handlePinch(_ g: UIPinchGestureRecognizer) {
             let p = g.location(in: mtk)
             switch g.state {
-            case .began: lastPinch = p; pinching = true
+            case .began: lastPinch = p; pinching = true; panning = false
             case .changed:
                 // A finger lifted or added moves the touch centre: re-anchor instead of jumping.
                 if g.numberOfTouches != pinchTouches { pinchTouches = g.numberOfTouches; lastPinch = p; g.scale = 1; return }
@@ -629,7 +687,7 @@ struct MapView: UIViewRepresentable {
                 let moved = camera.panned(dx: Double(p.x - lastPinch.x), dy: Double(p.y - lastPinch.y))
                 set(moved.zoomed(by: Double(g.scale), anchorX: Double(p.x), anchorY: Double(p.y), viewport: viewport, bounds: bounds), sync: true)
                 g.scale = 1; lastPinch = p
-            default: pinching = false; pinchTouches = 2; setSyncPresent(false)
+            default: pinching = false; pinchTouches = 2; setSyncPresent(cameraInteractive)
             }
         }
         @objc private func handleDoubleTap(_ g: UITapGestureRecognizer) {
@@ -769,25 +827,25 @@ struct MapView: UIViewRepresentable {
         @objc private func step(_ l: CADisplayLink) {
             let dt = min(0.05, l.targetTimestamp - l.timestamp)
             let revealing = advanceReveal()
-            let cameraMoving = animation != nil || hypot(velocity.x, velocity.y) > 8
+            let cameraMoving = cameraInteractive
             pace(l, glide: !cameraMoving)
             if let a = animation {
                 let x = min(1, (CACurrentMediaTime() - a.start) / a.duration)
                 let eased = x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2
                 set(MapCamera.interpolate(a.from, a.to, eased), sync: true)
-                if x >= 1 { animation = nil; setSyncPresent(false) }
+                if x >= 1 { animation = nil; setSyncPresent(cameraInteractive) }
             } else if hypot(velocity.x, velocity.y) > 8 {
                 // Exponential deceleration close to UIScrollView's normal rate.
                 set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt), sync: true)
                 let decay = CGFloat(pow(0.998, dt * 1000))
                 velocity = CGPoint(x: velocity.x * decay, y: velocity.y * decay)
             } else if !controller.sheetOpen && renderer?.isAnimating == true {
-                setSyncPresent(false)
+                if !cameraInteractive { setSyncPresent(false) }
                 velocity = .zero
                 updateTroops()
                 mtk.setNeedsDisplay()
             } else if !revealing {
-                setSyncPresent(false)
+                if !cameraInteractive { setSyncPresent(false) }
                 velocity = .zero
                 if !controller.sheetOpen { mtk.setNeedsDisplay() }
                 link?.invalidate(); link = nil
@@ -821,7 +879,7 @@ struct MapView: UIViewRepresentable {
                 // 快速拖拽回放进度条期间跳过国名框重建，松手或单步/自动播放时即时更新。
                 if !controller.replayScrubbing {
                     if let groups = controller.viewLabels { labels.setGroups(groups, animated: false) } else { labels.setNations(map: next, animated: false) }
-                    if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                    if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size)) }
                 }
                 dirty = true
             }
@@ -854,7 +912,7 @@ struct MapView: UIViewRepresentable {
                 controller.editorSeaDirty = false
                 labels.setNations(map: next, animated: false)
                 labels.setCities(map: next)
-                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size)) }
                 dirty = true
             }
             if controller.armiesRevision != shownArmiesRevision, let armies = controller.armies {
@@ -882,7 +940,7 @@ struct MapView: UIViewRepresentable {
                 let animated = controller.viewLabels?.map(\.name) != shownViewLabels?.map(\.name)
                 shownViewLabels = controller.viewLabels
                 if let groups = shownViewLabels { labels.setGroups(groups, animated: animated) } else { labels.setNations(map: map, animated: animated) }
-                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size)) }
                 dirty = true
             }
             if controller.effects != shownEffects { shownEffects = controller.effects; effects.set(shownEffects); effects.alpha = controller.reveal >= 1 ? 1 : 0; dirty = true }
@@ -935,12 +993,12 @@ struct MapView: UIViewRepresentable {
                 let namesChanged = labels.fullNames != controller.display.fullNationNames
                 labels.fullNames = controller.display.fullNationNames
                 if namesChanged, controller.viewLabels == nil { labels.setNations(map: map, animated: false) }
-                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size)) }
                 dirty = true
             }
             if let labels, labels.showCities != controller.display.cityNames {
                 labels.showCities = controller.display.cityNames
-                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size, mapRect: mapScreenRect(camera: renderer.camera, viewport: mtk.bounds.size)) }
                 dirty = true
             }
             metrics.isHidden = !controller.showMetrics
@@ -974,7 +1032,7 @@ struct MapView: UIViewRepresentable {
                 animate(to: camera.zoomed(by: z.factor, anchorX: viewport.width / 2, anchorY: viewport.height / 2, viewport: viewport, bounds: bounds), duration: 0.3)
             }
             applyFramingRequests()
-            if dirty { setSyncPresent(false); mtk?.setNeedsDisplay() }
+            if dirty { setSyncPresent(cameraInteractive); mtk?.setNeedsDisplay() }
         }
 
         /// 展开和复位独立于推演刷新，命令可在地图静止时直接启动镜头。
@@ -1262,12 +1320,13 @@ final class MapLabelsView: UIView {
     private var rendering = Set<NSString>()
     private var lastCamera: MapCamera?
     private var lastViewport: CGSize = .zero
+    private var lastMapRect: CGRect = .zero
     private var refreshQueued = false
     /// 字图换档：缓存里有就直接换；第一次显示的名字同步画；其余在后台画，画好之前先把旧图按比例放缩顶着
     /// （缩放跨档时以前一帧里同步重画几百个名字，是缩放卡一下的主因）。
     private func resize(_ l: Label, to size: Double) {
         let key = "\(l.text)|\(size)|\(l.fill.hashValue)|\(l.stroke.hashValue)" as NSString
-        func apply(_ image: UIImage) { l.rendered = size; l.view.transform = .identity; l.view.image = image; l.view.sizeToFit() }
+        func apply(_ image: UIImage) { l.rendered = size; l.view.transform = .identity; l.view.image = image; l.view.bounds = CGRect(origin: .zero, size: image.size) }
         if let cached = Self.images.object(forKey: key) { apply(cached); return }
         if l.rendered == 0 || l.view.image == nil || Self.legacy {
             let image = Self.render(l.text, size: CGFloat(size), fill: l.fill, stroke: l.stroke, strokeEm: CGFloat(l.strokeWidth))
@@ -1293,12 +1352,15 @@ final class MapLabelsView: UIView {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.refreshQueued = false
-            if let c = self.lastCamera { self.update(camera: c, viewport: self.lastViewport) }
+            if let c = self.lastCamera { self.update(camera: c, viewport: self.lastViewport, mapRect: self.lastMapRect.isEmpty ? nil : self.lastMapRect) }
         }
     }
 
-    func update(camera: MapCamera, viewport: CGSize) {
+    func update(camera: MapCamera, viewport: CGSize, mapRect: CGRect? = nil) {
         lastCamera = camera; lastViewport = viewport
+        let innerMap = (mapRect != nil && !mapRect!.isEmpty) ? mapRect! : CGRect(origin: .zero, size: viewport)
+        lastMapRect = innerMap
+        let safeFallbackRect = innerMap.width > 12 && innerMap.height > 12 ? innerMap.insetBy(dx: 4, dy: 4) : innerMap
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // 避让: the biggest names first; a name that would land on one already placed waits until the
         // player zooms in. One already showing gets a little slack, so names do not flicker at the limit.
@@ -1326,8 +1388,10 @@ final class MapLabelsView: UIView {
         for p in pictures {
             let at = camera.toScreen(x: p.x, y: p.y, viewport: vp), w = p.width * camera.scale, size = p.view.bounds.width
             guard size > 0, w > 2, at.x > -w, at.y > -w, at.x < vp.width + w, at.y < vp.height + w else { p.view.isHidden = true; continue }
-            p.view.transform = CGAffineTransform(rotationAngle: CGFloat(p.angle)).scaledBy(x: CGFloat(w / Double(size)), y: CGFloat(w / Double(size)))
-            p.view.center = CGPoint(x: at.x, y: at.y); p.view.isHidden = false
+            UIView.performWithoutAnimation {
+                p.view.transform = CGAffineTransform(rotationAngle: CGFloat(p.angle)).scaledBy(x: CGFloat(w / Double(size)), y: CGFloat(w / Double(size)))
+                p.view.center = CGPoint(x: at.x, y: at.y); p.view.isHidden = false
+            }
         }
         if !showCities { for l in cities { l.view.isHidden = true } }
         // The capitals' rings are kept clear first (with a little margin), and the capitals' names are
@@ -1365,7 +1429,9 @@ final class MapLabelsView: UIView {
                 // Clear of its own rings as the layout sees them (their box, the slack a hidden name is asked
                 // for, and half the name's height): 1.14 put the name a point too low and it hid itself.
                 // 近看时（字号不必放大）名字原位也可能压在自身首都圈的占位框上而被隐藏：同样抬到圈外。
-                p = (x: at.x, y: min(p.y, at.y - (max(ring, 3) + 3 + 7 + points * 0.78)))
+                let lift = max(ring, 3) + 3 + 7 + points * 0.78
+                let aboveY = min(p.y, at.y - lift)
+                p = (x: at.x, y: aboveY < Double(innerMap.minY) + points * 0.55 ? at.y + lift : aboveY)
             }
             // A name larger than the screen can show is hidden (a continent-wide group zoomed in close).
             // 滞回：已显示的名字在下限的 88% 以下才隐藏，免得缩放停在临界处时名字反复出没。
@@ -1398,9 +1464,11 @@ final class MapLabelsView: UIView {
                     let shifts: [(Double, Double)] = [(0, -stepY), (0, stepY), (-stepX, 0), (stepX, 0), (0, -stepY * 1.6), (0, stepY * 1.6)]
                     var placedFallback = false
                     for (dx, dy) in shifts {
-                        let cand = Box(x: CGFloat(p.x + dx), y: CGFloat(p.y + dy), halfW: box.halfW, halfH: box.halfH, cosine: box.cosine, sine: box.sine, nation: true, text: l.text)
+                        let nx = p.x + dx, ny = p.y + dy
+                        guard safeFallbackRect.contains(CGPoint(x: nx, y: ny)) else { continue }
+                        let cand = Box(x: CGFloat(nx), y: CGFloat(ny), halfW: box.halfW, halfH: box.halfH, cosine: box.cosine, sine: box.sine, nation: true, text: l.text)
                         if !blocked(cand, margin: 1) {
-                            box = cand; p = (x: p.x + dx, y: p.y + dy); placedFallback = true; break
+                            box = cand; p = (x: nx, y: ny); placedFallback = true; break
                         }
                     }
                     if !placedFallback && !placedNationTexts.contains(l.text) {
@@ -1408,9 +1476,11 @@ final class MapLabelsView: UIView {
                         let sw = image.width * shrunkK / 2, sh = image.height * shrunkK / 2
                         let rescues: [(Double, Double)] = [(0, 0), (0, -stepY), (0, stepY)]
                         for (dx, dy) in rescues {
-                            let cand = Box(x: CGFloat(p.x + dx), y: CGFloat(p.y + dy), halfW: sw, halfH: sh, cosine: box.cosine, sine: box.sine, nation: true, text: l.text)
+                            let nx = p.x + dx, ny = p.y + dy
+                            guard safeFallbackRect.contains(CGPoint(x: nx, y: ny)) else { continue }
+                            let cand = Box(x: CGFloat(nx), y: CGFloat(ny), halfW: sw, halfH: sh, cosine: box.cosine, sine: box.sine, nation: true, text: l.text)
                             if !blockedByTextOnly(cand, margin: 0) {
-                                k = shrunkK; box = cand; p = (x: p.x + dx, y: p.y + dy); placedFallback = true; break
+                                k = shrunkK; box = cand; p = (x: nx, y: ny); placedFallback = true; break
                             }
                         }
                     }
@@ -1421,8 +1491,11 @@ final class MapLabelsView: UIView {
             }
             if l.province == nil { placedNationTexts.insert(l.text) }
             place(box)
-            l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: k, y: k)
-            l.view.center = CGPoint(x: p.x, y: p.y)
+            // 始终在无动画事务内写回 transform 与 center，彻底防止 SwiftUI 外层 withAnimation 劫持标签位移导致与底图脱节。
+            UIView.performWithoutAnimation {
+                l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: k, y: k)
+                l.view.center = CGPoint(x: p.x, y: p.y)
+            }
             if l.view.isHidden {
                 // A name that gave way comes back softly. 缩放时一帧里冒出很多名字：只给前十二个起淡入动画，其余直接显示。
                 l.view.isHidden = false

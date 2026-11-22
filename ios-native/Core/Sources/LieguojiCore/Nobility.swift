@@ -200,7 +200,14 @@ public enum Nobility {
     static func createCollateral(_ r: JS, _ n: JS, _ id: String) {
         let k = r.kin.families[id], random = Random(n: n), gender = random.value() <= f(0.5) ? 1 : 0, culture = k.cultureName.asString, profile = cultures[culture]
         let pool = givenPool(r, profile, culture, gender: gender), first = pool[random.intRange(0, pool.count)].asString
-        let houses = profile.houses.asArray, generatedLast = houses[random.intRange(0, houses.count)].asString
+        let generatedLast: String
+        if UnitKinds.enabled {
+            let hPool = NamingCatalog.houseNames(culture: culture)
+            generatedLast = hPool[random.intRange(0, hPool.count)]
+        } else {
+            let houses = profile.houses.asArray
+            generatedLast = houses.isEmpty ? "林" : houses[random.intRange(0, houses.count)].asString
+        }
         let last = k.surname.asString.isEmpty ? generatedLast : k.surname.asString, life = r.life
         let identity = personName(culture, given: first, house: last, gender: gender), religionId = r.civilization.nations[k.nationId.asString].religionId
         let p = createNamed(r, first: first, last: last, gender: gender, culture: culture, source: "collateral", religionId: religionId, identity: identity, random: random)
@@ -295,7 +302,14 @@ public enum Nobility {
         let religionId = noble.isNull ? r.civilization.nations[k.nationId.asString].religionId : noble.religionId
         let culture = k.cultureName.asString, profile = cultures[culture]
         let pool = givenPool(r, profile, culture, gender: gender), first = pool[random.intRange(0, pool.count)].asString
-        let houses = profile.houses.asArray; var surname = houses[random.intRange(0, houses.count)].asString
+        var surname: String
+        if UnitKinds.enabled {
+            let hPool = NamingCatalog.houseNames(culture: culture)
+            surname = hPool[random.intRange(0, hPool.count)]
+        } else {
+            let houses = profile.houses.asArray
+            surname = houses.isEmpty ? "林" : houses[random.intRange(0, houses.count)].asString
+        }
         if (matrilineal ? mother.familyId.asInt : father.familyId.asInt) > 0 && !last.isEmpty { surname = last }
         else if !last.isEmpty { surname = last }
         let identity = personName(culture, given: first, house: surname, gender: gender)

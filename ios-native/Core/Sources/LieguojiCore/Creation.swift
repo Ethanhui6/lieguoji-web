@@ -84,9 +84,20 @@ public enum Creation {
         for n in nations.asArray {
             let nid = n.id.asString, id = "ruler-\(nid)-1", identity = civ.nations[nid], cultureId = identity.cultureId.asString
             let gender = Int(Opening.hash("\(worldId)/\(id)") % 2), pool = Nobility.cultures[cultureId]
-            let given = (gender == 0 ? pool.givenMale : pool.givenFemale), houses = pool.houses
-            let person = Nobility.personName(cultureId, given: given[Int(Opening.hash("\(worldId)/\(id)/given") % UInt32(given.length))].asString,
-                                             house: houses[Int(Opening.hash("\(worldId)/\(id)/house") % UInt32(houses.length))].asString, gender: gender)
+            let givenVal: String, houseVal: String
+            if UnitKinds.enabled {
+                let rawG = gender == 0 ? pool.givenMale : pool.givenFemale
+                let fallbackG: [String] = { if case .array = rawG.storage { return rawG.asArray.map(\.asString) }; return ["明远"] }()
+                let gList = (gender == 0 ? NamingCatalog.people[cultureId]?.male : NamingCatalog.people[cultureId]?.female) ?? (fallbackG.isEmpty ? ["明远"] : fallbackG)
+                let hList = NamingCatalog.houseNames(culture: cultureId)
+                givenVal = gList[Int(Opening.hash("\(worldId)/\(id)/given") % UInt32(max(1, gList.count)))]
+                houseVal = hList[Int(Opening.hash("\(worldId)/\(id)/house") % UInt32(max(1, hList.count)))]
+            } else {
+                let given = (gender == 0 ? pool.givenMale : pool.givenFemale), houses = pool.houses
+                givenVal = given[Int(Opening.hash("\(worldId)/\(id)/given") % UInt32(given.length))].asString
+                houseVal = houses[Int(Opening.hash("\(worldId)/\(id)/house") % UInt32(houses.length))].asString
+            }
+            let person = Nobility.personName(cultureId, given: givenVal, house: houseVal, gender: gender)
             let v = Founding.rulerFrom(person, identity)
             civ.rulers[id] = v
             let ruler = object([("id", JS(id)), ("name", v.name.clone()), ("family", v.house.clone()), ("order", JS(1)), ("regnalName", v.given.clone()), ("regnalOrdinal", JS(1)),
@@ -382,7 +393,18 @@ public enum Creation {
         let spouse = k.generateInit(cultureId, head.gender.asInt == 0 ? 1 : 0, nil)
         var age = f(f(head.age.asNumber) + random.floatRange(-10, 10)); if age < 16 { age = random.floatRange(16, 20) }
         k.setBirth(spouse, age)
-        spouse.stateId = JS(stateId); head.marriageType = JS(0); spouse.marriageType = JS(0); spouse.familyId = family.id.clone(); spouse.lastName = JS(k.lastName(head))
+        spouse.stateId = JS(stateId); head.marriageType = JS(0); spouse.marriageType = JS(0); spouse.familyId = family.id.clone()
+        if UnitKinds.enabled {
+            let famHouse = NamingCatalog.cleanSurname(k.lastName(head))
+            if NamingCatalog.cleanSurname(spouse.lastName.asString) == famHouse {
+                let houses = NamingCatalog.houseNames(culture: cultureId).filter { $0 != famHouse }
+                if !houses.isEmpty { spouse.lastName = JS(houses[random.intRange(0, houses.count)]) }
+            }
+            spouse.natalSurname = spouse.lastName.clone()
+            spouse.identity = Nobility.personName(cultureId, given: spouse.firstName.asString, house: spouse.lastName.asString, gender: spouse.gender.asInt)
+        } else {
+            spouse.lastName = JS(k.lastName(head))
+        }
         head.spouseId = spouse.id.clone(); spouse.spouseId = head.id.clone(); family.memberIds.push(spouse.id.clone())
         let count = random.intRange(0, 4)
         for _ in 0..<count {

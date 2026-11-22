@@ -54,12 +54,36 @@ public enum CombatReader {
         if let o = owner, let d = defense, d.distance.asNumber != 2147483647, d.distance.asNumber <= o.coreThreshold.asNumber {
             coreDefense = o.traits.asArray.contains { $0.asString == "CoreDefense" } ? f(1.5) : f(1.15)
         }
+        var biomes = land.map { $0.biomes.isNull ? [] : $0.biomes.asArray.map(\.asNumber) } ?? []
+        var isMountain = land.map { $0.mountain.isTruthy } ?? false
+        // 本作规则：接敌格实际地貌参与战斗地形修正（70% 接敌格实测地貌 + 30% 全省地形分布），
+        // 让骑兵/弓兵/盾兵在同一州内的林地、平原或山口交锋时真实体现局部地形优劣；网页黄金测试保持原全省统计。
+        if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy, let index, let bridge = Armies.bridge {
+            let rec = r.armyPositions.records[a.id.asString]
+            if !rec.isNull {
+                let g = bridge.graph
+                let loc = g.location(bridge.travel(rec))
+                if Int(g.provinces[loc.cell]) == index {
+                    let faceIdx = Int(g.faces[loc.cell])
+                    if g.faceBiomes.indices.contains(faceIdx) {
+                        let bi = Int(g.faceBiomes[faceIdx])
+                        if bi >= 1 && bi < 13 {
+                            var mixed = [Double](repeating: 0, count: max(13, biomes.count))
+                            for i in biomes.indices { mixed[i] = biomes[i] * 0.3 }
+                            mixed[bi] += 0.7
+                            biomes = mixed
+                            if bi == 11 || bi == 12 { isMountain = true }
+                        }
+                    }
+                }
+            }
+        }
         let input = Efficiency.Input(unit: r.units[a.id.asString].asString, command: snapshot.command.asString, official: official, base: base.base.asNumber, destiny: state.destiny.asNumber,
                                      leaderModifier: r.combatPersonnel.nations[nation].leader.modifier.asNumber, provinceDefense: provinceDefense, coreDefense: coreDefense,
                                      politicalAttack: politics.attack, politicalDefense: politics.defense, goldBattleModifier: r.finance.nations[nation].goldBattleModifier.asNumber,
                                      attacking: attacking, sameNation: p != nil && !attacking, protruding: index.map { protruding(r, $0) } ?? false,
                                      wellTrained: traits.contains("WellTrained"), homelandDefense: traits.contains("HomelandDefense"), conqueror: traits.contains("Conqueror"),
-                                     biomes: land.map { $0.biomes.isNull ? [] : $0.biomes.asArray.map(\.asNumber) } ?? [], mountain: land.map { $0.mountain.isTruthy } ?? false)
+                                     biomes: biomes, mountain: isMountain)
         let multiplier = p.map { attacking && Wars.relation(r, nation, $0.controller.asString)?.status.asString == "war" && blockaded(r, $0) ? 2 : 1 } ?? 1
         return MilitaryState.Combat(input: input, damageToArmy: snapshot.damageToArmy.asNumber, damageToProvince: snapshot.damageToProvince.asNumber, multiplier: multiplier)
     }

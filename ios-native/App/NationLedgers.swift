@@ -321,9 +321,8 @@ struct FamilyTreeSheet: View {
                 SheetHeader(
                     title: displayTitle,
                     subtitle: tree.map { t in
-                        let total = t.members.count + t.collaterals.count
                         let realm = t.nationName.isEmpty ? "" : "\(t.nationName) · "
-                        return "\(realm)本支 \(t.members.count) 人" + (t.collaterals.isEmpty ? "" : " · 旁系 \(t.collaterals.count) 人（共 \(total) 人）")
+                        return "\(realm)本支 \(t.members.count) 人" + (t.collaterals.isEmpty ? "" : " · 旁系 \(t.collaterals.count) 人")
                     } ?? "族谱",
                     seal: "谱"
                 )
@@ -432,7 +431,8 @@ struct FamilyTreeSheet: View {
         Group2 {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
-                    PaperTag(text: tree.ruling ? "宗室" : "世家", color: tree.ruling ? Theme.seal : Theme.ink)
+                    PaperTag(text: tree.ruling ? "宗室" : (tree.governing ? "掌权世家" : "世家"),
+                             color: (tree.ruling || tree.governing) ? Theme.seal : Theme.ink)
                     if let h = tree.headMember { Text("家主 \(h.name)").font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1) }
                     Spacer()
                     Button {
@@ -538,7 +538,7 @@ struct FamilyTreeSheet: View {
                     }
                 }
                 Divider2()
-                PaperSwitch(title: "允许女性继承（家主与王位）", on: Binding(
+                PaperSwitch(title: "允许女性继承（家主／王位）", on: Binding(
                     get: { tree.allowFemale },
                     set: { v in
                         perform { (await model.edit("editFamily", ["family": activeFamily, "surname": NSNull(), "influence": NSNull(), "strip": 0, "allowFemale": v ? 1 : 0]), v ? "已允许女性继承" : "已改为男系优先继承") }
@@ -655,7 +655,9 @@ struct FamilyTreeSheet: View {
         if m.spouse == 0 || tree.spouse(of: m)?.alive == false { items.append(PressMenuItem(title: "为其婚配", symbol: "heart") { act(m, "spouse", "婚配已成") }) }
         else { items.append(PressMenuItem(title: "添一子女", symbol: "figure.and.child.holdinghands") { act(m, "child", "家添新丁") }) }
         items.append(PressMenuItem(title: "处死", symbol: "xmark.seal", destructive: true) { act(m, "kill", "\(m.name)已被处死") })
-        return PressMenu(title: m.name, subtitle: "\(m.female ? "女" : "男") · \(Int(m.age)) 岁", items: items)
+        let roleLabel = m.title.isEmpty ? (m.id == tree.head ? "家主" : m.id == tree.heir ? "继承人" : m.collateral ? "旁系" : "族人") : m.title
+        let sk = m.skills.count >= 4 ? " · 魅\(Int(m.skills[0])) 军\(Int(m.skills[1])) 外\(Int(m.skills[2])) 政\(Int(m.skills[3]))" : ""
+        return PressMenu(title: m.name, subtitle: "\(roleLabel) · \(m.female ? "女" : "男") \(Int(m.age)) 岁\(sk)", items: items)
     }
     private func act(_ m: FamilyTree.Member, _ action: String, _ success: String) {
         perform { (await model.familyAction(m.id, action: action), success) }

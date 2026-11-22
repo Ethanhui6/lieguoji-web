@@ -49,7 +49,7 @@ public enum CreationPolitics {
     public static func openingWars(_ r: JS, engine: DeclarationEngine) {
         let nations = r.world.nations.asArray
         var index = [String: Int](); for (i, n) in nations.enumerated() { index[n.id.asString] = i }
-        var c = DeclarationEngine.Context(engine: engine, world: DiplomacyBridge.world(r))
+        let c = DeclarationEngine.Context(engine: engine, world: DiplomacyBridge.world(r))
         let pairs = r.world.statecraft.relations.asArray.compactMap { p -> (String, String)? in
             let a = p.a.asString, b = p.b.asString, ai = index[a]!, bi = index[b]!
             return c.usable(1, ai, bi) != nil && c.claimEntry(ai, bi) != nil ? (a, b) : nil

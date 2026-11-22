@@ -275,7 +275,7 @@ public enum PeaceBridge {
         let w = world(r)
         let maximum = r.diplomacy.maximumMonths.asInt, start = People.start(r), spd = r.life.secondsPerDay.asNumber
         func monthsSince(_ t: Double) -> Int { DiplomacyCalendar.wholeMonths(DiplomacyCalendar.date(t, secondsPerDay: spd, start: start), DiplomacyCalendar.date(f(w.gameTime), secondsPerDay: spd, start: start)) }
-        for id in maximum <= 0 ? [] : complete().filter({ $0.internal.isNull && monthsSince($0.startTime.asNumber) >= maximum }).map { $0.id.asInt } {
+        for id in maximum <= 0 ? [] : complete().filter({ $0.internal.isNull && monthsSince($0.startTime.asNumber) >= maximum }).map({ $0.id.asInt }) {
             if let c = complete().first(where: { $0.id.asInt == id }) { settle(r, c, reason: 4) }
         }
         for id in complete().map(\.id.asInt) {

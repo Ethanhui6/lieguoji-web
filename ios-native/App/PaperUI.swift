@@ -311,9 +311,9 @@ struct MapViewLegend: View {
                 HStack(spacing: 7) {
                     RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Names.color(e.color)).frame(width: 12, height: 12)
                         .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).stroke(Theme.ink.opacity(0.22), lineWidth: 0.5))
-                    Text(e.name.isEmpty ? "—" : e.name).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text(e.name.isEmpty ? "—" : e.name).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.82)
                     Spacer(minLength: 4)
-                    Text("\(e.count)省").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    Text("\(e.count)省").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize()
                     if e.members != nil && open != nil { Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.ink2.opacity(0.6)) }
                 }
                 .frame(minHeight: 22).contentShape(Rectangle())
@@ -321,7 +321,7 @@ struct MapViewLegend: View {
                 .transition(.opacity.combined(with: .move(edge: .leading)))
             }
         }
-        .padding(12).frame(width: 172)
+        .padding(12).frame(width: 224)
         .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
     }
 }

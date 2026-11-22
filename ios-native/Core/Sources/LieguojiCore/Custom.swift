@@ -62,6 +62,11 @@ public enum Regimes {
         if let c = stateCreed(r, id) { t *= c.temper }
         if !r.regimes.isNull && r.regimes.enabled.isTruthy {
             t *= (1.0 + styleProfile(r, id).temper)
+            // 战败割地后的国内震荡在休养生息期内压低对外开战冲动，与民情、倒阁形成完整战略因果。
+            let defeat = defeatPenalty(r, id)
+            if defeat > 0.01 {
+                t *= max(0.65, 1.0 - defeat * 0.65)
+            }
         }
         return min(1.6, max(0.6, t))
     }

@@ -47,6 +47,13 @@ public final class InkCells: @unchecked Sendable {
     private var dirtyMark: [UInt32]
     private var refreshMark: [UInt32]
     private var stamp: UInt32 = 1
+    /// 复用缓冲：记录本步落墨前的旧显示状态与守军防护格，避免每步 CoW 整表拷贝（240 KB）和哈希集合分配。
+    private var prevNation: [Int32]
+    private var prevArrive: [Float]
+    private var prevLeave: [Float]
+    private var prevMark: [UInt32]
+    private var defendedMark: [UInt32]
+    private var stepStamp: UInt32 = 1
 
     public static let never: Float = 1e9
     /// 显出与淡去的时长（秒）。
@@ -95,6 +102,11 @@ public final class InkCells: @unchecked Sendable {
         delayOf = Array(repeating: 0, count: n)
         dirtyMark = Array(repeating: 0, count: n)
         refreshMark = Array(repeating: 0, count: n)
+        prevNation = Array(repeating: -1, count: n)
+        prevArrive = Array(repeating: 0, count: n)
+        prevLeave = Array(repeating: Self.never, count: n)
+        prevMark = Array(repeating: 0, count: n)
+        defendedMark = Array(repeating: 0, count: n)
         vertexData = Array(repeating: 0, count: topology.vertexCount * 4)
         for v in 0..<topology.vertexCount { vertexData[v * 4] = -1 }
         var r = [Float](repeating: 1, count: n), reachOf = [Float](repeating: 1, count: n)
@@ -163,8 +175,19 @@ public final class InkCells: @unchecked Sendable {
         for (a, list) in frame.enemies { for b in list where a != b { war.insert(Self.pair(a, b)) } }
         func owner(_ c: Int) -> Int { let p = Int(t.province[c]); return p >= 0 && p < owners.count ? owners[p] : -1 }
         func atWar(_ a: Int, _ b: Int) -> Bool { a >= 0 && b >= 0 && a != b && war.contains(Self.pair(a, b)) }
+        stepStamp &+= 1
+        if stepStamp == 0 {
+            stepStamp = 1
+            for i in prevMark.indices { prevMark[i] = 0; defendedMark[i] = 0 }
+        }
+        let curStep = stepStamp
+        var capturePrevious = false
         func setCell(_ c: Int, nation n: Int32, arrive a: Float, leave l: Float) {
             if nation[c] == n && arrive[c] == a && leave[c] == l { return }
+            if capturePrevious && prevMark[c] != curStep {
+                prevMark[c] = curStep
+                prevNation[c] = nation[c]; prevArrive[c] = arrive[c]; prevLeave[c] = leave[c]
+            }
             nation[c] = n; arrive[c] = a; leave[c] = l
             markDirty(c)
             busyUntil = max(busyUntil, l < Self.never ? l + Self.fadeSeconds : a + Self.revealSeconds)
@@ -180,7 +203,6 @@ public final class InkCells: @unchecked Sendable {
             else if !atWar(n, o) || frame.day - Int(touched[c]) > Self.staleDays { setCell(c, nation: Int32(n), arrive: arrive[c], leave: now) }
         }
         // 先结算本步守军能保持的范围。相持时同一格只退墨一次，直到守军实际离开。
-        var defended = Set<Int>()
         var holdsByProvince = [Int: (positions: [SIMD2<Float>], troops: Float)]()
         for h in frame.inputs where h.kind == .hold && !h.armies.isEmpty {
             if owners.indices.contains(h.province), owners[h.province] == h.attacker {
@@ -192,27 +214,30 @@ public final class InkCells: @unchecked Sendable {
                 guard let start = cell(at: pos), owner(start) == h.attacker else { continue }
                 spread(from: [(start, 0)], budget: budget, within: nil) { c, _, _ in
                     guard owner(c) == h.attacker else { return }
-                    defended.insert(c)
+                    self.defendedMark[c] = curStep
                     if self.nation[c] >= 0 && self.nation[c] != Int32(h.attacker) && self.leave[c] >= Self.never {
                         setCell(c, nation: self.nation[c], arrive: self.arrive[c], leave: now)
                     }
                 }
             }
         }
-        // 同一格若被多国前沿覆盖，以更新前的显示状态接续最后选中的颜色。
-        let previous = (nation: nation, arrive: arrive, leave: leave)
+        // 同一格若被多国前沿覆盖，以更新前的显示状态接续最后选中的颜色（按需写时留存，零整表拷贝）。
+        capturePrevious = true
         func layInk(_ c: Int, attacker: Int, arrival: Float) {
-            guard !defended.contains(c), atWar(attacker, owner(c)) else { return }
+            guard defendedMark[c] != curStep, atWar(attacker, owner(c)) else { return }
             let n = Int32(attacker)
             touched[c] = Int32(frame.day)
             var start = arrival
             if nation[c] == n && leave[c] >= Self.never { return }
-            if previous.nation[c] == n {
-                if previous.leave[c] >= Self.never {
-                    setCell(c, nation: n, arrive: previous.arrive[c], leave: Self.never)
+            let pNation = prevMark[c] == curStep ? prevNation[c] : nation[c]
+            if pNation == n {
+                let pArrive = prevMark[c] == curStep ? prevArrive[c] : arrive[c]
+                let pLeave = prevMark[c] == curStep ? prevLeave[c] : leave[c]
+                if pLeave >= Self.never {
+                    setCell(c, nation: n, arrive: pArrive, leave: Self.never)
                     return
                 }
-                let visible = Self.amount(arrival: previous.arrive[c], departure: previous.leave[c], at: now)
+                let visible = Self.amount(arrival: pArrive, departure: pLeave, at: now)
                 if visible > 0 { start = now - visible * Self.revealSeconds }
             }
             setCell(c, nation: n, arrive: start, leave: Self.never)

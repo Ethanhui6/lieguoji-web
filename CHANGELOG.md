@@ -1,5 +1,23 @@
 # 更新日志
 
+## 2.8.2 / build 144 — 2026-11-22
+
+### 修复
+- **地图裁剪越界与缩放/拖动坐标系错位**：
+  - Metal 渲染管线对地图画心 `[0, map.width] × [0, map.height]` 施加像素精确 `MTLScissorRect`（御案底纹与外侧卷轴画框仍全屏绘制），防止任何底图、军团棋子或行军线溢出卷轴边框。
+  - 将 `effects`、`labels`、`floats`、`troops` 四层覆盖视图统一收拢至 `overlayHost`（开启 `clipsToBounds`）并挂载画心蒙版 `overlayMask`，同步限制国名避让回退与北缘都城名留在画心内，彻底杜绝国名、战争箭头、海浪与兵力条飞出上下木框。
+  - 修复双指缩放与单指拖拽期间 `sync()` 与 `CADisplayLink` 回调将 `mtk.presentsWithTransaction` 改回 `false` 导致的 Metal 与 UIKit 1–2 帧不同步错位；交互移动期间在单次 `CATransaction` + `UIView.performWithoutAnimation` 内统一更新画心蒙版、覆盖层坐标并同步执行 `mtk.draw()`，同时将 `MapLabelsView.resize` 改为更新 `bounds` 避免字图换档偏移。
+- **联盟图与专题视图缺陷**：专题分色视图（`fills != nil`）屏蔽国家色占领墨晕，不再串出绿块；提高专题视图色彩权重避免与地形底色混成撞色；加宽 `MapViewLegend` 至 224pt 减少同盟名截断。
+- **顶栏日期截断与面板细节**：竖屏顶栏战争数改为紧凑形态（`N战`）并调整日期字号与布局优先级；优化族谱页副标题、女性继承开关折行，补充掌权世家徽标与成员点击四维能力速览；国家页自定义顶栏增加分隔线与裁剪，百官列表改为切至朝政页签时懒加载。
+- **自定义文化空数组闪退与家族一致性**：修复 `NamingCatalog.givenNames`/`houseNames` 与 `Creation.base` 在玩家自建未知文化上调用 `.asArray` 触发的崩溃；修复 `Creation.createNobleFamily` 强制把家主配偶改为同姓的问题，`Nobility` 兜底姓氏统一走纯净池。
+
+### 优化与补全
+- **接敌格地貌与军情说明**：App 规则 `CombatReader.inputs` 按 70% 接敌格实际地貌 + 30% 全省地形混合计算战斗地形修正；`NativeView` 补全渡海撤回、边境集结、无路待命与护卫都城说明。
+- **海军主动截击渡海**：App 规则 `Naval.issueAutonomous` 检测同海域渡海敌军并优先派舰队驰援近岸港口截击登陆航道。
+- **战败震荡接入好战度**：`Regimes.temper` 纳入 `defeatPenalty`，补齐战败割地 → 民情/动荡/好战度下降的政治因果闭环。
+- **墨场性能与零警告**：重构 `InkCells.apply` 去除每步 240 KB 整表 CoW 拷贝与 `Set<Int>` 分配，改为可复用时间戳数组；消除 `CreationPolitics.swift` 与 `PeaceBridge.swift` 两处编译器警告；展开全图远景军团图标下限由 8.8 调至 6.8。
+- **新增专项回归**：`ContinuationAuditTests.swift`（接敌格地貌、40/80/120 城多模板面积均衡、跨海截击与海上停战返航、家族文化隔离与自定义文化防崩、战败震荡因果链）。
+
 ## 2.8.1 / build 143 — 2026-11-22
 
 - 停战后依当前墨量退场，取消尚未显示的落墨。在守军相持和多国前沿重叠时，保持已经显示的进度。

@@ -265,18 +265,19 @@ struct InkPressStyle: ButtonStyle {
 /// 顶栏的战事：交叉的戈与战争数。新开一场战争时戈一跳、朱圈一荡，战时轻缓呼吸。
 struct WarCount: View {
     let count: Int
+    var compact: Bool = false
     @State private var bump = false
     @State private var ring = false
     @State private var pulse = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         HStack(spacing: 3) {
-            InkIcon(glyph: .war, size: 15, weight: 2.0, accent: Theme.seal.opacity(0.55))
+            InkIcon(glyph: .war, size: 14, weight: 2.0, accent: Theme.seal.opacity(0.55))
                 .scaleEffect(bump ? 1.35 : (pulse ? 1.07 : 1)).rotationEffect(.degrees(bump ? -10 : 0))
                 .background {
                     Circle().stroke(Theme.seal.opacity(ring ? 0 : 0.6), lineWidth: 1.2).scaleEffect(ring ? 2.2 : 0.6)
                 }
-            Text("\(count)场战争").font(Theme.label).lineLimit(1).fixedSize()
+            Text(compact ? "\(count)战" : "\(count)场战争").font(Theme.label).lineLimit(1).fixedSize()
                 .contentTransition(.numericText()).animation(Motion.tap, value: count)
         }
         .foregroundStyle(Theme.seal)
@@ -448,6 +449,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("2.8.2", ["【彻底修复地图裁剪越界与缩放错位】① Metal 底图（海洋、地形、国界、军团、行军线与羊皮纸）启用画心精确剪裁矩形（Scissor Rect），全部 UI 覆盖层（国名、城名、战争箭头、交战/围城标记、海浪、兵力条与飘字）统一收入 `overlayHost` 并以画心蒙版严格裁在卷轴木框之内，国名避让与北缘都城名同样限制在画心内，彻底杜绝飞出上下边框覆盖留白；② 修复拖拽与双指缩放期间 `presentsWithTransaction` 被后台推演与帧回调抢关导致的 1–2 帧异步错位，改在单次无动画事务内同步驱动覆盖层与 `mtk.draw()`，并消除 SwiftUI 外层动画劫持与字图换档偏移。",
+                   "【联盟视图、顶栏日期与远景画面修整】联盟/文化/家族/宗教等专题分色视图不再叠加国家色占领墨晕，提升专题色保真度并加宽同盟图例至 224pt 避免名称截断；竖屏顶栏战争数改为紧凑显示（`N战`）并优化日期字号与优先级，日期不再被截成省略号；微调展开全图远景军团图标下限，看海更清爽。",
+                   "【战场地形、海防截击、家族文化与战败政治】App 规则战斗接入接敌格实际地貌（70% 接敌格 + 30% 全省）；自主海军识别本海域渡海敌军并主动驰援截击；修复自建自定义文化在族谱/姓氏池触发的空数组闪退、新立世家配偶强制同姓与兜底池错配；族谱页精简副标题、补齐掌权世家徽标与成员四维能力速览，国家页懒加载百官列表；战败割地冲击（`defeatShock`）正式接入好战度（`Regimes.temper`）抑制战后盲目开战。",
+                   "【墨场零整表拷贝优化】消除 `InkCells.apply` 每步约 240 KB 的全图数组写时拷贝与哈希集分配，改为按需写时留存与时间戳标记，同时清零两处核心编译警告。"]),
         ("2.8.1", ["【战线墨晕】停战后保留已经染出的墨色并平滑退去。守军持续相持时，敌墨退到防线便稳定下来，多方前沿重叠时从当前墨色接续。",
                    "【和约】签订和约后确认条款指定的疆域，归还双方的其余军事占领地。尚未停战的第三方及其占领保留。",
                    "【地图与调兵】易主底色、国色和占领归属采用同一批地图结果。收住雪峰和向阳坡高光，驻防军令以实际控制的都城为准。",

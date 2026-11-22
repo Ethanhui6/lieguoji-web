@@ -1150,7 +1150,7 @@ struct FloatingTacticalPill: View {
                 if !expanded && wars > 0 {
                     Text(badgeText)
                         .font(Theme.kai(9)).foregroundStyle(Theme.paper2).monospacedDigit()
-                        .padding(.horizontal, 4).frame(minWidth: 15, height: 14)
+                        .padding(.horizontal, 4).frame(minWidth: 15).frame(height: 14)
                         .background(Theme.seal, in: Capsule())
                         .overlay(Capsule().stroke(Theme.paper2, lineWidth: 1))
                         .offset(x: 5, y: -4)

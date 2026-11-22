@@ -479,7 +479,7 @@ struct ReplayOverlay: View {
                         Text("返回当下").font(Theme.body).lineLimit(1)
                     }
                     .foregroundStyle(Theme.seal)
-                    .padding(.horizontal, 12).frame(minWidth: 88, height: 42)
+                    .padding(.horizontal, 12).frame(minWidth: 88).frame(height: 42)
                     .glass(Capsule())
                     .contentShape(Capsule())
                 }
@@ -506,7 +506,7 @@ struct ReplayOverlay: View {
                         Text("节点").font(Theme.body).lineLimit(1)
                     }
                     .foregroundStyle(Theme.ink)
-                    .padding(.horizontal, 12).frame(minWidth: 70, height: 42)
+                    .padding(.horizontal, 12).frame(minWidth: 70).frame(height: 42)
                     .glass(Capsule())
                     .contentShape(Capsule())
                 }

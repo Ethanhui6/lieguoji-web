@@ -277,24 +277,29 @@ extension NativeEngine {
             // 2.8.4 新增：① 朝堂四方权力天平（君主中枢 / 门阀世家 / 军功将领 / 议会文官） + 冲龄幼主摄政；② 当期朝堂大政议案与战后问责；③ 国家旌旗纹章印记
             let cp = JS.object()
             let ldrPerson = !leaderId.isNull ? People.person(r, leaderId.asInt) : nil
-            let ldrAge = ldrPerson?.age.optionalNumber ?? 30
-            let sk = ldrPerson.map(People.skills) ?? (50, 50, 50, 50)
-            var rawCrown = 28.0 + (sk.administrative + sk.charisma) * 0.28 + (r.destiny.nations[id].destiny.optionalNumber ?? 50) * 0.22
+            let ldrAge: Double = ldrPerson?.age.optionalNumber ?? 30
+            let sk = ldrPerson.map(People.skills)
+            let skAdmin: Double = sk?.administrative ?? 50
+            let skCharisma: Double = sk?.charisma ?? 50
+            let skMilitary: Double = sk?.military ?? 50
+            let skDiplomatic: Double = sk?.diplomatic ?? 50
+            let curDestiny: Double = r.destiny.nations[id].destiny.optionalNumber ?? 50
+            var rawCrown: Double = 28.0 + (skAdmin + skCharisma) * 0.28 + curDestiny * 0.22
             if ldrAge < 16 { rawCrown *= 0.42 }
             let allHouses = r.nobility.isNull || r.nobility.families.isNull ? [] : r.nobility.families.objectEntries.filter { $0.1.nationId.optionalString == id }
             let rulingFam = People.rulingFamilyId(r, id)
-            let houseInf = allHouses.reduce(0.0) { sum, entry in
+            let houseInf: Double = allHouses.reduce(0.0) { sum, entry in
                 let inf = entry.1.influence.optionalNumber ?? 0
                 return (Int(entry.0) == rulingFam) ? sum + inf * 0.15 : sum + inf * 0.22
             }
-            var rawHouses = (prof.fiefRule.allowsFiefs ? 18.0 : 8.0) + min(65.0, houseInf * 0.25)
+            var rawHouses: Double = (prof.fiefRule.allowsFiefs ? 18.0 : 8.0) + min(65.0, houseInf * 0.25)
             if prof.fiefRule == .regent || ldrAge < 16 { rawHouses += 24.0 }
             let activeArmies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }.count
             let activeWars = r.world.campaigns.asArray.filter { $0.status.asString == "active" && ($0.attackerId.asString == id || $0.defenderId.asString == id) }.count
-            var rawMilitary = 14.0 + Double(activeArmies) * 3.5 + Double(activeWars) * 14.0 + sk.military * 0.18
+            var rawMilitary: Double = 14.0 + Double(activeArmies) * 3.5 + Double(activeWars) * 14.0 + skMilitary * 0.18
             if st.id == "junta" || st.id == "fascist" || st.id == "nazi" || st.id == "shogunate" { rawMilitary += 28.0 }
             let hasParties = !r.regimes.nations[id].parties.isNull && r.regimes.nations[id].parties.length > 0
-            var rawCouncil = (hasParties ? 32.0 : 16.0) + Offices.governance(r, id) * 24.0 + sk.diplomatic * 0.15
+            var rawCouncil: Double = (hasParties ? 32.0 : 16.0) + Offices.governance(r, id) * 24.0 + skDiplomatic * 0.15
             if prof.camp == .republic || prof.camp == .constitutional || prof.camp == .socialist { rawCouncil += 22.0 }
             // 玩家主动调衡偏移（r.regimes.nations[id].powerBias）
             let bias = r.regimes.nations[id].powerBias.optionalString ?? ""
@@ -302,10 +307,10 @@ extension NativeEngine {
             else if bias == "houses" { rawHouses += 28 }
             else if bias == "military" { rawMilitary += 28 }
             else if bias == "council" { rawCouncil += 28 }
-            let sumRaw = max(1.0, rawCrown + rawHouses + rawMilitary + rawCouncil)
-            let pCrown = max(5, Int((rawCrown / sumRaw * 100).rounded()))
-            let pHouses = max(5, Int((rawHouses / sumRaw * 100).rounded()))
-            let pMilitary = max(5, Int((rawMilitary / sumRaw * 100).rounded()))
+            let sumRaw: Double = max(1.0, rawCrown + rawHouses + rawMilitary + rawCouncil)
+            let pCrown = max(5, Int((rawCrown / sumRaw * 100.0).rounded()))
+            let pHouses = max(5, Int((rawHouses / sumRaw * 100.0).rounded()))
+            let pMilitary = max(5, Int((rawMilitary / sumRaw * 100.0).rounded()))
             let pCouncil = max(5, 100 - pCrown - pHouses - pMilitary)
             cp.crown = JS(pCrown); cp.houses = JS(pHouses); cp.military = JS(pMilitary); cp.council = JS(pCouncil)
             let rankedP: [(String, Int, String)] = [

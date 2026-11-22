@@ -1,16 +1,19 @@
 # 更新日志
 
-## 2.8.5 / build 147 — 2026-11-22
+## 2.8.6 / build 148 — 2026-11-22
 
 ### 修复与性能优化
-- **根治进入游戏与点开始闪退（`MapView.swift`、`MapRenderer.swift`）**：
-  - 移除 `MapView.Coordinator.set` 与 `layoutChanged` 在 `UIView.layoutSubviews()` 及嵌套 `CATransaction` 中同步直接调用 `mtk.draw()` 的路径，统一交由 `mtk.setNeedsDisplay()` 在 CoreAnimation 提交阶段渲染，彻底解决进入游戏与点击开始时因 `presentsWithTransaction` 双重绘制及 `waitUntilScheduled()` 重入引发的闪退。
+- **修复 CI 归档构建上传失败（`NationInfo.swift`、`WorldSheets.swift`）**：
+  - 修复 `NationInfo.swift` 朝堂四方权力天平读取 `People.skills(_:)` 返回的 `Persona.Skills` 结构体时误用四元组的编译错误，并显式标定 `Double` 运算类型；同步确保 `WorldSheets.swift` 时间长卷引用 `Theme.ink2`、`Names.color(...)` 与 `Theme.kai(...)`，恢复 GitHub Actions 自动归档与未签名 IPA 产物上传。
+- **根治进入游戏与点开始闪退（`MapView.swift`、`MapRenderer.swift`、`GameView.swift`）**：
+  - 移除 `MapView.Coordinator.set` 与 `layoutChanged` 在 `UIView.layoutSubviews()` 及嵌套 `CATransaction` 中同步直接调用 `mtk.draw()` 的路径，统一交由 `mtk.setNeedsDisplay()` 在 CoreAnimation 提交阶段渲染，并在 `set(_:sync:)` 内确保覆盖层各子视图帧尺寸始终与视口 `fullBounds` 一致，彻底解决进入游戏与点击开始时因 `presentsWithTransaction` 双重绘制及 `waitUntilScheduled()` 重入引发的闪退。
   - `MapRenderer.draw(in:)` 的 `MTLScissorRect` 改为对 `pass.colorAttachments[0].texture`（2× MSAA 多重采样纹理）与 `drawable.texture` 取共同宽高下界，并在 `Double` 域完成 `.isFinite` 校验与 `[0, dw] × [0, dh]` 钳制后再转为 `Int`，杜绝视口刚创建或旋转时因 MSAA 纹理尺寸瞬态差异或浮点转整型越界触发的 Metal 闪退。
+  - 统一 `PlaySealButton` 的 `.onChange(of: playing)` 为 iOS 17 双参数闭包。
 - **消除全屏 `CALayer.mask` 离屏渲染开销（`MapView.swift`）**：
   - 将 `overlayHost.layer.mask` 替换为硬件裁剪架构 `overlayHost.clipsToBounds = true`（`overlayHost.frame = clipRect`）+ 内层 `overlayCanvas`（`frame = CGRect(x: -clipRect.minX, y: -clipRect.minY, ...)`），在保持国名、箭头与特效严守卷轴画心边界的同时，彻底消除 60–120Hz 每帧全屏离屏蒙版渲染开销。
-- **核心引擎与着色全链路防越界加固（`Travel.swift`、`CombatReader.swift`、`Naval.swift`、`NativeView.swift`、`InkCells.swift`、`Creation.swift`、`UnitArt.swift`、`WorldSheets.swift`）**：
+- **核心引擎与着色全链路防越界加固（`Travel.swift`、`CombatReader.swift`、`Naval.swift`、`NativeView.swift`、`InkCells.swift`、`Creation.swift`、`UnitArt.swift`）**：
   - 统一 `UnitArt.swift` 与 `MapRenderer.swift`（`0plate`）的 `CGGradient` 为 4 通道 `CGColorSpaceCreateDeviceRGB()` 并指定 `preferredRange = .standard`。
-  - 为 `TravelGraph.location/segment`、`CombatReader.protruding/inputs`、`Naval.issueAutonomous`、`NativeView.gameState`（`etaDays` 有限值校验与 `g.mountain/plateau` 下标检查）、`InkCells.cell(at:)` 与 `Creation.rulers` 补齐全部边界与空数组防护；修正 `WorldSheets.swift` 时间长卷配色引用与正楷字体。
+  - 为 `TravelGraph.location/segment`、`CombatReader.protruding/inputs`、`Naval.issueAutonomous`、`NativeView.gameState`（`etaDays` 有限值校验与 `g.mountain/plateau` 下标检查）、`InkCells.cell(at:)` 与 `Creation.rulers` 补齐全部边界与空数组防护。
 
 ## 2.8.4 / build 146 — 2026-11-22
 

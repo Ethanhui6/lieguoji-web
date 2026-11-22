@@ -867,7 +867,7 @@ struct PlaySealButton: View {
             }
             .contentShape(Circle())
             .animation(Motion.tap, value: playing)
-            .onChange(of: playing) { _ in
+            .onChange(of: playing) { _, _ in
                 sealPulse = false
                 withAnimation(.easeOut(duration: 0.42)) { sealPulse = true }
             }

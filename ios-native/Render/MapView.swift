@@ -580,9 +580,13 @@ struct MapView: UIViewRepresentable {
             renderer.camera = clamped
             let clipRect = mapScreenRect(camera: clamped, viewport: vpSize)
             let canvasFrame = CGRect(x: -clipRect.minX, y: -clipRect.minY, width: vpSize.width, height: vpSize.height)
+            let fullBounds = CGRect(origin: .zero, size: vpSize)
             UIView.performWithoutAnimation {
                 if overlayHost.frame != clipRect { overlayHost.frame = clipRect }
                 if overlayCanvas.frame != canvasFrame { overlayCanvas.frame = canvasFrame }
+                for v in [effects, labels!, floats, troops] as [UIView] where v.frame != fullBounds {
+                    v.frame = fullBounds
+                }
                 labels.update(camera: clamped, viewport: vpSize, mapRect: clipRect)
                 effects.update(camera: clamped, viewport: vpSize)
                 updateTroops()

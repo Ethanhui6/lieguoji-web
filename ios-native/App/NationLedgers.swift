@@ -397,7 +397,7 @@ struct FamilyTreeSheet: View {
                     return (e == nil ? await model.editPerson(p.key, skills: skills, traits: traits) : e, "\(p.name)已修改")
                 }
             }
-            .presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            .presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
         .sheet(item: $ageEdit) { m in
             NumberEditSheet(title: m.name + "的年龄", unit: "岁", value: m.age, range: 0...110) { v in
@@ -405,7 +405,7 @@ struct FamilyTreeSheet: View {
                 let age = Int(v.rounded())
                 perform { (await model.renamePerson(m.id, first: nil, last: nil, age: age), "\(m.name)已改为\(age)岁") }
             }
-            .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            .presentationDetents([.height(370)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
         .sheet(isPresented: $renamingHouse) {
             VStack(alignment: .leading, spacing: 14) {
@@ -419,7 +419,7 @@ struct FamilyTreeSheet: View {
                 .padding(.horizontal, 22)
             }
             .padding(.bottom, 20)
-            .presentationDetents([.height(270)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            .presentationDetents([.height(270)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
     }
     private func switchFamily(to id: String, name: String) {

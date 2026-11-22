@@ -633,17 +633,17 @@ struct GameView: View {
         VStack(spacing: 6) {
             HStack(spacing: 10) {
                 let n = controller.paintNation ?? -1, nation = model.map.flatMap { $0.meta.nations.indices.contains(n) ? $0.meta.nations[n] : nil }
-                RoundedRectangle(cornerRadius: 3).fill(nation.map { Names.color($0.color) } ?? Theme.ink2).frame(width: 14, height: 14)
+                RoundedRectangle(cornerRadius: 4, style: .continuous).fill(nation.map { Names.color($0.color) } ?? Theme.ink2).frame(width: 14, height: 14)
                 Text(controller.brushName ?? (controller.placingArmy ? "在地图上点按或划过州郡放置" : "绘制\(nation?.name ?? "")疆域")).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
                 Button("完成") { controller.paintNation = nil; controller.placingArmy = false; controller.placeCount = 1; controller.brushName = nil; controller.brushAction = nil }.font(Theme.body).foregroundStyle(Theme.seal)
             }
             if controller.placingArmy {
-                // 拖动选择一次放多少支军队.
+                // 与全作统一的纸面滑轨：拖动选择一次放多少支军队。
                 HStack(spacing: 10) {
-                    Image(systemName: "shield.lefthalf.filled").font(.system(size: 14)).foregroundStyle(Theme.seal)
-                    Slider(value: Binding(get: { Double(controller.placeCount) }, set: { v in
+                    InkIcon(glyph: .military, size: 16, weight: 1.75).foregroundStyle(Theme.seal)
+                    PaperTrack(value: Binding(get: { Double(controller.placeCount) }, set: { v in
                         let k = Int(v.rounded()); if k != controller.placeCount { controller.placeCount = k; GameFeel.shared.tap() }
-                    }), in: 1...30, step: 1).tint(Theme.seal)
+                    }), range: 1...30, step: 1, onEditingChanged: nil)
                     Text("\(controller.placeCount) 军").font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 48, alignment: .trailing).contentTransition(.numericText())
                 }
                 .frame(width: 270)
@@ -654,7 +654,7 @@ struct GameView: View {
 
     private var fleetBanner: some View {
         HStack(spacing: 10) {
-            Image(systemName: "anchor").foregroundStyle(Theme.seal)
+            InkIcon(glyph: .anchor, size: 16, weight: 1.75).foregroundStyle(Theme.seal)
             Text("舰队：点选停留的港口").font(Theme.body).foregroundStyle(Theme.ink)
             Button("取消") { controller.marchingFleet = nil; model.refreshArmies() }.font(Theme.body).foregroundStyle(Theme.seal)
         }
@@ -663,7 +663,7 @@ struct GameView: View {
 
     private var marchBanner: some View {
         HStack(spacing: 10) {
-            Image(systemName: "arrow.triangle.turn.up.right.diamond.fill").foregroundStyle(Theme.seal)
+            InkIcon(glyph: .march, size: 16, weight: 1.75).foregroundStyle(Theme.seal)
             Text(marchRetreat ? "撤退：点选目的地" : "调兵：点选目的地").font(Theme.body).foregroundStyle(Theme.ink)
             Button("取消") { controller.marchingArmy = nil; controller.selectedArmy = nil; model.refreshArmies() }.font(Theme.body).foregroundStyle(Theme.seal)
         }
@@ -805,7 +805,7 @@ struct GameView: View {
 
 /// 推演启停朱印钮：与 54pt 底栏绝对同心（44×44pt，四周留白 5pt）。
 /// 彻底回归原本温润宣纸朱印风格：推演中为朱砂实印（宣纸暂停符），暂停时为宣纸底配朱砂双框印（朱砂播放符），彻底消除突兀黑圆块。
-private struct PlaySealButton: View {
+struct PlaySealButton: View {
     let playing: Bool
     var size: CGFloat = Theme.Control.sealButtonSize
     let action: () -> Void

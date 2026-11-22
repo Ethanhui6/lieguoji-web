@@ -190,6 +190,8 @@ struct DisplaySettings: Codable, Equatable {
     var gridLines: Bool? = nil
     /// 战争晕染：军队在敌境走过、驻留、围城处洇开进攻方颜色（nil：旧设置，默认开）。
     var battleGround: Bool? = nil
+    /// 光影氛围：统一西北日照立体明暗、柔和浮云投影、海面波光与军团城池落影（nil：默认开）。
+    var lighting: Bool? = nil
     static let key = "displaySettings.v3"
     static func load() -> DisplaySettings {
         guard let data = UserDefaults.standard.data(forKey: key), let v = try? JSONDecoder().decode(DisplaySettings.self, from: data) else { return DisplaySettings() }
@@ -314,7 +316,7 @@ struct MapView: UIViewRepresentable {
         private var shownViewLabels: [GroupLabel]?
         private var lastAppearanceKey: (mode: MapMode, highlight: Int?, relations: [Int: UInt32], fills: [RGB]?, view: String)?
         private var lastBorderWide: Set<Int> = []
-        private var scrollEdgeMargin: Double { (controller.display.scrollMount ?? controller.display.darkEdges) ? 58 : 12 }
+        private var scrollEdgeMargin: Double { (controller.display.scrollMount ?? controller.display.darkEdges) ? 78 : 12 }
         /// 仅在手指拖拽、双指缩放或镜头飞行期间启用同事务呈现，其余看海行军帧改用异步提交，彻底解除主线程 waitUntilScheduled 阻塞与发热。
         private func setSyncPresent(_ sync: Bool) {
             guard mtk != nil, mtk.presentsWithTransaction != sync else { return }

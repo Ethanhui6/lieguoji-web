@@ -220,6 +220,8 @@ struct MapDisplaySettings: View {
                     set: { controller.display.scrollMount = $0; controller.display.darkEdges = $0 }
                 ))
                 Divider2()
+                PaperSwitch(title: "光影氛围（日照立体光影、浮云投影与海面水光）", on: Binding(get: { controller.display.lighting ?? true }, set: { controller.display.lighting = $0 }))
+                Divider2()
                 PaperSwitch(title: "舆图细节（水线、十六向罗盘、雪峰、田亩、驿道）", on: Binding(get: { controller.display.mapDetail ?? true }, set: { controller.display.mapDetail = $0 }))
                 Divider2()
                 PaperSwitch(title: "战争晕染（行军与围城处洇开进攻方颜色）", on: Binding(get: { controller.display.battleGround ?? true }, set: { controller.display.battleGround = $0 }))

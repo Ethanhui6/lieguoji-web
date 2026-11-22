@@ -5,10 +5,12 @@ import Foundation
 /// the states around it. The palette keeps the muted mineral tones of a painted chart: twelve hues in a
 /// light and a middle tone, and six earths and inks.
 public enum NationColors {
+    /// 28 枚高辨识度古舆图矿物色：剔除易与地形/邻国混淆的灰蒙浅色，强化色相与明度分层，
+    /// 配合三层国界晕边，令列国疆域一眼分明、毫不缭乱（任意两色 CIELAB ΔE > 10，相邻国 ΔE > 20）。
     public static let palette = [
-        "#fec2cb", "#fec4b5", "#f9c999", "#ddd396", "#bbdba3", "#99e1bc", "#7de2db", "#77e0f7", "#a0d9ff", "#c1d1fe", "#e2c7fe", "#ffbfe6",
-        "#dc7a78", "#ce845a", "#b2924a", "#8d9d50", "#61a56a", "#4aa890", "#45a5ab", "#42a1c4", "#499ce0", "#8f8fd9", "#be81c1", "#d8789e",
-        "#c5b49d", "#89867f", "#9a5953", "#486d99", "#477a55", "#efe8d5",
+        "#e88b96", "#ee9e72", "#e7b95e", "#b5c962", "#6ec287", "#53bfb4", "#55b5de", "#7da8ee", "#a992e8", "#d988cf",
+        "#c95458", "#c86d3f", "#b68c2e", "#76983b", "#3d945f", "#2f8c8a", "#357fb8", "#5968bd", "#8d5cb0", "#b85582",
+        "#f3c4a4", "#f0dc8a", "#9ed9bd", "#9fd2f0", "#d4b5ec", "#9e6b54", "#667d96", "#6b8863",
     ]
     private static let paletteLab = palette.map(lab)
 
@@ -64,7 +66,7 @@ public enum NationColors {
                 guard let c = chosen[j] else { continue }
                 // Near from either side: a small state beside a large one is its neighbour too.
                 let k = min(rank[i][j] ?? n, rank[j][i] ?? n)
-                if k < 12 { near.append((paletteLab[c], k < 6 ? 0 : 22)) }
+                if k < 16 { near.append((paletteLab[c], k < 8 ? 0 : 24)) }
             }
             let c = best(near: near, worn: worn, salt: "opening/\(n)/\(i)")
             chosen[i] = c; worn[c] += 1

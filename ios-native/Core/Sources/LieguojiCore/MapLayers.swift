@@ -34,6 +34,22 @@ public struct ColoredMesh: Sendable {
         vertex(a.x, a.y, color, outer); vertex(b.x, b.y, color, outer); vertex(c.x, c.y, color, inner)
         vertex(a.x, a.y, color, outer); vertex(c.x, c.y, color, inner); vertex(d.x, d.y, color, inner)
     }
+    /// 四顶点平滑色阶四边形（用于圆柱木轴、鎏金箍环、碧玉轴头与绫锦丝光的连续 GPU 高洛德光照）。
+    public mutating func gradientQuad(_ a: SIMD2<Float>, _ b: SIMD2<Float>, _ c: SIMD2<Float>, _ d: SIMD2<Float>, _ ca: RGB, _ cb: RGB, _ cc: RGB, _ cd: RGB, alpha: Float = 1) {
+        vertex(a.x, a.y, ca, alpha); vertex(b.x, b.y, cb, alpha); vertex(c.x, c.y, cc, alpha)
+        vertex(a.x, a.y, ca, alpha); vertex(c.x, c.y, cc, alpha); vertex(d.x, d.y, cd, alpha)
+    }
+    /// 沿折线向法线一侧微微偏移 `offset` 的描边（用于每个国家自身疆域内侧的国色晕边，与邻国严密区隔）。
+    public mutating func offsetPolyline(_ points: [Float], width: Float, offset: Float, _ color: RGB, alpha: Float) {
+        guard points.count >= 4 else { return }
+        for i in stride(from: 0, to: points.count - 2, by: 2) {
+            let x1 = points[i], y1 = points[i + 1], x2 = points[i + 2], y2 = points[i + 3]
+            let dx = x2 - x1, dy = y2 - y1, len = (dx * dx + dy * dy).squareRoot()
+            guard len > 0 else { continue }
+            let nx = -dy / len * offset, ny = dx / len * offset
+            segment(x1 + nx, y1 + ny, x2 + nx, y2 + ny, width: width, color, alpha: alpha)
+        }
+    }
     public mutating func disc(_ x: Float, _ y: Float, radius: Float, _ color: RGB, alpha: Float = 1, sides: Int = 20) {
         for k in 0..<sides {
             let a0 = Float(k) / Float(sides) * 2 * .pi, a1 = Float(k + 1) / Float(sides) * 2 * .pi
@@ -279,13 +295,13 @@ public enum MapLayers {
             gx[b] += dx / len * s; gy[b] += dy / len * s
         }
         // Light from the upper left: a slope rising towards it is lit, facing away is shaded.
-        // 强化山脉起伏与河谷明暗层次（0.79…1.16），即便覆盖政区配色仍保持精致立体地形质感。
+        // 保持洁净立体的山脉明暗（0.84…1.15），既突出起伏又绝不把政区国色压暗发灰。
         let lx: Float = -0.707, ly: Float = -0.707
         return (0..<map.cellCount).map { c in
             guard map.isLand(c) else { return 1 }
             let lit = gx[c] * lx + gy[c] * ly
-            let elevBoost = max(0, Float(map.elevation[c]) - 55) * 0.0012
-            return 1 + min(0.16, max(-0.21, lit * 0.105)) + elevBoost
+            let elevBoost = max(0, Float(map.elevation[c]) - 56) * 0.0014
+            return 1 + min(0.15, max(-0.16, lit * 0.095)) + elevBoost
         }
     }
 
@@ -309,40 +325,91 @@ public enum MapLayers {
         }
     }
 
-    /// StateLineRenderer outlines on the shared cell edges: each state strokes its own outline in its
-    /// adjusted colour (both sides of a border), then the smoothed coastline in grey.
-    /// `wide` nations（点击国家或打开国家详情页时）以暖金亮晕 + 醒目朱墨双层描边勾勒完整疆域轮廓，
-    /// 一眼就能看清所选国家的全部陆地、海岸与飞地国界线。
+    /// 三层清晰国界体系（参考经典大战略地图与宋元古舆图）：
+    /// 1. 两侧本国加深色内晕边（沿着各自疆域内侧铺展，彻底区分相邻两国的归属范围）；
+    /// 2. 极轻暖宣纸分隔微亮边（防止深色大国相接时颜色互咬）；
+    /// 3. 锐利深墨脊国界主线（让国界与省界形成清晰视觉层级，全局整洁分明毫不缭乱）；
+    /// `wide` 选中国家则在最顶层叠加鎏金亮晕与醒目朱墨国界。
     public static func outlines(_ map: WorldMap, wide: Set<Int> = []) -> ColoredMesh {
-        let colors = map.meta.nations.map { RGB(css: $0.line) ?? RGB(0.2, 0.2, 0.2) }
+        let lineColors = map.meta.nations.map { RGB(css: $0.line) ?? RGB(0.24, 0.20, 0.16) }
+        let fillColors = map.meta.nations.map { RGB(css: $0.color) ?? RGB(0.55, 0.50, 0.45) }
+        let provs = map.meta.provinces
+        let frontierInk = RGB(hex: 0x241B13)
+        let frontierIvory = RGB(hex: 0xF7EFE0)
+        let coastInk = RGB(hex: 0x3D352B)
         var m = ColoredMesh()
-        // Each state's border edges, joined into lines and smoothed with the original's curve
-        // (BorderDataProcessor.UpdateStateLine → SmoothBorderLines, CurveBasis(points, 4)), so a
-        // border runs as one soft line instead of the cells' stair steps.
+
+        // 1. 清晰柔和的海岸墨线（略细于陆地国界，主次分明）
         for s in stride(from: 0, to: map.coast.count, by: 4) {
-            m.segment(map.coast[s], map.coast[s + 1], map.coast[s + 2], map.coast[s + 3], width: lineWidth, coastColor, alpha: 1)
+            m.segment(map.coast[s], map.coast[s + 1], map.coast[s + 2], map.coast[s + 3], width: lineWidth * 0.92, coastInk, alpha: 0.88)
         }
+
         let allPairs = boundaries(map)
+        var landFrontierLines: [[Float]] = []
         var emphasisLines: [(lines: [[Float]], color: RGB)] = []
-        // The state borders are the shared province-pair curves whose two sides belong to different
-        // states (or one side is water), so they lie exactly on the province lines.
+
+        func ribbonColor(_ n: Int) -> RGB {
+            let f = fillColors[n], l = lineColors[n]
+            // 结合饱和国色与加深界色，令本国内晕边明艳醒目而不发脏
+            return RGB(max(0, min(1, f.r * 0.48 + l.r * 0.52)),
+                       max(0, min(1, f.g * 0.48 + l.g * 0.52)),
+                       max(0, min(1, f.b * 0.48 + l.b * 0.52)))
+        }
+        /// 判定该段折线的左法线 (-dy, dx) 是否指向参考州中心：用于把每个国家的内晕边严密偏移到各自疆域内侧。
+        func sideSign(_ line: [Float], toward provIndex: Int) -> Float {
+            guard provs.indices.contains(provIndex), line.count >= 4 else { return 0 }
+            let px = provs[provIndex].x, py = provs[provIndex].y
+            let mid = (line.count / 4) * 2
+            let i0 = max(0, min(line.count - 4, mid))
+            let x1 = line[i0], y1 = line[i0 + 1], x2 = line[i0 + 2], y2 = line[i0 + 3]
+            let dx = x2 - x1, dy = y2 - y1
+            let mx = (x1 + x2) * 0.5, my = (y1 + y2) * 0.5
+            let dot = (-dy) * (px - mx) + dx * (py - my)
+            return dot >= 0 ? 1 : -1
+        }
+
+        // 2. 各国疆域内侧国色晕边（紧贴自己一侧国界，形成极具辨识度的立体疆域轮廓）
         for pair in allPairs {
             let oa = owner(map, pair.a), ob = owner(map, pair.b)
             guard oa != ob else { continue }
-            for n in [oa, ob].compactMap({ $0 }) where n < colors.count {
-                if wide.contains(n) {
-                    emphasisLines.append((pair.lines, colors[n]))
-                } else {
-                    for line in pair.lines { m.polyline(line, width: lineWidth, colors[n], alpha: 1) }
+            let isLandBorder = oa != nil && ob != nil
+            if isLandBorder { landFrontierLines.append(contentsOf: pair.lines) }
+            if let na = oa, na < lineColors.count {
+                if wide.contains(na) { emphasisLines.append((pair.lines, lineColors[na])) }
+                let rc = ribbonColor(na)
+                let wRim = isLandBorder ? lineWidth * 1.85 : lineWidth * 1.15
+                let shift = isLandBorder ? lineWidth * 0.78 : lineWidth * 0.45
+                for line in pair.lines {
+                    let sgn = sideSign(line, toward: pair.a)
+                    if sgn != 0 { m.offsetPolyline(line, width: wRim, offset: shift * sgn, rc, alpha: isLandBorder ? 0.50 : 0.34) }
+                }
+            }
+            if let nb = ob, nb < lineColors.count {
+                if wide.contains(nb) { emphasisLines.append((pair.lines, lineColors[nb])) }
+                let rc = ribbonColor(nb)
+                let wRim = isLandBorder ? lineWidth * 1.85 : lineWidth * 1.15
+                let shift = isLandBorder ? lineWidth * 0.78 : lineWidth * 0.45
+                for line in pair.lines {
+                    let sgn = sideSign(line, toward: pair.b)
+                    if sgn != 0 { m.offsetPolyline(line, width: wRim, offset: shift * sgn, rc, alpha: isLandBorder ? 0.50 : 0.34) }
                 }
             }
         }
-        // 选中国家国界置于最顶层：先铺宣金亮边，再压深朱红/深色醒目实线，在任何底色下都轮廓分明。
+
+        // 3. 陆地国界极微暖白透气边 + 锐利深墨主脊线（一眼割开相邻两国，彻底杜绝颜色混杂缭乱）
+        for line in landFrontierLines {
+            m.polyline(line, width: lineWidth * 1.48, frontierIvory, alpha: 0.24)
+        }
+        for line in landFrontierLines {
+            m.polyline(line, width: lineWidth * 1.12, frontierInk, alpha: 0.90)
+        }
+
+        // 4. 选中国家国界置于最顶层：宣金亮边 + 深朱红实线，轮廓清晰聚焦
         if !emphasisLines.isEmpty {
             let halo = RGB(0.99, 0.94, 0.72)
             let seal = RGB(0.76, 0.17, 0.12)
             for item in emphasisLines {
-                for line in item.lines { m.polyline(line, width: lineWidth * 4.8, halo, alpha: 0.78) }
+                for line in item.lines { m.polyline(line, width: lineWidth * 4.8, halo, alpha: 0.80) }
             }
             for item in emphasisLines {
                 let c = RGB(item.color.r * 0.35 + seal.r * 0.65, item.color.g * 0.35 + seal.g * 0.65, item.color.b * 0.35 + seal.b * 0.65)
@@ -414,9 +481,9 @@ public enum MapLayers {
     public static let provinceInk = RGB(hex: 0x4A4036)
     public static func provinceLines(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
-        // Inside a state only: where the owners differ, the state border is drawn on the same curve.
+        // 州郡内界退居细丝次级层次，拉近清晰可辨、远观绝不与国界主脊线抢戏。
         for pair in boundaries(map) where pair.a >= 0 && pair.b >= 0 && owner(map, pair.a) == owner(map, pair.b) {
-            for line in pair.lines { m.polyline(line, width: lineWidth * 0.42, provinceInk, alpha: 0.5) }
+            for line in pair.lines { m.polyline(line, width: lineWidth * 0.30, provinceInk, alpha: 0.25) }
         }
         return m
     }
@@ -440,167 +507,281 @@ public enum MapLayers {
         return result
     }
 
-    /// 博物馆级「御览手卷」装裱画框：
-    /// 1. 柔和多层御案落影：整卷平铺于织锦案头，四周与轴杆下方投射细腻渐变暖影；
-    /// 2. 宫廷三层绫锦装裱框（外紫檀细框 → 朱红锦边 → 御黄云锦绫边 + 菱格云锦暗纹 + 双道鎏金丝线 + 四角鎏金云纹包角 + 上下朱锦玉别子锦结）；
-    /// 3. 左右 7 层圆柱立体紫檀卷轴杆 + 宣纸内卷高光边 + 鎏金雕花箍环 + 青碧玉葫芦轴头；
-    /// 4. 画心内缘柔和卷纸弧面投影，拉远看全图宛如一卷恢宏考究的御批万里舆图。
+    /// 100 分博物馆级「御览万里手卷」装裱画框（彻底根治四角重叠暗斑与轴杆光照矛盾 Bug）：
+    /// 1. 严格 45° 斜接羽化落影（与全局西北日照一致，向东南柔和投射，零重叠、零矩形硬边）；
+    /// 2. 24 段连续高洛德圆柱光照紫檀卷轴（双轴统一西北受光，附柔和木纹、镜面高光、卷纸多层断面、鎏金雕花轴箍、雕刻青碧玉葫芦轴头与朱锦金穗流苏）；
+    /// 3. 御制多层云锦绫裱（立体斜切外包边 → 朱锦边 → 暖金云锦菱格如意花纹 → 隔水牙白内衬 → 四角双层鎏金回纹包角 → 上下带影嵌玉朱锦玉别子）；
+    /// 4. 画心内缘 45° 无缝斜接宣纸卷曲微影（左深右浅贴合西北来光）。
     public static func scrollFrame(width w: Float, height h: Float) -> ColoredMesh {
         var m = ColoredMesh()
-        let deskShadow = RGB(hex: 0x26180C)
-        let paperCurl = RGB(hex: 0x563D22)
-        let silkIvory = RGB(hex: 0xDFCFA9)
-        let silkGold = RGB(hex: 0xC69B4D)
-        let silkDeep = RGB(hex: 0x8A6326)
-        let brocadeRed = RGB(hex: 0x7A2319)
-        let brocadeDark = RGB(hex: 0x52150F)
-        let woodShadow = RGB(hex: 0x1E0F07)
-        let woodDark = RGB(hex: 0x321B0E)
-        let woodMid = RGB(hex: 0x5F381E)
-        let woodWarm = RGB(hex: 0x855530)
-        let woodLight = RGB(hex: 0xB38353)
-        let jadeDark = RGB(hex: 0x2E5548)
-        let jade = RGB(hex: 0x4A7C6A)
-        let jadeLight = RGB(hex: 0x8AB7A5)
-        let goldBright = RGB(hex: 0xE8C87A)
-        let ink = RGB(hex: 0x2B2014)
+        let deskShadow = RGB(hex: 0x201309)
+        let paperCurl = RGB(hex: 0x4E361E)
+        let silkIvory = RGB(hex: 0xE5D8B8)
+        let silkGoldLight = RGB(hex: 0xD8B467)
+        let silkGold = RGB(hex: 0xC29648)
+        let silkDeep = RGB(hex: 0x825A20)
+        let brocadeLit = RGB(hex: 0x8F2D21)
+        let brocadeRed = RGB(hex: 0x762118)
+        let brocadeDark = RGB(hex: 0x47120C)
+        let woodDark = RGB(hex: 0x25130A)
+        let woodMid = RGB(hex: 0x5C351C)
+        let woodHi = RGB(hex: 0xB88552)
+        let jadeDark = RGB(hex: 0x24473B)
+        let jadeMid = RGB(hex: 0x497D6A)
+        let jadeHi = RGB(hex: 0x9AD0BB)
+        let goldDark = RGB(hex: 0x6D4D1B)
+        let goldMid = RGB(hex: 0xC89C47)
+        let goldBright = RGB(hex: 0xF5DD99)
+        let paperEdge = RGB(hex: 0xEFE4CA)
+        let paperEdgeShade = RGB(hex: 0xC5B28D)
+        let ink = RGB(hex: 0x281D12)
 
+        func lerpRGB(_ a: RGB, _ b: RGB, _ t: Float) -> RGB {
+            let k = max(0, min(1, t))
+            return RGB(a.r + (b.r - a.r) * k, a.g + (b.g - a.g) * k, a.b + (b.b - a.b) * k)
+        }
         func rect(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ c: RGB, alpha: Float = 1) {
             m.fill([x0, y0, x1, y0, x1, y1, x0, y1], c, alpha: alpha)
         }
-        func vBand(_ x0: Float, _ x1: Float, _ y0: Float, _ y1: Float, _ c: RGB, left: Float, right: Float) {
-            m.band(SIMD2(x0, y0), SIMD2(x0, y1), SIMD2(x1, y1), SIMD2(x1, y0), c, outer: left, inner: right)
+        /// 严格 45° 斜接羽化外阴影环：四边在转角严丝合缝，绝不重叠产生黑方块！
+        func miterShadowRing(x0: Float, y0: Float, x1: Float, y1: Float, spreadL: Float, spreadT: Float, spreadR: Float, spreadB: Float, color: RGB, innerA: Float, outerA: Float = 0) {
+            let iTL = SIMD2<Float>(x0, y0), iTR = SIMD2<Float>(x1, y0), iBR = SIMD2<Float>(x1, y1), iBL = SIMD2<Float>(x0, y1)
+            let oTL = SIMD2<Float>(x0 - spreadL, y0 - spreadT), oTR = SIMD2<Float>(x1 + spreadR, y0 - spreadT)
+            let oBR = SIMD2<Float>(x1 + spreadR, y1 + spreadB), oBL = SIMD2<Float>(x0 - spreadL, y1 + spreadB)
+            m.band(oTL, oTR, iTR, iTL, color, outer: outerA, inner: innerA * 0.72)
+            m.band(oTR, oBR, iBR, iTR, color, outer: outerA, inner: innerA)
+            m.band(oBR, oBL, iBL, iBR, color, outer: outerA, inner: innerA * 1.08)
+            m.band(oBL, oTL, iTL, iBL, color, outer: outerA, inner: innerA * 0.78)
         }
-        func hBand(_ x0: Float, _ x1: Float, _ y0: Float, _ y1: Float, _ c: RGB, top: Float, bottom: Float) {
-            m.band(SIMD2(x0, y0), SIMD2(x1, y0), SIMD2(x1, y1), SIMD2(x0, y1), c, outer: top, inner: bottom)
+        /// 连续 24 段圆柱 Phong 光照（统一西北来光 lx = -0.62, lz = 0.78，镜面与漫反射自然平滑过渡）。
+        func cylinder(_ x0: Float, _ x1: Float, _ y0: Float, _ y1: Float, dark: RGB, mid: RGB, hi: RGB, spec: RGB, specPow: Float = 18, specAmt: Float = 0.42, steps: Int = 20) {
+            let dx = (x1 - x0) / Float(steps)
+            func shadeAt(_ u: Float) -> RGB {
+                // u in 0...1 -> theta in -pi/2 ... +pi/2
+                let theta = (u - 0.5) * .pi
+                let nx = sin(theta), nz = max(0.05, cos(theta))
+                let diff = max(0, nx * (-0.62) + nz * 0.78)
+                let bounce = max(0, nx * 0.45 + nz * 0.25) * 0.16
+                let lum = min(1, diff * 0.88 + bounce + 0.08)
+                // 半程向量（西北主光 + 正视视角）产生丝缎高光带
+                let hx: Float = -0.35, hz: Float = 0.936
+                let sp = powf(max(0, nx * hx + nz * hz), specPow) * specAmt
+                var base = lum < 0.5 ? lerpRGB(dark, mid, lum * 2) : lerpRGB(mid, hi, (lum - 0.5) * 2)
+                base = lerpRGB(base, spec, min(0.85, sp))
+                return base
+            }
+            for s in 0..<steps {
+                let u0 = Float(s) / Float(steps), u1 = Float(s + 1) / Float(steps)
+                let xa = x0 + dx * Float(s), xb = x0 + dx * Float(s + 1)
+                let c0 = shadeAt(u0), c1 = shadeAt(u1)
+                m.gradientQuad(SIMD2(xa, y0), SIMD2(xb, y0), SIMD2(xb, y1), SIMD2(xa, y1), c0, c1, c1, c0, alpha: 1)
+            }
+        }
+        /// 柔和椭圆形定向落影（用于轴头与锦扣底部）。
+        func softEllipseShadow(cx: Float, cy: Float, rx: Float, ry: Float, alpha: Float) {
+            for layer in 0..<3 {
+                let s: Float = 1.0 + Float(layer) * 0.34
+                let a = alpha * (layer == 0 ? 0.52 : layer == 1 ? 0.28 : 0.14)
+                var pts = [Float]()
+                for k in 0..<18 {
+                    let ang = Float(k) / 18 * 2 * .pi
+                    pts.append(cx + cos(ang) * rx * s)
+                    pts.append(cy + sin(ang) * ry * s)
+                }
+                m.fill(pts, deskShadow, alpha: a)
+            }
         }
 
         let unit = min(w, h)
-        let curlShadow = unit * 0.048
-        let trimH = unit * 0.036
-        let rollerW = unit * 0.044
-        let capOut = unit * 0.022
-        let shadowSpread = unit * 0.042
-        let leftEdge = -rollerW * 0.85
-        let rightEdge = w + rollerW * 0.85
+        let trimH = unit * 0.040
+        let rollerW = unit * 0.048
+        let capOut = unit * 0.028
+        let leftX0 = -rollerW * 0.86, leftX1 = rollerW * 0.20
+        let rightX0 = w - rollerW * 0.20, rightX1 = w + rollerW * 0.86
+        let rollTop = -trimH - capOut * 0.18, rollBot = h + trimH + capOut * 0.18
 
-        // 0. 手卷投射在织锦御案上的柔和立体落影（上下四边自然羽化，彻底消除贴图生硬边界）
-        hBand(leftEdge - shadowSpread * 0.3, rightEdge + shadowSpread * 0.3, -trimH - shadowSpread, -trimH, deskShadow, top: 0, bottom: 0.24)
-        hBand(leftEdge - shadowSpread * 0.3, rightEdge + shadowSpread * 0.3, h + trimH, h + trimH + shadowSpread * 1.25, deskShadow, top: 0.34, bottom: 0)
-        vBand(leftEdge - shadowSpread * 1.1, leftEdge, -trimH - capOut, h + trimH + capOut, deskShadow, left: 0, right: 0.30)
-        vBand(rightEdge, rightEdge + shadowSpread * 1.2, -trimH - capOut, h + trimH + capOut, deskShadow, left: 0.32, right: 0)
+        // 0. 无缝 45° 斜接御案定向落影（西北主光 → 东南柔影，零重叠黑块！）
+        miterShadowRing(
+            x0: leftX0, y0: -trimH, x1: rightX1, y1: h + trimH,
+            spreadL: unit * 0.022, spreadT: unit * 0.020, spreadR: unit * 0.052, spreadB: unit * 0.058,
+            color: deskShadow, innerA: 0.34, outerA: 0
+        )
+        // 第二层远距柔和环境光遮蔽（让整卷稳稳贴合在锦案上）
+        miterShadowRing(
+            x0: leftX0 - unit * 0.008, y0: -trimH - unit * 0.006, x1: rightX1 + unit * 0.018, y1: h + trimH + unit * 0.020,
+            spreadL: unit * 0.036, spreadT: unit * 0.032, spreadR: unit * 0.078, spreadB: unit * 0.084,
+            color: deskShadow, innerA: 0.15, outerA: 0
+        )
 
-        // 1. 画心内缘柔和宣纸卷曲投影（左右较深模拟卷轴弧面，上下轻柔烘托画心）
-        vBand(0, curlShadow * 0.32, 0, h, deskShadow, left: 0.32, right: 0.13)
-        vBand(curlShadow * 0.32, curlShadow * 1.15, 0, h, paperCurl, left: 0.13, right: 0)
-        vBand(w - curlShadow * 0.32, w, 0, h, deskShadow, left: 0.13, right: 0.32)
-        vBand(w - curlShadow * 1.15, w - curlShadow * 0.32, 0, h, paperCurl, left: 0, right: 0.13)
-        hBand(0, w, 0, curlShadow * 0.55, paperCurl, top: 0.18, bottom: 0)
-        hBand(0, w, h - curlShadow * 0.55, h, paperCurl, top: 0, bottom: 0.18)
+        // 1. 画心内缘 45° 无缝斜接宣纸卷曲投影（左卷轴投下暖影，上下微阴，零转角重影！）
+        let cL = unit * 0.052, cR = unit * 0.036, cT = unit * 0.026, cB = unit * 0.020
+        let oTL = SIMD2<Float>(0, 0), oTR = SIMD2<Float>(w, 0), oBR = SIMD2<Float>(w, h), oBL = SIMD2<Float>(0, h)
+        let iTL = SIMD2<Float>(cL, cT), iTR = SIMD2<Float>(w - cR, cT), iBR = SIMD2<Float>(w - cR, h - cB), iBL = SIMD2<Float>(cL, h - cB)
+        // 外近轴深影 + 内缓释羽化
+        let mTL = SIMD2<Float>(cL * 0.28, cT * 0.28), mTR = SIMD2<Float>(w - cR * 0.28, cT * 0.28)
+        let mBR = SIMD2<Float>(w - cR * 0.28, h - cB * 0.28), mBL = SIMD2<Float>(cL * 0.28, h - cB * 0.28)
+        m.band(oBL, oTL, mTL, mBL, deskShadow, outer: 0.30, inner: 0.13)
+        m.band(mBL, mTL, iTL, iBL, paperCurl, outer: 0.13, inner: 0)
+        m.band(oTR, oBR, mBR, mTR, deskShadow, outer: 0.22, inner: 0.09)
+        m.band(mTR, mBR, iBR, iTR, paperCurl, outer: 0.09, inner: 0)
+        m.band(oTL, oTR, mTR, mTL, deskShadow, outer: 0.20, inner: 0.08)
+        m.band(mTL, mTR, iTR, iTL, paperCurl, outer: 0.08, inner: 0)
+        m.band(oBR, oBL, mBL, mBR, paperCurl, outer: 0.13, inner: 0)
 
-        // 2. 上下三层御制绫锦装裱框（外深紫檀镶边 → 朱锦边 → 暖黄云锦绫边 + 菱格云锦暗纹 + 双鎏金丝线）
-        let outerRim = trimH * 0.12
-        let redBand = trimH * 0.36
+        // 2. 上下御制多层云锦装裱边（带丝绸斜向光泽渐变与立体包边）
+        let outerRim = trimH * 0.13
+        let redBand = trimH * 0.34
         let innerSlip = trimH * 0.14
-        // 顶边
-        rect(-rollerW * 0.3, -trimH, w + rollerW * 0.3, 0, silkGold, alpha: 0.98)
-        rect(-rollerW * 0.3, -innerSlip, w + rollerW * 0.3, 0, silkIvory, alpha: 0.96)
-        rect(-rollerW * 0.3, -trimH + outerRim, w + rollerW * 0.3, -trimH + outerRim + redBand, brocadeRed, alpha: 0.98)
-        rect(-rollerW * 0.3, -trimH, w + rollerW * 0.3, -trimH + outerRim, brocadeDark, alpha: 0.98)
-        // 底边
-        rect(-rollerW * 0.3, h, w + rollerW * 0.3, h + trimH, silkGold, alpha: 0.98)
-        rect(-rollerW * 0.3, h, w + rollerW * 0.3, h + innerSlip, silkIvory, alpha: 0.96)
-        rect(-rollerW * 0.3, h + trimH - outerRim - redBand, w + rollerW * 0.3, h + trimH - outerRim, brocadeRed, alpha: 0.98)
-        rect(-rollerW * 0.3, h + trimH - outerRim, w + rollerW * 0.3, h + trimH, brocadeDark, alpha: 0.98)
+        let frameX0 = leftX1 - rollerW * 0.25, frameX1 = rightX0 + rollerW * 0.25
+        // 顶边（向阳微亮）
+        m.gradientQuad(SIMD2(frameX0, -trimH), SIMD2(frameX1, -trimH), SIMD2(frameX1, 0), SIMD2(frameX0, 0), silkGoldLight, silkGold, silkGold, silkGoldLight, alpha: 0.99)
+        rect(frameX0, -innerSlip, frameX1, 0, silkIvory, alpha: 0.98)
+        m.gradientQuad(SIMD2(frameX0, -trimH + outerRim), SIMD2(frameX1, -trimH + outerRim), SIMD2(frameX1, -trimH + outerRim + redBand), SIMD2(frameX0, -trimH + outerRim + redBand), brocadeLit, brocadeRed, brocadeRed, brocadeLit, alpha: 0.99)
+        rect(frameX0, -trimH, frameX1, -trimH + outerRim, brocadeDark, alpha: 0.99)
+        // 顶边最外缘受光金线
+        let threadW = max(0.85, unit * 0.0014)
+        m.segment(frameX0, -trimH + outerRim * 0.45, frameX1, -trimH + outerRim * 0.45, width: threadW * 0.7, goldBright, alpha: 0.45)
 
-        // 御绫双道鎏金丝线与云锦菱格暗纹
-        let threadW = max(0.9, unit * 0.0014)
+        // 底边（略沉背阴）
+        m.gradientQuad(SIMD2(frameX0, h), SIMD2(frameX1, h), SIMD2(frameX1, h + trimH), SIMD2(frameX0, h + trimH), silkGold, silkDeep, silkDeep, silkGold, alpha: 0.99)
+        rect(frameX0, h, frameX1, h + innerSlip, silkIvory, alpha: 0.97)
+        m.gradientQuad(SIMD2(frameX0, h + trimH - outerRim - redBand), SIMD2(frameX1, h + trimH - outerRim - redBand), SIMD2(frameX1, h + trimH - outerRim), SIMD2(frameX0, h + trimH - outerRim), brocadeRed, brocadeDark, brocadeDark, brocadeRed, alpha: 0.99)
+        rect(frameX0, h + trimH - outerRim, frameX1, h + trimH, brocadeDark, alpha: 0.99)
+
+        // 六道贯通全幅的鎏金丝线（左右严丝合缝衔入卷轴）
         for gy in [-trimH + outerRim, -trimH + outerRim + redBand, -innerSlip, h + innerSlip, h + trimH - outerRim - redBand, h + trimH - outerRim] {
-            m.segment(0, gy, w, gy, width: threadW, goldBright, alpha: 0.88)
+            m.segment(frameX0, gy, frameX1, gy, width: threadW, goldBright, alpha: 0.88)
         }
-        let brocadeStep = max(26, unit * 0.038)
-        let diamondR = trimH * 0.19
+        // 云锦绫面细密菱格如意暗花（交错重菱＋中心金蕊）
+        let brocadeStep = max(24, unit * 0.034)
+        let diamondR = trimH * 0.21
+        let topMidY = -innerSlip - (trimH - outerRim - redBand - innerSlip) * 0.5
+        let botMidY = h + innerSlip + (trimH - outerRim - redBand - innerSlip) * 0.5
         var bx: Float = brocadeStep * 0.5
         while bx < w - brocadeStep * 0.3 {
-            for by in [-innerSlip - (trimH - outerRim - redBand - innerSlip) * 0.5, h + innerSlip + (trimH - outerRim - redBand - innerSlip) * 0.5] {
-                m.polyline([bx - diamondR, by, bx, by - diamondR * 0.68, bx + diamondR, by, bx, by + diamondR * 0.68, bx - diamondR, by], width: threadW * 0.8, silkDeep, alpha: 0.48)
-                m.disc(bx, by, radius: diamondR * 0.18, goldBright, alpha: 0.55, sides: 6)
+            for by in [topMidY, botMidY] {
+                m.polyline([bx - diamondR, by, bx, by - diamondR * 0.65, bx + diamondR, by, bx, by + diamondR * 0.65, bx - diamondR, by], width: threadW * 0.78, silkDeep, alpha: 0.52)
+                m.polyline([bx - diamondR * 0.56, by, bx, by - diamondR * 0.36, bx + diamondR * 0.56, by, bx, by + diamondR * 0.36, bx - diamondR * 0.56, by], width: threadW * 0.55, goldBright, alpha: 0.48)
+                m.disc(bx, by, radius: diamondR * 0.14, goldBright, alpha: 0.68, sides: 6)
             }
             bx += brocadeStep
         }
 
-        // 上下正中「御制朱锦玉别子」锦带扣饰
+        // 上下正中「嵌玉朱锦玉别子」锦带扣饰（带柔和东南落影与玉面高光）
         let midX = w * 0.5
-        for (y0, y1) in [(-trimH * 1.04, -innerSlip * 0.7), (h + innerSlip * 0.7, h + trimH * 1.04)] {
-            let cy = (y0 + y1) * 0.5
-            let cw = trimH * 1.75
+        for (y0, y1) in [(-trimH * 1.05, -innerSlip * 0.65), (h + innerSlip * 0.65, h + trimH * 1.05)] {
+            let cy = (y0 + y1) * 0.5, cw = trimH * 1.85
+            // 锦扣东南投影
+            rect(midX - cw + 2.5, y0 + 2.5, midX + cw + 3.2, y1 + 3.2, deskShadow, alpha: 0.28)
             rect(midX - cw, y0, midX + cw, y1, brocadeRed, alpha: 0.99)
-            m.polyline([midX - cw + 1.4, y0 + 1.4, midX + cw - 1.4, y0 + 1.4, midX + cw - 1.4, y1 - 1.4, midX - cw + 1.4, y1 - 1.4, midX - cw + 1.4, y0 + 1.4], width: threadW, goldBright, alpha: 0.92)
-            m.disc(midX, cy, radius: trimH * 0.24, jade, alpha: 0.98)
-            m.disc(midX, cy, radius: trimH * 0.14, jadeLight, alpha: 0.92)
-            m.disc(midX - cw * 0.58, cy, radius: trimH * 0.11, goldBright, alpha: 0.92)
-            m.disc(midX + cw * 0.58, cy, radius: trimH * 0.11, goldBright, alpha: 0.92)
+            m.gradientQuad(SIMD2(midX - cw, y0), SIMD2(midX + cw, y0), SIMD2(midX + cw, cy), SIMD2(midX - cw, cy), brocadeLit, brocadeRed, brocadeRed, brocadeRed, alpha: 0.85)
+            m.polyline([midX - cw + 1.5, y0 + 1.5, midX + cw - 1.5, y0 + 1.5, midX + cw - 1.5, y1 - 1.5, midX - cw + 1.5, y1 - 1.5, midX - cw + 1.5, y0 + 1.5], width: threadW * 1.05, goldBright, alpha: 0.94)
+            // 中心嵌青碧玉（暗底 → 玉身 → 西北晶润高光）
+            m.disc(midX + 0.8, cy + 1.0, radius: trimH * 0.29, deskShadow, alpha: 0.32, sides: 16)
+            m.disc(midX, cy, radius: trimH * 0.28, goldMid, alpha: 0.98, sides: 16)
+            m.disc(midX, cy, radius: trimH * 0.23, jadeDark, alpha: 0.98, sides: 16)
+            m.disc(midX - 0.5, cy - 0.5, radius: trimH * 0.19, jadeMid, alpha: 0.96, sides: 14)
+            m.disc(midX - trimH * 0.06, cy - trimH * 0.06, radius: trimH * 0.09, jadeHi, alpha: 0.92, sides: 10)
+            // 左右鎏金双铆钉
+            for sx in [Float(-1), 1] {
+                let rx = midX + sx * cw * 0.62
+                m.disc(rx + 0.5, cy + 0.6, radius: trimH * 0.12, deskShadow, alpha: 0.28, sides: 10)
+                m.disc(rx, cy, radius: trimH * 0.11, goldMid, alpha: 0.96, sides: 10)
+                m.disc(rx - 0.4, cy - 0.4, radius: trimH * 0.055, goldBright, alpha: 0.95, sides: 8)
+            }
         }
 
-        // 画心内外双层细金墨框 + 四角传统回纹鎏金包角
-        let ruleIn = unit * 0.0085
-        let ruleOut = unit * 0.0035
-        m.polyline([ruleIn, ruleIn, w - ruleIn, ruleIn, w - ruleIn, h - ruleIn, ruleIn, h - ruleIn, ruleIn, ruleIn], width: max(1.0, unit * 0.0017), silkDeep, alpha: 0.65)
-        m.polyline([ruleOut, ruleOut, w - ruleOut, ruleOut, w - ruleOut, h - ruleOut, ruleOut, h - ruleOut, ruleOut, ruleOut], width: max(0.75, unit * 0.0012), ink, alpha: 0.48)
+        // 画心内外双层细金墨框 + 四角传统双层回纹鎏金包角
+        let ruleIn = unit * 0.009, ruleOut = unit * 0.0035
+        m.polyline([ruleIn, ruleIn, w - ruleIn, ruleIn, w - ruleIn, h - ruleIn, ruleIn, h - ruleIn, ruleIn, ruleIn], width: max(1.0, unit * 0.0017), silkDeep, alpha: 0.68)
+        m.polyline([ruleOut, ruleOut, w - ruleOut, ruleOut, w - ruleOut, h - ruleOut, ruleOut, h - ruleOut, ruleOut, ruleOut], width: max(0.75, unit * 0.0012), ink, alpha: 0.52)
 
-        let cLen = unit * 0.044, cStep = unit * 0.013, cw = max(1.3, unit * 0.0023)
+        let cLen = unit * 0.048, cStep = unit * 0.013, cw = max(1.3, unit * 0.0023)
         for (sx, sy, ox, oy) in [(Float(1), Float(1), ruleIn, ruleIn), (-1, 1, w - ruleIn, ruleIn), (1, -1, ruleIn, h - ruleIn), (-1, -1, w - ruleIn, h - ruleIn)] {
-            m.polyline([ox, oy + sy * cLen, ox, oy, ox + sx * cLen, oy], width: cw * 1.4, brocadeRed, alpha: 0.88)
-            m.polyline([ox + sx * cStep, oy + sy * (cLen * 0.72), ox + sx * cStep, oy + sy * cStep, ox + sx * (cLen * 0.72), oy + sy * cStep], width: cw * 0.95, silkGold, alpha: 0.92)
-            m.disc(ox + sx * cStep * 1.45, oy + sy * cStep * 1.45, radius: cw * 1.25, goldBright, alpha: 0.90)
+            m.polyline([ox, oy + sy * cLen, ox, oy, ox + sx * cLen, oy], width: cw * 1.45, brocadeRed, alpha: 0.90)
+            m.polyline([ox + sx * cStep, oy + sy * (cLen * 0.78), ox + sx * cStep, oy + sy * cStep, ox + sx * (cLen * 0.78), oy + sy * cStep], width: cw * 0.95, silkGoldLight, alpha: 0.94)
+            // 回纹拐钩
+            let hook = cStep * 1.9
+            m.polyline([ox + sx * hook, oy + sy * (cStep * 2.7), ox + sx * hook, oy + sy * hook, ox + sx * (cStep * 2.7), oy + sy * hook], width: cw * 0.72, goldBright, alpha: 0.85)
+            m.disc(ox + sx * cStep * 1.4, oy + sy * cStep * 1.4, radius: cw * 1.15, goldBright, alpha: 0.92, sides: 10)
         }
 
-        // 3. 左右 7 层圆柱立体紫檀卷轴杆 + 多叠卷纸侧边 + 鎏金雕花箍环 + 青碧玉葫芦轴头
-        func drawRoller(x0: Float, x1: Float, inwardRight: Bool) {
-            let rw = x1 - x0
-            let yTop = -trimH - capOut * 0.25, yBot = h + trimH + capOut * 0.25
-            // 7 段圆柱平滑光照带
-            rect(x0, yTop, x1, yBot, woodShadow, alpha: 0.99)
-            rect(x0 + rw * 0.08, yTop, x1 - rw * 0.08, yBot, woodDark, alpha: 0.98)
-            rect(x0 + rw * 0.17, yTop, x1 - rw * 0.17, yBot, woodMid, alpha: 0.96)
-            let warmA = inwardRight ? x0 + rw * 0.24 : x0 + rw * 0.36
-            let warmB = inwardRight ? x0 + rw * 0.64 : x0 + rw * 0.76
-            rect(warmA, yTop, warmB, yBot, woodWarm, alpha: 0.94)
-            let hiA = inwardRight ? x0 + rw * 0.32 : x0 + rw * 0.48
-            let hiB = inwardRight ? x0 + rw * 0.52 : x0 + rw * 0.68
-            rect(hiA, yTop, hiB, yBot, woodLight, alpha: 0.92)
-            let specX = (hiA + hiB) * 0.5
-            m.segment(specX, yTop, specX, yBot, width: max(1.2, rw * 0.09), goldBright, alpha: 0.52)
+        // 3. 左右 24 段光滑圆柱立体紫檀卷轴 + 卷纸侧叠断面 + 鎏金雕花轴箍 + 雕刻青碧玉葫芦轴头 + 朱锦丝绦
+        func drawRoller(x0: Float, x1: Float, inwardRight: Bool, addTassel: Bool) {
+            let rw = x1 - x0, cx = (x0 + x1) * 0.5
+            let capW = rw * 0.82
 
-            // 卷入木轴的多叠宣纸高光卷边（让左右真像卷起来的圣旨纸筒）
-            let curl1 = inwardRight ? x1 - rw * 0.07 : x0 + rw * 0.07
-            let curl2 = inwardRight ? x1 - rw * 0.15 : x0 + rw * 0.15
-            m.segment(curl1, 0, curl1, h, width: max(1.4, rw * 0.11), RGB(hex: 0xEFE3C8), alpha: 0.92)
-            m.segment(curl2, 0, curl2, h, width: max(0.8, rw * 0.06), RGB(hex: 0xCBB994), alpha: 0.78)
+            // 轴头下方独立椭圆柔影（投向东南方，严密吻合西北日照）
+            softEllipseShadow(cx: cx + rw * 0.16, cy: rollTop - capOut * 0.5 + rw * 0.18, rx: capW * 0.62, ry: capOut * 0.72, alpha: 0.34)
+            softEllipseShadow(cx: cx + rw * 0.16, cy: rollBot + capOut * 0.5 + rw * 0.22, rx: capW * 0.66, ry: capOut * 0.78, alpha: 0.38)
 
-            // 轴杆上下鎏金雕花箍环
-            let ringH = trimH * 0.76
+            // 圆柱木轴主体（平滑连续 20 段 Phong 漫反射＋丝缎镜面高光）
+            cylinder(x0, x1, rollTop, rollBot, dark: woodDark, mid: woodMid, hi: woodHi, spec: goldBright, specPow: 22, specAmt: 0.34, steps: 20)
+
+            // 细腻紫檀木纹直丝（极低透明度增加手工打磨实木触感）
+            for g in [Float(0.22), 0.38, 0.56, 0.74] {
+                let gx = x0 + rw * g
+                m.segment(gx, rollTop + 2, gx, rollBot - 2, width: max(0.55, rw * 0.025), woodDark, alpha: 0.22)
+            }
+
+            // 卷入木轴的多叠宣纸高光卷边与上下卷纸断面（立显真实圣旨卷筒层次）
+            let curl1 = inwardRight ? x1 - rw * 0.05 : x0 + rw * 0.05
+            let curl2 = inwardRight ? x1 - rw * 0.12 : x0 + rw * 0.12
+            let curl3 = inwardRight ? x1 - rw * 0.18 : x0 + rw * 0.18
+            m.segment(curl1, 0, curl1, h, width: max(1.6, rw * 0.11), paperEdge, alpha: 0.95)
+            m.segment(curl2, 0, curl2, h, width: max(0.95, rw * 0.065), paperEdgeShade, alpha: 0.85)
+            m.segment(curl3, 0, curl3, h, width: max(0.7, rw * 0.045), deskShadow, alpha: 0.45)
+
+            // 上下鎏金雕花圆柱箍环（与木轴同一西北光照）
+            let ringH = trimH * 0.78
             for ry in [-trimH, h + trimH - ringH] {
-                rect(x0 - rw * 0.07, ry, x1 + rw * 0.07, ry + ringH, silkDeep, alpha: 0.98)
-                rect(x0 - rw * 0.04, ry + ringH * 0.12, x1 + rw * 0.04, ry + ringH * 0.88, silkGold, alpha: 0.98)
-                rect(hiA, ry + ringH * 0.12, hiB, ry + ringH * 0.88, goldBright, alpha: 0.95)
-                m.polyline([x0 - rw * 0.07, ry, x1 + rw * 0.07, ry], width: max(0.9, unit * 0.0014), ink, alpha: 0.58)
-                m.polyline([x0 - rw * 0.07, ry + ringH, x1 + rw * 0.07, ry + ringH], width: max(0.9, unit * 0.0014), ink, alpha: 0.58)
+                let rx0 = x0 - rw * 0.075, rx1 = x1 + rw * 0.075
+                cylinder(rx0, rx1, ry, ry + ringH, dark: goldDark, mid: goldMid, hi: goldBright, spec: RGB(1, 0.97, 0.86), specPow: 16, specAmt: 0.52, steps: 14)
+                // 上下凸棱与中腰雕刻细线
+                m.segment(rx0, ry, rx1, ry, width: max(1.0, unit * 0.0016), ink, alpha: 0.65)
+                m.segment(rx0, ry + ringH, rx1, ry + ringH, width: max(1.0, unit * 0.0016), ink, alpha: 0.65)
+                m.segment(rx0 + 1, ry + ringH * 0.22, rx1 - 1, ry + ringH * 0.22, width: threadW * 0.75, goldDark, alpha: 0.55)
+                m.segment(rx0 + 1, ry + ringH * 0.78, rx1 - 1, ry + ringH * 0.78, width: threadW * 0.75, goldDark, alpha: 0.55)
             }
 
-            // 上下两端青碧玉葫芦轴头 + 鎏金宝顶
-            let capW = rw * 0.82, cx = (x0 + x1) * 0.5
-            for (yA, yB, tipY) in [(yTop - capOut, yTop, yTop - capOut - capOut * 0.22), (yBot, yBot + capOut, yBot + capOut + capOut * 0.22)] {
-                rect(cx - capW * 0.5, yA, cx + capW * 0.5, yB, jadeDark, alpha: 0.99)
-                rect(cx - capW * 0.4, yA, cx + capW * 0.4, yB, jade, alpha: 0.98)
-                rect(cx - capW * 0.18, yA, cx + capW * 0.14, yB, jadeLight, alpha: 0.92)
-                // 鎏金宝顶圆帽
-                m.disc(cx, tipY, radius: capW * 0.34, silkGold, alpha: 0.98, sides: 12)
-                m.disc(cx - capW * 0.08, tipY, radius: capW * 0.16, goldBright, alpha: 0.95, sides: 10)
+            // 上下两端雕刻青碧玉葫芦轴头 + 鎏金领环 + 圆润玉顶金珠
+            for (yA, yB, isTop) in [(rollTop - capOut, rollTop, true), (rollBot, rollBot + capOut, false)] {
+                let neckY = isTop ? yB - capOut * 0.22 : yA + capOut * 0.22
+                let bodyA = isTop ? yA + capOut * 0.12 : neckY
+                let bodyB = isTop ? neckY : yB - capOut * 0.12
+                // 鎏金颈环
+                cylinder(cx - capW * 0.54, cx + capW * 0.54, min(neckY, isTop ? yB : yA), max(neckY, isTop ? yB : yA), dark: goldDark, mid: goldMid, hi: goldBright, spec: RGB(1, 0.97, 0.88), specPow: 14, specAmt: 0.5, steps: 10)
+                // 碧玉主体（20 段柔和温润玉光）
+                cylinder(cx - capW * 0.48, cx + capW * 0.48, bodyA, bodyB, dark: jadeDark, mid: jadeMid, hi: jadeHi, spec: RGB(0.92, 0.99, 0.96), specPow: 24, specAmt: 0.48, steps: 14)
+                // 玉顶圆帽与鎏金宝珠
+                let tipY = isTop ? yA : yB
+                m.disc(cx, tipY, radius: capW * 0.42, jadeDark, alpha: 0.98, sides: 16)
+                m.disc(cx - capW * 0.05, tipY, radius: capW * 0.36, jadeMid, alpha: 0.96, sides: 14)
+                m.disc(cx - capW * 0.14, tipY + (isTop ? -capW * 0.06 : capW * 0.06), radius: capW * 0.15, jadeHi, alpha: 0.88, sides: 10)
+                let beadY = isTop ? tipY - capW * 0.30 : tipY + capW * 0.30
+                m.disc(cx, beadY, radius: capW * 0.20, goldMid, alpha: 0.99, sides: 12)
+                m.disc(cx - capW * 0.06, beadY - capW * 0.05, radius: capW * 0.09, goldBright, alpha: 0.96, sides: 8)
+            }
+
+            // 右上轴头垂挂一缕典雅「朱锦金穗丝绦」，点睛皇家御卷细节
+            if addTassel {
+                let tx = x1 + rw * 0.06, ty0 = rollTop + trimH * 0.45
+                // 丝绦投向案面的淡影
+                m.polyline([tx + 2.4, ty0 + 2.5, tx + rw * 0.44, ty0 + trimH * 1.45, tx + rw * 0.32, ty0 + trimH * 3.15], width: max(1.8, rw * 0.08), deskShadow, alpha: 0.22)
+                // 朱红编织丝带 + 如意玉结 + 鎏金流苏穗
+                m.polyline([tx, ty0, tx + rw * 0.38, ty0 + trimH * 1.35, tx + rw * 0.26, ty0 + trimH * 2.95], width: max(1.7, rw * 0.075), brocadeRed, alpha: 0.96)
+                m.polyline([tx - 0.5, ty0, tx + rw * 0.35, ty0 + trimH * 1.35], width: max(0.7, rw * 0.03), goldBright, alpha: 0.72)
+                let knotX = tx + rw * 0.26, knotY = ty0 + trimH * 2.95
+                m.disc(knotX, knotY, radius: rw * 0.13, brocadeLit, alpha: 0.98, sides: 10)
+                m.disc(knotX, knotY, radius: rw * 0.065, goldBright, alpha: 0.96, sides: 8)
+                for s in -2...2 {
+                    let fx = knotX + Float(s) * rw * 0.048
+                    m.segment(knotX, knotY + rw * 0.08, fx, knotY + trimH * 1.15, width: max(0.65, rw * 0.032), s % 2 == 0 ? goldBright : brocadeRed, alpha: 0.90)
+                }
             }
         }
-        drawRoller(x0: -rollerW * 0.85, x1: rollerW * 0.22, inwardRight: true)
-        drawRoller(x0: w - rollerW * 0.22, x1: w + rollerW * 0.85, inwardRight: false)
+        drawRoller(x0: leftX0, x1: leftX1, inwardRight: true, addTassel: false)
+        drawRoller(x0: rightX0, x1: rightX1, inwardRight: false, addTassel: true)
 
         return m
     }
@@ -648,27 +829,49 @@ public enum MapLayers {
         return map.meta.cities.indices.map { capitals.contains($0) ? .capital : seats.contains($0) ? .provinceSeat : .city }
     }
 
-    /// Shapes CityMain (black disc, white centre 0.56) and CityCapitalFinal (1.3 / 0.885 / 0.43 rings).
-    /// A province seat uses the same discs, drawn clearer than an ordinary city and smaller than a capital.
-    /// The seat radius (1.7× a town, under the capital's 1.95× outer ring) is a presentation choice (网页适配), not a measured original size.
+    /// 精绘城池徽记（附统一东南柔影）：
+    /// - 国都：落影 + 墨环 + 鎏金城廓 + 象牙护城河 + 朱砂内城 + 鎏金四芒星辉；
+    /// - 府城：落影 + 墨石城垣 + 宣白内坊 + 鎏金方印内城 + 墨心；
+    /// - 城邑：落影 + 墨圈 + 温润象牙城心。
     public static func cityIcons(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
-        let black = RGB(0, 0, 0), white = RGB(1, 1, 1), u = cityUnit, c = cityUnit * 1.5
+        let shadow = RGB(hex: 0x1E140A)
+        let ink = RGB(hex: 0x261B12)
+        let ivory = RGB(hex: 0xFAF3E3)
+        let gold = RGB(hex: 0xD9AD4B)
+        let goldHi = RGB(hex: 0xF8E4A6)
+        let seal = RGB(hex: 0xA8261B)
+        let bronze = RGB(hex: 0x8F6B36)
+        let u = cityUnit, c = cityUnit * 1.5
         for (mark, city) in zip(cityMarks(map), map.meta.cities) {
+            let x = city.x, y = city.y
             switch mark {
             case .capital:
-                // 都城: larger than any seat and unmistakable — an ink rim, a gold ring, a vermilion heart.
-                // Drawn a quarter larger than before (same rings), so it is found at a glance.
                 let k = Float(capitalOuter / 1.75)
-                m.disc(city.x, city.y, radius: 1.75 * k * c, black); m.disc(city.x, city.y, radius: 1.42 * k * c, RGB(0.9, 0.72, 0.3)); m.disc(city.x, city.y, radius: 1.08 * k * c, black)
-                m.disc(city.x, city.y, radius: 0.82 * k * c, white); m.disc(city.x, city.y, radius: 0.5 * k * c, RGB(0.72, 0.16, 0.12))
+                let r = 1.75 * k * c
+                m.disc(x + r * 0.20, y + r * 0.24, radius: r * 1.06, shadow, alpha: 0.30, sides: 20)
+                m.disc(x, y, radius: r, ink, sides: 20)
+                m.disc(x, y, radius: r * 0.84, gold, sides: 20)
+                m.disc(x, y, radius: r * 0.66, ink, sides: 18)
+                m.disc(x, y, radius: r * 0.55, ivory, sides: 18)
+                m.disc(x, y, radius: r * 0.42, seal, sides: 16)
+                // 中心鎏金四芒皇星
+                let sr = r * 0.34, sw = r * 0.11
+                m.fill([x, y - sr, x + sw, y - sw, x + sr, y, x + sw, y + sw, x, y + sr, x - sw, y + sw, x - sr, y, x - sw, y - sw], goldHi, alpha: 0.98)
             case .provinceSeat:
-                // Larger than a town (u) and still inside the capital's outer ring (1.95u). The white
-                // disc is wide so the black rim and the centre pip read at the close-up used in screenshots.
-                let s = u * 1.7
-                m.disc(city.x, city.y, radius: s, black, sides: 16); m.disc(city.x, city.y, radius: 0.72 * s, white, sides: 16); m.disc(city.x, city.y, radius: 0.34 * s, black, sides: 12)
+                let s = u * 1.72
+                m.disc(x + s * 0.22, y + s * 0.26, radius: s * 1.06, shadow, alpha: 0.26, sides: 16)
+                m.disc(x, y, radius: s, ink, sides: 16)
+                m.disc(x, y, radius: 0.74 * s, ivory, sides: 16)
+                // 府城方形青铜内城墙与城心
+                let q = 0.42 * s
+                m.fill([x - q, y - q, x + q, y - q, x + q, y + q, x - q, y + q], bronze, alpha: 0.95)
+                m.disc(x, y, radius: 0.22 * s, ink, sides: 10)
             case .city:
-                m.disc(city.x, city.y, radius: u, black, sides: 14); m.disc(city.x, city.y, radius: 0.56 * u, white, sides: 14)
+                m.disc(x + u * 0.24, y + u * 0.28, radius: u * 1.06, shadow, alpha: 0.24, sides: 12)
+                m.disc(x, y, radius: u, ink, sides: 14)
+                m.disc(x, y, radius: 0.60 * u, ivory, sides: 14)
+                m.disc(x, y, radius: 0.22 * u, ink, sides: 8)
             }
         }
         return m

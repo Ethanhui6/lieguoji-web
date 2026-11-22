@@ -81,15 +81,15 @@ extension MapLayers {
             }
             frontier = next
         }
-        // 六道由浓渐淡的木刻等深水线 + 柔润翡翠浅滩过渡（海岸更细腻立体）
-        let rings: [(at: Float, strength: Float)] = [(4.2, 0.78), (9.2, 0.62), (15.2, 0.46), (22.5, 0.34), (31.5, 0.23), (42.0, 0.14)]
+        // 七道由浓渐淡的木刻等深水线 + 柔润翡翠浅海陆棚过渡（近岸层次更细腻立体）
+        let rings: [(at: Float, strength: Float)] = [(3.4, 0.84), (7.6, 0.68), (12.8, 0.54), (18.8, 0.42), (25.8, 0.30), (33.5, 0.20), (41.0, 0.12)]
         let unit = 1 / max(sx, sy)
         var mask = [UInt8](repeating: 0, count: w * h * 2)
         for p in 0..<(w * h) where distance[p] > 0 {
             let d = Float(distance[p]) * unit
             var light: Float = 0
             for r in rings { light = max(light, max(0, 1 - abs(d - r.at) / max(1, unit)) * r.strength) }
-            mask[p * 2] = UInt8(light * 255); mask[p * 2 + 1] = UInt8(max(0, 1 - d / 28) * 0.34 * 255)
+            mask[p * 2] = UInt8(light * 255); mask[p * 2 + 1] = UInt8(max(0, 1 - d / 32) * 0.38 * 255)
         }
         // The sea texture is coarse: two soft passes take the stair steps out of the lines.
         for _ in 0..<2 {
@@ -239,43 +239,60 @@ extension MapLayers {
                 m.polyline(line, width: 0.62 - Float(k) * 0.08, wave, alpha: 0.52 - Float(k) * 0.09)
             }
         }
-        // 浅滩: short pale dashes along the coast in the shallows, as old charts mark shoal water.
+        // 浅滩礁沙：海岸近浅水点缀细沙短划与礁点，增强海陆衔接细节
+        let reef = RGB(hex: 0x395866)
         for c in 0..<map.cellCount where !map.isLand(c) && !lakes[c] && shore[c] && hash(c &* 5 &+ 3) % 2 == 0 {
             let x = map.sites[c * 2], y = map.sites[c * 2 + 1], h = Int(hash(c &* 13 &+ 1))
             let dx = Float(h % 9) / 4 - 1, dy = Float(h / 9 % 9) / 4 - 1
-            m.segment(x + dx - 0.9, y + dy, x + dx + 0.9, y + dy, width: 0.42, sand, alpha: 0.5)
+            m.segment(x + dx - 1.1, y + dy, x + dx + 1.1, y + dy, width: 0.44, sand, alpha: 0.54)
+            if h % 5 == 0 {
+                m.disc(x + dx + 1.6, y + dy + 0.9, radius: 0.48, reef, alpha: 0.42, sides: 6)
+            }
         }
-        // 精致十六向鎏金罗盘（含古航海方位射线、外圈 32 分刻度环、朱砂北针、八大主向与八小副向指针）
+        // 精致十六向鎏金罗盘（带柔和东南水影、古航海方位射线、外圈 32 分刻度环、朱砂北针、十六向指针）
         let (cx, cy) = compassCorner(map)
-        // 远洋手绘古航海帆船剪影（至多 3 艘，严格避开陆地与罗盘，赋予大洋古典舆图神韵）
-        let hullColor = RGB(hex: 0x4A3321), sailColor = RGB(hex: 0xF0E6CE), pennantColor = RGB(hex: 0x9E3629)
+        // 远洋精绘三桅古航海宝船（至多 5 艘，严格避开陆地与罗盘，附船底水影、满帆缝线、鎏金船尾与 V 形航迹波）
+        let hullColor = RGB(hex: 0x4A311E), hullLight = RGB(hex: 0x7A5334), sailColor = RGB(hex: 0xF4ECDA), sailShade = RGB(hex: 0xD7C9AA)
+        let pennantColor = RGB(hex: 0xA83226), wakeFoam = RGB(hex: 0xEAF3F2)
         var placedShips: [(Float, Float)] = []
-        for (sx, sy) in shipSpots where placedShips.count < 3 {
+        for (sx, sy) in shipSpots where placedShips.count < 5 {
             let dc = hypot(sx - cx, sy - cy)
-            guard dc > 150 else { continue }
-            guard !placedShips.contains(where: { hypot($0.0 - sx, $0.1 - sy) < 260 }) else { continue }
+            guard dc > 145 else { continue }
+            guard !placedShips.contains(where: { hypot($0.0 - sx, $0.1 - sy) < 210 }) else { continue }
             var nearLand = false
             for c in stride(from: 0, to: map.cellCount, by: 7) where map.isLand(c) {
                 let dx = map.sites[c * 2] - sx, dy = map.sites[c * 2 + 1] - sy
-                if dx * dx + dy * dy < 44 * 44 { nearLand = true; break }
+                if dx * dx + dy * dy < 42 * 42 { nearLand = true; break }
             }
             if nearLand { continue }
             placedShips.append((sx, sy))
             let dir: Float = placedShips.count % 2 == 0 ? -1 : 1
-            // 船尾水波纹
-            m.polyline([sx - 10 * dir, sy + 5.2, sx - 3 * dir, sy + 4.4, sx + 5 * dir, sy + 5.3, sx + 11 * dir, sy + 4.6], width: 0.55, wave, alpha: 0.55)
-            // 船身
-            m.fill([sx - 8.5 * dir, sy + 1.2, sx + 9.2 * dir, sy + 0.8, sx + 6.4 * dir, sy + 4.4, sx - 6.2 * dir, sy + 4.4], hullColor, alpha: 0.72)
-            // 主桅与前桅满帆
-            m.segment(sx - 0.5 * dir, sy + 1.0, sx - 0.5 * dir, sy - 10.5, width: 0.65, ink, alpha: 0.68)
-            m.fill([sx - 0.5 * dir, sy - 9.4, sx + 6.4 * dir, sy - 4.8, sx + 5.4 * dir, sy - 0.4, sx - 1.2 * dir, sy - 1.2], sailColor, alpha: 0.78)
-            m.polyline([sx - 0.5 * dir, sy - 9.4, sx + 6.4 * dir, sy - 4.8, sx + 5.4 * dir, sy - 0.4, sx - 1.2 * dir, sy - 1.2], width: 0.45, ink, alpha: 0.55)
-            m.fill([sx - 5.2 * dir, sy - 6.2, sx - 1.4 * dir, sy - 3.6, sx - 2.0 * dir, sy - 0.8, sx - 5.8 * dir, sy - 1.4], sailColor, alpha: 0.68)
-            // 桅顶朱红小旗
-            m.fill([sx - 0.5 * dir, sy - 10.6, sx - 4.2 * dir, sy - 9.6, sx - 0.5 * dir, sy - 8.8], pennantColor, alpha: 0.78)
+            // 船底东南水影 + V 形船首尾航迹白浪
+            m.fill([sx - 8.2 * dir + 1.6, sy + 4.4, sx + 9.2 * dir + 1.6, sy + 4.0, sx + 6.4 * dir + 2.2, sy + 6.8, sx - 6.8 * dir + 1.8, sy + 6.8], trough, alpha: 0.24)
+            m.polyline([sx + 8.6 * dir, sy + 3.4, sx + 1.5 * dir, sy + 5.6, sx - 11.5 * dir, sy + 6.4], width: 0.55, wakeFoam, alpha: 0.62)
+            m.polyline([sx + 7.2 * dir, sy + 4.4, sx - 2.0 * dir, sy + 6.2, sx - 13.0 * dir, sy + 5.0], width: 0.42, wave, alpha: 0.45)
+            // 高翘船首与楼船船身（含向阳甲板边线）
+            m.fill([sx - 9.4 * dir, sy + 0.4, sx - 5.0 * dir, sy + 1.4, sx + 9.8 * dir, sy + 0.6, sx + 6.8 * dir, sy + 4.5, sx - 6.6 * dir, sy + 4.5], hullColor, alpha: 0.84)
+            m.segment(sx - 8.6 * dir, sy + 1.4, sx + 8.8 * dir, sy + 1.3, width: 0.55, hullLight, alpha: 0.78)
+            // 三桅：后桅、主桅、前桅
+            m.segment(sx - 5.2 * dir, sy + 1.2, sx - 5.2 * dir, sy - 7.8, width: 0.52, ink, alpha: 0.72)
+            m.segment(sx - 0.2 * dir, sy + 1.2, sx - 0.2 * dir, sy - 11.8, width: 0.68, ink, alpha: 0.78)
+            m.segment(sx + 4.6 * dir, sy + 1.2, sx + 4.6 * dir, sy - 8.2, width: 0.52, ink, alpha: 0.72)
+            // 主帆（鼓风曲面＋背阴折光＋横向帆骨缝线）
+            m.fill([sx - 0.2 * dir, sy - 10.2, sx + 6.2 * dir, sy - 6.2, sx + 5.2 * dir, sy - 0.8, sx - 1.2 * dir, sy - 1.4], sailColor, alpha: 0.88)
+            m.fill([sx + 3.0 * dir, sy - 8.0, sx + 6.2 * dir, sy - 6.2, sx + 5.2 * dir, sy - 0.8, sx + 2.4 * dir, sy - 1.1], sailShade, alpha: 0.52)
+            m.polyline([sx - 0.2 * dir, sy - 10.2, sx + 6.2 * dir, sy - 6.2, sx + 5.2 * dir, sy - 0.8, sx - 1.2 * dir, sy - 1.4, sx - 0.2 * dir, sy - 10.2], width: 0.42, ink, alpha: 0.58)
+            m.segment(sx - 0.6 * dir, sy - 5.6, sx + 5.6 * dir, sy - 5.0, width: 0.34, ink, alpha: 0.38)
+            // 前帆与后帆
+            m.fill([sx + 4.6 * dir, sy - 7.4, sx + 8.6 * dir, sy - 4.4, sx + 7.8 * dir, sy - 0.9, sx + 3.8 * dir, sy - 1.3], sailColor, alpha: 0.82)
+            m.fill([sx - 5.2 * dir, sy - 6.8, sx - 1.6 * dir, sy - 4.2, sx - 2.2 * dir, sy - 1.0, sx - 6.0 * dir, sy - 1.6], sailColor, alpha: 0.76)
+            // 主桅顶朱砂长旌
+            m.fill([sx - 0.2 * dir, sy - 12.0, sx - 5.4 * dir, sy - 11.2, sx - 0.2 * dir, sy - 10.2], pennantColor, alpha: 0.86)
         }
-        let radius: Float = 56
+        let radius: Float = 58
         let gold = RGB(hex: 0xB88B3B), seal = RGB(hex: 0xA63628)
+        // 罗盘柔和东南落影，立于海面之上
+        m.disc(cx + 2.6, cy + 3.2, radius: radius * 0.86, trough, alpha: 0.14, sides: 32)
         // 古航海图方位射线（自罗盘轻柔向外延展，极低透明度衬托古舆图韵味）
         let raySpan = min(map.width, map.height) * 0.26
         for k in 0..<16 {

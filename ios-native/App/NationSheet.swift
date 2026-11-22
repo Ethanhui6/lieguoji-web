@@ -305,7 +305,7 @@ struct NationSheet: View {
                         Task { await run(success: "已任命\(name)为\((target.office.hasPrefix("WarCommander") ? "征伐主将" : Self.title(String(target.office.split(separator: ":").first ?? ""), info)))") { await model.appointOffice(nation, office: target.office, person: person) } }
                     }
                 }
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $editing) { p in
                 PersonEditor(person: p) { skills, traits, first, last, age in
@@ -317,26 +317,26 @@ struct NationSheet: View {
                         }
                     }
                 }
-                .presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
-            .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section) }
+            .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section) }
             .sheet(item: $tree, onDismiss: { Task { await reload() } }) { t in
                 FamilyTreeSheet(model: model, family: t.id, name: t.name)
-                    .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
             }
             .sheet(item: $numberEdit) { e in
                 NumberEditSheet(title: e.title, unit: e.unit, value: e.value) { v in
                     numberEdit = nil
                     Task { await run(success: "\(e.title)已改为 \(Int(v))\(e.unit)") { await e.apply(v) } }
                 }
-                .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.height(370)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $partyEdit) { p in
                 PartyEditSheet(name: p.name, seats: p.seats) { name, seats in
                     partyEdit = nil
                     Task { await run(success: "\(name)已修改") { await model.editParty(nation, party: p.id, name: name, seats: seats) } }
                 }
-                .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $creatingHouse) {
                 let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
@@ -361,14 +361,14 @@ struct NationSheet: View {
                     .padding(.horizontal, 16)
                 }
                 .padding(.bottom, 22)
-                .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $enthroning) {
                 EnthroneSheet(model: model, nation: nation, stateName: meta?.name ?? info?.name ?? "") { personId, name in
                     enthroning = false
                     Task { await run(success: "已拥立\(name)即位") { await model.enthronePerson(nation, person: personId) } }
                 }
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
     }

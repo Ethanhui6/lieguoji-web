@@ -99,7 +99,7 @@ struct WorldEditorSheet: View {
                 }
                 .padding(.bottom, 20)
             }
-            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $picking) {
             if let map = model.map, let state = model.state {
@@ -118,7 +118,7 @@ struct WorldEditorSheet: View {
                     }
                     .padding(.bottom, 20)
                 }
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
             }
         }
         .sheet(item: Binding(get: { exported.map(Shared.init) }, set: { exported = $0?.url })) { ShareSheet(items: [$0.url]) }
@@ -509,7 +509,9 @@ private struct NewUnitEditor: View {
             VStack(alignment: .leading, spacing: 14) {
                 SheetHeader(title: "编入新兵种", subtitle: "以现有兵种为底", seal: "兵")
                 VStack(spacing: 12) {
-                    Picker("基础兵种", selection: $base) { ForEach(UnitKinds.kinds, id: \.key) { k in Text(k.name).tag(k.key) } }.pickerStyle(.menu).tint(Theme.seal).frame(maxWidth: .infinity, alignment: .leading)
+                    Group2 {
+                        PaperMenu(title: "基础兵种", items: UnitKinds.kinds.map { ($0.key, $0.name) }, selection: $base)
+                    }
                     TextField("新兵种名称", text: $name).paperField()
                     quickSlider("战力", value: $power, 10...500, step: 5, text: "\(Int(power))%")
                     quickSlider("行速", value: $speed, 10...300, step: 5, text: "\(Int(speed))%")
@@ -520,7 +522,7 @@ private struct NewUnitEditor: View {
             }
             .padding(.bottom, 16)
         }
-        .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
     }
 }
 
@@ -536,7 +538,7 @@ private struct TitleEditor: View {
             Button("恢复默认") { done(nil) }.font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity)
         }
         .padding(.bottom, 16)
-        .presentationDetents([.height(320)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.height(320)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
     }
 }
 
@@ -564,6 +566,6 @@ private struct UnitEditor: View {
             .padding(.bottom, 16)
         }
         .onAppear { name = unit.name; power = unit.power; speed = unit.speed; weight = unit.weight }
-        .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
     }
 }

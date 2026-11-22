@@ -256,7 +256,7 @@ enum Glyph {
         // 设置、装裱与菜单（所有键均映射至统一手绘 InkGlyph）
         ("国界", "square.grid.3x3"), ("行省边界", "square.grid.2x2"), ("省界", "square.grid.2x2"), ("航线", "ferry"), ("经纬线", "map"),
         ("城市名称", "book.closed"), ("城市图标", "building.2"), ("国名", "book.closed"), ("全称", "book.closed"), ("大小", "eye"),
-        ("羊皮纸", "photo.artframe"), ("卷轴", "scroll"), ("装裱", "photo.artframe"), ("舆图", "map"), ("晕染", "paintbrush"),
+        ("羊皮纸", "photo.artframe"), ("卷轴", "scroll"), ("装裱", "photo.artframe"), ("光影", "sun.max"), ("舆图", "map"), ("晕染", "paintbrush"),
         ("浮印", "seal"), ("传报", "scroll"), ("飘字", "flame"), ("波浪", "water.waves"), ("海色", "water.waves"),
         ("地貌", "mountain.2"), ("植被", "leaf"), ("山脉", "mountain.2"), ("河流", "water.waves"), ("海洋", "water.waves"), ("海岸", "water.waves"), ("暗边", "eye"),
         ("颜色", "paintpalette"), ("国色", "paintpalette"), ("浓度", "drop"),

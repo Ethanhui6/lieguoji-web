@@ -242,11 +242,11 @@ struct TitleView: View {
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet(start: { options in creating = false; Task { await model.generate(options) } }, draw: { options in creating = false; model.openEditor(options) }, inputs: model.previewInputs)
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
             WorldArchiveSheet(model: model) { world in archive = false; Task { await model.openArchived(world) } }
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $settings) {
             ScrollView {
@@ -260,9 +260,9 @@ struct TitleView: View {
                 }
                 .padding(.bottom, 24)
             }
-            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
-        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
     }
 }
 

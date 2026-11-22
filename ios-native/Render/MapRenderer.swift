@@ -55,6 +55,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let seaPipeline: MTLRenderPipelineState
     private let texturePipeline: MTLRenderPipelineState
     private let multiplyPipeline: MTLRenderPipelineState
+    private let spriteShadowPipeline: MTLRenderPipelineState
     private let spritePipeline: MTLRenderPipelineState
     /// Army icons grouped by unit type: the texture and its quads.
     private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int)] = []
@@ -69,6 +70,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var icons: (buffer: MTLBuffer, count: Int)?
     /// Sea lanes between harbours. Rebuilt when the port list changes, hidden by the display switch.
     private var seaLanes: (buffer: MTLBuffer, count: Int)?
+    /// 海岸海港微缩徽记（木栈桥＋港湾锚标，随海港列表同步更新）。
+    private var portIcons: (buffer: MTLBuffer, count: Int)?
     /// 经纬线: twelve meridians and eight parallels over the map, built once on first use.
     private lazy var gridLines: (buffer: MTLBuffer, count: Int)? = {
         var m = ColoredMesh()
@@ -106,7 +109,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private(set) var mode: MapMode = .political
     private(set) var highlight: Int?
 
-    struct Uniforms { var viewport: SIMD2<Float>; var center: SIMD2<Float>; var scale: Float; var halfWidth: Float; var alpha: Float = 1; var pad: Float = 0 }
+    struct Uniforms {
+        var viewport: SIMD2<Float>
+        var center: SIMD2<Float>
+        var scale: Float
+        var halfWidth: Float
+        var alpha: Float = 1
+        var time: Float = 0
+        var lighting: Float = 1
+        var mapWidth: Float = 1600
+        var mapHeight: Float = 900
+        var pad: Float = 0
+    }
     /// The blank sheet the map is painted on (the parchment is multiplied over it).
     static let paper = RGB(hex: 0xEDE3CC)
     struct QuadUniforms { var origin: SIMD2<Float>; var size: SIMD2<Float> }
@@ -154,6 +168,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             seaPipeline = try pipeline("seaVertex", "seaFragment", .none)
             texturePipeline = try pipeline("quadVertex", "textureFragment", .none)
             multiplyPipeline = try pipeline("quadVertex", "textureFragment", .multiply)
+            spriteShadowPipeline = try pipeline("spriteShadowVertex", "spriteShadowFragment", .alpha)
             spritePipeline = try pipeline("spriteVertex", "spriteFragment", .alpha)
             sweepPipeline = try pipeline("sweepVertex", "sweepFragment", .alpha)
             inkPipes = try InkPipelines.make(device: device, library: library, mainFormat: view.colorPixelFormat, sampleCount: view.sampleCount)
@@ -246,6 +261,23 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         guard ports != seaLaneKey else { return false }
         seaLaneKey = ports
         seaLanes = buffer(MapLayers.seaLanes(map, ports: ports.map { (x: $0.x, y: $0.y) }).vertices, stride: 6)
+        // 海岸海港微缩徽记：柔影＋实木栈桥＋靛蓝象牙铁锚圆徽
+        var m = ColoredMesh()
+        let u = MapLayers.cityUnit
+        let shadow = RGB(hex: 0x1A242B), navy = RGB(hex: 0x264866), ivory = RGB(hex: 0xF7EFE0), timber = RGB(hex: 0x6F4A2B), gold = RGB(hex: 0xD6AB4E)
+        for p in ports {
+            let x = p.x, y = p.y, r = u * 1.15
+            m.disc(x + r * 0.22, y + r * 0.25, radius: r * 1.05, shadow, alpha: 0.26, sides: 12)
+            m.segment(x - r * 1.15, y + r * 0.55, x + r * 1.15, y + r * 0.55, width: r * 0.42, timber, alpha: 0.92)
+            m.disc(x, y, radius: r, navy, alpha: 0.96, sides: 14)
+            m.disc(x, y, radius: r * 0.72, ivory, alpha: 0.96, sides: 12)
+            // 迷你锚杆与横杠
+            m.segment(x, y - r * 0.46, x, y + r * 0.42, width: r * 0.22, navy, alpha: 0.96)
+            m.segment(x - r * 0.34, y - r * 0.16, x + r * 0.34, y - r * 0.16, width: r * 0.18, navy, alpha: 0.96)
+            m.polyline([x - r * 0.38, y + r * 0.18, x, y + r * 0.46, x + r * 0.38, y + r * 0.18], width: r * 0.19, navy, alpha: 0.96)
+            m.disc(x, y - r * 0.46, radius: r * 0.18, gold, alpha: 0.96, sides: 8)
+        }
+        portIcons = ports.isEmpty ? nil : buffer(m.vertices, stride: 6)
         return true
     }
 
@@ -268,23 +300,34 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         guard points != fortKey || holy != holyKey else { return false }
         fortKey = points; holyKey = holy
         var m = ColoredMesh()
-        let u = MapLayers.cityUnit, ink = RGB(0.16, 0.12, 0.1), wall = RGB(0.93, 0.89, 0.8)
-        func rect(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ c: RGB) { m.fill([x0, y0, x1, y0, x1, y1, x0, y1], c, alpha: 1) }
+        let u = MapLayers.cityUnit
+        let shadow = RGB(hex: 0x1E140A), ink = RGB(0.18, 0.13, 0.09), wallLit = RGB(0.95, 0.91, 0.82), wallShade = RGB(0.76, 0.70, 0.59), seal = RGB(0.74, 0.18, 0.14)
+        func rect(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ c: RGB, alpha: Float = 1) { m.fill([x0, y0, x1, y0, x1, y1, x0, y1], c, alpha: alpha) }
         for p in points {
-            let x = p.x + 2.5 * u, y = p.y - 2.4 * u, w = 2.2 * u, h = 1.6 * u, k = w / 5
+            let x = p.x + 2.55 * u, y = p.y - 2.35 * u, w = 2.45 * u, h = 1.85 * u, k = w / 5
+            // 要塞东南投影 + 墨石城垛 + 明暗双坡石壁 + 拱形铁门 + 城头小红旗
+            rect(x - w / 2 + 0.45 * u, y - h / 2 + 0.50 * u, x + w / 2 + 0.55 * u, y + h / 2 + 0.55 * u, shadow, alpha: 0.28)
             rect(x - w / 2, y - h / 2, x + w / 2, y + h / 2, ink)
-            for i in [0, 2, 4] { rect(x - w / 2 + Float(i) * k, y - h / 2 - k * 1.1, x - w / 2 + Float(i + 1) * k, y - h / 2, ink) }
-            rect(x - w / 2 + k * 0.6, y - h / 2 + k * 0.6, x + w / 2 - k * 0.6, y + h / 2 - k * 0.6, wall)
-            rect(x - k * 0.45, y + h / 2 - k * 1.8, x + k * 0.45, y + h / 2, ink)
+            for i in [0, 2, 4] { rect(x - w / 2 + Float(i) * k, y - h / 2 - k * 1.15, x - w / 2 + Float(i + 1) * k, y - h / 2, ink) }
+            rect(x - w / 2 + k * 0.52, y - h / 2 + k * 0.52, x, y + h / 2 - k * 0.52, wallLit)
+            rect(x, y - h / 2 + k * 0.52, x + w / 2 - k * 0.52, y + h / 2 - k * 0.52, wallShade)
+            rect(x - k * 0.48, y + h / 2 - k * 1.85, x + k * 0.48, y + h / 2, ink)
+            // 守备朱红令旗
+            m.segment(x + w * 0.30, y - h * 0.5 - k * 1.1, x + w * 0.30, y - h * 0.5 - k * 2.7, width: k * 0.35, ink, alpha: 0.95)
+            m.fill([x + w * 0.30, y - h * 0.5 - k * 2.7, x + w * 0.30 + k * 1.6, y - h * 0.5 - k * 2.15, x + w * 0.30, y - h * 0.5 - k * 1.6], seal, alpha: 0.96)
         }
-        // 圣地: a gold four-pointed star with an ink rim above left of the city mark.
-        let gold = RGB(0.86, 0.66, 0.2)
+        // 圣地：柔和金辉光晕 + 八芒墨边鎏金圣星 + 象牙珠心
+        let gold = RGB(0.90, 0.70, 0.24), goldHi = RGB(0.99, 0.92, 0.68), pearl = RGB(0.99, 0.97, 0.91)
         for p in holy {
-            let x = p.x - 2.5 * u, y = p.y - 2.4 * u
-            for (r, c) in [(1.55 * u, ink), (1.2 * u, gold)] {
-                let k = r * 0.36
+            let x = p.x - 2.55 * u, y = p.y - 2.35 * u
+            m.disc(x + 0.35 * u, y + 0.40 * u, radius: 1.65 * u, shadow, alpha: 0.22, sides: 14)
+            m.disc(x, y, radius: 2.05 * u, goldHi, alpha: 0.28, sides: 16)
+            for (r, c) in [(1.72 * u, ink), (1.36 * u, gold)] {
+                let k = r * 0.34, d = r * 0.70, dk = r * 0.26
                 m.fill([x, y - r, x + k, y - k, x + r, y, x + k, y + k, x, y + r, x - k, y + k, x - r, y, x - k, y - k], c, alpha: 1)
+                m.fill([x - d, y - d, x, y - dk, x + d, y - d, x + dk, y, x + d, y + d, x, y + dk, x - d, y + d, x - dk, y], c, alpha: 0.92)
             }
+            m.disc(x, y, radius: 0.42 * u, pearl, alpha: 0.98, sides: 10)
         }
         forts = buffer(m.vertices, stride: 6)
         return true
@@ -802,7 +845,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if !camera.isValid {
             camera = MapCamera.cover(map: (Double(map.width), Double(map.height)), viewport: (Double(size.width), Double(size.height)))
         }
-        var u = Uniforms(viewport: SIMD2(Float(size.width), Float(size.height)), center: SIMD2(Float(camera.centerX), Float(camera.centerY)), scale: Float(camera.scale), halfWidth: 0)
+        let lightStrength: Float = (display.lighting ?? true) ? (Energy.hot ? 0.55 : 1.0) : 0.0
+        var u = Uniforms(
+            viewport: SIMD2(Float(size.width), Float(size.height)),
+            center: SIMD2(Float(camera.centerX), Float(camera.centerY)),
+            scale: Float(camera.scale),
+            halfWidth: 0,
+            alpha: 1,
+            time: Float(frameTime.truncatingRemainder(dividingBy: 3600)),
+            lighting: lightStrength,
+            mapWidth: max(1, map.width),
+            mapHeight: max(1, map.height),
+            pad: 0
+        )
         let uniformLength = MemoryLayout<Uniforms>.stride
         func quad(_ texture: MTLTexture?, _ pipeline: MTLRenderPipelineState, x: Float, y: Float, width: Float, height: Float) {
             guard let texture else { return }
@@ -810,6 +865,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setRenderPipelineState(pipeline)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
+            encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
             encoder.setFragmentTexture(texture, index: 0)
             encoder.setFragmentSamplerState(sampler, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
@@ -823,9 +879,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
             u.alpha = 1
         }
-        // 0. 全视口无缝「御案织锦」背景：全屏均匀细腻云锦暗纹与书案聚光暗角，彻底消除拉远缩小时上下惨白割裂。
+        // 0. 全视口无缝「御案织锦」背景：统一西北来光书案聚光 + 细腻云锦暗纹，彻底消除拉远全图上下割裂。
         encoder.setRenderPipelineState(deskPipeline)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+        encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
 
         // 开卷: each layer is brushed in over a moment at its turn, none pops up whole.
@@ -859,9 +916,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setRenderPipelineState(fadePipeline)
             encoder.setVertexBuffer(previous, offset: 0, index: 3)
             encoder.setVertexBytes(&t, length: MemoryLayout<SIMD2<Float>>.stride, index: 4)
+            encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
         } else {
             if previousColors != nil { previousColors = nil }
             encoder.setRenderPipelineState(cellPipeline)
+            encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
         }
         encoder.setVertexBuffer(positions, offset: 0, index: 0)
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
@@ -914,19 +973,32 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if chart && camera.scale >= 1.5 { colored(fineDetail, alpha: ramp(0.44)) }
         if display.vegetation { colored(relief, alpha: ramp(0.44)) }
         if display.borders { colored(outlines, alpha: ramp(0.75)) }
-        if display.cityIcons { colored(icons, alpha: ramp(0.85)); colored(forts, alpha: ramp(0.85)) }
+        if display.cityIcons { colored(icons, alpha: ramp(0.85)); colored(forts, alpha: ramp(0.85)); colored(portIcons, alpha: ramp(0.85)) }
         if reveal >= 1 {
         colored(route)
         encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
         var clock = Float(CACurrentMediaTime().truncatingRemainder(dividingBy: 600))
         encoder.setVertexBytes(&clock, length: MemoryLayout<Float>.stride, index: 5)
-        for unit in units where showArmies {
-            encoder.setRenderPipelineState(spritePipeline)
-            encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
+        if showArmies && lightStrength > 0.1 && camera.scale >= 0.72 {
+            // 军团棋子东南落地阴影：复用既有顶点缓冲，零额外 CPU 开销，令大军如微缩棋子立于舆图之上
+            encoder.setRenderPipelineState(spriteShadowPipeline)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-            encoder.setFragmentTexture(unit.texture, index: 0)
             encoder.setFragmentSamplerState(sampler, index: 0)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
+            for unit in units {
+                encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
+                encoder.setFragmentTexture(unit.texture, index: 0)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
+            }
+        }
+        if showArmies && !units.isEmpty {
+            encoder.setRenderPipelineState(spritePipeline)
+            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+            encoder.setFragmentSamplerState(sampler, index: 0)
+            for unit in units {
+                encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
+                encoder.setFragmentTexture(unit.texture, index: 0)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
+            }
         }
         }
         // The original's mounting (a paper band and black rules along the edge) read as a hard brown frame
@@ -969,7 +1041,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     static let shaders = """
     #include <metal_stdlib>
     using namespace metal;
-    struct Uniforms { float2 viewport; float2 center; float scale; float halfWidth; float alpha; float pad; };
+    struct Uniforms { float2 viewport; float2 center; float scale; float halfWidth; float alpha; float time; float lighting; float mapWidth; float mapHeight; float pad; };
     struct QuadUniforms { float2 origin; float2 size; };
     struct ColorOut { float4 position [[position]]; float4 color; };
     struct LandOut { float4 position [[position]]; float4 color; float2 world; float scale; };
@@ -990,6 +1062,21 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         for (int k = 0; k < 4; k++) { v += a * vnoise(p); p = p * 2.03 + float2(17.1, 9.2); a *= 0.5; }
         return v;
     }
+    // 统一全局光影：柔和东南飘移浮云投影（0 = 晴朗微光，1 = 轻云覆影，海陆同频流动）
+    static float cloudCover(float2 world, float time) {
+        float2 drift = float2(time * 2.4, time * 1.35);
+        float c1 = vnoise((world - drift) * 0.0048 + float2(3.1, 7.4));
+        float c2 = vnoise((world - drift * 1.45) * 0.0112 + float2(19.3, 11.7));
+        float f = c1 * 0.65 + c2 * 0.35;
+        return smoothstep(0.46, 0.80, f);
+    }
+    // 统一西北御案主光（uv 0..1）：西北角微沐暖阳，东南角微沉古意
+    static float3 studioLight(float2 uv, float strength) {
+        float diag = clamp(1.0 - (uv.x * 0.55 + uv.y * 0.45), 0.0, 1.0);
+        float3 nwSun = float3(1.032, 1.018, 0.988);
+        float3 seDepth = float3(0.946, 0.942, 0.954);
+        return mix(float3(1.0), mix(seDepth, nwSun, diag), strength);
+    }
     vertex LandOut cellVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]],
                               const device float4* colors [[buffer(1)]], constant Uniforms& u [[buffer(2)]]) {
         LandOut o; float2 w = positions[id];
@@ -1000,18 +1087,28 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); o.color.a *= u.alpha; return o;
     }
     fragment float4 colorFragment(ColorOut in [[stage_in]]) { return in.color; }
-    // 陆地古图宣纸质感片元着色：双频宣纸微纤维颗粒 + 矿物颜料微暖高光与墨青暗部，近景不发糊、远景更通透。
-    fragment float4 landFragment(LandOut in [[stage_in]]) {
+    // 陆地光影与宣纸质感：统一西北日照暖阳/青影层次 + 轻柔浮云投影 + 全局书案光氛 + 双频宣纸肌理。
+    fragment float4 landFragment(LandOut in [[stage_in]], constant Uniforms& u [[buffer(2)]]) {
         float detail = clamp((in.scale - 0.5) / 1.5, 0.0, 1.0);
         float g1 = vnoise(in.world * 0.55) - 0.5;
         float g2 = vnoise(in.world * 1.95 + float2(13.7, 7.3)) - 0.5;
-        float grain = (g1 * 0.026 + g2 * 0.022 * detail);
+        float grain = (g1 * 0.024 + g2 * 0.020 * detail);
         float3 rgb = in.color.rgb;
         float lum = dot(rgb, float3(0.299, 0.587, 0.114));
-        // 亮坡微融宣金暖意、背阴微沉冷墨，立体起伏更精致且不偏色。
-        float3 warm = float3(1.018, 1.006, 0.985);
-        float3 cool = float3(0.978, 0.988, 1.008);
-        rgb *= mix(cool, warm, smoothstep(0.32, 0.72, lum));
+        if (u.lighting > 0.01) {
+            float k = u.lighting;
+            // 西北向阳面泛暖玉金光，东南背阴面沉静冷青，山河起伏更通透立体且绝不发灰脏浊
+            float3 warm = float3(1.036, 1.018, 0.982);
+            float3 cool = float3(0.958, 0.972, 1.010);
+            rgb *= mix(float3(1.0), mix(cool, warm, smoothstep(0.30, 0.74, lum)), k);
+            // 柔和飘云斑驳光影（微晴增亮 + 轻云微冷柔影，绝不遮挡国界与地名）
+            float cloud = cloudCover(in.world, u.time);
+            float3 cloudTint = mix(float3(1.022, 1.014, 0.996), float3(0.928, 0.944, 0.972), cloud);
+            rgb *= mix(float3(1.0), cloudTint, k * 0.85);
+            // 统一全局西北御案光照
+            float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
+            rgb *= studioLight(mapUV, k);
+        }
         rgb = clamp(rgb + grain, 0.0, 1.0);
         return float4(rgb, in.color.a);
     }
@@ -1109,19 +1206,45 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     // A piece: the texture multiplied by the state's colour (white body → the colour, grey rim → its
     // shade, as the original's SpriteRenderer.color), the rim pulled towards ink so it reads on land
     // of the same colour, and lit a little from above.
+    // 军团棋子东南落地投影着色器（复用同一顶点缓冲，与西北主光严格同向）
+    vertex SpriteOut spriteShadowVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
+                                        constant float& time [[buffer(5)]]) {
+        SpriteVertex s = v[id];
+        float pixels = s.size * clamp(u.scale * 0.8, 11.0 / 3.0112, 26.0 / 3.0112);
+        float4 tint = float4(s.tint);
+        if (tint.a < -1.5) { float d = -tint.a - 2.0; tint.a = 1.0 - clamp((progress - d) / 0.15, 0.0, 1.0); }
+        else if (tint.a < 0.0) tint.a = progress;
+        else if (tint.a > 1.5) tint.a = 1.0;
+        float t = progress, t2 = t * t, t3 = t2 * t;
+        float2 a = float2(s.center), b = float2(s.target);
+        float2 walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + (b - a) * (t3 - t2);
+        float2 shOffset = float2(2.1, 2.5);
+        SpriteOut o;
+        o.position = clip(walk, u, (float2(s.corner) * float2(1.04, 0.96) + float2(s.shift)) * pixels + shOffset);
+        o.uv = float2(s.corner) + 0.5;
+        o.tint = float4(0.10, 0.07, 0.04, tint.a * 0.28 * u.lighting);
+        return o;
+    }
+    fragment float4 spriteShadowFragment(SpriteOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
+        float a = t.sample(s, in.uv).a;
+        if (a <= 0.05) discard_fragment();
+        return float4(in.tint.rgb, a * in.tint.a);
+    }
     fragment float4 spriteFragment(SpriteOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         float4 p = t.sample(s, in.uv);
         if (p.a <= 0.01) discard_fragment();
         float lum = p.r / max(p.a, 0.001);
-        float3 fill = in.tint.rgb * (1.06 - 0.16 * in.uv.y);
-        float3 rim = mix(float3(0.14, 0.11, 0.08), in.tint.rgb, 0.3);
+        // 西北受光棋面微高光，东南边缘柔和压深，增强军团立体棋子感
+        float lightGrad = 1.09 - 0.14 * in.uv.y - 0.06 * in.uv.x;
+        float3 fill = in.tint.rgb * lightGrad;
+        float3 rim = mix(float3(0.14, 0.11, 0.08), in.tint.rgb, 0.28);
         float3 c = mix(rim, fill, smoothstep(0.45, 0.95, lum));
         return float4(c, p.a * in.tint.a);
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         return float4(t.sample(s, in.uv).rgb, 1.0);
     }
-    // 全视口无缝「御案织锦」书案背景：温润云锦暗纹 + 细腻织丝肌理 + 柔和书案暗角，拉远全图视野上下浑然一体。
+    // 全视口无缝「御案织锦」书案背景：与卷轴、海陆统一西北暖光聚光 + 细腻双经纬织锦云花，四面一体零割裂。
     struct DeskOut { float4 position [[position]]; float2 uv; float2 screenPx; };
     vertex DeskOut deskVertex(uint id [[vertex_id]], constant Uniforms& u [[buffer(2)]]) {
         const float2 ndc[6] = { float2(-1, -1), float2(1, -1), float2(-1, 1), float2(-1, 1), float2(1, -1), float2(1, 1) };
@@ -1132,26 +1255,29 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         o.screenPx = o.uv * u.viewport;
         return o;
     }
-    fragment float4 deskFragment(DeskOut in [[stage_in]]) {
+    fragment float4 deskFragment(DeskOut in [[stage_in]], constant Uniforms& u [[buffer(2)]]) {
         float2 p = in.screenPx;
-        // 细腻双经纬织锦丝纹 + 典雅云锦菱格暗花
-        float warp = sin(p.x * 1.45) * 0.5 + 0.5;
-        float weft = sin(p.y * 1.45) * 0.5 + 0.5;
-        float weave = (warp * 0.5 + weft * 0.5 - 0.5) * 0.016;
-        float2 dCell = fract(p / 38.0) - 0.5;
+        // 细腻双经纬织锦丝纹 + 典雅云锦双层菱格暗花
+        float warp = sin(p.x * 1.55) * 0.5 + 0.5;
+        float weft = sin(p.y * 1.55) * 0.5 + 0.5;
+        float weave = (warp * 0.5 + weft * 0.5 - 0.5) * 0.015;
+        float2 dCell = fract(p / 36.0) - 0.5;
         float diamond = abs(dCell.x) + abs(dCell.y);
-        float damask = smoothstep(0.46, 0.50, diamond) * (1.0 - smoothstep(0.50, 0.54, diamond)) * 0.022;
-        float paperGrain = (vnoise(p * 0.14) - 0.5) * 0.028;
-        // 柔和书案中心聚光：中央暖玉宣帛 -> 四角沉稳古茶暗晕
-        float2 c = (in.uv - 0.5) * float2(1.45, 1.35);
-        float r2 = clamp(dot(c, c), 0.0, 1.2);
-        float3 centerTone = float3(0.892, 0.854, 0.778);
-        float3 outerTone = float3(0.768, 0.708, 0.606);
-        float3 rgb = mix(centerTone, outerTone, smoothstep(0.08, 0.98, r2));
+        float outerLatt = smoothstep(0.45, 0.49, diamond) * (1.0 - smoothstep(0.49, 0.53, diamond));
+        float innerMed = smoothstep(0.20, 0.23, diamond) * (1.0 - smoothstep(0.23, 0.26, diamond));
+        float damask = (outerLatt * 0.020 + innerMed * 0.013);
+        float paperGrain = (vnoise(p * 0.14) - 0.5) * 0.022;
+        // 西北御案柔和主光聚光 + 四周温润古茶书案暗角
+        float2 lightCenter = float2(0.42, 0.58);
+        float2 c = (in.uv - lightCenter) * float2(1.38, 1.32);
+        float r2 = clamp(dot(c, c), 0.0, 1.35);
+        float3 centerTone = float3(0.896, 0.856, 0.778);
+        float3 outerTone = float3(0.732, 0.668, 0.562);
+        float3 rgb = mix(centerTone, outerTone, smoothstep(0.06, 1.05, r2));
         rgb = clamp(rgb + weave + damask + paperGrain, 0.0, 1.0);
         return float4(rgb, 1.0);
     }
-    // 海洋多层古图着色：融合深度海图纹理、铜版细波纹、微洋流丝晕与近景宣纸纤维，彻底告别低分模糊海面。
+    // 海洋多层动态古图光影着色：深浅海棚渐变 + 多频海浪法线西北日照水光闪烁 + 铜版细浪刻纹 + 飘云投影 + 近岸呼吸白沫。
     struct SeaOut { float4 position [[position]]; float2 uv; float2 world; float scale; };
     vertex SeaOut seaVertex(uint id [[vertex_id]], constant Uniforms& u [[buffer(2)]], constant QuadUniforms& q [[buffer(3)]]) {
         const float2 corners[6] = { float2(0, 0), float2(1, 0), float2(0, 1), float2(0, 1), float2(1, 0), float2(1, 1) };
@@ -1164,21 +1290,46 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         o.scale = u.scale;
         return o;
     }
-    fragment float4 seaFragment(SeaOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
+    fragment float4 seaFragment(SeaOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]], constant Uniforms& u [[buffer(2)]]) {
         float3 base = t.sample(s, in.uv).rgb;
-        float detail = clamp((in.scale - 0.35) / 1.4, 0.0, 1.0);
-        // 铜版水平微浪纹 + 缓慢洋流宽带明暗
+        float detail = clamp((in.scale - 0.30) / 1.35, 0.0, 1.0);
         float2 w = in.world;
-        float current = (fbm(w * 0.011 + float2(4.2, 8.7)) - 0.5) * 0.055;
-        float ripplePhase = w.y * 0.85 + sin(w.x * 0.16 + fbm(w * 0.05) * 3.0) * 1.4;
-        float engraving = sin(ripplePhase) * 0.014 * detail;
-        float grain = (vnoise(w * 0.65) - 0.5) * 0.024;
-        // 极轻的南北极洋冷暖微调与深海层次
+        float tm = u.time;
+        // 1. 远洋宽带洋流与深海层次
+        float current = (fbm(w * 0.010 + float2(4.2, 8.7)) - 0.5) * 0.062;
         float lum = dot(base, float3(0.299, 0.587, 0.114));
-        float3 shallowTint = float3(0.985, 1.018, 1.015);
-        float3 deepTint = float3(0.965, 0.985, 1.022);
-        float3 rgb = base * mix(deepTint, shallowTint, smoothstep(0.32, 0.68, lum));
-        rgb = clamp(rgb + current + engraving + grain, 0.0, 1.0);
+        float shallowMask = smoothstep(0.46, 0.78, lum);
+        float3 shallowTint = float3(0.955, 1.032, 1.028);
+        float3 deepTint = float3(0.935, 0.972, 1.035);
+        float3 rgb = base * mix(deepTint, shallowTint, shallowMask);
+
+        // 2. 铜版细腻水平微浪纹 + 动态海浪法线与西北日光波光高光
+        float p1 = w.x * 0.19 + w.y * 0.62 - tm * 0.55;
+        float p2 = w.x * 0.34 - w.y * 0.48 + tm * 0.38;
+        float p3 = w.x * 0.11 + w.y * 0.92 + sin(w.x * 0.06) * 2.2 - tm * 0.25;
+        float waveSlopeX = cos(p1) * 0.19 + cos(p2) * 0.22;
+        float waveSlopeY = cos(p1) * 0.62 - cos(p2) * 0.31 + cos(p3) * 0.38;
+        float3 waveN = normalize(float3(-waveSlopeX * 0.32, -waveSlopeY * 0.32, 1.0));
+        // 与全局一致的西北太阳半程方向 -> 产生温润柔和的水面金白波光
+        float3 halfVec = normalize(float3(-0.34, -0.30, 0.89));
+        float spec = pow(max(0.0, dot(waveN, halfVec)), 22.0);
+        float glint = spec * (0.048 + 0.065 * detail) * u.lighting;
+
+        float engraving = sin(w.y * 0.88 + sin(w.x * 0.15 + fbm(w * 0.045) * 2.8) * 1.35) * (0.012 + 0.012 * detail);
+        // 浅海沿岸柔和浪花呼吸光晕
+        float surfPulse = (sin(w.x * 0.12 + w.y * 0.14 - tm * 0.9) * 0.5 + 0.5) * shallowMask * 0.032 * u.lighting;
+        float grain = (vnoise(w * 0.68) - 0.5) * 0.022;
+
+        rgb += current + engraving + grain + surfPulse;
+        rgb += float3(1.0, 0.96, 0.84) * glint;
+
+        if (u.lighting > 0.01) {
+            float cloud = cloudCover(w, tm);
+            float3 cloudTint = mix(float3(1.018, 1.016, 1.008), float3(0.915, 0.935, 0.972), cloud);
+            rgb *= mix(float3(1.0), cloudTint, u.lighting * 0.90);
+            rgb *= studioLight(in.uv, u.lighting);
+        }
+        rgb = clamp(rgb, 0.0, 1.0);
         return float4(rgb, 1.0);
     }
     """

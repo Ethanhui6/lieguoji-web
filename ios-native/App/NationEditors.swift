@@ -235,7 +235,7 @@ struct NumberEditSheet: View {
             }
             .padding(.horizontal, 22)
             VStack(spacing: 4) {
-                Slider(value: $slide, in: bounds).tint(Theme.seal)
+                PaperTrack(value: $slide, range: bounds, step: nil, onEditingChanged: nil)
                 HStack {
                     Text(Self.format(bounds.lowerBound) + unit).font(Theme.caption).foregroundStyle(Theme.ink2)
                     Spacer()

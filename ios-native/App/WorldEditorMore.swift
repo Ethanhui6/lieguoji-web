@@ -107,7 +107,7 @@ struct EditorChoiceList: View {
             }
             .padding(.bottom, 20)
         }
-        .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
     }
 }
 
@@ -176,7 +176,7 @@ struct EditorAllianceTab: View {
                     }
                     .padding(.bottom, 20)
                 }
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
             }
         }
     }

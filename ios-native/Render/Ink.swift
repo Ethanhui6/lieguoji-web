@@ -53,28 +53,38 @@ struct InkPipelines {
         float show = in.show;
         float amount = in.amount;
         if (amount < 0.01) discard_fragment();
-        // 柔润水墨宣纸晕染前沿：以低频纸纤维连续波动替代高频碎裂噪声，配合宽柔过渡带（soft），消除碎块斑点感。
-        // 停战/败退收水退墨（retreatLift）：退墨时提高纸纹显色阈值，使墨晕从外缘沿着宣纸纤维向内徐徐收干，而非生硬整体透明。
+        // 宣纸三层水墨洇染前沿：域扭曲低频纤维波动 + 淡墨先导水晕 + 湿墨聚边笔锋 + 干透归纸微润水泽；
+        // 停战/败退收水退墨（retreatLift）：退墨时沿宣纸纤维向内徐徐收干，保留自然枯笔边缘。
         float2 q = in.world;
-        float n1 = fbm(q * k.freq), n2 = vnoise(q * k.freq * 2.1 + float2(5.1, 1.7));
-        float level = amount + (n1 - 0.5) * 2.0 * k.noise + (n2 - 0.5) * (k.noise * 0.35);
-        float retreatLift = (1.0 - clamp(in.fade, 0.0, 1.0)) * 0.22;
+        float2 warp = float2(
+            vnoise(q * k.freq * 1.45 + float2(3.1, 7.4)),
+            vnoise(q * k.freq * 1.45 + float2(9.2, 2.3))
+        ) - 0.5;
+        float n1 = fbm(q * k.freq + warp * 0.42);
+        float n2 = vnoise(q * k.freq * 2.55 + warp * 0.65 + float2(5.1, 1.7));
+        float level = amount + (n1 - 0.5) * 2.0 * k.noise + (n2 - 0.5) * (k.noise * 0.38);
+        float retreatLift = (1.0 - clamp(in.fade, 0.0, 1.0)) * 0.26;
         float thresh = k.visible + retreatLift;
         float reached = smoothstep(thresh - k.soft, thresh + k.soft, level);
-        if (reached < 0.004) discard_fragment();
+        // 推进前缘先导淡墨水晕（水比墨先走半步，模拟真实生宣洇水）
+        float waterHalo = smoothstep(thresh - k.soft * 1.55, thresh - k.soft * 0.15, level) * (1.0 - reached) * (1.0 - show * 0.62);
+        float outAlpha = reached * (0.87 + 0.13 * show) + waterHalo * 0.16;
+        if (outAlpha < 0.004) discard_fragment();
         float3 e = colours[in.nation].rgb;
         float3 lin = float3(inkToLinear(e.r), inkToLinear(e.g), inkToLinear(e.b));
         lin = in.gray + (lin - in.gray) * k.stateAlpha;
         float3 col = float3(inkToSrgb(lin.r), inkToSrgb(lin.g), inkToSrgb(lin.b));
         col = in.terrain + (col - in.terrain) * k.density;
         col = min(float3(1.0), col * in.shade);
-        // 宣纸湿墨聚边笔锋 + 新墨微润水光：推进前沿处聚墨收深，紧贴墨锋内侧泛出微润水泽，干透后自然敛入宣纸。
+        // 湿墨聚边笔锋 + 饱和微提 + 内侧新墨水光
         float capillary = reached * (1.0 - reached) * 4.0;
-        float wetCrest = capillary * (1.0 - show * 0.55);
-        float wetSheen = smoothstep(0.45, 0.82, reached) * (1.0 - smoothstep(0.82, 0.98, reached)) * (1.0 - show);
-        col = min(float3(1.0), col * (1.0 - 0.23 * wetCrest - 0.06 * capillary) + float3(0.035 * wetSheen));
-        // 刚显出时略淡，像墨刚落下还在宣纸上洇开。
-        return float4(col, reached * (0.86 + 0.14 * show));
+        float wetCrest = capillary * (1.12 - show * 0.52);
+        float wetSheen = smoothstep(0.42, 0.80, reached) * (1.0 - smoothstep(0.80, 0.98, reached)) * (1.0 - show);
+        float3 ridgeCol = col * (1.0 - 0.26 * wetCrest - 0.06 * capillary) + float3(0.042 * wetSheen);
+        // 水晕区域呈微暗润湿本色
+        float3 haloCol = mix(in.terrain * in.shade * 0.86, ridgeCol, 0.55);
+        float3 finalCol = mix(haloCol, ridgeCol, clamp(reached / max(outAlpha, 1e-4), 0.0, 1.0));
+        return float4(min(float3(1.0), finalCol), outAlpha);
     }
     """
 }

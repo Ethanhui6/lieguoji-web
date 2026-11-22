@@ -124,12 +124,12 @@ struct SealFace: View {
     var body: some View {
         let chars = Array(text.prefix(4)).map(String.init)
         let ink = filled ? Theme.paper2 : color
-        let shape = RoundedRectangle(cornerRadius: size * 0.12, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: max(3.5, size * 0.16), style: .continuous)
         ZStack {
             if filled { shape.fill(color) } else { shape.fill(Theme.paper2) }
             // 压印斑驳：几处纸色细点，让印面像真的盖在纸上（位置由字决定，固定不闪）。
             if filled { SealSpecks(seed: text).fill(Theme.paper2.opacity(0.16)) }
-            shape.inset(by: size * 0.07).stroke(ink.opacity(filled ? 0.75 : 0.6), lineWidth: max(0.8, size * 0.025))
+            shape.inset(by: max(1.5, size * 0.08)).strokeBorder(ink.opacity(filled ? 0.75 : 0.6), lineWidth: max(0.8, size * 0.025))
             Group {
                 switch chars.count {
                 case 0: EmptyView()
@@ -147,7 +147,7 @@ struct SealFace: View {
             .foregroundStyle(ink)
         }
         .frame(width: size, height: size)
-        .overlay(filled ? nil : shape.stroke(color.opacity(0.7), lineWidth: max(0.8, size * 0.03)))
+        .overlay(filled ? nil : shape.strokeBorder(color.opacity(0.7), lineWidth: max(0.8, size * 0.03)))
     }
 }
 
@@ -281,7 +281,7 @@ struct MapViewSwitcher: View {
                 .frame(width: 50, height: 46)
                 .background {
                     if mode == m {
-                        RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                        RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 5, style: .continuous)
                             .fill(Theme.seal)
                             .matchedGeometryEffect(id: "seal", in: marker)
                             .shadow(color: Theme.seal.opacity(0.28), radius: 4, y: 2)
@@ -1048,8 +1048,8 @@ extension View {
                     .shadow(color: Color(red: 0.22, green: 0.16, blue: 0.08).opacity(0.07), radius: 6, y: 2)
             )
             .background((tint ?? .clear).opacity(0.055), in: shape)
-            .overlay(shape.stroke((tint ?? Theme.ink).opacity(tint == nil ? 0.15 : 0.34), lineWidth: 0.9))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 2.5, style: .continuous).stroke((tint ?? Theme.seal).opacity(0.11), lineWidth: 0.55).padding(2.5))
+            .overlay(shape.strokeBorder((tint ?? Theme.ink).opacity(tint == nil ? 0.15 : 0.34), lineWidth: 0.9))
+            .overlay(shape.inset(by: 2.5).strokeBorder((tint ?? Theme.seal).opacity(0.11), lineWidth: 0.55))
     }
 }
 
@@ -1299,8 +1299,8 @@ struct FloatingTacticalPill: View {
         }
         .padding(.horizontal, expanded ? 8 : 6).padding(.vertical, 6)
         .background(Theme.paper2.opacity(0.96), in: Capsule())
-        .overlay(Capsule().stroke(strokeColor, lineWidth: 0.9))
-        .overlay(Capsule().stroke(Theme.seal.opacity(0.13), lineWidth: 0.5).padding(2.5))
+        .overlay(Capsule().strokeBorder(strokeColor, lineWidth: 0.9))
+        .overlay(Capsule().inset(by: 2.5).strokeBorder(Theme.seal.opacity(0.13), lineWidth: 0.5))
         .shadow(color: shadowColor, radius: dragging ? 12 : 7, y: dragging ? 5 : 2.5)
         .scaleEffect(dragging ? 1.05 : 1.0)
         .contentShape(Capsule())
@@ -1421,7 +1421,7 @@ private struct PaperToastHost: ViewModifier {
                             Text(text).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(.horizontal, 12).padding(.vertical, 9)
-                        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous)))
+                        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)))
                         .paperCard()
                         .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
                         .padding(.horizontal, 28).padding(.top, 10)
@@ -1501,15 +1501,7 @@ struct ScrollPowerPlacard: View {
                     }
                     .buttonStyle(.plain)
 
-                    Button {
-                        GameFeel.shared.tap()
-                        onHide()
-                    } label: {
-                        InkIcon(glyph: .close, size: 11, weight: 1.7)
-                            .foregroundStyle(Theme.ink2)
-                            .frame(width: 20, height: 20)
-                    }
-                    .buttonStyle(.plain)
+                    CardCloseButton(action: onHide)
                 }
 
                 // 列强版图占比色带

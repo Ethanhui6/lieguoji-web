@@ -723,6 +723,7 @@ struct ReplayOverlay: View {
                 .animation(Motion.panel, value: showNodes)
                 .animation(Motion.panel, value: showDetails)
                 .animation(Motion.panel, value: confirmRollback)
+                .animation(Motion.tap, value: scrubIndex != nil)
                 .onChange(of: model.notice) { _, text in
                     guard let text else { return }
                     model.notice = nil
@@ -734,40 +735,42 @@ struct ReplayOverlay: View {
         }
     }
 
-    // MARK: - 顶栏（与 GameView.topBar 1:1 统一：左侧 44pt 纪年/列国胶囊 + 右侧 44×44pt 圆钮与返回当下胶囊）
+    // MARK: - 顶栏（与 GameView.topBar 1:1 对齐：左侧 44pt 纪年胶囊 + 右侧三枚 44×44pt 同心圆钮，彻底根治竖屏挤压变形）
 
     private func topBar(timeline: ReplayTimelineData, idx: Int, frame: ReplayTimelineData.Frame) -> some View {
         HStack(spacing: Theme.Control.gap) {
-            // 左侧纪年与天下态势胶囊（与主界面点日期开大事记一致：点击开启历史节点与回溯奏折）
+            // 左侧纪年与存世国数胶囊（与主界面日期胶囊同高同曲率，点击直开历史节点与回溯奏折）
             Button {
                 GameFeel.shared.tap()
                 model.pauseReplay()
                 showNodes.toggle()
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: landscape ? 8 : 6) {
                     Circle()
                         .fill(model.replayPlaying ? (model.replayReversing ? Theme.jade : Theme.seal) : Theme.ink2.opacity(0.42))
                         .frame(width: 6.5, height: 6.5)
                         .animation(Motion.panel, value: model.replayPlaying)
                     Text(frame.dateText)
-                        .font(Theme.section)
+                        .font(landscape ? Theme.section : Theme.body)
                         .foregroundStyle(Theme.ink)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
+                        .layoutPriority(1)
                     Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.8, height: 15)
                     Text("\(frame.aliveCount)国")
                         .font(Theme.label)
                         .foregroundStyle(Theme.ink2)
                         .monospacedDigit()
                         .lineLimit(1)
-                    if !frame.topName.isEmpty {
+                    if landscape, !frame.topName.isEmpty {
                         let topColor: Color = {
                             let nations = model.controller.world?.meta.nations ?? model.map?.meta.nations ?? []
                             if nations.indices.contains(frame.topNation) { return Names.color(nations[frame.topNation].color) }
                             if timeline.nations.indices.contains(frame.topNation) { return Names.color(timeline.nations[frame.topNation].color) }
                             return Theme.seal
                         }()
+                        Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.8, height: 15)
                         HStack(spacing: 4) {
                             Circle().fill(topColor).frame(width: 7, height: 7)
                             Text("\(MapLayers.stateLabel(frame.topName, full: false)) \(frame.topProvinces)州")
@@ -778,7 +781,7 @@ struct ReplayOverlay: View {
                         }
                     }
                 }
-                .padding(.horizontal, 14)
+                .padding(.horizontal, landscape ? 14 : 12)
                 .frame(height: Theme.Control.topHeight)
                 .glass(Capsule())
                 .contentShape(Capsule())
@@ -787,7 +790,7 @@ struct ReplayOverlay: View {
 
             Spacer(minLength: 6)
 
-            // 右侧与主界面一致的 44pt 控件组：当帧大势 / 定位焦点 / 历史节点 / 返回当下
+            // 右侧与主界面 GameView.topBar 严格对称的三枚 44×44pt 正圆同心钮：当帧大势 / 历史节点 / 返回当下
             HStack(spacing: Theme.Control.gap) {
                 Button {
                     GameFeel.shared.tap()
@@ -798,20 +801,6 @@ struct ReplayOverlay: View {
                 }
                 .buttonStyle(InkPressStyle())
                 .accessibilityLabel("当帧天下大势")
-
-                Button {
-                    GameFeel.shared.tap()
-                    if frame.province >= 0, let m = model.map, m.meta.provinces.indices.contains(frame.province) {
-                        let pr = m.meta.provinces[frame.province]
-                        model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
-                    } else {
-                        model.controller.unrollRequest = UUID()
-                    }
-                } label: {
-                    CircleIcon(glyph: .locate)
-                }
-                .buttonStyle(InkPressStyle())
-                .accessibilityLabel("定位大事发生地")
 
                 Button {
                     GameFeel.shared.tap()
@@ -830,28 +819,33 @@ struct ReplayOverlay: View {
                     confirmRollback = nil
                     model.exitReplay()
                 } label: {
-                    HStack(spacing: 5) {
-                        InkIcon(glyph: .retreat, size: 15, weight: 1.8, accent: Theme.seal.opacity(0.26))
-                        Text("返回当下").font(Theme.body).lineLimit(1)
-                    }
-                    .foregroundStyle(Theme.seal)
-                    .padding(.horizontal, 14)
-                    .frame(height: Theme.Control.topHeight)
-                    .glass(Capsule())
-                    .contentShape(Capsule())
+                    CircleIcon(glyph: .retreat, active: false, tint: Theme.seal)
                 }
-                .buttonStyle(PressStyle())
+                .buttonStyle(InkPressStyle())
+                .accessibilityLabel("返回当下")
             }
         }
         .padding(.horizontal, Theme.Control.screenInset).padding(.top, 4)
     }
 
-    // MARK: - 底栏（与 GameView.bottomBar 1:1 统一：上方 34pt 大事滚动条 + 下方 54pt 进度坞与朱印启停坞）
+    // MARK: - 底栏（与 GameView.bottomBar 1:1 统一：拖动时浮出纪年预览 + 34pt 大事横幅 + 双 54pt 胶囊坞）
 
     private func bottomBar(timeline: ReplayTimelineData, idx: Int, frame: ReplayTimelineData.Frame, nearCP: WorldCheckpoint?, multiFrame: Bool) -> some View {
         VStack(spacing: Theme.Control.gap) {
-            // 第一层：与主界面 EventTicker 同高（34pt）的当帧大事横幅胶囊 + 一键回溯此年
-            HStack(spacing: 8) {
+            // 拖动时间轴时的即时纪年预览浮签
+            if scrubIndex != nil {
+                HStack(spacing: 7) {
+                    KindSeal(kind: .of(frame.kind), size: 18)
+                    Text(frame.dateText).font(Theme.label).foregroundStyle(Theme.seal).monospacedDigit()
+                    Text("· \(frame.headline)").font(Theme.caption).foregroundStyle(Theme.ink).lineLimit(1)
+                }
+                .padding(.horizontal, 12).frame(height: 30)
+                .glass(Capsule())
+                .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .bottom)))
+            }
+
+            // 第一层：与主界面 EventTicker 同高（34pt）的当帧大事横幅胶囊 + 快捷定位 + 一键回溯此年
+            HStack(spacing: 7) {
                 Button {
                     GameFeel.shared.tap()
                     if frame.province >= 0, let m = model.map, m.meta.provinces.indices.contains(frame.province) {
@@ -869,7 +863,7 @@ struct ReplayOverlay: View {
                             .foregroundStyle(Theme.ink)
                             .lineLimit(1)
                         Spacer(minLength: 4)
-                        Text("\(idx + 1)/\(timeline.frames.count)帧")
+                        Text("\(idx + 1)/\(timeline.frames.count)")
                             .font(Theme.caption)
                             .foregroundStyle(Theme.ink2)
                             .monospacedDigit()
@@ -877,6 +871,23 @@ struct ReplayOverlay: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(PressStyle())
+
+                Button {
+                    GameFeel.shared.tap()
+                    if frame.province >= 0, let m = model.map, m.meta.provinces.indices.contains(frame.province) {
+                        let pr = m.meta.provinces[frame.province]
+                        model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
+                    } else {
+                        model.controller.unrollRequest = UUID()
+                    }
+                } label: {
+                    InkIcon(glyph: .locate, size: 13, weight: 1.8)
+                        .foregroundStyle(Theme.ink2)
+                        .frame(width: 24, height: 24)
+                        .background(Theme.ink.opacity(0.06), in: Circle())
+                }
+                .buttonStyle(PressStyle())
+                .accessibilityLabel("定位大事发生地")
 
                 if let nearCP {
                     Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 14)
@@ -892,15 +903,13 @@ struct ReplayOverlay: View {
                         .foregroundStyle(Theme.jade)
                         .padding(.horizontal, 8).padding(.vertical, 3.5)
                         .background(Theme.jade.opacity(0.14), in: Capsule())
-                        .overlay(Capsule().stroke(Theme.jade.opacity(0.35), lineWidth: 0.7))
+                        .overlay(Capsule().strokeBorder(Theme.jade.opacity(0.35), lineWidth: 0.7))
                         .contentShape(Capsule())
                     }
                     .buttonStyle(PressStyle())
-                } else {
-                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.ink2)
                 }
             }
-            .padding(.leading, 8).padding(.trailing, 12).frame(height: 34)
+            .padding(.leading, 8).padding(.trailing, 8).frame(height: 34)
             .frame(maxWidth: landscape ? 560 : .infinity)
             .glass(Capsule())
 
@@ -1017,11 +1026,11 @@ struct ReplayOverlay: View {
                 return model.cachedReplayCurrentCounts
                     .filter { $0.value > 0 }
                     .sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
-                    .prefix(8)
+                    .prefix(6)
                     .map { ($0.key, $0.value) }
             }
             if let slices = frame.topPowers, !slices.isEmpty {
-                return slices.prefix(8).map { ($0.i, $0.p) }
+                return slices.prefix(6).map { ($0.i, $0.p) }
             }
             return frame.topNation >= 0 ? [(frame.topNation, frame.topProvinces)] : []
         }()
@@ -1039,16 +1048,10 @@ struct ReplayOverlay: View {
                         .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
                 }
                 Spacer(minLength: 4)
-                Button {
-                    GameFeel.shared.tap()
+                CardCloseButton {
                     showDetails = false
                     model.controller.play.showReplayPlacard = false
-                } label: {
-                    InkIcon(glyph: .close, size: 13, weight: 1.7)
-                        .foregroundStyle(Theme.ink2)
-                        .frame(width: 24, height: 24)
                 }
-                .buttonStyle(.plain)
             }
 
             // 快捷演播工具条：按住对比开局 / 大事自动追焦 / 循环回放
@@ -1158,7 +1161,7 @@ struct ReplayOverlay: View {
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
-        .frame(width: min(312, UIScreen.main.bounds.width - 28))
+        .frame(width: min(296, UIScreen.main.bounds.width - 32))
         .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
     }
 
@@ -1171,7 +1174,7 @@ struct ReplayOverlay: View {
                 .foregroundStyle(active ? Theme.paper2 : Theme.ink)
                 .frame(width: 36, height: 36)
                 .background(active ? tint : Theme.paper2.opacity(0.85), in: Circle())
-                .overlay(Circle().stroke(active ? Color.clear : Theme.ink.opacity(0.14), lineWidth: 0.8))
+                .overlay(Circle().strokeBorder(active ? Color.clear : Theme.ink.opacity(0.14), lineWidth: 0.8))
                 .contentShape(Circle())
         }
         .buttonStyle(PressStyle())
@@ -1202,8 +1205,7 @@ struct ReplayOverlay: View {
                 .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.24), radius: 18, x: -4, y: 4)
                 .overlay(alignment: .leading) {
                     Button { showNodes = false } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .semibold))
+                        InkIcon(glyph: .chevronRight, size: 13, weight: 1.8)
                             .foregroundStyle(Theme.ink)
                             .frame(width: 34, height: 34)
                             .glass(Circle())

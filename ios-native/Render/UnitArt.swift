@@ -2,10 +2,9 @@ import CoreGraphics
 import UIKit
 import LieguojiCore
 
-/// The army marks: one chess set in the original's manner (grey-rimmed white pieces that the map
-/// multiplies by the state's colour, as the original's SpriteRenderer.color does). Every arm stands on
-/// the same plinth with the same rim; its crown — pawn, spear, shield, bow, crossbow, knight, plumed
-/// knight, knight with bow, gonfalon, elephant — names it. The warship and the anchor are drawn in the same line.
+/// 雕漆军团与水师棋子（256×256 预烘焙多级纹理）：
+/// 统一四阶浮雕工艺（浓墨外郭 → 中灰倒角 → 西北至东南立体象牙受光面 → 刻线纹饰），
+/// 配合地图上国色漆盾军牌（`0plate`）与战舰水浪底纹（`0fleetwake`），在任意缩放倍率下皆清晰可辨。
 enum UnitArt {
     static let size = 256
     private static var cache = [String: CGImage]()
@@ -15,15 +14,12 @@ enum UnitArt {
         return UnitKinds.byKey[unit]?.role.rawValue ?? "infantry"
     }
 
-
     static func image(_ unit: String) -> CGImage? {
         let key = role(unit)
         if let c = cache[key] { return c }
-        // A plain 8-bit RGBA bitmap (the image renderer may pick a wide-colour format that the
-        // Metal texture loader refuses, and then no army was drawn at all).
         guard let g = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: size * 4,
                                 space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-        g.translateBy(x: 0, y: CGFloat(size)); g.scaleBy(x: 1, y: -1)   // drawn top-down, like UIKit
+        g.translateBy(x: 0, y: CGFloat(size)); g.scaleBy(x: 1, y: -1)
         g.setLineCap(.round); g.setLineJoin(.round)
         draw(key, g)
         guard let cg = g.makeImage() else { return nil }
@@ -45,24 +41,22 @@ enum UnitArt {
 
     // MARK: Drawing (256 grid, y down)
 
-    private static let rim: CGFloat = 18
+    private static let rim: CGFloat = 17
     private enum Shape { case rod(CGPath, CGFloat), solid(CGPath) }
 
-    /// Three-stage carved chess piece shading:
-    /// 1) Deep outer rim (0.28) so pieces stand cleanly off any terrain;
-    /// 2) Mid bevel ring (0.44) for carved depth;
-    /// 3) Northwest-to-southeast 3D ivory/wood light gradient (1.00 → 0.80) + crisp crest highlight,
-    ///    which multiplies with the nation's colour in Metal/UIKit to yield a dimensional lacquered piece.
+    /// 四阶雕漆象牙立体棋子着色：浓墨外轮廓 → 中调刻槽倒角 → 西北来光立体受光面 → 锐利高光脊。
     private static func render(_ g: CGContext, _ shapes: [Shape]) {
-        g.setFillColor(gray: 0.28, alpha: 1); g.setStrokeColor(gray: 0.28, alpha: 1)
+        g.setFillColor(red: 0.22, green: 0.22, blue: 0.22, alpha: 1)
+        g.setStrokeColor(red: 0.22, green: 0.22, blue: 0.22, alpha: 1)
         for s in shapes {
             switch s {
             case .rod(let p, let w): g.setLineWidth(w + rim); g.addPath(p); g.strokePath()
             case .solid(let p): g.addPath(p); g.fillPath(); g.setLineWidth(rim); g.addPath(p); g.strokePath()
             }
         }
-        g.setFillColor(gray: 0.44, alpha: 1); g.setStrokeColor(gray: 0.44, alpha: 1)
-        let innerRim = rim * 0.44
+        g.setFillColor(red: 0.42, green: 0.42, blue: 0.42, alpha: 1)
+        g.setStrokeColor(red: 0.42, green: 0.42, blue: 0.42, alpha: 1)
+        let innerRim = rim * 0.42
         for s in shapes {
             switch s {
             case .rod(let p, let w): g.setLineWidth(w + innerRim); g.addPath(p); g.strokePath()
@@ -71,17 +65,17 @@ enum UnitArt {
         }
         let grad = CGGradient(
             colorSpace: CGColorSpaceCreateDeviceRGB(),
-            colorComponents: [1.0, 1.0, 1.0, 1.0, 0.94, 0.94, 0.94, 1.0, 0.80, 0.80, 0.80, 1.0],
-            locations: [0.0, 0.52, 1.0],
+            colorComponents: [1.0, 1.0, 1.0, 1.0, 0.94, 0.94, 0.94, 1.0, 0.78, 0.78, 0.78, 1.0],
+            locations: [0.0, 0.50, 1.0],
             count: 3
         )
         for s in shapes {
             switch s {
             case .rod(let p, let w):
-                g.setStrokeColor(gray: 0.92, alpha: 1)
+                g.setStrokeColor(red: 0.90, green: 0.90, blue: 0.90, alpha: 1)
                 g.setLineWidth(w); g.addPath(p); g.strokePath()
-                g.setStrokeColor(gray: 1.0, alpha: 1)
-                g.setLineWidth(max(2, w * 0.52)); g.addPath(p); g.strokePath()
+                g.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1)
+                g.setLineWidth(max(2.5, w * 0.46)); g.addPath(p); g.strokePath()
             case .solid(let p):
                 let box = p.boundingBoxOfPath
                 g.saveGState()
@@ -95,13 +89,14 @@ enum UnitArt {
                         options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
                     )
                 } else {
-                    g.setFillColor(gray: 0.96, alpha: 1)
+                    g.setFillColor(red: 0.96, green: 0.96, blue: 0.96, alpha: 1)
                     g.fill(box)
                 }
                 g.restoreGState()
             }
         }
     }
+
     private static func line(_ a: (CGFloat, CGFloat), _ b: (CGFloat, CGFloat)) -> CGPath {
         let p = CGMutablePath(); p.move(to: CGPoint(x: a.0, y: a.1)); p.addLine(to: CGPoint(x: b.0, y: b.1)); return p
     }
@@ -111,84 +106,304 @@ enum UnitArt {
     private static func poly(_ pts: [(CGFloat, CGFloat)]) -> CGPath {
         let p = CGMutablePath(); p.addLines(between: pts.map { CGPoint(x: $0.0, y: $0.1) }); p.closeSubpath(); return p
     }
-    private static func oval(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> CGPath { CGPath(ellipseIn: CGRect(x: x, y: y, width: w, height: h), transform: nil) }
+    private static func oval(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> CGPath {
+        CGPath(ellipseIn: CGRect(x: x, y: y, width: w, height: h), transform: nil)
+    }
     private static func detail(_ g: CGContext, _ p: CGPath, _ w: CGFloat) {
-        g.setStrokeColor(gray: 0.34, alpha: 1); g.setLineWidth(w); g.addPath(p); g.strokePath()
+        g.setStrokeColor(red: 0.28, green: 0.28, blue: 0.28, alpha: 1); g.setLineWidth(w); g.addPath(p); g.strokePath()
+    }
+    private static func dot(_ g: CGContext, _ x: CGFloat, _ y: CGFloat, d: CGFloat = 13) {
+        g.setFillColor(red: 0.26, green: 0.26, blue: 0.26, alpha: 1)
+        g.fillEllipse(in: CGRect(x: x, y: y, width: d, height: d))
     }
 
-    /// The shared plinth every piece stands on, so the set reads as one.
-    private static let base: [Shape] = [.solid(poly([(78, 184), (178, 184), (184, 204), (72, 204)])), .solid(poly([(52, 212), (204, 212), (204, 236), (52, 236)]))]
-    private static var knight: Shape {
-        .solid(poly([(86, 186), (176, 186), (172, 146), (182, 104), (174, 66), (152, 40), (124, 30), (110, 16), (100, 38), (80, 54), (58, 92), (62, 112), (82, 116), (104, 100), (112, 114), (92, 150)]))
-    }
-    private static func dot(_ g: CGContext, _ x: CGFloat, _ y: CGFloat) { g.setFillColor(gray: 0.32, alpha: 1); g.fillEllipse(in: CGRect(x: x, y: y, width: 14, height: 14)) }
+    /// 陆军统一雕花阶座（收巧贴合漆盾军牌底缘）。
+    private static let base: [Shape] = [
+        .solid(poly([(82, 190), (174, 190), (184, 210), (72, 210)])),
+        .solid(poly([(56, 216), (200, 216), (204, 236), (52, 236)]))
+    ]
 
-    /// One chess set: the same plinth, rim and fill; only the crown of each piece names the arm.
+    /// 精雕骏马战首轮廓（高昂脖颈 + 飞扬鬃毛 + 锐利马吻）。
+    private static var warhorse: CGPath {
+        let p = CGMutablePath()
+        p.move(to: CGPoint(x: 80, y: 188))
+        p.addLine(to: CGPoint(x: 178, y: 188))
+        p.addQuadCurve(to: CGPoint(x: 184, y: 112), control: CGPoint(x: 192, y: 152))
+        p.addQuadCurve(to: CGPoint(x: 162, y: 46), control: CGPoint(x: 184, y: 74))
+        p.addLine(to: CGPoint(x: 130, y: 32))
+        p.addLine(to: CGPoint(x: 114, y: 16))
+        p.addLine(to: CGPoint(x: 102, y: 38))
+        p.addQuadCurve(to: CGPoint(x: 60, y: 92), control: CGPoint(x: 78, y: 56))
+        p.addQuadCurve(to: CGPoint(x: 68, y: 118), control: CGPoint(x: 54, y: 108))
+        p.addLine(to: CGPoint(x: 92, y: 114))
+        p.addQuadCurve(to: CGPoint(x: 112, y: 102), control: CGPoint(x: 104, y: 108))
+        p.addQuadCurve(to: CGPoint(x: 80, y: 188), control: CGPoint(x: 106, y: 142))
+        p.closeSubpath()
+        return p
+    }
+
     private static func draw(_ role: String, _ g: CGContext) {
         switch role {
         case "Fleet":
-            // A two-sailed warship with mast pennant & hull gunports (no plinth: it floats).
-            render(g, [.rod(line((128, 26), (128, 170)), 12),
-                       .solid(poly([(128, 22), (168, 30), (128, 38)])),
-                       .solid(poly([(138, 42), (206, 150), (138, 150)])),
-                       .solid(poly([(118, 56), (118, 150), (62, 150)])),
-                       .solid(poly([(26, 170), (230, 170), (196, 222), (60, 222)]))])
-            dot(g, 82, 188); dot(g, 121, 188); dot(g, 160, 188)
+            // 双桅楼船/盖伦主力战舰：高翘艏楼与撞角、高耸艉楼、鼓风弧形主前双帆、桅顶燕尾帅旗、四门舷炮与船底浪脊。
+            let hull = CGMutablePath()
+            hull.move(to: CGPoint(x: 20, y: 158))      // 船首高翘撞角
+            hull.addLine(to: CGPoint(x: 64, y: 164))
+            hull.addLine(to: CGPoint(x: 184, y: 164))
+            hull.addLine(to: CGPoint(x: 234, y: 142))  // 艉楼高甲板
+            hull.addLine(to: CGPoint(x: 222, y: 182))
+            hull.addQuadCurve(to: CGPoint(x: 188, y: 214), control: CGPoint(x: 214, y: 206))
+            hull.addLine(to: CGPoint(x: 68, y: 214))
+            hull.addQuadCurve(to: CGPoint(x: 34, y: 178), control: CGPoint(x: 42, y: 204))
+            hull.closeSubpath()
+
+            // 主桅鼓风大帆（饱满弧面）
+            let mainSail = CGMutablePath()
+            mainSail.move(to: CGPoint(x: 112, y: 42))
+            mainSail.addQuadCurve(to: CGPoint(x: 186, y: 52), control: CGPoint(x: 150, y: 38))
+            mainSail.addQuadCurve(to: CGPoint(x: 182, y: 146), control: CGPoint(x: 212, y: 100))
+            mainSail.addQuadCurve(to: CGPoint(x: 106, y: 146), control: CGPoint(x: 148, y: 136))
+            mainSail.addQuadCurve(to: CGPoint(x: 112, y: 42), control: CGPoint(x: 130, y: 94))
+            mainSail.closeSubpath()
+
+            // 前桅三角/前帆
+            let foreSail = CGMutablePath()
+            foreSail.move(to: CGPoint(x: 78, y: 66))
+            foreSail.addQuadCurve(to: CGPoint(x: 98, y: 146), control: CGPoint(x: 112, y: 106))
+            foreSail.addQuadCurve(to: CGPoint(x: 42, y: 146), control: CGPoint(x: 68, y: 140))
+            foreSail.addQuadCurve(to: CGPoint(x: 78, y: 66), control: CGPoint(x: 52, y: 108))
+            foreSail.closeSubpath()
+
+            // 船底雕浪水线
+            let wave = CGMutablePath()
+            wave.move(to: CGPoint(x: 34, y: 228))
+            wave.addQuadCurve(to: CGPoint(x: 82, y: 228), control: CGPoint(x: 58, y: 216))
+            wave.addQuadCurve(to: CGPoint(x: 128, y: 228), control: CGPoint(x: 105, y: 238))
+            wave.addQuadCurve(to: CGPoint(x: 174, y: 228), control: CGPoint(x: 151, y: 216))
+            wave.addQuadCurve(to: CGPoint(x: 222, y: 228), control: CGPoint(x: 198, y: 238))
+
+            render(g, [
+                .rod(line((138, 18), (138, 166)), 10),         // 主桅
+                .rod(line((82, 54), (82, 166)), 8),            // 前桅
+                .rod(line((20, 154), (56, 168)), 8),           // 船首斜桅撞角
+                .solid(poly([(138, 16), (192, 24), (174, 31), (192, 38), (138, 40)])), // 燕尾旗舰帅旗
+                .solid(foreSail),
+                .solid(mainSail),
+                .solid(hull),
+                .rod(wave, 8)
+            ])
+            // 帆面横向桁索缝线 + 船壳四门炮窗与艉楼栅栏
+            detail(g, curve((118, 82), (156, 76), (192, 86)), 6)
+            detail(g, curve((116, 114), (154, 108), (190, 118)), 6)
+            detail(g, line((62, 178), (196, 178)), 6)
+            dot(g, 74, 188, d: 12); dot(g, 108, 188, d: 12); dot(g, 142, 188, d: 12); dot(g, 176, 186, d: 12)
+
         case "Merchant":
-            // A merchant cog: one broad square sail with a cargo stripe over a deep hull.
-            render(g, [.rod(line((128, 34), (128, 168)), 10), .solid(poly([(72, 52), (184, 52), (176, 150), (80, 150)])),
-                       .solid(poly([(36, 168), (220, 168), (194, 216), (62, 216)]))])
-            detail(g, line((78, 100), (178, 100)), 8)
-            detail(g, line((128, 56), (128, 146)), 6)
+            // 圆腹商船：饱满单方帆、十字商徽绳带、深腹货舱与船底水波。
+            let sail = CGMutablePath()
+            sail.move(to: CGPoint(x: 72, y: 50))
+            sail.addQuadCurve(to: CGPoint(x: 184, y: 50), control: CGPoint(x: 128, y: 40))
+            sail.addQuadCurve(to: CGPoint(x: 178, y: 148), control: CGPoint(x: 204, y: 98))
+            sail.addQuadCurve(to: CGPoint(x: 78, y: 148), control: CGPoint(x: 128, y: 138))
+            sail.addQuadCurve(to: CGPoint(x: 72, y: 50), control: CGPoint(x: 56, y: 98))
+            sail.closeSubpath()
+
+            let hull = CGMutablePath()
+            hull.move(to: CGPoint(x: 34, y: 162))
+            hull.addLine(to: CGPoint(x: 222, y: 158))
+            hull.addQuadCurve(to: CGPoint(x: 190, y: 214), control: CGPoint(x: 212, y: 202))
+            hull.addLine(to: CGPoint(x: 66, y: 214))
+            hull.addQuadCurve(to: CGPoint(x: 34, y: 162), control: CGPoint(x: 42, y: 200))
+            hull.closeSubpath()
+
+            render(g, [
+                .rod(line((128, 24), (128, 166)), 10),
+                .solid(poly([(128, 22), (166, 30), (128, 38)])),
+                .solid(sail),
+                .solid(hull)
+            ])
+            detail(g, curve((78, 98), (128, 92), (178, 98)), 7)
+            detail(g, line((128, 52), (128, 144)), 6)
+            detail(g, line((58, 182), (198, 182)), 6)
+
         case "Port":
-            // An anchor.
-            render(g, [.rod(line((128, 56), (128, 214)), 16), .rod(line((84, 84), (172, 84)), 14), .solid(oval(108, 18, 40, 40)),
-                       .rod(curve((46, 150), (128, 268), (210, 150)), 16), .solid(poly([(30, 156), (62, 138), (64, 170)])), .solid(poly([(226, 156), (194, 138), (192, 170)]))])
-            g.setFillColor(gray: 0.32, alpha: 1); g.fillEllipse(in: CGRect(x: 120, y: 30, width: 16, height: 16))
+            // 精雕海港铁锚：顶环、斜角横木、倒刺双锚爪与港湾波纹。
+            render(g, [
+                .rod(line((128, 58), (128, 210)), 16),
+                .rod(line((78, 86), (178, 86)), 14),
+                .solid(oval(104, 16, 48, 48)),
+                .rod(curve((46, 148), (128, 260), (210, 148)), 16),
+                .solid(poly([(28, 152), (64, 134), (66, 170)])),
+                .solid(poly([(228, 152), (192, 134), (190, 170)]))
+            ])
+            dot(g, 118, 30, d: 20)
+
         case "spear":
-            // Long halberd/pike with side battle-pennant.
-            render(g, [.rod(line((128, 186), (128, 70)), 14),
-                       .solid(poly([(132, 74), (186, 86), (150, 102), (178, 114), (132, 120)])),
-                       .solid(poly([(128, 12), (156, 56), (128, 94), (100, 56)])),
-                       .rod(line((92, 112), (156, 112)), 12)] + base)
+            // 方天画戟 / 仪仗长枪：菱形戟尖 + 弯月侧刃 + 迎风飘带战旆。
+            let crescent = CGMutablePath()
+            crescent.move(to: CGPoint(x: 132, y: 56))
+            crescent.addQuadCurve(to: CGPoint(x: 192, y: 92), control: CGPoint(x: 182, y: 56))
+            crescent.addQuadCurve(to: CGPoint(x: 132, y: 122), control: CGPoint(x: 184, y: 126))
+            crescent.addQuadCurve(to: CGPoint(x: 132, y: 56), control: CGPoint(x: 158, y: 90))
+            crescent.closeSubpath()
+
+            let pennant = CGMutablePath()
+            pennant.move(to: CGPoint(x: 122, y: 84))
+            pennant.addQuadCurve(to: CGPoint(x: 56, y: 104), control: CGPoint(x: 86, y: 82))
+            pennant.addLine(to: CGPoint(x: 78, y: 120))
+            pennant.addLine(to: CGPoint(x: 62, y: 136))
+            pennant.addQuadCurve(to: CGPoint(x: 122, y: 128), control: CGPoint(x: 92, y: 138))
+            pennant.closeSubpath()
+
+            render(g, [
+                .rod(line((128, 190), (128, 66)), 14),
+                .solid(pennant),
+                .solid(crescent),
+                .solid(poly([(128, 10), (150, 52), (128, 86), (106, 52)])),
+                .rod(line((102, 128), (154, 128)), 10)
+            ] + base)
+            detail(g, line((128, 22), (128, 76)), 6)
+
         case "shield":
-            let p = CGMutablePath()
-            p.move(to: CGPoint(x: 60, y: 40)); p.addLine(to: CGPoint(x: 196, y: 40)); p.addLine(to: CGPoint(x: 196, y: 96))
-            p.addQuadCurve(to: CGPoint(x: 128, y: 186), control: CGPoint(x: 192, y: 160)); p.addQuadCurve(to: CGPoint(x: 60, y: 96), control: CGPoint(x: 64, y: 160)); p.closeSubpath()
-            render(g, [.solid(p)] + base)
-            detail(g, line((128, 62), (128, 158)), 12); detail(g, line((90, 96), (166, 96)), 12)
-            dot(g, 121, 89)
+            // 鸢形重盾 + 背后佩剑柄 + 浮雕十字棱与铆钉盾脐。
+            let kite = CGMutablePath()
+            kite.move(to: CGPoint(x: 58, y: 46))
+            kite.addQuadCurve(to: CGPoint(x: 198, y: 46), control: CGPoint(x: 128, y: 34))
+            kite.addLine(to: CGPoint(x: 198, y: 104))
+            kite.addQuadCurve(to: CGPoint(x: 128, y: 188), control: CGPoint(x: 192, y: 162))
+            kite.addQuadCurve(to: CGPoint(x: 58, y: 104), control: CGPoint(x: 64, y: 162))
+            kite.closeSubpath()
+
+            render(g, [
+                .rod(line((128, 16), (128, 52)), 14),
+                .rod(line((102, 32), (154, 32)), 10),
+                .solid(kite)
+            ] + base)
+            detail(g, line((128, 58), (128, 164)), 10)
+            detail(g, line((82, 98), (174, 98)), 10)
+            dot(g, 118, 88, d: 20)
+
         case "archer":
-            render(g, [.rod(curve((96, 26), (196, 104), (96, 182)), 14), .rod(line((44, 104), (176, 104)), 9), .solid(poly([(196, 104), (170, 88), (170, 120)]))] + base)
-            detail(g, line((96, 30), (96, 178)), 6)
+            // 反曲强弓张满 + 搭弦羽箭 + 斜背箭囊。
+            let bow = CGMutablePath()
+            bow.move(to: CGPoint(x: 92, y: 24))
+            bow.addQuadCurve(to: CGPoint(x: 154, y: 104), control: CGPoint(x: 162, y: 50))
+            bow.addQuadCurve(to: CGPoint(x: 92, y: 184), control: CGPoint(x: 162, y: 158))
+            render(g, [
+                .rod(bow, 14),
+                .rod(line((46, 104), (186, 104)), 9),
+                .solid(poly([(208, 104), (176, 86), (182, 104), (176, 122)])),
+                .solid(poly([(44, 104), (66, 90), (58, 104), (66, 118)]))
+            ] + base)
+            detail(g, line((92, 28), (64, 104)), 6)
+            detail(g, line((64, 104), (92, 180)), 6)
+
         case "crossbow":
-            render(g, [.rod(line((128, 70), (128, 186)), 18), .rod(curve((40, 112), (128, 40), (216, 112)), 14), .solid(poly([(128, 22), (150, 62), (106, 62)]))] + base)
-            detail(g, line((44, 116), (212, 116)), 6)
+            // 劲弩 / 重机弩：钢弧弩臂 + 前镫环 + 弩身箭槽 + 三棱钢矢。
+            render(g, [
+                .solid(oval(110, 14, 36, 30)),
+                .rod(line((128, 42), (128, 188)), 18),
+                .rod(curve((36, 114), (128, 36), (220, 114)), 14),
+                .solid(poly([(128, 18), (152, 60), (128, 50), (104, 60)]))
+            ] + base)
+            detail(g, line((42, 116), (128, 134)), 6)
+            detail(g, line((214, 116), (128, 134)), 6)
+            detail(g, line((128, 72), (128, 174)), 6)
+
         case "cavalry":
-            render(g, [knight] + base); dot(g, 128, 62)
+            // 轻骑战马首：昂首嘶鸣 + 飘逸长鬃 + 缰绳刻纹。
+            render(g, [.solid(warhorse)] + base)
+            detail(g, curve((88, 102), (122, 86), (146, 62)), 7)
+            detail(g, curve((158, 74), (174, 108), (166, 152)), 7)
+            dot(g, 114, 58, d: 13)
+
         case "heavy":
-            render(g, [.solid(poly([(118, 30), (154, 4), (166, 22), (142, 46)])), knight] + base)
-            detail(g, line((92, 160), (172, 160)), 10)
-            detail(g, line((100, 134), (168, 134)), 8)
-            dot(g, 128, 62)
+            // 具装铁骑：高耸缨盔战马 + 马面护甲 + 颈部层甲 + 冲锋长骑枪。
+            let plume = CGMutablePath()
+            plume.move(to: CGPoint(x: 118, y: 32))
+            plume.addQuadCurve(to: CGPoint(x: 186, y: 12), control: CGPoint(x: 154, y: 0))
+            plume.addQuadCurve(to: CGPoint(x: 146, y: 46), control: CGPoint(x: 176, y: 34))
+            plume.closeSubpath()
+
+            render(g, [
+                .rod(line((194, 186), (218, 22)), 11),
+                .solid(poly([(220, 10), (232, 42), (206, 38)])),
+                .solid(plume),
+                .solid(warhorse)
+            ] + base)
+            detail(g, curve((70, 82), (98, 66), (128, 42)), 8)   // 马面具装铁甲
+            detail(g, line((94, 132), (172, 132)), 8)
+            detail(g, line((88, 158), (174, 158)), 8)
+            dot(g, 114, 58, d: 13)
+
         case "horseArcher":
-            render(g, [.rod(curve((176, 30), (236, 108), (176, 186)), 12), .rod(line((154, 108), (214, 108)), 8), knight] + base); dot(g, 128, 62)
+            // 草原骑射：战马首配搭弦反曲马弓。
+            render(g, [
+                .rod(curve((176, 26), (238, 104), (176, 182)), 12),
+                .rod(line((154, 104), (222, 104)), 8),
+                .solid(poly([(236, 104), (212, 90), (212, 118)])),
+                .solid(warhorse)
+            ] + base)
+            detail(g, line((176, 30), (176, 178)), 5)
+            dot(g, 114, 58, d: 13)
+
         case "elite":
-            render(g, [.rod(line((84, 186), (84, 30)), 12), .solid(oval(72, 12, 24, 24)),
-                       .solid(poly([(92, 38), (190, 38), (190, 138), (164, 116), (140, 138), (92, 138)]))] + base)
-            detail(g, oval(122, 64, 40, 40), 10)
-            dot(g, 135, 77)
+            // 禁军龙虎帅旗：枪尖旗杆 + 随风双波浪大纛 + 日月圆徽。
+            let banner = CGMutablePath()
+            banner.move(to: CGPoint(x: 84, y: 38))
+            banner.addQuadCurve(to: CGPoint(x: 196, y: 42), control: CGPoint(x: 140, y: 22))
+            banner.addLine(to: CGPoint(x: 178, y: 88))
+            banner.addLine(to: CGPoint(x: 198, y: 136))
+            banner.addQuadCurve(to: CGPoint(x: 84, y: 138), control: CGPoint(x: 140, y: 152))
+            banner.closeSubpath()
+
+            render(g, [
+                .rod(line((78, 190), (78, 30)), 12),
+                .solid(poly([(78, 8), (94, 30), (78, 44), (62, 30)])),
+                .solid(banner)
+            ] + base)
+            detail(g, oval(114, 66, 44, 44), 9)
+            dot(g, 129, 81, d: 14)
+
         case "elephant":
-            render(g, [.solid(oval(36, 46, 66, 84)), .solid(oval(154, 46, 66, 84)), .solid(oval(82, 36, 92, 104)), .rod(curve((128, 130), (124, 168), (148, 182)), 26)] + base)
-            detail(g, curve((100, 128), (86, 150), (90, 166)), 8); detail(g, curve((156, 128), (170, 150), (166, 166)), 8)
-            dot(g, 103, 73); dot(g, 139, 73)
+            // 重甲战象：背负战楼冠顶 + 双扇巨耳 + 弧形象牙与卷鼻。
+            render(g, [
+                .solid(poly([(94, 18), (162, 18), (154, 52), (102, 52)])), // 象背战楼
+                .solid(oval(32, 48, 68, 86)),
+                .solid(oval(156, 48, 68, 86)),
+                .solid(oval(80, 40, 96, 104)),
+                .rod(curve((128, 128), (122, 168), (152, 182)), 26)
+            ] + base)
+            detail(g, curve((96, 126), (78, 150), (88, 170)), 9)
+            detail(g, curve((160, 126), (178, 150), (168, 170)), 9)
+            dot(g, 102, 76, d: 13); dot(g, 140, 76, d: 13)
+
         default:
-            // Footman / Infantry: crested war-helm, armored torso, and upright broadsword guard.
-            render(g, [.solid(poly([(96, 114), (160, 114), (174, 186), (82, 186)])),
-                       .solid(oval(90, 46, 76, 74)),
-                       .solid(poly([(128, 18), (144, 48), (112, 48)]))] + base)
-            detail(g, line((128, 124), (128, 176)), 9)
-            detail(g, line((108, 142), (148, 142)), 8)
+            // 步兵/甲士：冠翎战盔 + 阔肩甲冑 + 护手十字阔剑。
+            let helm = CGMutablePath()
+            helm.move(to: CGPoint(x: 88, y: 84))
+            helm.addQuadCurve(to: CGPoint(x: 128, y: 38), control: CGPoint(x: 88, y: 42))
+            helm.addQuadCurve(to: CGPoint(x: 168, y: 84), control: CGPoint(x: 168, y: 42))
+            helm.addLine(to: CGPoint(x: 162, y: 112))
+            helm.addLine(to: CGPoint(x: 94, y: 112))
+            helm.closeSubpath()
+
+            let armor = CGMutablePath()
+            armor.move(to: CGPoint(x: 78, y: 122))
+            armor.addLine(to: CGPoint(x: 178, y: 122))
+            armor.addLine(to: CGPoint(x: 186, y: 188))
+            armor.addLine(to: CGPoint(x: 70, y: 188))
+            armor.closeSubpath()
+
+            render(g, [
+                .solid(poly([(128, 10), (146, 42), (128, 52), (110, 42)])), // 盔顶朱翎
+                .solid(helm),
+                .solid(armor)
+            ] + base)
+            detail(g, line((98, 76), (158, 76)), 8)      // 面甲横槽
+            detail(g, line((128, 76), (128, 108)), 7)    // 护鼻棱
+            detail(g, line((128, 126), (128, 178)), 9)   // 剑脊
+            detail(g, line((104, 144), (152, 144)), 8)   // 剑格
         }
     }
 }

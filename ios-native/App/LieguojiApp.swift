@@ -208,12 +208,12 @@ struct SecondaryLabel: View {
 extension View {
     /// Frosted glass with a hairline, the iOS 17 floating-control look.
     /// Floating chrome (date, buttons, tab bar, notices) in the panels' own paper: the ink rule and
-    /// the faint vermilion inner rule of Group2, so the map's controls and the pages read as one set.
-    func glass<S: Shape>(_ shape: S) -> some View {
-        // Apple 级克制浮层质感：统一柔白宣纸表面、0.75pt 细墨边框、微弱内描边与轻柔低海拔投影，零离屏模糊开销。
+    /// the faint vermilion inner rule of Group2, using InsettableShape.inset(by:) so every corner
+    /// (Circle, Capsule, RoundedRectangle) stays mathematically concentric without pinched inner arcs.
+    func glass<S: InsettableShape>(_ shape: S) -> some View {
         background(shape.fill(Theme.paper2.opacity(0.96)).shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.12), radius: 9, y: 3))
-            .overlay(shape.stroke(Theme.ink.opacity(0.15), lineWidth: 0.85))
-            .overlay(shape.stroke(Theme.seal.opacity(0.11), lineWidth: 0.5).padding(2.5))
+            .overlay(shape.strokeBorder(Theme.ink.opacity(0.15), lineWidth: 0.85))
+            .overlay(shape.inset(by: 2.5).strokeBorder(Theme.seal.opacity(0.11), lineWidth: 0.5))
     }
 }
 
@@ -222,12 +222,14 @@ struct CircleIcon: View {
     var symbol: String = ""
     var glyph: InkGlyph? = nil
     var active = false
+    var tint: Color? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
+        let accentColor = tint ?? Theme.seal
         ZStack {
             if let glyph {
                 InkIcon(glyph: glyph, size: 19, weight: active ? 1.95 : 1.7, filled: active,
-                        accent: active ? Theme.seal.opacity(0.24) : nil)
+                        accent: (active || tint != nil) ? accentColor.opacity(0.24) : nil)
                     .id(glyph)
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.72).combined(with: .opacity),
@@ -237,13 +239,32 @@ struct CircleIcon: View {
                 Image(systemName: symbol).font(.system(size: 16, weight: .medium))
             }
         }
-        .foregroundStyle(active ? Theme.seal : Theme.ink)
+        .foregroundStyle((active || tint != nil) ? accentColor : Theme.ink)
         .frame(width: Theme.Control.topHeight, height: Theme.Control.topHeight)
         .glass(Circle())
-        .overlay(Circle().strokeBorder(active ? Theme.seal.opacity(0.58) : Color.clear, lineWidth: 1.1).padding(2.5))
+        .overlay(Circle().inset(by: 2.5).strokeBorder(active ? accentColor.opacity(0.58) : Color.clear, lineWidth: 1.1))
         .contentShape(Circle())
         .animation(Motion.tap, value: glyph)
         .animation(Motion.tap, value: active)
+    }
+}
+
+/// 卡片内统一的圆形轻关闭按钮（26×26pt 正圆、柔墨底、居中墨叉），彻底统一所有悬浮卡的关闭角标。
+struct CardCloseButton: View {
+    let action: () -> Void
+    var body: some View {
+        Button {
+            GameFeel.shared.tap()
+            action()
+        } label: {
+            InkIcon(glyph: .close, size: 11, weight: 1.8)
+                .foregroundStyle(Theme.ink2)
+                .frame(width: 26, height: 26)
+                .background(Theme.ink.opacity(0.065), in: Circle())
+                .overlay(Circle().strokeBorder(Theme.ink.opacity(0.12), lineWidth: 0.6))
+                .contentShape(Circle())
+        }
+        .buttonStyle(PressStyle())
     }
 }
 
@@ -401,8 +422,8 @@ struct Group2<Content: View>: View {
                 shape.fill(Theme.paper2.opacity(0.86))
                     .shadow(color: Color(red: 0.22, green: 0.16, blue: 0.08).opacity(0.07), radius: 6, y: 2)
             )
-            .overlay(shape.stroke(Theme.ink.opacity(0.15), lineWidth: 0.9))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 2.5, style: .continuous).stroke(Theme.seal.opacity(0.11), lineWidth: 0.55).padding(2.5))
+            .overlay(shape.strokeBorder(Theme.ink.opacity(0.15), lineWidth: 0.9))
+            .overlay(shape.inset(by: 2.5).strokeBorder(Theme.seal.opacity(0.11), lineWidth: 0.55))
     }
 }
 
@@ -449,6 +470,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("2.8.8", ["【闪退修复与全局兜底】根据真机崩溃日志定位：开局推演约二十五秒后月度外交结算读取旧战役字段导致引擎断言闪退；除改读真实战役表外，引擎数据层新增宽松默认值与越界防护，彻底杜绝同类字段错配闪退。",
+                   "【全局同心圆角修复与史记/回放重做】① 统一升级 `glass`、卡片与印章为严格的苹果同心 `inset(by:)` 内外双边曲率，彻底修复山河回放右上角返回按钮在竖屏下被挤压变形导致的圆角错误（统一为与主界面严格对称的 44×44pt 正圆同心钮）；② 彻底重做「史记」页面，移除杂乱堆叠顶卡与生硬直角框，统一为「编年大事 / 兴衰长卷」双页签与按年分节奏折卡片并优化长史分页加载；③ 山河回放新增拖动时间轴实时纪年浮签与快捷定位钮，收紧大势小笺留出更大观战视野。",
+                   "【雕漆漆盾军团、双桅破浪战舰与三层水墨晕染】① 军牌升级为 128×128 盾形漆牌配高反差象牙浮雕全套兵种；水师重绘为双桅鼓风楼船战舰并新增海沫浪环与多舰破浪雁行阵；② 战争占领与易主扫色升级为域扭曲宣纸三层水墨洇染（先导淡墨水晕 + 湿墨聚边笔锋 + 暖金波锋），陆战新增外扩兵戈气圈、海战新增炮弹入水白浪水花、攻城插旗新增鎏金星芒。"]),
         ("2.8.7", ["【开局与传报】修复「天下大势」收到失效交战方时的数组越界。进入另一局时清理旧战报和地图特效，旧传报任务退场后保留新队列。",
                    "【观战性能】顶部传报播完即停止逐帧绘制。复用未变化的地图标注，避免战斗效果在镜头静止时重复生成路径。",
                    "【地图稳定】动态 Metal 缓冲在 GPU 结束读取后再原地复用。交锋、战损和预计行军日数在数值异常时安全处理。",

@@ -180,32 +180,35 @@ struct ChronicleFilterBar: View {
     let nation: String?
     let clearNation: () -> Void
     var body: some View {
-        let box = RoundedRectangle(cornerRadius: 12, style: .continuous)
         HStack(spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass").font(.system(size: 13)).foregroundStyle(Theme.ink2)
-                TextField("", text: $keyword, prompt: Text("搜寻纪事").foregroundColor(Theme.ink2.opacity(0.7)))
+            HStack(spacing: 7) {
+                InkIcon(glyph: .search, size: 14, weight: 1.75).foregroundStyle(Theme.ink2)
+                TextField("", text: $keyword, prompt: Text("搜寻史册……").foregroundColor(Theme.ink2.opacity(0.65)))
                     .font(Theme.body).foregroundStyle(Theme.ink).tint(Theme.seal)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !keyword.isEmpty {
                     Button { keyword = "" } label: {
-                        Image(systemName: "xmark").font(.system(size: 11)).foregroundStyle(Theme.ink2).frame(width: 24, height: 24).contentShape(Rectangle())
+                        InkIcon(glyph: .close, size: 11, weight: 1.8)
+                            .foregroundStyle(Theme.ink2)
+                            .frame(width: 24, height: 24)
+                            .background(Theme.ink.opacity(0.06), in: Circle())
+                            .contentShape(Circle())
                     }
                     .buttonStyle(.plain)
                 }
             }
-            // The same field as 搜索国名 on the states page.
             .paperField()
             if let nation {
                 Button(action: clearNation) {
-                    HStack(spacing: 4) {
-                        Text("只看 " + nation).font(Theme.label).lineLimit(1)
-                        Image(systemName: "xmark").font(.system(size: 10))
+                    HStack(spacing: 5) {
+                        Text(nation).font(Theme.label).lineLimit(1)
+                        InkIcon(glyph: .close, size: 10, weight: 2.0)
                     }
-                    .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 40)
-                    .background(Theme.seal, in: box)
+                    .foregroundStyle(Theme.paper2)
+                    .padding(.horizontal, 12).frame(height: 40)
+                    .background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressStyle())
             }
         }
     }

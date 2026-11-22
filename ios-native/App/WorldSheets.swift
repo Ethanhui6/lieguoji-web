@@ -768,10 +768,11 @@ struct ChronicleSheet: View {
     @ObservedObject var model: GameModel
     var fly: (Int) -> Void = { _ in }
     var openReplay: (Int?) -> Void = { _ in }
-    @State private var unrolled = false
+    @State private var page = "annals"
     @State private var category = "all"
     @State private var entries: [ChronicleEntry] = []
     @State private var open: String?
+    @State private var limit = 80
     /// 岁纪 counts every kind of record, whatever category is listed below.
     @State private var digest: [ChronicleEntry] = []
     @State private var timeline: ReplayTimelineData?
@@ -780,9 +781,16 @@ struct ChronicleSheet: View {
     /// 联动: another page asks for one state's records once (外交 › 史).
     static var openNation: Int?
     @State private var keyword = ""
+
+    private struct YearGroup: Identifiable {
+        let id: Int
+        let items: [ChronicleEntry]
+    }
+
     private var shown: [ChronicleEntry] {
         entries.filter { e in
-            (nationFilter.map { e.nations.contains($0) } ?? true) && (keyword.isEmpty || e.text.contains(keyword) || e.reason.contains(keyword))
+            (nationFilter.map { e.nations.contains($0) } ?? true)
+                && (keyword.isEmpty || e.text.contains(keyword) || e.reason.contains(keyword))
         }
     }
     private func yearLabel(_ year: Int) -> String { year > 0 ? "\(year)" : "前\(1 - year)" }
@@ -790,7 +798,11 @@ struct ChronicleSheet: View {
         guard let n = nationFilter, let map = model.map, n >= 0, n < map.meta.nations.count else { return nil }
         return MapLayers.stateLabel(map.meta.nations[n].name, full: false)
     }
-    static let categories = [("all", "要闻"), ("politics", "政权"), ("reform", "制度"), ("culture", "文化"), ("religion", "宗教"), ("war", "战争"), ("territory", "领土"), ("diplomacy", "外交"), ("family", "家族"), ("events", "天时人事")]
+    static let categories: [(String, String)] = [
+        ("all", "要闻"), ("war", "战争"), ("territory", "领土"), ("politics", "政权"),
+        ("diplomacy", "外交"), ("reform", "制度"), ("culture", "文化"), ("religion", "宗教"),
+        ("family", "家族"), ("events", "人事")
+    ]
     private var era: String { (model.state?.era).flatMap { $0.isEmpty ? nil : $0 } ?? "公元" }
     /// The year of a day (the calendar runs 365¼ days a year from the state's current date).
     private func yearOf(_ day: Int) -> Int {
@@ -798,149 +810,255 @@ struct ChronicleSheet: View {
         let dayOfYear = Double(s.date.month - 1) * 30.44 + Double(s.date.day - 1)
         return s.displayYear + Int(((dayOfYear - Double(s.day - day)) / 365.25).rounded(.down))
     }
-    var body: some View {
-        ZStack {
-            MemorialPaper()
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
-                    MemorialHeader(title: "纪事", subtitle: model.state?.dateText, seal: "史")
-                    // 山河回放入口卡：支持正放、倒放、进度条自由拖动与回到历史节点继续推演
-                    Button {
-                        GameFeel.shared.tap()
-                        openReplay(nil)
-                    } label: {
-                        HStack(spacing: 12) {
-                            SealFace(text: "溯", size: 36)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("山河回放 · 时光倒流").font(Theme.section).foregroundStyle(Theme.ink)
-                                Text("支持正放、倒放、进度条拖动与回到各历史节点").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
-                            }
-                            Spacer(minLength: 6)
-                            HStack(spacing: 4) {
-                                InkIcon(glyph: .replay, size: 14, weight: 1.8)
-                                Text("回放").font(Theme.label)
-                            }
-                            .foregroundStyle(Theme.paper2)
-                            .padding(.horizontal, 12).frame(height: 32)
-                            .background(Theme.seal, in: Capsule())
-                        }
-                        .padding(13)
-                        .paperCard(tint: Theme.seal)
-                    }
-                    .buttonStyle(PressStyle())
-                    .padding(.horizontal, 16)
-                    if let tl = timeline, tl.frames.count >= 2 {
-                        ChronicleDynastyScroll(timeline: tl) { day in
-                            GameFeel.shared.tap()
-                            openReplay(day)
-                        }
-                        .padding(.horizontal, 16)
-                    }
-                    WorldSummary(model: model).padding(.horizontal, 16)
-                    ChronicleDigest(entries: digest, yearOf: yearOf, yearText: yearLabel).padding(.horizontal, 16)
-                    // 大事记 by category: the whole chronicle (not only the latest lines), grouped by year;
-                    // tap an entry for why it happened.
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(Self.categories, id: \.0) { c in
-                                let on = category == c.0
-                                Button { category = c.0 } label: {
-                                    Text(c.1).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                        .padding(.horizontal, 14).frame(height: 40)
-                                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
-                                }
-                                .buttonStyle(PressStyle())
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                    }
-                    ChronicleFilterBar(keyword: $keyword, nation: filterName, clearNation: { nationFilter = nil }).padding(.horizontal, 16)
-                    VStack(spacing: 0) {
-                        let entries = shown
-                        ScrollRod().padding(.horizontal, 6)
-                        LazyVStack(alignment: .leading, spacing: 0) {
-                            if entries.isEmpty { Text("尚无记载").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 20) }
-                            ForEach(Array(entries.enumerated()), id: \.offset) { i, e in
-                                let year = yearOf(e.day)
-                                if i == 0 || yearOf(entries[i - 1].day) != year {
-                                    Text(year > 0 ? "\(era)\(year)年" : "\(era)前\(1 - year)年").font(Theme.body).foregroundStyle(Theme.seal)
-                                        .padding(.horizontal, 18).padding(.top, 10).padding(.bottom, 2)
-                                }
-                                Button { withAnimation(Motion.fade) { open = open == e.id ? nil : e.id } } label: {
-                                    HStack(alignment: .top, spacing: 10) {
-                                        KindSeal(kind: .of(e.kind), size: 20).padding(.top, 1)
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            Text(e.text).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true).multilineTextAlignment(.leading)
-                                            if open == e.id, !e.reason.isEmpty {
-                                                Text(e.reason).font(Theme.label).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true).multilineTextAlignment(.leading)
-                                            }
-                                        }
-                                        Spacer(minLength: 0)
-                                        if i == 0 { Seal(text: "新", size: 22) }
-                                    }
-                                    .padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 3).contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                                ChronicleEntryMeta(entry: e, map: model.map, today: model.state?.day ?? e.day) { n in
-                                    withAnimation(Motion.fade) { nationFilter = nationFilter == n ? nil : n }
-                                }
-                                .padding(.leading, 48).padding(.trailing, 18).padding(.bottom, 7)
-                                if open == e.id {
-                                    HStack(spacing: 12) {
-                                        if let place = e.province {
-                                            Button { fly(place) } label: {
-                                                HStack(spacing: 5) {
-                                                    InkIcon(glyph: .locate, size: 13, weight: 1.7)
-                                                    Text("在舆图上查看").font(Theme.label)
-                                                }
-                                                .foregroundStyle(Theme.seal)
-                                                .padding(.horizontal, 10).frame(height: 28)
-                                                .background(Theme.seal.opacity(0.08), in: Capsule())
-                                            }
-                                            .buttonStyle(PressStyle())
-                                        }
-                                        Button {
-                                            GameFeel.shared.tap()
-                                            openReplay(e.day)
-                                        } label: {
-                                            HStack(spacing: 5) {
-                                                InkIcon(glyph: .replay, size: 13, weight: 1.7)
-                                                Text("从此节点回放").font(Theme.label)
-                                            }
-                                            .foregroundStyle(Theme.jade)
-                                            .padding(.horizontal, 10).frame(height: 28)
-                                            .background(Theme.jade.opacity(0.1), in: Capsule())
-                                        }
-                                        .buttonStyle(PressStyle())
-                                        Spacer(minLength: 0)
-                                    }
-                                    .padding(.leading, 48).padding(.trailing, 18).padding(.bottom, 8)
-                                }
-                                if i < entries.count - 1 { Rectangle().fill(Theme.ink.opacity(0.08)).frame(height: 0.7).padding(.leading, 48).padding(.trailing, 18) }
-                            }
-                        }
-                        .padding(.vertical, 8)
-                        .background(Theme.paper2.opacity(0.55))
-                        .overlay(Rectangle().stroke(Theme.ink.opacity(0.12), lineWidth: 0.8))
-                        .padding(.horizontal, 16)
-                        ScrollRod().padding(.horizontal, 6)
-                    }
-                    .padding(.horizontal, 10)
-                    .opacity(unrolled ? 1 : 0)
-                }
-                .padding(.bottom, 28)
+
+    private func grouped(_ list: [ChronicleEntry]) -> [YearGroup] {
+        var out: [YearGroup] = []
+        for e in list {
+            let y = yearOf(e.day)
+            if let last = out.last, last.id == y {
+                out[out.count - 1] = YearGroup(id: y, items: last.items + [e])
+            } else {
+                out.append(YearGroup(id: y, items: [e]))
             }
         }
+        return out
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                SheetHeader(title: "史记", subtitle: model.state?.dateText, seal: "史")
+
+                ChipPicker(items: [("annals", "编年大事"), ("era", "兴衰长卷")], selection: $page)
+                    .padding(.horizontal, Theme.Layout.pageInset)
+
+                if page == "annals" {
+                    annalsBody
+                } else {
+                    eraOverviewBody
+                }
+            }
+            .padding(.bottom, 28)
+        }
+        .scrollIndicators(.hidden)
         .onAppear {
             if let n = Self.openNation { nationFilter = n; Self.openNation = nil }
-            withAnimation(Motion.fade) { unrolled = true }
         }
-        .task(id: "\(category)-\((model.state?.day ?? 0) / 30)") { entries = await model.chronicle(category) }
-        .task(id: (model.state?.day ?? 0) / 30) {
-            digest = await model.chronicle("all")
-            timeline = await model.replayTimeline()
+        .onChange(of: category) { _, _ in limit = 80 }
+        .task(id: "\(category)-\((model.state?.day ?? 0) / 30)") {
+            entries = await model.chronicle(category)
         }
+        .task(id: "\(page)-\((model.state?.day ?? 0) / 30)") {
+            if page == "era" {
+                digest = await model.chronicle("all")
+                timeline = await model.replayTimeline()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var annalsBody: some View {
+        let allShown = shown
+        let visible = Array(allShown.prefix(limit))
+        let groups = grouped(visible)
+        let newestId = allShown.first?.id
+
+        // 精简山河回放快捷入口（与列国/外交卡片 1:1 统一视觉语言）
+        Button {
+            GameFeel.shared.tap()
+            openReplay(nil)
+        } label: {
+            HStack(spacing: 11) {
+                SealFace(text: "溯", size: 32, color: Theme.seal)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("山河回放 · 时光倒流").font(Theme.section).foregroundStyle(Theme.ink)
+                    Text("纵览版图兴替，拖动进度或回溯至历史节点").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                }
+                Spacer(minLength: 6)
+                HStack(spacing: 4) {
+                    InkIcon(glyph: .replay, size: 13, weight: 1.8)
+                    Text("回放").font(Theme.label)
+                }
+                .foregroundStyle(Theme.paper2)
+                .padding(.horizontal, 12).frame(height: 30)
+                .background(Theme.seal, in: Capsule())
+            }
+            .padding(.horizontal, 14).padding(.vertical, 11)
+            .paperCard(tint: Theme.seal)
+        }
+        .buttonStyle(PressStyle())
+        .padding(.horizontal, Theme.Layout.pageInset)
+
+        // 搜索 + 只看一国
+        ChronicleFilterBar(keyword: $keyword, nation: filterName, clearNation: { nationFilter = nil })
+            .padding(.horizontal, Theme.Layout.pageInset)
+
+        // 轻盈胶囊分类筛选（与军事/外交筛选签完全同高同曲率）
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 7) {
+                ForEach(Self.categories, id: \.0) { c in
+                    let on = category == c.0
+                    Button {
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.tap) { category = c.0 }
+                    } label: {
+                        Text(c.1).font(Theme.label)
+                            .foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                            .padding(.horizontal, 13).frame(height: 32)
+                            .background(on ? Theme.seal : Theme.paper2.opacity(0.9), in: Capsule())
+                            .overlay(Capsule().strokeBorder(on ? Color.clear : Theme.ink.opacity(0.16), lineWidth: 0.85))
+                    }
+                    .buttonStyle(PressStyle())
+                }
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+        }
+
+        if groups.isEmpty {
+            Group2 {
+                Row(label: "史册记载", value: keyword.isEmpty && nationFilter == nil ? "尚无记载" : "未找到相符的纪事")
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+        } else {
+            ForEach(groups) { group in
+                let y = group.id
+                HStack(spacing: 6) {
+                    SectionLabel(y > 0 ? "\(era)\(y)年" : "\(era)前\(1 - y)年", inset: false)
+                    Spacer()
+                    Text("\(group.items.count) 记").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                }
+                .padding(.horizontal, Theme.Layout.sectionInset)
+                .padding(.top, 2)
+
+                Group2 {
+                    ForEach(Array(group.items.enumerated()), id: \.offset) { idx, e in
+                        chronicleRow(e, isNewest: e.id == newestId)
+                        if idx < group.items.count - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+
+            if allShown.count > limit {
+                Button {
+                    GameFeel.shared.tap()
+                    withAnimation(Motion.panel) { limit += 80 }
+                } label: {
+                    SecondaryLabel(title: "加载更早史册（余 \(allShown.count - limit) 条）", symbol: "book.pages")
+                }
+                .buttonStyle(PressStyle())
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func chronicleRow(_ e: ChronicleEntry, isNewest: Bool) -> some View {
+        let isOpen = open == e.id
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                GameFeel.shared.tap()
+                withAnimation(Motion.panel) { open = isOpen ? nil : e.id }
+            } label: {
+                HStack(alignment: .top, spacing: 10) {
+                    KindSeal(kind: .of(e.kind), size: 22).padding(.top, 1)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(e.text)
+                            .font(Theme.body)
+                            .foregroundStyle(Theme.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.leading)
+                        if isOpen, !e.reason.isEmpty {
+                            Text(e.reason)
+                                .font(Theme.label)
+                                .foregroundStyle(Theme.ink2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .multilineTextAlignment(.leading)
+                        }
+                    }
+                    Spacer(minLength: 4)
+                    if isNewest {
+                        PaperTag(text: "新", color: Theme.seal, size: 11)
+                    } else {
+                        InkIcon(glyph: .chevronDown, size: 11, weight: 1.7)
+                            .foregroundStyle(Theme.ink2.opacity(0.65))
+                            .rotationEffect(.degrees(isOpen ? 180 : 0))
+                            .padding(.top, 5)
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            ChronicleEntryMeta(entry: e, map: model.map, today: model.state?.day ?? e.day) { n in
+                GameFeel.shared.tap()
+                withAnimation(Motion.tap) { nationFilter = nationFilter == n ? nil : n }
+            }
+            .padding(.leading, 32)
+
+            if isOpen {
+                HStack(spacing: 8) {
+                    if let place = e.province {
+                        Button {
+                            GameFeel.shared.tap()
+                            fly(place)
+                        } label: {
+                            HStack(spacing: 5) {
+                                InkIcon(glyph: .locate, size: 12, weight: 1.8)
+                                Text("定位舆图").font(Theme.caption)
+                            }
+                            .foregroundStyle(Theme.seal)
+                            .padding(.horizontal, 10).frame(height: 28)
+                            .background(Theme.seal.opacity(0.09), in: Capsule())
+                            .overlay(Capsule().strokeBorder(Theme.seal.opacity(0.28), lineWidth: 0.7))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                    Button {
+                        GameFeel.shared.tap()
+                        openReplay(e.day)
+                    } label: {
+                        HStack(spacing: 5) {
+                            InkIcon(glyph: .replay, size: 12, weight: 1.8)
+                            Text("此日回放").font(Theme.caption)
+                        }
+                        .foregroundStyle(Theme.jade)
+                        .padding(.horizontal, 10).frame(height: 28)
+                        .background(Theme.jade.opacity(0.10), in: Capsule())
+                        .overlay(Capsule().strokeBorder(Theme.jade.opacity(0.28), lineWidth: 0.7))
+                    }
+                    .buttonStyle(PressStyle())
+                    Spacer(minLength: 0)
+                }
+                .padding(.leading, 32)
+                .padding(.top, 2)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(isOpen ? Theme.seal.opacity(0.035) : Color.clear)
+    }
+
+    @ViewBuilder
+    private var eraOverviewBody: some View {
+        WorldSummary(model: model)
+            .padding(.horizontal, Theme.Layout.pageInset)
+
+        if let tl = timeline, tl.frames.count >= 2 {
+            ChronicleDynastyScroll(timeline: tl) { day in
+                GameFeel.shared.tap()
+                openReplay(day)
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+        } else {
+            Group2 {
+                Row(label: "兴衰长卷", value: "推演满 30 天并留存历史帧后自动生成")
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+        }
+
+        ChronicleDigest(entries: digest, yearOf: yearOf, yearText: yearLabel)
+            .padding(.horizontal, Theme.Layout.pageInset)
     }
 }
 
@@ -968,21 +1086,20 @@ struct ChronicleDynastyScroll: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Seal(text: "卷", size: 22)
-                Text("列国兴衰时间长卷").font(Theme.section).foregroundStyle(Theme.ink)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                SealFace(text: "卷", size: 22, color: Theme.seal)
+                Text("列国兴衰长卷").font(Theme.section).foregroundStyle(Theme.ink)
                 Spacer(minLength: 4)
-                Text("点按节点直达回放 · 共 \(timeline.frames.count) 帧").font(Theme.caption).foregroundStyle(Theme.ink2)
+                Text("共 \(timeline.frames.count) 帧 · 点按直达回放").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
             }
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .bottom, spacing: 6) {
+                HStack(alignment: .bottom, spacing: 7) {
                     ForEach(sampledFrames) { f in
                         Button {
                             onSelectDay(f.day)
                         } label: {
                             VStack(spacing: 4) {
-                                // 堆叠列强色柱
                                 GeometryReader { geo in
                                     let slices = f.topPowers ?? [ReplayTimelineData.PowerSlice(i: f.topNation, p: max(1, f.topProvinces))]
                                     let total = max(1, slices.reduce(0) { $0 + max(1, $1.p) })
@@ -993,27 +1110,34 @@ struct ChronicleDynastyScroll: View {
                                                 .frame(height: max(3, geo.size.height * CGFloat(sl.p) / CGFloat(total)))
                                         }
                                     }
-                                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                            .stroke(f.major ? Theme.seal : Theme.ink.opacity(0.18), lineWidth: f.major ? 1.1 : 0.5)
+                                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                            .strokeBorder(f.major ? Theme.seal : Theme.ink.opacity(0.16), lineWidth: f.major ? 1.1 : 0.6)
                                     )
                                 }
-                                .frame(width: 24, height: 54)
+                                .frame(width: 26, height: 58)
 
                                 Text(MapLayers.stateLabel(f.topName, full: false))
                                     .font(Theme.kai(10))
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(1)
-                                    .frame(width: 34)
+                                    .frame(width: 38)
                                 Text(f.year > 0 ? "\(f.year)年" : "前\(1 - f.year)")
                                     .font(Theme.kai(9).monospacedDigit())
                                     .foregroundStyle(f.major ? Theme.seal : Theme.ink2)
                                     .lineLimit(1)
                             }
-                            .padding(.vertical, 5)
-                            .padding(.horizontal, 3)
-                            .background(f.major ? Theme.seal.opacity(0.06) : Theme.paper2.opacity(0.65), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 4)
+                            .background(
+                                f.major ? Theme.seal.opacity(0.07) : Theme.paper2.opacity(0.75),
+                                in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous)
+                                    .strokeBorder(f.major ? Theme.seal.opacity(0.28) : Theme.ink.opacity(0.08), lineWidth: 0.6)
+                            )
                         }
                         .buttonStyle(PressStyle())
                     }
@@ -1021,7 +1145,7 @@ struct ChronicleDynastyScroll: View {
                 .padding(.vertical, 2)
             }
         }
-        .padding(12)
+        .padding(14)
         .paperCard()
     }
 }

@@ -205,7 +205,7 @@ extension MapRenderer {
             if !sweep.isEmpty, let mesh = sweepMesh(sweep) {
                 let detail = Float(min(1, max(0, (camera.scale - 0.7) / 0.6)))
                 let scale = sweep.topology.scale
-                let w: [Float] = [now, FlipSweep.edge, FlipSweep.after, 0.5, 0.26, 1 / (scale * 1.25), detail, 0]
+                let w: [Float] = [now, FlipSweep.edge, FlipSweep.after, 0.5, 0.30, 1 / (scale * 1.22), detail, 0]
                 encoder.setRenderPipelineState(sweepPipeline)
                 encoder.setVertexBuffer(mesh.vertices, offset: 0, index: 0)
                 encoder.setVertexBytes(&u, length: MemoryLayout<Uniforms>.stride, index: 2)
@@ -230,20 +230,28 @@ extension MapRenderer {
     fragment float4 sweepFragment(SweepOut in [[stage_in]], constant SweepLook& k [[buffer(0)]]) {
         if (in.mode < -0.5) discard_fragment();
         float2 q = in.world;
-        float rough = (fbm(q * k.freq) - 0.5) * 2.0 * k.noise;
+        float2 warp = float2(
+            vnoise(q * k.freq * 1.55 + float2(2.7, 6.1)),
+            vnoise(q * k.freq * 1.55 + float2(8.3, 1.9))
+        ) - 0.5;
+        float rough = (fbm(q * k.freq + warp * 0.36) - 0.5) * 2.0 * k.noise;
         float s = (k.now - in.arrive) / k.edge + rough;
-        float reached = smoothstep(-1.0, 1.0, s);
+        float reached = smoothstep(-1.05, 1.05, s);
         float a = 0.0;
         if (in.mode > 0.5) {
-            // 未到达处盖旧色；到达处旧色余韵（与进攻色压旧色的晕染同浓度）随后淡去。
+            // 未到达处盖旧色；到达处旧色余韵随后沿纸纹淡去。
             float fade = (1.0 - k.tint) * clamp(1.0 - (k.now - in.arrive) / k.after, 0.0, 1.0);
             a = mix(1.0, fade, reached);
         }
-        float rim = exp(-s * s * 0.72) * (in.mode > 0.5 ? 0.13 + 0.11 * k.detail : 0.19 + 0.12 * k.detail);
-        float total = a + rim * (1.0 - a);
+        // 双层墨锋：主湿墨脊 + 细微先导暖金纸光（改朝换代墨圈略添金意，攻城易主以浓湿墨锋领衔）。
+        float rim = exp(-s * s * 0.76) * (in.mode > 0.5 ? 0.16 + 0.12 * k.detail : 0.22 + 0.14 * k.detail);
+        float crest = exp(-(s + 0.45) * (s + 0.45) * 2.2) * (in.mode > 0.5 ? 0.05 : 0.12);
+        float total = min(1.0, a + (rim + crest) * (1.0 - a));
         if (total < 0.003) discard_fragment();
-        float3 rgb = (in.old * a * (1.0 - rim) + float3(0.20, 0.14, 0.10) * rim) / max(total, 1e-4);
-        return float4(rgb, total);
+        float3 rimCol = in.mode > 0.5 ? float3(0.18, 0.13, 0.09) : float3(0.56, 0.38, 0.14);
+        float3 crestCol = float3(0.84, 0.68, 0.34);
+        float3 rgb = (in.old * a * (1.0 - rim) + rimCol * rim + crestCol * crest * (1.0 - a)) / max(total, 1e-4);
+        return float4(min(float3(1.0), rgb), total);
     }
     """
 }

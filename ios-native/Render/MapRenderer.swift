@@ -260,26 +260,65 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
         }
         unitTextures["banner"] = unitTextures["elite"]
-        // 军牌底盘: a carved token plaque under each army (outer lacquer rim + northwest-to-southeast shaded face + inner carved groove),
-        // tinted with its state's colour so armies stand out with tactile presence at every zoom.
-        let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 96, height: 96), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
+        // 军牌底盘 (128×128): 精雕漆盾军牌（平肩微弧收尖盾形 + 浓墨外漆框 + 西北至东南立体受光面 + 内切雕槽与双铆钉），
+        // 叠加国色后与顶部象牙浮雕兵种纹样层次分明，任意缩放下都兼具古舆图战棋质感。
+        let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
             let g = ctx.cgContext
-            let outer = UIBezierPath(roundedRect: CGRect(x: 4, y: 4, width: 88, height: 88), cornerRadius: 19).cgPath
-            g.setFillColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1); g.addPath(outer); g.fillPath()
-            let innerRect = CGRect(x: 10.5, y: 10.5, width: 75, height: 75)
-            let inner = UIBezierPath(roundedRect: innerRect, cornerRadius: 14).cgPath
+            func shieldPath(inset d: CGFloat) -> CGPath {
+                let p = CGMutablePath()
+                let l = 10 + d, r = 118 - d, t = 8 + d, midY = 74 - d * 0.15, b = 120 - d
+                let corner: CGFloat = max(4, 16 - d * 0.65)
+                p.move(to: CGPoint(x: l + corner, y: t))
+                p.addLine(to: CGPoint(x: r - corner, y: t))
+                p.addQuadCurve(to: CGPoint(x: r, y: t + corner), control: CGPoint(x: r, y: t))
+                p.addLine(to: CGPoint(x: r, y: midY))
+                p.addQuadCurve(to: CGPoint(x: 64, y: b), control: CGPoint(x: r - 2, y: b - 14))
+                p.addQuadCurve(to: CGPoint(x: l, y: midY), control: CGPoint(x: l + 2, y: b - 14))
+                p.addLine(to: CGPoint(x: l, y: t + corner))
+                p.addQuadCurve(to: CGPoint(x: l + corner, y: t), control: CGPoint(x: l, y: t))
+                p.closeSubpath()
+                return p
+            }
+            // 外圈浓墨漆框
+            g.setFillColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1)
+            g.addPath(shieldPath(inset: 0)); g.fillPath()
+            // 中层温润亮边倒角
+            g.setFillColor(red: 0.68, green: 0.68, blue: 0.68, alpha: 1)
+            g.addPath(shieldPath(inset: 5.5)); g.fillPath()
+            // 内盾受光渐变面
+            let inner = shieldPath(inset: 8.5)
             g.saveGState()
             g.addPath(inner); g.clip()
-            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.94, 0.94, 0.94, 1.0, 0.84, 0.84, 0.84, 1.0], locations: [0.0, 0.55, 1.0], count: 3) {
-                g.drawLinearGradient(grad, start: CGPoint(x: 10, y: 10), end: CGPoint(x: 86, y: 86), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.93, 0.93, 0.93, 1.0, 0.78, 0.78, 0.78, 1.0], locations: [0.0, 0.52, 1.0], count: 3) {
+                g.drawLinearGradient(grad, start: CGPoint(x: 16, y: 12), end: CGPoint(x: 112, y: 116), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
             } else {
-                g.setFillColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1); g.fill(innerRect)
+                g.setFillColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1); g.fill(CGRect(x: 0, y: 0, width: 128, height: 128))
             }
             g.restoreGState()
-            let groove = UIBezierPath(roundedRect: CGRect(x: 14.5, y: 14.5, width: 67, height: 67), cornerRadius: 11).cgPath
-            g.setStrokeColor(red: 0.42, green: 0.42, blue: 0.42, alpha: 0.45); g.setLineWidth(1.6); g.addPath(groove); g.strokePath()
+            // 盾内细雕槽 + 顶部双铆钉
+            g.setStrokeColor(red: 0.36, green: 0.36, blue: 0.36, alpha: 0.50); g.setLineWidth(1.9)
+            g.addPath(shieldPath(inset: 14.0)); g.strokePath()
+            g.setFillColor(red: 0.34, green: 0.34, blue: 0.34, alpha: 0.60)
+            g.fillEllipse(in: CGRect(x: 28, y: 20, width: 5.5, height: 5.5))
+            g.fillEllipse(in: CGRect(x: 94.5, y: 20, width: 5.5, height: 5.5))
         }.cgImage
         if let plateArt { unitTextures["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
+        // 水师舰队浪花尾迹底纹 (128×128): 双层弧形碎浪与微晕水环，衬托战舰浮于碧海之上的立体感。
+        let wakeArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
+            let g = ctx.cgContext
+            g.setLineCap(.round)
+            // 柔和半透明海沫底椭圆
+            g.setFillColor(red: 0.96, green: 0.98, blue: 1.0, alpha: 0.24)
+            g.fillEllipse(in: CGRect(x: 10, y: 66, width: 108, height: 42))
+            // 主浪弧与外层余波
+            g.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.72)
+            g.setLineWidth(3.4)
+            g.strokeEllipse(in: CGRect(x: 18, y: 74, width: 92, height: 28))
+            g.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.42)
+            g.setLineWidth(2.0)
+            g.strokeEllipse(in: CGRect(x: 8, y: 68, width: 112, height: 40))
+        }.cgImage
+        if let wakeArt { unitTextures["0fleetwake"] = (try? loader.newTexture(cgImage: wakeArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, wakeArt) }
         if let start = map.meta.economy {
             setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
         }
@@ -826,24 +865,46 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 let size = iconSize * iconScale * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
                 // The commander's gonfalon stands behind the pieces: gold for the ruler in person, crimson for generals & flagship armadas.
                 if a.banner > 0 {
-                    let k: Float = 0.62
-                    quad("banner", at, a.banner == 2 ? RGB(0.93, 0.74, 0.25) : RGB(0.72, 0.22, 0.16), size * k, (0.55 + o.x) / k, (-0.5 + o.y) / k)
+                    let k: Float = 0.66
+                    quad("banner", at, a.banner == 2 ? RGB(0.95, 0.76, 0.24) : RGB(0.76, 0.20, 0.14), size * k, (0.52 + o.x) / k, (-0.48 + o.y) / k)
                 }
-                // The state's token under land armies; the pieces on it are drawn light so they read on it.
+                // 水师战舰下铺双层海沫浪圈，衬托船舰浮于海面；陆军下铺国色漆盾军牌，上方象牙兵种棋子反差鲜明。
+                if role == "Fleet", unitTextures["0fleetwake"] != nil {
+                    quad("0fleetwake", at, RGB(0.95, 0.98, 1.0), size * 1.18, o.x / 1.18, (0.14 + o.y) / 1.18)
+                }
                 let token = role != "Fleet" && role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
-                if token { quad("0plate", at, c, size * 0.92, o.x / 0.92, (0.16 + o.y) / 0.92) }
-                let piece = token ? RGB(0.62 + c.r * 0.38, 0.62 + c.g * 0.38, 0.62 + c.b * 0.38) : c
-                // Strength as one to three pieces of the arm (the back ones a shade darker).
+                if token { quad("0plate", at, c, size * 0.98, o.x / 0.98, (0.14 + o.y) / 0.98) }
+                let piece = token
+                    ? RGB(0.84 + c.r * 0.16, 0.84 + c.g * 0.16, 0.84 + c.b * 0.16)
+                    : (role == "Fleet" ? RGB(min(1, c.r * 1.10 + 0.12), min(1, c.g * 1.10 + 0.12), min(1, c.b * 1.10 + 0.12)) : c)
+                // 陆军按编制排成三阶战阵，水师多舰编队排成纵深破浪雁行阵。
                 let n = role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
-                // Strength: the piece, with one or two smaller pieces just behind it (not a wide spread).
-                let layout: [(Float, Float, Float)] = n == 1 ? [(0, 0, 1)] : n == 2 ? [(0.2, -0.12, 0.7), (0, 0, 1)]
-                    : [(-0.22, -0.12, 0.65), (0.22, -0.12, 0.65), (0, 0, 1)]
+                let layout: [(Float, Float, Float)] = {
+                    if role == "Fleet" {
+                        return n == 1 ? [(0, 0, 1.06)]
+                            : n == 2 ? [(-0.28, -0.14, 0.76), (0.08, 0.04, 1.06)]
+                            : [(-0.34, -0.10, 0.72), (0.34, -0.10, 0.72), (0, 0.06, 1.08)]
+                    }
+                    return n == 1 ? [(0, 0, 1)] : n == 2 ? [(0.22, -0.12, 0.70), (0, 0, 1)]
+                        : [(-0.24, -0.12, 0.66), (0.24, -0.12, 0.66), (0, 0, 1)]
+                }()
                 for (i, (dx, dy, k)) in layout.enumerated() {
-                    let shade: Float = i < layout.count - 1 && n > 1 ? 0.9 : 1
+                    let shade: Float = i < layout.count - 1 && n > 1 ? 0.88 : 1
                     quad(role, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, (dx + o.x) / k, (dy + o.y) / k)
                 }
             }
-            units = byRole.keys.sorted { ($0 == "banner" ? "" : $0) < ($1 == "banner" ? "" : $1) }.compactMap { role -> (texture: MTLTexture, buffer: MTLBuffer, count: Int, pool: MapBufferPool)? in
+            func roleLayerOrder(_ key: String) -> Int {
+                switch key {
+                case "0fleetwake": return 0
+                case "banner": return 1
+                case "0plate": return 2
+                default: return 3
+                }
+            }
+            units = byRole.keys.sorted {
+                let oa = roleLayerOrder($0), ob = roleLayerOrder($1)
+                return oa != ob ? oa < ob : $0 < $1
+            }.compactMap { role -> (texture: MTLTexture, buffer: MTLBuffer, count: Int, pool: MapBufferPool)? in
                 guard let data = byRole[role], !data.isEmpty, let texture = unitTextures[role] else { return nil }
                 let byteLen = data.count * MemoryLayout<Float>.stride
                 let pool = unitBufferPool[role] ?? MapBufferPool()
@@ -1088,7 +1149,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.setRenderPipelineState(spriteShadowPipeline)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.setFragmentSamplerState(sampler, index: 0)
+            let wakeTex = unitTextures["0fleetwake"]
             for unit in units {
+                if let wakeTex, unit.texture === wakeTex { continue }
                 encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
                 encoder.setFragmentTexture(unit.texture, index: 0)
                 encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
@@ -1358,11 +1421,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float4 p = t.sample(s, in.uv);
         if (p.a <= 0.01) discard_fragment();
         float lum = p.r / max(p.a, 0.001);
-        // 西北受光棋面微高光，东南边缘柔和压深，增强军团立体棋子感
-        float lightGrad = 1.09 - 0.14 * in.uv.y - 0.06 * in.uv.x;
-        float3 fill = in.tint.rgb * lightGrad;
-        float3 rim = mix(float3(0.14, 0.11, 0.08), in.tint.rgb, 0.28);
-        float3 c = mix(rim, fill, smoothstep(0.45, 0.95, lum));
+        // 西北受光雕漆棋面高光，东南边缘沉稳压深，提升军牌与战舰立体质感
+        float lightGrad = 1.12 - 0.16 * in.uv.y - 0.08 * in.uv.x;
+        float3 fill = clamp(in.tint.rgb * lightGrad, 0.0, 1.0);
+        float3 rim = mix(float3(0.11, 0.09, 0.07), in.tint.rgb, 0.24);
+        float3 c = mix(rim, fill, smoothstep(0.42, 0.94, lum));
         return float4(c, p.a * in.tint.a);
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {

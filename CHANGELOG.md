@@ -1,5 +1,27 @@
 # 更新日志
 
+## 2.8.8 / build 151 — 2026-11-22
+
+### 闪退修复与引擎兜底
+- **崩溃日志根因定位与彻底防闪退（`JSValue.swift`）**：解析真机崩溃日志（`2.8.7 build 149`，iPhone14,3 / iOS 27.0.1），确认为开局约 25 秒在推演线程触发 `EXC_BREAKPOINT`（`DiplomacyDeep.month` → `Regimes.day` → `NativeEngine.advance` 读取已废弃的 `world.campaigns` 导致 `JS.asArray` 触发 `fatalError`）。除 `build 150` 已改读真实战役表外，本次从引擎数据层 `JSValue` 彻底建立宽松兜底：生产环境读取缺失/错型字段不再 `fatalError`，改为返回与 JS 一致的默认值（`0 / "" / false / []`）并对数组下标越界安全防护，彻底杜绝同类字段错配导致整局闪退。
+
+### 界面与圆角统一、史记与回放重做
+- **修复右上角返回圆角与全局同心圆角（`LieguojiApp.swift`、`PaperUI.swift`、`ReplayOverlay.swift`）**：
+  - 将 `View.glass` 升级为 `InsettableShape` 并统一使用 `shape.inset(by: 2.5).strokeBorder(...)`，同步修正 `Group2`、`.paperCard()`、`FloatingTacticalPill`、`MapViewSwitcher`、`SealFace` 与 `PaperToastHost`（原 10pt 裁切与 16pt 卡片错配），实现全作严格的苹果同心连续曲率。
+  - 修复山河回放顶栏在竖屏下因宽度溢出把右上角「返回当下」挤压变形的圆角 Bug：顶栏改为与主界面 `GameView.topBar` 1:1 对齐的左侧 44pt 纪年胶囊 + 右侧三枚 44×44pt 正圆同心 `CircleIcon`（大势 / 节点 / 朱红返回），统一所有悬浮卡关闭角标为 26pt 圆形 `CardCloseButton`。
+- **史记（纪事）页面彻底重做（`WorldSheets.swift`、`ChronicleViews.swift`）**：
+  - 彻底移除旧版杂乱堆叠的 4 张顶卡、`ScrollRod()` 与生硬直角矩形框，改为与列国/军事/外交 100% 一致的 `SheetHeader` + `ChipPicker`（「编年大事」/「兴衰长卷」双页签）+ 按年分节 `SectionLabel` 与 `Group2` 奏折卡片；分类筛选改用轻盈 32pt 胶囊、搜索框换用手绘水墨图标，并支持分页懒加载与仅切入「兴衰长卷」时再加载时间轴，首开更顺滑。
+- **山河回放页面进一步优化（`ReplayOverlay.swift`）**：
+  - 新增拖动时间轴实时浮出的纪年与大事预览浮签、底栏横幅内置快捷定位焦点圆钮，收紧大势悬浮笺高度以留出更广阔的舆图观战空间。
+
+### 军队、海军与作战晕染动画全面升级
+- **军队与海军视觉重绘（`UnitArt.swift`、`MapRenderer.swift`）**：
+  - 军牌底盘 `0plate` 升级为 128×128 雕漆盾形军牌（平肩微弧收尖盾形 + 亮边倒角 + 雕槽双铆钉），配高反差象牙浮雕全套 13 种兵种（冠翎甲士、方天画戟、鸢形重盾、反曲强弓、重机弩、骏马轻骑、具装铁骑、草原骑射、龙虎大纛、战楼战象等）。
+  - 水师战舰重绘为双桅楼船/盖伦主力战舰（高翘撞角、艉楼甲板、双桅鼓风弧帆、燕尾旗舰帅旗、四门炮窗与船底雕浪），新增专属海沫尾迹底纹 `0fleetwake`（跳过阴影通道呈纯净海沫浪环），多舰编队排成破浪雁行阵。
+- **作战水墨晕染与战斗特效升级（`Ink.swift`、`Wash.swift`、`MapEffects.swift`）**：
+  - 战争占领墨场着色器升级为「宣纸三层水墨洇染」：域扭曲纤维波动 + 先导淡墨水晕 + 湿墨聚边笔锋与干透归纸微润水泽；易主扫色升级为域扭曲双层湿墨暖金波锋。
+  - 陆战交锋新增节律性外扩兵戈气圈，海战齐射新增炮弹入水白浪水花环，攻城插旗新增旗竿落定鎏金星芒微闪。
+
 ## 2.8.7 / build 150 — 2026-11-22
 
 - 修复顶部「天下大势」解析缺失交战方时的越界。修复切换存档后上一局传报混入、快速收起传报时旧任务抢占新队列的问题。

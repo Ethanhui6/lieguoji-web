@@ -42,10 +42,34 @@ public final class JS: CustomStringConvertible {
     // MARK: Reading (names chosen not to collide with fields of the game data)
     public var isNull: Bool { if case .null = storage { return true }; return false }
     public var isArray: Bool { if case .array = storage { return true }; return false }
-    public var asNumber: Double { if case .number(let n) = storage { return n }; fatalError("not a number: \(self)") }
-    public var asInt: Int { Int(asNumber) }
-    public var asString: String { if case .string(let s) = storage { return s }; fatalError("not a string: \(self)") }
-    public var asBool: Bool { if case .bool(let b) = storage { return b }; fatalError("not a bool: \(self)") }
+    /// 读到缺失/错型字段时不再 fatalError 闪退：返回与 JavaScript 宽松语义一致的默认值（0 / "" / false / []），
+    /// 并记一次诊断。旧版本在推演中读到已废弃字段（如 world.campaigns）会直接触发 EXC_BREAKPOINT 闪退。
+    static func lenient(_ what: String) {
+        #if DEBUG
+        if JS.strictReads { fatalError(what) }
+        #endif
+        JS.lenientReads &+= 1
+    }
+    public static var strictReads = false
+    public static var lenientReads = 0
+    public var asNumber: Double {
+        switch storage {
+        case .number(let n): return n
+        case .bool(let b): return b ? 1 : 0
+        case .string(let s): if let d = Double(s) { return d }
+        default: break
+        }
+        JS.lenient("not a number"); return 0
+    }
+    public var asInt: Int { let n = asNumber; return n.isFinite ? Int(max(-9.0e18, min(9.0e18, n))) : 0 }
+    public var asString: String {
+        switch storage {
+        case .string(let s): return s
+        case .number(let n): return n == n.rounded() && abs(n) < 1e15 ? String(Int(n)) : String(n)
+        default: JS.lenient("not a string"); return ""
+        }
+    }
+    public var asBool: Bool { if case .bool(let b) = storage { return b }; JS.lenient("not a bool"); return isTruthy }
     public var optionalNumber: Double? { if case .number(let n) = storage { return n }; return nil }
     public var optionalString: String? { if case .string(let s) = storage { return s }; return nil }
     public var optionalArray: [JS]? { if case .array(let a) = storage { return a }; return nil }
@@ -60,13 +84,13 @@ public final class JS: CustomStringConvertible {
         }
     }
     public var asArray: [JS] {
-        get { if case .array(let a) = storage { return a }; fatalError("not an array: \(self)") }
+        get { if case .array(let a) = storage { return a }; JS.lenient("not an array"); return [] }
         set { storage = .array(newValue) }
     }
     public var length: Int { asArray.count }
-    public var objectKeys: [String] { if case .object(let o) = storage { return o.keys }; fatalError("not an object: \(self)") }
+    public var objectKeys: [String] { if case .object(let o) = storage { return o.keys }; JS.lenient("not an object"); return [] }
     /// Object.entries order.
-    public var objectEntries: [(String, JS)] { if case .object(let o) = storage { return o.entries }; fatalError("not an object: \(self)") }
+    public var objectEntries: [(String, JS)] { if case .object(let o) = storage { return o.entries }; JS.lenient("not an object"); return [] }
     public var objectValues: [JS] { objectEntries.map(\.1) }
     public func has(_ key: String) -> Bool { if case .object(let o) = storage { return o[key] != nil }; return false }
 
@@ -74,18 +98,18 @@ public final class JS: CustomStringConvertible {
     /// Missing members read as a fresh null (JavaScript undefined) that is not attached.
     public subscript(key: String) -> JS {
         get { if case .object(let o) = storage, let v = o[key] { return v }; return .null }
-        set { guard case .object(var o) = storage else { fatalError("set \(key) on \(self)") }; storage = .null; o[key] = newValue; storage = .object(o) }
+        set { guard case .object(var o) = storage else { JS.lenient("set on non-object"); return }; storage = .null; o[key] = newValue; storage = .object(o) }
     }
     public subscript(dynamicMember key: String) -> JS {
         get { self[key] }
         set { self[key] = newValue }
     }
     public subscript(index: Int) -> JS {
-        get { asArray[index] }
-        set { var a = asArray; a[index] = newValue; asArray = a }
+        get { if case .array(let a) = storage, a.indices.contains(index) { return a[index] }; JS.lenient("index out of range"); return .null }
+        set { guard case .array(var a) = storage, a.indices.contains(index) else { JS.lenient("set index out of range"); return }; storage = .null; a[index] = newValue; storage = .array(a) }
     }
     public func delete(_ key: String) { guard case .object(var o) = storage else { return }; storage = .null; o[key] = nil; storage = .object(o) }
-    public func push(_ v: JS) { guard case .array(var a) = storage else { fatalError("push on \(self)") }; storage = .null; a.append(v); storage = .array(a) }
+    public func push(_ v: JS) { guard case .array(var a) = storage else { JS.lenient("push on non-array"); return }; storage = .null; a.append(v); storage = .array(a) }
 
     // MARK: Copies and comparison
     /// structuredClone.

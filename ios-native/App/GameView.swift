@@ -759,8 +759,7 @@ struct GameView: View {
                         .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.24), radius: 18, x: -4, y: 4)
                         .overlay(alignment: .leading) {
                             Button { closePage() } label: {
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 13, weight: .semibold))
+                                InkIcon(glyph: .chevronRight, size: 13, weight: 1.8)
                                     .foregroundStyle(Theme.ink)
                                     .frame(width: 34, height: 34)
                                     .glass(Circle())

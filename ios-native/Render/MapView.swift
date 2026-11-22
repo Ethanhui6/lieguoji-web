@@ -467,8 +467,8 @@ struct MapView: UIViewRepresentable {
                 self.link?.preferredFrameRateRange = self.frameRange
             }
             controller.cameraScale = { [weak self] in
-                guard let self else { return (0, 0) }
-                return (self.camera.scale, self.bounds.lowerBound)
+                guard let self, let renderer = self.renderer else { return (0, 0) }
+                return (renderer.camera.scale, self.bounds.lowerBound)
             }
             controller.onFramingRequest = { [weak self] in self?.applyFramingRequests() }
             controller.nameFrame = { [weak self] in self?.labels?.nameFrame() ?? [:] }

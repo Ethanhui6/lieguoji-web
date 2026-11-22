@@ -42,14 +42,18 @@ export function checkNativeTour(directory) {
   if(names.version !== 1 || names.passed !== true || !(names.frames >= 300) || !(names.names >= 1) || !(names.blinks <= 4)) {
     throw Error(`国名稳定回归失败：镜头静止推演 ${names.frames} 帧里国名闪烁 ${names.blinks} 次（易主 ${names.provincesChanged} 州，新建 ${names.created}，移位 ${names.moved}）。`);
   }
-  // 战争晕染（墨场）测量（只报告不拦截：结论由人看视频与数据确认）。
+  let wash;
   try {
-    const wash = JSON.parse(readFileSync(join(directory,'wash-demo.json'),'utf8'));
-    const row = side => { const s = wash[side] || {}, g = s.callbackGapMs || {}, st = (s.stress || {}).callbackGapMs || {};
-      return `反复变色 ${s.colourReversals} 次，扫色格子最多 ${s.inkedCellsMax}，回调间隔 p95 ${Number(g.p95).toFixed(1)} / p99 ${Number(g.p99).toFixed(1)} / 最长 ${Number(g.max).toFixed(0)} ms，`
-        + `>50ms ${g.over50ms} 次；压力 ${(wash[side].stress || {}).provinces} 州 p95 ${Number(st.p95).toFixed(1)} / p99 ${Number(st.p99).toFixed(1)} / 最长 ${Number(st.max).toFixed(0)} ms`; };
-    console.log('战争晕染 ' + row('after'));
-  } catch { console.log('战争晕染：没有 wash-demo.json'); }
+    wash = JSON.parse(readFileSync(join(directory,'wash-demo.json'),'utf8'));
+  } catch { throw Error('战争晕染巡览缺失或无法读取。'); }
+  const measured = wash.after, peace = measured?.ceasefire;
+  if (wash.version !== 3 || !(measured?.encodeMs?.samples > 0)) throw Error('战争晕染巡览没有实际 Metal 绘制帧。');
+  if (peace?.passed !== true || !(peace.before > peace.during && peace.during > 0 && peace.after === 0)) {
+    throw Error('停战退墨回归失败，未采到连续退场的墨量。');
+  }
+  const gap = measured.callbackGapMs || {}, stress = measured.stress || {}, stressGap = stress.callbackGapMs || {};
+  console.log(`战争晕染：${measured.encodeMs.samples} 帧，回调 P95 ${Number(gap.p95).toFixed(1)} ms，`
+    + `压力 ${stress.provinces} 州 P95 ${Number(stressGap.p95).toFixed(1)} ms，退墨 ${peace.before.toFixed(2)} → ${peace.during.toFixed(2)} → ${peace.after}。`);
   for(const name of requiredShots) {
     let bytes;
     try { bytes = readFileSync(join(directory,`${name}.png`)); }

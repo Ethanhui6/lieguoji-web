@@ -218,7 +218,7 @@ extension MapRenderer {
     private func rebuildInkColours(_ palette: [RGB]) {
         guard let ink else { return }
         guard ink.colours == nil || ink.colourValues != palette else { return }
-        var colours = palette.flatMap { [$0.r, $0.g, $0.b, 1] }
+        var colours: [Float] = palette.flatMap { color -> [Float] in [color.r, color.g, color.b, 1] }
         if colours.isEmpty { colours = [0.6, 0.6, 0.6, 1] }
         ink.colours = device.makeBuffer(bytes: colours, length: colours.count * 4, options: .storageModeShared)
         ink.colourValues = palette

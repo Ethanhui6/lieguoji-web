@@ -9,7 +9,7 @@ import {checkNativeTour,requiredShots} from './check-native-tour.mjs';
 function fixture(t) {
   const directory = mkdtempSync(join(tmpdir(),'lieguoji-tour-'));
   t.after(() => {
-    for(const name of ['tour-status.json','founding-time.json','advance-ownership.json','panel-profile.json','name-stability.json','color-contrast.json','map-unrolled.json',...requiredShots.map(name => `${name}.png`)]) {
+    for(const name of ['tour-status.json','founding-time.json','advance-ownership.json','panel-profile.json','name-stability.json','color-contrast.json','map-unrolled.json','wash-demo.json',...requiredShots.map(name => `${name}.png`)]) {
       try { unlinkSync(join(directory,name)); } catch(error) { if(error.code !== 'ENOENT') throw error; }
     }
     rmdirSync(directory);
@@ -25,6 +25,10 @@ function fixture(t) {
   writeFileSync(join(directory,'name-stability.json'),JSON.stringify({version:1,passed:true,frames:2000,names:12,blinks:0,provincesChanged:9,created:1,moved:3,fadedIn:1}));
   writeFileSync(join(directory,'color-contrast.json'),JSON.stringify({version:1,passed:true,states:12,leastDifference:27.4,closestPair:'#fec2cb #8d9d50'}));
   writeFileSync(join(directory,'map-unrolled.json'),JSON.stringify({version:1,passed:true,scale:0.2437,fit:0.2437}));
+  writeFileSync(join(directory,'wash-demo.json'),JSON.stringify({version:3,after:{
+    encodeMs:{samples:600},callbackGapMs:{p95:16.7},stress:{provinces:48,callbackGapMs:{p95:20}},
+    ceasefire:{passed:true,before:1,during:0.62,after:0}
+  }}));
   return directory;
 }
 
@@ -83,6 +87,18 @@ test('a map that cannot be zoomed out to show all of itself fails the tour',t =>
   const d = fixture(t);
   writeFileSync(join(d,'map-unrolled.json'),JSON.stringify({version:1,passed:false,scale:0.94,fit:0.2437}));
   assert.throws(() => checkNativeTour(d),/地图展开回归失败/);
+});
+test('a completed tour with no Metal frames fails',t => {
+  const d = fixture(t);
+  writeFileSync(join(d,'wash-demo.json'),JSON.stringify({version:3,after:{encodeMs:{samples:0}}}));
+  assert.throws(() => checkNativeTour(d),/没有实际 Metal 绘制帧/);
+});
+test('a hard ink cut at ceasefire fails even if frames were drawn',t => {
+  const d = fixture(t);
+  writeFileSync(join(d,'wash-demo.json'),JSON.stringify({version:3,after:{
+    encodeMs:{samples:200},ceasefire:{passed:true,before:1,during:0,after:0}
+  }}));
+  assert.throws(() => checkNativeTour(d),/停战退墨回归失败/);
 });
 test('a world built by the web engine fallback fails',t => {
   const d = fixture(t);

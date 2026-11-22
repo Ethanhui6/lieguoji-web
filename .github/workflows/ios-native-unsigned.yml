@@ -88,9 +88,11 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          source = Path('ios-native/Render/MapRenderer.swift').read_text()
-          shader = source.split('static let shaders = """', 1)[1].split('"""', 1)[0]
-          Path('/tmp/lieguoji-map.metal').write_text(shader)
+          render = Path('ios-native/Render')
+          parts = [('MapRenderer.swift', 'shaders'), ('Wash.swift', 'sweepShaders'), ('Ink.swift', 'shaders')]
+          shader = '\n'.join((render / file).read_text(encoding='utf-8').split(f'static let {key} = """', 1)[1].split('"""', 1)[0]
+                             for file, key in parts)
+          Path('/tmp/lieguoji-map.metal').write_text(shader, encoding='utf-8')
           PY
           xcrun -sdk iphoneos metal -c /tmp/lieguoji-map.metal -o /tmp/lieguoji-map.air
       - name: Archive unsigned application
@@ -157,7 +159,10 @@ jobs:
           for name in founding-time.json wash-demo.json name-stability.json color-contrast.json map-unrolled.json advance-ownership.json ci-control-world.lgj ci-control-tuning.json panel-profile.json ci-panel-world.lgj; do
             [ ! -f "$DATA/Documents/$name" ] || cp "$DATA/Documents/$name" shots/
           done
-          node scripts/check-native-tour.mjs shots
+          node scripts/check-native-tour.mjs shots || {
+            xcrun simctl spawn "$UDID" log show --last 30m --predicate 'eventMessage CONTAINS "Lieguoji Metal:"' --style compact | tail -12 || true
+            exit 1
+          }
           # 边缘特写: the top of the title screen and the top and bottom of the map, where an empty band
           # or a hard frame would show (cropped full-width, 360 px tall).
           mkdir -p shots/edges

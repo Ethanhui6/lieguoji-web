@@ -125,12 +125,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     struct QuadUniforms { var origin: SIMD2<Float>; var size: SIMD2<Float> }
 
     init?(view: MTKView, map: WorldMap, parchmentURL: URL?, unitURL: (String) -> URL? = { _ in nil }) {
-        guard let device = view.device, let queue = device.makeCommandQueue() else { return nil }
+        guard let device = view.device, let queue = device.makeCommandQueue() else {
+            NSLog("Lieguoji Metal: no rendering device or command queue")
+            return nil
+        }
         self.device = device; self.queue = queue; self.map = map
         nationColors = map.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         camera = MapCamera.fit(map: (Double(map.width), Double(map.height)), viewport: (390, 844))
         // 2× MSAA 在高分 Retina 屏上观感清晰且显存带宽与发热减半（较 4× MSAA 显著降温省电）。
-        view.sampleCount = 2
+        view.sampleCount = device.supportsTextureSampleCount(2) ? 2 : 1
         // Colours are sRGB as the web draws them; blend and store them unconverted, like Pixi.
         view.colorPixelFormat = .bgra8Unorm
         do {
@@ -171,7 +174,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             spritePipeline = try pipeline("spriteVertex", "spriteFragment", .alpha)
             sweepPipeline = try pipeline("sweepVertex", "sweepFragment", .alpha)
             inkPipes = try InkPipelines.make(device: device, library: library, mainFormat: view.colorPixelFormat, sampleCount: view.sampleCount)
-        } catch { return nil }
+        } catch {
+            NSLog("Lieguoji Metal: pipeline setup failed at %dx MSAA: %@", view.sampleCount, error.localizedDescription)
+            return nil
+        }
         let mesh = CellMesh(map: map)
         guard let p = device.makeBuffer(bytes: mesh.positions, length: mesh.positions.count * 4, options: .storageModeShared),
               let i = device.makeBuffer(bytes: mesh.indices, length: mesh.indices.count * 4, options: .storageModeShared) else { return nil }

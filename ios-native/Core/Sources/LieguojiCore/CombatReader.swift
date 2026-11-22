@@ -17,9 +17,11 @@ public enum CombatReader {
         "Kingdom": (1, Native.fr(1.05)), "Empire": (Native.fr(1.05), 1), "Federation": (1, 1), "Republic": (1, 1), "Tribal": (Native.fr(1.05), Native.fr(0.95)), "Theocracy": (1, 1),
     ]
     public static func protruding(_ r: JS, _ index: Int) -> Bool {
+        guard borders.indices.contains(index), index >= 0, index < r.world.provinces.length else { return false }
         let row = borders[index], owner = r.world.provinces[index].controller.asString
+        guard !row.isEmpty else { return false }
         var foreign = 0
-        for i in row where r.world.provinces[i].controller.asString != owner { foreign += 1 }
+        for i in row where i >= 0 && i < r.world.provinces.length && r.world.provinces[i].controller.asString != owner { foreign += 1 }
         return f(f(Double(foreign)) / f(Double(row.count))) > 0.5
     }
     static func militaryLeaderSkill(_ r: JS, _ nation: String, enemy: String?) -> Double? {
@@ -41,7 +43,7 @@ public enum CombatReader {
         let p: JS? = index.map { r.world.provinces[$0] }
         let owner = p.map { r.upperCombat.nations[$0.controller.asString] }, defense = p.map { r.upperCombat.provinces[$0.id.asString] }
         let attacking = p == nil || p!.controller.asString != nation
-        let traits = Set(state.traits.asArray.map(\.asString)), politics = polityCombat[state.polity.asString]!
+        let traits = Set(state.traits.asArray.map(\.asString)), politics = polityCombat[state.polity.asString] ?? (1, 1)
         let land = p.map { r.terrainContext.provinces[$0.id.asString] }
         let leaderId = r.people.nations[nation].leaderId
         let leader = Regimes.governor(r, nation) ?? (leaderId.isNull ? nil : People.person(r, leaderId.asInt))
@@ -60,19 +62,22 @@ public enum CombatReader {
         // 让骑兵/弓兵/盾兵在同一州内的林地、平原或山口交锋时真实体现局部地形优劣；网页黄金测试保持原全省统计。
         if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy, let index, let bridge = Armies.bridge {
             let rec = r.armyPositions.records[a.id.asString]
-            if !rec.isNull {
+            if !rec.isNull, rec.nodes.length > 0 {
                 let g = bridge.graph
-                let loc = g.location(bridge.travel(rec))
-                if Int(g.provinces[loc.cell]) == index {
-                    let faceIdx = Int(g.faces[loc.cell])
-                    if g.faceBiomes.indices.contains(faceIdx) {
-                        let bi = Int(g.faceBiomes[faceIdx])
-                        if bi >= 1 && bi < 13 {
-                            var mixed = [Double](repeating: 0, count: max(13, biomes.count))
-                            for i in biomes.indices { mixed[i] = biomes[i] * 0.3 }
-                            mixed[bi] += 0.7
-                            biomes = mixed
-                            if bi == 11 || bi == 12 { isMountain = true }
+                let tr = bridge.travel(rec)
+                if !tr.nodes.isEmpty {
+                    let loc = g.location(tr)
+                    if g.provinces.indices.contains(loc.cell), Int(g.provinces[loc.cell]) == index, g.faces.indices.contains(loc.cell) {
+                        let faceIdx = Int(g.faces[loc.cell])
+                        if g.faceBiomes.indices.contains(faceIdx) {
+                            let bi = Int(g.faceBiomes[faceIdx])
+                            if bi >= 1 && bi < 13 {
+                                var mixed = [Double](repeating: 0, count: max(13, biomes.count))
+                                for i in biomes.indices { mixed[i] = biomes[i] * 0.3 }
+                                mixed[bi] += 0.7
+                                biomes = mixed
+                                if bi == 11 || bi == 12 { isMountain = true }
+                            }
                         }
                     }
                 }

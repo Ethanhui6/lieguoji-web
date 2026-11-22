@@ -146,6 +146,7 @@ public final class InkCells: @unchecked Sendable {
 
     /// 点所在的陆地格（最近的格心）。
     public func cell(at p: SIMD2<Float>) -> Int? {
+        guard p.x.isFinite, p.y.isFinite, bucket > 0 else { return nil }
         let bx = Int((p.x - origin.x) / bucket), by = Int((p.y - origin.y) / bucket)
         var best = -1, bestD = Float.infinity
         for ring in 0...3 {

@@ -307,6 +307,7 @@ public enum Naval {
         if UnitKinds.enabled, let bridge = Armies.bridge {
             let g = bridge.graph
             for v in space where v.province == nil && v.army.status.asString != "retreating" {
+                guard g.faces.indices.contains(v.cell), !v.travel.isNull else { continue }
                 let face = Int(g.faces[v.cell])
                 let comp = sea.component(face)
                 if comp >= 0 {

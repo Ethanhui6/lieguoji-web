@@ -70,8 +70,8 @@ enum UnitArt {
             }
         }
         let grad = CGGradient(
-            colorSpace: CGColorSpaceCreateDeviceGray(),
-            colorComponents: [1.0, 1.0, 0.94, 1.0, 0.80, 1.0],
+            colorSpace: CGColorSpaceCreateDeviceRGB(),
+            colorComponents: [1.0, 1.0, 1.0, 1.0, 0.94, 0.94, 0.94, 1.0, 0.80, 0.80, 0.80, 1.0],
             locations: [0.0, 0.52, 1.0],
             count: 3
         )

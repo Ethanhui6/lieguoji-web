@@ -326,7 +326,7 @@ struct MapView: UIViewRepresentable {
         private var mtk: MTKView!
         private var renderer: MapRenderer?
         private let overlayHost = UIView()
-        private let overlayMask = CALayer()
+        private let overlayCanvas = UIView()
         private var labels: MapLabelsView!
         private let effects = EffectsView()
         private let floats = UIView()
@@ -465,19 +465,20 @@ struct MapView: UIViewRepresentable {
             }
             labels = MapLabelsView(map: map)
             mtk.frame = container.bounds; mtk.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(mtk)
-            // 统一将全部地图覆盖层（战争特效、国名地名、飘字、兵力条）收入 overlayHost，并用 overlayMask 严格裁在卷轴画心内。
-            overlayHost.frame = container.bounds; overlayHost.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            // 统一将全部地图覆盖层（战争特效、国名地名、飘字、兵力条）收入 overlayHost -> overlayCanvas，
+            // 通过 overlayHost.clipsToBounds 硬件剪裁在卷轴画心内（零 layer.mask 离屏渲染开销）。
+            overlayHost.frame = container.bounds
             overlayHost.isUserInteractionEnabled = false; overlayHost.clipsToBounds = true
-            overlayMask.backgroundColor = UIColor.white.cgColor
-            overlayMask.actions = ["bounds": NSNull(), "position": NSNull(), "frame": NSNull()]
-            overlayHost.layer.mask = overlayMask
+            overlayCanvas.frame = container.bounds
+            overlayCanvas.isUserInteractionEnabled = false
+            overlayHost.addSubview(overlayCanvas)
             container.addSubview(overlayHost)
             // 战争特效在地名之下（地图之上）：交战、围城、攻占、事件印都不盖住国名与城名；
             // 战况飘字与兵力条另放在地名之上。
             for v in [effects, labels!, floats, troops] as [UIView] {
-                v.frame = overlayHost.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                v.frame = overlayCanvas.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]
                 v.isUserInteractionEnabled = false; v.clipsToBounds = true
-                overlayHost.addSubview(v)
+                overlayCanvas.addSubview(v)
             }
             effects.floatHost = floats.layer
             // Sea points for the waves: open-sea cell centres, thinned to a few thousand.
@@ -557,13 +558,12 @@ struct MapView: UIViewRepresentable {
             guard let renderer, b.width > 0, b.height > 0 else { return }
             UIView.performWithoutAnimation {
                 if mtk.frame != b { mtk.frame = b }
-                if overlayHost.frame != b { overlayHost.frame = b }
-                for v in [effects, labels!, floats, troops] as [UIView] where v.frame != overlayHost.bounds {
-                    v.frame = overlayHost.bounds
+                for v in [effects, labels!, floats, troops] as [UIView] where v.frame != b {
+                    v.frame = b
                 }
             }
             if !placed { renderer.camera = MapCamera.cover(map: mapSize, viewport: viewport); placed = true }
-            set(renderer.camera, sync: true)
+            set(renderer.camera)
             applyFramingRequests()
         }
         private func set(_ camera: MapCamera, sync: Bool = false) {
@@ -579,21 +579,16 @@ struct MapView: UIViewRepresentable {
             setSyncPresent(wantSync)
             renderer.camera = clamped
             let clipRect = mapScreenRect(camera: clamped, viewport: vpSize)
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
+            let canvasFrame = CGRect(x: -clipRect.minX, y: -clipRect.minY, width: vpSize.width, height: vpSize.height)
             UIView.performWithoutAnimation {
-                overlayMask.frame = clipRect
+                if overlayHost.frame != clipRect { overlayHost.frame = clipRect }
+                if overlayCanvas.frame != canvasFrame { overlayCanvas.frame = canvasFrame }
                 labels.update(camera: clamped, viewport: vpSize, mapRect: clipRect)
                 effects.update(camera: clamped, viewport: vpSize)
                 updateTroops()
                 placeSpot()
             }
-            if wantSync && mtk.window != nil {
-                mtk.draw()
-            } else {
-                mtk.setNeedsDisplay()
-            }
-            CATransaction.commit()
+            mtk.setNeedsDisplay()
         }
         private func updateTroops() {
             guard let renderer else { return }

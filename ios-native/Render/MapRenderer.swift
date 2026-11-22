@@ -230,22 +230,22 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         unitTextures["banner"] = unitTextures["elite"]
         // 军牌底盘: a carved token plaque under each army (outer lacquer rim + northwest-to-southeast shaded face + inner carved groove),
         // tinted with its state's colour so armies stand out with tactile presence at every zoom.
-        let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 96, height: 96), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; return f }()).image { ctx in
+        let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 96, height: 96), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
             let g = ctx.cgContext
             let outer = UIBezierPath(roundedRect: CGRect(x: 4, y: 4, width: 88, height: 88), cornerRadius: 19).cgPath
-            g.setFillColor(UIColor(white: 0.10, alpha: 1).cgColor); g.addPath(outer); g.fillPath()
+            g.setFillColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1); g.addPath(outer); g.fillPath()
             let innerRect = CGRect(x: 10.5, y: 10.5, width: 75, height: 75)
             let inner = UIBezierPath(roundedRect: innerRect, cornerRadius: 14).cgPath
             g.saveGState()
             g.addPath(inner); g.clip()
-            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceGray(), colorComponents: [1.0, 1.0, 0.94, 1.0, 0.84, 1.0], locations: [0.0, 0.55, 1.0], count: 3) {
+            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.94, 0.94, 0.94, 1.0, 0.84, 0.84, 0.84, 1.0], locations: [0.0, 0.55, 1.0], count: 3) {
                 g.drawLinearGradient(grad, start: CGPoint(x: 10, y: 10), end: CGPoint(x: 86, y: 86), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
             } else {
-                g.setFillColor(UIColor.white.cgColor); g.fill(innerRect)
+                g.setFillColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1); g.fill(innerRect)
             }
             g.restoreGState()
             let groove = UIBezierPath(roundedRect: CGRect(x: 14.5, y: 14.5, width: 67, height: 67), cornerRadius: 11).cgPath
-            g.setStrokeColor(UIColor(white: 0.42, alpha: 0.45).cgColor); g.setLineWidth(1.6); g.addPath(groove); g.strokePath()
+            g.setStrokeColor(red: 0.42, green: 0.42, blue: 0.42, alpha: 0.45); g.setLineWidth(1.6); g.addPath(groove); g.strokePath()
         }.cgImage
         if let plateArt { unitTextures["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
         if let start = map.meta.economy {
@@ -936,7 +936,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             u.alpha = 1
         }
         // 0. 全视口无缝「御案织锦」背景：统一西北来光书案聚光 + 细腻云锦暗纹，彻底消除拉远全图上下割裂。
-        let dw = drawable.texture.width, dh = drawable.texture.height
+        let targetTex = pass.colorAttachments[0].texture ?? drawable.texture
+        let dw = min(targetTex.width, drawable.texture.width), dh = min(targetTex.height, drawable.texture.height)
         guard dw > 0, dh > 0 else { encoder.endEncoding(); return }
         let fullScissor = MTLScissorRect(x: 0, y: 0, width: dw, height: dh)
         encoder.setScissorRect(fullScissor)
@@ -951,10 +952,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let mapTL = camera.toScreen(x: 0, y: 0, viewport: (vpW, vpH))
         let mapBR = camera.toScreen(x: Double(map.width), y: Double(map.height), viewport: (vpW, vpH))
         let pxScaleX = Double(dw) / max(1, vpW), pxScaleY = Double(dh) / max(1, vpH)
-        let sx0 = max(0, min(dw, Int(floor(mapTL.x * pxScaleX))))
-        let sy0 = max(0, min(dh, Int(floor(mapTL.y * pxScaleY))))
-        let sx1 = max(sx0, min(dw, Int(ceil(mapBR.x * pxScaleX))))
-        let sy1 = max(sy0, min(dh, Int(ceil(mapBR.y * pxScaleY))))
+        let rawX0 = (mapTL.x * pxScaleX).isFinite ? mapTL.x * pxScaleX : 0
+        let rawY0 = (mapTL.y * pxScaleY).isFinite ? mapTL.y * pxScaleY : 0
+        let rawX1 = (mapBR.x * pxScaleX).isFinite ? mapBR.x * pxScaleX : Double(dw)
+        let rawY1 = (mapBR.y * pxScaleY).isFinite ? mapBR.y * pxScaleY : Double(dh)
+        let sx0 = Int(max(0, min(Double(dw), floor(rawX0))))
+        let sy0 = Int(max(0, min(Double(dh), floor(rawY0))))
+        let sx1 = Int(max(Double(sx0), min(Double(dw), ceil(rawX1))))
+        let sy1 = Int(max(Double(sy0), min(Double(dh), ceil(rawY1))))
         let mapScissor = MTLScissorRect(x: sx0, y: sy0, width: sx1 - sx0, height: sy1 - sy0)
         if mapScissor.width > 0 && mapScissor.height > 0 {
         encoder.setScissorRect(mapScissor)

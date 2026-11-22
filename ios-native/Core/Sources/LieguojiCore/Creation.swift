@@ -88,14 +88,16 @@ public enum Creation {
             if UnitKinds.enabled {
                 let rawG = gender == 0 ? pool.givenMale : pool.givenFemale
                 let fallbackG: [String] = { if case .array = rawG.storage { return rawG.asArray.map(\.asString) }; return ["明远"] }()
-                let gList = (gender == 0 ? NamingCatalog.people[cultureId]?.male : NamingCatalog.people[cultureId]?.female) ?? (fallbackG.isEmpty ? ["明远"] : fallbackG)
-                let hList = NamingCatalog.houseNames(culture: cultureId)
-                givenVal = gList[Int(Opening.hash("\(worldId)/\(id)/given") % UInt32(max(1, gList.count)))]
-                houseVal = hList[Int(Opening.hash("\(worldId)/\(id)/house") % UInt32(max(1, hList.count)))]
+                let catG = gender == 0 ? NamingCatalog.people[cultureId]?.male : NamingCatalog.people[cultureId]?.female
+                let gList = (catG?.isEmpty == false) ? catG! : (fallbackG.isEmpty ? ["明远"] : fallbackG)
+                let rawH = NamingCatalog.houseNames(culture: cultureId)
+                let hList = rawH.isEmpty ? ["林"] : rawH
+                givenVal = gList[Int(Opening.hash("\(worldId)/\(id)/given") % UInt32(gList.count))]
+                houseVal = hList[Int(Opening.hash("\(worldId)/\(id)/house") % UInt32(hList.count))]
             } else {
                 let given = (gender == 0 ? pool.givenMale : pool.givenFemale), houses = pool.houses
-                givenVal = given[Int(Opening.hash("\(worldId)/\(id)/given") % UInt32(given.length))].asString
-                houseVal = houses[Int(Opening.hash("\(worldId)/\(id)/house") % UInt32(houses.length))].asString
+                givenVal = given.length > 0 ? given[Int(Opening.hash("\(worldId)/\(id)/given") % UInt32(given.length))].asString : "明远"
+                houseVal = houses.length > 0 ? houses[Int(Opening.hash("\(worldId)/\(id)/house") % UInt32(houses.length))].asString : "林"
             }
             let person = Nobility.personName(cultureId, given: givenVal, house: houseVal, gender: gender)
             let v = Founding.rulerFrom(person, identity)

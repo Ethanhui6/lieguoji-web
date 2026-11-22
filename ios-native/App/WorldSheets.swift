@@ -963,8 +963,8 @@ struct ChronicleDynastyScroll: View {
     }
 
     private func nationColor(_ idx: Int) -> Color {
-        guard idx >= 0, idx < timeline.nations.count else { return Theme.ink3 }
-        return Color(hex: timeline.nations[idx].color)
+        guard idx >= 0, idx < timeline.nations.count else { return Theme.ink2 }
+        return Names.color(timeline.nations[idx].color)
     }
 
     var body: some View {
@@ -1002,13 +1002,13 @@ struct ChronicleDynastyScroll: View {
                                 .frame(width: 24, height: 54)
 
                                 Text(MapLayers.stateLabel(f.topName, full: false))
-                                    .font(.system(size: 9.5, weight: .semibold, design: .serif))
+                                    .font(Theme.kai(10))
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(1)
                                     .frame(width: 34)
                                 Text(f.year > 0 ? "\(f.year)年" : "前\(1 - f.year)")
-                                    .font(.system(size: 8.5, design: .serif).monospacedDigit())
-                                    .foregroundStyle(f.major ? Theme.seal : Theme.ink3)
+                                    .font(Theme.kai(9).monospacedDigit())
+                                    .foregroundStyle(f.major ? Theme.seal : Theme.ink2)
                                     .lineLimit(1)
                             }
                             .padding(.vertical, 5)

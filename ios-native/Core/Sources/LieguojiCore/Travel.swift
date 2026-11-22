@@ -226,9 +226,9 @@ extension TravelGraph {
             let distance = jsHypot(s.origin.x - d.x, s.origin.y - d.y), a = s.nodes[0]
             return TravelSegment(a: a, b: a, start: s.origin, gate: d, end: d, toGate: distance, distance: distance, local: true)
         }
-        guard s.leg + 1 < s.nodes.count else { return nil }
+        guard s.leg >= 0, s.leg + 1 < s.nodes.count else { return nil }
         let a = s.nodes[s.leg], b = s.nodes[s.leg + 1]
-        guard let k = link(from: a, to: b) else { return nil }
+        guard centers.indices.contains(a), centers.indices.contains(b), let k = link(from: a, to: b) else { return nil }
         let start = s.leg == 0 ? s.origin : centers[a], gate = gates[k], end = s.destination != nil && s.leg == s.nodes.count - 2 ? s.destination! : centers[b]
         let toGate = jsHypot(start.x - gate.x, start.y - gate.y)
         return TravelSegment(a: a, b: b, start: start, gate: gate, end: end, toGate: toGate, distance: toGate + jsHypot(gate.x - end.x, gate.y - end.y))
@@ -236,8 +236,10 @@ extension TravelGraph {
 
     /// armyTravelLocation47: the exact point and cell of a journey.
     public func location(_ s: ArmyTravel) -> (point: TravelPoint, cell: Int) {
-        let a = s.nodes[s.leg]
-        guard let l = segment(s) else { return (s.destination ?? (s.leg == 0 ? s.origin : centers[a]), a) }
+        guard !s.nodes.isEmpty else { return (s.destination ?? s.origin, 0) }
+        let safeLeg = max(0, min(s.nodes.count - 1, s.leg))
+        let a = s.nodes[safeLeg]
+        guard let l = segment(s) else { return (s.destination ?? (safeLeg == 0 || !centers.indices.contains(a) ? s.origin : centers[a]), a) }
         if l.local {
             let ratio = l.distance > 0 ? s.offset / l.distance : 1
             return (ratio == 1 ? l.end : ratio == 0 ? l.start : TravelPoint(x: l.start.x + (l.end.x - l.start.x) * ratio, y: l.start.y + (l.end.y - l.start.y) * ratio), a)

@@ -349,7 +349,7 @@ extension NativeEngine {
             var routeNote: String?
             if moving, let bridge {
                 let tr = bridge.travel(v.travel), g = bridge.graph
-                if let last = tr.nodes.last {
+                if let last = tr.nodes.last, g.provinces.indices.contains(last) {
                     let q = Int(g.provinces[last]); if q >= 0 && q < provinces.count { dest = q }
                 }
                 let unitKey = r.units[id].optionalString ?? "Infantry"
@@ -360,34 +360,41 @@ extension NativeEngine {
                 if tr.destination != nil, tr.nodes.count == 1, let seg = g.segment(tr) {
                     let rem = max(0, seg.distance - tr.offset)
                     let spd = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.a, graph: g, secondsPerTick: secPerTick)
-                    if spd > 0 { ticks += rem / spd }
-                    let q = Int(g.provinces[seg.a])
-                    if q < 0 { seaLegs += 1 } else if g.mountain[q] { mountainLegs += 1 } else if g.plateau[q] { plateauLegs += 1 } else { landLegs += 1 }
+                    if spd > 1e-6, rem.isFinite { ticks += rem / spd }
+                    let q = g.provinces.indices.contains(seg.a) ? Int(g.provinces[seg.a]) : -1
+                    if q < 0 { seaLegs += 1 }
+                    else if g.mountain.indices.contains(q) && g.mountain[q] { mountainLegs += 1 }
+                    else if g.plateau.indices.contains(q) && g.plateau[q] { plateauLegs += 1 }
+                    else { landLegs += 1 }
                 } else {
-                    for leg in tr.leg..<max(tr.leg, tr.nodes.count - 1) {
+                    for leg in max(0, tr.leg)..<max(max(0, tr.leg), tr.nodes.count - 1) {
                         var part = tr; part.leg = leg
                         guard let seg = g.segment(part) else { break }
                         if leg == tr.leg {
                             if !tr.crossed {
                                 let d1 = max(0, seg.toGate - tr.offset), sp1 = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.a, graph: g, secondsPerTick: secPerTick)
-                                if sp1 > 0 { ticks += d1 / sp1 }
+                                if sp1 > 1e-6, d1.isFinite { ticks += d1 / sp1 }
                                 let d2 = max(0, seg.distance - seg.toGate), sp2 = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.b, graph: g, secondsPerTick: secPerTick)
-                                if sp2 > 0 { ticks += d2 / sp2 }
+                                if sp2 > 1e-6, d2.isFinite { ticks += d2 / sp2 }
                             } else {
                                 let d2 = max(0, seg.distance - tr.offset), sp2 = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.b, graph: g, secondsPerTick: secPerTick)
-                                if sp2 > 0 { ticks += d2 / sp2 }
+                                if sp2 > 1e-6, d2.isFinite { ticks += d2 / sp2 }
                             }
                         } else {
                             let sp1 = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.a, graph: g, secondsPerTick: secPerTick)
                             let sp2 = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.b, graph: g, secondsPerTick: secPerTick)
-                            if sp1 > 0 { ticks += seg.toGate / sp1 }
-                            if sp2 > 0 { ticks += (seg.distance - seg.toGate) / sp2 }
+                            if sp1 > 1e-6, seg.toGate.isFinite { ticks += seg.toGate / sp1 }
+                            if sp2 > 1e-6, (seg.distance - seg.toGate).isFinite { ticks += max(0, seg.distance - seg.toGate) / sp2 }
                         }
-                        let qb = Int(g.provinces[seg.b])
-                        if qb < 0 { seaLegs += 1 } else if g.mountain[qb] { mountainLegs += 1 } else if g.plateau[qb] { plateauLegs += 1 } else { landLegs += 1 }
+                        let qb = g.provinces.indices.contains(seg.b) ? Int(g.provinces[seg.b]) : -1
+                        if qb < 0 { seaLegs += 1 }
+                        else if g.mountain.indices.contains(qb) && g.mountain[qb] { mountainLegs += 1 }
+                        else if g.plateau.indices.contains(qb) && g.plateau[qb] { plateauLegs += 1 }
+                        else { landLegs += 1 }
                     }
                 }
-                let etaDays = max(1, Int((ticks / 120.0).rounded(.up)))
+                let rawDays = (ticks / 120.0).rounded(.up)
+                let etaDays = rawDays.isFinite ? max(1, min(9999, Int(rawDays))) : 1
                 if a.status.asString == "retreating" {
                     let prefix = seaLegs > 0 ? "渡海撤回" : "撤退休整"
                     routeNote = "\(prefix) · 预计 \(etaDays) 日\(seaLegs > 0 ? "返港" : "抵达")"

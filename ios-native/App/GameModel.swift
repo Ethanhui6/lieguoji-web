@@ -1216,8 +1216,12 @@ import LieguojiCore
             }
         }
         // 海陆后勤补给脉络：选中某支军团时，连出其与最近本国实控州城/海港的后勤脉络（若孤悬敌境或粮草告急则呈朱砂断线警示）
-        if let aid = controller.selectedArmy, state.armies.indices.contains(aid) {
-            let a = state.armies[aid]
+        let pickedArmy: GameState.Army? = {
+            if let sid = controller.selectedArmyId, let found = state.armies.first(where: { $0.id == sid }) { return found }
+            if let aid = controller.selectedArmy, state.armies.indices.contains(aid) { return state.armies[aid] }
+            return nil
+        }()
+        if let a = pickedArmy {
             if a.troops > 0 {
                 var bestDist = Double.infinity
                 var bestPt: (Double, Double)? = nil

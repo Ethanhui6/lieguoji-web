@@ -22,6 +22,7 @@ public struct GameState: Codable, Equatable, Sendable {
         public var banner: String? = nil; public var bannerMark: String? = nil; public var commander: String? = nil
         /// 行军路线地形说明与预计抵达天数（正在行军时生成，供军队详情页展示）。
         public var routeNote: String? = nil
+        public var full: Int? = nil
     }
     /// A fleet at its actual sea point (open-sea worlds) and its naval command.
     public struct Fleet: Codable, Equatable, Identifiable, Sendable {

@@ -28,13 +28,54 @@ struct HeraldBanner: View {
         }
     }
 
+    /// 四类迥异形制：遮住文字也能凭外框、底色与展开节奏瞬间分辨兵戈急报、和约玉简、国玺易代与轻捷战报。
+    private enum StyleForm { case warDispatch, peaceScroll, imperialEdict, fieldSlip }
+    private var form: StyleForm {
+        switch herald.kind {
+        case .war, .ultimatum, .coup, .uprising: return .warDispatch
+        case .peace, .treaty, .marriage: return .peaceScroll
+        case .regime, .restoration, .house: return .imperialEdict
+        case .capture, .capital, .extinction: return .fieldSlip
+        }
+    }
+    private var bannerWidth: CGFloat {
+        switch form {
+        case .warDispatch: return 348
+        case .peaceScroll, .imperialEdict: return 344
+        case .fieldSlip: return 284
+        }
+    }
+    private var bannerHeight: CGFloat {
+        switch form {
+        case .warDispatch, .imperialEdict: return 62
+        case .peaceScroll: return 60
+        case .fieldSlip: return 46
+        }
+    }
+    private var paperFill: Color {
+        switch form {
+        case .warDispatch: return Color(red: 0.97, green: 0.91, blue: 0.85)
+        case .peaceScroll: return Color(red: 0.93, green: 0.96, blue: 0.93)
+        case .imperialEdict: return Color(red: 0.98, green: 0.94, blue: 0.84)
+        case .fieldSlip: return Theme.paper2
+        }
+    }
+    private var rollerColors: [Color] {
+        switch form {
+        case .warDispatch: return [Color(red: 0.42, green: 0.14, blue: 0.11), Color(red: 0.62, green: 0.22, blue: 0.16), Color(red: 0.34, green: 0.11, blue: 0.09)]
+        case .peaceScroll: return [Color(red: 0.18, green: 0.40, blue: 0.32), Color(red: 0.28, green: 0.56, blue: 0.46), Color(red: 0.14, green: 0.34, blue: 0.27)]
+        case .imperialEdict: return [Color(red: 0.66, green: 0.48, blue: 0.18), Color(red: 0.86, green: 0.70, blue: 0.34), Color(red: 0.54, green: 0.38, blue: 0.14)]
+        case .fieldSlip: return []
+        }
+    }
+
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
             let t = reduceMotion ? 3 : context.date.timeIntervalSince(start)
             scene(t)
         }
-        // 窄条：高 58 点、最宽 340 点，挂在顶栏下，不遮地图中部；轻点或上滑可立即收卷。
-        .frame(maxWidth: 340).frame(height: 58)
+        // 按事件级别区分尺寸与形制，挂在顶栏下不遮地图中部；轻点定位并收卷，上滑直接收卷。
+        .frame(maxWidth: bannerWidth).frame(height: bannerHeight)
         .padding(.horizontal, 24)
         .offset(y: min(0, dragY))
         .opacity(Double(max(0.25, 1 + min(0, dragY) / 48)))
@@ -71,53 +112,86 @@ struct HeraldBanner: View {
     private static func span(_ t: Double, _ a: Double, _ b: Double) -> Double { ease((t - a) / (b - a)) }
 
     @ViewBuilder private func scene(_ t: Double) -> some View {
-        let unroll = min(1.02, Self.easeOutBack(min(1, max(0, t / 0.48))))
+        // 四类差异化动效节奏：急报疾展微震、和约徐徐舒展、国玺庄重下印、轻捷战报轻快滑现。
+        let unroll: Double = {
+            switch form {
+            case .warDispatch: return min(1.03, Self.easeOutBack(min(1, max(0, t / 0.24))))
+            case .peaceScroll: return Self.ease(min(1, max(0, t / 0.58)))
+            case .imperialEdict: return Self.ease(min(1, max(0, t / 0.42)))
+            case .fieldSlip: return Self.ease(min(1, max(0, t / 0.28)))
+            }
+        }()
+        let tremorX: CGFloat = (form == .warDispatch && t >= 0.72 && t <= 0.94 && !reduceMotion)
+            ? CGFloat(sin((t - 0.72) * 58) * (1 - (t - 0.72) / 0.22) * 2.4) : 0
+        let dropY: CGFloat = form == .imperialEdict ? CGFloat((1 - unroll) * -10) : 0
+        let corner: CGFloat = form == .fieldSlip ? 12 : form == .imperialEdict ? 3 : 5
         GeometryReader { g in
             let w = g.size.width, h = g.size.height
-            let paperW = max(24, min(w, w * (0.08 + 0.92 * unroll)))
-            let content = Self.span(t, 0.28, 0.58)
+            let paperW: CGFloat = form == .imperialEdict
+                ? max(24, w * CGFloat(0.86 + 0.14 * unroll))
+                : max(24, min(w, w * CGFloat(0.10 + 0.90 * unroll)))
+            let content = form == .warDispatch ? Self.span(t, 0.14, 0.36) : Self.span(t, 0.24, 0.56)
+            let textIn = Self.span(t, form == .warDispatch ? 0.28 : 0.44, form == .warDispatch ? 0.56 : 0.80)
             ZStack {
-                // 纸卷：宣纸卷面、朱金内框、两端鎏金木轴。
-                RoundedRectangle(cornerRadius: 5, style: .continuous).fill(Theme.paper2)
-                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Theme.ink.opacity(0.14), lineWidth: 0.7))
-                    .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).strokeBorder(accent.opacity(0.28), lineWidth: 0.8).padding(3.5))
-                    .shadow(color: Theme.ink.opacity(0.16), radius: 6, y: 2.5)
+                // 主底板：四类专属宣纸色、边线厚度与装饰语言
+                RoundedRectangle(cornerRadius: corner, style: .continuous).fill(paperFill)
+                    .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(accent.opacity(form == .warDispatch ? 0.55 : form == .imperialEdict ? 0.65 : 0.26), lineWidth: form == .fieldSlip ? 0.8 : 1.2))
+                    .overlay(
+                        Group {
+                            if form != .fieldSlip {
+                                RoundedRectangle(cornerRadius: max(2, corner - 2), style: .continuous)
+                                    .strokeBorder(accent.opacity(form == .warDispatch ? 0.42 : 0.32), lineWidth: form == .imperialEdict ? 1.1 : 0.8)
+                                    .padding(3.5)
+                            }
+                        }
+                    )
+                    .shadow(color: Theme.ink.opacity(form == .fieldSlip ? 0.12 : 0.20), radius: form == .fieldSlip ? 4 : 7, y: 2.5)
                     .frame(width: paperW, height: h - 4)
-                ForEach([-1.0, 1.0], id: \.self) { side in
-                    VStack(spacing: 0) {
-                        Capsule().fill(LinearGradient(colors: [Color(red: 0.82, green: 0.68, blue: 0.36), Color(red: 0.56, green: 0.42, blue: 0.16)], startPoint: .leading, endPoint: .trailing))
-                            .frame(width: 7, height: 4.5)
-                        Rectangle().fill(LinearGradient(colors: [Color(red: 0.34, green: 0.22, blue: 0.14), Color(red: 0.54, green: 0.38, blue: 0.24), Color(red: 0.28, green: 0.18, blue: 0.11)], startPoint: .leading, endPoint: .trailing))
-                            .frame(width: 6, height: max(10, h - 9))
-                        Capsule().fill(LinearGradient(colors: [Color(red: 0.82, green: 0.68, blue: 0.36), Color(red: 0.56, green: 0.42, blue: 0.16)], startPoint: .leading, endPoint: .trailing))
-                            .frame(width: 7, height: 4.5)
+                // 轻捷战报用左侧国色竖条；三大重磅传报用专属双轴/金角
+                if form == .fieldSlip {
+                    let stripeColor = herald.nations.first.map(color) ?? accent
+                    Capsule().fill(stripeColor)
+                        .frame(width: 3.5, height: max(12, h - 18))
+                        .offset(x: -(paperW / 2 - 7))
+                } else {
+                    ForEach([-1.0, 1.0], id: \.self) { side in
+                        VStack(spacing: 0) {
+                            Capsule().fill(LinearGradient(colors: [Color(red: 0.86, green: 0.72, blue: 0.38), Color(red: 0.56, green: 0.42, blue: 0.16)], startPoint: .leading, endPoint: .trailing))
+                                .frame(width: form == .imperialEdict ? 8.5 : 7, height: 4.5)
+                            Rectangle().fill(LinearGradient(colors: rollerColors, startPoint: .leading, endPoint: .trailing))
+                                .frame(width: form == .imperialEdict ? 7 : 6, height: max(10, h - 9))
+                            Capsule().fill(LinearGradient(colors: [Color(red: 0.86, green: 0.72, blue: 0.38), Color(red: 0.56, green: 0.42, blue: 0.16)], startPoint: .leading, endPoint: .trailing))
+                                .frame(width: form == .imperialEdict ? 8.5 : 7, height: 4.5)
+                        }
+                        .shadow(color: .black.opacity(0.22), radius: 2, y: 1)
+                        .offset(x: side * (paperW / 2 + 1.5))
                     }
-                    .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
-                    .offset(x: side * (paperW / 2 + 1.5))
                 }
-                // 左侧一幅小画（场景按 208 × 100 的画面绘制、缩到一半），右侧事由。
-                HStack(spacing: 8) {
+                // 左侧工笔小画（场景按 208 × 100 的画面绘制），右侧事由。
+                HStack(spacing: form == .fieldSlip ? 6 : 8) {
                     Canvas { ctx, size in
                         var c = ctx; c.scaleBy(x: size.width / 208, y: size.height / 100)
                         // 单主体的画面原本画在中线左侧 46 处（给注脚让位），小画里居中。
                         if herald.kind != .war && herald.kind != .peace && herald.kind != .marriage && herald.kind != .treaty && herald.kind != .ultimatum { c.translateBy(x: 46, y: 0) }
                         draw(c, size: CGSize(width: 208, height: 100), t: t)
                     }
-                    .frame(width: 96, height: 46)
-                    Rectangle().fill(Theme.ink.opacity(0.12)).frame(width: 0.7, height: 30)
+                    .frame(width: form == .fieldSlip ? 68 : 96, height: form == .fieldSlip ? 34 : 46)
+                    Rectangle().fill(accent.opacity(0.22)).frame(width: 0.8, height: form == .fieldSlip ? 22 : 30)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(title).font(Theme.caption).foregroundStyle(accent).lineLimit(1)
-                        Text(herald.text).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(2).minimumScaleFactor(0.76)
+                        Text(herald.text).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(form == .fieldSlip ? 1 : 2).minimumScaleFactor(0.76)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .opacity(Self.span(t, 0.46, 0.82)).offset(x: (1 - Self.span(t, 0.46, 0.82)) * 7)
+                    .opacity(textIn)
+                    .offset(x: CGFloat((1 - textIn) * 7))
                     Spacer(minLength: 0)
                 }
-                .padding(.leading, 12).padding(.trailing, 14)
+                .padding(.leading, form == .fieldSlip ? 14 : 12).padding(.trailing, 14)
                 .frame(width: max(24, paperW), height: h)
                 .clipped()
                 .opacity(content)
             }
+            .offset(x: tremorX, y: dropY)
             .frame(width: w, height: h)
         }
     }

@@ -55,21 +55,24 @@ public enum PreviewWorld {
     /// The opening on given heights: terrain, provinces (the settlement partition) and the states'
     /// starting land and capitals, as the engine will found them.
     public static func build(_ input: Inputs, heights: [UInt8], nations: Int, cities: Int) -> WorldMap {
-        let t = terrain(input, heights: heights, sea: false)
+        let rawElev = heights.map(Int.init)
+        let cleaned = Regions.cleanTinyIslets(input.document, elevations: rawElev, cities: cities)
+        let effHeights = cleaned.map { UInt8(max(0, min(100, $0))) }
+        let t = terrain(input, heights: effHeights, sea: false)
         var m = t.map
-        let surface = t.surface, elevations = heights.map(Int.init), n = min(m.cellCount, heights.count)
+        let surface = t.surface, elevations = cleaned, n = min(m.cellCount, effHeights.count)
         // Provinces: each land cell joins the province of a clipped face it belongs to.
         var province = [Int32](repeating: -1, count: m.cellCount)
         var provinces = [WorldMeta.Province](), owners = [Int](), seeds = [Int]()
         // Too few provinces for this land: the same steps up as the engine, so the two still agree.
         var target = cities
-        var found = Regions.partition(input.document, elevations: elevations, cities: target, surface: surface)
+        var found = Regions.partition(input.document, elevations: elevations, cities: target, surface: surface, balanceAreas: true)
         while found == nil && target < 480 {
             target = raisedCities(target)
-            found = Regions.partition(input.document, elevations: elevations, cities: target, surface: surface)
+            found = Regions.partition(input.document, elevations: elevations, cities: target, surface: surface, balanceAreas: true)
         }
         if let part = found {
-            for (r, region) in part.regions.enumerated() { for f in region.members { for s in part.faces[f].source where s < n && heights[s] >= 20 && province[s] < 0 { province[s] = Int32(r) } } }
+            for (r, region) in part.regions.enumerated() { for f in region.members { for s in part.faces[f].source where s < n && effHeights[s] >= 20 && province[s] < 0 { province[s] = Int32(r) } } }
             let count = min(nations, part.regions.count)
             let layout = Opening.layout(part.regions, count: count)
             owners = layout.owners; seeds = layout.seeds
@@ -77,7 +80,7 @@ public enum PreviewWorld {
                 WorldMeta.Province(id: "p-\(i)", name: "", x: Float(r.center.0), y: Float(r.center.1), nation: owners[i], terrain: r.height > 65 ? "mountain" : r.height > 45 ? "forest" : "plain")
             }
         }
-        for c in 0..<n where heights[c] >= 20 && province[c] < 0 { province[c] = provinces.isEmpty ? -1 : 0 }
+        for c in 0..<n where effHeights[c] >= 20 && province[c] < 0 { province[c] = provinces.isEmpty ? -1 : 0 }
         m.province = province
         m.meta.provinces = provinces
         // 国色分明: the colours the finished world takes (NationColors.apply), so nothing changes at the hand-over.

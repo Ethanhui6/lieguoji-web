@@ -35,7 +35,7 @@ final class RegionsTests: XCTestCase {
         }
     }
 
-    /// Item 3 审计：统计 80 城模板的州面积分布与连通性（校验无退化细条/无效区划，并输出实测分位）。
+    /// Item 3 审计与前后对照：对比 80 城模板改前（原版）与改后（微岛清理 + 面积均衡）的 P10/中位面积比。
     func testEightyCityPartitionAreaDistribution() throws {
         let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         let doc = try TerrainDocument(data: Data(contentsOf: dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World/doc20k.bin")))
@@ -43,17 +43,18 @@ final class RegionsTests: XCTestCase {
         var tested = 0
         for s in golden.samples where s.cities == 80 && s.regions != nil {
             let elevations = [UInt8](Data(base64Encoded: s.heights)!).map(Int.init)
-            let got = try XCTUnwrap(Regions.partition(doc, elevations: elevations, cities: s.cities))
-            let areas = got.regions.map(\.area).sorted()
-            let members = got.regions.map(\.members.count).sorted()
-            let med = areas[areas.count / 2]
-            let p10 = areas[max(0, areas.count / 10)]
-            let minCells = members.first ?? 0
-            let singleCellCount = members.filter { $0 <= 1 }.count
-            print("[80城审计] \(s.seed)/\(s.template): 州数=\(got.regions.count) 最小格数=\(minCells) 单格州=\(singleCellCount) 面积P10/中位=\(String(format: "%.2f", p10 / max(1e-9, med))) 最小/中位=\(String(format: "%.2f", (areas.first ?? 0) / max(1e-9, med)))")
-            XCTAssertEqual(got.regions.count, 80)
-            XCTAssertGreaterThan(areas.first ?? 0, 0)
-            for r in got.regions { XCTAssertGreaterThanOrEqual(r.ring.count, 3) }
+            let raw = try XCTUnwrap(Regions.partition(doc, elevations: elevations, cities: s.cities))
+            let cleaned = Regions.cleanTinyIslets(doc, elevations: elevations, cities: s.cities)
+            let balanced = try XCTUnwrap(Regions.partition(doc, elevations: cleaned, cities: s.cities, balanceAreas: true))
+            let rawAreas = raw.regions.map(\.area).sorted()
+            let balAreas = balanced.regions.map(\.area).sorted()
+            let rawP10 = rawAreas[max(0, rawAreas.count / 10)] / max(1e-9, rawAreas[rawAreas.count / 2])
+            let balP10 = balAreas[max(0, balAreas.count / 10)] / max(1e-9, balAreas[balAreas.count / 2])
+            let balMin = (balAreas.first ?? 0) / max(1e-9, balAreas[balAreas.count / 2])
+            print("[80城对照] \(s.seed)/\(s.template): P10/中位 \(String(format: "%.2f", rawP10)) -> \(String(format: "%.2f", balP10))，最小/中位=\(String(format: "%.2f", balMin))")
+            XCTAssertEqual(balanced.regions.count, 80)
+            XCTAssertGreaterThanOrEqual(balP10 + 1e-6, rawP10, "均衡区划后 P10/中位面积比不应退化：\(s.seed)/\(s.template)")
+            for r in balanced.regions { XCTAssertGreaterThanOrEqual(r.ring.count, 3) }
             tested += 1
         }
         XCTAssertGreaterThan(tested, 0)

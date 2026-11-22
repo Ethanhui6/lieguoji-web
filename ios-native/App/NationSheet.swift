@@ -36,6 +36,8 @@ struct NationInfo: Decodable {
         let summary: String; let traitLine: String
         let stability: Int; let coupRisk: Int; let coupLevel: String
         let pressure: String; let likelyPath: String
+        var defeatShock: Int? = nil
+        var mood: Int? = nil
         let transitions: [Transition]
     }
     var polityDetail: PolityDetail? = nil
@@ -665,6 +667,15 @@ struct NationSheet: View {
                                 Text(pd.traitLine).font(Theme.caption).foregroundStyle(Theme.seal)
                                 Divider2()
                                 StabilityRiskMeter(stability: pd.stability, risk: pd.coupRisk, level: pd.coupLevel)
+                                if let shock = pd.defeatShock, shock >= 5 {
+                                    HStack(spacing: 6) {
+                                        PaperTag(text: "战败震荡 −\(shock)%", color: Theme.seal, size: 11)
+                                        if let mood = pd.mood {
+                                            Text("朝野民心 \(mood >= 0 ? "+\(mood)" : "\(mood)")").font(Theme.caption).foregroundStyle(mood < -20 ? Theme.seal : Theme.ink2)
+                                        }
+                                        Spacer()
+                                    }
+                                }
                                 Text("主导风向：\(pd.pressure)（\(pd.likelyPath)）").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                             }
                             .padding(14)

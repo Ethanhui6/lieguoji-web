@@ -405,6 +405,8 @@ extension NativeEngine {
             if ["attacking", "supporting", "guarding", "staging"].contains(order) { x.duty = order }
             if let b = banners[id] { x.banner = b.kind; x.bannerMark = b.mark; x.commander = b.name }
             x.routeNote = routeNote
+            let rawFull = r.tactics.forces[id].fullStrength.optionalNumber ?? Double(safeTroops)
+            x.full = max(safeTroops, rawFull.isFinite ? Int(rawFull.rounded()) : safeTroops)
             return x
         }
         // Fleets at their actual sea points and the harbour ports (open-sea worlds; empty otherwise).

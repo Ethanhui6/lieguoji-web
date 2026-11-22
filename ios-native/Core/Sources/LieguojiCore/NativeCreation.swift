@@ -53,8 +53,10 @@ public enum NativeCreation {
         progress?("people")
         // 陆地太碎（岛屿、湖泊）放不下所选州数时，州数按网页的步长增加直到放得下。
         var found: (run: JS, travel: CreationGeography.Graph, sea: SeaGraph)?
+        // App 新世界（organicBorders == true）清理极小孤立礁石，避免 80 城模板被 1%–3% 边角微岛占掉名额（手绘自定布局与网页基准测试保持原地形不变）。
+        let effectiveHeights = (o.layout == nil && o.organicBorders) ? Regions.cleanTinyIslets(doc, elevations: heights, cities: cityCount) : heights
         while found == nil {
-            found = try opening(o, doc: doc, heights: heights, count: count, cityCount: cityCount, enabled: enabled, worldId: worldId, runId: runId)
+            found = try opening(o, doc: doc, heights: effectiveHeights, count: count, cityCount: cityCount, enabled: enabled, worldId: worldId, runId: runId)
             if found == nil {
                 if o.layout != nil || cityCount >= 480 { throw CreationError.message("这片陆地放不下 \(cityCount) 个州郡，请编辑陆地或减少州郡。") }
                 cityCount = raised(cityCount)
@@ -62,10 +64,10 @@ public enum NativeCreation {
         }
         let (r, travel, sea) = found!
         progress?("armies")
-        CreationForces.attach(r, doc, elevations: heights, sea: sea, faceBiomes: CreationForces.faceBiomes(doc, elevations: heights, ids: Climate.surface(doc, elevations: heights).ids), method: "capital-neighbor-v2")
+        CreationForces.attach(r, doc, elevations: effectiveHeights, sea: sea, faceBiomes: CreationForces.faceBiomes(doc, elevations: effectiveHeights, ids: Climate.surface(doc, elevations: effectiveHeights).ids), method: "capital-neighbor-v2")
         CreationPolitics.attach(r)
         r.id = JS(runId); r.world.custom.id = JS(runId)
-        let statics = CreationStatics.build(r, doc, elevations: heights, sea: sea, travel: travel)
+        let statics = CreationStatics.build(r, doc, elevations: effectiveHeights, sea: sea, travel: travel)
         if o.relations == "war" {
             _ = try NativeEngine(created: r, statics: statics)
             War26.install()
@@ -75,15 +77,15 @@ public enum NativeCreation {
         CreationRules.enable(r)
         CreationNames.vary(r, seed: o.seed)
         progress?("map")
-        let map = CreationMap.build(x, run: r, elevations: heights, seed: o.seed, template: o.template)
-        statics.labelGrid = CreationMap.labelGrid(x.grid, elevations: heights, cells: map.cells)
+        let map = CreationMap.build(x, run: r, elevations: effectiveHeights, seed: o.seed, template: o.template)
+        statics.labelGrid = CreationMap.labelGrid(x.grid, elevations: effectiveHeights, cells: map.cells)
         statics.map = map.map
         return World(run: r, statics: statics, cityCount: cityCount)
     }
 
     /// createCivilizationWorld47 + attachGovernment47（含开局军队位置）。nil：这片陆地放不下 `cityCount` 个州。
     static func opening(_ o: Options, doc: TerrainDocument, heights: [Int], count: Int, cityCount: Int, enabled: [String], worldId: String, runId: String) throws -> (run: JS, travel: CreationGeography.Graph, sea: SeaGraph)? {
-        guard let part = Regions.partition(doc, elevations: heights, cities: cityCount) else { return nil }
+        guard let part = Regions.partition(doc, elevations: heights, cities: cityCount, balanceAreas: o.layout == nil && o.organicBorders) else { return nil }
         let regions = part.regions
         let layout = o.layout ?? (o.organicBorders ? Opening.organicLayout(regions, count: count, seed: o.seed) : Opening.layout(regions, count: count))
         if let l = o.layout, l.owners.count != regions.count || l.seeds.contains(where: { $0 < 0 || $0 >= regions.count }) { throw CreationError.message("国家领土布局无效，原稿未改动。") }

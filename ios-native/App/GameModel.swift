@@ -1266,18 +1266,31 @@ import LieguojiCore
         // Icons never sit on one another: armies (and fleets) closer than an icon are eased apart, the
         // later one moving, a few passes. Display only; an army in battle keeps its spot facing the foe.
         Self.offset(&sprites)
-        // 兵力 under each army's plaque (the original's army label), shown once zoomed in enough.
+        // 兵力条与兵力字（紧贴军团/舰队脚下，按真实 troops/full 与船体完整度驱动，阵亡与零兵立即消失）。
         var counts = [String: String]()
+        var ratios = [String: Float]()
+        var barColors = [String: RGB]()
+        func nationRGB(_ n: Int) -> RGB {
+            guard let m = map, n >= 0, n < m.meta.nations.count else { return RGB(0.32, 0.56, 0.36) }
+            return RGB(css: m.meta.nations[n].color) ?? RGB(0.32, 0.56, 0.36)
+        }
         // 兵力前加一字军情：战（交战）、退（撤退）、集（集结待发）、守（驻防）、援（回援本土）、征（出征）、行（行军）；驻扎不标。
-        for a in state.armies where a.troops > 0 {
+        for a in state.armies where a.troops > 0 && a.status != "destroyed" {
             let n = a.troops >= 10000 ? String(format: "%.1f万", Double(a.troops) / 10000) : "\(a.troops)"
             counts[a.id] = Self.stateMark(a).map { $0 + " " + n } ?? n
+            let denom = max(a.troops, a.full ?? a.troops, 1)
+            ratios[a.id] = Float(a.troops) / Float(denom)
+            barColors[a.id] = nationRGB(a.nation)
         }
         for f in state.fleets ?? [] where f.ships > 0 && f.status != "lost" {
             let mark: String? = f.decision == "busy" ? "海战" : f.decision == "attacking" ? "夺港" : f.decision == "resupply" ? "补粮" : f.travel == "moving" ? "巡航" : nil
             counts[f.id] = (mark.map { $0 + " " } ?? "") + "\(f.ships)艘"
+            ratios[f.id] = Float(min(1, max(0.05, f.hull)))
+            barColors[f.id] = nationRGB(f.nation)
         }
         controller.troopTexts = counts
+        controller.troopRatios = ratios
+        controller.troopBarColors = barColors
         controller.armies = sprites
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
             let id = state.armies[selected].id

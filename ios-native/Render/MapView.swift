@@ -63,6 +63,9 @@ import LieguojiCore
     var tween: Double = 0.3
     /// Troop / ship counts by army or fleet id, shown under the icons when zoomed in.
     var troopTexts: [String: String] = [:]
+    /// Per-army strength ratio (troops / full) or fleet hull (0…1), rendered as a crisp bar directly under each icon.
+    var troopRatios: [String: Float] = [:]
+    var troopBarColors: [String: RGB] = [:]
     /// 战争晕染（墨场）：本步的行军、守军、围城与最近的攻占（GameModel.refreshWashes），与世界代次（读档、换世界时变）。
     var washes = WashFrame.empty
     /// 本步阵亡军队（军队标识 → 阵亡时刻，秒，自本步动画开始）：图标停到那一刻，阵亡动画同时开始。
@@ -532,6 +535,8 @@ struct MapView: UIViewRepresentable {
             // Zoomed out the banners carry no marks: skip collecting every army's position each frame.
             if !troops.shows(renderer.camera) && troops.isEmpty { return }
             troops.texts = controller.troopTexts
+            troops.ratios = controller.troopRatios
+            troops.colors = controller.troopBarColors
             troops.update(renderer.placedSprites(), camera: renderer.camera, viewport: mtk.bounds.size, spread: renderer.spread)
         }
         private var camera: MapCamera { renderer?.camera ?? MapCamera(centerX: 0, centerY: 0, scale: 1) }
@@ -676,7 +681,7 @@ struct MapView: UIViewRepresentable {
             // 半径随图标屏幕尺寸，至少 16 点。
             if controller.armies != nil, let renderer {
                 let placed = renderer.placedSprites()
-                let icon = MapRenderer.iconPoints(camera.scale, iconScale: controller.play.iconScale), reach = max(16, icon * 0.6)
+                let icon = MapRenderer.iconPoints(camera.scale, iconScale: controller.play.iconScale), reach = max(22, icon * 0.78)
                 var best: (army: Int, key: String, d: Double)?
                 for a in placed where a.sprite.army > -100_000 && a.x.isFinite && a.y.isFinite {
                     let s = camera.toScreen(x: Double(a.x), y: Double(a.y), viewport: viewport), o = renderer.spread[a.sprite.key] ?? .zero
@@ -1425,52 +1430,87 @@ final class MapLabelsView: UIView {
     }
 }
 
-/// Troop and ship counts under the icons once the map is zoomed in (the original shows unit
-/// strength up close); they follow the icons while they glide.
+/// Troop/hull strength bars and zoomed-in counts under army & fleet icons; they follow the icons while they glide.
 final class TroopLabelsView: UIView {
     var texts: [String: String] = [:]
+    var ratios: [String: Float] = [:]
+    var colors: [String: RGB] = [:]
     private var layers = [String: CATextLayer]()
-    private static let font = UIFont(name: "TW-Kai-98_1", size: 11) ?? .systemFont(ofSize: 11, weight: .semibold)
+    private var bars = [String: (track: CALayer, fill: CALayer)]()
+    private static let font = UIFont(name: "TW-Kai-98_1", size: 10.5) ?? .systemFont(ofSize: 10.5, weight: .semibold)
     override init(frame: CGRect) { super.init(frame: frame); isUserInteractionEnabled = false }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
     /// The army icons' size setting (推演与画面).
     var iconScale = 1.0
-    var isEmpty: Bool { layers.isEmpty }
-    /// Whether banners are large enough at this zoom to carry a mark.
-    func shows(_ camera: MapCamera) -> Bool { MapRenderer.iconPoints(camera.scale, iconScale: iconScale) >= 22 }
+    var isEmpty: Bool { layers.isEmpty && bars.isEmpty }
+    /// Whether icons are large enough at this zoom to carry a strength bar or troop mark.
+    func shows(_ camera: MapCamera) -> Bool { MapRenderer.iconPoints(camera.scale, iconScale: iconScale) >= 12 }
     func update(_ placed: [(sprite: MapRenderer.ArmySprite, x: Float, y: Float)], camera: MapCamera, viewport: CGSize, spread: [String: SIMD2<Float>] = [:]) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // Icon size on screen (the renderer's icon size in map units × scale).
         let icon = MapRenderer.iconPoints(camera.scale, iconScale: iconScale)
-        var seen = Set<String>()
+        var seenText = Set<String>(), seenBar = Set<String>()
         CATransaction.begin(); CATransaction.setDisableActions(true)
-        // Banner marks only when the banner is big enough to carry a character.
-        if icon >= 22 {
+        if icon >= 12 {
+            let barW = min(26.0, max(16.0, icon * 1.05))
+            let barH: Double = 3.0
             for p in placed where p.sprite.army > -100_000 {
-                guard let text = texts[p.sprite.key] else { continue }
+                let key = p.sprite.key
+                guard let ratio = ratios[key], ratio > 0 else { continue }
                 let s = camera.toScreen(x: Double(p.x), y: Double(p.y), viewport: vp)
                 guard s.x > -40, s.y > -40, s.x < vp.width + 40, s.y < vp.height + 40 else { continue }
-                let l = layers[p.sprite.key] ?? make(p.sprite.key)
-                if (l.string as? String) != text {
-                    l.string = text
-                    let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 6
-                    l.bounds = CGRect(x: 0, y: 0, width: w, height: 15)
+                let o = spread[key] ?? SIMD2<Float>(0, 0)
+                let bx = s.x + Double(o.x) * icon
+                let by = s.y + (Double(o.y) + 0.62) * icon
+                let pair = bars[key] ?? makeBar(key)
+                let clamped = Double(min(1, max(0.04, ratio)))
+                pair.track.bounds = CGRect(x: 0, y: 0, width: barW, height: barH)
+                pair.track.position = CGPoint(x: bx, y: by)
+                pair.fill.frame = CGRect(x: 0, y: 0, width: barW * clamped, height: barH)
+                if clamped < 0.25 {
+                    pair.fill.backgroundColor = UIColor(red: 0.78, green: 0.18, blue: 0.14, alpha: 1).cgColor
+                } else if clamped < 0.48 {
+                    pair.fill.backgroundColor = UIColor(red: 0.85, green: 0.56, blue: 0.14, alpha: 1).cgColor
+                } else if let c = colors[key] {
+                    pair.fill.backgroundColor = UIColor(red: CGFloat(c.r), green: CGFloat(c.g), blue: CGFloat(c.b), alpha: 1).cgColor
+                } else {
+                    pair.fill.backgroundColor = UIColor(red: 0.22, green: 0.58, blue: 0.36, alpha: 1).cgColor
                 }
-                // Under the plaque (rebuildArmies: the plaque sits 0.16 below the point, half an icon tall),
-                // following the army's seat in a ring of armies on one spot.
-                let o = spread[p.sprite.key] ?? SIMD2<Float>(0, 0)
-                l.position = CGPoint(x: s.x + Double(o.x) * icon, y: s.y + (Double(o.y) + 0.78) * icon)
-                seen.insert(p.sprite.key)
+                seenBar.insert(key)
+
+                if icon >= 19, let text = texts[key] {
+                    let l = layers[key] ?? make(key)
+                    if (l.string as? String) != text {
+                        l.string = text
+                        let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 6
+                        l.bounds = CGRect(x: 0, y: 0, width: w, height: 14)
+                    }
+                    l.position = CGPoint(x: bx, y: by + 9.5)
+                    seenText.insert(key)
+                }
             }
         }
-        for (k, l) in layers where !seen.contains(k) { l.removeFromSuperlayer(); layers[k] = nil }
+        for (k, pair) in bars where !seenBar.contains(k) { pair.track.removeFromSuperlayer(); bars[k] = nil }
+        for (k, l) in layers where !seenText.contains(k) { l.removeFromSuperlayer(); layers[k] = nil }
         CATransaction.commit()
+    }
+    private func makeBar(_ key: String) -> (track: CALayer, fill: CALayer) {
+        let track = CALayer()
+        track.backgroundColor = UIColor(red: 0.12, green: 0.09, blue: 0.07, alpha: 0.72).cgColor
+        track.cornerRadius = 1.5; track.masksToBounds = true
+        track.borderWidth = 0.55; track.borderColor = UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 0.92).cgColor
+        let fill = CALayer()
+        track.addSublayer(fill)
+        layer.addSublayer(track)
+        let pair = (track, fill)
+        bars[key] = pair
+        return pair
     }
     private func make(_ key: String) -> CATextLayer {
         let l = CATextLayer()
-        l.font = Self.font; l.fontSize = 11; l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
-        // A paper-white character with an ink shadow, written on the flag.
+        l.font = Self.font; l.fontSize = 10.5; l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
+        // A paper-white character with an ink shadow, written under the strength bar.
         l.foregroundColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 1).cgColor
         l.shadowColor = UIColor(white: 0.05, alpha: 1).cgColor; l.shadowOpacity = 0.9; l.shadowRadius = 1.2; l.shadowOffset = .zero
         // Rasterized once: these labels move with their armies every frame, and a live text shadow

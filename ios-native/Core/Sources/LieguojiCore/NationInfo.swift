@@ -254,6 +254,8 @@ extension NativeEngine {
             pd.coupLevel = JS(outlook.level)
             pd.pressure = JS(outlook.pressure)
             pd.likelyPath = JS(outlook.likelyPath)
+            pd.defeatShock = JS(Int((Regimes.defeatPenalty(r, id) * 100).rounded()))
+            pd.mood = JS(Int((Regimes.mood(r, id) * 100).rounded()))
             pd.transitions = .array(Regimes.availableTransitions(r, id).map { tr in
                 let x = JS.object()
                 x.id = JS(tr.id); x.title = JS(tr.title); x.subtitle = JS(tr.subtitle)

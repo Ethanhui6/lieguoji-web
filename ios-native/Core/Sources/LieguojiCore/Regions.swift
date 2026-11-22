@@ -111,23 +111,60 @@ public enum Regions {
         }
     }
 
+    /// App 新世界专用：清理面积极小且孤立的海上礁石/细碎微岛（避免 4 格礁石占掉 80 城名额导致 1% 面积边角小城）。
+    /// 不修改原版黄金测试路径（默认不调用）。
+    public static func cleanTinyIslets(_ d: TerrainDocument, elevations: [Int], cities: Int) -> [Int] {
+        let faces = landFaces(d, elevations)
+        guard !faces.isEmpty, cities > 0 else { return elevations }
+        var visited = [Bool](repeating: false, count: faces.count)
+        var comps = [(members: [Int], area: Double)]()
+        var totalArea = 0.0
+        for i in faces.indices where !visited[i] {
+            var q = [i]; visited[i] = true; var h = 0, area = 0.0
+            while h < q.count {
+                let u = q[h]; h += 1
+                area += polygonArea(faces[u].ring)
+                for v in faces[u].neighbors where !visited[v] { visited[v] = true; q.append(v) }
+            }
+            totalArea += area
+            comps.append((q, area))
+        }
+        guard comps.count > 1, totalArea > 0 else { return elevations }
+        let targetArea = totalArea / Double(cities)
+        let largestIdx = comps.indices.max(by: { comps[$0].area < comps[$1].area }) ?? 0
+        var out = elevations
+        var droppedArea = 0.0
+        // 按面积从小到大清理微岛，总剔除面积不超过总陆地的 4.5%，确保大中岛屿完整保留。
+        for idx in comps.indices.sorted(by: { comps[$0].area < comps[$1].area }) {
+            guard idx != largestIdx else { continue }
+            let c = comps[idx]
+            guard c.area < targetArea * 0.16 && c.members.count < 28 else { continue }
+            guard droppedArea + c.area <= totalArea * 0.045 else { break }
+            droppedArea += c.area
+            for f in c.members {
+                for s in faces[f].source where out.indices.contains(s) && out[s] >= 20 { out[s] = 19 }
+            }
+        }
+        return out
+    }
+
     /// settlementRegions47: the established unions (with the cut fallback), and if they stall the
     /// perimeter-aware unions. Nil when the web also fails.
-    public static func partition(_ d: TerrainDocument, elevations: [Int], cities: Int, surface known: Climate.Surface? = nil) -> (regions: [Region], perimeter: Bool, faces: [Face])? {
+    public static func partition(_ d: TerrainDocument, elevations: [Int], cities: Int, surface known: Climate.Surface? = nil, balanceAreas: Bool = false) -> (regions: [Region], perimeter: Bool, faces: [Face])? {
         let faces = landFaces(d, elevations)
         let surface = known ?? Climate.surface(d, elevations: elevations)
         // Only the explicit stall of the established unions falls back to the perimeter unions.
-        switch unions(d, elevations, faces, surface, cities, perimeter: false) {
+        switch unions(d, elevations, faces, surface, cities, perimeter: false, balanceAreas: balanceAreas) {
         case .ok(let r): return (r, false, faces)
         case .failed: return nil
         case .stalled: break
         }
-        if case .ok(let r) = unions(d, elevations, faces, surface, cities, perimeter: true) { return (r, true, faces) }
+        if case .ok(let r) = unions(d, elevations, faces, surface, cities, perimeter: true, balanceAreas: balanceAreas) { return (r, true, faces) }
         return nil
     }
 
     enum Outcome { case ok([Region]), stalled, failed }
-    static func unions(_ d: TerrainDocument, _ elevations: [Int], _ faces: [Face], _ surface: Climate.Surface, _ cities: Int, perimeter: Bool) -> Outcome {
+    static func unions(_ d: TerrainDocument, _ elevations: [Int], _ faces: [Face], _ surface: Climate.Surface, _ cities: Int, perimeter: Bool, balanceAreas: Bool = false) -> Outcome {
         let scale = 1000 / max(d.width, d.height)
         if !perimeter {
             if faces.count < cities { return .failed }
@@ -141,6 +178,7 @@ public enum Regions {
         var rivers = Set<String>()
         for (a, b) in surface.rivers.segments { rivers.insert(edgeKey(Vertex(key: "p\(a)", x: 0, y: 0), Vertex(key: "p\(b)", x: 0, y: 0))) }
         var clusters = faces.enumerated().map { i, f -> Cluster in let p = middle(f.ring); return Cluster(ring: f.ring, area: polygonArea(f.ring), x: p.0, y: p.1, height: f.height, members: [i]) }
+        let targetArea = clusters.reduce(0.0) { $0 + $1.area } / Double(max(1, cities))
         var edges = [String: Int]()
         for i in faces.indices { let f = faces[i]; for k in f.ring.indices {
             let a = f.ring[k], b = f.ring[(k + 1) % f.ring.count], key = edgeKey(a, b), length = jsHypot(a.x - b.x, a.y - b.y)
@@ -158,12 +196,18 @@ public enum Regions {
             let ward = (dx * dx + dy * dy) * x.area * y.area / (x.area + y.area)
             let neck = 1 + min(4, min(x.area, y.area).squareRoot() / max(border.length, 1e-9))
             let cost: Double
+            // App 新世界面积均衡：极小边角州在合并队列中获得优先折扣，避免被山河阻力孤立成 1%–3% 细碎边角。
+            let smallFactor: Double = {
+                guard balanceAreas, targetArea > 0 else { return 1.0 }
+                let minA = min(x.area, y.area), floorA = targetArea * 0.45
+                return minA < floorA ? max(0.08, (minA / floorA) * 0.40) : 1.0
+            }()
             if perimeter {
                 let boundary = Double(x.ring.count + y.ring.count - 2 * border.edges), r = boundary / 200
-                cost = ward * neck * border.resistance / border.length * (1 + r * r)
+                cost = ward * neck * border.resistance / border.length * (1 + r * r) * smallFactor
             } else {
                 let r = max(0, Double(x.ring.count + y.ring.count - 2 * border.edges - 60) / 60)
-                cost = ward * neck * border.resistance / border.length * (1 + r * r)
+                cost = ward * neck * border.resistance / border.length * (1 + r * r) * smallFactor
             }
             heap.push(Entry(a: a, b: b, ar: x.revision, br: y.revision, cost: cost))
         }

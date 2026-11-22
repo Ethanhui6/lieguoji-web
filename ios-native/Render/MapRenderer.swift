@@ -625,8 +625,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Where every icon is drawn right now (mid-walk included), for taps and troop labels.
-    /// 军队图标的缩放系数（屏幕点 / 图标基准尺寸），与着色器 spriteVertex 同一规则。
-    static func iconZoom(_ scale: Double) -> Double { min(26 / 3.0112, max(11 / 3.0112, scale * 0.8)) }
+    /// 军队图标的缩放系数（屏幕点 / 图标基准尺寸），与着色器 spriteVertex 同一规则（收巧约 22%，不遮国界与战线）。
+    static func iconZoom(_ scale: Double) -> Double { min(21.0 / 3.0112, max(8.8 / 3.0112, scale * 0.66)) }
     /// 一支军队主图标在屏幕上的边长（点）。
     static func iconPoints(_ scale: Double, iconScale: Double) -> Double { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * iconZoom(scale) }
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
@@ -1131,19 +1131,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float detail = clamp((in.scale - 0.5) / 1.5, 0.0, 1.0);
         float g1 = vnoise(in.world * 0.55) - 0.5;
         float g2 = vnoise(in.world * 1.95 + float2(13.7, 7.3)) - 0.5;
-        float grain = (g1 * 0.024 + g2 * 0.020 * detail);
+        float grain = (g1 * 0.025 + g2 * 0.024 * detail);
         float3 rgb = in.color.rgb;
         float lum = dot(rgb, float3(0.299, 0.587, 0.114));
         if (u.lighting > 0.01) {
             float k = u.lighting;
-            // 西北向阳面泛暖玉金光，东南背阴面沉静冷青，山河起伏更通透立体且绝不发灰脏浊
-            float3 warm = float3(1.036, 1.018, 0.982);
-            float3 cool = float3(0.958, 0.972, 1.010);
-            rgb *= mix(float3(1.0), mix(cool, warm, smoothstep(0.30, 0.74, lum)), k);
-            // 柔和飘云斑驳光影（微晴增亮 + 轻云微冷柔影，绝不遮挡国界与地名）
+            // 西北向阳面泛暖玉金光，东南背阴面沉静冷青，山河起伏层次更鲜明且绝不发灰脏浊
+            float3 warm = float3(1.048, 1.024, 0.976);
+            float3 cool = float3(0.942, 0.962, 1.016);
+            rgb *= mix(float3(1.0), mix(cool, warm, smoothstep(0.28, 0.74, lum)), k);
+            // 柔和飘云斑驳光影（克制浓度，绝不压暗国界与地名）
             float cloud = cloudCover(in.world, u.time);
-            float3 cloudTint = mix(float3(1.022, 1.014, 0.996), float3(0.928, 0.944, 0.972), cloud);
-            rgb *= mix(float3(1.0), cloudTint, k * 0.85);
+            float3 cloudTint = mix(float3(1.018, 1.012, 0.996), float3(0.938, 0.952, 0.976), cloud);
+            rgb *= mix(float3(1.0), cloudTint, k * 0.72);
             // 统一全局西北御案光照
             float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
             rgb *= studioLight(mapUV, k);
@@ -1218,9 +1218,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // Marks at least 22 points tall (an army mark is 5 map units), so whose army it is reads at
         // every zoom; banner and pips keep their proportions. The shift (in the quad's own size)
         // places the banner and the pips around the army's point.
-        // 屏幕尺寸规则（与 MapRenderer.iconZoom 一致）：远景 11 点、随缩放增长、近景封顶 26 点，
-        // 远看不再盖住战线与地名，近看不会大到遮住整州。
-        float pixels = s.size * clamp(u.scale * 0.8, 11.0 / 3.0112, 26.0 / 3.0112);
+        // 屏幕尺寸规则（与 MapRenderer.iconZoom 一致）：远景 8.8 点、随缩放增长、近景封顶 21 点，
+        // 图标收巧约 22%，清晰露出国界与战线推进，触控区仍由 MapView 保持 ≥22pt。
+        float pixels = s.size * clamp(u.scale * 0.66, 8.8 / 3.0112, 21.0 / 3.0112);
         // Alpha below zero: the icon fades in over the leg (new and re-formed armies).
         // Alpha −2: an army that fell fades out over the leg.
         float4 tint = float4(s.tint);
@@ -1249,7 +1249,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     vertex SpriteOut spriteShadowVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
                                         constant float& time [[buffer(5)]]) {
         SpriteVertex s = v[id];
-        float pixels = s.size * clamp(u.scale * 0.8, 11.0 / 3.0112, 26.0 / 3.0112);
+        float pixels = s.size * clamp(u.scale * 0.66, 8.8 / 3.0112, 21.0 / 3.0112);
         float4 tint = float4(s.tint);
         if (tint.a < -1.5) { float d = -tint.a - 2.0; tint.a = 1.0 - clamp((progress - d) / 0.15, 0.0, 1.0); }
         else if (tint.a < 0.0) tint.a = progress;

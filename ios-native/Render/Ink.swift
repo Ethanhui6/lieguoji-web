@@ -68,11 +68,12 @@ struct InkPipelines {
         float3 col = float3(inkToSrgb(lin.r), inkToSrgb(lin.g), inkToSrgb(lin.b));
         col = in.terrain + (col - in.terrain) * k.density;
         col = min(float3(1.0), col * in.shade);
-        // 细微宣纸湿墨边缘：前沿处略微聚墨收深，保留原色清透质感，不抢国色。
-        float capillary = reached * (1.0 - reached) * 4.0 * (1.0 - show * 0.42);
-        col *= (1.0 - 0.11 * capillary);
-        // 刚显出时略淡，像墨刚落下还在洇。
-        return float4(col, reached * (0.85 + 0.15 * show));
+        // 宣纸湿墨聚边笔锋：推进前沿处聚墨收深呈手绘水墨浸润感，稳定后徐徐趋平，不掩国界与地貌。
+        float capillary = reached * (1.0 - reached) * 4.0;
+        float wetCrest = capillary * (1.0 - show * 0.55);
+        col *= (1.0 - 0.22 * wetCrest - 0.06 * capillary);
+        // 刚显出时略淡，像墨刚落下还在宣纸上洇开。
+        return float4(col, reached * (0.86 + 0.14 * show));
     }
     """
 }

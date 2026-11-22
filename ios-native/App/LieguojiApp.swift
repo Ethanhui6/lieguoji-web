@@ -27,6 +27,8 @@ enum Theme {
     static let wash = Color(red: 0.925, green: 0.894, blue: 0.835)
     static let seal = Color(red: 0.706, green: 0.255, blue: 0.18)
     static let jade = Color(red: 0.184, green: 0.365, blue: 0.314)
+    static let gold = Color(red: 0.686, green: 0.494, blue: 0.145)
+    static let danger = Color(red: 0.745, green: 0.188, blue: 0.145)
     /// Backdrop behind the map. Follows the sea preset so the edges are not a different blue.
     static func seaColor(_ ocean: String) -> Color {
         let c = MapPalette.ocean(ocean).deep

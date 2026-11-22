@@ -85,6 +85,8 @@ struct GameView: View {
     @State private var nationDetent: PresentationDetent = .fraction(0.38)
     /// The world was paused by a big panel and resumes when it closes.
     @State private var pausedByPanel = false
+    /// 等待竖屏原生 `.sheet` 完全收起后再进入山河回放，彻底消除 UIKit 转场竞态与残余遮罩。
+    @State private var pendingReplayDay: Int?? = nil
     @Namespace private var tabMarker
     @Environment(\.verticalSizeClass) private var verticalClass
     /// 横屏 on a phone: its own layout (a rail down the left, pages beside the map).
@@ -160,16 +162,28 @@ struct GameView: View {
         .statusBarHidden()
         .overlay(alignment: .bottom) {
             Group {
-                if landscape { EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }.frame(maxWidth: 380).padding(.bottom, 4) }
-                else { bottomBar }
+                if landscape {
+                    EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }
+                        .frame(maxWidth: 380).padding(.bottom, 6)
+                        .opacity(panel == nil ? 1 : 0)
+                        .allowsHitTesting(panel == nil)
+                } else {
+                    bottomBar
+                }
             }
             .offset(y: chromeIn ? 0 : 130).opacity(chromeIn ? 1 : 0)
             .animation(Motion.drift.delay(0.12), value: chromeIn)
             .opacity(wallpaper || model.replayActive ? 0 : 1).allowsHitTesting(!wallpaper && !model.replayActive)
             .task { try? await Task.sleep(nanoseconds: 250_000_000); entered = true }
         }
-        .overlay(alignment: .topLeading) {
-            if landscape { landscapeRail.offset(x: chromeIn ? 0 : -120).animation(Motion.drift, value: chromeIn).opacity(wallpaper || model.replayActive ? 0 : 1).allowsHitTesting(!wallpaper && !model.replayActive) }
+        .overlay(alignment: .leading) {
+            if landscape {
+                landscapeRail
+                    .offset(x: chromeIn ? 0 : -120)
+                    .animation(Motion.drift, value: chromeIn)
+                    .opacity(wallpaper || model.replayActive ? 0 : 1)
+                    .allowsHitTesting(!wallpaper && !model.replayActive)
+            }
         }
         .overlay {
             if wallpaper {
@@ -180,17 +194,20 @@ struct GameView: View {
         }
         .overlay(alignment: .bottomLeading) {
             if !model.viewLegend.isEmpty && !model.replayActive {
-                MapViewLegend(mode: model.mapView, legend: model.viewLegend, open: { allianceMenu($0) }).padding(.leading, landscape ? 84 : 14).padding(.bottom, landscape ? 40 : model.state?.events.isEmpty == false ? 120 : 80)
+                MapViewLegend(mode: model.mapView, legend: model.viewLegend, open: { allianceMenu($0) })
+                    .padding(.leading, landscape ? 80 : 16)
+                    .padding(.bottom, landscape ? 44 : model.state?.events.isEmpty == false ? 120 : 80)
                     .transition(.asymmetric(insertion: .scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity), removal: .opacity))
             }
         }
         .animation(Motion.panel, value: model.viewLegend)
         .pressMenuHost($legendMenu)
         .overlay(alignment: .topTrailing) {
+            let hideSwitcher = model.replayActive || (landscape && panel != nil)
             MapViewSwitcher(mode: $model.mapView, open: $viewsOpen)
-                .opacity(model.replayActive ? 0 : 1)
-                .allowsHitTesting(viewsOpen && !model.replayActive)
-                .padding(.top, 52).padding(.trailing, 14)
+                .opacity(hideSwitcher ? 0 : 1)
+                .allowsHitTesting(viewsOpen && !hideSwitcher)
+                .padding(.top, 54).padding(.trailing, Theme.Control.screenInset)
         }
         .overlay {
             // 可隐藏的精致四角吸附局势浮印：收起为小巧印章，展开含战况/外交/回放/启停/倍速与一键隐藏。
@@ -201,7 +218,7 @@ struct GameView: View {
                     model: model,
                     openWars: { MilitarySheet.openOn = "wars"; show(.military) },
                     openDiplomacy: { show(.diplomacy) },
-                    openReplay: { Task { await model.enterReplay() } },
+                    openReplay: { requestReplay(atDay: nil) },
                     onHide: {
                         controller.play.showTacticalPill = false
                         say("已隐藏局势浮印，可在菜单 › 声音与其他重新开启")
@@ -325,11 +342,8 @@ struct GameView: View {
                     Text(toast).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.leading, 10).padding(.trailing, 16).padding(.vertical, 10)
-                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 0.9))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.seal.opacity(0.18), lineWidth: 0.6).padding(2.5))
-                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.16), radius: 10, y: 4)
-                .padding(.horizontal, 24).padding(.bottom, 114)
+                .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+                .padding(.horizontal, 24).padding(.bottom, landscape ? 56 : 114)
                 .id(toastSerial)
                 .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.94, anchor: .bottom)), removal: .opacity.combined(with: .offset(y: -10))))
                 .onTapGesture { self.toast = nil }
@@ -345,6 +359,10 @@ struct GameView: View {
                 controller.selectedFleet = nil; controller.selectedFleetId = nil
                 if controller.marchingArmy == nil { controller.selectedArmy = nil; controller.selectedArmyId = nil }
             }
+            if let pending = pendingReplayDay {
+                pendingReplayDay = nil
+                Task { await model.enterReplay(atDay: pending) }
+            }
         }) {
             if let panel = panel ?? lastPanel {
                 sheet(for: panel)
@@ -352,7 +370,7 @@ struct GameView: View {
                     .transition(.asymmetric(insertion: .move(edge: backward ? .leading : .trailing).combined(with: .opacity),
                                             removal: .move(edge: backward ? .trailing : .leading).combined(with: .opacity)))
                     .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
-                    .presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(28).font(Theme.section)
+                    .presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet).font(Theme.section)
             }
         }
     }
@@ -455,12 +473,7 @@ struct GameView: View {
                 controller.selectedArmy = a
                 open(.army(a))
             }, openPeople: { nationDetent = .fraction(0.38); open(.people(n)) }, openWars: { nationDetent = .fraction(0.38); open(.nationWars(n)) }, openTalks: { nationDetent = .fraction(0.38); open(.nationTalks(n)) }, openReplay: {
-                pausedByPanel = false
-                closePage()
-                Task {
-                    try? await Task.sleep(nanoseconds: 180_000_000)
-                    await model.enterReplay()
-                }
+                requestReplay(atDay: nil)
             })
                 .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
                 .onAppear { if NationSheet.tourTab != nil { nationDetent = .large } }
@@ -506,12 +519,7 @@ struct GameView: View {
                openChronicle: { n in ChronicleSheet.openNation = n; open(.chronicle) }).presentationDetents([.medium, .large])
         case .chronicle:
             ChronicleSheet(model: model, fly: { controller.fly(to: $0) }, openReplay: { targetDay in
-                pausedByPanel = false
-                closePage()
-                Task {
-                    try? await Task.sleep(nanoseconds: 180_000_000)
-                    await model.enterReplay(atDay: targetDay)
-                }
+                requestReplay(atDay: targetDay)
             }).presentationDetents([.medium, .large])
         case .menu:
             MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }, openEditor: { open(.editor) },
@@ -664,11 +672,11 @@ struct GameView: View {
 
     @ViewBuilder private var mainTabs: some View {
         let flex = !landscape
-        TabButton(symbol: "building.columns", title: "国家", glyph: .nation, active: panel?.tab == "nations", marker: tabMarker, flexible: flex) { show(.nations) }
-        TabButton(symbol: "shield", title: "军事", glyph: .military, active: panel?.tab == "military", marker: tabMarker, flexible: flex) { show(.military) }
-        TabButton(symbol: "scroll", title: "外交", glyph: .diplomacy, active: panel?.tab == "diplomacy", marker: tabMarker, flexible: flex) { show(.diplomacy) }
-        TabButton(symbol: "book", title: "纪事", glyph: .chronicle, active: panel?.tab == "chronicle", marker: tabMarker, flexible: flex) { show(.chronicle) }
-        TabButton(symbol: "chart.bar.xaxis", title: "排行", glyph: .ranking, active: panel?.tab == "statistics", marker: tabMarker, flexible: flex) { show(.statistics) }
+        TabButton(symbol: "building.columns", title: "国家", glyph: .nation, active: panel?.tab == "nations", marker: tabMarker, flexible: flex, compact: landscape) { show(.nations) }
+        TabButton(symbol: "shield", title: "军事", glyph: .military, active: panel?.tab == "military", marker: tabMarker, flexible: flex, compact: landscape) { show(.military) }
+        TabButton(symbol: "scroll", title: "外交", glyph: .diplomacy, active: panel?.tab == "diplomacy", marker: tabMarker, flexible: flex, compact: landscape) { show(.diplomacy) }
+        TabButton(symbol: "book", title: "纪事", glyph: .chronicle, active: panel?.tab == "chronicle", marker: tabMarker, flexible: flex, compact: landscape) { show(.chronicle) }
+        TabButton(symbol: "chart.bar.xaxis", title: "排行", glyph: .ranking, active: panel?.tab == "statistics", marker: tabMarker, flexible: flex, compact: landscape) { show(.statistics) }
     }
     private var transport: some View {
         let sealSize: CGFloat = landscape ? 34 : Theme.Control.sealButtonSize
@@ -692,38 +700,60 @@ struct GameView: View {
                 .sensoryFeedback(.impact(weight: .light), trigger: model.playing)
         }
     }
-    /// 横屏: the tabs stand down the left edge, so the map keeps its full height.
+    /// 横屏左侧竖排导航坞：居中悬浮、紧凑 38pt 项高、苹果同心连续圆角（22pt），绝不挤压顶栏或底部安全区。
     private var landscapeRail: some View {
-        VStack(spacing: 4) { mainTabs }
+        VStack(spacing: 2) { mainTabs }
             .padding(.vertical, 6).padding(.horizontal, 4)
-            .glass(RoundedRectangle(cornerRadius: 26, style: .continuous))
-            .padding(.leading, 10).padding(.top, 52)
+            .glass(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .padding(.leading, 10)
+            .padding(.top, 44)
             .animation(Motion.tap, value: panel?.tab)
     }
-    /// 横屏: a page opens beside the map instead of covering it.
+    /// 横屏右侧悬浮奏折面板：苹果悬浮卡片式圆角（24pt 连续曲率），精确适配容器宽度与安全区，不再使用硬编码屏幕宽度与负边距截断。
     @ViewBuilder private var sidePage: some View {
         if landscape, let panel {
-            sheet(for: panel)
-                .id(panel.id)
-                .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
-                .font(Theme.section)
-                .frame(width: min(480, UIScreen.main.bounds.width * 0.52))
-                .frame(maxHeight: .infinity)
-                // The paper runs on past the safe area to the screen's edge; the text stays inside it.
-                .background {
-                    MemorialPaper()
-                        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 22, bottomLeadingRadius: 22, bottomTrailingRadius: 0, topTrailingRadius: 0, style: .continuous))
-                        .shadow(color: .black.opacity(0.25), radius: 16, x: -4)
-                        .padding(.trailing, -90)
-                        .ignoresSafeArea()
+            GeometryReader { geo in
+                let panelW = min(460, max(330, geo.size.width * 0.48))
+                let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    sheet(for: panel)
+                        .id(panel.id)
+                        .safeAreaInset(edge: .top, spacing: 0) { if let last = trail.last { backRow(last) } }
+                        .font(Theme.section)
+                        .frame(width: panelW)
+                        .frame(maxHeight: .infinity)
+                        .background(MemorialPaper(rules: true, fullBleed: false))
+                        .clipShape(shape)
+                        .overlay(shape.stroke(Theme.ink.opacity(0.18), lineWidth: 0.9).allowsHitTesting(false))
+                        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.24), radius: 18, x: -4, y: 4)
+                        .overlay(alignment: .leading) {
+                            Button { closePage() } label: {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Theme.ink)
+                                    .frame(width: 34, height: 34)
+                                    .glass(Circle())
+                            }
+                            .buttonStyle(PressStyle())
+                            .offset(x: -17)
+                        }
+                        .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { if $0.translation.width > 90 && abs($0.translation.height) < 60 { closePage() } })
+                        .padding(.trailing, 8).padding(.vertical, 8)
                 }
-                .overlay(alignment: .leading) {
-                    Button { closePage() } label: { Image(systemName: "chevron.right").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.ink).frame(width: 36, height: 36).glass(Circle()) }
-                        .buttonStyle(PressStyle()).offset(x: -18)
-                }
-                .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { if $0.translation.width > 90 && abs($0.translation.height) < 60 { closePage() } })
-                .ignoresSafeArea(.container, edges: .vertical)
-                .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+            .transition(.move(edge: .trailing).combined(with: .opacity))
+        }
+    }
+    /// 统一进入山河回放：竖屏有原生 sheet 时挂起待 onDismiss 彻底完成后再开回放；横屏或无 sheet 时直接进入。
+    private func requestReplay(atDay targetDay: Int?) {
+        pausedByPanel = false
+        if !landscape && panel != nil {
+            pendingReplayDay = .some(targetDay)
+            closePage()
+        } else {
+            closePage()
+            Task { await model.enterReplay(atDay: targetDay) }
         }
     }
     /// 导出地图截图: the controls step aside for a moment, the screen is drawn to an image and shared.
@@ -773,7 +803,8 @@ struct GameView: View {
     }
 }
 
-/// 推演启停朱印钮：与 54pt 底栏绝对同心（44×44pt，四周留白 5pt），取消溢出的红圈闪烁，采用温润内描边与利落图标切换。
+/// 推演启停朱印钮：与 54pt 底栏绝对同心（44×44pt，四周留白 5pt）。
+/// 彻底回归原本温润宣纸朱印风格：推演中为朱砂实印（宣纸暂停符），暂停时为宣纸底配朱砂双框印（朱砂播放符），彻底消除突兀黑圆块。
 private struct PlaySealButton: View {
     let playing: Bool
     var size: CGFloat = Theme.Control.sealButtonSize
@@ -782,12 +813,22 @@ private struct PlaySealButton: View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(playing ? Theme.seal : Theme.ink)
-                    .overlay(Circle().strokeBorder(Theme.paper2.opacity(0.32), lineWidth: 0.9).padding(2.5))
-                    .shadow(color: (playing ? Theme.seal : Theme.ink).opacity(0.22), radius: 4, y: 1.5)
+                    .fill(playing ? Theme.seal : Theme.paper2)
+                    .overlay(
+                        Circle()
+                            .strokeBorder(playing ? Theme.paper2.opacity(0.32) : Theme.seal.opacity(0.72), lineWidth: playing ? 0.9 : 1.35)
+                            .padding(playing ? 2.5 : 0.8)
+                    )
+                    .overlay(
+                        Circle()
+                            .strokeBorder(playing ? Color.clear : Theme.seal.opacity(0.22), lineWidth: 0.6)
+                            .padding(3.5)
+                    )
+                    .shadow(color: Theme.seal.opacity(playing ? 0.24 : 0.12), radius: 4, y: 1.5)
                     .frame(width: size, height: size)
-                InkIcon(glyph: playing ? .pause : .play, size: size * 0.39, weight: 1.95, accent: Theme.paper2.opacity(0.88))
-                    .foregroundStyle(Theme.paper2)
+                InkIcon(glyph: playing ? .pause : .play, size: size * 0.39, weight: 1.95,
+                        accent: (playing ? Theme.paper2 : Theme.seal).opacity(0.88))
+                    .foregroundStyle(playing ? Theme.paper2 : Theme.seal)
                     .offset(x: playing ? 0 : 1)
                     .id(playing)
                     .transition(.scale(scale: 0.76).combined(with: .opacity))

@@ -337,6 +337,7 @@ struct NewWorldSheet: View {
     var draw: ((GameModel.NewWorld) -> Void)? = nil
     /// The original grid, for the picture of the land this seed makes.
     var inputs: PreviewWorld.Inputs? = nil
+    @Environment(\.verticalSizeClass) private var verticalClass
     @State private var options = GameModel.NewWorld()
     /// The seed used while the field is left blank, so the land shown is the land founded.
     @State private var rolled = String(UInt32.random(in: 0...UInt32.max))
@@ -478,9 +479,9 @@ struct NewWorldSheet: View {
                         } label: {
                             Text(sp.title).font(Theme.kai(12)).lineLimit(1).minimumScaleFactor(0.78)
                                 .foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                .frame(maxWidth: .infinity).frame(height: 32)
-                                .background(on ? Theme.ink : Theme.paper2, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.15), lineWidth: 0.8))
+                                .frame(maxWidth: .infinity).frame(height: 34)
+                                .background(on ? Theme.seal : Theme.paper2.opacity(0.88), in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.15), lineWidth: 0.85))
                         }
                         .buttonStyle(PressStyle())
                     }
@@ -573,27 +574,32 @@ struct NewWorldSheet: View {
         .scrollIndicators(.hidden)
         .task(id: "\(seed)|\(options.template)|\(previewShowNations ? options.nations : 0)") { await drawTerrain() }
     }
-    /// 高清山河预览卡：展示地形浮雕／预计列国版图切换、实测陆海山地占比与随机换图按钮。
+    /// 高清山河预览卡：统一温润宣纸胶囊浮标（移除深黑底块）、自适应横屏高度，并展示地形/势力切换与实测勘测数据。
     private var terrainCard: some View {
-        VStack(spacing: 0) {
+        let compactH = verticalClass == .compact
+        return VStack(spacing: 0) {
             ZStack(alignment: .bottomTrailing) {
                 Group {
-                    if let terrain { Image(uiImage: terrain).resizable().transition(.opacity) } else { Theme.paper2 }
+                    if let terrain { Image(uiImage: terrain).resizable().scaledToFill().transition(.opacity) } else { Theme.paper2 }
                 }
-                .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .frame(height: compactH ? 168 : 204)
+                .clipped()
                 .overlay(alignment: .topLeading) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         Text(Names.templates.first(where: { $0.id == options.template })?.name ?? options.template)
-                            .font(Theme.caption).foregroundStyle(Theme.paper2)
+                            .font(Theme.caption).foregroundStyle(Theme.ink)
                         Text("· \(options.nations)国 \(options.provinceCount)州")
-                            .font(Theme.caption).foregroundStyle(Theme.paper2.opacity(0.88)).monospacedDigit()
+                            .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
                     }
                     .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(Theme.ink.opacity(0.72), in: Capsule())
+                    .background(Theme.paper2.opacity(0.92), in: Capsule())
+                    .overlay(Capsule().stroke(Theme.ink.opacity(0.16), lineWidth: 0.75))
+                    .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.14), radius: 5, y: 2)
                     .padding(10)
                 }
                 .overlay(alignment: .topTrailing) {
-                    // 地形图 / 势力分布实时切换胶囊
+                    // 地形图 / 势力分布实时切换宣纸胶囊
                     HStack(spacing: 2) {
                         ForEach([(false, "地貌"), (true, "势力")], id: \.0) { mode, label in
                             Button {
@@ -601,15 +607,17 @@ struct NewWorldSheet: View {
                                 withAnimation(Motion.tap) { previewShowNations = mode }
                             } label: {
                                 Text(label).font(Theme.kai(11))
-                                    .foregroundStyle(previewShowNations == mode ? Theme.ink : Theme.paper2.opacity(0.88))
+                                    .foregroundStyle(previewShowNations == mode ? Theme.paper2 : Theme.ink)
                                     .padding(.horizontal, 9).frame(height: 24)
-                                    .background(previewShowNations == mode ? Theme.paper2 : Color.clear, in: Capsule())
+                                    .background(previewShowNations == mode ? Theme.seal : Color.clear, in: Capsule())
                             }
                             .buttonStyle(.plain)
                         }
                     }
                     .padding(2.5)
-                    .background(Theme.ink.opacity(0.68), in: Capsule())
+                    .background(Theme.paper2.opacity(0.92), in: Capsule())
+                    .overlay(Capsule().stroke(Theme.ink.opacity(0.16), lineWidth: 0.75))
+                    .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.14), radius: 5, y: 2)
                     .padding(10)
                 }
                 .overlay {
@@ -631,7 +639,7 @@ struct NewWorldSheet: View {
                     }
                     .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 32)
                     .background(Theme.seal, in: Capsule())
-                    .shadow(color: .black.opacity(0.22), radius: 5, y: 2)
+                    .shadow(color: Theme.seal.opacity(0.28), radius: 5, y: 2)
                 }
                 .buttonStyle(PressStyle()).padding(10)
             }
@@ -651,11 +659,11 @@ struct NewWorldSheet: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(Theme.paper2.opacity(0.96))
+            .background(Theme.paper2.opacity(0.92))
         }
         .clipShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.22), lineWidth: 1))
-        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.12), radius: 10, y: 4)
+        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 0.9))
+        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.10), radius: 8, y: 3)
         .animation(Motion.fade, value: renderingTerrain)
     }
 

@@ -413,74 +413,42 @@ struct DiplomacySheet: View {
     @State private var tab = "board"
     @State private var attacker = 0
     @State private var defender = 1
+    @State private var pickingRole: PickRole? = nil
+    @State private var pairInfo: DiplomacyOverview? = nil
+
+    private enum PickRole: String, Identifiable {
+        case board, source, target
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .board: return "切换观察国家"
+            case .source: return "选择发起国"
+            case .target: return "选择目标国"
+            }
+        }
+    }
+
     var body: some View {
         if let map = model.map, let state = model.state {
-            let alive = state.nations.indices.filter { state.nations[$0].alive && $0 < map.meta.nations.count }
+            let alive = state.nations.indices
+                .filter { state.nations[$0].alive && $0 < map.meta.nations.count }
+                .sorted { state.nations[$0].provinces != state.nations[$1].provinces ? state.nations[$0].provinces > state.nations[$1].provinces : $0 < $1 }
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
-                    SheetHeader(title: "外交", subtitle: state.wars.isEmpty ? "天下太平" : "\(state.wars.count) 场战争进行中")
-                    ChipPicker(items: [("board", "邦交总览"), ("actions", "外交施令"), ("wars", "当前战事")], selection: $tab)
+                    SheetHeader(title: "外交", subtitle: state.wars.isEmpty ? "四海承平 · 邦交纵横" : "\(state.wars.count) 场战争进行中 · \(alive.count) 国存世", seal: "盟")
+                    ChipPicker(items: [("board", "邦交总览"), ("actions", "遣使缔约"), ("wars", "列国战局")], selection: $tab)
                         .padding(.horizontal, Theme.Layout.pageInset)
 
                     if tab == "board" {
-                        // 快速切换查看哪国的邦交（无需拉到最底找列表）
-                        if alive.count > 1 {
-                            Group2 {
-                                PaperMenu(title: "观察国家", items: alive.map { ($0, map.meta.nations[$0].name) }, selection: $attacker)
-                            }
-                            .padding(.horizontal, Theme.Layout.pageInset)
-                        }
-                        DiplomacyBoard(model: model, map: map, state: state, nation: attacker, fly: fly, openNation: openNation, openWars: openWars, openChronicle: openChronicle)
+                        DiplomacyBoard(
+                            model: model, map: map, state: state, nation: attacker,
+                            fly: fly, openNation: openNation, openWars: openWars, openChronicle: openChronicle,
+                            onSwitchNation: alive.count > 1 ? { pickingRole = .board } : nil
+                        )
                     } else if tab == "actions" {
-                        SectionLabel("往来国与目标国")
-                        Group2 {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("发起国").font(Theme.body).foregroundStyle(Theme.ink2)
-                                NationGrid(map: map, nations: alive, selection: $attacker)
-                                Text("目标国").font(Theme.body).foregroundStyle(Theme.ink2).padding(.top, 6)
-                                NationGrid(map: map, nations: alive.filter { $0 != attacker }, selection: $defender)
-                            }
-                            .padding(Theme.Layout.cardPadding)
-                            Divider2()
-                            Button {
-                                Task { if let e = await model.declareWar(attacker, on: defender) { say(e) } else { say(model.state?.events.last?.text ?? "已宣战") } }
-                            } label: { Label("宣战", systemImage: "flag.2.crossed").font(Theme.section).frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(Theme.seal) }
-                            .buttonStyle(.plain).disabled(attacker == defender || !state.nations.indices.contains(attacker) || !state.nations.indices.contains(defender) || !state.nations[attacker].alive || !state.nations[defender].alive)
-                        }
-                        .padding(.horizontal, Theme.Layout.pageInset)
-                        SectionLabel("条约与邦交")
-                        DiplomaticActions(model: model, source: attacker, target: defender, say: say).padding(.horizontal, Theme.Layout.pageInset)
+                        envoyPanel(map: map, state: state, alive: alive)
                     } else {
-                        SectionLabel(state.wars.isEmpty ? "当前战事" : "当前战事（\(state.wars.count) 场）")
-                        Group2 {
-                            if state.wars.isEmpty {
-                                Row(label: "战事", value: "天下太平，暂无交战")
-                            }
-                            ForEach(state.wars) { war in
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack(spacing: 8) {
-                                        NationChip(map: map, nation: war.attacker)
-                                        Image(systemName: "bolt.fill").font(.caption).foregroundStyle(Theme.seal)
-                                        NationChip(map: map, nation: war.defender)
-                                        Spacer()
-                                        Button("议和") {
-                                            Task { if let e = await model.makePeace(war.attacker, war.defender) { say(e) } else { say("两国议和") } }
-                                        }
-                                        .font(Theme.body).padding(.horizontal, 12).padding(.vertical, 5)
-                                        .background(Theme.jade.opacity(0.12), in: Capsule()).foregroundStyle(Theme.jade).buttonStyle(.plain)
-                                    }
-                                    Text([war.casusBelli, war.goal].filter { !$0.isEmpty }.joined(separator: " · ")).font(Theme.label).foregroundStyle(Theme.ink2)
-                                    if war.participants.count > 2 {
-                                        Text("参战：" + war.participants.compactMap { p in p.nation >= 0 && p.nation < map.meta.nations.count ? map.meta.nations[p.nation].name : nil }.joined(separator: "、"))
-                                            .font(Theme.label).foregroundStyle(Theme.ink2)
-                                    }
-                                    WarBalance(map: map, state: state, war: war)
-                                }
-                                .padding(16)
-                                if war.id != state.wars.last?.id { Divider2() }
-                            }
-                        }
-                        .padding(.horizontal, Theme.Layout.pageInset)
+                        warsPanel(map: map, state: state, aliveCount: alive.count)
                     }
                 }
                 .padding(.bottom, 24)
@@ -492,6 +460,248 @@ struct DiplomacySheet: View {
                     if defender == value || !alive.contains(defender) { defender = alive.first { $0 != value } ?? -1 }
                 }
             }
+            .task(id: "\(tab)-\(attacker)-\(defender)-\(state.day / 30)") {
+                guard tab == "actions", alive.contains(attacker) else { return }
+                pairInfo = await model.diplomacyInfo(attacker)
+            }
+            .sheet(item: $pickingRole) { role in
+                nationPickerSheet(role: role, map: map, state: state, alive: alive)
+                    .presentationDetents([.medium, .large])
+                    .presentationBackground { MemorialPaper() }
+                    .presentationDragIndicator(.hidden)
+                    .presentationCornerRadius(Theme.Control.cornerSheet)
+                    .font(Theme.section)
+            }
+        }
+    }
+
+    // MARK: - 遣使缔约：双边对席卡片 + 实时好感态势 + 宣战/议和 + 深度条约台
+
+    @ViewBuilder
+    private func envoyPanel(map: WorldMap, state: GameState, alive: [Int]) -> some View {
+        let validPair = attacker != defender && state.nations.indices.contains(attacker) && state.nations.indices.contains(defender)
+            && state.nations[attacker].alive && state.nations[defender].alive
+        let atWar = validPair && state.wars.contains { w in
+            (w.attacker == attacker && w.defender == defender) || (w.attacker == defender && w.defender == attacker)
+                || (w.participants.contains { $0.nation == attacker } && w.participants.contains { $0.nation == defender })
+        }
+        let opinion = pairInfo?.opinions?.first(where: { $0.nation == defender })
+
+        SectionLabel("往来对席（轻点切换双方）")
+        VStack(spacing: 12) {
+            HStack(spacing: 8) {
+                envoySeat(roleLabel: "发起国", nation: attacker, map: map, state: state) { pickingRole = .source }
+                Button {
+                    guard validPair else { return }
+                    GameFeel.shared.tap()
+                    withAnimation(Motion.tap) {
+                        let tmp = attacker
+                        attacker = defender
+                        defender = tmp
+                    }
+                } label: {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.seal)
+                        .frame(width: 34, height: 34)
+                        .background(Theme.seal.opacity(0.10), in: Circle())
+                        .overlay(Circle().stroke(Theme.seal.opacity(0.28), lineWidth: 0.8))
+                }
+                .buttonStyle(PressStyle())
+                envoySeat(roleLabel: "目标国", nation: defender, map: map, state: state) { pickingRole = .target }
+            }
+
+            if validPair {
+                Divider2()
+                HStack(spacing: 10) {
+                    if let opinion {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Text("双边好感").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                PaperTag(
+                                    text: "\(opinion.stance) \(opinion.score > 0 ? "+" : "")\(opinion.score)",
+                                    color: atWar || opinion.score <= -22 ? Theme.seal : opinion.score >= 25 ? Theme.jade : Theme.ink2,
+                                    size: 11
+                                )
+                            }
+                            OpinionGauge(score: opinion.score, height: 5)
+                        }
+                    } else {
+                        Text(atWar ? "两国正处于交战状态" : "两国当前处于和平状态")
+                            .font(Theme.label).foregroundStyle(atWar ? Theme.seal : Theme.ink2)
+                        Spacer()
+                    }
+                    if atWar {
+                        Button {
+                            GameFeel.shared.tap()
+                            Task {
+                                if let e = await model.makePeace(attacker, defender) { say(e) }
+                                else { say("两国已缔结停战和约") }
+                            }
+                        } label: {
+                            Label("立即议和", systemImage: "leaf")
+                                .font(Theme.label).foregroundStyle(Theme.paper2)
+                                .padding(.horizontal, 14).frame(height: 36)
+                                .background(Theme.jade, in: Capsule())
+                        }
+                        .buttonStyle(PressStyle())
+                    } else {
+                        Button {
+                            GameFeel.shared.tap()
+                            Task {
+                                if let e = await model.declareWar(attacker, on: defender) { say(e) }
+                                else { say(model.state?.events.last?.text ?? "已宣战") }
+                            }
+                        } label: {
+                            Label("立即宣战", systemImage: "flag.2.crossed")
+                                .font(Theme.label).foregroundStyle(Theme.paper2)
+                                .padding(.horizontal, 14).frame(height: 36)
+                                .background(Theme.seal, in: Capsule())
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .paperCard()
+        .padding(.horizontal, Theme.Layout.pageInset)
+
+        SectionLabel("条约、联姻与博弈")
+        DiplomaticActions(model: model, source: attacker, target: defender, say: say)
+            .padding(.horizontal, Theme.Layout.pageInset)
+    }
+
+    private func envoySeat(roleLabel: String, nation: Int, map: WorldMap, state: GameState, action: @escaping () -> Void) -> some View {
+        let valid = nation >= 0 && nation < map.meta.nations.count && state.nations.indices.contains(nation)
+        let color = valid ? Names.color(map.meta.nations[nation].color) : Theme.ink2
+        let title = valid ? MapLayers.stateLabel(map.meta.nations[nation].name, full: false) : "请选择"
+        let provs = valid ? state.nations[nation].provinces : 0
+        return Button {
+            GameFeel.shared.tap()
+            action()
+        } label: {
+            HStack(spacing: 8) {
+                RoundedRectangle(cornerRadius: 3.5, style: .continuous).fill(color).frame(width: 6, height: 34)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(roleLabel).font(Theme.kai(11)).foregroundStyle(Theme.ink2)
+                    Text(title).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                    if valid { Text("\(provs) 州").font(Theme.kai(10)).foregroundStyle(Theme.ink2).monospacedDigit() }
+                }
+                Spacer(minLength: 2)
+                Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.ink2)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(Theme.paper.opacity(0.65), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+        }
+        .buttonStyle(PressStyle())
+    }
+
+    // MARK: - 列国战局
+
+    @ViewBuilder
+    private func warsPanel(map: WorldMap, state: GameState, aliveCount: Int) -> some View {
+        let belligerents = Set(state.wars.flatMap { [$0.attacker, $0.defender] + $0.participants.map(\.nation) }).count
+        StatStrip(tiles: [
+            StatTile(label: "进行战事", value: "\(state.wars.count)", warn: !state.wars.isEmpty),
+            StatTile(label: "参战列国", value: "\(belligerents)"),
+            StatTile(label: "围城战场", value: "\(state.sieges.count)", warn: !state.sieges.isEmpty),
+            StatTile(label: "天下存国", value: "\(aliveCount)"),
+        ])
+
+        SectionLabel(state.wars.isEmpty ? "当前战事" : "列国战事（\(state.wars.count) 场）")
+        if state.wars.isEmpty {
+            Group2 { Row(label: "战事", value: "天下太平，暂无交战") }
+                .padding(.horizontal, Theme.Layout.pageInset)
+        } else {
+            VStack(spacing: 10) {
+                ForEach(state.wars) { war in
+                    VStack(alignment: .leading, spacing: 9) {
+                        HStack(spacing: 6) {
+                            Button {
+                                GameFeel.shared.tap()
+                                openNation(war.attacker)
+                            } label: { NationChip(map: map, nation: war.attacker) }
+                            .buttonStyle(PressStyle())
+                            InkIcon(glyph: .war, size: 14, weight: 1.9).foregroundStyle(Theme.seal)
+                            Button {
+                                GameFeel.shared.tap()
+                                openNation(war.defender)
+                            } label: { NationChip(map: map, nation: war.defender) }
+                            .buttonStyle(PressStyle())
+                            Spacer(minLength: 4)
+                            LinkSeal(mark: "都", color: Theme.ink2) { fly(war.defender) }
+                            Button {
+                                GameFeel.shared.tap()
+                                Task { if let e = await model.makePeace(war.attacker, war.defender) { say(e) } else { say("两国议和停战") } }
+                            } label: {
+                                Text("议和").font(Theme.label).foregroundStyle(Theme.jade)
+                                    .padding(.horizontal, 11).frame(height: 28)
+                                    .background(Theme.jade.opacity(0.11), in: Capsule())
+                                    .overlay(Capsule().stroke(Theme.jade.opacity(0.35), lineWidth: 0.8))
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                        let meta = [war.casusBelli, war.goal].filter { !$0.isEmpty }.joined(separator: " · ")
+                        if !meta.isEmpty { Text(meta).font(Theme.label).foregroundStyle(Theme.ink2) }
+                        if war.participants.count > 2 {
+                            Text("参战：" + war.participants.compactMap { p in p.nation >= 0 && p.nation < map.meta.nations.count ? map.meta.nations[p.nation].name : nil }.joined(separator: "、"))
+                                .font(Theme.caption).foregroundStyle(Theme.ink2)
+                        }
+                        WarBalance(map: map, state: state, war: war)
+                    }
+                    .padding(14)
+                    .paperCard(tint: Theme.seal)
+                }
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+        }
+    }
+
+    // MARK: - 选国弹窗
+
+    @ViewBuilder
+    private func nationPickerSheet(role: PickRole, map: WorldMap, state: GameState, alive: [Int]) -> some View {
+        let excluded = role == .target ? attacker : -1
+        let list = alive.filter { $0 != excluded }
+        let selected = role == .target ? defender : attacker
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                SheetHeader(title: role.title, subtitle: "按疆域规模排序，轻点即选", seal: "选")
+                Group2 {
+                    ForEach(Array(list.enumerated()), id: \.element) { idx, n in
+                        let on = n == selected
+                        let troops = state.armies.reduce(0) { $1.nation == n ? $0 + $1.troops : $0 }
+                        Button {
+                            GameFeel.shared.tap()
+                            if role == .target { defender = n } else { attacker = n }
+                            pickingRole = nil
+                        } label: {
+                            HStack(spacing: 10) {
+                                RoundedRectangle(cornerRadius: 3.5, style: .continuous).fill(Names.color(map.meta.nations[n].color)).frame(width: 8, height: 30)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(map.meta.nations[n].name).font(Theme.section).foregroundStyle(on ? Theme.seal : Theme.ink)
+                                    Text("\(state.nations[n].provinces) 州 · \(Names.wan(troops)) 兵").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                }
+                                Spacer()
+                                if on {
+                                    Image(systemName: "checkmark.circle.fill").font(.system(size: 16)).foregroundStyle(Theme.seal)
+                                }
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 10)
+                            .background(on ? Theme.seal.opacity(0.06) : Color.clear)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if idx < list.count - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+            .padding(.bottom, 24)
         }
     }
 }

@@ -59,14 +59,14 @@ struct ChipPicker<T: Hashable>: View {
             .frame(minWidth: compact ? 62 : nil, maxWidth: compact ? nil : .infinity)
             .frame(height: tall ? 48 : 38)
             .background {
-                let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+                let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
                 if on {
                     shape.fill(Theme.seal)
                         .matchedGeometryEffect(id: "chip-pill", in: pill)
-                        .shadow(color: Theme.seal.opacity(0.28), radius: 4, y: 2)
+                        .shadow(color: Theme.seal.opacity(0.24), radius: 4, y: 2)
                 } else {
-                    shape.fill(Theme.paper2.opacity(0.92))
-                        .overlay(shape.stroke(Theme.ink.opacity(0.18), lineWidth: 1))
+                    shape.fill(Theme.paper2.opacity(0.88))
+                        .overlay(shape.stroke(Theme.ink.opacity(0.15), lineWidth: 0.9))
                 }
             }
         }

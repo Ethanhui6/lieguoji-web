@@ -230,12 +230,10 @@ struct NationDecreesTab: View {
             }
         }
         .padding(14)
-        .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
-        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.07), radius: 6, y: 2)
+        .paperCard()
         .padding(.horizontal, Theme.Layout.pageInset)
 
-        // 2. 四大治国领域细分筛选
+        // 2. 四大治国领域细分筛选（统一温润朱砂选中态，告别突兀黑底）
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 7) {
                 ForEach(ReformDomain.allCases, id: \.self) { dom in
@@ -248,8 +246,8 @@ struct NationDecreesTab: View {
                             .font(Theme.label)
                             .foregroundStyle(on ? Theme.paper2 : Theme.ink)
                             .padding(.horizontal, 12).frame(height: 30)
-                            .background(on ? Theme.ink : Theme.paper2.opacity(0.9), in: Capsule())
-                            .overlay(Capsule().stroke(on ? Color.clear : Theme.ink.opacity(0.15), lineWidth: 0.8))
+                            .background(on ? Theme.seal : Theme.paper2.opacity(0.88), in: Capsule())
+                            .overlay(Capsule().stroke(on ? Color.clear : Theme.ink.opacity(0.15), lineWidth: 0.85))
                     }
                     .buttonStyle(PressStyle())
                 }
@@ -341,9 +339,9 @@ struct NationDecreesTab: View {
                         }
                         .padding(10)
                         .frame(maxWidth: .infinity, minHeight: 82, alignment: .topLeading)
-                        .background(r.on ? Theme.seal.opacity(0.07) : Theme.paper.opacity(0.6), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(r.on ? Theme.seal.opacity(0.55) : Theme.ink.opacity(0.12), lineWidth: r.on ? 1.2 : 0.8))
-                        .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                        .background(r.on ? Theme.seal.opacity(0.07) : Theme.paper.opacity(0.58), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(r.on ? Theme.seal.opacity(0.55) : Theme.ink.opacity(0.12), lineWidth: r.on ? 1.2 : 0.8))
+                        .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
                     }
                     .buttonStyle(PressStyle())
                     .disabled(busy)
@@ -351,8 +349,7 @@ struct NationDecreesTab: View {
             }
         }
         .padding(13)
-        .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
+        .paperCard()
         .padding(.horizontal, Theme.Layout.pageInset)
     }
 
@@ -428,8 +425,7 @@ struct NationDecreesTab: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
-                    .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
+                    .paperCard()
                     .opacity(busy ? 0.55 : 1)
                     .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
                 }

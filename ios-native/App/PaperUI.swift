@@ -71,10 +71,16 @@ struct MemorialPaper: View {
     }()
     var body: some View {
         // The base colour takes exactly the offered size; the pre-baked image is an overlay clipped to
-        // it, so the paper never widens or lengthens the view it backs and costs near-zero CPU.
+        // it. Crucially, `scaledToFill()` on a 1024×1024 square extends its hit-test rect far beyond
+        // `.clipped()`/`.clipShape()` in SwiftUI, so both decorative overlays MUST disable hit-testing
+        // and the base must clip hit-testing via `.contentShape(Rectangle())`.
         let image = rules ? (Self.ruledTexture ?? Self.texture) : Self.texture
         let paper = Theme.paper
-            .overlay { if let t = image { Image(uiImage: t).resizable().scaledToFill() } }
+            .overlay {
+                if let t = image {
+                    Image(uiImage: t).resizable().scaledToFill().allowsHitTesting(false)
+                }
+            }
             .overlay(alignment: .top) {
                 // The brocade binding of a memorial's cover: a deep red band edged in gold.
                 if rules && fullBleed {
@@ -82,9 +88,11 @@ struct MemorialPaper: View {
                         LinearGradient(colors: [Color(red: 0.45, green: 0.12, blue: 0.08), Color(red: 0.6, green: 0.18, blue: 0.11)], startPoint: .top, endPoint: .bottom).frame(height: 5)
                         Rectangle().fill(Color(red: 0.78, green: 0.62, blue: 0.3).opacity(0.85)).frame(height: 1)
                     }
+                    .allowsHitTesting(false)
                 }
             }
             .clipped()
+            .contentShape(Rectangle())
         if fullBleed { paper.ignoresSafeArea() } else { paper }
     }
 }
@@ -243,21 +251,16 @@ struct MapViewSwitcher: View {
     /// becomes a grid of four.
     @Environment(\.verticalSizeClass) private var vertical
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
         Group {
             if vertical == .compact {
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 2), count: 4), spacing: 2) { buttons }
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 2), count: 5), spacing: 2) { buttons }
             } else {
                 VStack(spacing: 2) { buttons }
             }
         }
         .padding(5)
-        .background(
-            shape.fill(Theme.paper2.opacity(0.97))
-                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
-        )
-        .overlay(shape.stroke(Theme.ink.opacity(0.2), lineWidth: 1))
-        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Theme.seal.opacity(0.22), lineWidth: 0.6).padding(3))
+        .glass(shape)
         .offset(y: open ? 0 : -14)
         .scaleEffect(open ? 1 : 0.94, anchor: .topTrailing)
         .opacity(open ? 1 : 0)
@@ -275,9 +278,14 @@ struct MapViewSwitcher: View {
                     Text(m.title).font(Theme.label)
                 }
                 .foregroundStyle(mode == m ? Theme.paper2 : Theme.ink)
-                .frame(width: 50, height: 48)
+                .frame(width: 50, height: 46)
                 .background {
-                    if mode == m { RoundedRectangle(cornerRadius: 9).fill(Theme.seal).matchedGeometryEffect(id: "seal", in: marker).shadow(color: Theme.seal.opacity(0.35), radius: 4, y: 2) }
+                    if mode == m {
+                        RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                            .fill(Theme.seal)
+                            .matchedGeometryEffect(id: "seal", in: marker)
+                            .shadow(color: Theme.seal.opacity(0.28), radius: 4, y: 2)
+                    }
                 }
             }
             .buttonStyle(PressStyle())
@@ -298,11 +306,11 @@ struct MapViewLegend: View {
                 Spacer(minLength: 4)
                 Text("\(legend.count)").font(Theme.caption).foregroundStyle(Theme.ink2)
             }
-            Rectangle().fill(Theme.ink.opacity(0.25)).frame(height: 0.8)
-            ForEach(Array(legend.prefix(6).enumerated()), id: \.offset) { i, e in
+            Rectangle().fill(Theme.ink.opacity(0.2)).frame(height: 0.8)
+            ForEach(Array(legend.prefix(6).enumerated()), id: \.offset) { _, e in
                 HStack(spacing: 7) {
-                    RoundedRectangle(cornerRadius: 2).fill(Names.color(e.color)).frame(width: 12, height: 12)
-                        .overlay(RoundedRectangle(cornerRadius: 2).stroke(Theme.ink.opacity(0.25), lineWidth: 0.5))
+                    RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Names.color(e.color)).frame(width: 12, height: 12)
+                        .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).stroke(Theme.ink.opacity(0.22), lineWidth: 0.5))
                     Text(e.name.isEmpty ? "—" : e.name).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1)
                     Spacer(minLength: 4)
                     Text("\(e.count)省").font(Theme.caption).foregroundStyle(Theme.ink2)
@@ -313,10 +321,8 @@ struct MapViewLegend: View {
                 .transition(.opacity.combined(with: .move(edge: .leading)))
             }
         }
-        .padding(12).frame(width: 168)
-        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 12)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
-        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.18), radius: 10, y: 4)
+        .padding(12).frame(width: 172)
+        .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
     }
 }
 
@@ -368,8 +374,10 @@ struct StatisticsSheet: View {
     }
     @State private var category = "power"
     @State private var rows: [StatisticsRow] = []
-    @State private var brushed = false
+    @State private var entered = false
+    @State private var switchTick = 0
     @Namespace private var catPill
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         ZStack {
             MemorialPaper()
@@ -378,7 +386,7 @@ struct StatisticsSheet: View {
                     MemorialHeader(title: Self.categories.first { $0.id == category }?.title ?? "", subtitle: model.state.map { "\($0.dateText) · 呈御览" }, seal: "奏折")
                     ScrollViewReader { proxy in
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 6) {
+                            HStack(spacing: 7) {
                                 ForEach(Self.categories, id: \.id) { c in
                                     let on = category == c.id
                                     Button {
@@ -388,21 +396,23 @@ struct StatisticsSheet: View {
                                         HStack(spacing: 5) {
                                             if let g = GameActionLabel.glyph(for: Self.categoryIcon[c.id] ?? "") {
                                                 InkIcon(glyph: g, size: 15, weight: on ? 1.85 : 1.55, filled: on,
-                                                        accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.26))
-                                                    .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.9))
+                                                        accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.24))
+                                                    .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.88))
                                             } else {
                                                 Image(systemName: Self.categoryIcon[c.id] ?? "list.number").font(.system(size: 13)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
                                             }
                                             Text(c.title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                                         }
-                                        .padding(.horizontal, 14).frame(height: 40)
+                                        .padding(.horizontal, 14).frame(height: 38)
                                         .background {
+                                            let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
                                             if on {
-                                                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.seal)
+                                                shape.fill(Theme.seal)
                                                     .matchedGeometryEffect(id: "stat-cat", in: catPill)
+                                                    .shadow(color: Theme.seal.opacity(0.24), radius: 5, y: 2)
                                             } else {
-                                                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.paper2)
-                                                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.2)))
+                                                shape.fill(Theme.paper2.opacity(0.88))
+                                                    .overlay(shape.stroke(Theme.ink.opacity(0.15), lineWidth: 0.9))
                                             }
                                         }
                                     }
@@ -410,82 +420,134 @@ struct StatisticsSheet: View {
                                     .id(c.id)
                                 }
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, Theme.Layout.pageInset)
                         }
                         .onChange(of: category) { _, next in withAnimation(Motion.tap) { proxy.scrollTo(next, anchor: .center) } }
                     }
                     let top = max(1, rows.map { abs($0.value) }.max() ?? 1)
-                    // 天下前三甲颁台（魁首 / 榜眼 / 探花）：视觉与国家列表、外交列表清晰区隔
-                    if rows.count >= 3 && category != "wars" && category != "campaigns" {
-                        podiumStrip(rows: Array(rows.prefix(3)))
-                            .padding(.horizontal, 16)
+                    let showPodium = rows.count >= 3 && category != "wars" && category != "campaigns"
+                    // 天下前三甲颁台（魁首 / 榜眼 / 探花）：三阶递升弹簧入场，切换榜单丝滑过渡零闪白
+                    if showPodium {
+                        podiumStrip(rows: Array(rows.prefix(3)), top: top)
+                            .padding(.horizontal, Theme.Layout.pageInset)
+                            .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
                     }
-                    let restOffset = (rows.count >= 3 && category != "wars" && category != "campaigns") ? 3 : 0
+                    let restOffset = showPodium ? 3 : 0
                     let shownRows = Array(rows.dropFirst(restOffset))
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(shownRows.enumerated()), id: \.element.id) { offset, row in
-                            let i = offset + restOffset
-                            Button { if row.nation >= 0 { openNation(row.nation) } } label: {
-                                HStack(spacing: 12) {
-                                    Text(ChineseNumeral.of(i + 1)).font(Theme.kai(i < 3 ? 22 : 16)).foregroundStyle(i < 3 ? Theme.seal : Theme.ink2).frame(width: 34)
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        HStack {
-                                            if let c = row.color { RoundedRectangle(cornerRadius: 2).fill(Names.color(c)).frame(width: 10, height: 10) }
-                                            Text(row.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                                            Spacer(minLength: 6)
-                                            Text(row.text).font(Theme.label).foregroundStyle(row.value < 0 ? Theme.seal : Theme.ink2).monospacedDigit()
-                                        }
-                                        InkBar(fraction: brushed ? abs(row.value) / top : 0, color: row.color.map { Names.color($0) } ?? Theme.ink, height: 4, gradient: true)
-                                            .animation(Motion.reveal.delay(min(0.4, Double(offset) * 0.035)), value: brushed)
+                    Group2 {
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(shownRows.enumerated()), id: \.element.id) { offset, row in
+                                let i = offset + restOffset
+                                let frac = entered ? abs(row.value) / top : 0
+                                Button {
+                                    if row.nation >= 0 {
+                                        GameFeel.shared.tap()
+                                        openNation(row.nation)
                                     }
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Text(ChineseNumeral.of(i + 1))
+                                            .font(Theme.kai(i < 3 ? 20 : 16))
+                                            .foregroundStyle(i < 3 ? Theme.seal : Theme.ink2)
+                                            .frame(width: 34)
+                                        VStack(alignment: .leading, spacing: 5) {
+                                            HStack(spacing: 6) {
+                                                if let c = row.color {
+                                                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                                        .fill(Names.color(c))
+                                                        .frame(width: 10, height: 10)
+                                                }
+                                                Text(row.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
+                                                Spacer(minLength: 6)
+                                                Text(row.text)
+                                                    .font(Theme.label)
+                                                    .foregroundStyle(row.value < 0 ? Theme.seal : Theme.ink2)
+                                                    .monospacedDigit()
+                                                    .contentTransition(.numericText())
+                                            }
+                                            InkBar(fraction: frac, color: row.color.map { Names.color($0) } ?? Theme.seal, height: 5, gradient: true)
+                                                .animation(reduceMotion ? nil : Motion.drift.delay(min(0.22, Double(offset) * 0.022)), value: frac)
+                                        }
+                                    }
+                                    .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
+                                .buttonStyle(PressStyle())
+                                if offset < shownRows.count - 1 {
+                                    Divider2()
+                                }
                             }
-                            .buttonStyle(.plain)
-                            if offset < shownRows.count - 1 { Rectangle().fill(Theme.ink.opacity(0.1)).frame(height: 0.7).padding(.leading, 62) }
+                            if rows.isEmpty {
+                                Text(category == "war" || category == "wars" || category == "campaigns" ? "天下无战事" : "暂无记录")
+                                    .font(Theme.section).foregroundStyle(Theme.ink2)
+                                    .frame(maxWidth: .infinity).padding(30)
+                            }
                         }
-                        if rows.isEmpty { Text(category == "war" || category == "wars" || category == "campaigns" ? "天下无战事" : "暂无记录").font(Theme.section).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(30) }
                     }
-                    .background(Theme.paper2.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 1))
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                    .animation(reduceMotion ? nil : Motion.panel, value: switchTick)
                 }
                 .padding(.bottom, 28)
             }
         }
         .task(id: "\(category)-\(model.state?.day ?? 0)") {
             let next = category == "wars" ? Self.currentWars(model.state, model.map) : await model.statistics(category)
-            if next.map(\.name) != rows.map(\.name) { brushed = false }
-            rows = next
-            try? await Task.sleep(nanoseconds: 30_000_000)
-            brushed = true
+            withAnimation(reduceMotion ? nil : Motion.panel) {
+                rows = next
+                switchTick &+= 1
+            }
+            if !entered {
+                try? await Task.sleep(nanoseconds: 40_000_000)
+                withAnimation(reduceMotion ? nil : Motion.drift) { entered = true }
+            }
         }
     }
 
     @ViewBuilder
-    private func podiumStrip(rows: [StatisticsRow]) -> some View {
-        let medals: [(rank: Int, label: String, color: Color, lift: CGFloat)] = [
-            (1, "榜眼", Theme.ink2, 0),
-            (0, "魁首", Theme.seal, 10),
-            (2, "探花", Color(red: 0.64, green: 0.45, blue: 0.16), 0),
+    private func podiumStrip(rows: [StatisticsRow], top: Double) -> some View {
+        let medals: [(rank: Int, label: String, color: Color, lift: CGFloat, delay: Double)] = [
+            (1, "榜眼", Theme.jade, 0, 0.06),
+            (0, "魁首", Theme.seal, 12, 0.0),
+            (2, "探花", Color(red: 0.64, green: 0.45, blue: 0.16), 0, 0.11),
         ]
-        HStack(alignment: .bottom, spacing: 8) {
+        HStack(alignment: .bottom, spacing: 9) {
             ForEach(medals, id: \.rank) { m in
                 let row = rows[m.rank]
                 let tint = row.color.map { Names.color($0) } ?? m.color
-                Button { if row.nation >= 0 { openNation(row.nation) } } label: {
-                    VStack(spacing: 6) {
-                        SealFace(text: m.label, size: m.rank == 0 ? 30 : 25, color: m.color)
-                        RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 24, height: 3.5)
-                        Text(row.name).font(m.rank == 0 ? Theme.section : Theme.body).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
-                        Text(row.text).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.72)
+                let share = min(1, max(0.08, abs(row.value) / max(1, top)))
+                Button {
+                    if row.nation >= 0 {
+                        GameFeel.shared.tap()
+                        openNation(row.nation)
                     }
-                    .padding(.horizontal, 8).padding(.vertical, m.rank == 0 ? 14 : 10)
+                } label: {
+                    VStack(spacing: 6) {
+                        SealFace(text: m.label, size: m.rank == 0 ? 32 : 26, color: m.color)
+                            .scaleEffect(entered ? 1 : 0.72)
+                            .animation(reduceMotion ? nil : Motion.stamp.delay(m.delay), value: entered)
+                        RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+                            .fill(tint)
+                            .frame(width: m.rank == 0 ? 30 : 22, height: 3.5)
+                        Text(row.name)
+                            .font(m.rank == 0 ? Theme.section : Theme.body)
+                            .foregroundStyle(Theme.ink)
+                            .lineLimit(1).minimumScaleFactor(0.75)
+                        Text(row.text)
+                            .font(Theme.caption)
+                            .foregroundStyle(m.rank == 0 ? Theme.seal : Theme.ink2)
+                            .monospacedDigit().lineLimit(1).minimumScaleFactor(0.72)
+                            .contentTransition(.numericText())
+                        InkBar(fraction: entered ? share : 0, color: tint, height: 3.5, gradient: true)
+                            .padding(.top, 2)
+                            .animation(reduceMotion ? nil : Motion.drift.delay(m.delay + 0.06), value: entered)
+                            .animation(reduceMotion ? nil : Motion.panel, value: share)
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, m.rank == 0 ? 14 : 11)
                     .frame(maxWidth: .infinity)
-                    .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(m.rank == 0 ? Theme.seal.opacity(0.45) : Theme.ink.opacity(0.14), lineWidth: m.rank == 0 ? 1.15 : 0.85))
-                    .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(m.rank == 0 ? 0.10 : 0.05), radius: 6, y: 2)
+                    .paperCard(tint: m.rank == 0 ? Theme.seal : nil)
                     .padding(.bottom, m.lift)
+                    .opacity(entered ? 1 : 0)
+                    .offset(y: entered ? 0 : 18)
+                    .animation(reduceMotion ? nil : Motion.panel.delay(m.delay), value: entered)
                 }
                 .buttonStyle(PressStyle())
             }
@@ -909,18 +971,18 @@ struct InkBar: View {
 }
 
 extension View {
-    /// The one card look of every page (Group2's): paper, an ink rim, a fine vermilion inner line and a
-    /// path shadow on the background shape (zero offscreen pass during scroll).
+    /// The one unified card look of every page (matching Group2 identically): warm rice paper,
+    /// Apple continuous 16pt corners, subtle ink outer rule and concentric 13.5pt vermilion inner rule.
     func paperCard(tint: Color? = nil) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
         return self
             .background(
-                shape.fill(Theme.paper2.opacity(0.64))
-                    .shadow(color: Color(red: 0.25, green: 0.18, blue: 0.08).opacity(0.08), radius: 5, y: 2)
+                shape.fill(Theme.paper2.opacity(0.86))
+                    .shadow(color: Color(red: 0.22, green: 0.16, blue: 0.08).opacity(0.07), radius: 6, y: 2)
             )
-            .background((tint ?? .clear).opacity(0.07), in: shape)
-            .overlay(shape.stroke((tint ?? Theme.ink).opacity(tint == nil ? 0.2 : 0.35), lineWidth: 1))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.16), lineWidth: 0.6).padding(3))
+            .background((tint ?? .clear).opacity(0.055), in: shape)
+            .overlay(shape.stroke((tint ?? Theme.ink).opacity(tint == nil ? 0.15 : 0.34), lineWidth: 0.9))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 2.5, style: .continuous).stroke((tint ?? Theme.seal).opacity(0.11), lineWidth: 0.55).padding(2.5))
     }
 }
 
@@ -1131,12 +1193,13 @@ struct FloatingTacticalPill: View {
     @State private var dragging = false
 
     private func anchor(in size: CGSize, safe: EdgeInsets) -> CGPoint {
-        let padX: CGFloat = landscape ? 86 : Theme.Control.screenInset
-        let topY: CGFloat = safe.top + 66
-        let botY: CGFloat = max(topY + 80, size.height - safe.bottom - (landscape ? 60 : 134))
-        let pillW: CGFloat = expanded ? 236 : Theme.Control.topHeight
+        let padX: CGFloat = landscape ? max(safe.leading + 76, 86) : Theme.Control.screenInset
+        let trailPad: CGFloat = landscape ? max(safe.trailing + 16, 20) : Theme.Control.screenInset
+        let topY: CGFloat = safe.top + (landscape ? 64 : 68)
+        let botY: CGFloat = max(topY + 64, size.height - safe.bottom - (landscape ? 54 : 134))
+        let pillW: CGFloat = expanded ? 228 : Theme.Control.topHeight
         let leftX = padX + pillW / 2
-        let rightX = max(leftX, size.width - Theme.Control.screenInset - pillW / 2)
+        let rightX = max(leftX, size.width - trailPad - pillW / 2)
         switch corner {
         case .topLeading: return CGPoint(x: leftX, y: topY)
         case .topTrailing: return CGPoint(x: rightX, y: topY)
@@ -1159,8 +1222,8 @@ struct FloatingTacticalPill: View {
     }
 
     private func pillContent(wars: Int) -> some View {
-        let strokeColor = wars > 0 ? Theme.seal.opacity(0.42) : Theme.ink.opacity(0.2)
-        let shadowColor = Color(red: 0.12, green: 0.09, blue: 0.05).opacity(dragging ? 0.28 : 0.16)
+        let strokeColor = wars > 0 ? Theme.seal.opacity(0.4) : Theme.ink.opacity(0.16)
+        let shadowColor = Color(red: 0.12, green: 0.09, blue: 0.05).opacity(dragging ? 0.24 : 0.14)
         return HStack(spacing: 4) {
             toggleSealButton(wars: wars)
             if expanded {
@@ -1168,11 +1231,11 @@ struct FloatingTacticalPill: View {
             }
         }
         .padding(.horizontal, expanded ? 8 : 6).padding(.vertical, 6)
-        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(Capsule()))
+        .background(Theme.paper2.opacity(0.96), in: Capsule())
         .overlay(Capsule().stroke(strokeColor, lineWidth: 0.9))
-        .overlay(Capsule().stroke(Theme.seal.opacity(0.16), lineWidth: 0.5).padding(2.5))
-        .shadow(color: shadowColor, radius: dragging ? 12 : 6, y: dragging ? 5 : 2.5)
-        .scaleEffect(dragging ? 1.06 : 1.0)
+        .overlay(Capsule().stroke(Theme.seal.opacity(0.13), lineWidth: 0.5).padding(2.5))
+        .shadow(color: shadowColor, radius: dragging ? 12 : 7, y: dragging ? 5 : 2.5)
+        .scaleEffect(dragging ? 1.05 : 1.0)
         .contentShape(Capsule())
     }
 
@@ -1183,7 +1246,7 @@ struct FloatingTacticalPill: View {
             withAnimation(Motion.panel) { expanded.toggle() }
         } label: {
             ZStack(alignment: .topTrailing) {
-                SealFace(text: wars > 0 ? "战" : "印", size: 28, color: wars > 0 ? Theme.seal : Theme.ink)
+                SealFace(text: wars > 0 ? "战" : "印", size: 28, color: wars > 0 ? Theme.seal : Theme.jade)
                     .rotationEffect(.degrees(expanded ? -12 : 0))
                 if !expanded && wars > 0 {
                     Text(badgeText)

@@ -49,7 +49,9 @@ enum Theme {
         static let iconGutter: CGFloat = 22
         static let headerTop: CGFloat = 10
     }
-    /// Apple HIG 统一控件尺度：顶栏所有胶囊与圆钮严守 44pt 等高对齐，底栏悬浮坞严守 54pt 等高且内嵌 44pt 同心朱印钮，屏幕左右边距统一 16pt。
+    /// Apple HIG 统一控件与同心圆角尺度：
+    /// 顶栏所有胶囊与圆钮严守 44pt 等高对齐，底栏悬浮坞严守 54pt 等高且内嵌 44pt 同心朱印钮；
+    /// 圆角严守同心连续曲率：面板 28pt → 外卡片 16pt → 内控件 12pt → 轻标签 10pt。
     enum Control {
         static let screenInset: CGFloat = 16
         static let topHeight: CGFloat = 44
@@ -57,8 +59,10 @@ enum Theme {
         static let sealButtonSize: CGFloat = 44
         static let tickerHeight: CGFloat = 34
         static let gap: CGFloat = 8
-        static let cornerCard: CGFloat = 14
+        static let cornerSheet: CGFloat = 28
+        static let cornerCard: CGFloat = 16
         static let cornerControl: CGFloat = 12
+        static let cornerChip: CGFloat = 10
     }
 }
 
@@ -184,16 +188,18 @@ struct VerticalText: View {
 struct PrimaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
-        GameActionLabel(title: title, symbol: symbol).font(Theme.section).frame(maxWidth: .infinity).frame(minHeight: 54).padding(.horizontal, 10)
-            .foregroundStyle(Theme.paper2).background(Theme.seal, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        GameActionLabel(title: title, symbol: symbol).font(Theme.section).frame(maxWidth: .infinity).frame(minHeight: 50).padding(.horizontal, 12)
+            .foregroundStyle(Theme.paper2).background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous).stroke(Theme.paper2.opacity(0.24), lineWidth: 0.7).padding(2))
+            .shadow(color: Theme.seal.opacity(0.22), radius: 5, y: 2)
     }
 }
 struct SecondaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
-        GameActionLabel(title: title, symbol: symbol).font(Theme.section).frame(maxWidth: .infinity).frame(minHeight: 54).padding(.horizontal, 10)
-            .foregroundStyle(Theme.ink).background(Theme.paper2.opacity(0.9), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.line))
+        GameActionLabel(title: title, symbol: symbol).font(Theme.section).frame(maxWidth: .infinity).frame(minHeight: 50).padding(.horizontal, 12)
+            .foregroundStyle(Theme.ink).background(Theme.paper2.opacity(0.92), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.ink.opacity(0.16), lineWidth: 0.9))
     }
 }
 
@@ -293,27 +299,39 @@ struct TabButton: View {
     var active = false
     var marker: Namespace.ID? = nil
     var flexible = true
+    var compact = false
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
+            VStack(spacing: compact ? 1.5 : 2) {
                 if let glyph {
-                    InkIcon(glyph: glyph, size: 20, weight: active ? 2.0 : 1.65, filled: active,
+                    InkIcon(glyph: glyph, size: compact ? 17 : 20, weight: active ? 2.0 : 1.65, filled: active,
                             accent: active ? Theme.seal.opacity(0.28) : Theme.seal.opacity(0.14))
                         .scaleEffect(active ? 1.05 : 1)
                         .animation(Motion.tap, value: active)
                 }
-                else if let icon { Image(uiImage: icon).resizable().interpolation(.high).scaledToFit().frame(width: 20, height: 20) }
-                else { Image(systemName: symbol).font(.system(size: 17, weight: .medium)).symbolVariant(active ? .fill : .none) }
-                Text(title).font(Theme.kai(11)).lineLimit(1)
+                else if let icon { Image(uiImage: icon).resizable().interpolation(.high).scaledToFit().frame(width: compact ? 17 : 20, height: compact ? 17 : 20) }
+                else { Image(systemName: symbol).font(.system(size: compact ? 15 : 17, weight: .medium)).symbolVariant(active ? .fill : .none) }
+                Text(title).font(Theme.kai(compact ? 10 : 11)).lineLimit(1)
             }
             .foregroundStyle(active ? Theme.seal : Theme.ink)
-            .frame(maxWidth: flexible ? .infinity : 50).frame(height: 44)
+            .frame(maxWidth: flexible ? .infinity : (compact ? 46 : 50)).frame(height: compact ? 38 : 44)
+            .background {
+                if compact && active, let marker {
+                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                        .fill(Theme.seal.opacity(0.11))
+                        .matchedGeometryEffect(id: "tab-bg", in: marker)
+                }
+            }
             .contentShape(Rectangle())
-            .overlay(alignment: .bottom) {
-                // 选中底标：齐整克制的短朱囊
+            .overlay(alignment: compact ? .leading : .bottom) {
+                // 选中标：竖屏为底部短朱囊，横屏侧栏为左侧竖朱标
                 if active, let marker {
-                    Capsule().fill(Theme.seal).frame(width: 16, height: 2.4).offset(y: 1).matchedGeometryEffect(id: "tab", in: marker)
+                    if compact {
+                        Capsule().fill(Theme.seal).frame(width: 2.6, height: 16).offset(x: 1).matchedGeometryEffect(id: "tab", in: marker)
+                    } else {
+                        Capsule().fill(Theme.seal).frame(width: 16, height: 2.4).offset(y: 1).matchedGeometryEffect(id: "tab", in: marker)
+                    }
                 }
             }
         }
@@ -369,19 +387,19 @@ struct SheetHeader: View {
     }
 }
 
-/// A folded memorial page: translucent rice paper, an ink outer rule and a vermilion inner rule.
-/// 阴影落于底图形状路径上（避免整卡片离屏渲染），并移除滚动入屏时的纵向缩放跳动，长列表滑动顺滑不卡顿。
+/// A folded memorial page: unified warm rice paper, Apple continuous concentric corners (16pt outer / 13.5pt inner),
+/// subtle ink outer rule and faint vermilion inner rule — matching `.paperCard()` identically across the entire app.
 struct Group2<Content: View>: View {
     @ViewBuilder let content: Content
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
         VStack(spacing: 0) { content }
             .background(
-                shape.fill(Theme.paper2.opacity(0.64))
-                    .shadow(color: Color(red: 0.25, green: 0.18, blue: 0.08).opacity(0.08), radius: 5, y: 2)
+                shape.fill(Theme.paper2.opacity(0.86))
+                    .shadow(color: Color(red: 0.22, green: 0.16, blue: 0.08).opacity(0.07), radius: 6, y: 2)
             )
-            .overlay(shape.stroke(Theme.ink.opacity(0.2), lineWidth: 1))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.16), lineWidth: 0.6).padding(3))
+            .overlay(shape.stroke(Theme.ink.opacity(0.15), lineWidth: 0.9))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 2.5, style: .continuous).stroke(Theme.seal.opacity(0.11), lineWidth: 0.55).padding(2.5))
     }
 }
 
@@ -428,6 +446,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("2.4.0", ["【彻底根治「山河回放」顶栏失灵与无法缩放的底层元凶】查明并根治真机上回放左上角「返回当下」、右上角「节点」无法点击及舆图无法双指缩放的真正根因：`MemorialPaper` 内部 `1024×1024` 羊皮纸底图采用 `scaledToFill()` 叠加，SwiftUI `.clipped()` 仅裁视觉不裁触控，导致回放卡片生成巨型隐形触摸拦截框向上盖死顶栏按钮、向下锁死整片地图！现已从 `MemorialPaper` 源头禁用装饰纹理触控并用 `.contentShape(Rectangle())` 严守边界；重构 `ReplayOverlay` 为 `Color.clear` 无遮挡基底 + 独立顶/底/右浮层，仅在收起小手柄挂下滑手势；改由 `.sheet(onDismiss:)` 等待原生弹窗彻底关闭后再进回放；新增横屏单行 44pt 顶栏与紧凑底栏（露出 72%+ 纯地图空间供自由双指缩放），右侧增配单手「+ / − / 全图」缩放胶囊。",
+                   "【全面统一回归「温润宣纸 × 暖墨 × 朱砂印」苹果同心圆角体系】彻底清理此前版本中突兀的黑块按钮与割裂白底（移除暂停态纯黑启停钮、国策黑底筛选签、新世界黑底规模钮与地图预览黑底浮标、局势浮印黑印章），启停朱印钮回归「推演朱砂实印 / 暂停宣纸朱框印」原作本色；统一全应用卡片为 `Theme.Control` 苹果连续同心圆角（面板 28pt → 外卡片 16pt → 内控件 12pt → 轻标签 10pt）与一致的暖宣纸质感，彻底消除界面割裂感。",
+                   "【横屏体验专项大修】重做横屏左侧导航坞（紧凑 38pt 项高 + 苹果 22pt 连续圆角 + 左侧竖朱标，绝不再与顶栏或底部安全区冲突）；重做横屏右侧悬浮奏折面板（基于容器宽度自适应 24pt 连续圆角悬浮卡，取消硬编码屏幕宽度与负边距裁切）；优化横屏视图切换栏为 5 列宫格、新世界地图预览自适应横屏高度，以及横屏打开侧栏时自动隐去遮挡物。",
+                   "【州郡详情页完全重置 & 军团详情页完全重做】点击地图州郡后，在页首最醒目位置置顶「所属国家主权大卡」（点任意处直接进入国家详情，不再深埋底部），配四格核心指标与「概览 / 地利战况 / 政区编辑」三页签及一屏直达快捷操作；军团页重构为「军令调度 / 整编队伍 / 履历战绩」三页签帅帐，将「整编队伍」提至顶部一键直达，并新增三千/一万/两万/五万快选兵力与可视化兵种换装。",
+                   "【排行榜动效重做 & 外交界面全面完善】重做排行榜动画：取消切榜时清零闪白，改用丝滑弹簧进度条插值、三阶递升「魁首 / 榜眼 / 探花」颁台与数字滚动过渡；外交界面全面升级——将「切换观察国」直接融入鸿胪态势卡、新增「全部 / 交战 / 盟约 / 接壤」双边筛选与展开全套操作（议和 / 宣战 / 结盟 / 联姻 / 赠金 / 通商 / 共防 / 通牒 / 资敌），「遣使缔约」改为紧凑双边对席卡片 + 互换双方 + 实时好感态势与宣战/议和按钮，「列国战局」补齐战事汇总条与点击参战国直跳详情。"]),
         ("2.3.0", ["【彻底根治「山河回放」顶栏失灵并全面重做回放推进特效】将「山河回放」从 `GameView` 多层弹窗中剥离，直接挂载至 `RootView` 最顶层并彻底屏蔽底层 `GameView` 触控干扰，根治左上角「返回当下」与右上角「节点」点击无响应的问题（并在底部控制坞同步提供单手直达入口）；回放推进全面升级——自动比对历帧疆域易主，实时绘制弧形战役进攻箭头、前线交锋火花、先锋行军军团、强国国都守军以及基于 GPU 墨场的自然易主墨晕扫色效果；自动回溯节点留存间隔由 5 年缩短至 2 年。",
                    "【Apple 级全界面控件尺度与视觉对齐统一】确立 `Theme.Control` 全局控件规范：顶部日期胶囊、右上角全部圆形工具钮与各类提示横幅严守 `44pt` 绝对等高、`16pt` 左右屏幕基准线对齐与 `8pt` 等距排布；底部导航坞与倍速启停坞统一为 `54pt` 等高悬浮胶囊，五项页签等宽分布，启停朱印钮收束为 `44×44pt` 同心圆章（四周精确留白 `5pt`）并彻底移除外溢闪烁光环；统一柔白宣纸表面、细墨描边与克制低海拔投影。",
                    "【国家「长期政策 / 政令」彻底改版与页面去同质化】告别 24 行冗长平铺勾选列表：顶部新增苹果式「现行国策总览」洞察卡，实时汇总已行国策的攻防/岁入/人口/安定/腐化净加成；按「官制宪政 / 军制兵役 / 财税农商 / 礼教宗法」四大领域分层，将 6 组互斥制度重塑为双栏/三栏直观立国路线卡，10 项专项制度换用苹果风格拨动开关与红绿属性胶囊；三大御批诏令改为 2×2 快捷宫格；排行榜新增「魁首 / 榜眼 / 探花」前三甲颁台、外交页改为鸿胪邦交态势横卡、军事名将谱改为横向勋业画廊、系统菜单改为 2×2 视觉快捷面板，全面消除页面重复感。",

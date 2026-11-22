@@ -142,8 +142,7 @@ struct MilitaryOverview: View {
                             }
                             .padding(11)
                             .frame(width: 176, alignment: .leading)
-                            .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
+                            .paperCard()
                         }
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)

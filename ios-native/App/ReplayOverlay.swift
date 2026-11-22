@@ -154,6 +154,8 @@ extension GameModel {
     /// 进入「山河回放」模式：支持正放、倒放、进度条自由拖动与逐节点跳转。
     func enterReplay(atDay targetDay: Int? = nil) async {
         pause(saving: false)
+        controller.interactive = true
+        controller.sheetOpen = false
         controller.replayLocked = true
         loadCheckpoints()
         guard let timeline = await replayTimeline(), !timeline.frames.isEmpty else {
@@ -484,8 +486,11 @@ extension GameModel {
 
 struct ReplayOverlay: View {
     @ObservedObject var model: GameModel
+    @Environment(\.verticalSizeClass) private var verticalClass
+    private var landscape: Bool { verticalClass == .compact }
     @State private var showNodes = false
     @State private var collapsed = false
+    @State private var showBanner = true
     @State private var deckDragY: CGFloat = 0
     @State private var confirmRollback: WorldCheckpoint?
     @State private var localToast: String?
@@ -535,83 +540,112 @@ struct ReplayOverlay: View {
             let powers = powerBreakdown(for: frame, in: timeline)
             let multiFrame = timeline.frames.count > 1
 
-            ZStack {
-                VStack(spacing: 0) {
+            // 关键：基底为透明且不拦触摸的 Color.clear，顶/底/右悬浮层各占各自极小区域，
+            // 中间整片舆图 100% 直通 Metal MapView，双指缩放与单指拖拽零阻拦；
+            // 且全部浮层采用纯宣纸 `.glass(...)`（不再用会越界吞触摸的 scaledToFill 底图）。
+            Color.clear
+                .allowsHitTesting(false)
+                .overlay(alignment: .top) {
                     topHeader(timeline: timeline, idx: idx, frame: frame, powers: powers)
-                    Spacer(minLength: 0)
-                    if collapsed {
-                        compactDeck(timeline: timeline, idx: idx, frame: frame, multiFrame: multiFrame)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else {
-                        fullDeck(timeline: timeline, idx: idx, frame: frame, nearCP: nearCP, multiFrame: multiFrame)
-                            .offset(y: max(0, deckDragY))
-                            .gesture(
-                                DragGesture(minimumDistance: 14)
-                                    .onChanged { g in
-                                        deckDragY = g.translation.height > 0 ? g.translation.height : g.translation.height * 0.2
-                                    }
-                                    .onEnded { g in
-                                        if g.translation.height > 48 || g.predictedEndTranslation.height > 90 {
-                                            GameFeel.shared.tap()
-                                            withAnimation(Motion.panel) { collapsed = true; deckDragY = 0 }
-                                        } else {
-                                            withAnimation(Motion.panel) { deckDragY = 0 }
-                                        }
-                                    }
-                            )
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                .overlay(alignment: .trailing) {
+                    if !showNodes && confirmRollback == nil {
+                        zoomRail
+                            .padding(.trailing, Theme.Control.screenInset)
+                            .transition(.opacity)
                     }
                 }
-
-                if showNodes {
-                    nodesDrawer(timeline: timeline)
-                        .transition(.opacity)
-                        .zIndex(20)
+                .overlay(alignment: .bottom) {
+                    Group {
+                        if collapsed {
+                            compactDeck(timeline: timeline, idx: idx, frame: frame, multiFrame: multiFrame)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        } else if landscape {
+                            landscapeDeck(timeline: timeline, idx: idx, frame: frame, nearCP: nearCP, multiFrame: multiFrame)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        } else {
+                            fullDeck(timeline: timeline, idx: idx, frame: frame, nearCP: nearCP, multiFrame: multiFrame)
+                                .offset(y: max(0, deckDragY))
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                    }
                 }
-
-                if let cp = confirmRollback {
-                    rollbackConfirmCard(cp)
-                        .transition(.opacity.combined(with: .scale(scale: 0.94)))
-                        .zIndex(30)
+                .overlay {
+                    if showNodes {
+                        nodesDrawer(timeline: timeline)
+                            .transition(.opacity)
+                            .zIndex(20)
+                    }
                 }
-
-                if let localToast {
-                    VStack {
-                        Spacer()
+                .overlay {
+                    if let cp = confirmRollback {
+                        rollbackConfirmCard(cp)
+                            .transition(.opacity.combined(with: .scale(scale: 0.94)))
+                            .zIndex(30)
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    if let localToast {
                         HStack(spacing: 8) {
                             Seal(text: "史", size: 20)
                             Text(localToast).font(Theme.body).foregroundStyle(Theme.ink)
                         }
                         .padding(.horizontal, 14).padding(.vertical, 9)
-                        .background(Theme.paper2.opacity(0.97), in: Capsule())
-                        .overlay(Capsule().stroke(Theme.ink.opacity(0.18), lineWidth: 0.9))
-                        .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
-                        .padding(.bottom, collapsed ? 84 : 210)
+                        .glass(Capsule())
+                        .padding(.bottom, collapsed ? 76 : (landscape ? 104 : 206))
                         .onTapGesture { self.localToast = nil }
+                        .transition(.opacity)
+                        .zIndex(40)
                     }
-                    .transition(.opacity)
-                    .zIndex(40)
                 }
-            }
-            .statusBarHidden()
-            .animation(Motion.panel, value: collapsed)
-            .animation(Motion.panel, value: showNodes)
-            .animation(Motion.panel, value: confirmRollback)
-            .onChange(of: model.notice) { _, text in
-                guard let text else { return }
-                model.notice = nil
-                toastSerial += 1
-                let serial = toastSerial
-                localToast = text
-                Task { try? await Task.sleep(nanoseconds: 2_200_000_000); if toastSerial == serial { localToast = nil } }
-            }
+                .statusBarHidden()
+                .animation(Motion.panel, value: collapsed)
+                .animation(Motion.panel, value: showBanner)
+                .animation(Motion.panel, value: showNodes)
+                .animation(Motion.panel, value: confirmRollback)
+                .onChange(of: model.notice) { _, text in
+                    guard let text else { return }
+                    model.notice = nil
+                    toastSerial += 1
+                    let serial = toastSerial
+                    localToast = text
+                    Task { try? await Task.sleep(nanoseconds: 2_200_000_000); if toastSerial == serial { localToast = nil } }
+                }
         }
+    }
+
+    /// 右侧单手缩放胶囊（与双指捏合缩放互补，随时放大看战线或一键展开全图）
+    private var zoomRail: some View {
+        VStack(spacing: 2) {
+            zoomBtn(symbol: "plus", label: "放大") { model.controller.zoom(1.55) }
+            Rectangle().fill(Theme.ink.opacity(0.12)).frame(width: 20, height: 0.8)
+            zoomBtn(symbol: "minus", label: "缩小") { model.controller.zoom(0.65) }
+            Rectangle().fill(Theme.ink.opacity(0.12)).frame(width: 20, height: 0.8)
+            zoomBtn(symbol: "arrow.up.left.and.arrow.down.right", label: "全图") { model.controller.unrollRequest = UUID() }
+        }
+        .padding(.vertical, 4).padding(.horizontal, 2)
+        .glass(Capsule())
+    }
+
+    private func zoomBtn(symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button {
+            GameFeel.shared.tap()
+            action()
+        } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Theme.ink)
+                .frame(width: 34, height: 32)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressStyle())
+        .accessibilityLabel(label)
     }
 
     @ViewBuilder
     private func topHeader(timeline: ReplayTimelineData, idx: Int, frame: ReplayTimelineData.Frame, powers: [PowerDisplay]) -> some View {
         VStack(spacing: Theme.Control.gap) {
-            // 与主界面顶栏严守同一 44pt 高度与 16pt 边距，按钮独立响应、零重叠挤压
+            // 与主界面顶栏严守同一 44pt 高度与 16pt 边距，按钮独立 zIndex(2) 响应、零遮挡零挤压
             HStack(spacing: Theme.Control.gap) {
                 Button {
                     GameFeel.shared.tap()
@@ -626,26 +660,54 @@ struct ReplayOverlay: View {
                     .foregroundStyle(Theme.seal)
                     .padding(.horizontal, 13)
                     .frame(height: Theme.Control.topHeight)
-                    .background(Theme.paper2.opacity(0.96), in: Capsule())
-                    .overlay(Capsule().stroke(Theme.ink.opacity(0.15), lineWidth: 0.85).allowsHitTesting(false))
-                    .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.12), radius: 8, y: 3)
+                    .glass(Capsule())
                     .contentShape(Capsule())
                 }
                 .buttonStyle(PressStyle())
 
-                HStack(spacing: 6) {
+                // 中央胶囊：横屏单行整合日期 + 大事简讯 + 定位钮（不占第二行，露出整片地图）；竖屏点按可收折下方大事卡
+                HStack(spacing: 7) {
                     SealFace(text: model.replayReversing ? "倒" : "史", size: 22, color: model.replayReversing ? Theme.jade : Theme.seal)
                     Text(frame.dateText).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
-                        .lineLimit(1).minimumScaleFactor(0.68)
+                        .lineLimit(1).minimumScaleFactor(0.72)
                         .contentTransition(.numericText())
+                    if landscape {
+                        Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 15)
+                        Text(frame.headline).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
+                        Text("(\(idx + 1)/\(timeline.frames.count))").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                        if frame.province >= 0, let m = model.map, m.meta.provinces.indices.contains(frame.province) {
+                            Button {
+                                GameFeel.shared.tap()
+                                let pr = m.meta.provinces[frame.province]
+                                model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
+                            } label: {
+                                InkIcon(glyph: .locate, size: 14, weight: 1.8, accent: Theme.seal.opacity(0.25))
+                                    .foregroundStyle(Theme.seal)
+                                    .frame(width: 28, height: 28).background(Theme.seal.opacity(0.1), in: Circle())
+                                    .contentShape(Circle())
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                    } else {
+                        Spacer(minLength: 0)
+                        Button {
+                            GameFeel.shared.tap()
+                            withAnimation(Motion.panel) { showBanner.toggle() }
+                        } label: {
+                            Image(systemName: showBanner ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Theme.ink2)
+                                .frame(width: 26, height: 26)
+                                .background(Theme.wash.opacity(0.8), in: Circle())
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(PressStyle())
+                    }
                 }
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity)
                 .frame(height: Theme.Control.topHeight)
-                .background(Theme.paper2.opacity(0.96), in: Capsule())
-                .overlay(Capsule().stroke(Theme.ink.opacity(0.15), lineWidth: 0.85).allowsHitTesting(false))
-                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.12), radius: 8, y: 3)
-                .allowsHitTesting(false)
+                .glass(Capsule())
 
                 Button {
                     GameFeel.shared.tap()
@@ -659,80 +721,80 @@ struct ReplayOverlay: View {
                     .foregroundStyle(Theme.ink)
                     .padding(.horizontal, 13)
                     .frame(height: Theme.Control.topHeight)
-                    .background(Theme.paper2.opacity(0.96), in: Capsule())
-                    .overlay(Capsule().stroke(Theme.ink.opacity(0.15), lineWidth: 0.85).allowsHitTesting(false))
-                    .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.12), radius: 8, y: 3)
+                    .glass(Capsule())
                     .contentShape(Capsule())
                 }
                 .buttonStyle(PressStyle())
             }
+            .zIndex(2)
 
-            // 当帧大事横幅 + 实时大国疆域占比条（可一键定位舆图）
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 10) {
-                    KindSeal(kind: .of(frame.kind), size: 22)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(frame.headline).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(2)
-                        Text("第 \(idx + 1)/\(timeline.frames.count) 帧 · 存世 \(frame.aliveCount) 国\(frame.topName.isEmpty ? "" : " · 最强：\(frame.topName)（\(frame.topProvinces)州）")")
-                            .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
-                    }
-                    Spacer(minLength: 4)
-                    if frame.province >= 0, let m = model.map, m.meta.provinces.indices.contains(frame.province) {
-                        Button {
-                            GameFeel.shared.tap()
-                            let pr = m.meta.provinces[frame.province]
-                            model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
-                        } label: {
-                            InkIcon(glyph: .locate, size: 16, weight: 1.75, accent: Theme.seal.opacity(0.25))
-                                .foregroundStyle(Theme.seal)
-                                .frame(width: 36, height: 36).background(Theme.seal.opacity(0.1), in: Circle())
-                                .contentShape(Circle())
+            // 竖屏当帧大事横幅 + 实时大国疆域占比条（可轻点顶栏折起以获更大地图视野）
+            if !landscape && showBanner {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 10) {
+                        KindSeal(kind: .of(frame.kind), size: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(frame.headline).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(2)
+                            Text("第 \(idx + 1)/\(timeline.frames.count) 帧 · 存世 \(frame.aliveCount) 国\(frame.topName.isEmpty ? "" : " · 最强：\(frame.topName)（\(frame.topProvinces)州）")")
+                                .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
                         }
-                        .buttonStyle(PressStyle())
+                        Spacer(minLength: 4)
+                        if frame.province >= 0, let m = model.map, m.meta.provinces.indices.contains(frame.province) {
+                            Button {
+                                GameFeel.shared.tap()
+                                let pr = m.meta.provinces[frame.province]
+                                model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
+                            } label: {
+                                InkIcon(glyph: .locate, size: 16, weight: 1.75, accent: Theme.seal.opacity(0.25))
+                                    .foregroundStyle(Theme.seal)
+                                    .frame(width: 36, height: 36).background(Theme.seal.opacity(0.1), in: Circle())
+                                    .contentShape(Circle())
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                    }
+
+                    if !powers.isEmpty {
+                        VStack(alignment: .leading, spacing: 5) {
+                            GeometryReader { g in
+                                HStack(spacing: 1.5) {
+                                    ForEach(powers) { pw in
+                                        let w = max(6, g.size.width * CGFloat(pw.share))
+                                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                            .fill(pw.color)
+                                            .frame(width: w)
+                                    }
+                                    Rectangle().fill(Theme.ink.opacity(0.12))
+                                }
+                                .clipShape(Capsule())
+                            }
+                            .frame(height: 6)
+                            .animation(Motion.drift, value: idx)
+
+                            HStack(spacing: 10) {
+                                ForEach(powers.prefix(3)) { pw in
+                                    HStack(spacing: 4) {
+                                        Circle().fill(pw.color).frame(width: 7, height: 7)
+                                        Text("\(pw.name) \(Int((pw.share * 100).rounded()))%")
+                                            .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
+                                    }
+                                }
+                                Spacer(minLength: 0)
+                            }
+                        }
                     }
                 }
-
-                if !powers.isEmpty {
-                    VStack(alignment: .leading, spacing: 5) {
-                        GeometryReader { g in
-                            HStack(spacing: 1.5) {
-                                ForEach(powers) { pw in
-                                    let w = max(6, g.size.width * CGFloat(pw.share))
-                                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                        .fill(pw.color)
-                                        .frame(width: w)
-                                }
-                                Rectangle().fill(Theme.ink.opacity(0.12))
-                            }
-                            .clipShape(Capsule())
-                        }
-                        .frame(height: 6)
-                        .animation(Motion.drift, value: idx)
-
-                        HStack(spacing: 10) {
-                            ForEach(powers.prefix(3)) { pw in
-                                HStack(spacing: 4) {
-                                    Circle().fill(pw.color).frame(width: 7, height: 7)
-                                    Text("\(pw.name) \(Int((pw.share * 100).rounded()))%")
-                                        .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
-                                }
-                            }
-                            Spacer(minLength: 0)
-                        }
-                    }
-                }
+                .padding(.horizontal, Theme.Layout.cardPadding).padding(.vertical, 10)
+                .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
-            .padding(.horizontal, Theme.Layout.cardPadding).padding(.vertical, 10)
-            .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.16), lineWidth: 0.85).allowsHitTesting(false))
-            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.12), radius: 8, y: 3)
         }
         .padding(.horizontal, Theme.Control.screenInset).padding(.top, 4)
     }
 
     @ViewBuilder
     private func nodesDrawer(timeline: ReplayTimelineData) -> some View {
-        let drawerShape = UnevenRoundedRectangle(topLeadingRadius: 24, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 24, style: .continuous)
+        let drawerShape = UnevenRoundedRectangle(topLeadingRadius: Theme.Control.cornerSheet, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: Theme.Control.cornerSheet, style: .continuous)
         ZStack(alignment: .bottom) {
             Color.black.opacity(0.32)
                 .ignoresSafeArea()
@@ -742,13 +804,7 @@ struct ReplayOverlay: View {
                 }
 
             VStack(spacing: 0) {
-                HStack {
-                    Spacer()
-                    Capsule().fill(Theme.ink.opacity(0.24)).frame(width: 38, height: 4)
-                    Spacer()
-                }
-                .padding(.top, 10).padding(.bottom, 4)
-
+                SheetGrabber()
                 HStack {
                     Spacer()
                     Button {
@@ -778,7 +834,8 @@ struct ReplayOverlay: View {
                     }
                 })
             }
-            .frame(maxHeight: 580)
+            .frame(maxWidth: landscape ? 560 : .infinity)
+            .frame(maxHeight: landscape ? 310 : 560)
             .background(MemorialPaper(rules: true, fullBleed: false).clipShape(drawerShape).ignoresSafeArea(edges: .bottom))
             .overlay(drawerShape.stroke(Theme.ink.opacity(0.18), lineWidth: 0.9).allowsHitTesting(false))
             .shadow(color: .black.opacity(0.22), radius: 18, y: -4)
@@ -812,8 +869,8 @@ struct ReplayOverlay: View {
                     } label: {
                         Text("取消").font(Theme.body).foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity).frame(height: 40)
-                            .background(Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.line))
+                            .background(Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line))
                     }
                     .buttonStyle(PressStyle())
 
@@ -824,17 +881,114 @@ struct ReplayOverlay: View {
                     } label: {
                         Text("确定回溯").font(Theme.body).foregroundStyle(Theme.paper2)
                             .frame(maxWidth: .infinity).frame(height: 40)
-                            .background(Theme.seal, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
                     }
                     .buttonStyle(PressStyle())
                 }
             }
             .padding(18)
-            .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous)))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.ink.opacity(0.22), lineWidth: 1))
-            .shadow(color: .black.opacity(0.25), radius: 16, y: 6)
+            .frame(maxWidth: 380)
+            .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
             .padding(.horizontal, 28)
         }
+    }
+
+    /// 横屏紧凑回放控制坞（单栏居中、高度精简，让出 >72% 舆图空间供双指缩放观看战局）
+    @ViewBuilder
+    private func landscapeDeck(timeline: ReplayTimelineData, idx: Int, frame: ReplayTimelineData.Frame, nearCP: WorldCheckpoint?, multiFrame: Bool) -> some View {
+        VStack(spacing: 6) {
+            if multiFrame {
+                Slider(
+                    value: Binding(
+                        get: { Double(model.replayIndex) },
+                        set: { v in
+                            let target = Int(v.rounded())
+                            if target != model.replayIndex { model.seekReplay(to: target, animated: false) }
+                        }
+                    ),
+                    in: 0...Double(timeline.frames.count - 1),
+                    step: 1,
+                    onEditingChanged: { editing in
+                        if editing { model.pauseReplay() }
+                    }
+                )
+                .tint(model.replayReversing ? Theme.jade : Theme.seal)
+            }
+            HStack(spacing: 10) {
+                Button { model.stepReplay(-1) } label: {
+                    InkIcon(glyph: .stepBack, size: 15, weight: 1.75).foregroundStyle(Theme.ink)
+                        .frame(width: 34, height: 34).background(Theme.paper2, in: Circle()).overlay(Circle().stroke(Theme.line))
+                }
+                .buttonStyle(PressStyle()).opacity(multiFrame && idx > 0 ? 1 : 0.42)
+
+                Button {
+                    GameFeel.shared.tap()
+                    model.toggleReplayPlay(reverse: true)
+                } label: {
+                    let activeRev = model.replayPlaying && model.replayReversing
+                    HStack(spacing: 4) {
+                        InkIcon(glyph: activeRev ? .pause : .rewind, size: 13, weight: 1.8)
+                        Text("倒放").font(Theme.label)
+                    }
+                    .foregroundStyle(activeRev ? Theme.paper2 : Theme.ink)
+                    .padding(.horizontal, 11).frame(height: 34)
+                    .background(activeRev ? Theme.jade : Theme.paper2, in: Capsule())
+                    .overlay(Capsule().stroke(activeRev ? Color.clear : Theme.line))
+                }
+                .buttonStyle(PressStyle()).opacity(multiFrame ? 1 : 0.55)
+
+                Button {
+                    GameFeel.shared.tap()
+                    model.toggleReplayPlay(reverse: false)
+                } label: {
+                    let activeFwd = model.replayPlaying && !model.replayReversing
+                    InkIcon(glyph: activeFwd ? .pause : .play, size: 16, weight: 1.95)
+                        .foregroundStyle(Theme.paper2)
+                        .frame(width: 38, height: 38)
+                        .background(Theme.seal, in: Circle())
+                }
+                .buttonStyle(PressStyle()).opacity(multiFrame ? 1 : 0.55)
+
+                Button { model.stepReplay(1) } label: {
+                    InkIcon(glyph: .stepForward, size: 15, weight: 1.75).foregroundStyle(Theme.ink)
+                        .frame(width: 34, height: 34).background(Theme.paper2, in: Circle()).overlay(Circle().stroke(Theme.line))
+                }
+                .buttonStyle(PressStyle()).opacity(multiFrame && idx < timeline.frames.count - 1 ? 1 : 0.42)
+
+                Button { model.cycleReplaySpeed() } label: {
+                    Text("\(model.replaySpeed)×").font(Theme.body).foregroundStyle(model.replaySpeed > 1 ? Theme.seal : Theme.ink)
+                        .frame(width: 34, height: 34).background(Theme.paper2, in: Circle()).overlay(Circle().stroke(Theme.line))
+                        .contentTransition(.numericText())
+                }
+                .buttonStyle(PressStyle())
+
+                if let nearCP {
+                    Button {
+                        GameFeel.shared.tap()
+                        confirmRollback = nearCP
+                    } label: {
+                        Text("回溯此年").font(Theme.label).foregroundStyle(Theme.jade)
+                            .padding(.horizontal, 10).frame(height: 34)
+                            .background(Theme.jade.opacity(0.1), in: Capsule())
+                            .overlay(Capsule().stroke(Theme.jade.opacity(0.32), lineWidth: 0.8))
+                    }
+                    .buttonStyle(PressStyle())
+                }
+
+                Button {
+                    GameFeel.shared.tap()
+                    withAnimation(Motion.panel) { collapsed = true }
+                } label: {
+                    Image(systemName: "chevron.down").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.ink2)
+                        .frame(width: 30, height: 30).background(Theme.wash, in: Circle())
+                }
+                .buttonStyle(PressStyle())
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .frame(maxWidth: 560)
+        .glass(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, Theme.Control.screenInset).padding(.bottom, 6)
     }
 
     @ViewBuilder
@@ -895,7 +1049,7 @@ struct ReplayOverlay: View {
     @ViewBuilder
     private func fullDeck(timeline: ReplayTimelineData, idx: Int, frame: ReplayTimelineData.Frame, nearCP: WorldCheckpoint?, multiFrame: Bool) -> some View {
         VStack(spacing: 10) {
-            // 顶部交互头：左侧返回当下、中间收起手柄、右侧历史节点目录（单手大拇指也可一键直达）
+            // 仅在顶部收起手柄挂下拉手势，避免和滑条或舆图双指缩放抢占触控
             HStack(spacing: 8) {
                 Button {
                     GameFeel.shared.tap()
@@ -904,7 +1058,7 @@ struct ReplayOverlay: View {
                     model.exitReplay()
                 } label: {
                     Text("返回当下").font(Theme.caption).foregroundStyle(Theme.seal)
-                        .padding(.horizontal, 10).frame(height: 26)
+                        .padding(.horizontal, 10).frame(height: 28)
                         .background(Theme.seal.opacity(0.09), in: Capsule())
                         .contentShape(Capsule())
                 }
@@ -915,10 +1069,22 @@ struct ReplayOverlay: View {
                     GameFeel.shared.tap()
                     withAnimation(Motion.panel) { collapsed = true }
                 } label: {
-                    Capsule().fill(Theme.ink.opacity(0.22)).frame(width: 36, height: 4)
-                        .frame(width: 56, height: 22).contentShape(Rectangle())
+                    Capsule().fill(Theme.ink.opacity(0.22)).frame(width: 38, height: 4)
+                        .frame(width: 68, height: 26).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .gesture(
+                    DragGesture(minimumDistance: 10)
+                        .onChanged { g in deckDragY = g.translation.height > 0 ? g.translation.height : 0 }
+                        .onEnded { g in
+                            if g.translation.height > 36 || g.predictedEndTranslation.height > 70 {
+                                GameFeel.shared.tap()
+                                withAnimation(Motion.panel) { collapsed = true; deckDragY = 0 }
+                            } else {
+                                withAnimation(Motion.panel) { deckDragY = 0 }
+                            }
+                        }
+                )
                 Spacer()
 
                 Button {
@@ -927,7 +1093,7 @@ struct ReplayOverlay: View {
                     withAnimation(Motion.panel) { showNodes = true }
                 } label: {
                     Text("节点(\(timeline.frames.count))").font(Theme.caption).foregroundStyle(Theme.ink)
-                        .padding(.horizontal, 10).frame(height: 26)
+                        .padding(.horizontal, 10).frame(height: 28)
                         .background(Theme.wash, in: Capsule())
                         .contentShape(Capsule())
                 }
@@ -971,7 +1137,6 @@ struct ReplayOverlay: View {
                     .tint(model.replayReversing ? Theme.jade : Theme.seal)
                 }
             } else {
-                // 单帧空态清晰引导：绝不留无响应死按钮
                 VStack(spacing: 8) {
                     Text("目前仅有开局首帧，推演满 30 天或发生大事即自动录制历史帧。")
                         .font(Theme.caption).foregroundStyle(Theme.ink2).multilineTextAlignment(.center)
@@ -987,14 +1152,14 @@ struct ReplayOverlay: View {
                         }
                         .foregroundStyle(Theme.paper2)
                         .frame(maxWidth: .infinity).frame(height: 40)
-                        .background(Theme.seal, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                        .background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
                     }
                     .buttonStyle(PressStyle())
                 }
                 .padding(.vertical, 2)
             }
 
-            // 播放 / 倒放 / 步进 / 倍速按钮排（全部采用光学居中的手绘水墨图标）
+            // 播放 / 倒放 / 步进 / 倍速按钮排
             HStack(spacing: 12) {
                 Button { model.stepReplay(-1) } label: {
                     InkIcon(glyph: .stepBack, size: 17, weight: 1.75)
@@ -1004,7 +1169,6 @@ struct ReplayOverlay: View {
                 }
                 .buttonStyle(PressStyle()).opacity(multiFrame && idx > 0 ? 1 : 0.42)
 
-                // 倒放按钮
                 Button {
                     GameFeel.shared.tap()
                     model.toggleReplayPlay(reverse: true)
@@ -1021,7 +1185,6 @@ struct ReplayOverlay: View {
                 }
                 .buttonStyle(PressStyle()).opacity(multiFrame ? 1 : 0.55)
 
-                // 主正放/暂停朱印钮
                 Button {
                     GameFeel.shared.tap()
                     model.toggleReplayPlay(reverse: false)
@@ -1052,7 +1215,6 @@ struct ReplayOverlay: View {
                 .buttonStyle(PressStyle())
             }
 
-            // 若当前附近存在可恢复推演的历史快照，一键回到此节点改写历史
             if let nearCP {
                 Button {
                     GameFeel.shared.tap()
@@ -1064,16 +1226,14 @@ struct ReplayOverlay: View {
                     }
                     .foregroundStyle(Theme.jade)
                     .frame(maxWidth: .infinity).frame(height: 36)
-                    .background(Theme.jade.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.8))
+                    .background(Theme.jade.opacity(0.1), in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(Theme.jade.opacity(0.32), lineWidth: 0.8))
                 }
                 .buttonStyle(PressStyle())
             }
         }
         .padding(.horizontal, Theme.Layout.pageInset).padding(.top, 6).padding(.bottom, 12)
-        .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous)))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
-        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.22), radius: 14, y: 5)
+        .glass(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .padding(.horizontal, Theme.Layout.pageInset).padding(.bottom, 8)
     }
 }

@@ -171,8 +171,7 @@ struct MenuSheet: View {
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
+            .paperCard()
             .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
         }
         .buttonStyle(PressStyle())

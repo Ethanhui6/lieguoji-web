@@ -45,7 +45,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 最近的攻占（州 → 进攻方、军队位置、登记时刻）、刚有大事的国家、上次安装颜色时各州的主人。
     var washCaptures: [Int: (nation: Int, armies: [SIMD2<Float>], time: Float)] = [:]
     var washRegimes: [Int: Float] = [:]
-    var washOwners: [Int] = []
     /// 易主扫满时各顶点的旧色（rgb，按顶点号）。
     var washOld: [Float] = []
     private let linePipeline: MTLRenderPipelineState
@@ -238,7 +237,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 自绘地图: the terrain itself changed (land raised from the sea, coasts moved): the land mesh,
     /// relief marks, province lines and outlines are rebuilt, and the sea texture when given.
     func setTerrain(_ next: WorldMap, refreshSea: Bool) {
-        workRevision.replaceMap()
+        let work = workRevision.replaceMap()
+        workRevision.installColours(work)
+        workRevision.installGeometry(work)
         map = next; base = nil; shade = []; terrainBase = nil
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         let mesh = CellMesh(map: next)
@@ -390,7 +391,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 if self.shade.isEmpty { self.shade = colours.shade }
                 if self.workRevision.acceptsColours(work) {
                     self.workRevision.installColours(work)
-                    self.base = (colours.land, colours.terrain)
+                    self.base = (colours.land, colours.terrain, next.meta.provinces.map(\.nation), inputs.nationColors)
                     self.fadeOnRecolor = doFade
                     self.recolor()
                     self.fadeOnRecolor = false
@@ -448,7 +449,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// The map's colours before the generation reveal: the land colours of the current mode and the
     /// terrain colours, both shaded. Kept while only the reveal moves, so the animation does not
     /// recompute every cell's palette 60 times a second.
-    private(set) var base: (land: [Float], terrain: [Float])? { didSet { revealTerrain = nil } }
+    private(set) var base: (land: [Float], terrain: [Float], owners: [Int], palette: [RGB])? { didSet { revealTerrain = nil } }
     /// For the reveal shader: each vertex's two fields (RevealFields.swift) and the shaded terrain colours.
     private var revealFields: MTLBuffer?
     private var revealFieldData: [Float]?
@@ -493,7 +494,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     terrain[v * 4 + j] = min(1, terrain[v * 4 + j] * k)
                 }
             }
-            base = (c, terrain)
+            base = (c, terrain, map.meta.provinces.map(\.nation), nationColors)
         }
         guard let base else { return }
         // The generation reveal (land rising from the coast to the peaks over 0…0.45, the states' colours
@@ -512,7 +513,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let now = clock(), began = CACurrentMediaTime()
             defer { if let probe = Self.frameProbe, fadeOnRecolor { probe.recolor.append((CACurrentMediaTime() - began) * 1000) } }
             let fade = fadeOnRecolor && reveal >= 1 && colors.length == b.length
-            let handed = fade ? washHandover(next: c, now: now) : []
+            let handed = fade ? washHandover(next: c, owners: base.owners, now: now) : []
             let vp = washTopology?.vertexProvince
             landFade.set(c, at: now, fade: fade, instant: { v in
                 guard !handed.isEmpty, let vp, v < vp.count else { return false }
@@ -856,7 +857,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 self.workRevision.installColours(work)
                 if self.terrainBase == nil { self.terrainBase = colours.terrainBase }
                 if self.shade.isEmpty { self.shade = colours.shade }
-                self.base = (colours.land, colours.terrain)
+                self.base = (colours.land, colours.terrain, map.meta.provinces.map(\.nation), inputs.nationColors)
                 self.fadeOnRecolor = fade
                 self.washViewSwitch = viewSwitch
                 self.recolor()

@@ -146,6 +146,57 @@ final class ConquestWashTests: XCTestCase {
         XCTAssertTrue(ink.nation.allSatisfy { $0 == -1 })
     }
 
+    func testCeasefireDoesNotRevealInkThatHadNotArrived() {
+        let (t, owners) = Self.front()
+        let ink = InkCells(topology: t)
+        let march = Self.march(SIMD2(32, 5.5), SIMD2(46, 5.5), day: 1)
+        ink.apply(WashFrame(day: 1, inputs: [march], enemies: [0: [1]]), owners: owners, now: 0, tween: 0.5)
+        let v = t.vertexRange(Self.cellAt(44, 5)).lowerBound
+        let ceasefire: Float = 0.05
+        XCTAssertEqual(ink.level(v, at: ceasefire), 0)
+        ink.apply(WashFrame(day: 2, inputs: [], enemies: [:]), owners: owners, now: ceasefire, tween: 0.5)
+        for elapsed in [Float(0.18), 0.4, 0.6, 0.9] {
+            XCTAssertEqual(ink.level(v, at: ceasefire + elapsed), 0, "停战后，尚未抵达的战线不能继续染开")
+        }
+    }
+
+    func testStationaryDefendersDoNotRestartTheFadeEachDay() {
+        let (t, owners) = Self.front()
+        let ink = InkCells(topology: t)
+        let position = SIMD2<Float>(44.5, 5.5)
+        let march = Self.march(position, position, day: 1)
+        let hold = WashInput(province: 4, attacker: 1, kind: .hold, day: 2, armies: [position])
+        ink.apply(WashFrame(day: 1, inputs: [march], enemies: [0: [1]]), owners: owners, now: 0, tween: 0.5)
+        let c = Self.cellAt(44, 5)
+        let v = t.vertexRange(c).lowerBound
+        let start: Float = 2
+        ink.apply(WashFrame(day: 2, inputs: [march, hold], enemies: [0: [1]]), owners: owners, now: start, tween: 0.5)
+        XCTAssertEqual(ink.leave[c], start)
+        for day in 3...7 {
+            let now = start + Float(day - 2) * 0.15
+            let before = ink.level(v, at: now)
+            ink.apply(WashFrame(day: day, inputs: [march, hold], enemies: [0: [1]]), owners: owners, now: now, tween: 0.5)
+            XCTAssertEqual(ink.leave[c], start, "同一片守军足迹只能触发一次退墨")
+            XCTAssertEqual(ink.level(v, at: now), before, accuracy: 1e-5)
+        }
+        ink.apply(WashFrame(day: 8, inputs: [march, hold], enemies: [0: [1]]), owners: owners, now: 4, tween: 0.5)
+        XCTAssertEqual(ink.nation[c], -1, "守军未离开时，进攻方不应反复在原地补墨")
+    }
+
+    func testCompetingFrontsKeepInkThatWasAlreadyVisible() {
+        let (t, owners) = Self.front()
+        let ink = InkCells(topology: t)
+        let point = SIMD2<Float>(44.5, 5.5)
+        let inputs = [Self.march(point, point, day: 1), Self.march(point, point, day: 1, key: "rival", attacker: 2)]
+        let enemies = [0: [1], 2: [1]]
+        ink.apply(WashFrame(day: 1, inputs: inputs, enemies: enemies), owners: owners, now: 0, tween: 0.5)
+        let v = t.vertexRange(Self.cellAt(44, 5)).lowerBound
+        let before = ink.level(v, at: 2)
+        XCTAssertGreaterThan(before, 0.75)
+        ink.apply(WashFrame(day: 2, inputs: inputs, enemies: enemies), owners: owners, now: 2, tween: 0.5)
+        XCTAssertEqual(ink.level(v, at: 2), before, accuracy: 1e-5)
+    }
+
     func testNearbyArmiesInkWiderTogether() {
         let (t, owners) = Self.front()
         let one = InkCells(topology: t)

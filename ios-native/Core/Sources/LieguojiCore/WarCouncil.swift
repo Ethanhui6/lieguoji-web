@@ -187,7 +187,8 @@ extension ArmyOrders {
     static func warPlan(_ r: JS, nation: String, enemies enemySet: Set<String>, _ c: CouncilContext, bridge: ForceBridge) -> [String: WarCouncil.Duty] {
         let g = bridge.graph, state = r.armyAutonomy, provinces = c.provinces
         let owned = c.ownedBy[nation] ?? []
-        let capital = Rebellion.capitalProvince(r, nation).flatMap { c.provinceAt[$0] }
+        // 旧都落在敌方控制下时，由「收复失地」评估，不能列为我军安静驻防点。
+        let capital = Rebellion.capitalProvince(r, nation).flatMap { c.provinceAt[$0] }.flatMap { owned.contains($0) ? $0 : nil }
         var invadedFoes = 0.0, homeTroops = 0.0
         for p in owned {
             let f = (c.presentAt[provinces[p].id.asString] ?? []).reduce(0.0) { s, x in

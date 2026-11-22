@@ -30,6 +30,53 @@ final class PolityDiplomacyNamingTests: XCTestCase {
         ArmyAutonomy.temper = nil
     }
 
+    func testTreatyKeepsTheAgreedProvinceAndReturnsOtherOccupations() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+        let r = engine.run, registry = r.nativeWars
+        let war = registry.campaigns[0], other = registry.campaigns[1]
+        let attacker = war.attacker.asString, defender = war.defender.asString
+        let goal = war.goals[0], number = goal.scope.provinceIds[0].asInt
+        let treatyID = registry.provinceIds[number - 1].asString
+        let provinces = r.world.provinces.asArray
+        let ceded = try XCTUnwrap(provinces.first { $0.id.asString == treatyID && $0.controller.asString == defender })
+        let returned = try XCTUnwrap(provinces.first { $0.id.asString != treatyID && $0.controller.asString == defender })
+        let thirdDefender = other.defender.asString, thirdAttacker = other.attacker.asString
+        let disputed = try XCTUnwrap(provinces.first { $0.controller.asString == thirdDefender })
+        for p in [ceded, returned] { p.legalOwner = JS(defender); p.controller = JS(attacker) }
+        disputed.legalOwner = JS(thirdDefender); disputed.controller = JS(thirdAttacker)
+        goal.scope.provinceIds = .array([JS(number)])
+        goal.scope.requiredCount = JS(1)
+
+        XCTAssertTrue(PeaceBridge.settle(r, war, reason: 4))
+        XCTAssertEqual(ceded.controller.asString, attacker)
+        XCTAssertEqual(ceded.legalOwner.asString, attacker)
+        XCTAssertEqual(returned.controller.asString, defender)
+        XCTAssertEqual(returned.legalOwner.asString, defender)
+        XCTAssertFalse(RunWindow.atWar(r, attacker, defender))
+        XCTAssertTrue(other.endedTick.isNull)
+        XCTAssertTrue(RunWindow.atWar(r, thirdAttacker, thirdDefender))
+        XCTAssertEqual(disputed.controller.asString, thirdAttacker)
+        XCTAssertEqual(disputed.legalOwner.asString, thirdDefender)
+    }
+
+    func testPlayerCeasefireRestoresTerritoryWithoutAssigningNewOwnership() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+        let r = engine.run, war = r.nativeWars.campaigns[0]
+        let attacker = war.attacker.asString, defender = war.defender.asString
+        let nations = r.world.nations.asArray
+        let a = try XCTUnwrap(nations.firstIndex { $0.id.asString == attacker })
+        let d = try XCTUnwrap(nations.firstIndex { $0.id.asString == defender })
+        let occupied = try XCTUnwrap(r.world.provinces.asArray.first { $0.controller.asString == defender })
+        occupied.controller = JS(attacker); occupied.legalOwner = JS(defender)
+
+        XCTAssertTrue(engine.politics(declare: false, a, d).ok)
+        XCTAssertEqual(occupied.controller.asString, defender)
+        XCTAssertEqual(occupied.legalOwner.asString, defender)
+        XCTAssertFalse(RunWindow.atWar(r, attacker, defender))
+    }
+
     func testAuthenticNamingAcrossCulturesAndStyles() {
         let forbidden: [String] = [
             "中国地方", "江南帝国", "巴蜀帝国", "大金共和国", "大金人民共和国",

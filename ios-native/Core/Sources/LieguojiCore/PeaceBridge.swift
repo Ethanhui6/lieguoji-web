@@ -132,16 +132,47 @@ public enum PeaceBridge {
         return "\(complete ? "历时" : "自本局记录起经过")\(jsNumber(elapsed))日。\(groups)。目标：\(targets)。累计军力损失：\(loss.isEmpty ? "0" : loss)（原作战分单位，非阵亡人数）。本次和约执行\(s.isNull ? 0 : s.transfers.length)项转地、确认\(s.isNull ? 0 : s.confirmedOwnership.length)处实控归属。"
     }
 
+    /// 已经由条约受益方控制的目标地不会出现在 transfers 中，单独确认其法理归属。
+    private static func confirmOccupiedCessions(_ r: JS, war: PeaceWar, result: Settlement.Result) -> [JS] {
+        let s = r.nativeWars
+        let goals = war.goals.filter { (0...3).contains($0.type) && result.enforcedGoals.contains($0.id ?? 0) }
+        guard !goals.isEmpty || result.annexation else { return [] }
+        let attackers = Settlement.sideIDs(war, 0), defenders = Settlement.sideIDs(war, 1)
+        var confirmed = [JS]()
+        for p in r.world.provinces.asArray {
+            let controller = p.controller.asString
+            guard let owner = p.legalOwner.optionalString, owner != controller,
+                  let lawful = r.people.nations[owner].id.optionalNumber,
+                  let occupier = r.people.nations[controller].id.optionalNumber else { continue }
+            let from = Int(lawful), to = Int(occupier)
+            guard (attackers.contains(to) && defenders.contains(from)) ||
+                  (defenders.contains(to) && attackers.contains(from)) else { continue }
+            let id = Wars.provinceNumber(s, p.id.asString)
+            guard id > 0 else { continue }
+            let annexed = result.annexation && from == war.primaryDefenderId && to == war.primaryAttackerId
+            let granted = goals.contains { goal in
+                goal.beneficiary == to && (goal.type == 3 ? goal.target == from : goal.provinceIds?.contains(id) == true)
+            }
+            guard annexed || granted else { continue }
+            p.legalOwner = p.controller.clone()
+            stripOffice(r, id)
+            confirmed.append(.array([JS(id), JS(to)]))
+        }
+        return confirmed
+    }
+
     /// settleWar47 for wars the typed treaty ports cover (external wars and player-ordered ends).
     @discardableResult
     public static func settle(_ r: JS, _ c: JS, reason: Int) -> Bool {
         if !c.endedTick.isNull { return false }
         let s = r.nativeWars, participants = Wars.participantNations(s, c), complete = c.history.asString == "complete"
+        let restoreOccupations = r.regimes.enabled.isTruthy && c.internal.isNull
         var result: Settlement.Result?
         var confirmed = [JS]()
         if complete {
             var w = world(r)
-            result = Settlement.settle(war: war(c), world: &w, reason: reason)
+            let terms = war(c)
+            result = Settlement.settle(war: terms, world: &w, reason: reason)
             if let result {
                 for t in result.applied {
                     let p = r.world.provinces.asArray.first { $0.id.asString == s.provinceIds[t.provinceId - 1].asString }!, owner = nation(r, t.to)
@@ -152,20 +183,44 @@ public enum PeaceBridge {
                 }
                 // Reparations were paid on the typed world in effect order; its treasuries are written back.
                 for st in w.states { let fin = r.finance.nations[nation(r, st.id)]; if fin.gold.asNumber != st.gold { fin.gold = JS(st.gold) } }
-                for pair in c.initialOwners.asArray {
-                    let pid = pair[0].asInt, original = pair[1].asInt
-                    let p = r.world.provinces.asArray.first { $0.id.asString == s.provinceIds[pid - 1].asString }!, owner = Wars.stateNumber(r, p.controller.asString)
-                    if owner != original && participants.contains(p.controller.asString) && participants.contains(p.legalOwner.asString) {
-                        if p.legalOwner.asString != p.controller.asString { p.legalOwner = p.controller.clone(); stripOffice(r, pid) }
-                        confirmed.append(.array([JS(pid), JS(owner)]))
+                if restoreOccupations {
+                    confirmed = confirmOccupiedCessions(r, war: terms, result: result)
+                } else {
+                    for pair in c.initialOwners.asArray {
+                        let pid = pair[0].asInt, original = pair[1].asInt
+                        let p = r.world.provinces.asArray.first { $0.id.asString == s.provinceIds[pid - 1].asString }!, owner = Wars.stateNumber(r, p.controller.asString)
+                        if owner != original && participants.contains(p.controller.asString) && participants.contains(p.legalOwner.asString) {
+                            if p.legalOwner.asString != p.controller.asString { p.legalOwner = p.controller.clone(); stripOffice(r, pid) }
+                            confirmed.append(.array([JS(pid), JS(owner)]))
+                        }
                     }
                 }
             }
         }
+        var endedEnemies = [String: Set<String>]()
         for (a, b) in Wars.opposedPairs(s, c) {
             if s.campaigns.asArray.contains(where: { $0 !== c && $0.endedTick.isNull && Wars.coversPair($0, s, a, b) }) { continue }
             let rel = Wars.relation(r, a, b)!
             rel.status = JS("peace"); rel.sinceDay = r.world.day.clone(); rel.truceUntilDay = JS(r.world.day.asNumber + 10)
+            if restoreOccupations {
+                endedEnemies[a, default: []].insert(b)
+                endedEnemies[b, default: []].insert(a)
+            }
+        }
+        var restored = 0
+        if !endedEnemies.isEmpty {
+            let livingRegistry = Set(r.world.nations.asArray.map(\.id.asString))
+            for p in r.world.provinces.asArray {
+                let controller = p.controller.asString
+                guard let owner = p.legalOwner.optionalString, livingRegistry.contains(owner),
+                      endedEnemies[controller]?.contains(owner) == true else { continue }
+                // 正式割让已改法理归属。停战双方其余仍属军事占领的州恢复原主。
+                let id = p.id.asString
+                transferEconomy(r, id, controller, owner)
+                p.controller = JS(owner)
+                stripOffice(r, Wars.provinceNumber(s, id))
+                restored += 1
+            }
         }
         if complete {
             let o = JS.object()
@@ -194,6 +249,7 @@ public enum PeaceBridge {
             }
         } else { c.settlement = .null }
         c.endedTick = r.clock.tick.clone(); Wars.revise(s)
+        if restored > 0 { Wars.reconcileCore(r); Wars.reconcileParticipants(r) }
         let names = c.nations.asArray.map { id in r.world.nations.asArray.first { $0.id.asString == id.asString }!.name.asString }
         func nameOf(_ id: JS, _ fallback: String) -> String { r.world.nations.asArray.first { $0.id.optionalString == id.optionalString }?.name.asString ?? fallback }
         let declaration = r.nativeDiplomacy.declarations.asArray.first { $0.warId.asInt == c.id.asInt }
@@ -201,7 +257,8 @@ public enum PeaceBridge {
         let text = settledText(aggressor: nameOf(c.attacker, names[0]), defender: nameOf(c.defender, names[1]), winnerSide: result?.winnerSide == 0 || result?.winnerSide == 1 ? result?.winnerSide : nil,
                                annexed: result?.annexation ?? false, reason: reason, goal: goal, ceded: result?.applied.count ?? 0, months: Int(((c.endedTick.asNumber - c.openedTick.asNumber) / 120 / 30).rounded(.down)))
         let prefix = reason == 11 ? "玩家干预停战，不执行割地和赔款。" : result != nil ? "按原作和约规则执行：\(result!.applied.count)项转地。" : "开局缺少宣战史，只结束已失去参战条件的战争，不编造条款。"
-        People.announce(r, kind: "diplomacy", text: text, reason: prefix + historyDetails(r, c) + "其他仍在进行的战争保留。", nations: participants, province: nil)
+        let returned = restored > 0 ? "归还\(restored)处军事占领地。" : ""
+        People.announce(r, kind: "diplomacy", text: text, reason: prefix + returned + historyDetails(r, c) + "其他仍在进行的战争保留。", nations: participants, province: nil)
         reconcileForces?(r, Set(participants))
         return true
     }

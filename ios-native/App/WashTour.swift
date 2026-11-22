@@ -170,6 +170,28 @@ extension ShotTour {
         await shoot("rec-wash-stop")
         var out = recorder.stop()
         out["sweepActiveLeft"] = c.renderer?()?.sweep?.active.count ?? -1
+        // 全部停战时依然绘制正在淡出的墨。录制独立片段以保持上面性能样本的场景相同。
+        await shoot("rec-wash-ceasefire-start")
+        if let renderer = c.renderer?(), let snapshot = renderer.ink?.snapshot {
+            let now = renderer.clock()
+            let v = (0..<t.vertexCount).first { v in
+                let p = Int(t.vertexProvince[v])
+                return world.meta.provinces.indices.contains(p) && world.meta.provinces[p].nation == d &&
+                    snapshot.vertices.indices.contains(v * 4 + 3) && snapshot.level(v, at: now) > 0.8
+            }
+            if let v {
+                let before = snapshot.level(v, at: now)
+                c.washes = WashFrame(day: day + 1, inputs: [], enemies: [:])
+                c.objectWillChange.send()
+                await wait(0.5)
+                let during = renderer.ink?.snapshot?.level(v, at: renderer.clock()) ?? 0
+                await wait(1)
+                let after = renderer.ink?.snapshot?.level(v, at: renderer.clock()) ?? 0
+                out["ceasefire"] = ["before": before, "during": during, "after": after,
+                                    "passed": before > during && during > 0 && after == 0] as [String: Any]
+            }
+        }
+        await shoot("rec-wash-ceasefire-stop")
         // 压力：几十个州同时被邻国从邻州打进来、分批攻占，镜头拉远。
         c.resetRequest = UUID(); await wait(1)
         let stress = WashRecorder(renderer: { c.renderer?() }, probes: [:])
@@ -213,7 +235,7 @@ extension ShotTour {
         model.pause(saving: false)
         await wait(0.8)
         let after = await washRun(model, stage: stage)
-        let report: [String: Any] = ["version": 2, "chain": stage.chain, "attacker": stage.attacker, "after": after,
+        let report: [String: Any] = ["version": 3, "chain": stage.chain, "attacker": stage.attacker, "after": after,
                                      "note": "callbackGapMs 为主线程显示回调间隔；encodeMs 为整帧编码（CPU）；gpuMs 为命令缓冲 GPU 执行；presentGapMs 为实际上屏间隔"]
         if let data = try? JSONSerialization.data(withJSONObject: report, options: [.sortedKeys, .prettyPrinted]) {
             try? data.write(to: FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("wash-demo.json"), options: .atomic)

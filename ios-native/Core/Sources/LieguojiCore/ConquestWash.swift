@@ -233,7 +233,7 @@ public struct WashFrame: Equatable, Sendable {
             }
         }
         var enemies = [Int: [Int]]()
-        // 所有在战国家（不只这一步在敌境的）：军队撤回本国后，它留在敌境的墨照样显示、按天褪去；议和后立即不显示。
+        // 军队撤回后保留战时墨迹；只有解除敌对的墨迹进入退场过渡。
         for n in next.nations.indices where !next.nations[n].enemies.isEmpty { enemies[n] = next.nations[n].enemies.sorted() }
         return WashFrame(day: next.day, inputs: inputs.sorted(by: WashFrame.order), enemies: enemies)
     }

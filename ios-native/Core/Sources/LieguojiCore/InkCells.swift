@@ -57,6 +57,32 @@ public final class InkCells: @unchecked Sendable {
     /// 一年没有军队经过的墨淡去。
     public static let staleDays = 365
 
+    /// 后台格子更新完成后发布的只读画面。同一份数据用于上传和易主颜色交接。
+    public struct RenderSnapshot: Sendable {
+        public let nation: [Int32]
+        public let leave: [Float]
+        public let vertices: [Float]
+        public let busyUntil: Float
+        public let visibleUntil: Float
+
+        public func level(_ v: Int, at now: Float) -> Float {
+            InkCells.level(vertices, vertex: v, at: now)
+        }
+    }
+
+    public func renderSnapshot() -> RenderSnapshot {
+        var visibleUntil: Float = 0
+        for c in nation.indices where nation[c] >= 0 {
+            if leave[c] >= Self.never {
+                visibleUntil = Self.never
+                break
+            }
+            visibleUntil = max(visibleUntil, leave[c] + Self.fadeSeconds)
+        }
+        return RenderSnapshot(nation: nation, leave: leave, vertices: vertexData,
+                              busyUntil: busyUntil, visibleUntil: visibleUntil)
+    }
+
     /// `elevation`：每格高度（0–100，海为低值），没有时视为平地。
     public init(topology: WashTopology, elevation: [Int16]? = nil) {
         self.topology = topology
@@ -153,6 +179,44 @@ public final class InkCells: @unchecked Sendable {
             if o == n { setCell(c, nation: -1, arrive: 0, leave: Self.never) }
             else if !atWar(n, o) || frame.day - Int(touched[c]) > Self.staleDays { setCell(c, nation: Int32(n), arrive: arrive[c], leave: now) }
         }
+        // 先结算本步守军能保持的范围。相持时同一格只退墨一次，直到守军实际离开。
+        var defended = Set<Int>()
+        var holdsByProvince = [Int: (positions: [SIMD2<Float>], troops: Float)]()
+        for h in frame.inputs where h.kind == .hold && !h.armies.isEmpty {
+            if owners.indices.contains(h.province), owners[h.province] == h.attacker {
+                holdsByProvince[h.province, default: ([], 0)].positions.append(contentsOf: h.armies)
+                holdsByProvince[h.province, default: ([], 0)].troops += h.troops
+            }
+            let budget = t.scale * 0.45 * Self.width(troops: max(4000, h.troops))
+            for pos in h.armies {
+                guard let start = cell(at: pos), owner(start) == h.attacker else { continue }
+                spread(from: [(start, 0)], budget: budget, within: nil) { c, _, _ in
+                    guard owner(c) == h.attacker else { return }
+                    defended.insert(c)
+                    if self.nation[c] >= 0 && self.nation[c] != Int32(h.attacker) && self.leave[c] >= Self.never {
+                        setCell(c, nation: self.nation[c], arrive: self.arrive[c], leave: now)
+                    }
+                }
+            }
+        }
+        // 同一格若被多国前沿覆盖，以更新前的显示状态接续最后选中的颜色。
+        let previous = (nation: nation, arrive: arrive, leave: leave)
+        func layInk(_ c: Int, attacker: Int, arrival: Float) {
+            guard !defended.contains(c), atWar(attacker, owner(c)) else { return }
+            let n = Int32(attacker)
+            touched[c] = Int32(frame.day)
+            var start = arrival
+            if nation[c] == n && leave[c] >= Self.never { return }
+            if previous.nation[c] == n {
+                if previous.leave[c] >= Self.never {
+                    setCell(c, nation: n, arrive: previous.arrive[c], leave: Self.never)
+                    return
+                }
+                let visible = Self.amount(arrival: previous.arrive[c], departure: previous.leave[c], at: now)
+                if visible > 0 { start = now - visible * Self.revealSeconds }
+            }
+            setCell(c, nation: n, arrive: start, leave: Self.never)
+        }
         // 二、行军与驻扎：按进攻国分桶聚合邻近友军兵力，避免军队数量多时 O(N²) 全量比对与重复驻留搜索。
         let marches = frame.inputs.filter { $0.kind == .march && $0.armies.count == 2 }
         var byAttacker = [Int: [Int]]()
@@ -191,10 +255,7 @@ public final class InkCells: @unchecked Sendable {
                 if let c = cell(at: from + (to - from) * f), !seeds.contains(where: { $0.cell == c }) { seeds.append((c, f * tween)) }
             }
             spread(from: seeds, budget: budget, within: nil) { c, d, delay in
-                guard atWar(m.attacker, owner(c)) else { return }
-                self.touched[c] = Int32(frame.day)
-                if self.nation[c] == Int32(m.attacker) && self.leave[c] >= Self.never { return }
-                setCell(c, nation: Int32(m.attacker), arrive: now + delay + d / (t.scale * Self.spreadPerSecond), leave: Self.never)
+                layInk(c, attacker: m.attacker, arrival: now + delay + d / (t.scale * Self.spreadPerSecond))
             }
         }
         dwelt = dwelt.filter { keys.contains($0.key) }
@@ -235,10 +296,9 @@ public final class InkCells: @unchecked Sendable {
                 far = max(far, d)
                 siegeVisited.append((c, d))
             }
-            let provOwner = s.province < owners.count ? owners[s.province] : -1
-            let holdInputs = frame.inputs.filter { $0.kind == .hold && $0.province == s.province && $0.attacker == provOwner }
-            let defenders = holdInputs.flatMap(\.armies)
-            let defScale = defenders.isEmpty ? Float(1) : Self.width(troops: max(4000, holdInputs.reduce(Float(0)) { $0 + $1.troops }))
+            let hold = holdsByProvince[s.province]
+            let defenders = hold?.positions ?? []
+            let defScale = Self.width(troops: max(4000, hold?.troops ?? 0))
             let defZone = t.scale * 2.6 * defScale, defCore2 = (t.scale * 0.9 * defScale) * (t.scale * 0.9 * defScale)
             let contestDamp: Float = (s.progress < 0.98 && !defenders.isEmpty) ? 0.72 : 1.0
             let budget = s.progress >= 0.98 ? Float.infinity : max(t.scale * 0.3, far * s.progress * 1.1 * contestDamp)
@@ -253,22 +313,7 @@ public final class InkCells: @unchecked Sendable {
                     if minDef < defZone { effDist *= 1.0 + 1.15 * (1.0 - minDef / defZone) }
                 }
                 guard effDist <= budget * reach[c] || item.d == 0 else { continue }
-                guard atWar(s.attacker, owner(c)) else { continue }
-                self.touched[c] = Int32(frame.day)
-                if self.nation[c] == Int32(s.attacker) && self.leave[c] >= Self.never { continue }
-                setCell(c, nation: Int32(s.attacker), arrive: now + effDist / (t.scale * Self.spreadPerSecond), leave: Self.never)
-            }
-        }
-        // 四、守军：在本土与敌相持或收复失地时，从守军当前位置按兵力顶回并淡出身边敌墨。
-        for h in frame.inputs where h.kind == .hold && !h.armies.isEmpty {
-            let holdBudget = t.scale * 0.45 * Self.width(troops: max(4000, h.troops))
-            for pos in h.armies {
-                guard let start = cell(at: pos) else { continue }
-                spread(from: [(start, 0)], budget: holdBudget, within: nil) { c, _, _ in
-                    if self.nation[c] >= 0 && self.nation[c] != Int32(h.attacker) && self.leave[c] >= Self.never && owner(c) == h.attacker {
-                        setCell(c, nation: self.nation[c], arrive: self.arrive[c], leave: now)
-                    }
-                }
+                layInk(c, attacker: s.attacker, arrival: now + effDist / (t.scale * Self.spreadPerSecond))
             }
         }
         refresh()
@@ -399,11 +444,19 @@ public final class InkCells: @unchecked Sendable {
 
     /// 顶点 v 在时刻 now 的墨量（0…1，与着色器同一算法，不含纸纹）。
     public func level(_ v: Int, at now: Float) -> Float {
-        let o = v * 4
-        guard vertexData[o] >= 0 else { return 0 }
-        let show = min(1, max(0, (now - vertexData[o + 1]) / Self.revealSeconds))
-        let fade = 1 - min(1, max(0, (now - vertexData[o + 2]) / Self.fadeSeconds))
-        return vertexData[o + 3] * show * fade
+        Self.level(vertexData, vertex: v, at: now)
+    }
+
+    private static func level(_ vertices: [Float], vertex: Int, at now: Float) -> Float {
+        let o = vertex * 4
+        guard vertices[o] >= 0 else { return 0 }
+        return vertices[o + 3] * amount(arrival: vertices[o + 1], departure: vertices[o + 2], at: now)
+    }
+
+    private static func amount(arrival: Float, departure: Float, at now: Float) -> Float {
+        let show = min(1, max(0, (min(now, departure) - arrival) / Self.revealSeconds))
+        let fade = 1 - min(1, max(0, (now - departure) / Self.fadeSeconds))
+        return show * fade
     }
 
     @inline(__always) static func pair(_ a: Int, _ b: Int) -> Int64 { Int64(min(a, b)) << 32 | Int64(max(a, b)) }

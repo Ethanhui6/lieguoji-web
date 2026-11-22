@@ -13,11 +13,6 @@ extension MapRenderer {
         return (sweep?.animating(at: clock(frameTime)) ?? false) || (ink?.busy(clock(frameTime)) ?? false)
     }
 
-    private func washOwner() -> (Int) -> Int {
-        let provinces = map.meta.provinces
-        return { p in provinces.indices.contains(p) ? provinces[p].nation : -1 }
-    }
-
     /// 某国首都所在城的位置。
     func capitalPoint(_ nation: Int) -> SIMD2<Float>? {
         guard map.meta.nations.indices.contains(nation) else { return nil }
@@ -58,8 +53,8 @@ extension MapRenderer {
         if epoch != washEpoch {
             washEpoch = epoch
             sweep?.clear(); sweepMeshCache = nil
-            ink?.update(self) { $0.clear() }
-            washCaptures = [:]; washRegimes = [:]; washOwners = []
+            ink?.reset(self)
+            washCaptures = [:]; washRegimes = [:]
         }
         washFrame = frame
         let now = clock()
@@ -82,16 +77,15 @@ extension MapRenderer {
 
     /// 新的陆地颜色即将安装：归属变了（攻占、反叛、割地、新立国）或刚有大事的国家颜色变了（改朝换代在家族等视图里换色）
     /// 的州交给扫色——底色立即换，新颜色从攻占的军队或新主人的首都扫过去。记下这些州每个顶点此刻显示的颜色作为旧色。
-    func washHandover(next: [Float], now: Float) -> Set<Int> {
+    func washHandover(next: [Float], owners: [Int], now: Float) -> Set<Int> {
         guard let sweep, let t = washTopology, display.battleGround ?? true, landFade.to.count == next.count else { return [] }
-        let owner = washOwner(), shown = landFade.to
-        let owners = map.meta.provinces.map(\.nation)
-        defer { washOwners = owners }
+        let previousOwners = ink?.lastProvinceOwners ?? [], shown = landFade.to
+        func owner(_ p: Int) -> Int { owners.indices.contains(p) ? owners[p] : -1 }
         var captured = [(provinces: [Int], seeds: [SIMD2<Float>])](), byOwner = [Int: [Int]]()
         for p in t.provinceCells.indices where !t.provinceCells[p].isEmpty {
             let n = owner(p)
             guard n >= 0 else { continue }
-            let moved = washOwners.indices.contains(p) && washOwners[p] != n
+            let moved = previousOwners.indices.contains(p) && previousOwners[p] != n
             guard moved || washRegimes[n] != nil else { continue }
             var changed = false
             search: for c in t.provinceCells[p] {
@@ -106,22 +100,22 @@ extension MapRenderer {
             else { byOwner[n, default: []].append(p) }
         }
         var groups = captured
-        let inkCells = ink?.cells
+        let inkSnapshot = ink?.snapshot
         for n in byOwner.keys.sorted() {
             let list = byOwner[n]!
             var frontSeeds = [SIMD2<Float>]()
-            if let inkCells, t.cellCount == inkCells.nation.count {
+            if let inkSnapshot, t.cellCount == inkSnapshot.nation.count {
                 let targetSet = Set(list)
                 for p in list {
                     for c32 in t.provinceCells[p] {
                         let c = Int(c32)
-                        if inkCells.nation[c] == Int32(n) {
+                        if inkSnapshot.nation[c] == Int32(n) {
                             frontSeeds.append(t.site[c]); continue
                         }
                         for nb32 in t.neighbors(c) {
                             let nb = Int(nb32), np = Int(t.province[nb])
                             guard np >= 0 else { continue }
-                            if !targetSet.contains(np), (owner(np) == n || (inkCells.nation[nb] == Int32(n) && inkCells.leave[nb] >= InkCells.never)) {
+                            if !targetSet.contains(np), (owner(np) == n || (inkSnapshot.nation[nb] == Int32(n) && inkSnapshot.leave[nb] >= InkCells.never)) {
                                 frontSeeds.append(t.site[c]); break
                             }
                         }
@@ -151,9 +145,9 @@ extension MapRenderer {
                         col = oldC + (col - oldC) * r
                     }
                     // 若该顶点在易主/正式割让前已被新主人的战时墨迹覆盖，从当前墨色无缝衔接新主底色，杜绝闪回旧国底色 1 帧。
-                    if let inkCells, newOwner >= 0, v * 4 + 3 < inkCells.vertexData.count,
-                       Int(inkCells.vertexData[v * 4] + 0.5) == newOwner, v * 4 + 2 < next.count {
-                        let inkAmt = inkCells.level(v, at: now)
+                    if let inkSnapshot, newOwner >= 0, v * 4 + 3 < inkSnapshot.vertices.count,
+                       inkSnapshot.vertices[v * 4] >= 0, Int(inkSnapshot.vertices[v * 4] + 0.5) == newOwner, v * 4 + 2 < next.count {
+                        let inkAmt = inkSnapshot.level(v, at: now)
                         if inkAmt > 0.01 {
                             let nextC = SIMD3(next[v * 4], next[v * 4 + 1], next[v * 4 + 2])
                             col = col + (nextC - col) * inkAmt

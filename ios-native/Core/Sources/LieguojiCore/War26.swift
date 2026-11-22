@@ -157,8 +157,8 @@ public enum War26 {
             let blocked = rest.contains { node in
                 guard let cell = g.cell(id: node.asInt) else { return false }
                 let q = Int(g.provinces[cell]); if q < 0 { return false }
-                let c = provinces[q].controller.asString
-                return !(RunWindow.access(r, nation, c) || c == anchor || !retreat && RunWindow.atWar(r, nation, c))
+                return !ArmyOrders.canTraverse(r, nation: nation, controller: provinces[q].controller.asString,
+                                               anchor: anchor, retreat: retreat)
             }
             if !blocked { continue }
             let h = t.clone(); h.status = JS("halted"); r.armyPositions.records[id] = h; Vassals.bump(r.armyPositions)

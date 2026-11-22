@@ -250,6 +250,7 @@ public enum PeaceBridge {
         } else { c.settlement = .null }
         c.endedTick = r.clock.tick.clone(); Wars.revise(s)
         if restored > 0 { Wars.reconcileCore(r); Wars.reconcileParticipants(r) }
+        if restoreOccupations && (restored > 0 || result?.applied.isEmpty == false) { Naval.reconcileLandOwners(r) }
         let names = c.nations.asArray.map { id in r.world.nations.asArray.first { $0.id.asString == id.asString }!.name.asString }
         func nameOf(_ id: JS, _ fallback: String) -> String { r.world.nations.asArray.first { $0.id.optionalString == id.optionalString }?.name.asString ?? fallback }
         let declaration = r.nativeDiplomacy.declarations.asArray.first { $0.warId.asInt == c.id.asInt }

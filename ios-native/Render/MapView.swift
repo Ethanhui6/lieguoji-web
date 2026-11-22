@@ -26,9 +26,10 @@ import LieguojiCore
     @Published var play = PlaySettings.load() { didSet { play.save() } }
     /// Province to fly to; the id makes repeated requests for the same province animate again.
     @Published var focus: (province: Int, id: UUID)?
-    @Published var resetRequest = UUID()
+    @Published var resetRequest = UUID() { didSet { onFramingRequest?() } }
     /// 地图展开: the camera draws back until the whole map is on screen.
-    @Published var unrollRequest = UUID()
+    @Published var unrollRequest = UUID() { didSet { onFramingRequest?() } }
+    var onFramingRequest: (() -> Void)?
     /// The camera's scale now and the scale at which the whole map fits (CI checks the map can be unrolled).
     var cameraScale: (() -> (scale: Double, fit: Double))?
     /// CI 测量：当前的地图渲染器。
@@ -469,6 +470,7 @@ struct MapView: UIViewRepresentable {
                 guard let self else { return (0, 0) }
                 return (self.camera.scale, self.bounds.lowerBound)
             }
+            controller.onFramingRequest = { [weak self] in self?.applyFramingRequests() }
             controller.nameFrame = { [weak self] in self?.labels?.nameFrame() ?? [:] }
             controller.renderer = { [weak self] in self?.renderer }
             controller.placed = { [weak self] key in
@@ -516,6 +518,7 @@ struct MapView: UIViewRepresentable {
             guard let renderer, mtk.bounds.width > 0, mtk.bounds.height > 0 else { return }
             if !placed { renderer.camera = MapCamera.cover(map: mapSize, viewport: viewport); placed = true }
             set(renderer.camera)
+            applyFramingRequests()
         }
         private func set(_ camera: MapCamera, sync: Bool = false) {
             guard let renderer else { return }
@@ -970,6 +973,13 @@ struct MapView: UIViewRepresentable {
                 zoomID = z.id
                 animate(to: camera.zoomed(by: z.factor, anchorX: viewport.width / 2, anchorY: viewport.height / 2, viewport: viewport, bounds: bounds), duration: 0.3)
             }
+            applyFramingRequests()
+            if dirty { setSyncPresent(false); mtk?.setNeedsDisplay() }
+        }
+
+        /// 展开和复位独立于推演刷新，命令可在地图静止时直接启动镜头。
+        private func applyFramingRequests() {
+            guard renderer != nil, viewport.width > 0, viewport.height > 0 else { return }
             if controller.unrollRequest != unrollID {
                 unrollID = controller.unrollRequest
                 animate(to: MapCamera.fit(map: mapSize, viewport: viewport), duration: 0.6)
@@ -978,7 +988,6 @@ struct MapView: UIViewRepresentable {
                 resetID = controller.resetRequest
                 animate(to: MapCamera.cover(map: mapSize, viewport: viewport), duration: 0.45)
             }
-            if dirty { setSyncPresent(false); mtk?.setNeedsDisplay() }
         }
 
         private func frameDrawn(_ t: CFTimeInterval) {

@@ -100,10 +100,16 @@ enum ShotTour {
             await wait(2.4)
         }
         // 地图展开: zoomed all the way out, the whole chart is on screen.
+        let unrollStart = Date()
         model.controller.unrollRequest = UUID()
-        await wait(1.4)
-        let reached = model.controller.cameraScale?() ?? (scale: 0, fit: 0)
-        let unrolled: [String: Any] = ["version": 1, "scale": reached.scale, "fit": reached.fit, "passed": reached.fit > 0 && reached.scale <= reached.fit * 1.02]
+        var reached = model.controller.cameraScale?() ?? (scale: 0, fit: 0)
+        while unrollStart.timeIntervalSinceNow > -4, !(reached.fit > 0 && reached.scale <= reached.fit * 1.02) {
+            await wait(0.10)
+            reached = model.controller.cameraScale?() ?? (scale: 0, fit: 0)
+        }
+        let unrolled: [String: Any] = ["version": 1, "scale": reached.scale, "fit": reached.fit,
+                                       "seconds": -unrollStart.timeIntervalSinceNow,
+                                       "passed": reached.fit > 0 && reached.scale <= reached.fit * 1.02]
         if let data = try? JSONSerialization.data(withJSONObject: unrolled, options: .sortedKeys) {
             try? data.write(to: dir.appendingPathComponent("map-unrolled.json"), options: .atomic)
         }

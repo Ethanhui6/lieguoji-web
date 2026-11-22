@@ -33,6 +33,51 @@ final class ArmyOrdersTests: XCTestCase {
 
 
 extension ArmyOrdersTests {
+    func testDiplomacyRevalidationKeepsNeutralReturnRoute() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let world = dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World")
+        let r = try JS.parse(Data(contentsOf: dir.appendingPathComponent("Golden/army-orders.json"))).samples[0].input.clone()
+        let graph = try TravelGraph(data: Data(contentsOf: world.appendingPathComponent("travel.bin")))
+        let oldBridge = Armies.bridge
+        Armies.bridge = ForceBridge(graph: graph)
+        defer { Armies.bridge = oldBridge }
+        let provinces = r.world.provinces.asArray
+        let army = try XCTUnwrap(r.world.armies.asArray.first), nation = army.nationId.asString
+        let neutral = try XCTUnwrap(r.world.nations.asArray.map(\.id.asString).first {
+            $0 != nation && !RunWindow.atWar(r, nation, $0) && !RunWindow.access(r, nation, $0)
+        })
+        let from = try XCTUnwrap(provinces.indices.compactMap { graph.targetCell(province: $0) }.first)
+        let route = try XCTUnwrap(provinces.indices.lazy.compactMap { p -> [Int]? in
+            guard let to = graph.targetCell(province: p),
+                  let path = graph.path(from: from, to: to, allowSea: false, canEnterProvince: { _ in true }),
+                  Set(path.nodes.map { graph.provinces[$0] }).count >= 3 else { return nil }
+            return path.nodes
+        }.first)
+        let start = Int(graph.provinces[route[0]]), end = Int(graph.provinces[route.last!])
+        for cell in route {
+            let p = Int(graph.provinces[cell])
+            provinces[p].controller = JS(p == start || p == end ? nation : neutral)
+        }
+        r.regimes = .object(); r.regimes.enabled = JS(true)
+        army.provinceId = provinces[start].id.clone(); army.status = JS("retreating")
+        r.world.armies = .array([army])
+        let travel = r.armyPositions.records[army.id.asString]
+        travel.nodes = .array(route.map { JS(Int(graph.ids[$0])) })
+        travel.leg = JS(0); travel.status = JS("moving")
+
+        War26.invalidateRoutes(r)
+        XCTAssertEqual(r.armyPositions.records[army.id.asString].status.asString, "moving")
+        let relations = r.world.statecraft.relations
+        let relation = Wars.relation(r, nation, neutral) ?? .object()
+        if relation.a.isNull {
+            relation.a = JS(nation); relation.b = JS(neutral)
+            relations.push(relation)
+        }
+        relation.status = JS("war")
+        War26.invalidateRoutes(r)
+        XCTAssertEqual(r.armyPositions.records[army.id.asString].status.asString, "halted")
+    }
+
     func testLiveRunRetainsDefenderAndHonorsPlayerTakeover() throws {
         let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         let world = dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World")

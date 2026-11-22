@@ -64,6 +64,13 @@ public enum ArmyOrders {
         embarkCache = (g.linkCost.count, v)
         return v
     }
+
+    /// 规划和复核同一道军令时使用相同的军事通行规则。
+    static func canTraverse(_ r: JS, nation: String, controller: String, anchor: String?, retreat: Bool) -> Bool {
+        if controller == anchor || RunWindow.access(r, nation, controller) { return true }
+        let hostile = RunWindow.atWar(r, nation, controller)
+        return retreat ? r.regimes.enabled.isTruthy && !hostile : hostile
+    }
     /// resolve(): the travel record and target name of an order, or the refusal.
     static func resolve(_ r: JS, _ id: String, _ action: Action) -> Result<(travel: JS, name: String), Refused> {
         // 先 reason() 检查、紧接着 issue() 下达同一道军令时，第二次直接用第一次的寻路结果（只给紧随其后的一次调用用）。
@@ -102,11 +109,7 @@ public enum ArmyOrders {
                 return { q in ports.contains(q) ? 0 : cost }
             }() : nil
             guard let path = g.path(from: here.cell, to: target, allowSea: allowSea, canEnterProvince: { q in
-                let c = r.world.provinces[q].controller.asString
-                // App worlds (归国通行): an army marching home may cross any land it is not at war with;
-                // after a peace it used to find no lawful road out of the former enemy's land and stood there.
-                return RunWindow.access(r, nation, c) || c == anchor || !v && RunWindow.atWar(r, nation, c)
-                    || v && r.regimes.enabled.isTruthy && !RunWindow.atWar(r, nation, c)
+                canTraverse(r, nation: nation, controller: r.world.provinces[q].controller.asString, anchor: anchor, retreat: v)
             }, embark: embark, aStar: r.regimes.enabled.isTruthy, seaRate: r.regimes.enabled.isTruthy ? 0.5 : 1, terrainCost: r.regimes.enabled.isTruthy) else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }
             let point = g.location(travel).point
             let t = JS.object()

@@ -43,6 +43,17 @@ struct NationInfo: Decodable {
     var polityDetail: PolityDetail? = nil
     struct Claim: Decodable, Identifiable { let nation: Int; let years: Int; var id: Int { nation } }
     var claims: [Claim]? = nil
+    struct CourtPower: Decodable {
+        let crown: Int; let houses: Int; let military: Int; let council: Int
+        let dominant: String; let effect: String; var regency: String? = nil
+    }
+    var courtPower: CourtPower? = nil
+    struct CourtAgenda: Decodable {
+        let id: String; let title: String; let desc: String
+        let support: String; let oppose: String; let effect: String
+    }
+    var agenda: CourtAgenda? = nil
+    var emblem: String? = nil
     let enemies: [Int]; let alliance: Alliance?; let overlord: Int; let vassals: [Int]
     let wars: [War]
     struct Truce: Decodable { let nation: Int; let years: Int; let required: Int }
@@ -117,7 +128,7 @@ struct FoldSection<Content: View>: View {
                     if !expanded, let summary, !summary.isEmpty {
                         Text(summary).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8).transition(.opacity)
                     }
-                    Image(systemName: "chevron.down").font(.system(size: 14, weight: .regular)).foregroundStyle(Theme.ink2).rotationEffect(.degrees(expanded ? 180 : 0))
+                    InkIcon(glyph: .chevronDown, size: 15, weight: 1.65).foregroundStyle(Theme.ink2).rotationEffect(.degrees(expanded ? 180 : 0))
                 }
                 .padding(.horizontal, Theme.Layout.sectionInset).frame(minHeight: 44).contentShape(Rectangle())
             }
@@ -206,6 +217,7 @@ struct NationSheet: View {
     @State private var transitionConfirm: NationInfo.PolityDetail.Transition?
     @State private var ultimatumDemand = "tribute"
     @State private var covertKind = "fundRebels"
+    @State private var bodyReady = false
     enum Pick: String, Identifiable {
         case war = "宣战", alliance = "缔结盟约", vassal = "收为附庸", annex = "吞并"
         case pact = "互不侵犯条约", marriage = "王室联姻", trade = "通商协定", defense = "共同防御条约"
@@ -242,7 +254,7 @@ struct NationSheet: View {
                     if let focus {
                         focusPage(focus, info: info, map: map, state: state, meta: meta)
                     } else {
-                    SheetHeader(title: meta?.name ?? info?.name ?? "", subtitle: s.alive ? "\(s.provinces) 省 · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) })
+                    SheetHeader(title: meta?.name ?? info?.name ?? "", subtitle: s.alive ? "\(s.provinces) 省 · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) }, seal: info?.emblem ?? "国")
                     if let info {
                         // Original section order: BasicInfo (only one expanded by default), Action, War, Family, Diplomacy.
                         // 卷首: the state at a glance, then its ruler and identity.
@@ -274,7 +286,9 @@ struct NationSheet: View {
                             )
                         }
                         NationTabs(tab: $tab)
-                        tabContent(info, map, state)
+                        if bodyReady || ShotTour.on {
+                            tabContent(info, map, state)
+                        }
                     } else {
                         PanelPending(failed: failed, busy: true) { Task { await reload() } }
                     }
@@ -293,6 +307,7 @@ struct NationSheet: View {
             }
             .onAppear {
                 if let t = Self.tourTab { tab = t; customPane = Self.tourPane }
+                if !bodyReady { Task { await Task.yield(); bodyReady = true } }
                 model.controller.relationsNation = nation
                 if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count {
                     let capProv = map.meta.cities[p].province
@@ -655,6 +670,88 @@ struct NationSheet: View {
                         .padding(14)
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)
+
+                    // 2.8.4 新增：朝堂四方权力天平（君主中枢 / 门阀世家 / 军功将领 / 议会文官） + 冲龄幼主摄政 + 主动调衡
+                    if let cp = info.courtPower {
+                        Group2 {
+                            VStack(alignment: .leading, spacing: 9) {
+                                HStack(spacing: 6) {
+                                    SealFace(text: "权", size: 20, color: Theme.seal)
+                                    Text("朝堂四方权力天平").font(Theme.section).foregroundStyle(Theme.ink)
+                                    Spacer()
+                                    PaperTag(text: "主导 · \(cp.dominant)", color: Theme.seal, size: 11)
+                                }
+                                if let reg = cp.regency, !reg.isEmpty {
+                                    HStack(spacing: 6) {
+                                        InkIcon(glyph: .crown, size: 13, weight: 1.75).foregroundStyle(Theme.seal)
+                                        Text(reg).font(Theme.caption).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                }
+                                GeometryReader { g in
+                                    let w = g.size.width
+                                    HStack(spacing: 1.5) {
+                                        Rectangle().fill(Theme.seal).frame(width: max(6, w * CGFloat(cp.crown) / 100))
+                                        Rectangle().fill(Color(red: 0.72, green: 0.48, blue: 0.16)).frame(width: max(6, w * CGFloat(cp.houses) / 100))
+                                        Rectangle().fill(Theme.ink).frame(width: max(6, w * CGFloat(cp.military) / 100))
+                                        Rectangle().fill(Theme.jade).frame(width: max(6, w * CGFloat(cp.council) / 100))
+                                    }
+                                    .clipShape(Capsule())
+                                }
+                                .frame(height: 8)
+                                HStack(spacing: 6) {
+                                    powerPillarChip("中枢", pct: cp.crown, color: Theme.seal, code: "crown")
+                                    powerPillarChip("世家", pct: cp.houses, color: Color(red: 0.72, green: 0.48, blue: 0.16), code: "houses")
+                                    powerPillarChip("军方", pct: cp.military, color: Theme.ink, code: "military")
+                                    powerPillarChip("文官", pct: cp.council, color: Theme.jade, code: "council")
+                                }
+                                Text("\(cp.effect)（轻点任一方可主动扶植调衡朝局）").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(14)
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+                    }
+
+                    // 2.8.4 新增：当期朝堂大政议案与战后问责
+                    if let ag = info.agenda {
+                        Group2 {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack(spacing: 6) {
+                                    SealFace(text: "议", size: 20, color: Theme.jade)
+                                    Text(ag.title).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                                    Spacer()
+                                    PaperTag(text: "朝议博弈", color: Theme.jade, size: 10)
+                                }
+                                Text(ag.desc).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                                HStack(spacing: 10) {
+                                    Text("力主：\(ag.support)").font(Theme.caption).foregroundStyle(Theme.jade)
+                                    Text("·").foregroundStyle(Theme.ink2)
+                                    Text("阻挠：\(ag.oppose)").font(Theme.caption).foregroundStyle(Theme.seal)
+                                    Spacer()
+                                }
+                                HStack(spacing: 10) {
+                                    Text(ag.effect).font(Theme.caption).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                                    Spacer(minLength: 4)
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        Task { await run { await model.nationDecree(nation, kind: ag.id) } }
+                                    } label: {
+                                        HStack(spacing: 4) {
+                                            InkIcon(glyph: .edict, size: 13, weight: 1.8)
+                                            Text("御批强推").font(Theme.label)
+                                        }
+                                        .foregroundStyle(Theme.paper2)
+                                        .padding(.horizontal, 12).frame(height: 30)
+                                        .background(Theme.seal, in: Capsule())
+                                    }
+                                    .buttonStyle(PressStyle())
+                                }
+                            }
+                            .padding(14)
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+                    }
 
                     // 政体个性、政局安定与政变风险仪 + 现实政体更迭入口
                     if let pd = info.polityDetail {
@@ -1614,6 +1711,39 @@ struct NationSheet: View {
             .animation(Motion.fade, value: pane)
         } else {
             VStack(alignment: .leading, spacing: 10) {
+                // 2.8.4 新增：天命笔 · 上帝导演神迹台（一键天降雄主 / 天降神兵 / 天赐巨帑 / 共主邦联 / 大乱分裂）
+                Group2 {
+                    VStack(alignment: .leading, spacing: 9) {
+                        HStack(spacing: 6) {
+                            SealFace(text: "天", size: 20, color: Theme.seal)
+                            Text("天命笔 · 上帝导演神迹台").font(Theme.section).foregroundStyle(Theme.ink)
+                            Spacer()
+                            Text("即点即应").font(Theme.caption).foregroundStyle(Theme.ink2)
+                        }
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                miracleButton(title: "天降雄主", note: "四维95+·国运95", glyph: .crown, tint: Theme.seal) {
+                                    Task { await run { await model.nationDecree(nation, kind: "miracle:ruler") } }
+                                }
+                                miracleButton(title: "天降神兵", note: "3支满编精锐禁军", glyph: .military, tint: Theme.seal) {
+                                    Task { await run { await model.nationDecree(nation, kind: "miracle:legions") } }
+                                }
+                                miracleButton(title: "天赐巨帑", note: "+5000金·满仓清腐", glyph: .economy, tint: Theme.jade) {
+                                    Task { await run { await model.nationDecree(nation, kind: "miracle:treasury") } }
+                                }
+                                miracleButton(title: "共主邦联", note: "联姻邻邦合为一脉", glyph: .marriage, tint: Theme.jade) {
+                                    Task { await run { await model.nationDecree(nation, kind: "miracle:personalUnion") } }
+                                }
+                                miracleButton(title: "藩镇分裂", note: "立即引爆内战割据", glyph: .fire, tint: Theme.ink) {
+                                    Task { await run { await model.triggerCivilWar(nation) } }
+                                }
+                            }
+                        }
+                    }
+                    .padding(14)
+                }
+                .padding(.horizontal, 16)
+
                 Text("点一类进入修改；改动立即生效。").font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                     ForEach(CustomPane.allCases) { p in customCard(p, summary: customSummary(p, info, map, current: current, owned: owned.count), tint: p == .identity ? current.map { Names.color($0.color) } : nil) }
@@ -1736,6 +1866,24 @@ struct NationSheet: View {
                         Task { await run(success: "国色已更改") { await model.editIdentity(nation, name: nil, color: hex) } }
                     } label: { Text("用此色").font(Theme.label).foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 32).background(customColor, in: Capsule()).overlay(Capsule().stroke(Theme.ink.opacity(0.25))) }
                     .buttonStyle(PressStyle())
+                }
+                Divider2()
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("国家旌旗纹章印记（显示于国家页卷首大印）").font(Theme.label).foregroundStyle(Theme.ink2)
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 6), spacing: 8) {
+                        ForEach(["龙", "鹰", "鼎", "狮", "狼", "樱", "剑", "日", "月", "莲", "凰", "聖"], id: \.self) { sym in
+                            let on = (info.emblem ?? "国") == sym
+                            Button {
+                                GameFeel.shared.tap()
+                                Task { await run(success: "旌旗纹章已改为「\(sym)」") { await model.nationDecree(nation, kind: "emblem:\(sym)") } }
+                            } label: {
+                                SealFace(text: sym, size: 30, color: on ? Theme.seal : Theme.ink2.opacity(0.65))
+                                    .padding(3)
+                                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(on ? Theme.seal : Color.clear, lineWidth: 1.5))
+                            }
+                            .buttonStyle(PressStyle())
+                        }
+                    }
                 }
             }
             .onAppear { if let c = current?.color { customColor = Names.color(c) } }
@@ -1887,6 +2035,42 @@ struct NationSheet: View {
             .foregroundStyle(Theme.seal).frame(maxWidth: .infinity).frame(height: 44)
             .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Theme.seal.opacity(0.3)))
+    }
+
+    private func powerPillarChip(_ label: String, pct: Int, color: Color, code: String) -> some View {
+        Button {
+            GameFeel.shared.tap()
+            Task { await run { await model.nationDecree(nation, kind: "balancePower:\(code)") } }
+        } label: {
+            HStack(spacing: 4) {
+                Circle().fill(color).frame(width: 6.5, height: 6.5)
+                Text("\(label) \(pct)%").font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 5)
+            .background(color.opacity(0.09), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(color.opacity(0.28), lineWidth: 0.7))
+        }
+        .buttonStyle(PressStyle())
+    }
+
+    private func miracleButton(title: String, note: String, glyph: InkGlyph, tint: Color, action: @escaping () -> Void) -> some View {
+        Button {
+            GameFeel.shared.tap()
+            action()
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 5) {
+                    InkIcon(glyph: glyph, size: 15, weight: 1.8, accent: tint.opacity(0.24)).foregroundStyle(tint)
+                    Text(title).font(Theme.label).foregroundStyle(Theme.ink)
+                }
+                Text(note).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+            }
+            .padding(.horizontal, 11).padding(.vertical, 8)
+            .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(tint.opacity(0.28), lineWidth: 0.8))
+        }
+        .buttonStyle(PressStyle())
     }
     /// 国家行为 (CultureNationActions47).
     private func actions(_ info: NationInfo, _ map: WorldMap) -> some View {

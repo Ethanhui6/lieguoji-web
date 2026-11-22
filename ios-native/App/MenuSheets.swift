@@ -40,7 +40,13 @@ struct MenuSheet: View {
                     Divider2()
                     PaperSwitch(title: "显示战争箭头", on: $controller.play.warArrows)
                     Divider2()
-                    PaperSwitch(title: "地图局势快控浮印", on: $controller.play.showTacticalPill)
+                    PaperSwitch(title: "地图局势快控悬浮小笺（四角吸附印章）", on: $controller.play.showTacticalPill)
+                    Divider2()
+                    PaperSwitch(title: "御案天下大势悬浮小笺（列强占比与头号战事）", on: $controller.play.showScrollPlacard)
+                    Divider2()
+                    PaperSwitch(title: "山河回放天下大势悬浮小笺", on: $controller.play.showReplayPlacard)
+                    Divider2()
+                    PaperSwitch(title: "观战巡弋导演镜头（推演中自动巡礼焦点战场）", on: $controller.play.directorCruise)
                     Divider2()
                     PaperSwitch(title: "大事传报横幅", on: $controller.play.showHeralds)
                     Divider2()
@@ -183,6 +189,17 @@ struct MapDisplaySettings: View {
     @ObservedObject var controller: MapController
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            SectionLabel("悬浮小笺与看海辅助")
+            Group2 {
+                PaperSwitch(title: "地图局势快控悬浮小笺（四角吸附印章）", on: $controller.play.showTacticalPill)
+                Divider2()
+                PaperSwitch(title: "御案天下大势悬浮小笺（列强占比与头号战事）", on: $controller.play.showScrollPlacard)
+                Divider2()
+                PaperSwitch(title: "山河回放天下大势悬浮小笺", on: $controller.play.showReplayPlacard)
+                Divider2()
+                PaperSwitch(title: "观战巡弋导演镜头（推演中自动巡礼焦点战场）", on: $controller.play.directorCruise)
+            }
+            .padding(.horizontal, 16)
             SectionLabel("界线")
             Group2 {
                 PaperSwitch(title: "国界", on: $controller.display.borders)

@@ -248,6 +248,141 @@ extension NativeEngine {
                             nations: [id], province: nil)
             return (true, "太学兴办完成：中枢能力精进，腐化 −4，国运 +3。")
 
+        case "agenda_accountability":
+            // 战后问责与整军复仇案：清除战败震荡，全军士气 +25，国运 +4
+            if !r.regimes.defeatShock.isNull { r.regimes.defeatShock.delete(id) }
+            let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
+            for a in armies { a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 25)) }
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+            People.announce(r, kind: "politics", text: "\(stateName)通过《战后问责与整军案》",
+                            reason: "罢黜失律将校、重赏敢战之士，战败震荡平息，全军士气 +25，国运 +4。",
+                            nations: [id], province: nil)
+            return (true, "《战后问责与整军案》已颁行：战败震荡平息，全军士气 +25，国运 +4。")
+
+        case "agenda_wartax":
+            // 战时急征军饷与前线犒师案：国库 +450，全军补给满额、士气 +20
+            if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + 450) }
+            let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
+            for a in armies {
+                a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 20))
+                a.supplies = JS(100)
+            }
+            People.announce(r, kind: "politics", text: "\(stateName)通过《战时急征军饷与犒师案》",
+                            reason: "开征战时特饷充盈军库（+450 金），前线三军粮草满额、士气 +20。",
+                            nations: [id], province: nil)
+            return (true, "《战时急征军饷案》已颁行：国库 +450 金，全军粮草满额、士气 +20。")
+
+        case "agenda_curbhouses":
+            // 清丈勋贵田庄与抑豪强案：非宗室世家势力 -35，国库 +380，腐化 -8
+            let ruling = People.rulingFamilyId(r, id)
+            if !r.nobility.isNull && !r.nobility.families.isNull {
+                for (fid, fam) in r.nobility.families.objectEntries where fam.nationId.optionalString == id && Int(fid) != ruling {
+                    fam.influence = JS(max(10, (fam.influence.optionalNumber ?? 60) - 35))
+                }
+            }
+            if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + 380) }
+            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 8))
+            People.announce(r, kind: "reform", text: "\(stateName)御批《清丈勋贵田庄案》",
+                            reason: "清查豪强隐田、收权归于中枢：门阀权势受抑，国库 +380 金，腐化 −8。",
+                            nations: [id], province: nil)
+            return (true, "《清丈勋贵田庄案》已颁行：门阀权势 −35，国库 +380 金，腐化 −8。")
+
+        case "agenda_civil":
+            // 开科取士与劝农兴学案：全境人口 +3%，腐化 -6，国运 +5
+            let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
+            for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
+                let curPop = s.population.optionalNumber ?? 0
+                s.population = JS((curPop * 1.03).rounded())
+            }
+            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 6))
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 5)) }
+            People.announce(r, kind: "culture", text: "\(stateName)御批《开科取士与劝农案》",
+                            reason: "广开科举、劝课农桑：全境人口 +3%，腐化 −6，国运 +5。",
+                            nations: [id], province: nil)
+            return (true, "《开科取士与劝农案》已颁行：全境人口 +3%，腐化 −6，国运 +5。")
+
+        case let k where k.hasPrefix("balancePower:"):
+            let target = String(k.dropFirst("balancePower:".count))
+            r.regimes.nations[id].powerBias = JS(target)
+            let label = target == "crown" ? "君主中枢" : target == "houses" ? "门阀世家" : target == "military" ? "军功将领" : "议会文官"
+            People.recordHistory(r, kind: "politics", text: "\(stateName)扶植\(label)权势",
+                                 reason: "中枢调整朝局倚重，\(label)在朝堂权力天平中的比重显著上升。",
+                                 nations: [id], province: nil)
+            return (true, "已扶植「\(label)」，朝堂权力天平已随之倾斜。")
+
+        case let k where k.hasPrefix("emblem:"):
+            let sym = String(k.dropFirst("emblem:".count))
+            guard !sym.isEmpty else { return (false, "纹章字样不能为空。") }
+            r.regimes.nations[id].emblem = JS(String(sym.prefix(2)))
+            return (true, "\(stateName)旌旗纹章已更改为「\(String(sym.prefix(2)))」。")
+
+        case "miracle:ruler":
+            // 天命神迹：天降雄主（君主四维全满 96+、国运 95、清除战败震荡）
+            let lid = r.people.nations[id].leaderId.optionalNumber.map(Int.init) ?? -1
+            if lid > 0, let p = People.person(r, lid) {
+                p.base.charisma = JS(96); p.base.military = JS(98); p.base.diplomatic = JS(95); p.base.administrative = JS(98)
+                if p.age.optionalNumber ?? 30 < 18 { p.age = JS(24) }
+            }
+            if !destinyRow.isNull { destinyRow.destiny = JS(95) }
+            if !r.regimes.defeatShock.isNull { r.regimes.defeatShock.delete(id) }
+            People.announce(r, kind: "politics", text: "\(stateName)天降雄主，乾坤一振",
+                            reason: "君主文治武功臻于化境（四维皆达 95+），国运飙升至 95！",
+                            nations: [id], province: nil)
+            return (true, "天命加护：\(stateName)君主四维已臻化境（95+），国运升至 95！")
+
+        case "miracle:legions":
+            // 天命神迹：天降神兵（在都城及重镇立刻编成 3 支满编禁军并补满全军士气粮草）
+            let capPid = Rebellion.capitalProvince(r, id)
+            let picks = Array(ownedIndices.filter { Armies.homeCells[provinces[$0].id.asString] != nil }.sorted { a, b in
+                (provinces[a].id.asString == capPid) && (provinces[b].id.asString != capPid)
+            }.prefix(3))
+            guard !picks.isEmpty else { return (false, "境内没有可驻军的城池。") }
+            for idx in picks { Armies.create(r, nation: id, home: provinces[idx].id.asString, kind: "regular") }
+            Daily.reconcileMilitaryClock(r)
+            for a in r.world.armies.asArray where a.nationId.optionalString == id && a.troops.asNumber > 0 {
+                a.morale = JS(100); a.supplies = JS(100)
+            }
+            People.announce(r, kind: "war", text: "\(stateName)天降禁军精锐",
+                            reason: "三支满编精锐禁军应诏集结，全国现役三军士气与粮草尽皆满额！",
+                            nations: [id], province: provinces[picks[0]].id.asString)
+            return (true, "天降神兵：已为\(stateName)新编 \(picks.count) 支精锐大军，全军士气与粮草补满！")
+
+        case "miracle:treasury":
+            // 天命神迹：天赐巨帑与丰年（国库 +5000 金、全境存粮 +50万、腐化清零）
+            if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + 5000) }
+            let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
+            for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
+                s.grain = JS(min(50_000_000, (s.grain.optionalNumber ?? 0) + 500_000))
+            }
+            Finance.setCorruption(r, id, 0)
+            People.announce(r, kind: "event", text: "\(stateName)连岁大稔、府库充溢",
+                            reason: "天赐丰年：国库骤增 5000 金，全境仓廪充盈，贪墨弊政一扫而空。",
+                            nations: [id], province: nil)
+            return (true, "天赐巨帑：国库 +5000 金，全境各州存粮 +50 万，腐化清零！")
+
+        case "miracle:personalUnion":
+            // 联姻共主邦联：与有王室联姻或同阵营亲善邻国结为共主邦联（收为附庸并缔结共防铁盟）
+            let candidates = nations.indices.filter { idx in
+                let oid = nations[idx].id.asString
+                return oid != id && Vassals.alive(r, oid) && !Regimes.isBlank(r, oid) && !Regimes.atWar(r, id, oid) && Vassals.overlord(r, oid) == nil
+            }
+            let best = candidates.max { a, b in
+                let oa = nations[a].id.asString, ob = nations[b].id.asString
+                let mA = DiplomacyDeep.hasTreaty(r, id, oa, kind: "marriage") ? 100 : 0
+                let mB = DiplomacyDeep.hasTreaty(r, id, ob, kind: "marriage") ? 100 : 0
+                return (mA + DiplomacyDeep.opinion(r, id, oa).score) < (mB + DiplomacyDeep.opinion(r, id, ob).score)
+            }
+            guard let targetIdx = best else { return (false, "当前没有可缔结共主邦联的独立和平国家。") }
+            let tid = nations[targetIdx].id.asString, tName = nations[targetIdx].name.asString
+            _ = makeVassal(targetIdx, of: index)
+            DiplomacyDeep.upsertTreaty(r, a: id, b: tid, kind: "marriage", years: 20)
+            DiplomacyDeep.upsertTreaty(r, a: id, b: tid, kind: "defense", years: 20)
+            DiplomacyDeep.adjustOpinionMod(r, id, tid, delta: 45)
+            People.announce(r, kind: "diplomacy", text: "\(stateName)与\(tName)缔结王室共主邦联",
+                            reason: "两国借宗室联姻与王位宣称合为一脉，\(tName)奉\(stateName)君主为共主并缔结二十年攻守同盟。",
+                            nations: [id, tid], province: nil)
+            return (true, "已与\(tName)正式缔结「王室共主邦联」！")
+
         default:
             return (false, "未知政令：\(kind)。")
         }

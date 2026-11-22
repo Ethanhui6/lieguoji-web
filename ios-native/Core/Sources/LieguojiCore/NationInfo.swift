@@ -274,7 +274,107 @@ extension NativeEngine {
                     }
                 o.claims = .array(myClaims)
             }
+            // 2.8.4 新增：① 朝堂四方权力天平（君主中枢 / 门阀世家 / 军功将领 / 议会文官） + 冲龄幼主摄政；② 当期朝堂大政议案与战后问责；③ 国家旌旗纹章印记
+            let cp = JS.object()
+            let ldrPerson = !leaderId.isNull ? People.person(r, leaderId.asInt) : nil
+            let ldrAge = ldrPerson?.age.optionalNumber ?? 30
+            let sk = ldrPerson.map(People.skills) ?? (50, 50, 50, 50)
+            var rawCrown = 28.0 + (sk.administrative + sk.charisma) * 0.28 + (r.destiny.nations[id].destiny.optionalNumber ?? 50) * 0.22
+            if ldrAge < 16 { rawCrown *= 0.42 }
+            let allHouses = r.nobility.isNull || r.nobility.families.isNull ? [] : r.nobility.families.objectEntries.filter { $0.1.nationId.optionalString == id }
+            let rulingFam = People.rulingFamilyId(r, id)
+            let houseInf = allHouses.reduce(0.0) { sum, entry in
+                let inf = entry.1.influence.optionalNumber ?? 0
+                return (Int(entry.0) == rulingFam) ? sum + inf * 0.15 : sum + inf * 0.22
+            }
+            var rawHouses = (prof.fiefRule.allowsFiefs ? 18.0 : 8.0) + min(65.0, houseInf * 0.25)
+            if prof.fiefRule == .regent || ldrAge < 16 { rawHouses += 24.0 }
+            let activeArmies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }.count
+            let activeWars = r.world.campaigns.asArray.filter { $0.status.asString == "active" && ($0.attackerId.asString == id || $0.defenderId.asString == id) }.count
+            var rawMilitary = 14.0 + Double(activeArmies) * 3.5 + Double(activeWars) * 14.0 + sk.military * 0.18
+            if st.id == "junta" || st.id == "fascist" || st.id == "nazi" || st.id == "shogunate" { rawMilitary += 28.0 }
+            let hasParties = !r.regimes.nations[id].parties.isNull && r.regimes.nations[id].parties.length > 0
+            var rawCouncil = (hasParties ? 32.0 : 16.0) + Offices.governance(r, id) * 24.0 + sk.diplomatic * 0.15
+            if prof.camp == .republic || prof.camp == .constitutional || prof.camp == .socialist { rawCouncil += 22.0 }
+            // 玩家主动调衡偏移（r.regimes.nations[id].powerBias）
+            let bias = r.regimes.nations[id].powerBias.optionalString ?? ""
+            if bias == "crown" { rawCrown += 28 }
+            else if bias == "houses" { rawHouses += 28 }
+            else if bias == "military" { rawMilitary += 28 }
+            else if bias == "council" { rawCouncil += 28 }
+            let sumRaw = max(1.0, rawCrown + rawHouses + rawMilitary + rawCouncil)
+            let pCrown = max(5, Int((rawCrown / sumRaw * 100).rounded()))
+            let pHouses = max(5, Int((rawHouses / sumRaw * 100).rounded()))
+            let pMilitary = max(5, Int((rawMilitary / sumRaw * 100).rounded()))
+            let pCouncil = max(5, 100 - pCrown - pHouses - pMilitary)
+            cp.crown = JS(pCrown); cp.houses = JS(pHouses); cp.military = JS(pMilitary); cp.council = JS(pCouncil)
+            let rankedP: [(String, Int, String)] = [
+                ("君主中枢", pCrown, "乾纲独断 · 政令通行、中枢岁入 +6%，世家难起异心"),
+                ("门阀世家", pHouses, "门阀专政 · 世家把持朝政与封地，削藩易激起兵变"),
+                ("军功将领", pMilitary, "将帅干政 · 全军攻势凌厉、好战高涨，战败易生兵变"),
+                ("议会文官", pCouncil, "文官/议会主导 · 财政稳健、邦交审慎，战时动员偏缓"),
+            ]
+            let dom = rankedP.max(by: { $0.1 < $1.1 })!
+            cp.dominant = JS(dom.0)
+            cp.effect = JS(dom.2)
+            if ldrAge < 16 {
+                let regentName = Regimes.governor(r, id).map(Self.displayPersonName) ?? (o.heads.isNull ? "辅政大臣" : (o.heads.premierName.optionalString ?? "辅政王"))
+                cp.regency = JS("冲龄幼主（\(Int(ldrAge))岁）· 由\(regentName)摄政辅国（满16岁行亲政大典或面临权臣博弈）")
+            }
+            o.courtPower = cp
+
+            // 当期朝堂大政议案与战后问责
+            let ag = JS.object()
+            let shockPct = Int((Regimes.defeatPenalty(r, id) * 100).rounded())
+            if shockPct >= 5 {
+                ag.id = JS("agenda_accountability")
+                ag.title = JS("《战后问责与整军复仇案》")
+                ag.desc = JS("新败割地之后朝野震动（震荡 −\(shockPct)%），军方与言官联名奏请问责失利主帅、抚恤阵亡将士以重振军心。")
+                ag.support = JS("军功将领 · 言官")
+                ag.oppose = JS("主和派文官")
+                ag.effect = JS("消除战败震荡 · 全军士气 +25 · 国运 +4")
+            } else if activeWars > 0 {
+                ag.id = JS("agenda_wartax")
+                ag.title = JS("《战时急征军饷与前线犒师案》")
+                ag.desc = JS("前线兵戈正急，兵部与户部奏请向豪强开征战时特饷，悉数充作前线将士粮饷。")
+                ag.support = JS("军功将领 · 君主中枢")
+                ag.oppose = JS("门阀世家")
+                ag.effect = JS("国库 +450 金 · 全军补给满额 · 士气 +20")
+            } else if pHouses >= 32 {
+                ag.id = JS("agenda_curbhouses")
+                ag.title = JS("《清丈勋贵田庄与抑豪强案》")
+                ag.desc = JS("门阀世家权势日炽（占朝局 \(pHouses)%），御史台奏请清丈勋贵隐田、收权归于中枢。")
+                ag.support = JS("君主中枢 · 寒门文官")
+                ag.oppose = JS("门阀世家")
+                ag.effect = JS("各世家权势 −35 · 国库 +380 金 · 腐化 −8")
+            } else {
+                ag.id = JS("agenda_civil")
+                ag.title = JS("《开科取士与劝农兴学案》")
+                ag.desc = JS("四境暂安，礼部与司农奏请广开太学、选拔寒门良才并劝课农桑以固国本。")
+                ag.support = JS("议会文官 · 君主中枢")
+                ag.oppose = JS("守旧门阀")
+                ag.effect = JS("全境人口 +3% · 腐化 −6 · 国运 +5")
+            }
+            o.agenda = ag
         }
+        // 国家旌旗纹章印记（支持自定义，默认按文化与政体自动匹配）
+        let customEmblem = r.regimes.isNull ? nil : r.regimes.nations[id].emblem.optionalString
+        let defaultEmblem: String = {
+            let cult = civ.cultureId.optionalString ?? ""
+            switch cult {
+            case "chinese", "korean", "vietnamese": return "龙"
+            case "japanese": return "樱"
+            case "roman", "german", "russian", "slavic", "polish": return "鹰"
+            case "arab", "turkic", "persian": return "月"
+            case "indian", "tibetan": return "莲"
+            case "mongol", "hungarian": return "狼"
+            case "english", "french", "spanish", "portuguese": return "狮"
+            case "norse": return "剑"
+            case "aztec", "inca": return "日"
+            default: return "鼎"
+            }
+        }()
+        o.emblem = JS((customEmblem?.isEmpty == false) ? customEmblem! : defaultEmblem)
         // 宗教: the state faith's effect and the provinces by faith.
         o.creedEffect = JS(Regimes.stateCreed(r, id)?.text ?? "")
         // 编辑: every state trait, and the titles the player set.

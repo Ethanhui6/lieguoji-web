@@ -294,34 +294,75 @@ struct MapViewSwitcher: View {
 }
 
 /// The legend of a colour view: a paper slip listing the largest groups with their colours.
+/// 2.8.4 新增「点图例聚光高亮」：轻点任意图例行即可在舆图上单独聚光高亮该阵营/文化/宗教/世家（其余疆域退为淡纸灰），同盟行右侧可点开成员表。
 struct MapViewLegend: View {
     let mode: MapViewMode
     let legend: [MapViewData.Entry]
+    var spotlightColor: String? = nil
+    var onSpotlight: ((String) -> Void)? = nil
     /// 点一行（带成员的同盟）：查看成员。
     var open: ((MapViewData.Entry) -> Void)? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text(mode.title + "图").font(Theme.body).foregroundStyle(Theme.ink)
+                if spotlightColor != nil {
+                    Text("· 聚光中").font(Theme.caption).foregroundStyle(Theme.seal)
+                }
                 Spacer(minLength: 4)
-                Text("\(legend.count)").font(Theme.caption).foregroundStyle(Theme.ink2)
+                if spotlightColor != nil {
+                    Button {
+                        GameFeel.shared.tap()
+                        if let c = spotlightColor { onSpotlight?(c) }
+                    } label: {
+                        Text("还原").font(Theme.caption).foregroundStyle(Theme.seal)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text("\(legend.count)").font(Theme.caption).foregroundStyle(Theme.ink2)
+                }
             }
             Rectangle().fill(Theme.ink.opacity(0.2)).frame(height: 0.8)
             ForEach(Array(legend.prefix(6).enumerated()), id: \.offset) { _, e in
+                let active = spotlightColor?.uppercased() == e.color.uppercased()
+                let dimmed = spotlightColor != nil && !active
                 HStack(spacing: 7) {
                     RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Names.color(e.color)).frame(width: 12, height: 12)
-                        .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).stroke(Theme.ink.opacity(0.22), lineWidth: 0.5))
-                    Text(e.name.isEmpty ? "—" : e.name).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.82)
+                        .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).stroke(active ? Theme.seal : Theme.ink.opacity(0.22), lineWidth: active ? 1.5 : 0.5))
+                    Text(e.name.isEmpty ? "—" : e.name)
+                        .font(Theme.label)
+                        .foregroundStyle(active ? Theme.seal : Theme.ink.opacity(dimmed ? 0.5 : 1))
+                        .lineLimit(1).minimumScaleFactor(0.82)
                     Spacer(minLength: 4)
-                    Text("\(e.count)省").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize()
-                    if e.members != nil && open != nil { Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.ink2.opacity(0.6)) }
+                    Text("\(e.count)省").font(Theme.caption).foregroundStyle(Theme.ink2.opacity(dimmed ? 0.5 : 1)).fixedSize()
+                    if e.members != nil, let open {
+                        Button {
+                            GameFeel.shared.tap()
+                            open(e)
+                        } label: {
+                            InkIcon(glyph: .chevronRight, size: 11, weight: 1.8)
+                                .foregroundStyle(Theme.seal)
+                                .frame(width: 20, height: 20)
+                                .background(Theme.seal.opacity(0.10), in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
+                .padding(.horizontal, 5).padding(.vertical, 2)
+                .background(active ? Theme.seal.opacity(0.09) : Color.clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .frame(minHeight: 22).contentShape(Rectangle())
-                .onTapGesture { if e.members != nil { open?(e) } }
+                .onTapGesture {
+                    GameFeel.shared.tap()
+                    if let onSpotlight {
+                        onSpotlight(e.color)
+                    } else if e.members != nil {
+                        open?(e)
+                    }
+                }
                 .transition(.opacity.combined(with: .move(edge: .leading)))
             }
         }
-        .padding(12).frame(width: 224)
+        .padding(12).frame(width: 228)
         .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
     }
 }
@@ -1223,7 +1264,7 @@ struct FloatingTacticalPill: View {
         let trailPad: CGFloat = landscape ? max(safe.trailing + 16, 20) : Theme.Control.screenInset
         let topY: CGFloat = safe.top + (landscape ? 64 : 68)
         let botY: CGFloat = max(topY + 64, size.height - safe.bottom - (landscape ? 54 : 134))
-        let pillW: CGFloat = expanded ? 228 : Theme.Control.topHeight
+        let pillW: CGFloat = expanded ? 256 : Theme.Control.topHeight
         let leftX = padX + pillW / 2
         let rightX = max(leftX, size.width - trailPad - pillW / 2)
         switch corner {
@@ -1319,12 +1360,19 @@ struct FloatingTacticalPill: View {
         } content: {
             InkIcon(glyph: .replay, size: 14, weight: 1.75)
         }
+        pillButton(tint: model.controller.play.directorCruise ? Theme.seal : Theme.ink2) {
+            model.controller.play.directorCruise.toggle()
+            model.notice = model.controller.play.directorCruise ? "已开启观战巡弋导演镜头（推演中自动巡礼大战前线）" : "已关闭观战巡弋导演镜头"
+        } content: {
+            InkIcon(glyph: .locate, size: 14, weight: 1.75)
+        }
+        .accessibilityLabel("观战巡弋导演镜头")
         Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 18).padding(.horizontal, 1)
         pillButton(tint: Theme.ink2) {
             withAnimation(Motion.tap) { expanded = false }
             onHide()
         } content: {
-            Image(systemName: "eye.slash").font(.system(size: 12, weight: .regular))
+            InkIcon(glyph: .eye, size: 13, weight: 1.65)
         }
         .accessibilityLabel("隐藏局势浮印")
     }
@@ -1395,4 +1443,105 @@ extension View {
     func pressMenu(_ menu: @escaping () -> PressMenu?, present: @escaping (PressMenu) -> Void) -> some View { modifier(LongPressLift(menu: menu, present: present)) }
     func pressMenuHost(_ menu: Binding<PressMenu?>) -> some View { modifier(PressMenuHost(menu: menu)) }
     func paperToast(_ text: Binding<String?>) -> some View { modifier(PaperToastHost(text: text)) }
+}
+
+/// 御案天下大势悬浮小笺（可在「设置 › 地图显示」自由开启/关闭）：
+/// 展示当前列强版图占比色带、前三强州数（点击直飞都城）、头号战事及观战巡弋快捷开关。
+struct ScrollPowerPlacard: View {
+    @ObservedObject var model: GameModel
+    let onOpenNation: (Int) -> Void
+    let onHide: () -> Void
+
+    var body: some View {
+        if let map = model.map, let state = model.state {
+            let total = max(1, map.meta.provinces.count)
+            let alive = state.nations.indices
+                .filter { $0 < map.meta.nations.count && state.nations[$0].alive && state.nations[$0].provinces > 0 }
+                .sorted { state.nations[$0].provinces > state.nations[$1].provinces }
+            let topPowers = Array(alive.prefix(6))
+            let topThree = Array(alive.prefix(3))
+            let hotWar = state.wars.first
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    SealFace(text: "势", size: 18, color: Theme.seal)
+                    Text("天下大势 · 存世 \(alive.count) 国")
+                        .font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit()
+                    if let w = hotWar, w.attacker < map.meta.nations.count, w.defender < map.meta.nations.count {
+                        Text("· \(MapLayers.stateLabel(map.meta.nations[w.attacker].name, full: false))⚔\(MapLayers.stateLabel(map.meta.nations[w.defender].name, full: false))")
+                            .font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1)
+                    }
+                    Spacer(minLength: 4)
+                    Button {
+                        GameFeel.shared.tap()
+                        model.controller.play.directorCruise.toggle()
+                        model.notice = model.controller.play.directorCruise ? "已开启观战巡弋导演镜头" : "已关闭观战巡弋导演镜头"
+                    } label: {
+                        HStack(spacing: 3) {
+                            InkIcon(glyph: .locate, size: 11, weight: 1.8)
+                            Text(model.controller.play.directorCruise ? "巡弋中" : "巡弋").font(Theme.caption)
+                        }
+                        .foregroundStyle(model.controller.play.directorCruise ? Theme.paper2 : Theme.jade)
+                        .padding(.horizontal, 7).padding(.vertical, 2.5)
+                        .background(model.controller.play.directorCruise ? Theme.jade : Theme.jade.opacity(0.12), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        GameFeel.shared.tap()
+                        onHide()
+                    } label: {
+                        InkIcon(glyph: .close, size: 11, weight: 1.7)
+                            .foregroundStyle(Theme.ink2)
+                            .frame(width: 20, height: 20)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                // 列强版图占比色带
+                GeometryReader { g in
+                    HStack(spacing: 1) {
+                        ForEach(topPowers, id: \.self) { n in
+                            let share = CGFloat(state.nations[n].provinces) / CGFloat(total)
+                            Rectangle()
+                                .fill(Names.color(map.meta.nations[n].color))
+                                .frame(width: max(4, g.size.width * share))
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .background(Theme.ink.opacity(0.10))
+                    .clipShape(Capsule())
+                }
+                .frame(height: 5)
+
+                // 前三强可点击快捷题签
+                HStack(spacing: 8) {
+                    ForEach(topThree, id: \.self) { n in
+                        let meta = map.meta.nations[n]
+                        let pct = Int((Double(state.nations[n].provinces) / Double(total) * 100).rounded())
+                        Button {
+                            GameFeel.shared.tap()
+                            if map.meta.cities.indices.contains(meta.capital) {
+                                let c = map.meta.cities[meta.capital]
+                                model.controller.showPlace(x: Double(c.x), y: Double(c.y))
+                            } else {
+                                onOpenNation(n)
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Circle().fill(Names.color(meta.color)).frame(width: 6.5, height: 6.5)
+                                Text("\(MapLayers.stateLabel(meta.name, full: false)) \(state.nations[n].provinces)州(\(pct)%)")
+                                    .font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit().lineLimit(1)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .frame(maxWidth: 360)
+            .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+        }
+    }
 }

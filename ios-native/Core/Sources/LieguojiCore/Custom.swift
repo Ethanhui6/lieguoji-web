@@ -490,6 +490,22 @@ public enum Regimes {
         reform(r, n, id, key)
         // 现实感政体更迭与政变引擎（由军变、权臣摄政、立宪维新、社会革命与复辟条件真实驱动）
         realisticPoliticsMonth(r, n, id, key)
+        // 冲龄幼主加冠亲政（满 16 岁首次收回辅政大权，国运 +5 并记入大事记）
+        if UnitKinds.enabled, rule(r, "event") > 0, let ldr = Regimes.ruler(r, id) {
+            let age = ldr.age.optionalNumber ?? 30
+            let lid = ldr.id.asInt
+            let b = book(r, id)
+            if age < 16 {
+                b.wasMinorLeader = JS(lid)
+            } else if age >= 16 && age < 18 && b.wasMinorLeader.optionalNumber.map(Int.init) == lid && b.cameOfAgeLeader.optionalNumber.map(Int.init) != lid {
+                b.cameOfAgeLeader = JS(lid)
+                addDestiny(5)
+                let rName = NativeEngine.displayPersonName(ldr)
+                _ = People.announce(r, kind: "politics", text: "\(n.name.asString)幼主\(rName)加冠亲政",
+                                    reason: "冲龄之君年满十六，行加冠大礼收回摄政大权，朝纲一新，国运 +5。",
+                                    nations: [id], province: Rebellion.capitalProvince(r, id))
+            }
+        }
     }
 
     /// 纳贡 (app rule): a vassal sends a tenth of its monthly income to its overlord; each January the

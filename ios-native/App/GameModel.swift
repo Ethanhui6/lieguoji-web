@@ -132,6 +132,12 @@ import LieguojiCore
     var cachedReplayCurrentCentroids: [Int: (x: Float, y: Float)] = [:]
     var cachedReplayChangedProvinces: Int = 0
     var lastReplayScrubTime: CFTimeInterval = 0
+    /// 观战巡弋导演镜头上次运镜时刻与轮换序号
+    var lastDirectorCruiseTime: CFTimeInterval = 0
+    var directorCruiseStep: Int = 0
+    /// 专题视图点图例聚光高亮颜色（nil 为全部正常显示）
+    @Published var legendSpotlightColor: String? = nil
+    private var cachedViewRawFills: [String] = []
     /// 后备网页引擎：纯 Swift 已接管全部建世、推演、指令与存档，启动与日常游玩零 WKWebView 实例；
     /// 仅在读取极早期旧版 JSON 存档、远程气候回退或 CI 对照计时时按需创建并挂载。
     @Published private(set) var legacyEngine: EngineHost?
@@ -859,7 +865,47 @@ import LieguojiCore
             lastViewRefresh = CACurrentMediaTime()
             Task { await refreshView() }
         }
+        maybeDirectorCruise(next)
         maybeRecordCheckpoint(next)
+    }
+
+    /// 观战巡弋导演镜头：开启后在推演期间自动、平滑地巡礼天下最激烈的大战、危急围城或海战前线；玩家触碰地图后自动礼让 12 秒。
+    private func maybeDirectorCruise(_ next: GameState) {
+        guard playing, controller.play.directorCruise, !pageOpen, !replayActive, let map else { return }
+        let now = CACurrentMediaTime()
+        guard now - controller.lastUserTouchTime > 12.0, now - lastDirectorCruiseTime > 7.5 else { return }
+        var targets = [(x: Double, y: Double)]()
+        // 1. 激战中的陆战接触点
+        for pair in (next.contacts ?? []).prefix(3) where pair.count == 2 && next.armies.indices.contains(pair[0]) && next.armies.indices.contains(pair[1]) {
+            let a = next.armies[pair[0]], b = next.armies[pair[1]]
+            if a.troops > 0 && b.troops > 0 {
+                targets.append((Double(a.x + b.x) * 0.5, Double(a.y + b.y) * 0.5))
+            }
+        }
+        // 2. 进度过半的危城围困
+        for s in next.sieges.sorted(by: { $0.progress > $1.progress }).prefix(2) where map.meta.provinces.indices.contains(s.province) {
+            let p = map.meta.provinces[s.province]
+            targets.append((Double(p.x), Double(p.y)))
+        }
+        // 3. 海战前线
+        for sb in (next.seaBattles ?? []).prefix(1) where sb.count >= 2 {
+            targets.append((sb[0], sb[1]))
+        }
+        // 4. 兜底：当前最大交战强国都城
+        if targets.isEmpty, let w = next.wars.first, map.meta.nations.indices.contains(w.defender) {
+            let cap = map.meta.nations[w.defender].capital
+            if map.meta.cities.indices.contains(cap) {
+                let c = map.meta.cities[cap]
+                targets.append((Double(c.x), Double(c.y)))
+            }
+        }
+        guard !targets.isEmpty else { return }
+        lastDirectorCruiseTime = now
+        let pick = targets[directorCruiseStep % targets.count]
+        directorCruiseStep &+= 1
+        if pick.x.isFinite && pick.y.isFinite {
+            controller.fly(x: pick.x, y: pick.y)
+        }
     }
 
     /// Wars declared or ended and provinces taken since the last state, as banners.
@@ -1153,6 +1199,40 @@ import LieguojiCore
             }
         }
         e.flashes = flashes
+        // 外交地缘视线弧线：打开某国详情或外交关系高亮时，从该国都城向敌国（朱红）、盟友（青玉）、附庸/宗主（鎏金）绘出丝绒弧线
+        if let rn = controller.relationsNation, state.nations.indices.contains(rn), let src = pole(rn) {
+            let sn = state.nations[rn]
+            for enemy in sn.enemies.prefix(6) {
+                if let dst = pole(enemy) {
+                    e.geoArcs.append(.init(key: "gw-\(rn)-\(enemy)", fromX: src.0, fromY: src.1, toX: dst.0, toY: dst.1, kind: .war))
+                }
+            }
+            for (other, hex) in controller.relations where other != rn {
+                if hex == 0x0000ff, let dst = pole(other) {
+                    e.geoArcs.append(.init(key: "ga-\(rn)-\(other)", fromX: src.0, fromY: src.1, toX: dst.0, toY: dst.1, kind: .ally))
+                } else if (hex == 0x00ff00 || hex == 0xff00ff), let dst = pole(other) {
+                    e.geoArcs.append(.init(key: "gv-\(rn)-\(other)", fromX: src.0, fromY: src.1, toX: dst.0, toY: dst.1, kind: .vassal))
+                }
+            }
+        }
+        // 海陆后勤补给脉络：选中某支军团时，连出其与最近本国实控州城/海港的后勤脉络（若孤悬敌境或粮草告急则呈朱砂断线警示）
+        if let aid = controller.selectedArmy, state.armies.indices.contains(aid) {
+            let a = state.armies[aid]
+            if a.troops > 0 {
+                var bestDist = Double.infinity
+                var bestPt: (Double, Double)? = nil
+                for (pi, owner) in state.owners.enumerated() where owner == a.nation && map.meta.provinces.indices.contains(pi) {
+                    let pr = map.meta.provinces[pi]
+                    let d = hypot(Double(pr.x - a.x), Double(pr.y - a.y))
+                    if d < bestDist { bestDist = d; bestPt = (Double(pr.x), Double(pr.y)) }
+                }
+                if let src = bestPt, bestDist > 4 {
+                    let inOwn = a.province >= 0 && state.owners.indices.contains(a.province) && state.owners[a.province] == a.nation
+                    let severed = !inOwn && (a.supplies < 25 || bestDist > 160)
+                    e.geoArcs.append(.init(key: "gs-\(a.id)", fromX: src.0, fromY: src.1, toX: Double(a.x), toY: Double(a.y), kind: .supply, severed: severed))
+                }
+            }
+        }
         controller.effects = e
     }
 
@@ -1377,16 +1457,47 @@ import LieguojiCore
     // MARK: map views and statistics
 
     /// The colour view on the map (国家、联盟、文化、家族、宗教、地形).
-    @Published var mapView: MapViewMode = .state { didSet { Task { await refreshView() } } }
+    @Published var mapView: MapViewMode = .state {
+        didSet {
+            if oldValue != mapView { legendSpotlightColor = nil; cachedViewRawFills = [] }
+            Task { await refreshView() }
+        }
+    }
     @Published private(set) var viewLegend: [MapViewData.Entry] = []
     /// A colour view refresh is running / another was asked for meanwhile (refreshes coalesce, so
     /// fast play does not pile up view computations).
     private var viewBusy = false, viewDirty = false
+
+    /// 专题视图图例聚光切换：点同一项恢复全图，点不同项单独高亮该颜色对应疆域、其余退为淡纸灰。
+    func toggleLegendSpotlight(_ color: String) {
+        if legendSpotlightColor?.uppercased() == color.uppercased() {
+            legendSpotlightColor = nil
+        } else {
+            legendSpotlightColor = color
+        }
+        applySpotlightFills()
+    }
+
+    private func applySpotlightFills() {
+        guard !cachedViewRawFills.isEmpty else { return }
+        let target = legendSpotlightColor?.uppercased()
+        let fills: [RGB] = cachedViewRawFills.map { hex in
+            let base = RGB(css: hex) ?? RGB(1, 1, 1)
+            guard let target else { return base }
+            if hex.uppercased() == target { return base }
+            // 非聚光阵营退为柔和宣纸灰，让聚光阵营的飞地与疆界一目了然
+            let lum = base.r * 0.3 + base.g * 0.59 + base.b * 0.11
+            return RGB(lum * 0.25 + 0.66, lum * 0.25 + 0.63, lum * 0.25 + 0.57)
+        }
+        if controller.viewFills != fills { controller.viewFills = fills }
+    }
+
     func refreshView() async {
         controller.mode = mapView == .terrain ? .terrain : .political
         let mode = mapView
         guard mode != .state && mode != .terrain else {
             controller.viewKey = ""
+            cachedViewRawFills = []
             if controller.viewFills != nil { controller.viewFills = nil }
             if controller.viewLabels != nil { controller.viewLabels = nil }
             if !viewLegend.isEmpty { viewLegend = [] }
@@ -1399,10 +1510,10 @@ import LieguojiCore
               let v = try? await Task.detached(operation: { try JSONDecoder().decode(MapViewData.self, from: data) }).value else { return }
         // The player switched views while this one was computed: drop it (the switch refreshes again).
         guard mapView == mode else { return }
-        let fills = v.fills.map { RGB(css: $0) ?? RGB(1, 1, 1) }
+        cachedViewRawFills = v.fills
         if controller.viewLabels != v.labels { controller.viewLabels = v.labels }
         controller.viewKey = mode.rawValue
-        if controller.viewFills != fills { controller.viewFills = fills }
+        applySpotlightFills()
         if viewLegend != v.legend { viewLegend = v.legend }
     }
     /// 天下规则: world rates in percent (war, damage, march, levy, ships).

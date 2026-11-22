@@ -38,6 +38,12 @@ struct MapEffects: Equatable {
         let shallow: (Double, Double, Double); let deep: (Double, Double, Double)
         static func == (a: Arrow, b: Arrow) -> Bool { a.key == b.key && a.sx == b.sx && a.sy == b.sy && a.ex == b.ex && a.ey == b.ey && a.cx == b.cx && a.cy == b.cy && a.deep == b.deep }
     }
+    /// 外交地缘视线弧线与军团海陆补给脉络（war: 朱红敌对线；ally: 青玉同盟线；vassal: 鎏金宗藩线；supply: 军团后勤补给虚线）。
+    struct GeoArc: Equatable {
+        enum Kind: Equatable { case war, ally, vassal, supply }
+        let key: String; let fromX: Double; let fromY: Double; let toX: Double; let toY: Double
+        let kind: Kind; var severed: Bool = false
+    }
     var battles: [Battle] = []
     var sieges: [Siege] = []
     var flashes: [Flash] = []
@@ -46,6 +52,7 @@ struct MapEffects: Equatable {
     var peaces: [Peace] = []
     var arrows: [Arrow] = []
     var bursts: [Burst] = []
+    var geoArcs: [GeoArc] = []
 }
 
 final class EffectsView: UIView {
@@ -75,6 +82,7 @@ final class EffectsView: UIView {
     /// 正在显示的事件印（同屏最多三方，不抢视线）。
     private var sealIDs = Set<String>()
     private var battleArrows: [String: (root: CALayer, fill: CAShapeLayer, gradient: CAGradientLayer, outline: CAShapeLayer, head: CAShapeLayer, reveal: CAShapeLayer, a: MapEffects.Arrow)] = [:]
+    private var geoArcLayers: [String: (layer: CAShapeLayer, arc: MapEffects.GeoArc)] = [:]
     private var seen = Set<String>()
     private var seenOrder: [String] = []
     private var camera: MapCamera?
@@ -769,6 +777,34 @@ final class EffectsView: UIView {
             let id = p.id
             once(id, after: 1.8) { [weak self] in self?.peaceLayers[id]?.layer.removeFromSuperlayer(); self?.peaceLayers[id] = nil }
         }
+        let liveGeo = Set(effects.geoArcs.map(\.key))
+        for (key, v) in geoArcLayers where !liveGeo.contains(key) { v.layer.removeFromSuperlayer(); geoArcLayers[key] = nil }
+        for arc in effects.geoArcs {
+            if let old = geoArcLayers[arc.key] {
+                geoArcLayers[arc.key] = (old.layer, arc)
+            } else {
+                let l = CAShapeLayer()
+                l.fillColor = nil; l.lineCap = .round
+                switch arc.kind {
+                case .war:
+                    l.strokeColor = UIColor(red: 0.72, green: 0.20, blue: 0.14, alpha: 0.72).cgColor
+                    l.lineWidth = 1.6; l.lineDashPattern = [5, 4]
+                case .ally:
+                    l.strokeColor = UIColor(red: 0.18, green: 0.44, blue: 0.36, alpha: 0.68).cgColor
+                    l.lineWidth = 1.5
+                case .vassal:
+                    l.strokeColor = UIColor(red: 0.76, green: 0.56, blue: 0.18, alpha: 0.70).cgColor
+                    l.lineWidth = 1.4; l.lineDashPattern = [3, 3]
+                case .supply:
+                    l.strokeColor = arc.severed
+                        ? UIColor(red: 0.68, green: 0.18, blue: 0.14, alpha: 0.58).cgColor
+                        : UIColor(red: 0.22, green: 0.20, blue: 0.16, alpha: 0.56).cgColor
+                    l.lineWidth = 1.4; l.lineDashPattern = arc.severed ? [2, 5] : [4, 3]
+                }
+                layer.insertSublayer(l, at: 0)
+                geoArcLayers[arc.key] = (l, arc)
+            }
+        }
         CATransaction.commit()
         if let camera { update(camera: camera, viewport: viewport) }
     }
@@ -826,6 +862,14 @@ final class EffectsView: UIView {
             v.root.frame = vpRect; v.gradient.frame = vpRect; v.fill.frame = vpRect
             v.outline.frame = vpRect; v.head.frame = vpRect; v.reveal.frame = vpRect
             layoutArrow(v) { screen($0, $1) }
+        }
+        for v in geoArcLayers.values {
+            let a = screen(v.arc.fromX, v.arc.fromY), b = screen(v.arc.toX, v.arc.toY)
+            let dx = b.x - a.x, dy = b.y - a.y, len = max(1, hypot(dx, dy))
+            let bow = min(56, len * 0.16)
+            let ctrl = CGPoint(x: (a.x + b.x) * 0.5 - (dy / len) * bow, y: (a.y + b.y) * 0.5 + (dx / len) * bow)
+            let path = UIBezierPath(); path.move(to: a); path.addQuadCurve(to: b, controlPoint: ctrl)
+            v.layer.path = path.cgPath
         }
         for v in arrowLayers.values {
             let a = screen(v.d.fromX, v.d.fromY), b = screen(v.d.toX, v.d.toY)

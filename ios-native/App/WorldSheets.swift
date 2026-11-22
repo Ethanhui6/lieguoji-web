@@ -774,6 +774,7 @@ struct ChronicleSheet: View {
     @State private var open: String?
     /// 岁纪 counts every kind of record, whatever category is listed below.
     @State private var digest: [ChronicleEntry] = []
+    @State private var timeline: ReplayTimelineData?
     /// 只看一国 and 搜寻: the list narrowed to one state's records or to a word.
     @State private var nationFilter: Int?
     /// 联动: another page asks for one state's records once (外交 › 史).
@@ -828,6 +829,13 @@ struct ChronicleSheet: View {
                     }
                     .buttonStyle(PressStyle())
                     .padding(.horizontal, 16)
+                    if let tl = timeline, tl.frames.count >= 2 {
+                        ChronicleDynastyScroll(timeline: tl) { day in
+                            GameFeel.shared.tap()
+                            openReplay(day)
+                        }
+                        .padding(.horizontal, 16)
+                    }
                     WorldSummary(model: model).padding(.horizontal, 16)
                     ChronicleDigest(entries: digest, yearOf: yearOf, yearText: yearLabel).padding(.horizontal, 16)
                     // 大事记 by category: the whole chronicle (not only the latest lines), grouped by year;
@@ -929,6 +937,91 @@ struct ChronicleSheet: View {
             withAnimation(Motion.fade) { unrolled = true }
         }
         .task(id: "\(category)-\((model.state?.day ?? 0) / 30)") { entries = await model.chronicle(category) }
-        .task(id: (model.state?.day ?? 0) / 30) { digest = await model.chronicle("all") }
+        .task(id: (model.state?.day ?? 0) / 30) {
+            digest = await model.chronicle("all")
+            timeline = await model.replayTimeline()
+        }
+    }
+}
+
+/// 纪事页「列国兴衰时间长卷」：横向展示各历史节点的列强疆域消长色带与头号霸主，点击任一节点即可直接跳转至该日山河回放。
+struct ChronicleDynastyScroll: View {
+    let timeline: ReplayTimelineData
+    var onSelectDay: (Int) -> Void
+
+    private var sampledFrames: [ReplayTimelineData.Frame] {
+        let all = timeline.frames
+        guard all.count > 28 else { return all }
+        let step = max(1, all.count / 24)
+        var out: [ReplayTimelineData.Frame] = []
+        for (i, f) in all.enumerated() {
+            if i == 0 || i == all.count - 1 || f.major || i % step == 0 {
+                out.append(f)
+            }
+        }
+        return out
+    }
+
+    private func nationColor(_ idx: Int) -> Color {
+        guard idx >= 0, idx < timeline.nations.count else { return Theme.ink3 }
+        return Color(hex: timeline.nations[idx].color)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Seal(text: "卷", size: 22)
+                Text("列国兴衰时间长卷").font(Theme.section).foregroundStyle(Theme.ink)
+                Spacer(minLength: 4)
+                Text("点按节点直达回放 · 共 \(timeline.frames.count) 帧").font(Theme.caption).foregroundStyle(Theme.ink2)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .bottom, spacing: 6) {
+                    ForEach(sampledFrames) { f in
+                        Button {
+                            onSelectDay(f.day)
+                        } label: {
+                            VStack(spacing: 4) {
+                                // 堆叠列强色柱
+                                GeometryReader { geo in
+                                    let slices = f.topPowers ?? [ReplayTimelineData.PowerSlice(i: f.topNation, p: max(1, f.topProvinces))]
+                                    let total = max(1, slices.reduce(0) { $0 + max(1, $1.p) })
+                                    VStack(spacing: 0.5) {
+                                        ForEach(slices.prefix(5)) { sl in
+                                            Rectangle()
+                                                .fill(nationColor(sl.i))
+                                                .frame(height: max(3, geo.size.height * CGFloat(sl.p) / CGFloat(total)))
+                                        }
+                                    }
+                                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                            .stroke(f.major ? Theme.seal : Theme.ink.opacity(0.18), lineWidth: f.major ? 1.1 : 0.5)
+                                    )
+                                }
+                                .frame(width: 24, height: 54)
+
+                                Text(MapLayers.stateLabel(f.topName, full: false))
+                                    .font(.system(size: 9.5, weight: .semibold, design: .serif))
+                                    .foregroundStyle(Theme.ink)
+                                    .lineLimit(1)
+                                    .frame(width: 34)
+                                Text(f.year > 0 ? "\(f.year)年" : "前\(1 - f.year)")
+                                    .font(.system(size: 8.5, design: .serif).monospacedDigit())
+                                    .foregroundStyle(f.major ? Theme.seal : Theme.ink3)
+                                    .lineLimit(1)
+                            }
+                            .padding(.vertical, 5)
+                            .padding(.horizontal, 3)
+                            .background(f.major ? Theme.seal.opacity(0.06) : Theme.paper2.opacity(0.65), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .padding(12)
+        .paperCard()
     }
 }

@@ -717,6 +717,9 @@ struct ReplayOverlay: View {
                     .font(Theme.section)
                 }
                 .statusBarHidden()
+                .onAppear {
+                    showDetails = model.controller.play.showReplayPlacard
+                }
                 .animation(Motion.panel, value: showNodes)
                 .animation(Motion.panel, value: showDetails)
                 .animation(Motion.panel, value: confirmRollback)
@@ -789,6 +792,7 @@ struct ReplayOverlay: View {
                 Button {
                     GameFeel.shared.tap()
                     showDetails.toggle()
+                    model.controller.play.showReplayPlacard = showDetails
                 } label: {
                     CircleIcon(glyph: .ranking, active: showDetails)
                 }
@@ -1038,6 +1042,7 @@ struct ReplayOverlay: View {
                 Button {
                     GameFeel.shared.tap()
                     showDetails = false
+                    model.controller.play.showReplayPlacard = false
                 } label: {
                     InkIcon(glyph: .close, size: 13, weight: 1.7)
                         .foregroundStyle(Theme.ink2)

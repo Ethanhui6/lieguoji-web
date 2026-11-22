@@ -123,6 +123,17 @@ struct GameView: View {
         .overlay(alignment: .top) {
             VStack(spacing: 8) {
                 topBar
+                if controller.play.showScrollPlacard && !ShotTour.on && panel == nil && controller.marchingArmy == nil && controller.marchingFleet == nil && controller.paintNation == nil && controller.pickPrompt == nil && controller.groupArmies.isEmpty {
+                    ScrollPowerPlacard(
+                        model: model,
+                        onOpenNation: { n in nationDetent = .fraction(0.38); show(.nation(n)) },
+                        onHide: {
+                            controller.play.showScrollPlacard = false
+                            say("已关闭御案天下大势悬浮小笺，可在菜单 › 地图显示重新开启")
+                        }
+                    )
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
                 if controller.marchingArmy != nil { marchBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if controller.marchingFleet != nil { fleetBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if controller.paintNation != nil { paintBanner.transition(.move(edge: .top).combined(with: .opacity)) }
@@ -203,7 +214,13 @@ struct GameView: View {
         }
         .overlay(alignment: .bottomLeading) {
             if !model.viewLegend.isEmpty && !model.replayActive {
-                MapViewLegend(mode: model.mapView, legend: model.viewLegend, open: { allianceMenu($0) })
+                MapViewLegend(
+                    mode: model.mapView,
+                    legend: model.viewLegend,
+                    spotlightColor: model.legendSpotlightColor,
+                    onSpotlight: { model.toggleLegendSpotlight($0) },
+                    open: { allianceMenu($0) }
+                )
                     .padding(.leading, landscape ? 80 : 16)
                     .padding(.bottom, landscape ? 44 : model.state?.events.isEmpty == false ? 120 : 80)
                     .transition(.asymmetric(insertion: .scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity), removal: .opacity))

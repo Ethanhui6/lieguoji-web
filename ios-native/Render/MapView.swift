@@ -78,6 +78,8 @@ import LieguojiCore
     var viewKey = ""
     /// 四时节气光影相位（0..1，由模拟日期驱动）。
     var seasonPhase: Float = -1
+    /// 玩家最近一次主动触碰地图的时刻（用于观战巡弋导演镜头自动礼让手动操作）。
+    var lastUserTouchTime: CFTimeInterval = 0
     /// Where the icon with this key is drawn now (set by the map view).
     var placed: ((String) -> (Double, Double)?)?
     /// CI 连续帧对比: the state names on screen in this frame and how opaque each is drawn.
@@ -232,15 +234,18 @@ struct PlaySettings: Codable, Equatable {
     var autosave = 120
     /// 大事暂停: a declaration of war, a rising or a state's end stops the clock.
     var pauseOnNews = false
-    /// 界面与看海偏好：局势快控浮印、大事传报横幅、战况飘字、海面波浪、打开面板自动暂停。
+    /// 界面与看海偏好：局势快控浮印、御案天下大势悬浮小笺、回放天下大势悬浮小笺、观战巡弋导演镜头、大事传报横幅、战况飘字、海面波浪、打开面板自动暂停。
     var showTacticalPill = true
+    var showScrollPlacard = false
+    var showReplayPlacard = true
+    var directorCruise = false
     var showHeralds = true
     var showBattleFloats = true
     var seaWaves = true
     var pauseOnSheet = true
     static let key = "playSettings.v1"
     init() {}
-    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave, pauseOnNews, showTacticalPill, showHeralds, showBattleFloats, seaWaves, pauseOnSheet }
+    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave, pauseOnNews, showTacticalPill, showScrollPlacard, showReplayPlacard, directorCruise, showHeralds, showBattleFloats, seaWaves, pauseOnSheet }
     // Every field is optional in a stored setting: older versions saved fewer (and a 高帧率 switch).
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -258,6 +263,9 @@ struct PlaySettings: Codable, Equatable {
         autosave = try c.decodeIfPresent(Int.self, forKey: .autosave) ?? 120
         pauseOnNews = try c.decodeIfPresent(Bool.self, forKey: .pauseOnNews) ?? false
         showTacticalPill = try c.decodeIfPresent(Bool.self, forKey: .showTacticalPill) ?? true
+        showScrollPlacard = try c.decodeIfPresent(Bool.self, forKey: .showScrollPlacard) ?? false
+        showReplayPlacard = try c.decodeIfPresent(Bool.self, forKey: .showReplayPlacard) ?? true
+        directorCruise = try c.decodeIfPresent(Bool.self, forKey: .directorCruise) ?? false
         showHeralds = try c.decodeIfPresent(Bool.self, forKey: .showHeralds) ?? true
         showBattleFloats = try c.decodeIfPresent(Bool.self, forKey: .showBattleFloats) ?? true
         seaWaves = try c.decodeIfPresent(Bool.self, forKey: .seaWaves) ?? true
@@ -274,7 +282,9 @@ struct PlaySettings: Codable, Equatable {
         try c.encode(renderScale, forKey: .renderScale); try c.encode(simLoad, forKey: .simLoad); try c.encode(autoCool, forKey: .autoCool)
         try c.encode(introCamera, forKey: .introCamera); try c.encode(easeReveal, forKey: .easeReveal)
         try c.encode(autosave, forKey: .autosave); try c.encode(pauseOnNews, forKey: .pauseOnNews)
-        try c.encode(showTacticalPill, forKey: .showTacticalPill); try c.encode(showHeralds, forKey: .showHeralds)
+        try c.encode(showTacticalPill, forKey: .showTacticalPill); try c.encode(showScrollPlacard, forKey: .showScrollPlacard)
+        try c.encode(showReplayPlacard, forKey: .showReplayPlacard); try c.encode(directorCruise, forKey: .directorCruise)
+        try c.encode(showHeralds, forKey: .showHeralds)
         try c.encode(showBattleFloats, forKey: .showBattleFloats); try c.encode(seaWaves, forKey: .seaWaves)
         try c.encode(pauseOnSheet, forKey: .pauseOnSheet)
     }
@@ -535,7 +545,8 @@ struct MapView: UIViewRepresentable {
             (g is UIPinchGestureRecognizer || g is UIPanGestureRecognizer) && (other is UIPinchGestureRecognizer || other is UIPanGestureRecognizer)
         }
         func gestureRecognizer(_ g: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-            // Any new touch stops a fling or a camera animation, as in Maps.
+            // Any new touch stops a fling or a camera animation, as in Maps, and defers director cruise.
+            controller.lastUserTouchTime = CACurrentMediaTime()
             stopMotion(); return true
         }
 

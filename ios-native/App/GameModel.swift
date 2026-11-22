@@ -1765,6 +1765,7 @@ import LieguojiCore
     func setAutoDiplomacy(_ n: Int, _ enabled: Bool) async -> String? { finish(await native.setAutoDiplomacy(n, enabled)) }
     func regimeTransition(_ n: Int, action: String) async -> String? { await edit("regimeTransition", ["n": n, "action": action]) }
     func partyAction(_ n: Int, party: Int, action: String) async -> String? { await edit("partyAction", ["n": n, "party": party, "action": action]) }
+    func nationDecree(_ n: Int, kind: String) async -> String? { await edit("nationDecree", ["n": n, "kind": kind]) }
     func sendUltimatum(_ from: Int, to: Int, demand: String) async -> String? { await edit("sendUltimatum", ["from": from, "to": to, "demand": demand]) }
     func formCoalition(_ caller: Int, against target: Int) async -> String? { await edit("formCoalition", ["caller": caller, "target": target]) }
     func covertAction(_ from: Int, target: Int, kind: String) async -> String? { await edit("covertAction", ["from": from, "target": target, "kind": kind]) }

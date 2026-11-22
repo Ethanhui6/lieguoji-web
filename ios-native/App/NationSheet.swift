@@ -1870,9 +1870,10 @@ struct NationSheet: View {
                 Divider2()
                 VStack(alignment: .leading, spacing: 8) {
                     Text("国家旌旗纹章印记（显示于国家页卷首大印）").font(Theme.label).foregroundStyle(Theme.ink2)
+                    let emblemChoices: [String] = ["龙", "鹰", "鼎", "狮", "狼", "樱", "剑", "日", "月", "莲", "凰", "聖"]
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 6), spacing: 8) {
-                        ForEach(["龙", "鹰", "鼎", "狮", "狼", "樱", "剑", "日", "月", "莲", "凰", "聖"], id: \.self) { sym in
-                            let on = (info.emblem ?? "国") == sym
+                        ForEach(emblemChoices, id: \.self) { sym in
+                            let on: Bool = (info.emblem ?? "国") == sym
                             Button {
                                 GameFeel.shared.tap()
                                 Task { await run(success: "旌旗纹章已改为「\(sym)」") { await model.nationDecree(nation, kind: "emblem:\(sym)") } }

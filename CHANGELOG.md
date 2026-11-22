@@ -3,8 +3,8 @@
 ## 2.8.6 / build 148 — 2026-11-22
 
 ### 修复与性能优化
-- **修复 CI 归档构建上传失败（`NationInfo.swift`、`WorldSheets.swift`）**：
-  - 修复 `NationInfo.swift` 朝堂四方权力天平读取 `People.skills(_:)` 返回的 `Persona.Skills` 结构体时误用四元组的编译错误，并显式标定 `Double` 运算类型；同步确保 `WorldSheets.swift` 时间长卷引用 `Theme.ink2`、`Names.color(...)` 与 `Theme.kai(...)`，恢复 GitHub Actions 自动归档与未签名 IPA 产物上传。
+- **修复 CI 归档构建上传失败（`NationInfo.swift`、`GameModel.swift`、`NationSheet.swift`、`WorldSheets.swift`、`MapEditor.swift`、`NativeHost.swift`）**：
+  - 修复 `NationInfo.swift` 朝堂四方权力天平读取 `People.skills(_:)` 返回的 `Persona.Skills` 结构体时误用四元组的编译错误，并显式标定 `Double` 运算类型；在 `GameModel.swift` 补齐 `nationDecree(_:kind:)` 统一包装并在 `NationSheet.swift` 显式标定纹章列表 `[String]` 类型；同步确保 `WorldSheets.swift` 时间长卷引用 `Theme.ink2`、`Names.color(...)` 与 `Theme.kai(...)` 并清零 `MapEditor.swift` 与 `NativeHost.swift` 的 Swift 6 并发告警，恢复 GitHub Actions 自动归档与未签名 IPA 产物上传。
 - **根治进入游戏与点开始闪退（`MapView.swift`、`MapRenderer.swift`、`GameView.swift`）**：
   - 移除 `MapView.Coordinator.set` 与 `layoutChanged` 在 `UIView.layoutSubviews()` 及嵌套 `CATransaction` 中同步直接调用 `mtk.draw()` 的路径，统一交由 `mtk.setNeedsDisplay()` 在 CoreAnimation 提交阶段渲染，并在 `set(_:sync:)` 内确保覆盖层各子视图帧尺寸始终与视口 `fullBounds` 一致，彻底解决进入游戏与点击开始时因 `presentsWithTransaction` 双重绘制及 `waitUntilScheduled()` 重入引发的闪退。
   - `MapRenderer.draw(in:)` 的 `MTLScissorRect` 改为对 `pass.colorAttachments[0].texture`（2× MSAA 多重采样纹理）与 `drawable.texture` 取共同宽高下界，并在 `Double` 域完成 `.isFinite` 校验与 `[0, dw] × [0, dh]` 钳制后再转为 `Int`，杜绝视口刚创建或旋转时因 MSAA 纹理尺寸瞬态差异或浮点转整型越界触发的 Metal 闪退。

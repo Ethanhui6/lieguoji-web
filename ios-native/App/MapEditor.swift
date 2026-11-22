@@ -291,11 +291,12 @@ import LieguojiCore
                     built.meta.provinces[i].nation = organic[i]
                 }
             }
+            let finalBuilt = built
             await MainActor.run {
                 guard ticket == self.computing else { return }
-                self.map = built; self.busy = false
-                if step == .provinces && built.meta.provinces.isEmpty { self.message = "陆地太少，无法划分州郡" } else { self.message = "" }
-                self.show(built, sea: true)
+                self.map = finalBuilt; self.busy = false
+                if step == .provinces && finalBuilt.meta.provinces.isEmpty { self.message = "陆地太少，无法划分州郡" } else { self.message = "" }
+                self.show(finalBuilt, sea: true)
             }
         }
     }

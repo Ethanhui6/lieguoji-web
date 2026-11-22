@@ -393,7 +393,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
     func start(timeout: Double = 6) async throws {
         let gate = Gate()
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
-            func finish(_ r: Result<Void, Error>) { if gate.open() { c.resume(with: r) } }
+            @Sendable func finish(_ r: Result<Void, Error>) { if gate.open() { c.resume(with: r) } }
             connection.stateUpdateHandler = { state in
                 switch state {
                 case .ready: finish(.success(()))

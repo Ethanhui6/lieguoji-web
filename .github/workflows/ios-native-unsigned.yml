@@ -137,9 +137,16 @@ jobs:
           mkdir -p "$DATA/Library/Preferences"
           /usr/libexec/PlistBuddy -c 'Add :remote.autoAll bool false' "$DATA/Library/Preferences/com.lieguoji.native.plist"
           /usr/libexec/PlistBuddy -c 'Print :remote.autoAll' "$DATA/Library/Preferences/com.lieguoji.native.plist"
-          SIMCTL_CHILD_LGJ_SHOT=1 xcrun simctl launch "$UDID" com.lieguoji.native
+          launched=$(SIMCTL_CHILD_LGJ_SHOT=1 xcrun simctl launch "$UDID" com.lieguoji.native)
+          echo "$launched"
+          pid=${launched##*: }
           mkdir -p shots; end=$((SECONDS+1500)); finished=0
           while [ $SECONDS -lt $end ] && [ $finished = 0 ]; do
+            if [[ "$pid" =~ ^[0-9]+$ ]] && ! kill -0 "$pid" 2>/dev/null; then
+              echo "::error::列国纪在模拟器巡览期间退出"
+              xcrun simctl spawn "$UDID" log show --last 3m --predicate 'process == "LieguojiNative"' --style compact | tail -30 || true
+              break
+            fi
             for f in "$DATA"/Documents/shot-*.ready; do
               [ -e "$f" ] || continue
               n=$(basename "$f" .ready); n=${n#shot-}

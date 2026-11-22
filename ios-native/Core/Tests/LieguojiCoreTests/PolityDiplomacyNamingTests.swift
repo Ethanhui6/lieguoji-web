@@ -187,6 +187,41 @@ final class PolityDiplomacyNamingTests: XCTestCase {
         XCTAssertFalse(transitions.isEmpty)
     }
 
+    func testQuarterlyWarRelationsAndCourtUseNativeCampaigns() throws {
+        let engine = try loadWorld(); defer { cleanup() }
+        let r = engine.run
+        XCTAssertTrue(r.world.campaigns.isNull)
+        let war = try XCTUnwrap(r.nativeWars.campaigns.asArray.first { $0.endedTick.isNull && $0.attacker.optionalString != nil })
+        let attacker = war.attacker.asString, defender = war.defender.asString
+        let nations = r.world.nations.asArray
+        let allyIndex = try XCTUnwrap(nations.firstIndex {
+            let id = $0.id.asString
+            return id != attacker && id != defender && Vassals.alive(r, id)
+        })
+        let ally = nations[allyIndex].id.asString
+        let participant = JS.object()
+        participant.stateId = JS(Wars.stateNumber(r, ally))
+        participant.side = JS(0)
+        war.participants.push(participant)
+        r.nativeWars.campaigns = .array([war])
+        r.regimes.opinionMod = .object()
+        r.diplomacy.worldAuto = JS(false)
+
+        DiplomacyDeep.month(r, 3)
+        XCTAssertEqual(r.regimes.opinionMod[DiplomacyDeep.pairKey(attacker, defender)].optionalNumber, -2)
+        XCTAssertEqual(r.regimes.opinionMod[DiplomacyDeep.pairKey(ally, defender)].optionalNumber, -2)
+        XCTAssertTrue(r.regimes.opinionMod[DiplomacyDeep.pairKey(attacker, ally)].isNull)
+        XCTAssertEqual(Wars.activeCampaignCount(r, for: ally), 1)
+        let activeInfo = try JS.parse(XCTUnwrap(engine.nationInfo(allyIndex)))
+
+        war.endedTick = JS(1)
+        DiplomacyDeep.month(r, 6)
+        XCTAssertEqual(r.regimes.opinionMod[DiplomacyDeep.pairKey(ally, defender)].optionalNumber, -2)
+        XCTAssertEqual(Wars.activeCampaignCount(r, for: ally), 0)
+        let endedInfo = try JS.parse(XCTUnwrap(engine.nationInfo(allyIndex)))
+        XCTAssertGreaterThan(activeInfo.courtPower.military.asInt, endedInfo.courtPower.military.asInt)
+    }
+
     func testDeepDiplomacyOpinionTreatiesDefenseAndCoalition() throws {
         let engine = try loadWorld(); defer { cleanup() }
         let r = engine.run

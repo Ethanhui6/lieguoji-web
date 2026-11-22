@@ -295,7 +295,7 @@ extension NativeEngine {
             var rawHouses: Double = (prof.fiefRule.allowsFiefs ? 18.0 : 8.0) + min(65.0, houseInf * 0.25)
             if prof.fiefRule == .regent || ldrAge < 16 { rawHouses += 24.0 }
             let activeArmies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }.count
-            let activeWars = r.world.campaigns.asArray.filter { $0.status.asString == "active" && ($0.attackerId.asString == id || $0.defenderId.asString == id) }.count
+            let activeWars = Wars.activeCampaignCount(r, for: id)
             var rawMilitary: Double = 14.0 + Double(activeArmies) * 3.5 + Double(activeWars) * 14.0 + skMilitary * 0.18
             if st.id == "junta" || st.id == "fascist" || st.id == "nazi" || st.id == "shogunate" { rawMilitary += 28.0 }
             let hasParties = !r.regimes.nations[id].parties.isNull && r.regimes.nations[id].parties.length > 0

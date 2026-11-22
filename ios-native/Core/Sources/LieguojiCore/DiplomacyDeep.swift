@@ -268,12 +268,8 @@ public enum DiplomacyDeep {
         // +60 好感 → 0.55x（极难轻启战端）；-60 宿敌 → 1.38x（蠢蠢欲动）
         var raw = 1.0 - Double(rep.score) * 0.0065
         if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
-            var warsA = 0, warsB = 0
-            for c in r.world.campaigns.asArray where c.status.asString == "active" {
-                let ca = c.attackerId.asString, cd = c.defenderId.asString
-                if ca == a || cd == a { warsA += 1 }
-                if ca == b || cd == b { warsB += 1 }
-            }
+            let warsA = Wars.activeCampaignCount(r, for: a)
+            let warsB = Wars.activeCampaignCount(r, for: b)
             // 慎开多线：已在两线以上交战时克制再启新战端
             if warsA >= 2 { raw *= 0.52 }
             else if warsA == 1 { raw *= 0.78 }
@@ -296,10 +292,11 @@ public enum DiplomacyDeep {
         }
         // 1b. 每季度演进交战宿怨与同盟情谊，并检查关系破裂后的旧约废止
         if key % 3 == 0 {
-            for c in r.world.campaigns.asArray where c.status.asString == "active" {
-                let ca = c.attackerId.asString, cd = c.defenderId.asString
-                if Vassals.alive(r, ca) && Vassals.alive(r, cd) {
-                    adjustOpinionMod(r, ca, cd, delta: -2)
+            let registry = r.nativeWars
+            for campaign in registry.campaigns.optionalArray ?? [] where campaign.endedTick.isNull {
+                for (attacker, defender) in Wars.opposedPairs(registry, campaign, currentOnly: true)
+                    where Vassals.alive(r, attacker) && Vassals.alive(r, defender) {
+                    adjustOpinionMod(r, attacker, defender, delta: -2)
                 }
             }
             if !r.regimes.pacts.isNull {

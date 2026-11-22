@@ -69,6 +69,16 @@ public enum Wars {
         return (ordered + keys.filter { !seen.contains($0) }).map { owned[$0]! }
     }
     static func members(_ c: JS, current: Bool) -> [JS] { current ? c.participants.asArray : c.participants.asArray + c.destroyedParticipants.asArray }
+    static func activeCampaignCount(_ r: JS, for nation: String) -> Int {
+        guard let state = r.people.nations[nation].id.optionalNumber,
+              let campaigns = r.nativeWars.campaigns.optionalArray else { return 0 }
+        return campaigns.lazy.filter { campaign in
+            guard campaign.endedTick.isNull, let participants = campaign.participants.optionalArray else { return false }
+            return participants.contains { member in
+                member.stateId.optionalNumber == state && (member.side.optionalNumber == 0 || member.side.optionalNumber == 1)
+            }
+        }.count
+    }
     public static func opposedPairs(_ s: JS, _ c: JS, currentOnly: Bool = false) -> [(String, String)] {
         let all = members(c, current: currentOnly)
         var pairs = [(String, String)]()

@@ -97,20 +97,20 @@ struct MemorialPaper: View {
     }
 }
 
-/// 全作统一的动效（WWDC23 临界阻尼弹簧原则：常规位移/面板切换默认不回弹，利落跟手；仅落印仪式保留克制弹性）：
+/// 全作统一的苹果流体物理动效（iOS 17+ 原生 `.snappy` / `.smooth` / `.bouncy` 弹簧曲线：利落跟手、克制回弹、落印有质感）：
 enum Motion {
-    /// 点按、开关、小控件的反馈（临界阻尼，干脆不晃）。
-    static let tap = Animation.spring(response: 0.26, dampingFraction: 0.96)
-    /// 面板切换、展开收起、布局变化（跟手无拖尾）。
-    static let panel = Animation.spring(response: 0.36, dampingFraction: 0.98)
-    /// 较大的位移（整页滑入、数据条生长、镜头相关的界面跟随）。
-    static let drift = Animation.spring(response: 0.52, dampingFraction: 0.98)
-    /// 纯透明度与颜色淡入淡出（非位移属性保持短促缓出）。
+    /// 点按、开关、滑块与分段控件反馈（苹果原生 snappy 流体弹簧）。
+    static let tap = Animation.snappy(duration: 0.24, extraBounce: 0.06)
+    /// 面板切换、展开收起、布局变化（跟手顺滑无拖尾）。
+    static let panel = Animation.snappy(duration: 0.34, extraBounce: 0.03)
+    /// 较大的位移（整页滑入、数据条生长、镜头与浮印吸附）。
+    static let drift = Animation.smooth(duration: 0.44)
+    /// 纯透明度与颜色淡入淡出。
     static let fade = Animation.easeOut(duration: 0.18)
     /// 墨迹显现、细线展开与图表绘制。
     static let reveal = Animation.easeOut(duration: 0.42)
-    /// 只表达一件事：落印确认（标题印、宣战印、警报跃动）。略带回弹，像印章按下去。
-    static let stamp = Animation.spring(response: 0.32, dampingFraction: 0.68)
+    /// 落印确认（标题印、宣战印、警报跃动）：饱满弹性，如朱印压纸。
+    static let stamp = Animation.bouncy(duration: 0.36, extraBounce: 0.20)
 }
 
 /// 印面：全作统一的朱印。始终是正方形，按字数定版式，使一字印与多字印的视觉重量一致——
@@ -647,7 +647,8 @@ struct EdictSheet: View {
     /// A one-off world order (the original's world editor), confirmed first.
     private func order(_ title: String, _ note: String, _ key: String) -> some View {
         Button { confirming = (title, key) } label: {
-            HStack {
+            HStack(spacing: 10) {
+                Glyph.icon(title, size: 15, fallback: .edict)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(Theme.section).foregroundStyle(Theme.seal)
                     Text(note).font(Theme.caption).foregroundStyle(Theme.ink2)
@@ -669,12 +670,13 @@ struct EdictSheet: View {
         let value = rules[key] ?? 100
         let range = WorldRuleRange.of(key)
         return HStack(spacing: 10) {
+            Glyph.icon(title, size: 15, fallback: .settings)
             Text(title).font(Theme.section).foregroundStyle(Theme.ink2)
             Spacer()
-            Button { setRule(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
+            Button { GameFeel.shared.tap(); setRule(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value <= range.lowerBound)
             Text(value == 0 && zero != nil ? zero! : "\(value)%").font(Theme.section).foregroundStyle(value == 100 ? Theme.ink : Theme.seal).frame(minWidth: 64).contentTransition(.numericText())
-            Button { setRule(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
+            Button { GameFeel.shared.tap(); setRule(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value >= range.upperBound)
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -715,7 +717,7 @@ struct ScrollRod: View {
     var body: some View {
         HStack(spacing: 0) {
             Capsule().fill(LinearGradient(colors: [Color(red: 0.72, green: 0.56, blue: 0.25), Color(red: 0.45, green: 0.32, blue: 0.12)], startPoint: .top, endPoint: .bottom)).frame(width: 14, height: 20)
-            RoundedRectangle(cornerRadius: 5).fill(LinearGradient(colors: [Color(red: 0.42, green: 0.22, blue: 0.12), Color(red: 0.22, green: 0.1, blue: 0.05), Color(red: 0.36, green: 0.18, blue: 0.09)], startPoint: .top, endPoint: .bottom)).frame(height: 14)
+            RoundedRectangle(cornerRadius: 5, style: .continuous).fill(LinearGradient(colors: [Color(red: 0.42, green: 0.22, blue: 0.12), Color(red: 0.22, green: 0.1, blue: 0.05), Color(red: 0.36, green: 0.18, blue: 0.09)], startPoint: .top, endPoint: .bottom)).frame(height: 14)
             Capsule().fill(LinearGradient(colors: [Color(red: 0.72, green: 0.56, blue: 0.25), Color(red: 0.45, green: 0.32, blue: 0.12)], startPoint: .top, endPoint: .bottom)).frame(width: 14, height: 20)
         }
         .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
@@ -728,7 +730,7 @@ struct SectionLabel: View {
     init(_ title: String, inset: Bool = true) { self.title = title; self.inset = inset }
     var body: some View {
         HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 1).fill(Theme.seal).frame(width: 3, height: 15)
+            RoundedRectangle(cornerRadius: 1.5, style: .continuous).fill(Theme.seal).frame(width: 3, height: 15)
             Text(title).font(Theme.section).foregroundStyle(Theme.ink)
         }
         .frame(maxWidth: inset ? .infinity : nil, alignment: .leading)
@@ -757,8 +759,9 @@ struct PaperMenu<T: Hashable>: View {
     @Binding var selection: T
     @State private var open = false
     var body: some View {
-        Button { open = true } label: {
+        Button { GameFeel.shared.tap(); open = true } label: {
             HStack(spacing: 10) {
+                Glyph.icon(title, size: 15, fallback: .edict)
                 Text(title).font(Theme.body).foregroundStyle(Theme.ink2)
                 Spacer(minLength: 12)
                 Text(items.first { $0.0 == selection }?.1 ?? "请选择").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
@@ -775,6 +778,7 @@ struct PaperMenu<T: Hashable>: View {
                         if items.isEmpty { Row(label: title, value: "没有可选项") }
                         ForEach(items.indices, id: \.self) { i in
                             Button {
+                                GameFeel.shared.tap()
                                 selection = items[i].0
                                 open = false
                             } label: {
@@ -793,7 +797,11 @@ struct PaperMenu<T: Hashable>: View {
                 }
                 .padding(.bottom, 24)
             }
-            .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            .presentationDetents([.medium, .large])
+            .presentationCornerRadius(Theme.Control.cornerSheet)
+            .presentationBackground { MemorialPaper() }
+            .presentationDragIndicator(.hidden)
+            .font(Theme.section)
         }
     }
 }
@@ -877,10 +885,15 @@ struct PaperSlider: View {
     var onEditingChanged: ((Bool) -> Void)? = nil
     let format: (Double) -> String
     var body: some View {
-        HStack(spacing: 12) {
-            Text(title).font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 68, alignment: .leading)
+        HStack(spacing: 10) {
+            HStack(spacing: 6) {
+                Glyph.icon(title, size: 13)
+                Text(title).font(Theme.body).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            .frame(minWidth: 68, alignment: .leading)
             PaperTrack(value: $value, range: range, step: step, onEditingChanged: onEditingChanged)
-            Text(format(value)).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 52, alignment: .trailing)
+            Text(format(value)).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 50, alignment: .trailing)
+                .contentTransition(.numericText())
         }
         .accessibilityElement(children: .combine)
         .accessibilityAdjustableAction { direction in
@@ -891,12 +904,13 @@ struct PaperSlider: View {
     }
 }
 
-/// Ink track and vermilion thumb. Values stay on the same binding as the old slider.
+/// 墨轨与朱砂滑珠：拖动时滑珠如苹果控制中心般柔润放大并亮起微晕，松手弹性回位。
 struct PaperTrack: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     var step: Double?
     var onEditingChanged: ((Bool) -> Void)?
+    @State private var dragging = false
     private var fraction: Double {
         let span = range.upperBound - range.lowerBound
         guard span > 0 else { return 0 }
@@ -905,28 +919,40 @@ struct PaperTrack: View {
     var body: some View {
         GeometryReader { g in
             let width = max(g.size.width, 1)
-            let thumb: CGFloat = 14
+            let thumb: CGFloat = 15
             let x = (width - thumb) * CGFloat(fraction)
             ZStack(alignment: .leading) {
-                Capsule().fill(Theme.ink.opacity(0.1)).frame(height: 4)
-                Capsule().fill(Theme.seal).frame(width: x + thumb / 2, height: 4)
-                Circle().fill(Theme.seal).frame(width: thumb, height: thumb)
-                    .overlay(Circle().stroke(Theme.paper, lineWidth: 2))
-                    .offset(x: x)
+                Capsule().fill(Theme.ink.opacity(0.11)).frame(height: dragging ? 5.5 : 4)
+                Capsule().fill(Theme.seal).frame(width: x + thumb / 2, height: dragging ? 5.5 : 4)
+                ZStack {
+                    Circle()
+                        .fill(Theme.seal.opacity(dragging ? 0.22 : 0))
+                        .frame(width: dragging ? 26 : 15, height: dragging ? 26 : 15)
+                    Circle()
+                        .fill(Theme.seal)
+                        .frame(width: thumb, height: thumb)
+                        .overlay(Circle().stroke(Theme.paper2, lineWidth: 2))
+                        .shadow(color: Theme.seal.opacity(dragging ? 0.34 : 0.16), radius: dragging ? 4 : 2, y: 1)
+                        .scaleEffect(dragging ? 1.18 : 1.0)
+                }
+                .frame(width: thumb, height: thumb)
+                .offset(x: x)
             }
             .frame(maxHeight: .infinity)
+            .animation(Motion.tap, value: dragging)
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0)
                 .onChanged { drag in
-                    onEditingChanged?(true)
+                    if !dragging { dragging = true; onEditingChanged?(true) }
                     write(drag.location.x, width: width)
                 }
                 .onEnded { drag in
                     write(drag.location.x, width: width)
+                    dragging = false
                     onEditingChanged?(false)
                 })
         }
-        .frame(height: 22)
+        .frame(height: 26)
     }
     private func write(_ location: CGFloat, width: CGFloat) {
         let span = range.upperBound - range.lowerBound

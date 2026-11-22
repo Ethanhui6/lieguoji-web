@@ -81,16 +81,15 @@ extension MapLayers {
             }
             frontier = next
         }
-        // Five lines, each further out fainter and wider apart (a woodcut chart's 水线), over shallows
-        // that pale towards the shore.
-        let rings: [(at: Float, strength: Float)] = [(5, 0.72), (10.5, 0.56), (17, 0.42), (25, 0.3), (35, 0.19)]
+        // 六道由浓渐淡的木刻等深水线 + 柔润翡翠浅滩过渡（海岸更细腻立体）
+        let rings: [(at: Float, strength: Float)] = [(4.2, 0.78), (9.2, 0.62), (15.2, 0.46), (22.5, 0.34), (31.5, 0.23), (42.0, 0.14)]
         let unit = 1 / max(sx, sy)
         var mask = [UInt8](repeating: 0, count: w * h * 2)
         for p in 0..<(w * h) where distance[p] > 0 {
             let d = Float(distance[p]) * unit
             var light: Float = 0
             for r in rings { light = max(light, max(0, 1 - abs(d - r.at) / max(1, unit)) * r.strength) }
-            mask[p * 2] = UInt8(light * 255); mask[p * 2 + 1] = UInt8(max(0, 1 - d / 22) * 0.26 * 255)
+            mask[p * 2] = UInt8(light * 255); mask[p * 2 + 1] = UInt8(max(0, 1 - d / 28) * 0.34 * 255)
         }
         // The sea texture is coarse: two soft passes take the stair steps out of the lines.
         for _ in 0..<2 {
@@ -144,13 +143,67 @@ extension MapLayers {
         }
     }
 
-    /// Always on the map: the sand edge of the land, wave marks on the open sea, the compass and the scale.
+    /// 识别封闭内陆湖泊：从地图四边水格 BFS 泛洪标记外海，其余被陆地环抱的水格即真实内陆湖泊。
+    private static func inlandLakeCells(_ map: WorldMap) -> [Bool] {
+        let n = map.cellCount
+        guard n > 0 else { return [] }
+        var adj = [[Int]](repeating: [], count: n)
+        for e in map.edges where e.a >= 0 && e.b >= 0 {
+            let a = Int(e.a), b = Int(e.b)
+            if a < n && b < n && !map.isLand(a) && !map.isLand(b) {
+                adj[a].append(b); adj[b].append(a)
+            }
+        }
+        var ocean = [Bool](repeating: false, count: n)
+        var q = [Int](), head = 0
+        let pad: Float = 18
+        for c in 0..<n where !map.isLand(c) {
+            let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
+            if x <= pad || y <= pad || x >= map.width - pad || y >= map.height - pad {
+                ocean[c] = true; q.append(c)
+            }
+        }
+        while head < q.count {
+            let cur = q[head]; head += 1
+            for nb in adj[cur] where !ocean[nb] { ocean[nb] = true; q.append(nb) }
+        }
+        var lakes = [Bool](repeating: false, count: n)
+        for c in 0..<n where !map.isLand(c) && !ocean[c] { lakes[c] = true }
+        return lakes
+    }
+
+    /// Always on the map: inland lakes, the sand edge of the land, wave marks & classical sailing vessels on the open sea, the compass and the scale.
     public static func ornaments(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
         let sand = RGB(hex: 0xE9D9AE), wave = RGB(hex: 0xD5E4E2), ink = RGB(hex: 0x2E2518), paper = RGB(hex: 0xEFE4C8)
+        let lakeShallow = RGB(hex: 0x8FC7C4), lakeGleam = RGB(hex: 0xE6F4F1), lakeRim = RGB(hex: 0x4A7782)
         let coast = coastLines(map)
         for i in stride(from: 0, to: coast.count - 3, by: 4) {
-            m.segment(coast[i], coast[i + 1], coast[i + 2], coast[i + 3], width: 3.4, sand, alpha: 0.3)
+            m.segment(coast[i], coast[i + 1], coast[i + 2], coast[i + 3], width: 3.6, sand, alpha: 0.34)
+        }
+        // 真实内陆湖泊绘制：碧青湖面润色、浅湖环岸与水平镜面波纹，清晰区别于辽阔外海
+        let lakes = inlandLakeCells(map)
+        var lakeShimmer = Set<Int64>()
+        for c in 0..<map.cellCount where lakes[c] {
+            let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
+            let s0 = Int(map.offsets[c]), s1 = Int(map.offsets[c + 1])
+            if s1 - s0 >= 3 {
+                var poly = [Float]()
+                poly.reserveCapacity((s1 - s0) * 2)
+                for v in s0..<s1 { poly.append(map.vertices[v * 2]); poly.append(map.vertices[v * 2 + 1]) }
+                m.fill(poly, lakeShallow, alpha: 0.36)
+            }
+            let lk = Int64(floor(x / 16)) << 32 | Int64(Int32(floor(y / 16))) & 0xFFFF_FFFF
+            if lakeShimmer.insert(lk).inserted {
+                m.segment(x - 4.2, y, x + 4.2, y, width: 0.48, lakeGleam, alpha: 0.65)
+                m.segment(x - 2.4, y + 2.0, x + 2.6, y + 2.0, width: 0.38, lakeRim, alpha: 0.36)
+            }
+        }
+        for e in map.edges where e.a >= 0 && e.b >= 0 {
+            let a = Int(e.a), b = Int(e.b)
+            if (lakes[a] && map.isLand(b)) || (lakes[b] && map.isLand(a)) {
+                m.segment(e.x1, e.y1, e.x2, e.y2, width: 1.35, lakeRim, alpha: 0.62)
+            }
         }
         let shore = shoreCells(map)
         // Waves keep well off the coast, and a slow field gathers them into patches.
@@ -160,13 +213,17 @@ extension MapLayers {
         // thin dark line under it (the engraver's shadow), so it reads on the pale warm sea as well as
         // on the blue one. Lengths, phase and spacing vary from mark to mark.
         let trough = RGB(hex: 0x23424E)
-        for c in 0..<map.cellCount where !map.isLand(c) && !shore[c] && hash(c &* 3 &+ 11) % 7 == 0 {
+        var shipSpots: [(Float, Float)] = []
+        for c in 0..<map.cellCount where !map.isLand(c) && !lakes[c] && !shore[c] && hash(c &* 3 &+ 11) % 7 == 0 {
             let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
             let field = sin(x * 0.017 + 0.4) * sin(y * 0.021 + 1.9)
             if field < -0.3 { continue }
             let key = Int64(floor(x / 24)) << 32 | Int64(Int32(floor(y / 24))) & 0xFFFF_FFFF
             if !taken.insert(key).inserted { continue }
             let h = Int(hash(c &* 7 &+ 5))
+            if h % 41 == 0 && x > 140 && x < map.width - 140 && y > 120 && y < map.height - 120 {
+                shipSpots.append((x, y))
+            }
             let crests = field > 0.3 ? 3 : h % 3 == 0 ? 1 : 2
             let half = 5.5 + Float(h % 5), phase = Float(h % 7)
             for k in 0..<crests {
@@ -179,17 +236,44 @@ extension MapLayers {
                     line += [px, py]; shade += [px, py + 0.6]
                 }
                 m.polyline(shade, width: 0.5, trough, alpha: 0.17 - Float(k) * 0.03)
-                m.polyline(line, width: 0.62 - Float(k) * 0.08, wave, alpha: 0.5 - Float(k) * 0.09)
+                m.polyline(line, width: 0.62 - Float(k) * 0.08, wave, alpha: 0.52 - Float(k) * 0.09)
             }
         }
         // 浅滩: short pale dashes along the coast in the shallows, as old charts mark shoal water.
-        for c in 0..<map.cellCount where !map.isLand(c) && shore[c] && hash(c &* 5 &+ 3) % 2 == 0 {
+        for c in 0..<map.cellCount where !map.isLand(c) && !lakes[c] && shore[c] && hash(c &* 5 &+ 3) % 2 == 0 {
             let x = map.sites[c * 2], y = map.sites[c * 2 + 1], h = Int(hash(c &* 13 &+ 1))
             let dx = Float(h % 9) / 4 - 1, dy = Float(h / 9 % 9) / 4 - 1
             m.segment(x + dx - 0.9, y + dy, x + dx + 0.9, y + dy, width: 0.42, sand, alpha: 0.5)
         }
         // 精致十六向鎏金罗盘（含古航海方位射线、外圈 32 分刻度环、朱砂北针、八大主向与八小副向指针）
         let (cx, cy) = compassCorner(map)
+        // 远洋手绘古航海帆船剪影（至多 3 艘，严格避开陆地与罗盘，赋予大洋古典舆图神韵）
+        let hullColor = RGB(hex: 0x4A3321), sailColor = RGB(hex: 0xF0E6CE), pennantColor = RGB(hex: 0x9E3629)
+        var placedShips: [(Float, Float)] = []
+        for (sx, sy) in shipSpots where placedShips.count < 3 {
+            let dc = hypot(sx - cx, sy - cy)
+            guard dc > 150 else { continue }
+            guard !placedShips.contains(where: { hypot($0.0 - sx, $0.1 - sy) < 260 }) else { continue }
+            var nearLand = false
+            for c in stride(from: 0, to: map.cellCount, by: 7) where map.isLand(c) {
+                let dx = map.sites[c * 2] - sx, dy = map.sites[c * 2 + 1] - sy
+                if dx * dx + dy * dy < 44 * 44 { nearLand = true; break }
+            }
+            if nearLand { continue }
+            placedShips.append((sx, sy))
+            let dir: Float = placedShips.count % 2 == 0 ? -1 : 1
+            // 船尾水波纹
+            m.polyline([sx - 10 * dir, sy + 5.2, sx - 3 * dir, sy + 4.4, sx + 5 * dir, sy + 5.3, sx + 11 * dir, sy + 4.6], width: 0.55, wave, alpha: 0.55)
+            // 船身
+            m.fill([sx - 8.5 * dir, sy + 1.2, sx + 9.2 * dir, sy + 0.8, sx + 6.4 * dir, sy + 4.4, sx - 6.2 * dir, sy + 4.4], hullColor, alpha: 0.72)
+            // 主桅与前桅满帆
+            m.segment(sx - 0.5 * dir, sy + 1.0, sx - 0.5 * dir, sy - 10.5, width: 0.65, ink, alpha: 0.68)
+            m.fill([sx - 0.5 * dir, sy - 9.4, sx + 6.4 * dir, sy - 4.8, sx + 5.4 * dir, sy - 0.4, sx - 1.2 * dir, sy - 1.2], sailColor, alpha: 0.78)
+            m.polyline([sx - 0.5 * dir, sy - 9.4, sx + 6.4 * dir, sy - 4.8, sx + 5.4 * dir, sy - 0.4, sx - 1.2 * dir, sy - 1.2], width: 0.45, ink, alpha: 0.55)
+            m.fill([sx - 5.2 * dir, sy - 6.2, sx - 1.4 * dir, sy - 3.6, sx - 2.0 * dir, sy - 0.8, sx - 5.8 * dir, sy - 1.4], sailColor, alpha: 0.68)
+            // 桅顶朱红小旗
+            m.fill([sx - 0.5 * dir, sy - 10.6, sx - 4.2 * dir, sy - 9.6, sx - 0.5 * dir, sy - 8.8], pennantColor, alpha: 0.78)
+        }
         let radius: Float = 56
         let gold = RGB(hex: 0xB88B3B), seal = RGB(hex: 0xA63628)
         // 古航海图方位射线（自罗盘轻柔向外延展，极低透明度衬托古舆图韵味）

@@ -92,7 +92,9 @@ public enum MapLayers {
             if map.elevation[b] < WorldMap.seaLevel { touchesSea[a] = true }
             if map.elevation[a] < WorldMap.seaLevel { touchesSea[b] = true }
         }
-        let light = RGB(hex: 0xDDD1B1), ink = RGB(hex: 0x514D3C), tree = RGB(hex: 0x405D45), trunk = RGB(hex: 0x354A35)
+        let light = RGB(hex: 0xEAE0C8), ink = RGB(hex: 0x453E30), shadowInk = RGB(hex: 0x3A3327)
+        let snowSun = RGB(hex: 0xFAF7F0), snowShade = RGB(hex: 0xC6D7E3)
+        let treeDark = RGB(hex: 0x325039), treeMid = RGB(hex: 0x456949), treeLit = RGB(hex: 0x628558), trunk = RGB(hex: 0x354834)
         var occupied = Set<Int64>()
         var m = ColoredMesh()
         // Groves: a slow field over the map decides where woods stand thick and where they thin out.
@@ -105,46 +107,94 @@ public enum MapLayers {
             if h < 55 && !forest { continue }
             if touchesSea[i] { continue }
             if forest && grove(map.sites[i * 2], map.sites[i * 2 + 1]) < -0.45 { continue }
-            // Sparser than one mark per square: real ranges read as ridgelines, not a carpet of peaks.
             let pick = UInt32(truncatingIfNeeded: i &* 2654435761) >> 16 % 100
-            // Fuller than 0.21 (it had thinned the land too far): more peaks along the ranges, denser woods.
-            if h >= 55 && (h < 58 || pick < 15) { continue }
-            if forest && pick < 22 { continue }
+            if h >= 55 && (h < 57 || pick < 12) { continue }
+            if forest && pick < 20 { continue }
             let jx = Float(i * 7919 % 13) - 6, jy = Float(i * 104_729 % 11) - 5
             let x = map.sites[i * 2] + jx * 0.6, y = map.sites[i * 2 + 1] + jy * 0.6
-            let key = Int64(floor(map.sites[i * 2] / 23)) << 32 | Int64(Int32(floor(map.sites[i * 2 + 1] / 23))) & 0xFFFF_FFFF
+            let key = Int64(floor(map.sites[i * 2] / 22)) << 32 | Int64(Int32(floor(map.sites[i * 2 + 1] / 22))) & 0xFFFF_FFFF
             if occupied.contains(key) { continue }
             occupied.insert(key)
             if h >= 55 {
-                let variation = Float(i * 37 % 101) / 100, w = (5 + (h - 55) * 0.11) * (0.75 + variation * 0.6)
-                let top = y - (8 + (h - 55) * 0.19) * (0.85 + variation * 0.3), peak = x - 2 + variation * 3
-                let ridge: [Float] = [x - w - 3, y + 4, x - w * 0.6, y - 2, x - w * 0.35, y - 1, peak, top, x + w * 0.3, y - 3, x + w * 0.55, y - 5, x + w + 3, y + 4]
-                m.fill(ridge, light, alpha: 0.32)
-                m.polyline(ridge, width: 0.65, ink, alpha: 0.62)
-                m.fill([peak, top, x + w * 0.3, y - 3, x + w * 0.55, y - 5, x + w + 3, y + 4, x + 1, y + 1], ink, alpha: 0.23)
-                m.polyline([peak, top, x - 2, y - 1, x - 4, y + 3], width: 0.5, ink, alpha: 0.6)
-                if h >= 72 {
-                    // Snow on the high peaks.
-                    let s = (top - y) * 0.32
-                    m.fill([peak, top, peak - w * 0.28, top - s, peak - w * 0.1, top - s * 0.8, peak + w * 0.12, top - s * 1.05, peak + w * 0.3, top - s * 0.85], RGB(hex: 0xF7F4EC), alpha: 0.85)
-                }
+                // 宋元工笔山水群峰：柔和山脚底影 + 主峰与左右副峰三叠构图 + 披麻皴阴影 + 高山双色冰川雪冠
+                let v1 = Float(i * 37 % 101) / 100
+                let v2 = Float(i * 73 % 97) / 97
+                let w = (6.5 + (h - 55) * 0.14) * (0.82 + v1 * 0.45)
+                let height = (9.5 + (h - 55) * 0.24) * (0.85 + v1 * 0.34)
+                let peakX = x + (v2 - 0.5) * 3.6
+                let peakY = y - height
+
+                // 山脚柔和落影（令群山自然扎根大地，不再悬空生硬）
+                m.fill([x - w * 1.35, y + 3.8, x - w * 0.5, y + 1.4, x + w * 0.6, y + 1.6, x + w * 1.4, y + 4.4, x + w * 0.3, y + 5.6, x - w * 0.7, y + 5.2], shadowInk, alpha: 0.12)
+
+                // 后景副峰（稍低、略偏左或右，形成连绵山脉群落感）
+                let subSide: Float = v2 > 0.5 ? -1 : 1
+                let subX = x + subSide * w * 0.62
+                let subY = y - height * (0.58 + v1 * 0.14)
+                let subW = w * 0.68
+                let subPoly: [Float] = [subX - subW, y + 2.8, subX - subW * 0.45, subY + (y - subY) * 0.45, subX, subY, subX + subW * 0.5, subY + (y - subY) * 0.52, subX + subW, y + 2.8]
+                m.fill(subPoly, light, alpha: 0.28)
+                m.fill([subX, subY, subX + subW * 0.5, subY + (y - subY) * 0.52, subX + subW, y + 2.8, subX + subW * 0.08, y + 1.8], ink, alpha: 0.22)
+                m.polyline([subX - subW, y + 2.8, subX - subW * 0.45, subY + (y - subY) * 0.45, subX, subY, subX + subW * 0.5, subY + (y - subY) * 0.52, subX + subW, y + 2.8], width: 0.52, ink, alpha: 0.52)
+
+                // 前景主峰轮廓（受光西北暖阳面 + 背光东南墨青面 + 蜿蜒中脊线）
+                let lMidX = peakX - w * 0.56, lMidY = peakY + height * 0.48
+                let rMidX = peakX + w * 0.48, rMidY = peakY + height * 0.44
+                let spineX = peakX - w * 0.08, spineY = peakY + height * 0.56
+                let mainPoly: [Float] = [x - w * 1.15, y + 3.6, lMidX, lMidY, peakX, peakY, rMidX, rMidY, x + w * 1.18, y + 3.6]
+                m.fill(mainPoly, light, alpha: 0.42)
+                // 背阴坡墨青层次
+                m.fill([peakX, peakY, rMidX, rMidY, x + w * 1.18, y + 3.6, x + w * 0.12, y + 2.6, spineX, spineY], ink, alpha: 0.30)
+                // 精致山脊线与轮廓墨线
+                m.polyline(mainPoly, width: 0.72, ink, alpha: 0.70)
+                m.polyline([peakX, peakY, spineX, spineY, x - w * 0.16, y + 3.2], width: 0.58, ink, alpha: 0.65)
+                // 披麻皴侧坡细笔触
                 for k in 0..<4 {
-                    let fk = Float(k)
-                    m.segment(x + fk * 1.6, y - 3 + fk, x + fk * 1.6 + 2, y + 2 + fk * 0.5, width: 0.45, ink, alpha: 0.45)
+                    let t = Float(k + 1) / 5.0
+                    let sx = peakX + (x + w * 0.92 - peakX) * t * 0.68
+                    let sy = peakY + (y + 2.5 - peakY) * t * 0.72
+                    m.segment(sx, sy, sx + w * 0.22, sy + height * 0.22, width: 0.42, shadowInk, alpha: 0.38)
+                }
+
+                // 真实高山雪峰（h >= 68 覆盖冰川雪冠，区分受光雪白与背阴冰蓝雪影）
+                if h >= 68 {
+                    let snowFrac: Float = min(0.54, 0.28 + (h - 68) * 0.012)
+                    let slX = peakX + (lMidX - peakX) * snowFrac * 1.45, slY = peakY + (lMidY - peakY) * snowFrac * 1.45
+                    let srX = peakX + (rMidX - peakX) * snowFrac * 1.45, srY = peakY + (rMidY - peakY) * snowFrac * 1.45
+                    let scX = peakX + (spineX - peakX) * snowFrac * 1.35, scY = peakY + (spineY - peakY) * snowFrac * 1.35
+                    // 西北向阳雪坡（暖玉白）
+                    m.fill([peakX, peakY, slX, slY, (slX + scX) * 0.5, scY - 0.7, scX, scY], snowSun, alpha: 0.92)
+                    // 东南背阴雪坡（冷冰蓝，立体感极强）
+                    m.fill([peakX, peakY, scX, scY, (scX + srX) * 0.5, srY + 0.6, srX, srY], snowShade, alpha: 0.88)
+                    // 副峰高海拔亦可落雪
+                    if h >= 76 {
+                        let ss = snowFrac * 0.75
+                        m.fill([subX, subY, subX - subW * ss * 0.55, subY + (y - subY) * ss * 0.65, subX + subW * ss * 0.1, subY + (y - subY) * ss * 0.55], snowSun, alpha: 0.82)
+                        m.fill([subX, subY, subX + subW * ss * 0.1, subY + (y - subY) * ss * 0.55, subX + subW * ss * 0.58, subY + (y - subY) * ss * 0.68], snowShade, alpha: 0.78)
+                    }
                 }
             } else if biome == 9 {
-                // Taiga: tall dark conifers.
-                let pine = RGB(hex: 0x2F4A33)
-                for (dx, dy) in [(Float(-3), Float(1)), (1, -2), (4, 2)] {
+                // 针叶泰加林：多层松柏塔形轮廓 + 柔和林底暗影
+                let pineDark = RGB(hex: 0x264130), pineLit = RGB(hex: 0x3B5E46)
+                for (dx, dy, sc) in [(Float(-3.4), Float(1.2), Float(0.88)), (0.6, -2.0, 1.08), (4.2, 1.8, 0.92)] {
                     let cx = x + dx, cy = y + dy
-                    m.fill([cx, cy - 7, cx - 2, cy - 2, cx - 1, cy - 2, cx - 2.6, cy + 2, cx + 2.6, cy + 2, cx + 1, cy - 2, cx + 2, cy - 2], pine, alpha: 0.5)
-                    m.segment(cx, cy + 2, cx, cy + 4.5, width: 0.5, trunk, alpha: 0.55)
+                    m.disc(cx, cy + 3.4 * sc, radius: 2.3 * sc, shadowInk, alpha: 0.14, sides: 8)
+                    m.fill([cx, cy - 7.5 * sc, cx - 2.3 * sc, cy - 2.4 * sc, cx - 1.1 * sc, cy - 2.4 * sc, cx - 3.0 * sc, cy + 2.2 * sc, cx + 3.0 * sc, cy + 2.2 * sc, cx + 1.1 * sc, cy - 2.4 * sc, cx + 2.3 * sc, cy - 2.4 * sc], pineDark, alpha: 0.58)
+                    m.fill([cx, cy - 7.5 * sc, cx - 2.0 * sc, cy - 2.4 * sc, cx - 0.1 * sc, cy + 2.0 * sc], pineLit, alpha: 0.36)
+                    m.segment(cx, cy + 2.0 * sc, cx, cy + 4.4 * sc, width: 0.55, trunk, alpha: 0.62)
                 }
             } else {
-                for (dx, dy) in [(Float(-3), Float(1)), (2, -2), (5, 2)] {
+                // 温带/热带阔叶丛林：层叠圆润树冠（暗叶底 + 苍翠主冠 + 暖阳冠顶高光）
+                let dark = (biome == 7 || biome == 8) ? RGB(hex: 0x254D31) : treeDark
+                let mid = (biome == 7 || biome == 8) ? RGB(hex: 0x386E43) : treeMid
+                let lit = (biome == 7 || biome == 8) ? RGB(hex: 0x568F56) : treeLit
+                for (dx, dy, sc) in [(Float(-3.5), Float(1.4), Float(0.9)), (1.2, -2.0, 1.08), (4.8, 1.6, 0.88)] {
                     let cx = x + dx, cy = y + dy
-                    m.fill([cx, cy - 5, cx - 2.5, cy, cx - 1, cy, cx - 3, cy + 3, cx + 3, cy + 3, cx + 1, cy, cx + 2.5, cy], tree, alpha: 0.4)
-                    m.segment(cx, cy + 2, cx, cy + 5, width: 0.5, trunk, alpha: 0.55)
+                    m.disc(cx + 0.4, cy + 3.2 * sc, radius: 2.6 * sc, shadowInk, alpha: 0.13, sides: 8)
+                    m.segment(cx, cy + 0.5, cx, cy + 4.2 * sc, width: 0.6, trunk, alpha: 0.62)
+                    m.disc(cx, cy - 0.6 * sc, radius: 3.1 * sc, dark, alpha: 0.54, sides: 9)
+                    m.disc(cx - 0.5 * sc, cy - 1.5 * sc, radius: 2.5 * sc, mid, alpha: 0.52, sides: 9)
+                    m.disc(cx - 1.0 * sc, cy - 2.2 * sc, radius: 1.4 * sc, lit, alpha: 0.44, sides: 7)
                 }
             }
         }
@@ -390,24 +440,30 @@ public enum MapLayers {
         return result
     }
 
-    /// 皇帝诏书式卷轴装裱边缘：
-    /// 1. 左右两侧呈现立体圆柱卷轴杆（深檀暗影 → 暖木高光脊 → 宣纸内卷投影），上下端配鎏金碧玉轴头；
-    /// 2. 上下边缘饰御制黄绫朱锦装裱带、鎏金细线与传统四角回纹角花；
-    /// 3. 内侧边缘柔和宣纸卷曲暗晕，拉远看海宛如一卷徐徐展开的御批圣旨舆图。
+    /// 博物馆级「御览手卷」装裱画框：
+    /// 1. 柔和多层御案落影：整卷平铺于织锦案头，四周与轴杆下方投射细腻渐变暖影；
+    /// 2. 宫廷三层绫锦装裱框（外紫檀细框 → 朱红锦边 → 御黄云锦绫边 + 菱格云锦暗纹 + 双道鎏金丝线 + 四角鎏金云纹包角 + 上下朱锦玉别子锦结）；
+    /// 3. 左右 7 层圆柱立体紫檀卷轴杆 + 宣纸内卷高光边 + 鎏金雕花箍环 + 青碧玉葫芦轴头；
+    /// 4. 画心内缘柔和卷纸弧面投影，拉远看全图宛如一卷恢宏考究的御批万里舆图。
     public static func scrollFrame(width w: Float, height h: Float) -> ColoredMesh {
         var m = ColoredMesh()
-        let shadow = RGB(hex: 0x3A2512)
-        let paperCurl = RGB(hex: 0x5A3F22)
-        let silkGold = RGB(hex: 0xC99F4F)
-        let silkDeep = RGB(hex: 0x8F682B)
-        let brocadeRed = RGB(hex: 0x7A241A)
-        let woodDark = RGB(hex: 0x2F1A0E)
-        let woodMid = RGB(hex: 0x623B20)
-        let woodLight = RGB(hex: 0x9B6D41)
-        let jade = RGB(hex: 0x4A7766)
-        let jadeLight = RGB(hex: 0x7AA694)
-        let goldBright = RGB(hex: 0xE2C174)
-        let ink = RGB(hex: 0x2B2116)
+        let deskShadow = RGB(hex: 0x26180C)
+        let paperCurl = RGB(hex: 0x563D22)
+        let silkIvory = RGB(hex: 0xDFCFA9)
+        let silkGold = RGB(hex: 0xC69B4D)
+        let silkDeep = RGB(hex: 0x8A6326)
+        let brocadeRed = RGB(hex: 0x7A2319)
+        let brocadeDark = RGB(hex: 0x52150F)
+        let woodShadow = RGB(hex: 0x1E0F07)
+        let woodDark = RGB(hex: 0x321B0E)
+        let woodMid = RGB(hex: 0x5F381E)
+        let woodWarm = RGB(hex: 0x855530)
+        let woodLight = RGB(hex: 0xB38353)
+        let jadeDark = RGB(hex: 0x2E5548)
+        let jade = RGB(hex: 0x4A7C6A)
+        let jadeLight = RGB(hex: 0x8AB7A5)
+        let goldBright = RGB(hex: 0xE8C87A)
+        let ink = RGB(hex: 0x2B2014)
 
         func rect(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ c: RGB, alpha: Float = 1) {
             m.fill([x0, y0, x1, y0, x1, y1, x0, y1], c, alpha: alpha)
@@ -420,96 +476,131 @@ public enum MapLayers {
         }
 
         let unit = min(w, h)
-        let curlShadow = unit * 0.045
-        let trimH = unit * 0.015
-        let rollerW = unit * 0.026
-        let capOut = unit * 0.014
+        let curlShadow = unit * 0.048
+        let trimH = unit * 0.036
+        let rollerW = unit * 0.044
+        let capOut = unit * 0.022
+        let shadowSpread = unit * 0.042
+        let leftEdge = -rollerW * 0.85
+        let rightEdge = w + rollerW * 0.85
 
-        // 1. 宣纸四边柔和内卷投影（左右更深，模拟圣旨左右卷起的立体弧面阴影）
-        vBand(0, curlShadow * 0.35, 0, h, shadow, left: 0.36, right: 0.14)
-        vBand(curlShadow * 0.35, curlShadow * 1.15, 0, h, paperCurl, left: 0.14, right: 0)
-        vBand(w - curlShadow * 0.35, w, 0, h, shadow, left: 0.14, right: 0.36)
-        vBand(w - curlShadow * 1.15, w - curlShadow * 0.35, 0, h, paperCurl, left: 0, right: 0.14)
-        hBand(0, w, 0, curlShadow * 0.65, paperCurl, top: 0.22, bottom: 0)
-        hBand(0, w, h - curlShadow * 0.65, h, paperCurl, top: 0, bottom: 0.22)
+        // 0. 手卷投射在织锦御案上的柔和立体落影（上下四边自然羽化，彻底消除贴图生硬边界）
+        hBand(leftEdge - shadowSpread * 0.3, rightEdge + shadowSpread * 0.3, -trimH - shadowSpread, -trimH, deskShadow, top: 0, bottom: 0.24)
+        hBand(leftEdge - shadowSpread * 0.3, rightEdge + shadowSpread * 0.3, h + trimH, h + trimH + shadowSpread * 1.25, deskShadow, top: 0.34, bottom: 0)
+        vBand(leftEdge - shadowSpread * 1.1, leftEdge, -trimH - capOut, h + trimH + capOut, deskShadow, left: 0, right: 0.30)
+        vBand(rightEdge, rightEdge + shadowSpread * 1.2, -trimH - capOut, h + trimH + capOut, deskShadow, left: 0.32, right: 0)
 
-        // 2. 上下御制黄绫朱锦装裱边（紧贴地图外缘，含御绫暗纹与双金丝线，不侵占大陆视野）
-        rect(-rollerW * 0.2, -trimH, w + rollerW * 0.2, 0, silkGold, alpha: 0.94)
-        rect(-rollerW * 0.2, -trimH, w + rollerW * 0.2, -trimH * 0.62, brocadeRed, alpha: 0.95)
-        rect(-rollerW * 0.2, h, w + rollerW * 0.2, h + trimH, silkGold, alpha: 0.94)
-        rect(-rollerW * 0.2, h + trimH * 0.62, w + rollerW * 0.2, h + trimH, brocadeRed, alpha: 0.95)
-        // 御绫细金丝分隔线与菱格云锦暗纹
-        let threadW = max(0.7, unit * 0.0012)
-        m.segment(0, -trimH * 0.62, w, -trimH * 0.62, width: threadW, goldBright, alpha: 0.85)
-        m.segment(0, h + trimH * 0.62, w, h + trimH * 0.62, width: threadW, goldBright, alpha: 0.85)
-        let brocadeStep = max(24, unit * 0.036)
-        let diamondR = trimH * 0.24
+        // 1. 画心内缘柔和宣纸卷曲投影（左右较深模拟卷轴弧面，上下轻柔烘托画心）
+        vBand(0, curlShadow * 0.32, 0, h, deskShadow, left: 0.32, right: 0.13)
+        vBand(curlShadow * 0.32, curlShadow * 1.15, 0, h, paperCurl, left: 0.13, right: 0)
+        vBand(w - curlShadow * 0.32, w, 0, h, deskShadow, left: 0.13, right: 0.32)
+        vBand(w - curlShadow * 1.15, w - curlShadow * 0.32, 0, h, paperCurl, left: 0, right: 0.13)
+        hBand(0, w, 0, curlShadow * 0.55, paperCurl, top: 0.18, bottom: 0)
+        hBand(0, w, h - curlShadow * 0.55, h, paperCurl, top: 0, bottom: 0.18)
+
+        // 2. 上下三层御制绫锦装裱框（外深紫檀镶边 → 朱锦边 → 暖黄云锦绫边 + 菱格云锦暗纹 + 双鎏金丝线）
+        let outerRim = trimH * 0.12
+        let redBand = trimH * 0.36
+        let innerSlip = trimH * 0.14
+        // 顶边
+        rect(-rollerW * 0.3, -trimH, w + rollerW * 0.3, 0, silkGold, alpha: 0.98)
+        rect(-rollerW * 0.3, -innerSlip, w + rollerW * 0.3, 0, silkIvory, alpha: 0.96)
+        rect(-rollerW * 0.3, -trimH + outerRim, w + rollerW * 0.3, -trimH + outerRim + redBand, brocadeRed, alpha: 0.98)
+        rect(-rollerW * 0.3, -trimH, w + rollerW * 0.3, -trimH + outerRim, brocadeDark, alpha: 0.98)
+        // 底边
+        rect(-rollerW * 0.3, h, w + rollerW * 0.3, h + trimH, silkGold, alpha: 0.98)
+        rect(-rollerW * 0.3, h, w + rollerW * 0.3, h + innerSlip, silkIvory, alpha: 0.96)
+        rect(-rollerW * 0.3, h + trimH - outerRim - redBand, w + rollerW * 0.3, h + trimH - outerRim, brocadeRed, alpha: 0.98)
+        rect(-rollerW * 0.3, h + trimH - outerRim, w + rollerW * 0.3, h + trimH, brocadeDark, alpha: 0.98)
+
+        // 御绫双道鎏金丝线与云锦菱格暗纹
+        let threadW = max(0.9, unit * 0.0014)
+        for gy in [-trimH + outerRim, -trimH + outerRim + redBand, -innerSlip, h + innerSlip, h + trimH - outerRim - redBand, h + trimH - outerRim] {
+            m.segment(0, gy, w, gy, width: threadW, goldBright, alpha: 0.88)
+        }
+        let brocadeStep = max(26, unit * 0.038)
+        let diamondR = trimH * 0.19
         var bx: Float = brocadeStep * 0.5
         while bx < w - brocadeStep * 0.3 {
-            for by in [-trimH * 0.31, h + trimH * 0.31] {
-                m.polyline([bx - diamondR, by, bx, by - diamondR * 0.72, bx + diamondR, by, bx, by + diamondR * 0.72, bx - diamondR, by], width: threadW * 0.85, silkDeep, alpha: 0.55)
+            for by in [-innerSlip - (trimH - outerRim - redBand - innerSlip) * 0.5, h + innerSlip + (trimH - outerRim - redBand - innerSlip) * 0.5] {
+                m.polyline([bx - diamondR, by, bx, by - diamondR * 0.68, bx + diamondR, by, bx, by + diamondR * 0.68, bx - diamondR, by], width: threadW * 0.8, silkDeep, alpha: 0.48)
+                m.disc(bx, by, radius: diamondR * 0.18, goldBright, alpha: 0.55, sides: 6)
             }
             bx += brocadeStep
         }
-        // 卷首正中御制红绫锦结（圣旨装裱点睛之笔）
-        let midX = w * 0.5
-        rect(midX - trimH * 1.4, -trimH * 1.05, midX + trimH * 1.4, -trimH * 0.12, brocadeRed, alpha: 0.98)
-        m.polyline([midX - trimH * 1.32, -trimH * 0.95, midX + trimH * 1.32, -trimH * 0.95, midX + trimH * 1.32, -trimH * 0.2, midX - trimH * 1.32, -trimH * 0.2, midX - trimH * 1.32, -trimH * 0.95], width: threadW, goldBright, alpha: 0.9)
-        m.disc(midX, -trimH * 0.58, radius: trimH * 0.22, goldBright, alpha: 0.95)
-        // 内外双层鎏金与墨线框
-        let ruleIn = unit * 0.008
-        m.polyline([ruleIn, ruleIn, w - ruleIn, ruleIn, w - ruleIn, h - ruleIn, ruleIn, h - ruleIn, ruleIn, ruleIn], width: max(1.0, unit * 0.0018), silkDeep, alpha: 0.68)
-        let ruleOut = unit * 0.004
-        m.polyline([ruleOut, ruleOut, w - ruleOut, ruleOut, w - ruleOut, h - ruleOut, ruleOut, h - ruleOut, ruleOut, ruleOut], width: max(0.7, unit * 0.0012), ink, alpha: 0.45)
 
-        // 3. 四角传统回纹云角饰（精致细节，放大缩小皆清晰）
-        let cLen = unit * 0.036, cStep = unit * 0.011, cw = max(1.2, unit * 0.0022)
-        for (sx, sy, ox, oy) in [(Float(1), Float(1), ruleIn, ruleIn), (-1, 1, w - ruleIn, ruleIn), (1, -1, ruleIn, h - ruleIn), (-1, -1, w - ruleIn, h - ruleIn)] {
-            m.polyline([ox, oy + sy * cLen, ox, oy, ox + sx * cLen, oy], width: cw * 1.35, brocadeRed, alpha: 0.85)
-            m.polyline([ox + sx * cStep, oy + sy * (cLen * 0.72), ox + sx * cStep, oy + sy * cStep, ox + sx * (cLen * 0.72), oy + sy * cStep], width: cw * 0.9, silkGold, alpha: 0.9)
-            m.disc(ox + sx * cStep * 1.45, oy + sy * cStep * 1.45, radius: cw * 1.2, brocadeRed, alpha: 0.82)
+        // 上下正中「御制朱锦玉别子」锦带扣饰
+        let midX = w * 0.5
+        for (y0, y1) in [(-trimH * 1.04, -innerSlip * 0.7), (h + innerSlip * 0.7, h + trimH * 1.04)] {
+            let cy = (y0 + y1) * 0.5
+            let cw = trimH * 1.75
+            rect(midX - cw, y0, midX + cw, y1, brocadeRed, alpha: 0.99)
+            m.polyline([midX - cw + 1.4, y0 + 1.4, midX + cw - 1.4, y0 + 1.4, midX + cw - 1.4, y1 - 1.4, midX - cw + 1.4, y1 - 1.4, midX - cw + 1.4, y0 + 1.4], width: threadW, goldBright, alpha: 0.92)
+            m.disc(midX, cy, radius: trimH * 0.24, jade, alpha: 0.98)
+            m.disc(midX, cy, radius: trimH * 0.14, jadeLight, alpha: 0.92)
+            m.disc(midX - cw * 0.58, cy, radius: trimH * 0.11, goldBright, alpha: 0.92)
+            m.disc(midX + cw * 0.58, cy, radius: trimH * 0.11, goldBright, alpha: 0.92)
         }
 
-        // 4. 左右立体卷轴木杆 + 卷纸高光卷边 + 四端鎏金碧玉轴头（皇帝圣旨标志性外观）
+        // 画心内外双层细金墨框 + 四角传统回纹鎏金包角
+        let ruleIn = unit * 0.0085
+        let ruleOut = unit * 0.0035
+        m.polyline([ruleIn, ruleIn, w - ruleIn, ruleIn, w - ruleIn, h - ruleIn, ruleIn, h - ruleIn, ruleIn, ruleIn], width: max(1.0, unit * 0.0017), silkDeep, alpha: 0.65)
+        m.polyline([ruleOut, ruleOut, w - ruleOut, ruleOut, w - ruleOut, h - ruleOut, ruleOut, h - ruleOut, ruleOut, ruleOut], width: max(0.75, unit * 0.0012), ink, alpha: 0.48)
+
+        let cLen = unit * 0.044, cStep = unit * 0.013, cw = max(1.3, unit * 0.0023)
+        for (sx, sy, ox, oy) in [(Float(1), Float(1), ruleIn, ruleIn), (-1, 1, w - ruleIn, ruleIn), (1, -1, ruleIn, h - ruleIn), (-1, -1, w - ruleIn, h - ruleIn)] {
+            m.polyline([ox, oy + sy * cLen, ox, oy, ox + sx * cLen, oy], width: cw * 1.4, brocadeRed, alpha: 0.88)
+            m.polyline([ox + sx * cStep, oy + sy * (cLen * 0.72), ox + sx * cStep, oy + sy * cStep, ox + sx * (cLen * 0.72), oy + sy * cStep], width: cw * 0.95, silkGold, alpha: 0.92)
+            m.disc(ox + sx * cStep * 1.45, oy + sy * cStep * 1.45, radius: cw * 1.25, goldBright, alpha: 0.90)
+        }
+
+        // 3. 左右 7 层圆柱立体紫檀卷轴杆 + 多叠卷纸侧边 + 鎏金雕花箍环 + 青碧玉葫芦轴头
         func drawRoller(x0: Float, x1: Float, inwardRight: Bool) {
             let rw = x1 - x0
             let yTop = -trimH - capOut * 0.25, yBot = h + trimH + capOut * 0.25
-            // 卷轴底座暗影
-            rect(x0, yTop, x1, yBot, woodDark, alpha: 0.98)
-            // 圆柱明暗渐变（暗边 → 暖檀木 → 柱面高光脊 → 次暗面）
-            let hiA = inwardRight ? x0 + rw * 0.28 : x0 + rw * 0.48
-            let hiB = inwardRight ? x0 + rw * 0.56 : x0 + rw * 0.72
-            rect(x0 + rw * 0.12, yTop, x1 - rw * 0.12, yBot, woodMid, alpha: 0.95)
+            // 7 段圆柱平滑光照带
+            rect(x0, yTop, x1, yBot, woodShadow, alpha: 0.99)
+            rect(x0 + rw * 0.08, yTop, x1 - rw * 0.08, yBot, woodDark, alpha: 0.98)
+            rect(x0 + rw * 0.17, yTop, x1 - rw * 0.17, yBot, woodMid, alpha: 0.96)
+            let warmA = inwardRight ? x0 + rw * 0.24 : x0 + rw * 0.36
+            let warmB = inwardRight ? x0 + rw * 0.64 : x0 + rw * 0.76
+            rect(warmA, yTop, warmB, yBot, woodWarm, alpha: 0.94)
+            let hiA = inwardRight ? x0 + rw * 0.32 : x0 + rw * 0.48
+            let hiB = inwardRight ? x0 + rw * 0.52 : x0 + rw * 0.68
             rect(hiA, yTop, hiB, yBot, woodLight, alpha: 0.92)
             let specX = (hiA + hiB) * 0.5
-            m.segment(specX, yTop, specX, yBot, width: max(1.0, rw * 0.11), goldBright, alpha: 0.55)
-            // 纸张卷入木杆的窄白金卷边
-            let curlEdgeX = inwardRight ? x1 - rw * 0.08 : x0 + rw * 0.08
-            m.segment(curlEdgeX, 0, curlEdgeX, h, width: max(1.2, rw * 0.14), RGB(hex: 0xE9DCBE), alpha: 0.88)
-            // 轴杆上下鎏金箍环
-            let ringH = trimH * 0.72
-            for ry in [-trimH, h + trimH - ringH] {
-                rect(x0 - rw * 0.08, ry, x1 + rw * 0.08, ry + ringH, silkGold, alpha: 0.98)
-                rect(hiA, ry, hiB, ry + ringH, goldBright, alpha: 0.9)
-                m.polyline([x0 - rw * 0.08, ry, x1 + rw * 0.08, ry], width: max(0.8, unit * 0.0014), ink, alpha: 0.55)
-                m.polyline([x0 - rw * 0.08, ry + ringH, x1 + rw * 0.08, ry + ringH], width: max(0.8, unit * 0.0014), ink, alpha: 0.55)
-            }
-            // 上下两端碧玉轴头（带鎏金端帽）
-            let capW = rw * 0.78, cx = (x0 + x1) * 0.5
-            let topCapY0 = yTop - capOut, topCapY1 = yTop
-            rect(cx - capW * 0.5, topCapY0, cx + capW * 0.5, topCapY1, jade, alpha: 0.98)
-            rect(cx - capW * 0.18, topCapY0, cx + capW * 0.16, topCapY1, jadeLight, alpha: 0.9)
-            rect(cx - capW * 0.56, topCapY0 - capOut * 0.22, cx + capW * 0.56, topCapY0 + capOut * 0.12, goldBright, alpha: 0.98)
+            m.segment(specX, yTop, specX, yBot, width: max(1.2, rw * 0.09), goldBright, alpha: 0.52)
 
-            let botCapY0 = yBot, botCapY1 = yBot + capOut
-            rect(cx - capW * 0.5, botCapY0, cx + capW * 0.5, botCapY1, jade, alpha: 0.98)
-            rect(cx - capW * 0.18, botCapY0, cx + capW * 0.16, botCapY1, jadeLight, alpha: 0.9)
-            rect(cx - capW * 0.56, botCapY1 - capOut * 0.12, cx + capW * 0.56, botCapY1 + capOut * 0.22, goldBright, alpha: 0.98)
+            // 卷入木轴的多叠宣纸高光卷边（让左右真像卷起来的圣旨纸筒）
+            let curl1 = inwardRight ? x1 - rw * 0.07 : x0 + rw * 0.07
+            let curl2 = inwardRight ? x1 - rw * 0.15 : x0 + rw * 0.15
+            m.segment(curl1, 0, curl1, h, width: max(1.4, rw * 0.11), RGB(hex: 0xEFE3C8), alpha: 0.92)
+            m.segment(curl2, 0, curl2, h, width: max(0.8, rw * 0.06), RGB(hex: 0xCBB994), alpha: 0.78)
+
+            // 轴杆上下鎏金雕花箍环
+            let ringH = trimH * 0.76
+            for ry in [-trimH, h + trimH - ringH] {
+                rect(x0 - rw * 0.07, ry, x1 + rw * 0.07, ry + ringH, silkDeep, alpha: 0.98)
+                rect(x0 - rw * 0.04, ry + ringH * 0.12, x1 + rw * 0.04, ry + ringH * 0.88, silkGold, alpha: 0.98)
+                rect(hiA, ry + ringH * 0.12, hiB, ry + ringH * 0.88, goldBright, alpha: 0.95)
+                m.polyline([x0 - rw * 0.07, ry, x1 + rw * 0.07, ry], width: max(0.9, unit * 0.0014), ink, alpha: 0.58)
+                m.polyline([x0 - rw * 0.07, ry + ringH, x1 + rw * 0.07, ry + ringH], width: max(0.9, unit * 0.0014), ink, alpha: 0.58)
+            }
+
+            // 上下两端青碧玉葫芦轴头 + 鎏金宝顶
+            let capW = rw * 0.82, cx = (x0 + x1) * 0.5
+            for (yA, yB, tipY) in [(yTop - capOut, yTop, yTop - capOut - capOut * 0.22), (yBot, yBot + capOut, yBot + capOut + capOut * 0.22)] {
+                rect(cx - capW * 0.5, yA, cx + capW * 0.5, yB, jadeDark, alpha: 0.99)
+                rect(cx - capW * 0.4, yA, cx + capW * 0.4, yB, jade, alpha: 0.98)
+                rect(cx - capW * 0.18, yA, cx + capW * 0.14, yB, jadeLight, alpha: 0.92)
+                // 鎏金宝顶圆帽
+                m.disc(cx, tipY, radius: capW * 0.34, silkGold, alpha: 0.98, sides: 12)
+                m.disc(cx - capW * 0.08, tipY, radius: capW * 0.16, goldBright, alpha: 0.95, sides: 10)
+            }
         }
-        // 4. 左右立体卷轴木杆 + 卷纸高光卷边 + 四端鎏金碧玉轴头（皇帝圣旨标志性外观）
-        // 卷杆内缘微微压过画纸左右 0.42×rollerW，使全图展开与滑至边沿时均可清晰看见卷起的圣旨木轴与碧玉轴头
-        drawRoller(x0: -rollerW * 0.72, x1: rollerW * 0.42, inwardRight: true)
-        drawRoller(x0: w - rollerW * 0.42, x1: w + rollerW * 0.72, inwardRight: false)
+        drawRoller(x0: -rollerW * 0.85, x1: rollerW * 0.22, inwardRight: true)
+        drawRoller(x0: w - rollerW * 0.22, x1: w + rollerW * 0.85, inwardRight: false)
 
         return m
     }

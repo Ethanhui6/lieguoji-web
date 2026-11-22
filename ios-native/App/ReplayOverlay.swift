@@ -294,7 +294,7 @@ extension GameModel {
         replayTimer?.cancel()
         replayTimer = Task { [weak self] in
             while let self, !Task.isCancelled, self.replayPlaying, let timeline = self.replayTimelineData {
-                let baseMs: Double = self.replaySpeed == 4 ? 220 : self.replaySpeed == 2 ? 380 : 620
+                let baseMs: Double = self.replaySpeed == 4 ? 260 : self.replaySpeed == 2 ? 440 : 760
                 try? await Task.sleep(nanoseconds: UInt64(baseMs * 1_000_000))
                 guard !Task.isCancelled, self.replayPlaying else { break }
                 let next = self.replayIndex + (self.replayReversing ? -1 : 1)
@@ -368,18 +368,18 @@ extension GameModel {
         }
         world.meta.labels = boxes
 
-        // 合成史诗级回放战局视觉：易主墨晕扫色 + 战役弧形进军箭头 + 攻占火花 + 先锋行军军团与国都守军
+        // 合成史诗级回放战局视觉：丝滑逐帧变色 + 易主墨晕扫色 + 战役弧形进军箭头 + 交锋火花 + 真实行军先锋与国都御林军
         controller.replayAnimate = animated
-        let stepTween = replaySpeed == 4 ? 0.20 : replaySpeed == 2 ? 0.34 : 0.54
+        let stepTween = replaySpeed == 4 ? 0.24 : replaySpeed == 2 ? 0.41 : 0.72
         var fx = MapEffects()
         var washInputs = [WashInput]()
         var enemiesMap = [Int: Set<Int>]()
         var ripples = Set<Int>()
         var sprites = [MapRenderer.ArmySprite]()
 
-        // 预先登记前 6 大强国在国都／重心处的历史守军旗帜，令疆域版图富有生命力
-        let majorNations = cnt.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.prefix(6).map(\.key)
-        for n in majorNations where world.meta.nations.indices.contains(n) {
+        // 前 10 大强国在国都／疆域重心处常驻御林军与王旗（使用真实 UnitKinds 键值），无论暂停或播放均清晰可见
+        let majorNations = cnt.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.prefix(10).map(\.key)
+        for (rank, n) in majorNations.enumerated() where world.meta.nations.indices.contains(n) {
             let capIdx = world.meta.nations[n].capital
             let pt: (Float, Float)
             if world.meta.cities.indices.contains(capIdx) {
@@ -387,7 +387,8 @@ extension GameModel {
             } else if let c = cnt[n], c > 0 {
                 pt = (sumX[n, default: 0] / Float(c), sumY[n, default: 0] / Float(c))
             } else { continue }
-            sprites.append(MapRenderer.ArmySprite(army: -(1000 + n), x: pt.0, y: pt.1, unit: "elite", nation: n, selected: false, key: "rg-\(n)", tier: 2))
+            let guardUnit = rank < 3 ? "Elite" : (rank % 2 == 0 ? "HeavyCavalry" : "Infantry")
+            sprites.append(MapRenderer.ArmySprite(army: 1000 + n, x: pt.0, y: pt.1, unit: guardUnit, nation: n, selected: false, key: "rg-\(n)", tier: rank < 3 ? 3 : 2, banner: 2))
         }
 
         if animated && prevOwners.count == owners.count {
@@ -421,7 +422,7 @@ extension GameModel {
                 let dstPt = SIMD2(tp.x, tp.y)
                 washInputs.append(WashInput(province: p, attacker: newN, kind: .capture, progress: 1, day: frame.day, armies: [srcPt]))
                 if bestFrom != p {
-                    washInputs.append(WashInput(province: p, attacker: newN, kind: .march, progress: 0.9, day: frame.day, armies: [srcPt, dstPt], troops: 9000, key: "rm-\(newN)-\(p)"))
+                    washInputs.append(WashInput(province: p, attacker: newN, kind: .march, progress: 0.9, day: frame.day, armies: [srcPt, dstPt], troops: 12000, key: "rm-\(newN)-\(p)"))
                 }
                 conquests.append(Conquest(attacker: newN, defender: oldN, from: bestFrom, to: p, dist: bestD.squareRoot()))
             }
@@ -430,37 +431,47 @@ extension GameModel {
                 ripples.insert(frame.topNation)
             }
 
-            // 为每个活跃战线生成至多 8 支弧形战役箭头、攻占闪光、前线交锋火花与行军先锋军团
+            // 为每个活跃战线生成至多 14 支弧形战役箭头、攻占闪光、交锋火花与沿战线真实行进的先锋军团
             var usedTargets = Set<Int>()
             var perAttacker = [Int: Int]()
-            let unitPool = ["cavalry", "infantry", "spear", "heavy"]
-            for (ci, cq) in conquests.prefix(24).enumerated() {
-                guard !usedTargets.contains(cq.to), perAttacker[cq.attacker, default: 0] < 2, fx.arrows.count < 8 else { continue }
+            let unitPool = ["Cavalry", "HeavyCavalry", "Infantry", "Spear", "HorseArcher", "Elite"]
+            for (ci, cq) in conquests.prefix(36).enumerated() {
+                guard !usedTargets.contains(cq.to), perAttacker[cq.attacker, default: 0] < 3, fx.arrows.count < 14 else { continue }
                 usedTargets.insert(cq.to)
                 let fp = world.meta.provinces[cq.from], tp = world.meta.provinces[cq.to]
                 let rgb = world.meta.nations.indices.contains(cq.attacker) ? (RGB(css: world.meta.nations[cq.attacker].color) ?? RGB(0.7, 0.25, 0.18)) : RGB(0.7, 0.25, 0.18)
                 fx.flashes.append(MapEffects.Flash(id: "rf-\(index)-\(cq.to)", x: Double(tp.x), y: Double(tp.y), r: Double(rgb.r), g: Double(rgb.g), b: Double(rgb.b)))
 
-                if cq.from != cq.to && cq.dist > 4 {
+                if cq.from != cq.to && cq.dist > 2 {
                     perAttacker[cq.attacker, default: 0] += 1
                     let sx = Double(fp.x), sy = Double(fp.y), ex = Double(tp.x), ey = Double(tp.y)
                     let dx = ex - sx, dy = ey - sy
                     let len = max(1.0, hypot(dx, dy))
                     let curveSign: Double = (ci % 2 == 0) ? 1 : -1
-                    let bend = min(34.0, len * 0.24) * curveSign
+                    let bend = min(32.0, len * 0.22) * curveSign
                     let cx = (sx + ex) * 0.5 - (dy / len) * bend
                     let cy = (sy + ey) * 0.5 + (dx / len) * bend
                     let shallow = (min(1, Double(rgb.r) * 0.65 + 0.35), min(1, Double(rgb.g) * 0.65 + 0.35), min(1, Double(rgb.b) * 0.65 + 0.35))
                     let deep = (Double(rgb.r) * 0.85, Double(rgb.g) * 0.85, Double(rgb.b) * 0.85)
                     fx.arrows.append(MapEffects.Arrow(key: "ra-\(index)-\(cq.attacker)-\(cq.to)", sx: sx, sy: sy, cx: cx, cy: cy, ex: ex, ey: ey, shallow: shallow, deep: deep))
 
-                    // 行军先锋军团：在目标州就位并配合战斗火花表现推进态势
+                    // 行军先锋军团：设置显式出发点 (fp.x, fp.y) -> 终点 (tp.x, tp.y)，由 GPU Hermite 插值丝滑跨界行军！
                     let unitKind = unitPool[(cq.attacker + ci) % unitPool.count]
-                    let mx = Float((sx + ex) * 0.5 + (ex - sx) * 0.32)
-                    let my = Float((sy + ey) * 0.5 + (ey - sy) * 0.32)
-                    sprites.append(MapRenderer.ArmySprite(army: 10000 + ci, x: mx, y: my, unit: unitKind, nation: cq.attacker, selected: false, key: "rv-\(cq.attacker)-\(perAttacker[cq.attacker, default: 1])", tier: 2, fighting: cq.defender >= 0))
+                    sprites.append(MapRenderer.ArmySprite(
+                        army: 10000 + ci,
+                        x: tp.x, y: tp.y,
+                        unit: unitKind,
+                        nation: cq.attacker,
+                        selected: false,
+                        key: "rv-\(index)-\(cq.attacker)-\(cq.to)",
+                        tier: 3,
+                        banner: 1,
+                        fighting: cq.defender >= 0,
+                        startX: fp.x,
+                        startY: fp.y
+                    ))
 
-                    if cq.defender >= 0 && fx.battles.count < 4 {
+                    if cq.defender >= 0 && fx.battles.count < 6 {
                         fx.battles.append(MapEffects.Battle(key: "rb-\(index)-\(cq.to)", x: Double(tp.x), y: Double(tp.y)))
                     }
                 }

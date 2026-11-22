@@ -84,10 +84,10 @@ struct MenuSheet: View {
             default:
                 // 2×2 苹果式视觉快捷面板：高频动作一眼触达，打破千篇一律的纯文本长列表
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                    menuTile(title: "保存当前进度", note: "立存此世卷宗", symbol: "square.and.arrow.down", tint: Theme.jade) {
+                    menuTile(title: "保存当前进度", note: "立存此世卷宗", symbol: "bookmark.fill", tint: Theme.jade) {
                         Task { let ok = await model.saveNow(); GameFeel.shared.notify(ok ? .success : .error); say(ok ? "已保存" : "保存失败"); close() }
                     }
-                    menuTile(title: "世界卷宗", note: "切换或管理存档", symbol: "books.vertical", tint: Theme.ink) { archive = true }
+                    menuTile(title: "世界卷宗", note: "切换或管理存档", symbol: "books.vertical", tint: Theme.jade) { archive = true }
                     menuTile(title: "世界编辑", note: "改绘山河与列国", symbol: "paintbrush.pointed.fill", tint: Theme.seal) { openEditor() }
                     menuTile(title: "开辟新世界", note: "重选地图与剧本", symbol: "globe.asia.australia", tint: Theme.seal) { creating = true }
                 }
@@ -120,11 +120,11 @@ struct MenuSheet: View {
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet(start: { options in creating = false; close(); Task { await model.generate(options) } }, draw: { options in creating = false; close(); model.openEditor(options) }, inputs: model.previewInputs)
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
             WorldArchiveSheet(model: model) { world in archive = false; close(); Task { await model.openArchived(world) } }
-                .presentationDetents([.medium, .large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }
         .sheet(isPresented: $calendar) {
@@ -140,12 +140,12 @@ struct MenuSheet: View {
                 .padding(.horizontal, 22)
             }
             .padding(.bottom, 16)
-            .presentationDetents([.height(340)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
             if case .success(let url) = result { close(); Task { await model.importSave(from: url) } }
         }
-        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
     }
 
     private func menuTile(title: String, note: String, symbol: String, tint: Color, action: @escaping () -> Void) -> some View {
@@ -251,7 +251,14 @@ struct MenuRow: View {
     let symbol: String; let title: String
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: symbol).frame(width: 24).foregroundStyle(Theme.seal)
+            Group {
+                if let g = GameActionLabel.glyph(for: symbol) {
+                    InkIcon(glyph: g, size: 18, weight: 1.7, accent: Theme.seal.opacity(0.22))
+                } else {
+                    Glyph.icon(title, size: 15, fallback: .edict)
+                }
+            }
+            .frame(width: 24).foregroundStyle(Theme.seal)
             Text(title).font(Theme.section).foregroundStyle(Theme.ink)
             Spacer()
             Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
@@ -260,12 +267,14 @@ struct MenuRow: View {
     }
 }
 
-/// Pressed buttons sink slightly, like paper under a finger.
+/// 苹果质感微弹按压反馈：按下时自然微缩（0.965），松开时由 `.snappy` 流体弹簧回弹。
 struct PressStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label.scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1).opacity(configuration.isPressed ? 0.86 : 1)
-            .animation(reduceMotion ? nil : Motion.fade, value: configuration.isPressed)
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.965 : 1)
+            .opacity(configuration.isPressed ? 0.88 : 1)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.18, extraBounce: 0.04), value: configuration.isPressed)
     }
 }
 

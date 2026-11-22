@@ -191,15 +191,32 @@ public enum PreviewWorld {
         }
         var ownerGrid = [Int](repeating: -1, count: anchors.isEmpty ? 0 : w * h)
         if !anchors.isEmpty {
+            // 有机自然疆域划分：通过三频域扭曲噪声（Domain Warping）+ 山脊地形阻隔，
+            // 令势力边界顺着山脉、河谷与自然地势蜿蜒舒展，彻底消除直来直去的正方几何切割。
+            let seedPhase = Float(seed.utf8.reduce(UInt32(17)) { ($0 &* 31) &+ UInt32($1) } % 1000) * 0.013
+            let scaleSpan = Float(min(w, h))
+            let warpAmp = scaleSpan * 0.085
+            let f1: Float = 6.28318 / max(28, scaleSpan * 0.28)
+            let f2: Float = 6.28318 / max(14, scaleSpan * 0.13)
+            let f3: Float = 6.28318 / max(8, scaleSpan * 0.065)
+            // 各国轻微的自然扩张权重差异（模拟大国/小邦并存，而非完全均等方块）
+            let weights: [Float] = anchors.indices.map { a in
+                0.86 + Float((a * 37 + Int(seedPhase * 100)) % 29) / 100.0
+            }
             for y in 0..<h {
                 for x in 0..<w {
                     let i = y * w + x
-                    guard field[i] >= 20 else { continue }
+                    let elev = field[i]
+                    guard elev >= 20 else { continue }
                     let fx = Float(x), fy = Float(y)
+                    let wx = fx + (sin(fy * f1 + seedPhase) * 0.55 + sin((fx + fy) * f2 + seedPhase * 1.7) * 0.30 + cos(fx * f3 - fy * f3) * 0.15) * warpAmp
+                    let wy = fy + (cos(fx * f1 + seedPhase * 1.3) * 0.55 + cos((fx - fy) * f2 + seedPhase * 0.8) * 0.30 + sin(fx * f3 + fy * f3) * 0.15) * warpAmp
+                    // 高山地带增强边疆阻隔，使国界天然倾向沿着山脉分水岭弯折
+                    let ridgeBias: Float = elev >= 58 ? (elev - 58) * 0.35 : 0
                     var best = 0, bestD: Float = 1e12
                     for a in anchors.indices {
-                        let dx = fx - anchors[a].x, dy = fy - anchors[a].y
-                        let d = dx * dx + dy * dy
+                        let dx = wx - anchors[a].x, dy = wy - anchors[a].y
+                        let d = (dx * dx + dy * dy).squareRoot() * weights[a] + ridgeBias * (a % 2 == 0 ? 1 : -0.6)
                         if d < bestD { bestD = d; best = a }
                     }
                     ownerGrid[i] = best

@@ -12,6 +12,8 @@ public enum NativeCreation {
         public var heights: [UInt8]? = nil
         /// 划定列国：各国首府辖区与每个辖区的所属国（序号）。
         public var layout: (seeds: [Int], owners: [Int])? = nil
+        /// 有机自然疆界（移动端新世界默认开启，按山脊河谷阻力分疆；核心单测保持 false 以逐位对照网页基准）。
+        public var organicBorders: Bool = false
         public init(seed: String, template: String, count: Int, cityCount: Int, relations: String = "peace", naming: String = "historical-names", cultures: [String] = []) {
             self.seed = seed; self.template = template; self.count = count; self.cityCount = cityCount; self.relations = relations; self.naming = naming; self.cultures = cultures
         }
@@ -83,7 +85,7 @@ public enum NativeCreation {
     static func opening(_ o: Options, doc: TerrainDocument, heights: [Int], count: Int, cityCount: Int, enabled: [String], worldId: String, runId: String) throws -> (run: JS, travel: CreationGeography.Graph, sea: SeaGraph)? {
         guard let part = Regions.partition(doc, elevations: heights, cities: cityCount) else { return nil }
         let regions = part.regions
-        let layout = o.layout ?? Opening.layout(regions, count: count)
+        let layout = o.layout ?? (o.organicBorders ? Opening.organicLayout(regions, count: count, seed: o.seed) : Opening.layout(regions, count: count))
         if let l = o.layout, l.owners.count != regions.count || l.seeds.contains(where: { $0 < 0 || $0 >= regions.count }) { throw CreationError.message("国家领土布局无效，原稿未改动。") }
         guard let r = Creation.base(regions: regions, seeds: layout.seeds, owners: layout.owners, width: doc.width, height: doc.height, worldId: worldId, runId: runId,
                                     relations: "peace", mode: o.naming == "culture-generated" ? "culture-generated" : "historical-names", enabled: enabled, cultures: Founding.cultures)

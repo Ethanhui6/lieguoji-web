@@ -8,14 +8,14 @@ struct ChipPicker<T: Hashable>: View {
     @Binding var selection: T
     @Namespace private var pill
     var body: some View {
-        let tall = items.contains { Glyph.of($0.1) != nil }
+        // 严格视觉一致性：只有当整排所有选项均配有手绘图标时才展示图标，杜绝同一排中「有的有图标、有的纯文字」的割裂感。
+        let showIcons = !items.isEmpty && items.allSatisfy { Glyph.of($0.1) != nil }
         if items.count > 4 {
-            // 超过四项自动改为横滑签条，避免文字挤压折行，选中朱印平滑跟随并自动居中。
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 7) {
+                    HStack(spacing: 6) {
                         ForEach(items.indices, id: \.self) { i in
-                            chip(items[i], tall: tall, compact: true)
+                            chip(items[i], showIcons: showIcons, segmented: false)
                                 .id(items[i].0)
                         }
                     }
@@ -27,48 +27,55 @@ struct ChipPicker<T: Hashable>: View {
                 }
             }
         } else {
-            HStack(spacing: 8) {
+            // 苹果式同心圆角分段控件（外槽 14pt continuous + 3.5pt 内边距 + 内滑块 10.5pt continuous）
+            let outerShape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+            HStack(spacing: 4) {
                 ForEach(items.indices, id: \.self) { i in
-                    chip(items[i], tall: tall, compact: false)
+                    chip(items[i], showIcons: showIcons, segmented: true)
                 }
             }
+            .padding(3.5)
+            .background(Theme.wash.opacity(0.68), in: outerShape)
+            .overlay(outerShape.stroke(Theme.ink.opacity(0.11), lineWidth: 0.8))
         }
     }
-    private func chip(_ item: (T, String), tall: Bool, compact: Bool) -> some View {
+    private func chip(_ item: (T, String), showIcons: Bool, segmented: Bool) -> some View {
         let on = item.0 == selection
+        let corner: CGFloat = segmented ? 10.5 : Theme.Control.cornerControl
         return Button {
             GameFeel.shared.tap()
             withAnimation(Motion.tap) { selection = item.0 }
         } label: {
             VStack(spacing: 2) {
-                if let s = Glyph.of(item.1) {
+                if showIcons, let s = Glyph.of(item.1) {
                     if let g = GameActionLabel.glyph(for: s) {
                         InkIcon(glyph: g, size: 15, weight: on ? 1.85 : 1.55, filled: on,
-                                accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.25))
-                            .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.88))
-                            .frame(height: 18)
+                                accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.24))
+                            .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.86))
+                            .frame(height: 17)
                     } else {
                         Image(systemName: s).font(.system(size: 13, weight: .regular))
                             .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
-                            .frame(height: 18)
+                            .frame(height: 17)
                     }
                 }
                 Text(item.1).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
             }
-            .padding(.horizontal, compact ? 13 : 4)
-            .frame(minWidth: compact ? 62 : nil, maxWidth: compact ? nil : .infinity)
-            .frame(height: tall ? 48 : 38)
+            .padding(.horizontal, segmented ? 4 : 13)
+            .frame(minWidth: segmented ? nil : 62, maxWidth: segmented ? .infinity : nil)
+            .frame(height: showIcons ? 46 : 36)
             .background {
-                let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
                 if on {
                     shape.fill(Theme.seal)
                         .matchedGeometryEffect(id: "chip-pill", in: pill)
-                        .shadow(color: Theme.seal.opacity(0.24), radius: 4, y: 2)
-                } else {
+                        .shadow(color: Theme.seal.opacity(0.24), radius: 4, y: 1.5)
+                } else if !segmented {
                     shape.fill(Theme.paper2.opacity(0.88))
-                        .overlay(shape.stroke(Theme.ink.opacity(0.15), lineWidth: 0.9))
+                        .overlay(shape.stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
                 }
             }
+            .contentShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
         }
         .buttonStyle(PressStyle())
     }
@@ -126,14 +133,24 @@ struct PaperSwitch: View {
     let title: String
     @Binding var on: Bool
     var body: some View {
-        Button { withAnimation(Motion.tap) { on.toggle() } } label: {
+        Button {
+            GameFeel.shared.tap()
+            withAnimation(Motion.tap) { on.toggle() }
+        } label: {
             HStack(spacing: 10) {
-                Glyph.icon(title, size: 15)
+                Glyph.icon(title, size: 15, fallback: .settings)
                 Text(title).font(Theme.section).foregroundStyle(Theme.ink)
                 Spacer()
                 ZStack(alignment: on ? .trailing : .leading) {
-                    Capsule().fill(on ? Theme.seal : Theme.wash).frame(width: 50, height: 30)
-                    Circle().fill(Theme.paper2).frame(width: 24, height: 24).padding(3).shadow(color: .black.opacity(0.15), radius: 2, y: 1)
+                    Capsule()
+                        .fill(on ? Theme.seal : Theme.wash)
+                        .overlay(Capsule().stroke(on ? Color.clear : Theme.ink.opacity(0.14), lineWidth: 0.8))
+                        .frame(width: 50, height: 30)
+                    Circle()
+                        .fill(Theme.paper2)
+                        .frame(width: 24, height: 24)
+                        .padding(3)
+                        .shadow(color: Color(red: 0.14, green: 0.10, blue: 0.05).opacity(0.20), radius: 2.5, y: 1.2)
                 }
             }
             .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
@@ -153,7 +170,7 @@ struct NationGrid: View {
                 let on = n == selection
                 Button { withAnimation(Motion.tap) { selection = n } } label: {
                     HStack(spacing: 6) {
-                        RoundedRectangle(cornerRadius: 3).fill(Names.color(map.meta.nations[n].color)).frame(width: 12, height: 12)
+                        RoundedRectangle(cornerRadius: 4, style: .continuous).fill(Names.color(map.meta.nations[n].color)).frame(width: 12, height: 12)
                         Text(map.meta.nations[n].name).font(Theme.body).lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .foregroundStyle(Theme.ink).frame(maxWidth: .infinity).frame(height: 38)

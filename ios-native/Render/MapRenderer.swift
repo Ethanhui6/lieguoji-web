@@ -51,6 +51,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let linePipeline: MTLRenderPipelineState
     private let flatPipeline: MTLRenderPipelineState
     private let coloredPipeline: MTLRenderPipelineState
+    private let deskPipeline: MTLRenderPipelineState
+    private let seaPipeline: MTLRenderPipelineState
     private let texturePipeline: MTLRenderPipelineState
     private let multiplyPipeline: MTLRenderPipelineState
     private let spritePipeline: MTLRenderPipelineState
@@ -148,6 +150,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             linePipeline = try pipeline("lineVertex", "flatFragment", .alpha)
             flatPipeline = try pipeline("flatVertex", "flatFragment", .alpha)
             coloredPipeline = try pipeline("coloredVertex", "colorFragment", .alpha)
+            deskPipeline = try pipeline("deskVertex", "deskFragment", .none)
+            seaPipeline = try pipeline("seaVertex", "seaFragment", .none)
             texturePipeline = try pipeline("quadVertex", "textureFragment", .none)
             multiplyPipeline = try pipeline("quadVertex", "textureFragment", .multiply)
             spritePipeline = try pipeline("spriteVertex", "spriteFragment", .alpha)
@@ -304,8 +308,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// Ownership changed (conquest, rebellion): recolour the land and redraw the state outlines.
     /// The state outlines are rebuilt on a background queue (the whole map's border walk); the land
     /// is recoloured at once, and the new outlines replace the old ones when ready.
-    func setMap(_ next: WorldMap, replayFast: Bool = false) {
+    /// `skipStatic`: during replay, static city icons & province lines never change and are skipped to avoid stutter.
+    /// `animateColors`: enables smooth GPU vertex color dissolve (`fadeVertex`) between frames.
+    func setMap(_ next: WorldMap, replayFast: Bool = false, skipStatic: Bool = false, animateColors: Bool? = nil) {
         let work = workRevision.replaceMap()
+        let noStatic = replayFast || skipStatic
+        let doFade = animateColors ?? !replayFast
         // The founded world brings the smoothed coast the preview lacked: the waterlines and sand follow it.
         if !coastRefined && !next.coast.isEmpty {
             coastRefined = true
@@ -320,18 +328,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         map = next
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         let wide = borderWide
-        // Everything an ownership change redraws — every vertex's colour, the state outlines and the
-        // city marks — is computed off the main thread and swapped in together (the colours used to be
-        // recomputed for the whole map on the main thread at each conquest).
         let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let vertices = MapLayers.outlines(next, wide: wide).vertices
-            let marks = replayFast ? nil : MapLayers.cityIcons(next).vertices
-            let provinceLines = replayFast ? nil : MapLayers.provinceLines(next).vertices
+            let marks = noStatic ? nil : MapLayers.cityIcons(next).vertices
+            let provinceLines = noStatic ? nil : MapLayers.provinceLines(next).vertices
             let colours = MapRenderer.baseColors(next, inputs)
             DispatchQueue.main.async {
-                // 按代次安装：不比屏幕上的旧就装（高倍速时旧一点的结果先顶上，不让颜色一直等），
-                // 更新的结果已装上则丢弃；切换视图之后的颜色由视图那一趟负责。
                 guard let self, self.workRevision.acceptsGeometry(work) else { return }
                 if self.workRevision.acceptsOutlineGeometry(work) { self.outlines = self.buffer(vertices, stride: 6) }
                 if let marks { self.icons = self.buffer(marks, stride: 6) }
@@ -342,7 +345,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 if self.workRevision.acceptsColours(work) {
                     self.workRevision.installColours(work)
                     self.base = (colours.land, colours.terrain)
-                    self.fadeOnRecolor = !replayFast
+                    self.fadeOnRecolor = doFade
                     self.recolor()
                     self.fadeOnRecolor = false
                 }
@@ -485,11 +488,16 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         t.replace(region: MTLRegionMake2D(0, 0, w, h), mipmapLevel: 0, withBytes: bytes, bytesPerRow: w * 4)
         return t
     }
-    struct ArmySprite: Equatable { var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = ""; var tier = 1; var banner = 0; var reorganizing = false
+    struct ArmySprite: Equatable {
+        var army: Int; var x: Float; var y: Float; var unit: String; var nation: Int; var selected: Bool; var key = ""; var tier = 1; var banner = 0; var reorganizing = false
         /// Locked in battle: its pieces lunge and recoil on the map (spriteVertex, alpha marker 2).
         var fighting = false
         /// Falling back: drawn faded (败退), without the idle drift.
-        var retreating = false }
+        var retreating = false
+        /// 显式出发点（用于山河回放中先锋大军沿战线真实行军至目标州）。
+        var startX: Float? = nil
+        var startY: Float? = nil
+    }
     private var unitTextures: [String: MTLTexture] = [:]
     private var route: (buffer: MTLBuffer, count: Int)?
     private(set) var armySprites: [ArmySprite] = []
@@ -569,6 +577,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let newLength = snap ? 0 : max(0.12, tweenDuration * 1.08)
             for s in sprites where !s.key.isEmpty {
                 let target = SIMD2(s.x, s.y)
+                if !snap, let sx = s.startX, let sy = s.startY, sx.isFinite, sy.isFinite {
+                    let origin = SIMD2(sx, sy)
+                    from[s.key] = origin; to[s.key] = target
+                    lead[s.key] = (target - origin) * 0.55
+                    continue
+                }
                 // Where the icon stands now, mid-walk included (nil: a new army, or a world just opened).
                 let here: SIMD2<Float>? = snap ? nil : legFrom[s.key].flatMap { a in legTo[s.key].map { b in Self.hermite(a, b, legLead[s.key] ?? (b - a), t) } }
                 guard let p = here, p.x.isFinite, p.y.isFinite else {
@@ -809,10 +823,16 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
             u.alpha = 1
         }
+        // 0. 全视口无缝「御案织锦」背景：全屏均匀细腻云锦暗纹与书案聚光暗角，彻底消除拉远缩小时上下惨白割裂。
+        encoder.setRenderPipelineState(deskPipeline)
+        encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+
         // 开卷: each layer is brushed in over a moment at its turn, none pops up whole.
         let stage = reveal
         func ramp(_ from: Float) -> Float { min(1, max(0, (stage - from) / 0.07)) }
-        quad(sea, texturePipeline, x: 0, y: 0, width: map.width, height: map.height)
+        // 1. 精致多层海洋渲染：在海图深度纹理之上叠加铜版细浪纹理、微洋流与古纸颗粒，远近皆细腻通透。
+        quad(sea, seaPipeline, x: 0, y: 0, width: map.width, height: map.height)
         if reveal < 0.2 {
             // Blank paper over the sea, soaked through from the middle of the sheet outwards.
             var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
@@ -868,9 +888,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         } else if coastInk != nil { coastInk = nil }
         if display.provinceLines { colored(provinceLines, alpha: ramp(0.5)) }
         if let rivers, reveal > 0.42 {
-            var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, ramp(0.42))
+            // 双层真实河道：先绘微偏移深青河岸暗影，再绘湛蓝清澈河心水体，层次立体自然。
+            let rAlpha = ramp(0.42)
+            var bankColor = SIMD4<Float>(MapLayers.river.r * 0.56, MapLayers.river.g * 0.62, MapLayers.river.b * 0.68, rAlpha * 0.52)
+            var bankU = u
+            bankU.center.x -= 0.45 / max(0.3, u.scale)
+            bankU.center.y -= 0.55 / max(0.3, u.scale)
             encoder.setRenderPipelineState(flatPipeline)
             encoder.setVertexBuffer(rivers.buffer, offset: 0, index: 0)
+            encoder.setVertexBytes(&bankU, length: uniformLength, index: 2)
+            encoder.setFragmentBytes(&bankColor, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
+
+            var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, rAlpha)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
@@ -903,9 +933,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // on a phone screen; the scroll edge below (a soft aged wash) frames the map instead.
         _ = mount
         if display.parchment {
-            // A little past the map: the parchment lies over the paper mounting too.
-            let r = map.meta.parchment
-            quad(parchment, multiplyPipeline, x: r.x - 70, y: r.y - 70, width: r.width + 140, height: r.height + 140)
+            // 严丝合缝裁切在地图画心 (0, 0, map.width, map.height) 内，彻底杜绝旧版羊皮纸外漏在画框下方的难看凸块！
+            quad(parchment, multiplyPipeline, x: 0, y: 0, width: map.width, height: map.height)
         }
         if display.scrollMount ?? display.darkEdges { colored(frame) }
         encoder.endEncoding()
@@ -1091,6 +1120,66 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         return float4(t.sample(s, in.uv).rgb, 1.0);
+    }
+    // 全视口无缝「御案织锦」书案背景：温润云锦暗纹 + 细腻织丝肌理 + 柔和书案暗角，拉远全图视野上下浑然一体。
+    struct DeskOut { float4 position [[position]]; float2 uv; float2 screenPx; };
+    vertex DeskOut deskVertex(uint id [[vertex_id]], constant Uniforms& u [[buffer(2)]]) {
+        const float2 ndc[6] = { float2(-1, -1), float2(1, -1), float2(-1, 1), float2(-1, 1), float2(1, -1), float2(1, 1) };
+        float2 p = ndc[id];
+        DeskOut o;
+        o.position = float4(p, 0.0, 1.0);
+        o.uv = p * 0.5 + 0.5;
+        o.screenPx = o.uv * u.viewport;
+        return o;
+    }
+    fragment float4 deskFragment(DeskOut in [[stage_in]]) {
+        float2 p = in.screenPx;
+        // 细腻双经纬织锦丝纹 + 典雅云锦菱格暗花
+        float warp = sin(p.x * 1.45) * 0.5 + 0.5;
+        float weft = sin(p.y * 1.45) * 0.5 + 0.5;
+        float weave = (warp * 0.5 + weft * 0.5 - 0.5) * 0.016;
+        float2 dCell = fract(p / 38.0) - 0.5;
+        float diamond = abs(dCell.x) + abs(dCell.y);
+        float damask = smoothstep(0.46, 0.50, diamond) * (1.0 - smoothstep(0.50, 0.54, diamond)) * 0.022;
+        float paperGrain = (vnoise(p * 0.14) - 0.5) * 0.028;
+        // 柔和书案中心聚光：中央暖玉宣帛 -> 四角沉稳古茶暗晕
+        float2 c = (in.uv - 0.5) * float2(1.45, 1.35);
+        float r2 = clamp(dot(c, c), 0.0, 1.2);
+        float3 centerTone = float3(0.892, 0.854, 0.778);
+        float3 outerTone = float3(0.768, 0.708, 0.606);
+        float3 rgb = mix(centerTone, outerTone, smoothstep(0.08, 0.98, r2));
+        rgb = clamp(rgb + weave + damask + paperGrain, 0.0, 1.0);
+        return float4(rgb, 1.0);
+    }
+    // 海洋多层古图着色：融合深度海图纹理、铜版细波纹、微洋流丝晕与近景宣纸纤维，彻底告别低分模糊海面。
+    struct SeaOut { float4 position [[position]]; float2 uv; float2 world; float scale; };
+    vertex SeaOut seaVertex(uint id [[vertex_id]], constant Uniforms& u [[buffer(2)]], constant QuadUniforms& q [[buffer(3)]]) {
+        const float2 corners[6] = { float2(0, 0), float2(1, 0), float2(0, 1), float2(0, 1), float2(1, 0), float2(1, 1) };
+        float2 c = corners[id];
+        float2 w = q.origin + c * q.size;
+        SeaOut o;
+        o.position = clip(w, u, float2(0.0));
+        o.uv = c;
+        o.world = w;
+        o.scale = u.scale;
+        return o;
+    }
+    fragment float4 seaFragment(SeaOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
+        float3 base = t.sample(s, in.uv).rgb;
+        float detail = clamp((in.scale - 0.35) / 1.4, 0.0, 1.0);
+        // 铜版水平微浪纹 + 缓慢洋流宽带明暗
+        float2 w = in.world;
+        float current = (fbm(w * 0.011 + float2(4.2, 8.7)) - 0.5) * 0.055;
+        float ripplePhase = w.y * 0.85 + sin(w.x * 0.16 + fbm(w * 0.05) * 3.0) * 1.4;
+        float engraving = sin(ripplePhase) * 0.014 * detail;
+        float grain = (vnoise(w * 0.65) - 0.5) * 0.024;
+        // 极轻的南北极洋冷暖微调与深海层次
+        float lum = dot(base, float3(0.299, 0.587, 0.114));
+        float3 shallowTint = float3(0.985, 1.018, 1.015);
+        float3 deepTint = float3(0.965, 0.985, 1.022);
+        float3 rgb = base * mix(deepTint, shallowTint, smoothstep(0.32, 0.68, lum));
+        rgb = clamp(rgb + current + engraving + grain, 0.0, 1.0);
+        return float4(rgb, 1.0);
     }
     """
 }

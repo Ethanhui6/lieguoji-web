@@ -314,7 +314,7 @@ struct MapView: UIViewRepresentable {
         private var shownViewLabels: [GroupLabel]?
         private var lastAppearanceKey: (mode: MapMode, highlight: Int?, relations: [Int: UInt32], fills: [RGB]?, view: String)?
         private var lastBorderWide: Set<Int> = []
-        private var scrollEdgeMargin: Double { (controller.display.scrollMount ?? controller.display.darkEdges) ? 24 : 0 }
+        private var scrollEdgeMargin: Double { (controller.display.scrollMount ?? controller.display.darkEdges) ? 58 : 12 }
         /// 仅在手指拖拽、双指缩放或镜头飞行期间启用同事务呈现，其余看海行军帧改用异步提交，彻底解除主线程 waitUntilScheduled 阻塞与发热。
         private func setSyncPresent(_ sync: Bool) {
             guard mtk != nil, mtk.presentsWithTransaction != sync else { return }
@@ -801,9 +801,9 @@ struct MapView: UIViewRepresentable {
             if controller.worldRevision != shownRevision, let next = controller.world, Self.worldChanged(next, map) {
                 shownRevision = controller.worldRevision
                 map = next
-                renderer?.setMap(next, replayFast: controller.replayLocked && !controller.replayAnimate)
-                // City names never change hands with a province: only the state names are rebuilt.
-                labels.setCities(map: next)
+                renderer?.setMap(next, skipStatic: controller.replayLocked, animateColors: !controller.replayLocked || controller.replayAnimate)
+                // 回放期间城池位置不变，跳过主线程 CoreText 全城重绘，彻底消除逐帧掉帧与卡顿。
+                if !controller.replayLocked { labels.setCities(map: next) }
                 // Daily border changes swap the names in place; only a view switch cross-fades.
                 if let groups = controller.viewLabels { labels.setGroups(groups, animated: false) } else { labels.setNations(map: next, animated: false) }
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
@@ -883,7 +883,7 @@ struct MapView: UIViewRepresentable {
                 }
             }
             if let renderer {
-                let wantArmies = controller.play.showArmies || (controller.replayLocked && controller.replayAnimate)
+                let wantArmies = controller.play.showArmies || controller.replayLocked
                 if renderer.showArmies != wantArmies || renderer.iconScale != Float(controller.play.iconScale) { dirty = true }
                 renderer.showArmies = wantArmies
                 renderer.iconScale = Float(controller.play.iconScale)

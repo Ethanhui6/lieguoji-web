@@ -110,8 +110,8 @@ struct PersonEditor: View {
                             } label: {
                                 Text(t).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                                     .frame(maxWidth: .infinity).frame(height: 32)
-                                    .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 8))
-                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(on ? Color.clear : Theme.line))
+                                    .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(on ? Color.clear : Theme.line))
                             }
                             .buttonStyle(PressStyle())
                         }

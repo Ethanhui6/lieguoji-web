@@ -37,6 +37,93 @@ public enum Opening {
         return (seeds, owners)
     }
 
+    /// 有机地形阻力扩张（供自绘地图「划定列国」均衡重分使用）：山地与陡坡代价更高，天然沿山脊与河谷分疆，不生硬方正。
+    public static func organicAssign(centers: [(Float, Float)], heights: [Float], neighbors: [[Int]], seeds: [Int], salt: Int = 1) -> [Int] {
+        let count = centers.count
+        guard count > 0, !seeds.isEmpty else { return [] }
+        var owners = [Int](repeating: -1, count: count)
+        var bestCost = [Float](repeating: .infinity, count: count)
+        var frontier = [(node: Int, cost: Float, nation: Int)]()
+        for (k, s) in seeds.enumerated() where s >= 0 && s < count {
+            owners[s] = k; bestCost[s] = 0; frontier.append((s, 0, k))
+        }
+        // 轻微的确定性国家扩张系数差异 + 地形高差阻力，自然形成大小错落、顺山势绵延的版图
+        let pace: [Float] = seeds.indices.map { 0.88 + Float((($0 * 53 + salt * 17) & 0x1F)) / 120.0 }
+        while !frontier.isEmpty {
+            var bestIdx = 0
+            for i in 1..<frontier.count where frontier[i].cost < frontier[bestIdx].cost { bestIdx = i }
+            let cur = frontier.remove(at: bestIdx)
+            if cur.cost > bestCost[cur.node] + 0.001 { continue }
+            for nb in neighbors[cur.node] where nb >= 0 && nb < count {
+                let dx = centers[nb].0 - centers[cur.node].0, dy = centers[nb].1 - centers[cur.node].1
+                let dist = max(1, (dx * dx + dy * dy).squareRoot())
+                let hCur = heights.indices.contains(cur.node) ? heights[cur.node] : 30
+                let hNb = heights.indices.contains(nb) ? heights[nb] : 30
+                let mountainCost: Float = 1 + max(0, (hCur + hNb) * 0.5 - 52) * 0.045 + abs(hNb - hCur) * 0.025
+                let jitter: Float = 0.86 + Float(((nb &* 2654435761 ^ cur.nation &* 40503 ^ salt) >> 16) & 0x1F) / 110.0
+                let nextCost = cur.cost + dist * mountainCost * pace[cur.nation] * jitter
+                if nextCost < bestCost[nb] {
+                    bestCost[nb] = nextCost
+                    owners[nb] = cur.nation
+                    frontier.append((nb, nextCost, cur.nation))
+                }
+            }
+        }
+        for i in 0..<count where owners[i] < 0 {
+            func d(_ s: Int) -> Float {
+                let dx = centers[i].0 - centers[s].0, dy = centers[i].1 - centers[s].1
+                return dx * dx + dy * dy
+            }
+            owners[i] = seeds.indices.min { d(seeds[$0]) < d(seeds[$1]) } ?? 0
+        }
+        return owners
+    }
+
+    /// 自然有机开局版图：都城优先择肥沃盆地与河海要冲，疆界按山脊与高差阻力自然延展，杜绝生硬方正的格子轮廓。
+    public static func organicLayout(_ regions: [Regions.Region], count: Int, seed: String) -> (seeds: [Int], owners: [Int]) {
+        guard !regions.isEmpty, count > 0 else { return ([], []) }
+        let target = min(count, regions.count)
+        let hSeed = hash(seed)
+        let salt = Int(hSeed & 0x7FFF) + 1
+        func jitter(_ idx: Int, _ step: Int) -> Double {
+            let x = (UInt64(idx &+ 1) &* 2654435761) ^ (UInt64(step &+ 1) &* 40503) ^ UInt64(hSeed)
+            let v = Double((x >> 11) & 0x3FF) / 1023.0
+            return 0.84 + v * 0.32
+        }
+        func distSq(_ a: (Double, Double), _ b: (Double, Double)) -> Double {
+            let dx = a.0 - b.0, dy = a.1 - b.1
+            return dx * dx + dy * dy
+        }
+        // 首座都城：偏好开阔平原／河谷且带轻微种子差异
+        var first = 0
+        var firstScore = -1.0
+        for i in regions.indices {
+            let area = Regions.polygonArea(regions[i].ring)
+            let h = regions[i].height
+            let reliefBonus = (h >= 20 && h <= 56) ? 1.25 : (h > 68 ? 0.62 : 0.92)
+            let sc = area * reliefBonus * jitter(i, 0)
+            if sc > firstScore { firstScore = sc; first = i }
+        }
+        var seeds = [first]
+        while seeds.count < target {
+            var best = -1, bestScore = -1.0
+            for i in regions.indices where !seeds.contains(i) {
+                let minD = seeds.map { distSq(regions[i].center, regions[$0].center) }.min() ?? 0
+                let h = regions[i].height
+                let habitability = h > 68 ? 0.70 : (h <= 52 ? 1.12 : 0.95)
+                let sc = minD * habitability * jitter(i, seeds.count)
+                if sc > bestScore { bestScore = sc; best = i }
+            }
+            guard best >= 0 else { break }
+            seeds.append(best)
+        }
+        let centers = regions.map { (Float($0.center.0), Float($0.center.1)) }
+        let heights = regions.map { Float($0.height) }
+        let neighbors = regions.map(\.neighbors)
+        let owners = organicAssign(centers: centers, heights: heights, neighbors: neighbors, seeds: seeds, salt: salt)
+        return (seeds, owners)
+    }
+
     static func hash(_ s: String) -> UInt32 {
         var h: UInt32 = 2166136261
         for c in s.unicodeScalars { let unit = String(c).utf16.first!; h = (h ^ UInt32(unit)) &* 16777619 }

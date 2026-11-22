@@ -29,7 +29,7 @@ struct NationsSheet: View {
                             let n = map.meta.nations[i], s = state.nations[i]
                             Button { select(i) } label: {
                                 HStack(spacing: 12) {
-                                    RoundedRectangle(cornerRadius: 5).fill(Names.color(n.color)).frame(width: 22, height: 22)
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Names.color(n.color)).frame(width: 22, height: 22)
                                     VStack(alignment: .leading, spacing: 3) {
                                         HStack(spacing: 6) {
                                             Text(n.name).font(Theme.section).foregroundStyle(s.alive ? Theme.ink : Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)

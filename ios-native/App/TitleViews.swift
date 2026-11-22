@@ -846,8 +846,7 @@ struct FoundingView: View {
                 .animation(Motion.fade, value: waited > 20)
                 .padding(.horizontal, 20).padding(.vertical, 16)
                 .frame(maxWidth: 360, alignment: .leading)
-                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous)))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 1))
+                .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerSheet, style: .continuous))
                 .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
                 .padding(.bottom, 40)
             }

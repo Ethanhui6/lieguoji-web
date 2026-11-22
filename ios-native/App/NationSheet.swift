@@ -1270,7 +1270,7 @@ struct NationSheet: View {
                     Button { if !PressGuard.consume() { appointing = AppointTarget(office: o.office) } } label: {
                         HStack(spacing: 10) {
                             Text(Self.title(o.office, info)).font(Theme.body).foregroundStyle(Theme.paper2).lineLimit(1).minimumScaleFactor(0.6)
-                                .frame(width: 70, height: 26).background(Theme.seal.opacity(o.name.isEmpty ? 0.35 : 0.85), in: RoundedRectangle(cornerRadius: 5))
+                                .frame(width: 70, height: 26).background(Theme.seal.opacity(o.name.isEmpty ? 0.35 : 0.85), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                             Text(o.name.isEmpty ? "空缺" : o.name).font(Theme.body).foregroundStyle(o.name.isEmpty ? Theme.ink2 : Theme.ink).lineLimit(1)
                             if !o.name.isEmpty { Text("\(Int(o.age))岁").font(Theme.caption).foregroundStyle(Theme.ink2) }
                             Spacer(minLength: 6)

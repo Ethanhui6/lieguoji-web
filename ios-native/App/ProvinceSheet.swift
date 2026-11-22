@@ -241,7 +241,7 @@ struct ProvinceSheet: View {
         if let n = nation {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
                 quickTile(title: "国家详情", glyph: .nation, tint: Theme.seal) { openNation(owner) }
-                quickTile(title: "划入他国", glyph: .brush, tint: Theme.ink) { grantTarget = -1; granting = true }
+                quickTile(title: "划入他国", glyph: .brush, tint: Theme.seal) { grantTarget = -1; granting = true }
                 quickTile(title: "在此立国", glyph: .fire, tint: Theme.seal) {
                     pressMenu = PressMenu(title: "在\(p.name)建立新国家", subtitle: "按本州文化生成国号、君主与家族", items: [
                         PressMenuItem(title: "和平独立", symbol: "leaf") { Task { report(await model.foundNation(province, war: false), "新国已立"); self.info = await model.provinceInfo(province) } },
@@ -351,7 +351,8 @@ struct ProvinceSheet: View {
                 Row(label: "存粮", value: Int(info.grain).formatted()); Divider2()
                 if let good = info.specialty {
                     Button { pickingGood = true } label: {
-                        HStack {
+                        HStack(spacing: 8) {
+                            Glyph.icon("特产")
                             Text("特产").foregroundStyle(Theme.ink2)
                             Spacer()
                             Text(good).foregroundStyle(Theme.ink)
@@ -364,7 +365,8 @@ struct ProvinceSheet: View {
                 }
                 if let g = region {
                     Button { regionActions = true } label: {
-                        HStack {
+                        HStack(spacing: 8) {
+                            Glyph.icon("区域")
                             Text("区域").foregroundStyle(Theme.ink2)
                             Spacer()
                             Text("\(g.name) · \(g.provinces.count)州 · \(Names.wan(Int(g.population)))人").foregroundStyle(Theme.ink).lineLimit(1)
@@ -380,7 +382,8 @@ struct ProvinceSheet: View {
                     Divider2()
                 }
                 Button { pickingCulture = true } label: {
-                    HStack {
+                    HStack(spacing: 8) {
+                        Glyph.icon("本地文化")
                         Text("本地文化").foregroundStyle(Theme.ink2)
                         Spacer()
                         Text(Names.culture[info.cityCulture ?? ""] ?? info.cityCulture ?? "—").foregroundStyle(Theme.ink)

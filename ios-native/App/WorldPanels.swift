@@ -240,48 +240,58 @@ struct ProvinceWarView: View {
 /// found wins (the more specific ones come first).
 enum Glyph {
     static let table: [(String, String)] = [
-        // 分页 (every tab bar).
+        // 分页与标签栏（所有 Tab 均完整配图，杜绝同排有图无图割裂）
         ("概览", "doc.text.magnifyingglass"), ("政令", "seal"), ("疆土", "square.grid.3x3"), ("朝政", "building.columns"), ("军事", "shield.lefthalf.filled"), ("自定义", "slider.horizontal.3"),
-        ("邦交总览", "person.2"), ("外交施令", "scroll"), ("当前战事", "flag.2.crossed"),
+        ("地利", "mountain.2"), ("政区", "square.grid.3x3"), ("军令", "flag"), ("整编", "shield"), ("履历", "book.pages"), ("战绩", "trophy"),
+        ("邦交总览", "person.2"), ("遣使", "scroll"), ("外交施令", "scroll"), ("当前战事", "flag.2.crossed"), ("列国战局", "flag.2.crossed"),
+        ("全部时间", "clock.arrow.circlepath"), ("重大转折", "flame"), ("可续推", "bookmark"),
+        ("通商", "shippingbox"), ("共防", "shield"), ("互不侵犯", "leaf"), ("联姻", "heart"), ("通行", "figure.walk"), ("赠金", "banknote"), ("通牒", "flame"), ("谍报", "eye"),
         ("按人口", "person.3"), ("按城防", "building.2"), ("按州名", "map"),
-        ("游戏", "gamecontroller"), ("地图显示", "map"), ("声音与其他", "speaker.wave.2"), ("全部", "square.grid.2x2"), ("交战围城", "flag.2.crossed"), ("战局", "map"),
-        ("亲自指挥", "hand.point.up.left"), ("舰队", "sailboat"), ("排行", "list.number"), ("统计", "chart.bar"), ("纪事", "book.pages"), ("史册", "book.pages"), ("国史", "book.pages"), ("回放", "clock.arrow.circlepath"),
-        ("军情", "binoculars"),
-        // 国势 (the nation page's five rows: every row carries its icon, not 财政 alone).
+        ("游戏", "trophy"), ("地图显示", "map"), ("声音与其他", "speaker.wave.2"), ("全部", "square.grid.2x2"), ("交战围城", "flag.2.crossed"), ("战局", "flag.2.crossed"),
+        ("亲自指挥", "flag"), ("舰队", "sailboat"), ("排行", "list.number"), ("统计", "chart.bar"), ("纪事", "book.pages"), ("史册", "book.pages"), ("国史", "book.pages"), ("回放", "clock.arrow.circlepath"),
+        ("军情", "eye"),
+        // 国势与州郡
         ("军略", "flag.2.crossed"), ("守御", "shield.lefthalf.filled"), ("财政", "banknote"), ("民生", "leaf"), ("安定", "house"),
-        // 设置与菜单 (more specific words first: the first match wins).
-        ("国界", "square.dashed"), ("行省边界", "square.grid.2x2"), ("省界", "square.grid.2x2"), ("航线", "ferry"), ("经纬线", "globe"),
-        ("城市名称", "textformat"), ("城市图标", "building.2"), ("国名", "character.textbox"), ("全称", "character.textbox"),
-        ("地貌", "mountain.2"), ("植被", "tree"), ("山脉", "mountain.2"), ("河流", "water.waves"), ("海洋", "water.waves"), ("暗边", "circle.lefthalf.filled"),
-        ("颜色", "paintpalette"), ("国色", "paintpalette"), ("浓度", "drop.halffull"),
-        ("音乐", "music.note"), ("音效", "speaker.wave.2"), ("声音", "speaker.wave.2"), ("震动", "iphone.radiowaves.left.and.right"), ("触感", "iphone.radiowaves.left.and.right"),
-        ("帧率", "speedometer"), ("流畅", "speedometer"), ("画质", "photo"), ("分辨率", "photo"), ("降温", "thermometer.snowflake"), ("发热", "thermometer.sun"), ("耗时", "stopwatch"), ("调试", "ladybug"),
-        ("自动存档", "clock.arrow.circlepath"), ("存档", "tray.and.arrow.down"), ("开场", "film"), ("镜头", "camera.viewfinder"), ("动画", "sparkles.rectangle.stack"),
-        ("箭头", "arrow.up.right"), ("军旗", "flag"), ("军队图标", "shield"), ("显示军队", "eye"), ("兵力数字", "number"),
-        ("战争期限", "hourglass"), ("间隔", "timer"), ("自主结盟", "person.2"), ("允许", "checkmark.seal"), ("附庸叛变", "crown"), ("自动", "gearshape.2"), ("外交", "scroll"), ("同盟", "person.2"), ("附庸", "crown"), ("停战", "hand.raised"), ("条约", "doc.text"), ("宣战", "flag.2.crossed"), ("战争", "flag.2.crossed"),
-        ("叛乱", "flame"), ("内战", "flame"), ("天灾", "cloud.bolt.rain"), ("家族", "person.3"), ("世家", "person.3"), ("继承", "person.badge.clock"), ("君主", "crown"), ("年龄", "calendar"), ("纪年", "calendar"),
-        ("都城", "star"), ("性格", "theatermasks"), ("好战", "bolt"), ("生计", "leaf"), ("国家", "flag"), ("州", "map"), ("省", "map"), ("种子", "dice"),
+        ("法理", "seal"), ("圣地", "sun.max"), ("海港", "anchor"), ("港口", "anchor"), ("控制度", "shield"), ("军功", "trophy"),
+        // 设置、装裱与菜单（所有键均映射至统一手绘 InkGlyph）
+        ("国界", "square.grid.3x3"), ("行省边界", "square.grid.2x2"), ("省界", "square.grid.2x2"), ("航线", "ferry"), ("经纬线", "map"),
+        ("城市名称", "book.closed"), ("城市图标", "building.2"), ("国名", "book.closed"), ("全称", "book.closed"), ("大小", "eye"),
+        ("羊皮纸", "photo.artframe"), ("卷轴", "scroll"), ("装裱", "photo.artframe"), ("舆图", "map"), ("晕染", "paintbrush"),
+        ("浮印", "seal"), ("传报", "scroll"), ("飘字", "flame"), ("波浪", "water.waves"), ("海色", "water.waves"),
+        ("地貌", "mountain.2"), ("植被", "leaf"), ("山脉", "mountain.2"), ("河流", "water.waves"), ("海洋", "water.waves"), ("海岸", "water.waves"), ("暗边", "eye"),
+        ("颜色", "paintpalette"), ("国色", "paintpalette"), ("浓度", "drop"),
+        ("音乐", "music.note"), ("音效", "speaker.wave.2"), ("音量", "speaker.wave.2"), ("声音", "speaker.wave.2"), ("震动", "speaker.wave.2"), ("触感", "speaker.wave.2"),
+        ("粒子", "flame"), ("特效", "flame"), ("电脑", "arrow.left.arrow.right"), ("远程", "arrow.left.arrow.right"),
+        ("帧率", "speedometer"), ("流畅", "speedometer"), ("画质", "photo"), ("分辨率", "photo"), ("降温", "speedometer"), ("发热", "speedometer"), ("耗时", "calendar"), ("调试", "gearshape"),
+        ("自动存档", "clock.arrow.circlepath"), ("存档", "bookmark"), ("暂停", "pause"), ("开场", "photo.artframe"), ("镜头", "eye"), ("动画", "sparkles"),
+        ("箭头", "arrow.up.right"), ("军旗", "flag"), ("军队图标", "shield"), ("显示军队", "eye"), ("兵力数字", "list.number"),
+        ("战争期限", "calendar"), ("间隔", "calendar"), ("频率", "speedometer"), ("烈度", "flame"), ("速度", "speedometer"), ("规模", "shield"), ("造舰", "sailboat"), ("事件", "book.pages"),
+        ("停止", "leaf"), ("解除", "person.2"), ("自主结盟", "person.2"), ("允许", "checkmark.seal"), ("附庸叛变", "crown"), ("自动", "gearshape.2"),
+        ("外交", "scroll"), ("同盟", "person.2"), ("附庸", "crown"), ("停战", "hand.raised"), ("条约", "doc.text"), ("宣战", "flag.2.crossed"), ("战争", "flag.2.crossed"),
+        ("叛乱", "flame"), ("内战", "flame"), ("天灾", "flame"), ("家族", "person.3"), ("世家", "person.3"), ("继承", "person"), ("君主", "crown"), ("年龄", "calendar"), ("纪年", "calendar"),
+        ("都城", "star"), ("性格", "person"), ("好战", "bolt"), ("生计", "leaf"), ("国家", "flag"), ("州", "map"), ("省", "map"), ("种子", "dice"),
         ("疆域", "map"), ("现存", "flag"), ("人口上限", "person.3.sequence"), ("人口", "person.3"), ("信徒", "person.3"),
-        ("战役", "flag.2.crossed"), ("参战", "flag.2.crossed"), ("歼灭", "scope"), ("折损", "cross.case"),
+        ("战役", "flag.2.crossed"), ("参战", "flag.2.crossed"), ("歼灭", "scope"), ("折损", "shield"),
         ("战争状态", "exclamationmark.shield"), ("交战", "exclamationmark.shield"), ("城市防御", "building.2"), ("城防", "building.2"),
-        ("兵力", "shield.lefthalf.filled"), ("满编", "shield.lefthalf.filled"), ("军队", "shield.lefthalf.filled"), ("编制", "flag"),
+        ("兵力", "shield.lefthalf.filled"), ("满编", "shield.lefthalf.filled"), ("军队", "shield.lefthalf.filled"), ("编制", "flag"), ("驻军", "shield"),
         ("士气", "flame"), ("粮", "leaf"), ("补给", "leaf"),
-        ("国库", "banknote"), ("月入", "banknote"), ("收入", "banknote"), ("金", "banknote"), ("财", "banknote"), ("增收", "chart.line.uptrend.xyaxis"),
-        ("国运", "sparkles"), ("施政", "building.columns"), ("地方官", "person.text.rectangle"), ("国策", "scroll"),
-        ("政体", "crown"), ("文化", "book.closed"), ("宗教", "book.closed"),
+        ("国库", "banknote"), ("月入", "banknote"), ("收入", "banknote"), ("金", "banknote"), ("财", "banknote"), ("增收", "banknote"),
+        ("国运", "sparkles"), ("施政", "building.columns"), ("地方官", "person"), ("国策", "scroll"), ("党派", "building.columns"),
+        ("政体", "building.columns"), ("文化", "book.closed"), ("宗教", "sun.max"), ("统帅", "person"), ("将领", "person"),
         ("州郡", "map"), ("行省", "map"), ("领土", "map"), ("区域", "square.grid.3x3"), ("特产", "shippingbox"),
-        ("当前状态", "figure.walk"), ("征召", "house"), ("服役", "hourglass"), ("首都", "star"),
+        ("当前状态", "figure.walk"), ("征召", "house"), ("服役", "calendar"), ("首都", "star"), ("笔刷", "paintbrush"), ("强度", "speedometer"), ("柔和", "leaf"), ("目标高", "mountain.2"),
     ]
     static func of(_ label: String) -> String? { table.first { label.contains($0.0) }?.1 }
-    /// A small line icon in the seal colour, the same at every row (手绘水墨图标优先).
-    @ViewBuilder static func icon(_ label: String, size: CGFloat = 14) -> some View {
-        if let s = of(label) {
-            if let g = GameActionLabel.glyph(for: s) {
-                InkIcon(glyph: g, size: size + 2, weight: 1.65, accent: Theme.seal.opacity(0.22))
-                    .foregroundStyle(Theme.seal.opacity(0.85)).frame(width: size + 8)
-            } else {
-                Image(systemName: s).font(.system(size: size, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.8)).frame(width: size + 8)
-            }
+    /// 全作统一的手绘水墨行标图标：统一朱砂色阶，可选兜底图标保证同类列表中每行严格对齐、绝不出现无图标孤行。
+    @ViewBuilder static func icon(_ label: String, size: CGFloat = 14, fallback: InkGlyph? = nil) -> some View {
+        if let s = of(label), let g = GameActionLabel.glyph(for: s) {
+            InkIcon(glyph: g, size: size + 2, weight: 1.65, accent: Theme.seal.opacity(0.22))
+                .foregroundStyle(Theme.seal.opacity(0.86)).frame(width: size + 8)
+        } else if let fallback {
+            InkIcon(glyph: fallback, size: size + 2, weight: 1.65, accent: Theme.seal.opacity(0.22))
+                .foregroundStyle(Theme.seal.opacity(0.86)).frame(width: size + 8)
+        } else if let s = of(label) {
+            Image(systemName: s).font(.system(size: size, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.84)).frame(width: size + 8)
         }
     }
 }
@@ -357,8 +367,8 @@ struct FaithCard: View {
                     Text("教规").font(Theme.label).foregroundStyle(Theme.ink2)
                     ForEach(f.practices, id: \.self) { p in
                         Text(p).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
-                            .padding(.horizontal, 7).padding(.vertical, 3).background(Theme.paper2, in: RoundedRectangle(cornerRadius: 5))
-                            .overlay(RoundedRectangle(cornerRadius: 5).stroke(Theme.line))
+                            .padding(.horizontal, 7).padding(.vertical, 3).background(Theme.paper2, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.line))
                     }
                 }
                 Text("信徒约 \(Names.wan(followers.reduce(0) { $0 + $1.population })) · 奉行国家 \(followers.count) 个").font(Theme.label).foregroundStyle(Theme.ink2)

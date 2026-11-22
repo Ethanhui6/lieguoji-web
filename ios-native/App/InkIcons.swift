@@ -17,6 +17,9 @@ enum InkGlyph: String, CaseIterable {
     case locate, replay, rewind, stepBack, stepForward
     case search, settings, refresh, archive, importSave
     case brush, fortress, anchor, fire, retreat, march
+    // 2.5.0 全量补齐手绘水墨图标（湖泊、群岛、增减、废除、交换、显隐、历法、封存、导出、壁纸、丝竹、时速、爵杯、人物、偃兵）
+    case lake, island, plus, minus, trash, swap, eye, calendar
+    case save, export, wallpaper, sound, speed, trophy, person, peace
 }
 
 struct InkIcon: View {
@@ -283,8 +286,21 @@ struct InkAccentPath: Shape {
             p.addQuadCurve(to: pt(7.6, 14.6), control: pt(8.5, 18.8)); p.addQuadCurve(to: pt(12, 7.2), control: pt(6.6, 11.2)); p.closeSubpath()
         case .archive:
             p.addRoundedRect(in: CGRect(origin: pt(9.8, 5.2), size: CGSize(width: 4.4 * k, height: 14.4 * k)), cornerSize: CGSize(width: 0.8 * k, height: 0.8 * k))
+        case .lake:
+            p.addEllipse(in: CGRect(origin: pt(6.5, 9.0), size: CGSize(width: 11.0 * k, height: 6.4 * k)))
+        case .island:
+            p.addEllipse(in: CGRect(origin: pt(6.0, 9.5), size: CGSize(width: 5.5 * k, height: 3.4 * k)))
+            p.addEllipse(in: CGRect(origin: pt(13.2, 7.6), size: CGSize(width: 4.6 * k, height: 3.0 * k)))
+        case .trophy:
+            p.move(to: pt(7.2, 6.2)); p.addLine(to: pt(16.8, 6.2)); p.addQuadCurve(to: pt(12, 13.8), control: pt(16.2, 12.2))
+            p.addQuadCurve(to: pt(7.2, 6.2), control: pt(7.8, 12.2)); p.closeSubpath()
+        case .eye:
+            p.addEllipse(in: CGRect(origin: pt(9.8, 9.8), size: CGSize(width: 4.4 * k, height: 4.4 * k)))
+        case .wallpaper:
+            p.addEllipse(in: CGRect(origin: pt(14.5, 6.8), size: CGSize(width: 2.8 * k, height: 2.8 * k)))
         case .sea, .plain, .mountain, .raise, .lower, .smooth, .menu, .close,
-             .search, .settings, .refresh, .importSave, .brush, .anchor, .retreat, .march:
+             .search, .settings, .refresh, .importSave, .brush, .anchor, .retreat, .march,
+             .plus, .minus, .trash, .swap, .calendar, .save, .export, .sound, .speed, .person, .peace:
             break
         }
         return p
@@ -531,6 +547,97 @@ struct InkPath: Shape {
             p.move(to: pt(4.8, 19.2)); p.addLine(to: pt(18.8, 5.2))
             p.move(to: pt(10.8, 5.2)); p.addLine(to: pt(18.8, 5.2)); p.addLine(to: pt(18.8, 13.2))
             p.move(to: pt(4.2, 11.8)); p.addLine(to: pt(8.6, 11.8)); p.addLine(to: pt(8.6, 15.8))
+        case .lake:
+            // 内陆明湖：水潭轮廓与平镜细波。
+            p.move(to: pt(3.5, 12.2))
+            p.addQuadCurve(to: pt(12.2, 6.8), control: pt(5.5, 6.2))
+            p.addQuadCurve(to: pt(20.5, 11.8), control: pt(18.8, 7.2))
+            p.addQuadCurve(to: pt(11.8, 17.6), control: pt(19.2, 17.8))
+            p.addQuadCurve(to: pt(3.5, 12.2), control: pt(4.6, 17.2))
+            p.move(to: pt(8.0, 11.2)); p.addLine(to: pt(15.6, 11.2))
+            p.move(to: pt(9.8, 14.0)); p.addLine(to: pt(14.6, 14.0))
+        case .island:
+            // 星罗群岛：三岛浮波。
+            p.move(to: pt(4.0, 14.0)); p.addQuadCurve(to: pt(12.0, 14.0), control: pt(8.0, 8.2)); p.closeSubpath()
+            p.move(to: pt(12.6, 11.4)); p.addQuadCurve(to: pt(19.6, 11.4), control: pt(16.2, 6.8)); p.closeSubpath()
+            p.move(to: pt(3.0, 18.2)); p.addCurve(to: pt(21.0, 18.2), control1: pt(9.0, 15.2), control2: pt(15.0, 21.0))
+        case .plus:
+            p.addEllipse(in: CGRect(origin: pt(3.6, 3.6), size: CGSize(width: 16.8 * k, height: 16.8 * k)))
+            p.move(to: pt(12, 7.6)); p.addLine(to: pt(12, 16.4))
+            p.move(to: pt(7.6, 12)); p.addLine(to: pt(16.4, 12))
+        case .minus:
+            p.addEllipse(in: CGRect(origin: pt(3.6, 3.6), size: CGSize(width: 16.8 * k, height: 16.8 * k)))
+            p.move(to: pt(7.6, 12)); p.addLine(to: pt(16.4, 12))
+        case .trash:
+            // 废除删削：简牍匣与竖格。
+            p.move(to: pt(4.6, 6.8)); p.addLine(to: pt(19.4, 6.8))
+            p.move(to: pt(9.2, 4.2)); p.addLine(to: pt(14.8, 4.2))
+            p.move(to: pt(6.4, 6.8)); p.addLine(to: pt(7.6, 19.8)); p.addLine(to: pt(16.4, 19.8)); p.addLine(to: pt(17.6, 6.8))
+            p.move(to: pt(10.2, 10.2)); p.addLine(to: pt(10.5, 16.6))
+            p.move(to: pt(13.8, 10.2)); p.addLine(to: pt(13.5, 16.6))
+        case .swap:
+            // 易位换防：上下对向双箭。
+            p.move(to: pt(4.5, 8.6)); p.addLine(to: pt(19.2, 8.6))
+            p.move(to: pt(15.4, 5.2)); p.addLine(to: pt(19.2, 8.6)); p.addLine(to: pt(15.4, 12.0))
+            p.move(to: pt(19.5, 15.6)); p.addLine(to: pt(4.8, 15.6))
+            p.move(to: pt(8.6, 12.2)); p.addLine(to: pt(4.8, 15.6)); p.addLine(to: pt(8.6, 19.0))
+        case .eye:
+            // 观图明察：修眉杏目。
+            p.move(to: pt(2.8, 12.0)); p.addQuadCurve(to: pt(21.2, 12.0), control: pt(12.0, 5.0))
+            p.addQuadCurve(to: pt(2.8, 12.0), control: pt(12.0, 19.0))
+            p.addEllipse(in: CGRect(origin: pt(9.4, 9.4), size: CGSize(width: 5.2 * k, height: 5.2 * k)))
+        case .calendar:
+            // 纪年历书：历牌、挂环与横栏。
+            p.addRoundedRect(in: CGRect(origin: pt(4.2, 5.4), size: CGSize(width: 15.6 * k, height: 14.8 * k)), cornerSize: CGSize(width: 2.0 * k, height: 2.0 * k))
+            p.move(to: pt(8.4, 3.2)); p.addLine(to: pt(8.4, 7.2))
+            p.move(to: pt(15.6, 3.2)); p.addLine(to: pt(15.6, 7.2))
+            p.move(to: pt(4.2, 9.8)); p.addLine(to: pt(19.8, 9.8))
+            p.move(to: pt(8.2, 13.4)); p.addLine(to: pt(15.8, 13.4))
+            p.move(to: pt(8.2, 16.6)); p.addLine(to: pt(13.2, 16.6))
+        case .save:
+            // 封存秘档：书签封缄。
+            p.move(to: pt(6.0, 3.8)); p.addLine(to: pt(18.0, 3.8)); p.addLine(to: pt(18.0, 20.2))
+            p.addLine(to: pt(12.0, 16.0)); p.addLine(to: pt(6.0, 20.2)); p.closeSubpath()
+            p.move(to: pt(9.2, 9.0)); p.addLine(to: pt(14.8, 9.0))
+        case .export:
+            // 传抄输出：出匣上箭。
+            p.move(to: pt(12, 14.4)); p.addLine(to: pt(12, 3.8))
+            p.move(to: pt(8.2, 7.6)); p.addLine(to: pt(12, 3.6)); p.addLine(to: pt(15.8, 7.6))
+            p.move(to: pt(4.2, 13.8)); p.addLine(to: pt(4.2, 19.6)); p.addLine(to: pt(19.8, 19.6)); p.addLine(to: pt(19.8, 13.8))
+        case .wallpaper:
+            // 山水画帧：装裱框、远山与晓日。
+            p.addRoundedRect(in: CGRect(origin: pt(3.6, 4.6), size: CGSize(width: 16.8 * k, height: 14.8 * k)), cornerSize: CGSize(width: 2.0 * k, height: 2.0 * k))
+            p.move(to: pt(5.0, 17.2)); p.addLine(to: pt(10.0, 11.4)); p.addLine(to: pt(14.2, 15.2)); p.addLine(to: pt(16.6, 12.6)); p.addLine(to: pt(19.0, 17.2))
+            p.addEllipse(in: CGRect(origin: pt(14.4, 6.8), size: CGSize(width: 2.8 * k, height: 2.8 * k)))
+        case .sound:
+            // 编钟清韵：古钟与声波。
+            p.move(to: pt(5.2, 10.0)); p.addLine(to: pt(8.6, 10.0)); p.addLine(to: pt(13.4, 6.2)); p.addLine(to: pt(13.4, 17.8)); p.addLine(to: pt(8.6, 14.0)); p.addLine(to: pt(5.2, 14.0)); p.closeSubpath()
+            p.addArc(center: pt(14.2, 12.0), radius: 3.4 * k, startAngle: .degrees(-48), endAngle: .degrees(48), clockwise: false)
+            p.addArc(center: pt(14.2, 12.0), radius: 6.2 * k, startAngle: .degrees(-52), endAngle: .degrees(52), clockwise: false)
+        case .speed:
+            // 日晷时速：半圆表盘与斜针。
+            p.addArc(center: pt(12.0, 15.5), radius: 8.2 * k, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+            p.move(to: pt(3.8, 15.5)); p.addLine(to: pt(20.2, 15.5))
+            p.move(to: pt(12.0, 15.5)); p.addLine(to: pt(16.8, 9.8))
+            p.addEllipse(in: CGRect(origin: pt(10.6, 14.1), size: CGSize(width: 2.8 * k, height: 2.8 * k)))
+        case .trophy:
+            // 礼爵荣耀：青铜礼杯与双耳。
+            p.move(to: pt(6.8, 5.2)); p.addLine(to: pt(17.2, 5.2)); p.addQuadCurve(to: pt(12.0, 14.2), control: pt(16.8, 12.4))
+            p.addQuadCurve(to: pt(6.8, 5.2), control: pt(7.2, 12.4))
+            p.move(to: pt(6.8, 7.2)); p.addQuadCurve(to: pt(5.2, 11.4), control: pt(3.6, 8.6))
+            p.move(to: pt(17.2, 7.2)); p.addQuadCurve(to: pt(18.8, 11.4), control: pt(20.4, 8.6))
+            p.move(to: pt(12.0, 14.2)); p.addLine(to: pt(12.0, 18.8))
+            p.move(to: pt(8.0, 19.2)); p.addLine(to: pt(16.0, 19.2))
+        case .person:
+            // 儒生立像：首冠与拱袖肩线。
+            p.addEllipse(in: CGRect(origin: pt(8.6, 4.0), size: CGSize(width: 6.8 * k, height: 6.8 * k)))
+            p.move(to: pt(4.8, 20.0)); p.addQuadCurve(to: pt(12.0, 13.4), control: pt(5.4, 14.2))
+            p.addQuadCurve(to: pt(19.2, 20.0), control: pt(18.6, 14.2))
+        case .peace:
+            // 偃兵止戈：翠枝双叶。
+            p.move(to: pt(5.0, 19.2)); p.addQuadCurve(to: pt(18.8, 5.0), control: pt(10.5, 11.5))
+            p.move(to: pt(10.8, 13.4)); p.addQuadCurve(to: pt(16.8, 12.6), control: pt(14.0, 15.8))
+            p.move(to: pt(13.6, 10.4)); p.addQuadCurve(to: pt(11.6, 4.6), control: pt(16.0, 7.2))
         }
         return p
     }
@@ -576,6 +683,22 @@ struct GameActionLabel: View {
         case "flame", "flame.fill", "bolt": return .fire
         case "arrow.uturn.backward", "arrow.uturn.left": return .retreat
         case "arrow.triangle.turn.up.right.diamond", "arrow.up.right", "figure.walk": return .march
+        case "drop", "drop.fill", "water.waves": return .lake
+        case "circle.hexagongrid", "sparkles", "aqi.medium": return .island
+        case "plus", "plus.circle", "plus.circle.fill": return .plus
+        case "minus", "minus.circle": return .minus
+        case "trash", "trash.fill", "xmark.bin": return .trash
+        case "arrow.left.arrow.right", "arrow.2.squarepath", "square.stack.3d.up": return .swap
+        case "eye", "eye.fill", "eye.slash": return .eye
+        case "calendar", "calendar.badge.clock", "clock", "clock.fill": return .calendar
+        case "bookmark", "bookmark.fill", "opticaldisc", "tray.full": return .save
+        case "square.and.arrow.up", "arrow.up.doc": return .export
+        case "photo", "photo.artframe", "photo.on.rectangle": return .wallpaper
+        case "speaker.wave.2", "speaker.wave.2.fill", "music.note": return .sound
+        case "gauge.with.dots.needle.67percent", "speedometer", "bolt.fill", "hare", "tortoise": return .speed
+        case "trophy", "trophy.fill", "medal": return .trophy
+        case "person", "person.fill", "person.crop.circle": return .person
+        case "leaf", "leaf.fill", "hand.raised", "peace": return .peace
         default: return nil
         }
     }

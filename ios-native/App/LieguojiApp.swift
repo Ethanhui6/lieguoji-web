@@ -409,12 +409,12 @@ struct Row: View {
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .center, spacing: 16) {
-                HStack(spacing: 8) { Glyph.icon(label); Text(label).foregroundStyle(Theme.ink2) }.fixedSize()
+                HStack(spacing: 8) { Glyph.icon(label, fallback: .edict); Text(label).foregroundStyle(Theme.ink2) }.fixedSize()
                 Spacer(minLength: 12)
                 Text(value).foregroundStyle(Theme.ink).monospacedDigit().fixedSize()
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text(label).foregroundStyle(Theme.ink2)
+                HStack(spacing: 8) { Glyph.icon(label, fallback: .edict); Text(label).foregroundStyle(Theme.ink2) }
                 Text(value).foregroundStyle(Theme.ink).monospacedDigit().fixedSize(horizontal: false, vertical: true)
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -429,7 +429,7 @@ struct NationChip: View {
     let map: WorldMap; let nation: Int
     var body: some View {
         HStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 3).fill(nation >= 0 && nation < map.meta.nations.count ? Names.color(map.meta.nations[nation].color) : .gray).frame(width: 12, height: 12)
+            RoundedRectangle(cornerRadius: 3.5, style: .continuous).fill(nation >= 0 && nation < map.meta.nations.count ? Names.color(map.meta.nations[nation].color) : .gray).frame(width: 12, height: 12)
             Text(nation >= 0 && nation < map.meta.nations.count ? map.meta.nations[nation].name : "无主").font(Theme.section).foregroundStyle(Theme.ink)
         }
     }
@@ -446,6 +446,12 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("2.5.0", ["【皇帝诏书级卷轴装裱与全屏御案织锦底纹】根治缩小到全图时「上方空白、下方凸出难看羊皮纸」的割裂 Bug：将羊皮纸纹理严丝合缝裁切在地图画心之内，新增全视口 GPU 织锦绫绢书案底纹（`deskPipeline`）与四边对称留白；重绘皇帝诏书级卷轴画框——四面羽化落影、三层锦绫菱格装裱边、金丝线、鎏金包角、上下嵌玉朱锦扣、七段立体紫檀木轴、卷纸层叠边缘及鎏金碧玉葫芦轴头。",
+                   "【山川雪峰、内陆明湖、深岸江河与立体海面全面重绘】新增 GPU 多层海面着色器（`seaPipeline`）融合铜版水波、洋流暗涌与六道浅海等深水线，在大洋开阔处点缀古绘帆船；重绘宋元山水画意多峰连绵山脉（向阳暖坡＋背阴披麻皴笔＋双色雪山冰冠与软底影）及层次林冠；洪水泛滥算法识别内陆封闭明湖并绘以碧水湖岸与镜面微澜；江河新增水岸投影，舆图质感显著跃升。",
+                   "【自然有机疆界 & 根治生成世界途中变名变色】新世界与地形预览全面引入多频域扭曲噪声与山脊高差阻力扩张（`Opening.organicLayout` / `organicAssign`），列国疆界顺山势河谷自然延展，不再方方正正；重构开卷建世管线，在开卷动画播放前即一次性启用本作名号与国色规则并同步最终元数据，彻底消除生成过程中显示一个国名/颜色、进入游戏后又突然变更的割裂感。",
+                   "【山河回放彻底丝滑 & 军队清晰跨界行军】消除回放期间每帧主线程 CoreText 全城重绘与静态几何重建，改用 GPU 逐顶点色彩平滑渐变（`fadeVertex`）＋易主墨晕扫色同步驱动，彻底告别「一卡一卡」的顿挫感；修复回放军团兵种贴图键名错误与暂停隐身问题，为前十大强国常驻国都御林军王旗，并为每条活跃战线的先锋大军注入真实出发点→目标州 GPU 曲线跨界行军动画。",
+                   "【全作手绘水墨图标全覆盖、苹果同心分段控件与流体动效】扩充 16 枚手绘水墨图标（内湖、群岛、增减、废除、交换、显隐、历法、封存、导出、壁纸、丝竹、时速、爵杯、人物、偃兵），补齐菜单、设置、天下诏令、州郡编辑、全部选项卡与数据行的图标缺失（`ChipPicker` 严格校验全排统一配图，彻底消除同一卡片内「有的有图标、有的纯文字」与杂色割裂）；全局动效升级为 iOS 17+ 原生 `.snappy` / `.smooth` / `.bouncy` 弹簧曲线，`ChipPicker` 升级苹果同心圆角分段滑块，`PaperTrack` 滑块新增拖动放大微晕。",
+                   "【手绘地图与「划定列国」全面升级简化】自绘地图「山川」新增「内湖」「群岛」笔刷与 5×2 对称十笔刷，加入一键「抬海陆 / 降海面 / 整图平滑 / 海岸崎岖 / 随机新图」快捷条、全屏画图收起钮与横屏适配；「州郡」新增袖珍/标准/宏大/史诗四档一键规模；「划定列国」大幅简化并补齐功能：顶部内置一键「+ 新建国」、新增「单州 / 连片」双模式画笔、一键「自然重分」山河划界、完整撤销/重做，并采用与实机开局 100% 一致的国色配色。"]),
         ("2.4.0", ["【彻底根治「山河回放」顶栏失灵与无法缩放的底层元凶】查明并根治真机上回放左上角「返回当下」、右上角「节点」无法点击及舆图无法双指缩放的真正根因：`MemorialPaper` 内部 `1024×1024` 羊皮纸底图采用 `scaledToFill()` 叠加，SwiftUI `.clipped()` 仅裁视觉不裁触控，导致回放卡片生成巨型隐形触摸拦截框向上盖死顶栏按钮、向下锁死整片地图！现已从 `MemorialPaper` 源头禁用装饰纹理触控并用 `.contentShape(Rectangle())` 严守边界；重构 `ReplayOverlay` 为 `Color.clear` 无遮挡基底 + 独立顶/底/右浮层，仅在收起小手柄挂下滑手势；改由 `.sheet(onDismiss:)` 等待原生弹窗彻底关闭后再进回放；新增横屏单行 44pt 顶栏与紧凑底栏（露出 72%+ 纯地图空间供自由双指缩放），右侧增配单手「+ / − / 全图」缩放胶囊。",
                    "【全面统一回归「温润宣纸 × 暖墨 × 朱砂印」苹果同心圆角体系】彻底清理此前版本中突兀的黑块按钮与割裂白底（移除暂停态纯黑启停钮、国策黑底筛选签、新世界黑底规模钮与地图预览黑底浮标、局势浮印黑印章），启停朱印钮回归「推演朱砂实印 / 暂停宣纸朱框印」原作本色；统一全应用卡片为 `Theme.Control` 苹果连续同心圆角（面板 28pt → 外卡片 16pt → 内控件 12pt → 轻标签 10pt）与一致的暖宣纸质感，彻底消除界面割裂感。",
                    "【横屏体验专项大修】重做横屏左侧导航坞（紧凑 38pt 项高 + 苹果 22pt 连续圆角 + 左侧竖朱标，绝不再与顶栏或底部安全区冲突）；重做横屏右侧悬浮奏折面板（基于容器宽度自适应 24pt 连续圆角悬浮卡，取消硬编码屏幕宽度与负边距裁切）；优化横屏视图切换栏为 5 列宫格、新世界地图预览自适应横屏高度，以及横屏打开侧栏时自动隐去遮挡物。",

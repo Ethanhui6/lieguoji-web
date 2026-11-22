@@ -316,9 +316,8 @@ import LieguojiCore
         var provinceCount: Int { max(nations, min(480, Int(provinces) ?? nations * 10)) }
     }
 
-    /// The terrain, rivers, provinces and capitals are generated on the device at once (the Swift
-    /// ports give the web engine's exact result for the same seed) and rise on screen while the
-    /// engine builds the same world with its people and armies; that world then takes over.
+    /// 新世界由 Swift 本机一次性建成，并在开卷动画前就启用本作规则（名号多样与国色分明），
+    /// 令开卷阶段浮现的每一处版图色块、国号与疆界和进入推演后完全一致，彻底杜绝生成途中变名变色。
     func generate(_ options: NewWorld) async {
         pause()
         failure = nil
@@ -326,57 +325,48 @@ import LieguojiCore
         let epoch = worldEpoch
         controller.foundingStage = 0
         generationNote = "正在生成地形"
-        // Straight into the founding: the sea fills the screen at once and the new land rises from it as
-        // soon as it is built (the separate loading screen in between is gone). Without the device-built
-        // preview the engine's world is awaited on the loading screen as before.
         controller.drifting = false
-        if previewInputs != nil { controller.reveal = 0; phase = .founding } else { phase = .generating }
+        controller.reveal = 0
+        phase = .founding
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
             options.climate.apply()
             let json: [String: Any] = ["climate": options.climate.json, "template": options.template, "count": options.nations, "cityCount": options.provinceCount, "seed": seed,
                                        "relations": options.relations, "naming": options.naming, "cultures": Names.cultureIds.filter { options.cultures.contains($0) }]
             let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
-            // 新世界由 Swift 在本机建成（与网页引擎逐位相同）；Swift 失败时才交给网页引擎。
             let made = Self.nativeOptions(seed: seed, template: options.template, nations: options.nations, provinces: options.provinceCount, relations: options.relations,
                                           naming: options.naming, cultures: options.cultures, climate: options.climate)
-            let full = Task { try await self.found(made, webOptions: text, epoch: epoch) }
-            if let inputs = previewInputs {
-                let nations = options.nations, provinceCount = options.provinceCount
-                // The world and its map layers are built off the main thread, so the map appears
-                // without a pause (the renderer used to build the layers on the main thread).
-                let (preview, layers) = await Task.detached(priority: .userInitiated) { () -> (WorldMap, MapLayers.Prepared) in
-                    let w = PreviewWorld.build(inputs, seed: seed, template: options.template, nations: nations, cities: provinceCount)
-                    return (w, MapLayers.prepare(w))
-                }.value
+            let founded = try await found(made, webOptions: text, epoch: epoch)
+            guard epoch == worldEpoch else { return }
+            let world: WorldMap
+            switch founded {
+            case .native(let created):
+                let loaded = try await decodeFinalNative(created, epoch: epoch, prepareLayers: true)
                 guard epoch == worldEpoch else { return }
-                MapRenderer.prepared = layers
+                if let layers = loaded.layers { MapRenderer.prepared = layers }
                 state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.seaPorts = []
-                map = preview; worldID = UUID()
+                map = loaded.world; worldID = UUID()
+                controller.snapArmies = true
+                apply(loaded.state)
+                lastSavedDay = loaded.state.day
+                controller.foundingStage = 3
                 generationNote = ""
                 phase = .founding
                 await rise(epoch)
                 guard epoch == worldEpoch else { return }
-            }
-            let settled = Date()
-            let founded = try await full.value
-            guard epoch == worldEpoch else { return }
-            let world: WorldMap
-            switch founded {
-            case .native(let made): world = try await adoptNative(made)
+                world = loaded.world
             case .web(let built):
                 world = try await open(built)
                 try checkWorld(epoch)
                 controller.foundingStage = 3
                 try await handOver()
+                guard epoch == worldEpoch else { return }
+                generationNote = ""
+                await rise(epoch)
+                guard epoch == worldEpoch else { return }
             }
-            guard epoch == worldEpoch else { return }
-            // The founding captions after the map (houses, armies, relations) each get their moment.
-            let wait = 2.6 - Date().timeIntervalSince(settled)
-            if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
-            guard epoch == worldEpoch else { return }
             generationNote = ""
-            if phase != .founding { await reveal(world) } else { phase = .playing; controller.interactive = true }
+            phase = .playing; controller.interactive = true
             // A coast too broken for the provinces asked for: the engine took more.
             if world.meta.provinces.count > options.provinceCount { notice = "这片陆地支离破碎，州郡已增至 \(world.meta.provinces.count) 个" }
             await archiveCurrent()
@@ -389,11 +379,11 @@ import LieguojiCore
         }
     }
 
-    /// The generation animation on the device-built world.
+    /// The generation animation on the final device-built world (identical names & colors to live play).
     private func rise(_ epoch: Int) async {
         controller.interactive = false
         controller.reveal = 0
-        if !ShotTour.on { await playReveal(duration: 9, push: true, while: { self.worldEpoch == epoch }); return }
+        if !ShotTour.on { await playReveal(duration: 6.8, push: true, while: { self.worldEpoch == epoch }); return }
         // CI waits on these frames: the clock is pinned to each stage in turn while its shot is taken.
         let shots: [(at: Float, name: String)] = [(0.03, "02-founding"), (0.10, "02a-sea"), (0.24, "02b-rise"), (0.36, "02c-ink"), (0.62, "02d-states"), (0.80, "02e-borders")]
         for shot in shots {
@@ -467,23 +457,47 @@ import LieguojiCore
         try checkWorld(epoch)
         return show(loaded.0, loaded.1, layers: loaded.2)
     }
-    /// 本机 Swift 建好的世界（NativeHost.create）：地图与首个状态同 open，再做交接的后半段。
-    private func adoptNative(_ made: NativeHost.Made) async throws -> WorldMap {
-        let epoch = worldEpoch
+    /// 先启用云端调校与本作规则（NameVariety / NationColors / 兵种），再将最终国名与国色写入 WorldMap，
+    /// 保证开卷前后的国家名称与颜色 100% 统一，绝不中途跳变。
+    private func decodeFinalNative(_ made: NativeHost.Made, epoch: Int, prepareLayers: Bool) async throws -> (world: WorldMap, state: GameState, layers: MapLayers.Prepared?) {
         guard let mapData = made.map else { throw EngineError.message("新世界缺少地图") }
-        let keeps = phase == .founding
-        let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared?) in
+        nativeRevision = made.revision
+        await applyCloud()
+        try checkWorld(epoch)
+        await native.enableAppRules()
+        try checkWorld(epoch)
+        let finalStateData = await native.state() ?? made.state
+        try checkWorld(epoch)
+        return try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared?) in
             struct Saved: Decodable { let bin: String; let meta: WorldMeta }
             let m = try JSONDecoder().decode(Saved.self, from: mapData)
             guard let bin = Data(base64Encoded: m.bin) else { throw EngineError.message("地图数据损坏") }
-            let world = try WorldMap(binary: bin, meta: m.meta)
-            return (world, try JSONDecoder().decode(GameState.self, from: made.state), keeps ? nil : MapLayers.prepare(world))
+            var world = try WorldMap(binary: bin, meta: m.meta)
+            let finalState = try JSONDecoder().decode(GameState.self, from: finalStateData)
+            // 将启用本作规则后的最终国号、国色、疆域与标签同步进地图元数据
+            for (i, owner) in finalState.owners.enumerated() where i < world.meta.provinces.count {
+                world.meta.provinces[i].nation = owner
+            }
+            for (i, s) in finalState.nations.enumerated() {
+                guard let id = s.id, let name = s.name, let color = s.color else { continue }
+                let entry = WorldMeta.Nation(id: id, name: name, color: color, line: s.line ?? color, capital: s.capital ?? -1, culture: s.culture ?? "", polity: s.polity ?? "", religion: s.religion ?? "")
+                if i < world.meta.nations.count { world.meta.nations[i] = entry }
+                else { world.meta.nations.append(entry) }
+            }
+            if let labels = finalState.labels { world.meta.labels = labels }
+            return (world, finalState, prepareLayers ? MapLayers.prepare(world) : nil)
         }.value
+    }
+    /// 本机 Swift 建好的世界（NativeHost.create）：先完成规则生效与国名国色同步，再一次性呈现在地图上。
+    private func adoptNative(_ made: NativeHost.Made) async throws -> WorldMap {
+        let epoch = worldEpoch
+        let keeps = phase == .founding
+        let loaded = try await decodeFinalNative(made, epoch: epoch, prepareLayers: !keeps)
         try checkWorld(epoch)
-        let world = show(loaded.0, loaded.1, layers: loaded.2)
+        controller.snapArmies = true
+        state = nil
+        let world = show(loaded.world, loaded.state, layers: loaded.layers)
         controller.foundingStage = 3
-        nativeRevision = made.revision
-        try await finishHandOver(epoch)
         return world
     }
     /// The decoded world on screen (shared by open and adoptNative).
@@ -1560,6 +1574,7 @@ extension GameModel {
                                        naming: naming == "culture-generated" ? "culture-generated" : "historical-names", cultures: Names.cultureIds.filter { cultures.contains($0) })
         o.precipitation = Double(climate.rain); o.temperatureOffset = Double(climate.temperature)
         o.north = Double(climate.north) / 100; o.south = Double(min(climate.south, climate.north - 10)) / 100
+        o.organicBorders = true
         return o
     }
 }

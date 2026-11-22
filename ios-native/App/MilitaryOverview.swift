@@ -118,15 +118,36 @@ struct MilitaryOverview: View {
             }
 
             if !generals.isEmpty {
-                SectionLabel("名将谱")
-                Group2 {
-                    let shown = Array(generals.prefix(8))
-                    ForEach(shown) { g in
-                        GeneralRow(entry: g, state: name(g.nation), color: color(g.nation))
-                        if g.id != shown.last?.id { Divider2() }
+                SectionLabel("名将谱（横划览名将勋业）")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(Array(generals.prefix(8))) { g in
+                            VStack(alignment: .leading, spacing: 7) {
+                                HStack(spacing: 6) {
+                                    SealFace(text: String(g.rank.prefix(2)), size: 26, color: g.fallen ? Theme.ink2 : Theme.seal)
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(g.name).font(Theme.body).foregroundStyle(g.fallen ? Theme.ink2 : Theme.ink).lineLimit(1)
+                                        HStack(spacing: 4) {
+                                            RoundedRectangle(cornerRadius: 2).fill(color(g.nation)).frame(width: 7, height: 7)
+                                            Text(name(g.nation)).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                        }
+                                    }
+                                    Spacer(minLength: 2)
+                                }
+                                HStack(spacing: 6) {
+                                    Text("战功 \(Int(g.merit))").font(Theme.caption).foregroundStyle(Theme.seal).monospacedDigit()
+                                    Spacer()
+                                    Text("拓 \(g.gained) 州 · \(g.months)月").font(Theme.kai(11)).foregroundStyle(Theme.ink2).monospacedDigit()
+                                }
+                            }
+                            .padding(11)
+                            .frame(width: 176, alignment: .leading)
+                            .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
+                        }
                     }
+                    .padding(.horizontal, Theme.Layout.pageInset)
                 }
-                .padding(.horizontal, 16)
             }
 
             if !strongest.isEmpty {

@@ -49,6 +49,17 @@ enum Theme {
         static let iconGutter: CGFloat = 22
         static let headerTop: CGFloat = 10
     }
+    /// Apple HIG 统一控件尺度：顶栏所有胶囊与圆钮严守 44pt 等高对齐，底栏悬浮坞严守 54pt 等高且内嵌 44pt 同心朱印钮，屏幕左右边距统一 16pt。
+    enum Control {
+        static let screenInset: CGFloat = 16
+        static let topHeight: CGFloat = 44
+        static let dockHeight: CGFloat = 54
+        static let sealButtonSize: CGFloat = 44
+        static let tickerHeight: CGFloat = 34
+        static let gap: CGFloat = 8
+        static let cornerCard: CGFloat = 14
+        static let cornerControl: CGFloat = 12
+    }
 }
 
 enum Names {
@@ -94,8 +105,17 @@ struct RootView: View {
             case .title: TitleView(model: model).transition(.opacity)
             case .generating: GeneratingView(note: model.generationNote).transition(.opacity)
             case .founding: FoundingView(controller: model.controller, cancel: { model.cancelGeneration() }).transition(.opacity)
-            case .playing: GameView(model: model).transition(.opacity)
+            case .playing:
+                GameView(model: model)
+                    .opacity(model.replayActive ? 0 : 1)
+                    .allowsHitTesting(!model.replayActive)
+                    .transition(.opacity)
             case .editing: if let ed = model.editor { EditorView(model: model, editor: ed).transition(.opacity) }
+            }
+            if model.phase == .playing && model.replayActive {
+                ReplayOverlay(model: model)
+                    .transition(.opacity)
+                    .zIndex(50)
             }
             if model.phase == .splash { SplashView { finishSplash() }.transition(.opacity).zIndex(10) }
         }
@@ -182,53 +202,40 @@ extension View {
     /// Floating chrome (date, buttons, tab bar, notices) in the panels' own paper: the ink rule and
     /// the faint vermilion inner rule of Group2, so the map's controls and the pages read as one set.
     func glass<S: Shape>(_ shape: S) -> some View {
-        // The shadow belongs to the plain shape behind the content (a path shadow), not to the whole
-        // panel: over a map that redraws every frame, a view shadow cost an offscreen pass each frame.
-        background(shape.fill(Theme.paper2.opacity(0.97)).shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.16), radius: 12, y: 4))
-            .overlay(shape.stroke(Theme.ink.opacity(0.2), lineWidth: 1))
-            .overlay(shape.stroke(Theme.seal.opacity(0.16), lineWidth: 0.6).padding(3))
+        // Apple 级克制浮层质感：统一柔白宣纸表面、0.75pt 细墨边框、微弱内描边与轻柔低海拔投影，零离屏模糊开销。
+        background(shape.fill(Theme.paper2.opacity(0.96)).shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.12), radius: 9, y: 3))
+            .overlay(shape.stroke(Theme.ink.opacity(0.15), lineWidth: 0.85))
+            .overlay(shape.stroke(Theme.seal.opacity(0.11), lineWidth: 0.5).padding(2.5))
     }
 }
 
-/// 顶栏的圆钮：毛笔图标在一枚纸面圆章里，内圈一道细墨线；选中时笔色与内圈转朱并泛起柔和朱晕。
-/// 换形（开/合）采用清脆缩放淡入与轻旋，避免小尺寸圆钮遮罩闪烁。
+/// 顶栏的圆钮：严守 44×44pt（与左上角日期胶囊绝对等高对齐），毛笔图标居中，选中态温和转朱不刺眼。
 struct CircleIcon: View {
     var symbol: String = ""
     var glyph: InkGlyph? = nil
     var active = false
-    @State private var halo = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         ZStack {
-            if active && !reduceMotion {
-                Circle()
-                    .stroke(Theme.seal.opacity(halo ? 0 : 0.42), lineWidth: 1.4)
-                    .scaleEffect(halo ? 1.32 : 0.96)
-                    .allowsHitTesting(false)
-            }
             if let glyph {
-                InkIcon(glyph: glyph, size: 21, weight: active ? 1.95 : 1.7, filled: active,
-                        accent: active ? Theme.seal.opacity(0.28) : nil)
+                InkIcon(glyph: glyph, size: 19, weight: active ? 1.95 : 1.7, filled: active,
+                        accent: active ? Theme.seal.opacity(0.24) : nil)
                     .id(glyph)
                     .transition(.asymmetric(
-                        insertion: .scale(scale: 0.68).combined(with: .opacity),
-                        removal: .scale(scale: 0.78).combined(with: .opacity)
+                        insertion: .scale(scale: 0.72).combined(with: .opacity),
+                        removal: .scale(scale: 0.82).combined(with: .opacity)
                     ))
             } else {
                 Image(systemName: symbol).font(.system(size: 16, weight: .medium))
             }
         }
         .foregroundStyle(active ? Theme.seal : Theme.ink)
-        .frame(width: 42, height: 42)
+        .frame(width: Theme.Control.topHeight, height: Theme.Control.topHeight)
         .glass(Circle())
-        .overlay(Circle().strokeBorder(active ? Theme.seal.opacity(0.65) : Theme.ink.opacity(0.12), lineWidth: active ? 1.2 : 0.6).padding(3.5))
+        .overlay(Circle().strokeBorder(active ? Theme.seal.opacity(0.58) : Color.clear, lineWidth: 1.1).padding(2.5))
+        .contentShape(Circle())
         .animation(Motion.tap, value: glyph)
         .animation(Motion.tap, value: active)
-        .onChange(of: active) { _, on in
-            guard on, !reduceMotion else { halo = false; return }
-            halo = false
-            withAnimation(Motion.reveal) { halo = true }
-        }
     }
 }
 
@@ -285,26 +292,28 @@ struct TabButton: View {
     var glyph: InkGlyph? = nil
     var active = false
     var marker: Namespace.ID? = nil
+    var flexible = true
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 3) {
+            VStack(spacing: 2) {
                 if let glyph {
-                    InkIcon(glyph: glyph, size: 23, weight: active ? 2.05 : 1.65, filled: active,
-                            accent: active ? Theme.seal.opacity(0.32) : Theme.seal.opacity(0.18))
-                        .scaleEffect(active ? 1.07 : 1)
-                        .offset(y: active ? -1.5 : 0)
+                    InkIcon(glyph: glyph, size: 20, weight: active ? 2.0 : 1.65, filled: active,
+                            accent: active ? Theme.seal.opacity(0.28) : Theme.seal.opacity(0.14))
+                        .scaleEffect(active ? 1.05 : 1)
                         .animation(Motion.tap, value: active)
                 }
-                else if let icon { Image(uiImage: icon).resizable().interpolation(.high).scaledToFit().frame(width: 22, height: 22) }
-                else { Image(systemName: symbol).font(.system(size: 18, weight: .medium)).symbolVariant(active ? .fill : .none) }
-                Text(title).font(Theme.caption)
+                else if let icon { Image(uiImage: icon).resizable().interpolation(.high).scaledToFit().frame(width: 20, height: 20) }
+                else { Image(systemName: symbol).font(.system(size: 17, weight: .medium)).symbolVariant(active ? .fill : .none) }
+                Text(title).font(Theme.kai(11)).lineLimit(1)
             }
-            .foregroundStyle(active ? Theme.seal : Theme.ink).frame(width: 50, height: 50).contentShape(Rectangle())
+            .foregroundStyle(active ? Theme.seal : Theme.ink)
+            .frame(maxWidth: flexible ? .infinity : 50).frame(height: 44)
+            .contentShape(Rectangle())
             .overlay(alignment: .bottom) {
-                // The vermilion mark under the open tab slides between tabs.
+                // 选中底标：齐整克制的短朱囊
                 if active, let marker {
-                    Capsule().fill(Theme.seal).frame(width: 18, height: 2.6).offset(y: 1).matchedGeometryEffect(id: "tab", in: marker)
+                    Capsule().fill(Theme.seal).frame(width: 16, height: 2.4).offset(y: 1).matchedGeometryEffect(id: "tab", in: marker)
                 }
             }
         }
@@ -419,6 +428,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("2.3.0", ["【彻底根治「山河回放」顶栏失灵并全面重做回放推进特效】将「山河回放」从 `GameView` 多层弹窗中剥离，直接挂载至 `RootView` 最顶层并彻底屏蔽底层 `GameView` 触控干扰，根治左上角「返回当下」与右上角「节点」点击无响应的问题（并在底部控制坞同步提供单手直达入口）；回放推进全面升级——自动比对历帧疆域易主，实时绘制弧形战役进攻箭头、前线交锋火花、先锋行军军团、强国国都守军以及基于 GPU 墨场的自然易主墨晕扫色效果；自动回溯节点留存间隔由 5 年缩短至 2 年。",
+                   "【Apple 级全界面控件尺度与视觉对齐统一】确立 `Theme.Control` 全局控件规范：顶部日期胶囊、右上角全部圆形工具钮与各类提示横幅严守 `44pt` 绝对等高、`16pt` 左右屏幕基准线对齐与 `8pt` 等距排布；底部导航坞与倍速启停坞统一为 `54pt` 等高悬浮胶囊，五项页签等宽分布，启停朱印钮收束为 `44×44pt` 同心圆章（四周精确留白 `5pt`）并彻底移除外溢闪烁光环；统一柔白宣纸表面、细墨描边与克制低海拔投影。",
+                   "【国家「长期政策 / 政令」彻底改版与页面去同质化】告别 24 行冗长平铺勾选列表：顶部新增苹果式「现行国策总览」洞察卡，实时汇总已行国策的攻防/岁入/人口/安定/腐化净加成；按「官制宪政 / 军制兵役 / 财税农商 / 礼教宗法」四大领域分层，将 6 组互斥制度重塑为双栏/三栏直观立国路线卡，10 项专项制度换用苹果风格拨动开关与红绿属性胶囊；三大御批诏令改为 2×2 快捷宫格；排行榜新增「魁首 / 榜眼 / 探花」前三甲颁台、外交页改为鸿胪邦交态势横卡、军事名将谱改为横向勋业画廊、系统菜单改为 2×2 视觉快捷面板，全面消除页面重复感。",
+                   "【开始游戏选图细节全面升级】将 640px 高清山河预览置顶于「新世界」页首，支持一键切换「地貌浮雕 / 势力分布」实时预演与底栏陆地/山地/林泽/岸线勘测数据；四类地形格局新增手绘微缩舆图轮廓与战略标签；扩充至 6 套精选剧本（新增「战国七雄」「万国演义」）并加入一键规模档位。",
+                   "【游戏画质与古图质感显著提升】为 Metal 陆地片元着色器新增双频宣纸微纤维颗粒与暖阳亮坡/冷墨背阴矿物颜料层次（拉近画面细腻锐利不发糊），启用 4× 各向异性纹理采样并保留精细古图海岸描边，强化山地立体明暗起伏与四频海面水墨晕染。"]),
         ("2.2.0", ["【紧急修复：国家「史册」页闪退与「山河回放」顶栏失灵】彻底根治点开国家「史册」页时因新立国／禅位／旧档缺失 `reigns47` 数组或 `isAlive` 空值触发的硬闪退，全面加固 `NationReigns` / `MonarchLore` 空值与 `NaN` 免疫并杜绝重复 ID；彻底修复「山河回放」左上角「返回当下」与右上角「节点」按钮无响应的重大 Bug——改用独立顶/底悬浮层消除全屏缩放对角落命中框的偏移、重构顶栏防窄屏挤压溢出，并将「历史节点」与「回溯确认」改为内置宣纸抽屉，彻底消除与主页面弹窗冲突。",
                    "【皇帝诏书卷轴装裱与地图细节全面升级】重制地图四边装裱：左右新增立体檀木卷轴、卷纸高光卷边与四端鎏金碧玉轴头，上下配黄绫朱锦装裱边（含御绫菱格暗纹、双金丝线与卷首红绫锦结）及四角回纹云角饰；升级舆图十六向鎏金罗盘（含古航海方位射线、32 分刻度环与海面祥云纹），拉近山脉新增高峰雪冠与水墨皴笔，驿道中途增设朱点驿站标记；卷轴装裱与舆图细节均可在「地图显示」独立开关。",
                    "【彻底根治卡顿、掉帧与手机发烫（含国家页专项优化）】Metal 渲染由 4× MSAA 调优为 2× MSAA（显存带宽与 GPU 发热减半）；解除看海期间每帧主线程 `waitUntilScheduled` 阻塞（仅拖拽、双指缩放与镜头飞行时同事务呈现，日常行军改为异步提交）；打开国家页等任意面板时自动休眠底层 `CADisplayLink` 与海面波浪，并缓存地图外观与国界高亮避免冗余重绘；将国家页概览、朝政、史册、政令、军事、外交外层容器全面改为 `LazyVStack`，移除开页瞬间二次重复全图染色，显著消除国家页滑动掉帧；新增「极省电」看海预设档位并调优默认均衡档负载。",

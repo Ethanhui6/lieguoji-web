@@ -130,7 +130,7 @@ struct GameView: View {
                         Text(prompt).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                         Button("取消") { controller.pickPrompt = nil; controller.onPick = nil; if controller.onTerrainStrokeEnd != nil && controller.brushName == nil && model.controller.terrainBrush { controller.terrainBrush = false; controller.onTerrainStroke = nil; controller.onTerrainStrokeEnd = nil } }.font(Theme.body).foregroundStyle(Theme.seal)
                     }
-                    .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
+                    .padding(.horizontal, 16).frame(height: Theme.Control.topHeight).glass(Capsule())
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 if !controller.groupArmies.isEmpty { rtsBanner.transition(.move(edge: .top).combined(with: .opacity)) }
@@ -317,30 +317,21 @@ struct GameView: View {
         .overlay(alignment: .trailing) { sidePage }
         .animation(Motion.panel, value: sideKey)
         .overlay { if let ripple { PressRipple().position(ripple).ignoresSafeArea() } }
-        .overlay {
-            // 山河回放置于最顶层（纯透明度转场避免缩放破坏四角按钮命中框，所有按钮清晰可点）。
-            if model.replayActive {
-                ReplayOverlay(model: model)
-                    .transition(.opacity)
-                    .zIndex(100)
-            }
-        }
-        .animation(Motion.panel, value: model.replayActive)
         .overlay(alignment: .bottom) {
-            // 提示条居于全层之上（回放期内亦可见），轻点可立即收起。
+            // 提示条居于全层之上，轻点可立即收起。
             if let toast {
                 HStack(spacing: 10) {
                     Seal(text: "令", size: 22)
                     Text(toast).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.leading, 10).padding(.trailing, 16).padding(.vertical, 10)
-                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous)))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.2), lineWidth: 1))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.seal.opacity(0.22), lineWidth: 0.6).padding(3))
-                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 10, y: 4)
-                .padding(.horizontal, 32).padding(.bottom, model.replayActive ? 176 : 116)
+                .background(MemorialPaper(rules: false, fullBleed: false).clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous)))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 0.9))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.seal.opacity(0.18), lineWidth: 0.6).padding(2.5))
+                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.16), radius: 10, y: 4)
+                .padding(.horizontal, 24).padding(.bottom, 114)
                 .id(toastSerial)
-                .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.92, anchor: .bottom)), removal: .opacity.combined(with: .offset(y: -12))))
+                .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.94, anchor: .bottom)), removal: .opacity.combined(with: .offset(y: -10))))
                 .onTapGesture { self.toast = nil }
                 .zIndex(120)
             }
@@ -548,7 +539,7 @@ struct GameView: View {
     // MARK: chrome
 
     private var topBar: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Theme.Control.gap) {
             HStack(spacing: 8) {
                 Button {
                     GameFeel.shared.tap()
@@ -556,18 +547,19 @@ struct GameView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(model.playing ? Theme.jade : Theme.ink2.opacity(0.45))
+                            .fill(model.playing ? Theme.jade : Theme.ink2.opacity(0.42))
                             .frame(width: 6.5, height: 6.5)
-                            .scaleEffect(model.playing ? 1.05 : 0.85)
                             .animation(Motion.panel, value: model.playing)
                         Text(model.state?.dateText ?? "").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
-                            .lineLimit(1).minimumScaleFactor(0.7)
+                            .lineLimit(1).minimumScaleFactor(0.72)
                             .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
                     }
+                    .frame(height: Theme.Control.topHeight)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(PressStyle())
                 if let wars = model.state?.wars.count, wars > 0 {
-                    Rectangle().fill(Theme.ink.opacity(0.16)).frame(width: 0.8, height: 14)
+                    Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.8, height: 15)
                         .transition(.opacity)
                     Button {
                         GameFeel.shared.tap()
@@ -575,9 +567,11 @@ struct GameView: View {
                         show(.military)
                     } label: {
                         WarCount(count: wars)
+                            .frame(height: Theme.Control.topHeight)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(PressStyle())
-                    .transition(.scale(scale: 0.72).combined(with: .opacity))
+                    .transition(.scale(scale: 0.82).combined(with: .opacity))
                 }
                 // 远程计算: the computer simulates.
                 if model.remoteAddress != nil {
@@ -585,20 +579,22 @@ struct GameView: View {
                         .transition(.scale.combined(with: .opacity))
                 }
             }
-            .padding(.horizontal, 15).frame(height: 42).glass(Capsule())
+            .padding(.horizontal, 14).frame(height: Theme.Control.topHeight).glass(Capsule())
             .animation(Motion.panel, value: (model.state?.wars.count ?? 0) > 0)
-            if landscape { transport.padding(.horizontal, 6).frame(height: 50).glass(Capsule()) }
-            Spacer()
-            Button { GameFeel.shared.tap(); withAnimation(Motion.panel) { viewsOpen.toggle() } } label: { CircleIcon(glyph: viewsOpen ? .close : .views, active: viewsOpen) }
-                .buttonStyle(InkPressStyle())
-            Button {
-                GameFeel.shared.tap()
-                if controller.boxSelecting || !controller.groupArmies.isEmpty { controller.boxSelecting = false; controller.groupArmies = []; model.refreshArmies() }
-                else { controller.boxSelecting = true; say("即时战略：在地图上拖出方框选择军队") }
-            } label: { CircleIcon(glyph: controller.boxSelecting || !controller.groupArmies.isEmpty ? .close : .command, active: controller.boxSelecting || !controller.groupArmies.isEmpty) }.buttonStyle(InkPressStyle())
-            Button { GameFeel.shared.tap(); show(.menu) } label: { CircleIcon(glyph: .menu) }.buttonStyle(InkPressStyle())
+            if landscape { transport.padding(.horizontal, 5).frame(height: Theme.Control.topHeight).glass(Capsule()) }
+            Spacer(minLength: 6)
+            HStack(spacing: Theme.Control.gap) {
+                Button { GameFeel.shared.tap(); withAnimation(Motion.panel) { viewsOpen.toggle() } } label: { CircleIcon(glyph: viewsOpen ? .close : .views, active: viewsOpen) }
+                    .buttonStyle(InkPressStyle())
+                Button {
+                    GameFeel.shared.tap()
+                    if controller.boxSelecting || !controller.groupArmies.isEmpty { controller.boxSelecting = false; controller.groupArmies = []; model.refreshArmies() }
+                    else { controller.boxSelecting = true; say("即时战略：在地图上拖出方框选择军队") }
+                } label: { CircleIcon(glyph: controller.boxSelecting || !controller.groupArmies.isEmpty ? .close : .command, active: controller.boxSelecting || !controller.groupArmies.isEmpty) }.buttonStyle(InkPressStyle())
+                Button { GameFeel.shared.tap(); show(.menu) } label: { CircleIcon(glyph: .menu) }.buttonStyle(InkPressStyle())
+            }
         }
-        .padding(.horizontal, 14).padding(.top, 2)
+        .padding(.horizontal, Theme.Control.screenInset).padding(.top, 4)
     }
 
     /// 即时战略 banner: the selected count, 进攻/防御 mode and cancel.
@@ -622,7 +618,7 @@ struct GameView: View {
             }.font(Theme.body).foregroundStyle(Theme.jade)
             Button("取消") { controller.groupArmies = []; model.refreshArmies() }.font(Theme.body).foregroundStyle(Theme.seal)
         }
-        .padding(.horizontal, 14).frame(height: 42).glass(Capsule())
+        .padding(.horizontal, 14).frame(height: Theme.Control.topHeight).glass(Capsule())
     }
 
     private var paintBanner: some View {
@@ -645,7 +641,7 @@ struct GameView: View {
                 .frame(width: 270)
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 8).glass(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, 16).padding(.vertical, 9).glass(RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var fleetBanner: some View {
@@ -654,7 +650,7 @@ struct GameView: View {
             Text("舰队：点选停留的港口").font(Theme.body).foregroundStyle(Theme.ink)
             Button("取消") { controller.marchingFleet = nil; model.refreshArmies() }.font(Theme.body).foregroundStyle(Theme.seal)
         }
-        .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
+        .padding(.horizontal, 16).frame(height: Theme.Control.topHeight).glass(Capsule())
     }
 
     private var marchBanner: some View {
@@ -663,25 +659,36 @@ struct GameView: View {
             Text(marchRetreat ? "撤退：点选目的地" : "调兵：点选目的地").font(Theme.body).foregroundStyle(Theme.ink)
             Button("取消") { controller.marchingArmy = nil; controller.selectedArmy = nil; model.refreshArmies() }.font(Theme.body).foregroundStyle(Theme.seal)
         }
-        .padding(.horizontal, 16).frame(height: 40).glass(Capsule())
+        .padding(.horizontal, 16).frame(height: Theme.Control.topHeight).glass(Capsule())
     }
 
     @ViewBuilder private var mainTabs: some View {
-        TabButton(symbol: "building.columns", title: "国家", glyph: .nation, active: panel?.tab == "nations", marker: tabMarker) { show(.nations) }
-        TabButton(symbol: "shield", title: "军事", glyph: .military, active: panel?.tab == "military", marker: tabMarker) { show(.military) }
-        TabButton(symbol: "scroll", title: "外交", glyph: .diplomacy, active: panel?.tab == "diplomacy", marker: tabMarker) { show(.diplomacy) }
-        TabButton(symbol: "book", title: "纪事", glyph: .chronicle, active: panel?.tab == "chronicle", marker: tabMarker) { show(.chronicle) }
-        TabButton(symbol: "chart.bar.xaxis", title: "排行", glyph: .ranking, active: panel?.tab == "statistics", marker: tabMarker) { show(.statistics) }
+        let flex = !landscape
+        TabButton(symbol: "building.columns", title: "国家", glyph: .nation, active: panel?.tab == "nations", marker: tabMarker, flexible: flex) { show(.nations) }
+        TabButton(symbol: "shield", title: "军事", glyph: .military, active: panel?.tab == "military", marker: tabMarker, flexible: flex) { show(.military) }
+        TabButton(symbol: "scroll", title: "外交", glyph: .diplomacy, active: panel?.tab == "diplomacy", marker: tabMarker, flexible: flex) { show(.diplomacy) }
+        TabButton(symbol: "book", title: "纪事", glyph: .chronicle, active: panel?.tab == "chronicle", marker: tabMarker, flexible: flex) { show(.chronicle) }
+        TabButton(symbol: "chart.bar.xaxis", title: "排行", glyph: .ranking, active: panel?.tab == "statistics", marker: tabMarker, flexible: flex) { show(.statistics) }
     }
     private var transport: some View {
-        HStack(spacing: 2) {
-            Button { model.cycleSpeed() } label: {
-                Text("\(model.speed)×").font(Theme.section).foregroundStyle(model.speed > 1 ? Theme.seal : Theme.ink)
-                    .frame(width: 40, height: 50).contentTransition(.numericText())
+        let sealSize: CGFloat = landscape ? 34 : Theme.Control.sealButtonSize
+        return HStack(spacing: 4) {
+            Button {
+                GameFeel.shared.tap()
+                model.cycleSpeed()
+            } label: {
+                Text("\(model.speed)×")
+                    .font(Theme.body)
+                    .foregroundStyle(model.speed > 1 ? Theme.seal : Theme.ink)
+                    .monospacedDigit()
+                    .frame(width: landscape ? 34 : 38, height: sealSize)
+                    .background(model.speed > 1 ? Theme.seal.opacity(0.1) : Color.clear, in: Capsule())
+                    .contentShape(Capsule())
+                    .contentTransition(.numericText())
                     .animation(Motion.tap, value: model.speed)
             }
             .buttonStyle(PressStyle())
-            PlaySealButton(playing: model.playing) { model.togglePlay() }
+            PlaySealButton(playing: model.playing, size: sealSize) { model.togglePlay() }
                 .sensoryFeedback(.impact(weight: .light), trigger: model.playing)
         }
     }
@@ -744,56 +751,50 @@ struct GameView: View {
     }
 
     private var bottomBar: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Theme.Control.gap) {
             EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }
-            HStack(spacing: 10) {
+            HStack(spacing: Theme.Control.gap) {
                 HStack(spacing: 0) {
                     mainTabs
                 }
                 .animation(Motion.tap, value: panel?.tab)
-                .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
+                .padding(.horizontal, 6)
+                .frame(maxWidth: .infinity)
+                .frame(height: Theme.Control.dockHeight)
+                .glass(Capsule())
+
                 transport
-                .padding(.horizontal, 6).frame(height: 58).glass(Capsule())
+                .padding(.horizontal, 5)
+                .frame(height: Theme.Control.dockHeight)
+                .glass(Capsule())
             }
         }
-        .padding(.horizontal, 12).padding(.bottom, 4)
+        .padding(.horizontal, Theme.Control.screenInset).padding(.bottom, 6)
     }
 }
 
-/// 推演启停朱印钮：毛笔手绘播放/暂停符号，推演进行时外围泛起一圈柔和的朱砂光晕呼吸。
+/// 推演启停朱印钮：与 54pt 底栏绝对同心（44×44pt，四周留白 5pt），取消溢出的红圈闪烁，采用温润内描边与利落图标切换。
 private struct PlaySealButton: View {
     let playing: Bool
+    var size: CGFloat = Theme.Control.sealButtonSize
     let action: () -> Void
-    @State private var halo = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         Button(action: action) {
             ZStack {
-                if playing && !reduceMotion {
-                    Circle()
-                        .stroke(Theme.seal.opacity(halo ? 0 : 0.45), lineWidth: 1.6)
-                        .frame(width: 46, height: 46)
-                        .scaleEffect(halo ? 1.32 : 1.0)
-                }
-                Circle().fill(Theme.seal)
+                Circle()
+                    .fill(playing ? Theme.seal : Theme.ink)
                     .overlay(Circle().strokeBorder(Theme.paper2.opacity(0.32), lineWidth: 0.9).padding(2.5))
-                    .shadow(color: Theme.seal.opacity(0.32), radius: 5, y: 2)
-                    .frame(width: 46, height: 46)
-                InkIcon(glyph: playing ? .pause : .play, size: 18, weight: 1.9, accent: Theme.paper2.opacity(0.88))
+                    .shadow(color: (playing ? Theme.seal : Theme.ink).opacity(0.22), radius: 4, y: 1.5)
+                    .frame(width: size, height: size)
+                InkIcon(glyph: playing ? .pause : .play, size: size * 0.39, weight: 1.95, accent: Theme.paper2.opacity(0.88))
                     .foregroundStyle(Theme.paper2)
                     .offset(x: playing ? 0 : 1)
                     .id(playing)
-                    .transition(.scale(scale: 0.72).combined(with: .opacity))
+                    .transition(.scale(scale: 0.76).combined(with: .opacity))
             }
+            .contentShape(Circle())
             .animation(Motion.tap, value: playing)
         }
         .buttonStyle(PressStyle())
-        .onAppear { syncHalo(playing) }
-        .onChange(of: playing) { _, on in syncHalo(on) }
-    }
-    private func syncHalo(_ on: Bool) {
-        guard on, !reduceMotion else { halo = false; return }
-        halo = false
-        withAnimation(.easeOut(duration: 1.7).repeatForever(autoreverses: false)) { halo = true }
     }
 }

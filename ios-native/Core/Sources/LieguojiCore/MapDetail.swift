@@ -117,7 +117,7 @@ extension MapLayers {
     /// 水墨晕染: the sea is not one flat wash. Three octaves of smooth noise make it a little lighter and
     /// darker in slow patches, as a brush leaves it, whatever the sea's colours (cold or warm preset).
     /// At most ±`depth` of each channel; the same for the same size, so a recoloured sea keeps its wash.
-    public static func applySeaWash(width w: Int, height h: Int, to rgba: inout [UInt8], depth: Float = 0.055) {
+    public static func applySeaWash(width w: Int, height h: Int, to rgba: inout [UInt8], depth: Float = 0.068) {
         guard w > 1, h > 1, rgba.count == w * h * 4 else { return }
         func lattice(_ x: Int, _ y: Int, _ salt: Int) -> Float { Float(hash(x &* 73856093 ^ y &* 19349663 ^ salt &* 83492791) & 0xFFF) / Float(0xFFF) }
         func noise(_ x: Float, _ y: Float, _ salt: Int) -> Float {
@@ -127,13 +127,19 @@ extension MapLayers {
             return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v
         }
         // The patches are sized against the texture's short side, so a map of any size is washed alike.
+        // 四频水墨海晕 + 细密宣纸海图颗粒，拉近海面更富古图质感。
         let unit = Float(min(w, h))
         for y in 0..<h {
             for x in 0..<w {
                 let px = Float(x) / unit, py = Float(y) / unit
-                let n = noise(px * 5, py * 5, 1) * 0.55 + noise(px * 13, py * 13, 2) * 0.3 + noise(px * 34, py * 34, 3) * 0.15
+                let n = noise(px * 4.5, py * 4.5, 1) * 0.46
+                    + noise(px * 12, py * 12, 2) * 0.28
+                    + noise(px * 30, py * 30, 3) * 0.16
+                    + noise(px * 72, py * 72, 4) * 0.10
                 let k = 1 + (n - 0.5) * 2 * depth, i = (y * w + x) * 4
-                rgba[i] = UInt8(max(0, min(255, Float(rgba[i]) * k))); rgba[i + 1] = UInt8(max(0, min(255, Float(rgba[i + 1]) * k))); rgba[i + 2] = UInt8(max(0, min(255, Float(rgba[i + 2]) * k)))
+                rgba[i] = UInt8(max(0, min(255, Float(rgba[i]) * k)))
+                rgba[i + 1] = UInt8(max(0, min(255, Float(rgba[i + 1]) * k)))
+                rgba[i + 2] = UInt8(max(0, min(255, Float(rgba[i + 2]) * (k + 0.008))))
             }
         }
     }

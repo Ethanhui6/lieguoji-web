@@ -142,6 +142,8 @@ import LieguojiCore
     @Published var interactive = true
     /// 山河回放期间锁定地图单击与长按（允许自由拖拽缩放舆图，但不弹出州郡/军团/快捷面板干扰回放）。
     @Published var replayLocked = false
+    /// 山河回放单步／播放推进时开启墨晕扫色、战役箭头与行军军队动效（快速拖滑条时关闭以保持零延迟跟手）。
+    var replayAnimate = false
     /// Slow drift of the title backdrop.
     @Published var drifting = false
     /// How far the engine has got once the map has risen (FoundingView.later).
@@ -799,7 +801,7 @@ struct MapView: UIViewRepresentable {
             if controller.worldRevision != shownRevision, let next = controller.world, Self.worldChanged(next, map) {
                 shownRevision = controller.worldRevision
                 map = next
-                renderer?.setMap(next, replayFast: controller.replayLocked)
+                renderer?.setMap(next, replayFast: controller.replayLocked && !controller.replayAnimate)
                 // City names never change hands with a province: only the state names are rebuilt.
                 labels.setCities(map: next)
                 // Daily border changes swap the names in place; only a view switch cross-fades.
@@ -881,10 +883,11 @@ struct MapView: UIViewRepresentable {
                 }
             }
             if let renderer {
-                if renderer.showArmies != controller.play.showArmies || renderer.iconScale != Float(controller.play.iconScale) { dirty = true }
-                renderer.showArmies = controller.play.showArmies
+                let wantArmies = controller.play.showArmies || (controller.replayLocked && controller.replayAnimate)
+                if renderer.showArmies != wantArmies || renderer.iconScale != Float(controller.play.iconScale) { dirty = true }
+                renderer.showArmies = wantArmies
                 renderer.iconScale = Float(controller.play.iconScale)
-                effects.showArrows = controller.play.warArrows
+                effects.showArrows = controller.play.warArrows || controller.replayLocked
                 troops.iconScale = controller.play.iconScale
                 if !controller.sheetOpen { mtk.preferredFramesPerSecond = controller.play.mapFPS }
                 // 画面 settings: the simulation's share, cooling, the effects' frames and the map's pixels.

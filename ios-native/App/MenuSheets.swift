@@ -82,36 +82,35 @@ struct MenuSheet: View {
                 }
                 .padding(.horizontal, 16)
             default:
-                SectionLabel("存档")
-                Group2 {
-                    Button {
+                // 2×2 苹果式视觉快捷面板：高频动作一眼触达，打破千篇一律的纯文本长列表
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    menuTile(title: "保存当前进度", note: "立存此世卷宗", symbol: "square.and.arrow.down", tint: Theme.jade) {
                         Task { let ok = await model.saveNow(); GameFeel.shared.notify(ok ? .success : .error); say(ok ? "已保存" : "保存失败"); close() }
-                    } label: { MenuRow(symbol: "square.and.arrow.down", title: "保存") }.buttonStyle(.plain)
-                    Divider2()
-                    Button { Task { exported = await model.exportCopy().map(ExportFile.init) } } label: { MenuRow(symbol: "square.and.arrow.up", title: "导出存档（备份）") }.buttonStyle(.plain)
-                    Divider2()
-                    Button { importing = true } label: { MenuRow(symbol: "tray.and.arrow.down", title: "导入存档") }.buttonStyle(.plain)
-                    Divider2()
-                    Button { archive = true } label: { MenuRow(symbol: "books.vertical", title: "世界卷宗") }.buttonStyle(.plain)
+                    }
+                    menuTile(title: "世界卷宗", note: "切换或管理存档", symbol: "books.vertical", tint: Theme.ink) { archive = true }
+                    menuTile(title: "世界编辑", note: "改绘山河与列国", symbol: "paintbrush.pointed.fill", tint: Theme.seal) { openEditor() }
+                    menuTile(title: "开辟新世界", note: "重选地图与剧本", symbol: "globe.asia.australia", tint: Theme.seal) { creating = true }
                 }
                 .padding(.horizontal, 16)
-                SectionLabel("世界")
+
+                SectionLabel("世局与工具")
                 Group2 {
-                    Button { openEditor() } label: { MenuRow(symbol: "paintbrush.pointed.fill", title: "世界编辑") }.buttonStyle(.plain)
-                    Divider2()
                     Button { openEdicts() } label: { MenuRow(symbol: "scroll.fill", title: "天下诏令与规则") }.buttonStyle(.plain)
-                    Divider2()
-                    Button { creating = true } label: { MenuRow(symbol: "globe.asia.australia", title: "新世界") }.buttonStyle(.plain)
-                    Divider2()
-                    Button { wallpaper() } label: { MenuRow(symbol: "photo.on.rectangle", title: "壁纸模式") }.buttonStyle(.plain)
                     Divider2()
                     Button { calendar = true } label: { MenuRow(symbol: "calendar", title: "纪年与日期") }.buttonStyle(.plain)
                     Divider2()
-                    Button { close(); model.backToTitle() } label: { MenuRow(symbol: "house", title: "返回标题") }.buttonStyle(.plain)
+                    Button { wallpaper() } label: { MenuRow(symbol: "photo.on.rectangle", title: "壁纸观景模式") }.buttonStyle(.plain)
+                    Divider2()
+                    Button { Task { exported = await model.exportCopy().map(ExportFile.init) } } label: { MenuRow(symbol: "square.and.arrow.up", title: "导出存档备份") }.buttonStyle(.plain)
+                    Divider2()
+                    Button { importing = true } label: { MenuRow(symbol: "tray.and.arrow.down", title: "导入外部存档") }.buttonStyle(.plain)
                 }
                 .padding(.horizontal, 16)
+
                 Group2 {
                     Button { notes = true } label: { MenuRow(symbol: "sparkles", title: "本版新增与更新内容") }.buttonStyle(.plain)
+                    Divider2()
+                    Button { close(); model.backToTitle() } label: { MenuRow(symbol: "house", title: "返回标题画面") }.buttonStyle(.plain)
                 }
                 .padding(.horizontal, 16)
             }
@@ -147,6 +146,36 @@ struct MenuSheet: View {
             if case .success(let url) = result { close(); Task { await model.importSave(from: url) } }
         }
         .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
+    }
+
+    private func menuTile(title: String, note: String, symbol: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Button {
+            GameFeel.shared.tap()
+            action()
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                Group {
+                    if let g = GameActionLabel.glyph(for: symbol) {
+                        InkIcon(glyph: g, size: 19, weight: 1.85, accent: tint.opacity(0.22))
+                    } else {
+                        Image(systemName: symbol).font(.system(size: 17, weight: .medium))
+                    }
+                }
+                .foregroundStyle(tint)
+                .frame(width: 34, height: 34)
+                .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text(note).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+        }
+        .buttonStyle(PressStyle())
     }
 }
 

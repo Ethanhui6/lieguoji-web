@@ -94,39 +94,201 @@ public enum PreviewWorld {
     /// engine.ts raisedCities.
     static func raisedCities(_ n: Int) -> Int { min(480, max(n + 1, Int((Double(n) * 1.15).rounded(.up)))) }
 
-    /// A small shaded chart of the land these heights make, for the new-world sheet.
-    public static func thumbnail(_ input: Inputs, heights: [UInt8], width: Int) -> (rgba: [UInt8], width: Int, height: Int) {
+    /// 新世界地形预览统计（用于开局选图页实时展示陆地占比、山地比例与海岸形态）。
+    public struct ThumbnailStats: Sendable {
+        public let landPercent: Int
+        public let mountainPercent: Int
+        public let forestPercent: Int
+        public let coastKind: String
+    }
+
+    /// A richly shaded antique-atlas preview chart of the land these heights make, for the new-world sheet.
+    /// Supports both pure relief cartography and optional projected nation-influence preview (`nations > 0`).
+    public static func thumbnail(
+        _ input: Inputs,
+        heights: [UInt8],
+        width: Int,
+        nations previewNations: Int = 0,
+        seed: String = ""
+    ) -> (rgba: [UInt8], width: Int, height: Int, stats: ThumbnailStats) {
         let map = input.base, picker = CellPicker(map: map)
         let w = max(2, width), h = max(2, Int(Float(w) * map.height / map.width))
         var field = [Float](repeating: 0, count: w * h)
-        for y in 0..<h { for x in 0..<w {
-            let px = (Float(x) + 0.5) * map.width / Float(w), py = (Float(y) + 0.5) * map.height / Float(h)
-            if let c = picker.cell(atX: px, y: py), c < heights.count { field[y * w + x] = Float(heights[c]) }
-        } }
-        let deep = MapPalette.Ocean.warmPaper.deep, shallow = MapPalette.Ocean.warmPaper.shallow, ink = RGB(hex: 0x4A3A28)
-        let ramp: [(at: Float, color: RGB)] = [(20, RGB(hex: 0xD3D49B)), (34, RGB(hex: 0xA9BC78)), (48, RGB(hex: 0xBFA96F)), (66, RGB(hex: 0x927A54)), (84, RGB(hex: 0xEFE8D8))]
-        func mix(_ a: RGB, _ b: RGB, _ t: Float) -> (Float, Float, Float) { (a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t) }
+        var landPixels = 0, mountainPixels = 0, forestPixels = 0, coastPixels = 0
+        for y in 0..<h {
+            for x in 0..<w {
+                let px = (Float(x) + 0.5) * map.width / Float(w), py = (Float(y) + 0.5) * map.height / Float(h)
+                if let c = picker.cell(atX: px, y: py), c < heights.count {
+                    let v = Float(heights[c])
+                    field[y * w + x] = v
+                    if v >= 20 {
+                        landPixels += 1
+                        if v >= 62 { mountainPixels += 1 }
+                        else if v >= 34 && v < 52 { forestPixels += 1 }
+                    }
+                }
+            }
+        }
+        // 可选势力分布预演：基于当前种子与陆地采样点按 Voronoi 划分示意版图与都城星标
+        var anchors: [(x: Float, y: Float, color: RGB)] = []
+        if previewNations > 0 && landPixels > 0 {
+            var rng: UInt64 = 14695981039346656037
+            for b in seed.utf8 { rng = (rng ^ UInt64(b)) &* 1099511628211 }
+            rng ^= UInt64(previewNations) &* 0x9E3779B97F4A7C15
+            func nextRand() -> Float {
+                rng ^= rng >> 12; rng ^= rng << 25; rng ^= rng >> 27
+                let v = (rng &* 2685821657736338717) >> 40
+                return Float(v) / Float(1 << 24)
+            }
+            var landCoords: [(Float, Float)] = []
+            let step = max(2, min(w, h) / 40)
+            for y in stride(from: step, to: h - step, by: step) {
+                for x in stride(from: step, to: w - step, by: step) where field[y * w + x] >= 22 {
+                    landCoords.append((Float(x), Float(y)))
+                }
+            }
+            if !landCoords.isEmpty {
+                let target = min(previewNations, min(palette.count, landCoords.count))
+                let firstIdx = Int(nextRand() * Float(landCoords.count)) % landCoords.count
+                var chosen = [landCoords[firstIdx]]
+                while chosen.count < target {
+                    var best = landCoords[0], bestDist: Float = -1
+                    for _ in 0..<min(48, landCoords.count) {
+                        let cand = landCoords[Int(nextRand() * Float(landCoords.count)) % landCoords.count]
+                        var dMin: Float = 1e9
+                        for s in chosen {
+                            let dx = cand.0 - s.0, dy = cand.1 - s.1
+                            dMin = min(dMin, dx * dx + dy * dy)
+                        }
+                        if dMin > bestDist { bestDist = dMin; best = cand }
+                    }
+                    chosen.append(best)
+                }
+                for (i, pt) in chosen.enumerated() {
+                    let col = RGB(css: palette[i % palette.count]) ?? RGB(0.65, 0.58, 0.48)
+                    anchors.append((pt.0, pt.1, col))
+                }
+            }
+        }
+        let deep = RGB(hex: 0x3D6472), midSea = RGB(hex: 0x5B8691), shallow = RGB(hex: 0x9AC0BE), ink = RGB(hex: 0x3B2E20), sand = RGB(hex: 0xEADAB2)
+        let ramp: [(at: Float, color: RGB)] = [
+            (20, RGB(hex: 0xDDD69E)),
+            (32, RGB(hex: 0xB3C37D)),
+            (46, RGB(hex: 0x99AD6A)),
+            (60, RGB(hex: 0xBD9F6A)),
+            (74, RGB(hex: 0x8F7550)),
+            (86, RGB(hex: 0xF2ECE0)),
+        ]
+        func mix3(_ a: RGB, _ b: RGB, _ t: Float) -> (Float, Float, Float) {
+            (a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t)
+        }
         func land(_ v: Float) -> (Float, Float, Float) {
-            for k in 1..<ramp.count where v < ramp[k].at { return mix(ramp[k - 1].color, ramp[k].color, (v - ramp[k - 1].at) / (ramp[k].at - ramp[k - 1].at)) }
+            for k in 1..<ramp.count where v < ramp[k].at {
+                return mix3(ramp[k - 1].color, ramp[k].color, (v - ramp[k - 1].at) / (ramp[k].at - ramp[k - 1].at))
+            }
             let top = ramp[ramp.count - 1].color
             return (top.r, top.g, top.b)
         }
-        var out = [UInt8](repeating: 255, count: w * h * 4)
-        for y in 0..<h { for x in 0..<w {
-            let i = y * w + x, v = field[i]
-            let north = field[max(0, y - 1) * w + x], west = field[y * w + max(0, x - 1)], nw = field[max(0, y - 1) * w + max(0, x - 1)]
-            var c: (Float, Float, Float)
-            if v < 20 { let t = v / 20; c = mix(deep, shallow, t * t) }
-            else {
-                c = land(v)
-                let light: Float = max(0.78, min(1.2, 1 + (v - nw) * 0.022))
-                c = (c.0 * light, c.1 * light, c.2 * light)
-                // The coast inked in.
-                if north < 20 || west < 20 { c = (c.0 + (ink.r - c.0) * 0.6, c.1 + (ink.g - c.1) * 0.6, c.2 + (ink.b - c.2) * 0.6) }
+        var ownerGrid = [Int](repeating: -1, count: anchors.isEmpty ? 0 : w * h)
+        if !anchors.isEmpty {
+            for y in 0..<h {
+                for x in 0..<w {
+                    let i = y * w + x
+                    guard field[i] >= 20 else { continue }
+                    let fx = Float(x), fy = Float(y)
+                    var best = 0, bestD: Float = 1e12
+                    for a in anchors.indices {
+                        let dx = fx - anchors[a].x, dy = fy - anchors[a].y
+                        let d = dx * dx + dy * dy
+                        if d < bestD { bestD = d; best = a }
+                    }
+                    ownerGrid[i] = best
+                }
             }
-            out[i * 4] = UInt8(max(0, min(1, c.0)) * 255); out[i * 4 + 1] = UInt8(max(0, min(1, c.1)) * 255); out[i * 4 + 2] = UInt8(max(0, min(1, c.2)) * 255)
-        } }
-        return (out, w, h)
+        }
+        var out = [UInt8](repeating: 255, count: w * h * 4)
+        for y in 0..<h {
+            for x in 0..<w {
+                let i = y * w + x, v = field[i]
+                let north = field[max(0, y - 1) * w + x]
+                let south = field[min(h - 1, y + 1) * w + x]
+                let west = field[y * w + max(0, x - 1)]
+                let east = field[y * w + min(w - 1, x + 1)]
+                let nw = field[max(0, y - 1) * w + max(0, x - 1)]
+                // 细腻古纸纹理噪点（零开销纯整数哈希）
+                let hBits = UInt32(truncatingIfNeeded: (x &* 374761393) ^ (y &* 668265263) ^ ((x + y) &* 1442695041))
+                let grain = (Float((hBits ^ (hBits >> 13)) & 0xFF) / 255.0 - 0.5) * 0.042
+                var c: (Float, Float, Float)
+                if v < 20 {
+                    let t = max(0, min(1, v / 20))
+                    c = t < 0.65 ? mix3(deep, midSea, t / 0.65) : mix3(midSea, shallow, (t - 0.65) / 0.35)
+                    // 浅海浪纹高光
+                    if north >= 20 || west >= 20 || south >= 20 || east >= 20 {
+                        c = (c.0 + (shallow.r - c.0) * 0.55, c.1 + (shallow.g - c.1) * 0.55, c.2 + (shallow.b - c.2) * 0.55)
+                    }
+                } else {
+                    c = land(v)
+                    if !anchors.isEmpty, ownerGrid[i] >= 0 {
+                        let ac = anchors[ownerGrid[i]].color
+                        c = (c.0 * 0.44 + ac.r * 0.56, c.1 * 0.44 + ac.g * 0.56, c.2 * 0.44 + ac.b * 0.56)
+                    }
+                    let slope = (v - nw) * 0.026 + (v - north) * 0.01 + (v - west) * 0.01
+                    let light = max(0.76, min(1.22, 1 + slope))
+                    // 暖阳高光 + 墨青暗部立体坡面
+                    c = (c.0 * light + (light > 1 ? (light - 1) * 0.08 : 0),
+                         c.1 * light + (light > 1 ? (light - 1) * 0.05 : 0),
+                         c.2 * light + (light < 1 ? (1 - light) * 0.06 : 0))
+                    let isCoast = north < 20 || west < 20 || south < 20 || east < 20
+                    if isCoast {
+                        coastPixels += 1
+                        if north < 20 || west < 20 {
+                            c = (c.0 + (ink.r - c.0) * 0.65, c.1 + (ink.g - c.1) * 0.65, c.2 + (ink.b - c.2) * 0.65)
+                        } else {
+                            c = (c.0 + (sand.r - c.0) * 0.38, c.1 + (sand.g - c.1) * 0.38, c.2 + (sand.b - c.2) * 0.38)
+                        }
+                    } else if !anchors.isEmpty {
+                        let o = ownerGrid[i]
+                        let oN = ownerGrid[max(0, y - 1) * w + x], oW = ownerGrid[y * w + max(0, x - 1)]
+                        if (oN >= 0 && oN != o) || (oW >= 0 && oW != o) {
+                            c = (c.0 * 0.58 + ink.r * 0.42, c.1 * 0.58 + ink.g * 0.42, c.2 * 0.58 + ink.b * 0.42)
+                        }
+                    }
+                }
+                // 柔和四角暗角烘托古图装裱质感
+                let ux = Float(x) / Float(max(1, w - 1)) * 2 - 1, uy = Float(y) / Float(max(1, h - 1)) * 2 - 1
+                let vig = 1 - min(0.14, (ux * ux + uy * uy) * 0.075)
+                out[i * 4] = UInt8(max(0, min(1, (c.0 + grain) * vig)) * 255)
+                out[i * 4 + 1] = UInt8(max(0, min(1, (c.1 + grain) * vig)) * 255)
+                out[i * 4 + 2] = UInt8(max(0, min(1, (c.2 + grain) * vig)) * 255)
+            }
+        }
+        // 在势力预览模式下点亮各拟建都城朱金星点
+        for a in anchors {
+            let cx = Int(a.x), cy = Int(a.y)
+            for dy in -3...3 {
+                for dx in -3...3 {
+                    let px = cx + dx, py = cy + dy
+                    guard px >= 0, px < w, py >= 0, py < h else { continue }
+                    let d2 = dx * dx + dy * dy
+                    guard d2 <= 9 else { continue }
+                    let i = (py * w + px) * 4
+                    if d2 <= 2 {
+                        out[i] = 250; out[i + 1] = 238; out[i + 2] = 200
+                    } else if d2 <= 5 {
+                        out[i] = 186; out[i + 1] = 56; out[i + 2] = 40
+                    } else {
+                        out[i] = 52; out[i + 1] = 38; out[i + 2] = 26
+                    }
+                }
+            }
+        }
+        let total = max(1, w * h)
+        let landPct = Int((Float(landPixels) / Float(total) * 100).rounded())
+        let mtnPct = landPixels > 0 ? Int((Float(mountainPixels) / Float(landPixels) * 100).rounded()) : 0
+        let forPct = landPixels > 0 ? Int((Float(forestPixels) / Float(landPixels) * 100).rounded()) : 0
+        let coastDensity = landPixels > 0 ? Float(coastPixels) / Float(landPixels) : 0
+        let coastKind = coastDensity > 0.14 ? "岛屿曲折" : coastDensity > 0.085 ? "海湾错落" : "大陆广袤"
+        return (out, w, h, ThumbnailStats(landPercent: landPct, mountainPercent: mtnPct, forestPercent: forPct, coastKind: coastKind))
     }
 
     /// A sea texture shaded by depth, authored in the warm-paper pair (deep 0x527c86 → shallow 0x8eafb1).

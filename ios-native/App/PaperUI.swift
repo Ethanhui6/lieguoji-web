@@ -415,11 +415,19 @@ struct StatisticsSheet: View {
                         .onChange(of: category) { _, next in withAnimation(Motion.tap) { proxy.scrollTo(next, anchor: .center) } }
                     }
                     let top = max(1, rows.map { abs($0.value) }.max() ?? 1)
+                    // 天下前三甲颁台（魁首 / 榜眼 / 探花）：视觉与国家列表、外交列表清晰区隔
+                    if rows.count >= 3 && category != "wars" && category != "campaigns" {
+                        podiumStrip(rows: Array(rows.prefix(3)))
+                            .padding(.horizontal, 16)
+                    }
+                    let restOffset = (rows.count >= 3 && category != "wars" && category != "campaigns") ? 3 : 0
+                    let shownRows = Array(rows.dropFirst(restOffset))
                     LazyVStack(spacing: 0) {
-                        ForEach(Array(rows.enumerated()), id: \.element.id) { i, row in
+                        ForEach(Array(shownRows.enumerated()), id: \.element.id) { offset, row in
+                            let i = offset + restOffset
                             Button { if row.nation >= 0 { openNation(row.nation) } } label: {
                                 HStack(spacing: 12) {
-                                    Text(ChineseNumeral.of(i + 1)).font(Theme.kai(i < 3 ? 22 : 17)).foregroundStyle(i < 3 ? Theme.seal : Theme.ink2).frame(width: 34)
+                                    Text(ChineseNumeral.of(i + 1)).font(Theme.kai(i < 3 ? 22 : 16)).foregroundStyle(i < 3 ? Theme.seal : Theme.ink2).frame(width: 34)
                                     VStack(alignment: .leading, spacing: 5) {
                                         HStack {
                                             if let c = row.color { RoundedRectangle(cornerRadius: 2).fill(Names.color(c)).frame(width: 10, height: 10) }
@@ -428,13 +436,13 @@ struct StatisticsSheet: View {
                                             Text(row.text).font(Theme.label).foregroundStyle(row.value < 0 ? Theme.seal : Theme.ink2).monospacedDigit()
                                         }
                                         InkBar(fraction: brushed ? abs(row.value) / top : 0, color: row.color.map { Names.color($0) } ?? Theme.ink, height: 4, gradient: true)
-                                            .animation(Motion.reveal.delay(min(0.4, Double(i) * 0.035)), value: brushed)
+                                            .animation(Motion.reveal.delay(min(0.4, Double(offset) * 0.035)), value: brushed)
                                     }
                                 }
                                 .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            if i < rows.count - 1 { Rectangle().fill(Theme.ink.opacity(0.1)).frame(height: 0.7).padding(.leading, 62) }
+                            if offset < shownRows.count - 1 { Rectangle().fill(Theme.ink.opacity(0.1)).frame(height: 0.7).padding(.leading, 62) }
                         }
                         if rows.isEmpty { Text(category == "war" || category == "wars" || category == "campaigns" ? "天下无战事" : "暂无记录").font(Theme.section).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(30) }
                     }
@@ -451,6 +459,36 @@ struct StatisticsSheet: View {
             rows = next
             try? await Task.sleep(nanoseconds: 30_000_000)
             brushed = true
+        }
+    }
+
+    @ViewBuilder
+    private func podiumStrip(rows: [StatisticsRow]) -> some View {
+        let medals: [(rank: Int, label: String, color: Color, lift: CGFloat)] = [
+            (1, "榜眼", Theme.ink2, 0),
+            (0, "魁首", Theme.seal, 10),
+            (2, "探花", Color(red: 0.64, green: 0.45, blue: 0.16), 0),
+        ]
+        HStack(alignment: .bottom, spacing: 8) {
+            ForEach(medals, id: \.rank) { m in
+                let row = rows[m.rank]
+                let tint = row.color.map { Names.color($0) } ?? m.color
+                Button { if row.nation >= 0 { openNation(row.nation) } } label: {
+                    VStack(spacing: 6) {
+                        SealFace(text: m.label, size: m.rank == 0 ? 30 : 25, color: m.color)
+                        RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 24, height: 3.5)
+                        Text(row.name).font(m.rank == 0 ? Theme.section : Theme.body).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                        Text(row.text).font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.72)
+                    }
+                    .padding(.horizontal, 8).padding(.vertical, m.rank == 0 ? 14 : 10)
+                    .frame(maxWidth: .infinity)
+                    .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(m.rank == 0 ? Theme.seal.opacity(0.45) : Theme.ink.opacity(0.14), lineWidth: m.rank == 0 ? 1.15 : 0.85))
+                    .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(m.rank == 0 ? 0.10 : 0.05), radius: 6, y: 2)
+                    .padding(.bottom, m.lift)
+                }
+                .buttonStyle(PressStyle())
+            }
         }
     }
 }
@@ -1093,12 +1131,12 @@ struct FloatingTacticalPill: View {
     @State private var dragging = false
 
     private func anchor(in size: CGSize, safe: EdgeInsets) -> CGPoint {
-        let padX: CGFloat = landscape ? 86 : 14
-        let topY: CGFloat = safe.top + 64
-        let botY: CGFloat = max(topY + 80, size.height - safe.bottom - (landscape ? 60 : 138))
-        let pillW: CGFloat = expanded ? 232 : 42
+        let padX: CGFloat = landscape ? 86 : Theme.Control.screenInset
+        let topY: CGFloat = safe.top + 66
+        let botY: CGFloat = max(topY + 80, size.height - safe.bottom - (landscape ? 60 : 134))
+        let pillW: CGFloat = expanded ? 236 : Theme.Control.topHeight
         let leftX = padX + pillW / 2
-        let rightX = max(leftX, size.width - 14 - pillW / 2)
+        let rightX = max(leftX, size.width - Theme.Control.screenInset - pillW / 2)
         switch corner {
         case .topLeading: return CGPoint(x: leftX, y: topY)
         case .topTrailing: return CGPoint(x: rightX, y: topY)

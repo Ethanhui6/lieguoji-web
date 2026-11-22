@@ -119,6 +119,7 @@ import LieguojiCore
     var savedLiveEffects: MapEffects?
     var savedLiveMapView: MapViewMode = .state
     var replayTimer: Task<Void, Never>?
+    var lastReplayOwners: [Int] = []
     /// 后备网页引擎：纯 Swift 已接管全部建世、推演、指令与存档，启动与日常游玩零 WKWebView 实例；
     /// 仅在读取极早期旧版 JSON 存档、远程气候回退或 CI 对照计时时按需创建并挂载。
     @Published private(set) var legacyEngine: EngineHost?

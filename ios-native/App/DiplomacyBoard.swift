@@ -30,6 +30,14 @@ struct DiplomacyBoard: View {
     }
     private func name(_ n: Int) -> String { map.meta.nations.indices.contains(n) ? MapLayers.stateLabel(map.meta.nations[n].name, full: false) : "无主" }
     private func color(_ n: Int) -> Color { map.meta.nations.indices.contains(n) ? Names.color(map.meta.nations[n].color) : Theme.ink2 }
+    private func posturePill(label: String, count: Int, tint: Color) -> some View {
+        HStack(spacing: 4) {
+            Text(label).font(Theme.caption).foregroundStyle(Theme.ink2)
+            Text("\(count)").font(Theme.body).foregroundStyle(count > 0 ? tint : Theme.ink2).monospacedDigit()
+        }
+        .frame(maxWidth: .infinity).frame(height: 30)
+        .background(count > 0 ? tint.opacity(0.09) : Theme.wash.opacity(0.65), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
 
     private func relations(_ info: DiplomacyOverview) -> [Relation] {
         var rows = [Int: Relation]()
@@ -77,12 +85,29 @@ struct DiplomacyBoard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                CountTile(title: "战争", value: state.wars.count, hot: !state.wars.isEmpty)
-                CountTile(title: "同盟", value: alliances.count, hot: false)
-                CountTile(title: "条约", value: info?.pacts.count ?? 0, hot: false)
-                CountTile(title: "接壤", value: info?.neighbors.count ?? 0, hot: false)
+            // 邦交态势总览卡（区别于军事页的四格计数块，以单一国玺态势横卡直观呈现本国外交处境）
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    RoundedRectangle(cornerRadius: 4).fill(color(nation)).frame(width: 6, height: 34)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(name(nation)) · 鸿胪邦交").font(Theme.section).foregroundStyle(Theme.ink)
+                        Text(state.wars.isEmpty ? "四海承平 · 邦交从容" : "天下 \(state.wars.count) 场战事进行中 · 本国接壤 \(info?.neighbors.count ?? 0) 邦")
+                            .font(Theme.caption).foregroundStyle(Theme.ink2)
+                    }
+                    Spacer()
+                    SealFace(text: (info?.enemies.isEmpty == false) ? "战" : "盟", size: 28, color: (info?.enemies.isEmpty == false) ? Theme.seal : Theme.jade)
+                }
+                HStack(spacing: 6) {
+                    posturePill(label: "敌国", count: info?.enemies.count ?? 0, tint: Theme.seal)
+                    posturePill(label: "同盟", count: info?.allies.count ?? 0, tint: Theme.jade)
+                    posturePill(label: "条约", count: info?.pacts.count ?? 0, tint: Color(red: 0.66, green: 0.48, blue: 0.14))
+                    posturePill(label: "附庸", count: info?.vassals.count ?? 0, tint: Theme.ink)
+                }
             }
+            .padding(14)
+            .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
+            .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.06), radius: 6, y: 2)
             .padding(.horizontal, Theme.Layout.pageInset)
 
             // 霸权威胁警示与反霸包围网

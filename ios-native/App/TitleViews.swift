@@ -267,12 +267,12 @@ struct TitleView: View {
 }
 
 /// 山河预览 off the main thread: the template's heights for this seed, drawn small.
-func terrainThumbnail(_ inputs: PreviewWorld.Inputs, seed: String, template: String) -> UIImage? {
-    let t = PreviewWorld.thumbnail(inputs, heights: TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: template), width: 480)
+func terrainThumbnail(_ inputs: PreviewWorld.Inputs, seed: String, template: String, previewNations: Int = 0) -> (image: UIImage, stats: PreviewWorld.ThumbnailStats)? {
+    let t = PreviewWorld.thumbnail(inputs, heights: TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: template), width: 640, nations: previewNations, seed: seed)
     guard let provider = CGDataProvider(data: Data(t.rgba) as CFData),
           let image = CGImage(width: t.width, height: t.height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: t.width * 4, space: CGColorSpaceCreateDeviceRGB(),
                               bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipLast.rawValue), provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent) else { return nil }
-    return UIImage(cgImage: image)
+    return (UIImage(cgImage: image), t.stats)
 }
 
 /// The title screen's main action: a vermilion seal plate (or a paper one) with an icon, a title and a
@@ -341,39 +341,55 @@ struct NewWorldSheet: View {
     /// The seed used while the field is left blank, so the land shown is the land founded.
     @State private var rolled = String(UInt32.random(in: 0...UInt32.max))
     @State private var terrain: UIImage?
+    @State private var terrainStats: PreviewWorld.ThumbnailStats?
+    @State private var previewShowNations = true
     @State private var renderingTerrain = false
     @State private var selectedPreset: String? = nil
     private var seed: String { options.seed.isEmpty ? rolled : options.seed }
     private var chosen: GameModel.NewWorld { var o = options; o.seed = seed; return o }
     struct ScenarioPreset: Identifiable {
-        let id: String; let title: String; let note: String; let symbol: String
+        let id: String; let title: String; let note: String; let seal: String; let symbol: String
         let template: String; let nations: Int; let provinces: Int; let relations: String; let cultures: Set<String>
     }
     static let presets: [ScenarioPreset] = [
-        ScenarioPreset(id: "huaxia", title: "华夏群雄", note: "中原大陆 · 诸侯并起", symbol: "crown", template: "pangea", nations: 12, provinces: 140, relations: "peace", cultures: ["chinese", "korean", "mongol", "vietnamese", "japanese"]),
-        ScenarioPreset(id: "warring", title: "列国争霸", note: "多陆交锋 · 开局即战", symbol: "flag.2.crossed", template: "continents", nations: 14, provinces: 160, relations: "war", cultures: Set(Names.cultureIds)),
-        ScenarioPreset(id: "voyage", title: "大航海群岛", note: "星罗海岛 · 舟师竞渡", symbol: "water.waves", template: "archipelago", nations: 10, provinces: 120, relations: "peace", cultures: ["british", "french", "spanish", "portuguese", "dutch", "italian", "japanese", "chinese", "southeastAsian"]),
-        ScenarioPreset(id: "silkroad", title: "丝路万邦", note: "高原群山 · 东西汇通", symbol: "mountain.2", template: "highIsland", nations: 12, provinces: 130, relations: "peace", cultures: ["chinese", "mongol", "turkish", "persian", "arab", "indian", "greek", "italian", "russian"]),
+        ScenarioPreset(id: "huaxia", title: "华夏群雄", note: "中原大陆 · 诸侯并起", seal: "夏", symbol: "crown", template: "pangea", nations: 12, provinces: 140, relations: "peace", cultures: ["chinese", "korean", "mongol", "vietnamese", "japanese"]),
+        ScenarioPreset(id: "zhanguo", title: "战国七雄", note: "七强接壤 · 合纵连横", seal: "战", symbol: "flag.2.crossed", template: "pangea", nations: 7, provinces: 110, relations: "war", cultures: ["chinese"]),
+        ScenarioPreset(id: "warring", title: "列国争霸", note: "多陆交锋 · 开局即战", seal: "霸", symbol: "flag.2.crossed", template: "continents", nations: 14, provinces: 160, relations: "war", cultures: Set(Names.cultureIds)),
+        ScenarioPreset(id: "voyage", title: "大航海群岛", note: "星罗海岛 · 舟师竞渡", seal: "海", symbol: "water.waves", template: "archipelago", nations: 10, provinces: 120, relations: "peace", cultures: ["english", "french", "spanish", "portuguese", "dutch", "italian", "japanese", "chinese"]),
+        ScenarioPreset(id: "silkroad", title: "丝路万邦", note: "高原群山 · 东西汇通", seal: "丝", symbol: "mountain.2", template: "highIsland", nations: 12, provinces: 130, relations: "peace", cultures: ["chinese", "mongol", "turkic", "persian", "arab", "indian", "greek", "italian", "slavic"]),
+        ScenarioPreset(id: "myriad", title: "万国演义", note: "二十诸侯 · 乱世纷争", seal: "万", symbol: "globe.asia.australia", template: "continents", nations: 20, provinces: 210, relations: "peace", cultures: Set(Names.cultureIds)),
+    ]
+    struct ScalePreset: Identifiable { let id: String; let title: String; let nations: Int; let provinces: Int }
+    static let scalePresets: [ScalePreset] = [
+        ScalePreset(id: "compact", title: "袖珍 · 6国", nations: 6, provinces: 80),
+        ScalePreset(id: "standard", title: "标准 · 12国", nations: 12, provinces: 140),
+        ScalePreset(id: "grand", title: "宏大 · 18国", nations: 18, provinces: 200),
+        ScalePreset(id: "epic", title: "史诗 · 24国", nations: 24, provinces: 260),
     ]
     struct CultureGroup: Identifiable { let id: String; let title: String; let list: Set<String> }
     static let cultureGroups: [CultureGroup] = [
         CultureGroup(id: "east", title: "东亚", list: ["chinese", "japanese", "korean", "vietnamese", "mongol"]),
-        CultureGroup(id: "euro", title: "欧洲", list: ["british", "french", "german", "italian", "spanish", "portuguese", "dutch", "polish", "russian", "scandinavian", "greek", "balkan", "celtic", "austrian"]),
-        CultureGroup(id: "silk", title: "亚非", list: ["arab", "persian", "turkish", "indian", "egyptian", "african", "southeastAsian"]),
+        CultureGroup(id: "euro", title: "欧洲", list: ["english", "french", "german", "italian", "spanish", "portuguese", "dutch", "polish", "slavic", "norse", "greek", "roman", "hungarian"]),
+        CultureGroup(id: "silk", title: "亚非", list: ["arab", "persian", "turkic", "indian", "egyptian", "tibetan"]),
         CultureGroup(id: "all", title: "全选", list: Set(Names.cultureIds)),
     ]
-    /// Each terrain template's picture and one line of what it makes.
-    static let templateArt: [String: (symbol: String, note: String)] = [
-        "continents": ("globe.asia.australia", "数块大陆隔海相望"),
-        "pangea": ("globe.europe.africa", "一整块大陆，列国接壤"),
-        "archipelago": ("water.waves", "星罗棋布的海岛"),
-        "highIsland": ("mountain.2", "群山耸立的大岛"),
+    /// Each terrain template's picture, playstyle badge and description.
+    static let templateArt: [String: (tag: String, note: String)] = [
+        "continents": ("陆海兼备", "数块大陆隔海相望"),
+        "pangea": ("中原逐鹿", "一整块大陆，列国接壤"),
+        "archipelago": ("舟师争霸", "星罗棋布的群岛海湾"),
+        "highIsland": ("关隘天险", "群山耸立的高原大岛"),
     ]
     var body: some View {
         ScrollView {
-        VStack(alignment: .leading, spacing: 18) {
-            SheetHeader(title: "新世界", subtitle: "开辟一方天下", seal: "新")
-            SectionLabel("精选开局")
+        VStack(alignment: .leading, spacing: 16) {
+            SheetHeader(title: "新世界", subtitle: "择一方山河 · 启一卷史诗", seal: "新")
+
+            // 1. 顶部实时高清山河预览卡（支持「地形地貌 / 势力分布」即时切换 + 陆海山地实测数据 + 换图按钮）
+            if inputs != nil { terrainCard.padding(.horizontal, Theme.Layout.pageInset) }
+
+            // 2. 精选剧本（6 套差异化历史/沙盒格局）
+            SectionLabel("精选剧本")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(Self.presets) { p in
@@ -390,69 +406,100 @@ struct NewWorldSheet: View {
                                 options.naming = "historical-names"
                             }
                         } label: {
-                            HStack(spacing: 8) {
-                                Group {
-                                    if let g = GameActionLabel.glyph(for: p.symbol) {
-                                        InkIcon(glyph: g, size: 17, weight: 1.75)
-                                    } else {
-                                        Image(systemName: p.symbol).font(.system(size: 17, weight: .medium))
-                                    }
-                                }
-                                .foregroundStyle(on ? Theme.paper2 : Theme.seal)
+                            HStack(spacing: 9) {
+                                SealFace(text: p.seal, size: 28, color: on ? Theme.paper2 : Theme.seal, filled: !on)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(p.title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                    Text(p.note).font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2)
+                                    HStack(spacing: 5) {
+                                        Text(p.title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                        Text("\(p.nations)国").font(Theme.kai(11))
+                                            .foregroundStyle(on ? Theme.paper2.opacity(0.9) : Theme.seal)
+                                    }
+                                    Text(p.note).font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.84) : Theme.ink2)
                                 }
                             }
                             .padding(.horizontal, 12).padding(.vertical, 9)
-                            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
+                            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.16), lineWidth: 0.85))
                         }
                         .buttonStyle(PressStyle())
                     }
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
-            SectionLabel("地形")
-            // 地形: a card each, with its picture.
+
+            // 3. 地形模板（2×2 手绘微缩山河轮廓卡 + 战略标签）
+            SectionLabel("山河格局")
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(Names.templates, id: \.id) { t in
                     let on = options.template == t.id, art = Self.templateArt[t.id]
-                    Button { withAnimation(Motion.tap) { options.template = t.id } } label: {
+                    Button {
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.tap) { selectedPreset = nil; options.template = t.id }
+                    } label: {
                         HStack(spacing: 10) {
-                            Group {
-                                if let g = GameActionLabel.glyph(for: art?.symbol ?? "map") {
-                                    InkIcon(glyph: g, size: 22, weight: 1.7)
-                                } else {
-                                    Image(systemName: art?.symbol ?? "map").font(.system(size: 22, weight: .light))
-                                }
-                            }
-                            .foregroundStyle(on ? Theme.paper2 : Theme.seal).frame(width: 30)
+                            TerrainSilhouette(template: t.id, active: on)
+                                .frame(width: 38, height: 34)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(t.name).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                Text(art?.note ?? "").font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
+                                HStack(spacing: 4) {
+                                    Text(t.name).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1)
+                                    if let tag = art?.tag {
+                                        Text(tag).font(Theme.kai(10))
+                                            .foregroundStyle(on ? Theme.paper2.opacity(0.92) : Theme.seal)
+                                            .padding(.horizontal, 5).padding(.vertical, 1)
+                                            .background(on ? Theme.paper2.opacity(0.18) : Theme.seal.opacity(0.09), in: Capsule())
+                                    }
+                                }
+                                Text(art?.note ?? "").font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.84) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
                             }
                             Spacer(minLength: 0)
                         }
-                        .padding(.horizontal, 12).frame(height: 58)
-                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
+                        .padding(.horizontal, 11).frame(height: 62)
+                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.16), lineWidth: 0.85))
                     }
                     .buttonStyle(PressStyle())
                 }
             }
             .padding(.horizontal, Theme.Layout.pageInset)
-            if inputs != nil { terrainCard.padding(.horizontal, Theme.Layout.pageInset) }
-            SectionLabel("规模")
-            VStack(alignment: .leading, spacing: 12) {
-                PaperStepper(title: "国家", value: $options.nations, range: 2...24, unit: "国")
-                PaperStepper(title: "州郡", value: Binding(get: { options.provinceCount }, set: { options.provinces = String($0) }), range: options.nations...480, unit: "州")
-                HStack(spacing: 10) {
-                    InkIcon(glyph: .refresh, size: 16, weight: 1.7).foregroundStyle(Theme.seal).frame(width: Theme.Layout.iconGutter)
-                    Text("种子").font(Theme.section).foregroundStyle(Theme.ink2)
-                    Spacer()
-                    TextField("", text: $options.seed, prompt: Text("随机").foregroundColor(Theme.ink2.opacity(0.6)))
-                        .paperField(width: 160).keyboardType(.numberPad).multilineTextAlignment(.trailing)
+
+            // 4. 天下规模（一键快捷档位 + 精细步进器）
+            SectionLabel("天下规模")
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 7) {
+                    ForEach(Self.scalePresets) { sp in
+                        let on = options.nations == sp.nations && options.provinceCount == sp.provinces
+                        Button {
+                            GameFeel.shared.tap()
+                            withAnimation(Motion.tap) {
+                                selectedPreset = nil
+                                options.nations = sp.nations
+                                options.provinces = String(sp.provinces)
+                            }
+                        } label: {
+                            Text(sp.title).font(Theme.kai(12)).lineLimit(1).minimumScaleFactor(0.78)
+                                .foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                .frame(maxWidth: .infinity).frame(height: 32)
+                                .background(on ? Theme.ink : Theme.paper2, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.15), lineWidth: 0.8))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
+                Group2 {
+                    VStack(spacing: 10) {
+                        PaperStepper(title: "国家数", value: $options.nations, range: 2...24, unit: "国")
+                        Divider2()
+                        PaperStepper(title: "州郡数", value: Binding(get: { options.provinceCount }, set: { options.provinces = String($0) }), range: options.nations...480, unit: "州")
+                        Divider2()
+                        HStack(spacing: 10) {
+                            InkIcon(glyph: .refresh, size: 16, weight: 1.7).foregroundStyle(Theme.seal).frame(width: Theme.Layout.iconGutter)
+                            Text("山河种子").font(Theme.body).foregroundStyle(Theme.ink2)
+                            Spacer()
+                            TextField("", text: $options.seed, prompt: Text("随机 · \(rolled.prefix(6))").foregroundColor(Theme.ink2.opacity(0.6)))
+                                .paperField(width: 156).keyboardType(.numberPad).multilineTextAlignment(.trailing)
+                        }
+                    }
+                    .padding(12)
                 }
             }
             .padding(.horizontal, Theme.Layout.pageInset)
@@ -468,20 +515,20 @@ struct NewWorldSheet: View {
                 .paperCard()
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
-            SectionLabel("开局")
+            SectionLabel("开局局势")
             HStack(spacing: 10) {
                 choice("peace", "列国和平", "leaf", "各国相安，渐起争端", selection: $options.relations)
                 choice("war", "群雄混战", "flag.2.crossed", "开局即四面开战", selection: $options.relations)
             }
             .padding(.horizontal, Theme.Layout.pageInset)
-            SectionLabel("命名")
+            SectionLabel("命名体系")
             HStack(spacing: 10) {
                 choice("historical-names", "历史真名", "book.closed", "取自史书的国名人名", selection: $options.naming)
                 choice("culture-generated", "按文化生成", "character.book.closed", "按各文化新造名字", selection: $options.naming)
             }
             .padding(.horizontal, Theme.Layout.pageInset)
             HStack(spacing: 8) {
-                SectionLabel("文化（\(options.cultures.count)）", inset: false)
+                SectionLabel("文明文化（\(options.cultures.count)）", inset: false)
                 Spacer()
                 ForEach(Self.cultureGroups) { g in
                     Button(g.title) {
@@ -489,7 +536,7 @@ struct NewWorldSheet: View {
                         withAnimation(Motion.tap) { options.cultures = g.list }
                     }
                     .font(Theme.caption).foregroundStyle(options.cultures == g.list ? Theme.paper2 : Theme.seal)
-                    .padding(.horizontal, 8).frame(height: 24)
+                    .padding(.horizontal, 9).frame(height: 26)
                     .background(options.cultures == g.list ? Theme.seal : Theme.seal.opacity(0.08), in: Capsule())
                 }
             }
@@ -506,7 +553,7 @@ struct NewWorldSheet: View {
                         Text(Names.culture[c] ?? c).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                             .frame(maxWidth: .infinity).frame(height: 36)
                             .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.16), lineWidth: 0.85))
                     }
                     .buttonStyle(PressStyle())
                 }
@@ -514,9 +561,9 @@ struct NewWorldSheet: View {
             .padding(.horizontal, Theme.Layout.pageInset)
             Text("各国从所选文化中取名、宗教与政体。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
             VStack(spacing: 10) {
-                Button { start(chosen) } label: { PrimaryLabel(title: "生成地图", symbol: "map") }.buttonStyle(PressStyle())
+                Button { start(chosen) } label: { PrimaryLabel(title: "生成地图 · 启幕推演", symbol: "map") }.buttonStyle(PressStyle())
                 if let draw {
-                    Button { draw(chosen) } label: { SecondaryLabel(title: "自己绘制地图", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle())
+                    Button { draw(chosen) } label: { SecondaryLabel(title: "手绘自定义地图", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle())
                 }
             }
             .padding(.horizontal, Theme.Layout.pageInset).padding(.top, 4)
@@ -524,61 +571,112 @@ struct NewWorldSheet: View {
         .padding(.vertical, 18)
         }
         .scrollIndicators(.hidden)
-        .task(id: seed + "|" + options.template) { await drawTerrain() }
+        .task(id: "\(seed)|\(options.template)|\(previewShowNations ? options.nations : 0)") { await drawTerrain() }
     }
-    /// 山河预览: the land this template and seed will make, before anything is founded.
+    /// 高清山河预览卡：展示地形浮雕／预计列国版图切换、实测陆海山地占比与随机换图按钮。
     private var terrainCard: some View {
-        ZStack(alignment: .bottomTrailing) {
-            Group {
-                if let terrain { Image(uiImage: terrain).resizable().transition(.opacity) } else { Theme.paper2 }
-            }
-            .aspectRatio(16.0 / 9.0, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.ink.opacity(0.3), lineWidth: 1))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.paper2.opacity(0.4), lineWidth: 0.6).padding(3))
-            .overlay(alignment: .topLeading) {
-                HStack(spacing: 6) {
-                    Text(Names.templates.first(where: { $0.id == options.template })?.name ?? options.template)
-                        .font(Theme.caption).foregroundStyle(Theme.paper2)
-                    Text("· \(options.nations)国 \(options.provinceCount)州")
-                        .font(Theme.caption).foregroundStyle(Theme.paper2.opacity(0.85)).monospacedDigit()
+        VStack(spacing: 0) {
+            ZStack(alignment: .bottomTrailing) {
+                Group {
+                    if let terrain { Image(uiImage: terrain).resizable().transition(.opacity) } else { Theme.paper2 }
                 }
-                .padding(.horizontal, 9).padding(.vertical, 4)
-                .background(Theme.ink.opacity(0.68), in: Capsule())
-                .padding(9)
-            }
-            .overlay {
-                if renderingTerrain {
-                    ZStack {
-                        Theme.paper.opacity(0.35)
-                        InkBusy()
+                .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                .overlay(alignment: .topLeading) {
+                    HStack(spacing: 6) {
+                        Text(Names.templates.first(where: { $0.id == options.template })?.name ?? options.template)
+                            .font(Theme.caption).foregroundStyle(Theme.paper2)
+                        Text("· \(options.nations)国 \(options.provinceCount)州")
+                            .font(Theme.caption).foregroundStyle(Theme.paper2.opacity(0.88)).monospacedDigit()
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .transition(.opacity)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Theme.ink.opacity(0.72), in: Capsule())
+                    .padding(10)
                 }
-            }
-            Button {
-                GameFeel.shared.tap()
-                options.seed = ""; rolled = String(UInt32.random(in: 0...UInt32.max))
-            } label: {
-                HStack(spacing: 5) {
-                    InkIcon(glyph: .refresh, size: 13, weight: 1.8)
-                    Text("换一方山河").font(Theme.label)
+                .overlay(alignment: .topTrailing) {
+                    // 地形图 / 势力分布实时切换胶囊
+                    HStack(spacing: 2) {
+                        ForEach([(false, "地貌"), (true, "势力")], id: \.0) { mode, label in
+                            Button {
+                                GameFeel.shared.tap()
+                                withAnimation(Motion.tap) { previewShowNations = mode }
+                            } label: {
+                                Text(label).font(Theme.kai(11))
+                                    .foregroundStyle(previewShowNations == mode ? Theme.ink : Theme.paper2.opacity(0.88))
+                                    .padding(.horizontal, 9).frame(height: 24)
+                                    .background(previewShowNations == mode ? Theme.paper2 : Color.clear, in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(2.5)
+                    .background(Theme.ink.opacity(0.68), in: Capsule())
+                    .padding(10)
                 }
-                .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 30)
-                .background(Theme.seal, in: Capsule())
+                .overlay {
+                    if renderingTerrain {
+                        ZStack {
+                            Theme.paper.opacity(0.30)
+                            InkBusy()
+                        }
+                        .transition(.opacity)
+                    }
+                }
+                Button {
+                    GameFeel.shared.tap()
+                    options.seed = ""; rolled = String(UInt32.random(in: 0...UInt32.max))
+                } label: {
+                    HStack(spacing: 5) {
+                        InkIcon(glyph: .refresh, size: 13, weight: 1.8)
+                        Text("换一方山河").font(Theme.label)
+                    }
+                    .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 32)
+                    .background(Theme.seal, in: Capsule())
+                    .shadow(color: .black.opacity(0.22), radius: 5, y: 2)
+                }
+                .buttonStyle(PressStyle()).padding(10)
             }
-            .buttonStyle(PressStyle()).padding(9)
+            // 底部地理勘测条：实时显示陆地占比、山地比例、林地与海岸特征
+            HStack(spacing: 10) {
+                if let st = terrainStats {
+                    atlasStat(label: "陆地", value: "\(st.landPercent)%")
+                    Divider().frame(height: 12)
+                    atlasStat(label: "山地", value: "\(st.mountainPercent)%")
+                    Divider().frame(height: 12)
+                    atlasStat(label: "林泽", value: "\(st.forestPercent)%")
+                    Divider().frame(height: 12)
+                    atlasStat(label: "岸线", value: st.coastKind)
+                } else {
+                    Text("正在勘测此方山河地貌……").font(Theme.caption).foregroundStyle(Theme.ink2)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .background(Theme.paper2.opacity(0.96))
         }
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.22), lineWidth: 1))
+        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.12), radius: 10, y: 4)
         .animation(Motion.fade, value: renderingTerrain)
     }
+
+    private func atlasStat(label: String, value: String) -> some View {
+        HStack(spacing: 3) {
+            Text(label).font(Theme.kai(11)).foregroundStyle(Theme.ink2)
+            Text(value).font(Theme.kai(12)).foregroundStyle(Theme.ink).monospacedDigit()
+        }
+    }
+
     private func drawTerrain() async {
         guard let inputs else { return }
         renderingTerrain = true
-        let seed = self.seed, template = options.template
-        let image = await Task.detached(priority: .userInitiated) { terrainThumbnail(inputs, seed: seed, template: template) }.value
+        let seed = self.seed, template = options.template, n = previewShowNations ? options.nations : 0
+        let res = await Task.detached(priority: .userInitiated) { terrainThumbnail(inputs, seed: seed, template: template, previewNations: n) }.value
         guard !Task.isCancelled else { return }
-        withAnimation(Motion.fade) { terrain = image; renderingTerrain = false }
+        withAnimation(Motion.fade) {
+            terrain = res?.image
+            terrainStats = res?.stats
+            renderingTerrain = false
+        }
     }
     /// A two-way choice as an illustrated card.
     private func choice(_ id: String, _ title: String, _ symbol: String, _ note: String, selection: Binding<String>) -> some View {
@@ -601,6 +699,54 @@ struct NewWorldSheet: View {
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
         }
         .buttonStyle(PressStyle())
+    }
+}
+
+/// 开局选图页 4 种地形格局的手绘微缩舆图轮廓（多大陆 / 联合大陆 / 群岛 / 高山大岛）。
+private struct TerrainSilhouette: View {
+    let template: String
+    let active: Bool
+    var body: some View {
+        let fg = active ? Theme.paper2 : Theme.seal
+        let sea = active ? Theme.paper2.opacity(0.14) : Theme.jade.opacity(0.11)
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(sea)
+            Canvas { ctx, size in
+                let w = size.width, h = size.height
+                func blob(_ pts: [(CGFloat, CGFloat)], fill: Color, stroke: Color) {
+                    var p = Path()
+                    guard let first = pts.first else { return }
+                    p.move(to: CGPoint(x: first.0 * w, y: first.1 * h))
+                    for pt in pts.dropFirst() { p.addLine(to: CGPoint(x: pt.0 * w, y: pt.1 * h)) }
+                    p.closeSubpath()
+                    ctx.fill(p, with: .color(fill))
+                    ctx.stroke(p, with: .color(stroke), lineWidth: 1.0)
+                }
+                let landFill = fg.opacity(active ? 0.30 : 0.22)
+                let landStroke = fg.opacity(active ? 0.92 : 0.82)
+                switch template {
+                case "pangea":
+                    blob([(0.18, 0.30), (0.45, 0.16), (0.76, 0.24), (0.86, 0.50), (0.72, 0.78), (0.42, 0.84), (0.16, 0.66)], fill: landFill, stroke: landStroke)
+                case "archipelago":
+                    blob([(0.16, 0.24), (0.34, 0.20), (0.36, 0.38), (0.20, 0.42)], fill: landFill, stroke: landStroke)
+                    blob([(0.54, 0.18), (0.76, 0.22), (0.80, 0.42), (0.58, 0.40)], fill: landFill, stroke: landStroke)
+                    blob([(0.24, 0.58), (0.44, 0.56), (0.46, 0.78), (0.26, 0.80)], fill: landFill, stroke: landStroke)
+                    blob([(0.62, 0.60), (0.84, 0.56), (0.82, 0.80), (0.64, 0.78)], fill: landFill, stroke: landStroke)
+                case "highIsland":
+                    blob([(0.18, 0.46), (0.38, 0.20), (0.66, 0.22), (0.84, 0.52), (0.68, 0.80), (0.32, 0.78)], fill: landFill, stroke: landStroke)
+                    var ridge = Path()
+                    ridge.move(to: CGPoint(x: 0.32 * w, y: 0.58 * h))
+                    ridge.addLine(to: CGPoint(x: 0.48 * w, y: 0.34 * h))
+                    ridge.addLine(to: CGPoint(x: 0.60 * w, y: 0.54 * h))
+                    ridge.addLine(to: CGPoint(x: 0.68 * w, y: 0.42 * h))
+                    ridge.addLine(to: CGPoint(x: 0.76 * w, y: 0.60 * h))
+                    ctx.stroke(ridge, with: .color(landStroke), style: StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round))
+                default: // continents
+                    blob([(0.12, 0.24), (0.42, 0.18), (0.48, 0.48), (0.34, 0.78), (0.14, 0.64)], fill: landFill, stroke: landStroke)
+                    blob([(0.56, 0.22), (0.86, 0.26), (0.88, 0.58), (0.66, 0.80), (0.54, 0.56)], fill: landFill, stroke: landStroke)
+                }
+            }
+        }
     }
 }
 

@@ -284,9 +284,9 @@ struct EventTicker: View {
                             .overlay(Circle().stroke(Theme.seal.opacity(0.3), lineWidth: 2.5))
                         Text(text).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1)
                     }
-                    .padding(.horizontal, 14).frame(height: 32).glass(Capsule())
+                    .padding(.horizontal, 14).frame(height: Theme.Control.tickerHeight).glass(Capsule())
                 }
-                .buttonStyle(PressStyle()).padding(.horizontal, 30)
+                .buttonStyle(PressStyle()).padding(.horizontal, 4)
                 .id(text).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .move(edge: .top).combined(with: .opacity)))
             }
         }

@@ -141,10 +141,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
                 return try device.makeRenderPipelineState(descriptor: d)
             }
-            cellPipeline = try pipeline("cellVertex", "colorFragment", .none)
+            cellPipeline = try pipeline("cellVertex", "landFragment", .none)
             revealPipeline = try pipeline("revealVertex", "revealFragment", .none)
             veilPipeline = try pipeline("quadVertex", "veilFragment", .alpha)
-            fadePipeline = try pipeline("fadeVertex", "colorFragment", .none)
+            fadePipeline = try pipeline("fadeVertex", "landFragment", .none)
             linePipeline = try pipeline("lineVertex", "flatFragment", .alpha)
             flatPipeline = try pipeline("flatVertex", "flatFragment", .alpha)
             coloredPipeline = try pipeline("coloredVertex", "colorFragment", .alpha)
@@ -172,6 +172,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         } else { parchment = nil }
         let s = MTLSamplerDescriptor()
         s.minFilter = .linear; s.magFilter = .linear; s.mipFilter = .linear
+        s.maxAnisotropy = 4
         s.sAddressMode = .clampToEdge; s.tAddressMode = .clampToEdge
         sampler = device.makeSamplerState(descriptor: s)
         super.init()
@@ -860,6 +861,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             // The shore is outlined first and gives way to the finished borders.
             if coastInk == nil { coastInk = self.buffer(MapLayers.coastInk(map).vertices, stride: 6) }
             colored(coastInk, alpha: ramp(0.1) * (1 - ramp(0.75)))
+        } else if display.mapDetail ?? true {
+            // 精致古图海岸微墨描边：常态下保留一道克制细墨岸线，令海湾岛屿轮廓清晰锐利。
+            if coastInk == nil { coastInk = self.buffer(MapLayers.coastInk(map).vertices, stride: 6) }
+            colored(coastInk, alpha: 0.24)
         } else if coastInk != nil { coastInk = nil }
         if display.provinceLines { colored(provinceLines, alpha: ramp(0.5)) }
         if let rivers, reveal > 0.42 {
@@ -938,30 +943,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     struct Uniforms { float2 viewport; float2 center; float scale; float halfWidth; float alpha; float pad; };
     struct QuadUniforms { float2 origin; float2 size; };
     struct ColorOut { float4 position [[position]]; float4 color; };
+    struct LandOut { float4 position [[position]]; float4 color; float2 world; float scale; };
     struct FlatOut { float4 position [[position]]; };
     struct QuadOut { float4 position [[position]]; float2 uv; };
     static float4 clip(float2 world, constant Uniforms& u, float2 offset) {
         float2 s = (world - u.center) * u.scale + u.viewport * 0.5 + offset;
         return float4(s.x / u.viewport.x * 2.0 - 1.0, 1.0 - s.y / u.viewport.y * 2.0, 0.0, 1.0);
     }
-    vertex ColorOut cellVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]],
-                               const device float4* colors [[buffer(1)]], constant Uniforms& u [[buffer(2)]]) {
-        ColorOut o; o.position = clip(positions[id], u, float2(0.0)); o.color = colors[id]; return o;
-    }
-    struct ColoredVertex { packed_float2 position; packed_float4 color; };
-    vertex ColorOut coloredVertex(uint id [[vertex_id]], const device ColoredVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
-        ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); o.color.a *= u.alpha; return o;
-    }
-    fragment float4 colorFragment(ColorOut in [[stage_in]]) { return in.color; }
-    // 逐顶点易主渐变：previous = 起始颜色 rgb + 开始时刻；clock = (此刻, 时长)。
-    vertex ColorOut fadeVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
-                               constant Uniforms& u [[buffer(2)]], const device float4* previous [[buffer(3)]], constant float2& clock [[buffer(4)]]) {
-        float4 p = previous[id];
-        float x = clamp((clock.x - p.a) / clock.y, 0.0, 1.0);
-        x = x * x * (3.0 - 2.0 * x);
-        ColorOut o; o.position = clip(positions[id], u, float2(0.0)); o.color = float4(mix(p.rgb, colors[id].rgb, x), colors[id].a); return o;
-    }
-    // 开卷. Paper grain for the brush: value noise, four octaves.
     static float hash21(float2 p) { p = fract(p * float2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
     static float vnoise(float2 p) {
         float2 i = floor(p), f = fract(p), w = f * f * (3.0 - 2.0 * f);
@@ -973,6 +961,41 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         for (int k = 0; k < 4; k++) { v += a * vnoise(p); p = p * 2.03 + float2(17.1, 9.2); a *= 0.5; }
         return v;
     }
+    vertex LandOut cellVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]],
+                              const device float4* colors [[buffer(1)]], constant Uniforms& u [[buffer(2)]]) {
+        LandOut o; float2 w = positions[id];
+        o.position = clip(w, u, float2(0.0)); o.color = colors[id]; o.world = w; o.scale = u.scale; return o;
+    }
+    struct ColoredVertex { packed_float2 position; packed_float4 color; };
+    vertex ColorOut coloredVertex(uint id [[vertex_id]], const device ColoredVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
+        ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); o.color.a *= u.alpha; return o;
+    }
+    fragment float4 colorFragment(ColorOut in [[stage_in]]) { return in.color; }
+    // 陆地古图宣纸质感片元着色：双频宣纸微纤维颗粒 + 矿物颜料微暖高光与墨青暗部，近景不发糊、远景更通透。
+    fragment float4 landFragment(LandOut in [[stage_in]]) {
+        float detail = clamp((in.scale - 0.5) / 1.5, 0.0, 1.0);
+        float g1 = vnoise(in.world * 0.55) - 0.5;
+        float g2 = vnoise(in.world * 1.95 + float2(13.7, 7.3)) - 0.5;
+        float grain = (g1 * 0.026 + g2 * 0.022 * detail);
+        float3 rgb = in.color.rgb;
+        float lum = dot(rgb, float3(0.299, 0.587, 0.114));
+        // 亮坡微融宣金暖意、背阴微沉冷墨，立体起伏更精致且不偏色。
+        float3 warm = float3(1.018, 1.006, 0.985);
+        float3 cool = float3(0.978, 0.988, 1.008);
+        rgb *= mix(cool, warm, smoothstep(0.32, 0.72, lum));
+        rgb = clamp(rgb + grain, 0.0, 1.0);
+        return float4(rgb, in.color.a);
+    }
+    // 逐顶点易主渐变：previous = 起始颜色 rgb + 开始时刻；clock = (此刻, 时长)。
+    vertex LandOut fadeVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
+                              constant Uniforms& u [[buffer(2)]], const device float4* previous [[buffer(3)]], constant float2& clock [[buffer(4)]]) {
+        float4 p = previous[id];
+        float x = clamp((clock.x - p.a) / clock.y, 0.0, 1.0);
+        x = x * x * (3.0 - 2.0 * x);
+        float2 w = positions[id];
+        LandOut o; o.position = clip(w, u, float2(0.0)); o.color = float4(mix(p.rgb, colors[id].rgb, x), colors[id].a); o.world = w; o.scale = u.scale; return o;
+    }
+    // 开卷. Paper grain for the brush: value noise, four octaves.
     struct RevealOut { float4 position [[position]]; float4 color; float4 terrain; float2 world; float2 field; };
     vertex RevealOut revealVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
                                   constant Uniforms& u [[buffer(2)]], const device float4* terrain [[buffer(3)]], const device float2* fields [[buffer(4)]]) {

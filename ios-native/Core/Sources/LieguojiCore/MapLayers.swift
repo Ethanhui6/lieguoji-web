@@ -229,11 +229,13 @@ public enum MapLayers {
             gx[b] += dx / len * s; gy[b] += dy / len * s
         }
         // Light from the upper left: a slope rising towards it is lit, facing away is shaded.
+        // 强化山脉起伏与河谷明暗层次（0.79…1.16），即便覆盖政区配色仍保持精致立体地形质感。
         let lx: Float = -0.707, ly: Float = -0.707
         return (0..<map.cellCount).map { c in
             guard map.isLand(c) else { return 1 }
             let lit = gx[c] * lx + gy[c] * ly
-            return 1 + min(0.14, max(-0.18, lit * 0.09))
+            let elevBoost = max(0, Float(map.elevation[c]) - 55) * 0.0012
+            return 1 + min(0.16, max(-0.21, lit * 0.105)) + elevBoost
         }
     }
 

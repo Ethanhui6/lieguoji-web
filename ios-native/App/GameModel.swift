@@ -120,6 +120,10 @@ import LieguojiCore
     var savedLiveMapView: MapViewMode = .state
     var replayTimer: Task<Void, Never>?
     var lastReplayOwners: [Int] = []
+    var cachedReplayNations: [[WorldMeta.Nation]] = []
+    var cachedReplayMajorIndices: [Int] = []
+    var cachedReplayLabelBoxes: [Int: (count: Int, cx: Float, cy: Float, box: WorldMeta.LabelBox)] = [:]
+    var lastReplayScrubTime: CFTimeInterval = 0
     /// 后备网页引擎：纯 Swift 已接管全部建世、推演、指令与存档，启动与日常游玩零 WKWebView 实例；
     /// 仅在读取极早期旧版 JSON 存档、远程气候回退或 CI 对照计时时按需创建并挂载。
     @Published private(set) var legacyEngine: EngineHost?
@@ -737,10 +741,16 @@ import LieguojiCore
         }
         var hits = byProvince.values.filter { $0.loss >= 20 && $0.n > 0 }.sorted { $0.loss > $1.loss }.prefix(8)
             .map { (x: $0.x / Float($0.n), y: $0.y / Float($0.n), text: "−" + Names.wan($0.loss), naval: false) }
-        var hull = [String: Double](); for f in a.fleets ?? [] { hull[f.id] = f.hull }
-        for f in (b.fleets ?? []) where (hull[f.id] ?? f.hull) - f.hull >= 1 {
+        var hull = [String: (hull: Double, crew: Int, ships: Int)]()
+        for f in a.fleets ?? [] { hull[f.id] = (f.hull, f.crew, f.ships) }
+        for f in (b.fleets ?? []) {
+            guard let old = hull[f.id] else { continue }
+            let hullDrop = Int(((old.hull - f.hull) * 100).rounded())
+            let crewDrop = old.crew - f.crew
+            guard hullDrop >= 2 || crewDrop >= 15 else { continue }
             if hits.count >= 10 { break }
-            hits.append((x: f.x, y: f.y, text: "−\(Int(((hull[f.id] ?? f.hull) - f.hull).rounded()))船", naval: true))
+            let text = hullDrop >= 3 ? "−\(hullDrop)%舰体" : "−\(crewDrop)水兵"
+            hits.append((x: f.x, y: f.y, text: text, naval: true))
         }
         if !hits.isEmpty { controller.onHits?(hits) }
     }
@@ -908,6 +918,7 @@ import LieguojiCore
         var spots = [String: (x: Double, y: Double, n: Double)]()
         var sides = [String: (Int, Int)](), ends = [String: (Double, Double, Double, Double)]()
         var fighters = [String: [Int: Int]]()
+        var navalStrengths = [String: (left: Int, right: Int)]()
         for pair in state.contacts ?? [] where pair.count == 2 && state.armies.indices.contains(pair[0]) && state.armies.indices.contains(pair[1]) {
             let a = state.armies[pair[0]], b = state.armies[pair[1]]
             let x = Double(a.x + b.x) / 2, y = Double(a.y + b.y) / 2
@@ -917,9 +928,19 @@ import LieguojiCore
             if sides[key] == nil { sides[key] = (a.nation, b.nation); ends[key] = (Double(a.x), Double(a.y), Double(b.x), Double(b.y)) }
             fighters[key, default: [:]][pair[0]] = a.nation; fighters[key, default: [:]][pair[1]] = b.nation
         }
-        for p in state.seaBattles ?? [] where p.count == 2 {
+        for p in state.seaBattles ?? [] where p.count >= 2 {
             let key = "s\(Int(p[0] / 6)):\(Int(p[1] / 6))", old = spots[key] ?? (0, 0, 0)
             spots[key] = (old.x + p[0], old.y + p[1], old.n + 1)
+            if p.count >= 10 {
+                let na = Int(p[2]), nb = Int(p[3]), sa = max(1, Int(p[4])), sb = max(1, Int(p[5]))
+                if sides[key] == nil { sides[key] = (na, nb); ends[key] = (p[6], p[7], p[8], p[9]) }
+                let cur = navalStrengths[key] ?? (0, 0)
+                if sides[key]?.0 == na {
+                    navalStrengths[key] = (cur.left + sa, cur.right + sb)
+                } else {
+                    navalStrengths[key] = (cur.left + sb, cur.right + sa)
+                }
+            }
         }
         func side(_ n: Int) -> MapEffects.Side? {
             guard n >= 0, n < map.meta.nations.count else { return nil }
@@ -931,6 +952,10 @@ import LieguojiCore
             if let p = ends[key] { battle.ax = p.0; battle.ay = p.1; battle.bx = p.2; battle.by = p.3 }
             if let s, let f = fighters[key] {
                 for (i, n) in f { if n == s.0 { battle.leftTroops += state.armies[i].troops } else { battle.rightTroops += state.armies[i].troops } }
+            }
+            if let ns = navalStrengths[key] {
+                battle.leftTroops += ns.left
+                battle.rightTroops += ns.right
             }
             e.battles.append(battle)
         }
@@ -944,8 +969,11 @@ import LieguojiCore
             // 图标停在原处到自己的那一刻、与动画同时消失；同处扎堆的几支合为一处，墨团随之变大，不满屏乱炸。
             let alive = Set(state.armies.map(\.id))
             let prior = Dictionary(previous.armies.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+            let hasDeadOrReorg = previous.armies.contains(where: { !alive.contains($0.id) }) || state.armies.contains(where: { a in a.reorganizing == true && prior[a.id]?.reorganizing != true })
             var placed = [String: SIMD2<Float>]()
-            for p in controller.renderer?()?.placedSprites() ?? [] where !p.sprite.key.isEmpty { placed[p.sprite.key] = SIMD2(p.x, p.y) }
+            if hasDeadOrReorg {
+                for p in controller.renderer?()?.placedSprites() ?? [] where !p.sprite.key.isEmpty { placed[p.sprite.key] = SIMD2(p.x, p.y) }
+            }
             var fallen = [(army: GameState.Army, id: String, at: SIMD2<Float>)]()
             for a in previous.armies where !alive.contains(a.id) { fallen.append((a, "d\(a.id)", placed[a.id] ?? SIMD2(a.x, a.y))) }
             for a in state.armies {
@@ -971,6 +999,14 @@ import LieguojiCore
                 for m in group.members { delays[fallen[m].army.id] = delay }
             }
             controller.deathDelays = delays
+            // 战舰覆没：舰队沉没时在海面绽开碎船与水柱波纹
+            let aliveFleets = Set((state.fleets ?? []).filter { $0.status != "lost" }.map(\.id))
+            for f in (previous.fleets ?? []) where f.status != "lost" && !aliveFleets.contains(f.id) {
+                let c = rgb(f.nation)
+                var burst = MapEffects.Burst(id: "df-\(f.id)-\(state.day)", x: Double(f.x), y: Double(f.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: "Fleet")
+                burst.count = max(1, f.ships / 2)
+                e.bursts.append(burst)
+            }
             for n in previous.nations.count..<max(previous.nations.count, state.nations.count) where n < map.meta.nations.count {
                 let c = rgb(n), cap = map.meta.nations[n].capital
                 if cap >= 0, cap < map.meta.cities.count { e.bursts.append(.init(id: "n\(n)-\(state.day)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: .founded, r: c.0, g: c.1, b: c.2)) }
@@ -1037,6 +1073,13 @@ import LieguojiCore
         for s in state.sieges where s.province >= 0 && s.province < map.meta.provinces.count {
             let p = map.meta.provinces[s.province], c = rgb(s.nation)
             e.sieges.append(.init(key: "s\(s.province)", x: Double(p.x), y: Double(p.y), progress: s.progress, r: c.0, g: c.1, b: c.2))
+        }
+        // 海港争夺与海上封锁圈：港控度低于 100% 或已被敌国舰队封锁占领时，在海港锚点绘制海港争夺进度圈
+        for port in state.ports ?? [] where port.value < 99.5 || (port.occupier >= 0 && port.owner >= 0 && port.occupier != port.owner) {
+            let attacker = port.occupier >= 0 && port.occupier != port.owner ? port.occupier : (state.fleets?.first(where: { $0.decision == "attacking" && hypot($0.x - port.x, $0.y - port.y) < 18 })?.nation ?? port.occupier)
+            let c = rgb(attacker)
+            let prog = port.occupier != port.owner ? 1.0 : max(0.08, 1.0 - port.value / 100.0)
+            e.sieges.append(.init(key: "port-\(port.province)", x: Double(port.x), y: Double(port.y), progress: prog, r: c.0, g: c.1, b: c.2))
         }
         var flashes = controller.effects.flashes.suffix(6).map { $0 }
         if let previous {
@@ -1144,7 +1187,9 @@ import LieguojiCore
         for (i, f) in (state.fleets ?? []).enumerated() {
             // One to three ships on the map for one, two to three, and four or more hulls.
             sprites.append(MapRenderer.ArmySprite(army: -(i + 1), x: f.x, y: f.y, unit: "Fleet", nation: f.nation, selected: i == choosing, key: f.id,
-                                                  tier: f.ships >= 4 ? 3 : f.ships >= 2 ? 2 : 1))
+                                                  tier: f.ships >= 4 ? 3 : f.ships >= 2 ? 2 : 1,
+                                                  banner: (f.ships >= 4 || f.decision == "busy") ? 1 : 0,
+                                                  fighting: f.decision == "busy"))
         }
         // 商船: merchant ships ply the sea lanes between harbours whose holders are at peace, back and
         // forth, in the colour of the harbour they sailed from (the original's merchant ships carrying
@@ -1173,10 +1218,20 @@ import LieguojiCore
             let n = a.troops >= 10000 ? String(format: "%.1f万", Double(a.troops) / 10000) : "\(a.troops)"
             counts[a.id] = Self.stateMark(a).map { $0 + " " + n } ?? n
         }
+        for f in state.fleets ?? [] where f.ships > 0 && f.status != "lost" {
+            let mark: String? = f.decision == "busy" ? "海战" : f.decision == "attacking" ? "夺港" : f.decision == "resupply" ? "补粮" : f.travel == "moving" ? "巡航" : nil
+            counts[f.id] = (mark.map { $0 + " " } ?? "") + "\(f.ships)艘"
+        }
         controller.troopTexts = counts
         controller.armies = sprites
         if let selected, state.armies.indices.contains(selected), state.armies[selected].travel == "moving" {
             let id = state.armies[selected].id
+            Task {
+                let points = await native.route(armyId: id)
+                controller.route = points.map { SIMD2(Float($0[0]), Float($0[1])) }
+            }
+        } else if let choosing, let fleets = state.fleets, fleets.indices.contains(choosing), fleets[choosing].travel == "moving" {
+            let id = fleets[choosing].id
             Task {
                 let points = await native.route(armyId: id)
                 controller.route = points.map { SIMD2(Float($0[0]), Float($0[1])) }

@@ -56,10 +56,10 @@ struct InkPipelines {
         float fade = 1.0 - clamp((k.now - in.leave) / k.fade, 0.0, 1.0);
         float amount = in.weight * show * fade;
         if (amount < 0.01) discard_fragment();
-        // 阈值受纸纹扰动：大尺度起伏让边缘时进时退，细碎毛口像墨在宣纸纤维里渗开。
+        // 柔润水墨宣纸晕染前沿：以低频纸纤维连续波动替代高频碎裂噪声，配合宽柔过渡带（soft），消除碎块斑点感。
         float2 q = in.world;
-        float n1 = fbm(q * k.freq), n2 = fbm(q * k.freq * 3.7 + float2(5.1, 1.7));
-        float level = amount + (n1 - 0.5) * 2.0 * k.noise + (n2 - 0.5) * 0.12;
+        float n1 = fbm(q * k.freq), n2 = vnoise(q * k.freq * 2.1 + float2(5.1, 1.7));
+        float level = amount + (n1 - 0.5) * 2.0 * k.noise + (n2 - 0.5) * (k.noise * 0.35);
         float reached = smoothstep(k.visible - k.soft, k.visible + k.soft, level);
         if (reached < 0.004) discard_fragment();
         float3 e = colours[in.nation].rgb;
@@ -69,10 +69,10 @@ struct InkPipelines {
         col = in.terrain + (col - in.terrain) * k.density;
         col = min(float3(1.0), col * in.shade);
         // 细微宣纸湿墨边缘：前沿处略微聚墨收深，保留原色清透质感，不抢国色。
-        float capillary = reached * (1.0 - reached) * 4.0 * (1.0 - show * 0.45);
-        col *= (1.0 - 0.13 * capillary);
+        float capillary = reached * (1.0 - reached) * 4.0 * (1.0 - show * 0.42);
+        col *= (1.0 - 0.11 * capillary);
         // 刚显出时略淡，像墨刚落下还在洇。
-        return float4(col, reached * (0.82 + 0.18 * show));
+        return float4(col, reached * (0.85 + 0.15 * show));
     }
     """
 }
@@ -94,6 +94,13 @@ final class InkField {
     /// 每个顶点：主人国号、高度灰（线性）、山影、陆地标记；地形色（未加山影）。
     var owners: MTLBuffer?
     var terrain: MTLBuffer?
+    /// 预缓存的不变地形高度灰与山影，以及双缓冲 owners 顶点池（避免每次易主在主线程重新分配 4MB Metal 缓冲与重算地形色）。
+    var staticGrayShade: [Float] = []
+    var staticVertexProvince: [Int32] = []
+    var ownerBuffers: [MTLBuffer?] = [nil, nil]
+    var ownerCurrent = 0
+    var lastProvinceOwners: [Int] = []
+    var scrubbingReplay = false
     /// 每个国家 8 格：与它交战的国家号（−1 结尾）；每个国家的国色。
     var enemies: MTLBuffer?
     var colours: MTLBuffer?
@@ -134,26 +141,75 @@ final class InkField {
 }
 
 extension MapRenderer {
-    /// 每个顶点的主人国号、高度灰、山影与地形色：与陆地颜色同一时刻安装；被攻下的格子的墨随之收起。
-    func rebuildInkOwners() {
+    /// 每个顶点的主人国号、高度灰、山影与地形色：静态地形只建一次，易主时仅双缓冲原位更新归属，彻底消除主线程重复分配与掉帧。
+    func rebuildInkOwners(forceTerrain: Bool = false) {
         guard let ink else { return }
         let count = map.vertices.count / 2
-        var data = [Float](repeating: 0, count: count * 4), ground = [Float](repeating: 0, count: count * 4)
-        let provinces = map.meta.provinces, terrain = terrainBase, shades = shade
-        for c in 0..<map.cellCount where map.isLand(c) {
-            let p = Int(map.province[c])
-            let n = provinces.indices.contains(p) ? provinces[p].nation : -1
-            let gray = MapPalette.heightGray(map.elevation[c])
-            for v in Int(map.offsets[c])..<Int(map.offsets[c + 1]) {
-                data[v * 4] = Float(max(0, n)); data[v * 4 + 1] = gray; data[v * 4 + 2] = shades.count == count ? shades[v] : 1; data[v * 4 + 3] = n >= 0 ? 1 : 0
-                if let terrain, terrain.count == count * 4 { for j in 0..<3 { ground[v * 4 + j] = terrain[v * 4 + j] } }
-                else { for j in 0..<3 { ground[v * 4 + j] = MapPalette.linearToSrgb(gray) } }
+        guard count > 0 else { return }
+        let provinces = map.meta.provinces
+        let currentOwners = provinces.map(\.nation)
+
+        // 1. 静态地形缓冲（ink.terrain）与顶点高度灰/山影表仅在首次或自绘地形变更时构建一次
+        if forceTerrain || ink.terrain == nil || ink.staticGrayShade.count != count * 2 || ink.staticVertexProvince.count != count {
+            var gs = [Float](repeating: 1, count: count * 2)
+            var vp = [Int32](repeating: -1, count: count)
+            var ground = [Float](repeating: 0, count: count * 4)
+            let terrain = terrainBase, shades = shade
+            for c in 0..<map.cellCount where map.isLand(c) {
+                let p = map.province[c]
+                let gray = MapPalette.heightGray(map.elevation[c])
+                for v in Int(map.offsets[c])..<Int(map.offsets[c + 1]) {
+                    vp[v] = p
+                    gs[v * 2] = gray
+                    gs[v * 2 + 1] = shades.count == count ? shades[v] : 1
+                    if let terrain, terrain.count == count * 4 {
+                        for j in 0..<3 { ground[v * 4 + j] = terrain[v * 4 + j] }
+                    } else {
+                        let srgb = MapPalette.linearToSrgb(gray)
+                        for j in 0..<3 { ground[v * 4 + j] = srgb }
+                    }
+                }
             }
+            ink.staticGrayShade = gs
+            ink.staticVertexProvince = vp
+            ink.terrain = device.makeBuffer(bytes: ground, length: max(16, ground.count * 4), options: .storageModeShared)
+            ink.lastProvinceOwners = []
         }
-        ink.owners = device.makeBuffer(bytes: data, length: max(16, data.count * 4), options: .storageModeShared)
-        ink.terrain = device.makeBuffer(bytes: ground, length: max(16, ground.count * 4), options: .storageModeShared)
-        let owners = provinces.map(\.nation), now = clock()
-        ink.update(self) { $0.owners(owners, now: now) }
+
+        // 2. 若各州归属完全未变（如仅点选高亮或开闭面板触发 recolor），直接零开销跳过！
+        if !forceTerrain && ink.owners != nil && ink.lastProvinceOwners == currentOwners {
+            rebuildInkEnemies()
+            return
+        }
+        ink.lastProvinceOwners = currentOwners
+
+        // 3. 双缓冲原位写入顶点主人号（零新 MTLBuffer 分配）
+        let nextSlot = 1 - ink.ownerCurrent
+        let byteLen = max(16, count * 16)
+        if ink.ownerBuffers[nextSlot] == nil || ink.ownerBuffers[nextSlot]!.length < byteLen {
+            ink.ownerBuffers[nextSlot] = device.makeBuffer(length: byteLen, options: .storageModeShared)
+        }
+        if let buf = ink.ownerBuffers[nextSlot] {
+            let ptr = buf.contents().bindMemory(to: Float.self, capacity: count * 4)
+            let gs = ink.staticGrayShade
+            let vp = ink.staticVertexProvince
+            let pCount = currentOwners.count
+            for v in 0..<count {
+                let p = Int(vp[v])
+                let n = (p >= 0 && p < pCount) ? currentOwners[p] : -1
+                let o = v * 4
+                ptr[o] = Float(max(0, n))
+                ptr[o + 1] = gs[v * 2]
+                ptr[o + 2] = gs[v * 2 + 1]
+                ptr[o + 3] = n >= 0 ? 1 : 0
+            }
+            ink.ownerCurrent = nextSlot
+            ink.owners = buf
+        }
+        if !ink.scrubbingReplay {
+            let now = clock()
+            ink.update(self) { $0.owners(currentOwners, now: now) }
+        }
         ink.enemyKey = nil
         rebuildInkEnemies()
     }
@@ -192,8 +248,8 @@ extension MapRenderer {
         guard let enemies = ink.enemies, let colours = ink.colours, ink.enemyKey?.isEmpty == false else { return }
         let scale = washTopology?.scale ?? 30
         let density = mode == .political ? Float(max(0, min(1, display.colorDensity))) : 1
-        var look = InkField.Look(now: clock(frameTime), reveal: InkCells.revealSeconds, fade: InkCells.fadeSeconds, visible: 0.5, soft: 0.05, noise: 0.16,
-                                 freq: 1 / (scale * 0.7), stateAlpha: MapPalette.stateAlpha, density: density, nations: Float(ink.nationCount))
+        var look = InkField.Look(now: clock(frameTime), reveal: InkCells.revealSeconds, fade: InkCells.fadeSeconds, visible: 0.42, soft: 0.21, noise: 0.068,
+                                 freq: 1 / (scale * 1.15), stateAlpha: MapPalette.stateAlpha, density: density, nations: Float(ink.nationCount))
         encoder.setRenderPipelineState(inkPipes.composite)
         encoder.setVertexBuffer(positions, offset: 0, index: 0)
         encoder.setVertexBuffer(owners, offset: 0, index: 1)

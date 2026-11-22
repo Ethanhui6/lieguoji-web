@@ -366,16 +366,27 @@ extension NativeEngine {
         var fleetRows = [GameState.Fleet](), fleetPoint = [(Double, Double)]()
         if let bridge, !r.navy.isNull, !r.navy.fleets.isNull {
             let manualFleets = Set(r.voyages.manualFleets.asArray.map(\.asString))
+            let safeScale = sc.isFinite && sc > 1e-6 ? sc : 1.0
             for fl in r.navy.fleets.asArray where fl.status.asString != "lost" {
                 let id = fl.id.asString, rec = r.fleetPositions.records[id]
                 if rec.isNull { continue }
                 let p = bridge.graph.location(bridge.travel(rec)).point, row = r.navalAutonomy.isNull ? JS.null : r.navalAutonomy.fleets[id]
                 let port = row.isNull ? nil : row.assignedPortId.optionalString.flatMap { a in Naval.sea?.ports.first { $0.id == a } }
-                fleetPoint.append((p.x / sc, p.y / sc))
+                var at = (p.x, p.y)
+                let fleetClash = clash[Daily.key("fleet", id)]
+                if let m = fleetClash {
+                    let cx = m.x / m.n, cy = m.y / m.n, dx = at.0 - cx, dy = at.1 - cy, d = (dx * dx + dy * dy).squareRoot()
+                    at = d > halfIcon ? (cx + dx / d * halfIcon, cy + dy / d * halfIcon) : at
+                }
+                let fx = (at.0 / safeScale).isFinite ? at.0 / safeScale : 0.0
+                let fy = (at.1 / safeScale).isFinite ? at.1 / safeScale : 0.0
+                fleetPoint.append((fx, fy))
+                let rawDecision = row.isNull ? "" : row.decision.optionalString ?? ""
+                let decision = fleetClash != nil ? "busy" : rawDecision
                 fleetRows.append(GameState.Fleet(id: id, name: fl.name.asString, nation: ni[fl.nationId.asString] ?? -1, ships: Int(fl.ships.asNumber), crew: Int(fl.crew.asNumber), food: Int(fl.food.asNumber),
                                                  hull: fl.ships.asNumber > 0 ? (r.maritime.hulls[id].optionalNumber ?? 0) / (fl.ships.asNumber * 100) : 0,
-                                                 status: fl.status.asString, travel: rec.status.asString, x: Float(p.x / sc), y: Float(p.y / sc),
-                                                 decision: row.isNull ? "" : row.decision.optionalString ?? "", reason: row.isNull ? "" : row.reason.optionalString ?? "",
+                                                 status: fl.status.asString, travel: rec.status.asString, x: Float(fx), y: Float(fy),
+                                                 decision: decision, reason: row.isNull ? "" : row.reason.optionalString ?? "",
                                                  port: port.flatMap { pi[$0.provinceId] } ?? -1, manual: manualFleets.contains(id), patrol: fl.patrol.optionalBool ?? false))
             }
         }
@@ -402,13 +413,26 @@ extension NativeEngine {
             guard let a = armyIndex[p.a.asString], let b = armyIndex[p.b.asString] else { return nil }
             return [a, b]
         }
-        // Battles at sea (a fleet in contact): the same BattleSword between the two forces.
-        var forcePoint = [String: (Double, Double)]()
-        for (i, v) in space.enumerated() { forcePoint[Daily.key("army", v.army.id.asString)] = armyPoint[i] }
-        for (i, f) in fleetRows.enumerated() { forcePoint[Daily.key("fleet", f.id)] = fleetPoint[i] }
+        // 海上会战（含交锋双方国家、舰队战力与炮击位置，供渲染层绘制双国战力条、舷炮对射与海浪冲击环）。
+        var forcePoint = [String: (Double, Double)](), forceNation = [String: Int](), forceStrength = [String: Int]()
+        for (i, v) in space.enumerated() {
+            let k = Daily.key("army", v.army.id.asString)
+            forcePoint[k] = armyPoint[i]
+            forceNation[k] = armyRows[i].nation
+            forceStrength[k] = max(1, armyRows[i].troops)
+        }
+        for (i, f) in fleetRows.enumerated() {
+            let k = Daily.key("fleet", f.id)
+            forcePoint[k] = fleetPoint[i]
+            forceNation[k] = f.nation
+            forceStrength[k] = max(50, Int((Double(max(1, f.ships)) * 200 * max(0.15, f.hull)).rounded()))
+        }
         let seaBattles = pairs.compactMap { p -> [Double]? in
-            guard p.a.asString.hasPrefix("[\"fleet") || p.b.asString.hasPrefix("[\"fleet"), let a = forcePoint[p.a.asString], let b = forcePoint[p.b.asString] else { return nil }
-            return [(a.0 + b.0) / 2, (a.1 + b.1) / 2]
+            let ka = p.a.asString, kb = p.b.asString
+            guard ka.hasPrefix("[\"fleet") || kb.hasPrefix("[\"fleet"), let a = forcePoint[ka], let b = forcePoint[kb] else { return nil }
+            let na = Double(forceNation[ka] ?? -1), nb = Double(forceNation[kb] ?? -1)
+            let sa = Double(forceStrength[ka] ?? 100), sb = Double(forceStrength[kb] ?? 100)
+            return [(a.0 + b.0) / 2, (a.1 + b.1) / 2, na, nb, sa, sb, a.0, a.1, b.0, b.1]
         }
         let stateNation = Dictionary(uniqueKeysWithValues: r.nativeWars.nationIds.asArray.map { ($0[0].asInt, $0[1].asString) })
         let wars = r.nativeWars.campaigns.asArray.filter { $0.endedTick.isNull }.map { c -> GameState.War in

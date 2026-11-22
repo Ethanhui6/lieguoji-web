@@ -39,15 +39,116 @@ public struct ColoredMesh: Sendable {
         vertex(a.x, a.y, ca, alpha); vertex(b.x, b.y, cb, alpha); vertex(c.x, c.y, cc, alpha)
         vertex(a.x, a.y, ca, alpha); vertex(c.x, c.y, cc, alpha); vertex(d.x, d.y, cd, alpha)
     }
-    /// 沿折线向法线一侧微微偏移 `offset` 的描边（用于每个国家自身疆域内侧的国色晕边，与邻国严密区隔）。
-    public mutating func offsetPolyline(_ points: [Float], width: Float, offset: Float, _ color: RGB, alpha: Float) {
-        guard points.count >= 4 else { return }
-        for i in stride(from: 0, to: points.count - 2, by: 2) {
-            let x1 = points[i], y1 = points[i + 1], x2 = points[i + 2], y2 = points[i + 3]
-            let dx = x2 - x1, dy = y2 - y1, len = (dx * dx + dy * dy).squareRoot()
-            guard len > 0 else { continue }
-            let nx = -dy / len * offset, ny = dx / len * offset
-            segment(x1 + nx, y1 + ny, x2 + nx, y2 + ny, width: width, color, alpha: alpha)
+    /// 连续斜接（Miter-Joined）平滑折线带：相邻线段严格共享角平分线顶点，彻底消除旧版逐段方头重叠造成的「竹节黑点」与折角毛刺。
+    public mutating func smoothPolyline(_ points: [Float], width: Float, _ color: RGB, alpha: Float) {
+        let count = points.count / 2
+        guard count >= 2, width > 0 else { return }
+        var pts = [SIMD2<Float>]()
+        pts.reserveCapacity(count)
+        for i in 0..<count {
+            let p = SIMD2(points[i * 2], points[i * 2 + 1])
+            if let last = pts.last, hypot(p.x - last.x, p.y - last.y) < 1e-4 { continue }
+            pts.append(p)
+        }
+        let m = pts.count
+        guard m >= 2 else { return }
+        let closed = m >= 3 && hypot(pts[0].x - pts[m - 1].x, pts[0].y - pts[m - 1].y) < 1e-3
+        let segCount = m - 1
+        var normals = [SIMD2<Float>](repeating: .zero, count: segCount)
+        for i in 0..<segCount {
+            let d = pts[i + 1] - pts[i]
+            let len = max(1e-5, (d.x * d.x + d.y * d.y).squareRoot())
+            normals[i] = SIMD2(-d.y / len, d.x / len)
+        }
+        let half = width * 0.5
+        var miters = [SIMD2<Float>](repeating: .zero, count: m)
+        for i in 0..<m {
+            let nPrev: SIMD2<Float>
+            let nNext: SIMD2<Float>
+            if i == 0 {
+                nPrev = closed ? normals[segCount - 1] : normals[0]
+                nNext = normals[0]
+            } else if i == m - 1 {
+                nPrev = normals[segCount - 1]
+                nNext = closed ? normals[0] : normals[segCount - 1]
+            } else {
+                nPrev = normals[i - 1]
+                nNext = normals[i]
+            }
+            let sum = nPrev + nNext
+            let sLen = (sum.x * sum.x + sum.y * sum.y).squareRoot()
+            if sLen < 1e-4 {
+                miters[i] = nNext * half
+            } else {
+                let u = sum / sLen
+                let dot = max(0.42, abs(u.x * nNext.x + u.y * nNext.y))
+                let scale = min(1.55, 1.0 / dot) * half
+                miters[i] = u * scale
+            }
+        }
+        for i in 0..<segCount {
+            let p0 = pts[i], p1 = pts[i + 1]
+            let m0 = miters[i], m1 = miters[i + 1]
+            let l0 = p0 + m0, r0 = p0 - m0
+            let l1 = p1 + m1, r1 = p1 - m1
+            vertex(l0.x, l0.y, color, alpha); vertex(r0.x, r0.y, color, alpha); vertex(l1.x, l1.y, color, alpha)
+            vertex(l1.x, l1.y, color, alpha); vertex(r0.x, r0.y, color, alpha); vertex(r1.x, r1.y, color, alpha)
+        }
+    }
+
+    /// 连续斜接（Miter-Joined）单侧水彩渐隐内晕带：外缘紧贴国界主线（`edgeAlpha`），向本国领土内侧平滑过渡至完全透明（`innerAlpha = 0`），
+    /// 彻底消除旧版偏移折线的双硬边、拐角断裂与重叠黑斑，呈现古典手绘舆图般柔润通透的国界内晕。
+    public mutating func innerGradientRibbon(_ points: [Float], width: Float, side: Float, _ color: RGB, edgeAlpha: Float, innerAlpha: Float = 0) {
+        let count = points.count / 2
+        guard count >= 2, width > 0, side != 0 else { return }
+        var pts = [SIMD2<Float>]()
+        pts.reserveCapacity(count)
+        for i in 0..<count {
+            let p = SIMD2(points[i * 2], points[i * 2 + 1])
+            if let last = pts.last, hypot(p.x - last.x, p.y - last.y) < 1e-4 { continue }
+            pts.append(p)
+        }
+        let m = pts.count
+        guard m >= 2 else { return }
+        let closed = m >= 3 && hypot(pts[0].x - pts[m - 1].x, pts[0].y - pts[m - 1].y) < 1e-3
+        let segCount = m - 1
+        let sgn: Float = side >= 0 ? 1 : -1
+        var normals = [SIMD2<Float>](repeating: .zero, count: segCount)
+        for i in 0..<segCount {
+            let d = pts[i + 1] - pts[i]
+            let len = max(1e-5, (d.x * d.x + d.y * d.y).squareRoot())
+            normals[i] = SIMD2(-d.y / len * sgn, d.x / len * sgn)
+        }
+        var miters = [SIMD2<Float>](repeating: .zero, count: m)
+        for i in 0..<m {
+            let nPrev: SIMD2<Float>
+            let nNext: SIMD2<Float>
+            if i == 0 {
+                nPrev = closed ? normals[segCount - 1] : normals[0]
+                nNext = normals[0]
+            } else if i == m - 1 {
+                nPrev = normals[segCount - 1]
+                nNext = closed ? normals[0] : normals[segCount - 1]
+            } else {
+                nPrev = normals[i - 1]
+                nNext = normals[i]
+            }
+            let sum = nPrev + nNext
+            let sLen = (sum.x * sum.x + sum.y * sum.y).squareRoot()
+            if sLen < 1e-4 {
+                miters[i] = nNext * width
+            } else {
+                let u = sum / sLen
+                let dot = max(0.45, abs(u.x * nNext.x + u.y * nNext.y))
+                let scale = min(1.45, 1.0 / dot) * width
+                miters[i] = u * scale
+            }
+        }
+        for i in 0..<segCount {
+            let p0 = pts[i], p1 = pts[i + 1]
+            let q0 = p0 + miters[i], q1 = p1 + miters[i + 1]
+            vertex(p0.x, p0.y, color, edgeAlpha); vertex(q0.x, q0.y, color, innerAlpha); vertex(p1.x, p1.y, color, edgeAlpha)
+            vertex(p1.x, p1.y, color, edgeAlpha); vertex(q0.x, q0.y, color, innerAlpha); vertex(q1.x, q1.y, color, innerAlpha)
         }
     }
     public mutating func disc(_ x: Float, _ y: Float, radius: Float, _ color: RGB, alpha: Float = 1, sides: Int = 20) {
@@ -368,7 +469,7 @@ public enum MapLayers {
             return dot >= 0 ? 1 : -1
         }
 
-        // 2. 各国疆域内侧国色晕边（紧贴自己一侧国界，形成极具辨识度的立体疆域轮廓）
+        // 2. 各国疆域内侧水彩渐隐晕边（外缘紧贴国界主线、向内平滑渐隐至 0 透明度，零双硬边、零拐角断裂）
         for pair in allPairs {
             let oa = owner(map, pair.a), ob = owner(map, pair.b)
             guard oa != ob else { continue }
@@ -377,31 +478,29 @@ public enum MapLayers {
             if let na = oa, na < lineColors.count {
                 if wide.contains(na) { emphasisLines.append((pair.lines, lineColors[na])) }
                 let rc = ribbonColor(na)
-                let wRim = isLandBorder ? lineWidth * 1.85 : lineWidth * 1.15
-                let shift = isLandBorder ? lineWidth * 0.78 : lineWidth * 0.45
+                let wRim = isLandBorder ? lineWidth * 2.55 : lineWidth * 1.38
                 for line in pair.lines {
                     let sgn = sideSign(line, toward: pair.a)
-                    if sgn != 0 { m.offsetPolyline(line, width: wRim, offset: shift * sgn, rc, alpha: isLandBorder ? 0.50 : 0.34) }
+                    if sgn != 0 { m.innerGradientRibbon(line, width: wRim, side: sgn, rc, edgeAlpha: isLandBorder ? 0.56 : 0.30, innerAlpha: 0.0) }
                 }
             }
             if let nb = ob, nb < lineColors.count {
                 if wide.contains(nb) { emphasisLines.append((pair.lines, lineColors[nb])) }
                 let rc = ribbonColor(nb)
-                let wRim = isLandBorder ? lineWidth * 1.85 : lineWidth * 1.15
-                let shift = isLandBorder ? lineWidth * 0.78 : lineWidth * 0.45
+                let wRim = isLandBorder ? lineWidth * 2.55 : lineWidth * 1.38
                 for line in pair.lines {
                     let sgn = sideSign(line, toward: pair.b)
-                    if sgn != 0 { m.offsetPolyline(line, width: wRim, offset: shift * sgn, rc, alpha: isLandBorder ? 0.50 : 0.34) }
+                    if sgn != 0 { m.innerGradientRibbon(line, width: wRim, side: sgn, rc, edgeAlpha: isLandBorder ? 0.56 : 0.30, innerAlpha: 0.0) }
                 }
             }
         }
 
-        // 3. 陆地国界极微暖白透气边 + 锐利深墨主脊线（一眼割开相邻两国，彻底杜绝颜色混杂缭乱）
+        // 3. 陆地国界连续斜接暖白微衬边 + 锐利浓墨主脊线（无重叠竹节黑点，一眼区分相邻列国）
         for line in landFrontierLines {
-            m.polyline(line, width: lineWidth * 1.48, frontierIvory, alpha: 0.24)
+            m.smoothPolyline(line, width: lineWidth * 1.38, frontierIvory, alpha: 0.24)
         }
         for line in landFrontierLines {
-            m.polyline(line, width: lineWidth * 1.12, frontierInk, alpha: 0.90)
+            m.smoothPolyline(line, width: lineWidth * 0.94, frontierInk, alpha: 0.92)
         }
 
         // 4. 选中国家国界置于最顶层：宣金亮边 + 深朱红实线，轮廓清晰聚焦
@@ -409,11 +508,11 @@ public enum MapLayers {
             let halo = RGB(0.99, 0.94, 0.72)
             let seal = RGB(0.76, 0.17, 0.12)
             for item in emphasisLines {
-                for line in item.lines { m.polyline(line, width: lineWidth * 4.8, halo, alpha: 0.80) }
+                for line in item.lines { m.smoothPolyline(line, width: lineWidth * 4.5, halo, alpha: 0.80) }
             }
             for item in emphasisLines {
                 let c = RGB(item.color.r * 0.35 + seal.r * 0.65, item.color.g * 0.35 + seal.g * 0.65, item.color.b * 0.35 + seal.b * 0.65)
-                for line in item.lines { m.polyline(line, width: lineWidth * 2.5, c, alpha: 1) }
+                for line in item.lines { m.smoothPolyline(line, width: lineWidth * 2.35, c, alpha: 1) }
             }
         }
         return m
@@ -481,9 +580,9 @@ public enum MapLayers {
     public static let provinceInk = RGB(hex: 0x4A4036)
     public static func provinceLines(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
-        // 州郡内界退居细丝次级层次，拉近清晰可辨、远观绝不与国界主脊线抢戏。
+        // 州郡内界采用无重叠斜接细丝，拉近匀净无竹节黑点、远观绝不与国界主脊线抢戏。
         for pair in boundaries(map) where pair.a >= 0 && pair.b >= 0 && owner(map, pair.a) == owner(map, pair.b) {
-            for line in pair.lines { m.polyline(line, width: lineWidth * 0.30, provinceInk, alpha: 0.25) }
+            for line in pair.lines { m.smoothPolyline(line, width: lineWidth * 0.28, provinceInk, alpha: 0.23) }
         }
         return m
     }

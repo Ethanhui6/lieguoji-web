@@ -186,8 +186,20 @@ struct MilitarySheet: View {
                             .padding(.horizontal, 16)
                         }
                     }
+                    if filter == "navy" {
+                        let activeFleets = (state.fleets ?? []).filter { $0.status != "lost" }
+                        let totalShips = activeFleets.reduce(0) { $0 + $1.ships }
+                        let seaFights = (state.seaBattles ?? []).count
+                        let blockadedPorts = (state.ports ?? []).filter { $0.occupier != $0.owner || $0.value < 99.5 }.count
+                        StatStrip(tiles: [
+                            StatTile(label: "现役舰队", value: "\(activeFleets.count)支"),
+                            StatTile(label: "总战船", value: "\(totalShips)艘"),
+                            StatTile(label: "海港/争夺", value: "\((state.ports ?? []).count)/\(blockadedPorts)", warn: blockadedPorts > 0),
+                            StatTile(label: "海战/船坞", value: "\(seaFights)/\((state.yards ?? []).count)", warn: seaFights > 0),
+                        ])
+                    }
                     if filter == "all" || filter == "navy", let fleets = state.fleets, !fleets.isEmpty {
-                        SectionLabel("舰队")
+                        SectionLabel("水师舰队")
                         Group2 {
                             ForEach(fleets.indices, id: \.self) { i in
                                 Button { selectFleet(i) } label: { FleetRow(map: map, fleet: fleets[i]) }.buttonStyle(.plain)
@@ -195,6 +207,8 @@ struct MilitarySheet: View {
                             }
                         }
                         .padding(.horizontal, 16)
+                    } else if filter == "navy" {
+                        Text("天下尚无现役水师舰队").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
                     }
                     if filter == "all" || filter == "navy", let yards = state.yards, !yards.isEmpty {
                         SectionLabel("船坞")

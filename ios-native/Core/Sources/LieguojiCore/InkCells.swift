@@ -41,6 +41,7 @@ public final class InkCells: @unchecked Sendable {
     private var delayOf: [Float]
     private var seen: [Int32] = []
     private var heap: [(d: Float, c: Int32)] = []
+    private var siegeVisited: [(c: Int, d: Float)] = []
     /// 本步改动的格子（列表 + 标记，免得每步建集合）。
     private var dirty: [Int32] = []
     private var dirtyMark: [UInt32]
@@ -152,22 +153,38 @@ public final class InkCells: @unchecked Sendable {
             if o == n { setCell(c, nation: -1, arrive: 0, leave: Self.never) }
             else if !atWar(n, o) || frame.day - Int(touched[c]) > Self.staleDays { setCell(c, nation: Int32(n), arrive: arrive[c], leave: now) }
         }
-        // 二、行军与驻扎：同国、相距一个格距内的军队合算兵力。
+        // 二、行军与驻扎：按进攻国分桶聚合邻近友军兵力，避免军队数量多时 O(N²) 全量比对与重复驻留搜索。
         let marches = frame.inputs.filter { $0.kind == .march && $0.armies.count == 2 }
+        var byAttacker = [Int: [Int]]()
+        for (i, m) in marches.enumerated() {
+            byAttacker[m.attacker, default: []].append(i)
+        }
         var keys = Set<String>()
         for (i, m) in marches.enumerated() {
             let key = m.key.isEmpty ? "\(m.attacker)-\(i)" : m.key
             keys.insert(key)
             let from = m.armies[0], to = m.armies[1]
             var troops = m.troops
-            for (j, o) in marches.enumerated() where j != i && o.attacker == m.attacker && washDistance(o.armies[1], to) < t.scale { troops += o.troops }
-            var stay = dwelt[key] ?? (to, 0)
-            stay = washDistance(stay.at, to) < t.scale * 0.15 ? (stay.at, stay.days + days) : (to, 0)
+            let scale2 = t.scale * t.scale
+            for j in byAttacker[m.attacker] ?? [] where j != i {
+                if washDistance2(marches[j].armies[1], to) < scale2 { troops += marches[j].troops }
+            }
+            let prevStay = dwelt[key]
+            var stay = prevStay ?? (to, 0)
+            let movedDistance2 = washDistance2(stay.at, to)
+            stay = movedDistance2 < (t.scale * 0.15) * (t.scale * 0.15) ? (stay.at, stay.days + days) : (to, 0)
             dwelt[key] = stay
-            let budget = t.scale * 0.55 * Self.width(troops: troops) * (1 + 0.5 * min(1, stay.days / 20))
+            // 若部队原地驻留已满 20 天（扩散半径已达上限）且落脚格已染本国墨，无需每步重复跑 Dijkstra
+            if let prev = prevStay, prev.days >= 20, movedDistance2 < 1e-4, washDistance2(from, to) < 1e-4,
+               let sc = cell(at: to), nation[sc] == Int32(m.attacker), leave[sc] >= Self.never,
+               frame.day - Int(touched[sc]) < 20 {
+                touched[sc] = Int32(frame.day)
+                continue
+            }
+            let budget = t.scale * 0.58 * Self.width(troops: troops) * (1 + 0.5 * min(1, stay.days / 20))
             // 路线上的起点格：每隔约 0.2 格距取一点，显出时刻随军队图标在这一步里走到那里。
             let length = washDistance(from, to)
-            let steps = max(1, min(40, Int(ceil(length / (t.scale * 0.2)))))
+            let steps = max(1, min(32, Int(ceil(length / (t.scale * 0.22)))))
             var seeds = [(cell: Int, delay: Float)]()
             for s in 0...steps {
                 let f = Float(s) / Float(steps)
@@ -181,18 +198,23 @@ public final class InkCells: @unchecked Sendable {
             }
         }
         dwelt = dwelt.filter { keys.contains($0.key) }
-        // 三、围城：从进攻军处在被围州内铺开，进度满时铺满。
+        // 三、围城：单次 Dijkstra 遍历同时求取最远省界距离与省内扩散（消除旧版双倍 Dijkstra 开销）。
         for s in frame.inputs where s.kind == .siege {
             guard t.provinceCells.indices.contains(s.province), !t.provinceCells[s.province].isEmpty else { continue }
             let center = s.armies.isEmpty ? t.centroid(s.province) : s.armies.reduce(SIMD2<Float>(0, 0), +) / Float(s.armies.count)
             guard let start = cell(at: center) ?? t.provinceCells[s.province].first.map(Int.init) else { continue }
             var far: Float = 0
-            spread(from: [(start, 0)], budget: .infinity, within: s.province) { _, d, _ in far = max(far, d) }
+            siegeVisited.removeAll(keepingCapacity: true)
+            spread(from: [(start, 0)], budget: .infinity, within: s.province) { c, d, _ in
+                far = max(far, d)
+                siegeVisited.append((c, d))
+            }
             let budget = s.progress >= 0.98 ? Float.infinity : max(t.scale * 0.3, far * s.progress * 1.1)
-            spread(from: [(start, 0)], budget: budget, within: s.province) { c, d, _ in
-                guard atWar(s.attacker, owner(c)) else { return }
+            for item in siegeVisited where item.d <= budget * reach[item.c] || item.d == 0 {
+                let c = item.c, d = item.d
+                guard atWar(s.attacker, owner(c)) else { continue }
                 self.touched[c] = Int32(frame.day)
-                if self.nation[c] == Int32(s.attacker) && self.leave[c] >= Self.never { return }
+                if self.nation[c] == Int32(s.attacker) && self.leave[c] >= Self.never { continue }
                 setCell(c, nation: Int32(s.attacker), arrive: now + d / (t.scale * Self.spreadPerSecond), leave: Self.never)
             }
         }
@@ -291,6 +313,19 @@ public final class InkCells: @unchecked Sendable {
                     if count > best || (count == best && k < n) { best = count; n = k }
                 }
             }
+            // 预统计本格一环邻格的落墨覆盖率，用于消弭三格顶点（0.33 / 0.67）的阶梯断裂感，使墨缘柔顺连贯
+            var ringLand = 0, ringHit = 0
+            if n >= 0 {
+                if t.land[c] {
+                    ringLand += 2
+                    if nation[c] == n { ringHit += 2 }
+                }
+                for nb in t.touching[c] where t.land[Int(nb)] {
+                    ringLand += 1
+                    if nation[Int(nb)] == n { ringHit += 1 }
+                }
+            }
+            let ringFrac: Float = ringLand > 0 ? Float(ringHit) / Float(ringLand) : 0
             for v in t.vertexRange(c) {
                 let o = v * 4
                 guard n >= 0 else { vertexData[o] = -1; vertexData[o + 1] = 0; vertexData[o + 2] = Self.never; vertexData[o + 3] = 0; continue }
@@ -302,10 +337,19 @@ public final class InkCells: @unchecked Sendable {
                     hit += 1; first = min(first, arrive[mi])
                     if leave[mi] >= Self.never { fading = false } else { last = max(last, leave[mi]) }
                 }
+                let directFrac: Float = land > 0 ? Float(hit) / Float(land) : 0
+                let smoothWeight: Float
+                if hit == 0 {
+                    smoothWeight = 0
+                } else if hit == land {
+                    smoothWeight = 1
+                } else {
+                    smoothWeight = directFrac * 0.72 + ringFrac * 0.28
+                }
                 vertexData[o] = Float(n)
                 vertexData[o + 1] = hit > 0 ? first : 0
                 vertexData[o + 2] = hit > 0 && fading ? last : Self.never
-                vertexData[o + 3] = land > 0 ? Float(hit) / Float(land) : 0
+                vertexData[o + 3] = smoothWeight
             }
         }
         revision &+= 1

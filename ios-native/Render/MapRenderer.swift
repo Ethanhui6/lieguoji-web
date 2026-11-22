@@ -253,6 +253,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             seaSource = next.seaRGBA; seaMask = MapLayers.waterlines(next); uploadSea(); seaLaneKey = []; seaLanes = nil
             ornaments = buffer(MapLayers.ornaments(next).vertices, stride: 6); fineDetail = buffer(MapLayers.fineDetail(next).vertices, stride: 6)
         }
+        ink?.terrain = nil
         recolor()
     }
 
@@ -352,11 +353,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// The state outlines are rebuilt on a background queue (the whole map's border walk); the land
     /// is recoloured at once, and the new outlines replace the old ones when ready.
     /// `skipStatic`: during replay, static city icons & province lines never change and are skipped to avoid stutter.
+    /// `skipOutlines`: during fast replay slider scrubbing, skips border retessellation until the finger pauses/releases.
     /// `animateColors`: enables smooth GPU vertex color dissolve (`fadeVertex`) between frames.
-    func setMap(_ next: WorldMap, replayFast: Bool = false, skipStatic: Bool = false, animateColors: Bool? = nil) {
+    func setMap(_ next: WorldMap, replayFast: Bool = false, skipStatic: Bool = false, skipOutlines: Bool = false, animateColors: Bool? = nil) {
         let work = workRevision.replaceMap()
         let noStatic = replayFast || skipStatic
         let doFade = animateColors ?? !replayFast
+        ink?.scrubbingReplay = skipOutlines
         // The founded world brings the smoothed coast the preview lacked: the waterlines and sand follow it.
         if !coastRefined && !next.coast.isEmpty {
             coastRefined = true
@@ -373,13 +376,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let wide = borderWide
         let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let vertices = MapLayers.outlines(next, wide: wide).vertices
+            let vertices = skipOutlines ? nil : MapLayers.outlines(next, wide: wide).vertices
             let marks = noStatic ? nil : MapLayers.cityIcons(next).vertices
             let provinceLines = noStatic ? nil : MapLayers.provinceLines(next).vertices
             let colours = MapRenderer.baseColors(next, inputs)
             DispatchQueue.main.async {
                 guard let self, self.workRevision.acceptsGeometry(work) else { return }
-                if self.workRevision.acceptsOutlineGeometry(work) { self.outlines = self.buffer(vertices, stride: 6) }
+                if let vertices, self.workRevision.acceptsOutlineGeometry(work) { self.outlines = self.buffer(vertices, stride: 6) }
                 if let marks { self.icons = self.buffer(marks, stride: 6) }
                 if let provinceLines { self.provinceLines = self.buffer(provinceLines, stride: 6) }
                 self.workRevision.installGeometry(work)
@@ -496,7 +499,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // The generation reveal (land rising from the coast to the peaks over 0…0.45, the states' colours
         // washing in over 0.55…0.75) is drawn by revealVertex from these colours: no per-frame CPU work.
         let c = base.land
-        if let b = device.makeBuffer(bytes: c, length: c.count * 4, options: .storageModeShared) {
+        let byteLen = max(16, c.count * 4)
+        colorPoolSlot = 1 - colorPoolSlot
+        if colorBufferPool[colorPoolSlot] == nil || colorBufferPool[colorPoolSlot]!.length < byteLen {
+            colorBufferPool[colorPoolSlot] = device.makeBuffer(length: byteLen, options: .storageModeShared)
+        }
+        if let b = colorBufferPool[colorPoolSlot] {
+            c.withUnsafeBytes { raw in
+                if let ptr = raw.baseAddress { memcpy(b.contents(), ptr, c.count * 4) }
+            }
             // 归属变化（揭幕之后）逐顶点渐变；切换视图与揭幕立即到位。正在晕染的州由晕染接手。
             let now = clock(), began = CACurrentMediaTime()
             defer { if let probe = Self.frameProbe, fadeOnRecolor { probe.recolor.append((CACurrentMediaTime() - began) * 1000) } }
@@ -510,11 +521,23 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             if !fade && reveal >= 1 && washViewSwitch { washViewChanged() }
             rebuildInkOwners()
             if landFade.fading(at: now) {
-                previousColors = device.makeBuffer(bytes: landFade.from, length: landFade.from.count * 4, options: .storageModeShared)
+                let prevLen = max(16, landFade.from.count * 4)
+                if prevColorBufferPool[colorPoolSlot] == nil || prevColorBufferPool[colorPoolSlot]!.length < prevLen {
+                    prevColorBufferPool[colorPoolSlot] = device.makeBuffer(length: prevLen, options: .storageModeShared)
+                }
+                if let pb = prevColorBufferPool[colorPoolSlot] {
+                    landFade.from.withUnsafeBytes { raw in
+                        if let ptr = raw.baseAddress { memcpy(pb.contents(), ptr, landFade.from.count * 4) }
+                    }
+                    previousColors = pb
+                }
             } else { previousColors = nil }
             colors = b
         }
     }
+    private var colorBufferPool: [MTLBuffer?] = [nil, nil]
+    private var prevColorBufferPool: [MTLBuffer?] = [nil, nil]
+    private var colorPoolSlot = 0
     private(set) var shade: [Float] = []
     private(set) var terrainBase: [Float]?
 
@@ -755,8 +778,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 end = legTo[a.key] ?? at
                 lead = legLead[a.key] ?? (end - at)
                 let size = iconSize * iconScale * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
-                // The commander's gonfalon stands behind the pieces: gold for the ruler in person.
-                if a.banner > 0 && role != "Fleet" {
+                // The commander's gonfalon stands behind the pieces: gold for the ruler in person, crimson for generals & flagship armadas.
+                if a.banner > 0 {
                     let k: Float = 0.62
                     quad("banner", at, a.banner == 2 ? RGB(0.93, 0.74, 0.25) : RGB(0.72, 0.22, 0.16), size * k, (0.55 + o.x) / k, (-0.5 + o.y) / k)
                 }
@@ -774,15 +797,27 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     quad(role, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, (dx + o.x) / k, (dy + o.y) / k)
                 }
             }
-            // A fixed draw order (banners first, then by role): a fresh dictionary's order changed every
-            // rebuild, so overlapping icons swapped in front of each other and flickered.
-            // Banners, then the tokens ("0plate" sorts before every arm), then the pieces.
+            // 双缓冲复用各兵种顶点 MTLBuffer，避免在大规模军团同屏行军时每步向内核重复申请 12 块新缓冲区导致卡顿。
+            unitPoolSlot = 1 - unitPoolSlot
+            let slot = unitPoolSlot
             units = byRole.keys.sorted { ($0 == "banner" ? "" : $0) < ($1 == "banner" ? "" : $1) }.compactMap { role -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
-                guard let data = byRole[role], let texture = unitTextures[role], let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
+                guard let data = byRole[role], !data.isEmpty, let texture = unitTextures[role] else { return nil }
+                let byteLen = data.count * 4
+                var pair = unitBufferPool[role] ?? [nil, nil]
+                if pair[slot] == nil || pair[slot]!.length < byteLen {
+                    pair[slot] = device.makeBuffer(length: max(256, byteLen * 3 / 2), options: .storageModeShared)
+                    unitBufferPool[role] = pair
+                }
+                guard let b = pair[slot] else { return nil }
+                data.withUnsafeBytes { raw in
+                    if let base = raw.baseAddress { memcpy(b.contents(), base, byteLen) }
+                }
                 return (texture: texture, buffer: b, count: data.count / 15)
             }
         }
     }
+    private var unitBufferPool: [String: [MTLBuffer?]] = [:]
+    private var unitPoolSlot = 0
 
     /// 显示军队 and the icons' size (推演与画面).
     var showArmies = true

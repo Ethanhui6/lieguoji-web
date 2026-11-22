@@ -404,28 +404,54 @@ struct FleetRow: View {
     let map: WorldMap
     let fleet: GameState.Fleet
     var body: some View {
+        let tint = fleet.nation >= 0 && fleet.nation < map.meta.nations.count ? Names.color(map.meta.nations[fleet.nation].color) : Theme.ink2
+        let isFighting = fleet.decision == "busy"
+        let isAttacking = fleet.decision == "attacking"
+        let badgeColor: Color = isFighting ? Theme.danger : isAttacking ? Theme.seal : fleet.manual ? Theme.gold : Theme.jade
         HStack(spacing: 12) {
-            Image(systemName: "sailboat.fill").foregroundStyle(fleet.nation >= 0 && fleet.nation < map.meta.nations.count ? Names.color(map.meta.nations[fleet.nation].color) : Theme.ink2)
+            UnitMark(unit: "Fleet", color: tint).frame(width: 38, height: 38)
             VStack(alignment: .leading, spacing: 3) {
-                Text(fleet.name).font(Theme.section).foregroundStyle(Theme.ink)
-                Text("\(FleetText.status(fleet.status)) · \(FleetText.decision(fleet.decision))").font(Theme.label).foregroundStyle(Theme.ink2)
+                HStack(spacing: 6) {
+                    Text(fleet.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
+                    if fleet.ships >= 4 {
+                        PaperTag(text: "主力舰队", color: Theme.gold, size: 10)
+                    }
+                    PaperTag(text: FleetText.decision(fleet.decision), color: badgeColor, size: 10)
+                }
+                HStack(spacing: 8) {
+                    Text("\(FleetText.status(fleet.status)) · \(fleet.port >= 0 && map.meta.provinces.indices.contains(fleet.port) ? map.meta.provinces[fleet.port].name + "港" : "外海巡航")")
+                        .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
+                    InkBar(fraction: fleet.hull, color: fleet.hull < 0.35 ? Theme.danger : tint, height: 4)
+                        .frame(width: 44)
+                }
             }
-            Spacer()
-            Text("\(fleet.ships) 船 · \(fleet.crew) 人").font(Theme.body).foregroundStyle(Theme.ink2)
+            Spacer(minLength: 4)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(fleet.ships) 艘").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
+                Text("\(fleet.crew) 水兵").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+            }
+            Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
         }
         .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
     }
 }
 
 struct FleetSheet: View {
+    private enum Tab: String, CaseIterable {
+        case orders = "舰令航向"
+        case reorganize = "船坞整编"
+        case ports = "海港态势"
+    }
+
+    @State private var tab: Tab = .orders
     @State private var target = -1
-    /// 整编舰队: ship count and name edits.
-    @State private var shipsEdit = false
-    @State private var renaming = false
+    @State private var draftShips = 3
     @State private var newName = ""
+    @State private var syncedFleetId = ""
     @State private var sending = false
     @State private var feedback = ""
-    @State private var allPorts = false
+    @State private var allFriendlyPorts = false
+    @State private var allEnemyPorts = false
 
     @ObservedObject var model: GameModel
     let fleet: Int
@@ -433,125 +459,394 @@ struct FleetSheet: View {
     /// Pick the port on the map instead of the list.
     var pickOnMap: () -> Void = {}
     var onClose: () -> Void = {}
+
     var body: some View {
         if let map = model.map, let resolved = model.resolveFleet(id: fleetId, fallback: fleet) {
             let f = resolved.fleet
             let nation = f.nation >= 0 && f.nation < map.meta.nations.count ? map.meta.nations[f.nation] : nil
+            let tint = nation.map { Names.color($0.color) } ?? Theme.ink2
             let busy = f.decision == "busy" || f.status == "lost"
-            // Ports this fleet may stay at: its own state's harbours (held by it), nearest first.
-            let ports: [(port: GameState.Port, distance: Double)] = (model.state?.ports ?? []).filter { $0.occupier == f.nation && map.meta.provinces.indices.contains($0.province) }
-                .map { (port: $0, distance: hypot(Double($0.x - f.x), Double($0.y - f.y))) }.sorted { $0.distance < $1.distance }
-            let shown = allPorts ? ports : Array(ports.prefix(6))
-            ScrollView {
-                LazyVStack(spacing: 14) {
-                    SheetHeader(title: f.name, subtitle: nation.map { "\($0.name) · 舰队 · \(FleetText.status(f.status))" }, color: nation.map { Names.color($0.color) }, seal: "舟")
-                    StatStrip(tiles: [
-                        StatTile(label: "船只", value: "\(f.ships)", edit: f.status == "lost" ? nil : { shipsEdit = true }),
-                        StatTile(label: "船员", value: Names.wan(f.crew)),
-                        StatTile(label: "舰体", value: "\(Int((f.hull * 100).rounded()))%", fraction: f.hull, warn: f.hull < 0.35),
-                        StatTile(label: "口粮", value: "\(f.food)", warn: f.food <= 0),
-                    ])
-                    Group2 {
-                        Button { newName = f.name; renaming = true } label: {
-                            HStack { Text("舰队名").font(Theme.body).foregroundStyle(Theme.ink2); Spacer(); Text(f.name).font(Theme.body).foregroundStyle(Theme.ink); Image(systemName: "pencil").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.seal) }
-                                .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain).disabled(f.status == "lost"); Divider2()
-                        Row(label: "指挥", value: f.manual || !f.patrol ? "玩家指挥" : "AI · " + FleetText.decision(f.decision)); Divider2()
-                        if f.port >= 0, f.port < map.meta.provinces.count { Row(label: "停留港口", value: map.meta.provinces[f.port].name + "港"); Divider2() }
-                        if !f.reason.isEmpty { Text(f.reason).font(Theme.label).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 10) }
-                    }
-                    .padding(.horizontal, Theme.Layout.pageInset)
+            let enemies = Set(model.state?.nations.indices.contains(f.nation) == true ? model.state!.nations[f.nation].enemies : [])
+            let allMapPorts = (model.state?.ports ?? []).filter { map.meta.provinces.indices.contains($0.province) }
+            // 敌方海港（可跨海夺港与海上封锁）：占领国或宗主国与本国交战，或本国港口被敌军占领
+            let enemyPorts: [(port: GameState.Port, distance: Double, reclaim: Bool)] = allMapPorts.compactMap { p in
+                let isReclaim = p.owner == f.nation && p.occupier != f.nation
+                let isEnemyHeld = enemies.contains(p.occupier) || enemies.contains(p.owner)
+                guard isReclaim || isEnemyHeld else { return nil }
+                guard p.occupier != f.nation || p.value < 99.5 else { return nil }
+                return (port: p, distance: hypot(Double(p.x - f.x), Double(p.y - f.y)), reclaim: isReclaim)
+            }.sorted { a, b in
+                if a.reclaim != b.reclaim { return a.reclaim && !b.reclaim }
+                return a.distance < b.distance
+            }
+            // 本国控制海港（驻泊补给）
+            let friendlyPorts: [(port: GameState.Port, distance: Double)] = allMapPorts.filter { $0.occupier == f.nation }
+                .map { (port: $0, distance: hypot(Double($0.x - f.x), Double($0.y - f.y))) }
+                .sorted { $0.distance < $1.distance }
+            let shownEnemy = allEnemyPorts ? enemyPorts : Array(enemyPorts.prefix(5))
+            let shownFriendly = allFriendlyPorts ? friendlyPorts : Array(friendlyPorts.prefix(6))
+            let targetIsEnemy = enemyPorts.contains { $0.port.province == target }
 
-                    HStack {
-                        SectionLabel("停留港口", inset: false)
-                        Spacer()
-                        Button(action: pickOnMap) { Label("地图选港", systemImage: "hand.tap").font(Theme.label).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle()).disabled(busy)
-                    }
-                    .padding(.horizontal, Theme.Layout.sectionInset)
-                    Group2 {
-                        if ports.isEmpty {
-                            Text("本国没有可停留的港口").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 14) {
+                    SheetGrabber()
+
+                    // 1. 舰牌抬头：国色战船徽 + 舰号 + 主力/状态印签 + 定位圆钮
+                    HStack(spacing: 12) {
+                        UnitMark(unit: "Fleet", color: tint).frame(width: 48, height: 48)
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: 6) {
+                                Text(f.name).font(Theme.kai(24)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                                if f.ships >= 4 {
+                                    PaperTag(text: "主力水师", color: Theme.gold, size: 11)
+                                }
+                                PaperTag(text: FleetText.decision(f.decision), color: f.decision == "busy" ? Theme.danger : f.decision == "attacking" ? Theme.seal : Theme.jade, size: 11)
+                            }
+                            HStack(spacing: 6) {
+                                RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(tint).frame(width: 9, height: 9)
+                                Text("\(nation?.name ?? "") · 水师舰队 · \(FleetText.status(f.status))")
+                                    .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
+                            }
                         }
-                        ForEach(shown, id: \.port.province) { item in
-                            let on = target == item.port.province
-                            Button { withAnimation(Motion.tap) { target = on ? -1 : item.port.province } } label: {
+                        Spacer(minLength: 4)
+                        Button {
+                            GameFeel.shared.tap()
+                            model.controller.flyTo?(f.x, f.y)
+                        } label: {
+                            InkIcon(glyph: .locate, size: 18, weight: 1.8, accent: Theme.seal.opacity(0.24))
+                                .foregroundStyle(Theme.seal)
+                                .frame(width: 40, height: 40)
+                                .background(Theme.paper2.opacity(0.92), in: Circle())
+                                .overlay(Circle().stroke(Theme.seal.opacity(0.32), lineWidth: 0.9))
+                        }
+                        .buttonStyle(PressStyle()).accessibilityLabel("定位舰队")
+                    }
+                    .padding(.horizontal, Theme.Layout.sectionInset).padding(.top, 2)
+
+                    // 2. 四格核心指标
+                    StatStrip(tiles: [
+                        StatTile(label: "战船", value: "\(f.ships)艘", edit: f.status == "lost" ? nil : { withAnimation(Motion.panel) { tab = .reorganize } }),
+                        StatTile(label: "水兵", value: Names.wan(f.crew)),
+                        StatTile(label: "舰体", value: "\(Int((f.hull * 100).rounded()))%", fraction: f.hull, warn: f.hull < 0.35),
+                        StatTile(label: "海粮", value: "\(f.food)", fraction: Double(min(100, max(0, f.food / max(1, f.crew / 2)))) / 100, warn: f.food <= f.crew * 15),
+                    ])
+
+                    // 3. 三页签切换：舰令航向 / 船坞整编 / 海港态势
+                    ChipPicker(items: Tab.allCases.map { ($0, $0.rawValue) }, selection: $tab)
+                        .padding(.horizontal, Theme.Layout.pageInset)
+
+                    if !feedback.isEmpty {
+                        HStack(spacing: 8) {
+                            InkIcon(glyph: .seal, size: 14, weight: 1.7).foregroundStyle(Theme.seal)
+                            Text(feedback).font(Theme.label).foregroundStyle(Theme.seal)
+                        }
+                        .padding(.horizontal, Theme.Layout.sectionInset)
+                        .transition(.opacity)
+                    }
+
+                    switch tab {
+                    case .orders:
+                        Group2 {
+                            Row(label: "指挥归属", value: f.manual || !f.patrol ? "玩家直接指挥" : "水师都督 · " + FleetText.decision(f.decision))
+                            Divider2()
+                            if f.port >= 0, f.port < map.meta.provinces.count {
+                                Row(label: "当前锚地", value: map.meta.provinces[f.port].name + "港")
+                                Divider2()
+                            }
+                            if !f.reason.isEmpty {
+                                Text(f.reason).font(Theme.label).foregroundStyle(Theme.ink2)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 16).padding(.vertical, 10)
+                            }
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+
+                        // 敌方与争夺海港（交战时显示，支持跨海夺港与海上封锁）
+                        if !enemyPorts.isEmpty {
+                            HStack {
+                                SectionLabel("敌港封锁 · 跨海夺港", inset: false)
+                                Spacer()
+                                PaperTag(text: "交战目标 \(enemyPorts.count) 港", color: Theme.danger, size: 10)
+                            }
+                            .padding(.horizontal, Theme.Layout.sectionInset)
+                            Group2 {
+                                ForEach(shownEnemy, id: \.port.province) { item in
+                                    let on = target == item.port.province
+                                    let pName = map.meta.provinces[item.port.province].name + "港"
+                                    let holderName = map.meta.nations.indices.contains(item.port.occupier) ? map.meta.nations[item.port.occupier].name : "敌军"
+                                    Button { withAnimation(Motion.tap) { target = on ? -1 : item.port.province } } label: {
+                                        HStack(spacing: 10) {
+                                            InkIcon(glyph: .sword, size: 15, weight: 1.7).foregroundStyle(on ? Theme.danger : Theme.seal).frame(width: Theme.Layout.iconGutter)
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                HStack(spacing: 6) {
+                                                    Text(pName).font(Theme.section).foregroundStyle(Theme.ink)
+                                                    PaperTag(text: item.reclaim ? "收复本港" : "夺港封锁", color: item.reclaim ? Theme.gold : Theme.danger, size: 10)
+                                                }
+                                                Text("现由\(holderName)把持 · 港控 \(Int(item.port.value.rounded()))%")
+                                                    .font(Theme.caption).foregroundStyle(Theme.ink2)
+                                            }
+                                            Spacer()
+                                            Text("\(Int(item.distance)) 里").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                                            Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Theme.danger : Theme.ink.opacity(0.25))
+                                        }
+                                        .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+                                        .background(on ? Theme.danger.opacity(0.08) : .clear)
+                                    }
+                                    .buttonStyle(.plain)
+                                    if item.port.province != shownEnemy.last?.port.province { Divider2() }
+                                }
+                                if enemyPorts.count > 5 {
+                                    Divider2()
+                                    Button { withAnimation(Motion.panel) { allEnemyPorts.toggle() } } label: {
+                                        Text(allEnemyPorts ? "收起敌方海港" : "展开全部 \(enemyPorts.count) 处交战海港").font(Theme.body).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 10)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, Theme.Layout.pageInset)
+                        }
+
+                        // 本国驻泊与补给港口
+                        HStack {
+                            SectionLabel("本国海港 · 驻泊补粮", inset: false)
+                            Spacer()
+                            Button(action: pickOnMap) { Label("地图选港", systemImage: "hand.tap").font(Theme.label).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle()).disabled(busy)
+                        }
+                        .padding(.horizontal, Theme.Layout.sectionInset)
+                        Group2 {
+                            if friendlyPorts.isEmpty {
+                                Text("本国当前没有已控制的海港").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16)
+                            }
+                            ForEach(shownFriendly, id: \.port.province) { item in
+                                let on = target == item.port.province
+                                Button { withAnimation(Motion.tap) { target = on ? -1 : item.port.province } } label: {
+                                    HStack(spacing: 10) {
+                                        InkIcon(glyph: .anchor, size: 15, weight: 1.7).foregroundStyle(on ? Theme.seal : Theme.ink2).frame(width: Theme.Layout.iconGutter)
+                                        Text(map.meta.provinces[item.port.province].name + "港").font(Theme.section).foregroundStyle(Theme.ink)
+                                        if item.port.province == f.port {
+                                            PaperTag(text: "现泊", color: Theme.jade, size: 10)
+                                        }
+                                        if item.port.owner != f.nation {
+                                            PaperTag(text: "占领港", color: Theme.gold, size: 10)
+                                        }
+                                        Spacer()
+                                        Text("\(Int(item.distance)) 里").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                                        Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Theme.seal : Theme.ink.opacity(0.25))
+                                    }
+                                    .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
+                                    .background(on ? Theme.seal.opacity(0.07) : .clear)
+                                }
+                                .buttonStyle(.plain)
+                                if item.port.province != shownFriendly.last?.port.province { Divider2() }
+                            }
+                            if friendlyPorts.count > 6 {
+                                Divider2()
+                                Button { withAnimation(Motion.panel) { allFriendlyPorts.toggle() } } label: {
+                                    Text(allFriendlyPorts ? "收起" : "展开全部 \(friendlyPorts.count) 港").font(Theme.body).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 10)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+
+                        HStack(spacing: 10) {
+                            Button {
+                                sending = true
+                                Task {
+                                    let pName = map.meta.provinces.indices.contains(target) ? map.meta.provinces[target].name : ""
+                                    let err = await model.fleetOrder(id: f.id, province: target)
+                                    feedback = err ?? (targetIsEnemy ? "战舰起航，跨海夺取\(pName)港" : "起航，驶往\(pName)港")
+                                    sending = false
+                                    if err == nil { target = -1; GameFeel.shared.notify(.success) } else { GameFeel.shared.notify(.error) }
+                                }
+                            } label: { PrimaryLabel(title: targetIsEnemy ? "起航夺港" : "拔锚起航", symbol: targetIsEnemy ? "flame.fill" : "sailboat") }
+                            .disabled(sending || target < 0 || busy).opacity(target < 0 || busy ? 0.5 : 1)
+
+                            Button {
+                                sending = true
+                                Task {
+                                    feedback = await model.fleetOrder(id: f.id, province: nil) ?? "舰队已在当前海面下锚"
+                                    sending = false
+                                }
+                            } label: { SecondaryLabel(title: "下锚待命", symbol: "stop.fill") }
+                            .disabled(sending || busy).opacity(busy ? 0.5 : 1)
+                        }
+                        .buttonStyle(.plain).padding(.horizontal, Theme.Layout.pageInset)
+                        .animation(Motion.fade, value: target)
+
+                        if f.status != "lost" {
+                            let mine = f.manual || !f.patrol
+                            Button {
+                                Task {
+                                    let out = await model.armyAction("fleetManual", armyId: f.id, flag: !mine)
+                                    feedback = out.message
+                                    GameFeel.shared.tap()
+                                }
+                            } label: { SecondaryLabel(title: mine ? "交还水师都督自主巡防" : "由玩家亲自统帅水师", symbol: mine ? "cpu" : "person.fill") }
+                            .buttonStyle(.plain).padding(.horizontal, Theme.Layout.pageInset)
+                        }
+                        Text(busy ? "交战或撤离中的舰队不可中途改令" : "可驶往本国港口补粮驻防，或在交战时跨海夺取敌方港口并实施海上封锁")
+                            .font(Theme.label).foregroundStyle(Theme.ink2)
+                            .padding(.horizontal, Theme.Layout.sectionInset)
+
+                    case .reorganize:
+                        SectionLabel("战船编制与船坞扩建")
+                        Group2 {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text("战船艘数").font(Theme.body).foregroundStyle(Theme.ink2)
+                                    Spacer()
+                                    Text("\(draftShips) 艘 · 编制水兵 \(draftShips * 200) 人")
+                                        .font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
+                                }
+                                HStack(spacing: 8) {
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        draftShips = max(1, draftShips - 1)
+                                    } label: {
+                                        Text("−1艘").font(Theme.label).foregroundStyle(Theme.ink)
+                                            .frame(width: 48, height: 32)
+                                            .background(Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(Theme.ink.opacity(0.15), lineWidth: 0.85))
+                                    }
+                                    .buttonStyle(PressStyle())
+
+                                    ForEach([2, 4, 6, 10], id: \.self) { preset in
+                                        let active = draftShips == preset
+                                        Button {
+                                            GameFeel.shared.tap()
+                                            draftShips = preset
+                                        } label: {
+                                            Text("\(preset)艘")
+                                                .font(Theme.label)
+                                                .foregroundStyle(active ? Theme.paper2 : Theme.ink)
+                                                .frame(maxWidth: .infinity)
+                                                .frame(height: 32)
+                                                .background(active ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(active ? Theme.seal : Theme.ink.opacity(0.15), lineWidth: 0.85))
+                                        }
+                                        .buttonStyle(PressStyle())
+                                    }
+
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        draftShips = min(10, draftShips + 1)
+                                    } label: {
+                                        Text("+1艘").font(Theme.label).foregroundStyle(Theme.ink)
+                                            .frame(width: 48, height: 32)
+                                            .background(Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(Theme.ink.opacity(0.15), lineWidth: 0.85))
+                                    }
+                                    .buttonStyle(PressStyle())
+                                }
+                                SealButton(title: "颁行战船整编", disabled: f.status == "lost" || draftShips == f.ships) {
+                                    Task {
+                                        let err = await model.editFleet(f.id, ships: draftShips, name: nil)
+                                        feedback = err ?? "已整编为 \(draftShips) 艘战船"
+                                        GameFeel.shared.notify(err == nil ? .success : .error)
+                                    }
+                                }
+                            }
+                            .padding(14)
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+
+                        SectionLabel("水师舰号更定")
+                        Group2 {
+                            VStack(alignment: .leading, spacing: 10) {
+                                TextField("输入新舰号", text: $newName).paperField()
+                                SealButton(title: "更定舰号", disabled: f.status == "lost" || newName.trimmingCharacters(in: .whitespaces).isEmpty || newName == f.name) {
+                                    let trimmed = newName.trimmingCharacters(in: .whitespaces)
+                                    Task {
+                                        let err = await model.editFleet(f.id, ships: nil, name: trimmed)
+                                        feedback = err ?? "舰队已更名为「\(trimmed)」"
+                                        GameFeel.shared.notify(err == nil ? .success : .error)
+                                    }
+                                }
+                            }
+                            .padding(14)
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+
+                    case .ports:
+                        let myPorts = allMapPorts.filter { $0.owner == f.nation || $0.occupier == f.nation }
+                        SectionLabel("本国海港与制海态势（\(myPorts.count) 港）")
+                        Group2 {
+                            if myPorts.isEmpty {
+                                Text("本国当前无沿海港口").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16)
+                            }
+                            ForEach(Array(myPorts.enumerated()), id: \.element.province) { idx, p in
+                                let pName = map.meta.provinces[p.province].name + "港"
+                                let blockaded = p.owner == f.nation && p.occupier != f.nation
+                                let occupiedEnemy = p.owner != f.nation && p.occupier == f.nation
+                                let contested = p.value < 99.5
                                 HStack(spacing: 10) {
-                                    InkIcon(glyph: .anchor, size: 15, weight: 1.7).foregroundStyle(on ? Theme.seal : Theme.ink2).frame(width: Theme.Layout.iconGutter)
-                                    Text(map.meta.provinces[item.port.province].name + "港").font(Theme.section).foregroundStyle(Theme.ink)
-                                    if item.port.province == f.port {
-                                        Text("现泊").font(Theme.caption).foregroundStyle(Theme.jade)
-                                            .padding(.horizontal, 6).padding(.vertical, 1.5)
-                                            .background(Theme.jade.opacity(0.12), in: Capsule())
+                                    InkIcon(glyph: .anchor, size: 15, weight: 1.7)
+                                        .foregroundStyle(blockaded ? Theme.danger : occupiedEnemy ? Theme.gold : Theme.jade)
+                                        .frame(width: Theme.Layout.iconGutter)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        HStack(spacing: 6) {
+                                            Text(pName).font(Theme.section).foregroundStyle(Theme.ink)
+                                            if blockaded {
+                                                let occName = map.meta.nations.indices.contains(p.occupier) ? map.meta.nations[p.occupier].name : "敌军"
+                                                PaperTag(text: "被\(occName)封锁", color: Theme.danger, size: 10)
+                                            } else if occupiedEnemy {
+                                                PaperTag(text: "跨海占领", color: Theme.gold, size: 10)
+                                            } else if contested {
+                                                PaperTag(text: "港湾交锋", color: Theme.seal, size: 10)
+                                            } else {
+                                                PaperTag(text: "海路畅通", color: Theme.jade, size: 10)
+                                            }
+                                        }
+                                        HStack(spacing: 8) {
+                                            Text("港控度 \(Int(p.value.rounded()))%").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                            InkBar(fraction: p.value / 100.0, color: blockaded ? Theme.danger : tint, height: 4).frame(width: 68)
+                                        }
                                     }
                                     Spacer()
-                                    Text("\(Int(item.distance)) 里").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
-                                    Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Theme.seal : Theme.ink.opacity(0.25))
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        model.controller.flyTo?(p.x, p.y)
+                                    } label: {
+                                        Text("查看").font(Theme.caption).foregroundStyle(Theme.seal)
+                                            .padding(.horizontal, 8).padding(.vertical, 4)
+                                            .background(Theme.seal.opacity(0.1), in: Capsule())
+                                    }
+                                    .buttonStyle(PressStyle())
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
-                                .background(on ? Theme.seal.opacity(0.07) : .clear)
+                                .padding(.horizontal, 16).padding(.vertical, 10)
+                                if idx < myPorts.count - 1 { Divider2() }
                             }
-                            .buttonStyle(.plain)
-                            if item.port.province != shown.last?.port.province { Divider2() }
                         }
-                        if ports.count > 6 {
-                            Divider2()
-                            Button { withAnimation(Motion.panel) { allPorts.toggle() } } label: {
-                                Text(allPorts ? "收起" : "展开全部 \(ports.count) 港").font(Theme.body).foregroundStyle(Theme.seal).frame(maxWidth: .infinity).padding(.vertical, 10)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, Theme.Layout.pageInset)
+                        .padding(.horizontal, Theme.Layout.pageInset)
 
-                    HStack(spacing: 10) {
-                        Button {
-                            sending = true
-                            Task { feedback = await model.fleetOrder(id: f.id, province: target) ?? "起航，前往\(map.meta.provinces.indices.contains(target) ? map.meta.provinces[target].name : "")港"; sending = false; if feedback.hasPrefix("起航") { target = -1 } }
-                        } label: { PrimaryLabel(title: "起航", symbol: "sailboat") }
-                        .disabled(sending || target < 0 || busy).opacity(target < 0 || busy ? 0.5 : 1)
-                        Button {
-                            sending = true
-                            Task { feedback = await model.fleetOrder(id: f.id, province: nil) ?? "舰队已下锚"; sending = false }
-                        } label: { SecondaryLabel(title: "下锚停航", symbol: "stop.fill") }
-                        .disabled(sending || busy).opacity(busy ? 0.5 : 1)
+                        let myYards = (model.state?.yards ?? []).filter { $0.nation == f.nation }
+                        if !myYards.isEmpty {
+                            SectionLabel("船坞建造队列")
+                            Group2 {
+                                ForEach(Array(myYards.enumerated()), id: \.offset) { idx, y in
+                                    HStack {
+                                        InkIcon(glyph: .hammer, size: 15, weight: 1.7).foregroundStyle(Theme.seal).frame(width: Theme.Layout.iconGutter)
+                                        Text(y.name).font(Theme.section).foregroundStyle(Theme.ink)
+                                        Spacer()
+                                        PaperTag(text: "建造中 · 约 \(max(1, Int(y.months.rounded()))) 个月下水", color: Theme.gold, size: 10)
+                                    }
+                                    .padding(.horizontal, 16).padding(.vertical, 10)
+                                    if idx < myYards.count - 1 { Divider2() }
+                                }
+                            }
+                            .padding(.horizontal, Theme.Layout.pageInset)
+                        }
                     }
-                    .buttonStyle(.plain).padding(.horizontal, Theme.Layout.pageInset)
-                    .animation(Motion.fade, value: target)
-                    if f.status != "lost" {
-                        let mine = f.manual || !f.patrol
-                        Button {
-                            Task { let out = await model.armyAction("fleetManual", armyId: f.id, flag: !mine); feedback = out.message }
-                        } label: { SecondaryLabel(title: mine ? "交还 AI 自主巡防" : "亲自指挥", symbol: mine ? "cpu" : "person.fill") }
-                        .buttonStyle(.plain).padding(.horizontal, Theme.Layout.pageInset)
-                    }
-                    if !feedback.isEmpty {
-                        Text(feedback).font(Theme.label).foregroundStyle(Theme.seal).transition(.opacity)
-                    }
-                    Text(busy ? "交战或撤退中的舰队不能改令" : "只能停留本国港口；目标须有连通海路").font(Theme.label).foregroundStyle(Theme.ink2)
                 }
                 .padding(.bottom, 24)
                 .animation(Motion.fade, value: feedback)
             }
-            .sheet(isPresented: $shipsEdit) {
-                NumberEditSheet(title: "\(f.name)船只", unit: "艘", value: Double(f.ships), range: 1...10) { v in
-                    shipsEdit = false
-                    Task { feedback = await model.editFleet(f.id, ships: Int(v.rounded()), name: nil) ?? "已整编为 \(min(10, max(1, Int(v.rounded())))) 艘" }
-                }
-                .presentationDetents([.height(370)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet).font(Theme.section)
+            .onAppear {
+                syncDraft(f)
             }
-            .sheet(isPresented: $renaming) {
-                VStack(alignment: .leading, spacing: 14) {
-                    SheetHeader(title: "舰队更名", subtitle: "现名 \(f.name)", seal: "改")
-                    TextField("", text: $newName).paperField().padding(.horizontal, Theme.Layout.pageInset)
-                    SealButton(title: "颁行", disabled: newName.trimmingCharacters(in: .whitespaces).isEmpty) {
-                        renaming = false
-                        Task { feedback = await model.editFleet(f.id, ships: nil, name: newName) ?? "已更名为\(newName)" }
-                    }
-                    .padding(.horizontal, Theme.Layout.pageInset)
-                }
-                .padding(.bottom, 16)
-                .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet).font(Theme.section)
+            .onChange(of: f.id) { _, _ in
+                syncDraft(f)
             }
         } else {
             VStack(spacing: 16) {
@@ -562,6 +857,13 @@ struct FleetSheet: View {
             }
             .padding(.bottom, 24)
         }
+    }
+
+    private func syncDraft(_ f: GameState.Fleet) {
+        guard syncedFleetId != f.id else { return }
+        syncedFleetId = f.id
+        draftShips = max(1, min(10, f.ships))
+        newName = f.name
     }
 }
 

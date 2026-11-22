@@ -36,8 +36,9 @@ import LieguojiCore
     /// Zoom by a factor around the screen centre (the + / − buttons).
     @Published var zoomRequest: (factor: Double, id: UUID)?
     /// Army icons and the selected army's remaining route, from the simulation (nil keeps the opening icons).
-    @Published var armies: [MapRenderer.ArmySprite]?
-    @Published var route: [SIMD2<Float>] = []
+    @Published var armies: [MapRenderer.ArmySprite]? { didSet { armiesRevision &+= 1 } }
+    @Published var route: [SIMD2<Float>] = [] { didSet { armiesRevision &+= 1 } }
+    private(set) var armiesRevision = 0
     @Published var selectedArmy: Int?
     /// 选中军队的稳定 ID（推演中数组下标变化或军队覆灭时仍能准确找回，避免点军团出现空白页）。
     @Published var selectedArmyId: String?
@@ -144,6 +145,8 @@ import LieguojiCore
     @Published var replayLocked = false
     /// 山河回放单步／播放推进时开启墨晕扫色、战役箭头与行军军队动效（快速拖滑条时关闭以保持零延迟跟手）。
     var replayAnimate = false
+    /// 山河回放快速拖拽时间轴期间为真：仅刷新各州颜色，延后重建国界与国名框，松手时一次性补齐。
+    var replayScrubbing = false
     /// Slow drift of the title backdrop.
     @Published var drifting = false
     /// How far the engine has got once the map has risen (FoundingView.later).
@@ -312,6 +315,7 @@ struct MapView: UIViewRepresentable {
         private let troops = TroopLabelsView()
         private var shownEffects = MapEffects()
         private var shownRevision = -1
+        private var shownArmiesRevision = -1
         private var shownEditorRevision = 0
         private var shownViewLabels: [GroupLabel]?
         private var lastAppearanceKey: (mode: MapMode, highlight: Int?, relations: [Int: UInt32], fills: [RGB]?, view: String)?
@@ -803,12 +807,14 @@ struct MapView: UIViewRepresentable {
             if controller.worldRevision != shownRevision, let next = controller.world, Self.worldChanged(next, map) {
                 shownRevision = controller.worldRevision
                 map = next
-                renderer?.setMap(next, skipStatic: controller.replayLocked, animateColors: !controller.replayLocked || controller.replayAnimate)
+                renderer?.setMap(next, skipStatic: controller.replayLocked, skipOutlines: controller.replayScrubbing, animateColors: !controller.replayLocked || controller.replayAnimate)
                 // 回放期间城池位置不变，跳过主线程 CoreText 全城重绘，彻底消除逐帧掉帧与卡顿。
                 if !controller.replayLocked { labels.setCities(map: next) }
-                // Daily border changes swap the names in place; only a view switch cross-fades.
-                if let groups = controller.viewLabels { labels.setGroups(groups, animated: false) } else { labels.setNations(map: next, animated: false) }
-                if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                // 快速拖拽回放进度条期间跳过国名框重建，松手或单步/自动播放时即时更新。
+                if !controller.replayScrubbing {
+                    if let groups = controller.viewLabels { labels.setGroups(groups, animated: false) } else { labels.setNations(map: next, animated: false) }
+                    if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
+                }
                 dirty = true
             }
             // While a reveal clock runs the display link draws it; the published value is only coarse.
@@ -843,7 +849,8 @@ struct MapView: UIViewRepresentable {
                 if let renderer { labels.update(camera: renderer.camera, viewport: mtk.bounds.size) }
                 dirty = true
             }
-            if let armies = controller.armies {
+            if controller.armiesRevision != shownArmiesRevision, let armies = controller.armies {
+                shownArmiesRevision = controller.armiesRevision
                 // Playing: glide linearly over one step so marching does not pulse; a single move eases.
                 let snapped = controller.snapArmies
                 renderer?.tweenDuration = controller.tween
@@ -852,15 +859,16 @@ struct MapView: UIViewRepresentable {
                 renderer?.setArmies(armies, route: controller.route, snap: snapped)
                 controller.snapArmies = false
                 if snapped || !controller.route.isEmpty { dirty = true }
-                if controller.washes != shownWashes || controller.washEpoch != shownWashEpoch {
-                    shownWashes = controller.washes; shownWashEpoch = controller.washEpoch
-                    renderer?.setWashes(shownWashes, epoch: shownWashEpoch)
-                    dirty = true
-                }
                 if !controller.sheetOpen {
                     updateTroops()
                     if renderer?.isAnimating == true { startLink() }
                 }
+            }
+            if controller.washes != shownWashes || controller.washEpoch != shownWashEpoch {
+                shownWashes = controller.washes; shownWashEpoch = controller.washEpoch
+                renderer?.setWashes(shownWashes, epoch: shownWashEpoch)
+                if !controller.sheetOpen && renderer?.isAnimating == true { startLink() }
+                dirty = true
             }
             if controller.viewLabels != shownViewLabels {
                 let animated = controller.viewLabels?.map(\.name) != shownViewLabels?.map(\.name)

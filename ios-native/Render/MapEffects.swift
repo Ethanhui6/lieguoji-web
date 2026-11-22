@@ -176,22 +176,78 @@ final class EffectsView: UIView {
         return c
     }
     /// Battle smoke rolling up and sparks flying where the swords clash.
-    /// 海战: broadsides over the water, muzzle flashes and white gun smoke drifting off, and a splash
-    /// ring where the shot falls (no blades at sea).
+    /// 海战: 双舰舷炮齐射、海浪激荡水环、双国海战战力对比条与交叉火炮海锚徽记。
     private func navalLayer() -> CALayer {
-        let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 30, height: 20)
-        let ring = CAShapeLayer(); ring.frame = root.bounds
-        ring.path = UIBezierPath(ovalIn: CGRect(x: 9, y: 6, width: 12, height: 8)).cgPath
-        ring.fillColor = nil; ring.strokeColor = UIColor(white: 1, alpha: 0.8).cgColor; ring.lineWidth = 1.2
-        let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.3; grow.toValue = 1.8
-        let fade = CABasicAnimation(keyPath: "opacity"); fade.fromValue = 0.9; fade.toValue = 0
-        let g = CAAnimationGroup(); g.animations = [grow, fade]; g.duration = 1.1; g.repeatCount = .infinity; g.timeOffset = Double.random(in: 0..<1.1)
-        ring.add(Self.calm(g), forKey: "splash"); root.addSublayer(ring)
+        let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 32, height: 22)
+        // 海战双方战力对比条（与陆战一致，由 setStrength 动态更新两国色彩与占比）
+        let strength = CALayer(); strength.name = "strength"; strength.bounds = CGRect(x: 0, y: 0, width: 28, height: 3.2); strength.position = CGPoint(x: 16, y: -11)
+        strength.cornerRadius = 1.6; strength.masksToBounds = true; strength.borderWidth = 0.6
+        strength.borderColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 0.95).cgColor; strength.isHidden = true
+        strength.addSublayer(CALayer()); strength.addSublayer(CALayer()); root.addSublayer(strength)
+        // 双重扩散海浪水花环
+        for idx in 0..<2 {
+            let ring = CAShapeLayer(); ring.frame = root.bounds
+            ring.path = UIBezierPath(ovalIn: CGRect(x: 7, y: 5, width: 18, height: 12)).cgPath
+            ring.fillColor = nil
+            ring.strokeColor = (idx == 0 ? UIColor(red: 0.94, green: 0.97, blue: 1.0, alpha: 0.88) : UIColor(red: 0.62, green: 0.82, blue: 0.94, alpha: 0.72)).cgColor
+            ring.lineWidth = idx == 0 ? 1.4 : 1.0
+            let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.35; grow.toValue = 1.95
+            let fade = CABasicAnimation(keyPath: "opacity"); fade.fromValue = 0.92; fade.toValue = 0
+            let g = CAAnimationGroup(); g.animations = [grow, fade]; g.duration = 1.25; g.repeatCount = .infinity
+            g.timeOffset = Double(idx) * 0.62 + Double.random(in: 0..<0.3)
+            ring.add(Self.calm(g), forKey: "splash-\(idx)")
+            root.addSublayer(ring)
+        }
+        // 炮火暖金赤焰呼吸核心
+        let fireGlow = CAShapeLayer(); fireGlow.frame = root.bounds
+        fireGlow.path = UIBezierPath(ovalIn: CGRect(x: 9, y: 4, width: 14, height: 14)).cgPath
+        fireGlow.fillColor = UIColor(red: 0.98, green: 0.56, blue: 0.18, alpha: 0.30).cgColor
+        let glowAnim = CAKeyframeAnimation(keyPath: "opacity"); glowAnim.values = [0.25, 0.92, 0.30]; glowAnim.duration = 0.75; glowAnim.repeatCount = .infinity
+        fireGlow.add(Self.calm(glowAnim), forKey: "glow")
+        root.addSublayer(fireGlow)
+        // 左右舷交替齐射炮火弹道弧线
+        for side in 0..<2 {
+            let volley = CAShapeLayer(); volley.frame = root.bounds
+            let vp = UIBezierPath()
+            if side == 0 {
+                vp.move(to: CGPoint(x: 3, y: 14))
+                vp.addQuadCurve(to: CGPoint(x: 27, y: 8), controlPoint: CGPoint(x: 15, y: 2))
+            } else {
+                vp.move(to: CGPoint(x: 29, y: 14))
+                vp.addQuadCurve(to: CGPoint(x: 5, y: 8), controlPoint: CGPoint(x: 17, y: 2))
+            }
+            volley.path = vp.cgPath; volley.fillColor = nil
+            volley.strokeColor = UIColor(red: 1.0, green: 0.78, blue: 0.28, alpha: 0.95).cgColor
+            volley.lineWidth = 1.6; volley.lineCap = .round
+            let shoot = CAKeyframeAnimation(keyPath: "strokeEnd"); shoot.values = [0.0, 1.0, 1.0]; shoot.keyTimes = [0, 0.45, 1]
+            let tail = CAKeyframeAnimation(keyPath: "strokeStart"); tail.values = [0.0, 0.2, 1.0]; tail.keyTimes = [0, 0.35, 1]
+            let vFade = CAKeyframeAnimation(keyPath: "opacity"); vFade.values = [0.0, 1.0, 0.0]; vFade.keyTimes = [0, 0.3, 1]
+            let vg = CAAnimationGroup(); vg.animations = [shoot, tail, vFade]; vg.duration = 0.86; vg.repeatCount = .infinity
+            vg.timeOffset = Double(side) * 0.43
+            volley.add(Self.calm(vg), forKey: "volley-\(side)")
+            root.addSublayer(volley)
+        }
+        // 海战交叉火炮与铁锚中心徽记（宣纸金墨描边）
+        let emblem = CAShapeLayer(); emblem.frame = root.bounds
+        let ep = UIBezierPath()
+        // 交叉双炮筒
+        ep.move(to: CGPoint(x: 9, y: 16)); ep.addLine(to: CGPoint(x: 23, y: 6))
+        ep.move(to: CGPoint(x: 23, y: 16)); ep.addLine(to: CGPoint(x: 9, y: 6))
+        // 中心海锚竖杆与月牙锚钩
+        ep.move(to: CGPoint(x: 16, y: 5)); ep.addLine(to: CGPoint(x: 16, y: 17))
+        ep.addArc(withCenter: CGPoint(x: 16, y: 12.5), radius: 4.5, startAngle: .pi * 0.18, endAngle: .pi * 0.82, clockwise: true)
+        emblem.path = ep.cgPath; emblem.fillColor = nil
+        emblem.strokeColor = UIColor(red: 0.99, green: 0.95, blue: 0.84, alpha: 0.96).cgColor
+        emblem.lineWidth = 1.65; emblem.lineCap = .round
+        let recoil = CAKeyframeAnimation(keyPath: "transform.scale"); recoil.values = [0.92, 1.12, 0.96, 1.0]; recoil.keyTimes = [0, 0.25, 0.6, 1]
+        recoil.duration = 0.86; recoil.repeatCount = .infinity
+        emblem.add(Self.calm(recoil), forKey: "recoil")
+        root.addSublayer(emblem)
         if Self.particles && !Energy.hot && battleLayers.count < 6 {
-            let e = CAEmitterLayer(); e.emitterShape = .line; e.emitterSize = CGSize(width: 26, height: 1); e.emitterPosition = CGPoint(x: 15, y: 10)
+            let e = CAEmitterLayer(); e.emitterShape = .line; e.emitterSize = CGSize(width: 26, height: 1); e.emitterPosition = CGPoint(x: 16, y: 11)
             e.emitterCells = [
-                cell(Self.puff, color: UIColor(white: 0.95, alpha: 0.22), rate: 3, life: 2.0, velocity: 6, range: .pi / 4, scale: 0.3, scaleSpeed: 0.16, alphaSpeed: -0.1, spin: 0.2, angle: -.pi / 2),
-                cell(Self.spark, color: UIColor(red: 1, green: 0.62, blue: 0.2, alpha: 1), rate: 4, life: 0.25, velocity: 18, range: .pi / 5, scale: 0.55, scaleSpeed: -1.4, alphaSpeed: -3, angle: -.pi / 2),
+                cell(Self.puff, color: UIColor(white: 0.96, alpha: 0.25), rate: 3.2, life: 1.9, velocity: 7, range: .pi / 4, scale: 0.3, scaleSpeed: 0.15, alphaSpeed: -0.11, spin: 0.2, angle: -.pi / 2),
+                cell(Self.spark, color: UIColor(red: 1, green: 0.66, blue: 0.22, alpha: 1), rate: 4.5, life: 0.28, velocity: 20, range: .pi / 4, scale: 0.55, scaleSpeed: -1.3, alphaSpeed: -3, angle: -.pi / 2),
             ]
             e.renderMode = .unordered
             root.insertSublayer(e, at: 0)
@@ -458,10 +514,12 @@ final class EffectsView: UIView {
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 120, height: 120)
         switch b.kind {
         case .destroyed:
-            // 阵亡：这支军队在它倒下的地方被墨吞没——一团墨（掺本国色）由小洇大、边缘几处飞溅，一圈本国色的震痕荡开，
-            // 军旗（兵种图标）向一侧倾倒、下沉、褪色。几支同处倒下时墨团随数量变大、飞溅更多。
+            // 阵亡/沉没：陆军被焦墨吞没，舰队则伴随深海墨浪与白沫水花沉入海底。
+            let isNaval = b.unit == "Fleet"
             let count = CGFloat(max(1, b.count)), grow = min(1.6, 1 + 0.2 * (count - 1))
-            let ink = UIColor(red: 0.14 + 0.22 * b.r, green: 0.11 + 0.22 * b.g, blue: 0.09 + 0.22 * b.b, alpha: 1)
+            let ink = isNaval
+                ? UIColor(red: 0.10 + 0.18 * b.r, green: 0.22 + 0.18 * b.g, blue: 0.32 + 0.18 * b.b, alpha: 1)
+                : UIColor(red: 0.14 + 0.22 * b.r, green: 0.11 + 0.22 * b.g, blue: 0.09 + 0.22 * b.b, alpha: 1)
             var seed = UInt64(truncatingIfNeeded: b.id.hashValue)
             func rnd() -> CGFloat { seed = seed &* 6364136223846793005 &+ 1442695040888963407; return CGFloat((seed >> 33) % 10_000) / 10_000 }
             let begin = CACurrentMediaTime() + b.delay

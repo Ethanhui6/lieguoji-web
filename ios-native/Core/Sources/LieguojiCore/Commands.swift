@@ -7,18 +7,39 @@ extension NativeEngine {
     /// Uses the existing fleet resolver: combat, access and sea routes stay authoritative.
     public func fleetOrder(fleetId: String, provinceIndex: Int?) -> (ok: Bool, reason: String) {
         let action: Naval.Command
+        var portId: String? = nil, provinceId: String? = nil
         if let index = provinceIndex {
             guard run.world.provinces.asArray.indices.contains(index),
                   let port = Naval.sea?.ports.first(where: { $0.provinceId == run.world.provinces[index].id.asString }) else {
                 return (false, "目标省份没有可用海港。")
             }
+            portId = port.id; provinceId = port.provinceId
             action = .sail(port: port.id)
         } else { action = .halt }
         switch Naval.resolve(run, fleetId, action) {
         case .failure(let error): return (false, error.reason)
-        case .success:
+        case .success(let resolved):
             guard Naval.issue(run, fleetId, action, player: true) else { return (false, "舰队军令未生效。") }
-            return (true, provinceIndex == nil ? "舰队已在实际位置停止航行。" : "舰队已按真实海路前往目标港口。")
+            let row = run.navalAutonomy.fleets[fleetId], order = run.portControl.fleets[fleetId]
+            let nation = resolved.fleet.nationId.asString
+            if let pid = provinceId, let portId {
+                let occ = run.portControl.ports[pid].occupierId.optionalString ?? ""
+                let attacking = !occ.isEmpty && occ != nation && RunWindow.atWar(run, nation, occ)
+                if !row.isNull {
+                    row.assignedPortId = JS(portId)
+                    row.decision = JS(attacking ? "attacking" : "manual")
+                    row.reason = JS(attacking ? "玩家军令：跨海夺取敌方海港并实施海上封锁。" : "玩家军令：按真实海路驶往目标港口驻泊。")
+                }
+                if !order.isNull {
+                    order.targetId = attacking ? JS(pid) : .null
+                    order.active = JS(attacking)
+                }
+                return (true, attacking ? "舰队已起航，跨海夺取并封锁\(resolved.name)。" : "舰队已按真实海路前往\(resolved.name)。")
+            } else {
+                if !row.isNull { row.assignedPortId = .null; row.decision = JS("manual"); row.reason = JS("玩家军令：在当前海域下锚待命。") }
+                if !order.isNull { order.targetId = .null; order.active = JS(false) }
+                return (true, "舰队已在实际位置停止航行。")
+            }
         }
     }
 
@@ -134,9 +155,10 @@ extension NativeEngine {
         return Data(o.json.utf8)
     }
 
-    /// The remaining route of an army in map units (remainingArmyTravelPoints47 / scale).
+    /// The remaining route of an army or fleet in map units (remainingArmyTravelPoints47 / scale).
     public func route(armyId: String) -> [[Double]] {
-        let r = run, t = r.armyPositions.records[armyId]
+        let r = run
+        let t = !r.armyPositions.records[armyId].isNull ? r.armyPositions.records[armyId] : r.fleetPositions.records[armyId]
         guard !t.isNull, let bridge = Armies.bridge else { return [] }
         let g = bridge.graph, travel = bridge.travel(t), sc = r.scale.asNumber
         var points = [g.location(travel).point]

@@ -164,7 +164,7 @@ extension MapRenderer {
             if !sweep.isEmpty, let mesh = sweepMesh(sweep) {
                 let detail = Float(min(1, max(0, (camera.scale - 0.7) / 0.6)))
                 let scale = sweep.topology.scale
-                let w: [Float] = [now, FlipSweep.edge, FlipSweep.after, 0.5, 0.9, 1 / (scale * 0.9), detail, 0]
+                let w: [Float] = [now, FlipSweep.edge, FlipSweep.after, 0.5, 0.26, 1 / (scale * 1.25), detail, 0]
                 encoder.setRenderPipelineState(sweepPipeline)
                 encoder.setVertexBuffer(mesh.vertices, offset: 0, index: 0)
                 encoder.setVertexBytes(&u, length: MemoryLayout<Uniforms>.stride, index: 2)

@@ -620,10 +620,26 @@ public struct DeclarationEngine: Sendable {
             // 欺凌弱小 goes for the weakest neighbour, 不畏强权 for the strongest.
             let bully = stance.contains("BullyTheWeak"), defy = stance.contains("DefyTheStrong")
             let weakest = bully ? list.min { strength($0) < strength($1) } : nil, strongest = defy ? list.max { strength($0) < strength($1) } : nil
+            // 本土防务评估（本作规则）：统计接壤敌意陆邻总兵力与自身舰船数，避免无海军或陆邻虎视眈眈时盲目挑起远海战事。
+            let myShips = w.nations[nation].ships.reduce(0, +)
+            var landThreat = 0.0
+            if UnitKinds.enabled {
+                for nbId in states[a].neighbors.items {
+                    guard let nb = stateByID[nbId], nb != a, !states[nb].dead else { continue }
+                    if let al = states[a].alliance, w.alliances[al].members.contains(states[nb].index) { continue }
+                    if w.overlordOf(states[nb].index) == nation || w.overlordOf(nation) == states[nb].index { continue }
+                    if affinity(a, nb) < 0 { landThreat += strength(nb) }
+                }
+            }
             for candidate in list {
                 let stanceBias = bully ? (candidate == weakest ? 1.6 : 0.8) : defy ? (candidate == strongest ? 1.6 : 0.8) : 1.0
                 let opBias = DeclarationEngine.opinionBias?(states[a].index, states[candidate].index) ?? 1.0
-                let bias = stanceBias * opBias
+                var seaBias = 1.0
+                if UnitKinds.enabled, !states[a].neighbors.contains(states[candidate].id) {
+                    if myShips == 0 && states[a].provinceCount <= 4 { seaBias = 0.25 }
+                    else if landThreat > strength(a) * 0.75 { seaBias = 0.45 }
+                }
+                let bias = stanceBias * opBias * seaBias
                 let usableList = DeclarationEngine.supported.filter { canUse($0, a, candidate) }
                 for cb in usableList { let v = Native.fr(weight(cb, a, candidate) * bias); if v > best { best = v; target = candidate; chosenCB = cb } }
             }

@@ -326,7 +326,9 @@ public struct ArmyAutonomy: Sendable {
                 let targetEnemy: Int? = target.flatMap { t in enemySet.contains(w.owners[t]) ? w.owners[t] : access(a.nation, w.owners[t]) ? enemyAt(t) : nil }
                 let ongoing = here.travel.status == .moving
                 let targetOwned = target.map { w.owners[$0] == a.nation } ?? false
-                if ongoing && (target == nil || targetEnemy != nil || row.decision == "returning" && targetOwned || row.decision == "staging" && targetOwned && !en.isEmpty
+                let homeInvaded = ArmyAutonomy.temper != nil && w.owners.indices.contains { w.owners[$0] == a.nation && enemyAt($0) != nil }
+                let chasingAwayFromHome = homeInvaded && target.map { !(w.owners[$0] == a.nation && enemyAt($0) != nil) } ?? true
+                if ongoing && !chasingAwayFromHome && (target == nil || targetEnemy != nil || row.decision == "returning" && targetOwned || row.decision == "staging" && targetOwned && !en.isEmpty
                                || row.garrison >= 0 && row.garrison == target && targetOwned && en.isEmpty || a.status == "retreating") {
                     if row.garrison >= 0 && row.garrison == target && targetOwned && en.isEmpty { note("garrison") } else { row.nextTick = tick + retry }
                     continue

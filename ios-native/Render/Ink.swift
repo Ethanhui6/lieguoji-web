@@ -234,11 +234,14 @@ extension MapRenderer {
     }
 
     /// 新的一步：按这一步的输入落墨、清墨（拓扑建好之前的步跳过）。
+    /// 传给 InkCells 的各州主人必须与已安装到底色缓冲的归属一致（`ink.lastProvinceOwners`），
+    /// 防止后台 `baseColors` 尚未算完时提前擦除占领墨迹、造成被攻占州闪回旧主底色 1–3 帧。
     func inkFrame(_ frame: WashFrame, topology: WashTopology?) {
         guard let ink else { return }
         if ink.cells == nil || ink.cells!.topology !== topology, let topology { ink.cells = InkCells(topology: topology, elevation: map.elevation) }
-        let owners = map.meta.provinces.map(\.nation), now = clock(), tween = Float(max(0.15, tweenDuration))
-        ink.update(self) { $0.apply(frame, owners: owners, now: now, tween: tween) }
+        let installed = ink.lastProvinceOwners.count == map.meta.provinces.count ? ink.lastProvinceOwners : map.meta.provinces.map(\.nation)
+        let now = clock(), tween = Float(max(0.15, tweenDuration))
+        ink.update(self) { $0.apply(frame, owners: installed, now: now, tween: tween) }
     }
 
     /// 主画面里（陆地之上、州界之下）合成墨迹。

@@ -198,6 +198,47 @@ final class ConquestWashTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(ink.leave[Self.cellAt(33, 5)], InkCells.never, "远处的墨不受影响")
     }
 
+    func testMultiProvinceBranchingFrontAndDefenderResistance() {
+        // 30 × 20：左下为国 0 前哨 P0，中下为州 A (x 10..19, y 10..19)，右下为 B 无守军 (x 20..29, y 10..19)，中上为 C 有守军 (x 10..19, y 0..9)
+        let t = Self.grid(30, 20) { x, y in
+            if x < 10 { return 0 }
+            if y >= 10 { return x < 20 ? 1 : 2 }
+            return x < 20 ? 3 : -1
+        }
+        let owners = [0, 1, 1, 1]
+        let ink = InkCells(topology: t)
+        // 第一步：国 0 占领州 A（owners[1] = 0）并在东侧与北侧推进进入 B(p=2)、C(p=3)
+        var stepOwners = owners; stepOwners[1] = 0
+        // 先让 A 在西侧落过墨、再换归属与同步推进 B/C，验证多省跨界种子与守军阻滞
+        ink.apply(WashFrame(day: 1, inputs: [WashInput(province: 1, attacker: 0, kind: .siege, progress: 0.99, day: 1, armies: [SIMD2(10.5, 14.5)])], enemies: [0: [1]]), owners: owners, now: 0, tween: 0.5)
+        let aBefore = t.provinceCells[1].filter { ink.nation[Int($0)] == 0 }.count
+        XCTAssertEqual(aBefore, t.provinceCells[1].count)
+
+        // 此时 A 已归 0 并稳住，主力跨过 A-B 东界进围 B（无守军），支路跨过 A-C 北界进围 C（有守军驻于 C 北部）
+        let siegeB = WashInput(province: 2, attacker: 0, kind: .siege, progress: 0.52, day: 2, armies: [SIMD2(20.5, 14.5)])
+        let siegeC = WashInput(province: 3, attacker: 0, kind: .siege, progress: 0.52, day: 2, armies: [SIMD2(14.5, 9.5)])
+        let holdC = WashInput(province: 3, attacker: 1, kind: .hold, day: 2, armies: [SIMD2(14.5, 5.5)], troops: 8000)
+        ink.apply(WashFrame(day: 2, inputs: [siegeB, siegeC, holdC], enemies: [0: [1]]), owners: stepOwners, now: 1, tween: 0.5)
+
+        // 1. 边界连续进入：B 紧邻 A 的西缘已有墨，而不是只在中心冒圆斑；C 南缘紧邻 A 有墨，而 C 北侧守军正面保持未陷落
+        XCTAssertEqual(ink.nation[14 * 30 + 20], 0, "B 紧邻 A 公共省界处应直接承接墨晕")
+        XCTAssertEqual(ink.nation[9 * 30 + 14], 0, "C 紧邻 A 北界应有支路墨晕进入")
+        XCTAssertNotEqual(ink.nation[5 * 30 + 14], 0, "C 守军正面core范围内未被提前占墨")
+        let covB = t.provinceCells[2].filter { ink.nation[Int($0)] == 0 }.count
+        let covC = t.provinceCells[3].filter { ink.nation[Int($0)] == 0 }.count
+        XCTAssertGreaterThan(covB, covC, "相同进度下，无守军的 B 推进明显快于有守军的 C（B=\(covB), C=\(covC)）")
+
+        // 2. 守军主动反推：无守军与有守军分离，停战后仅交战双方淡出、不影响仍在交战的第三方
+        let holdB = WashInput(province: 2, attacker: 1, kind: .hold, day: 2, armies: [SIMD2(21.5, 14.5)], troops: 12000)
+        ink.apply(WashFrame(day: 2, inputs: [holdB], enemies: [0: [1]]), owners: stepOwners, now: 2, tween: 0.5)
+        XCTAssertLessThan(ink.leave[14 * 30 + 21], InkCells.never, "同日抵达的守军也能立即从所在格擦退敌墨")
+
+        // 3. 多国同地参战隔离：新增第三国 2 对国 1 落墨，随后 0-1 停战，国 0 墨淡出而国 2 墨保持常亮
+        let thirdMarch = WashInput(province: 2, attacker: 2, kind: .march, day: 3, armies: [SIMD2(27.5, 15.5), SIMD2(26.5, 15.5)], troops: 6000, key: "p2")
+        ink.apply(WashFrame(day: 3, inputs: [thirdMarch], enemies: [2: [1]]), owners: stepOwners, now: 3, tween: 0.5)
+        XCTAssertGreaterThanOrEqual(ink.leave[15 * 30 + 26], InkCells.never, "0-1 议和只消退国 0 墨迹，不影响仍在交战的第三国 2")
+    }
+
     // MARK: 易主扫色
 
     /// 一行：州 2（新主人 9 的领土）x 0…3，州 0 x 4…11，州 1 x 12…19；高 6 格。

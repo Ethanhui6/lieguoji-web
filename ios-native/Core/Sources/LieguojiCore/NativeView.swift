@@ -344,10 +344,54 @@ extension NativeEngine {
             let rx = (at.0 / safeScale).isFinite ? at.0 / safeScale : 0.0
             let ry = (at.1 / safeScale).isFinite ? at.1 / safeScale : 0.0
             armyPoint.append((rx, ry))
-            // Destination province of a march (last travel node), for the army panel.
+            // Destination province of a march (last travel node), for the army panel, plus terrain route & ETA.
             var dest = -1
-            if moving, let bridge, let last = v.travel.nodes.asArray.last, let cell = bridge.graph.cell(id: last.asInt) {
-                let q = Int(bridge.graph.provinces[cell]); if q >= 0 && q < provinces.count { dest = q }
+            var routeNote: String?
+            if moving, let bridge {
+                let tr = bridge.travel(v.travel), g = bridge.graph
+                if let last = tr.nodes.last {
+                    let q = Int(g.provinces[last]); if q >= 0 && q < provinces.count { dest = q }
+                }
+                let unitKey = r.units[id].optionalString ?? "Infantry"
+                let baseSp = r.forceSpeed.armies[id].base.optionalNumber ?? 0
+                let unitSp = CombatReader.unitSpeed(unitKey) * Regimes.unitSpeed(r, a.nationId.asString, unitKey) * Regimes.armySpeed(r, id) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1)
+                let secPerTick = r.forceClock.secondsPerTick.optionalNumber ?? 0.05
+                var seaLegs = 0, mountainLegs = 0, plateauLegs = 0, landLegs = 0, ticks = 0.0
+                if tr.destination != nil, tr.nodes.count == 1, let seg = g.segment(tr) {
+                    let rem = max(0, seg.distance - tr.offset)
+                    let spd = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.a, graph: g, secondsPerTick: secPerTick)
+                    if spd > 0 { ticks += rem / spd }
+                    let q = Int(g.provinces[seg.a])
+                    if q < 0 { seaLegs += 1 } else if g.mountain[q] { mountainLegs += 1 } else if g.plateau[q] { plateauLegs += 1 } else { landLegs += 1 }
+                } else {
+                    for leg in tr.leg..<max(tr.leg, tr.nodes.count - 1) {
+                        var part = tr; part.leg = leg
+                        guard let seg = g.segment(part) else { break }
+                        if leg == tr.leg {
+                            if !tr.crossed {
+                                let d1 = max(0, seg.toGate - tr.offset), sp1 = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.a, graph: g, secondsPerTick: secPerTick)
+                                if sp1 > 0 { ticks += d1 / sp1 }
+                                let d2 = max(0, seg.distance - seg.toGate), sp2 = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.b, graph: g, secondsPerTick: secPerTick)
+                                if sp2 > 0 { ticks += d2 / sp2 }
+                            } else {
+                                let d2 = max(0, seg.distance - tr.offset), sp2 = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.b, graph: g, secondsPerTick: secPerTick)
+                                if sp2 > 0 { ticks += d2 / sp2 }
+                            }
+                        } else {
+                            let sp1 = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.a, graph: g, secondsPerTick: secPerTick)
+                            let sp2 = ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: seg.b, graph: g, secondsPerTick: secPerTick)
+                            if sp1 > 0 { ticks += seg.toGate / sp1 }
+                            if sp2 > 0 { ticks += (seg.distance - seg.toGate) / sp2 }
+                        }
+                        let qb = Int(g.provinces[seg.b])
+                        if qb < 0 { seaLegs += 1 } else if g.mountain[qb] { mountainLegs += 1 } else if g.plateau[qb] { plateauLegs += 1 } else { landLegs += 1 }
+                    }
+                }
+                let etaDays = max(1, Int((ticks / 120.0).rounded(.up)))
+                let prefix = seaLegs > 0 ? "渡海航行" : mountainLegs > 0 ? "翻越山隘险阻" : plateauLegs > 0 ? "经高原要道行进" : landLegs > 0 ? "沿平地谷道行军" : "整军进发"
+                routeNote = "\(prefix) · 预计 \(etaDays) 日\(seaLegs > 0 ? "登陆" : "抵达")"
+            } else if v.travel.status.asString == "blocked" {
+                routeNote = "前方受阻或无外交通行权，暂停待命"
             }
             let safeTroops = a.troops.asNumber.isFinite ? max(0, Int(a.troops.asNumber.rounded())) : 0
             let safeSupplies = a.supplies.asNumber.isFinite ? min(100, max(0, Int(a.supplies.asNumber.rounded()))) : 100
@@ -360,6 +404,7 @@ extension NativeEngine {
             let order = r.armyAutonomy.armies[id].decision.optionalString ?? ""
             if ["attacking", "supporting", "guarding", "staging"].contains(order) { x.duty = order }
             if let b = banners[id] { x.banner = b.kind; x.bannerMark = b.mark; x.commander = b.name }
+            x.routeNote = routeNote
             return x
         }
         // Fleets at their actual sea points and the harbour ports (open-sea worlds; empty otherwise).

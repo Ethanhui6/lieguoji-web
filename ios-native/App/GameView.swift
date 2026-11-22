@@ -137,8 +137,17 @@ struct GameView: View {
                 }
                 if !controller.groupArmies.isEmpty { rtsBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if controller.play.showHeralds, let h = model.herald, let map = model.map {
-                    // Slides down and fades like the other top banners (调兵、绘制、即时战略)；轻点可立即收卷。
-                    HeraldBanner(herald: h, map: map, onDismiss: { model.dismissHerald() }).id(h.id)
+                    // Slides down and fades like the other top banners (调兵、绘制、即时战略)；轻点定位并收卷，上滑直接收卷，不强抢镜头。
+                    HeraldBanner(herald: h, map: map, onTap: {
+                        if let n = h.nations.first, map.meta.nations.indices.contains(n) {
+                            let cap = map.meta.nations[n].capital
+                            if map.meta.cities.indices.contains(cap) {
+                                let c = map.meta.cities[cap]
+                                controller.fly(x: Double(c.x), y: Double(c.y))
+                            }
+                        }
+                        model.dismissHerald()
+                    }, onDismiss: { model.dismissHerald() }).id(h.id)
                         .transition(.asymmetric(
                             insertion: .move(edge: .top).combined(with: .scale(scale: 0.94, anchor: .top)).combined(with: .opacity),
                             removal: .move(edge: .top).combined(with: .opacity)

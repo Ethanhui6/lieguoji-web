@@ -381,4 +381,70 @@ final class PolityDiplomacyNamingTests: XCTestCase {
         let reignsJson = try XCTUnwrap(JSONSerialization.jsonObject(with: reignsData) as? [String: Any])
         XCTAssertNotNil(reignsJson["reigns"])
     }
+
+    /// Item 9 & Item 10 回归：
+    /// 1) 关闭叛乱/事件或将 war/rebel/event 规则设为 0 时，所有触发路径（行省叛乱、世家叛乱、内战、现实政变、极端党夺权、随机事件）均严格不触发；
+    /// 2) 战败割地冲击（defeatShock）在和约后持续拉低民心并推高政局风险，打通外战战败 -> 内政震荡链条；
+    /// 3) Epochs 兜底人名池不再包含封号、复姓或带姓全名等脏词。
+    func testWarDefeatDomesticShockAndStrictToggleCompliance() throws {
+        let engine = try loadWorld(); defer { cleanup() }
+        let r = engine.run
+        let id0 = r.world.nations[0].id.asString
+        let n0 = r.world.nations[0]
+
+        // 1. 规则 0% 真正关闭 war/rebel/event，而 levy 保留除零安全下限
+        _ = engine.setWorldRule("war", value: 0)
+        _ = engine.setWorldRule("rebel", value: 0)
+        _ = engine.setWorldRule("event", value: 0)
+        XCTAssertEqual(Regimes.rule(r, "war"), 0)
+        XCTAssertEqual(Regimes.rule(r, "rebel"), 0)
+        XCTAssertEqual(Regimes.rule(r, "event"), 0)
+        r.regimes.world.levy = JS(0)
+        XCTAssertGreaterThan(Regimes.rule(r, "levy"), 0)
+
+        // 2. 关闭叛乱与事件后，所有子系统触发点严格静默
+        r.foundings.enabled = JS(false)
+        let styleBefore = Regimes.style(r, id0).id
+        let eventsBefore = r.chronicle.entries.length
+        let b = Regimes.book(r, id0)
+        b.calm = JS(120)
+        Finance.setCorruption(r, id0, 80)
+        for m in 1...120 {
+            Regimes.realisticPoliticsMonth(r, n0, id0, m)
+            Regimes.happenings(r, n0, id0, m, gain: 100, addGold: { _ in }, addDestiny: { _ in })
+            MonarchLore.dynamicEventMonth(r, n0, id0, m, addGold: { _ in }, addDestiny: { _ in })
+            Regimes.seizure(r, n0, id0, m)
+            Regimes.dynastyMonth(r, n0, id0, m)
+            Regimes.coup(r, n0, id0, m)
+        }
+        XCTAssertEqual(Regimes.style(r, id0).id, styleBefore, "关闭事件与叛乱后不应发生政变或改制")
+        XCTAssertEqual(r.chronicle.entries.length, eventsBefore, "关闭事件与叛乱后不应产生任何随机事件或政变条目")
+        if let p0 = r.world.provinces.asArray.first?.id.asString {
+            XCTAssertFalse(Rebellion.tryRebel(r, p0, force: false), "关闭叛乱后行省叛乱必须返回 false")
+        }
+
+        // 3. 战败割地冲击（defeatShock）直接压低民心、推高政局风险并随时间衰减
+        let moodBefore = Regimes.mood(r, id0)
+        let riskBefore = Regimes.coupOutlook(r, id0).risk
+        b.defeatShock = JS(0.62)
+        b.defeatTick = r.clock.tick.clone()
+        let moodAfter = Regimes.mood(r, id0)
+        let outlookAfter = Regimes.coupOutlook(r, id0)
+        XCTAssertLessThan(moodAfter, moodBefore - 0.4, "战败冲击应显著压低国内民心")
+        XCTAssertGreaterThan(outlookAfter.risk, riskBefore + 15, "战败冲击应推高政局动荡风险")
+        // 36 个月后衰减归零
+        let savedTick = r.clock.tick.clone()
+        r.clock.tick = JS(savedTick.asNumber + 36.0 * 30.0 * 120.0 + 10.0)
+        XCTAssertEqual(Regimes.defeatPenalty(r, id0), 0, accuracy: 1e-6)
+        r.clock.tick = savedTick
+
+        // 4. Epochs 兜底人名池脏词清零校验
+        let forbiddenGiven = Set(["孝庄", "经略", "上官", "宋庆", "李舜臣", "陈兴道", "俾斯麦", "北政所"])
+        for (_, list) in Nobility.moreMale {
+            for name in list { XCTAssertFalse(forbiddenGiven.contains(name), "moreMale 仍有脏词：\(name)") }
+        }
+        for (_, list) in Nobility.moreFemale {
+            for name in list { XCTAssertFalse(forbiddenGiven.contains(name), "moreFemale 仍有脏词：\(name)") }
+        }
+    }
 }

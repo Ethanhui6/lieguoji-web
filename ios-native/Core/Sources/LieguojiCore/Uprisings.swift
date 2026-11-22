@@ -417,6 +417,8 @@ extension Regimes {
     }
     /// 禅让: a failing crown is replaced by a new house under a new dynastic name, with the land unchanged.
     static func dynastyMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
+        if !r.foundings.isNull && !r.foundings.enabled.isTruthy { return }
+        guard rule(r, "rebel") > 0, rule(r, "event") > 0 else { return }
         let polity = r.civilization.nations[id].polity.optionalString ?? "", culture = r.civilization.nations[id].cultureId.optionalString ?? "", tag = "\(id)|\(key)|mandate"
         guard polity == "Empire" || polity == "Kingdom", leverage(r, id).stability < 45, chance(tag) < 0.008 else { return }
         guard let base = unusedName(r, NamingCatalog.dynastyPool(culture: culture), tag + "|name")

@@ -106,14 +106,61 @@ extension MapRenderer {
             else { byOwner[n, default: []].append(p) }
         }
         var groups = captured
-        for n in byOwner.keys.sorted() { groups.append((byOwner[n]!, capitalPoint(n).map { [$0] } ?? [])) }
+        let inkCells = ink?.cells
+        for n in byOwner.keys.sorted() {
+            let list = byOwner[n]!
+            var frontSeeds = [SIMD2<Float>]()
+            if let inkCells, t.cellCount == inkCells.nation.count {
+                let targetSet = Set(list)
+                for p in list {
+                    for c32 in t.provinceCells[p] {
+                        let c = Int(c32)
+                        if inkCells.nation[c] == Int32(n) {
+                            frontSeeds.append(t.site[c]); continue
+                        }
+                        for nb32 in t.neighbors(c) {
+                            let nb = Int(nb32), np = Int(t.province[nb])
+                            guard np >= 0 else { continue }
+                            if !targetSet.contains(np), (owner(np) == n || (inkCells.nation[nb] == Int32(n) && inkCells.leave[nb] >= InkCells.never)) {
+                                frontSeeds.append(t.site[c]); break
+                            }
+                        }
+                    }
+                }
+            }
+            if frontSeeds.count > 12 {
+                let step = max(1, frontSeeds.count / 8)
+                frontSeeds = stride(from: 0, to: frontSeeds.count, by: step).map { frontSeeds[$0] }
+            }
+            groups.append((list, frontSeeds.isEmpty ? (capitalPoint(n).map { [$0] } ?? []) : frontSeeds))
+        }
         guard !groups.isEmpty else { return [] }
+        let prevSweepModes = sweep.mode, prevSweepArrive = sweep.arrive, prevOld = washOld
         let taken = sweep.start(groups, recolour: true, now: now)
         if washOld.count != t.vertexCount * 3 { washOld = [Float](repeating: 0, count: t.vertexCount * 3) }
         for p in taken {
             washCaptures[p] = nil
+            let newOwner = owner(p)
             for c in t.provinceCells[p] {
-                for v in t.vertexRange(Int(c)) { let col = landFade.shown(v, at: now); washOld[v * 3] = col.x; washOld[v * 3 + 1] = col.y; washOld[v * 3 + 2] = col.z }
+                for v in t.vertexRange(Int(c)) {
+                    var col = landFade.shown(v, at: now)
+                    if prevSweepModes[v] > 0.5, prevOld.count >= v * 3 + 3 {
+                        let x = min(Float(1), max(0, ((now - prevSweepArrive[v]) / FlipSweep.edge + 1) / 2))
+                        let r = x * x * (3 - 2 * x)
+                        let oldC = SIMD3(prevOld[v * 3], prevOld[v * 3 + 1], prevOld[v * 3 + 2])
+                        col = oldC + (col - oldC) * r
+                    }
+                    // 若该顶点在易主/正式割让前已被新主人的战时墨迹覆盖，从当前墨色无缝衔接新主底色，杜绝闪回旧国底色 1 帧。
+                    if let inkCells, newOwner >= 0, v * 4 + 3 < inkCells.vertexData.count,
+                       Int(inkCells.vertexData[v * 4] + 0.5) == newOwner, v * 4 + 2 < next.count {
+                        let inkAmt = inkCells.level(v, at: now)
+                        if inkAmt > 0.01 {
+                            let nextC = SIMD3(next[v * 4], next[v * 4 + 1], next[v * 4 + 2])
+                            col = col + (nextC - col) * inkAmt
+                        }
+                    }
+                    washOld[v * 3] = col.x; washOld[v * 3 + 1] = col.y; washOld[v * 3 + 2] = col.z
+                }
             }
         }
         return Set(taken)

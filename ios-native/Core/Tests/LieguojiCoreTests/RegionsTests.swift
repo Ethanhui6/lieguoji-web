@@ -34,4 +34,28 @@ final class RegionsTests: XCTestCase {
             }
         }
     }
+
+    /// Item 3 审计：统计 80 城模板的州面积分布与连通性（校验无退化细条/无效区划，并输出实测分位）。
+    func testEightyCityPartitionAreaDistribution() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let doc = try TerrainDocument(data: Data(contentsOf: dir.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World/doc20k.bin")))
+        let golden = try JSONDecoder().decode(RegionsGolden.self, from: Data(contentsOf: dir.appendingPathComponent("Golden/regions.json")))
+        var tested = 0
+        for s in golden.samples where s.cities == 80 && s.regions != nil {
+            let elevations = [UInt8](Data(base64Encoded: s.heights)!).map(Int.init)
+            let got = try XCTUnwrap(Regions.partition(doc, elevations: elevations, cities: s.cities))
+            let areas = got.regions.map(\.area).sorted()
+            let members = got.regions.map(\.members.count).sorted()
+            let med = areas[areas.count / 2]
+            let p10 = areas[max(0, areas.count / 10)]
+            let minCells = members.first ?? 0
+            let singleCellCount = members.filter { $0 <= 1 }.count
+            print("[80城审计] \(s.seed)/\(s.template): 州数=\(got.regions.count) 最小格数=\(minCells) 单格州=\(singleCellCount) 面积P10/中位=\(String(format: "%.2f", p10 / max(1e-9, med))) 最小/中位=\(String(format: "%.2f", (areas.first ?? 0) / max(1e-9, med)))")
+            XCTAssertEqual(got.regions.count, 80)
+            XCTAssertGreaterThan(areas.first ?? 0, 0)
+            for r in got.regions { XCTAssertGreaterThanOrEqual(r.ring.count, 3) }
+            tested += 1
+        }
+        XCTAssertGreaterThan(tested, 0)
+    }
 }

@@ -10,8 +10,10 @@ import LieguojiCore
 struct HeraldBanner: View {
     let herald: GameModel.Herald
     let map: WorldMap
+    var onTap: (() -> Void)? = nil
     var onDismiss: (() -> Void)? = nil
     @State private var start = Date()
+    @State private var dragY: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private func color(_ n: Int) -> Color { map.meta.nations.indices.contains(n) ? Names.color(map.meta.nations[n].color) : Theme.ink2 }
@@ -31,15 +33,31 @@ struct HeraldBanner: View {
             let t = reduceMotion ? 3 : context.date.timeIntervalSince(start)
             scene(t)
         }
-        // 窄条：高 58 点、最宽 340 点，挂在顶栏下，不遮地图中部；轻点可立即收卷。
+        // 窄条：高 58 点、最宽 340 点，挂在顶栏下，不遮地图中部；轻点或上滑可立即收卷。
         .frame(maxWidth: 340).frame(height: 58)
         .padding(.horizontal, 24)
+        .offset(y: min(0, dragY))
+        .opacity(Double(max(0.25, 1 + min(0, dragY) / 48)))
         .contentShape(Rectangle())
         .onTapGesture {
             GameFeel.shared.tap()
-            onDismiss?()
+            if let onTap { onTap() } else { onDismiss?() }
         }
-        .onAppear { start = Date() }
+        .gesture(
+            DragGesture(minimumDistance: 10)
+                .onChanged { v in
+                    dragY = v.translation.height < 0 ? v.translation.height : 0
+                }
+                .onEnded { v in
+                    if v.translation.height < -18 || v.predictedEndTranslation.height < -32 {
+                        GameFeel.shared.tap()
+                        onDismiss?()
+                    } else {
+                        withAnimation(Motion.tap) { dragY = 0 }
+                    }
+                }
+        )
+        .onAppear { start = Date(); dragY = 0 }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(herald.text)
     }
@@ -352,23 +370,25 @@ struct HeraldBanner: View {
         }
     }
 
-    /// 绶带与玉璧：从一杆旗系到另一杆。
+    /// 绶带与玉璧：从一杆旗系到另一杆，中央悬一枚金边翡翠玉璧，遮住文字亦可一眼辨出议和。
     private func ribbon(_ ctx: GraphicsContext, from a: CGPoint, to b: CGPoint, t: Double) {
         let k = Self.span(t, 0.8, 1.3)
         guard k > 0 else { return }
         var band = Path(); band.move(to: a); band.addQuadCurve(to: b, control: CGPoint(x: (a.x + b.x) / 2, y: a.y + 26))
-        ctx.stroke(band.trimmedPath(from: 0, to: k), with: .color(Theme.jade), style: StrokeStyle(lineWidth: 2.6, lineCap: .round))
-        let disc = Self.span(t, 1.1, 1.45)
+        ctx.stroke(band.trimmedPath(from: 0, to: k), with: .color(Theme.jade), style: StrokeStyle(lineWidth: 3.1, lineCap: .round))
+        let disc = Self.span(t, 1.05, 1.4)
         if disc > 0 {
-            let m = CGPoint(x: (a.x + b.x) / 2, y: a.y + 13), r = 10 * CGFloat(disc)
+            let m = CGPoint(x: (a.x + b.x) / 2, y: a.y + 13), r = 11.5 * CGFloat(disc)
             let aura = Self.span(t, 1.15, 1.85)
             if aura > 0 && aura < 1 {
-                let ar = r + 14 * CGFloat(aura)
+                let ar = r + 15 * CGFloat(aura)
                 ctx.stroke(Path(ellipseIn: CGRect(x: m.x - ar, y: m.y - ar, width: ar * 2, height: ar * 2)),
-                           with: .color(Theme.jade.opacity(0.42 * (1 - aura))), lineWidth: 1.8)
+                           with: .color(Theme.jade.opacity(0.45 * (1 - aura))), lineWidth: 2.0)
             }
-            ctx.fill(Path(ellipseIn: CGRect(x: m.x - r, y: m.y - r, width: r * 2, height: r * 2)), with: .color(Theme.jade.opacity(0.85)))
-            ctx.fill(Path(ellipseIn: CGRect(x: m.x - r * 0.35, y: m.y - r * 0.35, width: r * 0.7, height: r * 0.7)), with: .color(Theme.paper2))
+            let ringRect = CGRect(x: m.x - r, y: m.y - r, width: r * 2, height: r * 2)
+            ctx.fill(Path(ellipseIn: ringRect), with: .color(Theme.jade.opacity(0.9)))
+            ctx.stroke(Path(ellipseIn: ringRect), with: .color(Color(red: 0.78, green: 0.6, blue: 0.24).opacity(0.85)), lineWidth: 1.4)
+            ctx.fill(Path(ellipseIn: CGRect(x: m.x - r * 0.36, y: m.y - r * 0.36, width: r * 0.72, height: r * 0.72)), with: .color(Theme.paper2))
         }
     }
 

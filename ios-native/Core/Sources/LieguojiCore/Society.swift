@@ -127,11 +127,23 @@ extension Regimes {
         return h
     }
     static func chance(_ text: String) -> Double { Double(draw(text)) / 4294967296 }
-    /// How the country feels about its government, −1…1: lost land, an empty treasury, corruption, debt.
+    /// Residual domestic political shock from a recent war defeat / territorial cession (decays over 36 months).
+    static func defeatPenalty(_ r: JS, _ id: String) -> Double {
+        guard !r.regimes.isNull, !r.regimes.nations[id].isNull else { return 0 }
+        let b = r.regimes.nations[id]
+        guard let shock = b.defeatShock.optionalNumber, shock > 0 else { return 0 }
+        let tick = b.defeatTick.optionalNumber ?? 0
+        let now = r.clock.tick.optionalNumber ?? tick
+        let span = 36.0 * 30.0 * 120.0
+        let rem = max(0.0, 1.0 - max(0.0, now - tick) / span)
+        return shock * rem
+    }
+    /// How the country feels about its government, −1…1: lost land, recent war defeat, an empty treasury, corruption, debt.
     static func mood(_ r: JS, _ id: String) -> Double {
         var m = 0.1
         let lost = r.world.provinces.asArray.reduce(0) { $1.legalOwner.optionalString == id && $1.controller.optionalString != id ? $0 + 1 : $0 }
         m -= min(0.8, Double(lost) / 6)
+        m -= defeatPenalty(r, id)
         let corruption = Finance.corruption(r, id)
         if corruption >= 40 { m -= 0.25 }
         if (r.finance.nations[id].gold.optionalNumber ?? 0) <= 0 { m -= 0.3 }
@@ -169,12 +181,13 @@ extension Regimes {
             let d = r.destiny.nations[id]
             if !d.isNull { d.destiny = JS(max(0, (d.destiny.optionalNumber ?? 0) - 1.5)) }
             say("\(name)\(party(a))与\(party(c))爆发街头冲突", "\(platform(party(a)).name)与\(platform(party(c)).name)势不两立，流血冲突后\(party(winner))声势大涨（议席 +3），国运 −1.5。")
-        } else if roll < 0.05, list[ruling].seats.asInt < 50, m < -0.1 {
-            // 倒阁
-            shift(list, from: ruling, to: opposition, 9)
+        } else if roll < (defeatPenalty(r, id) >= 0.22 ? 0.16 : 0.05), list[ruling].seats.asInt < 55, m < -0.1 {
+            // 倒阁（战败割地后问责更剧，反对党上台改换执政路线）
+            shift(list, from: ruling, to: opposition, defeatPenalty(r, id) >= 0.22 ? 12 : 9)
             rank = order()
-            if rank[0] == opposition { say("\(name)内阁倒台，\(party(opposition))组阁", "\(party(ruling))失去议会信任，不信任案通过，\(party(opposition))（\(platform(party(opposition)).name)）上台执政。") }
-            else { say("\(name)\(party(ruling))内阁险遭倒阁", "不信任案差几票未过，\(party(opposition))议席大增。") }
+            let defeatWhy = defeatPenalty(r, id) >= 0.22 ? "战败失地引发朝野究责，" : ""
+            if rank[0] == opposition { say("\(name)内阁倒台，\(party(opposition))组阁", "\(defeatWhy)\(party(ruling))失去议会信任，不信任案通过，\(party(opposition))（\(platform(party(opposition)).name)）上台执政。") }
+            else { say("\(name)\(party(ruling))内阁险遭倒阁", "\(defeatWhy)不信任案差几票未过，\(party(opposition))议席大增。") }
         } else if roll < 0.06, list[ruling].seats.asInt >= 55, ["共产主义", "法西斯"].contains(platform(party(ruling)).name), list.count >= 3 {
             // 查禁
             let axis = platform(party(ruling)).axis

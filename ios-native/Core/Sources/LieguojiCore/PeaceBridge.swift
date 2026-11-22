@@ -175,6 +175,23 @@ public enum PeaceBridge {
             o.effects = .array((result?.effects ?? []).map { e in let x = JS.object(); x.sourceGoalId = JS(e.sourceGoalId); x.type = JS(e.type); x.beneficiary = JS(e.beneficiary); x.target = JS(e.target); x.status = JS(e.status); x.reason = .null; return x })
             o.confirmedOwnership = .array(confirmed)
             c.settlement = o
+            // 战败国内冲击（App 规则）：割地与战败在和约后持续影响民心、内阁问责与政局稳定。
+            if UnitKinds.enabled, !r.regimes.isNull, reason != 11, let result {
+                let pw = war(c)
+                var cededBy = [Int: Int]()
+                for t in result.applied { cededBy[t.from, default: 0] += 1 }
+                for p in pw.participants {
+                    let nid = nation(r, p.stateId)
+                    let lostWar = result.winnerSide.map { $0 != p.side } ?? false
+                    let ceded = cededBy[p.stateId] ?? 0
+                    guard lostWar || ceded > 0 else { continue }
+                    let shock = min(0.85, (lostWar ? 0.30 : 0.0) + Double(ceded) * 0.16)
+                    let b = Regimes.book(r, nid)
+                    let prev = Regimes.defeatPenalty(r, nid)
+                    b.defeatShock = JS(max(prev, shock))
+                    b.defeatTick = r.clock.tick.clone()
+                }
+            }
         } else { c.settlement = .null }
         c.endedTick = r.clock.tick.clone(); Wars.revise(s)
         let names = c.nations.asArray.map { id in r.world.nations.asArray.first { $0.id.asString == id.asString }!.name.asString }

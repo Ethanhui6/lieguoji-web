@@ -267,13 +267,15 @@ final class EffectsView: UIView {
 
     /// The two sides' strength over a fight: one bar in their colours, split by troops.
     private func setStrength(_ root: CALayer, _ b: MapEffects.Battle) {
-        guard let bar = root.sublayers?.first(where: { $0.name == "strength" }), bar.sublayers?.count == 2, let l = b.left, let r = b.right else { return }
+        guard let bar = root.sublayers?.first(where: { $0.name == "strength" }), bar.sublayers?.count == 2 else { return }
         let total = b.leftTroops + b.rightTroops
-        bar.isHidden = total <= 0
-        guard total > 0 else { return }
+        guard let l = b.left, let r = b.right, total > 0 else { bar.isHidden = true; return }
+        let wasHidden = bar.isHidden
+        bar.isHidden = false
         let w = bar.bounds.width, h = bar.bounds.height, share = w * CGFloat(b.leftTroops) / CGFloat(total)
-        // The balance moves as the fight goes.
-        CATransaction.setDisableActions(false); CATransaction.setAnimationDuration(0.35)
+        // 首次出现立即落位（避免从复用旧条滑变），交战中再平滑过渡兵力消长。
+        CATransaction.setDisableActions(wasHidden)
+        if !wasHidden { CATransaction.setAnimationDuration(0.35) }
         defer { CATransaction.setDisableActions(true) }
         bar.sublayers![0].frame = CGRect(x: 0, y: 0, width: share, height: h); bar.sublayers![0].backgroundColor = UIColor(red: l.r, green: l.g, blue: l.b, alpha: 1).cgColor
         bar.sublayers![1].frame = CGRect(x: share, y: 0, width: w - share, height: h); bar.sublayers![1].backgroundColor = UIColor(red: r.r, green: r.g, blue: r.b, alpha: 1).cgColor

@@ -48,7 +48,7 @@ struct ProvinceSheet: View {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(
                         title: p.name,
-                        subtitle: [Self.terrainLine(info, p.terrain), region?.name].compactMap { $0 }.joined(separator: " · "),
+                        subtitle: [Self.terrainLine(info, p.terrain, port: port != nil), region?.name].compactMap { $0 }.joined(separator: " · "),
                         color: nation.map { Names.color($0.color) },
                         seal: "州"
                     )
@@ -434,10 +434,16 @@ struct ProvinceSheet: View {
 extension ProvinceSheet {
     /// Subtitle uses the same land name as the tags. The coarse plain/forest/mountain field can
     /// disagree with the biome (平原 beside 热带雨林); the tag wins once the province is loaded.
-    static func terrainLine(_ info: ProvinceInfo?, _ stored: String) -> String {
-        if info?.mountain == true { return "山地" }
-        if let name = info?.terrain, !name.isEmpty { return name }
-        return Names.terrain[stored] ?? stored
+    static func terrainLine(_ info: ProvinceInfo?, _ stored: String, port: Bool = false) -> String {
+        let base: String
+        if info?.mountain == true { base = "山地" }
+        else if let name = info?.terrain, !name.isEmpty { base = name }
+        else { base = Names.terrain[stored] ?? stored }
+        if port { return "\(base) · 良港要冲" }
+        if info?.mountain == true { return "\(base) · 山隘险地" }
+        if base.contains("林") { return "\(base) · 林莽之地" }
+        if base.contains("草原") || base.contains("平") { return "\(base) · 沃野平畴" }
+        return base
     }
     /// A terrain multiplier as a signed percent: jade when it helps, seal when it hurts.
     static func percent(_ v: Double) -> some View {

@@ -187,6 +187,22 @@ extension ArmyOrders {
     static func warPlan(_ r: JS, nation: String, enemies enemySet: Set<String>, _ c: CouncilContext, bridge: ForceBridge) -> [String: WarCouncil.Duty] {
         let g = bridge.graph, state = r.armyAutonomy, provinces = c.provinces
         let owned = c.ownedBy[nation] ?? []
+        let capital = Rebellion.capitalProvince(r, nation).flatMap { c.provinceAt[$0] }
+        var invadedFoes = 0.0, homeTroops = 0.0
+        for p in owned {
+            let f = (c.presentAt[provinces[p].id.asString] ?? []).reduce(0.0) { s, x in
+                x.status.asString != "retreating" && enemySet.contains(x.nationId.asString) ? s + x.troops.asNumber : s
+            }
+            invadedFoes += f
+        }
+        let capitalInvaded = capital.map { cp in
+            (c.presentAt[provinces[cp].id.asString] ?? []).contains { $0.status.asString != "retreating" && enemySet.contains($0.nationId.asString) }
+        } ?? false
+        for v in c.forcesOf[nation] ?? [] {
+            let inHome = v.province.map { $0.controller.asString == nation } ?? false
+            if inHome { homeTroops += v.army.troops.asNumber }
+        }
+        let homeCrisis = capitalInvaded || (invadedFoes > 0 && invadedFoes > homeTroops * 0.8)
         var forces = [WarCouncil.Force]()
         for v in c.forcesOf[nation] ?? [] {
             let a = v.army, id = a.id.asString
@@ -199,7 +215,7 @@ extension ArmyOrders {
             let ordered: Int? = row.targetId.optionalString.flatMap { c.provinceAt[$0] }
             let waited: Double = row.pledgeTick.optionalNumber.map { (r.clock.tick.asNumber - $0) / 120 } ?? 0
             let standing: Int? = v.province.flatMap { c.provinceAt[$0.id.asString] }
-            forces.append(WarCouncil.Force(id: id, troops: a.troops.asNumber, x: at.x, y: at.y, feature: c.geo.cellFeature[v.cell], target: pledge ?? ordered, movable: !inEnemyLand && !fighting,
+            forces.append(WarCouncil.Force(id: id, troops: a.troops.asNumber, x: at.x, y: at.y, feature: c.geo.cellFeature[v.cell], target: pledge ?? ordered, movable: (!inEnemyLand || homeCrisis) && !fighting,
                                            province: standing, still: v.travel.status.asString != "moving", pledged: pledge != nil, waited: waited))
         }
         guard !forces.isEmpty else { return [:] }
@@ -235,7 +251,6 @@ extension ArmyOrders {
         }
 
         // 守土: land an enemy stands on or has taken from us (都城 > 危城围困 > 重兵来犯).
-        let capital = Rebellion.capitalProvince(r, nation).flatMap { c.provinceAt[$0] }
         let invaded = owned.filter { foes($0) > 0 }
         let ranked = invaded.map { (p: $0, foes: foes($0), siege: enemySiegeOnUs[provinces[$0].id.asString] ?? 0) }.sorted { x, y in
             if (x.p == capital) != (y.p == capital) { return x.p == capital }
@@ -287,10 +302,10 @@ extension ArmyOrders {
         // 京畿驻军 (app rule, at the player's request): at war the capital keeps a standing guard of about
         // an eighth of the host, first call on the holding budget. The original weighs the capital and
         // its neighbours only in its peacetime garrison choice (FindTargetIdleProvince, chooseIdle).
-        if forces.count >= 3, let cp = capital, !invaded.contains(cp) {
+        if forces.count >= 2, let cp = capital, !invaded.contains(cp) {
             hold.append(post(cp, need: max(average, mine * 0.12), mustHold: true))
         }
-        if forces.count >= 6 {
+        if forces.count >= 3 {
             let others = contact.keys.filter { $0 != order.first && !RunWindow.access(r, nation, $0) }.sorted { x, y in
                 let wx = enemySet.contains(x), wy = enemySet.contains(y)
                 if wx != wy { return wx }

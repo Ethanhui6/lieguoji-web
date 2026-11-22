@@ -189,12 +189,14 @@ extension Regimes {
         let leaderAge = leader?.age.optionalNumber ?? 35
         let leaderAdm = leader.map { People.skills($0).administrative } ?? 50
         let atWar = isAtWar(r, id)
+        let defeat = defeatPenalty(r, id)
 
         var risk = max(0.0, 58.0 - Double(stability)) * 1.15
         if corrupt >= 40 { risk += (corrupt - 35) * 0.45 }
         if gov < 0.35 { risk += (0.35 - gov) * 45 }
         if debtMon >= 18 { risk += min(25, (debtMon - 16) * 0.8) }
         if atWar { risk += 8 }
+        if defeat > 0.05 { risk += defeat * 42 }
         if prof.camp == .authoritarian { risk += 12 }
         if prof.id == "regency" { risk += 10 }
         if prof.camp == .constitutional { risk *= 0.65 }
@@ -213,7 +215,10 @@ extension Regimes {
 
         let pressure: String
         let likelyPath: String
-        if prof.camp == .authoritarian && clampedRisk < 40 && !atWar {
+        if defeat >= 0.25 && clampedRisk >= 34 {
+            pressure = "新败失地、朝野震荡，究责与改制呼声高涨"
+            likelyPath = prof.camp == .monarchy ? "立宪问责或军事政变" : "倒阁改组或强人夺权"
+        } else if prof.camp == .authoritarian && clampedRisk < 40 && !atWar {
             pressure = "军管日久，民间呼唤还政于民"
             likelyPath = "制宪还政 → 议会/总统共和"
         } else if (atWar || debtMon >= 20 || marshalAmbitious) && prof.camp != .authoritarian && clampedRisk >= 35 {
@@ -244,6 +249,8 @@ extension Regimes {
     static func realisticPoliticsMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
         let b = book(r, id)
         b.calm = JS(b.calm.asInt + 1)
+        let evRate = rule(r, "event")
+        guard evRate > 0 else { return }
         // 两次重大政体剧变之间至少间隔 30 个月（防止反复横跳失真）。
         guard b.calm.asInt >= 30 else { return }
         let held = monthLandCount(r, id)
@@ -258,7 +265,7 @@ extension Regimes {
 
         // 1. 军政府/独裁长期和平后还政于民（现实如拉美/东亚军政府民主化）
         if prof.camp == .authoritarian && b.calm.asInt >= 60 && !isAtWar(r, id) && outlook.stability >= 52 {
-            if chance(tag + "|civilian") < 0.025 {
+            if chance(tag + "|civilian") < 0.025 * evRate {
                 let target = chance(tag + "|civkind") < 0.5 ? "presidential" : "parliamentary"
                 _ = executeTransition(r, id: id, toStyle: target, kind: "civilian", actorName: nil, detail: "连年太平，军政当局迫于民意召开制宪国会，交出政权、还政于民。")
                 return
@@ -270,7 +277,7 @@ extension Regimes {
             let reformer = rulerHas(r, id, { $0.isReformer.isTruthy })
             let moderateUnrest = outlook.stability >= 36 && outlook.stability <= 56
             if reformer || moderateUnrest {
-                let p = reformer ? 0.022 : 0.008
+                let p = (reformer ? 0.022 : 0.008) * evRate
                 if chance(tag + "|const") < p {
                     _ = executeTransition(r, id: id, toStyle: "constitutional", kind: "reform", actorName: nil, detail: reformer ? "开明君主顺应时势，颁布宪法、开设议会，和平改行君主立宪。" : "朝廷为缓和民怨，采纳维新派建言，颁行宪章并设立责任内阁。")
                     return
@@ -282,7 +289,7 @@ extension Regimes {
         if prof.camp == .monarchy && prof.id != "regency" && prof.id != "shogunate" && prof.id != "constitutional" {
             let leader = ruler(r, id)
             let weakCrown = (leader?.age.optionalNumber ?? 30) < 16 || (leader.map { People.skills($0).administrative + People.skills($0).charisma < 85 } ?? false)
-            if weakCrown && chance(tag + "|regent") < 0.02 {
+            if weakCrown && chance(tag + "|regent") < 0.02 * evRate {
                 let chan = Offices.holder(r, id, "Chancellor", Offices.stateId(r, id))
                 let actor = chan.map { NativeEngine.displayPersonName($0) }
                 let toStyle = culture == "japanese" ? "shogunate" : "regency"
@@ -294,12 +301,15 @@ extension Regimes {
             }
         }
 
-        // 4. 真正的危机驱动型政变／革命／威权夺权／复辟（高风险才会发生，绝不平白无故乱变）
+        // 4. 真正的危机驱动型政变／革命／威权夺权／复辟（高风险才会发生；关闭叛乱或动荡归零时不触发）
+        if !r.foundings.isNull && !r.foundings.enabled.isTruthy { return }
+        guard rule(r, "rebel") > 0 else { return }
         guard outlook.risk >= 34 else { return }
-        let triggerProb = Double(outlook.risk - 28) / 100.0 * 0.045 * rule(r, "event")
+        let triggerProb = Double(outlook.risk - 28) / 100.0 * 0.045 * evRate
         guard chance(tag + "|crisis") < triggerProb else { return }
 
         let lost = monthLostCount(r, id)
+        let defeat = defeatPenalty(r, id)
         let corrupt = Finance.corruption(r, id)
         let sid = Offices.stateId(r, id)
         let marshal = Offices.holder(r, id, "Marshal", sid)
@@ -307,7 +317,7 @@ extension Regimes {
         let roll = chance(tag + "|branch")
 
         // A. 军事政变：战败失地、欠饷重债或强硬统帅掌兵
-        if prof.camp != .authoritarian, (lost > 0 || debtMon >= 18 || isAtWar(r, id) || marshal != nil), roll < 0.34 {
+        if prof.camp != .authoritarian, (lost > 0 || defeat >= 0.18 || debtMon >= 18 || isAtWar(r, id) || marshal != nil), roll < 0.34 {
             let general = marshal ?? claimant(r, id, .otherHouse)
             let genName = general.map { NativeEngine.displayPersonName($0) }
             let detail = "\(genName ?? "军方将领")以「内忧外患、文官误国」为由率部包围京师，发动军事政变并宣布全国戒严。"
@@ -345,7 +355,7 @@ extension Regimes {
                 _ = executeTransition(r, id: id, toStyle: restoreStyle, kind: "restoration", actorName: nil, detail: detail)
                 return
             } else {
-                let authStyle: String = (lost > 0 && roll > 0.78) ? "fascist" : "dictatorship"
+                let authStyle: String = ((lost > 0 || defeat >= 0.18) && roll > 0.78) ? "fascist" : "dictatorship"
                 let detail = authStyle == "fascist"
                     ? "战败屈辱与经济凋敝催生极端民族狂潮，强人解散议会、实行战时极权统制。"
                     : "议会长期瘫痪，执政强人宣布紧急状态并解散党派，独揽军政大权。"

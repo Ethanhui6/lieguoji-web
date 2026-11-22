@@ -56,7 +56,7 @@ import LieguojiCore
     private var reconnecting = false
     func remoteLost() {
         let wasPlaying = playing
-        if playing { loop?.cancel(); loop = nil; playing = false }
+        if playing { loopToken = nil; loop?.cancel(); loop = nil; playing = false }
         remoteAddress = nil
         guard !reconnecting else { return }
         reconnecting = true
@@ -138,6 +138,7 @@ import LieguojiCore
     let native = NativeHost()
     let controller = MapController()
     private var loop: Task<Void, Never>?
+    private var loopToken: UUID?
     var advanceOwnership = AdvanceOwnership()
     var nativeRevision: UInt64 = 0
     private var singleStep: (world: Int, task: Task<Void, Never>)?
@@ -577,22 +578,44 @@ import LieguojiCore
     }
     func play() {
         guard !replayActive, loop == nil, state != nil, phase == .playing else { return }
-        let epoch = worldEpoch, revision = nativeRevision
+        let epoch = worldEpoch
         let manual = singleStep?.world == worldEpoch ? singleStep?.task : nil
+        let token = UUID()
+        loopToken = token
         playing = true
         loop = Task { [weak self] in
+            // 任何退出路径都清理 loop 与 playing，彻底杜绝“界面仍显示运行、推演已停滞需重新暂停再开始”的假死。
+            defer {
+                if let self, self.loopToken == token {
+                    self.loopToken = nil
+                    self.loop = nil
+                    self.playing = false
+                }
+            }
             // A cancelled play waiting for a manual step never became a producer. Keep that step's
             // ownership until it can display its result, even if play was paused before it finished.
             if let manual { await manual.value }
-            guard let self, !Task.isCancelled, self.playing, self.phase == .playing, self.worldEpoch == epoch else { return }
-            let ticket = self.advanceOwnership.begin(world: epoch)
+            guard let self, !Task.isCancelled, self.loopToken == token, self.playing, self.phase == .playing, self.worldEpoch == epoch else { return }
+            var revision = self.nativeRevision
+            var ticket = self.advanceOwnership.begin(world: epoch)
+            var nilRetries = 0
             // Through the relay the next step is already asked for while this one is applied, so
             // the computer never waits for the phone (a round trip there costs most of a step).
             var ahead: Task<NativeHost.Step?, Never>?
             // Drain a real accepted tail, but never let a previous loop overwrite a resumed world.
-            defer { if let ahead { Task { if let data = await ahead.value, self.owns(ticket) { try? await self.apply(step: data, ticket: ticket) } } } }
+            defer {
+                if let ahead {
+                    let tailTicket = ticket
+                    Task { if let data = await ahead.value, self.owns(tailTicket) { try? await self.apply(step: data, ticket: tailTicket) } }
+                }
+            }
             while !Task.isCancelled {
-                guard self.owns(ticket) else { return }
+                guard self.loopToken == token, self.playing, self.phase == .playing, self.worldEpoch == epoch else { return }
+                if !self.owns(ticket) || self.nativeRevision != revision {
+                    revision = self.nativeRevision
+                    ticket = self.advanceOwnership.begin(world: epoch)
+                    ahead = nil
+                }
                 let started = Date()
                 // Speed is days per step: the engine runs that many days in one call and the map,
                 // the state and the panels refresh once, so 2×, 4× and 8× really are faster.
@@ -616,14 +639,25 @@ import LieguojiCore
                     // the main thread applies the last (on the phone too, not only through the relay —
                     // the two used to take turns, and a day cost the sum of both).
                     if ahead == nil { ahead = self.requestStep(days: days, ticket: ticket, revision: revision) }
-                    guard let data = await ahead!.value else { ahead = nil; return }
+                    guard let data = await ahead!.value else {
+                        ahead = nil
+                        nilRetries += 1
+                        if nilRetries <= 3, !Task.isCancelled, self.loopToken == token, self.playing, self.phase == .playing, self.worldEpoch == epoch {
+                            revision = self.nativeRevision
+                            ticket = self.advanceOwnership.begin(world: epoch)
+                            try? await Task.sleep(nanoseconds: 50_000_000)
+                            continue
+                        }
+                        return
+                    }
+                    nilRetries = 0
                     ahead = nil
-                    guard self.owns(ticket) else { return }
+                    guard self.owns(ticket) else { continue }
                     if !Task.isCancelled, self.playing { ahead = self.requestStep(days: days, ticket: ticket, revision: revision) }
                     try await self.apply(step: data, ticket: ticket)
                 }
                 catch { if self.owns(ticket) { self.failure = error.localizedDescription; self.pause() }; return }
-                guard self.owns(ticket), !Task.isCancelled else { return }
+                guard self.loopToken == token, self.playing, !Task.isCancelled else { return }
                 let spent = Date().timeIntervalSince(started)
                 // A single slow step (a save, a month's politics) is clipped, so it cannot drag the pace
                 // down to one day a step for many steps after it.
@@ -637,7 +671,7 @@ import LieguojiCore
         }
     }
     func pause(saving: Bool = true) {
-        let was = playing; loop?.cancel(); loop = nil; playing = false
+        let was = playing; loopToken = nil; loop?.cancel(); loop = nil; playing = false
         // Ownership held back while playing reaches the map — after the page that paused the game has
         // slid in (a page opening paused and redrew the map and every state name during its animation:
         // the stutter measured on every page).
@@ -765,7 +799,8 @@ import LieguojiCore
         // cell and rebuilds the borders and names); labels that arrive meanwhile wait for it.
         if let labels = next.labels { pendingLabels = labels }
         let now = CACurrentMediaTime()
-        if !playing || now - lastMapUpdate >= 0.5 {
+        let ownerChanged = next.owners.enumerated().contains { $0.offset < world.meta.provinces.count && world.meta.provinces[$0.offset].nation != $0.element }
+        if ownerChanged || !playing || now - lastMapUpdate >= 0.5 {
             for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
                 world.meta.provinces[i].nation = owner; changed = true
             }
@@ -873,12 +908,18 @@ import LieguojiCore
     private func enqueue(_ h: Herald) {
         if controller.play.pauseOnNews, playing, [Herald.Kind.war, .uprising, .extinction].contains(h.kind) { pause(saving: false) }
         guard controller.play.showHeralds else { return }
+        if herald?.text == h.text || heraldQueue.contains(where: { $0.text == h.text }) { return }
         heraldQueue.append(h)
-        if heraldQueue.count > 4 { heraldQueue.removeFirst(heraldQueue.count - 4) }
+        while heraldQueue.count > 4 {
+            if let low = heraldQueue.firstIndex(where: { $0.kind == .capture }) { heraldQueue.remove(at: low) }
+            else { heraldQueue.removeFirst() }
+        }
         guard heraldTask == nil else { return }
         heraldTask = Task { [weak self] in
             while let self, !Task.isCancelled, !self.heraldQueue.isEmpty {
                 let h = self.heraldQueue.removeFirst()
+                // 若宣战传报在排队期间该场战争已然结束，直接跳过，避免滞后播放失效战报。
+                if h.kind == .war, h.nations.count >= 2, let s = self.state, !s.atWar(h.nations[0], h.nations[1]) { continue }
                 self.herald = h
                 switch h.kind {
                 case .war, .uprising, .house, .coup, .ultimatum: GameFeel.shared.news(.warning)
@@ -921,11 +962,19 @@ import LieguojiCore
         var navalStrengths = [String: (left: Int, right: Int)]()
         for pair in state.contacts ?? [] where pair.count == 2 && state.armies.indices.contains(pair[0]) && state.armies.indices.contains(pair[1]) {
             let a = state.armies[pair[0]], b = state.armies[pair[1]]
+            guard a.troops > 0, b.troops > 0, a.status != "destroyed", b.status != "destroyed" else { continue }
             let x = Double(a.x + b.x) / 2, y = Double(a.y + b.y) / 2
             let key = "\(Int(x / 6)):\(Int(y / 6))"
             let old = spots[key] ?? (0, 0, 0)
             spots[key] = (old.x + x, old.y + y, old.n + 1)
-            if sides[key] == nil { sides[key] = (a.nation, b.nation); ends[key] = (Double(a.x), Double(a.y), Double(b.x), Double(b.y)) }
+            // 统一按较小国号居左排序，防止接触对顺序波动导致战斗兵力条左右翻转跳变。
+            if sides[key] == nil {
+                if a.nation <= b.nation {
+                    sides[key] = (a.nation, b.nation); ends[key] = (Double(a.x), Double(a.y), Double(b.x), Double(b.y))
+                } else {
+                    sides[key] = (b.nation, a.nation); ends[key] = (Double(b.x), Double(b.y), Double(a.x), Double(a.y))
+                }
+            }
             fighters[key, default: [:]][pair[0]] = a.nation; fighters[key, default: [:]][pair[1]] = b.nation
         }
         for p in state.seaBattles ?? [] where p.count >= 2 {
@@ -933,7 +982,13 @@ import LieguojiCore
             spots[key] = (old.x + p[0], old.y + p[1], old.n + 1)
             if p.count >= 10 {
                 let na = Int(p[2]), nb = Int(p[3]), sa = max(1, Int(p[4])), sb = max(1, Int(p[5]))
-                if sides[key] == nil { sides[key] = (na, nb); ends[key] = (p[6], p[7], p[8], p[9]) }
+                if sides[key] == nil {
+                    if na <= nb {
+                        sides[key] = (na, nb); ends[key] = (p[6], p[7], p[8], p[9])
+                    } else {
+                        sides[key] = (nb, na); ends[key] = (p[8], p[9], p[6], p[7])
+                    }
+                }
                 let cur = navalStrengths[key] ?? (0, 0)
                 if sides[key]?.0 == na {
                     navalStrengths[key] = (cur.left + sa, cur.right + sb)
@@ -1174,7 +1229,7 @@ import LieguojiCore
         guard let state else { controller.armies = []; return }
         let selected = controller.marchingArmy ?? controller.selectedArmy
         var sprites: [MapRenderer.ArmySprite] = state.armies.enumerated().compactMap { i, a in
-            guard a.x.isFinite && a.y.isFinite else { return nil }
+            guard a.troops > 0, a.status != "destroyed", a.x.isFinite && a.y.isFinite else { return nil }
             let isSel = i == selected || (controller.selectedArmyId != nil && a.id == controller.selectedArmyId) || controller.groupArmies.contains(i)
             return MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: isSel, key: a.id,
                                           tier: a.troops < 2000 ? 1 : a.troops < 6000 ? 2 : 3, banner: a.banner == "ruler" ? 2 : a.banner == "general" ? 1 : 0, reorganizing: a.reorganizing ?? false, fighting: a.status == "fighting", retreating: a.status == "retreating")

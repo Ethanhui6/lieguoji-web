@@ -131,4 +131,14 @@ final class WarCouncilTests: XCTestCase {
         XCTAssertTrue(WarCouncil.Duty.defend(1).urgent)
         XCTAssertTrue(WarCouncil.Duty.hold(1).urgent)
     }
+
+    func testExpeditionRecallsNonFightingArmiesWhenHomelandInvaded() {
+        // 本土危机下（远征主力尚未交战但被设为 movable），军机调度应立即将其转为 .defend 保卫本土/都城
+        let exp = force("exp", 500, troops: 8000, target: 9, movable: true)
+        let guardHome = force("home", 10, troops: 2000, target: 1, movable: true)
+        let invadedCapital = WarCouncil.Post(province: 0, x: 0, y: 0, feature: 1, need: 9000, mustHold: true)
+        let duties = WarCouncil.assign(forces: [exp, guardHome], defend: [invadedCapital], hold: [], holdBudget: 0, attack: [post(9, 500, need: 2000)])
+        XCTAssertEqual(duties["exp"], .defend(0), "都城/本土危急时，未交战远征军应立即被召回驰援")
+        XCTAssertEqual(duties["home"], .defend(0))
+    }
 }

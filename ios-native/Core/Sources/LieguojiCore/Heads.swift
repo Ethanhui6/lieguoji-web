@@ -165,7 +165,8 @@ extension Regimes {
         guard seat.elected, let title = seat.premier, !Offices.book(r, id).manual.isTruthy else { return }
         let sid = Offices.stateId(r, id), current = premier(r, id), head = ruler(r, id)
         let election = key % 48 == sid % 48
-        let fall = !election && current != nil && mood(r, id) < -0.35 && chance("\(id)|\(key)|cabinet") < 0.04
+        let defeat = defeatPenalty(r, id)
+        let fall = !election && current != nil && mood(r, id) < -0.35 && chance("\(id)|\(key)|cabinet") < (defeat >= 0.22 ? 0.28 : 0.04)
         guard election || fall || current == nil else { return }
         let all = People.electionFamilies(r, id).filter { $0.k.stateId.asInt == sid }
         // The reigning house does not sit in the cabinet where another house can.
@@ -177,8 +178,11 @@ extension Regimes {
         book(r, id).premierSeen = next.id.clone()
         let state = n.name.asString, who = personName(next), reigning = seat.head ?? "元首"
         if fall, let current {
+            let reason = defeat >= 0.22
+                ? "战败失地引发朝野究责，议会通过不信任案问责内阁，内阁总辞；\(reigning)在位如故。"
+                : "国势不振、民怨沸腾，议会通过不信任案，内阁总辞；\(reigning)在位如故。"
             _ = People.announce(r, kind: "politics", text: "\(state)倒阁：\(title)\(personName(current))去职，\(who)组阁",
-                                reason: "国势不振、民怨沸腾，议会通过不信任案，内阁总辞；\(reigning)在位如故。", nations: [id], province: nil)
+                                reason: reason, nations: [id], province: nil)
         } else {
             _ = People.announce(r, kind: "politics", text: "\(who)出任\(state)\(title)",
                                 reason: (election ? "大选之后，议会多数推举\(title)组阁，掌理国政；" : "\(title)出缺，议会推举新阁；") + "\(reigning)在位如故。", nations: [id], province: nil)

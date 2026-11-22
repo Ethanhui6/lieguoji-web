@@ -204,7 +204,8 @@ public enum NobleRevolt {
     }
     static func checkFamilyRebellions(_ r: JS) {
         let n = r.nobility
-        if n.isNull || !n.settings.allowFamilyRebellion.isTruthy { return }
+        if n.isNull || !n.settings.allowFamilyRebellion.isTruthy || r.foundings.isNull || !r.foundings.enabled.isTruthy { return }
+        if UnitKinds.enabled && Regimes.rule(r, "rebel") <= 0 { return }
         for id in n.families.objectKeys where n.families.has(id) && shouldRebel(r, id) { startFamilyRebellion(r, id) }
     }
 
@@ -309,7 +310,8 @@ public enum NobleRevolt {
     }
     static func checkCivilWars(_ r: JS) {
         let n = r.nobility
-        if n.isNull || !n.settings.allowCivilWar.isTruthy || r.foundings.isNull { return }
+        if n.isNull || !n.settings.allowCivilWar.isTruthy || r.foundings.isNull || !r.foundings.enabled.isTruthy { return }
+        if UnitKinds.enabled && Regimes.rule(r, "rebel") <= 0 { return }
         for v in r.world.nations.asArray.map(\.id.asString) where land(r, v) >= 15 { checkStateForCivilWar(r, v) }
     }
     /// Installs the month-6/12 checks into the family step.

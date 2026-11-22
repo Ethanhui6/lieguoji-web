@@ -88,6 +88,7 @@ public enum Rebellion {
         let owner = p.controller.asString
         if !force {
             if !s.enabled.isTruthy || capitalProvince(r, owner) == province { return false }
+            if UnitKinds.enabled && Regimes.rule(r, "rebel") <= 0 { return false }
             let c = r.upperCombat.provinces[province]
             if c.distance.asNumber <= r.upperCombat.nations[owner].coreThreshold.asNumber && manifest(r, owner) > 1 { return false }
             if !canProvinceRebel(r, s, owner, province) { return false }
@@ -116,6 +117,7 @@ public enum Rebellion {
     static func process(_ r: JS, _ id: String) {
         let s = r.foundings
         if s.isNull || !s.enabled.isTruthy || !alive(r, id) { return }
+        if UnitKinds.enabled && Regimes.rule(r, "rebel") <= 0 { return }
         let d = destiny(r, id)
         if monthsSince(r, never) < (UnitKinds.enabled ? Tuning.current.calmMonths : 24) || d > 30 || !superSuperPower(r, id) || !canAllowNew(r, s, id) { return }
         let capital = capitalProvince(r, id)

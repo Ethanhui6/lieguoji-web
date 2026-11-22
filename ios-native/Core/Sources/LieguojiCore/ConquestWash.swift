@@ -128,7 +128,7 @@ public final class WashTopology: @unchecked Sendable {
         scale = radii.isEmpty ? 10 : max(0.5, radii[radii.count / 2])
     }
 
-    @inline(__always) func neighbors(_ c: Int) -> ArraySlice<Int32> { nbList[Int(nbStart[c])..<Int(nbStart[c + 1])] }
+    @inline(__always) public func neighbors(_ c: Int) -> ArraySlice<Int32> { nbList[Int(nbStart[c])..<Int(nbStart[c + 1])] }
     @inline(__always) public func position(_ v: Int) -> SIMD2<Float> { SIMD2(vertices[v * 2], vertices[v * 2 + 1]) }
     @inline(__always) public func vertexRange(_ c: Int) -> Range<Int> { Int(offsets[c])..<Int(offsets[c + 1]) }
 

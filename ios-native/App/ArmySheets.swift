@@ -210,17 +210,27 @@ struct ArmySheet: View {
     @ViewBuilder
     private func ordersSection(map: WorldMap, a: GameState.Army, fighting: Bool, peers: [(offset: Int, element: GameState.Army)]) -> some View {
         // 状态与行军路线条
-        HStack(spacing: 8) {
-            let statusColor: Color = fighting ? Theme.seal : (a.travel == "moving" ? Theme.jade : Theme.ink2)
-            PaperTag(text: fighting ? "交战中" : a.travel == "moving" ? "行军中" : Names.status(a.status), color: statusColor, size: 12)
-            Text(map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "途中")
-                .font(Theme.body).foregroundStyle(Theme.ink)
-            if let d = a.destination, d >= 0, d < map.meta.provinces.count {
-                Image(systemName: "arrow.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
-                Text(map.meta.provinces[d].name).font(Theme.body).foregroundStyle(Theme.seal)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                let statusColor: Color = fighting ? Theme.seal : (a.travel == "moving" ? Theme.jade : Theme.ink2)
+                PaperTag(text: fighting ? "交战中" : a.travel == "moving" ? "行军中" : Names.status(a.status), color: statusColor, size: 12)
+                Text(map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "途中")
+                    .font(Theme.body).foregroundStyle(Theme.ink)
+                if let d = a.destination, d >= 0, d < map.meta.provinces.count {
+                    Image(systemName: "arrow.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
+                    Text(map.meta.provinces[d].name).font(Theme.body).foregroundStyle(Theme.seal)
+                }
+                Spacer(minLength: 4)
+                Text(ArmyRow.command(a)).font(Theme.caption).foregroundStyle(Theme.ink2)
             }
-            Spacer(minLength: 4)
-            Text(ArmyRow.command(a)).font(Theme.caption).foregroundStyle(Theme.ink2)
+            if let note = a.routeNote, !note.isEmpty {
+                HStack(spacing: 5) {
+                    Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundStyle(Theme.jade)
+                    Text(note).font(Theme.caption).foregroundStyle(Theme.ink2)
+                }
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .paperCard()

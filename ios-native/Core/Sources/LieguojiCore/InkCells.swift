@@ -198,31 +198,73 @@ public final class InkCells: @unchecked Sendable {
             }
         }
         dwelt = dwelt.filter { keys.contains($0.key) }
-        // 三、围城：单次 Dijkstra 遍历同时求取最远省界距离与省内扩散（消除旧版双倍 Dijkstra 开销）。
+        // 三、围城：多源跨界种子（从进攻军位置与已控/已染墨的公共省界同步渗入）+ 守军阻滞接敌前沿。
         for s in frame.inputs where s.kind == .siege {
             guard t.provinceCells.indices.contains(s.province), !t.provinceCells[s.province].isEmpty else { continue }
-            let center = s.armies.isEmpty ? t.centroid(s.province) : s.armies.reduce(SIMD2<Float>(0, 0), +) / Float(s.armies.count)
-            guard let start = cell(at: center) ?? t.provinceCells[s.province].first.map(Int.init) else { continue }
+            var seeds = [(cell: Int, delay: Float)]()
+            var seeded = Set<Int>()
+            for pos in s.armies {
+                if let c = cell(at: pos), Int(t.province[c]) == s.province, seeded.insert(c).inserted {
+                    seeds.append((c, 0))
+                }
+            }
+            let maxEdgeDist2 = (t.scale * 1.45) * (t.scale * 1.45)
+            for c32 in t.provinceCells[s.province] {
+                let c = Int(c32)
+                guard !seeded.contains(c) else { continue }
+                let touchesAttacker = t.neighbors(c).contains { nb32 in
+                    let nb = Int(nb32), np = Int(t.province[nb])
+                    guard np != s.province, t.land[nb] else { return false }
+                    return owner(nb) == s.attacker || (nation[nb] == Int32(s.attacker) && leave[nb] >= Self.never)
+                }
+                guard touchesAttacker else { continue }
+                if s.armies.isEmpty || s.armies.contains(where: { washDistance2(t.site[c], $0) <= maxEdgeDist2 }) {
+                    if seeded.insert(c).inserted { seeds.append((c, 0)) }
+                }
+            }
+            if seeds.isEmpty {
+                let fallback = s.armies.first ?? t.centroid(s.province)
+                if let c = cell(at: fallback) ?? t.provinceCells[s.province].first.map(Int.init) {
+                    seeds.append((c, 0))
+                }
+            }
+            guard !seeds.isEmpty else { continue }
             var far: Float = 0
             siegeVisited.removeAll(keepingCapacity: true)
-            spread(from: [(start, 0)], budget: .infinity, within: s.province) { c, d, _ in
+            spread(from: seeds, budget: .infinity, within: s.province) { c, d, _ in
                 far = max(far, d)
                 siegeVisited.append((c, d))
             }
-            let budget = s.progress >= 0.98 ? Float.infinity : max(t.scale * 0.3, far * s.progress * 1.1)
-            for item in siegeVisited where item.d <= budget * reach[item.c] || item.d == 0 {
-                let c = item.c, d = item.d
+            let provOwner = s.province < owners.count ? owners[s.province] : -1
+            let holdInputs = frame.inputs.filter { $0.kind == .hold && $0.province == s.province && $0.attacker == provOwner }
+            let defenders = holdInputs.flatMap(\.armies)
+            let defScale = defenders.isEmpty ? Float(1) : Self.width(troops: max(4000, holdInputs.reduce(Float(0)) { $0 + $1.troops }))
+            let defZone = t.scale * 2.6 * defScale, defCore2 = (t.scale * 0.9 * defScale) * (t.scale * 0.9 * defScale)
+            let contestDamp: Float = (s.progress < 0.98 && !defenders.isEmpty) ? 0.72 : 1.0
+            let budget = s.progress >= 0.98 ? Float.infinity : max(t.scale * 0.3, far * s.progress * 1.1 * contestDamp)
+            for item in siegeVisited {
+                let c = item.c
+                var effDist = item.d
+                if s.progress < 0.98 && !defenders.isEmpty && effDist > 0 {
+                    var minDef2 = Float.infinity
+                    for defPos in defenders { minDef2 = min(minDef2, washDistance2(t.site[c], defPos)) }
+                    if s.progress < 0.85 && minDef2 < defCore2 { continue }
+                    let minDef = minDef2.squareRoot()
+                    if minDef < defZone { effDist *= 1.0 + 1.15 * (1.0 - minDef / defZone) }
+                }
+                guard effDist <= budget * reach[c] || item.d == 0 else { continue }
                 guard atWar(s.attacker, owner(c)) else { continue }
                 self.touched[c] = Int32(frame.day)
                 if self.nation[c] == Int32(s.attacker) && self.leave[c] >= Self.never { continue }
-                setCell(c, nation: Int32(s.attacker), arrive: now + d / (t.scale * Self.spreadPerSecond), leave: Self.never)
+                setCell(c, nation: Int32(s.attacker), arrive: now + effDist / (t.scale * Self.spreadPerSecond), leave: Self.never)
             }
         }
-        // 四、守军：在本土与敌相持，身边的敌墨淡去（推演在走才擦）。
-        if days > 0 {
-            for h in frame.inputs where h.kind == .hold && !h.armies.isEmpty {
-                guard let start = cell(at: h.armies[0]) else { continue }
-                spread(from: [(start, 0)], budget: t.scale * 0.45, within: nil) { c, _, _ in
+        // 四、守军：在本土与敌相持或收复失地时，从守军当前位置按兵力顶回并淡出身边敌墨。
+        for h in frame.inputs where h.kind == .hold && !h.armies.isEmpty {
+            let holdBudget = t.scale * 0.45 * Self.width(troops: max(4000, h.troops))
+            for pos in h.armies {
+                guard let start = cell(at: pos) else { continue }
+                spread(from: [(start, 0)], budget: holdBudget, within: nil) { c, _, _ in
                     if self.nation[c] >= 0 && self.nation[c] != Int32(h.attacker) && self.leave[c] >= Self.never && owner(c) == h.attacker {
                         setCell(c, nation: self.nation[c], arrive: self.arrive[c], leave: now)
                     }

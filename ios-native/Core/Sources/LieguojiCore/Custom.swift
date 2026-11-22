@@ -398,6 +398,7 @@ public enum Regimes {
     public static let ruleRanges: [String: ClosedRange<Double>] = ["war": 0...300, "damage": 25...400, "march": 25...300, "levy": 25...400, "ships": 25...400, "rebel": 0...400, "event": 0...400]
     public static func rule(_ r: JS, _ key: String) -> Double {
         guard !r.regimes.isNull, let v = r.regimes.world[key].optionalNumber else { return 1 }
+        if key == "war" || key == "rebel" || key == "event" { return max(0, v / 100) }
         return max(0.05, v / 100)
     }
 
@@ -505,6 +506,8 @@ public enum Regimes {
     /// through the engine's own appointment (chronicle, roles, ruling house), the old reign closes.
     static func coup(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
         guard !r.nobility.isNull, !r.nobility.families.isNull, Offices.governance(r, id) < 0.4 else { return }
+        if !r.foundings.isNull && !r.foundings.enabled.isTruthy { return }
+        guard rule(r, "rebel") > 0, rule(r, "event") > 0 else { return }
         let rid = People.rulingFamilyId(r, id)
         let ruling = rid > 0 ? String(rid) : ""
         guard !ruling.isEmpty, r.nobility.families.has(ruling) else { return }
@@ -568,9 +571,11 @@ public enum Regimes {
     /// Rare monthly happenings that make each state's history its own: a bumper harvest, a disaster, a
     /// generation of able ministers, a plague. Deterministic per state and month.
     static func happenings(_ r: JS, _ n: JS, _ id: String, _ key: Int, gain: Double, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
+        let evRate = rule(r, "event")
+        guard evRate > 0 else { return }
         var h: UInt32 = 0x811c9dc5
         for u in "\(id)|\(key)|event".utf8 { h = (h ^ UInt32(u)) &* 0x1000193 }
-        let roll = Double(h) / 4294967296, name = n.name.asString
+        let roll = Double(h) / 4294967296 / evRate, name = n.name.asString
         // A second draw from the same seed picks the province or army an event falls on.
         let pick = Int((h &* 2654435761) >> 8)
         let land = r.world.provinces.asArray.filter { $0.controller.asString == id }

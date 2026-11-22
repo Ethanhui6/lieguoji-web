@@ -343,9 +343,11 @@ public enum MonarchLore {
     // MARK: - 3. 24 项全新深度历史动态事件
 
     public static func dynamicEventMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
+        let evRate = Regimes.rule(r, "event")
+        guard evRate > 0 else { return }
         let seed = r.world.custom.seed.optionalString ?? ""
         let tag = "\(seed)|dynev|\(id)|\(key)"
-        guard Regimes.chance(tag) < 0.065 else { return }
+        guard Regimes.chance(tag) < 0.065 * evRate else { return }
         let land = Regimes.monthLand(r, id)
         guard !land.isEmpty else { return }
         let pick = Int(Regimes.draw(tag + "|p"))

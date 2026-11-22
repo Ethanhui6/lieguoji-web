@@ -1005,7 +1005,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if display.gridLines == true && reveal >= 1 { colored(gridLines) }
         let chart = display.mapDetail ?? true
         if chart { colored(ornaments, alpha: ramp(0.44)) }
-        if chart && camera.scale >= 1.5 { colored(fineDetail, alpha: ramp(0.44)) }
+        let fineFade = Float(min(1, max(0, (camera.scale - 1.25) / 0.55)))
+        if chart && fineFade > 0.01 { colored(fineDetail, alpha: ramp(0.44) * fineFade) }
         if display.vegetation { colored(relief, alpha: ramp(0.44)) }
         if display.borders { colored(outlines, alpha: ramp(0.75)) }
         if display.cityIcons { colored(icons, alpha: ramp(0.85)); colored(forts, alpha: ramp(0.85)); colored(portIcons, alpha: ramp(0.85)) }
@@ -1014,8 +1015,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
         var clock = Float(CACurrentMediaTime().truncatingRemainder(dividingBy: 600))
         encoder.setVertexBytes(&clock, length: MemoryLayout<Float>.stride, index: 5)
-        if showArmies && lightStrength > 0.1 && camera.scale >= 0.72 {
-            // 军团棋子东南落地阴影：复用既有顶点缓冲，零额外 CPU 开销，令大军如微缩棋子立于舆图之上
+        let shadowFade = Float(min(1, max(0, (camera.scale - 0.62) / 0.25)))
+        if showArmies && lightStrength > 0.1 && shadowFade > 0.02 {
+            // 军团棋子东南落地阴影：随缩放平滑淡入淡出，零额外 CPU 开销，令大军如微缩棋子立于舆图之上
+            u.alpha = shadowFade
             encoder.setRenderPipelineState(spriteShadowPipeline)
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.setFragmentSamplerState(sampler, index: 0)
@@ -1024,6 +1027,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 encoder.setFragmentTexture(unit.texture, index: 0)
                 encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
             }
+            u.alpha = 1
         }
         if showArmies && !units.isEmpty {
             encoder.setRenderPipelineState(spritePipeline)
@@ -1257,7 +1261,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         SpriteOut o;
         o.position = clip(walk, u, (float2(s.corner) * float2(1.04, 0.96) + float2(s.shift)) * pixels + shOffset);
         o.uv = float2(s.corner) + 0.5;
-        o.tint = float4(0.10, 0.07, 0.04, tint.a * 0.28 * u.lighting);
+        o.tint = float4(0.10, 0.07, 0.04, tint.a * 0.28 * u.lighting * u.alpha);
         return o;
     }
     fragment float4 spriteShadowFragment(SpriteOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {

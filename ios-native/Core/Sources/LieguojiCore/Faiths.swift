@@ -175,6 +175,8 @@ extension Regimes {
     }
     /// When a state is in crisis, a strong extreme party may take it: revolution, a march on the capital, a coup.
     static func seizure(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
+        if !r.foundings.isNull && !r.foundings.enabled.isTruthy { return }
+        guard rule(r, "rebel") > 0, rule(r, "event") > 0 else { return }
         let s = style(r, id), b = book(r, id)
         guard s.parties, s.single == nil, !b.parties.isNull, mood(r, id) < -0.3 else { return }
         let german = r.civilization.nations[id].cultureId.optionalString == "german"
@@ -190,6 +192,7 @@ extension Regimes {
     }
     /// Unions and students: strikes cost a month's taxes and fill the left's benches.
     static func unrestMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
+        guard rule(r, "event") > 0 else { return }
         let s = style(r, id), b = book(r, id)
         guard s.parties, s.single == nil, !b.parties.isNull, mood(r, id) < 0 else { return }
         let list = b.parties.asArray, roll = chance("\(id)|\(key)|strike")

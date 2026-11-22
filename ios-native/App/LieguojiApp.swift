@@ -158,9 +158,8 @@ struct RootView: View {
         model.controller.reveal = 0
         model.phase = .title
         if ShotTour.on { Task { @MainActor in await ShotTour.start(model) } }
-        // The title backdrop generates itself: sea, then land from the coast up, then the states.
-        // Slow and unhurried behind the title (3.2 s read as rushed on the phone).
-        Task { @MainActor in await model.playReveal(duration: 7, while: { model.phase == .title }) }
+        // The title backdrop generates itself smoothly behind the title (brisk & dignified 3.6s wash).
+        Task { @MainActor in await model.playReveal(duration: 3.6, while: { model.phase == .title }) }
     }
 }
 
@@ -470,6 +469,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("2.8.9", ["【清晰军团与主力战舰、战局特效打磨】① 军团与舰队地图显示尺寸由原先偏小的 6.8–21pt 提升至 15.5–34pt，取消重叠多棋子与笨重底座，改为「单枚雕漆盾牌 + 饱满象牙兵种纹章」高反差架构，水师战舰放大并衬明亮海沫浪环；② 陆战交锋加大并新增猩金冲击波环与四向金色火星，海战炮火、围城进度环、插旗双圈与战损飘字全面放大提亮。",
+                   "【山川地貌重构与真实玩法深度联动】① 疏减约 65% 遮挡国界的冗余山峰并移除拉近二层重绘，新增日照丘陵、分气候林木、沙漠沙丘与绿洲椰林、青灰沼泽芦苇、草原草簇、冻原苔丘与冰川脊线；② 地形正式联动行军速度、寻路代价、州郡月税、天然守险与客军险境补给减员，州郡面板新增「山川地利影响」专卡。",
+                   "【移除违和悬浮笺、进局提速与页面统一】① 彻底移除风格脱节且功能重复的天下军情/国力悬浮小笺；② 新开世界展卷由 6.8 秒提速至 2.6 秒，续档入场压缩至 1.0 秒，精简底部单条朱印进度胶囊；③ 国家页精简为免横滑五主签（概览/朝政/军事/外交/治理），外交页重排为盟好/博弈双网格，设置页收敛为无重复项的「游戏/画面/推演」三签并折叠高级微调，全面统一宣纸 `Group2` 与手绘水墨图标。",
+                   "【GPU/CPU 渲染与推演性能优化】海洋、展卷与云雾着色器改用 2 阶快速噪声并按缩放跳过远景细噪（海洋片元算力减半），配合山地减负显著降低发热；月度财政/国运消除 O(P²) 扫描，行军预计抵达改为 O(1) 采样估算。"]),
         ("2.8.8", ["【闪退修复与全局兜底】根据真机崩溃日志定位：开局推演约二十五秒后月度外交结算读取旧战役字段导致引擎断言闪退；除改读真实战役表外，引擎数据层新增宽松默认值与越界防护，彻底杜绝同类字段错配闪退。",
                    "【全局同心圆角修复与史记/回放重做】① 统一升级 `glass`、卡片与印章为严格的苹果同心 `inset(by:)` 内外双边曲率，彻底修复山河回放右上角返回按钮在竖屏下被挤压变形导致的圆角错误（统一为与主界面严格对称的 44×44pt 正圆同心钮）；② 彻底重做「史记」页面，移除杂乱堆叠顶卡与生硬直角框，统一为「编年大事 / 兴衰长卷」双页签与按年分节奏折卡片并优化长史分页加载；③ 山河回放新增拖动时间轴实时纪年浮签与快捷定位钮，收紧大势小笺留出更大观战视野。",
                    "【雕漆漆盾军团、双桅破浪战舰与三层水墨晕染】① 军牌升级为 128×128 盾形漆牌配高反差象牙浮雕全套兵种；水师重绘为双桅鼓风楼船战舰并新增海沫浪环与多舰破浪雁行阵；② 战争占领与易主扫色升级为域扭曲宣纸三层水墨洇染（先导淡墨水晕 + 湿墨聚边笔锋 + 暖金波锋），陆战新增外扩兵戈气圈、海战新增炮弹入水白浪水花、攻城插旗新增鎏金星芒。"]),

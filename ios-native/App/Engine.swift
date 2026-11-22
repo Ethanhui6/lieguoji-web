@@ -146,8 +146,9 @@ struct ChronicleEntry: Decodable, Identifiable {
 struct ProvinceInfo: Decodable {
     let population: Int; let grain: Double; let capacity: Int; let supply: Double; let controller: Int; let owner: Int
     let core: Bool?; let defense: Double?; let mountain: Bool?; let biomes: [Double]?; let income: Double?
-    /// The main land (地形) and an army's march pace over it (1 = normal).
+    /// The main land (地形) and an army's march pace, tax, attrition and natural defense over it.
     var terrain: String? = nil; var pace: Double? = nil
+    var terrainTax: Double? = nil; var terrainAttrition: String? = nil; var terrainDefense: Double? = nil; var terrainSummary: String? = nil
     /// 特产 and its index in the goods list.
     var specialty: String? = nil; var specialtyIndex: Int? = nil
     /// The province city's own culture.

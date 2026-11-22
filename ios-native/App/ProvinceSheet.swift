@@ -148,7 +148,10 @@ struct ProvinceSheet: View {
                                     let t = grantTarget; granting = false
                                     Task { report(await model.grant(province: province, to: t), "已划入他国"); self.info = await model.provinceInfo(province) }
                                 } label: {
-                                    Label("确认划入", systemImage: "paintbrush.pointed.fill")
+                                    HStack(spacing: 6) {
+                                        InkIcon(glyph: .brush, size: 15, weight: 1.8)
+                                        Text("确认划入")
+                                    }
                                         .font(Theme.section)
                                         .frame(maxWidth: .infinity).padding(.vertical, 13)
                                         .foregroundStyle(grantTarget < 0 ? Theme.ink2 : Theme.seal)
@@ -198,7 +201,7 @@ struct ProvinceSheet: View {
                     Spacer(minLength: 4)
                     HStack(spacing: 4) {
                         Text("国家详情").font(Theme.label)
-                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
+                        InkIcon(glyph: .chevronRight, size: 11, weight: 1.9)
                     }
                     .foregroundStyle(Theme.paper2)
                     .padding(.horizontal, 12).frame(height: 34)
@@ -309,6 +312,31 @@ struct ProvinceSheet: View {
     @ViewBuilder
     private func militarySection(map: WorldMap, owner: Int) -> some View {
         if let info {
+            // 地形实际玩法影响卡片：一目了然展示行军速度、税赋丰瘠、天然守险与敌军补给损耗
+            SectionLabel("山川地利影响")
+            Group2 {
+                VStack(alignment: .leading, spacing: 10) {
+                    if let summary = info.terrainSummary, !summary.isEmpty {
+                        Text(summary).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                    }
+                    HStack(spacing: 0) {
+                        let pacePct = Int(((info.pace ?? 1.0) * 100).rounded())
+                        let taxDelta = Int((((info.terrainTax ?? 1.0) - 1.0) * 100).rounded())
+                        let defDelta = Int((((info.terrainDefense ?? 1.0) - 1.0) * 100).rounded())
+                        let attrText = info.terrainAttrition ?? "无"
+                        terrainCell(label: "行军速", value: "\(pacePct)%", tone: pacePct >= 100 ? Theme.jade : pacePct <= 70 ? Theme.seal : Theme.ink)
+                        Rectangle().fill(Theme.ink.opacity(0.10)).frame(width: 0.8, height: 32)
+                        terrainCell(label: "赋税产出", value: taxDelta == 0 ? "标准" : (taxDelta > 0 ? "+\(taxDelta)%" : "\(taxDelta)%"), tone: taxDelta > 0 ? Theme.jade : taxDelta < 0 ? Theme.seal : Theme.ink)
+                        Rectangle().fill(Theme.ink.opacity(0.10)).frame(width: 0.8, height: 32)
+                        terrainCell(label: "天然守险", value: defDelta == 0 ? "平地" : (defDelta > 0 ? "+\(defDelta)%" : "\(defDelta)%"), tone: defDelta > 0 ? Theme.jade : Theme.ink2)
+                        Rectangle().fill(Theme.ink.opacity(0.10)).frame(width: 0.8, height: 32)
+                        terrainCell(label: "客军损耗", value: attrText.replacingOccurrences(of: "无额外损耗", with: "无"), tone: attrText.contains("极") || attrText.contains("严") || attrText.contains("瘴") ? Theme.seal : attrText.contains("无") ? Theme.ink2 : Theme.gold)
+                    }
+                }
+                .padding(.horizontal, 14).padding(.vertical, 12)
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+
             if let arms = info.combat, !arms.isEmpty {
                 SectionLabel("地利 · 各兵种攻防修正")
                 Group2 {
@@ -356,7 +384,7 @@ struct ProvinceSheet: View {
                             Text("特产").foregroundStyle(Theme.ink2)
                             Spacer()
                             Text(good).foregroundStyle(Theme.ink)
-                            Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.75))
+                            InkIcon(glyph: .brush, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75))
                         }
                         .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                     }
@@ -370,7 +398,7 @@ struct ProvinceSheet: View {
                             Text("区域").foregroundStyle(Theme.ink2)
                             Spacer()
                             Text("\(g.name) · \(g.provinces.count)州 · \(Names.wan(Int(g.population)))人").foregroundStyle(Theme.ink).lineLimit(1)
-                            Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.75))
+                            InkIcon(glyph: .brush, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75))
                         }
                         .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                     }
@@ -387,7 +415,7 @@ struct ProvinceSheet: View {
                         Text("本地文化").foregroundStyle(Theme.ink2)
                         Spacer()
                         Text(Names.culture[info.cityCulture ?? ""] ?? info.cityCulture ?? "—").foregroundStyle(Theme.ink)
-                        Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.75))
+                        InkIcon(glyph: .brush, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75))
                     }
                     .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                 }
@@ -408,6 +436,14 @@ struct ProvinceSheet: View {
             }
         }
         .padding(.horizontal, Theme.Layout.pageInset)
+    }
+
+    private func terrainCell(label: String, value: String, tone: Color) -> some View {
+        VStack(spacing: 3) {
+            Text(label).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+            Text(value).font(Theme.body).foregroundStyle(tone).monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func quickTile(title: String, glyph: InkGlyph, tint: Color, disabled: Bool = false, action: @escaping () -> Void) -> some View {

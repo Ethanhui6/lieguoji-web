@@ -20,16 +20,18 @@ struct DiplomaticActions: View {
         return state.nations[source].alive && state.nations[target].alive
     }
 
-    private static let actions = [
-        ("trade", "通商"),
-        ("defense", "共防"),
-        ("pact", "互不侵犯"),
-        ("marriage", "联姻"),
-        ("access", "通行"),
-        ("alliance", "同盟"),
-        ("gift", "赠金"),
-        ("ultimatum", "通牒"),
-        ("covert", "谍报"),
+    private static let friendlyActions: [(id: String, title: String, glyph: InkGlyph)] = [
+        ("trade", "通商", .goods),
+        ("defense", "共防", .fortress),
+        ("pact", "互不侵犯", .peace),
+        ("marriage", "联姻", .marriage),
+        ("access", "通行", .march),
+        ("alliance", "同盟", .alliance),
+        ("gift", "赠金", .economy),
+    ]
+    private static let hostileActions: [(id: String, title: String, glyph: InkGlyph)] = [
+        ("ultimatum", "最后通牒", .fire),
+        ("covert", "谍报资敌", .eye),
     ]
 
     private var note: String {
@@ -46,10 +48,37 @@ struct DiplomaticActions: View {
         }
     }
 
+    private func actionChip(_ item: (id: String, title: String, glyph: InkGlyph), hostile: Bool = false) -> some View {
+        let on = action == item.id
+        let tint = hostile ? Theme.seal : Theme.jade
+        return Button {
+            GameFeel.shared.tap()
+            withAnimation(Motion.tap) { action = item.id }
+        } label: {
+            HStack(spacing: 4) {
+                InkIcon(glyph: item.glyph, size: 13, weight: on ? 1.9 : 1.65, accent: (on ? Theme.paper2 : tint).opacity(0.26))
+                Text(item.title).font(Theme.label).lineLimit(1).minimumScaleFactor(0.75)
+            }
+            .foregroundStyle(on ? Theme.paper2 : (hostile ? Theme.seal : Theme.ink))
+            .frame(maxWidth: .infinity).frame(height: 34)
+            .background(on ? (hostile ? Theme.seal : Theme.jade) : Theme.paper.opacity(0.72), in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).strokeBorder(on ? Color.clear : (hostile ? Theme.seal.opacity(0.28) : Theme.ink.opacity(0.14)), lineWidth: 0.85))
+        }
+        .buttonStyle(PressStyle())
+    }
+
     var body: some View {
         Group2 {
             VStack(alignment: .leading, spacing: 12) {
-                ChipPicker(items: Self.actions, selection: $action)
+                Text("邦交盟好").font(Theme.caption).foregroundStyle(Theme.ink2)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 7), count: 4), spacing: 7) {
+                    ForEach(Self.friendlyActions, id: \.id) { item in actionChip(item) }
+                }
+                Text("强硬博弈").font(Theme.caption).foregroundStyle(Theme.seal)
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 7), GridItem(.flexible(), spacing: 7)], spacing: 7) {
+                    ForEach(Self.hostileActions, id: \.id) { item in actionChip(item, hostile: true) }
+                }
+                Divider2()
                 if ["pact", "trade", "defense", "access"].contains(action) {
                     ChipPicker(items: [(5, "五年"), (10, "十年"), (20, "二十年")], selection: $years)
                 } else if action == "gift" {

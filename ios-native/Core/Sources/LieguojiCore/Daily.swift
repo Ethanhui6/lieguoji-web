@@ -232,7 +232,57 @@ public enum Daily {
             state.fraction = JS(amount - whole); a.troops = JS(min(full, a.troops.asNumber + whole)); force.fullStrength = JS(full)
             if a.troops.asNumber >= full { r.reorganization.active.delete(id); r.reorganization.completed[id] = JS((r.reorganization.completed[id].optionalNumber ?? 0) + 1) }
         }
-        for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" { a.supplies = JS(100); a.morale = JS(100) }
+        let appTerrain = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
+        if appTerrain, let bridge = Armies.bridge {
+            let g = bridge.graph, provinces = r.world.provinces.asArray
+            for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" {
+                let id = a.id.asString, rec = r.armyPositions.records[id]
+                var supplies = a.supplies.optionalNumber ?? 100
+                var morale = a.morale.optionalNumber ?? 100
+                if !rec.isNull, rec.nodes.length > 0 {
+                    let loc = g.location(bridge.travel(rec))
+                    let q = g.provinces.indices.contains(loc.cell) ? Int(g.provinces[loc.cell]) : -1
+                    if q >= 0 && q < provinces.count {
+                        let controller = provinces[q].controller.asString
+                        let nation = a.nationId.asString
+                        let faceIdx = g.faces.indices.contains(loc.cell) ? Int(g.faces[loc.cell]) : -1
+                        let bi = (faceIdx >= 0 && g.faceBiomes.indices.contains(faceIdx)) ? Int(g.faceBiomes[faceIdx]) : 4
+                        let isMtn = g.mountain.indices.contains(q) && g.mountain[q]
+                        let prof = ForceMotion.terrainProfile(biome: bi, mountain: isMtn)
+                        let hostile = controller != nation && Wars.relation(r, nation, controller)?.status.asString == "war"
+                        if hostile {
+                            // 深入敌境：恶劣地形（大漠、冰川、高山、沼泽、深林）加速消耗随军粮秣；断粮后引发非战斗减员与士气滑坡。
+                            supplies = max(0, supplies - prof.supplyDrain)
+                            if supplies < 22 && prof.attrition > 0 && a.status.asString != "retreating" {
+                                let cur = a.troops.asNumber
+                                let full = max(cur, r.tactics.forces[id].fullStrength.optionalNumber ?? cur)
+                                let floorTroops = max(80, (full * 0.25).rounded(.down))
+                                if cur > floorTroops {
+                                    let loss = max(1, (cur * prof.attrition).rounded(.down))
+                                    a.troops = JS(max(floorTroops, cur - loss))
+                                }
+                                morale = max(25, morale - 1.6)
+                            }
+                        } else {
+                            // 己方或友邦境内：平畴快速休整补给，山地荒漠补给稍缓。
+                            let refill = prof.attrition > 0 ? 7.0 : 14.0
+                            supplies = min(100, supplies + refill)
+                            if a.status.asString != "fighting" { morale = min(100, morale + 4.0) }
+                        }
+                    } else {
+                        // 渡海航行：轻度消耗随船口粮
+                        supplies = max(20, supplies - 1.5)
+                    }
+                } else {
+                    supplies = min(100, supplies + 12)
+                    if a.status.asString != "fighting" { morale = min(100, morale + 4) }
+                }
+                a.supplies = JS(supplies)
+                a.morale = JS(morale)
+            }
+        } else {
+            for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" { a.supplies = JS(100); a.morale = JS(100) }
+        }
         return true
     }
     /// retireArmiesOwned47.
@@ -344,15 +394,26 @@ public enum Daily {
         if r.world.day.asInt % 30 != 0 { return }
         Wars.reconcileCore(r)
         let month = r.world.day.asInt / 30
+        var stockById = [String: JS]()
+        for s in r.world.statecraft.provinces.asArray { stockById[s.provinceId.asString] = s }
+        let appTerrain = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
         for nation in r.world.nations.asArray {
             let id = nation.id.asString, n = r.finance.nations[id], u = r.upperCombat.nations[id]
             if n.lastMonth.asInt >= month || u.provinceOrder.length == 0 { continue }
             let ethnic = r.economy.nations[id].ethnic.asString, fees = armyFees(r, id), openingGold = n.gold.asInt
             let incomes = u.provinceOrder.asArray.map { pidJS -> Int in
-                let pid = pidJS.asString, p = r.finance.provinces[pid], data = r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == pid }!
+                let pid = pidJS.asString, p = r.finance.provinces[pid]
+                guard let data = stockById[pid] else { return 0 }
                 let resources = p.resources.asArray.map { Treasury.Resource(base: $0.baseValue.asInt, probability: $0.probability.asNumber, affectedBy: $0.affectedBy.asArray.map(\.asString)) }
+                var local = r.offices47.isNull ? 1 : Offices.localIncome(r, pid)
+                if appTerrain {
+                    let land = r.terrainContext.provinces[pid]
+                    let ratios = land.isNull || land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
+                    let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
+                    local *= ForceMotion.terrainProfile(biome: main, mountain: land.mountain.isTruthy).tax
+                }
                 return Treasury.provinceIncome(Treasury.ProvinceInput(population: data.population.asInt, capacity: p.maxPopulation.asInt, cells: p.cellBiomes.length, resources: resources,
-                                                                      local: r.offices47.isNull ? 1 : Offices.localIncome(r, pid)),
+                                                                      local: local),
                                                ethnic: ethnic, destiny: r.destiny.nations[id].destiny.asNumber, nationProvinces: u.provinceOrder.length, worldProvinces: r.world.provinces.length)
             }
             let out = Treasury.settle(gold: openingGold, incomes: incomes, tax: taxMultiplier(r, id), central: r.offices47.isNull ? 1 : Offices.centralIncome(r, id),
@@ -369,11 +430,13 @@ public enum Daily {
         let day = r.world.day.asInt
         if day % 30 != 0 { return }
         let month = day / 30
+        var stockById = [String: JS]()
+        for s in r.world.statecraft.provinces.asArray { stockById[s.provinceId.asString] = s }
         for n in r.world.nations.asArray {
             let id = n.id.asString, v = r.destiny.nations[id]
             let owned = r.world.provinces.asArray.filter { $0.controller.asString == id }
             if v.isNull || v.lastMonth.asInt >= month || owned.isEmpty { continue }
-            let pops = owned.map { p in r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == p.id.asString }!.population.asNumber }
+            let pops = owned.map { p in stockById[p.id.asString]?.population.asNumber ?? 0 }
             let caps = owned.map { r.finance.provinces[$0.id.asString].maxPopulation.asNumber }
             let ratio = f(f(pops.reduce(0, +)) / f(caps.reduce(0, +)))
             let leaderId = r.people.nations[id].leaderId

@@ -118,16 +118,16 @@ final class EffectsView: UIView {
     weak var floatHost: CALayer?
     func float(_ text: String, at p: CGPoint, naval: Bool) {
         guard !Energy.hot, floats < 12, window != nil else { return }
-        let font = UIFont(name: "TW-Kai-98_1", size: 13) ?? .boldSystemFont(ofSize: 13)
-        let fill = naval ? UIColor(red: 0.16, green: 0.4, blue: 0.72, alpha: 1) : UIColor(red: 0.74, green: 0.16, blue: 0.1, alpha: 1)
+        let font = UIFont(name: "TW-Kai-98_1", size: 14.5) ?? .boldSystemFont(ofSize: 14.5)
+        let fill = naval ? UIColor(red: 0.12, green: 0.36, blue: 0.72, alpha: 1) : UIColor(red: 0.76, green: 0.14, blue: 0.08, alpha: 1)
         let l = CATextLayer()
         // Filled and outlined in paper, readable over land, sea and borders without a shadow pass.
-        l.string = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: fill, .strokeColor: UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 1), .strokeWidth: -4])
+        l.string = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: fill, .strokeColor: UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 1), .strokeWidth: -5])
         l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
-        l.bounds = CGRect(x: 0, y: 0, width: 96, height: 18); l.position = p
+        l.bounds = CGRect(x: 0, y: 0, width: 108, height: 22); l.position = p
         (floatHost ?? layer).addSublayer(l)
         // 轻轻浮起、淡出：柔和缓动上升一小段，清晰不抢眼。
-        let up = CABasicAnimation(keyPath: "position.y"); up.fromValue = p.y; up.toValue = p.y - 22
+        let up = CABasicAnimation(keyPath: "position.y"); up.fromValue = p.y; up.toValue = p.y - 26
         up.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 0.84, 0.3, 1)
         let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 0.96, 0.96, 0]; fade.keyTimes = [0, 0.14, 0.68, 1]
         let pop = CAKeyframeAnimation(keyPath: "transform.scale"); pop.values = [0.82, 1.06, 1, 0.98]; pop.keyTimes = [0, 0.18, 0.36, 1]
@@ -186,23 +186,23 @@ final class EffectsView: UIView {
         return c
     }
     /// Battle smoke rolling up and sparks flying where the swords clash.
-    /// 海战: 双舰舷炮齐射、海浪激荡水环、双国海战战力对比条与交叉火炮海锚徽记。
+    /// 海战: 44×30pt 鲜明双舰舷炮齐射、炮口亮焰、落弹激浪水环、清晰 38×4.5pt 战力条与交叉火炮铁锚徽记。
     private func navalLayer() -> CALayer {
-        let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 32, height: 22)
-        // 海战双方战力对比条（与陆战一致，由 setStrength 动态更新两国色彩与占比）
-        let strength = CALayer(); strength.name = "strength"; strength.bounds = CGRect(x: 0, y: 0, width: 28, height: 3.2); strength.position = CGPoint(x: 16, y: -11)
-        strength.cornerRadius = 1.6; strength.masksToBounds = true; strength.borderWidth = 0.6
-        strength.borderColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 0.95).cgColor; strength.isHidden = true
+        let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 44, height: 30)
+        // 海战双方战力对比条（加宽清晰读数 + 浓墨宣纸双描边）
+        let strength = CALayer(); strength.name = "strength"; strength.bounds = CGRect(x: 0, y: 0, width: 38, height: 4.5); strength.position = CGPoint(x: 22, y: -12)
+        strength.cornerRadius = 2.25; strength.masksToBounds = true; strength.borderWidth = 0.8
+        strength.borderColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 0.96).cgColor; strength.isHidden = true
         strength.addSublayer(CALayer()); strength.addSublayer(CALayer()); root.addSublayer(strength)
         // 双重扩散海浪水花环
         for idx in 0..<2 {
             let ring = CAShapeLayer(); ring.frame = root.bounds
-            ring.path = UIBezierPath(ovalIn: CGRect(x: 7, y: 5, width: 18, height: 12)).cgPath
+            ring.path = UIBezierPath(ovalIn: CGRect(x: 8, y: 6, width: 28, height: 18)).cgPath
             ring.fillColor = nil
-            ring.strokeColor = (idx == 0 ? UIColor(red: 0.94, green: 0.97, blue: 1.0, alpha: 0.88) : UIColor(red: 0.62, green: 0.82, blue: 0.94, alpha: 0.72)).cgColor
-            ring.lineWidth = idx == 0 ? 1.4 : 1.0
-            let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.35; grow.toValue = 1.95
-            let fade = CABasicAnimation(keyPath: "opacity"); fade.fromValue = 0.92; fade.toValue = 0
+            ring.strokeColor = (idx == 0 ? UIColor(red: 0.96, green: 0.99, blue: 1.0, alpha: 0.92) : UIColor(red: 0.62, green: 0.84, blue: 0.96, alpha: 0.78)).cgColor
+            ring.lineWidth = idx == 0 ? 1.8 : 1.25
+            let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.40; grow.toValue = 1.95
+            let fade = CABasicAnimation(keyPath: "opacity"); fade.fromValue = 0.95; fade.toValue = 0
             let g = CAAnimationGroup(); g.animations = [grow, fade]; g.duration = 1.25; g.repeatCount = .infinity
             g.timeOffset = Double(idx) * 0.62 + Double.random(in: 0..<0.3)
             ring.add(Self.calm(g), forKey: "splash-\(idx)")
@@ -210,67 +210,69 @@ final class EffectsView: UIView {
         }
         // 炮火暖金赤焰呼吸核心
         let fireGlow = CAShapeLayer(); fireGlow.frame = root.bounds
-        fireGlow.path = UIBezierPath(ovalIn: CGRect(x: 9, y: 4, width: 14, height: 14)).cgPath
-        fireGlow.fillColor = UIColor(red: 0.98, green: 0.56, blue: 0.18, alpha: 0.30).cgColor
-        let glowAnim = CAKeyframeAnimation(keyPath: "opacity"); glowAnim.values = [0.25, 0.92, 0.30]; glowAnim.duration = 0.75; glowAnim.repeatCount = .infinity
+        fireGlow.path = UIBezierPath(ovalIn: CGRect(x: 13, y: 6, width: 18, height: 18)).cgPath
+        fireGlow.fillColor = UIColor(red: 1.0, green: 0.58, blue: 0.16, alpha: 0.36).cgColor
+        let glowAnim = CAKeyframeAnimation(keyPath: "opacity"); glowAnim.values = [0.28, 0.96, 0.32]; glowAnim.duration = 0.78; glowAnim.repeatCount = .infinity
         fireGlow.add(Self.calm(glowAnim), forKey: "glow")
         root.addSublayer(fireGlow)
-        // 左右舷交替齐射炮火弹道弧线 + 落弹处激起洁白海浪水花环
+        // 左右舷交替齐射炮火弹道弧线 + 炮口火球 + 落弹洁白激浪环
         for side in 0..<2 {
             let volley = CAShapeLayer(); volley.frame = root.bounds
             let vp = UIBezierPath()
             if side == 0 {
-                vp.move(to: CGPoint(x: 3, y: 14))
-                vp.addQuadCurve(to: CGPoint(x: 27, y: 8), controlPoint: CGPoint(x: 15, y: 1))
+                vp.move(to: CGPoint(x: 4, y: 19))
+                vp.addQuadCurve(to: CGPoint(x: 38, y: 11), controlPoint: CGPoint(x: 21, y: 1))
             } else {
-                vp.move(to: CGPoint(x: 29, y: 14))
-                vp.addQuadCurve(to: CGPoint(x: 5, y: 8), controlPoint: CGPoint(x: 17, y: 1))
+                vp.move(to: CGPoint(x: 40, y: 19))
+                vp.addQuadCurve(to: CGPoint(x: 6, y: 11), controlPoint: CGPoint(x: 23, y: 1))
             }
             volley.path = vp.cgPath; volley.fillColor = nil
-            volley.strokeColor = UIColor(red: 1.0, green: 0.80, blue: 0.30, alpha: 0.96).cgColor
-            volley.lineWidth = 1.7; volley.lineCap = .round
-            let shoot = CAKeyframeAnimation(keyPath: "strokeEnd"); shoot.values = [0.0, 1.0, 1.0]; shoot.keyTimes = [0, 0.45, 1]
-            let tail = CAKeyframeAnimation(keyPath: "strokeStart"); tail.values = [0.0, 0.2, 1.0]; tail.keyTimes = [0, 0.35, 1]
-            let vFade = CAKeyframeAnimation(keyPath: "opacity"); vFade.values = [0.0, 1.0, 0.0]; vFade.keyTimes = [0, 0.3, 1]
-            let vg = CAAnimationGroup(); vg.animations = [shoot, tail, vFade]; vg.duration = 0.86; vg.repeatCount = .infinity
-            vg.timeOffset = Double(side) * 0.43
+            volley.strokeColor = UIColor(red: 1.0, green: 0.84, blue: 0.32, alpha: 0.98).cgColor
+            volley.lineWidth = 2.2; volley.lineCap = .round
+            let shoot = CAKeyframeAnimation(keyPath: "strokeEnd"); shoot.values = [0.0, 1.0, 1.0]; shoot.keyTimes = [0, 0.44, 1]
+            let tail = CAKeyframeAnimation(keyPath: "strokeStart"); tail.values = [0.0, 0.18, 1.0]; tail.keyTimes = [0, 0.34, 1]
+            let vFade = CAKeyframeAnimation(keyPath: "opacity"); vFade.values = [0.0, 1.0, 0.0]; vFade.keyTimes = [0, 0.28, 1]
+            let vg = CAAnimationGroup(); vg.animations = [shoot, tail, vFade]; vg.duration = 0.88; vg.repeatCount = .infinity
+            vg.timeOffset = Double(side) * 0.44
             volley.add(Self.calm(vg), forKey: "volley-\(side)")
             root.addSublayer(volley)
 
-            // 炮弹入水白浪水花环（与弹道落地时刻错峰触发）
-            let splash = CAShapeLayer(); splash.frame = CGRect(x: side == 0 ? 22 : 0, y: 4, width: 10, height: 8)
-            splash.path = UIBezierPath(ovalIn: CGRect(x: 1, y: 1, width: 8, height: 6)).cgPath
+            // 炮弹入水洁白浪环
+            let splash = CAShapeLayer(); splash.frame = CGRect(x: side == 0 ? 31 : 1, y: 5, width: 12, height: 10)
+            splash.path = UIBezierPath(ovalIn: CGRect(x: 1, y: 1, width: 10, height: 8)).cgPath
             splash.fillColor = nil
-            splash.strokeColor = UIColor(red: 0.94, green: 0.98, blue: 1.0, alpha: 0.90).cgColor
-            splash.lineWidth = 1.15; splash.opacity = 0
-            let sScale = CAKeyframeAnimation(keyPath: "transform.scale"); sScale.values = [0.35, 0.35, 1.55]; sScale.keyTimes = [0, 0.38, 1]
-            let sFade = CAKeyframeAnimation(keyPath: "opacity"); sFade.values = [0.0, 0.0, 0.92, 0.0]; sFade.keyTimes = [0, 0.38, 0.56, 1]
-            let sg = CAAnimationGroup(); sg.animations = [sScale, sFade]; sg.duration = 0.86; sg.repeatCount = .infinity
-            sg.timeOffset = Double(side) * 0.43
+            splash.strokeColor = UIColor(red: 0.96, green: 0.99, blue: 1.0, alpha: 0.94).cgColor
+            splash.lineWidth = 1.5; splash.opacity = 0
+            let sScale = CAKeyframeAnimation(keyPath: "transform.scale"); sScale.values = [0.32, 0.32, 1.72]; sScale.keyTimes = [0, 0.36, 1]
+            let sFade = CAKeyframeAnimation(keyPath: "opacity"); sFade.values = [0.0, 0.0, 0.96, 0.0]; sFade.keyTimes = [0, 0.36, 0.54, 1]
+            let sg = CAAnimationGroup(); sg.animations = [sScale, sFade]; sg.duration = 0.88; sg.repeatCount = .infinity
+            sg.timeOffset = Double(side) * 0.44
             splash.add(Self.calm(sg), forKey: "splash-\(side)")
             root.addSublayer(splash)
         }
-        // 海战交叉火炮与铁锚中心徽记（宣纸金墨描边）
-        let emblem = CAShapeLayer(); emblem.frame = root.bounds
+        // 海战交叉火炮与铁锚中心徽记（深墨衬底 + 明亮象牙金描边，碧海之上分外清晰）
+        let emblemBg = CAShapeLayer(); emblemBg.frame = root.bounds
         let ep = UIBezierPath()
-        // 交叉双炮筒
-        ep.move(to: CGPoint(x: 9, y: 16)); ep.addLine(to: CGPoint(x: 23, y: 6))
-        ep.move(to: CGPoint(x: 23, y: 16)); ep.addLine(to: CGPoint(x: 9, y: 6))
-        // 中心海锚竖杆与月牙锚钩
-        ep.move(to: CGPoint(x: 16, y: 5)); ep.addLine(to: CGPoint(x: 16, y: 17))
-        ep.addArc(withCenter: CGPoint(x: 16, y: 12.5), radius: 4.5, startAngle: .pi * 0.18, endAngle: .pi * 0.82, clockwise: true)
+        ep.move(to: CGPoint(x: 12, y: 22)); ep.addLine(to: CGPoint(x: 32, y: 8))
+        ep.move(to: CGPoint(x: 32, y: 22)); ep.addLine(to: CGPoint(x: 12, y: 8))
+        ep.move(to: CGPoint(x: 22, y: 6)); ep.addLine(to: CGPoint(x: 22, y: 24))
+        ep.addArc(withCenter: CGPoint(x: 22, y: 17.5), radius: 6.2, startAngle: .pi * 0.18, endAngle: .pi * 0.82, clockwise: true)
+        emblemBg.path = ep.cgPath; emblemBg.fillColor = nil
+        emblemBg.strokeColor = UIColor(red: 0.08, green: 0.12, blue: 0.18, alpha: 0.78).cgColor
+        emblemBg.lineWidth = 4.0; emblemBg.lineCap = .round
+        let emblem = CAShapeLayer(); emblem.frame = root.bounds
         emblem.path = ep.cgPath; emblem.fillColor = nil
-        emblem.strokeColor = UIColor(red: 0.99, green: 0.95, blue: 0.84, alpha: 0.96).cgColor
-        emblem.lineWidth = 1.65; emblem.lineCap = .round
-        let recoil = CAKeyframeAnimation(keyPath: "transform.scale"); recoil.values = [0.92, 1.12, 0.96, 1.0]; recoil.keyTimes = [0, 0.25, 0.6, 1]
-        recoil.duration = 0.86; recoil.repeatCount = .infinity
-        emblem.add(Self.calm(recoil), forKey: "recoil")
-        root.addSublayer(emblem)
+        emblem.strokeColor = UIColor(red: 0.99, green: 0.95, blue: 0.84, alpha: 0.98).cgColor
+        emblem.lineWidth = 2.1; emblem.lineCap = .round
+        let recoil = CAKeyframeAnimation(keyPath: "transform.scale"); recoil.values = [0.92, 1.14, 0.96, 1.0]; recoil.keyTimes = [0, 0.25, 0.6, 1]
+        recoil.duration = 0.88; recoil.repeatCount = .infinity
+        emblemBg.add(Self.calm(recoil), forKey: "recoil"); emblem.add(Self.calm(recoil), forKey: "recoil")
+        root.addSublayer(emblemBg); root.addSublayer(emblem)
         if Self.particles && !Energy.hot && battleLayers.count < 6 {
-            let e = CAEmitterLayer(); e.emitterShape = .line; e.emitterSize = CGSize(width: 26, height: 1); e.emitterPosition = CGPoint(x: 16, y: 11)
+            let e = CAEmitterLayer(); e.emitterShape = .line; e.emitterSize = CGSize(width: 32, height: 1); e.emitterPosition = CGPoint(x: 22, y: 15)
             e.emitterCells = [
-                cell(Self.puff, color: UIColor(white: 0.96, alpha: 0.25), rate: 3.2, life: 1.9, velocity: 7, range: .pi / 4, scale: 0.3, scaleSpeed: 0.15, alphaSpeed: -0.11, spin: 0.2, angle: -.pi / 2),
-                cell(Self.spark, color: UIColor(red: 1, green: 0.66, blue: 0.22, alpha: 1), rate: 4.5, life: 0.28, velocity: 20, range: .pi / 4, scale: 0.55, scaleSpeed: -1.3, alphaSpeed: -3, angle: -.pi / 2),
+                cell(Self.puff, color: UIColor(white: 0.96, alpha: 0.28), rate: 3.4, life: 1.9, velocity: 8, range: .pi / 4, scale: 0.34, scaleSpeed: 0.16, alphaSpeed: -0.11, spin: 0.2, angle: -.pi / 2),
+                cell(Self.spark, color: UIColor(red: 1, green: 0.68, blue: 0.22, alpha: 1), rate: 5.0, life: 0.30, velocity: 22, range: .pi / 4, scale: 0.60, scaleSpeed: -1.3, alphaSpeed: -3, angle: -.pi / 2),
             ]
             e.renderMode = .unordered
             root.insertSublayer(e, at: 0)
@@ -304,84 +306,87 @@ final class EffectsView: UIView {
         bar.sublayers![1].frame = CGRect(x: share, y: 0, width: w - share, height: h); bar.sublayers![1].backgroundColor = UIColor(red: r.r, green: r.g, blue: r.b, alpha: 1).cgColor
     }
     private func battleLayer() -> CALayer {
-        // 小而精：双刃 28 × 21 点，兵力对比条 28×3.2 点镶宣纸细边，背后一道克制的暖金兵戈闪晕，不压住周围地名与图标。
-        let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 28, height: 18)
-        let strength = CALayer(); strength.name = "strength"; strength.bounds = CGRect(x: 0, y: 0, width: 28, height: 3.2); strength.position = CGPoint(x: 14, y: -11)
-        strength.cornerRadius = 1.6; strength.masksToBounds = true; strength.borderWidth = 0.6; strength.borderColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 0.95).cgColor; strength.isHidden = true
+        // 精致陆战动效：36×26pt 醒目双刃交击 + 清晰 38×4.5pt 双国兵力对比条 + 节律性朱金兵戈气圈 + 锐利火花辐射。
+        let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 36, height: 26)
+        let strength = CALayer(); strength.name = "strength"; strength.bounds = CGRect(x: 0, y: 0, width: 38, height: 4.5); strength.position = CGPoint(x: 18, y: -12)
+        strength.cornerRadius = 2.25; strength.masksToBounds = true; strength.borderWidth = 0.8; strength.borderColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 0.96).cgColor; strength.isHidden = true
         strength.addSublayer(CALayer()); strength.addSublayer(CALayer()); root.addSublayer(strength)
-        // 交锋中心暖金微芒 + 节律性外扩兵戈气圈（纯矢量零离屏模糊，远景一眼辨认激战前线）
+        // 交锋中心朱金兵戈气圈（纯矢量零离屏模糊，远景一眼辨认激战前线）
         let pulseRing = CAShapeLayer(); pulseRing.frame = root.bounds
-        pulseRing.path = UIBezierPath(ovalIn: CGRect(x: 7, y: 2, width: 14, height: 14)).cgPath
+        pulseRing.path = UIBezierPath(ovalIn: CGRect(x: 9, y: 4, width: 18, height: 18)).cgPath
         pulseRing.fillColor = nil
-        pulseRing.strokeColor = UIColor(red: 0.86, green: 0.32, blue: 0.16, alpha: 0.58).cgColor
-        pulseRing.lineWidth = 1.05
-        let prScale = CABasicAnimation(keyPath: "transform.scale"); prScale.fromValue = 0.72; prScale.toValue = 1.68
-        let prFade = CAKeyframeAnimation(keyPath: "opacity"); prFade.values = [0.0, 0.72, 0.0]; prFade.keyTimes = [0, 0.24, 1]
-        let prGroup = CAAnimationGroup(); prGroup.animations = [prScale, prFade]; prGroup.duration = 1.35; prGroup.repeatCount = .infinity
+        pulseRing.strokeColor = UIColor(red: 0.88, green: 0.30, blue: 0.14, alpha: 0.66).cgColor
+        pulseRing.lineWidth = 1.45
+        let prScale = CABasicAnimation(keyPath: "transform.scale"); prScale.fromValue = 0.72; prScale.toValue = 1.82
+        let prFade = CAKeyframeAnimation(keyPath: "opacity"); prFade.values = [0.0, 0.82, 0.0]; prFade.keyTimes = [0, 0.22, 1]
+        let prGroup = CAAnimationGroup(); prGroup.animations = [prScale, prFade]; prGroup.duration = 1.25; prGroup.repeatCount = .infinity
         prGroup.timingFunction = CAMediaTimingFunction(name: .easeOut)
         pulseRing.add(Self.calm(prGroup), forKey: "clashRing")
         root.addSublayer(pulseRing)
 
         let sparkGlow = CAShapeLayer(); sparkGlow.frame = root.bounds
-        sparkGlow.path = UIBezierPath(ovalIn: CGRect(x: 8, y: 3, width: 12, height: 12)).cgPath
-        sparkGlow.fillColor = UIColor(red: 0.96, green: 0.72, blue: 0.28, alpha: 0.30).cgColor
-        let glowAnim = CAKeyframeAnimation(keyPath: "opacity"); glowAnim.values = [0.25, 0.92, 0.25]; glowAnim.duration = 0.9; glowAnim.repeatCount = .infinity
+        sparkGlow.path = UIBezierPath(ovalIn: CGRect(x: 10, y: 5, width: 16, height: 16)).cgPath
+        sparkGlow.fillColor = UIColor(red: 0.98, green: 0.74, blue: 0.26, alpha: 0.36).cgColor
+        let glowAnim = CAKeyframeAnimation(keyPath: "opacity"); glowAnim.values = [0.28, 0.96, 0.28]; glowAnim.duration = 0.85; glowAnim.repeatCount = .infinity
         sparkGlow.add(Self.calm(glowAnim), forKey: "glow")
         root.addSublayer(sparkGlow)
+
+        // 四向金铁火星短划（即便叠加原作双刃动画也同步闪烁，增强刀兵相撞的锐利质感）
         let marks = CAShapeLayer(); marks.frame = root.bounds
         let path = UIBezierPath()
-        for (x, y) in [(CGFloat(4), CGFloat(4)), (23, 3), (3, 13), (24, 14)] {
-            path.move(to: CGPoint(x: 14 + (x - 14) * 0.42, y: 9 + (y - 9) * 0.42))
+        for (x, y) in [(CGFloat(4), CGFloat(4)), (32, 4), (4, 22), (32, 22)] {
+            path.move(to: CGPoint(x: 18 + (x - 18) * 0.45, y: 13 + (y - 13) * 0.45))
             path.addLine(to: CGPoint(x: x, y: y))
         }
         marks.path = path.cgPath; marks.fillColor = nil
-        marks.strokeColor = UIColor(red: 0.72, green: 0.22, blue: 0.12, alpha: 0.92).cgColor
-        marks.lineWidth = 1.45; marks.lineCap = .round
+        marks.strokeColor = UIColor(red: 1.0, green: 0.84, blue: 0.32, alpha: 0.92).cgColor
+        marks.lineWidth = 1.6; marks.lineCap = .round
         let flash = CAKeyframeAnimation(keyPath: "opacity")
-        flash.values = [0.15, 0.92, 0.22, 0.15]; flash.keyTimes = [0, 0.2, 0.5, 1]
-        flash.duration = 1.15; flash.repeatCount = .infinity
+        flash.values = [0.0, 0.95, 0.15, 0.0]; flash.keyTimes = [0, 0.18, 0.46, 1]
+        let mScale = CAKeyframeAnimation(keyPath: "transform.scale")
+        mScale.values = [0.75, 1.15, 0.92]; mScale.keyTimes = [0, 0.22, 1]
+        let mg = CAAnimationGroup(); mg.animations = [flash, mScale]; mg.duration = 1.10; mg.repeatCount = .infinity
+        marks.add(Self.calm(mg), forKey: "contact"); root.addSublayer(marks)
+
         if let sheet = Self.swords {
-            // The original BattleSword: two blades clashing over the fight, a 40-frame loop.
             let blades = CALayer()
             blades.contents = sheet; blades.contentsRect = Self.swordFrames[0].cgRectValue
-            blades.bounds = CGRect(x: 0, y: 0, width: 28, height: 21); blades.position = CGPoint(x: 14, y: 3)
+            blades.bounds = CGRect(x: 0, y: 0, width: 34, height: 26); blades.position = CGPoint(x: 18, y: 9)
             let clash = CAKeyframeAnimation(keyPath: "contentsRect"); clash.values = Self.swordFrames; clash.calculationMode = .discrete
-            clash.duration = 1.35; clash.repeatCount = .infinity
-            clash.timeOffset = Double.random(in: 0..<1.35)
+            clash.duration = 1.25; clash.repeatCount = .infinity
+            clash.timeOffset = Double.random(in: 0..<1.25)
             blades.add(Self.calm(clash), forKey: "clash"); root.addSublayer(blades)
-        } else { marks.add(Self.calm(flash), forKey: "contact"); root.addSublayer(marks) }
+        }
         if Self.particles && !Energy.hot && battleLayers.count < 4 {
-            let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: 14, y: 9); root.insertSublayer(smoke, at: 0)
+            let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: 18, y: 13); root.insertSublayer(smoke, at: 0)
         }
         return root
     }
 
     private func siegeLayer(color: UIColor) -> (CALayer, CAShapeLayer) {
-        // 围城：一枚小小的城圈——宣纸底、细墨圈，进攻方国色的弧随进度从正上方顺时针合拢；
-        // 中间一点国色，缓缓呼吸。直径 16 点，挂在城上，不挡地名。
-        let side: CGFloat = 20, mid = side / 2, radius: CGFloat = 7
+        // 围城：26×26pt 清晰宣纸城垣进度环（外墨波轻荡、3pt 国色进度弧顺时针合拢），中距缩放一眼读懂围城进展。
+        let side: CGFloat = 26, mid = side / 2, radius: CGFloat = 9.2
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: side, height: side)
         let circle = UIBezierPath(arcCenter: CGPoint(x: mid, y: mid), radius: radius, startAngle: -.pi / 2, endAngle: .pi * 1.5, clockwise: true)
         let paper = CAShapeLayer(); paper.frame = root.bounds
-        paper.path = UIBezierPath(ovalIn: CGRect(x: mid - radius - 1.5, y: mid - radius - 1.5, width: (radius + 1.5) * 2, height: (radius + 1.5) * 2)).cgPath
-        paper.fillColor = UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 0.82).cgColor
-        paper.strokeColor = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 0.45).cgColor; paper.lineWidth = 0.6
+        paper.path = UIBezierPath(ovalIn: CGRect(x: mid - radius - 2.0, y: mid - radius - 2.0, width: (radius + 2.0) * 2, height: (radius + 2.0) * 2)).cgPath
+        paper.fillColor = UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 0.88).cgColor
+        paper.strokeColor = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 0.55).cgColor; paper.lineWidth = 0.8
         let track = CAShapeLayer(); track.frame = root.bounds; track.path = circle.cgPath
-        track.fillColor = nil; track.strokeColor = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 0.14).cgColor; track.lineWidth = 2.4
+        track.fillColor = nil; track.strokeColor = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 0.16).cgColor; track.lineWidth = 3.0
         let ring = CAShapeLayer(); ring.frame = root.bounds; ring.path = circle.cgPath
-        ring.fillColor = nil; ring.strokeColor = color.cgColor; ring.lineWidth = 2.4; ring.lineCap = .round; ring.strokeEnd = 0
+        ring.fillColor = nil; ring.strokeColor = color.cgColor; ring.lineWidth = 3.0; ring.lineCap = .round; ring.strokeEnd = 0
         let core = CAShapeLayer(); core.frame = root.bounds
-        core.path = UIBezierPath(ovalIn: CGRect(x: mid - 2.2, y: mid - 2.2, width: 4.4, height: 4.4)).cgPath
+        core.path = UIBezierPath(ovalIn: CGRect(x: mid - 2.8, y: mid - 2.8, width: 5.6, height: 5.6)).cgPath
         core.fillColor = color.cgColor
-        let breathe = CAKeyframeAnimation(keyPath: "opacity"); breathe.values = [0.55, 1, 0.55]; breathe.duration = 1.8; breathe.repeatCount = .infinity
+        let breathe = CAKeyframeAnimation(keyPath: "opacity"); breathe.values = [0.55, 1, 0.55]; breathe.duration = 1.7; breathe.repeatCount = .infinity
         breathe.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         core.add(Self.calm(breathe), forKey: "breathe")
-        // 细微外圈墨波：轻缓扩散提示围城进行中，不遮地名。
         let pulse = CAShapeLayer(); pulse.frame = root.bounds; pulse.path = circle.cgPath
-        pulse.fillColor = nil; pulse.strokeColor = color.withAlphaComponent(0.55).cgColor; pulse.lineWidth = 0.9
-        let pScale = CABasicAnimation(keyPath: "transform.scale"); pScale.fromValue = 1.0; pScale.toValue = 1.55
-        let pFade = CABasicAnimation(keyPath: "opacity"); pFade.fromValue = 0.55; pFade.toValue = 0.0
-        let pGroup = CAAnimationGroup(); pGroup.animations = [pScale, pFade]; pGroup.duration = 2.0; pGroup.repeatCount = .infinity
+        pulse.fillColor = nil; pulse.strokeColor = color.withAlphaComponent(0.62).cgColor; pulse.lineWidth = 1.15
+        let pScale = CABasicAnimation(keyPath: "transform.scale"); pScale.fromValue = 1.0; pScale.toValue = 1.62
+        let pFade = CABasicAnimation(keyPath: "opacity"); pFade.fromValue = 0.62; pFade.toValue = 0.0
+        let pGroup = CAAnimationGroup(); pGroup.animations = [pScale, pFade]; pGroup.duration = 1.9; pGroup.repeatCount = .infinity
         pGroup.timingFunction = CAMediaTimingFunction(name: .easeOut)
         pulse.add(Self.calm(pGroup), forKey: "pulse")
         root.addSublayer(pulse); root.addSublayer(paper); root.addSublayer(track); root.addSublayer(ring); root.addSublayer(core)
@@ -389,37 +394,36 @@ final class EffectsView: UIView {
     }
 
     private func flashLayer(color: UIColor) -> CALayer {
-        // 攻占：换色交给地图上的扫色（FlipSweep），这里只插一面小旗——旗杆落下、落地处一圈细墨荡开、旗面招展，
-        // 然后淡去。不再铺半透明色盘（以前 190 点的色盘与粗环盖住整片地名）。
+        // 攻占：插下一面清晰招展的征服国旗 + 双重国色与水墨波纹 + 鎏金星芒。
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 120, height: 120)
         let ink = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 1)
         let ripple = CAShapeLayer(); ripple.frame = root.bounds
-        ripple.path = UIBezierPath(ovalIn: CGRect(x: 50, y: 58, width: 20, height: 8)).cgPath
-        ripple.fillColor = nil; ripple.strokeColor = ink.withAlphaComponent(0.55).cgColor; ripple.lineWidth = 1; ripple.opacity = 0
-        let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.4; grow.toValue = 2.2
-        let fadeRing = CAKeyframeAnimation(keyPath: "opacity"); fadeRing.values = [0, 0.9, 0]; fadeRing.keyTimes = [0, 0.2, 1]
+        ripple.path = UIBezierPath(ovalIn: CGRect(x: 48, y: 57, width: 24, height: 10)).cgPath
+        ripple.fillColor = nil; ripple.strokeColor = ink.withAlphaComponent(0.60).cgColor; ripple.lineWidth = 1.25; ripple.opacity = 0
+        let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.4; grow.toValue = 2.4
+        let fadeRing = CAKeyframeAnimation(keyPath: "opacity"); fadeRing.values = [0, 0.92, 0]; fadeRing.keyTimes = [0, 0.2, 1]
         let rippleGroup = CAAnimationGroup(); rippleGroup.animations = [grow, fadeRing]; rippleGroup.duration = 1.15
         rippleGroup.beginTime = CACurrentMediaTime() + 0.22; rippleGroup.timingFunction = CAMediaTimingFunction(controlPoints: 0.15, 0.6, 0.3, 1)
         rippleGroup.fillMode = .both; rippleGroup.isRemovedOnCompletion = false
         ripple.add(rippleGroup, forKey: "ripple"); root.addSublayer(ripple)
-        // 第二圈淡国色余波，与首圈错峰 0.14s 荡开
+        // 第二圈国色余波
         let echo = CAShapeLayer(); echo.frame = root.bounds
-        echo.path = UIBezierPath(ovalIn: CGRect(x: 48, y: 57, width: 24, height: 10)).cgPath
-        echo.fillColor = nil; echo.strokeColor = color.withAlphaComponent(0.65).cgColor; echo.lineWidth = 1.2; echo.opacity = 0
-        let echoGrow = CABasicAnimation(keyPath: "transform.scale"); echoGrow.fromValue = 0.5; echoGrow.toValue = 2.6
-        let echoFade = CAKeyframeAnimation(keyPath: "opacity"); echoFade.values = [0, 0.78, 0]; echoFade.keyTimes = [0, 0.22, 1]
+        echo.path = UIBezierPath(ovalIn: CGRect(x: 46, y: 56, width: 28, height: 12)).cgPath
+        echo.fillColor = nil; echo.strokeColor = color.withAlphaComponent(0.75).cgColor; echo.lineWidth = 1.5; echo.opacity = 0
+        let echoGrow = CABasicAnimation(keyPath: "transform.scale"); echoGrow.fromValue = 0.5; echoGrow.toValue = 2.8
+        let echoFade = CAKeyframeAnimation(keyPath: "opacity"); echoFade.values = [0, 0.85, 0]; echoFade.keyTimes = [0, 0.22, 1]
         let echoGroup = CAAnimationGroup(); echoGroup.animations = [echoGrow, echoFade]; echoGroup.duration = 1.25
         echoGroup.beginTime = CACurrentMediaTime() + 0.34; echoGroup.timingFunction = CAMediaTimingFunction(controlPoints: 0.15, 0.6, 0.3, 1)
         echoGroup.fillMode = .both; echoGroup.isRemovedOnCompletion = false
         echo.add(echoGroup, forKey: "echo"); root.addSublayer(echo)
-        let pole = CALayer(); pole.backgroundColor = ink.withAlphaComponent(0.85).cgColor
-        pole.bounds = CGRect(x: 0, y: 0, width: 1.2, height: 20); pole.anchorPoint = CGPoint(x: 0.5, y: 1); pole.position = CGPoint(x: 60, y: 62)
+        let pole = CALayer(); pole.backgroundColor = ink.withAlphaComponent(0.90).cgColor
+        pole.bounds = CGRect(x: 0, y: 0, width: 1.5, height: 24); pole.anchorPoint = CGPoint(x: 0.5, y: 1); pole.position = CGPoint(x: 60, y: 62)
         let cloth = CAShapeLayer()
-        let wave = UIBezierPath(); wave.move(to: .zero); wave.addQuadCurve(to: CGPoint(x: 12, y: 1), controlPoint: CGPoint(x: 6, y: -2))
-        wave.addLine(to: CGPoint(x: 10, y: 4.5)); wave.addLine(to: CGPoint(x: 12, y: 8))
-        wave.addQuadCurve(to: CGPoint(x: 0, y: 8), controlPoint: CGPoint(x: 6, y: 10)); wave.close()
-        cloth.path = wave.cgPath; cloth.fillColor = color.cgColor; cloth.strokeColor = ink.withAlphaComponent(0.5).cgColor; cloth.lineWidth = 0.5
-        cloth.frame = CGRect(x: 0.6, y: 0, width: 12, height: 9); cloth.anchorPoint = CGPoint(x: 0, y: 0.5); cloth.position = CGPoint(x: 0.6, y: 4.5)
+        let wave = UIBezierPath(); wave.move(to: .zero); wave.addQuadCurve(to: CGPoint(x: 15, y: 1.5), controlPoint: CGPoint(x: 7.5, y: -2.2))
+        wave.addLine(to: CGPoint(x: 12.5, y: 5.5)); wave.addLine(to: CGPoint(x: 15, y: 10))
+        wave.addQuadCurve(to: CGPoint(x: 0, y: 10), controlPoint: CGPoint(x: 7.5, y: 12.2)); wave.close()
+        cloth.path = wave.cgPath; cloth.fillColor = color.cgColor; cloth.strokeColor = ink.withAlphaComponent(0.65).cgColor; cloth.lineWidth = 0.7
+        cloth.frame = CGRect(x: 0.75, y: 0, width: 15, height: 11); cloth.anchorPoint = CGPoint(x: 0, y: 0.5); cloth.position = CGPoint(x: 0.75, y: 5.5)
         let flutter = CAKeyframeAnimation(keyPath: "transform.scale.x"); flutter.values = [1, 0.86, 1.03, 0.92, 1]; flutter.duration = 1.0; flutter.repeatCount = .infinity
         flutter.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         cloth.add(Self.calm(flutter), forKey: "flutter"); pole.addSublayer(cloth)

@@ -138,8 +138,13 @@ extension NativeEngine {
         // 地形 and the pace an army marches over it (app rules), from the province's main biome.
         let ratios = land.isNull || land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
         let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
+        let tProf = ForceMotion.terrainProfile(biome: main, mountain: land.mountain.isTruthy)
         o.terrain = JS(["海滨", "炎热荒漠", "寒冷荒漠", "稀树草原", "草原", "热带季雨林", "温带森林", "热带雨林", "温带雨林", "针叶林", "苔原", "冰川", "沼泽"][min(12, main)])
-        o.pace = JS(land.mountain.isTruthy ? 0.5 : ForceMotion.terrainSpeed[min(ForceMotion.terrainSpeed.count - 1, main)])
+        o.pace = JS(UnitKinds.enabled ? tProf.speed : (land.mountain.isTruthy ? 0.5 : ForceMotion.terrainSpeed[min(ForceMotion.terrainSpeed.count - 1, main)]))
+        o.terrainTax = JS(tProf.tax)
+        o.terrainAttrition = JS(tProf.attritionLabel)
+        o.terrainDefense = JS(tProf.defenseBonus)
+        o.terrainSummary = JS(tProf.summary)
         // 特产 (app rules) and its index for the custom picker.
         let good = Trade.of(r, id)
         o.specialty = JS(Trade.goods[good]); o.specialtyIndex = JS(good)

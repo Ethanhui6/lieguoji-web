@@ -678,14 +678,14 @@ struct GameActionLabel: View {
         case "person.2", "person.2.fill": return .alliance
         case "building.columns", "building.columns.fill", "building.2": return .polity
         case "book", "book.closed", "book.pages", "character.book.closed.fill", "list.bullet.rectangle": return .chronicle
-        case "chart.bar", "chart.bar.fill", "chart.bar.xaxis", "list.number": return .ranking
+        case "chart.bar", "chart.bar.fill", "chart.bar.xaxis", "list.number", "chart.line.uptrend.xyaxis": return .ranking
         case "banknote", "dollarsign.circle": return .economy
         case "shippingbox", "shippingbox.fill": return .goods
         case "square.grid.3x3", "square.grid.3x3.fill", "square.grid.2x2": return .region
         case "sun.max", "sun.max.fill": return .religion
         case "heart", "heart.circle": return .marriage
         case "seal", "checkmark.seal": return .edict
-        case "scope", "location", "mappin", "mappin.and.ellipse", "star", "star.fill": return .locate
+        case "scope", "location", "mappin", "mappin.and.ellipse", "star", "star.fill", "hand.tap": return .locate
         case "clock.arrow.circlepath", "arrow.counterclockwise", "arrow.counterclockwise.circle", "arrow.counterclockwise.circle.fill": return .replay
         case "backward", "backward.fill": return .rewind
         case "backward.frame.fill", "backward.end.fill": return .stepBack
@@ -705,10 +705,10 @@ struct GameActionLabel: View {
         case "arrow.triangle.turn.up.right.diamond", "arrow.up.right", "figure.walk": return .march
         case "drop", "drop.fill", "water.waves": return .lake
         case "circle.hexagongrid", "sparkles", "aqi.medium": return .island
-        case "plus", "plus.circle", "plus.circle.fill": return .plus
-        case "minus", "minus.circle": return .minus
+        case "plus", "plus.circle", "plus.circle.fill", "person.badge.plus": return .plus
+        case "minus", "minus.circle", "person.badge.minus": return .minus
         case "trash", "trash.fill", "xmark.bin": return .trash
-        case "arrow.left.arrow.right", "arrow.2.squarepath", "square.stack.3d.up": return .swap
+        case "arrow.left.arrow.right", "arrow.2.squarepath", "square.stack.3d.up", "link.badge.plus", "rectangle.portrait.and.arrow.right": return .swap
         case "eye", "eye.fill", "eye.slash": return .eye
         case "calendar", "calendar.badge.clock", "clock", "clock.fill": return .calendar
         case "bookmark", "bookmark.fill", "opticaldisc", "tray.full": return .save
@@ -717,8 +717,8 @@ struct GameActionLabel: View {
         case "speaker.wave.2", "speaker.wave.2.fill", "music.note": return .sound
         case "gauge.with.dots.needle.67percent", "speedometer", "bolt.fill", "hare", "tortoise": return .speed
         case "trophy", "trophy.fill", "medal": return .trophy
-        case "person", "person.fill", "person.crop.circle": return .person
-        case "leaf", "leaf.fill", "hand.raised", "peace": return .peace
+        case "person", "person.fill", "person.crop.circle", "person.text.rectangle": return .person
+        case "leaf", "leaf.fill", "hand.raised", "hand.raised.fill", "peace": return .peace
         case "chevron.down", "chevron.compact.down": return .chevronDown
         case "chevron.right", "chevron.compact.right": return .chevronRight
         case "desktopcomputer", "laptopcomputer", "cpu": return .computer

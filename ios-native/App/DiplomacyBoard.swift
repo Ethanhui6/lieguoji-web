@@ -118,47 +118,48 @@ struct DiplomacyBoard: View {
     var body: some View {
         let warmGold = Color(red: 0.66, green: 0.46, blue: 0.14)
         VStack(alignment: .leading, spacing: 14) {
-            // 1. 集成「切换观察国」的鸿胪邦交态势卡（彻底告别外部孤零零的重复菜单框）
-            VStack(alignment: .leading, spacing: 11) {
-                HStack(spacing: 10) {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous).fill(color(nation)).frame(width: 6, height: 38)
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text(fullName(nation)).font(Theme.kai(20)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
-                            if let onSwitchNation {
-                                Button {
-                                    GameFeel.shared.tap()
-                                    onSwitchNation()
-                                } label: {
-                                    HStack(spacing: 3) {
-                                        Text("切换").font(Theme.caption)
-                                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 9, weight: .semibold))
+            // 1. 集成「切换观察国」的鸿胪邦交态势卡（统一 Group2 卡片语言与手绘图标）
+            Group2 {
+                VStack(alignment: .leading, spacing: 11) {
+                    HStack(spacing: 10) {
+                        RoundedRectangle(cornerRadius: 4, style: .continuous).fill(color(nation)).frame(width: 6, height: 38)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 6) {
+                                Text(fullName(nation)).font(Theme.kai(20)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                                if let onSwitchNation {
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        onSwitchNation()
+                                    } label: {
+                                        HStack(spacing: 3) {
+                                            Text("切换").font(Theme.caption)
+                                            InkIcon(glyph: .chevronDown, size: 11, weight: 1.8)
+                                        }
+                                        .foregroundStyle(Theme.seal)
+                                        .padding(.horizontal, 8).frame(height: 22)
+                                        .background(Theme.seal.opacity(0.10), in: Capsule())
                                     }
-                                    .foregroundStyle(Theme.seal)
-                                    .padding(.horizontal, 8).frame(height: 22)
-                                    .background(Theme.seal.opacity(0.10), in: Capsule())
+                                    .buttonStyle(PressStyle())
                                 }
-                                .buttonStyle(PressStyle())
                             }
+                            Text(state.wars.isEmpty ? "四海承平 · 接壤 \(info?.neighbors.count ?? 0) 邦" : "天下 \(state.wars.count) 场战事 · 接壤 \(info?.neighbors.count ?? 0) 邦")
+                                .font(Theme.caption).foregroundStyle(Theme.ink2)
                         }
-                        Text(state.wars.isEmpty ? "四海承平 · 接壤 \(info?.neighbors.count ?? 0) 邦" : "天下 \(state.wars.count) 场战事 · 接壤 \(info?.neighbors.count ?? 0) 邦")
-                            .font(Theme.caption).foregroundStyle(Theme.ink2)
+                        Spacer(minLength: 4)
+                        HStack(spacing: 6) {
+                            LinkSeal(mark: "都", color: Theme.ink2) { fly(nation) }
+                            LinkSeal(mark: "国", color: Theme.jade) { openNation(nation) }
+                        }
                     }
-                    Spacer(minLength: 4)
-                    HStack(spacing: 6) {
-                        LinkSeal(mark: "都", color: Theme.ink2) { fly(nation) }
-                        LinkSeal(mark: "国", color: Theme.jade) { openNation(nation) }
+                    HStack(spacing: 7) {
+                        posturePill(label: "敌国", count: info?.enemies.count ?? 0, tint: Theme.seal)
+                        posturePill(label: "同盟", count: info?.allies.count ?? 0, tint: Theme.jade)
+                        posturePill(label: "条约", count: info?.pacts.count ?? 0, tint: warmGold)
+                        posturePill(label: "附庸", count: info?.vassals.count ?? 0, tint: Theme.ink2)
                     }
                 }
-                HStack(spacing: 7) {
-                    posturePill(label: "敌国", count: info?.enemies.count ?? 0, tint: Theme.seal)
-                    posturePill(label: "同盟", count: info?.allies.count ?? 0, tint: Theme.jade)
-                    posturePill(label: "条约", count: info?.pacts.count ?? 0, tint: warmGold)
-                    posturePill(label: "附庸", count: info?.vassals.count ?? 0, tint: Theme.ink2)
-                }
+                .padding(14)
             }
-            .padding(14)
-            .paperCard(tint: (info?.enemies.isEmpty == false) ? Theme.seal : nil)
             .padding(.horizontal, Theme.Layout.pageInset)
 
             // 2. 霸权威胁警示与反霸包围网

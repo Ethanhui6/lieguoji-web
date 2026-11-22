@@ -353,7 +353,7 @@ extension MapLayers {
     public static func fineDetail(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
         let grass = RGB(hex: 0x4F5F36), dune = RGB(hex: 0x876C3C), hill = RGB(hex: 0x57503A), field = RGB(hex: 0xC9B27A), furrow = RGB(hex: 0x74633A), road = RGB(hex: 0x5C4728)
-        let snow = RGB(hex: 0xF5EFE0), peakInk = RGB(hex: 0x3D352A), milestone = RGB(hex: 0x8E3B2B)
+        let milestone = RGB(hex: 0x8E3B2B)
         let shore = shoreCells(map)
         var cityGrid = [Int64: [(Float, Float)]]()
         func cell(_ x: Float, _ y: Float) -> Int64 { Int64(floor(x / 24)) << 32 | Int64(Int32(floor(y / 24))) & 0xFFFF_FFFF }
@@ -372,17 +372,6 @@ extension MapLayers {
         for c in 0..<map.cellCount where map.isLand(c) && !shore[c] {
             let h = Float(map.elevation[c]), biome = map.biome[c], x = map.sites[c * 2], y = map.sites[c * 2 + 1], pick = hash(c) % 100
             let key = Int64(floor(x / 13)) << 32 | Int64(Int32(floor(y / 13))) & 0xFFFF_FFFF
-            if h >= 58 {
-                // 高峰雪冠与水墨山脊皴笔（拉近山脉可见细致山峰层次）
-                if pick < 36 && taken.insert(key).inserted {
-                    let span: Float = 5.2 + Float(hash(c &+ 7) % 3)
-                    let ht: Float = 4.6 + Float(hash(c &+ 13) % 3)
-                    m.fill([x, y - ht, x - span * 0.42, y - ht * 0.35, x + span * 0.42, y - ht * 0.35], snow, alpha: 0.72)
-                    m.polyline([x - span, y, x, y - ht, x + span, y], width: 0.55, peakInk, alpha: 0.52)
-                    m.segment(x + span * 0.12, y - ht * 0.8, x + span * 0.65, y - ht * 0.1, width: 0.4, peakInk, alpha: 0.35)
-                }
-                continue
-            }
             if h >= 55 || (biome >= 5 && biome <= 9) { continue }
             if h < 40 && pick < 32 && nearCity(x, y) {
                 if !taken.insert(key).inserted { continue }

@@ -123,23 +123,12 @@ struct GameView: View {
         .overlay(alignment: .top) {
             VStack(spacing: 8) {
                 topBar
-                if controller.play.showScrollPlacard && panel == nil && controller.marchingArmy == nil && controller.marchingFleet == nil && controller.paintNation == nil && controller.pickPrompt == nil && controller.groupArmies.isEmpty {
-                    ScrollPowerPlacard(
-                        model: model,
-                        onOpenNation: { n in nationDetent = .fraction(0.38); show(.nation(n)) },
-                        onHide: {
-                            controller.play.showScrollPlacard = false
-                            say("已关闭御案天下大势悬浮小笺，可在菜单 › 地图显示重新开启")
-                        }
-                    )
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
                 if controller.marchingArmy != nil { marchBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if controller.marchingFleet != nil { fleetBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if controller.paintNation != nil { paintBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 if let prompt = controller.pickPrompt {
                     HStack(spacing: 10) {
-                        Image(systemName: "hand.tap").foregroundStyle(Theme.seal)
+                        InkIcon(glyph: .locate, size: 16, weight: 1.8).foregroundStyle(Theme.seal)
                         Text(prompt).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                         Button("取消") { controller.pickPrompt = nil; controller.onPick = nil; if controller.onTerrainStrokeEnd != nil && controller.brushName == nil && model.controller.terrainBrush { controller.terrainBrush = false; controller.onTerrainStroke = nil; controller.onTerrainStrokeEnd = nil } }.font(Theme.body).foregroundStyle(Theme.seal)
                     }
@@ -195,10 +184,10 @@ struct GameView: View {
                     bottomBar
                 }
             }
-            .offset(y: chromeIn ? 0 : 130).opacity(chromeIn ? 1 : 0)
-            .animation(Motion.drift.delay(0.12), value: chromeIn)
+            .offset(y: chromeIn ? 0 : 110).opacity(chromeIn ? 1 : 0)
+            .animation(Motion.drift.delay(0.06), value: chromeIn)
             .opacity(wallpaper || model.replayActive ? 0 : 1).allowsHitTesting(!wallpaper && !model.replayActive)
-            .task { try? await Task.sleep(nanoseconds: 250_000_000); entered = true }
+            .task { try? await Task.sleep(nanoseconds: 60_000_000); entered = true }
         }
         .overlay(alignment: .leading) {
             if landscape {
@@ -238,25 +227,6 @@ struct GameView: View {
                 .opacity(hideSwitcher ? 0 : 1)
                 .allowsHitTesting(viewsOpen && !hideSwitcher)
                 .padding(.top, 54).padding(.trailing, Theme.Control.screenInset)
-        }
-        .overlay {
-            // 可隐藏的精致四角吸附局势浮印：收起为小巧印章，展开含战况/外交/回放/启停/倍速与一键隐藏。
-            if controller.play.showTacticalPill && chromeIn && !ShotTour.on && !wallpaper && !model.replayActive && panel == nil
-                && controller.paintNation == nil && controller.marchingArmy == nil
-                && controller.marchingFleet == nil && controller.pickPrompt == nil && controller.groupArmies.isEmpty {
-                FloatingTacticalPill(
-                    model: model,
-                    openWars: { MilitarySheet.openOn = "wars"; show(.military) },
-                    openDiplomacy: { show(.diplomacy) },
-                    openReplay: { requestReplay(atDay: nil) },
-                    onHide: {
-                        controller.play.showTacticalPill = false
-                        say("已隐藏局势浮印，可在菜单 › 声音与其他重新开启")
-                    },
-                    landscape: landscape
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.85)))
-            }
         }
         .opacity(controller.reveal >= 1 ? 1 : 0)
         .animation(Motion.panel, value: controller.reveal >= 1)
@@ -439,7 +409,7 @@ struct GameView: View {
         HStack {
             Button { back() } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "chevron.left").font(.system(size: 13, weight: .regular))
+                    InkIcon(glyph: .chevronRight, size: 12, weight: 1.85).rotationEffect(.degrees(180))
                     Text("返回" + last.title).font(Theme.body)
                 }
                 .foregroundStyle(Theme.seal).padding(.horizontal, 12).frame(height: 30)
@@ -613,7 +583,7 @@ struct GameView: View {
                 }
                 // 远程计算: the computer simulates.
                 if model.remoteAddress != nil {
-                    Image(systemName: "desktopcomputer").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.jade)
+                    InkIcon(glyph: .computer, size: 13, weight: 1.75).foregroundStyle(Theme.jade)
                         .transition(.scale.combined(with: .opacity))
                 }
             }

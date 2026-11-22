@@ -52,6 +52,15 @@ public enum CombatReader {
         let official = militaryLeaderSkill(r, nation, enemy: enemy) ?? leader.map { People.skills($0).military } ?? 50
         var provinceDefense = 1.0
         if let d = defense { provinceDefense = !d.locked.isTruthy && d.manualSet.isTruthy && d.manualFortress.isTruthy ? 3 : min(10, max(1, f(d.storedDefense.asNumber))) }
+        // 本作规则：天然地形守险（山地/沼泽/深林）为守军提供温和而真实的城防与据险修正，平畴则更利于攻防展开。
+        if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy, let land {
+            let ratios = land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
+            let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
+            let bonus = ForceMotion.terrainProfile(biome: main, mountain: land.mountain.isTruthy).defenseBonus
+            // 仅将天然地利温和叠加到防御修正（最大 ±20%），与兵种地形表协同发挥战略纵深
+            let factor = 1.0 + (bonus - 1.0) * 0.65
+            provinceDefense = min(10, max(0.85, f(provinceDefense * f(factor))))
+        }
         var coreDefense = 1.0
         if let o = owner, let d = defense, d.distance.asNumber != 2147483647, d.distance.asNumber <= o.coreThreshold.asNumber {
             coreDefense = o.traits.asArray.contains { $0.asString == "CoreDefense" } ? f(1.5) : f(1.15)

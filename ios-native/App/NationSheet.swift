@@ -180,15 +180,17 @@ struct NationSheet: View {
     @State private var religionChoice = ""
     @State private var info: NationInfo?
     @State private var failed = false
-    /// 分类: the page's tabs（超过 4 项时由 ChipPicker 自动横滑并带滑动朱印）。
-    enum Tab: String, CaseIterable { case overview = "概览", history = "史册", decrees = "政令", territory = "疆土", court = "朝政", military = "军事", diplomacy = "外交", custom = "自定义" }
+    /// 分类：精简为五页（概览 / 朝政 / 军事 / 外交 / 治理），免横滑翻找；政令、疆土、史册、定制统一归入「治理」。
+    enum Tab: String, CaseIterable { case overview = "概览", court = "朝政", military = "军事", diplomacy = "外交", govern = "治理" }
     @State private var tab: Tab = .overview
+    @State private var governSub = "decrees"
     @State private var enthroning = false
     @State private var confirmWarNeighbors = false
     @State private var pressMenu: PressMenu?
     @State private var flash: String?
     /// The screenshot tour opens the page on a given tab.
     static var tourTab: Tab?
+    static var tourGovernSub: String?
     /// CI 巡游：载入后直接打开第一个世家的族谱（从真实入口进出族谱）。
     static var tourFamily = false
     @State private var nameText = ""
@@ -271,20 +273,6 @@ struct NationSheet: View {
                                 numberEdit = NumberEdit(title: "国库", unit: "金", value: info.gold) { v in await model.editNation(nation, gold: v, destiny: nil, polity: nil) }
                             } : nil),
                         ])
-                        if info.alive {
-                            NationQuickBar(
-                                onPaint: { paint(nation) },
-                                onPlaceArmy: { placeArmy(nation) },
-                                onDecrees: { withAnimation(Motion.tap) { tab = .decrees } },
-                                onTerritory: { withAnimation(Motion.tap) { tab = .territory } },
-                                onCapital: {
-                                    if nation < map.meta.nations.count, map.meta.cities.indices.contains(map.meta.nations[nation].capital) {
-                                        let c = map.meta.cities[map.meta.nations[nation].capital]
-                                        lower(); model.controller.showPlace(x: Double(c.x), y: Double(c.y))
-                                    }
-                                }
-                            )
-                        }
                         NationTabs(tab: $tab)
                         if bodyReady || ShotTour.on {
                             tabContent(info, map, state)
@@ -306,7 +294,11 @@ struct NationSheet: View {
                 if tab == .court, postList.isEmpty { postList = await model.posts(nation) }
             }
             .onAppear {
-                if let t = Self.tourTab { tab = t; customPane = Self.tourPane }
+                if let t = Self.tourTab {
+                    tab = t
+                    if let sub = Self.tourGovernSub { governSub = sub }
+                    customPane = Self.tourPane
+                }
                 if !bodyReady { Task { await Task.yield(); bodyReady = true } }
                 model.controller.relationsNation = nation
                 if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count {
@@ -447,20 +439,67 @@ struct NationSheet: View {
     }
     @ViewBuilder private func overviewTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         LazyVStack(alignment: .leading, spacing: 14) {
+                if info.alive {
+                    HStack(spacing: 8) {
+                        Button {
+                            GameFeel.shared.tap()
+                            if nation < map.meta.nations.count, map.meta.cities.indices.contains(map.meta.nations[nation].capital) {
+                                let c = map.meta.cities[map.meta.nations[nation].capital]
+                                lower(); model.controller.showPlace(x: Double(c.x), y: Double(c.y))
+                            }
+                        } label: {
+                            HStack(spacing: 5) {
+                                InkIcon(glyph: .locate, size: 15, weight: 1.7)
+                                Text("定位都城").font(Theme.label)
+                            }
+                            .foregroundStyle(Theme.ink)
+                            .frame(maxWidth: .infinity).frame(height: 36)
+                            .background(Theme.paper2.opacity(0.85), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.line, lineWidth: 0.7))
+                        }
+                        .buttonStyle(PressStyle())
+
+                        Button { GameFeel.shared.tap(); paint(nation) } label: {
+                            HStack(spacing: 5) {
+                                InkIcon(glyph: .brush, size: 15, weight: 1.7)
+                                Text("绘制疆域").font(Theme.label)
+                            }
+                            .foregroundStyle(Theme.ink)
+                            .frame(maxWidth: .infinity).frame(height: 36)
+                            .background(Theme.paper2.opacity(0.85), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.line, lineWidth: 0.7))
+                        }
+                        .buttonStyle(PressStyle())
+
+                        Button { GameFeel.shared.tap(); placeArmy(nation) } label: {
+                            HStack(spacing: 5) {
+                                InkIcon(glyph: .military, size: 15, weight: 1.7)
+                                Text("放置新军").font(Theme.label)
+                            }
+                            .foregroundStyle(Theme.seal)
+                            .frame(maxWidth: .infinity).frame(height: 36)
+                            .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.seal.opacity(0.32), lineWidth: 0.7))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                    .padding(.horizontal, 16)
+                }
                 if let p = info.power, p.count >= 2 {
                     // 国力走势: rise and fall at a glance.
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("国力走势").font(Theme.label).foregroundStyle(Theme.ink2)
-                            let change = (p.last ?? 0) - (p.first ?? 0)
-                            Text((change >= 0 ? "↑ " : "↓ ") + String(format: "%.0f%%", abs(change) / max(1, p.first ?? 1) * 100))
-                                .font(Theme.section).foregroundStyle(change >= 0 ? Theme.jade : Theme.seal)
-                            Text(p.count >= 24 ? "近 \(p.count / 12) 年" : "近 \(p.count) 个月").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    Group2 {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("国力走势").font(Theme.label).foregroundStyle(Theme.ink2)
+                                let change = (p.last ?? 0) - (p.first ?? 0)
+                                Text((change >= 0 ? "↑ " : "↓ ") + String(format: "%.0f%%", abs(change) / max(1, p.first ?? 1) * 100))
+                                    .font(Theme.section).foregroundStyle(change >= 0 ? Theme.jade : Theme.seal)
+                                Text(p.count >= 24 ? "近 \(p.count / 12) 年" : "近 \(p.count) 个月").font(Theme.caption).foregroundStyle(Theme.ink2)
+                            }
+                            Sparkline(values: p).frame(height: 44)
                         }
-                        Sparkline(values: p).frame(height: 46)
+                        .padding(.horizontal, 16).padding(.vertical, 10)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .paperCard()
                     .padding(.horizontal, 16)
                 }
                 FoldSection("基本信息", expanded: true) {
@@ -492,8 +531,8 @@ struct NationSheet: View {
                             Row(label: h.premierTitle, value: (h.premierName ?? "出缺") + (h.premierRules ? " · 掌国政" : "") + (h.elected ? " · 大选组阁" : ""))
                             Divider2()
                         }
-                        EditRow(label: "政体", value: info.styleLabel ?? Names.polity[info.polity] ?? info.polity) { customPane = .polity; tab = .custom }; Divider2()
-                        // 都城: tap to see it on the map, and to move it by tapping the map.
+                        EditRow(label: "政体", value: info.styleLabel ?? Names.polity[info.polity] ?? info.polity) { governSub = "custom"; customPane = .polity; tab = .govern }; Divider2()
+                        // 都城: tap to move it by tapping the map.
                         EditRow(label: "都城", value: capitalName(map, nation < map.meta.nations.count ? map.meta.nations[nation] : nil) ?? "—") {
                             let owned = state.owners.indices.filter { state.owners[$0] == nation }
                             pickProvince("点选新都城：本国有城池的州郡") { p in
@@ -501,19 +540,8 @@ struct NationSheet: View {
                                 Task { await run(success: "迁都\(map.meta.provinces[p].name)") { await model.setCapital(nation, province: p) } }
                             }
                         }
-                        if nation < map.meta.nations.count, map.meta.cities.indices.contains(map.meta.nations[nation].capital) {
-                            Divider2()
-                            Button {
-                                let c = map.meta.cities[map.meta.nations[nation].capital]
-                                lower(); model.controller.showPlace(x: Double(c.x), y: Double(c.y)); GameFeel.shared.tap()
-                            } label: {
-                                HStack { Text("在地图上查看都城").foregroundStyle(Theme.seal); Spacer(); Image(systemName: "scope").foregroundStyle(Theme.seal) }
-                                    .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                        }
                         Divider2()
-                        EditRow(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)") { customPane = .faith; tab = .custom }; Divider2()
+                        EditRow(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)") { governSub = "custom"; customPane = .faith; tab = .govern }; Divider2()
                         ReformCard(model: model, nation: nation, info: info, say: { flash = $0 }, reload: { await reload() })
                         if Faith.catalog[info.religion] != nil { FaithCard(religion: info.religion, state: model.state, map: map, effect: info.creedEffect, shares: info.faiths); Divider2() }
                         EditRow(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金" + Self.percent(info.bonus?["income"])) {
@@ -535,20 +563,12 @@ struct NationSheet: View {
                 }
                 FoldSection("财政", expanded: false, summary: "月入 \(Int(info.goldPerMonth).formatted()) 金 · 国库 \(Names.wan(Int(info.gold)))") { FinanceSection(model: model, nation: nation, day: state.day / 30, say: { flash = $0 }) }
                 FoldSection("特产与贸易", expanded: false, summary: "特产、商路与贸易伙伴") { TradeSection(model: model, map: map, nation: nation, day: state.day / 30) }
-                Group2 {
-                    Button(action: openPeople) { MenuRow(symbol: "person.2", title: "人物") }.buttonStyle(.plain)
-                    Divider2()
-                    Button(action: openWars) { MenuRow(symbol: "flag.2.crossed", title: info.wars.isEmpty ? "战争" : "战争（\(info.wars.count)）") }.buttonStyle(.plain)
-                    Divider2()
-                    Button(action: openTalks) { MenuRow(symbol: "scroll", title: "外交") }.buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16)
                 if !regime.history.isEmpty {
                     // 政体沿革: the polities this state has had, and the current one's standing bonus.
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 6) {
                             ForEach(Array(regime.history.suffix(6).enumerated()), id: \.offset) { i, p in
-                                if i > 0 { Image(systemName: "arrow.right").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.ink2) }
+                                if i > 0 { InkIcon(glyph: .chevronRight, size: 10, weight: 1.8).foregroundStyle(Theme.ink2) }
                                 Text(p).font(Theme.label).foregroundStyle(i == min(5, regime.history.count - 1) ? Theme.seal : Theme.ink2)
                             }
                         }
@@ -559,12 +579,12 @@ struct NationSheet: View {
                 // 国史: the chronicle entries naming this state, newest first (each locatable on the map).
                 FoldSection("国史", expanded: false, summary: history.first.map { "第\($0.day + 1)日 · " + $0.text } ?? "尚无记载") {
                     Group2 {
-                        Button { withAnimation(Motion.tap) { tab = .history } } label: {
+                        Button { withAnimation(Motion.tap) { governSub = "history"; tab = .govern } } label: {
                             HStack(spacing: 8) {
                                 SealFace(text: "纪", size: 20)
                                 Text("查看历代君主世系、强势评级与完整史册").font(Theme.body).foregroundStyle(Theme.seal)
                                 Spacer()
-                                Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(Theme.seal)
+                                InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal)
                             }
                             .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
                         }
@@ -586,7 +606,7 @@ struct NationSheet: View {
                                         model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
                                         fly(p)
                                     } label: {
-                                        Image(systemName: "scope").font(.system(size: 12)).foregroundStyle(Theme.seal)
+                                        InkIcon(glyph: .locate, size: 13, weight: 1.7).foregroundStyle(Theme.seal)
                                             .frame(width: 26, height: 26).background(Theme.seal.opacity(0.08), in: Circle())
                                     }
                                     .buttonStyle(PressStyle())
@@ -784,28 +804,29 @@ struct NationSheet: View {
 
                         if !pd.transitions.isEmpty {
                             FoldSection("政体更迭与政变（\(pd.transitions.count) 项）", expanded: false, summary: "立宪 · 政变 · 革命 · 复辟") {
-                                VStack(spacing: 8) {
-                                    ForEach(pd.transitions) { tr in
+                                Group2 {
+                                    ForEach(Array(pd.transitions.enumerated()), id: \.element.id) { idx, tr in
                                         Button {
                                             GameFeel.shared.tap()
                                             transitionConfirm = tr
                                         } label: {
                                             HStack(spacing: 10) {
-                                                InkIcon(glyph: tr.dramatic ? .war : .polity, size: 18, weight: 1.8, accent: (tr.dramatic ? Theme.seal : Theme.jade).opacity(0.24))
+                                                InkIcon(glyph: tr.dramatic ? .war : .polity, size: 17, weight: 1.75, accent: (tr.dramatic ? Theme.seal : Theme.jade).opacity(0.24))
                                                     .foregroundStyle(tr.dramatic ? Theme.seal : Theme.jade)
-                                                    .frame(width: 30, height: 30)
+                                                    .frame(width: 28, height: 28)
                                                     .background((tr.dramatic ? Theme.seal : Theme.jade).opacity(0.09), in: Circle())
                                                 VStack(alignment: .leading, spacing: 2) {
                                                     Text(tr.title).font(Theme.body).foregroundStyle(Theme.ink)
                                                     Text(tr.subtitle).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                                                 }
                                                 Spacer(minLength: 4)
-                                                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(tr.dramatic ? Theme.seal : Theme.jade)
+                                                InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(tr.dramatic ? Theme.seal : Theme.jade)
                                             }
                                             .padding(.horizontal, 14).padding(.vertical, 10)
-                                            .paperCard(tint: tr.dramatic ? Theme.seal : Theme.jade)
+                                            .contentShape(Rectangle())
                                         }
-                                        .buttonStyle(PressStyle())
+                                        .buttonStyle(.plain)
+                                        if idx < pd.transitions.count - 1 { Divider2() }
                                     }
                                 }
                                 .padding(.horizontal, Theme.Layout.pageInset)
@@ -824,21 +845,25 @@ struct NationSheet: View {
                         }
                     }
 
-                    HStack(spacing: 10) {
+                    HStack(spacing: 8) {
                         Button {
                             GameFeel.shared.tap()
                             Task { await run(success: "已为各州补齐总督") { await model.edit("nationDiplomacyOrder", ["n": nation, "kind": "fillGovernors"]) } }
-                        } label: { paneAction("一键补齐总督", "person.badge.plus") }.buttonStyle(PressStyle())
+                        } label: { paneAction("补齐总督", "person.badge.plus") }.buttonStyle(PressStyle())
                         Button {
                             GameFeel.shared.tap()
                             enthroning = true
                         } label: { paneAction("禅位择君", "crown") }.buttonStyle(PressStyle())
+                        Button {
+                            GameFeel.shared.tap()
+                            openPeople()
+                        } label: { paneAction("人物录", "person") }.buttonStyle(PressStyle())
                     }
                     .padding(.horizontal, 16)
                 }
                 if let court = info.court, info.alive { FoldSection("朝堂", expanded: true) { courtView(court, map) } }
                 if let court = info.court, info.alive, !court.houses.isEmpty {
-                    FoldSection("朝堂世家（\(court.houses.count)）", expanded: true, summary: "\(court.houses.count) 家门阀") { housesSection(court) }
+                    FoldSection("朝堂世家（\(court.houses.count)）", expanded: court.houses.count <= 4, summary: "\(court.houses.count) 家门阀") { housesSection(court) }
                 }
                 if let list = info.court?.governorList, !list.isEmpty, info.alive {
                     let filled = list.filter { $0.holder != nil }.count
@@ -854,7 +879,7 @@ struct NationSheet: View {
                                             Text(fit >= 0.4 ? "称职" : fit >= 0 ? "平庸" : "失职").font(Theme.label)
                                                 .foregroundStyle(fit >= 0.4 ? Theme.jade : fit >= 0 ? Theme.ink2 : Theme.seal)
                                         }
-                                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
+                                        InkIcon(glyph: .chevronRight, size: 12, weight: 1.6).foregroundStyle(Theme.ink2)
                                     }
                                     .padding(.horizontal, 16).padding(.vertical, 8).contentShape(Rectangle())
                                 }
@@ -870,7 +895,7 @@ struct NationSheet: View {
                     FoldSection("叛乱形势", expanded: u.open, summary: u.open ? "有起事之虞" : "尚属安定") {
                         Group2 {
                             HStack(spacing: 10) {
-                                Image(systemName: u.open ? "flame" : "checkmark.shield").font(.system(size: 15)).foregroundStyle(u.open ? Theme.seal : Theme.jade)
+                                InkIcon(glyph: u.open ? .fire : .peace, size: 15, weight: 1.7).foregroundStyle(u.open ? Theme.seal : Theme.jade)
                                 Text(u.status).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
                                 Spacer(minLength: 6)
                                 if let d = u.destiny { Text("国运 \(Int(d))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit() }
@@ -969,7 +994,7 @@ struct NationSheet: View {
                                         if i == 0 { PaperTag(text: "执政") }
                                         Spacer()
                                         Text("\(p.seats) 席").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
-                                        Image(systemName: "ellipsis.circle").font(.system(size: 12, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.75))
+                                        InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75))
                                     }
                                     .padding(.horizontal, 16).padding(.top, 7).contentShape(Rectangle())
                                 }
@@ -995,7 +1020,7 @@ struct NationSheet: View {
                                         Text(p.holder?.name ?? "空缺").font(Theme.body).foregroundStyle(p.holder == nil ? Theme.ink2 : Theme.ink).lineLimit(1)
                                         Spacer()
                                         if let v = p.value { Text("\(["魅", "军", "外", "政"][min(3, max(0, p.skill))])\(Int(v))").font(Theme.caption).foregroundStyle(v >= 60 ? Theme.jade : v < 40 ? Theme.seal : Theme.ink2).monospacedDigit() }
-                                        Image(systemName: p.effect == "gold" ? "dollarsign.circle" : p.effect == "morale" ? "shield" : "sparkles").font(.system(size: 12)).foregroundStyle(Theme.ink2)
+                                        InkIcon(glyph: p.effect == "gold" ? .economy : p.effect == "morale" ? .military : .crown, size: 13, weight: 1.6).foregroundStyle(Theme.ink2)
                                     }
                                     .padding(.horizontal, 16).padding(.vertical, 8).contentShape(Rectangle())
                                 }
@@ -1005,7 +1030,7 @@ struct NationSheet: View {
                                 }
                                 if i < postList.count - 1 { Divider2() }
                             }
-                            Text("称职的官员每月增国库（$）、国运（✦）或各军士气（盾）；不称职则相反。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8)
+                            Text("称职的官员每月增国库、国运或各军士气；不称职则相反。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8)
                         }
                         .padding(.horizontal, 16)
                     }
@@ -1042,30 +1067,31 @@ struct NationSheet: View {
                     .map { (unit: $0.key, troops: $0.value.reduce(0) { $0 + state.armies[$1].troops }, count: $0.value.count) }
                     .sorted { $0.troops != $1.troops ? $0.troops > $1.troops : $0.unit < $1.unit }
                 FoldSection("兵种构成", expanded: false) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        GeometryReader { g in
-                            HStack(spacing: 1.5) {
+                    Group2 {
+                        VStack(alignment: .leading, spacing: 10) {
+                            GeometryReader { g in
+                                HStack(spacing: 1.5) {
+                                    ForEach(Array(byUnit.enumerated()), id: \.offset) { i, u in
+                                        Rectangle().fill(tint.opacity(1 - Double(min(i, 5)) * 0.14)).frame(width: max(2, (g.size.width - CGFloat(byUnit.count - 1) * 1.5) * CGFloat(u.troops) / CGFloat(max(1, troops))))
+                                    }
+                                }
+                                .frame(width: g.size.width, alignment: .leading)
+                                .clipShape(Capsule())
+                            }
+                            .frame(height: 10)
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 8) {
                                 ForEach(Array(byUnit.enumerated()), id: \.offset) { i, u in
-                                    Rectangle().fill(tint.opacity(1 - Double(min(i, 5)) * 0.14)).frame(width: max(2, (g.size.width - CGFloat(byUnit.count - 1) * 1.5) * CGFloat(u.troops) / CGFloat(max(1, troops))))
-                                }
-                            }
-                            .frame(width: g.size.width, alignment: .leading)
-                            .clipShape(Capsule())
-                        }
-                        .frame(height: 10)
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 8) {
-                            ForEach(Array(byUnit.enumerated()), id: \.offset) { i, u in
-                                HStack(spacing: 6) {
-                                    UnitMark(unit: u.unit, color: tint.opacity(1 - Double(min(i, 5)) * 0.14)).frame(width: 22, height: 22)
-                                    Text(Names.unit[u.unit] ?? u.unit).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
-                                    Spacer(minLength: 2)
-                                    Text("\(u.count)支 · \(Int((Double(u.troops) / Double(max(1, troops)) * 100).rounded()))%").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    HStack(spacing: 6) {
+                                        UnitMark(unit: u.unit, color: tint.opacity(1 - Double(min(i, 5)) * 0.14)).frame(width: 22, height: 22)
+                                        Text(Names.unit[u.unit] ?? u.unit).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                                        Spacer(minLength: 2)
+                                        Text("\(u.count)支 · \(Int((Double(u.troops) / Double(max(1, troops)) * 100).rounded()))%").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    }
                                 }
                             }
                         }
+                        .padding(14)
                     }
-                    .padding(14)
-                    .paperCard()
                     .padding(.horizontal, 16)
                 }
             }
@@ -1114,7 +1140,7 @@ struct NationSheet: View {
                     Group2 {
                         ForEach(Array(fleets.enumerated()), id: \.offset) { k, f in
                             HStack(spacing: 10) {
-                                Image(systemName: "sailboat.fill").font(.system(size: 16)).foregroundStyle(tint).frame(width: 30)
+                                InkIcon(glyph: .anchor, size: 18, weight: 1.7, accent: tint.opacity(0.24)).foregroundStyle(tint).frame(width: 30)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(f.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
                                     Text("\(f.ships) 艘 · 水手 \(Names.wan(f.crew))").font(Theme.caption).foregroundStyle(Theme.ink2)
@@ -1144,14 +1170,14 @@ struct NationSheet: View {
     @ViewBuilder func diplomacyTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState, startExpanded: Bool = true) -> some View {
         // 外交: each relation as a row of state chips in its colour (tap a chip to open that state), then
         // treaties, then the state's own acts.
-        let groups: [(title: String, icon: String, color: Color, nations: [Int], note: (Int) -> String?)] = [
-            ("交战", "flag.2.crossed.fill", Theme.seal, info.enemies, { _ in nil }),
-            ("同盟" + (info.alliance.map { "·" + $0.name } ?? ""), "person.2.fill", Color(red: 0.2, green: 0.4, blue: 0.65), (info.alliance?.members ?? []).filter { $0 != nation }, { _ in nil }),
-            ("宗主", "crown.fill", Color(red: 0.6, green: 0.3, blue: 0.6), info.overlord >= 0 ? [info.overlord] : [], { _ in nil }),
-            ("附庸", "shield.lefthalf.filled", Theme.jade, info.vassals, { _ in nil }),
-            ("停战", "hand.raised.fill", Theme.ink2, (info.truces ?? []).map(\.nation), { n in (info.truces ?? []).first { $0.nation == n }.map { "余\($0.years)年" } }),
-            ("条约", "doc.text.fill", Color(red: 0.72, green: 0.52, blue: 0.14), (info.treaties ?? []).map(\.nation), { n in (info.treaties ?? []).first { $0.nation == n }.map { DiplomacyOverview.treatyLabel($0.kind) + " · 余\(max(1, $0.years))年" } }),
-            ("王位宣称", "crown.fill", Color(red: 0.68, green: 0.44, blue: 0.12), (info.claims ?? []).map(\.nation), { n in (info.claims ?? []).first { $0.nation == n }.map { "宣称 · 余\($0.years)年" } }),
+        let groups: [(title: String, glyph: InkGlyph, color: Color, nations: [Int], note: (Int) -> String?)] = [
+            ("交战", .war, Theme.seal, info.enemies, { _ in nil }),
+            ("同盟" + (info.alliance.map { "·" + $0.name } ?? ""), .alliance, Color(red: 0.2, green: 0.4, blue: 0.65), (info.alliance?.members ?? []).filter { $0 != nation }, { _ in nil }),
+            ("宗主", .crown, Color(red: 0.6, green: 0.3, blue: 0.6), info.overlord >= 0 ? [info.overlord] : [], { _ in nil }),
+            ("附庸", .fortress, Theme.jade, info.vassals, { _ in nil }),
+            ("停战", .peace, Theme.ink2, (info.truces ?? []).map(\.nation), { n in (info.truces ?? []).first { $0.nation == n }.map { "余\($0.years)年" } }),
+            ("条约", .diplomacy, Color(red: 0.72, green: 0.52, blue: 0.14), (info.treaties ?? []).map(\.nation), { n in (info.treaties ?? []).first { $0.nation == n }.map { DiplomacyOverview.treatyLabel($0.kind) + " · 余\(max(1, $0.years))年" } }),
+            ("王位宣称", .crown, Color(red: 0.68, green: 0.44, blue: 0.12), (info.claims ?? []).map(\.nation), { n in (info.claims ?? []).first { $0.nation == n }.map { "宣称 · 余\($0.years)年" } }),
         ]
         let shown = groups.filter { !$0.nations.isEmpty }
         LazyVStack(alignment: .leading, spacing: 14) {
@@ -1177,14 +1203,14 @@ struct NationSheet: View {
                 } message: { Text("不会攻击盟友、宗主、附庸或停战期内国家。") }
             }
             FoldSection("外交关系", expanded: startExpanded) {
-                VStack(alignment: .leading, spacing: 10) {
+                Group2 {
                     if shown.isEmpty {
-                        Group2 { Row(label: "外交", value: "与天下诸国相安无事") }
+                        Row(label: "外交", value: "与天下诸国相安无事")
                     }
-                    ForEach(Array(shown.enumerated()), id: \.offset) { _, g in
+                    ForEach(Array(shown.enumerated()), id: \.offset) { idx, g in
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(spacing: 6) {
-                                Image(systemName: g.icon).font(.system(size: 12)).foregroundStyle(g.color)
+                                InkIcon(glyph: g.glyph, size: 14, weight: 1.7, accent: g.color.opacity(0.24)).foregroundStyle(g.color)
                                 Text(g.title).font(Theme.body).foregroundStyle(Theme.ink)
                                 PaperTag(text: "\(g.nations.count)", color: g.color)
                                 Spacer()
@@ -1212,8 +1238,8 @@ struct NationSheet: View {
                                 pressMenu = PressMenu(title: otherName, subtitle: g.note(other) ?? g.title, items: items)
                             }
                         }
-                        .padding(12)
-                        .paperCard(tint: g.color)
+                        .padding(.horizontal, 14).padding(.vertical, 11)
+                        if idx < shown.count - 1 { Divider2() }
                     }
                 }
                 .padding(.horizontal, 16)
@@ -1356,7 +1382,7 @@ struct NationSheet: View {
                 }),
                 StatTile(label: "中枢增收", value: String(format: "%+.0f%%", (c.centralIncome - 1) * 100), warn: c.centralIncome < 1),
                 StatTile(label: "地方官", value: "\(c.governors)/\(c.provinces)", fraction: c.provinces > 0 ? Double(c.governors) / Double(c.provinces) : 0),
-                StatTile(label: "国策", value: Self.temperName(c.temper ?? 1), warn: (c.temper ?? 1) > 1.25, edit: { customPane = .temper; tab = .custom }),
+                StatTile(label: "国策", value: Self.temperName(c.temper ?? 1), warn: (c.temper ?? 1) > 1.25, edit: { governSub = "custom"; customPane = .temper; tab = .govern }),
             ])
             if let traits = c.traits, !traits.isEmpty {
                 // 国家特性 (the original's state traits), each with what it does.
@@ -1408,9 +1434,21 @@ struct NationSheet: View {
                 Group2 {
                     if c.occupied > 0 || c.lost > 0 {
                         HStack {
-                            if c.occupied > 0 { Label("占他国 \(c.occupied) 州", systemImage: "flag.fill").foregroundStyle(Theme.jade) }
+                            if c.occupied > 0 {
+                                HStack(spacing: 5) {
+                                    InkIcon(glyph: .command, size: 14, weight: 1.7)
+                                    Text("占他国 \(c.occupied) 州")
+                                }
+                                .foregroundStyle(Theme.jade)
+                            }
                             Spacer()
-                            if c.lost > 0 { Label("失地 \(c.lost) 州", systemImage: "flag.slash").foregroundStyle(Theme.seal) }
+                            if c.lost > 0 {
+                                HStack(spacing: 5) {
+                                    InkIcon(glyph: .retreat, size: 14, weight: 1.7)
+                                    Text("失地 \(c.lost) 州")
+                                }
+                                .foregroundStyle(Theme.seal)
+                            }
                         }
                         .font(Theme.body).padding(.horizontal, 16).padding(.vertical, 9)
                         if !c.commanders.isEmpty { Divider2() }
@@ -1419,7 +1457,7 @@ struct NationSheet: View {
                         let person = info?.people?.first(where: { $0.id == w.person })
                         Button { if !PressGuard.consume() { appointing = AppointTarget(office: "WarCommander:\(w.enemy)") } } label: {
                             HStack(spacing: 10) {
-                                Image(systemName: "flag.2.crossed.fill").font(.system(size: 13)).foregroundStyle(Theme.seal)
+                                InkIcon(glyph: .war, size: 14, weight: 1.75).foregroundStyle(Theme.seal)
                                 Text("征讨").font(Theme.label).foregroundStyle(Theme.ink2)
                                 if map.meta.nations.indices.contains(w.enemy) { NationChip(map: map, nation: w.enemy).scaleEffect(0.85, anchor: .leading) }
                                 Spacer()
@@ -1618,7 +1656,7 @@ struct NationSheet: View {
                         if p.skills.count == 4 {
                             Text("魅\(Int(p.skills[0])) 军\(Int(p.skills[1])) 外\(Int(p.skills[2])) 政\(Int(p.skills[3]))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
                         }
-                        if p.key >= 0 { Image(systemName: "pencil").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7)) }
+                        if p.key >= 0 { InkIcon(glyph: .brush, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75)) }
                     }
                     if !p.traits.isEmpty {
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -1642,46 +1680,59 @@ struct NationSheet: View {
         .padding(.horizontal, 16)
     }
 
-    /// 自定义: treasury, destiny, polity (revolution by decree) and raising a legion.
+    /// 五页主体：概览 / 朝政 / 军事 / 外交 / 治理（内含政令、疆土、史册、定制四子项）。
     @ViewBuilder private func tabContent(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         switch tab {
         case .overview: overviewTab(info, map, state)
-        case .history:
-            NationHistoryTab(
-                model: model,
-                nation: nation,
-                map: map,
-                history: history,
-                fly: fly,
-                lower: lower,
-                onOpenReplay: openReplay
-            )
-        case .decrees:
-            NationDecreesTab(
-                model: model,
-                nation: nation,
-                info: info,
-                onToast: { flash = $0 },
-                onReload: { await reload() },
-                onEnthrone: { enthroning = true }
-            )
-        case .territory:
-            NationTerritoryTab(
-                model: model,
-                nation: nation,
-                alive: info.alive,
-                day: state.day / 30,
-                onFly: { p in lower(); fly(p) },
-                onAppointGovernor: { p in appointing = AppointTarget(office: "Governor:\(p)") },
-                onToast: { flash = $0 },
-                onReload: { await reload() },
-                onPresentMenu: { pressMenu = $0 }
-            )
         case .court: courtTab(info, map, state)
         case .military: militaryTab(info, map, state)
         case .diplomacy: diplomacyTab(info, map, state)
-        case .custom:
-            if info.alive { customView(info, map, state) } else { Text("此国已亡，无可设定。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 20) }
+        case .govern:
+            VStack(alignment: .leading, spacing: 12) {
+                ChipPicker(items: [
+                    ("decrees", "政令"),
+                    ("territory", "疆土"),
+                    ("history", "史册"),
+                    ("custom", "定制"),
+                ], selection: $governSub)
+                .padding(.horizontal, 16)
+                switch governSub {
+                case "territory":
+                    NationTerritoryTab(
+                        model: model,
+                        nation: nation,
+                        alive: info.alive,
+                        day: state.day / 30,
+                        onFly: { p in lower(); fly(p) },
+                        onAppointGovernor: { p in appointing = AppointTarget(office: "Governor:\(p)") },
+                        onToast: { flash = $0 },
+                        onReload: { await reload() },
+                        onPresentMenu: { pressMenu = $0 }
+                    )
+                case "history":
+                    NationHistoryTab(
+                        model: model,
+                        nation: nation,
+                        map: map,
+                        history: history,
+                        fly: fly,
+                        lower: lower,
+                        onOpenReplay: openReplay
+                    )
+                case "custom":
+                    if info.alive { customView(info, map, state) }
+                    else { Text("此国已亡，无可设定。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 20) }
+                default:
+                    NationDecreesTab(
+                        model: model,
+                        nation: nation,
+                        info: info,
+                        onToast: { flash = $0 },
+                        onReload: { await reload() },
+                        onEnthrone: { enthroning = true }
+                    )
+                }
+            }
         }
     }
     /// 自定义：以前十几节设置从上到下排成一长条，要一直往下翻；现在先是一屏放得下的分类格（每格写着现状），
@@ -1801,7 +1852,7 @@ struct NationSheet: View {
     private func customBar(_ pane: CustomPane) -> some View {
         HStack(spacing: 10) {
             Button { GameFeel.shared.tap(); withAnimation(Motion.fade) { customPane = nil } } label: {
-                HStack(spacing: 3) { Image(systemName: "chevron.left").font(.system(size: 13, weight: .semibold)); Text("总览").font(Theme.body) }
+                HStack(spacing: 3) { InkIcon(glyph: .chevronRight, size: 13, weight: 1.8).rotationEffect(.degrees(180)); Text("总览").font(Theme.body) }
                     .foregroundStyle(Theme.seal).frame(height: 32).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -2073,30 +2124,40 @@ struct NationSheet: View {
         }
         .buttonStyle(PressStyle())
     }
-    /// 国家行为 (CultureNationActions47).
+    /// 国家行为 (CultureNationActions47)：分为「邦交与条约」和「军事与博弈」两大区，层次分明。
     private func actions(_ info: NationInfo, _ map: WorldMap) -> some View {
         let vassal = info.overlord >= 0
         return VStack(alignment: .leading, spacing: 10) {
             Group2 {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    action("宣战", "flag.2.crossed", Theme.seal, disabled: vassal) { target = -1; picking = .war }
-                    action("缔结盟约", "person.2.fill", Theme.jade, disabled: vassal) { target = -1; picking = .alliance }
-                    action("退出同盟", "person.badge.minus", Theme.ink, disabled: info.alliance == nil) { Task { await run { await model.alliance(nation, with: -1) } } }
-                    action("解除附庸", "link.badge.plus", Theme.ink, disabled: !vassal) { Task { await run { await model.releaseVassal(nation) } } }
-                    action("收为附庸", "crown", Theme.jade, disabled: vassal) { target = -1; picking = .vassal }
-                    action("吞并", "map", Theme.seal, disabled: false) { target = -1; picking = .annex }
-                    action("触发内战", "flame", Theme.seal, disabled: false) { Task { await run { await model.triggerCivilWar(nation) } } }
-                    action("煽动叛乱", "flame.fill", Theme.seal, disabled: !info.alive) { Task { await run { await model.inciteRebellion(nation) } } }
-                    action("绘制疆域", "paintbrush.pointed.fill", Theme.ink, disabled: false) { paint(nation) }
-                    action("互不侵犯", "doc.text", Theme.jade, disabled: false) { target = -1; picking = .pact }
-                    action("通商协定", "shippingbox.fill", Theme.jade, disabled: false) { target = -1; picking = .trade }
-                    action("共同防御", "shield.lefthalf.filled", Theme.jade, disabled: vassal) { target = -1; picking = .defense }
-                    action("王室联姻", "heart.circle", Theme.jade, disabled: false) { target = -1; picking = .marriage }
-                    action("最后通牒", "flame.fill", Theme.seal, disabled: vassal) { target = -1; picking = .ultimatum }
-                    action("反霸包围网", "person.3.fill", Theme.seal, disabled: vassal) { target = -1; picking = .coalition }
-                    action("谍报资敌", "eye.slash", Theme.ink, disabled: false) { target = -1; picking = .covert }
-                    action("赠送金帛", "dollarsign.circle", Theme.ink, disabled: false) { target = -1; picking = .gift }
-                    action("割让州郡", "rectangle.portrait.and.arrow.right", Theme.seal, disabled: false) { target = -1; cedeProvince = -1; picking = .cede }
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("邦交与条约").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                        action("缔结盟约", "person.2.fill", Theme.jade, disabled: vassal) { target = -1; picking = .alliance }
+                        action("退出同盟", "person.badge.minus", Theme.ink, disabled: info.alliance == nil) { Task { await run { await model.alliance(nation, with: -1) } } }
+                        action("互不侵犯", "doc.text", Theme.jade, disabled: false) { target = -1; picking = .pact }
+                        action("通商协定", "shippingbox.fill", Theme.jade, disabled: false) { target = -1; picking = .trade }
+                        action("共同防御", "shield.lefthalf.filled", Theme.jade, disabled: vassal) { target = -1; picking = .defense }
+                        action("王室联姻", "heart.circle", Theme.jade, disabled: false) { target = -1; picking = .marriage }
+                        action("赠送金帛", "dollarsign.circle", Theme.ink, disabled: false) { target = -1; picking = .gift }
+                        action("解除附庸", "link.badge.plus", Theme.ink, disabled: !vassal) { Task { await run { await model.releaseVassal(nation) } } }
+                    }
+                }
+                .padding(14)
+                Divider2()
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("军事与博弈").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                        action("宣战", "flag.2.crossed", Theme.seal, disabled: vassal) { target = -1; picking = .war }
+                        action("最后通牒", "flame.fill", Theme.seal, disabled: vassal) { target = -1; picking = .ultimatum }
+                        action("反霸包围网", "person.3.fill", Theme.seal, disabled: vassal) { target = -1; picking = .coalition }
+                        action("收为附庸", "crown", Theme.jade, disabled: vassal) { target = -1; picking = .vassal }
+                        action("吞并", "map", Theme.seal, disabled: false) { target = -1; picking = .annex }
+                        action("割让州郡", "rectangle.portrait.and.arrow.right", Theme.seal, disabled: false) { target = -1; cedeProvince = -1; picking = .cede }
+                        action("谍报资敌", "eye.slash", Theme.ink, disabled: false) { target = -1; picking = .covert }
+                        action("触发内战", "flame", Theme.seal, disabled: false) { Task { await run { await model.triggerCivilWar(nation) } } }
+                        action("煽动叛乱", "flame.fill", Theme.seal, disabled: !info.alive) { Task { await run { await model.inciteRebellion(nation) } } }
+                        action("绘制疆域", "paintbrush.pointed.fill", Theme.ink, disabled: false) { paint(nation) }
+                    }
                 }
                 .padding(14)
                 Divider2()
@@ -2108,8 +2169,8 @@ struct NationSheet: View {
     }
     private func action(_ title: String, _ icon: String, _ color: Color, disabled: Bool, _ perform: @escaping () -> Void) -> some View {
         Button(action: perform) {
-            GameActionLabel(title: title, symbol: icon).font(Theme.body).frame(maxWidth: .infinity, minHeight: 44).padding(.horizontal, 8).padding(.vertical, 4)
-                .background(color.opacity(disabled ? 0.04 : 0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            GameActionLabel(title: title, symbol: icon).font(Theme.body).frame(maxWidth: .infinity, minHeight: 42).padding(.horizontal, 8).padding(.vertical, 4)
+                .background(color.opacity(disabled ? 0.04 : 0.1), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 .foregroundStyle(disabled ? Theme.ink2.opacity(0.5) : color)
         }
         .buttonStyle(.plain).disabled(disabled)
@@ -2171,7 +2232,7 @@ struct NationSheet: View {
                             }
                         } }
                     } label: {
-                        Label("确认\(pick.rawValue)", systemImage: pick.icon).font(Theme.section).frame(maxWidth: .infinity).padding(.vertical, 13)
+                        GameActionLabel(title: "确认\(pick.rawValue)", symbol: pick.icon).font(Theme.section).frame(maxWidth: .infinity).padding(.vertical, 13)
                             .foregroundStyle(target < 0 ? Theme.ink2 : pick.hostile ? Theme.seal : Theme.jade)
                     }
                     .buttonStyle(.plain).disabled(target < 0)

@@ -24,61 +24,62 @@ struct MenuSheet: View {
     var body: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 14) {
-            SheetHeader(title: "菜单", subtitle: AppVersion.text)
-            ChipPicker(items: [("game", "游戏"), ("map", "地图显示"), ("other", "声音与其他")], selection: $page).padding(.horizontal, 16)
+            SheetHeader(title: "菜单", subtitle: AppVersion.text, seal: "典")
+            ChipPicker(items: [("game", "游戏"), ("map", "画面"), ("play", "推演")], selection: $page).padding(.horizontal, Theme.Layout.pageInset)
             switch page {
             case "map":
                 MapDisplaySettings(controller: controller)
-            case "other":
-                SectionLabel("声音与触感")
-                FeelSettings()
-                SectionLabel("远程计算")
-                RemoteSettings(model: model)
-                SectionLabel("推演与看海体验")
+                SectionLabel("性能与帧率")
+                Group2 {
+                    FrameSettings(play: $controller.play)
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            case "play":
+                SectionLabel("战场与推演")
                 Group2 {
                     PaperSwitch(title: "显示军队", on: $controller.play.showArmies)
                     Divider2()
+                    PaperSlider(title: "军队图标大小", value: $controller.play.iconScale, range: 0.7...1.5, step: 0.1) { String(format: "%.1f×", $0) }
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                    Divider2()
                     PaperSwitch(title: "显示战争箭头", on: $controller.play.warArrows)
-                    Divider2()
-                    PaperSwitch(title: "地图局势快控悬浮小笺（四角吸附印章）", on: $controller.play.showTacticalPill)
-                    Divider2()
-                    PaperSwitch(title: "御案天下大势悬浮小笺（列强占比与头号战事）", on: $controller.play.showScrollPlacard)
-                    Divider2()
-                    PaperSwitch(title: "山河回放天下大势悬浮小笺", on: $controller.play.showReplayPlacard)
-                    Divider2()
-                    PaperSwitch(title: "观战巡弋导演镜头（推演中自动巡礼焦点战场）", on: $controller.play.directorCruise)
                     Divider2()
                     PaperSwitch(title: "大事传报横幅", on: $controller.play.showHeralds)
                     Divider2()
                     PaperSwitch(title: "战况伤亡飘字", on: $controller.play.showBattleFloats)
                     Divider2()
-                    PaperSwitch(title: "海面动态波浪（关闭更省电）", on: $controller.play.seaWaves)
+                    PaperSwitch(title: "海面动态波浪", on: $controller.play.seaWaves)
                     Divider2()
-                    PaperSlider(title: "军队图标", value: $controller.play.iconScale, range: 0.6...1.6, step: 0.1) { String(format: "%.1f×", $0) }
-                        .padding(.horizontal, 16).padding(.vertical, 10)
-                    Divider2()
-                    FrameSettings(play: $controller.play)
-                    Divider2()
-                    PaperSwitch(title: "打开国家/面板时自动暂停", on: $controller.play.pauseOnSheet)
-                    Divider2()
-                    PaperSwitch(title: "进场镜头拉远", on: $controller.play.introCamera)
-                    Divider2()
-                    PaperSwitch(title: "动画先快后缓（关闭为匀速）", on: $controller.play.easeReveal)
+                    PaperSwitch(title: "观战巡弋导演镜头", on: $controller.play.directorCruise)
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+
+                SectionLabel("节律与存档")
+                Group2 {
+                    PaperSwitch(title: "打开面板时自动暂停", on: $controller.play.pauseOnSheet)
                     Divider2()
                     PaperSwitch(title: "大事自动暂停（宣战、起义、亡国）", on: $controller.play.pauseOnNews)
                     Divider2()
+                    PaperSwitch(title: "入场镜头缓动", on: $controller.play.introCamera)
+                    Divider2()
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("自动存档").font(Theme.body).foregroundStyle(Theme.ink)
+                        Text("自动存档间隔").font(Theme.body).foregroundStyle(Theme.ink)
                         ChipPicker(items: [(60, "1分钟"), (120, "2分钟"), (300, "5分钟"), (0, "关闭")], selection: $controller.play.autosave)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
                 }
-                .padding(.horizontal, 16)
-                SectionLabel("调试")
+                .padding(.horizontal, Theme.Layout.pageInset)
+
+                SectionLabel("声音与触感")
+                FeelSettings()
+
+                SectionLabel("远程计算")
+                RemoteSettings(model: model)
+
+                SectionLabel("调试与复位")
                 Group2 {
                     PaperSwitch(title: "显示帧率与推演耗时", on: $controller.showMetrics)
                     Divider2()
-                    // 打开上面的开关后会记录性能日志；导出为表格文本，便于真机前后对比。
                     Button {
                         if !PerfLog.isEmpty, let url = PerfLog.export() { exported = ExportFile(url: url) } else { say("还没有记录：先打开「显示帧率与推演耗时」玩一会儿") }
                     } label: { MenuRow(symbol: "waveform.path.ecg", title: "导出性能日志") }
@@ -86,20 +87,19 @@ struct MenuSheet: View {
                     Divider2()
                     ResetSettingsRow(controller: controller, say: say)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Theme.Layout.pageInset)
             default:
-                // 2×2 苹果式视觉快捷面板：高频动作一眼触达，打破千篇一律的纯文本长列表
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                    menuTile(title: "保存当前进度", note: "立存此世卷宗", symbol: "bookmark.fill", tint: Theme.jade) {
+                    menuTile(title: "保存进度", note: "立存此世卷宗", symbol: "bookmark.fill", tint: Theme.jade) {
                         Task { let ok = await model.saveNow(); GameFeel.shared.notify(ok ? .success : .error); say(ok ? "已保存" : "保存失败"); close() }
                     }
                     menuTile(title: "世界卷宗", note: "切换或管理存档", symbol: "books.vertical", tint: Theme.jade) { archive = true }
                     menuTile(title: "世界编辑", note: "改绘山河与列国", symbol: "paintbrush.pointed.fill", tint: Theme.seal) { openEditor() }
                     menuTile(title: "开辟新世界", note: "重选地图与剧本", symbol: "globe.asia.australia", tint: Theme.seal) { creating = true }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Theme.Layout.pageInset)
 
-                SectionLabel("世局与工具")
+                SectionLabel("世局工具")
                 Group2 {
                     Button { openEdicts() } label: { MenuRow(symbol: "scroll.fill", title: "天下诏令与规则") }.buttonStyle(.plain)
                     Divider2()
@@ -111,14 +111,14 @@ struct MenuSheet: View {
                     Divider2()
                     Button { importing = true } label: { MenuRow(symbol: "tray.and.arrow.down", title: "导入外部存档") }.buttonStyle(.plain)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Theme.Layout.pageInset)
 
                 Group2 {
                     Button { notes = true } label: { MenuRow(symbol: "sparkles", title: "本版新增与更新内容") }.buttonStyle(.plain)
                     Divider2()
                     Button { close(); model.backToTitle() } label: { MenuRow(symbol: "house", title: "返回标题画面") }.buttonStyle(.plain)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Theme.Layout.pageInset)
             }
         }
         .padding(.bottom, 24)
@@ -184,75 +184,59 @@ struct MenuSheet: View {
     }
 }
 
-/// The map switches. Same paper rows as the rest of the menus.
+/// 精简清晰的地图显示设置：彻底去除重复开关与无关悬浮小笺，分为「地图元素」与「视觉装裱」两张清爽分组卡。
 struct MapDisplaySettings: View {
     @ObservedObject var controller: MapController
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionLabel("悬浮小笺与看海辅助")
+            SectionLabel("地图元素")
             Group2 {
-                PaperSwitch(title: "地图局势快控悬浮小笺（四角吸附印章）", on: $controller.play.showTacticalPill)
-                Divider2()
-                PaperSwitch(title: "御案天下大势悬浮小笺（列强占比与头号战事）", on: $controller.play.showScrollPlacard)
-                Divider2()
-                PaperSwitch(title: "山河回放天下大势悬浮小笺", on: $controller.play.showReplayPlacard)
-                Divider2()
-                PaperSwitch(title: "观战巡弋导演镜头（推演中自动巡礼焦点战场）", on: $controller.play.directorCruise)
-            }
-            .padding(.horizontal, 16)
-            SectionLabel("界线")
-            Group2 {
-                PaperSwitch(title: "国界", on: $controller.display.borders)
+                PaperSwitch(title: "国界线", on: $controller.display.borders)
                 Divider2()
                 PaperSwitch(title: "行省边界", on: $controller.display.provinceLines)
                 Divider2()
-                PaperSwitch(title: "航线", on: $controller.display.seaRoutes)
+                PaperSwitch(title: "海上航线", on: $controller.display.seaRoutes)
                 Divider2()
                 PaperSwitch(title: "经纬线", on: Binding(get: { controller.display.gridLines == true }, set: { controller.display.gridLines = $0 }))
-            }
-            .padding(.horizontal, 16)
-            SectionLabel("城市与地貌")
-            Group2 {
-                PaperSwitch(title: "城市名称", on: $controller.display.cityNames)
                 Divider2()
-                PaperSwitch(title: "城市图标", on: $controller.display.cityIcons)
+                PaperSwitch(title: "城池名称", on: $controller.display.cityNames)
                 Divider2()
-                PaperSwitch(title: "植被与地貌图标", on: $controller.display.vegetation)
-            }
-            .padding(.horizontal, 16)
-            SectionLabel("国名")
-            Group2 {
-                PaperSwitch(title: "完整国名", on: $controller.display.fullNationNames)
+                PaperSwitch(title: "城池图标", on: $controller.display.cityIcons)
                 Divider2()
-                PaperSlider(title: "大小", value: $controller.display.nationNameScale, range: 0.5...2, step: 0.05) { String(format: "%.2f", $0) }
-                    .padding(.horizontal, 16).padding(.vertical, 10)
+                PaperSwitch(title: "地貌与植被", on: $controller.display.vegetation)
             }
-            .padding(.horizontal, 16)
-            SectionLabel("画面与装裱")
+            .padding(.horizontal, Theme.Layout.pageInset)
+
+            SectionLabel("视觉与装裱")
             Group2 {
                 PaperSwitch(title: "羊皮纸底纹", on: $controller.display.parchment)
                 Divider2()
-                PaperSwitch(title: "皇帝诏书卷轴装裱（左右木轴、碧玉轴头与回纹）", on: Binding(
+                PaperSwitch(title: "卷轴装裱", on: Binding(
                     get: { controller.display.scrollMount ?? controller.display.darkEdges },
                     set: { controller.display.scrollMount = $0; controller.display.darkEdges = $0 }
                 ))
                 Divider2()
-                PaperSwitch(title: "光影氛围（日照立体光影、浮云投影与海面水光）", on: Binding(get: { controller.display.lighting ?? true }, set: { controller.display.lighting = $0 }))
+                PaperSwitch(title: "光影氛围", on: Binding(get: { controller.display.lighting ?? true }, set: { controller.display.lighting = $0 }))
                 Divider2()
-                PaperSwitch(title: "舆图细节（水线、十六向罗盘、雪峰、田亩、驿道）", on: Binding(get: { controller.display.mapDetail ?? true }, set: { controller.display.mapDetail = $0 }))
+                PaperSwitch(title: "舆图细节（水线、罗盘与田亩）", on: Binding(get: { controller.display.mapDetail ?? true }, set: { controller.display.mapDetail = $0 }))
                 Divider2()
-                PaperSwitch(title: "战争晕染（行军与围城处洇开进攻方颜色）", on: Binding(get: { controller.display.battleGround ?? true }, set: { controller.display.battleGround = $0 }))
+                PaperSwitch(title: "战争晕染", on: Binding(get: { controller.display.battleGround ?? true }, set: { controller.display.battleGround = $0 }))
+                Divider2()
+                PaperSwitch(title: "显示完整国名", on: $controller.display.fullNationNames)
+                Divider2()
+                PaperSlider(title: "国名字号", value: $controller.display.nationNameScale, range: 0.5...2, step: 0.05) { String(format: "%.2f", $0) }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
                 Divider2()
                 PaperSlider(title: "国色浓度", value: $controller.display.colorDensity, range: 0.2...1, step: 0.1) { "\(Int($0 * 100))%" }
                     .padding(.horizontal, 16).padding(.vertical, 10)
                 Divider2()
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("海色").font(Theme.body).foregroundStyle(Theme.ink)
+                    Text("海面色调").font(Theme.body).foregroundStyle(Theme.ink)
                     ChipPicker(items: [("original", "原作海蓝"), ("warm", "暖纸海色")], selection: $controller.display.ocean)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Theme.Layout.pageInset)
         }
     }
 }
@@ -280,7 +264,7 @@ struct MenuRow: View {
             .frame(width: 24).foregroundStyle(Theme.seal)
             Text(title).font(Theme.section).foregroundStyle(Theme.ink)
             Spacer()
-            Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
+            InkIcon(glyph: .chevronRight, size: 12, weight: 1.8).foregroundStyle(Theme.ink2)
         }
         .padding(.horizontal, 16).padding(.vertical, 13).contentShape(Rectangle())
     }
@@ -297,9 +281,7 @@ struct PressStyle: ButtonStyle {
     }
 }
 
-/// A row of paper chips (replaces the system segmented control).
-/// 恢复默认设置: the map display and the 推演与画面 settings back to how a new install starts (the
-/// worlds and saves are untouched). Every newer change in those settings can be undone this way.
+/// 恢复默认设置（统一使用手绘刷新图标）。
 struct ResetSettingsRow: View {
     @ObservedObject var controller: MapController
     let say: (String) -> Void
@@ -309,7 +291,7 @@ struct ResetSettingsRow: View {
             HStack {
                 Text("恢复默认设置").font(Theme.section).foregroundStyle(Theme.seal)
                 Spacer()
-                Image(systemName: "arrow.counterclockwise").font(.system(size: 14, weight: .regular)).foregroundStyle(Theme.seal)
+                InkIcon(glyph: .refresh, size: 15, weight: 1.75).foregroundStyle(Theme.seal)
             }
             .padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
         }
@@ -323,9 +305,10 @@ struct ResetSettingsRow: View {
     }
 }
 
-/// 画面档位 and each frame rate, the map's sharpness and the simulation's share of the processor.
+/// 画面性能档位：默认只展示清晰的一键档位与智能降温，将 5 项高阶帧率滑档收纳进折叠栏，界面告别杂乱。
 struct FrameSettings: View {
     @Binding var play: PlaySettings
+    @State private var showAdvanced = false
     private func row<T: Hashable>(_ title: String, _ note: String, _ items: [(T, String)], _ value: Binding<T>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
@@ -339,22 +322,35 @@ struct FrameSettings: View {
     }
     var body: some View {
         VStack(spacing: 0) {
-            row("画面档位", play.preset == "custom" ? "自定" : "一键设定下面各项", PlaySettings.presets.map { ($0.key, $0.name) } + (play.preset == "custom" ? [("custom", "自定")] : []), $play.preset)
-            Divider2()
-            row("拖动地图帧率", "拖动、缩放时", [(30, "30"), (60, "60"), (120, "120")], $play.mapFPS)
-            Divider2()
-            row("行军帧率", "军队移动时（看海推荐 24）", [(15, "15"), (24, "24"), (30, "30"), (60, "60")], $play.marchFPS)
-            Divider2()
-            row("动画帧率", "海浪、战场、旗帜", [(12, "12"), (15, "15"), (20, "20"), (30, "30")], $play.effectFPS)
-            Divider2()
-            row("地图清晰度", "越高越耗电", [(1.0, "低"), (1.5, "中"), (2.0, "高"), (3.0, "原生")], $play.renderScale)
-            Divider2()
-            row("推演占用", "越高越快、越热", [(40, "40%"), (55, "55%"), (75, "75%"), (100, "全速")], $play.simLoad)
+            row("性能档位", play.preset == "custom" ? "已自定微调" : "一键平衡流畅与续航", PlaySettings.presets.map { ($0.key, $0.name) } + (play.preset == "custom" ? [("custom", "自定")] : []), $play.preset)
             Divider2()
             PaperSwitch(title: "发热时自动降档", on: $play.autoCool)
-            Text("手机变热或开启低电量模式时，帧率降到 30、推演多休息、暂停海浪和战场烟雾，降温后恢复。")
-                .font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 9)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            Divider2()
+            Button {
+                GameFeel.shared.tap()
+                withAnimation(Motion.panel) { showAdvanced.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Text("高级帧率与负载微调").font(Theme.body).foregroundStyle(Theme.ink2)
+                    Spacer()
+                    Text("\(play.mapFPS)帧 · \(Int(play.renderScale * 100 / 2))%清晰").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                    InkIcon(glyph: .chevronDown, size: 14, weight: 1.7).foregroundStyle(Theme.ink2).rotationEffect(.degrees(showAdvanced ? 180 : 0))
+                }
+                .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if showAdvanced {
+                Divider2()
+                row("拖动地图帧率", "拖拽缩放时", [(30, "30"), (60, "60"), (120, "120")], $play.mapFPS)
+                Divider2()
+                row("行军帧率", "军队移动时", [(15, "15"), (24, "24"), (30, "30"), (60, "60")], $play.marchFPS)
+                Divider2()
+                row("动画帧率", "海浪与战场特效", [(12, "12"), (15, "15"), (20, "20"), (30, "30")], $play.effectFPS)
+                Divider2()
+                row("地图清晰度", "越高越耗电", [(1.0, "低"), (1.5, "中"), (2.0, "高"), (3.0, "原生")], $play.renderScale)
+                Divider2()
+                row("推演算力占比", "越高越快越热", [(40, "40%"), (55, "55%"), (75, "75%"), (100, "全速")], $play.simLoad)
+            }
         }
     }
 }

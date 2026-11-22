@@ -260,14 +260,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
         }
         unitTextures["banner"] = unitTextures["elite"]
-        // 军牌底盘 (128×128): 精雕漆盾军牌（平肩微弧收尖盾形 + 浓墨外漆框 + 西北至东南立体受光面 + 内切雕槽与双铆钉），
-        // 叠加国色后与顶部象牙浮雕兵种纹样层次分明，任意缩放下都兼具古舆图战棋质感。
+        // 军牌底盘 (128×128): 高辨识度雕漆纹章盾牌（粗浓墨外郭 + 明亮象牙金属倒角 + 饱满受光国色盾面），
+        // 即使在同色本土领土上也轮廓分明、远景一眼可辨；顶部嵌入象牙浮雕兵种纹章，兼具战略棋盘质感。
         let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
             let g = ctx.cgContext
             func shieldPath(inset d: CGFloat) -> CGPath {
                 let p = CGMutablePath()
-                let l = 10 + d, r = 118 - d, t = 8 + d, midY = 74 - d * 0.15, b = 120 - d
-                let corner: CGFloat = max(4, 16 - d * 0.65)
+                let l = 6 + d, r = 122 - d, t = 6 + d, midY = 74 - d * 0.14, b = 122 - d
+                let corner: CGFloat = max(4, 18 - d * 0.65)
                 p.move(to: CGPoint(x: l + corner, y: t))
                 p.addLine(to: CGPoint(x: r - corner, y: t))
                 p.addQuadCurve(to: CGPoint(x: r, y: t + corner), control: CGPoint(x: r, y: t))
@@ -279,28 +279,22 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 p.closeSubpath()
                 return p
             }
-            // 外圈浓墨漆框
-            g.setFillColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1)
+            // 厚实浓墨外漆框（令军牌在任何底图色上均清晰跳脱）
+            g.setFillColor(red: 0.08, green: 0.08, blue: 0.08, alpha: 1)
             g.addPath(shieldPath(inset: 0)); g.fillPath()
-            // 中层温润亮边倒角
-            g.setFillColor(red: 0.68, green: 0.68, blue: 0.68, alpha: 1)
-            g.addPath(shieldPath(inset: 5.5)); g.fillPath()
-            // 内盾受光渐变面
-            let inner = shieldPath(inset: 8.5)
+            // 清晰亮边倒角框
+            g.setFillColor(red: 0.84, green: 0.84, blue: 0.84, alpha: 1)
+            g.addPath(shieldPath(inset: 6.5)); g.fillPath()
+            // 饱满受光国色盾面
+            let inner = shieldPath(inset: 11.0)
             g.saveGState()
             g.addPath(inner); g.clip()
-            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.93, 0.93, 0.93, 1.0, 0.78, 0.78, 0.78, 1.0], locations: [0.0, 0.52, 1.0], count: 3) {
-                g.drawLinearGradient(grad, start: CGPoint(x: 16, y: 12), end: CGPoint(x: 112, y: 116), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.94, 0.94, 0.94, 1.0, 0.80, 0.80, 0.80, 1.0], locations: [0.0, 0.55, 1.0], count: 3) {
+                g.drawLinearGradient(grad, start: CGPoint(x: 14, y: 10), end: CGPoint(x: 114, y: 118), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
             } else {
                 g.setFillColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1); g.fill(CGRect(x: 0, y: 0, width: 128, height: 128))
             }
             g.restoreGState()
-            // 盾内细雕槽 + 顶部双铆钉
-            g.setStrokeColor(red: 0.36, green: 0.36, blue: 0.36, alpha: 0.50); g.setLineWidth(1.9)
-            g.addPath(shieldPath(inset: 14.0)); g.strokePath()
-            g.setFillColor(red: 0.34, green: 0.34, blue: 0.34, alpha: 0.60)
-            g.fillEllipse(in: CGRect(x: 28, y: 20, width: 5.5, height: 5.5))
-            g.fillEllipse(in: CGRect(x: 94.5, y: 20, width: 5.5, height: 5.5))
         }.cgImage
         if let plateArt { unitTextures["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
         // 水师舰队浪花尾迹底纹 (128×128): 双层弧形碎浪与微晕水环，衬托战舰浮于碧海之上的立体感。
@@ -710,8 +704,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Where every icon is drawn right now (mid-walk included), for taps and troop labels.
-    /// 军队图标的缩放系数（屏幕点 / 图标基准尺寸），与着色器 spriteVertex 同一规则（收巧约 22%，远景看海更清爽，不遮国界与战线）。
-    static func iconZoom(_ scale: Double) -> Double { min(21.0 / 3.0112, max(6.8 / 3.0112, scale * 0.66)) }
+    /// 军队与舰队图标的缩放系数（屏幕点 / 图标基准尺寸），与着色器 spriteVertex 严格一致：
+    /// 远景不低于 15.5 点、随缩放流畅放大、近景封顶 34 点，全局看海与微操点选均清晰醒目。
+    static func iconZoom(_ scale: Double) -> Double { min(34.0 / 3.0112, max(15.5 / 3.0112, scale * 1.12)) }
     /// 一支军队主图标在屏幕上的边长（点）。
     static func iconPoints(_ scale: Double, iconScale: Double) -> Double { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * iconZoom(scale) }
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
@@ -862,35 +857,31 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)
                 end = legTo[a.key] ?? at
                 lead = legLead[a.key] ?? (end - at)
-                let size = iconSize * iconScale * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
-                // The commander's gonfalon stands behind the pieces: gold for the ruler in person, crimson for generals & flagship armadas.
+                let tierScale: Float = (role == "Port" || role == "Merchant" || a.army <= -100_000) ? 1.0 : (a.tier >= 3 ? 1.18 : a.tier == 2 ? 1.08 : 0.96)
+                let size = iconSize * iconScale * tierScale * (a.unit == "Port" ? 0.68 : a.unit == "Merchant" ? 0.72 : 1) * (a.selected ? 1.24 : 1)
+                // 统帅大纛（御驾亲征为鎏金，大将/旗舰为朱砂），立于军牌右肩，轮廓利落不遮兵种
                 if a.banner > 0 {
-                    let k: Float = 0.66
-                    quad("banner", at, a.banner == 2 ? RGB(0.95, 0.76, 0.24) : RGB(0.76, 0.20, 0.14), size * k, (0.52 + o.x) / k, (-0.48 + o.y) / k)
+                    let k: Float = 0.64
+                    quad("banner", at, a.banner == 2 ? RGB(0.96, 0.78, 0.24) : RGB(0.80, 0.20, 0.14), size * k, (0.56 + o.x) / k, (-0.42 + o.y) / k)
                 }
-                // 水师战舰下铺双层海沫浪圈，衬托船舰浮于海面；陆军下铺国色漆盾军牌，上方象牙兵种棋子反差鲜明。
-                if role == "Fleet", unitTextures["0fleetwake"] != nil {
-                    quad("0fleetwake", at, RGB(0.95, 0.98, 1.0), size * 1.18, o.x / 1.18, (0.14 + o.y) / 1.18)
-                }
-                let token = role != "Fleet" && role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
-                if token { quad("0plate", at, c, size * 0.98, o.x / 0.98, (0.14 + o.y) / 0.98) }
-                let piece = token
-                    ? RGB(0.84 + c.r * 0.16, 0.84 + c.g * 0.16, 0.84 + c.b * 0.16)
-                    : (role == "Fleet" ? RGB(min(1, c.r * 1.10 + 0.12), min(1, c.g * 1.10 + 0.12), min(1, c.b * 1.10 + 0.12)) : c)
-                // 陆军按编制排成三阶战阵，水师多舰编队排成纵深破浪雁行阵。
-                let n = role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
-                let layout: [(Float, Float, Float)] = {
-                    if role == "Fleet" {
-                        return n == 1 ? [(0, 0, 1.06)]
-                            : n == 2 ? [(-0.28, -0.14, 0.76), (0.08, 0.04, 1.06)]
-                            : [(-0.34, -0.10, 0.72), (0.34, -0.10, 0.72), (0, 0.06, 1.08)]
+                // 水师主力战舰：放大船身 + 洁白破浪水圈，蔚蓝海面上一目了然；
+                // 陆军军团：单枚饱满国色漆盾军牌 + 正中明亮象牙浮雕兵种纹章，彻底消除旧版三小块重叠糊成一团的问题。
+                if role == "Fleet" {
+                    if unitTextures["0fleetwake"] != nil {
+                        quad("0fleetwake", at, RGB(0.96, 0.99, 1.0), size * 1.38, o.x / 1.38, (0.16 + o.y) / 1.38)
                     }
-                    return n == 1 ? [(0, 0, 1)] : n == 2 ? [(0.22, -0.12, 0.70), (0, 0, 1)]
-                        : [(-0.24, -0.12, 0.66), (0.24, -0.12, 0.66), (0, 0, 1)]
-                }()
-                for (i, (dx, dy, k)) in layout.enumerated() {
-                    let shade: Float = i < layout.count - 1 && n > 1 ? 0.88 : 1
-                    quad(role, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, (dx + o.x) / k, (dy + o.y) / k)
+                    let shipTint = RGB(min(1, c.r * 0.55 + 0.45), min(1, c.g * 0.55 + 0.45), min(1, c.b * 0.55 + 0.45))
+                    quad("Fleet", at, shipTint, size * 1.24, o.x / 1.24, o.y / 1.24)
+                } else {
+                    let token = role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
+                    if token {
+                        let plateColor = RGB(min(1, c.r * 1.08 + 0.05), min(1, c.g * 1.08 + 0.05), min(1, c.b * 1.08 + 0.05))
+                        quad("0plate", at, plateColor, size * 1.08, o.x / 1.08, (0.04 + o.y) / 1.08)
+                        let emblem = a.selected ? RGB(0.18, 0.12, 0.08) : RGB(0.99, 0.96, 0.89)
+                        quad(role, at, emblem, size * 0.72, o.x / 0.72, (-0.02 + o.y) / 0.72)
+                    } else {
+                        quad(role, at, c, size, o.x, o.y)
+                    }
                 }
             }
             func roleLayerOrder(_ key: String) -> Int {
@@ -1228,18 +1219,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float a = hash21(i), b = hash21(i + float2(1.0, 0.0)), c = hash21(i + float2(0.0, 1.0)), d = hash21(i + float2(1.0, 1.0));
         return mix(mix(a, b, w.x), mix(c, d, w.x), w.y);
     }
+    static float fbm2(float2 p) {
+        return vnoise(p) * 0.65 + vnoise(p * 2.04 + float2(17.1, 9.2)) * 0.35;
+    }
     static float fbm(float2 p) {
-        float v = 0.0, a = 0.5;
-        for (int k = 0; k < 4; k++) { v += a * vnoise(p); p = p * 2.03 + float2(17.1, 9.2); a *= 0.5; }
+        float v = 0.0, a = 0.54;
+        for (int k = 0; k < 3; k++) { v += a * vnoise(p); p = p * 2.03 + float2(17.1, 9.2); a *= 0.48; }
         return v;
     }
-    // 统一全局光影：柔和东南飘移浮云投影（0 = 晴朗微光，1 = 轻云覆影，海陆同频流动）
+    // 统一全局光影：柔和东南飘移浮云投影（轻量化双频噪声，海陆同频流动且低功耗）
     static float cloudCover(float2 world, float time) {
         float2 drift = float2(time * 2.4, time * 1.35);
-        float c1 = vnoise((world - drift) * 0.0048 + float2(3.1, 7.4));
-        float c2 = vnoise((world - drift * 1.45) * 0.0112 + float2(19.3, 11.7));
-        float f = c1 * 0.65 + c2 * 0.35;
-        return smoothstep(0.46, 0.80, f);
+        float c1 = vnoise((world - drift) * 0.0052 + float2(3.1, 7.4));
+        return smoothstep(0.42, 0.82, c1);
     }
     // 统一西北御案主光（uv 0..1）：西北角微沐暖阳，东南角微沉古意
     static float3 studioLight(float2 uv, float strength) {
@@ -1258,12 +1250,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); o.color.a *= u.alpha; return o;
     }
     fragment float4 colorFragment(ColorOut in [[stage_in]]) { return in.color; }
-    // 陆地光影与宣纸质感：统一西北日照暖阳/青影层次 + 轻柔浮云投影 + 全局书案光氛 + 双频宣纸肌理。
+    // 陆地光影与宣纸质感：轻量化低功耗像素着色，远景自动省去高频噪点，保持温润立体光氛。
     fragment float4 landFragment(LandOut in [[stage_in]], constant Uniforms& u [[buffer(2)]]) {
-        float detail = clamp((in.scale - 0.5) / 1.5, 0.0, 1.0);
+        float detail = clamp((in.scale - 0.55) / 1.45, 0.0, 1.0);
         float g1 = vnoise(in.world * 0.55) - 0.5;
-        float g2 = vnoise(in.world * 1.95 + float2(13.7, 7.3)) - 0.5;
-        float grain = (g1 * 0.025 + g2 * 0.024 * detail);
+        float g2 = detail > 0.04 ? (vnoise(in.world * 1.95 + float2(13.7, 7.3)) - 0.5) : 0.0;
+        float grain = (g1 * 0.024 + g2 * 0.022 * detail);
         float3 rgb = in.color.rgb;
         float lum = dot(rgb, float3(0.299, 0.587, 0.114));
         if (u.lighting > 0.01) {
@@ -1320,13 +1312,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     // creeps like a wash on paper instead of popping up cell by cell.
     fragment float4 revealFragment(RevealOut in [[stage_in]], constant float4& r [[buffer(0)]]) {
         float2 q = in.world;
-        // Inked from the shore up to the peaks over 0.14…0.44.
+        // Inked from the shore up to the peaks over 0.14…0.44 (2-octave fbm2 keeps 60/120fps silky smooth).
         float rise = clamp((r.w - 0.14) / 0.30, 0.0, 1.0);
-        float e = rise * 1.25 - 0.1 - (in.field.x * 0.8 + fbm(q * 0.02) * 0.25);
+        float e = rise * 1.25 - 0.1 - (in.field.x * 0.8 + fbm2(q * 0.02) * 0.25);
         float shown = smoothstep(-0.03, 0.05, e);
         // Each state's colour spreads from its capital over 0.5…0.75.
         float spread = clamp((r.w - 0.5) / 0.25, 0.0, 1.0);
-        float ew = spread * 1.3 - 0.1 - (clamp(in.field.y, 0.0, 1.0) * 0.85 + fbm(q * 0.015 + float2(31.7, 11.3)) * 0.3);
+        float ew = spread * 1.3 - 0.1 - (clamp(in.field.y, 0.0, 1.0) * 0.85 + fbm2(q * 0.015 + float2(31.7, 11.3)) * 0.3);
         float washed = smoothstep(-0.02, 0.07, ew);
         // The first wash is ink and tea, as a landscape is laid in before it is coloured.
         float light = dot(in.terrain.rgb, float3(0.3, 0.59, 0.11));
@@ -1343,7 +1335,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     // The blank sheet over the sea, soaked through over 0…0.16 (r: paper and the reveal).
     fragment float4 veilFragment(QuadOut in [[stage_in]], constant float4& r [[buffer(0)]], constant float4& water [[buffer(1)]], constant float4& extent [[buffer(2)]]) {
         float2 q = in.uv * extent.xy, middle = extent.xy * 0.5;
-        float flood = fbm(q * 0.006) * 0.55 + 0.45 * distance(q, middle) / max(1.0, length(middle));
+        float flood = fbm2(q * 0.006) * 0.55 + 0.45 * distance(q, middle) / max(1.0, length(middle));
         float wet = smoothstep(-0.04, 0.04, clamp(r.w / 0.16, 0.0, 1.0) * 1.2 - 0.1 - flood);
         return float4(mix(r.rgb, water.rgb * 0.55, wet), 1.0 - wet);
     }
@@ -1366,9 +1358,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // Marks at least 22 points tall (an army mark is 5 map units), so whose army it is reads at
         // every zoom; banner and pips keep their proportions. The shift (in the quad's own size)
         // places the banner and the pips around the army's point.
-        // 屏幕尺寸规则（与 MapRenderer.iconZoom 一致）：远景 6.8 点、随缩放增长、近景封顶 21 点，
-        // 图标收巧约 22%，清晰露出国界与战线推进，触控区仍由 MapView 保持 ≥22pt。
-        float pixels = s.size * clamp(u.scale * 0.66, 6.8 / 3.0112, 21.0 / 3.0112);
+        // 屏幕尺寸规则（与 MapRenderer.iconZoom 严格一致）：远景 15.5 点、随缩放流畅放大、近景封顶 34 点，
+        // 陆军漆盾与水师主力舰在全局与近景下皆清晰醒目。
+        float pixels = s.size * clamp(u.scale * 1.12, 15.5 / 3.0112, 34.0 / 3.0112);
         // Alpha below zero: the icon fades in over the leg (new and re-formed armies).
         // Alpha −2: an army that fell fades out over the leg.
         float4 tint = float4(s.tint);
@@ -1397,7 +1389,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     vertex SpriteOut spriteShadowVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
                                         constant float& time [[buffer(5)]]) {
         SpriteVertex s = v[id];
-        float pixels = s.size * clamp(u.scale * 0.66, 6.8 / 3.0112, 21.0 / 3.0112);
+        float pixels = s.size * clamp(u.scale * 1.12, 15.5 / 3.0112, 34.0 / 3.0112);
         float4 tint = float4(s.tint);
         if (tint.a < -1.5) { float d = -tint.a - 2.0; tint.a = 1.0 - clamp((progress - d) / 0.15, 0.0, 1.0); }
         else if (tint.a < 0.0) tint.a = progress;
@@ -1482,8 +1474,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float detail = clamp((in.scale - 0.30) / 1.35, 0.0, 1.0);
         float2 w = in.world;
         float tm = u.time;
-        // 1. 远洋宽带洋流与深海层次
-        float current = (fbm(w * 0.010 + float2(4.2, 8.7)) - 0.5) * 0.062;
+        // 1. 远洋宽带洋流与深海层次（轻量化双频噪声 fbm2，GPU 像素算力减半且观感同等温润）
+        float current = (fbm2(w * 0.010 + float2(4.2, 8.7)) - 0.5) * 0.058;
         float lum = dot(base, float3(0.299, 0.587, 0.114));
         float shallowMask = smoothstep(0.46, 0.78, lum);
         float3 shallowTint = float3(0.955, 1.032, 1.028);
@@ -1493,19 +1485,17 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // 2. 铜版细腻水平微浪纹 + 动态海浪法线与西北日光波光高光
         float p1 = w.x * 0.19 + w.y * 0.62 - tm * 0.55;
         float p2 = w.x * 0.34 - w.y * 0.48 + tm * 0.38;
-        float p3 = w.x * 0.11 + w.y * 0.92 + sin(w.x * 0.06) * 2.2 - tm * 0.25;
         float waveSlopeX = cos(p1) * 0.19 + cos(p2) * 0.22;
-        float waveSlopeY = cos(p1) * 0.62 - cos(p2) * 0.31 + cos(p3) * 0.38;
+        float waveSlopeY = cos(p1) * 0.62 - cos(p2) * 0.31;
         float3 waveN = normalize(float3(-waveSlopeX * 0.32, -waveSlopeY * 0.32, 1.0));
-        // 与全局一致的西北太阳半程方向 -> 产生温润柔和的水面金白波光
         float3 halfVec = normalize(float3(-0.34, -0.30, 0.89));
         float spec = pow(max(0.0, dot(waveN, halfVec)), 22.0);
         float glint = spec * (0.048 + 0.065 * detail) * u.lighting;
 
-        float engraving = sin(w.y * 0.88 + sin(w.x * 0.15 + fbm(w * 0.045) * 2.8) * 1.35) * (0.012 + 0.012 * detail);
+        float engraving = sin(w.y * 0.88 + sin(w.x * 0.15 + vnoise(w * 0.045) * 2.5) * 1.30) * (0.012 + 0.011 * detail);
         // 浅海沿岸柔和浪花呼吸光晕
-        float surfPulse = (sin(w.x * 0.12 + w.y * 0.14 - tm * 0.9) * 0.5 + 0.5) * shallowMask * 0.032 * u.lighting;
-        float grain = (vnoise(w * 0.68) - 0.5) * 0.022;
+        float surfPulse = (sin(w.x * 0.12 + w.y * 0.14 - tm * 0.9) * 0.5 + 0.5) * shallowMask * 0.030 * u.lighting;
+        float grain = detail > 0.05 ? (vnoise(w * 0.68) - 0.5) * 0.020 * detail : 0.0;
 
         rgb += current + engraving + grain + surfPulse;
         rgb += float3(1.0, 0.96, 0.84) * glint;
@@ -1513,7 +1503,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if (u.lighting > 0.01) {
             float cloud = cloudCover(w, tm);
             float3 cloudTint = mix(float3(1.018, 1.016, 1.008), float3(0.915, 0.935, 0.972), cloud);
-            rgb *= mix(float3(1.0), cloudTint, u.lighting * 0.90);
+            rgb *= mix(float3(1.0), cloudTint, u.lighting * 0.85);
             rgb *= studioLight(in.uv, u.lighting);
         }
         rgb = clamp(rgb, 0.0, 1.0);

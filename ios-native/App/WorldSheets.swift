@@ -502,83 +502,89 @@ struct DiplomacySheet: View {
         let opinion = pairInfo?.opinions?.first(where: { $0.nation == defender })
 
         SectionLabel("往来对席（轻点切换双方）")
-        VStack(spacing: 12) {
-            HStack(spacing: 8) {
-                envoySeat(roleLabel: "发起国", nation: attacker, map: map, state: state) { pickingRole = .source }
-                Button {
-                    guard validPair else { return }
-                    GameFeel.shared.tap()
-                    withAnimation(Motion.tap) {
-                        let tmp = attacker
-                        attacker = defender
-                        defender = tmp
+        Group2 {
+            VStack(spacing: 12) {
+                HStack(spacing: 8) {
+                    envoySeat(roleLabel: "发起国", nation: attacker, map: map, state: state) { pickingRole = .source }
+                    Button {
+                        guard validPair else { return }
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.tap) {
+                            let tmp = attacker
+                            attacker = defender
+                            defender = tmp
+                        }
+                    } label: {
+                        InkIcon(glyph: .swap, size: 15, weight: 1.85)
+                            .foregroundStyle(Theme.seal)
+                            .frame(width: 34, height: 34)
+                            .background(Theme.seal.opacity(0.10), in: Circle())
+                            .overlay(Circle().strokeBorder(Theme.seal.opacity(0.28), lineWidth: 0.8))
                     }
-                } label: {
-                    Image(systemName: "arrow.left.arrow.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Theme.seal)
-                        .frame(width: 34, height: 34)
-                        .background(Theme.seal.opacity(0.10), in: Circle())
-                        .overlay(Circle().stroke(Theme.seal.opacity(0.28), lineWidth: 0.8))
+                    .buttonStyle(PressStyle())
+                    envoySeat(roleLabel: "目标国", nation: defender, map: map, state: state) { pickingRole = .target }
                 }
-                .buttonStyle(PressStyle())
-                envoySeat(roleLabel: "目标国", nation: defender, map: map, state: state) { pickingRole = .target }
-            }
 
-            if validPair {
-                Divider2()
-                HStack(spacing: 10) {
-                    if let opinion {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 6) {
-                                Text("双边好感").font(Theme.caption).foregroundStyle(Theme.ink2)
-                                PaperTag(
-                                    text: "\(opinion.stance) \(opinion.score > 0 ? "+" : "")\(opinion.score)",
-                                    color: atWar || opinion.score <= -22 ? Theme.seal : opinion.score >= 25 ? Theme.jade : Theme.ink2,
-                                    size: 11
-                                )
+                if validPair {
+                    Divider2()
+                    HStack(spacing: 10) {
+                        if let opinion {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 6) {
+                                    Text("双边好感").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                    PaperTag(
+                                        text: "\(opinion.stance) \(opinion.score > 0 ? "+" : "")\(opinion.score)",
+                                        color: atWar || opinion.score <= -22 ? Theme.seal : opinion.score >= 25 ? Theme.jade : Theme.ink2,
+                                        size: 11
+                                    )
+                                }
+                                OpinionGauge(score: opinion.score, height: 5)
                             }
-                            OpinionGauge(score: opinion.score, height: 5)
+                        } else {
+                            Text(atWar ? "两国正处于交战状态" : "两国当前处于和平状态")
+                                .font(Theme.label).foregroundStyle(atWar ? Theme.seal : Theme.ink2)
+                            Spacer()
                         }
-                    } else {
-                        Text(atWar ? "两国正处于交战状态" : "两国当前处于和平状态")
-                            .font(Theme.label).foregroundStyle(atWar ? Theme.seal : Theme.ink2)
-                        Spacer()
-                    }
-                    if atWar {
-                        Button {
-                            GameFeel.shared.tap()
-                            Task {
-                                if let e = await model.makePeace(attacker, defender) { say(e) }
-                                else { say("两国已缔结停战和约") }
+                        if atWar {
+                            Button {
+                                GameFeel.shared.tap()
+                                Task {
+                                    if let e = await model.makePeace(attacker, defender) { say(e) }
+                                    else { say("两国已缔结停战和约") }
+                                }
+                            } label: {
+                                HStack(spacing: 5) {
+                                    InkIcon(glyph: .peace, size: 14, weight: 1.85, accent: Theme.paper2.opacity(0.3))
+                                    Text("立即议和")
+                                }
+                                    .font(Theme.label).foregroundStyle(Theme.paper2)
+                                    .padding(.horizontal, 14).frame(height: 36)
+                                    .background(Theme.jade, in: Capsule())
                             }
-                        } label: {
-                            Label("立即议和", systemImage: "leaf")
-                                .font(Theme.label).foregroundStyle(Theme.paper2)
-                                .padding(.horizontal, 14).frame(height: 36)
-                                .background(Theme.jade, in: Capsule())
-                        }
-                        .buttonStyle(PressStyle())
-                    } else {
-                        Button {
-                            GameFeel.shared.tap()
-                            Task {
-                                if let e = await model.declareWar(attacker, on: defender) { say(e) }
-                                else { say(model.state?.events.last?.text ?? "已宣战") }
+                            .buttonStyle(PressStyle())
+                        } else {
+                            Button {
+                                GameFeel.shared.tap()
+                                Task {
+                                    if let e = await model.declareWar(attacker, on: defender) { say(e) }
+                                    else { say(model.state?.events.last?.text ?? "已宣战") }
+                                }
+                            } label: {
+                                HStack(spacing: 5) {
+                                    InkIcon(glyph: .war, size: 14, weight: 1.85, accent: Theme.paper2.opacity(0.3))
+                                    Text("立即宣战")
+                                }
+                                    .font(Theme.label).foregroundStyle(Theme.paper2)
+                                    .padding(.horizontal, 14).frame(height: 36)
+                                    .background(Theme.seal, in: Capsule())
                             }
-                        } label: {
-                            Label("立即宣战", systemImage: "flag.2.crossed")
-                                .font(Theme.label).foregroundStyle(Theme.paper2)
-                                .padding(.horizontal, 14).frame(height: 36)
-                                .background(Theme.seal, in: Capsule())
+                            .buttonStyle(PressStyle())
                         }
-                        .buttonStyle(PressStyle())
                     }
                 }
             }
+            .padding(14)
         }
-        .padding(14)
-        .paperCard()
         .padding(.horizontal, Theme.Layout.pageInset)
 
         SectionLabel("条约、联姻与博弈")
@@ -603,12 +609,12 @@ struct DiplomacySheet: View {
                     if valid { Text("\(provs) 州").font(Theme.kai(10)).foregroundStyle(Theme.ink2).monospacedDigit() }
                 }
                 Spacer(minLength: 2)
-                Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.ink2)
+                InkIcon(glyph: .chevronDown, size: 12, weight: 1.8).foregroundStyle(Theme.ink2)
             }
             .padding(.horizontal, 10).padding(.vertical, 8)
             .frame(maxWidth: .infinity)
             .background(Theme.paper.opacity(0.65), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).strokeBorder(Theme.ink.opacity(0.14), lineWidth: 0.85))
             .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
         }
         .buttonStyle(PressStyle())

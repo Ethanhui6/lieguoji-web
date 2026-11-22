@@ -200,8 +200,10 @@ public enum MapLayers {
     /// ORIGINAL_CITY_UNIT (Shapes CityMain, 0.23 world units) and the capital's 1.5×.
     public static let cityUnit: Float = 0.23 / (240.0 / 1600.0)
 
-    /// original-relief.ts drawOriginalRelief: a mountain for h ≥ 55, a tree group for forest
-    /// biomes 5…9 at 22 ≤ h < 55; never on a cell touching the sea; at most one per 23-unit square.
+    /// 舆图山川地貌层（清爽工笔重构）：
+    /// 1. 疏朗山脊（h >= 61，36 格间距，仅沿真实高脊落笔，绝不铺满屏幕遮挡国界、城池与军队）；
+    /// 2. 丘陵起伏（46 <= h < 61 绘温润弧形土丘与向阳坡色）；
+    /// 3. 丰富多样的非山地地貌：针叶泰加林、热带/温带阔叶林、大漠沙丘与绿洲、泽国水洼芦苇、稀树草原金合欢、平畴草甸、冻原苔藓、冰原冰脊。
     public static func relief(_ map: WorldMap) -> ColoredMesh {
         var touchesSea = [Bool](repeating: false, count: map.cellCount)
         for e in map.edges where e.a >= 0 && e.b >= 0 {
@@ -209,174 +211,192 @@ public enum MapLayers {
             if map.elevation[b] < WorldMap.seaLevel { touchesSea[a] = true }
             if map.elevation[a] < WorldMap.seaLevel { touchesSea[b] = true }
         }
-        let light = RGB(hex: 0xEAE0C8), ink = RGB(hex: 0x453E30), shadowInk = RGB(hex: 0x3A3327)
-        let snowSun = RGB(hex: 0xFAF7F0), snowShade = RGB(hex: 0xC6D7E3)
-        let treeDark = RGB(hex: 0x325039), treeMid = RGB(hex: 0x456949), treeLit = RGB(hex: 0x628558), trunk = RGB(hex: 0x354834)
-        var occupied = Set<Int64>()
+        let light = RGB(hex: 0xECE3CE), ink = RGB(hex: 0x4A4032), shadowInk = RGB(hex: 0x3D3529)
+        let snowSun = RGB(hex: 0xFBF8F1), snowShade = RGB(hex: 0xC8D8E4)
+        let treeDark = RGB(hex: 0x2F5239), treeMid = RGB(hex: 0x466F4B), treeLit = RGB(hex: 0x6A915E), trunk = RGB(hex: 0x3A4A36)
+        var mtnGrid = Set<Int64>()
+        var woodGrid = Set<Int64>()
         var m = ColoredMesh()
-        // Groves: a slow field over the map decides where woods stand thick and where they thin out.
-        func grove(_ x: Float, _ y: Float) -> Float { sin(x * 0.011 + 1.3) * sin(y * 0.013 + 0.7) + 0.6 * sin((x + y) * 0.006 + 2.1) }
-        // Drawn from the top of the map down, so nearer peaks and trees overlap the ones behind.
+        func gridKey(_ x: Float, _ y: Float, _ step: Float) -> Int64 {
+            Int64(floor(x / step)) << 32 | Int64(Int32(floor(y / step))) & 0xFFFF_FFFF
+        }
+        // 林地疏密场：林海成片成团，留出清晰河谷与城邦空地
+        func grove(_ x: Float, _ y: Float) -> Float { sin(x * 0.012 + 1.3) * sin(y * 0.014 + 0.7) + 0.55 * sin((x + y) * 0.007 + 2.1) }
+        // 自北向南绘制，令前峰自然压住后峰
         let order = (0..<map.cellCount).sorted { map.sites[$0 * 2 + 1] < map.sites[$1 * 2 + 1] }
         for i in order {
             let h = Float(map.elevation[i]), biome = map.biome[i]
-            let forest = h >= 22 && h < 55 && biome >= 5 && biome <= 9
-            if h < 55 && !forest { continue }
+            let mountain = h >= 61
+            let forest = h >= 22 && h < 61 && biome >= 5 && biome <= 9
+            if !mountain && !forest { continue }
             if touchesSea[i] { continue }
-            if forest && grove(map.sites[i * 2], map.sites[i * 2 + 1]) < -0.45 { continue }
+            let sx = map.sites[i * 2], sy = map.sites[i * 2 + 1]
             let pick = UInt32(truncatingIfNeeded: i &* 2654435761) >> 16 % 100
-            if h >= 55 && (h < 57 || pick < 12) { continue }
-            if forest && pick < 20 { continue }
-            let jx = Float(i * 7919 % 13) - 6, jy = Float(i * 104_729 % 11) - 5
-            let x = map.sites[i * 2] + jx * 0.6, y = map.sites[i * 2 + 1] + jy * 0.6
-            let key = Int64(floor(map.sites[i * 2] / 22)) << 32 | Int64(Int32(floor(map.sites[i * 2 + 1] / 22))) & 0xFFFF_FFFF
-            if occupied.contains(key) { continue }
-            occupied.insert(key)
-            if h >= 55 {
-                // 宋元工笔山水群峰：柔和山脚底影 + 主峰与左右副峰三叠构图 + 披麻皴阴影 + 高山双色冰川雪冠
+            if mountain {
+                // 低矮山麓大幅疏朗（跳过 46%），仅真正险峻高脊成脉连绵，彻底根治“满屏黑山糊成一片”
+                if h < 69 && pick < 46 { continue }
+                if h >= 69 && pick < 18 { continue }
+                let key = gridKey(sx, sy, 36)
+                if !mtnGrid.insert(key).inserted { continue }
+                let jx = Float(i * 7919 % 11) - 5, jy = Float(i * 104_729 % 9) - 4
+                let x = sx + jx * 0.45, y = sy + jy * 0.45
                 let v1 = Float(i * 37 % 101) / 100
                 let v2 = Float(i * 73 % 97) / 97
-                let w = (6.5 + (h - 55) * 0.14) * (0.82 + v1 * 0.45)
-                let height = (9.5 + (h - 55) * 0.24) * (0.85 + v1 * 0.34)
-                let peakX = x + (v2 - 0.5) * 3.6
+                // 峰形收秀挺拔（较旧版收瘦 26%），留出通透国色与国界空间
+                let w = (5.2 + (h - 60) * 0.11) * (0.85 + v1 * 0.32)
+                let height = (7.8 + (h - 60) * 0.20) * (0.88 + v1 * 0.28)
+                let peakX = x + (v2 - 0.5) * 2.4
                 let peakY = y - height
 
-                // 山脚柔和落影（令群山自然扎根大地，不再悬空生硬）
-                m.fill([x - w * 1.35, y + 3.8, x - w * 0.5, y + 1.4, x + w * 0.6, y + 1.6, x + w * 1.4, y + 4.4, x + w * 0.3, y + 5.6, x - w * 0.7, y + 5.2], shadowInk, alpha: 0.12)
+                // 轻薄山脚阴影
+                m.fill([x - w * 1.12, y + 2.8, x - w * 0.4, y + 1.1, x + w * 0.5, y + 1.2, x + w * 1.16, y + 3.0, x + w * 0.2, y + 3.9, x - w * 0.6, y + 3.7], shadowInk, alpha: 0.08)
 
-                // 后景副峰（稍低、略偏左或右，形成连绵山脉群落感）
-                let subSide: Float = v2 > 0.5 ? -1 : 1
-                let subX = x + subSide * w * 0.62
-                let subY = y - height * (0.58 + v1 * 0.14)
-                let subW = w * 0.68
-                let subPoly: [Float] = [subX - subW, y + 2.8, subX - subW * 0.45, subY + (y - subY) * 0.45, subX, subY, subX + subW * 0.5, subY + (y - subY) * 0.52, subX + subW, y + 2.8]
-                m.fill(subPoly, light, alpha: 0.28)
-                m.fill([subX, subY, subX + subW * 0.5, subY + (y - subY) * 0.52, subX + subW, y + 2.8, subX + subW * 0.08, y + 1.8], ink, alpha: 0.22)
-                m.polyline([subX - subW, y + 2.8, subX - subW * 0.45, subY + (y - subY) * 0.45, subX, subY, subX + subW * 0.5, subY + (y - subY) * 0.52, subX + subW, y + 2.8], width: 0.52, ink, alpha: 0.52)
-
-                // 前景主峰轮廓（受光西北暖阳面 + 背光东南墨青面 + 蜿蜒中脊线）
-                let lMidX = peakX - w * 0.56, lMidY = peakY + height * 0.48
-                let rMidX = peakX + w * 0.48, rMidY = peakY + height * 0.44
-                let spineX = peakX - w * 0.08, spineY = peakY + height * 0.56
-                let mainPoly: [Float] = [x - w * 1.15, y + 3.6, lMidX, lMidY, peakX, peakY, rMidX, rMidY, x + w * 1.18, y + 3.6]
-                m.fill(mainPoly, light, alpha: 0.42)
-                // 背阴坡墨青层次
-                m.fill([peakX, peakY, rMidX, rMidY, x + w * 1.18, y + 3.6, x + w * 0.12, y + 2.6, spineX, spineY], ink, alpha: 0.30)
-                // 精致山脊线与轮廓墨线
-                m.polyline(mainPoly, width: 0.72, ink, alpha: 0.70)
-                m.polyline([peakX, peakY, spineX, spineY, x - w * 0.16, y + 3.2], width: 0.58, ink, alpha: 0.65)
-                // 披麻皴侧坡细笔触
-                for k in 0..<4 {
-                    let t = Float(k + 1) / 5.0
-                    let sx = peakX + (x + w * 0.92 - peakX) * t * 0.68
-                    let sy = peakY + (y + 2.5 - peakY) * t * 0.72
-                    m.segment(sx, sy, sx + w * 0.22, sy + height * 0.22, width: 0.42, shadowInk, alpha: 0.38)
+                // 高大山脊才附带一处远景小副峰，避免杂乱三角重叠
+                if h >= 66 {
+                    let subSide: Float = v2 > 0.5 ? -1 : 1
+                    let subX = x + subSide * w * 0.68
+                    let subY = y - height * (0.56 + v1 * 0.12)
+                    let subW = w * 0.58
+                    let subPoly: [Float] = [subX - subW, y + 2.2, subX - subW * 0.42, subY + (y - subY) * 0.48, subX, subY, subX + subW * 0.48, subY + (y - subY) * 0.50, subX + subW, y + 2.2]
+                    m.fill(subPoly, light, alpha: 0.26)
+                    m.fill([subX, subY, subX + subW * 0.48, subY + (y - subY) * 0.50, subX + subW, y + 2.2, subX + subW * 0.06, y + 1.5], ink, alpha: 0.16)
+                    m.polyline(subPoly, width: 0.46, ink, alpha: 0.42)
                 }
 
-                // 真实高山雪峰（h >= 68 覆盖冰川雪冠，区分受光雪白与背阴冰蓝雪影）
-                if h >= 68 {
-                    let snowFrac: Float = min(0.54, 0.28 + (h - 68) * 0.012)
-                    let slX = peakX + (lMidX - peakX) * snowFrac * 1.45, slY = peakY + (lMidY - peakY) * snowFrac * 1.45
-                    let srX = peakX + (rMidX - peakX) * snowFrac * 1.45, srY = peakY + (rMidY - peakY) * snowFrac * 1.45
-                    let scX = peakX + (spineX - peakX) * snowFrac * 1.35, scY = peakY + (spineY - peakY) * snowFrac * 1.35
-                    // 西北向阳雪坡（暖玉白）
-                    m.fill([peakX, peakY, slX, slY, (slX + scX) * 0.5, scY - 0.7, scX, scY], snowSun, alpha: 0.92)
-                    // 东南背阴雪坡（冷冰蓝，立体感极强）
-                    m.fill([peakX, peakY, scX, scY, (scX + srX) * 0.5, srY + 0.6, srX, srY], snowShade, alpha: 0.88)
-                    // 副峰高海拔亦可落雪
-                    if h >= 76 {
-                        let ss = snowFrac * 0.75
-                        m.fill([subX, subY, subX - subW * ss * 0.55, subY + (y - subY) * ss * 0.65, subX + subW * ss * 0.1, subY + (y - subY) * ss * 0.55], snowSun, alpha: 0.82)
-                        m.fill([subX, subY, subX + subW * ss * 0.1, subY + (y - subY) * ss * 0.55, subX + subW * ss * 0.58, subY + (y - subY) * ss * 0.68], snowShade, alpha: 0.78)
-                    }
-                }
-            } else if biome == 9 {
-                // 针叶泰加林：多层松柏塔形轮廓 + 柔和林底暗影
-                let pineDark = RGB(hex: 0x264130), pineLit = RGB(hex: 0x3B5E46)
-                for (dx, dy, sc) in [(Float(-3.4), Float(1.2), Float(0.88)), (0.6, -2.0, 1.08), (4.2, 1.8, 0.92)] {
-                    let cx = x + dx, cy = y + dy
-                    m.disc(cx, cy + 3.4 * sc, radius: 2.3 * sc, shadowInk, alpha: 0.14, sides: 8)
-                    m.fill([cx, cy - 7.5 * sc, cx - 2.3 * sc, cy - 2.4 * sc, cx - 1.1 * sc, cy - 2.4 * sc, cx - 3.0 * sc, cy + 2.2 * sc, cx + 3.0 * sc, cy + 2.2 * sc, cx + 1.1 * sc, cy - 2.4 * sc, cx + 2.3 * sc, cy - 2.4 * sc], pineDark, alpha: 0.58)
-                    m.fill([cx, cy - 7.5 * sc, cx - 2.0 * sc, cy - 2.4 * sc, cx - 0.1 * sc, cy + 2.0 * sc], pineLit, alpha: 0.36)
-                    m.segment(cx, cy + 2.0 * sc, cx, cy + 4.4 * sc, width: 0.55, trunk, alpha: 0.62)
+                // 前景主峰：柔和向阳面 + 清雅背阴面 + 简洁山脊线
+                let lMidX = peakX - w * 0.54, lMidY = peakY + height * 0.48
+                let rMidX = peakX + w * 0.46, rMidY = peakY + height * 0.44
+                let spineX = peakX - w * 0.06, spineY = peakY + height * 0.55
+                let mainPoly: [Float] = [x - w * 1.06, y + 2.8, lMidX, lMidY, peakX, peakY, rMidX, rMidY, x + w * 1.08, y + 2.8]
+                m.fill(mainPoly, light, alpha: 0.36)
+                m.fill([peakX, peakY, rMidX, rMidY, x + w * 1.08, y + 2.8, x + w * 0.10, y + 2.0, spineX, spineY], ink, alpha: 0.22)
+                m.polyline(mainPoly, width: 0.62, ink, alpha: 0.54)
+                m.polyline([peakX, peakY, spineX, spineY, x - w * 0.12, y + 2.4], width: 0.48, ink, alpha: 0.48)
+
+                // 高海拔雪山（h >= 70）：温润雪白 + 冰蓝背坡
+                if h >= 70 {
+                    let snowFrac: Float = min(0.50, 0.26 + (h - 70) * 0.012)
+                    let slX = peakX + (lMidX - peakX) * snowFrac * 1.4, slY = peakY + (lMidY - peakY) * snowFrac * 1.4
+                    let srX = peakX + (rMidX - peakX) * snowFrac * 1.4, srY = peakY + (rMidY - peakY) * snowFrac * 1.4
+                    let scX = peakX + (spineX - peakX) * snowFrac * 1.3, scY = peakY + (spineY - peakY) * snowFrac * 1.3
+                    m.fill([peakX, peakY, slX, slY, (slX + scX) * 0.5, scY - 0.5, scX, scY], snowSun, alpha: 0.90)
+                    m.fill([peakX, peakY, scX, scY, (scX + srX) * 0.5, srY + 0.5, srX, srY], snowShade, alpha: 0.84)
                 }
             } else {
-                // 温带/热带阔叶丛林：层叠圆润树冠（暗叶底 + 苍翠主冠 + 暖阳冠顶高光）
-                let dark = (biome == 7 || biome == 8) ? RGB(hex: 0x254D31) : treeDark
-                let mid = (biome == 7 || biome == 8) ? RGB(hex: 0x386E43) : treeMid
-                let lit = (biome == 7 || biome == 8) ? RGB(hex: 0x568F56) : treeLit
-                for (dx, dy, sc) in [(Float(-3.5), Float(1.4), Float(0.9)), (1.2, -2.0, 1.08), (4.8, 1.6, 0.88)] {
-                    let cx = x + dx, cy = y + dy
-                    m.disc(cx + 0.4, cy + 3.2 * sc, radius: 2.6 * sc, shadowInk, alpha: 0.13, sides: 8)
-                    m.segment(cx, cy + 0.5, cx, cy + 4.2 * sc, width: 0.6, trunk, alpha: 0.62)
-                    m.disc(cx, cy - 0.6 * sc, radius: 3.1 * sc, dark, alpha: 0.54, sides: 9)
-                    m.disc(cx - 0.5 * sc, cy - 1.5 * sc, radius: 2.5 * sc, mid, alpha: 0.52, sides: 9)
-                    m.disc(cx - 1.0 * sc, cy - 2.2 * sc, radius: 1.4 * sc, lit, alpha: 0.44, sides: 7)
+                if grove(sx, sy) < -0.35 || pick < 22 { continue }
+                let key = gridKey(sx, sy, 27)
+                if !woodGrid.insert(key).inserted { continue }
+                let jx = Float(i * 7919 % 11) - 5, jy = Float(i * 104_729 % 9) - 4
+                let x = sx + jx * 0.45, y = sy + jy * 0.45
+                if biome == 9 {
+                    // 北方针叶泰加林：双层松柏林丛
+                    let pineDark = RGB(hex: 0x264734), pineLit = RGB(hex: 0x3E684C)
+                    for (dx, dy, sc) in [(Float(-3.6), Float(1.1), Float(0.86)), (0.6, -2.1, 1.08), (4.4, 1.5, 0.90)] {
+                        let cx = x + dx, cy = y + dy
+                        m.disc(cx, cy + 3.2 * sc, radius: 2.2 * sc, shadowInk, alpha: 0.12, sides: 7)
+                        m.fill([cx, cy - 7.2 * sc, cx - 2.3 * sc, cy - 2.2 * sc, cx - 1.0 * sc, cy - 2.2 * sc, cx - 3.0 * sc, cy + 2.2 * sc, cx + 3.0 * sc, cy + 2.2 * sc, cx + 1.0 * sc, cy - 2.2 * sc, cx + 2.3 * sc, cy - 2.2 * sc], pineDark, alpha: 0.62)
+                        m.fill([cx, cy - 7.2 * sc, cx - 1.9 * sc, cy - 2.2 * sc, cx - 0.1 * sc, cy + 2.0 * sc], pineLit, alpha: 0.42)
+                        m.segment(cx, cy + 2.0 * sc, cx, cy + 4.2 * sc, width: 0.55, trunk, alpha: 0.58)
+                    }
+                } else {
+                    // 热带雨林（浓翠深绿）与温带阔叶林（苍翠明润）层次分明
+                    let tropical = (biome == 7 || biome == 8)
+                    let dark = tropical ? RGB(hex: 0x1E4E30) : treeDark
+                    let mid = tropical ? RGB(hex: 0x317443) : treeMid
+                    let lit = tropical ? RGB(hex: 0x579A5A) : treeLit
+                    for (dx, dy, sc) in [(Float(-3.8), Float(1.3), Float(0.92)), (1.0, -2.0, 1.12), (4.9, 1.5, 0.88)] {
+                        let cx = x + dx, cy = y + dy
+                        m.disc(cx + 0.4, cy + 3.1 * sc, radius: 2.6 * sc, shadowInk, alpha: 0.11, sides: 7)
+                        m.segment(cx, cy + 0.5, cx, cy + 4.1 * sc, width: 0.6, trunk, alpha: 0.56)
+                        m.disc(cx, cy - 0.5 * sc, radius: 3.3 * sc, dark, alpha: 0.58, sides: 8)
+                        m.disc(cx - 0.5 * sc, cy - 1.5 * sc, radius: 2.6 * sc, mid, alpha: 0.58, sides: 8)
+                        m.disc(cx - 1.0 * sc, cy - 2.2 * sc, radius: 1.5 * sc, lit, alpha: 0.50, sides: 6)
+                    }
                 }
             }
         }
-        // Further detail, on a finer grid and never under the original's marks: rounded hills, dunes,
-        // grass tufts, savanna acacias, tundra and ice. Presentation only.
+        // 非山地特色地貌层（常规缩放即清晰可见，不再藏在极近缩放里）：
+        // 丘陵、沙丘绿洲、湿地沼泽、稀树金合欢、平畴草甸、苔原与冰原。
         var fine = Set<Int64>()
-        let sand = RGB(hex: 0xA88A55), grass = RGB(hex: 0x6F7F3C), acacia = RGB(hex: 0x56653A), frost = RGB(hex: 0xFFFFFF), moss = RGB(hex: 0x7A6E52)
-        for i in 0..<map.cellCount {
+        let hillLit = RGB(hex: 0xCBB98A), hillInk = RGB(hex: 0x62563F)
+        let duneLit = RGB(hex: 0xDFC17E), duneRidge = RGB(hex: 0x9C7A40), oasisWater = RGB(hex: 0x4892A2), oasisPalm = RGB(hex: 0x3B7042)
+        let grass = RGB(hex: 0x5E7A38), acacia = RGB(hex: 0x4E6837), frost = RGB(hex: 0xEEF6FA), iceShade = RGB(hex: 0x8DB2C7), moss = RGB(hex: 0x7A7358)
+        let marshPool = RGB(hex: 0x5B8792), marshReed = RGB(hex: 0x3C6343)
+        for i in order {
             let h = Float(map.elevation[i]), biome = map.biome[i]
-            guard h >= Float(WorldMap.seaLevel) + 2, !touchesSea[i] else { continue }
+            guard h >= Float(WorldMap.seaLevel) + 2, h < 61, !touchesSea[i] else { continue }
             let x = map.sites[i * 2], y = map.sites[i * 2 + 1]
-            let coarse = Int64(floor(x / 23)) << 32 | Int64(Int32(floor(y / 23))) & 0xFFFF_FFFF
-            if occupied.contains(coarse) && (h >= 55 || (h >= 22 && biome >= 5 && biome <= 9)) { continue }
-            let key = Int64(floor(x / 20)) << 32 | Int64(Int32(floor(y / 20))) & 0xFFFF_FFFF
+            if woodGrid.contains(gridKey(x, y, 27)) && biome >= 5 && biome <= 9 { continue }
+            if mtnGrid.contains(gridKey(x, y, 36)) { continue }
+            let key = gridKey(x, y, 24)
             if fine.contains(key) { continue }
             let v = Float(i * 53 % 97) / 97
-            if h >= 46 && h < 62 {
-                if v > 0.35 { continue }
+            if h >= 46 {
+                // 温润丘陵（46..60）：双弧向阳土坡 + 柔墨轮廓，自然过渡平地与高山
+                if v > 0.52 { continue }
                 fine.insert(key)
-                // Rounded hills: two soft mounds.
-                m.polyline([x - 6, y + 2, x - 4, y - 1.5, x - 1.5, y - 2.5, x + 1, y - 1, x + 2, y + 1], width: 0.55, ink, alpha: 0.45)
-                m.polyline([x + 0.5, y + 2.5, x + 2.5, y, x + 4.5, y - 0.8, x + 6.5, y + 2.5], width: 0.5, ink, alpha: 0.38)
+                m.fill([x - 7.5, y + 2.2, x - 4.5, y - 1.6, x - 1.2, y - 2.6, x + 2.0, y - 0.8, x + 3.2, y + 2.2], hillLit, alpha: 0.30)
+                m.polyline([x - 7.5, y + 2.2, x - 4.5, y - 1.6, x - 1.2, y - 2.6, x + 2.0, y - 0.8, x + 3.2, y + 2.2], width: 0.62, hillInk, alpha: 0.48)
+                m.fill([x + 0.5, y + 2.8, x + 3.0, y - 0.3, x + 5.8, y - 0.9, x + 8.0, y + 2.8], hillLit, alpha: 0.24)
+                m.polyline([x + 0.5, y + 2.8, x + 3.0, y - 0.3, x + 5.8, y - 0.9, x + 8.0, y + 2.8], width: 0.54, hillInk, alpha: 0.40)
             } else if biome == 1 || biome == 2 {
-                if v > 0.7 { continue }
+                // 荒漠沙丘 + 偶见碧水绿洲
+                if v > 0.72 { continue }
                 fine.insert(key)
-                // Dunes: wind-ridged sand, a crest shaded on its lee, and scattered stones.
-                m.fill([x - 6, y + 1, x - 2, y - 2.2, x + 1, y - 0.8, x + 5, y - 2.4, x + 7, y + 1], sand, alpha: 0.18)
-                m.polyline([x - 6, y, x - 3, y - 1.8, x, y - 0.6, x + 3, y - 2, x + 6, y - 0.4], width: 0.6, sand, alpha: 0.65)
-                m.polyline([x - 4, y + 3, x - 1, y + 1.6, x + 2, y + 2.6, x + 5, y + 1.4], width: 0.45, sand, alpha: 0.5)
-                if v < 0.25 { m.disc(x + 4, y + 3.5, radius: 0.5, ink, alpha: 0.35, sides: 6); m.disc(x - 5, y + 3, radius: 0.4, ink, alpha: 0.3, sides: 6) }
+                if biome == 1 && v < 0.08 {
+                    // 沙漠绿洲：碧泉小潭 + 两株棕榈
+                    m.disc(x, y + 1.0, radius: 4.2, oasisWater, alpha: 0.62, sides: 10)
+                    m.disc(x - 0.8, y + 0.5, radius: 2.2, RGB(hex: 0xA2D6DD), alpha: 0.48, sides: 8)
+                    for px in [Float(-3.2), 2.8] {
+                        m.segment(x + px, y + 1.2, x + px * 1.15, y - 3.6, width: 0.6, trunk, alpha: 0.7)
+                        m.disc(x + px * 1.15, y - 4.2, radius: 2.3, oasisPalm, alpha: 0.76, sides: 7)
+                    }
+                } else {
+                    m.fill([x - 8.0, y + 1.5, x - 3.2, y - 2.6, x + 1.0, y - 0.9, x + 5.4, y - 2.8, x + 8.6, y + 1.5], duneLit, alpha: 0.34)
+                    m.polyline([x - 8.0, y + 0.6, x - 3.6, y - 2.2, x + 0.4, y - 0.7, x + 4.8, y - 2.4, x + 8.2, y - 0.2], width: 0.72, duneRidge, alpha: 0.66)
+                    m.polyline([x - 5.2, y + 3.8, x - 1.2, y + 2.0, x + 2.6, y + 3.2, x + 6.4, y + 1.8], width: 0.54, duneRidge, alpha: 0.52)
+                }
             } else if biome == 12 {
-                if v > 0.6 { continue }
+                // 湿地沼泽：平静泽国水洼 + 成丛芦苇
+                if v > 0.78 { continue }
                 fine.insert(key)
-                // Marsh: still water lines and reeds.
-                let reed = RGB(hex: 0x4F6B4A), water = RGB(hex: 0x6F8F98)
-                m.segment(x - 5, y + 2, x + 5, y + 2, width: 0.45, water, alpha: 0.55)
-                m.segment(x - 3, y + 3.5, x + 3, y + 3.5, width: 0.4, water, alpha: 0.45)
-                for dx in [Float(-3), -1, 2] { m.segment(x + dx, y + 2, x + dx + 0.4, y - 2.5, width: 0.4, reed, alpha: 0.6) }
-            } else if biome == 4 {
-                if v > 0.3 { continue }
-                fine.insert(key)
-                // Grassland tufts.
-                for dx in [Float(-3), 2] {
-                    m.segment(x + dx, y + 1.5, x + dx - 1, y - 1.2, width: 0.4, grass, alpha: 0.55)
-                    m.segment(x + dx, y + 1.5, x + dx, y - 1.8, width: 0.4, grass, alpha: 0.55)
-                    m.segment(x + dx, y + 1.5, x + dx + 1, y - 1.2, width: 0.4, grass, alpha: 0.55)
+                m.disc(x, y + 1.8, radius: 5.4, marshPool, alpha: 0.34, sides: 10)
+                m.segment(x - 6.2, y + 2.2, x + 6.2, y + 2.2, width: 0.58, marshPool, alpha: 0.68)
+                m.segment(x - 4.0, y + 4.0, x + 4.4, y + 4.0, width: 0.48, marshPool, alpha: 0.54)
+                for dx in [Float(-4.0), -1.4, 1.8, 3.8] {
+                    m.segment(x + dx, y + 2.4, x + dx + 0.5, y - 3.2, width: 0.55, marshReed, alpha: 0.72)
                 }
             } else if biome == 3 {
-                if v > 0.25 { continue }
+                // 稀树草原：疏朗平顶金合欢树冠 + 旱草
+                if v > 0.48 { continue }
                 fine.insert(key)
-                // Savanna: a lone flat-topped acacia.
-                m.fill([x - 3.5, y - 2.5, x - 2, y - 4, x + 2, y - 4, x + 3.5, y - 2.5, x, y - 1.8], acacia, alpha: 0.5)
-                m.segment(x, y - 2, x, y + 2, width: 0.5, trunk, alpha: 0.55)
+                m.segment(x, y - 2.4, x, y + 2.6, width: 0.65, trunk, alpha: 0.64)
+                m.fill([x - 5.2, y - 2.6, x - 3.0, y - 4.8, x + 3.0, y - 4.8, x + 5.2, y - 2.6, x, y - 1.8], acacia, alpha: 0.64)
+                m.segment(x - 4.5, y + 3.0, x + 4.2, y + 3.0, width: 0.45, grass, alpha: 0.42)
+            } else if biome == 4 {
+                // 沃野草原：随风轻拂的青翠牧草丛
+                if v > 0.38 { continue }
+                fine.insert(key)
+                for dx in [Float(-3.8), 2.6] {
+                    m.segment(x + dx, y + 2.0, x + dx - 1.4, y - 1.6, width: 0.50, grass, alpha: 0.58)
+                    m.segment(x + dx, y + 2.0, x + dx + 0.2, y - 2.4, width: 0.52, grass, alpha: 0.62)
+                    m.segment(x + dx, y + 2.0, x + dx + 1.6, y - 1.4, width: 0.50, grass, alpha: 0.56)
+                }
             } else if biome == 10 {
-                if v > 0.3 { continue }
+                // 冻原：低矮苔藓土丘与冻石
+                if v > 0.52 { continue }
                 fine.insert(key)
-                // Tundra: low moss and stones.
-                m.polyline([x - 4, y + 1, x - 2.5, y - 0.6, x - 1, y + 1], width: 0.45, moss, alpha: 0.5)
-                m.polyline([x + 1, y + 1.5, x + 2.5, y, x + 4, y + 1.5], width: 0.45, moss, alpha: 0.5)
+                m.fill([x - 5.5, y + 1.6, x - 3.0, y - 0.8, x - 0.5, y + 1.6], moss, alpha: 0.36)
+                m.polyline([x - 5.5, y + 1.6, x - 3.0, y - 0.8, x - 0.5, y + 1.6], width: 0.55, moss, alpha: 0.60)
+                m.polyline([x + 0.8, y + 2.2, x + 3.0, y + 0.2, x + 5.6, y + 2.2], width: 0.52, moss, alpha: 0.54)
             } else if biome == 11 {
-                if v > 0.6 { continue }
+                // 冰川冰原：晶莹冰脊与冰蓝裂隙
+                if v > 0.72 { continue }
                 fine.insert(key)
-                // Ice field: pale cracks.
-                m.polyline([x - 5, y - 1, x - 1, y + 1, x + 2, y - 1.5, x + 5, y + 0.5], width: 0.5, frost, alpha: 0.7)
-                m.segment(x - 1, y + 1, x - 2, y + 3.5, width: 0.4, frost, alpha: 0.6)
+                m.fill([x - 6.5, y + 1.2, x - 2.2, y - 2.8, x + 2.6, y - 1.6, x + 6.5, y + 1.4], frost, alpha: 0.44)
+                m.polyline([x - 6.5, y - 0.6, x - 1.4, y + 1.4, x + 2.4, y - 1.8, x + 6.5, y + 0.6], width: 0.65, frost, alpha: 0.82)
+                m.segment(x - 1.4, y + 1.4, x - 2.4, y + 4.4, width: 0.55, iceShade, alpha: 0.68)
+                m.segment(x + 2.4, y - 1.8, x + 3.6, y + 2.2, width: 0.48, iceShade, alpha: 0.58)
             }
         }
         return m

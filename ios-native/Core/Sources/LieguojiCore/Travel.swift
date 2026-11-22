@@ -132,19 +132,20 @@ public struct TravelGraph: Sendable {
                 var step = linkCost[k]
                 if seaRate != 1, provinces[a] < 0, provinces[b] < 0 { step *= seaRate }
                 // 地形真实参与寻路（本作规则，与 ForceMotion.armySpeed 完全共用同一套地形速比）：
-                // 山地 0.5× 速对应 2.0× 代价，高原/荒漠/冰川 0.7× 速对应 ~1.43× 代价，短绕走谷道、长绕才翻山。
+                // 山地 0.50× 速对应 2.0× 代价，冰川 0.58× / 沼泽荒漠 ~0.66× / 深林 ~0.78×，短绕走平畴谷道、长绕才翻险阻。
                 if terrainCost, provinces[b] >= 0 {
                     let qb = Int(provinces[b])
                     if mountain.indices.contains(qb), mountain[qb] {
                         step *= 2.0
                     } else if plateau.indices.contains(qb), plateau[qb] {
-                        step /= 0.7
+                        step /= 0.72
                     } else {
                         let faceIdx = Int(faces[b])
                         if faceBiomes.indices.contains(faceIdx) {
                             let bi = Int(faceBiomes[faceIdx])
-                            if ForceMotion.terrainSpeed.indices.contains(bi) {
-                                let sp = ForceMotion.terrainSpeed[bi]
+                            let table = UnitKinds.enabled ? ForceMotion.appTerrainSpeed : ForceMotion.terrainSpeed
+                            if table.indices.contains(bi) {
+                                let sp = table[bi]
                                 if sp > 0 && sp < 1 { step /= sp }
                             }
                         }
@@ -322,6 +323,52 @@ public enum ForceMotion {
     /// seasonal forest, temperate forest, rainforest, temperate rainforest, taiga, tundra, glacier, wetland).
     /// The pace over each kind of land, as the original sets it (biomeSpeed; mountain 0.5, plateau 0.7).
     public static let terrainSpeed: [Double] = [1, 0.7, 0.7, 1, 1, 1, 1, 1, 1, 1, 1, 0.7, 1]
+    /// 本作深化地形规则：每类地貌真实区分行军速度、税赋丰瘠、客军补给消耗、恶劣环境减员与守险修正。
+    public static let appTerrainSpeed: [Double] = [1.02, 0.68, 0.68, 1.04, 1.06, 0.86, 0.86, 0.76, 0.80, 0.78, 0.76, 0.58, 0.66]
+    public struct TerrainProfile: Sendable {
+        public let speed: Double
+        public let tax: Double
+        public let supplyDrain: Double
+        public let attrition: Double
+        public let defenseBonus: Double
+        public let attritionLabel: String
+        public let summary: String
+    }
+    public static func terrainProfile(biome: Int, mountain: Bool) -> TerrainProfile {
+        if mountain {
+            return TerrainProfile(speed: 0.50, tax: 0.85, supplyDrain: 3.8, attrition: 0.012, defenseBonus: 1.28,
+                                  attritionLabel: "中度损耗", summary: "关山险隘：行军半速、易守难攻，敌军深入补给吃紧")
+        }
+        switch max(0, min(12, biome)) {
+        case 1, 2:
+            return TerrainProfile(speed: 0.68, tax: 0.78, supplyDrain: 5.2, attrition: 0.018, defenseBonus: 1.05,
+                                  attritionLabel: "严酷损耗", summary: "大漠荒原：产出稀薄，客军孤军深入极易断粮减员")
+        case 11:
+            return TerrainProfile(speed: 0.58, tax: 0.68, supplyDrain: 5.8, attrition: 0.022, defenseBonus: 1.18,
+                                  attritionLabel: "极寒损耗", summary: "冰封极地：寸步难行，敌军久驻必遭严寒冻馁减员")
+        case 12:
+            return TerrainProfile(speed: 0.66, tax: 0.82, supplyDrain: 4.2, attrition: 0.015, defenseBonus: 1.20,
+                                  attritionLabel: "瘴疠损耗", summary: "泥淖泽国：骑军受阻、守军得利，客军易染瘴耗粮")
+        case 10:
+            return TerrainProfile(speed: 0.76, tax: 0.80, supplyDrain: 3.6, attrition: 0.012, defenseBonus: 1.10,
+                                  attritionLabel: "严寒损耗", summary: "冻原荒寒：粮产较低，行军滞缓且客军补给紧张")
+        case 7, 8, 9:
+            return TerrainProfile(speed: 0.78, tax: 0.90, supplyDrain: 2.8, attrition: 0.008, defenseBonus: 1.18,
+                                  attritionLabel: "轻度损耗", summary: "深林密莽：易守难攻，不利骑兵展开与长途补给")
+        case 5, 6:
+            return TerrainProfile(speed: 0.86, tax: 0.98, supplyDrain: 1.8, attrition: 0.0, defenseBonus: 1.10,
+                                  attritionLabel: "无额外损耗", summary: "林木葱郁：林道略缓，弓兵与步军守御占优")
+        case 3:
+            return TerrainProfile(speed: 1.04, tax: 1.02, supplyDrain: 1.4, attrition: 0.0, defenseBonus: 0.96,
+                                  attritionLabel: "无额外损耗", summary: "疏林旷野：视野开阔、行军迅捷，利于骑兵驰骋")
+        case 4:
+            return TerrainProfile(speed: 1.06, tax: 1.12, supplyDrain: 1.0, attrition: 0.0, defenseBonus: 0.95,
+                                  attritionLabel: "无额外损耗", summary: "沃野平畴：税赋丰盈、通衢疾行，骑兵冲阵如虎添翼")
+        default:
+            return TerrainProfile(speed: 1.02, tax: 1.10, supplyDrain: 1.0, attrition: 0.0, defenseBonus: 1.00,
+                                  attritionLabel: "无额外损耗", summary: "临海通衢：渔盐商贸兴盛，补给充沛")
+        }
+    }
     public static let mapUnitsPerNativeUnit = 1000.0 / 240.0
     /// App worlds: this map's provinces are several times the original's, so an army marches twice
     /// the original's pace to cross one in about the original's time.
@@ -335,7 +382,11 @@ public enum ForceMotion {
         if q < 0 { value = fr(b * fr(1.5)) }
         else if g.mountain[q] { value = fr(fr(b * fr(0.5)) * unit) }
         else if g.plateau[q] { value = fr(fr(b * fr(0.7)) * unit) }
-        else { value = fr(fr(b * biomeSpeed[Int(g.faceBiomes[Int(g.faces[cell])])]) * unit) }
+        else {
+            let bi = Int(g.faceBiomes[Int(g.faces[cell])])
+            let sp = UnitKinds.enabled && appTerrainSpeed.indices.contains(bi) ? fr(appTerrainSpeed[bi]) : biomeSpeed[min(biomeSpeed.count - 1, max(0, bi))]
+            value = fr(fr(b * sp) * unit)
+        }
         return value * mapUnitsPerNativeUnit * secondsPerTick
     }
 }

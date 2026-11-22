@@ -350,10 +350,10 @@ import LieguojiCore
         worldEpoch &+= 1
         let epoch = worldEpoch
         controller.foundingStage = 0
-        generationNote = "正在生成地形"
+        generationNote = "正在开辟山河与列国"
         controller.drifting = false
         controller.reveal = 0
-        phase = .founding
+        phase = .generating
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
             options.climate.apply()
@@ -409,7 +409,7 @@ import LieguojiCore
     private func rise(_ epoch: Int) async {
         controller.interactive = false
         controller.reveal = 0
-        if !ShotTour.on { await playReveal(duration: 6.8, push: true, while: { self.worldEpoch == epoch }); return }
+        if !ShotTour.on { await playReveal(duration: 2.6, push: controller.play.introCamera, while: { self.worldEpoch == epoch }); return }
         // CI waits on these frames: the clock is pinned to each stage in turn while its shot is taken.
         let shots: [(at: Float, name: String)] = [(0.03, "02-founding"), (0.10, "02a-sea"), (0.24, "02b-rise"), (0.36, "02c-ink"), (0.62, "02d-states"), (0.80, "02e-borders")]
         for shot in shots {
@@ -545,23 +545,22 @@ import LieguojiCore
         return loaded.0
     }
 
-    /// Land rises from the sea, then the states' colours wash over it (about two seconds).
+    /// Continuing a saved world: brisk, smooth ink unroll (~1.0s) so players return to their map immediately.
     private func reveal(_ world: WorldMap) async {
         controller.interactive = false
-        controller.reveal = 0
+        controller.reveal = 0.28
         phase = .playing
-        // The land rises and the camera eases out to the whole world (on the display link).
-        await playReveal(duration: 3.2, push: controller.play.introCamera)
+        await playReveal(from: 0.28, duration: 1.0, push: controller.play.introCamera)
         controller.interactive = true
     }
 
     /// Plays a reveal on the map's display link, smooth at the screen's rate; the published value the
-    /// panels read (stage list, bars) follows ten times a second instead of every frame.
-    func playReveal(duration: Double, push: Bool = false, while keep: () -> Bool = { true }) async {
-        controller.reveal = 0
-        controller.animateReveal(duration: duration, push: push)
+    /// panels read (stage list, bars) follows smoothly without per-frame SwiftUI churn.
+    func playReveal(from start: Float = 0, duration: Double, push: Bool = false, while keep: () -> Bool = { true }) async {
+        controller.reveal = start
+        controller.animateReveal(from: start, to: 1, duration: duration, push: push)
         while !controller.revealDone && keep() {
-            try? await Task.sleep(nanoseconds: 100_000_000)
+            try? await Task.sleep(nanoseconds: 80_000_000)
             controller.reveal = controller.revealNow ?? 1
         }
         // Cut short (the title left for a new world): the next reveal owns the map from here.

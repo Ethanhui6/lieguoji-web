@@ -224,16 +224,17 @@ enum ShotTour {
         // The navy: a fleet's page (ships editable) when the world has fleets.
         if !(model.state?.fleets ?? []).isEmpty { show(.fleet(0)); await wait(1.4); await shoot("13b-fleet") }
         // The nation page's tabs, opened full height.
-        for (name, t) in [("11c-court", NationSheet.Tab.court), ("11d-nation-military", .military), ("11e-nation-diplomacy", .diplomacy), ("11f-custom", .custom)] {
-            NationSheet.tourTab = t
+        for (name, t, sub) in [("11c-court", NationSheet.Tab.court, nil as String?), ("11d-nation-military", .military, nil), ("11e-nation-diplomacy", .diplomacy, nil), ("11f-custom", .govern, "custom")] {
+            NationSheet.tourTab = t; NationSheet.tourGovernSub = sub
             show(nil); await wait(0.6); show(.nation(nation)); await wait(1.8); await shoot(name)
         }
         // 自定义的分类页：国号国色与政体。
         for (name, p) in [("11f2-custom-identity", NationSheet.CustomPane.identity), ("11f3-custom-army", .army)] {
-            NationSheet.tourTab = .custom; NationSheet.tourPane = p
+            NationSheet.tourTab = .govern; NationSheet.tourGovernSub = "custom"; NationSheet.tourPane = p
             show(nil); await wait(0.6); show(.nation(nation)); await wait(1.8); await shoot(name)
         }
         NationSheet.tourPane = nil
+        NationSheet.tourGovernSub = nil
         NationSheet.tourTab = nil
         // 族谱：从国家页的世家进入，换几个国家连续开合（闪退回归），第一次留图。
         NationSheet.tourFamily = true

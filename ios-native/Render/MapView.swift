@@ -178,8 +178,8 @@ struct DisplaySettings: Codable, Equatable {
     var cityNames = true
     var cityIcons = true
     var vegetation = true
-    /// State colours over the terrain: below full so mountains, forests and deserts show through.
-    var colorDensity = 0.7
+    /// State colours over the terrain: balanced so hills, forests, deserts, marshes and glaciers read clearly.
+    var colorDensity = 0.66
     /// Sea routes between harbours. Default on.
     var seaRoutes = true
     /// Scroll-edge darkening. Default on (IsEnableDarkBorder).
@@ -234,8 +234,8 @@ struct PlaySettings: Codable, Equatable {
     var autosave = 120
     /// 大事暂停: a declaration of war, a rising or a state's end stops the clock.
     var pauseOnNews = false
-    /// 界面与看海偏好：局势快控浮印、御案天下大势悬浮小笺、回放天下大势悬浮小笺、观战巡弋导演镜头、大事传报横幅、战况飘字、海面波浪、打开面板自动暂停。
-    var showTacticalPill = true
+    /// 界面与看海偏好（保留旧版字段名以兼容已存设置；已移除冗余悬浮小笺，统一交由顶栏与底栏操作）。
+    var showTacticalPill = false
     var showScrollPlacard = false
     var showReplayPlacard = true
     var directorCruise = false
@@ -262,8 +262,8 @@ struct PlaySettings: Codable, Equatable {
         easeReveal = try c.decodeIfPresent(Bool.self, forKey: .easeReveal) ?? true
         autosave = try c.decodeIfPresent(Int.self, forKey: .autosave) ?? 120
         pauseOnNews = try c.decodeIfPresent(Bool.self, forKey: .pauseOnNews) ?? false
-        showTacticalPill = try c.decodeIfPresent(Bool.self, forKey: .showTacticalPill) ?? true
-        showScrollPlacard = try c.decodeIfPresent(Bool.self, forKey: .showScrollPlacard) ?? false
+        showTacticalPill = false
+        showScrollPlacard = false
         showReplayPlacard = try c.decodeIfPresent(Bool.self, forKey: .showReplayPlacard) ?? true
         directorCruise = try c.decodeIfPresent(Bool.self, forKey: .directorCruise) ?? false
         showHeralds = try c.decodeIfPresent(Bool.self, forKey: .showHeralds) ?? true
@@ -824,13 +824,13 @@ struct MapView: UIViewRepresentable {
             gliding = glide
             l.preferredFrameRateRange = glide ? glideRange : frameRange
         }
-        /// A reveal clock began: the map follows it frame by frame; with `push` the camera eases in from afar.
+        /// A reveal clock began: the map follows it frame by frame; with `push` the camera settles smoothly.
         private func revealStarted() {
             if let c = controller.revealClock, c.push, renderer != nil {
                 let target = camera
-                var from = target; from.scale = target.scale * 1.25
+                var from = target; from.scale = target.scale * 1.12
                 set(from)
-                animate(to: target, duration: c.duration * 1.1)
+                animate(to: target, duration: c.duration)
             }
             startLink()
         }

@@ -449,6 +449,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("2.8.7", ["【开局与传报】修复「天下大势」收到失效交战方时的数组越界。进入另一局时清理旧战报和地图特效，旧传报任务退场后保留新队列。",
+                   "【观战性能】顶部传报播完即停止逐帧绘制。复用未变化的地图标注，避免战斗效果在镜头静止时重复生成路径。",
+                   "【地图稳定】动态 Metal 缓冲在 GPU 结束读取后再原地复用。交锋、战损和预计行军日数在数值异常时安全处理。"]),
         ("2.8.6", ["【修复 CI 构建上传与进入游戏点开始闪退】① 修复 `NationInfo.swift` 朝堂权力天平读取君主 `Persona.Skills` 结构体属性的编译类型错误，恢复 GitHub Actions 自动归档与未签名 IPA 构建上传；② 彻底移除 `MapView.Coordinator.set` 与 `layoutChanged` 在 `UIView.layoutSubviews()` 和 `CATransaction` 内直接同步调用 `mtk.draw()` 的危险路径（统一由 `mtk.setNeedsDisplay()` 交由 CoreAnimation 驱动），并确保覆盖层子视图在首帧布局前即同步视口 `fullBounds`，根治建世/进入游戏与点击开始时因 `CAMetalLayer` 双重绘制及 `waitUntilScheduled` 事务重入引发的闪退；③ `MapRenderer.draw` 的 `MTLScissorRect` 改为严格按 `min(pass.colorAttachments[0].texture, drawable.texture)` 取界，并在 `Double` 域完成有限值校验与区间钳制后再转 `Int`，杜绝 2× MSAA 多重采样缓冲尺寸瞬态不一致或浮点溢出触发的 Metal 断言闪退。",
                    "【性能优化：移除全屏 `layer.mask` 离屏渲染】将 `overlayHost` 的 `CALayer.mask` 替换为零离屏开销的 `overlayHost.clipsToBounds = true` + `overlayCanvas` 坐标反偏移架构，在严守卷轴画心边界的同时彻底省去每帧（60–120fps）全屏离屏蒙版合成带宽与发热。",
                    "【全链路边界与类型安全加固】① 统一 `UnitArt` 与 `0plate` 军牌的 `CGGradient` 为标准 8-bit 4 通道 `DeviceRGB` 色彩空间；② 加固 `TravelGraph.location/segment`、`CombatReader`、`Naval.issueAutonomous`、`NativeView.gameState`（行军预计日数 `etaDays` 有限值钳制与地形数组越界防护）、`InkCells.cell(at:)` 与 `Creation.rulers` 空池防护，全面消除推演与建世期间的潜在越界闪退。"]),

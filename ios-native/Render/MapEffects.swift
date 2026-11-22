@@ -67,6 +67,7 @@ final class EffectsView: UIView {
         return a
     }
     private var battleLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
+    private var battleOrder: [String] = []
     /// Who fights whom, without text: a line from each army to the clash, in its state's colour.
     private var clashLayers: [String: (a: CAShapeLayer, b: CAShapeLayer, battle: MapEffects.Battle)] = [:]
     /// Off since the icons are drawn meeting at the clash.
@@ -89,6 +90,7 @@ final class EffectsView: UIView {
     /// 地图上军队图标此刻的边长（点）：阵亡动画里倒下的军旗与之同大。
     private var iconPoints: CGFloat { CGFloat(MapRenderer.iconPoints(camera?.scale ?? 1, iconScale: 1)) }
     private var viewport: CGSize = .zero
+    private var reduceMotion = false
 
     override init(frame: CGRect) { super.init(frame: frame); isUserInteractionEnabled = false }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
@@ -806,12 +808,13 @@ final class EffectsView: UIView {
             }
         }
         CATransaction.commit()
-        if let camera { update(camera: camera, viewport: viewport) }
+        battleOrder = battleLayers.keys.sorted()
+        if let camera { update(camera: camera, viewport: viewport, effectsChanged: true) }
     }
 
     private func visibility(_ item: CALayer, visible: Bool) {
-        item.isHidden = !visible
-        let paused = !visible || UIAccessibility.isReduceMotionEnabled
+        if item.isHidden == visible { item.isHidden = !visible }
+        let paused = !visible || reduceMotion
         if paused && item.speed != 0 {
             let time = item.convertTime(CACurrentMediaTime(), from: nil)
             item.speed = 0
@@ -825,9 +828,12 @@ final class EffectsView: UIView {
         }
     }
 
-    func update(camera: MapCamera, viewport: CGSize) {
-        self.camera = camera; self.viewport = viewport
+    func update(camera: MapCamera, viewport: CGSize, effectsChanged: Bool = false) {
+        let reduceMotion = UIAccessibility.isReduceMotionEnabled
+        guard effectsChanged || camera != self.camera || viewport != self.viewport || reduceMotion != self.reduceMotion else { return }
+        self.camera = camera; self.viewport = viewport; self.reduceMotion = reduceMotion
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
+        let visibleRect = CGRect(origin: .zero, size: viewport).insetBy(dx: -80, dy: -80)
         func screen(_ x: Double, _ y: Double) -> CGPoint { let p = camera.toScreen(x: x, y: y, viewport: vp); return CGPoint(x: p.x, y: p.y) }
         CATransaction.begin(); CATransaction.setDisableActions(true)
         for w in waves {
@@ -838,16 +844,25 @@ final class EffectsView: UIView {
         // The swords hang just above the armies they belong to (the figures stay visible beneath),
         // and battles that would overlap on screen share one mark.
         var marks = [CGPoint]()
-        for key in battleLayers.keys.sorted() {
-            let v = battleLayers[key]!
+        for key in battleOrder {
+            guard let v = battleLayers[key] else { continue }
             var p = screen(v.x, v.y); p.y -= 15 * k
+            guard visibleRect.contains(p) else {
+                visibility(v.layer, visible: false)
+                continue
+            }
             let crowded = marks.contains { hypot($0.x - p.x, $0.y - p.y) < 28 * k }
-            if !crowded { marks.append(p) }
+            visibility(v.layer, visible: !crowded)
+            guard !crowded else { continue }
+            marks.append(p)
             v.layer.position = p; v.layer.setAffineTransform(CGAffineTransform(scaleX: k, y: k))
-            v.layer.isHidden = crowded
         }
         for v in clashLayers.values {
-            let a = screen(v.battle.ax, v.battle.ay), b = screen(v.battle.bx, v.battle.by), m = screen(v.battle.x, v.battle.y)
+            let m = screen(v.battle.x, v.battle.y)
+            let visible = visibleRect.contains(m)
+            visibility(v.a, visible: visible); visibility(v.b, visible: visible)
+            guard visible else { continue }
+            let a = screen(v.battle.ax, v.battle.ay), b = screen(v.battle.bx, v.battle.by)
             let pa = UIBezierPath(); pa.move(to: a); pa.addLine(to: m); v.a.path = pa.cgPath
             let pb = UIBezierPath(); pb.move(to: b); pb.addLine(to: m); v.b.path = pb.cgPath
             v.a.lineWidth = 1 + k * 0.6; v.b.lineWidth = 1 + k * 0.6
@@ -887,14 +902,7 @@ final class EffectsView: UIView {
             head.addQuadCurve(to: tip, controlPoint: CGPoint(x: tip.x - tx * 5 + ty * 1.5, y: tip.y - ty * 5 - tx * 1.5)); head.close()
             v.head.path = head.cgPath
         }
-        // Hide and freeze continuous offscreen effects. A margin avoids edge flicker.
-        let visibleRect = CGRect(origin: .zero, size: viewport).insetBy(dx: -80, dy: -80)
-        for v in battleLayers.values where !v.layer.isHidden { visibility(v.layer, visible: visibleRect.contains(v.layer.position)) }
         for v in siegeLayers.values { visibility(v.layer, visible: visibleRect.contains(v.layer.position)) }
-        for v in clashLayers.values {
-            let visible = visibleRect.contains(screen(v.battle.x, v.battle.y))
-            visibility(v.a, visible: visible); visibility(v.b, visible: visible)
-        }
         CATransaction.commit()
     }
 }

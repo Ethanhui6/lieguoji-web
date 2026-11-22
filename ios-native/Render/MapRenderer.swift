@@ -2,6 +2,38 @@ import UIKit
 import MetalKit
 import LieguojiCore
 
+/// Reuse the inactive slot only after its most recent read on the render queue has ended.
+final class MapBufferPool {
+    private struct Slot {
+        let buffer: MTLBuffer
+        var lastRead: MTLCommandBuffer?
+    }
+
+    private var slots: [Slot?] = [nil, nil]
+    private var current = 0
+    var buffer: MTLBuffer? { slots[current]?.buffer }
+
+    func write(device: MTLDevice, length: Int, capacity: Int? = nil, _ fill: (MTLBuffer) -> Void) -> MTLBuffer? {
+        let index = 1 - current
+        let buffer: MTLBuffer
+        if let slot = slots[index], slot.buffer.length >= length,
+           slot.lastRead == nil || slot.lastRead?.status == .completed || slot.lastRead?.status == .error {
+            buffer = slot.buffer
+        } else {
+            guard let replacement = device.makeBuffer(length: max(length, capacity ?? length), options: .storageModeShared) else { return nil }
+            buffer = replacement
+        }
+        fill(buffer)
+        slots[index] = Slot(buffer: buffer, lastRead: nil)
+        current = index
+        return buffer
+    }
+
+    func recordRead(in command: MTLCommandBuffer) {
+        slots[current]?.lastRead = command
+    }
+}
+
 /// Draws the world with Metal in the web renderer's layer order (original-play-renderer + map.ts):
 /// coastal-distance sea texture → land cells → province lines → rivers → mountain and forest
 /// ornaments → state outlines and coastline → city icons → the original parchment multiplied over
@@ -57,7 +89,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let spriteShadowPipeline: MTLRenderPipelineState
     private let spritePipeline: MTLRenderPipelineState
     /// Army icons grouped by unit type: the texture and its quads.
-    private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int)] = []
+    private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int, pool: MapBufferPool)] = []
     let positions: MTLBuffer
     private(set) var indices: MTLBuffer
     private(set) var indexCount: Int
@@ -520,15 +552,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // The generation reveal (land rising from the coast to the peaks over 0…0.45, the states' colours
         // washing in over 0.55…0.75) is drawn by revealVertex from these colours: no per-frame CPU work.
         let c = base.land
-        let byteLen = max(16, c.count * 4)
-        colorPoolSlot = 1 - colorPoolSlot
-        if colorBufferPool[colorPoolSlot] == nil || colorBufferPool[colorPoolSlot]!.length < byteLen {
-            colorBufferPool[colorPoolSlot] = device.makeBuffer(length: byteLen, options: .storageModeShared)
-        }
-        if let b = colorBufferPool[colorPoolSlot] {
+        let colourBytes = c.count * MemoryLayout<Float>.stride
+        let uploaded = colorBufferPool.write(device: device, length: max(16, colourBytes)) { buffer in
             c.withUnsafeBytes { raw in
-                if let ptr = raw.baseAddress { memcpy(b.contents(), ptr, c.count * 4) }
+                if let ptr = raw.baseAddress { memcpy(buffer.contents(), ptr, colourBytes) }
             }
+        }
+        if let b = uploaded {
             // 归属变化（揭幕之后）逐顶点渐变；切换视图与揭幕立即到位。正在晕染的州由晕染接手。
             let now = clock(), began = CACurrentMediaTime()
             defer { if let probe = Self.frameProbe, fadeOnRecolor { probe.recolor.append((CACurrentMediaTime() - began) * 1000) } }
@@ -542,23 +572,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             if !fade && reveal >= 1 && washViewSwitch { washViewChanged() }
             rebuildInkOwners()
             if landFade.fading(at: now) {
-                let prevLen = max(16, landFade.from.count * 4)
-                if prevColorBufferPool[colorPoolSlot] == nil || prevColorBufferPool[colorPoolSlot]!.length < prevLen {
-                    prevColorBufferPool[colorPoolSlot] = device.makeBuffer(length: prevLen, options: .storageModeShared)
-                }
-                if let pb = prevColorBufferPool[colorPoolSlot] {
+                let previousBytes = landFade.from.count * MemoryLayout<Float>.stride
+                previousColors = prevColorBufferPool.write(device: device, length: max(16, previousBytes)) { pb in
                     landFade.from.withUnsafeBytes { raw in
-                        if let ptr = raw.baseAddress { memcpy(pb.contents(), ptr, landFade.from.count * 4) }
+                        if let ptr = raw.baseAddress { memcpy(pb.contents(), ptr, previousBytes) }
                     }
-                    previousColors = pb
                 }
             } else { previousColors = nil }
             colors = b
         }
     }
-    private var colorBufferPool: [MTLBuffer?] = [nil, nil]
-    private var prevColorBufferPool: [MTLBuffer?] = [nil, nil]
-    private var colorPoolSlot = 0
+    private let colorBufferPool = MapBufferPool()
+    private let prevColorBufferPool = MapBufferPool()
     private(set) var shade: [Float] = []
     private(set) var terrainBase: [Float]?
 
@@ -818,27 +843,22 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     quad(role, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, (dx + o.x) / k, (dy + o.y) / k)
                 }
             }
-            // 双缓冲复用各兵种顶点 MTLBuffer，避免在大规模军团同屏行军时每步向内核重复申请 12 块新缓冲区导致卡顿。
-            unitPoolSlot = 1 - unitPoolSlot
-            let slot = unitPoolSlot
-            units = byRole.keys.sorted { ($0 == "banner" ? "" : $0) < ($1 == "banner" ? "" : $1) }.compactMap { role -> (texture: MTLTexture, buffer: MTLBuffer, count: Int)? in
+            units = byRole.keys.sorted { ($0 == "banner" ? "" : $0) < ($1 == "banner" ? "" : $1) }.compactMap { role -> (texture: MTLTexture, buffer: MTLBuffer, count: Int, pool: MapBufferPool)? in
                 guard let data = byRole[role], !data.isEmpty, let texture = unitTextures[role] else { return nil }
-                let byteLen = data.count * 4
-                var pair = unitBufferPool[role] ?? [nil, nil]
-                if pair[slot] == nil || pair[slot]!.length < byteLen {
-                    pair[slot] = device.makeBuffer(length: max(256, byteLen * 3 / 2), options: .storageModeShared)
-                    unitBufferPool[role] = pair
+                let byteLen = data.count * MemoryLayout<Float>.stride
+                let pool = unitBufferPool[role] ?? MapBufferPool()
+                unitBufferPool[role] = pool
+                let uploaded = pool.write(device: device, length: byteLen, capacity: max(256, byteLen * 3 / 2)) { buffer in
+                    data.withUnsafeBytes { raw in
+                        if let base = raw.baseAddress { memcpy(buffer.contents(), base, byteLen) }
+                    }
                 }
-                guard let b = pair[slot] else { return nil }
-                data.withUnsafeBytes { raw in
-                    if let base = raw.baseAddress { memcpy(b.contents(), base, byteLen) }
-                }
-                return (texture: texture, buffer: b, count: data.count / 15)
+                guard let buffer = uploaded else { return nil }
+                return (texture: texture, buffer: buffer, count: data.count / 15, pool: pool)
             }
         }
     }
-    private var unitBufferPool: [String: [MTLBuffer?]] = [:]
-    private var unitPoolSlot = 0
+    private var unitBufferPool: [String: MapBufferPool] = [:]
 
     /// 显示军队 and the icons' size (推演与画面).
     var showArmies = true
@@ -994,6 +1014,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             var t = SIMD2<Float>(clock(frameTime), LandFade.duration)
             encoder.setRenderPipelineState(fadePipeline)
             encoder.setVertexBuffer(previous, offset: 0, index: 3)
+            prevColorBufferPool.recordRead(in: buffer)
             encoder.setVertexBytes(&t, length: MemoryLayout<SIMD2<Float>>.stride, index: 4)
             encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
         } else {
@@ -1003,12 +1024,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         encoder.setVertexBuffer(positions, offset: 0, index: 0)
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
+        colorBufferPool.recordRead(in: buffer)
         encoder.setVertexBytes(&u, length: uniformLength, index: 2)
         if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
         // 战争晕染（墨场）：在陆地颜色之上、州界与军队之下；专题分色视图（联盟/文化/家族/宗教等）不叠绘国家占领墨色。
         if reveal >= 1 && (display.battleGround ?? true) && fills == nil {
             let t0 = CACurrentMediaTime()
-            drawWashes(encoder, &u)
+            drawWashes(encoder, &u, command: buffer)
             probe?.wash.append((CACurrentMediaTime() - t0) * 1000)
         }
         // Province lines: 0.55 screen px once zoomed in. Colour is the measured #B2B2B2.
@@ -1081,6 +1103,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
                 encoder.setFragmentTexture(unit.texture, index: 0)
                 encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: unit.count)
+                unit.pool.recordRead(in: buffer)
             }
         }
         }

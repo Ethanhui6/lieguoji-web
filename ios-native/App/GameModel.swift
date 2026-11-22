@@ -103,7 +103,14 @@ import LieguojiCore
     private var heraldQueue: [Herald] = []
     private var heraldTask: Task<Void, Never>?
     /// Bumped whenever a different world is opened, so the map view rebuilds.
-    @Published private(set) var worldID = UUID() { didSet { Task { await refreshCustom(); loadCheckpoints() } } }
+    @Published private(set) var worldID = UUID() {
+        didSet {
+            dismissHerald()
+            pendingLabels = nil
+            lastMapUpdate = 0
+            Task { await refreshCustom(); loadCheckpoints() }
+        }
+    }
     /// 山河回放状态（正放、倒放、时间轴拖动与可续推历史节点）
     @Published var replayActive = false
     @Published var replayTimelineData: ReplayTimelineData?
@@ -442,6 +449,9 @@ import LieguojiCore
                 }.value
                 try checkWorld(epoch)
                 MapRenderer.prepared = loaded.2
+                state = nil
+                controller.effects = MapEffects()
+                controller.snapArmies = true
                 map = loaded.0; worldID = UUID(); controller.world = nil
                 apply(loaded.1); lastSavedDay = loaded.1.day
                 world = loaded.0
@@ -559,7 +569,7 @@ import LieguojiCore
         controller.endReveal()
     }
 
-    func backToTitle() { pause(); save(); phase = .title }
+    func backToTitle() { pause(); dismissHerald(); save(); phase = .title }
 
     // MARK: time
 
@@ -793,7 +803,7 @@ import LieguojiCore
         for f in a.fleets ?? [] { hull[f.id] = (f.hull, f.crew, f.ships) }
         for f in (b.fleets ?? []) {
             guard let old = hull[f.id] else { continue }
-            let hullDrop = Int(((old.hull - f.hull) * 100).rounded())
+            guard let hullDrop = Int(exactly: ((old.hull - f.hull) * 100).rounded()) else { continue }
             let crewDrop = old.crew - f.crew
             guard hullDrop >= 2 || crewDrop >= 15 else { continue }
             if hits.count >= 10 { break }
@@ -807,11 +817,18 @@ import LieguojiCore
         let previous = state
         state = next
         controller.seasonPhase = Float(max(0, next.day % 365)) / 365.0
-        if let previous { announce(previous, next); if playing { battleHits(previous, next) } }
+        var newEvents: [GameState.Event] = []
+        if let previous {
+            if previous.events != next.events {
+                let seen = Set(previous.events.map(\.text))
+                newEvents = next.events.filter { !seen.contains($0.text) }
+            }
+            announce(previous, next, newEvents: newEvents)
+            if playing { battleHits(previous, next) }
+        }
         guard var world = controller.world ?? map else { return }
         var changed = false
-        // Ownership reaches the map at most twice a second while playing (each change recolours every
-        // cell and rebuilds the borders and names); labels that arrive meanwhile wait for it.
+        // Install territory changes immediately for the conquest animation. Throttle label-only updates.
         if let labels = next.labels { pendingLabels = labels }
         let now = CACurrentMediaTime()
         let ownerChanged = next.owners.enumerated().contains { $0.offset < world.meta.provinces.count && world.meta.provinces[$0.offset].nation != $0.element }
@@ -819,7 +836,10 @@ import LieguojiCore
             for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
                 world.meta.provinces[i].nation = owner; changed = true
             }
-            if let labels = pendingLabels { world.meta.labels = labels; pendingLabels = nil; changed = true }
+            if let labels = pendingLabels {
+                if world.meta.labels != labels { world.meta.labels = labels; changed = true }
+                pendingLabels = nil
+            }
             if changed { lastMapUpdate = now }
         }
         // States founded by rebellion or civil war, and renamed states, join the legend.
@@ -836,11 +856,13 @@ import LieguojiCore
         if changed { controller.world = world }
         let ports = (next.ports ?? []).map { SIMD2<Float>($0.x, $0.y) }
         if ports != controller.seaPorts { controller.seaPorts = ports }
-        if let meta = map?.meta, (next.forts != nil || next.holy != nil) {
+        let changedForts = next.forts != previous?.forts ? next.forts : nil
+        let changedHoly = next.holy != previous?.holy ? next.holy : nil
+        if let meta = map?.meta, changedForts != nil || changedHoly != nil {
             var cityByProv = [Int: WorldMeta.City]()
             cityByProv.reserveCapacity(meta.cities.count)
             for c in meta.cities where cityByProv[c.province] == nil { cityByProv[c.province] = c }
-            if let list = next.forts {
+            if let list = changedForts {
                 let forts = list.compactMap { p -> SIMD2<Float>? in
                     guard meta.provinces.indices.contains(p) else { return nil }
                     if let c = cityByProv[p] { return SIMD2(c.x, c.y) }
@@ -848,7 +870,7 @@ import LieguojiCore
                 }
                 if forts != controller.forts { controller.forts = forts }
             }
-            if let list = next.holy {
+            if let list = changedHoly {
                 let holy = list.compactMap { h -> SIMD2<Float>? in
                     guard meta.provinces.indices.contains(h.province) else { return nil }
                     if let c = cityByProv[h.province] { return SIMD2(c.x, c.y) }
@@ -860,7 +882,7 @@ import LieguojiCore
         refreshLanes()
         refreshWashes(previous: previous, next: next)
         refreshArmies()
-        refreshEffects(previous: previous)
+        refreshEffects(previous: previous, newEvents: newEvents)
         if mapView != .state && mapView != .terrain, !playing || CACurrentMediaTime() - lastViewRefresh > 0.6 {
             lastViewRefresh = CACurrentMediaTime()
             Task { await refreshView() }
@@ -909,7 +931,8 @@ import LieguojiCore
     }
 
     /// Wars declared or ended and provinces taken since the last state, as banners.
-    private func announce(_ old: GameState, _ next: GameState) {
+    private func announce(_ old: GameState, _ next: GameState, newEvents: [GameState.Event]) {
+        guard controller.play.showHeralds || controller.play.pauseOnNews else { return }
         guard let map else { return }
         let name = { (n: Int) in n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].name : "" }
         let before = Set(old.wars.map(\.id)), after = Set(next.wars.map(\.id))
@@ -920,8 +943,7 @@ import LieguojiCore
             enqueue(Herald(kind: .peace, text: "\(name(w.attacker))与\(name(w.defender))议和", nations: [w.attacker, w.defender]))
         }
         // Revolutions, coups, regime shifts, treaties, ultimatums and royal marriages are proclaimed with bespoke ink animations.
-        let seen = Set(old.events.map(\.text))
-        for e in next.events where !seen.contains(e.text) {
+        for e in newEvents {
             if e.text.contains("最后通牒") {
                 enqueue(Herald(kind: .ultimatum, text: e.text, nations: []))
             } else if e.text.contains("政变") || e.text.contains("兵变") || e.text.contains("夺权") {
@@ -937,7 +959,7 @@ import LieguojiCore
             }
         }
         // Rebellions, restorations, dynasties dying out and capitals moving: the original's big news.
-        for e in next.events where !seen.contains(e.text) {
+        for e in newEvents {
             switch e.kind {
             case "uprising": enqueue(Herald(kind: .uprising, text: e.text, nations: []))
             case "restoration": enqueue(Herald(kind: .restoration, text: e.text, nations: []))
@@ -949,7 +971,8 @@ import LieguojiCore
         // Only a fallen capital is proclaimed (every captured province flooded the screen with banners).
         let capitals = Set(map.meta.nations.compactMap { map.meta.cities.indices.contains($0.capital) ? map.meta.cities[$0.capital].province : nil })
         var captures = 0
-        for (p, owner) in next.owners.enumerated() where p < old.owners.count && old.owners[p] != owner && owner >= 0 && capitals.contains(p) {
+        for (p, owner) in next.owners.enumerated() where old.owners.indices.contains(p) && map.meta.provinces.indices.contains(p)
+            && old.owners[p] != owner && owner >= 0 && capitals.contains(p) {
             captures += 1; if captures > 1 { break }
             enqueue(Herald(kind: .capture, text: "\(name(owner))攻下\(map.meta.provinces[p].name)", nations: [owner]))
         }
@@ -988,7 +1011,8 @@ import LieguojiCore
                 self.herald = nil
                 try? await Task.sleep(nanoseconds: 350_000_000)
             }
-            self?.heraldTask = nil
+            // A dismissed task can wake after a replacement banner has started.
+            if !Task.isCancelled { self?.heraldTask = nil }
         }
     }
 
@@ -1002,7 +1026,7 @@ import LieguojiCore
         controller.onHits?([(x: at.x, y: at.y, text: "+\(count) 军", naval: false)])
     }
     /// Battles (fighting armies, grouped by province), sieges and fresh captures on the map.
-    private func refreshEffects(previous: GameState?) {
+    private func refreshEffects(previous: GameState?, newEvents: [GameState.Event]) {
         guard let state, let map else { return }
         func rgb(_ n: Int) -> (Double, Double, Double) {
             let c = n >= 0 && n < map.meta.nations.count ? (RGB(css: map.meta.nations[n].color) ?? RGB(0.6, 0.6, 0.6)) : RGB(0.6, 0.6, 0.6)
@@ -1018,8 +1042,10 @@ import LieguojiCore
         for pair in state.contacts ?? [] where pair.count == 2 && state.armies.indices.contains(pair[0]) && state.armies.indices.contains(pair[1]) {
             let a = state.armies[pair[0]], b = state.armies[pair[1]]
             guard a.troops > 0, b.troops > 0, a.status != "destroyed", b.status != "destroyed" else { continue }
-            let x = Double(a.x + b.x) / 2, y = Double(a.y + b.y) / 2
-            let key = "\(Int(x / 6)):\(Int(y / 6))"
+            let x = (Double(a.x) + Double(b.x)) / 2, y = (Double(a.y) + Double(b.y)) / 2
+            guard let tileX = Int(exactly: (x / 6).rounded(.towardZero)),
+                  let tileY = Int(exactly: (y / 6).rounded(.towardZero)) else { continue }
+            let key = "\(tileX):\(tileY)"
             let old = spots[key] ?? (0, 0, 0)
             spots[key] = (old.x + x, old.y + y, old.n + 1)
             // 统一按较小国号居左排序，防止接触对顺序波动导致战斗兵力条左右翻转跳变。
@@ -1033,10 +1059,14 @@ import LieguojiCore
             fighters[key, default: [:]][pair[0]] = a.nation; fighters[key, default: [:]][pair[1]] = b.nation
         }
         for p in state.seaBattles ?? [] where p.count >= 2 {
-            let key = "s\(Int(p[0] / 6)):\(Int(p[1] / 6))", old = spots[key] ?? (0, 0, 0)
+            guard let tileX = Int(exactly: (p[0] / 6).rounded(.towardZero)),
+                  let tileY = Int(exactly: (p[1] / 6).rounded(.towardZero)) else { continue }
+            let key = "s\(tileX):\(tileY)", old = spots[key] ?? (0, 0, 0)
             spots[key] = (old.x + p[0], old.y + p[1], old.n + 1)
-            if p.count >= 10 {
-                let na = Int(p[2]), nb = Int(p[3]), sa = max(1, Int(p[4])), sb = max(1, Int(p[5]))
+            if p.count >= 10, let na = Int(exactly: p[2]), let nb = Int(exactly: p[3]),
+               let first = Int(exactly: p[4]), let second = Int(exactly: p[5]),
+               p[6...9].allSatisfy(\.isFinite) {
+                let sa = max(1, first), sb = max(1, second)
                 if sides[key] == nil {
                     if na <= nb {
                         sides[key] = (na, nb); ends[key] = (p[6], p[7], p[8], p[9])
@@ -1093,7 +1123,9 @@ import LieguojiCore
             fallen.sort { $0.army.troops != $1.army.troops ? $0.army.troops < $1.army.troops : $0.id < $1.id }
             var groups = [(key: SIMD2<Int32>, members: [Int])]()
             for (i, f) in fallen.enumerated() {
-                let key = SIMD2(Int32((f.at.x / 24).rounded(.down)), Int32((f.at.y / 24).rounded(.down)))
+                guard let x = Int32(exactly: (f.at.x / 24).rounded(.down)),
+                      let y = Int32(exactly: (f.at.y / 24).rounded(.down)) else { continue }
+                let key = SIMD2(x, y)
                 if let k = groups.firstIndex(where: { $0.key == key }) { groups[k].members.append(i) } else { groups.append((key, [i])) }
             }
             let span = min(0.8, max(0, controller.tween * 0.8))
@@ -1129,10 +1161,9 @@ import LieguojiCore
                 }
             }
             // The chronicle's happenings play at the capital of the state they name.
-            let seenText = Set(previous.events.map(\.text))
             var ripples = [Int]()
             let kinds: [(String, MapEffects.Burst.Kind)] = [("农民起义", .shock), ("军阀割据", .coup), ("藩镇独立", .coup), ("神国起义", .regime), ("复国运动", .founded), ("复辟", .regime), ("改制", .regime), ("禅位", .regime), ("改建", .regime), ("推行", .talent), ("诗文", .talent), ("书院", .talent), ("文艺复兴", .talent), ("寺观", .talent), ("五谷丰登", .harvest), ("人丁兴旺", .harvest), ("婴戏盈门", .harvest), ("天灾", .disaster), ("大旱", .disaster), ("水患", .disaster), ("大雪", .disaster), ("蝗灾", .disaster), ("地震", .disaster), ("洪水", .disaster), ("大火", .disaster), ("名臣辈出", .talent), ("开科", .talent), ("名医", .talent), ("学者", .talent), ("瘟疫", .plague), ("商路大开", .trade), ("互市", .trade), ("宝藏", .trade), ("矿藏", .trade), ("万国来朝", .trade), ("篡位", .coup), ("政变", .coup), ("夺权", .coup), ("革命", .coup), ("倒台", .regime), ("改称", .regime), ("改行", .regime), ("改奉", .regime), ("破产", .regime), ("总罢工", .shock), ("街头冲突", .shock), ("学潮", .shock)]
-            for ev in state.events where !seenText.contains(ev.text) {
+            for ev in newEvents {
                 guard let kind = kinds.first(where: { ev.text.contains($0.0) })?.1 else { continue }
                 // Where it happened, when the chronicle knows the place.
                 if let p = ev.province, let city = map.meta.cities.first(where: { $0.province == p }) {
@@ -1163,8 +1194,10 @@ import LieguojiCore
         e.declarations = controller.effects.declarations; e.claims = controller.effects.claims; e.peaces = controller.effects.peaces
         // Province battle arrows in the attacker's shallow → deep colour (MaterialManager.UpdateStateColor).
         for a in state.arrows ?? [] where a.count == 10 {
-            let c = rgb(Int(a[2])), shallow = NativeEngine.adjustColor(c, -0.05, -0.05), deep = NativeEngine.adjustColor(c, 0.1, 0.05)
-            e.arrows.append(.init(key: "\(Int(a[0]))>\(Int(a[1]))", sx: a[4], sy: a[5], cx: a[6], cy: a[7], ex: a[8], ey: a[9], shallow: shallow, deep: deep))
+            guard let from = Int(exactly: a[0]), let to = Int(exactly: a[1]), let nation = Int(exactly: a[2]),
+                  a[4...9].allSatisfy(\.isFinite) else { continue }
+            let c = rgb(nation), shallow = NativeEngine.adjustColor(c, -0.05, -0.05), deep = NativeEngine.adjustColor(c, 0.1, 0.05)
+            e.arrows.append(.init(key: "\(from)>\(to)", sx: a[4], sy: a[5], cx: a[6], cy: a[7], ex: a[8], ey: a[9], shallow: shallow, deep: deep))
         }
         if let previous {
             let before = Set(previous.wars.map(\.id)), after = Set(state.wars.map(\.id))

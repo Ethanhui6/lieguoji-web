@@ -1452,23 +1452,37 @@ struct ScrollPowerPlacard: View {
     let onOpenNation: (Int) -> Void
     let onHide: () -> Void
 
+    private func standings(_ state: GameState, nationCount: Int) -> (alive: Int, powers: [Int]) {
+        var alive = 0
+        var powers = [Int]()
+        powers.reserveCapacity(7)
+        for n in state.nations.indices.prefix(nationCount) {
+            let nation = state.nations[n]
+            guard nation.alive, nation.provinces > 0 else { continue }
+            alive += 1
+            let place = powers.firstIndex { state.nations[$0].provinces < nation.provinces } ?? powers.endIndex
+            guard place < 6 else { continue }
+            powers.insert(n, at: place)
+            if powers.count > 6 { powers.removeLast() }
+        }
+        return (alive, powers)
+    }
+
     var body: some View {
         if let map = model.map, let state = model.state {
             let total = max(1, map.meta.provinces.count)
-            let alive = state.nations.indices
-                .filter { $0 < map.meta.nations.count && state.nations[$0].alive && state.nations[$0].provinces > 0 }
-                .sorted { state.nations[$0].provinces > state.nations[$1].provinces }
-            let topPowers = Array(alive.prefix(6))
-            let topThree = Array(alive.prefix(3))
-            let hotWar = state.wars.first
+            let nations = map.meta.nations
+            let standing = standings(state, nationCount: nations.count)
+            // 战役在首领缺失时会用 -1 表示该国，且地图与推演快照可能短暂处于不同版本。
+            let hotWar = state.wars.first { nations.indices.contains($0.attacker) && nations.indices.contains($0.defender) }
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     SealFace(text: "势", size: 18, color: Theme.seal)
-                    Text("天下大势 · 存世 \(alive.count) 国")
+                    Text("天下大势 · 存世 \(standing.alive) 国")
                         .font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit()
-                    if let w = hotWar, w.attacker < map.meta.nations.count, w.defender < map.meta.nations.count {
-                        Text("· \(MapLayers.stateLabel(map.meta.nations[w.attacker].name, full: false))⚔\(MapLayers.stateLabel(map.meta.nations[w.defender].name, full: false))")
+                    if let w = hotWar {
+                        Text("· \(MapLayers.stateLabel(nations[w.attacker].name, full: false))⚔\(MapLayers.stateLabel(nations[w.defender].name, full: false))")
                             .font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1)
                     }
                     Spacer(minLength: 4)
@@ -1500,12 +1514,13 @@ struct ScrollPowerPlacard: View {
 
                 // 列强版图占比色带
                 GeometryReader { g in
+                    let width = g.size.width.isFinite ? max(0, g.size.width) : 0
                     HStack(spacing: 1) {
-                        ForEach(topPowers, id: \.self) { n in
-                            let share = CGFloat(state.nations[n].provinces) / CGFloat(total)
+                        ForEach(standing.powers, id: \.self) { n in
+                            let share = CGFloat(min(total, state.nations[n].provinces)) / CGFloat(total)
                             Rectangle()
-                                .fill(Names.color(map.meta.nations[n].color))
-                                .frame(width: max(4, g.size.width * share))
+                                .fill(Names.color(nations[n].color))
+                                .frame(width: min(width, max(4, width * share)))
                         }
                         Spacer(minLength: 0)
                     }
@@ -1516,13 +1531,13 @@ struct ScrollPowerPlacard: View {
 
                 // 前三强可点击快捷题签
                 HStack(spacing: 8) {
-                    ForEach(topThree, id: \.self) { n in
-                        let meta = map.meta.nations[n]
-                        let pct = Int((Double(state.nations[n].provinces) / Double(total) * 100).rounded())
+                    ForEach(standing.powers.prefix(3), id: \.self) { n in
+                        let meta = nations[n]
+                        let pct = Int((Double(min(total, state.nations[n].provinces)) / Double(total) * 100).rounded())
+                        let capital = map.meta.cities.indices.contains(meta.capital) ? map.meta.cities[meta.capital] : nil
                         Button {
                             GameFeel.shared.tap()
-                            if map.meta.cities.indices.contains(meta.capital) {
-                                let c = map.meta.cities[meta.capital]
+                            if let c = capital, c.x.isFinite, c.y.isFinite {
                                 model.controller.showPlace(x: Double(c.x), y: Double(c.y))
                             } else {
                                 onOpenNation(n)

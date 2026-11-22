@@ -198,7 +198,7 @@ extension MapRenderer {
     }
 
     /// 每帧：扫色（盖旧色、湿边）在墨场之下，二者都在陆地之上、州界之下。
-    func drawWashes(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms) {
+    func drawWashes(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms, command: MTLCommandBuffer) {
         let now = clock(frameTime)
         if let sweep {
             sweep.tick(now)
@@ -213,7 +213,7 @@ extension MapRenderer {
                 encoder.drawIndexedPrimitives(type: .triangle, indexCount: mesh.count, indexType: .uint32, indexBuffer: mesh.indices, indexBufferOffset: 0)
             }
         }
-        drawInk(encoder, &u)
+        drawInk(encoder, &u, command: command)
     }
 
     /// 扫色着色器（拼在 MapRenderer.shaders 之后）。

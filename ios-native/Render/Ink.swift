@@ -91,17 +91,13 @@ final class InkField {
     private var generation = 0
     private(set) var snapshot: InkCells.RenderSnapshot?
     /// 顶点数据：每次更新写进另一块，正在被显卡读的那块不动。
-    private var buffers: [MTLBuffer?] = [nil, nil]
-    private var current = 0
-    var data: MTLBuffer? { buffers[current] }
+    let vertexBuffers = MapBufferPool()
     /// 每个顶点：主人国号、高度灰（线性）、山影、陆地标记；地形色（未加山影）。
-    var owners: MTLBuffer?
     var terrain: MTLBuffer?
     /// 预缓存的不变地形高度灰与山影，以及双缓冲 owners 顶点池（避免每次易主在主线程重新分配 4MB Metal 缓冲与重算地形色）。
     var staticGrayShade: [Float] = []
     var staticVertexProvince: [Int32] = []
-    var ownerBuffers: [MTLBuffer?] = [nil, nil]
-    var ownerCurrent = 0
+    let ownerBuffers = MapBufferPool()
     var lastProvinceOwners: [Int] = []
     var scrubbingReplay = false
     var colours: MTLBuffer?
@@ -112,12 +108,11 @@ final class InkField {
 
     /// 有新数据就拷进另一块缓冲（推演每步一次，约两百万字节的内存拷贝）。
     private func upload(_ device: MTLDevice, _ data: [Float]) -> Bool {
-        let next = 1 - current, length = max(16, data.count * 4)
-        if buffers[next] == nil || buffers[next]!.length < length { buffers[next] = device.makeBuffer(length: length, options: .storageModeShared) }
-        guard let b = buffers[next] else { return false }
-        data.withUnsafeBytes { if let address = $0.baseAddress { memcpy(b.contents(), address, $0.count) } }
-        current = next
-        return true
+        let length = max(16, data.count * MemoryLayout<Float>.stride)
+        let uploaded = vertexBuffers.write(device: device, length: length) { buffer in
+            data.withUnsafeBytes { if let address = $0.baseAddress { memcpy(buffer.contents(), address, $0.count) } }
+        }
+        return uploaded != nil
     }
 
     /// 在后台改格子模型，算完回主线程上传并要求重绘。
@@ -187,16 +182,11 @@ extension MapRenderer {
 
         rebuildInkColours(base?.palette ?? nationColors)
         // 点选、换色等未改变归属时，复用已有的主人缓冲。
-        if !forceTerrain && ink.owners != nil && ink.lastProvinceOwners == currentOwners { return }
-        ink.lastProvinceOwners = currentOwners
+        if !forceTerrain && ink.ownerBuffers.buffer != nil && ink.lastProvinceOwners == currentOwners { return }
 
         // 3. 双缓冲原位写入顶点主人号（零新 MTLBuffer 分配）
-        let nextSlot = 1 - ink.ownerCurrent
-        let byteLen = max(16, count * 16)
-        if ink.ownerBuffers[nextSlot] == nil || ink.ownerBuffers[nextSlot]!.length < byteLen {
-            ink.ownerBuffers[nextSlot] = device.makeBuffer(length: byteLen, options: .storageModeShared)
-        }
-        if let buf = ink.ownerBuffers[nextSlot] {
+        let byteLen = max(16, count * 4 * MemoryLayout<Float>.stride)
+        let uploaded = ink.ownerBuffers.write(device: device, length: byteLen) { buf in
             let ptr = buf.contents().bindMemory(to: Float.self, capacity: count * 4)
             let gs = ink.staticGrayShade
             let vp = ink.staticVertexProvince
@@ -210,9 +200,9 @@ extension MapRenderer {
                 ptr[o + 2] = gs[v * 2 + 1]
                 ptr[o + 3] = n >= 0 ? 1 : 0
             }
-            ink.ownerCurrent = nextSlot
-            ink.owners = buf
         }
+        guard uploaded != nil else { return }
+        ink.lastProvinceOwners = currentOwners
         if !ink.scrubbingReplay {
             let now = clock()
             ink.update(self) { $0.owners(currentOwners, now: now) }
@@ -241,10 +231,10 @@ extension MapRenderer {
     }
 
     /// 主画面里（陆地之上、州界之下）合成墨迹。
-    func drawInk(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms) {
+    func drawInk(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms, command: MTLCommandBuffer) {
         let now = clock(frameTime)
-        guard let ink, let snapshot = ink.snapshot, snapshot.visibleUntil > now, let data = ink.data,
-              let owners = ink.owners, let terrain = ink.terrain, let colours = ink.colours,
+        guard let ink, let snapshot = ink.snapshot, snapshot.visibleUntil > now, let data = ink.vertexBuffers.buffer,
+              let owners = ink.ownerBuffers.buffer, let terrain = ink.terrain, let colours = ink.colours,
               indexCount > 0, reveal >= 1, display.battleGround ?? true else { return }
         let scale = washTopology?.scale ?? 30
         let density = mode == .political ? Float(max(0, min(1, display.colorDensity))) : 1
@@ -260,5 +250,7 @@ extension MapRenderer {
         encoder.setFragmentBytes(&look, length: MemoryLayout<InkField.Look>.stride, index: 0)
         encoder.setFragmentBuffer(colours, offset: 0, index: 1)
         encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0)
+        ink.vertexBuffers.recordRead(in: command)
+        ink.ownerBuffers.recordRead(in: command)
     }
 }

@@ -394,7 +394,7 @@ extension NativeEngine {
                     }
                 }
                 let rawDays = (ticks / 120.0).rounded(.up)
-                let etaDays = rawDays.isFinite ? max(1, min(9999, Int(rawDays))) : 1
+                let etaDays = rawDays.isFinite ? Int(max(1, min(9999, rawDays))) : 1
                 if a.status.asString == "retreating" {
                     let prefix = seaLegs > 0 ? "渡海撤回" : "撤退休整"
                     routeNote = "\(prefix) · 预计 \(etaDays) 日\(seaLegs > 0 ? "返港" : "抵达")"
@@ -491,7 +491,8 @@ extension NativeEngine {
             let k = Daily.key("fleet", f.id)
             forcePoint[k] = fleetPoint[i]
             forceNation[k] = f.nation
-            forceStrength[k] = max(50, Int((Double(max(1, f.ships)) * 200 * max(0.15, f.hull)).rounded()))
+            let strength = (Double(max(1, f.ships)) * 200 * max(0.15, f.hull)).rounded()
+            forceStrength[k] = max(50, Int(exactly: strength) ?? 50)
         }
         let seaBattles = pairs.compactMap { p -> [Double]? in
             let ka = p.a.asString, kb = p.b.asString
@@ -500,7 +501,8 @@ extension NativeEngine {
             let sa = Double(forceStrength[ka] ?? 100), sb = Double(forceStrength[kb] ?? 100)
             return [(a.0 + b.0) / 2, (a.1 + b.1) / 2, na, nb, sa, sb, a.0, a.1, b.0, b.1]
         }
-        let stateNation = Dictionary(uniqueKeysWithValues: r.nativeWars.nationIds.asArray.map { ($0[0].asInt, $0[1].asString) })
+        let stateNation = Dictionary(r.nativeWars.nationIds.asArray.map { ($0[0].asInt, $0[1].asString) },
+                                     uniquingKeysWith: { first, _ in first })
         let wars = r.nativeWars.campaigns.asArray.filter { $0.endedTick.isNull }.map { c -> GameState.War in
             let d = r.nativeDiplomacy.declarations.asArray.first { $0.warId.asInt == c.id.asInt }, goal = d.flatMap { $0.goals.asArray.first }
             // War goals' claimed provinces with their claimant (WarClaimAnimationManager).

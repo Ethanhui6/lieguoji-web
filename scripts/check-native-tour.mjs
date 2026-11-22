@@ -8,6 +8,7 @@ export const requiredShots = [
   '03-world','03b-colors-dense','04-war-0','04-war-1','04-war-2','04c-capital-spotlight','04d-map-unrolled','07-views',
   '10-nations','11-nation','12-military','14-diplomacy','15-chronicle',
   '16-statistics','17-edicts','18-menu','19-province','30-landscape','31-landscape-nation',
+  '41e-herald-house','41f-herald-marriage',
 ];
 
 /** A screenshot job must finish its actual in-app tour; a title shot after a timeout is not a pass. */

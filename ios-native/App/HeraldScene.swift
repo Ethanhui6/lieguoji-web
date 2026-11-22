@@ -9,15 +9,35 @@ import LieguojiCore
 /// 节奏：0–0.45 秒展卷，0.35–0.8 秒旗出，0.6–1.0 秒主画面，1.0 秒后注脚淡入；GameModel 按类型留够时长后收起。
 struct HeraldBanner: View {
     let herald: GameModel.Herald
-    let map: WorldMap
-    var onTap: (() -> Void)? = nil
-    var onDismiss: (() -> Void)? = nil
-    @State private var start = Date()
+    private let participantColors: [Color]
+    private let onTap: (() -> Void)?
+    private let onDismiss: (() -> Void)?
+    @State private var start = ProcessInfo.processInfo.systemUptime
+    @State private var motionSettled = false
     @State private var dragY: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private func color(_ n: Int) -> Color { map.meta.nations.indices.contains(n) ? Names.color(map.meta.nations[n].color) : Theme.ink2 }
-    private func name(_ n: Int) -> String { map.meta.nations.indices.contains(n) ? map.meta.nations[n].name : "" }
+    init(herald: GameModel.Herald, map: WorldMap, onTap: (() -> Void)? = nil, onDismiss: (() -> Void)? = nil) {
+        self.herald = herald
+        self.onTap = onTap
+        self.onDismiss = onDismiss
+        let nations = map.meta.nations
+        participantColors = herald.nations.prefix(2).map { n in
+            nations.indices.contains(n) ? Names.color(nations[n].color) : Theme.ink2
+        }
+    }
+
+    private var animationDuration: TimeInterval {
+        switch herald.kind {
+        case .war, .coup, .ultimatum: return 2.2
+        case .peace, .marriage, .treaty: return 1.9
+        case .extinction, .regime, .uprising: return 1.8
+        case .house, .restoration: return 1.35
+        case .capture: return 1.3
+        case .capital: return 1.1
+        }
+    }
+
     private var accent: Color {
         switch herald.kind {
         case .war, .uprising, .house, .coup, .ultimatum: return Theme.seal
@@ -70,8 +90,9 @@ struct HeraldBanner: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
-            let t = reduceMotion ? 3 : context.date.timeIntervalSince(start)
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || motionSettled)) { _ in
+            let elapsed = max(0, ProcessInfo.processInfo.systemUptime - start)
+            let t = reduceMotion ? 3 : min(elapsed, animationDuration)
             scene(t)
         }
         // 按事件级别区分尺寸与形制，挂在顶栏下不遮地图中部；轻点定位并收卷，上滑直接收卷。
@@ -98,7 +119,18 @@ struct HeraldBanner: View {
                     }
                 }
         )
-        .onAppear { start = Date(); dragY = 0 }
+        .task(id: herald.id) {
+            start = ProcessInfo.processInfo.systemUptime
+            motionSettled = false
+            dragY = 0
+            do {
+                try await Task.sleep(nanoseconds: UInt64(animationDuration * 1_000_000_000))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            motionSettled = true
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(herald.text)
     }
@@ -126,10 +158,10 @@ struct HeraldBanner: View {
         let dropY: CGFloat = form == .imperialEdict ? CGFloat((1 - unroll) * -10) : 0
         let corner: CGFloat = form == .fieldSlip ? 12 : form == .imperialEdict ? 3 : 5
         GeometryReader { g in
-            let w = g.size.width, h = g.size.height
-            let paperW: CGFloat = form == .imperialEdict
-                ? max(24, w * CGFloat(0.86 + 0.14 * unroll))
-                : max(24, min(w, w * CGFloat(0.10 + 0.90 * unroll)))
+            let w = g.size.width.isFinite ? max(0, g.size.width) : 0
+            let h = g.size.height.isFinite ? max(0, g.size.height) : 0
+            let widthFactor = form == .imperialEdict ? 0.86 + 0.14 * unroll : 0.10 + 0.90 * unroll
+            let paperW = min(w, max(24, w * CGFloat(widthFactor)))
             let content = form == .warDispatch ? Self.span(t, 0.14, 0.36) : Self.span(t, 0.24, 0.56)
             let textIn = Self.span(t, form == .warDispatch ? 0.28 : 0.44, form == .warDispatch ? 0.56 : 0.80)
             ZStack {
@@ -146,10 +178,10 @@ struct HeraldBanner: View {
                         }
                     )
                     .shadow(color: Theme.ink.opacity(form == .fieldSlip ? 0.12 : 0.20), radius: form == .fieldSlip ? 4 : 7, y: 2.5)
-                    .frame(width: paperW, height: h - 4)
+                    .frame(width: paperW, height: max(0, h - 4))
                 // 轻捷战报用左侧国色竖条；三大重磅传报用专属双轴/金角
                 if form == .fieldSlip {
-                    let stripeColor = herald.nations.first.map(color) ?? accent
+                    let stripeColor = participantColors.first ?? accent
                     Capsule().fill(stripeColor)
                         .frame(width: 3.5, height: max(12, h - 18))
                         .offset(x: -(paperW / 2 - 7))
@@ -170,6 +202,7 @@ struct HeraldBanner: View {
                 // 左侧工笔小画（场景按 208 × 100 的画面绘制），右侧事由。
                 HStack(spacing: form == .fieldSlip ? 6 : 8) {
                     Canvas { ctx, size in
+                        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return }
                         var c = ctx; c.scaleBy(x: size.width / 208, y: size.height / 100)
                         // 单主体的画面原本画在中线左侧 46 处（给注脚让位），小画里居中。
                         if herald.kind != .war && herald.kind != .peace && herald.kind != .marriage && herald.kind != .treaty && herald.kind != .ultimatum { c.translateBy(x: 46, y: 0) }
@@ -187,7 +220,7 @@ struct HeraldBanner: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.leading, form == .fieldSlip ? 14 : 12).padding(.trailing, 14)
-                .frame(width: max(24, paperW), height: h)
+                .frame(width: paperW, height: h)
                 .clipped()
                 .opacity(content)
             }
@@ -222,7 +255,7 @@ struct HeraldBanner: View {
         let flags = Self.span(t, 0.35, 0.8)
         switch herald.kind {
         case .war:
-            let a = herald.nations.first.map(color) ?? Theme.seal, b = herald.nations.dropFirst().first.map(color) ?? Theme.ink2
+            let a = participantColors.first ?? Theme.seal, b = participantColors.dropFirst().first ?? Theme.ink2
             pennant(ctx, x: 28 + (1 - flags) * -30, base: base, color: a, t: t, facing: 1, alpha: flags)
             pennant(ctx, x: size.width - 28 + (1 - flags) * 30, base: base, color: b, t: t, facing: -1, alpha: flags)
             halberds(ctx, cx: cx, base: base, t: t)
@@ -238,7 +271,7 @@ struct HeraldBanner: View {
                            style: StrokeStyle(lineWidth: 2.8, lineCap: .round))
             }
         case .peace:
-            let a = herald.nations.first.map(color) ?? Theme.jade, b = herald.nations.dropFirst().first.map(color) ?? Theme.jade
+            let a = participantColors.first ?? Theme.jade, b = participantColors.dropFirst().first ?? Theme.jade
             let close = Self.span(t, 0.5, 1.1) * 18
             pennant(ctx, x: 30 + close + (1 - flags) * -30, base: base, color: a, t: t, facing: 1, alpha: flags)
             pennant(ctx, x: size.width - 30 - close + (1 - flags) * 30, base: base, color: b, t: t, facing: -1, alpha: flags)
@@ -251,7 +284,7 @@ struct HeraldBanner: View {
                 ctx.stroke(Path(ellipseIn: glowRect), with: .color(Theme.jade.opacity((1 - jadeGlow) * 0.55)), lineWidth: 1.6)
             }
         case .capture:
-            let c = herald.nations.first.map(color) ?? Theme.ink
+            let c = participantColors.first ?? Theme.ink
             let drop = Self.span(t, 0.4, 0.75)
             spread(ctx, at: CGPoint(x: cx - 46, y: base - 18), t: t, start: 0.7, color: c)
             pennant(ctx, x: cx - 46, base: base - (1 - drop) * 60, color: c, t: t, facing: 1, alpha: drop)
@@ -277,7 +310,7 @@ struct HeraldBanner: View {
         case .regime:
             regimeShift(ctx, at: CGPoint(x: cx - 46, y: base - 24), t: t)
         case .treaty:
-            let a = herald.nations.first.map(color) ?? Theme.jade, b = herald.nations.dropFirst().first.map(color) ?? Color(red: 0.72, green: 0.52, blue: 0.2)
+            let a = participantColors.first ?? Theme.jade, b = participantColors.dropFirst().first ?? Color(red: 0.72, green: 0.52, blue: 0.2)
             let close = Self.span(t, 0.45, 1.05) * 16
             pennant(ctx, x: 30 + close + (1 - flags) * -30, base: base, color: a, t: t, facing: 1, alpha: flags)
             pennant(ctx, x: size.width - 30 - close + (1 - flags) * 30, base: base, color: b, t: t, facing: -1, alpha: flags)
@@ -508,8 +541,8 @@ struct HeraldBanner: View {
         }
         let petals = Self.span(t, 0.6, 1.9)
         if petals > 0 {
-            for i in 0..<7 {
-                let px = cx + CGFloat([-46, -24, -8, 12, 30, 48, 2][i]) + CGFloat(sin(t * 3 + Double(i))) * 4
+            for (i, x) in [CGFloat(-46), -24, -8, 12, 30, 48, 2].enumerated() {
+                let px = cx + x + CGFloat(sin(t * 3 + Double(i))) * 4
                 let py = cy - 24 + CGFloat((Double(i) * 7 + t * 22).truncatingRemainder(dividingBy: 56))
                 ctx.fill(Path(ellipseIn: CGRect(x: px - 2.4, y: py - 1.5, width: 4.8, height: 3.0)),
                          with: .color(Color(red: 0.86, green: 0.42, blue: 0.46).opacity(0.65 * (1 - 0.35 * petals))))

@@ -71,6 +71,7 @@ enum ShotTour {
     @MainActor static func play(_ model: GameModel, show: @escaping (Panel?) -> Void, views: @escaping (Bool) -> Void) async {
         await wait(3)
         await shoot("03-world")
+        await checkEarlyHeralds(model)
         await checkColors(model)
         await checkAdvanceOwnership(model)
         // 国名稳定: while the war redraws the borders and the camera stands still, every frame is compared
@@ -273,6 +274,52 @@ enum ShotTour {
         await shootRulerTraits(model, nation: nation, show: show)
         show(nil); await wait(1)
         await shoot("done")
+    }
+
+    /// Feed the first chronicle events through the real queue while the starting map is visible.
+    @MainActor private static func checkEarlyHeralds(_ model: GameModel) async {
+        guard let initial = model.state, let bytes = try? JSONEncoder().encode(initial),
+              var snapshot = (try? JSONSerialization.jsonObject(with: bytes)) as? [String: Any],
+              var events = snapshot["events"] as? [[String: Any]],
+              let wars = snapshot["wars"] as? [[String: Any]] else { return }
+        let placard = model.controller.play.showScrollPlacard
+        let heralds = model.controller.play.showHeralds
+        let pauseOnNews = model.controller.play.pauseOnNews
+        model.dismissHerald()
+        model.controller.play.showScrollPlacard = true
+        model.controller.play.showHeralds = true
+        model.controller.play.pauseOnNews = false
+        defer {
+            model.apply(initial)
+            model.dismissHerald()
+            model.controller.play.showScrollPlacard = placard
+            model.controller.play.showHeralds = heralds
+            model.controller.play.pauseOnNews = pauseOnNews
+        }
+        // The view producer can publish -1 for a participant absent from the current legend.
+        snapshot["wars"] = [["id": -999, "attacker": -1, "defender": 0, "casusBelli": "",
+                             "goal": "", "startDay": initial.day, "participants": []] as [String: Any]] + wars
+        func announce(_ text: String) -> Bool {
+            events.append(["day": initial.day, "text": text, "kind": "politics"])
+            snapshot["events"] = events
+            guard let data = try? JSONSerialization.data(withJSONObject: snapshot),
+                  let state = try? JSONDecoder().decode(GameState.self, from: data) else { return false }
+            model.apply(state)
+            return true
+        }
+        guard announce("巡览世家篡位") else { return }
+        await wait(0.5)
+        guard model.herald?.kind == .house else { return }
+        await shoot("41e-herald-house")
+        model.dismissHerald()
+        guard announce("巡览两国联姻") else { return }
+        await wait(0.2)
+        guard let wedding = model.herald, wedding.kind == .marriage,
+              announce("巡览朝廷政变") else { return }
+        await wait(0.5)
+        // The cancelled first banner must not leave two consumers draining the same queue.
+        guard model.herald?.id == wedding.id else { return }
+        await shoot("41f-herald-marriage")
     }
 
     /// Real controls and the real Swift engine: fast pause/resume, then queued single steps.

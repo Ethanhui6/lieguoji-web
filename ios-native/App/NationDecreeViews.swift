@@ -275,12 +275,13 @@ struct NationDecreesTab: View {
 
             // 4. 专项制度拨钮（Apple Settings Switch 风格）
             let groupedIds = Set(Self.mutexGroups.flatMap(\.ids))
+            let specIds = Set(Self.independentSpecs.map(\.id))
             let specRows: [NationInfo.ReformRow] = Self.independentSpecs.compactMap { spec in
                 guard reformDomain == .all || spec.domain == reformDomain else { return nil }
                 return byId[spec.id]
             }
             let extraRows: [NationInfo.ReformRow] = reformDomain == .all
-                ? list.filter { !groupedIds.contains($0.id) && !Self.independentSpecs.contains(where: { s in s.id == $0.id }) }
+                ? list.filter { !groupedIds.contains($0.id) && !specIds.contains($0.id) }
                 : []
             let independents = specRows + extraRows
             if !independents.isEmpty {

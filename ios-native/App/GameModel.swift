@@ -111,6 +111,9 @@ import LieguojiCore
     @Published var replayPlaying = false
     @Published var replayReversing = false
     @Published var replaySpeed = 1
+    @Published var replayLoop = false
+    @Published var replayAutoFocus = false
+    @Published var replayComparingOpening = false
     @Published var checkpoints: [WorldCheckpoint] = []
     var lastCheckpointDay = -9999
     var checkpointBusy = false
@@ -123,6 +126,11 @@ import LieguojiCore
     var cachedReplayNations: [[WorldMeta.Nation]] = []
     var cachedReplayMajorIndices: [Int] = []
     var cachedReplayLabelBoxes: [Int: (count: Int, cx: Float, cy: Float, box: WorldMeta.LabelBox)] = [:]
+    var cachedReplayStartCounts: [Int: Int] = [:]
+    var cachedReplayStartAlive: Int = 0
+    var cachedReplayCurrentCounts: [Int: Int] = [:]
+    var cachedReplayCurrentCentroids: [Int: (x: Float, y: Float)] = [:]
+    var cachedReplayChangedProvinces: Int = 0
     var lastReplayScrubTime: CFTimeInterval = 0
     /// 后备网页引擎：纯 Swift 已接管全部建世、推演、指令与存档，启动与日常游玩零 WKWebView 实例；
     /// 仅在读取极早期旧版 JSON 存档、远程气候回退或 CI 对照计时时按需创建并挂载。
@@ -792,6 +800,7 @@ import LieguojiCore
         if replayActive { return }
         let previous = state
         state = next
+        controller.seasonPhase = Float(max(0, next.day % 365)) / 365.0
         if let previous { announce(previous, next); if playing { battleHits(previous, next) } }
         guard var world = controller.world ?? map else { return }
         var changed = false

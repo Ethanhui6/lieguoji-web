@@ -818,9 +818,15 @@ struct PlaySealButton: View {
     let playing: Bool
     var size: CGFloat = Theme.Control.sealButtonSize
     let action: () -> Void
+    @State private var sealPulse = false
     var body: some View {
         Button(action: action) {
             ZStack {
+                Circle()
+                    .strokeBorder(Theme.seal.opacity(sealPulse ? 0 : 0.46), lineWidth: 1.4)
+                    .frame(width: size, height: size)
+                    .scaleEffect(sealPulse ? 1.38 : 0.96)
+                    .allowsHitTesting(false)
                 Circle()
                     .fill(playing ? Theme.seal : Theme.paper2)
                     .overlay(
@@ -844,6 +850,10 @@ struct PlaySealButton: View {
             }
             .contentShape(Circle())
             .animation(Motion.tap, value: playing)
+            .onChange(of: playing) { _ in
+                sealPulse = false
+                withAnimation(.easeOut(duration: 0.42)) { sealPulse = true }
+            }
         }
         .buttonStyle(PressStyle())
     }

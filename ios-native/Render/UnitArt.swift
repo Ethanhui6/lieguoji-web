@@ -48,21 +48,57 @@ enum UnitArt {
     private static let rim: CGFloat = 18
     private enum Shape { case rod(CGPath, CGFloat), solid(CGPath) }
 
-    /// Two passes, so touching parts share one outline: every shape in grey grown by the rim, then
-    /// every shape in white.
+    /// Three-stage carved chess piece shading:
+    /// 1) Deep outer rim (0.28) so pieces stand cleanly off any terrain;
+    /// 2) Mid bevel ring (0.44) for carved depth;
+    /// 3) Northwest-to-southeast 3D ivory/wood light gradient (1.00 → 0.80) + crisp crest highlight,
+    ///    which multiplies with the nation's colour in Metal/UIKit to yield a dimensional lacquered piece.
     private static func render(_ g: CGContext, _ shapes: [Shape]) {
-        g.setFillColor(gray: 0.4, alpha: 1); g.setStrokeColor(gray: 0.4, alpha: 1)
+        g.setFillColor(gray: 0.28, alpha: 1); g.setStrokeColor(gray: 0.28, alpha: 1)
         for s in shapes {
             switch s {
             case .rod(let p, let w): g.setLineWidth(w + rim); g.addPath(p); g.strokePath()
             case .solid(let p): g.addPath(p); g.fillPath(); g.setLineWidth(rim); g.addPath(p); g.strokePath()
             }
         }
-        g.setFillColor(gray: 1, alpha: 1); g.setStrokeColor(gray: 1, alpha: 1)
+        g.setFillColor(gray: 0.44, alpha: 1); g.setStrokeColor(gray: 0.44, alpha: 1)
+        let innerRim = rim * 0.44
         for s in shapes {
             switch s {
-            case .rod(let p, let w): g.setLineWidth(w); g.addPath(p); g.strokePath()
-            case .solid(let p): g.addPath(p); g.fillPath()
+            case .rod(let p, let w): g.setLineWidth(w + innerRim); g.addPath(p); g.strokePath()
+            case .solid(let p): g.setLineWidth(innerRim); g.addPath(p); g.strokePath()
+            }
+        }
+        let grad = CGGradient(
+            colorSpace: CGColorSpaceCreateDeviceGray(),
+            colorComponents: [1.0, 1.0, 0.94, 1.0, 0.80, 1.0],
+            locations: [0.0, 0.52, 1.0],
+            count: 3
+        )
+        for s in shapes {
+            switch s {
+            case .rod(let p, let w):
+                g.setStrokeColor(gray: 0.92, alpha: 1)
+                g.setLineWidth(w); g.addPath(p); g.strokePath()
+                g.setStrokeColor(gray: 1.0, alpha: 1)
+                g.setLineWidth(max(2, w * 0.52)); g.addPath(p); g.strokePath()
+            case .solid(let p):
+                let box = p.boundingBoxOfPath
+                g.saveGState()
+                g.addPath(p)
+                g.clip()
+                if let grad, !box.isEmpty {
+                    g.drawLinearGradient(
+                        grad,
+                        start: CGPoint(x: box.minX, y: box.minY),
+                        end: CGPoint(x: box.maxX, y: box.maxY),
+                        options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
+                    )
+                } else {
+                    g.setFillColor(gray: 0.96, alpha: 1)
+                    g.fill(box)
+                }
+                g.restoreGState()
             }
         }
     }
@@ -77,7 +113,7 @@ enum UnitArt {
     }
     private static func oval(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> CGPath { CGPath(ellipseIn: CGRect(x: x, y: y, width: w, height: h), transform: nil) }
     private static func detail(_ g: CGContext, _ p: CGPath, _ w: CGFloat) {
-        g.setStrokeColor(gray: 0.4, alpha: 1); g.setLineWidth(w); g.addPath(p); g.strokePath()
+        g.setStrokeColor(gray: 0.34, alpha: 1); g.setLineWidth(w); g.addPath(p); g.strokePath()
     }
 
     /// The shared plinth every piece stands on, so the set reads as one.
@@ -85,33 +121,43 @@ enum UnitArt {
     private static var knight: Shape {
         .solid(poly([(86, 186), (176, 186), (172, 146), (182, 104), (174, 66), (152, 40), (124, 30), (110, 16), (100, 38), (80, 54), (58, 92), (62, 112), (82, 116), (104, 100), (112, 114), (92, 150)]))
     }
-    private static func dot(_ g: CGContext, _ x: CGFloat, _ y: CGFloat) { g.setFillColor(gray: 0.4, alpha: 1); g.fillEllipse(in: CGRect(x: x, y: y, width: 14, height: 14)) }
+    private static func dot(_ g: CGContext, _ x: CGFloat, _ y: CGFloat) { g.setFillColor(gray: 0.32, alpha: 1); g.fillEllipse(in: CGRect(x: x, y: y, width: 14, height: 14)) }
 
     /// One chess set: the same plinth, rim and fill; only the crown of each piece names the arm.
     private static func draw(_ role: String, _ g: CGContext) {
         switch role {
         case "Fleet":
-            // A two-sailed warship, in the same line as the pieces (no plinth: it floats).
-            render(g, [.rod(line((128, 30), (128, 170)), 12), .solid(poly([(138, 36), (204, 150), (138, 150)])), .solid(poly([(118, 56), (118, 150), (64, 150)])),
-                       .solid(poly([(28, 170), (228, 170), (196, 222), (60, 222)]))])
+            // A two-sailed warship with mast pennant & hull gunports (no plinth: it floats).
+            render(g, [.rod(line((128, 26), (128, 170)), 12),
+                       .solid(poly([(128, 22), (168, 30), (128, 38)])),
+                       .solid(poly([(138, 42), (206, 150), (138, 150)])),
+                       .solid(poly([(118, 56), (118, 150), (62, 150)])),
+                       .solid(poly([(26, 170), (230, 170), (196, 222), (60, 222)]))])
+            dot(g, 82, 188); dot(g, 121, 188); dot(g, 160, 188)
         case "Merchant":
-            // A merchant cog: one square sail with a stripe over a deep hull (the warship has two sails).
-            render(g, [.rod(line((128, 36), (128, 168)), 10), .solid(poly([(72, 52), (184, 52), (176, 150), (80, 150)])),
+            // A merchant cog: one broad square sail with a cargo stripe over a deep hull.
+            render(g, [.rod(line((128, 34), (128, 168)), 10), .solid(poly([(72, 52), (184, 52), (176, 150), (80, 150)])),
                        .solid(poly([(36, 168), (220, 168), (194, 216), (62, 216)]))])
             detail(g, line((78, 100), (178, 100)), 8)
+            detail(g, line((128, 56), (128, 146)), 6)
         case "Port":
             // An anchor.
             render(g, [.rod(line((128, 56), (128, 214)), 16), .rod(line((84, 84), (172, 84)), 14), .solid(oval(108, 18, 40, 40)),
                        .rod(curve((46, 150), (128, 268), (210, 150)), 16), .solid(poly([(30, 156), (62, 138), (64, 170)])), .solid(poly([(226, 156), (194, 138), (192, 170)]))])
-            g.setFillColor(gray: 0.4, alpha: 1); g.fillEllipse(in: CGRect(x: 120, y: 30, width: 16, height: 16))
+            g.setFillColor(gray: 0.32, alpha: 1); g.fillEllipse(in: CGRect(x: 120, y: 30, width: 16, height: 16))
         case "spear":
-            render(g, [.rod(line((128, 186), (128, 74)), 14), .solid(poly([(128, 14), (154, 58), (128, 96), (102, 58)])), .rod(line((92, 112), (164, 112)), 12)] + base)
+            // Long halberd/pike with side battle-pennant.
+            render(g, [.rod(line((128, 186), (128, 70)), 14),
+                       .solid(poly([(132, 74), (186, 86), (150, 102), (178, 114), (132, 120)])),
+                       .solid(poly([(128, 12), (156, 56), (128, 94), (100, 56)])),
+                       .rod(line((92, 112), (156, 112)), 12)] + base)
         case "shield":
             let p = CGMutablePath()
             p.move(to: CGPoint(x: 60, y: 40)); p.addLine(to: CGPoint(x: 196, y: 40)); p.addLine(to: CGPoint(x: 196, y: 96))
             p.addQuadCurve(to: CGPoint(x: 128, y: 186), control: CGPoint(x: 192, y: 160)); p.addQuadCurve(to: CGPoint(x: 60, y: 96), control: CGPoint(x: 64, y: 160)); p.closeSubpath()
             render(g, [.solid(p)] + base)
             detail(g, line((128, 62), (128, 158)), 12); detail(g, line((90, 96), (166, 96)), 12)
+            dot(g, 121, 89)
         case "archer":
             render(g, [.rod(curve((96, 26), (196, 104), (96, 182)), 14), .rod(line((44, 104), (176, 104)), 9), .solid(poly([(196, 104), (170, 88), (170, 120)]))] + base)
             detail(g, line((96, 30), (96, 178)), 6)
@@ -121,21 +167,28 @@ enum UnitArt {
         case "cavalry":
             render(g, [knight] + base); dot(g, 128, 62)
         case "heavy":
-            render(g, [.solid(poly([(120, 30), (150, 4), (158, 20), (140, 44)])), knight] + base)
-            detail(g, line((92, 160), (172, 160)), 10); dot(g, 128, 62)
+            render(g, [.solid(poly([(118, 30), (154, 4), (166, 22), (142, 46)])), knight] + base)
+            detail(g, line((92, 160), (172, 160)), 10)
+            detail(g, line((100, 134), (168, 134)), 8)
+            dot(g, 128, 62)
         case "horseArcher":
-            render(g, [.rod(curve((176, 30), (236, 108), (176, 186)), 12), knight] + base); dot(g, 128, 62)
+            render(g, [.rod(curve((176, 30), (236, 108), (176, 186)), 12), .rod(line((154, 108), (214, 108)), 8), knight] + base); dot(g, 128, 62)
         case "elite":
             render(g, [.rod(line((84, 186), (84, 30)), 12), .solid(oval(72, 12, 24, 24)),
                        .solid(poly([(92, 38), (190, 38), (190, 138), (164, 116), (140, 138), (92, 138)]))] + base)
-            detail(g, oval(124, 66, 36, 36), 10)
+            detail(g, oval(122, 64, 40, 40), 10)
+            dot(g, 135, 77)
         case "elephant":
             render(g, [.solid(oval(36, 46, 66, 84)), .solid(oval(154, 46, 66, 84)), .solid(oval(82, 36, 92, 104)), .rod(curve((128, 130), (124, 168), (148, 182)), 26)] + base)
             detail(g, curve((100, 128), (86, 150), (90, 166)), 8); detail(g, curve((156, 128), (170, 150), (166, 166)), 8)
             dot(g, 103, 73); dot(g, 139, 73)
         default:
-            // The pawn.
-            render(g, [.solid(poly([(100, 112), (156, 112), (172, 186), (84, 186)])), .solid(oval(90, 46, 76, 76))] + base)
+            // Footman / Infantry: crested war-helm, armored torso, and upright broadsword guard.
+            render(g, [.solid(poly([(96, 114), (160, 114), (174, 186), (82, 186)])),
+                       .solid(oval(90, 46, 76, 74)),
+                       .solid(poly([(128, 18), (144, 48), (112, 48)]))] + base)
+            detail(g, line((128, 124), (128, 176)), 9)
+            detail(g, line((108, 142), (148, 142)), 8)
         }
     }
 }

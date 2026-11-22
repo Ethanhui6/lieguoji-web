@@ -186,6 +186,18 @@ extension GameModel {
         cachedReplayMajorIndices = majors
         cachedReplayNations = snapshots
         cachedReplayLabelBoxes = [:]
+        var startCounts = [Int: Int]()
+        if let first = timeline.frames.first {
+            let firstOwners = ReplayEngine.decodeRLE(first.rle, count: baseWorld.meta.provinces.count)
+            for o in firstOwners where o >= 0 { startCounts[o, default: 0] += 1 }
+            cachedReplayStartAlive = first.aliveCount
+        } else {
+            cachedReplayStartAlive = 0
+        }
+        cachedReplayStartCounts = startCounts
+        cachedReplayCurrentCounts = startCounts
+        cachedReplayCurrentCentroids = [:]
+        cachedReplayChangedProvinces = 0
         lastReplayScrubTime = 0
     }
 
@@ -246,6 +258,7 @@ extension GameModel {
         replayTimer = nil
         replayPlaying = false
         replayReversing = false
+        replayComparingOpening = false
         controller.replayLocked = false
         controller.replayAnimate = false
         controller.replayScrubbing = false
@@ -253,6 +266,10 @@ extension GameModel {
         cachedReplayNations = []
         cachedReplayMajorIndices = []
         cachedReplayLabelBoxes = [:]
+        cachedReplayStartCounts = [:]
+        cachedReplayCurrentCounts = [:]
+        cachedReplayCurrentCentroids = [:]
+        cachedReplayChangedProvinces = 0
         guard replayActive else { return }
         replayActive = false
         if restoreLive {
@@ -335,9 +352,48 @@ extension GameModel {
         startReplayTimer()
     }
 
+    var replaySpeedText: String {
+        replaySpeed == 0 ? "0.5×" : "\(replaySpeed)×"
+    }
+
     func cycleReplaySpeed() {
-        replaySpeed = replaySpeed == 1 ? 2 : replaySpeed == 2 ? 4 : 1
+        switch replaySpeed {
+        case 1: replaySpeed = 2
+        case 2: replaySpeed = 4
+        case 4: replaySpeed = 8
+        case 8: replaySpeed = 0
+        default: replaySpeed = 1
+        }
         GameFeel.shared.tap()
+    }
+
+    /// 按住对比开局版图：按住时临时渲染第 0 帧疆域，松手即刻切回当前回放帧。
+    func previewReplayOpening(_ holding: Bool) {
+        guard let timeline = replayTimelineData, !timeline.frames.isEmpty else { return }
+        if holding {
+            guard !replayComparingOpening else { return }
+            pauseReplay()
+            replayComparingOpening = true
+            applyReplayFrame(at: 0, in: timeline, animated: false, scrubbing: false)
+            GameFeel.shared.tap()
+        } else if replayComparingOpening {
+            replayComparingOpening = false
+            applyReplayFrame(at: replayIndex, in: timeline, animated: false, scrubbing: false)
+            GameFeel.shared.tap()
+        }
+    }
+
+    /// 飞往指定国家在当前回放帧的疆域重心。
+    func focusReplayNation(_ nation: Int) {
+        if let c = cachedReplayCurrentCentroids[nation] {
+            controller.showPlace(x: Double(c.x), y: Double(c.y))
+        } else if let m = controller.world ?? map, m.meta.nations.indices.contains(nation) {
+            let cap = m.meta.nations[nation].capital
+            if m.meta.cities.indices.contains(cap) {
+                let city = m.meta.cities[cap]
+                controller.showPlace(x: Double(city.x), y: Double(city.y))
+            }
+        }
     }
 
     private func stopReplayTimer() {
@@ -350,15 +406,29 @@ extension GameModel {
         replayTimer?.cancel()
         replayTimer = Task { [weak self] in
             while let self, !Task.isCancelled, self.replayPlaying, let timeline = self.replayTimelineData {
-                let baseMs: Double = self.replaySpeed == 4 ? 260 : self.replaySpeed == 2 ? 440 : 760
+                let baseMs: Double
+                switch self.replaySpeed {
+                case 8: baseMs = 150
+                case 4: baseMs = 260
+                case 2: baseMs = 440
+                case 0: baseMs = 1150
+                default: baseMs = 760
+                }
                 try? await Task.sleep(nanoseconds: UInt64(baseMs * 1_000_000))
                 guard !Task.isCancelled, self.replayPlaying else { break }
-                let next = self.replayIndex + (self.replayReversing ? -1 : 1)
+                var next = self.replayIndex + (self.replayReversing ? -1 : 1)
                 if next < 0 || next >= timeline.frames.count {
-                    self.replayPlaying = false
-                    break
+                    if self.replayLoop && timeline.frames.count > 1 {
+                        next = self.replayReversing ? (timeline.frames.count - 1) : 0
+                        self.seekReplay(to: next, focusEvent: false, animated: false, scrubbing: false)
+                        continue
+                    } else {
+                        self.replayPlaying = false
+                        break
+                    }
                 }
-                self.seekReplay(to: next, focusEvent: false, animated: true, scrubbing: false)
+                let shouldFocus = self.replayAutoFocus && timeline.frames[next].major && timeline.frames[next].province >= 0
+                self.seekReplay(to: next, focusEvent: shouldFocus, animated: true, scrubbing: false)
             }
         }
     }
@@ -372,6 +442,7 @@ extension GameModel {
     private func applyReplayFrame(at index: Int, in timeline: ReplayTimelineData, animated: Bool, scrubbing: Bool) {
         guard var world = savedLiveWorld ?? controller.world ?? map else { return }
         let frame = timeline.frames[index]
+        controller.seasonPhase = Float(max(0, frame.day % 365)) / 365.0
         let owners = ReplayEngine.decodeRLE(frame.rle, count: world.meta.provinces.count)
         let prevOwners = lastReplayOwners
         lastReplayOwners = owners
@@ -405,9 +476,11 @@ extension GameModel {
         }
         var boxes = [WorldMeta.LabelBox]()
         boxes.reserveCapacity(cnt.count)
+        var centroids = [Int: (x: Float, y: Float)]()
         for (n, c) in cnt where c > 0 && world.meta.nations.indices.contains(n) {
             let cx = sumX[n, default: 0] / Float(c)
             let cy = sumY[n, default: 0] / Float(c)
+            centroids[n] = (cx, cy)
             if let hit = cachedReplayLabelBoxes[n], hit.count == c, abs(hit.cx - cx) < 0.05, abs(hit.cy - cy) < 0.05 {
                 boxes.append(hit.box)
                 continue
@@ -421,9 +494,20 @@ extension GameModel {
             boxes.append(box)
         }
         world.meta.labels = boxes
+        cachedReplayCurrentCounts = cnt
+        cachedReplayCurrentCentroids = centroids
+        if index > 0 {
+            let prevRLE = timeline.frames[index - 1].rle
+            let prevStepOwners = ReplayEngine.decodeRLE(prevRLE, count: world.meta.provinces.count)
+            var changed = 0
+            for i in 0..<min(owners.count, prevStepOwners.count) where owners[i] != prevStepOwners[i] { changed += 1 }
+            cachedReplayChangedProvinces = changed
+        } else {
+            cachedReplayChangedProvinces = 0
+        }
 
         controller.replayAnimate = animated
-        let stepTween = replaySpeed == 4 ? 0.24 : replaySpeed == 2 ? 0.41 : 0.72
+        let stepTween = replaySpeed == 8 ? 0.14 : replaySpeed == 4 ? 0.24 : replaySpeed == 2 ? 0.41 : replaySpeed == 0 ? 0.98 : 0.72
         var fx = MapEffects()
         var washInputs = [WashInput]()
         var enemiesMap = [Int: Set<Int>]()
@@ -550,6 +634,7 @@ struct ReplayOverlay: View {
     @Environment(\.verticalSizeClass) private var verticalClass
     private var landscape: Bool { verticalClass == .compact }
     @State private var showNodes = false
+    @State private var showDetails = false
     @State private var scrubIndex: Int? = nil
     @State private var confirmRollback: WorldCheckpoint? = nil
     @State private var localToast: String? = nil
@@ -567,6 +652,15 @@ struct ReplayOverlay: View {
                 .allowsHitTesting(false)
                 .overlay(alignment: .top) {
                     topBar(timeline: timeline, idx: shownIdx, frame: frame)
+                }
+                .overlay(alignment: .topLeading) {
+                    if showDetails {
+                        frameDetailCard(timeline: timeline, idx: shownIdx, frame: frame)
+                            .padding(.top, Theme.Control.topHeight + 12)
+                            .padding(.leading, Theme.Control.screenInset)
+                            .transition(.opacity.combined(with: .move(edge: .top)).combined(with: .scale(scale: 0.96, anchor: .topLeading)))
+                            .zIndex(18)
+                    }
                 }
                 .overlay(alignment: .bottom) {
                     bottomBar(timeline: timeline, idx: shownIdx, frame: frame, nearCP: nearCP, multiFrame: multiFrame)
@@ -624,6 +718,7 @@ struct ReplayOverlay: View {
                 }
                 .statusBarHidden()
                 .animation(Motion.panel, value: showNodes)
+                .animation(Motion.panel, value: showDetails)
                 .animation(Motion.panel, value: confirmRollback)
                 .onChange(of: model.notice) { _, text in
                     guard let text else { return }
@@ -689,8 +784,17 @@ struct ReplayOverlay: View {
 
             Spacer(minLength: 6)
 
-            // 右侧与主界面一致的 44pt 控件组：定位焦点 / 历史节点 / 返回当下
+            // 右侧与主界面一致的 44pt 控件组：当帧大势 / 定位焦点 / 历史节点 / 返回当下
             HStack(spacing: Theme.Control.gap) {
+                Button {
+                    GameFeel.shared.tap()
+                    showDetails.toggle()
+                } label: {
+                    CircleIcon(glyph: .ranking, active: showDetails)
+                }
+                .buttonStyle(InkPressStyle())
+                .accessibilityLabel("当帧天下大势")
+
                 Button {
                     GameFeel.shared.tap()
                     if frame.province >= 0, let m = model.map, m.meta.provinces.indices.contains(frame.province) {
@@ -718,6 +822,7 @@ struct ReplayOverlay: View {
                 Button {
                     GameFeel.shared.tap()
                     showNodes = false
+                    showDetails = false
                     confirmRollback = nil
                     model.exitReplay()
                 } label: {
@@ -877,12 +982,12 @@ struct ReplayOverlay: View {
             Button {
                 model.cycleReplaySpeed()
             } label: {
-                Text("\(model.replaySpeed)×")
+                Text(model.replaySpeedText)
                     .font(Theme.body)
-                    .foregroundStyle(model.replaySpeed > 1 ? Theme.seal : Theme.ink)
+                    .foregroundStyle(model.replaySpeed != 1 ? Theme.seal : Theme.ink)
                     .monospacedDigit()
-                    .frame(width: 38, height: sealSize)
-                    .background(model.replaySpeed > 1 ? Theme.seal.opacity(0.1) : Color.clear, in: Capsule())
+                    .frame(width: 40, height: sealSize)
+                    .background(model.replaySpeed != 1 ? Theme.seal.opacity(0.1) : Color.clear, in: Capsule())
                     .contentShape(Capsule())
                     .contentTransition(.numericText())
                     .animation(Motion.tap, value: model.replaySpeed)
@@ -896,6 +1001,160 @@ struct ReplayOverlay: View {
             .opacity(multiFrame ? 1 : 0.55)
             .sensoryFeedback(.impact(weight: .light), trigger: model.replayPlaying)
         }
+    }
+
+    /// 当帧天下大势与列强兴衰对比悬浮小笺（点击任意列强飞往其当帧疆域重心，支持按住比对开局、大事追焦与循环回放）
+    @ViewBuilder
+    private func frameDetailCard(timeline: ReplayTimelineData, idx: Int, frame: ReplayTimelineData.Frame) -> some View {
+        let nations = model.controller.world?.meta.nations ?? model.map?.meta.nations ?? []
+        let totalProvinces = max(1, timeline.provinceCount)
+        let powers: [(nation: Int, count: Int)] = {
+            if !model.cachedReplayCurrentCounts.isEmpty {
+                return model.cachedReplayCurrentCounts
+                    .filter { $0.value > 0 }
+                    .sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
+                    .prefix(8)
+                    .map { ($0.key, $0.value) }
+            }
+            if let slices = frame.topPowers, !slices.isEmpty {
+                return slices.prefix(8).map { ($0.i, $0.p) }
+            }
+            return frame.topNation >= 0 ? [(frame.topNation, frame.topProvinces)] : []
+        }()
+        let maxCount = max(1, powers.first?.count ?? 1)
+        let aliveDelta = frame.aliveCount - max(1, model.cachedReplayStartAlive)
+        let aliveDeltaText = aliveDelta == 0 ? "与开局同" : (aliveDelta > 0 ? "较开局 +\(aliveDelta)国" : "较开局 \(aliveDelta)国")
+
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                SealFace(text: model.replayComparingOpening ? "初" : "势", size: 20, color: model.replayComparingOpening ? Theme.jade : Theme.seal)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(model.replayComparingOpening ? "开局初年疆域对照" : "当帧天下大势 · 列强消长")
+                        .font(Theme.label).foregroundStyle(Theme.ink)
+                    Text("存世 \(frame.aliveCount) 国（\(aliveDeltaText)）· 本步易主 \(model.cachedReplayChangedProvinces) 州")
+                        .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                }
+                Spacer(minLength: 4)
+                Button {
+                    GameFeel.shared.tap()
+                    showDetails = false
+                } label: {
+                    InkIcon(glyph: .close, size: 13, weight: 1.7)
+                        .foregroundStyle(Theme.ink2)
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(.plain)
+            }
+
+            // 快捷演播工具条：按住对比开局 / 大事自动追焦 / 循环回放
+            HStack(spacing: 6) {
+                Text(model.replayComparingOpening ? "松手还原当帧" : "按住对比开局")
+                    .font(Theme.caption)
+                    .foregroundStyle(model.replayComparingOpening ? Theme.paper2 : Theme.jade)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(model.replayComparingOpening ? Theme.jade : Theme.jade.opacity(0.12), in: Capsule())
+                    .overlay(Capsule().stroke(Theme.jade.opacity(0.35), lineWidth: 0.7))
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { _ in model.previewReplayOpening(true) }
+                            .onEnded { _ in model.previewReplayOpening(false) }
+                    )
+
+                Button {
+                    GameFeel.shared.tap()
+                    model.replayAutoFocus.toggle()
+                } label: {
+                    HStack(spacing: 3) {
+                        InkIcon(glyph: .locate, size: 11, weight: 1.8)
+                        Text("追焦").font(Theme.caption)
+                    }
+                    .foregroundStyle(model.replayAutoFocus ? Theme.paper2 : Theme.ink)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(model.replayAutoFocus ? Theme.seal : Theme.ink.opacity(0.07), in: Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    GameFeel.shared.tap()
+                    model.replayLoop.toggle()
+                } label: {
+                    HStack(spacing: 3) {
+                        InkIcon(glyph: .refresh, size: 11, weight: 1.8)
+                        Text("循环").font(Theme.caption)
+                    }
+                    .foregroundStyle(model.replayLoop ? Theme.paper2 : Theme.ink)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(model.replayLoop ? Theme.seal : Theme.ink.opacity(0.07), in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+
+            Divider2()
+
+            VStack(spacing: 5) {
+                ForEach(Array(powers.enumerated()), id: \.element.nation) { rank, item in
+                    let n = item.nation
+                    let count = item.count
+                    let name: String = {
+                        if nations.indices.contains(n), !nations[n].name.isEmpty { return nations[n].name }
+                        if timeline.nations.indices.contains(n), !timeline.nations[n].name.isEmpty { return timeline.nations[n].name }
+                        return "列国\(n + 1)"
+                    }()
+                    let color: Color = {
+                        if nations.indices.contains(n) { return Names.color(nations[n].color) }
+                        if timeline.nations.indices.contains(n) { return Names.color(timeline.nations[n].color) }
+                        return Theme.seal
+                    }()
+                    let startCount = model.cachedReplayStartCounts[n] ?? 0
+                    let delta = count - startCount
+                    let share = Int((Double(count) / Double(totalProvinces) * 100).rounded())
+
+                    Button {
+                        GameFeel.shared.tap()
+                        model.focusReplayNation(n)
+                    } label: {
+                        VStack(spacing: 2.5) {
+                            HStack(spacing: 6) {
+                                Text("\(rank + 1)")
+                                    .font(Theme.caption).foregroundStyle(rank < 3 ? Theme.seal : Theme.ink2)
+                                    .monospacedDigit()
+                                    .frame(width: 13, alignment: .trailing)
+                                Circle().fill(color).frame(width: 7.5, height: 7.5)
+                                Text(MapLayers.stateLabel(name, full: false))
+                                    .font(Theme.label).foregroundStyle(Theme.ink)
+                                    .lineLimit(1)
+                                Spacer(minLength: 4)
+                                if startCount == 0 && idx > 0 {
+                                    Text("新立 +\(count)州")
+                                        .font(Theme.caption).foregroundStyle(Theme.jade).monospacedDigit()
+                                } else if delta > 0 {
+                                    Text("+\(delta)州")
+                                        .font(Theme.caption).foregroundStyle(Theme.jade).monospacedDigit()
+                                } else if delta < 0 {
+                                    Text("\(delta)州")
+                                        .font(Theme.caption).foregroundStyle(Theme.seal).monospacedDigit()
+                                }
+                                Text("\(count)州 · \(share)%")
+                                    .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                            }
+                            GeometryReader { barGeo in
+                                let w = max(4, barGeo.size.width * CGFloat(count) / CGFloat(maxCount))
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(Theme.ink.opacity(0.08)).frame(height: 3)
+                                    Capsule().fill(color.opacity(0.82)).frame(width: w, height: 3)
+                                }
+                            }
+                            .frame(height: 3)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .frame(width: min(312, UIScreen.main.bounds.width - 28))
+        .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
     }
 
     private func dockButton(active: Bool, tint: Color = Theme.seal, enabled: Bool = true, action: @escaping () -> Void, @ViewBuilder content: () -> some View) -> some View {
@@ -1107,7 +1366,13 @@ private struct ReplayNodesSheet: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
                 SheetHeader(title: "历史节点", subtitle: "共 \(timeline.frames.count) 帧版图记录 · \(model.checkpoints.count) 个可回溯节点", seal: "溯")
-                ChipPicker(items: [("nodes", "全部时间节点"), ("major", "重大转折"), ("checkpoints", "可续推节点（\(model.checkpoints.count)）")], selection: $tab)
+                ChipPicker(items: [
+                    ("nodes", "全部（\(timeline.frames.count)）"),
+                    ("major", "重大转折"),
+                    ("war", "兵戈攻伐"),
+                    ("politics", "政权兴替"),
+                    ("checkpoints", "可续推节点（\(model.checkpoints.count)）")
+                ], selection: $tab)
                     .padding(.horizontal, 16)
 
                 if tab == "checkpoints" {
@@ -1134,24 +1399,39 @@ private struct ReplayNodesSheet: View {
                     }
                     .padding(.horizontal, 16)
                 } else {
-                    let list = Array(timeline.frames.indices.filter { tab == "nodes" || timeline.frames[$0].major }.reversed())
+                    let list = Array(timeline.frames.indices.filter { idx in
+                        let f = timeline.frames[idx]
+                        switch tab {
+                        case "major": return f.major
+                        case "war": return ["war", "peace", "capture"].contains(f.kind)
+                        case "politics": return ["politics", "uprising", "restoration", "extinction", "capital", "house", "marriage"].contains(f.kind)
+                        default: return true
+                        }
+                    }.reversed())
                     Group2 {
+                        if list.isEmpty {
+                            Row(label: "筛选结果", value: "该类别下暂无历史节点")
+                        }
                         ForEach(Array(list.enumerated()), id: \.element) { pos, i in
                             let f = timeline.frames[i]
                             let active = i == model.replayIndex
                             Button { onPickFrame(i) } label: {
                                 HStack(alignment: .top, spacing: 10) {
                                     KindSeal(kind: .of(f.kind), size: 20).padding(.top, 2)
-                                    VStack(alignment: .leading, spacing: 2) {
+                                    VStack(alignment: .leading, spacing: 3) {
                                         HStack(spacing: 6) {
                                             Text(f.dateText).font(Theme.label).foregroundStyle(active ? Theme.seal : Theme.ink2).monospacedDigit()
                                             Text("· \(f.aliveCount) 国").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                            if !f.topName.isEmpty {
+                                                Text("· 首强 \(MapLayers.stateLabel(f.topName, full: false)) \(f.topProvinces)州")
+                                                    .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                            }
                                             if active { PaperTag(text: "当前", color: Theme.seal) }
                                         }
                                         Text(f.headline).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                                     }
                                     Spacer(minLength: 4)
-                                    Image(systemName: "chevron.right").font(.system(size: 11)).foregroundStyle(Theme.ink2)
+                                    InkIcon(glyph: .chevronRight, size: 13, weight: 1.65).foregroundStyle(Theme.ink2)
                                 }
                                 .padding(.horizontal, 14).padding(.vertical, 10)
                                 .background(active ? Theme.seal.opacity(0.06) : Color.clear)

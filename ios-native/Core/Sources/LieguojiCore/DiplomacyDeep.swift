@@ -262,20 +262,60 @@ public enum DiplomacyDeep {
         return OpinionReport(score: clamped, stance: stance, reasons: reasons, hegemonThreat: threat)
     }
 
-    /// 供 `DeclarationEngine` 调用的双边好感修正乘数（高好感显著降低宣战意愿，宿敌/霸权威胁提高宣战意愿）。
+    /// 供 `DeclarationEngine` 调用的双边好感与战略审势修正乘数（高好感/多线作战/国库空虚显著降低宣战意愿，宿敌/趁敌大败/宣称权提高宣战意愿）。
     public static func warTemperBias(_ r: JS, attacker a: String, defender b: String) -> Double {
         let rep = opinion(r, a, b)
         // +60 好感 → 0.55x（极难轻启战端）；-60 宿敌 → 1.38x（蠢蠢欲动）
-        let raw = 1.0 - Double(rep.score) * 0.0065
-        return max(0.45, min(1.55, raw))
+        var raw = 1.0 - Double(rep.score) * 0.0065
+        if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+            var warsA = 0, warsB = 0
+            for c in r.world.campaigns.asArray where c.status.asString == "active" {
+                let ca = c.attackerId.asString, cd = c.defenderId.asString
+                if ca == a || cd == a { warsA += 1 }
+                if ca == b || cd == b { warsB += 1 }
+            }
+            // 慎开多线：已在两线以上交战时克制再启新战端
+            if warsA >= 2 { raw *= 0.52 }
+            else if warsA == 1 { raw *= 0.78 }
+            // 国库与战败震荡审势
+            if Regimes.defeatPenalty(r, a) > 0.10 { raw *= 0.65 }
+            if let goldA = r.finance.nations[a].gold.optionalNumber, goldA < 25 { raw *= 0.72 }
+            // 趁虚而入：敌方正陷多线苦战或新败动摇，或我方握有王位宣称
+            if Regimes.defeatPenalty(r, b) >= 0.15 || warsB >= 2 { raw *= 1.28 }
+            if hasThroneClaim(r, claimant: a, target: b) { raw *= 1.18 }
+        }
+        return max(0.35, min(1.75, raw))
     }
 
-    /// 每月深度外交结算：通商增收、岁币划转、好感记忆缓释、过期宣称清理，以及 AI 自主外交！
+    /// 每月深度外交结算：通商增收、岁币划转、好感记忆演进、恶化断交、过期宣称清理，以及 AI 自主外交！
     public static func month(_ r: JS, _ key: Int) {
         guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy else { return }
         // 1. 清理过期王位宣称
         if !r.regimes.claims.isNull {
             r.regimes.claims = .array(r.regimes.claims.asArray.filter { $0.until.asInt > key })
+        }
+        // 1b. 每季度演进交战宿怨与同盟情谊，并检查关系破裂后的旧约废止
+        if key % 3 == 0 {
+            for c in r.world.campaigns.asArray where c.status.asString == "active" {
+                let ca = c.attackerId.asString, cd = c.defenderId.asString
+                if Vassals.alive(r, ca) && Vassals.alive(r, cd) {
+                    adjustOpinionMod(r, ca, cd, delta: -2)
+                }
+            }
+            if !r.regimes.pacts.isNull {
+                for p in r.regimes.pacts.asArray where p.until.asInt > key {
+                    let a = p.a.asString, b = p.b.asString
+                    let kind = p.kind.optionalString ?? "pact"
+                    guard Vassals.alive(r, a), Vassals.alive(r, b) else { continue }
+                    if (kind == "trade" || kind == "pact") && opinion(r, a, b).score <= -45 {
+                        p.until = JS(key)
+                        let nameA = Vassals.name(r, a), nameB = Vassals.name(r, b)
+                        _ = People.recordHistory(r, kind: "diplomacy", text: "\(nameA)与\(nameB)邦交恶化，废止\(treatyLabels[kind] ?? "旧约")",
+                                                 reason: "两国猜忌日深（好感跌至 -45 以下），原有条约提前作废。",
+                                                 nations: [a, b], province: nil)
+                    }
+                }
+            }
         }
         // 2. 每年初缓释外交记忆（朝 0 靠拢 15%）
         if key % 12 == 0, !r.regimes.opinionMod.isNull {
@@ -377,11 +417,16 @@ public enum DiplomacyDeep {
             let target = candidates[Int(Regimes.draw(tag + "|t") % UInt32(candidates.count))]
             let rep = opinion(r, nid, target)
             let nameA = Vassals.name(r, nid), nameB = Vassals.name(r, target)
+            let myStr = max(1, War26.strength(r, nid))
+            let underThreat = neighbors.contains { nb in
+                nb != target && (Regimes.atWar(r, nid, nb) || (War26.strength(r, nb) > myStr * 1.8 && opinion(r, nid, nb).score <= -15))
+            }
+            let defenseThreshold = underThreat ? 24 : 38
 
-            if rep.score >= 38 && !hasTreaty(r, nid, target, kind: "defense") {
+            if rep.score >= defenseThreshold && !hasTreaty(r, nid, target, kind: "defense") {
                 upsertTreaty(r, a: nid, b: target, kind: "defense", years: 10)
                 _ = People.announce(r, kind: "diplomacy", text: "\(nameA)与\(nameB)缔结共同防御条约",
-                                    reason: "两国邦交亲善（好感 +\(rep.score)），约定十年内一方遇袭则另一方自动出兵协防。",
+                                    reason: underThreat ? "面对强邻环伺，两国合纵联防（好感 +\(rep.score)），约定一方遇袭则另一方自动出兵协防。" : "两国邦交亲善（好感 +\(rep.score)），约定十年内一方遇袭则另一方自动出兵协防。",
                                     nations: [nid, target], province: nil)
             } else if rep.score >= 22 && !hasTreaty(r, nid, target, kind: "trade") {
                 upsertTreaty(r, a: nid, b: target, kind: "trade", years: 10)

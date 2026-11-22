@@ -227,12 +227,29 @@ struct HeraldBanner: View {
             pennant(ctx, x: size.width - 28 + (1 - flags) * 30, base: base, color: b, t: t, facing: -1, alpha: flags)
             halberds(ctx, cx: cx, base: base, t: t)
             splash(ctx, at: CGPoint(x: cx, y: base - 30), t: t, start: 0.98, color: Theme.seal)
+            // 兵戈急报飞白斜划：双戟相交刹那一道干笔朱墨斜锋划破画格
+            let warSlash = Self.span(t, 0.76, 1.08)
+            if warSlash > 0 && warSlash < 1 {
+                var slashPath = Path()
+                slashPath.move(to: CGPoint(x: cx - 34, y: base - 8))
+                slashPath.addLine(to: CGPoint(x: cx + 36, y: base - 52))
+                ctx.stroke(slashPath.trimmedPath(from: max(0, warSlash - 0.55), to: warSlash),
+                           with: .color(Theme.seal.opacity(0.75 * (1 - warSlash * 0.4))),
+                           style: StrokeStyle(lineWidth: 2.8, lineCap: .round))
+            }
         case .peace:
             let a = herald.nations.first.map(color) ?? Theme.jade, b = herald.nations.dropFirst().first.map(color) ?? Theme.jade
             let close = Self.span(t, 0.5, 1.1) * 18
             pennant(ctx, x: 30 + close + (1 - flags) * -30, base: base, color: a, t: t, facing: 1, alpha: flags)
             pennant(ctx, x: size.width - 30 - close + (1 - flags) * 30, base: base, color: b, t: t, facing: -1, alpha: flags)
             ribbon(ctx, from: CGPoint(x: 30 + close, y: base - 40), to: CGPoint(x: size.width - 30 - close, y: base - 40), t: t)
+            // 玉帛合盟温润光晕：礼成之时中线玉璧泛起一层翠白瑞光
+            let jadeGlow = Self.span(t, 0.85, 1.45)
+            if jadeGlow > 0 {
+                let r = CGFloat(8 + 10 * jadeGlow)
+                let glowRect = CGRect(x: cx - r, y: base - 32 - r, width: r * 2, height: r * 2)
+                ctx.stroke(Path(ellipseIn: glowRect), with: .color(Theme.jade.opacity((1 - jadeGlow) * 0.55)), lineWidth: 1.6)
+            }
         case .capture:
             let c = herald.nations.first.map(color) ?? Theme.ink
             let drop = Self.span(t, 0.4, 0.75)

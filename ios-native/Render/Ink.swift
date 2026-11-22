@@ -31,7 +31,7 @@ struct InkPipelines {
     struct InkCompositeOut {
         float4 position [[position]]; float2 world;
         int nation [[flat]]; int owner [[flat]]; float gray [[flat]];
-        float shade; float3 terrain; float show; float amount;
+        float shade; float3 terrain; float show; float fade; float amount;
     };
     vertex InkCompositeOut inkCompositeVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* owners [[buffer(1)]],
                                               constant Uniforms& u [[buffer(2)]], const device float4* terrain [[buffer(3)]],
@@ -42,6 +42,7 @@ struct InkPipelines {
         // 先算顶点的墨量再插值，让持续留墨的顶点和正在退墨的顶点平滑相接。
         o.show = clamp((min(look.now, k.z) - k.y) / look.reveal, 0.0, 1.0);
         float fade = 1.0 - clamp((look.now - k.z) / look.fade, 0.0, 1.0);
+        o.fade = fade;
         o.amount = k.w * o.show * fade;
         return o;
     }
@@ -53,10 +54,13 @@ struct InkPipelines {
         float amount = in.amount;
         if (amount < 0.01) discard_fragment();
         // 柔润水墨宣纸晕染前沿：以低频纸纤维连续波动替代高频碎裂噪声，配合宽柔过渡带（soft），消除碎块斑点感。
+        // 停战/败退收水退墨（retreatLift）：退墨时提高纸纹显色阈值，使墨晕从外缘沿着宣纸纤维向内徐徐收干，而非生硬整体透明。
         float2 q = in.world;
         float n1 = fbm(q * k.freq), n2 = vnoise(q * k.freq * 2.1 + float2(5.1, 1.7));
         float level = amount + (n1 - 0.5) * 2.0 * k.noise + (n2 - 0.5) * (k.noise * 0.35);
-        float reached = smoothstep(k.visible - k.soft, k.visible + k.soft, level);
+        float retreatLift = (1.0 - clamp(in.fade, 0.0, 1.0)) * 0.22;
+        float thresh = k.visible + retreatLift;
+        float reached = smoothstep(thresh - k.soft, thresh + k.soft, level);
         if (reached < 0.004) discard_fragment();
         float3 e = colours[in.nation].rgb;
         float3 lin = float3(inkToLinear(e.r), inkToLinear(e.g), inkToLinear(e.b));
@@ -64,10 +68,11 @@ struct InkPipelines {
         float3 col = float3(inkToSrgb(lin.r), inkToSrgb(lin.g), inkToSrgb(lin.b));
         col = in.terrain + (col - in.terrain) * k.density;
         col = min(float3(1.0), col * in.shade);
-        // 宣纸湿墨聚边笔锋：推进前沿处聚墨收深呈手绘水墨浸润感，稳定后徐徐趋平，不掩国界与地貌。
+        // 宣纸湿墨聚边笔锋 + 新墨微润水光：推进前沿处聚墨收深，紧贴墨锋内侧泛出微润水泽，干透后自然敛入宣纸。
         float capillary = reached * (1.0 - reached) * 4.0;
         float wetCrest = capillary * (1.0 - show * 0.55);
-        col *= (1.0 - 0.22 * wetCrest - 0.06 * capillary);
+        float wetSheen = smoothstep(0.45, 0.82, reached) * (1.0 - smoothstep(0.82, 0.98, reached)) * (1.0 - show);
+        col = min(float3(1.0), col * (1.0 - 0.23 * wetCrest - 0.06 * capillary) + float3(0.035 * wetSheen));
         // 刚显出时略淡，像墨刚落下还在宣纸上洇开。
         return float4(col, reached * (0.86 + 0.14 * show));
     }

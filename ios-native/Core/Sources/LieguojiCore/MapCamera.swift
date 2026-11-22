@@ -89,4 +89,19 @@ public struct MapCamera: Equatable, Sendable {
         let s = a.scale > 0 && b.scale > 0 ? exp(log(a.scale) + (log(b.scale) - log(a.scale)) * k) : b.scale
         return MapCamera(centerX: a.centerX + (b.centerX - a.centerX) * k, centerY: a.centerY + (b.centerY - a.centerY) * k, scale: s)
     }
+
+    /// 抛物线鹰眼飞跃（Parabolic Eagle-Eye Arc）：长距离跳转时先微微拉高视野（展卷），越过山海后再俯冲落定，避免贴地瞬移眩晕。
+    public static func arcInterpolate(_ a: MapCamera, _ b: MapCamera, _ t: Double, bounds: ClosedRange<Double>) -> MapCamera {
+        var base = interpolate(a, b, t)
+        let k = t.isFinite ? min(1, max(0, t)) : 1
+        let dist = hypot(b.centerX - a.centerX, b.centerY - a.centerY)
+        let minScale = max(1e-4, min(a.scale, b.scale))
+        let screenSpan = dist * minScale
+        if screenSpan > 260 {
+            let dipStrength = min(0.38, (screenSpan - 260) / 1400 * 0.38)
+            let arc = 1.0 - dipStrength * sin(.pi * k)
+            base.scale = max(bounds.lowerBound, min(bounds.upperBound, base.scale * arc))
+        }
+        return base
+    }
 }

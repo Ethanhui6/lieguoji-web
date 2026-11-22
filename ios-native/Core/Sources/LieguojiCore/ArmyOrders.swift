@@ -428,6 +428,10 @@ public enum ArmyOrders {
                     }
                     let converging = max(a.troops.asNumber, headingOf[nation]?[tid] ?? a.troops.asNumber)
                     if foesThere > 1.85 * converging { trapAbort = true }
+                    // 残兵惜力：士气低迷或兵力残破时不再孤军冲击有敌军据守的城池
+                    if (a.morale.optionalNumber ?? 1.0) < 0.24 || a.troops.asNumber < 320, foesThere > a.troops.asNumber * 0.75 {
+                        trapAbort = true
+                    }
                 }
             }
             if ongoing && !recalled && !trapAbort && (row.targetId.isNull || targetEnemy != nil || row.decision.asString == "returning" && targetOwned || row.decision.asString == "staging" && targetOwned && !en.isEmpty || row.decision.asString == "guarding" && targetOwned && !en.isEmpty

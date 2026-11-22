@@ -76,6 +76,8 @@ import LieguojiCore
     var washDemo = false
     /// 当前着色视图的标识（同一视图里填色随推演刷新时渐变，换视图时瞬切）。
     var viewKey = ""
+    /// 四时节气光影相位（0..1，由模拟日期驱动）。
+    var seasonPhase: Float = -1
     /// Where the icon with this key is drawn now (set by the map view).
     var placed: ((String) -> (Double, Double)?)?
     /// CI 连续帧对比: the state names on screen in this frame and how opaque each is drawn.
@@ -676,16 +678,25 @@ struct MapView: UIViewRepresentable {
                 setSyncPresent(cameraInteractive)
             }
         }
+        private var atUnrollFloor = false
         @objc private func handlePinch(_ g: UIPinchGestureRecognizer) {
             let p = g.location(in: mtk)
             switch g.state {
-            case .began: lastPinch = p; pinching = true; panning = false
+            case .began:
+                lastPinch = p; pinching = true; panning = false
+                atUnrollFloor = camera.scale <= bounds.lowerBound * 1.015
             case .changed:
                 // A finger lifted or added moves the touch centre: re-anchor instead of jumping.
                 if g.numberOfTouches != pinchTouches { pinchTouches = g.numberOfTouches; lastPinch = p; g.scale = 1; return }
                 // The fingers both zoom and drag the map.
                 let moved = camera.panned(dx: Double(p.x - lastPinch.x), dy: Double(p.y - lastPinch.y))
-                set(moved.zoomed(by: Double(g.scale), anchorX: Double(p.x), anchorY: Double(p.y), viewport: viewport, bounds: bounds), sync: true)
+                let nextCam = moved.zoomed(by: Double(g.scale), anchorX: Double(p.x), anchorY: Double(p.y), viewport: viewport, bounds: bounds)
+                let hitFloor = nextCam.scale <= bounds.lowerBound * 1.012
+                if hitFloor && !atUnrollFloor && g.scale < 1 {
+                    selection.selectionChanged()
+                }
+                atUnrollFloor = hitFloor
+                set(nextCam, sync: true)
                 g.scale = 1; lastPinch = p
             default: pinching = false; pinchTouches = 2; setSyncPresent(cameraInteractive)
             }
@@ -832,7 +843,7 @@ struct MapView: UIViewRepresentable {
             if let a = animation {
                 let x = min(1, (CACurrentMediaTime() - a.start) / a.duration)
                 let eased = x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2
-                set(MapCamera.interpolate(a.from, a.to, eased), sync: true)
+                set(MapCamera.arcInterpolate(a.from, a.to, eased, bounds: bounds), sync: true)
                 if x >= 1 { animation = nil; setSyncPresent(cameraInteractive) }
             } else if hypot(velocity.x, velocity.y) > 8 {
                 // Exponential deceleration close to UIScrollView's normal rate.
@@ -870,6 +881,10 @@ struct MapView: UIViewRepresentable {
 
         func sync() {
             var dirty = false
+            if let renderer, renderer.seasonPhase != controller.seasonPhase {
+                renderer.seasonPhase = controller.seasonPhase
+                dirty = true
+            }
             if controller.worldRevision != shownRevision, let next = controller.world, Self.worldChanged(next, map) {
                 shownRevision = controller.worldRevision
                 map = next

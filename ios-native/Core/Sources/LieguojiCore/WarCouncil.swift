@@ -294,8 +294,25 @@ extension ArmyOrders {
         for p in owned {
             for x in c.presentAt[provinces[p].id.asString] ?? [] where enemySet.contains(x.nationId.asString) && x.status.asString != "retreating" { invaders[x.nationId.asString, default: 0] += x.troops.asNumber }
         }
+        var lostByEnemy = [String: Int]()
+        for p in lost { lostByEnemy[provinces[p].controller.asString, default: 0] += 1 }
+        var capitalThreatByEnemy = Set<String>()
+        if let cp = capital {
+            for q in provinces[cp].neighbors.asArray {
+                if let qi = c.provinceAt[q.asString] {
+                    let ctrl = provinces[qi].controller.asString
+                    if enemySet.contains(ctrl) { capitalThreatByEnemy.insert(ctrl) }
+                }
+            }
+        }
         func strength(_ n: String) -> Double { c.strength[n] ?? 0 }
-        func standing(_ n: String) -> Double { (committed[n] ?? 0) + (invaders[n] ?? 0) - strength(n) * 0.5 }
+        func standing(_ n: String) -> Double {
+            let commitScore = committed[n] ?? 0
+            let invadeScore = (invaders[n] ?? 0) * 1.65
+            let lostScore = Double(lostByEnemy[n] ?? 0) * average * 0.55
+            let capScore = capitalThreatByEnemy.contains(n) ? average * 1.25 : 0
+            return commitScore + invadeScore + lostScore + capScore - strength(n) * 0.45
+        }
         let order = frontier.keys.sorted { x, y in standing(x) != standing(y) ? standing(x) > standing(y) : x < y }
 
         // 分守: the borders we are not attacking across keep a holding force; a host too small to divide does not.
@@ -367,6 +384,18 @@ extension ArmyOrders {
                 if foes(p) <= 0 { v -= 55 }
                 if targeted.contains(p) { v -= 60 }
                 if CombatReader.protruding(r, p) { v -= 35 }
+                // 故土光复与突出部合围：优先收复本国法定故土、优先拔除深入我境的敌方孤立突出部与飞地
+                if provinces[p].legalOwner.optionalString == nation { v -= 52 }
+                var ourAdj = 0, enemyAdj = 0
+                for q in provinces[p].neighbors.asArray {
+                    if let qi = c.provinceAt[q.asString] {
+                        let ctrl = provinces[qi].controller.asString
+                        if ctrl == nation { ourAdj += 1 }
+                        else if ctrl == enemy { enemyAdj += 1 }
+                    }
+                }
+                if ourAdj >= 2 && enemyAdj <= 1 { v -= 48 }
+                if ourAdj >= 3 { v -= 24 }
                 v -= 40 * min(2.5, (people[pid] ?? 0) / meanPopulation)
                 return v
             }

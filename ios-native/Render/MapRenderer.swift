@@ -107,6 +107,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     var onDraw: ((CFTimeInterval) -> Void)?
     private(set) var mode: MapMode = .political
     private(set) var highlight: Int?
+    /// 四时节气光影相位（0..1 对应春→夏→秋→冬，负数表示未启用）。
+    var seasonPhase: Float = -1
 
     struct Uniforms {
         var viewport: SIMD2<Float>
@@ -226,13 +228,24 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
         }
         unitTextures["banner"] = unitTextures["elite"]
-        // 军牌底盘: a round token under each army, a light disc in a dark rim, tinted with its state's colour,
-        // so armies stand out from the terrain at every zoom (pale pieces alone vanished into the land).
+        // 军牌底盘: a carved token plaque under each army (outer lacquer rim + northwest-to-southeast shaded face + inner carved groove),
+        // tinted with its state's colour so armies stand out with tactile presence at every zoom.
         let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 96, height: 96), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; return f }()).image { ctx in
             let g = ctx.cgContext
-            // The original's avatarSquare: a rounded square plaque, dark rim, light face.
-            g.setFillColor(UIColor.black.cgColor); g.addPath(UIBezierPath(roundedRect: CGRect(x: 4, y: 4, width: 88, height: 88), cornerRadius: 18).cgPath); g.fillPath()
-            g.setFillColor(UIColor.white.cgColor); g.addPath(UIBezierPath(roundedRect: CGRect(x: 11, y: 11, width: 74, height: 74), cornerRadius: 13).cgPath); g.fillPath()
+            let outer = UIBezierPath(roundedRect: CGRect(x: 4, y: 4, width: 88, height: 88), cornerRadius: 19).cgPath
+            g.setFillColor(UIColor(white: 0.10, alpha: 1).cgColor); g.addPath(outer); g.fillPath()
+            let innerRect = CGRect(x: 10.5, y: 10.5, width: 75, height: 75)
+            let inner = UIBezierPath(roundedRect: innerRect, cornerRadius: 14).cgPath
+            g.saveGState()
+            g.addPath(inner); g.clip()
+            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceGray(), colorComponents: [1.0, 1.0, 0.94, 1.0, 0.84, 1.0], locations: [0.0, 0.55, 1.0], count: 3) {
+                g.drawLinearGradient(grad, start: CGPoint(x: 10, y: 10), end: CGPoint(x: 86, y: 86), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            } else {
+                g.setFillColor(UIColor.white.cgColor); g.fill(innerRect)
+            }
+            g.restoreGState()
+            let groove = UIBezierPath(roundedRect: CGRect(x: 14.5, y: 14.5, width: 67, height: 67), cornerRadius: 11).cgPath
+            g.setStrokeColor(UIColor(white: 0.42, alpha: 0.45).cgColor); g.setLineWidth(1.6); g.addPath(groove); g.strokePath()
         }.cgImage
         if let plateArt { unitTextures["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
         if let start = map.meta.economy {
@@ -899,7 +912,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             lighting: lightStrength,
             mapWidth: max(1, map.width),
             mapHeight: max(1, map.height),
-            pad: 0
+            pad: Energy.hot ? -1 : seasonPhase
         )
         let uniformLength = MemoryLayout<Uniforms>.stride
         func quad(_ texture: MTLTexture?, _ pipeline: MTLRenderPipelineState, x: Float, y: Float, width: Float, height: Float) {
@@ -1175,6 +1188,22 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             // 统一全局西北御案光照
             float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
             rgb *= studioLight(mapUV, k);
+            // 四时节气光影流转（u.pad 存放 0..1 年相：春润青玉、夏沐暖金、秋染缃赭、冬覆清霜）
+            if (u.pad >= 0.0) {
+                float ang = u.pad * 6.2831853;
+                float springSummer = sin(ang);
+                float autumnWinter = cos(ang);
+                float3 seasonTint = float3(
+                    1.0 + 0.014 * springSummer - 0.012 * autumnWinter,
+                    1.0 + 0.011 * springSummer - 0.006 * autumnWinter,
+                    1.0 - 0.012 * springSummer + 0.016 * autumnWinter
+                );
+                rgb *= mix(float3(1.0), seasonTint, k * 0.85);
+                // 冬日北境高纬微霜薄雾（仅在冬季且靠北疆域轻敷 <= 2.2% 银霜感）
+                float winterAmt = clamp(autumnWinter, 0.0, 1.0);
+                float northFrost = winterAmt * smoothstep(0.42, 0.06, mapUV.y) * 0.022 * k;
+                rgb = mix(rgb, float3(0.95, 0.96, 0.98), northFrost);
+            }
         }
         rgb = clamp(rgb + grain, 0.0, 1.0);
         return float4(rgb, in.color.a);

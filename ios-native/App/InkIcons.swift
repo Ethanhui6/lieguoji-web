@@ -20,6 +20,8 @@ enum InkGlyph: String, CaseIterable {
     // 2.5.0 全量补齐手绘水墨图标（湖泊、群岛、增减、废除、交换、显隐、历法、封存、导出、壁纸、丝竹、时速、爵杯、人物、偃兵）
     case lake, island, plus, minus, trash, swap, eye, calendar
     case save, export, wallpaper, sound, speed, trophy, person, peace
+    // 2.8.3 补齐折叠与机巧符号（下展、右进、机巧推演），消除 SF Symbol 混搭
+    case chevronDown, chevronRight, computer
 }
 
 struct InkIcon: View {
@@ -27,13 +29,13 @@ struct InkIcon: View {
     var size: CGFloat = 22
     var weight: CGFloat = 1.7
     var filled = false
-    /// 可选点缀色；为空时在选中态用柔和前景色晕染焦点部件，平时不抢主笔。
+    /// 可选点缀色；为空时在选中态用柔和前景色晕染焦点部件，平时以宋版双色套印（淡朱砂）点睛。
     var accent: Color? = nil
 
     /// 视觉对齐（Optical Alignment）：非对称三角与上重下轻图标做几何中心微调，视觉上严格居中。
     private var opticalOffset: CGSize {
         switch glyph {
-        case .play: return CGSize(width: size * 0.055, height: 0)
+        case .play, .chevronRight: return CGSize(width: size * 0.05, height: 0)
         case .rewind: return CGSize(width: -size * 0.04, height: 0)
         case .crown, .locate, .fortress: return CGSize(width: 0, height: -size * 0.02)
         default: return .zero
@@ -41,23 +43,27 @@ struct InkIcon: View {
     }
 
     var body: some View {
-        let w = weight * size / 22
+        let scaleBoost: CGFloat = size <= 16 ? 1.12 : 1.0
+        let w = weight * (size / 22) * scaleBoost
         ZStack {
             if filled {
                 // 选中态的柔和墨/朱砂圆形水晕，替代生硬矩形框。
                 Circle()
-                    .fill(RadialGradient(colors: [Theme.seal.opacity(0.14), .clear], center: .center, startRadius: 0, endRadius: size * 0.56))
+                    .fill(RadialGradient(colors: [Theme.seal.opacity(0.16), .clear], center: .center, startRadius: 0, endRadius: size * 0.56))
                     .scaleEffect(1.15)
             }
             Group {
                 if let accent {
                     InkAccentPath(glyph: glyph).fill(accent)
                 } else if filled {
-                    InkAccentPath(glyph: glyph).fill(.foreground.opacity(0.24))
+                    InkAccentPath(glyph: glyph).fill(Theme.seal.opacity(0.32))
+                } else {
+                    // 宋版双色套印：未选中态也在焦点部件（印纽、铜钱孔、火焰芯、旗面）敷一层克制淡朱砂，层次顿显。
+                    InkAccentPath(glyph: glyph).fill(Theme.seal.opacity(0.14))
                 }
                 // 淡墨洇晕：纯矢量略宽淡墨底笔（去掉离屏 .blur/.drawingGroup，列表滚动零离屏合成开销且边缘更锐利）。
                 BrushShape(glyph: glyph, width: w * 1.56)
-                    .fill(.foreground.opacity(0.11))
+                    .fill(.foreground.opacity(0.12))
                 // 主笔触：起顿行饱收锋。
                 BrushShape(glyph: glyph, width: w * 1.24)
                     .fill(.foreground)
@@ -298,9 +304,12 @@ struct InkAccentPath: Shape {
             p.addEllipse(in: CGRect(origin: pt(9.8, 9.8), size: CGSize(width: 4.4 * k, height: 4.4 * k)))
         case .wallpaper:
             p.addEllipse(in: CGRect(origin: pt(14.5, 6.8), size: CGSize(width: 2.8 * k, height: 2.8 * k)))
+        case .computer:
+            p.addRoundedRect(in: CGRect(origin: pt(7.0, 7.6), size: CGSize(width: 10.0 * k, height: 6.2 * k)), cornerSize: CGSize(width: 1.2 * k, height: 1.2 * k))
         case .sea, .plain, .mountain, .raise, .lower, .smooth, .menu, .close,
              .search, .settings, .refresh, .importSave, .brush, .anchor, .retreat, .march,
-             .plus, .minus, .trash, .swap, .calendar, .save, .export, .sound, .speed, .person, .peace:
+             .plus, .minus, .trash, .swap, .calendar, .save, .export, .sound, .speed, .person, .peace,
+             .chevronDown, .chevronRight:
             break
         }
         return p
@@ -638,6 +647,17 @@ struct InkPath: Shape {
             p.move(to: pt(5.0, 19.2)); p.addQuadCurve(to: pt(18.8, 5.0), control: pt(10.5, 11.5))
             p.move(to: pt(10.8, 13.4)); p.addQuadCurve(to: pt(16.8, 12.6), control: pt(14.0, 15.8))
             p.move(to: pt(13.6, 10.4)); p.addQuadCurve(to: pt(11.6, 4.6), control: pt(16.0, 7.2))
+        case .chevronDown:
+            // 墨笔下展折锋。
+            p.move(to: pt(5.6, 9.2)); p.addLine(to: pt(12.0, 15.6)); p.addLine(to: pt(18.4, 9.2))
+        case .chevronRight:
+            // 墨笔右进折锋。
+            p.move(to: pt(9.2, 5.6)); p.addLine(to: pt(15.6, 12.0)); p.addLine(to: pt(9.2, 18.4))
+        case .computer:
+            // 算筹屏案：案屏与底座。
+            p.addRoundedRect(in: CGRect(origin: pt(4.2, 5.0), size: CGSize(width: 15.6 * k, height: 11.0 * k)), cornerSize: CGSize(width: 2.0 * k, height: 2.0 * k))
+            p.move(to: pt(12.0, 16.0)); p.addLine(to: pt(12.0, 19.2))
+            p.move(to: pt(7.6, 19.2)); p.addLine(to: pt(16.4, 19.2))
         }
         return p
     }
@@ -699,6 +719,9 @@ struct GameActionLabel: View {
         case "trophy", "trophy.fill", "medal": return .trophy
         case "person", "person.fill", "person.crop.circle": return .person
         case "leaf", "leaf.fill", "hand.raised", "peace": return .peace
+        case "chevron.down", "chevron.compact.down": return .chevronDown
+        case "chevron.right", "chevron.compact.right": return .chevronRight
+        case "desktopcomputer", "laptopcomputer", "cpu": return .computer
         default: return nil
         }
     }

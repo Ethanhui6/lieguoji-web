@@ -333,20 +333,20 @@ struct HeraldBanner: View {
             var flame = Path()
             flame.move(to: CGPoint(x: cx, y: cy + r * 0.85))
             flame.addCurve(to: CGPoint(x: cx + sway, y: cy - r * 0.92 * enter),
-                           controlPoint1: CGPoint(x: cx - r * 0.85, y: cy + r * 0.25),
-                           controlPoint2: CGPoint(x: cx - r * 0.30 + sway, y: cy - r * 0.45))
+                           control1: CGPoint(x: cx - r * 0.85, y: cy + r * 0.25),
+                           control2: CGPoint(x: cx - r * 0.30 + sway, y: cy - r * 0.45))
             flame.addCurve(to: CGPoint(x: cx, y: cy + r * 0.85),
-                           controlPoint1: CGPoint(x: cx + r * 0.55 + sway, y: cy - r * 0.30),
-                           controlPoint2: CGPoint(x: cx + r * 0.85, y: cy + r * 0.35))
+                           control1: CGPoint(x: cx + r * 0.55 + sway, y: cy - r * 0.30),
+                           control2: CGPoint(x: cx + r * 0.85, y: cy + r * 0.35))
             ctx.fill(flame, with: .color(Theme.seal.opacity(0.86)))
             var inner = Path()
             inner.move(to: CGPoint(x: cx, y: cy + r * 0.72))
             inner.addCurve(to: CGPoint(x: cx + sway * 0.6, y: cy - r * 0.36 * enter),
-                           controlPoint1: CGPoint(x: cx - r * 0.36, y: cy + r * 0.30),
-                           controlPoint2: CGPoint(x: cx - r * 0.14, y: cy - r * 0.08))
+                           control1: CGPoint(x: cx - r * 0.36, y: cy + r * 0.30),
+                           control2: CGPoint(x: cx - r * 0.14, y: cy - r * 0.08))
             inner.addCurve(to: CGPoint(x: cx, y: cy + r * 0.72),
-                           controlPoint1: CGPoint(x: cx + r * 0.22, y: cy - r * 0.05),
-                           controlPoint2: CGPoint(x: cx + r * 0.36, y: cy + r * 0.34))
+                           control1: CGPoint(x: cx + r * 0.22, y: cy - r * 0.05),
+                           control2: CGPoint(x: cx + r * 0.36, y: cy + r * 0.34))
             ctx.fill(inner, with: .color(gold.opacity(0.95)))
 
         case .peace, .treaty, .marriage:
@@ -358,10 +358,10 @@ struct HeraldBanner: View {
             let bob = CGFloat(cos(t * 4.0) * 1.8)
             var wing = Path()
             wing.move(to: CGPoint(x: cx, y: cy + bob))
-            wing.addQuadCurve(to: CGPoint(x: cx - r * 0.92, y: cy - r * 0.25 - lift + bob), controlPoint: CGPoint(x: cx - r * 0.48, y: cy - r * 0.58 - lift + bob))
-            wing.addQuadCurve(to: CGPoint(x: cx, y: cy + r * 0.26 + bob), controlPoint: CGPoint(x: cx - r * 0.40, y: cy + r * 0.14 + bob))
-            wing.addQuadCurve(to: CGPoint(x: cx + r * 0.92, y: cy - r * 0.25 - lift + bob), controlPoint: CGPoint(x: cx + r * 0.40, y: cy + r * 0.14 + bob))
-            wing.addQuadCurve(to: CGPoint(x: cx, y: cy + bob), controlPoint: CGPoint(x: cx + r * 0.48, y: cy - r * 0.58 - lift + bob))
+            wing.addQuadCurve(to: CGPoint(x: cx - r * 0.92, y: cy - r * 0.25 - lift + bob), control: CGPoint(x: cx - r * 0.48, y: cy - r * 0.58 - lift + bob))
+            wing.addQuadCurve(to: CGPoint(x: cx, y: cy + r * 0.26 + bob), control: CGPoint(x: cx - r * 0.40, y: cy + r * 0.14 + bob))
+            wing.addQuadCurve(to: CGPoint(x: cx + r * 0.92, y: cy - r * 0.25 - lift + bob), control: CGPoint(x: cx + r * 0.40, y: cy + r * 0.14 + bob))
+            wing.addQuadCurve(to: CGPoint(x: cx, y: cy + bob), control: CGPoint(x: cx + r * 0.48, y: cy - r * 0.58 - lift + bob))
             ctx.fill(wing, with: .color(Theme.paper2))
             ctx.stroke(wing, with: .color(accent), style: fine)
 
@@ -378,13 +378,13 @@ struct HeraldBanner: View {
             var cloth = Path()
             cloth.move(to: CGPoint(x: poleX + 1, y: cy - r * 0.78 + dropY))
             cloth.addCurve(to: CGPoint(x: cx + r * 0.86, y: cy - r * 0.70 + w2 * 0.6 + dropY),
-                           controlPoint1: CGPoint(x: cx - r * 0.10, y: cy - r * 0.96 + w1 + dropY),
-                           controlPoint2: CGPoint(x: cx + r * 0.36, y: cy - r * 0.52 + w2 + dropY))
+                           control1: CGPoint(x: cx - r * 0.10, y: cy - r * 0.96 + w1 + dropY),
+                           control2: CGPoint(x: cx + r * 0.36, y: cy - r * 0.52 + w2 + dropY))
             cloth.addLine(to: CGPoint(x: cx + r * 0.56, y: cy - r * 0.22 + w2 * 0.4 + dropY))
             cloth.addLine(to: CGPoint(x: cx + r * 0.88, y: cy + r * 0.18 + w2 * 0.6 + dropY))
             cloth.addCurve(to: CGPoint(x: poleX + 1, y: cy + r * 0.12 + dropY),
-                           controlPoint1: CGPoint(x: cx + r * 0.36, y: cy + r * 0.32 + w2 + dropY),
-                           controlPoint2: CGPoint(x: cx - r * 0.10, y: cy - r * 0.04 + w1 + dropY))
+                           control1: CGPoint(x: cx + r * 0.36, y: cy + r * 0.32 + w2 + dropY),
+                           control2: CGPoint(x: cx - r * 0.10, y: cy - r * 0.04 + w1 + dropY))
             cloth.closeSubpath()
             ctx.fill(cloth, with: .color(c1.opacity(0.92)))
             ctx.stroke(cloth, with: .color(ink.opacity(0.65)), style: fine)
@@ -445,7 +445,7 @@ struct HeraldBanner: View {
             let sway = CGFloat(sin(t * 4.2) * 3.5)
             var stalk = Path()
             stalk.move(to: CGPoint(x: cx, y: cy + r * 0.88))
-            stalk.addQuadCurve(to: CGPoint(x: cx + sway, y: cy - r * 0.82 * enter), controlPoint: CGPoint(x: cx - r * 0.20, y: cy))
+            stalk.addQuadCurve(to: CGPoint(x: cx + sway, y: cy - r * 0.82 * enter), control: CGPoint(x: cx - r * 0.20, y: cy))
             ctx.stroke(stalk, with: .color(gold), style: stroke)
             for k in 0..<4 {
                 let fy = cy + r * 0.35 - CGFloat(k) * r * 0.30
@@ -463,8 +463,8 @@ struct HeraldBanner: View {
                 var w = Path()
                 w.move(to: CGPoint(x: cx - r * 0.72, y: cy + dy))
                 w.addCurve(to: CGPoint(x: cx + r * 0.72, y: cy + dy),
-                           controlPoint1: CGPoint(x: cx - r * 0.24, y: cy + dy - 5 + rot),
-                           controlPoint2: CGPoint(x: cx + r * 0.24, y: cy + dy + 5 - rot))
+                           control1: CGPoint(x: cx - r * 0.24, y: cy + dy - 5 + rot),
+                           control2: CGPoint(x: cx + r * 0.24, y: cy + dy + 5 - rot))
                 ctx.stroke(w, with: .color(accent.opacity(0.86)), style: fine)
             }
 

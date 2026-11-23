@@ -121,6 +121,11 @@ struct BattleBoard: View {
                 Spacer()
                 PaperTag(text: fighting ? "交战中" : c.owner && defenders.isEmpty ? "围城中" : "对峙中", color: fighting ? Theme.seal : Theme.ink2, size: 13)
             }
+            let battleClip = fighting ? "herald-war" : "herald-siege"
+            if (fighting || (c.owner && defenders.isEmpty)), !UIAccessibility.isReduceMotionEnabled, InkVideoStage.hasVideo(battleClip) {
+                InkVideoStage(clip: battleClip, cornerRadius: 8, tint: Theme.seal)
+                    .frame(height: 52)
+            }
             // Each side's name and strength, and the balance between them.
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {

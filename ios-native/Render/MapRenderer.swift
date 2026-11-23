@@ -264,12 +264,29 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
-        // v4.1 视觉回正：彻底停用重彩厚涂 AI 地形贴图与大块角饰贴图，让轻盈淡墨融纸地貌（MapLayers.relief）与清晰宣纸底图浑然一体。
-        terrainBatches = []
+        // v4.2 极简古舆图焦墨线描地貌印章（白底提纯透明墨线，与底层半透明水彩晕染 MapLayers.relief 及顶层羊皮纸正片叠底浑然天成，彻底零厚涂贴图感）。
+        let loader = MTKTextureLoader(device: device)
+        let stampFiles: [(Int, String)] = [
+            (0, "stamp-mountain"),
+            (1, "stamp-mountain-snow"),
+            (2, "stamp-forest"),
+            (3, "stamp-pine"),
+            (4, "stamp-desert"),
+            (5, "stamp-hill"),
+            (6, "stamp-forest"),
+            (7, "stamp-marsh"),
+            (8, "stamp-mountain-snow")
+        ]
+        for (k, name) in stampFiles {
+            if let url = BundleArt.url(name),
+               let tex = try? loader.newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true]) {
+                terrainTextures[k] = tex
+            }
+        }
+        rebuildTerrainSprites(map)
         scrollCornerTexture = nil
         scrollCornerBuffer = nil
         // 恢复经典雕漆国色军团与水师棋子（含风格完全统一的跨海运兵船 `Transport`），任意缩放下清晰高辨识、零贴图割裂感。
-        let loader = MTKTextureLoader(device: device)
         for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Fleet", "Transport", "Port", "Merchant"] {
             let probe = ["Fleet", "Transport", "Port", "Merchant"].contains(role) ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
             guard let image = UnitArt.image(probe) else { continue }
@@ -355,7 +372,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         provinceLines = buffer(MapLayers.provinceLines(next).vertices, stride: 6)
         rivers = next.rivers.isEmpty ? nil : buffer(next.rivers, stride: 2)
         relief = buffer(MapLayers.relief(next).vertices, stride: 6)
-        terrainBatches = []
+        rebuildTerrainSprites(next)
         outlines = buffer(MapLayers.outlines(next, wide: borderWide).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
         if refreshSea {
@@ -1234,9 +1251,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if chart && fineFade > 0.01 { colored(fineDetail, alpha: ramp(0.44) * fineFade) }
         if display.vegetation {
             let vegAlpha = ramp(0.44)
-            colored(relief, alpha: vegAlpha)
+            colored(relief, alpha: vegAlpha * 0.56)
             if vegAlpha > 0.01 && !terrainBatches.isEmpty {
-                u.alpha = vegAlpha * 0.90
+                u.alpha = vegAlpha * 0.66
                 encoder.setRenderPipelineState(terrainPipeline)
                 encoder.setVertexBytes(&u, length: uniformLength, index: 2)
                 encoder.setFragmentBytes(&u, length: uniformLength, index: 2)

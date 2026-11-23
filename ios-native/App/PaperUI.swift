@@ -188,21 +188,24 @@ struct MemorialHeader: View {
     var seal: String = "御览"
     var showGrabber = true
     @State private var inked = false
+    @Environment(\.inSidePanel) private var inSidePanel
+    @Environment(\.hasBackBar) private var hasBackBar
     var body: some View {
+        let grabberVisible = showGrabber && !inSidePanel && !hasBackBar
         VStack(spacing: 0) {
-            if showGrabber { SheetGrabber() }
+            if grabberVisible { SheetGrabber() }
             HStack(alignment: .center, spacing: 14) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(title).font(Theme.kai(28)).foregroundStyle(Theme.ink).tracking(3).lineLimit(1).minimumScaleFactor(0.75)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(title).font(Theme.kai(inSidePanel ? 24 : 28)).foregroundStyle(Theme.ink).tracking(2).lineLimit(1).minimumScaleFactor(0.75)
                     Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.75), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
                         .frame(height: 1.5).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
-                    if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2) }
+                    if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8) }
                 }
                 Spacer(minLength: 8)
-                Seal(text: seal, size: 32)
+                Seal(text: seal, size: inSidePanel ? 28 : 32)
             }
             .padding(.horizontal, Theme.Layout.sectionInset)
-            .padding(.top, showGrabber ? Theme.Layout.headerTop : 18)
+            .padding(.top, grabberVisible ? Theme.Layout.headerTop : 12)
         }
         .onAppear { withAnimation(Motion.reveal) { inked = true } }
     }
@@ -243,51 +246,50 @@ enum MapViewMode: String, CaseIterable, Identifiable {
     }
 }
 
-/// A strip of paper tabs that glides cleanly from the top-right button without squashing icons.
+/// A strip of paper tabs that glides cleanly from the top-right button without colliding with the bottom dock.
+/// 竖屏改为 2×5 紧凑双列宫格（高度折半，绝不再向下砸穿底栏）；横屏为 5×2 横排宫格。
 struct MapViewSwitcher: View {
     @Binding var mode: MapViewMode
     @Binding var open: Bool
     @Namespace private var marker
-    /// Landscape: the column of views was taller than the screen and ran under the bottom bar; it
-    /// becomes a grid of four.
     @Environment(\.verticalSizeClass) private var vertical
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
-        Group {
-            if vertical == .compact {
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(50), spacing: 2), count: 5), spacing: 2) { buttons }
-            } else {
-                VStack(spacing: 2) { buttons }
-            }
-        }
-        .padding(5)
-        .glass(shape)
-        .offset(y: open ? 0 : -14)
-        .scaleEffect(open ? 1 : 0.94, anchor: .topTrailing)
-        .opacity(open ? 1 : 0)
-        .animation(Motion.panel, value: open)
+        let compact = vertical == .compact
+        let cols = compact
+            ? Array(repeating: GridItem(.fixed(50), spacing: 3), count: 5)
+            : Array(repeating: GridItem(.fixed(54), spacing: 3), count: 2)
+        LazyVGrid(columns: cols, spacing: 3) { buttons(compact: compact) }
+            .padding(6)
+            .glass(shape)
+            .offset(y: open ? 0 : -10)
+            .scaleEffect(open ? 1 : 0.92, anchor: .topTrailing)
+            .opacity(open ? 1 : 0)
+            .animation(Motion.panel, value: open)
     }
-    @ViewBuilder private var buttons: some View {
+    @ViewBuilder private func buttons(compact: Bool) -> some View {
         ForEach(MapViewMode.allCases) { m in
             Button {
+                GameFeel.shared.tap()
                 withAnimation(Motion.tap) { mode = m }
             } label: {
-                VStack(spacing: 3) {
-                    InkIcon(glyph: m.glyph, size: 17, weight: mode == m ? 1.9 : 1.55, filled: mode == m,
+                VStack(spacing: 2.5) {
+                    InkIcon(glyph: m.glyph, size: compact ? 16 : 17, weight: mode == m ? 1.9 : 1.55, filled: mode == m,
                             accent: mode == m ? Theme.paper2.opacity(0.32) : Theme.seal.opacity(0.28))
                         .scaleEffect(mode == m ? 1.06 : 1)
-                    Text(m.title).font(Theme.label)
+                    Text(m.title).font(Theme.kai(11.5)).lineLimit(1)
                 }
                 .foregroundStyle(mode == m ? Theme.paper2 : Theme.ink)
-                .frame(width: 50, height: 46)
+                .frame(width: compact ? 50 : 54, height: compact ? 42 : 44)
                 .background {
                     if mode == m {
                         RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 5, style: .continuous)
                             .fill(Theme.seal)
                             .matchedGeometryEffect(id: "seal", in: marker)
-                            .shadow(color: Theme.seal.opacity(0.28), radius: 4, y: 2)
+                            .shadow(color: Theme.seal.opacity(0.26), radius: 4, y: 1.5)
                     }
                 }
+                .contentShape(Rectangle())
             }
             .buttonStyle(PressStyle())
         }
@@ -426,11 +428,9 @@ struct StatisticsSheet: View {
     @Namespace private var catPill
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        ZStack {
-            MemorialPaper()
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 14) {
-                    MemorialHeader(title: Self.categories.first { $0.id == category }?.title ?? "", subtitle: model.state.map { "\($0.dateText) · 呈御览" }, seal: "奏折")
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                MemorialHeader(title: Self.categories.first { $0.id == category }?.title ?? "", subtitle: model.state.map { "\($0.dateText) · 呈御览" }, seal: "奏折")
                     ScrollViewReader { proxy in
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 7) {
@@ -535,8 +535,7 @@ struct StatisticsSheet: View {
                 }
                 .padding(.bottom, 28)
             }
-        }
-        .task(id: "\(category)-\(model.state?.day ?? 0)") {
+            .task(id: "\(category)-\(model.state?.day ?? 0)") {
             let next = category == "wars" ? Self.currentWars(model.state, model.map) : await model.statistics(category)
             withAnimation(reduceMotion ? nil : Motion.panel) {
                 rows = next
@@ -620,11 +619,9 @@ struct EdictSheet: View {
     @State private var rules: [String: Int] = [:]
     @State private var writingRule = false
     var body: some View {
-        ZStack {
-            MemorialPaper()
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 14) {
-                    MemorialHeader(title: "天下诏令", subtitle: "奉天承运，诏曰：", seal: "诏")
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                MemorialHeader(title: "天下诏令", subtitle: "奉天承运，诏曰：", seal: "诏")
                     if let s {
                         section("外交") {
                             toggle("世界自动外交", s.worldAuto, "worldAuto")
@@ -668,7 +665,6 @@ struct EdictSheet: View {
                 }
                 .padding(.bottom, 28)
             }
-        }
         .task { await reload() }
     }
     private func reload() async { s = await model.worldSettings(); rules = await model.worldRules() }

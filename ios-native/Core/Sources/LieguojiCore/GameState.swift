@@ -43,6 +43,14 @@ public struct GameState: Codable, Equatable, Sendable {
         public let status: String; public let travel: String; public let x: Float; public let y: Float; public let decision: String; public let reason: String; public let port: Int; public let manual: Bool; public let patrol: Bool
         public var escorting: Bool? = nil
         public var blockading: Bool? = nil
+        public var mission: String? = nil
+        public var heavy: Int? = nil
+        public var light: Int? = nil
+        public var gunboats: Int? = nil
+        public var admiral: String? = nil
+        public var admiralBonus: Int? = nil
+        public var experience: Int? = nil
+        public var repairActive: Bool? = nil
     }
     /// A harbour port: its land owner, current occupier and control value.
     public struct Port: Codable, Equatable, Sendable {

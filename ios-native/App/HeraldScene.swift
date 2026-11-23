@@ -222,10 +222,10 @@ struct HeraldBanner: View {
                     }
                 }
 
-                // 4. 左侧无圆框宋画活态微绘舞台 + 右侧疏朗纪事正文
+                // 4. 左侧古风水墨动态短视频画窗（或60/120fps水墨矢量舞台） + 右侧疏朗纪事正文
                 HStack(spacing: 10) {
                     livingArtStage(t: t, contentIn: contentIn)
-                        .frame(width: form == .fieldSlip ? 48 : 58, height: form == .fieldSlip ? 44 : 54)
+                        .frame(width: form == .fieldSlip ? 64 : 76, height: form == .fieldSlip ? 42 : 50)
 
                     Rectangle()
                         .fill(LinearGradient(colors: [accent.opacity(0.05), accent.opacity(0.32), accent.opacity(0.05)], startPoint: .top, endPoint: .bottom))
@@ -269,13 +269,33 @@ struct HeraldBanner: View {
         }
     }
 
-    /// 左侧 60/120fps 纯实时水墨矢量活态舞台（彻底告别贴图感，与宣纸御卷浑然一体，每帧丝滑律动）。
+    private var videoClipName: String {
+        if herald.text.contains("水师") || herald.text.contains("舰队") || herald.text.contains("海港") || herald.text.contains("封锁") || herald.text.contains("海战") {
+            return "herald-naval"
+        }
+        switch herald.kind {
+        case .war, .ultimatum, .coup: return "herald-war"
+        case .capture, .uprising, .extinction: return "herald-siege"
+        case .peace, .treaty, .marriage: return "herald-peace"
+        case .regime, .restoration, .house, .capital: return "herald-regime"
+        case .blizzard, .drought, .flood, .harvest, .plague: return "herald-weather"
+        }
+    }
+
+    /// 左侧硬件解码古风水墨动态短视频画窗（无障碍减弱动态效果开启或视频未载入时平滑回退至 60/120fps 纯实时水墨矢量舞台）。
     @ViewBuilder private func livingArtStage(t: Double, contentIn: Double) -> some View {
         let enter = Self.span(t, 0.14, 0.44)
-        Canvas { ctx, size in
-            drawLivingInkEmblem(ctx, size: size, t: t, enter: enter)
+        let clip = videoClipName
+        if !reduceMotion && InkVideoStage.hasVideo(clip) {
+            InkVideoStage(clip: clip, cornerRadius: 7, tint: accent)
+                .opacity(contentIn)
+                .scaleEffect(0.92 + 0.08 * enter)
+        } else {
+            Canvas { ctx, size in
+                drawLivingInkEmblem(ctx, size: size, t: t, enter: enter)
+            }
+            .opacity(contentIn)
         }
-        .opacity(contentIn)
     }
 
     private func drawLivingInkEmblem(_ ctx: GraphicsContext, size: CGSize, t: Double, enter: Double) {

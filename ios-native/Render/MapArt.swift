@@ -112,6 +112,19 @@ enum BundleArt {
     static let sealCourt: UIImage? = load("seal-court")
     static let sealCouncil: UIImage? = load("seal-council")
 
+    // MARK: - 极简古舆图焦墨细线都城印记（白底提纯透明墨线，与宣纸国色无缝融纸）
+    static let stampCapitalEast: UIImage? = load("stamp-capital-east")
+    static let stampCapitalWest: UIImage? = load("stamp-capital-west")
+    static let stampCapitalIslamic: UIImage? = load("stamp-capital-islamic")
+
+    static func capitalInkStamp(for culture: String?) -> UIImage? {
+        switch CultureStyle.of(culture) {
+        case .chinese, .japanese, .indian: return stampCapitalEast
+        case .islamic, .steppe, .mesoamerican: return stampCapitalIslamic ?? stampCapitalEast
+        case .western, .classical, .nordic, .slavic: return stampCapitalWest ?? stampCapitalEast
+        }
+    }
+
     // MARK: - 4×1 透明序列帧动画图集（1024×256，供 SpriteAnimator 与 Metal GPU 管线共享）
     static let sheetInfantryMarch: UIImage? = load("sheet-infantry-march")
     static let sheetCavalryCharge: UIImage? = load("sheet-cavalry-charge")

@@ -503,6 +503,26 @@ enum FleetText {
     static func decision(_ d: String) -> String {
         ["waiting": "待命", "attacking": "进攻敌港", "guarding": "驻防", "resupply": "回港补给", "manual": "玩家指挥", "busy": "交战中", "lost": "已损失", "no-route": "无可达港口"][d] ?? d
     }
+    static func mission(_ m: String?) -> String {
+        ["patrol": "制海巡弋", "escort": "护航掩护", "blockade": "封锁敌港", "raid": "破交袭扰", "refit": "归港修整"][m ?? "patrol"] ?? "制海巡弋"
+    }
+    static func rankBadge(xp: Int?, ships: Int) -> (text: String, color: Color) {
+        let v = xp ?? 0
+        if v >= 120 { return ("无敌舰队", Theme.seal) }
+        if v >= 60 { return ("镇海主力", Theme.gold) }
+        if v >= 25 || ships >= 5 { return ("精锐水师", Theme.jade) }
+        return ("新编水师", Theme.ink2)
+    }
+    static func classes(_ f: GameState.Fleet) -> (h: Int, l: Int, g: Int) {
+        let total = max(1, f.ships)
+        if let h = f.heavy, let l = f.light, let g = f.gunboats, h + l + g > 0 {
+            return (h, l, g)
+        }
+        let h = max(1, (total + 1) / 3)
+        let l = max(0, (total - h + 1) / 2)
+        let g = max(0, total - h - l)
+        return (h, l, g)
+    }
 }
 
 struct FleetRow: View {
@@ -511,23 +531,28 @@ struct FleetRow: View {
     var body: some View {
         let tint = fleet.nation >= 0 && fleet.nation < map.meta.nations.count ? Names.color(map.meta.nations[fleet.nation].color) : Theme.ink2
         let isFighting = fleet.decision == "busy"
-        let isAttacking = fleet.decision == "attacking"
-        let badgeColor: Color = isFighting ? Theme.danger : isAttacking ? Theme.seal : fleet.manual ? Theme.gold : Theme.jade
+        let isBlockading = fleet.blockading == true || fleet.decision == "attacking"
+        let isEscorting = fleet.escorting == true
+        let isRepairing = fleet.repairActive == true
+        let badgeColor: Color = isFighting ? Theme.danger : isBlockading ? Theme.seal : isEscorting ? Theme.jade : fleet.manual ? Theme.gold : Theme.jade
+        let rank = FleetText.rankBadge(xp: fleet.experience, ships: fleet.ships)
+        let cls = FleetText.classes(fleet)
         HStack(spacing: 12) {
-            UnitMark(unit: "Fleet", color: tint).frame(width: 38, height: 38)
+            UnitMark(unit: "Fleet", color: tint).frame(width: 40, height: 40)
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
+                HStack(spacing: 5) {
                     Text(fleet.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                    if fleet.ships >= 4 {
-                        PaperTag(text: "主力舰队", color: Theme.gold, size: 10)
-                    }
-                    PaperTag(text: FleetText.decision(fleet.decision), color: badgeColor, size: 10)
+                    PaperTag(text: rank.text, color: rank.color, size: 10)
+                    PaperTag(text: isFighting ? "海战交火" : isBlockading ? "封锁夺港" : isEscorting ? "护航掩护" : isRepairing ? "船坞修整" : FleetText.mission(fleet.mission), color: badgeColor, size: 10)
                 }
-                HStack(spacing: 8) {
-                    Text("\(FleetText.status(fleet.status)) · \(fleet.port >= 0 && map.meta.provinces.indices.contains(fleet.port) ? map.meta.provinces[fleet.port].name + "港" : "外海巡航")")
-                        .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
+                HStack(spacing: 6) {
+                    Text("\(FleetText.status(fleet.status)) · \(fleet.port >= 0 && map.meta.provinces.indices.contains(fleet.port) ? map.meta.provinces[fleet.port].name + "港" : "外海巡航") · 主\(cls.h)/快\(cls.l)/炮\(cls.g)")
+                        .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                    if let adm = fleet.admiral, !adm.isEmpty {
+                        Text("· 提督\(adm)").font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1)
+                    }
                     InkBar(fraction: fleet.hull, color: fleet.hull < 0.35 ? Theme.danger : tint, height: 4)
-                        .frame(width: 44)
+                        .frame(width: 38)
                 }
             }
             Spacer(minLength: 4)
@@ -543,14 +568,16 @@ struct FleetRow: View {
 
 struct FleetSheet: View {
     private enum Tab: String, CaseIterable {
-        case orders = "舰令航向"
-        case reorganize = "船坞整编"
-        case ports = "海港态势"
+        case orders = "水师军令"
+        case reorganize = "舰种编制"
+        case ports = "制海态势"
     }
 
     @State private var tab: Tab = .orders
     @State private var target = -1
-    @State private var draftShips = 3
+    @State private var draftHeavy = 1
+    @State private var draftLight = 1
+    @State private var draftGunboats = 1
     @State private var newName = ""
     @State private var syncedFleetId = ""
     @State private var sending = false
@@ -573,7 +600,6 @@ struct FleetSheet: View {
             let busy = f.decision == "busy" || f.status == "lost"
             let enemies = Set(model.state?.nations.indices.contains(f.nation) == true ? model.state!.nations[f.nation].enemies : [])
             let allMapPorts = (model.state?.ports ?? []).filter { map.meta.provinces.indices.contains($0.province) }
-            // 敌方海港（可跨海夺港与海上封锁）：占领国或宗主国与本国交战，或本国港口被敌军占领
             let enemyPorts: [(port: GameState.Port, distance: Double, reclaim: Bool)] = allMapPorts.compactMap { p in
                 let isReclaim = p.owner == f.nation && p.occupier != f.nation
                 let isEnemyHeld = enemies.contains(p.occupier) || enemies.contains(p.owner)
@@ -584,32 +610,32 @@ struct FleetSheet: View {
                 if a.reclaim != b.reclaim { return a.reclaim && !b.reclaim }
                 return a.distance < b.distance
             }
-            // 本国控制海港（驻泊补给）
             let friendlyPorts: [(port: GameState.Port, distance: Double)] = allMapPorts.filter { $0.occupier == f.nation }
                 .map { (port: $0, distance: hypot(Double($0.x - f.x), Double($0.y - f.y))) }
                 .sorted { $0.distance < $1.distance }
             let shownEnemy = allEnemyPorts ? enemyPorts : Array(enemyPorts.prefix(5))
             let shownFriendly = allFriendlyPorts ? friendlyPorts : Array(friendlyPorts.prefix(6))
             let targetIsEnemy = enemyPorts.contains { $0.port.province == target }
+            let rank = FleetText.rankBadge(xp: f.experience, ships: f.ships)
+            let cls = FleetText.classes(f)
+            let curMission = f.mission ?? "patrol"
 
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetGrabber()
 
-                    // 1. 舰牌抬头：国色战船徽 + 舰号 + 主力/状态印签 + 定位圆钮
+                    // 1. 舰牌抬头：国色战船徽 + 舰号 + 勋阶/任务印签 + 定位圆钮
                     HStack(spacing: 12) {
                         UnitMark(unit: "Fleet", color: tint).frame(width: 48, height: 48)
                         VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 6) {
                                 Text(f.name).font(Theme.kai(24)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
-                                if f.ships >= 4 {
-                                    PaperTag(text: "主力水师", color: Theme.gold, size: 11)
-                                }
-                                PaperTag(text: FleetText.decision(f.decision), color: f.decision == "busy" ? Theme.danger : f.decision == "attacking" ? Theme.seal : Theme.jade, size: 11)
+                                PaperTag(text: rank.text, color: rank.color, size: 11)
+                                PaperTag(text: FleetText.mission(curMission), color: f.decision == "busy" ? Theme.danger : f.blockading == true ? Theme.seal : Theme.jade, size: 11)
                             }
                             HStack(spacing: 6) {
                                 RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(tint).frame(width: 9, height: 9)
-                                Text("\(nation?.name ?? "") · 水师舰队 · \(FleetText.status(f.status))")
+                                Text("\(nation?.name ?? "") · 主力\(cls.h) / 快舰\(cls.l) / 炮舰\(cls.g) · \(FleetText.status(f.status))")
                                     .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
                             }
                         }
@@ -628,7 +654,7 @@ struct FleetSheet: View {
                     }
                     .padding(.horizontal, Theme.Layout.sectionInset).padding(.top, 2)
 
-                    // 2. 四格核心指标
+                    // 2. 四格核心指标 + 水师提督与抢修快栏
                     StatStrip(tiles: [
                         StatTile(label: "战船", value: "\(f.ships)艘", edit: f.status == "lost" ? nil : { withAnimation(Motion.panel) { tab = .reorganize } }),
                         StatTile(label: "水兵", value: Names.wan(f.crew)),
@@ -636,7 +662,44 @@ struct FleetSheet: View {
                         StatTile(label: "海粮", value: "\(f.food)", fraction: Double(min(100, max(0, f.food / max(1, f.crew / 2)))) / 100, warn: f.food <= f.crew * 15),
                     ])
 
-                    // 3. 三页签切换：舰令航向 / 船坞整编 / 海港态势
+                    // 水师提督帅帐与船坞紧急抢修横栏
+                    Group2 {
+                        HStack(spacing: 10) {
+                            InkIcon(glyph: .military, size: 16, weight: 1.75).foregroundStyle(Theme.seal)
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("水师提督：\(f.admiral ?? "未委任")").font(Theme.section).foregroundStyle(Theme.ink)
+                                    if let bonus = f.admiralBonus, bonus > 0 {
+                                        PaperTag(text: "海战火力 +\(bonus)%", color: Theme.seal, size: 10)
+                                    }
+                                    if f.repairActive == true {
+                                        PaperTag(text: "船坞抢修中", color: Theme.jade, size: 10)
+                                    }
+                                }
+                                Text("战功 \(f.experience ?? 0) · \(f.blockading == true ? "正在封锁敌港并截夺海贸商税" : f.escorting == true ? "正在掩护跨海运兵船队" : f.reason.isEmpty ? "巡航镇守海域" : f.reason)")
+                                    .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
+                            }
+                            Spacer(minLength: 4)
+                            Button {
+                                GameFeel.shared.tap()
+                                Task {
+                                    let out = await model.armyAction("fleetAdmiral", armyId: f.id)
+                                    feedback = out.message
+                                    GameFeel.shared.notify(out.ok ? .success : .error)
+                                }
+                            } label: {
+                                Text(f.admiral == nil ? "委任提督" : "易帅").font(Theme.caption).foregroundStyle(Theme.seal)
+                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .background(Theme.seal.opacity(0.10), in: Capsule())
+                                    .overlay(Capsule().stroke(Theme.seal.opacity(0.35), lineWidth: 0.8))
+                            }
+                            .buttonStyle(PressStyle()).disabled(f.status == "lost")
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 10)
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+
+                    // 3. 三页签切换：水师军令 / 舰种编制 / 制海态势
                     ChipPicker(items: Tab.allCases.map { ($0, $0.rawValue) }, selection: $tab)
                         .padding(.horizontal, Theme.Layout.pageInset)
 
@@ -651,20 +714,74 @@ struct FleetSheet: View {
 
                     switch tab {
                     case .orders:
+                        // 五大水师战略任务矩阵（玩家点选即刻生效）
+                        SectionLabel("水师战略任务指令（五略）")
                         Group2 {
-                            Row(label: "指挥归属", value: f.manual || !f.patrol ? "玩家直接指挥" : "水师都督 · " + FleetText.decision(f.decision))
-                            Divider2()
-                            if f.port >= 0, f.port < map.meta.provinces.count {
-                                Row(label: "当前锚地", value: map.meta.provinces[f.port].name + "港")
-                                Divider2()
+                            VStack(spacing: 7) {
+                                ForEach(MaritimeWarfare.FleetMission.allCases, id: \.rawValue) { m in
+                                    let active = curMission == m.rawValue
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        Task {
+                                            let out = await model.armyAction("fleetMission", armyId: f.id, text: m.rawValue)
+                                            feedback = out.message
+                                            GameFeel.shared.notify(out.ok ? .success : .error)
+                                        }
+                                    } label: {
+                                        HStack(spacing: 10) {
+                                            PaperTag(text: m.label, color: active ? Theme.seal : Theme.jade, size: 11)
+                                            Text(m.note)
+                                                .font(Theme.caption)
+                                                .foregroundStyle(active ? Theme.ink : Theme.ink2)
+                                                .lineLimit(2)
+                                                .multilineTextAlignment(.leading)
+                                            Spacer(minLength: 4)
+                                            if active {
+                                                PaperTag(text: "奉行中", color: Theme.seal, size: 10)
+                                            } else {
+                                                Text("传令").font(Theme.caption).foregroundStyle(Theme.seal)
+                                            }
+                                        }
+                                        .padding(.horizontal, 12).padding(.vertical, 8)
+                                        .background(active ? Theme.seal.opacity(0.08) : Theme.paper2.opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(active ? Theme.seal.opacity(0.42) : Theme.ink.opacity(0.10), lineWidth: 0.85))
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain).disabled(busy)
+                                }
                             }
-                            if !f.reason.isEmpty {
-                                Text(f.reason).font(Theme.label).foregroundStyle(Theme.ink2)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal, 16).padding(.vertical, 10)
-                            }
+                            .padding(12)
                         }
                         .padding(.horizontal, Theme.Layout.pageInset)
+
+                        // 一键船坞紧急抢修与补给 + 自主/手动切换
+                        HStack(spacing: 10) {
+                            Button {
+                                GameFeel.shared.tap()
+                                Task {
+                                    let out = await model.armyAction("fleetRepair", armyId: f.id)
+                                    feedback = out.message
+                                    GameFeel.shared.notify(out.ok ? .success : .error)
+                                }
+                            } label: {
+                                SecondaryLabel(title: f.hull < 0.96 || f.food < f.crew * 40 ? "船坞紧急抢修补给" : "满编战备巡航", symbol: "wrench.and.screwdriver")
+                            }
+                            .disabled(busy)
+
+                            if f.status != "lost" {
+                                let mine = f.manual || !f.patrol
+                                Button {
+                                    Task {
+                                        let out = await model.armyAction("fleetManual", armyId: f.id, flag: !mine)
+                                        feedback = out.message
+                                        GameFeel.shared.tap()
+                                    }
+                                } label: {
+                                    SecondaryLabel(title: mine ? "交还都督巡防" : "亲自统帅航向", symbol: mine ? "cpu" : "person.fill")
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain).padding(.horizontal, Theme.Layout.pageInset)
 
                         // 敌方与争夺海港（交战时显示，支持跨海夺港与海上封锁）
                         if !enemyPorts.isEmpty {
@@ -685,7 +802,7 @@ struct FleetSheet: View {
                                             VStack(alignment: .leading, spacing: 2) {
                                                 HStack(spacing: 6) {
                                                     Text(pName).font(Theme.section).foregroundStyle(Theme.ink)
-                                                    PaperTag(text: item.reclaim ? "收复本港" : "夺港封锁", color: item.reclaim ? Theme.gold : Theme.danger, size: 10)
+                                                    PaperTag(text: item.reclaim ? "收复本港" : item.port.blockaded == true ? "已封锁" : "夺港封锁", color: item.reclaim ? Theme.gold : Theme.danger, size: 10)
                                                 }
                                                 Text("现由\(holderName)把持 · 港控 \(Int(item.port.value.rounded()))%")
                                                     .font(Theme.caption).foregroundStyle(Theme.ink2)
@@ -779,76 +896,69 @@ struct FleetSheet: View {
                         .buttonStyle(.plain).padding(.horizontal, Theme.Layout.pageInset)
                         .animation(Motion.fade, value: target)
 
-                        if f.status != "lost" {
-                            let mine = f.manual || !f.patrol
-                            Button {
-                                Task {
-                                    let out = await model.armyAction("fleetManual", armyId: f.id, flag: !mine)
-                                    feedback = out.message
-                                    GameFeel.shared.tap()
-                                }
-                            } label: { SecondaryLabel(title: mine ? "交还水师都督自主巡防" : "由玩家亲自统帅水师", symbol: mine ? "cpu" : "person.fill") }
-                            .buttonStyle(.plain).padding(.horizontal, Theme.Layout.pageInset)
-                        }
-                        Text(busy ? "交战或撤离中的舰队不可中途改令" : "可驶往本国港口补粮驻防，或在交战时跨海夺取敌方港口并实施海上封锁")
-                            .font(Theme.label).foregroundStyle(Theme.ink2)
-                            .padding(.horizontal, Theme.Layout.sectionInset)
-
                     case .reorganize:
-                        SectionLabel("战船编制与船坞扩建")
+                        let draftTotal = max(1, draftHeavy + draftLight + draftGunboats)
+                        let hShare = Int((Double(draftHeavy) / Double(draftTotal) * 100).rounded())
+                        let lShare = Int((Double(draftLight) / Double(draftTotal) * 100).rounded())
+                        let gShare = max(0, 100 - hShare - lShare)
+                        SectionLabel("三舰种协同编制（主力战舰 / 巡弋快舰 / 封锁炮舰）")
                         Group2 {
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack {
-                                    Text("战船艘数").font(Theme.body).foregroundStyle(Theme.ink2)
+                                    Text("总编制：\(draftTotal) 艘战船 · \(draftTotal * 200) 水兵").font(Theme.section).foregroundStyle(Theme.ink)
                                     Spacer()
-                                    Text("\(draftShips) 艘 · 编制水兵 \(draftShips * 200) 人")
-                                        .font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
+                                    PaperTag(text: "主\(hShare)% · 快\(lShare)% · 炮\(gShare)%", color: Theme.seal, size: 10)
                                 }
-                                HStack(spacing: 8) {
-                                    Button {
-                                        GameFeel.shared.tap()
-                                        draftShips = max(1, draftShips - 1)
-                                    } label: {
-                                        Text("−1艘").font(Theme.label).foregroundStyle(Theme.ink)
-                                            .frame(width: 48, height: 32)
-                                            .background(Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
-                                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(Theme.ink.opacity(0.15), lineWidth: 0.85))
-                                    }
-                                    .buttonStyle(PressStyle())
-
-                                    ForEach([2, 4, 6, 10], id: \.self) { preset in
-                                        let active = draftShips == preset
-                                        Button {
-                                            GameFeel.shared.tap()
-                                            draftShips = preset
-                                        } label: {
-                                            Text("\(preset)艘")
-                                                .font(Theme.label)
-                                                .foregroundStyle(active ? Theme.paper2 : Theme.ink)
-                                                .frame(maxWidth: .infinity)
-                                                .frame(height: 32)
-                                                .background(active ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
-                                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(active ? Theme.seal : Theme.ink.opacity(0.15), lineWidth: 0.85))
+                                // 三色比例条
+                                GeometryReader { geo in
+                                    let w = max(10, geo.size.width)
+                                    HStack(spacing: 2) {
+                                        if draftHeavy > 0 {
+                                            RoundedRectangle(cornerRadius: 3).fill(Theme.seal)
+                                                .frame(width: max(6, w * CGFloat(draftHeavy) / CGFloat(draftTotal)))
                                         }
-                                        .buttonStyle(PressStyle())
+                                        if draftLight > 0 {
+                                            RoundedRectangle(cornerRadius: 3).fill(Theme.jade)
+                                                .frame(width: max(6, w * CGFloat(draftLight) / CGFloat(draftTotal)))
+                                        }
+                                        if draftGunboats > 0 {
+                                            RoundedRectangle(cornerRadius: 3).fill(Theme.gold)
+                                                .frame(width: max(6, w * CGFloat(draftGunboats) / CGFloat(draftTotal)))
+                                        }
                                     }
-
-                                    Button {
-                                        GameFeel.shared.tap()
-                                        draftShips = min(10, draftShips + 1)
-                                    } label: {
-                                        Text("+1艘").font(Theme.label).foregroundStyle(Theme.ink)
-                                            .frame(width: 48, height: 32)
-                                            .background(Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
-                                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(Theme.ink.opacity(0.15), lineWidth: 0.85))
-                                    }
-                                    .buttonStyle(PressStyle())
                                 }
-                                SealButton(title: "颁行战船整编", disabled: f.status == "lost" || draftShips == f.ships) {
+                                .frame(height: 8)
+
+                                shipClassStepper(
+                                    title: "主力战舰（楼船/战列）",
+                                    note: "正面海战决战火力 +\(Int((Double(draftHeavy) / Double(draftTotal) * 16).rounded()))%，压制敌方主力水师",
+                                    color: Theme.seal,
+                                    count: $draftHeavy,
+                                    otherSum: draftLight + draftGunboats
+                                )
+                                Divider2()
+                                shipClassStepper(
+                                    title: "巡弋快舰（艨艟/巡洋）",
+                                    note: "护航与破交截杀半径 +\(Int((Double(draftLight) / Double(draftTotal) * 34).rounded())) 里，猎杀敌运兵船",
+                                    color: Theme.jade,
+                                    count: $draftLight,
+                                    otherSum: draftHeavy + draftGunboats
+                                )
+                                Divider2()
+                                shipClassStepper(
+                                    title: "封锁炮舰（火舫/臼炮）",
+                                    note: "港口封锁压制与海贸截夺 +\(Int((Double(draftGunboats) / Double(draftTotal) * 45).rounded()))%，支援两栖抢滩岸轰",
+                                    color: Theme.gold,
+                                    count: $draftGunboats,
+                                    otherSum: draftHeavy + draftLight
+                                )
+
+                                SealButton(title: "颁行三舰种整编（共 \(draftTotal) 艘）", disabled: f.status == "lost" || (draftHeavy == cls.h && draftLight == cls.l && draftGunboats == cls.g && draftTotal == f.ships)) {
+                                    let spec = "\(draftHeavy),\(draftLight),\(draftGunboats)"
                                     Task {
-                                        let err = await model.editFleet(f.id, ships: draftShips, name: nil)
-                                        feedback = err ?? "已整编为 \(draftShips) 艘战船"
-                                        GameFeel.shared.notify(err == nil ? .success : .error)
+                                        let out = await model.armyAction("fleetComposition", armyId: f.id, text: spec)
+                                        feedback = out.message
+                                        GameFeel.shared.notify(out.ok ? .success : .error)
                                     }
                                 }
                             }
@@ -874,15 +984,37 @@ struct FleetSheet: View {
                         .padding(.horizontal, Theme.Layout.pageInset)
 
                     case .ports:
+                        let allFleets = (model.state?.fleets ?? []).filter { $0.status != "lost" }
+                        let myShips = allFleets.filter { $0.nation == f.nation }.reduce(0) { $0 + $1.ships }
+                        let enemyShips = allFleets.filter { enemies.contains($0.nation) }.reduce(0) { $0 + $1.ships }
                         let myPorts = allMapPorts.filter { $0.owner == f.nation || $0.occupier == f.nation }
-                        SectionLabel("本国海港与制海态势（\(myPorts.count) 港）")
+                        let blockedMyPorts = myPorts.filter { $0.blockaded == true || ($0.owner == f.nation && $0.occupier != f.nation) }.count
+
+                        SectionLabel("制海权与海运对比")
+                        Group2 {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("本国战船 \(myShips) 艘").font(Theme.section).foregroundStyle(Theme.jade)
+                                    Spacer()
+                                    Text("交战敌舰 \(enemyShips) 艘").font(Theme.section).foregroundStyle(enemyShips > 0 ? Theme.danger : Theme.ink2)
+                                }
+                                let totalS = max(1, myShips + enemyShips)
+                                InkBar(fraction: Double(myShips) / Double(totalS), color: tint, height: 6)
+                                Text("控制海港 \(myPorts.count) 处（受封锁 \(blockedMyPorts) 处）· 跨海运力取决于未封锁海港与现役战船规模")
+                                    .font(Theme.caption).foregroundStyle(Theme.ink2)
+                            }
+                            .padding(14)
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+
+                        SectionLabel("本国海港与封锁态势（\(myPorts.count) 港）")
                         Group2 {
                             if myPorts.isEmpty {
                                 Text("本国当前无沿海港口").font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity).padding(.vertical, 16)
                             }
                             ForEach(Array(myPorts.enumerated()), id: \.element.province) { idx, p in
                                 let pName = map.meta.provinces[p.province].name + "港"
-                                let blockaded = p.owner == f.nation && p.occupier != f.nation
+                                let blockaded = p.blockaded == true || (p.owner == f.nation && p.occupier != f.nation)
                                 let occupiedEnemy = p.owner != f.nation && p.occupier == f.nation
                                 let contested = p.value < 99.5
                                 HStack(spacing: 10) {
@@ -893,8 +1025,8 @@ struct FleetSheet: View {
                                         HStack(spacing: 6) {
                                             Text(pName).font(Theme.section).foregroundStyle(Theme.ink)
                                             if blockaded {
-                                                let occName = map.meta.nations.indices.contains(p.occupier) ? map.meta.nations[p.occupier].name : "敌军"
-                                                PaperTag(text: "被\(occName)封锁", color: Theme.danger, size: 10)
+                                                let occName = map.meta.nations.indices.contains(p.occupier) && p.occupier != f.nation ? map.meta.nations[p.occupier].name : "敌舰"
+                                                PaperTag(text: "遭\(occName)封锁", color: Theme.danger, size: 10)
                                             } else if occupiedEnemy {
                                                 PaperTag(text: "跨海占领", color: Theme.gold, size: 10)
                                             } else if contested {
@@ -964,10 +1096,54 @@ struct FleetSheet: View {
         }
     }
 
+    @ViewBuilder
+    private func shipClassStepper(title: String, note: String, color: Color, count: Binding<Int>, otherSum: Int) -> some View {
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 2.5).fill(color).frame(width: 6, height: 32)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(Theme.section).foregroundStyle(Theme.ink)
+                Text(note).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 6)
+            HStack(spacing: 8) {
+                Button {
+                    GameFeel.shared.tap()
+                    if count.wrappedValue > 0 && (count.wrappedValue + otherSum) > 1 {
+                        count.wrappedValue -= 1
+                    }
+                } label: {
+                    Text("−").font(Theme.section).foregroundStyle(Theme.ink)
+                        .frame(width: 30, height: 28)
+                        .background(Theme.paper2, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Theme.ink.opacity(0.15), lineWidth: 0.8))
+                }
+                .buttonStyle(PressStyle())
+
+                Text("\(count.wrappedValue)艘").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 38)
+
+                Button {
+                    GameFeel.shared.tap()
+                    if (count.wrappedValue + otherSum) < 12 {
+                        count.wrappedValue += 1
+                    }
+                } label: {
+                    Text("+").font(Theme.section).foregroundStyle(Theme.ink)
+                        .frame(width: 30, height: 28)
+                        .background(Theme.paper2, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Theme.ink.opacity(0.15), lineWidth: 0.8))
+                }
+                .buttonStyle(PressStyle())
+            }
+        }
+    }
+
     private func syncDraft(_ f: GameState.Fleet) {
         guard syncedFleetId != f.id else { return }
         syncedFleetId = f.id
-        draftShips = max(1, min(10, f.ships))
+        let cls = FleetText.classes(f)
+        draftHeavy = cls.h
+        draftLight = cls.l
+        draftGunboats = cls.g
         newName = f.name
     }
 }

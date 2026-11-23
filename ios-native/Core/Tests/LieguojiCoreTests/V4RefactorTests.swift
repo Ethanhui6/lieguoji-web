@@ -116,4 +116,44 @@ final class V4RefactorTests: XCTestCase {
         let st = try XCTUnwrap(json["seaTransport"] as? [String: Any])
         XCTAssertEqual(st["capacity"] as? Int, cap)
     }
+
+    func testV42DeepNavalMissionsCompositionAndAdmiral() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+        let r = engine.run
+        let fleets = Naval.fleets(r)
+        guard let firstFleet = fleets.first else { return }
+        let fid = firstFleet.id.asString
+        let nationId = firstFleet.nationId.asString
+        let cmd = ArmyCommands(r)
+
+        // 1. 测试五大水师战略指令切换
+        for m in MaritimeWarfare.FleetMission.allCases {
+            let res = cmd.setFleetMission(fid, mission: m.rawValue)
+            XCTAssertTrue(res.ok, res.reason)
+            XCTAssertEqual(MaritimeWarfare.fleetMeta(r, fleet: firstFleet).mission, m)
+        }
+
+        // 2. 测试三舰种协同编制整编（主力 3 + 快舰 2 + 炮舰 2 = 7 艘）
+        let compRes = cmd.setFleetComposition(fid, spec: "3,2,2")
+        XCTAssertTrue(compRes.ok, compRes.reason)
+        XCTAssertEqual(firstFleet.ships.asInt, 7)
+        let meta = MaritimeWarfare.fleetMeta(r, fleet: firstFleet)
+        XCTAssertEqual(meta.heavy, 3)
+        XCTAssertEqual(meta.light, 2)
+        XCTAssertEqual(meta.gunboats, 2)
+
+        // 3. 测试水师提督委任与真实海战火力加成
+        let admRes = cmd.assignFleetAdmiral(fid)
+        XCTAssertTrue(admRes.ok, admRes.reason)
+        let metaAfterAdm = MaritimeWarfare.fleetMeta(r, fleet: firstFleet)
+        XCTAssertNotNil(metaAfterAdm.admiralName)
+        XCTAssertGreaterThan(metaAfterAdm.admiralBonus, 0)
+        XCTAssertGreaterThan(MaritimeWarfare.navalCombatBonus(r, nation: nationId), 0)
+
+        // 4. 测试船坞紧急抢修与补给
+        r.maritime.hulls[fid] = JS(200.0)
+        let refitRes = cmd.refitFleetNow(fid)
+        XCTAssertTrue(refitRes.ok, refitRes.reason)
+    }
 }

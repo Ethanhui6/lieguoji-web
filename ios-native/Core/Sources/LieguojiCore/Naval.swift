@@ -137,7 +137,11 @@ public enum Naval {
         if !id.isNull, let p = People.person(r, id.asInt) {
             var sum = 0.0
             for name in (p.traits.isNull ? [] : p.traits.asArray.map(\.asString)) { sum = f(sum + f(Nobility.trait(name)?.navalCombatModifier.optionalNumber ?? 0)) }
-            leader = sum
+            let doctrineBonus = MaritimeWarfare.navalCombatBonus(r, nation: nation)
+            leader = f(sum + f(doctrineBonus))
+        } else {
+            let doctrineBonus = MaritimeWarfare.navalCombatBonus(r, nation: nation)
+            if doctrineBonus > 0 { leader = f(doctrineBonus) }
         }
         return Volley.NavalInput(destiny: r.upperCombat.nations[nation].destiny.asNumber, maritime: r.economy.nations[nation].ethnic.optionalString == "Maritime", leader: leader)
     }
@@ -329,7 +333,19 @@ public enum Naval {
             }
             if view.held.contains(fleetKey(id)) || (r.maritime.retreating[id].optionalNumber ?? -.infinity) > now { note("busy", "实际海战或撤离尚未结束，保留当前航向。"); continue }
             let moving = r.fleetPositions.records[id].status.asString == "moving", component = sea.component(actual.face)
-            let candidates = candidatesIn(component), low = fl.food.asNumber < fl.crew.asNumber * 30, safe = safeIn(nation, component, low)
+            let appNaval = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
+            let maxHull = max(100.0, fl.ships.asNumber * 100.0)
+            let curHull = r.maritime.hulls[id].optionalNumber ?? maxHull
+            if appNaval {
+                let initMeta = MaritimeWarfare.fleetMeta(r, fleet: fl)
+                if curHull < maxHull * 0.30 && initMeta.mission != .refit && !r.regimes.fleetMeta[id].playerMission.isTruthy {
+                    r.regimes.fleetMeta[id].mission = JS("refit")
+                }
+            }
+            let activeMission: MaritimeWarfare.FleetMission = appNaval ? MaritimeWarfare.fleetMeta(r, fleet: fl).mission : .patrol
+            let foodLow = fl.food.asNumber < fl.crew.asNumber * 30
+            let refitNeed = appNaval && activeMission == .refit
+            let candidates = candidatesIn(component), low = foodLow || refitNeed, safe = safeIn(nation, component, foodLow)
             let assigned = row.assignedPortId.optionalString
             let goal = assigned.flatMap { a in candidates.first { $0.id == a } }
             let goalAttack = goal.map { g in order.targetId.optionalString == g.provinceId && portTarget(r.portControl.ports[g.provinceId], nation, enemy) } ?? false
@@ -343,14 +359,15 @@ public enum Naval {
             func atAnchor(_ p: Port) -> Bool { p.node == actual.face && jsHypot(actual.point.x - p.center.x, actual.point.y - p.center.y) <= 1e-8 }
             func start(_ pid: String, _ d: String, _ reason: String) { issue(r, id, .sail(port: pid)); row.assignedPortId = JS(pid); row.issuedTick = JS(now); note(d, reason) }
             let here = safe.first(where: atAnchor)
-            if low, let here { row.assignedPortId = JS(here.id); order.targetId = .null; note("resupply", "实际停在安全本国锚点，等待日结从当地粮储补给。"); continue }
+            if low, let here { row.assignedPortId = JS(here.id); order.targetId = .null; note("resupply", refitNeed ? "已泊入安全船坞，加速抢修舰体与补员。" : "实际停在安全本国锚点，等待日结从当地粮储补给。"); continue }
             let home = candidates.first { $0.id == row.homePortId.optionalString }
             let homeLost = home.map { r.portControl.ports[$0.provinceId].occupierId.asString != nation } ?? false
             let rationNow = Double(ration(fl.crew.asInt)), food = fl.food.asNumber, crew = fl.crew.asNumber
             func days(_ d: Double) -> Double { (d / speed / 120).rounded(.up) }
-            if !low && atWarNow && (r.portControl.attackFleetIds.asArray.contains { $0.asString == id } || homeLost || goalAttack || (UnitKinds.enabled && (seaArmiesByComp[component]?.contains { enemy($0.nation) } ?? false))) {
-                // 本作海防截击：若有敌军正在本海域渡海，优先驰援最接近敌军航迹的己方/敌方海港截击登陆部队。
-                if UnitKinds.enabled, let threats = seaArmiesByComp[component]?.filter({ enemy($0.nation) }), !threats.isEmpty {
+            let missionActive = appNaval && (activeMission == .blockade || activeMission == .raid || activeMission == .escort)
+            if !low && atWarNow && (r.portControl.attackFleetIds.asArray.contains { $0.asString == id } || homeLost || goalAttack || missionActive || (UnitKinds.enabled && (seaArmiesByComp[component]?.contains { enemy($0.nation) } ?? false))) {
+                func tryIntercept() -> Bool {
+                    guard UnitKinds.enabled, let threats = seaArmiesByComp[component]?.filter({ enemy($0.nation) }), !threats.isEmpty else { return false }
                     var intercept: (port: Port, distToFoe: Double, sailDist: Double)?
                     for port in candidates {
                         let landCtrl = landById[port.provinceId]?.controller.asString ?? ""
@@ -365,15 +382,14 @@ public enum Naval {
                         }
                         if intercept == nil || df < intercept!.distToFoe { intercept = (port, df, sailD) }
                     }
-                    if let intercept {
-                        order.targetId = enemy(landById[intercept.port.provinceId]?.controller.asString ?? "") ? JS(intercept.port.provinceId) : .null
-                        if atAnchor(intercept.port) { row.assignedPortId = JS(intercept.port.id); note("attacking", "守株待兔，在敌军渡海登陆口截击。") }
-                        else { start(intercept.port.id, "attacking", "敌军渡海来犯，沿真实海路驰援截击登陆航道。") }
-                        continue
-                    }
+                    guard let intercept else { return false }
+                    order.targetId = enemy(landById[intercept.port.provinceId]?.controller.asString ?? "") ? JS(intercept.port.provinceId) : .null
+                    if atAnchor(intercept.port) { row.assignedPortId = JS(intercept.port.id); note("attacking", activeMission == .raid ? "破交伏击敌方跨海运兵船队。" : "守株待兔，在敌军渡海登陆口截击。") }
+                    else { start(intercept.port.id, "attacking", activeMission == .raid ? "奉破交令全速截杀敌跨海运兵船队。" : "敌军渡海来犯，沿真实海路驰援截击登陆航道。") }
+                    return true
                 }
-                // 友军运兵船队护航：若本海域存在己方渡海运兵船队，战舰主动前出至船队前方航道护航并掩护两栖登陆
-                if UnitKinds.enabled, let convoys = seaArmiesByComp[component]?.filter({ $0.nation == nation }), !convoys.isEmpty {
+                func tryEscort() -> Bool {
+                    guard UnitKinds.enabled, let convoys = seaArmiesByComp[component]?.filter({ $0.nation == nation }), !convoys.isEmpty else { return false }
                     var escortPick: (port: Port, distToConvoy: Double)?
                     for port in candidates {
                         let df = convoys.reduce(Double.infinity) { min($0, jsHypot(port.center.x - $1.point.x, port.center.y - $1.point.y)) }
@@ -386,35 +402,47 @@ public enum Naval {
                             }
                         }
                     }
-                    if let escortPick {
-                        order.targetId = enemy(landById[escortPick.port.provinceId]?.controller.asString ?? "") ? JS(escortPick.port.provinceId) : .null
-                        if atAnchor(escortPick.port) { row.assignedPortId = JS(escortPick.port.id); note("guarding", "在渡海航道锚位护航己方运兵船队与两栖登陆。") }
-                        else { start(escortPick.port.id, "guarding", "驰往渡海航道为己方运兵船队护航并提供岸轰支援。") }
-                        continue
-                    }
+                    guard let escortPick else { return false }
+                    order.targetId = enemy(landById[escortPick.port.provinceId]?.controller.asString ?? "") ? JS(escortPick.port.provinceId) : .null
+                    if atAnchor(escortPick.port) { row.assignedPortId = JS(escortPick.port.id); note("guarding", "在渡海航道锚位护航己方运兵船队与两栖登陆。") }
+                    else { start(escortPick.port.id, "guarding", "驰往渡海航道为己方运兵船队护航并提供岸轰支援。") }
+                    return true
                 }
-                var best: (port: Port, control: JS, distance: Double)?
-                for port in candidates where portTarget(r.portControl.ports[port.provinceId], nation, enemy) {
-                    let control = r.portControl.ports[port.provinceId]
-                    var row0: (port: Port, control: JS, distance: Double)?
-                    if atAnchor(port) { row0 = (port, control, 0) }
-                    else { let p = preview(r, id, .sail(port: port.id)); if p.valid && food >= rationNow * (days(p.distance) + 3) + crew * 30 { row0 = (port, control, p.distance) } }
-                    guard let c = row0 else { continue }
-                    // App worlds (制海权): after retaking our own ports, seek the enemy fleet where it lies at anchor.
-                    func rankOf(_ x: (port: Port, control: JS, distance: Double)) -> Int {
-                        if x.control.landOwnerId.asString == nation { return 0 }
-                        if UnitKinds.enabled && view.atPort(x.port.id).contains(where: { enemy($0.fleet.nationId.asString) }) { return 1 }
-                        return UnitKinds.enabled ? 2 : 1
+                func tryPortAttack() -> Bool {
+                    var best: (port: Port, control: JS, distance: Double)?
+                    for port in candidates where portTarget(r.portControl.ports[port.provinceId], nation, enemy) {
+                        let control = r.portControl.ports[port.provinceId]
+                        var row0: (port: Port, control: JS, distance: Double)?
+                        if atAnchor(port) { row0 = (port, control, 0) }
+                        else { let p = preview(r, id, .sail(port: port.id)); if p.valid && food >= rationNow * (days(p.distance) + 3) + crew * 30 { row0 = (port, control, p.distance) } }
+                        guard let c = row0 else { continue }
+                        func rankOf(_ x: (port: Port, control: JS, distance: Double)) -> Int {
+                            if x.control.landOwnerId.asString == nation { return activeMission == .blockade ? 1 : 0 }
+                            if activeMission == .blockade {
+                                // 封锁指令优先压制尚未被封锁的敌国主力海港
+                                let already = MaritimeWarfare.isPortBlockaded(r, provinceId: x.port.provinceId, landOwner: x.control.landOwnerId.optionalString)
+                                return already ? 2 : 0
+                            }
+                            if UnitKinds.enabled && view.atPort(x.port.id).contains(where: { enemy($0.fleet.nationId.asString) }) { return 1 }
+                            return UnitKinds.enabled ? 2 : 1
+                        }
+                        let rank = rankOf(c), bestRank = best.map(rankOf) ?? 3
+                        if best == nil || rank < bestRank || rank == bestRank && c.distance < best!.distance { best = c }
                     }
-                    let rank = rankOf(c), bestRank = best.map(rankOf) ?? 3
-                    if best == nil || rank < bestRank || rank == bestRank && c.distance < best!.distance { best = c }
-                }
-                if let best {
+                    guard let best else { return false }
                     order.targetId = JS(best.port.provinceId)
-                    if atAnchor(best.port) { row.assignedPortId = JS(best.port.id); note("attacking", "在实际敌港等待争夺完成。") }
-                    else { start(best.port.id, "attacking", best.control.landOwnerId.asString == nation ? "先夺回本国海港；沿真实海路航行。" : "前往可在余粮范围内抵达的敌港。") }
-                    continue
+                    if atAnchor(best.port) { row.assignedPortId = JS(best.port.id); note("attacking", activeMission == .blockade ? "死锁敌港外海，切断海运并截夺海贸岁入。" : "在实际敌港等待争夺完成。") }
+                    else { start(best.port.id, "attacking", best.control.landOwnerId.asString == nation ? "先夺回本国海港；沿真实海路航行。" : (activeMission == .blockade ? "奉封锁令抵近敌港实施海上封锁。" : "前往可在余粮范围内抵达的敌港。")) }
+                    return true
                 }
+                let dispatched: Bool
+                switch activeMission {
+                case .escort:   dispatched = tryEscort() || tryIntercept() || tryPortAttack()
+                case .blockade: dispatched = tryPortAttack() || tryIntercept() || tryEscort()
+                case .raid:     dispatched = tryIntercept() || tryPortAttack() || tryEscort()
+                case .patrol, .refit: dispatched = tryIntercept() || tryEscort() || tryPortAttack()
+                }
+                if dispatched { continue }
             }
             var available = [(port: Port, distance: Double)]()
             for port in safe {

@@ -24,6 +24,10 @@ targets:
       - path: Resources/Art
         type: folder
         buildPhase: resources
+      # 原生硬件解码古风水墨动态短视频画卷（H.264 MP4，静音无缝循环）
+      - path: Resources/Video
+        type: folder
+        buildPhase: resources
       # TW-Kai（全字库正楷体，© 2018 台湾国家发展委员会，政府资料开放授权第1版）：GB2312 全部汉字 + 网页与原生名称目录用字的子集。
       - path: Resources/Fonts
         type: folder
@@ -46,8 +50,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lieguoji.native
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "4.1.0"
-        CURRENT_PROJECT_VERSION: "161"
+        MARKETING_VERSION: "4.2.0"
+        CURRENT_PROJECT_VERSION: "162"
     info:
       path: App/Info.plist
       properties:

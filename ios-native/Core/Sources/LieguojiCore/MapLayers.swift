@@ -266,56 +266,56 @@ public enum MapLayers {
             let jy = (Float(i * 104_729 % 9) - 4) * 0.44
             let x = sx + jx, y = sy + jy
             if h >= 61 {
-                if h < 68 && pick < 42 { continue }
-                if h >= 68 && pick < 16 { continue }
-                if !mtnGrid.insert(gridKey(sx, sy, 34)).inserted { continue }
-                if nearCity(x, y, 160) { continue }
+                if h < 68 && pick < 45 { continue }
+                if h >= 68 && pick < 18 { continue }
+                if !mtnGrid.insert(gridKey(sx, sy, 36)).inserted { continue }
+                if nearCity(x, y, 165) { continue }
                 let snow = h >= 72
-                let baseW = (20.5 + (h - 60) * 0.44) * (0.86 + v1 * 0.34)
-                let baseH = baseW * (0.90 + v2 * 0.16)
-                stamps.append(TerrainStamp(x: x, y: y - baseH * 0.18, width: baseW, height: baseH, kind: snow ? .mountainSnow : .mountain, flipX: (i & 1) == 1, shade: 0.90 + v1 * 0.16))
+                let baseW = (17.2 + (h - 60) * 0.36) * (0.86 + v1 * 0.30)
+                let baseH = baseW * (0.86 + v2 * 0.14)
+                stamps.append(TerrainStamp(x: x, y: y - baseH * 0.16, width: baseW, height: baseH, kind: snow ? .mountainSnow : .mountain, flipX: (i & 1) == 1, shade: 0.90 + v1 * 0.14))
             } else if h >= 22 && biome >= 5 && biome <= 9 {
-                if grove(sx, sy) < -0.30 || pick < 20 { continue }
-                if !woodGrid.insert(gridKey(sx, sy, 26)).inserted { continue }
-                if nearCity(x, y, 130) { continue }
-                let isPine = (biome == 9) || (sy < map.height * 0.28 && pick < 55)
-                let baseW = (17.5 + v1 * 8.5) * (biome == 7 || biome == 8 ? 1.12 : 1.0)
-                let baseH = baseW * 0.94
-                stamps.append(TerrainStamp(x: x, y: y - baseH * 0.12, width: baseW, height: baseH, kind: isPine ? .pine : .forest, flipX: (i & 2) == 2, shade: 0.88 + v2 * 0.18))
-            } else if h >= 46 {
-                // 温润厚涂水墨丘陵（彻底替代旧版代码弧线山丘）
-                if pick < 52 { continue }
-                if mtnGrid.contains(gridKey(sx, sy, 34)) || !hillGrid.insert(gridKey(sx, sy, 30)).inserted { continue }
-                if nearCity(x, y, 145) { continue }
-                let baseW = 19.0 + v1 * 7.5
-                stamps.append(TerrainStamp(x: x, y: y - baseW * 0.08, width: baseW, height: baseW * 0.68, kind: .hill, flipX: (i & 1) == 1, shade: 0.90 + v2 * 0.14))
-            } else if h >= Float(WorldMap.seaLevel) + 2 && (biome == 1 || biome == 2) {
-                if pick < 50 { continue }
-                if !duneGrid.insert(gridKey(sx, sy, 34)).inserted { continue }
-                if nearCity(x, y, 140) { continue }
-                let baseW = 19.0 + v1 * 8.0
-                stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.72, kind: .desert, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
-            } else if h >= Float(WorldMap.seaLevel) + 2 && biome == 3 {
-                // 疏朗厚涂草原林木（彻底替代旧版扁平 T 字伞树）
-                if pick < 56 { continue }
-                if !woodGrid.insert(gridKey(sx, sy, 30)).inserted { continue }
-                if nearCity(x, y, 130) { continue }
-                let baseW = 16.5 + v1 * 6.5
-                stamps.append(TerrainStamp(x: x, y: y - baseW * 0.08, width: baseW, height: baseW * 0.80, kind: .savanna, flipX: (i & 2) == 2, shade: 0.90 + v2 * 0.15))
-            } else if h >= Float(WorldMap.seaLevel) + 2 && biome == 12 {
-                // 江南水乡泽国湿地
-                if pick < 45 { continue }
-                if !duneGrid.insert(gridKey(sx, sy, 30)).inserted { continue }
+                if grove(sx, sy) < -0.26 || pick < 24 { continue }
+                if !woodGrid.insert(gridKey(sx, sy, 28)).inserted { continue }
                 if nearCity(x, y, 135) { continue }
-                let baseW = 18.0 + v1 * 6.5
-                stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.72, kind: .marsh, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
-            } else if h >= Float(WorldMap.seaLevel) + 2 && (biome == 10 || biome == 11) {
-                // 极北冰原苔原厚涂地貌
+                let isPine = (biome == 9) || (sy < map.height * 0.28 && pick < 55)
+                let baseW = (14.8 + v1 * 6.4) * (biome == 7 || biome == 8 ? 1.08 : 1.0)
+                let baseH = baseW * 0.90
+                stamps.append(TerrainStamp(x: x, y: y - baseH * 0.10, width: baseW, height: baseH, kind: isPine ? .pine : .forest, flipX: (i & 2) == 2, shade: 0.88 + v2 * 0.16))
+            } else if h >= 46 {
+                // 极简手绘水墨丘陵线稿（彻底替代旧版代码弧线山丘）
+                if pick < 54 { continue }
+                if mtnGrid.contains(gridKey(sx, sy, 36)) || !hillGrid.insert(gridKey(sx, sy, 32)).inserted { continue }
+                if nearCity(x, y, 145) { continue }
+                let baseW = 15.8 + v1 * 5.8
+                stamps.append(TerrainStamp(x: x, y: y - baseW * 0.06, width: baseW, height: baseW * 0.64, kind: .hill, flipX: (i & 1) == 1, shade: 0.90 + v2 * 0.14))
+            } else if h >= Float(WorldMap.seaLevel) + 2 && (biome == 1 || biome == 2) {
+                if pick < 52 { continue }
+                if !duneGrid.insert(gridKey(sx, sy, 35)).inserted { continue }
+                if nearCity(x, y, 140) { continue }
+                let baseW = 16.2 + v1 * 6.2
+                stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.68, kind: .desert, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
+            } else if h >= Float(WorldMap.seaLevel) + 2 && biome == 3 {
+                // 疏朗手绘水墨林冠（彻底替代旧版扁平 T 字伞树）
+                if pick < 58 { continue }
+                if !woodGrid.insert(gridKey(sx, sy, 32)).inserted { continue }
+                if nearCity(x, y, 135) { continue }
+                let baseW = 14.2 + v1 * 5.2
+                stamps.append(TerrainStamp(x: x, y: y - baseW * 0.06, width: baseW, height: baseW * 0.78, kind: .savanna, flipX: (i & 2) == 2, shade: 0.90 + v2 * 0.14))
+            } else if h >= Float(WorldMap.seaLevel) + 2 && biome == 12 {
+                // 江南水乡泽国水纹芦苇线稿
                 if pick < 48 { continue }
                 if !duneGrid.insert(gridKey(sx, sy, 32)).inserted { continue }
+                if nearCity(x, y, 138) { continue }
+                let baseW = 15.2 + v1 * 5.4
+                stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.68, kind: .marsh, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
+            } else if h >= Float(WorldMap.seaLevel) + 2 && (biome == 10 || biome == 11) {
+                // 极北冰原苔原水墨峰脊
+                if pick < 52 { continue }
+                if !duneGrid.insert(gridKey(sx, sy, 34)).inserted { continue }
                 if nearCity(x, y, 140) { continue }
-                let baseW = 18.5 + v1 * 7.0
-                stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.74, kind: .tundra, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
+                let baseW = 15.6 + v1 * 5.8
+                stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.70, kind: .tundra, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
             }
         }
         return stamps

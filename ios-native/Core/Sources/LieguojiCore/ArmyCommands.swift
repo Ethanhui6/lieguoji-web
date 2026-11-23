@@ -169,6 +169,108 @@ extension NativeEngine {
         return (true, manual ? "\(fl.name.asString)由你亲自指挥。" : "\(fl.name.asString)交还 AI 自主巡防。")
     }
 
+    /// 水师战略任务指令（制海巡弋 / 护航掩护 / 封锁敌港 / 破交袭扰 / 归港修整）。
+    public func setFleetMission(_ id: String, mission raw: String) -> (ok: Bool, reason: String) {
+        let r = run
+        guard let fl = Naval.fleets(r).first(where: { $0.id.asString == id && $0.status.asString != "lost" }) else { return (false, "这支舰队不存在或已沉没。") }
+        guard let m = MaritimeWarfare.FleetMission(rawValue: raw) else { return (false, "未知的水师战略指令。") }
+        _ = MaritimeWarfare.fleetMeta(r, fleet: fl)
+        if !r.regimes.isNull {
+            r.regimes.fleetMeta[id].mission = JS(m.rawValue)
+            r.regimes.fleetMeta[id].playerMission = JS(true)
+        }
+        // 下达战略指令后交由舰队立刻按该指令自主执行（并重置下次评估时刻）
+        r.voyages.manualFleets = .array(r.voyages.manualFleets.asArray.filter { $0.asString != id })
+        fl.patrol = JS(true)
+        if !r.navalAutonomy.isNull { let row = r.navalAutonomy.fleets[id]; if !row.isNull { row.nextTick = JS(0) } }
+        Vassals.bump(r.voyages)
+        return (true, "\(fl.name.asString)奉命执行「\(m.label)」：\(m.note)")
+    }
+
+    /// 三舰种编制重编（格式 "主力,轻舰,炮舰"，总艘数 1…12，同步更新水兵、船体与海粮）。
+    public func setFleetComposition(_ id: String, spec: String) -> (ok: Bool, reason: String) {
+        let r = run
+        guard let fl = Naval.fleets(r).first(where: { $0.id.asString == id && $0.status.asString != "lost" }) else { return (false, "这支舰队不存在或已沉没。") }
+        let parts = spec.split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
+        guard parts.count == 3 else { return (false, "舰种编制参数无效。") }
+        let h = max(0, parts[0]), l = max(0, parts[1]), g = max(0, parts[2])
+        let total = h + l + g
+        guard (1...12).contains(total) else { return (false, "舰队总战船须为 1 至 12 艘。") }
+        let oldShips = max(1, fl.ships.asInt)
+        let oldHullRatio = min(1.0, max(0.25, (r.maritime.hulls[id].optionalNumber ?? Double(oldShips * 100)) / Double(oldShips * 100)))
+        fl.ships = JS(total)
+        fl.crew = JS(total * 200)
+        fl.food = JS(max(fl.food.asInt, total * 200 * 45))
+        r.maritime.hulls[id] = JS(Double(total) * 100.0 * max(oldHullRatio, 0.85))
+        _ = MaritimeWarfare.fleetMeta(r, fleet: fl)
+        if !r.regimes.isNull {
+            r.regimes.fleetMeta[id].heavy = JS(h)
+            r.regimes.fleetMeta[id].light = JS(l)
+            r.regimes.fleetMeta[id].gunboats = JS(g)
+        }
+        return (true, "\(fl.name.asString)已整编：主力 \(h) · 巡弋 \(l) · 炮舰 \(g)（共 \(total) 艘）。")
+    }
+
+    /// 舰队紧急船坞抢修与补给（在安全本国港立即修复；在外海则改命归港修整并立即返航）。
+    public func refitFleetNow(_ id: String) -> (ok: Bool, reason: String) {
+        let r = run
+        guard let fl = Naval.fleets(r).first(where: { $0.id.asString == id && $0.status.asString != "lost" }) else { return (false, "这支舰队不存在或已沉没。") }
+        let nation = fl.nationId.asString
+        let ships = max(1, fl.ships.asInt)
+        let maxHull = Double(ships) * 100.0
+        let curHull = r.maritime.hulls[id].optionalNumber ?? maxHull
+        let maxCrew = ships * 200
+        let rec = r.fleetPositions.records[id]
+        let atFriendlyPort: Bool = {
+            guard let bridge = Armies.bridge, let sea = Naval.sea, !rec.isNull else { return false }
+            let pt = bridge.graph.location(bridge.travel(rec)).point
+            guard let p = sea.ports.first(where: { jsHypot(pt.x - $0.center.x, pt.y - $0.center.y) <= 28 }) else { return false }
+            return r.portControl.ports[p.provinceId].landOwnerId.optionalString == nation && !MaritimeWarfare.isPortBlockaded(r, provinceId: p.provinceId, landOwner: nation)
+        }()
+        if atFriendlyPort {
+            r.maritime.hulls[id] = JS(min(maxHull, curHull + maxHull * 0.45))
+            fl.crew = JS(maxCrew)
+            fl.food = JS(max(fl.food.asInt, maxCrew * 55))
+            if let nat = r.world.nations.asArray.first(where: { $0.id.asString == nation }) {
+                nat.gold = JS(max(0, nat.gold.asNumber - 100))
+            }
+            return (true, "\(fl.name.asString)完成紧急船坞抢修与海粮满载（耗资 100 金）。")
+        } else {
+            return setFleetMission(id, mission: "refit")
+        }
+    }
+
+    /// 为舰队委任本国水师提督（择取本国在世武略最高将才，实装海战火力与指挥加成）。
+    public func assignFleetAdmiral(_ id: String) -> (ok: Bool, reason: String) {
+        let r = run
+        guard let fl = Naval.fleets(r).first(where: { $0.id.asString == id && $0.status.asString != "lost" }) else { return (false, "这支舰队不存在或已沉没。") }
+        let nation = fl.nationId.asString
+        _ = MaritimeWarfare.fleetMeta(r, fleet: fl)
+        var bestName: String? = nil
+        var bestScore = -1.0
+        var bestBonus = 10
+        if !r.people.isNull, !r.people.people.isNull {
+            for p in r.people.people.asArray where p.nationId.optionalString == nation && p.alive.asBool && (p.age.optionalNumber ?? 0) >= 18 {
+                let mil = p.skills.military.optionalNumber ?? 40
+                let traits = p.traits.isNull ? [] : p.traits.asArray.map(\.asString)
+                let navalTrait = traits.contains("NavalMastery") ? 35.0 : (traits.contains("ShipMaster") ? 20.0 : 0.0)
+                let score = mil + navalTrait
+                if score > bestScore {
+                    bestScore = score
+                    bestName = p.name.optionalString ?? (p.firstName.optionalString ?? "无名")
+                    bestBonus = max(8, min(32, Int((mil / 4.2 + (navalTrait > 0 ? 10 : 0)).rounded())))
+                }
+            }
+        }
+        let chosen = bestName ?? "镇海都督"
+        if !r.regimes.isNull {
+            r.regimes.fleetMeta[id].admiralName = JS(chosen)
+            r.regimes.fleetMeta[id].admiralBonus = JS(bestBonus)
+        }
+        Daily.event(r, "politics", "委任\(chosen)为\(fl.name.asString)水师提督", "提督统帅水师出征，舰队海战战力提升 +\(bestBonus)%。")
+        return (true, "已委任「\(chosen)」出任水师提督（海战火力 +\(bestBonus)%）。")
+    }
+
     /// 改名.
     public func renameArmy(_ id: String, name: String) -> (ok: Bool, reason: String) {
         guard let a = liveArmy(id) else { return (false, "这支军队不存在或已覆灭。") }

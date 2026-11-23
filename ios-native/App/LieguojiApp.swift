@@ -366,15 +366,34 @@ struct TabButton: View {
 
 // MARK: - panels
 
-/// 宣纸面板顶部拖拽手柄（隐藏系统指示条后的统一物理暗示，居中暖墨细条）。
+private struct InSidePanelKey: EnvironmentKey { static let defaultValue = false }
+private struct HasBackBarKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+    /// 横屏右侧悬浮奏折内：隐藏底部弹窗拖拽手柄，由面板顶栏统一提供返回与关闭按钮。
+    var inSidePanel: Bool {
+        get { self[InSidePanelKey.self] }
+        set { self[InSidePanelKey.self] = newValue }
+    }
+    /// 当前页面上方已由 `GameView` 提供固定返回导航栏时，隐藏页内重复拖拽条。
+    var hasBackBar: Bool {
+        get { self[HasBackBarKey.self] }
+        set { self[HasBackBarKey.self] = newValue }
+    }
+}
+
+/// 宣纸面板顶部拖拽手柄（隐藏系统指示条后的统一物理暗示，居中暖墨细条；在横屏侧栏或二级返回栏下方自动隐去，杜绝双层抬头错乱）。
 struct SheetGrabber: View {
+    @Environment(\.inSidePanel) private var inSidePanel
+    @Environment(\.hasBackBar) private var hasBackBar
     var body: some View {
-        Capsule()
-            .fill(Theme.ink.opacity(0.22))
-            .frame(width: 38, height: 4)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 9).padding(.bottom, 2)
-            .accessibilityHidden(true)
+        if !inSidePanel && !hasBackBar {
+            Capsule()
+                .fill(Theme.ink.opacity(0.22))
+                .frame(width: 38, height: 4)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 9).padding(.bottom, 2)
+                .accessibilityHidden(true)
+        }
     }
 }
 
@@ -387,26 +406,29 @@ struct SheetHeader: View {
     var seal: String = "阅"
     var showGrabber = true
     @State private var inked = false
+    @Environment(\.inSidePanel) private var inSidePanel
+    @Environment(\.hasBackBar) private var hasBackBar
     var body: some View {
+        let grabberVisible = showGrabber && !inSidePanel && !hasBackBar
         VStack(spacing: 0) {
-            if showGrabber { SheetGrabber() }
+            if grabberVisible { SheetGrabber() }
             HStack(alignment: .center, spacing: 12) {
                 if let color {
-                    RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 7, height: 44)
+                    RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 7, height: 42)
                         .shadow(color: Theme.ink.opacity(0.15), radius: 1, y: 1)
                 }
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(title).font(Theme.kai(26)).foregroundStyle(Theme.ink).tracking(2).lineLimit(1).minimumScaleFactor(0.72)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(Theme.kai(inSidePanel ? 23 : 26)).foregroundStyle(Theme.ink).tracking(1.5).lineLimit(1).minimumScaleFactor(0.72)
                     Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.7), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
                         .frame(height: 1.2).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
-                    if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2) }
+                    if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8) }
                 }
                 Spacer(minLength: 6)
-                Seal(text: seal, size: 32)
+                Seal(text: seal, size: inSidePanel ? 28 : 32)
             }
             .padding(.horizontal, Theme.Layout.sectionInset)
-            .padding(.top, showGrabber ? Theme.Layout.headerTop : 18)
-            .padding(.bottom, 10)
+            .padding(.top, grabberVisible ? Theme.Layout.headerTop : 12)
+            .padding(.bottom, 8)
         }
         .onAppear { withAnimation(Motion.reveal) { inked = true } }
     }
@@ -471,6 +493,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("4.2.0", ["【竖屏/横屏/收起边框（净图）与二级菜单防遮挡重构】彻底根治窄屏与横屏组件互相挤压重叠：① 竖屏顶栏重构为 38pt 紧凑纪年胶囊 + 右侧 146pt 一体化四键宣纸工具坞（视图/框选/净图/菜单），总宽严格 < 366pt；② 视图切换器重构为 2×5（竖屏）/ 5×2（横屏）紧凑宫格并支持点空白处秒收，不再向下捅穿底栏；③ 横屏采用 GeometryReader 严格划分左轨（44pt）、顶栏（36pt，右侧面板展开时自动收缩让位）与右侧面板安全区，彻底消除横屏侧栏外悬 `.offset(x: -17)` 残圈与二级菜单透明返回栏滚字重叠；④ 点「净图」时顶栏、底栏、左轨、图例、天气条与四边暗角同步丝滑收起，仅留右上角一枚 32pt「展开」小印签。",
+                   "【极简古舆图焦墨细线生图地貌（白底提纯墨迹 × 零贴图割裂感）】修正 AI 生图提示词范式：摒弃与矢量色块底图严重冲突的厚涂重彩阴影图，全新生成 10 枚纯白底极简古舆图焦墨线描印记（远山、雪峰、丘陵、阔叶林冠、北境松林、大漠沙丘、水乡芦苇及三大文明都城线稿），经亮度转 Alpha 纯墨迹提纯后以半透明焦墨叠印于宣纸水彩底晕之上、羊皮纸纹理之下，如亲手墨笔绘于古纸，彻底告别“贴图感”。",
+                   "【深度海军战略系统大升级】告别单一战船数字：每支舰队实装「主力战舰（楼船/战列）+ 巡弋快舰（艨艟/巡洋）+ 封锁炮舰（火舫/臼炮）」三舰种协同编制与比例调配；新增「制海巡弋 / 护航掩护 / 封锁敌港 / 破交袭扰 / 归港修整」五大水师战略指令（玩家与 AI 共用）；实装水师提督委任（真实海战火力加成）、本国安全港船坞日常修船补员与紧急抢修、封锁敌港每十日截夺敌方海贸商税与四阶水师勋阶，以及海港旋转朱墨封锁锁链圈与两栖抢滩近海舰炮岸轰弹道。",
+                   "【原生硬件解码古风水墨动态短视频画卷 × 多层次 60/120fps 战场特效】新增 `InkVideoStage`（基于 iOS 原生 `AVQueuePlayer` + `AVPlayerLooper` 静音硬件循环解码 + 宣纸羽化晕边蒙版），在大事传报御卷、交战/围城对阵图与海上会战面板内实装 6 段 60fps 古风水墨动态短视频（兵戈交锋、水师会战、危城合围、金兰盟好、奉天改制、四时天象）；同步升级大地图 60/120fps 双层赤金刀光、多波次流矢齐射与双舷连环火炮齐射动效。"]),
         ("4.1.0", ["【审美品味回正：回归经典兵种棋子与轻墨融纸舆图】彻底移除与极简纸墨地图细节割裂的厚重不透明 PNG 贴图及 4 帧翻页小图；恢复经典国色雕漆兵种与双桅战舰棋子（`UnitArt`），并按同画风补绘跨海 `Transport` 运兵船；山川林漠重绘为轻墨淡彩半透明水彩融纸地貌（宋元淡墨远山、轻雪顶、多层半透林冠、沙丘泽国），全站印章与小图标回归经典宣纸朱印与双色手绘水墨线描，彻底消除“贴上去”的违和感。",
                    "【真 60/120fps 灵动流体动画重铸】查明并解除旧版隐藏的 20fps 动画限速瓶颈（默认行军与特效帧率全面解放至 60/120fps 并自动迁移旧默认设置）；全面废除僵硬低帧率 4 帧图集，重铸为原生 60/120fps 流体水墨与物理粒子动效——双锋交叉刀光弧线＋抛物线箭雨、真实国色 Bézier 连续飘扬丝旗、顺时针围城火环、舷炮水花、高清矢量飘雪落花落枫以及顶部传报 60/120fps 实时水墨演画，兵种行军微倾、交战突刺与接地投影丝滑同步。",
                    "【直觉稳定的 HUD 与一键「净图」开关】彻底移除拖拽地图或静置后莫名自动收隐按钮及隐形边缘手势，常态界面稳定常驻、操作零打断；横竖屏顶栏统一新增清晰直观的一键「净图」切换钮（开启后纯赏地图，右上角提供醒目「显示界面」胶囊一键恢复）。",

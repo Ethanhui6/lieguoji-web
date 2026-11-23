@@ -191,13 +191,49 @@ struct MilitarySheet: View {
                         let activeFleets = (state.fleets ?? []).filter { $0.status != "lost" }
                         let totalShips = activeFleets.reduce(0) { $0 + $1.ships }
                         let seaFights = (state.seaBattles ?? []).count
-                        let blockadedPorts = (state.ports ?? []).filter { $0.occupier != $0.owner || $0.value < 99.5 }.count
+                        let blockadedPorts = (state.ports ?? []).filter { $0.blockaded == true || $0.occupier != $0.owner || $0.value < 99.5 }.count
                         StatStrip(tiles: [
                             StatTile(label: "现役舰队", value: "\(activeFleets.count)支"),
                             StatTile(label: "总战船", value: "\(totalShips)艘"),
-                            StatTile(label: "海港/争夺", value: "\((state.ports ?? []).count)/\(blockadedPorts)", warn: blockadedPorts > 0),
+                            StatTile(label: "海港/封锁", value: "\((state.ports ?? []).count)/\(blockadedPorts)", warn: blockadedPorts > 0),
                             StatTile(label: "海战/船坞", value: "\(seaFights)/\((state.yards ?? []).count)", warn: seaFights > 0),
                         ])
+                        if let sbs = state.seaBattles, !sbs.isEmpty {
+                            SectionLabel("当前海上会战（\(sbs.count) 处交火海域）")
+                            if !UIAccessibility.isReduceMotionEnabled, InkVideoStage.hasVideo("herald-naval") {
+                                InkVideoStage(clip: "herald-naval", cornerRadius: 10, tint: Theme.seal)
+                                    .frame(height: 56)
+                                    .padding(.horizontal, 16)
+                            }
+                            Group2 {
+                                ForEach(Array(sbs.enumerated()), id: \.offset) { idx, sb in
+                                    let na = sb.count >= 4 ? Int(sb[2]) : -1
+                                    let nb = sb.count >= 4 ? Int(sb[3]) : -1
+                                    let sa = sb.count >= 6 ? Int(sb[4]) : 0
+                                    let sbStrength = sb.count >= 6 ? Int(sb[5]) : 0
+                                    Button {
+                                        GameFeel.shared.tap()
+                                        if sb.count >= 2 { flyTo(sb[0], sb[1]) }
+                                    } label: {
+                                        HStack(spacing: 10) {
+                                            InkIcon(glyph: .war, size: 15, weight: 1.75).foregroundStyle(Theme.danger)
+                                            if map.meta.nations.indices.contains(na) { NationChip(map: map, nation: na) }
+                                            Text("vs").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                            if map.meta.nations.indices.contains(nb) { NationChip(map: map, nation: nb) }
+                                            Spacer()
+                                            if sa + sbStrength > 0 {
+                                                Text("\(Names.wan(sa)) : \(Names.wan(sbStrength))").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                            }
+                                            PaperTag(text: "观战", color: Theme.seal, size: 10)
+                                        }
+                                        .padding(.horizontal, 14).padding(.vertical, 10).contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    if idx < sbs.count - 1 { Divider2() }
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                        }
                     }
                     if filter == "all" || filter == "navy", let fleets = state.fleets, !fleets.isEmpty {
                         SectionLabel("水师舰队")

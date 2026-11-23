@@ -1277,10 +1277,27 @@ final class MapLabelsView: UIView {
         rebuildStamps(map)
     }
     private func rebuildStamps(_ map: WorldMap) {
-        // v4.1 视觉回正：彻底停用厚重 AI 建筑/罗盘贴图，让地图原生清雅金属城圈、要塞、港锚与圣星与宣纸底图保持完全统一精度。
+        // v4.2 极简古舆图线描都城微标：在王都城圈旁轻敷半透明焦墨手绘宫阙/城楼线稿印记，放大观图时呈现古图志风韵，远景自动隐去零干扰。
         for s in stamps { s.view.removeFromSuperview() }
         stamps.removeAll(keepingCapacity: true)
-        _ = map
+        for n in map.meta.nations where map.meta.cities.indices.contains(n.capital) {
+            let c = map.meta.cities[n.capital]
+            guard let img = BundleArt.capitalInkStamp(for: n.culture) else { continue }
+            let iv = UIImageView(image: img)
+            iv.bounds = CGRect(origin: .zero, size: img.size)
+            iv.isHidden = true
+            insertSubview(iv, at: 0)
+            stamps.append(MapStamp(
+                view: iv,
+                x: Double(c.x),
+                y: Double(c.y) - 3.6,
+                worldWidth: 14.5,
+                minScale: 1.08,
+                maxAlpha: 0.68,
+                screenMin: 15,
+                screenMax: 29
+            ))
+        }
     }
     private static func cityLabels(_ map: WorldMap) -> [Label] {
         return zip(map.meta.cities, MapLayers.cityMarks(map)).filter { !$0.0.name.isEmpty }.map { c, mark in

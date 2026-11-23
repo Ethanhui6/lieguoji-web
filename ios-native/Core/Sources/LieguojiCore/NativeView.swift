@@ -473,6 +473,15 @@ extension NativeEngine {
                 if UnitKinds.enabled && !r.regimes.isNull {
                     if !r.regimes.escortingFleets.isNull && r.regimes.escortingFleets[id].isTruthy { flRow.escorting = true }
                     if !r.regimes.blockadingFleets.isNull && r.regimes.blockadingFleets[id].isTruthy { flRow.blockading = true }
+                    if !r.regimes.repairingFleets.isNull && r.regimes.repairingFleets[id].isTruthy { flRow.repairActive = true }
+                    let meta = MaritimeWarfare.fleetMeta(r, fleet: fl)
+                    flRow.mission = meta.mission.rawValue
+                    flRow.heavy = meta.heavy
+                    flRow.light = meta.light
+                    flRow.gunboats = meta.gunboats
+                    flRow.admiral = meta.admiralName
+                    flRow.admiralBonus = meta.admiralBonus > 0 ? meta.admiralBonus : nil
+                    flRow.experience = meta.rank > 0 ? meta.rank : nil
                 }
                 fleetRows.append(flRow)
             }

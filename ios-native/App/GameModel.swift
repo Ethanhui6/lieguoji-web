@@ -1334,12 +1334,29 @@ import LieguojiCore
             let p = map.meta.provinces[s.province], c = rgb(s.nation)
             e.sieges.append(.init(key: "s\(s.province)", x: Double(p.x), y: Double(p.y), progress: s.progress, r: c.0, g: c.1, b: c.2))
         }
-        // 海港争夺与海上封锁圈：港控度低于 100% 或已被敌国舰队封锁占领时，在海港锚点绘制海港争夺进度圈
-        for port in state.ports ?? [] where port.value < 99.5 || (port.occupier >= 0 && port.owner >= 0 && port.occupier != port.owner) {
-            let attacker = port.occupier >= 0 && port.occupier != port.owner ? port.occupier : (state.fleets?.first(where: { $0.decision == "attacking" && hypot($0.x - port.x, $0.y - port.y) < 18 })?.nation ?? port.occupier)
+        // 海港争夺与海上封锁圈：港控度低于 100% 或已被敌国舰队封锁占领时，在海港锚点绘制海港争夺进度圈与旋转朱墨封锁锁链环
+        for port in state.ports ?? [] where port.blockaded == true || port.value < 99.5 || (port.occupier >= 0 && port.owner >= 0 && port.occupier != port.owner) {
+            let attacker = port.occupier >= 0 && port.occupier != port.owner ? port.occupier : (state.fleets?.first(where: { ($0.blockading == true || $0.decision == "attacking") && hypot($0.x - port.x, $0.y - port.y) < 72 })?.nation ?? port.occupier)
             let c = rgb(attacker)
             let prog = port.occupier != port.owner ? 1.0 : max(0.08, 1.0 - port.value / 100.0)
             e.sieges.append(.init(key: "port-\(port.province)", x: Double(port.x), y: Double(port.y), progress: prog, r: c.0, g: c.1, b: c.2))
+            if port.blockaded == true || (port.occupier >= 0 && port.owner >= 0 && port.occupier != port.owner) {
+                e.blockades.append(.init(key: "blk-\(port.province)", x: Double(port.x), y: Double(port.y), r: c.0, g: c.1, b: c.2))
+            }
+        }
+        // 两栖抢滩登陆滩头阵地与近海舰炮岸轰弹道弧
+        for a in state.armies where (a.landingDays ?? 0) > 0 && a.troops > 0 && a.status != "destroyed" {
+            let c = rgb(a.nation)
+            let supportFleet = (state.fleets ?? []).first { $0.status != "lost" && $0.nation == a.nation && hypot($0.x - a.x, $0.y - a.y) <= 120 }
+            e.landings.append(.init(
+                key: "lnd-\(a.id)",
+                x: Double(a.x),
+                y: Double(a.y),
+                fx: Double(supportFleet?.x ?? a.x),
+                fy: Double(supportFleet?.y ?? a.y),
+                hasFire: supportFleet != nil,
+                r: c.0, g: c.1, b: c.2
+            ))
         }
         var flashes = controller.effects.flashes.suffix(6).map { $0 }
         if let previous {

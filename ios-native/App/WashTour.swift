@@ -105,7 +105,6 @@ extension ShotTour {
         let t = WashTopology(map: map)
         for p in chain { if let cell = t.provinceCells[p].first { probes[p] = Int(map.offsets[Int(cell)]) } }
         let recorder = WashRecorder(renderer: { c.renderer?() }, probes: probes)
-        await shoot("rec-wash-start")
         recorder.start()
         var world = start
         var day = 1
@@ -144,34 +143,26 @@ extension ShotTour {
         // 1 行军：两路从本国出发穿过前沿州，路线上留下墨痕。
         let routeA = [centre(stage.home), centre(chain[0]), centre(chain[1])], routeB = [centre(stage.home), centre(chain[0]), centre(chain[3])]
         await drive(3) { k in armyA = along(routeA, k); armyB = along(routeB, k) }
-        await shoot("40a-wash-march")
         // 2 驻留与围城：两处各自从军队位置洇开（相邻的前沿州连成一片）。
         await drive(3) { k in sieges[chain[1]] = Float(k) * 0.7; sieges[chain[3]] = Float(k) * 0.5 }
-        await shoot("40b-wash-siege")
         // 3 守军在 2 号州与之相持，把 B 路的墨推回。
         holding = centre(chain[2])
         await drive(2) { k in sieges[chain[1]] = 0.7 + Float(k) * 0.25 }
-        await shoot("40c-wash-hold")
         // 4 攻占 1 号州：底色换成进攻方，从已染处扫满。
         capture(chain[1])
         await drive(1.5) { _ in }
-        await shoot("40d-wash-capture")
         // 5 拉远、换视图再换回。
         c.resetRequest = UUID()
         await drive(1.5) { _ in }
-        await shoot("40e-wash-zoomed-out")
         model.mapView = .alliance
         await drive(1) { _ in }
         model.mapView = .state
         // 6 B 路解围撤走：墨慢慢褪去。
         sieges[chain[3]] = nil; holding = nil
         await drive(2.5) { k in armyB = along([centre(chain[3]), centre(chain[0])], k) }
-        await shoot("40f-wash-settled")
-        await shoot("rec-wash-stop")
         var out = recorder.stop()
         out["sweepActiveLeft"] = c.renderer?()?.sweep?.active.count ?? -1
-        // 全部停战时依然绘制正在淡出的墨。录制独立片段以保持上面性能样本的场景相同。
-        await shoot("rec-wash-ceasefire-start")
+        // 全部停战时依然绘制正在淡出的墨。
         if let renderer = c.renderer?(), let snapshot = renderer.ink?.snapshot {
             let now = renderer.clock()
             let v = (0..<t.vertexCount).first { v in
@@ -185,13 +176,12 @@ extension ShotTour {
                 c.objectWillChange.send()
                 await wait(0.5)
                 let during = renderer.ink?.snapshot?.level(v, at: renderer.clock()) ?? 0
-                await wait(1)
+                await wait(1.5)
                 let after = renderer.ink?.snapshot?.level(v, at: renderer.clock()) ?? 0
                 out["ceasefire"] = ["before": before, "during": during, "after": after,
                                     "passed": before > during && during > 0 && after == 0] as [String: Any]
             }
         }
-        await shoot("rec-wash-ceasefire-stop")
         // 压力：几十个州同时被邻国从邻州打进来、分批攻占，镜头拉远。
         c.resetRequest = UUID(); await wait(1)
         let stress = WashRecorder(renderer: { c.renderer?() }, probes: [:])
@@ -217,7 +207,6 @@ extension ShotTour {
             c.objectWillChange.send()
             await wait(0.1)
         }
-        await shoot("40g-wash-stress")
         var heavy = stress.stop()
         heavy["provinces"] = crowd.count
         out["stress"] = heavy

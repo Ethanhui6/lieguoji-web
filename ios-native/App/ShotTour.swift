@@ -121,103 +121,12 @@ enum ShotTour {
         }
         await shoot("04d-map-unrolled")
         model.controller.resetRequest = UUID(); await wait(0.8)
-        // Up close on the biggest fight: armies that are fighting or besieging.
-        if let state = model.state, let a = state.armies.filter({ $0.status == "fighting" || $0.status == "sieging" }).max(by: { $0.troops < $1.troops }) ?? state.armies.first {
-            model.controller.fly(x: Double(a.x), y: Double(a.y))
-            await wait(2); await shoot("05-battle-close")
-            await wait(4); await shoot("06-battle-close-later")
-        }
         // 战争晕染（墨场）：行军、围城、守军、攻占的演示，逐帧记录与压力测量（App/WashTour.swift）。
         await washTour(model)
-        // 大事传报（宣战、议和）的关键帧与阵亡动画（图标此刻的位置、错开与合并）。
-        if let state = model.state, state.nations.count >= 2 {
-            let wasPlaying = model.playing
-            model.pause(saving: false)
-            model.herald = GameModel.Herald(kind: .war, text: "演示：以边境争端为由宣战", nations: [0, 1])
-            await wait(0.4); await shoot("41a-herald-war-unroll")
-            await wait(0.6); await shoot("41b-herald-war-cross")
-            await wait(0.9); await shoot("41c-herald-war-full")
-            model.herald = nil; await wait(0.6)
-            model.herald = GameModel.Herald(kind: .peace, text: "演示：两国议和", nations: [0, 1])
-            await wait(1.6); await shoot("41d-herald-peace")
-            model.herald = nil; await wait(0.6)
-            if let r = model.controller.renderer?(), let s = r.placedSprites().first(where: { $0.sprite.army >= 0 }) {
-                model.controller.fly(x: Double(s.x), y: Double(s.y)); await wait(1.6)
-                var e = model.controller.effects
-                e.bursts.append(.init(id: "demo-fall-1", x: Double(s.x), y: Double(s.y), kind: .destroyed, r: 0.7, g: 0.2, b: 0.15, unit: s.sprite.unit))
-                var merged = MapEffects.Burst(id: "demo-fall-2", x: Double(s.x) + 26, y: Double(s.y) + 8, kind: .destroyed, r: 0.2, g: 0.3, b: 0.6, unit: s.sprite.unit)
-                merged.delay = 0.4; merged.count = 3
-                e.bursts.append(merged)
-                model.controller.effects = e; model.controller.objectWillChange.send()
-                await wait(0.3); await shoot("42a-fall-early")
-                await wait(0.5); await shoot("42b-fall-spread")
-                await wait(2.4)
-            }
-            if wasPlaying { model.play() }
-        }
-        // Up close on a resting army and on the one under the commander's banner (the figures).
-        if let state = model.state {
-            if let a = state.armies.filter({ $0.status != "fighting" && $0.status != "sieging" }).max(by: { $0.troops < $1.troops }) {
-                model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(2.5); await shoot("06b-army-close")
-            }
-            if let a = state.armies.first(where: { $0.banner != nil }) {
-                model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(2.5); await shoot("06c-banner-close")
-            }
-        }
-        // A burst on a marching army, one shot a second, to see how it walks and meets the enemy.
-        if let state = model.state, let a = state.armies.first(where: { $0.travel == "moving" && $0.destination != nil }) {
-            // At 4× with the metrics overlay: the shots carry the frame time, the engine's cost per
-            // day and the main-thread cost of applying a step.
-            let speed = model.speed
-            model.speed = 4; model.controller.showMetrics = true
-            model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(1.5)
-            for i in 0..<10 { await shoot(String(format: "08-march-%02d", i)); await wait(1) }
-            model.speed = speed; model.controller.showMetrics = false
-        }
-        // Close on a province seat, which is drawn differently from a national capital.
-        if let map = model.map, let seat = zip(map.meta.cities, MapLayers.cityMarks(map)).first(where: { $0.1 == .provinceSeat })?.0 {
-            model.controller.fly(x: Double(seat.x), y: Double(seat.y))
-            await wait(2.2); await shoot("05d-province-seat")
-        }
-        // 卡顿体检: pan across the map while it plays at 4×, then open and close the nation page five
-        // times. Frame gaps of the main thread are measured; the result rides in the shot's name.
-        let meter = HitchMeter(), speed = model.speed
-        model.speed = 4
-        meter.start()
-        for a in (model.state?.armies ?? []).prefix(8) { model.controller.fly(x: Double(a.x), y: Double(a.y)); await wait(0.7) }
-        await shoot("20-stress-pan-" + meter.stop())
-        // 缩放体检：4× 推演中在都城上空连续放大缩小；同一世界先走旧的地名路径、再走新的，各自从空字图缓存开始。
-        if let map = model.map, let cap = map.meta.nations.first.flatMap({ map.meta.cities.indices.contains($0.capital) ? map.meta.cities[$0.capital] : nil }) {
-            for (name, legacy) in [("20b-stress-zoom-old-", true), ("20c-stress-zoom-", false)] {
-                MapLabelsView.legacy = legacy; MapLabelsView.clearImages()
-                model.controller.fly(x: Double(cap.x), y: Double(cap.y)); await wait(1.2)
-                meter.start()
-                for i in 0..<20 { model.controller.zoom(i % 10 < 5 ? 1.5 : 1 / 1.5); await wait(0.3) }
-                await shoot(name + meter.stop())
-            }
-            MapLabelsView.legacy = false
-        }
-        meter.start()
-        for _ in 0..<5 { show(.nation(0)); await wait(0.8); show(nil); await wait(0.5) }
-        await shoot("21-stress-panels-" + meter.stop())
-        // The same for the province and army pages, to see which page is heavy.
-        meter.start()
-        for _ in 0..<5 { show(.province(0)); await wait(0.8); show(nil); await wait(0.5) }
-        await shoot("22-stress-province-" + meter.stop())
-        if !(model.state?.armies.isEmpty ?? true) {
-            meter.start()
-            for _ in 0..<5 { show(.army(0)); await wait(0.8); show(nil); await wait(0.5) }
-            await shoot("23-stress-army-" + meter.stop())
-        }
-        meter.start()
-        for _ in 0..<5 { show(.statistics); await wait(0.8); show(nil); await wait(0.5) }
-        await shoot("24-stress-ranking-" + meter.stop())
-        model.speed = speed
+        show(nil); await wait(0.4)
         model.pause(saving: false)
         await profilePausedPanels(model, show: show)
         views(true); await wait(1); await shoot("07-views"); views(false)
-        // 同盟图：同盟墨色、淡纸色底、同盟名与图例。
-        model.mapView = .alliance; await wait(2.2); await shoot("07b-alliance-view"); model.mapView = .state; await wait(0.8)
         let nation = model.state?.nations.indices.max { (model.state?.nations[$0].provinces ?? 0) < (model.state?.nations[$1].provinces ?? 0) } ?? 0
         let panels: [(String, Panel)] = [("10-nations", .nations), ("11-nation", .nation(nation)),
                                          ("12-military", .military), ("13-army", .army(0)), ("14-diplomacy", .diplomacy), ("15-chronicle", .chronicle),
@@ -232,46 +141,9 @@ enum ShotTour {
         MenuSheet.tourWarRules = false
         // The navy: a fleet's page (ships editable) when the world has fleets.
         if !(model.state?.fleets ?? []).isEmpty { show(.fleet(0)); await wait(1.4); await shoot("13b-fleet") }
-        // The nation page's tabs, opened full height.
-        for (name, t, sub) in [("11c-court", NationSheet.Tab.court, nil as String?), ("11d-nation-military", .military, nil), ("11e-nation-diplomacy", .diplomacy, nil), ("11f-custom", .govern, "custom")] {
-            NationSheet.tourTab = t; NationSheet.tourGovernSub = sub
-            show(nil); await wait(0.6); show(.nation(nation)); await wait(1.8); await shoot(name)
-        }
-        // 自定义的分类页：国号国色与政体。
-        for (name, p) in [("11f2-custom-identity", NationSheet.CustomPane.identity), ("11f3-custom-army", .army)] {
-            NationSheet.tourTab = .govern; NationSheet.tourGovernSub = "custom"; NationSheet.tourPane = p
-            show(nil); await wait(0.6); show(.nation(nation)); await wait(1.8); await shoot(name)
-        }
-        NationSheet.tourPane = nil
-        NationSheet.tourGovernSub = nil
+        NationSheet.tourTab = .court
+        show(nil); await wait(0.5); show(.nation(nation)); await wait(1.4); await shoot("11c-court")
         NationSheet.tourTab = nil
-        // 族谱：从国家页的世家进入，换几个国家连续开合（闪退回归），第一次留图。
-        NationSheet.tourFamily = true
-        let byLand = (model.state?.nations.indices ?? 0..<0).sorted { (model.state?.nations[$0].provinces ?? 0) > (model.state?.nations[$1].provinces ?? 0) }
-        for (k, n) in byLand.prefix(4).enumerated() {
-            show(nil); await wait(0.5); show(.nation(n)); await wait(k == 0 ? 2.4 : 1.2)
-            if k == 0 { await shoot("11g-family-tree") }
-        }
-        NationSheet.tourFamily = false
-        show(nil); await wait(0.6)
-        // 战局: the wars at a glance.
-        MilitarySheet.tourFilter = "wars"
-        show(nil); await wait(0.6); show(.military); await wait(1.8); await shoot("12b-wars")
-        MilitarySheet.tourFilter = nil
-        // 舆图细节: the whole chart, then close on the land.
-        show(nil); await wait(0.6)
-        if let map = model.map, let c = map.meta.cities.dropFirst(5).first { model.controller.fly(x: Double(c.x), y: Double(c.y)); await wait(2.2); await shoot("05e-map-detail") }
-        show(nil); await wait(0.6)
-        // 罗盘, and the world editor's pages.
-        if let map = model.map { let c = MapLayers.compassCorner(map); model.controller.fly(x: Double(c.x), y: Double(c.y)); await wait(2.2); await shoot("05f-compass") }
-        for (name, t) in [("17b-editor-brush", WorldEditorSheet.Tab.brush), ("17c-editor-land", .land), ("17d-editor-pact", .pact), ("17e-editor-map", .map), ("17f-editor-labels", .labels), ("17g-editor-culture", .culture)] {
-            WorldEditorSheet.tourTab = t
-            show(nil); await wait(0.5); show(.editor); await wait(1.6); await shoot(name)
-        }
-        WorldEditorSheet.tourTab = nil
-        show(nil); await wait(0.5)
-        // 长按面板 and 横屏 (its rail and its side page).
-        if let p = model.map?.meta.cities.dropFirst(3).first?.province { show(nil); await wait(0.6); show(.quick(p)); await wait(1.4); await shoot("14-quick") }
         show(nil); await wait(0.6)
         if let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first {
             scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight))
@@ -281,7 +153,6 @@ enum ShotTour {
             scene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
             await wait(1.4)
         }
-        await shootRulerTraits(model, nation: nation, show: show)
         show(nil); await wait(1)
         await shoot("done")
     }

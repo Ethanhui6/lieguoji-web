@@ -16,6 +16,20 @@ struct MilitaryOverview: View {
     struct Power: Identifiable { let id: Int; let troops: Int; let armies: Int }
     struct Share: Identifiable { let id: String; let troops: Int }
     struct Clash: Identifiable { let id: Int; let first: Int; let second: Int }
+    struct ArmyGroupRow: Identifiable { let id: String; let nation: Int; let name: String; let count: Int; let troops: Int; let bonus: Int }
+
+    private var activeGroups: [ArmyGroupRow] {
+        var acc = [String: (nation: Int, name: String, count: Int, troops: Int, bonus: Int)]()
+        for a in state.armies {
+            guard let g = a.armyGroup, !g.isEmpty else { continue }
+            let k = "\(a.nation)|\(g)"
+            var cur = acc[k] ?? (a.nation, g, 0, 0, a.groupBonus ?? 6)
+            cur.count += 1; cur.troops += a.troops; cur.bonus = max(cur.bonus, a.groupBonus ?? 6)
+            acc[k] = cur
+        }
+        return Array(acc.map { ArmyGroupRow(id: $0.key, nation: $0.value.nation, name: $0.value.name, count: $0.value.count, troops: $0.value.troops, bonus: $0.value.bonus) }
+            .sorted { $0.troops != $1.troops ? $0.troops > $1.troops : $0.id < $1.id }.prefix(6))
+    }
 
     private func name(_ n: Int) -> String { map.meta.nations.indices.contains(n) ? MapLayers.stateLabel(map.meta.nations[n].name, full: false) : "无主" }
     private func color(_ n: Int) -> Color { map.meta.nations.indices.contains(n) ? Names.color(map.meta.nations[n].color) : Theme.ink2 }
@@ -79,6 +93,30 @@ struct MilitaryOverview: View {
                 .padding(12).paperCard().padding(.horizontal, Theme.Layout.pageInset)
             }
 
+            let groups = activeGroups
+            if !groups.isEmpty {
+                SectionLabel("天下集团军群（同战区协同作战）")
+                Group2 {
+                    ForEach(Array(groups.enumerated()), id: \.element.id) { idx, grp in
+                        HStack(spacing: 8) {
+                            RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(color(grp.nation)).frame(width: 8, height: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 5) {
+                                    Text("\(name(grp.nation)) · \(grp.name)").font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                                    PaperTag(text: "协同+\(grp.bonus)%", color: Theme.seal, size: 10)
+                                }
+                                Text("\(grp.count) 支军团联合作战").font(Theme.caption).foregroundStyle(Theme.ink2)
+                            }
+                            Spacer(minLength: 4)
+                            Text(Names.wan(grp.troops)).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 9)
+                        if idx < groups.count - 1 { Divider2() }
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+
             if !state.sieges.isEmpty {
                 SectionLabel("围城 \(state.sieges.count) 处")
                 Group2 {
@@ -118,21 +156,40 @@ struct MilitaryOverview: View {
             }
 
             if !generals.isEmpty {
-                SectionLabel("名将谱（横划览名将勋业）")
+                SectionLabel("战神谱（在阵活将实时加持全军）")
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        ForEach(Array(generals.prefix(8))) { g in
+                        ForEach(Array(generals.prefix(10))) { g in
+                            let live = (g.active ?? !g.fallen) && !g.fallen
+                            let accent = live ? Theme.seal : Theme.ink2
                             VStack(alignment: .leading, spacing: 7) {
-                                HStack(spacing: 6) {
-                                    SealFace(text: String(g.rank.prefix(2)), size: 26, color: g.fallen ? Theme.ink2 : Theme.seal)
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(g.name).font(Theme.body).foregroundStyle(g.fallen ? Theme.ink2 : Theme.ink).lineLimit(1)
+                                HStack(spacing: 7) {
+                                    SealFace(text: String(g.rank.prefix(2)), size: 28, color: accent)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack(spacing: 4) {
+                                            Text(g.name).font(Theme.body).foregroundStyle(g.fallen ? Theme.ink2 : Theme.ink).lineLimit(1)
+                                            if let ep = g.epithet, !ep.isEmpty {
+                                                PaperTag(text: ep, color: live ? Theme.gold : Theme.ink2, size: 10)
+                                            }
+                                        }
                                         HStack(spacing: 4) {
                                             RoundedRectangle(cornerRadius: 2).fill(color(g.nation)).frame(width: 7, height: 7)
                                             Text(name(g.nation)).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                            Text("· \(live ? "在阵加持" : g.fallen ? "将星已陨" : "解甲归田")")
+                                                .font(Theme.kai(10))
+                                                .foregroundStyle(live ? Theme.jade : Theme.ink2)
                                         }
                                     }
                                     Spacer(minLength: 2)
+                                }
+                                if let buff = g.buff, !buff.isEmpty {
+                                    Text(buff)
+                                        .font(Theme.kai(11))
+                                        .foregroundStyle(live ? Theme.seal : Theme.ink2)
+                                        .lineLimit(1).minimumScaleFactor(0.8)
+                                        .padding(.horizontal, 7).padding(.vertical, 3)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background((live ? Theme.seal : Theme.ink2).opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                                 }
                                 HStack(spacing: 6) {
                                     Text("战功 \(Int(g.merit))").font(Theme.caption).foregroundStyle(Theme.seal).monospacedDigit()
@@ -140,9 +197,9 @@ struct MilitaryOverview: View {
                                     Text("拓 \(g.gained) 州 · \(g.months)月").font(Theme.kai(11)).foregroundStyle(Theme.ink2).monospacedDigit()
                                 }
                             }
-                            .padding(11)
-                            .frame(width: 176, alignment: .leading)
-                            .paperCard()
+                            .padding(12)
+                            .frame(width: 214, alignment: .leading)
+                            .paperCard(tint: live && g.rank == "军神" ? Theme.seal : nil)
                         }
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)

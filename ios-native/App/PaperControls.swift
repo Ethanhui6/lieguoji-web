@@ -10,7 +10,7 @@ struct ChipPicker<T: Hashable>: View {
     var body: some View {
         // 严格视觉一致性：只有当整排所有选项均配有手绘图标时才展示图标，杜绝同一排中「有的有图标、有的纯文字」的割裂感。
         let showIcons = !items.isEmpty && items.allSatisfy { Glyph.of($0.1) != nil }
-        if items.count > 4 {
+        if items.count > 5 {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
@@ -107,19 +107,22 @@ struct PaperStepper: View {
     }
     private func stepButton(_ symbol: String, _ delta: Int) -> some View {
         let enabled = delta < 0 ? value > range.lowerBound : value < range.upperBound
-        return InkIcon(glyph: delta < 0 ? .minus : .plus, size: 14, weight: 1.85).foregroundStyle(enabled ? Theme.ink : Theme.ink2.opacity(0.4))
-            .frame(width: 46, height: 38)
-            .background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
-            .contentShape(Capsule())
-            .onTapGesture { change(delta) }
-            .onLongPressGesture(minimumDuration: 0.35, pressing: { pressing in
-                repeatTask?.cancel()
-                guard pressing else { return }
-                repeatTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 350_000_000)
-                    while !Task.isCancelled { change(delta); try? await Task.sleep(nanoseconds: 90_000_000) }
-                }
-            }, perform: {})
+        return Button { change(delta) } label: {
+            InkIcon(glyph: delta < 0 ? .minus : .plus, size: 14, weight: 1.85)
+                .foregroundStyle(enabled ? Theme.ink : Theme.ink2.opacity(0.4))
+                .frame(width: 46, height: 38)
+                .background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(PressStyle())
+        .onLongPressGesture(minimumDuration: 0.38, maximumDistance: 8, pressing: { pressing in
+            repeatTask?.cancel()
+            guard pressing else { return }
+            repeatTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 380_000_000)
+                while !Task.isCancelled { change(delta); try? await Task.sleep(nanoseconds: 90_000_000) }
+            }
+        }, perform: {})
     }
     @State private var repeatTask: Task<Void, Never>?
     private func change(_ delta: Int) {

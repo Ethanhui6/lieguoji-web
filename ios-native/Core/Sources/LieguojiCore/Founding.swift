@@ -287,13 +287,19 @@ public enum Founding {
         let ruler: JS
         if let family { ruler = rulerFrom(r.kin.persons[String(family.leaderId)].identity, identity) }
         else {
-            let gender = Int(hash("\(seed)/\(reignId)") % 2)
+            let polityId = identity.polity.optionalString ?? "Kingdom"
+            let gender = UnitKinds.enabled ? MonarchLore.historicalRulerGender(seed: "\(seed)/\(reignId)", polity: polityId) : Int(hash("\(seed)/\(reignId)") % 2)
             let given: String, house: String
             if UnitKinds.enabled {
-                let gPool = NamingCatalog.givenNames(r, culture: cultureId, gender: gender)
-                let hPool = NamingCatalog.houseNames(culture: cultureId)
-                given = gPool.isEmpty ? "元明" : gPool[Int(hash("\(seed)/\(reignId)/given") % UInt32(gPool.count))]
-                house = hPool.isEmpty ? "李" : hPool[Int(hash("\(seed)/\(reignId)/house") % UInt32(hPool.count))]
+                if cultureId == "japanese" && polityId == "Empire" {
+                    given = MonarchLore.japaneseImperialGivenName(seed: "\(seed)/\(reignId)/given", female: gender == 1)
+                    house = ""
+                } else {
+                    let gPool = NamingCatalog.givenNames(r, culture: cultureId, gender: gender)
+                    let hPool = NamingCatalog.houseNames(culture: cultureId)
+                    given = gPool.isEmpty ? "元明" : gPool[Int(hash("\(seed)/\(reignId)/given") % UInt32(gPool.count))]
+                    house = hPool.isEmpty ? "李" : hPool[Int(hash("\(seed)/\(reignId)/house") % UInt32(hPool.count))]
+                }
             } else {
                 let names = gender == 0 ? Nobility.cultures[cultureId].givenMale : Nobility.cultures[cultureId].givenFemale, houses = Nobility.cultures[cultureId].houses
                 given = names.length > 0 ? names[Int(hash("\(seed)/\(reignId)/given") % UInt32(names.length))].asString : "元明"

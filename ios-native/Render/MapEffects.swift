@@ -29,7 +29,11 @@ struct MapEffects: Equatable {
         var count = 1
     }
     struct Siege: Equatable { let key: String; let x: Double; let y: Double; let progress: Double; let r: Double; let g: Double; let b: Double }
-    struct Flash: Equatable { let id: String; let x: Double; let y: Double; let r: Double; let g: Double; let b: Double }
+    struct Flash: Equatable {
+        let id: String; let x: Double; let y: Double; let r: Double; let g: Double; let b: Double
+        /// 山河回放专用图志晕环样式（以水墨鎏金扩散晕环与舆图星徽取代插旗，清爽高级不遮挡疆域）。
+        var atlasStyle: Bool = false
+    }
     struct Declaration: Equatable { let id: String; let fromX: Double; let fromY: Double; let toX: Double; let toY: Double }
     struct Claim: Equatable { let id: String; let x: Double; let y: Double; let r: Double; let g: Double; let b: Double; let delay: Double }
     struct Peace: Equatable { let id: String; let x: Double; let y: Double }
@@ -450,6 +454,61 @@ final class EffectsView: UIView {
         return root
     }
 
+    /// 山河回放专用图志动效：水墨晕染圆斑 + 鎏金国色双圈涟漪 + 舆图菱星，替代插旗，高速回放零闪烁更雅致。
+    private func atlasRippleLayer(color: UIColor) -> CALayer {
+        let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 96, height: 96)
+        let gold = UIColor(red: 0.84, green: 0.66, blue: 0.28, alpha: 1)
+
+        // 1. 柔润国色水彩晕斑（轻洇即干）
+        let wash = CAShapeLayer(); wash.frame = root.bounds
+        wash.path = UIBezierPath(ovalIn: CGRect(x: 34, y: 34, width: 28, height: 28)).cgPath
+        wash.fillColor = color.withAlphaComponent(0.26).cgColor; wash.opacity = 0
+        let wScale = CABasicAnimation(keyPath: "transform.scale"); wScale.fromValue = 0.35; wScale.toValue = 1.65
+        let wFade = CAKeyframeAnimation(keyPath: "opacity"); wFade.values = [0, 0.88, 0]; wFade.keyTimes = [0, 0.24, 1]
+        let wg = CAAnimationGroup(); wg.animations = [wScale, wFade]; wg.duration = 0.92
+        wg.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 0.72, 0.28, 1)
+        wg.fillMode = .forwards; wg.isRemovedOnCompletion = false
+        wash.add(Self.calm(wg), forKey: "atlasWash"); root.addSublayer(wash)
+
+        // 2. 外圈国色墨环扩散
+        let ring = CAShapeLayer(); ring.frame = root.bounds
+        ring.path = UIBezierPath(ovalIn: CGRect(x: 36, y: 36, width: 24, height: 24)).cgPath
+        ring.fillColor = nil; ring.strokeColor = color.withAlphaComponent(0.85).cgColor; ring.lineWidth = 1.8; ring.opacity = 0
+        let rScale = CABasicAnimation(keyPath: "transform.scale"); rScale.fromValue = 0.48; rScale.toValue = 2.25
+        let rThin = CABasicAnimation(keyPath: "lineWidth"); rThin.fromValue = 2.0; rThin.toValue = 0.35
+        let rFade = CAKeyframeAnimation(keyPath: "opacity"); rFade.values = [0, 0.92, 0]; rFade.keyTimes = [0, 0.18, 1]
+        let rg = CAAnimationGroup(); rg.animations = [rScale, rThin, rFade]; rg.duration = 1.05
+        rg.timingFunction = CAMediaTimingFunction(controlPoints: 0.14, 0.66, 0.3, 1)
+        rg.fillMode = .forwards; rg.isRemovedOnCompletion = false
+        ring.add(Self.calm(rg), forKey: "atlasRing"); root.addSublayer(ring)
+
+        // 3. 内圈鎏金细环余波
+        let inner = CAShapeLayer(); inner.frame = root.bounds
+        inner.path = UIBezierPath(ovalIn: CGRect(x: 40, y: 40, width: 16, height: 16)).cgPath
+        inner.fillColor = nil; inner.strokeColor = gold.withAlphaComponent(0.82).cgColor; inner.lineWidth = 1.1; inner.opacity = 0
+        let iScale = CABasicAnimation(keyPath: "transform.scale"); iScale.fromValue = 0.55; iScale.toValue = 1.95
+        let iFade = CAKeyframeAnimation(keyPath: "opacity"); iFade.values = [0, 0.85, 0]; iFade.keyTimes = [0, 0.25, 1]
+        let ig = CAAnimationGroup(); ig.animations = [iScale, iFade]; ig.duration = 0.86
+        ig.beginTime = CACurrentMediaTime() + 0.08
+        ig.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 0.7, 0.3, 1)
+        ig.fillMode = .both; ig.isRemovedOnCompletion = false
+        inner.add(Self.calm(ig), forKey: "atlasInner"); root.addSublayer(inner)
+
+        // 4. 州心微光四角舆图星徽
+        let star = CAShapeLayer(); star.frame = CGRect(x: 41, y: 41, width: 14, height: 14)
+        let sp = UIBezierPath()
+        sp.move(to: CGPoint(x: 7, y: 1.5)); sp.addLine(to: CGPoint(x: 8.6, y: 5.4)); sp.addLine(to: CGPoint(x: 12.5, y: 7))
+        sp.addLine(to: CGPoint(x: 8.6, y: 8.6)); sp.addLine(to: CGPoint(x: 7, y: 12.5)); sp.addLine(to: CGPoint(x: 5.4, y: 8.6))
+        sp.addLine(to: CGPoint(x: 1.5, y: 7)); sp.addLine(to: CGPoint(x: 5.4, y: 5.4)); sp.close()
+        star.path = sp.cgPath; star.fillColor = gold.withAlphaComponent(0.95).cgColor; star.opacity = 0
+        let sScale = CAKeyframeAnimation(keyPath: "transform.scale"); sScale.values = [0.3, 1.15, 0.65]; sScale.keyTimes = [0, 0.35, 1]
+        let sFade = CAKeyframeAnimation(keyPath: "opacity"); sFade.values = [0, 0.95, 0]; sFade.keyTimes = [0, 0.28, 1]
+        let sg = CAAnimationGroup(); sg.animations = [sScale, sFade]; sg.duration = 0.68
+        sg.fillMode = .forwards; sg.isRemovedOnCompletion = false
+        star.add(Self.calm(sg), forKey: "atlasStar"); root.addSublayer(star)
+        return root
+    }
+
     /// PlayerController.DrawAttackArrowAnim: the pattern flows 5 units a second, gone after 2 s.
     private func declarationLayers() -> (CAShapeLayer, CAShapeLayer) {
         // 宣战：一道朱笔从进攻方都城写向对方都城（0.7 秒写完），笔尾落下箭头，停一停后淡去。
@@ -785,10 +844,13 @@ final class EffectsView: UIView {
         }
         for f in effects.flashes where !seen.contains(f.id) {
             guard flashLayers.count < 24 else { continue }
-            let l = flashLayer(color: UIColor(red: f.r, green: f.g, blue: f.b, alpha: 1)); layer.addSublayer(l)
+            let col = UIColor(red: f.r, green: f.g, blue: f.b, alpha: 1)
+            let l = f.atlasStyle ? atlasRippleLayer(color: col) : flashLayer(color: col)
+            layer.addSublayer(l)
             flashLayers[f.id] = (l, f.x, f.y)
             let id = f.id
-            once(id, after: 2.2) { [weak self] in self?.flashLayers[id]?.layer.removeFromSuperlayer(); self?.flashLayers[id] = nil }
+            let ttl = f.atlasStyle ? 1.15 : 2.2
+            once(id, after: ttl) { [weak self] in self?.flashLayers[id]?.layer.removeFromSuperlayer(); self?.flashLayers[id] = nil }
         }
         let liveArrows = Set(effects.arrows.map(\.key))
         for (key, v) in battleArrows where !liveArrows.contains(key) { Self.retire(v.root); battleArrows[key] = nil }

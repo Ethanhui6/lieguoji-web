@@ -1,9 +1,9 @@
 import Foundation
 
-/// 真实历史君主年号／世数／尊号体系、扩展人物个性特质与丰富动态事件库（App 规则专用，不影响网页逐字节对照测试）：
-/// - 日本天皇无姓氏、一世一元、配正统日本年号（如「明治天皇 · 睦仁（明治三年）」，皇室标注「皇室（无姓）」）；
-/// - 中华／朝鲜／越南皇帝与国王配正统年号、在位年次与庙号（如「太宗 · 贞观皇帝 李文昭（贞观五年）」）；
-/// - 欧美／斯拉夫／中东／地中海君主配真实世数与尊号（如「伊丽莎白二世」「路易十四」「彼得大帝」「苏莱曼一世」）；
+/// 真实历史君主年号／谥号／世数／尊号体系、扩展人物个性特质与丰富动态事件库（App 规则专用，不影响网页逐字节对照测试）：
+/// - 日本天皇遵循一世一元，格式为「昭和天皇 裕仁」「令和天皇 德仁」，皇室成员无姓氏且无需额外标注；
+/// - 中华／朝鲜／越南皇帝遵循真实史书格式「汉武帝 刘彻」「唐贞观帝 李世民」，藩王称「齐威王 田因齐」；
+/// - 欧美／斯拉夫／中东／埃及／草原／天竺君主遵循真实传统（「国王 亨利四世」「沙皇 彼得一世（大帝）」「苏丹 穆罕默德二世」「忽必烈大汗」）；
 /// - 16 项鲜明历史人物性格特质（带可感知的税收、战力、安定、外交与政局修正）；
 /// - 24 项深度历史／朝堂／经济／军事／文化随机事件。
 public enum MonarchLore {
@@ -11,19 +11,72 @@ public enum MonarchLore {
     // MARK: - 1. 真实历代君主年号、世数与尊号
 
     public struct RulerHonor: Sendable {
-        /// 完整在位尊称（如「贞观皇帝 李文昭」「明治天皇 睦仁」「伊丽莎白二世女王」「彼得大帝」）。
+        /// 完整在位尊称（如「唐贞观帝 李世民」「汉武帝 刘彻」「昭和天皇 裕仁」「国王 路易十四世」「沙皇 彼得一世（大帝）」）。
         public let styledName: String
-        /// 年号（中华/日本/朝鲜/越南君主专用，如「贞观」「明治」；其余文明为空）。
+        /// 年号（中华/日本/朝鲜/越南君主专用，如「贞观」「昭和」；其余文明为空）。
         public let eraName: String
-        /// 在位年号纪年（如「贞观三年」「明治元年」）。
+        /// 在位年号纪年（如「贞观三年」「昭和元年」）。
         public let eraYearText: String
-        /// 庙号或历史尊号/绰号（如「太祖」「大帝」「征服者」「贤王」「狮心王」）。
+        /// 庙号或历史尊号/绰号（如「太祖」「太宗」「大帝」「征服者」「狮心王」）。
         public let honorific: String
-        /// 展示用本名（日本天皇自动去姓氏，其余文明沿用文化姓名顺序）。
+        /// 展示用本名（日本天皇仅保留名讳，其余文明沿用文化姓名顺序）。
         public let cleanPersonalName: String
-        /// 是否属于无姓氏的日本皇室。
+        /// 是否属于日本皇室。
         public let surnameLessImperial: Bool
     }
+
+    /// 真实历史君主性别分布（App 规则专用）：君主制约 8% 女主、神权政体约 3%、共和/联邦约 16%，避免满图半数女帝。
+    public static func historicalRulerGender(seed: String, polity: String) -> Int {
+        let pct = Int(hashU32(seed + "|gender-hist") % 100)
+        switch polity {
+        case "Republic", "Federation": return pct < 16 ? 1 : 0
+        case "Theocracy": return pct < 3 ? 1 : 0
+        default: return pct < 8 ? 1 : 0
+        }
+    }
+
+    /// 正统日本皇室名讳库（男系历代「○仁」讳名与罕见女天皇名讳）。
+    public static let japaneseImperialMaleNames: [String] = [
+        "裕仁", "德仁", "明仁", "睦仁", "嘉仁", "统仁", "惠仁", "兼仁",
+        "英仁", "智仁", "朝仁", "庆仁", "秀仁", "良仁", "诚仁", "昭仁",
+        "宽仁", "文仁", "宪仁", "崇仁", "政仁", "胜仁", "丰仁", "兴仁",
+    ]
+    public static let japaneseImperialFemaleNames: [String] = [
+        "爱子", "佳子", "真子", "和子", "纪子", "雅子", "智子", "顺子",
+        "荣子", "敬子", "明子", "清子", "节子", "美子",
+    ]
+
+    public static func japaneseImperialGivenName(seed: String, female: Bool) -> String {
+        let pool = female ? japaneseImperialFemaleNames : japaneseImperialMaleNames
+        return pool[Int(hashU32(seed + "|jp-imp") % UInt32(pool.count))]
+    }
+
+    /// 提取中华/东亚王朝用于拼合帝王谥号/年号的简明国号（如「大汉」→「汉」，「大唐」→「唐」，「北魏」→「魏」，「齐国」→「齐」）。
+    public static func shortDynastyPrefix(_ r: JS, nationId: String, culture: String) -> String {
+        let rawCiv = r.civilization.isNull ? "" : (r.civilization.nations[nationId].name.value.optionalString ?? "")
+        let rawWorld = r.world.nations.asArray.first(where: { $0.id.asString == nationId })?.name.optionalString ?? ""
+        let cleaned = NamingCatalog.cleanStateBase(rawCiv.isEmpty ? rawWorld : rawCiv)
+        if culture == "chinese" {
+            let core = NamingCatalog.canonicalStateKey(cleaned)
+            if core.count == 1 { return core }
+            if cleaned.hasPrefix("大") && cleaned.count == 2 { return String(cleaned.dropFirst()) }
+            if ["北", "南", "东", "西", "前", "后", "蜀", "吴", "夏", "晋", "齐", "楚", "燕", "韩", "赵", "魏", "秦", "汉", "唐", "宋", "明", "清", "周", "隋", "梁", "陈", "元", "辽", "金"].contains(where: { cleaned.hasPrefix($0) }) && cleaned.count == 2 {
+                return cleaned
+            }
+            if cleaned == "中华" || cleaned == "华夏" { return "华" }
+            return String(cleaned.prefix(2))
+        }
+        return String(cleaned.prefix(2))
+    }
+
+    private static let posthumousEmperorChars: [String] = [
+        "高", "文", "武", "景", "宣", "明", "章", "昭", "惠", "元",
+        "成", "平", "顺", "康", "肃", "宪", "孝", "靖", "光", "献",
+    ]
+    private static let posthumousKingChars: [String] = [
+        "桓", "文", "武", "威", "宣", "昭", "庄", "穆", "襄", "惠",
+        "康", "景", "悼", "平", "定", "简", "敬", "烈", "慎", "怀",
+    ]
 
     static let chineseEras: [String] = [
         "建元", "太初", "元狩", "神爵", "建武", "永平", "永元", "开皇", "大业",
@@ -211,20 +264,66 @@ public enum MonarchLore {
         let safeReignYears = reignYears.isFinite ? max(0, reignYears) : 0
         let yr = max(1, Int(safeReignYears.rounded(.down)) + 1)
         let eraYearText = era.isEmpty ? "" : "\(era)\(yr == 1 ? "元" : chineseNumeral(yr))年"
+        let isFemale = (person?.gender.optionalNumber == 1) || title.contains("女")
 
         let styledName: String
         if isJPImperial {
-            // 日本天皇：无姓氏，如「明治天皇 · 睦仁」
-            styledName = era.isEmpty ? "\(title) \(personalName)" : "\(era)\(title) · \(personalName)"
+            // 真实日本天皇命名：「昭和天皇 裕仁」「令和天皇 德仁」（皇室本无姓氏，空格接名讳）
+            styledName = era.isEmpty ? "天皇 \(personalName)" : "\(era)天皇 \(personalName)"
         } else if sinosphereCultures.contains(culture) {
-            // 中华/东亚：如「贞观皇帝 李文昭」或「太宗 贞观皇帝 李文昭」
-            let prefix = (!isActive && !honorific.isEmpty) ? "\(honorific)·" : ""
-            styledName = era.isEmpty ? "\(prefix)\(title) \(personalName)" : "\(prefix)\(era)\(title) \(personalName)"
+            // 真实中华／东亚帝王命名：
+            // 皇帝在位称「[国号][年号]帝 [姓名]」（如「明永乐帝 朱棣」「唐贞观帝 李世民」），
+            // 崩逝入史称「[国号][谥号]帝 [姓名]」（如「汉高帝 刘邦」「汉武帝 刘彻」「魏文帝 曹丕」）；
+            // 国王称「[国号][谥号]王 [姓名]」（如「齐威王 田因齐」「楚怀王 熊槐」）。
+            let dyn = shortDynastyPrefix(r, nationId: nationId, culture: culture)
+            let isEmperor = (polity == "Empire") || title.contains("皇") || title.contains("帝")
+            let postChar: String = {
+                if isEmperor {
+                    if order == 1 { return "高" }
+                    if deltaProvs >= 4 || traits.contains("Conqueror") || traits.contains("Unifier") { return "武" }
+                    if avgSkill >= 74 || traits.contains("Genius") || traits.contains("Visionary") { return "明" }
+                    if traits.contains("Benevolent") || traits.contains("Merciful") || traits.contains("Just") { return "仁" }
+                    if traits.contains("Reformer") || traits.contains("Scholar") { return "文" }
+                    if deltaProvs <= -3 { return "哀" }
+                    let h = Int(hashU32("\(nationId)|\(reignId)|post-e") % UInt32(posthumousEmperorChars.count))
+                    return posthumousEmperorChars[h]
+                } else {
+                    if order == 1 { return "武" }
+                    if deltaProvs >= 3 { return "威" }
+                    if avgSkill >= 70 { return "文" }
+                    if deltaProvs <= -3 { return "怀" }
+                    let h = Int(hashU32("\(nationId)|\(reignId)|post-k") % UInt32(posthumousKingChars.count))
+                    return posthumousKingChars[h]
+                }
+            }()
+            if isEmperor {
+                let empSuffix = isFemale ? "女帝" : "帝"
+                if isActive && !era.isEmpty {
+                    styledName = "\(dyn)\(era)\(empSuffix) \(personalName)"
+                } else {
+                    styledName = "\(dyn)\(postChar)\(empSuffix) \(personalName)"
+                }
+            } else {
+                let kingSuffix = isFemale ? "女王" : "王"
+                styledName = "\(dyn)\(postChar)\(kingSuffix) \(personalName)"
+            }
+        } else if culture == "mongol" {
+            // 蒙古汗国：「忽必烈大汗」「拔都汗」
+            let khanTitle = polity == "Empire" ? "大汗" : "汗"
+            let suffix = honorific.isEmpty ? "" : "（\(honorific)）"
+            styledName = "\(givenKey)\(khanTitle)\(suffix)"
+        } else if culture == "tibetan" {
+            let suffix = honorific.isEmpty ? "" : "（\(honorific)）"
+            styledName = "赞普 \(givenKey)\(suffix)"
+        } else if culture == "indian" {
+            let indTitle = title == "苏丹" ? "苏丹" : (polity == "Empire" ? "摩诃罗阇" : "罗阇")
+            let suffix = honorific.isEmpty ? "" : "（\(honorific)）"
+            styledName = "\(indTitle) \(givenKey)\(suffix)"
         } else if regnalNumberCultures.contains(culture) {
-            // 西方/中东：如「伊丽莎白二世」「路易十四」「彼得一世（大帝）」
+            // 西方/斯拉夫/中东/埃及：如「国王 亨利四世」「女王 伊丽莎白二世」「沙皇 彼得一世（大帝）」「苏丹 穆罕默德二世」「法老 拉美西斯二世」
             let numLabel = "\(givenKey)\(chineseNumeral(max(1, ordinal)))世"
             let suffix = honorific.isEmpty ? "" : "（\(honorific)）"
-            styledName = "\(numLabel)\(suffix)"
+            styledName = "\(title) \(numLabel)\(suffix)"
         } else {
             styledName = honorific.isEmpty ? "\(title) \(personalName)" : "\(title) \(personalName)（\(honorific)）"
         }

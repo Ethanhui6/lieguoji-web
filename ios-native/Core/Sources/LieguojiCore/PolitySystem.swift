@@ -129,7 +129,7 @@ extension Regimes {
             StyleProfile(id: "lamaism", camp: .theocracy, fiefRule: .dynastic, attack: -2, defense: 10, income: 0, stability: 10, corruption: -5, temper: -0.14,
                          summary: "活佛法王政教合一，高原固守、民风笃信安宁。", traitLine: "守御+10% · 安定+10 · 腐化−5"),
             StyleProfile(id: "holy", camp: .theocracy, fiefRule: .dynastic, attack: 11, defense: 8, income: -5, stability: -4, corruption: -3, temper: 0.24,
-                         summary: "狂热神国运动，兵锋狂飙而百业凋敝，胜则定鼎为教廷或王朝。", traitLine: "进攻+11% · 守御+8% · 岁入−5%"),
+                         summary: "宗教革新政权，教众狂热而百业受抑，定鼎后转为教廷或世俗王朝。", traitLine: "进攻+11% · 守御+8% · 岁入−5%"),
 
             // 部落与起义
             StyleProfile(id: "tribal", camp: .tribal, fiefRule: .tribal, attack: 10, defense: 2, income: -8, stability: 0, corruption: -3, temper: 0.16,

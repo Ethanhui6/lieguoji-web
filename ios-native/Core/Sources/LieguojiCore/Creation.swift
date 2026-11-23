@@ -83,17 +83,24 @@ public enum Creation {
                                 ("unrest", .object()), ("ended", .object())])
         for n in nations.asArray {
             let nid = n.id.asString, id = "ruler-\(nid)-1", identity = civ.nations[nid], cultureId = identity.cultureId.asString
-            let gender = Int(Opening.hash("\(worldId)/\(id)") % 2), pool = Nobility.cultures[cultureId]
+            let polityId = identity.polity.optionalString ?? "Kingdom"
+            let gender = UnitKinds.enabled ? MonarchLore.historicalRulerGender(seed: "\(worldId)/\(id)", polity: polityId) : Int(Opening.hash("\(worldId)/\(id)") % 2)
+            let pool = Nobility.cultures[cultureId]
             let givenVal: String, houseVal: String
             if UnitKinds.enabled {
-                let rawG = gender == 0 ? pool.givenMale : pool.givenFemale
-                let fallbackG: [String] = { if case .array = rawG.storage { return rawG.asArray.map(\.asString) }; return ["明远"] }()
-                let catG = gender == 0 ? NamingCatalog.people[cultureId]?.male : NamingCatalog.people[cultureId]?.female
-                let gList = (catG?.isEmpty == false) ? catG! : (fallbackG.isEmpty ? ["明远"] : fallbackG)
-                let rawH = NamingCatalog.houseNames(culture: cultureId)
-                let hList = rawH.isEmpty ? ["林"] : rawH
-                givenVal = gList[Int(Opening.hash("\(worldId)/\(id)/given") % UInt32(gList.count))]
-                houseVal = hList[Int(Opening.hash("\(worldId)/\(id)/house") % UInt32(hList.count))]
+                if cultureId == "japanese" && polityId == "Empire" {
+                    givenVal = MonarchLore.japaneseImperialGivenName(seed: "\(worldId)/\(id)/given", female: gender == 1)
+                    houseVal = ""
+                } else {
+                    let rawG = gender == 0 ? pool.givenMale : pool.givenFemale
+                    let fallbackG: [String] = { if case .array = rawG.storage { return rawG.asArray.map(\.asString) }; return ["明远"] }()
+                    let catG = gender == 0 ? NamingCatalog.people[cultureId]?.male : NamingCatalog.people[cultureId]?.female
+                    let gList = (catG?.isEmpty == false) ? catG! : (fallbackG.isEmpty ? ["明远"] : fallbackG)
+                    let rawH = NamingCatalog.houseNames(culture: cultureId)
+                    let hList = rawH.isEmpty ? ["林"] : rawH
+                    givenVal = gList[Int(Opening.hash("\(worldId)/\(id)/given") % UInt32(gList.count))]
+                    houseVal = hList[Int(Opening.hash("\(worldId)/\(id)/house") % UInt32(hList.count))]
+                }
             } else {
                 let given = (gender == 0 ? pool.givenMale : pool.givenFemale), houses = pool.houses
                 givenVal = given.length > 0 ? given[Int(Opening.hash("\(worldId)/\(id)/given") % UInt32(given.length))].asString : "明远"

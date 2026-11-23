@@ -131,7 +131,7 @@ struct ProvinceQuickSheet: View {
                         tiles {
                             tile("农民起义", "flame", destructive: true) { rise("peasant") }
                             tile("军阀割据", "person.badge.shield.checkmark", destructive: true) { rise("warlord") }
-                            tile("神国起义", "moon.stars", destructive: true) { rise("holy") }
+                            tile("宗教起义", "moon.stars", destructive: true) { rise("holy") }
                             tile("藩镇独立", "flag", destructive: true) { rise("secession") }
                             tile("旧邦复国", "arrow.uturn.backward.circle") { target = -1; picking = .restore }
                             tile("随机起事", "dice") { rise(nil) }

@@ -376,12 +376,12 @@ final class PolityDiplomacyNamingTests: XCTestCase {
             XCTAssertTrue((rulerJson["styledName"] as? String ?? "").contains("天皇"))
         }
 
-        // 3. 中华皇帝年号 + 庙号；西方君主世数（如 伊丽莎白二世）
+        // 3. 中华皇帝真实史书命名（「[国号][谥号/年号]帝 [姓名]」）；西方君主世数（如「女王 伊丽莎白一世（大帝）」）
         r.civilization.nations[id0].cultureId = JS("chinese")
         let cnHonor = MonarchLore.honor(r, nationId: id0, reignId: "test-cn-1", order: 1, culture: "chinese", polity: "Empire", title: "皇帝", person: nil, fallbackName: "李世民", reignYears: 12, deltaProvs: 5, avgSkill: 80, isActive: false)
         XCTAssertFalse(cnHonor.eraName.isEmpty)
         XCTAssertEqual(cnHonor.honorific, "太祖")
-        XCTAssertTrue(cnHonor.styledName.contains("太祖"))
+        XCTAssertTrue(cnHonor.styledName.contains("帝 李世民"), "中华皇帝应为「XX帝 本名」格式，实际：\(cnHonor.styledName)")
 
         let ukHonor1 = MonarchLore.honor(r, nationId: id0, reignId: "test-uk-1", order: 1, culture: "english", polity: "Kingdom", title: "女王", person: nil, fallbackName: "伊丽莎白", reignYears: 20, deltaProvs: 7, avgSkill: 82, isActive: false)
         XCTAssertTrue(ukHonor1.styledName.contains("一世"))
@@ -527,6 +527,75 @@ final class PolityDiplomacyNamingTests: XCTestCase {
         }
         for (_, list) in Nobility.moreFemale {
             for name in list { XCTAssertFalse(forbiddenGiven.contains(name), "moreFemale 仍有脏词：\(name)") }
+        }
+    }
+
+    /// v2.9.2 回归：真实世界帝王命名与女性君主历史比例、去神国化国名、五部军制与战神谱实战光环。
+    func testV292AuthenticNamingGenderAndArmyOrganization() throws {
+        let engine = try loadWorld(); defer { cleanup() }
+        let r = engine.run
+        let id0 = r.world.nations[0].id.asString
+
+        // 1. 君主性别历史比例：帝制/王制女性占比约 8%，绝非 50/50
+        let femaleEmpire = (0..<200).filter { MonarchLore.historicalRulerGender(seed: "emp-\($0)", polity: "Empire") == 1 }.count
+        XCTAssertLessThan(femaleEmpire, 40, "帝制女帝占比过高：\(femaleEmpire)/200")
+        XCTAssertGreaterThan(femaleEmpire, 2, "帝制应保留历史女帝可能：\(femaleEmpire)/200")
+
+        // 2. 日本天皇命名无中点、无姓氏、无「无姓」字样
+        r.civilization.nations[id0].cultureId = JS("japanese")
+        r.civilization.nations[id0].polity = JS("Empire")
+        let jpHonor = MonarchLore.honor(r, nationId: id0, reignId: "jp-test-1", order: 1, culture: "japanese", polity: "Empire", title: "天皇", person: nil, fallbackName: "裕仁", reignYears: 15, deltaProvs: 2, avgSkill: 72, isActive: true)
+        XCTAssertTrue(jpHonor.styledName.hasSuffix("天皇 裕仁"), "日本天皇应为「[年号]天皇 [名讳]」，实际：\(jpHonor.styledName)")
+        XCTAssertFalse(jpHonor.styledName.contains("·"))
+        XCTAssertFalse(jpHonor.styledName.contains("无姓"))
+
+        // 3. 中华在位/入史皇帝真实称法
+        r.civilization.nations[id0].cultureId = JS("chinese")
+        r.civilization.nations[id0].polity = JS("Empire")
+        let cnActive = MonarchLore.honor(r, nationId: id0, reignId: "cn-act-1", order: 2, culture: "chinese", polity: "Empire", title: "皇帝", person: nil, fallbackName: "朱棣", reignYears: 8, deltaProvs: 3, avgSkill: 80, isActive: true)
+        XCTAssertTrue(cnActive.styledName.contains("帝 朱棣"), "在位皇帝应为「[朝号][年号]帝 [姓名]」，实际：\(cnActive.styledName)")
+        let cnPast = MonarchLore.honor(r, nationId: id0, reignId: "cn-past-1", order: 1, culture: "chinese", polity: "Empire", title: "皇帝", person: nil, fallbackName: "刘邦", reignYears: 12, deltaProvs: 6, avgSkill: 82, isActive: false)
+        XCTAssertTrue(cnPast.styledName.contains("高帝 刘邦"), "开国皇帝入史应称高帝，实际：\(cnPast.styledName)")
+
+        // 4. 全文化神权/教廷国名彻底清除「神国」
+        if let theoStyle = Regimes.styles.first(where: { $0.id == "theocracy" }),
+           let holyStyle = Regimes.styles.first(where: { $0.id == "holy" }) {
+            let faiths = ["catholic", "orthodox", "protestant", "islam", "buddhism", "shinto", "hinduism", "chineseFolk", "daoism"]
+            for c in NativeEngine.cultureIds {
+                for f in faiths {
+                    let n1 = NamingCatalog.formatStateTitle(base: "罗马", style: theoStyle, religion: f, culture: c, ordinal: "", rulingSurname: "", template: nil)
+                    let n2 = NamingCatalog.formatStateTitle(base: "罗马", style: holyStyle, religion: f, culture: c, ordinal: "", rulingSurname: "", template: nil)
+                    XCTAssertFalse(n1.contains("神国"), "文化 \(c)/\(f) theocracy 仍生成了神国：\(n1)")
+                    XCTAssertFalse(n2.contains("神国"), "文化 \(c)/\(f) holy 仍生成了神国：\(n2)")
+                }
+            }
+        }
+
+        // 5. 五部军制、集团军字段与战神谱活将光环
+        let snap = engine.gameState(includeLabels: false)
+        if let firstArmy = snap.armies.first {
+            XCTAssertNotNil(firstArmy.branch, "军队应分配职能分部")
+            XCTAssertNotNil(firstArmy.branchLabel)
+            XCTAssertNotNil(firstArmy.branchNote)
+        }
+        // 为当前在任元帅写入高功勋战神谱条目，验证战神谱实时光环生效
+        if let marshal = Offices.holder(r, id0, "Marshal", Offices.stateId(r, id0)), marshal.isAlive.asBool {
+            let pid = String(marshal.id.asInt)
+            if r.regimes.generals.isNull { r.regimes.generals = .object() }
+            r.regimes.generals[pid] = JS.object([
+                ("name", JS("卫青")),
+                ("nation", JS(id0)),
+                ("merit", JS(380)),
+                ("gained", JS(14)),
+                ("months", JS(24)),
+                ("fallen", JS(false)),
+            ])
+            let savedTick = r.clock.tick.clone()
+            r.clock.tick = JS(savedTick.asInt + 1)
+            let aura = Regimes.warGodAura(r, nationId: id0)
+            r.clock.tick = savedTick
+            XCTAssertEqual(aura?.tier.title, "军神")
+            XCTAssertEqual(aura?.tier.attackPct, 18)
         }
     }
 }

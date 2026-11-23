@@ -48,8 +48,8 @@ enum NameVariety {
             switch religion {
             case "islam": return [("caliphate", 1)]
             case "catholic": return [("papacy", 0.70), ("order", 0.30)]
-            case "buddhism": return [("lamaism", 0.60), ("theocracy", 0.40)]
-            default: return [("theocracy", 0.80), ("holy", 0.20)]
+            case "buddhism": return [("lamaism", 0.65), ("theocracy", 0.35)]
+            default: return [("theocracy", 1.0)]
             }
         default: return []
         }
@@ -103,6 +103,16 @@ enum NameVariety {
             n.name = JS(Regimes.title(r, id, base: c.name.value.optionalString ?? MapLayers.stateLabel(n.name.asString, full: false), style: st))
         }
         polishHousesAndPeople(r, seed: seed)
+        // 为第 0 天开局已编成的所有军队分配真实军事职能分部与地道番号
+        for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" {
+            let aid = a.id.asString, nid = a.nationId.asString
+            let home = r.tactics.forces[aid].homeId.optionalString ?? a.provinceId.asString
+            let unitKey = r.units[aid].optionalString ?? "Infantry"
+            let unitName = UnitKinds.byKey[unitKey]?.name ?? unitKey
+            let kind = r.tactics.forces[aid].kind.optionalString ?? "regular"
+            let assigned = Regimes.assignArmyBranchAndName(r, nation: nid, armyId: aid, home: home, unitKey: unitKey, unitName: unitName, kind: kind)
+            a.name = JS(assigned.name)
+        }
         FamilyPolitics.seedOpeningRelations(r, seed: seed)
         // 同步开篇史册里的国名与开国君主名。
         refreshOpeningChronicle(r)
@@ -111,12 +121,27 @@ enum NameVariety {
     /// 整理开局全部世家与人物：同国世家不撞姓、清洗脏姓氏与脏人名、已婚配偶保留独立本姓、统一全名格式。
     static func polishHousesAndPeople(_ r: JS, seed: String) {
         guard !r.kin.isNull, !r.kin.families.isNull, !r.kin.persons.isNull else { return }
-        // 1. 按国家分组为世家去重姓氏（宗室优先保留，其余世家撞姓或带“家/人/氏”尾缀时从本文化纯净姓氏池改选）。
+        // 1. 识别日本皇室宗室家族（天皇家族无姓氏，保持 surname 为空），其余世家按国分组去重姓氏。
+        var jpImperialFamilyIds = Set<Int>()
+        for n in r.world.nations.asArray {
+            let nid = n.id.asString, civ = r.civilization.nations[nid]
+            let cult = civ.cultureId.optionalString ?? ""
+            let pol = civ.polity.optionalString ?? ""
+            let stTitle = r.regimes.isNull ? "" : (Regimes.seats(r, nid).head ?? Regimes.style(r, nid).title ?? "")
+            if MonarchLore.isJapaneseEmperor(culture: cult, title: stTitle, polity: pol) {
+                let fid = People.rulingFamilyId(r, nid)
+                if fid > 0 { jpImperialFamilyIds.insert(fid) }
+            }
+        }
         var usedByNation = [String: Set<String>]()
         let familyKeys = r.kin.families.objectKeys.sorted { (Int($0) ?? 0) < (Int($1) ?? 0) }
         for key in familyKeys {
             let fam = r.kin.families[key]
             guard case .object = fam.storage else { continue }
+            if let fidInt = Int(key), jpImperialFamilyIds.contains(fidInt) {
+                fam.surname = JS("")
+                continue
+            }
             let nationId = fam.nationId.optionalString ?? ""
             let culture = fam.cultureName.optionalString ?? ""
             let pool = NamingCatalog.houseNames(culture: culture)
@@ -165,17 +190,25 @@ enum NameVariety {
             let pid = p.id.asInt
             let culture = p.cultureName.optionalString ?? ""
             let gender = p.gender.asInt
+            let isJPImperialBlood = jpImperialFamilyIds.contains(p.familyId.asInt) && !spouseIds.contains(pid)
             let givenPool = NamingCatalog.givenNames(r, culture: culture, gender: gender)
             let housePool = NamingCatalog.houseNames(culture: culture)
             var given = p.firstName.optionalString ?? ""
-            if !givenPool.isEmpty && !givenPool.contains(given) {
+            if isJPImperialBlood {
+                let impPool = gender == 1 ? MonarchLore.japaneseImperialFemaleNames : MonarchLore.japaneseImperialMaleNames
+                if !impPool.contains(given) {
+                    given = MonarchLore.japaneseImperialGivenName(seed: "\(seed)/jp-imp-clean/\(pid)", female: gender == 1)
+                }
+            } else if !givenPool.isEmpty && !givenPool.contains(given) {
                 let idx = Int(Opening.hash("\(seed)/given-clean/\(pid)") % UInt32(givenPool.count))
                 given = givenPool[idx]
             }
             let fam = r.kin.families[p.familyId.asInt.description]
             let famSurname = NamingCatalog.cleanSurname(fam.surname.optionalString ?? p.lastName.optionalString ?? "")
             let house: String
-            if spouseIds.contains(pid) {
+            if isJPImperialBlood {
+                house = ""
+            } else if spouseIds.contains(pid) {
                 let current = NamingCatalog.cleanSurname(p.lastName.optionalString ?? "")
                 if !current.isEmpty && current != famSurname && (housePool.isEmpty || housePool.contains(current)) {
                     house = current
@@ -189,7 +222,7 @@ enum NameVariety {
             } else {
                 house = famSurname.isEmpty ? NamingCatalog.cleanSurname(p.lastName.optionalString ?? "") : famSurname
             }
-            let formatted = NamingCatalog.formatPerson(culture: culture, given: given, house: house, gender: gender)
+            let formatted = isJPImperialBlood ? given : NamingCatalog.formatPerson(culture: culture, given: given, house: house, gender: gender)
             p.firstName = JS(given)
             p.lastName = JS(house)
             if case .object = p.identity.storage {

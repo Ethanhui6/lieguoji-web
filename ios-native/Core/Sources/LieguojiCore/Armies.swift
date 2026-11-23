@@ -94,8 +94,14 @@ public enum Armies {
             Regimes.noteExtraUnit(r, army: id, k)
         }
         let name = r.world.cities.asArray.first { $0.provinceId.asString == home }?.name.asString ?? p.name.asString
+        let finalArmyName: String
+        if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+            finalArmyName = Regimes.assignArmyBranchAndName(r, nation: nation, armyId: id, home: home, unitKey: unit.key, unitName: unit.name, kind: kind).name
+        } else {
+            finalArmyName = armyName(r, name + (kind == "emergency" ? "动员" : "") + unit.name)
+        }
         let a = JS.object()
-        a.id = JS(id); a.name = JS(armyName(r, name + (kind == "emergency" ? "动员" : "") + unit.name)); a.nationId = JS(nation); a.provinceId = JS(home); a.originId = JS(home)
+        a.id = JS(id); a.name = JS(finalArmyName); a.nationId = JS(nation); a.provinceId = JS(home); a.originId = JS(home)
         a.troops = JS(troops); a.morale = JS(80); a.supplies = JS(100); a.status = JS("idle"); a.route = .array(); a.progress = JS(0)
         r.world.armies.push(a)
         r.units[id] = JS(unit.key)

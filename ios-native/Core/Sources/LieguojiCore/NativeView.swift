@@ -355,7 +355,7 @@ extension NativeEngine {
                 }
                 let unitKey = r.units[id].optionalString ?? "Infantry"
                 let baseSp = r.forceSpeed.armies[id].base.optionalNumber ?? 0
-                let unitSp = CombatReader.unitSpeed(unitKey) * Regimes.unitSpeed(r, a.nationId.asString, unitKey) * Regimes.armySpeed(r, id) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1)
+                let unitSp = CombatReader.unitSpeed(unitKey) * Regimes.unitSpeed(r, a.nationId.asString, unitKey) * Regimes.armySpeed(r, id, nation: a.nationId.asString) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1)
                 let secPerTick = r.forceClock.secondsPerTick.optionalNumber ?? 0.05
                 let curLeg = max(0, min(max(0, tr.nodes.count - 1), tr.leg))
                 let remLegs = max(1, tr.nodes.count - 1 - curLeg)
@@ -416,6 +416,20 @@ extension NativeEngine {
             x.routeNote = routeNote
             let rawFull = r.tactics.forces[id].fullStrength.optionalNumber ?? Double(safeTroops)
             x.full = max(safeTroops, Int(exactly: rawFull.rounded()) ?? safeTroops)
+            if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+                let unitKey = r.units[id].optionalString ?? "Infantry"
+                let br = Regimes.armyBranch(r, armyId: id, unitKey: unitKey)
+                x.branch = br.rawValue
+                x.branchLabel = br.label
+                x.branchNote = br.roleNote
+                if let grp = Regimes.armyGroup(r, armyId: id) {
+                    x.armyGroup = grp.name
+                    x.groupBonus = grp.bonusPct
+                }
+                if let wg = Regimes.warGodAura(r, nationId: a.nationId.asString) {
+                    x.warGodAura = "\(wg.rank) \(wg.name)（\(wg.epithet)）· \(wg.tier.buffText)"
+                }
+            }
             return x
         }
         // Fleets at their actual sea points and the harbour ports (open-sea worlds; empty otherwise).

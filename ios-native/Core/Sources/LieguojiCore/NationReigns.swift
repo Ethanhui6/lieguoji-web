@@ -218,7 +218,7 @@ extension NativeEngine {
             item.eraYearText = JS(honor.eraYearText)
             item.honorific = JS(honor.honorific)
             item.title = JS(title)
-            item.house = JS(honor.surnameLessImperial ? "皇室（无姓）" : (house.isEmpty ? "无" : NamingCatalog.houseLabel(house)))
+            item.house = JS(honor.surnameLessImperial ? "皇室" : (house.isEmpty ? "无" : NamingCatalog.houseLabel(house)))
             item.familyId = JS(familyId)
             item.personId = JS(pid)
             item.stateName = JS(row.stateName.optionalString ?? (n.name.optionalString ?? ""))

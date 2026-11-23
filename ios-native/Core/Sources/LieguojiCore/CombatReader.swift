@@ -92,14 +92,38 @@ public enum CombatReader {
                 }
             }
         }
+        var dmgArmy = snapshot.damageToArmy.asNumber
+        var dmgProv = snapshot.damageToProvince.asNumber
+        var polAtk = politics.attack
+        var polDef = politics.defense
+        // 本作规则：多兵种职能分部、战区集团军协同与战神谱活将光环的真实战场加持（不影响网页逐字节黄金测试）
+        if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy {
+            let aid = a.id.asString
+            let unitKey = r.units[aid].optionalString ?? "Infantry"
+            let branch = Regimes.armyBranch(r, armyId: aid, unitKey: unitKey)
+            polAtk = f(polAtk * f(branch.attackFactor))
+            polDef = f(polDef * f(branch.defenseFactor))
+            dmgProv = f(dmgProv * f(branch.siegeFactor))
+            if let grp = Regimes.armyGroup(r, armyId: aid), grp.bonusPct > 0 {
+                let gf = f(1.0 + Double(grp.bonusPct) / 100.0)
+                polAtk = f(polAtk * gf)
+                polDef = f(polDef * gf)
+            }
+            if let wg = Regimes.warGodAura(r, nationId: nation) {
+                polAtk = f(polAtk * f(1.0 + wg.tier.attackPct / 100.0))
+                polDef = f(polDef * f(1.0 + wg.tier.defensePct / 100.0))
+                dmgProv = f(dmgProv * f(1.0 + wg.tier.siegePct / 100.0))
+            }
+            dmgArmy = f(dmgArmy)
+        }
         let input = Efficiency.Input(unit: r.units[a.id.asString].asString, command: snapshot.command.asString, official: official, base: base.base.asNumber, destiny: state.destiny.asNumber,
                                      leaderModifier: r.combatPersonnel.nations[nation].leader.modifier.asNumber, provinceDefense: provinceDefense, coreDefense: coreDefense,
-                                     politicalAttack: politics.attack, politicalDefense: politics.defense, goldBattleModifier: r.finance.nations[nation].goldBattleModifier.asNumber,
+                                     politicalAttack: polAtk, politicalDefense: polDef, goldBattleModifier: r.finance.nations[nation].goldBattleModifier.asNumber,
                                      attacking: attacking, sameNation: p != nil && !attacking, protruding: index.map { protruding(r, $0) } ?? false,
                                      wellTrained: traits.contains("WellTrained"), homelandDefense: traits.contains("HomelandDefense"), conqueror: traits.contains("Conqueror"),
                                      biomes: biomes, mountain: isMountain)
         let multiplier = p.map { attacking && Wars.relation(r, nation, $0.controller.asString)?.status.asString == "war" && blockaded(r, $0) ? 2 : 1 } ?? 1
-        return MilitaryState.Combat(input: input, damageToArmy: snapshot.damageToArmy.asNumber, damageToProvince: snapshot.damageToProvince.asNumber, multiplier: multiplier)
+        return MilitaryState.Combat(input: input, damageToArmy: dmgArmy, damageToProvince: dmgProv, multiplier: multiplier)
     }
     static func unitSpeed(_ key: String) -> Double { unitSpeeds[key] ?? 1 }
 }

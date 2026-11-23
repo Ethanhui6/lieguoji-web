@@ -193,7 +193,7 @@ struct EditRow: View {
                 HStack(spacing: 8) { Glyph.icon(label); Text(label).foregroundStyle(Theme.ink2) }.fixedSize()
                 Spacer(minLength: 8)
                 Text(value).foregroundStyle(Theme.ink).monospacedDigit().multilineTextAlignment(.trailing).lineLimit(2)
-                Image(systemName: "pencil").font(.system(size: 10, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.7))
+                InkIcon(glyph: .brush, size: 11, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.72))
             }
             .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
         }

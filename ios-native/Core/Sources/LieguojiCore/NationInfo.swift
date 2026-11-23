@@ -97,7 +97,7 @@ extension NativeEngine {
             let fidInt = Int(key) ?? -1
             let isRuling = fidInt == ruling
             let imperialNoSurname = isRuling && isJPImperialRuler
-            e.name = JS(imperialNoSurname ? "皇室（无姓）" : NamingCatalog.houseLabel(surname))
+            e.name = JS(imperialNoSurname ? "皇室" : NamingCatalog.houseLabel(surname))
             e.surname = JS(imperialNoSurname ? "" : surname)
             e.id = JS(key)
             var headLabel = ""

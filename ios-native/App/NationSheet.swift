@@ -422,11 +422,11 @@ struct NationSheet: View {
     @ViewBuilder private func warPage(_ info: NationInfo, _ map: WorldMap) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("国际宣战理由按目录登记的六条：\(WarText.internationalCasus.map { WarText.casusBelli($0) }.joined(separator: "、"))。编号 4、5 没有登记。")
-                .font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 24).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset).fixedSize(horizontal: false, vertical: true)
             Text("战争目标：索取若干省、占领若干省、吞并全境、附庸。目录另外允许索取赔款，以及迫使目标改信本国宗教。")
-                .font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 24).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset).fixedSize(horizontal: false, vertical: true)
             Text("结束原文：\(WarText.endReasons.filter { $0.0 != 9 }.map(\.1).joined(separator: "、"))，另有首都沦陷。进行中的战争不写还没发生的结束原因。")
-                .font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, 24).fixedSize(horizontal: false, vertical: true)
+                .font(Theme.label).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset).fixedSize(horizontal: false, vertical: true)
             Group2 {
                 if info.wars.isEmpty { Row(label: "战争", value: "暂无战争") }
                 ForEach(info.wars) { war in
@@ -618,7 +618,7 @@ struct NationSheet: View {
                         }
                         if !regime.trait.isEmpty { Text(regime.trait).font(Theme.label).foregroundStyle(Theme.ink2) }
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, Theme.Layout.sectionInset)
                 }
                 // 国史: the chronicle entries naming this state, newest first (each locatable on the map).
                 FoldSection("国史", expanded: false, summary: history.first.map { "第\($0.day + 1)日 · " + $0.text } ?? "尚无记载") {
@@ -689,8 +689,7 @@ struct NationSheet: View {
                                         }
                                         Text(info.ruler?.styledName ?? info.ruler?.name ?? "空缺").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
                                         if let r = info.ruler {
-                                            let houseNote = r.surnameLessImperial == true ? "皇室（无姓）" : "点按编辑"
-                                            Text("\(Int(r.age))岁 · \(houseNote)").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                            Text("\(Int(r.age))岁 · 点按编辑").font(Theme.caption).foregroundStyle(Theme.ink2)
                                         }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -731,7 +730,7 @@ struct NationSheet: View {
                                 }
                             }
                         }
-                        .padding(14)
+                        .padding(.horizontal, 16).padding(.vertical, 14)
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)
 
@@ -772,7 +771,7 @@ struct NationSheet: View {
                                 }
                                 Text("\(cp.effect)（轻点任一方可主动扶植调衡朝局）").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                             }
-                            .padding(14)
+                            .padding(.horizontal, 16).padding(.vertical, 14)
                         }
                         .padding(.horizontal, Theme.Layout.pageInset)
                     }
@@ -812,7 +811,7 @@ struct NationSheet: View {
                                     .buttonStyle(PressStyle())
                                 }
                             }
-                            .padding(14)
+                            .padding(.horizontal, 16).padding(.vertical, 14)
                         }
                         .padding(.horizontal, Theme.Layout.pageInset)
                     }
@@ -842,7 +841,7 @@ struct NationSheet: View {
                                 }
                                 Text("主导风向：\(pd.pressure)（\(pd.likelyPath)）").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                             }
-                            .padding(14)
+                            .padding(.horizontal, 16).padding(.vertical, 14)
                         }
                         .padding(.horizontal, Theme.Layout.pageInset)
 
@@ -1106,6 +1105,85 @@ struct NationSheet: View {
                 onReload: { await reload() }
             )
             if !mine.isEmpty {
+                // 集团军群、五部职能编制与战神谱实时加持总览
+                let groupRows: [(name: String, count: Int, troops: Int, bonus: Int)] = {
+                    var mapGrp = [String: (count: Int, troops: Int, bonus: Int)]()
+                    for idx in mine {
+                        let a = state.armies[idx]
+                        guard let g = a.armyGroup, !g.isEmpty else { continue }
+                        var cur = mapGrp[g] ?? (0, 0, a.groupBonus ?? 6)
+                        cur.count += 1; cur.troops += a.troops; cur.bonus = max(cur.bonus, a.groupBonus ?? 6)
+                        mapGrp[g] = cur
+                    }
+                    return mapGrp.map { ($0.key, $0.value.count, $0.value.troops, $0.value.bonus) }
+                        .sorted { $0.troops != $1.troops ? $0.troops > $1.troops : $0.name < $1.name }
+                }()
+                let branchRows: [(label: String, note: String, count: Int, troops: Int)] = {
+                    var mapBr = [String: (note: String, count: Int, troops: Int)]()
+                    for idx in mine {
+                        let a = state.armies[idx]
+                        let lbl = a.branchLabel ?? "野战主力"
+                        var cur = mapBr[lbl] ?? (a.branchNote ?? "", 0, 0)
+                        cur.count += 1; cur.troops += a.troops
+                        mapBr[lbl] = cur
+                    }
+                    return mapBr.map { ($0.key, $0.value.note, $0.value.count, $0.value.troops) }
+                        .sorted { $0.troops != $1.troops ? $0.troops > $1.troops : $0.label < $1.label }
+                }()
+                let nationWarGod = mine.compactMap { state.armies[$0].warGodAura }.first
+
+                FoldSection("集团军与五部军制", expanded: true, summary: groupRows.isEmpty ? "\(branchRows.count) 类职能分部" : "\(groupRows.count) 支集团军 · \(branchRows.count) 类分部") {
+                    Group2 {
+                        VStack(alignment: .leading, spacing: 10) {
+                            if let wg = nationWarGod, !wg.isEmpty {
+                                HStack(alignment: .top, spacing: 8) {
+                                    SealFace(text: "战神", size: 22, color: Theme.seal)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("战神谱在阵加持").font(Theme.caption).foregroundStyle(Theme.seal)
+                                        Text(wg).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(10)
+                                .background(Theme.seal.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            }
+                            if !groupRows.isEmpty {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("战区集团军协同（同战区 2 支以上友军自动成群）").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                    ForEach(groupRows, id: \.name) { g in
+                                        HStack(spacing: 8) {
+                                            PaperTag(text: "协同+\(g.bonus)%", color: Theme.seal, size: 11)
+                                            Text(g.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                                            Spacer(minLength: 4)
+                                            Text("\(g.count) 支 · \(Names.wan(g.troops))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                                        }
+                                    }
+                                }
+                                Divider2()
+                            }
+                            VStack(alignment: .leading, spacing: 7) {
+                                Text("常备军职能分部").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                ForEach(branchRows, id: \.label) { b in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        PaperTag(text: b.label, color: Theme.jade, size: 11)
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            HStack {
+                                                Text("\(b.count) 支 · \(Names.wan(b.troops))").font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit()
+                                                Spacer()
+                                            }
+                                            if !b.note.isEmpty {
+                                                Text(b.note).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 14)
+                    }
+                    .padding(.horizontal, 16)
+                }
+
                 // 兵种构成: troops by arm, as one bar and a legend with each arm's piece.
                 let byUnit = Dictionary(grouping: mine, by: { state.armies[$0].unit })
                     .map { (unit: $0.key, troops: $0.value.reduce(0) { $0 + state.armies[$1].troops }, count: $0.value.count) }
@@ -1134,7 +1212,7 @@ struct NationSheet: View {
                                 }
                             }
                         }
-                        .padding(14)
+                        .padding(.horizontal, 16).padding(.vertical, 14)
                     }
                     .padding(.horizontal, 16)
                 }
@@ -1152,11 +1230,16 @@ struct NationSheet: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     HStack(spacing: 6) {
                                         Text(a.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
-                                        if a.banner != nil { PaperTag(text: a.banner == "ruler" ? "御驾" : "帅旗", size: 11) }
+                                        if let br = a.branchLabel, !br.isEmpty { PaperTag(text: br, color: Theme.jade, size: 10) }
+                                        if a.banner != nil { PaperTag(text: a.banner == "ruler" ? "御驾" : "帅旗", size: 10) }
                                     }
                                     HStack(spacing: 6) {
-                                        PaperTag(text: status.0, color: status.1, size: 11)
-                                        Text(Names.unit[a.unit] ?? a.unit).font(Theme.caption).foregroundStyle(Theme.ink2)
+                                        PaperTag(text: status.0, color: status.1, size: 10)
+                                        if let grp = a.armyGroup, !grp.isEmpty {
+                                            Text(grp).font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1)
+                                        } else {
+                                            Text(Names.unit[a.unit] ?? a.unit).font(Theme.caption).foregroundStyle(Theme.ink2)
+                                        }
                                         if map.meta.provinces.indices.contains(a.province) { Text("· " + map.meta.provinces[a.province].name).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1) }
                                     }
                                 }
@@ -1170,7 +1253,7 @@ struct NationSheet: View {
                                     .frame(width: 46, height: 4)
                                 }
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 8).contentShape(Rectangle())
+                            .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         if k < sorted.count - 1 { Divider2() }
@@ -1191,7 +1274,7 @@ struct NationSheet: View {
                                 }
                                 Spacer()
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            .padding(.horizontal, 16).padding(.vertical, 9)
                             if k < fleets.count - 1 { Divider2() }
                         }
                     }
@@ -1282,7 +1365,7 @@ struct NationSheet: View {
                                 pressMenu = PressMenu(title: otherName, subtitle: g.note(other) ?? g.title, items: items)
                             }
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 11)
+                        .padding(.horizontal, 16).padding(.vertical, 11)
                         if idx < shown.count - 1 { Divider2() }
                     }
                 }
@@ -1324,7 +1407,7 @@ struct NationSheet: View {
         ("oligarchic", "寡头共和", "共和国 · 执政官 · 元老与商会"), ("technocracy", "专家官僚制", "共和国 · 首席执政官 · 精英治国"),
         ("directorate", "督政府", "共和国 · 首席督政官 · 委员会"),
         ("federal", "联邦共和", "联邦 · 联邦主席 · 多党"),
-        ("theocracy", "神权", "神权国 · 宗教领袖"), ("tribal", "部落联盟", "部族 · 酋长或可汗"),
+        ("theocracy", "政教合一", "教宗国 / 哈里发国 / 法王领"), ("tribal", "部落联盟", "部族 · 酋长或可汗"),
         ("feudal", "封建王国", "王国 · 君主"),
         ("elective", "选侯君主", "王国 · 选王"),
         ("sultanate", "苏丹国", "苏丹国 · 苏丹"),
@@ -1533,40 +1616,44 @@ struct NationSheet: View {
             if !c.houses.isEmpty {
                 Group2 {
                     ForEach(Array(c.houses.enumerated()), id: \.offset) { i, h in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 7) {
-                                Text(h.name).font(Theme.body).foregroundStyle(Theme.ink)
-                                if let stance = h.stance ?? (h.ruling ? "宗室" : nil) {
-                                    PaperTag(text: stance, color: Self.stanceColor(stance), size: 11)
-                                }
-                                if let foe = h.rival { Text("宿敌 " + foe).font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1) }
-                                Spacer(minLength: 4)
-                                Text(fiefAllowed ? "\(h.members)人 · \(h.provinces)州" : "\(h.members)人 · 势\(Int(h.influence))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
-                                if let hist = h.history, hist.count >= 2 {
-                                    Sparkline(values: hist).frame(width: 48, height: 18)
-                                } else {
-                                    InkBar(fraction: min(1, max(0, h.influence / 1000)), color: h.ruling ? Theme.seal : Theme.ink.opacity(0.6), height: 4)
-                                        .frame(width: 48)
-                                }
-                            }
-                            if let summary = h.keyMembers, !summary.isEmpty {
-                                HStack(spacing: 6) {
-                                    Text(summary).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
-                                    if (h.fiefCooldown ?? 0) > 0 {
-                                        Text("· 封地冷却 \(h.fiefCooldown ?? 0)月").font(Theme.caption).foregroundStyle(Theme.seal.opacity(0.8))
+                        Button {
+                            if !PressGuard.consume(), let id = h.id { tree = TreePick(id: id, name: h.name) }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 7) {
+                                    Text(h.name).font(Theme.body).foregroundStyle(Theme.ink)
+                                    if let stance = h.stance ?? (h.ruling ? "宗室" : nil) {
+                                        PaperTag(text: stance, color: Self.stanceColor(stance), size: 11)
                                     }
-                                    if h.allowFemale == true { Text("· 男女平等").font(Theme.caption).foregroundStyle(Theme.jade) }
+                                    if let foe = h.rival { Text("宿敌 " + foe).font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1) }
+                                    Spacer(minLength: 4)
+                                    Text(fiefAllowed ? "\(h.members)人 · \(h.provinces)州" : "\(h.members)人 · 势\(Int(h.influence))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    if let hist = h.history, hist.count >= 2 {
+                                        Sparkline(values: hist).frame(width: 48, height: 18)
+                                    } else {
+                                        InkBar(fraction: min(1, max(0, h.influence / 1000)), color: h.ruling ? Theme.seal : Theme.ink.opacity(0.6), height: 4)
+                                            .frame(width: 48)
+                                    }
                                 }
-                            } else if let head = h.headName, !head.isEmpty {
-                                HStack(spacing: 8) {
-                                    Text("家主：\(head)").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
-                                    if h.allowFemale == true { Text("男女平等继承").font(Theme.caption).foregroundStyle(Theme.jade) }
+                                if let summary = h.keyMembers, !summary.isEmpty {
+                                    HStack(spacing: 6) {
+                                        Text(summary).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                        if (h.fiefCooldown ?? 0) > 0 {
+                                            Text("· 封地冷却 \(h.fiefCooldown ?? 0)月").font(Theme.caption).foregroundStyle(Theme.seal.opacity(0.8))
+                                        }
+                                        if h.allowFemale == true { Text("· 男女平等").font(Theme.caption).foregroundStyle(Theme.jade) }
+                                    }
+                                } else if let head = h.headName, !head.isEmpty {
+                                    HStack(spacing: 8) {
+                                        Text("家主：\(head)").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                        if h.allowFemale == true { Text("男女平等继承").font(Theme.caption).foregroundStyle(Theme.jade) }
+                                    }
                                 }
                             }
+                            .padding(.horizontal, 16).padding(.vertical, 9)
+                            .contentShape(Rectangle())
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 9)
-                        .contentShape(Rectangle())
-                        .onTapGesture { if let id = h.id { tree = TreePick(id: id, name: h.name) } }
+                        .buttonStyle(.plain)
                         .pressMenu({
                             guard let id = h.id else { return nil }
                             var items = [PressMenuItem(title: "查看族谱、世家往来与改姓", symbol: "person.3") { tree = TreePick(id: id, name: h.name) }]
@@ -1835,7 +1922,7 @@ struct NationSheet: View {
                             }
                         }
                     }
-                    .padding(14)
+                    .padding(.horizontal, 16).padding(.vertical, 14)
                 }
                 .padding(.horizontal, 16)
 
@@ -1921,11 +2008,11 @@ struct NationSheet: View {
                 .onChange(of: pane) { _, p in withAnimation(Motion.fade) { reader.scrollTo(p, anchor: .center) } }
             }
         }
-        .padding(.leading, 18).padding(.trailing, 6)
+        .padding(.horizontal, Theme.Layout.pageInset)
     }
-    /// 一个分类里的卡片：统一内边距与行距。
+    /// 一个分类里的卡片：统一内边距与行距（与 Row / EditRow / Divider2 的 16pt 水平基线严丝合缝对齐）。
     private func paneCard<C: View>(@ViewBuilder _ content: () -> C) -> some View {
-        Group2 { VStack(alignment: .leading, spacing: 12) { content() }.padding(14) }.padding(.horizontal, 16)
+        Group2 { VStack(alignment: .leading, spacing: 12) { content() }.padding(.horizontal, 16).padding(.vertical, 14) }.padding(.horizontal, Theme.Layout.pageInset)
     }
     private func paneNote(_ text: String) -> some View {
         Text(text).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
@@ -2186,7 +2273,7 @@ struct NationSheet: View {
                         action("解除附庸", "link.badge.plus", Theme.ink, disabled: !vassal) { Task { await run { await model.releaseVassal(nation) } } }
                     }
                 }
-                .padding(14)
+                .padding(.horizontal, 16).padding(.vertical, 14)
                 Divider2()
                 VStack(alignment: .leading, spacing: 10) {
                     Text("军事与博弈").font(Theme.caption).foregroundStyle(Theme.ink2)
@@ -2203,7 +2290,7 @@ struct NationSheet: View {
                         action("绘制疆域", "paintbrush.pointed.fill", Theme.ink, disabled: false) { paint(nation) }
                     }
                 }
-                .padding(14)
+                .padding(.horizontal, 16).padding(.vertical, 14)
                 Divider2()
                 PaperSwitch(title: "自主外交\(info.worldAuto ? "" : "（全局已关闭）")", on: Binding(get: { info.auto }, set: { on in Task { await run { await model.setAutoDiplomacy(nation, on) } } }))
             }

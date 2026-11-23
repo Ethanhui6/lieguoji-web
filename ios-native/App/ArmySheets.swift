@@ -25,10 +25,16 @@ struct ArmyRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(army.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                    Text(Echelon.name(troops: army.troops, culture: map.meta.nations.indices.contains(army.nation) ? map.meta.nations[army.nation].culture : ""))
-                        .font(Theme.caption).foregroundStyle(Theme.ink2)
-                        .padding(.horizontal, 6).padding(.vertical, 1.5)
-                        .background(Theme.wash, in: Capsule())
+                    if let br = army.branchLabel, !br.isEmpty {
+                        Text(br).font(Theme.caption).foregroundStyle(Theme.jade)
+                            .padding(.horizontal, 6).padding(.vertical, 1.5)
+                            .background(Theme.jade.opacity(0.10), in: Capsule())
+                    } else {
+                        Text(Echelon.name(troops: army.troops, culture: map.meta.nations.indices.contains(army.nation) ? map.meta.nations[army.nation].culture : ""))
+                            .font(Theme.caption).foregroundStyle(Theme.ink2)
+                            .padding(.horizontal, 6).padding(.vertical, 1.5)
+                            .background(Theme.wash, in: Capsule())
+                    }
                     if let duty = army.duty.flatMap({ Self.duties[$0] }) {
                         Text(duty).font(Theme.caption).foregroundStyle(Theme.seal)
                             .padding(.horizontal, 6).padding(.vertical, 1.5)
@@ -36,8 +42,9 @@ struct ArmyRow: View {
                             .overlay(Capsule().stroke(Theme.seal.opacity(0.35), lineWidth: 0.7))
                     }
                 }
-                Text("\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "途中") · \(Names.status(army.status))\(Self.dest(map, army))")
-                    .font(Theme.label).foregroundStyle(Theme.ink2)
+                let grpPrefix = army.armyGroup.map { "\($0) · " } ?? ""
+                Text("\(grpPrefix)\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "途中") · \(Names.status(army.status))\(Self.dest(map, army))")
+                    .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
             }
             Spacer()
             Text(Names.wan(army.troops)).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
@@ -246,8 +253,31 @@ struct ArmySheet: View {
                     Spacer(minLength: 4)
                     PaperTag(text: curSeason.fullName, color: curSeason == .winter ? Color(red: 0.24, green: 0.44, blue: 0.62) : curSeason == .autumn ? Color(red: 0.74, green: 0.42, blue: 0.12) : Theme.jade, size: 11)
                 }
+                if let br = a.branchLabel, !br.isEmpty {
+                    Divider2()
+                    HStack(alignment: .top, spacing: 7) {
+                        PaperTag(text: br, color: Theme.jade, size: 11)
+                        Text(a.branchNote ?? "常备军分部编制").font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                }
+                if let grp = a.armyGroup, !grp.isEmpty {
+                    HStack(spacing: 7) {
+                        PaperTag(text: "集团军", color: Theme.ink, size: 11)
+                        Text("\(grp)\(a.groupBonus.map { " · 同战区协同攻防 +\($0)%" } ?? "")")
+                            .font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                }
+                if let wg = a.warGodAura, !wg.isEmpty {
+                    HStack(alignment: .top, spacing: 7) {
+                        PaperTag(text: "战神加持", color: Theme.seal, size: 11)
+                        Text(wg).font(Theme.caption).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                }
             }
-            .padding(.horizontal, 14).padding(.vertical, 11)
+            .padding(.horizontal, 16).padding(.vertical, 11)
         }
         .padding(.horizontal, Theme.Layout.pageInset)
 

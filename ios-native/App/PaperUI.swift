@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import LieguojiCore
 
 // MARK: - Paper and memorial language
@@ -782,7 +783,7 @@ struct PaperMenu<T: Hashable>: View {
                 Text(title).font(Theme.body).foregroundStyle(Theme.ink2)
                 Spacer(minLength: 12)
                 Text(items.first { $0.0 == selection }?.1 ?? "请选择").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
+                InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.ink2)
             }
             .padding(.horizontal, 16).frame(minHeight: 46).contentShape(Rectangle())
         }
@@ -802,7 +803,7 @@ struct PaperMenu<T: Hashable>: View {
                                 HStack(spacing: 10) {
                                     Text(items[i].1).font(Theme.section).foregroundStyle(items[i].0 == selection ? Theme.seal : Theme.ink).lineLimit(1)
                                     Spacer()
-                                    if items[i].0 == selection { Image(systemName: "checkmark").font(.system(size: 13, weight: .regular)).foregroundStyle(Theme.seal) }
+                                    if items[i].0 == selection { InkIcon(glyph: .peace, size: 13, weight: 1.8).foregroundStyle(Theme.seal) }
                                 }
                                 .padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
                             }
@@ -957,19 +958,26 @@ struct PaperTrack: View {
             }
             .frame(maxHeight: .infinity)
             .animation(Motion.tap, value: dragging)
-            .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 0)
-                .onChanged { drag in
-                    if !dragging { dragging = true; onEditingChanged?(true) }
-                    write(drag.location.x, width: width)
-                }
-                .onEnded { drag in
-                    write(drag.location.x, width: width)
-                    dragging = false
-                    onEditingChanged?(false)
-                })
+            .overlay {
+                PaperTrackTouchOverlay(
+                    onTap: { x in
+                        onEditingChanged?(true)
+                        write(x, width: width)
+                        onEditingChanged?(false)
+                    },
+                    onDragChanged: { x in
+                        if !dragging { dragging = true; onEditingChanged?(true) }
+                        write(x, width: width)
+                    },
+                    onDragEnded: { x in
+                        write(x, width: width)
+                        dragging = false
+                        onEditingChanged?(false)
+                    }
+                )
+            }
         }
-        .frame(height: 26)
+        .frame(height: 28)
     }
     private func write(_ location: CGFloat, width: CGFloat) {
         let span = range.upperBound - range.lowerBound
@@ -981,6 +989,57 @@ struct PaperTrack: View {
             next = min(range.upperBound, max(range.lowerBound, range.lowerBound + n * step))
         }
         value = next
+    }
+}
+
+/// UIKit 方向感知滑轨触控层：水平拖动与点击即时调值，竖向滑动彻底放行给外层 ScrollView，永不卡滞页面上下滚动。
+private struct PaperTrackTouchOverlay: UIViewRepresentable {
+    let onTap: (CGFloat) -> Void
+    let onDragChanged: (CGFloat) -> Void
+    let onDragEnded: (CGFloat) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+    func makeUIView(context: Context) -> UIView {
+        let v = UIView()
+        v.backgroundColor = .clear
+        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
+        pan.delegate = context.coordinator
+        pan.cancelsTouchesInView = true
+        v.addGestureRecognizer(pan)
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
+        tap.cancelsTouchesInView = false
+        v.addGestureRecognizer(tap)
+        return v
+    }
+    func updateUIView(_ uiView: UIView, context: Context) {
+        context.coordinator.parent = self
+    }
+
+    @MainActor final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var parent: PaperTrackTouchOverlay
+        init(parent: PaperTrackTouchOverlay) { self.parent = parent }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = gestureRecognizer as? UIPanGestureRecognizer, let view = pan.view else { return true }
+            let vel = pan.velocity(in: view)
+            return abs(vel.x) >= abs(vel.y) * 0.9
+        }
+
+        @objc func handlePan(_ g: UIPanGestureRecognizer) {
+            guard let view = g.view else { return }
+            let x = g.location(in: view).x
+            switch g.state {
+            case .began, .changed:
+                parent.onDragChanged(x)
+            default:
+                parent.onDragEnded(x)
+            }
+        }
+
+        @objc func handleTap(_ g: UITapGestureRecognizer) {
+            guard let view = g.view, g.state == .ended else { return }
+            parent.onTap(g.location(in: view).x)
+        }
     }
 }
 
@@ -1051,22 +1110,18 @@ enum PressGuard {
     static var fired = false
     static func consume() -> Bool { defer { fired = false }; return fired }
 }
-/// The row sinks and tints under the finger, then a tick of haptics and the paper menu.
+/// 长按菜单：仅在手指静止长按超过 0.42 秒（允许微抖 8pt）时触发，绝不在落指瞬间拦截 ScrollView 上下滑动。
 private struct LongPressLift: ViewModifier {
     let menu: () -> PressMenu?
     let present: (PressMenu) -> Void
-    @GestureState private var pressing = false
     func body(content: Content) -> some View {
         content
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.seal.opacity(pressing ? 0.1 : 0)))
-            .scaleEffect(pressing ? 0.965 : 1)
-            .animation(Motion.tap, value: pressing)
-            .simultaneousGesture(LongPressGesture(minimumDuration: 0.38).updating($pressing) { v, s, _ in s = v }.onEnded { _ in
+            .onLongPressGesture(minimumDuration: 0.42, maximumDistance: 8) {
                 guard let m = menu() else { return }
                 PressGuard.fired = true
                 GameFeel.shared.tap()
                 present(m)
-            })
+            }
     }
 }
 private struct PressMenuCard: View {

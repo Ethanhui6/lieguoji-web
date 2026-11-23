@@ -199,17 +199,17 @@ extension Regimes {
 
     // MARK: 大叛乱
 
-    static let rebelLabels = ["peasant": "农民起义", "warlord": "军阀割据", "holy": "神国起义", "secession": "藩镇独立", "restoration": "复国运动"]
+    static let rebelLabels = ["peasant": "农民起义", "warlord": "军阀割据", "holy": "宗教起义", "secession": "藩镇独立", "restoration": "复国运动"]
     static let holyNames: [String: [String]] = [
-        "chineseFolk": ["太平", "黄天", "五斗米", "天师", "玄元", "天道", "太清"],
-        "daoism": ["太平", "黄天", "玄都", "天师", "玉清", "紫微", "无极"],
-        "quanzhen": ["全真", "玄都", "重阳", "长春"], "zhengyi": ["天师", "龙虎", "正一"],
-        "whiteLotus": ["白莲", "弥勒", "龙华", "无生", "明王", "红巾"], "manichean": ["明尊", "光明", "摩尼", "明教"],
-        "buddhism": ["佛", "净土", "弥勒", "法王", "莲华"], "chan": ["禅林", "菩提", "曹溪"],
-        "pureLand": ["净土", "极乐", "莲邦"], "tiantai": ["天台", "法华"], "tantric": ["金刚", "香巴拉", "密宗"],
-        "islam": ["圣战", "马赫迪", "绿旗", "正统", "星月"], "catholic": ["圣殿", "千年", "圣约", "圣十字", "神圣"],
-        "protestant": ["再洗礼", "新耶路撒冷", "千禧", "圣约"], "orthodox": ["第三罗马", "圣山", "圣索菲亚"],
-        "shinto": ["神风", "八幡", "天照", "高天原"], "hinduism": ["梵天", "湿婆", "毗湿奴", "法轮"], "zoroastrian": ["圣火", "光明", "阿胡拉"],
+        "chineseFolk": ["太平", "黄天", "五斗米", "天师", "玄元"],
+        "daoism": ["太平", "黄天", "天师", "正一", "全真"],
+        "quanzhen": ["全真", "重阳", "长春"], "zhengyi": ["天师", "龙虎", "正一"],
+        "whiteLotus": ["白莲", "弥勒", "龙华", "明王", "红巾"], "manichean": ["明教", "光明", "摩尼"],
+        "buddhism": ["净土", "弥勒", "法王", "莲华"], "chan": ["禅林", "曹溪"],
+        "pureLand": ["净土", "莲邦"], "tiantai": ["天台", "法华"], "tantric": ["香巴拉", "雪域"],
+        "islam": ["马赫迪", "绿旗", "星月", "麦地那"], "catholic": ["圣殿", "圣约", "十字", "拉丁"],
+        "protestant": ["盟约", "新约", "日内瓦"], "orthodox": ["圣山", "圣索菲亚", "基辅"],
+        "shinto": ["伊势", "八幡", "出云"], "hinduism": ["法轮", "毗湿奴", "湿婆"], "zoroastrian": ["圣火", "波斯波利斯"],
     ]
     private static func unusedName(_ r: JS, _ pool: [String], _ tag: String) -> String? {
         guard !pool.isEmpty else { return nil }
@@ -300,7 +300,7 @@ extension Regimes {
         let faith = provinceFaith(r, p) ?? "", stateFaith = c.nations[owner].religionId.optionalString ?? "", heretic = faith != stateFaith
         var kind = wanted ?? "secession"
         if wanted == nil {
-            let weights: [(String, UInt32)] = [("peasant", Finance.corruption(r, owner) > 35 ? 4 : 2), ("warlord", 2), ("holy", heretic ? 5 : 1), ("secession", 3)]
+            let weights: [(String, UInt32)] = [("peasant", Finance.corruption(r, owner) > 35 ? 4 : 2), ("warlord", 3), ("holy", heretic ? 2 : 0), ("secession", 4)]
             var roll = draw(tag + "|kind") % weights.reduce(0) { $0 + $1.1 }
             for (k, w) in weights { if roll < w { kind = k; break }; roll -= w }
         }

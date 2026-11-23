@@ -750,7 +750,6 @@ struct GameView: View {
                             .buttonStyle(PressStyle())
                             .offset(x: -17)
                         }
-                        .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { if $0.translation.width > 90 && abs($0.translation.height) < 60 { closePage() } })
                         .padding(.trailing, 8).padding(.vertical, 8)
                 }
             }

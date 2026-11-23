@@ -554,20 +554,7 @@ struct FamilyTreeSheet: View {
         SectionLabel("世家往来")
         Group2 {
             ForEach(Array(tree.relations.enumerated()), id: \.element.id) { idx, rel in
-                HStack(spacing: 8) {
-                    Text(rel.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
-                    if rel.ruling { PaperTag(text: "宗室", color: Theme.seal, size: 11) }
-                    if !rel.nation.isEmpty { Text(rel.nation).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1) }
-                    Spacer(minLength: 4)
-                    PaperTag(text: rel.label, color: Self.relationColor(rel), size: 11)
-                    Text("\(rel.score > 0 ? "+" : "")\(Int(rel.score))").font(Theme.label)
-                        .foregroundStyle(rel.score >= 20 ? Theme.jade : rel.score <= -20 ? Theme.seal : Theme.ink2)
-                        .monospacedDigit().frame(minWidth: 30, alignment: .trailing)
-                    InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(busy ? 0.3 : 0.7))
-                }
-                .padding(.horizontal, 16).padding(.vertical, 9)
-                .contentShape(Rectangle())
-                .onTapGesture {
+                Button {
                     guard !busy else { return }
                     pressMenu = PressMenu(
                         title: "\(displayTitle) × \(rel.name)",
@@ -587,7 +574,22 @@ struct FamilyTreeSheet: View {
                             },
                         ]
                     )
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(rel.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                        if rel.ruling { PaperTag(text: "宗室", color: Theme.seal, size: 11) }
+                        if !rel.nation.isEmpty { Text(rel.nation).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1) }
+                        Spacer(minLength: 4)
+                        PaperTag(text: rel.label, color: Self.relationColor(rel), size: 11)
+                        Text("\(rel.score > 0 ? "+" : "")\(Int(rel.score))").font(Theme.label)
+                            .foregroundStyle(rel.score >= 20 ? Theme.jade : rel.score <= -20 ? Theme.seal : Theme.ink2)
+                            .monospacedDigit().frame(minWidth: 30, alignment: .trailing)
+                        InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(busy ? 0.3 : 0.7))
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 9)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 if idx < tree.relations.count - 1 { Divider2() }
             }
         }
@@ -602,34 +604,38 @@ struct FamilyTreeSheet: View {
         return rel.married ? Color(red: 0.65, green: 0.34, blue: 0.46) : Theme.ink2
     }
     private func row(_ m: FamilyTree.Member, _ tree: FamilyTree, showParent: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 6) {
-                Text(m.name).font(Theme.section).foregroundStyle(m.alive ? Theme.ink : Theme.ink2.opacity(0.6)).lineLimit(1).layoutPriority(1)
-                if m.id == tree.head {
-                    Text("家主").font(Theme.caption).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule())
-                } else if m.id == tree.heir {
-                    Text("继承人").font(Theme.caption).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.jade, in: Capsule())
+        Button {
+            if m.alive && !busy { pressMenu = actions(m, tree) }
+        } label: {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(m.name).font(Theme.section).foregroundStyle(m.alive ? Theme.ink : Theme.ink2.opacity(0.6)).lineLimit(1).layoutPriority(1)
+                    if m.id == tree.head {
+                        Text("家主").font(Theme.caption).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal, in: Capsule())
+                    } else if m.id == tree.heir {
+                        Text("继承人").font(Theme.caption).foregroundStyle(Theme.paper2).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.jade, in: Capsule())
+                    }
+                    if m.collateral {
+                        Text("旁系").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 5).padding(.vertical, 1).overlay(Capsule().stroke(Theme.line))
+                    }
+                    if !m.title.isEmpty { Text(m.title).font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1) }
+                    Spacer(minLength: 4)
+                    if let s = tree.spouse(of: m) { Text("配 \(s.name)").font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1) }
+                    Text(m.alive ? "\(m.female ? "女" : "男") · \(Int(m.age))" : "已故").font(Theme.label).foregroundStyle(Theme.ink2).fixedSize()
+                    if m.alive { InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(busy ? 0.3 : 0.7)) }
                 }
-                if m.collateral {
-                    Text("旁系").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 5).padding(.vertical, 1).overlay(Capsule().stroke(Theme.line))
+                let parentNote: String? = showParent ? tree.parent(of: m).map { "\($0.female ? "母" : "父") \($0.name)" } : nil
+                let natalNote: String? = m.natalHouse.isEmpty ? nil : "出身 \(NamingCatalog.houseLabel(m.natalHouse))"
+                let traitsNote: String? = m.traits.isEmpty ? nil : m.traits.prefix(3).joined(separator: "·")
+                let parts = [parentNote, natalNote, traitsNote].compactMap { $0 }
+                if !parts.isEmpty {
+                    Text(parts.joined(separator: "  ·  ")).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                 }
-                if !m.title.isEmpty { Text(m.title).font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1) }
-                Spacer(minLength: 4)
-                if let s = tree.spouse(of: m) { Text("配 \(s.name)").font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1) }
-                Text(m.alive ? "\(m.female ? "女" : "男") · \(Int(m.age))" : "已故").font(Theme.label).foregroundStyle(Theme.ink2).fixedSize()
-                if m.alive { InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(busy ? 0.3 : 0.7)) }
             }
-            let parentNote: String? = showParent ? tree.parent(of: m).map { "\($0.female ? "母" : "父") \($0.name)" } : nil
-            let natalNote: String? = m.natalHouse.isEmpty ? nil : "出身 \(NamingCatalog.houseLabel(m.natalHouse))"
-            let traitsNote: String? = m.traits.isEmpty ? nil : m.traits.prefix(3).joined(separator: "·")
-            let parts = [parentNote, natalNote, traitsNote].compactMap { $0 }
-            if !parts.isEmpty {
-                Text(parts.joined(separator: "  ·  ")).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
-            }
+            .padding(.horizontal, 16).padding(.vertical, 8)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 16).padding(.vertical, 8)
-        .contentShape(Rectangle())
-        .onTapGesture { if m.alive && !busy { pressMenu = actions(m, tree) } }
+        .buttonStyle(.plain)
     }
     /// 重新读取族谱；只有最后一次请求的结果会被采用。
     private func reload() async {

@@ -50,7 +50,18 @@ extension Regimes {
         let e = JS.object(); e.power = JS(kind.power); e.speed = JS(kind.speed); r.regimes.armyBoost[army] = e
     }
     static func armyPower(_ r: JS, _ army: String) -> Double { r.regimes.isNull ? 1 : r.regimes.armyBoost[army].power.optionalNumber ?? 1 }
-    static func armySpeed(_ r: JS, _ army: String) -> Double { r.regimes.isNull ? 1 : r.regimes.armyBoost[army].speed.optionalNumber ?? 1 }
+    static func armySpeed(_ r: JS, _ army: String, nation: String? = nil) -> Double {
+        guard !r.regimes.isNull else { return 1 }
+        var sp = r.regimes.armyBoost[army].speed.optionalNumber ?? 1
+        if UnitKinds.enabled && r.regimes.enabled.isTruthy {
+            let unitKey = r.units[army].optionalString ?? "Infantry"
+            sp *= Regimes.armyBranch(r, armyId: army, unitKey: unitKey).speedFactor
+            if let nid = nation, let wg = Regimes.warGodAura(r, nationId: nid), wg.tier.speedPct > 0 {
+                sp *= (1.0 + wg.tier.speedPct / 100.0)
+            }
+        }
+        return sp
+    }
 }
 
 extension NativeEngine {

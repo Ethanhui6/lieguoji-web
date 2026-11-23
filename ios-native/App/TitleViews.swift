@@ -232,7 +232,15 @@ struct TitleView: View {
             }
         }
         .statusBarHidden()
-        .onAppear { shown = false; withAnimation(Motion.drift.delay(model.controller.reveal < 1 ? 1.2 : 0.1)) { shown = true } }
+        .onAppear {
+            model.controller.sheetOpen = (creating || archive || settings || notes || importing)
+            shown = false
+            withAnimation(Motion.drift.delay(model.controller.reveal < 1 ? 0.9 : 0.1)) { shown = true }
+        }
+        .onDisappear { model.controller.sheetOpen = false }
+        .onChange(of: creating || archive || settings || notes || importing) { _, open in
+            model.controller.sheetOpen = open
+        }
         .onChange(of: model.tourTitle) { _, name in
             settings = name == "settings"
             creating = name == "new-world"
@@ -279,7 +287,7 @@ struct TitleView: View {
 
 /// 山河预览 off the main thread: the template's heights for this seed, drawn small.
 func terrainThumbnail(_ inputs: PreviewWorld.Inputs, seed: String, template: String, previewNations: Int = 0) -> (image: UIImage, stats: PreviewWorld.ThumbnailStats)? {
-    let t = PreviewWorld.thumbnail(inputs, heights: TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: template), width: 640, nations: previewNations, seed: seed)
+    let t = PreviewWorld.thumbnail(inputs, heights: TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: template), width: 440, nations: previewNations, seed: seed)
     guard let provider = CGDataProvider(data: Data(t.rgba) as CFData),
           let image = CGImage(width: t.width, height: t.height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: t.width * 4, space: CGColorSpaceCreateDeviceRGB(),
                               bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipLast.rawValue), provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent) else { return nil }
@@ -687,6 +695,11 @@ struct NewWorldSheet: View {
 
     private func drawTerrain() async {
         guard let inputs else { return }
+        if terrain != nil {
+            // 切换剧本/国家数/种子时短暂防抖，避免快速连点引发多次后台 20k 网格光栅化抢占 CPU。
+            try? await Task.sleep(nanoseconds: 110_000_000)
+            guard !Task.isCancelled else { return }
+        }
         renderingTerrain = true
         let seed = self.seed, template = options.template, n = previewShowNations ? options.nations : 0
         let res = await Task.detached(priority: .userInitiated) { terrainThumbnail(inputs, seed: seed, template: template, previewNations: n) }.value

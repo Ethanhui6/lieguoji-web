@@ -465,18 +465,20 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         map = next
         nationColors = next.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
+        // 州界多边形终身静态无需重建；城池图标仅在都城迁移或首次载入时重建，彻底消除战争推进期每步重造百万顶点卡顿。
+        let capitals = next.meta.nations.map(\.capital)
+        let rebuildIcons = !noStatic && (icons == nil || capitals != lastCapitalKey)
+        if rebuildIcons { lastCapitalKey = capitals }
         let wide = borderWide
         let inputs = BaseInputs(mode: mode, nationColors: nationColors, highlight: highlight, tint: tint, fills: fills, density: Float(display.colorDensity), terrain: terrainBase, shade: shade)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let vertices = skipOutlines ? nil : MapLayers.outlines(next, wide: wide).vertices
-            let marks = noStatic ? nil : MapLayers.cityIcons(next).vertices
-            let provinceLines = noStatic ? nil : MapLayers.provinceLines(next).vertices
+            let marks = rebuildIcons ? MapLayers.cityIcons(next).vertices : nil
             let colours = MapRenderer.baseColors(next, inputs)
             DispatchQueue.main.async {
                 guard let self, self.workRevision.acceptsGeometry(work) else { return }
                 if let vertices, self.workRevision.acceptsOutlineGeometry(work) { self.outlines = self.buffer(vertices, stride: 6) }
                 if let marks { self.icons = self.buffer(marks, stride: 6) }
-                if let provinceLines { self.provinceLines = self.buffer(provinceLines, stride: 6) }
                 self.workRevision.installGeometry(work)
                 if self.terrainBase == nil { self.terrainBase = colours.terrainBase }
                 if self.shade.isEmpty { self.shade = colours.shade }
@@ -514,6 +516,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         return (c, terrain, terrainBase, shade)
     }
     private var workRevision = MapWorkRevision()
+    private var lastCapitalKey: [Int] = []
     private var borderWide = Set<Int>()
     /// The open nation and the owner of the selected province, drawn at twice the border width.
     func setBorderEmphasis(_ wide: Set<Int>) {
@@ -1261,11 +1264,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); o.color.a *= u.alpha; return o;
     }
     fragment float4 colorFragment(ColorOut in [[stage_in]]) { return in.color; }
-    // 陆地光影与宣纸质感：轻量化低功耗像素着色，远景自动省去高频噪点，保持温润立体光氛。
+    // 陆地光影与宣纸质感：单次共享环境噪声驱动四季云岚、枫林与冬雪，像素算力减半且四时层次鲜明温润。
     fragment float4 landFragment(LandOut in [[stage_in]], constant Uniforms& u [[buffer(2)]]) {
         float detail = clamp((in.scale - 0.55) / 1.45, 0.0, 1.0);
         float g1 = vnoise(in.world * 0.55) - 0.5;
-        float g2 = detail > 0.04 ? (vnoise(in.world * 1.95 + float2(13.7, 7.3)) - 0.5) : 0.0;
+        float g2 = detail > 0.18 ? (vnoise(in.world * 1.95 + float2(13.7, 7.3)) - 0.5) : 0.0;
         float grain = (g1 * 0.024 + g2 * 0.022 * detail);
         float3 rgb = in.color.rgb;
         float lum = dot(rgb, float3(0.299, 0.587, 0.114));
@@ -1300,27 +1303,27 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 float3 seasonTint = springTint * wSpring + summerTint * wSummer + autumnTint * wAutumn + winterTint * wWinter;
                 rgb *= mix(float3(1.0), seasonTint, k);
 
+                // 单次低频空间噪声共享驱动春岚、秋枫与冬雪，大幅减轻片元着色压力
+                float envNoise = vnoise(in.world * 0.020 + float2(7.3, 19.1));
+
                 // 春：平野泛嫩绿青岚微雾
                 if (wSpring > 0.02) {
-                    float bloomNoise = vnoise(in.world * 0.025 + float2(4.1, 2.9));
-                    float springMist = wSpring * smoothstep(0.35, 0.85, bloomNoise) * 0.055 * k;
+                    float springMist = wSpring * smoothstep(0.32, 0.84, envNoise) * 0.055 * k;
                     rgb = mix(rgb, float3(0.86, 0.96, 0.89), springMist);
                 }
 
                 // 秋：中纬林野与丘陵浸染鲜明金赭枫红秋韵
                 if (wAutumn > 0.02) {
                     float midLat = smoothstep(0.08, 0.42, mapUV.y) * smoothstep(0.94, 0.54, mapUV.y);
-                    float leafNoise = fbm2(in.world * 0.022 + float2(11.3, 6.7));
-                    float autumnWash = wAutumn * (0.28 + 0.72 * midLat) * smoothstep(0.28, 0.78, leafNoise) * 0.24 * k;
+                    float autumnWash = wAutumn * (0.28 + 0.72 * midLat) * smoothstep(0.26, 0.78, envNoise) * 0.24 * k;
                     rgb = mix(rgb, rgb * float3(1.22, 0.90, 0.66) + float3(0.04, 0.015, -0.02), autumnWash);
                 }
 
                 // 冬：清晰可辨的有机飘雪覆盖层自北境与高山岭脊南下漫铺（保留国色与地势起伏）
                 if (wWinter > 0.02) {
-                    float snowNoise = fbm2(in.world * 0.018 + float2(7.3, 19.1));
                     float northBelt = smoothstep(0.68, 0.06, mapUV.y);
                     float highlandBelt = smoothstep(0.48, 0.78, lum);
-                    float snowField = clamp(northBelt * 0.68 + highlandBelt * 0.34 + (snowNoise - 0.46) * 0.36, 0.0, 1.0);
+                    float snowField = clamp(northBelt * 0.68 + highlandBelt * 0.34 + (envNoise - 0.46) * 0.36, 0.0, 1.0);
                     float snowCover = wWinter * smoothstep(0.24, 0.84, snowField) * 0.46 * k;
                     rgb = mix(rgb, float3(0.935, 0.962, 0.995), snowCover);
                 }
@@ -1508,8 +1511,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float detail = clamp((in.scale - 0.30) / 1.35, 0.0, 1.0);
         float2 w = in.world;
         float tm = u.time;
-        // 1. 远洋宽带洋流与深海层次（轻量化双频噪声 fbm2，GPU 像素算力减半且观感同等温润）
-        float current = (fbm2(w * 0.010 + float2(4.2, 8.7)) - 0.5) * 0.058;
+        // 1. 远洋宽带洋流与深海层次（单频轻量化噪声，GPU 像素开销再降一倍且层次通透）
+        float current = (vnoise(w * 0.011 + float2(4.2, 8.7)) - 0.5) * 0.056;
         float lum = dot(base, float3(0.299, 0.587, 0.114));
         float shallowMask = smoothstep(0.46, 0.78, lum);
         float3 shallowTint = float3(0.955, 1.032, 1.028);

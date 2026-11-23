@@ -114,7 +114,7 @@ public enum Regimes {
         Style(id: "dynasty", base: "Empire", label: "新朝", suffix: "", title: "皇帝", parties: false, single: nil),
         Style(id: "warlord", base: "Empire", label: "军阀割据", suffix: "军政府", title: "大帅", parties: false, single: nil),
         Style(id: "peasant", base: "Tribal", label: "义军", suffix: "义军", title: "大元帅", parties: false, single: nil),
-        Style(id: "holy", base: "Theocracy", label: "神国", suffix: "神国", title: "天王", parties: false, single: nil),
+        Style(id: "holy", base: "Theocracy", label: "宗教政权", suffix: "教廷", title: "教主", parties: false, single: nil),
         Style(id: "dualMonarchy", base: "Empire", label: "二元君主立宪", suffix: "帝国", title: nil, parties: true, single: nil),
         Style(id: "semiPresidential", base: "Republic", label: "半总统共和", suffix: "共和国", title: "总统", parties: true, single: nil),
         Style(id: "technocracy", base: "Republic", label: "专家官僚制", suffix: "执政府", title: "首席执政", parties: false, single: nil),

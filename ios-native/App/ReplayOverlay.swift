@@ -199,6 +199,8 @@ extension GameModel {
         cachedReplayCurrentCentroids = [:]
         cachedReplayChangedProvinces = 0
         lastReplayScrubTime = 0
+        replayFlipTimes = [:]
+        replayFrameTick = 0
     }
 
     /// 进入「山河回放」模式：支持正放、倒放、进度条自由拖动与逐节点跳转。
@@ -270,6 +272,8 @@ extension GameModel {
         cachedReplayCurrentCounts = [:]
         cachedReplayCurrentCentroids = [:]
         cachedReplayChangedProvinces = 0
+        replayFlipTimes = [:]
+        replayFrameTick = 0
         guard replayActive else { return }
         replayActive = false
         if restoreLive {
@@ -361,7 +365,9 @@ extension GameModel {
         case 1: replaySpeed = 2
         case 2: replaySpeed = 4
         case 4: replaySpeed = 8
-        case 8: replaySpeed = 0
+        case 8: replaySpeed = 16
+        case 16: replaySpeed = 32
+        case 32: replaySpeed = 0
         default: replaySpeed = 1
         }
         GameFeel.shared.tap()
@@ -399,7 +405,13 @@ extension GameModel {
     private func stopReplayTimer() {
         replayTimer?.cancel()
         replayTimer = nil
+        let wasPlaying = replayPlaying
         replayPlaying = false
+        // 高速回放暂停时若当前处于国界/国名节流帧，立刻完整提交一次清晰国界与国名。
+        if wasPlaying && controller.replayScrubbing, let timeline = replayTimelineData, timeline.frames.indices.contains(replayIndex) {
+            controller.replayScrubbing = false
+            applyReplayFrame(at: replayIndex, in: timeline, animated: false, scrubbing: false)
+        }
     }
 
     private func startReplayTimer() {
@@ -407,27 +419,42 @@ extension GameModel {
         replayTimer = Task { [weak self] in
             while let self, !Task.isCancelled, self.replayPlaying, let timeline = self.replayTimelineData {
                 let baseMs: Double
+                let strideCount: Int
                 switch self.replaySpeed {
-                case 8: baseMs = 150
-                case 4: baseMs = 260
-                case 2: baseMs = 440
-                case 0: baseMs = 1150
-                default: baseMs = 760
+                case 32: baseMs = 46; strideCount = 2
+                case 16: baseMs = 52; strideCount = 1
+                case 8:  baseMs = 92; strideCount = 1
+                case 4:  baseMs = 170; strideCount = 1
+                case 2:  baseMs = 320; strideCount = 1
+                case 0:  baseMs = 960; strideCount = 1
+                default: baseMs = 600; strideCount = 1
                 }
                 try? await Task.sleep(nanoseconds: UInt64(baseMs * 1_000_000))
                 guard !Task.isCancelled, self.replayPlaying else { break }
-                var next = self.replayIndex + (self.replayReversing ? -1 : 1)
+                let dir = self.replayReversing ? -1 : 1
+                var next = self.replayIndex + dir * strideCount
+                // 32× 跨步时若途经重大历史节点，优先停在节点帧上不错过大事。
+                if strideCount > 1 {
+                    let mid = self.replayIndex + dir
+                    if timeline.frames.indices.contains(mid) && timeline.frames[mid].major {
+                        next = mid
+                    }
+                }
                 if next < 0 || next >= timeline.frames.count {
+                    let edge = self.replayReversing ? 0 : (timeline.frames.count - 1)
+                    if self.replayIndex != edge {
+                        self.seekReplay(to: edge, focusEvent: false, animated: true, scrubbing: false)
+                    }
                     if self.replayLoop && timeline.frames.count > 1 {
-                        next = self.replayReversing ? (timeline.frames.count - 1) : 0
-                        self.seekReplay(to: next, focusEvent: false, animated: false, scrubbing: false)
+                        let wrap = self.replayReversing ? (timeline.frames.count - 1) : 0
+                        self.seekReplay(to: wrap, focusEvent: false, animated: false, scrubbing: false)
                         continue
                     } else {
-                        self.replayPlaying = false
+                        self.stopReplayTimer()
                         break
                     }
                 }
-                let shouldFocus = self.replayAutoFocus && timeline.frames[next].major && timeline.frames[next].province >= 0
+                let shouldFocus = self.replayAutoFocus && self.replaySpeed <= 8 && timeline.frames[next].major && timeline.frames[next].province >= 0
                 self.seekReplay(to: next, focusEvent: shouldFocus, animated: true, scrubbing: false)
             }
         }
@@ -506,34 +533,54 @@ extension GameModel {
             cachedReplayChangedProvinces = 0
         }
 
+        replayFrameTick &+= 1
+        let now = CACurrentMediaTime()
+        let isFastPlay = animated && replayPlaying && replaySpeed >= 8
+        let isUltraPlay = animated && replayPlaying && replaySpeed >= 16
+        let fastThrottleOutlines = isFastPlay && !frame.major && (replayFrameTick % (isUltraPlay ? 4 : 3) != 0)
+        controller.replayScrubbing = fastThrottleOutlines
         controller.replayAnimate = animated
-        let stepTween = replaySpeed == 8 ? 0.14 : replaySpeed == 4 ? 0.24 : replaySpeed == 2 ? 0.41 : replaySpeed == 0 ? 0.98 : 0.72
+        let stepTween: Double = {
+            switch replaySpeed {
+            case 32: return 0.06
+            case 16: return 0.08
+            case 8:  return 0.11
+            case 4:  return 0.17
+            case 2:  return 0.30
+            case 0:  return 0.88
+            default: return 0.56
+            }
+        }()
         var fx = MapEffects()
         var washInputs = [WashInput]()
         var enemiesMap = [Int: Set<Int>]()
         var ripples = Set<Int>()
         var sprites = [MapRenderer.ArmySprite]()
 
-        // 前 10 大强国在国都／疆域重心处常驻御林军与王旗
-        let majorNations = cnt.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.prefix(10).map(\.key)
-        for (rank, n) in majorNations.enumerated() where world.meta.nations.indices.contains(n) {
-            let capIdx = world.meta.nations[n].capital
-            let pt: (Float, Float)
-            if world.meta.cities.indices.contains(capIdx) {
-                let c = world.meta.cities[capIdx]; pt = (c.x, c.y)
-            } else if let c = cnt[n], c > 0 {
-                pt = (sumX[n, default: 0] / Float(c), sumY[n, default: 0] / Float(c))
-            } else { continue }
-            let guardUnit = rank < 3 ? "Elite" : (rank % 2 == 0 ? "HeavyCavalry" : "Infantry")
-            sprites.append(MapRenderer.ArmySprite(army: 1000 + n, x: pt.0, y: pt.1, unit: guardUnit, nation: n, selected: false, key: "rg-\(n)", tier: rank < 3 ? 3 : 2, banner: 2))
+        // 前 8 大强国在国都／疆域重心处常驻王旗（超高速回放 16×/32× 时隐藏细碎军牌以保丝滑流畅）
+        if !isUltraPlay {
+            let majorNations = cnt.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.prefix(8).map(\.key)
+            for (rank, n) in majorNations.enumerated() where world.meta.nations.indices.contains(n) {
+                let capIdx = world.meta.nations[n].capital
+                let pt: (Float, Float)
+                if world.meta.cities.indices.contains(capIdx) {
+                    let c = world.meta.cities[capIdx]; pt = (c.x, c.y)
+                } else if let c = cnt[n], c > 0 {
+                    pt = (sumX[n, default: 0] / Float(c), sumY[n, default: 0] / Float(c))
+                } else { continue }
+                let guardUnit = rank < 3 ? "Elite" : (rank % 2 == 0 ? "HeavyCavalry" : "Infantry")
+                sprites.append(MapRenderer.ArmySprite(army: 1000 + n, x: pt.0, y: pt.1, unit: guardUnit, nation: n, selected: false, key: "rg-\(n)", tier: rank < 3 ? 3 : 2, banner: 2))
+            }
         }
 
         if animated && prevOwners.count == owners.count {
             var prevByNation = [Int: [Int]]()
-            for p in prevOwners.indices where prevOwners[p] >= 0 {
-                prevByNation[prevOwners[p], default: []].append(p)
+            if !isUltraPlay {
+                for p in prevOwners.indices where prevOwners[p] >= 0 {
+                    prevByNation[prevOwners[p], default: []].append(p)
+                }
             }
-            struct Conquest { let attacker: Int; let defender: Int; let from: Int; let to: Int; let dist: Float }
+            struct Conquest { let attacker: Int; let defender: Int; let from: Int; let to: Int; let dist: Float; let hotFlip: Bool }
             var conquests = [Conquest]()
             var gainedByNation = [Int: Int]()
             for p in owners.indices {
@@ -541,8 +588,13 @@ extension GameModel {
                 guard oldN != newN, newN >= 0, world.meta.provinces.indices.contains(p) else { continue }
                 let tp = world.meta.provinces[p]
                 guard tp.x.isFinite && tp.y.isFinite else { continue }
+                // 拉锯战防闪烁判定：若同一州郡在 0.85 秒内反复易主，视为前线拉锯，跳过叠加扫色与特效，交由 GPU 顶点柔和渐变。
+                let lastFlip = replayFlipTimes[p] ?? -10
+                let hotFlip = (now - lastFlip) < 0.85
+                replayFlipTimes[p] = now
                 gainedByNation[newN, default: 0] += 1
                 if oldN >= 0 { enemiesMap[newN, default: []].insert(oldN) }
+                guard !isUltraPlay else { continue }
                 var bestFrom = p, bestD: Float = 1e12
                 if let ownedPrev = prevByNation[newN] {
                     for cand in ownedPrev where world.meta.provinces.indices.contains(cand) {
@@ -556,57 +608,77 @@ extension GameModel {
                     ? SIMD2(world.meta.provinces[bestFrom].x, world.meta.provinces[bestFrom].y)
                     : SIMD2(tp.x, tp.y)
                 let dstPt = SIMD2(tp.x, tp.y)
-                washInputs.append(WashInput(province: p, attacker: newN, kind: .capture, progress: 1, day: frame.day, armies: [srcPt]))
-                if bestFrom != p {
-                    washInputs.append(WashInput(province: p, attacker: newN, kind: .march, progress: 0.9, day: frame.day, armies: [srcPt, dstPt], troops: 12000, key: "rm-\(newN)-\(p)"))
+                // 仅在非高速且非反复拉锯的州郡上叠加水墨扫色，彻底杜绝同一地块的反复闪烁与重算掉帧。
+                if !hotFlip && !isFastPlay {
+                    washInputs.append(WashInput(province: p, attacker: newN, kind: .capture, progress: 1, day: frame.day, armies: [srcPt]))
+                    if bestFrom != p && washInputs.count < 24 {
+                        washInputs.append(WashInput(province: p, attacker: newN, kind: .march, progress: 0.85, day: frame.day, armies: [srcPt, dstPt], troops: 12000, key: "rm-\(newN)-\(p)"))
+                    }
                 }
-                conquests.append(Conquest(attacker: newN, defender: oldN, from: bestFrom, to: p, dist: bestD.squareRoot()))
+                conquests.append(Conquest(attacker: newN, defender: oldN, from: bestFrom, to: p, dist: bestD.squareRoot(), hotFlip: hotFlip))
             }
-            for (n, g) in gainedByNation where g >= 3 { ripples.insert(n) }
-            if ["politics", "restoration", "uprising", "capital"].contains(frame.kind), frame.topNation >= 0 {
-                ripples.insert(frame.topNation)
+            if !isFastPlay {
+                for (n, g) in gainedByNation where g >= 3 { ripples.insert(n) }
+                if ["politics", "restoration", "uprising", "capital"].contains(frame.kind), frame.topNation >= 0 {
+                    ripples.insert(frame.topNation)
+                }
+            }
+
+            // 重大历史事件落下一枚古朴朱墨事件印（替代杂乱插旗）
+            if frame.major && !isUltraPlay && frame.province >= 0 && world.meta.provinces.indices.contains(frame.province) {
+                let mp = world.meta.provinces[frame.province]
+                let mn = frame.topNation >= 0 && world.meta.nations.indices.contains(frame.topNation) ? world.meta.nations[frame.topNation] : nil
+                let rgb = mn.flatMap { RGB(css: $0.color) } ?? RGB(0.72, 0.22, 0.16)
+                let bKind: MapEffects.Burst.Kind = frame.kind == "uprising" ? .shock : frame.kind == "restoration" ? .founded : frame.kind == "politics" ? .regime : .coup
+                fx.bursts.append(MapEffects.Burst(id: "rmaj-\(index)-\(frame.province)", x: Double(mp.x), y: Double(mp.y), kind: bKind, r: Double(rgb.r), g: Double(rgb.g), b: Double(rgb.b)))
             }
 
             var usedTargets = Set<Int>()
             var perAttacker = [Int: Int]()
             let unitPool = ["Cavalry", "HeavyCavalry", "Infantry", "Spear", "HorseArcher", "Elite"]
-            for (ci, cq) in conquests.prefix(36).enumerated() {
-                guard !usedTargets.contains(cq.to), perAttacker[cq.attacker, default: 0] < 3, fx.arrows.count < 14 else { continue }
+            let maxArrows = isFastPlay ? 6 : 12
+            let maxRipples = isFastPlay ? 6 : 14
+            for (ci, cq) in conquests.prefix(28).enumerated() {
+                guard !cq.hotFlip, !usedTargets.contains(cq.to), perAttacker[cq.attacker, default: 0] < (isFastPlay ? 2 : 3) else { continue }
                 usedTargets.insert(cq.to)
                 let fp = world.meta.provinces[cq.from], tp = world.meta.provinces[cq.to]
                 let rgb = world.meta.nations.indices.contains(cq.attacker) ? (RGB(css: world.meta.nations[cq.attacker].color) ?? RGB(0.7, 0.25, 0.18)) : RGB(0.7, 0.25, 0.18)
-                fx.flashes.append(MapEffects.Flash(id: "rf-\(index)-\(cq.to)", x: Double(tp.x), y: Double(tp.y), r: Double(rgb.r), g: Double(rgb.g), b: Double(rgb.b)))
+                // 图志水墨鎏金扩散晕环（atlasStyle: true），彻底替代回放中的插旗动画
+                if fx.flashes.count < maxRipples {
+                    fx.flashes.append(MapEffects.Flash(id: "rf-\(index)-\(cq.to)", x: Double(tp.x), y: Double(tp.y), r: Double(rgb.r), g: Double(rgb.g), b: Double(rgb.b), atlasStyle: true))
+                }
 
-                if cq.from != cq.to && cq.dist > 2 {
+                if cq.from != cq.to && cq.dist > 2 && fx.arrows.count < maxArrows {
                     perAttacker[cq.attacker, default: 0] += 1
                     let sx = Double(fp.x), sy = Double(fp.y), ex = Double(tp.x), ey = Double(tp.y)
                     let dx = ex - sx, dy = ey - sy
                     let len = max(1.0, hypot(dx, dy))
                     let curveSign: Double = (ci % 2 == 0) ? 1 : -1
-                    let bend = min(32.0, len * 0.22) * curveSign
+                    let bend = min(30.0, len * 0.20) * curveSign
                     let cx = (sx + ex) * 0.5 - (dy / len) * bend
                     let cy = (sy + ey) * 0.5 + (dx / len) * bend
                     let shallow = (min(1, Double(rgb.r) * 0.65 + 0.35), min(1, Double(rgb.g) * 0.65 + 0.35), min(1, Double(rgb.b) * 0.65 + 0.35))
                     let deep = (Double(rgb.r) * 0.85, Double(rgb.g) * 0.85, Double(rgb.b) * 0.85)
                     fx.arrows.append(MapEffects.Arrow(key: "ra-\(index)-\(cq.attacker)-\(cq.to)", sx: sx, sy: sy, cx: cx, cy: cy, ex: ex, ey: ey, shallow: shallow, deep: deep))
 
-                    let unitKind = unitPool[(cq.attacker + ci) % unitPool.count]
-                    sprites.append(MapRenderer.ArmySprite(
-                        army: 10000 + ci,
-                        x: tp.x, y: tp.y,
-                        unit: unitKind,
-                        nation: cq.attacker,
-                        selected: false,
-                        key: "rv-\(index)-\(cq.attacker)-\(cq.to)",
-                        tier: 3,
-                        banner: 1,
-                        fighting: cq.defender >= 0,
-                        startX: fp.x,
-                        startY: fp.y
-                    ))
-
-                    if cq.defender >= 0 && fx.battles.count < 6 {
-                        fx.battles.append(MapEffects.Battle(key: "rb-\(index)-\(cq.to)", x: Double(tp.x), y: Double(tp.y)))
+                    if !isFastPlay {
+                        let unitKind = unitPool[(cq.attacker + ci) % unitPool.count]
+                        sprites.append(MapRenderer.ArmySprite(
+                            army: 10000 + ci,
+                            x: tp.x, y: tp.y,
+                            unit: unitKind,
+                            nation: cq.attacker,
+                            selected: false,
+                            key: "rv-\(index)-\(cq.attacker)-\(cq.to)",
+                            tier: 3,
+                            banner: 1,
+                            fighting: cq.defender >= 0,
+                            startX: fp.x,
+                            startY: fp.y
+                        ))
+                        if cq.defender >= 0 && fx.battles.count < 5 {
+                            fx.battles.append(MapEffects.Battle(key: "rb-\(index)-\(cq.to)", x: Double(tp.x), y: Double(tp.y)))
+                        }
                     }
                 }
             }
@@ -999,7 +1071,8 @@ struct ReplayOverlay: View {
                     .font(Theme.body)
                     .foregroundStyle(model.replaySpeed != 1 ? Theme.seal : Theme.ink)
                     .monospacedDigit()
-                    .frame(width: 40, height: sealSize)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                    .frame(minWidth: 44, maxWidth: 48, minHeight: sealSize, maxHeight: sealSize)
                     .background(model.replaySpeed != 1 ? Theme.seal.opacity(0.1) : Color.clear, in: Capsule())
                     .contentShape(Capsule())
                     .contentTransition(.numericText())

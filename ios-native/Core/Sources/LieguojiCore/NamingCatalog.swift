@@ -85,9 +85,9 @@ public enum NamingCatalog {
 
     /// 全部已知政体后缀（按长度降序排列，避免「社会主义共和国」只剥掉「共和国」留下「社会主义」）。
     public static let politySuffixes: [String] = [
-        "社会主义共和国", "社会共和国", "人民共和国", "立宪王国", "联合王国", "骑士团国", "哈里发国",
-        "苏丹国", "沙皇国", "教宗国", "神权国", "共和国", "军政府", "执政府", "法王国", "立宪国", "独裁国", "民族国",
-        "王国", "帝国", "公国", "汗国", "联邦", "邦联", "城邦", "幕府", "公社", "酋邦", "义军", "神国", "部族", "部落", "王朝",
+        "社会主义共和国", "社会共和国", "人民共和国", "立宪王国", "联合王国", "骑士团国", "哈里发国", "伊玛目国",
+        "苏丹国", "沙皇国", "教宗国", "神权国", "共和国", "军政府", "执政府", "法王国", "法王领", "牧首领", "圣座领", "神宫领", "立宪国", "独裁国", "民族国",
+        "王国", "帝国", "公国", "汗国", "联邦", "邦联", "城邦", "幕府", "公社", "酋邦", "义军", "部族", "部落", "王朝",
     ]
 
     /// 已知带前缀「大」的真实双字国号/地名（简写时不可误剥「大」字）。
@@ -450,8 +450,19 @@ public enum NamingCatalog {
     ) -> String {
         let base = cleanStateBase(rawBase)
         let effectiveSuffix: String = {
-            if style.id == "theocracy" {
-                return religion == "islam" ? "哈里发国" : religion == "catholic" ? "教宗国" : "神权国"
+            if style.id == "theocracy" || style.id == "holy" {
+                switch religion {
+                case "islam": return style.id == "holy" ? "伊玛目国" : "哈里发国"
+                case "catholic": return style.id == "holy" ? "圣座领" : "教宗国"
+                case "orthodox": return "牧首领"
+                case "protestant": return "圣约邦"
+                case "buddhism", "chan", "pureLand", "tiantai", "tantric": return "法王领"
+                case "shinto": return "神宫领"
+                case "hinduism", "zoroastrian": return "法王国"
+                default:
+                    if culture == "chinese" { return style.id == "holy" ? "教廷" : "道国" }
+                    return "教宗领"
+                }
             }
             if style.id == "dynasty" { return "朝" }
             if style.id == "junta" { return "军政府" }
@@ -518,7 +529,8 @@ public enum NamingCatalog {
             if style.id == "warlord" || style.id == "junta" { return base + "军政府" }
             if style.id == "dictatorship" { return base + "执政府" }
             if style.id == "peasant" { return base + "义军" }
-            if style.id == "holy" { return base + "神国" }
+            if style.id == "holy" { return base == "太平" ? "太平天国" : base + "教廷" }
+            if style.id == "theocracy" { return base == "天师" ? "天师道领" : base + (religion == "buddhism" || religion == "tantric" ? "法王领" : "教廷") }
             if style.id == "tribal" || style.id == "chiefdom" { return base + "部" }
             if style.id == "khanate" { return base + "汗国" }
             if style.id == "democratic" || style.id == "presidential" || style.id == "parliamentary" {

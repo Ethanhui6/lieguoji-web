@@ -23,6 +23,13 @@ public struct GameState: Codable, Equatable, Sendable {
         /// 行军路线地形说明与预计抵达天数（正在行军时生成，供军队详情页展示）。
         public var routeNote: String? = nil
         public var full: Int? = nil
+        /// 军队职能分部（guard/field/garrison/vanguard/siege）、分部称号与职责、所属集团军及协同/战神加持摘要。
+        public var branch: String? = nil
+        public var branchLabel: String? = nil
+        public var branchNote: String? = nil
+        public var armyGroup: String? = nil
+        public var groupBonus: Int? = nil
+        public var warGodAura: String? = nil
     }
     /// A fleet at its actual sea point (open-sea worlds) and its naval command.
     public struct Fleet: Codable, Equatable, Identifiable, Sendable {

@@ -17,7 +17,7 @@ import LieguojiCore
     var pageOpen = false
     private var lastPublish = 0.0, publishPending = false
     private func publishState() {
-        let now = Date().timeIntervalSinceReferenceDate, gap = pageOpen ? 0.5 : 0.1
+        let now = Date().timeIntervalSinceReferenceDate, gap = pageOpen ? 0.5 : (playing ? 0.18 : 0.08)
         if now - lastPublish >= gap || state == nil { lastPublish = now; objectWillChange.send(); return }
         guard !publishPending else { return }
         publishPending = true
@@ -139,6 +139,9 @@ import LieguojiCore
     var cachedReplayCurrentCentroids: [Int: (x: Float, y: Float)] = [:]
     var cachedReplayChangedProvinces: Int = 0
     var lastReplayScrubTime: CFTimeInterval = 0
+    /// 回放中各州最近易主时刻与帧序号（用于抑制拉锯战反复易主时的闪烁与高速跳帧节流）
+    var replayFlipTimes: [Int: CFTimeInterval] = [:]
+    var replayFrameTick: Int = 0
     /// 观战巡弋导演镜头上次运镜时刻与轮换序号
     var lastDirectorCruiseTime: CFTimeInterval = 0
     var directorCruiseStep: Int = 0
@@ -424,7 +427,7 @@ import LieguojiCore
     private func rise(_ epoch: Int) async {
         controller.interactive = false
         controller.reveal = 0
-        if !ShotTour.on { await playReveal(from: 0, duration: 6.8, push: true, while: { self.worldEpoch == epoch }); return }
+        if !ShotTour.on { await playReveal(from: 0, duration: 6.8, push: true, publishProgress: true, while: { self.worldEpoch == epoch }); return }
         // CI waits on these frames: the clock is pinned to each stage in turn while its shot is taken.
         let shots: [(at: Float, name: String)] = [(0.03, "02-founding"), (0.10, "02a-sea"), (0.24, "02b-rise"), (0.36, "02c-ink"), (0.62, "02d-states"), (0.80, "02e-borders")]
         for shot in shots {
@@ -575,14 +578,18 @@ import LieguojiCore
         controller.interactive = true
     }
 
-    /// Plays a reveal on the map's display link, smooth at the screen's rate; the published value the
-    /// panels read (stage list, bars) follows smoothly without per-frame SwiftUI churn.
-    func playReveal(from start: Float = 0, duration: Double, push: Bool = false, while keep: () -> Bool = { true }) async {
+    /// Plays a reveal on the map's display link, smooth at the screen's rate.
+    /// `publishProgress`: only publish intermediate `@Published reveal` ticks when a UI progress card (`FoundingView`)
+    /// is reading it; on Title Screen & Continue reveal, the GPU display link drives reveal at 60fps with zero SwiftUI diffing!
+    func playReveal(from start: Float = 0, duration: Double, push: Bool = false, publishProgress: Bool = false, while keep: () -> Bool = { true }) async {
         controller.reveal = start
         controller.animateReveal(from: start, to: 1, duration: duration, push: push)
+        let sleepNs: UInt64 = publishProgress ? 180_000_000 : 120_000_000
         while !controller.revealDone && keep() {
-            try? await Task.sleep(nanoseconds: 80_000_000)
-            controller.reveal = controller.revealNow ?? 1
+            try? await Task.sleep(nanoseconds: sleepNs)
+            if publishProgress {
+                controller.reveal = controller.revealNow ?? 1
+            }
         }
         // Cut short (the title left for a new world): the next reveal owns the map from here.
         if keep() { controller.reveal = 1 }
@@ -854,7 +861,9 @@ import LieguojiCore
         if let labels = next.labels { pendingLabels = labels }
         let now = CACurrentMediaTime()
         let ownerChanged = next.owners.enumerated().contains { $0.offset < world.meta.provinces.count && world.meta.provinces[$0.offset].nation != $0.element }
-        if ownerChanged || !playing || now - lastMapUpdate >= 0.5 {
+        // 高速推演（≥ 4×）时对疆域重绘适度合批（0.20s），大幅降低频繁易主时的国界三角化与 Metal 缓冲重建压力；1×/2× 与暂停状态即时落图。
+        let ownerGate = (!playing || speed < 4 || now - lastMapUpdate >= 0.20)
+        if (ownerChanged && ownerGate) || !playing || now - lastMapUpdate >= 0.55 {
             for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
                 world.meta.provinces[i].nation = owner; changed = true
             }
@@ -1190,7 +1199,7 @@ import LieguojiCore
             }
             // The chronicle's happenings play at the capital of the state they name.
             var ripples = [Int]()
-            let kinds: [(String, MapEffects.Burst.Kind)] = [("农民起义", .shock), ("军阀割据", .coup), ("藩镇独立", .coup), ("神国起义", .regime), ("复国运动", .founded), ("复辟", .regime), ("改制", .regime), ("禅位", .regime), ("改建", .regime), ("推行", .talent), ("诗文", .talent), ("书院", .talent), ("文艺复兴", .talent), ("寺观", .talent), ("五谷丰登", .harvest), ("人丁兴旺", .harvest), ("婴戏盈门", .harvest), ("天灾", .disaster), ("大旱", .disaster), ("水患", .disaster), ("大雪", .disaster), ("蝗灾", .disaster), ("地震", .disaster), ("洪水", .disaster), ("大火", .disaster), ("名臣辈出", .talent), ("开科", .talent), ("名医", .talent), ("学者", .talent), ("瘟疫", .plague), ("商路大开", .trade), ("互市", .trade), ("宝藏", .trade), ("矿藏", .trade), ("万国来朝", .trade), ("篡位", .coup), ("政变", .coup), ("夺权", .coup), ("革命", .coup), ("倒台", .regime), ("改称", .regime), ("改行", .regime), ("改奉", .regime), ("破产", .regime), ("总罢工", .shock), ("街头冲突", .shock), ("学潮", .shock)]
+            let kinds: [(String, MapEffects.Burst.Kind)] = [("农民起义", .shock), ("军阀割据", .coup), ("藩镇独立", .coup), ("宗教起义", .regime), ("复国运动", .founded), ("复辟", .regime), ("改制", .regime), ("禅位", .regime), ("改建", .regime), ("推行", .talent), ("诗文", .talent), ("书院", .talent), ("文艺复兴", .talent), ("寺观", .talent), ("五谷丰登", .harvest), ("人丁兴旺", .harvest), ("婴戏盈门", .harvest), ("天灾", .disaster), ("大旱", .disaster), ("水患", .disaster), ("大雪", .disaster), ("蝗灾", .disaster), ("地震", .disaster), ("洪水", .disaster), ("大火", .disaster), ("名臣辈出", .talent), ("开科", .talent), ("名医", .talent), ("学者", .talent), ("瘟疫", .plague), ("商路大开", .trade), ("互市", .trade), ("宝藏", .trade), ("矿藏", .trade), ("万国来朝", .trade), ("篡位", .coup), ("政变", .coup), ("夺权", .coup), ("革命", .coup), ("倒台", .regime), ("改称", .regime), ("改行", .regime), ("改奉", .regime), ("破产", .regime), ("总罢工", .shock), ("街头冲突", .shock), ("学潮", .shock)]
             for ev in newEvents {
                 guard let kind = kinds.first(where: { ev.text.contains($0.0) })?.1 else { continue }
                 // Where it happened, when the chronicle knows the place.

@@ -132,9 +132,12 @@ struct EngineView: UIViewRepresentable {
 /// A province's region (区域).
 struct RegionInfo: Decodable { let id: Int; let name: String; let center: Int; let provinces: [Int]; let population: Double }
 /// One chronicle entry with its reason and the states it names.
-/// 名将谱: a commander on the roll.
+/// 战神谱 / 名将谱: a commander on the roll, with legendary epithet & live combat aura.
 struct GeneralEntry: Decodable, Identifiable {
     let id: Int; let name: String; let nation: Int; let merit: Double; let months: Int; let gained: Int; let rank: String; let fallen: Bool
+    var epithet: String? = nil
+    var buff: String? = nil
+    var active: Bool? = nil
 }
 
 struct ChronicleEntry: Decodable, Identifiable {

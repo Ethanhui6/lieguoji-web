@@ -1349,7 +1349,7 @@ struct FloatingTacticalPill: View {
             withAnimation(Motion.panel) { expanded.toggle() }
         } label: {
             ZStack(alignment: .topTrailing) {
-                ArtEmblem(image: wars > 0 ? BundleArt.heraldWar : BundleArt.heraldEdict, size: 26, fallback: wars > 0 ? .war : .decree)
+                ArtEmblem(image: wars > 0 ? BundleArt.heraldWar : BundleArt.heraldEdict, size: 26, fallback: wars > 0 ? .war : .edict)
                     .rotationEffect(.degrees(expanded ? -12 : 0))
                 if !expanded && wars > 0 {
                     Text(badgeText)
@@ -1453,7 +1453,7 @@ private struct PaperToastHost: ViewModifier {
                 ZStack {
                     if let text {
                         HStack(spacing: 8) {
-                            ArtEmblem(image: BundleArt.heraldEdict, size: 20, fallback: .decree)
+                            ArtEmblem(image: BundleArt.heraldEdict, size: 20, fallback: .edict)
                             Text(text).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(.horizontal, 12).padding(.vertical, 9)

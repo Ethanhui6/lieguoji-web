@@ -477,7 +477,7 @@ struct LinkSeal: View {
         switch mark {
         case "战": return .war
         case "都": return .locate
-        default: return .nations
+        default: return .crown
         }
     }
     var body: some View {

@@ -311,88 +311,108 @@ struct HeraldBanner: View {
                     .resizable()
                     .interpolation(.high)
                     .scaledToFit()
-                switch herald.kind {
-                case .war, .ultimatum:
-                    // 双戟凌空劈合＋余震微颤
-                    let slam = Self.easeOutBack(min(1, max(0, (t - 0.10) / 0.30)))
-                    let shake = t > 0.34 ? sin((t - 0.34) * 28) * exp(-(t - 0.34) * 3.8) * 6.5 : 0
-                    art
-                        .scaleEffect(0.62 + 0.40 * slam)
-                        .rotationEffect(.degrees(shake + (1 - enter) * -14))
-                        .shadow(color: Theme.seal.opacity(0.24), radius: 3, y: 1.5)
-                case .uprising, .coup:
-                    // 火炬烈焰跃动呼吸＋旗帜猎猎摇曳
-                    let flicker = 1.0 + 0.045 * sin(t * 15.0)
-                    let sway = sin(t * 7.2) * 3.8
-                    art
-                        .scaleEffect(x: (0.72 + 0.28 * enter) * flicker, y: (0.72 + 0.28 * enter) * (1.0 + 0.05 * cos(t * 13.0)), anchor: .bottom)
-                        .rotationEffect(.degrees(sway), anchor: .bottom)
-                        .offset(y: CGFloat((1 - enter) * 10))
-                case .peace, .treaty, .marriage:
-                    // 白鹤衔枝翩跹飞入并轻盈起伏翱翔
-                    let glide = Self.span(t, 0.12, 0.62)
-                    let bob = sin(t * 4.8) * 2.6
-                    let wingTilt = sin(t * 4.8 + 0.6) * 4.0
-                    art
-                        .offset(x: CGFloat((1 - glide) * 16), y: CGFloat((1 - glide) * 8 + bob))
-                        .rotationEffect(.degrees(wingTilt))
-                        .scaleEffect(0.80 + 0.22 * glide)
-                case .regime, .restoration, .house:
-                    // 盘龙传国玉玺自云端庄重落印＋微金辉
-                    let drop = Self.easeOutBack(min(1, max(0, (t - 0.12) / 0.36)))
-                    let hover = sin(t * 3.2) * 1.4
-                    art
-                        .offset(y: CGFloat((1 - drop) * -14 + hover))
-                        .scaleEffect(0.84 + 0.18 * drop)
-                        .shadow(color: Color(red: 0.78, green: 0.56, blue: 0.18).opacity(0.28), radius: 4, y: 2)
-                case .capture:
-                    // 战旗疾插城头并持续迎风招展
-                    let plant = Self.easeOutBack(min(1, max(0, (t - 0.10) / 0.28)))
-                    let wave = sin(t * 7.5) * 4.2
-                    art
-                        .scaleEffect(x: (0.85 + 0.15 * plant) * (1.0 + 0.045 * sin(t * 9.0)), y: 0.85 + 0.15 * plant, anchor: .bottom)
-                        .rotationEffect(.degrees(wave), anchor: .bottom)
-                        .offset(y: CGFloat((1 - plant) * -12))
-                case .extinction:
-                    // 断旗哀倾折伏（由直而倾、渐沉化烟）
-                    let fall = Self.span(t, 0.24, 1.15)
-                    art
-                        .rotationEffect(.degrees(-8 + fall * 28), anchor: .bottomLeading)
-                        .offset(y: CGFloat(fall * 4))
-                        .opacity(1.0 - fall * 0.22)
-                case .blizzard:
-                    // 积雪松枝寒风轻晃
-                    art
-                        .rotationEffect(.degrees(sin(t * 3.6) * 3.5), anchor: .leading)
-                        .scaleEffect(0.84 + 0.18 * enter)
-                case .drought:
-                    // 炽日龟裂热浪脉动
-                    art
-                        .scaleEffect((0.86 + 0.16 * enter) * (1.0 + 0.045 * sin(t * 5.2)))
-                case .flood:
-                    // 乌云惊雷微震翻涌
-                    let flash = (abs(t - 0.45) < 0.08 || abs(t - 1.35) < 0.08) ? 1.12 : 1.0
-                    art
-                        .scaleEffect((0.84 + 0.18 * enter) * flash)
-                        .offset(x: CGFloat(sin(t * 14) * (flash > 1 ? 1.8 : 0.4)))
-                case .harvest:
-                    // 金黄稻穗随秋风舒缓摇曳
-                    art
-                        .rotationEffect(.degrees(sin(t * 4.0) * 5.0), anchor: .bottom)
-                        .scaleEffect(0.84 + 0.18 * enter)
-                case .plague:
-                    // 阴霭瘴雾缓慢旋浮
-                    art
-                        .scaleEffect((0.86 + 0.16 * enter) * (1.0 + 0.05 * sin(t * 3.2)))
-                        .rotationEffect(.degrees(sin(t * 2.4) * 6.0))
-                case .capital:
-                    // 宫阙城楼自祥云升起
-                    art
-                        .offset(y: CGFloat((1 - enter) * 8))
-                        .scaleEffect(0.84 + 0.18 * enter)
-                }
+                let p = heroMotion(t: t, enter: enter)
+                art
+                    .scaleEffect(x: p.scaleX, y: p.scaleY, anchor: p.anchor)
+                    .rotationEffect(.degrees(p.deg), anchor: p.anchor)
+                    .offset(x: p.ox, y: p.oy)
+                    .opacity(p.opacity)
+                    .shadow(color: p.shadowColor, radius: p.shadowRadius, y: p.shadowY)
             }
         }
+    }
+
+    private struct HeroMotionParams {
+        var scaleX: CGFloat = 1
+        var scaleY: CGFloat = 1
+        var anchor: UnitPoint = .center
+        var deg: Double = 0
+        var ox: CGFloat = 0
+        var oy: CGFloat = 0
+        var opacity: Double = 1
+        var shadowColor: Color = .clear
+        var shadowRadius: CGFloat = 0
+        var shadowY: CGFloat = 0
+    }
+
+    private func heroMotion(t: Double, enter: Double) -> HeroMotionParams {
+        var p = HeroMotionParams()
+        switch herald.kind {
+        case .war, .ultimatum:
+            // 双戟／双剑凌空劈合＋余震微颤
+            let slam = Self.easeOutBack(min(1, max(0, (t - 0.10) / 0.30)))
+            let shake = t > 0.34 ? sin((t - 0.34) * 28) * exp(-(t - 0.34) * 3.8) * 6.5 : 0
+            let sc = CGFloat(0.62 + 0.40 * slam)
+            p.scaleX = sc; p.scaleY = sc
+            p.deg = shake + (1 - enter) * -14
+            p.shadowColor = Theme.seal.opacity(0.24); p.shadowRadius = 3; p.shadowY = 1.5
+        case .uprising, .coup:
+            // 火炬烈焰跃动呼吸＋旗帜猎猎摇曳
+            let base = 0.72 + 0.28 * enter
+            p.scaleX = CGFloat(base * (1.0 + 0.045 * sin(t * 15.0)))
+            p.scaleY = CGFloat(base * (1.0 + 0.05 * cos(t * 13.0)))
+            p.anchor = .bottom
+            p.deg = sin(t * 7.2) * 3.8
+            p.oy = CGFloat((1 - enter) * 10)
+        case .peace, .treaty, .marriage:
+            // 白鹤衔枝翩跹飞入并轻盈起伏翱翔
+            let glide = Self.span(t, 0.12, 0.62)
+            let sc = CGFloat(0.80 + 0.22 * glide)
+            p.scaleX = sc; p.scaleY = sc
+            p.ox = CGFloat((1 - glide) * 16)
+            p.oy = CGFloat((1 - glide) * 8 + sin(t * 4.8) * 2.6)
+            p.deg = sin(t * 4.8 + 0.6) * 4.0
+        case .regime, .restoration, .house:
+            // 传国玉玺／皇冠诏书自云端庄重落印＋微金辉
+            let drop = Self.easeOutBack(min(1, max(0, (t - 0.12) / 0.36)))
+            let sc = CGFloat(0.84 + 0.18 * drop)
+            p.scaleX = sc; p.scaleY = sc
+            p.oy = CGFloat((1 - drop) * -14 + sin(t * 3.2) * 1.4)
+            p.shadowColor = Color(red: 0.78, green: 0.56, blue: 0.18).opacity(0.28); p.shadowRadius = 4; p.shadowY = 2
+        case .capture:
+            // 战旗疾插城头并持续迎风招展
+            let plant = Self.easeOutBack(min(1, max(0, (t - 0.10) / 0.28)))
+            let base = 0.85 + 0.15 * plant
+            p.scaleX = CGFloat(base * (1.0 + 0.045 * sin(t * 9.0)))
+            p.scaleY = CGFloat(base)
+            p.anchor = .bottom
+            p.deg = sin(t * 7.5) * 4.2
+            p.oy = CGFloat((1 - plant) * -12)
+        case .extinction:
+            // 断旗哀倾折伏（由直而倾、渐沉化烟）
+            let fall = Self.span(t, 0.24, 1.15)
+            p.anchor = .bottomLeading
+            p.deg = -8 + fall * 28
+            p.oy = CGFloat(fall * 4)
+            p.opacity = 1.0 - fall * 0.22
+        case .blizzard:
+            let sc = CGFloat(0.84 + 0.18 * enter)
+            p.scaleX = sc; p.scaleY = sc
+            p.anchor = .leading
+            p.deg = sin(t * 3.6) * 3.5
+        case .drought:
+            let sc = CGFloat((0.86 + 0.16 * enter) * (1.0 + 0.045 * sin(t * 5.2)))
+            p.scaleX = sc; p.scaleY = sc
+        case .flood:
+            let flash = (abs(t - 0.45) < 0.08 || abs(t - 1.35) < 0.08) ? 1.12 : 1.0
+            let sc = CGFloat((0.84 + 0.18 * enter) * flash)
+            p.scaleX = sc; p.scaleY = sc
+            p.ox = CGFloat(sin(t * 14) * (flash > 1 ? 1.8 : 0.4))
+        case .harvest:
+            let sc = CGFloat(0.84 + 0.18 * enter)
+            p.scaleX = sc; p.scaleY = sc
+            p.anchor = .bottom
+            p.deg = sin(t * 4.0) * 5.0
+        case .plague:
+            let sc = CGFloat((0.86 + 0.16 * enter) * (1.0 + 0.05 * sin(t * 3.2)))
+            p.scaleX = sc; p.scaleY = sc
+            p.deg = sin(t * 2.4) * 6.0
+        case .capital:
+            let sc = CGFloat(0.84 + 0.18 * enter)
+            p.scaleX = sc; p.scaleY = sc
+            p.oy = CGFloat((1 - enter) * 8)
+        }
+        return p
     }
 
     /// 卷面动态氛围粒子与丝绸斜光（60/120fps 纯轻量化路径绘制）

@@ -746,7 +746,7 @@ final class EffectsView: UIView {
                     flutter.values = [1.0, 1.08, 0.90, 0.96, 0.84]; flutter.keyTimes = [0, 0.18, 0.44, 0.72, 1]
                     let fade = CAKeyframeAnimation(keyPath: "opacity")
                     fade.values = [1, 1, 0.82, 0.38, 0]; fade.keyTimes = [0, 0.26, 0.58, 0.82, 1]
-                    play(mark, [snap, sink, flutter, fade], duration: 1.65, ease: .easeInOut)
+                    play(mark, [snap, sink, flutter, fade], duration: 1.65, ease: .easeInEaseOut)
                 }
                 root.addSublayer(mark)
             }

@@ -338,7 +338,7 @@ struct GameView: View {
             // 提示条居于全层之上，轻点可立即收起。
             if let toast {
                 HStack(spacing: 10) {
-                    ArtEmblem(image: BundleArt.heraldEdict, size: 22, fallback: .decree)
+                    ArtEmblem(image: BundleArt.heraldEdict, size: 22, fallback: .edict)
                     Text(toast).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.leading, 10).padding(.trailing, 16).padding(.vertical, 10)

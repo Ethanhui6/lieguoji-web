@@ -306,6 +306,10 @@ extension Regimes {
     static let disasterText: [String: (name: String, effect: String)] = [
         "plague": ("瘟疫", "每月人口 −1.2%，向邻州蔓延"),
         "famine": ("饥荒", "每月人口 −0.5%，存粮减两成半"),
+        "snow": ("暴雪封山", "严寒暴雪：每月存粮减两成，客军寒损加剧"),
+        "drought": ("赤地大旱", "连月无雨：每月存粮减三成，赤地龟裂"),
+        "flood": ("江河洪涝", "暴雨决堤：每月存粮减两成半，人口略损"),
+        "harvest": ("丰年大稔", "风调雨顺：每月存粮增两成，生民安乐"),
     ]
     /// A disaster begins in a province (nothing if that province already has one).
     static func startDisaster(_ r: JS, kind: String, province: String, months: Int) {
@@ -318,7 +322,7 @@ extension Regimes {
         guard !r.regimes.isNull, !r.regimes.disasters.isNull else { return nil }
         return r.regimes.disasters.asArray.first { d in d.provinces.asArray.contains { $0.asString == province } }?.kind.asString
     }
-    /// Once a world-month: every disaster strikes its provinces, plagues spread to neighbours, and they burn out.
+    /// Once a world-month: every disaster/weather zone strikes its provinces, plagues/droughts/blizzards spread to neighbours, and they burn out.
     static func disasterMonth(_ r: JS, _ key: Int) {
         guard !r.regimes.disasters.isNull, r.regimes.disasterMonth.optionalNumber != Double(key) else { return }
         r.regimes.disasterMonth = JS(key)
@@ -326,17 +330,32 @@ extension Regimes {
         var byId = [String: JS](); for p in r.world.provinces.asArray { byId[p.id.asString] = p }
         var left = [JS]()
         for (i, d) in r.regimes.disasters.asArray.enumerated() {
-            let kind = d.kind.asString, plague = kind == "plague"
+            let kind = d.kind.asString
+            let plague = kind == "plague"
+            let harvest = kind == "harvest"
             var places = d.provinces.asArray.map(\.asString)
             for p in places {
                 guard let s = stock[p] else { continue }
-                s.population = JS(max(100, (s.population.asNumber * (plague ? 0.988 : 0.995)).rounded()))
-                if !plague { s.grain = JS((s.grain.asNumber * 0.75).rounded()) }
+                if harvest {
+                    s.population = JS((s.population.asNumber * 1.003).rounded())
+                    s.grain = JS((s.grain.asNumber * 1.16 + 40).rounded())
+                } else {
+                    let popMul: Double = plague ? 0.988 : (kind == "flood" ? 0.993 : kind == "drought" ? 0.994 : 0.996)
+                    s.population = JS(max(100, (s.population.asNumber * popMul).rounded()))
+                    if !plague {
+                        let grainMul: Double = kind == "drought" ? 0.70 : kind == "snow" ? 0.80 : 0.75
+                        s.grain = JS((s.grain.asNumber * grainMul).rounded())
+                    }
+                }
             }
-            if plague && places.count < 12 {
+            let spreadCap = plague ? 12 : (kind == "snow" || kind == "drought" || kind == "flood" || harvest ? 4 : 1)
+            let spreadRate = plague ? 0.20 : 0.28
+            if places.count < spreadCap {
                 for p in places {
                     guard let at = byId[p] else { continue }
-                    for q in at.neighbors.asArray.map(\.asString) where !places.contains(q) && places.count < 12 && chance("\(key)|\(i)|\(p)|\(q)") < 0.2 { places.append(q) }
+                    for q in at.neighbors.asArray.map(\.asString) where !places.contains(q) && places.count < spreadCap && chance("\(key)|\(i)|\(p)|\(q)") < spreadRate {
+                        places.append(q)
+                    }
                 }
             }
             d.provinces = .array(places.map { JS($0) })
@@ -344,7 +363,9 @@ extension Regimes {
             if d.months.asInt > 0 { left.append(d) }
             else {
                 let nations = Array(Set(places.compactMap { byId[$0]?.controller.optionalString })).sorted()
-                _ = People.announce(r, kind: "event", text: (disasterText[kind]?.name ?? "天灾") + "平息", reason: "波及 \(places.count) 州，历时数月，终告结束。", nations: nations, province: nil)
+                let title = harvest ? "丰年大稔收官" : (disasterText[kind]?.name ?? "天灾") + "平息"
+                let note = harvest ? "惠及 \(places.count) 州，仓廪充实，百姓安居。" : "波及 \(places.count) 州，历时数月，终告结束。"
+                _ = People.announce(r, kind: "event", text: title, reason: note, nations: nations, province: nil)
             }
         }
         r.regimes.disasters = .array(left)

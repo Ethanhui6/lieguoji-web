@@ -1138,8 +1138,9 @@ struct NationSheet: View {
                     Group2 {
                         VStack(alignment: .leading, spacing: 10) {
                             if let wg = nationWarGod, !wg.isEmpty {
+                                let natCul = model.map?.meta.nations.indices.contains(nation) == true ? model.map!.meta.nations[nation].culture : nil
                                 HStack(alignment: .top, spacing: 8) {
-                                    ArtEmblem(image: BundleArt.wargodCrest, size: 28, fallback: .military)
+                                    ArtEmblem(image: BundleArt.warCrest(for: natCul), size: 28, fallback: .military)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("战神谱在阵加持").font(Theme.caption).foregroundStyle(Theme.seal)
                                         Text(wg).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)

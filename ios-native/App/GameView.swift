@@ -338,7 +338,7 @@ struct GameView: View {
             // 提示条居于全层之上，轻点可立即收起。
             if let toast {
                 HStack(spacing: 10) {
-                    Seal(text: "令", size: 22)
+                    ArtEmblem(image: BundleArt.heraldEdict, size: 22, fallback: .decree)
                     Text(toast).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.leading, 10).padding(.trailing, 16).padding(.vertical, 10)
@@ -564,21 +564,62 @@ struct GameView: View {
                             .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
                         if let m = model.state?.date.month {
                             let s = WorldSeason.of(month: m)
-                            let sColor: Color = s == .spring ? Theme.jade : s == .summer ? Color(red: 0.24, green: 0.52, blue: 0.24) : s == .autumn ? Color(red: 0.74, green: 0.42, blue: 0.12) : Color(red: 0.24, green: 0.44, blue: 0.62)
-                            Text(s.name)
-                                .font(Theme.kai(11))
-                                .foregroundStyle(sColor)
-                                .padding(.horizontal, 5).padding(.vertical, 1.5)
-                                .background(sColor.opacity(0.12), in: Capsule())
-                                .overlay(Capsule().stroke(sColor.opacity(0.32), lineWidth: 0.6))
-                                .transition(.opacity)
-                                .animation(Motion.fade, value: s.rawValue)
+                            let sColor: Color = s == .spring ? Color(red: 0.78, green: 0.34, blue: 0.46) : s == .summer ? Color(red: 0.22, green: 0.54, blue: 0.24) : s == .autumn ? Color(red: 0.76, green: 0.38, blue: 0.10) : Color(red: 0.22, green: 0.46, blue: 0.68)
+                            let sImg: UIImage? = s == .spring ? BundleArt.fxPetal : s == .summer ? BundleArt.fxHarvest : s == .autumn ? BundleArt.fxMaple : BundleArt.fxSnowflake
+                            HStack(spacing: 2.5) {
+                                if let sImg {
+                                    Image(uiImage: sImg).resizable().interpolation(.high).scaledToFit().frame(width: 12, height: 12)
+                                }
+                                Text(s.name).font(Theme.kai(11)).foregroundStyle(sColor)
+                            }
+                            .padding(.horizontal, 5.5).padding(.vertical, 2)
+                            .background(sColor.opacity(0.12), in: Capsule())
+                            .overlay(Capsule().stroke(sColor.opacity(0.32), lineWidth: 0.6))
+                            .transition(.opacity)
+                            .animation(Motion.fade, value: s.rawValue)
                         }
                     }
                     .frame(height: Theme.Control.topHeight)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(PressStyle())
+                if let zones = model.state?.weatherZones, !zones.isEmpty {
+                    let priority: (String) -> Int = { $0 == "snow" ? 0 : ($0 == "drought" || $0 == "famine") ? 1 : $0 == "flood" ? 2 : $0 == "plague" ? 3 : 4 }
+                    if let top = zones.min(by: { priority($0.kind) < priority($1.kind) }) {
+                        let wMeta: (img: UIImage?, label: String, color: Color) = {
+                            switch top.kind {
+                            case "snow": return (BundleArt.fxWeatherSnow, "暴雪", Color(red: 0.22, green: 0.44, blue: 0.68))
+                            case "drought", "famine": return (BundleArt.fxWeatherDrought, "大旱", Color(red: 0.78, green: 0.42, blue: 0.10))
+                            case "flood": return (BundleArt.fxWeatherStorm, "洪涝", Color(red: 0.16, green: 0.42, blue: 0.58))
+                            case "plague": return (BundleArt.fxPlague, "大疫", Color(red: 0.42, green: 0.48, blue: 0.18))
+                            default: return (BundleArt.fxHarvest, "丰年", Color(red: 0.74, green: 0.54, blue: 0.10))
+                            }
+                        }()
+                        Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.8, height: 15)
+                            .transition(.opacity)
+                        Button {
+                            GameFeel.shared.tap()
+                            controller.fly(to: top.province)
+                            if let map = model.map, map.meta.provinces.indices.contains(top.province) {
+                                say("\(map.meta.provinces[top.province].name)正逢\(wMeta.label)")
+                            }
+                        } label: {
+                            HStack(spacing: 3) {
+                                ArtEmblem(image: wMeta.img, size: 15, fallback: .chronicle)
+                                if landscape || (model.state?.wars.count ?? 0) == 0 {
+                                    Text(wMeta.label).font(Theme.kai(11)).foregroundStyle(wMeta.color)
+                                }
+                            }
+                            .padding(.horizontal, 5.5).padding(.vertical, 2)
+                            .background(wMeta.color.opacity(0.12), in: Capsule())
+                            .overlay(Capsule().stroke(wMeta.color.opacity(0.30), lineWidth: 0.6))
+                            .frame(height: Theme.Control.topHeight)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PressStyle())
+                        .transition(.scale(scale: 0.82).combined(with: .opacity))
+                    }
+                }
                 if let wars = model.state?.wars.count, wars > 0 {
                     Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.8, height: 15)
                         .transition(.opacity)

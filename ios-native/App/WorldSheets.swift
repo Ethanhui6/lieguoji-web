@@ -98,8 +98,9 @@ struct MilitarySheet: View {
         return Group2 {
             VStack(alignment: .leading, spacing: 9) {
                 HStack(spacing: 8) {
+                    let atkCulture = map.meta.nations.indices.contains(war.attacker) ? map.meta.nations[war.attacker].culture : nil
                     Button { GameFeel.shared.tap(); openNation(war.attacker) } label: { NationChip(map: map, nation: war.attacker) }.buttonStyle(.plain)
-                    SealFace(text: "伐", size: 20, color: Theme.seal)
+                    ArtEmblem(image: BundleArt.warCrest(for: atkCulture), size: 22, fallback: .war)
                     Button { GameFeel.shared.tap(); openNation(war.defender) } label: { NationChip(map: map, nation: war.defender) }.buttonStyle(.plain)
                     Spacer(minLength: 4)
                     Button { GameFeel.shared.tap(); showFront(map, state, war) } label: {

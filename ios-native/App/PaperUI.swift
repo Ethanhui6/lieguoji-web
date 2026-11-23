@@ -1349,7 +1349,7 @@ struct FloatingTacticalPill: View {
             withAnimation(Motion.panel) { expanded.toggle() }
         } label: {
             ZStack(alignment: .topTrailing) {
-                SealFace(text: wars > 0 ? "战" : "印", size: 28, color: wars > 0 ? Theme.seal : Theme.jade)
+                ArtEmblem(image: wars > 0 ? BundleArt.heraldWar : BundleArt.heraldEdict, size: 26, fallback: wars > 0 ? .war : .decree)
                     .rotationEffect(.degrees(expanded ? -12 : 0))
                 if !expanded && wars > 0 {
                     Text(badgeText)
@@ -1453,7 +1453,7 @@ private struct PaperToastHost: ViewModifier {
                 ZStack {
                     if let text {
                         HStack(spacing: 8) {
-                            Seal(text: "令", size: 20)
+                            ArtEmblem(image: BundleArt.heraldEdict, size: 20, fallback: .decree)
                             Text(text).font(Theme.body).foregroundStyle(Theme.ink).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(.horizontal, 12).padding(.vertical, 9)
@@ -1514,7 +1514,7 @@ struct ScrollPowerPlacard: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    SealFace(text: "势", size: 18, color: Theme.seal)
+                    ArtEmblem(image: BundleArt.compassRose, size: 20, fallback: .views)
                     Text("天下大势 · 存世 \(standing.alive) 国")
                         .font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit()
                     if let w = hotWar {

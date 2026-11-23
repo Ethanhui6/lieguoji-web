@@ -55,13 +55,25 @@ enum ChronicleKind {
     }
 }
 
-/// The record's kind as a small seal.
+/// 纪事类别工笔微绘徽章（全面取代旧版单字方块印，同步应用于史记、国史与山河回放）。
 struct KindSeal: View {
     let kind: ChronicleKind
     var size: CGFloat = 22
+    private var artwork: UIImage? {
+        switch kind {
+        case .war: return BundleArt.heraldWar
+        case .land: return BundleArt.fxBannerVictory
+        case .politics: return BundleArt.heraldEdict
+        case .reform, .culture: return BundleArt.fxTalent
+        case .faith: return BundleArt.fxHarvest
+        case .house: return BundleArt.landmarkCapital
+        case .pact: return BundleArt.heraldPeace
+        case .event: return BundleArt.fxTrade
+        }
+    }
     var body: some View {
-        // 统一印面，颜色按纪事类别。
-        SealFace(text: kind.mark, size: size, color: kind.color.opacity(0.9)).accessibilityLabel(kind.label)
+        ArtEmblem(image: artwork, size: max(20, size + 2), fallback: .chronicle)
+            .accessibilityLabel(kind.label)
     }
 }
 

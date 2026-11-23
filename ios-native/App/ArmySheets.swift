@@ -277,8 +277,9 @@ struct ArmySheet: View {
                     }
                 }
                 if let wg = a.warGodAura, !wg.isEmpty {
+                    let armyCul = map.meta.nations.indices.contains(a.nation) ? map.meta.nations[a.nation].culture : nil
                     HStack(alignment: .center, spacing: 7) {
-                        ArtEmblem(image: BundleArt.wargodCrest, size: 22, fallback: .military)
+                        ArtEmblem(image: BundleArt.warCrest(for: armyCul), size: 22, fallback: .military)
                         Text(wg).font(Theme.caption).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                     }

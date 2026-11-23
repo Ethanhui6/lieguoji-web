@@ -202,8 +202,94 @@ public enum MapLayers {
 
     /// 舆图山川地貌层（清爽工笔重构）：
     /// 1. 疏朗山脊（h >= 61，36 格间距，仅沿真实高脊落笔，绝不铺满屏幕遮挡国界、城池与军队）；
+    /// 青绿山水手绘地形精灵实例（由 Metal 渲染器批量绘制，并随四季流转与局部旱雪实时变色）。
+    public struct TerrainStamp: Sendable {
+        public enum Kind: Int, Sendable, CaseIterable {
+            case mountain = 0
+            case mountainSnow = 1
+            case forest = 2
+            case pine = 3
+            case desert = 4
+        }
+        public let x: Float
+        public let y: Float
+        public let width: Float
+        public let height: Float
+        public let kind: Kind
+        public let flipX: Bool
+        public let shade: Float
+    }
+
+    /// 依地形海拔与生态群落生成疏密有致、自北向南叠压的宋画手绘山峰、林海与大漠沙丘分布。
+    public static func terrainStamps(_ map: WorldMap) -> [TerrainStamp] {
+        var touchesSea = [Bool](repeating: false, count: map.cellCount)
+        for e in map.edges where e.a >= 0 && e.b >= 0 {
+            let a = Int(e.a), b = Int(e.b)
+            if map.elevation[b] < WorldMap.seaLevel { touchesSea[a] = true }
+            if map.elevation[a] < WorldMap.seaLevel { touchesSea[b] = true }
+        }
+        // 避开主要城池中心，免得高山或密林遮挡王都城圈与城名
+        let cityPts: [(Float, Float)] = map.meta.cities.map { ($0.x, $0.y) }
+        func nearCity(_ x: Float, _ y: Float, _ r2: Float) -> Bool {
+            for c in cityPts {
+                let dx = x - c.0, dy = y - c.1
+                if dx * dx + dy * dy < r2 { return true }
+            }
+            return false
+        }
+        func gridKey(_ x: Float, _ y: Float, _ step: Float) -> Int64 {
+            Int64(floor(x / step)) << 32 | Int64(Int32(floor(y / step))) & 0xFFFF_FFFF
+        }
+        func grove(_ x: Float, _ y: Float) -> Float {
+            sin(x * 0.011 + 1.1) * sin(y * 0.013 + 0.6) + 0.55 * sin((x + y) * 0.0065 + 2.3)
+        }
+        var mtnGrid = Set<Int64>()
+        var woodGrid = Set<Int64>()
+        var duneGrid = Set<Int64>()
+        var stamps = [TerrainStamp]()
+        stamps.reserveCapacity(1200)
+        // 自北向南排序，使南麓自然遮掩北坡，呈现真实手卷纵深
+        let order = (0..<map.cellCount).sorted { map.sites[$0 * 2 + 1] < map.sites[$1 * 2 + 1] }
+        for i in order {
+            guard !touchesSea[i] else { continue }
+            let h = Float(map.elevation[i]), biome = map.biome[i]
+            let sx = map.sites[i * 2], sy = map.sites[i * 2 + 1]
+            let pick = UInt32(truncatingIfNeeded: i &* 2654435761) >> 16 % 100
+            let v1 = Float(i * 37 % 101) / 100
+            let v2 = Float(i * 73 % 97) / 97
+            let jx = (Float(i * 7919 % 11) - 5) * 0.48
+            let jy = (Float(i * 104_729 % 9) - 4) * 0.44
+            let x = sx + jx, y = sy + jy
+            if h >= 61 {
+                if h < 68 && pick < 42 { continue }
+                if h >= 68 && pick < 16 { continue }
+                if !mtnGrid.insert(gridKey(sx, sy, 34)).inserted { continue }
+                if nearCity(x, y, 160) { continue }
+                let snow = h >= 72
+                let baseW = (20.5 + (h - 60) * 0.44) * (0.86 + v1 * 0.34)
+                let baseH = baseW * (0.90 + v2 * 0.16)
+                stamps.append(TerrainStamp(x: x, y: y - baseH * 0.18, width: baseW, height: baseH, kind: snow ? .mountainSnow : .mountain, flipX: (i & 1) == 1, shade: 0.90 + v1 * 0.16))
+            } else if h >= 22 && biome >= 5 && biome <= 9 {
+                if grove(sx, sy) < -0.30 || pick < 20 { continue }
+                if !woodGrid.insert(gridKey(sx, sy, 26)).inserted { continue }
+                if nearCity(x, y, 130) { continue }
+                let isPine = (biome == 9) || (sy < map.height * 0.28 && pick < 55)
+                let baseW = (17.5 + v1 * 8.5) * (biome == 7 || biome == 8 ? 1.12 : 1.0)
+                let baseH = baseW * 0.94
+                stamps.append(TerrainStamp(x: x, y: y - baseH * 0.12, width: baseW, height: baseH, kind: isPine ? .pine : .forest, flipX: (i & 2) == 2, shade: 0.88 + v2 * 0.18))
+            } else if h >= Float(WorldMap.seaLevel) + 2 && (biome == 1 || biome == 2) {
+                if pick < 52 { continue }
+                if !duneGrid.insert(gridKey(sx, sy, 34)).inserted { continue }
+                if nearCity(x, y, 140) { continue }
+                let baseW = 19.0 + v1 * 8.0
+                stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.72, kind: .desert, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
+            }
+        }
+        return stamps
+    }
+
     /// 2. 丘陵起伏（46 <= h < 61 绘温润弧形土丘与向阳坡色）；
-    /// 3. 丰富多样的非山地地貌：针叶泰加林、热带/温带阔叶林、大漠沙丘与绿洲、泽国水洼芦苇、稀树草原金合欢、平畴草甸、冻原苔藓、冰原冰脊。
+    /// 3. 丰富多样的非山地微地貌（山脉与森林主体已升级为 GPU 宋画青绿山水精灵，此处保留柔和山麓雾影与丘陵/绿洲/泽国/草原/苔原/冰原笔触，不与手绘山林重影）。
     public static func relief(_ map: WorldMap) -> ColoredMesh {
         var touchesSea = [Bool](repeating: false, count: map.cellCount)
         for e in map.edges where e.a >= 0 && e.b >= 0 {
@@ -211,18 +297,14 @@ public enum MapLayers {
             if map.elevation[b] < WorldMap.seaLevel { touchesSea[a] = true }
             if map.elevation[a] < WorldMap.seaLevel { touchesSea[b] = true }
         }
-        let light = RGB(hex: 0xECE3CE), ink = RGB(hex: 0x4A4032), shadowInk = RGB(hex: 0x3D3529)
-        let snowSun = RGB(hex: 0xFBF8F1), snowShade = RGB(hex: 0xC8D8E4)
-        let treeDark = RGB(hex: 0x2F5239), treeMid = RGB(hex: 0x466F4B), treeLit = RGB(hex: 0x6A915E), trunk = RGB(hex: 0x3A4A36)
+        let shadowInk = RGB(hex: 0x3D3529)
         var mtnGrid = Set<Int64>()
         var woodGrid = Set<Int64>()
         var m = ColoredMesh()
         func gridKey(_ x: Float, _ y: Float, _ step: Float) -> Int64 {
             Int64(floor(x / step)) << 32 | Int64(Int32(floor(y / step))) & 0xFFFF_FFFF
         }
-        // 林地疏密场：林海成片成团，留出清晰河谷与城邦空地
         func grove(_ x: Float, _ y: Float) -> Float { sin(x * 0.012 + 1.3) * sin(y * 0.014 + 0.7) + 0.55 * sin((x + y) * 0.007 + 2.1) }
-        // 自北向南绘制，令前峰自然压住后峰
         let order = (0..<map.cellCount).sorted { map.sites[$0 * 2 + 1] < map.sites[$1 * 2 + 1] }
         for i in order {
             let h = Float(map.elevation[i]), biome = map.biome[i]
@@ -233,86 +315,19 @@ public enum MapLayers {
             let sx = map.sites[i * 2], sy = map.sites[i * 2 + 1]
             let pick = UInt32(truncatingIfNeeded: i &* 2654435761) >> 16 % 100
             if mountain {
-                // 低矮山麓大幅疏朗（跳过 46%），仅真正险峻高脊成脉连绵，彻底根治“满屏黑山糊成一片”
-                if h < 69 && pick < 46 { continue }
-                if h >= 69 && pick < 18 { continue }
-                let key = gridKey(sx, sy, 36)
+                if h < 68 && pick < 42 { continue }
+                if h >= 68 && pick < 16 { continue }
+                let key = gridKey(sx, sy, 34)
                 if !mtnGrid.insert(key).inserted { continue }
-                let jx = Float(i * 7919 % 11) - 5, jy = Float(i * 104_729 % 9) - 4
-                let x = sx + jx * 0.45, y = sy + jy * 0.45
-                let v1 = Float(i * 37 % 101) / 100
-                let v2 = Float(i * 73 % 97) / 97
-                // 峰形收秀挺拔（较旧版收瘦 26%），留出通透国色与国界空间
-                let w = (5.2 + (h - 60) * 0.11) * (0.85 + v1 * 0.32)
-                let height = (7.8 + (h - 60) * 0.20) * (0.88 + v1 * 0.28)
-                let peakX = x + (v2 - 0.5) * 2.4
-                let peakY = y - height
-
-                // 轻薄山脚阴影
-                m.fill([x - w * 1.12, y + 2.8, x - w * 0.4, y + 1.1, x + w * 0.5, y + 1.2, x + w * 1.16, y + 3.0, x + w * 0.2, y + 3.9, x - w * 0.6, y + 3.7], shadowInk, alpha: 0.08)
-
-                // 高大山脊才附带一处远景小副峰，避免杂乱三角重叠
-                if h >= 66 {
-                    let subSide: Float = v2 > 0.5 ? -1 : 1
-                    let subX = x + subSide * w * 0.68
-                    let subY = y - height * (0.56 + v1 * 0.12)
-                    let subW = w * 0.58
-                    let subPoly: [Float] = [subX - subW, y + 2.2, subX - subW * 0.42, subY + (y - subY) * 0.48, subX, subY, subX + subW * 0.48, subY + (y - subY) * 0.50, subX + subW, y + 2.2]
-                    m.fill(subPoly, light, alpha: 0.26)
-                    m.fill([subX, subY, subX + subW * 0.48, subY + (y - subY) * 0.50, subX + subW, y + 2.2, subX + subW * 0.06, y + 1.5], ink, alpha: 0.16)
-                    m.polyline(subPoly, width: 0.46, ink, alpha: 0.42)
-                }
-
-                // 前景主峰：柔和向阳面 + 清雅背阴面 + 简洁山脊线
-                let lMidX = peakX - w * 0.54, lMidY = peakY + height * 0.48
-                let rMidX = peakX + w * 0.46, rMidY = peakY + height * 0.44
-                let spineX = peakX - w * 0.06, spineY = peakY + height * 0.55
-                let mainPoly: [Float] = [x - w * 1.06, y + 2.8, lMidX, lMidY, peakX, peakY, rMidX, rMidY, x + w * 1.08, y + 2.8]
-                m.fill(mainPoly, light, alpha: 0.36)
-                m.fill([peakX, peakY, rMidX, rMidY, x + w * 1.08, y + 2.8, x + w * 0.10, y + 2.0, spineX, spineY], ink, alpha: 0.22)
-                m.polyline(mainPoly, width: 0.62, ink, alpha: 0.54)
-                m.polyline([peakX, peakY, spineX, spineY, x - w * 0.12, y + 2.4], width: 0.48, ink, alpha: 0.48)
-
-                // 高海拔雪山（h >= 70）：温润雪白 + 冰蓝背坡
-                if h >= 70 {
-                    let snowFrac: Float = min(0.50, 0.26 + (h - 70) * 0.012)
-                    let slX = peakX + (lMidX - peakX) * snowFrac * 1.4, slY = peakY + (lMidY - peakY) * snowFrac * 1.4
-                    let srX = peakX + (rMidX - peakX) * snowFrac * 1.4, srY = peakY + (rMidY - peakY) * snowFrac * 1.4
-                    let scX = peakX + (spineX - peakX) * snowFrac * 1.3, scY = peakY + (spineY - peakY) * snowFrac * 1.3
-                    m.fill([peakX, peakY, slX, slY, (slX + scX) * 0.5, scY - 0.5, scX, scY], snowSun, alpha: 0.90)
-                    m.fill([peakX, peakY, scX, scY, (scX + srX) * 0.5, srY + 0.5, srX, srY], snowShade, alpha: 0.84)
-                }
+                // 极淡山脚晕影承托手绘宋画山峰，消除硬边割裂
+                let w: Float = 8.5 + (h - 60) * 0.14
+                m.disc(sx + 0.8, sy + 2.2, radius: w * 0.65, shadowInk, alpha: 0.06, sides: 8)
             } else {
-                if grove(sx, sy) < -0.35 || pick < 22 { continue }
-                let key = gridKey(sx, sy, 27)
+                if grove(sx, sy) < -0.30 || pick < 20 { continue }
+                let key = gridKey(sx, sy, 26)
                 if !woodGrid.insert(key).inserted { continue }
-                let jx = Float(i * 7919 % 11) - 5, jy = Float(i * 104_729 % 9) - 4
-                let x = sx + jx * 0.45, y = sy + jy * 0.45
-                if biome == 9 {
-                    // 北方针叶泰加林：双层松柏林丛
-                    let pineDark = RGB(hex: 0x264734), pineLit = RGB(hex: 0x3E684C)
-                    for (dx, dy, sc) in [(Float(-3.6), Float(1.1), Float(0.86)), (0.6, -2.1, 1.08), (4.4, 1.5, 0.90)] {
-                        let cx = x + dx, cy = y + dy
-                        m.disc(cx, cy + 3.2 * sc, radius: 2.2 * sc, shadowInk, alpha: 0.12, sides: 7)
-                        m.fill([cx, cy - 7.2 * sc, cx - 2.3 * sc, cy - 2.2 * sc, cx - 1.0 * sc, cy - 2.2 * sc, cx - 3.0 * sc, cy + 2.2 * sc, cx + 3.0 * sc, cy + 2.2 * sc, cx + 1.0 * sc, cy - 2.2 * sc, cx + 2.3 * sc, cy - 2.2 * sc], pineDark, alpha: 0.62)
-                        m.fill([cx, cy - 7.2 * sc, cx - 1.9 * sc, cy - 2.2 * sc, cx - 0.1 * sc, cy + 2.0 * sc], pineLit, alpha: 0.42)
-                        m.segment(cx, cy + 2.0 * sc, cx, cy + 4.2 * sc, width: 0.55, trunk, alpha: 0.58)
-                    }
-                } else {
-                    // 热带雨林（浓翠深绿）与温带阔叶林（苍翠明润）层次分明
-                    let tropical = (biome == 7 || biome == 8)
-                    let dark = tropical ? RGB(hex: 0x1E4E30) : treeDark
-                    let mid = tropical ? RGB(hex: 0x317443) : treeMid
-                    let lit = tropical ? RGB(hex: 0x579A5A) : treeLit
-                    for (dx, dy, sc) in [(Float(-3.8), Float(1.3), Float(0.92)), (1.0, -2.0, 1.12), (4.9, 1.5, 0.88)] {
-                        let cx = x + dx, cy = y + dy
-                        m.disc(cx + 0.4, cy + 3.1 * sc, radius: 2.6 * sc, shadowInk, alpha: 0.11, sides: 7)
-                        m.segment(cx, cy + 0.5, cx, cy + 4.1 * sc, width: 0.6, trunk, alpha: 0.56)
-                        m.disc(cx, cy - 0.5 * sc, radius: 3.3 * sc, dark, alpha: 0.58, sides: 8)
-                        m.disc(cx - 0.5 * sc, cy - 1.5 * sc, radius: 2.6 * sc, mid, alpha: 0.58, sides: 8)
-                        m.disc(cx - 1.0 * sc, cy - 2.2 * sc, radius: 1.5 * sc, lit, alpha: 0.50, sides: 6)
-                    }
-                }
+                // 极淡林荫地影承托手绘宋画林海
+                m.disc(sx + 0.5, sy + 2.0, radius: 4.8, shadowInk, alpha: 0.055, sides: 7)
             }
         }
         // 非山地特色地貌层（常规缩放即清晰可见，不再藏在极近缩放里）：
@@ -712,12 +727,12 @@ public enum MapLayers {
         }
 
         let unit = min(w, h)
-        let trimH = unit * 0.040
-        let rollerW = unit * 0.048
-        let capOut = unit * 0.028
-        let leftX0 = -rollerW * 0.86, leftX1 = rollerW * 0.20
-        let rightX0 = w - rollerW * 0.20, rightX1 = w + rollerW * 0.86
-        let rollTop = -trimH - capOut * 0.18, rollBot = h + trimH + capOut * 0.18
+        let trimH = unit * 0.032
+        let rollerW = unit * 0.038
+        let capOut = unit * 0.024
+        let leftX0 = -rollerW * 0.86, leftX1 = rollerW * 0.18
+        let rightX0 = w - rollerW * 0.18, rightX1 = w + rollerW * 0.86
+        let rollTop = -trimH - capOut * 0.16, rollBot = h + trimH + capOut * 0.16
 
         // 0. 无缝 45° 斜接御案定向落影（西北主光 → 东南柔影，零重叠黑块！）
         miterShadowRing(
@@ -810,20 +825,44 @@ public enum MapLayers {
             }
         }
 
-        // 画心内外双层细金墨框 + 四角传统双层回纹鎏金包角
-        let ruleIn = unit * 0.009, ruleOut = unit * 0.0035
-        m.polyline([ruleIn, ruleIn, w - ruleIn, ruleIn, w - ruleIn, h - ruleIn, ruleIn, h - ruleIn, ruleIn, ruleIn], width: max(1.0, unit * 0.0017), silkDeep, alpha: 0.68)
-        m.polyline([ruleOut, ruleOut, w - ruleOut, ruleOut, w - ruleOut, h - ruleOut, ruleOut, h - ruleOut, ruleOut, ruleOut], width: max(0.75, unit * 0.0012), ink, alpha: 0.52)
+        // 画心内缘古舆图「经纬分度刻度边栏」：内外双层金墨细框之间交错嵌印古铜墨与象牙金分度格，四角交由 GPU 贴合手绘鎏金碧玉云纹包角（scroll-corner.png）。
+        let ruleIn = unit * 0.0125, ruleOut = unit * 0.0030
+        let bandW = ruleIn - ruleOut
+        // 柔和纸白底带承托分度格
+        rect(ruleOut, ruleOut, w - ruleOut, ruleIn, paperEdge, alpha: 0.56)
+        rect(ruleOut, h - ruleIn, w - ruleOut, h - ruleOut, paperEdge, alpha: 0.56)
+        rect(ruleOut, ruleIn, ruleIn, h - ruleIn, paperEdge, alpha: 0.56)
+        rect(w - ruleIn, ruleIn, w - ruleOut, h - ruleIn, paperEdge, alpha: 0.56)
 
-        let cLen = unit * 0.048, cStep = unit * 0.013, cw = max(1.3, unit * 0.0023)
-        for (sx, sy, ox, oy) in [(Float(1), Float(1), ruleIn, ruleIn), (-1, 1, w - ruleIn, ruleIn), (1, -1, ruleIn, h - ruleIn), (-1, -1, w - ruleIn, h - ruleIn)] {
-            m.polyline([ox, oy + sy * cLen, ox, oy, ox + sx * cLen, oy], width: cw * 1.45, brocadeRed, alpha: 0.90)
-            m.polyline([ox + sx * cStep, oy + sy * (cLen * 0.78), ox + sx * cStep, oy + sy * cStep, ox + sx * (cLen * 0.78), oy + sy * cStep], width: cw * 0.95, silkGoldLight, alpha: 0.94)
-            // 回纹拐钩
-            let hook = cStep * 1.9
-            m.polyline([ox + sx * hook, oy + sy * (cStep * 2.7), ox + sx * hook, oy + sy * hook, ox + sx * (cStep * 2.7), oy + sy * hook], width: cw * 0.72, goldBright, alpha: 0.85)
-            m.disc(ox + sx * cStep * 1.4, oy + sy * cStep * 1.4, radius: cw * 1.15, goldBright, alpha: 0.92, sides: 10)
+        // 上下经度分度交错刻格（避让四角鎏金云纹包角区）
+        let cornerSkip = unit * 0.055
+        let hSegs = 24
+        let hSpan = max(1, (w - cornerSkip * 2) / Float(hSegs))
+        for i in 0..<hSegs {
+            let x0 = cornerSkip + Float(i) * hSpan
+            let x1 = x0 + hSpan
+            let dark = (i % 2 == 0)
+            let c = dark ? ink : goldMid
+            let a: Float = dark ? 0.42 : 0.34
+            rect(x0, ruleOut + bandW * 0.22, x1, ruleIn - bandW * 0.22, c, alpha: a)
+            rect(x0, h - ruleIn + bandW * 0.22, x1, h - ruleOut - bandW * 0.22, c, alpha: a)
         }
+        // 左右纬度分度交错刻格
+        let vSegs = 16
+        let vSpan = max(1, (h - cornerSkip * 2) / Float(vSegs))
+        for j in 0..<vSegs {
+            let y0 = cornerSkip + Float(j) * vSpan
+            let y1 = y0 + vSpan
+            let dark = (j % 2 == 0)
+            let c = dark ? ink : goldMid
+            let a: Float = dark ? 0.42 : 0.34
+            rect(ruleOut + bandW * 0.22, y0, ruleIn - bandW * 0.22, y1, c, alpha: a)
+            rect(w - ruleIn + bandW * 0.22, y0, w - ruleOut - bandW * 0.22, y1, c, alpha: a)
+        }
+
+        // 内外双层精描金墨舆图框线
+        m.polyline([ruleIn, ruleIn, w - ruleIn, ruleIn, w - ruleIn, h - ruleIn, ruleIn, h - ruleIn, ruleIn, ruleIn], width: max(1.0, unit * 0.0017), silkDeep, alpha: 0.74)
+        m.polyline([ruleOut, ruleOut, w - ruleOut, ruleOut, w - ruleOut, h - ruleOut, ruleOut, h - ruleOut, ruleOut, ruleOut], width: max(0.85, unit * 0.0013), ink, alpha: 0.62)
 
         // 3. 左右 24 段光滑圆柱立体紫檀卷轴 + 卷纸侧叠断面 + 鎏金雕花轴箍 + 雕刻青碧玉葫芦轴头 + 朱锦丝绦
         func drawRoller(x0: Float, x1: Float, inwardRight: Bool, addTassel: Bool) {

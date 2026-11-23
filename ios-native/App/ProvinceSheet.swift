@@ -78,7 +78,7 @@ struct ProvinceSheet: View {
                     if let siege {
                         Group2 {
                             HStack(spacing: 8) {
-                                SealFace(text: "围", size: 22, color: Theme.seal)
+                                ArtEmblem(image: BundleArt.fxSiegeFlame, size: 24, fallback: .war)
                                 Text("敌军围城中").font(Theme.body).foregroundStyle(Theme.seal)
                                 Spacer()
                                 NationChip(map: map, nation: siege.nation)

@@ -97,8 +97,8 @@ import LieguojiCore
     }
     @Published var failure: String?
     @Published var generationNote = ""
-    /// A war declared, a peace made, a royal marriage, house coup, regime shift, treaty or ultimatum: shown as a banner for a moment.
-    struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital, marriage, house, coup, regime, treaty, ultimatum } }
+    /// A war declared, a peace made, a royal marriage, house coup, regime shift, treaty, ultimatum, or seasonal weather event: shown as a banner for a moment.
+    struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital, marriage, house, coup, regime, treaty, ultimatum, blizzard, drought, flood, harvest, plague } }
     @Published var herald: Herald?
     private var heraldQueue: [Herald] = []
     private var heraldTask: Task<Void, Never>?
@@ -108,6 +108,9 @@ import LieguojiCore
             dismissHerald()
             pendingLabels = nil
             lastMapUpdate = 0
+            controller.weatherZones = []
+            controller.weatherGPUZones = []
+            controller.weatherRevision &+= 1
             Task { await refreshCustom(); loadCheckpoints() }
         }
     }
@@ -913,6 +916,31 @@ import LieguojiCore
                 if holy != controller.holy { controller.holy = holy }
             }
         }
+        // 同步活跃四季天气与灾丰州郡至 GPU 着色缓冲与 60fps 大气粒子层。
+        if let meta = map?.meta {
+            let baseRadius = max(22, Float(min(world.width, world.height)) * 0.058)
+            var uiZones: [WeatherOverlayView.Zone] = []
+            var gpuZones: [(x: Float, y: Float, radius: Float, kind: Float)] = []
+            for wz in (next.weatherZones ?? []) where meta.provinces.indices.contains(wz.province) {
+                let kindCode: Int
+                switch wz.kind {
+                case "snow": kindCode = 1
+                case "drought", "famine": kindCode = 2
+                case "flood": kindCode = 3
+                case "plague": kindCode = 4
+                case "harvest": kindCode = 5
+                default: continue
+                }
+                let pr = meta.provinces[wz.province]
+                uiZones.append(.init(province: wz.province, x: Double(pr.x), y: Double(pr.y), kind: kindCode))
+                gpuZones.append((x: pr.x, y: pr.y, radius: baseRadius, kind: Float(kindCode)))
+            }
+            if uiZones != controller.weatherZones {
+                controller.weatherZones = uiZones
+                controller.weatherGPUZones = gpuZones
+                controller.weatherRevision &+= 1
+            }
+        }
         refreshLanes()
         refreshWashes(previous: previous, next: next)
         refreshArmies()
@@ -969,6 +997,16 @@ import LieguojiCore
         guard controller.play.showHeralds || controller.play.pauseOnNews else { return }
         guard let map else { return }
         let name = { (n: Int) in n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].name : "" }
+        func eventNations(_ e: GameState.Event) -> [Int] {
+            if let p = e.province, next.owners.indices.contains(p), next.owners[p] >= 0 {
+                return [next.owners[p]]
+            }
+            let matched = map.meta.nations.indices.filter { !map.meta.nations[$0].name.isEmpty && e.text.contains(map.meta.nations[$0].name) }
+            if let best = matched.max(by: { map.meta.nations[$0].name.count < map.meta.nations[$1].name.count }) {
+                return [best]
+            }
+            return []
+        }
         let before = Set(old.wars.map(\.id)), after = Set(next.wars.map(\.id))
         for w in next.wars where !before.contains(w.id) {
             enqueue(Herald(kind: .war, text: "\(name(w.attacker))以\(w.casusBelli.isEmpty ? "开战" : w.casusBelli)为由向\(name(w.defender))宣战", nations: [w.attacker, w.defender]))
@@ -976,29 +1014,44 @@ import LieguojiCore
         for w in old.wars where !after.contains(w.id) {
             enqueue(Herald(kind: .peace, text: "\(name(w.attacker))与\(name(w.defender))议和", nations: [w.attacker, w.defender]))
         }
-        // Revolutions, coups, regime shifts, treaties, ultimatums and royal marriages are proclaimed with bespoke ink animations.
+        // Revolutions, coups, regime shifts, treaties, ultimatums, royal marriages and seasonal weather events are proclaimed with bespoke civilization-matched animations.
+        var weatherAnnounced = false
         for e in newEvents {
+            let nats = eventNations(e)
             if e.text.contains("最后通牒") {
-                enqueue(Herald(kind: .ultimatum, text: e.text, nations: []))
+                enqueue(Herald(kind: .ultimatum, text: e.text, nations: nats))
             } else if e.text.contains("政变") || e.text.contains("兵变") || e.text.contains("夺权") {
-                enqueue(Herald(kind: .coup, text: e.text, nations: []))
+                enqueue(Herald(kind: .coup, text: e.text, nations: nats))
             } else if e.text.contains("篡位") || e.text.contains("削藩激变") {
-                enqueue(Herald(kind: .house, text: e.text, nations: []))
+                enqueue(Herald(kind: .house, text: e.text, nations: nats))
             } else if e.text.contains("联姻") || e.text.contains("结为秦晋之好") {
-                enqueue(Herald(kind: .marriage, text: e.text, nations: []))
+                enqueue(Herald(kind: .marriage, text: e.text, nations: nats))
             } else if e.text.contains("包围网") || e.text.contains("共同防御") || e.text.contains("通商协定") || e.text.contains("斡旋") {
-                enqueue(Herald(kind: .treaty, text: e.text, nations: []))
+                enqueue(Herald(kind: .treaty, text: e.text, nations: nats))
             } else if e.text.contains("革命") || e.text.contains("立宪") || e.text.contains("改称") || e.text.contains("改制") || e.text.contains("禅位") || e.text.contains("改建") || e.text.contains("改行") || e.text.contains("复辟") || e.text.contains("还政于民") {
-                enqueue(Herald(kind: .regime, text: e.text, nations: []))
+                enqueue(Herald(kind: .regime, text: e.text, nations: nats))
+            } else if !weatherAnnounced {
+                if e.text.contains("暴雪") || e.text.contains("大雪") || e.text.contains("雪灾") || e.text.contains("封山") {
+                    enqueue(Herald(kind: .blizzard, text: e.text, nations: nats)); weatherAnnounced = true
+                } else if e.text.contains("大旱") || e.text.contains("旱灾") || e.text.contains("赤地") || e.text.contains("饥荒") {
+                    enqueue(Herald(kind: .drought, text: e.text, nations: nats)); weatherAnnounced = true
+                } else if e.text.contains("洪涝") || e.text.contains("洪水") || e.text.contains("水患") || e.text.contains("梅雨") {
+                    enqueue(Herald(kind: .flood, text: e.text, nations: nats)); weatherAnnounced = true
+                } else if e.text.contains("瘟疫") || e.text.contains("大疫") {
+                    enqueue(Herald(kind: .plague, text: e.text, nations: nats)); weatherAnnounced = true
+                } else if e.text.contains("大稔") || e.text.contains("五谷丰登") || e.text.contains("春耕大兴") {
+                    enqueue(Herald(kind: .harvest, text: e.text, nations: nats)); weatherAnnounced = true
+                }
             }
         }
         // Rebellions, restorations, dynasties dying out and capitals moving: the original's big news.
         for e in newEvents {
+            let nats = eventNations(e)
             switch e.kind {
-            case "uprising": enqueue(Herald(kind: .uprising, text: e.text, nations: []))
-            case "restoration": enqueue(Herald(kind: .restoration, text: e.text, nations: []))
-            case "extinction": enqueue(Herald(kind: .extinction, text: e.text, nations: []))
-            case "capital": enqueue(Herald(kind: .capital, text: e.text, nations: []))
+            case "uprising": enqueue(Herald(kind: .uprising, text: e.text, nations: nats))
+            case "restoration": enqueue(Herald(kind: .restoration, text: e.text, nations: nats))
+            case "extinction": enqueue(Herald(kind: .extinction, text: e.text, nations: nats))
+            case "capital": enqueue(Herald(kind: .capital, text: e.text, nations: nats))
             default: break
             }
         }
@@ -1034,12 +1087,12 @@ import LieguojiCore
                 if h.kind == .war, h.nations.count >= 2, let s = self.state, !s.atWar(h.nations[0], h.nations[1]) { continue }
                 self.herald = h
                 switch h.kind {
-                case .war, .uprising, .house, .coup, .ultimatum: GameFeel.shared.news(.warning)
-                case .peace, .restoration, .marriage, .treaty, .regime: GameFeel.shared.news(.success)
+                case .war, .uprising, .house, .coup, .ultimatum, .blizzard, .drought, .flood, .plague: GameFeel.shared.news(.warning)
+                case .peace, .restoration, .marriage, .treaty, .regime, .harvest: GameFeel.shared.news(.success)
                 case .capture, .extinction, .capital: GameFeel.shared.newsTap()
                 }
-                // 场景时长：宣战/政变/通牒 2.9 秒、议和/改制/邦交 2.6 秒、攻克 1.8 秒，其余 2.4 秒。
-                let seconds: Double = (h.kind == .war || h.kind == .coup || h.kind == .ultimatum) ? 2.9 : (h.kind == .peace || h.kind == .regime || h.kind == .treaty) ? 2.6 : h.kind == .capture ? 1.8 : 2.4
+                // 场景时长：宣战/政变/通牒 2.9 秒、议和/改制/邦交/天时灾丰 2.5 秒、攻克 1.8 秒，其余 2.4 秒。
+                let seconds: Double = (h.kind == .war || h.kind == .coup || h.kind == .ultimatum) ? 2.9 : (h.kind == .peace || h.kind == .regime || h.kind == .treaty || h.kind == .blizzard || h.kind == .drought || h.kind == .flood || h.kind == .harvest || h.kind == .plague) ? 2.5 : h.kind == .capture ? 1.8 : 2.4
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
                 // A host under load may take longer than the banner's normal lifetime to take the shot.
                 if ShotTour.on {
@@ -1060,8 +1113,9 @@ import LieguojiCore
     func playMuster(nation n: Int, province p: Int, count: Int) {
         guard let map, let at = map.meta.cities.first(where: { $0.province == p }) else { return }
         let c = n >= 0 && n < map.meta.nations.count ? (RGB(css: map.meta.nations[n].color) ?? RGB(0.6, 0.6, 0.6)) : RGB(0.6, 0.6, 0.6)
+        let cul = n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].culture : ""
         var e = controller.effects
-        e.bursts.append(.init(id: "muster-\(p)-\(UUID().uuidString)", x: Double(at.x), y: Double(at.y), kind: .founded, r: Double(c.r), g: Double(c.g), b: Double(c.b)))
+        e.bursts.append(.init(id: "muster-\(p)-\(UUID().uuidString)", x: Double(at.x), y: Double(at.y), kind: .founded, r: Double(c.r), g: Double(c.g), b: Double(c.b), culture: cul))
         controller.effects = e
         controller.onHits?([(x: at.x, y: at.y, text: "+\(count) 军", naval: false)])
     }
@@ -1071,6 +1125,10 @@ import LieguojiCore
         func rgb(_ n: Int) -> (Double, Double, Double) {
             let c = n >= 0 && n < map.meta.nations.count ? (RGB(css: map.meta.nations[n].color) ?? RGB(0.6, 0.6, 0.6)) : RGB(0.6, 0.6, 0.6)
             return (Double(c.r), Double(c.g), Double(c.b))
+        }
+        func cultureOf(_ n: Int) -> String {
+            guard n >= 0, n < map.meta.nations.count else { return "" }
+            return map.meta.nations[n].culture
         }
         var e = MapEffects()
         // The original BattleSword plays between every pair of armies in contact; pairs at one
@@ -1128,7 +1186,7 @@ import LieguojiCore
         }
         for (key, v) in spots.sorted(by: { $0.key < $1.key }) {
             let s = sides[key]
-            var battle = MapEffects.Battle(key: key, x: v.x / v.n, y: v.y / v.n, left: s.flatMap { side($0.0) }, right: s.flatMap { side($0.1) })
+            var battle = MapEffects.Battle(key: key, x: v.x / v.n, y: v.y / v.n, left: s.flatMap { side($0.0) }, right: s.flatMap { side($0.1) }, culture: s.map { cultureOf($0.0) } ?? "")
             if let p = ends[key] { battle.ax = p.0; battle.ay = p.1; battle.bx = p.2; battle.by = p.3 }
             if let s, let f = fighters[key] {
                 for (i, n) in f { if n == s.0 { battle.leftTroops += state.armies[i].troops } else { battle.rightTroops += state.armies[i].troops } }
@@ -1175,7 +1233,7 @@ import LieguojiCore
                 let lead = fallen[group.members[0]]
                 let at = group.members.reduce(SIMD2<Float>(0, 0)) { $0 + fallen[$1].at } / Float(group.members.count)
                 let c = rgb(lead.army.nation)
-                var burst = MapEffects.Burst(id: lead.id, x: Double(at.x), y: Double(at.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: lead.army.unit)
+                var burst = MapEffects.Burst(id: lead.id, x: Double(at.x), y: Double(at.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: lead.army.unit, culture: cultureOf(lead.army.nation))
                 burst.delay = delay; burst.count = group.members.count
                 e.bursts.append(burst)
                 for m in group.members { delays[fallen[m].army.id] = delay }
@@ -1185,30 +1243,46 @@ import LieguojiCore
             let aliveFleets = Set((state.fleets ?? []).filter { $0.status != "lost" }.map(\.id))
             for f in (previous.fleets ?? []) where f.status != "lost" && !aliveFleets.contains(f.id) {
                 let c = rgb(f.nation)
-                var burst = MapEffects.Burst(id: "df-\(f.id)-\(state.day)", x: Double(f.x), y: Double(f.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: "Fleet")
+                var burst = MapEffects.Burst(id: "df-\(f.id)-\(state.day)", x: Double(f.x), y: Double(f.y), kind: .destroyed, r: c.0, g: c.1, b: c.2, unit: "Fleet", culture: cultureOf(f.nation))
                 burst.count = max(1, f.ships / 2)
                 e.bursts.append(burst)
             }
             for n in previous.nations.count..<max(previous.nations.count, state.nations.count) where n < map.meta.nations.count {
                 let c = rgb(n), cap = map.meta.nations[n].capital
-                if cap >= 0, cap < map.meta.cities.count { e.bursts.append(.init(id: "n\(n)-\(state.day)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: .founded, r: c.0, g: c.1, b: c.2)) }
+                if cap >= 0, cap < map.meta.cities.count { e.bursts.append(.init(id: "n\(n)-\(state.day)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: .founded, r: c.0, g: c.1, b: c.2, culture: cultureOf(n))) }
             }
             let before = Set(previous.wars.map(\.id))
             for w in state.wars where !before.contains(w.id) {
                 if w.defender >= 0, w.defender < map.meta.nations.count {
                     let cap = map.meta.nations[w.defender].capital
-                    if cap >= 0, cap < map.meta.cities.count { e.bursts.append(.init(id: "s\(w.id)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: .shock, r: 0.86, g: 0.12, b: 0.1)) }
+                    if cap >= 0, cap < map.meta.cities.count { e.bursts.append(.init(id: "s\(w.id)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: .shock, r: 0.86, g: 0.12, b: 0.1, culture: cultureOf(w.attacker))) }
                 }
             }
             // The chronicle's happenings play at the capital of the state they name.
             var ripples = [Int]()
-            let kinds: [(String, MapEffects.Burst.Kind)] = [("农民起义", .shock), ("军阀割据", .coup), ("藩镇独立", .coup), ("宗教起义", .regime), ("复国运动", .founded), ("复辟", .regime), ("改制", .regime), ("禅位", .regime), ("改建", .regime), ("推行", .talent), ("诗文", .talent), ("书院", .talent), ("文艺复兴", .talent), ("寺观", .talent), ("五谷丰登", .harvest), ("人丁兴旺", .harvest), ("婴戏盈门", .harvest), ("天灾", .disaster), ("大旱", .disaster), ("水患", .disaster), ("大雪", .disaster), ("蝗灾", .disaster), ("地震", .disaster), ("洪水", .disaster), ("大火", .disaster), ("名臣辈出", .talent), ("开科", .talent), ("名医", .talent), ("学者", .talent), ("瘟疫", .plague), ("商路大开", .trade), ("互市", .trade), ("宝藏", .trade), ("矿藏", .trade), ("万国来朝", .trade), ("篡位", .coup), ("政变", .coup), ("夺权", .coup), ("革命", .coup), ("倒台", .regime), ("改称", .regime), ("改行", .regime), ("改奉", .regime), ("破产", .regime), ("总罢工", .shock), ("街头冲突", .shock), ("学潮", .shock)]
+            let kinds: [(String, MapEffects.Burst.Kind)] = [
+                ("农民起义", .shock), ("军阀割据", .coup), ("藩镇独立", .coup), ("宗教起义", .regime), ("复国运动", .founded),
+                ("复辟", .regime), ("改制", .regime), ("禅位", .regime), ("改建", .regime), ("推行", .talent),
+                ("诗文", .talent), ("书院", .talent), ("文艺复兴", .talent), ("寺观", .talent),
+                ("五谷丰登", .harvest), ("大稔", .harvest), ("春耕", .harvest), ("人丁兴旺", .harvest), ("婴戏盈门", .harvest),
+                ("暴雪", .snow), ("大雪", .snow), ("雪灾", .snow), ("封山", .snow),
+                ("大旱", .drought), ("旱灾", .drought), ("赤地", .drought), ("饥荒", .drought),
+                ("洪水", .flood), ("洪涝", .flood), ("水患", .flood), ("梅雨", .flood),
+                ("天灾", .disaster), ("蝗灾", .disaster), ("地震", .disaster), ("大火", .disaster),
+                ("名臣辈出", .talent), ("开科", .talent), ("名医", .talent), ("学者", .talent),
+                ("瘟疫", .plague), ("大疫", .plague),
+                ("商路大开", .trade), ("互市", .trade), ("宝藏", .trade), ("矿藏", .trade), ("万国来朝", .trade),
+                ("篡位", .coup), ("政变", .coup), ("夺权", .coup), ("革命", .coup),
+                ("倒台", .regime), ("改称", .regime), ("改行", .regime), ("改奉", .regime), ("破产", .regime),
+                ("总罢工", .shock), ("街头冲突", .shock), ("学潮", .shock)
+            ]
             for ev in newEvents {
                 guard let kind = kinds.first(where: { ev.text.contains($0.0) })?.1 else { continue }
                 // Where it happened, when the chronicle knows the place.
                 if let p = ev.province, let city = map.meta.cities.first(where: { $0.province == p }) {
-                    e.bursts.append(.init(id: "e\(ev.day)-\(ev.text.hashValue)", x: Double(city.x), y: Double(city.y), kind: kind, r: 0.86, g: 0.2, b: 0.12))
-                    if kind == .regime || kind == .coup, state.owners.indices.contains(p), state.owners[p] >= 0, !ripples.contains(state.owners[p]) { ripples.append(state.owners[p]) }
+                    let owner = state.owners.indices.contains(p) ? state.owners[p] : -1
+                    e.bursts.append(.init(id: "e\(ev.day)-\(ev.text.hashValue)", x: Double(city.x), y: Double(city.y), kind: kind, r: 0.86, g: 0.2, b: 0.12, culture: cultureOf(owner)))
+                    if kind == .regime || kind == .coup, owner >= 0, !ripples.contains(owner) { ripples.append(owner) }
                     continue
                 }
                 let named = map.meta.nations.indices.filter { !map.meta.nations[$0].name.isEmpty && ev.text.hasPrefix(map.meta.nations[$0].name) }
@@ -1216,7 +1290,7 @@ import LieguojiCore
                 let cap = map.meta.nations[n].capital
                 guard map.meta.cities.indices.contains(cap) else { continue }
                 let c = rgb(n)
-                e.bursts.append(.init(id: "e\(ev.day)-\(ev.text.hashValue)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: kind, r: c.0, g: c.1, b: c.2))
+                e.bursts.append(.init(id: "e\(ev.day)-\(ev.text.hashValue)", x: Double(map.meta.cities[cap].x), y: Double(map.meta.cities[cap].y), kind: kind, r: c.0, g: c.1, b: c.2, culture: cultureOf(n)))
                 // 改朝换代、政变、篡位：从首都扫过全国的一道墨圈（颜色因此变了的州按换色扫）。
                 if kind == .regime || kind == .coup, !ripples.contains(n) { ripples.append(n) }
             }
@@ -1268,7 +1342,7 @@ import LieguojiCore
         if let previous {
             for (p, owner) in state.owners.enumerated() where p < previous.owners.count && previous.owners[p] != owner && p < map.meta.provinces.count {
                 let c = rgb(owner), pr = map.meta.provinces[p]
-                flashes.append(.init(id: "\(state.day)-\(p)", x: Double(pr.x), y: Double(pr.y), r: c.0, g: c.1, b: c.2))
+                flashes.append(.init(id: "\(state.day)-\(p)", x: Double(pr.x), y: Double(pr.y), r: c.0, g: c.1, b: c.2, culture: cultureOf(owner)))
             }
         }
         e.flashes = flashes

@@ -64,6 +64,12 @@ public struct GameState: Codable, Equatable, Sendable {
     /// 圣地: each faith's holy province.
     public struct Holy: Codable, Equatable, Sendable { public let religion: String; public let province: Int }
     public var holy: [Holy]? = nil
+    /// 活跃天时与灾异区域（暴雪/大旱/洪涝/瘟疫/丰年）：驱动地图 GPU 地表效果与大气粒子。
+    public struct WeatherZone: Codable, Equatable, Sendable {
+        public let province: Int; public let kind: String
+        public init(province: Int, kind: String) { self.province = province; self.kind = kind }
+    }
+    public var weatherZones: [WeatherZone]? = nil
     public let wars: [War]
     public let sieges: [Siege]
     /// Armies in contact (indices into armies), where the battle animation plays.

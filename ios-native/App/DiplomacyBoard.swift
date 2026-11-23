@@ -461,17 +461,34 @@ private struct RelationRow: View {
     }
 }
 
-/// 列表行末的一枚小方印（国 / 都 / 战）：统一朱/青玉/暖墨方印样式，点按直达。
+/// 列表行末的快捷直达徽标（战 / 都 / 国）：以纯 AI 无圆框手绘微标取代单字方框印章，点按直达。
 struct LinkSeal: View {
     let mark: String
     var color: Color = Theme.seal
     let action: () -> Void
+    private var emblem: UIImage? {
+        switch mark {
+        case "战": return BundleArt.heraldWar
+        case "都": return BundleArt.compassRose
+        default: return BundleArt.heraldEdict
+        }
+    }
+    private var fallback: InkGlyph {
+        switch mark {
+        case "战": return .war
+        case "都": return .locate
+        default: return .nations
+        }
+    }
     var body: some View {
         Button {
             GameFeel.shared.tap()
             action()
         } label: {
-            SealFace(text: mark, size: 26, color: color, filled: false)
+            ArtEmblem(image: emblem, size: 20, fallback: fallback)
+                .frame(width: 28, height: 28)
+                .background(color.opacity(0.09), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(color.opacity(0.26), lineWidth: 0.7))
         }
         .buttonStyle(PressStyle())
     }

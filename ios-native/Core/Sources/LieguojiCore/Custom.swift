@@ -606,12 +606,27 @@ public enum Regimes {
         func everyStock(_ body: (JS) -> Void) { for s in r.world.statecraft.provinces.asArray where mine.contains(s.provinceId.asString) { body(s) } }
         let armies = r.world.armies.asArray.filter { $0.nationId.asString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
         func say(_ text: String, _ reason: String, _ province: JS? = nil) { _ = People.announce(r, kind: "event", text: text, reason: reason, nations: [id], province: province?.id.optionalString) }
+        let season = WorldSeason.of(month: r.life.currentDate.month.asInt)
         switch roll {
         case ..<0.004:
-            addGold(2); say("\(name)五谷丰登", "风调雨顺，仓廪充实：国库多收两月岁入。")
+            addGold(2)
+            if let p = place { startDisaster(r, kind: "harvest", province: p.id.asString, months: 4) }
+            say(season == .autumn ? "\(name)金秋大稔・五谷丰登" : "\(name)五谷丰登", "风调雨顺，仓廪充实：国库多收两月岁入，\(place?.name.asString ?? "诸州")连月丰收。", place)
         case ..<0.007:
             let fin = r.finance.nations[id]; if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) * 0.85) }
-            addDestiny(-3); say("\(name)遭遇天灾", "水旱相继，赈济耗费：国库减一成半，国运 −3。")
+            addDestiny(-3)
+            if season == .winter, let p = place {
+                startDisaster(r, kind: "snow", province: p.id.asString, months: 3)
+                say("\(p.name.asString)暴雪封山", "严冬大雪封道，牲畜冻毙：国库赈济减一成半，\(p.name.asString)一带积雪连月、国运 −3。", p)
+            } else if season == .summer, let p = place {
+                startDisaster(r, kind: "drought", province: p.id.asString, months: 5)
+                say("\(p.name.asString)赤地大旱", "盛夏酷暑无雨、田畴龟裂：国库赈济减一成半，\(p.name.asString)连旱五月、国运 −3。", p)
+            } else if season == .spring, let p = place {
+                startDisaster(r, kind: "flood", province: p.id.asString, months: 3)
+                say("\(p.name.asString)梅雨洪涝", "春汛连绵、江河决堤：国库赈济减一成半，\(p.name.asString)泽国水患、国运 −3。", p)
+            } else {
+                say("\(name)遭遇天灾", "水旱相继，赈济耗费：国库减一成半，国运 −3。", place)
+            }
         case ..<0.009:
             addDestiny(5); say("\(name)名臣辈出", "朝中贤能云集，政通人和：国运 +5。")
         case ..<0.0105:
@@ -620,37 +635,48 @@ public enum Regimes {
             addDestiny(-3); say("\(p.name.asString)爆发瘟疫", "疫病自\(p.name.asString)而起，将向邻州蔓延（持续约八个月，每月人口 −1.2%）；国运 −3。", p)
         case ..<0.0115 where gain > 0:
             addGold(4); say("\(name)商路大开", "远方商旅络绎不绝：国库多收四月岁入。")
-        case ..<0.0130:
+        case ..<0.0135:
             guard let p = place, let s = stock(p) else { return }
-            // 天灾随气候: locusts do not swarm over frozen land; there it is a winter that kills the herds.
-            if climate(r, p.id.asString).frozen > 0.5 {
+            // 天灾随四季与气候：冬季或高寒州郡必起暴雪封山，温热时节生蝗灾
+            if season == .winter || climate(r, p.id.asString).frozen > 0.5 {
                 s.grain = JS((s.grain.asNumber * 0.6).rounded()); s.population = JS(max(100, (s.population.asNumber * 0.98).rounded()))
-                say("\(p.name.asString)雪灾", "大雪封山，牲畜冻毙：\(p.name.asString)存粮去四成，人口 −2%。", p); return
+                startDisaster(r, kind: "snow", province: p.id.asString, months: 3)
+                say("\(p.name.asString)雪灾", "大雪封山，牲畜冻毙：\(p.name.asString)存粮去四成，人口 −2%，大雪连月不止。", p); return
             }
             s.grain = JS((s.grain.asNumber * 0.4).rounded()); s.population = JS(max(100, (s.population.asNumber * 0.98).rounded()))
             say("\(p.name.asString)蝗灾", "飞蝗蔽日，禾稼一空：\(p.name.asString)存粮去六成，人口 −2%。", p)
-        case ..<0.0142:
+        case ..<0.0145:
             guard let p = place, let s = stock(p) else { return }
             let d = r.upperCombat.provinces[p.id.asString]
             if !d.isNull, let v = d.storedDefense.optionalNumber, v > 1 { d.storedDefense = JS(v - 1) }
             s.population = JS(max(100, (s.population.asNumber * 0.96).rounded()))
             say("\(p.name.asString)地震", "地动山摇，城垣崩塌：\(p.name.asString)城防降一级，人口 −4%。", p)
-        case ..<0.0154:
+        case ..<0.0160:
             guard let p = place, let s = stock(p) else { return }
-            // A desert province has no river to burst: its disaster is drought.
-            if climate(r, p.id.asString).arid > 0.5 {
+            if season == .summer || climate(r, p.id.asString).arid > 0.5 {
                 s.grain = JS((s.grain.asNumber * 0.5).rounded()); s.population = JS(max(100, (s.population.asNumber * 0.97).rounded()))
-                say("\(p.name.asString)旱灾", "井泉枯竭，沙进人退：\(p.name.asString)存粮减半，人口 −3%。", p); return
+                startDisaster(r, kind: "drought", province: p.id.asString, months: 4)
+                say("\(p.name.asString)旱灾", "井泉枯竭，赤地千里：\(p.name.asString)存粮减半，人口 −3%，旱情持续数月。", p); return
             }
             s.grain = JS(0); s.population = JS(max(100, (s.population.asNumber * 0.95).rounded()))
-            say("\(p.name.asString)洪水", "江河决堤，田庐漂没：\(p.name.asString)存粮尽失，人口 −5%。", p)
-        case ..<0.0166:
+            startDisaster(r, kind: "flood", province: p.id.asString, months: 3)
+            say("\(p.name.asString)洪水", "江河决堤，田庐漂没：\(p.name.asString)存粮尽失，人口 −5%，汛情漫延数月。", p)
+        case ..<0.0176:
             everyStock { $0.grain = JS(($0.grain.asNumber * 0.7).rounded()) }
-            if let p = place { startDisaster(r, kind: "famine", province: p.id.asString, months: 5) }
-            say("\(name)大旱", "赤地千里：全国存粮减三成，\(place?.name.asString ?? "")饥荒五月不止。", place)
-        case ..<0.0180:
+            if let p = place { startDisaster(r, kind: season == .winter ? "snow" : "drought", province: p.id.asString, months: 5) }
+            if season == .winter {
+                say("\(name)大寒雪灾", "朔风怒号、千里冰封：全国存粮减三成，\(place?.name.asString ?? "")连月大雪封道。", place)
+            } else {
+                say("\(name)大旱", "赤地千里：全国存粮减三成，\(place?.name.asString ?? "")旱荒五月不止。", place)
+            }
+        case ..<0.0190:
             everyStock { $0.population = JS(($0.population.asNumber * 1.02).rounded()) }
-            say("\(name)人丁兴旺", "太平日久，生齿日繁：全国人口 +2%。")
+            if season == .spring, let p = place {
+                startDisaster(r, kind: "harvest", province: p.id.asString, months: 3)
+                say("\(name)春耕大兴", "仲春雪融水丰、农桑并举：全国人口 +2%，\(p.name.asString)连月丰饶。", p)
+            } else {
+                say("\(name)人丁兴旺", "太平日久，生齿日繁：全国人口 +2%。")
+            }
         case ..<0.0192 where !armies.isEmpty:
             for a in armies { a.morale = JS(min(100, a.morale.asNumber + 15)) }
             say("\(name)名将出世", "良将练兵，三军用命：全国军队士气 +15。")

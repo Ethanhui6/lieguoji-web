@@ -88,6 +88,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private let multiplyPipeline: MTLRenderPipelineState
     private let spriteShadowPipeline: MTLRenderPipelineState
     private let spritePipeline: MTLRenderPipelineState
+    /// 宋画青绿山水地形精灵（山脉、雪峰、阔叶林、松柏林、大漠沙丘）与御卷四角鎏金云纹包角专用 GPU 管线。
+    private let terrainPipeline: MTLRenderPipelineState
+    private var terrainTextures: [Int: MTLTexture] = [:]
+    private var terrainBatches: [(texture: MTLTexture, buffer: MTLBuffer, count: Int)] = []
+    private var scrollCornerTexture: MTLTexture?
+    private var scrollCornerBuffer: (buffer: MTLBuffer, count: Int)?
+    /// 实时天气与灾异区域（1 + 12 个 float4：`[0].x = 数量`，`[1...12] = (worldX, worldY, radius, kind)`，1雪/2旱/3涝/4疫/5丰）。
+    var weatherUniforms: [SIMD4<Float>] = Array(repeating: .zero, count: 13)
     /// Army icons grouped by unit type: the texture and its quads.
     private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int, pool: MapBufferPool)] = []
     let positions: MTLBuffer
@@ -207,6 +215,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             multiplyPipeline = try pipeline("quadVertex", "textureFragment", .multiply)
             spriteShadowPipeline = try pipeline("spriteShadowVertex", "spriteShadowFragment", .alpha)
             spritePipeline = try pipeline("spriteVertex", "spriteFragment", .alpha)
+            terrainPipeline = try pipeline("terrainVertex", "terrainFragment", .alpha)
             sweepPipeline = try pipeline("sweepVertex", "sweepFragment", .alpha)
             inkPipes = try InkPipelines.make(device: device, library: library, mainFormat: view.colorPixelFormat, sampleCount: view.sampleCount)
         } catch {
@@ -250,6 +259,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
+        // 载入宋画青绿山水地形精灵与四角鎏金云纹包角贴图（Mipmap 三线性采样，任意缩放清润无锯齿）
+        let artLoader = MTKTextureLoader(device: device)
+        let artOpts: [MTKTextureLoader.Option: Any] = [.SRGB: false, .generateMipmaps: true]
+        for (kindIdx, name) in [(0, "terrain-mountain"), (1, "terrain-mountain-snow"), (2, "terrain-forest"), (3, "terrain-pine"), (4, "terrain-desert")] {
+            if let u = BundleArt.url(name), let tex = try? artLoader.newTexture(URL: u, options: artOpts) {
+                terrainTextures[kindIdx] = tex
+            }
+        }
+        if let cu = BundleArt.url("scroll-corner"), let tex = try? artLoader.newTexture(URL: cu, options: artOpts) {
+            scrollCornerTexture = tex
+        }
+        rebuildTerrainSprites(map)
+        rebuildScrollCorners(width: map.width, height: map.height)
         // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
         // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
         // The pieces (UnitArt), one texture per role; the commander's banner is the gonfalon piece.
@@ -339,6 +361,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         provinceLines = buffer(MapLayers.provinceLines(next).vertices, stride: 6)
         rivers = next.rivers.isEmpty ? nil : buffer(next.rivers, stride: 2)
         relief = buffer(MapLayers.relief(next).vertices, stride: 6)
+        rebuildTerrainSprites(next)
         outlines = buffer(MapLayers.outlines(next, wide: borderWide).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
         if refreshSea {
@@ -931,6 +954,73 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// Layers prepared off the main thread for the next map view (MapLayers.prepare).
     static var prepared: MapLayers.Prepared?
 
+    /// 按地图拓扑构建 5 组青绿山水手绘地形精灵顶点缓冲（每顶点 6 Float：worldX, worldY, u, v, kind, shade），5 次 DrawCall 即可绘满千峰万林。
+    func rebuildTerrainSprites(_ source: WorldMap) {
+        let stamps = MapLayers.terrainStamps(source)
+        var byKind = [Int: [Float]]()
+        for st in stamps {
+            let k = st.kind.rawValue
+            guard terrainTextures[k] != nil else { continue }
+            let x0 = st.x - st.width * 0.5, x1 = st.x + st.width * 0.5
+            let y0 = st.y - st.height * 0.5, y1 = st.y + st.height * 0.5
+            let u0: Float = st.flipX ? 1 : 0, u1: Float = st.flipX ? 0 : 1
+            let kf = Float(k), sh = st.shade
+            byKind[k, default: []].append(contentsOf: [
+                x0, y0, u0, 0, kf, sh,
+                x1, y0, u1, 0, kf, sh,
+                x0, y1, u0, 1, kf, sh,
+                x0, y1, u0, 1, kf, sh,
+                x1, y0, u1, 0, kf, sh,
+                x1, y1, u1, 1, kf, sh
+            ])
+        }
+        // 按 沙漠 → 林海 → 山峰 顺序绘制，令高峰雄峙于苍林之上
+        let drawOrder = [4, 2, 3, 0, 1]
+        terrainBatches = drawOrder.compactMap { k in
+            guard let tex = terrainTextures[k], let data = byKind[k], !data.isEmpty,
+                  let buf = device.makeBuffer(bytes: data, length: data.count * MemoryLayout<Float>.stride, options: .storageModeShared) else { return nil }
+            return (texture: tex, buffer: buf, count: data.count / 6)
+        }
+    }
+
+    /// 构建地图画心四隅「鎏金碧玉云纹包角」四边形缓冲（左上/右上/左下/右下镜像精确贴合舆图内框）。
+    private func rebuildScrollCorners(width w: Float, height h: Float) {
+        guard scrollCornerTexture != nil, w > 0, h > 0 else { scrollCornerBuffer = nil; return }
+        let unit = min(w, h)
+        let pad = unit * 0.004
+        let s = unit * 0.064
+        var verts = [Float]()
+        func cornerQuad(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ u0: Float, _ v0: Float, _ u1: Float, _ v1: Float) {
+            verts.append(contentsOf: [
+                x0, y0, u0, v0, 5, 1,
+                x1, y0, u1, v0, 5, 1,
+                x0, y1, u0, v1, 5, 1,
+                x0, y1, u0, v1, 5, 1,
+                x1, y0, u1, v0, 5, 1,
+                x1, y1, u1, v1, 5, 1
+            ])
+        }
+        // 左上、右上、左下、右下四角精确对称贴合画框
+        cornerQuad(pad, pad, pad + s, pad + s, 0, 0, 1, 1)
+        cornerQuad(w - pad - s, pad, w - pad, pad + s, 1, 0, 0, 1)
+        cornerQuad(pad, h - pad - s, pad + s, h - pad, 0, 1, 1, 0)
+        cornerQuad(w - pad - s, h - pad - s, w - pad, h - pad, 1, 1, 0, 0)
+        if let buf = device.makeBuffer(bytes: verts, length: verts.count * MemoryLayout<Float>.stride, options: .storageModeShared) {
+            scrollCornerBuffer = (buf, verts.count / 6)
+        }
+    }
+
+    /// 更新实时活跃的天时灾异区域（雪灾/大旱/洪涝/瘟疫/丰年），零网格重建直达 GPU 片元着色器。
+    func setWeatherZones(_ zones: [(x: Float, y: Float, radius: Float, kind: Float)]) {
+        var next = Array(repeating: SIMD4<Float>.zero, count: 13)
+        let n = min(12, zones.count)
+        next[0] = SIMD4(Float(n), 0, 0, 0)
+        for i in 0..<n {
+            next[i + 1] = SIMD4(zones[i].x, zones[i].y, max(12, zones[i].radius), zones[i].kind)
+        }
+        weatherUniforms = next
+    }
+
     private func buffer(_ data: [Float], stride: Int) -> (MTLBuffer, Int)? {
         guard !data.isEmpty, let b = device.makeBuffer(bytes: data, length: data.count * 4, options: .storageModeShared) else { return nil }
         return (b, data.count / stride)
@@ -1083,10 +1173,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             prevColorBufferPool.recordRead(in: buffer)
             encoder.setVertexBytes(&t, length: MemoryLayout<SIMD2<Float>>.stride, index: 4)
             encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+            encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
         } else {
             if previousColors != nil { previousColors = nil }
             encoder.setRenderPipelineState(cellPipeline)
             encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+            encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
         }
         encoder.setVertexBuffer(positions, offset: 0, index: 0)
         encoder.setVertexBuffer(colors, offset: 0, index: 1)
@@ -1139,7 +1231,24 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if chart { colored(ornaments, alpha: ramp(0.44)) }
         let fineFade = Float(min(1, max(0, (camera.scale - 0.92) / 0.55)))
         if chart && fineFade > 0.01 { colored(fineDetail, alpha: ramp(0.44) * fineFade) }
-        if display.vegetation { colored(relief, alpha: ramp(0.44)) }
+        if display.vegetation {
+            let vegAlpha = ramp(0.44)
+            colored(relief, alpha: vegAlpha)
+            if vegAlpha > 0.01 && !terrainBatches.isEmpty {
+                u.alpha = vegAlpha * 0.90
+                encoder.setRenderPipelineState(terrainPipeline)
+                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
+                encoder.setFragmentSamplerState(sampler, index: 0)
+                for batch in terrainBatches {
+                    encoder.setVertexBuffer(batch.buffer, offset: 0, index: 0)
+                    encoder.setFragmentTexture(batch.texture, index: 0)
+                    encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: batch.count)
+                }
+                u.alpha = 1
+            }
+        }
         if display.borders { colored(outlines, alpha: ramp(0.75)) }
         if display.cityIcons { colored(icons, alpha: ramp(0.85)); colored(forts, alpha: ramp(0.85)); colored(portIcons, alpha: ramp(0.85)) }
         if reveal >= 1 {
@@ -1184,7 +1293,21 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         } // end mapScissor
         encoder.setScissorRect(fullScissor)
-        if display.scrollMount ?? display.darkEdges { colored(frame) }
+        if display.scrollMount ?? display.darkEdges {
+            colored(frame)
+            if let cornerTex = scrollCornerTexture, let cb = scrollCornerBuffer {
+                u.alpha = 0.96
+                encoder.setRenderPipelineState(terrainPipeline)
+                encoder.setVertexBuffer(cb.buffer, offset: 0, index: 0)
+                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
+                encoder.setFragmentTexture(cornerTex, index: 0)
+                encoder.setFragmentSamplerState(sampler, index: 0)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: cb.count)
+                u.alpha = 1
+            }
+        }
         encoder.endEncoding()
         if let probe {
             probe.encode.append((CACurrentMediaTime() - frameTime) * 1000)
@@ -1264,73 +1387,184 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); o.color.a *= u.alpha; return o;
     }
     fragment float4 colorFragment(ColorOut in [[stage_in]]) { return in.color; }
-    // 陆地光影与宣纸质感：单次共享环境噪声驱动四季云岚、枫林与冬雪，像素算力减半且四时层次鲜明温润。
-    fragment float4 landFragment(LandOut in [[stage_in]], constant Uniforms& u [[buffer(2)]]) {
+    // 陆地光影与宣纸质感：单次共享环境噪声驱动鲜明四季地貌演化（春岚／夏阳／秋枫／冬雪）＋实时局部天时灾异（暴雪、大旱龟裂、洪涝、瘟疫、丰年）。
+    fragment float4 landFragment(LandOut in [[stage_in]], constant Uniforms& u [[buffer(2)]], constant float4* weather [[buffer(3)]]) {
         float detail = clamp((in.scale - 0.55) / 1.45, 0.0, 1.0);
         float g1 = vnoise(in.world * 0.55) - 0.5;
         float g2 = detail > 0.18 ? (vnoise(in.world * 1.95 + float2(13.7, 7.3)) - 0.5) : 0.0;
         float grain = (g1 * 0.024 + g2 * 0.022 * detail);
         float3 rgb = in.color.rgb;
         float lum = dot(rgb, float3(0.299, 0.587, 0.114));
+        float envNoise = vnoise(in.world * 0.020 + float2(7.3, 19.1));
         if (u.lighting > 0.01) {
             float k = u.lighting;
-            // 西北向阳面泛暖玉金光，东南背阴面沉静冷青，山河起伏层次更鲜明且绝不发灰脏浊
             float3 warm = float3(1.048, 1.024, 0.976);
             float3 cool = float3(0.942, 0.962, 1.016);
             rgb *= mix(float3(1.0), mix(cool, warm, smoothstep(0.28, 0.74, lum)), k);
-            // 柔和飘云斑驳光影（克制浓度，绝不压暗国界与地名）
             float cloud = cloudCover(in.world, u.time);
             float3 cloudTint = mix(float3(1.018, 1.012, 0.996), float3(0.938, 0.952, 0.976), cloud);
             rgb *= mix(float3(1.0), cloudTint, k * 0.72);
-            // 统一全局西北御案光照
             float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
             rgb *= studioLight(mapUV, k);
-            // 四时节气光影与真实地貌季节演化（u.pad 0.0=隆冬, 0.25=仲春, 0.50=盛夏, 0.75=金秋）
+            // 鲜明可辨的四时节气天光与地貌演变（u.pad 0.0=隆冬, 0.25=仲春, 0.50=盛夏, 0.75=金秋）
             if (u.pad >= 0.0) {
                 float ang = u.pad * 6.2831853;
-                float wWinter = smoothstep(-0.18, 0.86,  cos(ang));
-                float wSpring = smoothstep(-0.18, 0.86,  sin(ang));
-                float wSummer = smoothstep(-0.18, 0.86, -cos(ang));
-                float wAutumn = smoothstep(-0.18, 0.86, -sin(ang));
+                float wWinter = smoothstep(-0.14, 0.84,  cos(ang));
+                float wSpring = smoothstep(-0.14, 0.84,  sin(ang));
+                float wSummer = smoothstep(-0.14, 0.84, -cos(ang));
+                float wAutumn = smoothstep(-0.14, 0.84, -sin(ang));
                 float wSum = max(0.001, wWinter + wSpring + wSummer + wAutumn);
                 wWinter /= wSum; wSpring /= wSum; wSummer /= wSum; wAutumn /= wSum;
 
-                // 四季主天光：春润青玉、夏沐暖金、秋染缃赭枫金、冬覆晶蓝清冷
-                float3 springTint = float3(0.955, 1.062, 0.992);
-                float3 summerTint = float3(1.062, 1.042, 0.922);
-                float3 autumnTint = float3(1.135, 1.005, 0.815);
-                float3 winterTint = float3(0.905, 0.958, 1.085);
+                // 四季鲜明天光基调：春润青碧生机、夏沐炽金暖阳、秋染金赭丹枫、冬覆寒青霜雪
+                float3 springTint = float3(0.935, 1.090, 0.975);
+                float3 summerTint = float3(1.095, 1.048, 0.892);
+                float3 autumnTint = float3(1.185, 0.985, 0.765);
+                float3 winterTint = float3(0.875, 0.952, 1.125);
                 float3 seasonTint = springTint * wSpring + summerTint * wSummer + autumnTint * wAutumn + winterTint * wWinter;
                 rgb *= mix(float3(1.0), seasonTint, k);
 
-                // 单次低频空间噪声共享驱动春岚、秋枫与冬雪，大幅减轻片元着色压力
-                float envNoise = vnoise(in.world * 0.020 + float2(7.3, 19.1));
-
-                // 春：平野泛嫩绿青岚微雾
+                // 春：平野泛嫩绿青岚，低谷浮淡淡桃花春雾
                 if (wSpring > 0.02) {
-                    float springMist = wSpring * smoothstep(0.32, 0.84, envNoise) * 0.055 * k;
-                    rgb = mix(rgb, float3(0.86, 0.96, 0.89), springMist);
+                    float springMist = wSpring * smoothstep(0.28, 0.82, envNoise) * 0.11 * k;
+                    rgb = mix(rgb, float3(0.84, 0.98, 0.88), springMist);
                 }
 
-                // 秋：中纬林野与丘陵浸染鲜明金赭枫红秋韵
+                // 夏：低纬与内陆受艳阳炙暖，草木葱茏鲜明
+                if (wSummer > 0.02) {
+                    float sunGlow = wSummer * smoothstep(0.35, 0.85, envNoise) * 0.075 * k;
+                    rgb = mix(rgb, rgb * float3(1.08, 1.04, 0.86) + float3(0.03, 0.02, -0.01), sunGlow);
+                }
+
+                // 秋：广袤中北纬林野浸染鲜明金赭与丹红秋韵
                 if (wAutumn > 0.02) {
-                    float midLat = smoothstep(0.08, 0.42, mapUV.y) * smoothstep(0.94, 0.54, mapUV.y);
-                    float autumnWash = wAutumn * (0.28 + 0.72 * midLat) * smoothstep(0.26, 0.78, envNoise) * 0.24 * k;
-                    rgb = mix(rgb, rgb * float3(1.22, 0.90, 0.66) + float3(0.04, 0.015, -0.02), autumnWash);
+                    float midLat = smoothstep(0.04, 0.36, mapUV.y) * smoothstep(0.96, 0.56, mapUV.y);
+                    float autumnWash = wAutumn * (0.36 + 0.64 * midLat) * smoothstep(0.22, 0.76, envNoise) * 0.34 * k;
+                    rgb = mix(rgb, rgb * float3(1.26, 0.86, 0.58) + float3(0.06, 0.02, -0.03), autumnWash);
                 }
 
-                // 冬：清晰可辨的有机飘雪覆盖层自北境与高山岭脊南下漫铺（保留国色与地势起伏）
+                // 冬：清晰厚实的银白积雪自北境与高山岭脊漫铺南下（国色依然清晰可辨）
                 if (wWinter > 0.02) {
-                    float northBelt = smoothstep(0.68, 0.06, mapUV.y);
-                    float highlandBelt = smoothstep(0.48, 0.78, lum);
-                    float snowField = clamp(northBelt * 0.68 + highlandBelt * 0.34 + (envNoise - 0.46) * 0.36, 0.0, 1.0);
-                    float snowCover = wWinter * smoothstep(0.24, 0.84, snowField) * 0.46 * k;
-                    rgb = mix(rgb, float3(0.935, 0.962, 0.995), snowCover);
+                    float northBelt = smoothstep(0.76, 0.06, mapUV.y);
+                    float highlandBelt = smoothstep(0.44, 0.76, lum);
+                    float snowField = clamp(northBelt * 0.72 + highlandBelt * 0.36 + (envNoise - 0.44) * 0.38, 0.0, 1.0);
+                    float snowCover = wWinter * smoothstep(0.18, 0.78, snowField) * 0.62 * k;
+                    rgb = mix(rgb, float3(0.955, 0.975, 1.0), snowCover);
                 }
+            }
+        }
+        // 实时活跃天时灾异区域地表视觉反馈（1=暴雪积白、2=大旱赤地龟裂、3=洪涝乌云湿暗、4=瘟疫阴霭、5=丰年金辉）
+        int wCount = clamp(int(weather[0].x + 0.5), 0, 12);
+        for (int wi = 0; wi < wCount; wi++) {
+            float4 wz = weather[wi + 1];
+            float dist = distance(in.world, wz.xy);
+            float mask = 1.0 - smoothstep(wz.z * 0.35, wz.z * 1.15, dist + (envNoise - 0.5) * wz.z * 0.42);
+            if (mask <= 0.005) continue;
+            int wKind = int(wz.w + 0.5);
+            if (wKind == 1) {
+                rgb = mix(rgb, float3(0.96, 0.985, 1.0), mask * 0.66);
+            } else if (wKind == 2) {
+                float crack = smoothstep(0.065, 0.0, abs(vnoise(in.world * 0.14) - 0.5)) * (0.4 + 0.6 * detail);
+                float3 parched = mix(rgb * float3(1.16, 0.94, 0.62), float3(0.82, 0.60, 0.32), 0.48);
+                parched = mix(parched, float3(0.42, 0.28, 0.14), crack * 0.45);
+                rgb = mix(rgb, parched, mask * 0.72);
+            } else if (wKind == 3) {
+                rgb = mix(rgb, rgb * float3(0.72, 0.80, 0.92) + float3(0.0, 0.02, 0.06), mask * 0.56);
+            } else if (wKind == 4) {
+                rgb = mix(rgb, mix(rgb, float3(0.52, 0.58, 0.30), 0.52), mask * 0.52);
+            } else if (wKind == 5) {
+                rgb = mix(rgb, rgb * float3(1.14, 1.06, 0.82) + float3(0.06, 0.04, 0.0), mask * 0.46);
             }
         }
         rgb = clamp(rgb + grain, 0.0, 1.0);
         return float4(rgb, in.color.a);
+    }
+
+    // —— 宋画青绿山水地形精灵（山脉、雪峰、阔叶林、松柏林、大漠沙丘）与四角鎏金云纹包角 ——
+    struct TerrainVertex { packed_float2 world; packed_float2 uv; float kind; float shade; };
+    struct TerrainOut { float4 position [[position]]; float2 world; float2 uv; float kind; float shade; };
+    vertex TerrainOut terrainVertex(uint id [[vertex_id]], const device TerrainVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
+        TerrainVertex tv = v[id];
+        TerrainOut o;
+        o.world = float2(tv.world);
+        o.position = clip(o.world, u, float2(0.0));
+        o.uv = float2(tv.uv);
+        o.kind = tv.kind;
+        o.shade = tv.shade;
+        return o;
+    }
+    fragment float4 terrainFragment(TerrainOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]],
+                                    constant Uniforms& u [[buffer(2)]], constant float4* weather [[buffer(3)]]) {
+        float4 p = t.sample(s, in.uv);
+        if (p.a < 0.02) discard_fragment();
+        // iOS MTKTextureLoader 载入 PNG 默认预乘 Alpha，先还原直通道色值再交由 .alpha 管线混合，边缘通透零黑边。
+        float3 srcRgb = clamp(p.rgb / max(p.a, 0.001), 0.0, 1.0);
+        // 四角鎏金云纹包角原色锐利呈现
+        if (in.kind > 4.5) {
+            return float4(srcRgb, p.a * u.alpha);
+        }
+        float3 rgb = srcRgb * in.shade;
+        float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
+        if (u.lighting > 0.01) {
+            rgb *= studioLight(mapUV, u.lighting * 0.85);
+            if (u.pad >= 0.0) {
+                float ang = u.pad * 6.2831853;
+                float wWinter = smoothstep(-0.14, 0.84,  cos(ang));
+                float wSpring = smoothstep(-0.14, 0.84,  sin(ang));
+                float wSummer = smoothstep(-0.14, 0.84, -cos(ang));
+                float wAutumn = smoothstep(-0.14, 0.84, -sin(ang));
+                float wSum = max(0.001, wWinter + wSpring + wSummer + wAutumn);
+                wWinter /= wSum; wSpring /= wSum; wSummer /= wSum; wAutumn /= wSum;
+                float lum = dot(rgb, float3(0.299, 0.587, 0.114));
+                int kind = int(in.kind + 0.5);
+                if (kind == 2) {
+                    // 阔叶林海随四季剧变：春绽嫩翠微粉花冠、夏郁苍青、秋燃炽红丹枫金黄、冬覆北国霜雪
+                    if (wSpring > 0.02) {
+                        float blossom = smoothstep(0.60, 0.16, in.uv.y) * smoothstep(0.32, 0.65, lum);
+                        rgb = mix(rgb * float3(0.95, 1.12, 0.96), float3(0.96, 0.82, 0.84), wSpring * blossom * 0.28);
+                    }
+                    if (wAutumn > 0.02) {
+                        float varN = vnoise(in.world * 0.045);
+                        float3 maple = mix(float3(0.86, 0.30, 0.12), float3(0.94, 0.66, 0.18), varN) * (0.45 + lum * 1.18);
+                        rgb = mix(rgb, clamp(maple, 0.0, 1.0), wAutumn * 0.84);
+                    }
+                    if (wWinter > 0.02) {
+                        float north = smoothstep(0.74, 0.10, mapUV.y);
+                        float crown = smoothstep(0.75, 0.18, in.uv.y);
+                        rgb = mix(rgb * float3(0.82, 0.86, 0.92), float3(0.94, 0.97, 1.0), wWinter * (0.28 + 0.58 * north) * crown);
+                    }
+                } else if (kind == 3) {
+                    // 松柏泰加林：秋保持苍郁青松，隆冬针冠挂雪
+                    if (wAutumn > 0.02) rgb *= mix(float3(1.0), float3(1.06, 0.98, 0.86), wAutumn * 0.5);
+                    if (wWinter > 0.02) {
+                        float crown = smoothstep(0.72, 0.16, in.uv.y);
+                        rgb = mix(rgb, float3(0.92, 0.96, 1.0), wWinter * crown * 0.64);
+                    }
+                } else if (kind == 0 || kind == 1) {
+                    // 青绿山峰：秋沐金赭斜阳，隆冬山巅积雪漫降
+                    if (wAutumn > 0.02) rgb *= mix(float3(1.0), float3(1.14, 0.98, 0.80), wAutumn * 0.65);
+                    if (wWinter > 0.02) {
+                        float north = smoothstep(0.80, 0.12, mapUV.y);
+                        float ridge = smoothstep(0.72, 0.14, in.uv.y);
+                        rgb = mix(rgb, float3(0.95, 0.975, 1.0), wWinter * ridge * (0.36 + 0.48 * north));
+                    }
+                }
+            }
+        }
+        // 局部雪灾/大旱实时影响该处山林风貌
+        int wCount = clamp(int(weather[0].x + 0.5), 0, 12);
+        for (int wi = 0; wi < wCount; wi++) {
+            float4 wz = weather[wi + 1];
+            float mask = 1.0 - smoothstep(wz.z * 0.35, wz.z * 1.05, distance(in.world, wz.xy));
+            if (mask <= 0.005) continue;
+            int wKind = int(wz.w + 0.5);
+            if (wKind == 1) {
+                rgb = mix(rgb, float3(0.96, 0.985, 1.0), mask * 0.72 * smoothstep(0.84, 0.18, in.uv.y));
+            } else if (wKind == 2) {
+                rgb = mix(rgb, rgb * float3(1.14, 0.88, 0.52) + float3(0.06, 0.02, -0.02), mask * 0.75);
+            }
+        }
+        return float4(clamp(rgb, 0.0, 1.0), p.a * u.alpha);
     }
     // 逐顶点易主渐变：previous = 起始颜色 rgb + 开始时刻；clock = (此刻, 时长)。
     vertex LandOut fadeVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],

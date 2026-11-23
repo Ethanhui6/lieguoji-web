@@ -167,11 +167,10 @@ struct MilitaryOverview: View {
                             let accent = live ? Theme.seal : Theme.ink2
                             VStack(alignment: .leading, spacing: 7) {
                                 HStack(spacing: 7) {
-                                    if live && (g.rank == "军神" || g.rank == "上将军"), BundleArt.wargodCrest != nil {
-                                        ArtEmblem(image: BundleArt.wargodCrest, size: 32, fallback: .military)
-                                    } else {
-                                        SealFace(text: String(g.rank.prefix(2)), size: 28, color: accent)
-                                    }
+                                    let gCul = map.meta.nations.indices.contains(g.nation) ? map.meta.nations[g.nation].culture : nil
+                                    let gArt: UIImage? = g.fallen ? BundleArt.fallenBanner(for: gCul) : (live && (g.rank == "军神" || g.rank == "上将军") ? BundleArt.warCrest(for: gCul) : BundleArt.victoryBanner(for: gCul))
+                                    ArtEmblem(image: gArt, size: 30, fallback: .military)
+                                        .opacity(g.fallen ? 0.65 : 1.0)
                                     VStack(alignment: .leading, spacing: 2) {
                                         HStack(spacing: 4) {
                                             Text(g.name).font(Theme.body).foregroundStyle(g.fallen ? Theme.ink2 : Theme.ink).lineLimit(1)

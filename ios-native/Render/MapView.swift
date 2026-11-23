@@ -78,6 +78,10 @@ import LieguojiCore
     var viewKey = ""
     /// 四时节气光影相位（0..1，由模拟日期驱动）。
     var seasonPhase: Float = -1
+    /// 实时活跃天时与灾异州郡（暴雪/大旱/洪涝/瘟疫/丰年），同步驱动 GPU 地表着色与全屏/局部天气粒子层。
+    var weatherZones: [WeatherOverlayView.Zone] = []
+    var weatherGPUZones: [(x: Float, y: Float, radius: Float, kind: Float)] = []
+    var weatherRevision: Int = 0
     /// 玩家最近一次主动触碰地图的时刻（用于观战巡弋导演镜头自动礼让手动操作）。
     var lastUserTouchTime: CFTimeInterval = 0
     /// Where the icon with this key is drawn now (set by the map view).
@@ -366,6 +370,13 @@ struct MapView: UIViewRepresentable {
             if want { effects.startWaves() } else { effects.stopWaves() }
         }
         private let metrics = UILabel()
+        private let weather = WeatherOverlayView()
+        private var shownWeatherRevision = -1
+        private func syncWeather() {
+            guard let renderer else { return }
+            let active = !controller.drifting && !controller.sheetOpen && controller.reveal >= 1
+            weather.update(seasonPhase: controller.seasonPhase, zones: controller.weatherZones, camera: renderer.camera, viewport: mtk.bounds.size, active: active)
+        }
         private var stats = FrameStatistics()
         private var lastFrame: CFTimeInterval = 0
         private var lastReport: CFTimeInterval = 0
@@ -485,7 +496,7 @@ struct MapView: UIViewRepresentable {
             container.addSubview(overlayHost)
             // 战争特效在地名之下（地图之上）：交战、围城、攻占、事件印都不盖住国名与城名；
             // 战况飘字与兵力条另放在地名之上。
-            for v in [effects, labels!, floats, troops] as [UIView] {
+            for v in [effects, labels!, floats, troops, weather] as [UIView] {
                 v.frame = overlayCanvas.bounds; v.autoresizingMask = [.flexibleWidth, .flexibleHeight]
                 v.isUserInteractionEnabled = false; v.clipsToBounds = true
                 overlayCanvas.addSubview(v)
@@ -503,6 +514,7 @@ struct MapView: UIViewRepresentable {
                 guard let self else { return }
                 self.gliding = false
                 self.syncWaves()
+                self.syncWeather()
                 if self.controller.sheetOpen {
                     self.mtk.preferredFramesPerSecond = 30
                     self.drift?.invalidate(); self.drift = nil
@@ -570,7 +582,7 @@ struct MapView: UIViewRepresentable {
             guard let renderer, b.width > 0, b.height > 0 else { return }
             UIView.performWithoutAnimation {
                 if mtk.frame != b { mtk.frame = b }
-                for v in [effects, labels!, floats, troops] as [UIView] where v.frame != b {
+                for v in [effects, labels!, floats, troops, weather] as [UIView] where v.frame != b {
                     v.frame = b
                 }
             }
@@ -604,7 +616,7 @@ struct MapView: UIViewRepresentable {
             UIView.performWithoutAnimation {
                 if overlayHost.frame != clipRect { overlayHost.frame = clipRect }
                 if overlayCanvas.frame != canvasFrame { overlayCanvas.frame = canvasFrame }
-                for v in [effects, labels!, floats, troops] as [UIView] where v.frame != fullBounds {
+                for v in [effects, labels!, floats, troops, weather] as [UIView] where v.frame != fullBounds {
                     v.frame = fullBounds
                 }
                 if !skipLabels && labels.alpha > 0.01 {
@@ -615,6 +627,7 @@ struct MapView: UIViewRepresentable {
                 }
                 if !skipLabels && renderer.reveal >= 1 {
                     updateTroops()
+                    syncWeather()
                 }
                 placeSpot()
             }
@@ -924,6 +937,13 @@ struct MapView: UIViewRepresentable {
             var dirty = false
             if let renderer, renderer.seasonPhase != controller.seasonPhase {
                 renderer.seasonPhase = controller.seasonPhase
+                syncWeather()
+                dirty = true
+            }
+            if let renderer, shownWeatherRevision != controller.weatherRevision {
+                shownWeatherRevision = controller.weatherRevision
+                renderer.setWeatherZones(controller.weatherGPUZones)
+                syncWeather()
                 dirty = true
             }
             if controller.worldRevision != shownRevision, let next = controller.world, Self.worldChanged(next, map) {
@@ -1284,46 +1304,50 @@ final class MapLabelsView: UIView {
             }
         }
 
-        // 2. 王都工笔微缩城楼（放大赏景时浮现，错位在城圈左上方不遮挡城名）
+        // 2. 多文明差异化王都微缩地标（自动依该国所属文明匹配中华宫阙／日本天守阁／西欧城堡／古典卫城／北欧木堡／斯拉夫洋葱顶／伊斯兰穹顶宫／蒙古汗帐／印度宫城／美洲金字塔！）
         let marks = MapLayers.cityMarks(map)
+        func provinceCulture(_ provinceIdx: Int) -> String? {
+            guard map.meta.provinces.indices.contains(provinceIdx) else { return nil }
+            let n = map.meta.provinces[provinceIdx].nation
+            guard map.meta.nations.indices.contains(n) else { return nil }
+            return map.meta.nations[n].culture
+        }
         var capCount = 0
-        if let capImg = BundleArt.landmarkCapital {
-            for (c, mark) in zip(map.meta.cities, marks) where mark == .capital && capCount < 16 {
-                let v = UIImageView(image: capImg)
-                v.contentMode = .scaleAspectFit
-                v.isHidden = true
-                v.bounds = CGRect(x: 0, y: 0, width: 48, height: 48)
-                insertSubview(v, at: 0)
-                built.append(MapStamp(view: v, x: Double(c.x) - 5.5, y: Double(c.y) - 4.2, worldWidth: 16, minScale: 1.12, maxAlpha: 0.90, screenMin: 18, screenMax: 36))
-                capCount += 1
-            }
+        for (c, mark) in zip(map.meta.cities, marks) where mark == .capital && capCount < 36 {
+            guard let capImg = BundleArt.capital(for: provinceCulture(c.province)) else { continue }
+            let v = UIImageView(image: capImg)
+            v.contentMode = .scaleAspectFit
+            v.isHidden = true
+            v.bounds = CGRect(x: 0, y: 0, width: 52, height: 52)
+            insertSubview(v, at: 0)
+            built.append(MapStamp(view: v, x: Double(c.x) - 5.6, y: Double(c.y) - 4.4, worldWidth: 18, minScale: 1.05, maxAlpha: 0.94, screenMin: 20, screenMax: 42))
+            capCount += 1
         }
 
-        // 3. 雄关要塞烽燧（真实山地/丘陵/高地州郡，且自然间距分散）与 4. 古港灯塔帆影（真实濒海城市，距海面采样格最近）
+        // 3. 多文明雄关要塞（真实山地/丘陵/高地州郡，按该州领主文明自动选用东亚关隘／西欧石堡／伊斯兰沙堡）与 4. 多文明古港灯塔帆影（真实濒海城市）
         let minSpread = max(24, min(mapW, mapH) * 0.13)
         let minSpread2 = minSpread * minSpread
         var placedForts = [(Double, Double)]()
-        if let fortImg = BundleArt.landmarkFortress {
-            let capProvs = Set(zip(map.meta.cities, marks).filter { $0.1 == .capital }.map { $0.0.province })
-            for (idx, p) in map.meta.provinces.enumerated() where !capProvs.contains(idx) && placedForts.count < 10 {
-                guard p.x.isFinite && p.y.isFinite else { continue }
-                guard p.terrain != "plain" && p.terrain != "forest" else { continue }
-                let px = Double(p.x), py = Double(p.y)
-                if placedForts.contains(where: { ($0.0 - px) * ($0.0 - px) + ($0.1 - py) * ($0.1 - py) < minSpread2 }) { continue }
-                let v = UIImageView(image: fortImg)
-                v.contentMode = .scaleAspectFit
-                v.isHidden = true
-                v.bounds = CGRect(x: 0, y: 0, width: 44, height: 44)
-                insertSubview(v, at: 0)
-                built.append(MapStamp(view: v, x: px + 3.2, y: py - 2.8, worldWidth: 14, minScale: 1.48, maxAlpha: 0.86, screenMin: 16, screenMax: 32))
-                placedForts.append((px, py))
-            }
+        let capProvs = Set(zip(map.meta.cities, marks).filter { $0.1 == .capital }.map { $0.0.province })
+        for (idx, p) in map.meta.provinces.enumerated() where !capProvs.contains(idx) && placedForts.count < 12 {
+            guard p.x.isFinite && p.y.isFinite else { continue }
+            guard p.terrain != "plain" && p.terrain != "forest" else { continue }
+            let px = Double(p.x), py = Double(p.y)
+            if placedForts.contains(where: { ($0.0 - px) * ($0.0 - px) + ($0.1 - py) * ($0.1 - py) < minSpread2 }) { continue }
+            guard let fortImg = BundleArt.fortress(for: provinceCulture(idx)) else { continue }
+            let v = UIImageView(image: fortImg)
+            v.contentMode = .scaleAspectFit
+            v.isHidden = true
+            v.bounds = CGRect(x: 0, y: 0, width: 46, height: 46)
+            insertSubview(v, at: 0)
+            built.append(MapStamp(view: v, x: px + 3.2, y: py - 2.8, worldWidth: 15, minScale: 1.42, maxAlpha: 0.90, screenMin: 18, screenMax: 36))
+            placedForts.append((px, py))
         }
 
         var placedPorts = [(Double, Double)]()
-        if let portImg = BundleArt.landmarkPort, !seaPts.isEmpty {
+        if !seaPts.isEmpty {
             let coastLimit2 = max(360.0, pow(min(mapW, mapH) * 0.045, 2))
-            for (idx, c) in map.meta.cities.enumerated() where idx < marks.count && marks[idx] != .capital && placedPorts.count < 10 {
+            for (idx, c) in map.meta.cities.enumerated() where idx < marks.count && marks[idx] != .capital && placedPorts.count < 12 {
                 let cx = Double(c.x), cy = Double(c.y)
                 guard cx.isFinite && cy.isFinite else { continue }
                 var nearSea = false
@@ -1333,12 +1357,13 @@ final class MapLabelsView: UIView {
                 }
                 guard nearSea else { continue }
                 if placedPorts.contains(where: { ($0.0 - cx) * ($0.0 - cx) + ($0.1 - cy) * ($0.1 - cy) < minSpread2 }) { continue }
+                guard let portImg = BundleArt.port(for: provinceCulture(c.province)) else { continue }
                 let v = UIImageView(image: portImg)
                 v.contentMode = .scaleAspectFit
                 v.isHidden = true
-                v.bounds = CGRect(x: 0, y: 0, width: 44, height: 44)
+                v.bounds = CGRect(x: 0, y: 0, width: 46, height: 46)
                 insertSubview(v, at: 0)
-                built.append(MapStamp(view: v, x: cx + 4.8, y: cy + 3.2, worldWidth: 14, minScale: 1.48, maxAlpha: 0.86, screenMin: 16, screenMax: 32))
+                built.append(MapStamp(view: v, x: cx + 4.8, y: cy + 3.2, worldWidth: 15, minScale: 1.42, maxAlpha: 0.90, screenMin: 18, screenMax: 36))
                 placedPorts.append((cx, cy))
             }
         }

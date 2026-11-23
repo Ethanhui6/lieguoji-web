@@ -538,6 +538,21 @@ extension NativeEngine {
         }
         var out = GameState(day: w.day.asInt, date: date, owners: owners, labels: labelBoxes, nations: nationRows, armies: armyRows, wars: wars, sieges: sieges, events: events)
         out.fleets = fleetRows; out.yards = yards; out.ports = ports; out.forts = forts; out.holy = holy
+        // 汇总当前持续中的天时与灾异州郡（暴雪/大旱/洪涝/瘟疫/丰年），供地图 GPU 着色与天气粒子实时呈现
+        var wzs = [GameState.WeatherZone]()
+        if !r.regimes.isNull, !r.regimes.disasters.isNull {
+            var seenWZ = Set<Int>()
+            for d in r.regimes.disasters.asArray {
+                let raw = d.kind.asString
+                let norm = raw == "famine" ? "drought" : raw
+                for pid in d.provinces.asArray {
+                    if let pIdx = pi[pid.asString], seenWZ.insert(pIdx).inserted {
+                        wzs.append(GameState.WeatherZone(province: pIdx, kind: norm))
+                    }
+                }
+            }
+        }
+        out.weatherZones = wzs.isEmpty ? nil : wzs
         out.contacts = contacts; out.arrows = arrows; out.seaBattles = seaBattles; out.era = era; out.yearOffset = yearOffset
         return out
     }

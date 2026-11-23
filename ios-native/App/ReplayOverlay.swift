@@ -788,7 +788,7 @@ struct ReplayOverlay: View {
                 .overlay(alignment: .bottom) {
                     if let localToast {
                         HStack(spacing: 10) {
-                            Seal(text: "史", size: 22)
+                            ArtEmblem(image: BundleArt.heraldEdict, size: 22, fallback: .chronicle)
                             Text(localToast).font(Theme.body).foregroundStyle(Theme.ink)
                                 .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                         }
@@ -1185,7 +1185,7 @@ struct ReplayOverlay: View {
 
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                SealFace(text: model.replayComparingOpening ? "初" : "势", size: 22, color: model.replayComparingOpening ? Theme.jade : Theme.seal)
+                ArtEmblem(image: BundleArt.compassRose, size: 24, fallback: .views)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.replayComparingOpening ? "开局初年疆域对照" : "当帧天下大势")
                         .font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)

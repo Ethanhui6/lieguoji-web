@@ -453,7 +453,7 @@ struct NationDecreesTab: View {
                             .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                     }
                     Spacer(minLength: 4)
-                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.seal)
+                    InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 10).contentShape(Rectangle())
             }
@@ -557,10 +557,10 @@ struct NationTerritoryTab: View {
                 // 搜索与排序
                 VStack(spacing: 8) {
                     HStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass").font(.system(size: 13)).foregroundStyle(Theme.ink2)
+                        InkIcon(glyph: .search, size: 14, weight: 1.7).foregroundStyle(Theme.ink2)
                         TextField("", text: $query, prompt: Text("搜州名、特产、总督或世家").foregroundColor(Theme.ink2.opacity(0.6)))
                         if !query.isEmpty {
-                            Button { query = "" } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 14)).foregroundStyle(Theme.ink2) }
+                            Button { query = "" } label: { InkIcon(glyph: .close, size: 12, weight: 1.8).foregroundStyle(Theme.ink2) }
                                 .buttonStyle(.plain)
                         }
                     }
@@ -626,7 +626,7 @@ struct NationTerritoryTab: View {
                 if row.armies > 0 { PaperTag(text: "\(row.armies)军", color: Theme.seal.opacity(0.85), size: 11) }
                 Spacer(minLength: 4)
                 Text(Names.wan(row.population) + "人").font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit()
-                Image(systemName: "ellipsis.circle").font(.system(size: 13)).foregroundStyle(Theme.seal.opacity(0.75))
+                InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75))
             }
             HStack(spacing: 8) {
                 Text("城防 \(row.defense) 级").font(Theme.caption).foregroundStyle(row.defense >= 3 ? Theme.jade : Theme.ink2)
@@ -800,7 +800,7 @@ struct EnthroneSheet: View {
                                         }
                                     }
                                     Spacer(minLength: 4)
-                                    Image(systemName: "crown").font(.system(size: 14)).foregroundStyle(Theme.seal)
+                                    InkIcon(glyph: .crown, size: 14, weight: 1.75).foregroundStyle(Theme.seal)
                                 }
                                 .padding(.horizontal, 14).padding(.vertical, 9).contentShape(Rectangle())
                             }

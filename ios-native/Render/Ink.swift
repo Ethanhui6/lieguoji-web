@@ -52,23 +52,29 @@ struct InkPipelines {
         if (in.nation < 0 || in.owner < 0 || in.nation == in.owner || float(in.nation) >= k.nations) discard_fragment();
         float show = in.show;
         float amount = in.amount;
-        if (amount < 0.01) discard_fragment();
-        // 宣纸三层水墨洇染前沿：域扭曲低频纤维波动 + 淡墨先导水晕 + 湿墨聚边笔锋 + 干透归纸微润水泽；
-        // 停战/败退收水退墨（retreatLift）：退墨时沿宣纸纤维向内徐徐收干，保留自然枯笔边缘。
+        if (amount < 0.006) discard_fragment();
+        // 生宣矿彩水墨洇染前沿：
+        // 1) 双尺度域扭曲 + 纤维微噪打破一切多边形格边，令墨迹呈自然毛细丝缕浸润宣纸；
+        // 2) 彻底摒弃生硬黑灰脏边，改以「淡彩先导水晕 + 通透主色晕染 + 本色微深水彩积墨润边」三层叠透，山川明暗透纸而出。
         float2 q = in.world;
-        float2 warp = float2(
-            vnoise(q * k.freq * 1.45 + float2(3.1, 7.4)),
-            vnoise(q * k.freq * 1.45 + float2(9.2, 2.3))
+        float2 warp1 = float2(
+            fbm2(q * k.freq * 0.95 + float2(3.1, 7.4)),
+            fbm2(q * k.freq * 0.95 + float2(9.2, 2.3))
         ) - 0.5;
-        float n1 = fbm(q * k.freq + warp * 0.42);
-        float n2 = vnoise(q * k.freq * 2.55 + warp * 0.65 + float2(5.1, 1.7));
-        float level = amount + (n1 - 0.5) * 2.0 * k.noise + (n2 - 0.5) * (k.noise * 0.38);
-        float retreatLift = (1.0 - clamp(in.fade, 0.0, 1.0)) * 0.26;
+        float2 warp2 = float2(
+            vnoise(q * k.freq * 2.6 + warp1 * 1.1 + float2(4.7, 1.3)),
+            vnoise(q * k.freq * 2.6 + warp1 * 1.1 + float2(8.1, 6.2))
+        ) - 0.5;
+        float n1 = fbm(q * k.freq * 0.85 + warp1 * 0.85 + warp2 * 0.24);
+        float n2 = vnoise(q * k.freq * 3.4 + warp1 * 1.2 + float2(5.1, 1.7));
+        float paperGrain = (n2 - 0.5) * 0.045;
+        float level = amount + (n1 - 0.5) * 2.0 * k.noise + (n2 - 0.5) * (k.noise * 0.42);
+        float retreatLift = (1.0 - clamp(in.fade, 0.0, 1.0)) * 0.28;
         float thresh = k.visible + retreatLift;
-        float reached = smoothstep(thresh - k.soft, thresh + k.soft, level);
-        // 推进前缘先导淡墨水晕（水比墨先走半步，模拟真实生宣洇水）
-        float waterHalo = smoothstep(thresh - k.soft * 1.55, thresh - k.soft * 0.15, level) * (1.0 - reached) * (1.0 - show * 0.62);
-        float outAlpha = reached * (0.87 + 0.13 * show) + waterHalo * 0.16;
+        // 主色柔润晕开与外缘毛细淡彩水晕
+        float core = smoothstep(thresh - k.soft * 0.65, thresh + k.soft * 0.95, level);
+        float waterVeil = smoothstep(thresh - k.soft * 1.65, thresh + k.soft * 0.25, level) * (1.0 - core * 0.72);
+        float outAlpha = clamp(core * (0.76 + 0.14 * show) + waterVeil * 0.24, 0.0, 0.90);
         if (outAlpha < 0.004) discard_fragment();
         float3 e = colours[in.nation].rgb;
         float3 lin = float3(inkToLinear(e.r), inkToLinear(e.g), inkToLinear(e.b));
@@ -76,15 +82,16 @@ struct InkPipelines {
         float3 col = float3(inkToSrgb(lin.r), inkToSrgb(lin.g), inkToSrgb(lin.b));
         col = in.terrain + (col - in.terrain) * k.density;
         col = min(float3(1.0), col * in.shade);
-        // 湿墨聚边笔锋 + 饱和微提 + 内侧新墨水光
-        float capillary = reached * (1.0 - reached) * 4.0;
-        float wetCrest = capillary * (1.12 - show * 0.52);
-        float wetSheen = smoothstep(0.42, 0.80, reached) * (1.0 - smoothstep(0.80, 0.98, reached)) * (1.0 - show);
-        float3 ridgeCol = col * (1.0 - 0.26 * wetCrest - 0.06 * capillary) + float3(0.042 * wetSheen);
-        // 水晕区域呈微暗润湿本色
-        float3 haloCol = mix(in.terrain * in.shade * 0.86, ridgeCol, 0.55);
-        float3 finalCol = mix(haloCol, ridgeCol, clamp(reached / max(outAlpha, 1e-4), 0.0, 1.0));
-        return float4(min(float3(1.0), finalCol), outAlpha);
+        // 本色水彩积墨边（加深本国色纯度而非发黑发灰）+ 宣纸细纤维微润质感
+        float edgeBand = core * (1.0 - core) * 4.0;
+        float3 richPigment = mix(col, col * col * 0.96, 0.32);
+        float wetEdge = edgeBand * (0.28 + 0.22 * (1.0 - show));
+        float3 bodyCol = mix(col, richPigment, wetEdge) + float3(paperGrain);
+        // 先导水晕：柔润淡化的本国彩水色（绝不发灰脏浊）
+        float3 veilCol = mix(in.terrain * in.shade, bodyCol, 0.58);
+        float coreRatio = clamp(core * 0.85 / max(outAlpha, 1e-4), 0.0, 1.0);
+        float3 finalCol = mix(veilCol, bodyCol, coreRatio);
+        return float4(clamp(finalCol, 0.0, 1.0), outAlpha);
     }
     """
 }
@@ -248,8 +255,8 @@ extension MapRenderer {
               indexCount > 0, reveal >= 1, display.battleGround ?? true else { return }
         let scale = washTopology?.scale ?? 30
         let density = mode == .political ? Float(max(0, min(1, display.colorDensity))) : 1
-        var look = InkField.Look(now: now, reveal: InkCells.revealSeconds, fade: InkCells.fadeSeconds, visible: 0.42, soft: 0.21, noise: 0.068,
-                                 freq: 1 / (scale * 1.15), stateAlpha: MapPalette.stateAlpha, density: density, nations: Float(ink.colourValues.count))
+        var look = InkField.Look(now: now, reveal: InkCells.revealSeconds, fade: InkCells.fadeSeconds, visible: 0.36, soft: 0.25, noise: 0.175,
+                                 freq: 1 / (scale * 0.88), stateAlpha: MapPalette.stateAlpha, density: density, nations: Float(ink.colourValues.count))
         encoder.setRenderPipelineState(inkPipes.composite)
         encoder.setVertexBuffer(positions, offset: 0, index: 0)
         encoder.setVertexBuffer(owners, offset: 0, index: 1)

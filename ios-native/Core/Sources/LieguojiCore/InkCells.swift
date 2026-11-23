@@ -56,11 +56,11 @@ public final class InkCells: @unchecked Sendable {
     private var stepStamp: UInt32 = 1
 
     public static let never: Float = 1e9
-    /// 显出与淡去的时长（秒）。
-    public static let revealSeconds: Float = 0.6
-    public static let fadeSeconds: Float = 1.2
-    /// 墨向外渗的速度（每秒几个格距）：近处先显，远处后显。
-    public static let spreadPerSecond: Float = 1.6
+    /// 显出与淡去的时长（秒）：拉长至温润水墨漫渗节律，彻底告别生硬块状弹出。
+    public static let revealSeconds: Float = 1.15
+    public static let fadeSeconds: Float = 1.65
+    /// 墨向外渗的速度（每秒几个格距）：近处先显、远处徐徐漫开。
+    public static let spreadPerSecond: Float = 1.35
     /// 一年没有军队经过的墨淡去。
     public static let staleDays = 365
 
@@ -454,10 +454,10 @@ public final class InkCells: @unchecked Sendable {
                 let smoothWeight: Float
                 if hit == 0 {
                     smoothWeight = 0
-                } else if hit == land {
+                } else if hit == land && ringFrac > 0.85 {
                     smoothWeight = 1
                 } else {
-                    smoothWeight = directFrac * 0.72 + ringFrac * 0.28
+                    smoothWeight = directFrac * 0.48 + ringFrac * 0.52
                 }
                 vertexData[o] = Float(n)
                 vertexData[o + 1] = hit > 0 ? first : 0

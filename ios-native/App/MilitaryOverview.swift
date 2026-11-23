@@ -230,7 +230,7 @@ private struct SiegeRow: View {
                 }
                 InkBar(fraction: share, color: Theme.seal.opacity(0.85), track: Theme.ink.opacity(0.08), height: 5)
             }
-            Image(systemName: "scope").font(.system(size: 13)).foregroundStyle(Theme.seal)
+            InkIcon(glyph: .locate, size: 14, weight: 1.75).foregroundStyle(Theme.seal)
         }
         .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
     }

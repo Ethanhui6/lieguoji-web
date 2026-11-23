@@ -391,6 +391,83 @@ public enum ForceMotion {
     }
 }
 
+/// 四时节气（与游戏内真实历法月份严格同步）：驱动地图光影雪线与实际行军、补给、赋税规则。
+public enum WorldSeason: Int, Sendable {
+    case spring = 0
+    case summer = 1
+    case autumn = 2
+    case winter = 3
+
+    public static func of(month: Int) -> WorldSeason {
+        switch ((month - 1) % 12 + 12) % 12 + 1 {
+        case 3, 4, 5: return .spring
+        case 6, 7, 8: return .summer
+        case 9, 10, 11: return .autumn
+        default: return .winter
+        }
+    }
+
+    public var name: String {
+        switch self {
+        case .spring: return "春"
+        case .summer: return "夏"
+        case .autumn: return "秋"
+        case .winter: return "冬"
+        }
+    }
+
+    public var fullName: String {
+        switch self {
+        case .spring: return "仲春"
+        case .summer: return "盛夏"
+        case .autumn: return "金秋"
+        case .winter: return "隆冬"
+        }
+    }
+
+    public var summary: String {
+        switch self {
+        case .spring: return "春耕复苏：兵源与士气恢复加快（+25%），雪融通途"
+        case .summer: return "盛夏畅行：白昼充裕、行军畅快，正宜挥师远征"
+        case .autumn: return "金秋丰稔：秋收赋税与粮秣增收（+12%），宜整军备战"
+        case .winter: return "隆冬苦寒：高地北境积雪阻道，客军粮耗与寒损大增（+45%）"
+        }
+    }
+
+    public var supplyDrainMultiplier: Double {
+        switch self {
+        case .spring: return 0.92
+        case .summer: return 1.00
+        case .autumn: return 0.88
+        case .winter: return 1.45
+        }
+    }
+
+    public var friendlyRecoveryMultiplier: Double {
+        switch self {
+        case .spring: return 1.25
+        case .summer: return 1.00
+        case .autumn: return 1.20
+        case .winter: return 0.84
+        }
+    }
+
+    public var taxMultiplier: Double {
+        switch self {
+        case .spring: return 1.02
+        case .summer: return 1.04
+        case .autumn: return 1.12
+        case .winter: return 0.90
+        }
+    }
+
+    public func winterColdBonus(biome: Int, mountain: Bool) -> Double {
+        guard self == .winter else { return 0 }
+        if mountain || biome == 10 || biome == 11 || biome == 2 { return 0.010 }
+        return 0.004
+    }
+}
+
 /// Army motion start exported from the web world (src/native-export/native-state.ts nativeTravelState).
 /// Points are normalized web units; map coordinates are point / scale.
 public struct TravelStart: Codable, Sendable {

@@ -130,10 +130,14 @@ import LieguojiCore
     /// A reveal played on the map's display link (smooth, without a SwiftUI update each frame); the
     /// published `reveal` then only follows it coarsely for the panels. `push`: the camera eases in.
     private(set) var revealClock: (from: Float, to: Float, start: CFTimeInterval, duration: Double, push: Bool)?
+    private(set) var revealClockSerial = 0
+    var mapMountToken = 0
+    var onMapMounted: (() -> Void)?
     var onRevealClock: (() -> Void)?
     /// Battle losses to float over the map (map point, text, at sea).
     var onHits: (([(x: Float, y: Float, text: String, naval: Bool)]) -> Void)?
     func animateReveal(from: Float = 0, to: Float = 1, duration: Double, push: Bool = false) {
+        revealClockSerial &+= 1
         revealClock = (from, to, CACurrentMediaTime(), max(0.05, duration), push)
         onRevealClock?()
     }
@@ -417,6 +421,8 @@ struct MapView: UIViewRepresentable {
         }
         private let selection = UISelectionFeedbackGenerator()
         private let impact = UIImpactFeedbackGenerator(style: .light)
+        private var mountNotified = false
+        private var appliedRevealSerial = -1
 
         init(map: WorldMap, controller: MapController) {
             self.map = map; self.controller = controller; picker = CellPicker(map: map)
@@ -450,6 +456,8 @@ struct MapView: UIViewRepresentable {
             mtk.contentScaleFactor = min(UIScreen.main.scale, controller.play.renderScale)
             renderer = MapRenderer(view: mtk, map: map, parchmentURL: Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"),
                                    unitURL: { Bundle.main.url(forResource: "unit-\($0)", withExtension: "png", subdirectory: "World") })
+            let initialReveal = controller.revealNow ?? controller.reveal
+            renderer?.setReveal(initialReveal)
             mtk.delegate = renderer
             renderer?.onDraw = { [weak self] t in self?.frameDrawn(t) }
             renderer?.onOutlines = { [weak self] in self?.startLink(); self?.mtk.setNeedsDisplay() }
@@ -464,6 +472,8 @@ struct MapView: UIViewRepresentable {
                 }
             }
             labels = MapLabelsView(map: map)
+            labels?.alpha = CGFloat(max(0, min(1, (initialReveal - 0.85) / 0.15)))
+            effects.alpha = CGFloat(max(0, min(1, (initialReveal - 0.9) / 0.1)))
             mtk.frame = container.bounds; mtk.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(mtk)
             // 统一将全部地图覆盖层（战争特效、国名地名、飘字、兵力条）收入 overlayHost -> overlayCanvas，
             // 通过 overlayHost.clipsToBounds 硬件剪裁在卷轴画心内（零 layer.mask 离屏渲染开销）。
@@ -565,6 +575,14 @@ struct MapView: UIViewRepresentable {
             if !placed { renderer.camera = MapCamera.cover(map: mapSize, viewport: viewport); placed = true }
             set(renderer.camera)
             applyFramingRequests()
+            if !mountNotified {
+                mountNotified = true
+                controller.mapMountToken &+= 1
+                controller.onMapMounted?()
+            }
+            if controller.revealClock != nil && !controller.revealDone && appliedRevealSerial != controller.revealClockSerial {
+                revealStarted()
+            }
         }
         private func set(_ camera: MapCamera, sync: Bool = false) {
             guard let renderer else { return }
@@ -824,13 +842,18 @@ struct MapView: UIViewRepresentable {
             gliding = glide
             l.preferredFrameRateRange = glide ? glideRange : frameRange
         }
-        /// A reveal clock began: the map follows it frame by frame; with `push` the camera settles smoothly.
+        /// A reveal clock began: the map follows it frame by frame; with `push` the camera eases out from 1.25×.
         private func revealStarted() {
-            if let c = controller.revealClock, c.push, renderer != nil {
-                let target = camera
-                var from = target; from.scale = target.scale * 1.12
-                set(from)
-                animate(to: target, duration: c.duration)
+            guard placed else { return }
+            appliedRevealSerial = controller.revealClockSerial
+            if let c = controller.revealClock, let renderer {
+                renderer.setReveal(controller.revealNow ?? c.from)
+                if c.push {
+                    let target = camera
+                    var from = target; from.scale = target.scale * 1.25
+                    set(from)
+                    animate(to: target, duration: c.duration * 1.1)
+                }
             }
             startLink()
         }

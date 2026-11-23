@@ -342,6 +342,14 @@ import LieguojiCore
         var provinceCount: Int { max(nations, min(480, Int(provinces) ?? nations * 10)) }
     }
 
+    /// 等待新挂载的 MapView 完成首帧布局与相机初始化，确保开卷动画与镜头推拉 100% 落在新地图上不跳帧、不闪屏。
+    private func waitForMapMount(after token: Int) async {
+        let deadline = CACurrentMediaTime() + 0.45
+        while controller.mapMountToken == token && CACurrentMediaTime() < deadline {
+            try? await Task.sleep(nanoseconds: 16_000_000)
+        }
+    }
+
     /// 新世界由 Swift 本机一次性建成，并在开卷动画前就启用本作规则（名号多样与国色分明），
     /// 令开卷阶段浮现的每一处版图色块、国号与疆界和进入推演后完全一致，彻底杜绝生成途中变名变色。
     func generate(_ options: NewWorld) async {
@@ -350,10 +358,10 @@ import LieguojiCore
         worldEpoch &+= 1
         let epoch = worldEpoch
         controller.foundingStage = 0
-        generationNote = "正在开辟山河与列国"
+        generationNote = "正在生成地形"
         controller.drifting = false
         controller.reveal = 0
-        phase = .generating
+        phase = .founding
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
             options.climate.apply()
@@ -370,7 +378,9 @@ import LieguojiCore
                 let loaded = try await decodeFinalNative(created, epoch: epoch, prepareLayers: true)
                 guard epoch == worldEpoch else { return }
                 if let layers = loaded.layers { MapRenderer.prepared = layers }
+                let mountBefore = controller.mapMountToken
                 state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.seaPorts = []
+                controller.reveal = 0
                 map = loaded.world; worldID = UUID()
                 controller.snapArmies = true
                 apply(loaded.state)
@@ -378,16 +388,21 @@ import LieguojiCore
                 controller.foundingStage = 3
                 generationNote = ""
                 phase = .founding
+                await waitForMapMount(after: mountBefore)
+                guard epoch == worldEpoch else { return }
                 await rise(epoch)
                 guard epoch == worldEpoch else { return }
                 world = loaded.world
             case .web(let built):
+                let mountBefore = controller.mapMountToken
                 world = try await open(built)
                 try checkWorld(epoch)
                 controller.foundingStage = 3
                 try await handOver(applyNewWorldRules: true)
                 guard epoch == worldEpoch else { return }
                 generationNote = ""
+                await waitForMapMount(after: mountBefore)
+                guard epoch == worldEpoch else { return }
                 await rise(epoch)
                 guard epoch == worldEpoch else { return }
             }
@@ -405,11 +420,11 @@ import LieguojiCore
         }
     }
 
-    /// The generation animation on the final device-built world (identical names & colors to live play).
+    /// The classic full ink-painting generation reveal (6.8s sea soak -> shore ink -> rising hills -> state wash -> borders + camera pull-back).
     private func rise(_ epoch: Int) async {
         controller.interactive = false
         controller.reveal = 0
-        if !ShotTour.on { await playReveal(duration: 2.6, push: controller.play.introCamera, while: { self.worldEpoch == epoch }); return }
+        if !ShotTour.on { await playReveal(from: 0, duration: 6.8, push: true, while: { self.worldEpoch == epoch }); return }
         // CI waits on these frames: the clock is pinned to each stage in turn while its shot is taken.
         let shots: [(at: Float, name: String)] = [(0.03, "02-founding"), (0.10, "02a-sea"), (0.24, "02b-rise"), (0.36, "02c-ink"), (0.62, "02d-states"), (0.80, "02e-borders")]
         for shot in shots {
@@ -426,6 +441,7 @@ import LieguojiCore
         worldEpoch &+= 1
         let epoch = worldEpoch
         phase = .generating; failure = nil; generationNote = "正在读取存档"
+        let mountBefore = controller.mapMountToken
         do {
             let data = try Data(contentsOf: Self.saveURL)
             let world: WorldMap
@@ -452,6 +468,7 @@ import LieguojiCore
                 state = nil
                 controller.effects = MapEffects()
                 controller.snapArmies = true
+                controller.reveal = 0
                 map = loaded.0; worldID = UUID(); controller.world = nil
                 apply(loaded.1); lastSavedDay = loaded.1.day
                 world = loaded.0
@@ -461,13 +478,14 @@ import LieguojiCore
                 await Task.yield()
                 let restored = try await webHost.call("load(text)", ["text": saved])
                 try checkWorld(epoch)
+                controller.reveal = 0
                 world = try await open(restored)
                 try checkWorld(epoch)
                 try await handOver()
             }
             try checkWorld(epoch)
             generationNote = ""
-            await reveal(world)
+            await reveal(world, mountBefore: mountBefore)
             try checkWorld(epoch)
             autoConnect()
         } catch { if epoch == worldEpoch { failure = "存档无法读取：\(error.localizedDescription)"; phase = .title } }
@@ -546,12 +564,14 @@ import LieguojiCore
         return loaded.0
     }
 
-    /// Continuing a saved world: brisk, smooth ink unroll (~1.0s) so players return to their map immediately.
-    private func reveal(_ world: WorldMap) async {
+    /// Land rises from the sea, then the states' colours wash over it (classic ~3.2s ink unroll).
+    private func reveal(_ world: WorldMap, mountBefore: Int? = nil) async {
         controller.interactive = false
-        controller.reveal = 0.28
+        controller.reveal = 0
         phase = .playing
-        await playReveal(from: 0.28, duration: 1.0, push: controller.play.introCamera)
+        if let token = mountBefore { await waitForMapMount(after: token) }
+        else { try? await Task.sleep(nanoseconds: 50_000_000) }
+        await playReveal(from: 0, duration: 3.2, push: controller.play.introCamera)
         controller.interactive = true
     }
 
@@ -817,7 +837,8 @@ import LieguojiCore
         if replayActive { return }
         let previous = state
         state = next
-        controller.seasonPhase = Float(max(0, next.day % 365)) / 365.0
+        let dayOfYear = ((max(1, min(12, next.date.month)) - 1) * 30 + max(1, min(30, next.date.day)) - 1) % 360
+        controller.seasonPhase = Float(dayOfYear) / 360.0
         var newEvents: [GameState.Event] = []
         if let previous {
             if previous.events != next.events {

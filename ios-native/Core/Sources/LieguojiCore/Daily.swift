@@ -235,6 +235,7 @@ public enum Daily {
         let appTerrain = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
         if appTerrain, let bridge = Armies.bridge {
             let g = bridge.graph, provinces = r.world.provinces.asArray
+            let season = WorldSeason.of(month: r.life.currentDate.month.asInt)
             for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" {
                 let id = a.id.asString, rec = r.armyPositions.records[id]
                 var supplies = a.supplies.optionalNumber ?? 100
@@ -251,31 +252,32 @@ public enum Daily {
                         let prof = ForceMotion.terrainProfile(biome: bi, mountain: isMtn)
                         let hostile = controller != nation && Wars.relation(r, nation, controller)?.status.asString == "war"
                         if hostile {
-                            // 深入敌境：恶劣地形（大漠、冰川、高山、沼泽、深林）加速消耗随军粮秣；断粮后引发非战斗减员与士气滑坡。
-                            supplies = max(0, supplies - prof.supplyDrain)
-                            if supplies < 22 && prof.attrition > 0 && a.status.asString != "retreating" {
+                            // 深入敌境：地形 × 节气联动消耗随军粮秣；隆冬苦寒与荒漠断粮将触发真实非战斗减员与士气滑坡。
+                            supplies = max(0, supplies - prof.supplyDrain * season.supplyDrainMultiplier)
+                            let effAttrition = prof.attrition + season.winterColdBonus(biome: bi, mountain: isMtn)
+                            if supplies < 26 && effAttrition > 0 && a.status.asString != "retreating" {
                                 let cur = a.troops.asNumber
                                 let full = max(cur, r.tactics.forces[id].fullStrength.optionalNumber ?? cur)
                                 let floorTroops = max(80, (full * 0.25).rounded(.down))
                                 if cur > floorTroops {
-                                    let loss = max(1, (cur * prof.attrition).rounded(.down))
+                                    let loss = max(1, (cur * effAttrition).rounded(.down))
                                     a.troops = JS(max(floorTroops, cur - loss))
                                 }
-                                morale = max(25, morale - 1.6)
+                                morale = max(22, morale - (season == .winter ? 2.2 : 1.5))
                             }
                         } else {
-                            // 己方或友邦境内：平畴快速休整补给，山地荒漠补给稍缓。
-                            let refill = prof.attrition > 0 ? 7.0 : 14.0
+                            // 己方或友邦境内：春耕与秋收季节恢复显著加快，隆冬略缓。
+                            let refill = (prof.attrition > 0 ? 7.0 : 14.0) * season.friendlyRecoveryMultiplier
                             supplies = min(100, supplies + refill)
-                            if a.status.asString != "fighting" { morale = min(100, morale + 4.0) }
+                            if a.status.asString != "fighting" { morale = min(100, morale + 4.0 * season.friendlyRecoveryMultiplier) }
                         }
                     } else {
-                        // 渡海航行：轻度消耗随船口粮
-                        supplies = max(20, supplies - 1.5)
+                        // 渡海航行：隆冬风浪更大、随船口粮消耗略增
+                        supplies = max(20, supplies - (season == .winter ? 2.1 : 1.5))
                     }
                 } else {
-                    supplies = min(100, supplies + 12)
-                    if a.status.asString != "fighting" { morale = min(100, morale + 4) }
+                    supplies = min(100, supplies + 12 * season.friendlyRecoveryMultiplier)
+                    if a.status.asString != "fighting" { morale = min(100, morale + 4 * season.friendlyRecoveryMultiplier) }
                 }
                 a.supplies = JS(supplies)
                 a.morale = JS(morale)
@@ -397,6 +399,7 @@ public enum Daily {
         var stockById = [String: JS]()
         for s in r.world.statecraft.provinces.asArray { stockById[s.provinceId.asString] = s }
         let appTerrain = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
+        let seasonTax = appTerrain ? WorldSeason.of(month: r.life.currentDate.month.asInt).taxMultiplier : 1.0
         for nation in r.world.nations.asArray {
             let id = nation.id.asString, n = r.finance.nations[id], u = r.upperCombat.nations[id]
             if n.lastMonth.asInt >= month || u.provinceOrder.length == 0 { continue }
@@ -410,7 +413,7 @@ public enum Daily {
                     let land = r.terrainContext.provinces[pid]
                     let ratios = land.isNull || land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
                     let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
-                    local *= ForceMotion.terrainProfile(biome: main, mountain: land.mountain.isTruthy).tax
+                    local *= ForceMotion.terrainProfile(biome: main, mountain: land.mountain.isTruthy).tax * seasonTax
                 }
                 return Treasury.provinceIncome(Treasury.ProvinceInput(population: data.population.asInt, capacity: p.maxPopulation.asInt, cells: p.cellBiomes.length, resources: resources,
                                                                       local: local),

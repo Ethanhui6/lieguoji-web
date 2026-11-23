@@ -72,7 +72,7 @@ struct FinanceSection: View {
                 // 国债: what is owed, what it costs a month, how the lenders see it.
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
-                        Image(systemName: "building.columns").font(.system(size: 14)).foregroundStyle(Theme.seal.opacity(0.8))
+                        InkIcon(glyph: .economy, size: 15, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.8))
                         Text("国债").font(Theme.label).foregroundStyle(Theme.ink2)
                         PaperTag(text: ["信用良好", "负债尚可", "债务沉重", "濒临破产"][min(3, max(0, f.debtLevel ?? 0))], color: (f.debtLevel ?? 0) >= 2 ? Theme.seal : (f.debtLevel ?? 0) == 1 ? Theme.ink2 : Theme.jade)
                         Spacer()
@@ -307,7 +307,7 @@ struct FamilyTreeSheet: View {
                         switchFamily(to: family, name: name)
                     } label: {
                         HStack(spacing: 4) {
-                            Image(systemName: "chevron.left").font(.system(size: 12, weight: .semibold))
+                            InkIcon(glyph: .chevronRight, size: 12, weight: 1.8).rotationEffect(.degrees(180))
                             Text("返回\(name)").font(Theme.label)
                         }
                         .foregroundStyle(Theme.seal)
@@ -440,7 +440,7 @@ struct FamilyTreeSheet: View {
                         renamingHouse = true
                     } label: {
                         HStack(spacing: 3) {
-                            Image(systemName: "pencil").font(.system(size: 11))
+                            InkIcon(glyph: .brush, size: 12, weight: 1.7)
                             Text("改族姓").font(Theme.label)
                         }
                         .foregroundStyle(Theme.seal)
@@ -563,7 +563,7 @@ struct FamilyTreeSheet: View {
                     Text("\(rel.score > 0 ? "+" : "")\(Int(rel.score))").font(Theme.label)
                         .foregroundStyle(rel.score >= 20 ? Theme.jade : rel.score <= -20 ? Theme.seal : Theme.ink2)
                         .monospacedDigit().frame(minWidth: 30, alignment: .trailing)
-                    Image(systemName: "ellipsis.circle").font(.system(size: 13)).foregroundStyle(Theme.seal.opacity(busy ? 0.3 : 0.7))
+                    InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(busy ? 0.3 : 0.7))
                 }
                 .padding(.horizontal, 16).padding(.vertical, 9)
                 .contentShape(Rectangle())
@@ -617,7 +617,7 @@ struct FamilyTreeSheet: View {
                 Spacer(minLength: 4)
                 if let s = tree.spouse(of: m) { Text("配 \(s.name)").font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1) }
                 Text(m.alive ? "\(m.female ? "女" : "男") · \(Int(m.age))" : "已故").font(Theme.label).foregroundStyle(Theme.ink2).fixedSize()
-                if m.alive { Image(systemName: "ellipsis.circle").font(.system(size: 13)).foregroundStyle(Theme.seal.opacity(busy ? 0.3 : 0.7)) }
+                if m.alive { InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(busy ? 0.3 : 0.7)) }
             }
             let parentNote: String? = showParent ? tree.parent(of: m).map { "\($0.female ? "母" : "父") \($0.name)" } : nil
             let natalNote: String? = m.natalHouse.isEmpty ? nil : "出身 \(NamingCatalog.houseLabel(m.natalHouse))"

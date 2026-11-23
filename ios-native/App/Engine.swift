@@ -149,6 +149,8 @@ struct ProvinceInfo: Decodable {
     /// The main land (地形) and an army's march pace, tax, attrition and natural defense over it.
     var terrain: String? = nil; var pace: Double? = nil
     var terrainTax: Double? = nil; var terrainAttrition: String? = nil; var terrainDefense: Double? = nil; var terrainSummary: String? = nil
+    var prosperity: Int? = nil; var prosperityLabel: String? = nil; var strategicRole: String? = nil
+    var seasonName: String? = nil; var seasonNote: String? = nil
     /// 特产 and its index in the goods list.
     var specialty: String? = nil; var specialtyIndex: Int? = nil
     /// The province city's own culture.

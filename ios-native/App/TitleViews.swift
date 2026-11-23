@@ -82,22 +82,22 @@ struct SplashView: View {
             .opacity(dried ? 0 : 1).scaleEffect(dried ? 1.03 : 1)
         }
         .task {
-            withAnimation(.easeOut(duration: 0.9)) { soaked = true }
-            withAnimation(.easeOut(duration: 1.1)) { contours = true }
-            withAnimation(.easeOut(duration: 1.0).delay(0.1)) { hills = true }
-            try? await Task.sleep(nanoseconds: 200_000_000)
+            withAnimation(.easeOut(duration: 1.1)) { soaked = true }
+            withAnimation(.easeOut(duration: 1.4)) { contours = true }
+            withAnimation(.easeOut(duration: 1.3).delay(0.15)) { hills = true }
+            try? await Task.sleep(nanoseconds: 280_000_000)
             for i in 1...3 {
                 withAnimation(Motion.reveal) { brushed = i }
-                try? await Task.sleep(nanoseconds: 200_000_000)
+                try? await Task.sleep(nanoseconds: 260_000_000)
             }
-            try? await Task.sleep(nanoseconds: 100_000_000)
+            try? await Task.sleep(nanoseconds: 140_000_000)
             withAnimation(Motion.stamp) { stamped = true }
-            withAnimation(.easeOut(duration: 0.5)) { stampRing = true }
+            withAnimation(.easeOut(duration: 0.6)) { stampRing = true }
             GameFeel.shared.tap()
-            withAnimation(Motion.reveal.delay(0.08)) { motto = true }
-            try? await Task.sleep(nanoseconds: 700_000_000)
+            withAnimation(Motion.reveal.delay(0.15)) { motto = true }
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             withAnimation(Motion.reveal) { dried = true }
-            try? await Task.sleep(nanoseconds: 320_000_000)
+            try? await Task.sleep(nanoseconds: 420_000_000)
             done()
         }
     }
@@ -232,7 +232,7 @@ struct TitleView: View {
             }
         }
         .statusBarHidden()
-        .onAppear { shown = false; withAnimation(Motion.drift.delay(model.controller.reveal < 1 ? 0.35 : 0.08)) { shown = true } }
+        .onAppear { shown = false; withAnimation(Motion.drift.delay(model.controller.reveal < 1 ? 1.2 : 0.1)) { shown = true } }
         .onChange(of: model.tourTitle) { _, name in
             settings = name == "settings"
             creating = name == "new-world"
@@ -796,49 +796,69 @@ struct GeneratingView: View {
 
 // MARK: - game
 
-/// 精致极简开卷提示浮标：不遮挡山河晕染画面，底部一条温润宣纸胶囊随显卡开卷进度流畅推进。
+/// 经典开卷阶段浮卡：铺纸注海 → 勾勒海岸 → 晕染山河 → 冲刷江河 → 划分州郡 → 分封列国 → 勘定国界 → 营建城邦，
+/// 实时跟随显卡开卷时钟与引擎建世阶段推进。
 struct FoundingView: View {
     @ObservedObject var controller: MapController
     let cancel: () -> Void
     private var reveal: Float { controller.reveal }
     static let stages: [(until: Float, text: String)] = [
-        (0.20, "铺纸注海"), (0.44, "晕染山河"), (0.72, "分封列国"), (0.90, "勘定疆界"), (1.00, "城邦落成"),
+        (0.15, "铺纸注海"), (0.30, "勾勒海岸"), (0.44, "晕染山河"), (0.50, "冲刷江河，播撒林木"),
+        (0.56, "划分州郡"), (0.75, "分封列国"), (0.85, "勘定国界"), (1.00, "营建城邦与港口"),
     ]
+    static let later = ["诞生世家与人物", "编练军队", "缔结邦交", "天下初定"]
     @State private var started = Date()
     var body: some View {
-        let current = Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1
-        let progress = max(0.02, min(1.0, Double(reveal)))
-        VStack {
-            Spacer()
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 10) {
-                    SealFace(text: "卷", size: 24, color: Theme.seal)
-                    Text(Self.stages[current].text).font(Theme.section).foregroundStyle(Theme.ink)
-                        .id(current).transition(.opacity)
-                    Spacer(minLength: 6)
-                    Text("\(Int((progress * 100).rounded()))%").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
-                }
-                GeometryReader { g in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Theme.ink.opacity(0.10))
-                        Capsule().fill(Theme.seal).frame(width: g.size.width * progress)
+        TimelineView(.periodic(from: .now, by: 0.35)) { context in
+            let waited = reveal >= 1 ? context.date.timeIntervalSince(started) : 0
+            let laterIndex = min(Self.later.count - 1, controller.foundingStage)
+            let current = reveal < 1 ? (Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1) : Self.stages.count + laterIndex
+            let all = Self.stages.map(\.text) + Self.later
+            let creep: Double = (1 - exp(-waited / 8)) * 0.9
+            let progress: Double = reveal < 1 ? Double(reveal) * 0.85 : 0.85 + (Double(laterIndex) + creep) / Double(Self.later.count) * 0.15
+            VStack {
+                Spacer()
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(max(0, current - 3)..<current, id: \.self) { i in
+                        HStack(spacing: 8) {
+                            InkIcon(glyph: .peace, size: 12, weight: 1.8).foregroundStyle(Theme.jade)
+                            Text(all[i]).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                        }
+                        .opacity(0.45 + 0.18 * Double(i - (current - 3)))
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    HStack(spacing: 8) {
+                        SealFace(text: "卷", size: 22, color: Theme.seal)
+                        Text(all[min(current, all.count - 1)] + "……").font(Theme.kai(20)).foregroundStyle(Theme.ink)
+                            .id(current).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
+                    }
+                    GeometryReader { g in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Theme.ink.opacity(0.1))
+                            Capsule().fill(Theme.seal).frame(width: g.size.width * progress)
+                        }
+                    }
+                    .frame(height: 4)
+                    Text("\(Int(progress * 100))%").font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
+                    if waited > 20 {
+                        HStack(spacing: 8) {
+                            Text("比平时久一些，仍在推算").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                            Spacer(minLength: 8)
+                            Button(action: cancel) { Text("放弃，回标题").font(Theme.kai(13)).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle())
+                        }
+                        .transition(.opacity)
                     }
                 }
-                .frame(height: 3.5)
-                if Date().timeIntervalSince(started) > 15 {
-                    HStack {
-                        Text("推算耗时略久").font(Theme.caption).foregroundStyle(Theme.ink2)
-                        Spacer()
-                        Button("返回标题", action: cancel).font(Theme.caption).foregroundStyle(Theme.seal).buttonStyle(PressStyle())
-                    }
-                }
+                .animation(Motion.panel, value: current)
+                .animation(Motion.fade, value: progress)
+                .animation(Motion.fade, value: waited > 20)
+                .padding(.horizontal, 20).padding(.vertical, 16)
+                .frame(maxWidth: 360, alignment: .leading)
+                .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerSheet, style: .continuous))
+                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
+                .padding(.bottom, 40)
             }
-            .animation(Motion.fade, value: current)
-            .padding(.horizontal, 18).padding(.vertical, 13)
-            .frame(maxWidth: 300)
-            .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
-            .padding(.bottom, 38)
+            .onChange(of: reveal >= 1) { _, done in if done { started = Date() } }
         }
-        .onAppear { started = Date() }
     }
 }

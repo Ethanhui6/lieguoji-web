@@ -350,7 +350,7 @@ struct ReformCard: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 5) {
-                                Image(systemName: f.on ? "checkmark.seal.fill" : "seal").font(.system(size: 13)).foregroundStyle(f.on ? Theme.seal : Theme.ink2)
+                                InkIcon(glyph: .edict, size: 13, weight: 1.75, filled: f.on).foregroundStyle(f.on ? Theme.seal : Theme.ink2)
                                 Text(f.name).font(Theme.body).foregroundStyle(f.on ? Theme.seal : Theme.ink).lineLimit(1)
                             }
                             Text(f.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).frame(maxWidth: .infinity, alignment: .leading)

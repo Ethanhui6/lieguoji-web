@@ -138,13 +138,58 @@ extension NativeEngine {
         // 地形 and the pace an army marches over it (app rules), from the province's main biome.
         let ratios = land.isNull || land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
         let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
-        let tProf = ForceMotion.terrainProfile(biome: main, mountain: land.mountain.isTruthy)
+        let isMtn = land.mountain.isTruthy
+        let tProf = ForceMotion.terrainProfile(biome: main, mountain: isMtn)
+        let curSeason = WorldSeason.of(month: r.life.currentDate.month.asInt)
         o.terrain = JS(["海滨", "炎热荒漠", "寒冷荒漠", "稀树草原", "草原", "热带季雨林", "温带森林", "热带雨林", "温带雨林", "针叶林", "苔原", "冰川", "沼泽"][min(12, main)])
-        o.pace = JS(UnitKinds.enabled ? tProf.speed : (land.mountain.isTruthy ? 0.5 : ForceMotion.terrainSpeed[min(ForceMotion.terrainSpeed.count - 1, main)]))
+        o.pace = JS(UnitKinds.enabled ? tProf.speed : (isMtn ? 0.5 : ForceMotion.terrainSpeed[min(ForceMotion.terrainSpeed.count - 1, main)]))
         o.terrainTax = JS(tProf.tax)
         o.terrainAttrition = JS(tProf.attritionLabel)
         o.terrainDefense = JS(tProf.defenseBonus)
         o.terrainSummary = JS(tProf.summary)
+        // 州郡繁盛度、战略定位与当令节气实效（均由真实人口、存粮、总督、港口、围城与灾荒动态算出）
+        let popVal = stock?.population.asNumber ?? 0
+        let capVal = max(1.0, r.finance.provinces[id].maxPopulation.asNumber)
+        let grainVal = stock?.grain.asNumber ?? 0
+        let hasPort = !r.portControl.isNull && !r.portControl.ports.isNull && !r.portControl.ports[id].isNull
+        let govFit = o.governorFit.optionalNumber ?? 0
+        let occupied = o.owner.asInt != o.controller.asInt
+        var prosp = Int((min(1.0, popVal / capVal) * 44.0 + min(1.0, grainVal / max(800.0, popVal * 0.25)) * 18.0).rounded())
+        if o.core.isTruthy { prosp += 10 }
+        if hasPort { prosp += 10 }
+        if govFit >= 0.4 { prosp += 14 } else if govFit < 0 { prosp -= 8 }
+        if !sieges.isEmpty { prosp -= 26 }
+        if occupied { prosp -= 18 }
+        if !o.disaster.isNull { prosp -= 22 }
+        if !o.blockade.isNull { prosp -= 12 }
+        if (o.unrest.optionalNumber ?? 0) >= 35 { prosp -= 10 }
+        prosp = max(5, min(100, prosp))
+        o.prosperity = JS(prosp)
+        o.prosperityLabel = JS(prosp >= 80 ? "殷富繁华" : prosp >= 62 ? "安居乐业" : prosp >= 44 ? "民生尚可" : prosp >= 26 ? "凋敝承创" : "战火残破")
+        let role: String = {
+            if isMtn || d.manualFortress.isTruthy || (o.defense.optionalNumber ?? 1) >= 3 { return "咽喉雄关" }
+            if hasPort { return "通海良港" }
+            if (main == 4 || main == 3) && capVal >= 12000 { return "鱼米沃野" }
+            if main == 1 || main == 2 || main == 10 || main == 11 || main == 12 { return "边荒险地" }
+            if main >= 5 && main <= 9 { return "林莽要冲" }
+            return "腹心州郡"
+        }()
+        o.strategicRole = JS(role)
+        o.seasonName = JS(curSeason.fullName)
+        let coldLand = isMtn || main == 10 || main == 11 || main == 2
+        let sNote: String = {
+            switch curSeason {
+            case .winter:
+                return coldLand ? "隆冬严寒：山原积雪封道，客军粮耗 +45% 并加剧冻伤减员" : "隆冬休兵：本州月税 −10%，敌军粮秣补给吃紧"
+            case .spring:
+                return "仲春复苏：友军休整补给加快（+25%），雪融水丰"
+            case .summer:
+                return (main == 1) ? "盛夏酷暑：大漠烈日炙烤，行军补给仍需严密筹措" : "盛夏畅行：官道通畅，正宜行军与大举出征"
+            case .autumn:
+                return "金秋丰稔：秋收充盈，本州月税增收 +12% 且军粮充足"
+            }
+        }()
+        o.seasonNote = JS(sNote)
         // 特产 (app rules) and its index for the custom picker.
         let good = Trade.of(r, id)
         o.specialty = JS(Trade.goods[good]); o.specialtyIndex = JS(good)

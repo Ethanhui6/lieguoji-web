@@ -994,7 +994,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             lighting: lightStrength,
             mapWidth: max(1, map.width),
             mapHeight: max(1, map.height),
-            pad: Energy.hot ? -1 : seasonPhase,
+            pad: seasonPhase,
             iconZoom: Float(Self.iconZoom(camera.scale))
         )
         let uniformLength = MemoryLayout<Uniforms>.stride
@@ -1134,7 +1134,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if display.gridLines == true && reveal >= 1 { colored(gridLines) }
         let chart = display.mapDetail ?? true
         if chart { colored(ornaments, alpha: ramp(0.44)) }
-        let fineFade = Float(min(1, max(0, (camera.scale - 1.25) / 0.55)))
+        let fineFade = Float(min(1, max(0, (camera.scale - 0.92) / 0.55)))
         if chart && fineFade > 0.01 { colored(fineDetail, alpha: ramp(0.44) * fineFade) }
         if display.vegetation { colored(relief, alpha: ramp(0.44)) }
         if display.borders { colored(outlines, alpha: ramp(0.75)) }
@@ -1282,21 +1282,48 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             // 统一全局西北御案光照
             float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
             rgb *= studioLight(mapUV, k);
-            // 四时节气光影流转（u.pad 存放 0..1 年相：春润青玉、夏沐暖金、秋染缃赭、冬覆清霜）
+            // 四时节气光影与真实地貌季节演化（u.pad 0.0=隆冬, 0.25=仲春, 0.50=盛夏, 0.75=金秋）
             if (u.pad >= 0.0) {
                 float ang = u.pad * 6.2831853;
-                float springSummer = sin(ang);
-                float autumnWinter = cos(ang);
-                float3 seasonTint = float3(
-                    1.0 + 0.014 * springSummer - 0.012 * autumnWinter,
-                    1.0 + 0.011 * springSummer - 0.006 * autumnWinter,
-                    1.0 - 0.012 * springSummer + 0.016 * autumnWinter
-                );
-                rgb *= mix(float3(1.0), seasonTint, k * 0.85);
-                // 冬日北境高纬微霜薄雾（仅在冬季且靠北疆域轻敷 <= 2.2% 银霜感）
-                float winterAmt = clamp(autumnWinter, 0.0, 1.0);
-                float northFrost = winterAmt * smoothstep(0.42, 0.06, mapUV.y) * 0.022 * k;
-                rgb = mix(rgb, float3(0.95, 0.96, 0.98), northFrost);
+                float wWinter = smoothstep(-0.18, 0.86,  cos(ang));
+                float wSpring = smoothstep(-0.18, 0.86,  sin(ang));
+                float wSummer = smoothstep(-0.18, 0.86, -cos(ang));
+                float wAutumn = smoothstep(-0.18, 0.86, -sin(ang));
+                float wSum = max(0.001, wWinter + wSpring + wSummer + wAutumn);
+                wWinter /= wSum; wSpring /= wSum; wSummer /= wSum; wAutumn /= wSum;
+
+                // 四季主天光：春润青玉、夏沐暖金、秋染缃赭枫金、冬覆晶蓝清冷
+                float3 springTint = float3(0.955, 1.062, 0.992);
+                float3 summerTint = float3(1.062, 1.042, 0.922);
+                float3 autumnTint = float3(1.135, 1.005, 0.815);
+                float3 winterTint = float3(0.905, 0.958, 1.085);
+                float3 seasonTint = springTint * wSpring + summerTint * wSummer + autumnTint * wAutumn + winterTint * wWinter;
+                rgb *= mix(float3(1.0), seasonTint, k);
+
+                // 春：平野泛嫩绿青岚微雾
+                if (wSpring > 0.02) {
+                    float bloomNoise = vnoise(in.world * 0.025 + float2(4.1, 2.9));
+                    float springMist = wSpring * smoothstep(0.35, 0.85, bloomNoise) * 0.055 * k;
+                    rgb = mix(rgb, float3(0.86, 0.96, 0.89), springMist);
+                }
+
+                // 秋：中纬林野与丘陵浸染鲜明金赭枫红秋韵
+                if (wAutumn > 0.02) {
+                    float midLat = smoothstep(0.08, 0.42, mapUV.y) * smoothstep(0.94, 0.54, mapUV.y);
+                    float leafNoise = fbm2(in.world * 0.022 + float2(11.3, 6.7));
+                    float autumnWash = wAutumn * (0.28 + 0.72 * midLat) * smoothstep(0.28, 0.78, leafNoise) * 0.24 * k;
+                    rgb = mix(rgb, rgb * float3(1.22, 0.90, 0.66) + float3(0.04, 0.015, -0.02), autumnWash);
+                }
+
+                // 冬：清晰可辨的有机飘雪覆盖层自北境与高山岭脊南下漫铺（保留国色与地势起伏）
+                if (wWinter > 0.02) {
+                    float snowNoise = fbm2(in.world * 0.018 + float2(7.3, 19.1));
+                    float northBelt = smoothstep(0.68, 0.06, mapUV.y);
+                    float highlandBelt = smoothstep(0.48, 0.78, lum);
+                    float snowField = clamp(northBelt * 0.68 + highlandBelt * 0.34 + (snowNoise - 0.46) * 0.36, 0.0, 1.0);
+                    float snowCover = wWinter * smoothstep(0.24, 0.84, snowField) * 0.46 * k;
+                    rgb = mix(rgb, float3(0.935, 0.962, 0.995), snowCover);
+                }
             }
         }
         rgb = clamp(rgb + grain, 0.0, 1.0);
@@ -1508,10 +1535,31 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         rgb += float3(1.0, 0.96, 0.84) * glint;
 
         if (u.lighting > 0.01) {
+            float k = u.lighting;
             float cloud = cloudCover(w, tm);
             float3 cloudTint = mix(float3(1.018, 1.016, 1.008), float3(0.915, 0.935, 0.972), cloud);
-            rgb *= mix(float3(1.0), cloudTint, u.lighting * 0.85);
-            rgb *= studioLight(in.uv, u.lighting);
+            rgb *= mix(float3(1.0), cloudTint, k * 0.85);
+            rgb *= studioLight(in.uv, k);
+            // 海面四季色温与冬日北洋寒霜浮冰感
+            if (u.pad >= 0.0) {
+                float ang = u.pad * 6.2831853;
+                float wWinter = smoothstep(-0.18, 0.86,  cos(ang));
+                float wSpring = smoothstep(-0.18, 0.86,  sin(ang));
+                float wSummer = smoothstep(-0.18, 0.86, -cos(ang));
+                float wAutumn = smoothstep(-0.18, 0.86, -sin(ang));
+                float wSum = max(0.001, wWinter + wSpring + wSummer + wAutumn);
+                wWinter /= wSum; wSpring /= wSum; wSummer /= wSum; wAutumn /= wSum;
+                float3 seaSeason = float3(0.95, 1.045, 1.02) * wSpring
+                                 + float3(1.02, 1.04, 0.98) * wSummer
+                                 + float3(1.06, 0.97, 0.90) * wAutumn
+                                 + float3(0.88, 0.94, 1.06) * wWinter;
+                rgb *= mix(float3(1.0), seaSeason, k * 0.88);
+                if (wWinter > 0.02) {
+                    float northSea = smoothstep(0.50, 0.04, in.uv.y);
+                    float iceRim = wWinter * northSea * (0.16 + 0.16 * shallowMask) * k;
+                    rgb = mix(rgb, float3(0.82, 0.90, 0.96), iceRim);
+                }
+            }
         }
         rgb = clamp(rgb, 0.0, 1.0);
         return float4(rgb, 1.0);

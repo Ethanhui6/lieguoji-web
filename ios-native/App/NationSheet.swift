@@ -502,6 +502,50 @@ struct NationSheet: View {
                     }
                     .padding(.horizontal, 16)
                 }
+                if let sway = info.sway, !sway.isEmpty {
+                    let warCount = info.wars.count
+                    let lostProvs = info.court?.lost ?? 0
+                    let season = WorldSeason.of(month: state.date.month)
+                    FoldSection("国势五维", expanded: true, summary: "\(season.fullName) · " + (warCount > 0 ? "战事 \(warCount) 场" : "天下承平")) {
+                        Group2 {
+                            VStack(alignment: .leading, spacing: 0) {
+                                HStack(spacing: 8) {
+                                    PaperTag(text: season.fullName, color: season == .winter ? Color(red: 0.24, green: 0.44, blue: 0.62) : season == .autumn ? Color(red: 0.74, green: 0.42, blue: 0.12) : Theme.jade, size: 11)
+                                    Text(season.summary).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(.horizontal, 16).padding(.vertical, 9)
+                                if warCount > 0 || lostProvs > 0 {
+                                    Divider2()
+                                    let exhaustion = min(100, warCount * 18 + lostProvs * 12 + (info.polityDetail?.defeatShock ?? 0))
+                                    HStack(spacing: 8) {
+                                        InkIcon(glyph: .war, size: 14, weight: 1.7).foregroundStyle(exhaustion >= 40 ? Theme.seal : Theme.ink2)
+                                        Text("战事疲弊").font(Theme.body).foregroundStyle(Theme.ink2)
+                                        Spacer()
+                                        Text(exhaustion >= 60 ? "兵疲民困（\(exhaustion)%）" : exhaustion >= 30 ? "军需吃紧（\(exhaustion)%）" : "尚可持久（\(exhaustion)%）")
+                                            .font(Theme.label).foregroundStyle(exhaustion >= 40 ? Theme.seal : Theme.ink)
+                                    }
+                                    .padding(.horizontal, 16).padding(.vertical, 9)
+                                }
+                                ForEach(Array(sway.enumerated()), id: \.offset) { _, row in
+                                    Divider2()
+                                    let g: InkGlyph = row.name.contains("军") ? .military : row.name.contains("守") ? .fortress : row.name.contains("财") ? .economy : row.name.contains("民") ? .house : .crown
+                                    HStack(spacing: 10) {
+                                        InkIcon(glyph: g, size: 15, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.85)).frame(width: 18)
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text(row.name).font(Theme.body).foregroundStyle(Theme.ink)
+                                            Text(row.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
+                                        }
+                                        Spacer(minLength: 6)
+                                        Text(row.value).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
+                                    }
+                                    .padding(.horizontal, 16).padding(.vertical, 8)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                }
                 FoldSection("基本信息", expanded: true) {
                     Group2 {
                         if let r = info.ruler {

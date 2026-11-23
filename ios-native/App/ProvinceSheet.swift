@@ -276,23 +276,57 @@ struct ProvinceSheet: View {
             .padding(.horizontal, Theme.Layout.pageInset)
         }
 
-        // 州郡风物与属性
-        if let info, !info.kinds.isEmpty {
-            SectionLabel("州郡风物与治况")
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10, alignment: .leading), GridItem(.flexible(), spacing: 10, alignment: .leading)], alignment: .leading, spacing: 9) {
-                ForEach(Array(info.kinds.enumerated()), id: \.offset) { _, k in
-                    HStack(alignment: .top, spacing: 6) {
-                        PaperTag(
-                            text: k.0,
-                            color: k.0 == "边地" ? Theme.ink2 : (k.0 == "封锁" || k.0 == "民变" || k.0 == "瘟疫" || k.0 == "饥荒") ? Theme.seal : (k.0 == "核心" || k.0 == "善治" || k.0 == "粮仓") ? Theme.jade : Theme.seal,
-                            size: 12
-                        )
-                        Text(k.1).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).fixedSize(horizontal: false, vertical: true)
+        // 州郡繁盛度与战略定位卡片
+        if let info, let prosp = info.prosperity {
+            SectionLabel("州郡治况与战略价值")
+            Group2 {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        if let role = info.strategicRole {
+                            PaperTag(text: role, color: role == "咽喉雄关" || role == "边荒险地" ? Theme.seal : Theme.jade, size: 11)
+                        }
+                        Text("繁盛度").font(Theme.label).foregroundStyle(Theme.ink2)
+                        Text(info.prosperityLabel ?? "").font(Theme.body).foregroundStyle(prosp >= 62 ? Theme.jade : prosp < 40 ? Theme.seal : Theme.ink)
+                        Spacer()
+                        Text("\(prosp) / 100").font(Theme.label).foregroundStyle(Theme.ink).monospacedDigit()
+                    }
+                    InkBar(fraction: Double(prosp) / 100.0, color: prosp >= 62 ? Theme.jade : prosp < 40 ? Theme.seal : Theme.ink.opacity(0.65), height: 6)
+                    if !info.kinds.isEmpty {
+                        Divider2()
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10, alignment: .leading), GridItem(.flexible(), spacing: 10, alignment: .leading)], alignment: .leading, spacing: 8) {
+                            ForEach(Array(info.kinds.enumerated()), id: \.offset) { _, k in
+                                HStack(alignment: .top, spacing: 6) {
+                                    PaperTag(
+                                        text: k.0,
+                                        color: k.0 == "边地" ? Theme.ink2 : (k.0 == "封锁" || k.0 == "民变" || k.0 == "瘟疫" || k.0 == "饥荒") ? Theme.seal : (k.0 == "核心" || k.0 == "善治" || k.0 == "粮仓") ? Theme.jade : Theme.seal,
+                                        size: 11
+                                    )
+                                    Text(k.1).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
                     }
                 }
+                .padding(14)
             }
-            .padding(14)
-            .paperCard()
+            .padding(.horizontal, Theme.Layout.pageInset)
+        } else if let info, !info.kinds.isEmpty {
+            SectionLabel("州郡风物与治况")
+            Group2 {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10, alignment: .leading), GridItem(.flexible(), spacing: 10, alignment: .leading)], alignment: .leading, spacing: 9) {
+                    ForEach(Array(info.kinds.enumerated()), id: \.offset) { _, k in
+                        HStack(alignment: .top, spacing: 6) {
+                            PaperTag(
+                                text: k.0,
+                                color: k.0 == "边地" ? Theme.ink2 : (k.0 == "封锁" || k.0 == "民变" || k.0 == "瘟疫" || k.0 == "饥荒") ? Theme.seal : (k.0 == "核心" || k.0 == "善治" || k.0 == "粮仓") ? Theme.jade : Theme.seal,
+                                size: 11
+                            )
+                            Text(k.1).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .padding(14)
+            }
             .padding(.horizontal, Theme.Layout.pageInset)
         }
 
@@ -331,6 +365,14 @@ struct ProvinceSheet: View {
                         terrainCell(label: "天然守险", value: defDelta == 0 ? "平地" : (defDelta > 0 ? "+\(defDelta)%" : "\(defDelta)%"), tone: defDelta > 0 ? Theme.jade : Theme.ink2)
                         Rectangle().fill(Theme.ink.opacity(0.10)).frame(width: 0.8, height: 32)
                         terrainCell(label: "客军损耗", value: attrText.replacingOccurrences(of: "无额外损耗", with: "无"), tone: attrText.contains("极") || attrText.contains("严") || attrText.contains("瘴") ? Theme.seal : attrText.contains("无") ? Theme.ink2 : Theme.gold)
+                    }
+                    if let sName = info.seasonName, let sNote = info.seasonNote, !sNote.isEmpty {
+                        Divider2()
+                        HStack(alignment: .top, spacing: 6) {
+                            PaperTag(text: sName, color: sName.contains("冬") ? Color(red: 0.24, green: 0.44, blue: 0.62) : sName.contains("秋") ? Color(red: 0.74, green: 0.42, blue: 0.12) : Theme.jade, size: 11)
+                            Text(sNote).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
+                        }
                     }
                 }
                 .padding(.horizontal, 14).padding(.vertical, 12)

@@ -107,7 +107,7 @@ struct PaperStepper: View {
     }
     private func stepButton(_ symbol: String, _ delta: Int) -> some View {
         let enabled = delta < 0 ? value > range.lowerBound : value < range.upperBound
-        return Image(systemName: symbol).font(.system(size: 15, weight: .regular)).foregroundStyle(enabled ? Theme.ink : Theme.ink2.opacity(0.4))
+        return InkIcon(glyph: delta < 0 ? .minus : .plus, size: 14, weight: 1.85).foregroundStyle(enabled ? Theme.ink : Theme.ink2.opacity(0.4))
             .frame(width: 46, height: 38)
             .background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
             .contentShape(Capsule())

@@ -122,7 +122,7 @@ struct NationHistoryTab: View {
                         withAnimation(Motion.tap) { newestFirst.toggle() }
                     } label: {
                         HStack(spacing: 4) {
-                            Image(systemName: "arrow.up.arrow.down").font(.system(size: 11))
+                            InkIcon(glyph: .swap, size: 12, weight: 1.7)
                             Text(newestFirst ? "近世在前" : "开国在前").font(Theme.caption)
                         }
                         .foregroundStyle(Theme.seal)
@@ -174,7 +174,7 @@ struct NationHistoryTab: View {
                             if let p = e.province, map.meta.provinces.indices.contains(p) {
                                 Button { locateProvince(p) } label: {
                                     HStack(spacing: 3) {
-                                        Image(systemName: "scope").font(.system(size: 11))
+                                        InkIcon(glyph: .locate, size: 12, weight: 1.7)
                                         Text("定位").font(Theme.caption)
                                     }
                                     .foregroundStyle(Theme.seal)
@@ -214,7 +214,7 @@ struct NationHistoryTab: View {
                 if report.capitalProvince >= 0 {
                     Button { locateProvince(report.capitalProvince) } label: {
                         HStack(spacing: 4) {
-                            Image(systemName: "scope").font(.system(size: 12))
+                            InkIcon(glyph: .locate, size: 13, weight: 1.7)
                             Text("定位都城").font(Theme.caption)
                         }
                         .foregroundStyle(Theme.seal)
@@ -234,7 +234,7 @@ struct NationHistoryTab: View {
                         InkIcon(glyph: .replay, size: 15, weight: 1.8)
                         Text("开启山河回放 · 追溯历代疆域演变").font(Theme.label)
                         Spacer()
-                        Image(systemName: "chevron.right").font(.system(size: 11))
+                        InkIcon(glyph: .chevronRight, size: 12, weight: 1.7)
                     }
                     .foregroundStyle(Theme.paper2)
                     .padding(.horizontal, 12).frame(height: 36)
@@ -346,7 +346,7 @@ struct NationHistoryTab: View {
                                 .font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit()
                             Text(deltaText).font(Theme.caption).foregroundStyle(deltaColor).monospacedDigit()
                             Spacer()
-                            Image(systemName: isOpen ? "chevron.up" : "chevron.down").font(.system(size: 11)).foregroundStyle(Theme.ink2)
+                            InkIcon(glyph: .chevronDown, size: 12, weight: 1.7).foregroundStyle(Theme.ink2).rotationEffect(.degrees(isOpen ? 180 : 0))
                         }
                     }
                 }

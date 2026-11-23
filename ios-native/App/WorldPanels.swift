@@ -116,8 +116,7 @@ struct BattleBoard: View {
         let allies = Set(defenders.map(\.element.nation)).subtracting([c.anchor]).count
         VStack(spacing: 10) {
             HStack(spacing: 8) {
-                Image(systemName: "flag.2.crossed.fill").font(.system(size: 15, weight: .regular)).foregroundStyle(Theme.seal)
-                    .symbolEffect(.pulse, isActive: fighting)
+                InkIcon(glyph: .war, size: 15, weight: 1.8).foregroundStyle(Theme.seal)
                 Text(c.owner ? "对阵" : "遭遇").font(Theme.section).foregroundStyle(Theme.ink)
                 Spacer()
                 PaperTag(text: fighting ? "交战中" : c.owner && defenders.isEmpty ? "围城中" : "对峙中", color: fighting ? Theme.seal : Theme.ink2, size: 13)

@@ -106,17 +106,29 @@ struct WarRateRows: View {
     var body: some View {
         ForEach(Self.rates) { rate in
             let range = Regimes.ruleRanges[rate.id] ?? 0...400
+            let lo = Int(range.lowerBound), hi = Int(range.upperBound)
             let value = values[rate.id] ?? 100
-            Stepper(value: Binding(get: { value }, set: { change(rate.id, $0) }),
-                    in: Int(range.lowerBound)...Int(range.upperBound), step: 25) {
-                HStack {
-                    Text(rate.title).font(Theme.body).foregroundStyle(Theme.ink)
-                    Spacer(minLength: 6)
-                    Text("\(value)%").font(Theme.caption).monospacedDigit()
-                        .foregroundStyle(value == 100 ? Theme.ink2 : Theme.seal)
+            HStack(spacing: 10) {
+                Glyph.icon(rate.title, size: 15, fallback: .settings)
+                Text(rate.title).font(Theme.body).foregroundStyle(Theme.ink)
+                Spacer(minLength: 6)
+                Button { GameFeel.shared.tap(); change(rate.id, max(lo, value - 25)) } label: {
+                    InkIcon(glyph: .minus, size: 13, weight: 1.8).frame(width: 34, height: 30)
                 }
+                .buttonStyle(PressStyle()).foregroundStyle(Theme.ink)
+                .background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                .disabled(value <= lo)
+                Text(value == 0 ? "关闭" : "\(value)%").font(Theme.body).monospacedDigit()
+                    .foregroundStyle(value == 100 ? Theme.ink : Theme.seal)
+                    .frame(minWidth: 50).contentTransition(.numericText())
+                Button { GameFeel.shared.tap(); change(rate.id, min(hi, value + 25)) } label: {
+                    InkIcon(glyph: .plus, size: 13, weight: 1.8).frame(width: 34, height: 30)
+                }
+                .buttonStyle(PressStyle()).foregroundStyle(Theme.ink)
+                .background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line))
+                .disabled(value >= hi)
             }
-            .padding(.horizontal, 16).padding(.vertical, 5)
+            .padding(.horizontal, 16).padding(.vertical, 8)
             if rate.id != Self.rates.last?.id { Divider2() }
         }
     }

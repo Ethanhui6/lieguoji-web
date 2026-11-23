@@ -158,8 +158,8 @@ struct RootView: View {
         model.controller.reveal = 0
         model.phase = .title
         if ShotTour.on { Task { @MainActor in await ShotTour.start(model) } }
-        // The title backdrop generates itself smoothly behind the title (brisk & dignified 3.6s wash).
-        Task { @MainActor in await model.playReveal(duration: 3.6, while: { model.phase == .title }) }
+        // The title backdrop generates itself behind the title as a classic 7s ink-on-paper unroll.
+        Task { @MainActor in await model.playReveal(duration: 7.0, while: { model.phase == .title }) }
     }
 }
 
@@ -469,6 +469,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("2.9.1", ["【回退并根修开局过渡动画】修复新建/续档切换世界时开卷动画未等新地图挂载即触发导致过渡消失与闪屏的缺陷，完整恢复经典的八阶段水墨渐显（铺纸注海→勾勒海岸→晕染山河→分封列国→勘定国界→营建城邦）与 1.25× 镜头拉开动画、续档 3.2 秒展卷及 7 秒标题展卷。",
+                   "【生宣矿彩水墨晕染与占领扫色彻底重铸】消除战线墨迹的 Voronoi 多边形硬边与脏黑描边，改用双尺度宣纸纤维毛细洇染与温润矿彩三层叠透；土地易主扫色放缓柔化并大幅增强宣纸纤维扭曲，过渡如水彩自然漫开。",
+                   "【四季流转鲜明呈现 × 真实玩法】历法四季全面联动地图光影与海陆风貌——春润青岚、夏沐暖金、秋染中纬金赭枫红、冬覆北境与高山有机飘雪（北洋同步生霜）并在顶栏显示四时节气徽标；隆冬加剧客军粮耗寒损（+45%）、金秋丰收增税（+12%）、仲春加快休整恢复（+25%）。",
+                   "【地图地标创新与属性深度拓展】① 新增世界奇观与地标（岬角灯塔、雄关烽燧、大漠古碑、深林古刹）、王都四向角楼与城郊黛瓦村舍桑田，提前至 0.92× 缩放平滑浮现驿道与微细地貌；② 州郡新增动态繁盛度（0–100）、战略定位与当令节气实效，军团新增战备评级与粮道补给态，国家页新增国势五维与战事疲弊度。",
+                   "【全局 UI 图标梳理统一】全站清扫国家史册、世家宗谱、政令、军团、军事、州郡与诏令界面的残留系统图标，全面统一为手绘水墨 `InkIcon` 与宣纸双线卡片。"]),
         ("2.9.0", ["【军队与舰队】恢复 2.8.8 的棋子、军牌和舰队编队。默认略放大 12%，可在画面设置调节大小。",
                    "【战争规则】局内菜单可调整全世界的宣战频率、战斗烈度、行军、征兵、造舰、叛乱与事件。标题页也可设置新世界默认值。"]),
         ("2.8.10", ["【设置】修复标题页性能设置的绑定。帧率、地图清晰度和降温选项与局内菜单同步。",

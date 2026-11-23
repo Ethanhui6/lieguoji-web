@@ -562,6 +562,18 @@ struct GameView: View {
                         Text(model.state?.dateText ?? "").font(landscape ? Theme.section : Theme.body).foregroundStyle(Theme.ink).monospacedDigit()
                             .lineLimit(1).minimumScaleFactor(0.70).layoutPriority(1)
                             .contentTransition(.numericText()).animation(Motion.tap, value: model.state?.dateText)
+                        if let m = model.state?.date.month {
+                            let s = WorldSeason.of(month: m)
+                            let sColor: Color = s == .spring ? Theme.jade : s == .summer ? Color(red: 0.24, green: 0.52, blue: 0.24) : s == .autumn ? Color(red: 0.74, green: 0.42, blue: 0.12) : Color(red: 0.24, green: 0.44, blue: 0.62)
+                            Text(s.name)
+                                .font(Theme.kai(11))
+                                .foregroundStyle(sColor)
+                                .padding(.horizontal, 5).padding(.vertical, 1.5)
+                                .background(sColor.opacity(0.12), in: Capsule())
+                                .overlay(Capsule().stroke(sColor.opacity(0.32), lineWidth: 0.6))
+                                .transition(.opacity)
+                                .animation(Motion.fade, value: s.rawValue)
+                        }
                     }
                     .frame(height: Theme.Control.topHeight)
                     .contentShape(Rectangle())

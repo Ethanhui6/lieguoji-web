@@ -41,7 +41,7 @@ struct ArmyRow: View {
             }
             Spacer()
             Text(Names.wan(army.troops)).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
-            Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
+            InkIcon(glyph: .chevronRight, size: 12, weight: 1.6).foregroundStyle(Theme.ink2)
         }
         .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
     }
@@ -209,31 +209,46 @@ struct ArmySheet: View {
 
     @ViewBuilder
     private func ordersSection(map: WorldMap, a: GameState.Army, fighting: Bool, peers: [(offset: Int, element: GameState.Army)]) -> some View {
-        // 状态与行军路线条
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                let statusColor: Color = fighting ? Theme.seal : (a.travel == "moving" ? Theme.jade : Theme.ink2)
-                PaperTag(text: fighting ? "交战中" : a.travel == "moving" ? "行军中" : Names.status(a.status), color: statusColor, size: 12)
-                Text(map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "途中")
-                    .font(Theme.body).foregroundStyle(Theme.ink)
-                if let d = a.destination, d >= 0, d < map.meta.provinces.count {
-                    Image(systemName: "arrow.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
-                    Text(map.meta.provinces[d].name).font(Theme.body).foregroundStyle(Theme.seal)
+        // 状态、行军路线、补给粮道与当令节气综合战备卡
+        let curSeason = WorldSeason.of(month: model.state?.date.month ?? 4)
+        let supplyState: (text: String, color: Color) = a.supplies <= 15 ? ("断粮危殆（非战斗减员）", Theme.seal)
+            : a.supplies <= 45 ? ("粮草吃紧（宜回师补给）", Color(red: 0.72, green: 0.45, blue: 0.15))
+            : ("粮道充盈", Theme.jade)
+        let readiness: (text: String, color: Color) = {
+            if a.morale >= 85 && a.supplies >= 70 && a.troops >= 4000 { return ("锐气鼎盛", Theme.jade) }
+            if a.morale < 35 || a.supplies < 25 { return ("疲惫低迷", Theme.seal) }
+            return ("战备齐整", Theme.ink)
+        }()
+        Group2 {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    let statusColor: Color = fighting ? Theme.seal : (a.travel == "moving" ? Theme.jade : Theme.ink2)
+                    PaperTag(text: fighting ? "交战中" : a.travel == "moving" ? "行军中" : Names.status(a.status), color: statusColor, size: 12)
+                    Text(map.meta.provinces.indices.contains(a.province) ? map.meta.provinces[a.province].name : "途中")
+                        .font(Theme.body).foregroundStyle(Theme.ink)
+                    if let d = a.destination, d >= 0, d < map.meta.provinces.count {
+                        InkIcon(glyph: .chevronRight, size: 11, weight: 1.7).foregroundStyle(Theme.ink2)
+                        Text(map.meta.provinces[d].name).font(Theme.body).foregroundStyle(Theme.seal)
+                    }
+                    Spacer(minLength: 4)
+                    Text(ArmyRow.command(a)).font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
-                Spacer(minLength: 4)
-                Text(ArmyRow.command(a)).font(Theme.caption).foregroundStyle(Theme.ink2)
-            }
-            if let note = a.routeNote, !note.isEmpty {
-                HStack(spacing: 5) {
-                    Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundStyle(Theme.jade)
-                    Text(note).font(Theme.caption).foregroundStyle(Theme.ink2)
+                if let note = a.routeNote, !note.isEmpty {
+                    HStack(spacing: 5) {
+                        InkIcon(glyph: .march, size: 12, weight: 1.7).foregroundStyle(Theme.jade)
+                        Text(note).font(Theme.caption).foregroundStyle(Theme.ink2)
+                    }
+                }
+                Divider2()
+                HStack(spacing: 8) {
+                    PaperTag(text: readiness.text, color: readiness.color, size: 11)
+                    Text(supplyState.text).font(Theme.caption).foregroundStyle(supplyState.color)
+                    Spacer(minLength: 4)
+                    PaperTag(text: curSeason.fullName, color: curSeason == .winter ? Color(red: 0.24, green: 0.44, blue: 0.62) : curSeason == .autumn ? Color(red: 0.74, green: 0.42, blue: 0.12) : Theme.jade, size: 11)
                 }
             }
+            .padding(.horizontal, 14).padding(.vertical, 11)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .paperCard()
         .padding(.horizontal, Theme.Layout.pageInset)
 
         // 主行军指令排：调兵 / 撤退 / 停止
@@ -620,7 +635,7 @@ struct FleetSheet: View {
                         HStack {
                             SectionLabel("本国海港 · 驻泊补粮", inset: false)
                             Spacer()
-                            Button(action: pickOnMap) { Label("地图选港", systemImage: "hand.tap").font(Theme.label).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle()).disabled(busy)
+                            Button(action: pickOnMap) { GameActionLabel(title: "地图选港", symbol: "hand.tap").font(Theme.label).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle()).disabled(busy)
                         }
                         .padding(.horizontal, Theme.Layout.sectionInset)
                         Group2 {

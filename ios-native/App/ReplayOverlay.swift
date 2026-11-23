@@ -442,7 +442,7 @@ extension GameModel {
     private func applyReplayFrame(at index: Int, in timeline: ReplayTimelineData, animated: Bool, scrubbing: Bool) {
         guard var world = savedLiveWorld ?? controller.world ?? map else { return }
         let frame = timeline.frames[index]
-        controller.seasonPhase = Float(max(0, frame.day % 365)) / 365.0
+        controller.seasonPhase = Float(max(0, frame.day % 360)) / 360.0
         let owners = ReplayEngine.decodeRLE(frame.rle, count: world.meta.provinces.count)
         let prevOwners = lastReplayOwners
         lastReplayOwners = owners

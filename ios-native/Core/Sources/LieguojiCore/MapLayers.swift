@@ -968,7 +968,13 @@ public enum MapLayers {
             case .capital:
                 let k = Float(capitalOuter / 1.75)
                 let r = 1.75 * k * c
-                m.disc(x + r * 0.20, y + r * 0.24, radius: r * 1.06, shadow, alpha: 0.30, sides: 20)
+                m.disc(x + r * 0.20, y + r * 0.24, radius: r * 1.08, shadow, alpha: 0.30, sides: 20)
+                // 王都四向城阙角楼（微微探出圆廓，拉近更显帝都威仪）
+                for ang in [Float(0), .pi * 0.5, .pi, .pi * 1.5] {
+                    let bx = x + cos(ang) * r * 1.02, by = y + sin(ang) * r * 1.02
+                    m.disc(bx, by, radius: r * 0.22, ink, sides: 8)
+                    m.disc(bx, by, radius: r * 0.13, gold, sides: 6)
+                }
                 m.disc(x, y, radius: r, ink, sides: 20)
                 m.disc(x, y, radius: r * 0.84, gold, sides: 20)
                 m.disc(x, y, radius: r * 0.66, ink, sides: 18)

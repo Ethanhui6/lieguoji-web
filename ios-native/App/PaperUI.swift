@@ -677,7 +677,7 @@ struct EdictSheet: View {
                     Text(note).font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 Spacer()
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.ink2)
+                InkIcon(glyph: .chevronRight, size: 12, weight: 1.6).foregroundStyle(Theme.ink2)
             }
             .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
         }
@@ -717,10 +717,10 @@ struct EdictSheet: View {
             Glyph.icon(title, size: 15)
             Text(title).font(Theme.section).foregroundStyle(Theme.ink2)
             Spacer()
-            Button { apply(key, max(range.lowerBound, value - step)) } label: { Image(systemName: "minus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
+            Button { apply(key, max(range.lowerBound, value - step)) } label: { InkIcon(glyph: .minus, size: 14, weight: 1.8).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value <= range.lowerBound)
             Text(value == 0 && zero != nil ? zero! : "\(value) \(unit)").font(Theme.section).foregroundStyle(Theme.ink).frame(minWidth: 64).contentTransition(.numericText())
-            Button { apply(key, min(range.upperBound, value + step)) } label: { Image(systemName: "plus").font(.system(size: 14, weight: .regular)).frame(width: 36, height: 32) }
+            Button { apply(key, min(range.upperBound, value + step)) } label: { InkIcon(glyph: .plus, size: 14, weight: 1.8).frame(width: 36, height: 32) }
                 .buttonStyle(PressStyle()).foregroundStyle(Theme.ink).background(Theme.paper2, in: Capsule()).overlay(Capsule().stroke(Theme.line)).disabled(value >= range.upperBound)
         }
         .padding(.horizontal, 16).padding(.vertical, 10)

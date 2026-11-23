@@ -254,12 +254,12 @@ public final class FlipSweep {
     /// 正在扫的州 → 收尾时刻。
     public private(set) var ends: [Int: Float] = [:]
     public private(set) var revision = 0
-    /// 一组最长时长、前沿柔边（秒）、到达后旧色余韵（秒）。
-    public static let maxSeconds: Float = 2.4
-    public static let edge: Float = 0.22
-    public static let after: Float = 0.6
+    /// 一组最长时长、前沿柔边（秒）、到达后旧色余韵（秒）：更从容温润的宣纸晕染铺展。
+    public static let maxSeconds: Float = 2.8
+    public static let edge: Float = 0.44
+    public static let after: Float = 0.90
     /// 基本扫速（世界单位/秒）。
-    public var speed: Float { topology.scale * 2.4 }
+    public var speed: Float { topology.scale * 1.55 }
 
     public init(topology: WashTopology) {
         self.topology = topology
@@ -344,7 +344,7 @@ public struct LandFade: Sendable {
     /// 每顶点 r, g, b, 开始时刻（秒，渲染时钟）。
     public private(set) var from: [Float] = []
     public private(set) var to: [Float] = []
-    public static let duration: Float = 0.7
+    public static let duration: Float = 0.95
     /// 不在渐变的顶点的“开始时刻”（极早；不用无穷大，着色器里好算）。
     public static let idle: Float = -1e9
     /// 最后一个渐变结束的时刻。

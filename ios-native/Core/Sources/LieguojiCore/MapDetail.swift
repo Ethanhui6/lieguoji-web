@@ -249,6 +249,53 @@ extension MapLayers {
                 m.disc(x + dx + 1.6, y + dy + 0.9, radius: 0.48, reef, alpha: 0.42, sides: 6)
             }
         }
+        // 山河人文奇观与地标（严格避开城池与罗盘，保持清雅疏朗：岬角灯塔 / 关隘烽燧 / 大漠古碑 / 林间古刹）
+        var landmarks = [(Float, Float)]()
+        let stone = RGB(hex: 0xDDD3BE), stoneShade = RGB(hex: 0x7A6F5D)
+        let shrineRed = RGB(hex: 0xA83628), beaconGold = RGB(hex: 0xF5D276), desertStone = RGB(hex: 0xD2A96B)
+        func landmarkClear(_ lx: Float, _ ly: Float) -> Bool {
+            if lx < 90 || lx > map.width - 90 || ly < 90 || ly > map.height - 90 { return false }
+            if landmarks.contains(where: { hypot($0.0 - lx, $0.1 - ly) < 115 }) { return false }
+            for city in map.meta.cities {
+                let dx = city.x - lx, dy = city.y - ly
+                if dx * dx + dy * dy < 24 * 24 { return false }
+            }
+            return true
+        }
+        for c in stride(from: 0, to: map.cellCount, by: 3) where map.isLand(c) && landmarks.count < 20 {
+            let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
+            let h = Float(map.elevation[c]), bi = map.biome[c], k = Int(hash(c &* 17 &+ 9))
+            guard k % 29 == 0, landmarkClear(x, y) else { continue }
+            if shore[c] && h < 42 {
+                // 岬角古灯塔：白石塔身 + 鎏金灯笼微芒
+                landmarks.append((x, y))
+                m.disc(x + 0.8, y + 1.2, radius: 2.6, ink, alpha: 0.22, sides: 8)
+                m.fill([x - 1.5, y + 1.2, x - 0.9, y - 4.4, x + 0.9, y - 4.4, x + 1.5, y + 1.2], stone, alpha: 0.90)
+                m.fill([x, y - 4.4, x + 0.9, y - 4.4, x + 1.5, y + 1.2, x, y + 1.2], stoneShade, alpha: 0.50)
+                m.disc(x, y - 5.2, radius: 2.3, beaconGold, alpha: 0.34, sides: 10)
+                m.disc(x, y - 5.2, radius: 1.0, beaconGold, alpha: 0.94, sides: 8)
+            } else if h >= 60 {
+                // 雄关烽燧：石砌方台 + 顶上微燃烽火
+                landmarks.append((x, y))
+                m.fill([x - 2.4, y + 1.0, x - 1.8, y - 3.0, x + 1.8, y - 3.0, x + 2.4, y + 1.0], stoneShade, alpha: 0.86)
+                m.fill([x - 2.2, y - 3.0, x - 2.2, y - 3.9, x - 1.1, y - 3.9, x - 1.1, y - 3.0], stone, alpha: 0.88)
+                m.fill([x + 1.1, y - 3.0, x + 1.1, y - 3.9, x + 2.2, y - 3.9, x + 2.2, y - 3.0], stone, alpha: 0.88)
+                m.disc(x, y - 4.4, radius: 1.2, shrineRed, alpha: 0.85, sides: 8)
+                m.disc(x, y - 4.8, radius: 0.65, beaconGold, alpha: 0.92, sides: 6)
+            } else if bi == 1 || bi == 2 {
+                // 大漠遗迹金字塔 / 古碑
+                landmarks.append((x, y))
+                m.fill([x - 3.8, y + 1.6, x, y - 4.6, x + 0.6, y + 1.6], desertStone, alpha: 0.88)
+                m.fill([x, y - 4.6, x + 3.8, y + 1.6, x + 0.6, y + 1.6], stoneShade, alpha: 0.72)
+                m.polyline([x - 3.8, y + 1.6, x, y - 4.6, x + 3.8, y + 1.6], width: 0.38, ink, alpha: 0.48)
+            } else if bi >= 5 && bi <= 8 && h < 54 {
+                // 深林重檐宝塔 / 古刹
+                landmarks.append((x, y))
+                m.fill([x - 3.2, y + 0.4, x, y - 1.4, x + 3.2, y + 0.4], shrineRed, alpha: 0.86)
+                m.fill([x - 2.3, y - 1.5, x, y - 3.2, x + 2.3, y - 1.5], shrineRed, alpha: 0.88)
+                m.segment(x, y - 3.2, x, y - 4.6, width: 0.45, beaconGold, alpha: 0.88)
+            }
+        }
         // 精致十六向鎏金罗盘（带柔和东南水影、古航海方位射线、外圈 32 分刻度环、朱砂北针、十六向指针）
         let (cx, cy) = compassCorner(map)
         // 远洋精绘三桅古航海宝船（至多 5 艘，严格避开陆地与罗盘，附船底水影、满帆缝线、鎏金船尾与 V 形航迹波）
@@ -373,12 +420,17 @@ extension MapLayers {
             let h = Float(map.elevation[c]), biome = map.biome[c], x = map.sites[c * 2], y = map.sites[c * 2 + 1], pick = hash(c) % 100
             let key = Int64(floor(x / 13)) << 32 | Int64(Int32(floor(y / 13))) & 0xFFFF_FFFF
             if h >= 55 || (biome >= 5 && biome <= 9) { continue }
-            if h < 40 && pick < 32 && nearCity(x, y) {
+            if h < 40 && pick < 38 && nearCity(x, y) {
                 if !taken.insert(key).inserted { continue }
-                // Ploughed strips, each patch lying its own way.
-                let a = Float(hash(c &+ 5) % 180) * .pi / 180, ux = cos(a), uy = sin(a), vx = -uy, vy = ux, w: Float = 5, d: Float = 3
-                m.fill([x - ux * w - vx * d, y - uy * w - vy * d, x + ux * w - vx * d, y + uy * w - vy * d, x + ux * w + vx * d, y + uy * w + vy * d, x - ux * w + vx * d, y - uy * w + vy * d], field, alpha: 0.2)
-                for k in -1...1 { let o = Float(k) * d * 0.6; m.segment(x - ux * w + vx * o, y - uy * w + vy * o, x + ux * w + vx * o, y + uy * w + vy * o, width: 0.3, furrow, alpha: 0.28) }
+                // 郭外桑田与村舍：错落阡陌田块 + 点缀微小黛瓦农舍，令城邦腹地富有烟火气
+                let a = Float(hash(c &+ 5) % 180) * .pi / 180, ux = cos(a), uy = sin(a), vx = -uy, vy = ux, w: Float = 5.4, d: Float = 3.2
+                m.fill([x - ux * w - vx * d, y - uy * w - vy * d, x + ux * w - vx * d, y + uy * w - vy * d, x + ux * w + vx * d, y + uy * w + vy * d, x - ux * w + vx * d, y - uy * w + vy * d], field, alpha: 0.24)
+                for k in -1...1 { let o = Float(k) * d * 0.6; m.segment(x - ux * w + vx * o, y - uy * w + vy * o, x + ux * w + vx * o, y + uy * w + vy * o, width: 0.32, furrow, alpha: 0.30) }
+                if pick < 16 {
+                    let hx = x + vx * (d + 1.8), hy = y + vy * (d + 1.8)
+                    m.fill([hx - 1.5, hy, hx + 1.5, hy, hx + 1.5, hy + 1.2, hx - 1.5, hy + 1.2], RGB(hex: 0xDFD3B8), alpha: 0.65)
+                    m.fill([hx - 1.9, hy + 0.1, hx, hy - 1.1, hx + 1.9, hy + 0.1], RGB(hex: 0x7A3D2A), alpha: 0.72)
+                }
                 continue
             }
             if pick >= 42 || !taken.insert(key).inserted { continue }

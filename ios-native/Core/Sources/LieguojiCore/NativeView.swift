@@ -328,27 +328,28 @@ extension NativeEngine {
         if !r.voyages.missions.isNull { for (_, m) in r.voyages.missions.objectEntries { if let a = m.armyId.optionalString, missionOf[a] == nil { missionOf[a] = m.phase.optionalString ?? "" } } }
         var armyPoint = [(Double, Double)]()
         armyPoint.reserveCapacity(space.count)
+        let safeScale = sc.isFinite && sc > 1e-6 ? sc : 1.0
         let armyRows = space.map { v -> GameState.Army in
             let a = v.army, id = a.id.asString, moving = v.travel.status.asString == "moving"
+            let travel = bridge.map { $0.travel(v.travel) }
             var at: (Double, Double)
             // Every army is drawn at its real point. A separate resting spot made an icon jump when the
             // army set out or met an enemy and jump back after the battle; stacked icons are spread
             // apart by the map instead.
             // 行军中的军队按路径弧长平滑后的位置显示（抹平之字形路线造成的左右摆动；推演位置不变）。
-            if let bridge { let p = bridge.graph.displayPoint(bridge.travel(v.travel), window: 4 * sc); at = (p.x, p.y) } else { at = (0, 0) }
+            if let bridge, let travel { let p = bridge.graph.displayPoint(travel, window: 4 * safeScale); at = (p.x, p.y) } else { at = (0, 0) }
             if let m = clash[Daily.key("army", id)] {
                 let cx = m.x / m.n, cy = m.y / m.n, dx = at.0 - cx, dy = at.1 - cy, d = (dx * dx + dy * dy).squareRoot()
                 at = d > halfIcon ? (cx + dx / d * halfIcon, cy + dy / d * halfIcon) : at
             }
-            let safeScale = sc.isFinite && sc > 1e-6 ? sc : 1.0
             let rx = (at.0 / safeScale).isFinite ? at.0 / safeScale : 0.0
             let ry = (at.1 / safeScale).isFinite ? at.1 / safeScale : 0.0
             armyPoint.append((rx, ry))
             // Destination province of a march (last travel node), for the army panel, plus O(1) fast terrain route & ETA.
             var dest = -1
             var routeNote: String?
-            if moving, let bridge {
-                let tr = bridge.travel(v.travel), g = bridge.graph
+            if moving, let bridge, let tr = travel {
+                let g = bridge.graph
                 if let last = tr.nodes.last, g.provinces.indices.contains(last) {
                     let q = Int(g.provinces[last]); if q >= 0 && q < provinces.count { dest = q }
                 }
@@ -400,9 +401,10 @@ extension NativeEngine {
                 else if orderDec == "no-route" { routeNote = why.isEmpty ? "暂缺符合通行权的路线，原地待命" : why }
                 else if orderDec == "guarding", why.contains("都城") { routeNote = "都城告急，留守护卫都城" }
             }
-            let safeTroops = a.troops.asNumber.isFinite ? max(0, Int(a.troops.asNumber.rounded())) : 0
-            let safeSupplies = a.supplies.asNumber.isFinite ? min(100, max(0, Int(a.supplies.asNumber.rounded()))) : 100
-            let safeMorale = a.morale.asNumber.isFinite ? min(100, max(0, Int(a.morale.asNumber.rounded()))) : 80
+            let safeTroops = max(0, Int(exactly: a.troops.asNumber.rounded()) ?? 0)
+            let supply = a.supplies.asNumber, morale = a.morale.asNumber
+            let safeSupplies = supply.isFinite ? Int(min(100, max(0, supply.rounded()))) : 100
+            let safeMorale = morale.isFinite ? Int(min(100, max(0, morale.rounded()))) : 80
             var x = GameState.Army(id: id, name: a.name.asString, nation: ni[a.nationId.asString] ?? -1, troops: safeTroops, unit: r.units[id].optionalString ?? "Infantry",
                                    status: a.status.asString, travel: v.travel.status.asString, province: v.province.flatMap { pi[$0.id.asString] } ?? -1,
                                    supplies: safeSupplies, morale: safeMorale, x: Float(rx), y: Float(ry),
@@ -413,14 +415,13 @@ extension NativeEngine {
             if let b = banners[id] { x.banner = b.kind; x.bannerMark = b.mark; x.commander = b.name }
             x.routeNote = routeNote
             let rawFull = r.tactics.forces[id].fullStrength.optionalNumber ?? Double(safeTroops)
-            x.full = max(safeTroops, rawFull.isFinite ? Int(rawFull.rounded()) : safeTroops)
+            x.full = max(safeTroops, Int(exactly: rawFull.rounded()) ?? safeTroops)
             return x
         }
         // Fleets at their actual sea points and the harbour ports (open-sea worlds; empty otherwise).
         var fleetRows = [GameState.Fleet](), fleetPoint = [(Double, Double)]()
         if let bridge, !r.navy.isNull, !r.navy.fleets.isNull {
             let manualFleets = Set(r.voyages.manualFleets.asArray.map(\.asString))
-            let safeScale = sc.isFinite && sc > 1e-6 ? sc : 1.0
             for fl in r.navy.fleets.asArray where fl.status.asString != "lost" {
                 let id = fl.id.asString, rec = r.fleetPositions.records[id]
                 if rec.isNull { continue }

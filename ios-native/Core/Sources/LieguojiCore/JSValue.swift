@@ -42,16 +42,13 @@ public final class JS: CustomStringConvertible {
     // MARK: Reading (names chosen not to collide with fields of the game data)
     public var isNull: Bool { if case .null = storage { return true }; return false }
     public var isArray: Bool { if case .array = storage { return true }; return false }
-    /// 读到缺失/错型字段时不再 fatalError 闪退：返回与 JavaScript 宽松语义一致的默认值（0 / "" / false / []），
-    /// 并记一次诊断。旧版本在推演中读到已废弃字段（如 world.campaigns）会直接触发 EXC_BREAKPOINT 闪退。
+    /// 生产环境为缺失或错型字段返回默认值。调试时可启用严格读取来定位错误字段。
     static func lenient(_ what: String) {
         #if DEBUG
         if JS.strictReads { fatalError(what) }
         #endif
-        JS.lenientReads &+= 1
     }
     public static var strictReads = false
-    public static var lenientReads = 0
     public var asNumber: Double {
         switch storage {
         case .number(let n): return n

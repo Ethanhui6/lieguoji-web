@@ -432,13 +432,18 @@ public enum Daily {
         let month = day / 30
         var stockById = [String: JS]()
         for s in r.world.statecraft.provinces.asArray { stockById[s.provinceId.asString] = s }
+        var totals = [String: (population: Double, capacity: Double)]()
+        for province in r.world.provinces.asArray {
+            let id = province.id.asString, controller = province.controller.asString
+            var total = totals[controller] ?? (population: 0, capacity: 0)
+            total.population += stockById[id]?.population.asNumber ?? 0
+            total.capacity += r.finance.provinces[id].maxPopulation.asNumber
+            totals[controller] = total
+        }
         for n in r.world.nations.asArray {
             let id = n.id.asString, v = r.destiny.nations[id]
-            let owned = r.world.provinces.asArray.filter { $0.controller.asString == id }
-            if v.isNull || v.lastMonth.asInt >= month || owned.isEmpty { continue }
-            let pops = owned.map { p in stockById[p.id.asString]?.population.asNumber ?? 0 }
-            let caps = owned.map { r.finance.provinces[$0.id.asString].maxPopulation.asNumber }
-            let ratio = f(f(pops.reduce(0, +)) / f(caps.reduce(0, +)))
+            guard !v.isNull, v.lastMonth.asInt < month, let total = totals[id] else { continue }
+            let ratio = total.capacity > 0 ? f(f(total.population) / f(total.capacity)) : 0
             let leaderId = r.people.nations[id].leaderId
             let leader: JS? = Regimes.governor(r, id) ?? (leaderId.isNull ? nil : r.people.persons[leaderId.asInt.description])
             var administrative: Double? = v.destiny.asNumber >= 30 ? 50 : nil

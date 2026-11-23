@@ -71,9 +71,9 @@ enum ShotTour {
     @MainActor static func play(_ model: GameModel, show: @escaping (Panel?) -> Void, views: @escaping (Bool) -> Void) async {
         await wait(3)
         await shoot("03-world")
-        await checkEarlyHeralds(model)
         await checkColors(model)
         await checkAdvanceOwnership(model)
+        await checkEarlyHeralds(model)
         // 国名稳定: while the war redraws the borders and the camera stands still, every frame is compared
         // with the one before. A name that dips (hidden or fading) and is back within 45 frames blinked.
         let names = NameWatch(model.controller)
@@ -277,31 +277,26 @@ enum ShotTour {
         await shoot("done")
     }
 
-    /// Feed the first chronicle events through the real queue while the starting map is visible.
+    /// Feed chronicle events through the real queue while native play updates the opening map.
     @MainActor private static func checkEarlyHeralds(_ model: GameModel) async {
-        guard let initial = model.state, let bytes = try? JSONEncoder().encode(initial),
-              var snapshot = (try? JSONSerialization.jsonObject(with: bytes)) as? [String: Any],
-              var events = snapshot["events"] as? [[String: Any]],
-              let wars = snapshot["wars"] as? [[String: Any]] else { return }
-        let placard = model.controller.play.showScrollPlacard
+        guard let startDay = model.state?.day else { return }
         let heralds = model.controller.play.showHeralds
         let pauseOnNews = model.controller.play.pauseOnNews
         model.dismissHerald()
-        model.controller.play.showScrollPlacard = true
         model.controller.play.showHeralds = true
         model.controller.play.pauseOnNews = false
         defer {
-            model.apply(initial)
+            model.pause(saving: false)
             model.dismissHerald()
-            model.controller.play.showScrollPlacard = placard
             model.controller.play.showHeralds = heralds
             model.controller.play.pauseOnNews = pauseOnNews
         }
-        // The view producer can publish -1 for a participant absent from the current legend.
-        snapshot["wars"] = [["id": -999, "attacker": -1, "defender": 0, "casusBelli": "",
-                             "goal": "", "startDay": initial.day, "participants": []] as [String: Any]] + wars
+        model.play()
         func announce(_ text: String) -> Bool {
-            events.append(["day": initial.day, "text": text, "kind": "politics"])
+            guard let current = model.state, let bytes = try? JSONEncoder().encode(current),
+                  var snapshot = (try? JSONSerialization.jsonObject(with: bytes)) as? [String: Any],
+                  var events = snapshot["events"] as? [[String: Any]] else { return false }
+            events.append(["day": current.day, "text": text, "kind": "politics"])
             snapshot["events"] = events
             guard let data = try? JSONSerialization.data(withJSONObject: snapshot),
                   let state = try? JSONDecoder().decode(GameState.self, from: data) else { return false }
@@ -310,7 +305,7 @@ enum ShotTour {
         }
         guard announce("巡览世家篡位") else { return }
         await wait(0.5)
-        guard model.herald?.kind == .house else { return }
+        guard model.playing, model.herald?.kind == .house else { return }
         await shoot("41e-herald-house")
         model.dismissHerald()
         guard announce("巡览两国联姻") else { return }
@@ -319,7 +314,7 @@ enum ShotTour {
               announce("巡览朝廷政变") else { return }
         await wait(0.5)
         // The cancelled first banner must not leave two consumers draining the same queue.
-        guard model.herald?.id == wedding.id else { return }
+        guard model.playing, model.herald?.id == wedding.id, (model.state?.day ?? startDay) > startDay else { return }
         await shoot("41f-herald-marriage")
     }
 

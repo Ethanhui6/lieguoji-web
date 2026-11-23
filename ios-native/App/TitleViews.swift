@@ -255,7 +255,7 @@ struct TitleView: View {
                     MapDisplaySettings(controller: model.controller)
                     SectionLabel("性能与帧率")
                     Group2 {
-                        FrameSettings(play: $model.controller.play)
+                        FrameSettings(controller: model.controller)
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)
                     SectionLabel("声音与触感")

@@ -31,7 +31,7 @@ struct MenuSheet: View {
                 MapDisplaySettings(controller: controller)
                 SectionLabel("性能与帧率")
                 Group2 {
-                    FrameSettings(play: $controller.play)
+                    FrameSettings(controller: controller)
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
             case "play":
@@ -307,7 +307,7 @@ struct ResetSettingsRow: View {
 
 /// 画面性能档位：默认只展示清晰的一键档位与智能降温，将 5 项高阶帧率滑档收纳进折叠栏，界面告别杂乱。
 struct FrameSettings: View {
-    @Binding var play: PlaySettings
+    @ObservedObject var controller: MapController
     @State private var showAdvanced = false
     private func row<T: Hashable>(_ title: String, _ note: String, _ items: [(T, String)], _ value: Binding<T>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -321,10 +321,11 @@ struct FrameSettings: View {
         .padding(.horizontal, 16).padding(.vertical, 9)
     }
     var body: some View {
+        let play = controller.play
         VStack(spacing: 0) {
-            row("性能档位", play.preset == "custom" ? "已自定微调" : "一键平衡流畅与续航", PlaySettings.presets.map { ($0.key, $0.name) } + (play.preset == "custom" ? [("custom", "自定")] : []), $play.preset)
+            row("性能档位", play.preset == "custom" ? "已自定微调" : "一键平衡流畅与续航", PlaySettings.presets.map { ($0.key, $0.name) } + (play.preset == "custom" ? [("custom", "自定")] : []), $controller.play.preset)
             Divider2()
-            PaperSwitch(title: "发热时自动降档", on: $play.autoCool)
+            PaperSwitch(title: "发热时自动降档", on: $controller.play.autoCool)
             Divider2()
             Button {
                 GameFeel.shared.tap()
@@ -341,15 +342,15 @@ struct FrameSettings: View {
             .buttonStyle(.plain)
             if showAdvanced {
                 Divider2()
-                row("拖动地图帧率", "拖拽缩放时", [(30, "30"), (60, "60"), (120, "120")], $play.mapFPS)
+                row("拖动地图帧率", "拖拽缩放时", [(30, "30"), (60, "60"), (120, "120")], $controller.play.mapFPS)
                 Divider2()
-                row("行军帧率", "军队移动时", [(15, "15"), (24, "24"), (30, "30"), (60, "60")], $play.marchFPS)
+                row("行军帧率", "军队移动时", [(15, "15"), (24, "24"), (30, "30"), (60, "60")], $controller.play.marchFPS)
                 Divider2()
-                row("动画帧率", "海浪与战场特效", [(12, "12"), (15, "15"), (20, "20"), (30, "30")], $play.effectFPS)
+                row("动画帧率", "海浪与战场特效", [(12, "12"), (15, "15"), (20, "20"), (30, "30")], $controller.play.effectFPS)
                 Divider2()
-                row("地图清晰度", "越高越耗电", [(1.0, "低"), (1.5, "中"), (2.0, "高"), (3.0, "原生")], $play.renderScale)
+                row("地图清晰度", "越高越耗电", [(1.0, "低"), (1.5, "中"), (2.0, "高"), (3.0, "原生")], $controller.play.renderScale)
                 Divider2()
-                row("推演算力占比", "越高越快越热", [(40, "40%"), (55, "55%"), (75, "75%"), (100, "全速")], $play.simLoad)
+                row("推演算力占比", "越高越快越热", [(40, "40%"), (55, "55%"), (75, "75%"), (100, "全速")], $controller.play.simLoad)
             }
         }
     }

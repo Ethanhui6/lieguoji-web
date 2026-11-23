@@ -591,6 +591,21 @@ final class PolityDiplomacyNamingTests: XCTestCase {
             r.clock.tick = savedTick
             XCTAssertEqual(aura?.tier.title, "军神")
             XCTAssertEqual(aura?.tier.attackPct, 18)
+            XCTAssertFalse(aura?.skill.name.isEmpty ?? true, "战神谱名将应觉醒专属兵法特技")
+        }
+
+        // 6. v2.9.3：幕府与神权领袖称谓、主动整编军部（setArmyBranch）
+        let shogunHonor = MonarchLore.honor(r, nationId: id0, reignId: "jp-shogun-1", order: 1, culture: "japanese", polity: "Kingdom", title: "征夷大将军", person: nil, fallbackName: "德川家康", reignYears: 10, deltaProvs: 3, avgSkill: 80, isActive: true)
+        XCTAssertEqual(shogunHonor.styledName, "征夷大将军 德川家康")
+        let popeHonor = MonarchLore.honor(r, nationId: id0, reignId: "pope-1", order: 1, culture: "italian", polity: "Theocracy", title: "教宗", person: nil, fallbackName: "利奥", reignYears: 8, deltaProvs: 0, avgSkill: 72, isActive: true)
+        XCTAssertEqual(popeHonor.styledName, "教宗 利奥一世")
+        if let firstArmy = snap.armies.first {
+            let reorg = engine.setArmyBranch(firstArmy.id, branch: "siege", rename: true)
+            XCTAssertTrue(reorg.ok, reorg.reason)
+            let afterSnap = engine.gameState(includeLabels: false)
+            let updated = afterSnap.armies.first { $0.id == firstArmy.id }
+            XCTAssertEqual(updated?.branch, "siege")
+            XCTAssertEqual(updated?.branchLabel, "攻城炮旅")
         }
     }
 }

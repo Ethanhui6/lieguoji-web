@@ -1106,16 +1106,18 @@ struct NationSheet: View {
             )
             if !mine.isEmpty {
                 // 集团军群、五部职能编制与战神谱实时加持总览
-                let groupRows: [(name: String, count: Int, troops: Int, bonus: Int)] = {
-                    var mapGrp = [String: (count: Int, troops: Int, bonus: Int)]()
+                let groupRows: [(name: String, count: Int, troops: Int, bonus: Int, composition: String, synergy: String)] = {
+                    var mapGrp = [String: (count: Int, troops: Int, bonus: Int, composition: String, synergy: String)]()
                     for idx in mine {
                         let a = state.armies[idx]
                         guard let g = a.armyGroup, !g.isEmpty else { continue }
-                        var cur = mapGrp[g] ?? (0, 0, a.groupBonus ?? 6)
+                        var cur = mapGrp[g] ?? (0, 0, a.groupBonus ?? 6, a.groupComposition ?? "", a.groupSynergy ?? "")
                         cur.count += 1; cur.troops += a.troops; cur.bonus = max(cur.bonus, a.groupBonus ?? 6)
+                        if cur.composition.isEmpty, let comp = a.groupComposition { cur.composition = comp }
+                        if cur.synergy.isEmpty, let syn = a.groupSynergy { cur.synergy = syn }
                         mapGrp[g] = cur
                     }
-                    return mapGrp.map { ($0.key, $0.value.count, $0.value.troops, $0.value.bonus) }
+                    return mapGrp.map { ($0.key, $0.value.count, $0.value.troops, $0.value.bonus, $0.value.composition, $0.value.synergy) }
                         .sorted { $0.troops != $1.troops ? $0.troops > $1.troops : $0.name < $1.name }
                 }()
                 let branchRows: [(label: String, note: String, count: Int, troops: Int)] = {
@@ -1151,11 +1153,17 @@ struct NationSheet: View {
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text("战区集团军协同（同战区 2 支以上友军自动成群）").font(Theme.caption).foregroundStyle(Theme.ink2)
                                     ForEach(groupRows, id: \.name) { g in
-                                        HStack(spacing: 8) {
-                                            PaperTag(text: "协同+\(g.bonus)%", color: Theme.seal, size: 11)
-                                            Text(g.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
-                                            Spacer(minLength: 4)
-                                            Text("\(g.count) 支 · \(Names.wan(g.troops))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            HStack(spacing: 8) {
+                                                PaperTag(text: "总协同+\(g.bonus)%", color: Theme.seal, size: 11)
+                                                Text(g.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                                                Spacer(minLength: 4)
+                                                Text("\(g.count) 支 · \(Names.wan(g.troops))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                                            }
+                                            if !g.composition.isEmpty || !g.synergy.isEmpty {
+                                                Text([g.composition, g.synergy].filter { !$0.isEmpty }.joined(separator: " · "))
+                                                    .font(Theme.caption).foregroundStyle(Theme.jade).lineLimit(1).minimumScaleFactor(0.82)
+                                            }
                                         }
                                     }
                                 }

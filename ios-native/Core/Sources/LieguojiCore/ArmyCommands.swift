@@ -178,6 +178,14 @@ extension NativeEngine {
         return (true, "已更名为\(t)。")
     }
 
+    /// 整编军部：更改军队职能分部（御林禁军/野战主力/边防镇戍/轻骑前锋/攻城炮旅），可选同步换授本文化对应编制番号。
+    public func setArmyBranch(_ id: String, branch raw: String, rename: Bool = true) -> (ok: Bool, reason: String) {
+        guard let a = liveArmy(id) else { return (false, "这支军队不存在或已覆灭。") }
+        guard let br = Regimes.ArmyBranch(rawValue: raw) else { return (false, "未知的军队职能分部。") }
+        let newTitle = Regimes.reorganizeArmyBranch(run, army: a, branch: br, rename: rename)
+        return (true, "已整编为\(br.label)「\(newTitle)」，\(br.roleNote)")
+    }
+
     /// Marks an army gone the way a destroyed one is (the daily retirement then archives it).
     private func retire(_ a: JS) {
         let r = run, id = a.id.asString

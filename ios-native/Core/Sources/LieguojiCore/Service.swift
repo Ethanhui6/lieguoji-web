@@ -257,6 +257,7 @@ public final class EngineService {
         case "mergeArmy": return command(engine?.mergeArmy(str("armyId"), into: str("text")))
         case "disbandArmy": return command(engine?.disbandArmy(str("armyId")))
         case "renameArmy": return command(engine?.renameArmy(str("armyId"), name: str("text")))
+        case "setArmyBranch": return command(engine?.setArmyBranch(str("armyId"), branch: str("text"), rename: bool("manual")))
         case "fleetManual": return command(engine?.setFleetManual(str("armyId"), manual: bool("manual")))
         case "nationDecree": return command(engine?.nationDecree(int("n"), kind: str("kind")))
         case "nationMilitaryOrder": return command(engine?.nationMilitaryOrder(int("n"), kind: str("kind")))

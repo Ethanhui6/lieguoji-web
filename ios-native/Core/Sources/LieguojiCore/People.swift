@@ -145,13 +145,31 @@ public enum People {
         return Native.iadd(Native.iadd(score, -c.age.asInt), 100)
     }
     static func findSuccessor(_ r: JS, _ family: JS, _ deceased: JS) -> JS? {
-        // App 规则：尊重玩家或家主已明确立定的储君／继承人（setHeir）。
+        // App 规则：尊重玩家或家主已明确立定的储君／继承人（setHeir），并遵循真实历史男嗣优先（避免第 2 代后女帝占比失真）。
         if UnitKinds.enabled {
             let designated = family.heirId.asInt
             if designated > 0 && designated != deceased.id.asInt,
                let chosen = person(r, designated), chosen.isAlive.asBool, chosen.familyId.asInt == family.id.asInt {
                 return chosen
             }
+            func eldest(_ list: [Int], gender: Int?, sameFamily: Bool) -> JS? {
+                var best: JS?
+                for id in list where id != deceased.id.asInt {
+                    guard let c = person(r, id), c.isAlive.asBool else { continue }
+                    if sameFamily && c.familyId.asInt != family.id.asInt { continue }
+                    if let g = gender, c.gender.asInt != g { continue }
+                    if best == nil || c.age.asInt > best!.age.asInt { best = c }
+                }
+                return best
+            }
+            let allowFemale = family.allowFemaleInheritance.asBool
+            if let son = eldest(ids(deceased.childrenIds), gender: 0, sameFamily: true) { return son }
+            if allowFemale, let daughter = eldest(ids(deceased.childrenIds), gender: 1, sameFamily: true) { return daughter }
+            if let maleCol = eldest(ids(family.collateralMemberIds), gender: 0, sameFamily: false) { return maleCol }
+            if let maleMem = eldest(ids(family.memberIds), gender: 0, sameFamily: false) { return maleMem }
+            if let daughter = eldest(ids(deceased.childrenIds), gender: 1, sameFamily: true) { return daughter }
+            if let col = eldest(ids(family.collateralMemberIds), gender: nil, sameFamily: false) { return col }
+            return eldest(ids(family.memberIds), gender: nil, sameFamily: false)
         }
         func stage(_ list: [Int], _ tier: Int) -> JS? {
             var best: JS?, bestScore = 0
@@ -376,17 +394,30 @@ public enum People {
         r.sovereignty.reigns[id] = heir.id.clone(); r.sovereignty.revision = JS(r.sovereignty.revision.asNumber + 1); r.kin.lifecycle.vacancies.delete(nationId)
         setRulingFamily(r, nationId, heir.familyId.asInt)
         let polity = nation.polity.optionalString ?? "Kingdom", title = identity.titleAtAccession.asString
-        let leaderName = rulerDisplayName(culture: nation.cultureId.optionalString ?? "chinese", polity: polity, name: identity.name.asString, regnalName: regnalName, ordinal: ordinal, given: identity.given.asString, title: title)
+        let cultureId = nation.cultureId.optionalString ?? "chinese"
+        let leaderName: String
+        if UnitKinds.enabled {
+            let honor = MonarchLore.honor(r, nationId: nationId, reignId: id, order: order, culture: cultureId, polity: polity, title: title, person: heir, fallbackName: identity.name.asString, reignYears: 0, deltaProvs: 0, avgSkill: 60, isActive: true)
+            leaderName = honor.styledName
+        } else {
+            leaderName = rulerDisplayName(culture: cultureId, polity: polity, name: identity.name.asString, regnalName: regnalName, ordinal: ordinal, given: identity.given.asString, title: title)
+        }
         let stateName = r.world.nations.asArray.first { $0.id.asString == nationId }?.name.optionalString ?? nationId, oldName = old?.name.optionalString ?? "前任"
         let text: String
         if cause == "election" { text = "\(leaderName)在大选中当选为\(stateName)的领导人，前任\(oldName)卸任" }
         else if cause == "restoration" { text = "\(leaderName)恢复\(stateName)的统治，取代了\(oldName)" }
         else if cause != "death" { text = "\(leaderName)成为\(stateName)的统治者，前任领导人\(oldName)卸任" }
         else if polity == "Republic" || polity == "Federation" { text = "\(leaderName)在选举中当选为\(stateName)的领导人，前任\(oldName)卸任" }
-        else if polity == "Empire" { text = "\(leaderName)继承\(stateName)的帝位，前皇帝\(oldName)驾崩" }
+        else if polity == "Empire" {
+            if UnitKinds.enabled && MonarchLore.isJapaneseEmperor(culture: cultureId, title: title, polity: polity) {
+                text = "\(leaderName)践祚登基，继任\(stateName)皇位，先皇\(oldName)崩逝"
+            } else {
+                text = "\(leaderName)继承\(stateName)的帝位，前皇帝\(oldName)驾崩"
+            }
+        }
         else if polity == "Kingdom" { text = "\(leaderName)继承\(stateName)的王位，前国王\(oldName)去世" }
-        else if polity == "Tribal" { text = "\(leaderName)成为\(stateName)的酋长，前酋长\(oldName)去世" }
-        else if polity == "Theocracy" { text = "\(leaderName)被选为\(stateName)的教宗，前教宗\(oldName)去世" }
+        else if polity == "Tribal" { text = UnitKinds.enabled ? "\(leaderName)成为\(stateName)的\(title)，前任\(oldName)去世" : "\(leaderName)成为\(stateName)的酋长，前酋长\(oldName)去世" }
+        else if polity == "Theocracy" { text = UnitKinds.enabled ? "\(leaderName)继任\(stateName)的\(title)，前任\(oldName)圆寂" : "\(leaderName)被选为\(stateName)的教宗，前教宗\(oldName)去世" }
         else { text = "\(leaderName)继承\(stateName)的统治权，前任统治者\(oldName)去世" }
         let reason = cause == "election" ? "四年一度大选，按共和国／联邦候选规则（能力、家族势力与战功）择优当选；连任满八年者不得再选。" : cause == "abdication" ? "玩家安排已知家族成员传位，前任仍然在世。" : (polity == "Republic" || polity == "Federation" ? "按原作共和国／联邦紧急候选规则，从至少25岁的已知在世成员中补位；正常投票选举尚未接入。" : "按已恢复的本政体候选规则，从真实登记的在世人物中接任。")
         announce(r, kind: "accession", text: text, reason: reason + " 人物身份、生日、能力和亲属关系保留；家主独立继承。", nations: [nationId], province: nil, people: [reign])

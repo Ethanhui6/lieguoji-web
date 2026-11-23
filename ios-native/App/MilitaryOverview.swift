@@ -16,18 +16,20 @@ struct MilitaryOverview: View {
     struct Power: Identifiable { let id: Int; let troops: Int; let armies: Int }
     struct Share: Identifiable { let id: String; let troops: Int }
     struct Clash: Identifiable { let id: Int; let first: Int; let second: Int }
-    struct ArmyGroupRow: Identifiable { let id: String; let nation: Int; let name: String; let count: Int; let troops: Int; let bonus: Int }
+    struct ArmyGroupRow: Identifiable { let id: String; let nation: Int; let name: String; let count: Int; let troops: Int; let bonus: Int; let composition: String; let synergy: String }
 
     private var activeGroups: [ArmyGroupRow] {
-        var acc = [String: (nation: Int, name: String, count: Int, troops: Int, bonus: Int)]()
+        var acc = [String: (nation: Int, name: String, count: Int, troops: Int, bonus: Int, composition: String, synergy: String)]()
         for a in state.armies {
             guard let g = a.armyGroup, !g.isEmpty else { continue }
             let k = "\(a.nation)|\(g)"
-            var cur = acc[k] ?? (a.nation, g, 0, 0, a.groupBonus ?? 6)
+            var cur = acc[k] ?? (a.nation, g, 0, 0, a.groupBonus ?? 6, a.groupComposition ?? "", a.groupSynergy ?? "")
             cur.count += 1; cur.troops += a.troops; cur.bonus = max(cur.bonus, a.groupBonus ?? 6)
+            if cur.composition.isEmpty, let comp = a.groupComposition { cur.composition = comp }
+            if cur.synergy.isEmpty, let syn = a.groupSynergy { cur.synergy = syn }
             acc[k] = cur
         }
-        return Array(acc.map { ArmyGroupRow(id: $0.key, nation: $0.value.nation, name: $0.value.name, count: $0.value.count, troops: $0.value.troops, bonus: $0.value.bonus) }
+        return Array(acc.map { ArmyGroupRow(id: $0.key, nation: $0.value.nation, name: $0.value.name, count: $0.value.count, troops: $0.value.troops, bonus: $0.value.bonus, composition: $0.value.composition, synergy: $0.value.synergy) }
             .sorted { $0.troops != $1.troops ? $0.troops > $1.troops : $0.id < $1.id }.prefix(6))
     }
 
@@ -103,9 +105,10 @@ struct MilitaryOverview: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack(spacing: 5) {
                                     Text("\(name(grp.nation)) · \(grp.name)").font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
-                                    PaperTag(text: "协同+\(grp.bonus)%", color: Theme.seal, size: 10)
+                                    PaperTag(text: "总协同+\(grp.bonus)%", color: Theme.seal, size: 10)
                                 }
-                                Text("\(grp.count) 支军团联合作战").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                Text("\(grp.count) 支军团\(grp.composition.isEmpty ? "" : "（\(grp.composition)）")\(grp.synergy.isEmpty ? "" : " · \(grp.synergy)")")
+                                    .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
                             }
                             Spacer(minLength: 4)
                             Text(Names.wan(grp.troops)).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
@@ -181,6 +184,14 @@ struct MilitaryOverview: View {
                                         }
                                     }
                                     Spacer(minLength: 2)
+                                }
+                                if let sk = g.skill, !sk.isEmpty {
+                                    HStack(spacing: 5) {
+                                        PaperTag(text: sk, color: live ? Theme.jade : Theme.ink2, size: 10)
+                                        if let note = g.skillNote, !note.isEmpty {
+                                            Text(note).font(Theme.kai(10)).foregroundStyle(Theme.ink2).lineLimit(1)
+                                        }
+                                    }
                                 }
                                 if let buff = g.buff, !buff.isEmpty {
                                     Text(buff)

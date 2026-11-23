@@ -131,7 +131,7 @@ struct WorldArchiveSheet: View {
             }
             Spacer(minLength: 8)
             Button { burning = w } label: {
-                Image(systemName: "flame").font(.system(size: 15)).foregroundStyle(Theme.ink2).frame(width: 34, height: 34)
+                InkIcon(glyph: .fire, size: 15, weight: 1.7).foregroundStyle(Theme.ink2).frame(width: 34, height: 34)
             }
             .buttonStyle(PressStyle())
             Button { open(w) } label: {

@@ -81,6 +81,7 @@ struct ArmySheet: View {
     @State private var unit = ""
     @State private var morale = 100.0
     @State private var syncedArmyId = ""
+    @State private var autoRenameBranch = true
 
     static let units = UnitKinds.kinds.map { ($0.key, $0.name) }
 
@@ -262,11 +263,17 @@ struct ArmySheet: View {
                     }
                 }
                 if let grp = a.armyGroup, !grp.isEmpty {
-                    HStack(spacing: 7) {
-                        PaperTag(text: "集团军", color: Theme.ink, size: 11)
-                        Text("\(grp)\(a.groupBonus.map { " · 同战区协同攻防 +\($0)%" } ?? "")")
-                            .font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 0)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 7) {
+                            PaperTag(text: "集团军", color: Theme.ink, size: 11)
+                            Text("\(grp)\(a.groupBonus.map { " · 总协同攻防 +\($0)%" } ?? "")")
+                                .font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
+                        }
+                        if let comp = a.groupComposition, !comp.isEmpty {
+                            Text([comp, a.groupSynergy ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
+                                .font(Theme.caption).foregroundStyle(Theme.jade).fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
                 if let wg = a.warGodAura, !wg.isEmpty {
@@ -317,6 +324,48 @@ struct ArmySheet: View {
 
     @ViewBuilder
     private func reorganizeSection(a: GameState.Army) -> some View {
+        SectionLabel("职能分部整编（五部军制）")
+        Group2 {
+            VStack(alignment: .leading, spacing: 8) {
+                let currentBranch = a.branch ?? "field"
+                ForEach(Regimes.ArmyBranch.allCases, id: \.rawValue) { br in
+                    let active = currentBranch == br.rawValue
+                    Button {
+                        guard !active else { return }
+                        GameFeel.shared.tap()
+                        act("setArmyBranch", a, text: br.rawValue, flag: autoRenameBranch)
+                    } label: {
+                        HStack(alignment: .top, spacing: 10) {
+                            PaperTag(text: br.label, color: active ? Theme.seal : Theme.jade, size: 11)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(br.roleNote)
+                                    .font(Theme.caption)
+                                    .foregroundStyle(active ? Theme.ink : Theme.ink2)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: 4)
+                            if active {
+                                PaperTag(text: "当前", color: Theme.seal, size: 10)
+                            } else {
+                                Text("改编").font(Theme.caption).foregroundStyle(Theme.seal)
+                            }
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 9)
+                        .background(active ? Theme.seal.opacity(0.08) : Theme.paper2.opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(active ? Theme.seal.opacity(0.42) : Theme.ink.opacity(0.10), lineWidth: 0.85))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                Divider2().padding(.horizontal, -14)
+                PaperSwitch(title: "改编时同步换授本文化对应番号", on: $autoRenameBranch)
+                    .padding(.horizontal, -14)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 12)
+        }
+        .padding(.horizontal, Theme.Layout.pageInset)
+
         SectionLabel("兵力编制")
         Group2 {
             VStack(spacing: 10) {
@@ -485,7 +534,7 @@ struct FleetRow: View {
                 Text("\(fleet.ships) 艘").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
                 Text("\(fleet.crew) 水兵").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
             }
-            Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
+            InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.ink2)
         }
         .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
     }

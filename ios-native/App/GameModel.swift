@@ -136,6 +136,7 @@ import LieguojiCore
     var cachedReplayStartCounts: [Int: Int] = [:]
     var cachedReplayStartAlive: Int = 0
     var cachedReplayCurrentCounts: [Int: Int] = [:]
+    var cachedReplayTopPowers: [(nation: Int, count: Int)] = []
     var cachedReplayCurrentCentroids: [Int: (x: Float, y: Float)] = [:]
     var cachedReplayChangedProvinces: Int = 0
     var lastReplayScrubTime: CFTimeInterval = 0
@@ -441,12 +442,14 @@ import LieguojiCore
 
     func continueGame() async {
         pause()
+        controller.drifting = false
         worldEpoch &+= 1
         let epoch = worldEpoch
         phase = .generating; failure = nil; generationNote = "正在读取存档"
         let mountBefore = controller.mapMountToken
         do {
-            let data = try Data(contentsOf: Self.saveURL)
+            let saveURL = Self.saveURL
+            let data = try await Task.detached(priority: .userInitiated) { try Data(contentsOf: saveURL) }.value
             let world: WorldMap
             let quote = "\""
             if data.starts(with: Array(("{" + quote + "format" + quote + ":" + quote + NativeEngine.saveFormat + quote).utf8)) {

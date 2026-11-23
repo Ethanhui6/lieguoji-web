@@ -137,6 +137,8 @@ struct GeneralEntry: Decodable, Identifiable {
     let id: Int; let name: String; let nation: Int; let merit: Double; let months: Int; let gained: Int; let rank: String; let fallen: Bool
     var epithet: String? = nil
     var buff: String? = nil
+    var skill: String? = nil
+    var skillNote: String? = nil
     var active: Bool? = nil
 }
 

@@ -1199,6 +1199,8 @@ final class MapLabelsView: UIView {
         return true
     }
     private var cities: [Label] = []
+    private var capitalCityLabels: [Label] = []
+    private var otherCityLabels: [Label] = []
 
     static func font(_ size: CGFloat) -> UIFont { UIFont(name: fontName, size: size) ?? .systemFont(ofSize: size, weight: .semibold) }
 
@@ -1207,6 +1209,8 @@ final class MapLabelsView: UIView {
         let unit = Double(MapLayers.fontUnit)
         nations = Self.nationLabels(map, unit: unit, full: true)
         cities = Self.cityLabels(map)
+        capitalCityLabels = cities.filter { $0.fill === Self.capitalInk }
+        otherCityLabels = cities.filter { $0.fill !== Self.capitalInk }
         for l in cities + nations { l.view.isHidden = true; addSubview(l.view) }
         setSeals(map)
     }
@@ -1231,6 +1235,8 @@ final class MapLabelsView: UIView {
         cityKey = key
         for l in cities { l.view.removeFromSuperview() }
         cities = Self.cityLabels(map)
+        capitalCityLabels = cities.filter { $0.fill === Self.capitalInk }
+        otherCityLabels = cities.filter { $0.fill !== Self.capitalInk }
         for l in cities { l.view.isHidden = true; insertSubview(l.view, at: 0) }
         setSeals(map)
     }
@@ -1383,13 +1389,14 @@ final class MapLabelsView: UIView {
     private var lastViewport: CGSize = .zero
     private var lastMapRect: CGRect = .zero
     private var refreshQueued = false
-    /// 字图换档：缓存里有就直接换；第一次显示的名字同步画；其余在后台画，画好之前先把旧图按比例放缩顶着
-    /// （缩放跨档时以前一帧里同步重画几百个名字，是缩放卡一下的主因）。
-    private func resize(_ l: Label, to size: Double) {
+    /// 字图换档：缓存里有就直接换；首帧最多同步绘制有限配额的主要国名，其余全部转后台串行光栅化后一次性补排，
+    /// 彻底消除进入主页、点击读档或切图瞬间主线程同步绘制上百张毛笔描边字图引起的明显卡顿。
+    private func resize(_ l: Label, to size: Double, syncBudget: inout Int) {
         let key = "\(l.text)|\(size)|\(l.fill.hashValue)|\(l.stroke.hashValue)" as NSString
         func apply(_ image: UIImage) { l.rendered = size; l.view.transform = .identity; l.view.image = image; l.view.bounds = CGRect(origin: .zero, size: image.size) }
         if let cached = Self.images.object(forKey: key) { apply(cached); return }
-        if l.rendered == 0 || l.view.image == nil || Self.legacy {
+        if Self.legacy || ((l.rendered == 0 || l.view.image == nil) && syncBudget > 0) {
+            syncBudget -= 1
             let image = Self.render(l.text, size: CGFloat(size), fill: l.fill, stroke: l.stroke, strokeEm: CGFloat(l.strokeWidth))
             Self.store(image, key); apply(image); return
         }
@@ -1466,8 +1473,8 @@ final class MapLabelsView: UIView {
                 place(Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: half, halfH: half, cosine: 1, sine: 0, nation: false, text: ""))
             }
         }
-        let capitalNames = showCities ? cities.filter { $0.fill === Self.capitalInk } : []
-        let otherCities = showCities ? cities.filter { $0.fill !== Self.capitalInk } : []
+        let capitalNames = showCities ? capitalCityLabels : []
+        let otherCities = showCities ? otherCityLabels : []
         // Enlarged capital names (the map seen from afar) give way to the state names; at their own size
         // (close up) they come first, as before.
         let enlarged = capitalNames.first.map { $0.mapEm * camera.scale < $0.floorPoints } ?? false
@@ -1476,6 +1483,7 @@ final class MapLabelsView: UIView {
         _ = enlarged
         let order = custom + nations + capitalNames + otherCities
         var placedNationTexts = Set<String>()
+        var syncBudget = 6
         func blockedByTextOnly(_ b: Box, margin: CGFloat) -> Bool {
             if Self.legacy { return taken.contains { !$0.text.isEmpty && Self.clash($0, b, margin: margin) } }
             for c in cells(b, margin) { for i in grid[c] ?? [] where !taken[i].text.isEmpty && Self.clash(taken[i], b, margin: margin) { return true } }
@@ -1503,7 +1511,7 @@ final class MapLabelsView: UIView {
             let wanted = min(96, points)
             if l.rendered == 0 || wanted / l.rendered > 1.25 || wanted / l.rendered < 0.8 {
                 // Sizes on a ×1.25 ladder, so the cached images are reused while zooming.
-                resize(l, to: min(96, pow(1.25, (log(wanted) / log(1.25)).rounded())))
+                resize(l, to: min(96, pow(1.25, (log(wanted) / log(1.25)).rounded())), syncBudget: &syncBudget)
             }
             guard l.rendered > 0 else { l.view.isHidden = true; continue }
             var k = CGFloat(points / l.rendered)

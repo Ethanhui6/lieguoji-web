@@ -165,7 +165,7 @@ struct AppointSheet: View {
                                     }
                                 }
                                 Spacer()
-                                Image(systemName: "checkmark.seal").foregroundStyle(Theme.seal)
+                                InkIcon(glyph: .peace, size: 14, weight: 1.8).foregroundStyle(Theme.seal)
                             }
                             .padding(.horizontal, 16).padding(.vertical, 9).contentShape(Rectangle())
                         }

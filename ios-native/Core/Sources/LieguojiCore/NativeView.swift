@@ -424,10 +424,12 @@ extension NativeEngine {
                 x.branchNote = br.roleNote
                 if let grp = Regimes.armyGroup(r, armyId: id) {
                     x.armyGroup = grp.name
-                    x.groupBonus = grp.bonusPct
+                    x.groupBonus = grp.totalBonusPct
+                    x.groupComposition = grp.composition
+                    x.groupSynergy = grp.synergyLabel.isEmpty ? nil : grp.synergyLabel
                 }
                 if let wg = Regimes.warGodAura(r, nationId: a.nationId.asString) {
-                    x.warGodAura = "\(wg.rank) \(wg.name)（\(wg.epithet)）· \(wg.tier.buffText)"
+                    x.warGodAura = "\(wg.rank) \(wg.name)〔\(wg.skill.name)〕· \(wg.buffSummary)"
                 }
             }
             return x

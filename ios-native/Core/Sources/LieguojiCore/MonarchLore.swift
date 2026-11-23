@@ -152,9 +152,13 @@ public enum MonarchLore {
         avgSkill: Double,
         isActive: Bool
     ) -> RulerHonor {
+        let isShogun = title.contains("将军") || title.contains("幕府") || title.contains("元帅")
+        let isTheocracy = (polity == "Theocracy")
+            || title == "教宗" || title == "哈里发" || title == "伊玛目" || title == "牧首" || title == "法王" || title == "天师" || title == "祭主"
         let isMonarch = ["Kingdom", "Empire", "Theocracy"].contains(polity)
-            && !title.contains("总统") && !title.contains("主席") && !title.contains("总书记") && !title.contains("执政官") && !title.contains("委员长")
-        let isJPImperial = isJapaneseEmperor(culture: culture, title: title, polity: polity)
+            && !isShogun
+            && !title.contains("总统") && !title.contains("主席") && !title.contains("总书记") && !title.contains("执政官") && !title.contains("委员长") && !title.contains("首相") && !title.contains("总理")
+        let isJPImperial = !isShogun && !isTheocracy && isJapaneseEmperor(culture: culture, title: title, polity: polity)
 
         // 1. 提取洁净的个人名（日本天皇绝不带姓氏！）
         let first = person?.firstName.optionalString ?? ""
@@ -183,8 +187,9 @@ public enum MonarchLore {
 
         var era = stored.era.optionalString ?? ""
         var ordinal = stored.ordinal.optionalNumber.map(Int.init) ?? 0
+        let numberedTheocracy = isTheocracy && (title == "教宗" || title == "牧首" || title == "哈里发" || title == "伊玛目")
 
-        if era.isEmpty && (isJPImperial || sinosphereCultures.contains(culture)) {
+        if era.isEmpty && !isTheocracy && (isJPImperial || sinosphereCultures.contains(culture)) {
             let pool = isJPImperial ? japaneseEras : chineseEras
             var usedEras = Set<String>()
             if !r.regimes.isNull && !r.regimes.reignLore.isNull {
@@ -202,9 +207,14 @@ public enum MonarchLore {
             }
         }
 
-        // 计算西方/欧亚君主名字世数（统计本国历代同名君主顺位：伊丽莎白一世 → 伊丽莎白二世）
-        let givenKey = first.isEmpty ? personalName : first
-        if ordinal <= 0 && regnalNumberCultures.contains(culture) {
+        // 计算西方/欧亚君主及教宗/哈里发名字世数（统计本国历代同名顺位：伊丽莎白一世 → 二世，教宗 利奥一世 → 二世）
+        let givenKey: String = {
+            let trimmed = first.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty { return trimmed }
+            if personalName.contains("·") { return personalName.components(separatedBy: "·").first ?? personalName }
+            return personalName
+        }()
+        if ordinal <= 0 && (numberedTheocracy || (!isTheocracy && regnalNumberCultures.contains(culture))) {
             var count = 1
             let leadersRaw = (r.chronicle.isNull || r.chronicle.leaders.isNull) ? JS.null : r.chronicle.leaders[nationId]
             let leaders = leadersRaw.isArray ? leadersRaw.asArray : []
@@ -267,7 +277,15 @@ public enum MonarchLore {
         let isFemale = (person?.gender.optionalNumber == 1) || title.contains("女")
 
         let styledName: String
-        if isJPImperial {
+        if isTheocracy {
+            // 教宗国/哈里发国/牧首领/法王领/道国真实宗教领袖称谓，绝不误套世俗帝王号
+            if numberedTheocracy {
+                let numLabel = "\(givenKey)\(chineseNumeral(max(1, ordinal)))世"
+                styledName = "\(title) \(numLabel)"
+            } else {
+                styledName = "\(title) \(personalName)"
+            }
+        } else if isJPImperial {
             // 真实日本天皇命名：「昭和天皇 裕仁」「令和天皇 德仁」（皇室本无姓氏，空格接名讳）
             styledName = era.isEmpty ? "天皇 \(personalName)" : "\(era)天皇 \(personalName)"
         } else if sinosphereCultures.contains(culture) {

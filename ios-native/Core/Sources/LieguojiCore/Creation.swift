@@ -355,7 +355,15 @@ public enum Creation {
             if views.isEmpty { continue }
             let rulingKin = kin.families[String(stateId)]
             let capital = r.world.cities.asArray.first { $0.id.asString == n.capitalId.asString }!.provinceId.asString
-            rulingKin.allowFemaleInheritance = JS(random.value() < f(0.2))
+            let femaleSuccessionRate: Double = {
+                guard UnitKinds.enabled else { return 0.2 }
+                let cid = identity.cultureId.optionalString ?? ""
+                if ["english", "french", "german", "spanish", "italian", "slavic", "norse", "greek", "roman", "egyptian"].contains(cid) {
+                    return 0.14
+                }
+                return 0.05
+            }()
+            rulingKin.allowFemaleInheritance = JS(random.value() < f(femaleSuccessionRate))
             let ruling = Holding(rulingKin.id.asInt, number(capital), [])
             let home = views.first { $0.id == ruling.home }!; ruling.provinces.append(home.id); home.familyId = ruling.id
             allocateRuling(ruling, views, polity, distance)

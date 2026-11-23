@@ -48,12 +48,54 @@ extension Regimes {
         return "百战骁将"
     }
 
+    /// 战神专属兵法特技：依真实战绩与将领特质觉醒，为全军叠加特色实战加成。
+    public struct WarGodSkill: Sendable {
+        public let name: String
+        public let note: String
+        public let attackPct: Double
+        public let defensePct: Double
+        public let siegePct: Double
+        public let speedPct: Double
+    }
+
+    static func warGodSkill(merit: Double, gained: Int, months: Int, traits: Set<String>) -> WarGodSkill {
+        if traits.contains("Conqueror") || traits.contains("Unifier") || gained >= 10 {
+            return WarGodSkill(name: "神机破城", note: "围城破防额外 +18%", attackPct: 0, defensePct: 0, siegePct: 18, speedPct: 0)
+        }
+        if traits.contains("Tactician") || traits.contains("Genius") || merit >= 350 {
+            return WarGodSkill(name: "兵仙奇谋", note: "全军攻防 +6% · 围城 +10%", attackPct: 6, defensePct: 6, siegePct: 10, speedPct: 0)
+        }
+        if traits.contains("Brave") || traits.contains("Hawkish") || gained >= 5 {
+            return WarGodSkill(name: "破阵无双", note: "野战进攻额外 +8%", attackPct: 8, defensePct: 0, siegePct: 0, speedPct: 0)
+        }
+        if traits.contains("IronFist") || traits.contains("Stoic") || months >= 24 {
+            return WarGodSkill(name: "铁壁金汤", note: "全军防线额外 +12%", attackPct: 0, defensePct: 12, siegePct: 0, speedPct: 0)
+        }
+        return WarGodSkill(name: "千里奔袭", note: "全军行军额外 +8% · 攻 +4%", attackPct: 4, defensePct: 0, siegePct: 0, speedPct: 8)
+    }
+
+    private static func combinedBuffText(tier: WarGodTier, skill: WarGodSkill) -> String {
+        let atk = Int(tier.attackPct + skill.attackPct)
+        let def = Int(tier.defensePct + skill.defensePct)
+        let sge = Int(tier.siegePct + skill.siegePct)
+        let spd = Int(tier.speedPct + skill.speedPct)
+        var parts = [String]()
+        if atk > 0 && atk == def { parts.append("攻防+\(atk)%") }
+        else {
+            if atk > 0 { parts.append("攻+\(atk)%") }
+            if def > 0 { parts.append("防+\(def)%") }
+        }
+        if sge > 0 { parts.append("围城+\(sge)%") }
+        if spd > 0 { parts.append("行军+\(spd)%") }
+        return parts.joined(separator: " · ")
+    }
+
     private static var warGodCacheTick: Int = -1
     private static var warGodCacheWorld: ObjectIdentifier?
-    private static var warGodCacheMap: [String: (name: String, rank: String, epithet: String, tier: WarGodTier)] = [:]
+    private static var warGodCacheMap: [String: (name: String, rank: String, epithet: String, tier: WarGodTier, skill: WarGodSkill, buffSummary: String)] = [:]
 
-    /// 读取某国当前在任战神谱主将提供的真实战场加持（每 Tick 缓存一次，O(1) 查询，零推演开销）。
-    public static func warGodAura(_ r: JS, nationId: String) -> (name: String, rank: String, epithet: String, tier: WarGodTier)? {
+    /// 读取某国当前在任战神谱主将提供的真实战场加持（含阶位光环 + 专属兵法特技；每 Tick 缓存一次，O(1) 查询）。
+    public static func warGodAura(_ r: JS, nationId: String) -> (name: String, rank: String, epithet: String, tier: WarGodTier, skill: WarGodSkill, buffSummary: String)? {
         guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy, !r.regimes.generals.isNull else { return nil }
         let tick = r.clock.tick.asInt
         let wid = ObjectIdentifier(r)
@@ -67,18 +109,22 @@ extension Regimes {
                 var activeIds = Set<Int>()
                 for p in commanders(r, nid) where p.isAlive.asBool { activeIds.insert(p.id.asInt) }
                 if let m = Offices.holder(r, nid, "Marshal", Offices.stateId(r, nid)), m.isAlive.asBool { activeIds.insert(m.id.asInt) }
-                var best: (name: String, merit: Double, gained: Int, months: Int, tier: WarGodTier)?
+                var best: (pid: Int, name: String, merit: Double, gained: Int, months: Int, tier: WarGodTier)?
                 for pid in activeIds {
                     let e = roll[String(pid)]
                     guard !e.isNull, !e.fallen.isTruthy else { continue }
                     let merit = e.merit.optionalNumber ?? 0
                     guard let tier = generalTier(merit) else { continue }
                     if best == nil || merit > best!.merit {
-                        best = (e.name.optionalString ?? "名将", merit, e.gained.asInt, e.months.asInt, tier)
+                        best = (pid, e.name.optionalString ?? "名将", merit, e.gained.asInt, e.months.asInt, tier)
                     }
                 }
                 if let b = best {
-                    warGodCacheMap[nid] = (b.name, b.tier.title, generalEpithet(merit: b.merit, gained: b.gained, months: b.months), b.tier)
+                    let person = People.person(r, b.pid)
+                    let traits = Set(person?.traits.isArray == true ? person!.traits.asArray.compactMap(\.optionalString) : [])
+                    let skill = warGodSkill(merit: b.merit, gained: b.gained, months: b.months, traits: traits)
+                    let summary = combinedBuffText(tier: b.tier, skill: skill)
+                    warGodCacheMap[nid] = (b.name, b.tier.title, generalEpithet(merit: b.merit, gained: b.gained, months: b.months), b.tier, skill, summary)
                 }
             }
         }
@@ -147,12 +193,17 @@ extension Regimes {
             let tier = generalTier(merit)!
             let fallen = e.fallen.isTruthy
             let pid = Int(key) ?? e.id.asInt
+            let person = People.person(r, pid)
+            let traits = Set(person?.traits.isArray == true ? person!.traits.asArray.compactMap(\.optionalString) : [])
+            let skill = warGodSkill(merit: merit, gained: e.gained.asInt, months: e.months.asInt, traits: traits)
             let o = JS.object()
             o.id = e.id.clone(); o.name = e.name.clone(); o.nation = JS(index[e.nation.optionalString ?? ""] ?? -1)
             o.merit = JS(merit.rounded()); o.months = e.months.clone(); o.gained = e.gained.clone()
             o.rank = JS(tier.title); o.fallen = JS(fallen)
             o.epithet = JS(generalEpithet(merit: merit, gained: e.gained.asInt, months: e.months.asInt))
-            o.buff = JS(tier.buffText)
+            o.buff = JS(combinedBuffText(tier: tier, skill: skill))
+            o.skill = JS(skill.name)
+            o.skillNote = JS(skill.note)
             o.active = JS(!fallen && activeCommanders.contains(pid))
             return o
         })
@@ -177,13 +228,22 @@ extension Regimes {
             case .siege: return "攻城炮旅"
             }
         }
+        public var shortTag: String {
+            switch self {
+            case .guardCorps: return "禁军"
+            case .field: return "主力"
+            case .garrison: return "边防"
+            case .vanguard: return "前锋"
+            case .siege: return "炮旅"
+            }
+        }
         public var roleNote: String {
             switch self {
-            case .guardCorps: return "拱卫京畿与御驾决战 · 进攻+10% · 防御+15%"
-            case .field: return "正面野战与跨州主力决战 · 对军进攻+12%"
-            case .garrison: return "扼守关隘险要与本土守备 · 守御+18%"
-            case .vanguard: return "穿插奔袭与截断粮道 · 行军+15% · 进攻+8%"
-            case .siege: return "攻坚破城与火力支援 · 围城破防+28% · 攻+5%"
+            case .guardCorps: return "拱卫京畿与御驾决战 · 攻+10% 防+15% · 被动「护驾死战」近畿防御再+12%"
+            case .field: return "正面会战主力中坚 · 攻+12% · 被动「中坚会战」集团军协同再+4%"
+            case .garrison: return "扼守关隘险要与本土守备 · 守+18% · 被动「深沟高垒」本土守御再+10%"
+            case .vanguard: return "穿插奔袭与截断粮道 · 行军+15% 攻+8% · 被动「疾袭冲阵」主动进攻再+6%"
+            case .siege: return "攻坚破城与重炮火力支援 · 围城+28% · 被动「重炮破城」打要塞再+15%"
             }
         }
         public var attackFactor: Double {
@@ -290,14 +350,77 @@ extension Regimes {
         }()
 
         let rawTitle = titlePool[h % titlePool.count]
+        return (branch, uniqueArmyTitle(r, rawTitle))
+    }
+
+    private static func uniqueArmyTitle(_ r: JS, _ rawTitle: String) -> String {
         let used = Set(r.world.armies.asArray.filter { $0.troops.asNumber > 0 }.compactMap { $0.name.optionalString })
-        if !used.contains(rawTitle) { return (branch, rawTitle) }
+        if !used.contains(rawTitle) { return rawTitle }
         for k in 1..<99 {
             let num = MonarchLore.chineseNumeral(k)
             let candidate = "第\(num)\(rawTitle)"
-            if !used.contains(candidate) { return (branch, candidate) }
+            if !used.contains(candidate) { return candidate }
         }
-        return (branch, rawTitle)
+        return rawTitle
+    }
+
+    /// 玩家或政令主动整编军队职能分部（立即生效并刷新集团军诸兵协同缓存）。
+    public static func reorganizeArmyBranch(_ r: JS, army: JS, branch: ArmyBranch, rename: Bool) -> String {
+        let aid = army.id.asString
+        let nation = army.nationId.asString
+        let home = army.provinceId.asString
+        if !r.regimes.isNull {
+            if r.regimes.armyBranches.isNull { r.regimes.armyBranches = .object() }
+            r.regimes.armyBranches[aid] = JS(branch.rawValue)
+        }
+        groupCacheTick = -1
+        if rename {
+            let culture = r.civilization.isNull ? "" : (r.civilization.nations[nation].cultureId.optionalString ?? "")
+            let cityName = r.world.cities.asArray.first { $0.provinceId.asString == home }?.name.optionalString
+                ?? r.world.provinces.asArray.first { $0.id.asString == home }?.name.optionalString ?? ""
+            let shortPlace = String(cityName.prefix(3))
+            let pool: [String] = {
+                switch culture {
+                case "chinese", "korean", "vietnamese":
+                    switch branch {
+                    case .guardCorps: return ["神策禁军", "羽林亲军", "龙骧禁卫", "虎贲御林军"]
+                    case .field:      return ["征东野战军", "破虏主力军", "平南方面军", "定北主力军"]
+                    case .garrison:   return ["\(shortPlace)镇戍军", "\(shortPlace)边防军", "关隘戍卫军"]
+                    case .vanguard:   return ["骁骑前锋营", "飞熊轻骑军", "铁骑先锋营"]
+                    case .siege:      return ["神机破城营", "霹雳攻城军", "虎蹲炮兵旅"]
+                    }
+                case "japanese":
+                    switch branch {
+                    case .guardCorps: return ["近卫师团", "旗本御亲卫", "御所禁卫旅"]
+                    case .field:      return ["\(shortPlace)野战师团", "征讨主力军", "中央机动师团"]
+                    case .garrison:   return ["\(shortPlace)镇守旅", "\(shortPlace)警备团"]
+                    case .vanguard:   return ["疾风骑兵旅", "先阵突击队"]
+                    case .siege:      return ["铁炮攻城队", "大筒破城旅"]
+                    }
+                case "mongol", "turkic":
+                    switch branch {
+                    case .guardCorps: return ["怯薛亲卫万户", "可汗护卫军"]
+                    case .field:      return ["中军主力万户", "左翼征伐万户"]
+                    case .garrison:   return ["\(shortPlace)镇守千户", "边关屯戍军"]
+                    case .vanguard:   return ["苍狼先锋千户", "奔袭轻骑万户"]
+                    case .siege:      return ["回回炮攻城营", "破城工兵营"]
+                    }
+                default:
+                    switch branch {
+                    case .guardCorps: return ["皇家近卫军团", "帝国禁卫师", "王室铁卫军"]
+                    case .field:      return ["\(shortPlace)野战军", "中央主力军团", "常备野战军"]
+                    case .garrison:   return ["\(shortPlace)边防军", "\(shortPlace)要塞守备旅"]
+                    case .vanguard:   return ["骠骑前锋团", "轻骑机动旅", "龙骑先锋团"]
+                    case .siege:      return ["皇家攻城炮旅", "重炮攻坚团"]
+                    }
+                }
+            }()
+            let h = Int(draw("\(aid)|reorg|\(branch.rawValue)|\(r.clock.tick.asInt)"))
+            let title = uniqueArmyTitle(r, pool[h % pool.count])
+            army.name = JS(title)
+            return title
+        }
+        return army.name.asString
     }
 
     public static func armyBranch(_ r: JS, armyId: String, unitKey: String) -> ArmyBranch {
@@ -313,13 +436,18 @@ extension Regimes {
         return .field
     }
 
-    /// 集团军／方面军动态战区编组（每 Tick 缓存一次，O(A) 扫描，2 支及以上同战区友军自动协同并获得真实攻防加成）。
+    /// 集团军／方面军动态战区编组（每 Tick 缓存一次，O(A) 扫描；同战区友军自动协同，多兵种分部同阵更触发「诸兵合击」加成）。
     public struct ArmyGroupInfo: Sendable {
         public let name: String
         public let theatre: String
         public let count: Int
         public let troops: Int
         public let bonusPct: Int
+        public let distinctBranches: Int
+        public let synergyBonusPct: Int
+        public var totalBonusPct: Int { bonusPct + synergyBonusPct }
+        public let composition: String
+        public let synergyLabel: String
     }
     private static var groupCacheTick: Int = -1
     private static var groupCacheWorld: ObjectIdentifier?
@@ -352,9 +480,9 @@ extension Regimes {
                 capPos[nid] = pt
             }
         }
-        // 按（国家 + 战区方位）聚合当前活跃野战部队
+        // 按（国家 + 战区方位）聚合当前活跃野战部队，并统计诸兵种分部构成
         struct BucketKey: Hashable { let nation: String; let theatre: String }
-        var buckets = [BucketKey: [(id: String, troops: Int)]]()
+        var buckets = [BucketKey: [(id: String, troops: Int, branch: ArmyBranch)]]()
         for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" {
             let nid = a.nationId.asString, aid = a.id.asString
             let pid = a.provinceId.asString
@@ -370,11 +498,22 @@ extension Regimes {
             } else {
                 theatre = dy >= 0 ? "南线" : "北线"
             }
-            buckets[BucketKey(nation: nid, theatre: theatre), default: []].append((aid, Int(a.troops.asNumber.rounded())))
+            let unitKey = r.units[aid].optionalString ?? "Infantry"
+            let br = armyBranch(r, armyId: aid, unitKey: unitKey)
+            buckets[BucketKey(nation: nid, theatre: theatre), default: []].append((aid, Int(a.troops.asNumber.rounded()), br))
         }
         for (key, members) in buckets where members.count >= 2 {
             let totalTroops = members.reduce(0) { $0 + $1.troops }
             let bonusPct = members.count >= 4 ? 14 : (members.count == 3 ? 10 : 6)
+            var brCount = [ArmyBranch: Int]()
+            for m in members { brCount[m.branch, default: 0] += 1 }
+            let distinct = brCount.count
+            let synergyBonus = distinct >= 3 ? 7 : (distinct == 2 ? 4 : 0)
+            let comp = ArmyBranch.allCases.compactMap { b -> String? in
+                guard let c = brCount[b], c > 0 else { return nil }
+                return "\(b.shortTag)×\(c)"
+            }.joined(separator: " · ")
+            let synLabel = synergyBonus > 0 ? "诸兵合击（\(distinct)部协同 +\(synergyBonus)%）" : ""
             let cult = cultureOf[key.nation] ?? ""
             let groupTitle: String = {
                 if key.theatre == "京畿" {
@@ -384,7 +523,17 @@ extension Regimes {
                 if cult == "mongol" || cult == "turkic" { return "\(key.theatre)大汗军团群" }
                 return "\(key.theatre)第一集团军"
             }()
-            let info = ArmyGroupInfo(name: groupTitle, theatre: key.theatre, count: members.count, troops: totalTroops, bonusPct: bonusPct)
+            let info = ArmyGroupInfo(
+                name: groupTitle,
+                theatre: key.theatre,
+                count: members.count,
+                troops: totalTroops,
+                bonusPct: bonusPct,
+                distinctBranches: distinct,
+                synergyBonusPct: synergyBonus,
+                composition: comp,
+                synergyLabel: synLabel
+            )
             for m in members { groupCacheMap[m.id] = info }
         }
     }

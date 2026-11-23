@@ -327,15 +327,28 @@ struct MapViewLegend: View {
             ForEach(Array(legend.prefix(6).enumerated()), id: \.offset) { _, e in
                 let active = spotlightColor?.uppercased() == e.color.uppercased()
                 let dimmed = spotlightColor != nil && !active
-                HStack(spacing: 7) {
-                    RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Names.color(e.color)).frame(width: 12, height: 12)
-                        .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).stroke(active ? Theme.seal : Theme.ink.opacity(0.22), lineWidth: active ? 1.5 : 0.5))
-                    Text(e.name.isEmpty ? "—" : e.name)
-                        .font(Theme.label)
-                        .foregroundStyle(active ? Theme.seal : Theme.ink.opacity(dimmed ? 0.5 : 1))
-                        .lineLimit(1).minimumScaleFactor(0.82)
-                    Spacer(minLength: 4)
-                    Text("\(e.count)省").font(Theme.caption).foregroundStyle(Theme.ink2.opacity(dimmed ? 0.5 : 1)).fixedSize()
+                HStack(spacing: 4) {
+                    Button {
+                        GameFeel.shared.tap()
+                        if let onSpotlight {
+                            onSpotlight(e.color)
+                        } else if e.members != nil {
+                            open?(e)
+                        }
+                    } label: {
+                        HStack(spacing: 7) {
+                            RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Names.color(e.color)).frame(width: 12, height: 12)
+                                .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).stroke(active ? Theme.seal : Theme.ink.opacity(0.22), lineWidth: active ? 1.5 : 0.5))
+                            Text(e.name.isEmpty ? "—" : e.name)
+                                .font(Theme.label)
+                                .foregroundStyle(active ? Theme.seal : Theme.ink.opacity(dimmed ? 0.5 : 1))
+                                .lineLimit(1).minimumScaleFactor(0.82)
+                            Spacer(minLength: 4)
+                            Text("\(e.count)省").font(Theme.caption).foregroundStyle(Theme.ink2.opacity(dimmed ? 0.5 : 1)).fixedSize()
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                     if e.members != nil, let open {
                         Button {
                             GameFeel.shared.tap()
@@ -351,15 +364,7 @@ struct MapViewLegend: View {
                 }
                 .padding(.horizontal, 5).padding(.vertical, 2)
                 .background(active ? Theme.seal.opacity(0.09) : Color.clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .frame(minHeight: 22).contentShape(Rectangle())
-                .onTapGesture {
-                    GameFeel.shared.tap()
-                    if let onSpotlight {
-                        onSpotlight(e.color)
-                    } else if e.members != nil {
-                        open?(e)
-                    }
-                }
+                .frame(minHeight: 22)
                 .transition(.opacity.combined(with: .move(edge: .leading)))
             }
         }
@@ -1150,7 +1155,7 @@ private struct PressMenuCard: View {
                         }
                         Text(item.title).font(Theme.section).foregroundStyle(item.destructive ? Theme.seal : Theme.ink)
                         Spacer()
-                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.ink2.opacity(0.5))
+                        InkIcon(glyph: .chevronRight, size: 11, weight: 1.7).foregroundStyle(Theme.ink2.opacity(0.5))
                     }
                     .padding(.horizontal, 18).padding(.vertical, 13).contentShape(Rectangle())
                 }

@@ -96,7 +96,7 @@ public enum CombatReader {
         var dmgProv = snapshot.damageToProvince.asNumber
         var polAtk = politics.attack
         var polDef = politics.defense
-        // 本作规则：多兵种职能分部、战区集团军协同与战神谱活将光环的真实战场加持（不影响网页逐字节黄金测试）
+        // 本作规则：五部军制与专属战场被动、战区集团军与诸兵合击、战神谱活将光环＋专属兵法特技（不影响网页逐字节黄金测试）
         if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy {
             let aid = a.id.asString
             let unitKey = r.units[aid].optionalString ?? "Infantry"
@@ -104,15 +104,41 @@ public enum CombatReader {
             polAtk = f(polAtk * f(branch.attackFactor))
             polDef = f(polDef * f(branch.defenseFactor))
             dmgProv = f(dmgProv * f(branch.siegeFactor))
-            if let grp = Regimes.armyGroup(r, armyId: aid), grp.bonusPct > 0 {
-                let gf = f(1.0 + Double(grp.bonusPct) / 100.0)
+            // 五部专属战场被动
+            switch branch {
+            case .guardCorps:
+                // 护驾死战：京畿或本土核心作战防御再 +12%
+                if let cap = Rebellion.capitalProvince(r, nation),
+                   let pObj = p,
+                   (pObj.id.asString == cap || pObj.neighbors.asArray.contains { $0.asString == cap }) {
+                    polDef = f(polDef * f(1.12))
+                }
+            case .garrison:
+                // 深沟高垒：本土守御防御再 +10%
+                if !attacking && p != nil { polDef = f(polDef * f(1.10)) }
+            case .vanguard:
+                // 疾袭冲阵：主动出击进攻再 +6%
+                if attacking { polAtk = f(polAtk * f(1.06)) }
+            case .siege:
+                // 重炮破城：对高防要塞围城破防再 +15%
+                if attacking && provinceDefense >= 2 { dmgProv = f(dmgProv * f(1.15)) }
+            case .field:
+                break
+            }
+            if let grp = Regimes.armyGroup(r, armyId: aid), grp.totalBonusPct > 0 {
+                // 野战主力「中坚会战」在集团军内再享 +4% 协同放大
+                let extra = branch == .field ? 4 : 0
+                let gf = f(1.0 + Double(grp.totalBonusPct + extra) / 100.0)
                 polAtk = f(polAtk * gf)
                 polDef = f(polDef * gf)
             }
             if let wg = Regimes.warGodAura(r, nationId: nation) {
-                polAtk = f(polAtk * f(1.0 + wg.tier.attackPct / 100.0))
-                polDef = f(polDef * f(1.0 + wg.tier.defensePct / 100.0))
-                dmgProv = f(dmgProv * f(1.0 + wg.tier.siegePct / 100.0))
+                let atkPct = wg.tier.attackPct + wg.skill.attackPct
+                let defPct = wg.tier.defensePct + wg.skill.defensePct
+                let sgePct = wg.tier.siegePct + wg.skill.siegePct
+                if atkPct > 0 { polAtk = f(polAtk * f(1.0 + atkPct / 100.0)) }
+                if defPct > 0 { polDef = f(polDef * f(1.0 + defPct / 100.0)) }
+                if sgePct > 0 { dmgProv = f(dmgProv * f(1.0 + sgePct / 100.0)) }
             }
             dmgArmy = f(dmgArmy)
         }

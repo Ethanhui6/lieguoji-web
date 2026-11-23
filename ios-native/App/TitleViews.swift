@@ -261,10 +261,14 @@ struct TitleView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "设置", subtitle: AppVersion.text, seal: "设")
-                    DisclosureGroup("战争规则", isExpanded: $warRulesOpen) {
-                        WarRuleSettings()
+                    Group2 {
+                        DisclosureGroup("战争规则", isExpanded: $warRulesOpen) {
+                            WarRuleSettings()
+                                .padding(.top, 8)
+                        }
+                        .font(Theme.section).tint(Theme.seal)
+                        .padding(.horizontal, 16).padding(.vertical, 12)
                     }
-                    .font(Theme.body).tint(Theme.seal)
                     .padding(.horizontal, Theme.Layout.pageInset)
                     MapDisplaySettings(controller: model.controller)
                     SectionLabel("性能与帧率")

@@ -248,67 +248,335 @@ extension NativeEngine {
                             nations: [id], province: nil)
             return (true, "太学兴办完成：中枢能力精进，腐化 −4，国运 +3。")
 
-        case "agenda_accountability":
-            // 战后问责与整军复仇案：清除战败震荡，全军士气 +25，国运 +4
-            if !r.regimes.defeatShock.isNull { r.regimes.defeatShock.delete(id) }
-            let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
-            for a in armies { a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 25)) }
-            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
-            People.announce(r, kind: "politics", text: "\(stateName)通过《战后问责与整军案》",
-                            reason: "罢黜失律将校、重赏敢战之士，战败震荡平息，全军士气 +25，国运 +4。",
-                            nations: [id], province: nil)
-            return (true, "《战后问责与整军案》已颁行：战败震荡平息，全军士气 +25，国运 +4。")
-
-        case "agenda_wartax":
-            // 战时急征军饷与前线犒师案：国库 +450，全军补给满额、士气 +20
-            if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + 450) }
-            let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
-            for a in armies {
-                a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 20))
-                a.supplies = JS(100)
-            }
-            People.announce(r, kind: "politics", text: "\(stateName)通过《战时急征军饷与犒师案》",
-                            reason: "开征战时特饷充盈军库（+450 金），前线三军粮草满额、士气 +20。",
-                            nations: [id], province: nil)
-            return (true, "《战时急征军饷案》已颁行：国库 +450 金，全军粮草满额、士气 +20。")
-
-        case "agenda_curbhouses":
-            // 清丈勋贵田庄与抑豪强案：非宗室世家势力 -35，国库 +380，腐化 -8
-            let ruling = People.rulingFamilyId(r, id)
-            if !r.nobility.isNull && !r.nobility.families.isNull {
-                for (fid, fam) in r.nobility.families.objectEntries where fam.nationId.optionalString == id && Int(fid) != ruling {
-                    fam.influence = JS(max(10, (fam.influence.optionalNumber ?? 60) - 35))
-                }
-            }
-            if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + 380) }
-            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 8))
-            People.announce(r, kind: "reform", text: "\(stateName)御批《清丈勋贵田庄案》",
-                            reason: "清查豪强隐田、收权归于中枢：门阀权势受抑，国库 +380 金，腐化 −8。",
-                            nations: [id], province: nil)
-            return (true, "《清丈勋贵田庄案》已颁行：门阀权势 −35，国库 +380 金，腐化 −8。")
-
-        case "agenda_civil":
-            // 开科取士与劝农兴学案：全境人口 +3%，腐化 -6，国运 +5
+        case "roadNetwork":
+            // 驰道驿路 / 交通基建：耗 240 金，全境人口 +2%，国库商业回流 +180，国运 +4。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(240, (gold * 0.14).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
             let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
+            var popAdded = 0
             for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
                 let curPop = s.population.optionalNumber ?? 0
-                s.population = JS((curPop * 1.03).rounded())
+                let gain = max(40, (curPop * 0.02).rounded())
+                s.population = JS((curPop + gain).rounded())
+                popAdded += Int(gain)
             }
-            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 6))
-            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 5)) }
-            People.announce(r, kind: "culture", text: "\(stateName)御批《开科取士与劝农案》",
-                            reason: "广开科举、劝课农桑：全境人口 +3%，腐化 −6，国运 +5。",
+            if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + 180) }
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+            People.announce(r, kind: "event", text: "\(stateName)大兴驿路交通基建",
+                            reason: "修筑官道驿站、疏通商旅：全国增丁 \(popAdded) 人，商税回流 +180 金，国运 +4。",
                             nations: [id], province: nil)
-            return (true, "《开科取士与劝农案》已颁行：全境人口 +3%，腐化 −6，国运 +5。")
+            return (true, "交通基建完成：全国增丁 \(popAdded) 人，商税 +180 金，国运 +4。")
+
+        case "granary":
+            // 常平义仓 / 战略粮储：耗 180 金，全境存粮 +45%，国运 +5。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(180, (gold * 0.11).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
+            for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
+                let g = s.grain.optionalNumber ?? 0
+                s.grain = JS(min(50_000_000, max(g + 3200, (g * 1.45).rounded())))
+            }
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 5)) }
+            People.recordHistory(r, kind: "event", text: "\(stateName)广设常平战略粮仓",
+                                 reason: "兴修官仓、平籴积谷，全境战略存粮大增 45%，国运 +5。",
+                                 nations: [id], province: nil)
+            return (true, "战略粮储完成：全境存粮 +45%，国运 +5。")
+
+        case "techAcademy":
+            // 格物兴科 / 国家科研：耗 260 金，中枢军事与行政能力 +4，现役全军士气 +15，国运 +4。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(260, (gold * 0.14).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            if let ldr = Regimes.ruler(r, id) {
+                ldr.base.military = JS(min(100, (ldr.base.military.optionalNumber ?? 50) + 4))
+                ldr.base.administrative = JS(min(100, (ldr.base.administrative.optionalNumber ?? 50) + 4))
+            }
+            for a in r.world.armies.asArray where a.nationId.optionalString == id && a.troops.asNumber > 0 && a.status.asString != "destroyed" {
+                a.morale = JS(min(100, (a.morale.optionalNumber ?? 60) + 15))
+            }
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+            People.announce(r, kind: "culture", text: "\(stateName)兴办格物科研院",
+                            reason: "拨资革新工械与兵法：中枢军政能力 +4，全军士气 +15，国运 +4。",
+                            nations: [id], province: nil)
+            return (true, "格物兴科完成：中枢军政 +4，全军士气 +15，国运 +4。")
+
+        case "navalDockyard":
+            // 扩建水师船坞 / 海运统筹：提升跨海运力 +2 编队，并修复本国所有舰队船体至 100%。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(240, (gold * 0.14).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let nb = Regimes.book(r, id)
+            let curCap = nb.seaTransportBonus.optionalNumber.map(Int.init) ?? 0
+            nb.seaTransportBonus = JS(min(12, curCap + 2))
+            var repaired = 0
+            for fl in Naval.fleets(r) where fl.nationId.optionalString == id && fl.status.asString != "lost" {
+                let fid = fl.id.asString
+                let maxHull = max(100, fl.ships.asNumber * 100)
+                if !r.maritime.isNull {
+                    if r.maritime.hulls.isNull { r.maritime.hulls = .object() }
+                    r.maritime.hulls[fid] = JS(maxHull)
+                }
+                fl.food = JS(max(fl.food.asNumber, fl.ships.asNumber * 2400))
+                repaired += 1
+            }
+            People.announce(r, kind: "event", text: "\(stateName)扩建船坞与海运船队",
+                            reason: "增建跨海运输船队（运力 +2 支）并修缮 \(repaired) 支水师舰船船体。",
+                            nations: [id], province: nil)
+            return (true, "海运扩建完成：跨海运力 +2，已修缮 \(repaired) 支舰队。")
+
+        case "envoyGoodwill":
+            // 遣使修好 / 外交斡旋：与全部非交战存活国好感 +18。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(200, (gold * 0.12).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            var touched = 0
+            for other in nations {
+                let oid = other.id.asString
+                guard oid != id, Vassals.alive(r, oid), !Regimes.atWar(r, id, oid) else { continue }
+                DiplomacyDeep.adjustOpinionMod(r, id, oid, delta: 18)
+                touched += 1
+            }
+            guard touched > 0 else { return (false, "当前无非交战邻国可派遣使节。") }
+            People.announce(r, kind: "diplomacy", text: "\(stateName)遣使四方、广结善邻",
+                            reason: "派遣外交使团走访 \(touched) 国，双边邦交好感普遍 +18。",
+                            nations: [id], province: nil)
+            return (true, "外交斡旋完成：与 \(touched) 国关系好感 +18。")
+
+        case "taxRelief":
+            // 减赋安民 / 民生纾困：腐化 -10、国运 +6、民心回升。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(160, (gold * 0.10).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 10))
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 6)) }
+            People.announce(r, kind: "event", text: "\(stateName)颁行减赋纾困安民令",
+                            reason: "蠲免苛捐杂税、抚恤黎庶：腐化 −10，国运 +6，地方安定大增。",
+                            nations: [id], province: nil)
+            return (true, "减赋安民完成：腐化 −10，国运 +6。")
+
+        case let k where k.hasPrefix("strategy:"):
+            // 一键智能国策预设（自动匹配互斥国策组合与权力侧重）
+            let preset = String(k.dropFirst("strategy:".count))
+            let nb = Regimes.book(r, id)
+            let spec: (title: String, reforms: [String], bias: String)? = {
+                switch preset {
+                case "warMobilize":  return ("战时动员", ["conscription", "jungong", "junxian", "audit"], "military")
+                case "prosperTrade": return ("富国兴商", ["seaopen", "free", "liangshui", "guild", "minting"], "council")
+                case "stabilize":    return ("固本维稳", ["keju", "juntian", "audit", "charter"], "crown")
+                case "expand":       return ("经略扩张", ["mubing", "jungong", "navyAct", "seaopen"], "military")
+                case "techFocus":    return ("格物兴科", ["keju", "secular", "parliament", "free", "audit"], "council")
+                default: return nil
+                }
+            }()
+            guard let spec else { return (false, "未知战略预设：\(preset)。") }
+            nb.strategy = JS(preset)
+            nb.powerBias = JS(spec.bias)
+            var applied = [String]()
+            for rid in spec.reforms {
+                if let f = Regimes.reforms.first(where: { $0.id == rid }) {
+                    Regimes.setReform(r, id, f, on: true)
+                    applied.append(f.name)
+                }
+            }
+            People.recordHistory(r, kind: "reform", text: "\(stateName)确立「\(spec.title)」大战略",
+                                 reason: "统筹调配长期国策（\(applied.joined(separator: "、"))）并校准权力重心。",
+                                 nations: [id], province: nil)
+            return (true, "已应用「\(spec.title)」方案：自动启用 \(applied.joined(separator: "、"))。")
+
+        case let k where k.hasPrefix("strategyAuto:"):
+            let on = k.hasSuffix(":on")
+            let nb = Regimes.book(r, id)
+            nb.autoStrategy = JS(on)
+            return (true, on ? "已开启季度智能施政：每季按既定战略自动校准国策与救灾稳局。" : "已关闭季度智能施政，恢复全手动管理。")
+
+        case let k where k.hasPrefix("agenda:") || k.hasPrefix("agenda_"):
+            // 防无限点击漏洞：全部政治议案严格执行 180 日（搁置休会 90 日）议期冷却，杜绝单回合刷金刷士气！
+            let nb = Regimes.book(r, id)
+            let nowDay = r.world.day.asInt
+            let cdUntil = nb.agendaCooldownUntil.optionalNumber.map(Int.init) ?? 0
+            let civ = r.civilization.nations[id]
+            let lex = LocalizationEngine.lexicon(culture: civ.cultureId.optionalString, polity: civ.polity.optionalString, style: Regimes.style(r, id).id)
+            if nowDay < cdUntil {
+                let left = cdUntil - nowDay
+                return (false, "本期\(lex.agendaTag)已议决，距下届议期尚余 \(left) 日。")
+            }
+            // 解析 topic 与 branch（兼容旧版 agenda_wartax 直接映射到 force）
+            let topic: String
+            let branch: String
+            if k.hasPrefix("agenda:") {
+                let parts = k.split(separator: ":").map(String.init)
+                topic = parts.count >= 2 ? parts[1] : "civil"
+                branch = parts.count >= 3 ? parts[2] : "force"
+            } else {
+                topic = String(k.dropFirst("agenda_".count))
+                branch = "force"
+            }
+            let cooldownSpan = (branch == "table") ? 90 : 180
+            nb.agendaCooldownUntil = JS(nowDay + cooldownSpan)
+
+            let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            var title = "本期\(lex.agendaTag)"
+            var outcome = ""
+
+            switch (topic, branch) {
+            case ("accountability", "force"):
+                title = lex.isRepublican ? "《国防听证与军备重整法案》" : "《战后问责与整军复仇案》"
+                if !fin.isNull { fin.gold = JS(max(0, gold - min(gold, 180))) }
+                if !r.regimes.defeatShock.isNull { r.regimes.defeatShock.delete(id) }
+                for a in armies { a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 25)) }
+                if !destinyRow.isNull { destinyRow.destiny = JS(max(0, (destinyRow.destiny.optionalNumber ?? 50) - 2)) }
+                outcome = "强硬追责：战败震荡清除，全军士气 +25（耗 180 金）。"
+            case ("accountability", "compromise"):
+                title = lex.isRepublican ? "《国防听证与军备重整法案》" : "《战后问责与整军复仇案》"
+                if !r.regimes.defeatShock.isNull, let cur = r.regimes.defeatShock[id].optionalNumber { r.regimes.defeatShock[id] = JS(cur * 0.5) }
+                for a in armies { a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 14)) }
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+                outcome = "温和重整：震荡减半，士气 +14，国运 +4。"
+            case ("accountability", "bargain"):
+                title = lex.isRepublican ? "《国防听证与军备重整法案》" : "《战后问责与整军复仇案》"
+                if !r.regimes.defeatShock.isNull { r.regimes.defeatShock.delete(id) }
+                for a in armies { a.supplies = JS(100); a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 18)) }
+                nb.powerBias = JS("military")
+                outcome = "军方让利：震荡消除、全军满补给，权力倾向\(lex.pillarShort[2])。"
+            case ("imbalance", "force"):
+                title = lex.isRepublican ? "《宪政制衡与权力纠偏法案》" : "《整肃纲纪与制衡权势案》"
+                if !fin.isNull { fin.gold = JS(max(0, gold - min(gold, 220))) }
+                nb.powerBias = JS("")
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 10))
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 5)) }
+                outcome = "铁腕削权：重置天平、腐化 −10、国运 +5。"
+            case ("imbalance", "compromise"):
+                title = lex.isRepublican ? "《宪政制衡与权力纠偏法案》" : "《整肃纲纪与制衡权势案》"
+                nb.powerBias = JS("council")
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+                outcome = "分权协定：温和纠偏、国运 +4。"
+            case ("imbalance", "bargain"):
+                title = lex.isRepublican ? "《宪政制衡与权力纠偏法案》" : "《整肃纲纪与制衡权势案》"
+                if !fin.isNull { fin.gold = JS(max(0, gold - min(gold, 320))) }
+                nb.powerBias = JS("")
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 5))
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 6)) }
+                outcome = "利益赎买：安抚强势派系、腐化 −5、国运 +6。"
+            case ("wartax", "force"):
+                title = lex.isRepublican ? "《战时国防特别预算与债券法案》" : "《战时急征军饷与前线犒师案》"
+                if !fin.isNull { fin.gold = JS(gold + 380) }
+                for a in armies { a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 18)); a.supplies = JS(100) }
+                Finance.setCorruption(r, id, min(100, Finance.corruption(r, id) + 4))
+                if !destinyRow.isNull { destinyRow.destiny = JS(max(0, (destinyRow.destiny.optionalNumber ?? 50) - 2)) }
+                outcome = "强推全额特饷：国库 +380 金、全军补给满额、士气 +18（腐化 +4、国运 −2）。"
+            case ("wartax", "compromise"):
+                title = lex.isRepublican ? "《战时国防特别预算与债券法案》" : "《战时急征军饷与前线犒师案》"
+                if !fin.isNull { fin.gold = JS(gold + 220) }
+                for a in armies { a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 12)) }
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 2)) }
+                outcome = "折中军债：国库 +220 金、全军士气 +12、国运 +2。"
+            case ("wartax", "bargain"):
+                title = lex.isRepublican ? "《战时国防特别预算与债券法案》" : "《战时急征军饷与前线犒师案》"
+                if !fin.isNull { fin.gold = JS(gold + 520) }
+                for a in armies { a.supplies = JS(100) }
+                nb.powerBias = JS("houses")
+                outcome = "派系筹款：国库 +520 金、全军满补给，权力倾向\(lex.pillarShort[1])。"
+            case ("fiscal", "force"):
+                title = lex.isRepublican ? "《联邦审计反腐与税制改革法案》" : "《整顿盐铁与清查亏空案》"
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 14))
+                if !fin.isNull { fin.gold = JS(gold + 320) }
+                if !destinyRow.isNull { destinyRow.destiny = JS(max(0, (destinyRow.destiny.optionalNumber ?? 50) - 1)) }
+                outcome = "雷霆查账：腐化 −14，追缴国库 +320 金。"
+            case ("fiscal", "compromise"):
+                title = lex.isRepublican ? "《联邦审计反腐与税制改革法案》" : "《整顿盐铁与清查亏空案》"
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 8))
+                if !fin.isNull { fin.gold = JS(gold + 180) }
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 3)) }
+                outcome = "渐进税改：腐化 −8，国库 +180 金，国运 +3。"
+            case ("fiscal", "bargain"):
+                title = lex.isRepublican ? "《联邦审计反腐与税制改革法案》" : "《整顿盐铁与清查亏空案》"
+                if !fin.isNull { fin.gold = JS(gold + 460) }
+                Finance.setCorruption(r, id, min(100, Finance.corruption(r, id) + 3))
+                nb.powerBias = JS("houses")
+                outcome = "特许筹款：国库 +460 金（腐化 +3，权力倾向\(lex.pillarShort[1])）。"
+            case ("curbhouses", "force"):
+                title = lex.isRepublican ? "《反垄断拆分财团与选举透明法案》" : "《清丈勋贵田庄与抑豪强案》"
+                let ruling = People.rulingFamilyId(r, id)
+                if !r.nobility.isNull && !r.nobility.families.isNull {
+                    for (fid, fam) in r.nobility.families.objectEntries where fam.nationId.optionalString == id && Int(fid) != ruling {
+                        fam.influence = JS(max(10, (fam.influence.optionalNumber ?? 60) - 30))
+                    }
+                }
+                if !fin.isNull { fin.gold = JS(gold + 340) }
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 8))
+                outcome = "强力抑强：\(lex.houseUnitLabel)权重 −30，国库 +340 金，腐化 −8。"
+            case ("curbhouses", "compromise"):
+                title = lex.isRepublican ? "《反垄断拆分财团与选举透明法案》" : "《清丈勋贵田庄与抑豪强案》"
+                let ruling = People.rulingFamilyId(r, id)
+                if !r.nobility.isNull && !r.nobility.families.isNull {
+                    for (fid, fam) in r.nobility.families.objectEntries where fam.nationId.optionalString == id && Int(fid) != ruling {
+                        fam.influence = JS(max(10, (fam.influence.optionalNumber ?? 60) - 15))
+                    }
+                }
+                if !fin.isNull { fin.gold = JS(gold + 200) }
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 5))
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 3)) }
+                outcome = "协商纳税：权重 −15，国库 +200 金，腐化 −5，国运 +3。"
+            case ("curbhouses", "bargain"):
+                title = lex.isRepublican ? "《反垄断拆分财团与选举透明法案》" : "《清丈勋贵田庄与抑豪强案》"
+                nb.powerBias = JS("houses")
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+                outcome = "纳入共治：缓和内部对立，国运 +4，权力倾向\(lex.pillarShort[1])。"
+            case ("civil", "force"):
+                title = lex.isRepublican ? "《国民教育普及与基建振兴法案》" : "《开科取士与劝农兴学案》"
+                if !fin.isNull { fin.gold = JS(max(0, gold - min(gold, 160))) }
+                let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
+                for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
+                    s.population = JS(((s.population.optionalNumber ?? 0) * 1.03).rounded())
+                }
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 6))
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 6)) }
+                outcome = "全力兴办：全境人口 +3%，腐化 −6，国运 +6（耗 160 金）。"
+            case ("civil", "compromise"):
+                title = lex.isRepublican ? "《国民教育普及与基建振兴法案》" : "《开科取士与劝农兴学案》"
+                let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
+                for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
+                    s.population = JS(((s.population.optionalNumber ?? 0) * 1.02).rounded())
+                }
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 4))
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+                outcome = "稳健推进：全境人口 +2%，腐化 −4，国运 +4。"
+            case ("civil", "bargain"):
+                title = lex.isRepublican ? "《国民教育普及与基建振兴法案》" : "《开科取士与劝农兴学案》"
+                let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
+                for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
+                    s.population = JS(((s.population.optionalNumber ?? 0) * 1.02).rounded())
+                    s.grain = JS(((s.grain.optionalNumber ?? 0) * 1.15).rounded())
+                }
+                nb.powerBias = JS("houses")
+                outcome = "合营募资：全境人口 +2%、存粮 +15%，权力倾向\(lex.pillarShort[1])。"
+            default:
+                // table / 休会搁置
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 3))
+                if !fin.isNull && (topic == "civil" || topic == "imbalance") { fin.gold = JS(gold + 130) }
+                if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 3)) }
+                outcome = "休会搁置：平息党派争端，腐化 −3，国运 +3（90 日后重开议期）。"
+            }
+
+            nb.agendaLastTitle = JS(title)
+            nb.agendaLastOutcome = JS(outcome)
+            People.announce(r, kind: "politics", text: "\(stateName)议决\(title)",
+                            reason: outcome, nations: [id], province: nil)
+            return (true, "\(title)已议决：\(outcome)")
 
         case let k where k.hasPrefix("balancePower:"):
             let target = String(k.dropFirst("balancePower:".count))
+            let civ = r.civilization.nations[id]
+            let lex = LocalizationEngine.lexicon(culture: civ.cultureId.optionalString, polity: civ.polity.optionalString, style: Regimes.style(r, id).id)
             r.regimes.nations[id].powerBias = JS(target)
-            let label = target == "crown" ? "君主中枢" : target == "houses" ? "门阀世家" : target == "military" ? "军功将领" : "议会文官"
+            let label = target == "crown" ? lex.pillarFull[0] : target == "houses" ? lex.pillarFull[1] : target == "military" ? lex.pillarFull[2] : lex.pillarFull[3]
             People.recordHistory(r, kind: "politics", text: "\(stateName)扶植\(label)权势",
-                                 reason: "中枢调整朝局倚重，\(label)在朝堂权力天平中的比重显著上升。",
+                                 reason: "执政重心调整，\(label)在\(lex.powerBalanceTitle)中的比重显著上升。",
                                  nations: [id], province: nil)
-            return (true, "已扶植「\(label)」，朝堂权力天平已随之倾斜。")
+            return (true, "已扶植「\(label)」，\(lex.powerBalanceTitle)随之倾斜。")
 
         case let k where k.hasPrefix("emblem:"):
             let sym = String(k.dropFirst("emblem:".count))

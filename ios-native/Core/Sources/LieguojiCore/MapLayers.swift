@@ -202,7 +202,7 @@ public enum MapLayers {
 
     /// 舆图山川地貌层（清爽工笔重构）：
     /// 1. 疏朗山脊（h >= 61，36 格间距，仅沿真实高脊落笔，绝不铺满屏幕遮挡国界、城池与军队）；
-    /// 青绿山水手绘地形精灵实例（由 Metal 渲染器批量绘制，并随四季流转与局部旱雪实时变色）。
+    /// 青绿山水厚涂手绘地形精灵实例（全 8 类纯 AI 透明地貌，彻底零代码线条山丘与扁平 T 字伞树，随四季流转与局部旱雪实时变色）。
     public struct TerrainStamp: Sendable {
         public enum Kind: Int, Sendable, CaseIterable {
             case mountain = 0
@@ -210,6 +210,9 @@ public enum MapLayers {
             case forest = 2
             case pine = 3
             case desert = 4
+            case hill = 5
+            case savanna = 6
+            case marsh = 7
         }
         public let x: Float
         public let y: Float
@@ -220,7 +223,7 @@ public enum MapLayers {
         public let shade: Float
     }
 
-    /// 依地形海拔与生态群落生成疏密有致、自北向南叠压的宋画手绘山峰、林海与大漠沙丘分布。
+    /// 依地形海拔与生态群落生成疏密有致、自北向南叠压的全套纯 AI 手绘山峰、丘陵、林海、草原树丛、水乡泽国与大漠沙丘分布。
     public static func terrainStamps(_ map: WorldMap) -> [TerrainStamp] {
         var touchesSea = [Bool](repeating: false, count: map.cellCount)
         for e in map.edges where e.a >= 0 && e.b >= 0 {
@@ -246,8 +249,9 @@ public enum MapLayers {
         var mtnGrid = Set<Int64>()
         var woodGrid = Set<Int64>()
         var duneGrid = Set<Int64>()
+        var hillGrid = Set<Int64>()
         var stamps = [TerrainStamp]()
-        stamps.reserveCapacity(1200)
+        stamps.reserveCapacity(1600)
         // 自北向南排序，使南麓自然遮掩北坡，呈现真实手卷纵深
         let order = (0..<map.cellCount).sorted { map.sites[$0 * 2 + 1] < map.sites[$1 * 2 + 1] }
         for i in order {
@@ -277,143 +281,45 @@ public enum MapLayers {
                 let baseW = (17.5 + v1 * 8.5) * (biome == 7 || biome == 8 ? 1.12 : 1.0)
                 let baseH = baseW * 0.94
                 stamps.append(TerrainStamp(x: x, y: y - baseH * 0.12, width: baseW, height: baseH, kind: isPine ? .pine : .forest, flipX: (i & 2) == 2, shade: 0.88 + v2 * 0.18))
-            } else if h >= Float(WorldMap.seaLevel) + 2 && (biome == 1 || biome == 2) {
+            } else if h >= 46 {
+                // 温润厚涂水墨丘陵（彻底替代旧版代码弧线山丘）
                 if pick < 52 { continue }
+                if mtnGrid.contains(gridKey(sx, sy, 34)) || !hillGrid.insert(gridKey(sx, sy, 30)).inserted { continue }
+                if nearCity(x, y, 145) { continue }
+                let baseW = 19.0 + v1 * 7.5
+                stamps.append(TerrainStamp(x: x, y: y - baseW * 0.08, width: baseW, height: baseW * 0.68, kind: .hill, flipX: (i & 1) == 1, shade: 0.90 + v2 * 0.14))
+            } else if h >= Float(WorldMap.seaLevel) + 2 && (biome == 1 || biome == 2) {
+                if pick < 50 { continue }
                 if !duneGrid.insert(gridKey(sx, sy, 34)).inserted { continue }
                 if nearCity(x, y, 140) { continue }
                 let baseW = 19.0 + v1 * 8.0
                 stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.72, kind: .desert, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
+            } else if h >= Float(WorldMap.seaLevel) + 2 && biome == 3 {
+                // 疏朗厚涂草原林木（彻底替代旧版扁平 T 字伞树）
+                if pick < 56 { continue }
+                if !woodGrid.insert(gridKey(sx, sy, 30)).inserted { continue }
+                if nearCity(x, y, 130) { continue }
+                let baseW = 16.5 + v1 * 6.5
+                stamps.append(TerrainStamp(x: x, y: y - baseW * 0.08, width: baseW, height: baseW * 0.80, kind: .savanna, flipX: (i & 2) == 2, shade: 0.90 + v2 * 0.15))
+            } else if h >= Float(WorldMap.seaLevel) + 2 && biome == 12 {
+                // 江南水乡泽国湿地
+                if pick < 45 { continue }
+                if !duneGrid.insert(gridKey(sx, sy, 30)).inserted { continue }
+                if nearCity(x, y, 135) { continue }
+                let baseW = 18.0 + v1 * 6.5
+                stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.72, kind: .marsh, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
             }
         }
         return stamps
     }
 
-    /// 2. 丘陵起伏（46 <= h < 61 绘温润弧形土丘与向阳坡色）；
-    /// 3. 丰富多样的非山地微地貌（山脉与森林主体已升级为 GPU 宋画青绿山水精灵，此处保留柔和山麓雾影与丘陵/绿洲/泽国/草原/苔原/冰原笔触，不与手绘山林重影）。
+    /// 柔和山林地影层（零代码线条山丘与扁平 T 字树：仅在纯 AI 手绘地形精灵足下铺设淡墨晕影，令山林自然落纸生根）。
     public static func relief(_ map: WorldMap) -> ColoredMesh {
-        var touchesSea = [Bool](repeating: false, count: map.cellCount)
-        for e in map.edges where e.a >= 0 && e.b >= 0 {
-            let a = Int(e.a), b = Int(e.b)
-            if map.elevation[b] < WorldMap.seaLevel { touchesSea[a] = true }
-            if map.elevation[a] < WorldMap.seaLevel { touchesSea[b] = true }
-        }
         let shadowInk = RGB(hex: 0x3D3529)
-        var mtnGrid = Set<Int64>()
-        var woodGrid = Set<Int64>()
         var m = ColoredMesh()
-        func gridKey(_ x: Float, _ y: Float, _ step: Float) -> Int64 {
-            Int64(floor(x / step)) << 32 | Int64(Int32(floor(y / step))) & 0xFFFF_FFFF
-        }
-        func grove(_ x: Float, _ y: Float) -> Float { sin(x * 0.012 + 1.3) * sin(y * 0.014 + 0.7) + 0.55 * sin((x + y) * 0.007 + 2.1) }
-        let order = (0..<map.cellCount).sorted { map.sites[$0 * 2 + 1] < map.sites[$1 * 2 + 1] }
-        for i in order {
-            let h = Float(map.elevation[i]), biome = map.biome[i]
-            let mountain = h >= 61
-            let forest = h >= 22 && h < 61 && biome >= 5 && biome <= 9
-            if !mountain && !forest { continue }
-            if touchesSea[i] { continue }
-            let sx = map.sites[i * 2], sy = map.sites[i * 2 + 1]
-            let pick = UInt32(truncatingIfNeeded: i &* 2654435761) >> 16 % 100
-            if mountain {
-                if h < 68 && pick < 42 { continue }
-                if h >= 68 && pick < 16 { continue }
-                let key = gridKey(sx, sy, 34)
-                if !mtnGrid.insert(key).inserted { continue }
-                // 极淡山脚晕影承托手绘宋画山峰，消除硬边割裂
-                let w: Float = 8.5 + (h - 60) * 0.14
-                m.disc(sx + 0.8, sy + 2.2, radius: w * 0.65, shadowInk, alpha: 0.06, sides: 8)
-            } else {
-                if grove(sx, sy) < -0.30 || pick < 20 { continue }
-                let key = gridKey(sx, sy, 26)
-                if !woodGrid.insert(key).inserted { continue }
-                // 极淡林荫地影承托手绘宋画林海
-                m.disc(sx + 0.5, sy + 2.0, radius: 4.8, shadowInk, alpha: 0.055, sides: 7)
-            }
-        }
-        // 非山地特色地貌层（常规缩放即清晰可见，不再藏在极近缩放里）：
-        // 丘陵、沙丘绿洲、湿地沼泽、稀树金合欢、平畴草甸、苔原与冰原。
-        var fine = Set<Int64>()
-        let trunk = RGB(hex: 0x4A3A28)
-        let hillLit = RGB(hex: 0xCBB98A), hillInk = RGB(hex: 0x62563F)
-        let duneLit = RGB(hex: 0xDFC17E), duneRidge = RGB(hex: 0x9C7A40), oasisWater = RGB(hex: 0x4892A2), oasisPalm = RGB(hex: 0x3B7042)
-        let grass = RGB(hex: 0x5E7A38), acacia = RGB(hex: 0x4E6837), frost = RGB(hex: 0xEEF6FA), iceShade = RGB(hex: 0x8DB2C7), moss = RGB(hex: 0x7A7358)
-        let marshPool = RGB(hex: 0x5B8792), marshReed = RGB(hex: 0x3C6343)
-        for i in order {
-            let h = Float(map.elevation[i]), biome = map.biome[i]
-            guard h >= Float(WorldMap.seaLevel) + 2, h < 61, !touchesSea[i] else { continue }
-            let x = map.sites[i * 2], y = map.sites[i * 2 + 1]
-            if woodGrid.contains(gridKey(x, y, 27)) && biome >= 5 && biome <= 9 { continue }
-            if mtnGrid.contains(gridKey(x, y, 36)) { continue }
-            let key = gridKey(x, y, 24)
-            if fine.contains(key) { continue }
-            let v = Float(i * 53 % 97) / 97
-            if h >= 46 {
-                // 温润丘陵（46..60）：双弧向阳土坡 + 柔墨轮廓，自然过渡平地与高山
-                if v > 0.52 { continue }
-                fine.insert(key)
-                m.fill([x - 7.5, y + 2.2, x - 4.5, y - 1.6, x - 1.2, y - 2.6, x + 2.0, y - 0.8, x + 3.2, y + 2.2], hillLit, alpha: 0.30)
-                m.polyline([x - 7.5, y + 2.2, x - 4.5, y - 1.6, x - 1.2, y - 2.6, x + 2.0, y - 0.8, x + 3.2, y + 2.2], width: 0.62, hillInk, alpha: 0.48)
-                m.fill([x + 0.5, y + 2.8, x + 3.0, y - 0.3, x + 5.8, y - 0.9, x + 8.0, y + 2.8], hillLit, alpha: 0.24)
-                m.polyline([x + 0.5, y + 2.8, x + 3.0, y - 0.3, x + 5.8, y - 0.9, x + 8.0, y + 2.8], width: 0.54, hillInk, alpha: 0.40)
-            } else if biome == 1 || biome == 2 {
-                // 荒漠沙丘 + 偶见碧水绿洲
-                if v > 0.72 { continue }
-                fine.insert(key)
-                if biome == 1 && v < 0.08 {
-                    // 沙漠绿洲：碧泉小潭 + 两株棕榈
-                    m.disc(x, y + 1.0, radius: 4.2, oasisWater, alpha: 0.62, sides: 10)
-                    m.disc(x - 0.8, y + 0.5, radius: 2.2, RGB(hex: 0xA2D6DD), alpha: 0.48, sides: 8)
-                    for px in [Float(-3.2), 2.8] {
-                        m.segment(x + px, y + 1.2, x + px * 1.15, y - 3.6, width: 0.6, trunk, alpha: 0.7)
-                        m.disc(x + px * 1.15, y - 4.2, radius: 2.3, oasisPalm, alpha: 0.76, sides: 7)
-                    }
-                } else {
-                    m.fill([x - 8.0, y + 1.5, x - 3.2, y - 2.6, x + 1.0, y - 0.9, x + 5.4, y - 2.8, x + 8.6, y + 1.5], duneLit, alpha: 0.34)
-                    m.polyline([x - 8.0, y + 0.6, x - 3.6, y - 2.2, x + 0.4, y - 0.7, x + 4.8, y - 2.4, x + 8.2, y - 0.2], width: 0.72, duneRidge, alpha: 0.66)
-                    m.polyline([x - 5.2, y + 3.8, x - 1.2, y + 2.0, x + 2.6, y + 3.2, x + 6.4, y + 1.8], width: 0.54, duneRidge, alpha: 0.52)
-                }
-            } else if biome == 12 {
-                // 湿地沼泽：平静泽国水洼 + 成丛芦苇
-                if v > 0.78 { continue }
-                fine.insert(key)
-                m.disc(x, y + 1.8, radius: 5.4, marshPool, alpha: 0.34, sides: 10)
-                m.segment(x - 6.2, y + 2.2, x + 6.2, y + 2.2, width: 0.58, marshPool, alpha: 0.68)
-                m.segment(x - 4.0, y + 4.0, x + 4.4, y + 4.0, width: 0.48, marshPool, alpha: 0.54)
-                for dx in [Float(-4.0), -1.4, 1.8, 3.8] {
-                    m.segment(x + dx, y + 2.4, x + dx + 0.5, y - 3.2, width: 0.55, marshReed, alpha: 0.72)
-                }
-            } else if biome == 3 {
-                // 稀树草原：疏朗平顶金合欢树冠 + 旱草
-                if v > 0.48 { continue }
-                fine.insert(key)
-                m.segment(x, y - 2.4, x, y + 2.6, width: 0.65, trunk, alpha: 0.64)
-                m.fill([x - 5.2, y - 2.6, x - 3.0, y - 4.8, x + 3.0, y - 4.8, x + 5.2, y - 2.6, x, y - 1.8], acacia, alpha: 0.64)
-                m.segment(x - 4.5, y + 3.0, x + 4.2, y + 3.0, width: 0.45, grass, alpha: 0.42)
-            } else if biome == 4 {
-                // 沃野草原：随风轻拂的青翠牧草丛
-                if v > 0.38 { continue }
-                fine.insert(key)
-                for dx in [Float(-3.8), 2.6] {
-                    m.segment(x + dx, y + 2.0, x + dx - 1.4, y - 1.6, width: 0.50, grass, alpha: 0.58)
-                    m.segment(x + dx, y + 2.0, x + dx + 0.2, y - 2.4, width: 0.52, grass, alpha: 0.62)
-                    m.segment(x + dx, y + 2.0, x + dx + 1.6, y - 1.4, width: 0.50, grass, alpha: 0.56)
-                }
-            } else if biome == 10 {
-                // 冻原：低矮苔藓土丘与冻石
-                if v > 0.52 { continue }
-                fine.insert(key)
-                m.fill([x - 5.5, y + 1.6, x - 3.0, y - 0.8, x - 0.5, y + 1.6], moss, alpha: 0.36)
-                m.polyline([x - 5.5, y + 1.6, x - 3.0, y - 0.8, x - 0.5, y + 1.6], width: 0.55, moss, alpha: 0.60)
-                m.polyline([x + 0.8, y + 2.2, x + 3.0, y + 0.2, x + 5.6, y + 2.2], width: 0.52, moss, alpha: 0.54)
-            } else if biome == 11 {
-                // 冰川冰原：晶莹冰脊与冰蓝裂隙
-                if v > 0.72 { continue }
-                fine.insert(key)
-                m.fill([x - 6.5, y + 1.2, x - 2.2, y - 2.8, x + 2.6, y - 1.6, x + 6.5, y + 1.4], frost, alpha: 0.44)
-                m.polyline([x - 6.5, y - 0.6, x - 1.4, y + 1.4, x + 2.4, y - 1.8, x + 6.5, y + 0.6], width: 0.65, frost, alpha: 0.82)
-                m.segment(x - 1.4, y + 1.4, x - 2.4, y + 4.4, width: 0.55, iceShade, alpha: 0.68)
-                m.segment(x + 2.4, y - 1.8, x + 3.6, y + 2.2, width: 0.48, iceShade, alpha: 0.58)
-            }
+        for st in terrainStamps(map) {
+            let rx = st.width * 0.34
+            m.disc(st.x + 0.8, st.y + st.height * 0.24, radius: rx, shadowInk, alpha: st.kind == .mountain || st.kind == .mountainSnow ? 0.055 : 0.042, sides: 8)
         }
         return m
     }
@@ -473,12 +379,40 @@ public enum MapLayers {
         let provs = map.meta.provinces
         let frontierInk = RGB(hex: 0x241B13)
         let frontierIvory = RGB(hex: 0xF7EFE0)
-        let coastInk = RGB(hex: 0x3D352B)
+        let coastInk = RGB(hex: 0x544738)
+        let isletInk = RGB(hex: 0x6D5F4C)
         var m = ColoredMesh()
 
-        // 1. 清晰柔和的海岸墨线（略细于陆地国界，主次分明）
-        for s in stride(from: 0, to: map.coast.count, by: 4) {
-            m.segment(map.coast[s], map.coast[s + 1], map.coast[s + 2], map.coast[s + 3], width: lineWidth * 0.92, coastInk, alpha: 0.88)
+        // 统计每块连通陆地单元数：海中微小孤岛（<= 14 格）自动采用极柔淡墨细岸与浅滩过渡，彻底消除生硬粗黑框
+        var landComp = [Int](repeating: -1, count: map.cellCount)
+        var compSizes = [Int]()
+        var landAdj = [[Int]](repeating: [], count: map.cellCount)
+        for e in map.edges where e.a >= 0 && e.b >= 0 {
+            let a = Int(e.a), b = Int(e.b)
+            if map.isLand(a) && map.isLand(b) { landAdj[a].append(b); landAdj[b].append(a) }
+        }
+        for c in 0..<map.cellCount where map.isLand(c) && landComp[c] < 0 {
+            let cid = compSizes.count
+            var q = [c], head = 0
+            landComp[c] = cid
+            while head < q.count {
+                let cur = q[head]; head += 1
+                for nb in landAdj[cur] where landComp[nb] < 0 { landComp[nb] = cid; q.append(nb) }
+            }
+            compSizes.append(q.count)
+        }
+
+        // 1. 柔和细腻的古舆图海岸墨线（微小孤岛轻笔淡墨，大陆岸线温润不抢戏，配合浅滩晕边自然过渡）
+        for e in map.edges where e.a >= 0 && e.b >= 0 {
+            let a = Int(e.a), b = Int(e.b)
+            let la = map.isLand(a), lb = map.isLand(b)
+            guard la != lb else { continue }
+            let landCell = la ? a : b
+            let isIslet = landComp[landCell] >= 0 && compSizes[landComp[landCell]] <= 14
+            m.segment(e.x1, e.y1, e.x2, e.y2,
+                      width: isIslet ? lineWidth * 0.34 : lineWidth * 0.56,
+                      isIslet ? isletInk : coastInk,
+                      alpha: isIslet ? 0.32 : 0.52)
         }
 
         let allPairs = boundaries(map)

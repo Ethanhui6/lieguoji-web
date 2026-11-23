@@ -1557,7 +1557,7 @@ private struct ReplayNodesSheet: View {
                         ForEach(Array(model.checkpoints.reversed().enumerated()), id: \.element.id) { i, cp in
                             Button { onRollback(cp) } label: {
                                 HStack(spacing: 10) {
-                                    SealFace(text: "溯", size: 24, color: Theme.jade)
+                                    ArtEmblem(image: BundleArt.sealReplay, size: 28, fallback: .replay)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(cp.dateText).font(Theme.section).foregroundStyle(Theme.ink)
                                         Text("存世 \(cp.aliveCount) 国 · 点击从此节点重新推演").font(Theme.caption).foregroundStyle(Theme.ink2)

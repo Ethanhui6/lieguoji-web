@@ -84,6 +84,9 @@ import LieguojiCore
     var weatherRevision: Int = 0
     /// 玩家最近一次主动触碰地图的时刻（用于观战巡弋导演镜头自动礼让手动操作）。
     var lastUserTouchTime: CFTimeInterval = 0
+    /// 沉浸式自适应 HUD 回调：玩家拖拽/双指缩放浏览地图时自动收起外围功能栏；轻点画布时唤回 HUD。
+    var onMapBrowsing: ((Bool) -> Void)?
+    var onMapTap: ((Bool) -> Void)?
     /// Where the icon with this key is drawn now (set by the map view).
     var placed: ((String) -> (Double, Double)?)?
     /// CI 连续帧对比: the state names on screen in this frame and how opaque each is drawn.
@@ -711,19 +714,27 @@ struct MapView: UIViewRepresentable {
             // finger left after a pinch does not fling.
             if pinching { panning = false; g.setTranslation(.zero, in: mtk); return }
             switch g.state {
-            case .began, .changed:
+            case .began:
+                panning = true
+                controller.onMapBrowsing?(true)
+                let t = g.translation(in: mtk)
+                set(camera.panned(dx: Double(t.x), dy: Double(t.y)), sync: true)
+                g.setTranslation(.zero, in: mtk)
+            case .changed:
                 panning = true
                 let t = g.translation(in: mtk)
                 set(camera.panned(dx: Double(t.x), dy: Double(t.y)), sync: true)
                 g.setTranslation(.zero, in: mtk)
             case .ended:
                 panning = false
+                controller.onMapBrowsing?(false)
                 let t = g.translation(in: mtk)
                 if t != .zero { set(camera.panned(dx: Double(t.x), dy: Double(t.y)), sync: true); g.setTranslation(.zero, in: mtk) }
                 velocity = g.velocity(in: mtk)
                 if hypot(velocity.x, velocity.y) > 60 { startLink() } else { setSyncPresent(cameraInteractive) }
             default:
                 panning = false
+                controller.onMapBrowsing?(false)
                 setSyncPresent(cameraInteractive)
             }
         }
@@ -733,6 +744,7 @@ struct MapView: UIViewRepresentable {
             switch g.state {
             case .began:
                 lastPinch = p; pinching = true; panning = false
+                controller.onMapBrowsing?(true)
                 atUnrollFloor = camera.scale <= bounds.lowerBound * 1.015
             case .changed:
                 // A finger lifted or added moves the touch centre: re-anchor instead of jumping.
@@ -747,7 +759,10 @@ struct MapView: UIViewRepresentable {
                 atUnrollFloor = hitFloor
                 set(nextCam, sync: true)
                 g.scale = 1; lastPinch = p
-            default: pinching = false; pinchTouches = 2; setSyncPresent(cameraInteractive)
+            default:
+                pinching = false; pinchTouches = 2
+                controller.onMapBrowsing?(false)
+                setSyncPresent(cameraInteractive)
             }
         }
         @objc private func handleDoubleTap(_ g: UITapGestureRecognizer) {
@@ -823,6 +838,7 @@ struct MapView: UIViewRepresentable {
                 }
             }
             if province != controller.selectedProvince { selection.selectionChanged() }
+            controller.onMapTap?(province == nil)
             controller.selectedProvince = province
         }
 
@@ -1280,8 +1296,8 @@ final class MapLabelsView: UIView {
             for c in Swift.stride(from: 0, to: cells, by: seaStep) where !map.isLand(c) && 2 * c + 1 < map.sites.count {
                 let sx = Double(map.sites[2 * c]), sy = Double(map.sites[2 * c + 1])
                 seaPts.append((sx, sy))
-                // 保持在地图边缘内侧，避免被裁切
-                guard sx > mapW * 0.10, sx < mapW * 0.90, sy > mapH * 0.14, sy < mapH * 0.86 else { continue }
+                // 保持在地图边缘内侧安全区域，绝不在边缘被裁切
+                guard sx > mapW * 0.16, sx < mapW * 0.84, sy > mapH * 0.18, sy < mapH * 0.82 else { continue }
                 var minD2 = Double.greatestFiniteMagnitude
                 for (lx, ly) in landPts {
                     let dx = sx - lx, dy = sy - ly
@@ -1805,9 +1821,10 @@ final class TroopLabelsView: UIView {
                 let by = s.y + (Double(o.y) + 0.62) * icon
                 let pair = bars[key] ?? makeBar(key)
                 let clamped = Double(min(1, max(0.04, ratio)))
-                pair.track.bounds = CGRect(x: 0, y: 0, width: barW, height: barH)
+                let h = p.sprite.fighting ? 3.8 : barH
+                pair.track.bounds = CGRect(x: 0, y: 0, width: barW, height: h)
                 pair.track.position = CGPoint(x: bx, y: by)
-                pair.fill.frame = CGRect(x: 0, y: 0, width: barW * clamped, height: barH)
+                pair.fill.frame = CGRect(x: 0, y: 0, width: barW * clamped, height: h)
                 if clamped < 0.25 {
                     pair.fill.backgroundColor = UIColor(red: 0.78, green: 0.18, blue: 0.14, alpha: 1).cgColor
                 } else if clamped < 0.48 {
@@ -1819,7 +1836,8 @@ final class TroopLabelsView: UIView {
                 }
                 seenBar.insert(key)
 
-                if icon >= 19, let text = texts[key] {
+                // 高倍观战交锋时去文字化：交战部队仅保留清晰血条，避免密密麻麻数字遮挡兵种序列帧演出
+                if icon >= 19, !p.sprite.fighting, let text = texts[key] {
                     let l = layers[key] ?? make(key)
                     if (l.string as? String) != text {
                         l.string = text

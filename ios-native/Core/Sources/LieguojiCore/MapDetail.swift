@@ -172,234 +172,45 @@ extension MapLayers {
         return lakes
     }
 
-    /// Always on the map: inland lakes, the sand edge of the land, wave marks & classical sailing vessels on the open sea, the compass and the scale.
+    /// Always on the map: soft watercolor coastal shoal/beach transition & inland freshwater lakes.
+    /// 彻底移除旧版代码折线海浪、代码罗盘、黑白比例尺与简易几何地标，全部交由 GPU 洋流着色与纯 AI 透明精灵呈现。
     public static func ornaments(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
-        let sand = RGB(hex: 0xE9D9AE), wave = RGB(hex: 0xD5E4E2), ink = RGB(hex: 0x2E2518), paper = RGB(hex: 0xEFE4C8)
-        let lakeShallow = RGB(hex: 0x8FC7C4), lakeGleam = RGB(hex: 0xE6F4F1), lakeRim = RGB(hex: 0x4A7782)
+        let shoalOuter = RGB(hex: 0x62A8B4)
+        let shoalInner = RGB(hex: 0xDFD4B4)
+        let lakeShallow = RGB(hex: 0x84BEB9)
+        let lakeRim = RGB(hex: 0x56828B)
         let coast = coastLines(map)
+        // 柔和双层浅滩过渡晕边（外层碧青浅海＋内层淡暖沙岸），彻底化解岛屿与大陆海岸生硬黑边
         for i in stride(from: 0, to: coast.count - 3, by: 4) {
-            m.segment(coast[i], coast[i + 1], coast[i + 2], coast[i + 3], width: 3.6, sand, alpha: 0.34)
+            let x1 = coast[i], y1 = coast[i + 1], x2 = coast[i + 2], y2 = coast[i + 3]
+            m.segment(x1, y1, x2, y2, width: 6.4, shoalOuter, alpha: 0.16)
+            m.segment(x1, y1, x2, y2, width: 3.1, shoalInner, alpha: 0.24)
         }
-        // 真实内陆湖泊绘制：碧青湖面润色、浅湖环岸与水平镜面波纹，清晰区别于辽阔外海
+        // 内陆湖泊柔润碧青水色与轻岸线
         let lakes = inlandLakeCells(map)
-        var lakeShimmer = Set<Int64>()
         for c in 0..<map.cellCount where lakes[c] {
-            let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
             let s0 = Int(map.offsets[c]), s1 = Int(map.offsets[c + 1])
             if s1 - s0 >= 3 {
                 var poly = [Float]()
                 poly.reserveCapacity((s1 - s0) * 2)
                 for v in s0..<s1 { poly.append(map.vertices[v * 2]); poly.append(map.vertices[v * 2 + 1]) }
-                m.fill(poly, lakeShallow, alpha: 0.36)
-            }
-            let lk = Int64(floor(x / 16)) << 32 | Int64(Int32(floor(y / 16))) & 0xFFFF_FFFF
-            if lakeShimmer.insert(lk).inserted {
-                m.segment(x - 4.2, y, x + 4.2, y, width: 0.48, lakeGleam, alpha: 0.65)
-                m.segment(x - 2.4, y + 2.0, x + 2.6, y + 2.0, width: 0.38, lakeRim, alpha: 0.36)
+                m.fill(poly, lakeShallow, alpha: 0.34)
             }
         }
         for e in map.edges where e.a >= 0 && e.b >= 0 {
             let a = Int(e.a), b = Int(e.b)
             if (lakes[a] && map.isLand(b)) || (lakes[b] && map.isLand(a)) {
-                m.segment(e.x1, e.y1, e.x2, e.y2, width: 1.35, lakeRim, alpha: 0.62)
+                m.segment(e.x1, e.y1, e.x2, e.y2, width: 0.95, lakeRim, alpha: 0.42)
             }
         }
-        let shore = shoreCells(map)
-        // Waves keep well off the coast, and a slow field gathers them into patches.
-        var taken = Set<Int64>()
-        // 叠浪: where the field gathers them the waves come stacked three deep, each crest shorter and
-        // fainter than the one before and set off to the side; elsewhere one or two. Every crest has a
-        // thin dark line under it (the engraver's shadow), so it reads on the pale warm sea as well as
-        // on the blue one. Lengths, phase and spacing vary from mark to mark.
-        let trough = RGB(hex: 0x23424E)
-        var shipSpots: [(Float, Float)] = []
-        for c in 0..<map.cellCount where !map.isLand(c) && !lakes[c] && !shore[c] && hash(c &* 3 &+ 11) % 7 == 0 {
-            let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
-            let field = sin(x * 0.017 + 0.4) * sin(y * 0.021 + 1.9)
-            if field < -0.3 { continue }
-            let key = Int64(floor(x / 24)) << 32 | Int64(Int32(floor(y / 24))) & 0xFFFF_FFFF
-            if !taken.insert(key).inserted { continue }
-            let h = Int(hash(c &* 7 &+ 5))
-            if h % 41 == 0 && x > 140 && x < map.width - 140 && y > 120 && y < map.height - 120 {
-                shipSpots.append((x, y))
-            }
-            let crests = field > 0.3 ? 3 : h % 3 == 0 ? 1 : 2
-            let half = 5.5 + Float(h % 5), phase = Float(h % 7)
-            for k in 0..<crests {
-                let reach = half * (1 - Float(k) * 0.2), left = x - reach + (k % 2 == 0 ? 0 : half * 0.4), top = y + Float(k) * 2.7
-                var line = [Float](), shade = [Float]()
-                for s in 0...10 {
-                    let t = Float(s) / 10
-                    // The swell dies away towards both ends of the stroke.
-                    let px = left + 2 * reach * t, py = top + sin(t * 2 * .pi * 1.5 + phase) * 1.25 * (1 - abs(t - 0.5) * 0.9)
-                    line += [px, py]; shade += [px, py + 0.6]
-                }
-                m.polyline(shade, width: 0.5, trough, alpha: 0.17 - Float(k) * 0.03)
-                m.polyline(line, width: 0.62 - Float(k) * 0.08, wave, alpha: 0.52 - Float(k) * 0.09)
-            }
-        }
-        // 浅滩礁沙：海岸近浅水点缀细沙短划与礁点，增强海陆衔接细节
-        let reef = RGB(hex: 0x395866)
-        for c in 0..<map.cellCount where !map.isLand(c) && !lakes[c] && shore[c] && hash(c &* 5 &+ 3) % 2 == 0 {
-            let x = map.sites[c * 2], y = map.sites[c * 2 + 1], h = Int(hash(c &* 13 &+ 1))
-            let dx = Float(h % 9) / 4 - 1, dy = Float(h / 9 % 9) / 4 - 1
-            m.segment(x + dx - 1.1, y + dy, x + dx + 1.1, y + dy, width: 0.44, sand, alpha: 0.54)
-            if h % 5 == 0 {
-                m.disc(x + dx + 1.6, y + dy + 0.9, radius: 0.48, reef, alpha: 0.42, sides: 6)
-            }
-        }
-        // 山河人文奇观与地标（严格避开城池与罗盘，保持清雅疏朗：岬角灯塔 / 关隘烽燧 / 大漠古碑 / 林间古刹）
-        var landmarks = [(Float, Float)]()
-        let stone = RGB(hex: 0xDDD3BE), stoneShade = RGB(hex: 0x7A6F5D)
-        let shrineRed = RGB(hex: 0xA83628), beaconGold = RGB(hex: 0xF5D276), desertStone = RGB(hex: 0xD2A96B)
-        func landmarkClear(_ lx: Float, _ ly: Float) -> Bool {
-            if lx < 90 || lx > map.width - 90 || ly < 90 || ly > map.height - 90 { return false }
-            if landmarks.contains(where: { hypot($0.0 - lx, $0.1 - ly) < 115 }) { return false }
-            for city in map.meta.cities {
-                let dx = city.x - lx, dy = city.y - ly
-                if dx * dx + dy * dy < 24 * 24 { return false }
-            }
-            return true
-        }
-        for c in stride(from: 0, to: map.cellCount, by: 3) where map.isLand(c) && landmarks.count < 20 {
-            let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
-            let h = Float(map.elevation[c]), bi = map.biome[c], k = Int(hash(c &* 17 &+ 9))
-            guard k % 29 == 0, landmarkClear(x, y) else { continue }
-            if shore[c] && h < 42 {
-                // 岬角古灯塔：白石塔身 + 鎏金灯笼微芒
-                landmarks.append((x, y))
-                m.disc(x + 0.8, y + 1.2, radius: 2.6, ink, alpha: 0.22, sides: 8)
-                m.fill([x - 1.5, y + 1.2, x - 0.9, y - 4.4, x + 0.9, y - 4.4, x + 1.5, y + 1.2], stone, alpha: 0.90)
-                m.fill([x, y - 4.4, x + 0.9, y - 4.4, x + 1.5, y + 1.2, x, y + 1.2], stoneShade, alpha: 0.50)
-                m.disc(x, y - 5.2, radius: 2.3, beaconGold, alpha: 0.34, sides: 10)
-                m.disc(x, y - 5.2, radius: 1.0, beaconGold, alpha: 0.94, sides: 8)
-            } else if h >= 60 {
-                // 雄关烽燧：石砌方台 + 顶上微燃烽火
-                landmarks.append((x, y))
-                m.fill([x - 2.4, y + 1.0, x - 1.8, y - 3.0, x + 1.8, y - 3.0, x + 2.4, y + 1.0], stoneShade, alpha: 0.86)
-                m.fill([x - 2.2, y - 3.0, x - 2.2, y - 3.9, x - 1.1, y - 3.9, x - 1.1, y - 3.0], stone, alpha: 0.88)
-                m.fill([x + 1.1, y - 3.0, x + 1.1, y - 3.9, x + 2.2, y - 3.9, x + 2.2, y - 3.0], stone, alpha: 0.88)
-                m.disc(x, y - 4.4, radius: 1.2, shrineRed, alpha: 0.85, sides: 8)
-                m.disc(x, y - 4.8, radius: 0.65, beaconGold, alpha: 0.92, sides: 6)
-            } else if bi == 1 || bi == 2 {
-                // 大漠遗迹金字塔 / 古碑
-                landmarks.append((x, y))
-                m.fill([x - 3.8, y + 1.6, x, y - 4.6, x + 0.6, y + 1.6], desertStone, alpha: 0.88)
-                m.fill([x, y - 4.6, x + 3.8, y + 1.6, x + 0.6, y + 1.6], stoneShade, alpha: 0.72)
-                m.polyline([x - 3.8, y + 1.6, x, y - 4.6, x + 3.8, y + 1.6], width: 0.38, ink, alpha: 0.48)
-            } else if bi >= 5 && bi <= 8 && h < 54 {
-                // 深林重檐宝塔 / 古刹
-                landmarks.append((x, y))
-                m.fill([x - 3.2, y + 0.4, x, y - 1.4, x + 3.2, y + 0.4], shrineRed, alpha: 0.86)
-                m.fill([x - 2.3, y - 1.5, x, y - 3.2, x + 2.3, y - 1.5], shrineRed, alpha: 0.88)
-                m.segment(x, y - 3.2, x, y - 4.6, width: 0.45, beaconGold, alpha: 0.88)
-            }
-        }
-        // 精致十六向鎏金罗盘（带柔和东南水影、古航海方位射线、外圈 32 分刻度环、朱砂北针、十六向指针）
-        let (cx, cy) = compassCorner(map)
-        // 远洋精绘三桅古航海宝船（至多 5 艘，严格避开陆地与罗盘，附船底水影、满帆缝线、鎏金船尾与 V 形航迹波）
-        let hullColor = RGB(hex: 0x4A311E), hullLight = RGB(hex: 0x7A5334), sailColor = RGB(hex: 0xF4ECDA), sailShade = RGB(hex: 0xD7C9AA)
-        let pennantColor = RGB(hex: 0xA83226), wakeFoam = RGB(hex: 0xEAF3F2)
-        var placedShips: [(Float, Float)] = []
-        for (sx, sy) in shipSpots where placedShips.count < 5 {
-            let dc = hypot(sx - cx, sy - cy)
-            guard dc > 145 else { continue }
-            guard !placedShips.contains(where: { hypot($0.0 - sx, $0.1 - sy) < 210 }) else { continue }
-            var nearLand = false
-            for c in stride(from: 0, to: map.cellCount, by: 7) where map.isLand(c) {
-                let dx = map.sites[c * 2] - sx, dy = map.sites[c * 2 + 1] - sy
-                if dx * dx + dy * dy < 42 * 42 { nearLand = true; break }
-            }
-            if nearLand { continue }
-            placedShips.append((sx, sy))
-            let dir: Float = placedShips.count % 2 == 0 ? -1 : 1
-            // 船底东南水影 + V 形船首尾航迹白浪
-            m.fill([sx - 8.2 * dir + 1.6, sy + 4.4, sx + 9.2 * dir + 1.6, sy + 4.0, sx + 6.4 * dir + 2.2, sy + 6.8, sx - 6.8 * dir + 1.8, sy + 6.8], trough, alpha: 0.24)
-            m.polyline([sx + 8.6 * dir, sy + 3.4, sx + 1.5 * dir, sy + 5.6, sx - 11.5 * dir, sy + 6.4], width: 0.55, wakeFoam, alpha: 0.62)
-            m.polyline([sx + 7.2 * dir, sy + 4.4, sx - 2.0 * dir, sy + 6.2, sx - 13.0 * dir, sy + 5.0], width: 0.42, wave, alpha: 0.45)
-            // 高翘船首与楼船船身（含向阳甲板边线）
-            m.fill([sx - 9.4 * dir, sy + 0.4, sx - 5.0 * dir, sy + 1.4, sx + 9.8 * dir, sy + 0.6, sx + 6.8 * dir, sy + 4.5, sx - 6.6 * dir, sy + 4.5], hullColor, alpha: 0.84)
-            m.segment(sx - 8.6 * dir, sy + 1.4, sx + 8.8 * dir, sy + 1.3, width: 0.55, hullLight, alpha: 0.78)
-            // 三桅：后桅、主桅、前桅
-            m.segment(sx - 5.2 * dir, sy + 1.2, sx - 5.2 * dir, sy - 7.8, width: 0.52, ink, alpha: 0.72)
-            m.segment(sx - 0.2 * dir, sy + 1.2, sx - 0.2 * dir, sy - 11.8, width: 0.68, ink, alpha: 0.78)
-            m.segment(sx + 4.6 * dir, sy + 1.2, sx + 4.6 * dir, sy - 8.2, width: 0.52, ink, alpha: 0.72)
-            // 主帆（鼓风曲面＋背阴折光＋横向帆骨缝线）
-            m.fill([sx - 0.2 * dir, sy - 10.2, sx + 6.2 * dir, sy - 6.2, sx + 5.2 * dir, sy - 0.8, sx - 1.2 * dir, sy - 1.4], sailColor, alpha: 0.88)
-            m.fill([sx + 3.0 * dir, sy - 8.0, sx + 6.2 * dir, sy - 6.2, sx + 5.2 * dir, sy - 0.8, sx + 2.4 * dir, sy - 1.1], sailShade, alpha: 0.52)
-            m.polyline([sx - 0.2 * dir, sy - 10.2, sx + 6.2 * dir, sy - 6.2, sx + 5.2 * dir, sy - 0.8, sx - 1.2 * dir, sy - 1.4, sx - 0.2 * dir, sy - 10.2], width: 0.42, ink, alpha: 0.58)
-            m.segment(sx - 0.6 * dir, sy - 5.6, sx + 5.6 * dir, sy - 5.0, width: 0.34, ink, alpha: 0.38)
-            // 前帆与后帆
-            m.fill([sx + 4.6 * dir, sy - 7.4, sx + 8.6 * dir, sy - 4.4, sx + 7.8 * dir, sy - 0.9, sx + 3.8 * dir, sy - 1.3], sailColor, alpha: 0.82)
-            m.fill([sx - 5.2 * dir, sy - 6.8, sx - 1.6 * dir, sy - 4.2, sx - 2.2 * dir, sy - 1.0, sx - 6.0 * dir, sy - 1.6], sailColor, alpha: 0.76)
-            // 主桅顶朱砂长旌
-            m.fill([sx - 0.2 * dir, sy - 12.0, sx - 5.4 * dir, sy - 11.2, sx - 0.2 * dir, sy - 10.2], pennantColor, alpha: 0.86)
-        }
-        let radius: Float = 58
-        let gold = RGB(hex: 0xB88B3B), seal = RGB(hex: 0xA63628)
-        // 罗盘柔和东南落影，立于海面之上
-        m.disc(cx + 2.6, cy + 3.2, radius: radius * 0.86, trough, alpha: 0.14, sides: 32)
-        // 古航海图方位射线（自罗盘轻柔向外延展，极低透明度衬托古舆图韵味）
-        let raySpan = min(map.width, map.height) * 0.26
-        for k in 0..<16 {
-            let a = Float(k) * .pi / 8
-            let len = k % 4 == 0 ? raySpan : raySpan * 0.72
-            let x1 = max(8, min(map.width - 8, cx + cos(a) * len))
-            let y1 = max(8, min(map.height - 8, cy + sin(a) * len))
-            m.segment(cx + cos(a) * (radius * 0.92), cy + sin(a) * (radius * 0.92), x1, y1, width: k % 4 == 0 ? 0.45 : 0.3, gold, alpha: k % 4 == 0 ? 0.22 : 0.13)
-        }
-        func ring(_ r: Float, _ width: Float, _ alpha: Float, _ col: RGB = ink) {
-            var p = [Float]()
-            for k in 0...64 { let a = Float(k) / 64 * 2 * .pi; p += [cx + cos(a) * r, cy + sin(a) * r] }
-            m.polyline(p, width: width, col, alpha: alpha)
-        }
-        ring(radius * 0.86, 0.9, 0.72, gold); ring(radius * 0.76, 0.75, 0.75); ring(radius * 0.66, 0.45, 0.55)
-        // 外圈 32 等分航海刻度线
-        for k in 0..<32 {
-            let a = Float(k) / 32 * 2 * .pi
-            let r0 = radius * (k % 4 == 0 ? 0.66 : 0.72), r1 = radius * 0.86
-            m.segment(cx + cos(a) * r0, cy + sin(a) * r0, cx + cos(a) * r1, cy + sin(a) * r1, width: k % 4 == 0 ? 0.65 : 0.35, ink, alpha: 0.55)
-        }
-        func spike(_ angle: Float, _ length: Float, _ waist: Float, _ darkCol: RGB = ink) {
-            let tip = (cx + cos(angle) * length, cy + sin(angle) * length)
-            let l = (cx + cos(angle - .pi / 2) * waist, cy + sin(angle - .pi / 2) * waist), r = (cx + cos(angle + .pi / 2) * waist, cy + sin(angle + .pi / 2) * waist)
-            m.fill([tip.0, tip.1, l.0, l.1, cx, cy], darkCol, alpha: 0.86)
-            m.fill([tip.0, tip.1, cx, cy, r.0, r.1], paper, alpha: 0.92)
-            m.polyline([l.0, l.1, tip.0, tip.1, r.0, r.1], width: 0.42, ink, alpha: 0.75)
-        }
-        for k in 0..<16 where k % 2 == 1 { spike(Float(k) * .pi / 8, radius * 0.42, 3.6, gold) }
-        for k in 0..<8 where k % 2 == 1 { spike(Float(k) * .pi / 4, radius * 0.62, 6) }
-        for k in 0..<8 where k % 2 == 0 { spike(Float(k) * .pi / 4, radius, 8.2, k == 6 ? seal : ink) }
-        m.disc(cx, cy, radius: 4.5, gold, alpha: 0.95)
-        m.disc(cx, cy, radius: 2.2, seal, alpha: 0.95)
-        // 北向朱砂指尖与外海祥云纹饰
-        m.fill([cx, cy - radius - 13, cx - 4.8, cy - radius - 3, cx + 4.8, cy - radius - 3], seal, alpha: 0.9)
-        // 古图祥云角纹（点缀在罗盘两侧开阔海面）
-        for side in [Float(-1), 1] {
-            let qx = cx + side * (radius + 20), qy = cy + 6
-            var curl = [Float]()
-            for s in 0...14 {
-                let t = Float(s) / 14 * 1.8 * .pi
-                let rr = 4.5 + t * 1.4
-                curl += [qx + side * cos(t) * rr, qy + sin(t) * rr * 0.65]
-            }
-            m.polyline(curl, width: 0.65, gold, alpha: 0.52)
-        }
-        // The scale bar below it, its parts ink and paper in turn.
-        let bar: Float = 18, x0 = cx - bar * 2.5, y0 = cy + radius + 13
-        for k in 0..<5 {
-            let x = x0 + Float(k) * bar
-            m.fill([x, y0, x + bar, y0, x + bar, y0 + 3.8, x, y0 + 3.8], k % 2 == 0 ? ink : paper, alpha: 0.9)
-        }
-        m.polyline([x0, y0, x0 + bar * 5, y0, x0 + bar * 5, y0 + 3.8, x0, y0 + 3.8, x0, y0], width: 0.5, gold, alpha: 0.85)
         return m
     }
 
     /// Close up only: what lies between the mountains and woods.
     public static func fineDetail(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
-        let grass = RGB(hex: 0x4F5F36), dune = RGB(hex: 0x876C3C), hill = RGB(hex: 0x57503A), field = RGB(hex: 0xC9B27A), furrow = RGB(hex: 0x74633A), road = RGB(hex: 0x5C4728)
+        let field = RGB(hex: 0xC9B27A), furrow = RGB(hex: 0x74633A), road = RGB(hex: 0x5C4728)
         let milestone = RGB(hex: 0x8E3B2B)
         let shore = shoreCells(map)
         var cityGrid = [Int64: [(Float, Float)]]()
@@ -434,24 +245,8 @@ extension MapLayers {
                 continue
             }
             if pick >= 42 || !taken.insert(key).inserted { continue }
-            if h >= 38 {
-                // A low hill.
-                var p = [Float](); for k in 0...6 { let t = Float(k) / 6 * .pi; p += [x - cos(t) * 6, y - sin(t) * 3.2] }
-                m.polyline(p, width: 0.5, hill, alpha: 0.46)
-                m.segment(x + 2.5, y - 1.8, x + 4.5, y - 0.3, width: 0.4, hill, alpha: 0.32)
-            } else if biome == 1 || biome == 2 {
-                // Dunes.
-                for k in 0..<2 {
-                    let oy = Float(k) * 3.2, ox = Float(k) * 2.4
-                    var p = [Float](); for j in 0...6 { let t = Float(j) / 6; p += [x - 6 + ox + 12 * t, y + oy - sin(t * .pi) * 2.2] }
-                    m.polyline(p, width: 0.45, dune, alpha: 0.44)
-                }
-            } else {
-                // A tuft of grass.
-                m.segment(x, y, x - 1.7, y - 3, width: 0.4, grass, alpha: 0.48)
-                m.segment(x, y, x, y - 3.8, width: 0.4, grass, alpha: 0.48)
-                m.segment(x, y, x + 1.7, y - 3, width: 0.4, grass, alpha: 0.48)
-            }
+            // 旧版代码弧线丘陵、折线沙丘与草棍已全部清除，改由纯 AI 手绘地貌精灵呈现
+            continue
         }
         // Roads: each province seat joined by land to its nearest few neighbours.
         var firstCity = [Int: (Float, Float)]()

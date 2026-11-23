@@ -106,6 +106,49 @@ enum BundleArt {
     static let fxMaple: UIImage? = load("fx-maple")
     static let fxSnowflake: UIImage? = load("fx-snowflake")
 
+    // MARK: - 真 AI 篆刻朱砂／鎏金古风印章（全面取代代码简易红框）
+    static let sealChronicle: UIImage? = load("seal-chronicle")
+    static let sealReplay: UIImage? = load("seal-replay")
+    static let sealCourt: UIImage? = load("seal-court")
+    static let sealCouncil: UIImage? = load("seal-council")
+
+    // MARK: - 4×1 透明序列帧动画图集（1024×256，供 SpriteAnimator 与 Metal GPU 管线共享）
+    static let sheetInfantryMarch: UIImage? = load("sheet-infantry-march")
+    static let sheetCavalryCharge: UIImage? = load("sheet-cavalry-charge")
+    static let sheetWarshipEast: UIImage? = load("sheet-warship-east")
+    static let sheetWarshipWest: UIImage? = load("sheet-warship-west")
+    static let sheetTransportShip: UIImage? = load("sheet-transport-ship")
+    static let sheetBattleClash: UIImage? = load("sheet-battle-clash")
+    static let sheetSiegeSmoke: UIImage? = load("sheet-siege-smoke")
+
+    static func spriteSheet(_ name: String) -> UIImage? {
+        switch name {
+        case "sheet-infantry-march": return sheetInfantryMarch
+        case "sheet-cavalry-charge": return sheetCavalryCharge
+        case "sheet-warship-east": return sheetWarshipEast
+        case "sheet-warship-west": return sheetWarshipWest
+        case "sheet-transport-ship": return sheetTransportShip
+        case "sheet-battle-clash": return sheetBattleClash
+        case "sheet-siege-smoke": return sheetSiegeSmoke
+        default: return load(name)
+        }
+    }
+
+    /// 将全应用面板与印信语义映射至对应的 museum-grade 真 AI 雕刻印章，彻底消灭代码红框单字印。
+    static func sealArt(for tag: String) -> UIImage? {
+        switch tag.trimmingCharacters(in: .whitespacesAndNewlines) {
+        case "史", "纪", "历", "卷", "典": return sealChronicle ?? sealCouncil
+        case "溯", "回": return sealReplay ?? sealChronicle
+        case "权", "政", "御", "御览", "禅", "龙", "列", "国", "夏", "万", "新", "阅": return sealCourt ?? sealChronicle
+        case "议", "令", "任", "党", "盟", "择", "选", "改", "编", "设", "弃", "底", "误": return sealCouncil ?? sealCourt
+        case "战", "兵", "军", "霸", "合": return heraldWarEast ?? sealCourt
+        case "舟", "海": return navalEast ?? sealReplay
+        case "丝": return fxTrade ?? sealCouncil
+        case "官": return fxTalent ?? sealCouncil
+        default: return sealCourt ?? sealChronicle
+        }
+    }
+
     // MARK: - 默认兼容别名（全部为无圆框纯 AI 透明图）
     static var landmarkCapital: UIImage? { capitalChinese }
     static var landmarkFortress: UIImage? { fortressEast }

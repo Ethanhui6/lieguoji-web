@@ -490,6 +490,10 @@ public enum Regimes {
         reform(r, n, id, key)
         // 现实感政体更迭与政变引擎（由军变、权臣摄政、立宪维新、社会革命与复辟条件真实驱动）
         realisticPoliticsMonth(r, n, id, key)
+        // AI 季度自主施政与自动国策统筹引擎（仅在 App 规则开启时运行，绝不影响网页黄金逐字节重放）
+        if UnitKinds.enabled && key % 3 == 0 {
+            aiAutonomousGovernanceQuarter(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
+        }
         // 冲龄幼主加冠亲政（满 16 岁首次收回辅政大权，国运 +5 并记入大事记）
         if UnitKinds.enabled, rule(r, "event") > 0, let ldr = Regimes.ruler(r, id) {
             let age = ldr.age.optionalNumber ?? 30

@@ -32,14 +32,26 @@ public struct GameState: Codable, Equatable, Sendable {
         public var groupComposition: String? = nil
         public var groupSynergy: String? = nil
         public var warGodAura: String? = nil
+        /// 跨海登船运兵状态、两栖抢滩登陆剩余天数与海外补给被封锁标志。
+        public var embarked: Bool? = nil
+        public var landingDays: Int? = nil
+        public var seaSupplyCut: Bool? = nil
     }
     /// A fleet at its actual sea point (open-sea worlds) and its naval command.
     public struct Fleet: Codable, Equatable, Identifiable, Sendable {
         public let id: String; public let name: String; public let nation: Int; public let ships: Int; public let crew: Int; public let food: Int; public let hull: Double
         public let status: String; public let travel: String; public let x: Float; public let y: Float; public let decision: String; public let reason: String; public let port: Int; public let manual: Bool; public let patrol: Bool
+        public var escorting: Bool? = nil
+        public var blockading: Bool? = nil
     }
     /// A harbour port: its land owner, current occupier and control value.
-    public struct Port: Codable, Equatable, Sendable { public let province: Int; public let x: Float; public let y: Float; public let owner: Int; public let occupier: Int; public let value: Double }
+    public struct Port: Codable, Equatable, Sendable {
+        public let province: Int; public let x: Float; public let y: Float; public let owner: Int; public let occupier: Int; public let value: Double
+        public var blockaded: Bool? = nil
+        public init(province: Int, x: Float, y: Float, owner: Int, occupier: Int, value: Double, blockaded: Bool? = nil) {
+            self.province = province; self.x = x; self.y = y; self.owner = owner; self.occupier = occupier; self.value = value; self.blockaded = blockaded
+        }
+    }
     public struct Participant: Codable, Equatable, Sendable { public let nation: Int; public let side: Int }
     public struct Claim: Codable, Equatable, Sendable { public let province: Int; public let nation: Int }
     public struct War: Codable, Equatable, Identifiable, Sendable {

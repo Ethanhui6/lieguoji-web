@@ -102,15 +102,37 @@ public enum ArmyOrders {
             let original = !r.originalArmy47.isNull && r.originalArmy47.paths.optionalNumber == 1
             let anchor = original ? r.world.provinces.asArray.first { $0.id.asString == a.provinceId.asString }?.controller.asString : nil
             let allowSea = r.reorganization.active[id].isNull
-            // 港口登船 (app worlds, the original's NON_PORT_CELL_TRANSITION_PENALTY 450): taking ship from a
-            // province without a harbour costs about forty steps of travel, so armies embark at ports.
+            let strictMaritime = UnitKinds.enabled && r.regimes.enabled.isTruthy && allowSea && (Naval.sea?.ports.isEmpty == false)
+            let unblockedPorts = strictMaritime ? MaritimeWarfare.unblockedFriendlyPortIndices(r, nation: nation) : []
+            // 港口登船 (app worlds): 有海港体系时严禁陆军徒步踏海，必须自本国或友邦未封锁海港登船。
             let embark: ((Int) -> Double)? = r.regimes.enabled.isTruthy && allowSea ? {
+                if strictMaritime {
+                    return { q in unblockedPorts.contains(q) ? 0 : 1_000_000_000 }
+                }
                 let ports = portProvinces(r), cost = embarkPenalty(g)
                 return { q in ports.contains(q) ? 0 : cost }
             }() : nil
             guard let path = g.path(from: here.cell, to: target, allowSea: allowSea, canEnterProvince: { q in
                 canTraverse(r, nation: nation, controller: r.world.provinces[q].controller.asString, anchor: anchor, retreat: v)
             }, embark: embark, aStar: r.regimes.enabled.isTruthy, seaRate: r.regimes.enabled.isTruthy ? 0.5 : 1, terrainCost: r.regimes.enabled.isTruthy) else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }
+            // 跨海运力与未封锁港口核验：自陆地发起渡海时必须从可用港口出发且具备剩余海运运力
+            if strictMaritime && g.provinces.indices.contains(here.cell) && g.provinces[here.cell] >= 0 {
+                if let firstWaterIdx = path.nodes.firstIndex(where: { g.provinces.indices.contains($0) && g.provinces[$0] < 0 }) {
+                    let seaCap = MaritimeWarfare.seaTransportCapacity(r, nation: nation)
+                    guard seaCap > 0 else {
+                        return .failure(Refused(reason: "本国无可用未封锁海港，陆军无法登船渡海（请先夺回或解除港口封锁）。"))
+                    }
+                    let embarkLandCell = firstWaterIdx > 0 ? path.nodes[firstWaterIdx - 1] : here.cell
+                    let embarkProv = g.provinces.indices.contains(embarkLandCell) ? Int(g.provinces[embarkLandCell]) : -1
+                    if embarkProv < 0 || !unblockedPorts.contains(embarkProv) {
+                        return .failure(Refused(reason: "陆军无法从无港或被封锁海岸直接踏海，需经己方未封锁海港登船。"))
+                    }
+                    let inUse = MaritimeWarfare.activeSeaTransports(r, nation: nation, excludingArmyId: id)
+                    if inUse >= seaCap {
+                        return .failure(Refused(reason: "跨海海运运力已满（当前 \(inUse)/\(seaCap) 支船队），请扩建海运船坞、增造战舰或待前批登陆。"))
+                    }
+                }
+            }
             let point = g.location(travel).point
             let t = JS.object()
             t.version = JS(1); t.armyId = JS(id); t.origin = ForceBridge.json(point); t.nodes = .array(path.nodes.map { JS(Int(g.ids[$0])) })

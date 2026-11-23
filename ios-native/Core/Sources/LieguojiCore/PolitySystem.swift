@@ -646,6 +646,136 @@ extension Regimes {
         }
         return r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == pid }
     }
+
+    // MARK: - AI 季度自主施政、个性原型、权力失衡危机与定期大选（仅 App 规则开启）
+
+    /// 五大 AI 执政个性原型：按政体、文化、海港数与君主性格确定性分配。
+    static func aiArchetype(_ r: JS, _ id: String) -> String {
+        let b = book(r, id)
+        if let custom = b.strategy.optionalString, !custom.isEmpty { return custom }
+        let prof = styleProfile(r, id)
+        let cult = (r.civilization.nations[id].cultureId.optionalString ?? "").lowercased()
+        let ports = Naval.sea?.ports.filter { p in monthLand(r, id).contains { $0.id.asString == p.provinceId } }.count ?? 0
+        if prof.camp == .authoritarian || prof.camp == .tribal || cult == "mongol" { return "warMobilize" }
+        if prof.id == "merchant" || ports >= 2 || ["english", "dutch", "portuguese", "japanese", "norse"].contains(cult) { return "expand" }
+        if prof.camp == .republic || prof.camp == .constitutional { return "prosperTrade" }
+        if prof.camp == .theocracy || prof.id == "feudal" || prof.id == "citystate" { return "stabilize" }
+        return "techFocus"
+    }
+
+    /// 每季度由引擎自动为各存活国家统筹长期国策、危机救灾、权力调衡与共和定期大选。
+    static func aiAutonomousGovernanceQuarter(_ r: JS, _ n: JS, _ id: String, _ key: Int, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
+        guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy else { return }
+        guard !isBlank(r, id), monthLandCount(r, id) > 0 else { return }
+        let b = book(r, id)
+        let prof = styleProfile(r, id)
+        let civ = r.civilization.nations[id]
+        let lex = LocalizationEngine.lexicon(culture: civ.cultureId.optionalString, polity: civ.polity.optionalString, style: prof.id)
+        let fin = r.finance.nations[id]
+        let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+        let corrupt = Finance.corruption(r, id)
+        let atWar = isAtWar(r, id)
+        let nowDay = r.world.day.asInt
+        let autoEnabled = b.autoStrategy.isTruthy || (r.diplomacy.nations[id].optionalBool != false)
+
+        // 1. 长期国策与战略自动适配（战时动员 / 财政危机 / 腐化整顿 / 国家个性原型）
+        if autoEnabled {
+            let desired: [String]
+            if atWar && gold < 260 {
+                desired = ["conscription", "liangshui", "audit"]
+            } else if atWar {
+                desired = ["conscription", "jungong", "junxian"]
+            } else if corrupt >= 42 {
+                desired = ["keju", "audit", "charter"]
+            } else {
+                switch aiArchetype(r, id) {
+                case "warMobilize":  desired = ["conscription", "jungong", "junxian"]
+                case "prosperTrade": desired = ["seaopen", "free", "liangshui", "guild"]
+                case "stabilize":    desired = ["keju", "juntian", "audit", "charter"]
+                case "expand":       desired = ["mubing", "navyAct", "seaopen", "jungong"]
+                default:             desired = ["keju", "secular", "free", "audit"]
+                }
+            }
+            let heldIds = Set(heldReforms(r, id).map(\.id))
+            if let pickId = desired.first(where: { !heldIds.contains($0) }),
+               let f = reforms.first(where: { $0.id == pickId }) {
+                setReform(r, id, f, on: true)
+            }
+
+            // 2. 季度危机政令自动施政（消耗真实国库与 180 日冷却，绝不白嫖）
+            let aiCd = b.aiDecreeCooldownUntil.optionalNumber.map(Int.init) ?? 0
+            if nowDay >= aiCd {
+                if corrupt >= 46 && gold >= 180 {
+                    if !fin.isNull { fin.gold = JS(max(0, gold - 160)) }
+                    Finance.setCorruption(r, id, max(0, corrupt - 12))
+                    addDestiny(3)
+                    b.aiDecreeCooldownUntil = JS(nowDay + 180)
+                } else if atWar && gold >= 240 {
+                    let armies = monthArmies(r, id)
+                    let avgMorale = armies.isEmpty ? 80.0 : armies.reduce(0.0) { $0 + ($1.morale.optionalNumber ?? 70) } / Double(armies.count)
+                    if avgMorale < 58 && !armies.isEmpty {
+                        if !fin.isNull { fin.gold = JS(max(0, gold - 180)) }
+                        for a in armies {
+                            a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 22))
+                            a.supplies = JS(100)
+                        }
+                        b.aiDecreeCooldownUntil = JS(nowDay + 180)
+                    }
+                } else if !atWar && gold >= 520 && (r.destiny.nations[id].destiny.optionalNumber ?? 50) < 48 {
+                    if !fin.isNull { fin.gold = JS(max(0, gold - 200)) }
+                    addDestiny(5)
+                    b.aiDecreeCooldownUntil = JS(nowDay + 180)
+                }
+            }
+        }
+
+        // 3. 权力天平失衡连锁事件（当长期偏置同一派系且国内安定度跌破 42 时触发真实宪政／军方危机）
+        let outlook = coupOutlook(r, id)
+        let bias = b.powerBias.optionalString ?? ""
+        if !bias.isEmpty && outlook.stability < 42 && chance("\(id)|\(key)|imbalance") < 0.08 {
+            b.powerBias = JS("")
+            addDestiny(-4)
+            let targetLabel = bias == "military" ? lex.pillarFull[2] : (bias == "houses" ? lex.pillarFull[1] : lex.pillarFull[0])
+            _ = People.announce(r, kind: "politics",
+                                text: "\(n.name.asString)爆发\(targetLabel)专权风波",
+                                reason: "\(lex.powerBalanceTitle)长期严重失衡，各方势力迫使中枢回调权柄以稳局势（国运 −4）。",
+                                nations: [id], province: Rebellion.capitalProvince(r, id))
+        } else if autoEnabled && bias.isEmpty && outlook.stability < 45 {
+            b.powerBias = JS(atWar ? "military" : "council")
+        }
+
+        // 4. 共和与立宪议会四年定期换届大选（议席随战局、国库与清廉度真实摆动）
+        let st = style(r, id)
+        if key > 0 && key % 48 == 0 && st.parties && st.single == nil {
+            if b.parties.isNull { b.parties = parties(r, id, st, seed: key) }
+            let list = b.parties.asArray
+            if list.count >= 2 {
+                let defeat = defeatPenalty(r, id)
+                let incumbentSwing: Double = (defeat > 0.05 || corrupt > 40 || outlook.stability < 45) ? -14.0 : 8.0
+                var raw = [Double]()
+                for (i, p) in list.enumerated() {
+                    let cur = max(4.0, p.seats.asNumber)
+                    let jitter = Double(Int(Opening.hash("\(r.world.custom.seed.asString)|elec|\(id)|\(key)|\(i)") % 19) - 9)
+                    raw.append(max(4.0, cur + (i == 0 ? incumbentSwing : -incumbentSwing / Double(list.count - 1)) + jitter))
+                }
+                let total = max(1.0, raw.reduce(0, +))
+                var rem = 100
+                for i in list.indices {
+                    let s = i == list.count - 1 ? rem : max(3, min(rem, Int((raw[i] / total * 100.0).rounded())))
+                    list[i].seats = JS(s)
+                    rem -= s
+                }
+                b.parties = .array(list)
+                let winner = list.max { $0.seats.asInt < $1.seats.asInt }?.name.asString ?? "执政联盟"
+                if seats(r, id).elected { _ = seat(r, id) }
+                ensurePremier(r, id)
+                _ = People.announce(r, kind: "politics",
+                                    text: "\(n.name.asString)举行换届大选，\(winner)胜出执政",
+                                    reason: "四年一届常规议会改选落幕，\(winner)赢得最多议席并主导新一届\(lex.courtSectionTitle)。",
+                                    nations: [id], province: Rebellion.capitalProvince(r, id))
+            }
+        }
+    }
 }
 
 // MARK: - 玩家主动发起政体更迭／政变接口（NativeEngine）

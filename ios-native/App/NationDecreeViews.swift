@@ -50,10 +50,26 @@ struct NationDecreesTab: View {
 
     enum Category: String, CaseIterable {
         case reforms = "长期国策"
-        case domestic = "内政民生"
-        case military = "军事整备"
-        case culture = "文教宗教"
+        case domestic = "内政基建"
+        case military = "军事海运"
+        case culture = "文教外交"
     }
+
+    struct StrategyPreset: Identifiable {
+        let id: String
+        let title: String
+        let note: String
+        let glyph: InkGlyph
+        let tone: Color
+    }
+
+    static let strategies: [StrategyPreset] = [
+        StrategyPreset(id: "warMobilize",  title: "战时动员", note: "义务兵役 · 军功授爵", glyph: .war, tone: Theme.seal),
+        StrategyPreset(id: "prosperTrade", title: "富国兴商", note: "开海通商 · 工商行会", glyph: .economy, tone: Theme.jade),
+        StrategyPreset(id: "stabilize",    title: "固本维稳", note: "反腐审计 · 均田安民", glyph: .polity, tone: Theme.ink),
+        StrategyPreset(id: "expand",       title: "经略扩张", note: "海陆并进 · 强军拓土", glyph: .military, tone: Theme.seal),
+        StrategyPreset(id: "techFocus",    title: "格物兴科", note: "贤能取士 · 宪政革新", glyph: .chronicle, tone: Theme.jade),
+    ]
 
     enum ReformDomain: String, CaseIterable {
         case all = "全部"
@@ -157,21 +173,27 @@ struct NationDecreesTab: View {
     }
 
     static let decrees: [DecreeItem] = [
-        // 内政民生
+        // 内政基建（6 项）
         DecreeItem(id: "prosper", category: .domestic, title: "休养生息", badge: "人丁 +3%", note: "存粮 +20% · 国运 +5", glyph: .goods, tone: Theme.jade),
         DecreeItem(id: "antiCorruption", category: .domestic, title: "整顿吏治", badge: "腐化 −15", note: "肃清贪墨 · 国运 +4", glyph: .polity, tone: Theme.jade),
-        DecreeItem(id: "relief", category: .domestic, title: "开仓赈灾", badge: "耗 200 金", note: "存粮 +35% · 国运 +7", glyph: .economy, tone: Theme.jade),
-        DecreeItem(id: "landSurvey", category: .domestic, title: "清丈田亩", badge: "得半岁税", note: "厘清税籍 · 腐化 −8", glyph: .region, tone: Theme.ink),
-        // 军事整备
-        DecreeItem(id: "mobilize", category: .military, title: "全国大征兵", badge: "急征 3 军", note: "都城大州募兵 · 国运 −4", glyph: .military, tone: Theme.seal),
+        DecreeItem(id: "relief", category: .domestic, title: "开仓赈灾", badge: "耗 180 金", note: "存粮 +30% · 国运 +4", glyph: .economy, tone: Theme.jade),
+        DecreeItem(id: "landSurvey", category: .domestic, title: "清丈田亩", badge: "得半岁税", note: "厘清税籍 · 腐化 −10", glyph: .region, tone: Theme.ink),
+        DecreeItem(id: "roadNetwork", category: .domestic, title: "交通基建", badge: "增丁+商税", note: "驰道驿路 · 人丁+2% · +180金", glyph: .views, tone: Theme.jade),
+        DecreeItem(id: "granary", category: .domestic, title: "战略粮储", badge: "存粮 +45%", note: "广设常平义仓 · 国运 +5", glyph: .goods, tone: Theme.ink),
+        // 军事海运（6 项）
+        DecreeItem(id: "mobilize", category: .military, title: "全国大征兵", badge: "急征 3 军", note: "重镇紧急编练 · 国运 −4", glyph: .military, tone: Theme.seal),
         DecreeItem(id: "rewardArmies", category: .military, title: "犒赏三军", badge: "士气 +35", note: "全军振奋 · 军粮补满", glyph: .command, tone: Theme.seal),
-        DecreeItem(id: "fortifyBorder", category: .military, title: "加固边防", badge: "城防 +1", note: "边塞至多 12 州修城", glyph: .nation, tone: Theme.ink),
-        DecreeItem(id: "armsUpgrade", category: .military, title: "军械改良", badge: "耗 260 金", note: "士气 +25 · 全军补员", glyph: .war, tone: Theme.seal),
-        // 文教宗教
+        DecreeItem(id: "fortifyBorder", category: .military, title: "加固边防", badge: "城防 +1", note: "边塞至多 12 处修城", glyph: .nation, tone: Theme.ink),
+        DecreeItem(id: "armsUpgrade", category: .military, title: "军械改良", badge: "耗 260 金", note: "士气 +20 · 全军整补", glyph: .war, tone: Theme.seal),
+        DecreeItem(id: "navalDockyard", category: .military, title: "海运船坞", badge: "运力 +2", note: "扩建跨海船队 · 舰体全修", glyph: .anchor, tone: Theme.jade),
+        DecreeItem(id: "techAcademy", category: .military, title: "格物兴科", badge: "军政 +4", note: "科研革新 · 全军士气 +15", glyph: .chronicle, tone: Theme.seal),
+        // 文教外交（6 项）
         DecreeItem(id: "assimilateCulture", category: .culture, title: "推行文教", badge: "教化归心", note: "境内城池归入主体文化", glyph: .culture, tone: Theme.ink),
-        DecreeItem(id: "convertFaith", category: .culture, title: "统一国教", badge: "礼法一统", note: "诸州与世家归奉国教", glyph: .religion, tone: Theme.ink),
-        DecreeItem(id: "amnesty", category: .culture, title: "大赦世家", badge: "情谊 +20", note: "安抚诸大族与宗室", glyph: .house, tone: Theme.jade),
-        DecreeItem(id: "academy", category: .culture, title: "兴办太学", badge: "耗 180 金", note: "腐化 −6 · 国运 +5", glyph: .chronicle, tone: Theme.jade),
+        DecreeItem(id: "convertFaith", category: .culture, title: "统一国教", badge: "礼法一统", note: "全境归奉主体信仰", glyph: .religion, tone: Theme.ink),
+        DecreeItem(id: "amnesty", category: .culture, title: "大赦安抚", badge: "情谊 +20", note: "缓和国内各派系关系", glyph: .house, tone: Theme.jade),
+        DecreeItem(id: "academy", category: .culture, title: "兴办国立院", badge: "耗 200 金", note: "能力精进 · 腐化 −4 · 国运 +3", glyph: .chronicle, tone: Theme.jade),
+        DecreeItem(id: "envoyGoodwill", category: .culture, title: "遣使修好", badge: "好感 +18", note: "走访非交战邻国 · 缓和孤立", glyph: .alliance, tone: Theme.jade),
+        DecreeItem(id: "taxRelief", category: .culture, title: "减赋安民", badge: "国运 +6", note: "民生纾困 · 腐化 −10", glyph: .peace, tone: Theme.jade),
     ]
 
     var body: some View {
@@ -202,7 +224,61 @@ struct NationDecreesTab: View {
         let activeRows = list.filter(\.on)
         let net = Self.netChips(for: activeRows.map(\.id))
 
-        // 1. 苹果式国策总效洞察卡（Apple Insight Card 构图）
+        // 1. 一键智能战略预设 + 季度自动托管（按战时/兴商/维稳/扩张/科研自动组合最优互斥国策）
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("智能战略一键调配").font(Theme.section).foregroundStyle(Theme.ink)
+                    Text("轻点方案自动匹配互斥国策与权力重心").font(Theme.caption).foregroundStyle(Theme.ink2)
+                }
+                Spacer()
+                let autoOn = info.autoStrategy == true
+                Button {
+                    GameFeel.shared.tap()
+                    runDecreeKind(autoOn ? "strategyAuto:off" : "strategyAuto:on", fallback: autoOn ? "已关闭智能托管" : "已开启季度智能托管")
+                } label: {
+                    HStack(spacing: 4) {
+                        Circle().fill(autoOn ? Theme.jade : Theme.ink2.opacity(0.45)).frame(width: 6.5, height: 6.5)
+                        Text(autoOn ? "自动托管中" : "开启托管").font(Theme.caption)
+                    }
+                    .foregroundStyle(autoOn ? Theme.jade : Theme.ink2)
+                    .padding(.horizontal, 9).frame(height: 28)
+                    .background((autoOn ? Theme.jade : Theme.ink).opacity(0.09), in: Capsule())
+                    .overlay(Capsule().stroke((autoOn ? Theme.jade : Theme.ink).opacity(0.24), lineWidth: 0.7))
+                }
+                .buttonStyle(PressStyle())
+                .disabled(busy)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 7) {
+                    ForEach(Self.strategies) { sp in
+                        let active = info.strategy == sp.id
+                        Button {
+                            GameFeel.shared.tap()
+                            runDecreeKind("strategy:\(sp.id)", fallback: "已启用「\(sp.title)」方案")
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 4) {
+                                    InkIcon(glyph: sp.glyph, size: 12, weight: 1.8).foregroundStyle(active ? Theme.paper2 : sp.tone)
+                                    Text(sp.title).font(Theme.label).foregroundStyle(active ? Theme.paper2 : Theme.ink)
+                                }
+                                Text(sp.note).font(Theme.caption).foregroundStyle(active ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1)
+                            }
+                            .padding(.horizontal, 11).padding(.vertical, 7)
+                            .background(active ? sp.tone : Theme.paper2.opacity(0.9), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(active ? Color.clear : sp.tone.opacity(0.25), lineWidth: 0.85))
+                        }
+                        .buttonStyle(PressStyle())
+                        .disabled(busy)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .paperCard()
+        .padding(.horizontal, Theme.Layout.pageInset)
+
+        // 2. 苹果式国策总效洞察卡（Apple Insight Card 构图）
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -397,7 +473,8 @@ struct NationDecreesTab: View {
     @ViewBuilder
     private var decreesGridSection: some View {
         let items = Self.decrees.filter { $0.category == category }
-        SectionLabel("御批\(category.rawValue)（点击立即颁行）")
+        let lex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
+        SectionLabel("\(lex.decreePrefix)\(category.rawValue)（点击立即施行）")
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
             ForEach(items) { item in
                 Button { issue(item) } label: {
@@ -420,7 +497,7 @@ struct NationDecreesTab: View {
                         Spacer(minLength: 0)
                         HStack {
                             Spacer()
-                            Text("颁诏施行").font(Theme.kai(11)).foregroundStyle(item.tone)
+                            Text(lex.enactVerb).font(Theme.kai(11)).foregroundStyle(item.tone)
                         }
                     }
                     .padding(12)
@@ -437,7 +514,8 @@ struct NationDecreesTab: View {
     }
 
     private var throneCard: some View {
-        Group2 {
+        let lex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
+        return Group2 {
             Button {
                 GameFeel.shared.tap()
                 onEnthrone()
@@ -448,8 +526,8 @@ struct NationDecreesTab: View {
                         .frame(width: 32, height: 32)
                         .background(Theme.seal.opacity(0.09), in: Circle())
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("禅位择君").font(Theme.body).foregroundStyle(Theme.ink)
-                        Text(info.ruler.map { "现任：\($0.styledName ?? ($0.title + $0.name))" } ?? "择本国在世贤能登基执政")
+                        Text(lex.successionAction).font(Theme.body).foregroundStyle(Theme.ink)
+                        Text(info.ruler.map { "现任：\($0.styledName ?? ($0.title + $0.name))" } ?? "择本国在世贤能执掌国政")
                             .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                     }
                     Spacer(minLength: 4)
@@ -460,6 +538,23 @@ struct NationDecreesTab: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, Theme.Layout.pageInset)
+    }
+
+    private func runDecreeKind(_ kind: String, fallback: String) {
+        guard !busy else { return }
+        busy = true
+        Task {
+            let err = await model.edit("nationDecree", ["n": nation, "kind": kind])
+            await onReload()
+            if let err {
+                onToast(err)
+                GameFeel.shared.notify(.error)
+            } else {
+                onToast(fallback)
+                GameFeel.shared.notify(.success)
+            }
+            busy = false
+        }
     }
 
     private func toggleReform(_ r: NationInfo.ReformRow) {

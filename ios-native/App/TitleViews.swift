@@ -139,12 +139,12 @@ struct InkHills: Shape {
     }
 }
 
-/// The app's seal: a vermilion rounded square with 列国 in the original's Kai script.
+/// The app's seal: museum-grade carved antique sovereign crest.
 struct SealMark: View {
     var size: CGFloat
     var body: some View {
-        // 与全作朱印同一印面（一字印）。
-        SealFace(text: "列", size: size).shadow(color: Theme.seal.opacity(0.25), radius: size * 0.08, y: size * 0.03)
+        ArtEmblem(image: BundleArt.sealCourt, size: size * 1.16, fallback: .crown)
+            .shadow(color: Theme.ink.opacity(0.22), radius: size * 0.08, y: size * 0.03)
     }
 }
 
@@ -848,7 +848,7 @@ struct FoundingView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                     HStack(spacing: 8) {
-                        SealFace(text: "卷", size: 22, color: Theme.seal)
+                        ArtEmblem(image: BundleArt.sealChronicle, size: 26, fallback: .chronicle)
                         Text(all[min(current, all.count - 1)] + "……").font(Theme.kai(20)).foregroundStyle(Theme.ink)
                             .id(current).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
                     }

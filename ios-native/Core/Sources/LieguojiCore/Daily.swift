@@ -471,6 +471,7 @@ public enum Daily {
         r.world.day = JS(r.world.day.asNumber + 1)
         if Profile.measure("d.people", { People.month(r) }) || r.world.day.asInt % 30 == 0 { Government.refreshLeaderCombat(r) }
         Profile.measure("d.fleets") { Naval.settleFleetFood(r) }
+        Profile.measure("d.maritime") { MaritimeWarfare.dailyTick(r) }
         Profile.measure("d.economy") { economy(r) }
         _ = Profile.measure("d.armyDay") { originalArmyDay(r) }
         Profile.measure("d.forces") { finishForces(r); retire(r); recover(r) }

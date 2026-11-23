@@ -419,8 +419,11 @@ extension NativeEngine {
             if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
                 let unitKey = r.units[id].optionalString ?? "Infantry"
                 let br = Regimes.armyBranch(r, armyId: id, unitKey: unitKey)
+                let nid = a.nationId.asString
+                let nCiv = r.civilization.nations[nid]
+                let nStyle = Regimes.style(r, nid).id
                 x.branch = br.rawValue
-                x.branchLabel = br.label
+                x.branchLabel = LocalizationEngine.branchLabel(branch: br.rawValue, culture: nCiv.cultureId.optionalString, polity: nCiv.polity.optionalString, style: nStyle)
                 x.branchNote = br.roleNote
                 if let grp = Regimes.armyGroup(r, armyId: id) {
                     x.armyGroup = grp.name
@@ -430,6 +433,14 @@ extension NativeEngine {
                 }
                 if let wg = Regimes.warGodAura(r, nationId: a.nationId.asString) {
                     x.warGodAura = "\(wg.rank) \(wg.name)〔\(wg.skill.name)〕· \(wg.buffSummary)"
+                }
+                // 跨海登船状态（供前端切换 4 帧运兵运输船序列帧）、两栖抢滩与海外断补标记
+                x.embarked = (v.province == nil)
+                if !r.regimes.landingDays.isNull, let ld = r.regimes.landingDays[id].optionalNumber.map(Int.init), ld > 0 {
+                    x.landingDays = ld
+                }
+                if !r.regimes.seaSupplyCut.isNull, r.regimes.seaSupplyCut[id].isTruthy {
+                    x.seaSupplyCut = true
                 }
             }
             return x
@@ -454,11 +465,16 @@ extension NativeEngine {
                 fleetPoint.append((fx, fy))
                 let rawDecision = row.isNull ? "" : row.decision.optionalString ?? ""
                 let decision = fleetClash != nil ? "busy" : rawDecision
-                fleetRows.append(GameState.Fleet(id: id, name: fl.name.asString, nation: ni[fl.nationId.asString] ?? -1, ships: Int(fl.ships.asNumber), crew: Int(fl.crew.asNumber), food: Int(fl.food.asNumber),
-                                                 hull: fl.ships.asNumber > 0 ? (r.maritime.hulls[id].optionalNumber ?? 0) / (fl.ships.asNumber * 100) : 0,
-                                                 status: fl.status.asString, travel: rec.status.asString, x: Float(fx), y: Float(fy),
-                                                 decision: decision, reason: row.isNull ? "" : row.reason.optionalString ?? "",
-                                                 port: port.flatMap { pi[$0.provinceId] } ?? -1, manual: manualFleets.contains(id), patrol: fl.patrol.optionalBool ?? false))
+                var flRow = GameState.Fleet(id: id, name: fl.name.asString, nation: ni[fl.nationId.asString] ?? -1, ships: Int(fl.ships.asNumber), crew: Int(fl.crew.asNumber), food: Int(fl.food.asNumber),
+                                            hull: fl.ships.asNumber > 0 ? (r.maritime.hulls[id].optionalNumber ?? 0) / (fl.ships.asNumber * 100) : 0,
+                                            status: fl.status.asString, travel: rec.status.asString, x: Float(fx), y: Float(fy),
+                                            decision: decision, reason: row.isNull ? "" : row.reason.optionalString ?? "",
+                                            port: port.flatMap { pi[$0.provinceId] } ?? -1, manual: manualFleets.contains(id), patrol: fl.patrol.optionalBool ?? false)
+                if UnitKinds.enabled && !r.regimes.isNull {
+                    if !r.regimes.escortingFleets.isNull && r.regimes.escortingFleets[id].isTruthy { flRow.escorting = true }
+                    if !r.regimes.blockadingFleets.isNull && r.regimes.blockadingFleets[id].isTruthy { flRow.blockading = true }
+                }
+                fleetRows.append(flRow)
             }
         }
         // 造舰: sunk fleets their state is rebuilding, with the months left.
@@ -476,8 +492,10 @@ extension NativeEngine {
         let ports = (Naval.sea?.ports ?? []).compactMap { port -> GameState.Port? in
             guard let q = pi[port.provinceId] else { return nil }
             let c = r.portControl.isNull ? JS.null : r.portControl.ports[port.provinceId]
+            let blk = UnitKinds.enabled ? MaritimeWarfare.isPortBlockaded(r, provinceId: port.provinceId) : false
             return GameState.Port(province: q, x: Float(port.center.x / sc), y: Float(port.center.y / sc), owner: c.isNull ? -1 : ni[c.landOwnerId.asString] ?? -1,
-                                  occupier: c.isNull ? -1 : ni[c.occupierId.asString] ?? -1, value: c.isNull ? 100 : c.value.asNumber.rounded())
+                                  occupier: c.isNull ? -1 : ni[c.occupierId.asString] ?? -1, value: c.isNull ? 100 : c.value.asNumber.rounded(),
+                                  blockaded: blk ? true : nil)
         }
         var armyIndex = [String: Int](); for (i, v) in space.enumerated() { armyIndex[Daily.key("army", v.army.id.asString)] = i }
         let contacts = pairs.compactMap { p -> [Int]? in

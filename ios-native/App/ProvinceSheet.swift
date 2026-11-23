@@ -44,13 +44,16 @@ struct ProvinceSheet: View {
             let port = model.state?.ports?.first(where: { $0.province == province })
             let holyOf = model.state?.holy?.first(where: { $0.province == province })
 
+            let ownerState = (model.state?.nations.indices.contains(owner) == true) ? model.state?.nations[owner] : nil
+            let lex = LocalizationEngine.lexicon(culture: ownerState?.culture ?? nation?.culture, polity: ownerState?.polity ?? nation?.polity, style: nil)
+
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(
                         title: p.name,
                         subtitle: [Self.terrainLine(info, p.terrain, port: port != nil), region?.name].compactMap { $0 }.joined(separator: " · "),
                         color: nation.map { Names.color($0.color) },
-                        seal: "州"
+                        seal: lex.adminUnit
                     )
 
                     // 1. 置顶主权国家大卡：点击任意处立即直达「国家详情」，再也不用翻到最底找入口

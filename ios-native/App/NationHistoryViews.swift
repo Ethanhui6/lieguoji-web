@@ -202,12 +202,15 @@ struct NationHistoryTab: View {
     }
 
     private func summaryCard(_ report: NationReignsReport) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let stNation = (model.state?.nations.indices.contains(nation) == true) ? model.state?.nations[nation] : nil
+        let metaNation = (model.map?.meta.nations.indices.contains(nation) == true) ? model.map?.meta.nations[nation] : nil
+        let lex = LocalizationEngine.lexicon(culture: stNation?.culture ?? metaNation?.culture, polity: stNation?.polity ?? metaNation?.polity, style: nil)
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                SealFace(text: "史", size: 30)
+                ArtEmblem(image: BundleArt.sealChronicle, size: 34, fallback: .chronicle)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(report.nationName) · 本纪").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                    Text("凡传 \(max(1, report.totalReigns)) 世 · 历史极盛 \(report.peakProvinces) 州 · 现领 \(report.currentProvinces) 州")
+                    Text("\(report.nationName) · \(lex.chronicleLabel)").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text("凡传 \(max(1, report.totalReigns)) 任 · 历史极盛 \(report.peakProvinces) \(lex.adminUnit) · 现领 \(report.currentProvinces) \(lex.adminUnit)")
                         .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
                 }
                 Spacer(minLength: 4)

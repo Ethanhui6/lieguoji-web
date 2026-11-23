@@ -1031,16 +1031,19 @@ import LieguojiCore
             } else if e.text.contains("革命") || e.text.contains("立宪") || e.text.contains("改称") || e.text.contains("改制") || e.text.contains("禅位") || e.text.contains("改建") || e.text.contains("改行") || e.text.contains("复辟") || e.text.contains("还政于民") {
                 enqueue(Herald(kind: .regime, text: e.text, nations: nats))
             } else if !weatherAnnounced {
-                if e.text.contains("暴雪") || e.text.contains("大雪") || e.text.contains("雪灾") || e.text.contains("封山") {
-                    enqueue(Herald(kind: .blizzard, text: e.text, nations: nats)); weatherAnnounced = true
-                } else if e.text.contains("大旱") || e.text.contains("旱灾") || e.text.contains("赤地") || e.text.contains("饥荒") {
-                    enqueue(Herald(kind: .drought, text: e.text, nations: nats)); weatherAnnounced = true
-                } else if e.text.contains("洪涝") || e.text.contains("洪水") || e.text.contains("水患") || e.text.contains("梅雨") {
-                    enqueue(Herald(kind: .flood, text: e.text, nations: nats)); weatherAnnounced = true
-                } else if e.text.contains("瘟疫") || e.text.contains("大疫") {
-                    enqueue(Herald(kind: .plague, text: e.text, nations: nats)); weatherAnnounced = true
-                } else if e.text.contains("大稔") || e.text.contains("五谷丰登") || e.text.contains("春耕大兴") {
-                    enqueue(Herald(kind: .harvest, text: e.text, nations: nats)); weatherAnnounced = true
+                let isEnding = e.text.contains("平息") || e.text.contains("缓解") || e.text.contains("已过") || e.text.contains("结束") || e.text.contains("消退")
+                if !isEnding {
+                    if e.text.contains("暴雪") || e.text.contains("大雪") || e.text.contains("雪灾") || e.text.contains("封山") {
+                        enqueue(Herald(kind: .blizzard, text: e.text, nations: nats)); weatherAnnounced = true
+                    } else if e.text.contains("大旱") || e.text.contains("旱灾") || e.text.contains("赤地") || e.text.contains("饥荒") {
+                        enqueue(Herald(kind: .drought, text: e.text, nations: nats)); weatherAnnounced = true
+                    } else if e.text.contains("洪涝") || e.text.contains("洪水") || e.text.contains("水患") || e.text.contains("梅雨") {
+                        enqueue(Herald(kind: .flood, text: e.text, nations: nats)); weatherAnnounced = true
+                    } else if e.text.contains("瘟疫") || e.text.contains("大疫") {
+                        enqueue(Herald(kind: .plague, text: e.text, nations: nats)); weatherAnnounced = true
+                    } else if e.text.contains("大稔") || e.text.contains("五谷丰登") || e.text.contains("春耕大兴") {
+                        enqueue(Herald(kind: .harvest, text: e.text, nations: nats)); weatherAnnounced = true
+                    }
                 }
             }
         }
@@ -1471,8 +1474,15 @@ import LieguojiCore
         var sprites: [MapRenderer.ArmySprite] = state.armies.enumerated().compactMap { i, a in
             guard a.troops > 0, a.status != "destroyed", a.x.isFinite && a.y.isFinite else { return nil }
             let isSel = i == selected || (controller.selectedArmyId != nil && a.id == controller.selectedArmyId) || controller.groupArmies.contains(i)
+            let cult = state.nations.indices.contains(a.nation) ? (state.nations[a.nation].culture ?? "") : ""
             return MapRenderer.ArmySprite(army: i, x: a.x, y: a.y, unit: a.unit, nation: a.nation, selected: isSel, key: a.id,
-                                          tier: a.troops < 2000 ? 1 : a.troops < 6000 ? 2 : 3, banner: a.banner == "ruler" ? 2 : a.banner == "general" ? 1 : 0, reorganizing: a.reorganizing ?? false, fighting: a.status == "fighting", retreating: a.status == "retreating")
+                                          tier: a.troops < 2000 ? 1 : a.troops < 6000 ? 2 : 3,
+                                          banner: a.banner == "ruler" ? 2 : a.banner == "general" ? 1 : 0,
+                                          reorganizing: a.reorganizing ?? false,
+                                          fighting: a.status == "fighting",
+                                          retreating: a.status == "retreating",
+                                          culture: cult,
+                                          embarked: a.embarked ?? false)
         }
         // Harbour anchors in the occupier's colour (not tappable; the province panel lists them), then fleets.
         let choosing = controller.marchingFleet ?? controller.selectedFleet
@@ -1481,10 +1491,12 @@ import LieguojiCore
         }
         for (i, f) in (state.fleets ?? []).enumerated() {
             // One to three ships on the map for one, two to three, and four or more hulls.
+            let cult = state.nations.indices.contains(f.nation) ? (state.nations[f.nation].culture ?? "") : ""
             sprites.append(MapRenderer.ArmySprite(army: -(i + 1), x: f.x, y: f.y, unit: "Fleet", nation: f.nation, selected: i == choosing, key: f.id,
                                                   tier: f.ships >= 4 ? 3 : f.ships >= 2 ? 2 : 1,
                                                   banner: (f.ships >= 4 || f.decision == "busy") ? 1 : 0,
-                                                  fighting: f.decision == "busy"))
+                                                  fighting: f.decision == "busy",
+                                                  culture: cult))
         }
         // 商船: merchant ships ply the sea lanes between harbours whose holders are at peace, back and
         // forth, in the colour of the harbour they sailed from (the original's merchant ships carrying

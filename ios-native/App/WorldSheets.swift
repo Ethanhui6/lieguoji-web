@@ -876,7 +876,7 @@ struct ChronicleSheet: View {
             openReplay(nil)
         } label: {
             HStack(spacing: 11) {
-                SealFace(text: "溯", size: 32, color: Theme.seal)
+                ArtEmblem(image: BundleArt.sealReplay, size: 36, fallback: .replay)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("山河回放 · 时光倒流").font(Theme.section).foregroundStyle(Theme.ink)
                     Text("纵览版图兴替，拖动进度或回溯至历史节点").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)

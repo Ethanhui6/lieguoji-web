@@ -168,16 +168,27 @@ private struct SealSpecks: Shape {
     }
 }
 
-/// A vermilion seal pressed onto the page (the headings' seal): the unified face, slightly rotated, stamped in once.
+/// A museum-grade antique carved seal pressed onto the page header (backed by AI carved cinnabar/gilded art).
 struct Seal: View {
     let text: String
     var size: CGFloat = 40
     @State private var pressed = false
     var body: some View {
-        SealFace(text: text, size: size)
-            .rotationEffect(.degrees(-4))
-            .scaleEffect(pressed ? 1 : 1.35).opacity(pressed ? 0.94 : 0)
-            .onAppear { withAnimation(Motion.stamp) { pressed = true } }
+        Group {
+            if let img = BundleArt.sealArt(for: text) {
+                Image(uiImage: img)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: size * 1.18, height: size * 1.18)
+                    .shadow(color: Theme.ink.opacity(0.16), radius: 2.5, y: 1.5)
+            } else {
+                SealFace(text: text, size: size)
+                    .rotationEffect(.degrees(-4))
+            }
+        }
+        .scaleEffect(pressed ? 1 : 1.28).opacity(pressed ? 0.96 : 0)
+        .onAppear { withAnimation(Motion.stamp) { pressed = true } }
     }
 }
 

@@ -58,10 +58,13 @@ extension NativeEngine {
         // Noble houses of this state, by influence (0…1000).
         let ruling = People.rulingFamilyId(r, id)
         let prof = Regimes.styleProfile(r, id)
+        let civLoc = r.civilization.nations[id]
+        let styleLoc = r.regimes.isNull ? nil : Regimes.style(r, id).id
+        let lexLoc = LocalizationEngine.lexicon(culture: civLoc.cultureId.optionalString, polity: civLoc.polity.optionalString, style: styleLoc)
         let fiefAllowed = prof.fiefRule.allowsFiefs
         let govPerson = Regimes.governor(r, id)
         let govFamilyId = govPerson?.familyId.asInt ?? 0
-        c.fiefRule = JS(prof.fiefRule.rawValue)
+        c.fiefRule = JS(lexLoc.fiefRuleLabel)
         c.allowsFiefs = JS(fiefAllowed)
         if let gp = govPerson {
             let ar = JS.object()
@@ -242,10 +245,11 @@ extension NativeEngine {
         // 政体深度画像、政局安定／政变风险仪与可执行现实政体演变列表
         if !r.regimes.isNull, r.regimes.enabled.isTruthy {
             let prof = Regimes.styleProfile(r, id)
+            let lex = LocalizationEngine.lexicon(culture: civ.cultureId.optionalString, polity: civ.polity.optionalString, style: st.id)
             let outlook = Regimes.coupOutlook(r, id)
             let pd = JS.object()
             pd.camp = JS(prof.camp.rawValue)
-            pd.fiefRule = JS(prof.fiefRule.rawValue)
+            pd.fiefRule = JS(lex.fiefRuleLabel)
             pd.allowsFiefs = JS(prof.fiefRule.allowsFiefs)
             pd.summary = JS(prof.summary)
             pd.traitLine = JS(prof.traitLine)
@@ -263,6 +267,12 @@ extension NativeEngine {
                 return x
             })
             o.polityDetail = pd
+            // 当前国家智能战略预设与自动统筹开关
+            let nb = r.regimes.nations[id]
+            if !nb.isNull {
+                o.strategy = nb.strategy.optionalString.map { JS($0) } ?? JS("")
+                o.autoStrategy = JS(nb.autoStrategy.isTruthy)
+            }
             // 王位宣称（来自跨国王室联姻）
             if !r.regimes.claims.isNull {
                 let nowM = r.regimes.month.asInt
@@ -274,7 +284,7 @@ extension NativeEngine {
                     }
                 o.claims = .array(myClaims)
             }
-            // 2.8.4 新增：① 朝堂四方权力天平（君主中枢 / 门阀世家 / 军功将领 / 议会文官） + 冲龄幼主摄政；② 当期朝堂大政议案与战后问责；③ 国家旌旗纹章印记
+            // ① 全政体动态四方权力天平（按文化 × 政体完全切换称谓，共和零帝制词汇）
             let cp = JS.object()
             let ldrPerson = !leaderId.isNull ? People.person(r, leaderId.asInt) : nil
             let ldrAge: Double = ldrPerson?.age.optionalNumber ?? 30
@@ -285,15 +295,15 @@ extension NativeEngine {
             let skDiplomatic: Double = sk?.diplomatic ?? 50
             let curDestiny: Double = r.destiny.nations[id].destiny.optionalNumber ?? 50
             var rawCrown: Double = 28.0 + (skAdmin + skCharisma) * 0.28 + curDestiny * 0.22
-            if ldrAge < 16 { rawCrown *= 0.42 }
+            if ldrAge < 16 && !lex.isRepublican { rawCrown *= 0.42 }
             let allHouses = r.nobility.isNull || r.nobility.families.isNull ? [] : r.nobility.families.objectEntries.filter { $0.1.nationId.optionalString == id }
             let rulingFam = People.rulingFamilyId(r, id)
             let houseInf: Double = allHouses.reduce(0.0) { sum, entry in
                 let inf = entry.1.influence.optionalNumber ?? 0
                 return (Int(entry.0) == rulingFam) ? sum + inf * 0.15 : sum + inf * 0.22
             }
-            var rawHouses: Double = (prof.fiefRule.allowsFiefs ? 18.0 : 8.0) + min(65.0, houseInf * 0.25)
-            if prof.fiefRule == .regent || ldrAge < 16 { rawHouses += 24.0 }
+            var rawHouses: Double = (prof.fiefRule.allowsFiefs ? 18.0 : 14.0) + min(65.0, houseInf * 0.25)
+            if (prof.fiefRule == .regent || ldrAge < 16) && !lex.isRepublican { rawHouses += 24.0 }
             let activeArmies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }.count
             let activeWars = Wars.activeCampaignCount(r, for: id)
             var rawMilitary: Double = 14.0 + Double(activeArmies) * 3.5 + Double(activeWars) * 14.0 + skMilitary * 0.18
@@ -301,64 +311,139 @@ extension NativeEngine {
             let hasParties = !r.regimes.nations[id].parties.isNull && r.regimes.nations[id].parties.length > 0
             var rawCouncil: Double = (hasParties ? 32.0 : 16.0) + Offices.governance(r, id) * 24.0 + skDiplomatic * 0.15
             if prof.camp == .republic || prof.camp == .constitutional || prof.camp == .socialist { rawCouncil += 22.0 }
-            // 玩家主动调衡偏移（r.regimes.nations[id].powerBias）
             let bias = r.regimes.nations[id].powerBias.optionalString ?? ""
-            if bias == "crown" { rawCrown += 28 }
-            else if bias == "houses" { rawHouses += 28 }
-            else if bias == "military" { rawMilitary += 28 }
-            else if bias == "council" { rawCouncil += 28 }
+            if bias == "crown" { rawCrown += 26 }
+            else if bias == "houses" { rawHouses += 26 }
+            else if bias == "military" { rawMilitary += 26 }
+            else if bias == "council" { rawCouncil += 26 }
             let sumRaw: Double = max(1.0, rawCrown + rawHouses + rawMilitary + rawCouncil)
             let pCrown = max(5, Int((rawCrown / sumRaw * 100.0).rounded()))
             let pHouses = max(5, Int((rawHouses / sumRaw * 100.0).rounded()))
             let pMilitary = max(5, Int((rawMilitary / sumRaw * 100.0).rounded()))
             let pCouncil = max(5, 100 - pCrown - pHouses - pMilitary)
             cp.crown = JS(pCrown); cp.houses = JS(pHouses); cp.military = JS(pMilitary); cp.council = JS(pCouncil)
-            let rankedP: [(String, Int, String)] = [
-                ("君主中枢", pCrown, "乾纲独断 · 政令通行、中枢岁入 +6%，世家难起异心"),
-                ("门阀世家", pHouses, "门阀专政 · 世家把持朝政与封地，削藩易激起兵变"),
-                ("军功将领", pMilitary, "将帅干政 · 全军攻势凌厉、好战高涨，战败易生兵变"),
-                ("议会文官", pCouncil, "文官/议会主导 · 财政稳健、邦交审慎，战时动员偏缓"),
-            ]
-            let dom = rankedP.max(by: { $0.1 < $1.1 })!
-            cp.dominant = JS(dom.0)
-            cp.effect = JS(dom.2)
-            if ldrAge < 16 {
-                let regentName = Regimes.governor(r, id).map(Self.displayPersonName) ?? (o.heads.isNull ? "辅政大臣" : (o.heads.premierName.optionalString ?? "辅政王"))
-                cp.regency = JS("冲龄幼主（\(Int(ldrAge))岁）· 由\(regentName)摄政辅国（满16岁行亲政大典或面临权臣博弈）")
+            cp.title = JS(lex.powerBalanceTitle)
+            cp.pillars = .array(lex.pillarShort.map { JS($0) })
+            let pctArr = [pCrown, pHouses, pMilitary, pCouncil]
+            var domIdx = 0
+            for idx in 1..<4 { if pctArr[idx] > pctArr[domIdx] { domIdx = idx } }
+            cp.dominant = JS(lex.pillarFull[domIdx])
+            cp.effect = JS(lex.pillarEffects[domIdx])
+            if pctArr[domIdx] >= 58 {
+                cp.imbalance = JS("失衡预警：\(lex.pillarFull[domIdx])权重高达 \(pctArr[domIdx])%，持续放任可能触发派系危机或政体动荡。")
+            }
+            if ldrAge < 16 && !lex.isRepublican {
+                let regentName = Regimes.governor(r, id).map(Self.displayPersonName) ?? (o.heads.isNull ? lex.deputyTitle : (o.heads.premierName.optionalString ?? lex.deputyTitle))
+                cp.regency = JS("冲龄幼主（\(Int(ldrAge))岁）· 由\(regentName)摄政辅国（满16岁亲政或面临权臣博弈）")
             }
             o.courtPower = cp
 
-            // 当期朝堂大政议案与战后问责
+            // ② 当期多分支政治议案（严格 180 日议期冷却防无限点击 + 按政体/战况/财税动态生成 4 条差异路线）
             let ag = JS.object()
+            let nowDay = r.world.day.asInt
+            let cdUntil = r.regimes.nations[id].agendaCooldownUntil.optionalNumber.map(Int.init) ?? 0
+            let remDays = max(0, cdUntil - nowDay)
             let shockPct = Int((Regimes.defeatPenalty(r, id) * 100).rounded())
-            if shockPct >= 5 {
-                ag.id = JS("agenda_accountability")
-                ag.title = JS("《战后问责与整军复仇案》")
-                ag.desc = JS("新败割地之后朝野震动（震荡 −\(shockPct)%），军方与言官联名奏请问责失利主帅、抚恤阵亡将士以重振军心。")
-                ag.support = JS("军功将领 · 言官")
-                ag.oppose = JS("主和派文官")
-                ag.effect = JS("消除战败震荡 · 全军士气 +25 · 国运 +4")
-            } else if activeWars > 0 {
-                ag.id = JS("agenda_wartax")
-                ag.title = JS("《战时急征军饷与前线犒师案》")
-                ag.desc = JS("前线兵戈正急，兵部与户部奏请向豪强开征战时特饷，悉数充作前线将士粮饷。")
-                ag.support = JS("军功将领 · 君主中枢")
-                ag.oppose = JS("门阀世家")
-                ag.effect = JS("国库 +450 金 · 全军补给满额 · 士气 +20")
-            } else if pHouses >= 32 {
-                ag.id = JS("agenda_curbhouses")
-                ag.title = JS("《清丈勋贵田庄与抑豪强案》")
-                ag.desc = JS("门阀世家权势日炽（占朝局 \(pHouses)%），御史台奏请清丈勋贵隐田、收权归于中枢。")
-                ag.support = JS("君主中枢 · 寒门文官")
-                ag.oppose = JS("门阀世家")
-                ag.effect = JS("各世家权势 −35 · 国库 +380 金 · 腐化 −8")
-            } else {
-                ag.id = JS("agenda_civil")
-                ag.title = JS("《开科取士与劝农兴学案》")
-                ag.desc = JS("四境暂安，礼部与司农奏请广开太学、选拔寒门良才并劝课农桑以固国本。")
-                ag.support = JS("议会文官 · 君主中枢")
-                ag.oppose = JS("守旧门阀")
-                ag.effect = JS("全境人口 +3% · 腐化 −6 · 国运 +5")
+            let curGold = r.finance.nations[id].gold.optionalNumber ?? 0
+            let curCorrupt = Finance.corruption(r, id)
+            let isRep = lex.isRepublican
+            let p0 = lex.pillarFull[0], p1 = lex.pillarFull[1], p2 = lex.pillarFull[2], p3 = lex.pillarFull[3]
+
+            func makeChoice(_ cid: String, _ label: String, _ tag: String, _ detail: String, _ tone: String) -> JS {
+                let x = JS.object()
+                x.id = JS(cid); x.label = JS(label); x.tag = JS(tag); x.detail = JS(detail); x.tone = JS(tone)
+                return x
+            }
+
+            let topic: String
+            if shockPct >= 5 { topic = "accountability" }
+            else if pctArr[domIdx] >= 55 { topic = "imbalance" }
+            else if activeWars > 0 { topic = "wartax" }
+            else if curCorrupt >= 32 || curGold < 260 { topic = "fiscal" }
+            else if pHouses >= 32 { topic = "curbhouses" }
+            else { topic = "civil" }
+
+            ag.id = JS("agenda:\(topic):force")
+            ag.tag = JS(lex.agendaTag)
+            ag.cooldownDays = JS(remDays)
+            if remDays > 0 {
+                ag.resolvedTitle = JS(r.regimes.nations[id].agendaLastTitle.optionalString ?? "本期\(lex.agendaTag)")
+                ag.resolvedOutcome = JS(r.regimes.nations[id].agendaLastOutcome.optionalString ?? "已完成表决，需待下届议期方可再议。")
+            }
+
+            switch topic {
+            case "accountability":
+                ag.title = JS(isRep ? "《国防听证与军备重整法案》" : "《战后问责与整军复仇案》")
+                ag.desc = JS("新败割地之后朝野震动（震荡 −\(shockPct)%），\(p2)与各方呼吁彻查失利责任并抚恤重整防务。")
+                ag.support = JS("\(p2) · \(p0)")
+                ag.oppose = JS("\(p3)")
+                ag.effect = JS("三线择一：强力整肃 / 妥协抚恤 / 军方让利")
+                ag.choices = .array([
+                    makeChoice("agenda:accountability:force", lex.forceActionLabel, "强硬追责", "立即平息战败震荡 · 全军士气 +25 · 耗 180 金 · 安定微降", "force"),
+                    makeChoice("agenda:accountability:compromise", lex.compromiseActionLabel, "温和重整", "战败震荡减半 · 士气 +14 · 国运 +4 · 政局回稳", "compromise"),
+                    makeChoice("agenda:accountability:bargain", "授军方扩编特权", "派系交换", "偏向\(p2) · 消除震荡且免费补充全军粮草 · 军权上升", "bargain"),
+                    makeChoice("agenda:accountability:table", "暂缓休会", "冷静 90 日", "平息争端 · 腐化 −3 · 90 日后重开议期", "table"),
+                ])
+            case "imbalance":
+                ag.title = JS(isRep ? "《宪政制衡与权力纠偏法案》" : "《整肃纲纪与制衡权势案》")
+                ag.desc = JS("\(lex.pillarFull[domIdx])当前独占 \(pctArr[domIdx])% 权重，若放任失衡将危及国家稳定与既定国体。")
+                ag.support = JS("\(p0) · \(p3)")
+                ag.oppose = JS("\(lex.pillarFull[domIdx])")
+                ag.effect = JS("回调权力天平 · 防止政变或寡头架空")
+                ag.choices = .array([
+                    makeChoice("agenda:imbalance:force", lex.forceActionLabel, "铁腕削权", "重置天平倾斜 · 腐化 −10 · 国运 +5 · 耗 220 金", "force"),
+                    makeChoice("agenda:imbalance:compromise", lex.compromiseActionLabel, "分权协定", "温和调衡 · 安定度显著提升 · 国运 +4", "compromise"),
+                    makeChoice("agenda:imbalance:bargain", "以财税换取退让", "利益赎买", "耗 320 金安抚强势派系 · 消除失衡风险且腐化 −5", "bargain"),
+                    makeChoice("agenda:imbalance:table", "维持现状", "观望 90 日", "暂不干预 · 留存政费 +120 金", "table"),
+                ])
+            case "wartax":
+                ag.title = JS(isRep ? "《战时国防特别预算与债券法案》" : "《战时急征军饷与前线犒师案》")
+                ag.desc = JS(isRep ? "前线战事吃紧，内阁与国防部提请国会批准战时特别军费与债券筹款，保障三军补给。" : "前线兵戈正急，中枢提请开征战时特饷并调拨粮秣，充作前线将士军需。")
+                ag.support = JS("\(p2) · \(p0)")
+                ag.oppose = JS("\(p1)")
+                ag.effect = JS("战时筹饷与后勤补给 · 每次议期仅可决断一次")
+                ag.choices = .array([
+                    makeChoice("agenda:wartax:force", lex.forceActionLabel, "全额特饷", "国库 +380 金 · 全军粮草补满 · 士气 +18 · 腐化 +4、国运 −2", "force"),
+                    makeChoice("agenda:wartax:compromise", lex.compromiseActionLabel, "折中军债", "国库 +220 金 · 全军士气 +12 · 安定无损且国运 +2", "compromise"),
+                    makeChoice("agenda:wartax:bargain", isRep ? "让渡商税换债券" : "赐爵换取豪门捐饷", "派系筹款", "偏向\(p1) · 国库 +520 金 · 军粮满额", "bargain"),
+                    makeChoice("agenda:wartax:table", "严控军费休会", "节流 90 日", "不加新税 · 民心回升 · 腐化 −4 · 国运 +3", "table"),
+                ])
+            case "fiscal":
+                ag.title = JS(isRep ? "《联邦审计反腐与税制改革法案》" : "《整顿盐铁与清查亏空案》")
+                ag.desc = JS("当前财税承压或腐化偏高（腐化 \(Int(curCorrupt))），财政部门呼吁彻查漏税与冗余开支。")
+                ag.support = JS("\(p3) · \(p0)")
+                ag.oppose = JS("\(p1)")
+                ag.effect = JS("开源节流 · 肃清贪墨与充实国库")
+                ag.choices = .array([
+                    makeChoice("agenda:fiscal:force", lex.forceActionLabel, "雷霆查账", "腐化 −14 · 国库 +320 金 · 国运 −1", "force"),
+                    makeChoice("agenda:fiscal:compromise", lex.compromiseActionLabel, "渐进税改", "腐化 −8 · 国库 +180 金 · 国运 +3", "compromise"),
+                    makeChoice("agenda:fiscal:bargain", "特许专卖筹款", "以权换钱", "偏向\(p1) · 国库 +460 金 · 腐化 +3", "bargain"),
+                    makeChoice("agenda:fiscal:table", "延后审计", "休会 90 日", "避免剧烈震荡 · 安定度微升", "table"),
+                ])
+            case "curbhouses":
+                ag.title = JS(isRep ? "《反垄断拆分财团与选举透明法案》" : "《清丈勋贵田庄与抑豪强案》")
+                ag.desc = JS(isRep ? "\(p1)影响力膨胀（占天平 \(pHouses)%），议会呼吁推动反垄断法案与政治献金透明化。" : "\(p1)权势日炽（占天平 \(pHouses)%），中枢奏请清丈隐田、收权归公。")
+                ag.support = JS("\(p0) · \(p3)")
+                ag.oppose = JS("\(p1)")
+                ag.effect = JS("遏制寡头门阀坐大 · 增加公库与清廉度")
+                ag.choices = .array([
+                    makeChoice("agenda:curbhouses:force", lex.forceActionLabel, "强力抑强", "\(lex.houseUnitLabel)权重 −30 · 国库 +340 金 · 腐化 −8", "force"),
+                    makeChoice("agenda:curbhouses:compromise", lex.compromiseActionLabel, "协商纳税", "权重 −15 · 国库 +200 金 · 腐化 −5 · 国运 +3", "compromise"),
+                    makeChoice("agenda:curbhouses:bargain", "纳入内阁共治", "招安合作", "偏向\(p1) · 消除离心危机 · 国运 +4", "bargain"),
+                    makeChoice("agenda:curbhouses:table", "暂缓动议", "休会 90 日", "缓和内部对立 · 90 日后再议", "table"),
+                ])
+            default:
+                ag.title = JS(isRep ? "《国民教育普及与基建振兴法案》" : "《开科取士与劝农兴学案》")
+                ag.desc = JS(isRep ? "国内承平，内阁与议会提议加大公立教育与基础建设投入，培育人才并提振人口增长。" : "四境暂安，中枢提请广开官学、选拔良才并劝课农桑以固国本。")
+                ag.support = JS("\(p3) · \(p0)")
+                ag.oppose = JS("\(p1)")
+                ag.effect = JS("全境增丁 · 降腐化 · 提升国运与长远国力")
+                ag.choices = .array([
+                    makeChoice("agenda:civil:force", lex.forceActionLabel, "全力兴办", "耗 160 金 · 全境人口 +3% · 腐化 −6 · 国运 +6", "force"),
+                    makeChoice("agenda:civil:compromise", lex.compromiseActionLabel, "稳健推进", "全境人口 +2% · 腐化 −4 · 国运 +4", "compromise"),
+                    makeChoice("agenda:civil:bargain", isRep ? "公私合营募资" : "令地方大族捐学", "筹资兴学", "偏向\(p1) · 免耗国库且人口 +2%、存粮 +15%", "bargain"),
+                    makeChoice("agenda:civil:table", "留存国帑", "休会 90 日", "国库 +140 金 · 休养生息", "table"),
+                ])
             }
             o.agenda = ag
         }

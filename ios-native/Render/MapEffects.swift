@@ -67,12 +67,11 @@ struct MapEffects: Equatable {
 final class EffectsView: UIView {
     /// Smoke, fire and sparks (设置 › 粒子特效).
     static var particles = true
-    /// 动画帧率 (推演与画面): looping ambient animations (waves, battle marks, flags, marching arrows)
-    /// run at this many frames; with ProMotion unlocked they otherwise ran the screen at 120 all war long.
-    static var fps = 30
+    /// 动画帧率 (推演与画面): 默认解锁真 60/120fps 丝滑实时动画（仅高温时柔和回落至 30fps）。
+    static var fps = 60
     static func calm(_ a: CAAnimation) -> CAAnimation {
-        let f = Float(Energy.hot ? min(fps, 30) : fps)
-        a.preferredFrameRateRange = CAFrameRateRange(minimum: max(8, f / 2), maximum: f, preferred: f)
+        let f = Float(Energy.hot ? min(fps, 30) : max(60, fps))
+        a.preferredFrameRateRange = CAFrameRateRange(minimum: max(30, f / 2), maximum: max(f, 120), preferred: f)
         return a
     }
     private var battleLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
@@ -260,18 +259,13 @@ final class EffectsView: UIView {
             splash.add(Self.calm(sg), forKey: "splash-\(side)")
             root.addSublayer(splash)
         }
-        // 海战按文明大系播放 4×1 透明序列帧战舰（东亚楼船／北欧维京长船／伊斯兰三角帆舰／西洋盖伦，真逐帧破浪划桨）
-        let shipSpec = SpriteSheetSpec.warship(for: culture)
-        let shipSheet = SpriteSheetLayer(spec: shipSpec)
-        shipSheet.bounds = CGRect(x: 0, y: 0, width: 44, height: 34)
-        shipSheet.position = CGPoint(x: 22, y: 15)
-        shipSheet.configure(spec: shipSpec, state: .combat, fps: 6.5, phaseOffset: Double.random(in: 0..<0.6))
-        root.addSublayer(shipSheet)
-        if Self.particles && !Energy.hot && battleLayers.count < 6 {
-            let e = CAEmitterLayer(); e.emitterShape = .line; e.emitterSize = CGSize(width: 32, height: 1); e.emitterPosition = CGPoint(x: 22, y: 15)
+        // 取消僵硬 4 帧船贴图，海面主角交给清晰的国色 UnitArt 战舰，交锋点专注 60/120fps 舷炮弹道、火花与洁白水花涟漪
+        _ = culture
+        if Self.particles && !Energy.hot && battleLayers.count < 8 {
+            let e = CAEmitterLayer(); e.emitterShape = .line; e.emitterSize = CGSize(width: 28, height: 1); e.emitterPosition = CGPoint(x: 22, y: 15)
             e.emitterCells = [
-                cell(Self.puff, color: UIColor(white: 0.96, alpha: 0.28), rate: 3.4, life: 1.9, velocity: 8, range: .pi / 4, scale: 0.34, scaleSpeed: 0.16, alphaSpeed: -0.11, spin: 0.2, angle: -.pi / 2),
-                cell(Self.spark, color: UIColor(red: 1, green: 0.68, blue: 0.22, alpha: 1), rate: 5.0, life: 0.30, velocity: 22, range: .pi / 4, scale: 0.60, scaleSpeed: -1.3, alphaSpeed: -3, angle: -.pi / 2),
+                cell(Self.puff, color: UIColor(white: 0.96, alpha: 0.28), rate: 3.8, life: 1.7, velocity: 9, range: .pi / 4, scale: 0.30, scaleSpeed: 0.16, alphaSpeed: -0.14, spin: 0.25, angle: -.pi / 2),
+                cell(Self.spark, color: UIColor(red: 1, green: 0.72, blue: 0.24, alpha: 1), rate: 6.5, life: 0.32, velocity: 24, range: .pi / 3, scale: 0.56, scaleSpeed: -1.2, alphaSpeed: -2.8, angle: -.pi / 2),
             ]
             e.renderMode = .unordered
             root.insertSublayer(e, at: 0)
@@ -305,56 +299,93 @@ final class EffectsView: UIView {
         bar.sublayers![1].frame = CGRect(x: share, y: 0, width: w - share, height: h); bar.sublayers![1].backgroundColor = UIColor(red: r.r, green: r.g, blue: r.b, alpha: 1).cgColor
     }
     private func battleLayer(culture: String) -> CALayer {
-        // 视觉化纯图战局演出：4×1 透明序列帧兵戈交击（sheet-battle-clash）+ 双向抛物线箭雨/炮火轨迹 + 双色兵力对比条 + 战线推进波纹（彻底废除静态图代码摇晃）。
+        // 60/120fps 纯实时灵动水墨刀光剧场（零 4 帧卡顿贴图）：双弧刀光疾斩 + 星芒撞击瞬闪 + 双向箭雨抛物线 + 柔墨波纹 + 清晰双色兵力条。
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 46, height: 36)
-        let strength = CALayer(); strength.name = "strength"; strength.bounds = CGRect(x: 0, y: 0, width: 42, height: 5.0); strength.position = CGPoint(x: 23, y: -11)
-        strength.cornerRadius = 2.5; strength.masksToBounds = true; strength.borderWidth = 0.85; strength.borderColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 0.96).cgColor; strength.isHidden = true
+        let strength = CALayer(); strength.name = "strength"; strength.bounds = CGRect(x: 0, y: 0, width: 40, height: 4.6); strength.position = CGPoint(x: 23, y: -10)
+        strength.cornerRadius = 2.3; strength.masksToBounds = true; strength.borderWidth = 0.8; strength.borderColor = UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 0.95).cgColor; strength.isHidden = true
         strength.addSublayer(CALayer()); strength.addSublayer(CALayer()); root.addSublayer(strength)
 
-        // 战线推进水墨朱金扩散波纹
+        let phase = Double.random(in: 0..<0.55)
+
+        // 1. 柔和朱墨冲击波环（60/120fps 弹性外扩）
         let pulseRing = CAShapeLayer(); pulseRing.frame = root.bounds
-        pulseRing.path = UIBezierPath(ovalIn: CGRect(x: 11, y: 7, width: 24, height: 20)).cgPath
+        pulseRing.path = UIBezierPath(ovalIn: CGRect(x: 13, y: 9, width: 20, height: 18)).cgPath
         pulseRing.fillColor = nil
-        pulseRing.strokeColor = UIColor(red: 0.88, green: 0.30, blue: 0.14, alpha: 0.62).cgColor
-        pulseRing.lineWidth = 1.45
-        let prScale = CABasicAnimation(keyPath: "transform.scale"); prScale.fromValue = 0.65; prScale.toValue = 1.88
-        let prFade = CAKeyframeAnimation(keyPath: "opacity"); prFade.values = [0.0, 0.78, 0.0]; prFade.keyTimes = [0, 0.22, 1]
-        let prGroup = CAAnimationGroup(); prGroup.animations = [prScale, prFade]; prGroup.duration = 1.25; prGroup.repeatCount = .infinity
-        prGroup.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        pulseRing.strokeColor = UIColor(red: 0.82, green: 0.24, blue: 0.14, alpha: 0.56).cgColor
+        pulseRing.lineWidth = 1.35
+        let prScale = CABasicAnimation(keyPath: "transform.scale"); prScale.fromValue = 0.58; prScale.toValue = 1.82
+        let prFade = CAKeyframeAnimation(keyPath: "opacity"); prFade.values = [0.0, 0.72, 0.0]; prFade.keyTimes = [0, 0.22, 1]
+        let prGroup = CAAnimationGroup(); prGroup.animations = [prScale, prFade]; prGroup.duration = 1.10; prGroup.repeatCount = .infinity
+        prGroup.timeOffset = phase; prGroup.timingFunction = CAMediaTimingFunction(name: .easeOut)
         pulseRing.add(Self.calm(prGroup), forKey: "clashRing")
         root.addSublayer(pulseRing)
 
-        // 双向抛物线箭雨／火炮弹道轨迹（左右阵营交替齐射）
+        // 2. 双弧凌厉交锋刀光（左右交替疾速挥斩拉尾，120Hz 真丝滑）
+        for side in 0..<2 {
+            let slash = CAShapeLayer(); slash.frame = root.bounds
+            let sp = UIBezierPath()
+            if side == 0 {
+                sp.move(to: CGPoint(x: 11, y: 27))
+                sp.addQuadCurve(to: CGPoint(x: 35, y: 7), controlPoint: CGPoint(x: 17, y: 10))
+            } else {
+                sp.move(to: CGPoint(x: 35, y: 27))
+                sp.addQuadCurve(to: CGPoint(x: 11, y: 7), controlPoint: CGPoint(x: 29, y: 10))
+            }
+            slash.path = sp.cgPath; slash.fillColor = nil
+            slash.strokeColor = (side == 0 ? UIColor(red: 1.0, green: 0.96, blue: 0.82, alpha: 0.96) : UIColor(red: 0.98, green: 0.76, blue: 0.28, alpha: 0.95)).cgColor
+            slash.lineWidth = 2.6; slash.lineCap = .round
+            let sEnd = CAKeyframeAnimation(keyPath: "strokeEnd"); sEnd.values = [0.0, 1.0, 1.0]; sEnd.keyTimes = [0, 0.34, 1]
+            let sStart = CAKeyframeAnimation(keyPath: "strokeStart"); sStart.values = [0.0, 0.14, 1.0]; sStart.keyTimes = [0, 0.24, 0.72]
+            let sOp = CAKeyframeAnimation(keyPath: "opacity"); sOp.values = [0.0, 1.0, 0.92, 0.0]; sOp.keyTimes = [0, 0.12, 0.42, 0.78]
+            let sg = CAAnimationGroup(); sg.animations = [sEnd, sStart, sOp]; sg.duration = 0.76; sg.repeatCount = .infinity
+            sg.timeOffset = phase + Double(side) * 0.38
+            sg.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 0.86, 0.28, 1)
+            slash.add(Self.calm(sg), forKey: "slash-\(side)")
+            root.addSublayer(slash)
+        }
+
+        // 3. 刀锋相接处金红十字星芒瞬闪
+        let sparkStar = CAShapeLayer(); sparkStar.frame = CGRect(x: 15, y: 10, width: 16, height: 16)
+        let gp = UIBezierPath()
+        gp.move(to: CGPoint(x: 8, y: 1)); gp.addLine(to: CGPoint(x: 9.6, y: 6.4)); gp.addLine(to: CGPoint(x: 15, y: 8))
+        gp.addLine(to: CGPoint(x: 9.6, y: 9.6)); gp.addLine(to: CGPoint(x: 8, y: 15)); gp.addLine(to: CGPoint(x: 6.4, y: 9.6))
+        gp.addLine(to: CGPoint(x: 1, y: 8)); gp.addLine(to: CGPoint(x: 6.4, y: 6.4)); gp.close()
+        sparkStar.path = gp.cgPath
+        sparkStar.fillColor = UIColor(red: 1.0, green: 0.92, blue: 0.56, alpha: 0.98).cgColor
+        sparkStar.strokeColor = UIColor(red: 0.86, green: 0.26, blue: 0.12, alpha: 0.85).cgColor
+        sparkStar.lineWidth = 0.7
+        let stScale = CAKeyframeAnimation(keyPath: "transform.scale"); stScale.values = [0.25, 1.25, 0.45, 0.25]; stScale.keyTimes = [0, 0.22, 0.58, 1]
+        let stRot = CABasicAnimation(keyPath: "transform.rotation.z"); stRot.fromValue = 0; stRot.toValue = Double.pi * 0.5
+        let stOp = CAKeyframeAnimation(keyPath: "opacity"); stOp.values = [0.0, 1.0, 0.0, 0.0]; stOp.keyTimes = [0, 0.18, 0.58, 1]
+        let stg = CAAnimationGroup(); stg.animations = [stScale, stRot, stOp]; stg.duration = 0.38; stg.repeatCount = .infinity
+        stg.timeOffset = phase + 0.10
+        sparkStar.add(Self.calm(stg), forKey: "clashSpark")
+        root.addSublayer(sparkStar)
+
+        // 4. 纤细轻快的双向流矢抛物线（节奏错开、绝不杂乱）
         for side in 0..<2 {
             let arc = CAShapeLayer(); arc.frame = root.bounds
             let p = UIBezierPath()
             if side == 0 {
-                p.move(to: CGPoint(x: 2, y: 24))
-                p.addQuadCurve(to: CGPoint(x: 44, y: 18), controlPoint: CGPoint(x: 23, y: 0))
+                p.move(to: CGPoint(x: 3, y: 24))
+                p.addQuadCurve(to: CGPoint(x: 43, y: 18), controlPoint: CGPoint(x: 23, y: 2))
             } else {
-                p.move(to: CGPoint(x: 44, y: 24))
-                p.addQuadCurve(to: CGPoint(x: 2, y: 18), controlPoint: CGPoint(x: 23, y: 2))
+                p.move(to: CGPoint(x: 43, y: 24))
+                p.addQuadCurve(to: CGPoint(x: 3, y: 18), controlPoint: CGPoint(x: 23, y: 4))
             }
             arc.path = p.cgPath; arc.fillColor = nil
-            arc.strokeColor = (side == 0 ? UIColor(red: 0.99, green: 0.88, blue: 0.44, alpha: 0.92) : UIColor(red: 0.96, green: 0.56, blue: 0.22, alpha: 0.88)).cgColor
-            arc.lineWidth = 1.65; arc.lineCap = .round
-            let head = CAKeyframeAnimation(keyPath: "strokeEnd"); head.values = [0.0, 1.0, 1.0]; head.keyTimes = [0, 0.45, 1]
-            let tail = CAKeyframeAnimation(keyPath: "strokeStart"); tail.values = [0.0, 0.22, 1.0]; tail.keyTimes = [0, 0.35, 1]
-            let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0.0, 0.95, 0.0]; fade.keyTimes = [0, 0.30, 1]
+            arc.strokeColor = (side == 0 ? UIColor(red: 0.99, green: 0.86, blue: 0.44, alpha: 0.88) : UIColor(red: 0.94, green: 0.52, blue: 0.22, alpha: 0.82)).cgColor
+            arc.lineWidth = 1.35; arc.lineCap = .round
+            let head = CAKeyframeAnimation(keyPath: "strokeEnd"); head.values = [0.0, 1.0, 1.0]; head.keyTimes = [0, 0.42, 1]
+            let tail = CAKeyframeAnimation(keyPath: "strokeStart"); tail.values = [0.0, 0.24, 1.0]; tail.keyTimes = [0, 0.34, 1]
+            let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0.0, 0.92, 0.0]; fade.keyTimes = [0, 0.28, 1]
             let ag = CAAnimationGroup(); ag.animations = [head, tail, fade]; ag.duration = 0.92; ag.repeatCount = .infinity
-            ag.timeOffset = Double(side) * 0.46 + Double.random(in: 0..<0.2)
+            ag.timeOffset = phase + Double(side) * 0.46
             arc.add(Self.calm(ag), forKey: "volley-\(side)")
             root.addSublayer(arc)
         }
 
-        // 真 4×1 透明序列帧交战核心（战戟长剑碰撞火花、流矢飞溅与战烟翻涌）
-        let clashSheet = SpriteSheetLayer(spec: .battleClash)
-        clashSheet.bounds = CGRect(x: 0, y: 0, width: 46, height: 46)
-        clashSheet.position = CGPoint(x: 23, y: 17)
-        clashSheet.configure(spec: .battleClash, state: .combat, fps: 8.5, phaseOffset: Double.random(in: 0..<0.45))
-        root.addSublayer(clashSheet)
-
-        if Self.particles && !Energy.hot && battleLayers.count < 6 {
+        if Self.particles && !Energy.hot && battleLayers.count < 8 {
             let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: 23, y: 18); root.insertSublayer(smoke, at: 0)
         }
         _ = culture
@@ -362,83 +393,132 @@ final class EffectsView: UIView {
     }
 
     private func siegeLayer(color: UIColor) -> (CALayer, CAShapeLayer) {
-        // 围城：国色攻城进度弧内嵌 4×1 透明序列帧攻城烈焰与浓烟（sheet-siege-smoke），真逐帧燃烧升腾。
-        let side: CGFloat = 34, mid = side / 2, radius: CGFloat = 12.2
+        // 60/120fps 清雅围城城圈：宣纸底细墨环 + 顺时针国色合拢进度弧 + 柔和外扩波纹 + 轻盈上升暖金余烬（彻底告别糊成黑块的贴图烟）。
+        let side: CGFloat = 30, mid = side / 2, radius: CGFloat = 10.8
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: side, height: side)
         let circle = UIBezierPath(arcCenter: CGPoint(x: mid, y: mid), radius: radius, startAngle: -.pi / 2, endAngle: .pi * 1.5, clockwise: true)
-        let track = CAShapeLayer(); track.frame = root.bounds; track.path = circle.cgPath
-        track.fillColor = nil; track.strokeColor = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 0.22).cgColor; track.lineWidth = 2.6
+
+        let back = CAShapeLayer(); back.frame = root.bounds; back.path = circle.cgPath
+        back.fillColor = UIColor(red: 0.97, green: 0.94, blue: 0.87, alpha: 0.52).cgColor
+        back.strokeColor = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 0.32).cgColor; back.lineWidth = 1.6
+
         let ring = CAShapeLayer(); ring.frame = root.bounds; ring.path = circle.cgPath
-        ring.fillColor = nil; ring.strokeColor = color.cgColor; ring.lineWidth = 2.8; ring.lineCap = .round; ring.strokeEnd = 0
+        ring.fillColor = nil; ring.strokeColor = color.cgColor; ring.lineWidth = 2.6; ring.lineCap = .round; ring.strokeEnd = 0
+
         let pulse = CAShapeLayer(); pulse.frame = root.bounds; pulse.path = circle.cgPath
-        pulse.fillColor = nil; pulse.strokeColor = color.withAlphaComponent(0.55).cgColor; pulse.lineWidth = 1.15
-        let pScale = CABasicAnimation(keyPath: "transform.scale"); pScale.fromValue = 1.0; pScale.toValue = 1.56
-        let pFade = CABasicAnimation(keyPath: "opacity"); pFade.fromValue = 0.58; pFade.toValue = 0.0
-        let pGroup = CAAnimationGroup(); pGroup.animations = [pScale, pFade]; pGroup.duration = 1.85; pGroup.repeatCount = .infinity
+        pulse.fillColor = nil; pulse.strokeColor = color.withAlphaComponent(0.50).cgColor; pulse.lineWidth = 1.05
+        let pScale = CABasicAnimation(keyPath: "transform.scale"); pScale.fromValue = 1.0; pScale.toValue = 1.52
+        let pFade = CABasicAnimation(keyPath: "opacity"); pFade.fromValue = 0.56; pFade.toValue = 0.0
+        let pGroup = CAAnimationGroup(); pGroup.animations = [pScale, pFade]; pGroup.duration = 1.75; pGroup.repeatCount = .infinity
         pGroup.timingFunction = CAMediaTimingFunction(name: .easeOut)
         pulse.add(Self.calm(pGroup), forKey: "pulse")
-        root.addSublayer(pulse); root.addSublayer(track); root.addSublayer(ring)
 
-        let smokeSheet = SpriteSheetLayer(spec: .siegeSmoke)
-        smokeSheet.bounds = CGRect(x: 0, y: 0, width: 28, height: 34)
-        smokeSheet.anchorPoint = CGPoint(x: 0.5, y: 0.85)
-        smokeSheet.position = CGPoint(x: mid, y: mid + 8)
-        smokeSheet.configure(spec: .siegeSmoke, state: .siege, fps: 6.5, phaseOffset: Double.random(in: 0..<0.6))
-        root.addSublayer(smokeSheet)
+        // 城心国色微呼吸点
+        let core = CAShapeLayer(); core.frame = root.bounds
+        core.path = UIBezierPath(ovalIn: CGRect(x: mid - 2.6, y: mid - 2.6, width: 5.2, height: 5.2)).cgPath
+        core.fillColor = color.withAlphaComponent(0.86).cgColor
+        let cPulse = CAKeyframeAnimation(keyPath: "transform.scale"); cPulse.values = [0.82, 1.22, 0.82]; cPulse.duration = 1.2; cPulse.repeatCount = .infinity
+        cPulse.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        core.add(Self.calm(cPulse), forKey: "core")
+
+        root.addSublayer(pulse); root.addSublayer(back); root.addSublayer(ring); root.addSublayer(core)
+
+        if Self.particles && !Energy.hot && siegeLayers.count < 10 {
+            let e = CAEmitterLayer(); e.emitterShape = .point; e.emitterPosition = CGPoint(x: mid, y: mid - 2)
+            e.emitterCells = [
+                cell(Self.puff, color: UIColor(red: 0.28, green: 0.24, blue: 0.20, alpha: 0.16), rate: 1.8, life: 1.4, velocity: 8, range: .pi / 5, scale: 0.18, scaleSpeed: 0.10, alphaSpeed: -0.11, angle: -.pi / 2),
+                cell(Self.spark, color: UIColor(red: 0.98, green: 0.58, blue: 0.18, alpha: 0.95), rate: 2.8, life: 0.65, velocity: 14, range: .pi / 3, scale: 0.34, scaleSpeed: -0.35, alphaSpeed: -1.3, angle: -.pi / 2)
+            ]
+            e.renderMode = .unordered
+            root.insertSublayer(e, at: 0)
+        }
         return (root, ring)
     }
 
     private func flashLayer(color: UIColor, culture: String) -> CALayer {
-        // 攻占：插落手绘丝绸龙云燕尾大战旗（`fx-banner-victory`），落杆微弹＋持续迎风猎猎招展＋双层国色墨波与金芒！
+        // 60/120fps 真丝滑矢量国色飘扬战旗：旗杆弹性插落 + 连续贝塞尔路径丝绸招展（真正 60/120fps 柔波）+ 双层水墨与国色涟漪 + 鎏金星芒。
+        _ = culture
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 120, height: 120)
         let ink = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 1)
+        let gold = UIColor(red: 0.94, green: 0.76, blue: 0.28, alpha: 1)
+
         let ripple = CAShapeLayer(); ripple.frame = root.bounds
         ripple.path = UIBezierPath(ovalIn: CGRect(x: 48, y: 57, width: 24, height: 10)).cgPath
-        ripple.fillColor = nil; ripple.strokeColor = ink.withAlphaComponent(0.60).cgColor; ripple.lineWidth = 1.25; ripple.opacity = 0
-        let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.4; grow.toValue = 2.4
-        let fadeRing = CAKeyframeAnimation(keyPath: "opacity"); fadeRing.values = [0, 0.92, 0]; fadeRing.keyTimes = [0, 0.2, 1]
+        ripple.fillColor = nil; ripple.strokeColor = ink.withAlphaComponent(0.55).cgColor; ripple.lineWidth = 1.2; ripple.opacity = 0
+        let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.4; grow.toValue = 2.35
+        let fadeRing = CAKeyframeAnimation(keyPath: "opacity"); fadeRing.values = [0, 0.88, 0]; fadeRing.keyTimes = [0, 0.2, 1]
         let rippleGroup = CAAnimationGroup(); rippleGroup.animations = [grow, fadeRing]; rippleGroup.duration = 1.15
-        rippleGroup.beginTime = CACurrentMediaTime() + 0.20; rippleGroup.timingFunction = CAMediaTimingFunction(controlPoints: 0.15, 0.6, 0.3, 1)
+        rippleGroup.beginTime = CACurrentMediaTime() + 0.18; rippleGroup.timingFunction = CAMediaTimingFunction(controlPoints: 0.15, 0.6, 0.3, 1)
         rippleGroup.fillMode = .both; rippleGroup.isRemovedOnCompletion = false
-        ripple.add(rippleGroup, forKey: "ripple"); root.addSublayer(ripple)
+        ripple.add(Self.calm(rippleGroup), forKey: "ripple"); root.addSublayer(ripple)
 
         let echo = CAShapeLayer(); echo.frame = root.bounds
         echo.path = UIBezierPath(ovalIn: CGRect(x: 46, y: 56, width: 28, height: 12)).cgPath
-        echo.fillColor = nil; echo.strokeColor = color.withAlphaComponent(0.78).cgColor; echo.lineWidth = 1.6; echo.opacity = 0
-        let echoGrow = CABasicAnimation(keyPath: "transform.scale"); echoGrow.fromValue = 0.5; echoGrow.toValue = 2.85
-        let echoFade = CAKeyframeAnimation(keyPath: "opacity"); echoFade.values = [0, 0.88, 0]; echoFade.keyTimes = [0, 0.22, 1]
+        echo.fillColor = nil; echo.strokeColor = color.withAlphaComponent(0.76).cgColor; echo.lineWidth = 1.5; echo.opacity = 0
+        let echoGrow = CABasicAnimation(keyPath: "transform.scale"); echoGrow.fromValue = 0.5; echoGrow.toValue = 2.8
+        let echoFade = CAKeyframeAnimation(keyPath: "opacity"); echoFade.values = [0, 0.86, 0]; echoFade.keyTimes = [0, 0.22, 1]
         let echoGroup = CAAnimationGroup(); echoGroup.animations = [echoGrow, echoFade]; echoGroup.duration = 1.25
-        echoGroup.beginTime = CACurrentMediaTime() + 0.32; echoGroup.timingFunction = CAMediaTimingFunction(controlPoints: 0.15, 0.6, 0.3, 1)
+        echoGroup.beginTime = CACurrentMediaTime() + 0.28; echoGroup.timingFunction = CAMediaTimingFunction(controlPoints: 0.15, 0.6, 0.3, 1)
         echoGroup.fillMode = .both; echoGroup.isRemovedOnCompletion = false
-        echo.add(echoGroup, forKey: "echo"); root.addSublayer(echo)
+        echo.add(Self.calm(echoGroup), forKey: "echo"); root.addSublayer(echo)
 
-        // 攻占插旗：优先使用 4×1 透明飘扬战旗序列帧（sheet-banner-wave），真正逐帧猎猎招展！
-        if BundleArt.sheetBannerWave != nil {
-            let flag = SpriteSheetLayer(spec: .bannerWave)
-            flag.bounds = CGRect(x: 0, y: 0, width: 42, height: 42)
-            flag.anchorPoint = CGPoint(x: 0.34, y: 0.92)
-            flag.position = CGPoint(x: 60, y: 63)
-            flag.configure(spec: .bannerWave, state: .march, fps: 7.5, repeatCount: .infinity)
-            let drop = CABasicAnimation(keyPath: "transform.translation.y"); drop.fromValue = -18; drop.toValue = 0; drop.duration = 0.22
-            drop.timingFunction = CAMediaTimingFunction(name: .easeIn)
-            let fadeOut = CAKeyframeAnimation(keyPath: "opacity"); fadeOut.values = [0, 1, 1, 0]; fadeOut.keyTimes = [0, 0.08, 0.78, 1]; fadeOut.duration = 2.15
-            let plant = CAAnimationGroup(); plant.animations = [drop, fadeOut]; plant.duration = 2.15
-            plant.fillMode = .forwards; plant.isRemovedOnCompletion = false
-            flag.add(plant, forKey: "plant"); root.addSublayer(flag)
-        } else {
-            let flag = CALayer()
-            flag.contents = BundleArt.victoryBanner(for: culture)?.cgImage
-            flag.contentsGravity = .resizeAspect
-            flag.bounds = CGRect(x: 0, y: 0, width: 38, height: 38)
-            flag.anchorPoint = CGPoint(x: 0.32, y: 0.92)
-            flag.position = CGPoint(x: 60, y: 63)
-            let drop = CABasicAnimation(keyPath: "transform.translation.y"); drop.fromValue = -18; drop.toValue = 0; drop.duration = 0.24
-            drop.timingFunction = CAMediaTimingFunction(name: .easeIn)
-            let fadeOut = CAKeyframeAnimation(keyPath: "opacity"); fadeOut.values = [0, 1, 1, 0]; fadeOut.keyTimes = [0, 0.08, 0.78, 1]; fadeOut.duration = 2.15
-            let plant = CAAnimationGroup(); plant.animations = [drop, fadeOut]; plant.duration = 2.15
-            plant.fillMode = .forwards; plant.isRemovedOnCompletion = false
-            flag.add(plant, forKey: "plant"); root.addSublayer(flag)
+        // 矢量国色燕尾旗组合层（旗杆不动，旗面 60/120fps 连续贝塞尔柔波变形）
+        let flagHost = CALayer()
+        flagHost.bounds = CGRect(x: 0, y: 0, width: 42, height: 42)
+        flagHost.anchorPoint = CGPoint(x: 0.24, y: 0.92)
+        flagHost.position = CGPoint(x: 60, y: 63)
+
+        let pole = CAShapeLayer(); pole.frame = flagHost.bounds
+        let pp = UIBezierPath(); pp.move(to: CGPoint(x: 10, y: 39)); pp.addLine(to: CGPoint(x: 10, y: 7))
+        pole.path = pp.cgPath; pole.strokeColor = ink.cgColor; pole.lineWidth = 1.9; pole.lineCap = .round
+        flagHost.addSublayer(pole)
+
+        let finial = CAShapeLayer(); finial.frame = flagHost.bounds
+        let fp = UIBezierPath()
+        fp.move(to: CGPoint(x: 10, y: 2.5)); fp.addLine(to: CGPoint(x: 12.2, y: 7)); fp.addLine(to: CGPoint(x: 10, y: 9.2)); fp.addLine(to: CGPoint(x: 7.8, y: 7)); fp.close()
+        finial.path = fp.cgPath; finial.fillColor = gold.cgColor; finial.strokeColor = ink.withAlphaComponent(0.6).cgColor; finial.lineWidth = 0.6
+        flagHost.addSublayer(finial)
+
+        func clothPath(waveA: CGFloat, waveB: CGFloat, tipY: CGFloat) -> CGPath {
+            let p = UIBezierPath()
+            p.move(to: CGPoint(x: 11, y: 9))
+            p.addCurve(to: CGPoint(x: 35, y: 10 + tipY),
+                       controlPoint1: CGPoint(x: 18, y: 6 + waveA),
+                       controlPoint2: CGPoint(x: 27, y: 13 + waveB))
+            p.addLine(to: CGPoint(x: 30, y: 16.5 + tipY * 0.7))
+            p.addLine(to: CGPoint(x: 35.5, y: 22.5 + tipY))
+            p.addCurve(to: CGPoint(x: 11, y: 23),
+                       controlPoint1: CGPoint(x: 27, y: 25.5 + waveB),
+                       controlPoint2: CGPoint(x: 18, y: 19 + waveA))
+            p.close()
+            return p.cgPath
         }
+
+        let cloth = CAShapeLayer(); cloth.frame = flagHost.bounds
+        let p0 = clothPath(waveA: -2.4, waveB: 2.6, tipY: -1.4)
+        let p1 = clothPath(waveA: 2.4, waveB: -2.2, tipY: 1.6)
+        let p2 = clothPath(waveA: -1.8, waveB: -1.4, tipY: -0.6)
+        cloth.path = p0
+        cloth.fillColor = color.cgColor
+        cloth.strokeColor = ink.withAlphaComponent(0.68).cgColor
+        cloth.lineWidth = 1.05; cloth.lineJoin = .round
+
+        let flutter = CAKeyframeAnimation(keyPath: "path")
+        flutter.values = [p0, p1, p2, p0]
+        flutter.keyTimes = [0, 0.36, 0.70, 1]
+        flutter.duration = 0.72; flutter.repeatCount = .infinity
+        flutter.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        cloth.add(Self.calm(flutter), forKey: "flutter")
+        flagHost.addSublayer(cloth)
+
+        let drop = CABasicAnimation(keyPath: "transform.translation.y"); drop.fromValue = -16; drop.toValue = 0; drop.duration = 0.22
+        drop.timingFunction = CAMediaTimingFunction(name: .easeIn)
+        let squash = CAKeyframeAnimation(keyPath: "transform.scale.y"); squash.values = [1.0, 0.86, 1.05, 1.0]; squash.keyTimes = [0, 0.4, 0.76, 1]; squash.beginTime = 0.22; squash.duration = 0.22
+        let fadeOut = CAKeyframeAnimation(keyPath: "opacity"); fadeOut.values = [0, 1, 1, 0]; fadeOut.keyTimes = [0, 0.08, 0.78, 1]; fadeOut.duration = 2.15
+        let plant = CAAnimationGroup(); plant.animations = [drop, squash, fadeOut]; plant.duration = 2.15
+        plant.fillMode = .forwards; plant.isRemovedOnCompletion = false
+        flagHost.add(Self.calm(plant), forKey: "plant")
+        root.addSublayer(flagHost)
 
         // 旗竿插落瞬间的鎏金星芒微闪
         let glint = CAShapeLayer(); glint.frame = CGRect(x: 52, y: 26, width: 16, height: 16)
@@ -453,7 +533,7 @@ final class EffectsView: UIView {
         let gFade = CAKeyframeAnimation(keyPath: "opacity"); gFade.values = [0, 0.95, 0]; gFade.keyTimes = [0, 0.3, 1]
         let gg = CAAnimationGroup(); gg.animations = [gScale, gFade]; gg.duration = 0.65; gg.beginTime = CACurrentMediaTime() + 0.22
         gg.fillMode = .both; gg.isRemovedOnCompletion = false
-        glint.add(gg, forKey: "glint"); root.addSublayer(glint)
+        glint.add(Self.calm(gg), forKey: "glint"); root.addSublayer(glint)
         return root
     }
 
@@ -551,19 +631,44 @@ final class EffectsView: UIView {
         return l
     }
 
-    /// 和约：宋画手绘丹顶白鹤衔枝展翅翔升，微倾振翼并伴随青碧墨涟漪。
+    /// 和约：60/120fps 青碧墨涟漪 + 极简宣纸白羽翔升（双翼以贝塞尔关键帧顺滑振翅飞渡，彻底融于纸面）。
     private func peaceLayer() -> CALayer {
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 88, height: 88)
-        root.addSublayer(inkRing(UIColor(red: 0.20, green: 0.52, blue: 0.42, alpha: 1)))
-        let l = CALayer(); l.bounds = CGRect(x: 0, y: 0, width: 44, height: 44); l.position = CGPoint(x: 44, y: 44)
-        l.contents = BundleArt.heraldPeace?.cgImage ?? Self.dove; l.contentsGravity = .resizeAspect; l.opacity = 0
-        let rise = CABasicAnimation(keyPath: "transform.translation.y"); rise.fromValue = 6; rise.toValue = -28; rise.duration = 1.9
-        rise.timingFunction = CAMediaTimingFunction(controlPoints: 0.25, 0.7, 0.3, 1)
-        let drift = CABasicAnimation(keyPath: "transform.translation.x"); drift.fromValue = 8; drift.toValue = -14; drift.duration = 1.9
-        let flap = CAKeyframeAnimation(keyPath: "transform.rotation.z"); flap.values = [-0.08, 0.10, -0.07, 0.08, -0.04]; flap.duration = 1.9
-        let opacity = CAKeyframeAnimation(keyPath: "opacity"); opacity.values = [0, 1, 1, 0]; opacity.keyTimes = [0, 0.18, 0.72, 1]; opacity.duration = 1.9
-        let group = CAAnimationGroup(); group.animations = [rise, drift, flap, opacity]; group.duration = 1.9; group.fillMode = .both; group.isRemovedOnCompletion = false
-        l.add(group, forKey: "peace"); root.addSublayer(l)
+        let jade = UIColor(red: 0.20, green: 0.52, blue: 0.42, alpha: 1)
+        root.addSublayer(inkRing(jade))
+
+        func wingPath(lift: CGFloat) -> CGPath {
+            let p = UIBezierPath()
+            p.move(to: CGPoint(x: 18, y: 16))
+            p.addQuadCurve(to: CGPoint(x: 3, y: 12 - lift), controlPoint: CGPoint(x: 10, y: 8 - lift))
+            p.addQuadCurve(to: CGPoint(x: 18, y: 20), controlPoint: CGPoint(x: 11, y: 18))
+            p.addQuadCurve(to: CGPoint(x: 33, y: 12 - lift), controlPoint: CGPoint(x: 25, y: 18))
+            p.addQuadCurve(to: CGPoint(x: 18, y: 16), controlPoint: CGPoint(x: 26, y: 8 - lift))
+            p.close()
+            return p.cgPath
+        }
+
+        let bird = CAShapeLayer()
+        bird.bounds = CGRect(x: 0, y: 0, width: 36, height: 32)
+        bird.position = CGPoint(x: 44, y: 44)
+        let wUp = wingPath(lift: 5.5), wMid = wingPath(lift: 0.5), wDown = wingPath(lift: -4.2)
+        bird.path = wUp
+        bird.fillColor = UIColor(red: 0.99, green: 0.98, blue: 0.94, alpha: 0.96).cgColor
+        bird.strokeColor = jade.withAlphaComponent(0.75).cgColor
+        bird.lineWidth = 1.15; bird.lineJoin = .round; bird.opacity = 0
+
+        let flap = CAKeyframeAnimation(keyPath: "path")
+        flap.values = [wUp, wMid, wDown, wMid, wUp]
+        flap.duration = 0.48; flap.repeatCount = .infinity
+        flap.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        bird.add(Self.calm(flap), forKey: "flap")
+
+        let rise = CABasicAnimation(keyPath: "transform.translation.y"); rise.fromValue = 6; rise.toValue = -30; rise.duration = 1.9
+        rise.timingFunction = CAMediaTimingFunction(controlPoints: 0.22, 0.72, 0.3, 1)
+        let drift = CABasicAnimation(keyPath: "transform.translation.x"); drift.fromValue = 6; drift.toValue = -14; drift.duration = 1.9
+        let opacity = CAKeyframeAnimation(keyPath: "opacity"); opacity.values = [0, 1, 1, 0]; opacity.keyTimes = [0, 0.16, 0.74, 1]; opacity.duration = 1.9
+        let group = CAAnimationGroup(); group.animations = [rise, drift, opacity]; group.duration = 1.9; group.fillMode = .both; group.isRemovedOnCompletion = false
+        bird.add(Self.calm(group), forKey: "peace"); root.addSublayer(bird)
         return root
     }
 
@@ -692,37 +797,33 @@ final class EffectsView: UIView {
             let thin = CABasicAnimation(keyPath: "lineWidth"); thin.fromValue = 2.4; thin.toValue = 0.4
             play(ring, [wave, waveFade, thin], duration: 0.85)
             root.addSublayer(ring)
-            // 折旗倒伏 / 战舰倾覆：按文明大系自动选用对应断旗（东亚残旗／西欧折枪纹章旗／伊斯兰残月旗）或沉没战舰（楼船／盖伦／维京长船）！
-            let artCG = isNaval ? (BundleArt.warship(for: b.culture)?.cgImage ?? Self.unitImage(b.unit, tint: color))
-                                : (BundleArt.fallenBanner(for: b.culture)?.cgImage ?? Self.unitImage(b.unit, tint: color))
-            if let icon = artCG {
+            // 军团棋子 / 战舰棋子倾覆下沉：直接复用与地图完全同源的国色 UnitArt 雕漆棋子，丝滑倾倒褪去、零贴图割裂感。
+            if let icon = Self.unitImage(b.unit, tint: color) {
                 let side: CGFloat = rnd() < 0.5 ? -1 : 1
-                let size = max(28, min(44, iconPoints * 1.45))
+                let size = max(20, min(32, iconPoints * 1.15))
                 let mark = CALayer(); mark.contents = icon; mark.contentsGravity = .resizeAspect
                 mark.bounds = CGRect(x: 0, y: 0, width: size, height: size)
-                mark.anchorPoint = CGPoint(x: 0.45, y: 0.88)
-                mark.position = CGPoint(x: 60, y: 62 + size * 0.22)
+                mark.anchorPoint = CGPoint(x: 0.5, y: 0.85)
+                mark.position = CGPoint(x: 60, y: 62 + size * 0.18)
                 mark.opacity = 0
                 if isNaval {
                     let pitch = CAKeyframeAnimation(keyPath: "transform.rotation.z")
                     pitch.values = [0, -0.22, -0.58, -0.74]; pitch.keyTimes = [0, 0.20, 0.65, 1]
                     let sink = CAKeyframeAnimation(keyPath: "transform.translation.y")
-                    sink.values = [0, -2, 6, 15]; sink.keyTimes = [0, 0.16, 0.58, 1]
+                    sink.values = [0, -2, 6, 14]; sink.keyTimes = [0, 0.16, 0.58, 1]
                     let shrink = CAKeyframeAnimation(keyPath: "transform.scale")
                     shrink.values = [1.0, 1.04, 0.86, 0.66]; shrink.keyTimes = [0, 0.18, 0.62, 1]
                     let fade = CAKeyframeAnimation(keyPath: "opacity")
                     fade.values = [1, 1, 0.68, 0]; fade.keyTimes = [0, 0.24, 0.64, 1]
-                    play(mark, [pitch, sink, shrink, fade], duration: 1.55, ease: .easeIn)
+                    play(mark, [pitch, sink, shrink, fade], duration: 1.50, ease: .easeIn)
                 } else {
                     let snap = CAKeyframeAnimation(keyPath: "transform.rotation.z")
                     snap.values = [0, -side * 0.14, side * 0.34, side * 1.18, side * 1.32]; snap.keyTimes = [0, 0.14, 0.34, 0.72, 1]
                     let sink = CAKeyframeAnimation(keyPath: "transform.translation.y")
-                    sink.values = [0, -3.5, 2, 10, 13]; sink.keyTimes = [0, 0.14, 0.36, 0.76, 1]
-                    let flutter = CAKeyframeAnimation(keyPath: "transform.scale.x")
-                    flutter.values = [1.0, 1.08, 0.90, 0.96, 0.84]; flutter.keyTimes = [0, 0.18, 0.44, 0.72, 1]
+                    sink.values = [0, -3.0, 2, 9, 12]; sink.keyTimes = [0, 0.14, 0.36, 0.76, 1]
                     let fade = CAKeyframeAnimation(keyPath: "opacity")
                     fade.values = [1, 1, 0.82, 0.38, 0]; fade.keyTimes = [0, 0.26, 0.58, 0.82, 1]
-                    play(mark, [snap, sink, flutter, fade], duration: 1.65, ease: .easeInEaseOut)
+                    play(mark, [snap, sink, fade], duration: 1.55, ease: .easeInEaseOut)
                 }
                 root.addSublayer(mark)
             }
@@ -742,123 +843,170 @@ final class EffectsView: UIView {
                 DispatchQueue.main.asyncAfter(deadline: .now() + b.delay + 0.55) { e.birthRate = 0 }
             }
         default:
-            // 全面废除旧版单字方印（立/战/丰/商/才/灾/疫/革/篡），一律改以按文明匹配的无圆框真 AI 活态动画呈现！
-            let spec = Self.eventArt(b.kind, nation: color, culture: b.culture)
-            root.addSublayer(inkRing(spec.ring))
-            root.addSublayer(illustratedEventLayer(b.kind, image: spec.image, accent: spec.ring))
+            // 60/120fps 纯净水墨线描事件活态徽记（与纸墨舆图浑然一体，告别厚重贴图）
+            let accent = Self.eventColor(b.kind, nation: color)
+            root.addSublayer(inkRing(accent))
+            root.addSublayer(calligraphicEventLayer(b.kind, accent: accent))
         }
         return root
     }
 
-    /// 每类地图大事件专属的多文明无圆框真 AI 插画与水墨晕环配色（彻底告别「圆圈/方块里一个字」）。
-    private static func eventArt(_ kind: MapEffects.Burst.Kind, nation: UIColor, culture: String) -> (image: CGImage?, ring: UIColor) {
-        let vermilion = UIColor(red: 0.76, green: 0.18, blue: 0.12, alpha: 1)
-        let gold = UIColor(red: 0.78, green: 0.56, blue: 0.18, alpha: 1)
-        let frost = UIColor(red: 0.34, green: 0.62, blue: 0.86, alpha: 1)
-        let drought = UIColor(red: 0.82, green: 0.40, blue: 0.14, alpha: 1)
-        let storm = UIColor(red: 0.24, green: 0.40, blue: 0.64, alpha: 1)
-        let plague = UIColor(red: 0.42, green: 0.50, blue: 0.22, alpha: 1)
+    /// 每类地图大事件的水墨晕环与笔触配色。
+    private static func eventColor(_ kind: MapEffects.Burst.Kind, nation: UIColor) -> UIColor {
         switch kind {
-        case .founded:  return (BundleArt.victoryBanner(for: culture)?.cgImage, nation)
-        case .shock:    return (BundleArt.warCrest(for: culture)?.cgImage, vermilion)
-        case .harvest:  return (BundleArt.fxHarvest?.cgImage, gold)
-        case .trade:    return (BundleArt.fxTrade?.cgImage, gold)
-        case .talent:   return (BundleArt.fxTalent?.cgImage, UIColor(red: 0.20, green: 0.50, blue: 0.40, alpha: 1))
-        case .drought:  return (BundleArt.fxWeatherDrought?.cgImage, drought)
-        case .snow:     return (BundleArt.fxWeatherSnow?.cgImage, frost)
-        case .flood:    return (BundleArt.fxWeatherStorm?.cgImage, storm)
-        case .disaster: return (BundleArt.fxWeatherStorm?.cgImage, storm)
-        case .plague:   return (BundleArt.fxPlague?.cgImage, plague)
-        case .regime:   return (BundleArt.edictCrest(for: culture)?.cgImage, gold)
-        case .coup:     return (BundleArt.heraldUprising?.cgImage, vermilion)
-        case .destroyed: return (BundleArt.fallenBanner(for: culture)?.cgImage, UIColor(white: 0.22, alpha: 1))
+        case .founded:   return nation
+        case .shock:     return UIColor(red: 0.76, green: 0.18, blue: 0.12, alpha: 1)
+        case .harvest:   return UIColor(red: 0.76, green: 0.56, blue: 0.16, alpha: 1)
+        case .trade:     return UIColor(red: 0.74, green: 0.52, blue: 0.14, alpha: 1)
+        case .talent:    return UIColor(red: 0.18, green: 0.48, blue: 0.38, alpha: 1)
+        case .drought:   return UIColor(red: 0.80, green: 0.38, blue: 0.12, alpha: 1)
+        case .snow:      return UIColor(red: 0.28, green: 0.54, blue: 0.78, alpha: 1)
+        case .flood, .disaster: return UIColor(red: 0.22, green: 0.38, blue: 0.62, alpha: 1)
+        case .plague:    return UIColor(red: 0.40, green: 0.48, blue: 0.20, alpha: 1)
+        case .regime:    return UIColor(red: 0.72, green: 0.50, blue: 0.16, alpha: 1)
+        case .coup:      return UIColor(red: 0.76, green: 0.18, blue: 0.12, alpha: 1)
+        case .destroyed: return UIColor(white: 0.22, alpha: 1)
         }
     }
 
-    /// 双层墨晕：主圈与错峰余波由事件中心荡开并淡去（1.6 秒）。
+    /// 双层墨晕：主圈与错峰余波由事件中心 60/120fps 荡开并淡去（1.55 秒）。
     private func inkRing(_ color: UIColor) -> CALayer {
         let host = CALayer(); host.frame = CGRect(x: 0, y: 0, width: 120, height: 120)
         for (idx, delay) in [(0, 0.0), (1, 0.18)] {
             let ring = CAShapeLayer(); ring.frame = host.bounds
             ring.path = UIBezierPath(ovalIn: CGRect(x: 42, y: 42, width: 36, height: 36)).cgPath
-            ring.fillColor = nil; ring.strokeColor = color.withAlphaComponent(idx == 0 ? 0.72 : 0.38).cgColor
+            ring.fillColor = nil; ring.strokeColor = color.withAlphaComponent(idx == 0 ? 0.74 : 0.38).cgColor
             ring.lineWidth = idx == 0 ? 1.6 : 0.95; ring.opacity = 0
-            let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.50; grow.toValue = idx == 0 ? 2.05 : 2.50
+            let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.48; grow.toValue = idx == 0 ? 2.05 : 2.52
             let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 0.92, 0]; fade.keyTimes = [0, 0.24, 1]
             let g = CAAnimationGroup(); g.animations = [grow, fade]; g.duration = 1.55; g.beginTime = CACurrentMediaTime() + delay
             g.timingFunction = CAMediaTimingFunction(controlPoints: 0.18, 0.78, 0.3, 1); g.fillMode = .both; g.isRemovedOnCompletion = false
-            ring.add(g, forKey: "ink"); host.addSublayer(ring)
+            ring.add(Self.calm(g), forKey: "ink"); host.addSublayer(ring)
         }
         return host
     }
 
-    /// 无圆框手绘宋画事件活态动效：依事件语义分别演出飘升、震击、摇曳、烈日脉动、雪枝微摆与火炬翻飞（2.45 秒）。
-    private func illustratedEventLayer(_ kind: MapEffects.Burst.Kind, image: CGImage?, accent: UIColor) -> CALayer {
-        let size: CGFloat = 44
-        let icon = CALayer()
-        icon.contents = image; icon.contentsGravity = .resizeAspect
-        icon.bounds = CGRect(x: 0, y: 0, width: size, height: size)
-        icon.position = CGPoint(x: 60, y: 56)
-        icon.opacity = 0
+    /// 60/120fps 水墨线描事件活态演出：淡宣微底＋手绘矢量意象，依事件语义丝滑飘升、劈斩、摇曳或流转（2.35 秒）。
+    private func calligraphicEventLayer(_ kind: MapEffects.Burst.Kind, accent: UIColor) -> CALayer {
+        let host = CALayer()
+        host.bounds = CGRect(x: 0, y: 0, width: 42, height: 42)
+        host.position = CGPoint(x: 60, y: 56)
+        host.opacity = 0
+
+        // 轻透宣纸晕底（非实心圆框，仅提亮线描辨识度）
+        let wash = CAShapeLayer(); wash.frame = host.bounds
+        wash.path = UIBezierPath(ovalIn: CGRect(x: 7, y: 7, width: 28, height: 28)).cgPath
+        wash.fillColor = UIColor(red: 0.975, green: 0.952, blue: 0.900, alpha: 0.84).cgColor
+        wash.strokeColor = accent.withAlphaComponent(0.45).cgColor
+        wash.lineWidth = 1.0
+        host.addSublayer(wash)
+
+        let glyph = CAShapeLayer(); glyph.frame = host.bounds
+        glyph.fillColor = nil; glyph.strokeColor = accent.cgColor
+        glyph.lineWidth = 1.9; glyph.lineCap = .round; glyph.lineJoin = .round
+        let p = UIBezierPath()
+        switch kind {
+        case .shock, .coup:
+            // 双锋斜劈＋中心火花
+            p.move(to: CGPoint(x: 13, y: 29)); p.addLine(to: CGPoint(x: 29, y: 13))
+            p.move(to: CGPoint(x: 29, y: 29)); p.addLine(to: CGPoint(x: 13, y: 13))
+            p.move(to: CGPoint(x: 11, y: 24)); p.addLine(to: CGPoint(x: 18, y: 31))
+            p.move(to: CGPoint(x: 31, y: 24)); p.addLine(to: CGPoint(x: 24, y: 31))
+        case .founded:
+            // 舒展燕尾立国旗
+            p.move(to: CGPoint(x: 15, y: 31)); p.addLine(to: CGPoint(x: 15, y: 11))
+            p.addLine(to: CGPoint(x: 29, y: 14)); p.addLine(to: CGPoint(x: 25, y: 18)); p.addLine(to: CGPoint(x: 29, y: 22)); p.addLine(to: CGPoint(x: 15, y: 22))
+        case .harvest:
+            // 双枝金穗
+            p.move(to: CGPoint(x: 21, y: 31)); p.addQuadCurve(to: CGPoint(x: 16, y: 12), controlPoint: CGPoint(x: 16, y: 22))
+            p.move(to: CGPoint(x: 21, y: 31)); p.addQuadCurve(to: CGPoint(x: 26, y: 12), controlPoint: CGPoint(x: 26, y: 22))
+            p.move(to: CGPoint(x: 14, y: 18)); p.addLine(to: CGPoint(x: 18, y: 16))
+            p.move(to: CGPoint(x: 28, y: 18)); p.addLine(to: CGPoint(x: 24, y: 16))
+        case .trade:
+            // 方孔通宝钱
+            p.append(UIBezierPath(ovalIn: CGRect(x: 12.5, y: 12.5, width: 17, height: 17)))
+            p.append(UIBezierPath(rect: CGRect(x: 18.2, y: 18.2, width: 5.6, height: 5.6)))
+        case .talent:
+            // 四芒才星＋舒卷书轴
+            p.move(to: CGPoint(x: 21, y: 10)); p.addLine(to: CGPoint(x: 23.2, y: 18.8)); p.addLine(to: CGPoint(x: 32, y: 21))
+            p.addLine(to: CGPoint(x: 23.2, y: 23.2)); p.addLine(to: CGPoint(x: 21, y: 32)); p.addLine(to: CGPoint(x: 18.8, y: 23.2))
+            p.addLine(to: CGPoint(x: 10, y: 21)); p.addLine(to: CGPoint(x: 18.8, y: 18.8)); p.close()
+        case .drought:
+            // 烈日炙芒
+            p.append(UIBezierPath(ovalIn: CGRect(x: 16, y: 16, width: 10, height: 10)))
+            for i in 0..<8 {
+                let a = CGFloat(i) * .pi / 4
+                p.move(to: CGPoint(x: 21 + cos(a) * 7.2, y: 21 + sin(a) * 7.2))
+                p.addLine(to: CGPoint(x: 21 + cos(a) * 10.6, y: 21 + sin(a) * 10.6))
+            }
+        case .snow:
+            // 六出霜晶
+            for i in 0..<6 {
+                let a = CGFloat(i) * .pi / 3
+                p.move(to: CGPoint(x: 21, y: 21))
+                p.addLine(to: CGPoint(x: 21 + cos(a) * 9.8, y: 21 + sin(a) * 9.8))
+            }
+        case .flood, .disaster:
+            // 骤雨雷电
+            p.move(to: CGPoint(x: 23, y: 11)); p.addLine(to: CGPoint(x: 16, y: 22)); p.addLine(to: CGPoint(x: 21.5, y: 22))
+            p.addLine(to: CGPoint(x: 18.5, y: 31)); p.addLine(to: CGPoint(x: 26.5, y: 19.5)); p.addLine(to: CGPoint(x: 21.5, y: 19.5)); p.close()
+        case .plague:
+            // 瘴雾双旋
+            p.append(UIBezierPath(arcCenter: CGPoint(x: 21, y: 21), radius: 7.5, startAngle: 0.2, endAngle: .pi * 1.45, clockwise: true))
+            p.append(UIBezierPath(arcCenter: CGPoint(x: 21, y: 21), radius: 3.6, startAngle: .pi * 0.9, endAngle: .pi * 2.25, clockwise: true))
+        default:
+            // 改朝宝玺菱印
+            p.move(to: CGPoint(x: 21, y: 11)); p.addLine(to: CGPoint(x: 31, y: 21))
+            p.addLine(to: CGPoint(x: 21, y: 31)); p.addLine(to: CGPoint(x: 11, y: 21)); p.close()
+            p.append(UIBezierPath(ovalIn: CGRect(x: 18, y: 18, width: 6, height: 6)))
+        }
+        glyph.path = p.cgPath
+        host.addSublayer(glyph)
 
         let fade = CAKeyframeAnimation(keyPath: "opacity")
-        fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.10, 0.76, 1]
+        fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.10, 0.78, 1]
         var anims: [CAAnimation] = [fade]
 
         switch kind {
         case .shock, .coup:
-            // 战戟/起义火炬凌空砸落＋震颤火花
             let slam = CAKeyframeAnimation(keyPath: "transform.scale")
-            slam.values = [1.52, 0.88, 1.08, 1.0, 0.96]; slam.keyTimes = [0, 0.14, 0.26, 0.42, 1]
+            slam.values = [1.45, 0.90, 1.06, 1.0, 0.96]; slam.keyTimes = [0, 0.14, 0.28, 0.44, 1]
             let shake = CAKeyframeAnimation(keyPath: "transform.rotation.z")
-            shake.values = [-0.18, 0.14, -0.09, 0.06, -0.03, 0]; shake.keyTimes = [0, 0.18, 0.34, 0.50, 0.68, 1]
+            shake.values = [-0.14, 0.12, -0.07, 0.04, 0]; shake.keyTimes = [0, 0.20, 0.40, 0.62, 1]
             anims += [slam, shake]
         case .harvest, .trade, .talent:
-            // 稻穗/商宝/书卷轻盈上升并舒缓摇曳
             let pop = CAKeyframeAnimation(keyPath: "transform.scale")
-            pop.values = [0.55, 1.12, 1.0, 1.04, 0.96]; pop.keyTimes = [0, 0.18, 0.36, 0.72, 1]
-            let floatUp = CABasicAnimation(keyPath: "transform.translation.y")
-            floatUp.fromValue = 8; floatUp.toValue = -14
-            let sway = CAKeyframeAnimation(keyPath: "transform.rotation.z")
-            sway.values = [-0.08, 0.08, -0.06, 0.05, 0]
-            anims += [pop, floatUp, sway]
+            pop.values = [0.60, 1.12, 1.0, 1.03, 0.96]; pop.keyTimes = [0, 0.18, 0.36, 0.72, 1]
+            let floatUp = CABasicAnimation(keyPath: "transform.translation.y"); floatUp.fromValue = 7; floatUp.toValue = -13
+            anims += [pop, floatUp]
         case .drought:
-            // 炽日大旱热浪脉动炙烤
             let pulse = CAKeyframeAnimation(keyPath: "transform.scale")
-            pulse.values = [0.65, 1.14, 0.98, 1.12, 0.98, 1.08]; pulse.keyTimes = [0, 0.16, 0.36, 0.56, 0.76, 1]
-            let rise = CABasicAnimation(keyPath: "transform.translation.y"); rise.fromValue = 4; rise.toValue = -6
-            anims += [pulse, rise]
+            pulse.values = [0.68, 1.14, 0.98, 1.12, 0.98, 1.06]; pulse.keyTimes = [0, 0.16, 0.36, 0.56, 0.76, 1]
+            anims += [pulse]
         case .snow:
-            // 积雪松枝寒风轻晃飘雪
-            let pop = CAKeyframeAnimation(keyPath: "transform.scale"); pop.values = [0.62, 1.08, 1.0, 1.02]
-            let drift = CAKeyframeAnimation(keyPath: "transform.rotation.z"); drift.values = [-0.10, 0.07, -0.06, 0.05, -0.03]
-            let down = CABasicAnimation(keyPath: "transform.translation.y"); down.fromValue = -10; down.toValue = 4
-            anims += [pop, drift, down]
+            let spin = CABasicAnimation(keyPath: "transform.rotation.z"); spin.fromValue = -0.25; spin.toValue = 0.65
+            let down = CABasicAnimation(keyPath: "transform.translation.y"); down.fromValue = -8; down.toValue = 5
+            anims += [spin, down]
         case .flood, .disaster:
-            // 暴风雨电闪震颤
-            let pop = CAKeyframeAnimation(keyPath: "transform.scale"); pop.values = [0.68, 1.16, 0.96, 1.10, 1.0]
-            let jolt = CAKeyframeAnimation(keyPath: "transform.translation.x"); jolt.values = [0, -3.5, 3.5, -2.5, 2.0, 0]
+            let pop = CAKeyframeAnimation(keyPath: "transform.scale"); pop.values = [0.66, 1.16, 0.96, 1.08, 1.0]
+            let jolt = CAKeyframeAnimation(keyPath: "transform.translation.x"); jolt.values = [0, -3, 3, -2, 1.5, 0]
             anims += [pop, jolt]
         case .plague:
-            // 阴霭瘴雾徐徐膨胀翻涌
-            let swell = CAKeyframeAnimation(keyPath: "transform.scale"); swell.values = [0.52, 1.06, 1.18]
-            let swirl = CABasicAnimation(keyPath: "transform.rotation.z"); swirl.fromValue = -0.15; swirl.toValue = 0.22
+            let swell = CAKeyframeAnimation(keyPath: "transform.scale"); swell.values = [0.58, 1.08, 1.16]
+            let swirl = CABasicAnimation(keyPath: "transform.rotation.z"); swirl.fromValue = 0; swirl.toValue = 0.45
             anims += [swell, swirl]
         default:
-            // 建国战旗 / 改朝玉玺庄重升展
-            let drop = CAKeyframeAnimation(keyPath: "transform.translation.y"); drop.values = [-14, 1, -2, 0]; drop.keyTimes = [0, 0.20, 0.34, 1]
-            let scale = CAKeyframeAnimation(keyPath: "transform.scale"); scale.values = [0.72, 1.14, 0.98, 1.02]; scale.keyTimes = [0, 0.20, 0.36, 1]
-            let sway = CAKeyframeAnimation(keyPath: "transform.rotation.z"); sway.values = [-0.08, 0.06, -0.04, 0.02, 0]
-            anims += [drop, scale, sway]
+            let drop = CAKeyframeAnimation(keyPath: "transform.translation.y"); drop.values = [-12, 1, -1.5, 0]; drop.keyTimes = [0, 0.22, 0.38, 1]
+            let scale = CAKeyframeAnimation(keyPath: "transform.scale"); scale.values = [0.74, 1.12, 0.98, 1.0]; scale.keyTimes = [0, 0.22, 0.38, 1]
+            anims += [drop, scale]
         }
 
         let g = CAAnimationGroup()
-        g.animations = anims; g.duration = 2.45
+        g.animations = anims; g.duration = 2.35
         g.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         g.fillMode = .forwards; g.isRemovedOnCompletion = false
-        icon.add(g, forKey: "eventArt")
-        _ = accent
-        return icon
+        host.add(Self.calm(g), forKey: "eventGlyph")
+        return host
     }
 
 

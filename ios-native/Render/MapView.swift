@@ -227,11 +227,11 @@ struct PlaySettings: Codable, Equatable {
     var showArmies = true
     var warArrows = true
     var iconScale = 1.0
-    /// Frames a second while the map is dragged or zoomed, while only the armies march, and for the
-    /// looping effects (waves, battle marks, flags, arrows).
+    /// Frames a second while the map is dragged or zoomed, while armies march, and for
+    /// looping effects (waves, battle slashes, flags, marching arrows): unlocked to 60fps by default for silky fluidity.
     var mapFPS = 60
-    var marchFPS = 24
-    var effectFPS = 20
+    var marchFPS = 60
+    var effectFPS = 60
     /// Pixels per point the map is drawn at (capped at the screen's own; the names stay sharp).
     var renderScale = 2.0
     /// The share of real time the simulation may keep a core busy, in percent.
@@ -264,8 +264,8 @@ struct PlaySettings: Codable, Equatable {
         warArrows = try c.decodeIfPresent(Bool.self, forKey: .warArrows) ?? true
         iconScale = try c.decodeIfPresent(Double.self, forKey: .iconScale) ?? 1
         mapFPS = try c.decodeIfPresent(Int.self, forKey: .mapFPS) ?? ((try c.decodeIfPresent(Bool.self, forKey: .highFrameRate)) == true ? 120 : 60)
-        marchFPS = try c.decodeIfPresent(Int.self, forKey: .marchFPS) ?? 24
-        effectFPS = try c.decodeIfPresent(Int.self, forKey: .effectFPS) ?? 20
+        marchFPS = try c.decodeIfPresent(Int.self, forKey: .marchFPS) ?? 60
+        effectFPS = try c.decodeIfPresent(Int.self, forKey: .effectFPS) ?? 60
         renderScale = try c.decodeIfPresent(Double.self, forKey: .renderScale) ?? 2
         simLoad = try c.decodeIfPresent(Int.self, forKey: .simLoad) ?? 55
         autoCool = try c.decodeIfPresent(Bool.self, forKey: .autoCool) ?? true
@@ -281,9 +281,9 @@ struct PlaySettings: Codable, Equatable {
         showBattleFloats = try c.decodeIfPresent(Bool.self, forKey: .showBattleFloats) ?? true
         seaWaves = try c.decodeIfPresent(Bool.self, forKey: .seaWaves) ?? true
         pauseOnSheet = try c.decodeIfPresent(Bool.self, forKey: .pauseOnSheet) ?? true
-        // 自动迁移旧版偏热默认档位到更清凉的均衡档；用户手动单调的档位保留不动。
-        if mapFPS == 60 && (marchFPS == 60 || marchFPS == 30) && effectFPS == 30 && renderScale == 2 && (simLoad == 80 || simLoad == 65) {
-            marchFPS = 24; effectFPS = 20; simLoad = 55
+        // 自动迁移旧版被压低到 24/20fps 的默认均衡档至丝滑 60/60fps，彻底消除低帧率卡顿感。
+        if mapFPS == 60 && (marchFPS == 24 || marchFPS == 30) && (effectFPS == 20 || effectFPS == 30) && renderScale == 2 {
+            marchFPS = 60; effectFPS = 60
         }
     }
     func encode(to encoder: Encoder) throws {
@@ -301,10 +301,10 @@ struct PlaySettings: Codable, Equatable {
     }
     /// 画面档位: 极省电看海, 省电, 均衡, 流畅 (nil: the values were set one by one).
     static let presets: [(key: String, name: String, mapFPS: Int, marchFPS: Int, effectFPS: Int, renderScale: Double, simLoad: Int)] = [
-        ("cool", "极省电", 30, 15, 12, 1.5, 40),
-        ("saver", "省电", 60, 20, 15, 1.5, 50),
-        ("balanced", "均衡", 60, 24, 20, 2, 55),
-        ("smooth", "流畅", 120, 60, 30, 3, 85),
+        ("cool", "极省电", 30, 30, 30, 1.5, 45),
+        ("saver", "省电", 60, 45, 45, 1.75, 55),
+        ("balanced", "均衡", 60, 60, 60, 2, 60),
+        ("smooth", "流畅", 120, 120, 60, 3, 85),
     ]
     var preset: String {
         get { Self.presets.first { $0.mapFPS == mapFPS && $0.marchFPS == marchFPS && $0.effectFPS == effectFPS && $0.renderScale == renderScale && $0.simLoad == simLoad }?.key ?? "custom" }
@@ -1277,114 +1277,10 @@ final class MapLabelsView: UIView {
         rebuildStamps(map)
     }
     private func rebuildStamps(_ map: WorldMap) {
+        // v4.1 视觉回正：彻底停用厚重 AI 建筑/罗盘贴图，让地图原生清雅金属城圈、要塞、港锚与圣星与宣纸底图保持完全统一精度。
         for s in stamps { s.view.removeFromSuperview() }
         stamps.removeAll(keepingCapacity: true)
-        var built = [MapStamp]()
-
-        // 1. 海洋古舆图罗盘玫瑰：在最开阔的远洋深海处铺印一枚青金子午卯酉古罗盘，同时采样海面格供濒海古港匹配
-        var seaPts = [(Double, Double)]()
-        let mapW = Double(map.width), mapH = Double(map.height)
-        if map.width > 0, map.height > 0 {
-            var landPts = [(Double, Double)]()
-            let cells = map.cellCount, step = max(1, cells / 1200)
-            for c in Swift.stride(from: 0, to: cells, by: step) where map.isLand(c) && 2 * c + 1 < map.sites.count {
-                landPts.append((Double(map.sites[2 * c]), Double(map.sites[2 * c + 1])))
-            }
-            var bestPt: (Double, Double)?
-            var bestDist2: Double = -1
-            let seaStep = max(1, cells / 450)
-            for c in Swift.stride(from: 0, to: cells, by: seaStep) where !map.isLand(c) && 2 * c + 1 < map.sites.count {
-                let sx = Double(map.sites[2 * c]), sy = Double(map.sites[2 * c + 1])
-                seaPts.append((sx, sy))
-                // 保持在地图边缘内侧安全区域，绝不在边缘被裁切
-                guard sx > mapW * 0.16, sx < mapW * 0.84, sy > mapH * 0.18, sy < mapH * 0.82 else { continue }
-                var minD2 = Double.greatestFiniteMagnitude
-                for (lx, ly) in landPts {
-                    let dx = sx - lx, dy = sy - ly
-                    let d2 = dx * dx + dy * dy
-                    if d2 < minD2 { minD2 = d2 }
-                }
-                if minD2 > bestDist2 {
-                    bestDist2 = minD2
-                    bestPt = (sx, sy)
-                }
-            }
-            if let compass = BundleArt.compassRose, let pt = bestPt, bestDist2 > 420 {
-                let v = UIImageView(image: compass)
-                v.contentMode = .scaleAspectFit
-                v.isHidden = true
-                v.bounds = CGRect(x: 0, y: 0, width: 120, height: 120)
-                insertSubview(v, at: 0)
-                let ww = min(mapW, mapH) * 0.125
-                built.append(MapStamp(view: v, x: pt.0, y: pt.1, worldWidth: ww, minScale: 0.0, maxAlpha: 0.58, screenMin: 46, screenMax: 148))
-            }
-        }
-
-        // 2. 多文明差异化王都微缩地标（自动依该国所属文明匹配中华宫阙／日本天守阁／西欧城堡／古典卫城／北欧木堡／斯拉夫洋葱顶／伊斯兰穹顶宫／蒙古汗帐／印度宫城／美洲金字塔！）
-        let marks = MapLayers.cityMarks(map)
-        func provinceCulture(_ provinceIdx: Int) -> String? {
-            guard map.meta.provinces.indices.contains(provinceIdx) else { return nil }
-            let n = map.meta.provinces[provinceIdx].nation
-            guard map.meta.nations.indices.contains(n) else { return nil }
-            return map.meta.nations[n].culture
-        }
-        var capCount = 0
-        for (c, mark) in zip(map.meta.cities, marks) where mark == .capital && capCount < 36 {
-            guard let capImg = BundleArt.capital(for: provinceCulture(c.province)) else { continue }
-            let v = UIImageView(image: capImg)
-            v.contentMode = .scaleAspectFit
-            v.isHidden = true
-            v.bounds = CGRect(x: 0, y: 0, width: 52, height: 52)
-            insertSubview(v, at: 0)
-            built.append(MapStamp(view: v, x: Double(c.x) - 5.6, y: Double(c.y) - 4.4, worldWidth: 18, minScale: 1.05, maxAlpha: 0.94, screenMin: 20, screenMax: 42))
-            capCount += 1
-        }
-
-        // 3. 多文明雄关要塞（真实山地/丘陵/高地州郡，按该州领主文明自动选用东亚关隘／西欧石堡／伊斯兰沙堡）与 4. 多文明古港灯塔帆影（真实濒海城市）
-        let minSpread = max(24, min(mapW, mapH) * 0.13)
-        let minSpread2 = minSpread * minSpread
-        var placedForts = [(Double, Double)]()
-        let capProvs = Set(zip(map.meta.cities, marks).filter { $0.1 == .capital }.map { $0.0.province })
-        for (idx, p) in map.meta.provinces.enumerated() where !capProvs.contains(idx) && placedForts.count < 12 {
-            guard p.x.isFinite && p.y.isFinite else { continue }
-            guard p.terrain != "plain" && p.terrain != "forest" else { continue }
-            let px = Double(p.x), py = Double(p.y)
-            if placedForts.contains(where: { ($0.0 - px) * ($0.0 - px) + ($0.1 - py) * ($0.1 - py) < minSpread2 }) { continue }
-            guard let fortImg = BundleArt.fortress(for: provinceCulture(idx)) else { continue }
-            let v = UIImageView(image: fortImg)
-            v.contentMode = .scaleAspectFit
-            v.isHidden = true
-            v.bounds = CGRect(x: 0, y: 0, width: 46, height: 46)
-            insertSubview(v, at: 0)
-            built.append(MapStamp(view: v, x: px + 3.2, y: py - 2.8, worldWidth: 15, minScale: 1.42, maxAlpha: 0.90, screenMin: 18, screenMax: 36))
-            placedForts.append((px, py))
-        }
-
-        var placedPorts = [(Double, Double)]()
-        if !seaPts.isEmpty {
-            let coastLimit2 = max(360.0, pow(min(mapW, mapH) * 0.045, 2))
-            for (idx, c) in map.meta.cities.enumerated() where idx < marks.count && marks[idx] != .capital && placedPorts.count < 12 {
-                let cx = Double(c.x), cy = Double(c.y)
-                guard cx.isFinite && cy.isFinite else { continue }
-                var nearSea = false
-                for (sx, sy) in seaPts {
-                    let dx = cx - sx, dy = cy - sy
-                    if dx * dx + dy * dy < coastLimit2 { nearSea = true; break }
-                }
-                guard nearSea else { continue }
-                if placedPorts.contains(where: { ($0.0 - cx) * ($0.0 - cx) + ($0.1 - cy) * ($0.1 - cy) < minSpread2 }) { continue }
-                guard let portImg = BundleArt.port(for: provinceCulture(c.province)) else { continue }
-                let v = UIImageView(image: portImg)
-                v.contentMode = .scaleAspectFit
-                v.isHidden = true
-                v.bounds = CGRect(x: 0, y: 0, width: 46, height: 46)
-                insertSubview(v, at: 0)
-                built.append(MapStamp(view: v, x: cx + 4.8, y: cy + 3.2, worldWidth: 15, minScale: 1.42, maxAlpha: 0.90, screenMin: 18, screenMax: 36))
-                placedPorts.append((cx, cy))
-            }
-        }
-
-        stamps = built
+        _ = map
     }
     private static func cityLabels(_ map: WorldMap) -> [Label] {
         return zip(map.meta.cities, MapLayers.cityMarks(map)).filter { !$0.0.name.isEmpty }.map { c, mark in

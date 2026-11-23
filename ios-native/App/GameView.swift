@@ -94,60 +94,21 @@ struct GameView: View {
     @State private var ripple: CGPoint?
     /// 入场: the controls settle in a moment after the map is whole.
     @State private var entered = false
-    /// 沉浸式自动收隐 HUD（静置赏图或拖拽缩放浏览地图时丝滑退至边缘，轻点/轻扫边缘弹簧唤回）
-    @State private var hudHidden = false
-    /// 极简赏画锁定态（双击顶部呼吸微签一键切换纯画卷赏景）
-    @State private var watchLock = false
+    /// 手动「净图」模式：默认 false（HUD 稳定常驻，绝不自动乱藏）；仅玩家主动点击顶栏眼睛钮才进入纯赏画态。
+    @State private var cleanMap = false
     /// 天时灾丰折叠清单展开态（绝不与日期栏抢占横向宽度）
     @State private var weatherDrawerOpen = false
-    @State private var hudIdleTask: Task<Void, Never>?
-    private var hasCommandBanner: Bool {
-        controller.marchingArmy != nil || controller.marchingFleet != nil || controller.paintNation != nil
-        || controller.pickPrompt != nil || !controller.groupArmies.isEmpty || controller.boxSelecting
-    }
-    private var canAutoHideHUD: Bool {
-        !wallpaper && !model.replayActive && panel == nil && !viewsOpen && !weatherDrawerOpen && !hasCommandBanner && !ShotTour.on
-    }
-    private var hudVisible: Bool { chromeIn && !hudHidden && !watchLock }
+    private var hudVisible: Bool { chromeIn && !cleanMap }
     private var chromeIn: Bool { controller.reveal >= 1 && entered }
     private var barHeight: CGFloat { landscape ? 36 : Theme.Control.topHeight }
-    private static let hudSpring = Animation.spring(response: 0.42, dampingFraction: 0.84)
+    private static let hudSpring = Animation.spring(response: 0.36, dampingFraction: 0.86)
     private struct ShotFile: Identifiable { let url: URL; var id: URL { url } }
     @State private var shot: ShotFile?
     init(model: GameModel) { self.model = model; _controller = ObservedObject(wrappedValue: model.controller) }
 
-    private func wakeHUD(scheduleIdle: Bool = true) {
-        if hudHidden || watchLock {
-            withAnimation(Self.hudSpring) {
-                hudHidden = false
-                watchLock = false
-            }
-        }
-        if scheduleIdle { restartHUDIdleTimer() } else { hudIdleTask?.cancel(); hudIdleTask = nil }
-    }
-
-    private func tuckHUD() {
-        guard canAutoHideHUD else { return }
-        hudIdleTask?.cancel(); hudIdleTask = nil
-        if !hudHidden || viewsOpen || weatherDrawerOpen {
-            withAnimation(Self.hudSpring) {
-                hudHidden = true
-                viewsOpen = false
-                weatherDrawerOpen = false
-            }
-        }
-    }
-
-    private func restartHUDIdleTimer() {
-        hudIdleTask?.cancel()
-        guard canAutoHideHUD else { hudIdleTask = nil; return }
-        hudIdleTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 6_500_000_000)
-            guard !Task.isCancelled, canAutoHideHUD, !hudHidden else { return }
-            withAnimation(Self.hudSpring) {
-                hudHidden = true
-                weatherDrawerOpen = false
-            }
+    private func exitCleanMap() {
+        if cleanMap {
+            withAnimation(Self.hudSpring) { cleanMap = false }
         }
     }
 
@@ -199,7 +160,7 @@ struct GameView: View {
                 }
                 if !controller.groupArmies.isEmpty { rtsBanner.transition(.move(edge: .top).combined(with: .opacity)) }
                 VStack(spacing: 0) {
-                    if !watchLock, controller.play.showHeralds, let h = model.herald, let map = model.map {
+                    if !cleanMap, controller.play.showHeralds, let h = model.herald, let map = model.map {
                         HeraldBanner(herald: h, map: map, onTap: {
                             guard model.herald?.id == h.id else { return }
                             if let map = model.map, let n = h.nations.first, map.meta.nations.indices.contains(n) {
@@ -219,7 +180,6 @@ struct GameView: View {
                             ))
                     }
                 }
-                .offset(y: hudVisible ? 0 : (landscape ? -30 : -36))
                 .animation(Motion.panel, value: model.herald?.id)
                 .animation(Self.hudSpring, value: hudVisible)
             }
@@ -230,44 +190,24 @@ struct GameView: View {
                 .animation(Motion.panel, value: controller.pickPrompt)
                 .animation(Motion.panel, value: controller.groupArmies.count)
         }
-        // 收隐态下的极简顶部微缩呼吸签 + 边缘轻滑唤回区（横竖屏通用）
-        .overlay(alignment: .topLeading) {
-            if chromeIn && !hudVisible && !wallpaper && !model.replayActive {
-                immersiveWhisperPill
-                    .padding(.leading, Theme.Control.screenInset)
-                    .padding(.top, landscape ? 4 : 6)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .overlay(alignment: .top) {
-            if chromeIn && !hudVisible && !wallpaper && !model.replayActive {
-                VStack(spacing: 0) {
-                    if model.herald != nil {
-                        LinearGradient(colors: [Theme.seal.opacity(0.62), Theme.seal.opacity(0.18), .clear], startPoint: .top, endPoint: .bottom)
-                            .frame(height: 3)
-                            .allowsHitTesting(false)
+        // 手动「净图」模式下的清晰还原钮（一眼可见、一点即回，绝无隐形边缘盲摸）
+        .overlay(alignment: .topTrailing) {
+            if chromeIn && cleanMap && !wallpaper && !model.replayActive {
+                Button {
+                    GameFeel.shared.tap()
+                    exitCleanMap()
+                } label: {
+                    HStack(spacing: 5) {
+                        InkIcon(glyph: .eye, size: 14, weight: 1.8).foregroundStyle(Theme.seal)
+                        Text("显示界面").font(Theme.kai(12.5)).foregroundStyle(Theme.ink)
                     }
-                    Color.clear
-                        .frame(height: 20)
-                        .contentShape(Rectangle())
-                        .gesture(
-                            DragGesture(minimumDistance: 12)
-                                .onEnded { v in if v.translation.height > 12 { GameFeel.shared.tap(); wakeHUD() } }
-                        )
+                    .padding(.horizontal, 12).frame(height: 34)
+                    .glass(Capsule())
                 }
-                .ignoresSafeArea(edges: .top)
-            }
-        }
-        .overlay(alignment: .bottom) {
-            if chromeIn && !hudVisible && !wallpaper && !model.replayActive {
-                Color.clear
-                    .frame(height: 22)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 12)
-                            .onEnded { v in if v.translation.height < -12 { GameFeel.shared.tap(); wakeHUD() } }
-                    )
-                    .ignoresSafeArea(edges: .bottom)
+                .buttonStyle(PressStyle())
+                .padding(.trailing, Theme.Control.screenInset)
+                .padding(.top, landscape ? 4 : 6)
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
     }
@@ -278,7 +218,7 @@ struct GameView: View {
         .overlay(alignment: .bottom) {
             Group {
                 if landscape {
-                    EventTicker(latest: model.state?.events.last?.text) { wakeHUD(); show(.chronicle) }
+                    EventTicker(latest: model.state?.events.last?.text) { show(.chronicle) }
                         .frame(maxWidth: 320).padding(.bottom, 3)
                         .opacity(panel == nil ? 0.92 : 0)
                         .allowsHitTesting(panel == nil)
@@ -289,7 +229,7 @@ struct GameView: View {
             .offset(y: hudVisible ? 0 : 116).opacity(hudVisible ? 1 : 0)
             .animation(Self.hudSpring, value: hudVisible)
             .opacity(wallpaper || model.replayActive ? 0 : 1).allowsHitTesting(hudVisible && !wallpaper && !model.replayActive)
-            .task { try? await Task.sleep(nanoseconds: 60_000_000); entered = true; restartHUDIdleTimer() }
+            .task { try? await Task.sleep(nanoseconds: 60_000_000); entered = true }
         }
         .overlay(alignment: .leading) {
             if landscape {
@@ -335,22 +275,9 @@ struct GameView: View {
         .animation(Motion.panel, value: controller.reveal >= 1)
         .onAppear {
             controller.drifting = false
-            controller.onMapBrowsing = { active in
-                if active {
-                    tuckHUD()
-                } else if !hudHidden {
-                    restartHUDIdleTimer()
-                }
-            }
-            controller.onMapTap = { isBlank in
-                if hudHidden || watchLock {
-                    if isBlank || !watchLock {
-                        wakeHUD()
-                    }
-                } else {
-                    if weatherDrawerOpen { withAnimation(Motion.tap) { weatherDrawerOpen = false } }
-                    restartHUDIdleTimer()
-                }
+            controller.onMapBrowsing = nil
+            controller.onMapTap = { _ in
+                if weatherDrawerOpen { withAnimation(Motion.tap) { weatherDrawerOpen = false } }
             }
             controller.onGroupTarget = { province in
                 let armies = controller.groupArmies, defend = rtsDefend
@@ -410,7 +337,7 @@ struct GameView: View {
         }
         .sensoryFeedback(.selection, trigger: model.mapView)
         .onChange(of: panel) { old, p in
-            if p != nil { wakeHUD(scheduleIdle: false) } else { restartHUDIdleTimer() }
+            if p != nil { exitCleanMap() }
             if let p { lastPanel = p }
             // All inspection pages share one pause policy, including map picks.
             // 山河回放开启期间关闭旧弹窗时，严禁恢复实时推演覆盖回放画面。
@@ -677,50 +604,17 @@ struct GameView: View {
         }
     }
 
-    private func weatherMeta(_ kind: String) -> (img: UIImage?, label: String, color: Color) {
+    private func weatherMeta(_ kind: String) -> (label: String, color: Color) {
         switch kind {
-        case "snow": return (BundleArt.fxWeatherSnow, "暴雪", Color(red: 0.22, green: 0.44, blue: 0.68))
-        case "drought", "famine": return (BundleArt.fxWeatherDrought, "大旱", Color(red: 0.78, green: 0.42, blue: 0.10))
-        case "flood": return (BundleArt.fxWeatherStorm, "洪涝", Color(red: 0.16, green: 0.42, blue: 0.58))
-        case "plague": return (BundleArt.fxPlague, "大疫", Color(red: 0.42, green: 0.48, blue: 0.18))
-        default: return (BundleArt.fxHarvest, "丰年", Color(red: 0.74, green: 0.54, blue: 0.10))
+        case "snow": return ("暴雪", Color(red: 0.22, green: 0.44, blue: 0.68))
+        case "drought", "famine": return ("大旱", Color(red: 0.78, green: 0.42, blue: 0.10))
+        case "flood": return ("洪涝", Color(red: 0.16, green: 0.42, blue: 0.58))
+        case "plague": return ("大疫", Color(red: 0.42, green: 0.48, blue: 0.18))
+        default: return ("丰年", Color(red: 0.74, green: 0.54, blue: 0.10))
         }
     }
 
-    /// 沉浸式自动收隐时的左上极简呼吸时间条（单点弹簧唤回完整 HUD，双击锁定极简赏画）
-    private var immersiveWhisperPill: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(model.playing ? Theme.jade : Theme.ink2.opacity(0.45))
-                .frame(width: 5.5, height: 5.5)
-            Text(model.state?.dateText ?? "")
-                .font(Theme.kai(12))
-                .foregroundStyle(Theme.ink.opacity(0.88))
-                .monospacedDigit()
-                .fixedSize(horizontal: true, vertical: false)
-            if let m = model.state?.date.month {
-                let s = WorldSeason.of(month: m)
-                Text(s.name).font(Theme.kai(11)).foregroundStyle(Theme.seal.opacity(0.85))
-            }
-            if model.playing {
-                Text("\(model.speed)×").font(Theme.kai(11)).foregroundStyle(Theme.ink2).monospacedDigit()
-            }
-            if watchLock {
-                InkIcon(glyph: .eye, size: 11, weight: 1.7).foregroundStyle(Theme.jade)
-            }
-        }
-        .padding(.horizontal, 10).frame(height: 26)
-        .background(Theme.paper2.opacity(0.76), in: Capsule())
-        .overlay(Capsule().stroke(Theme.ink.opacity(0.16), lineWidth: 0.7))
-        .shadow(color: Theme.ink.opacity(0.10), radius: 5, y: 2)
-        .contentShape(Capsule())
-        .onTapGesture {
-            GameFeel.shared.tap()
-            wakeHUD()
-        }
-    }
-
-    /// 弹性防重叠顶部状态栏：日期永不被压缩重影，季节/战事各司其位，天时事件独立折叠在下排不挤撞右侧按钮。
+    /// 弹性防重叠顶部状态栏：日期永不被压缩重影，季节/战事各司其位，天时事件独立折叠在下排不挤撞右侧按钮；右侧提供手动「净图」切换钮（默认常驻绝不自动乱藏）。
     private var topBar: some View {
         let h = barHeight
         let btnSize: CGFloat = landscape ? 36 : Theme.Control.topHeight
@@ -728,7 +622,6 @@ struct GameView: View {
             HStack(spacing: landscape ? 7 : 6) {
                 Button {
                     GameFeel.shared.tap()
-                    wakeHUD()
                     show(.chronicle)
                 } label: {
                     HStack(spacing: 5) {
@@ -746,18 +639,15 @@ struct GameView: View {
                             .animation(Motion.tap, value: model.state?.dateText)
                         if let m = model.state?.date.month {
                             let s = WorldSeason.of(month: m)
-                            let sColor: Color = s == .spring ? Color(red: 0.78, green: 0.34, blue: 0.46) : s == .summer ? Color(red: 0.22, green: 0.54, blue: 0.24) : s == .autumn ? Color(red: 0.76, green: 0.38, blue: 0.10) : Color(red: 0.22, green: 0.46, blue: 0.68)
-                            let sImg: UIImage? = s == .spring ? BundleArt.fxPetal : s == .summer ? BundleArt.fxHarvest : s == .autumn ? BundleArt.fxMaple : BundleArt.fxSnowflake
-                            HStack(spacing: 2) {
-                                if let sImg {
-                                    Image(uiImage: sImg).resizable().interpolation(.high).scaledToFit().frame(width: 11.5, height: 11.5)
-                                }
+                            let sColor: Color = s == .spring ? Color(red: 0.76, green: 0.32, blue: 0.44) : s == .summer ? Color(red: 0.20, green: 0.52, blue: 0.24) : s == .autumn ? Color(red: 0.76, green: 0.38, blue: 0.10) : Color(red: 0.22, green: 0.46, blue: 0.68)
+                            HStack(spacing: 3) {
+                                Circle().fill(sColor).frame(width: 4.5, height: 4.5)
                                 Text(s.name).font(Theme.kai(10.5)).foregroundStyle(sColor)
                             }
                             .fixedSize(horizontal: true, vertical: false)
-                            .padding(.horizontal, 5).padding(.vertical, 2)
-                            .background(sColor.opacity(0.12), in: Capsule())
-                            .overlay(Capsule().stroke(sColor.opacity(0.30), lineWidth: 0.6))
+                            .padding(.horizontal, 5.5).padding(.vertical, 2)
+                            .background(sColor.opacity(0.11), in: Capsule())
+                            .overlay(Capsule().stroke(sColor.opacity(0.28), lineWidth: 0.6))
                             .animation(Motion.fade, value: s.rawValue)
                         }
                     }
@@ -770,7 +660,6 @@ struct GameView: View {
                     Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.8, height: 14)
                     Button {
                         GameFeel.shared.tap()
-                        wakeHUD()
                         MilitarySheet.openOn = "wars"
                         show(.military)
                     } label: {
@@ -804,27 +693,22 @@ struct GameView: View {
             HStack(spacing: landscape ? 5 : Theme.Control.gap) {
                 Button {
                     GameFeel.shared.tap()
-                    wakeHUD()
                     withAnimation(Motion.panel) { viewsOpen.toggle(); weatherDrawerOpen = false }
                 } label: { CircleIcon(glyph: viewsOpen ? .close : .views, active: viewsOpen, size: btnSize) }
                     .buttonStyle(InkPressStyle())
                 Button {
                     GameFeel.shared.tap()
-                    wakeHUD()
                     if controller.boxSelecting || !controller.groupArmies.isEmpty { controller.boxSelecting = false; controller.groupArmies = []; model.refreshArmies() }
                     else { controller.boxSelecting = true; say("即时战略：在地图上拖出方框选择军队") }
                 } label: { CircleIcon(glyph: controller.boxSelecting || !controller.groupArmies.isEmpty ? .close : .command, active: controller.boxSelecting || !controller.groupArmies.isEmpty, size: btnSize) }
                     .buttonStyle(InkPressStyle())
-                if landscape {
-                    Button {
-                        GameFeel.shared.tap()
-                        withAnimation(Self.hudSpring) { watchLock = true; hudHidden = true; viewsOpen = false; weatherDrawerOpen = false }
-                    } label: { CircleIcon(glyph: .eye, size: btnSize) }
-                        .buttonStyle(InkPressStyle())
-                }
                 Button {
                     GameFeel.shared.tap()
-                    wakeHUD()
+                    withAnimation(Self.hudSpring) { cleanMap = true; viewsOpen = false; weatherDrawerOpen = false }
+                } label: { CircleIcon(glyph: .eye, size: btnSize) }
+                    .buttonStyle(InkPressStyle())
+                Button {
+                    GameFeel.shared.tap()
                     show(.menu)
                 } label: { CircleIcon(glyph: .menu, size: btnSize) }
                     .buttonStyle(InkPressStyle())
@@ -848,14 +732,12 @@ struct GameView: View {
                             if let map = model.map, map.meta.provinces.indices.contains(top.province) {
                                 say("\(map.meta.provinces[top.province].name)正逢\(meta.label)")
                             }
-                            restartHUDIdleTimer()
                         } else {
                             withAnimation(Motion.panel) { weatherDrawerOpen.toggle() }
-                            if weatherDrawerOpen { hudIdleTask?.cancel() } else { restartHUDIdleTimer() }
                         }
                     } label: {
-                        HStack(spacing: 4.5) {
-                            ArtEmblem(image: meta.img, size: 15, fallback: .chronicle)
+                        HStack(spacing: 5) {
+                            Circle().fill(meta.color).frame(width: 6, height: 6)
                             Text(meta.label).font(Theme.kai(11.5)).foregroundStyle(meta.color)
                             if sorted.count > 1 {
                                 Text("等\(sorted.count)处").font(Theme.kai(10.5)).foregroundStyle(Theme.ink2).monospacedDigit()
@@ -866,7 +748,7 @@ struct GameView: View {
                         }
                         .fixedSize(horizontal: true, vertical: false)
                         .padding(.horizontal, 9).frame(height: 26)
-                        .background(Theme.paper2.opacity(0.90), in: Capsule())
+                        .background(Theme.paper2.opacity(0.92), in: Capsule())
                         .overlay(Capsule().stroke(meta.color.opacity(0.35), lineWidth: 0.75))
                         .shadow(color: Theme.ink.opacity(0.10), radius: 4, y: 1.5)
                     }
@@ -884,10 +766,9 @@ struct GameView: View {
                                 withAnimation(Motion.tap) { weatherDrawerOpen = false }
                                 controller.fly(to: z.province)
                                 say("\(pname)正逢\(zm.label)")
-                                restartHUDIdleTimer()
                             } label: {
                                 HStack(spacing: 7) {
-                                    ArtEmblem(image: zm.img, size: 16, fallback: .chronicle)
+                                    Circle().fill(zm.color).frame(width: 6.5, height: 6.5)
                                     Text(pname).font(Theme.kai(12.5)).foregroundStyle(Theme.ink)
                                     Spacer(minLength: 10)
                                     Text(zm.label).font(Theme.kai(11)).foregroundStyle(zm.color)
@@ -987,7 +868,6 @@ struct GameView: View {
         return HStack(spacing: 4) {
             Button {
                 GameFeel.shared.tap()
-                wakeHUD()
                 model.cycleSpeed()
             } label: {
                 Text("\(model.speed)×")
@@ -1001,11 +881,11 @@ struct GameView: View {
                     .animation(Motion.tap, value: model.speed)
             }
             .buttonStyle(PressStyle())
-            PlaySealButton(playing: model.playing, size: sealSize) { wakeHUD(); model.togglePlay() }
+            PlaySealButton(playing: model.playing, size: sealSize) { model.togglePlay() }
                 .sensoryFeedback(.impact(weight: .light), trigger: model.playing)
         }
     }
-    /// 横屏左侧极简超窄导航坞（44pt 宽纯水墨图标胶囊，释放 88%+ 海域与世界视野，拖拽浏览时自动收隐）。
+    /// 横屏左侧极简超窄导航坞（44pt 宽纯水墨图标胶囊，释放 88%+ 海域与世界视野，稳定常驻）。
     private var landscapeRail: some View {
         let items: [(id: String, glyph: InkGlyph, panel: Panel)] = [
             ("nations", .nation, .nations),
@@ -1019,7 +899,6 @@ struct GameView: View {
                 let active = panel?.tab == item.id
                 Button {
                     GameFeel.shared.tap()
-                    wakeHUD()
                     show(item.panel)
                 } label: {
                     InkIcon(glyph: item.glyph, size: 17, weight: active ? 2.0 : 1.65, filled: active,

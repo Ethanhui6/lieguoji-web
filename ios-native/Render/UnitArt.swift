@@ -10,7 +10,7 @@ enum UnitArt {
     private static var cache = [String: CGImage]()
 
     static func role(_ unit: String) -> String {
-        if ["Fleet", "Port", "Merchant"].contains(unit) { return unit }
+        if ["Fleet", "Transport", "Port", "Merchant"].contains(unit) { return unit }
         return UnitKinds.byKey[unit]?.role.rawValue ?? "infantry"
     }
 
@@ -197,6 +197,42 @@ enum UnitArt {
             detail(g, curve((116, 114), (154, 108), (190, 118)), 6)
             detail(g, line((62, 178), (196, 178)), 6)
             dot(g, 74, 188, d: 12); dot(g, 108, 188, d: 12); dot(g, 142, 188, d: 12); dot(g, 176, 186, d: 12)
+
+        case "Transport":
+            // 跨海运兵船（与经典 UnitArt 雕漆棋子完全同源）：圆润高舷运兵木舟 + 鼓风单帆 + 舷侧三面圆盾 + 船底轻浪。
+            let tSail = CGMutablePath()
+            tSail.move(to: CGPoint(x: 78, y: 48))
+            tSail.addQuadCurve(to: CGPoint(x: 178, y: 48), control: CGPoint(x: 128, y: 38))
+            tSail.addQuadCurve(to: CGPoint(x: 174, y: 142), control: CGPoint(x: 198, y: 95))
+            tSail.addQuadCurve(to: CGPoint(x: 82, y: 142), control: CGPoint(x: 128, y: 132))
+            tSail.addQuadCurve(to: CGPoint(x: 78, y: 48), control: CGPoint(x: 62, y: 95))
+            tSail.closeSubpath()
+
+            let tHull = CGMutablePath()
+            tHull.move(to: CGPoint(x: 36, y: 158))
+            tHull.addLine(to: CGPoint(x: 220, y: 156))
+            tHull.addQuadCurve(to: CGPoint(x: 192, y: 208), control: CGPoint(x: 212, y: 196))
+            tHull.addLine(to: CGPoint(x: 64, y: 208))
+            tHull.addQuadCurve(to: CGPoint(x: 36, y: 158), control: CGPoint(x: 44, y: 196))
+            tHull.closeSubpath()
+
+            let tWave = CGMutablePath()
+            tWave.move(to: CGPoint(x: 42, y: 224))
+            tWave.addQuadCurve(to: CGPoint(x: 96, y: 224), control: CGPoint(x: 69, y: 214))
+            tWave.addQuadCurve(to: CGPoint(x: 154, y: 224), control: CGPoint(x: 125, y: 234))
+            tWave.addQuadCurve(to: CGPoint(x: 214, y: 224), control: CGPoint(x: 184, y: 214))
+
+            render(g, [
+                .rod(line((128, 22), (128, 160)), 10),
+                .solid(poly([(128, 20), (168, 28), (128, 36)])),
+                .solid(tSail),
+                .solid(tHull),
+                .rod(tWave, 7)
+            ])
+            // 帆面兵锋暗纹与舷侧三面圆盾（一眼区分战舰与运兵船）
+            detail(g, line((102, 74), (154, 118)), 6)
+            detail(g, line((154, 74), (102, 118)), 6)
+            dot(g, 76, 174, d: 18); dot(g, 119, 174, d: 18); dot(g, 162, 174, d: 18)
 
         case "Merchant":
             // 圆腹商船：饱满单方帆、十字商徽绳带、深腹货舱与船底水波。

@@ -1,13 +1,12 @@
 import SwiftUI
 import LieguojiCore
 
-/// 顶部大事传报御卷（v3.0 全面重铸）：
-/// - 彻底摒弃圆形徽章套框与静态代码图形，全面采用无圆框自由轮廓宋画工笔插画（`BundleArt`）＋ 60/120Hz 原生 ProMotion 活态物理动效；
-/// - 宣战双戟凌空劈合迸射金星、起义火炬战旗猎猎翻飞、和约白鹤衔枝翩跹飞渡、国玺御云沉稳落印、绝嗣断旗倾折化烟、暴雪飘飞／大旱炙浪／洪涝骤雨／金秋丰登各具专属流光画境。
+/// 顶部大事传报御卷（v4.1.0 全面重铸）：
+/// - 彻底去除贴图感与圆形套框，改用与纸墨舆图浑然一体的 60/120Hz 原生 ProMotion 实时水墨矢量活态舞台 + 宣纸流光粒子；
+/// - 宣战双锋凌空交击迸射四芒星闪、起义跃动朱焰、和约双环相扣振翅白鹤、国色战旗正弦波浪迎风飘展、亡国折杆倾倒、暴雪六出旋晶／炽日脉动／骤雨惊雷／金穗摇曳／瘴雾旋纹／宝玺落印皆每帧丝滑演动。
 struct HeraldBanner: View {
     let herald: GameModel.Herald
     private let participantColors: [Color]
-    private let leadCulture: String?
     private let onTap: (() -> Void)?
     private let onDismiss: (() -> Void)?
     @State private var start = Date().timeIntervalSinceReferenceDate
@@ -22,13 +21,6 @@ struct HeraldBanner: View {
         let nations = map.meta.nations
         participantColors = herald.nations.prefix(2).map { n in
             nations.indices.contains(n) ? Names.color(nations[n].color) : Theme.ink2
-        }
-        if let first = herald.nations.first, nations.indices.contains(first) {
-            leadCulture = nations[first].culture
-        } else if let match = nations.first(where: { !$0.name.isEmpty && herald.text.contains($0.name) }) {
-            leadCulture = match.culture
-        } else {
-            leadCulture = nil
         }
     }
 
@@ -162,23 +154,6 @@ struct HeraldBanner: View {
     }
     private static func span(_ t: Double, _ a: Double, _ b: Double) -> Double { ease((t - a) / max(0.001, b - a)) }
 
-    private var heroArtwork: UIImage? {
-        switch herald.kind {
-        case .war, .ultimatum: return BundleArt.warCrest(for: leadCulture)
-        case .uprising, .coup: return BundleArt.heraldUprising
-        case .peace, .treaty, .marriage: return BundleArt.heraldPeace
-        case .regime, .restoration, .house: return BundleArt.edictCrest(for: leadCulture)
-        case .capture: return BundleArt.victoryBanner(for: leadCulture)
-        case .capital: return BundleArt.capital(for: leadCulture)
-        case .extinction: return BundleArt.fallenBanner(for: leadCulture)
-        case .blizzard: return BundleArt.fxWeatherSnow
-        case .drought: return BundleArt.fxWeatherDrought
-        case .flood: return BundleArt.fxWeatherStorm
-        case .harvest: return BundleArt.fxHarvest
-        case .plague: return BundleArt.fxPlague
-        }
-    }
-
     @ViewBuilder private func scene(_ t: Double) -> some View {
         let unroll: Double = {
             switch form {
@@ -294,125 +269,222 @@ struct HeraldBanner: View {
         }
     }
 
-    /// 左侧无圆框宋画活态动画舞台：每类事件各自拥有专属物理节奏与动作（劈合、招展、倒伏、翔舞、摇曳、落印、震颤）。
+    /// 左侧 60/120fps 纯实时水墨矢量活态舞台（彻底告别贴图感，与宣纸御卷浑然一体，每帧丝滑律动）。
     @ViewBuilder private func livingArtStage(t: Double, contentIn: Double) -> some View {
         let enter = Self.span(t, 0.14, 0.44)
-        let img = heroArtwork
-        ZStack {
-            // 底部柔和无边界水墨微晕（纯气氛光影，绝非圆框！）
-            RadialGradient(
-                colors: [accent.opacity(herald.kind == .drought ? 0.24 : 0.14), Color.clear],
-                center: .center, startRadius: 2, endRadius: 28
-            )
-            .scaleEffect(0.85 + 0.15 * sin(t * 4.2))
-
-            if let img {
-                let art = Image(uiImage: img)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                let p = heroMotion(t: t, enter: enter)
-                art
-                    .scaleEffect(x: p.scaleX, y: p.scaleY, anchor: p.anchor)
-                    .rotationEffect(.degrees(p.deg), anchor: p.anchor)
-                    .offset(x: p.ox, y: p.oy)
-                    .opacity(p.opacity)
-                    .shadow(color: p.shadowColor, radius: p.shadowRadius, y: p.shadowY)
-            }
+        Canvas { ctx, size in
+            drawLivingInkEmblem(ctx, size: size, t: t, enter: enter)
         }
+        .opacity(contentIn)
     }
 
-    private struct HeroMotionParams {
-        var scaleX: CGFloat = 1
-        var scaleY: CGFloat = 1
-        var anchor: UnitPoint = .center
-        var deg: Double = 0
-        var ox: CGFloat = 0
-        var oy: CGFloat = 0
-        var opacity: Double = 1
-        var shadowColor: Color = .clear
-        var shadowRadius: CGFloat = 0
-        var shadowY: CGFloat = 0
-    }
+    private func drawLivingInkEmblem(_ ctx: GraphicsContext, size: CGSize, t: Double, enter: Double) {
+        let cx = size.width * 0.5, cy = size.height * 0.5
+        let r = min(size.width, size.height) * 0.38
+        let stroke = StrokeStyle(lineWidth: 2.0, lineCap: .round, lineJoin: .round)
+        let fine = StrokeStyle(lineWidth: 1.25, lineCap: .round, lineJoin: .round)
+        let ink = Theme.ink.opacity(0.84)
+        let gold = Color(red: 0.82, green: 0.62, blue: 0.22)
+        let c1 = participantColors.first ?? accent
+        let c2 = participantColors.dropFirst().first ?? accent.opacity(0.75)
 
-    private func heroMotion(t: Double, enter: Double) -> HeroMotionParams {
-        var p = HeroMotionParams()
+        // 底部轻墨涟漪气韵（无边框、纯呼吸光晕）
+        let ringScale = 0.72 + 0.34 * Self.ease(min(1, max(0, (t - 0.12) / 0.55)))
+        let ringRect = CGRect(x: cx - r * ringScale, y: cy - r * ringScale, width: r * 2 * ringScale, height: r * 2 * ringScale)
+        ctx.stroke(Path(ellipseIn: ringRect), with: .color(accent.opacity(0.24 * enter)), lineWidth: 1.0)
+
         switch herald.kind {
         case .war, .ultimatum:
-            // 双戟／双剑凌空劈合＋余震微颤
-            let slam = Self.easeOutBack(min(1, max(0, (t - 0.10) / 0.30)))
-            let shake = t > 0.34 ? sin((t - 0.34) * 28) * exp(-(t - 0.34) * 3.8) * 6.5 : 0
-            let sc = CGFloat(0.62 + 0.40 * slam)
-            p.scaleX = sc; p.scaleY = sc
-            p.deg = shake + (1 - enter) * -14
-            p.shadowColor = Theme.seal.opacity(0.24); p.shadowRadius = 3; p.shadowY = 1.5
+            // 双锋凌空交击（120Hz 丝滑拉出刀光并迸射四芒火星）
+            let draw = Self.span(t, 0.14, 0.42)
+            let clash = Self.span(t, 0.34, 0.58)
+            var b1 = Path()
+            b1.move(to: CGPoint(x: cx - r * 0.85, y: cy + r * 0.78))
+            b1.addLine(to: CGPoint(x: cx - r * 0.85 + r * 1.70 * draw, y: cy + r * 0.78 - r * 1.56 * draw))
+            var b2 = Path()
+            b2.move(to: CGPoint(x: cx + r * 0.85, y: cy + r * 0.78))
+            b2.addLine(to: CGPoint(x: cx + r * 0.85 - r * 1.70 * draw, y: cy + r * 0.78 - r * 1.56 * draw))
+            ctx.stroke(b1, with: .color(c1), style: stroke)
+            ctx.stroke(b2, with: .color(c2), style: stroke)
+            // 护手横格
+            if draw > 0.25 {
+                var g1 = Path()
+                g1.move(to: CGPoint(x: cx - r * 0.66, y: cy + r * 0.26)); g1.addLine(to: CGPoint(x: cx - r * 0.26, y: cy + r * 0.62))
+                var g2 = Path()
+                g2.move(to: CGPoint(x: cx + r * 0.66, y: cy + r * 0.26)); g2.addLine(to: CGPoint(x: cx + r * 0.26, y: cy + r * 0.62))
+                ctx.stroke(g1, with: .color(ink), style: fine)
+                ctx.stroke(g2, with: .color(ink), style: fine)
+            }
+            // 撞击瞬间四芒金朱星闪
+            if clash > 0.02 {
+                let sR = r * 0.48 * CGFloat(sin(clash * .pi) + 0.35 * (1 - clash))
+                var star = Path()
+                star.move(to: CGPoint(x: cx, y: cy - sR)); star.addLine(to: CGPoint(x: cx + sR * 0.28, y: cy - sR * 0.28))
+                star.addLine(to: CGPoint(x: cx + sR, y: cy)); star.addLine(to: CGPoint(x: cx + sR * 0.28, y: cy + sR * 0.28))
+                star.addLine(to: CGPoint(x: cx, y: cy + sR)); star.addLine(to: CGPoint(x: cx - sR * 0.28, y: cy + sR * 0.28))
+                star.addLine(to: CGPoint(x: cx - sR, y: cy)); star.addLine(to: CGPoint(x: cx - sR * 0.28, y: cy - sR * 0.28))
+                star.closeSubpath()
+                ctx.fill(star, with: .color(gold.opacity(0.95)))
+            }
+
         case .uprising, .coup:
-            // 火炬烈焰跃动呼吸＋旗帜猎猎摇曳
-            let base = 0.72 + 0.28 * enter
-            p.scaleX = CGFloat(base * (1.0 + 0.045 * sin(t * 15.0)))
-            p.scaleY = CGFloat(base * (1.0 + 0.05 * cos(t * 13.0)))
-            p.anchor = .bottom
-            p.deg = sin(t * 7.2) * 3.8
-            p.oy = CGFloat((1 - enter) * 10)
+            // 跃动朱焰与斜挥战刃（真 60/120fps 火焰曲线摇曳）
+            let sway = CGFloat(sin(t * 9.5) * 3.0)
+            var flame = Path()
+            flame.move(to: CGPoint(x: cx, y: cy + r * 0.85))
+            flame.addCurve(to: CGPoint(x: cx + sway, y: cy - r * 0.92 * enter),
+                           controlPoint1: CGPoint(x: cx - r * 0.85, y: cy + r * 0.25),
+                           controlPoint2: CGPoint(x: cx - r * 0.30 + sway, y: cy - r * 0.45))
+            flame.addCurve(to: CGPoint(x: cx, y: cy + r * 0.85),
+                           controlPoint1: CGPoint(x: cx + r * 0.55 + sway, y: cy - r * 0.30),
+                           controlPoint2: CGPoint(x: cx + r * 0.85, y: cy + r * 0.35))
+            ctx.fill(flame, with: .color(Theme.seal.opacity(0.86)))
+            var inner = Path()
+            inner.move(to: CGPoint(x: cx, y: cy + r * 0.72))
+            inner.addCurve(to: CGPoint(x: cx + sway * 0.6, y: cy - r * 0.36 * enter),
+                           controlPoint1: CGPoint(x: cx - r * 0.36, y: cy + r * 0.30),
+                           controlPoint2: CGPoint(x: cx - r * 0.14, y: cy - r * 0.08))
+            inner.addCurve(to: CGPoint(x: cx, y: cy + r * 0.72),
+                           controlPoint1: CGPoint(x: cx + r * 0.22, y: cy - r * 0.05),
+                           controlPoint2: CGPoint(x: cx + r * 0.36, y: cy + r * 0.34))
+            ctx.fill(inner, with: .color(gold.opacity(0.95)))
+
         case .peace, .treaty, .marriage:
-            // 白鹤衔枝翩跹飞入并轻盈起伏翱翔
-            let glide = Self.span(t, 0.12, 0.62)
-            let sc = CGFloat(0.80 + 0.22 * glide)
-            p.scaleX = sc; p.scaleY = sc
-            p.ox = CGFloat((1 - glide) * 16)
-            p.oy = CGFloat((1 - glide) * 8 + sin(t * 4.8) * 2.6)
-            p.deg = sin(t * 4.8 + 0.6) * 4.0
-        case .regime, .restoration, .house:
-            // 传国玉玺／皇冠诏书自云端庄重落印＋微金辉
-            let drop = Self.easeOutBack(min(1, max(0, (t - 0.12) / 0.36)))
-            let sc = CGFloat(0.84 + 0.18 * drop)
-            p.scaleX = sc; p.scaleY = sc
-            p.oy = CGFloat((1 - drop) * -14 + sin(t * 3.2) * 1.4)
-            p.shadowColor = Color(red: 0.78, green: 0.56, blue: 0.18).opacity(0.28); p.shadowRadius = 4; p.shadowY = 2
-        case .capture:
-            // 战旗疾插城头并持续迎风招展
-            let plant = Self.easeOutBack(min(1, max(0, (t - 0.10) / 0.28)))
-            let base = 0.85 + 0.15 * plant
-            p.scaleX = CGFloat(base * (1.0 + 0.045 * sin(t * 9.0)))
-            p.scaleY = CGFloat(base)
-            p.anchor = .bottom
-            p.deg = sin(t * 7.5) * 4.2
-            p.oy = CGFloat((1 - plant) * -12)
+            // 青玉/绛红双环相扣 + 振翅翔升白鹤剪影（实时 60/120fps 振翼）
+            let spread = CGFloat(1.0 - enter) * r * 0.55
+            ctx.stroke(Path(ellipseIn: CGRect(x: cx - r * 0.68 - spread, y: cy - r * 0.44, width: r * 0.92, height: r * 0.92)), with: .color(c1.opacity(0.75)), style: fine)
+            ctx.stroke(Path(ellipseIn: CGRect(x: cx - r * 0.24 + spread, y: cy - r * 0.44, width: r * 0.92, height: r * 0.92)), with: .color(c2.opacity(0.75)), style: fine)
+            let lift = CGFloat(sin(t * 7.2) * 4.5)
+            let bob = CGFloat(cos(t * 4.0) * 1.8)
+            var wing = Path()
+            wing.move(to: CGPoint(x: cx, y: cy + bob))
+            wing.addQuadCurve(to: CGPoint(x: cx - r * 0.92, y: cy - r * 0.25 - lift + bob), controlPoint: CGPoint(x: cx - r * 0.48, y: cy - r * 0.58 - lift + bob))
+            wing.addQuadCurve(to: CGPoint(x: cx, y: cy + r * 0.26 + bob), controlPoint: CGPoint(x: cx - r * 0.40, y: cy + r * 0.14 + bob))
+            wing.addQuadCurve(to: CGPoint(x: cx + r * 0.92, y: cy - r * 0.25 - lift + bob), controlPoint: CGPoint(x: cx + r * 0.40, y: cy + r * 0.14 + bob))
+            wing.addQuadCurve(to: CGPoint(x: cx, y: cy + bob), controlPoint: CGPoint(x: cx + r * 0.48, y: cy - r * 0.58 - lift + bob))
+            ctx.fill(wing, with: .color(Theme.paper2))
+            ctx.stroke(wing, with: .color(accent), style: fine)
+
+        case .capture, .capital:
+            // 国色丝绸战旗迎风招展（实时正弦波浪每帧重算）
+            let poleX = cx - r * 0.56
+            let dropY = CGFloat((1 - enter) * -10)
+            var pole = Path()
+            pole.move(to: CGPoint(x: poleX, y: cy + r * 0.90 + dropY))
+            pole.addLine(to: CGPoint(x: poleX, y: cy - r * 0.88 + dropY))
+            ctx.stroke(pole, with: .color(ink), style: stroke)
+            let w1 = CGFloat(sin(t * 8.2) * 3.4)
+            let w2 = CGFloat(cos(t * 8.2 + 0.9) * 3.2)
+            var cloth = Path()
+            cloth.move(to: CGPoint(x: poleX + 1, y: cy - r * 0.78 + dropY))
+            cloth.addCurve(to: CGPoint(x: cx + r * 0.86, y: cy - r * 0.70 + w2 * 0.6 + dropY),
+                           controlPoint1: CGPoint(x: cx - r * 0.10, y: cy - r * 0.96 + w1 + dropY),
+                           controlPoint2: CGPoint(x: cx + r * 0.36, y: cy - r * 0.52 + w2 + dropY))
+            cloth.addLine(to: CGPoint(x: cx + r * 0.56, y: cy - r * 0.22 + w2 * 0.4 + dropY))
+            cloth.addLine(to: CGPoint(x: cx + r * 0.88, y: cy + r * 0.18 + w2 * 0.6 + dropY))
+            cloth.addCurve(to: CGPoint(x: poleX + 1, y: cy + r * 0.12 + dropY),
+                           controlPoint1: CGPoint(x: cx + r * 0.36, y: cy + r * 0.32 + w2 + dropY),
+                           controlPoint2: CGPoint(x: cx - r * 0.10, y: cy - r * 0.04 + w1 + dropY))
+            cloth.closeSubpath()
+            ctx.fill(cloth, with: .color(c1.opacity(0.92)))
+            ctx.stroke(cloth, with: .color(ink.opacity(0.65)), style: fine)
+
         case .extinction:
-            // 断旗哀倾折伏（由直而倾、渐沉化烟）
-            let fall = Self.span(t, 0.24, 1.15)
-            p.anchor = .bottomLeading
-            p.deg = -8 + fall * 28
-            p.oy = CGFloat(fall * 4)
-            p.opacity = 1.0 - fall * 0.22
+            // 折杆倾倒残旗（随时间平稳倾折淡去）
+            let fall = Self.span(t, 0.22, 1.10)
+            var shaft = Path()
+            shaft.move(to: CGPoint(x: cx - r * 0.45, y: cy + r * 0.78))
+            shaft.addLine(to: CGPoint(x: cx - r * 0.08, y: cy - r * 0.05))
+            let bx = cx - r * 0.08 + r * 0.72 * CGFloat(sin(0.35 + fall * 0.95))
+            let by = cy - r * 0.05 - r * 0.72 * CGFloat(cos(0.35 + fall * 0.95))
+            shaft.addLine(to: CGPoint(x: bx, y: by))
+            ctx.stroke(shaft, with: .color(ink.opacity(0.85 - fall * 0.25)), style: stroke)
+
         case .blizzard:
-            let sc = CGFloat(0.84 + 0.18 * enter)
-            p.scaleX = sc; p.scaleY = sc
-            p.anchor = .leading
-            p.deg = sin(t * 3.6) * 3.5
+            // 60/120fps 旋舞六瓣冰晶雪花
+            let rot = t * 0.95
+            for i in 0..<6 {
+                let a = rot + Double(i) * .pi / 3
+                let ex = cx + CGFloat(cos(a)) * r * 0.86 * enter
+                let ey = cy + CGFloat(sin(a)) * r * 0.86 * enter
+                var arm = Path()
+                arm.move(to: CGPoint(x: cx, y: cy)); arm.addLine(to: CGPoint(x: ex, y: ey))
+                let mx = cx + CGFloat(cos(a)) * r * 0.52 * enter
+                let my = cy + CGFloat(sin(a)) * r * 0.52 * enter
+                for sgn in [-1.0, 1.0] {
+                    let ba = a + sgn * 0.65
+                    arm.move(to: CGPoint(x: mx, y: my))
+                    arm.addLine(to: CGPoint(x: mx + CGFloat(cos(ba)) * r * 0.26 * enter, y: my + CGFloat(sin(ba)) * r * 0.26 * enter))
+                }
+                ctx.stroke(arm, with: .color(accent), style: fine)
+            }
+
         case .drought:
-            let sc = CGFloat((0.86 + 0.16 * enter) * (1.0 + 0.045 * sin(t * 5.2)))
-            p.scaleX = sc; p.scaleY = sc
+            // 炙热炽日脉动光芒
+            let pulse = CGFloat(0.86 + 0.14 * sin(t * 5.8)) * CGFloat(enter)
+            ctx.fill(Path(ellipseIn: CGRect(x: cx - r * 0.36 * pulse, y: cy - r * 0.36 * pulse, width: r * 0.72 * pulse, height: r * 0.72 * pulse)), with: .color(accent.opacity(0.88)))
+            for i in 0..<8 {
+                let a = t * 0.45 + Double(i) * .pi / 4
+                var ray = Path()
+                ray.move(to: CGPoint(x: cx + CGFloat(cos(a)) * r * 0.52, y: cy + CGFloat(sin(a)) * r * 0.52))
+                ray.addLine(to: CGPoint(x: cx + CGFloat(cos(a)) * r * 0.92 * pulse, y: cy + CGFloat(sin(a)) * r * 0.92 * pulse))
+                ctx.stroke(ray, with: .color(accent), style: fine)
+            }
+
         case .flood:
-            let flash = (abs(t - 0.45) < 0.08 || abs(t - 1.35) < 0.08) ? 1.12 : 1.0
-            let sc = CGFloat((0.84 + 0.18 * enter) * flash)
-            p.scaleX = sc; p.scaleY = sc
-            p.ox = CGFloat(sin(t * 14) * (flash > 1 ? 1.8 : 0.4))
+            // 雷电破空 + 疾雨斜纹
+            var bolt = Path()
+            bolt.move(to: CGPoint(x: cx + r * 0.18, y: cy - r * 0.85))
+            bolt.addLine(to: CGPoint(x: cx - r * 0.30, y: cy + r * 0.04))
+            bolt.addLine(to: CGPoint(x: cx + r * 0.14, y: cy + r * 0.04))
+            bolt.addLine(to: CGPoint(x: cx - r * 0.18, y: cy + r * 0.88))
+            ctx.stroke(bolt, with: .color(accent), style: stroke)
+
         case .harvest:
-            let sc = CGFloat(0.84 + 0.18 * enter)
-            p.scaleX = sc; p.scaleY = sc
-            p.anchor = .bottom
-            p.deg = sin(t * 4.0) * 5.0
+            // 随风轻拂的金穗四芒瑞辉
+            let sway = CGFloat(sin(t * 4.2) * 3.5)
+            var stalk = Path()
+            stalk.move(to: CGPoint(x: cx, y: cy + r * 0.88))
+            stalk.addQuadCurve(to: CGPoint(x: cx + sway, y: cy - r * 0.82 * enter), controlPoint: CGPoint(x: cx - r * 0.20, y: cy))
+            ctx.stroke(stalk, with: .color(gold), style: stroke)
+            for k in 0..<4 {
+                let fy = cy + r * 0.35 - CGFloat(k) * r * 0.30
+                let fx = cx + sway * CGFloat(k) * 0.25
+                var leaf = Path()
+                leaf.move(to: CGPoint(x: fx, y: fy)); leaf.addLine(to: CGPoint(x: fx - r * 0.36, y: fy - r * 0.22))
+                leaf.move(to: CGPoint(x: fx, y: fy)); leaf.addLine(to: CGPoint(x: fx + r * 0.36, y: fy - r * 0.22))
+                ctx.stroke(leaf, with: .color(gold), style: fine)
+            }
+
         case .plague:
-            let sc = CGFloat((0.86 + 0.16 * enter) * (1.0 + 0.05 * sin(t * 3.2)))
-            p.scaleX = sc; p.scaleY = sc
-            p.deg = sin(t * 2.4) * 6.0
-        case .capital:
-            let sc = CGFloat(0.84 + 0.18 * enter)
-            p.scaleX = sc; p.scaleY = sc
-            p.oy = CGFloat((1 - enter) * 8)
+            // 盘旋低沉瘴雾纹
+            let rot = CGFloat(sin(t * 2.8) * 3.0)
+            for dy in [-r * 0.32, 0.0, r * 0.32] {
+                var w = Path()
+                w.move(to: CGPoint(x: cx - r * 0.72, y: cy + dy))
+                w.addCurve(to: CGPoint(x: cx + r * 0.72, y: cy + dy),
+                           controlPoint1: CGPoint(x: cx - r * 0.24, y: cy + dy - 5 + rot),
+                           controlPoint2: CGPoint(x: cx + r * 0.24, y: cy + dy + 5 - rot))
+                ctx.stroke(w, with: .color(accent.opacity(0.86)), style: fine)
+            }
+
+        default:
+            // 改朝换代 / 复辟 / 世家：鎏金玉玺稳稳落印
+            let drop = CGFloat((1 - Self.easeOutBack(min(1, max(0, (t - 0.12) / 0.36)))) * -10)
+            let box = CGRect(x: cx - r * 0.68, y: cy - r * 0.68 + drop, width: r * 1.36, height: r * 1.36)
+            ctx.stroke(Path(roundedRect: box, cornerRadius: 4), with: .color(accent), style: stroke)
+            ctx.stroke(Path(roundedRect: box.insetBy(dx: 3.5, dy: 3.5), cornerRadius: 2), with: .color(gold.opacity(0.85)), style: fine)
+            var crown = Path()
+            crown.move(to: CGPoint(x: cx - r * 0.38, y: cy + r * 0.26 + drop))
+            crown.addLine(to: CGPoint(x: cx - r * 0.38, y: cy - r * 0.18 + drop))
+            crown.addLine(to: CGPoint(x: cx - r * 0.12, y: cy + r * 0.04 + drop))
+            crown.addLine(to: CGPoint(x: cx, y: cy - r * 0.30 + drop))
+            crown.addLine(to: CGPoint(x: cx + r * 0.12, y: cy + r * 0.04 + drop))
+            crown.addLine(to: CGPoint(x: cx + r * 0.38, y: cy - r * 0.18 + drop))
+            crown.addLine(to: CGPoint(x: cx + r * 0.38, y: cy + r * 0.26 + drop))
+            crown.closeSubpath()
+            ctx.stroke(crown, with: .color(accent), style: fine)
         }
-        return p
     }
 
     /// 卷面动态氛围粒子与丝绸斜光（60/120fps 纯轻量化路径绘制）

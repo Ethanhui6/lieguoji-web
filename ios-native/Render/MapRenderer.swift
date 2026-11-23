@@ -264,45 +264,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
-        // 载入全 9 组厚涂水墨地形精灵（山脉/雪峰/阔叶林/松柏林/沙漠/丘陵/草原树丛/水乡泽国/极地冻原）与四角鎏金云纹包角贴图
-        let artLoader = MTKTextureLoader(device: device)
-        let artOpts: [MTKTextureLoader.Option: Any] = [.SRGB: false, .generateMipmaps: true]
-        for (kindIdx, name) in [(0, "terrain-mountain"), (1, "terrain-mountain-snow"), (2, "terrain-forest"), (3, "terrain-pine"), (4, "terrain-desert"), (5, "terrain-hill"), (6, "terrain-savanna"), (7, "terrain-marsh"), (8, "terrain-tundra")] {
-            if let u = BundleArt.url(name), let tex = try? artLoader.newTexture(URL: u, options: artOpts) {
-                terrainTextures[kindIdx] = tex
-            }
-        }
-        if let cu = BundleArt.url("scroll-corner"), let tex = try? artLoader.newTexture(URL: cu, options: artOpts) {
-            scrollCornerTexture = tex
-        }
-        rebuildTerrainSprites(map)
-        rebuildScrollCorners(width: map.width, height: map.height)
-        // Original Army sprites (map.ts): one unit icon per army, tinted with its state colour, 2.56 × 0.84
-        // × ArmyIconScale 0.35 world units (elite × 1.5), never smaller than 7 points on screen.
-        // The pieces (UnitArt), one texture per role; the commander's banner is the gonfalon piece.
+        // v4.1 视觉回正：彻底停用重彩厚涂 AI 地形贴图与大块角饰贴图，让轻盈淡墨融纸地貌（MapLayers.relief）与清晰宣纸底图浑然一体。
+        terrainBatches = []
+        scrollCornerTexture = nil
+        scrollCornerBuffer = nil
+        // 恢复经典雕漆国色军团与水师棋子（含风格完全统一的跨海运兵船 `Transport`），任意缩放下清晰高辨识、零贴图割裂感。
         let loader = MTKTextureLoader(device: device)
-        for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Fleet", "Port", "Merchant"] {
-            let probe = ["Fleet", "Port", "Merchant"].contains(role) ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
+        for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Fleet", "Transport", "Port", "Merchant"] {
+            let probe = ["Fleet", "Transport", "Port", "Merchant"].contains(role) ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
             guard let image = UnitArt.image(probe) else { continue }
             if let texture = try? loader.newTexture(cgImage: image, options: [.SRGB: false, .generateMipmaps: true]) { unitTextures[role] = texture }
             else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
         }
         unitTextures["banner"] = unitTextures["elite"]
-        // 载入 7 套 4×1 横向透明序列帧动画图集（1024×256），驱动全图兵种行军冲锋与全文明战舰（楼船/盖伦/维京长船/三角帆舰）／运兵船实帧航行
-        for (sheetKey, assetName) in [
-            ("sheet_infantry", "sheet-infantry-march"),
-            ("sheet_cavalry", "sheet-cavalry-charge"),
-            ("sheet_warship_east", "sheet-warship-east"),
-            ("sheet_warship_west", "sheet-warship-west"),
-            ("sheet_warship_nordic", "sheet-warship-nordic"),
-            ("sheet_warship_islamic", "sheet-warship-islamic"),
-            ("sheet_transport", "sheet-transport-ship"),
-        ] {
-            if let su = BundleArt.url(assetName),
-               let tex = try? artLoader.newTexture(URL: su, options: [.SRGB: false, .generateMipmaps: true]) {
-                unitTextures[sheetKey] = tex
-            }
-        }
         // 军牌底盘 (128×128): 精雕漆盾军牌（平肩微弧收尖盾形 + 浓墨外漆框 + 西北至东南立体受光面 + 内切雕槽与双铆钉），
         // 叠加国色后与顶部象牙浮雕兵种纹样层次分明，任意缩放下都兼具古舆图战棋质感。
         let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
@@ -381,7 +355,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         provinceLines = buffer(MapLayers.provinceLines(next).vertices, stride: 6)
         rivers = next.rivers.isEmpty ? nil : buffer(next.rivers, stride: 2)
         relief = buffer(MapLayers.relief(next).vertices, stride: 6)
-        rebuildTerrainSprites(next)
+        terrainBatches = []
         outlines = buffer(MapLayers.outlines(next, wide: borderWide).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
         if refreshSea {
@@ -915,69 +889,40 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 lead = legLead[a.key] ?? (end - at)
                 let size = iconSize * iconScale * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
 
-                // 解析对应的高精 4×1 序列帧图集键（全面替代静态图+伪动画摇晃）
-                let resolvedRole: String = {
-                    if a.embarked || a.unit == "Transport", unitTextures["sheet_transport"] != nil {
-                        return "sheet_transport"
-                    }
-                    if role == "Fleet" {
-                        let style = CultureStyle.of(a.culture)
-                        let key: String
-                        switch style {
-                        case .chinese, .japanese, .indian: key = "sheet_warship_east"
-                        case .nordic: key = unitTextures["sheet_warship_nordic"] != nil ? "sheet_warship_nordic" : "sheet_warship_west"
-                        case .islamic: key = unitTextures["sheet_warship_islamic"] != nil ? "sheet_warship_islamic" : "sheet_warship_west"
-                        default: key = "sheet_warship_west"
-                        }
-                        return unitTextures[key] != nil ? key : role
-                    }
-                    if role == "cavalry" || role == "heavy" || role == "horseArcher" {
-                        return unitTextures["sheet_cavalry"] != nil ? "sheet_cavalry" : role
-                    }
-                    if role != "Port" && role != "Merchant" && a.army > -100_000 {
-                        return unitTextures["sheet_infantry"] != nil ? "sheet_infantry" : role
-                    }
-                    return role
-                }()
-                let isSheet = resolvedRole.hasPrefix("sheet_")
-                let isNavalSheet = resolvedRole == "sheet_warship_east" || resolvedRole == "sheet_warship_west" || resolvedRole == "sheet_warship_nordic" || resolvedRole == "sheet_warship_islamic" || resolvedRole == "sheet_transport"
+                // 100% 回归经典清晰国色雕漆棋子（跨海登船自动切换同风格 `Transport` 运兵船棋子，零卡顿低帧率贴图）
+                let resolvedRole: String = (a.embarked || a.unit == "Transport") ? "Transport" : role
+                let isNavalPiece = (resolvedRole == "Fleet" || resolvedRole == "Transport")
 
                 // The commander's gonfalon stands behind the pieces: gold for the ruler in person, crimson for generals & flagship armadas.
                 if a.banner > 0 {
                     let k: Float = 0.62
                     quad("banner", at, a.banner == 2 ? RGB(0.95, 0.76, 0.24) : RGB(0.76, 0.20, 0.14), size * k, (0.58 + o.x) / k, (-0.54 + o.y) / k)
                 }
-                // 水师战舰与运兵船下铺海沫光环，陆军脚下铺精巧国色底座盾徽，令阵营归属一眼可辨
-                if (role == "Fleet" || isNavalSheet), unitTextures["0fleetwake"] != nil {
+                // 水师战舰与运兵船下铺柔和海沫光环，陆军脚下铺精雕国色漆盾军牌，阵营归属清晰通透
+                if isNavalPiece, unitTextures["0fleetwake"] != nil {
                     quad("0fleetwake", at, RGB(0.95, 0.98, 1.0), size * 1.24, o.x / 1.24, (0.22 + o.y) / 1.24)
                 }
-                let token = !isNavalSheet && role != "Fleet" && role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
+                let token = !isNavalPiece && role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
                 if token {
-                    let plateScale: Float = isSheet ? 0.74 : 0.98
-                    let plateDy: Float = isSheet ? 0.28 : 0.14
-                    quad("0plate", at, c, size * plateScale, o.x / plateScale, (plateDy + o.y) / plateScale)
+                    quad("0plate", at, c, size * 0.98, o.x / 0.98, (0.14 + o.y) / 0.98)
                 }
-                let piece: RGB = isSheet
-                    ? c
-                    : (token
-                        ? RGB(0.84 + c.r * 0.16, 0.84 + c.g * 0.16, 0.84 + c.b * 0.16)
-                        : (role == "Fleet" ? RGB(min(1, c.r * 1.10 + 0.12), min(1, c.g * 1.10 + 0.12), min(1, c.b * 1.10 + 0.12)) : c))
-                // 陆军按编制排成序列帧战阵，水师舰队按舰数排成破浪编队
+                let piece: RGB = token
+                    ? RGB(0.86 + c.r * 0.14, 0.86 + c.g * 0.14, 0.86 + c.b * 0.14)
+                    : (isNavalPiece ? RGB(min(1, c.r * 1.10 + 0.12), min(1, c.g * 1.10 + 0.12), min(1, c.b * 1.10 + 0.12)) : c)
+                // 陆军按编制排成清晰棋子战阵，水师舰队按舰数排成破浪编队
                 let n = role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
-                let sheetBoost: Float = isNavalSheet ? 1.56 : (isSheet ? 1.44 : 1.0)
                 let layout: [(Float, Float, Float)] = {
-                    if role == "Fleet" || isNavalSheet {
-                        return n == 1 ? [(0, 0, 1.06)]
-                            : n == 2 ? [(-0.34, -0.15, 0.76), (0.10, 0.04, 1.06)]
-                            : [(-0.40, -0.11, 0.72), (0.40, -0.11, 0.72), (0, 0.06, 1.08)]
+                    if isNavalPiece {
+                        return n == 1 ? [(0, 0, 1.08)]
+                            : n == 2 ? [(-0.32, -0.14, 0.78), (0.10, 0.04, 1.08)]
+                            : [(-0.38, -0.10, 0.74), (0.38, -0.10, 0.74), (0, 0.06, 1.10)]
                     }
                     return n == 1 ? [(0, -0.06, 1)] : n == 2 ? [(0.26, -0.16, 0.74), (0, -0.04, 1)]
                         : [(-0.28, -0.16, 0.70), (0.28, -0.16, 0.70), (0, -0.04, 1)]
                 }()
                 for (i, (dx, dy, k)) in layout.enumerated() {
                     let shade: Float = i < layout.count - 1 && n > 1 ? 0.90 : 1
-                    let drawK = k * sheetBoost
-                    quad(resolvedRole, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * drawK, (dx + o.x) / drawK, (dy + o.y) / drawK)
+                    quad(resolvedRole, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, (dx + o.x) / k, (dy + o.y) / k)
                 }
             }
             func roleLayerOrder(_ key: String) -> Int {
@@ -1698,23 +1643,50 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
                                   constant float& time [[buffer(5)]]) {
         SpriteVertex s = v[id];
-        // The same zoom factor positions the troop labels and hit areas on the CPU.
         float pixels = s.size * u.iconZoom;
-        // Alpha below zero: the icon fades in over the leg (new and re-formed armies).
-        // Alpha −2: an army that fell fades out over the leg.
         float4 tint = float4(s.tint);
-        // 阵亡的图标（标记 −2 − d）：在原处停到自己的阵亡时刻 d（本步动画进度），再在 0.15 内淡去——与阵亡动画同时开始。
-        if (tint.a < -1.5) { float d = -tint.a - 2.0; tint.a = 1.0 - clamp((progress - d) / 0.15, 0.0, 1.0); }
-        else if (tint.a < 0.0) tint.a = progress;
-        // 废除旧版僵硬摇晃伪动画：所有实帧兵种与战舰均交由下方 spriteSheetVertex 逐帧驱动
-        if (tint.a > 1.5) {
+        bool fighting = (tint.a > 1.5);
+        bool dying = (tint.a < -1.5);
+        float sinkY = 0.0;
+        if (dying) {
+            float d = -tint.a - 2.0;
+            float fadeT = clamp((progress - d) / 0.16, 0.0, 1.0);
+            tint.a = 1.0 - fadeT;
+            sinkY = fadeT * 0.22 * pixels;
+        } else if (tint.a < 0.0) {
+            tint.a = progress;
+        } else if (fighting) {
             tint.a = 1.0;
         }
-        // 平滑行军: a Hermite curve leaving along the last leg's heading (lead), arriving straight.
         float t = progress, t2 = t * t, t3 = t2 * t;
         float2 a = float2(s.center), b = float2(s.target);
-        float2 walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + (b - a) * (t3 - t2);
-        SpriteOut o; o.position = clip(walk, u, (float2(s.corner) + float2(s.shift)) * pixels); o.uv = float2(s.corner) + 0.5; o.tint = tint; return o;
+        float2 delta = b - a;
+        bool moving = (length(delta) > 0.06);
+        float2 walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + delta * (t3 - t2);
+        // 60/120fps 灵动棋子微韵：行军轻快踏步微倾、交战果断突刺回弹、休整端稳不动
+        float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2831853;
+        float2 corner = float2(s.corner);
+        float2 extraPx = float2(0.0, sinkY);
+        if (fighting) {
+            float beat = sin(time * 8.4 + seed);
+            float lunge = pow(max(0.0, beat), 3.0) - 0.25 * max(0.0, -beat);
+            float dirX = (fract(seed * 1.7) > 0.5) ? 1.0 : -1.0;
+            extraPx += float2(dirX * lunge * pixels * 0.10, -abs(lunge) * pixels * 0.04);
+            float ang = dirX * lunge * 0.08;
+            float ca = cos(ang), sa = sin(ang);
+            corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
+        } else if (moving && !dying) {
+            float stride = sin(time * 9.2 + seed);
+            extraPx.y -= abs(stride) * min(1.3, pixels * 0.045);
+            float lean = (delta.x >= 0.0 ? 1.0 : -1.0) * 0.045 + stride * 0.03;
+            float ca = cos(lean), sa = sin(lean);
+            corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
+        }
+        SpriteOut o;
+        o.position = clip(walk, u, (corner + float2(s.shift)) * pixels + extraPx);
+        o.uv = float2(s.corner) + 0.5;
+        o.tint = tint;
+        return o;
     }
     // 4×1 透明序列帧统一 GPU 动画顶点着色器：零代码晃动，按行军／交战／航行／待机／沉没自动切帧与转向。
     vertex SpriteOut spriteSheetVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
@@ -1799,21 +1771,49 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     // A piece: the texture multiplied by the state's colour (white body → the colour, grey rim → its
     // shade, as the original's SpriteRenderer.color), the rim pulled towards ink so it reads on land
     // of the same colour, and lit a little from above.
-    // 军团棋子东南落地投影着色器（复用同一顶点缓冲，与西北主光严格同向）
+    // 军团棋子东南落地投影着色器（复用同一顶点缓冲，与西北主光及 60/120fps 棋子微韵严格同步）
     vertex SpriteOut spriteShadowVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
                                         constant float& time [[buffer(5)]]) {
         SpriteVertex s = v[id];
         float pixels = s.size * u.iconZoom;
         float4 tint = float4(s.tint);
-        if (tint.a < -1.5) { float d = -tint.a - 2.0; tint.a = 1.0 - clamp((progress - d) / 0.15, 0.0, 1.0); }
-        else if (tint.a < 0.0) tint.a = progress;
-        else if (tint.a > 1.5) tint.a = 1.0;
+        bool fighting = (tint.a > 1.5);
+        bool dying = (tint.a < -1.5);
+        float sinkY = 0.0;
+        if (dying) {
+            float d = -tint.a - 2.0;
+            float fadeT = clamp((progress - d) / 0.16, 0.0, 1.0);
+            tint.a = 1.0 - fadeT;
+            sinkY = fadeT * 0.22 * pixels;
+        } else if (tint.a < 0.0) {
+            tint.a = progress;
+        } else if (fighting) {
+            tint.a = 1.0;
+        }
         float t = progress, t2 = t * t, t3 = t2 * t;
         float2 a = float2(s.center), b = float2(s.target);
-        float2 walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + (b - a) * (t3 - t2);
-        float2 shOffset = float2(2.1, 2.5);
+        float2 delta = b - a;
+        bool moving = (length(delta) > 0.06);
+        float2 walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + delta * (t3 - t2);
+        float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2831853;
+        float2 corner = float2(s.corner) * float2(1.04, 0.96);
+        float2 shOffset = float2(2.1, 2.5 + sinkY);
+        if (fighting) {
+            float beat = sin(time * 8.4 + seed);
+            float lunge = pow(max(0.0, beat), 3.0) - 0.25 * max(0.0, -beat);
+            float dirX = (fract(seed * 1.7) > 0.5) ? 1.0 : -1.0;
+            shOffset.x += dirX * lunge * pixels * 0.10;
+            float ang = dirX * lunge * 0.08;
+            float ca = cos(ang), sa = sin(ang);
+            corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
+        } else if (moving && !dying) {
+            float stride = sin(time * 9.2 + seed);
+            float lean = (delta.x >= 0.0 ? 1.0 : -1.0) * 0.045 + stride * 0.03;
+            float ca = cos(lean), sa = sin(lean);
+            corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
+        }
         SpriteOut o;
-        o.position = clip(walk, u, (float2(s.corner) * float2(1.04, 0.96) + float2(s.shift)) * pixels + shOffset);
+        o.position = clip(walk, u, (corner + float2(s.shift)) * pixels + shOffset);
         o.uv = float2(s.corner) + 0.5;
         o.tint = float4(0.10, 0.07, 0.04, tint.a * 0.28 * u.lighting * u.alpha);
         return o;

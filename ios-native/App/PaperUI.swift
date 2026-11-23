@@ -168,27 +168,16 @@ private struct SealSpecks: Shape {
     }
 }
 
-/// A museum-grade antique carved seal pressed onto the page header (backed by AI carved cinnabar/gilded art).
+/// 宣纸古韵朱砂印章（轻透斑驳纸纹融纸，彻底去掉厚重贴图感）。
 struct Seal: View {
     let text: String
     var size: CGFloat = 40
     @State private var pressed = false
     var body: some View {
-        Group {
-            if let img = BundleArt.sealArt(for: text) {
-                Image(uiImage: img)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .frame(width: size * 1.18, height: size * 1.18)
-                    .shadow(color: Theme.ink.opacity(0.16), radius: 2.5, y: 1.5)
-            } else {
-                SealFace(text: text, size: size)
-                    .rotationEffect(.degrees(-4))
-            }
-        }
-        .scaleEffect(pressed ? 1 : 1.28).opacity(pressed ? 0.96 : 0)
-        .onAppear { withAnimation(Motion.stamp) { pressed = true } }
+        SealFace(text: text, size: size)
+            .rotationEffect(.degrees(-4))
+            .scaleEffect(pressed ? 1 : 1.24).opacity(pressed ? 0.94 : 0)
+            .onAppear { withAnimation(Motion.stamp) { pressed = true } }
     }
 }
 

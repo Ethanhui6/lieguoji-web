@@ -240,22 +240,15 @@ enum BundleArt {
     }
 }
 
-/// 在 SwiftUI 中以统一无圆框纯 AI 质感呈现 `BundleArt` 透明手绘插画。
+/// 全应用统一清雅水墨线描微标（彻底替代小尺寸发糊、风格割裂的厚涂 AI 贴图，与宣纸奏折界面浑然一体）。
 struct ArtEmblem: View {
     let image: UIImage?
     var size: CGFloat = 32
     var fallback: InkGlyph = .crown
     var body: some View {
-        if let image {
-            Image(uiImage: image)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: size, height: size)
-        } else {
-            InkIcon(glyph: fallback, size: size * 0.72, weight: 1.75)
-                .foregroundStyle(Theme.seal)
-                .frame(width: size, height: size)
-        }
+        let _ = image
+        InkIcon(glyph: fallback, size: max(13, size * 0.68), weight: 1.75, accent: Theme.seal.opacity(0.18))
+            .foregroundStyle(Theme.seal)
+            .frame(width: size, height: size)
     }
 }

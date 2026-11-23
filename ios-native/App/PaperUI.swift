@@ -256,43 +256,53 @@ struct MapViewSwitcher: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
         let compact = vertical == .compact
-        let cols = compact
-            ? Array(repeating: GridItem(.fixed(50), spacing: 3), count: 5)
-            : Array(repeating: GridItem(.fixed(54), spacing: 3), count: 2)
-        LazyVGrid(columns: cols, spacing: 3) { buttons(compact: compact) }
-            .padding(6)
-            .glass(shape)
-            .offset(y: open ? 0 : -10)
-            .scaleEffect(open ? 1 : 0.92, anchor: .topTrailing)
-            .opacity(open ? 1 : 0)
-            .animation(Motion.panel, value: open)
-    }
-    @ViewBuilder private func buttons(compact: Bool) -> some View {
-        ForEach(MapViewMode.allCases) { m in
-            Button {
-                GameFeel.shared.tap()
-                withAnimation(Motion.tap) { mode = m }
-            } label: {
-                VStack(spacing: 2.5) {
-                    InkIcon(glyph: m.glyph, size: compact ? 16 : 17, weight: mode == m ? 1.9 : 1.55, filled: mode == m,
-                            accent: mode == m ? Theme.paper2.opacity(0.32) : Theme.seal.opacity(0.28))
-                        .scaleEffect(mode == m ? 1.06 : 1)
-                    Text(m.title).font(Theme.kai(11.5)).lineLimit(1)
-                }
-                .foregroundStyle(mode == m ? Theme.paper2 : Theme.ink)
-                .frame(width: compact ? 50 : 54, height: compact ? 42 : 44)
-                .background {
-                    if mode == m {
-                        RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 5, style: .continuous)
-                            .fill(Theme.seal)
-                            .matchedGeometryEffect(id: "seal", in: marker)
-                            .shadow(color: Theme.seal.opacity(0.26), radius: 4, y: 1.5)
+        let all = MapViewMode.allCases
+        let colCount = compact ? 5 : 2
+        let rowCount = (all.count + colCount - 1) / colCount
+        VStack(spacing: 3) {
+            ForEach(0..<rowCount, id: \.self) { r in
+                HStack(spacing: 3) {
+                    ForEach(0..<colCount, id: \.self) { c in
+                        let idx = r * colCount + c
+                        if idx < all.count {
+                            cell(all[idx], compact: compact)
+                        }
                     }
                 }
-                .contentShape(Rectangle())
             }
-            .buttonStyle(PressStyle())
         }
+        .padding(6)
+        .glass(shape)
+        .fixedSize()
+        .offset(y: open ? 0 : -10)
+        .scaleEffect(open ? 1 : 0.92, anchor: .topTrailing)
+        .opacity(open ? 1 : 0)
+        .animation(Motion.panel, value: open)
+    }
+    @ViewBuilder private func cell(_ m: MapViewMode, compact: Bool) -> some View {
+        Button {
+            GameFeel.shared.tap()
+            withAnimation(Motion.tap) { mode = m }
+        } label: {
+            VStack(spacing: 2.5) {
+                InkIcon(glyph: m.glyph, size: compact ? 16 : 17, weight: mode == m ? 1.9 : 1.55, filled: mode == m,
+                        accent: mode == m ? Theme.paper2.opacity(0.32) : Theme.seal.opacity(0.28))
+                    .scaleEffect(mode == m ? 1.06 : 1)
+                Text(m.title).font(Theme.kai(11.5)).lineLimit(1)
+            }
+            .foregroundStyle(mode == m ? Theme.paper2 : Theme.ink)
+            .frame(width: compact ? 50 : 54, height: compact ? 42 : 44)
+            .background {
+                if mode == m {
+                    RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 5, style: .continuous)
+                        .fill(Theme.seal)
+                        .matchedGeometryEffect(id: "seal", in: marker)
+                        .shadow(color: Theme.seal.opacity(0.26), radius: 4, y: 1.5)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressStyle())
     }
 }
 

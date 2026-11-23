@@ -144,15 +144,19 @@ enum ShotTour {
         NationSheet.tourTab = .court
         show(nil); await wait(0.5); show(.nation(nation)); await wait(1.4); await shoot("11c-court")
         NationSheet.tourTab = nil
-        show(nil); await wait(0.6)
+        show(nil); await wait(0.8)
+        model.tourLandscape = true
         if let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first {
             scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight))
-            await wait(1.8); await shoot("30-landscape")
-            show(.nation(nation)); await wait(1.8); await shoot("31-landscape-nation")
-            show(nil); await wait(0.6)
-            scene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
-            await wait(1.4)
         }
+        await wait(1.2); await shoot("30-landscape")
+        show(.nation(nation)); await wait(1.6); await shoot("31-landscape-nation")
+        show(nil); await wait(0.6)
+        model.tourLandscape = false
+        if let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first {
+            scene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
+        }
+        await wait(1.0)
         show(nil); await wait(1)
         await shoot("done")
     }

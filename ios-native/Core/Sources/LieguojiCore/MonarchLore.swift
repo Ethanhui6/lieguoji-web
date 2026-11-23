@@ -180,8 +180,7 @@ public enum MonarchLore {
             return RulerHonor(styledName: "\(title) \(personalName)", eraName: "", eraYearText: "", honorific: "", cleanPersonalName: personalName, surnameLessImperial: false)
         }
 
-        // 2. 从 r.regimes.reignLore 读取或确定性生成年号与世数
-        if !r.regimes.isNull && r.regimes.reignLore.isNull { r.regimes.reignLore = .object() }
+        // 2. 从 r.regimes.reignLore 读取或确定性生成年号与世数（纯只读确定性计算，不在只读面板查询时修改存档字节）
         let loreKey = "\(nationId)|\(reignId)"
         let stored = (!r.regimes.isNull && !r.regimes.reignLore.isNull) ? r.regimes.reignLore[loreKey] : .null
 
@@ -200,11 +199,6 @@ public enum MonarchLore {
             let seed = "\(r.world.custom.seed.optionalString ?? "")|\(nationId)|\(reignId)|era"
             let start = Int(hashU32(seed) % UInt32(pool.count))
             era = (0..<pool.count).lazy.map { pool[(start + $0) % pool.count] }.first { !usedEras.contains($0) } ?? pool[start]
-            if !r.regimes.isNull && !r.regimes.reignLore.isNull {
-                let row = stored.isNull ? JS.object() : stored
-                row.era = JS(era)
-                r.regimes.reignLore[loreKey] = row
-            }
         }
 
         // 计算西方/欧亚君主及教宗/哈里发名字世数（统计本国历代同名顺位：伊丽莎白一世 → 二世，教宗 利奥一世 → 二世）
@@ -232,11 +226,6 @@ public enum MonarchLore {
                 if otherGiven == givenKey { count += 1 }
             }
             ordinal = count
-            if !r.regimes.isNull && !r.regimes.reignLore.isNull {
-                let row = r.regimes.reignLore[loreKey].isNull ? JS.object() : r.regimes.reignLore[loreKey]
-                row.ordinal = JS(ordinal)
-                r.regimes.reignLore[loreKey] = row
-            }
         }
 
         // 3. 计算庙号或历史尊号/绰号（随战功、能力、特质真实动态显现）

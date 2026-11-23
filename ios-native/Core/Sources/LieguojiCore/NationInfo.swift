@@ -192,9 +192,8 @@ extension NativeEngine {
             if p.gender.optionalNumber == 1 { let t = ruler.title.asString; ruler.title = JS(Self.femaleTitles[t] ?? t) }
             // 元首与掌权者 (Heads.swift): the form of government may set the head of state's title.
             if !r.regimes.isNull, let t = Regimes.seats(r, id).head { ruler.title = JS(p.gender.optionalNumber == 1 ? (Self.femaleTitles[t] ?? t) : t) }
-            // 真实历史年号、世数、尊号与无姓氏日本天皇展示 + 在位特质实际加成汇总
+            // 真实历史年号、世数、尊号与无姓氏日本天皇展示 + 在位特质实际加成汇总（纯只读查询，绝不修改引擎存档状态）
             if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
-                MonarchLore.ensurePersonalityTraits(r, person: p)
                 ruler.traits = p.traits.isNull ? .array() : .array(p.traits.asArray.map { JS(Self.traitLabels[$0.asString] ?? $0.asString) })
                 let latestReign = (r.chronicle.isNull || r.chronicle.leaders.isNull || r.chronicle.leaders[id].isNull) ? nil : r.chronicle.leaders[id].asArray.last
                 let rid = latestReign?.id.optionalString ?? "ruler-\(id)-\(leaderId.asInt)"

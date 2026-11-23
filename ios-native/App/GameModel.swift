@@ -11,6 +11,8 @@ import LieguojiCore
     @Published var phase: Phase = .splash
     /// CI tour only. "settings" or "new-world" holds that title sheet open.
     @Published var tourTitle: String?
+    /// CI tour only. Forces `.compact` verticalSizeClass in headless simctl mode so landscape layout (`landscapeRail` + `sidePage`) is rendered and verified.
+    @Published var tourLandscape = false
     @Published private(set) var map: WorldMap?
     private(set) var state: GameState? { didSet { publishState() } }
     /// A page is open over the map: its numbers refresh twice a second instead of with every step.

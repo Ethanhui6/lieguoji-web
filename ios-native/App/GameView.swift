@@ -618,7 +618,7 @@ struct GameView: View {
                 requestReplay(atDay: nil)
             })
                 .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
-                .onAppear { if NationSheet.tourTab != nil { nationDetent = .large } }
+                .onAppear { nationDetent = NationSheet.tourTab != nil ? .large : .fraction(0.38) }
         case .people(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .people)
                 .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))

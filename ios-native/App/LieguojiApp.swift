@@ -97,6 +97,7 @@ enum Names {
 struct RootView: View {
     @StateObject private var model = GameModel()
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.verticalSizeClass) private var sysVerticalClass
     var body: some View {
         ZStack {
             Theme.seaColor(model.controller.display.ocean).ignoresSafeArea()
@@ -113,6 +114,7 @@ struct RootView: View {
             case .founding: FoundingView(controller: model.controller, cancel: { model.cancelGeneration() }).transition(.opacity)
             case .playing:
                 GameView(model: model)
+                    .environment(\.verticalSizeClass, model.tourLandscape ? .compact : sysVerticalClass)
                     .opacity(model.replayActive ? 0 : 1)
                     .allowsHitTesting(!model.replayActive)
                     .transition(.opacity)

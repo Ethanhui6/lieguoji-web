@@ -636,7 +636,7 @@ struct FleetSheet: View {
                             HStack(spacing: 6) {
                                 RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(tint).frame(width: 9, height: 9)
                                 Text("\(nation?.name ?? "") · 主力\(cls.h) / 快舰\(cls.l) / 炮舰\(cls.g) · \(FleetText.status(f.status))")
-                                    .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
+                                    .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.76)
                             }
                         }
                         Spacer(minLength: 4)

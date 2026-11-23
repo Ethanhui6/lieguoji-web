@@ -582,14 +582,9 @@ final class PolityDiplomacyNamingTests: XCTestCase {
         if let marshal = Offices.holder(r, id0, "Marshal", Offices.stateId(r, id0)), marshal.isAlive.asBool {
             let pid = String(marshal.id.asInt)
             if r.regimes.generals.isNull { r.regimes.generals = .object() }
-            r.regimes.generals[pid] = JS.object([
-                ("name", JS("卫青")),
-                ("nation", JS(id0)),
-                ("merit", JS(380)),
-                ("gained", JS(14)),
-                ("months", JS(24)),
-                ("fallen", JS(false)),
-            ])
+            let e = JS.object()
+            e.name = JS("卫青"); e.nation = JS(id0); e.merit = JS(380); e.gained = JS(14); e.months = JS(24); e.fallen = JS(false)
+            r.regimes.generals[pid] = e
             let savedTick = r.clock.tick.clone()
             r.clock.tick = JS(savedTick.asInt + 1)
             let aura = Regimes.warGodAura(r, nationId: id0)

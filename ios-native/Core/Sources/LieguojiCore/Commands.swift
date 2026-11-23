@@ -154,7 +154,9 @@ extension NativeEngine {
         let hasPort = !r.portControl.isNull && !r.portControl.ports.isNull && !r.portControl.ports[id].isNull
         let govFit = o.governorFit.optionalNumber ?? 0
         let occupied = o.owner.asInt != o.controller.asInt
-        var prosp = Int((min(1.0, popVal / capVal) * 44.0 + min(1.0, grainVal / max(800.0, popVal * 0.25)) * 18.0).rounded())
+        let popScore: Double = min(1.0, popVal / capVal) * 44.0
+        let grainScore: Double = min(1.0, grainVal / max(800.0, popVal * 0.25)) * 18.0
+        var prosp = Int((popScore + grainScore).rounded())
         if o.core.isTruthy { prosp += 10 }
         if hasPort { prosp += 10 }
         if govFit >= 0.4 { prosp += 14 } else if govFit < 0 { prosp -= 8 }

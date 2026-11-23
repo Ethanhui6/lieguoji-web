@@ -115,13 +115,20 @@ final class NamingAndFamilyTests: XCTestCase {
         let engine = try appWorld(); defer { cleanup() }
         let r = engine.run
 
-        // 1. 同国世家无撞姓；已婚配偶拥有独立本姓（不再与配偶同姓）。
+        // 1. 同国世家无撞姓；日本皇室遵循真实史实无姓氏；已婚配偶拥有独立本姓（不再与配偶同姓）。
         var surnamesByNation = [String: Set<String>]()
-        for (_, fam) in r.kin.families.objectEntries {
+        for (fidStr, fam) in r.kin.families.objectEntries {
             let nid = fam.nationId.optionalString ?? ""
             let s = fam.surname.optionalString ?? ""
-            XCTAssertFalse(s.isEmpty)
-            XCTAssertTrue(surnamesByNation[nid, default: []].insert(s).inserted, "国家 \(nid) 出现重姓家族：\(s)")
+            let cid = r.civilization.nations[nid].cultureId.optionalString ?? ""
+            let pol = r.civilization.nations[nid].polity.optionalString ?? ""
+            let isJPImperial = (cid == "japanese" && pol == "Empire" && Int(fidStr) == People.rulingFamilyId(r, nid))
+            if isJPImperial {
+                XCTAssertTrue(s.isEmpty, "日本帝国皇室应无姓氏，实际：\(s)")
+            } else {
+                XCTAssertFalse(s.isEmpty, "国家 \(nid) 世家 \(fidStr) 不应缺姓")
+                XCTAssertTrue(surnamesByNation[nid, default: []].insert(s).inserted, "国家 \(nid) 出现重姓家族：\(s)")
+            }
             let headId = fam.headId.asInt
             if let head = People.person(r, headId), head.spouseId.asInt > 0, let sp = People.person(r, head.spouseId.asInt) {
                 XCTAssertNotEqual(sp.lastName.asString, head.lastName.asString, "开局家主与配偶不应同姓：\(head.identity.name.asString) / \(sp.identity.name.asString)")

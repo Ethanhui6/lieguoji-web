@@ -237,15 +237,15 @@ final class AnnalsTests: XCTestCase {
             Regimes.generalsMonth(r, nation, id, 100 + month)
         }
         let entry = r.regimes.generals[String(commander)]
-        XCTAssertEqual(entry.merit.optionalNumber, earned + 3 * (4 + 4 * 12))
+        XCTAssertEqual(entry.merit.optionalNumber, earned + 3 * (5 + 4 * 14))
         XCTAssertEqual(entry.gained.asInt, Int(won) + 12)
-        XCTAssertTrue(r.chronicle.entries.asArray.contains { $0.text.asString.contains("列为名将") })
+        XCTAssertTrue(r.chronicle.entries.asArray.contains { $0.text.asString.contains("晋封名将") })
         let roll = try JS.parse(engine.generals()).asArray
         XCTAssertEqual(roll.first?.id.asInt, commander)
         XCTAssertEqual(roll.first?.rank.optionalString, "名将")
-        // No gain, no war month counted twice: a month without new land adds four.
+        // No gain, no war month counted twice: a month without new land adds five.
         Regimes.generalsMonth(r, nation, id, 104)
-        XCTAssertEqual(entry.merit.optionalNumber, earned + 3 * 52 + 4)
+        XCTAssertEqual(entry.merit.optionalNumber, earned + 3 * 61 + 5)
     }
 
     func testNeighboursLeagueAgainstAHegemon() throws {

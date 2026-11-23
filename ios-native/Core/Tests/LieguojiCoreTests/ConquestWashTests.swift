@@ -78,8 +78,9 @@ final class ConquestWashTests: XCTestCase {
         let mid = fade.shown(0, at: 0.35).x
         fade.set([0, 0, 0, 1], at: 0.35, fade: true)    // 反攻：又换回去
         XCTAssertEqual(fade.shown(0, at: 0.35).x, mid, accuracy: 1e-6, "新目标以当前可见颜色为起点")
-        XCTAssertFalse(fade.fading(at: 1.1))
-        XCTAssertEqual(fade.shown(0, at: 1.1).x, 0)
+        let done = Float(0.35) + LandFade.duration + 0.05
+        XCTAssertFalse(fade.fading(at: done))
+        XCTAssertEqual(fade.shown(0, at: done).x, 0)
         // 由晕染接手的顶点：底色立即到位。
         fade.set([1, 0, 0, 1], at: 2, fade: true, instant: { _ in true })
         XCTAssertEqual(fade.shown(0, at: 2).x, 1)

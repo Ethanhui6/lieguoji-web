@@ -113,7 +113,7 @@ jobs:
     # The app tours itself in the simulator (LGJ_SHOT=1); manual dispatch only so pushes ship IPA fast.
     if: github.event_name == 'workflow_dispatch' && inputs.run_screenshots
     runs-on: macos-26
-    timeout-minutes: 40
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - name: Generate project
@@ -123,7 +123,7 @@ jobs:
           xcodegen generate
       - name: Build for the simulator
         run: |
-          xcodebuild -project ios-native/LieguojiNative.xcodeproj -scheme LieguojiNative -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-native/build/sim CODE_SIGNING_ALLOWED=NO build > sim-build.log 2>&1             || { grep -E "error:|fatal error|Segmentation|Stack dump" -A4 sim-build.log | head -80; tail -20 sim-build.log; exit 1; }
+          xcodebuild -project ios-native/LieguojiNative.xcodeproj -scheme LieguojiNative -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios-native/build/sim "ARCHS=$(uname -m)" CODE_SIGNING_ALLOWED=NO build > sim-build.log 2>&1             || { grep -E "error:|fatal error|Segmentation|Stack dump" -A4 sim-build.log | head -80; tail -20 sim-build.log; exit 1; }
           tail -5 sim-build.log
       - name: Tour and screenshot
         run: |
@@ -170,15 +170,6 @@ jobs:
             xcrun simctl spawn "$UDID" log show --last 30m --predicate 'eventMessage CONTAINS "Lieguoji Metal:"' --style compact | tail -12 || true
             exit 1
           }
-          # 边缘特写: the top of the title screen and the top and bottom of the map, where an empty band
-          # or a hard frame would show (cropped full-width, 360 px tall).
-          mkdir -p shots/edges
-          for pair in "01-title:top" "03-world:top" "03-world:bottom" "02e-borders:top"; do
-            n=${pair%%:*}; side=${pair##*:}; src="shots/$n.png"
-            [ -f "$src" ] || continue
-            swift scripts/crop-edge.swift "$src" "shots/edges/$n-$side.png" "$side" 360 || true
-          done
-          ls shots shots/edges
       - uses: actions/upload-artifact@v4
         if: always()
         with:

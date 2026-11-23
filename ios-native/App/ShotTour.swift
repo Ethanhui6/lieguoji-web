@@ -8,6 +8,7 @@ import LieguojiCore
 enum ShotTour {
     static let on = ProcessInfo.processInfo.environment["LGJ_SHOT"] == "1"
     private static var dir: URL { FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0] }
+    @MainActor static var heldHeraldText: String?
 
     /// Waits until the workflow has taken the screenshot `name` (or a minute has passed).
     @MainActor static func shoot(_ name: String) async {
@@ -280,12 +281,14 @@ enum ShotTour {
     /// Feed chronicle events through the real queue while native play updates the opening map.
     @MainActor private static func checkEarlyHeralds(_ model: GameModel) async {
         guard let startDay = model.state?.day else { return }
+        let houseText = "巡览世家篡位", marriageText = "巡览两国联姻"
         let heralds = model.controller.play.showHeralds
         let pauseOnNews = model.controller.play.pauseOnNews
         model.dismissHerald()
         model.controller.play.showHeralds = true
         model.controller.play.pauseOnNews = false
         defer {
+            heldHeraldText = nil
             model.pause(saving: false)
             model.dismissHerald()
             model.controller.play.showHeralds = heralds
@@ -303,14 +306,17 @@ enum ShotTour {
             model.apply(state)
             return true
         }
-        guard announce("巡览世家篡位") else { return }
+        heldHeraldText = houseText
+        guard announce(houseText) else { return }
         await wait(0.5)
-        guard model.playing, model.herald?.kind == .house else { return }
+        guard model.playing, let house = model.herald, house.kind == .house, house.text == houseText else { return }
         await shoot("41e-herald-house")
+        guard model.herald?.id == house.id else { return }
         model.dismissHerald()
-        guard announce("巡览两国联姻") else { return }
+        heldHeraldText = marriageText
+        guard announce(marriageText) else { return }
         await wait(0.2)
-        guard let wedding = model.herald, wedding.kind == .marriage,
+        guard let wedding = model.herald, wedding.kind == .marriage, wedding.text == marriageText,
               announce("巡览朝廷政变") else { return }
         await wait(0.5)
         // The cancelled first banner must not leave two consumers draining the same queue.

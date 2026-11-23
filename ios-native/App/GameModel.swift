@@ -1006,6 +1006,12 @@ import LieguojiCore
                 // 场景时长：宣战/政变/通牒 2.9 秒、议和/改制/邦交 2.6 秒、攻克 1.8 秒，其余 2.4 秒。
                 let seconds: Double = (h.kind == .war || h.kind == .coup || h.kind == .ultimatum) ? 2.9 : (h.kind == .peace || h.kind == .regime || h.kind == .treaty) ? 2.6 : h.kind == .capture ? 1.8 : 2.4
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                // A host under load may take longer than the banner's normal lifetime to take the shot.
+                if ShotTour.on {
+                    while !Task.isCancelled, ShotTour.heldHeraldText == h.text {
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                    }
+                }
                 if Task.isCancelled { break }
                 self.herald = nil
                 try? await Task.sleep(nanoseconds: 350_000_000)

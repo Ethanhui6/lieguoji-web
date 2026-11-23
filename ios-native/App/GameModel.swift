@@ -1015,7 +1015,7 @@ import LieguojiCore
             enqueue(Herald(kind: .peace, text: "\(name(w.attacker))与\(name(w.defender))议和", nations: [w.attacker, w.defender]))
         }
         // Revolutions, coups, regime shifts, treaties, ultimatums, royal marriages and seasonal weather events are proclaimed with bespoke civilization-matched animations.
-        var weatherAnnounced = false
+        var weatherAnnounced = ShotTour.on
         for e in newEvents {
             let nats = eventNations(e)
             if e.text.contains("最后通牒") {

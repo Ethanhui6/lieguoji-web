@@ -150,10 +150,9 @@ jobs:
             for f in "$DATA"/Documents/shot-*.ready; do
               [ -e "$f" ] || continue
               n=$(basename "$f" .ready); n=${n#shot-}
-              # 视频片段：rec-<名>-start 到 rec-<名>-stop 之间录屏（占领晕染前后对照）。
+              # 视频片段标记：立即消费标记，避免无头虚拟机后台 recordVideo 占用 simctl io 管道或阻塞步骤退出。
               case "$n" in
-                rec-*-start) r=${n#rec-}; r=${r%-start}; xcrun simctl io "$UDID" recordVideo --codec=h264 --force "shots/$r.mp4" > /dev/null 2>&1 & echo $! > /tmp/rec.pid; sleep 1; rm -f "$f"; continue ;;
-                rec-*-stop) [ -f /tmp/rec.pid ] && kill -INT "$(cat /tmp/rec.pid)" && sleep 2; rm -f /tmp/rec.pid "$f"; continue ;;
+                rec-*-start|rec-*-stop) rm -f "$f"; continue ;;
               esac
               sleep 0.6
               [ "$n" = done ] && finished=1 || xcrun simctl io "$UDID" screenshot "shots/$n.png"
@@ -168,8 +167,10 @@ jobs:
           done
           node scripts/check-native-tour.mjs shots || {
             xcrun simctl spawn "$UDID" log show --last 30m --predicate 'eventMessage CONTAINS "Lieguoji Metal:"' --style compact | tail -12 || true
+            xcrun simctl shutdown "$UDID" || true
             exit 1
           }
+          xcrun simctl shutdown "$UDID" || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -1481,8 +1481,8 @@ final class MapLabelsView: UIView {
         let key = "\(l.text)|\(size)|\(l.fill.hashValue)|\(l.stroke.hashValue)" as NSString
         func apply(_ image: UIImage) { l.rendered = size; l.view.transform = .identity; l.view.image = image; l.view.bounds = CGRect(origin: .zero, size: image.size) }
         if let cached = Self.images.object(forKey: key) { apply(cached); return }
-        if Self.legacy || ((l.rendered == 0 || l.view.image == nil) && syncBudget > 0) {
-            syncBudget -= 1
+        if Self.legacy || ((l.rendered == 0 || l.view.image == nil) && (l.province == nil || syncBudget > 0)) {
+            if l.province != nil { syncBudget -= 1 }
             let image = Self.render(l.text, size: CGFloat(size), fill: l.fill, stroke: l.stroke, strokeEm: CGFloat(l.strokeWidth))
             Self.store(image, key); apply(image); return
         }

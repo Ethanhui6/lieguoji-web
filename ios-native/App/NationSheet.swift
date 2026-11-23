@@ -1139,7 +1139,7 @@ struct NationSheet: View {
                         VStack(alignment: .leading, spacing: 10) {
                             if let wg = nationWarGod, !wg.isEmpty {
                                 HStack(alignment: .top, spacing: 8) {
-                                    SealFace(text: "战神", size: 22, color: Theme.seal)
+                                    ArtEmblem(image: BundleArt.wargodCrest, size: 28, fallback: .military)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("战神谱在阵加持").font(Theme.caption).foregroundStyle(Theme.seal)
                                         Text(wg).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)

@@ -763,7 +763,7 @@ struct ReplayOverlay: View {
                 .overlay(alignment: .topLeading) {
                     if showDetails {
                         frameDetailCard(timeline: timeline, idx: shownIdx, frame: frame)
-                            .padding(.top, Theme.Control.topHeight + 22)
+                            .padding(.top, Theme.Control.topHeight + 10)
                             .padding(.leading, Theme.Control.screenInset)
                             .transition(.opacity.combined(with: .move(edge: .top)).combined(with: .scale(scale: 0.96, anchor: .topLeading)))
                             .zIndex(18)
@@ -845,121 +845,92 @@ struct ReplayOverlay: View {
     // MARK: - 顶栏（与 GameView.topBar 1:1 对齐：左侧 44pt 纪年胶囊 + 右侧三枚 44×44pt 同心圆钮，彻底根治竖屏挤压变形）
 
     private func topBar(timeline: ReplayTimelineData, idx: Int, frame: ReplayTimelineData.Frame) -> some View {
-        VStack(spacing: 5) {
+        HStack(spacing: Theme.Control.gap) {
+            // 左侧纪年与存世国数胶囊（与主界面 GameView.topBar 日期胶囊 1:1 等高、同曲率、同对齐）
+            Button {
+                GameFeel.shared.tap()
+                model.pauseReplay()
+                showNodes.toggle()
+            } label: {
+                HStack(spacing: landscape ? 8 : 6) {
+                    Circle()
+                        .fill(model.replayPlaying ? (model.replayReversing ? Theme.jade : Theme.seal) : Theme.ink2.opacity(0.42))
+                        .frame(width: 6.5, height: 6.5)
+                        .animation(Motion.panel, value: model.replayPlaying)
+                    Text(frame.dateText)
+                        .font(landscape ? Theme.section : Theme.body)
+                        .foregroundStyle(Theme.ink)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                        .layoutPriority(1)
+                    Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.8, height: 15)
+                    Text("\(frame.aliveCount)国")
+                        .font(Theme.label)
+                        .foregroundStyle(Theme.ink2)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .fixedSize()
+                    if landscape, !frame.topName.isEmpty {
+                        let topColor: Color = {
+                            let nations = model.controller.world?.meta.nations ?? model.map?.meta.nations ?? []
+                            if nations.indices.contains(frame.topNation) { return Names.color(nations[frame.topNation].color) }
+                            if timeline.nations.indices.contains(frame.topNation) { return Names.color(timeline.nations[frame.topNation].color) }
+                            return Theme.seal
+                        }()
+                        Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.8, height: 15)
+                        HStack(spacing: 4) {
+                            Circle().fill(topColor).frame(width: 7, height: 7)
+                            Text("\(MapLayers.stateLabel(frame.topName, full: false)) \(frame.topProvinces)州")
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.ink2)
+                                .monospacedDigit()
+                                .lineLimit(1)
+                        }
+                    }
+                }
+                .padding(.horizontal, landscape ? 14 : 12)
+                .frame(height: Theme.Control.topHeight)
+                .glass(Capsule())
+                .contentShape(Capsule())
+            }
+            .buttonStyle(PressStyle())
+
+            Spacer(minLength: 6)
+
+            // 右侧与主界面 GameView.topBar 严格对称的三枚 44×44pt 正圆同心钮：当帧大势 / 历史节点 / 返回当下
             HStack(spacing: Theme.Control.gap) {
-                // 左侧纪年与存世国数胶囊（与主界面日期胶囊同高同曲率，点击直开历史节点与回溯奏折）
+                Button {
+                    GameFeel.shared.tap()
+                    showDetails.toggle()
+                    model.controller.play.showReplayPlacard = showDetails
+                } label: {
+                    CircleIcon(glyph: .ranking, active: showDetails)
+                }
+                .buttonStyle(InkPressStyle())
+                .accessibilityLabel("当帧天下大势")
+
                 Button {
                     GameFeel.shared.tap()
                     model.pauseReplay()
                     showNodes.toggle()
                 } label: {
-                    HStack(spacing: landscape ? 8 : 6) {
-                        Circle()
-                            .fill(model.replayPlaying ? (model.replayReversing ? Theme.jade : Theme.seal) : Theme.ink2.opacity(0.42))
-                            .frame(width: 6.5, height: 6.5)
-                            .animation(Motion.panel, value: model.replayPlaying)
-                        Text(frame.dateText)
-                            .font(landscape ? Theme.section : Theme.body)
-                            .foregroundStyle(Theme.ink)
-                            .monospacedDigit()
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.75)
-                            .layoutPriority(1)
-                        Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.8, height: 15)
-                        Text("\(frame.aliveCount)国")
-                            .font(Theme.label)
-                            .foregroundStyle(Theme.ink2)
-                            .monospacedDigit()
-                            .lineLimit(1)
-                        if landscape, !frame.topName.isEmpty {
-                            let topColor: Color = {
-                                let nations = model.controller.world?.meta.nations ?? model.map?.meta.nations ?? []
-                                if nations.indices.contains(frame.topNation) { return Names.color(nations[frame.topNation].color) }
-                                if timeline.nations.indices.contains(frame.topNation) { return Names.color(timeline.nations[frame.topNation].color) }
-                                return Theme.seal
-                            }()
-                            Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.8, height: 15)
-                            HStack(spacing: 4) {
-                                Circle().fill(topColor).frame(width: 7, height: 7)
-                                Text("\(MapLayers.stateLabel(frame.topName, full: false)) \(frame.topProvinces)州")
-                                    .font(Theme.caption)
-                                    .foregroundStyle(Theme.ink2)
-                                    .monospacedDigit()
-                                    .lineLimit(1)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, landscape ? 14 : 12)
-                    .frame(height: Theme.Control.topHeight)
-                    .glass(Capsule())
-                    .contentShape(Capsule())
+                    CircleIcon(glyph: .chronicle, active: showNodes)
                 }
-                .buttonStyle(PressStyle())
+                .buttonStyle(InkPressStyle())
+                .accessibilityLabel("历史节点")
 
-                Spacer(minLength: 6)
-
-                // 右侧与主界面 GameView.topBar 严格对称的三枚 44×44pt 正圆同心钮：当帧大势 / 历史节点 / 返回当下
-                HStack(spacing: Theme.Control.gap) {
-                    Button {
-                        GameFeel.shared.tap()
-                        showDetails.toggle()
-                        model.controller.play.showReplayPlacard = showDetails
-                    } label: {
-                        CircleIcon(glyph: .ranking, active: showDetails)
-                    }
-                    .buttonStyle(InkPressStyle())
-                    .accessibilityLabel("当帧天下大势")
-
-                    Button {
-                        GameFeel.shared.tap()
-                        model.pauseReplay()
-                        showNodes.toggle()
-                    } label: {
-                        CircleIcon(glyph: .chronicle, active: showNodes)
-                    }
-                    .buttonStyle(InkPressStyle())
-                    .accessibilityLabel("历史节点")
-
-                    Button {
-                        GameFeel.shared.tap()
-                        showNodes = false
-                        showDetails = false
-                        confirmRollback = nil
-                        model.exitReplay()
-                    } label: {
-                        CircleIcon(glyph: .retreat, active: false, tint: Theme.seal)
-                    }
-                    .buttonStyle(InkPressStyle())
-                    .accessibilityLabel("返回当下")
+                Button {
+                    GameFeel.shared.tap()
+                    showNodes = false
+                    showDetails = false
+                    confirmRollback = nil
+                    model.exitReplay()
+                } label: {
+                    CircleIcon(glyph: .retreat, active: false, tint: Theme.seal)
                 }
-            }
-
-            // 顶部极简「列强霸权演变色带」（4pt 丝滑流光占比条，不遮挡地图，一眼洞察分合消长）
-            if !model.cachedReplayTopPowers.isEmpty {
-                let nations = model.controller.world?.meta.nations ?? model.map?.meta.nations ?? []
-                let totalP = max(1, timeline.provinceCount)
-                GeometryReader { g in
-                    let w = max(1, g.size.width)
-                    HStack(spacing: 1) {
-                        ForEach(model.cachedReplayTopPowers.prefix(6), id: \.nation) { item in
-                            let share = CGFloat(min(totalP, item.count)) / CGFloat(totalP)
-                            let c: Color = {
-                                if nations.indices.contains(item.nation) { return Names.color(nations[item.nation].color) }
-                                if timeline.nations.indices.contains(item.nation) { return Names.color(timeline.nations[item.nation].color) }
-                                return Theme.seal
-                            }()
-                            Rectangle().fill(c).frame(width: max(3, w * share))
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    .background(Theme.paper2.opacity(0.65))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(Theme.ink.opacity(0.16), lineWidth: 0.6))
-                    .animation(.easeOut(duration: 0.16), value: idx)
-                }
-                .frame(height: 5)
-                .frame(maxWidth: landscape ? 480 : .infinity)
-                .allowsHitTesting(false)
+                .buttonStyle(InkPressStyle())
+                .accessibilityLabel("返回当下")
             }
         }
         .padding(.horizontal, Theme.Control.screenInset).padding(.top, 4)
@@ -981,8 +952,65 @@ struct ReplayOverlay: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .bottom)))
             }
 
-            // 第一层：与主界面 EventTicker 同高（34pt）的当帧大事横幅胶囊 + 快捷定位 + 一键回溯此年
-            HStack(spacing: 7) {
+            // 快捷史变与回溯浮条（独立于大事横幅，确保竖屏大事文字始终完整清晰不挤压错乱）
+            if scrubIndex == nil, (model.cachedReplayMajorIndices.count > 1 || nearCP != nil) {
+                let hasPrevMajor = model.cachedReplayMajorIndices.contains { $0 < idx }
+                let hasNextMajor = model.cachedReplayMajorIndices.contains { $0 > idx }
+                HStack(spacing: Theme.Control.gap) {
+                    if model.cachedReplayMajorIndices.count > 1 {
+                        HStack(spacing: 4) {
+                            Button { model.jumpReplayMajor(forward: false) } label: {
+                                HStack(spacing: 3) {
+                                    InkIcon(glyph: .stepBack, size: 11, weight: 1.8)
+                                    Text("上一史变").font(Theme.caption)
+                                }
+                                .foregroundStyle(hasPrevMajor ? Theme.ink : Theme.ink2.opacity(0.36))
+                                .padding(.horizontal, 9).frame(height: 28)
+                                .contentShape(Capsule())
+                            }
+                            .buttonStyle(PressStyle()).disabled(!hasPrevMajor)
+
+                            Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 13)
+
+                            Button { model.jumpReplayMajor(forward: true) } label: {
+                                HStack(spacing: 3) {
+                                    Text("下一史变").font(Theme.caption)
+                                    InkIcon(glyph: .stepForward, size: 11, weight: 1.8)
+                                }
+                                .foregroundStyle(hasNextMajor ? Theme.ink : Theme.ink2.opacity(0.36))
+                                .padding(.horizontal, 9).frame(height: 28)
+                                .contentShape(Capsule())
+                            }
+                            .buttonStyle(PressStyle()).disabled(!hasNextMajor)
+                        }
+                        .glass(Capsule())
+                    }
+
+                    Spacer(minLength: 4)
+
+                    if let nearCP {
+                        Button {
+                            GameFeel.shared.tap()
+                            model.pauseReplay()
+                            confirmRollback = nearCP
+                        } label: {
+                            HStack(spacing: 5) {
+                                InkIcon(glyph: .replay, size: 12, weight: 1.8)
+                                Text("回溯此年").font(Theme.caption)
+                            }
+                            .foregroundStyle(Theme.jade)
+                            .padding(.horizontal, 11).frame(height: 28)
+                            .glass(Capsule())
+                            .overlay(Capsule().strokeBorder(Theme.jade.opacity(0.35), lineWidth: 0.8))
+                        }
+                        .buttonStyle(PressStyle())
+                    }
+                }
+                .frame(maxWidth: landscape ? 560 : .infinity)
+            }
+
+            // 第一层：与主界面 EventTicker 1:1 等高（34pt）的纯净大事横幅胶囊（仅保留印章、完整标题、帧序与定位，绝不挤坏文字）
+            HStack(spacing: 8) {
                 Button {
                     GameFeel.shared.tap()
                     if frame.province >= 0, let m = model.map, m.meta.provinces.indices.contains(frame.province) {
@@ -999,39 +1027,18 @@ struct ReplayOverlay: View {
                             .font(Theme.label)
                             .foregroundStyle(Theme.ink)
                             .lineLimit(1)
+                            .truncationMode(.tail)
+                            .layoutPriority(1)
                         Spacer(minLength: 4)
                         Text("\(idx + 1)/\(timeline.frames.count)")
                             .font(Theme.caption)
                             .foregroundStyle(Theme.ink2)
                             .monospacedDigit()
+                            .fixedSize()
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(PressStyle())
-
-                if model.cachedReplayMajorIndices.count > 1 {
-                    let hasPrevMajor = model.cachedReplayMajorIndices.contains { $0 < idx }
-                    let hasNextMajor = model.cachedReplayMajorIndices.contains { $0 > idx }
-                    HStack(spacing: 3) {
-                        Button { model.jumpReplayMajor(forward: false) } label: {
-                            InkIcon(glyph: .stepBack, size: 11, weight: 1.8)
-                                .foregroundStyle(hasPrevMajor ? Theme.seal : Theme.ink2.opacity(0.32))
-                                .frame(width: 22, height: 22)
-                                .background(Theme.seal.opacity(hasPrevMajor ? 0.10 : 0.04), in: Circle())
-                        }
-                        .buttonStyle(PressStyle()).disabled(!hasPrevMajor)
-                        .accessibilityLabel("上一重大史变")
-
-                        Button { model.jumpReplayMajor(forward: true) } label: {
-                            InkIcon(glyph: .stepForward, size: 11, weight: 1.8)
-                                .foregroundStyle(hasNextMajor ? Theme.seal : Theme.ink2.opacity(0.32))
-                                .frame(width: 22, height: 22)
-                                .background(Theme.seal.opacity(hasNextMajor ? 0.10 : 0.04), in: Circle())
-                        }
-                        .buttonStyle(PressStyle()).disabled(!hasNextMajor)
-                        .accessibilityLabel("下一重大史变")
-                    }
-                }
 
                 Button {
                     GameFeel.shared.tap()
@@ -1049,28 +1056,8 @@ struct ReplayOverlay: View {
                 }
                 .buttonStyle(PressStyle())
                 .accessibilityLabel("定位大事发生地")
-
-                if let nearCP {
-                    Rectangle().fill(Theme.ink.opacity(0.14)).frame(width: 0.8, height: 14)
-                    Button {
-                        GameFeel.shared.tap()
-                        model.pauseReplay()
-                        confirmRollback = nearCP
-                    } label: {
-                        HStack(spacing: 4) {
-                            InkIcon(glyph: .replay, size: 12, weight: 1.8)
-                            Text("回溯此年").font(Theme.caption)
-                        }
-                        .foregroundStyle(Theme.jade)
-                        .padding(.horizontal, 8).padding(.vertical, 3.5)
-                        .background(Theme.jade.opacity(0.14), in: Capsule())
-                        .overlay(Capsule().strokeBorder(Theme.jade.opacity(0.35), lineWidth: 0.7))
-                        .contentShape(Capsule())
-                    }
-                    .buttonStyle(PressStyle())
-                }
             }
-            .padding(.leading, 8).padding(.trailing, 8).frame(height: 34)
+            .padding(.leading, 8).padding(.trailing, 7).frame(height: 34)
             .frame(maxWidth: landscape ? 560 : .infinity)
             .glass(Capsule())
 
@@ -1196,14 +1183,14 @@ struct ReplayOverlay: View {
         let aliveDelta = frame.aliveCount - max(1, model.cachedReplayStartAlive)
         let aliveDeltaText = aliveDelta == 0 ? "与开局同" : (aliveDelta > 0 ? "较开局 +\(aliveDelta)国" : "较开局 \(aliveDelta)国")
 
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                SealFace(text: model.replayComparingOpening ? "初" : "势", size: 20, color: model.replayComparingOpening ? Theme.jade : Theme.seal)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(model.replayComparingOpening ? "开局初年疆域对照" : "当帧天下大势 · 列强消长")
-                        .font(Theme.label).foregroundStyle(Theme.ink)
-                    Text("存世 \(frame.aliveCount) 国（\(aliveDeltaText)）· 本步易主 \(model.cachedReplayChangedProvinces) 州")
-                        .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                SealFace(text: model.replayComparingOpening ? "初" : "势", size: 22, color: model.replayComparingOpening ? Theme.jade : Theme.seal)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.replayComparingOpening ? "开局初年疆域对照" : "当帧天下大势")
+                        .font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text("存世 \(frame.aliveCount) 国（\(aliveDeltaText)）· 易主 \(model.cachedReplayChangedProvinces) 州")
+                        .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.84)
                 }
                 Spacer(minLength: 4)
                 CardCloseButton {
@@ -1212,14 +1199,17 @@ struct ReplayOverlay: View {
                 }
             }
 
-            // 快捷演播工具条：按住对比开局 / 大事自动追焦 / 循环回放
-            HStack(spacing: 6) {
-                Text(model.replayComparingOpening ? "松手还原当帧" : "按住对比开局")
+            // 统一同心圆角三等分工具槽（与全站 ChipPicker 同款外槽与 10pt 内圆角，严格齐平）
+            let barOuter = RoundedRectangle(cornerRadius: 12, style: .continuous)
+            let barInner = RoundedRectangle(cornerRadius: 9, style: .continuous)
+            HStack(spacing: 4) {
+                Text(model.replayComparingOpening ? "还原当帧" : "按住比初年")
                     .font(Theme.caption)
                     .foregroundStyle(model.replayComparingOpening ? Theme.paper2 : Theme.jade)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(model.replayComparingOpening ? Theme.jade : Theme.jade.opacity(0.12), in: Capsule())
-                    .overlay(Capsule().stroke(Theme.jade.opacity(0.35), lineWidth: 0.7))
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity).frame(height: 28)
+                    .background(model.replayComparingOpening ? Theme.jade : Theme.paper2.opacity(0.72), in: barInner)
+                    .contentShape(barInner)
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { _ in model.previewReplayOpening(true) }
@@ -1232,11 +1222,12 @@ struct ReplayOverlay: View {
                 } label: {
                     HStack(spacing: 3) {
                         InkIcon(glyph: .locate, size: 11, weight: 1.8)
-                        Text("追焦").font(Theme.caption)
+                        Text("追焦").font(Theme.caption).lineLimit(1)
                     }
                     .foregroundStyle(model.replayAutoFocus ? Theme.paper2 : Theme.ink)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(model.replayAutoFocus ? Theme.seal : Theme.ink.opacity(0.07), in: Capsule())
+                    .frame(maxWidth: .infinity).frame(height: 28)
+                    .background(model.replayAutoFocus ? Theme.seal : Theme.paper2.opacity(0.72), in: barInner)
+                    .contentShape(barInner)
                 }
                 .buttonStyle(.plain)
 
@@ -1246,18 +1237,44 @@ struct ReplayOverlay: View {
                 } label: {
                     HStack(spacing: 3) {
                         InkIcon(glyph: .refresh, size: 11, weight: 1.8)
-                        Text("循环").font(Theme.caption)
+                        Text("循环").font(Theme.caption).lineLimit(1)
                     }
                     .foregroundStyle(model.replayLoop ? Theme.paper2 : Theme.ink)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(model.replayLoop ? Theme.seal : Theme.ink.opacity(0.07), in: Capsule())
+                    .frame(maxWidth: .infinity).frame(height: 28)
+                    .background(model.replayLoop ? Theme.seal : Theme.paper2.opacity(0.72), in: barInner)
+                    .contentShape(barInner)
                 }
                 .buttonStyle(.plain)
+            }
+            .padding(3)
+            .background(Theme.wash.opacity(0.72), in: barOuter)
+            .overlay(barOuter.stroke(Theme.ink.opacity(0.11), lineWidth: 0.8))
+
+            // 列强版图全局占比演变色带（置于卡内与内容严格齐平，不干扰顶栏对称）
+            if !powers.isEmpty {
+                GeometryReader { g in
+                    let w = max(1, g.size.width)
+                    HStack(spacing: 1) {
+                        ForEach(powers, id: \.nation) { item in
+                            let share = CGFloat(min(totalProvinces, item.count)) / CGFloat(totalProvinces)
+                            let c: Color = {
+                                if nations.indices.contains(item.nation) { return Names.color(nations[item.nation].color) }
+                                if timeline.nations.indices.contains(item.nation) { return Names.color(timeline.nations[item.nation].color) }
+                                return Theme.seal
+                            }()
+                            Rectangle().fill(c).frame(width: max(3, w * share))
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .background(Theme.ink.opacity(0.09))
+                    .clipShape(Capsule())
+                }
+                .frame(height: 5)
             }
 
             Divider2()
 
-            VStack(spacing: 5) {
+            VStack(spacing: 6) {
                 ForEach(Array(powers.enumerated()), id: \.element.nation) { rank, item in
                     let n = item.nation
                     let count = item.count
@@ -1279,38 +1296,30 @@ struct ReplayOverlay: View {
                         GameFeel.shared.tap()
                         model.focusReplayNation(n)
                     } label: {
-                        VStack(spacing: 2.5) {
+                        VStack(spacing: 3) {
                             HStack(spacing: 6) {
                                 Text("\(rank + 1)")
                                     .font(Theme.caption).foregroundStyle(rank < 3 ? Theme.seal : Theme.ink2)
                                     .monospacedDigit()
-                                    .frame(width: 13, alignment: .trailing)
+                                    .frame(width: 14, alignment: .trailing)
                                 Circle().fill(color).frame(width: 7.5, height: 7.5)
                                 Text(MapLayers.stateLabel(name, full: false))
                                     .font(Theme.label).foregroundStyle(Theme.ink)
                                     .lineLimit(1)
-                                Spacer(minLength: 4)
+                                    .truncationMode(.tail)
+                                    .layoutPriority(1)
+                                Spacer(minLength: 6)
                                 if startCount == 0 && idx > 0 {
-                                    Text("新立 +\(count)州")
-                                        .font(Theme.caption).foregroundStyle(Theme.jade).monospacedDigit()
-                                } else if delta > 0 {
-                                    Text("+\(delta)州")
-                                        .font(Theme.caption).foregroundStyle(Theme.jade).monospacedDigit()
-                                } else if delta < 0 {
-                                    Text("\(delta)州")
-                                        .font(Theme.caption).foregroundStyle(Theme.seal).monospacedDigit()
+                                    Text("新+\(count)")
+                                        .font(Theme.caption).foregroundStyle(Theme.jade).monospacedDigit().fixedSize()
+                                } else if delta != 0 {
+                                    Text(delta > 0 ? "+\(delta)" : "\(delta)")
+                                        .font(Theme.caption).foregroundStyle(delta > 0 ? Theme.jade : Theme.seal).monospacedDigit().fixedSize()
                                 }
                                 Text("\(count)州 · \(share)%")
-                                    .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().fixedSize()
                             }
-                            GeometryReader { barGeo in
-                                let w = max(4, barGeo.size.width * CGFloat(count) / CGFloat(maxCount))
-                                ZStack(alignment: .leading) {
-                                    Capsule().fill(Theme.ink.opacity(0.08)).frame(height: 3)
-                                    Capsule().fill(color.opacity(0.82)).frame(width: w, height: 3)
-                                }
-                            }
-                            .frame(height: 3)
+                            InkBar(fraction: Double(count) / Double(maxCount), color: color.opacity(0.84), height: 3.5)
                         }
                         .contentShape(Rectangle())
                     }
@@ -1318,8 +1327,8 @@ struct ReplayOverlay: View {
                 }
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
-        .frame(width: min(296, UIScreen.main.bounds.width - 32))
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .frame(width: min(324, UIScreen.main.bounds.width - Theme.Control.screenInset * 2))
         .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
     }
 
@@ -1532,13 +1541,13 @@ private struct ReplayNodesSheet: View {
             LazyVStack(alignment: .leading, spacing: 12) {
                 SheetHeader(title: "历史节点", subtitle: "共 \(timeline.frames.count) 帧版图记录 · \(model.checkpoints.count) 个可回溯节点", seal: "溯")
                 ChipPicker(items: [
-                    ("nodes", "全部（\(timeline.frames.count)）"),
-                    ("major", "重大转折"),
-                    ("war", "兵戈攻伐"),
-                    ("politics", "政权兴替"),
-                    ("checkpoints", "可续推节点（\(model.checkpoints.count)）")
+                    ("nodes", "全部"),
+                    ("major", "转折"),
+                    ("war", "兵戈"),
+                    ("politics", "兴替"),
+                    ("checkpoints", "续推")
                 ], selection: $tab)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Theme.Layout.pageInset)
 
                 if tab == "checkpoints" {
                     Group2 {
@@ -1556,7 +1565,7 @@ private struct ReplayNodesSheet: View {
                                     Spacer()
                                     Text("回到此处").font(Theme.label).foregroundStyle(Theme.jade)
                                 }
-                                .padding(.horizontal, 14).padding(.vertical, 10).contentShape(Rectangle())
+                                .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             if i < model.checkpoints.count - 1 { Divider2() }

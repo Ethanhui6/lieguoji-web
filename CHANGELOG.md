@@ -1,5 +1,29 @@
 # 更新日志
 
+## 2.9.4 / build 158 — 2026-11-23
+
+### AI 定制宋画工笔水墨手绘美术包（舆图微缩地标 × 传报／战神徽章）
+- **生成 6 枚透明高精宋画工笔贴图并打包接入全站（`Resources/Art/*.png`、`MapArt.swift`、`MapView.swift`、`HeraldScene.swift`、`MilitaryOverview.swift`、`NationSheet.swift`、`ArmySheets.swift`）**：
+  - **舆图手绘层（纯 GPU 平移零着色开销）**：在最开阔远洋深海自动铺印青金子午卯酉**古罗盘玫瑰**（`compass-rose.png`）；放大赏景时在王都旁浮现手绘**王都宫阙城楼**（`landmark-capital.png`），在真实山地丘陵要冲浮现**雄关烽燧**（`landmark-fortress.png`），在真实濒海良港浮现**古港灯塔帆影**（`landmark-port.png`）。
+  - **界面手绘徽章**：顶部战事急报横幅、战神谱卡片、国家军事页与军团详情全面接入**朱砂赤金战神徽**（`wargod-crest.png`）；国玺诏令与和约横幅接入**盘龙金云传国玉玺徽**（`edict-crest.png`），所有透明 PNG 一次解码内存常驻。
+
+### 回归并精进 Claude 经典宣纸湿墨晕开与占领扫色
+- **彻底回退 v2.9.1 拖沓浑浊的双层噪声重写，以 Claude `97736f59` 经典利落湿墨公式为基座并精细升华（`ConquestWash.swift`、`Wash.swift`、`Ink.swift`）**：
+  - 恢复经典明快攻占扫色节奏（`FlipSweep.maxSeconds = 2.4`、`edge = 0.24`、`after = 0.62`、`speed = scale × 2.35`、`LandFade.duration = 0.72`），沿用单次低频 `fbm` 纤维扰动加轻声 `vnoise` 细纸纹，既保持边缘利落饱满不发糊，又降低约一半片元着色开销；
+  - 战争墨迹回归经典 `capillary` 湿墨聚边笔锋与清透国色浸染，并叠加细腻收水退墨（`retreatLift`）、水先墨行先导水痕（`waterHalo`）与新墨湿光（`wetSheen`）。
+
+### 顶部传报横幅与主页背景双双解锁 60/120Hz 满帧流畅
+- **顶部横幅解锁原生 ProMotion 帧率（`HeraldScene.swift`）**：移除原先硬锁 `30fps`（`minimumInterval: 1.0 / 30.0`）的 `TimelineView` 限制，改为 `minimumInterval: nil` 随设备满帧 60/120Hz 驱动卷轴舒展、急报微震与手绘徽章入画。
+- **主页面背景漂移告别低帧卡顿（`MapView.swift`、`TitleViews.swift`）**：
+  - 将主页背景缓游 `CADisplayLink` 从硬锁 `15fps` 升级至 `48–120Hz`（目标 `60fps`），新增零分配 `MapLabelsView.panVisible(dx:dy:)` 快路径在绝大多数帧直接像素平移可见国名与地标，仅每 24 帧执行一次新入镜碰撞重排；
+  - 移除标题页覆盖在 `MTKView` 之上的全屏 SwiftUI `.mask(...)` 离屏合成层，改用零离屏直叠柔和径向暗角，显著减轻首屏 GPU 负载。
+
+### 山河回放视觉统一对齐与文字挤压错乱根治
+- **彻底修复回放界面文字挤压错乱与控件不协调（`ReplayOverlay.swift`、`PaperControls.swift`）**：
+  - 修复 `ChipPicker` 在 5 签且含较长标题时强行挤压文字的问题，同时将「历史节点」五枚签题精炼统一为两字标签（`全部 / 转折 / 兵戈 / 兴替 / 续推`）；
+  - 恢复回放顶栏与主界面 `GameView.topBar` 的 1:1 对称结构，将「列强霸权演变色带」移入展开的「本年舆情详情卡」内部并统一 `16pt` 内边距、同心三键工具条与 `InkBar` 疆域条；
+  - 将「上一史变 / 下一史变 / 回溯此年」独立拆出至底栏大事横幅正上方的对齐快捷胶囊列，还给 34pt 史事横幅完整可读宽度，彻底告别截断错乱。
+
 ## 2.9.3 / build 157 — 2026-11-23
 
 ### 五部军制深化：玩家主动整编、诸兵合击与战神专属兵法特技

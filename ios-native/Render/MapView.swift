@@ -1122,8 +1122,8 @@ struct MapView: UIViewRepresentable {
         private func startDrift() {
             guard drift == nil, !controller.sheetOpen else { return }
             let l = CADisplayLink(target: self, selector: #selector(driftStep(_:)))
-            // 主页面舆图缓游：15Hz 低功耗匀速漂移，且在弹窗打开或开卷推进时自动礼让暂停，彻底消除主页面与点按卡顿。
-            l.preferredFrameRateRange = CAFrameRateRange(minimum: 12, maximum: 18, preferred: 15)
+            // 主页面舆图缓游：满帧 60Hz（ProMotion 最高 120Hz）丝滑匀速平推，弹窗打开或开卷时立即礼让，彻底告别低帧卡顿感。
+            l.preferredFrameRateRange = CAFrameRateRange(minimum: 48, maximum: 120, preferred: 60)
             l.add(to: .main, forMode: .common); drift = l
         }
         @objc private func driftStep(_ l: CADisplayLink) {
@@ -1131,9 +1131,22 @@ struct MapView: UIViewRepresentable {
             // 弹窗覆盖主页（新建世界/设置/卷宗等）或开卷主时钟正在绘制时，暂缓背景漂移，释放主线程与 GPU。
             if controller.sheetOpen || (controller.revealClock != nil && !controller.revealDone) { return }
             driftFrame &+= 1
-            let dt = min(0.08, max(0.0, l.targetTimestamp - l.timestamp))
-            // 缓慢漂移时每 3 帧更新一次地名避让，GPU 画面逐帧丝滑且主线程开销降低 65%。
-            set(camera.panned(dx: -3 * dt, dy: 0), skipLabels: (driftFrame % 3 != 0))
+            let dt = min(0.05, max(0.0, l.targetTimestamp - l.timestamp))
+            let prev = camera
+            let next = prev.panned(dx: -4.2 * dt, dy: 0)
+            // 绝大多数漂移帧走零网格重算的纯像素平移（60fps 丝滑无抖动），仅每 24 帧重排一次新入镜国名。
+            if driftFrame % 24 == 0 {
+                set(next, sync: false, skipLabels: false)
+            } else {
+                set(next, sync: false, skipLabels: true)
+                if let r = renderer {
+                    let screenDx = CGFloat((prev.centerX - r.camera.centerX) * r.camera.scale)
+                    let screenDy = CGFloat((prev.centerY - r.camera.centerY) * r.camera.scale)
+                    if abs(screenDx) > 0.0001 || abs(screenDy) > 0.0001 {
+                        labels?.panVisible(dx: screenDx, dy: screenDy)
+                    }
+                }
+            }
         }
     }
 }
@@ -1171,6 +1184,18 @@ final class MapLabelsView: UIView {
     private struct Picture { let view: UIImageView; let x: Double; let y: Double; let width: Double; let angle: Double }
     private var pictures: [Picture] = []
     private var picturesShown: [GameModel.MapImage] = []
+    /// 工笔手绘舆图装饰与微缩地标（海洋古罗盘玫瑰、王都城楼、雄关烽燧、古港灯塔），位于全部地名之下、纯 GPU 平移缩放零额外着色开销。
+    private struct MapStamp {
+        let view: UIImageView
+        let x: Double
+        let y: Double
+        let worldWidth: Double
+        let minScale: Double
+        let maxAlpha: CGFloat
+        let screenMin: CGFloat
+        let screenMax: CGFloat
+    }
+    private var stamps: [MapStamp] = []
     /// 地图图片: under the names, or over them when the player asks.
     func setImages(_ list: [GameModel.MapImage]) -> Bool {
         guard list != picturesShown else { return false }
@@ -1213,6 +1238,112 @@ final class MapLabelsView: UIView {
         otherCityLabels = cities.filter { $0.fill !== Self.capitalInk }
         for l in cities + nations { l.view.isHidden = true; addSubview(l.view) }
         setSeals(map)
+        rebuildStamps(map)
+    }
+    private func rebuildStamps(_ map: WorldMap) {
+        for s in stamps { s.view.removeFromSuperview() }
+        stamps.removeAll(keepingCapacity: true)
+        var built = [MapStamp]()
+
+        // 1. 海洋古舆图罗盘玫瑰：在最开阔的远洋深海处铺印一枚青金子午卯酉古罗盘，同时采样海面格供濒海古港匹配
+        var seaPts = [(Double, Double)]()
+        let mapW = Double(map.width), mapH = Double(map.height)
+        if map.width > 0, map.height > 0 {
+            var landPts = [(Double, Double)]()
+            let cells = map.cellCount, step = max(1, cells / 1200)
+            for c in Swift.stride(from: 0, to: cells, by: step) where map.isLand(c) && 2 * c + 1 < map.sites.count {
+                landPts.append((Double(map.sites[2 * c]), Double(map.sites[2 * c + 1])))
+            }
+            var bestPt: (Double, Double)?
+            var bestDist2: Double = -1
+            let seaStep = max(1, cells / 450)
+            for c in Swift.stride(from: 0, to: cells, by: seaStep) where !map.isLand(c) && 2 * c + 1 < map.sites.count {
+                let sx = Double(map.sites[2 * c]), sy = Double(map.sites[2 * c + 1])
+                seaPts.append((sx, sy))
+                // 保持在地图边缘内侧，避免被裁切
+                guard sx > mapW * 0.10, sx < mapW * 0.90, sy > mapH * 0.14, sy < mapH * 0.86 else { continue }
+                var minD2 = Double.greatestFiniteMagnitude
+                for (lx, ly) in landPts {
+                    let dx = sx - lx, dy = sy - ly
+                    let d2 = dx * dx + dy * dy
+                    if d2 < minD2 { minD2 = d2 }
+                }
+                if minD2 > bestDist2 {
+                    bestDist2 = minD2
+                    bestPt = (sx, sy)
+                }
+            }
+            if let compass = BundleArt.compassRose, let pt = bestPt, bestDist2 > 420 {
+                let v = UIImageView(image: compass)
+                v.contentMode = .scaleAspectFit
+                v.isHidden = true
+                v.bounds = CGRect(x: 0, y: 0, width: 120, height: 120)
+                insertSubview(v, at: 0)
+                let ww = min(mapW, mapH) * 0.125
+                built.append(MapStamp(view: v, x: pt.0, y: pt.1, worldWidth: ww, minScale: 0.0, maxAlpha: 0.58, screenMin: 46, screenMax: 148))
+            }
+        }
+
+        // 2. 王都工笔微缩城楼（放大赏景时浮现，错位在城圈左上方不遮挡城名）
+        let marks = MapLayers.cityMarks(map)
+        var capCount = 0
+        if let capImg = BundleArt.landmarkCapital {
+            for (c, mark) in zip(map.meta.cities, marks) where mark == .capital && capCount < 16 {
+                let v = UIImageView(image: capImg)
+                v.contentMode = .scaleAspectFit
+                v.isHidden = true
+                v.bounds = CGRect(x: 0, y: 0, width: 48, height: 48)
+                insertSubview(v, at: 0)
+                built.append(MapStamp(view: v, x: Double(c.x) - 5.5, y: Double(c.y) - 4.2, worldWidth: 16, minScale: 1.12, maxAlpha: 0.90, screenMin: 18, screenMax: 36))
+                capCount += 1
+            }
+        }
+
+        // 3. 雄关要塞烽燧（真实山地/丘陵/高地州郡，且自然间距分散）与 4. 古港灯塔帆影（真实濒海城市，距海面采样格最近）
+        let minSpread = max(24, min(mapW, mapH) * 0.13)
+        let minSpread2 = minSpread * minSpread
+        var placedForts = [(Double, Double)]()
+        if let fortImg = BundleArt.landmarkFortress {
+            let capProvs = Set(zip(map.meta.cities, marks).filter { $0.1 == .capital }.map { $0.0.province })
+            for (idx, p) in map.meta.provinces.enumerated() where !capProvs.contains(idx) && placedForts.count < 10 {
+                guard p.x.isFinite && p.y.isFinite else { continue }
+                guard p.terrain != "plain" && p.terrain != "forest" else { continue }
+                let px = Double(p.x), py = Double(p.y)
+                if placedForts.contains(where: { ($0.0 - px) * ($0.0 - px) + ($0.1 - py) * ($0.1 - py) < minSpread2 }) { continue }
+                let v = UIImageView(image: fortImg)
+                v.contentMode = .scaleAspectFit
+                v.isHidden = true
+                v.bounds = CGRect(x: 0, y: 0, width: 44, height: 44)
+                insertSubview(v, at: 0)
+                built.append(MapStamp(view: v, x: px + 3.2, y: py - 2.8, worldWidth: 14, minScale: 1.48, maxAlpha: 0.86, screenMin: 16, screenMax: 32))
+                placedForts.append((px, py))
+            }
+        }
+
+        var placedPorts = [(Double, Double)]()
+        if let portImg = BundleArt.landmarkPort, !seaPts.isEmpty {
+            let coastLimit2 = max(360.0, pow(min(mapW, mapH) * 0.045, 2))
+            for (idx, c) in map.meta.cities.enumerated() where idx < marks.count && marks[idx] != .capital && placedPorts.count < 10 {
+                let cx = Double(c.x), cy = Double(c.y)
+                guard cx.isFinite && cy.isFinite else { continue }
+                var nearSea = false
+                for (sx, sy) in seaPts {
+                    let dx = cx - sx, dy = cy - sy
+                    if dx * dx + dy * dy < coastLimit2 { nearSea = true; break }
+                }
+                guard nearSea else { continue }
+                if placedPorts.contains(where: { ($0.0 - cx) * ($0.0 - cx) + ($0.1 - cy) * ($0.1 - cy) < minSpread2 }) { continue }
+                let v = UIImageView(image: portImg)
+                v.contentMode = .scaleAspectFit
+                v.isHidden = true
+                v.bounds = CGRect(x: 0, y: 0, width: 44, height: 44)
+                insertSubview(v, at: 0)
+                built.append(MapStamp(view: v, x: cx + 4.8, y: cy + 3.2, worldWidth: 14, minScale: 1.48, maxAlpha: 0.86, screenMin: 16, screenMax: 32))
+                placedPorts.append((cx, cy))
+            }
+        }
+
+        stamps = built
     }
     private static func cityLabels(_ map: WorldMap) -> [Label] {
         return zip(map.meta.cities, MapLayers.cityMarks(map)).filter { !$0.0.name.isEmpty }.map { c, mark in
@@ -1239,6 +1370,7 @@ final class MapLabelsView: UIView {
         otherCityLabels = cities.filter { $0.fill !== Self.capitalInk }
         for l in cities { l.view.isHidden = true; insertSubview(l.view, at: 0) }
         setSeals(map)
+        rebuildStamps(map)
     }
 
     /// Where the capitals stand: their marks (the original's rings, MapLayers.cityIcons) are kept clear
@@ -1424,6 +1556,17 @@ final class MapLabelsView: UIView {
         }
     }
 
+    /// 轻量纯平移快路径：主页背景 60fps 缓游期间直接平移可见标签与舆图罗盘／地标坐标，零网格分配、零碰撞重算。
+    func panVisible(dx: CGFloat, dy: CGFloat) {
+        UIView.performWithoutAnimation {
+            for s in stamps where !s.view.isHidden { s.view.center.x += dx; s.view.center.y += dy }
+            for p in pictures where !p.view.isHidden { p.view.center.x += dx; p.view.center.y += dy }
+            for l in custom where !l.view.isHidden { l.view.center.x += dx; l.view.center.y += dy }
+            for l in nations where !l.view.isHidden { l.view.center.x += dx; l.view.center.y += dy }
+            for l in cities where !l.view.isHidden { l.view.center.x += dx; l.view.center.y += dy }
+        }
+    }
+
     func update(camera: MapCamera, viewport: CGSize, mapRect: CGRect? = nil) {
         lastCamera = camera; lastViewport = viewport
         let innerMap = (mapRect != nil && !mapRect!.isEmpty) ? mapRect! : CGRect(origin: .zero, size: viewport)
@@ -1453,6 +1596,27 @@ final class MapLabelsView: UIView {
             if !Self.legacy { for c in cells(b, 0) { grid[c, default: []].append(taken.count - 1) } }
         }
         var appeared = 0
+        for s in stamps {
+            if s.minScale > 0 && (!showCities || camera.scale < s.minScale) {
+                if !s.view.isHidden { s.view.isHidden = true }
+                continue
+            }
+            let at = camera.toScreen(x: s.x, y: s.y, viewport: vp)
+            let targetW = min(s.screenMax, max(s.screenMin, CGFloat(s.worldWidth * camera.scale)))
+            guard targetW > 4, at.x > -Double(targetW), at.y > -Double(targetW), at.x < vp.width + Double(targetW), at.y < vp.height + Double(targetW) else {
+                if !s.view.isHidden { s.view.isHidden = true }
+                continue
+            }
+            let fade: CGFloat = s.minScale > 0 ? min(1, max(0, CGFloat((camera.scale - s.minScale) / 0.35))) : 1
+            let baseW = max(1, s.view.bounds.width)
+            let k = targetW / baseW
+            UIView.performWithoutAnimation {
+                s.view.transform = CGAffineTransform(scaleX: k, y: k)
+                s.view.center = CGPoint(x: at.x, y: at.y)
+                s.view.alpha = s.maxAlpha * fade
+                s.view.isHidden = false
+            }
+        }
         for p in pictures {
             let at = camera.toScreen(x: p.x, y: p.y, viewport: vp), w = p.width * camera.scale, size = p.view.bounds.width
             guard size > 0, w > 2, at.x > -w, at.y > -w, at.x < vp.width + w, at.y < vp.height + w else { p.view.isHidden = true; continue }

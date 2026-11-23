@@ -10,7 +10,9 @@ struct ChipPicker<T: Hashable>: View {
     var body: some View {
         // 严格视觉一致性：只有当整排所有选项均配有手绘图标时才展示图标，杜绝同一排中「有的有图标、有的纯文字」的割裂感。
         let showIcons = !items.isEmpty && items.allSatisfy { Glyph.of($0.1) != nil }
-        if items.count > 5 {
+        // 5 项且每项为 2-4 字短词（如国家页五主签）采用整宽分段栏；超过 5 项或含长标题自动横向滚动，彻底杜绝文字挤压错乱。
+        let useScroll = items.count > 5 || (items.count == 5 && items.contains { $0.1.count > 4 })
+        if useScroll {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {

@@ -171,11 +171,14 @@ struct TitleView: View {
                                    .init(color: Theme.paper.opacity(0), location: 0.5), .init(color: Theme.paper.opacity(0.96), location: 0.74)],
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea().allowsHitTesting(false)
-            // An ink wash down the left, behind the title and the line of the classics.
-            LinearGradient(colors: [SplashView.night.opacity(0.72), SplashView.night.opacity(0)], startPoint: .leading, endPoint: .trailing)
-                .frame(width: 300).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.32), .init(color: .clear, location: 0.46)], startPoint: .top, endPoint: .bottom))
-                .ignoresSafeArea().allowsHitTesting(false)
+            // 左上角题名墨晕衬底：改用纯径向渐变替代全屏 .mask 离屏合成，彻底消除主页 Metal 地图上方的离屏合成掉帧。
+            RadialGradient(
+                colors: [SplashView.night.opacity(0.68), SplashView.night.opacity(0.28), SplashView.night.opacity(0)],
+                center: .topLeading,
+                startRadius: 20,
+                endRadius: 340
+            )
+            .ignoresSafeArea().allowsHitTesting(false)
             VStack(spacing: 0) {
                 // The inscription: the title brushed top to bottom, the seal, and a line of the classics.
                 HStack(alignment: .top, spacing: 14) {

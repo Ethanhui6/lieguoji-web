@@ -167,7 +167,11 @@ struct MilitaryOverview: View {
                             let accent = live ? Theme.seal : Theme.ink2
                             VStack(alignment: .leading, spacing: 7) {
                                 HStack(spacing: 7) {
-                                    SealFace(text: String(g.rank.prefix(2)), size: 28, color: accent)
+                                    if live && (g.rank == "军神" || g.rank == "上将军"), BundleArt.wargodCrest != nil {
+                                        ArtEmblem(image: BundleArt.wargodCrest, size: 32, fallback: .military)
+                                    } else {
+                                        SealFace(text: String(g.rank.prefix(2)), size: 28, color: accent)
+                                    }
                                     VStack(alignment: .leading, spacing: 2) {
                                         HStack(spacing: 4) {
                                             Text(g.name).font(Theme.body).foregroundStyle(g.fallen ? Theme.ink2 : Theme.ink).lineLimit(1)

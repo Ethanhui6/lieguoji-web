@@ -205,7 +205,7 @@ extension MapRenderer {
             if !sweep.isEmpty, let mesh = sweepMesh(sweep) {
                 let detail = Float(min(1, max(0, (camera.scale - 0.7) / 0.6)))
                 let scale = sweep.topology.scale
-                let w: [Float] = [now, FlipSweep.edge, FlipSweep.after, 0.55, 0.72, 1 / (scale * 0.92), detail, 0]
+                let w: [Float] = [now, FlipSweep.edge, FlipSweep.after, 0.5, 0.28, 1 / (scale * 1.24), detail, 0]
                 encoder.setRenderPipelineState(sweepPipeline)
                 encoder.setVertexBuffer(mesh.vertices, offset: 0, index: 0)
                 encoder.setVertexBytes(&u, length: MemoryLayout<Uniforms>.stride, index: 2)
@@ -216,7 +216,7 @@ extension MapRenderer {
         drawInk(encoder, &u, command: command)
     }
 
-    /// 扫色着色器（拼在 MapRenderer.shaders 之后）：双尺度宣纸纤维域扭曲 + 温润水彩渐融，彻底摒弃生硬圆环与脏黑描边。
+    /// 扫色着色器（拼在 MapRenderer.shaders 之后）：沿用 Claude 原版利落宣纸湿墨锋，并精调微纸纹与双层暖金笔光。
     static let sweepShaders = """
     // —— 易主扫色 ——
     struct SweepOut { float4 position [[position]]; float2 world; float arrive; float mode; float3 old; };
@@ -230,34 +230,26 @@ extension MapRenderer {
     fragment float4 sweepFragment(SweepOut in [[stage_in]], constant SweepLook& k [[buffer(0)]]) {
         if (in.mode < -0.5) discard_fragment();
         float2 q = in.world;
-        float2 warp1 = float2(
-            fbm2(q * k.freq * 0.9 + float2(2.7, 6.1)),
-            fbm2(q * k.freq * 0.9 + float2(8.3, 1.9))
-        ) - 0.5;
-        float2 warp2 = float2(
-            vnoise(q * k.freq * 2.8 + warp1 * 1.1 + float2(1.4, 5.2)),
-            vnoise(q * k.freq * 2.8 + warp1 * 1.1 + float2(6.9, 3.8))
-        ) - 0.5;
-        float fiber = fbm(q * k.freq * 0.85 + warp1 * 0.90 + warp2 * 0.25);
-        float fine = vnoise(q * k.freq * 3.6 + warp1 * 1.2) - 0.5;
-        float rough = (fiber - 0.5) * 2.0 * k.noise + fine * 0.16;
+        // 沿用原版低频宣纸纤维主扰动 + 极轻微细纸纹，既保持边缘利落不糊成散团，又具生宣毛口质感且片元开销减半
+        float nMain = fbm(q * k.freq);
+        float nFine = vnoise(q * k.freq * 2.2 + float2(3.7, 5.1));
+        float rough = (nMain - 0.5) * 2.0 * k.noise + (nFine - 0.5) * (k.noise * 0.28);
         float s = (k.now - in.arrive) / k.edge + rough;
-        float reached = smoothstep(-1.18, 1.18, s);
+        float reached = smoothstep(-1.02, 1.02, s);
         float a = 0.0;
         if (in.mode > 0.5) {
-            // 未到达处完整承接旧色；到达后旧色沿纸纹如水褪尽，显露新主明丽底色。
-            float tAfter = clamp(1.0 - (k.now - in.arrive) / k.after, 0.0, 1.0);
-            float fade = (1.0 - k.tint) * tAfter * tAfter;
+            // 未到达处完整承接旧色；到达处旧色余韵沿纸纹顺滑淡去，过渡干净不拖泥带水。
+            float fade = (1.0 - k.tint) * clamp(1.0 - (k.now - in.arrive) / k.after, 0.0, 1.0);
             a = mix(1.0, fade, reached);
         }
-        // 温润水晕波锋：攻占易主呈现极柔和的淡墨水痕与纸面湿光（无脏黑圈），改朝换代墨圈呈现典雅朱砂鎏金瑞波。
-        float rim = exp(-s * s * 0.62) * (in.mode > 0.5 ? 0.095 + 0.055 * k.detail : 0.20 + 0.12 * k.detail);
-        float crest = exp(-(s + 0.55) * (s + 0.55) * 1.8) * (in.mode > 0.5 ? 0.045 : 0.13);
+        // 原版经典湿墨脊 + 细微先导暖金纸光（攻占为克制浓湿墨锋，改朝换代墨圈略添古金华彩）
+        float rim = exp(-s * s * 0.74) * (in.mode > 0.5 ? 0.14 + 0.11 * k.detail : 0.21 + 0.13 * k.detail);
+        float crest = exp(-(s + 0.42) * (s + 0.42) * 2.4) * (in.mode > 0.5 ? 0.035 : 0.11);
         float total = min(1.0, a + (rim + crest) * (1.0 - a));
         if (total < 0.003) discard_fragment();
-        float3 rimCol = in.mode > 0.5 ? mix(in.old * 0.72, float3(0.36, 0.28, 0.20), 0.35) : float3(0.76, 0.38, 0.20);
-        float3 crestCol = in.mode > 0.5 ? float3(0.95, 0.91, 0.80) : float3(0.90, 0.74, 0.38);
-        float3 rgb = (in.old * a * (1.0 - rim * 0.65) + rimCol * rim + crestCol * crest * (1.0 - a)) / max(total, 1e-4);
+        float3 rimCol = in.mode > 0.5 ? float3(0.20, 0.14, 0.10) : float3(0.58, 0.38, 0.14);
+        float3 crestCol = float3(0.86, 0.72, 0.38);
+        float3 rgb = (in.old * a * (1.0 - rim) + rimCol * rim + crestCol * crest * (1.0 - a)) / max(total, 1e-4);
         return float4(clamp(rgb, 0.0, 1.0), total);
     }
     """

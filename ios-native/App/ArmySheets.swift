@@ -277,8 +277,8 @@ struct ArmySheet: View {
                     }
                 }
                 if let wg = a.warGodAura, !wg.isEmpty {
-                    HStack(alignment: .top, spacing: 7) {
-                        PaperTag(text: "战神加持", color: Theme.seal, size: 11)
+                    HStack(alignment: .center, spacing: 7) {
+                        ArtEmblem(image: BundleArt.wargodCrest, size: 22, fallback: .military)
                         Text(wg).font(Theme.caption).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                     }

@@ -12,7 +12,7 @@ struct HeraldBanner: View {
     private let participantColors: [Color]
     private let onTap: (() -> Void)?
     private let onDismiss: (() -> Void)?
-    @State private var start = ProcessInfo.processInfo.systemUptime
+    @State private var start = Date().timeIntervalSinceReferenceDate
     @State private var motionSettled = false
     @State private var dragY: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -90,14 +90,15 @@ struct HeraldBanner: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || motionSettled)) { _ in
-            let elapsed = max(0, ProcessInfo.processInfo.systemUptime - start)
+        // 解锁原生 60/120Hz ProMotion 帧率（移除原先硬锁的 30fps 间隔），令顶部传报卷轴展开、兵戈动效与卷轴微震丝滑顺畅。
+        TimelineView(.animation(minimumInterval: nil, paused: reduceMotion || motionSettled)) { ctx in
+            let elapsed = max(0, ctx.date.timeIntervalSinceReferenceDate - start)
             let t = reduceMotion ? 3 : min(elapsed, animationDuration)
             scene(t)
         }
         // 按事件级别区分尺寸与形制，挂在顶栏下不遮地图中部；轻点定位并收卷，上滑直接收卷。
         .frame(maxWidth: bannerWidth).frame(height: bannerHeight)
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 20)
         .offset(y: min(0, dragY))
         .opacity(Double(max(0.25, 1 + min(0, dragY) / 48)))
         .contentShape(Rectangle())
@@ -120,7 +121,7 @@ struct HeraldBanner: View {
                 }
         )
         .task(id: herald.id) {
-            start = ProcessInfo.processInfo.systemUptime
+            start = Date().timeIntervalSinceReferenceDate
             motionSettled = false
             dragY = 0
             do {
@@ -199,16 +200,30 @@ struct HeraldBanner: View {
                         .offset(x: side * (paperW / 2 + 1.5))
                     }
                 }
-                // 左侧工笔小画（场景按 208 × 100 的画面绘制），右侧事由。
-                HStack(spacing: form == .fieldSlip ? 6 : 8) {
-                    Canvas { ctx, size in
-                        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return }
-                        var c = ctx; c.scaleBy(x: size.width / 208, y: size.height / 100)
-                        // 单主体的画面原本画在中线左侧 46 处（给注脚让位），小画里居中。
-                        if herald.kind != .war && herald.kind != .peace && herald.kind != .marriage && herald.kind != .treaty && herald.kind != .ultimatum { c.translateBy(x: 46, y: 0) }
-                        draw(c, size: CGSize(width: 208, height: 100), t: t)
+                // 左侧工笔手绘徽章 + 动态笔墨小画，右侧事由。
+                HStack(spacing: form == .fieldSlip ? 7 : 9) {
+                    if form == .warDispatch, let art = BundleArt.wargodCrest {
+                        Image(uiImage: art)
+                            .resizable().interpolation(.high).scaledToFit()
+                            .frame(width: 40, height: 40)
+                            .scaleEffect(0.76 + 0.24 * content)
+                            .shadow(color: Theme.seal.opacity(0.28), radius: 3, y: 1)
+                    } else if (form == .imperialEdict || form == .peaceScroll), let art = BundleArt.edictCrest {
+                        Image(uiImage: art)
+                            .resizable().interpolation(.high).scaledToFit()
+                            .frame(width: 40, height: 40)
+                            .scaleEffect(0.76 + 0.24 * content)
+                            .shadow(color: accent.opacity(0.24), radius: 3, y: 1)
+                    } else {
+                        Canvas { ctx, size in
+                            guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return }
+                            var c = ctx; c.scaleBy(x: size.width / 208, y: size.height / 100)
+                            // 单主体的画面原本画在中线左侧 46 处（给注脚让位），小画里居中。
+                            if herald.kind != .war && herald.kind != .peace && herald.kind != .marriage && herald.kind != .treaty && herald.kind != .ultimatum { c.translateBy(x: 46, y: 0) }
+                            draw(c, size: CGSize(width: 208, height: 100), t: t)
+                        }
+                        .frame(width: form == .fieldSlip ? 62 : 84, height: form == .fieldSlip ? 32 : 44)
                     }
-                    .frame(width: form == .fieldSlip ? 68 : 96, height: form == .fieldSlip ? 34 : 46)
                     Rectangle().fill(accent.opacity(0.22)).frame(width: 0.8, height: form == .fieldSlip ? 22 : 30)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(title).font(Theme.caption).foregroundStyle(accent).lineLimit(1)

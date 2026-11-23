@@ -168,7 +168,10 @@ public final class EngineService {
             var r = Reply(); r.strings = g.history; r.text = g.trait; return r
         case "editPerson": return command(engine?.editPerson(int("id"), skills: dbls("skills"), traits: strs("traits")))
         case "setBonus": return command(engine?.setBonus(int("n"), key: str("key"), value: dbl("value")))
-        case "setWorldRule": return command(engine?.setWorldRule(str("key"), value: dbl("value")))
+        case "setWorldRule":
+            let result = engine?.setWorldRule(str("key"), value: dbl("value"))
+            if bool("withoutState"), let result { return Reply(ok: result.ok, reason: result.reason) }
+            return command(result)
         case "worldRules": return data(engine?.worldRules())
         case "editFleet": return command(engine?.editFleet(str("id"), ships: optInt("ships"), name: optStr("name")))
         case "scaleTotal": return command(engine?.scaleTotal(int("n"), key: str("key"), value: dbl("value") ?? -1))

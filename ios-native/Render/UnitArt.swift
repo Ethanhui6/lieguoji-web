@@ -21,12 +21,6 @@ enum UnitArt {
                                 space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         g.translateBy(x: 0, y: CGFloat(size)); g.scaleBy(x: 1, y: -1)
         g.setLineCap(.round); g.setLineJoin(.round)
-        // 陆军纹章去除笨重棋座，居中略放大以饱满呈现于漆盾军牌正中，远近皆清晰醒目。
-        if !["Fleet", "Port", "Merchant"].contains(key) {
-            g.translateBy(x: 128, y: 128)
-            g.scaleBy(x: 1.12, y: 1.12)
-            g.translateBy(x: -128, y: -108)
-        }
         draw(key, g)
         guard let cg = g.makeImage() else { return nil }
         cache[key] = cg
@@ -47,7 +41,7 @@ enum UnitArt {
 
     // MARK: Drawing (256 grid, y down)
 
-    private static let rim: CGFloat = 20
+    private static let rim: CGFloat = 17
     private enum Shape { case rod(CGPath, CGFloat), solid(CGPath) }
 
     /// 四阶雕漆象牙立体棋子着色：浓墨外轮廓 → 中调刻槽倒角 → 西北来光立体受光面 → 锐利高光脊。
@@ -123,8 +117,11 @@ enum UnitArt {
         g.fillEllipse(in: CGRect(x: x, y: y, width: d, height: d))
     }
 
-    /// 陆军纹章直接镶嵌于国色漆盾军牌正中，不再附加遮挡视野的宽底座。
-    private static let base: [Shape] = []
+    /// 陆军统一雕花阶座（收巧贴合漆盾军牌底缘）。
+    private static let base: [Shape] = [
+        .solid(poly([(82, 190), (174, 190), (184, 210), (72, 210)])),
+        .solid(poly([(56, 216), (200, 216), (204, 236), (52, 236)]))
+    ]
 
     /// 精雕骏马战首轮廓（高昂脖颈 + 飞扬鬃毛 + 锐利马吻）。
     private static var warhorse: CGPath {

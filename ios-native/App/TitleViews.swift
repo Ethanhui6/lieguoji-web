@@ -157,6 +157,7 @@ struct TitleView: View {
     @State private var archive = false
     @State private var shown = false
     @State private var settings = false
+    @State private var warRulesOpen = false
     @State private var notes = false
     /// A line of the classics under the title, changing each launch.
     private static let mottos = ["天下大势，分久必合，合久必分", "兴，百姓苦；亡，百姓苦", "江山如画，一时多少豪杰", "运筹帷幄之中，决胜千里之外", "苟利国家生死以"]
@@ -252,6 +253,11 @@ struct TitleView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "设置", subtitle: AppVersion.text, seal: "设")
+                    DisclosureGroup("战争规则", isExpanded: $warRulesOpen) {
+                        WarRuleSettings()
+                    }
+                    .font(Theme.body).tint(Theme.seal)
+                    .padding(.horizontal, Theme.Layout.pageInset)
                     MapDisplaySettings(controller: model.controller)
                     SectionLabel("性能与帧率")
                     Group2 {

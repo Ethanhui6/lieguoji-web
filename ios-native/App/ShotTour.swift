@@ -41,6 +41,9 @@ enum ShotTour {
         options.seed = "20261101"; options.nations = 12; options.provinces = "140"; options.relations = "war"
         await timeWebFounding(model, options)
         // 02-founding and 02b-rise are taken inside the rise itself, while those lines are on screen.
+        let previousDamage = NewWorldWarRules.values["damage"] ?? 100
+        NewWorldWarRules.set("damage", to: 175)
+        defer { NewWorldWarRules.set("damage", to: previousDamage) }
         await model.generate(options)
     }
 
@@ -72,6 +75,7 @@ enum ShotTour {
     @MainActor static func play(_ model: GameModel, show: @escaping (Panel?) -> Void, views: @escaping (Bool) -> Void) async {
         await wait(3)
         await shoot("03-world")
+        await checkWarRules(model)
         await checkColors(model)
         await checkAdvanceOwnership(model)
         await checkEarlyHeralds(model)
@@ -222,6 +226,10 @@ enum ShotTour {
             if case .army = panel, model.state?.armies.isEmpty ?? true { continue }
             show(panel); await wait(1.4); await shoot(name)
         }
+        MenuSheet.tourWarRules = true
+        show(.menu); await wait(1.4); await shoot("18b-war-rules")
+        show(nil)
+        MenuSheet.tourWarRules = false
         // The navy: a fleet's page (ships editable) when the world has fleets.
         if !(model.state?.fleets ?? []).isEmpty { show(.fleet(0)); await wait(1.4); await shoot("13b-fleet") }
         // The nation page's tabs, opened full height.
@@ -276,6 +284,18 @@ enum ShotTour {
         await shootRulerTraits(model, nation: nation, show: show)
         show(nil); await wait(1)
         await shoot("done")
+    }
+
+    @MainActor private static func checkWarRules(_ model: GameModel) async {
+        let newWorld = (await model.worldRules())["damage"] ?? -1
+        let changed = await model.setWorldRule("damage", 125)
+        let live = (await model.worldRules())["damage"] ?? -1
+        let reset = await model.setWorldRule("damage", 100)
+        let restored = (await model.worldRules())["damage"] ?? -1
+        let report = ["newWorld": newWorld, "live": changed == nil ? live : -1, "restored": reset == nil ? restored : -1]
+        if let data = try? JSONEncoder().encode(report) {
+            try? data.write(to: dir.appendingPathComponent("war-rule-settings.json"), options: .atomic)
+        }
     }
 
     /// Feed chronicle events through the real queue while native play updates the opening map.

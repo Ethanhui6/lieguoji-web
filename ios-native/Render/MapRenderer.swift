@@ -153,6 +153,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         var mapWidth: Float = 1600
         var mapHeight: Float = 900
         var pad: Float = 0
+        var iconZoom: Float = 1
     }
     /// The blank sheet the map is painted on (the parchment is multiplied over it).
     static let paper = RGB(hex: 0xEDE3CC)
@@ -260,14 +261,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
         }
         unitTextures["banner"] = unitTextures["elite"]
-        // 军牌底盘 (128×128): 高辨识度雕漆纹章盾牌（粗浓墨外郭 + 明亮象牙金属倒角 + 饱满受光国色盾面），
-        // 即使在同色本土领土上也轮廓分明、远景一眼可辨；顶部嵌入象牙浮雕兵种纹章，兼具战略棋盘质感。
+        // 军牌底盘 (128×128): 精雕漆盾军牌（平肩微弧收尖盾形 + 浓墨外漆框 + 西北至东南立体受光面 + 内切雕槽与双铆钉），
+        // 叠加国色后与顶部象牙浮雕兵种纹样层次分明，任意缩放下都兼具古舆图战棋质感。
         let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
             let g = ctx.cgContext
             func shieldPath(inset d: CGFloat) -> CGPath {
                 let p = CGMutablePath()
-                let l = 6 + d, r = 122 - d, t = 6 + d, midY = 74 - d * 0.14, b = 122 - d
-                let corner: CGFloat = max(4, 18 - d * 0.65)
+                let l = 10 + d, r = 118 - d, t = 8 + d, midY = 74 - d * 0.15, b = 120 - d
+                let corner: CGFloat = max(4, 16 - d * 0.65)
                 p.move(to: CGPoint(x: l + corner, y: t))
                 p.addLine(to: CGPoint(x: r - corner, y: t))
                 p.addQuadCurve(to: CGPoint(x: r, y: t + corner), control: CGPoint(x: r, y: t))
@@ -279,22 +280,28 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 p.closeSubpath()
                 return p
             }
-            // 厚实浓墨外漆框（令军牌在任何底图色上均清晰跳脱）
-            g.setFillColor(red: 0.08, green: 0.08, blue: 0.08, alpha: 1)
+            // 外圈浓墨漆框
+            g.setFillColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1)
             g.addPath(shieldPath(inset: 0)); g.fillPath()
-            // 清晰亮边倒角框
-            g.setFillColor(red: 0.84, green: 0.84, blue: 0.84, alpha: 1)
-            g.addPath(shieldPath(inset: 6.5)); g.fillPath()
-            // 饱满受光国色盾面
-            let inner = shieldPath(inset: 11.0)
+            // 中层温润亮边倒角
+            g.setFillColor(red: 0.68, green: 0.68, blue: 0.68, alpha: 1)
+            g.addPath(shieldPath(inset: 5.5)); g.fillPath()
+            // 内盾受光渐变面
+            let inner = shieldPath(inset: 8.5)
             g.saveGState()
             g.addPath(inner); g.clip()
-            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.94, 0.94, 0.94, 1.0, 0.80, 0.80, 0.80, 1.0], locations: [0.0, 0.55, 1.0], count: 3) {
-                g.drawLinearGradient(grad, start: CGPoint(x: 14, y: 10), end: CGPoint(x: 114, y: 118), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.93, 0.93, 0.93, 1.0, 0.78, 0.78, 0.78, 1.0], locations: [0.0, 0.52, 1.0], count: 3) {
+                g.drawLinearGradient(grad, start: CGPoint(x: 16, y: 12), end: CGPoint(x: 112, y: 116), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
             } else {
                 g.setFillColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1); g.fill(CGRect(x: 0, y: 0, width: 128, height: 128))
             }
             g.restoreGState()
+            // 盾内细雕槽 + 顶部双铆钉
+            g.setStrokeColor(red: 0.36, green: 0.36, blue: 0.36, alpha: 0.50); g.setLineWidth(1.9)
+            g.addPath(shieldPath(inset: 14.0)); g.strokePath()
+            g.setFillColor(red: 0.34, green: 0.34, blue: 0.34, alpha: 0.60)
+            g.fillEllipse(in: CGRect(x: 28, y: 20, width: 5.5, height: 5.5))
+            g.fillEllipse(in: CGRect(x: 94.5, y: 20, width: 5.5, height: 5.5))
         }.cgImage
         if let plateArt { unitTextures["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
         // 水师舰队浪花尾迹底纹 (128×128): 双层弧形碎浪与微晕水环，衬托战舰浮于碧海之上的立体感。
@@ -704,9 +711,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Where every icon is drawn right now (mid-walk included), for taps and troop labels.
-    /// 军队与舰队图标的缩放系数（屏幕点 / 图标基准尺寸），与着色器 spriteVertex 严格一致：
-    /// 远景不低于 15.5 点、随缩放流畅放大、近景封顶 34 点，全局看海与微操点选均清晰醒目。
-    static func iconZoom(_ scale: Double) -> Double { min(34.0 / 3.0112, max(15.5 / 3.0112, scale * 1.12)) }
+    /// 2.8.8 的缩放曲线略提 12%，供着色器和屏幕点选、兵力条共用。
+    static func iconZoom(_ scale: Double) -> Double { 1.12 * min(21.0 / 3.0112, max(6.8 / 3.0112, scale * 0.66)) }
     /// 一支军队主图标在屏幕上的边长（点）。
     static func iconPoints(_ scale: Double, iconScale: Double) -> Double { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * iconZoom(scale) }
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
@@ -857,31 +863,35 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 let role = UnitArt.role(a.unit), at = legFrom[a.key] ?? SIMD2(a.x, a.y)
                 end = legTo[a.key] ?? at
                 lead = legLead[a.key] ?? (end - at)
-                let tierScale: Float = (role == "Port" || role == "Merchant" || a.army <= -100_000) ? 1.0 : (a.tier >= 3 ? 1.18 : a.tier == 2 ? 1.08 : 0.96)
-                let size = iconSize * iconScale * tierScale * (a.unit == "Port" ? 0.68 : a.unit == "Merchant" ? 0.72 : 1) * (a.selected ? 1.24 : 1)
-                // 统帅大纛（御驾亲征为鎏金，大将/旗舰为朱砂），立于军牌右肩，轮廓利落不遮兵种
+                let size = iconSize * iconScale * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
+                // The commander's gonfalon stands behind the pieces: gold for the ruler in person, crimson for generals & flagship armadas.
                 if a.banner > 0 {
-                    let k: Float = 0.64
-                    quad("banner", at, a.banner == 2 ? RGB(0.96, 0.78, 0.24) : RGB(0.80, 0.20, 0.14), size * k, (0.56 + o.x) / k, (-0.42 + o.y) / k)
+                    let k: Float = 0.66
+                    quad("banner", at, a.banner == 2 ? RGB(0.95, 0.76, 0.24) : RGB(0.76, 0.20, 0.14), size * k, (0.52 + o.x) / k, (-0.48 + o.y) / k)
                 }
-                // 水师主力战舰：放大船身 + 洁白破浪水圈，蔚蓝海面上一目了然；
-                // 陆军军团：单枚饱满国色漆盾军牌 + 正中明亮象牙浮雕兵种纹章，彻底消除旧版三小块重叠糊成一团的问题。
-                if role == "Fleet" {
-                    if unitTextures["0fleetwake"] != nil {
-                        quad("0fleetwake", at, RGB(0.96, 0.99, 1.0), size * 1.38, o.x / 1.38, (0.16 + o.y) / 1.38)
+                // 水师战舰下铺双层海沫浪圈，衬托船舰浮于海面；陆军下铺国色漆盾军牌，上方象牙兵种棋子反差鲜明。
+                if role == "Fleet", unitTextures["0fleetwake"] != nil {
+                    quad("0fleetwake", at, RGB(0.95, 0.98, 1.0), size * 1.18, o.x / 1.18, (0.14 + o.y) / 1.18)
+                }
+                let token = role != "Fleet" && role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
+                if token { quad("0plate", at, c, size * 0.98, o.x / 0.98, (0.14 + o.y) / 0.98) }
+                let piece = token
+                    ? RGB(0.84 + c.r * 0.16, 0.84 + c.g * 0.16, 0.84 + c.b * 0.16)
+                    : (role == "Fleet" ? RGB(min(1, c.r * 1.10 + 0.12), min(1, c.g * 1.10 + 0.12), min(1, c.b * 1.10 + 0.12)) : c)
+                // 陆军按编制排成三阶战阵，水师多舰编队排成纵深破浪雁行阵。
+                let n = role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
+                let layout: [(Float, Float, Float)] = {
+                    if role == "Fleet" {
+                        return n == 1 ? [(0, 0, 1.06)]
+                            : n == 2 ? [(-0.28, -0.14, 0.76), (0.08, 0.04, 1.06)]
+                            : [(-0.34, -0.10, 0.72), (0.34, -0.10, 0.72), (0, 0.06, 1.08)]
                     }
-                    let shipTint = RGB(min(1, c.r * 0.55 + 0.45), min(1, c.g * 0.55 + 0.45), min(1, c.b * 0.55 + 0.45))
-                    quad("Fleet", at, shipTint, size * 1.24, o.x / 1.24, o.y / 1.24)
-                } else {
-                    let token = role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
-                    if token {
-                        let plateColor = RGB(min(1, c.r * 1.08 + 0.05), min(1, c.g * 1.08 + 0.05), min(1, c.b * 1.08 + 0.05))
-                        quad("0plate", at, plateColor, size * 1.08, o.x / 1.08, (0.04 + o.y) / 1.08)
-                        let emblem = a.selected ? RGB(0.18, 0.12, 0.08) : RGB(0.99, 0.96, 0.89)
-                        quad(role, at, emblem, size * 0.72, o.x / 0.72, (-0.02 + o.y) / 0.72)
-                    } else {
-                        quad(role, at, c, size, o.x, o.y)
-                    }
+                    return n == 1 ? [(0, 0, 1)] : n == 2 ? [(0.22, -0.12, 0.70), (0, 0, 1)]
+                        : [(-0.24, -0.12, 0.66), (0.24, -0.12, 0.66), (0, 0, 1)]
+                }()
+                for (i, (dx, dy, k)) in layout.enumerated() {
+                    let shade: Float = i < layout.count - 1 && n > 1 ? 0.88 : 1
+                    quad(role, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, (dx + o.x) / k, (dy + o.y) / k)
                 }
             }
             func roleLayerOrder(_ key: String) -> Int {
@@ -984,7 +994,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             lighting: lightStrength,
             mapWidth: max(1, map.width),
             mapHeight: max(1, map.height),
-            pad: Energy.hot ? -1 : seasonPhase
+            pad: Energy.hot ? -1 : seasonPhase,
+            iconZoom: Float(Self.iconZoom(camera.scale))
         )
         let uniformLength = MemoryLayout<Uniforms>.stride
         func quad(_ texture: MTLTexture?, _ pipeline: MTLRenderPipelineState, x: Float, y: Float, width: Float, height: Float) {
@@ -1203,7 +1214,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     static let shaders = """
     #include <metal_stdlib>
     using namespace metal;
-    struct Uniforms { float2 viewport; float2 center; float scale; float halfWidth; float alpha; float time; float lighting; float mapWidth; float mapHeight; float pad; };
+    struct Uniforms { float2 viewport; float2 center; float scale; float halfWidth; float alpha; float time; float lighting; float mapWidth; float mapHeight; float pad; float iconZoom; };
     struct QuadUniforms { float2 origin; float2 size; };
     struct ColorOut { float4 position [[position]]; float4 color; };
     struct LandOut { float4 position [[position]]; float4 color; float2 world; float scale; };
@@ -1355,12 +1366,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     vertex SpriteOut spriteVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
                                   constant float& time [[buffer(5)]]) {
         SpriteVertex s = v[id];
-        // Marks at least 22 points tall (an army mark is 5 map units), so whose army it is reads at
-        // every zoom; banner and pips keep their proportions. The shift (in the quad's own size)
-        // places the banner and the pips around the army's point.
-        // 屏幕尺寸规则（与 MapRenderer.iconZoom 严格一致）：远景 15.5 点、随缩放流畅放大、近景封顶 34 点，
-        // 陆军漆盾与水师主力舰在全局与近景下皆清晰醒目。
-        float pixels = s.size * clamp(u.scale * 1.12, 15.5 / 3.0112, 34.0 / 3.0112);
+        // The same zoom factor positions the troop labels and hit areas on the CPU.
+        float pixels = s.size * u.iconZoom;
         // Alpha below zero: the icon fades in over the leg (new and re-formed armies).
         // Alpha −2: an army that fell fades out over the leg.
         float4 tint = float4(s.tint);
@@ -1389,7 +1396,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     vertex SpriteOut spriteShadowVertex(uint id [[vertex_id]], const device SpriteVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]], constant float& progress [[buffer(4)]],
                                         constant float& time [[buffer(5)]]) {
         SpriteVertex s = v[id];
-        float pixels = s.size * clamp(u.scale * 1.12, 15.5 / 3.0112, 34.0 / 3.0112);
+        float pixels = s.size * u.iconZoom;
         float4 tint = float4(s.tint);
         if (tint.a < -1.5) { float d = -tint.a - 2.0; tint.a = 1.0 - clamp((progress - d) / 0.15, 0.0, 1.0); }
         else if (tint.a < 0.0) tint.a = progress;

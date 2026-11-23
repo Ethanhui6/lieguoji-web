@@ -523,7 +523,8 @@ struct GameView: View {
             }).presentationDetents([.medium, .large])
         case .menu:
             MenuSheet(model: model, controller: controller, openEdicts: { open(.edicts) }, openEditor: { open(.editor) },
-                      wallpaper: { self.panel = nil; withAnimation(Motion.reveal) { wallpaper = true }; controller.drifting = true }, say: say) { self.panel = nil }.presentationDetents([.medium, .large])
+                      wallpaper: { self.panel = nil; withAnimation(Motion.reveal) { wallpaper = true }; controller.drifting = true }, say: say) { self.panel = nil }
+                .presentationDetents(MenuSheet.tourWarRules ? [.large] : [.medium, .large])
         }
     }
 

@@ -248,7 +248,11 @@ actor NativeHost {
     func view(_ mode: String) async -> Data? { await call("view", ["mode": mode]).data }
     func worldSettings() async -> Data? { await call("worldSettings").data }
     func worldRules() async -> Data? { await call("worldRules").data }
-    func setWorldRule(_ key: String, value: Double?) async -> (ok: Bool, reason: String, state: Data?) { await command("setWorldRule", ["key": key, "value": Self.opt(value)]) }
+    func setWorldRule(_ key: String, value: Double?, revision: UInt64) async -> (ok: Bool, reason: String) {
+        guard advances.revision == revision else { return (false, "世界已经切换。") }
+        let result = await call("setWorldRule", ["key": key, "value": Self.opt(value), "withoutState": true])
+        return (result.ok, result.reason)
+    }
     func editFleet(_ id: String, ships: Int?, name: String?) async -> (ok: Bool, reason: String, state: Data?) { await command("editFleet", ["id": id, "ships": Self.opt(ships), "name": Self.opt(name)]) }
     func setWorld(_ key: String, _ value: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("setWorld", ["key": key, "value": value]) }
     func triggerCivilWar(_ n: Int) async -> (ok: Bool, reason: String, state: Data?) { await command("triggerCivilWar", ["n": n]) }

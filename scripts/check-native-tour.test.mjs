@@ -9,7 +9,7 @@ import {checkNativeTour,requiredShots} from './check-native-tour.mjs';
 function fixture(t) {
   const directory = mkdtempSync(join(tmpdir(),'lieguoji-tour-'));
   t.after(() => {
-    for(const name of ['tour-status.json','founding-time.json','advance-ownership.json','panel-profile.json','name-stability.json','color-contrast.json','map-unrolled.json','wash-demo.json',...requiredShots.map(name => `${name}.png`)]) {
+    for(const name of ['tour-status.json','founding-time.json','advance-ownership.json','panel-profile.json','name-stability.json','color-contrast.json','map-unrolled.json','wash-demo.json','war-rule-settings.json',...requiredShots.map(name => `${name}.png`)]) {
       try { unlinkSync(join(directory,name)); } catch(error) { if(error.code !== 'ENOENT') throw error; }
     }
     rmdirSync(directory);
@@ -19,6 +19,7 @@ function fixture(t) {
   for(const name of requiredShots) writeFileSync(join(directory,`${name}.png`),png);
   writeFileSync(join(directory,'tour-status.json'),JSON.stringify({finished:true}));
   writeFileSync(join(directory,'founding-time.json'),JSON.stringify({swift:{seconds:2.1,cityCount:140,error:null},'web-generate':{seconds:30,cityCount:null,error:null}}));
+  writeFileSync(join(directory,'war-rule-settings.json'),JSON.stringify({newWorld:175,live:125,restored:100}));
   writeFileSync(join(directory,'advance-ownership.json'),JSON.stringify({version:2,passed:true,manualDrain:true,controls:40,samples:12,startDay:0,endDay:10,authoritativeDay:10,backwards:0}));
   writeFileSync(join(directory,'panel-profile.json'),JSON.stringify({version:1,frozen:true,day:10,endDay:10,worldSHA256:'a'.repeat(64),
     panels:['nation','province','ranking'].map(scene => ({scene,cycles:3,samples:100,averageMs:20,p95Ms:40,maxMs:60,hitches:2}))}));

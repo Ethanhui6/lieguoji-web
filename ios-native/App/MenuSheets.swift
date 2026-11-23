@@ -4,6 +4,8 @@ import UniformTypeIdentifiers
 import LieguojiCore
 
 struct MenuSheet: View {
+    @MainActor static var tourWarRules = false
+
     @ObservedObject var model: GameModel
     @ObservedObject var controller: MapController
     var openEdicts: () -> Void = {}
@@ -16,8 +18,8 @@ struct MenuSheet: View {
     @State private var notes = false
     @State private var exported: ExportFile?
     @State private var importing = false
-    /// 菜单 in three pages: the game (saves, worlds, edicts), the map's look, and the rest.
-    @State private var page = "game"
+    /// 菜单的游戏、画面、推演与战争四个分组。
+    @State private var page = MenuSheet.tourWarRules ? "war" : "game"
     @State private var calendar = false
     @State private var eraText = ""
     @State private var yearText = ""
@@ -25,8 +27,15 @@ struct MenuSheet: View {
         ScrollView {
         VStack(alignment: .leading, spacing: 14) {
             SheetHeader(title: "菜单", subtitle: AppVersion.text, seal: "典")
-            ChipPicker(items: [("game", "游戏"), ("map", "画面"), ("play", "推演")], selection: $page).padding(.horizontal, Theme.Layout.pageInset)
+            ChipPicker(items: [("game", "游戏"), ("map", "画面"), ("play", "推演"), ("war", "战争")], selection: $page).padding(.horizontal, Theme.Layout.pageInset)
             switch page {
+            case "war":
+                WarRuleSettings(model: model)
+                Group2 {
+                    Button { openEdicts() } label: { MenuRow(symbol: "scroll.fill", title: "外交、同盟、战争期限与停战") }
+                        .buttonStyle(.plain)
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
             case "map":
                 MapDisplaySettings(controller: controller)
                 SectionLabel("性能与帧率")
@@ -37,11 +46,6 @@ struct MenuSheet: View {
             case "play":
                 SectionLabel("战场与推演")
                 Group2 {
-                    PaperSwitch(title: "显示军队", on: $controller.play.showArmies)
-                    Divider2()
-                    PaperSlider(title: "军队图标大小", value: $controller.play.iconScale, range: 0.7...1.5, step: 0.1) { String(format: "%.1f×", $0) }
-                        .padding(.horizontal, 16).padding(.vertical, 10)
-                    Divider2()
                     PaperSwitch(title: "显示战争箭头", on: $controller.play.warArrows)
                     Divider2()
                     PaperSwitch(title: "大事传报横幅", on: $controller.play.showHeralds)
@@ -189,6 +193,15 @@ struct MapDisplaySettings: View {
     @ObservedObject var controller: MapController
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            SectionLabel("军队与舰队")
+            Group2 {
+                PaperSwitch(title: "显示军队与舰队", on: $controller.play.showArmies)
+                Divider2()
+                PaperSlider(title: "图标大小", value: $controller.play.iconScale, range: 0.7...1.5, step: 0.1) { String(format: "%.1f×", $0) }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+
             SectionLabel("地图元素")
             Group2 {
                 PaperSwitch(title: "国界线", on: $controller.display.borders)

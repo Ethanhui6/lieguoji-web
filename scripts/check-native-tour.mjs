@@ -7,7 +7,7 @@ export const requiredShots = [
   '02-founding','02a-sea','02b-rise','02c-ink','02d-states','02e-borders',
   '03-world','03b-colors-dense','04-war-0','04-war-1','04-war-2','04c-capital-spotlight','04d-map-unrolled','07-views',
   '10-nations','11-nation','12-military','14-diplomacy','15-chronicle',
-  '16-statistics','17-edicts','18-menu','19-province','30-landscape','31-landscape-nation',
+  '16-statistics','17-edicts','18-menu','18b-war-rules','19-province','30-landscape','31-landscape-nation',
   '41e-herald-house','41f-herald-marriage',
 ];
 
@@ -18,6 +18,10 @@ export function checkNativeTour(directory) {
   // 原生建世界：CI 世界须由 Swift 建成（不退回网页引擎），耗时另有网页引擎的对照。
   const founding = JSON.parse(readFileSync(join(directory,'founding-time.json'),'utf8'));
   if(!founding.swift || founding.swift.error || !(founding.swift.seconds > 0) || founding.web) throw Error('新世界没有由 Swift 建成：' + JSON.stringify(founding));
+  const warRules = JSON.parse(readFileSync(join(directory,'war-rule-settings.json'),'utf8'));
+  if(warRules.newWorld !== 175 || warRules.live !== 125 || warRules.restored !== 100) {
+    throw Error('战争规则回归失败：新世界默认、局内修改或恢复常态未写入推演。');
+  }
   const ownership = JSON.parse(readFileSync(join(directory,'advance-ownership.json'),'utf8'));
   if(ownership.version !== 2 || ownership.passed !== true || ownership.manualDrain !== true || ownership.controls < 20 || ownership.samples < 1
     || ownership.backwards !== 0 || !(ownership.endDay > ownership.startDay) || ownership.endDay !== ownership.authoritativeDay) {

@@ -242,7 +242,7 @@ import LieguojiCore
                 // The engine's world (rivers, cities, names) replaces the drawn preview in place.
                 controller.editorMap = world; controller.editorSeaDirty = true; controller.editorRevision &+= 1
                 controller.foundingStage = 3
-                try await handOver()
+                try await handOver(applyNewWorldRules: true)
             }
             guard epoch == worldEpoch else { return }
             let wait = 2.6 - Date().timeIntervalSince(settled)
@@ -385,7 +385,7 @@ import LieguojiCore
                 world = try await open(built)
                 try checkWorld(epoch)
                 controller.foundingStage = 3
-                try await handOver()
+                try await handOver(applyNewWorldRules: true)
                 guard epoch == worldEpoch else { return }
                 generationNote = ""
                 await rise(epoch)
@@ -495,6 +495,7 @@ import LieguojiCore
         try checkWorld(epoch)
         await native.enableAppRules()
         try checkWorld(epoch)
+        try await applyNewWorldWarRules(epoch)
         let finalStateData = await native.state() ?? made.state
         try checkWorld(epoch)
         return try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared?) in
@@ -720,7 +721,7 @@ import LieguojiCore
     }
 
     /// The web engine's world goes to the Swift engine, which runs it from now on.
-    private func handOver() async throws {
+    private func handOver(applyNewWorldRules: Bool = false) async throws {
         let epoch = worldEpoch
         let webHost = ensureLegacyEngine()
         await Task.yield()
@@ -729,14 +730,15 @@ import LieguojiCore
         let opened = try await native.open(Data(text.utf8), world: epoch)
         try checkWorld(epoch)
         nativeRevision = opened.revision
-        try await finishHandOver(epoch)
+        try await finishHandOver(epoch, applyNewWorldRules: applyNewWorldRules)
     }
     /// 交接的后半段（网页世界交给 Swift 之后，或 Swift 建好之后）：云端调校、本作规则与 Swift 引擎的首个状态。
-    private func finishHandOver(_ epoch: Int) async throws {
+    private func finishHandOver(_ epoch: Int, applyNewWorldRules: Bool) async throws {
         await applyCloud()
         try checkWorld(epoch)
         await native.enableAppRules()
         try checkWorld(epoch)
+        if applyNewWorldRules { try await applyNewWorldWarRules(epoch) }
         // The Swift engine's own first state (its army points, the arms by culture) replaces the web
         // engine's at once: otherwise the first step after 开始 slid every army from the web's
         // points to the engine's, a burst of "teleport" walks before the game began.
@@ -1558,12 +1560,28 @@ import LieguojiCore
         applySpotlightFills()
         if viewLegend != v.legend { viewLegend = v.legend }
     }
-    /// 天下规则: world rates in percent (war, damage, march, levy, ships).
+    /// 天下规则：百分比。
     func worldRules() async -> [String: Int] {
         guard let data = await native.worldRules(), let v = await Self.decode([String: Double].self, from: data) else { return [:] }
-        return v.mapValues { Int($0.rounded()) }
+        return v.compactMapValues { Int(exactly: $0.rounded()) }
     }
-    func setWorldRule(_ key: String, _ value: Double?) async -> String? { finish(await native.setWorldRule(key, value: value)) }
+    func setWorldRule(_ key: String, _ value: Double?) async -> String? {
+        guard phase == .playing, state != nil, !replayActive else { return "当前没有可修改的世界。" }
+        let epoch = worldEpoch
+        let result = await native.setWorldRule(key, value: value, revision: nativeRevision)
+        guard epoch == worldEpoch else { return "世界已经切换。" }
+        return result.ok ? nil : result.reason
+    }
+    private func applyNewWorldWarRules(_ epoch: Int) async throws {
+        let values = NewWorldWarRules.values
+        for key in Regimes.ruleKeys {
+            guard let value = values[key] else { continue }
+            try checkWorld(epoch)
+            let result = await native.setWorldRule(key, value: Double(value), revision: nativeRevision)
+            try checkWorld(epoch)
+            guard result.ok else { throw EngineError.message(result.reason) }
+        }
+    }
     func editFleet(_ id: String, ships: Int?, name: String?) async -> String? { finish(await native.editFleet(id, ships: ships, name: name)) }
     func worldSettings() async -> WorldSettings? {
         guard let data = await native.worldSettings() else { return nil }

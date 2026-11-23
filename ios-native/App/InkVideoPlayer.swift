@@ -109,32 +109,32 @@ final class InkPlayerHostView: UIView {
     private static var posterCache: [String: UIImage] = [:]
     private static func posterImage(for clip: String) -> UIImage? {
         if let cached = posterCache[clip] { return cached }
-        let artName: String
+        let art: UIImage?
         let bgTop: UIColor
         let bgBot: UIColor
         switch clip {
         case "herald-naval":
-            artName = "naval-east"
+            art = BundleArt.navalEast
             bgTop = UIColor(red: 0.90, green: 0.94, blue: 0.95, alpha: 1)
             bgBot = UIColor(red: 0.78, green: 0.87, blue: 0.90, alpha: 1)
         case "herald-siege":
-            artName = "fx-siege-flame"
+            art = BundleArt.fxSiegeFlame
             bgTop = UIColor(red: 0.96, green: 0.90, blue: 0.84, alpha: 1)
             bgBot = UIColor(red: 0.89, green: 0.78, blue: 0.68, alpha: 1)
         case "herald-peace":
-            artName = "herald-peace"
+            art = BundleArt.heraldPeace
             bgTop = UIColor(red: 0.93, green: 0.96, blue: 0.93, alpha: 1)
             bgBot = UIColor(red: 0.85, green: 0.92, blue: 0.87, alpha: 1)
         case "herald-regime":
-            artName = "herald-edict"
+            art = BundleArt.heraldEdictEast
             bgTop = UIColor(red: 0.98, green: 0.94, blue: 0.85, alpha: 1)
             bgBot = UIColor(red: 0.93, green: 0.86, blue: 0.72, alpha: 1)
         case "herald-weather":
-            artName = "fx-weather-snow"
+            art = BundleArt.fxWeatherSnow
             bgTop = UIColor(red: 0.92, green: 0.95, blue: 0.98, alpha: 1)
             bgBot = UIColor(red: 0.83, green: 0.89, blue: 0.95, alpha: 1)
         default:
-            artName = "herald-war"
+            art = BundleArt.heraldWarEast
             bgTop = UIColor(red: 0.96, green: 0.91, blue: 0.85, alpha: 1)
             bgBot = UIColor(red: 0.91, green: 0.82, blue: 0.73, alpha: 1)
         }
@@ -145,7 +145,7 @@ final class InkPlayerHostView: UIView {
             if let grad = CGGradient(colorsSpace: space, colors: [bgTop.cgColor, bgBot.cgColor] as CFArray, locations: [0, 1]) {
                 g.drawLinearGradient(grad, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
             }
-            if let art = BundleArt.load(artName) {
+            if let art {
                 let h: CGFloat = 114
                 let w = h * (art.size.width / max(1, art.size.height))
                 art.draw(in: CGRect(x: (size.width - w) * 0.5, y: (size.height - h) * 0.5, width: w, height: h), blendMode: .normal, alpha: 0.94)

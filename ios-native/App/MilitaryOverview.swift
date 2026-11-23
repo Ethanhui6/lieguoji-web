@@ -164,7 +164,6 @@ struct MilitaryOverview: View {
                     HStack(spacing: 10) {
                         ForEach(Array(generals.prefix(10))) { g in
                             let live = (g.active ?? !g.fallen) && !g.fallen
-                            let accent = live ? Theme.seal : Theme.ink2
                             VStack(alignment: .leading, spacing: 7) {
                                 HStack(spacing: 7) {
                                     let gCul = map.meta.nations.indices.contains(g.nation) ? map.meta.nations[g.nation].culture : nil

@@ -485,7 +485,7 @@ public enum LocalizationEngine {
             switch branch {
             case "guard": return "天子禁军"
             case "vanguard": return "虎豹先锋"
-            case "siege": return "攻城重营"
+            case "siege": return "攻城炮旅"
             case "garrison": return "边镇守备"
             default: return "野战主力"
             }

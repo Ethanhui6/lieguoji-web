@@ -260,8 +260,8 @@ final class EffectsView: UIView {
             splash.add(Self.calm(sg), forKey: "splash-\(side)")
             root.addSublayer(splash)
         }
-        // 海战按文明大系播放 4×1 透明序列帧战舰（东亚楼船／西洋风帆盖伦，真逐帧破浪划桨，零静态图代码摇晃）
-        let shipSpec: SpriteSheetSpec = CultureStyle.of(culture).isEastAsian ? .warshipEast : .warshipWest
+        // 海战按文明大系播放 4×1 透明序列帧战舰（东亚楼船／北欧维京长船／伊斯兰三角帆舰／西洋盖伦，真逐帧破浪划桨）
+        let shipSpec = SpriteSheetSpec.warship(for: culture)
         let shipSheet = SpriteSheetLayer(spec: shipSpec)
         shipSheet.bounds = CGRect(x: 0, y: 0, width: 44, height: 34)
         shipSheet.position = CGPoint(x: 22, y: 15)
@@ -412,21 +412,33 @@ final class EffectsView: UIView {
         echoGroup.fillMode = .both; echoGroup.isRemovedOnCompletion = false
         echo.add(echoGroup, forKey: "echo"); root.addSublayer(echo)
 
-        let flag = CALayer()
-        flag.contents = BundleArt.victoryBanner(for: culture)?.cgImage
-        flag.contentsGravity = .resizeAspect
-        flag.bounds = CGRect(x: 0, y: 0, width: 38, height: 38)
-        flag.anchorPoint = CGPoint(x: 0.32, y: 0.92)
-        flag.position = CGPoint(x: 60, y: 63)
-        let drop = CABasicAnimation(keyPath: "transform.translation.y"); drop.fromValue = -18; drop.toValue = 0; drop.duration = 0.24
-        drop.timingFunction = CAMediaTimingFunction(name: .easeIn)
-        let squash = CAKeyframeAnimation(keyPath: "transform.scale.y"); squash.values = [1.0, 0.84, 1.06, 1.0]; squash.keyTimes = [0, 0.4, 0.78, 1]; squash.beginTime = 0.24; squash.duration = 0.22
-        let waveRot = CAKeyframeAnimation(keyPath: "transform.rotation.z"); waveRot.values = [0, -0.09, 0.08, -0.07, 0.06, -0.04, 0]; waveRot.beginTime = 0.24; waveRot.duration = 1.9
-        let waveX = CAKeyframeAnimation(keyPath: "transform.scale.x"); waveX.values = [1, 0.90, 1.05, 0.92, 1.04, 1]; waveX.beginTime = 0.24; waveX.duration = 1.9
-        let fadeOut = CAKeyframeAnimation(keyPath: "opacity"); fadeOut.values = [0, 1, 1, 0]; fadeOut.keyTimes = [0, 0.08, 0.78, 1]; fadeOut.duration = 2.15
-        let plant = CAAnimationGroup(); plant.animations = [drop, squash, waveRot, waveX, fadeOut]; plant.duration = 2.15
-        plant.fillMode = .forwards; plant.isRemovedOnCompletion = false
-        flag.add(plant, forKey: "plant"); root.addSublayer(flag)
+        // 攻占插旗：优先使用 4×1 透明飘扬战旗序列帧（sheet-banner-wave），真正逐帧猎猎招展！
+        if BundleArt.sheetBannerWave != nil {
+            let flag = SpriteSheetLayer(spec: .bannerWave)
+            flag.bounds = CGRect(x: 0, y: 0, width: 42, height: 42)
+            flag.anchorPoint = CGPoint(x: 0.34, y: 0.92)
+            flag.position = CGPoint(x: 60, y: 63)
+            flag.configure(spec: .bannerWave, state: .march, fps: 7.5, repeatCount: .infinity)
+            let drop = CABasicAnimation(keyPath: "transform.translation.y"); drop.fromValue = -18; drop.toValue = 0; drop.duration = 0.22
+            drop.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            let fadeOut = CAKeyframeAnimation(keyPath: "opacity"); fadeOut.values = [0, 1, 1, 0]; fadeOut.keyTimes = [0, 0.08, 0.78, 1]; fadeOut.duration = 2.15
+            let plant = CAAnimationGroup(); plant.animations = [drop, fadeOut]; plant.duration = 2.15
+            plant.fillMode = .forwards; plant.isRemovedOnCompletion = false
+            flag.add(plant, forKey: "plant"); root.addSublayer(flag)
+        } else {
+            let flag = CALayer()
+            flag.contents = BundleArt.victoryBanner(for: culture)?.cgImage
+            flag.contentsGravity = .resizeAspect
+            flag.bounds = CGRect(x: 0, y: 0, width: 38, height: 38)
+            flag.anchorPoint = CGPoint(x: 0.32, y: 0.92)
+            flag.position = CGPoint(x: 60, y: 63)
+            let drop = CABasicAnimation(keyPath: "transform.translation.y"); drop.fromValue = -18; drop.toValue = 0; drop.duration = 0.24
+            drop.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            let fadeOut = CAKeyframeAnimation(keyPath: "opacity"); fadeOut.values = [0, 1, 1, 0]; fadeOut.keyTimes = [0, 0.08, 0.78, 1]; fadeOut.duration = 2.15
+            let plant = CAAnimationGroup(); plant.animations = [drop, fadeOut]; plant.duration = 2.15
+            plant.fillMode = .forwards; plant.isRemovedOnCompletion = false
+            flag.add(plant, forKey: "plant"); root.addSublayer(flag)
+        }
 
         // 旗竿插落瞬间的鎏金星芒微闪
         let glint = CAShapeLayer(); glint.frame = CGRect(x: 52, y: 26, width: 16, height: 16)

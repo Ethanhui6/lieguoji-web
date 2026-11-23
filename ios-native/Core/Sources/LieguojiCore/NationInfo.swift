@@ -273,6 +273,18 @@ extension NativeEngine {
                 o.strategy = nb.strategy.optionalString.map { JS($0) } ?? JS("")
                 o.autoStrategy = JS(nb.autoStrategy.isTruthy)
             }
+            // 海运运力与制海权实时概览
+            let stInfo = JS.object()
+            let blk = Naval.blockade(r, id)
+            let unblocked = MaritimeWarfare.unblockedFriendlyPortIndices(r, nation: id).count
+            let seaCap = MaritimeWarfare.seaTransportCapacity(r, nation: id)
+            let seaUsed = MaritimeWarfare.activeSeaTransports(r, nation: id)
+            stInfo.used = JS(seaUsed)
+            stInfo.capacity = JS(seaCap)
+            stInfo.totalPorts = JS(blk.ports)
+            stInfo.blockadedPorts = JS(blk.held)
+            stInfo.unblockedPorts = JS(unblocked)
+            o.seaTransport = stInfo
             // 王位宣称（来自跨国王室联姻）
             if !r.regimes.claims.isNull {
                 let nowM = r.regimes.month.asInt

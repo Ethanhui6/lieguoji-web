@@ -592,12 +592,15 @@ struct NationDecreesTab: View {
     }
 }
 
-/// 国家页「疆土」总管标签：全境州郡搜索、排序、批量施政与逐州快捷操控。
+/// 国家页「疆土」总管标签：全境行政区搜索、排序、批量施政与逐区快捷操控（严格联动文化 × 政体区划称谓）。
 struct NationTerritoryTab: View {
     @ObservedObject var model: GameModel
     let nation: Int
     let alive: Bool
     let day: Int
+    var culture: String? = nil
+    var polity: String? = nil
+    var style: String? = nil
     let onFly: (Int) -> Void
     let onAppointGovernor: (Int) -> Void
     let onToast: (String) -> Void
@@ -607,7 +610,11 @@ struct NationTerritoryTab: View {
     enum SortMode: String, CaseIterable {
         case population = "按人口"
         case defense = "按城防"
-        case name = "按州名"
+        case name = "按地名"
+    }
+
+    private var lex: LocalizationEngine.Lexicon {
+        LocalizationEngine.lexicon(culture: culture, polity: polity, style: style)
     }
 
     @State private var rows: [GameModel.NationProvinceRow] = []
@@ -643,7 +650,7 @@ struct NationTerritoryTab: View {
                 // 全境批量操控条
                 HStack(spacing: 8) {
                     bulkChip("加固边防", glyph: .nation, tone: Theme.ink) { runBulk("nationDecree", ["n": nation, "kind": "fortifyBorder"], fallback: "边防已加固") }
-                    bulkChip("补齐总督", glyph: .polity, tone: Theme.jade) { runBulk("nationDiplomacyOrder", ["n": nation, "kind": "fillGovernors"], fallback: "已补齐总督") }
+                    bulkChip("补齐\(lex.governorTitle)", glyph: .polity, tone: Theme.jade) { runBulk("nationDiplomacyOrder", ["n": nation, "kind": "fillGovernors"], fallback: "已补齐\(lex.governorTitle)") }
                     bulkChip("同化文化", glyph: .culture, tone: Theme.ink) { runBulk("nationDecree", ["n": nation, "kind": "assimilateCulture"], fallback: "文化已同化") }
                     bulkChip("统一国教", glyph: .religion, tone: Theme.seal) { runBulk("nationDecree", ["n": nation, "kind": "convertFaith"], fallback: "国教已统一") }
                 }
@@ -653,7 +660,7 @@ struct NationTerritoryTab: View {
                 VStack(spacing: 8) {
                     HStack(spacing: 8) {
                         InkIcon(glyph: .search, size: 14, weight: 1.7).foregroundStyle(Theme.ink2)
-                        TextField("", text: $query, prompt: Text("搜州名、特产、总督或世家").foregroundColor(Theme.ink2.opacity(0.6)))
+                        TextField("", text: $query, prompt: Text("搜\(lex.adminUnit)名、特产、\(lex.governorTitle)或\(lex.houseUnitLabel)").foregroundColor(Theme.ink2.opacity(0.6)))
                         if !query.isEmpty {
                             Button { query = "" } label: { InkIcon(glyph: .close, size: 12, weight: 1.8).foregroundStyle(Theme.ink2) }
                                 .buttonStyle(.plain)
@@ -665,12 +672,12 @@ struct NationTerritoryTab: View {
                 .padding(.horizontal, Theme.Layout.pageInset)
 
                 let shown = filtered
-                SectionLabel("实控州郡（\(shown.count)/\(rows.count)）")
+                SectionLabel("实控\(lex.adminPlural)（\(shown.count)/\(rows.count)）")
                 if !loaded {
                     InkBusy(text: "清点疆土……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(24)
                 } else if shown.isEmpty {
                     Group2 {
-                        Row(label: "州郡", value: query.isEmpty ? "暂无实控州郡" : "无匹配州郡")
+                        Row(label: lex.adminUnit, value: query.isEmpty ? "暂无实控\(lex.adminUnit)" : "无匹配\(lex.adminUnit)")
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)
                 } else {
@@ -727,9 +734,9 @@ struct NationTerritoryTab: View {
                 Text("城防 \(row.defense) 级").font(Theme.caption).foregroundStyle(row.defense >= 3 ? Theme.jade : Theme.ink2)
                 if !row.specialty.isEmpty { Text("· \(row.specialty)").font(Theme.caption).foregroundStyle(Theme.ink2) }
                 if let g = row.governor {
-                    Text("· 总督 \(g)").font(Theme.caption).foregroundStyle((row.governorFit ?? 0) >= 0.3 ? Theme.jade : Theme.ink2).lineLimit(1)
+                    Text("· \(lex.governorTitle) \(g)").font(Theme.caption).foregroundStyle((row.governorFit ?? 0) >= 0.3 ? Theme.jade : Theme.ink2).lineLimit(1)
                 } else {
-                    Text("· 缺总督").font(Theme.caption).foregroundStyle(Theme.seal.opacity(0.85))
+                    Text("· 缺\(lex.governorTitle)").font(Theme.caption).foregroundStyle(Theme.seal.opacity(0.85))
                 }
                 if let fam = row.familyName {
                     Spacer(minLength: 2)
@@ -743,8 +750,8 @@ struct NationTerritoryTab: View {
     private func openMenu(for row: GameModel.NationProvinceRow) {
         var items: [PressMenuItem] = [
             PressMenuItem(title: "在舆图上查看\(row.name)", symbol: "map") { onFly(row.index) },
-            PressMenuItem(title: row.governor == nil ? "委任本州总督" : "改任本州总督（现：\(row.governor!)）", symbol: "building.columns") { onAppointGovernor(row.index) },
-            PressMenuItem(title: "在本州征募 1 支新军", symbol: "flag.2.crossed") {
+            PressMenuItem(title: row.governor == nil ? "委任本\(lex.adminUnit)\(lex.governorTitle)" : "改任本\(lex.adminUnit)\(lex.governorTitle)（现：\(row.governor!)）", symbol: "building.columns") { onAppointGovernor(row.index) },
+            PressMenuItem(title: "在本\(lex.adminUnit)征募 1 支新军", symbol: "flag.2.crossed") {
                 runAction("已在\(row.name)征募新军") { await model.addArmy(nation, province: row.index, count: 1) }
             },
             PressMenuItem(title: row.fortress ? "拆除要塞" : "修筑要塞（城防加强）", symbol: "building.2") {
@@ -859,20 +866,27 @@ struct NationMilitaryControlBar: View {
     }
 }
 
-/// 禅位择君弹窗：列出本国在世成年宗室、家主与大臣，点选即刻拥立登基。
+/// 换届择贤／禅位择君弹窗：严格按政体适配称谓，共和政体不出现禅位与宗室字样。
 struct EnthroneSheet: View {
     @ObservedObject var model: GameModel
     let nation: Int
     let stateName: String
+    var culture: String? = nil
+    var polity: String? = nil
+    var style: String? = nil
     let onPicked: (Int, String) -> Void
     @State private var candidates: [NationInfo.Person] = []
     @State private var loaded = false
     @State private var confirm: NationInfo.Person?
 
+    private var lex: LocalizationEngine.Lexicon {
+        LocalizationEngine.lexicon(culture: culture, polity: polity, style: style)
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: "禅位择君", subtitle: "\(stateName) · 择一在世成年之人登基执政", seal: "禅")
+                SheetHeader(title: lex.successionAction, subtitle: "\(stateName) · 择一在世成年贤能出任\(lex.leaderTitle)", seal: "政")
                 Group2 {
                     if !loaded {
                         InkBusy(text: "遴选人选……").frame(maxWidth: 200).frame(maxWidth: .infinity).padding(24)
@@ -912,16 +926,16 @@ struct EnthroneSheet: View {
             candidates = await model.throneCandidates(nation)
             loaded = true
         }
-        .confirmationDialog(confirm.map { "拥立\($0.name)登基？" } ?? "", isPresented: Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } }), titleVisibility: .visible) {
+        .confirmationDialog(confirm.map { "推举\($0.name)出任\(lex.leaderTitle)？" } ?? "", isPresented: Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } }), titleVisibility: .visible) {
             if let p = confirm, let id = p.id {
-                Button("即刻禅位登基", role: .destructive) {
+                Button("即刻\(lex.successionAction)", role: .destructive) {
                     confirm = nil
                     onPicked(id, p.name)
                 }
             }
             Button("取消", role: .cancel) { confirm = nil }
         } message: {
-            Text("原君主将和平卸任，所选人物成为新任君主／元首，其家族随之成为宗室。")
+            Text(lex.isRepublican ? "现任\(lex.leaderTitle)将和平卸任，所选人选即刻宣誓就任新一任国家元首。" : "原\(lex.leaderTitle)将和平卸任，所选人物成为新任\(lex.leaderTitle)。")
         }
     }
 }

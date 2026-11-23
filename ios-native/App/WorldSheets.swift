@@ -1095,7 +1095,7 @@ struct ChronicleDynastyScroll: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                SealFace(text: "卷", size: 22, color: Theme.seal)
+                ArtEmblem(image: BundleArt.sealChronicle, size: 26, fallback: .chronicle)
                 Text("列国兴衰长卷").font(Theme.section).foregroundStyle(Theme.ink)
                 Spacer(minLength: 4)
                 Text("共 \(timeline.frames.count) 帧 · 点按直达回放").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()

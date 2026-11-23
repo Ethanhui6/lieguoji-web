@@ -4,14 +4,14 @@
 
 ### 模块一：全量序列帧动画体系（Sprite Sheet）与统一播放器
 - **彻底废除静态图代码摇晃伪动画（`SpriteAnimator.swift`、`MapRenderer.swift`、`MapEffects.swift`、`MapArt.swift`）**：
-  - 生成并精准对齐打包 7 套 `1024×256`（4×1 透明等宽网格）纯 AI 手绘序列帧图集：`sheet-infantry-march.png`（步兵四帧行军）、`sheet-cavalry-charge.png`（铁骑四帧冲锋扬尘）、`sheet-warship-east.png`（东亚楼船四帧划桨破浪）、`sheet-warship-west.png`（西洋盖伦四帧破浪）、`sheet-transport-ship.png`（运兵船队四帧航行）、`sheet-battle-clash.png`（兵戈交锋四帧火花箭雨）与 `sheet-siege-smoke.png`（围城四帧烈焰浓烟）；
-  - 封装零拷贝离散切帧 `SpriteSheetLayer` / `SpriteSheetView`（支持配置 FPS、随机相位与待机/行军/交战/航行/沉没/围城状态切换），并在 Metal GPU 新增 `spriteSheetVertex` / `spriteSheetShadowVertex` / `spriteSheetFragment` 管线，使全图海陆部队按实际移动/交战状态与朝向 60/120fps 实帧跃动，落地阴影逐帧同步。
+  - 生成并精准对齐打包 **10 套** `1024×256`（4×1 透明等宽网格）纯 AI 手绘序列帧图集：`sheet-infantry-march.png`（步兵四帧行军）、`sheet-cavalry-charge.png`（铁骑四帧冲锋扬尘）、`sheet-warship-east.png`（东亚楼船四帧划桨破浪）、`sheet-warship-west.png`（西洋盖伦四帧破浪）、`sheet-warship-nordic.png`（北欧维京龙头长船四帧划桨）、`sheet-warship-islamic.png`（阿拉伯/伊斯兰三角帆战舰四帧航行）、`sheet-transport-ship.png`（跨海运兵船队四帧航行）、`sheet-battle-clash.png`（兵戈交锋四帧火花箭雨）、`sheet-siege-smoke.png`（围城四帧烈焰浓烟）与 `sheet-banner-wave.png`（战旗四帧迎风飘扬，攻城插旗实帧摆动）；
+  - 封装零拷贝离散切帧 `SpriteSheetLayer` / `SpriteSheetView`（支持配置 FPS、随机相位与待机/行军/交战/航行/沉没/围城状态切换），并在 Metal GPU 新增 `spriteSheetVertex` / `spriteSheetShadowVertex` / `spriteSheetFragment` 管线，使全图海陆部队按文明战舰差异、移动/交战状态与朝向 60/120fps 实帧跃动，落地阴影逐帧同步。
 
 ### 模块二：地图视觉彻底去代码绘图化与古印章换血
-- **全面清零地图残留的简陋代码绘制元素（`MapDetail.swift`、`MapLayers.swift`、`MapRenderer.swift`、`MapView.swift`）**：
-  - 彻底删除陆地残留的旧版弧线山脉与扁平 T 字伞状绿树，新增 3 套同画风厚涂水墨地形精灵（`terrain-hill.png` 温润丘陵、`terrain-savanna.png` 稀树草原、`terrain-marsh.png` 江南水乡泽国），凑齐 8 组全地形 GPU 精灵体系；
+- **全面清零地图残留的简陋代码绘制元素（`MapDetail.swift`、`MapLayers.swift`、`MapRenderer.swift`、`MapView.swift`、`PaperUI.swift`）**：
+  - 彻底删除陆地残留的旧版弧线山脉与扁平 T 字伞状绿树，新增 4 套同画风厚涂水墨地形精灵（`terrain-hill.png` 温润丘陵、`terrain-savanna.png` 稀树草原、`terrain-marsh.png` 江南水乡泽国、`terrain-tundra.png` 极北苔原冻土），凑齐 **9 组**全地形 GPU 精灵体系；
   - 删除海面机械重复的代码 `~ ~` 波浪折线与被边缘截断的代码罗盘及黑白比例尺；重写海岛海岸线判定，对海中孤岛改用温润细海岸与双层青绿/浅沙浅滩渐变，彻底消除粗硬黑描边；
-  - 新增 4 枚博物馆级雕刻朱砂/鎏金古风印章（`seal-chronicle.png`、`seal-replay.png`、`seal-court.png`、`seal-council.png`），全面取代史记、回放、国家页与面板抬头的单字红框印章。
+  - 新增 4 枚博物馆级雕刻朱砂/鎏金古风印章（`seal-chronicle.png`、`seal-replay.png`、`seal-court.png`、`seal-council.png`），全面取代史记、回放、卷宗、诏令、州郡、国家页与面板抬头的全部单字红框印章。
 
 ### 模块三：顶栏零重叠修复、横屏解放与全平台动态隐藏 HUD
 - **精准修复顶栏与横屏遮挡（`GameView.swift`、`LieguojiApp.swift`、`MapView.swift`、`GameModel.swift`）**：
@@ -33,9 +33,9 @@
 ### 模块六：战场去文字化视觉演出与完整跨海海运／两栖登陆体系
 - **高倍观战去文字化与实帧演出（`MapEffects.swift`、`MapView.swift`）**：
   - 高倍缩放观战时自动屏蔽重叠战损飘字与交战部队数字标签，以 4 帧实帧兵戈交击、双向抛物线箭雨/炮火、4 帧围城烈焰浓烟与清晰双色血条呈现干净纯粹的战局视觉；
-- **跨海海运运力、护航截杀、港口封锁与两栖抢滩登陆（`MaritimeWarfare.swift`、`ArmyOrders.swift`、`Daily.swift`、`CombatReader.swift`、`GameState.swift`、`NativeView.swift`、`V4RefactorTests.swift`）**：
-  - 终结陆军徒步踏海：有海港体系时必须自己方或友邦未封锁海港登船，受国家海运运力管控；海上航行期间自动切换为 4 帧透明运兵运输船序列帧；
-  - 战斗舰队自动为近距友军运兵船队护航，敌舰可在海上截杀无护航运兵船队，并可近海封锁敌港阻断登船与切断海外补给线；
+- **跨海海运运力、护航截杀、港口封锁与两栖抢滩登陆（`MaritimeWarfare.swift`、`Naval.swift`、`ArmyOrders.swift`、`Daily.swift`、`CombatReader.swift`、`GameState.swift`、`NativeView.swift`、`NationInfo.swift`、`NationSheet.swift`、`ProvinceSheet.swift`、`V4RefactorTests.swift`）**：
+  - 终结陆军徒步踏海：有海港体系时必须自己方或友邦未封锁海港登船，受国家海运运力管控；海上航行期间自动切换为 4 帧透明运兵运输船序列帧；国家军事页新增「海运运力与制海权」专卡（支持一键扩建船坞），舰队标注「护航中 / 封锁敌港」，被封锁海港在州郡页弹出红色阻航警示；
+  - 战斗舰队 AI 主动出海护航友军运兵船队并支援两栖抢滩，敌舰可在海上截杀无护航运兵船队，并可近海封锁敌港阻断登船与切断海外补给线；
   - 登船部队踏上敌控沿海州触发 3 日两栖抢滩登陆战（-28% 抢滩攻势罚值，近海友军舰队提供 +20% 舰炮火力支援与 +25% 破城轰击），同步接入暴雪/洪涝天时对海陆战力的真实联动。
 
 ## 3.0.0 / build 159 — 2026-11-23

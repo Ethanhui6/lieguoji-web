@@ -62,6 +62,11 @@ struct NationInfo: Decodable {
         var choices: [Choice]? = nil
     }
     var agenda: CourtAgenda? = nil
+    struct SeaTransport: Decodable {
+        let used: Int; let capacity: Int
+        let totalPorts: Int; let blockadedPorts: Int; let unblockedPorts: Int
+    }
+    var seaTransport: SeaTransport? = nil
     var strategy: String? = nil
     var autoStrategy: Bool? = nil
     var emblem: String? = nil
@@ -363,21 +368,22 @@ struct NationSheet: View {
                 .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $creatingHouse) {
+                let lex = LocalizationEngine.lexicon(culture: info?.culture ?? s.culture ?? meta?.culture, polity: info?.polity ?? s.polity ?? meta?.polity, style: info?.style)
                 let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
                 VStack(alignment: .leading, spacing: 14) {
-                    SheetHeader(title: "扶立新世家", subtitle: "赐封州郡，册立新门阀", seal: "封")
+                    SheetHeader(title: "扶立新\(lex.houseUnitLabel)", subtitle: lex.isRepublican ? "在指定\(lex.adminUnit)设立新地方派系与财团" : "赐封\(lex.adminUnit)，册立新门阀", seal: "政")
                     Group2 {
-                        PaperMenu(title: "封地州郡", items: owned.map { ($0, map.meta.provinces[$0].name) }, selection: $newHouseProvince)
+                        PaperMenu(title: "选定\(lex.adminUnit)", items: owned.map { ($0, map.meta.provinces[$0].name) }, selection: $newHouseProvince)
                     }
                     .padding(.horizontal, 16)
-                    TextField("", text: $newHouseSurname, prompt: Text("族姓（留空按本国文化自动取姓）").foregroundColor(Theme.ink2.opacity(0.6)))
+                    TextField("", text: $newHouseSurname, prompt: Text("名称／族姓（留空按本国文化自动取名）").foregroundColor(Theme.ink2.opacity(0.6)))
                         .paperField().padding(.horizontal, 16)
-                    SealButton(title: "颁诏册立", disabled: !owned.contains(newHouseProvince)) {
+                    SealButton(title: lex.isRepublican ? "核准设立" : "颁诏册立", disabled: !owned.contains(newHouseProvince)) {
                         let p = newHouseProvince
                         let s = newHouseSurname.trimmingCharacters(in: .whitespacesAndNewlines)
                         creatingHouse = false
                         Task {
-                            await run(success: "新世家已册立") {
+                            await run(success: "新\(lex.houseUnitLabel)已设立") {
                                 await model.edit("createHouse", ["n": nation, "province": p, "surname": s.isEmpty ? NSNull() as Any : s as Any])
                             }
                         }
@@ -388,9 +394,9 @@ struct NationSheet: View {
                 .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $enthroning) {
-                EnthroneSheet(model: model, nation: nation, stateName: meta?.name ?? info?.name ?? "") { personId, name in
+                EnthroneSheet(model: model, nation: nation, stateName: meta?.name ?? info?.name ?? "", culture: info?.culture ?? s.culture, polity: info?.polity ?? s.polity, style: info?.style) { personId, name in
                     enthroning = false
-                    Task { await run(success: "已拥立\(name)即位") { await model.enthronePerson(nation, person: personId) } }
+                    Task { await run(success: "已推举\(name)就任执政") { await model.enthronePerson(nation, person: personId) } }
                 }
                 .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
@@ -993,7 +999,7 @@ struct NationSheet: View {
                                 .buttonStyle(.plain)
                                 if i < list.count - 1 { Divider2() }
                             }
-                            Text("称职的总督每月为本州增税至多 12%，并压低本州叛乱。点州郡改任。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8)
+                            Text("称职的\(lex.governorTitle)每月为本\(lex.adminUnit)增税至多 12%，并压低地方动荡。轻点即可改任。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8)
                         }
                         .padding(.horizontal, 16)
                     }
@@ -1022,7 +1028,7 @@ struct NationSheet: View {
                                 }
                                 .padding(.horizontal, 16).padding(.vertical, 7)
                             }
-                            Text("国运越低、离都城越远的州郡越易起事；称职的总督可压低叛乱。家族「谋逆」见朝堂世家。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8).fixedSize(horizontal: false, vertical: true)
+                            Text("国运越低、离都城越远的\(lex.adminUnit)越易起事；称职的\(lex.governorTitle)可压低动荡。派系异动见「\(lex.housesSectionTitle)」。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8).fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(.horizontal, 16)
                     }
@@ -1339,6 +1345,43 @@ struct NationSheet: View {
                 }
                 .padding(.horizontal, 16)
             }
+            if let st = info.seaTransport, (st.totalPorts > 0 || !fleets.isEmpty) {
+                let escortCnt = fleets.filter { $0.escorting == true }.count
+                let blockCnt = fleets.filter { $0.blockading == true }.count
+                Group2 {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            InkIcon(glyph: .anchor, size: 15, weight: 1.85).foregroundStyle(Theme.jade)
+                            Text("海运运力与制海权").font(Theme.section).foregroundStyle(Theme.ink)
+                            Spacer()
+                            PaperTag(text: "运力 \(st.used)/\(st.capacity) 船队", color: st.capacity == 0 ? Theme.seal : (st.used >= st.capacity ? Color(red: 0.72, green: 0.48, blue: 0.16) : Theme.jade), size: 11)
+                        }
+                        HStack(spacing: 8) {
+                            Text("可用海港 \(st.unblockedPorts)/\(st.totalPorts)").font(Theme.caption).foregroundStyle(st.blockadedPorts > 0 ? Theme.seal : Theme.ink2).monospacedDigit()
+                            if st.blockadedPorts > 0 { PaperTag(text: "\(st.blockadedPorts)港遭封锁", color: Theme.seal, size: 10) }
+                            if escortCnt > 0 { PaperTag(text: "\(escortCnt)舰护航", color: Theme.jade, size: 10) }
+                            if blockCnt > 0 { PaperTag(text: "\(blockCnt)舰封锁敌港", color: Theme.ink, size: 10) }
+                            Spacer()
+                            if info.alive {
+                                Button {
+                                    GameFeel.shared.tap()
+                                    Task { await run { await model.nationDecree(nation, kind: "navalDockyard") } }
+                                } label: {
+                                    Text("扩建船坞 +2").font(Theme.caption).foregroundStyle(Theme.jade)
+                                        .padding(.horizontal, 9).frame(height: 26)
+                                        .background(Theme.jade.opacity(0.09), in: Capsule())
+                                        .overlay(Capsule().stroke(Theme.jade.opacity(0.28), lineWidth: 0.7))
+                                }
+                                .buttonStyle(PressStyle())
+                            }
+                        }
+                        Text("陆军须自未封锁海港登船渡海；无战舰护航的运兵船队易遭敌水师海上截杀，近海友军舰队可提供两栖抢滩舰炮火力支援。")
+                            .font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 12)
+                }
+                .padding(.horizontal, 16)
+            }
             if !fleets.isEmpty {
                 FoldSection("舰队（\(fleets.count) 支 · \(fleets.reduce(0) { $0 + $1.ships }) 艘）", expanded: true) {
                     Group2 {
@@ -1346,8 +1389,12 @@ struct NationSheet: View {
                             HStack(spacing: 10) {
                                 InkIcon(glyph: .anchor, size: 18, weight: 1.7, accent: tint.opacity(0.24)).foregroundStyle(tint).frame(width: 30)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(f.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
-                                    Text("\(f.ships) 艘 · 水手 \(Names.wan(f.crew))").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                    HStack(spacing: 6) {
+                                        Text(f.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                                        if f.escorting == true { PaperTag(text: "护航中", color: Theme.jade, size: 10) }
+                                        if f.blockading == true { PaperTag(text: "封锁敌港", color: Theme.seal, size: 10) }
+                                    }
+                                    Text("\(f.ships) 艘 · 水手 \(Names.wan(f.crew)) · 船体 \(Int((f.hull * 100).rounded()))%").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
                                 }
                                 Spacer()
                             }
@@ -1685,10 +1732,11 @@ struct NationSheet: View {
     /// fief, and a house estranged from the ruling one rises in arms (谋逆).
     @ViewBuilder private func housesSection(_ c: NationInfo.Court) -> some View {
         let fiefAllowed = c.allowsFiefs ?? true
+        let lex = LocalizationEngine.lexicon(culture: info?.culture, polity: info?.polity, style: info?.style)
         VStack(spacing: 8) {
             Text(fiefAllowed
-                 ? "世家执掌官职与封地（\(c.fiefRule ?? "赐封制")）；与宗室关系 ≤ −50 且势力 ≥ 200、有封地者可能举兵谋逆。点家族看族谱，长按赐封／削藩／改关系。"
-                 : "当前政体（\(c.fiefRule ?? "无封建封地")）不设世家封地，各族势力源于官职与家族财富。点家族看族谱，长按赏赐／削权。")
+                 ? "\(lex.houseUnitLabel)执掌官职与领地（\(c.fiefRule ?? lex.fiefRuleLabel)）；关系 ≤ −50 且势力 ≥ 200、有封地者可能举兵异动。点按看族谱，长按赐封／削权／改关系。"
+                 : "当前政体（\(c.fiefRule ?? lex.fiefRuleLabel)）不设封建封地，各\(lex.houseUnitLabel)影响力源于公职与资本。点按看谱系，长按资助／制衡。")
                 .font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
             if !c.houses.isEmpty {
                 Group2 {
@@ -1699,12 +1747,14 @@ struct NationSheet: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 7) {
                                     Text(h.name).font(Theme.body).foregroundStyle(Theme.ink)
-                                    if let stance = h.stance ?? (h.ruling ? "宗室" : nil) {
-                                        PaperTag(text: stance, color: Self.stanceColor(stance), size: 11)
+                                    let rawStance = h.stance ?? (h.ruling ? (lex.isRepublican ? "执政系" : "宗室") : nil)
+                                    if let stance = rawStance {
+                                        let shownStance = (lex.isRepublican && stance == "宗室") ? "执政系" : stance
+                                        PaperTag(text: shownStance, color: Self.stanceColor(stance), size: 11)
                                     }
                                     if let foe = h.rival { Text("宿敌 " + foe).font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1) }
                                     Spacer(minLength: 4)
-                                    Text(fiefAllowed ? "\(h.members)人 · \(h.provinces)州" : "\(h.members)人 · 势\(Int(h.influence))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    Text(fiefAllowed ? "\(h.members)人 · \(h.provinces)\(lex.adminUnit)" : "\(h.members)人 · 势\(Int(h.influence))").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
                                     if let hist = h.history, hist.count >= 2 {
                                         Sparkline(values: hist).frame(width: 48, height: 18)
                                     } else {
@@ -1715,14 +1765,14 @@ struct NationSheet: View {
                                 if let summary = h.keyMembers, !summary.isEmpty {
                                     HStack(spacing: 6) {
                                         Text(summary).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
-                                        if (h.fiefCooldown ?? 0) > 0 {
+                                        if fiefAllowed, (h.fiefCooldown ?? 0) > 0 {
                                             Text("· 封地冷却 \(h.fiefCooldown ?? 0)月").font(Theme.caption).foregroundStyle(Theme.seal.opacity(0.8))
                                         }
                                         if h.allowFemale == true { Text("· 男女平等").font(Theme.caption).foregroundStyle(Theme.jade) }
                                     }
                                 } else if let head = h.headName, !head.isEmpty {
                                     HStack(spacing: 8) {
-                                        Text("家主：\(head)").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                        Text("代表：\(head)").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                                         if h.allowFemale == true { Text("男女平等继承").font(Theme.caption).foregroundStyle(Theme.jade) }
                                     }
                                 }
@@ -1733,30 +1783,30 @@ struct NationSheet: View {
                         .buttonStyle(.plain)
                         .pressMenu({
                             guard let id = h.id else { return nil }
-                            var items = [PressMenuItem(title: "查看族谱、世家往来与改姓", symbol: "person.3") { tree = TreePick(id: id, name: h.name) }]
+                            var items = [PressMenuItem(title: "查看谱系、往来与改名", symbol: "person.3") { tree = TreePick(id: id, name: h.name) }]
                             if fiefAllowed {
                                 let cd = h.fiefCooldown ?? 0
-                                items.append(PressMenuItem(title: cd > 0 ? "封赏一州（冷却余 \(cd) 月）" : "封赏一州封地（势力 +25，关系 +15）", symbol: "map") {
+                                items.append(PressMenuItem(title: cd > 0 ? "封赏一\(lex.adminUnit)（冷却余 \(cd) 月）" : "封赏一\(lex.adminUnit)领地（势力 +25，关系 +15）", symbol: "map") {
                                     Task { await run { await model.grantFief(nation, family: id) } }
                                 })
                                 if !h.ruling && h.provinces > 0 {
-                                    items.append(PressMenuItem(title: "削藩收回封地（关系 −30 · 谨防激变！）", symbol: "flame", destructive: true) {
+                                    items.append(PressMenuItem(title: "收回领地（关系 −30 · 谨防激变！）", symbol: "flame", destructive: true) {
                                         Task { await run { await model.revokeFief(nation, family: id) } }
                                     })
                                 }
                             }
                             if !h.ruling {
-                                items.append(PressMenuItem(title: "赏赐安抚（势力 +40，关系 +20）", symbol: "seal") {
-                                    Task { await run(success: "已赏赐\(h.name)") { await model.edit("houseDiplomacy", ["a": id, "b": NSNull(), "kind": "favor"]) } }
+                                items.append(PressMenuItem(title: lex.isRepublican ? "资助结好（势力 +40，关系 +20）" : "赏赐安抚（势力 +40，关系 +20）", symbol: "seal") {
+                                    Task { await run(success: "已资助\(h.name)") { await model.edit("houseDiplomacy", ["a": id, "b": NSNull(), "kind": "favor"]) } }
                                 })
-                                items.append(PressMenuItem(title: "削夺权柄（势力 −60，关系 −25）", symbol: "bolt.slash", destructive: true) {
-                                    Task { await run(success: "已削夺\(h.name)权柄") { await model.edit("houseDiplomacy", ["a": id, "b": NSNull(), "kind": "suppress"]) } }
+                                items.append(PressMenuItem(title: lex.isRepublican ? "审查制衡（势力 −60，关系 −25）" : "削夺权柄（势力 −60，关系 −25）", symbol: "bolt.slash", destructive: true) {
+                                    Task { await run(success: "已制衡\(h.name)") { await model.edit("houseDiplomacy", ["a": id, "b": NSNull(), "kind": "suppress"]) } }
                                 })
-                                items.append(PressMenuItem(title: "修改拥戴关系（现 \(Int(h.relation ?? 0))）", symbol: "slider.horizontal.3") {
-                                    numberEdit = NumberEdit(title: h.name + "对宗室关系（-100–100）", unit: "", value: h.relation ?? 0) { v in await model.editCourt(nation, key: "house:" + id, value: v) }
+                                items.append(PressMenuItem(title: "修改协作关系（现 \(Int(h.relation ?? 0))）", symbol: "slider.horizontal.3") {
+                                    numberEdit = NumberEdit(title: h.name + (lex.isRepublican ? "与执政阵营关系（-100–100）" : "对宗室关系（-100–100）"), unit: "", value: h.relation ?? 0) { v in await model.editCourt(nation, key: "house:" + id, value: v) }
                                 })
                             }
-                            return PressMenu(title: h.name, subtitle: fiefAllowed ? "\(h.members) 人 · \(h.provinces) 州 · 势力 \(Int(h.influence))" : "\(h.members) 人 · 无封建封地 · 势力 \(Int(h.influence))", items: items)
+                            return PressMenu(title: h.name, subtitle: fiefAllowed ? "\(h.members) 人 · \(h.provinces) \(lex.adminUnit) · 势力 \(Int(h.influence))" : "\(h.members) 人 · \(lex.fiefRuleLabel) · 势力 \(Int(h.influence))", items: items)
                         }, present: { pressMenu = $0 })
                         if i < c.houses.count - 1 { Divider2() }
                     }
@@ -1774,7 +1824,7 @@ struct NationSheet: View {
                     } label: {
                         HStack(spacing: 6) {
                             InkIcon(glyph: .house, size: 15, weight: 1.8)
-                            Text("扶立新世家").font(Theme.body)
+                            Text("扶立新\(lex.houseUnitLabel)").font(Theme.body)
                         }
                         .foregroundStyle(Theme.seal)
                         .frame(maxWidth: .infinity).frame(height: 38)
@@ -1911,6 +1961,9 @@ struct NationSheet: View {
                         nation: nation,
                         alive: info.alive,
                         day: state.day / 30,
+                        culture: info.culture,
+                        polity: info.polity,
+                        style: info.style,
                         onFly: { p in lower(); fly(p) },
                         onAppointGovernor: { p in appointing = AppointTarget(office: "Governor:\(p)") },
                         onToast: { flash = $0 },
@@ -1974,7 +2027,7 @@ struct NationSheet: View {
                 Group2 {
                     VStack(alignment: .leading, spacing: 9) {
                         HStack(spacing: 6) {
-                            SealFace(text: "天", size: 20, color: Theme.seal)
+                            ArtEmblem(image: BundleArt.sealCourt, size: 24, fallback: .crown)
                             Text("天命笔 · 上帝导演神迹台").font(Theme.section).foregroundStyle(Theme.ink)
                             Spacer()
                             Text("即点即应").font(Theme.caption).foregroundStyle(Theme.ink2)

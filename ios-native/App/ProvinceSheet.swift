@@ -78,6 +78,20 @@ struct ProvinceSheet: View {
                     if let s = model.state {
                         BattleBoard(province: province, state: s, map: map, openArmy: openArmy)
                     }
+                    if let port, port.blockaded == true {
+                        Group2 {
+                            HStack(spacing: 8) {
+                                InkIcon(glyph: .anchor, size: 16, weight: 1.85).foregroundStyle(Theme.seal)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("海港遭敌舰封锁 · 禁止登船渡海").font(Theme.body).foregroundStyle(Theme.seal)
+                                    Text("敌军战舰控制港外航道，跨海贸易受阻且陆军无法从此港登船，需派水师驱逐封锁舰队。").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer(minLength: 4)
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 10)
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+                    }
                     if let siege {
                         Group2 {
                             HStack(spacing: 8) {
@@ -218,7 +232,7 @@ struct ProvinceSheet: View {
             .buttonStyle(PressStyle())
         } else {
             HStack(spacing: 12) {
-                SealFace(text: "荒", size: 32, color: Theme.ink2)
+                ArtEmblem(image: BundleArt.sealChronicle, size: 34, fallback: .region)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("无主之地").font(Theme.section).foregroundStyle(Theme.ink)
                     Text("尚未归属任何政权，可在此举旗立国").font(Theme.caption).foregroundStyle(Theme.ink2)

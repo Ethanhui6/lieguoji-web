@@ -51,9 +51,11 @@ final class V4RefactorTests: XCTestCase {
 
         // 军事编制随文化 × 政体动态切换
         XCTAssertEqual(LocalizationEngine.branchLabel(branch: "guard", culture: "chinese", polity: "Monarchy", style: "dynasty"), "天子禁军")
+        XCTAssertEqual(LocalizationEngine.branchLabel(branch: "siege", culture: "chinese", polity: "Monarchy", style: "dynasty"), "攻城炮旅")
         XCTAssertEqual(LocalizationEngine.branchLabel(branch: "guard", culture: "english", polity: "Republic", style: "federal"), "国民警卫师")
         XCTAssertEqual(LocalizationEngine.branchLabel(branch: "guard", culture: "japanese", polity: "Monarchy", style: "shogunate"), "旗本近卫")
         XCTAssertEqual(LocalizationEngine.branchLabel(branch: "guard", culture: "roman", polity: "Monarchy", style: "empire"), "禁卫军团")
+        XCTAssertEqual(MapLayers.TerrainStamp.Kind.tundra.rawValue, 8)
     }
 
     func testAgendaAntiExploitCooldownAndMultiBranch() throws {
@@ -105,9 +107,13 @@ final class V4RefactorTests: XCTestCase {
         let engine = try loadWorld()
         defer { cleanup() }
         let id = engine.run.world.nations[0].id.asString
-        // 验证跨海每日结算与海运运力计算在全图安全运行且无崩溃
+        // 验证跨海每日结算与海运运力计算在全图安全运行且无崩溃，且 nationInfo 正确暴露 seaTransport 运力卡字段
         MaritimeWarfare.dailyTick(engine.run)
         let cap = MaritimeWarfare.seaTransportCapacity(engine.run, nation: id)
         XCTAssertGreaterThanOrEqual(cap, 0)
+        let data = try XCTUnwrap(engine.nationInfo(0))
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let st = try XCTUnwrap(json["seaTransport"] as? [String: Any])
+        XCTAssertEqual(st["capacity"] as? Int, cap)
     }
 }

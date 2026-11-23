@@ -372,6 +372,27 @@ public enum Naval {
                         continue
                     }
                 }
+                // 友军运兵船队护航：若本海域存在己方渡海运兵船队，战舰主动前出至船队前方航道护航并掩护两栖登陆
+                if UnitKinds.enabled, let convoys = seaArmiesByComp[component]?.filter({ $0.nation == nation }), !convoys.isEmpty {
+                    var escortPick: (port: Port, distToConvoy: Double)?
+                    for port in candidates {
+                        let df = convoys.reduce(Double.infinity) { min($0, jsHypot(port.center.x - $1.point.x, port.center.y - $1.point.y)) }
+                        if atAnchor(port) {
+                            if escortPick == nil || df < escortPick!.distToConvoy { escortPick = (port, df) }
+                        } else {
+                            let p = preview(r, id, .sail(port: port.id))
+                            if p.valid && food >= rationNow * (days(p.distance) + 3) + crew * 25 {
+                                if escortPick == nil || df < escortPick!.distToConvoy { escortPick = (port, df) }
+                            }
+                        }
+                    }
+                    if let escortPick {
+                        order.targetId = enemy(landById[escortPick.port.provinceId]?.controller.asString ?? "") ? JS(escortPick.port.provinceId) : .null
+                        if atAnchor(escortPick.port) { row.assignedPortId = JS(escortPick.port.id); note("guarding", "在渡海航道锚位护航己方运兵船队与两栖登陆。") }
+                        else { start(escortPick.port.id, "guarding", "驰往渡海航道为己方运兵船队护航并提供岸轰支援。") }
+                        continue
+                    }
+                }
                 var best: (port: Port, control: JS, distance: Double)?
                 for port in candidates where portTarget(r.portControl.ports[port.provinceId], nation, enemy) {
                     let control = r.portControl.ports[port.provinceId]

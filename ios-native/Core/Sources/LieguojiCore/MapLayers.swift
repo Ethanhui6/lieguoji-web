@@ -202,7 +202,7 @@ public enum MapLayers {
 
     /// 舆图山川地貌层（清爽工笔重构）：
     /// 1. 疏朗山脊（h >= 61，36 格间距，仅沿真实高脊落笔，绝不铺满屏幕遮挡国界、城池与军队）；
-    /// 青绿山水厚涂手绘地形精灵实例（全 8 类纯 AI 透明地貌，彻底零代码线条山丘与扁平 T 字伞树，随四季流转与局部旱雪实时变色）。
+    /// 青绿山水厚涂手绘地形精灵实例（全 9 类纯 AI 透明地貌，彻底零代码线条山丘与扁平 T 字伞树，随四季流转与局部旱雪实时变色）。
     public struct TerrainStamp: Sendable {
         public enum Kind: Int, Sendable, CaseIterable {
             case mountain = 0
@@ -213,6 +213,7 @@ public enum MapLayers {
             case hill = 5
             case savanna = 6
             case marsh = 7
+            case tundra = 8
         }
         public let x: Float
         public let y: Float
@@ -308,6 +309,13 @@ public enum MapLayers {
                 if nearCity(x, y, 135) { continue }
                 let baseW = 18.0 + v1 * 6.5
                 stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.72, kind: .marsh, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
+            } else if h >= Float(WorldMap.seaLevel) + 2 && (biome == 10 || biome == 11) {
+                // 极北冰原苔原厚涂地貌
+                if pick < 48 { continue }
+                if !duneGrid.insert(gridKey(sx, sy, 32)).inserted { continue }
+                if nearCity(x, y, 140) { continue }
+                let baseW = 18.5 + v1 * 7.0
+                stamps.append(TerrainStamp(x: x, y: y, width: baseW, height: baseW * 0.74, kind: .tundra, flipX: (i & 1) == 1, shade: 0.92 + v2 * 0.12))
             }
         }
         return stamps

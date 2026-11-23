@@ -117,9 +117,12 @@ enum BundleArt {
     static let sheetCavalryCharge: UIImage? = load("sheet-cavalry-charge")
     static let sheetWarshipEast: UIImage? = load("sheet-warship-east")
     static let sheetWarshipWest: UIImage? = load("sheet-warship-west")
+    static let sheetWarshipNordic: UIImage? = load("sheet-warship-nordic")
+    static let sheetWarshipIslamic: UIImage? = load("sheet-warship-islamic")
     static let sheetTransportShip: UIImage? = load("sheet-transport-ship")
     static let sheetBattleClash: UIImage? = load("sheet-battle-clash")
     static let sheetSiegeSmoke: UIImage? = load("sheet-siege-smoke")
+    static let sheetBannerWave: UIImage? = load("sheet-banner-wave")
 
     static func spriteSheet(_ name: String) -> UIImage? {
         switch name {
@@ -127,9 +130,12 @@ enum BundleArt {
         case "sheet-cavalry-charge": return sheetCavalryCharge
         case "sheet-warship-east": return sheetWarshipEast
         case "sheet-warship-west": return sheetWarshipWest
+        case "sheet-warship-nordic": return sheetWarshipNordic
+        case "sheet-warship-islamic": return sheetWarshipIslamic
         case "sheet-transport-ship": return sheetTransportShip
         case "sheet-battle-clash": return sheetBattleClash
         case "sheet-siege-smoke": return sheetSiegeSmoke
+        case "sheet-banner-wave": return sheetBannerWave
         default: return load(name)
         }
     }

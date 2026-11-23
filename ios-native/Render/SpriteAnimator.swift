@@ -25,9 +25,22 @@ struct SpriteSheetSpec {
     static let cavalryCharge = SpriteSheetSpec(name: "sheet-cavalry-charge", cols: 4, rows: 1, defaultFPS: 9.0)
     static let warshipEast = SpriteSheetSpec(name: "sheet-warship-east", cols: 4, rows: 1, defaultFPS: 5.5)
     static let warshipWest = SpriteSheetSpec(name: "sheet-warship-west", cols: 4, rows: 1, defaultFPS: 5.5)
+    static let warshipNordic = SpriteSheetSpec(name: "sheet-warship-nordic", cols: 4, rows: 1, defaultFPS: 6.0)
+    static let warshipIslamic = SpriteSheetSpec(name: "sheet-warship-islamic", cols: 4, rows: 1, defaultFPS: 5.8)
     static let transportShip = SpriteSheetSpec(name: "sheet-transport-ship", cols: 4, rows: 1, defaultFPS: 4.8)
     static let battleClash = SpriteSheetSpec(name: "sheet-battle-clash", cols: 4, rows: 1, defaultFPS: 8.5)
     static let siegeSmoke = SpriteSheetSpec(name: "sheet-siege-smoke", cols: 4, rows: 1, defaultFPS: 6.5)
+    static let bannerWave = SpriteSheetSpec(name: "sheet-banner-wave", cols: 4, rows: 1, defaultFPS: 7.0)
+
+    /// 按文明大系自动调度对应战舰序列帧（东亚楼船 / 北欧维京长船 / 伊斯兰三角帆战舰 / 西洋风帆盖伦）。
+    static func warship(for culture: String?) -> SpriteSheetSpec {
+        switch CultureStyle.of(culture) {
+        case .chinese, .japanese, .indian: return .warshipEast
+        case .nordic: return BundleArt.sheetWarshipNordic != nil ? .warshipNordic : .warshipWest
+        case .islamic: return BundleArt.sheetWarshipIslamic != nil ? .warshipIslamic : .warshipWest
+        default: return .warshipWest
+        }
+    }
 
     /// 按状态调节实际播放帧率，保证待机舒缓、行军稳健、交战激昂。
     func fps(for state: SpriteAnimationState) -> Double {

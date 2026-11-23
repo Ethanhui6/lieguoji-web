@@ -264,10 +264,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
-        // 载入全 8 组厚涂水墨地形精灵（山脉/雪峰/阔叶林/松柏林/沙漠/丘陵/草原树丛/水乡泽国）与四角鎏金云纹包角贴图
+        // 载入全 9 组厚涂水墨地形精灵（山脉/雪峰/阔叶林/松柏林/沙漠/丘陵/草原树丛/水乡泽国/极地冻原）与四角鎏金云纹包角贴图
         let artLoader = MTKTextureLoader(device: device)
         let artOpts: [MTKTextureLoader.Option: Any] = [.SRGB: false, .generateMipmaps: true]
-        for (kindIdx, name) in [(0, "terrain-mountain"), (1, "terrain-mountain-snow"), (2, "terrain-forest"), (3, "terrain-pine"), (4, "terrain-desert"), (5, "terrain-hill"), (6, "terrain-savanna"), (7, "terrain-marsh")] {
+        for (kindIdx, name) in [(0, "terrain-mountain"), (1, "terrain-mountain-snow"), (2, "terrain-forest"), (3, "terrain-pine"), (4, "terrain-desert"), (5, "terrain-hill"), (6, "terrain-savanna"), (7, "terrain-marsh"), (8, "terrain-tundra")] {
             if let u = BundleArt.url(name), let tex = try? artLoader.newTexture(URL: u, options: artOpts) {
                 terrainTextures[kindIdx] = tex
             }
@@ -288,12 +288,14 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
         }
         unitTextures["banner"] = unitTextures["elite"]
-        // 载入 5 套 4×1 横向透明序列帧动画图集（1024×256），驱动全图兵种行军冲锋与多文明战舰／运兵船实帧航行
+        // 载入 7 套 4×1 横向透明序列帧动画图集（1024×256），驱动全图兵种行军冲锋与全文明战舰（楼船/盖伦/维京长船/三角帆舰）／运兵船实帧航行
         for (sheetKey, assetName) in [
             ("sheet_infantry", "sheet-infantry-march"),
             ("sheet_cavalry", "sheet-cavalry-charge"),
             ("sheet_warship_east", "sheet-warship-east"),
             ("sheet_warship_west", "sheet-warship-west"),
+            ("sheet_warship_nordic", "sheet-warship-nordic"),
+            ("sheet_warship_islamic", "sheet-warship-islamic"),
             ("sheet_transport", "sheet-transport-ship"),
         ] {
             if let su = BundleArt.url(assetName),
@@ -920,7 +922,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     }
                     if role == "Fleet" {
                         let style = CultureStyle.of(a.culture)
-                        let key = style.isEastAsian ? "sheet_warship_east" : "sheet_warship_west"
+                        let key: String
+                        switch style {
+                        case .chinese, .japanese, .indian: key = "sheet_warship_east"
+                        case .nordic: key = unitTextures["sheet_warship_nordic"] != nil ? "sheet_warship_nordic" : "sheet_warship_west"
+                        case .islamic: key = unitTextures["sheet_warship_islamic"] != nil ? "sheet_warship_islamic" : "sheet_warship_west"
+                        default: key = "sheet_warship_west"
+                        }
                         return unitTextures[key] != nil ? key : role
                     }
                     if role == "cavalry" || role == "heavy" || role == "horseArcher" {
@@ -932,7 +940,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     return role
                 }()
                 let isSheet = resolvedRole.hasPrefix("sheet_")
-                let isNavalSheet = resolvedRole == "sheet_warship_east" || resolvedRole == "sheet_warship_west" || resolvedRole == "sheet_transport"
+                let isNavalSheet = resolvedRole == "sheet_warship_east" || resolvedRole == "sheet_warship_west" || resolvedRole == "sheet_warship_nordic" || resolvedRole == "sheet_warship_islamic" || resolvedRole == "sheet_transport"
 
                 // The commander's gonfalon stands behind the pieces: gold for the ruler in person, crimson for generals & flagship armadas.
                 if a.banner > 0 {
@@ -1026,8 +1034,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 x1, y1, u1, 1, kf, sh
             ])
         }
-        // 按 水乡/沙漠/丘陵 → 草原/林海 → 山峰 顺序绘制，令高峰雄峙于丘林之上
-        let drawOrder = [7, 4, 5, 6, 2, 3, 0, 1]
+        // 按 水乡/沙漠/冻原/丘陵 → 草原/林海 → 山峰 顺序绘制，令高峰雄峙于丘林之上
+        let drawOrder = [7, 4, 8, 5, 6, 2, 3, 0, 1]
         terrainBatches = drawOrder.compactMap { k in
             guard let tex = terrainTextures[k], let data = byKind[k], !data.isEmpty,
                   let buf = device.makeBuffer(bytes: data, length: data.count * MemoryLayout<Float>.stride, options: .storageModeShared) else { return nil }
@@ -1604,6 +1612,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                         float north = smoothstep(0.70, 0.10, mapUV.y);
                         rgb = mix(rgb, float3(0.90, 0.94, 0.98), wWinter * north * 0.42);
                     }
+                } else if (kind == 8) {
+                    // 极北苔原冻土：盛夏微透苍苔青意，隆冬银霜覆雪
+                    if (wSummer > 0.02) rgb *= mix(float3(1.0), float3(0.94, 1.03, 0.95), wSummer * 0.45);
+                    if (wWinter > 0.02) rgb = mix(rgb, float3(0.95, 0.98, 1.0), wWinter * 0.36);
                 }
             }
         }

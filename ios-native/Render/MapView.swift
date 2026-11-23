@@ -373,7 +373,7 @@ struct MapView: UIViewRepresentable {
         private let weather = WeatherOverlayView()
         private var shownWeatherRevision = -1
         private func syncWeather() {
-            guard let renderer else { return }
+            guard let renderer, mtk != nil else { return }
             let active = !controller.drifting && !controller.sheetOpen && controller.reveal >= 1
             weather.update(seasonPhase: controller.seasonPhase, zones: controller.weatherZones, camera: renderer.camera, viewport: mtk.bounds.size, active: active)
         }

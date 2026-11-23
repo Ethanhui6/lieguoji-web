@@ -333,6 +333,7 @@ public enum MapLayers {
         // 非山地特色地貌层（常规缩放即清晰可见，不再藏在极近缩放里）：
         // 丘陵、沙丘绿洲、湿地沼泽、稀树金合欢、平畴草甸、苔原与冰原。
         var fine = Set<Int64>()
+        let trunk = RGB(hex: 0x4A3A28)
         let hillLit = RGB(hex: 0xCBB98A), hillInk = RGB(hex: 0x62563F)
         let duneLit = RGB(hex: 0xDFC17E), duneRidge = RGB(hex: 0x9C7A40), oasisWater = RGB(hex: 0x4892A2), oasisPalm = RGB(hex: 0x3B7042)
         let grass = RGB(hex: 0x5E7A38), acacia = RGB(hex: 0x4E6837), frost = RGB(hex: 0xEEF6FA), iceShade = RGB(hex: 0x8DB2C7), moss = RGB(hex: 0x7A7358)

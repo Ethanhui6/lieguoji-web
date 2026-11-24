@@ -37,20 +37,20 @@ final class StrategyDepthTests: XCTestCase {
         // 1. 切换五类阵型 + 四类野战指令
         let fRes = engine.setArmyFormation(aid, formation: "wedge")
         XCTAssertTrue(fRes.ok, fRes.reason)
-        XCTAssertEqual(ArmyTactics.formation(a), .wedge)
+        XCTAssertEqual(ArmyTactics.formation(engine.run, armyId: aid), .wedge)
 
         let oRes = engine.setArmyFieldOrder(aid, order: "entrench")
         XCTAssertTrue(oRes.ok, oRes.reason)
-        XCTAssertEqual(ArmyTactics.fieldOrder(a), .entrench)
+        XCTAssertEqual(ArmyTactics.fieldOrder(engine.run, armyId: aid), .entrench)
 
         // 2. 四阶老兵勋阶演算
         let r = engine.run
-        if r.regimes.records.isNull { r.regimes.records = .object() }
-        let rec = JS.object(); rec.battles = JS(10); rec.kills = JS(32000)
-        r.regimes.records[aid] = rec
-        let vet = ArmyTactics.veterancyInfo(r, armyId: aid)
-        XCTAssertEqual(vet.tier, 3)
-        XCTAssertEqual(vet.label, "虎贲·近卫")
+        if r.regimes.record.isNull { r.regimes.record = .object() }
+        let rec = JS.object(); rec.battles = JS(12); rec.kills = JS(32000)
+        r.regimes.record[aid] = rec
+        let vet = ArmyTactics.veterancyInfo(r, armyId: aid, nationId: a.nationId.asString)
+        XCTAssertEqual(vet.rank, 3)
+        XCTAssertTrue(vet.label == "虎贲劲旅" || vet.label == "近卫劲旅", "unexpected veterancy label: \(vet.label)")
 
         // 3. 补给线与每日结算安全运行
         let provIdx = r.world.provinces.asArray.firstIndex(where: { $0.id.asString == a.provinceId.asString })

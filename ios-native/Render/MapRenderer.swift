@@ -1833,25 +1833,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         return float4(t.sample(s, in.uv).rgb, 1.0);
     }
-    // 高倍缩放无缝古宣纸肌理正片叠底：远景保留古卷宏明暗，近景渐进注入双尺度无缝宣纸纤维（零拉伸噪块、零色偏）。
-    fragment float4 parchmentFragment(SeaOut in [[stage_in]],
-                                      texture2d<float> macroTex [[texture(0)]],
-                                      texture2d<float> detailTex [[texture(1)]],
-                                      sampler clampS [[sampler(0)]],
-                                      sampler repS [[sampler(1)]]) {
-        float3 macro = macroTex.sample(clampS, in.uv).rgb;
-        float zoom = smoothstep(0.72, 2.55, in.scale);
-        if (zoom > 0.005) {
-            float3 d1 = detailTex.sample(repS, in.world / 168.0).rgb;
-            float3 d2 = detailTex.sample(repS, in.world / 52.0 + float2(0.37, 0.61)).rgb;
-            float f1 = dot(d1, float3(0.299, 0.587, 0.114)) - 0.885;
-            float f2 = dot(d2, float3(0.299, 0.587, 0.114)) - 0.885;
-            float fiberDelta = (f1 * 0.62 + f2 * 0.38) * 1.42 * zoom;
-            float3 cleanMacro = mix(macro, mix(macro, float3(0.950, 0.928, 0.884), 0.50), zoom);
-            macro = clamp(cleanMacro + fiberDelta, 0.0, 1.0);
-        }
-        return float4(macro, 1.0);
-    }
     // 全视口无缝「御案织锦」书案背景：与卷轴、海陆统一西北暖光聚光 + 细腻双经纬织锦云花，四面一体零割裂。
     struct DeskOut { float4 position [[position]]; float2 uv; float2 screenPx; };
     vertex DeskOut deskVertex(uint id [[vertex_id]], constant Uniforms& u [[buffer(2)]]) {
@@ -1958,6 +1939,25 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
         rgb = clamp(rgb, 0.0, 1.0);
         return float4(rgb, 1.0);
+    }
+    // 高倍缩放无缝古宣纸肌理正片叠底：远景保留古卷宏明暗，近景渐进注入双尺度无缝宣纸纤维（零拉伸噪块、零色偏）。
+    fragment float4 parchmentFragment(SeaOut in [[stage_in]],
+                                      texture2d<float> macroTex [[texture(0)]],
+                                      texture2d<float> detailTex [[texture(1)]],
+                                      sampler clampS [[sampler(0)]],
+                                      sampler repS [[sampler(1)]]) {
+        float3 macro = macroTex.sample(clampS, in.uv).rgb;
+        float zoom = smoothstep(0.72, 2.55, in.scale);
+        if (zoom > 0.005) {
+            float3 d1 = detailTex.sample(repS, in.world / 168.0).rgb;
+            float3 d2 = detailTex.sample(repS, in.world / 52.0 + float2(0.37, 0.61)).rgb;
+            float f1 = dot(d1, float3(0.299, 0.587, 0.114)) - 0.885;
+            float f2 = dot(d2, float3(0.299, 0.587, 0.114)) - 0.885;
+            float fiberDelta = (f1 * 0.62 + f2 * 0.38) * 1.42 * zoom;
+            float3 cleanMacro = mix(macro, mix(macro, float3(0.950, 0.928, 0.884), 0.50), zoom);
+            macro = clamp(cleanMacro + fiberDelta, 0.0, 1.0);
+        }
+        return float4(macro, 1.0);
     }
     """
 }

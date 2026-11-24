@@ -1665,6 +1665,7 @@ import LieguojiCore
 
     /// Returns nil on success, or the engine's reason.
     private func finish(_ result: (ok: Bool, reason: String, state: Data?)) -> String? {
+        nationInfoCache.removeAll(keepingCapacity: true)
         if let data = result.state, let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
         return result.ok ? nil : result.reason
     }
@@ -1963,8 +1964,38 @@ import LieguojiCore
     func diplomacyInfo(_ index: Int) async -> DiplomacyOverview? {
         await query(DiplomacyOverview.self) { await native.diplomacyInfo(index) }
     }
+    /// 国家详情内存预取缓存（按世界版本 + 国家编号缓存，点击州郡时即刻预热所属国家，切入国家详情零闪烁、零空白帧）。
+    private var nationInfoCache: [String: (day: Int, info: NationInfo)] = [:]
+    private var prefetchingNations: Set<String> = []
+
+    func cachedNationInfo(_ index: Int) -> NationInfo? {
+        let key = "\(controller.worldRevision)-\(index)"
+        guard let hit = nationInfoCache[key] else { return nil }
+        let curDay = state?.day ?? hit.day
+        return abs(curDay - hit.day) <= 30 ? hit.info : nil
+    }
+
+    func prefetchNationInfo(_ index: Int) {
+        guard index >= 0 else { return }
+        if cachedNationInfo(index) != nil { return }
+        let key = "\(controller.worldRevision)-\(index)"
+        guard !prefetchingNations.contains(key) else { return }
+        prefetchingNations.insert(key)
+        Task { [weak self] in
+            guard let self else { return }
+            _ = await self.nationInfo(index)
+            self.prefetchingNations.remove(key)
+        }
+    }
+
     func nationInfo(_ index: Int) async -> NationInfo? {
-        await query(NationInfo.self) { await native.nationInfo(index) }
+        let rev = controller.worldRevision
+        let fetched = await query(NationInfo.self) { await native.nationInfo(index) }
+        if let fetched, controller.worldRevision == rev {
+            if nationInfoCache.count > 24 { nationInfoCache.removeAll(keepingCapacity: true) }
+            nationInfoCache["\(rev)-\(index)"] = (day: state?.day ?? 0, info: fetched)
+        }
+        return fetched
     }
     struct NationProvinceRow: Decodable, Identifiable {
         var id: Int { index }

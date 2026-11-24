@@ -187,8 +187,9 @@ struct MilitarySheet: View {
                     if filter == "overview" { MilitaryOverview(map: map, state: state, select: select, flyTo: flyTo, generals: generals) }
                     if filter == "wars" {
                         if !state.wars.isEmpty {
-                            if InkVideoStage.hasVideo("herald-war") {
-                                InkVideoStage(clip: "herald-war", cornerRadius: 12, tint: Theme.seal)
+                            let warClip = InkVideoStage.pick(from: ["herald-war", "herald-cavalry", "herald-artillery", "herald-knights-joust", "herald-samurai-charge", "herald-ambush", "herald-camp-muster"], seed: state.day / 60 + state.wars.count)
+                            if InkVideoStage.hasVideo(warClip) {
+                                InkVideoStage(clip: warClip, cornerRadius: 12, tint: Theme.seal)
                                     .frame(height: 70)
                                     .padding(.horizontal, 16)
                             }
@@ -227,8 +228,9 @@ struct MilitarySheet: View {
                         }
                     }
                     if filter == "navy" {
-                        if InkVideoStage.hasVideo("herald-naval") {
-                            InkVideoStage(clip: "herald-naval", cornerRadius: 12, tint: Theme.seal)
+                        let navyClip = InkVideoStage.pick(from: ["herald-galleon-broadside", "herald-naval", "herald-fire-ships", "herald-blockade", "herald-longship-raid", "herald-harbor-trade", "herald-voyage-fleet"], seed: state.day / 60 + (state.fleets?.count ?? 0))
+                        if InkVideoStage.hasVideo(navyClip) {
+                            InkVideoStage(clip: navyClip, cornerRadius: 12, tint: Theme.seal)
                                 .frame(height: 74)
                                 .padding(.horizontal, 16)
                         }
@@ -567,7 +569,7 @@ struct DiplomacySheet: View {
             }
             .sheet(item: $pickingRole) { role in
                 nationPickerSheet(role: role, map: map, state: state, alive: alive)
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.medium, .fraction(0.89)])
                     .background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper)
                     .presentationDragIndicator(.hidden)
                     .presentationCornerRadius(Theme.Control.cornerSheet)

@@ -817,7 +817,7 @@ struct ReplayOverlay: View {
                             withAnimation(Motion.panel) { confirmRollback = cp }
                         }
                     })
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.medium, .fraction(0.89)])
                     .presentationCornerRadius(Theme.Control.cornerSheet)
                     .background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper)
                     .presentationDragIndicator(.hidden)

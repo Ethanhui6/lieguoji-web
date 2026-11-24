@@ -130,6 +130,10 @@ import LieguojiCore
     var onPick: ((Int) -> Void)?
     /// A sheet covers the map: it redraws at 30 frames a second.
     var sheetOpen = false { didSet { onSheet?() } }
+    /// 当前竖屏底部抽屉占据屏幕高度的比例（如半屏 0.50、低档 0.38、收起 0），用于镜头聚焦自动上移至可视安全区正中央。
+    var sheetBottomFraction: Double = 0
+    /// 当前横屏右侧边栏占据屏幕宽度的比例（如 0.44），用于横屏镜头聚焦自动左移至可视安全区正中央。
+    var sheetTrailingFraction: Double = 0
     var onSheet: (() -> Void)?
     var onFleetTarget: ((Int) -> Void)?
     /// Generation reveal (title screen), 0…1; labels and markers appear at 1.
@@ -177,6 +181,12 @@ import LieguojiCore
     /// How far the engine has got once the map has risen (FoundingView.later).
     @Published var foundingStage = 0
     func fly(to province: Int) { focus = (province, UUID()) }
+    /// 聚焦整个国家核心疆域与国名中心（避免国家大字被底部抽屉顶边截断）。
+    @Published var focusNation: (nation: Int, id: UUID)?
+    func fly(toNation nation: Int) { focusNation = (nation, UUID()) }
+    /// 点选州郡弹出底部半屏抽屉时，若目标恰好落在抽屉遮挡区内则平滑轻移至上方可视安全区正中（不突兀改缩放）。
+    @Published var panAboveSheet: (province: Int, id: UUID)?
+    func panAboveSheetIfNeeded(province: Int) { panAboveSheet = (province, UUID()) }
     /// Flies to a map point and zooms in (an army or fleet), the point above the sheet.
     @Published var focusPoint: (x: Double, y: Double, id: UUID)?
     func fly(x: Double, y: Double) { focusPoint = (x, y, UUID()) }
@@ -409,6 +419,8 @@ struct MapView: UIViewRepresentable {
         private var pinching = false, pinchTouches = 2
         private var placed = false
         private var focusID: UUID?
+        private var focusNationID: UUID?
+        private var panAboveSheetID: UUID?
         private var focusPointID: UUID?
         private var resetID: UUID?
         private var zoomID: UUID?
@@ -1296,12 +1308,59 @@ struct MapView: UIViewRepresentable {
                 dirty = true
             }
             metrics.isHidden = !controller.showMetrics
+            let effTrailing = controller.sheetTrailingFraction
+            let effBottom = effTrailing > 0.05 ? 0.0 : (controller.sheetBottomFraction > 0.05 ? controller.sheetBottomFraction : (controller.sheetOpen ? 0.50 : 0.0))
             if let f = controller.focus, f.id != focusID {
                 focusID = f.id
                 if map.meta.provinces.indices.contains(f.province) {
                     let p = map.meta.provinces[f.province]
                     if p.x.isFinite && p.y.isFinite {
-                        animate(to: MapCamera(centerX: Double(p.x), centerY: Double(p.y), scale: max(camera.scale, bounds.lowerBound * 4)), duration: 0.5)
+                        let targetScale = max(camera.scale, bounds.lowerBound * 4)
+                        animate(to: MapCamera.focused(worldX: Double(p.x), worldY: Double(p.y), scale: targetScale, viewport: viewport, bottomFraction: effBottom, trailingFraction: effTrailing), duration: 0.48)
+                    }
+                }
+            }
+            if let fn = controller.focusNation, fn.id != focusNationID {
+                focusNationID = fn.id
+                if map.meta.nations.indices.contains(fn.nation) {
+                    let label = map.meta.labels.first(where: { $0.nation == fn.nation })
+                    let capIdx = map.meta.nations[fn.nation].capital
+                    let capCity = map.meta.cities.indices.contains(capIdx) ? map.meta.cities[capIdx] : nil
+                    let tx: Double
+                    let ty: Double
+                    if let label, label.x.isFinite, label.y.isFinite {
+                        // 优先对准国名与疆域重心（若与都城邻近则取加权居中），确保国名大字与核心领土完整落于抽屉上方可视安全区正中央
+                        if let capCity, capCity.x.isFinite, capCity.y.isFinite {
+                            tx = Double(label.x) * 0.72 + Double(capCity.x) * 0.28
+                            ty = Double(label.y) * 0.72 + Double(capCity.y) * 0.28
+                        } else {
+                            tx = Double(label.x); ty = Double(label.y)
+                        }
+                    } else if let capCity, capCity.x.isFinite, capCity.y.isFinite {
+                        tx = Double(capCity.x); ty = Double(capCity.y)
+                    } else {
+                        tx = .nan; ty = .nan
+                    }
+                    if tx.isFinite && ty.isFinite && viewport.width > 0 && viewport.height > 0 {
+                        let minScale = bounds.lowerBound * 2.4
+                        let maxScale = bounds.lowerBound * 5.2
+                        let targetScale = min(maxScale, max(minScale, camera.scale))
+                        animate(to: MapCamera.focused(worldX: tx, worldY: ty, scale: targetScale, viewport: viewport, bottomFraction: max(effBottom, effTrailing > 0.05 ? 0 : 0.50), trailingFraction: effTrailing), duration: 0.50)
+                    }
+                }
+            }
+            if let pa = controller.panAboveSheet, pa.id != panAboveSheetID {
+                panAboveSheetID = pa.id
+                if map.meta.provinces.indices.contains(pa.province), viewport.width > 0, viewport.height > 0 {
+                    let p = map.meta.provinces[pa.province]
+                    if p.x.isFinite && p.y.isFinite {
+                        let bottomFrac = max(effBottom, effTrailing > 0.05 ? 0 : 0.50)
+                        let sc = camera.toScreen(x: Double(p.x), y: Double(p.y), viewport: viewport)
+                        let coveredPortrait = bottomFrac > 0.05 && (sc.y > viewport.height * (1.0 - bottomFrac) - 52 || sc.y < 86)
+                        let coveredLandscape = effTrailing > 0.05 && (sc.x > viewport.width * (1.0 - effTrailing) - 48 || sc.x < 68)
+                        if coveredPortrait || coveredLandscape {
+                            animate(to: MapCamera.focused(worldX: Double(p.x), worldY: Double(p.y), scale: camera.scale, viewport: viewport, bottomFraction: bottomFrac, trailingFraction: effTrailing), duration: 0.36)
+                        }
                     }
                 }
             }
@@ -1309,15 +1368,16 @@ struct MapView: UIViewRepresentable {
                 focusPointID = f.id
                 if f.x.isFinite && f.y.isFinite && viewport.width > 0 && viewport.height > 0 {
                     let scale = max(0.05, max(camera.scale, bounds.lowerBound * 7))
-                    // The sheet covers the lower part of the screen: the unit sits in the upper third.
-                    animate(to: MapCamera(centerX: f.x, centerY: f.y + Double(viewport.height) * 0.2 / scale, scale: scale), duration: 0.55)
+                    animate(to: MapCamera.focused(worldX: f.x, worldY: f.y, scale: scale, viewport: viewport, bottomFraction: effBottom, trailingFraction: effTrailing), duration: 0.52)
                 }
             }
             if let s = controller.spotlight, s.id != spotlightID {
                 spotlightID = s.id
                 if s.x.isFinite && s.y.isFinite && viewport.width > 0 && viewport.height > 0 {
-                    // The sheet (dropped to its lowest stop) covers the lower part: the place sits at 30 % from the top.
-                    animate(to: MapCamera.spotlight(x: s.x, y: s.y, from: camera, map: mapSize, viewport: viewport), duration: 0.75)
+                    let b = MapCamera.scaleBounds(map: mapSize, viewport: viewport)
+                    let scale = max(1e-4, min(b.upperBound, max(camera.scale, b.lowerBound * 10)))
+                    let spotBottom = effTrailing > 0.05 ? 0.0 : max(effBottom, controller.sheetOpen ? 0.38 : 0.0)
+                    animate(to: MapCamera.focused(worldX: s.x, worldY: s.y, scale: scale, viewport: viewport, bottomFraction: spotBottom, trailingFraction: effTrailing), duration: 0.72)
                     showSpot(x: s.x, y: s.y)
                 }
             }

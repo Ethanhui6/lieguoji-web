@@ -226,8 +226,24 @@ struct ArmySheet: View {
 
     @ViewBuilder
     private func ordersSection(map: WorldMap, a: GameState.Army, fighting: Bool, peers: [(offset: Int, element: GameState.Army)]) -> some View {
-        if (fighting || a.status == "sieging"), InkVideoStage.hasVideo(a.status == "sieging" ? "herald-siege" : "herald-war") {
-            InkVideoStage(clip: a.status == "sieging" ? "herald-siege" : "herald-war", cornerRadius: 12, tint: Theme.seal)
+        let armyClip: String = {
+            let cul = (map.meta.nations.indices.contains(a.nation) ? map.meta.nations[a.nation].culture : "").lowercased()
+            let seed = abs(a.id.hashValue)
+            if a.status == "sieging" {
+                return InkVideoStage.pick(from: ["herald-artillery", "herald-siege", "herald-capture"], seed: seed)
+            }
+            if WorldSeason.of(month: model.state?.date.month ?? 4) == .winter {
+                return InkVideoStage.pick(from: ["herald-winter-march", "herald-war", "herald-ambush"], seed: seed)
+            }
+            if a.unit == "Cavalry" || cul.contains("mongol") || cul.contains("turk") || cul.contains("steppe") {
+                return InkVideoStage.pick(from: ["herald-cavalry", "herald-knights-joust", "herald-desert-war"], seed: seed)
+            }
+            if cul.contains("japan") { return InkVideoStage.pick(from: ["herald-samurai-charge", "herald-ambush", "herald-war"], seed: seed) }
+            if cul.contains("arab") || cul.contains("persian") || cul.contains("egypt") { return InkVideoStage.pick(from: ["herald-desert-war", "herald-cavalry", "herald-war"], seed: seed) }
+            return InkVideoStage.pick(from: ["herald-war", "herald-ambush", "herald-knights-joust", "herald-camp-muster"], seed: seed)
+        }()
+        if (fighting || a.status == "sieging"), InkVideoStage.hasVideo(armyClip) {
+            InkVideoStage(clip: armyClip, cornerRadius: 12, tint: Theme.seal)
                 .frame(height: 72)
                 .padding(.horizontal, Theme.Layout.pageInset)
         }
@@ -842,8 +858,17 @@ struct FleetSheet: View {
         shownFriendly: [FriendlyPortItem],
         targetIsEnemy: Bool
     ) -> some View {
-        if InkVideoStage.hasVideo("herald-naval") {
-            InkVideoStage(clip: "herald-naval", cornerRadius: 12, tint: Theme.seal)
+        let fleetClip: String = {
+            let cul = (map.meta.nations.indices.contains(f.nation) ? map.meta.nations[f.nation].culture : "").lowercased()
+            let seed = abs(f.id.hashValue)
+            if curMission == "blockade" { return InkVideoStage.pick(from: ["herald-blockade", "herald-galleon-broadside", "herald-naval"], seed: seed) }
+            if curMission == "escort" || curMission == "patrol" { return InkVideoStage.pick(from: ["herald-harbor-trade", "herald-voyage-fleet", "herald-voyage"], seed: seed) }
+            if cul.contains("nordic") || cul.contains("viking") { return InkVideoStage.pick(from: ["herald-longship-raid", "herald-naval", "herald-blockade"], seed: seed) }
+            if cul.contains("chinese") || cul.contains("japan") { return InkVideoStage.pick(from: ["herald-fire-ships", "herald-naval", "herald-voyage-fleet"], seed: seed) }
+            return InkVideoStage.pick(from: ["herald-galleon-broadside", "herald-naval", "herald-fire-ships", "herald-blockade"], seed: seed)
+        }()
+        if InkVideoStage.hasVideo(fleetClip) {
+            InkVideoStage(clip: fleetClip, cornerRadius: 12, tint: Theme.seal)
                 .frame(height: 74)
                 .padding(.horizontal, Theme.Layout.pageInset)
         }

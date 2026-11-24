@@ -7,6 +7,8 @@ import LieguojiCore
 struct HeraldBanner: View {
     let herald: GameModel.Herald
     private let participantColors: [Color]
+    private let leadCulture: String
+    private let leadPolity: String
     private let onTap: (() -> Void)?
     private let onDismiss: (() -> Void)?
     @State private var start = Date().timeIntervalSinceReferenceDate
@@ -21,6 +23,13 @@ struct HeraldBanner: View {
         let nations = map.meta.nations
         participantColors = herald.nations.prefix(2).map { n in
             nations.indices.contains(n) ? Names.color(nations[n].color) : Theme.ink2
+        }
+        if let first = herald.nations.first, nations.indices.contains(first) {
+            leadCulture = nations[first].culture
+            leadPolity = nations[first].polity
+        } else {
+            leadCulture = ""
+            leadPolity = ""
         }
     }
 
@@ -265,61 +274,136 @@ struct HeraldBanner: View {
         }
     }
 
-    /// 防重复短视频池：记录近期已播放的 3 部短片，在同类多候选画卷中自动避开刚刚播过的片段，
-    /// 配合 19 部全画幅 60fps 历史长卷，让连续大事传报每条都有耳目一新的画卷演出。
+    /// 54 卷全文明防重复短视频池：结合文明谱系、政体类型、战报关键词与近 16 条已播记忆环，
+    /// 让连续数十条大事传报每一卷都与文明风貌契合、几乎零重复。
     private static var recentClips: [String] = []
     private static var resolvedByHeraldId: [UUID: String] = [:]
 
-    private static func pickClip(for herald: GameModel.Herald) -> String {
+    private static func pickClip(for herald: GameModel.Herald, culture: String, polity: String) -> String {
         if let cached = resolvedByHeraldId[herald.id] { return cached }
         let t = herald.text
+        let c = culture.lowercased()
+        let p = polity.lowercased()
+        let isEastAsia = c.contains("chinese") || c.contains("han") || c.contains("korean") || c.contains("viet")
+        let isJapan = c.contains("japan")
+        let isSteppe = c.contains("mongol") || c.contains("turk") || c.contains("steppe") || c.contains("nomad") || c.contains("manchu")
+        let isIslamic = c.contains("arab") || c.contains("persian") || c.contains("ottoman") || c.contains("islamic") || c.contains("egypt")
+        let isNordic = c.contains("nordic") || c.contains("viking") || c.contains("norse")
+        let isClassical = c.contains("greek") || c.contains("roman") || c.contains("byzantine") || c.contains("hellen")
+        let isRepublic = p.contains("republic") || p.contains("parliament") || p.contains("senat") || p.contains("consul") || p.contains("dogate") || p.contains("free") || p.contains("hanse")
+
         var candidates: [String] = []
-        if t.contains("大航海") || t.contains("船坞") || t.contains("下水") || t.contains("远洋") || t.contains("海贸") || t.contains("商路") {
-            candidates = ["herald-voyage-fleet", "herald-voyage", "herald-naval"]
-        } else if t.contains("水师") || t.contains("舰队") || t.contains("海港") || t.contains("封锁") || t.contains("海战") || t.contains("抢滩") {
-            candidates = ["herald-naval", "herald-voyage-fleet", "herald-voyage"]
-        } else if t.contains("登基") || t.contains("即位") || t.contains("大选") || t.contains("就职") || t.contains("加冕") || t.contains("执政") {
-            candidates = ["herald-coronation", "herald-regime", "herald-alliance"]
-        } else if t.contains("科技") || t.contains("突破") || t.contains("维新") || t.contains("变法") || t.contains("革新") || t.contains("学宫") {
-            candidates = ["herald-reform", "herald-regime", "herald-coronation"]
-        } else if t.contains("赈灾") || t.contains("赈济") || t.contains("丰登") || t.contains("丰年") || t.contains("屯田") || t.contains("大稔") {
-            candidates = ["herald-relief", "herald-alliance", "herald-peace"]
+        if t.contains("大航海") || t.contains("船坞") || t.contains("下水") || t.contains("远洋") || t.contains("海贸") || t.contains("商路") || t.contains("商港") {
+            candidates = ["herald-harbor-trade", "herald-voyage-fleet", "herald-voyage", "herald-longship-raid", "herald-silkroad", "herald-galleon-broadside"]
+        } else if t.contains("水师") || t.contains("舰队") || t.contains("海港") || t.contains("封锁") || t.contains("海战") || t.contains("抢滩") || t.contains("火船") {
+            if isNordic {
+                candidates = ["herald-longship-raid", "herald-galleon-broadside", "herald-blockade", "herald-fire-ships", "herald-naval"]
+            } else if isEastAsia || isJapan {
+                candidates = ["herald-fire-ships", "herald-naval", "herald-blockade", "herald-voyage-fleet", "herald-galleon-broadside"]
+            } else {
+                candidates = ["herald-galleon-broadside", "herald-blockade", "herald-fire-ships", "herald-naval", "herald-longship-raid", "herald-voyage-fleet"]
+            }
+        } else if t.contains("议会") || t.contains("大选") || t.contains("元老") || t.contains("表决") || t.contains("公选") || t.contains("共和") {
+            candidates = isClassical
+                ? ["herald-senate", "herald-election", "herald-parliament", "herald-reform", "herald-library"]
+                : ["herald-parliament", "herald-senate", "herald-election", "herald-reform", "herald-regime"]
+        } else if t.contains("谍") || t.contains("暗杀") || t.contains("密探") || t.contains("刺客") || t.contains("离间") || t.contains("资助") {
+            candidates = ["herald-spy", "herald-betrayal", "herald-uprising", "herald-ultimatum", "herald-regime"]
+        } else if t.contains("通商") || t.contains("丝路") || t.contains("铸币") || t.contains("国库") || t.contains("岁入") || t.contains("商税") {
+            candidates = ["herald-silkroad", "herald-mint", "herald-harbor-trade", "herald-festival", "herald-relief"]
+        } else if t.contains("圣地") || t.contains("宗教") || t.contains("教派") || t.contains("寺") || t.contains("圣殿") || t.contains("祈福") {
+            candidates = (isEastAsia || isJapan)
+                ? ["herald-monastery", "herald-festival", "herald-cathedral", "herald-peace", "herald-exam-hall"]
+                : ["herald-cathedral", "herald-monastery", "herald-sultan-divan", "herald-peace", "herald-succession"]
+        } else if t.contains("登基") || t.contains("即位") || t.contains("就职") || t.contains("加冕") || t.contains("传玺") || t.contains("储君") {
+            if isRepublic {
+                candidates = ["herald-senate", "herald-parliament", "herald-election", "herald-coronation", "herald-succession"]
+            } else if isIslamic {
+                candidates = ["herald-sultan-divan", "herald-coronation", "herald-succession", "herald-vassal-tribute", "herald-regime"]
+            } else if isJapan {
+                candidates = ["herald-shogun-court", "herald-coronation", "herald-succession", "herald-regime"]
+            } else {
+                candidates = ["herald-succession", "herald-coronation", "herald-vassal-tribute", "herald-regime", "herald-camp-muster"]
+            }
+        } else if t.contains("科技") || t.contains("突破") || t.contains("维新") || t.contains("变法") || t.contains("革新") || t.contains("学宫") || t.contains("科举") {
+            candidates = (isEastAsia || isJapan)
+                ? ["herald-exam-hall", "herald-reform", "herald-library", "herald-mint", "herald-monastery"]
+                : ["herald-library", "herald-reform", "herald-election", "herald-mint", "herald-exam-hall"]
+        } else if t.contains("进贡") || t.contains("藩属") || t.contains("附庸") || t.contains("称臣") || t.contains("册封") {
+            candidates = ["herald-vassal-tribute", "herald-sultan-divan", "herald-ultimatum", "herald-coronation", "herald-banquet"]
+        } else if t.contains("赈灾") || t.contains("赈济") || t.contains("丰登") || t.contains("丰年") || t.contains("屯田") || t.contains("大稔") || t.contains("灯会") {
+            candidates = ["herald-festival", "herald-relief", "herald-locust", "herald-harbor-trade", "herald-peace", "herald-banquet"]
+        } else if t.contains("彗星") || t.contains("天象") || t.contains("星变") || t.contains("火山") || t.contains("地震") {
+            candidates = ["herald-comet", "herald-volcano", "herald-beacon", "herald-weather"]
         } else {
             switch herald.kind {
-            case .war: candidates = ["herald-war", "herald-capture", "herald-siege", "herald-uprising"]
-            case .ultimatum: candidates = ["herald-war", "herald-regime", "herald-uprising"]
-            case .coup: candidates = ["herald-uprising", "herald-regime", "herald-war"]
-            case .uprising: candidates = ["herald-uprising", "herald-siege", "herald-war"]
-            case .capture: candidates = ["herald-capture", "herald-siege", "herald-war"]
-            case .extinction: candidates = ["herald-extinction", "herald-siege", "herald-drought"]
-            case .peace: candidates = ["herald-peace", "herald-alliance", "herald-relief"]
-            case .treaty: candidates = ["herald-alliance", "herald-peace", "herald-reform"]
-            case .marriage: candidates = ["herald-marriage", "herald-peace", "herald-coronation"]
-            case .regime: candidates = ["herald-coronation", "herald-regime", "herald-reform"]
-            case .restoration: candidates = ["herald-coronation", "herald-capture", "herald-regime"]
-            case .house: candidates = ["herald-regime", "herald-reform", "herald-coronation"]
-            case .capital: candidates = ["herald-coronation", "herald-regime", "herald-alliance"]
-            case .harvest: candidates = ["herald-relief", "herald-peace", "herald-alliance"]
-            case .blizzard: candidates = ["herald-weather", "herald-flood"]
-            case .drought: candidates = ["herald-drought", "herald-extinction"]
-            case .flood: candidates = ["herald-flood", "herald-weather"]
-            case .plague: candidates = ["herald-plague", "herald-extinction"]
+            case .war:
+                if isSteppe {
+                    candidates = ["herald-cavalry", "herald-beacon", "herald-ambush", "herald-war", "herald-camp-muster", "herald-desert-war"]
+                } else if isJapan {
+                    candidates = ["herald-samurai-charge", "herald-ambush", "herald-war", "herald-artillery", "herald-siege", "herald-camp-muster"]
+                } else if isIslamic {
+                    candidates = ["herald-desert-war", "herald-cavalry", "herald-artillery", "herald-war", "herald-siege", "herald-beacon"]
+                } else if isEastAsia {
+                    candidates = ["herald-camp-muster", "herald-war", "herald-beacon", "herald-cavalry", "herald-artillery", "herald-ambush", "herald-winter-march"]
+                } else {
+                    candidates = ["herald-knights-joust", "herald-ambush", "herald-artillery", "herald-winter-march", "herald-war", "herald-cavalry", "herald-siege"]
+                }
+            case .ultimatum:
+                candidates = ["herald-ultimatum", "herald-beacon", "herald-camp-muster", "herald-sultan-divan", "herald-war", "herald-regime"]
+            case .coup:
+                candidates = ["herald-betrayal", "herald-spy", "herald-uprising", "herald-senate", "herald-regime", "herald-war"]
+            case .uprising:
+                candidates = ["herald-uprising", "herald-betrayal", "herald-beacon", "herald-artillery", "herald-siege", "herald-war"]
+            case .capture:
+                candidates = ["herald-capture", "herald-artillery", "herald-ultimatum", "herald-siege", "herald-samurai-charge", "herald-knights-joust"]
+            case .extinction:
+                candidates = ["herald-extinction", "herald-betrayal", "herald-volcano", "herald-siege", "herald-comet", "herald-drought"]
+            case .peace:
+                candidates = ["herald-peace", "herald-banquet", "herald-festival", "herald-alliance", "herald-harbor-trade", "herald-relief"]
+            case .treaty:
+                candidates = ["herald-alliance", "herald-banquet", "herald-vassal-tribute", "herald-silkroad", "herald-peace", "herald-sultan-divan"]
+            case .marriage:
+                candidates = ["herald-marriage", "herald-banquet", "herald-festival", "herald-peace", "herald-succession", "herald-coronation"]
+            case .regime:
+                candidates = isRepublic
+                    ? ["herald-parliament", "herald-senate", "herald-election", "herald-reform", "herald-regime"]
+                    : ["herald-regime", "herald-coronation", "herald-succession", "herald-vassal-tribute", "herald-exam-hall", "herald-shogun-court", "herald-sultan-divan"]
+            case .restoration:
+                candidates = ["herald-succession", "herald-coronation", "herald-camp-muster", "herald-capture", "herald-vassal-tribute"]
+            case .house:
+                candidates = ["herald-exam-hall", "herald-banquet", "herald-spy", "herald-shogun-court", "herald-regime", "herald-marriage"]
+            case .capital:
+                candidates = ["herald-festival", "herald-vassal-tribute", "herald-cathedral", "herald-monastery", "herald-coronation", "herald-harbor-trade"]
+            case .harvest:
+                candidates = ["herald-relief", "herald-festival", "herald-locust", "herald-silkroad", "herald-mint", "herald-peace"]
+            case .blizzard:
+                candidates = ["herald-weather", "herald-winter-march", "herald-beacon", "herald-flood"]
+            case .drought:
+                candidates = ["herald-drought", "herald-locust", "herald-desert-war", "herald-volcano", "herald-extinction"]
+            case .flood:
+                candidates = ["herald-flood", "herald-weather", "herald-volcano", "herald-comet"]
+            case .plague:
+                candidates = ["herald-plague", "herald-comet", "herald-spy", "herald-extinction", "herald-drought"]
             }
         }
         let available = candidates.filter { InkVideoStage.hasVideo($0) }
-        let chosen = available.first { !recentClips.contains($0) }
-            ?? available.first
+        // 按 herald.id 哈希轮转起点，避免同类事件每次从第 0 个开始挑，叠加 16 卷记忆环彻底杜绝重复。
+        let rot = abs(herald.text.hashValue) % max(1, available.count)
+        let rotated = available.isEmpty ? [] : Array(available[rot...]) + Array(available[..<rot])
+        let chosen = rotated.first { !recentClips.contains($0) }
+            ?? rotated.first
             ?? candidates.first
             ?? "herald-war"
         recentClips.append(chosen)
-        if recentClips.count > 4 { recentClips.removeFirst() }
-        if resolvedByHeraldId.count > 48 { resolvedByHeraldId.removeAll(keepingCapacity: true) }
+        if recentClips.count > 16 { recentClips.removeFirst() }
+        if resolvedByHeraldId.count > 64 { resolvedByHeraldId.removeAll(keepingCapacity: true) }
         resolvedByHeraldId[herald.id] = chosen
         return chosen
     }
 
     private var videoClipName: String {
-        Self.pickClip(for: herald)
+        Self.pickClip(for: herald, culture: leadCulture, polity: leadPolity)
     }
 
     /// 左侧硬件解码古风水墨动态短视频画窗（无障碍减弱动态效果开启或视频未载入时平滑回退至 60/120fps 纯实时水墨矢量舞台）。

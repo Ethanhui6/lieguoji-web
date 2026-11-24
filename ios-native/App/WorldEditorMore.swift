@@ -107,7 +107,7 @@ struct EditorChoiceList: View {
             }
             .padding(.bottom, 20)
         }
-        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
     }
 }
 
@@ -176,7 +176,7 @@ struct EditorAllianceTab: View {
                     }
                     .padding(.bottom, 20)
                 }
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
             }
         }
     }

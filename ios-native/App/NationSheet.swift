@@ -184,6 +184,8 @@ struct NationSheet: View {
     let nation: Int
     let say: (String) -> Void
     let fly: (Int) -> Void
+    /// 聚焦本国国名与疆域核心区（自动上移至半屏抽屉上方可视安全区正中央，绝不遮挡国名）。
+    var flyNation: ((Int) -> Void)? = nil
     /// 查看都城: the page drops to its lowest stop so the map above it is seen.
     var lower: () -> Void = {}
     /// 绘制疆域: paint provinces on the map for this state.
@@ -292,32 +294,33 @@ struct NationSheet: View {
         if let map = model.map, let state = model.state, state.nations.indices.contains(nation) {
             let meta = nation < map.meta.nations.count ? map.meta.nations[nation] : nil
             let s = state.nations[nation]
+            let shownInfo = info ?? model.cachedNationInfo(nation)
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     if let focus {
-                        focusPage(focus, info: info, map: map, state: state, meta: meta)
+                        focusPage(focus, info: shownInfo, map: map, state: state, meta: meta)
                     } else {
-                    let lex = LocalizationEngine.lexicon(culture: info?.culture ?? s.culture ?? meta?.culture, polity: info?.polity ?? s.polity ?? meta?.polity, style: info?.style)
-                    SheetHeader(title: meta?.name ?? info?.name ?? "", subtitle: s.alive ? "\(s.provinces) \(lex.adminUnit) · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) }, seal: info?.emblem ?? "国")
-                    if let info {
-                        // Original section order: BasicInfo (only one expanded by default), Action, War, Family, Diplomacy.
-                        // 卷首: the state at a glance, then its ruler and identity.
-                        // Every number here can be tapped and changed (点一下数字即可修改).
-                        StatStrip(tiles: [
-                            StatTile(label: "疆域", value: "\(s.provinces)\(lex.adminUnit)", edit: info.alive ? { paint(nation) } : nil),
-                            StatTile(label: "人口", value: Names.wan(s.population), edit: info.alive ? {
-                                numberEdit = NumberEdit(title: "全国人口", unit: "人", value: Double(s.population)) { v in await model.scaleTotal(nation, key: "population", value: v) }
-                            } : nil),
-                            StatTile(label: "兵力", value: Names.wan(s.troops), edit: info.alive ? {
-                                numberEdit = NumberEdit(title: "全国兵力", unit: "人", value: Double(s.troops)) { v in await model.scaleTotal(nation, key: "troops", value: v) }
-                            } : nil),
-                            StatTile(label: "国库", value: Names.wan(Int(info.gold)), warn: info.goldPerMonth < 0, edit: info.alive ? {
-                                numberEdit = NumberEdit(title: "国库", unit: "金", value: info.gold) { v in await model.editNation(nation, gold: v, destiny: nil, polity: nil) }
-                            } : nil),
-                        ])
-                        NationTabs(tab: $tab, courtTitle: lex.courtTabTitle)
-                        if bodyReady || ShotTour.on {
-                            tabContent(info, map, state)
+                    let lex = LocalizationEngine.lexicon(culture: shownInfo?.culture ?? s.culture ?? meta?.culture, polity: shownInfo?.polity ?? s.polity ?? meta?.polity, style: shownInfo?.style)
+                    SheetHeader(title: meta?.name ?? shownInfo?.name ?? "", subtitle: s.alive ? "\(s.provinces) \(lex.adminUnit) · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) }, seal: shownInfo?.emblem ?? "国")
+                    // 第 0 帧即以实时同步态渲染核心四格数字与主签，配合州郡页预取缓存，切换瞬间绝不出现空白或数字跳闪。
+                    StatStrip(tiles: [
+                        StatTile(label: "疆域", value: "\(s.provinces)\(lex.adminUnit)", edit: s.alive ? { paint(nation) } : nil),
+                        StatTile(label: "人口", value: Names.wan(s.population), edit: s.alive ? {
+                            numberEdit = NumberEdit(title: "全国人口", unit: "人", value: Double(s.population)) { v in await model.scaleTotal(nation, key: "population", value: v) }
+                        } : nil),
+                        StatTile(label: "兵力", value: Names.wan(s.troops), edit: s.alive ? {
+                            numberEdit = NumberEdit(title: "全国兵力", unit: "人", value: Double(s.troops)) { v in await model.scaleTotal(nation, key: "troops", value: v) }
+                        } : nil),
+                        StatTile(label: "国库", value: shownInfo.map { Names.wan(Int($0.gold)) } ?? "—", warn: (shownInfo?.goldPerMonth ?? 0) < 0, edit: (shownInfo?.alive ?? false) ? {
+                            if let cur = shownInfo {
+                                numberEdit = NumberEdit(title: "国库", unit: "金", value: cur.gold) { v in await model.editNation(nation, gold: v, destiny: nil, polity: nil) }
+                            }
+                        } : nil),
+                    ])
+                    NationTabs(tab: $tab, courtTitle: lex.courtTabTitle)
+                    if let shownInfo {
+                        if bodyReady || ShotTour.on || model.cachedNationInfo(nation) != nil {
+                            tabContent(shownInfo, map, state)
                         }
                     } else {
                         PanelPending(failed: failed, busy: true) { Task { await reload() } }
@@ -338,6 +341,10 @@ struct NationSheet: View {
                 if tab == .court, postList.isEmpty { postList = await model.posts(nation) }
             }
             .onAppear {
+                if info == nil, let cached = model.cachedNationInfo(nation) {
+                    info = cached
+                    bodyReady = true
+                }
                 if let t = Self.tourTab {
                     tab = t
                     if let sub = Self.tourGovernSub { governSub = sub }
@@ -345,9 +352,15 @@ struct NationSheet: View {
                 }
                 if !bodyReady { Task { await Task.yield(); bodyReady = true } }
                 model.controller.relationsNation = nation
-                if focus == nil, let p = map.meta.nations.indices.contains(nation) ? map.meta.nations[nation].capital : nil, p >= 0, p < map.meta.cities.count {
-                    let capProv = map.meta.cities[p].province
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) { fly(capProv) }
+                if focus == nil {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                        if let flyNation {
+                            flyNation(nation)
+                        } else if map.meta.nations.indices.contains(nation) {
+                            let p = map.meta.nations[nation].capital
+                            if p >= 0, p < map.meta.cities.count { fly(map.meta.cities[p].province) }
+                        }
+                    }
                 }
             }
             // Pages slide: the next state's page may already show its colours, so only clear our own.
@@ -362,7 +375,7 @@ struct NationSheet: View {
                     }
                 }
                 .background(MemorialPaper().ignoresSafeArea())
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $editing) { p in
                 PersonEditor(person: p) { skills, traits, first, last, age in
@@ -375,13 +388,13 @@ struct NationSheet: View {
                     }
                 }
                 .background(MemorialPaper().ignoresSafeArea())
-                .presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $picking) { pick in pickSheet(pick, map, state).background(MemorialPaper().ignoresSafeArea()).presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section) }
             .sheet(item: $tree, onDismiss: { Task { await reload() } }) { t in
                 FamilyTreeSheet(model: model, family: t.id, name: t.name)
                     .background(MemorialPaper().ignoresSafeArea())
-                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+                    .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
             }
             .sheet(item: $numberEdit) { e in
                 NumberEditSheet(title: e.title, unit: e.unit, value: e.value) { v in
@@ -432,12 +445,12 @@ struct NationSheet: View {
                     Task { await run(success: "已推举\(name)就任执政") { await model.enthronePerson(nation, person: personId) } }
                 }
                 .background(MemorialPaper().ignoresSafeArea())
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $showingBreakdown) {
                 NationBreakdownSheet(model: model, nation: nation, nationName: meta?.name ?? info?.name ?? "")
                     .background(MemorialPaper().ignoresSafeArea())
-                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                    .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
     }
@@ -521,22 +534,57 @@ struct NationSheet: View {
 
         VStack(alignment: .leading, spacing: 14) {
                 let heroClip: String = {
+                    let cul = info.culture.lowercased()
+                    let seed = nation &* 31 &+ (state.day / 90)
                     if !info.wars.isEmpty {
-                        if (info.seaTransport?.totalPorts ?? 0) >= 2 && !myFleets.isEmpty && nation % 2 == 1 { return "herald-naval" }
-                        if info.wars.count >= 2 || (info.wars.first?.months ?? 0) >= 16 { return "herald-siege" }
-                        return "herald-war"
+                        if (info.seaTransport?.totalPorts ?? 0) >= 2 && !myFleets.isEmpty && (nation + state.day / 90) % 3 == 1 {
+                            if cul.contains("nordic") || cul.contains("viking") { return InkVideoStage.pick(from: ["herald-longship-raid", "herald-blockade", "herald-naval"], seed: seed) }
+                            if cul.contains("chinese") || cul.contains("japan") { return InkVideoStage.pick(from: ["herald-fire-ships", "herald-naval", "herald-blockade"], seed: seed) }
+                            return InkVideoStage.pick(from: ["herald-galleon-broadside", "herald-naval", "herald-fire-ships", "herald-blockade"], seed: seed)
+                        }
+                        if info.wars.count >= 2 || (info.wars.first?.months ?? 0) >= 16 {
+                            return InkVideoStage.pick(from: ["herald-artillery", "herald-siege", "herald-beacon", "herald-capture"], seed: seed)
+                        }
+                        if cul.contains("mongol") || cul.contains("turk") || cul.contains("steppe") {
+                            return InkVideoStage.pick(from: ["herald-cavalry", "herald-beacon", "herald-war"], seed: seed)
+                        }
+                        if cul.contains("japan") { return InkVideoStage.pick(from: ["herald-samurai-charge", "herald-ambush", "herald-war"], seed: seed) }
+                        if cul.contains("arab") || cul.contains("persian") || cul.contains("ottoman") || cul.contains("egypt") {
+                            return InkVideoStage.pick(from: ["herald-desert-war", "herald-cavalry", "herald-war"], seed: seed)
+                        }
+                        if WorldSeason.of(month: state.date.month) == .winter {
+                            return InkVideoStage.pick(from: ["herald-winter-march", "herald-war", "herald-ambush"], seed: seed)
+                        }
+                        return InkVideoStage.pick(from: ["herald-war", "herald-knights-joust", "herald-ambush", "herald-camp-muster", "herald-cavalry"], seed: seed)
                     }
-                    if (info.polityDetail?.coupRisk ?? 0) >= 48 { return "herald-uprising" }
+                    if (info.polityDetail?.coupRisk ?? 0) >= 48 {
+                        return InkVideoStage.pick(from: ["herald-uprising", "herald-betrayal", "herald-spy"], seed: seed)
+                    }
+                    if ovLex.isRepublican || !(info.parties ?? []).isEmpty {
+                        if cul.contains("greek") || cul.contains("roman") {
+                            return InkVideoStage.pick(from: ["herald-senate", "herald-election", "herald-harbor-trade", "herald-library"], seed: seed)
+                        }
+                        return InkVideoStage.pick(from: ["herald-parliament", "herald-senate", "herald-election", "herald-reform", "herald-harbor-trade"], seed: seed)
+                    }
                     if (info.seaTransport?.totalPorts ?? 0) >= 2 && !myFleets.isEmpty {
-                        return nation % 2 == 0 ? "herald-voyage-fleet" : "herald-voyage"
+                        return InkVideoStage.pick(from: ["herald-harbor-trade", "herald-voyage-fleet", "herald-voyage", "herald-longship-raid"], seed: seed)
                     }
-                    if info.alliance != nil && nation % 2 == 0 { return "herald-alliance" }
-                    if ovLex.isRepublican { return "herald-reform" }
-                    switch nation % 3 {
-                    case 0: return "herald-coronation"
-                    case 1: return "herald-regime"
-                    default: return "herald-peace"
+                    if cul.contains("japan") {
+                        return InkVideoStage.pick(from: ["herald-shogun-court", "herald-monastery", "herald-festival", "herald-coronation"], seed: seed)
                     }
+                    if cul.contains("arab") || cul.contains("persian") || cul.contains("ottoman") || cul.contains("egypt") {
+                        return InkVideoStage.pick(from: ["herald-sultan-divan", "herald-silkroad", "herald-banquet", "herald-coronation"], seed: seed)
+                    }
+                    if cul.contains("chinese") || cul.contains("han") || cul.contains("korean") || cul.contains("viet") {
+                        return InkVideoStage.pick(from: ["herald-monastery", "herald-exam-hall", "herald-vassal-tribute", "herald-festival", "herald-camp-muster", "herald-coronation"], seed: seed)
+                    }
+                    if info.holdsHolySite == true {
+                        return InkVideoStage.pick(from: ["herald-cathedral", "herald-monastery", "herald-succession"], seed: seed)
+                    }
+                    if info.alliance != nil && nation % 2 == 0 {
+                        return InkVideoStage.pick(from: ["herald-alliance", "herald-banquet", "herald-vassal-tribute"], seed: seed)
+                    }
+                    return InkVideoStage.pick(from: ["herald-coronation", "herald-succession", "herald-cathedral", "herald-library", "herald-mint", "herald-banquet", "herald-peace", "herald-regime"], seed: seed)
                 }()
                 if InkVideoStage.hasVideo(heroClip) {
                     InkVideoStage(clip: heroClip, cornerRadius: 12, tint: !info.wars.isEmpty ? Theme.seal : Theme.jade)

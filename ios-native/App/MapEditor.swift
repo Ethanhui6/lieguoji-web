@@ -621,10 +621,61 @@ struct EditorView: View {
     private var landscape: Bool { verticalClass == .compact }
     @State private var leaving = false
     @State private var pickingBase = false
-    @State private var collapsed = false
+    private enum DeckDetent: Int, CaseIterable { case collapsed = 0, compact = 1, standard = 2, expanded = 3 }
+    @State private var deckDetent: DeckDetent = .standard
+    @State private var showBrushDetail = false
+    @GestureState private var deckDragY: CGFloat = 0
+    private var collapsed: Bool { deckDetent == .collapsed }
 
     private var canUndoNow: Bool { editor.step == .terrain ? editor.canUndo : (editor.step == .nations ? editor.canUndoNation : false) }
     private var canRedoNow: Bool { editor.step == .terrain ? editor.canRedo : (editor.step == .nations ? editor.canRedoNation : false) }
+
+    /// 橡皮筋跟手位移（拖拽顶部横条时实时给与柔顺物理反馈）。
+    private var rubberBandDragY: CGFloat {
+        let d = deckDragY
+        if abs(d) <= 44 { return d * 0.58 }
+        let extra = abs(d) - 44
+        return (d >= 0 ? 1 : -1) * (44 * 0.58 + extra * 0.22)
+    }
+
+    private var deckDragGesture: some Gesture {
+        DragGesture(minimumDistance: 8, coordinateSpace: .global)
+            .updating($deckDragY) { val, state, _ in
+                state = val.translation.height
+            }
+            .onEnded { val in
+                let dy = val.translation.height
+                let pred = val.predictedEndTranslation.height
+                let score = dy * 0.65 + pred * 0.35
+                guard abs(score) > 34 else { return }
+                GameFeel.shared.tap()
+                withAnimation(Motion.sheetSwap) {
+                    if score > 0 {
+                        // 下拉收窄/收起画板，释放更大地图绘制视野
+                        switch deckDetent {
+                        case .expanded:
+                            deckDetent = .standard
+                            showBrushDetail = false
+                        case .standard:
+                            deckDetent = .compact
+                        case .compact, .collapsed:
+                            deckDetent = .collapsed
+                        }
+                    } else {
+                        // 上拉展开更多笔刷与细节控制
+                        switch deckDetent {
+                        case .collapsed:
+                            deckDetent = .compact
+                        case .compact:
+                            deckDetent = .standard
+                        case .standard, .expanded:
+                            deckDetent = .expanded
+                            if editor.step == .terrain { showBrushDetail = true }
+                        }
+                    }
+                }
+            }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -647,17 +698,21 @@ struct EditorView: View {
 
             if collapsed {
                 collapsedBar
+                    .offset(y: max(-24, min(14, rubberBandDragY)))
+                    .gesture(deckDragGesture)
                     .padding(.bottom, landscape ? 6 : 8)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
                 bottomDeck
+                    .offset(y: max(-18, min(36, rubberBandDragY)))
                     .padding(.horizontal, landscape ? 24 : 12)
                     .padding(.bottom, landscape ? 4 : 6)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .animation(Motion.panel, value: editor.step)
-        .animation(Motion.panel, value: collapsed)
+        .animation(Motion.sheetSwap, value: editor.step)
+        .animation(Motion.sheetSwap, value: deckDetent)
+        .animation(Motion.sheetSwap, value: showBrushDetail)
         .sheet(isPresented: $leaving) {
             VStack(alignment: .leading, spacing: 14) {
                 SheetHeader(title: "放弃这幅地图？", subtitle: "还没开辟的画稿不会保存", seal: "弃")
@@ -747,7 +802,9 @@ struct EditorView: View {
 
             Button {
                 GameFeel.shared.tap()
-                withAnimation(Motion.panel) { collapsed.toggle() }
+                withAnimation(Motion.sheetSwap) {
+                    deckDetent = collapsed ? .standard : .collapsed
+                }
             } label: { CircleIcon(glyph: collapsed ? .brush : .eye, active: collapsed) }
             .buttonStyle(PressStyle())
             .accessibilityLabel(collapsed ? "展开画板" : "全屏画图")
@@ -765,33 +822,71 @@ struct EditorView: View {
     private var collapsedBar: some View {
         Button {
             GameFeel.shared.tap()
-            withAnimation(Motion.panel) { collapsed = false }
+            withAnimation(Motion.sheetSwap) { deckDetent = .standard }
         } label: {
-            HStack(spacing: 8) {
-                InkIcon(glyph: editor.step == .terrain ? editor.tool.glyph : .nation, size: 17).foregroundStyle(Theme.seal)
-                Text(editor.step == .terrain ? "正在绘制：\(editor.tool.title)（点此展开画板）" : "点此展开「划定列国」画板")
-                    .font(Theme.label).foregroundStyle(Theme.ink)
+            VStack(spacing: 3) {
+                Capsule()
+                    .fill(Theme.ink.opacity(0.24))
+                    .frame(width: 32, height: 3.5)
+                    .padding(.top, 4)
+                HStack(spacing: 8) {
+                    InkIcon(glyph: editor.step == .terrain ? editor.tool.glyph : .nation, size: 16).foregroundStyle(Theme.seal)
+                    Text(editor.step == .terrain ? "正在绘制：\(editor.tool.title)（上滑或点此展开画板）" : "上滑或点此展开「划定列国」画板")
+                        .font(Theme.label).foregroundStyle(Theme.ink)
+                }
+                .padding(.bottom, 6)
             }
-            .padding(.horizontal, 18).frame(height: 40).glass(Capsule())
+            .padding(.horizontal, 18).glass(Capsule())
         }
         .buttonStyle(PressStyle())
     }
 
-    private var bottomDeck: some View {
-        VStack(spacing: landscape ? 8 : 11) {
-            switch editor.step {
-            case .terrain: terrainTools
-            case .provinces: provinceTools
-            case .nations: nationTools
+    /// 统一顶部拖拽指示条（样式与国家/州郡详情抽屉顶部灰色圆角横条一致，支持上下拖拽切换 收起 / 精简 / 标准 / 展开，轻点快速切换精简/标准）。
+    private var deckGrabber: some View {
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(Theme.ink.opacity(0.24))
+                .frame(width: 38, height: 4)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 22)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            GameFeel.shared.tap()
+            withAnimation(Motion.sheetSwap) {
+                if deckDetent == .compact {
+                    deckDetent = .standard
+                } else {
+                    deckDetent = .compact
+                    showBrushDetail = false
+                }
             }
         }
-        .padding(landscape ? 11 : 14)
+        .gesture(deckDragGesture)
+        .accessibilityLabel("调节画板高度")
+    }
+
+    private var bottomDeck: some View {
+        VStack(spacing: 0) {
+            deckGrabber
+            VStack(spacing: landscape ? 8 : 10) {
+                switch editor.step {
+                case .terrain: terrainTools
+                case .provinces: provinceTools
+                case .nations: nationTools
+                }
+            }
+            .padding(.horizontal, landscape ? 11 : 14)
+            .padding(.bottom, landscape ? 10 : 13)
+            .padding(.top, 2)
+        }
         .frame(maxWidth: landscape ? 660 : .infinity)
         .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerSheet, style: .continuous))
     }
 
     private var terrainTools: some View {
-        VStack(spacing: landscape ? 8 : 10) {
+        let isCompact = deckDetent == .compact
+        return VStack(spacing: landscape ? 8 : (isCompact ? 8 : 10)) {
             // 实时四色地貌占比仪表（海 / 平原 / 丘陵高原 / 山脉雪峰）
             VStack(spacing: 4) {
                 GeometryReader { g in
@@ -812,44 +907,22 @@ struct EditorView: View {
                     Text("丘 \(Int(editor.hillShare * 100))%").foregroundStyle(Theme.gold)
                     Text("山 \(Int(editor.mountainShare * 100))%").foregroundStyle(Theme.ink2)
                     Spacer()
-                    Text(editor.mirror.rawValue).foregroundStyle(editor.mirror == .none ? Theme.ink2 : Theme.seal)
+                    Text(isCompact ? "精简 · \(editor.mirror.rawValue)" : editor.mirror.rawValue)
+                        .foregroundStyle(editor.mirror == .none ? Theme.ink2 : Theme.seal)
                 }
                 .font(Theme.caption).monospacedDigit()
             }
 
-            // 12 种笔刷 6×2（横屏 12×1）严格对齐排布
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: landscape ? 12 : 6), spacing: 5) {
-                ForEach(MapEditor.Tool.allCases) { t in
-                    let on = editor.tool == t
-                    Button {
-                        withAnimation(Motion.tap) {
-                            editor.tool = t
-                            if let h = t.target { editor.targetHeight = h }
+            if isCompact {
+                // 精简态：单排横向 12 笔刷 + 快捷笔径与下一步，释放 ~45% 地图绘景视野
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 5) {
+                        ForEach(MapEditor.Tool.allCases) { t in
+                            brushTile(t, width: 52, height: 42)
                         }
-                        GameFeel.shared.tap()
-                    } label: {
-                        VStack(spacing: 2.5) {
-                            ZStack {
-                                if !on && t.target != nil {
-                                    Circle().fill(t.swatch.opacity(0.28)).frame(width: 22, height: 22)
-                                }
-                                InkIcon(glyph: t.glyph, size: 16.5).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                            }
-                            .frame(height: 20)
-                            Text(t.title).font(Theme.caption).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
-                        }
-                        .frame(maxWidth: .infinity).frame(height: landscape ? 42 : 46)
-                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.line))
                     }
-                    .buttonStyle(PressStyle())
                 }
-            }
-
-            // 笔刷大小 + 四档圆标预设
-            HStack(spacing: 8) {
-                PaperSlider(title: "笔刷", value: $editor.radius, range: 8...110) { "\(Int($0))" }
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     ForEach(Self.brushPresets) { preset in
                         let near = abs(editor.radius - preset.radius) <= 6
                         Button(preset.label) {
@@ -863,49 +936,136 @@ struct EditorView: View {
                         .overlay(Circle().stroke(near ? Color.clear : Theme.line))
                         .buttonStyle(PressStyle())
                     }
-                }
-            }
-
-            // 一键地形快捷雕琢条（含对称绘图切换、双陆海峡、环海盆地）
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    quickTerrainChip("对称：\(editor.mirror.rawValue)", glyph: .swap, active: editor.mirror != .none) {
-                        GameFeel.shared.tap()
-                        let all = MapEditor.MirrorMode.allCases
-                        let idx = (all.firstIndex(of: editor.mirror) ?? 0) + 1
-                        editor.mirror = all[idx % all.count]
-                    }
-                    quickTerrainChip("中央海峡", glyph: .sea) { editor.carveStrait(inlandSea: false) }
-                    quickTerrainChip("环陆内海", glyph: .lake) { editor.carveStrait(inlandSea: true) }
-                    quickTerrainChip("抬海陆", glyph: .raise) { editor.shiftElevation(4) }
-                    quickTerrainChip("降海面", glyph: .lower) { editor.shiftElevation(-4) }
-                    quickTerrainChip("整图平滑", glyph: .smooth) { editor.smoothWholeMap() }
-                    quickTerrainChip("海岸崎岖", glyph: .mountain) { editor.roughenCoasts() }
-                    quickTerrainChip("随机新图", glyph: .refresh) { editor.randomizeCurrentTemplate() }
-                    quickTerrainChip("换底图", glyph: .views) { pickingBase = true }
-                }
-            }
-
-            if !landscape {
-                FoldSection("笔触细节与保护海岸", expanded: false) {
-                    VStack(spacing: 8) {
-                        PaperSlider(title: "强度", value: $editor.strength, range: 0.2...2) { String(format: "%.1f×", $0) }
-                        PaperSlider(title: "柔和", value: $editor.softness, range: 0.3...2) { String(format: "%.1f×", $0) }
-                        if editor.tool.target != nil {
-                            PaperSlider(title: "目标高", value: $editor.targetHeight, range: (editor.tool == .trench || editor.tool == .sea || editor.tool == .lake) ? 0...19 : 20...100, step: 1) { "\(Int($0))" }
+                    Spacer(minLength: 6)
+                    Button { editor.toProvinces() } label: {
+                        HStack(spacing: 5) {
+                            InkIcon(glyph: .region, size: 13.5).foregroundStyle(Theme.paper2)
+                            Text("下一步：分州郡").font(Theme.label).foregroundStyle(Theme.paper2)
                         }
-                        PaperSwitch(title: "保护现有海岸", on: $editor.protectCoast).padding(.horizontal, -16)
+                        .padding(.horizontal, 13).frame(height: 32)
+                        .background(Theme.seal, in: Capsule())
+                    }
+                    .buttonStyle(PressStyle())
+                    .disabled(editor.landShare < 0.03).opacity(editor.landShare < 0.03 ? 0.5 : 1)
+                }
+            } else {
+                // 12 种笔刷 6×2（横屏 12×1）严格对齐排布
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: landscape ? 12 : 6), spacing: 5) {
+                    ForEach(MapEditor.Tool.allCases) { t in
+                        brushTile(t, width: nil, height: landscape ? 42 : 46)
                     }
                 }
-            }
 
-            HStack(spacing: 10) {
-                Button { pickingBase = true } label: { SecondaryLabel(title: "换底图", symbol: "square.stack.3d.up") }
-                Button { editor.toProvinces() } label: { PrimaryLabel(title: "下一步：分州郡", symbol: "square.grid.3x3") }
-                    .disabled(editor.landShare < 0.03).opacity(editor.landShare < 0.03 ? 0.5 : 1)
+                // 笔刷大小 + 四档圆标预设
+                HStack(spacing: 8) {
+                    PaperSlider(title: "笔刷", value: $editor.radius, range: 8...110) { "\(Int($0))" }
+                    HStack(spacing: 4) {
+                        ForEach(Self.brushPresets) { preset in
+                            let near = abs(editor.radius - preset.radius) <= 6
+                            Button(preset.label) {
+                                GameFeel.shared.tap()
+                                withAnimation(Motion.tap) { editor.radius = preset.radius }
+                            }
+                            .font(Theme.caption)
+                            .foregroundStyle(near ? Theme.paper2 : Theme.ink)
+                            .frame(width: 28, height: 28)
+                            .background(near ? Theme.seal : Theme.paper2, in: Circle())
+                            .overlay(Circle().stroke(near ? Color.clear : Theme.line))
+                            .buttonStyle(PressStyle())
+                        }
+                    }
+                }
+
+                // 一键地形快捷雕琢条（含对称绘图切换、双陆海峡、环海盆地）
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        quickTerrainChip("对称：\(editor.mirror.rawValue)", glyph: .swap, active: editor.mirror != .none) {
+                            GameFeel.shared.tap()
+                            let all = MapEditor.MirrorMode.allCases
+                            let idx = (all.firstIndex(of: editor.mirror) ?? 0) + 1
+                            editor.mirror = all[idx % all.count]
+                        }
+                        quickTerrainChip("中央海峡", glyph: .sea) { editor.carveStrait(inlandSea: false) }
+                        quickTerrainChip("环陆内海", glyph: .lake) { editor.carveStrait(inlandSea: true) }
+                        quickTerrainChip("抬海陆", glyph: .raise) { editor.shiftElevation(4) }
+                        quickTerrainChip("降海面", glyph: .lower) { editor.shiftElevation(-4) }
+                        quickTerrainChip("整图平滑", glyph: .smooth) { editor.smoothWholeMap() }
+                        quickTerrainChip("海岸崎岖", glyph: .mountain) { editor.roughenCoasts() }
+                        quickTerrainChip("随机新图", glyph: .refresh) { editor.randomizeCurrentTemplate() }
+                        quickTerrainChip("换底图", glyph: .views) { pickingBase = true }
+                    }
+                }
+
+                if !landscape {
+                    VStack(spacing: 6) {
+                        Button {
+                            GameFeel.shared.tap()
+                            withAnimation(Motion.sheetSwap) {
+                                showBrushDetail.toggle()
+                                deckDetent = showBrushDetail ? .expanded : .standard
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                SectionLabel("笔触细节与保护海岸", inset: false)
+                                Spacer()
+                                InkIcon(glyph: .chevronDown, size: 14, weight: 1.7)
+                                    .foregroundStyle(Theme.ink2)
+                                    .rotationEffect(.degrees(showBrushDetail ? 180 : 0))
+                            }
+                            .frame(height: 30)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+
+                        if showBrushDetail {
+                            VStack(spacing: 8) {
+                                PaperSlider(title: "强度", value: $editor.strength, range: 0.2...2) { String(format: "%.1f×", $0) }
+                                PaperSlider(title: "柔和", value: $editor.softness, range: 0.3...2) { String(format: "%.1f×", $0) }
+                                if editor.tool.target != nil {
+                                    PaperSlider(title: "目标高", value: $editor.targetHeight, range: (editor.tool == .trench || editor.tool == .sea || editor.tool == .lake) ? 0...19 : 20...100, step: 1) { "\(Int($0))" }
+                                }
+                                PaperSwitch(title: "保护现有海岸", on: $editor.protectCoast).padding(.horizontal, -16)
+                            }
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                    }
+                }
+
+                HStack(spacing: 10) {
+                    Button { pickingBase = true } label: { SecondaryLabel(title: "换底图", symbol: "square.stack.3d.up") }
+                    Button { editor.toProvinces() } label: { PrimaryLabel(title: "下一步：分州郡", symbol: "square.grid.3x3") }
+                        .disabled(editor.landShare < 0.03).opacity(editor.landShare < 0.03 ? 0.5 : 1)
+                }
+                .buttonStyle(PressStyle())
             }
-            .buttonStyle(PressStyle())
         }
+    }
+
+    private func brushTile(_ t: MapEditor.Tool, width: CGFloat?, height: CGFloat) -> some View {
+        let on = editor.tool == t
+        return Button {
+            withAnimation(Motion.tap) {
+                editor.tool = t
+                if let h = t.target { editor.targetHeight = h }
+            }
+            GameFeel.shared.tap()
+        } label: {
+            VStack(spacing: 2.5) {
+                ZStack {
+                    if !on && t.target != nil {
+                        Circle().fill(t.swatch.opacity(0.28)).frame(width: 22, height: 22)
+                    }
+                    InkIcon(glyph: t.glyph, size: 16.5).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                }
+                .frame(height: 20)
+                Text(t.title).font(Theme.caption).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            .frame(width: width, height: height)
+            .frame(maxWidth: width == nil ? .infinity : nil)
+            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.line))
+        }
+        .buttonStyle(PressStyle())
     }
 
     private func quickTerrainChip(_ title: String, glyph: InkGlyph, active: Bool = false, action: @escaping () -> Void) -> some View {

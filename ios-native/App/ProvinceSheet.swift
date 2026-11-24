@@ -131,9 +131,10 @@ struct ProvinceSheet: View {
             .paperToast($flash)
             .sheet(isPresented: $showingBreakdown) {
                 ProvinceBreakdownSheet(model: model, province: province, provinceName: p.name)
-                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                    .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
             .task(id: model.state?.day) {
+                if owner >= 0 { model.prefetchNationInfo(owner) }
                 info = await model.provinceInfo(province)
                 if region == nil { region = await model.regionInfo(province) }
             }

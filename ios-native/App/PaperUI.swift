@@ -73,6 +73,8 @@ enum Motion {
     static let tap = Animation.snappy(duration: 0.24, extraBounce: 0.06)
     /// 面板切换、展开收起、布局变化（跟手顺滑无拖尾）。
     static let panel = Animation.snappy(duration: 0.34, extraBounce: 0.03)
+    /// 抽屉高度与页签无缝切换（iOS 经典流体三次贝塞尔曲线 cubic-bezier(0.32, 0.72, 0, 1)，280ms 零硬切零闪烁）。
+    static let sheetSwap = Animation.timingCurve(0.32, 0.72, 0, 1, duration: 0.28)
     /// 较大的位移（整页滑入、数据条生长、镜头与浮印吸附）。
     static let drift = Animation.smooth(duration: 0.44)
     /// 纯透明度与颜色淡入淡出。
@@ -803,7 +805,7 @@ struct PaperMenu<T: Hashable>: View {
                 .padding(.bottom, 24)
             }
             .background(MemorialPaper().ignoresSafeArea())
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.medium, .fraction(0.89)])
             .presentationCornerRadius(Theme.Control.cornerSheet)
             .presentationBackground(Theme.paper)
             .presentationDragIndicator(.hidden)
@@ -1567,5 +1569,43 @@ struct ScrollPowerPlacard: View {
             .frame(maxWidth: 360)
             .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
         }
+    }
+}
+
+/// 全屏抽屉顶部安全区防侵入垫片：
+/// 半屏（`.medium` / `.fraction(0.38)`）或停在安全区下方时高度为 0pt；
+/// 若抽屉被拉升至贴顶全屏进入灵动岛/刘海/状态栏区域，自动按主窗口真实 `safeAreaInsets.top` 补足留白（+6pt），
+/// 彻底防止 `< 返回州郡` 按钮或标题栏与系统时间/信号栏重叠。
+struct SheetTopSafeClearance: View {
+    @State private var extraTop: CGFloat = 0
+
+    private static var hardwareTopInset: CGFloat {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let window = scenes.flatMap(\.windows).first(where: \.isKeyWindow) ?? scenes.flatMap(\.windows).first
+        let raw = window?.safeAreaInsets.top ?? 0
+        if raw >= 20 { return raw }
+        let size = window?.screen.bounds.size ?? UIScreen.main.bounds.size
+        return max(size.width, size.height) >= 812 ? 54 : 20
+    }
+
+    var body: some View {
+        Color.clear
+            .frame(height: extraTop)
+            .background(
+                GeometryReader { geo in
+                    let minY = geo.frame(in: .global).minY
+                    let needed = max(0, Self.hardwareTopInset - minY + 6)
+                    Color.clear
+                        .onAppear { update(needed) }
+                        .onChange(of: minY) { _, newMinY in
+                            update(max(0, Self.hardwareTopInset - newMinY + 6))
+                        }
+                }
+            )
+    }
+
+    private func update(_ value: CGFloat) {
+        let snapped = min(72, (value * 2).rounded() / 2)
+        if abs(snapped - extraTop) >= 1 { extraTop = snapped }
     }
 }

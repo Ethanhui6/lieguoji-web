@@ -199,4 +199,21 @@ final class StrategyDepthTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(eff.attack, 24)
         XCTAssertGreaterThanOrEqual(eff.income, 22)
     }
+
+    func testV425FocusedCameraOffsetsForBottomSheetAndSidePanel() {
+        let vp = (width: 393.0, height: 852.0)
+        // 竖屏半屏抽屉（占底 50%）下，聚焦目标应落于顶栏（96pt）与抽屉顶边（426pt）之间的正中央（261pt），绝不被抽屉顶边截断
+        let camPortrait = MapCamera.focused(worldX: 500, worldY: 320, scale: 2.0, viewport: vp, bottomFraction: 0.50, trailingFraction: 0)
+        let ptPortrait = camPortrait.toScreen(x: 500, y: 320, viewport: vp)
+        XCTAssertEqual(ptPortrait.x, vp.width * 0.5, accuracy: 0.5)
+        XCTAssertEqual(ptPortrait.y, (96.0 + 426.0) * 0.5, accuracy: 0.5)
+        XCTAssertLessThan(ptPortrait.y, vp.height * 0.35)
+
+        // 横屏右侧边栏（占右 44%）下，聚焦目标应落于左侧安全轨（58pt）与边栏左缘之间的正中央
+        let lvp = (width: 852.0, height: 393.0)
+        let camLandscape = MapCamera.focused(worldX: 500, worldY: 320, scale: 2.0, viewport: lvp, bottomFraction: 0, trailingFraction: 0.44)
+        let ptLandscape = camLandscape.toScreen(x: 500, y: 320, viewport: lvp)
+        XCTAssertEqual(ptLandscape.y, lvp.height * 0.5, accuracy: 0.5)
+        XCTAssertEqual(ptLandscape.x, (58.0 + lvp.width * 0.56) * 0.5, accuracy: 0.5)
+    }
 }

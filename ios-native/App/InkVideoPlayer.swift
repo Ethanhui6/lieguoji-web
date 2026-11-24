@@ -3,7 +3,7 @@ import UIKit
 import AVFoundation
 
 /// 原生硬件加速古风水墨短视频循环播放器（AVQueuePlayer + AVPlayerLooper）：
-/// - 19 部全画幅 60fps 古风历史长卷视频 + 预烘焙轻量首帧缩略图（poster-*.jpg），彻底根除主线程 AVAssetImageGenerator 解码卡顿；
+/// - 54 部全画幅 60fps 古风历史长卷视频 + 预烘焙轻量首帧缩略图（poster-*.jpg），涵盖东亚、西欧、地中海、伊斯兰、草原、北欧与大航海全文明图景，彻底告别高重复率；
 /// - 打开面板或横幅第 0 毫秒立即呈现预烘焙首帧画卷（< 0.5ms），延迟 0.12s 待弹簧动画丝滑落定后再异步拉起硬件 H.264 循环解码，零掉帧零白屏；
 /// - 100% 静音、零音频会话抢占、不打断背景雅乐。
 struct InkVideoStage: View {
@@ -12,11 +12,34 @@ struct InkVideoStage: View {
     var tint: Color = Theme.seal
 
     static let allClips: [String] = [
+        // 经典 19 卷
         "herald-war", "herald-naval", "herald-siege", "herald-peace", "herald-regime", "herald-weather",
         "herald-coronation", "herald-reform", "herald-voyage", "herald-relief",
         "herald-uprising", "herald-marriage", "herald-drought", "herald-plague",
-        "herald-voyage-fleet", "herald-flood", "herald-capture", "herald-extinction", "herald-alliance"
+        "herald-voyage-fleet", "herald-flood", "herald-capture", "herald-extinction", "herald-alliance",
+        // 陆战与军事 8 卷
+        "herald-cavalry", "herald-ambush", "herald-artillery", "herald-winter-march",
+        "herald-samurai-charge", "herald-knights-joust", "herald-desert-war", "herald-camp-muster",
+        // 海战与商港 5 卷
+        "herald-fire-ships", "herald-longship-raid", "herald-galleon-broadside", "herald-harbor-trade", "herald-blockade",
+        // 共和议会、朝堂与礼制 7 卷
+        "herald-senate", "herald-parliament", "herald-election", "herald-exam-hall",
+        "herald-shogun-court", "herald-sultan-divan", "herald-vassal-tribute",
+        // 外交、谍报与宫廷风波 5 卷
+        "herald-spy", "herald-banquet", "herald-ultimatum", "herald-succession", "herald-betrayal",
+        // 丝路、铸币、文教与盛世 6 卷
+        "herald-silkroad", "herald-mint", "herald-library", "herald-cathedral", "herald-monastery", "herald-festival",
+        // 天象、灾异与边防 4 卷
+        "herald-comet", "herald-volcano", "herald-locust", "herald-beacon"
     ]
+
+    /// 按稳定种子从多候选中挑选可用视频，保证同场景不单调重复。
+    static func pick(from candidates: [String], seed: Int) -> String {
+        let valid = candidates.filter { hasVideo($0) }
+        guard !valid.isEmpty else { return candidates.first ?? "herald-war" }
+        let idx = abs(seed) % valid.count
+        return valid[idx]
+    }
 
     private static let urlCache: [String: URL] = {
         var map: [String: URL] = [:]

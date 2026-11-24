@@ -273,7 +273,7 @@ struct TitleView: View {
                 inputs: model.previewInputs
             )
             .background(MemorialPaper().ignoresSafeArea())
-            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
             WorldArchiveSheet(model: model) { world in
@@ -284,7 +284,7 @@ struct TitleView: View {
                 }
             }
             .background(MemorialPaper().ignoresSafeArea())
-            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $settings) {
             ScrollView {
@@ -313,9 +313,9 @@ struct TitleView: View {
                 .padding(.bottom, 24)
             }
             .background(MemorialPaper().ignoresSafeArea())
-            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
         }
-        .sheet(isPresented: $notes) { ReleaseNotesSheet().background(MemorialPaper().ignoresSafeArea()).presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden) }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().background(MemorialPaper().ignoresSafeArea()).presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden) }
     }
 }
 

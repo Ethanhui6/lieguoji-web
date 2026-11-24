@@ -89,7 +89,7 @@ struct WorldEditorSheet: View {
                 }
                 .padding(.bottom, 20)
             }
-            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $picking) {
             if let map = model.map, let state = model.state {
@@ -108,7 +108,7 @@ struct WorldEditorSheet: View {
                     }
                     .padding(.bottom, 20)
                 }
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
             }
         }
         .sheet(item: Binding(get: { exported.map(Shared.init) }, set: { exported = $0?.url })) { ShareSheet(items: [$0.url]) }
@@ -512,7 +512,7 @@ private struct NewUnitEditor: View {
             }
             .padding(.bottom, 16)
         }
-        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
     }
 }
 
@@ -556,6 +556,6 @@ private struct UnitEditor: View {
             .padding(.bottom, 16)
         }
         .onAppear { name = unit.name; power = unit.power; speed = unit.speed; weight = unit.weight }
-        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
     }
 }

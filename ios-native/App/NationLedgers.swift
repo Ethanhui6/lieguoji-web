@@ -396,7 +396,7 @@ struct FamilyTreeSheet: View {
                     return (e == nil ? await model.editPerson(p.key, skills: skills, traits: traits) : e, "\(p.name)已修改")
                 }
             }
-            .presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+            .presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
         }
         .sheet(item: $ageEdit) { m in
             NumberEditSheet(title: m.name + "的年龄", unit: "岁", value: m.age, range: 0...110) { v in

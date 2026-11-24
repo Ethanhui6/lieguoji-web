@@ -71,6 +71,35 @@ public struct MapCamera: Equatable, Sendable {
         }
         return MapCamera(centerX: axis(centerX, mw, vw), centerY: axis(centerY, mh, vh), scale: safeScale)
     }
+    /// 计算在底部抽屉（竖屏）或右侧边栏（横屏）覆盖下，将目标世界坐标精准置于“上方/左侧可视安全区正中央”所需的镜头位置。
+    public static func focused(worldX: Double, worldY: Double, scale: Double,
+                               viewport: (width: Double, height: Double),
+                               bottomFraction: Double = 0, trailingFraction: Double = 0,
+                               topInset: Double = 96, leadInset: Double = 58) -> MapCamera {
+        let safeScale = max(1e-4, scale.isFinite ? scale : 1)
+        let vw = max(1, viewport.width.isFinite ? viewport.width : 390)
+        let vh = max(1, viewport.height.isFinite ? viewport.height : 844)
+        let targetX: Double
+        if trailingFraction > 0.05 {
+            let visibleRight = max(leadInset + 40, vw * (1.0 - min(0.65, trailingFraction)))
+            targetX = (leadInset + visibleRight) * 0.5
+        } else {
+            targetX = vw * 0.5
+        }
+        let targetY: Double
+        if bottomFraction > 0.05 {
+            let visibleBottom = max(topInset + 40, vh * (1.0 - min(0.72, bottomFraction)))
+            targetY = (topInset + visibleBottom) * 0.5
+        } else {
+            targetY = vh * 0.5
+        }
+        return MapCamera(
+            centerX: worldX + (vw * 0.5 - targetX) / safeScale,
+            centerY: worldY + (vh * 0.5 - targetY) / safeScale,
+            scale: safeScale
+        )
+    }
+
     /// 查看都城: the camera that shows a place close up, the place `lift` of the screen's height above
     /// the centre (a page covers the lower part). It always zooms in to at least `closeness` × the
     /// whole-map scale, so the tap is seen even when the camera already looks at the place.

@@ -130,11 +130,11 @@ struct MenuSheet: View {
         }
         .sheet(isPresented: $creating) {
             NewWorldSheet(start: { options in creating = false; close(); Task { await model.generate(options) } }, draw: { options in creating = false; close(); model.openEditor(options) }, inputs: model.previewInputs)
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
             WorldArchiveSheet(model: model) { world in archive = false; close(); Task { await model.openArchived(world) } }
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
         }
         .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }
         .sheet(isPresented: $calendar) {
@@ -155,7 +155,7 @@ struct MenuSheet: View {
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .item]) { result in
             if case .success(let url) = result { close(); Task { await model.importSave(from: url) } }
         }
-        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden) }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden) }
     }
 
     private func menuTile(title: String, note: String, symbol: String, tint: Color, action: @escaping () -> Void) -> some View {

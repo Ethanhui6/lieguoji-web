@@ -417,6 +417,7 @@ public enum Daily {
                     let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
                     local *= ForceMotion.terrainProfile(biome: main, mountain: land.mountain.isTruthy).tax * seasonTax
                     local *= WorldDepth.provinceTaxMultiplier(r, provinceId: pid)
+                    local *= CultureDoctrines.provinceTaxFactor(r, nationId: id, provinceId: pid)
                 }
                 return Treasury.provinceIncome(Treasury.ProvinceInput(population: data.population.asInt, capacity: p.maxPopulation.asInt, cells: p.cellBiomes.length, resources: resources,
                                                                       local: local),

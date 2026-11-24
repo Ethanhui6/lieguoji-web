@@ -266,12 +266,19 @@ extension NativeEngine {
                 return x
             })
             o.polityDetail = pd
-            // 当前国家智能战略预设与自动统筹开关
+            // 当前国家智能战略预设与自动统筹开关（支持全图列国统一委托 + 单国手动接管）
             let nb = r.regimes.nations[id]
-            if !nb.isNull {
-                o.strategy = nb.strategy.optionalString.map { JS($0) } ?? JS("")
-                o.autoStrategy = JS(nb.autoStrategy.isTruthy)
-            }
+            o.strategy = (!nb.isNull ? nb.strategy.optionalString : nil).map { JS($0) } ?? JS("")
+            o.autoStrategy = JS(Regimes.isAutoGoverned(r, id))
+            o.globalAutoGovern = JS(Regimes.globalAutoGovern(r))
+            // 文明文化学说与圣地实效
+            let doc = CultureDoctrines.of(civ.cultureId.optionalString)
+            let docObj = JS.object()
+            docObj.title = JS(doc.title)
+            docObj.summary = JS(doc.summary)
+            docObj.effectLine = JS(doc.effectLine)
+            o.cultureDoctrine = docObj
+            o.holdsHolySite = JS(Regimes.holdsHolySite(r, id))
             // 海运运力与制海权实时概览
             let stInfo = JS.object()
             let blk = Naval.blockade(r, id)

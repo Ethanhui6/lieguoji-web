@@ -34,17 +34,19 @@ extension Regimes {
         let prof = styleProfile(r, id)
         let pTrait = MonarchLore.traitEffects(of: activePerson)
         let goodsBonus = Trade.nationalBonuses(r, id)
+        let cultDoc = CultureDoctrines.forNation(r, id)
+        let amp = UnitKinds.enabled
         var l = Leverage()
-        l.attack = (mil - 50) * 0.8 + (fortune - 50) * 0.25 - graft * 0.15 + sum.attack + prof.attack + pTrait.attack + goodsBonus.attack
-        l.defense = (mil - 50) * 0.4 + (cha - 50) * 0.2 + (fortune - 50) * 0.25 - graft * 0.1 + sum.defense + prof.defense + pTrait.defense + goodsBonus.defense
-        l.income = (adm - 50) * 0.8 - graft * 0.3 + sum.income + prof.income + pTrait.income + goodsBonus.income
-        l.growth = (adm - 50) * 0.1 + (cha - 50) * 0.1 + sum.growth + pTrait.growth + goodsBonus.growth
-        l.corruption = sum.corruption + prof.corruption + pTrait.corruption
+        l.attack = (mil - 50) * (amp ? 1.15 : 0.8) + (fortune - 50) * 0.28 - graft * 0.16 + sum.attack + prof.attack + pTrait.attack + goodsBonus.attack + (cultDoc?.attack ?? 0)
+        l.defense = (mil - 50) * (amp ? 0.65 : 0.4) + (cha - 50) * (amp ? 0.35 : 0.2) + (fortune - 50) * 0.28 - graft * 0.12 + sum.defense + prof.defense + pTrait.defense + goodsBonus.defense + (cultDoc?.defense ?? 0)
+        l.income = (adm - 50) * (amp ? 1.15 : 0.8) - graft * 0.32 + sum.income + prof.income + pTrait.income + goodsBonus.income + (cultDoc?.income ?? 0)
+        l.growth = (adm - 50) * (amp ? 0.16 : 0.1) + (cha - 50) * (amp ? 0.14 : 0.1) + sum.growth + pTrait.growth + goodsBonus.growth + (cultDoc?.growth ?? 0)
+        l.corruption = sum.corruption + prof.corruption + pTrait.corruption + (cultDoc?.corruption ?? 0)
         _ = grit(r, id)
         let land = Double(gritCache?.counts[id] ?? 0), total = max(1, Double(gritCache?.counts.values.reduce(0, +) ?? 1))
         var owed = 0.0
         if !r.finance.nations[id].isNull { let income = max(1, monthlyIncome(r, id)); owed = min(15, debt(r, id) / income / 12 * 10) }
-        l.stability = 60 + (adm - 50) * 0.35 + (crown - 50) * 0.35 + (fortune - 50) * 0.4 - graft * 0.4 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability + pTrait.stability + goodsBonus.stability
+        l.stability = 60 + (adm - 50) * (amp ? 0.46 : 0.35) + (crown - 50) * (amp ? 0.50 : 0.35) + (fortune - 50) * 0.42 - graft * 0.42 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability + pTrait.stability + goodsBonus.stability + (cultDoc?.stability ?? 0)
         return l
     }
     static func attributeMonth(_ r: JS, _ id: String, addGold: (Double) -> Void) {

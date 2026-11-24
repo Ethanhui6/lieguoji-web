@@ -562,7 +562,6 @@ public enum MapLayers {
         let provs = map.meta.provinces
         let frontierInk = RGB(hex: 0x241B13)
         let frontierIvory = RGB(hex: 0xF7EFE0)
-        let coastInk = RGB(hex: 0x544738)
         let isletInk = RGB(hex: 0x6D5F4C)
         var m = ColoredMesh()
 
@@ -585,17 +584,33 @@ public enum MapLayers {
             compSizes.append(q.count)
         }
 
-        // 1. 柔和细腻的古舆图海岸墨线（微小孤岛轻笔淡墨，大陆岸线温润不抢戏，配合浅滩晕边自然过渡）
+        // 1. 流畅连续斜接古舆图海岸线（BorderCurve.chain + BorderCurve.smooth 彻底根除锯齿折角与竹节黑点，区分大陆清锐双色岸线与海岛淡墨细岸）
+        let coastShadow = RGB(hex: 0x3A5E68)
+        let mainlandInk = RGB(hex: 0x3B2F22)
+        var mainCoastSegs = [BorderCurve.Segment]()
+        var isletCoastSegs = [BorderCurve.Segment]()
         for e in map.edges where e.a >= 0 && e.b >= 0 {
             let a = Int(e.a), b = Int(e.b)
             let la = map.isLand(a), lb = map.isLand(b)
             guard la != lb else { continue }
             let landCell = la ? a : b
             let isIslet = landComp[landCell] >= 0 && compSizes[landComp[landCell]] <= 14
-            m.segment(e.x1, e.y1, e.x2, e.y2,
-                      width: isIslet ? lineWidth * 0.34 : lineWidth * 0.56,
-                      isIslet ? isletInk : coastInk,
-                      alpha: isIslet ? 0.32 : 0.52)
+            if isIslet {
+                isletCoastSegs.append(.init(e.x1, e.y1, e.x2, e.y2))
+            } else {
+                mainCoastSegs.append(.init(e.x1, e.y1, e.x2, e.y2))
+            }
+        }
+        let mainCoasts = BorderCurve.smooth(BorderCurve.chain(mainCoastSegs))
+        let isletCoasts = BorderCurve.smooth(BorderCurve.chain(isletCoastSegs))
+        for loop in mainCoasts {
+            m.smoothPolyline(loop, width: lineWidth * 1.12, coastShadow, alpha: 0.22)
+        }
+        for loop in mainCoasts {
+            m.smoothPolyline(loop, width: lineWidth * 0.64, mainlandInk, alpha: 0.74)
+        }
+        for loop in isletCoasts {
+            m.smoothPolyline(loop, width: lineWidth * 0.42, isletInk, alpha: 0.46)
         }
 
         let allPairs = boundaries(map)

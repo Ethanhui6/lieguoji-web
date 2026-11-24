@@ -140,6 +140,9 @@ public enum CombatReader {
                 if defPct > 0 { polDef = f(polDef * f(1.0 + defPct / 100.0)) }
                 if sgePct > 0 { dmgProv = f(dmgProv * f(1.0 + sgePct / 100.0)) }
             }
+            if let cultDoc = CultureDoctrines.forNation(r, nation), cultDoc.siegeBonus != 0 {
+                dmgProv = f(dmgProv * f(1.0 + cultDoc.siegeBonus / 100.0))
+            }
             // 两栖抢滩登陆罚值（-28%）与近海友军舰队舰炮火力支援（+20% 抢滩抵消与 +25% 破城轰击）
             if !r.regimes.landingDays.isNull, (r.regimes.landingDays[aid].optionalNumber ?? 0) > 0, attacking {
                 var offshoreFire = false

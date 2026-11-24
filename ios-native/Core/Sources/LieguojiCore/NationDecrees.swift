@@ -389,7 +389,23 @@ extension NativeEngine {
             let on = k.hasSuffix(":on")
             let nb = Regimes.book(r, id)
             nb.autoStrategy = JS(on)
-            return (true, on ? "已开启季度智能施政：每季按既定战略自动校准国策与救灾稳局。" : "已关闭季度智能施政，恢复全手动管理。")
+            nb.manualGovern = JS(!on)
+            return (true, on ? "本国已交由中枢 AI 自动治理：每季按局势自动调配国策、救灾与稳局。" : "本国已切换为玩家手动接管（其余各国仍遵循全图自动治理开关）。")
+
+        case let k where k.hasPrefix("globalAutoGovern:"):
+            let on = k.hasSuffix(":on")
+            Regimes.enable(r)
+            if r.regimes.world.isNull { r.regimes.world = JS.object() }
+            r.regimes.world.globalAutoGovern = JS(on)
+            if on {
+                // 恢复全图统一委托时，同时清除各国残留的手动锁定，一键省心托管天下
+                for nItem in nations {
+                    let nid = nItem.id.asString
+                    let nb = Regimes.book(r, nid)
+                    nb.manualGovern = JS(false)
+                }
+            }
+            return (true, on ? "已开启「全图列国自动治理」：天下各国自动施政调策，无需逐国手动操劳。" : "已关闭「全图列国自动治理」：列国将保持现状，等待玩家逐国手动治理。")
 
         case let k where k.hasPrefix("agenda:") || k.hasPrefix("agenda_"):
             // 防无限点击漏洞：全部政治议案严格执行 180 日（搁置休会 90 日）议期冷却，杜绝单回合刷金刷士气！

@@ -819,7 +819,7 @@ struct ReplayOverlay: View {
                     })
                     .presentationDetents([.medium, .large])
                     .presentationCornerRadius(Theme.Control.cornerSheet)
-                    .presentationBackground { MemorialPaper() }
+                    .background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper)
                     .presentationDragIndicator(.hidden)
                     .font(Theme.section)
                 }

@@ -88,6 +88,10 @@ struct NationInfo: Decodable {
     var activeChain: ActiveChain? = nil
     var strategy: String? = nil
     var autoStrategy: Bool? = nil
+    var globalAutoGovern: Bool? = nil
+    struct CultureDoctrineInfo: Decodable { let title: String; let summary: String; let effectLine: String }
+    var cultureDoctrine: CultureDoctrineInfo? = nil
+    var holdsHolySite: Bool? = nil
     var emblem: String? = nil
     let enemies: [Int]; let alliance: Alliance?; let overlord: Int; let vassals: [Int]
     let wars: [War]
@@ -515,7 +519,7 @@ struct NationSheet: View {
             return "四境暂得承平，拥兵 \(Names.wan(sNat.troops))" + (myFleets.isEmpty ? "" : "、水师战船 \(myFleets.reduce(0) { $0 + $1.ships }) 艘")
         }()
 
-        LazyVStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 14) {
                 let heroClip: String = {
                     if !info.wars.isEmpty {
                         if (info.seaTransport?.totalPorts ?? 0) >= 2 && !myFleets.isEmpty && nation % 2 == 1 { return "herald-naval" }
@@ -570,6 +574,88 @@ struct NationSheet: View {
                     .padding(.horizontal, 16).padding(.vertical, 12)
                 }
                 .padding(.horizontal, 16)
+
+                // 共和/立宪等议会制国家：在概览首屏即展示紧凑议会席位分布条（一键直达议政页掌控议会）
+                if let parties = info.parties, !parties.isEmpty {
+                    let sortedP = parties.sorted { $0.seats > $1.seats }
+                    let rulingP = sortedP.first
+                    Group2 {
+                        VStack(alignment: .leading, spacing: 7) {
+                            HStack(spacing: 6) {
+                                InkIcon(glyph: .polity, size: 15, weight: 1.8, accent: Theme.jade.opacity(0.24)).foregroundStyle(Theme.jade)
+                                Text("议会格局").font(Theme.section).foregroundStyle(Theme.ink)
+                                if let r = rulingP { PaperTag(text: "执政 · \(r.name) \(r.seats)席", color: Theme.seal, size: 10) }
+                                Spacer()
+                                Button {
+                                    GameFeel.shared.tap()
+                                    withAnimation(Motion.tap) { tab = .court }
+                                } label: {
+                                    Text("进议会 ›").font(Theme.caption).foregroundStyle(Theme.seal)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            GeometryReader { g in
+                                HStack(spacing: 1.5) {
+                                    ForEach(Array(parties.enumerated()), id: \.offset) { i, p in
+                                        Rectangle().fill(Self.partyColor(i)).frame(width: max(3, g.size.width * CGFloat(p.seats) / 100))
+                                    }
+                                }
+                                .clipShape(Capsule())
+                            }
+                            .frame(height: 8)
+                            WrapLayout(spacing: 8) {
+                                ForEach(Array(sortedP.prefix(4).enumerated()), id: \.offset) { _, p in
+                                    let idx = parties.firstIndex { $0.name == p.name } ?? 0
+                                    HStack(spacing: 4) {
+                                        Circle().fill(Self.partyColor(idx)).frame(width: 7, height: 7)
+                                        Text("\(p.name) \(p.seats)席").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 12)
+                    }
+                    .padding(.horizontal, 16)
+                }
+
+                // 文明文化学说 × 国教教义与圣地实效卡（清晰呈现高权重文化与宗教加成）
+                if info.cultureDoctrine != nil || !(info.creedEffect ?? "").isEmpty {
+                    Group2 {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let doc = info.cultureDoctrine {
+                                HStack(spacing: 6) {
+                                    InkIcon(glyph: .culture, size: 15, weight: 1.8, accent: Theme.jade.opacity(0.24)).foregroundStyle(Theme.jade)
+                                    Text("文化学说 · \(doc.title)").font(Theme.section).foregroundStyle(Theme.ink)
+                                    Spacer()
+                                    if let culName = Names.culture[info.culture] { PaperTag(text: culName, color: Theme.jade, size: 10) }
+                                }
+                                Text(doc.summary).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                                WrapLayout(spacing: 5) {
+                                    ForEach(doc.effectLine.components(separatedBy: " · "), id: \.self) { token in
+                                        let neg = token.contains("−") || token.contains("-")
+                                        Text(token).font(Theme.caption).foregroundStyle(neg ? Theme.seal : Theme.jade)
+                                            .padding(.horizontal, 7).padding(.vertical, 2.5)
+                                            .background((neg ? Theme.seal : Theme.jade).opacity(0.10), in: Capsule())
+                                    }
+                                }
+                            }
+                            if let creedText = info.creedEffect, !creedText.isEmpty {
+                                if info.cultureDoctrine != nil { Divider2() }
+                                HStack(spacing: 6) {
+                                    InkIcon(glyph: .religion, size: 15, weight: 1.8, accent: Theme.gold.opacity(0.24)).foregroundStyle(Theme.gold)
+                                    Text("国教 · \(Names.religion[info.religion] ?? info.religion)").font(Theme.section).foregroundStyle(Theme.ink)
+                                    Spacer()
+                                    if info.holdsHolySite == true {
+                                        PaperTag(text: "圣地庇佑 +12%战力/+15%税", color: Theme.gold, size: 10)
+                                    }
+                                }
+                                Text(creedText).font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 12)
+                    }
+                    .padding(.horizontal, 16)
+                }
 
                 NationDepthSection(model: model, nation: nation, info: info, onReload: { await reload() }, onMessage: { flash = $0 })
 
@@ -800,7 +886,7 @@ struct NationSheet: View {
     }
     @ViewBuilder private func courtTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         let lex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
-        LazyVStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 14) {
                 // 中枢元首与实际掌权者统一卡片（落实多政体双轨掌权展示 + 年号尊号与在位性格实效）
                 if info.alive {
                     Group2 {
@@ -858,16 +944,30 @@ struct NationSheet: View {
                             }
                             if let summary = info.ruler?.traitSummary, !summary.isEmpty {
                                 Divider2()
-                                HStack(alignment: .top, spacing: 6) {
+                                VStack(alignment: .leading, spacing: 6) {
                                     PaperTag(text: "掌权实效", color: Theme.jade, size: 10)
-                                    Text(summary.joined(separator: " · ")).font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
-                                    Spacer(minLength: 0)
+                                    WrapLayout(spacing: 5) {
+                                        ForEach(summary, id: \.self) { item in
+                                            let neg = item.contains("-") || item.contains("−")
+                                            Text(item)
+                                                .font(Theme.caption).monospacedDigit()
+                                                .foregroundStyle(neg ? Theme.seal : Theme.jade)
+                                                .padding(.horizontal, 7).padding(.vertical, 2.5)
+                                                .background((neg ? Theme.seal : Theme.jade).opacity(0.10), in: Capsule())
+                                                .fixedSize()
+                                        }
+                                    }
                                 }
                             }
                         }
                         .padding(.horizontal, 16).padding(.vertical, 14)
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)
+
+                    // 共和国 / 联邦 / 君主立宪等议会制政体：议会与政党格局大幅前置并默认展开，一眼统揽执政党、议席与改选！
+                    if let parties = info.parties, !parties.isEmpty {
+                        parliamentSection(info: info, parties: parties)
+                    }
 
                     // 动态四方权力天平（完全按文化 × 政体切换，共和绝不出现朝堂／世家／文官）
                     if let cp = info.courtPower {
@@ -1145,95 +1245,6 @@ struct NationSheet: View {
                                 .padding(.horizontal, 16).padding(.vertical, 7)
                             }
                             Text("国运越低、离都城越远的\(lex.adminUnit)越易起事；称职的\(lex.governorTitle)可压低动荡。派系异动见「\(lex.housesSectionTitle)」。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.vertical, 8).fixedSize(horizontal: false, vertical: true)
-                        }
-                        .padding(.horizontal, 16)
-                    }
-                }
-                if let parties = info.parties, !parties.isEmpty {
-                    let topParty = parties.max(by: { $0.seats < $1.seats })
-                    FoldSection("议会（\(parties.count) 党 · \(info.styleLabel ?? "")）", expanded: false, summary: topParty.map { "执政：\($0.name)（\($0.seats)席）" }) {
-                        Group2 {
-                            // 议席分布条
-                            GeometryReader { g in
-                                HStack(spacing: 1) {
-                                    ForEach(Array(parties.enumerated()), id: \.offset) { i, p in
-                                        Rectangle().fill(Self.partyColor(i)).frame(width: max(2, g.size.width * CGFloat(p.seats) / 100))
-                                    }
-                                }
-                                .clipShape(Capsule())
-                            }
-                            .frame(height: 10).padding(.horizontal, 16).padding(.top, 12)
-                            if info.alive {
-                                HStack(spacing: 8) {
-                                    Button {
-                                        GameFeel.shared.tap()
-                                        Task { await run { await model.regimeTransition(nation, action: "snapElection") } }
-                                    } label: {
-                                        Text("提前大选").font(Theme.caption).foregroundStyle(Theme.seal)
-                                            .padding(.horizontal, 10).frame(height: 28)
-                                            .background(Theme.seal.opacity(0.08), in: Capsule())
-                                            .overlay(Capsule().stroke(Theme.seal.opacity(0.28), lineWidth: 0.8))
-                                    }
-                                    .buttonStyle(PressStyle())
-                                    Button {
-                                        GameFeel.shared.tap()
-                                        Task { await run { await model.partyAction(nation, party: -1, action: "found") } }
-                                    } label: {
-                                        Text("扶立新党").font(Theme.caption).foregroundStyle(Theme.jade)
-                                            .padding(.horizontal, 10).frame(height: 28)
-                                            .background(Theme.jade.opacity(0.08), in: Capsule())
-                                            .overlay(Capsule().stroke(Theme.jade.opacity(0.28), lineWidth: 0.8))
-                                    }
-                                    .buttonStyle(PressStyle())
-                                    Spacer()
-                                    Text("点按操控政党").font(Theme.caption).foregroundStyle(Theme.ink2)
-                                }
-                                .padding(.horizontal, 16).padding(.top, 8)
-                            }
-                            ForEach(Array(parties.sorted { $0.seats > $1.seats }.enumerated()), id: \.offset) { i, p in
-                                let index = parties.firstIndex { $0.name == p.name } ?? 0
-                                Button {
-                                    if info.alive {
-                                        pressMenu = PressMenu(
-                                            title: p.name,
-                                            subtitle: "\(p.line ?? "议会政党") · 现占 \(p.seats) 席",
-                                            items: [
-                                                PressMenuItem(title: "扶持增席（+12 席）", symbol: "arrow.up.circle") {
-                                                    Task { await run { await model.partyAction(nation, party: index, action: "boost") } }
-                                                },
-                                                PressMenuItem(title: "任命组阁执政", symbol: "crown") {
-                                                    Task { await run { await model.partyAction(nation, party: index, action: "appoint") } }
-                                                },
-                                                PressMenuItem(title: "自定义党名与议席", symbol: "pencil") {
-                                                    partyEdit = PartyEdit(id: index, name: p.name, seats: p.seats)
-                                                },
-                                                PressMenuItem(title: "查禁此党（国运 −3）", symbol: "xmark.octagon", destructive: true) {
-                                                    Task { await run { await model.partyAction(nation, party: index, action: "ban") } }
-                                                },
-                                            ]
-                                        )
-                                    } else {
-                                        partyEdit = PartyEdit(id: index, name: p.name, seats: p.seats)
-                                    }
-                                } label: {
-                                    HStack(spacing: 8) {
-                                        RoundedRectangle(cornerRadius: 2).fill(Self.partyColor(index)).frame(width: 10, height: 10)
-                                        Text(p.name).font(Theme.body).foregroundStyle(Theme.ink)
-                                        if let line = p.line { Text(line).font(Theme.caption).foregroundStyle(Self.partyColor(index)).padding(.horizontal, 5).padding(.vertical, 1).overlay(Capsule().stroke(Self.partyColor(index).opacity(0.6))) }
-                                        if i == 0 { PaperTag(text: "执政") }
-                                        Spacer()
-                                        Text("\(p.seats) 席").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
-                                        InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75))
-                                    }
-                                    .padding(.horizontal, 16).padding(.top, 7).contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                                // 党纲: what the party would do.
-                                if let policies = p.policies { Text(policies.joined(separator: " · ")).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8).padding(.leading, 34).padding(.trailing, 16).frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 6) }
-                            }
-                            if let top = topParty, let effect = top.effect {
-                                Text("执政 · \(top.name)（\(top.line ?? "")）：\(effect)。每四年改选，可随时扶持、组阁、查禁或扶立新党。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10).fixedSize(horizontal: false, vertical: true)
-                            }
                         }
                         .padding(.horizontal, 16)
                     }
@@ -1971,19 +1982,110 @@ struct NationSheet: View {
         }
     }
 
+    /// 置顶议会与政党格局组件（共和国/联邦/立宪国默认直接展开在「议政」页最顶部）。
+    @ViewBuilder private func parliamentSection(info: NationInfo, parties: [NationInfo.Party]) -> some View {
+        let topParty = parties.max(by: { $0.seats < $1.seats })
+        FoldSection("议会与政党格局（\(parties.count) 党 · \(info.styleLabel ?? "")）", expanded: true, summary: topParty.map { "执政：\($0.name)（\($0.seats)席）" }) {
+            Group2 {
+                // 议席分布条
+                GeometryReader { g in
+                    HStack(spacing: 1) {
+                        ForEach(Array(parties.enumerated()), id: \.offset) { i, p in
+                            Rectangle().fill(Self.partyColor(i)).frame(width: max(2, g.size.width * CGFloat(p.seats) / 100))
+                        }
+                    }
+                    .clipShape(Capsule())
+                }
+                .frame(height: 10).padding(.horizontal, 16).padding(.top, 12)
+                if info.alive {
+                    HStack(spacing: 8) {
+                        Button {
+                            GameFeel.shared.tap()
+                            Task { await run { await model.regimeTransition(nation, action: "snapElection") } }
+                        } label: {
+                            Text("提前大选").font(Theme.caption).foregroundStyle(Theme.seal)
+                                .padding(.horizontal, 10).frame(height: 28)
+                                .background(Theme.seal.opacity(0.08), in: Capsule())
+                                .overlay(Capsule().stroke(Theme.seal.opacity(0.28), lineWidth: 0.8))
+                        }
+                        .buttonStyle(PressStyle())
+                        Button {
+                            GameFeel.shared.tap()
+                            Task { await run { await model.partyAction(nation, party: -1, action: "found") } }
+                        } label: {
+                            Text("扶立新党").font(Theme.caption).foregroundStyle(Theme.jade)
+                                .padding(.horizontal, 10).frame(height: 28)
+                                .background(Theme.jade.opacity(0.08), in: Capsule())
+                                .overlay(Capsule().stroke(Theme.jade.opacity(0.28), lineWidth: 0.8))
+                        }
+                        .buttonStyle(PressStyle())
+                        Spacer()
+                        Text("点按操控政党").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    }
+                    .padding(.horizontal, 16).padding(.top, 8)
+                }
+                ForEach(Array(parties.sorted { $0.seats > $1.seats }.enumerated()), id: \.offset) { i, p in
+                    let index = parties.firstIndex { $0.name == p.name } ?? 0
+                    Button {
+                        if info.alive {
+                            pressMenu = PressMenu(
+                                title: p.name,
+                                subtitle: "\(p.line ?? "议会政党") · 现占 \(p.seats) 席",
+                                items: [
+                                    PressMenuItem(title: "扶持增席（+12 席）", symbol: "arrow.up.circle") {
+                                        Task { await run { await model.partyAction(nation, party: index, action: "boost") } }
+                                    },
+                                    PressMenuItem(title: "任命组阁执政", symbol: "crown") {
+                                        Task { await run { await model.partyAction(nation, party: index, action: "appoint") } }
+                                    },
+                                    PressMenuItem(title: "自定义党名与议席", symbol: "pencil") {
+                                        partyEdit = PartyEdit(id: index, name: p.name, seats: p.seats)
+                                    },
+                                    PressMenuItem(title: "查禁此党（国运 −3）", symbol: "xmark.octagon", destructive: true) {
+                                        Task { await run { await model.partyAction(nation, party: index, action: "ban") } }
+                                    },
+                                ]
+                            )
+                        } else {
+                            partyEdit = PartyEdit(id: index, name: p.name, seats: p.seats)
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            RoundedRectangle(cornerRadius: 2).fill(Self.partyColor(index)).frame(width: 10, height: 10)
+                            Text(p.name).font(Theme.body).foregroundStyle(Theme.ink)
+                            if let line = p.line { Text(line).font(Theme.caption).foregroundStyle(Self.partyColor(index)).padding(.horizontal, 5).padding(.vertical, 1).overlay(Capsule().stroke(Self.partyColor(index).opacity(0.6))) }
+                            if i == 0 { PaperTag(text: "执政") }
+                            Spacer()
+                            Text("\(p.seats) 席").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
+                            InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.75))
+                        }
+                        .padding(.horizontal, 16).padding(.top, 7).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if let policies = p.policies { Text(policies.joined(separator: " · ")).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8).padding(.leading, 34).padding(.trailing, 16).frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 6) }
+                }
+                if let top = topParty, let effect = top.effect {
+                    Text("执政 · \(top.name)（\(top.line ?? "")）：\(effect)。每四年改选，可随时扶持、组阁、查禁或扶立新党。").font(Theme.caption).foregroundStyle(Theme.ink2).padding(.horizontal, 16).padding(.bottom, 10).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
     private func reload() async {
-        async let infoTask = model.nationInfo(nation)
-        async let historyTask = model.nationHistory(nation)
-        async let regimeTask = model.regime(nation)
-        let (loadedInfo, loadedHistory, loadedRegime) = await (infoTask, historyTask, regimeTask)
+        // 优先秒开核心 NationInfo（彻底根治 1073ms 国家页首开卡顿），史册与政体演进随后异步补载不阻塞首帧。
+        let loadedInfo = await model.nationInfo(nation)
         info = loadedInfo; failed = loadedInfo == nil
-        history = loadedHistory
-        regime = loadedRegime
-        if tab == .court { postList = await model.posts(nation) }
         let nextRel = relationColors()
         if model.controller.relationsNation == nation && model.controller.relations != nextRel {
             model.controller.relations = nextRel
         }
+        async let historyTask = model.nationHistory(nation)
+        async let regimeTask = model.regime(nation)
+        let (loadedHistory, loadedRegime) = await (historyTask, regimeTask)
+        history = loadedHistory
+        regime = loadedRegime
+        if tab == .court { postList = await model.posts(nation) }
     }
     /// StateRelationsHighlighter colours.
     private func relationColors() -> [Int: UInt32] {

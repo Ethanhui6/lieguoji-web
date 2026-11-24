@@ -18,6 +18,7 @@ extension NativeEngine {
         o.civilWar = st.isNull ? .null : JS(st.allowCivilWar.isTruthy)
         o.civilMonths = JS(st.isNull ? 0 : st.civilWarMinMonths.optionalNumber ?? 0)
         o.vassals = r.vassalManager.isNull ? .null : JS(r.vassalManager.enabled.isTruthy)
+        o.globalAutoGovern = JS(Regimes.globalAutoGovern(r))
         return Data(o.json.utf8)
     }
 
@@ -27,11 +28,16 @@ extension NativeEngine {
         func months(_ max: Int) -> Bool { value >= 0 && value <= max }
         var reason = ""
         switch key {
-        case "abandon", "noAssist":
+        case "abandon", "noAssist", "globalAutoGovern":
             Regimes.enable(r)
             if r.regimes.world.isNull { r.regimes.world = JS.object() }
             r.regimes.world[key] = JS(value != 0)
-            return (true, "诏令已颁行。")
+            if key == "globalAutoGovern" && value != 0 {
+                for nItem in r.world.nations.asArray {
+                    Regimes.book(r, nItem.id.asString).manualGovern = JS(false)
+                }
+            }
+            return (true, key == "globalAutoGovern" ? (value != 0 ? "已开启全图列国自动治理。" : "已关闭全图列国自动治理。") : "诏令已颁行。")
         case "clearHistory": r.chronicle.entries = .array([]); return (true, "大事记已清空。")
         case "stopWars": return stopAllWars()
         case "dissolveAlliances": return dissolveAllAlliances()

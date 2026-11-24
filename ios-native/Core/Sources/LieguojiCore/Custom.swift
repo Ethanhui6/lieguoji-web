@@ -119,6 +119,21 @@ public enum Regimes {
         Style(id: "semiPresidential", base: "Republic", label: "半总统共和", suffix: "共和国", title: "总统", parties: true, single: nil),
         Style(id: "technocracy", base: "Republic", label: "专家官僚制", suffix: "执政府", title: "首席执政", parties: false, single: nil),
         Style(id: "directorate", base: "Republic", label: "督政府", suffix: "督政府", title: "第一执政", parties: true, single: nil),
+        // v4.2.4 扩充 14 种真实历史政体（总数 57 种）
+        Style(id: "senatorial", base: "Republic", label: "元老院共和", suffix: "共和国", title: "首席执政官", parties: true, single: nil),
+        Style(id: "consular", base: "Republic", label: "执政官共和", suffix: "执政府", title: "第一执政官", parties: true, single: nil),
+        Style(id: "dogate", base: "Republic", label: "总督商业共和", suffix: "最尊贵共和国", title: "大总督", parties: true, single: nil),
+        Style(id: "hanseatic", base: "Federation", label: "自由商盟邦", suffix: "商盟自由邦", title: "盟会长老", parties: true, single: nil),
+        Style(id: "freeCity", base: "Republic", label: "帝国自由市", suffix: "自由市", title: "首席市长", parties: true, single: nil),
+        Style(id: "protectorate", base: "Republic", label: "护国公制", suffix: "护国公领", title: "护国公", parties: false, single: nil),
+        Style(id: "archduchy", base: "Kingdom", label: "大公领", suffix: "大公国", title: "大公", parties: false, single: nil),
+        Style(id: "margraviate", base: "Kingdom", label: "边区侯国", suffix: "边区侯国", title: "边区侯", parties: false, single: nil),
+        Style(id: "jiedushi", base: "Empire", label: "藩镇节度使", suffix: "节度镇", title: "节度使", parties: false, single: nil),
+        Style(id: "duhufu", base: "Empire", label: "都护府", suffix: "都护府", title: "大都护", parties: false, single: nil),
+        Style(id: "emirate", base: "Kingdom", label: "埃米尔国", suffix: "埃米尔国", title: "埃米尔", parties: false, single: nil),
+        Style(id: "mamluk", base: "Kingdom", label: "马穆鲁克军政", suffix: "苏丹国", title: "军团苏丹", parties: false, single: nil),
+        Style(id: "pharaonic", base: "Empire", label: "法老双冠王朝", suffix: "法老王朝", title: "法老", parties: false, single: nil),
+        Style(id: "tusi", base: "Tribal", label: "土司宣慰司", suffix: "宣慰司", title: "宣慰使", parties: false, single: nil),
     ]
     static let defaultStyle = ["Kingdom": "absolute", "Empire": "empire", "Republic": "democratic", "Federation": "federal", "Theocracy": "theocracy", "Tribal": "tribal"]
     public static func style(_ r: JS, _ id: String) -> Style {
@@ -368,10 +383,12 @@ public enum Regimes {
         a += persona(r, attacker)?.attack ?? 0
         a += governing(r, attacker)?.attack ?? 0
         a += stateCreed(r, attacker)?.attack ?? 0
+        if holdsHolySite(r, attacker) { a += 12 }
         var d: Double = bonus(r, victim, "defense") ?? 0
         d += persona(r, victim)?.defense ?? 0
         d += governing(r, victim)?.defense ?? 0
         d += stateCreed(r, victim)?.defense ?? 0
+        if holdsHolySite(r, victim) { d += 12 }
         a += leverage(r, attacker).attack
         d += leverage(r, victim).defense
         // App worlds fight at twice the original's lethality: evenly matched armies used to grind for a

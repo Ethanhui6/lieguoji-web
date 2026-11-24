@@ -310,7 +310,7 @@ struct DiplomacyBoard: View {
                         warConfirmTarget = nil
                     }
                 )
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
         .task(id: "\(nation)-\(state.day / 30)-\(attempt)") {

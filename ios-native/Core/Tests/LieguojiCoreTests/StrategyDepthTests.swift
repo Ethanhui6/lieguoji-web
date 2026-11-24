@@ -158,4 +158,45 @@ final class StrategyDepthTests: XCTestCase {
             XCTAssertNotNil(wJson["warning"])
         }
     }
+
+    func testV424CultureReligionCharacterPolitiesAndGlobalAutoGovern() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+        let r = engine.run
+        let n0 = r.world.nations[0].id.asString
+
+        // 1. 全部 26 文明均具备鲜明文化学说与真实加成
+        XCTAssertGreaterThanOrEqual(CultureDoctrines.all.count, 26)
+        let mongol = CultureDoctrines.of("mongol")
+        let dutch = CultureDoctrines.of("dutch")
+        XCTAssertGreaterThanOrEqual(mongol.attack, 20)
+        XCTAssertGreaterThanOrEqual(dutch.income, 20)
+
+        // 2. 宗教教义大幅强化（10%+ 级别真实修正）
+        XCTAssertGreaterThanOrEqual(Regimes.creeds["norse"]?.attack ?? 0, 20)
+        XCTAssertGreaterThanOrEqual(Regimes.creeds["protestant"]?.income ?? 0, 20)
+
+        // 3. 政体扩充至 57 种且每一种均配有完整 StyleProfile 画像
+        XCTAssertGreaterThanOrEqual(Regimes.styles.count, 57)
+        for s in Regimes.styles {
+            XCTAssertNotNil(Regimes.styleProfiles[s.id], "缺少政体画像：\(s.id)")
+        }
+
+        // 4. 全图列国统一自动治理默认开启，且支持一键全局开关与单国手动接管
+        XCTAssertTrue(Regimes.globalAutoGovern(r))
+        XCTAssertTrue(Regimes.isAutoGoverned(r, n0))
+        let manual = engine.nationDecree(0, kind: "strategyAuto:off")
+        XCTAssertTrue(manual.ok, manual.reason)
+        XCTAssertFalse(Regimes.isAutoGoverned(r, n0))
+        let restoreAll = engine.nationDecree(0, kind: "globalAutoGovern:on")
+        XCTAssertTrue(restoreAll.ok, restoreAll.reason)
+        XCTAssertTrue(Regimes.isAutoGoverned(r, n0))
+
+        // 5. 人物性格特质实效大幅提升
+        let p = JS.object()
+        p.traits = .array([JS("Conqueror"), JS("Financier")])
+        let eff = MonarchLore.traitEffects(of: p)
+        XCTAssertGreaterThanOrEqual(eff.attack, 24)
+        XCTAssertGreaterThanOrEqual(eff.income, 22)
+    }
 }

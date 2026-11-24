@@ -214,7 +214,7 @@ struct StatTile: View {
         }
     }
     private var content: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 4) {
             Group {
                 if showIcon {
                     GlyphLabel(text: label)
@@ -222,8 +222,11 @@ struct StatTile: View {
                     Text(label)
                 }
             }
-            .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
-            Text(value).font(Theme.title).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.62).monospacedDigit()
+            .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.78)
+            .frame(height: 16, alignment: .leading)
+            Text(value).font(Theme.kai(18.5)).foregroundStyle(warn ? Theme.seal : Theme.ink)
+                .lineLimit(1).minimumScaleFactor(0.72).monospacedDigit()
+                .frame(height: 23, alignment: .leading)
                 .contentTransition(.numericText()).animation(Motion.tap, value: value)
             if let fraction {
                 InkBar(fraction: fraction, color: warn ? Theme.seal : Theme.ink.opacity(0.65), height: 4)
@@ -231,7 +234,7 @@ struct StatTile: View {
             } else if reserveBar { Color.clear.frame(height: 4) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12).padding(.vertical, 10)
+        .padding(.horizontal, 11).padding(.vertical, 10)
         .contentShape(Rectangle())
     }
 }

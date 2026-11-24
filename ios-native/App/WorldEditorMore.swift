@@ -107,7 +107,7 @@ struct EditorChoiceList: View {
             }
             .padding(.bottom, 20)
         }
-        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
     }
 }
 
@@ -151,7 +151,7 @@ struct EditorAllianceTab: View {
                             HStack {
                                 Text("\(a.members.count) 国\(a.unbreakable ? " · 铁盟" : "")").font(Theme.body).foregroundStyle(Theme.ink2)
                                 Spacer()
-                                Image(systemName: "chevron.down").font(.caption).foregroundStyle(Theme.ink2)
+                                InkIcon(glyph: .chevronDown, size: 12, weight: 1.7).foregroundStyle(Theme.ink2)
                             }
                             .contentShape(Rectangle())
                         }
@@ -176,7 +176,7 @@ struct EditorAllianceTab: View {
                     }
                     .padding(.bottom, 20)
                 }
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
             }
         }
     }
@@ -267,7 +267,7 @@ struct EditorMapTab: View {
             }
             quickSection(imageId >= 0 ? "修改图片" : "地图图片") {
                 PhotosPicker(selection: $photo, matching: .images) {
-                    HStack { Image(systemName: "photo"); Text(imageData == nil ? "从相册选图" : "已选图片，可更换"); Spacer() }.font(Theme.body).foregroundStyle(Theme.seal).contentShape(Rectangle())
+                    HStack(spacing: 6) { InkIcon(glyph: .wallpaper, size: 15, weight: 1.7); Text(imageData == nil ? "从相册选图" : "已选图片，可更换"); Spacer() }.font(Theme.body).foregroundStyle(Theme.seal).contentShape(Rectangle())
                 }
                 TextField("名称", text: $imageName).paperField()
                 quickSlider("宽度", value: $width, 20...1600, step: 10, text: "\(Int(width))")
@@ -289,7 +289,7 @@ struct EditorMapTab: View {
                         Button {
                             imageId = m.id; imageName = m.name; imageData = nil; width = m.width; angle = m.angle * 180 / .pi; alpha = m.alpha; front = m.front; visible = m.visible; imageX = m.x; imageY = m.y
                         } label: {
-                            HStack { Text(m.name).font(Theme.body).foregroundStyle(imageId == m.id ? Theme.seal : Theme.ink).lineLimit(1); Spacer(); Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2) }.contentShape(Rectangle())
+                            HStack { Text(m.name).font(Theme.body).foregroundStyle(imageId == m.id ? Theme.seal : Theme.ink).lineLimit(1); Spacer(); InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.ink2) }.contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }

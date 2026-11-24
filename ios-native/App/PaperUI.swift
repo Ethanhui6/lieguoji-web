@@ -591,6 +591,7 @@ struct WorldSettings: Decodable {
     let rebellion: Bool?; let rebellionMonths: Int
     let families: Bool?; let familyMonths: Int; let civilWar: Bool?; let civilMonths: Int
     let vassals: Bool?
+    var globalAutoGovern: Bool? = nil
 }
 
 /// The original's world AI and rule settings as an imperial edict: each change is proclaimed.
@@ -606,7 +607,9 @@ struct EdictSheet: View {
             LazyVStack(alignment: .leading, spacing: 14) {
                 MemorialHeader(title: "天下诏令", subtitle: "奉天承运，诏曰：", seal: "诏")
                     if let s {
-                        section("外交") {
+                        section("治理与外交") {
+                            toggle("全图列国统一自动治理", s.globalAutoGovern ?? true, "globalAutoGovern")
+                            Divider2()
                             toggle("世界自动外交", s.worldAuto, "worldAuto")
                             Divider2()
                             stepper("最长战争期限", s.maximumMonths, 0...480, 6, "月", "maximumMonths", zero: "不限")
@@ -799,9 +802,10 @@ struct PaperMenu<T: Hashable>: View {
                 }
                 .padding(.bottom, 24)
             }
+            .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.medium, .large])
             .presentationCornerRadius(Theme.Control.cornerSheet)
-            .presentationBackground { MemorialPaper() }
+            .presentationBackground(Theme.paper)
             .presentationDragIndicator(.hidden)
             .font(Theme.section)
         }
@@ -1057,18 +1061,16 @@ struct InkBar: View {
 }
 
 extension View {
-    /// The one unified card look of every page (matching Group2 identically): warm rice paper,
-    /// Apple continuous 16pt corners, subtle ink outer rule and concentric 13.5pt vermilion inner rule.
+    /// 全应用统一温润宣纸卡片（与 Group2 完全同源）：无双框白边、无刺眼泛白，单层暖墨细边收口。
     func paperCard(tint: Color? = nil) -> some View {
         let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
         return self
             .background(
-                shape.fill(Theme.paper2.opacity(0.82))
-                    .shadow(color: Color(red: 0.22, green: 0.16, blue: 0.08).opacity(0.06), radius: 5, y: 1.5)
+                shape.fill(Color(red: 0.926, green: 0.890, blue: 0.824).opacity(0.84))
             )
-            .background((tint ?? .clear).opacity(0.055), in: shape)
-            .overlay(shape.strokeBorder((tint ?? Theme.ink).opacity(tint == nil ? 0.13 : 0.32), lineWidth: 0.85))
-            .overlay(shape.inset(by: 2.5).strokeBorder((tint ?? Theme.seal).opacity(0.08), lineWidth: 0.5))
+            .background((tint ?? .clear).opacity(0.06), in: shape)
+            .clipShape(shape)
+            .overlay(shape.strokeBorder((tint ?? Theme.ink).opacity(tint == nil ? 0.15 : 0.30), lineWidth: 0.75))
     }
 }
 

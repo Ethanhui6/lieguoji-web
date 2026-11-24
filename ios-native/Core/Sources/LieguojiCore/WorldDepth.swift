@@ -668,6 +668,15 @@ extension NativeEngine {
         if corrupt > 0 { taxRows.append(makeLine("吏治腐化折损", "−\(min(45, corrupt / 2))%", "bad")) }
         let tr = Trade.share(r, id)
         if tr.rate > 0.005 { taxRows.append(makeLine("特产与通商网加成", "+\(Int((tr.rate * 100).rounded()))%", "good")) }
+        if let doc = CultureDoctrines.forNation(r, id), doc.income != 0 {
+            taxRows.append(makeLine("文化学说「\(doc.title)」", "\(doc.income > 0 ? "+" : "")\(Int(doc.income))%", doc.income > 0 ? "good" : "bad"))
+        }
+        if let creed = Regimes.stateCreed(r, id), creed.income != 0 {
+            taxRows.append(makeLine("国教「\(creed.name)」税政加持", "\(creed.income > 0 ? "+" : "")\(Int(creed.income))%", creed.income > 0 ? "good" : "bad"))
+        }
+        if Regimes.holdsHolySite(r, id) {
+            taxRows.append(makeLine("掌控本教圣地正统红利", "+15%", "good"))
+        }
         let ecLvl = WorldDepth.techLevel(r, nation: id, branch: .economy)
         if ecLvl > 1 { taxRows.append(makeLine("农商科技（\(ecLvl)阶）", "+\((ecLvl - 1) * 6)%", "good")) }
         let sea = SeaDominion.seaControl(r, nation: id)
@@ -684,6 +693,27 @@ extension NativeEngine {
         milRows.append(makeLine("国运底蕴（\(dest)）", dest >= 60 ? "高昂" : dest <= 30 ? "低迷" : "平稳", dest >= 60 ? "good" : dest <= 30 ? "bad" : "neutral"))
         let milLvl = WorldDepth.techLevel(r, nation: id, branch: .military)
         if milLvl > 1 { milRows.append(makeLine("军备科技（\(milLvl)阶）", "攻防 +\((milLvl - 1) * 5)%", "good")) }
+        if let doc = CultureDoctrines.forNation(r, id), (doc.attack != 0 || doc.defense != 0) {
+            milRows.append(makeLine("文化学说「\(doc.title)」", "攻 \(doc.attack >= 0 ? "+" : "")\(Int(doc.attack))% · 守 \(doc.defense >= 0 ? "+" : "")\(Int(doc.defense))%", (doc.attack + doc.defense) >= 0 ? "good" : "bad"))
+        }
+        if let creed = Regimes.stateCreed(r, id), (creed.attack != 0 || creed.defense != 0) {
+            milRows.append(makeLine("国教「\(creed.name)」战意", "攻 +\(Int(creed.attack))% · 守 +\(Int(creed.defense))%", "good"))
+        }
+        if Regimes.holdsHolySite(r, id) {
+            milRows.append(makeLine("圣地庇佑军心士气", "攻 +12% · 守 +12%", "good"))
+        }
+        let activeRuler = Regimes.governor(r, id) ?? Regimes.ruler(r, id)
+        if let activeRuler, !activeRuler.base.isNull {
+            let sk = People.skills(activeRuler)
+            let milBonus = Int(((sk.military - 50) * 1.15).rounded())
+            if abs(milBonus) >= 3 {
+                milRows.append(makeLine("主政者军事才略（\(Int(sk.military))）", "攻 \(milBonus >= 0 ? "+" : "")\(milBonus)%", milBonus >= 0 ? "good" : "bad"))
+            }
+            let te = MonarchLore.traitEffects(of: activeRuler)
+            if te.attack != 0 || te.defense != 0 {
+                milRows.append(makeLine("主政者人物特质", "攻 \(te.attack >= 0 ? "+" : "")\(Int(te.attack))% · 守 \(te.defense >= 0 ? "+" : "")\(Int(te.defense))%", (te.attack + te.defense) >= 0 ? "good" : "bad"))
+            }
+        }
         let tb = Trade.nationalBonuses(r, id)
         if tb.attack > 0.4 || tb.defense > 0.4 {
             milRows.append(makeLine("战略特产（战马/铁矿/硝石/石料）", "攻 +\(Int(tb.attack.rounded()))% · 防 +\(Int(tb.defense.rounded()))%", "good"))

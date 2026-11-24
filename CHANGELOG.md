@@ -1,5 +1,45 @@
 # 更新日志
 
+## 4.2.4 / build 167 — 2026-11-24
+
+### 一、严重 Bug 根治 × 海岸线与地图细节重铸 × 极速低耗流畅
+- **彻底修复“移动地图时飘字数字滞留屏幕原地”严重 Bug（`MapEffects.swift`、`MapView.swift`）**：
+  - 将战损飘字（`-120`、`+N 军` 等）与点选落指水晕全部重构为锚定世界坐标 `(worldX, worldY)` 的嵌套 `CALayer` 容器，随镜头拖拽、双指缩放、惯性滑行与镜头飞跃逐帧 `camera.toScreen` 贴地跟随，彻底告别文字数字停留在手势原地不随地图移动的顽疾；
+  - 将高速平移期间的 `MapLabelsView` 升级为世界坐标精确反算快路径 `repositionVisible(camera:viewport:)`，彻底消除累积像素漂移与边缘吸附错位。
+- **海岸线重铸 × 地图近观细节升级 × 彻底释放静止 GPU 发热卡顿（`MapLayers.swift`、`MapDetail.swift`、`MapView.swift`、`NationSheet.swift`）**：
+  - 将 `MapLayers.outlines` 与 `MapDetail.ornaments` 中原始锯齿状 Voronoi 海岸线全面重构为 `BorderCurve.chain` + `BorderCurve.smooth` 连续斜接三层古舆图海岸线（外层碧青浅海陆棚 → 薄雾浪沫 → 暖沙岸边 + 区分大陆双色清锐岸线与孤岛淡墨细岸），彻底根除折角重叠珠点与灰白浑浊宽边；
+  - 将 `waterlines` 精修为 5 道清锐宋画青碧等深线与单遍柔滑抗锯齿，并在放大近观时新增河口浅滩、高山微刻脊线与林野点苔肌理；
+  - 关闭地图静止时的 `ambientActive` 无谓 30fps 空转（静止降至 0% GPU 发热），重构 `NationSheet.reload()` 异步分步加载并去除嵌套 `LazyVStack`，根治国家页 1073ms 级首开卡顿。
+- **墨晕重铸：回归「生成地图开卷」同款生宣水墨漫渗质感（`Ink.swift`、`Wash.swift`）**：
+  - 将 `inkCompositeFragment` 与 `sweepFragment` 升级为与开卷 `revealFragment` 完全同源的大尺度 `0.015` 级生宣毛细渗纹、利落清透湿墨前沿（`soft: 0.062`）、初湿墨沉与湿锋蓄墨深环（`front = reached * (1 - reached) * 4.0`），兼具友军经过顺滑染回我方领土的完整体验。
+
+### 二、彻底清除国家页组件白边 × 顶/底 HUD 视觉统一 × 自绘/世界编辑器全面升级
+- **彻底消灭国家页及全站组件/卡片边缘白边（`LieguojiApp.swift`、`PaperUI.swift`、全站 28 处 Sheet）**：
+  - 查明卡片泛白亮边源自 `Theme.paper2` 过浅与 `Group2` / `.paperCard()` / `.glass()` 双框 `2.5pt` 间隙形成的亮白边圈：全面调暖 `Theme.paper2` 宣纸色温、移除全部双框亮隙改用单层精致暖墨收口与 `.clipShape`，并扫清全站剩余 24 处旧版 `.presentationBackground { MemorialPaper() }` 为全实底宣纸弹窗。
+- **全局数字对齐 × 顶/底 UI 比例统一（`GameView.swift`、`PaperControls.swift`、`NationSheet.swift`）**：
+  - 统一顶栏（`42pt`）与底栏悬浮坞（`46pt` / `38pt` 同心朱印钮）体量、线宽、字号与 `monospacedDigit` 基线对齐，彻底消除以往“顶栏偏小、底栏偏大”的割裂感；统一 `StatStrip` 四格数字基线高度，将 `NationSheet` 人物掌权实效改用 `WrapLayout` 独立胶囊（杜绝“外/交+6”断字换行）。
+- **自定义地图（自绘地图）与世界编辑器全面重铸（`MapEditor.swift`、`WorldEditor.swift`、`WorldEditorMore.swift`、`InkIcons.swift`）**：
+  - 「自绘地图」笔刷由 10 种扩充至 **12 种**（新增深海沟/海峡、高原，6×2 对齐排布），新增 **自由 / 左右对称 / 四象对称** 镜像绘图模式、**实时四色地貌占比仪表（海/平/丘/山）**、一键「中央海峡 / 环陆内海」快速雕琢，并将笔触刷新间隔提速至 `45ms`；
+  - 「世界编辑」全面统一为 `ChipPicker` 标签栏，补齐 `InkIcons` 全部剩余符号映射并清零编辑器残留 SF Symbol，视觉与交互全站统一。
+
+### 三、19 部短视频重铸为真实多维动态 × 矢量驱动棋子动作
+- **彻底告别水平平移：19 部 60fps 历史短视频全面升级为真实主体物理动态（`Resources/Video/herald-*.mp4`）**：
+  - 全面淘汰旧版水平 Ken Burns 滑动，改为逐像素双线性光流变形与动态光照重制全部 19 部短视频：海战与航海呈现真实波浪起伏、船体纵摇与鼓风船帆；战场与起义呈现旌旗迎风飘扬、火光随焰明暗跳动、冲击微震与飞溅火星；大旱呈现地表上升热浪折射；洪涝呈现斜风骤雨与闪电划空；庙堂与盛典呈现流动斜阳光柱与三维景深花瓣/金尘/飞鸽。
+- **大地图军团/舰队真实二维矢量动态（`MapRenderer.swift`）**：
+  - 军团与舰队顶点着色器按真实行进二维方向矢量（`normalize(delta)`）动态倾身、踏步起伏、弹性呼吸与交战双向突刺，摆脱僵硬单轴左右摆动。
+
+### 四、核心玩法深度跃升：全局自动治理、议会置顶、人物/文化/宗教大强化与 57 种历史政体
+- **治理界面支持「全图列国统一自动治理」（`PolitySystem.swift`、`NationDecrees.swift`、`NationDecreeViews.swift`、`WorldOrders.swift`、`PaperUI.swift`）**：
+  - 默认开启全图列国自动施政（不必再逐个国家点开手动开关），在「治理」页最顶部与「天下诏令」新增一键「全图自动治理」总开关，同时保留单国「手动接管 / 恢复委托」精细微调。
+- **共和国/立宪国议会大幅前置（`NationSheet.swift`）**：
+  - 议会制国家在「概览」首屏即展示紧凑议会席位分布条（一键直达议政），并在「议政」页最顶部默认直接展开完整的「议会与政党格局」主卡（不再沉底折叠）。
+- **大幅强化人物四维属性与特质、26 文明文化学说与 27 种国教实效（`CultureDoctrines.swift`、`Faiths.swift`、`MonarchLore.swift`、`Uprisings.swift`、`DiplomacyDeep.swift`、`Daily.swift`、`CombatReader.swift`、`MaritimeWarfare.swift`、`Rebellion.swift`、`WorldDepth.swift`）**：
+  - 新增 `CultureDoctrines` 26 大文明专属「文化学说」（如礼乐郡县农本、武士道与岛防、海洋霸权与商律、长生天铁骑、海上马车夫等，提供 12%–26% 级陆战/海战/破城/岁入/人口/安定修正），并实装异文化州郡税收 −18% 与动荡 +18 机制；
+  - 27 种国教教义加成整体抬升约 3 倍（10%–24% 级别），掌控国教圣地再享全军攻防 +12%、岁入 +15%、国运 +0.25/月，同教/同文外交好感抬升至 +24/+20、异教冲突至 −16/−32；
+  - 人物军事/行政/外交/魅力四维系数与 43 项特质实效大幅提升（明君猛将与昏君庸主在战力、财政、安定与外交上差距立现），全部修正明细在国家概览卡与「数值明细」弹窗透明可查。
+- **历史政体扩充至 57 种 × 文明地名库扩容（`Custom.swift`、`PolitySystem.swift`、`LocalizationEngine.swift`、`NamingCatalog.swift`）**：
+  - 新增 14 种真实历史政体（元老院共和、执政官共和、总督商业共和、自由商盟邦、帝国自由市、护国公制、大公领、边区侯国、藩镇节度使、都护府、埃米尔国、马穆鲁克军政、法老双冠王朝、土司宣慰司），总数达 **57 种**，并大幅扩充各主要文明的历史地理与国名池。
+
 ## 4.2.3 / build 166 — 2026-11-24
 
 ### 一、彻底根治严重卡顿、更新日志点开卡顿与行军/光影不流畅

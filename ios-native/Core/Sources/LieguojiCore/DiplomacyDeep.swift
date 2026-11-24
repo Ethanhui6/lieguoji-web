@@ -188,18 +188,24 @@ public enum DiplomacyDeep {
 
         let fa = ca.religionId.optionalString ?? "", fb = cb.religionId.optionalString ?? ""
         if !fa.isEmpty && !fb.isEmpty {
-            if fa == fb { add("同奉国教", 12) }
-            else if pa.camp == .theocracy || pb.camp == .theocracy { add("神权异教冲突", -20) }
-            else { add("宗教殊异", -6) }
+            if fa == fb { add("同奉国教", 24) }
+            else if pa.camp == .theocracy || pb.camp == .theocracy { add("神权异教冲突", -32) }
+            else { add("宗教殊异", -16) }
         }
         let cultA = ca.cultureId.optionalString ?? "", cultB = cb.cultureId.optionalString ?? ""
-        if !cultA.isEmpty && cultA == cultB { add("同文同源", 12) }
+        if !cultA.isEmpty && cultA == cultB { add("同文同源", 20) }
 
-        // 掌权者外交手腕与人物性格特质（让「纵横捭阖」「仁德宽厚」「苛政暴戾」等真实影响天下邦交！）
+        // 掌权者外交手腕（四维外交属性 + 人物性格特质，使明君贤相与昏君暴主的外交格局截然不同！）
         let rulerB = Regimes.governor(r, b) ?? Regimes.ruler(r, b)
         let rulerBOp = MonarchLore.traitEffects(of: rulerB).opinion
         if rulerBOp != 0 {
             add(rulerBOp > 0 ? "对方主政贤明声望" : "对方主政苛暴失德", rulerBOp)
+        }
+        if let rulerB, !rulerB.base.isNull {
+            let dipMod = Int(((People.skills(rulerB).diplomatic - 50) * 0.36).rounded())
+            if abs(dipMod) >= 3 {
+                add(dipMod > 0 ? "对方元首外交手腕" : "对方元首外交失策", dipMod)
+            }
         }
 
         // 战事、同盟、宗属

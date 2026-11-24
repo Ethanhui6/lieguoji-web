@@ -20,7 +20,7 @@ import LieguojiCore
 enum Theme {
     static let fontName = "TW-Kai-98_1"
     static let paper = Color(red: 0.949, green: 0.922, blue: 0.870)
-    static let paper2 = Color(red: 0.968, green: 0.947, blue: 0.905)
+    static let paper2 = Color(red: 0.936, green: 0.903, blue: 0.842)
     static let ink = Color(red: 0.098, green: 0.082, blue: 0.063)
     static let ink2 = Color(red: 0.36, green: 0.325, blue: 0.27)
     static let line = Color(red: 0.165, green: 0.145, blue: 0.114).opacity(0.14)
@@ -51,15 +51,15 @@ enum Theme {
         static let iconGutter: CGFloat = 22
         static let headerTop: CGFloat = 10
     }
-    /// Apple HIG 统一控件与同心圆角尺度：
-    /// 顶栏所有胶囊与圆钮严守 44pt 等高对齐，底栏悬浮坞严守 54pt 等高且内嵌 44pt 同心朱印钮；
+    /// 统一控件与同心圆角尺度：
+    /// 顶栏 42pt 与底栏 46pt（内嵌 38pt 同心朱印钮）视觉体量严格平衡，彻底告别顶小底大的割裂感；
     /// 圆角严守同心连续曲率：面板 28pt → 外卡片 16pt → 内控件 12pt → 轻标签 10pt。
     enum Control {
         static let screenInset: CGFloat = 16
-        static let topHeight: CGFloat = 44
-        static let dockHeight: CGFloat = 54
-        static let sealButtonSize: CGFloat = 44
-        static let tickerHeight: CGFloat = 34
+        static let topHeight: CGFloat = 42
+        static let dockHeight: CGFloat = 46
+        static let sealButtonSize: CGFloat = 38
+        static let tickerHeight: CGFloat = 32
         static let gap: CGFloat = 8
         static let cornerSheet: CGFloat = 28
         static let cornerCard: CGFloat = 16
@@ -145,7 +145,8 @@ struct RootView: View {
                 SealButton(title: "知道了") { model.failure = nil }.padding(.horizontal, Theme.Layout.pageInset)
             }
             .padding(.bottom, 24)
-            .presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            .background(MemorialPaper().ignoresSafeArea())
+            .presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
         }
     }
 
@@ -207,14 +208,10 @@ struct SecondaryLabel: View {
 }
 
 extension View {
-    /// Frosted glass with a hairline, the iOS 17 floating-control look.
-    /// Floating chrome (date, buttons, tab bar, notices) in the panels' own paper: the ink rule and
-    /// the faint vermilion inner rule of Group2, using InsettableShape.inset(by:) so every corner
-    /// (Circle, Capsule, RoundedRectangle) stays mathematically concentric without pinched inner arcs.
+    /// 统一温润宣纸悬浮条：单层暖墨细边 + 柔和贴地投影，彻底去除旧版双框 2.5pt 间隙形成的泛白亮边。
     func glass<S: InsettableShape>(_ shape: S) -> some View {
-        background(shape.fill(Theme.paper2.opacity(0.96)).shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.12), radius: 9, y: 3))
-            .overlay(shape.strokeBorder(Theme.ink.opacity(0.15), lineWidth: 0.85))
-            .overlay(shape.inset(by: 2.5).strokeBorder(Theme.seal.opacity(0.11), lineWidth: 0.5))
+        background(shape.fill(Theme.paper.opacity(0.95)).shadow(color: Color(red: 0.14, green: 0.10, blue: 0.05).opacity(0.13), radius: 8, y: 2.5))
+            .overlay(shape.strokeBorder(Theme.ink.opacity(0.17), lineWidth: 0.85))
     }
 }
 
@@ -301,7 +298,7 @@ struct WarCount: View {
                 .background {
                     Circle().stroke(Theme.seal.opacity(ring ? 0 : 0.6), lineWidth: 1.2).scaleEffect(ring ? 2.2 : 0.6)
                 }
-            Text(compact ? "\(count)战" : "\(count)场战争").font(Theme.label).lineLimit(1).fixedSize()
+            Text(compact ? "\(count)战" : "\(count)场战争").font(Theme.kai(13)).monospacedDigit().lineLimit(1).fixedSize()
                 .contentTransition(.numericText()).animation(Motion.tap, value: count)
         }
         .foregroundStyle(Theme.seal)
@@ -342,7 +339,7 @@ struct TabButton: View {
                 Text(title).font(Theme.kai(compact ? 10 : 11)).lineLimit(1)
             }
             .foregroundStyle(active ? Theme.seal : Theme.ink)
-            .frame(maxWidth: flexible ? .infinity : (compact ? 46 : 50)).frame(height: compact ? 38 : 44)
+            .frame(maxWidth: flexible ? .infinity : (compact ? 44 : 48)).frame(height: compact ? 36 : 40)
             .background {
                 if compact && active, let marker {
                     RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
@@ -446,19 +443,17 @@ struct SheetHeader: View {
     }
 }
 
-/// A folded memorial page: unified warm rice paper, Apple continuous concentric corners (16pt outer / 13.5pt inner),
-/// subtle ink outer rule and faint vermilion inner rule — matching `.paperCard()` identically across the entire app.
+/// 奏折统一温润宣纸卡片：与底纸自然融合的暖宣底色 + 单层精致墨线收口（彻底清除旧版双框 2.5pt 泛白亮边与反光边）。
 struct Group2<Content: View>: View {
     @ViewBuilder let content: Content
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
         VStack(spacing: 0) { content }
             .background(
-                shape.fill(Theme.paper2.opacity(0.82))
-                    .shadow(color: Color(red: 0.22, green: 0.16, blue: 0.08).opacity(0.06), radius: 5, y: 1.5)
+                shape.fill(Color(red: 0.926, green: 0.890, blue: 0.824).opacity(0.84))
             )
-            .overlay(shape.strokeBorder(Theme.ink.opacity(0.13), lineWidth: 0.85))
-            .overlay(shape.inset(by: 2.5).strokeBorder(Theme.seal.opacity(0.08), lineWidth: 0.5))
+            .clipShape(shape)
+            .overlay(shape.strokeBorder(Theme.ink.opacity(0.15), lineWidth: 0.75))
     }
 }
 
@@ -505,6 +500,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("4.2.4", ["【彻底修复移动地图飘字原地滞留 Bug × 海岸线与地图细节重铸 × 极速低耗】战损飘字与落指水晕全面锚定世界坐标逐帧随地图移动，地名快路径改为精确世界坐标反算零漂移；海岸线重构为 BorderCurve 连续斜接三层碧青浅滩+清锐岸线与 5 道宋画等深线（放大新增河口浅滩与山脊刻纹）；关闭静止无谓 GPU 空转、异步分步加载国家页根治 1073ms 首开卡顿；战争墨晕回归开卷同款生宣大尺度毛细渗纹与湿锋蓄墨深环。",
+                   "【彻底清除国家页组件白边 × 顶/底 UI 比例与数字对齐统一 × 自绘/世界编辑器重铸】调暖宣纸卡底并移除双框 2.5pt 泛白亮隙，清零全站 28 处旧弹窗白边；顶栏（42pt）与底栏（46pt/38pt 朱印钮）体量、线宽、字号与数字基线全面统一；自绘地图扩充至 12 种笔刷并新增左右/四象对称绘图、四色地貌占比仪表与海峡/内海快雕；世界编辑统一 ChipPicker 与全套手绘 InkIcon。",
+                   "【19 部短视频重铸为真实主体物理动态 × 矢量驱动棋子动作】淘汰水平平移，全部 19 部 60fps 历史短视频以逐像素光流与动态光影重制（海浪起伏/船体纵摇/旌旗飘扬/火光跳动/大旱热浪/暴雨闪电/斜阳光柱与三维粒子）；军团舰队按真实二维行进方向倾身踏步。",
+                   "【全局一键自动治理 × 共和国议会置顶 × 人物/文化/宗教影响大强化 × 57 种历史政体】治理页顶部与天下诏令新增全图列国统一自动治理开关（默认开启，可单国接管）；共和国议会大幅前置到「议政」首屏展开并在「概览」展示席位条；新增 26 文明专属文化学说与异文化税政动荡、3 倍强化 27 种国教与圣地加持、大幅放大人物四维与 43 项特质实效，历史政体由 43 种扩充至 57 种并扩充多文明历史国名库。"]),
         ("4.2.3", ["【彻底根治严重卡顿、更新日志卡顿与行军/光影不流畅】手势拖拽与双指缩放改为 VSync 单帧合批提交（根除单帧多次同步 waitUntilScheduled 阻塞，同时零图层错位）；抬高行军温控底线至常规/轻温满帧 60fps 并加入跨步 C1 Hermite 速度连续衔接，静止观图新增 30fps 轻耗活态海波与流云光影；视频改用预烘焙首帧海报秒开、异步起播（彻底移除主线程同步解码），更新日志重构为 LazyVStack 默认展开近 4 版秒开零卡顿。",
                    "【水墨晕染全面重铸 × 友军路过顺滑染回我方领土】新增友军收复反洗机制（WashInput.Kind.reclaim）：敌军在我方领土留下墨晕后即便已撤离，我方军队路过或驻守即沿行军路径将敌墨顺滑染回本国色；重写生宣水彩墨晕着色器，羽化边缘加倍且以纯净矿彩显色、GPU 耗时更低。",
                    "【彻底根治国家页白边 × AI 手绘御卷装裱边框 × 地图光影升级】通过 UIDesignRequiresCompatibility 与全站实底宣纸弹窗彻底清除 iOS 26 悬浮玻璃白边；地图四边全新实装 AI 手绘无缝宋锦织锦横边、紫檀雕花卷轴与四角鎏金碧玉包角；清除生硬三角山与折线草，强化西北定向山川明暗与浅滩绿松石流光。",

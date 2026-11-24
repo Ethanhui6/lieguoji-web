@@ -149,6 +149,35 @@ extension Regimes {
                          summary: "精干官僚与学者治国，财税效率极高、腐败骤降，然缺乏群众动员热忱。", traitLine: "岁入+14% · 腐化−10 · 高效行政"),
             StyleProfile(id: "directorate", camp: .republic, fiefRule: .republican, attack: 6, defense: 4, income: 6, stability: 2, corruption: -2, temper: 0.08,
                          summary: "数位执政官合议分权（法兰西督政府式），防单人独裁却多派系纵横。", traitLine: "进攻+6% · 岁入+6% · 执政合议"),
+            // v4.2.4 扩充 14 种真实历史政体个性画像
+            StyleProfile(id: "senatorial", camp: .republic, fiefRule: .republican, attack: 10, defense: 8, income: 10, stability: 6, corruption: -4, temper: 0.12,
+                         summary: "元老院贵族议政、执政官统军出征（古罗马式），兼具军团威势与法治根基。", traitLine: "进攻+10% 守御+8% · 岁入+10% · 元老院议政"),
+            StyleProfile(id: "consular", camp: .republic, fiefRule: .republican, attack: 12, defense: 6, income: 8, stability: 4, corruption: -6, temper: 0.16,
+                         summary: "第一执政官手握军政大权而留议会法统（拿破仑执政府式），改革果决、战力强悍。", traitLine: "进攻+12% 守御+6% · 岁入+8% · 腐化−6"),
+            StyleProfile(id: "dogate", camp: .republic, fiefRule: .republican, attack: 2, defense: 8, income: 20, stability: 8, corruption: -4, temper: -0.06,
+                         summary: "大总督与大议会制衡共治（威尼斯/热那亚式），海贸金融独步天下。", traitLine: "岁入+20% · 守御+8% · 安定+8 · 海洋总督制"),
+            StyleProfile(id: "hanseatic", camp: .republic, fiefRule: .republican, attack: -2, defense: 10, income: 22, stability: 7, corruption: -6, temper: -0.14,
+                         summary: "沿海岸商港自由邦同盟（汉萨同盟式），商船成群、财税富甲一方。", traitLine: "岁入+22% · 守御+10% · 腐化−6 · 商业邦联"),
+            StyleProfile(id: "freeCity", camp: .republic, fiefRule: .republican, attack: -2, defense: 14, income: 16, stability: 9, corruption: -8, temper: -0.16,
+                         summary: "享有自治特许状的自由市镇，工匠行会林立、城坚粮足而吏治清明。", traitLine: "守御+14% · 岁入+16% · 安定+9 · 腐化−8"),
+            StyleProfile(id: "protectorate", camp: .authoritarian, fiefRule: .republican, attack: 12, defense: 8, income: 4, stability: 2, corruption: -6, temper: 0.14,
+                         summary: "护国公铁腕统合军政与宗教纪律（克伦威尔护国公制），清廉强军却暗藏复辟压力。", traitLine: "进攻+12% 守御+8% · 腐化−6 · 军事护国"),
+            StyleProfile(id: "archduchy", camp: .monarchy, fiefRule: .feudal, attack: 4, defense: 8, income: 8, stability: 7, corruption: -4, temper: 0.02,
+                         summary: "显赫王室领主大公领（奥地利大公国式），善以联姻外交扩张而本土稳固。", traitLine: "守御+8% · 岁入+8% · 安定+7 · 世家联姻"),
+            StyleProfile(id: "margraviate", camp: .monarchy, fiefRule: .feudal, attack: 12, defense: 12, income: 0, stability: 4, corruption: -4, temper: 0.14,
+                         summary: "镇守帝国边陲的尚武侯国（勃兰登堡边区式），尚武重防、民风彪悍。", traitLine: "进攻+12% 守御+12% · 边防尚武"),
+            StyleProfile(id: "jiedushi", camp: .authoritarian, fiefRule: .feudal, attack: 14, defense: 8, income: -4, stability: -6, corruption: 4, temper: 0.24,
+                         summary: "拥兵自重的节度强藩（唐末五代藩镇式），牙兵悍战而易起内变或称帝建号。", traitLine: "进攻+14% 守御+8% · 牙兵强藩 · 安定−6"),
+            StyleProfile(id: "duhufu", camp: .monarchy, fiefRule: .dynastic, attack: 10, defense: 12, income: 2, stability: 4, corruption: -4, temper: 0.12,
+                         summary: "经略边疆的军政大都护府（安西/安北都护府式），屯田戍边、能征善守。", traitLine: "进攻+10% 守御+12% · 腐化−4 · 军政屯田"),
+            StyleProfile(id: "emirate", camp: .monarchy, fiefRule: .dynastic, attack: 10, defense: 6, income: 6, stability: 3, corruption: -2, temper: 0.12,
+                         summary: "绿洲与商道间的世袭埃米尔公国，骑兵精锐、兼顾商旅税收与教法正统。", traitLine: "进攻+10% 守御+6% · 岁入+6%"),
+            StyleProfile(id: "mamluk", camp: .authoritarian, fiefRule: .regent, attack: 16, defense: 10, income: 2, stability: -3, corruption: 2, temper: 0.20,
+                         summary: "由精锐职业军事集团推举苏丹（马穆鲁克式），野战骑兵天下无双而宫廷更迭频仍。", traitLine: "进攻+16% 守御+10% · 军事苏丹"),
+            StyleProfile(id: "pharaonic", camp: .theocracy, fiefRule: .dynastic, attack: 6, defense: 12, income: 12, stability: 12, corruption: -2, temper: 0.04,
+                         summary: "统御上下河谷的神王法老双冠王朝，集神权与水利农税于一身，国祚绵长。", traitLine: "守御+12% · 岁入+12% · 安定+12 · 神王双冠"),
+            StyleProfile(id: "tusi", camp: .tribal, fiefRule: .tribal, attack: 6, defense: 16, income: 2, stability: 8, corruption: -6, temper: -0.06,
+                         summary: "世袭羁縻土司宣慰司，凭崇山峻岭自守、部民安居而不轻启外衅。", traitLine: "守御+16% · 安定+8 · 腐化−6 · 山地土司"),
         ]
         var dict = [String: StyleProfile]()
         for p in list { dict[p.id] = p }
@@ -663,6 +692,24 @@ extension Regimes {
         return "techFocus"
     }
 
+    /// 全图列国是否开启统一自动治理（默认开启，免去逐国手动开关托管）。
+    public static func globalAutoGovern(_ r: JS) -> Bool {
+        guard !r.regimes.isNull else { return true }
+        if r.regimes.world.isNull || r.regimes.world.globalAutoGovern.isNull { return true }
+        return r.regimes.world.globalAutoGovern.isTruthy
+    }
+
+    /// 某国当前是否处于 AI 自动治理状态：全图统一自动治理开启且本国未被玩家单独设为「手动接管」，或本国单独开启了托管。
+    public static func isAutoGoverned(_ r: JS, _ id: String) -> Bool {
+        guard !r.regimes.isNull else { return true }
+        let b = r.regimes.nations[id]
+        if !b.isNull {
+            if b.manualGovern.isTruthy { return false }
+            if b.autoStrategy.isTruthy { return true }
+        }
+        return globalAutoGovern(r)
+    }
+
     /// 每季度由引擎自动为各存活国家统筹长期国策、危机救灾、权力调衡与共和定期大选。
     static func aiAutonomousGovernanceQuarter(_ r: JS, _ n: JS, _ id: String, _ key: Int, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
         guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy else { return }
@@ -676,7 +723,7 @@ extension Regimes {
         let corrupt = Finance.corruption(r, id)
         let atWar = isAtWar(r, id)
         let nowDay = r.world.day.asInt
-        let autoEnabled = b.autoStrategy.isTruthy || (r.diplomacy.nations[id].optionalBool != false)
+        let autoEnabled = isAutoGoverned(r, id)
 
         // 1. 长期国策与战略自动适配（战时动员 / 财政危机 / 腐化整顿 / 国家个性原型）
         if autoEnabled {

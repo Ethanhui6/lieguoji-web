@@ -61,17 +61,17 @@ public enum LocalizationEngine {
         if !s.isEmpty, let prof = Regimes.styleProfiles[s] { return prof.camp }
         let p = (polity ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         switch p {
-        case "republic", "democratic", "parliamentary", "presidential", "federal", "merchant", "oligarchic", "citystate", "confederation", "semiPresidential".lowercased(), "technocracy", "directorate":
+        case "republic", "democratic", "parliamentary", "presidential", "federal", "merchant", "oligarchic", "citystate", "confederation", "semipresidential", "technocracy", "directorate", "senatorial", "consular", "dogate", "hanseatic", "freecity":
             return .republic
         case "constitutional", "constitutionalmonarchy", "union", "dualmonarchy":
             return .constitutional
         case "socialist", "communist", "council":
             return .socialist
-        case "junta", "dictatorship", "authoritarian", "fascist", "nazi", "warlord", "military":
+        case "junta", "dictatorship", "authoritarian", "fascist", "nazi", "warlord", "military", "protectorate", "jiedushi", "mamluk":
             return .authoritarian
-        case "theocracy", "papacy", "caliphate", "order", "lamaism", "holy":
+        case "theocracy", "papacy", "caliphate", "order", "lamaism", "holy", "pharaonic":
             return .theocracy
-        case "tribal", "khanate", "chiefdom", "nomad", "peasant":
+        case "tribal", "khanate", "chiefdom", "nomad", "peasant", "tusi":
             return .tribal
         default:
             return .monarchy

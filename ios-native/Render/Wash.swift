@@ -205,7 +205,7 @@ extension MapRenderer {
             if !sweep.isEmpty, let mesh = sweepMesh(sweep) {
                 let detail = Float(min(1, max(0, (camera.scale - 0.7) / 0.6)))
                 let scale = sweep.topology.scale
-                let w: [Float] = [now, FlipSweep.edge, FlipSweep.after, 0.5, 0.28, 1 / (scale * 1.24), detail, 0]
+                let w: [Float] = [now, FlipSweep.edge, FlipSweep.after, 0.5, 0.38, 1 / (scale * 1.92), detail, 0]
                 encoder.setRenderPipelineState(sweepPipeline)
                 encoder.setVertexBuffer(mesh.vertices, offset: 0, index: 0)
                 encoder.setVertexBytes(&u, length: MemoryLayout<Uniforms>.stride, index: 2)
@@ -230,26 +230,26 @@ extension MapRenderer {
     fragment float4 sweepFragment(SweepOut in [[stage_in]], constant SweepLook& k [[buffer(0)]]) {
         if (in.mode < -0.5) discard_fragment();
         float2 q = in.world;
-        // 轻量化 2 阶宣纸纤维扰动 + 细纸毛孔，生宣毛口温润自然且 GPU 片元耗时再降 35%
-        float nMain = fbm2(q * k.freq);
-        float nFine = vnoise(q * k.freq * 2.35 + float2(3.7, 5.1));
-        float rough = (nMain - 0.5) * 2.0 * k.noise + (nFine - 0.5) * (k.noise * 0.34);
+        // 与开卷 revealFragment 一致的大尺度生宣毛细渗纹 + 利落水墨蓄色前锋
+        float nMain = fbm2(q * k.freq + float2(31.7, 11.3));
+        float nFine = vnoise(q * (k.freq * 3.1) + float2(3.7, 5.1));
+        float rough = (nMain - 0.5) * 2.0 * k.noise + (nFine - 0.5) * (k.noise * 0.26);
         float s = (k.now - in.arrive) / k.edge + rough;
-        float reached = smoothstep(-1.02, 1.02, s);
+        float reached = smoothstep(-0.32, 0.72, s);
         float a = 0.0;
         if (in.mode > 0.5) {
-            // 未到达处完整承接旧色；到达处旧色余韵沿纸纹顺滑淡去，过渡干净不拖泥带水。
             float fade = (1.0 - k.tint) * clamp(1.0 - (k.now - in.arrive) / k.after, 0.0, 1.0);
             a = mix(1.0, fade, reached);
         }
-        // 原版经典湿墨脊 + 细微先导暖金纸光（攻占为克制浓湿墨锋，改朝换代墨圈略添古金华彩）
-        float rim = exp(-s * s * 0.74) * (in.mode > 0.5 ? 0.14 + 0.11 * k.detail : 0.21 + 0.13 * k.detail);
-        float crest = exp(-(s + 0.42) * (s + 0.42) * 2.4) * (in.mode > 0.5 ? 0.035 : 0.11);
+        // 开卷同款湿墨蓄色前沿（front = reached * (1 - reached) * 4.0）
+        float front = reached * (1.0 - reached) * 4.0;
+        float rim = front * (in.mode > 0.5 ? 0.24 + 0.14 * k.detail : 0.30 + 0.16 * k.detail);
+        float crest = exp(-(s + 0.28) * (s + 0.28) * 3.2) * (in.mode > 0.5 ? 0.04 : 0.13);
         float total = min(1.0, a + (rim + crest) * (1.0 - a));
         if (total < 0.003) discard_fragment();
-        float3 rimCol = in.mode > 0.5 ? float3(0.20, 0.14, 0.10) : float3(0.58, 0.38, 0.14);
+        float3 rimCol = in.mode > 0.5 ? float3(0.16, 0.12, 0.09) : float3(0.58, 0.38, 0.14);
         float3 crestCol = float3(0.86, 0.72, 0.38);
-        float3 rgb = (in.old * a * (1.0 - rim) + rimCol * rim + crestCol * crest * (1.0 - a)) / max(total, 1e-4);
+        float3 rgb = (in.old * a * (1.0 - rim * 0.85) + rimCol * rim + crestCol * crest * (1.0 - a)) / max(total, 1e-4);
         return float4(clamp(rgb, 0.0, 1.0), total);
     }
     """

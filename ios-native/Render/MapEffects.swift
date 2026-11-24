@@ -134,30 +134,43 @@ final class EffectsView: UIView {
     private var waves: [(layer: CALayer, x: Double, y: Double, scale: Double)] = []
     private var waveTimer: Timer?
     /// 战况飘字: a loss rises, swells and fades over the fight (vermilion on land, blue at sea).
-    private var floats = 0
+    /// 锚定在地图世界坐标 (worldX, worldY) 的容器层上，随镜头拖拽、缩放、惯性滑行逐帧贴地跟随，绝不滞留屏幕原地！
+    private var activeFloats: [(id: UUID, host: CALayer, x: Double, y: Double)] = []
     /// 飘字放在地名之上的一层（特效本身在地名之下）。
     weak var floatHost: CALayer?
-    func float(_ text: String, at p: CGPoint, naval: Bool) {
-        // 高倍缩放观战时实行战场去文字化：隐藏重叠战损飘字，把舞台完全交给序列帧交锋、箭雨炮火与双色兵力条。
-        guard !Energy.hot, (camera?.scale ?? 1.0) < 1.45, floats < 6, window != nil else { return }
+    func float(_ text: String, worldX: Double, worldY: Double, naval: Bool) {
+        // 超高倍近观时适度让位给精细战局演出，其余倍镜一律精准贴合地图世界坐标随动。
+        guard !Energy.hot, (camera?.scale ?? 1.0) < 2.2, activeFloats.count < 8, window != nil,
+              let camera, viewport.width > 0, viewport.height > 0 else { return }
+        let vp = (width: Double(viewport.width), height: Double(viewport.height))
+        let s = camera.toScreen(x: worldX, y: worldY, viewport: vp)
+        guard s.x > -40, s.y > 20, s.x < vp.width + 40, s.y < vp.height + 20 else { return }
         let font = UIFont(name: "TW-Kai-98_1", size: 13.5) ?? .boldSystemFont(ofSize: 13.5)
         let fill = naval ? UIColor(red: 0.12, green: 0.36, blue: 0.72, alpha: 1) : UIColor(red: 0.76, green: 0.14, blue: 0.08, alpha: 1)
+        let host = CALayer()
+        host.bounds = .zero
+        host.position = CGPoint(x: s.x, y: s.y)
         let l = CATextLayer()
         // Filled and outlined in paper, readable over land, sea and borders without a shadow pass.
         l.string = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: fill, .strokeColor: UIColor(red: 0.99, green: 0.97, blue: 0.92, alpha: 1), .strokeWidth: -5])
         l.alignmentMode = .center; l.contentsScale = UIScreen.main.scale
-        l.bounds = CGRect(x: 0, y: 0, width: 108, height: 22); l.position = p
-        (floatHost ?? layer).addSublayer(l)
-        // 轻轻浮起、淡出：柔和缓动上升一小段，清晰不抢眼。
-        let up = CABasicAnimation(keyPath: "position.y"); up.fromValue = p.y; up.toValue = p.y - 26
+        l.bounds = CGRect(x: 0, y: 0, width: 108, height: 22); l.position = CGPoint(x: 0, y: -18)
+        host.addSublayer(l)
+        (floatHost ?? layer).addSublayer(host)
+        // 在世界坐标锚点局部向上柔和浮起、淡出；外层 host 每帧由 camera.toScreen 驱动，平移缩放丝毫不偏移。
+        let up = CABasicAnimation(keyPath: "position.y"); up.fromValue = -18.0; up.toValue = -44.0
         up.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 0.84, 0.3, 1)
         let fade = CAKeyframeAnimation(keyPath: "opacity"); fade.values = [0, 0.96, 0.96, 0]; fade.keyTimes = [0, 0.14, 0.68, 1]
         let pop = CAKeyframeAnimation(keyPath: "transform.scale"); pop.values = [0.82, 1.06, 1, 0.98]; pop.keyTimes = [0, 0.18, 0.36, 1]
         let g = CAAnimationGroup(); g.animations = [up, fade, pop]; g.duration = 1.45; g.fillMode = .forwards; g.isRemovedOnCompletion = false
         l.opacity = 0
         l.add(Self.calm(g), forKey: "float")
-        floats += 1
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.45) { [weak self] in l.removeFromSuperlayer(); self?.floats -= 1 }
+        let id = UUID()
+        activeFloats.append((id: id, host: host, x: worldX, y: worldY))
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.48) { [weak self] in
+            host.removeFromSuperlayer()
+            self?.activeFloats.removeAll { $0.id == id }
+        }
     }
     func startWaves() {
         guard waveTimer == nil else { return }
@@ -1136,6 +1149,9 @@ final class EffectsView: UIView {
         let visibleRect = CGRect(origin: .zero, size: viewport).insetBy(dx: -80, dy: -80)
         func screen(_ x: Double, _ y: Double) -> CGPoint { let p = camera.toScreen(x: x, y: y, viewport: vp); return CGPoint(x: p.x, y: p.y) }
         CATransaction.begin(); CATransaction.setDisableActions(true)
+        for f in activeFloats {
+            f.host.position = screen(f.x, f.y)
+        }
         for w in waves {
             w.layer.position = screen(w.x, w.y)
             let z = CGFloat(camera.scale / max(0.0001, w.scale)); w.layer.setAffineTransform(CGAffineTransform(scaleX: z, y: z))

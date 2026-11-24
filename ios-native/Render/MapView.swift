@@ -369,10 +369,8 @@ struct MapView: UIViewRepresentable {
         /// 仅在手指物理拖拽或双指捏合期间开启同事务同步上屏；程序运镜、惯性滑行与弹窗过渡一律按帧合批。
         private var fingerDragging: Bool { pinching || panning }
         private var cameraInteractive: Bool { pinching || panning || pendingCamera != nil || animation != nil || hypot(velocity.x, velocity.y) > 8 }
-        /// 静态活态海波与云影光晕：在地图静止且未开弹窗、非高温、非截图巡游时维持 30fps 轻耗微光呼吸，彻底告别水波云影停顿跳帧。
-        private var ambientActive: Bool {
-            !controller.drifting && !controller.sheetOpen && !sheetThrottled && !Energy.hot && !ShotTour.on && (controller.display.lighting ?? true) && (renderer?.reveal ?? 0) >= 0.99
-        }
+        /// 仅在主动动效/行军/墨晕/拖拽/飞行时驱动显示链路；地图静止时彻底休眠 0% GPU 占用，彻底解决真机持续发烫与卡顿。
+        private var ambientActive: Bool { false }
         /// 地图画心 [0, map.width] × [0, map.height] 在屏幕坐标系里的精确裁剪框，确保国名、箭头与特效严守卷轴画框内缘。
         private func mapScreenRect(camera: MapCamera, viewport: CGSize) -> CGRect {
             guard viewport.width > 0, viewport.height > 0 else { return .zero }
@@ -418,11 +416,20 @@ struct MapView: UIViewRepresentable {
         private var spotlightID: UUID?
         /// The seal ring over a spotlit place; it follows the map while it shows.
         private var spot: (x: Double, y: Double, layer: CALayer)?
+        /// 落指点选水晕同样锚定世界坐标，随地图平移缩放同步跟随。
+        private var tapRipples: [(id: UUID, layer: CALayer, x: Double, y: Double)] = []
         private func placeSpot() {
-            guard let spot, let renderer else { return }
-            let p = renderer.camera.toScreen(x: spot.x, y: spot.y, viewport: viewport)
+            guard let renderer else { return }
+            let vp = viewport
             CATransaction.begin(); CATransaction.setDisableActions(true)
-            spot.layer.position = CGPoint(x: p.x, y: p.y)
+            if let spot {
+                let p = renderer.camera.toScreen(x: spot.x, y: spot.y, viewport: vp)
+                spot.layer.position = CGPoint(x: p.x, y: p.y)
+            }
+            for r in tapRipples {
+                let p = renderer.camera.toScreen(x: r.x, y: r.y, viewport: vp)
+                r.layer.position = CGPoint(x: p.x, y: p.y)
+            }
             CATransaction.commit()
         }
         /// 朱印高亮: two vermilion rings close in on the place like a seal pressed on paper, a soft wash
@@ -507,12 +514,9 @@ struct MapView: UIViewRepresentable {
                 self.set(MapCamera.cover(map: self.mapSize, viewport: self.viewport), sync: true)
             }
             controller.onHits = { [weak self] hits in
-                guard let self, self.controller.play.showBattleFloats, !self.controller.sheetOpen, let renderer = self.renderer else { return }
-                let size = self.mtk.bounds.size, vp = (width: Double(size.width), height: Double(size.height))
+                guard let self, self.controller.play.showBattleFloats, !self.controller.sheetOpen else { return }
                 for h in hits {
-                    let s = renderer.camera.toScreen(x: Double(h.x), y: Double(h.y), viewport: vp)
-                    guard s.x > 10, s.y > 60, s.x < vp.width - 10, s.y < vp.height - 60 else { continue }
-                    self.effects.float(h.text, at: CGPoint(x: s.x, y: s.y - 18), naval: h.naval)
+                    self.effects.float(h.text, worldX: Double(h.x), worldY: Double(h.y), naval: h.naval)
                 }
             }
             labels = MapLabelsView(map: map)
@@ -682,14 +686,10 @@ struct MapView: UIViewRepresentable {
                     let purePan = fastPan && abs(prevCam.scale - clamped.scale) < 1e-6
                     if purePan {
                         panLabelTick &+= 1
-                        if panLabelTick % 4 == 0 {
+                        if panLabelTick % 5 == 0 {
                             labels.update(camera: clamped, viewport: vpSize, mapRect: clipRect)
                         } else {
-                            let dx = CGFloat((prevCam.centerX - clamped.centerX) * clamped.scale)
-                            let dy = CGFloat((prevCam.centerY - clamped.centerY) * clamped.scale)
-                            if abs(dx) > 0.0001 || abs(dy) > 0.0001 {
-                                labels.panVisible(dx: dx, dy: dy)
-                            }
+                            labels.repositionVisible(camera: clamped, viewport: vpSize)
                         }
                     } else {
                         labels.update(camera: clamped, viewport: vpSize, mapRect: clipRect)
@@ -937,7 +937,7 @@ struct MapView: UIViewRepresentable {
                 }
                 if let best {
                     selection.selectionChanged()
-                    showTapFeedback(at: p, isUnit: true)
+                    showTapFeedback(worldX: w.x, worldY: w.y, isUnit: true)
                     if best.army < 0 {
                         controller.selectedFleetId = best.key.isEmpty ? nil : best.key
                         controller.selectedFleet = -best.army - 1
@@ -948,27 +948,30 @@ struct MapView: UIViewRepresentable {
                     return
                 }
             }
-            if province != nil { showTapFeedback(at: p, isUnit: false) }
+            if province != nil { showTapFeedback(worldX: w.x, worldY: w.y, isUnit: false) }
             if province != controller.selectedProvince { selection.selectionChanged() }
             controller.onMapTap?(province == nil)
             controller.selectedProvince = province
         }
 
-        /// 零延迟 GPU/CoreAnimation 朱墨落指水晕：在手指点选军团、战船或州郡的第 0 毫秒立即绽开温润双圈波纹，无需等待 SwiftUI 面板布局。
-        private func showTapFeedback(at point: CGPoint, isUnit: Bool) {
-            guard mtk != nil else { return }
+        /// 零延迟 GPU/CoreAnimation 朱墨落指水晕：锚定世界坐标，点选军团、战船或州郡即刻绽开并严密贴地随动。
+        private func showTapFeedback(worldX: Double, worldY: Double, isUnit: Bool) {
+            guard mtk != nil, let renderer else { return }
             let accent = isUnit
                 ? UIColor(red: 0.76, green: 0.24, blue: 0.16, alpha: 0.88)
                 : UIColor(red: 0.58, green: 0.42, blue: 0.18, alpha: 0.72)
             let radius: CGFloat = isUnit ? 22 : 18
+            let s = renderer.camera.toScreen(x: worldX, y: worldY, viewport: viewport)
             let ring = CAShapeLayer()
             ring.bounds = CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2)
-            ring.position = point
+            ring.position = CGPoint(x: s.x, y: s.y)
             ring.path = UIBezierPath(ovalIn: ring.bounds).cgPath
             ring.fillColor = accent.withAlphaComponent(isUnit ? 0.14 : 0.08).cgColor
             ring.strokeColor = accent.cgColor
             ring.lineWidth = isUnit ? 2.0 : 1.5
             floats.layer.addSublayer(ring)
+            let id = UUID()
+            tapRipples.append((id: id, layer: ring, x: worldX, y: worldY))
 
             let scale = CABasicAnimation(keyPath: "transform.scale")
             scale.fromValue = 0.42
@@ -983,8 +986,9 @@ struct MapView: UIViewRepresentable {
             group.isRemovedOnCompletion = false
             group.fillMode = .forwards
             ring.add(group, forKey: "tapRipple")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak ring] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self, weak ring] in
                 ring?.removeFromSuperlayer()
+                self?.tapRipples.removeAll { $0.id == id }
             }
         }
 
@@ -1409,6 +1413,9 @@ final class MapLabelsView: UIView {
         /// The smallest size on screen (a capital's name), and the city's own place the enlarged name stands above.
         var floorPoints: Double = 0
         var anchorY: Double?
+        /// 上次完整避让排版相对世界坐标投影点的偏移量（用于高速拖动时按世界坐标精确零漂移跟地定位）。
+        var screenOffsetX: Double = 0
+        var screenOffsetY: Double = 0
         init(text: String, x: Double, y: Double, mapEm: Double, fill: UIColor, stroke: UIColor, strokeWidth: Double, minPoints: Double, province: Int?) {
             self.text = text; self.x = x; self.y = y; self.mapEm = mapEm; self.fill = fill; self.stroke = stroke; self.strokeWidth = strokeWidth; self.minPoints = minPoints; self.province = province
         }
@@ -1691,6 +1698,33 @@ final class MapLabelsView: UIView {
         }
     }
 
+    /// 轻量纯平移快路径：按世界坐标直接反算每个可见标签的精确屏幕位置，零网格重算且杜绝累积像素漂移。
+    func repositionVisible(camera: MapCamera, viewport: CGSize) {
+        let vp = (width: Double(viewport.width), height: Double(viewport.height))
+        UIView.performWithoutAnimation {
+            for s in stamps where !s.view.isHidden {
+                let p = camera.toScreen(x: s.x, y: s.y, viewport: vp)
+                s.view.center = CGPoint(x: p.x, y: p.y)
+            }
+            for p in pictures where !p.view.isHidden {
+                let at = camera.toScreen(x: p.x, y: p.y, viewport: vp)
+                p.view.center = CGPoint(x: at.x, y: at.y)
+            }
+            for l in custom where !l.view.isHidden {
+                let at = camera.toScreen(x: l.x, y: l.y, viewport: vp)
+                l.view.center = CGPoint(x: at.x + l.screenOffsetX, y: at.y + l.screenOffsetY)
+            }
+            for l in nations where !l.view.isHidden {
+                let at = camera.toScreen(x: l.x, y: l.y, viewport: vp)
+                l.view.center = CGPoint(x: at.x + l.screenOffsetX, y: at.y + l.screenOffsetY)
+            }
+            for l in cities where !l.view.isHidden {
+                let at = camera.toScreen(x: l.x, y: l.anchorY ?? l.y, viewport: vp)
+                l.view.center = CGPoint(x: at.x + l.screenOffsetX, y: at.y + l.screenOffsetY)
+            }
+        }
+    }
+
     /// 轻量纯平移快路径：主页背景 60fps 缓游期间直接平移可见标签与舆图罗盘／地标坐标，零网格分配、零碰撞重算。
     func panVisible(dx: CGFloat, dy: CGFloat) {
         UIView.performWithoutAnimation {
@@ -1859,6 +1893,9 @@ final class MapLabelsView: UIView {
             }
             if l.province == nil { placedNationTexts.insert(l.text) }
             place(box)
+            let baseScreen = camera.toScreen(x: l.x, y: l.anchorY ?? l.y, viewport: vp)
+            l.screenOffsetX = p.x - baseScreen.x
+            l.screenOffsetY = p.y - baseScreen.y
             // 始终在无动画事务内写回 transform 与 center，彻底防止 SwiftUI 外层 withAnimation 劫持标签位移导致与底图脱节。
             UIView.performWithoutAnimation {
                 l.view.transform = CGAffineTransform(rotationAngle: CGFloat(l.angle)).scaledBy(x: k, y: k)

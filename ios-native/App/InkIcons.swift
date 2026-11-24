@@ -677,14 +677,14 @@ struct GameActionLabel: View {
         case "crown", "crown.fill": return .crown
         case "person.2", "person.2.fill": return .alliance
         case "building.columns", "building.columns.fill", "building.2": return .polity
-        case "book", "book.closed", "book.pages", "character.book.closed.fill", "list.bullet.rectangle": return .chronicle
+        case "book", "book.closed", "book.pages", "character.book.closed", "character.book.closed.fill", "text.book.closed", "list.bullet.rectangle", "textformat": return .chronicle
         case "chart.bar", "chart.bar.fill", "chart.bar.xaxis", "list.number", "chart.line.uptrend.xyaxis": return .ranking
         case "banknote", "dollarsign.circle": return .economy
         case "shippingbox", "shippingbox.fill": return .goods
-        case "square.grid.3x3", "square.grid.3x3.fill", "square.grid.2x2": return .region
-        case "sun.max", "sun.max.fill": return .religion
+        case "square.grid.3x3", "square.grid.3x3.fill", "square.grid.2x2", "square.dashed", "plus.square.dashed": return .region
+        case "sun.max", "sun.max.fill", "hands.sparkles", "sparkle": return .religion
         case "heart", "heart.circle": return .marriage
-        case "seal", "checkmark.seal": return .edict
+        case "seal", "checkmark.seal", "checkmark.circle.fill": return .edict
         case "scope", "location", "mappin", "mappin.and.ellipse", "star", "star.fill", "hand.tap": return .locate
         case "clock.arrow.circlepath", "arrow.counterclockwise", "arrow.counterclockwise.circle", "arrow.counterclockwise.circle.fill": return .replay
         case "backward", "backward.fill": return .rewind
@@ -697,28 +697,28 @@ struct GameActionLabel: View {
         case "arrow.triangle.2.circlepath", "arrow.clockwise", "dice", "dice.fill": return .refresh
         case "books.vertical", "books.vertical.fill", "folder", "folder.fill", "archivebox": return .archive
         case "tray.and.arrow.down", "square.and.arrow.down", "doc.badge.plus": return .importSave
-        case "paintbrush.pointed", "paintbrush.pointed.fill", "paintbrush", "pencil", "pencil.line", "paintpalette": return .brush
-        case "shield", "shield.fill", "shield.lefthalf.filled", "exclamationmark.shield": return .fortress
+        case "paintbrush.pointed", "paintbrush.pointed.fill", "paintbrush", "pencil", "pencil.line", "paintpalette", "scribble": return .brush
+        case "shield", "shield.fill", "shield.lefthalf.filled", "exclamationmark.shield", "lock": return .fortress
         case "anchor", "ferry", "ferry.fill", "sailboat", "sailboat.fill": return .anchor
-        case "flame", "flame.fill", "bolt": return .fire
+        case "flame", "flame.fill", "bolt", "allergens", "drop.degreesign.slash": return .fire
         case "arrow.uturn.backward", "arrow.uturn.left": return .retreat
         case "arrow.triangle.turn.up.right.diamond", "arrow.up.right", "figure.walk": return .march
         case "drop", "drop.fill", "water.waves": return .lake
         case "circle.hexagongrid", "sparkles", "aqi.medium": return .island
         case "plus", "plus.circle", "plus.circle.fill", "person.badge.plus": return .plus
-        case "minus", "minus.circle", "person.badge.minus": return .minus
-        case "trash", "trash.fill", "xmark.bin": return .trash
+        case "minus", "minus.circle", "person.badge.minus", "person.2.slash", "person.fill.xmark": return .minus
+        case "trash", "trash.fill", "xmark.bin", "eraser", "hammer", "xmark.octagon": return .trash
         case "arrow.left.arrow.right", "arrow.2.squarepath", "square.stack.3d.up", "link.badge.plus", "rectangle.portrait.and.arrow.right": return .swap
         case "eye", "eye.fill", "eye.slash": return .eye
         case "calendar", "calendar.badge.clock", "clock", "clock.fill": return .calendar
         case "bookmark", "bookmark.fill", "opticaldisc", "tray.full": return .save
         case "square.and.arrow.up", "arrow.up.doc": return .export
-        case "photo", "photo.artframe", "photo.on.rectangle": return .wallpaper
+        case "photo", "photo.artframe", "photo.on.rectangle", "camera": return .wallpaper
         case "speaker.wave.2", "speaker.wave.2.fill", "music.note": return .sound
         case "gauge.with.dots.needle.67percent", "speedometer", "bolt.fill", "hare", "tortoise": return .speed
         case "trophy", "trophy.fill", "medal": return .trophy
         case "person", "person.fill", "person.crop.circle", "person.text.rectangle": return .person
-        case "leaf", "leaf.fill", "hand.raised", "hand.raised.fill", "peace": return .peace
+        case "leaf", "leaf.fill", "hand.raised", "hand.raised.fill", "peace", "cross.case": return .peace
         case "chevron.down", "chevron.compact.down": return .chevronDown
         case "chevron.right", "chevron.compact.right": return .chevronRight
         case "desktopcomputer", "laptopcomputer", "cpu": return .computer

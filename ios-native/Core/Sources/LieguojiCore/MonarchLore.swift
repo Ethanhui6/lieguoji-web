@@ -359,22 +359,22 @@ public enum MonarchLore {
     }
 
     public static let extraTraits: [ExtraTrait] = [
-        ExtraTrait(key: "Visionary", label: "雄才大略", summary: "全军进攻 +8% · 岁入 +8% · 安定 +6", positive: true, charisma: 12, military: 10, diplomatic: 10, administrative: 12, attack: 8, defense: 4, income: 8, growth: 1.5, stability: 6, corruption: -4, opinionBonus: 6, temper: 1.12),
-        ExtraTrait(key: "IronFist", label: "铁腕集权", summary: "安定 +10 · 腐化 −8 · 进攻 +6% · 外交 −6", positive: true, charisma: -4, military: 10, diplomatic: -6, administrative: 12, attack: 6, defense: 6, income: 4, growth: 0, stability: 10, corruption: -8, opinionBonus: -6, temper: 1.18),
-        ExtraTrait(key: "Benevolent", label: "仁德宽厚", summary: "安定 +12 · 人口年增 +2.5% · 外交 +10", positive: true, charisma: 14, military: -4, diplomatic: 10, administrative: 8, attack: -3, defense: 4, income: 2, growth: 2.5, stability: 12, corruption: -4, opinionBonus: 10, temper: 0.85),
-        ExtraTrait(key: "Financier", label: "精于理财", summary: "全国岁入 +14% · 腐化 −6", positive: true, charisma: 0, military: -2, diplomatic: 6, administrative: 16, attack: 0, defense: 0, income: 14, growth: 0.8, stability: 2, corruption: -6, opinionBonus: 4, temper: 0.92),
-        ExtraTrait(key: "Tactician", label: "兵法大家", summary: "全军进攻 +14% · 防御 +8%", positive: true, charisma: 4, military: 18, diplomatic: 0, administrative: 0, attack: 14, defense: 8, income: -2, growth: 0, stability: 2, corruption: 0, opinionBonus: 0, temper: 1.15),
-        ExtraTrait(key: "MasterDiplomat", label: "纵横捭阖", summary: "全天下外交好感 +14 · 岁入 +4%", positive: true, charisma: 12, military: 0, diplomatic: 18, administrative: 4, attack: 0, defense: 0, income: 4, growth: 0, stability: 4, corruption: 0, opinionBonus: 14, temper: 0.88),
-        ExtraTrait(key: "Scholar", label: "崇文重教", summary: "腐化 −8 · 安定 +6 · 岁入 +5%", positive: true, charisma: 8, military: -4, diplomatic: 8, administrative: 14, attack: -2, defense: 2, income: 5, growth: 1.2, stability: 6, corruption: -8, opinionBonus: 6, temper: 0.86),
-        ExtraTrait(key: "Conqueror", label: "开疆雄主", summary: "进攻 +16% · 好战度大幅提升 · 安定 −4", positive: true, charisma: 8, military: 16, diplomatic: -6, administrative: 2, attack: 16, defense: 4, income: 0, growth: 0, stability: -4, corruption: 2, opinionBonus: -10, temper: 1.32),
-        ExtraTrait(key: "Lawgiver", label: "明法审令", summary: "腐化 −12 · 安定 +8 · 岁入 +6%", positive: true, charisma: 6, military: 0, diplomatic: 4, administrative: 16, attack: 0, defense: 4, income: 6, growth: 0.6, stability: 8, corruption: -12, opinionBonus: 4, temper: 0.96),
-        ExtraTrait(key: "Diligent", label: "勤政爱民", summary: "岁入 +8% · 安定 +8 · 人口年增 +1.5%", positive: true, charisma: 8, military: 4, diplomatic: 4, administrative: 12, attack: 2, defense: 4, income: 8, growth: 1.5, stability: 8, corruption: -6, opinionBonus: 4, temper: 0.96),
-        ExtraTrait(key: "SeaVision", label: "海权远见", summary: "岁入 +10% · 进攻 +5% · 商贸繁盛", positive: true, charisma: 4, military: 8, diplomatic: 10, administrative: 6, attack: 5, defense: 3, income: 10, growth: 0.5, stability: 2, corruption: 0, opinionBonus: 5, temper: 1.05),
-        ExtraTrait(key: "Beloved", label: "民望所归", summary: "安定 +14 · 防御 +8% · 叛乱骤减", positive: true, charisma: 18, military: 2, diplomatic: 8, administrative: 4, attack: 0, defense: 8, income: 3, growth: 1.5, stability: 14, corruption: -3, opinionBonus: 8, temper: 0.94),
-        ExtraTrait(key: "Veteran", label: "宿将老谋", summary: "防御 +12% · 进攻 +8% · 安定 +4", positive: true, charisma: 4, military: 14, diplomatic: 0, administrative: 2, attack: 8, defense: 12, income: 0, growth: 0, stability: 4, corruption: -2, opinionBonus: 0, temper: 1.04),
-        ExtraTrait(key: "Extravagant", label: "奢靡无度", summary: "岁入 −12% · 腐化 +10 · 安定 −6", positive: false, charisma: 4, military: -4, diplomatic: 2, administrative: -12, attack: -4, defense: -4, income: -12, growth: -0.5, stability: -6, corruption: 10, opinionBonus: -2, temper: 0.95),
-        ExtraTrait(key: "Stubborn", label: "刚愎自用", summary: "外交好感 −10 · 腐化 +5 · 进攻 +4%", positive: false, charisma: -8, military: 4, diplomatic: -12, administrative: -6, attack: 4, defense: 2, income: -4, growth: 0, stability: -5, corruption: 5, opinionBonus: -10, temper: 1.15),
-        ExtraTrait(key: "Tyrant", label: "苛政暴戾", summary: "进攻 +8% · 安定 −14 · 外交 −14 · 腐化 +8", positive: false, charisma: -14, military: 6, diplomatic: -14, administrative: -6, attack: 8, defense: -6, income: 4, growth: -2.0, stability: -14, corruption: 8, opinionBonus: -14, temper: 1.25),
+        ExtraTrait(key: "Visionary", label: "雄才大略", summary: "全军进攻 +16% · 岁入 +16% · 安定 +10", positive: true, charisma: 16, military: 14, diplomatic: 14, administrative: 16, attack: 16, defense: 8, income: 16, growth: 2.2, stability: 10, corruption: -8, opinionBonus: 10, temper: 1.15),
+        ExtraTrait(key: "IronFist", label: "铁腕集权", summary: "安定 +16 · 腐化 −14 · 进攻 +12% · 外交 −10", positive: true, charisma: -4, military: 14, diplomatic: -8, administrative: 16, attack: 12, defense: 10, income: 8, growth: 0, stability: 16, corruption: -14, opinionBonus: -10, temper: 1.22),
+        ExtraTrait(key: "Benevolent", label: "仁德宽厚", summary: "安定 +18 · 人口年增 +3.5% · 外交 +16", positive: true, charisma: 18, military: -4, diplomatic: 14, administrative: 10, attack: -4, defense: 8, income: 6, growth: 3.5, stability: 18, corruption: -8, opinionBonus: 16, temper: 0.82),
+        ExtraTrait(key: "Financier", label: "精于理财", summary: "全国岁入 +24% · 腐化 −12", positive: true, charisma: 2, military: -2, diplomatic: 8, administrative: 22, attack: 0, defense: 0, income: 24, growth: 1.2, stability: 4, corruption: -12, opinionBonus: 6, temper: 0.90),
+        ExtraTrait(key: "Tactician", label: "兵法大家", summary: "全军进攻 +24% · 防御 +14%", positive: true, charisma: 6, military: 24, diplomatic: 0, administrative: 0, attack: 24, defense: 14, income: -2, growth: 0, stability: 4, corruption: 0, opinionBonus: 0, temper: 1.18),
+        ExtraTrait(key: "MasterDiplomat", label: "纵横捭阖", summary: "全天下外交好感 +24 · 岁入 +8%", positive: true, charisma: 16, military: 0, diplomatic: 24, administrative: 6, attack: 0, defense: 0, income: 8, growth: 0, stability: 6, corruption: 0, opinionBonus: 24, temper: 0.85),
+        ExtraTrait(key: "Scholar", label: "崇文重教", summary: "腐化 −14 · 安定 +12 · 岁入 +10%", positive: true, charisma: 10, military: -4, diplomatic: 10, administrative: 18, attack: -2, defense: 4, income: 10, growth: 1.8, stability: 12, corruption: -14, opinionBonus: 10, temper: 0.84),
+        ExtraTrait(key: "Conqueror", label: "开疆雄主", summary: "进攻 +26% · 破城凶猛 · 安定 −6", positive: true, charisma: 10, military: 22, diplomatic: -8, administrative: 2, attack: 26, defense: 8, income: 0, growth: 0, stability: -6, corruption: 3, opinionBonus: -14, temper: 1.38),
+        ExtraTrait(key: "Lawgiver", label: "明法审令", summary: "腐化 −18 · 安定 +14 · 岁入 +12%", positive: true, charisma: 8, military: 0, diplomatic: 6, administrative: 20, attack: 0, defense: 8, income: 12, growth: 1.0, stability: 14, corruption: -18, opinionBonus: 6, temper: 0.95),
+        ExtraTrait(key: "Diligent", label: "勤政爱民", summary: "岁入 +16% · 安定 +14 · 人口年增 +2.4%", positive: true, charisma: 10, military: 6, diplomatic: 6, administrative: 18, attack: 4, defense: 6, income: 16, growth: 2.4, stability: 14, corruption: -10, opinionBonus: 6, temper: 0.95),
+        ExtraTrait(key: "SeaVision", label: "海权远见", summary: "岁入 +18% · 进攻 +10% · 海贸兴旺", positive: true, charisma: 6, military: 10, diplomatic: 12, administrative: 8, attack: 10, defense: 6, income: 18, growth: 0.8, stability: 4, corruption: 0, opinionBonus: 8, temper: 1.08),
+        ExtraTrait(key: "Beloved", label: "民望所归", summary: "安定 +22 · 防御 +14% · 叛乱骤减", positive: true, charisma: 24, military: 4, diplomatic: 12, administrative: 6, attack: 0, defense: 14, income: 6, growth: 2.2, stability: 22, corruption: -6, opinionBonus: 14, temper: 0.92),
+        ExtraTrait(key: "Veteran", label: "宿将老谋", summary: "防御 +20% · 进攻 +14% · 安定 +6", positive: true, charisma: 6, military: 20, diplomatic: 0, administrative: 4, attack: 14, defense: 20, income: 0, growth: 0, stability: 6, corruption: -4, opinionBonus: 0, temper: 1.05),
+        ExtraTrait(key: "Extravagant", label: "奢靡无度", summary: "岁入 −20% · 腐化 +16 · 安定 −10", positive: false, charisma: 4, military: -6, diplomatic: 2, administrative: -18, attack: -8, defense: -8, income: -20, growth: -1.0, stability: -10, corruption: 16, opinionBonus: -4, temper: 0.95),
+        ExtraTrait(key: "Stubborn", label: "刚愎自用", summary: "外交好感 −16 · 腐化 +10 · 进攻 +6%", positive: false, charisma: -10, military: 6, diplomatic: -16, administrative: -10, attack: 6, defense: 2, income: -8, growth: 0, stability: -10, corruption: 10, opinionBonus: -16, temper: 1.18),
+        ExtraTrait(key: "Tyrant", label: "苛政暴戾", summary: "进攻 +14% · 安定 −22 · 外交 −20 · 腐化 +14", positive: false, charisma: -18, military: 8, diplomatic: -18, administrative: -10, attack: 14, defense: -10, income: 6, growth: -3.0, stability: -22, corruption: 14, opinionBonus: -20, temper: 1.30),
     ]
 
     public static let extraByKey: [String: ExtraTrait] = Dictionary(uniqueKeysWithValues: extraTraits.map { ($0.key, $0) })
@@ -412,26 +412,26 @@ public enum MonarchLore {
                 atk += ex.attack; def += ex.defense; inc += ex.income; gro += ex.growth
                 sta += ex.stability; cor += ex.corruption; op += ex.opinionBonus
             } else {
-                // 让原作特质也在国家层面产生清晰可感的加成
+                // 让原作全部 27 项人物特质也在国家层面产生鲜明可感、足以扭转国运的大幅实效
                 switch t {
-                case "Genius": atk += 6; def += 6; inc += 8; sta += 5
-                case "Strategist": atk += 10; def += 5
-                case "Brave": atk += 6
-                case "Administrator": inc += 10; cor -= 4; sta += 4
-                case "Diplomatic": op += 10; inc += 3
-                case "Charismatic", "NaturalLeader": sta += 8; op += 6
-                case "Just": sta += 8; cor -= 6
-                case "Merciful": sta += 6; gro += 1.2
-                case "Unifier": atk += 8; sta += 4
-                case "BattleHardened": atk += 8; def += 6
-                case "NavalMastery": inc += 5; atk += 4
-                case "Reformer": cor -= 6; inc += 5; sta += 3
-                case "Greedy": inc += 6; sta -= 6; cor += 6
-                case "Cruel": atk += 4; sta -= 10; op -= 8
-                case "Incompetent": atk -= 8; def -= 8; inc -= 10; sta -= 8
-                case "Craven": atk -= 8; def -= 6
-                case "WarWeary": atk -= 6; sta -= 4
-                case "Unconvincing": sta -= 8; op -= 6
+                case "Genius": atk += 14; def += 14; inc += 16; sta += 10
+                case "Strategist": atk += 18; def += 10
+                case "Brave": atk += 12; def += 4
+                case "Administrator": inc += 18; cor -= 10; sta += 8
+                case "Diplomatic": op += 18; inc += 8
+                case "Charismatic", "NaturalLeader": sta += 14; op += 12; def += 4
+                case "Just": sta += 14; cor -= 12
+                case "Merciful": sta += 12; gro += 2.2
+                case "Unifier": atk += 16; sta += 8
+                case "BattleHardened": atk += 16; def += 12
+                case "NavalMastery": inc += 10; atk += 10
+                case "Reformer": cor -= 12; inc += 12; sta += 8
+                case "Greedy": inc += 12; sta -= 12; cor += 12
+                case "Cruel": atk += 10; sta -= 16; op -= 14
+                case "Incompetent": atk -= 16; def -= 16; inc -= 18; sta -= 14
+                case "Craven": atk -= 16; def -= 12
+                case "WarWeary": atk -= 12; sta -= 8
+                case "Unconvincing": sta -= 14; op -= 12
                 default: break
                 }
             }

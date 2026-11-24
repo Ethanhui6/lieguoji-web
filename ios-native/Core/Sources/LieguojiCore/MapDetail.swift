@@ -81,35 +81,42 @@ extension MapLayers {
             }
             frontier = next
         }
-        // 七道由浓渐淡的木刻等深水线 + 柔润翡翠浅海陆棚过渡（近岸层次更细腻立体）
-        let rings: [(at: Float, strength: Float)] = [(3.4, 0.84), (7.6, 0.68), (12.8, 0.54), (18.8, 0.42), (25.8, 0.30), (33.5, 0.20), (41.0, 0.12)]
+        // 五道清锐由浓渐淡的宋画等深水线 + 澄澈碧青浅海陆棚过渡（彻底告别灰白浑浊宽边，近岸水色清亮通透）
+        let rings: [(at: Float, strength: Float)] = [(2.6, 0.72), (6.8, 0.52), (12.4, 0.35), (19.6, 0.21), (28.8, 0.11)]
         let unit = 1 / max(sx, sy)
         var mask = [UInt8](repeating: 0, count: w * h * 2)
         for p in 0..<(w * h) where distance[p] > 0 {
             let d = Float(distance[p]) * unit
             var light: Float = 0
-            for r in rings { light = max(light, max(0, 1 - abs(d - r.at) / max(1, unit)) * r.strength) }
-            mask[p * 2] = UInt8(light * 255); mask[p * 2 + 1] = UInt8(max(0, 1 - d / 32) * 0.38 * 255)
+            for r in rings { light = max(light, max(0, 1 - abs(d - r.at) / max(0.85, unit * 0.92)) * r.strength) }
+            let shelf = pow(max(0, 1 - d / 26), 1.35) * 0.44
+            mask[p * 2] = UInt8(min(255, light * 255)); mask[p * 2 + 1] = UInt8(min(255, shelf * 255))
         }
-        // The sea texture is coarse: two soft passes take the stair steps out of the lines.
-        for _ in 0..<2 {
-            var next = mask
-            for y in 1..<(h - 1) { for x in 1..<(w - 1) where distance[y * w + x] >= 0 {
-                var sum = 0
-                for dy in -1...1 { for dx in -1...1 { sum += Int(mask[((y + dy) * w + x + dx) * 2]) } }
-                next[(y * w + x) * 2] = UInt8(sum / 9)
-            } }
-            mask = next
-        }
+        // 单遍柔滑抗锯齿，既消除锯齿阶梯又保留宋代海图等深线的清锐笔锋。
+        var next = mask
+        for y in 1..<(h - 1) { for x in 1..<(w - 1) where distance[y * w + x] >= 0 {
+            let center = Int(mask[(y * w + x) * 2]) * 4
+            let cross = Int(mask[((y - 1) * w + x) * 2]) + Int(mask[((y + 1) * w + x) * 2])
+                + Int(mask[(y * w + x - 1) * 2]) + Int(mask[(y * w + x + 1) * 2])
+            next[(y * w + x) * 2] = UInt8((center + cross) / 8)
+        } }
+        mask = next
         return mask
     }
     /// Lays the waterlines on the sea once it has its colours (a preset's recolouring keeps only depth).
     public static func applyWaterlines(_ mask: [UInt8], to rgba: inout [UInt8]) {
         guard mask.count * 2 == rgba.count else { return }
         for p in 0..<(mask.count / 2) where mask[p * 2] != 0 || mask[p * 2 + 1] != 0 {
-            let light = Float(mask[p * 2]) / 255, shallow = Float(mask[p * 2 + 1]) / 255, i = p * 4
-            func blend(_ v: UInt8, _ pale: Float) -> UInt8 { var c = Float(v); c += (pale - c) * shallow; c += (238 - c) * light; return UInt8(max(0, min(255, c))) }
-            rgba[i] = blend(rgba[i], 186); rgba[i + 1] = blend(rgba[i + 1], 214); rgba[i + 2] = blend(rgba[i + 2], 206)
+            let light = Float(mask[p * 2]) / 255 * 0.56, shallow = Float(mask[p * 2 + 1]) / 255, i = p * 4
+            func blend(_ v: UInt8, _ shelf: Float, _ line: Float) -> UInt8 {
+                var c = Float(v)
+                c += (shelf - c) * shallow
+                c += (line - c) * light
+                return UInt8(max(0, min(255, c)))
+            }
+            rgba[i] = blend(rgba[i], 146, 214)
+            rgba[i + 1] = blend(rgba[i + 1], 198, 232)
+            rgba[i + 2] = blend(rgba[i + 2], 204, 229)
         }
     }
 
@@ -172,22 +179,33 @@ extension MapLayers {
         return lakes
     }
 
-    /// Always on the map: soft watercolor coastal shoal/beach transition & inland freshwater lakes.
-    /// 彻底移除旧版代码折线海浪、代码罗盘、黑白比例尺与简易几何地标，全部交由 GPU 洋流着色与纯 AI 透明精灵呈现。
+    /// Always on the map: smooth mitered watercolor coastal shoal/surf/beach transition & inland freshwater lakes.
+    /// 全部海岸浅滩采用 BorderCurve.chain + BorderCurve.smooth 连续斜接平滑带（零折角重叠珠点与锯齿缺口）。
     public static func ornaments(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
-        let shoalOuter = RGB(hex: 0x62A8B4)
-        let shoalInner = RGB(hex: 0xDFD4B4)
-        let lakeShallow = RGB(hex: 0x84BEB9)
-        let lakeRim = RGB(hex: 0x56828B)
+        let shoalOuter = RGB(hex: 0x4EA3B3)
+        let surfMist = RGB(hex: 0xE6F2EC)
+        let shoalInner = RGB(hex: 0xDFD2B0)
+        let lakeShallow = RGB(hex: 0x7EB9B6)
+        let lakeRim = RGB(hex: 0x4F7D87)
         let coast = coastLines(map)
-        // 柔和双层浅滩过渡晕边（外层碧青浅海＋内层淡暖沙岸），彻底化解岛屿与大陆海岸生硬黑边
-        for i in stride(from: 0, to: coast.count - 3, by: 4) {
-            let x1 = coast[i], y1 = coast[i + 1], x2 = coast[i + 2], y2 = coast[i + 3]
-            m.segment(x1, y1, x2, y2, width: 6.4, shoalOuter, alpha: 0.16)
-            m.segment(x1, y1, x2, y2, width: 3.1, shoalInner, alpha: 0.24)
+        var coastSegs = [BorderCurve.Segment]()
+        coastSegs.reserveCapacity(coast.count / 4)
+        for i in stride(from: 0, to: max(0, coast.count - 3), by: 4) {
+            coastSegs.append(.init(coast[i], coast[i + 1], coast[i + 2], coast[i + 3]))
         }
-        // 内陆湖泊柔润碧青水色与轻岸线
+        let smoothCoasts = BorderCurve.smooth(BorderCurve.chain(coastSegs))
+        // 三层无缝斜接海岸晕带：外层碧青浅海陆棚 → 中层薄雾浪沫 → 内层暖沙岸线
+        for loop in smoothCoasts {
+            m.smoothPolyline(loop, width: 8.4, shoalOuter, alpha: 0.14)
+        }
+        for loop in smoothCoasts {
+            m.smoothPolyline(loop, width: 3.8, surfMist, alpha: 0.22)
+        }
+        for loop in smoothCoasts {
+            m.smoothPolyline(loop, width: 2.0, shoalInner, alpha: 0.30)
+        }
+        // 内陆湖泊柔润碧青水色与连续平滑湖岸线
         let lakes = inlandLakeCells(map)
         for c in 0..<map.cellCount where lakes[c] {
             let s0 = Int(map.offsets[c]), s1 = Int(map.offsets[c + 1])
@@ -195,25 +213,65 @@ extension MapLayers {
                 var poly = [Float]()
                 poly.reserveCapacity((s1 - s0) * 2)
                 for v in s0..<s1 { poly.append(map.vertices[v * 2]); poly.append(map.vertices[v * 2 + 1]) }
-                m.fill(poly, lakeShallow, alpha: 0.34)
+                m.fill(poly, lakeShallow, alpha: 0.36)
             }
         }
+        var lakeSegs = [BorderCurve.Segment]()
         for e in map.edges where e.a >= 0 && e.b >= 0 {
             let a = Int(e.a), b = Int(e.b)
             if (lakes[a] && map.isLand(b)) || (lakes[b] && map.isLand(a)) {
-                m.segment(e.x1, e.y1, e.x2, e.y2, width: 0.95, lakeRim, alpha: 0.42)
+                lakeSegs.append(.init(e.x1, e.y1, e.x2, e.y2))
             }
+        }
+        for loop in BorderCurve.smooth(BorderCurve.chain(lakeSegs)) {
+            m.smoothPolyline(loop, width: 1.05, lakeRim, alpha: 0.48)
         }
         return m
     }
 
-    /// Close up only: delicate curved imperial post-roads (`驿道`) joining neighbouring province seats.
-    /// 彻底清除旧版放大后出现的黄褐色平行四边形色块与小三角农舍杂线，保持高倍缩放画面干净雅致。
+    /// Close up only: delicate curved imperial post-roads (`驿道`), river-mouth deltas (`河口沙洲`) & fine highland contour hachures (`山脊刻纹`).
+    /// 全手绘舆图精细铜版笔触，放大细看既有丰富古图地理肌理，又绝不杂乱遮挡国界与城池。
     public static func fineDetail(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
         let road = RGB(hex: 0x5C4728)
         let milestone = RGB(hex: 0x8E3B2B)
-        // Roads: each province seat joined by land to its nearest few neighbours.
+        let ridgeInk = RGB(hex: 0x5B4B39)
+        let forestInk = RGB(hex: 0x3D5B42)
+        let deltaWater = RGB(hex: 0x6AAAB5)
+
+        // 1. 山脊微刻线（铜版古图柔和短弧，赋予高地近观肌理）与林野点苔
+        for c in 0..<map.cellCount where map.isLand(c) && (hash(c &* 17 &+ 3) % 5 == 0) {
+            let h = map.elevation[c]
+            let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
+            if h >= 58 {
+                let tilt = Float(hash(c &* 29) % 100) / 100 * 0.5 - 0.25
+                let span: Float = h >= 72 ? 4.2 : 3.0
+                let lift: Float = h >= 72 ? 1.55 : 1.05
+                let pts: [Float] = [
+                    x - span, y + lift * 0.55 + tilt,
+                    x - span * 0.35, y - lift * 0.45,
+                    x + span * 0.30, y - lift * 0.55,
+                    x + span, y + lift * 0.60 - tilt
+                ]
+                m.smoothPolyline(pts, width: 0.48, ridgeInk, alpha: h >= 72 ? 0.24 : 0.16)
+            } else if h >= 24 && h <= 46 && (hash(c &* 43 &+ 7) % 3 == 0) {
+                let bio = c < map.biome.count ? Int(map.biome[c]) : 0
+                if bio == 5 || bio == 6 || bio == 7 || bio == 8 || bio == 9 {
+                    m.disc(x, y, radius: 1.05, forestInk, alpha: 0.14, sides: 7)
+                    m.disc(x + 1.9, y + 0.7, radius: 0.82, forestInk, alpha: 0.12, sides: 6)
+                }
+            }
+        }
+
+        // 2. 近岸低洼河口浅滩点纹（沿平缓入海口自然点缀清碧浅沙纹理）
+        let shore = shoreCells(map)
+        for c in 0..<map.cellCount where shore[c] && map.isLand(c) && map.elevation[c] <= 23 && (hash(c &* 53 &+ 11) % 6 == 0) {
+            let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
+            m.disc(x, y, radius: 1.45, deltaWater, alpha: 0.18, sides: 8)
+            m.disc(x + 2.1, y - 0.9, radius: 0.95, deltaWater, alpha: 0.14, sides: 6)
+        }
+
+        // 3. 官道驿路与中途驿站
         var firstCity = [Int: (Float, Float)]()
         for c in map.meta.cities where firstCity[c.province] == nil { firstCity[c.province] = (c.x, c.y) }
         var near = [Int: Set<Int>]()
@@ -251,7 +309,7 @@ extension MapLayers {
                 }
                 for k in stride(from: 1, to: steps - 1, by: 2) {
                     let p = at(Float(k) / Float(steps)), q = at(Float(k + 1) / Float(steps))
-                    m.segment(p.0, p.1, q.0, q.1, width: 0.7, road, alpha: 0.5)
+                    m.segment(p.0, p.1, q.0, q.1, width: 0.72, road, alpha: 0.52)
                 }
                 // 驿道中途朱点驿站标记（长驿道设驿）
                 if steps >= 10 {

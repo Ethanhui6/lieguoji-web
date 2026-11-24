@@ -100,7 +100,7 @@ struct GameView: View {
     @State private var weatherDrawerOpen = false
     private var hudVisible: Bool { chromeIn && !cleanMap }
     private var chromeIn: Bool { controller.reveal >= 1 && entered }
-    private var barHeight: CGFloat { landscape ? 36 : 38 }
+    private var barHeight: CGFloat { landscape ? 38 : Theme.Control.topHeight }
     private static let hudSpring = Animation.spring(response: 0.34, dampingFraction: 0.88)
     private struct ShotFile: Identifiable { let url: URL; var id: URL { url } }
     @State private var shot: ShotFile?
@@ -750,26 +750,26 @@ struct GameView: View {
     private func topBar(trailInset: CGFloat) -> some View {
         let h = barHeight
         let tightLandscape = landscape && panel != nil
-        let toolW: CGFloat = tightLandscape ? 28 : (landscape ? 32 : 34)
+        let toolW: CGFloat = tightLandscape ? 30 : (landscape ? 34 : 36)
         let rtsActive = controller.boxSelecting || !controller.groupArmies.isEmpty
 
-        return HStack(spacing: tightLandscape ? 4 : 6) {
-            HStack(spacing: tightLandscape ? 4 : (landscape ? 6 : 5)) {
+        return HStack(spacing: tightLandscape ? 5 : 7) {
+            HStack(alignment: .center, spacing: tightLandscape ? 4 : (landscape ? 6 : 6)) {
                 Button {
                     GameFeel.shared.tap()
                     show(.chronicle)
                 } label: {
-                    HStack(spacing: tightLandscape ? 3.5 : 4.5) {
+                    HStack(alignment: .center, spacing: tightLandscape ? 4 : 5) {
                         Circle()
                             .fill(model.playing ? Theme.jade : Theme.ink2.opacity(0.42))
-                            .frame(width: 5.5, height: 5.5)
+                            .frame(width: 6, height: 6)
                             .animation(Motion.panel, value: model.playing)
                         Text(compactDateText)
-                            .font(tightLandscape ? Theme.kai(12.2) : (landscape ? Theme.kai(13.5) : Theme.kai(12.8)))
+                            .font(tightLandscape ? Theme.kai(12.5) : Theme.kai(13.5))
                             .foregroundStyle(Theme.ink)
                             .monospacedDigit()
                             .lineLimit(1)
-                            .minimumScaleFactor(0.68)
+                            .minimumScaleFactor(0.72)
                             .layoutPriority(1)
                             .contentTransition(.numericText())
                             .animation(Motion.tap, value: compactDateText)
@@ -778,10 +778,10 @@ struct GameView: View {
                             let sColor: Color = s == .spring ? Color(red: 0.76, green: 0.32, blue: 0.44) : s == .summer ? Color(red: 0.20, green: 0.52, blue: 0.24) : s == .autumn ? Color(red: 0.76, green: 0.38, blue: 0.10) : Color(red: 0.22, green: 0.46, blue: 0.68)
                             HStack(spacing: 2.5) {
                                 Circle().fill(sColor).frame(width: 4, height: 4)
-                                Text(s.name).font(Theme.kai(10)).foregroundStyle(sColor)
+                                Text(s.name).font(Theme.kai(10.5)).foregroundStyle(sColor)
                             }
                             .fixedSize(horizontal: true, vertical: false)
-                            .padding(.horizontal, tightLandscape ? 4 : 5).padding(.vertical, 1.5)
+                            .padding(.horizontal, tightLandscape ? 4.5 : 5.5).padding(.vertical, 2)
                             .background(sColor.opacity(0.11), in: Capsule())
                             .overlay(Capsule().stroke(sColor.opacity(0.28), lineWidth: 0.55))
                             .animation(Motion.fade, value: s.rawValue)
@@ -793,7 +793,7 @@ struct GameView: View {
                 .buttonStyle(PressStyle())
 
                 if let wars = model.state?.wars.count, wars > 0 {
-                    Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.75, height: 13)
+                    Rectangle().fill(Theme.ink.opacity(0.15)).frame(width: 0.75, height: 14)
                     Button {
                         GameFeel.shared.tap()
                         MilitarySheet.openOn = "wars"
@@ -809,10 +809,10 @@ struct GameView: View {
                 }
 
                 if model.remoteAddress != nil {
-                    InkIcon(glyph: .computer, size: 12, weight: 1.75).foregroundStyle(Theme.jade)
+                    InkIcon(glyph: .computer, size: 13, weight: 1.75).foregroundStyle(Theme.jade)
                 }
             }
-            .padding(.horizontal, tightLandscape ? 7 : (landscape ? 10 : 9))
+            .padding(.horizontal, tightLandscape ? 8 : 10)
             .frame(height: h)
             .glass(Capsule())
             .animation(Motion.panel, value: (model.state?.wars.count ?? 0) > 0)
@@ -863,7 +863,7 @@ struct GameView: View {
             GameFeel.shared.tap()
             action()
         } label: {
-            InkIcon(glyph: glyph, size: landscape ? 15.5 : 16.5, weight: active ? 1.95 : 1.65, filled: active,
+            InkIcon(glyph: glyph, size: landscape ? 16 : 17.5, weight: active ? 2.0 : 1.7, filled: active,
                     accent: active ? Theme.seal.opacity(0.28) : nil)
                 .foregroundStyle(active ? Theme.seal : Theme.ink)
                 .frame(width: width, height: height)
@@ -1024,10 +1024,10 @@ struct GameView: View {
                 model.cycleSpeed()
             } label: {
                 Text("\(model.speed)×")
-                    .font(landscape ? Theme.label : Theme.body)
+                    .font(landscape ? Theme.kai(13) : Theme.kai(14))
                     .foregroundStyle(model.speed > 1 ? Theme.seal : Theme.ink)
                     .monospacedDigit()
-                    .frame(width: landscape ? 30 : 38, height: sealSize)
+                    .frame(width: landscape ? 30 : 34, height: sealSize)
                     .background(model.speed > 1 ? Theme.seal.opacity(0.1) : Color.clear, in: Capsule())
                     .contentShape(Capsule())
                     .contentTransition(.numericText())

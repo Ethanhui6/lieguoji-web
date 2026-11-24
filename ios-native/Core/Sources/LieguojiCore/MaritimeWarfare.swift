@@ -107,10 +107,11 @@ public enum MaritimeWarfare {
         let mine = Naval.fleets(r).filter { $0.nationId.optionalString == nation && $0.status.asString != "lost" && $0.ships.asInt > 0 }
         guard !mine.isEmpty else { return 0 }
         let navTech = Double(max(0, WorldDepth.techLevel(r, nation: nation, branch: .naval) - 1)) * 0.07
+        let cultNaval = (CultureDoctrines.forNation(r, nation)?.navalPower ?? 0) / 100.0
         var sum = 0.0
         for fl in mine {
             let meta = fleetMeta(r, fleet: fl)
-            var b = meta.heavyShare * 0.16 + Double(meta.rank) * 0.06 + Double(meta.admiralBonus) / 100.0 + navTech
+            var b = meta.heavyShare * 0.16 + Double(meta.rank) * 0.06 + Double(meta.admiralBonus) / 100.0 + navTech + cultNaval
             if meta.mission == .patrol { b += 0.10 }
             if meta.admiralSkill == .fireAttack { b += 0.18 }
             else if meta.admiralSkill == .windGauge { b += 0.14 }

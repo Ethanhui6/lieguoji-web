@@ -131,7 +131,7 @@ struct ProvinceSheet: View {
             .paperToast($flash)
             .sheet(isPresented: $showingBreakdown) {
                 ProvinceBreakdownSheet(model: model, province: province, provinceName: p.name)
-                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
             .task(id: model.state?.day) {
                 info = await model.provinceInfo(province)
@@ -159,7 +159,7 @@ struct ProvinceSheet: View {
                     .padding(.horizontal, 22)
                 }
                 .padding(.bottom, 16)
-                .presentationDetents([.height(280)]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet)
+                .presentationDetents([.height(280)]).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet)
             }
             .sheet(isPresented: $granting) {
                 ScrollView {
@@ -188,7 +188,7 @@ struct ProvinceSheet: View {
                     }
                     .padding(.bottom, 24)
                 }
-                .presentationDetents([.medium]).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet).font(Theme.section)
+                .presentationDetents([.medium]).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet).font(Theme.section)
             }
         }
     }

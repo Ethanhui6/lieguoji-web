@@ -1761,26 +1761,36 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float t = progress, t2 = t * t, t3 = t2 * t;
         float2 a = float2(s.center), b = float2(s.target);
         float2 delta = b - a;
-        bool moving = (length(delta) > 0.06);
+        float dist = length(delta);
+        bool moving = (dist > 0.06);
+        float2 dir = moving ? (delta / dist) : float2(1.0, 0.0);
         float2 walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + delta * (t3 - t2);
-        // 60/120fps 灵动棋子微韵：行军轻快踏步微倾、交战果断突刺回弹、休整端稳不动
+        // 真实二维矢量驱动棋子动态：按实际行军航向倾身、踏步起伏、微微弹性呼吸，交战双向冲锋回弹
         float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2831853;
         float2 corner = float2(s.corner);
         float2 extraPx = float2(0.0, sinkY);
         if (fighting) {
             float beat = sin(time * 8.4 + seed);
             float lunge = pow(max(0.0, beat), 3.0) - 0.25 * max(0.0, -beat);
-            float dirX = (fract(seed * 1.7) > 0.5) ? 1.0 : -1.0;
-            extraPx += float2(dirX * lunge * pixels * 0.10, -abs(lunge) * pixels * 0.04);
-            float ang = dirX * lunge * 0.08;
+            float2 thrustDir = moving ? dir : float2((fract(seed * 1.7) > 0.5) ? 1.0 : -1.0, (fract(seed * 3.1) - 0.5) * 0.45);
+            extraPx += thrustDir * (lunge * pixels * 0.12) + float2(0.0, -abs(lunge) * pixels * 0.05);
+            float squash = 1.0 + lunge * 0.055;
+            corner = float2(corner.x * squash, corner.y / squash);
+            float ang = clamp(thrustDir.x * lunge * 0.11, -0.16, 0.16);
             float ca = cos(ang), sa = sin(ang);
             corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
         } else if (moving && !dying) {
             float stride = sin(time * 9.2 + seed);
-            extraPx.y -= abs(stride) * min(1.3, pixels * 0.045);
-            float lean = (delta.x >= 0.0 ? 1.0 : -1.0) * 0.045 + stride * 0.03;
+            float stepLift = abs(stride);
+            extraPx += dir * (stride * min(1.1, pixels * 0.036)) + float2(0.0, -stepLift * min(1.8, pixels * 0.062));
+            float stretchY = 1.0 + (stepLift - 0.5) * 0.055;
+            corner = float2(corner.x / sqrt(stretchY), corner.y * stretchY);
+            float lean = clamp(dir.x * 0.085 + dir.y * 0.035 + stride * 0.042, -0.15, 0.15);
             float ca = cos(lean), sa = sin(lean);
             corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
+        } else if (!dying) {
+            float breath = sin(time * 2.4 + seed) * 0.016;
+            corner *= float2(1.0 - breath * 0.5, 1.0 + breath);
         }
         SpriteOut o;
         o.position = clip(walk, u, (corner + float2(s.shift)) * pixels + extraPx);
@@ -1893,7 +1903,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float t = progress, t2 = t * t, t3 = t2 * t;
         float2 a = float2(s.center), b = float2(s.target);
         float2 delta = b - a;
-        bool moving = (length(delta) > 0.06);
+        float dist = length(delta);
+        bool moving = (dist > 0.06);
+        float2 dir = moving ? (delta / dist) : float2(1.0, 0.0);
         float2 walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + delta * (t3 - t2);
         float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2831853;
         float2 corner = float2(s.corner) * float2(1.04, 0.96);
@@ -1901,14 +1913,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if (fighting) {
             float beat = sin(time * 8.4 + seed);
             float lunge = pow(max(0.0, beat), 3.0) - 0.25 * max(0.0, -beat);
-            float dirX = (fract(seed * 1.7) > 0.5) ? 1.0 : -1.0;
-            shOffset.x += dirX * lunge * pixels * 0.10;
-            float ang = dirX * lunge * 0.08;
+            float2 thrustDir = moving ? dir : float2((fract(seed * 1.7) > 0.5) ? 1.0 : -1.0, (fract(seed * 3.1) - 0.5) * 0.45);
+            shOffset += thrustDir * (lunge * pixels * 0.12);
+            float ang = clamp(thrustDir.x * lunge * 0.11, -0.16, 0.16);
             float ca = cos(ang), sa = sin(ang);
             corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
         } else if (moving && !dying) {
             float stride = sin(time * 9.2 + seed);
-            float lean = (delta.x >= 0.0 ? 1.0 : -1.0) * 0.045 + stride * 0.03;
+            shOffset += dir * (stride * min(1.1, pixels * 0.036));
+            float lean = clamp(dir.x * 0.085 + dir.y * 0.035 + stride * 0.042, -0.15, 0.15);
             float ca = cos(lean), sa = sin(lean);
             corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
         }

@@ -2,20 +2,28 @@ import SwiftUI
 import LieguojiCore
 
 /// 自绘地图 — 完整的手绘地形与划定列国工坊：
-/// 1. 「山川」：海洋、内湖、平原、丘陵、山地、雪峰、群岛、抬高、压低、平滑 10 种手绘笔刷，配海陆升降、整图平滑、地形崎岖化与一键随机新图；支持收起工具栏全屏畅绘与横屏适配。
-/// 2. 「州郡」：一键规模预设（袖珍／标准／宏大／史诗）与州郡／国家细调，实时按自然地形与有机分疆预览。
-/// 3. 「列国」：直觉化的划定列国——支持单州／连片双模式画笔、顶部「+ 新建国」一键加国、自然山河重分、迁都、删国、完整撤销／重做，以及与进局后完全一致的国色配色！
+/// 1. 「山川」：12 种手绘地形笔刷（深海/海洋/内湖/平原/丘陵/高原/山脉/雪峰/群岛/抬高/压低/平滑），支持左右/四象镜像对称绘图、四色地貌占比仪表、一键海峡/环海盆地/海陆升降/整图平滑/海岸崎岖化；
+/// 2. 「州郡」：一键规模预设（袖珍／标准／宏大／史诗）与州郡／国家细调，实时按自然地形与有机分疆预览；
+/// 3. 「列国」：直觉化的划定列国——支持单州／连片双模式画笔、一键加国、自然山河重分、迁都、删国、完整撤销／重做。
 @MainActor final class MapEditor: ObservableObject {
+    enum MirrorMode: String, CaseIterable, Identifiable {
+        case none = "自由"
+        case horizontal = "左右对称"
+        case quad = "四象对称"
+        var id: String { rawValue }
+    }
     enum Tool: String, CaseIterable, Identifiable {
-        case sea, lake, plain, hill, mountain, peak, island, raise, lower, smooth
+        case trench, sea, lake, plain, hill, plateau, mountain, peak, island, raise, lower, smooth
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .sea: return "海洋"
+            case .trench: return "深海"
+            case .sea: return "浅海"
             case .lake: return "内湖"
             case .plain: return "平原"
             case .hill: return "丘陵"
-            case .mountain: return "山地"
+            case .plateau: return "高原"
+            case .mountain: return "山脉"
             case .peak: return "雪峰"
             case .island: return "群岛"
             case .raise: return "抬高"
@@ -26,21 +34,23 @@ import LieguojiCore
         /// 塑形笔刷的目标海拔（nil 表示相对增减／滤镜笔刷）。
         var target: Double? {
             switch self {
-            case .sea: return 8.0
-            case .lake: return 12.0
+            case .trench: return 3.0
+            case .sea: return 11.0
+            case .lake: return 15.0
             case .plain: return 27.0
-            case .hill: return 44.0
-            case .mountain: return 66.0
-            case .peak: return 88.0
+            case .hill: return 43.0
+            case .plateau: return 55.0
+            case .mountain: return 69.0
+            case .peak: return 90.0
             case .island, .raise, .lower, .smooth: return nil
             }
         }
         var glyph: InkGlyph {
             switch self {
-            case .sea: return .sea
+            case .trench, .sea: return .sea
             case .lake: return .lake
             case .plain: return .plain
-            case .hill: return .views
+            case .hill, .plateau: return .views
             case .mountain, .peak: return .mountain
             case .island: return .island
             case .raise: return .raise
@@ -50,12 +60,14 @@ import LieguojiCore
         }
         var swatch: Color {
             switch self {
-            case .sea: return Color(red: 0.27, green: 0.43, blue: 0.67)
-            case .lake: return Color(red: 0.34, green: 0.62, blue: 0.72)
-            case .plain: return Color(red: 0.78, green: 0.84, blue: 0.56)
-            case .hill: return Color(red: 0.25, green: 0.61, blue: 0.26)
-            case .mountain: return Color(red: 0.59, green: 0.47, blue: 0.29)
-            case .peak: return Color(red: 0.84, green: 0.90, blue: 0.92)
+            case .trench: return Color(red: 0.16, green: 0.29, blue: 0.52)
+            case .sea: return Color(red: 0.27, green: 0.48, blue: 0.69)
+            case .lake: return Color(red: 0.34, green: 0.65, blue: 0.72)
+            case .plain: return Color(red: 0.76, green: 0.83, blue: 0.54)
+            case .hill: return Color(red: 0.42, green: 0.64, blue: 0.34)
+            case .plateau: return Color(red: 0.74, green: 0.62, blue: 0.38)
+            case .mountain: return Color(red: 0.56, green: 0.44, blue: 0.28)
+            case .peak: return Color(red: 0.86, green: 0.90, blue: 0.92)
             case .island: return Color(red: 0.52, green: 0.72, blue: 0.54)
             case .raise, .lower, .smooth: return Theme.ink2
             }
@@ -64,6 +76,7 @@ import LieguojiCore
     enum Step { case terrain, provinces, nations }
 
     @Published var tool: Tool = .plain
+    @Published var mirror: MirrorMode = .none
     @Published var radius: Double = 34 { didSet { controller.brushRadius = radius } }
     @Published var strength = 1.0
     @Published var softness = 1.0
@@ -78,6 +91,9 @@ import LieguojiCore
     @Published private(set) var canUndoNation = false
     @Published private(set) var canRedoNation = false
     @Published private(set) var landShare = 0.0
+    @Published private(set) var plainShare = 0.0
+    @Published private(set) var hillShare = 0.0
+    @Published private(set) var mountainShare = 0.0
     @Published var message = ""
 
     let inputs: PreviewWorld.Inputs
@@ -111,8 +127,18 @@ import LieguojiCore
     }
 
     private func measureLand() {
-        let land = heights.reduce(0) { $0 + ($1 >= 20 ? 1 : 0) }
-        landShare = Double(land) / Double(max(1, heights.count))
+        var land = 0, plain = 0, hill = 0, mtn = 0
+        for h in heights where h >= 20 {
+            land += 1
+            if h < 38 { plain += 1 }
+            else if h < 60 { hill += 1 }
+            else { mtn += 1 }
+        }
+        let total = Double(max(1, heights.count))
+        landShare = Double(land) / total
+        plainShare = Double(plain) / total
+        hillShare = Double(hill) / total
+        mountainShare = Double(mtn) / total
     }
 
     // MARK: drawing
@@ -121,7 +147,23 @@ import LieguojiCore
     func stamp(x: Double, y: Double) {
         guard step == .terrain else { return }
         if strokeStart == nil { strokeStart = heights; strokeSerial &+= 1 }
-        let r = Float(radius), px = Float(x), py = Float(y)
+        var centers: [(Float, Float)] = [(Float(x), Float(y))]
+        let mw = map.width, mh = map.height
+        if mirror == .horizontal || mirror == .quad {
+            centers.append((mw - Float(x), Float(y)))
+        }
+        if mirror == .quad {
+            centers.append((Float(x), mh - Float(y)))
+            centers.append((mw - Float(x), mh - Float(y)))
+        }
+        let r = Float(radius)
+        for (px, py) in centers {
+            stampOne(px: px, py: py, r: r)
+        }
+        if Date().timeIntervalSince(lastFlush) > 0.045 { flushQuick() }
+    }
+
+    private func stampOne(px: Float, py: Float, r: Float) {
         let x0 = Int64(floor((px - r) / bucket)), x1 = Int64(floor((px + r) / bucket))
         let y0 = Int64(floor((py - r) / bucket)), y1 = Int64(floor((py + r) / bucket))
         var touched = [(Int, Float)]()
@@ -153,12 +195,32 @@ import LieguojiCore
                 target = nil
                 delta = ns.isEmpty ? 0 : (ns.reduce(0.0) { $0 + Double(heights[$1]) } / Double(ns.count) - h) * 0.5
             }
-            let protect = tool == .lake ? false : protectCoast
+            let protect = (tool == .lake || tool == .trench) ? false : protectCoast
             let v = TerrainBrush.height(current: h, target: target, delta: delta, falloff: Double(falloff),
                                         strength: strength, softness: softness, protectCoast: protect)
             if v != heights[c] { heights[c] = v; dirty.insert(c) }
         }
-        if Date().timeIntervalSince(lastFlush) > 0.08 { flushQuick() }
+    }
+
+    /// 快捷雕琢：纵贯中央海峡（构造双雄隔海对峙地势）或中央内海盆地（地中海式环陆内海）。
+    func carveStrait(inlandSea: Bool) {
+        pushTerrainUndo(heights)
+        let w = map.width, h = map.height
+        for c in 0..<min(heights.count, map.cellCount) {
+            let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
+            if inlandSea {
+                let nx = (x - w * 0.5) / (w * 0.25), ny = (y - h * 0.5) / (h * 0.23)
+                let d = (nx * nx + ny * ny).squareRoot()
+                if d < 0.92 { heights[c] = UInt8(max(4, min(16, Int(4 + d * 12)))) }
+                else if d < 1.38 { heights[c] = max(heights[c], UInt8(min(54, Int(28 + (1.38 - d) * 36)))) }
+            } else {
+                let bend = sin(y / max(1, h) * .pi * 2.2) * w * 0.055
+                let dist = abs(x - (w * 0.5 + bend))
+                if dist < w * 0.055 { heights[c] = UInt8(max(4, Int(5 + dist / (w * 0.055) * 11))) }
+            }
+        }
+        GameFeel.shared.tap()
+        measureLand(); recompute()
     }
 
     private func flushQuick() {
@@ -603,9 +665,10 @@ struct EditorView: View {
                 Button { leaving = false } label: { SecondaryLabel(title: "继续绘制", symbol: "paintbrush.pointed") }.buttonStyle(PressStyle()).padding(.horizontal, 22)
             }
             .padding(.bottom, 24)
+            .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.height(310)])
             .presentationCornerRadius(Theme.Control.cornerSheet)
-            .presentationBackground { MemorialPaper() }
+            .presentationBackground(Theme.paper)
             .presentationDragIndicator(.hidden)
             .font(Theme.section)
         }
@@ -628,9 +691,10 @@ struct EditorView: View {
                 }
                 .padding(.bottom, 24)
             }
+            .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.medium])
             .presentationCornerRadius(Theme.Control.cornerSheet)
-            .presentationBackground { MemorialPaper() }
+            .presentationBackground(Theme.paper)
             .presentationDragIndicator(.hidden)
             .font(Theme.section)
         }
@@ -728,8 +792,33 @@ struct EditorView: View {
 
     private var terrainTools: some View {
         VStack(spacing: landscape ? 8 : 10) {
-            // 10 种笔刷 5×2 严格对称排布
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: landscape ? 10 : 5), spacing: 6) {
+            // 实时四色地貌占比仪表（海 / 平原 / 丘陵高原 / 山脉雪峰）
+            VStack(spacing: 4) {
+                GeometryReader { g in
+                    let w = max(1, g.size.width)
+                    let sea = max(0, 1 - editor.landShare)
+                    HStack(spacing: 0) {
+                        Rectangle().fill(Color(red: 0.27, green: 0.48, blue: 0.69)).frame(width: w * sea)
+                        Rectangle().fill(Color(red: 0.64, green: 0.74, blue: 0.44)).frame(width: w * editor.plainShare)
+                        Rectangle().fill(Color(red: 0.66, green: 0.56, blue: 0.34)).frame(width: w * editor.hillShare)
+                        Rectangle().fill(Color(red: 0.46, green: 0.36, blue: 0.24)).frame(width: w * editor.mountainShare)
+                    }
+                    .clipShape(Capsule())
+                }
+                .frame(height: 5)
+                HStack(spacing: 10) {
+                    Text("海 \(Int((1 - editor.landShare) * 100))%").foregroundStyle(Color(red: 0.22, green: 0.40, blue: 0.58))
+                    Text("平 \(Int(editor.plainShare * 100))%").foregroundStyle(Theme.jade)
+                    Text("丘 \(Int(editor.hillShare * 100))%").foregroundStyle(Theme.gold)
+                    Text("山 \(Int(editor.mountainShare * 100))%").foregroundStyle(Theme.ink2)
+                    Spacer()
+                    Text(editor.mirror.rawValue).foregroundStyle(editor.mirror == .none ? Theme.ink2 : Theme.seal)
+                }
+                .font(Theme.caption).monospacedDigit()
+            }
+
+            // 12 种笔刷 6×2（横屏 12×1）严格对齐排布
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: landscape ? 12 : 6), spacing: 5) {
                 ForEach(MapEditor.Tool.allCases) { t in
                     let on = editor.tool == t
                     Button {
@@ -739,17 +828,17 @@ struct EditorView: View {
                         }
                         GameFeel.shared.tap()
                     } label: {
-                        VStack(spacing: 3) {
+                        VStack(spacing: 2.5) {
                             ZStack {
                                 if !on && t.target != nil {
-                                    Circle().fill(t.swatch.opacity(0.24)).frame(width: 24, height: 24)
+                                    Circle().fill(t.swatch.opacity(0.28)).frame(width: 22, height: 22)
                                 }
-                                InkIcon(glyph: t.glyph, size: 18).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                InkIcon(glyph: t.glyph, size: 16.5).foregroundStyle(on ? Theme.paper2 : Theme.ink)
                             }
-                            .frame(height: 22)
-                            Text(t.title).font(Theme.caption).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1)
+                            .frame(height: 20)
+                            Text(t.title).font(Theme.caption).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
                         }
-                        .frame(maxWidth: .infinity).frame(height: landscape ? 44 : 48)
+                        .frame(maxWidth: .infinity).frame(height: landscape ? 42 : 46)
                         .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.line))
                     }
@@ -777,15 +866,23 @@ struct EditorView: View {
                 }
             }
 
-            // 一键地形快捷雕琢条
+            // 一键地形快捷雕琢条（含对称绘图切换、双陆海峡、环海盆地）
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
+                    quickTerrainChip("对称：\(editor.mirror.rawValue)", glyph: .swap, active: editor.mirror != .none) {
+                        GameFeel.shared.tap()
+                        let all = MapEditor.MirrorMode.allCases
+                        let idx = (all.firstIndex(of: editor.mirror) ?? 0) + 1
+                        editor.mirror = all[idx % all.count]
+                    }
+                    quickTerrainChip("中央海峡", glyph: .sea) { editor.carveStrait(inlandSea: false) }
+                    quickTerrainChip("环陆内海", glyph: .lake) { editor.carveStrait(inlandSea: true) }
                     quickTerrainChip("抬海陆", glyph: .raise) { editor.shiftElevation(4) }
                     quickTerrainChip("降海面", glyph: .lower) { editor.shiftElevation(-4) }
                     quickTerrainChip("整图平滑", glyph: .smooth) { editor.smoothWholeMap() }
                     quickTerrainChip("海岸崎岖", glyph: .mountain) { editor.roughenCoasts() }
                     quickTerrainChip("随机新图", glyph: .refresh) { editor.randomizeCurrentTemplate() }
-                    quickTerrainChip("换底图", glyph: .swap) { pickingBase = true }
+                    quickTerrainChip("换底图", glyph: .views) { pickingBase = true }
                 }
             }
 
@@ -795,7 +892,7 @@ struct EditorView: View {
                         PaperSlider(title: "强度", value: $editor.strength, range: 0.2...2) { String(format: "%.1f×", $0) }
                         PaperSlider(title: "柔和", value: $editor.softness, range: 0.3...2) { String(format: "%.1f×", $0) }
                         if editor.tool.target != nil {
-                            PaperSlider(title: "目标高", value: $editor.targetHeight, range: (editor.tool == .sea || editor.tool == .lake) ? 0...19 : 20...100, step: 1) { "\(Int($0))" }
+                            PaperSlider(title: "目标高", value: $editor.targetHeight, range: (editor.tool == .trench || editor.tool == .sea || editor.tool == .lake) ? 0...19 : 20...100, step: 1) { "\(Int($0))" }
                         }
                         PaperSwitch(title: "保护现有海岸", on: $editor.protectCoast).padding(.horizontal, -16)
                     }
@@ -811,15 +908,15 @@ struct EditorView: View {
         }
     }
 
-    private func quickTerrainChip(_ title: String, glyph: InkGlyph, action: @escaping () -> Void) -> some View {
+    private func quickTerrainChip(_ title: String, glyph: InkGlyph, active: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 4) {
-                InkIcon(glyph: glyph, size: 13).foregroundStyle(Theme.seal)
-                Text(title).font(Theme.caption).foregroundStyle(Theme.ink)
+                InkIcon(glyph: glyph, size: 13).foregroundStyle(active ? Theme.paper2 : Theme.seal)
+                Text(title).font(Theme.caption).foregroundStyle(active ? Theme.paper2 : Theme.ink)
             }
             .padding(.horizontal, 10).frame(height: 30)
-            .background(Theme.paper2, in: Capsule())
-            .overlay(Capsule().stroke(Theme.line))
+            .background(active ? Theme.seal : Theme.paper2, in: Capsule())
+            .overlay(Capsule().stroke(active ? Color.clear : Theme.line))
         }
         .buttonStyle(PressStyle())
     }

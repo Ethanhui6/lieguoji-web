@@ -25,39 +25,46 @@ extension Regimes {
         }
     }
     public static let creeds: [String: Creed] = [
-        // 中华诸教
-        "confucian": Creed(name: "儒教", family: "华夏", temper: 0.9, destiny: 0.1, corruption: -3),
-        "chineseFolk": Creed(name: "中国民间信仰", family: "华夏", growth: 0.1),
-        "daoism": Creed(name: "道教", family: "道门", destiny: 0.05, growth: 0.1),
-        "quanzhen": Creed(name: "全真道", family: "道门", destiny: 0.05, growth: 0.2),
-        "zhengyi": Creed(name: "正一道", family: "道门", destiny: 0.08),
-        "buddhism": Creed(name: "佛教", family: "释门", temper: 0.9, destiny: 0.05),
-        "chan": Creed(name: "禅宗", family: "释门", temper: 0.9, income: 2),
-        "pureLand": Creed(name: "净土宗", family: "释门", temper: 0.85, growth: 0.3),
-        "tiantai": Creed(name: "天台宗", family: "释门", temper: 0.92, destiny: 0.06),
-        "tantric": Creed(name: "藏传密宗", family: "释门", temper: 0.95, destiny: 0.1),
-        "whiteLotus": Creed(name: "白莲教", family: "释门", heresy: true, temper: 1.15, growth: 0.2),
-        "manichean": Creed(name: "明教", family: "光明", heresy: true, temper: 1.1, attack: 3),
-        "nestorian": Creed(name: "景教", family: "基督", income: 2),
+        // 中华诸教（大幅强化国教实效，使改宗、护教与争夺圣地成为真实战略核心）
+        "confucian": Creed(name: "儒教", family: "华夏", temper: 0.88, income: 8, destiny: 0.34, defense: 8, growth: 0.8, corruption: -10),
+        "chineseFolk": Creed(name: "中国民间信仰", family: "华夏", income: 6, destiny: 0.18, defense: 6, growth: 1.6),
+        "daoism": Creed(name: "道教", family: "道门", temper: 0.86, destiny: 0.28, defense: 10, growth: 1.4, corruption: -6),
+        "quanzhen": Creed(name: "全真道", family: "道门", temper: 0.88, destiny: 0.26, defense: 12, growth: 1.2, corruption: -8),
+        "zhengyi": Creed(name: "正一道", family: "道门", income: 6, destiny: 0.32, defense: 8, corruption: -4),
+        "buddhism": Creed(name: "佛教", family: "释门", temper: 0.84, income: 6, destiny: 0.30, defense: 12, growth: 1.0, corruption: -6),
+        "chan": Creed(name: "禅宗", family: "释门", temper: 0.86, income: 12, destiny: 0.24, defense: 10, corruption: -8),
+        "pureLand": Creed(name: "净土宗", family: "释门", temper: 0.80, destiny: 0.28, defense: 8, growth: 2.0, corruption: -4),
+        "tiantai": Creed(name: "天台宗", family: "释门", temper: 0.88, income: 8, destiny: 0.30, defense: 8, corruption: -6),
+        "tantric": Creed(name: "藏传密宗", family: "释门", temper: 0.92, destiny: 0.36, defense: 18, corruption: -8),
+        "whiteLotus": Creed(name: "白莲教", family: "释门", heresy: true, temper: 1.25, attack: 14, growth: 1.8, corruption: -4),
+        "manichean": Creed(name: "明教", family: "光明", heresy: true, temper: 1.22, income: 8, attack: 18, defense: 8),
+        "nestorian": Creed(name: "景教", family: "基督", income: 14, destiny: 0.20, defense: 6, corruption: -4),
         // 世界诸教
-        "shinto": Creed(name: "神道", family: "神道", defense: 4),
-        "islam": Creed(name: "伊斯兰教", family: "天方", temper: 1.1, attack: 3),
-        "catholic": Creed(name: "天主教", family: "基督", destiny: 0.08),
-        "orthodox": Creed(name: "东正教", family: "基督", destiny: 0.06, defense: 3),
-        "protestant": Creed(name: "新教", family: "基督", income: 4),
-        "judaism": Creed(name: "犹太教", family: "亚伯拉罕", income: 3),
-        "hinduism": Creed(name: "印度教", family: "天竺", growth: 0.3),
-        "zoroastrian": Creed(name: "祆教", family: "光明", destiny: 0.05),
-        "grecoRoman": Creed(name: "希腊罗马多神信仰", family: "多神", income: 2),
-        "norse": Creed(name: "北欧传统信仰", family: "多神", temper: 1.2, attack: 5),
-        "tengri": Creed(name: "腾格里信仰", family: "草原", temper: 1.1, attack: 4),
-        "kemetic": Creed(name: "古埃及信仰", family: "多神", destiny: 0.05),
-        "aztecFaith": Creed(name: "阿兹特克信仰", family: "美洲", temper: 1.2, attack: 3),
-        "incaFaith": Creed(name: "印加太阳信仰", family: "美洲", growth: 0.2),
+        "shinto": Creed(name: "神道", family: "神道", destiny: 0.26, attack: 10, defense: 18, corruption: -6),
+        "islam": Creed(name: "伊斯兰教", family: "天方", temper: 1.18, income: 12, destiny: 0.24, attack: 16, defense: 8),
+        "catholic": Creed(name: "天主教", family: "基督", income: 10, destiny: 0.34, defense: 12, corruption: -4),
+        "orthodox": Creed(name: "东正教", family: "基督", destiny: 0.30, attack: 6, defense: 18, corruption: -6),
+        "protestant": Creed(name: "新教", family: "基督", income: 22, destiny: 0.22, defense: 8, corruption: -10),
+        "judaism": Creed(name: "犹太教", family: "亚伯拉罕", income: 24, destiny: 0.20, defense: 12, corruption: -8),
+        "hinduism": Creed(name: "印度教", family: "天竺", income: 10, destiny: 0.24, defense: 10, growth: 2.4),
+        "zoroastrian": Creed(name: "祆教", family: "光明", income: 14, destiny: 0.32, attack: 10, defense: 10, corruption: -6),
+        "grecoRoman": Creed(name: "希腊罗马多神信仰", family: "多神", income: 14, attack: 12, defense: 10, corruption: -4),
+        "norse": Creed(name: "北欧传统信仰", family: "多神", temper: 1.30, attack: 22, defense: 6, corruption: -4),
+        "tengri": Creed(name: "腾格里信仰", family: "草原", temper: 1.22, attack: 20, defense: 4, growth: 0.8),
+        "kemetic": Creed(name: "古埃及信仰", family: "多神", income: 12, destiny: 0.36, defense: 12, growth: 1.6),
+        "aztecFaith": Creed(name: "阿兹特克信仰", family: "美洲", temper: 1.32, attack: 22, growth: 1.2),
+        "incaFaith": Creed(name: "印加太阳信仰", family: "美洲", income: 12, destiny: 0.30, defense: 14, growth: 1.8, corruption: -6),
     ]
     static func stateCreed(_ r: JS, _ id: String) -> Creed? {
         guard !r.regimes.isNull, r.regimes.enabled.isTruthy, let f = r.civilization.nations[id].religionId.optionalString else { return nil }
         return creeds[f]
+    }
+    /// 某国是否实际掌控本国国教圣地（掌控圣地享全军攻防 +12%、岁入 +15%、国运每月 +0.25 强力加持）。
+    public static func holdsHolySite(_ r: JS, _ id: String) -> Bool {
+        guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy,
+              let creedId = r.civilization.nations[id].religionId.optionalString, !creedId.isEmpty else { return false }
+        guard let h = holyProvinces(r).first(where: { $0.religion == creedId }) else { return false }
+        return r.world.provinces[h.province].controller.optionalString == id
     }
     /// A province's own faith (its holder's until it has been given one).
     static func provinceFaith(_ r: JS, _ province: JS) -> String? {
@@ -68,8 +75,8 @@ extension Regimes {
     static func faithUnrest(_ r: JS, _ province: JS) -> Int {
         guard !r.regimes.isNull, r.regimes.enabled.isTruthy, let f = provinceFaith(r, province),
               let state = r.civilization.nations[province.controller.asString].religionId.optionalString, f != state else { return 0 }
-        if creeds[f]?.heresy == true { return 20 }
-        return creeds[f]?.family == creeds[state]?.family ? 4 : 10
+        if creeds[f]?.heresy == true { return 30 }
+        return creeds[f]?.family == creeds[state]?.family ? 7 : 18
     }
     /// The sects of the Sinosphere, drawn once when the rules first run; provinces start with a scattering
     /// of neighbouring sects.
@@ -138,9 +145,18 @@ extension Regimes {
             count[f, default: 0] += 1
         }
         let unity = Double(count[creedId] ?? 0) / Double(land.count)
-        if unity >= 0.8 { addDestiny(0.03) } else if unity < 0.5 { addDestiny(-0.1) }
-        // 圣地: a state holding its faith's holy land is blessed for it.
-        if let h = holyProvinces(r).first(where: { $0.religion == creedId }), r.world.provinces[h.province].controller.optionalString == id { addDestiny(0.08) }
+        if unity >= 0.85 {
+            addDestiny(0.18)
+            addGold(0.06)
+        } else if unity < 0.50 {
+            addDestiny(-0.30)
+            addGold(-0.12)
+        }
+        // 圣地: 掌控本国国教圣地获巨幅正统加持（岁入 +15%、国运每月 +0.25，战时另享攻防 +12%）
+        if holdsHolySite(r, id) {
+            addDestiny(0.25)
+            addGold(0.15)
+        }
         // 改宗: a faith almost no one in the realm still holds is given up.
         if unity < 0.3, let top = count.max(by: { $0.value != $1.value ? $0.value < $1.value : $0.key > $1.key })?.key, top != creedId, chance("\(id)|\(key)|apostasy") < 0.08 {
             r.civilization.nations[id].religionId = JS(top)

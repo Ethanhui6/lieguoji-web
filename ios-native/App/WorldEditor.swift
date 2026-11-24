@@ -55,18 +55,8 @@ struct WorldEditorSheet: View {
         ScrollView {
             VStack(spacing: 12) {
                 SheetHeader(title: "世界编辑", subtitle: "笔刷、标注、文化宗教与导出", seal: "编")
-                ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 8) {
-                    ForEach(Tab.allCases, id: \.self) { t in
-                        Button { withAnimation(Motion.tap) { tab = t } } label: {
-                            Text(t.rawValue).font(Theme.body).foregroundStyle(tab == t ? Theme.paper2 : Theme.ink)
-                                .padding(.horizontal, 14).frame(height: 38)
-                                .background(tab == t ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(tab == t ? Color.clear : Theme.line))
-                        }
-                        .buttonStyle(PressStyle())
-                    }
-                }
-                .padding(.horizontal, 14) }
+                ChipPicker(items: Tab.allCases.map { ($0, $0.rawValue) }, selection: $tab)
+                    .padding(.horizontal, 16)
                 switch tab {
                 case .land: EditorLandTab(model: model, begin: { n, a in brush(n, a) }, say: { report($0, $1) }, close: close)
                 case .pact: EditorAllianceTab(model: model, say: { report($0, $1) })
@@ -99,7 +89,7 @@ struct WorldEditorSheet: View {
                 }
                 .padding(.bottom, 20)
             }
-            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $picking) {
             if let map = model.map, let state = model.state {
@@ -118,7 +108,7 @@ struct WorldEditorSheet: View {
                     }
                     .padding(.bottom, 20)
                 }
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
             }
         }
         .sheet(item: Binding(get: { exported.map(Shared.init) }, set: { exported = $0?.url })) { ShareSheet(items: [$0.url]) }
@@ -202,7 +192,7 @@ struct WorldEditorSheet: View {
                                 Circle().fill(Names.color(l.color)).frame(width: 12, height: 12)
                                 Text(l.text).font(Theme.body).foregroundStyle(labelId == l.id ? Theme.seal : Theme.ink).lineLimit(1)
                                 Spacer()
-                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
+                                InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.ink2)
                             }
                             .contentShape(Rectangle())
                         }
@@ -326,7 +316,7 @@ struct NationExtrasView: View {
                         Button { GameFeel.shared.tap(); run(t.on ? "已关闭\(t.name)" : "已开启\(t.name)") { await model.setStateTrait(nation, trait: t.key, on: !t.on) } } label: {
                             VStack(alignment: .leading, spacing: 3) {
                                 HStack(spacing: 5) {
-                                    Image(systemName: t.on ? "checkmark.seal.fill" : "seal").font(.system(size: 13)).foregroundStyle(t.on ? Theme.seal : Theme.ink2)
+                                    InkIcon(glyph: .edict, size: 13, weight: t.on ? 1.9 : 1.5, filled: t.on).foregroundStyle(t.on ? Theme.seal : Theme.ink2)
                                     Text(t.name).font(Theme.body).foregroundStyle(t.on ? Theme.seal : Theme.ink).lineLimit(1)
                                 }
                                 Text(t.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).frame(maxWidth: .infinity, alignment: .leading)
@@ -343,7 +333,7 @@ struct NationExtrasView: View {
             quickSection("官职称号") {
                 ForEach(posts, id: \.id) { p in
                     Button { titleEdit = Edit(id: p.id, label: p.title, text: p.title) } label: {
-                        HStack { Text(p.title).font(Theme.body).foregroundStyle(Theme.ink); Spacer(); Image(systemName: "pencil").font(.system(size: 12)).foregroundStyle(Theme.seal) }.contentShape(Rectangle())
+                        HStack { Text(p.title).font(Theme.body).foregroundStyle(Theme.ink); Spacer(); InkIcon(glyph: .brush, size: 12, weight: 1.7).foregroundStyle(Theme.seal) }.contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -352,7 +342,7 @@ struct NationExtrasView: View {
                         HStack {
                             Text(NationSheet.title(o, who)).font(Theme.body).foregroundStyle(Theme.ink)
                             Spacer()
-                            Image(systemName: "pencil").font(.system(size: 12)).foregroundStyle(Theme.seal)
+                            InkIcon(glyph: .brush, size: 12, weight: 1.7).foregroundStyle(Theme.seal)
                         }
                         .contentShape(Rectangle())
                     }
@@ -367,7 +357,7 @@ struct NationExtrasView: View {
                             Text(u.name).font(Theme.body).foregroundStyle(u.weight > 0 ? Theme.ink : Theme.ink2).lineLimit(1)
                             Spacer()
                             Text("战力\(Int(u.power))% · 行速\(Int(u.speed))% · 征募\(Int(u.weight))").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
-                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.ink2)
+                            InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.ink2)
                         }
                         .contentShape(Rectangle())
                     }
@@ -522,7 +512,7 @@ private struct NewUnitEditor: View {
             }
             .padding(.bottom, 16)
         }
-        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
     }
 }
 
@@ -538,7 +528,7 @@ private struct TitleEditor: View {
             Button("恢复默认") { done(nil) }.font(Theme.body).foregroundStyle(Theme.ink2).frame(maxWidth: .infinity)
         }
         .padding(.bottom, 16)
-        .presentationDetents([.height(320)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.height(320)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
     }
 }
 
@@ -566,6 +556,6 @@ private struct UnitEditor: View {
             .padding(.bottom, 16)
         }
         .onAppear { name = unit.name; power = unit.power; speed = unit.speed; weight = unit.weight }
-        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
     }
 }

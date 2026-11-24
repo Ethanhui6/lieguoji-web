@@ -198,10 +198,13 @@ struct NationDecreesTab: View {
     ]
 
     var body: some View {
-        LazyVStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 14) {
             if !info.alive {
                 Text("此国已亡，无法颁布政令。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
             } else {
+                // 全图统一自动委托总控条（置顶一键掌控全天下自动施政，绝不强迫逐国手动点开设置）
+                globalDelegationCard
+
                 // 顶部主分类切换（长期国策 vs 三大御批诏令）
                 ChipPicker(items: Category.allCases.map { ($0, $0.rawValue) }, selection: $category)
                     .padding(.horizontal, Theme.Layout.pageInset)
@@ -216,6 +219,62 @@ struct NationDecreesTab: View {
                 throneCard
             }
         }
+    }
+
+    @ViewBuilder
+    private var globalDelegationCard: some View {
+        let globalOn = info.globalAutoGovern ?? true
+        let nationOn = info.autoStrategy ?? globalOn
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                InkIcon(glyph: .edict, size: 17, weight: 1.85, accent: (globalOn ? Theme.jade : Theme.seal).opacity(0.24))
+                    .foregroundStyle(globalOn ? Theme.jade : Theme.seal)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("自动治理委托").font(Theme.section).foregroundStyle(Theme.ink)
+                    Text(globalOn ? "已统一委托天下各国自动施政，无需逐国手动" : "全图已转为手动治理，可一键恢复统一委托")
+                        .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
+                }
+                Spacer(minLength: 4)
+            }
+            HStack(spacing: 8) {
+                Button {
+                    GameFeel.shared.tap()
+                    runDecreeKind(globalOn ? "globalAutoGovern:off" : "globalAutoGovern:on",
+                                  fallback: globalOn ? "已关闭全图统一委托" : "已开启全图列国统一自动治理")
+                } label: {
+                    HStack(spacing: 5) {
+                        Circle().fill(globalOn ? Theme.paper2 : Theme.jade).frame(width: 6.5, height: 6.5)
+                        Text(globalOn ? "全图自动中 · 点按关闭" : "一键全图自动治理").font(Theme.caption)
+                    }
+                    .foregroundStyle(globalOn ? Theme.paper2 : Theme.jade)
+                    .frame(maxWidth: .infinity).frame(height: 34)
+                    .background(globalOn ? Theme.jade : Theme.jade.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(globalOn ? Color.clear : Theme.jade.opacity(0.32), lineWidth: 0.8))
+                }
+                .buttonStyle(PressStyle())
+                .disabled(busy)
+
+                Button {
+                    GameFeel.shared.tap()
+                    runDecreeKind(nationOn ? "strategyAuto:off" : "strategyAuto:on",
+                                  fallback: nationOn ? "本国已切为手动接管" : "本国已恢复自动治理")
+                } label: {
+                    HStack(spacing: 5) {
+                        Circle().fill(nationOn ? Theme.jade : Theme.seal).frame(width: 6.5, height: 6.5)
+                        Text(nationOn ? "本国：委托中" : "本国：已接管").font(Theme.caption)
+                    }
+                    .foregroundStyle(nationOn ? Theme.ink : Theme.seal)
+                    .frame(maxWidth: .infinity).frame(height: 34)
+                    .background((nationOn ? Theme.ink : Theme.seal).opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke((nationOn ? Theme.ink : Theme.seal).opacity(0.24), lineWidth: 0.8))
+                }
+                .buttonStyle(PressStyle())
+                .disabled(busy)
+            }
+        }
+        .padding(14)
+        .paperCard(tint: globalOn ? Theme.jade : Theme.seal)
+        .padding(.horizontal, Theme.Layout.pageInset)
     }
 
     @ViewBuilder

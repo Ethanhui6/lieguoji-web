@@ -5,33 +5,61 @@ import LieguojiCore
 
 /// State shared between SwiftUI panels and the Metal map.
 @MainActor final class MapController: ObservableObject {
-    /// 4.2.7 渲染直通合批通道（带归属实例锁）：地图高频数据直达当前活跃 `MapView.Coordinator.sync()`，
-    /// 切换世界（worldID 变化）时旧视图 `dismantleUIView` 严禁清空新视图注册的回调，根除军队冻结 Bug！
+    /// 4.2.9 严格世界代次隔离锁：
+    /// 切换世界时 `prepareForWorldSwitch(to:)` 会先推进 `activeWorldID` 并静默旧 `MapView #1`，
+    /// 彻底杜绝 `flushSync()` / `scheduleSync()` 在新 `MapView #2` 挂载前把新世界数据错投进旧渲染器引发的
+    /// `terrain[v * 4 + j]` 越界 (`SIGTRAP`) 或 Metal GPU 越界读闪退。
+    var activeWorldID = UUID()
     private weak var syncOwner: AnyObject?
+    private var syncWorldID: UUID?
     private var onNeedsSync: (() -> Void)?
+    private var onReleaseMap: (() -> Void)?
     private var syncScheduled = false
-    func registerSync(owner: AnyObject, handler: @escaping () -> Void) {
+
+    func prepareForWorldSwitch(to nextWorldID: UUID) {
+        activeWorldID = nextWorldID
+        syncScheduled = false
+        onReleaseMap?()
+    }
+    func registerSync(owner: AnyObject, worldID: UUID, onRelease: (() -> Void)? = nil, handler: @escaping () -> Void) {
+        guard worldID == activeWorldID || syncOwner == nil else { return }
         syncOwner = owner
+        syncWorldID = worldID
         onNeedsSync = handler
+        if let onRelease { onReleaseMap = onRelease }
     }
     func unregisterSync(owner: AnyObject) {
         if syncOwner === owner {
             syncOwner = nil
+            syncWorldID = nil
             onNeedsSync = nil
+            onReleaseMap = nil
+            onRevealClock = nil
+            onSkipReveal = nil
+            onHits = nil
+            onSheet = nil
+            onFramingRequest = nil
+            cameraScale = nil
+            nameFrame = nil
+            renderer = nil
+            placed = nil
         }
     }
-    func isSyncOwner(_ owner: AnyObject) -> Bool { syncOwner === owner }
+    func isSyncOwner(_ owner: AnyObject, worldID: UUID) -> Bool { syncOwner === owner && syncWorldID == worldID }
     func scheduleSync() {
+        guard syncWorldID == activeWorldID, onNeedsSync != nil else { return }
         guard !syncScheduled else { return }
         syncScheduled = true
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.syncScheduled = false
+            guard self.syncWorldID == self.activeWorldID else { return }
             self.onNeedsSync?()
         }
     }
     func flushSync() {
         syncScheduled = false
+        guard syncWorldID == activeWorldID else { return }
         onNeedsSync?()
     }
 
@@ -371,13 +399,15 @@ struct PlaySettings: Codable, Equatable {
 struct MapView: UIViewRepresentable {
     let map: WorldMap
     @ObservedObject var controller: MapController
+    let worldID: UUID
 
-    func makeCoordinator() -> Coordinator { Coordinator(map: map, controller: controller) }
+    func makeCoordinator() -> Coordinator { Coordinator(map: map, controller: controller, worldID: worldID) }
     func makeUIView(context: Context) -> MapContainerView { context.coordinator.build() }
     func updateUIView(_ view: MapContainerView, context: Context) {
         let c = context.coordinator
-        if !controller.isSyncOwner(c) {
-            controller.registerSync(owner: c) { [weak c] in c?.sync() }
+        guard c.worldID == controller.activeWorldID else { return }
+        if !controller.isSyncOwner(c, worldID: c.worldID) {
+            c.bindController()
         }
         c.sync()
     }
@@ -386,6 +416,7 @@ struct MapView: UIViewRepresentable {
     @MainActor final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         var map: WorldMap
         let controller: MapController
+        let worldID: UUID
         private let picker: CellPicker
         private var container: MapContainerView!
         private var mtk: MTKView!
@@ -515,8 +546,8 @@ struct MapView: UIViewRepresentable {
         private var mountNotified = false
         private var appliedRevealSerial = -1
 
-        init(map: WorldMap, controller: MapController) {
-            self.map = map; self.controller = controller; picker = CellPicker(map: map)
+        init(map: WorldMap, controller: MapController, worldID: UUID) {
+            self.map = map; self.controller = controller; self.worldID = worldID; picker = CellPicker(map: map)
             super.init()
             resetID = controller.resetRequest
             unrollID = controller.unrollRequest
@@ -542,6 +573,8 @@ struct MapView: UIViewRepresentable {
             mtk.presentsWithTransaction = false
             mtk.preferredFramesPerSecond = 60
             mtk.autoResizeDrawable = true
+            mtk.depthStencilPixelFormat = .invalid
+            mtk.framebufferOnly = true
             // 地图清晰度 (default 2×): on a 3× screen the map (drawn with 4× multisampling) cost more than twice
             // the GPU work for no visible gain; the names and labels above it stay at full resolution.
             mtk.contentScaleFactor = min(UIScreen.main.scale, controller.play.renderScale)
@@ -551,22 +584,9 @@ struct MapView: UIViewRepresentable {
             renderer?.setReveal(initialReveal)
             mtk.delegate = renderer
             renderer?.onDraw = { [weak self] t in self?.frameDrawn(t) }
-            renderer?.onOutlines = { [weak self] in self?.startLink(); self?.mtk.setNeedsDisplay() }
-            controller.onRevealClock = { [weak self] in self?.revealStarted() }
-            controller.onSkipReveal = { [weak self] in
-                guard let self, let renderer = self.renderer else { return }
-                self.animation = nil
-                renderer.setReveal(1)
-                self.labels?.alpha = 1
-                self.effects.alpha = 1
-                self.syncTroopVisibility(reveal: 1)
-                self.set(MapCamera.cover(map: self.mapSize, viewport: self.viewport), sync: true)
-            }
-            controller.onHits = { [weak self] hits in
-                guard let self, self.controller.play.showBattleFloats, !self.controller.sheetOpen else { return }
-                for h in hits {
-                    self.effects.float(h.text, worldX: Double(h.x), worldY: Double(h.y), naval: h.naval)
-                }
+            renderer?.onOutlines = { [weak self] in
+                guard let self, self.worldID == self.controller.activeWorldID else { return }
+                self.startLink(); self.mtk.setNeedsDisplay()
             }
             labels = MapLabelsView(map: map)
             labels?.alpha = CGFloat(max(0, min(1, (initialReveal - 0.85) / 0.15)))
@@ -597,17 +617,58 @@ struct MapView: UIViewRepresentable {
             }
             effects.seaSpots = spots
             syncWaves()
+            bindController()
+            metrics.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+            metrics.textColor = .white; metrics.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+            metrics.numberOfLines = 0; metrics.layer.cornerRadius = 8; metrics.layer.masksToBounds = true
+            metrics.isHidden = true; metrics.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(metrics)
+            NSLayoutConstraint.activate([metrics.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+                                         metrics.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 64)])
+            container.onLayout = { [weak self] in self?.layoutChanged() }
+            installGestures()
+            return container
+        }
+
+        /// 将本世界的所有控制回调原子注册到 `MapController`（仅当前活跃 `activeWorldID` 允许接管，绝不被旧视图抢占）。
+        func bindController() {
+            guard worldID == controller.activeWorldID else { return }
+            controller.registerSync(owner: self, worldID: worldID, onRelease: { [weak self] in
+                self?.quiesceForWorldSwitch()
+            }) { [weak self] in
+                self?.sync()
+            }
+            controller.onRevealClock = { [weak self] in
+                guard let self, self.worldID == self.controller.activeWorldID else { return }
+                self.revealStarted()
+            }
+            controller.onSkipReveal = { [weak self] in
+                guard let self, self.worldID == self.controller.activeWorldID, let renderer = self.renderer else { return }
+                self.animation = nil
+                renderer.setReveal(1)
+                self.labels?.alpha = 1
+                self.effects.alpha = 1
+                self.syncTroopVisibility(reveal: 1)
+                if self.viewport.width > 0 && self.viewport.height > 0 {
+                    self.set(MapCamera.cover(map: self.mapSize, viewport: self.viewport), sync: false)
+                }
+            }
+            controller.onHits = { [weak self] hits in
+                guard let self, self.worldID == self.controller.activeWorldID, self.controller.play.showBattleFloats, !self.controller.sheetOpen else { return }
+                for h in hits {
+                    self.effects.float(h.text, worldX: Double(h.x), worldY: Double(h.y), naval: h.naval)
+                }
+            }
             controller.onSheet = { [weak self] in
-                guard let self else { return }
+                guard let self, self.worldID == self.controller.activeWorldID else { return }
                 self.sheetSettleWork?.cancel()
                 self.sheetSettleWork = nil
                 self.linkPace = .full
                 self.syncWaves()
                 self.syncWeather()
                 if self.controller.sheetOpen {
-                    // 弹窗弹簧滑入与镜头飞行期间（前 0.50s）保持满帧 60/120fps 且绝不阻塞事务，待动画落定后再降为 30fps 省电。
                     let work = DispatchWorkItem { [weak self] in
-                        guard let self, self.controller.sheetOpen else { return }
+                        guard let self, self.worldID == self.controller.activeWorldID, self.controller.sheetOpen else { return }
                         self.sheetThrottled = true
                         self.mtk.preferredFramesPerSecond = 30
                         self.drift?.invalidate(); self.drift = nil
@@ -631,24 +692,25 @@ struct MapView: UIViewRepresentable {
                 guard let self, let renderer = self.renderer else { return (0, 0) }
                 return (renderer.camera.scale, self.bounds.lowerBound)
             }
-            controller.onFramingRequest = { [weak self] in self?.applyFramingRequests() }
-            controller.registerSync(owner: self) { [weak self] in self?.sync() }
+            controller.onFramingRequest = { [weak self] in
+                guard let self, self.worldID == self.controller.activeWorldID else { return }
+                self.applyFramingRequests()
+            }
             controller.nameFrame = { [weak self] in self?.labels?.nameFrame() ?? [:] }
             controller.renderer = { [weak self] in self?.renderer }
             controller.placed = { [weak self] key in
                 guard let p = self?.renderer?.placedSprites().first(where: { $0.sprite.key == key }) else { return nil }
                 return (Double(p.x), Double(p.y))
             }
-            metrics.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
-            metrics.textColor = .white; metrics.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-            metrics.numberOfLines = 0; metrics.layer.cornerRadius = 8; metrics.layer.masksToBounds = true
-            metrics.isHidden = true; metrics.translatesAutoresizingMaskIntoConstraints = false
-            container.addSubview(metrics)
-            NSLayoutConstraint.activate([metrics.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-                                         metrics.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 64)])
-            container.onLayout = { [weak self] in self?.layoutChanged() }
-            installGestures()
-            return container
+        }
+
+        /// 世界切换前静默本旧视图：立即停掉显示链路、漂移与浪花并释放重型瞬态墨场/拓扑内存，避免与新世界叠加触发真机 Jetsam。
+        private func quiesceForWorldSwitch() {
+            sheetSettleWork?.cancel(); sheetSettleWork = nil
+            link?.invalidate(); link = nil
+            drift?.invalidate(); drift = nil
+            effects.stopWaves()
+            renderer?.releaseHeavyTransientResources()
         }
 
         private func installGestures() {
@@ -678,6 +740,7 @@ struct MapView: UIViewRepresentable {
         // MARK: camera
 
         private func layoutChanged() {
+            guard worldID == controller.activeWorldID else { return }
             let b = container.bounds
             guard let renderer, b.width > 0, b.height > 0 else { return }
             UIView.performWithoutAnimation {
@@ -691,13 +754,19 @@ struct MapView: UIViewRepresentable {
             applyFramingRequests()
             if !mountNotified {
                 mountNotified = true
-                controller.registerSync(owner: self) { [weak self] in self?.sync() }
+                bindController()
                 controller.mapMountToken &+= 1
                 controller.onMapMounted?()
                 controller.scheduleSync()
             }
             if controller.revealClock != nil && !controller.revealDone && appliedRevealSerial != controller.revealClockSerial {
-                revealStarted()
+                // 严禁在 UIView.layoutSubviews() 内同步重入修改子视图 frame 与起动动画，延至下个 RunLoop 安全起动开卷。
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.worldID == self.controller.activeWorldID,
+                          self.controller.revealClock != nil, !self.controller.revealDone,
+                          self.appliedRevealSerial != self.controller.revealClockSerial else { return }
+                    self.revealStarted()
+                }
             }
         }
         private func syncTroopVisibility(reveal: Float) {
@@ -1191,6 +1260,8 @@ struct MapView: UIViewRepresentable {
         }
 
         func sync() {
+            // 严格代次隔离：已过期旧世界视图绝不消费新世界的任何状态、军队、墨晕或地图更新。
+            guard worldID == controller.activeWorldID, renderer != nil else { return }
             var dirty = false
             if let renderer, renderer.seasonPhase != controller.seasonPhase {
                 renderer.seasonPhase = controller.seasonPhase
@@ -1207,7 +1278,9 @@ struct MapView: UIViewRepresentable {
                 syncWeather()
                 dirty = true
             }
-            if controller.worldRevision != shownRevision, let next = controller.world, Self.worldChanged(next, map) {
+            if controller.worldRevision != shownRevision, let next = controller.world,
+               next.vertices.count == map.vertices.count, next.cellCount == map.cellCount,
+               Self.worldChanged(next, map) {
                 shownRevision = controller.worldRevision
                 map = next
                 renderer?.setMap(next, skipStatic: controller.replayLocked, skipOutlines: controller.replayScrubbing, animateColors: !controller.replayLocked || controller.replayAnimate)
@@ -1243,7 +1316,8 @@ struct MapView: UIViewRepresentable {
                 dirty = true
             }
             if controller.worldRevision != shownRevision { shownRevision = controller.worldRevision }
-            if controller.editorRevision != shownEditorRevision, let next = controller.editorMap {
+            if controller.editorRevision != shownEditorRevision, let next = controller.editorMap,
+               next.vertices.count == map.vertices.count, next.cellCount == map.cellCount {
                 shownEditorRevision = controller.editorRevision
                 map = next
                 renderer?.setTerrain(next, refreshSea: controller.editorSeaDirty)

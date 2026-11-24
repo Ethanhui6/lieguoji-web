@@ -220,6 +220,17 @@ import LieguojiCore
     @Published private(set) var editor: MapEditor?
     private var editorOptions = NewWorld()
 
+    /// 统一原子切换世界：先推进 `controller.activeWorldID` 并静默/清理旧地图重型瞬态资源，再发布新 `map` 与 `worldID`，
+    /// 彻底杜绝切换瞬间 `flushSync()` / `scheduleSync()` 将新世界状态喂给濒死旧渲染器。
+    @discardableResult
+    private func switchWorld(to nextMap: WorldMap) -> UUID {
+        let nextID = UUID()
+        controller.prepareForWorldSwitch(to: nextID)
+        map = nextMap
+        worldID = nextID
+        return nextID
+    }
+
     /// Opens the map editor on a template terrain (drawn over, or replaced by open sea).
     func openEditor(_ options: NewWorld) {
         guard let inputs = previewInputs else { failure = "缺少原作地图网格，无法绘制"; return }
@@ -231,7 +242,7 @@ import LieguojiCore
         let heights = TerrainGenerator.generate(graph: inputs.grid, seed: seed, template: options.template)
         let ed = MapEditor(inputs: inputs, heights: heights, seed: seed, template: options.template, controller: controller)
         ed.nations = options.nations; ed.provinces = options.provinceCount
-        editor = ed; map = ed.map; worldID = UUID()
+        editor = ed; switchWorld(to: ed.map)
         controller.drifting = false; controller.mode = .terrain; controller.reveal = 1; controller.interactive = true
         controller.terrainBrush = true
         controller.onTerrainStroke = { [weak ed] x, y in ed?.stamp(x: x, y: y) }
@@ -334,8 +345,13 @@ import LieguojiCore
             let template = Names.templates.randomElement()!.id
             return (inputs, PreviewWorld.build(inputs, seed: String(UInt32.random(in: 0...UInt32.max)), template: template, nations: 8, cities: 80))
         }.value
-        if let built { previewInputs = built.0; map = built.1; worldID = UUID() }
-        else if let world = try? WorldMap.load(directory: url) { map = world; worldID = UUID() }
+        if let built {
+            previewInputs = built.0
+            NativeHost.seedSharedInputs(base: built.0.base, grid: built.0.grid, document: built.0.document)
+            switchWorld(to: built.1)
+        } else if let world = try? WorldMap.load(directory: url) {
+            switchWorld(to: world)
+        }
     }
 
     static var saveURL: URL {
@@ -398,6 +414,7 @@ import LieguojiCore
     /// 新世界由 Swift 本机一次性建成，并在开卷动画前就启用本作规则（名号多样与国色分明），
     /// 令开卷阶段浮现的每一处版图色块、国号与疆界和进入推演后完全一致，彻底杜绝生成途中变名变色。
     func generate(_ options: NewWorld) async {
+        CrashBreadcrumb.mark("gen.start.\(options.template)")
         pause()
         failure = nil
         worldEpoch &+= 1
@@ -420,48 +437,52 @@ import LieguojiCore
             let text = String(data: try JSONSerialization.data(withJSONObject: json), encoding: .utf8)!
             let made = Self.nativeOptions(seed: seed, template: options.template, nations: options.nations, provinces: options.provinceCount, relations: options.relations,
                                           naming: options.naming, cultures: options.cultures, climate: options.climate)
-            let founded = try await found(made, webOptions: text, epoch: epoch)
-            guard epoch == worldEpoch else { return }
             let world: WorldMap
-            switch founded {
-            case .native(let created):
-                MapLabelsView.clearImages()
-                BundleArt.clearCache()
-                InkPlayerHostView.clearCache()
-                let loaded = try await decodeFinalNative(created, epoch: epoch, prepareLayers: true)
+            let mountBefore: Int
+            do {
+                let founded = try await found(made, webOptions: text, epoch: epoch)
                 guard epoch == worldEpoch else { return }
-                if let layers = loaded.layers { MapRenderer.prepared = layers }
-                let mountBefore = controller.mapMountToken
-                state = nil; controller.world = nil; controller.armies = []; controller.troopTexts = [:]; controller.troopRatios = [:]; controller.troopBarColors = [:]; controller.effects = MapEffects(); controller.seaPorts = []
-                controller.reveal = 0
-                map = loaded.world; worldID = UUID()
-                controller.snapArmies = true
-                apply(loaded.state)
-                lastSavedDay = loaded.state.day
-                controller.foundingStage = 3
-                generationNote = ""
-                phase = .founding
-                await waitForMapMount(after: mountBefore)
-                guard epoch == worldEpoch else { return }
-                await rise(epoch)
-                guard epoch == worldEpoch else { return }
-                world = loaded.world
-            case .web(let built):
-                MapLabelsView.clearImages()
-                BundleArt.clearCache()
-                InkPlayerHostView.clearCache()
-                let mountBefore = controller.mapMountToken
-                world = try await open(built)
-                try checkWorld(epoch)
-                controller.foundingStage = 3
-                try await handOver(applyNewWorldRules: true)
-                guard epoch == worldEpoch else { return }
-                generationNote = ""
-                await waitForMapMount(after: mountBefore)
-                guard epoch == worldEpoch else { return }
-                await rise(epoch)
-                guard epoch == worldEpoch else { return }
+                CrashBreadcrumb.mark("gen.founded")
+                switch founded {
+                case .native(let created):
+                    MapLabelsView.clearImages()
+                    BundleArt.clearCache()
+                    InkPlayerHostView.clearCache()
+                    let loaded = try await decodeFinalNative(created, epoch: epoch, prepareLayers: true)
+                    guard epoch == worldEpoch else { return }
+                    CrashBreadcrumb.mark("gen.decoded")
+                    if let layers = loaded.layers { MapRenderer.prepared = layers }
+                    mountBefore = controller.mapMountToken
+                    state = nil; controller.world = nil; controller.armies = []; controller.troopTexts = [:]; controller.troopRatios = [:]; controller.troopBarColors = [:]; controller.effects = MapEffects(); controller.seaPorts = []
+                    controller.reveal = 0
+                    switchWorld(to: loaded.world)
+                    controller.snapArmies = true
+                    apply(loaded.state)
+                    lastSavedDay = loaded.state.day
+                    controller.foundingStage = 3
+                    generationNote = ""
+                    phase = .founding
+                    world = loaded.world
+                case .web(let built):
+                    MapLabelsView.clearImages()
+                    BundleArt.clearCache()
+                    InkPlayerHostView.clearCache()
+                    mountBefore = controller.mapMountToken
+                    world = try await open(built)
+                    try checkWorld(epoch)
+                    controller.foundingStage = 3
+                    try await handOver(applyNewWorldRules: true)
+                    guard epoch == worldEpoch else { return }
+                    generationNote = ""
+                }
             }
+            // `founded`（含约 10MB 建世 JSON 中间体）已在内层作用域释放，再挂载新 MapView 并开始展卷，进一步压低真机峰值内存。
+            await waitForMapMount(after: mountBefore)
+            guard epoch == worldEpoch else { return }
+            CrashBreadcrumb.mark("gen.mounted")
+            await rise(epoch)
+            guard epoch == worldEpoch else { return }
+            CrashBreadcrumb.mark("play.enter")
             generationNote = ""
             phase = .playing; controller.interactive = true
             // A coast too broken for the provinces asked for: the engine took more.
@@ -473,10 +494,12 @@ import LieguojiCore
                 await self.archiveCurrent()
                 guard self.worldEpoch == epoch, self.phase == .playing else { return }
                 self.save()
+                CrashBreadcrumb.mark("play.autosave")
                 self.autoConnect()
             }
         } catch {
             guard epoch == worldEpoch else { return }
+            CrashBreadcrumb.mark("gen.error")
             failure = error.localizedDescription
             toTitle()
         }
@@ -499,6 +522,7 @@ import LieguojiCore
     }
 
     func continueGame() async {
+        CrashBreadcrumb.mark("cont.start")
         pause()
         controller.drifting = false
         worldEpoch &+= 1
@@ -530,6 +554,7 @@ import LieguojiCore
                     }
                 }.value
                 try checkWorld(epoch)
+                CrashBreadcrumb.mark("cont.decoded")
                 MapLabelsView.clearImages()
                 BundleArt.clearCache()
                 InkPlayerHostView.clearCache()
@@ -542,7 +567,8 @@ import LieguojiCore
                 controller.effects = MapEffects()
                 controller.snapArmies = true
                 controller.reveal = 0
-                map = loaded.0; worldID = UUID(); controller.world = nil
+                controller.world = nil
+                switchWorld(to: loaded.0)
                 apply(loaded.1); lastSavedDay = loaded.1.day
                 world = loaded.0
             } else {
@@ -560,8 +586,9 @@ import LieguojiCore
             generationNote = ""
             await reveal(world, mountBefore: mountBefore)
             try checkWorld(epoch)
+            CrashBreadcrumb.mark("cont.playing")
             autoConnect()
-        } catch { if epoch == worldEpoch { failure = "存档无法读取：\(error.localizedDescription)"; phase = .title } }
+        } catch { if epoch == worldEpoch { CrashBreadcrumb.mark("cont.error"); failure = "存档无法读取：\(error.localizedDescription)"; phase = .title } }
     }
 
     private func open(_ text: String) async throws -> WorldMap {
@@ -627,12 +654,13 @@ import LieguojiCore
     private func show(_ world: WorldMap, _ first: GameState, layers: MapLayers.Prepared?) -> WorldMap {
         let loaded = (world, first)
         if let layers { MapRenderer.prepared = layers }
-        if phase == .founding, let shown = map, shown.province.count == loaded.0.province.count, shown.meta.provinces.count == loaded.0.meta.provinces.count {
+        if phase == .founding, let shown = map, shown.vertices.count == loaded.0.vertices.count, shown.cellCount == loaded.0.cellCount, shown.province.count == loaded.0.province.count, shown.meta.provinces.count == loaded.0.meta.provinces.count {
             // The device-built preview has the same geometry: keep its map view (rebuilding the Metal
             // map and every label here was the hitch before entering the world); only states and names update.
             map = loaded.0; controller.world = loaded.0
         } else {
-            map = loaded.0; worldID = UUID(); controller.world = nil
+            controller.world = nil
+            switchWorld(to: loaded.0)
         }
         apply(loaded.1)
         lastSavedDay = loaded.1.day

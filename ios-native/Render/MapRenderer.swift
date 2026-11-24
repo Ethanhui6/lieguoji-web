@@ -90,6 +90,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// Army icons grouped by unit type: texture, vertex buffer, count, and pool.
     private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int, pool: MapBufferPool)] = []
     let positions: MTLBuffer
+    private let vertexCount: Int
     private(set) var indices: MTLBuffer
     private(set) var indexCount: Int
     private var colors: MTLBuffer
@@ -179,18 +180,40 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     static let paper = RGB(hex: 0xEDE3CC)
     struct QuadUniforms { var origin: SIMD2<Float>; var size: SIMD2<Float> }
 
+    /// 零 UB 安全 Metal 缓冲构造：当数组为空时绝不传入空指针调用 `makeBuffer(bytes:length:)`，确保全海面或极端地图绝不越界崩溃。
+    private static func makeSafeBuffer<T>(device: MTLDevice, _ data: [T], minLength: Int = 16) -> MTLBuffer? {
+        let byteCount = data.count * MemoryLayout<T>.stride
+        let length = max(minLength, byteCount)
+        if byteCount == 0 {
+            return device.makeBuffer(length: length, options: .storageModeShared)
+        }
+        if byteCount == length {
+            return data.withUnsafeBytes { raw in
+                guard let base = raw.baseAddress else { return nil }
+                return device.makeBuffer(bytes: base, length: length, options: .storageModeShared)
+            }
+        }
+        guard let buf = device.makeBuffer(length: length, options: .storageModeShared) else { return nil }
+        data.withUnsafeBytes { raw in
+            if let base = raw.baseAddress { memcpy(buf.contents(), base, byteCount) }
+        }
+        return buf
+    }
+
     init?(view: MTKView, map: WorldMap, parchmentURL: URL?, unitURL: (String) -> URL? = { _ in nil }) {
         _ = unitURL
         guard let device = view.device, let queue = device.makeCommandQueue() else {
             NSLog("Lieguoji Metal: no rendering device or command queue")
             return nil
         }
-        self.device = device; self.queue = queue; self.map = map
+        self.device = device; self.queue = queue; self.map = map; self.vertexCount = map.vertices.count / 2
         nationColors = map.meta.nations.map { RGB(css: $0.color) ?? RGB(0.6, 0.6, 0.6) }
         camera = MapCamera.fit(map: (Double(map.width), Double(map.height)), viewport: (390, 844))
-        // 2× MSAA：清晰抗锯齿且带宽仅为 4× MSAA 一半，显著降温。
+        // 2× MSAA + 无深度缓冲 + framebufferOnly：清晰抗锯齿且带宽仅为 4× MSAA 一半，显著降温降内存。
         view.sampleCount = device.supportsTextureSampleCount(2) ? 2 : 1
         view.colorPixelFormat = .bgra8Unorm
+        view.depthStencilPixelFormat = .invalid
+        view.framebufferOnly = true
 
         let devID = ObjectIdentifier(device)
         let assets: SharedMetalAssets
@@ -334,11 +357,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         unitTextures = assets.unitTextures
 
         let mesh = CellMesh(map: map)
-        guard let p = device.makeBuffer(bytes: mesh.positions, length: max(16, mesh.positions.count * 4), options: .storageModeShared),
-              let i = device.makeBuffer(bytes: mesh.indices, length: max(16, mesh.indices.count * 4), options: .storageModeShared) else { return nil }
+        guard let p = Self.makeSafeBuffer(device: device, mesh.positions, minLength: 16),
+              let i = Self.makeSafeBuffer(device: device, mesh.indices, minLength: 16) else { return nil }
         positions = p; indices = i; indexCount = mesh.indices.count
         let c = CellMesh.colors(map: map, mode: .political, nationColors: nationColors)
-        guard let cb = device.makeBuffer(bytes: c, length: max(16, c.count * 4), options: .storageModeShared) else { return nil }
+        guard let cb = Self.makeSafeBuffer(device: device, c, minLength: 16) else { return nil }
         colors = cb
 
         let seaDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: max(1, map.seaWidth), height: max(1, map.seaHeight), mipmapped: false)
@@ -365,10 +388,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
     }
 
-    /// 切换世界卸载旧地图时主动释放重型顶点与墨场缓冲，防止真机内存叠加触发 Jetsam 闪退。
-    func releaseResources() {
-        onDraw = nil
-        onOutlines = nil
+    /// 世界切换前夕抢先释放高内存瞬态数据（墨场、拓扑、扫色、海面源字节与展卷场），在保留最后一帧静图的同时削平双世界内存尖峰。
+    func releaseHeavyTransientResources() {
         ink = nil
         sweep = nil
         washTopology = nil
@@ -378,11 +399,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         revealFields = nil
         revealFieldData = nil
         revealTerrain = nil
+        seaSource.removeAll(keepingCapacity: false)
+        seaMask.removeAll(keepingCapacity: false)
+        coastInk = nil
+    }
+
+    /// 切换世界卸载旧地图时主动释放重型顶点与墨场缓冲，防止真机内存叠加触发 Jetsam 闪退。
+    func releaseResources() {
+        onDraw = nil
+        onOutlines = nil
+        releaseHeavyTransientResources()
         base = nil
         terrainBase = nil
         shade.removeAll(keepingCapacity: false)
-        seaSource.removeAll(keepingCapacity: false)
-        seaMask.removeAll(keepingCapacity: false)
         sea = nil
         provinceLines = nil
         rivers = nil
@@ -396,7 +425,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         portIcons = nil
         forts = nil
         scrollMount = nil
-        coastInk = nil
         route = nil
         units.removeAll(keepingCapacity: false)
         unitBufferPool.removeAll(keepingCapacity: false)
@@ -593,6 +621,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     func setTerrain(_ next: WorldMap, refreshSea: Bool) {
+        guard next.vertices.count == map.vertices.count, next.cellCount == map.cellCount else { return }
         let work = workRevision.replaceMap()
         workRevision.installColours(work)
         workRevision.installGeometry(work)
@@ -700,6 +729,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     func setMap(_ next: WorldMap, replayFast: Bool = false, skipStatic: Bool = false, skipOutlines: Bool = false, animateColors: Bool? = nil) {
+        // 硬隔离：setMap 仅用于同一地图网格的疆域/国色更新，严禁跨拓扑传入新世界（否则旧 terrainBase/positions 长度失配会瞬间越界闪退）。
+        guard next.vertices.count == map.vertices.count, next.cellCount == map.cellCount else { return }
         let work = workRevision.replaceMap()
         let noStatic = replayFast || skipStatic
         let doFade = animateColors ?? !replayFast
@@ -750,16 +781,17 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     static func baseColors(_ map: WorldMap, _ i: BaseInputs) -> (land: [Float], terrain: [Float], terrainBase: [Float], shade: [Float]) {
         var c = CellMesh.colors(map: map, mode: i.mode, nationColors: i.nationColors, highlightProvince: i.highlight, tint: i.tint, provinceColors: i.mode == .political ? i.fills : nil)
-        let terrainBase = i.terrain ?? CellMesh.colors(map: map, mode: .terrain, nationColors: i.nationColors)
+        let terrainBase = (i.terrain?.count == c.count ? i.terrain : nil) ?? CellMesh.colors(map: map, mode: .terrain, nationColors: i.nationColors)
         var terrain = terrainBase
         if i.mode == .political && i.density < 1 {
             let k = i.fills != nil ? max(0.84, i.density) : max(0, i.density)
             for j in 0..<min(c.count, terrain.count) where j % 4 != 3 { c[j] = terrain[j] + (c[j] - terrain[j]) * k }
         }
         let shade = i.shade.count == map.vertices.count / 2 ? i.shade : MapLayers.vertexHillshade(map)
-        for v in shade.indices {
-            let k = shade[v]
-            for j in 0..<3 { c[v * 4 + j] = min(1, c[v * 4 + j] * k); terrain[v * 4 + j] = min(1, terrain[v * 4 + j] * k) }
+        let safeLimit = min(shade.count, c.count / 4, terrain.count / 4)
+        for v in 0..<safeLimit {
+            let k = shade[v], o = v * 4
+            for j in 0..<3 { c[o + j] = min(1, c[o + j] * k); terrain[o + j] = min(1, terrain[o + j] * k) }
         }
         return (c, terrain, terrainBase, shade)
     }
@@ -794,12 +826,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var revealTerrain: MTLBuffer?
     private func revealBuffers() -> (fields: MTLBuffer, terrain: MTLBuffer)? {
         guard let base else { return nil }
-        if revealTerrain == nil { revealTerrain = device.makeBuffer(bytes: base.terrain, length: max(4, base.terrain.count * 4), options: .storageModeShared) }
+        if revealTerrain == nil { revealTerrain = Self.makeSafeBuffer(device: device, base.terrain, minLength: 16) }
         if revealFields == nil {
             var data = revealFieldData ?? []
             if data.count != map.vertices.count { data = MapLayers.revealFields(map) }
             revealFieldData = nil
-            revealFields = device.makeBuffer(bytes: data, length: max(8, data.count * 4), options: .storageModeShared)
+            revealFields = Self.makeSafeBuffer(device: device, data, minLength: 16)
         }
         guard let a = revealFields, let b = revealTerrain else { return nil }
         return (a, b)
@@ -817,24 +849,26 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private func recolor() {
         if base == nil {
             var c = CellMesh.colors(map: map, mode: mode, nationColors: nationColors, highlightProvince: highlight, tint: tint, provinceColors: mode == .political ? fills : nil)
-            if terrainBase == nil { terrainBase = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors) }
-            var terrain = terrainBase!
+            if terrainBase?.count != c.count { terrainBase = CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors) }
+            var terrain = terrainBase ?? CellMesh.colors(map: map, mode: .terrain, nationColors: nationColors)
             if mode == .political && display.colorDensity < 1 {
                 let k = fills != nil ? Float(max(0.84, display.colorDensity)) : Float(max(0, display.colorDensity))
                 for i in 0..<min(c.count, terrain.count) where i % 4 != 3 { c[i] = terrain[i] + (c[i] - terrain[i]) * k }
             }
             if shade.count != map.vertices.count / 2 { shade = MapLayers.vertexHillshade(map) }
-            for v in shade.indices {
-                let k = shade[v]
+            let safeLimit = min(shade.count, c.count / 4, terrain.count / 4)
+            for v in 0..<safeLimit {
+                let k = shade[v], o = v * 4
                 for j in 0..<3 {
-                    c[v * 4 + j] = min(1, c[v * 4 + j] * k)
-                    terrain[v * 4 + j] = min(1, terrain[v * 4 + j] * k)
+                    c[o + j] = min(1, c[o + j] * k)
+                    terrain[o + j] = min(1, terrain[o + j] * k)
                 }
             }
             base = (c, terrain, map.meta.provinces.map(\.nation), nationColors)
         }
         guard let base else { return }
         let c = base.land
+        guard c.count == vertexCount * 4 else { return }
         let colourBytes = c.count * MemoryLayout<Float>.stride
         let uploaded = colorBufferPool.write(device: device, length: max(16, colourBytes)) { buffer in
             c.withUnsafeBytes { raw in
@@ -1298,30 +1332,35 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
             }
 
-            // 2. 陆地地块（单次乘法着色，零片元噪声发热）
-            if stage < 1, let rb = revealBuffers() {
-                var r = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, stage)
-                encoder.setRenderPipelineState(revealPipeline)
-                encoder.setVertexBuffer(rb.terrain, offset: 0, index: 3)
-                encoder.setVertexBuffer(rb.fields, offset: 0, index: 4)
-                encoder.setFragmentBytes(&r, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
-            } else if fading, let previous = previousColors {
-                var t = SIMD2<Float>(clock(frameTime), LandFade.duration)
-                encoder.setRenderPipelineState(fadePipeline)
-                encoder.setVertexBuffer(previous, offset: 0, index: 3)
-                prevColorBufferPool.recordRead(in: buffer)
-                encoder.setVertexBytes(&t, length: MemoryLayout<SIMD2<Float>>.stride, index: 4)
-                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
-            } else {
-                if previousColors != nil { previousColors = nil }
-                encoder.setRenderPipelineState(cellPipeline)
-                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+            // 2. 陆地地块（单次乘法着色，零片元噪声发热；绘制前硬校验 Metal 缓冲字节长度防真机越界）
+            let minColorBytes = vertexCount * 16
+            let minFieldBytes = vertexCount * 8
+            let canDrawLand = indexCount > 0 && vertexCount > 0 && positions.length >= minFieldBytes && colors.length >= minColorBytes
+            if canDrawLand {
+                if stage < 1, let rb = revealBuffers(), rb.terrain.length >= minColorBytes, rb.fields.length >= minFieldBytes {
+                    var r = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, stage)
+                    encoder.setRenderPipelineState(revealPipeline)
+                    encoder.setVertexBuffer(rb.terrain, offset: 0, index: 3)
+                    encoder.setVertexBuffer(rb.fields, offset: 0, index: 4)
+                    encoder.setFragmentBytes(&r, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
+                } else if fading, let previous = previousColors, previous.length >= minColorBytes {
+                    var t = SIMD2<Float>(clock(frameTime), LandFade.duration)
+                    encoder.setRenderPipelineState(fadePipeline)
+                    encoder.setVertexBuffer(previous, offset: 0, index: 3)
+                    prevColorBufferPool.recordRead(in: buffer)
+                    encoder.setVertexBytes(&t, length: MemoryLayout<SIMD2<Float>>.stride, index: 4)
+                    encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                } else {
+                    if previousColors != nil { previousColors = nil }
+                    encoder.setRenderPipelineState(cellPipeline)
+                    encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                }
+                encoder.setVertexBuffer(positions, offset: 0, index: 0)
+                encoder.setVertexBuffer(colors, offset: 0, index: 1)
+                colorBufferPool.recordRead(in: buffer)
+                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0)
             }
-            encoder.setVertexBuffer(positions, offset: 0, index: 0)
-            encoder.setVertexBuffer(colors, offset: 0, index: 1)
-            colorBufferPool.recordRead(in: buffer)
-            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-            if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
 
             // 3. 战争晕染与易主扫色（Claude 原版单 Pass 墨场）
             if stage >= 1 && (display.battleGround ?? true) && fills == nil {

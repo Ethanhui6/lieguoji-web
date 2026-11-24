@@ -51,12 +51,13 @@ public enum CreationPolitics {
         var index = [String: Int](); for (i, n) in nations.enumerated() { index[n.id.asString] = i }
         let c = DeclarationEngine.Context(engine: engine, world: DiplomacyBridge.world(r))
         let pairs = r.world.statecraft.relations.asArray.compactMap { p -> (String, String)? in
-            let a = p.a.asString, b = p.b.asString, ai = index[a]!, bi = index[b]!
+            let a = p.a.asString, b = p.b.asString
+            guard let ai = index[a], let bi = index[b] else { return nil }
             return c.usable(1, ai, bi) != nil && c.claimEntry(ai, bi) != nil ? (a, b) : nil
         }
         for (a, b) in pairs {
             let refused = DiplomacyBridge.declareWar(r, a, b, engine: engine)
-            precondition(refused == nil, "开局宣战失败：\(refused ?? "")")
+            if refused != nil { continue }
         }
         War26.reconcileForces(r, [])
         Naval.reconcileLandOwners(r)

@@ -57,24 +57,24 @@ public final class NativeEngine {
         RunWindow.afterOccupation = nil
     }
     /// The world map (`{bin, meta}` of the bridge) the statics carry, as JSON.
-    public var mapJSON: Data? { statics.map.isNull ? nil : Data(statics.map.json.utf8) }
+    public var mapJSON: Data? { statics.map.isNull ? nil : statics.map.jsonData(reserveCapacity: 1_048_576) }
     /// 重算气候：同一片陆地按新的气候重画生物群系、群系色与河流（网页 engine.ts reclimate）；国家与规则不动。
     /// 新地图写回静态几何（存档带新地图），返回 `{bin, meta}` JSON。
     public func reclimate(_ x: CreationMap.Inputs, precipitation: Double, temperatureOffset: Double, north: Double, south: Double) throws -> Data {
         guard !statics.map.isNull, let bin = Data(base64Encoded: statics.map.bin.asString) else { throw NativeEngineError.message("这局没有地图数据，无法重算气候。") }
         let meta = statics.map.meta
-        let old = try WorldMap(binary: bin, meta: try JSONDecoder().decode(WorldMeta.self, from: Data(meta.json.utf8)))
+        let old = try WorldMap(binary: bin, meta: try JSONDecoder().decode(WorldMeta.self, from: meta.jsonData(reserveCapacity: 65_536)))
         Climate.precipitationInput = precipitation; Climate.temperatureOffset = temperatureOffset; Climate.north = north; Climate.south = south
         let built = CreationMap.build(x, run: run, elevations: old.elevation.map(Int.init), seed: meta.seed.optionalString ?? "", template: meta.template.optionalString ?? "")
         let map = JS.object(); map.bin = built.map.bin; map.meta = meta
         statics.map = map
-        return Data(map.json.utf8)
+        return map.jsonData(reserveCapacity: 1_048_576)
     }
     /// Whole days.
     public func advance(days: Int) { for _ in 0..<max(1, days) { Session.advance(run, ticks: 120); Regimes.day(run) } }
     public func save() -> Data {
         let o = JS.object(); o.format = JS(Self.saveFormat); o.run = run; o.statics = statics
-        return Data(o.json.utf8)
+        return o.jsonData(reserveCapacity: 4_194_304)
     }
 }
 

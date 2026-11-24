@@ -5,6 +5,7 @@ import LieguojiCore
 
 @main struct LieguojiApp: App {
     init() {
+        CrashBreadcrumb.install()
         // The original's map font (TW-Kai), used for every text in the app.
         if let url = Bundle.main.url(forResource: "TW-Kai", withExtension: "ttf", subdirectory: "Fonts") {
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
@@ -105,7 +106,7 @@ struct RootView: View {
                 EngineView(host: legacy).frame(width: 1, height: 1).opacity(0.01).allowsHitTesting(false)
             }
             if let map = model.map {
-                MapView(map: map, controller: model.controller).id(model.worldID).ignoresSafeArea()
+                MapView(map: map, controller: model.controller, worldID: model.worldID).id(model.worldID).ignoresSafeArea()
             }
             switch model.phase {
             case .splash: EmptyView()
@@ -159,6 +160,7 @@ struct RootView: View {
         model.controller.interactive = false
         model.controller.drifting = true
         model.controller.reveal = 0
+        CrashBreadcrumb.mark("title")
         model.phase = .title
         if ShotTour.on { Task { @MainActor in await ShotTour.start(model) } }
         // The title backdrop generates itself behind the title as a classic 7s ink-on-paper unroll.
@@ -500,6 +502,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("4.2.9", ["【彻底根治建图与读档进入游戏闪退（实证真凶清除）】查明 v4.2.6–v4.2.8 世界切换瞬间 `GameModel` 在新 `MapView` 尚未挂载前就同步调用 `controller.flushSync()` 将新世界灌入濒死旧地图渲染器、触发 `baseColors` 数组越界（SIGTRAP）或 Metal 顶点缓冲越界读的致命漏洞；现为 `MapController` 引入严格 `activeWorldID` 世界代次锁与原子 `bindController/unregisterSync` 归属隔离，旧视图立即静默并抢先释放瞬态墨场/拓扑，`layoutSubviews` 异步延后起动开卷消除 UIKit 布局重入。",
+                   "【Metal 硬边界防护 × 真机内存再省 ~45MB × 存盘零尖峰】`MapRenderer.setMap` 硬拒跨拓扑调用、`baseColors`/`recolor`/`draw`/`drawInk` 全链路补齐顶点缓冲长度守卫、`makeSafeBuffer` 消灭空数组 UB 并开启 `framebufferOnly = true`；`PreviewWorld.Inputs` 与 `NativeHost.creationInputs` 共享同一份 20k 静态格网（立省 ~45MB 常驻内存）；`JS.jsonData` 流式 UTF-8 写出消除进局存盘 ~60MB 临时堆尖峰。",
+                   "【Core 建世防崩清雷 × 真机零开销诊断面板】清除 `CreationPolitics`/`CreationForces`/`CreationGeography` 中全部随机种子可触发的 `precondition`/强制解包 `!` 崩溃点，并新增 12 组多模板（多大陆/联合大陆/群岛/高山）× 和平/战乱 × 有机疆界压力单测；「设置 › 性能与帧率」新增轻量「运行诊断与内存」折叠栏，可随时查看与复制实时内存、温控档位与上次运行轨迹。"]),
         ("4.2.8", ["【底层回归 Claude 硬核架构：根治建图进入闪退】移除导致真机进入首帧崩溃的 .memoryless 双离屏缓存与 CATransaction 同步 mtk.draw() 事务重入、清除 WeatherOverlay 私有 KVC；将 60+ 常驻 PNG 与 36 帧大图集重构为 14MB 有界缓存 + ImageIO 缩略解码（省 7 倍内存），旧地图卸载即时释放 Metal 缓冲并错峰延后首次归档落盘，彻底杜绝建图进局闪退。",
                    "【彻底根治开屏发烫与游玩掉帧】MapRenderer 删减近千行冗余（20 管线→10 管线、着色器从 960 行精炼至 150 行、单 Pass 直绘）：砍掉全部逐像素噪声/三角波/300 行 SDF 发热着色器（海陆降至 1~3 指令、古风卷轴装裱改 CPU 预建几何 1 指令绘制），标题页漂移回归 Claude 20fps、均衡档回归 60/30/30 并恢复 .fair/.hot 真温控，传报画卷改零 H.264 解码开销的 54 卷古画缓推，机身冷静顺滑。",
                    "【完整保留全部核心修复】继续保留军队归属锁防冻结、打开任意界面立即停弹传报、35 日与四季硬校验（杜绝跨季错放）及传报年月季节徽签、4.1 雕漆兵牌、国家页无缝宣纸与 12 枚统一地形图标。"]),

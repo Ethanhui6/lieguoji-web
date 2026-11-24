@@ -367,6 +367,8 @@ struct FrameSettings: View {
                 Divider2()
                 row("推演算力占比", "越高越快越热", [(40, "40%"), (55, "55%"), (75, "75%"), (100, "全速")], $controller.play.simLoad)
             }
+            Divider2()
+            DiagnosticsSettingsRow()
         }
     }
 }

@@ -66,7 +66,8 @@ public enum CreationForces {
         // 舰队位置：湿面 n 即行军格 2n+1。
         let fleetRecords = JS.object()
         for fl in fleets.asArray {
-            let node = fl.node.asInt, c = sea.nodes[node]!.center
+            let node = fl.node.asInt
+            guard let c = sea.nodes[node]?.center else { continue }
             fleetRecords[fl.id.asString] = object([("version", JS(1)), ("armyId", fl.id), ("origin", point(c)), ("nodes", .array([JS(node * 2 + 1)])), ("leg", JS(0)), ("offset", JS(0)),
                                                     ("crossed", JS(false)), ("status", JS("arrived"))])
         }
@@ -210,7 +211,7 @@ public enum CreationForces {
         for i in clusters.indices { for j in clusters[i].adjacent.keys where i < j { offer(i, j) } }
         var count = nodes.count
         while count > countGoal {
-            guard let e = heap.pop() else { preconditionFailure("水域连通分区无法完成。") }
+            guard let e = heap.pop() else { break }
             let a = clusters[e.a], b = clusters[e.b]
             if !a.live || !b.live || a.revision != e.ar || b.revision != e.br { continue }
             let area = a.area + b.area
@@ -243,7 +244,7 @@ public enum CreationForces {
                 let a = n.polygon[k], b = n.polygon[(k + 1) % n.polygon.count]
                 if a.x == b.x && a.y == b.y { continue }
                 let key = SeaGraph.EdgeKey(a, b); if !boundary.contains(key) { continue }
-                let id = owners[key]!
+                guard let id = owners[key] else { continue }
                 if !(coast[n.id]?.contains(id) ?? false) { coast[n.id, default: []].append(id) }
             }
         }

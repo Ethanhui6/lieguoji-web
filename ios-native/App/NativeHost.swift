@@ -142,17 +142,33 @@ actor NativeHost {
         return (r.map, r.data ?? Data(), revision)
     }
     /// 纯 Swift 建世界的固定输入（随包格网、原作格网邻接与边、绘图网格、群系资源），首次使用时载入一次。
+    /// 与 `GameModel.previewInputs` 共享同一份 `base`/`grid`/`document`，避免两份完全相同的 ~45MB 格网常驻真机内存。
+    private static let inputsLock = NSLock()
+    private static var sharedGrid: (base: WorldMap, grid: TerrainGraph, document: TerrainDocument)?
     private static var creationInputs: CreationMap.Inputs?
+    nonisolated static func seedSharedInputs(base: WorldMap, grid: TerrainGraph, document: TerrainDocument) {
+        inputsLock.lock()
+        if sharedGrid == nil { sharedGrid = (base, grid, document) }
+        inputsLock.unlock()
+    }
     static func loadCreationInputs() throws -> CreationMap.Inputs {
-        if let creationInputs { return creationInputs }
+        inputsLock.lock()
+        if let existing = creationInputs { inputsLock.unlock(); return existing }
+        let cached = sharedGrid
+        inputsLock.unlock()
         try loadCatalogs()
         guard let world = Bundle.main.url(forResource: "World", withExtension: nil),
               let resources = Bundle.main.url(forResource: "biome-resources", withExtension: "json", subdirectory: "Catalog") else { throw EngineError.message("安装包缺少建世界数据") }
         try OpeningGovernment.loadResources(Data(contentsOf: resources))
-        let x = CreationMap.Inputs(base: try WorldMap.load(directory: world), grid: try TerrainGraph(data: Data(contentsOf: world.appendingPathComponent("grid20k.bin"))),
-                                   edges: try CreationMap.GridEdges(data: Data(contentsOf: world.appendingPathComponent("edges20k.bin"))),
-                                   document: try TerrainDocument(data: Data(contentsOf: world.appendingPathComponent("doc20k.bin"))))
+        let base = try cached?.base ?? WorldMap.load(directory: world)
+        let grid = try cached?.grid ?? TerrainGraph(data: Data(contentsOf: world.appendingPathComponent("grid20k.bin")))
+        let edges = try CreationMap.GridEdges(data: Data(contentsOf: world.appendingPathComponent("edges20k.bin")))
+        let document = try cached?.document ?? TerrainDocument(data: Data(contentsOf: world.appendingPathComponent("doc20k.bin")))
+        let x = CreationMap.Inputs(base: base, grid: grid, edges: edges, document: document)
+        inputsLock.lock()
         creationInputs = x
+        sharedGrid = nil
+        inputsLock.unlock()
         return x
     }
     /// 新世界在本机由 Swift 建成（与网页引擎逐位相同，不经 WebKit），然后直接成为运行中的世界；连着电脑时
@@ -161,15 +177,17 @@ actor NativeHost {
     func create(_ options: NativeCreation.Options, world: Int, progress: @escaping @Sendable (String) -> Void) async throws -> Made {
         guard let revision = advances.replaceWorld(world: world) else { throw EngineError.message("世界已经切换，忽略旧的建世界请求") }
         let x = try Self.loadCreationInputs()
-        let built = try NativeCreation.generate(options, inputs: x, worldId: UUID().uuidString.lowercased(), runId: "fms-" + UUID().uuidString.lowercased(), progress: progress)
+        let built = try autoreleasepool {
+            try NativeCreation.generate(options, inputs: x, worldId: UUID().uuidString.lowercased(), runId: "fms-" + UUID().uuidString.lowercased(), progress: progress)
+        }
         guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的建世界结果") }
         let r: EngineService.Reply
         if remote != nil {
-            let data = Data(built.json.utf8)
+            let data = autoreleasepool { Data(built.json.utf8) }
             lastWorld = data
             r = await call("open", payload: data)
         } else {
-            r = service.adopt(try NativeEngine(created: built))
+            r = try autoreleasepool { service.adopt(try NativeEngine(created: built)) }
         }
         guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的建世界结果") }
         guard r.ok else { throw EngineError.message(r.reason) }

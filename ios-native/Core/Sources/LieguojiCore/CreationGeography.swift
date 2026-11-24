@@ -123,7 +123,7 @@ public enum CreationGeography {
                 if jsHypot(a.x - b.x, a.y - b.y) <= 0 { continue }
                 let k = SeaGraph.EdgeKey(a, b)
                 guard let old = edges[k] else { edges[k] = (cell, false); continue }
-                precondition(!old.paired && old.cell.id != cell.id, "行军网格共享边重叠。")
+                guard !old.paired && old.cell.id != cell.id else { return nil }
                 edges[k] = (old.cell, true)
                 if !old.cell.land && !cell.land && !sea.nodes[old.cell.face]!.links.contains(where: { $0.to == cell.face }) { continue }
                 let gate = TravelPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)

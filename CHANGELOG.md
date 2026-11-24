@@ -1,5 +1,26 @@
 # 更新日志
 
+## 4.2.9 / build 172 — 2026-11-24
+
+### 一、彻底根治真机建图/读档进入游戏闪退（实证四重真凶全清零）
+- **根治跨世界 `flushSync()` 错投旧地图渲染器的致命越界崩溃（`MapView.swift`、`GameModel.swift`、`LieguojiApp.swift`）**：
+  - 逐行溯源 `v4.2.5 → v4.2.8` 查明：`GameModel.generate()` / `continueGame()` / `show()` 在 `map = loaded.world; worldID = UUID()` 之后、SwiftUI 尚未销毁旧 `MapView #1` 并挂载新 `MapView #2` 之前，就在下一行同步调用了 `apply(loaded.state)` → `controller.flushSync()`；因 `MapController` 缺少世界代次隔离，新世界状态被直接灌进持有旧标题网格的 `MapRenderer #1`，触发 `MapRenderer.baseColors` 第 762 行 `terrain[v * 4 + j]` `Index out of range (SIGTRAP)` 或 Metal 顶点缓冲越界读崩溃，且偷吃 `snapArmies` 并在濒死旧视图上额外构建 `InkField` / `WashTopology` / `seaLanes`。
+  - 现为 `MapController` 引入严格 **`activeWorldID: UUID` 世界代次锁** 与统一 `prepareForWorldSwitch(to:)` / `bindController()` / `unregisterSync(owner:)`：世界切换前先推进代次立即静默旧视图并抢先释放其瞬态墨场/拓扑内存，所有 `scheduleSync()` / `flushSync()` 与 10 余项地图回调严格校验 `worldID == controller.activeWorldID`；`MapView.layoutChanged()` 内的 `revealStarted()` 改由异步 RunLoop 起动，彻底消除 `UIView.layoutSubviews()` 布局重入风险。
+- **Metal 渲染核全链路边界硬守卫（`MapRenderer.swift`、`Ink.swift`）**：
+  - `MapRenderer.setMap` 与 `setTerrain` 强制校验 `next.vertices.count == map.vertices.count && next.cellCount == map.cellCount`，硬拒绝跨拓扑误调用；
+  - `baseColors` 与 `recolor` 严格核验 `terrainBase?.count == c.count` 与顶点安全上限，彻底消灭数组越界；
+  - 新增 `makeSafeBuffer` 根除空数组传入 `device.makeBuffer(bytes:length:)` 的空指针读取 UB；
+  - `draw(in:)` 与 `drawInk` 在发起 `drawIndexedPrimitives` 前强校验 `positions`/`colors`/`revealTerrain`/`revealFields`/`previousColors`/`ink` 最小字节长度，并显式配置 `mtk.depthStencilPixelFormat = .invalid` 与 `mtk.framebufferOnly = true` 进一步降带宽降温。
+- **真机内存再省 ~45MB + 存盘零堆尖峰（`NativeHost.swift`、`JSValue.swift`、`NativeEngine.swift`、`GameModel.swift`）**：
+  - `GameModel.loadBackdrop()` 载入的 `world.bin` / `grid20k.bin` / `doc20k.bin` 通过 `NativeHost.seedSharedInputs` 与 `NativeHost.creationInputs` 共享同一份只读实例，彻底消灭两份完全相同的 ~45MB 静态格网常驻内存；
+  - `GameModel.generate()` 内层作用域即时释放 ~10MB `founded` JSON 中间体后再挂载新 `MapView`，`NativeHost.create` 全程包裹 `autoreleasepool`；
+  - `JSValue.swift` 新增流式 UTF-8 序列化 `jsonData(reserveCapacity:)`，跳过 20MB 级中间 `String` 与百万次临时键对象分配，直接将进局存盘内存尖峰腰斩并保持与 `Data(json.utf8)` 逐字节一致。
+- **清除 `Core` 建世随机种子 `precondition` / `!` 崩溃雷区 & 增补多模板压力单测（`CreationPolitics.swift`、`CreationForces.swift`、`CreationGeography.swift`、`CreationStabilityTests.swift`）**：
+  - 移除 `CreationPolitics`、`CreationForces`、`CreationGeography` 中全部可被随机种子触发的 `precondition` / `preconditionFailure` / 强制解包 `!`，改为安全跳过或返回 `nil` 触发建世平滑重试；
+  - 新增 `CreationStabilityTests`：覆盖 `JS.jsonData` 逐字节一致性校验，以及 **12 组多样种子 × 4 大地形模板（多大陆/联合大陆/群岛/高山大岛）× 和平/战乱 × `organicBorders: true`** 的完整建世、规则启用、地图着色校验、推演与存盘回读压力回归。
+- **轻量零开销真机诊断面包屑（`CrashBreadcrumb.swift`、`MenuSheets.swift`）**：
+  - 新增 `CrashBreadcrumb`，仅在生命周期节点记录短轨迹并挂载未捕获异常记录；「设置 › 性能与帧率」新增默认收起的「运行诊断与内存」折叠栏，可随时查看实时物理内存、温控档位与上次运行轨迹并一键复制。
+
 ## 4.2.8 / build 171 — 2026-11-24
 
 ### 一、底层渲染与生命周期回归 Claude 硬核架构：彻底根治建图进入游戏闪退

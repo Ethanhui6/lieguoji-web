@@ -247,8 +247,10 @@ extension MapRenderer {
     /// 主画面里（陆地之上、州界之下）合成墨迹。
     func drawInk(_ encoder: MTLRenderCommandEncoder, _ u: inout Uniforms, command: MTLCommandBuffer) {
         let now = clock(frameTime)
-        guard let ink, let snapshot = ink.snapshot, snapshot.visibleUntil > now, let data = ink.vertexBuffers.buffer,
+        let vCount = map.vertices.count / 2
+        guard vCount > 0, let ink, let snapshot = ink.snapshot, snapshot.visibleUntil > now, let data = ink.vertexBuffers.buffer,
               let owners = ink.ownerBuffers.buffer, let terrain = ink.terrain, let colours = ink.colours,
+              positions.length >= vCount * 8, data.length >= vCount * 16, owners.length >= vCount * 16, terrain.length >= vCount * 16,
               indexCount > 0, reveal >= 1, display.battleGround ?? true else { return }
         let scale = washTopology?.scale ?? 30
         let density = mode == .political ? Float(max(0, min(1, display.colorDensity))) : 1

@@ -72,3 +72,30 @@
 - [x] `MapRenderer.swift` 精炼重构（删减近千行冗余，20 管线 → 10 管线，MSL 着色器 960 行 → 150 行，回归单 Pass 直绘）：删除 `.memoryless` 双离屏缓存、删除全部逐像素噪声/三角波/300 行 SDF 发热着色器，四季色温改 CPU 预算 1 指令乘法，古风卷轴装裱改 CPU 预建几何 1 指令绘制，旧世界卸载即时释放全部 Metal 缓冲
 - [x] `MapView.swift` / `WeatherOverlay.swift` 彻底清除 `CATransaction` 同步 `mtk.draw()` 与 `layoutSubviews` 同步 `sync()` 重入闪退，删除私有 KVC 与全屏 `CAEmitterLayer`/5.1MB 图集预分配；标题页漂移回归 Claude 20fps、默认均衡档回归 `60/30/30` 并恢复 `.fair`/`.hot` 阶梯温控
 - [x] `MapArt.swift` / `MapEffects.swift` / `InkVideoPlayer.swift` / `GameModel.swift` 消除 ~100MB PNG 内存炸弹与 H.264 视频解码发热（`BundleArt` 改 14MB 有界 `NSCache` + `ImageIO` 缩略解码、`MapLabelsView` 收敛至 16MB、进局清缓存 + `autoreleasepool` + 错峰 1.5s 归档存盘、54 卷古画 0%-CPU 缓推）
+
+---
+
+## 2026-11 新四阶段严格执行表（v4.2.9 → v4.3.2）
+
+### 阶段一：v4.2.9（构建 172）—— 彻底根治真机建图/读档闪退 × 底层架构清乱 × 压力单测全覆盖
+- [x] **根治跨世界 `flushSync()` 错投旧地图致命崩溃**：`MapController` 引入 `activeWorldID` 世界代次锁与统一 `attach/detach` 绑定，杜绝旧 `MapView #1` 在世界切换瞬间接收新世界状态（消灭 `MapRenderer.baseColors` `terrain[v*4+j]` `Index out of range` 与 Metal 越界读）；世界切换前提前释放旧渲染器重型缓冲，异步延后 `layoutChanged()` 内的 `revealStarted()` 消除 UIKit 布局重入
+- [x] **Metal 缓冲安全与内存瘦身**：`MapRenderer.setMap` 硬拒跨拓扑调用、`baseColors`/`recolor` 全边界防护、`makeSafeBuffer` 消灭空数组 UB、`draw`/`drawInk` 顶点缓冲最小长度硬校验、开启 `framebufferOnly = true`；`PreviewWorld.Inputs` 与 `NativeHost.creationInputs` 共享同一份静态格网（立省 ~45MB 物理内存）；`JS.jsonData` 流式 UTF-8 写出消除 20MB 存盘堆尖峰
+- [x] **清除 `Core` 建世随机种子硬崩雷区**：将 `CreationPolitics` / `CreationForces` / `CreationGeography` 中的 `precondition` / `preconditionFailure` / `!` 强制解包改为安全降级与重试；在 `LieguojiCoreTests` 增补「12 多样种子 × 4 地形模板 × 和平/战乱 × `organicBorders`」压力回归与 `JS.jsonData` 逐字节一致性单测
+- [x] **真机零开销生命周期面包屑与异常捕获**：新增 `CrashBreadcrumb`，并在「设置 › 性能与帧率」支持一键查看与复制上次运行轨迹与实时内存/温控
+
+### 阶段二：v4.3.0（构建 173）—— 底层深度提速 × 卡顿拔除 × 视觉与编辑器精修
+- [ ] 消除国家页/军团页首帧打开卡顿（目标 `panel-profile.json` `maxMs < 180ms`、`p95Ms < 35ms`）
+- [ ] 收口全站 28 处弹窗双层 `MemorialPaper` 叠加，保留零白边宣纸同时内存减半
+- [ ] 精修近景海岸线浅滩层次与战争墨晕友军回染平滑度
+- [ ] 自绘地图编辑器新增 20 步撤销/重做栈、海湾/岛链/高原预设笔刷与实时陆地比例提示
+
+### 阶段三：v4.3.1（构建 174）—— 策略深度新功能 & 历史文明新特性
+- [ ] 国家自动治理委托进阶：新增 5 类战略方针预设（休养生息/富国强兵/经略海洋/远交近攻/彻底手操）
+- [ ] 外交深化：联姻继承权争夺战、战前秘密防卫同盟、宗藩朝贡岁币与勤王出兵
+- [ ] 君主与名臣生平列传、功勋谥号/尊号系统与 43 项特质深度数值联动
+- [ ] 共和/立宪/教廷/游牧等 6 大政体专属大事件链与交互抉择
+
+### 阶段四：v4.3.2（构建 175）—— 史诗观战演出 & 剧本/分享生态扩展
+- [ ] 4 套开局历史剧本模式（群雄逐鹿/霸权鼎立/帝国裂变/航海大发现）与世界种子配置码分享
+- [ ] 山河回放时间轴高光金印书签（建国/大战/破都/灭国/改制）与任意节点分叉续推
+- [ ] 设置内开放实时帧时/内存/温控档位与诊断日志导出面板

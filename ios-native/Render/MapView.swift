@@ -141,12 +141,18 @@ import LieguojiCore
     var mapMountToken = 0
     var onMapMounted: (() -> Void)?
     var onRevealClock: (() -> Void)?
+    var onSkipReveal: (() -> Void)?
     /// Battle losses to float over the map (map point, text, at sea).
     var onHits: (([(x: Float, y: Float, text: String, naval: Bool)]) -> Void)?
     func animateReveal(from: Float = 0, to: Float = 1, duration: Double, push: Bool = false) {
         revealClockSerial &+= 1
         revealClock = (from, to, CACurrentMediaTime(), max(0.05, duration), push)
         onRevealClock?()
+    }
+    func skipReveal() {
+        revealClock = nil
+        reveal = 1
+        onSkipReveal?()
     }
     /// The clock's value now (nil when none runs); it clears itself at the end.
     var revealNow: Float? {
@@ -351,6 +357,10 @@ struct MapView: UIViewRepresentable {
         private var lastBorderWide: Set<Int> = []
         private var scrollEdgeMargin: Double { (controller.display.scrollMount ?? controller.display.darkEdges) ? 78 : 12 }
         private var panning = false
+        private var sheetThrottled = false
+        private var sheetSettleWork: DispatchWorkItem?
+        /// 仅在手指物理拖拽或双指捏合期间开启同事务同步上屏；程序运镜、惯性滑行与弹窗过渡一律走异步呈现，彻底消除点选卡顿！
+        private var fingerDragging: Bool { pinching || panning }
         private var cameraInteractive: Bool { pinching || panning || animation != nil || hypot(velocity.x, velocity.y) > 8 }
         /// 地图画心 [0, map.width] × [0, map.height] 在屏幕坐标系里的精确裁剪框，确保国名、箭头与特效严守卷轴画框内缘。
         private func mapScreenRect(camera: MapCamera, viewport: CGSize) -> CGRect {
@@ -476,6 +486,15 @@ struct MapView: UIViewRepresentable {
             renderer?.onDraw = { [weak self] t in self?.frameDrawn(t) }
             renderer?.onOutlines = { [weak self] in self?.startLink(); self?.mtk.setNeedsDisplay() }
             controller.onRevealClock = { [weak self] in self?.revealStarted() }
+            controller.onSkipReveal = { [weak self] in
+                guard let self, let renderer = self.renderer else { return }
+                self.animation = nil
+                renderer.setReveal(1)
+                self.labels?.alpha = 1
+                self.effects.alpha = 1
+                self.set(MapCamera.cover(map: self.mapSize, viewport: self.viewport))
+                self.mtk.setNeedsDisplay()
+            }
             controller.onHits = { [weak self] hits in
                 guard let self, self.controller.play.showBattleFloats, !self.controller.sheetOpen, let renderer = self.renderer else { return }
                 let size = self.mtk.bounds.size, vp = (width: Double(size.width), height: Double(size.height))
@@ -515,16 +534,28 @@ struct MapView: UIViewRepresentable {
             syncWaves()
             controller.onSheet = { [weak self] in
                 guard let self else { return }
+                self.sheetSettleWork?.cancel()
+                self.sheetSettleWork = nil
                 self.gliding = false
                 self.syncWaves()
                 self.syncWeather()
                 if self.controller.sheetOpen {
-                    self.mtk.preferredFramesPerSecond = 30
-                    self.drift?.invalidate(); self.drift = nil
-                    if self.animation == nil && self.controller.revealClock == nil {
-                        self.link?.invalidate(); self.link = nil
+                    // 弹窗弹簧滑入与镜头飞行期间（前 0.50s）保持满帧 60/120fps 且绝不阻塞事务，待动画落定后再降为 30fps 省电。
+                    let work = DispatchWorkItem { [weak self] in
+                        guard let self, self.controller.sheetOpen else { return }
+                        self.sheetThrottled = true
+                        self.mtk.preferredFramesPerSecond = 30
+                        self.drift?.invalidate(); self.drift = nil
+                        if self.animation == nil && self.controller.revealClock == nil {
+                            self.link?.invalidate(); self.link = nil
+                        } else {
+                            self.link?.preferredFrameRateRange = self.frameRange
+                        }
                     }
+                    self.sheetSettleWork = work
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.50, execute: work)
                 } else {
+                    self.sheetThrottled = false
                     self.mtk.preferredFramesPerSecond = self.controller.play.mapFPS
                     if self.controller.drifting { self.startDrift() }
                     if self.renderer?.isAnimating == true { self.startLink() }
@@ -610,7 +641,7 @@ struct MapView: UIViewRepresentable {
             var c = camera.isValid ? camera : MapCamera.cover(map: mapSize, viewport: vp)
             c.scale = min(b.upperBound, max(b.lowerBound, c.scale))
             let clamped = c.clamped(map: mapSize, viewport: vp, margin: scrollEdgeMargin)
-            let wantSync = sync || cameraInteractive
+            let wantSync = sync && fingerDragging
             setSyncPresent(wantSync)
             renderer.camera = clamped
             let clipRect = mapScreenRect(camera: clamped, viewport: vpSize)
@@ -827,6 +858,7 @@ struct MapView: UIViewRepresentable {
                 }
                 if let best {
                     selection.selectionChanged()
+                    showTapFeedback(at: p, isUnit: true)
                     if best.army < 0 {
                         controller.selectedFleetId = best.key.isEmpty ? nil : best.key
                         controller.selectedFleet = -best.army - 1
@@ -837,9 +869,44 @@ struct MapView: UIViewRepresentable {
                     return
                 }
             }
+            if province != nil { showTapFeedback(at: p, isUnit: false) }
             if province != controller.selectedProvince { selection.selectionChanged() }
             controller.onMapTap?(province == nil)
             controller.selectedProvince = province
+        }
+
+        /// 零延迟 GPU/CoreAnimation 朱墨落指水晕：在手指点选军团、战船或州郡的第 0 毫秒立即绽开温润双圈波纹，无需等待 SwiftUI 面板布局。
+        private func showTapFeedback(at point: CGPoint, isUnit: Bool) {
+            guard mtk != nil else { return }
+            let accent = isUnit
+                ? UIColor(red: 0.76, green: 0.24, blue: 0.16, alpha: 0.88)
+                : UIColor(red: 0.58, green: 0.42, blue: 0.18, alpha: 0.72)
+            let radius: CGFloat = isUnit ? 22 : 18
+            let ring = CAShapeLayer()
+            ring.bounds = CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2)
+            ring.position = point
+            ring.path = UIBezierPath(ovalIn: ring.bounds).cgPath
+            ring.fillColor = accent.withAlphaComponent(isUnit ? 0.14 : 0.08).cgColor
+            ring.strokeColor = accent.cgColor
+            ring.lineWidth = isUnit ? 2.0 : 1.5
+            floats.layer.addSublayer(ring)
+
+            let scale = CABasicAnimation(keyPath: "transform.scale")
+            scale.fromValue = 0.42
+            scale.toValue = isUnit ? 1.52 : 1.38
+            let fade = CABasicAnimation(keyPath: "opacity")
+            fade.fromValue = 1.0
+            fade.toValue = 0.0
+            let group = CAAnimationGroup()
+            group.animations = [scale, fade]
+            group.duration = 0.32
+            group.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            group.isRemovedOnCompletion = false
+            group.fillMode = .forwards
+            ring.add(group, forKey: "tapRipple")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak ring] in
+                ring?.removeFromSuperlayer()
+            }
         }
 
         private func animate(to target: MapCamera, duration: Double = 0.38) {
@@ -863,12 +930,16 @@ struct MapView: UIViewRepresentable {
             return CAFrameRateRange(minimum: max(10, f / 2), maximum: f, preferred: f)
         }
         private var frameRange: CAFrameRateRange {
-            controller.sheetOpen ? Self.range(30) : Self.range(Energy.hot ? min(30, controller.play.mapFPS) : Energy.level >= 1 ? min(60, controller.play.mapFPS) : controller.play.mapFPS)
+            (sheetThrottled && animation == nil && controller.revealClock == nil)
+                ? Self.range(30)
+                : Self.range(Energy.hot ? min(30, controller.play.mapFPS) : Energy.level >= 1 ? min(60, controller.play.mapFPS) : controller.play.mapFPS)
         }
         /// While only the armies glide (the camera still): 60 frames, 30 when the phone runs hot. Icons
         /// moving a few points a frame look the same, and the map is drawn half as often as at 120.
         private var glideRange: CAFrameRateRange {
-            controller.sheetOpen ? Self.range(30) : Self.range(Energy.hot ? min(20, controller.play.marchFPS) : Energy.level >= 1 ? min(30, controller.play.marchFPS) : controller.play.marchFPS)
+            (sheetThrottled && animation == nil && controller.revealClock == nil)
+                ? Self.range(30)
+                : Self.range(Energy.hot ? min(20, controller.play.marchFPS) : Energy.level >= 1 ? min(30, controller.play.marchFPS) : controller.play.marchFPS)
         }
         private var gliding = false
         private var shownWashes = WashFrame.empty
@@ -913,22 +984,22 @@ struct MapView: UIViewRepresentable {
             if let a = animation {
                 let x = min(1, (CACurrentMediaTime() - a.start) / a.duration)
                 let eased = x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2
-                set(MapCamera.arcInterpolate(a.from, a.to, eased, bounds: bounds), sync: true)
-                if x >= 1 { animation = nil; setSyncPresent(cameraInteractive) }
+                set(MapCamera.arcInterpolate(a.from, a.to, eased, bounds: bounds), sync: false)
+                if x >= 1 { animation = nil; setSyncPresent(fingerDragging) }
             } else if hypot(velocity.x, velocity.y) > 8 {
                 // Exponential deceleration close to UIScrollView's normal rate.
-                set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt), sync: true)
+                set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt), sync: false)
                 let decay = CGFloat(pow(0.998, dt * 1000))
                 velocity = CGPoint(x: velocity.x * decay, y: velocity.y * decay)
-            } else if !controller.sheetOpen && renderer?.isAnimating == true {
-                if !cameraInteractive { setSyncPresent(false) }
+            } else if !sheetThrottled && renderer?.isAnimating == true {
+                setSyncPresent(false)
                 velocity = .zero
                 updateTroops()
                 mtk.setNeedsDisplay()
             } else if !revealing {
-                if !cameraInteractive { setSyncPresent(false) }
+                setSyncPresent(false)
                 velocity = .zero
-                if !controller.sheetOpen { mtk.setNeedsDisplay() }
+                if !sheetThrottled { mtk.setNeedsDisplay() }
                 link?.invalidate(); link = nil
             }
         }
@@ -1057,7 +1128,7 @@ struct MapView: UIViewRepresentable {
                 renderer.iconScale = Float(controller.play.iconScale)
                 effects.showArrows = controller.play.warArrows || controller.replayLocked
                 troops.iconScale = controller.play.iconScale
-                if !controller.sheetOpen { mtk.preferredFramesPerSecond = controller.play.mapFPS }
+                if !sheetThrottled { mtk.preferredFramesPerSecond = controller.play.mapFPS }
                 // 画面 settings: the simulation's share, cooling, the effects' frames and the map's pixels.
                 Energy.autoCool = controller.play.autoCool
                 Energy.load = Double(controller.play.simLoad) / 100
@@ -1124,7 +1195,7 @@ struct MapView: UIViewRepresentable {
                 animate(to: camera.zoomed(by: z.factor, anchorX: viewport.width / 2, anchorY: viewport.height / 2, viewport: viewport, bounds: bounds), duration: 0.3)
             }
             applyFramingRequests()
-            if dirty { setSyncPresent(cameraInteractive); mtk?.setNeedsDisplay() }
+            if dirty { setSyncPresent(fingerDragging); mtk?.setNeedsDisplay() }
         }
 
         /// 展开和复位独立于推演刷新，命令可在地图静止时直接启动镜头。

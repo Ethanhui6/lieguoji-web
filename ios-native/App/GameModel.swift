@@ -429,11 +429,11 @@ import LieguojiCore
         }
     }
 
-    /// The classic full ink-painting generation reveal (6.8s sea soak -> shore ink -> rising hills -> state wash -> borders + camera pull-back).
+    /// The classic full ink-painting generation reveal (brisk 3.6s sea soak -> shore ink -> rising hills -> state wash -> borders + camera pull-back; tap to skip instantly).
     private func rise(_ epoch: Int) async {
         controller.interactive = false
         controller.reveal = 0
-        if !ShotTour.on { await playReveal(from: 0, duration: 6.8, push: true, publishProgress: true, while: { self.worldEpoch == epoch }); return }
+        if !ShotTour.on { await playReveal(from: 0, duration: 3.6, push: true, publishProgress: false, while: { self.worldEpoch == epoch }); return }
         // CI waits on these frames: the clock is pinned to each stage in turn while its shot is taken.
         let shots: [(at: Float, name: String)] = [(0.03, "02-founding"), (0.10, "02a-sea"), (0.24, "02b-rise"), (0.36, "02c-ink"), (0.62, "02d-states"), (0.80, "02e-borders")]
         for shot in shots {
@@ -575,14 +575,14 @@ import LieguojiCore
         return loaded.0
     }
 
-    /// Land rises from the sea, then the states' colours wash over it (classic ~3.2s ink unroll).
+    /// Land rises from the sea, then the states' colours wash over it (brisk ~1.8s ink unroll).
     private func reveal(_ world: WorldMap, mountBefore: Int? = nil) async {
         controller.interactive = false
         controller.reveal = 0
         phase = .playing
         if let token = mountBefore { await waitForMapMount(after: token) }
-        else { try? await Task.sleep(nanoseconds: 50_000_000) }
-        await playReveal(from: 0, duration: 3.2, push: controller.play.introCamera)
+        else { try? await Task.sleep(nanoseconds: 40_000_000) }
+        await playReveal(from: 0, duration: 1.8, push: controller.play.introCamera)
         controller.interactive = true
     }
 

@@ -411,17 +411,29 @@ struct GameView: View {
         .sensoryFeedback(.selection, trigger: controller.selectedProvince)
         .onChange(of: controller.selectedArmy) { _, army in
             guard !model.replayActive else { return }
-            model.refreshArmies()
-            if let army { show(.army(army)) } else if case .army = panel { panel = nil }
+            if let army {
+                if viewsOpen { viewsOpen = false }
+                show(.army(army))
+                Task { @MainActor in model.refreshArmies() }
+            } else if case .army = panel {
+                panel = nil
+                Task { @MainActor in model.refreshArmies() }
+            }
         }
         .onChange(of: controller.selectedFleet) { _, fleet in
             guard !model.replayActive else { return }
-            model.refreshArmies()
-            if let fleet { show(.fleet(fleet)) } else if case .fleet = panel { panel = nil }
+            if let fleet {
+                if viewsOpen { viewsOpen = false }
+                show(.fleet(fleet))
+                Task { @MainActor in model.refreshArmies() }
+            } else if case .fleet = panel {
+                panel = nil
+                Task { @MainActor in model.refreshArmies() }
+            }
         }
         .onChange(of: controller.selectedProvince) { _, province in
             guard !model.replayActive else { return }
-            if province != nil { withAnimation(Motion.tap) { viewsOpen = false } }
+            if province != nil && viewsOpen { viewsOpen = false }
             if let province { show(.province(province)) } else if case .province = panel { panel = nil }
         }
     }

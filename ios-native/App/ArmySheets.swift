@@ -598,7 +598,7 @@ private struct PortSelectDot: View {
             .overlay(Circle().stroke(on ? color : Theme.ink.opacity(0.28), lineWidth: 1.4))
             .overlay {
                 if on {
-                    InkIcon(glyph: .check, size: 10, weight: 2.2).foregroundStyle(Theme.paper2)
+                    InkIcon(glyph: .peace, size: 10, weight: 2.2).foregroundStyle(Theme.paper2)
                 }
             }
     }

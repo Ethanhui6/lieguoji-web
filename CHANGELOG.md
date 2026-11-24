@@ -1,5 +1,18 @@
 # 更新日志
 
+## 4.4.0 / build 164 — 2026-11-23
+
+### 开局选图双缓冲丝滑过渡（根治「换一方山河」横线动画）
+- **双缓冲水墨溶叠与战略地势勘评（`TitleViews.swift`）**：
+  - 彻底移除新世界预览图（`terrainCard`）在点击「换一方山河」时覆盖全宽的 `InkBusy()` 4pt 横线进度条与半透明闪白遮罩，并取消手动换图的 110ms 人工等待延迟；
+  - 实装 `previousTerrain` + `terrain` 双缓冲无缝溶叠与 `1.022 -> 1.0` 微幅水墨落定过渡，点按「换一方山河」伴随 180° 旋钮微动效；支持直接轻点预览图切换「地貌 / 势力」、点左上角胶囊一键复制种子，并在底部勘测栏实时生成战略地势评语（如「星罗海疆 · 舟师争雄」「崇山天险 · 关隘易守」「广袤中土 · 铁骑逐鹿」）。
+
+### 开局建世与局内点击 60/120fps 全链路防掉帧架构升级
+- **解除 CoreAnimation / Metal 同步阻塞与面板首帧并发重排（`MapView.swift`、`GameView.swift`、`GameModel.swift`、`PaperControls.swift`、`TitleViews.swift`、`ArmySheets.swift`）**：
+  - 根治局内点击州郡、军团、舰队或底栏按钮时的掉帧卡顿：将 `MTKView.presentsWithTransaction` 严格限定在手指物理拖拽/捏合期间，程序镜头飞行与惯性滑行全面改为异步提交；并将弹窗打开后的后台地图 30fps 省电节流延后 `0.50s` 至 `.sheet` 弹簧动画完全落定后生效，彻底消除 30fps Metal 帧阻塞 60/120Hz 弹窗动画；
+  - 大地图点选州郡、军团、舰队新增 0 毫秒 CoreAnimation `CAShapeLayer` 朱墨水波纹即时落指反馈（`showTapFeedback`）；移除 `StatTile` 开页首帧逐格并发状态重排并合并选中军团/舰队的异步刷新，并拆分 `FleetSheet` 视图层级提升编译与渲染效率；
+  - 解耦标题页「新世界 / 世界卷宗」弹窗退场动画与后台 20,000 格建世计算；`FoundingView` 改为 60fps 独立时钟驱动 + GPU `scaleEffect` 进度条（关闭 `publishProgress` 对 `RootView` 的高频广播），新世界展卷提速至 3.6 秒（续档 1.8 秒）并新增「轻点立即入局 ›」一键跳过展卷功能。
+
 ## 4.3.0 / build 163 — 2026-11-23
 
 ### 四季与雨雪天象屏幕画卷回归与升级

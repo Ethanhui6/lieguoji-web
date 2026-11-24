@@ -253,12 +253,36 @@ struct TitleView: View {
             if case .success(let url) = result { Task { await model.importSave(from: url) } }
         }
         .sheet(isPresented: $creating) {
-            NewWorldSheet(start: { options in creating = false; Task { await model.generate(options) } }, draw: { options in creating = false; model.openEditor(options) }, inputs: model.previewInputs)
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            NewWorldSheet(
+                start: { options in
+                    creating = false
+                    Task { @MainActor in
+                        if !ShotTour.on {
+                            try? await Task.sleep(nanoseconds: 230_000_000)
+                        }
+                        await model.generate(options)
+                    }
+                },
+                draw: { options in
+                    creating = false
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 210_000_000)
+                        model.openEditor(options)
+                    }
+                },
+                inputs: model.previewInputs
+            )
+            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
-            WorldArchiveSheet(model: model) { world in archive = false; Task { await model.openArchived(world) } }
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            WorldArchiveSheet(model: model) { world in
+                archive = false
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 220_000_000)
+                    await model.openArchived(world)
+                }
+            }
+            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $settings) {
             ScrollView {
@@ -368,9 +392,14 @@ struct NewWorldSheet: View {
     /// The seed used while the field is left blank, so the land shown is the land founded.
     @State private var rolled = String(UInt32.random(in: 0...UInt32.max))
     @State private var terrain: UIImage?
+    @State private var previousTerrain: UIImage?
+    @State private var terrainSerial: Int = 0
     @State private var terrainStats: PreviewWorld.ThumbnailStats?
     @State private var previewShowNations = true
     @State private var renderingTerrain = false
+    @State private var immediateRoll = true
+    @State private var refreshSpin: Double = 0
+    @State private var seedCopied = false
     @State private var selectedPreset: String? = nil
     private var seed: String { options.seed.isEmpty ? rolled : options.seed }
     private var chosen: GameModel.NewWorld { var o = options; o.seed = seed; return o }
@@ -423,6 +452,7 @@ struct NewWorldSheet: View {
                         let on = selectedPreset == p.id
                         Button {
                             GameFeel.shared.tap()
+                            immediateRoll = true
                             withAnimation(Motion.panel) {
                                 selectedPreset = p.id
                                 options.template = p.template
@@ -461,6 +491,7 @@ struct NewWorldSheet: View {
                     let on = options.template == t.id, art = Self.templateArt[t.id]
                     Button {
                         GameFeel.shared.tap()
+                        immediateRoll = true
                         withAnimation(Motion.tap) { selectedPreset = nil; options.template = t.id }
                     } label: {
                         HStack(spacing: 10) {
@@ -497,6 +528,7 @@ struct NewWorldSheet: View {
                         let on = options.nations == sp.nations && options.provinceCount == sp.provinces
                         Button {
                             GameFeel.shared.tap()
+                            immediateRoll = true
                             withAnimation(Motion.tap) {
                                 selectedPreset = nil
                                 options.nations = sp.nations
@@ -600,28 +632,59 @@ struct NewWorldSheet: View {
         .scrollIndicators(.hidden)
         .task(id: "\(seed)|\(options.template)|\(previewShowNations ? options.nations : 0)") { await drawTerrain() }
     }
-    /// 高清山河预览卡：统一温润宣纸胶囊浮标（移除深黑底块）、自适应横屏高度，并展示地形/势力切换与实测勘测数据。
+    /// 高清山河预览卡：双缓冲水墨溶叠过渡（彻底移除丑陋的全宽横线进度条）、宣纸胶囊浮标、战略地势评语与顺滑换图旋钮。
     private var terrainCard: some View {
         let compactH = verticalClass == .compact
         return VStack(spacing: 0) {
             ZStack(alignment: .bottomTrailing) {
-                Group {
-                    if let terrain { Image(uiImage: terrain).resizable().scaledToFill().transition(.opacity) } else { Theme.paper2 }
+                ZStack {
+                    Theme.paper2
+                    if let previousTerrain {
+                        Image(uiImage: previousTerrain)
+                            .resizable()
+                            .interpolation(.high)
+                            .scaledToFill()
+                    }
+                    if let terrain {
+                        Image(uiImage: terrain)
+                            .resizable()
+                            .interpolation(.high)
+                            .scaledToFill()
+                            .id(terrainSerial)
+                            .transition(.opacity.combined(with: .scale(scale: 1.022)))
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: compactH ? 168 : 204)
                 .clipped()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    GameFeel.shared.tap()
+                    immediateRoll = true
+                    withAnimation(Motion.tap) { previewShowNations.toggle() }
+                }
                 .overlay(alignment: .topLeading) {
-                    HStack(spacing: 5) {
-                        Text(Names.templates.first(where: { $0.id == options.template })?.name ?? options.template)
-                            .font(Theme.caption).foregroundStyle(Theme.ink)
-                        Text("· \(options.nations)国 \(options.provinceCount)州")
-                            .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                    Button {
+                        UIPasteboard.general.string = seed
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.tap) { seedCopied = true }
+                        Task {
+                            try? await Task.sleep(nanoseconds: 1_400_000_000)
+                            withAnimation(Motion.fade) { seedCopied = false }
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text(Names.templates.first(where: { $0.id == options.template })?.name ?? options.template)
+                                .font(Theme.caption).foregroundStyle(Theme.ink)
+                            Text(seedCopied ? "· 已复制种子" : "· \(options.nations)国 \(options.provinceCount)州")
+                                .font(Theme.caption).foregroundStyle(seedCopied ? Theme.seal : Theme.ink2).monospacedDigit()
+                        }
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Theme.paper2.opacity(0.92), in: Capsule())
+                        .overlay(Capsule().stroke(Theme.ink.opacity(0.16), lineWidth: 0.75))
+                        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.14), radius: 5, y: 2)
                     }
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(Theme.paper2.opacity(0.92), in: Capsule())
-                    .overlay(Capsule().stroke(Theme.ink.opacity(0.16), lineWidth: 0.75))
-                    .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.14), radius: 5, y: 2)
+                    .buttonStyle(PressStyle())
                     .padding(10)
                 }
                 .overlay(alignment: .topTrailing) {
@@ -630,6 +693,7 @@ struct NewWorldSheet: View {
                         ForEach([(false, "地貌"), (true, "势力")], id: \.0) { mode, label in
                             Button {
                                 GameFeel.shared.tap()
+                                immediateRoll = true
                                 withAnimation(Motion.tap) { previewShowNations = mode }
                             } label: {
                                 Text(label).font(Theme.kai(11))
@@ -646,74 +710,101 @@ struct NewWorldSheet: View {
                     .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.14), radius: 5, y: 2)
                     .padding(10)
                 }
-                .overlay {
-                    if renderingTerrain {
-                        ZStack {
-                            Theme.paper.opacity(0.30)
-                            InkBusy()
-                        }
-                        .transition(.opacity)
-                    }
-                }
                 Button {
                     GameFeel.shared.tap()
-                    options.seed = ""; rolled = String(UInt32.random(in: 0...UInt32.max))
+                    immediateRoll = true
+                    withAnimation(.snappy(duration: 0.36, extraBounce: 0.10)) {
+                        refreshSpin += 180
+                    }
+                    options.seed = ""
+                    rolled = String(UInt32.random(in: 0...UInt32.max))
                 } label: {
                     HStack(spacing: 5) {
                         InkIcon(glyph: .refresh, size: 13, weight: 1.8)
+                            .rotationEffect(.degrees(refreshSpin))
                         Text("换一方山河").font(Theme.label)
                     }
                     .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 32)
-                    .background(Theme.seal, in: Capsule())
+                    .background(Theme.seal.opacity(renderingTerrain ? 0.88 : 1.0), in: Capsule())
                     .shadow(color: Theme.seal.opacity(0.28), radius: 5, y: 2)
                 }
                 .buttonStyle(PressStyle()).padding(10)
             }
-            // 底部地理勘测条：实时显示陆地占比、山地比例、林地与海岸特征
-            HStack(spacing: 10) {
+            // 底部地理勘测条：实时显示陆地占比、山地比例、林地与战略地势评语
+            HStack(spacing: 8) {
                 if let st = terrainStats {
                     atlasStat(label: "陆地", value: "\(st.landPercent)%")
-                    Divider().frame(height: 12)
+                    Divider().frame(height: 11)
                     atlasStat(label: "山地", value: "\(st.mountainPercent)%")
-                    Divider().frame(height: 12)
+                    Divider().frame(height: 11)
                     atlasStat(label: "林泽", value: "\(st.forestPercent)%")
-                    Divider().frame(height: 12)
-                    atlasStat(label: "岸线", value: st.coastKind)
+                    Spacer(minLength: 4)
+                    Text(terrainVerdict(st))
+                        .font(Theme.kai(11))
+                        .foregroundStyle(Theme.seal)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(Theme.seal.opacity(0.09), in: Capsule())
+                        .lineLimit(1)
                 } else {
-                    Text("正在勘测此方山河地貌……").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    Text("正在铺宣勘绘山河……").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(Theme.paper2.opacity(0.92))
+            .background(Theme.paper2.opacity(0.94))
         }
         .clipShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 0.9))
         .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.10), radius: 8, y: 3)
-        .animation(Motion.fade, value: renderingTerrain)
+    }
+
+    private func terrainVerdict(_ st: PreviewWorld.ThumbnailStats) -> String {
+        if st.landPercent <= 28 || options.template == "archipelago" {
+            return "星罗海疆 · 舟师争雄"
+        }
+        if st.mountainPercent >= 26 {
+            return "崇山天险 · 关隘易守"
+        }
+        if st.forestPercent >= 38 {
+            return "林泽丰茂 · 奇兵伏击"
+        }
+        if st.landPercent >= 56 {
+            return "广袤中土 · 铁骑逐鹿"
+        }
+        return "\(st.coastKind) · 陆海兼资"
     }
 
     private func atlasStat(label: String, value: String) -> some View {
         HStack(spacing: 3) {
             Text(label).font(Theme.kai(11)).foregroundStyle(Theme.ink2)
             Text(value).font(Theme.kai(12)).foregroundStyle(Theme.ink).monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(Motion.tap, value: value)
         }
     }
 
     private func drawTerrain() async {
         guard let inputs else { return }
-        if terrain != nil {
-            // 切换剧本/国家数/种子时短暂防抖，避免快速连点引发多次后台 20k 网格光栅化抢占 CPU。
-            try? await Task.sleep(nanoseconds: 110_000_000)
+        let fast = immediateRoll || terrain == nil
+        immediateRoll = false
+        if !fast {
+            // 仅在连续拨动数字步进器时轻微防抖 65ms；点击「换一方山河」零延迟立即生成！
+            try? await Task.sleep(nanoseconds: 65_000_000)
             guard !Task.isCancelled else { return }
         }
         renderingTerrain = true
         let seed = self.seed, template = options.template, n = previewShowNations ? options.nations : 0
         let res = await Task.detached(priority: .userInitiated) { terrainThumbnail(inputs, seed: seed, template: template, previewNations: n) }.value
         guard !Task.isCancelled else { return }
-        withAnimation(Motion.fade) {
-            terrain = res?.image
-            terrainStats = res?.stats
+        if let nextImage = res?.image {
+            previousTerrain = terrain
+            withAnimation(.smooth(duration: 0.30)) {
+                terrain = nextImage
+                terrainSerial &+= 1
+                terrainStats = res?.stats
+                renderingTerrain = false
+            }
+        } else {
             renderingTerrain = false
         }
     }
@@ -821,7 +912,7 @@ struct GeneratingView: View {
 struct FoundingView: View {
     @ObservedObject var controller: MapController
     let cancel: () -> Void
-    private var reveal: Float { controller.reveal }
+    private var liveReveal: Float { controller.revealNow ?? controller.reveal }
     static let stages: [(until: Float, text: String)] = [
         (0.15, "铺纸注海"), (0.30, "勾勒海岸"), (0.44, "晕染山河"), (0.50, "冲刷江河，播撒林木"),
         (0.56, "划分州郡"), (0.75, "分封列国"), (0.85, "勘定国界"), (1.00, "营建城邦与港口"),
@@ -829,7 +920,9 @@ struct FoundingView: View {
     static let later = ["诞生世家与人物", "编练军队", "缔结邦交", "天下初定"]
     @State private var started = Date()
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.35)) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { context in
+            let reveal = liveReveal
+            let canSkip = controller.revealClock != nil && reveal > 0.06 && !ShotTour.on
             let waited = reveal >= 1 ? context.date.timeIntervalSince(started) : 0
             let laterIndex = min(Self.later.count - 1, controller.foundingStage)
             let current = reveal < 1 ? (Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1) : Self.stages.count + laterIndex
@@ -852,14 +945,22 @@ struct FoundingView: View {
                         Text(all[min(current, all.count - 1)] + "……").font(Theme.kai(20)).foregroundStyle(Theme.ink)
                             .id(current).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
                     }
-                    GeometryReader { g in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Theme.ink.opacity(0.1))
-                            Capsule().fill(Theme.seal).frame(width: g.size.width * progress)
+                    // 零 GeometryReader 布局抖动的 60fps GPU 缩放进度条
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Theme.ink.opacity(0.10))
+                        Rectangle()
+                            .fill(Theme.seal)
+                            .scaleEffect(x: max(0.015, min(1.0, progress)), y: 1, anchor: .leading)
+                    }
+                    .frame(height: 4.5)
+                    .clipShape(Capsule())
+                    HStack {
+                        Text("\(Int(progress * 100))%").font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
+                        Spacer()
+                        if canSkip {
+                            Text("轻点立即入局 ›").font(Theme.kai(12)).foregroundStyle(Theme.seal)
                         }
                     }
-                    .frame(height: 4)
-                    Text("\(Int(progress * 100))%").font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
                     if waited > 20 {
                         HStack(spacing: 8) {
                             Text("比平时久一些，仍在推算").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
@@ -870,12 +971,18 @@ struct FoundingView: View {
                     }
                 }
                 .animation(Motion.panel, value: current)
-                .animation(Motion.fade, value: progress)
                 .animation(Motion.fade, value: waited > 20)
                 .padding(.horizontal, 20).padding(.vertical, 16)
                 .frame(maxWidth: 360, alignment: .leading)
                 .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerSheet, style: .continuous))
                 .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
+                .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerSheet, style: .continuous))
+                .onTapGesture {
+                    if canSkip {
+                        GameFeel.shared.tap()
+                        controller.skipReveal()
+                    }
+                }
                 .padding(.bottom, 40)
             }
             .onChange(of: reveal >= 1) { _, done in if done { started = Date() } }

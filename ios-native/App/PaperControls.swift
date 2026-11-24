@@ -205,7 +205,6 @@ struct StatTile: View {
     var reserveBar = false
     /// 同一排 StatStrip 仅在全部列皆有对应水墨微标时统一显示图标，杜绝单列突兀带图标。
     var showIcon = true
-    @State private var appeared = false
     var body: some View {
         Group {
             if let edit {
@@ -213,9 +212,6 @@ struct StatTile: View {
                     .buttonStyle(PressStyle())
             } else { content }
         }
-        // Tiles rise into place when a page opens.
-        .opacity(appeared ? 1 : 0).offset(y: appeared ? 0 : 8)
-        .onAppear { withAnimation(Motion.panel) { appeared = true } }
     }
     private var content: some View {
         VStack(alignment: .leading, spacing: 5) {

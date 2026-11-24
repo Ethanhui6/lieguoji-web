@@ -14,9 +14,35 @@ enum UnitArt {
         return UnitKinds.byKey[unit]?.role.rawValue ?? "infantry"
     }
 
+    private static func bundleUnitImage(_ role: String) -> CGImage? {
+        let resourceName: String? = {
+            switch role {
+            case "infantry": return "unit-Infantry"
+            case "cavalry": return "unit-Cavalry"
+            case "archer": return "unit-Archer"
+            case "shield": return "unit-Shield"
+            case "elite": return "unit-Elite"
+            case "Fleet": return "unit-Warship"
+            case "Transport": return "unit-Fleet"
+            case "Merchant": return "unit-Merchant"
+            case "Port": return "unit-Port"
+            default: return nil
+            }
+        }()
+        guard let name = resourceName,
+              let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "World"),
+              let ui = UIImage(contentsOfFile: url.path),
+              let cg = ui.cgImage else { return nil }
+        return cg
+    }
+
     static func image(_ unit: String) -> CGImage? {
         let key = role(unit)
         if let c = cache[key] { return c }
+        if let bundled = bundleUnitImage(key) {
+            cache[key] = bundled
+            return bundled
+        }
         guard let g = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: size * 4,
                                 space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         g.translateBy(x: 0, y: CGFloat(size)); g.scaleBy(x: 1, y: -1)

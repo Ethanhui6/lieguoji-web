@@ -190,6 +190,7 @@ struct MemorialHeader: View {
     @State private var inked = false
     @Environment(\.inSidePanel) private var inSidePanel
     @Environment(\.hasBackBar) private var hasBackBar
+    @Environment(\.sidePanelClose) private var sidePanelClose
     var body: some View {
         let grabberVisible = showGrabber && !inSidePanel && !hasBackBar
         VStack(spacing: 0) {
@@ -203,6 +204,9 @@ struct MemorialHeader: View {
                 }
                 Spacer(minLength: 8)
                 Seal(text: seal, size: inSidePanel ? 28 : 32)
+                if inSidePanel, !hasBackBar, let close = sidePanelClose {
+                    CardCloseButton(action: close)
+                }
             }
             .padding(.horizontal, Theme.Layout.sectionInset)
             .padding(.top, grabberVisible ? Theme.Layout.headerTop : 12)

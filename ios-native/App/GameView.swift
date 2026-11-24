@@ -79,10 +79,10 @@ struct GameView: View {
     /// The pending map pick is a retreat (原作防御模式) rather than a march.
     @State private var marchRetreat = false
     @State private var rtsDefend = false
-    /// The unit sheets' height; a pick from a list drops it low so the map shows the unit.
-    @State private var unitDetent: PresentationDetent = .height(320)
-    /// Nation pages stay under about 40% so the map keeps at least 60% of the screen.
-    @State private var nationDetent: PresentationDetent = .fraction(0.38)
+    /// The unit sheets' height; opens at .medium so war/naval scroll stage, stats and commands are visible immediately.
+    @State private var unitDetent: PresentationDetent = .medium
+    /// Nation pages open at .medium so ruler, stats, tabs and dossier summary show clearly above the fold.
+    @State private var nationDetent: PresentationDetent = .medium
     /// The world was paused by a big panel and resumes when it closes.
     @State private var pausedByPanel = false
     /// 等待竖屏原生 `.sheet` 完全收起后再进入山河回放，彻底消除 UIKit 转场竞态与残余遮罩。
@@ -117,10 +117,11 @@ struct GameView: View {
         return min(430, max(320, totalWidth * 0.44))
     }
 
-    /// 紧凑日期文案：竖屏有战事时省略“公元”前缀（保留自定义年号），保证 375pt 窄屏顶栏永不挤撞。
+    /// 紧凑日期文案：竖屏有战事或横屏展开右侧面板时省略“公元”前缀（保留自定义年号），保证顶栏永不截断或挤撞。
     private var compactDateText: String {
         let raw = model.state?.dateText ?? ""
-        if !landscape, (model.state?.wars.count ?? 0) > 0, raw.hasPrefix("公元") {
+        let squeeze = (landscape && panel != nil) || (!landscape && (model.state?.wars.count ?? 0) > 0)
+        if squeeze, raw.hasPrefix("公元") {
             return String(raw.dropFirst(2))
         }
         return raw
@@ -129,7 +130,7 @@ struct GameView: View {
     // Split in three: as one expression the compiler cannot type-check it in reasonable time.
     private func backdrop(size: CGSize) -> some View {
         let panelW = sidePanelWidth(for: size.width)
-        let trailSafe: CGFloat = (landscape && panel != nil) ? (panelW + 14) : 12
+        let trailSafe: CGFloat = (landscape && panel != nil) ? (panelW + 20) : 12
         let leadSafe: CGFloat = landscape ? 62 : 12
 
         return ZStack {
@@ -240,7 +241,7 @@ struct GameView: View {
 
     private func stage(size: CGSize) -> some View {
         let panelW = sidePanelWidth(for: size.width)
-        let trailSafe: CGFloat = (landscape && panel != nil) ? (panelW + 14) : 12
+        let trailSafe: CGFloat = (landscape && panel != nil) ? (panelW + 20) : 12
         let leadSafe: CGFloat = landscape ? 62 : 12
 
         return backdrop(size: size)
@@ -570,11 +571,11 @@ struct GameView: View {
             WorldEditorSheet(model: model, close: { closePage() }, takeShot: { mapShot() })
                 .presentationDetents([.medium, .large])
         case .quick(let p):
-            ProvinceQuickSheet(model: model, province: p, openProvince: { open(.province(p)) }, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in unitDetent = .height(320); open(.army(a)) }, close: { closePage() })
+            ProvinceQuickSheet(model: model, province: p, openProvince: { open(.province(p)) }, openNation: { n in nationDetent = .medium; open(.nation(n)) }, openArmy: { a in unitDetent = .medium; open(.army(a)) }, close: { closePage() })
                 .presentationDetents([.medium, .large])
         case .province(let p):
-            ProvinceSheet(model: model, province: p, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) }, openArmy: { a in
-                unitDetent = .height(320)
+            ProvinceSheet(model: model, province: p, openNation: { n in nationDetent = .medium; open(.nation(n)) }, openArmy: { a in
+                unitDetent = .medium
                 controller.selectedArmyId = model.army(a)?.id
                 controller.selectedArmy = a
                 open(.army(a)); locate(army: a)
@@ -611,44 +612,52 @@ struct GameView: View {
                 controller.onPick = { p in controller.pickPrompt = nil; controller.onPick = nil; done(p); nationDetent = .medium; open(.nation(n)) }
                 self.panel = nil
             }, openArmy: { a in
+                unitDetent = .medium
                 controller.selectedArmyId = model.army(a)?.id
                 controller.selectedArmy = a
                 open(.army(a))
-            }, openPeople: { nationDetent = .fraction(0.38); open(.people(n)) }, openWars: { nationDetent = .fraction(0.38); open(.nationWars(n)) }, openTalks: { nationDetent = .fraction(0.38); open(.nationTalks(n)) }, openReplay: {
+            }, openFleet: { fid in
+                if let idx = model.state?.fleets?.firstIndex(where: { $0.id == fid }) {
+                    unitDetent = .medium
+                    controller.selectedFleetId = fid
+                    controller.selectedFleet = idx
+                    open(.fleet(idx))
+                    if let fl = model.fleet(idx), fl.x.isFinite, fl.y.isFinite { controller.fly(x: Double(fl.x), y: Double(fl.y)) }
+                }
+            }, openPeople: { nationDetent = .medium; open(.people(n)) }, openWars: { nationDetent = .medium; open(.nationWars(n)) }, openTalks: { nationDetent = .medium; open(.nationTalks(n)) }, openReplay: {
                 requestReplay(atDay: nil)
             })
-                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
-                .onAppear { nationDetent = NationSheet.tourTab != nil ? .large : .fraction(0.38) }
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
+                .onAppear { nationDetent = NationSheet.tourTab != nil ? .large : .medium }
         case .people(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .people)
-                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nationWars(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .wars)
-                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .nationTalks(let n):
             NationSheet(model: model, nation: n, say: say, fly: { controller.fly(to: $0) }, focus: .talks)
-                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.38)))
+                .presentationDetents([.fraction(0.38), .medium, .large], selection: $nationDetent).presentationBackgroundInteraction(.enabled(upThrough: .medium))
         case .edicts:
             EdictSheet(model: model, say: say).presentationDetents([.medium, .large])
         case .statistics:
-            StatisticsSheet(model: model) { n in nationDetent = .fraction(0.38); open(.nation(n)) }.presentationDetents([.medium, .large])
+            StatisticsSheet(model: model) { n in nationDetent = .medium; open(.nation(n)) }.presentationDetents([.medium, .large])
         case .nations:
-            NationsSheet(model: model) { n in nationDetent = .fraction(0.38); open(.nation(n)) }.presentationDetents([.medium, .large])
+            NationsSheet(model: model) { n in nationDetent = .medium; open(.nation(n)) }.presentationDetents([.medium, .large])
         case .military:
             MilitarySheet(model: model, select: { army in
-                // The army's docket slides in over the roster (返回军事 goes back); the sheet drops low and
-                // the camera flies to the army itself.
-                unitDetent = .height(320)
+                // The army's docket slides in over the roster (返回军事 goes back); the camera flies to the army itself.
+                unitDetent = .medium
                 controller.selectedArmyId = model.army(army)?.id
                 open(.army(army)); controller.selectedArmy = army
                 locate(army: army)
             }, selectFleet: { fleet in
-                unitDetent = .height(320)
+                unitDetent = .medium
                 controller.selectedFleetId = model.fleet(fleet)?.id
                 open(.fleet(fleet)); controller.selectedFleet = fleet
                 if let f = model.fleet(fleet), f.x.isFinite, f.y.isFinite { controller.fly(x: Double(f.x), y: Double(f.y)) }
             }, flyTo: { x, y in if x.isFinite && y.isFinite { controller.fly(x: x, y: y) } }, openNation: { n in
-                nationDetent = .fraction(0.38); open(.nation(n))
+                nationDetent = .medium; open(.nation(n))
             }).presentationDetents([.medium, .large])
         case .diplomacy:
             DiplomacySheet(model: model, say: say, fly: { n in
@@ -656,7 +665,7 @@ struct GameView: View {
                     let c = map.meta.cities[map.meta.nations[n].capital]
                     controller.showPlace(x: Double(c.x), y: Double(c.y))
                 }
-            }, openNation: { n in nationDetent = .fraction(0.38); open(.nation(n)) },
+            }, openNation: { n in nationDetent = .medium; open(.nation(n)) },
                openWars: { MilitarySheet.openOn = "wars"; open(.military) },
                openChronicle: { n in ChronicleSheet.openNation = n; open(.chronicle) }).presentationDetents([.medium, .large])
         case .chronicle:
@@ -1040,17 +1049,21 @@ struct GameView: View {
             let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
+                let hasBack = trail.last != nil
                 sheet(for: panel)
                     .id(panel.id)
                     .environment(\.inSidePanel, true)
-                    .environment(\.hasBackBar, true)
+                    .environment(\.hasBackBar, hasBack)
+                    .environment(\.sidePanelClose, { closePage() })
                     .transition(.asymmetric(
                         insertion: .move(edge: backward ? .leading : .trailing).combined(with: .opacity),
                         removal: .move(edge: backward ? .trailing : .leading).combined(with: .opacity)
                     ))
                     .clipped()
                     .safeAreaInset(edge: .top, spacing: 0) {
-                        backRow(trail.last, current: panel, isSidePanel: true)
+                        if let last = trail.last {
+                            backRow(last, current: panel, isSidePanel: true)
+                        }
                     }
                     .font(Theme.section)
                     .frame(width: panelW)

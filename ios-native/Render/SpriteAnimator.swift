@@ -31,6 +31,11 @@ struct SpriteSheetSpec {
     static let battleClash = SpriteSheetSpec(name: "sheet-battle-clash", cols: 4, rows: 1, defaultFPS: 8.5)
     static let siegeSmoke = SpriteSheetSpec(name: "sheet-siege-smoke", cols: 4, rows: 1, defaultFPS: 6.5)
     static let bannerWave = SpriteSheetSpec(name: "sheet-banner-wave", cols: 4, rows: 1, defaultFPS: 7.0)
+    /// 36 帧（6×6 等宽网格，30fps 丝滑连贯）高密度多帧拼接序列帧图集
+    static let atlasBattle36 = SpriteSheetSpec(name: "atlas-battle-36", cols: 6, rows: 6, defaultFPS: 30.0)
+    static let atlasNaval36 = SpriteSheetSpec(name: "atlas-naval-36", cols: 6, rows: 6, defaultFPS: 30.0)
+    static let atlasSiege36 = SpriteSheetSpec(name: "atlas-siege-36", cols: 6, rows: 6, defaultFPS: 30.0)
+    static let atlasRainRipple36 = SpriteSheetSpec(name: "atlas-rain-ripple-36", cols: 6, rows: 6, defaultFPS: 30.0)
 
     /// 按文明大系自动调度对应战舰序列帧（东亚楼船 / 北欧维京长船 / 伊斯兰三角帆战舰 / 西洋风帆盖伦）。
     static func warship(for culture: String?) -> SpriteSheetSpec {
@@ -136,7 +141,7 @@ final class SpriteSheetLayer: CALayer {
             anim.timeOffset = phaseOffset.truncatingRemainder(dividingBy: cycleDuration)
         }
         removeAnimation(forKey: "sprite.sheet.play")
-        add(anim, forKey: "sprite.sheet.play")
+        add(EffectsView.calm(anim), forKey: "sprite.sheet.play")
         playing = true
     }
 

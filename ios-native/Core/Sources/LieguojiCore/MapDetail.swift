@@ -207,47 +207,12 @@ extension MapLayers {
         return m
     }
 
-    /// Close up only: what lies between the mountains and woods.
+    /// Close up only: delicate curved imperial post-roads (`驿道`) joining neighbouring province seats.
+    /// 彻底清除旧版放大后出现的黄褐色平行四边形色块与小三角农舍杂线，保持高倍缩放画面干净雅致。
     public static func fineDetail(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
-        let field = RGB(hex: 0xC9B27A), furrow = RGB(hex: 0x74633A), road = RGB(hex: 0x5C4728)
+        let road = RGB(hex: 0x5C4728)
         let milestone = RGB(hex: 0x8E3B2B)
-        let shore = shoreCells(map)
-        var cityGrid = [Int64: [(Float, Float)]]()
-        func cell(_ x: Float, _ y: Float) -> Int64 { Int64(floor(x / 24)) << 32 | Int64(Int32(floor(y / 24))) & 0xFFFF_FFFF }
-        for c in map.meta.cities { cityGrid[cell(c.x, c.y), default: []].append((c.x, c.y)) }
-        func nearCity(_ x: Float, _ y: Float) -> Bool {
-            let gx = Int64(floor(x / 24)), gy = Int64(floor(y / 24))
-            for dx in -1...1 { for dy in -1...1 {
-                for c in cityGrid[(gx + Int64(dx)) << 32 | Int64(Int32(gy + Int64(dy))) & 0xFFFF_FFFF] ?? [] {
-                    let ox = c.0 - x, oy = c.1 - y
-                    if ox * ox + oy * oy < 26 * 26 && ox * ox + oy * oy > 7 * 7 { return true }
-                }
-            } }
-            return false
-        }
-        var taken = Set<Int64>()
-        for c in 0..<map.cellCount where map.isLand(c) && !shore[c] {
-            let h = Float(map.elevation[c]), biome = map.biome[c], x = map.sites[c * 2], y = map.sites[c * 2 + 1], pick = hash(c) % 100
-            let key = Int64(floor(x / 13)) << 32 | Int64(Int32(floor(y / 13))) & 0xFFFF_FFFF
-            if h >= 55 || (biome >= 5 && biome <= 9) { continue }
-            if h < 40 && pick < 38 && nearCity(x, y) {
-                if !taken.insert(key).inserted { continue }
-                // 郭外桑田与村舍：错落阡陌田块 + 点缀微小黛瓦农舍，令城邦腹地富有烟火气
-                let a = Float(hash(c &+ 5) % 180) * .pi / 180, ux = cos(a), uy = sin(a), vx = -uy, vy = ux, w: Float = 5.4, d: Float = 3.2
-                m.fill([x - ux * w - vx * d, y - uy * w - vy * d, x + ux * w - vx * d, y + uy * w - vy * d, x + ux * w + vx * d, y + uy * w + vy * d, x - ux * w + vx * d, y - uy * w + vy * d], field, alpha: 0.24)
-                for k in -1...1 { let o = Float(k) * d * 0.6; m.segment(x - ux * w + vx * o, y - uy * w + vy * o, x + ux * w + vx * o, y + uy * w + vy * o, width: 0.32, furrow, alpha: 0.30) }
-                if pick < 16 {
-                    let hx = x + vx * (d + 1.8), hy = y + vy * (d + 1.8)
-                    m.fill([hx - 1.5, hy, hx + 1.5, hy, hx + 1.5, hy + 1.2, hx - 1.5, hy + 1.2], RGB(hex: 0xDFD3B8), alpha: 0.65)
-                    m.fill([hx - 1.9, hy + 0.1, hx, hy - 1.1, hx + 1.9, hy + 0.1], RGB(hex: 0x7A3D2A), alpha: 0.72)
-                }
-                continue
-            }
-            if pick >= 42 || !taken.insert(key).inserted { continue }
-            // 旧版代码弧线丘陵、折线沙丘与草棍已全部清除，改由纯 AI 手绘地貌精灵呈现
-            continue
-        }
         // Roads: each province seat joined by land to its nearest few neighbours.
         var firstCity = [Int: (Float, Float)]()
         for c in map.meta.cities where firstCity[c.province] == nil { firstCity[c.province] = (c.x, c.y) }

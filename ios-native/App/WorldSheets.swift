@@ -67,6 +67,7 @@ struct MilitarySheet: View {
     static var openOn: String?
     /// The page opens on 军情, the war room at a glance (MilitaryOverview).
     @State private var filter = "overview"
+    @State private var landScope = "all"
     /// 名将谱, reread each month of the game.
     @State private var generals: [GeneralEntry] = []
     @State private var released: String?
@@ -131,12 +132,43 @@ struct MilitarySheet: View {
     }
     var body: some View {
         if let map = model.map, let state = model.state {
-            // Armies by state, built lazily as the list scrolls (hundreds of rows made opening slow).
-            let byNation = Dictionary(grouping: state.armies.indices.filter { filter == "navy" || filter == "wars" || filter == "overview" ? false : filter == "all" || (filter == "manual" ? state.armies[$0].manual : state.armies[$0].status == "fighting" || state.armies[$0].status == "sieging") }, by: { state.armies[$0].nation })
+            // 四主签整宽对齐（军情 / 战局 / 陆军 / 水师），彻底消除 6 标签横滑截断与「舰队」被藏在屏外的问题！
+            let byNation = Dictionary(
+                grouping: state.armies.indices.filter { idx in
+                    guard filter == "land" else { return false }
+                    switch landScope {
+                    case "manual": return state.armies[idx].manual
+                    case "battle": return state.armies[idx].status == "fighting" || state.armies[idx].status == "sieging"
+                    default: return true
+                    }
+                },
+                by: { state.armies[$0].nation }
+            )
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
-                    SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支军队" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支舰队"))
-                    ChipPicker(items: [("overview", "军情"), ("all", "全部"), ("wars", "战局"), ("battle", "交战围城"), ("manual", "亲自指挥"), ("navy", "舰队")], selection: $filter).padding(.horizontal, 16)
+                    SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支陆军" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支水师舰队"), seal: "军")
+                    ChipPicker(items: [("overview", "军情"), ("wars", "战局"), ("land", "陆军"), ("navy", "水师")], selection: $filter)
+                        .padding(.horizontal, 16)
+                    if filter == "land" {
+                        HStack(spacing: 8) {
+                            ForEach([("all", "全部陆军"), ("battle", "交战围城"), ("manual", "亲自指挥")], id: \.0) { item in
+                                let on = landScope == item.0
+                                Button {
+                                    GameFeel.shared.tap()
+                                    withAnimation(Motion.tap) { landScope = item.0 }
+                                } label: {
+                                    Text(item.1)
+                                        .font(Theme.label)
+                                        .foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                        .frame(maxWidth: .infinity).frame(height: 32)
+                                        .background(on ? Theme.seal : Theme.paper2.opacity(0.88), in: Capsule())
+                                        .overlay(Capsule().stroke(on ? Color.clear : Theme.ink.opacity(0.14), lineWidth: 0.8))
+                                }
+                                .buttonStyle(PressStyle())
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
                     // 全军交 AI: every army and fleet the player commands goes back to the war council.
                     let manualCount = state.armies.filter(\.manual).count
                     if manualCount > 0 {
@@ -153,6 +185,11 @@ struct MilitarySheet: View {
                     if filter == "overview" { MilitaryOverview(map: map, state: state, select: select, flyTo: flyTo, generals: generals) }
                     if filter == "wars" {
                         if !state.wars.isEmpty {
+                            if InkVideoStage.hasVideo("herald-war") {
+                                InkVideoStage(clip: "herald-war", cornerRadius: 12, tint: Theme.seal)
+                                    .frame(height: 70)
+                                    .padding(.horizontal, 16)
+                            }
                             let involved = Set(state.wars.flatMap { [$0.attacker, $0.defender] + $0.participants.map(\.nation) })
                             let frontTroops = state.armies.reduce(0) { involved.contains($1.nation) ? $0 + $1.troops : $0 }
                             let fightingNow = state.armies.filter { $0.status == "fighting" }.count
@@ -166,7 +203,7 @@ struct MilitarySheet: View {
                         if state.wars.isEmpty { Text("天下暂无战事").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset) }
                         ForEach(state.wars) { war in warCard(map, state, war) }
                     }
-                    if byNation.isEmpty && filter != "navy" && filter != "wars" && filter != "overview" { Text("暂无符合条件的陆军").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset) }
+                    if byNation.isEmpty && filter == "land" { Text("暂无符合条件的陆军").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset) }
                     ForEach(state.nations.indices, id: \.self) { n in
                         let rows = (byNation[n] ?? []).sorted { state.armies[$0].troops > state.armies[$1].troops }
                         if !rows.isEmpty {
@@ -188,6 +225,11 @@ struct MilitarySheet: View {
                         }
                     }
                     if filter == "navy" {
+                        if InkVideoStage.hasVideo("herald-naval") {
+                            InkVideoStage(clip: "herald-naval", cornerRadius: 12, tint: Theme.seal)
+                                .frame(height: 74)
+                                .padding(.horizontal, 16)
+                        }
                         let activeFleets = (state.fleets ?? []).filter { $0.status != "lost" }
                         let totalShips = activeFleets.reduce(0) { $0 + $1.ships }
                         let seaFights = (state.seaBattles ?? []).count
@@ -200,11 +242,6 @@ struct MilitarySheet: View {
                         ])
                         if let sbs = state.seaBattles, !sbs.isEmpty {
                             SectionLabel("当前海上会战（\(sbs.count) 处交火海域）")
-                            if !UIAccessibility.isReduceMotionEnabled, InkVideoStage.hasVideo("herald-naval") {
-                                InkVideoStage(clip: "herald-naval", cornerRadius: 10, tint: Theme.seal)
-                                    .frame(height: 56)
-                                    .padding(.horizontal, 16)
-                            }
                             Group2 {
                                 ForEach(Array(sbs.enumerated()), id: \.offset) { idx, sb in
                                     let na = sb.count >= 4 ? Int(sb[2]) : -1
@@ -235,8 +272,8 @@ struct MilitarySheet: View {
                             .padding(.horizontal, 16)
                         }
                     }
-                    if filter == "all" || filter == "navy", let fleets = state.fleets, !fleets.isEmpty {
-                        SectionLabel("水师舰队")
+                    if filter == "navy", let fleets = state.fleets, !fleets.isEmpty {
+                        SectionLabel("水师舰队（轻点可检视舰种编制与下令起航）")
                         Group2 {
                             ForEach(fleets.indices, id: \.self) { i in
                                 Button { selectFleet(i) } label: { FleetRow(map: map, fleet: fleets[i]) }.buttonStyle(.plain)
@@ -247,8 +284,8 @@ struct MilitarySheet: View {
                     } else if filter == "navy" {
                         Text("天下尚无现役水师舰队").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
                     }
-                    if filter == "all" || filter == "navy", let yards = state.yards, !yards.isEmpty {
-                        SectionLabel("船坞")
+                    if filter == "navy", let yards = state.yards, !yards.isEmpty {
+                        SectionLabel("船坞建造队列")
                         Group2 {
                             ForEach(yards.indices, id: \.self) { i in
                                 let y = yards[i]
@@ -256,7 +293,7 @@ struct MilitarySheet: View {
                                     Text(y.name).font(Theme.body).foregroundStyle(Theme.ink)
                                     Spacer()
                                     Text(map.meta.nations.indices.contains(y.nation) ? map.meta.nations[y.nation].name : "").font(Theme.label).foregroundStyle(Theme.ink2)
-                                    Text("重建中 · 还需 \(Int(y.months)) 月").font(Theme.label).foregroundStyle(Theme.seal)
+                                    Text("建造中 · 约 \(max(1, Int(y.months.rounded()))) 月下水").font(Theme.label).foregroundStyle(Theme.seal)
                                 }
                                 .padding(.horizontal, 14).padding(.vertical, 10)
                                 if i != yards.indices.last { Divider2() }
@@ -267,7 +304,18 @@ struct MilitarySheet: View {
                 }
                 .padding(.bottom, 24)
             }
-            .onAppear { if let t = Self.tourFilter ?? Self.openOn { filter = t; Self.openOn = nil } }
+            .onAppear {
+                if let t = Self.tourFilter ?? Self.openOn {
+                    switch t {
+                    case "all", "battle", "manual":
+                        filter = "land"
+                        landScope = t
+                    default:
+                        filter = t
+                    }
+                    Self.openOn = nil
+                }
+            }
             .task(id: state.day / 30) { generals = await model.generals() }
         }
     }

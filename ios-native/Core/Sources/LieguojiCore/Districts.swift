@@ -4,9 +4,7 @@ import Foundation
 /// named after its centre city. Built once per world from the land's adjacency (not from who holds
 /// it), kept in the run so names and centres can be edited.
 public enum Districts {
-    static func ensure(_ r: JS) {
-        if !r.regimes.isNull, !r.regimes.regions.isNull { return }
-        Regimes.enable(r)
+    static func computeBook(_ r: JS) -> JS {
         let provinces = r.world.provinces.asArray
         var index = [String: Int](); for (i, p) in provinces.enumerated() { index[p.id.asString] = i }
         var cityName = [String: String](); for c in r.world.cities.asArray { cityName[c.provinceId.asString] = c.name.asString }
@@ -35,7 +33,17 @@ public enum Districts {
             for m in members { of[provinces[m].id.asString] = JS(next) }
         }
         book.of = of; book.list = .array(rows)
-        r.regimes.regions = book
+        return book
+    }
+    /// 纯只读获取区域索引（面板查看与区域视图绝不改动冻结存档字节）。
+    static func readBook(_ r: JS) -> JS {
+        if !r.regimes.isNull, !r.regimes.regions.isNull { return r.regimes.regions }
+        return computeBook(r)
+    }
+    static func ensure(_ r: JS) {
+        if !r.regimes.isNull, !r.regimes.regions.isNull { return }
+        Regimes.enable(r)
+        r.regimes.regions = computeBook(r)
     }
     static func region(_ r: JS, _ provinceId: String) -> JS? {
         ensure(r)
@@ -46,12 +54,17 @@ public enum Districts {
 }
 
 extension NativeEngine {
-    /// The region of a province: its name and centre, its provinces and people.
+    /// The region of a province: its name and centre, its provinces and people (pure read-only).
     public func regionInfo(_ province: Int) -> Data? {
         let r = run, provinces = r.world.provinces.asArray
-        guard provinces.indices.contains(province), let g = Districts.region(r, provinces[province].id.asString) else { return nil }
-        let rid = g.id.asInt
-        let members = provinces.indices.filter { r.regimes.regions.of[provinces[$0].id.asString].optionalNumber.map { Int($0) } == rid }
+        guard provinces.indices.contains(province) else { return nil }
+        let book = Districts.readBook(r)
+        let pid = provinces[province].id.asString
+        guard let rawId = book.of[pid].optionalNumber else { return nil }
+        let rid = Int(rawId)
+        guard rid >= 0 && rid < book.list.length else { return nil }
+        let g = book.list[rid]
+        let members = provinces.indices.filter { book.of[provinces[$0].id.asString].optionalNumber.map { Int($0) } == rid }
         var stock = [String: Double](); for s in r.world.statecraft.provinces.asArray { stock[s.provinceId.asString] = s.population.optionalNumber ?? 0 }
         let population = members.reduce(0.0) { $0 + (stock[provinces[$1].id.asString] ?? 0) }
         let o = JS.object()

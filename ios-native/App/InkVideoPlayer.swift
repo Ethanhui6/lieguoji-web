@@ -33,25 +33,14 @@ struct InkVideoStage: View {
         ZStack {
             InkVideoPlayerRepresentable(clip: clip)
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .mask(
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(
-                            RadialGradient(
-                                colors: [.white, .white, .white.opacity(0.92), .white.opacity(0.65)],
-                                center: .center,
-                                startRadius: 4,
-                                endRadius: 56
-                            )
-                        )
-                )
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
-                        colors: [tint.opacity(0.36), Color(red: 0.82, green: 0.66, blue: 0.32).opacity(0.42), tint.opacity(0.22)],
+                        colors: [tint.opacity(0.42), Color(red: 0.82, green: 0.66, blue: 0.32).opacity(0.48), tint.opacity(0.26)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 0.85
+                    lineWidth: 1.0
                 )
         }
         .allowsHitTesting(false)
@@ -109,6 +98,18 @@ final class InkPlayerHostView: UIView {
     private static var posterCache: [String: UIImage] = [:]
     private static func posterImage(for clip: String) -> UIImage? {
         if let cached = posterCache[clip] { return cached }
+        if let url = InkVideoStage.url(for: clip) {
+            let asset = AVURLAsset(url: url)
+            let gen = AVAssetImageGenerator(asset: asset)
+            gen.appliesPreferredTrackTransform = true
+            gen.maximumSize = CGSize(width: 640, height: 360)
+            let targetTime = CMTime(seconds: 0.8, preferredTimescale: 600)
+            if let cg = try? gen.copyCGImage(at: targetTime, actualTime: nil) {
+                let ui = UIImage(cgImage: cg)
+                posterCache[clip] = ui
+                return ui
+            }
+        }
         let art: UIImage?
         let bgTop: UIColor
         let bgBot: UIColor

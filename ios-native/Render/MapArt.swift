@@ -105,6 +105,14 @@ enum BundleArt {
     static let fxPetal: UIImage? = load("fx-petal")
     static let fxMaple: UIImage? = load("fx-maple")
     static let fxSnowflake: UIImage? = load("fx-snowflake")
+    static let fxRaindrop: UIImage? = load("fx-raindrop")
+    static let fxCloudMist: UIImage? = load("fx-cloud-mist")
+
+    // MARK: - 36 帧（6×6 @ 30fps）高密度连续序列帧动画图集
+    static let atlasBattle36: UIImage? = load("atlas-battle-36")
+    static let atlasNaval36: UIImage? = load("atlas-naval-36")
+    static let atlasSiege36: UIImage? = load("atlas-siege-36")
+    static let atlasRainRipple36: UIImage? = load("atlas-rain-ripple-36")
 
     // MARK: - 真 AI 篆刻朱砂／鎏金古风印章（全面取代代码简易红框）
     static let sealChronicle: UIImage? = load("seal-chronicle")
@@ -149,6 +157,10 @@ enum BundleArt {
         case "sheet-battle-clash": return sheetBattleClash
         case "sheet-siege-smoke": return sheetSiegeSmoke
         case "sheet-banner-wave": return sheetBannerWave
+        case "atlas-battle-36": return atlasBattle36
+        case "atlas-naval-36": return atlasNaval36
+        case "atlas-siege-36": return atlasSiege36
+        case "atlas-rain-ripple-36": return atlasRainRipple36
         default: return load(name)
         }
     }
@@ -253,15 +265,23 @@ enum BundleArt {
     }
 }
 
-/// 全应用统一清雅水墨线描微标（彻底替代小尺寸发糊、风格割裂的厚涂 AI 贴图，与宣纸奏折界面浑然一体）。
+/// 全应用统一古风手绘印信与徽章（优先呈现高精插画/朱砂鎏金印信，缺失时优雅回退至水墨线描纹章）。
 struct ArtEmblem: View {
     let image: UIImage?
     var size: CGFloat = 32
     var fallback: InkGlyph = .crown
     var body: some View {
-        let _ = image
-        InkIcon(glyph: fallback, size: max(13, size * 0.68), weight: 1.75, accent: Theme.seal.opacity(0.18))
-            .foregroundStyle(Theme.seal)
-            .frame(width: size, height: size)
+        if let image {
+            Image(uiImage: image)
+                .resizable()
+                .interpolation(.high)
+                .antialiased(true)
+                .scaledToFit()
+                .frame(width: size, height: size)
+        } else {
+            InkIcon(glyph: fallback, size: max(13, size * 0.68), weight: 1.75, accent: Theme.seal.opacity(0.18))
+                .foregroundStyle(Theme.seal)
+                .frame(width: size, height: size)
+        }
     }
 }

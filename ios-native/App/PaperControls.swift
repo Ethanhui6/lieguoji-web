@@ -56,7 +56,8 @@ struct ChipPicker<T: Hashable>: View {
                             .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.86))
                             .frame(height: 17)
                     } else {
-                        Image(systemName: s).font(.system(size: 13, weight: .regular))
+                        InkIcon(glyph: .edict, size: 15, weight: on ? 1.85 : 1.55, filled: on,
+                                accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.24))
                             .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
                             .frame(height: 17)
                     }
@@ -202,6 +203,8 @@ struct StatTile: View {
     var edit: (() -> Void)? = nil
     /// In a strip where another tile has a bar, keep the room for one so every value sits on one line.
     var reserveBar = false
+    /// 同一排 StatStrip 仅在全部列皆有对应水墨微标时统一显示图标，杜绝单列突兀带图标。
+    var showIcon = true
     @State private var appeared = false
     var body: some View {
         Group {
@@ -216,7 +219,14 @@ struct StatTile: View {
     }
     private var content: some View {
         VStack(alignment: .leading, spacing: 5) {
-            GlyphLabel(text: label).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
+            Group {
+                if showIcon {
+                    GlyphLabel(text: label)
+                } else {
+                    Text(label)
+                }
+            }
+            .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
             Text(value).font(Theme.title).foregroundStyle(warn ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.62).monospacedDigit()
                 .contentTransition(.numericText()).animation(Motion.tap, value: value)
             if let fraction {
@@ -233,14 +243,20 @@ struct StatTile: View {
 /// A row of stat tiles in one memorial fold, split by hairlines.
 struct StatStrip: View {
     let tiles: [StatTile]
-    private func tile(_ i: Int, _ bars: Bool) -> StatTile { var t = tiles[i]; t.reserveBar = bars; return t }
+    private func tile(_ i: Int, _ bars: Bool, _ uniformIcons: Bool) -> StatTile {
+        var t = tiles[i]
+        t.reserveBar = bars
+        t.showIcon = uniformIcons
+        return t
+    }
     var body: some View {
         Group2 {
             let bars = tiles.contains { $0.fraction != nil }
+            let uniformIcons = !tiles.isEmpty && tiles.allSatisfy { Glyph.of($0.label) != nil }
             HStack(alignment: .top, spacing: 0) {
                 ForEach(tiles.indices, id: \.self) { i in
                     if i > 0 { Rectangle().fill(Theme.ink.opacity(0.12)).frame(width: 0.8).frame(maxHeight: .infinity).padding(.vertical, 10) }
-                    tile(i, bars)
+                    tile(i, bars, uniformIcons)
                 }
             }
             .fixedSize(horizontal: false, vertical: true)

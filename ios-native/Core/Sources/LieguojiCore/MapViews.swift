@@ -52,7 +52,7 @@ extension NativeEngine {
         let sortedPop = population.values.sorted()
         func band(_ v: Double) -> Int { guard !sortedPop.isEmpty else { return 0 }; let rank = sortedPop.firstIndex { $0 >= v } ?? sortedPop.count - 1; return min(4, rank * 5 / max(1, sortedPop.count)) }
         let bandNames = ["人烟稀少", "人口疏落", "人口中等", "人口稠密", "繁华富庶"], bandColors = ["#f3ead2", "#e8d29a", "#d9b25f", "#c08a3a", "#8f5a22"]
-        if mode == "region" { Districts.ensure(r) }
+        let regionBook: JS = mode == "region" ? Districts.readBook(r) : .null
         // 同盟图：先收齐在世的同盟（按 ID 排序），各取一种互不相同、按 ID 稳定的墨色；成员进出不改颜色。
         var pacts = [(id: String, name: String, color: String, members: [Int])](), pactOf = [String: Int]()
         if mode == "alliance" {
@@ -83,8 +83,8 @@ extension NativeEngine {
             switch mode {
             case "region":
                 // 区域: each region in its own colour, named after its centre.
-                let rid = r.regimes.regions.of[p.id.asString].optionalNumber.map { Int($0) }
-                let name = rid.flatMap { i in i < r.regimes.regions.list.length ? r.regimes.regions.list[i].name.optionalString : nil } ?? ""
+                let rid = regionBook.of[p.id.asString].optionalNumber.map { Int($0) }
+                let name = rid.flatMap { i in i < regionBook.list.length ? regionBook.list[i].name.optionalString : nil } ?? ""
                 fills.append(add(rid.map { "region:\($0)" }, name, Self.familyPalette[(rid ?? 0) % Self.familyPalette.count]))
             case "alliance":
                 // 同盟各用其墨色；不在同盟的国家一律淡纸色（只为衬托阵营），名字仍写在各自国土上。

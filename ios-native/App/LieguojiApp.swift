@@ -370,6 +370,7 @@ struct TabButton: View {
 
 private struct InSidePanelKey: EnvironmentKey { static let defaultValue = false }
 private struct HasBackBarKey: EnvironmentKey { static let defaultValue = false }
+private struct SidePanelCloseKey: EnvironmentKey { static let defaultValue: (() -> Void)? = nil }
 extension EnvironmentValues {
     /// 横屏右侧悬浮奏折内：隐藏底部弹窗拖拽手柄，由面板顶栏统一提供返回与关闭按钮。
     var inSidePanel: Bool {
@@ -380,6 +381,11 @@ extension EnvironmentValues {
     var hasBackBar: Bool {
         get { self[HasBackBarKey.self] }
         set { self[HasBackBarKey.self] = newValue }
+    }
+    /// 横屏侧栏顶层页面内嵌关闭回调（消除冗余「国家 ×」外框条，直接与标题朱印同行对齐）。
+    var sidePanelClose: (() -> Void)? {
+        get { self[SidePanelCloseKey.self] }
+        set { self[SidePanelCloseKey.self] = newValue }
     }
 }
 
@@ -410,6 +416,7 @@ struct SheetHeader: View {
     @State private var inked = false
     @Environment(\.inSidePanel) private var inSidePanel
     @Environment(\.hasBackBar) private var hasBackBar
+    @Environment(\.sidePanelClose) private var sidePanelClose
     var body: some View {
         let grabberVisible = showGrabber && !inSidePanel && !hasBackBar
         VStack(spacing: 0) {
@@ -427,6 +434,9 @@ struct SheetHeader: View {
                 }
                 Spacer(minLength: 6)
                 Seal(text: seal, size: inSidePanel ? 28 : 32)
+                if inSidePanel, !hasBackBar, let close = sidePanelClose {
+                    CardCloseButton(action: close)
+                }
             }
             .padding(.horizontal, Theme.Layout.sectionInset)
             .padding(.top, grabberVisible ? Theme.Layout.headerTop : 12)
@@ -495,6 +505,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("4.3.0", ["【四季与雨雪天象屏幕画卷回归与升级】全面停用代码手绘几何粒子，恢复并归一化项目手绘水墨桃花瓣（`fx-petal`）、丹枫（`fx-maple`）、冰晶雪花（`fx-snowflake`）与灾丰宋画微标；补齐双景深手绘斜风银雨（`fx-raindrop`）、流云山霭（`fx-cloud-mist`）及霖雨地面 36 帧（30fps）水花涟漪序列帧。",
+                   "【36～64 帧高清多图拼接序列帧 × 60fps 历史画卷动画视频】大地图陆战、海战与攻城全面废除代码折线弧框，升级为 36 帧（6×6 @ 30fps）高密度连续序列帧图集（融合原作 40 帧双剑挥斩与 64 帧海浪碎沫，呈现寒钢双剑交击火浪、双舷火炮齐射冲天水柱与燃烧石堡滚烟）；6 段大事传报与军情/水师画卷视频升级至 180 帧真 60fps（`640×360` H.264）无缝循环。",
+                   "【高倍放大地图细节重铸】彻底清除放大后刺眼的平涂几何三角山（`MapLayers.relief`）、城郊黄褐色平行四边形杂块（`MapDetail.fineDetail`）、河道双影脱节与都城重影；升级 7 套 `512×512` 高精古舆图铜版线雕山川林漠印章，并在 Metal 正片叠底管线接入 `512×512` 无缝原作宣纸纤维细节纹理（`paper-detail.jpg`），5×～10× 缩放依旧纤毫毕现。",
+                   "【原作陆海军棋子回归 × 军事/水师/国家页与横竖屏对齐精修】地图与面板全面回归原作高辨识国色兵种棋子与战船图标（含主力战舰、运兵船、商船、禁军帅旗）单枚大棋呈现；军事页重构为「军情/战局/陆军/水师」四主签整宽对齐（彻底解决水师标签被截断隐藏），净化舰队页底层调试文案，补充国家页「国情卷宗」导语，统一全站指标栏图标基线与 `.medium` 展开高度，并消除横屏侧栏双层重复抬头与日期截断。"]),
         ("4.2.0", ["【竖屏/横屏/收起边框（净图）与二级菜单防遮挡重构】彻底根治窄屏与横屏组件互相挤压重叠：① 竖屏顶栏重构为 38pt 紧凑纪年胶囊 + 右侧 146pt 一体化四键宣纸工具坞（视图/框选/净图/菜单），总宽严格 < 366pt；② 视图切换器重构为 2×5（竖屏）/ 5×2（横屏）紧凑宫格并支持点空白处秒收，不再向下捅穿底栏；③ 横屏采用 GeometryReader 严格划分左轨（44pt）、顶栏（36pt，右侧面板展开时自动收缩让位）与右侧面板安全区，彻底消除横屏侧栏外悬 `.offset(x: -17)` 残圈与二级菜单透明返回栏滚字重叠；④ 点「净图」时顶栏、底栏、左轨、图例、天气条与四边暗角同步丝滑收起，仅留右上角一枚 32pt「展开」小印签。",
                    "【极简古舆图焦墨细线生图地貌（白底提纯墨迹 × 零贴图割裂感）】修正 AI 生图提示词范式：摒弃与矢量色块底图严重冲突的厚涂重彩阴影图，全新生成 10 枚纯白底极简古舆图焦墨线描印记（远山、雪峰、丘陵、阔叶林冠、北境松林、大漠沙丘、水乡芦苇及三大文明都城线稿），经亮度转 Alpha 纯墨迹提纯后以半透明焦墨叠印于宣纸水彩底晕之上、羊皮纸纹理之下，如亲手墨笔绘于古纸，彻底告别“贴图感”。",
                    "【深度海军战略系统大升级】告别单一战船数字：每支舰队实装「主力战舰（楼船/战列）+ 巡弋快舰（艨艟/巡洋）+ 封锁炮舰（火舫/臼炮）」三舰种协同编制与比例调配；新增「制海巡弋 / 护航掩护 / 封锁敌港 / 破交袭扰 / 归港修整」五大水师战略指令（玩家与 AI 共用）；实装水师提督委任（真实海战火力加成）、本国安全港船坞日常修船补员与紧急抢修、封锁敌港每十日截夺敌方海贸商税与四阶水师勋阶，以及海港旋转朱墨封锁锁链圈与两栖抢滩近海舰炮岸轰弹道。",

@@ -18,10 +18,10 @@ struct ArmyRow: View {
         return "AI 自主调度"
     }
     var body: some View {
+        let tint = army.nation >= 0 && army.nation < map.meta.nations.count ? Names.color(map.meta.nations[army.nation].color) : Theme.ink2
         HStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: 3.5, style: .continuous)
-                .fill(army.nation >= 0 && army.nation < map.meta.nations.count ? Names.color(map.meta.nations[army.nation].color) : .gray)
-                .frame(width: 8, height: 32)
+            UnitMark(unit: army.embarked == true ? "Transport" : army.unit, color: tint)
+                .frame(width: 36, height: 36)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(army.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
@@ -65,6 +65,9 @@ struct ArmySheet: View {
     let onHalt: () -> Void
     var onRetreat: () -> Void = {}
     var onClose: () -> Void = {}
+    @Environment(\.inSidePanel) private var inSidePanel
+    @Environment(\.hasBackBar) private var hasBackBar
+    @Environment(\.sidePanelClose) private var sidePanelClose
 
     private enum Tab: String, CaseIterable {
         case orders = "军令调度"
@@ -132,8 +135,11 @@ struct ArmySheet: View {
                                 .overlay(Circle().stroke(Theme.seal.opacity(0.32), lineWidth: 0.9))
                         }
                         .buttonStyle(PressStyle()).accessibilityLabel("定位")
+                        if inSidePanel, !hasBackBar, let close = sidePanelClose {
+                            CardCloseButton(action: close)
+                        }
                     }
-                    .padding(.horizontal, Theme.Layout.sectionInset).padding(.top, 2)
+                    .padding(.horizontal, Theme.Layout.sectionInset).padding(.top, inSidePanel && !hasBackBar ? 12 : 2)
 
                     // 2. 四格核心指标
                     StatStrip(tiles: [
@@ -217,6 +223,11 @@ struct ArmySheet: View {
 
     @ViewBuilder
     private func ordersSection(map: WorldMap, a: GameState.Army, fighting: Bool, peers: [(offset: Int, element: GameState.Army)]) -> some View {
+        if (fighting || a.status == "sieging"), InkVideoStage.hasVideo(a.status == "sieging" ? "herald-siege" : "herald-war") {
+            InkVideoStage(clip: a.status == "sieging" ? "herald-siege" : "herald-war", cornerRadius: 12, tint: Theme.seal)
+                .frame(height: 72)
+                .padding(.horizontal, Theme.Layout.pageInset)
+        }
         // 状态、行军路线、补给粮道与当令节气综合战备卡
         let curSeason = WorldSeason.of(month: model.state?.date.month ?? 4)
         let supplyState: (text: String, color: Color) = a.supplies <= 15 ? ("断粮危殆（非战斗减员）", Theme.seal)
@@ -523,6 +534,20 @@ enum FleetText {
         let g = max(0, total - h - l)
         return (h, l, g)
     }
+    /// 净化引擎内部调度说明，统一转换为地道水师军机奏报用语，杜绝底层技术词外露。
+    static func cleanReason(_ f: GameState.Fleet) -> String {
+        if f.blockading == true { return "封锁敌港航道，截夺海贸商税" }
+        if f.escorting == true { return "掩护跨海运兵船队安全渡海" }
+        if f.repairActive == true { return "驻泊本国船坞整修舰体与海粮" }
+        if f.decision == "busy" { return "正与敌国水师激战争夺制海权" }
+        if f.decision == "attacking" { return "扬帆奔袭敌方海港，准备夺港封锁" }
+        if f.decision == "resupply" { return "返航母港补充淡水海粮与水兵" }
+        let raw = f.reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.isEmpty || raw.contains("原作") || raw.contains("权重") || raw.contains("AI") {
+            return f.status == "sailing" ? "奉命巡弋近海航道，护卫海疆" : "锚泊母港整备，待机出航镇海"
+        }
+        return raw
+    }
 }
 
 struct FleetRow: View {
@@ -535,30 +560,27 @@ struct FleetRow: View {
         let isEscorting = fleet.escorting == true
         let isRepairing = fleet.repairActive == true
         let badgeColor: Color = isFighting ? Theme.danger : isBlockading ? Theme.seal : isEscorting ? Theme.jade : fleet.manual ? Theme.gold : Theme.jade
-        let rank = FleetText.rankBadge(xp: fleet.experience, ships: fleet.ships)
         let cls = FleetText.classes(fleet)
+        let portLabel = fleet.port >= 0 && map.meta.provinces.indices.contains(fleet.port) ? map.meta.provinces[fleet.port].name + "港" : "外海巡航"
         HStack(spacing: 12) {
             UnitMark(unit: "Fleet", color: tint).frame(width: 40, height: 40)
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 5) {
-                    Text(fleet.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                    PaperTag(text: rank.text, color: rank.color, size: 10)
-                    PaperTag(text: isFighting ? "海战交火" : isBlockading ? "封锁夺港" : isEscorting ? "护航掩护" : isRepairing ? "船坞修整" : FleetText.mission(fleet.mission), color: badgeColor, size: 10)
-                }
                 HStack(spacing: 6) {
-                    Text("\(FleetText.status(fleet.status)) · \(fleet.port >= 0 && map.meta.provinces.indices.contains(fleet.port) ? map.meta.provinces[fleet.port].name + "港" : "外海巡航") · 主\(cls.h)/快\(cls.l)/炮\(cls.g)")
-                        .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
-                    if let adm = fleet.admiral, !adm.isEmpty {
-                        Text("· 提督\(adm)").font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1)
-                    }
-                    InkBar(fraction: fleet.hull, color: fleet.hull < 0.35 ? Theme.danger : tint, height: 4)
-                        .frame(width: 38)
+                    Text(fleet.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
+                    PaperTag(
+                        text: isFighting ? "海战交火" : isBlockading ? "封锁夺港" : isEscorting ? "护航掩护" : isRepairing ? "船坞修整" : FleetText.mission(fleet.mission),
+                        color: badgeColor,
+                        size: 10
+                    )
                 }
+                Text("\(FleetText.status(fleet.status)) · \(portLabel) · 主\(cls.h)/快\(cls.l)/炮\(cls.g)" + ((fleet.admiral?.isEmpty == false) ? " · 提督\(fleet.admiral!)" : ""))
+                    .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
             }
-            Spacer(minLength: 4)
-            VStack(alignment: .trailing, spacing: 2) {
+            Spacer(minLength: 6)
+            VStack(alignment: .trailing, spacing: 4) {
                 Text("\(fleet.ships) 艘").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
-                Text("\(fleet.crew) 水兵").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                InkBar(fraction: fleet.hull, color: fleet.hull < 0.35 ? Theme.danger : tint, height: 4)
+                    .frame(width: 44)
             }
             InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.ink2)
         }
@@ -591,6 +613,9 @@ struct FleetSheet: View {
     /// Pick the port on the map instead of the list.
     var pickOnMap: () -> Void = {}
     var onClose: () -> Void = {}
+    @Environment(\.inSidePanel) private var inSidePanel
+    @Environment(\.hasBackBar) private var hasBackBar
+    @Environment(\.sidePanelClose) private var sidePanelClose
 
     var body: some View {
         if let map = model.map, let resolved = model.resolveFleet(id: fleetId, fallback: fleet) {
@@ -651,8 +676,11 @@ struct FleetSheet: View {
                                 .overlay(Circle().stroke(Theme.seal.opacity(0.32), lineWidth: 0.9))
                         }
                         .buttonStyle(PressStyle()).accessibilityLabel("定位舰队")
+                        if inSidePanel, !hasBackBar, let close = sidePanelClose {
+                            CardCloseButton(action: close)
+                        }
                     }
-                    .padding(.horizontal, Theme.Layout.sectionInset).padding(.top, 2)
+                    .padding(.horizontal, Theme.Layout.sectionInset).padding(.top, inSidePanel && !hasBackBar ? 12 : 2)
 
                     // 2. 四格核心指标 + 水师提督与抢修快栏
                     StatStrip(tiles: [
@@ -676,7 +704,7 @@ struct FleetSheet: View {
                                         PaperTag(text: "船坞抢修中", color: Theme.jade, size: 10)
                                     }
                                 }
-                                Text("战功 \(f.experience ?? 0) · \(f.blockading == true ? "正在封锁敌港并截夺海贸商税" : f.escorting == true ? "正在掩护跨海运兵船队" : f.reason.isEmpty ? "巡航镇守海域" : f.reason)")
+                                Text("战功 \(f.experience ?? 0) · \(FleetText.cleanReason(f))")
                                     .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
                             }
                             Spacer(minLength: 4)
@@ -714,6 +742,11 @@ struct FleetSheet: View {
 
                     switch tab {
                     case .orders:
+                        if InkVideoStage.hasVideo("herald-naval") {
+                            InkVideoStage(clip: "herald-naval", cornerRadius: 12, tint: Theme.seal)
+                                .frame(height: 74)
+                                .padding(.horizontal, Theme.Layout.pageInset)
+                        }
                         // 五大水师战略任务矩阵（玩家点选即刻生效）
                         SectionLabel("水师战略任务指令（五略）")
                         Group2 {
@@ -809,7 +842,11 @@ struct FleetSheet: View {
                                             }
                                             Spacer()
                                             Text("\(Int(item.distance)) 里").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
-                                            Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Theme.danger : Theme.ink.opacity(0.25))
+                                            Circle()
+                                                .fill(on ? Theme.danger : Color.clear)
+                                                .frame(width: 18, height: 18)
+                                                .overlay(Circle().stroke(on ? Theme.danger : Theme.ink.opacity(0.28), lineWidth: 1.4))
+                                                .overlay { if on { InkIcon(glyph: .check, size: 10, weight: 2.2).foregroundStyle(Theme.paper2) } }
                                         }
                                         .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
                                         .background(on ? Theme.danger.opacity(0.08) : .clear)
@@ -853,7 +890,11 @@ struct FleetSheet: View {
                                         }
                                         Spacer()
                                         Text("\(Int(item.distance)) 里").font(Theme.label).foregroundStyle(Theme.ink2).monospacedDigit()
-                                        Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Theme.seal : Theme.ink.opacity(0.25))
+                                        Circle()
+                                            .fill(on ? Theme.seal : Color.clear)
+                                            .frame(width: 18, height: 18)
+                                            .overlay(Circle().stroke(on ? Theme.seal : Theme.ink.opacity(0.28), lineWidth: 1.4))
+                                            .overlay { if on { InkIcon(glyph: .check, size: 10, weight: 2.2).foregroundStyle(Theme.paper2) } }
                                     }
                                     .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
                                     .background(on ? Theme.seal.opacity(0.07) : .clear)
@@ -1161,7 +1202,7 @@ struct ArmyChip: View {
                     if let g = GameActionLabel.glyph(for: symbol) {
                         InkIcon(glyph: g, size: 17, weight: 1.75)
                     } else {
-                        Image(systemName: symbol).font(.system(size: 15, weight: .regular))
+                        InkIcon(glyph: .military, size: 17, weight: 1.75)
                     }
                 }
                 .frame(height: 19)

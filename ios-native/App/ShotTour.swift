@@ -126,7 +126,8 @@ enum ShotTour {
         show(nil); await wait(0.4)
         model.pause(saving: false)
         await profilePausedPanels(model, show: show)
-        views(true); await wait(1); await shoot("07-views"); views(false)
+        show(nil); await wait(0.9)
+        views(true); await wait(1.0); await shoot("07-views"); views(false); await wait(0.6)
         let nation = model.state?.nations.indices.max { (model.state?.nations[$0].provinces ?? 0) < (model.state?.nations[$1].provinces ?? 0) } ?? 0
         let panels: [(String, Panel)] = [("10-nations", .nations), ("11-nation", .nation(nation)),
                                          ("12-military", .military), ("13-army", .army(0)), ("14-diplomacy", .diplomacy), ("15-chronicle", .chronicle),
@@ -135,6 +136,9 @@ enum ShotTour {
             if case .army = panel, model.state?.armies.isEmpty ?? true { continue }
             show(panel); await wait(1.4); await shoot(name)
         }
+        MilitarySheet.tourFilter = "navy"
+        show(nil); await wait(0.5); show(.military); await wait(1.4); await shoot("12b-navy")
+        MilitarySheet.tourFilter = nil
         MenuSheet.tourWarRules = true
         show(.menu); await wait(1.4); await shoot("18b-war-rules")
         show(nil)

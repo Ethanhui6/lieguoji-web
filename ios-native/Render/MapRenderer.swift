@@ -137,7 +137,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var mount: (buffer: MTLBuffer, count: Int)?
     private let sea: MTLTexture?
     private let parchment: MTLTexture?
+    private let paperDetail: MTLTexture?
     private let sampler: MTLSamplerState?
+    private let repeatSampler: MTLSamplerState?
     private(set) var map: WorldMap { didSet { revealFields = nil; revealFieldData = nil; coastInk = nil } }
     /// 勾勒海岸 (MapDetail.coastInk), kept only while a reveal runs.
     private var coastInk: (buffer: MTLBuffer, count: Int)?
@@ -215,7 +217,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             deskPipeline = try pipeline("deskVertex", "deskFragment", .none)
             seaPipeline = try pipeline("seaVertex", "seaFragment", .none)
             texturePipeline = try pipeline("quadVertex", "textureFragment", .none)
-            multiplyPipeline = try pipeline("quadVertex", "textureFragment", .multiply)
+            multiplyPipeline = try pipeline("seaVertex", "parchmentFragment", .multiply)
             spriteShadowPipeline = try pipeline("spriteShadowVertex", "spriteShadowFragment", .alpha)
             spritePipeline = try pipeline("spriteVertex", "spriteFragment", .alpha)
             spriteSheetShadowPipeline = try pipeline("spriteSheetShadowVertex", "spriteShadowFragment", .alpha)
@@ -243,11 +245,19 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if let url = parchmentURL {
             parchment = try? MTKTextureLoader(device: device).newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true])
         } else { parchment = nil }
+        if let detailURL = Bundle.main.url(forResource: "paper-detail", withExtension: "jpg", subdirectory: "World") {
+            paperDetail = try? MTKTextureLoader(device: device).newTexture(URL: detailURL, options: [.SRGB: false, .generateMipmaps: true])
+        } else { paperDetail = nil }
         let s = MTLSamplerDescriptor()
         s.minFilter = .linear; s.magFilter = .linear; s.mipFilter = .linear
         s.maxAnisotropy = 4
         s.sAddressMode = .clampToEdge; s.tAddressMode = .clampToEdge
         sampler = device.makeSamplerState(descriptor: s)
+        let rs = MTLSamplerDescriptor()
+        rs.minFilter = .linear; rs.magFilter = .linear; rs.mipFilter = .linear
+        rs.maxAnisotropy = 4
+        rs.sAddressMode = .repeat; rs.tAddressMode = .repeat
+        repeatSampler = device.makeSamplerState(descriptor: rs)
         super.init()
         // Layers built off the main thread for this very map are used as they are.
         let ready = Self.prepared.flatMap { $0.key == MapLayers.key(map) ? $0 : nil }
@@ -294,47 +304,17 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
         }
         unitTextures["banner"] = unitTextures["elite"]
-        // 军牌底盘 (128×128): 精雕漆盾军牌（平肩微弧收尖盾形 + 浓墨外漆框 + 西北至东南立体受光面 + 内切雕槽与双铆钉），
-        // 叠加国色后与顶部象牙浮雕兵种纹样层次分明，任意缩放下都兼具古舆图战棋质感。
+        // 温润宣纸背衬微光环 (128×128): 柔和象牙浅晕衬底，令同色疆域上的原作国色棋子与战舰轮廓分明、清爽利落。
         let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
             let g = ctx.cgContext
-            func shieldPath(inset d: CGFloat) -> CGPath {
-                let p = CGMutablePath()
-                let l = 10 + d, r = 118 - d, t = 8 + d, midY = 74 - d * 0.15, b = 120 - d
-                let corner: CGFloat = max(4, 16 - d * 0.65)
-                p.move(to: CGPoint(x: l + corner, y: t))
-                p.addLine(to: CGPoint(x: r - corner, y: t))
-                p.addQuadCurve(to: CGPoint(x: r, y: t + corner), control: CGPoint(x: r, y: t))
-                p.addLine(to: CGPoint(x: r, y: midY))
-                p.addQuadCurve(to: CGPoint(x: 64, y: b), control: CGPoint(x: r - 2, y: b - 14))
-                p.addQuadCurve(to: CGPoint(x: l, y: midY), control: CGPoint(x: l + 2, y: b - 14))
-                p.addLine(to: CGPoint(x: l, y: t + corner))
-                p.addQuadCurve(to: CGPoint(x: l + corner, y: t), control: CGPoint(x: l, y: t))
-                p.closeSubpath()
-                return p
+            let colors = [
+                UIColor(white: 1.0, alpha: 0.68).cgColor,
+                UIColor(white: 1.0, alpha: 0.32).cgColor,
+                UIColor(white: 1.0, alpha: 0.0).cgColor
+            ] as CFArray
+            if let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0.0, 0.62, 1.0]) {
+                g.drawRadialGradient(grad, startCenter: CGPoint(x: 64, y: 66), startRadius: 8, endCenter: CGPoint(x: 64, y: 66), endRadius: 56, options: [])
             }
-            // 外圈浓墨漆框
-            g.setFillColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1)
-            g.addPath(shieldPath(inset: 0)); g.fillPath()
-            // 中层温润亮边倒角
-            g.setFillColor(red: 0.68, green: 0.68, blue: 0.68, alpha: 1)
-            g.addPath(shieldPath(inset: 5.5)); g.fillPath()
-            // 内盾受光渐变面
-            let inner = shieldPath(inset: 8.5)
-            g.saveGState()
-            g.addPath(inner); g.clip()
-            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.93, 0.93, 0.93, 1.0, 0.78, 0.78, 0.78, 1.0], locations: [0.0, 0.52, 1.0], count: 3) {
-                g.drawLinearGradient(grad, start: CGPoint(x: 16, y: 12), end: CGPoint(x: 112, y: 116), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
-            } else {
-                g.setFillColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1); g.fill(CGRect(x: 0, y: 0, width: 128, height: 128))
-            }
-            g.restoreGState()
-            // 盾内细雕槽 + 顶部双铆钉
-            g.setStrokeColor(red: 0.36, green: 0.36, blue: 0.36, alpha: 0.50); g.setLineWidth(1.9)
-            g.addPath(shieldPath(inset: 14.0)); g.strokePath()
-            g.setFillColor(red: 0.34, green: 0.34, blue: 0.34, alpha: 0.60)
-            g.fillEllipse(in: CGRect(x: 28, y: 20, width: 5.5, height: 5.5))
-            g.fillEllipse(in: CGRect(x: 94.5, y: 20, width: 5.5, height: 5.5))
         }.cgImage
         if let plateArt { unitTextures["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
         // 水师舰队浪花尾迹底纹 (128×128): 双层弧形碎浪与微晕水环，衬托战舰浮于碧海之上的立体感。
@@ -752,10 +732,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Where every icon is drawn right now (mid-walk included), for taps and troop labels.
-    /// 2.8.8 的缩放曲线略提 12%，供着色器和屏幕点选、兵力条共用。
-    static func iconZoom(_ scale: Double) -> Double { 1.12 * min(21.0 / 3.0112, max(6.8 / 3.0112, scale * 0.66)) }
+    /// 清晰放大原作国色兵种与战舰单枚主棋（+26% 视觉尺寸），远近缩放皆锐利醒目。
+    static func iconZoom(_ scale: Double) -> Double { 1.24 * min(22.5 / 3.0112, max(7.4 / 3.0112, scale * 0.68)) }
     /// 一支军队主图标在屏幕上的边长（点）。
-    static func iconPoints(_ scale: Double, iconScale: Double) -> Double { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * iconZoom(scale) }
+    static func iconPoints(_ scale: Double, iconScale: Double) -> Double { 2.56 * 0.88 * 0.38 * (1600.0 / 240.0) * 0.6 * iconScale * iconZoom(scale) }
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
         armySprites.map { s in let p = displayed(s); return (s, p.x, p.y) }
     }
@@ -854,7 +834,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         do {
             let sprites = armySprites + dying
             let ghosts = Set(dying.map(\.key))
-            let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6)
+            let iconSize = Float(2.56 * 0.88 * 0.38 * (1600.0 / 240.0) * 0.6)
             var byRole: [String: [Float]] = [:]
             byRole.reserveCapacity(16)
             // Alpha −1 asks the shader to fade the icon in with the leg's progress.
@@ -906,47 +886,31 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 lead = legLead[a.key] ?? (end - at)
                 let size = iconSize * iconScale * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
 
-                // 100% 回归经典清晰国色雕漆棋子（跨海登船自动切换同风格 `Transport` 运兵船棋子，零卡顿低帧率贴图）
+                // 100% 回归原作清晰单枚国色兵种棋子与水师战舰（大编制适度放大棋身＋统帅旌旗，彻底告别 3 枚微缩图标挤成一团糊块）
                 let resolvedRole: String = (a.embarked || a.unit == "Transport") ? "Transport" : role
                 let isNavalPiece = (resolvedRole == "Fleet" || resolvedRole == "Transport")
+                let tierBoost: Float = (role == "Port" || a.army <= -100_000) ? 1.0 : (a.tier >= 3 ? 1.16 : (a.tier == 2 ? 1.08 : 1.0))
 
-                // The commander's gonfalon stands behind the pieces: gold for the ruler in person, crimson for generals & flagship armadas.
+                // 统帅／君主亲征帅旗立于棋子右后方
                 if a.banner > 0 {
-                    let k: Float = 0.62
-                    quad("banner", at, a.banner == 2 ? RGB(0.95, 0.76, 0.24) : RGB(0.76, 0.20, 0.14), size * k, (0.58 + o.x) / k, (-0.54 + o.y) / k)
+                    let k: Float = 0.66 * tierBoost
+                    quad("banner", at, a.banner == 2 ? RGB(0.95, 0.76, 0.24) : RGB(0.78, 0.20, 0.14), size * k, (0.52 + o.x) / k, (-0.44 + o.y) / k)
                 }
-                // 水师战舰与运兵船下铺柔和海沫光环，陆军脚下铺精雕国色漆盾军牌，阵营归属清晰通透
                 if isNavalPiece, unitTextures["0fleetwake"] != nil {
-                    quad("0fleetwake", at, RGB(0.95, 0.98, 1.0), size * 1.24, o.x / 1.24, (0.22 + o.y) / 1.24)
+                    let wk: Float = 1.28 * tierBoost
+                    quad("0fleetwake", at, RGB(0.95, 0.98, 1.0), size * wk, o.x / wk, (0.20 + o.y) / wk)
+                } else if role != "Port" && role != "Merchant" && a.army > -100_000, unitTextures["0plate"] != nil {
+                    let hk: Float = 1.12 * tierBoost
+                    quad("0plate", at, RGB(0.99, 0.97, 0.92), size * hk, o.x / hk, (0.04 + o.y) / hk)
                 }
-                let token = !isNavalPiece && role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
-                if token {
-                    quad("0plate", at, c, size * 0.98, o.x / 0.98, (0.14 + o.y) / 0.98)
-                }
-                let piece: RGB = token
-                    ? RGB(0.86 + c.r * 0.14, 0.86 + c.g * 0.14, 0.86 + c.b * 0.14)
-                    : (isNavalPiece ? RGB(min(1, c.r * 1.10 + 0.12), min(1, c.g * 1.10 + 0.12), min(1, c.b * 1.10 + 0.12)) : c)
-                // 陆军按编制排成清晰棋子战阵，水师舰队按舰数排成破浪编队
-                let n = role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
-                let layout: [(Float, Float, Float)] = {
-                    if isNavalPiece {
-                        return n == 1 ? [(0, 0, 1.08)]
-                            : n == 2 ? [(-0.32, -0.14, 0.78), (0.10, 0.04, 1.08)]
-                            : [(-0.38, -0.10, 0.74), (0.38, -0.10, 0.74), (0, 0.06, 1.10)]
-                    }
-                    return n == 1 ? [(0, -0.06, 1)] : n == 2 ? [(0.26, -0.16, 0.74), (0, -0.04, 1)]
-                        : [(-0.28, -0.16, 0.70), (0.28, -0.16, 0.70), (0, -0.04, 1)]
-                }()
-                for (i, (dx, dy, k)) in layout.enumerated() {
-                    let shade: Float = i < layout.count - 1 && n > 1 ? 0.90 : 1
-                    quad(resolvedRole, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, (dx + o.x) / k, (dy + o.y) / k)
-                }
+                let pieceScale: Float = (isNavalPiece ? 1.12 : 1.0) * tierBoost
+                quad(resolvedRole, at, c, size * pieceScale, o.x / pieceScale, o.y / pieceScale)
             }
             func roleLayerOrder(_ key: String) -> Int {
                 switch key {
                 case "0fleetwake": return 0
-                case "banner": return 1
-                case "0plate": return 2
+                case "0plate": return 1
+                case "banner": return 2
                 default: return 3
                 }
             }
@@ -1224,12 +1188,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         } else if coastInk != nil { coastInk = nil }
         if display.provinceLines { colored(provinceLines, alpha: ramp(0.5)) }
         if let rivers, reveal > 0.42 {
-            // 双层真实河道：先绘微偏移深青河岸暗影，再绘湛蓝清澈河心水体，层次立体自然。
+            // 双层河道紧贴河床：微距河岸柔影（限制最大世界偏移，彻底杜绝高倍放大后河影与河心脱节成双线）
             let rAlpha = ramp(0.42)
-            var bankColor = SIMD4<Float>(MapLayers.river.r * 0.56, MapLayers.river.g * 0.62, MapLayers.river.b * 0.68, rAlpha * 0.52)
+            let off = min(Float(0.18), 0.36 / max(1.0, u.scale))
+            var bankColor = SIMD4<Float>(MapLayers.river.r * 0.58, MapLayers.river.g * 0.64, MapLayers.river.b * 0.70, rAlpha * 0.34)
             var bankU = u
-            bankU.center.x -= 0.45 / max(0.3, u.scale)
-            bankU.center.y -= 0.55 / max(0.3, u.scale)
+            bankU.center.x -= off
+            bankU.center.y -= off
             encoder.setRenderPipelineState(flatPipeline)
             encoder.setVertexBuffer(rivers.buffer, offset: 0, index: 0)
             encoder.setVertexBytes(&bankU, length: uniformLength, index: 2)
@@ -1251,20 +1216,23 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if chart && fineFade > 0.01 { colored(fineDetail, alpha: ramp(0.44) * fineFade) }
         if display.vegetation {
             let vegAlpha = ramp(0.44)
-            colored(relief, alpha: vegAlpha * 0.56)
-            if vegAlpha > 0.01 && !terrainBatches.isEmpty {
-                u.alpha = vegAlpha * 0.66
-                encoder.setRenderPipelineState(terrainPipeline)
-                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
-                encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
-                encoder.setFragmentSamplerState(sampler, index: 0)
-                for batch in terrainBatches {
-                    encoder.setVertexBuffer(batch.buffer, offset: 0, index: 0)
-                    encoder.setFragmentTexture(batch.texture, index: 0)
-                    encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: batch.count)
+            if !terrainBatches.isEmpty {
+                if vegAlpha > 0.01 {
+                    u.alpha = vegAlpha * 0.84
+                    encoder.setRenderPipelineState(terrainPipeline)
+                    encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                    encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                    encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
+                    encoder.setFragmentSamplerState(sampler, index: 0)
+                    for batch in terrainBatches {
+                        encoder.setVertexBuffer(batch.buffer, offset: 0, index: 0)
+                        encoder.setFragmentTexture(batch.texture, index: 0)
+                        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: batch.count)
+                    }
+                    u.alpha = 1
                 }
-                u.alpha = 1
+            } else {
+                colored(relief, alpha: vegAlpha * 0.56)
             }
         }
         if display.borders { colored(outlines, alpha: ramp(0.75)) }
@@ -1280,9 +1248,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             u.alpha = shadowFade
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.setFragmentSamplerState(sampler, index: 0)
-            let wakeTex = unitTextures["0fleetwake"]
+            let ignoreShadowA = unitTextures["0fleetwake"]
+            let ignoreShadowB = unitTextures["0plate"]
             for unit in units {
-                if let wakeTex, unit.texture === wakeTex { continue }
+                if let ignoreShadowA, unit.texture === ignoreShadowA { continue }
+                if let ignoreShadowB, unit.texture === ignoreShadowB { continue }
                 encoder.setRenderPipelineState(unit.isSheet ? spriteSheetShadowPipeline : spriteShadowPipeline)
                 encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
                 encoder.setFragmentTexture(unit.texture, index: 0)
@@ -1305,9 +1275,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         // The original's mounting (a paper band and black rules along the edge) read as a hard brown frame
         // on a phone screen; the scroll edge below (a soft aged wash) frames the map instead.
         _ = mount
-        if display.parchment {
-            // 严丝合缝裁切在地图画心 (0, 0, map.width, map.height) 内，彻底杜绝旧版羊皮纸外漏在画框下方的难看凸块！
-            quad(parchment, multiplyPipeline, x: 0, y: 0, width: map.width, height: map.height)
+        if display.parchment, let parchment {
+            // 严丝合缝裁切在地图画心内，高倍放大时自动混入 512×512 无缝原作宣纸纤维细节纹理（paperDetail），任意缩放倍率均纤毫毕现、零马赛克色块！
+            var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
+            encoder.setRenderPipelineState(multiplyPipeline)
+            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+            encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
+            encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+            encoder.setFragmentTexture(parchment, index: 0)
+            encoder.setFragmentTexture(paperDetail ?? parchment, index: 1)
+            encoder.setFragmentSamplerState(sampler, index: 0)
+            encoder.setFragmentSamplerState(repeatSampler ?? sampler, index: 1)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
         }
         } // end mapScissor
         encoder.setScissorRect(fullScissor)
@@ -1853,6 +1832,25 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         return float4(t.sample(s, in.uv).rgb, 1.0);
+    }
+    // 高倍缩放无缝古宣纸肌理正片叠底：远景保留古卷宏明暗，近景渐进注入双尺度无缝宣纸纤维（零拉伸噪块、零色偏）。
+    fragment float4 parchmentFragment(SeaOut in [[stage_in]],
+                                      texture2d<float> macroTex [[texture(0)]],
+                                      texture2d<float> detailTex [[texture(1)]],
+                                      sampler clampS [[sampler(0)]],
+                                      sampler repS [[sampler(1)]]) {
+        float3 macro = macroTex.sample(clampS, in.uv).rgb;
+        float zoom = smoothstep(0.72, 2.55, in.scale);
+        if (zoom > 0.005) {
+            float3 d1 = detailTex.sample(repS, in.world / 168.0).rgb;
+            float3 d2 = detailTex.sample(repS, in.world / 52.0 + float2(0.37, 0.61)).rgb;
+            float f1 = dot(d1, float3(0.299, 0.587, 0.114)) - 0.885;
+            float f2 = dot(d2, float3(0.299, 0.587, 0.114)) - 0.885;
+            float fiberDelta = (f1 * 0.62 + f2 * 0.38) * 1.42 * zoom;
+            float3 cleanMacro = mix(macro, mix(macro, float3(0.950, 0.928, 0.884), 0.50), zoom);
+            macro = clamp(cleanMacro + fiberDelta, 0.0, 1.0);
+        }
+        return float4(macro, 1.0);
     }
     // 全视口无缝「御案织锦」书案背景：与卷轴、海陆统一西北暖光聚光 + 细腻双经纬织锦云花，四面一体零割裂。
     struct DeskOut { float4 position [[position]]; float2 uv; float2 screenPx; };

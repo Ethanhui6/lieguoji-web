@@ -1,5 +1,26 @@
 # 更新日志
 
+## 4.3.0 / build 163 — 2026-11-23
+
+### 四季与雨雪天象屏幕画卷回归与升级
+- **恢复并升级手绘四季与天气屏幕粒子（`WeatherOverlay.swift`、`MapArt.swift`）**：
+  - 全面移除代码硬画的多边形粒子，恢复项目手绘桃花瓣（`fx-petal`）、丹枫（`fx-maple`）、冰晶雪花（`fx-snowflake`）与灾丰微标（`fx-weather-*`），按屏幕点尺寸精确归一化缩放；
+  - 新增远近双景深手绘斜风银雨（`fx-raindrop`）、流云山霭（`fx-cloud-mist`）以及霖雨/洪涝期间 36 帧（30fps）连续水花涟漪序列帧（`atlas-rain-ripple-36`）；修复 `ArtEmblem` 忽略传入印信图像的问题。
+
+### 36～64 帧高密度序列帧动画 × 180 帧真 60fps 历史画卷短视频
+- **多图拼接高帧率战场特效与高清画卷视频（`SpriteAnimator.swift`、`MapEffects.swift`、`InkVideoPlayer.swift`）**：
+  - 陆战、海战、围城全面移除 `CAShapeLayer` 简陋折线弧框，实装 `1536×1536`（`6×6` 共 36 帧 @ 30fps）连续拼接图集 `atlas-battle-36`（融合原作 40 帧双剑交击序列＋气浪火星）、`atlas-naval-36`（双舷火炮齐射＋黑铁炮弹火弧＋冲天水柱＋原作 64 帧海浪碎沫）与 `atlas-siege-36`（手绘燃烧石堡＋滚烟飞烬）；
+  - 6 部画卷视频（`herald-war / naval / siege / peace / regime / weather.mp4`）全面重制为 `640×360` 180 帧真 60fps H.264 无缝循环动画，并解除 `InkVideoStage` 宽幅遮罩裁暗限制。
+
+### 高倍缩放地图细节重铸与陆海军棋子/对应页面重构
+- **高倍放大零三角山、零拉伸噪块（`MapRenderer.swift`、`MapLayers.swift`、`MapDetail.swift`、`MapView.swift`）**：
+  - 清除放大后暴露的 `MapLayers.relief` 平涂几何三角块、`MapDetail.fineDetail` 城郊黄褐色平行四边形杂块、河道双影脱节与都城印记重影；
+  - 升级 7 套 `512×512` 高精古舆图铜版线雕地貌印章（`stamp-*`），并在 Metal 正片叠底管线接入 `512×512` 无缝原作宣纸纤维细节纹理（`paper-detail.jpg`）。
+- **原作陆海军高辨识棋子与军事/水师/国家页对齐重构（`UnitArt.swift`、`MapRenderer.swift`、`WorldSheets.swift`、`ArmySheets.swift`、`NationSheet.swift`、`PaperControls.swift`、`GameView.swift`、`Districts.swift`）**：
+  - 地图与面板统一回归原作清晰国色兵种与战舰/运兵船/商船图标（`World/unit-*.png`），单枚醒目大棋呈现；
+  - 军事总览重构为「军情 / 战局 / 陆军 / 水师」四主签整宽对齐，水师直接置顶可见并嵌入 60fps 海战画卷；净化舰队页内部调试文案，新增国家页「国情卷宗」导语与舰队点击直达；
+  - 修复 `StatStrip` 单列混排图标错位、面板 `.height(320)` / `.fraction(0.38)` 截断、横屏右侧栏重复抬头与日期截断，以及 `Districts` 区域查询写盘导致的冻结世界校验失败。
+
 ## 4.2.0 / build 162 — 2026-11-23
 
 ### 竖屏、横屏、收起边框（净图）与二级菜单零遮挡重构

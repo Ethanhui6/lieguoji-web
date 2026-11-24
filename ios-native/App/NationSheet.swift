@@ -170,6 +170,7 @@ struct NationSheet: View {
     var pickProvince: (String, @escaping (Int) -> Void) -> Void = { _, _ in }
     /// Opens an army's page (the military tab lists the state's armies).
     var openArmy: (Int) -> Void = { _ in }
+    var openFleet: (String) -> Void = { _ in }
     var openPeople: () -> Void = {}
     var openWars: () -> Void = {}
     var openTalks: () -> Void = {}
@@ -456,7 +457,55 @@ struct NationSheet: View {
         }
     }
     @ViewBuilder private func overviewTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
+        let ovLex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
+        let sNat = state.nations[nation]
+        let capName: String = {
+            guard nation < map.meta.nations.count else { return "王畿" }
+            let capIdx = map.meta.nations[nation].capital
+            return map.meta.cities.indices.contains(capIdx) ? map.meta.cities[capIdx].name : "王畿"
+        }()
+        let myFleets = (state.fleets ?? []).filter { $0.nation == nation && $0.status != "lost" }
+        let rulerSummary: String = {
+            if let r = info.ruler {
+                return "\(r.title)\(r.styledName ?? r.name)执掌国柄"
+            }
+            return "中枢摄理国政"
+        }()
+        let postureSummary: String = {
+            if !info.wars.isEmpty {
+                return "现卷入 \(info.wars.count) 场战事，麾下常备军 \(Names.wan(sNat.troops))" + (myFleets.isEmpty ? "" : "、水师战船 \(myFleets.reduce(0) { $0 + $1.ships }) 艘")
+            }
+            return "四境暂得承平，拥兵 \(Names.wan(sNat.troops))" + (myFleets.isEmpty ? "" : "、水师战船 \(myFleets.reduce(0) { $0 + $1.ships }) 艘")
+        }()
+
         LazyVStack(alignment: .leading, spacing: 14) {
+                if !info.wars.isEmpty, InkVideoStage.hasVideo("herald-war") {
+                    InkVideoStage(clip: "herald-war", cornerRadius: 12, tint: Theme.seal)
+                        .frame(height: 68)
+                        .padding(.horizontal, 16)
+                }
+
+                // 国情卷宗导语（仿原作国策档案卷首叙事，一眼纵览政体、都城、执政与海陆军势）
+                Group2 {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 6) {
+                            ArtEmblem(image: BundleArt.sealCourt, size: 22, fallback: .crown)
+                            Text("国情卷宗").font(Theme.section).foregroundStyle(Theme.ink)
+                            PaperTag(text: info.styleLabel ?? Names.polity[info.polity] ?? info.polity, color: Theme.seal, size: 10)
+                            if let culName = Names.culture[info.culture] {
+                                PaperTag(text: culName, color: Theme.jade, size: 10)
+                            }
+                            Spacer()
+                        }
+                        Text("\(info.name)定鼎于\(capName)，领 \(sNat.provinces) \(ovLex.adminUnit) \(sNat.cities) 城；今由\(rulerSummary)，\(postureSummary)。")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 12)
+                }
+                .padding(.horizontal, 16)
+
                 if info.alive {
                     HStack(spacing: 8) {
                         Button {
@@ -1383,22 +1432,34 @@ struct NationSheet: View {
                 .padding(.horizontal, 16)
             }
             if !fleets.isEmpty {
-                FoldSection("舰队（\(fleets.count) 支 · \(fleets.reduce(0) { $0 + $1.ships }) 艘）", expanded: true) {
+                FoldSection("水师舰队（\(fleets.count) 支 · \(fleets.reduce(0) { $0 + $1.ships }) 艘）", expanded: true) {
                     Group2 {
                         ForEach(Array(fleets.enumerated()), id: \.offset) { k, f in
-                            HStack(spacing: 10) {
-                                InkIcon(glyph: .anchor, size: 18, weight: 1.7, accent: tint.opacity(0.24)).foregroundStyle(tint).frame(width: 30)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    HStack(spacing: 6) {
-                                        Text(f.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
-                                        if f.escorting == true { PaperTag(text: "护航中", color: Theme.jade, size: 10) }
-                                        if f.blockading == true { PaperTag(text: "封锁敌港", color: Theme.seal, size: 10) }
+                            let cls = FleetText.classes(f)
+                            Button {
+                                GameFeel.shared.tap()
+                                openFleet(f.id)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    UnitMark(unit: "Fleet", color: tint).frame(width: 34, height: 34)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack(spacing: 6) {
+                                            Text(f.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                                            PaperTag(text: f.blockading == true ? "封锁敌港" : f.escorting == true ? "护航掩护" : FleetText.mission(f.mission), color: f.blockading == true ? Theme.seal : Theme.jade, size: 10)
+                                        }
+                                        Text("主\(cls.h)/快\(cls.l)/炮\(cls.g) · 水兵 \(Names.wan(f.crew))" + ((f.admiral?.isEmpty == false) ? " · 提督\(f.admiral!)" : ""))
+                                            .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                                     }
-                                    Text("\(f.ships) 艘 · 水手 \(Names.wan(f.crew)) · 船体 \(Int((f.hull * 100).rounded()))%").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    Spacer(minLength: 6)
+                                    VStack(alignment: .trailing, spacing: 4) {
+                                        Text("\(f.ships) 艘").font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit()
+                                        InkBar(fraction: f.hull, color: f.hull < 0.35 ? Theme.danger : tint, height: 4).frame(width: 44)
+                                    }
+                                    InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.ink2)
                                 }
-                                Spacer()
+                                .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 9)
+                            .buttonStyle(.plain)
                             if k < fleets.count - 1 { Divider2() }
                         }
                     }

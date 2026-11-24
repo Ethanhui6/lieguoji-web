@@ -6,6 +6,7 @@ import LieguojiCore
 /// - 宣战双锋凌空交击迸射四芒星闪、起义跃动朱焰、和约双环相扣振翅白鹤、国色战旗正弦波浪迎风飘展、亡国折杆倾倒、暴雪六出旋晶／炽日脉动／骤雨惊雷／金穗摇曳／瘴雾旋纹／宝玺落印皆每帧丝滑演动。
 struct HeraldBanner: View {
     let herald: GameModel.Herald
+    let playVideo: Bool
     private let participantColors: [Color]
     private let leadCulture: String
     private let leadPolity: String
@@ -16,8 +17,9 @@ struct HeraldBanner: View {
     @State private var dragY: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(herald: GameModel.Herald, map: WorldMap, onTap: (() -> Void)? = nil, onDismiss: (() -> Void)? = nil) {
+    init(herald: GameModel.Herald, map: WorldMap, playVideo: Bool = true, onTap: (() -> Void)? = nil, onDismiss: (() -> Void)? = nil) {
         self.herald = herald
+        self.playVideo = playVideo
         self.onTap = onTap
         self.onDismiss = onDismiss
         let nations = map.meta.nations
@@ -112,7 +114,7 @@ struct HeraldBanner: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: reduceMotion || motionSettled)) { ctx in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || motionSettled)) { ctx in
             let elapsed = max(0, ctx.date.timeIntervalSinceReferenceDate - start)
             let t = reduceMotion ? 1.8 : min(elapsed, animationDuration)
             scene(t)
@@ -250,6 +252,15 @@ struct HeraldBanner: View {
                                 .font(Theme.caption.weight(.semibold))
                                 .foregroundStyle(accent)
                                 .lineLimit(1)
+                            if !herald.dateText.isEmpty {
+                                Text(herald.dateText)
+                                    .font(Theme.kai(10.5))
+                                    .monospacedDigit()
+                                    .foregroundStyle(Theme.ink2)
+                                    .padding(.horizontal, 5.5).padding(.vertical, 1)
+                                    .background(Theme.ink.opacity(0.065), in: Capsule())
+                                    .lineLimit(1)
+                            }
                         }
                         Text(herald.text)
                             .font(Theme.body)
@@ -411,7 +422,7 @@ struct HeraldBanner: View {
         let enter = Self.span(t, 0.14, 0.44)
         let clip = videoClipName
         if !reduceMotion && InkVideoStage.hasVideo(clip) {
-            InkVideoStage(clip: clip, cornerRadius: 7, tint: accent)
+            InkVideoStage(clip: clip, cornerRadius: 7, tint: accent, playVideo: playVideo && !Energy.hot)
                 .opacity(contentIn)
                 .scaleEffect(0.92 + 0.08 * enter)
         } else {

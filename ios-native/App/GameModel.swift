@@ -15,18 +15,33 @@ import LieguojiCore
     @Published var tourLandscape = false
     @Published private(set) var map: WorldMap? { didSet { rebuildCityByProvCache() } }
     private var cityByProvCache: [Int: WorldMeta.City] = [:]
+    private var cityByProvSignature: (Int, String, String) = (-1, "", "")
     private func rebuildCityByProvCache() {
+        guard let cities = map?.meta.cities else {
+            cityByProvCache.removeAll(keepingCapacity: true)
+            cityByProvSignature = (-1, "", "")
+            return
+        }
+        let sig = (cities.count, cities.first?.id ?? "", cities.last?.id ?? "")
+        guard sig != cityByProvSignature else { return }
+        cityByProvSignature = sig
         cityByProvCache.removeAll(keepingCapacity: true)
-        guard let cities = map?.meta.cities else { return }
         cityByProvCache.reserveCapacity(cities.count)
         for c in cities where cityByProvCache[c.province] == nil { cityByProvCache[c.province] = c }
     }
     private(set) var state: GameState? { didSet { publishState() } }
     /// A page is open over the map: its numbers refresh twice a second instead of with every step.
-    var pageOpen = false
+    /// 打开任意页面/抽屉时立即停止并清空后台传报队列，杜绝背景事件继续弹报与视频解码拖卡！
+    var pageOpen = false {
+        didSet {
+            if pageOpen && !ShotTour.on {
+                dismissHerald()
+            }
+        }
+    }
     private var lastPublish = 0.0, publishPending = false
     private func publishState() {
-        let now = Date().timeIntervalSinceReferenceDate, gap = pageOpen ? 0.5 : (playing ? 0.18 : 0.08)
+        let now = Date().timeIntervalSinceReferenceDate, gap = pageOpen ? 0.5 : (playing ? 0.28 : 0.08)
         if now - lastPublish >= gap || state == nil { lastPublish = now; objectWillChange.send(); return }
         guard !publishPending else { return }
         publishPending = true
@@ -107,7 +122,16 @@ import LieguojiCore
     @Published var failure: String?
     @Published var generationNote = ""
     /// A war declared, a peace made, a royal marriage, house coup, regime shift, treaty, ultimatum, or seasonal weather event: shown as a banner for a moment.
-    struct Herald: Equatable, Identifiable { let id = UUID(); let kind: Kind; let text: String; let nations: [Int]; enum Kind { case war, peace, capture, uprising, restoration, extinction, capital, marriage, house, coup, regime, treaty, ultimatum, blizzard, drought, flood, harvest, plague } }
+    struct Herald: Equatable, Identifiable {
+        let id = UUID()
+        let kind: Kind
+        let text: String
+        let nations: [Int]
+        var day: Int = 0
+        var month: Int = 1
+        var dateText: String = ""
+        enum Kind { case war, peace, capture, uprising, restoration, extinction, capital, marriage, house, coup, regime, treaty, ultimatum, blizzard, drought, flood, harvest, plague }
+    }
     @Published var herald: Herald?
     private var heraldQueue: [Herald] = []
     private var heraldTask: Task<Void, Never>?
@@ -441,11 +465,11 @@ import LieguojiCore
         }
     }
 
-    /// The classic full ink-painting generation reveal (brisk 3.6s sea soak -> shore ink -> rising hills -> state wash -> borders + camera pull-back; tap to skip instantly).
+    /// The classic full ink-painting generation reveal (brisk 2.0s sea soak -> shore ink -> rising hills -> state wash -> borders + camera pull-back; tap anywhere to skip instantly).
     private func rise(_ epoch: Int) async {
         controller.interactive = false
         controller.reveal = 0
-        if !ShotTour.on { await playReveal(from: 0, duration: 3.6, push: true, publishProgress: false, while: { self.worldEpoch == epoch }); return }
+        if !ShotTour.on { await playReveal(from: 0.04, duration: 2.0, push: true, publishProgress: false, while: { self.worldEpoch == epoch }); return }
         // CI waits on these frames: the clock is pinned to each stage in turn while its shot is taken.
         let shots: [(at: Float, name: String)] = [(0.03, "02-founding"), (0.10, "02a-sea"), (0.24, "02b-rise"), (0.36, "02c-ink"), (0.62, "02d-states"), (0.80, "02e-borders")]
         for shot in shots {
@@ -595,14 +619,14 @@ import LieguojiCore
         return loaded.0
     }
 
-    /// Land rises from the sea, then the states' colours wash over it (brisk ~1.8s ink unroll).
+    /// Land rises from the sea, then the states' colours wash over it (seamless ~1.15s ink unroll after Metal map is mounted).
     private func reveal(_ world: WorldMap, mountBefore: Int? = nil) async {
         controller.interactive = false
-        controller.reveal = 0
-        phase = .playing
+        controller.reveal = 0.06
         if let token = mountBefore { await waitForMapMount(after: token) }
-        else { try? await Task.sleep(nanoseconds: 40_000_000) }
-        await playReveal(from: 0, duration: 1.8, push: controller.play.introCamera)
+        else { try? await Task.sleep(nanoseconds: 32_000_000) }
+        phase = .playing
+        await playReveal(from: 0.06, duration: 1.15, push: controller.play.introCamera)
         controller.interactive = true
     }
 
@@ -885,6 +909,9 @@ import LieguojiCore
                 newEvents = next.events.filter { !seen.contains($0.text) }
             }
             announce(previous, next, newEvents: newEvents)
+            if let cur = herald, !ShotTour.on, !Self.isHeraldTimely(cur, state: next) {
+                herald = nil
+            }
             if playing { battleHits(previous, next) }
         }
         guard var world = controller.world ?? map else { return }
@@ -893,8 +920,8 @@ import LieguojiCore
         if let labels = next.labels { pendingLabels = labels }
         let now = CACurrentMediaTime()
         let ownerChanged = next.owners.enumerated().contains { $0.offset < world.meta.provinces.count && world.meta.provinces[$0.offset].nation != $0.element }
-        // 高速推演（≥ 4×）时对疆域重绘适度合批（0.20s），大幅降低频繁易主时的国界三角化与 Metal 缓冲重建压力；1×/2× 与暂停状态即时落图。
-        let ownerGate = (!playing || speed < 4 || now - lastMapUpdate >= 0.20)
+        // 推演期间对疆域易主重绘适度合批（1×/2× 0.22s，≥4× 0.36s），显著降低频繁易主时的全图国界重走与离屏缓存烘焙开销；暂停态即时落图。
+        let ownerGate = (!playing || (speed < 4 ? now - lastMapUpdate >= 0.22 : now - lastMapUpdate >= 0.36))
         if (ownerChanged && ownerGate) || !playing || now - lastMapUpdate >= 0.55 {
             for (i, owner) in next.owners.enumerated() where i < world.meta.provinces.count && world.meta.provinces[i].nation != owner {
                 world.meta.provinces[i].nation = owner; changed = true
@@ -1018,10 +1045,46 @@ import LieguojiCore
         }
     }
 
+    /// 校验传报是否仍与当前推演时间、季节和战局一致：超时（>35日）或跨季（如春天事件拖到夏天）立即丢弃，绝不滞后乱弹。
+    static func isHeraldTimely(_ h: Herald, state s: GameState) -> Bool {
+        if ShotTour.on { return true }
+        let age = s.day - h.day
+        if age < -2 || age > 35 { return false }
+        let curSeason = WorldSeason.of(month: s.date.month)
+        let evSeason = WorldSeason.of(month: h.month)
+        let isSeasonalKind = (h.kind == .blizzard || h.kind == .drought || h.kind == .flood || h.kind == .harvest || h.kind == .plague)
+        let hasSeasonWord = h.text.contains("春") || h.text.contains("夏") || h.text.contains("秋") || h.text.contains("冬")
+            || h.text.contains("暴雪") || h.text.contains("大雪") || h.text.contains("封山") || h.text.contains("梅雨")
+        if (isSeasonalKind || hasSeasonWord) && evSeason != curSeason {
+            return false
+        }
+        // 文案本身若与当前季节直接矛盾（例如春天文案却在盛夏触发）同样拦截
+        if (h.text.contains("春耕") || h.text.contains("仲春") || h.text.contains("早春")) && curSeason != .spring { return false }
+        if (h.text.contains("盛夏") || h.text.contains("梅雨") || h.text.contains("酷暑")) && curSeason != .summer { return false }
+        if (h.text.contains("秋收") || h.text.contains("金秋")) && curSeason != .autumn { return false }
+        if (h.text.contains("隆冬") || h.text.contains("暴雪") || h.text.contains("封山")) && curSeason != .winter { return false }
+        if h.kind == .war, h.nations.count >= 2, !s.atWar(h.nations[0], h.nations[1]) {
+            return false
+        }
+        return true
+    }
+
+    private static func formatHeraldDate(_ date: GameState.Date) -> String {
+        let season = WorldSeason.of(month: date.month).name
+        return "\(date.year)年\(date.month)月·\(season)"
+    }
+
     /// Wars declared or ended and provinces taken since the last state, as banners.
     private func announce(_ old: GameState, _ next: GameState, newEvents: [GameState.Event]) {
         guard controller.play.showHeralds || controller.play.pauseOnNews else { return }
+        guard !pageOpen || ShotTour.on else { return }
         guard let map else { return }
+        let curDay = next.day
+        let curMonth = next.date.month
+        let curDateText = Self.formatHeraldDate(next.date)
+        func makeHerald(_ kind: Herald.Kind, _ text: String, _ nations: [Int]) -> Herald {
+            Herald(kind: kind, text: text, nations: nations, day: curDay, month: curMonth, dateText: curDateText)
+        }
         let name = { (n: Int) in n >= 0 && n < map.meta.nations.count ? map.meta.nations[n].name : "" }
         func eventNations(_ e: GameState.Event) -> [Int] {
             if let p = e.province, next.owners.indices.contains(p), next.owners[p] >= 0 {
@@ -1035,40 +1098,40 @@ import LieguojiCore
         }
         let before = Set(old.wars.map(\.id)), after = Set(next.wars.map(\.id))
         for w in next.wars where !before.contains(w.id) {
-            enqueue(Herald(kind: .war, text: "\(name(w.attacker))以\(w.casusBelli.isEmpty ? "开战" : w.casusBelli)为由向\(name(w.defender))宣战", nations: [w.attacker, w.defender]))
+            enqueue(makeHerald(.war, "\(name(w.attacker))以\(w.casusBelli.isEmpty ? "开战" : w.casusBelli)为由向\(name(w.defender))宣战", [w.attacker, w.defender]))
         }
         for w in old.wars where !after.contains(w.id) {
-            enqueue(Herald(kind: .peace, text: "\(name(w.attacker))与\(name(w.defender))议和", nations: [w.attacker, w.defender]))
+            enqueue(makeHerald(.peace, "\(name(w.attacker))与\(name(w.defender))议和", [w.attacker, w.defender]))
         }
         // Revolutions, coups, regime shifts, treaties, ultimatums, royal marriages and seasonal weather events are proclaimed with bespoke civilization-matched animations.
         var weatherAnnounced = ShotTour.on
         for e in newEvents {
             let nats = eventNations(e)
             if e.text.contains("最后通牒") {
-                enqueue(Herald(kind: .ultimatum, text: e.text, nations: nats))
+                enqueue(makeHerald(.ultimatum, e.text, nats))
             } else if e.text.contains("政变") || e.text.contains("兵变") || e.text.contains("夺权") {
-                enqueue(Herald(kind: .coup, text: e.text, nations: nats))
+                enqueue(makeHerald(.coup, e.text, nats))
             } else if e.text.contains("篡位") || e.text.contains("削藩激变") {
-                enqueue(Herald(kind: .house, text: e.text, nations: nats))
+                enqueue(makeHerald(.house, e.text, nats))
             } else if e.text.contains("联姻") || e.text.contains("结为秦晋之好") {
-                enqueue(Herald(kind: .marriage, text: e.text, nations: nats))
+                enqueue(makeHerald(.marriage, e.text, nats))
             } else if e.text.contains("包围网") || e.text.contains("共同防御") || e.text.contains("通商协定") || e.text.contains("斡旋") {
-                enqueue(Herald(kind: .treaty, text: e.text, nations: nats))
+                enqueue(makeHerald(.treaty, e.text, nats))
             } else if e.text.contains("革命") || e.text.contains("立宪") || e.text.contains("改称") || e.text.contains("改制") || e.text.contains("禅位") || e.text.contains("改建") || e.text.contains("改行") || e.text.contains("复辟") || e.text.contains("还政于民") {
-                enqueue(Herald(kind: .regime, text: e.text, nations: nats))
+                enqueue(makeHerald(.regime, e.text, nats))
             } else if !weatherAnnounced {
                 let isEnding = e.text.contains("平息") || e.text.contains("缓解") || e.text.contains("已过") || e.text.contains("结束") || e.text.contains("消退")
                 if !isEnding {
                     if e.text.contains("暴雪") || e.text.contains("大雪") || e.text.contains("雪灾") || e.text.contains("封山") {
-                        enqueue(Herald(kind: .blizzard, text: e.text, nations: nats)); weatherAnnounced = true
+                        enqueue(makeHerald(.blizzard, e.text, nats)); weatherAnnounced = true
                     } else if e.text.contains("大旱") || e.text.contains("旱灾") || e.text.contains("赤地") || e.text.contains("饥荒") {
-                        enqueue(Herald(kind: .drought, text: e.text, nations: nats)); weatherAnnounced = true
+                        enqueue(makeHerald(.drought, e.text, nats)); weatherAnnounced = true
                     } else if e.text.contains("洪涝") || e.text.contains("洪水") || e.text.contains("水患") || e.text.contains("梅雨") {
-                        enqueue(Herald(kind: .flood, text: e.text, nations: nats)); weatherAnnounced = true
+                        enqueue(makeHerald(.flood, e.text, nats)); weatherAnnounced = true
                     } else if e.text.contains("瘟疫") || e.text.contains("大疫") {
-                        enqueue(Herald(kind: .plague, text: e.text, nations: nats)); weatherAnnounced = true
+                        enqueue(makeHerald(.plague, e.text, nats)); weatherAnnounced = true
                     } else if e.text.contains("大稔") || e.text.contains("五谷丰登") || e.text.contains("春耕大兴") {
-                        enqueue(Herald(kind: .harvest, text: e.text, nations: nats)); weatherAnnounced = true
+                        enqueue(makeHerald(.harvest, e.text, nats)); weatherAnnounced = true
                     }
                 }
             }
@@ -1077,10 +1140,10 @@ import LieguojiCore
         for e in newEvents {
             let nats = eventNations(e)
             switch e.kind {
-            case "uprising": enqueue(Herald(kind: .uprising, text: e.text, nations: nats))
-            case "restoration": enqueue(Herald(kind: .restoration, text: e.text, nations: nats))
-            case "extinction": enqueue(Herald(kind: .extinction, text: e.text, nations: nats))
-            case "capital": enqueue(Herald(kind: .capital, text: e.text, nations: nats))
+            case "uprising": enqueue(makeHerald(.uprising, e.text, nats))
+            case "restoration": enqueue(makeHerald(.restoration, e.text, nats))
+            case "extinction": enqueue(makeHerald(.extinction, e.text, nats))
+            case "capital": enqueue(makeHerald(.capital, e.text, nats))
             default: break
             }
         }
@@ -1090,7 +1153,7 @@ import LieguojiCore
         for (p, owner) in next.owners.enumerated() where old.owners.indices.contains(p) && map.meta.provinces.indices.contains(p)
             && old.owners[p] != owner && owner >= 0 && capitals.contains(p) {
             captures += 1; if captures > 1 { break }
-            enqueue(Herald(kind: .capture, text: "\(name(owner))攻下\(map.meta.provinces[p].name)", nations: [owner]))
+            enqueue(makeHerald(.capture, "\(name(owner))攻下\(map.meta.provinces[p].name)", [owner]))
         }
     }
     func dismissHerald() {
@@ -1102,26 +1165,34 @@ import LieguojiCore
     private func enqueue(_ h: Herald) {
         if controller.play.pauseOnNews, playing, [Herald.Kind.war, .uprising, .extinction].contains(h.kind) { pause(saving: false) }
         guard controller.play.showHeralds else { return }
+        guard !pageOpen || ShotTour.on else { return }
+        if let s = state, !Self.isHeraldTimely(h, state: s) { return }
         if herald?.text == h.text || heraldQueue.contains(where: { $0.text == h.text }) { return }
         heraldQueue.append(h)
-        while heraldQueue.count > 4 {
+        // 严格控制队列深度至多 2 条，确保只弹当前时刻最新大事、杜绝旧事件积压跨季播放。
+        while heraldQueue.count > 2 {
             if let low = heraldQueue.firstIndex(where: { $0.kind == .capture }) { heraldQueue.remove(at: low) }
             else { heraldQueue.removeFirst() }
         }
         guard heraldTask == nil else { return }
         heraldTask = Task { [weak self] in
             while let self, !Task.isCancelled, !self.heraldQueue.isEmpty {
+                if self.pageOpen && !ShotTour.on {
+                    self.herald = nil
+                    self.heraldQueue.removeAll()
+                    break
+                }
                 let h = self.heraldQueue.removeFirst()
-                // 若宣战传报在排队期间该场战争已然结束，直接跳过，避免滞后播放失效战报。
-                if h.kind == .war, h.nations.count >= 2, let s = self.state, !s.atWar(h.nations[0], h.nations[1]) { continue }
+                if let s = self.state, !Self.isHeraldTimely(h, state: s) { continue }
                 self.herald = h
                 switch h.kind {
                 case .war, .uprising, .house, .coup, .ultimatum, .blizzard, .drought, .flood, .plague: GameFeel.shared.news(.warning)
                 case .peace, .restoration, .marriage, .treaty, .regime, .harvest: GameFeel.shared.news(.success)
                 case .capture, .extinction, .capital: GameFeel.shared.newsTap()
                 }
-                // 场景时长：宣战/政变/通牒 2.9 秒、议和/改制/邦交/天时灾丰 2.5 秒、攻克 1.8 秒，其余 2.4 秒。
-                let seconds: Double = (h.kind == .war || h.kind == .coup || h.kind == .ultimatum) ? 2.9 : (h.kind == .peace || h.kind == .regime || h.kind == .treaty || h.kind == .blizzard || h.kind == .drought || h.kind == .flood || h.kind == .harvest || h.kind == .plague) ? 2.5 : h.kind == .capture ? 1.8 : 2.4
+                // 高倍速下收短停留时长，保证传报始终与当前日期同步；1×/2× 下从容阅览。
+                let baseSeconds: Double = (h.kind == .war || h.kind == .coup || h.kind == .ultimatum) ? 2.4 : (h.kind == .capture ? 1.6 : 2.1)
+                let seconds: Double = (self.speed >= 4 && !ShotTour.on) ? min(baseSeconds, 1.55) : baseSeconds
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
                 // A host under load may take longer than the banner's normal lifetime to take the shot.
                 if ShotTour.on {
@@ -1131,7 +1202,7 @@ import LieguojiCore
                 }
                 if Task.isCancelled { break }
                 self.herald = nil
-                try? await Task.sleep(nanoseconds: 350_000_000)
+                try? await Task.sleep(nanoseconds: 260_000_000)
             }
             // A dismissed task can wake after a replacement banner has started.
             if !Task.isCancelled { self?.heraldTask = nil }
@@ -1308,7 +1379,7 @@ import LieguojiCore
             for ev in newEvents {
                 guard let kind = kinds.first(where: { ev.text.contains($0.0) })?.1 else { continue }
                 // Where it happened, when the chronicle knows the place.
-                if let p = ev.province, let city = map.meta.cities.first(where: { $0.province == p }) {
+                if let p = ev.province, let city = cityByProvCache[p] {
                     let owner = state.owners.indices.contains(p) ? state.owners[p] : -1
                     e.bursts.append(.init(id: "e\(ev.day)-\(ev.text.hashValue)", x: Double(city.x), y: Double(city.y), kind: kind, r: 0.86, g: 0.2, b: 0.12, culture: cultureOf(owner)))
                     if kind == .regime || kind == .coup, owner >= 0, !ripples.contains(owner) { ripples.append(owner) }
@@ -1581,13 +1652,14 @@ import LieguojiCore
         // Icons never sit on one another: armies (and fleets) closer than an icon are eased apart, the
         // later one moving, a few passes. Display only; an army in battle keeps its spot facing the foe.
         Self.offset(&sprites)
-        // 兵力条与兵力字（紧贴军团/舰队脚下，按真实 troops/full 与船体完整度驱动，阵亡与零兵立即消失）。
+        // 兵力条与兵力字（预建国色查表，避免每步重复解析 200+ 次 CSS 十六进制字符串）。
         var counts = [String: String]()
         var ratios = [String: Float]()
         var barColors = [String: RGB]()
+        let fallbackRGB = RGB(0.32, 0.56, 0.36)
+        let nationPalette: [RGB] = map?.meta.nations.map { RGB(css: $0.color) ?? fallbackRGB } ?? []
         func nationRGB(_ n: Int) -> RGB {
-            guard let m = map, n >= 0, n < m.meta.nations.count else { return RGB(0.32, 0.56, 0.36) }
-            return RGB(css: m.meta.nations[n].color) ?? RGB(0.32, 0.56, 0.36)
+            (n >= 0 && n < nationPalette.count) ? nationPalette[n] : fallbackRGB
         }
         // 兵力前加一字军情：战（交战）、退（撤退）、集（集结待发）、守（驻防）、援（回援本土）、征（出征）、行（行军）；驻扎不标。
         for a in state.armies where a.troops > 0 && a.status != "destroyed" {

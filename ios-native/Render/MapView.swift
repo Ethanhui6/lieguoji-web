@@ -5,10 +5,22 @@ import LieguojiCore
 
 /// State shared between SwiftUI panels and the Metal map.
 @MainActor final class MapController: ObservableObject {
-    /// 4.2.6 渲染直通合批通道：地图高频数据（world/armies/effects/washes/relations/camera requests）不再触发 SwiftUI 整页重排，
-    /// 而是自动合批为每步至多 1 次 `Coordinator.sync()`，彻底消除推演期间每步 5~7 次无效全屏 SwiftUI diff 卡顿！
-    var onNeedsSync: (() -> Void)?
+    /// 4.2.7 渲染直通合批通道（带归属实例锁）：地图高频数据直达当前活跃 `MapView.Coordinator.sync()`，
+    /// 切换世界（worldID 变化）时旧视图 `dismantleUIView` 严禁清空新视图注册的回调，根除军队冻结 Bug！
+    private weak var syncOwner: AnyObject?
+    private var onNeedsSync: (() -> Void)?
     private var syncScheduled = false
+    func registerSync(owner: AnyObject, handler: @escaping () -> Void) {
+        syncOwner = owner
+        onNeedsSync = handler
+    }
+    func unregisterSync(owner: AnyObject) {
+        if syncOwner === owner {
+            syncOwner = nil
+            onNeedsSync = nil
+        }
+    }
+    func isSyncOwner(_ owner: AnyObject) -> Bool { syncOwner === owner }
     func scheduleSync() {
         guard !syncScheduled else { return }
         syncScheduled = true
@@ -362,7 +374,13 @@ struct MapView: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator(map: map, controller: controller) }
     func makeUIView(context: Context) -> MapContainerView { context.coordinator.build() }
-    func updateUIView(_ view: MapContainerView, context: Context) { context.coordinator.sync() }
+    func updateUIView(_ view: MapContainerView, context: Context) {
+        let c = context.coordinator
+        if !controller.isSyncOwner(c) {
+            controller.registerSync(owner: c) { [weak c] in c?.sync() }
+        }
+        c.sync()
+    }
     static func dismantleUIView(_ view: MapContainerView, coordinator: Coordinator) { coordinator.stop() }
 
     @MainActor final class Coordinator: NSObject, UIGestureRecognizerDelegate {
@@ -422,6 +440,7 @@ struct MapView: UIViewRepresentable {
         private let metrics = UILabel()
         private let weather = WeatherOverlayView()
         private var shownWeatherRevision = -1
+        private var shownWeatherSeasonBucket = -999
         private func syncWeather() {
             guard let renderer, mtk != nil else { return }
             let active = !controller.drifting && !controller.sheetOpen && controller.reveal >= 1
@@ -592,7 +611,7 @@ struct MapView: UIViewRepresentable {
                         self.sheetThrottled = true
                         self.mtk.preferredFramesPerSecond = 30
                         self.drift?.invalidate(); self.drift = nil
-                        if self.animation == nil && self.controller.revealClock == nil {
+                        if self.animation == nil && self.controller.revealClock == nil && self.renderer?.isAnimating != true {
                             self.link?.invalidate(); self.link = nil
                         } else {
                             self.link?.preferredFrameRateRange = self.frameRange
@@ -613,7 +632,7 @@ struct MapView: UIViewRepresentable {
                 return (renderer.camera.scale, self.bounds.lowerBound)
             }
             controller.onFramingRequest = { [weak self] in self?.applyFramingRequests() }
-            controller.onNeedsSync = { [weak self] in self?.sync() }
+            controller.registerSync(owner: self) { [weak self] in self?.sync() }
             controller.nameFrame = { [weak self] in self?.labels?.nameFrame() ?? [:] }
             controller.renderer = { [weak self] in self?.renderer }
             controller.placed = { [weak self] key in
@@ -672,6 +691,8 @@ struct MapView: UIViewRepresentable {
             applyFramingRequests()
             if !mountNotified {
                 mountNotified = true
+                controller.registerSync(owner: self) { [weak self] in self?.sync() }
+                sync()
                 controller.mapMountToken &+= 1
                 controller.onMapMounted?()
             }
@@ -1140,11 +1161,11 @@ struct MapView: UIViewRepresentable {
                     if (renderer?.reveal ?? 0) >= 0.99 { updateTroops() }
                     mtk.setNeedsDisplay()
                 }
-            } else if !sheetThrottled && renderer?.isAnimating == true {
-                pace(l, to: .glide)
+            } else if renderer?.isAnimating == true {
+                pace(l, to: sheetThrottled ? .ambient : .glide)
                 setSyncPresent(false)
                 velocity = .zero
-                if (renderer?.reveal ?? 0) >= 0.99 { updateTroops() }
+                if !sheetThrottled && (renderer?.reveal ?? 0) >= 0.99 { updateTroops() }
                 mtk.setNeedsDisplay()
             } else if revealing {
                 pace(l, to: .full)
@@ -1181,7 +1202,11 @@ struct MapView: UIViewRepresentable {
             var dirty = false
             if let renderer, renderer.seasonPhase != controller.seasonPhase {
                 renderer.seasonPhase = controller.seasonPhase
-                syncWeather()
+                let sBucket = controller.seasonPhase < 0 ? -1 : Int((controller.seasonPhase * 24).rounded())
+                if sBucket != shownWeatherSeasonBucket {
+                    shownWeatherSeasonBucket = sBucket
+                    syncWeather()
+                }
                 dirty = true
             }
             if let renderer, shownWeatherRevision != controller.weatherRevision {
@@ -1245,11 +1270,11 @@ struct MapView: UIViewRepresentable {
                 renderer?.deathDelays = controller.deathDelays
                 renderer?.setArmies(armies, route: controller.route, snap: snapped)
                 controller.snapArmies = false
-                if snapped || !controller.route.isEmpty { dirty = true }
-                if !controller.sheetOpen && (renderer?.reveal ?? 0) >= 0.99 {
-                    updateTroops()
+                dirty = true
+                if (renderer?.reveal ?? 0) >= 0.99 {
+                    if !controller.sheetOpen { updateTroops() }
                     if renderer?.isAnimating == true { startLink() }
-                } else if (renderer?.reveal ?? 0) < 0.99 {
+                } else {
                     syncTroopVisibility(reveal: renderer?.reveal ?? 0)
                 }
             }
@@ -1405,6 +1430,9 @@ struct MapView: UIViewRepresentable {
                 animate(to: camera.zoomed(by: z.factor, anchorX: viewport.width / 2, anchorY: viewport.height / 2, viewport: viewport, bounds: bounds), duration: 0.3)
             }
             applyFramingRequests()
+            if (renderer?.reveal ?? 0) >= 0.99, renderer?.isAnimating == true, link == nil {
+                startLink()
+            }
             if dirty { setSyncPresent(fingerDragging); mtk?.setNeedsDisplay() }
         }
 
@@ -1436,7 +1464,7 @@ struct MapView: UIViewRepresentable {
             link?.invalidate(); link = nil
             drift?.invalidate(); drift = nil
             effects.stopWaves()
-            controller.onNeedsSync = nil
+            controller.unregisterSync(owner: self)
         }
 
         private var drift: CADisplayLink?

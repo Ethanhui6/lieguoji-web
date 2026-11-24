@@ -10,6 +10,8 @@ struct InkVideoStage: View {
     let clip: String
     var cornerRadius: CGFloat = 8
     var tint: Color = Theme.seal
+    /// 极速倍速（≥8×）或设备发烫时可设为 false，仅零开销展示高清预烘焙首帧画卷，不拉起硬件 H.264 视频解码争抢帧率。
+    var playVideo: Bool = true
 
     static let allClips: [String] = [
         // 经典 19 卷
@@ -78,7 +80,7 @@ struct InkVideoStage: View {
 
     var body: some View {
         ZStack {
-            InkVideoPlayerRepresentable(clip: clip)
+            InkVideoPlayerRepresentable(clip: clip, playVideo: playVideo)
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .strokeBorder(
@@ -96,15 +98,16 @@ struct InkVideoStage: View {
 
 private struct InkVideoPlayerRepresentable: UIViewRepresentable {
     let clip: String
+    let playVideo: Bool
 
     func makeUIView(context: Context) -> InkPlayerHostView {
         let view = InkPlayerHostView()
-        view.load(clip: clip)
+        view.load(clip: clip, playVideo: playVideo)
         return view
     }
 
     func updateUIView(_ uiView: InkPlayerHostView, context: Context) {
-        uiView.load(clip: clip)
+        uiView.load(clip: clip, playVideo: playVideo)
     }
 
     static func dismantleUIView(_ uiView: InkPlayerHostView, coordinator: ()) {
@@ -162,7 +165,7 @@ final class InkPlayerHostView: UIView {
         return nil
     }
 
-    func load(clip: String) {
+    func load(clip: String, playVideo: Bool = true) {
         guard clip != currentClip else { return }
         teardown()
         currentClip = clip
@@ -174,8 +177,8 @@ final class InkPlayerHostView: UIView {
         posterView.alpha = 1
         posterView.isHidden = false
 
-        // 无头模拟器巡览（LGJ_SHOT=1）仅展示高清首帧画卷，避免虚拟机 mediaserverd 争用。
-        guard !ShotTour.on, let url = InkVideoStage.url(for: clip) else { return }
+        // 无头模拟器巡览（LGJ_SHOT=1）或高倍速静音节能模式仅展示高清首帧画卷，杜绝 mediaserverd 争用卡顿。
+        guard playVideo, !ShotTour.on, let url = InkVideoStage.url(for: clip) else { return }
 
         // 2. 延后 0.14s 待弹窗/横幅首帧入场动画稳定后，先在后台异步预加载音轨与时长元数据（彻底消除 AVPlayerLooper 主线程阻塞 mediaserverd 掉帧），再切入 60fps 硬件循环播放。
         let work = DispatchWorkItem { [weak self] in

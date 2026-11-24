@@ -185,8 +185,8 @@ struct GameView: View {
                 .padding(.leading, leadSafe).padding(.trailing, trailSafe)
 
                 ZStack(alignment: .top) {
-                    if hudVisible, controller.play.showHeralds, let h = model.herald, let map = model.map {
-                        HeraldBanner(herald: h, map: map, onTap: {
+                    if hudVisible, panel == nil, !model.pageOpen, !viewsOpen, controller.play.showHeralds, let h = model.herald, let map = model.map {
+                        HeraldBanner(herald: h, map: map, playVideo: model.speed <= 4, onTap: {
                             guard model.herald?.id == h.id else { return }
                             if let map = model.map, let n = h.nations.first, map.meta.nations.indices.contains(n) {
                                 let cap = map.meta.nations[n].capital
@@ -393,6 +393,8 @@ struct GameView: View {
         .onChange(of: panel) { old, p in
             if p != nil { exitCleanMap() }
             if let p { lastPanel = p }
+            // 打开任意页面立即同步标记 pageOpen（即时止停后台传报与视频解码），不再等下一轮视图刷新。
+            model.pageOpen = (p != nil)
             // All inspection pages share one pause policy, including map picks.
             // 山河回放开启期间关闭旧弹窗时，严禁恢复实时推演覆盖回放画面。
             controller.sheetOpen = p != nil
@@ -410,6 +412,9 @@ struct GameView: View {
         }
         .onChange(of: sheetDetent) { _, _ in syncSheetFocusInsets(for: panel) }
         .onChange(of: landscape) { _, _ in syncSheetFocusInsets(for: panel) }
+        .onChange(of: viewsOpen) { _, open in if open { model.dismissHerald() } }
+        .onChange(of: weatherDrawerOpen) { _, open in if open { model.dismissHerald() } }
+        .onChange(of: model.replayActive) { _, active in if active { model.dismissHerald() } }
         .sensoryFeedback(.impact(weight: .light), trigger: panel?.id)
         .sensoryFeedback(.selection, trigger: controller.selectedProvince)
         .onChange(of: controller.selectedArmy) { _, army in
@@ -812,8 +817,6 @@ struct GameView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.72)
                             .layoutPriority(1)
-                            .contentTransition(.numericText())
-                            .animation(Motion.tap, value: compactDateText)
                         if let m = model.state?.date.month {
                             let s = WorldSeason.of(month: m)
                             let sColor: Color = s == .spring ? Color(red: 0.76, green: 0.32, blue: 0.44) : s == .summer ? Color(red: 0.20, green: 0.52, blue: 0.24) : s == .autumn ? Color(red: 0.76, green: 0.38, blue: 0.10) : Color(red: 0.22, green: 0.46, blue: 0.68)

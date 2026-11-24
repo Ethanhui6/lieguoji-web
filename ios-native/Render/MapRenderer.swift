@@ -182,6 +182,41 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         var pad: Float = 0
         var iconZoom: Float = 1
     }
+    /// 跨世界复用的共享 Metal 资产（已编译着色器库、20 条渲染管线、宣纸/纤维纹理、16 张军牌兵种纹理与采样器）：
+    /// 标题页首次建图编译一次，随后进入新世界、读档或自绘地图直接零耗时复用，彻底根治进局 ~450ms 冻结卡顿！
+    private struct SharedMetalAssets {
+        let deviceID: ObjectIdentifier
+        let pixelFormat: MTLPixelFormat
+        let sampleCount: Int
+        let cellPipeline: MTLRenderPipelineState
+        let revealPipeline: MTLRenderPipelineState
+        let veilPipeline: MTLRenderPipelineState
+        let fadePipeline: MTLRenderPipelineState
+        let linePipeline: MTLRenderPipelineState
+        let flatPipeline: MTLRenderPipelineState
+        let coloredPipeline: MTLRenderPipelineState
+        let deskPipeline: MTLRenderPipelineState
+        let seaPipeline: MTLRenderPipelineState
+        let texturePipeline: MTLRenderPipelineState
+        let multiplyPipeline: MTLRenderPipelineState
+        let spriteShadowPipeline: MTLRenderPipelineState
+        let spritePipeline: MTLRenderPipelineState
+        let spriteSheetShadowPipeline: MTLRenderPipelineState
+        let spriteSheetPipeline: MTLRenderPipelineState
+        let terrainPipeline: MTLRenderPipelineState
+        let scrollBorderPipeline: MTLRenderPipelineState
+        let blitOpaquePipeline: MTLRenderPipelineState
+        let blitPremulPipeline: MTLRenderPipelineState
+        let sweepPipeline: MTLRenderPipelineState
+        let inkPipes: InkPipelines
+        let parchment: MTLTexture?
+        let paperDetail: MTLTexture?
+        let sampler: MTLSamplerState?
+        let repeatSampler: MTLSamplerState?
+        let unitTextures: [String: MTLTexture]
+    }
+    private static var sharedAssets: SharedMetalAssets?
+
     /// The blank sheet the map is painted on (the parchment is multiplied over it).
     static let paper = RGB(hex: 0xEDE3CC)
     struct QuadUniforms { var origin: SIMD2<Float>; var size: SIMD2<Float> }
@@ -198,58 +233,180 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         view.sampleCount = device.supportsTextureSampleCount(2) ? 2 : 1
         // Colours are sRGB as the web draws them; blend and store them unconverted, like Pixi.
         view.colorPixelFormat = .bgra8Unorm
-        do {
-            let library = try device.makeLibrary(source: MapRenderer.shaders + MapRenderer.sweepShaders + InkPipelines.shaders, options: nil)
-            enum Blend { case none, alpha, premultiplied, multiply }
-            func pipeline(_ vertex: String, _ fragment: String, _ blend: Blend) throws -> MTLRenderPipelineState {
-                let d = MTLRenderPipelineDescriptor()
-                d.vertexFunction = library.makeFunction(name: vertex)
-                d.fragmentFunction = library.makeFunction(name: fragment)
-                d.colorAttachments[0].pixelFormat = view.colorPixelFormat
-                d.rasterSampleCount = view.sampleCount
-                let a: MTLRenderPipelineColorAttachmentDescriptor = d.colorAttachments[0]
-                switch blend {
-                case .none: break
-                case .alpha:
-                    a.isBlendingEnabled = true
-                    a.sourceRGBBlendFactor = .sourceAlpha; a.destinationRGBBlendFactor = .oneMinusSourceAlpha
-                    a.sourceAlphaBlendFactor = .one; a.destinationAlphaBlendFactor = .oneMinusSourceAlpha
-                case .premultiplied:
-                    a.isBlendingEnabled = true
-                    a.sourceRGBBlendFactor = .one; a.destinationRGBBlendFactor = .oneMinusSourceAlpha
-                    a.sourceAlphaBlendFactor = .one; a.destinationAlphaBlendFactor = .oneMinusSourceAlpha
-                case .multiply:
-                    a.isBlendingEnabled = true
-                    a.sourceRGBBlendFactor = .destinationColor; a.destinationRGBBlendFactor = .zero
-                    a.sourceAlphaBlendFactor = .zero; a.destinationAlphaBlendFactor = .one
+
+        let devID = ObjectIdentifier(device)
+        let assets: SharedMetalAssets
+        if let cached = Self.sharedAssets,
+           cached.deviceID == devID,
+           cached.pixelFormat == view.colorPixelFormat,
+           cached.sampleCount == view.sampleCount {
+            assets = cached
+        } else {
+            do {
+                let library = try device.makeLibrary(source: MapRenderer.shaders + MapRenderer.sweepShaders + InkPipelines.shaders, options: nil)
+                enum Blend { case none, alpha, premultiplied, multiply }
+                func pipeline(_ vertex: String, _ fragment: String, _ blend: Blend) throws -> MTLRenderPipelineState {
+                    let d = MTLRenderPipelineDescriptor()
+                    d.vertexFunction = library.makeFunction(name: vertex)
+                    d.fragmentFunction = library.makeFunction(name: fragment)
+                    d.colorAttachments[0].pixelFormat = view.colorPixelFormat
+                    d.rasterSampleCount = view.sampleCount
+                    let a: MTLRenderPipelineColorAttachmentDescriptor = d.colorAttachments[0]
+                    switch blend {
+                    case .none: break
+                    case .alpha:
+                        a.isBlendingEnabled = true
+                        a.sourceRGBBlendFactor = .sourceAlpha; a.destinationRGBBlendFactor = .oneMinusSourceAlpha
+                        a.sourceAlphaBlendFactor = .one; a.destinationAlphaBlendFactor = .oneMinusSourceAlpha
+                    case .premultiplied:
+                        a.isBlendingEnabled = true
+                        a.sourceRGBBlendFactor = .one; a.destinationRGBBlendFactor = .oneMinusSourceAlpha
+                        a.sourceAlphaBlendFactor = .one; a.destinationAlphaBlendFactor = .oneMinusSourceAlpha
+                    case .multiply:
+                        a.isBlendingEnabled = true
+                        a.sourceRGBBlendFactor = .destinationColor; a.destinationRGBBlendFactor = .zero
+                        a.sourceAlphaBlendFactor = .zero; a.destinationAlphaBlendFactor = .one
+                    }
+                    return try device.makeRenderPipelineState(descriptor: d)
                 }
-                return try device.makeRenderPipelineState(descriptor: d)
+                let loader = MTKTextureLoader(device: device)
+                let pTex: MTLTexture? = parchmentURL.flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
+                let dTex: MTLTexture? = Bundle.main.url(forResource: "paper-detail", withExtension: "jpg", subdirectory: "World")
+                    .flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
+                let sDesc = MTLSamplerDescriptor()
+                sDesc.minFilter = .linear; sDesc.magFilter = .linear; sDesc.mipFilter = .linear
+                sDesc.maxAnisotropy = 4
+                sDesc.sAddressMode = .clampToEdge; sDesc.tAddressMode = .clampToEdge
+                let smp = device.makeSamplerState(descriptor: sDesc)
+                let rsDesc = MTLSamplerDescriptor()
+                rsDesc.minFilter = .linear; rsDesc.magFilter = .linear; rsDesc.mipFilter = .linear
+                rsDesc.maxAnisotropy = 4
+                rsDesc.sAddressMode = .repeat; rsDesc.tAddressMode = .repeat
+                let rsmp = device.makeSamplerState(descriptor: rsDesc)
+
+                var uTex: [String: MTLTexture] = [:]
+                for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Fleet", "Transport", "Port", "Merchant"] {
+                    let probe = ["Fleet", "Transport", "Port", "Merchant"].contains(role) ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
+                    guard let image = UnitArt.image(probe) else { continue }
+                    if let texture = try? loader.newTexture(cgImage: image, options: [.SRGB: false, .generateMipmaps: true]) { uTex[role] = texture }
+                    else if let texture = Self.texture(device, image) { uTex[role] = texture }
+                }
+                uTex["banner"] = uTex["elite"]
+                let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
+                    let g = ctx.cgContext
+                    func shieldPath(inset d: CGFloat) -> CGPath {
+                        let p = CGMutablePath()
+                        let l = 10 + d, r = 118 - d, t = 8 + d, midY = 74 - d * 0.15, b = 120 - d
+                        let corner: CGFloat = max(4, 16 - d * 0.65)
+                        p.move(to: CGPoint(x: l + corner, y: t))
+                        p.addLine(to: CGPoint(x: r - corner, y: t))
+                        p.addQuadCurve(to: CGPoint(x: r, y: t + corner), control: CGPoint(x: r, y: t))
+                        p.addLine(to: CGPoint(x: r, y: midY))
+                        p.addQuadCurve(to: CGPoint(x: 64, y: b), control: CGPoint(x: r - 2, y: b - 14))
+                        p.addQuadCurve(to: CGPoint(x: l, y: midY), control: CGPoint(x: l + 2, y: b - 14))
+                        p.addLine(to: CGPoint(x: l, y: t + corner))
+                        p.addQuadCurve(to: CGPoint(x: l + corner, y: t), control: CGPoint(x: l, y: t))
+                        p.closeSubpath()
+                        return p
+                    }
+                    g.setFillColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1)
+                    g.addPath(shieldPath(inset: 0)); g.fillPath()
+                    g.setFillColor(red: 0.68, green: 0.68, blue: 0.68, alpha: 1)
+                    g.addPath(shieldPath(inset: 5.5)); g.fillPath()
+                    let inner = shieldPath(inset: 8.5)
+                    g.saveGState()
+                    g.addPath(inner); g.clip()
+                    if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.93, 0.93, 0.93, 1.0, 0.78, 0.78, 0.78, 1.0], locations: [0.0, 0.52, 1.0], count: 3) {
+                        g.drawLinearGradient(grad, start: CGPoint(x: 16, y: 12), end: CGPoint(x: 112, y: 116), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+                    } else {
+                        g.setFillColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1); g.fill(CGRect(x: 0, y: 0, width: 128, height: 128))
+                    }
+                    g.restoreGState()
+                    g.setStrokeColor(red: 0.36, green: 0.36, blue: 0.36, alpha: 0.50); g.setLineWidth(1.9)
+                    g.addPath(shieldPath(inset: 14.0)); g.strokePath()
+                    g.setFillColor(red: 0.34, green: 0.34, blue: 0.34, alpha: 0.60)
+                    g.fillEllipse(in: CGRect(x: 28, y: 20, width: 5.5, height: 5.5))
+                    g.fillEllipse(in: CGRect(x: 94.5, y: 20, width: 5.5, height: 5.5))
+                }.cgImage
+                if let plateArt { uTex["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
+                let wakeArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
+                    let g = ctx.cgContext
+                    g.setLineCap(.round)
+                    g.setFillColor(red: 0.96, green: 0.98, blue: 1.0, alpha: 0.24)
+                    g.fillEllipse(in: CGRect(x: 10, y: 66, width: 108, height: 42))
+                    g.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.72)
+                    g.setLineWidth(3.4)
+                    g.strokeEllipse(in: CGRect(x: 18, y: 74, width: 92, height: 28))
+                    g.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.42)
+                    g.setLineWidth(2.0)
+                    g.strokeEllipse(in: CGRect(x: 8, y: 68, width: 112, height: 40))
+                }.cgImage
+                if let wakeArt { uTex["0fleetwake"] = (try? loader.newTexture(cgImage: wakeArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, wakeArt) }
+
+                assets = SharedMetalAssets(
+                    deviceID: devID,
+                    pixelFormat: view.colorPixelFormat,
+                    sampleCount: view.sampleCount,
+                    cellPipeline: try pipeline("cellVertex", "landFragment", .none),
+                    revealPipeline: try pipeline("revealVertex", "revealFragment", .none),
+                    veilPipeline: try pipeline("quadVertex", "veilFragment", .alpha),
+                    fadePipeline: try pipeline("fadeVertex", "landFragment", .none),
+                    linePipeline: try pipeline("lineVertex", "flatFragment", .alpha),
+                    flatPipeline: try pipeline("flatVertex", "flatFragment", .alpha),
+                    coloredPipeline: try pipeline("coloredVertex", "colorFragment", .alpha),
+                    deskPipeline: try pipeline("deskVertex", "deskFragment", .none),
+                    seaPipeline: try pipeline("seaVertex", "seaFragment", .none),
+                    texturePipeline: try pipeline("quadVertex", "textureFragment", .none),
+                    multiplyPipeline: try pipeline("seaVertex", "parchmentFragment", .multiply),
+                    spriteShadowPipeline: try pipeline("spriteShadowVertex", "spriteShadowFragment", .alpha),
+                    spritePipeline: try pipeline("spriteVertex", "spriteFragment", .alpha),
+                    spriteSheetShadowPipeline: try pipeline("spriteSheetShadowVertex", "spriteShadowFragment", .alpha),
+                    spriteSheetPipeline: try pipeline("spriteSheetVertex", "spriteSheetFragment", .alpha),
+                    terrainPipeline: try pipeline("terrainVertex", "terrainFragment", .alpha),
+                    scrollBorderPipeline: try pipeline("terrainVertex", "scrollMountFragment", .alpha),
+                    blitOpaquePipeline: try pipeline("blitVertex", "blitFragment", .none),
+                    blitPremulPipeline: try pipeline("blitVertex", "blitFragment", .premultiplied),
+                    sweepPipeline: try pipeline("sweepVertex", "sweepFragment", .alpha),
+                    inkPipes: try InkPipelines.make(device: device, library: library, mainFormat: view.colorPixelFormat, sampleCount: view.sampleCount),
+                    parchment: pTex,
+                    paperDetail: dTex,
+                    sampler: smp,
+                    repeatSampler: rsmp,
+                    unitTextures: uTex
+                )
+                Self.sharedAssets = assets
+            } catch {
+                NSLog("Lieguoji Metal: pipeline setup failed at %dx MSAA: %@", view.sampleCount, error.localizedDescription)
+                return nil
             }
-            cellPipeline = try pipeline("cellVertex", "landFragment", .none)
-            revealPipeline = try pipeline("revealVertex", "revealFragment", .none)
-            veilPipeline = try pipeline("quadVertex", "veilFragment", .alpha)
-            fadePipeline = try pipeline("fadeVertex", "landFragment", .none)
-            linePipeline = try pipeline("lineVertex", "flatFragment", .alpha)
-            flatPipeline = try pipeline("flatVertex", "flatFragment", .alpha)
-            coloredPipeline = try pipeline("coloredVertex", "colorFragment", .alpha)
-            deskPipeline = try pipeline("deskVertex", "deskFragment", .none)
-            seaPipeline = try pipeline("seaVertex", "seaFragment", .none)
-            texturePipeline = try pipeline("quadVertex", "textureFragment", .none)
-            multiplyPipeline = try pipeline("seaVertex", "parchmentFragment", .multiply)
-            spriteShadowPipeline = try pipeline("spriteShadowVertex", "spriteShadowFragment", .alpha)
-            spritePipeline = try pipeline("spriteVertex", "spriteFragment", .alpha)
-            spriteSheetShadowPipeline = try pipeline("spriteSheetShadowVertex", "spriteShadowFragment", .alpha)
-            spriteSheetPipeline = try pipeline("spriteSheetVertex", "spriteSheetFragment", .alpha)
-            terrainPipeline = try pipeline("terrainVertex", "terrainFragment", .alpha)
-            scrollBorderPipeline = try pipeline("terrainVertex", "scrollMountFragment", .alpha)
-            blitOpaquePipeline = try pipeline("blitVertex", "blitFragment", .none)
-            blitPremulPipeline = try pipeline("blitVertex", "blitFragment", .premultiplied)
-            sweepPipeline = try pipeline("sweepVertex", "sweepFragment", .alpha)
-            inkPipes = try InkPipelines.make(device: device, library: library, mainFormat: view.colorPixelFormat, sampleCount: view.sampleCount)
-        } catch {
-            NSLog("Lieguoji Metal: pipeline setup failed at %dx MSAA: %@", view.sampleCount, error.localizedDescription)
-            return nil
         }
+        cellPipeline = assets.cellPipeline
+        revealPipeline = assets.revealPipeline
+        veilPipeline = assets.veilPipeline
+        fadePipeline = assets.fadePipeline
+        linePipeline = assets.linePipeline
+        flatPipeline = assets.flatPipeline
+        coloredPipeline = assets.coloredPipeline
+        deskPipeline = assets.deskPipeline
+        seaPipeline = assets.seaPipeline
+        texturePipeline = assets.texturePipeline
+        multiplyPipeline = assets.multiplyPipeline
+        spriteShadowPipeline = assets.spriteShadowPipeline
+        spritePipeline = assets.spritePipeline
+        spriteSheetShadowPipeline = assets.spriteSheetShadowPipeline
+        spriteSheetPipeline = assets.spriteSheetPipeline
+        terrainPipeline = assets.terrainPipeline
+        scrollBorderPipeline = assets.scrollBorderPipeline
+        blitOpaquePipeline = assets.blitOpaquePipeline
+        blitPremulPipeline = assets.blitPremulPipeline
+        sweepPipeline = assets.sweepPipeline
+        inkPipes = assets.inkPipes
+        parchment = assets.parchment
+        paperDetail = assets.paperDetail
+        sampler = assets.sampler
+        repeatSampler = assets.repeatSampler
+        unitTextures = assets.unitTextures
+
         let mesh = CellMesh(map: map)
         guard let p = device.makeBuffer(bytes: mesh.positions, length: mesh.positions.count * 4, options: .storageModeShared),
               let i = device.makeBuffer(bytes: mesh.indices, length: mesh.indices.count * 4, options: .storageModeShared) else { return nil }
@@ -263,22 +420,6 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let seaTexture = device.makeTexture(descriptor: seaDescriptor)
         sea = seaTexture
         seaSource = map.seaRGBA
-        if let url = parchmentURL {
-            parchment = try? MTKTextureLoader(device: device).newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true])
-        } else { parchment = nil }
-        if let detailURL = Bundle.main.url(forResource: "paper-detail", withExtension: "jpg", subdirectory: "World") {
-            paperDetail = try? MTKTextureLoader(device: device).newTexture(URL: detailURL, options: [.SRGB: false, .generateMipmaps: true])
-        } else { paperDetail = nil }
-        let s = MTLSamplerDescriptor()
-        s.minFilter = .linear; s.magFilter = .linear; s.mipFilter = .linear
-        s.maxAnisotropy = 4
-        s.sAddressMode = .clampToEdge; s.tAddressMode = .clampToEdge
-        sampler = device.makeSamplerState(descriptor: s)
-        let rs = MTLSamplerDescriptor()
-        rs.minFilter = .linear; rs.magFilter = .linear; rs.mipFilter = .linear
-        rs.maxAnisotropy = 4
-        rs.sAddressMode = .repeat; rs.tAddressMode = .repeat
-        repeatSampler = device.makeSamplerState(descriptor: rs)
         super.init()
         // Layers built off the main thread for this very map are used as they are.
         let ready = Self.prepared.flatMap { $0.key == MapLayers.key(map) ? $0 : nil }
@@ -295,78 +436,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
-        // 地图内部坚持纯矢量宋画融纸地貌；四周装裱改由高精细程序化 Metal 着色器实时绘制（零粗糙拼接贴图、任意倍率视网膜锐利）。
-        let loader = MTKTextureLoader(device: device)
         terrainTextures.removeAll()
         terrainBatches.removeAll()
         rebuildScrollBorders(width: map.width, height: map.height)
-        // 恢复上版经典雕漆漆盾国色军团与水师战舰棋子（256×256 四阶象牙浮雕矢量纹理），任意缩放倍率均精致清晰。
-        for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Fleet", "Transport", "Port", "Merchant"] {
-            let probe = ["Fleet", "Transport", "Port", "Merchant"].contains(role) ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
-            guard let image = UnitArt.image(probe) else { continue }
-            if let texture = try? loader.newTexture(cgImage: image, options: [.SRGB: false, .generateMipmaps: true]) { unitTextures[role] = texture }
-            else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
-        }
-        unitTextures["banner"] = unitTextures["elite"]
-        // 军牌底盘 (128×128): 精雕漆盾军牌（平肩微弧收尖盾形 + 浓墨外漆框 + 西北至东南立体受光面 + 内切雕槽与双铆钉），
-        // 叠加国色后与顶部象牙浮雕兵种纹样层次分明，任意缩放下都兼具古舆图战棋质感。
-        let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
-            let g = ctx.cgContext
-            func shieldPath(inset d: CGFloat) -> CGPath {
-                let p = CGMutablePath()
-                let l = 10 + d, r = 118 - d, t = 8 + d, midY = 74 - d * 0.15, b = 120 - d
-                let corner: CGFloat = max(4, 16 - d * 0.65)
-                p.move(to: CGPoint(x: l + corner, y: t))
-                p.addLine(to: CGPoint(x: r - corner, y: t))
-                p.addQuadCurve(to: CGPoint(x: r, y: t + corner), control: CGPoint(x: r, y: t))
-                p.addLine(to: CGPoint(x: r, y: midY))
-                p.addQuadCurve(to: CGPoint(x: 64, y: b), control: CGPoint(x: r - 2, y: b - 14))
-                p.addQuadCurve(to: CGPoint(x: l, y: midY), control: CGPoint(x: l + 2, y: b - 14))
-                p.addLine(to: CGPoint(x: l, y: t + corner))
-                p.addQuadCurve(to: CGPoint(x: l + corner, y: t), control: CGPoint(x: l, y: t))
-                p.closeSubpath()
-                return p
-            }
-            // 外圈浓墨漆框
-            g.setFillColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1)
-            g.addPath(shieldPath(inset: 0)); g.fillPath()
-            // 中层温润亮边倒角
-            g.setFillColor(red: 0.68, green: 0.68, blue: 0.68, alpha: 1)
-            g.addPath(shieldPath(inset: 5.5)); g.fillPath()
-            // 内盾受光渐变面
-            let inner = shieldPath(inset: 8.5)
-            g.saveGState()
-            g.addPath(inner); g.clip()
-            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.93, 0.93, 0.93, 1.0, 0.78, 0.78, 0.78, 1.0], locations: [0.0, 0.52, 1.0], count: 3) {
-                g.drawLinearGradient(grad, start: CGPoint(x: 16, y: 12), end: CGPoint(x: 112, y: 116), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
-            } else {
-                g.setFillColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1); g.fill(CGRect(x: 0, y: 0, width: 128, height: 128))
-            }
-            g.restoreGState()
-            // 盾内细雕槽 + 顶部双铆钉
-            g.setStrokeColor(red: 0.36, green: 0.36, blue: 0.36, alpha: 0.50); g.setLineWidth(1.9)
-            g.addPath(shieldPath(inset: 14.0)); g.strokePath()
-            g.setFillColor(red: 0.34, green: 0.34, blue: 0.34, alpha: 0.60)
-            g.fillEllipse(in: CGRect(x: 28, y: 20, width: 5.5, height: 5.5))
-            g.fillEllipse(in: CGRect(x: 94.5, y: 20, width: 5.5, height: 5.5))
-        }.cgImage
-        if let plateArt { unitTextures["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
-        // 水师舰队浪花尾迹底纹 (128×128): 双层弧形碎浪与微晕水环，衬托战舰浮于碧海之上的立体感。
-        let wakeArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
-            let g = ctx.cgContext
-            g.setLineCap(.round)
-            // 柔和半透明海沫底椭圆
-            g.setFillColor(red: 0.96, green: 0.98, blue: 1.0, alpha: 0.24)
-            g.fillEllipse(in: CGRect(x: 10, y: 66, width: 108, height: 42))
-            // 主浪弧与外层余波
-            g.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.72)
-            g.setLineWidth(3.4)
-            g.strokeEllipse(in: CGRect(x: 18, y: 74, width: 92, height: 28))
-            g.setStrokeColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.42)
-            g.setLineWidth(2.0)
-            g.strokeEllipse(in: CGRect(x: 8, y: 68, width: 112, height: 40))
-        }.cgImage
-        if let wakeArt { unitTextures["0fleetwake"] = (try? loader.newTexture(cgImage: wakeArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, wakeArt) }
         if let start = map.meta.economy {
             setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
         }
@@ -1300,7 +1372,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let isFading = fading
         let settled = (reveal >= 1) && (camera == lastFrameCamera) && mapScissor.width > 0 && mapScissor.height > 0
         lastFrameCamera = camera
-        let seasonBucket = seasonPhase < 0 ? -1 : Int((seasonPhase * 120).rounded())
+        let seasonBucket = seasonPhase < 0 ? -1 : Int((seasonPhase * 24).rounded())
         let lightBucket = Int((lightStrength * 100).rounded())
         if cachedCamera != camera || cachePixelSize != (dw, dh) || cacheSampleCount != view.sampleCount {
             baseCacheValid = false

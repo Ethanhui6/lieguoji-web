@@ -1,5 +1,29 @@
 # 更新日志
 
+## 4.2.7 / build 170 — 2026-11-24
+
+### 一、紧急根治重大 Bug：军队在地图上完全不动、只有事件在动
+- **查明并彻底修复世界切换时的渲染回调清空竞态（`MapView.swift`）**：
+  - `v4.2.6` 将高频地图通道移出 `@Published` 改用 `MapController.onNeedsSync` 后，新建世界或读取存档切换 `worldID` 时，SwiftUI 会先挂载新 `MapView` 再销毁旧 `MapView`；旧实例 `dismantleUIView` 调用 `Coordinator.stop()` 时无条件执行了 `controller.onNeedsSync = nil`，直接抹掉了新地图刚刚注册的渲染回调，导致推演中只有 SwiftUI 事件在更新，而地图上的军队、舰队与战线全部原地冻结。
+  - 现重构为带实例归属锁的 `registerSync(owner:handler:)` / `unregisterSync(owner:)`，旧视图卸载时仅允许清理自身归属的回调；同时在 `MapView.updateUIView`、`Coordinator.layoutChanged()` 与 `sync()` 增加自动校验重绑与 `isAnimating` 显示链路保活（即使半屏面板开启且关闭了开页自动暂停，军队亦以 30fps 流畅行军绝不冻结）。
+
+### 二、传报系统全面整改：打开任意界面立即停弹 × 严格时令校准 × 标明事件发生时间
+- **点击其他界面立即停止并清空后台传报（`GameModel.swift`、`GameView.swift`）**：
+  - 打开任意弹窗/面板（国家、州郡、军事、外交、纪事、菜单、排行、视图切换、天时抽屉或山河回放）瞬间立即同步置位 `pageOpen = true` 并调用 `dismissHerald()`：立刻终止正在播放的传报横幅、释放后台视频解码并清空待播队列，彻底根除“打开其他界面时背景上方还在疯狂乱弹事件、严重拖卡”的顽疾。
+- **杜绝跨季错时播放（彻底消灭“夏天还在放春天事件”）**：
+  - 为每条 `Herald` 精确记录事件发生的 `day`、`month` 与 `dateText`，新增 `GameModel.isHeraldTimely(_:state:)` 严格校验：① 距当前日期超过 35 日的积压旧传报直接丢弃；② 凡属四时天象/农桑灾丰类事件或含季节词（春/夏/秋/冬/暴雪/封山/梅雨等），一旦当前推演已进入另一季节立即丢弃，绝不跨季错放；③ 战事传报仅在对应战争仍在持续时弹出；④ 队列上限压紧至 2 条、4× 及以上高倍速缩短停留时长，且推演中当前展示的传报若过期或跨季会即时自动收起。
+- **顶部传报清晰标注事件发生年月与季节（`HeraldScene.swift`）**：
+  - 在顶部传报横幅标题旁新增等宽数字时间徽签（如 `1452年3月·春`），让玩家一眼明晰该条传报精确发生于何时何季。
+
+### 三、进入游戏过渡重铸 & 全链路实机流畅度再提速
+- **进入游戏秒级无卡顿无缝过渡（`MapRenderer.swift`、`GameModel.swift`、`TitleViews.swift`）**：
+  - 新增跨世界复用的 `SharedMetalAssets` 静态缓存：将原本每次进入新世界/续档都在主线程耗时 ~485ms 重新编译的 1,100+ 行 Metal 着色器源码、20 条渲染管线、羊皮纸纹理与 16 张兵种序列帧贴图常驻复用，将 `MapRenderer.init` 耗时骤降至 ~15ms；
+  - 读档与进局统一在 `GeneratingView` 阶段即等待新 `MapView` 挂载就绪后再切入 `.playing` 并以轻快的 `1.15s`（新建 `2.0s` 且全屏轻点可随时跳过）丝滑展卷，彻底告别白屏闪跳与生硬顿挫。
+- **进一步削减游玩期主线程与 GPU 卡顿（`MapRenderer.swift`、`GameModel.swift`、`GameView.swift`、`HeraldScene.swift`、`InkVideoPlayer.swift`）**：
+  - `MapRenderer` 离屏底图缓存的节气分桶由 `120` 档/年（每 3 天即失效重绘）优化为 `24` 档/年（每半月一档，与天气层一致），大幅降低游玩期间离屏 20,000 地块重烘焙频次 5 倍；
+  - 4× 以上高倍速（`8×/16×`）或机身偏热时，传报横幅自动切换零 `AVQueuePlayer` 解码开销的高清预烘焙古画静帧海报；`HeraldBanner` 与 `FoundingView` 动效时钟由 120Hz 节流至 30Hz，并移除顶栏日期高频数字形变动画；
+  - `GameModel` 适度放宽推演态 `publishState`（`0.28s`）与领土合批门限（`0.22s`/`0.36s`），预建国色查表替代每步 200+ 次 CSS 十六进制解析，并用 `cityByProvCache` 替代线性扫描，实机帧率与跟手度显著跃升。
+
 ## 4.2.6 / build 169 — 2026-11-24
 
 ### 一、UI 细节、矢量图标规范与视觉材质全面重构

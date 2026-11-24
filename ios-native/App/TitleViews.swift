@@ -272,7 +272,8 @@ struct TitleView: View {
                 },
                 inputs: model.previewInputs
             )
-            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            .background(MemorialPaper().ignoresSafeArea())
+            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
             WorldArchiveSheet(model: model) { world in
@@ -282,7 +283,8 @@ struct TitleView: View {
                     await model.openArchived(world)
                 }
             }
-            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            .background(MemorialPaper().ignoresSafeArea())
+            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $settings) {
             ScrollView {
@@ -310,9 +312,10 @@ struct TitleView: View {
                 }
                 .padding(.bottom, 24)
             }
-            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+            .background(MemorialPaper().ignoresSafeArea())
+            .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
         }
-        .sheet(isPresented: $notes) { ReleaseNotesSheet().presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().background(MemorialPaper().ignoresSafeArea()).presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden) }
     }
 }
 
@@ -880,112 +883,250 @@ private struct TerrainSilhouette: View {
     }
 }
 
-// While the engine builds a world: ink drops spreading on paper.
+// 引擎建世铺卷过场：宣纸暖光水墨晕圈 + 鎏金经纬微环 + 书法朱印「开卷」，零离屏模糊。
 struct GeneratingView: View {
     let note: String
-    @State private var phase = false
+    @State private var pulse = false
+    @State private var spin = false
     var body: some View {
         ZStack {
-            Theme.paper.opacity(0.92).ignoresSafeArea()
-            VStack(spacing: 22) {
+            MemorialPaper(rules: false).ignoresSafeArea()
+            VStack(spacing: 18) {
                 ZStack {
-                    ForEach(0..<3) { i in
-                        Circle().stroke(Theme.ink.opacity(0.5), lineWidth: 1.2).frame(width: 46, height: 46)
-                            .scaleEffect(phase ? 2.4 : 0.4).opacity(phase ? 0 : 0.8)
-                            .animation(.easeOut(duration: 2.1).repeatForever(autoreverses: false).delay(Double(i) * 0.7), value: phase)
+                    // 宣纸微暖水墨晕环（纯渐变，零离屏开销）
+                    ForEach(0..<3, id: \.self) { i in
+                        Circle()
+                            .stroke(
+                                i == 0 ? Theme.seal.opacity(0.38) : SplashView.gold.opacity(0.45),
+                                lineWidth: i == 0 ? 1.4 : 1.0
+                            )
+                            .frame(width: 58, height: 58)
+                            .scaleEffect(pulse ? 2.35 : 0.72)
+                            .opacity(pulse ? 0 : 0.82)
+                            .animation(
+                                .easeOut(duration: 2.2).repeatForever(autoreverses: false).delay(Double(i) * 0.72),
+                                value: pulse
+                            )
                     }
-                    SealMark(size: 54)
+                    // 细金经纬虚线仪环
+                    Circle()
+                        .stroke(SplashView.gold.opacity(0.55), style: StrokeStyle(lineWidth: 1.0, dash: [4, 5]))
+                        .frame(width: 84, height: 84)
+                        .rotationEffect(.degrees(spin ? 360 : 0))
+                        .animation(.linear(duration: 18).repeatForever(autoreverses: false), value: spin)
+                    SealFace(text: "开卷", size: 48)
+                        .shadow(color: Theme.seal.opacity(0.28), radius: 10, y: 4)
                 }
-                .frame(height: 140)
-                Text(note.isEmpty ? "请稍候" : note).font(Theme.kai(20)).foregroundStyle(Theme.ink)
-                Text("地形、海岸、河流、国家与城市依次成形").font(Theme.kai(14)).foregroundStyle(Theme.ink2)
+                .frame(height: 136)
+                VStack(spacing: 6) {
+                    Text(note.isEmpty ? "铺宣勘舆，请稍候" : note)
+                        .font(Theme.kai(20))
+                        .foregroundStyle(Theme.ink)
+                    Text("山川海陆、江河州郡与列国邦交依次成形")
+                        .font(Theme.kai(13))
+                        .foregroundStyle(Theme.ink2)
+                }
             }
+            .padding(.horizontal, 28)
         }
-        .onAppear { phase = true }
+        .onAppear {
+            pulse = true
+            spin = true
+        }
     }
 }
 
 // MARK: - game
 
-/// 经典开卷阶段浮卡：铺纸注海 → 勾勒海岸 → 晕染山河 → 冲刷江河 → 划分州郡 → 分封列国 → 勘定国界 → 营建城邦，
-/// 实时跟随显卡开卷时钟与引擎建世阶段推进。
+/// 御卷建世浮卡（60/120fps 零卡顿重构）：
+/// - 动态单字书法朱印（海 / 岸 / 山 / 川 / 州 / 国 / 界 / 城 / 族 / 兵 / 盟 / 定）配诗意副题与八珠步进；
+/// - 抬头与步进珠严格按 `Equatable` 隔离，仅在阶段切换时更新；底部细墨进度条独占轻帧刷新，
+///   不叠加重型实时毛玻璃模糊，把全部 GPU 留给 Metal 山河水墨开卷！
 struct FoundingView: View {
     @ObservedObject var controller: MapController
     let cancel: () -> Void
     private var liveReveal: Float { controller.revealNow ?? controller.reveal }
-    static let stages: [(until: Float, text: String)] = [
-        (0.15, "铺纸注海"), (0.30, "勾勒海岸"), (0.44, "晕染山河"), (0.50, "冲刷江河，播撒林木"),
-        (0.56, "划分州郡"), (0.75, "分封列国"), (0.85, "勘定国界"), (1.00, "营建城邦与港口"),
+
+    struct StageMeta: Equatable {
+        let until: Float
+        let seal: String
+        let title: String
+        let poetic: String
+    }
+
+    static let stages: [StageMeta] = [
+        StageMeta(until: 0.15, seal: "海", title: "铺纸注海", poetic: "澄墨入宣，四海波兴"),
+        StageMeta(until: 0.30, seal: "岸", title: "勾勒海岸", poetic: "岬湾初定，洲岛分明"),
+        StageMeta(until: 0.44, seal: "山", title: "晕染山河", poetic: "青绿皴染，峰峦叠翠"),
+        StageMeta(until: 0.50, seal: "川", title: "疏浚江河", poetic: "大河奔流，林木蔚然"),
+        StageMeta(until: 0.56, seal: "州", title: "划分州郡", poetic: "经纬分疆，郡县棋布"),
+        StageMeta(until: 0.75, seal: "国", title: "分封列国", poetic: "裂土封侯，诸雄并起"),
+        StageMeta(until: 0.85, seal: "界", title: "勘定国界", poetic: "四境既明，雄关星列"),
+        StageMeta(until: 1.00, seal: "城", title: "营建城邦", poetic: "城郭宏开，通商海港"),
     ]
-    static let later = ["诞生世家与人物", "编练军队", "缔结邦交", "天下初定"]
+    static let later: [StageMeta] = [
+        StageMeta(until: 1.0, seal: "族", title: "诞生世家与人物", poetic: "门阀绵延，群英入仕"),
+        StageMeta(until: 1.0, seal: "兵", title: "编练列国军旅", poetic: "整军经武，旌旗列阵"),
+        StageMeta(until: 1.0, seal: "盟", title: "缔结纵横邦交", poetic: "合纵连横，使节往来"),
+        StageMeta(until: 1.0, seal: "定", title: "天下初定", poetic: "九州既成，即将入局"),
+    ]
+
     @State private var started = Date()
+
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { context in
             let reveal = liveReveal
             let canSkip = controller.revealClock != nil && reveal > 0.06 && !ShotTour.on
             let waited = reveal >= 1 ? context.date.timeIntervalSince(started) : 0
             let laterIndex = min(Self.later.count - 1, controller.foundingStage)
-            let current = reveal < 1 ? (Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1) : Self.stages.count + laterIndex
-            let all = Self.stages.map(\.text) + Self.later
+            let current = reveal < 1
+                ? (Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1)
+                : Self.stages.count + laterIndex
             let creep: Double = (1 - exp(-waited / 8)) * 0.9
-            let progress: Double = reveal < 1 ? Double(reveal) * 0.85 : 0.85 + (Double(laterIndex) + creep) / Double(Self.later.count) * 0.15
+            let progress: Double = reveal < 1
+                ? Double(reveal) * 0.85
+                : 0.85 + (Double(laterIndex) + creep) / Double(Self.later.count) * 0.15
+
             VStack {
                 Spacer()
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(max(0, current - 3)..<current, id: \.self) { i in
-                        HStack(spacing: 8) {
-                            InkIcon(glyph: .peace, size: 12, weight: 1.8).foregroundStyle(Theme.jade)
-                            Text(all[i]).font(Theme.kai(14)).foregroundStyle(Theme.ink2)
-                        }
-                        .opacity(0.45 + 0.18 * Double(i - (current - 3)))
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                    HStack(spacing: 8) {
-                        ArtEmblem(image: BundleArt.sealChronicle, size: 26, fallback: .chronicle)
-                        Text(all[min(current, all.count - 1)] + "……").font(Theme.kai(20)).foregroundStyle(Theme.ink)
-                            .id(current).transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
-                    }
-                    // 零 GeometryReader 布局抖动的 60fps GPU 缩放进度条
+                VStack(alignment: .leading, spacing: 11) {
+                    FoundingCartoucheHeader(current: current)
+                        .equatable()
+
+                    // 极轻纯 GPU 缩放墨金双色进度条
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Theme.ink.opacity(0.10))
-                        Rectangle()
-                            .fill(Theme.seal)
-                            .scaleEffect(x: max(0.015, min(1.0, progress)), y: 1, anchor: .leading)
+                        Capsule().fill(Theme.ink.opacity(0.11))
+                        LinearGradient(
+                            colors: [Theme.seal, Color(red: 0.80, green: 0.56, blue: 0.24)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .scaleEffect(x: max(0.015, min(1.0, progress)), y: 1, anchor: .leading)
                     }
                     .frame(height: 4.5)
                     .clipShape(Capsule())
-                    HStack {
-                        Text("\(Int(progress * 100))%").font(Theme.kai(12)).foregroundStyle(Theme.ink2).monospacedDigit()
+
+                    HStack(spacing: 8) {
+                        Text("\(Int(progress * 100))%")
+                            .font(Theme.kai(12))
+                            .foregroundStyle(Theme.ink2)
+                            .monospacedDigit()
                         Spacer()
                         if canSkip {
-                            Text("轻点立即入局 ›").font(Theme.kai(12)).foregroundStyle(Theme.seal)
+                            Text("轻点立即入局 ›")
+                                .font(Theme.kai(12))
+                                .foregroundStyle(Theme.seal)
+                        } else {
+                            Text(current < Self.stages.count ? "第 \(current + 1)/\(Self.stages.count) 笔" : "史卷落成")
+                                .font(Theme.kai(11.5))
+                                .foregroundStyle(Theme.ink2.opacity(0.8))
+                                .monospacedDigit()
                         }
                     }
+
                     if waited > 20 {
                         HStack(spacing: 8) {
-                            Text("比平时久一些，仍在推算").font(Theme.kai(13)).foregroundStyle(Theme.ink2)
+                            Text("比平时久一些，仍在推算")
+                                .font(Theme.kai(13))
+                                .foregroundStyle(Theme.ink2)
                             Spacer(minLength: 8)
-                            Button(action: cancel) { Text("放弃，回标题").font(Theme.kai(13)).foregroundStyle(Theme.seal) }.buttonStyle(PressStyle())
+                            Button(action: cancel) {
+                                Text("放弃，回标题")
+                                    .font(Theme.kai(13))
+                                    .foregroundStyle(Theme.seal)
+                            }
+                            .buttonStyle(PressStyle())
                         }
                         .transition(.opacity)
                     }
                 }
-                .animation(Motion.panel, value: current)
-                .animation(Motion.fade, value: waited > 20)
-                .padding(.horizontal, 20).padding(.vertical, 16)
-                .frame(maxWidth: 360, alignment: .leading)
-                .glass(RoundedRectangle(cornerRadius: Theme.Control.cornerSheet, style: .continuous))
-                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.2), radius: 12, y: 5)
-                .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerSheet, style: .continuous))
+                .padding(.horizontal, 18).padding(.vertical, 15)
+                .frame(maxWidth: 356, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Theme.paper2.opacity(0.95))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(SplashView.gold.opacity(0.42), lineWidth: 0.75)
+                        .padding(4)
+                        .allowsHitTesting(false)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Theme.ink.opacity(0.20), lineWidth: 0.9)
+                        .allowsHitTesting(false)
+                )
+                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.22), radius: 14, y: 6)
+                .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .onTapGesture {
                     if canSkip {
                         GameFeel.shared.tap()
                         controller.skipReveal()
                     }
                 }
-                .padding(.bottom, 40)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 34)
             }
             .onChange(of: reveal >= 1) { _, done in if done { started = Date() } }
         }
+    }
+}
+
+/// 等值隔离的开卷抬头与八珠步进：仅在阶段序号 `current` 跃迁时重绘，60fps 进度刷新零额外排版开销。
+private struct FoundingCartoucheHeader: View, Equatable {
+    let current: Int
+    var body: some View {
+        let all = FoundingView.stages + FoundingView.later
+        let clamped = max(0, min(current, all.count - 1))
+        let meta = all[clamped]
+        let prevTitle: String? = clamped > 0 ? all[clamped - 1].title : nil
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Theme.seal.opacity(0.11))
+                        .frame(width: 44, height: 44)
+                    SealFace(text: meta.seal, size: 36)
+                        .id(meta.seal)
+                        .transition(.scale(scale: 0.84).combined(with: .opacity))
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(meta.title)
+                            .font(Theme.kai(19))
+                            .foregroundStyle(Theme.ink)
+                            .lineLimit(1)
+                            .id(clamped)
+                            .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
+                        if let prevTitle {
+                            Text("· 已成\(prevTitle)")
+                                .font(Theme.kai(11.5))
+                                .foregroundStyle(Theme.jade)
+                                .lineLimit(1)
+                        }
+                    }
+                    Text(meta.poetic)
+                        .font(Theme.kai(12.5))
+                        .foregroundStyle(Theme.ink2)
+                        .lineLimit(1)
+                        .id("p-\(clamped)")
+                        .transition(.opacity)
+                }
+                Spacer(minLength: 0)
+            }
+            // 八珠开卷进度点：已成青玉、当前朱砂长胶囊、未启淡墨
+            HStack(spacing: 5) {
+                ForEach(0..<FoundingView.stages.count, id: \.self) { i in
+                    let done = i < clamped
+                    let active = i == min(clamped, FoundingView.stages.count - 1)
+                    Capsule()
+                        .fill(done ? Theme.jade.opacity(0.82) : (active ? Theme.seal : Theme.ink.opacity(0.14)))
+                        .frame(width: active ? 18 : 7, height: 4.5)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .animation(Motion.panel, value: clamped)
     }
 }

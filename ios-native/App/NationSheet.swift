@@ -357,7 +357,8 @@ struct NationSheet: View {
                         Task { await run(success: "已任命\(name)为\((target.office.hasPrefix("WarCommander") ? "征伐主将" : Self.title(String(target.office.split(separator: ":").first ?? ""), info)))") { await model.appointOffice(nation, office: target.office, person: person) } }
                     }
                 }
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .background(MemorialPaper().ignoresSafeArea())
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $editing) { p in
                 PersonEditor(person: p) { skills, traits, first, last, age in
@@ -369,26 +370,30 @@ struct NationSheet: View {
                         }
                     }
                 }
-                .presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .background(MemorialPaper().ignoresSafeArea())
+                .presentationDetents([.large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
-            .sheet(item: $picking) { pick in pickSheet(pick, map, state).presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section) }
+            .sheet(item: $picking) { pick in pickSheet(pick, map, state).background(MemorialPaper().ignoresSafeArea()).presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section) }
             .sheet(item: $tree, onDismiss: { Task { await reload() } }) { t in
                 FamilyTreeSheet(model: model, family: t.id, name: t.name)
-                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
+                    .background(MemorialPaper().ignoresSafeArea())
+                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
             }
             .sheet(item: $numberEdit) { e in
                 NumberEditSheet(title: e.title, unit: e.unit, value: e.value) { v in
                     numberEdit = nil
                     Task { await run(success: "\(e.title)已改为 \(Int(v))\(e.unit)") { await e.apply(v) } }
                 }
-                .presentationDetents([.height(370)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .background(MemorialPaper().ignoresSafeArea())
+                .presentationDetents([.height(370)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $partyEdit) { p in
                 PartyEditSheet(name: p.name, seats: p.seats) { name, seats in
                     partyEdit = nil
                     Task { await run(success: "\(name)已修改") { await model.editParty(nation, party: p.id, name: name, seats: seats) } }
                 }
-                .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .background(MemorialPaper().ignoresSafeArea())
+                .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $creatingHouse) {
                 let lex = LocalizationEngine.lexicon(culture: info?.culture ?? s.culture ?? meta?.culture, polity: info?.polity ?? s.polity ?? meta?.polity, style: info?.style)
@@ -414,18 +419,21 @@ struct NationSheet: View {
                     .padding(.horizontal, 16)
                 }
                 .padding(.bottom, 22)
-                .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .background(MemorialPaper().ignoresSafeArea())
+                .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $enthroning) {
                 EnthroneSheet(model: model, nation: nation, stateName: meta?.name ?? info?.name ?? "", culture: info?.culture ?? s.culture, polity: info?.polity ?? s.polity, style: info?.style) { personId, name in
                     enthroning = false
                     Task { await run(success: "已推举\(name)就任执政") { await model.enthronePerson(nation, person: personId) } }
                 }
-                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                .background(MemorialPaper().ignoresSafeArea())
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $showingBreakdown) {
                 NationBreakdownSheet(model: model, nation: nation, nationName: meta?.name ?? info?.name ?? "")
-                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+                    .background(MemorialPaper().ignoresSafeArea())
+                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
     }
@@ -509,10 +517,22 @@ struct NationSheet: View {
 
         LazyVStack(alignment: .leading, spacing: 14) {
                 let heroClip: String = {
-                    if !info.wars.isEmpty { return "herald-war" }
-                    if (info.seaTransport?.totalPorts ?? 0) >= 2 && !myFleets.isEmpty { return "herald-voyage" }
+                    if !info.wars.isEmpty {
+                        if (info.seaTransport?.totalPorts ?? 0) >= 2 && !myFleets.isEmpty && nation % 2 == 1 { return "herald-naval" }
+                        if info.wars.count >= 2 || (info.wars.first?.months ?? 0) >= 16 { return "herald-siege" }
+                        return "herald-war"
+                    }
+                    if (info.polityDetail?.coupRisk ?? 0) >= 48 { return "herald-uprising" }
+                    if (info.seaTransport?.totalPorts ?? 0) >= 2 && !myFleets.isEmpty {
+                        return nation % 2 == 0 ? "herald-voyage-fleet" : "herald-voyage"
+                    }
+                    if info.alliance != nil && nation % 2 == 0 { return "herald-alliance" }
                     if ovLex.isRepublican { return "herald-reform" }
-                    return "herald-coronation"
+                    switch nation % 3 {
+                    case 0: return "herald-coronation"
+                    case 1: return "herald-regime"
+                    default: return "herald-peace"
+                    }
                 }()
                 if InkVideoStage.hasVideo(heroClip) {
                     InkVideoStage(clip: heroClip, cornerRadius: 12, tint: !info.wars.isEmpty ? Theme.seal : Theme.jade)

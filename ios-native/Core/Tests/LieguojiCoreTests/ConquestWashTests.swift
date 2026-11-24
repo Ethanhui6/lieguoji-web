@@ -250,6 +250,33 @@ final class ConquestWashTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(ink.leave[Self.cellAt(33, 5)], InkCells.never, "远处的墨不受影响")
     }
 
+    func testFriendlyArmyReclaimsEnemyInkAfterEnemyLeaves() {
+        // 敌军（国 0）走过我方（国 1）州 3、州 4 留下墨晕后，敌军已经撤离该区域；
+        // 我方军队沿着敌军走过的区域行军，应发出 .reclaim 并将沿途敌墨平滑洗回我方国色。
+        let (t, owners) = Self.front()
+        let ink = InkCells(topology: t)
+        ink.apply(WashFrame(day: 1, inputs: [Self.march(SIMD2(32, 5.5), SIMD2(46, 5.5), day: 1)], enemies: [0: [1]]), owners: owners, now: 0, tween: 0.5)
+        XCTAssertEqual(ink.nation[Self.cellAt(36, 5)], 0)
+        XCTAssertEqual(ink.nation[Self.cellAt(44, 5)], 0)
+        // 验证 WashFrame.from：敌军已离开州 4，我方军队行经州 4 时应自动生成 .reclaim
+        let nations = [Self.nation([1]), Self.nation([0])]
+        let prevS = Self.state(owners, nations: nations, armies: [Self.army("f1", nation: 1, province: 4, x: 46, y: 5.5, troops: 5000)], day: 2)
+        let nextS = Self.state(owners, nations: nations, armies: [Self.army("f1", nation: 1, province: 4, x: 35, y: 5.5, troops: 5000)], day: 3)
+        let frame = WashFrame.from(previous: prevS, next: nextS)
+        let reclaims = frame.inputs.filter { $0.kind == .reclaim && $0.attacker == 1 }
+        XCTAssertEqual(reclaims.count, 1, "敌军撤走后，我方本土军队应生成回染指令")
+        XCTAssertEqual(reclaims.first?.armies, [SIMD2(46, 5.5), SIMD2(35, 5.5)])
+        // 应用回染帧：沿我方行军路径 46 → 35 的敌墨按行军顺序逐步触发平滑回染
+        ink.apply(frame, owners: owners, now: 5, tween: 0.5)
+        XCTAssertLessThan(ink.leave[Self.cellAt(45, 5)], InkCells.never, "起点附近敌墨立即开始染回")
+        XCTAssertLessThan(ink.leave[Self.cellAt(36, 5)], InkCells.never, "终点附近敌墨随军抵达染回")
+        XCTAssertLessThan(ink.leave[Self.cellAt(45, 5)], ink.leave[Self.cellAt(36, 5)], "回染前沿跟随我方军队行军方向顺次扫过")
+        // 过完回染淡出时长后，沿途格子的敌墨彻底洗净恢复我方本色
+        ink.apply(WashFrame(day: 4, inputs: [], enemies: [0: [1]]), owners: owners, now: 9, tween: 0.5)
+        XCTAssertEqual(ink.nation[Self.cellAt(45, 5)], -1)
+        XCTAssertEqual(ink.nation[Self.cellAt(36, 5)], -1)
+    }
+
     func testMultiProvinceBranchingFrontAndDefenderResistance() {
         // 30 × 20：左下为国 0 前哨 P0，中下为州 A (x 10..19, y 10..19)，右下为 B 无守军 (x 20..29, y 10..19)，中上为 C 有守军 (x 10..19, y 0..9)
         let t = Self.grid(30, 20) { x, y in

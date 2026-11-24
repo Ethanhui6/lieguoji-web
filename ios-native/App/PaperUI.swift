@@ -24,7 +24,7 @@ struct MemorialPaper: View {
             let k = max(size.width / parchment.size.width, size.height / parchment.size.height)
             let w = parchment.size.width * k, h = parchment.size.height * k
             parchment.draw(in: CGRect(x: (size.width - w) / 2, y: (size.height - h) / 2, width: w, height: h), blendMode: .multiply, alpha: 0.55)
-            let colors = [UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 0.55).cgColor, UIColor.clear.cgColor, UIColor(red: 0.55, green: 0.42, blue: 0.25, alpha: 0.10).cgColor] as CFArray
+            let colors = [UIColor(red: 0.96, green: 0.93, blue: 0.85, alpha: 0.22).cgColor, UIColor.clear.cgColor, UIColor(red: 0.55, green: 0.42, blue: 0.25, alpha: 0.12).cgColor] as CFArray
             if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.5, 1]) {
                 ctx.cgContext.drawLinearGradient(g, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
             }

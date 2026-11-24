@@ -53,8 +53,9 @@ final class StrategyDepthTests: XCTestCase {
         XCTAssertEqual(vet.label, "虎贲·近卫")
 
         // 3. 补给线与每日结算安全运行
-        let sup = ArmyTactics.supplyStatus(r, army: a)
-        XCTAssertNotNil(sup.state.label)
+        let provIdx = r.world.provinces.asArray.firstIndex(where: { $0.id.asString == a.provinceId.asString })
+        let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: provIdx)
+        XCTAssertFalse(sup.state.label.isEmpty)
         ArmyTactics.dailyTick(r)
 
         // 4. 兵种克制清单完整返回

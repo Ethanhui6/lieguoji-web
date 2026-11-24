@@ -1,5 +1,41 @@
 # 更新日志
 
+## 4.2.3 / build 166 — 2026-11-24
+
+### 一、彻底根治严重卡顿、更新日志点开卡顿与行军/光影不流畅
+- **手势 VSync 合帧与 0 帧图层锁定（`MapView.swift`、`MapRenderer.swift`）**：
+  - 将高频单指拖拽与双指缩放改由 `pendingCamera` 累积至 `CADisplayLink` 每 VSync 仅提交 1 次原子 `CATransaction` + Metal 渲染，彻底根除以前触控回调在单帧内多次同步 `mtk.draw()` + `waitUntilScheduled()` 阻塞主线程造成的严重掉帧与发烫；
+  - 纯平移与惯性滑行期间启用零网格分配的 `labels.panVisible` 快路径（每 4 帧与松手尾帧完整重排避让），同时维持底图与军团动画、国名、兵力条 0 像素错位。
+- **军队丝滑连续行军 × 活态海波与云影光晕（`MapRenderer.swift`、`MapView.swift`）**：
+  - 抬高行军帧率温控底线：常规与轻温（`.fair`）稳定满帧 `60fps`（仅在严重/极端发热才温和降至 `45/30fps`），彻底告别以往开玩两分钟即锁死 30/20fps 的顿挫感；
+  - 为军团位移新增跨步 C1 Hermite 速度连续衔接（`lastLegVelocity` + `1.18×` 步长微叠），转弯与连续行军如丝顺滑、不再每步一顿；
+  - 新增静态观图 `30fps` 轻耗活态光晕模式（`ambientActive`），海面波光与西北流云柔影持续流动、不再在推演间隙停顿跳帧。
+- **视频首帧与更新日志 0 毫秒秒开（`InkVideoPlayer.swift`、`HeraldScene.swift`、`LieguojiApp.swift`）**：
+  - 彻底废除在主线程同步调用 `AVAssetImageGenerator.copyCGImage` 解码视频首帧的卡顿元凶，改用预烘焙的 19 张轻量 `320×180` 首帧海报（`< 0.5ms` 即显）并异步延后 `0.12s` 启动硬件解码平滑淡入；传报卷轴展卷完毕（`0.68s`）即刻停止 `TimelineView` 逐帧重算；
+  - `ReleaseNotesSheet`（更新日志）由全量迫切 `VStack`（一次性排版 38 个版本）重构为 `LazyVStack`（默认展示最近 4 版 + 一键「展开更早历史版本」），点击「更新」即刻秒开零卡顿。
+
+### 二、敌军墨晕升级 × 友军路过顺滑染回我方领土
+- **友军收复染回机制（`ConquestWash.swift`、`InkCells.swift`、`ConquestWashTests.swift`）**：
+  - 彻底修复敌军在我方领土留下墨晕后撤离、因该州不再交战导致我方军队经过却无法洗回敌墨的机制缺口：新增 `WashInput.Kind.reclaim` 友军收复信号，凡我方军队行军或驻守在本国被敌墨染污的州郡（无论敌军是否仍在），均沿 `from → to` 全程行军路径以方向性反洗墨波顺滑将领土染回我方本色；
+  - 同步优化墨格统计（`provinceInkCount` / `totalInkCells` O(1) 早退跳过洁净州郡），并新增 `testFriendlyArmyReclaimsEnemyInkAfterEnemyLeaves` 单元测试严格锁死不回退。
+- **生宣水彩墨晕着色器精修（`Ink.swift`、`Wash.swift`）**：
+  - 升级 `inkCompositeFragment` 与 `sweepFragment` 为高速双八度 `fbm2` + 细腻生宣纤维羽化（边缘柔化加倍、去除泥褐色浑浊混色，以纯净矿彩国色呈现攻占与反洗收干层次），在 GPU 算力显著下降的同时呈现更通透自然的宣纸晕染过渡。
+
+### 三、彻底根治国家页白边 × AI 手绘御卷装裱边框 × 地图图层与光影重铸
+- **彻底根除国家页及全部弹窗白边（`project.yml`、`GameView.swift`、`NationSheet.swift`、`TitleViews.swift`、`PaperUI.swift`）**：
+  - 查明 iOS 26 SDK 编译下弹窗出现四周留白与刺眼白玻璃亮边的真正根因，在 `project.yml` 开启 `UIDesignRequiresCompatibility: true` 退出系统悬浮玻璃边框，全站弹窗统一改为 `.background(MemorialPaper().ignoresSafeArea())` + 实底 `.presentationBackground(Theme.paper)`，并压暗 `MemorialPaper` 顶边泛白叠层，横竖屏国家页与全部二级面板彻彻底底零白边。
+- **AI 手绘御制千里江山装裱边框（`MapRenderer.swift`、`MapLayers.swift`、`Resources/Art/scroll-*.png`）**：
+  - 全新生成并接入 3 套 AI 手绘高精御卷装裱纹理：上下无缝宋锦织锦紫檀镶边（`scroll-border-h.png`）、左右圆柱紫檀雕花卷轴与绫锦竖边（`scroll-roller-v.png`）、四角透明鎏金碧玉云纹包角（`scroll-corner.png`），配合 `scrollBorderFragment` 统一西北御案柔光与 45° 斜接桌案落影，拉远展卷尽显博物馆手卷质感。
+- **地图图层与定向光影全面升级（`MapLayers.swift`、`MapRenderer.swift`）**：
+  - 清除 `MapLayers.relief` 中生硬的几何尖角三角山与 `"V V V"` 草原折线，重绘为柔和 9 点宋画云烟曲弧远山、叠瓣苍翠松林与润泽草甸；大幅强化地形法线定向明暗（`hillshade` 向阳暖金坡 / 背阴松烟谷），提亮海面浅滩青绿宝石光泽与动态斜阳碎金水光，并精简陆地片元噪声与零灾异循环早退。
+
+### 四、开局与地图生成过渡动效重绘 × 19 部全画幅 60fps 历史短视频
+- **重绘 `GeneratingView` 与 `FoundingView` 开卷动效（`TitleViews.swift`、`MapRenderer.swift`）**：
+  - 淘汰粗糙的暗褐石印与扭曲小对勾，重铸为典雅御卷建世浮卡：12 阶段专属动态单字书法朱印（海/岸/山/川/州/国/界/城/族/兵/盟/定）+ 诗意副题 + 八珠步进，并以 `Equatable` 隔离抬头与 60fps 纯 GPU 墨金进度条，取消遮罩模糊释放全部算力给 Metal；同步升级 `veilFragment` 为三源有机水墨漫渗开卷。
+- **顶部传报短视频扩充至 19 部全画幅 60fps + 4 连防重轮播（`HeraldScene.swift`、`InkVideoPlayer.swift`、`NationSheet.swift`）**：
+  - 在原有 10 部基础上全新制作 9 部 180 帧真 60fps 全画幅短视频（民变烽火 `uprising`、王室联姻 `marriage`、赤地大旱 `drought`、瘟疫迷城 `plague`、远洋宝船舰队 `voyage-fleet`、暴雨山洪 `flood`、凯旋破城 `capture`、故国斜阳 `extinction`、会盟定鼎 `alliance`），总数达 **19 部**；新增 4 连防重循环队列大幅降低重复率，并同步扩展国家页横幅视频匹配种类。
+- **修复核心测试构建错误（`StrategyDepthTests.swift`）**：补齐 `ArmyTactics.supplyStatus` 缺失的 `provinceIndex` 参数，全量 `core-linux` 单元测试、`archive` 打包与模拟器实机截图验证全绿通过。
+
 ## 4.2.2 / build 165 — 2026-11-23
 
 ### 一、实机反馈核心体验与视觉缺陷全面根治

@@ -150,8 +150,10 @@ public struct WashInput: Equatable, Sendable {
         case capture
         /// 行军：attacker 的一支军队在敌境，armies = [上一步位置, 这一步位置]，troops 为兵力。
         case march
-        /// 守军：attacker（守方）的一支军队在本土与敌相持，armies = [位置]，把周围的敌墨推回。
+        /// 守军：attacker（守方）的一支军队在本土与敌相持，armies = [位置] 或 [上一步位置, 这一步位置]，把周围的敌墨推回。
         case hold
+        /// 回染：attacker 的一支我方军队行经或驻守在本土（即使敌军已撤离），把敌方此前留下的墨晕沿行军路线平滑染回我方国色。
+        case reclaim
     }
     public var province: Int
     public var attacker: Int
@@ -207,12 +209,16 @@ public struct WashFrame: Equatable, Sendable {
         for s in next.sieges where s.progress > 0.005 { contested.insert(s.province) }
         for a in next.armies where a.troops > 0 && a.province >= 0 {
             let o = owner(a.province), at = SIMD2(a.x, a.y)
+            var from = at
+            if let b = before[a.id], washDistance(SIMD2(b.x, b.y), at) <= jump { from = SIMD2(b.x, b.y) }
             if o >= 0, o != a.nation, next.atWar(a.nation, o) {
-                var from = at
-                if let b = before[a.id], washDistance(SIMD2(b.x, b.y), at) <= jump { from = SIMD2(b.x, b.y) }
                 inputs.append(WashInput(province: a.province, attacker: a.nation, kind: .march, day: next.day, armies: [from, at], troops: Float(a.troops), key: a.id))
-            } else if o == a.nation, contested.contains(a.province) {
-                inputs.append(WashInput(province: a.province, attacker: a.nation, kind: .hold, day: next.day, armies: [at], troops: Float(a.troops), key: a.id))
+            } else if o == a.nation {
+                if contested.contains(a.province) {
+                    inputs.append(WashInput(province: a.province, attacker: a.nation, kind: .hold, day: next.day, armies: from == at ? [at] : [from, at], troops: Float(a.troops), key: a.id))
+                } else {
+                    inputs.append(WashInput(province: a.province, attacker: a.nation, kind: .reclaim, day: next.day, armies: [from, at], troops: Float(a.troops), key: a.id))
+                }
             }
         }
         func armies(_ s: GameState?, _ nation: Int, _ p: Int) -> [SIMD2<Float>] {

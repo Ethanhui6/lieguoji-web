@@ -56,13 +56,17 @@ public final class InkCells: @unchecked Sendable {
     private var stepStamp: UInt32 = 1
 
     public static let never: Float = 1e9
-    /// 显出与淡去的时长（秒）：拉长至温润水墨漫渗节律，彻底告别生硬块状弹出。
-    public static let revealSeconds: Float = 1.15
-    public static let fadeSeconds: Float = 1.65
-    /// 墨向外渗的速度（每秒几个格距）：近处先显、远处徐徐漫开。
-    public static let spreadPerSecond: Float = 1.35
+    /// 显出与淡去（回染）的时长（秒）：灵动温润的生宣水墨漫渗与回洗节律，丝滑不拖沓。
+    public static let revealSeconds: Float = 0.88
+    public static let fadeSeconds: Float = 1.18
+    /// 墨向外渗与我方回染的速度（每秒几个格距）：近处先显/先复原、远处顺势漫开。
+    public static let spreadPerSecond: Float = 1.65
+    public static let reclaimSpreadPerSecond: Float = 2.65
     /// 一年没有军队经过的墨淡去。
     public static let staleDays = 365
+    /// 各州当前存留敌墨的格子计数（用于 .reclaim 快速跳过干净省份，零无谓 Dijkstra 开销）。
+    private var provinceInkCount: [Int32] = []
+    private var totalInkCells: Int = 0
 
     /// 后台格子更新完成后发布的只读画面。同一份数据用于上传和易主颜色交接。
     public struct RenderSnapshot: Sendable {
@@ -107,6 +111,8 @@ public final class InkCells: @unchecked Sendable {
         prevLeave = Array(repeating: Self.never, count: n)
         prevMark = Array(repeating: 0, count: n)
         defendedMark = Array(repeating: 0, count: n)
+        provinceInkCount = Array(repeating: 0, count: topology.provinceCells.count)
+        totalInkCells = 0
         vertexData = Array(repeating: 0, count: topology.vertexCount * 4)
         for v in 0..<topology.vertexCount { vertexData[v * 4] = -1 }
         var r = [Float](repeating: 1, count: n), reachOf = [Float](repeating: 1, count: n)
@@ -139,6 +145,8 @@ public final class InkCells: @unchecked Sendable {
     /// 读档、换世界：全部收起。
     public func clear() {
         for c in nation.indices { nation[c] = -1; leave[c] = Self.never }
+        for p in provinceInkCount.indices { provinceInkCount[p] = 0 }
+        totalInkCells = 0
         for v in 0..<topology.vertexCount { vertexData[v * 4] = -1; vertexData[v * 4 + 3] = 0 }
         dwelt = [:]; lastDay = nil; busyUntil = 0
         revision &+= 1
@@ -185,6 +193,18 @@ public final class InkCells: @unchecked Sendable {
         var capturePrevious = false
         func setCell(_ c: Int, nation n: Int32, arrive a: Float, leave l: Float) {
             if nation[c] == n && arrive[c] == a && leave[c] == l { return }
+            let wasInked = nation[c] >= 0
+            let willInk = n >= 0
+            if wasInked != willInk {
+                let p = Int(t.province[c])
+                if willInk {
+                    totalInkCells += 1
+                    if provinceInkCount.indices.contains(p) { provinceInkCount[p] += 1 }
+                } else {
+                    totalInkCells = max(0, totalInkCells - 1)
+                    if provinceInkCount.indices.contains(p) { provinceInkCount[p] = max(0, provinceInkCount[p] - 1) }
+                }
+            }
             if capturePrevious && prevMark[c] != curStep {
                 prevMark[c] = curStep
                 prevNation[c] = nation[c]; prevArrive[c] = arrive[c]; prevLeave[c] = leave[c]
@@ -203,22 +223,64 @@ public final class InkCells: @unchecked Sendable {
             if o == n { setCell(c, nation: -1, arrive: 0, leave: Self.never) }
             else if !atWar(n, o) || frame.day - Int(touched[c]) > Self.staleDays { setCell(c, nation: Int32(n), arrive: arrive[c], leave: now) }
         }
-        // 先结算本步守军能保持的范围。相持时同一格只退墨一次，直到守军实际离开。
-        var holdsByProvince = [Int: (positions: [SIMD2<Float>], troops: Float)]()
-        for h in frame.inputs where h.kind == .hold && !h.armies.isEmpty {
-            if owners.indices.contains(h.province), owners[h.province] == h.attacker {
-                holdsByProvince[h.province, default: ([], 0)].positions.append(contentsOf: h.armies)
-                holdsByProvince[h.province, default: ([], 0)].troops += h.troops
+        // 先结算本步守军与回染部队能复原的范围：
+        // - `.hold`（本土交战相持）：同时维护守军防护区与敌墨推回；
+        // - `.reclaim`（敌军已撤走，我方军队行经或驻扎本土）：沿完整行军路径（from → to）与两侧更宽幅面将残留敌墨方向性地顺滑染回我方国色。
+        func provinceOrNeighborHasInk(_ p: Int) -> Bool {
+            guard totalInkCells > 0 else { return false }
+            if provinceInkCount.indices.contains(p) && provinceInkCount[p] > 0 { return true }
+            if t.provinceNeighbors.indices.contains(p) {
+                for nb in t.provinceNeighbors[p] {
+                    let ni = Int(nb)
+                    if provinceInkCount.indices.contains(ni) && provinceInkCount[ni] > 0 { return true }
+                }
             }
-            let budget = t.scale * 0.45 * Self.width(troops: max(4000, h.troops))
-            for pos in h.armies {
-                guard let start = cell(at: pos), owner(start) == h.attacker else { continue }
-                spread(from: [(start, 0)], budget: budget, within: nil) { c, _, _ in
-                    guard owner(c) == h.attacker else { return }
-                    self.defendedMark[c] = curStep
-                    if self.nation[c] >= 0 && self.nation[c] != Int32(h.attacker) && self.leave[c] >= Self.never {
-                        setCell(c, nation: self.nation[c], arrive: self.arrive[c], leave: now)
+            return false
+        }
+        func buildFriendlySeeds(armies: [SIMD2<Float>], expectedOwner: Int) -> [(cell: Int, delay: Float)] {
+            var seeds = [(cell: Int, delay: Float)]()
+            if armies.count == 2 && washDistance2(armies[0], armies[1]) > 1e-4 {
+                let from = armies[0], to = armies[1]
+                let length = washDistance(from, to)
+                let steps = max(1, min(32, Int(ceil(length / (t.scale * 0.22)))))
+                for s in 0...steps {
+                    let f = Float(s) / Float(steps)
+                    if let c = cell(at: from + (to - from) * f), owner(c) == expectedOwner, !seeds.contains(where: { $0.cell == c }) {
+                        seeds.append((c, f * tween))
                     }
+                }
+            } else {
+                for pos in armies {
+                    if let c = cell(at: pos), owner(c) == expectedOwner, !seeds.contains(where: { $0.cell == c }) {
+                        seeds.append((c, 0))
+                    }
+                }
+            }
+            return seeds
+        }
+        var holdsByProvince = [Int: (positions: [SIMD2<Float>], troops: Float)]()
+        for h in frame.inputs where (h.kind == .hold || h.kind == .reclaim) && !h.armies.isEmpty {
+            if h.kind == .hold {
+                if owners.indices.contains(h.province), owners[h.province] == h.attacker {
+                    if let lastPos = h.armies.last {
+                        holdsByProvince[h.province, default: ([], 0)].positions.append(lastPos)
+                        holdsByProvince[h.province, default: ([], 0)].troops += h.troops
+                    }
+                }
+            } else if !provinceOrNeighborHasInk(h.province) {
+                // 该州及全部邻州均无敌墨时 O(1) 跳过，零额外 CPU 开销。
+                continue
+            }
+            let seeds = buildFriendlySeeds(armies: h.armies, expectedOwner: h.attacker)
+            guard !seeds.isEmpty else { continue }
+            let radiusFactor: Float = h.kind == .reclaim ? 0.86 : 0.56
+            let budget = t.scale * radiusFactor * Self.width(troops: max(4000, h.troops))
+            spread(from: seeds, budget: budget, within: nil) { c, d, delay in
+                guard owner(c) == h.attacker else { return }
+                self.defendedMark[c] = curStep
+                if self.nation[c] >= 0 && self.nation[c] != Int32(h.attacker) && self.leave[c] >= Self.never {
+                    let washAt = now + delay + (d > 0 ? d / (t.scale * Self.reclaimSpreadPerSecond) : 0)
+                    setCell(c, nation: self.nation[c], arrive: self.arrive[c], leave: washAt)
                 }
             }
         }
@@ -351,7 +413,11 @@ public final class InkCells: @unchecked Sendable {
     public func owners(_ owners: [Int], now: Float) {
         for c in 0..<topology.cellCount where nation[c] >= 0 {
             let p = Int(topology.province[c]), o = p >= 0 && p < owners.count ? owners[p] : -1
-            if o == Int(nation[c]) { nation[c] = -1; leave[c] = Self.never; markDirty(c) }
+            if o == Int(nation[c]) {
+                nation[c] = -1; leave[c] = Self.never; markDirty(c)
+                totalInkCells = max(0, totalInkCells - 1)
+                if provinceInkCount.indices.contains(p) { provinceInkCount[p] = max(0, provinceInkCount[p] - 1) }
+            }
         }
         refresh()
     }

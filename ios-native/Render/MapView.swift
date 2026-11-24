@@ -361,9 +361,18 @@ struct MapView: UIViewRepresentable {
         private var panning = false
         private var sheetThrottled = false
         private var sheetSettleWork: DispatchWorkItem?
-        /// 仅在手指物理拖拽或双指捏合期间开启同事务同步上屏；程序运镜、惯性滑行与弹窗过渡一律走异步呈现，彻底消除点选卡顿！
+        /// VSync 手势合帧缓冲：120Hz 触控事件先累积到 pendingCamera，统一在 CADisplayLink 每帧仅提交 1 次 Metal + UIKit 同事务渲染，彻底根治拖拽缩放卡顿与图层脱节！
+        private var pendingCamera: MapCamera?
+        private var pendingPurePan = false
+        private var panLabelTick = 0
+        private var gestureCamera: MapCamera { pendingCamera ?? camera }
+        /// 仅在手指物理拖拽或双指捏合期间开启同事务同步上屏；程序运镜、惯性滑行与弹窗过渡一律按帧合批。
         private var fingerDragging: Bool { pinching || panning }
-        private var cameraInteractive: Bool { pinching || panning || animation != nil || hypot(velocity.x, velocity.y) > 8 }
+        private var cameraInteractive: Bool { pinching || panning || pendingCamera != nil || animation != nil || hypot(velocity.x, velocity.y) > 8 }
+        /// 静态活态海波与云影光晕：在地图静止且未开弹窗、非高温、非截图巡游时维持 30fps 轻耗微光呼吸，彻底告别水波云影停顿跳帧。
+        private var ambientActive: Bool {
+            !controller.drifting && !controller.sheetOpen && !sheetThrottled && !Energy.hot && !ShotTour.on && (controller.display.lighting ?? true) && (renderer?.reveal ?? 0) >= 0.99
+        }
         /// 地图画心 [0, map.width] × [0, map.height] 在屏幕坐标系里的精确裁剪框，确保国名、箭头与特效严守卷轴画框内缘。
         private func mapScreenRect(camera: MapCamera, viewport: CGSize) -> CGRect {
             guard viewport.width > 0, viewport.height > 0 else { return .zero }
@@ -539,7 +548,7 @@ struct MapView: UIViewRepresentable {
                 guard let self else { return }
                 self.sheetSettleWork?.cancel()
                 self.sheetSettleWork = nil
-                self.gliding = false
+                self.linkPace = .full
                 self.syncWaves()
                 self.syncWeather()
                 if self.controller.sheetOpen {
@@ -561,7 +570,7 @@ struct MapView: UIViewRepresentable {
                     self.sheetThrottled = false
                     self.mtk.preferredFramesPerSecond = self.controller.play.mapFPS
                     if self.controller.drifting { self.startDrift() }
-                    if self.renderer?.isAnimating == true { self.startLink() }
+                    if self.renderer?.isAnimating == true || self.ambientActive { self.startLink() }
                 }
                 self.link?.preferredFrameRateRange = self.frameRange
             }
@@ -643,16 +652,18 @@ struct MapView: UIViewRepresentable {
                 troops.clear()
             }
         }
-        private func set(_ camera: MapCamera, sync: Bool = false, skipLabels: Bool = false) {
+        private func set(_ camera: MapCamera, sync: Bool = false, skipLabels: Bool = false, fastPan: Bool = false) {
             guard let renderer else { return }
             let vpSize = mtk.bounds.size
             guard vpSize.width > 0, vpSize.height > 0 else { return }
             let vp = (width: Double(vpSize.width), height: Double(vpSize.height))
             let b = MapCamera.scaleBounds(map: mapSize, viewport: vp)
+            let prevCam = renderer.camera
             var c = camera.isValid ? camera : MapCamera.cover(map: mapSize, viewport: vp)
             c.scale = min(b.upperBound, max(b.lowerBound, c.scale))
             let clamped = c.clamped(map: mapSize, viewport: vp, margin: scrollEdgeMargin)
-            // 同事务帧锁：凡用户拖拽、双指缩放、惯性滑行与镜头动画均与 Metal 地图在同一 CATransaction 内同步提交，彻底杜绝底图与军团动效/地名分层错位。
+            // 同事务帧锁：仅在 CADisplayLink 逐帧回调里将 Metal 地图与覆盖层在同一 CATransaction 内同步提交，
+            // 既根除拖拽/缩放时底图与军团动效分层，又避免高频触控回调在单帧内多次同步阻塞主线程。
             let wantSync = sync && !controller.sheetOpen
             setSyncPresent(wantSync)
             renderer.camera = clamped
@@ -668,7 +679,21 @@ struct MapView: UIViewRepresentable {
                     v.frame = fullBounds
                 }
                 if !skipLabels && labels.alpha > 0.01 {
-                    labels.update(camera: clamped, viewport: vpSize, mapRect: clipRect)
+                    let purePan = fastPan && abs(prevCam.scale - clamped.scale) < 1e-6
+                    if purePan {
+                        panLabelTick &+= 1
+                        if panLabelTick % 4 == 0 {
+                            labels.update(camera: clamped, viewport: vpSize, mapRect: clipRect)
+                        } else {
+                            let dx = CGFloat((prevCam.centerX - clamped.centerX) * clamped.scale)
+                            let dy = CGFloat((prevCam.centerY - clamped.centerY) * clamped.scale)
+                            if abs(dx) > 0.0001 || abs(dy) > 0.0001 {
+                                labels.panVisible(dx: dx, dy: dy)
+                            }
+                        }
+                    } else {
+                        labels.update(camera: clamped, viewport: vpSize, mapRect: clipRect)
+                    }
                 }
                 if !skipLabels && effects.alpha > 0.01 {
                     effects.update(camera: clamped, viewport: vpSize)
@@ -777,25 +802,41 @@ struct MapView: UIViewRepresentable {
             switch g.state {
             case .began:
                 panning = true
+                panLabelTick = 0
                 controller.onMapBrowsing?(true)
                 let t = g.translation(in: mtk)
-                set(camera.panned(dx: Double(t.x), dy: Double(t.y)), sync: true)
+                pendingCamera = gestureCamera.panned(dx: Double(t.x), dy: Double(t.y))
+                pendingPurePan = true
                 g.setTranslation(.zero, in: mtk)
+                startLink()
             case .changed:
                 panning = true
                 let t = g.translation(in: mtk)
-                set(camera.panned(dx: Double(t.x), dy: Double(t.y)), sync: true)
+                pendingCamera = gestureCamera.panned(dx: Double(t.x), dy: Double(t.y))
+                pendingPurePan = true
                 g.setTranslation(.zero, in: mtk)
+                startLink()
             case .ended:
                 panning = false
+                panLabelTick = 0
                 controller.onMapBrowsing?(false)
                 let t = g.translation(in: mtk)
-                if t != .zero { set(camera.panned(dx: Double(t.x), dy: Double(t.y)), sync: true); g.setTranslation(.zero, in: mtk) }
+                let finalCam = t != .zero ? gestureCamera.panned(dx: Double(t.x), dy: Double(t.y)) : pendingCamera
+                pendingCamera = nil
+                pendingPurePan = false
+                if t != .zero { g.setTranslation(.zero, in: mtk) }
+                if let finalCam { set(finalCam, sync: true) } else { set(camera, sync: false) }
                 velocity = g.velocity(in: mtk)
                 if hypot(velocity.x, velocity.y) > 60 { startLink() } else { setSyncPresent(cameraInteractive) }
             default:
                 panning = false
+                panLabelTick = 0
                 controller.onMapBrowsing?(false)
+                if let pending = pendingCamera {
+                    pendingCamera = nil
+                    pendingPurePan = false
+                    set(pending, sync: true)
+                }
                 setSyncPresent(cameraInteractive)
             }
         }
@@ -804,27 +845,33 @@ struct MapView: UIViewRepresentable {
             let p = g.location(in: mtk)
             switch g.state {
             case .began:
-                lastPinch = p; pinching = true; panning = false
+                lastPinch = p; pinching = true; panning = false; panLabelTick = 0
                 controller.onMapBrowsing?(true)
-                atUnrollFloor = camera.scale <= bounds.lowerBound * 1.015
+                atUnrollFloor = gestureCamera.scale <= bounds.lowerBound * 1.015
+                startLink()
             case .changed:
                 // A finger lifted or added moves the touch centre: re-anchor instead of jumping.
                 if g.numberOfTouches != pinchTouches { pinchTouches = g.numberOfTouches; lastPinch = p; g.scale = 1; return }
-                // The fingers both zoom and drag the map.
-                let moved = camera.panned(dx: Double(p.x - lastPinch.x), dy: Double(p.y - lastPinch.y))
+                // The fingers both zoom and drag the map — coalesce into VSync display link (max 1 GPU draw per frame).
+                let moved = gestureCamera.panned(dx: Double(p.x - lastPinch.x), dy: Double(p.y - lastPinch.y))
                 let nextCam = moved.zoomed(by: Double(g.scale), anchorX: Double(p.x), anchorY: Double(p.y), viewport: viewport, bounds: bounds)
                 let hitFloor = nextCam.scale <= bounds.lowerBound * 1.012
                 if hitFloor && !atUnrollFloor && g.scale < 1 {
                     selection.selectionChanged()
                 }
                 atUnrollFloor = hitFloor
-                set(nextCam, sync: true)
+                pendingCamera = nextCam
+                pendingPurePan = false
                 g.scale = 1; lastPinch = p
+                startLink()
             default:
-                pinching = false; pinchTouches = 2
+                pinching = false; pinchTouches = 2; panLabelTick = 0
                 controller.onMapBrowsing?(false)
-                // 松手尾帧强制同事务提交一次，防止最后一个缩放帧出现底图与动效层短暂错开。
-                set(camera, sync: true)
+                // 松手尾帧强制同事务提交一次完整排版，彻底杜绝底图与动效层错开。
+                let finalCam = pendingCamera ?? camera
+                pendingCamera = nil
+                pendingPurePan = false
+                set(finalCam, sync: true)
                 setSyncPresent(cameraInteractive)
             }
         }
@@ -955,7 +1002,7 @@ struct MapView: UIViewRepresentable {
             guard link == nil else { return }
             let l = CADisplayLink(target: self, selector: #selector(step(_:)))
             l.preferredFrameRateRange = frameRange
-            l.add(to: .main, forMode: .common); link = l; gliding = false
+            l.add(to: .main, forMode: .common); link = l; linkPace = .full
         }
         private static func range(_ fps: Int) -> CAFrameRateRange {
             let f = Float(fps)
@@ -964,23 +1011,29 @@ struct MapView: UIViewRepresentable {
         private var frameRange: CAFrameRateRange {
             (sheetThrottled && animation == nil && controller.revealClock == nil)
                 ? Self.range(30)
-                : Self.range(Energy.hot ? min(30, controller.play.mapFPS) : Energy.level >= 1 ? min(60, controller.play.mapFPS) : controller.play.mapFPS)
+                : Self.range(Energy.hot ? min(45, controller.play.mapFPS) : Energy.level >= 2 ? min(60, controller.play.mapFPS) : controller.play.mapFPS)
         }
-        /// While only the armies glide (the camera still): 60 frames, 30 when the phone runs hot. Icons
-        /// moving a few points a frame look the same, and the map is drawn half as often as at 120.
+        /// 行军与墨晕平滑帧率：温升正常/轻微（.fair）时稳定 60fps 丝滑行军，仅在严重/极端发热才温和降档至 45/30fps，彻底告别以前 30/20fps 的肉眼掉帧感。
         private var glideRange: CAFrameRateRange {
             (sheetThrottled && animation == nil && controller.revealClock == nil)
                 ? Self.range(30)
-                : Self.range(Energy.hot ? min(20, controller.play.marchFPS) : Energy.level >= 1 ? min(30, controller.play.marchFPS) : controller.play.marchFPS)
+                : Self.range(Energy.level >= 3 ? min(30, controller.play.marchFPS) : Energy.level == 2 ? min(45, controller.play.marchFPS) : min(60, controller.play.marchFPS))
         }
-        private var gliding = false
+        /// 静态观赏活态微光（海波流光、流云柔影）：稳定 30fps 轻耗绘制，零冻结零跳变。
+        private var ambientRange: CAFrameRateRange { Self.range(30) }
+        private enum LinkPace: Equatable { case full, glide, ambient }
+        private var linkPace: LinkPace = .full
         private var shownWashes = WashFrame.empty
         private var shownWashEpoch = -1
         private var appliedPlay: PlaySettings?
-        private func pace(_ l: CADisplayLink, glide: Bool) {
-            guard glide != gliding else { return }
-            gliding = glide
-            l.preferredFrameRateRange = glide ? glideRange : frameRange
+        private func pace(_ l: CADisplayLink, to next: LinkPace) {
+            guard next != linkPace else { return }
+            linkPace = next
+            switch next {
+            case .full: l.preferredFrameRateRange = frameRange
+            case .glide: l.preferredFrameRateRange = glideRange
+            case .ambient: l.preferredFrameRateRange = ambientRange
+            }
         }
         /// A reveal clock began: the map follows it frame by frame; with `push` the camera eases out from 1.25×.
         private func revealStarted() {
@@ -1017,26 +1070,55 @@ struct MapView: UIViewRepresentable {
             return true
         }
         @objc private func step(_ l: CADisplayLink) {
-            let dt = min(0.05, l.targetTimestamp - l.timestamp)
+            let dt = min(0.05, max(0.001, l.targetTimestamp - l.timestamp))
             let revealing = advanceReveal()
-            let cameraMoving = cameraInteractive
-            pace(l, glide: !cameraMoving)
+            if let pending = pendingCamera {
+                let purePan = pendingPurePan
+                pendingCamera = nil
+                pendingPurePan = false
+                pace(l, to: .full)
+                set(pending, sync: true, fastPan: purePan)
+                return
+            }
             if let a = animation {
+                pace(l, to: .full)
                 let x = min(1, (CACurrentMediaTime() - a.start) / a.duration)
                 let eased = x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2
                 set(MapCamera.arcInterpolate(a.from, a.to, eased, bounds: bounds), sync: true)
                 if x >= 1 { animation = nil; setSyncPresent(cameraInteractive) }
             } else if hypot(velocity.x, velocity.y) > 8 {
-                // Exponential deceleration close to UIScrollView's normal rate — synced atomically with Metal.
-                set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt), sync: true)
+                pace(l, to: .full)
+                // Exponential deceleration close to UIScrollView's normal rate — synced atomically with Metal at VSync.
+                set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt), sync: true, fastPan: true)
                 let decay = CGFloat(pow(0.998, dt * 1000))
                 velocity = CGPoint(x: velocity.x * decay, y: velocity.y * decay)
+                if hypot(velocity.x, velocity.y) <= 8 {
+                    velocity = .zero
+                    panLabelTick = 0
+                    set(camera, sync: false)
+                }
+            } else if fingerDragging {
+                // 手指按住未动时保持链路就绪但不空画，松手或下一帧滑动即刻跟手。
+                pace(l, to: .full)
+                if !sheetThrottled && renderer?.isAnimating == true {
+                    setSyncPresent(false)
+                    if (renderer?.reveal ?? 0) >= 0.99 { updateTroops() }
+                    mtk.setNeedsDisplay()
+                }
             } else if !sheetThrottled && renderer?.isAnimating == true {
+                pace(l, to: .glide)
                 setSyncPresent(false)
                 velocity = .zero
                 if (renderer?.reveal ?? 0) >= 0.99 { updateTroops() }
                 mtk.setNeedsDisplay()
-            } else if !revealing {
+            } else if revealing {
+                pace(l, to: .full)
+            } else if ambientActive {
+                pace(l, to: .ambient)
+                setSyncPresent(false)
+                velocity = .zero
+                mtk.setNeedsDisplay()
+            } else {
                 setSyncPresent(false)
                 velocity = .zero
                 if !sheetThrottled { mtk.setNeedsDisplay() }
@@ -1182,7 +1264,7 @@ struct MapView: UIViewRepresentable {
                     appliedPlay = controller.play
                     syncWaves()
                     updateTroops()
-                    gliding = false; link?.preferredFrameRateRange = frameRange
+                    linkPace = .full; link?.preferredFrameRateRange = frameRange
                     dirty = true
                 }
             }
@@ -1190,6 +1272,7 @@ struct MapView: UIViewRepresentable {
                 renderer.setDisplay(controller.display)
                 dirty = true
             }
+            if ambientActive && link == nil { startLink() }
             if renderer?.setSeaPorts(controller.seaPorts) == true { dirty = true }
             if renderer?.setForts(controller.forts, holy: controller.holy) == true { dirty = true }
             if labels.setCustom(controller.customLabels) { dirty = true }

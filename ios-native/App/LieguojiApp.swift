@@ -505,6 +505,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("4.2.3", ["【彻底根治严重卡顿、更新日志卡顿与行军/光影不流畅】手势拖拽与双指缩放改为 VSync 单帧合批提交（根除单帧多次同步 waitUntilScheduled 阻塞，同时零图层错位）；抬高行军温控底线至常规/轻温满帧 60fps 并加入跨步 C1 Hermite 速度连续衔接，静止观图新增 30fps 轻耗活态海波与流云光影；视频改用预烘焙首帧海报秒开、异步起播（彻底移除主线程同步解码），更新日志重构为 LazyVStack 默认展开近 4 版秒开零卡顿。",
+                   "【水墨晕染全面重铸 × 友军路过顺滑染回我方领土】新增友军收复反洗机制（WashInput.Kind.reclaim）：敌军在我方领土留下墨晕后即便已撤离，我方军队路过或驻守即沿行军路径将敌墨顺滑染回本国色；重写生宣水彩墨晕着色器，羽化边缘加倍且以纯净矿彩显色、GPU 耗时更低。",
+                   "【彻底根治国家页白边 × AI 手绘御卷装裱边框 × 地图光影升级】通过 UIDesignRequiresCompatibility 与全站实底宣纸弹窗彻底清除 iOS 26 悬浮玻璃白边；地图四边全新实装 AI 手绘无缝宋锦织锦横边、紫檀雕花卷轴与四角鎏金碧玉包角；清除生硬三角山与折线草，强化西北定向山川明暗与浅滩绿松石流光。",
+                   "【地图生成动效重绘 × 19 部 60fps 历史短视频防重轮播】重绘建世开卷浮卡（12 阶段动态单字书法朱印、诗意副题、八珠步进与等值隔离 60fps 墨金进度条）与三源水墨开卷过渡；顶部传报短视频由 10 部大幅扩充至 19 部全画幅 60fps（新增民变/联姻/大旱/瘟疫/宝船舰队/洪涝/破城/亡国/会盟）并内置 4 连防重轮播。"]),
         ("4.2.2", ["【回归 4.1 雕漆兵牌 × 零 AI 地图贴片 × 彻底去圆框动效】完整回退至 4.1 经典雕漆漆盾象牙浮雕军团与水师战舰编队；彻底移除所有生图地貌贴片，回归纯矢量宋画融纸山水；全面清除陆战/围城/封锁/登陆/地图事件上的丑陋圆圈套框，改用纯净无框 36 帧交锋/攻城/抢滩序列帧与手绘宋画微标。",
                    "【彻底根治建图血条堆叠、缩放图层错位、血条挡视野与国家页白边】开局与换图时彻底清空并锁定隐藏血条层，彻底消除生成地图时浮现一堆血条的旧病；将血条触发阈值大幅抬高至超高倍近观并在「设置 › 画面」新增「放大时显示军队血条」独立开关；拖拽/双指缩放/惯性滑行/镜头动画全程启用 CATransaction 同事务同步 Metal 提交，彻底根治地图层与军团动画层分离；重写奏折底纹与滚动边界，彻底去除国家页白边、顶栏红条切角及传报撞顶栏问题。",
                    "【10 部全画幅 60fps 古风历史长卷视频 × 7 套古风交互音效】全面淘汰旧版白纸贴图标短视频，以 10 幅全画幅宋明工笔青绿长卷重制 10 部 180 帧真 60fps 历史短视频（大战/海战/围城/登基/变法/航海/赈济/和约/庙堂/风雪）；新增落印/翻卷/拔锚/行军/刀兵/火炮/传报 7 套轻量古风交互音效（可于设置自由开关）。",
@@ -1285,24 +1289,56 @@ struct ReleaseNotesSheet: View {
         ("0.9.1", ["固定浅色纸面，不随深色模式变灰；自绘控件；国名描边改为字下圆角描边；启动与界面动画；新地图图标。"]),
         ("0.9.0", ["原生界面 + 网页原引擎：交战、占领、议和、家族等规则与网页完全一致；启动动画、标题生成动画、统一原作字体。"]),
     ]
+    @State private var showArchive = false
     var body: some View {
+        let visible = showArchive ? Self.notes : Array(Self.notes.prefix(4))
+        let hiddenCount = max(0, Self.notes.count - visible.count)
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                SheetHeader(title: "本版新增与更新内容", subtitle: AppVersion.text)
-                ForEach(Self.notes, id: \.version) { note in
-                    Group2 {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(note.version).font(Theme.kai(20)).foregroundStyle(Theme.seal)
-                            ForEach(note.lines, id: \.self) { line in
-                                HStack(alignment: .top, spacing: 8) { Text("·").foregroundStyle(Theme.ink2); Text(line).font(Theme.body).foregroundStyle(Theme.ink) }
+            LazyVStack(alignment: .leading, spacing: 12) {
+                SheetHeader(title: "本版新增与更新内容", subtitle: AppVersion.text, seal: "记")
+                ForEach(visible, id: \.version) { note in
+                    VStack(alignment: .leading, spacing: 7) {
+                        HStack(spacing: 8) {
+                            Text("v" + note.version).font(Theme.kai(19)).foregroundStyle(Theme.seal)
+                            if note.version == Self.notes.first?.version {
+                                PaperTag(text: "当前版本", color: Theme.seal, size: 10)
+                            }
+                            Spacer()
+                        }
+                        ForEach(Array(note.lines.enumerated()), id: \.offset) { _, line in
+                            HStack(alignment: .top, spacing: 7) {
+                                Text("·").font(Theme.body).foregroundStyle(Theme.seal.opacity(0.7))
+                                Text(line).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading).padding(16)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(Theme.paper2.opacity(0.86), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.13), lineWidth: 0.8))
+                    .padding(.horizontal, 16)
+                }
+                if hiddenCount > 0 {
+                    Button {
+                        GameFeel.shared.tap()
+                        withAnimation(Motion.panel) { showArchive = true }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("展开更早历史版本（共 \(hiddenCount) 版）").font(Theme.body)
+                            InkIcon(glyph: .chevronDown, size: 13, weight: 1.7)
+                        }
+                        .foregroundStyle(Theme.seal)
+                        .frame(maxWidth: .infinity).frame(height: 44)
+                        .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.seal.opacity(0.28), lineWidth: 0.8))
+                    }
+                    .buttonStyle(PressStyle())
                     .padding(.horizontal, 16)
                 }
             }
-            .padding(.bottom, 24)
+            .padding(.bottom, 32)
         }
+        .scrollContentBackground(.hidden)
+        .ignoresSafeArea(.container, edges: .bottom)
     }
 }

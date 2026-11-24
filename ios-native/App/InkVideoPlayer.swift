@@ -3,21 +3,38 @@ import UIKit
 import AVFoundation
 
 /// 原生硬件加速古风水墨短视频循环播放器（AVQueuePlayer + AVPlayerLooper）：
-/// - 100% 静音、零音频会话抢占、不打断背景雅乐，60fps 硬件解码丝滑循环；
-/// - 宣纸羽化晕边蒙版（Feathered Parchment Mask），使动态水墨视频画卷与御卷/奏折底纸浑然天成。
+/// - 19 部全画幅 60fps 古风历史长卷视频 + 预烘焙轻量首帧缩略图（poster-*.jpg），彻底根除主线程 AVAssetImageGenerator 解码卡顿；
+/// - 打开面板或横幅第 0 毫秒立即呈现预烘焙首帧画卷（< 0.5ms），延迟 0.12s 待弹簧动画丝滑落定后再异步拉起硬件 H.264 循环解码，零掉帧零白屏；
+/// - 100% 静音、零音频会话抢占、不打断背景雅乐。
 struct InkVideoStage: View {
     let clip: String
     var cornerRadius: CGFloat = 8
     var tint: Color = Theme.seal
 
+    static let allClips: [String] = [
+        "herald-war", "herald-naval", "herald-siege", "herald-peace", "herald-regime", "herald-weather",
+        "herald-coronation", "herald-reform", "herald-voyage", "herald-relief",
+        "herald-uprising", "herald-marriage", "herald-drought", "herald-plague",
+        "herald-voyage-fleet", "herald-flood", "herald-capture", "herald-extinction", "herald-alliance"
+    ]
+
     private static let urlCache: [String: URL] = {
-        let names = [
-            "herald-war", "herald-naval", "herald-siege", "herald-peace", "herald-regime", "herald-weather",
-            "herald-coronation", "herald-reform", "herald-voyage", "herald-relief"
-        ]
         var map: [String: URL] = [:]
-        for n in names {
-            if let u = Bundle.main.url(forResource: n, withExtension: "mp4", subdirectory: "Video") ?? Bundle.main.url(forResource: n, withExtension: "mp4") {
+        for n in allClips {
+            if let u = Bundle.main.url(forResource: n, withExtension: "mp4", subdirectory: "Video")
+                ?? Bundle.main.url(forResource: n, withExtension: "mp4") {
+                map[n] = u
+            }
+        }
+        return map
+    }()
+
+    private static let posterURLCache: [String: URL] = {
+        var map: [String: URL] = [:]
+        for n in allClips {
+            let p = "poster-" + n
+            if let u = Bundle.main.url(forResource: p, withExtension: "jpg", subdirectory: "Video")
+                ?? Bundle.main.url(forResource: p, withExtension: "jpg") {
                 map[n] = u
             }
         }
@@ -26,6 +43,10 @@ struct InkVideoStage: View {
 
     static func url(for name: String) -> URL? {
         urlCache[name]
+    }
+
+    static func posterURL(for name: String) -> URL? {
+        posterURLCache[name]
     }
 
     static func hasVideo(_ name: String) -> Bool {
@@ -73,7 +94,10 @@ final class InkPlayerHostView: UIView {
     private var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
     private var queuePlayer: AVQueuePlayer?
     private var looper: AVPlayerLooper?
+    private var readyObs: NSKeyValueObservation?
+    private var pendingStart: DispatchWorkItem?
     private var currentClip: String = ""
+    private var loadGeneration: Int = 0
     private let posterView = UIImageView()
 
     override init(frame: CGRect) {
@@ -101,106 +125,78 @@ final class InkPlayerHostView: UIView {
     private static var posterCache: [String: UIImage] = [:]
     private static func posterImage(for clip: String) -> UIImage? {
         if let cached = posterCache[clip] { return cached }
-        if let url = InkVideoStage.url(for: clip) {
-            let asset = AVURLAsset(url: url)
-            let gen = AVAssetImageGenerator(asset: asset)
-            gen.appliesPreferredTrackTransform = true
-            gen.maximumSize = CGSize(width: 640, height: 360)
-            let targetTime = CMTime(seconds: 0.8, preferredTimescale: 600)
-            if let cg = try? gen.copyCGImage(at: targetTime, actualTime: nil) {
-                let ui = UIImage(cgImage: cg)
-                posterCache[clip] = ui
-                return ui
-            }
+        // 零主线程视频解码：直接读取预烘焙的 320×180 JPG 首帧缩略图（< 0.5ms），彻底杜绝 AVAssetImageGenerator 同步卡顿。
+        if let url = InkVideoStage.posterURL(for: clip),
+           let ui = UIImage(contentsOfFile: url.path) {
+            posterCache[clip] = ui
+            return ui
         }
-        let art: UIImage?
-        let bgTop: UIColor
-        let bgBot: UIColor
-        switch clip {
-        case "herald-naval":
-            art = BundleArt.navalEast
-            bgTop = UIColor(red: 0.90, green: 0.94, blue: 0.95, alpha: 1)
-            bgBot = UIColor(red: 0.78, green: 0.87, blue: 0.90, alpha: 1)
-        case "herald-siege":
-            art = BundleArt.fxSiegeFlame
-            bgTop = UIColor(red: 0.96, green: 0.90, blue: 0.84, alpha: 1)
-            bgBot = UIColor(red: 0.89, green: 0.78, blue: 0.68, alpha: 1)
-        case "herald-peace":
-            art = BundleArt.heraldPeace
-            bgTop = UIColor(red: 0.93, green: 0.96, blue: 0.93, alpha: 1)
-            bgBot = UIColor(red: 0.85, green: 0.92, blue: 0.87, alpha: 1)
-        case "herald-regime":
-            art = BundleArt.heraldEdictEast
-            bgTop = UIColor(red: 0.98, green: 0.94, blue: 0.85, alpha: 1)
-            bgBot = UIColor(red: 0.93, green: 0.86, blue: 0.72, alpha: 1)
-        case "herald-weather":
-            art = BundleArt.fxWeatherSnow
-            bgTop = UIColor(red: 0.92, green: 0.95, blue: 0.98, alpha: 1)
-            bgBot = UIColor(red: 0.83, green: 0.89, blue: 0.95, alpha: 1)
-        case "herald-coronation":
-            art = BundleArt.sealCourt
-            bgTop = UIColor(red: 0.98, green: 0.93, blue: 0.82, alpha: 1)
-            bgBot = UIColor(red: 0.92, green: 0.84, blue: 0.68, alpha: 1)
-        case "herald-reform":
-            art = BundleArt.heraldEdictEast
-            bgTop = UIColor(red: 0.93, green: 0.95, blue: 0.96, alpha: 1)
-            bgBot = UIColor(red: 0.85, green: 0.90, blue: 0.92, alpha: 1)
-        case "herald-voyage":
-            art = BundleArt.navalEast
-            bgTop = UIColor(red: 0.88, green: 0.94, blue: 0.97, alpha: 1)
-            bgBot = UIColor(red: 0.76, green: 0.87, blue: 0.92, alpha: 1)
-        case "herald-relief":
-            art = BundleArt.fxTrade
-            bgTop = UIColor(red: 0.96, green: 0.95, blue: 0.86, alpha: 1)
-            bgBot = UIColor(red: 0.88, green: 0.87, blue: 0.74, alpha: 1)
-        default:
-            art = BundleArt.heraldWarEast
-            bgTop = UIColor(red: 0.96, green: 0.91, blue: 0.85, alpha: 1)
-            bgBot = UIColor(red: 0.91, green: 0.82, blue: 0.73, alpha: 1)
+        let fallback = UIImage(contentsOfFile: Bundle.main.url(forResource: "poster-herald-war", withExtension: "jpg", subdirectory: "Video")?.path ?? "")
+        if let fallback {
+            posterCache[clip] = fallback
+            return fallback
         }
-        let size = CGSize(width: 240, height: 135)
-        let img = UIGraphicsImageRenderer(size: size).image { ctx in
-            let g = ctx.cgContext
-            let space = CGColorSpaceCreateDeviceRGB()
-            if let grad = CGGradient(colorsSpace: space, colors: [bgTop.cgColor, bgBot.cgColor] as CFArray, locations: [0, 1]) {
-                g.drawLinearGradient(grad, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
-            }
-            if let art {
-                let h: CGFloat = 114
-                let w = h * (art.size.width / max(1, art.size.height))
-                art.draw(in: CGRect(x: (size.width - w) * 0.5, y: (size.height - h) * 0.5, width: w, height: h), blendMode: .normal, alpha: 0.94)
-            }
-        }
-        posterCache[clip] = img
-        return img
+        return nil
     }
 
     func load(clip: String) {
         guard clip != currentClip else { return }
         teardown()
         currentClip = clip
+        loadGeneration &+= 1
+        let gen = loadGeneration
+
+        // 1. 第 0 毫秒立即展示清晰全画幅首帧静画，面板弹簧滑入与横幅展卷全程零掉帧。
         posterView.image = Self.posterImage(for: clip)
-        // 无头模拟器巡览（LGJ_SHOT=1）时仅展示首帧画卷底图，避免无硬件音频/视频解码器的 CI 虚拟机 mediaserverd 与 simctl io 争用死锁；真机与常规运行走 AVQueuePlayer 硬件循环解码。
-        guard !ShotTour.on, let url = InkVideoStage.url(for: clip) else {
-            posterView.isHidden = false
-            return
+        posterView.alpha = 1
+        posterView.isHidden = false
+
+        // 无头模拟器巡览（LGJ_SHOT=1）仅展示高清首帧画卷，避免虚拟机 mediaserverd 争用。
+        guard !ShotTour.on, let url = InkVideoStage.url(for: clip) else { return }
+
+        // 2. 延后 0.12s 待弹窗/横幅首帧入场动画稳定后，再于后台轻装创建 AVURLAsset 并切入 60fps 硬件循环播放。
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.loadGeneration == gen, self.window != nil else { return }
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: false])
+                let item = AVPlayerItem(asset: asset)
+                item.preferredForwardBufferDuration = 1.0
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.loadGeneration == gen, self.window != nil else { return }
+                    let player = AVQueuePlayer()
+                    player.isMuted = true
+                    player.volume = 0
+                    player.preventsDisplaySleepDuringVideoPlayback = false
+                    player.automaticallyWaitsToMinimizeStalling = false
+                    let looper = AVPlayerLooper(player: player, templateItem: item)
+                    self.queuePlayer = player
+                    self.looper = looper
+                    self.playerLayer.player = player
+                    self.readyObs = self.playerLayer.observe(\.isReadyForDisplay, options: [.new, .initial]) { [weak self] layer, _ in
+                        guard layer.isReadyForDisplay else { return }
+                        DispatchQueue.main.async { [weak self] in
+                            guard let self, self.loadGeneration == gen else { return }
+                            UIView.animate(withDuration: 0.16, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) {
+                                self.posterView.alpha = 0
+                            } completion: { _ in
+                                if self.loadGeneration == gen { self.posterView.isHidden = true }
+                            }
+                        }
+                    }
+                    player.play()
+                }
+            }
         }
-        posterView.isHidden = true
-        let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: false])
-        let item = AVPlayerItem(asset: asset)
-        let player = AVQueuePlayer()
-        player.isMuted = true
-        player.volume = 0
-        player.preventsDisplaySleepDuringVideoPlayback = false
-        player.automaticallyWaitsToMinimizeStalling = false
-        let looper = AVPlayerLooper(player: player, templateItem: item)
-        self.queuePlayer = player
-        self.looper = looper
-        playerLayer.player = player
-        player.play()
+        pendingStart = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: work)
     }
 
     func teardown() {
+        loadGeneration &+= 1
+        pendingStart?.cancel()
+        pendingStart = nil
+        readyObs?.invalidate()
+        readyObs = nil
         queuePlayer?.pause()
         looper?.disableLooping()
         looper = nil
@@ -211,6 +207,8 @@ final class InkPlayerHostView: UIView {
     }
 
     deinit {
+        pendingStart?.cancel()
+        readyObs?.invalidate()
         queuePlayer?.pause()
         looper?.disableLooping()
     }

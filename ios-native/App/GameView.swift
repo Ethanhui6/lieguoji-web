@@ -504,7 +504,12 @@ struct GameView: View {
                                 backRow(last, current: panel, isSidePanel: false)
                             }
                         }
-                        .presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet).font(Theme.section)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .background(MemorialPaper().ignoresSafeArea())
+                        .presentationBackground(Theme.paper)
+                        .presentationDragIndicator(.hidden)
+                        .presentationCornerRadius(Theme.Control.cornerSheet)
+                        .font(Theme.section)
                 }
             }
         }

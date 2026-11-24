@@ -25,13 +25,9 @@ struct HeraldBanner: View {
     }
 
     private var animationDuration: TimeInterval {
-        switch herald.kind {
-        case .war, .coup, .ultimatum, .blizzard, .drought, .flood: return 2.8
-        case .peace, .marriage, .treaty, .harvest, .plague: return 2.5
-        case .extinction, .regime, .uprising: return 2.4
-        case .house, .restoration: return 2.1
-        case .capture, .capital: return 1.9
-        }
+        // 顶部横幅改用 60fps 硬件解码全画幅短视频承载持续动效；SwiftUI TimelineView 仅在 0.68s 展卷与文字落定期间运行，
+        // 展卷完毕立即停表释放主线程与 GPU，彻底杜绝顶部弹报时拖慢地图帧率。
+        return 0.68
     }
 
     private var accent: Color {
@@ -269,32 +265,61 @@ struct HeraldBanner: View {
         }
     }
 
-    private var videoClipName: String {
+    /// 防重复短视频池：记录近期已播放的 3 部短片，在同类多候选画卷中自动避开刚刚播过的片段，
+    /// 配合 19 部全画幅 60fps 历史长卷，让连续大事传报每条都有耳目一新的画卷演出。
+    private static var recentClips: [String] = []
+    private static var resolvedByHeraldId: [UUID: String] = [:]
+
+    private static func pickClip(for herald: GameModel.Herald) -> String {
+        if let cached = resolvedByHeraldId[herald.id] { return cached }
         let t = herald.text
-        if t.contains("大航海") || t.contains("船坞") || t.contains("下水") || t.contains("远洋") || t.contains("海贸") {
-            return "herald-voyage"
+        var candidates: [String] = []
+        if t.contains("大航海") || t.contains("船坞") || t.contains("下水") || t.contains("远洋") || t.contains("海贸") || t.contains("商路") {
+            candidates = ["herald-voyage-fleet", "herald-voyage", "herald-naval"]
+        } else if t.contains("水师") || t.contains("舰队") || t.contains("海港") || t.contains("封锁") || t.contains("海战") || t.contains("抢滩") {
+            candidates = ["herald-naval", "herald-voyage-fleet", "herald-voyage"]
+        } else if t.contains("登基") || t.contains("即位") || t.contains("大选") || t.contains("就职") || t.contains("加冕") || t.contains("执政") {
+            candidates = ["herald-coronation", "herald-regime", "herald-alliance"]
+        } else if t.contains("科技") || t.contains("突破") || t.contains("维新") || t.contains("变法") || t.contains("革新") || t.contains("学宫") {
+            candidates = ["herald-reform", "herald-regime", "herald-coronation"]
+        } else if t.contains("赈灾") || t.contains("赈济") || t.contains("丰登") || t.contains("丰年") || t.contains("屯田") || t.contains("大稔") {
+            candidates = ["herald-relief", "herald-alliance", "herald-peace"]
+        } else {
+            switch herald.kind {
+            case .war: candidates = ["herald-war", "herald-capture", "herald-siege", "herald-uprising"]
+            case .ultimatum: candidates = ["herald-war", "herald-regime", "herald-uprising"]
+            case .coup: candidates = ["herald-uprising", "herald-regime", "herald-war"]
+            case .uprising: candidates = ["herald-uprising", "herald-siege", "herald-war"]
+            case .capture: candidates = ["herald-capture", "herald-siege", "herald-war"]
+            case .extinction: candidates = ["herald-extinction", "herald-siege", "herald-drought"]
+            case .peace: candidates = ["herald-peace", "herald-alliance", "herald-relief"]
+            case .treaty: candidates = ["herald-alliance", "herald-peace", "herald-reform"]
+            case .marriage: candidates = ["herald-marriage", "herald-peace", "herald-coronation"]
+            case .regime: candidates = ["herald-coronation", "herald-regime", "herald-reform"]
+            case .restoration: candidates = ["herald-coronation", "herald-capture", "herald-regime"]
+            case .house: candidates = ["herald-regime", "herald-reform", "herald-coronation"]
+            case .capital: candidates = ["herald-coronation", "herald-regime", "herald-alliance"]
+            case .harvest: candidates = ["herald-relief", "herald-peace", "herald-alliance"]
+            case .blizzard: candidates = ["herald-weather", "herald-flood"]
+            case .drought: candidates = ["herald-drought", "herald-extinction"]
+            case .flood: candidates = ["herald-flood", "herald-weather"]
+            case .plague: candidates = ["herald-plague", "herald-extinction"]
+            }
         }
-        if t.contains("水师") || t.contains("舰队") || t.contains("海港") || t.contains("封锁") || t.contains("海战") {
-            return "herald-naval"
-        }
-        if t.contains("登基") || t.contains("即位") || t.contains("大选") || t.contains("就职") || t.contains("加冕") {
-            return "herald-coronation"
-        }
-        if t.contains("科技") || t.contains("突破") || t.contains("维新") || t.contains("变法") || t.contains("革新") || t.contains("学宫") {
-            return "herald-reform"
-        }
-        if t.contains("赈灾") || t.contains("赈济") || t.contains("丰登") || t.contains("丰年") || t.contains("屯田") || t.contains("疫病") {
-            return "herald-relief"
-        }
-        switch herald.kind {
-        case .war, .ultimatum, .coup: return "herald-war"
-        case .capture, .uprising, .extinction: return "herald-siege"
-        case .peace, .treaty, .marriage: return "herald-peace"
-        case .regime, .restoration: return "herald-coronation"
-        case .house, .capital: return "herald-regime"
-        case .harvest: return "herald-relief"
-        case .blizzard, .drought, .flood, .plague: return "herald-weather"
-        }
+        let available = candidates.filter { InkVideoStage.hasVideo($0) }
+        let chosen = available.first { !recentClips.contains($0) }
+            ?? available.first
+            ?? candidates.first
+            ?? "herald-war"
+        recentClips.append(chosen)
+        if recentClips.count > 4 { recentClips.removeFirst() }
+        if resolvedByHeraldId.count > 48 { resolvedByHeraldId.removeAll(keepingCapacity: true) }
+        resolvedByHeraldId[herald.id] = chosen
+        return chosen
+    }
+
+    private var videoClipName: String {
+        Self.pickClip(for: herald)
     }
 
     /// 左侧硬件解码古风水墨动态短视频画窗（无障碍减弱动态效果开启或视频未载入时平滑回退至 60/120fps 纯实时水墨矢量舞台）。

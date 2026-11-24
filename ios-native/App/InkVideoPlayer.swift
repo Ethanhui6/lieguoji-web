@@ -177,41 +177,43 @@ final class InkPlayerHostView: UIView {
         // 无头模拟器巡览（LGJ_SHOT=1）仅展示高清首帧画卷，避免虚拟机 mediaserverd 争用。
         guard !ShotTour.on, let url = InkVideoStage.url(for: clip) else { return }
 
-        // 2. 延后 0.12s 待弹窗/横幅首帧入场动画稳定后，再于后台轻装创建 AVURLAsset 并切入 60fps 硬件循环播放。
+        // 2. 延后 0.14s 待弹窗/横幅首帧入场动画稳定后，先在后台异步预加载音轨与时长元数据（彻底消除 AVPlayerLooper 主线程阻塞 mediaserverd 掉帧），再切入 60fps 硬件循环播放。
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.loadGeneration == gen, self.window != nil else { return }
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: false])
-                let item = AVPlayerItem(asset: asset)
-                item.preferredForwardBufferDuration = 1.0
-                DispatchQueue.main.async { [weak self] in
-                    guard let self, self.loadGeneration == gen, self.window != nil else { return }
-                    let player = AVQueuePlayer()
-                    player.isMuted = true
-                    player.volume = 0
-                    player.preventsDisplaySleepDuringVideoPlayback = false
-                    player.automaticallyWaitsToMinimizeStalling = false
-                    let looper = AVPlayerLooper(player: player, templateItem: item)
-                    self.queuePlayer = player
-                    self.looper = looper
-                    self.playerLayer.player = player
-                    self.readyObs = self.playerLayer.observe(\.isReadyForDisplay, options: [.new, .initial]) { [weak self] layer, _ in
-                        guard layer.isReadyForDisplay else { return }
-                        DispatchQueue.main.async { [weak self] in
-                            guard let self, self.loadGeneration == gen else { return }
-                            UIView.animate(withDuration: 0.16, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) {
-                                self.posterView.alpha = 0
-                            } completion: { _ in
-                                if self.loadGeneration == gen { self.posterView.isHidden = true }
+                asset.loadValuesAsynchronously(forKeys: ["playable", "duration", "tracks"]) { [weak self] in
+                    let item = AVPlayerItem(asset: asset)
+                    item.preferredForwardBufferDuration = 1.0
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self, self.loadGeneration == gen, self.window != nil else { return }
+                        let player = AVQueuePlayer()
+                        player.isMuted = true
+                        player.volume = 0
+                        player.preventsDisplaySleepDuringVideoPlayback = false
+                        player.automaticallyWaitsToMinimizeStalling = false
+                        let looper = AVPlayerLooper(player: player, templateItem: item)
+                        self.queuePlayer = player
+                        self.looper = looper
+                        self.playerLayer.player = player
+                        self.readyObs = self.playerLayer.observe(\.isReadyForDisplay, options: [.new, .initial]) { [weak self] layer, _ in
+                            guard layer.isReadyForDisplay else { return }
+                            DispatchQueue.main.async { [weak self] in
+                                guard let self, self.loadGeneration == gen else { return }
+                                UIView.animate(withDuration: 0.16, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) {
+                                    self.posterView.alpha = 0
+                                } completion: { _ in
+                                    if self.loadGeneration == gen { self.posterView.isHidden = true }
+                                }
                             }
                         }
+                        player.play()
                     }
-                    player.play()
                 }
             }
         }
         pendingStart = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.14, execute: work)
     }
 
     func teardown() {

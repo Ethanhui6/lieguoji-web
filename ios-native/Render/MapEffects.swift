@@ -116,18 +116,31 @@ final class EffectsView: UIView {
     override init(frame: CGRect) { super.init(frame: frame); isUserInteractionEnabled = false }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
-    private static func image(_ name: String) -> CGImage? {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "World") else { return nil }
-        return UIImage(contentsOfFile: url.path)?.cgImage
+    nonisolated private static func image(_ name: String) -> CGImage? {
+        guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "World"),
+              let img = UIImage(contentsOfFile: url.path) else { return nil }
+        return (img.preparingForDisplay() ?? img).cgImage
+    }
+    private static var prewarmed = false
+    /// 后台预解码剑影、海浪、宣称与和平鸽图集，杜绝首次交战/海浪现身时的主线程掉帧。
+    static func prewarmAsync() {
+        guard !prewarmed else { return }
+        prewarmed = true
+        DispatchQueue.global(qos: .utility).async {
+            _ = swords
+            _ = waveSheet
+            _ = claimIcon
+            _ = dove
+        }
     }
     /// The original BattleSword atlas: 5 × 8 frames of 258 × 194.
-    private static let swords = image("battle-sword")
+    nonisolated private static let swords = image("battle-sword")
     private static let swordFrames: [NSValue] = (0..<40).map { i in NSValue(cgRect: CGRect(x: CGFloat(i % 5) / 5, y: CGFloat(i / 5) / 8, width: 1.0 / 5, height: 1.0 / 8)) }
 
     // MARK: Sea waves
     /// The original's Water_Cartoon_Min: a wave that rises, curls and breaks, 8 × 8 frames. Like the
     /// original, waves come and go at random points of the sea in view.
-    private static let waveSheet = image("sea-wave")
+    nonisolated private static let waveSheet = image("sea-wave")
     private static let waveFrames: [NSValue] = (0..<64).map { i in NSValue(cgRect: CGRect(x: CGFloat(i % 8) / 8, y: CGFloat(i / 8) / 8, width: 1.0 / 8, height: 1.0 / 8)) }
     /// Sea points (cell centres) waves may rise at; set with the map.
     var seaSpots: [CGPoint] = []
@@ -200,8 +213,8 @@ final class EffectsView: UIView {
             l.removeFromSuperlayer(); self?.waves.removeAll { $0.layer === l }
         }
     }
-    private static let claimIcon = image("war-claim")
-    private static let dove = image("peace-bird")
+    nonisolated private static let claimIcon = image("war-claim")
+    nonisolated private static let dove = image("peace-bird")
 
     /// Soft round puff and a spark dot for the particle effects, drawn once.
     private static let puff: CGImage? = UIGraphicsImageRenderer(size: CGSize(width: 32, height: 32)).image { ctx in
@@ -1019,7 +1032,7 @@ final class EffectsView: UIView {
             CATransaction.setDisableActions(true)
         }
         for f in effects.flashes where !seen.contains(f.id) {
-            guard flashLayers.count < 24 else { continue }
+            guard flashLayers.count < 12 else { continue }
             let col = UIColor(red: f.r, green: f.g, blue: f.b, alpha: 1)
             let l = f.atlasStyle ? atlasRippleLayer(color: col) : flashLayer(color: col, culture: f.culture)
             layer.addSublayer(l)
@@ -1035,7 +1048,7 @@ final class EffectsView: UIView {
             else { let l = arrowLayer(a); layer.insertSublayer(l.0, at: 0); battleArrows[a.key] = (l.0, l.1, l.2, l.3, l.4, l.5, a) }
         }
         for b in effects.bursts where !seen.contains(b.id) {
-            guard burstLayers.count < 24 else { continue }
+            guard burstLayers.count < 12 else { continue }
             if b.kind != .destroyed { if sealIDs.count >= 3 { continue }; sealIDs.insert(b.id) }
             let l = burstLayer(b); layer.addSublayer(l); burstLayers[b.id] = (l, b.x, b.y)
             let id = b.id
@@ -1093,7 +1106,7 @@ final class EffectsView: UIView {
         }
         let liveBlockades = Set(effects.blockades.map(\.key))
         for (key, v) in blockadeLayers where !liveBlockades.contains(key) { Self.retire(v.layer); blockadeLayers[key] = nil }
-        for blk in effects.blockades.prefix(32) {
+        for blk in effects.blockades.prefix(16) {
             if let old = blockadeLayers[blk.key] {
                 blockadeLayers[blk.key] = (old.layer, blk.x, blk.y)
             } else {
@@ -1109,7 +1122,7 @@ final class EffectsView: UIView {
             v.arc?.removeFromSuperlayer()
             landingLayers[key] = nil
         }
-        for lnd in effects.landings.prefix(24) {
+        for lnd in effects.landings.prefix(12) {
             if let old = landingLayers[lnd.key] {
                 landingLayers[lnd.key] = (old.layer, old.arc, lnd)
             } else {

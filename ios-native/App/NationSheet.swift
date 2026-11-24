@@ -375,7 +375,7 @@ struct NationSheet: View {
                     }
                 }
                 .background(MemorialPaper().ignoresSafeArea())
-                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $editing) { p in
                 PersonEditor(person: p) { skills, traits, first, last, age in
@@ -388,13 +388,13 @@ struct NationSheet: View {
                     }
                 }
                 .background(MemorialPaper().ignoresSafeArea())
-                .presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
-            .sheet(item: $picking) { pick in pickSheet(pick, map, state).background(MemorialPaper().ignoresSafeArea()).presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section) }
+            .sheet(item: $picking) { pick in pickSheet(pick, map, state).background(MemorialPaper().ignoresSafeArea()).presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section) }
             .sheet(item: $tree, onDismiss: { Task { await reload() } }) { t in
                 FamilyTreeSheet(model: model, family: t.id, name: t.name)
                     .background(MemorialPaper().ignoresSafeArea())
-                    .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+                    .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
             }
             .sheet(item: $numberEdit) { e in
                 NumberEditSheet(title: e.title, unit: e.unit, value: e.value) { v in
@@ -402,7 +402,7 @@ struct NationSheet: View {
                     Task { await run(success: "\(e.title)已改为 \(Int(v))\(e.unit)") { await e.apply(v) } }
                 }
                 .background(MemorialPaper().ignoresSafeArea())
-                .presentationDetents([.height(370)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.height(370)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(item: $partyEdit) { p in
                 PartyEditSheet(name: p.name, seats: p.seats) { name, seats in
@@ -410,7 +410,7 @@ struct NationSheet: View {
                     Task { await run(success: "\(name)已修改") { await model.editParty(nation, party: p.id, name: name, seats: seats) } }
                 }
                 .background(MemorialPaper().ignoresSafeArea())
-                .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $creatingHouse) {
                 let lex = LocalizationEngine.lexicon(culture: info?.culture ?? s.culture ?? meta?.culture, polity: info?.polity ?? s.polity ?? meta?.polity, style: info?.style)
@@ -437,7 +437,7 @@ struct NationSheet: View {
                 }
                 .padding(.bottom, 22)
                 .background(MemorialPaper().ignoresSafeArea())
-                .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $enthroning) {
                 EnthroneSheet(model: model, nation: nation, stateName: meta?.name ?? info?.name ?? "", culture: info?.culture ?? s.culture, polity: info?.polity ?? s.polity, style: info?.style) { personId, name in
@@ -445,12 +445,12 @@ struct NationSheet: View {
                     Task { await run(success: "已推举\(name)就任执政") { await model.enthronePerson(nation, person: personId) } }
                 }
                 .background(MemorialPaper().ignoresSafeArea())
-                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $showingBreakdown) {
                 NationBreakdownSheet(model: model, nation: nation, nationName: meta?.name ?? info?.name ?? "")
                     .background(MemorialPaper().ignoresSafeArea())
-                    .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+                    .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
     }
@@ -533,65 +533,6 @@ struct NationSheet: View {
         }()
 
         VStack(alignment: .leading, spacing: 14) {
-                let heroClip: String = {
-                    let cul = info.culture.lowercased()
-                    let seed = nation &* 31 &+ (state.day / 90)
-                    if !info.wars.isEmpty {
-                        if (info.seaTransport?.totalPorts ?? 0) >= 2 && !myFleets.isEmpty && (nation + state.day / 90) % 3 == 1 {
-                            if cul.contains("nordic") || cul.contains("viking") { return InkVideoStage.pick(from: ["herald-longship-raid", "herald-blockade", "herald-naval"], seed: seed) }
-                            if cul.contains("chinese") || cul.contains("japan") { return InkVideoStage.pick(from: ["herald-fire-ships", "herald-naval", "herald-blockade"], seed: seed) }
-                            return InkVideoStage.pick(from: ["herald-galleon-broadside", "herald-naval", "herald-fire-ships", "herald-blockade"], seed: seed)
-                        }
-                        if info.wars.count >= 2 || (info.wars.first?.months ?? 0) >= 16 {
-                            return InkVideoStage.pick(from: ["herald-artillery", "herald-siege", "herald-beacon", "herald-capture"], seed: seed)
-                        }
-                        if cul.contains("mongol") || cul.contains("turk") || cul.contains("steppe") {
-                            return InkVideoStage.pick(from: ["herald-cavalry", "herald-beacon", "herald-war"], seed: seed)
-                        }
-                        if cul.contains("japan") { return InkVideoStage.pick(from: ["herald-samurai-charge", "herald-ambush", "herald-war"], seed: seed) }
-                        if cul.contains("arab") || cul.contains("persian") || cul.contains("ottoman") || cul.contains("egypt") {
-                            return InkVideoStage.pick(from: ["herald-desert-war", "herald-cavalry", "herald-war"], seed: seed)
-                        }
-                        if WorldSeason.of(month: state.date.month) == .winter {
-                            return InkVideoStage.pick(from: ["herald-winter-march", "herald-war", "herald-ambush"], seed: seed)
-                        }
-                        return InkVideoStage.pick(from: ["herald-war", "herald-knights-joust", "herald-ambush", "herald-camp-muster", "herald-cavalry"], seed: seed)
-                    }
-                    if (info.polityDetail?.coupRisk ?? 0) >= 48 {
-                        return InkVideoStage.pick(from: ["herald-uprising", "herald-betrayal", "herald-spy"], seed: seed)
-                    }
-                    if ovLex.isRepublican || !(info.parties ?? []).isEmpty {
-                        if cul.contains("greek") || cul.contains("roman") {
-                            return InkVideoStage.pick(from: ["herald-senate", "herald-election", "herald-harbor-trade", "herald-library"], seed: seed)
-                        }
-                        return InkVideoStage.pick(from: ["herald-parliament", "herald-senate", "herald-election", "herald-reform", "herald-harbor-trade"], seed: seed)
-                    }
-                    if (info.seaTransport?.totalPorts ?? 0) >= 2 && !myFleets.isEmpty {
-                        return InkVideoStage.pick(from: ["herald-harbor-trade", "herald-voyage-fleet", "herald-voyage", "herald-longship-raid"], seed: seed)
-                    }
-                    if cul.contains("japan") {
-                        return InkVideoStage.pick(from: ["herald-shogun-court", "herald-monastery", "herald-festival", "herald-coronation"], seed: seed)
-                    }
-                    if cul.contains("arab") || cul.contains("persian") || cul.contains("ottoman") || cul.contains("egypt") {
-                        return InkVideoStage.pick(from: ["herald-sultan-divan", "herald-silkroad", "herald-banquet", "herald-coronation"], seed: seed)
-                    }
-                    if cul.contains("chinese") || cul.contains("han") || cul.contains("korean") || cul.contains("viet") {
-                        return InkVideoStage.pick(from: ["herald-monastery", "herald-exam-hall", "herald-vassal-tribute", "herald-festival", "herald-camp-muster", "herald-coronation"], seed: seed)
-                    }
-                    if info.holdsHolySite == true {
-                        return InkVideoStage.pick(from: ["herald-cathedral", "herald-monastery", "herald-succession"], seed: seed)
-                    }
-                    if info.alliance != nil && nation % 2 == 0 {
-                        return InkVideoStage.pick(from: ["herald-alliance", "herald-banquet", "herald-vassal-tribute"], seed: seed)
-                    }
-                    return InkVideoStage.pick(from: ["herald-coronation", "herald-succession", "herald-cathedral", "herald-library", "herald-mint", "herald-banquet", "herald-peace", "herald-regime"], seed: seed)
-                }()
-                if InkVideoStage.hasVideo(heroClip) {
-                    InkVideoStage(clip: heroClip, cornerRadius: 12, tint: !info.wars.isEmpty ? Theme.seal : Theme.jade)
-                        .frame(height: 68)
-                        .padding(.horizontal, 16)
-                }
-
                 // 国情卷宗导语（仿原作国策档案卷首叙事，一眼纵览政体、都城、执政与海陆军势，附透明数值拆解入口）
                 Group2 {
                     VStack(alignment: .leading, spacing: 6) {

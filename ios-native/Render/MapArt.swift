@@ -264,8 +264,43 @@ enum BundleArt {
     }
 
     private static func load(_ name: String) -> UIImage? {
-        guard let u = url(name) else { return nil }
-        return UIImage(contentsOfFile: u.path)
+        guard let u = url(name), let img = UIImage(contentsOfFile: u.path) else { return nil }
+        return img.preparingForDisplay() ?? img
+    }
+
+    private static var prewarmed = false
+    /// 后台预解码高密度 36 帧战斗/围城/插旗/登陆动画图集与四季粒子，彻底消除首次触发战争动效时的主线程 PNG 解码卡顿。
+    static func prewarmAsync() {
+        guard !prewarmed else { return }
+        prewarmed = true
+        DispatchQueue.global(qos: .utility).async {
+            _ = atlasBattle36
+            _ = atlasNaval36
+            _ = atlasSiege36
+            _ = atlasCaptureFlag36
+            _ = atlasAmphibious36
+            _ = atlasRainRipple36
+            _ = bannerVictoryEast
+            _ = bannerVictoryWest
+            _ = bannerVictoryIslamic
+            _ = bannerVictorySteppe
+            _ = bannerFallenEast
+            _ = bannerFallenWest
+            _ = bannerFallenIslamic
+            _ = fxSiegeFlame
+            _ = fxHarvest
+            _ = fxTrade
+            _ = fxTalent
+            _ = fxWeatherSnow
+            _ = fxWeatherDrought
+            _ = fxWeatherStorm
+            _ = fxPlague
+            _ = fxPetal
+            _ = fxMaple
+            _ = fxSnowflake
+            _ = fxRaindrop
+            _ = fxCloudMist
+        }
     }
 }
 

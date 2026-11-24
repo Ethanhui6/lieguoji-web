@@ -13,7 +13,14 @@ import LieguojiCore
     @Published var tourTitle: String?
     /// CI tour only. Forces `.compact` verticalSizeClass in headless simctl mode so landscape layout (`landscapeRail` + `sidePage`) is rendered and verified.
     @Published var tourLandscape = false
-    @Published private(set) var map: WorldMap?
+    @Published private(set) var map: WorldMap? { didSet { rebuildCityByProvCache() } }
+    private var cityByProvCache: [Int: WorldMeta.City] = [:]
+    private func rebuildCityByProvCache() {
+        cityByProvCache.removeAll(keepingCapacity: true)
+        guard let cities = map?.meta.cities else { return }
+        cityByProvCache.reserveCapacity(cities.count)
+        for c in cities where cityByProvCache[c.province] == nil { cityByProvCache[c.province] = c }
+    }
     private(set) var state: GameState? { didSet { publishState() } }
     /// A page is open over the map: its numbers refresh twice a second instead of with every step.
     var pageOpen = false
@@ -490,6 +497,8 @@ import LieguojiCore
                 controller.snapArmies = true
                 controller.reveal = 0
                 map = loaded.0; worldID = UUID(); controller.world = nil
+                BundleArt.prewarmAsync()
+                EffectsView.prewarmAsync()
                 apply(loaded.1); lastSavedDay = loaded.1.day
                 world = loaded.0
             } else {
@@ -579,6 +588,8 @@ import LieguojiCore
         } else {
             map = loaded.0; worldID = UUID(); controller.world = nil
         }
+        BundleArt.prewarmAsync()
+        EffectsView.prewarmAsync()
         apply(loaded.1)
         lastSavedDay = loaded.1.day
         return loaded.0
@@ -911,9 +922,7 @@ import LieguojiCore
         let changedForts = next.forts != previous?.forts ? next.forts : nil
         let changedHoly = next.holy != previous?.holy ? next.holy : nil
         if let meta = map?.meta, changedForts != nil || changedHoly != nil {
-            var cityByProv = [Int: WorldMeta.City]()
-            cityByProv.reserveCapacity(meta.cities.count)
-            for c in meta.cities where cityByProv[c.province] == nil { cityByProv[c.province] = c }
+            let cityByProv = cityByProvCache
             if let list = changedForts {
                 let forts = list.compactMap { p -> SIMD2<Float>? in
                     guard meta.provinces.indices.contains(p) else { return nil }
@@ -960,6 +969,8 @@ import LieguojiCore
         refreshWashes(previous: previous, next: next)
         refreshArmies()
         refreshEffects(previous: previous, newEvents: newEvents)
+        // 单步全部地图数据（疆域/墨晕/军团/特效/海港/天时）一次性原子合批提交至渲染层，彻底消除多轮重复 sync。
+        controller.flushSync()
         if mapView != .state && mapView != .terrain, !playing || CACurrentMediaTime() - lastViewRefresh > 0.6 {
             lastViewRefresh = CACurrentMediaTime()
             Task { await refreshView() }

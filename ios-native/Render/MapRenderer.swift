@@ -91,18 +91,26 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 4×1 横向透明序列帧动画专用 GPU 管线（步兵行军、骑兵冲锋、东西方战舰破浪、跨海运输船队，60/120fps 逐帧切换无代码晃动）。
     private let spriteSheetShadowPipeline: MTLRenderPipelineState
     private let spriteSheetPipeline: MTLRenderPipelineState
-    /// 宋画青绿山水地形精灵（山脉、雪峰、阔叶林、松柏林、大漠沙丘）与御卷 AI 手绘装裱边框（织锦横边、紫檀卷轴、四角鎏金碧玉包角）专用 GPU 管线。
+    /// 宋画青绿山水地形精灵与程序化高精细古风舆图卷轴装裱（紫檀木轴、包金玉轴头、宋锦绫罗暗纹、四角回纹包角、柔和内阴影）专用 GPU 管线。
     private let terrainPipeline: MTLRenderPipelineState
     private let scrollBorderPipeline: MTLRenderPipelineState
+    /// 4.2.6 离屏静态地图双层缓存合成管线（cachedBaseTex 底图海陆 + cachedOverlayTex 静态州界/河网/地貌/国界/城徽，Dirty Flag 按需重绘）。
+    private let blitOpaquePipeline: MTLRenderPipelineState
+    private let blitPremulPipeline: MTLRenderPipelineState
+    private var cacheMSAATex: MTLTexture?
+    private var cachedBaseTex: MTLTexture?
+    private var cachedOverlayTex: MTLTexture?
+    private var cachePixelSize: (Int, Int) = (0, 0)
+    private var cacheSampleCount: Int = 0
+    private var cachedCamera = MapCamera(centerX: .nan, centerY: .nan, scale: .nan)
+    private var lastFrameCamera = MapCamera(centerX: .nan, centerY: .nan, scale: .nan)
+    private var cachedSeasonBucket: Int = -999
+    private var cachedLightBucket: Int = -999
+    private var baseCacheValid = false
+    private var overlayCacheValid = false
     private var terrainTextures: [Int: MTLTexture] = [:]
     private var terrainBatches: [(texture: MTLTexture, buffer: MTLBuffer, count: Int)] = []
-    private var scrollBorderHTex: MTLTexture?
-    private var scrollRollerVTex: MTLTexture?
-    private var scrollCornerTexture: MTLTexture?
-    private var scrollHBuffer: (buffer: MTLBuffer, count: Int)?
-    private var scrollVBuffer: (buffer: MTLBuffer, count: Int)?
-    private var scrollCornerBuffer: (buffer: MTLBuffer, count: Int)?
-    private var scrollShadow: (buffer: MTLBuffer, count: Int)?
+    private var scrollMountBuffer: (buffer: MTLBuffer, count: Int)?
     /// 实时天气与灾异区域（1 + 12 个 float4：`[0].x = 数量`，`[1...12] = (worldX, worldY, radius, kind)`，1雪/2旱/3涝/4疫/5丰）。
     var weatherUniforms: [SIMD4<Float>] = Array(repeating: .zero, count: 13)
     /// Army icons grouped by unit type: the texture and its quads.
@@ -192,7 +200,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         view.colorPixelFormat = .bgra8Unorm
         do {
             let library = try device.makeLibrary(source: MapRenderer.shaders + MapRenderer.sweepShaders + InkPipelines.shaders, options: nil)
-            enum Blend { case none, alpha, multiply }
+            enum Blend { case none, alpha, premultiplied, multiply }
             func pipeline(_ vertex: String, _ fragment: String, _ blend: Blend) throws -> MTLRenderPipelineState {
                 let d = MTLRenderPipelineDescriptor()
                 d.vertexFunction = library.makeFunction(name: vertex)
@@ -205,6 +213,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 case .alpha:
                     a.isBlendingEnabled = true
                     a.sourceRGBBlendFactor = .sourceAlpha; a.destinationRGBBlendFactor = .oneMinusSourceAlpha
+                    a.sourceAlphaBlendFactor = .one; a.destinationAlphaBlendFactor = .oneMinusSourceAlpha
+                case .premultiplied:
+                    a.isBlendingEnabled = true
+                    a.sourceRGBBlendFactor = .one; a.destinationRGBBlendFactor = .oneMinusSourceAlpha
                     a.sourceAlphaBlendFactor = .one; a.destinationAlphaBlendFactor = .oneMinusSourceAlpha
                 case .multiply:
                     a.isBlendingEnabled = true
@@ -229,7 +241,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             spriteSheetShadowPipeline = try pipeline("spriteSheetShadowVertex", "spriteShadowFragment", .alpha)
             spriteSheetPipeline = try pipeline("spriteSheetVertex", "spriteSheetFragment", .alpha)
             terrainPipeline = try pipeline("terrainVertex", "terrainFragment", .alpha)
-            scrollBorderPipeline = try pipeline("terrainVertex", "scrollBorderFragment", .alpha)
+            scrollBorderPipeline = try pipeline("terrainVertex", "scrollMountFragment", .alpha)
+            blitOpaquePipeline = try pipeline("blitVertex", "blitFragment", .none)
+            blitPremulPipeline = try pipeline("blitVertex", "blitFragment", .premultiplied)
             sweepPipeline = try pipeline("sweepVertex", "sweepFragment", .alpha)
             inkPipes = try InkPipelines.make(device: device, library: library, mainFormat: view.colorPixelFormat, sampleCount: view.sampleCount)
         } catch {
@@ -279,21 +293,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         fineDetail = buffer(ready?.fine ?? MapLayers.fineDetail(map).vertices, stride: 6)
         seaMask = ready?.sea ?? MapLayers.waterlines(map)
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
-        scrollShadow = buffer(MapLayers.scrollFrameShadow(width: map.width, height: map.height).vertices, stride: 6)
         mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
-        // 地图内部坚持纯矢量宋画融纸地貌（零贴片违和感）；地图四边装裱采用 AI 手绘织锦横边、紫檀卷轴与四角鎏金碧玉包角高精纹理。
+        // 地图内部坚持纯矢量宋画融纸地貌；四周装裱改由高精细程序化 Metal 着色器实时绘制（零粗糙拼接贴图、任意倍率视网膜锐利）。
         let loader = MTKTextureLoader(device: device)
         terrainTextures.removeAll()
         terrainBatches.removeAll()
-        func loadArtTexture(_ name: String) -> MTLTexture? {
-            guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "Art")
-                    ?? Bundle.main.url(forResource: name, withExtension: "png") else { return nil }
-            return try? loader.newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true])
-        }
-        scrollBorderHTex = loadArtTexture("scroll-border-h")
-        scrollRollerVTex = loadArtTexture("scroll-roller-v")
-        scrollCornerTexture = loadArtTexture("scroll-corner")
         rebuildScrollBorders(width: map.width, height: map.height)
         // 恢复上版经典雕漆漆盾国色军团与水师战舰棋子（256×256 四阶象牙浮雕矢量纹理），任意缩放倍率均精致清晰。
         for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Fleet", "Transport", "Port", "Merchant"] {
@@ -389,6 +394,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             ornaments = buffer(MapLayers.ornaments(next).vertices, stride: 6); fineDetail = buffer(MapLayers.fineDetail(next).vertices, stride: 6)
         }
         ink?.terrain = nil
+        baseCacheValid = false
+        overlayCacheValid = false
         recolor()
     }
 
@@ -396,6 +403,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     @discardableResult func setSeaPorts(_ ports: [SIMD2<Float>]) -> Bool {
         guard ports != seaLaneKey else { return false }
         seaLaneKey = ports
+        overlayCacheValid = false
         seaLanes = buffer(MapLayers.seaLanes(map, ports: ports.map { (x: $0.x, y: $0.y) }).vertices, stride: 6)
         // 海岸海港微缩徽记：柔影＋实木栈桥＋靛蓝象牙铁锚圆徽
         var m = ColoredMesh()
@@ -427,6 +435,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func setExtraRivers(_ paths: [[Float]]) -> Bool {
         guard paths != extraRiverKey else { return false }
         extraRiverKey = paths
+        overlayCacheValid = false
         var m = ColoredMesh()
         for p in paths where p.count >= 4 { m.polyline(p, width: 2.6, RGB(0.23, 0.49, 0.6), alpha: 0.92) }
         extraRivers = paths.isEmpty ? nil : buffer(m.vertices, stride: 6)
@@ -435,6 +444,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     @discardableResult func setForts(_ points: [SIMD2<Float>], holy: [SIMD2<Float>] = []) -> Bool {
         guard points != fortKey || holy != holyKey else { return false }
         fortKey = points; holyKey = holy
+        overlayCacheValid = false
         var m = ColoredMesh()
         let u = MapLayers.cityUnit
         let shadow = RGB(hex: 0x1E140A), ink = RGB(0.18, 0.13, 0.09), wallLit = RGB(0.95, 0.91, 0.82), wallShade = RGB(0.76, 0.70, 0.59), seal = RGB(0.74, 0.18, 0.14)
@@ -482,6 +492,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 sea.replace(region: MTLRegionMake2D(0, 0, map.seaWidth, map.seaHeight), mipmapLevel: 0, withBytes: base, bytesPerRow: map.seaWidth * 4)
             }
         }
+        baseCacheValid = false
     }
 
     /// Ownership changed (conquest, rebellion): recolour the land and redraw the state outlines.
@@ -502,7 +513,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 let mask = MapLayers.waterlines(next), marks = MapLayers.ornaments(next).vertices
                 DispatchQueue.main.async {
                     guard let self else { return }
-                    self.seaSource = next.seaRGBA; self.seaMask = mask; self.ornaments = self.buffer(marks, stride: 6); self.uploadSea(); self.onOutlines?()
+                    self.seaSource = next.seaRGBA; self.seaMask = mask; self.ornaments = self.buffer(marks, stride: 6); self.overlayCacheValid = false; self.uploadSea(); self.onOutlines?()
                 }
             }
         }
@@ -520,8 +531,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let colours = MapRenderer.baseColors(next, inputs)
             DispatchQueue.main.async {
                 guard let self, self.workRevision.acceptsGeometry(work) else { return }
-                if let vertices, self.workRevision.acceptsOutlineGeometry(work) { self.outlines = self.buffer(vertices, stride: 6) }
-                if let marks { self.icons = self.buffer(marks, stride: 6) }
+                if let vertices, self.workRevision.acceptsOutlineGeometry(work) { self.outlines = self.buffer(vertices, stride: 6); self.overlayCacheValid = false }
+                if let marks { self.icons = self.buffer(marks, stride: 6); self.overlayCacheValid = false }
                 self.workRevision.installGeometry(work)
                 if self.terrainBase == nil { self.terrainBase = colours.terrainBase }
                 if self.shade.isEmpty { self.shade = colours.shade }
@@ -572,6 +583,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             DispatchQueue.main.async {
                 guard let self, self.workRevision.acceptsOutlineGeometry(work) else { return }
                 self.outlines = self.buffer(vertices, stride: 6)
+                self.overlayCacheValid = false
                 self.onOutlines?()
             }
         }
@@ -583,7 +595,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// states' colours spread from their capitals, then lines, marks and names; at 1 every layer is drawn.
     private(set) var reveal: Float = 1
     /// Only a value for the reveal shader: no colours are recomputed while the map is painted.
-    func setReveal(_ t: Float) { reveal = max(0, min(1, t)); if base == nil { recolor() } }
+    func setReveal(_ t: Float) {
+        reveal = max(0, min(1, t))
+        if reveal < 1 { baseCacheValid = false; overlayCacheValid = false }
+        if base == nil { recolor() }
+    }
     /// The map's colours before the generation reveal: the land colours of the current mode and the
     /// terrain colours, both shaded. Kept while only the reveal moves, so the animation does not
     /// recompute every cell's palette 60 times a second.
@@ -610,6 +626,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let recolour = d.colorDensity != display.colorDensity
         let seaChanged = d.ocean != display.ocean, detailChanged = d.mapDetail != display.mapDetail
         display = d
+        baseCacheValid = false
+        overlayCacheValid = false
         if seaChanged || detailChanged { uploadSea() }
         if recolour { rebuildAppearance() }
     }
@@ -666,6 +684,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
             } else { previousColors = nil }
             colors = b
+            baseCacheValid = false
         }
     }
     private let colorBufferPool = MapBufferPool()
@@ -1020,66 +1039,38 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
     }
 
-    /// 构建 AI 手绘御制万里手卷装裱边框（上下无缝云锦织锦边 + 左右紫檀雕花卷轴 + 四角鎏金碧玉云纹包角）。
+    /// 构建程序化古风舆图卷轴装裱的空心四框几何（仅覆盖边缘装裱、卷轴轴头与画心柔和内阴影区，画心内部零片元过绘）。
     private func rebuildScrollBorders(width w: Float, height h: Float) {
         guard w > 0, h > 0 else {
-            scrollHBuffer = nil; scrollVBuffer = nil; scrollCornerBuffer = nil
+            scrollMountBuffer = nil
             return
         }
         let unit = min(w, h)
-        let trimH = unit * 0.036
-        let rollerW = unit * 0.044
-        let brocOver = rollerW * 0.45
-        func appendQuad(_ out: inout [Float], _ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ u0: Float, _ v0: Float, _ u1: Float, _ v1: Float, kind: Float) {
-            out.append(contentsOf: [
-                x0, y0, u0, v0, kind, 1,
-                x1, y0, u1, v0, kind, 1,
-                x0, y1, u0, v1, kind, 1,
-                x0, y1, u0, v1, kind, 1,
-                x1, y0, u1, v0, kind, 1,
-                x1, y1, u1, v1, kind, 1
+        let padX = unit * 0.092
+        let padY = unit * 0.104
+        let inner = min(unit * 0.030, min(w, h) * 0.25)
+        var verts = [Float]()
+        verts.reserveCapacity(4 * 6 * 6)
+        func appendQuad(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float) {
+            verts.append(contentsOf: [
+                x0, y0, 0, 0, 0, 1,
+                x1, y0, 1, 0, 0, 1,
+                x0, y1, 0, 1, 0, 1,
+                x0, y1, 0, 1, 0, 1,
+                x1, y0, 1, 0, 0, 1,
+                x1, y1, 1, 1, 0, 1
             ])
         }
-        // 1. 上下无缝织锦装裱横边（v=0 为外侧紫檀细边，v=1 为内侧牙白丝线，下边竖向翻转严丝合缝）
-        if scrollBorderHTex != nil {
-            var hv = [Float]()
-            let spanW = w + brocOver * 2
-            let tileU = max(1, spanW / max(1, trimH * 5.33))
-            // 上边
-            appendQuad(&hv, -brocOver, -trimH, w + brocOver, 0, 0, 0, tileU, 1, kind: 0)
-            // 下边（竖向镜像：牙白隔水线贴画心 y=h，紫檀细边在外 y=h+trimH）
-            appendQuad(&hv, -brocOver, h, w + brocOver, h + trimH, 0, 1, tileU, 0, kind: 0)
-            if let buf = device.makeBuffer(bytes: hv, length: hv.count * MemoryLayout<Float>.stride, options: .storageModeShared) {
-                scrollHBuffer = (buf, hv.count / 6)
-            }
-        } else { scrollHBuffer = nil }
-
-        // 2. 左右紫檀雕花卷轴 + 绫锦竖边（u=0 为外侧紫檀圆柱卷轴，u=1 为内侧织锦细线，右边横向镜像）
-        if scrollRollerVTex != nil {
-            var vv = [Float]()
-            let padY = trimH * 1.18
-            // 左轴
-            appendQuad(&vv, -rollerW, -padY, 0, h + padY, 0, 0, 1, 1, kind: 1)
-            // 右轴（横向镜像）
-            appendQuad(&vv, w, -padY, w + rollerW, h + padY, 1, 0, 0, 1, kind: 1)
-            if let buf = device.makeBuffer(bytes: vv, length: vv.count * MemoryLayout<Float>.stride, options: .storageModeShared) {
-                scrollVBuffer = (buf, vv.count / 6)
-            }
-        } else { scrollVBuffer = nil }
-
-        // 3. 四角鎏金碧玉回纹包角（左上/右上/左下/右下四向镜像贴合装裱四隅）
-        if scrollCornerTexture != nil {
-            var cv = [Float]()
-            let outPad = trimH * 0.16
-            let s = unit * 0.068
-            appendQuad(&cv, -outPad, -outPad, -outPad + s, -outPad + s, 0, 0, 1, 1, kind: 2)
-            appendQuad(&cv, w + outPad - s, -outPad, w + outPad, -outPad + s, 1, 0, 0, 1, kind: 2)
-            appendQuad(&cv, -outPad, h + outPad - s, -outPad + s, h + outPad, 0, 1, 1, 0, kind: 2)
-            appendQuad(&cv, w + outPad - s, h + outPad - s, w + outPad, h + outPad, 1, 1, 0, 0, kind: 2)
-            if let buf = device.makeBuffer(bytes: cv, length: cv.count * MemoryLayout<Float>.stride, options: .storageModeShared) {
-                scrollCornerBuffer = (buf, cv.count / 6)
-            }
-        } else { scrollCornerBuffer = nil }
+        // 四条互不重叠的空心框带：严格避免重叠区域二次混合，同时完全跳过 90%+ 画心内部像素。
+        appendQuad(-padX, -padY, w + padX, inner)              // 上带（含上绫边、上轴头、上画心内阴影）
+        appendQuad(-padX, h - inner, w + padX, h + padY)       // 下带（含下绫边、下轴头、下画心内阴影）
+        appendQuad(-padX, inner, inner, h - inner)             // 左带（含左紫檀轴、左绫边、左画心内阴影）
+        appendQuad(w - inner, inner, w + padX, h - inner)      // 右带（含右紫檀轴、右绫边、右画心内阴影）
+        if let buf = device.makeBuffer(bytes: verts, length: verts.count * MemoryLayout<Float>.stride, options: .storageModeShared) {
+            scrollMountBuffer = (buf, verts.count / 6)
+        } else {
+            scrollMountBuffer = nil
+        }
     }
 
     /// 更新实时活跃的天时灾异区域（雪灾/大旱/洪涝/瘟疫/丰年），零网格重建直达 GPU 片元着色器。
@@ -1090,7 +1081,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         for i in 0..<n {
             next[i + 1] = SIMD4(zones[i].x, zones[i].y, max(12, zones[i].radius), zones[i].kind)
         }
-        weatherUniforms = next
+        if next != weatherUniforms {
+            weatherUniforms = next
+            baseCacheValid = false
+        }
     }
 
     private func buffer(_ data: [Float], stride: Int) -> (MTLBuffer, Int)? {
@@ -1135,19 +1129,75 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         }
     }
 
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+        baseCacheValid = false
+        overlayCacheValid = false
+    }
+
+    /// 分配或复用离屏静态地图双层缓存纹理（物理机启用 .memoryless 零显存 MSAA 瞬态目标，彻底避免每帧重绘 20,000+ 地块与 13 层静态矢量）。
+    private func ensureCacheTextures(width: Int, height: Int, pixelFormat: MTLPixelFormat, sampleCount: Int) -> Bool {
+        guard width > 0, height > 0 else { return false }
+        if cachePixelSize == (width, height), cacheSampleCount == sampleCount,
+           cachedBaseTex != nil, cachedOverlayTex != nil,
+           (sampleCount <= 1 || cacheMSAATex != nil) {
+            return true
+        }
+        cachePixelSize = (width, height)
+        cacheSampleCount = sampleCount
+        baseCacheValid = false
+        overlayCacheValid = false
+        let desc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: pixelFormat, width: width, height: height, mipmapped: false)
+        desc.usage = [.renderTarget, .shaderRead]
+        desc.storageMode = .private
+        cachedBaseTex = device.makeTexture(descriptor: desc)
+        cachedOverlayTex = device.makeTexture(descriptor: desc)
+        if sampleCount > 1 {
+            let msaa = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: pixelFormat, width: width, height: height, mipmapped: false)
+            msaa.textureType = .type2DMultisample
+            msaa.sampleCount = sampleCount
+            msaa.usage = [.renderTarget]
+            #if targetEnvironment(simulator)
+            msaa.storageMode = .private
+            #else
+            msaa.storageMode = .memoryless
+            #endif
+            cacheMSAATex = device.makeTexture(descriptor: msaa)
+        } else {
+            cacheMSAATex = nil
+        }
+        return cachedBaseTex != nil && cachedOverlayTex != nil && (sampleCount <= 1 || cacheMSAATex != nil)
+    }
+
+    private func makeCachePass(resolveTo target: MTLTexture, clear: Bool, sampleCount: Int) -> MTLRenderPassDescriptor {
+        let rp = MTLRenderPassDescriptor()
+        let att = rp.colorAttachments[0]!
+        att.loadAction = clear ? .clear : .dontCare
+        att.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        if sampleCount > 1, let msaa = cacheMSAATex {
+            att.texture = msaa
+            att.resolveTexture = target
+            att.storeAction = .multisampleResolve
+        } else {
+            att.texture = target
+            att.storeAction = .store
+        }
+        return rp
+    }
 
     func draw(in view: MTKView) {
         guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable, let buffer = queue.makeCommandBuffer() else { return }
         frameTime = CACurrentMediaTime()
-        guard let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
         let probe = Self.frameProbe
         var spriteProgress: Float = advanceChase()
         let size = view.bounds.size
-        guard size.width > 0, size.height > 0 else { encoder.endEncoding(); return }
+        guard size.width > 0, size.height > 0 else { return }
         if !camera.isValid {
             camera = MapCamera.cover(map: (Double(map.width), Double(map.height)), viewport: (Double(size.width), Double(size.height)))
         }
+        let targetTex = pass.colorAttachments[0].texture ?? drawable.texture
+        let dw = min(targetTex.width, drawable.texture.width), dh = min(targetTex.height, drawable.texture.height)
+        guard dw > 0, dh > 0 else { return }
+
         let lightStrength: Float = (display.lighting ?? true) ? (Energy.hot ? 0.55 : 1.0) : 0.0
         var u = Uniforms(
             viewport: SIMD2(Float(size.width), Float(size.height)),
@@ -1163,36 +1213,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             iconZoom: Float(Self.iconZoom(camera.scale))
         )
         let uniformLength = MemoryLayout<Uniforms>.stride
-        func quad(_ texture: MTLTexture?, _ pipeline: MTLRenderPipelineState, x: Float, y: Float, width: Float, height: Float) {
-            guard let texture else { return }
-            var q = QuadUniforms(origin: SIMD2(x, y), size: SIMD2(width, height))
-            encoder.setRenderPipelineState(pipeline)
-            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-            encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
-            encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
-            encoder.setFragmentTexture(texture, index: 0)
-            encoder.setFragmentSamplerState(sampler, index: 0)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
-        }
-        func colored(_ layer: (buffer: MTLBuffer, count: Int)?, alpha: Float = 1) {
-            guard let layer, alpha > 0 else { return }
-            u.alpha = alpha
-            encoder.setRenderPipelineState(coloredPipeline)
-            encoder.setVertexBuffer(layer.buffer, offset: 0, index: 0)
-            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
-            u.alpha = 1
-        }
-        // 0. 全视口无缝「御案织锦」背景：统一西北来光书案聚光 + 细腻云锦暗纹，彻底消除拉远全图上下割裂。
-        let targetTex = pass.colorAttachments[0].texture ?? drawable.texture
-        let dw = min(targetTex.width, drawable.texture.width), dh = min(targetTex.height, drawable.texture.height)
-        guard dw > 0, dh > 0 else { encoder.endEncoding(); return }
         let fullScissor = MTLScissorRect(x: 0, y: 0, width: dw, height: dh)
-        encoder.setScissorRect(fullScissor)
-        encoder.setRenderPipelineState(deskPipeline)
-        encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-        encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
-        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
 
         // 严格按画心 [0, map.width] × [0, map.height] 裁剪全部地图内层（海洋、地形、国界、军团、行军线、羊皮纸），
         // 杜绝缩放或平移时任何底图瓦片、军团棋子或线框飞出卷轴画框覆盖上下留白区。
@@ -1209,104 +1230,206 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let sx1 = Int(max(Double(sx0), min(Double(dw), ceil(rawX1))))
         let sy1 = Int(max(Double(sy0), min(Double(dh), ceil(rawY1))))
         let mapScissor = MTLScissorRect(x: sx0, y: sy0, width: sx1 - sx0, height: sy1 - sy0)
+
+        func encodeQuad(_ enc: MTLRenderCommandEncoder, _ texture: MTLTexture?, _ pipeline: MTLRenderPipelineState, x: Float, y: Float, width: Float, height: Float) {
+            guard let texture else { return }
+            var q = QuadUniforms(origin: SIMD2(x, y), size: SIMD2(width, height))
+            enc.setRenderPipelineState(pipeline)
+            enc.setVertexBytes(&u, length: uniformLength, index: 2)
+            enc.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
+            enc.setFragmentBytes(&u, length: uniformLength, index: 2)
+            enc.setFragmentTexture(texture, index: 0)
+            enc.setFragmentSamplerState(sampler, index: 0)
+            enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+        }
+        func encodeColored(_ enc: MTLRenderCommandEncoder, _ layer: (buffer: MTLBuffer, count: Int)?, alpha: Float = 1) {
+            guard let layer, alpha > 0 else { return }
+            u.alpha = alpha
+            enc.setRenderPipelineState(coloredPipeline)
+            enc.setVertexBuffer(layer.buffer, offset: 0, index: 0)
+            enc.setVertexBytes(&u, length: uniformLength, index: 2)
+            enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: layer.count)
+            u.alpha = 1
+        }
+        func encodeStaticOverlays(_ enc: MTLRenderCommandEncoder, stage: Float) {
+            func ramp(_ from: Float) -> Float { min(1, max(0, (stage - from) / 0.07)) }
+            if stage < 0.82 {
+                if coastInk == nil { coastInk = self.buffer(MapLayers.coastInk(map).vertices, stride: 6) }
+                encodeColored(enc, coastInk, alpha: ramp(0.1) * (1 - ramp(0.75)))
+            } else if coastInk != nil { coastInk = nil }
+            if display.provinceLines { encodeColored(enc, provinceLines, alpha: ramp(0.5)) }
+            if let rivers, stage > 0.42 {
+                let rAlpha = ramp(0.42)
+                let off = min(Float(0.18), 0.36 / max(1.0, u.scale))
+                var bankColor = SIMD4<Float>(MapLayers.river.r * 0.58, MapLayers.river.g * 0.64, MapLayers.river.b * 0.70, rAlpha * 0.34)
+                var bankU = u
+                bankU.center.x -= off
+                bankU.center.y -= off
+                enc.setRenderPipelineState(flatPipeline)
+                enc.setVertexBuffer(rivers.buffer, offset: 0, index: 0)
+                enc.setVertexBytes(&bankU, length: uniformLength, index: 2)
+                enc.setFragmentBytes(&bankColor, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
+                enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
+
+                var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, rAlpha)
+                enc.setVertexBytes(&u, length: uniformLength, index: 2)
+                enc.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
+                enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
+            }
+            if stage > 0.42 { encodeColored(enc, extraRivers, alpha: ramp(0.42)) }
+            if display.seaRoutes { encodeColored(enc, seaLanes, alpha: ramp(0.7)) }
+            if display.gridLines == true && stage >= 1 { encodeColored(enc, gridLines) }
+            let chart = display.mapDetail ?? true
+            if chart { encodeColored(enc, ornaments, alpha: ramp(0.44)) }
+            let fineFade = Float(min(1, max(0, (camera.scale - 0.92) / 0.55)))
+            if chart && fineFade > 0.01 { encodeColored(enc, fineDetail, alpha: ramp(0.44) * fineFade) }
+            if display.vegetation {
+                let vegAlpha = ramp(0.44)
+                encodeColored(enc, relief, alpha: vegAlpha * 0.76)
+            }
+            if display.borders { encodeColored(enc, outlines, alpha: ramp(0.75)) }
+            if display.cityIcons {
+                encodeColored(enc, icons, alpha: ramp(0.85))
+                encodeColored(enc, forts, alpha: ramp(0.85))
+                encodeColored(enc, portIcons, alpha: ramp(0.85))
+            }
+        }
+
+        // 离屏静态地图双层缓存（Dirty Flag）：镜头静止且揭幕完成后，海陆 20,000+ 地块与 13 层静态矢量仅按需烘焙一次；
+        // 推演期间军队滑行、战争墨晕与战斗特效每帧 60fps 只需 2 个全屏三角形直通合成，GPU 耗时暴降 ~85%！
+        let isFading = fading
+        let settled = (reveal >= 1) && (camera == lastFrameCamera) && mapScissor.width > 0 && mapScissor.height > 0
+        lastFrameCamera = camera
+        let seasonBucket = seasonPhase < 0 ? -1 : Int((seasonPhase * 120).rounded())
+        let lightBucket = Int((lightStrength * 100).rounded())
+        if cachedCamera != camera || cachePixelSize != (dw, dh) || cacheSampleCount != view.sampleCount {
+            baseCacheValid = false
+            overlayCacheValid = false
+        }
+        if cachedSeasonBucket != seasonBucket || cachedLightBucket != lightBucket {
+            baseCacheValid = false
+        }
+        var useBaseCache = false
+        var useOverlayCache = false
+        if settled && ensureCacheTextures(width: dw, height: dh, pixelFormat: view.colorPixelFormat, sampleCount: view.sampleCount) {
+            cachedCamera = camera
+            cachedSeasonBucket = seasonBucket
+            cachedLightBucket = lightBucket
+            if !isFading, let baseTex = cachedBaseTex {
+                if !baseCacheValid {
+                    let rp = makeCachePass(resolveTo: baseTex, clear: true, sampleCount: view.sampleCount)
+                    if let bEnc = buffer.makeRenderCommandEncoder(descriptor: rp) {
+                        bEnc.setScissorRect(mapScissor)
+                        encodeQuad(bEnc, sea, seaPipeline, x: 0, y: 0, width: map.width, height: map.height)
+                        bEnc.setRenderPipelineState(cellPipeline)
+                        bEnc.setFragmentBytes(&u, length: uniformLength, index: 2)
+                        bEnc.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
+                        bEnc.setVertexBuffer(positions, offset: 0, index: 0)
+                        bEnc.setVertexBuffer(colors, offset: 0, index: 1)
+                        colorBufferPool.recordRead(in: buffer)
+                        bEnc.setVertexBytes(&u, length: uniformLength, index: 2)
+                        if indexCount > 0 { bEnc.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
+                        bEnc.endEncoding()
+                        baseCacheValid = true
+                    }
+                }
+                useBaseCache = baseCacheValid
+            }
+            if let ovTex = cachedOverlayTex {
+                if !overlayCacheValid {
+                    let rp = makeCachePass(resolveTo: ovTex, clear: true, sampleCount: view.sampleCount)
+                    if let oEnc = buffer.makeRenderCommandEncoder(descriptor: rp) {
+                        oEnc.setScissorRect(mapScissor)
+                        encodeStaticOverlays(oEnc, stage: 1)
+                        oEnc.endEncoding()
+                        overlayCacheValid = true
+                    }
+                }
+                useOverlayCache = overlayCacheValid
+            }
+        }
+
+        guard let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
+        func quad(_ texture: MTLTexture?, _ pipeline: MTLRenderPipelineState, x: Float, y: Float, width: Float, height: Float) {
+            encodeQuad(encoder, texture, pipeline, x: x, y: y, width: width, height: height)
+        }
+        func colored(_ layer: (buffer: MTLBuffer, count: Int)?, alpha: Float = 1) {
+            encodeColored(encoder, layer, alpha: alpha)
+        }
+        // 0. 全视口无缝「御案织锦」背景：统一西北来光书案聚光 + 细腻云锦暗纹，彻底消除拉远全图上下割裂。
+        encoder.setScissorRect(fullScissor)
+        encoder.setRenderPipelineState(deskPipeline)
+        encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+        encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+
         if mapScissor.width > 0 && mapScissor.height > 0 {
         encoder.setScissorRect(mapScissor)
 
-        // 开卷: each layer is brushed in over a moment at its turn, none pops up whole.
-        let stage = reveal
-        func ramp(_ from: Float) -> Float { min(1, max(0, (stage - from) / 0.07)) }
-        // 1. 精致多层海洋渲染：在海图深度纹理之上叠加铜版细浪纹理、微洋流与古纸颗粒，远近皆细腻通透。
-        quad(sea, seaPipeline, x: 0, y: 0, width: map.width, height: map.height)
-        if reveal < 0.2 {
-            // Blank paper over the sea, soaked through from the middle of the sheet outwards.
-            var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
-            var sheet = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, reveal)
-            let deep = MapPalette.ocean(display.ocean).deep
-            var water = SIMD4<Float>(deep.r, deep.g, deep.b, 0), extent = SIMD4<Float>(map.width, map.height, 0, 0)
-            encoder.setRenderPipelineState(veilPipeline)
-            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-            encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
-            encoder.setFragmentBytes(&sheet, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
-            encoder.setFragmentBytes(&water, length: MemoryLayout<SIMD4<Float>>.stride, index: 1)
-            encoder.setFragmentBytes(&extent, length: MemoryLayout<SIMD4<Float>>.stride, index: 2)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
-        }
-        if reveal < 1, let rb = revealBuffers() {
-            // Land not yet inked is the paper itself, left white while the sea is painted round it.
-            var r = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, reveal)
-            encoder.setRenderPipelineState(revealPipeline)
-            encoder.setVertexBuffer(rb.terrain, offset: 0, index: 3)
-            encoder.setVertexBuffer(rb.fields, offset: 0, index: 4)
-            encoder.setFragmentBytes(&r, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
-        } else if fading, let previous = previousColors {
-            var t = SIMD2<Float>(clock(frameTime), LandFade.duration)
-            encoder.setRenderPipelineState(fadePipeline)
-            encoder.setVertexBuffer(previous, offset: 0, index: 3)
-            prevColorBufferPool.recordRead(in: buffer)
-            encoder.setVertexBytes(&t, length: MemoryLayout<SIMD2<Float>>.stride, index: 4)
-            encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
-            encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
-        } else {
+        if useBaseCache, let baseTex = cachedBaseTex {
             if previousColors != nil { previousColors = nil }
-            encoder.setRenderPipelineState(cellPipeline)
-            encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
-            encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
+            encoder.setRenderPipelineState(blitOpaquePipeline)
+            encoder.setFragmentTexture(baseTex, index: 0)
+            encoder.setFragmentSamplerState(sampler, index: 0)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        } else {
+            // 1. 精致多层海洋渲染：在海图深度纹理之上叠加铜版细浪纹理、微洋流与古纸颗粒，远近皆细腻通透。
+            quad(sea, seaPipeline, x: 0, y: 0, width: map.width, height: map.height)
+            if reveal < 0.2 {
+                // Blank paper over the sea, soaked through from the middle of the sheet outwards.
+                var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
+                var sheet = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, reveal)
+                let deep = MapPalette.ocean(display.ocean).deep
+                var water = SIMD4<Float>(deep.r, deep.g, deep.b, 0), extent = SIMD4<Float>(map.width, map.height, 0, 0)
+                encoder.setRenderPipelineState(veilPipeline)
+                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
+                encoder.setFragmentBytes(&sheet, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
+                encoder.setFragmentBytes(&water, length: MemoryLayout<SIMD4<Float>>.stride, index: 1)
+                encoder.setFragmentBytes(&extent, length: MemoryLayout<SIMD4<Float>>.stride, index: 2)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+            }
+            if reveal < 1, let rb = revealBuffers() {
+                // Land not yet inked is the paper itself, left white while the sea is painted round it.
+                var r = SIMD4<Float>(Self.paper.r, Self.paper.g, Self.paper.b, reveal)
+                encoder.setRenderPipelineState(revealPipeline)
+                encoder.setVertexBuffer(rb.terrain, offset: 0, index: 3)
+                encoder.setVertexBuffer(rb.fields, offset: 0, index: 4)
+                encoder.setFragmentBytes(&r, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
+            } else if isFading, let previous = previousColors {
+                var t = SIMD2<Float>(clock(frameTime), LandFade.duration)
+                encoder.setRenderPipelineState(fadePipeline)
+                encoder.setVertexBuffer(previous, offset: 0, index: 3)
+                prevColorBufferPool.recordRead(in: buffer)
+                encoder.setVertexBytes(&t, length: MemoryLayout<SIMD2<Float>>.stride, index: 4)
+                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
+            } else {
+                if previousColors != nil { previousColors = nil }
+                encoder.setRenderPipelineState(cellPipeline)
+                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
+            }
+            encoder.setVertexBuffer(positions, offset: 0, index: 0)
+            encoder.setVertexBuffer(colors, offset: 0, index: 1)
+            colorBufferPool.recordRead(in: buffer)
+            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+            if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
         }
-        encoder.setVertexBuffer(positions, offset: 0, index: 0)
-        encoder.setVertexBuffer(colors, offset: 0, index: 1)
-        colorBufferPool.recordRead(in: buffer)
-        encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-        if indexCount > 0 { encoder.drawIndexedPrimitives(type: .triangle, indexCount: indexCount, indexType: .uint32, indexBuffer: indices, indexBufferOffset: 0) }
         // 战争晕染（墨场）：在陆地颜色之上、州界与军队之下；专题分色视图（联盟/文化/家族/宗教等）不叠绘国家占领墨色。
         if reveal >= 1 && (display.battleGround ?? true) && fills == nil {
             let t0 = CACurrentMediaTime()
             drawWashes(encoder, &u, command: buffer)
             probe?.wash.append((CACurrentMediaTime() - t0) * 1000)
         }
-        // Province lines: 0.55 screen px once zoomed in. Colour is the measured #B2B2B2.
-        // The screen width is the previous client choice; it is not a measured original width.
-        // Province borders: smoothed ink lines at every zoom (MapLayers.provinceLines), so each
-        // province reads as clearly as in the original.
-        if reveal < 0.82 {
-            // The shore is outlined first and gives way to the finished soft shoal & border pass.
-            if coastInk == nil { coastInk = self.buffer(MapLayers.coastInk(map).vertices, stride: 6) }
-            colored(coastInk, alpha: ramp(0.1) * (1 - ramp(0.75)))
-        } else if coastInk != nil { coastInk = nil }
-        if display.provinceLines { colored(provinceLines, alpha: ramp(0.5)) }
-        if let rivers, reveal > 0.42 {
-            // 双层河道紧贴河床：微距河岸柔影（限制最大世界偏移，彻底杜绝高倍放大后河影与河心脱节成双线）
-            let rAlpha = ramp(0.42)
-            let off = min(Float(0.18), 0.36 / max(1.0, u.scale))
-            var bankColor = SIMD4<Float>(MapLayers.river.r * 0.58, MapLayers.river.g * 0.64, MapLayers.river.b * 0.70, rAlpha * 0.34)
-            var bankU = u
-            bankU.center.x -= off
-            bankU.center.y -= off
-            encoder.setRenderPipelineState(flatPipeline)
-            encoder.setVertexBuffer(rivers.buffer, offset: 0, index: 0)
-            encoder.setVertexBytes(&bankU, length: uniformLength, index: 2)
-            encoder.setFragmentBytes(&bankColor, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
-
-            var color = SIMD4<Float>(MapLayers.river.r, MapLayers.river.g, MapLayers.river.b, rAlpha)
-            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-            encoder.setFragmentBytes(&color, length: MemoryLayout<SIMD4<Float>>.stride, index: 0)
-            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: rivers.count)
+        if useOverlayCache, let ovTex = cachedOverlayTex {
+            encoder.setRenderPipelineState(blitPremulPipeline)
+            encoder.setFragmentTexture(ovTex, index: 0)
+            encoder.setFragmentSamplerState(sampler, index: 0)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        } else {
+            encodeStaticOverlays(encoder, stage: reveal)
         }
-        // 手绘河流与天然河流同层（以前画在最后，压在国界、城池和军队上面）。
-        if reveal > 0.42 { colored(extraRivers, alpha: ramp(0.42)) }
-        if display.seaRoutes { colored(seaLanes, alpha: ramp(0.7)) }
-        if display.gridLines == true && reveal >= 1 { colored(gridLines) }
-        let chart = display.mapDetail ?? true
-        if chart { colored(ornaments, alpha: ramp(0.44)) }
-        let fineFade = Float(min(1, max(0, (camera.scale - 0.92) / 0.55)))
-        if chart && fineFade > 0.01 { colored(fineDetail, alpha: ramp(0.44) * fineFade) }
-        if display.vegetation {
-            let vegAlpha = ramp(0.44)
-            // 纯矢量水彩融纸地貌层（0 张 AI 生图贴片），与宣纸底图、河流、城池精度完全统一，任意高倍缩放依然锐利典雅。
-            colored(relief, alpha: vegAlpha * 0.76)
-        }
-        if display.borders { colored(outlines, alpha: ramp(0.75)) }
-        if display.cityIcons { colored(icons, alpha: ramp(0.85)); colored(forts, alpha: ramp(0.85)); colored(portIcons, alpha: ramp(0.85)) }
         if reveal >= 1 {
         colored(route)
         encoder.setVertexBytes(&spriteProgress, length: MemoryLayout<Float>.stride, index: 4)
@@ -1359,30 +1482,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         } // end mapScissor
         encoder.setScissorRect(fullScissor)
         if display.scrollMount ?? display.darkEdges {
-            if let hTex = scrollBorderHTex, let hb = scrollHBuffer,
-               let vTex = scrollRollerVTex, let vb = scrollVBuffer {
-                // 1. 书案定向柔影 + 画心宣纸内卷微影
-                colored(scrollShadow)
-                // 2. AI 手绘上下无缝云锦织锦装裱横边
+            if let mb = scrollMountBuffer {
                 encoder.setRenderPipelineState(scrollBorderPipeline)
                 encoder.setVertexBytes(&u, length: uniformLength, index: 2)
                 encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
-                encoder.setVertexBuffer(hb.buffer, offset: 0, index: 0)
-                encoder.setFragmentTexture(hTex, index: 0)
-                encoder.setFragmentSamplerState(repeatSampler ?? sampler, index: 0)
-                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: hb.count)
-                // 3. AI 手绘左右紫檀雕花卷轴 + 绫锦竖边
-                encoder.setVertexBuffer(vb.buffer, offset: 0, index: 0)
-                encoder.setFragmentTexture(vTex, index: 0)
-                encoder.setFragmentSamplerState(sampler, index: 0)
-                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vb.count)
-                // 4. AI 手绘四角鎏金碧玉云纹包角
-                if let cornerTex = scrollCornerTexture, let cb = scrollCornerBuffer {
-                    encoder.setVertexBuffer(cb.buffer, offset: 0, index: 0)
-                    encoder.setFragmentTexture(cornerTex, index: 0)
-                    encoder.setFragmentSamplerState(sampler, index: 0)
-                    encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: cb.count)
-                }
+                encoder.setVertexBuffer(mb.buffer, offset: 0, index: 0)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: mb.count)
             } else {
                 colored(frame)
             }
@@ -1656,18 +1761,314 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         return float4(clamp(rgb, 0.0, 1.0), p.a * u.alpha);
     }
 
-    // AI 手绘御卷装裱边框与紫檀卷轴专属着色器：直通高精纹理 + 统一西北御案温润柔光，水平无缝拼接且纵轴严防边缘回卷渗色。
-    fragment float4 scrollBorderFragment(TerrainOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]],
-                                         constant Uniforms& u [[buffer(2)]]) {
-        float2 uv = (in.kind < 0.5) ? float2(in.uv.x, clamp(in.uv.y, 0.008, 0.992)) : clamp(in.uv, 0.002, 0.998);
-        float4 p = t.sample(s, uv);
-        if (p.a < 0.02) discard_fragment();
-        float3 srcRgb = clamp(p.rgb / max(p.a, 0.001), 0.0, 1.0);
-        float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
-        if (u.lighting > 0.01) {
-            srcRgb *= studioLight(mapUV, u.lighting * 0.52);
+    // 4.2.6 高精细程序化古风舆图卷轴装裱着色器：
+    // - 紫檀圆柱木轴（真实柱面法线、细长木纹年轮与红漆高光、上下包金箍 + 车制碧玉弧顶轴头）；
+    // - 米金宋锦绫罗装裱宽边（织物经纬暗纹 + 菱格暗花光泽 + 牙白隔水边 + 泥金墨线双框 + 做旧宣纸微韵）；
+    // - 四角回纹云纹纤细鎏金包角（全视网膜分辨率抗锯齿矢量绘制）；
+    // - 画心交界处柔和多阶内阴影（Inner Shadow）与宣纸手工毛边晕染过渡 + 书案定向柔和投影。
+    static float sdBox2D(float2 p, float2 b) {
+        float2 q = abs(p) - b;
+        return length(max(q, float2(0.0))) + min(max(q.x, q.y), 0.0);
+    }
+    static float sdSeg2D(float2 p, float2 a, float2 b) {
+        float2 pa = p - a, ba = b - a;
+        float h = clamp(dot(pa, ba) / max(0.00001, dot(ba, ba)), 0.0, 1.0);
+        return length(pa - ba * h);
+    }
+    fragment float4 scrollMountFragment(TerrainOut in [[stage_in]], constant Uniforms& u [[buffer(2)]]) {
+        float W = max(1.0, u.mapWidth);
+        float H = max(1.0, u.mapHeight);
+        float unit = min(W, H);
+        float2 p = in.world;
+        float aa = max(length(float2(dfdx(p.x), dfdy(p.y))) * 0.72, 0.25);
+
+        // 装裱比例参数
+        float matH = unit * 0.036;
+        float matSide = unit * 0.025;
+        float rollerD = unit * 0.030;
+        float rollerR = rollerD * 0.5;
+        float collarH = unit * 0.0105;
+        float finialH = unit * 0.0295;
+        float innerW = unit * 0.024;
+
+        float matLeft = -matSide;
+        float matRight = W + matSide;
+        float matTop = -matH;
+        float matBottom = H + matH;
+        float rxL = matLeft - rollerR;
+        float rxR = matRight + rollerR;
+
+        // 西北御案主光方向
+        float3 lightDir = normalize(float3(-0.56, -0.32, 0.76));
+        float3 viewDir = float3(0.0, 0.0, 1.0);
+        float3 halfDir = normalize(lightDir + viewDir);
+
+        // 0. 画心内部：手工毛边微起伏 + 多阶柔和内阴影（Inner Shadow）与宣纸微卷晕染
+        float deckle = (fbm2(p * 0.068 + float2(4.1, 9.7)) - 0.5) * unit * 0.0016;
+        float dInL = p.x + deckle;
+        float dInR = (W - p.x) - deckle;
+        float dInT = p.y + deckle;
+        float dInB = (H - p.y) - deckle;
+        float dIn = min(min(dInL, dInR), min(dInT, dInB));
+
+        // 1. 计算左右紫檀卷轴与两端包金玉轴头（最高立体图层，压在绫边外侧并投下接触阴影）
+        float dxL = p.x - rxL;
+        float dxR = p.x - rxR;
+        bool useRight = abs(dxR) < abs(dxL);
+        float rxDist = useRight ? dxR : dxL;
+        float yFromTop = -matTop - p.y;       // > 0 表示向上伸出上绫边
+        float yFromBot = p.y - matBottom;     // > 0 表示向下伸出下绫边
+        float yBeyond = max(yFromTop, yFromBot);
+        float yEndSign = (yFromTop > yFromBot) ? -1.0 : 1.0;
+
+        float rollerCov = 0.0;
+        float3 rollerRgb = float3(0.0);
+        if (yBeyond <= collarH + finialH + aa * 2.0 && abs(rxDist) <= rollerR * 1.15 + aa * 2.0) {
+            float targetR = rollerR;
+            int part = 0; // 0 = 紫檀木轴身, 1 = 包金箍, 2 = 车制碧玉轴头
+            float localSlopeY = 0.0;
+            float tPart = 0.0;
+            if (yBeyond <= 0.0) {
+                part = 0;
+                targetR = rollerR;
+            } else if (yBeyond <= collarH) {
+                part = 1;
+                tPart = yBeyond / max(0.001, collarH);
+                // 包金箍双道微凸弦纹轮廓
+                float bead = sin(tPart * 3.14159265) * 0.065 + sin(tPart * 9.424778) * 0.02;
+                targetR = rollerR * (1.01 + bead);
+                localSlopeY = cos(tPart * 3.14159265) * 0.14 * yEndSign;
+            } else {
+                part = 2;
+                tPart = clamp((yBeyond - collarH) / max(0.001, finialH), 0.0, 1.0);
+                // 古典卷轴车制玉轴头：颈部微收 → 饱满弧肚 → 圆润拱顶，彻底告别生硬方块
+                float neck = mix(0.82, 0.96, smoothstep(0.0, 0.34, tPart));
+                float domeT = clamp((tPart - 0.60) / 0.40, 0.0, 1.0);
+                float dome = sqrt(max(0.0, 1.0 - domeT * domeT));
+                targetR = rollerR * neck * mix(1.0, dome, smoothstep(0.54, 0.64, tPart));
+                localSlopeY = (domeT > 0.01 ? domeT * 0.85 : -0.18 * (1.0 - smoothstep(0.0, 0.35, tPart))) * yEndSign;
+            }
+
+            float edgeDist = abs(rxDist) - targetR;
+            float tipDist = yBeyond - (collarH + finialH);
+            float sdfRoller = max(edgeDist, tipDist);
+            rollerCov = 1.0 - smoothstep(-aa, aa, sdfRoller);
+
+            if (rollerCov > 0.001) {
+                float nx = clamp(rxDist / max(0.001, targetR), -0.99, 0.99);
+                float nz = sqrt(max(0.02, 1.0 - nx * nx));
+                float3 N = normalize(float3(nx, localSlopeY, nz));
+                float diff = clamp(dot(N, lightDir), 0.0, 1.0);
+                float rim = pow(1.0 - nz, 2.2) * 0.18;
+
+                if (part == 0) {
+                    // 紫檀/红酸枝细密木纹 + 漆面柔和纵贯高光
+                    float grainWave = sin(nx * 14.0 + fbm2(float2(nx * 3.8 + (useRight ? 5.2 : 0.0), p.y * 0.028)) * 5.6);
+                    float finePore = fbm2(float2(nx * 24.0, p.y * 0.11));
+                    float gMix = clamp(grainWave * 0.34 + 0.5 + (finePore - 0.5) * 0.36, 0.0, 1.0);
+                    float3 darkWood = float3(0.17, 0.075, 0.048);
+                    float3 warmWood = float3(0.42, 0.20, 0.115);
+                    float3 woodBase = mix(darkWood, warmWood, gMix);
+                    float spec = pow(max(dot(N, halfDir), 0.0), 26.0) * 0.34;
+                    rollerRgb = woodBase * (0.42 + 0.72 * diff) + float3(0.96, 0.84, 0.66) * spec + float3(0.28, 0.15, 0.09) * rim;
+                    // 轴身靠上下绫边处的细鎏金嵌环
+                    float trimBand = min(abs(p.y - matTop - unit * 0.004), abs(p.y - matBottom + unit * 0.004));
+                    float bandMask = 1.0 - smoothstep(unit * 0.0014, unit * 0.0028, trimBand);
+                    if (bandMask > 0.01) {
+                        float goldSpec = pow(max(dot(N, halfDir), 0.0), 42.0) * 0.52;
+                        float3 goldCol = float3(0.78, 0.61, 0.28) * (0.48 + 0.68 * diff) + float3(1.0, 0.94, 0.74) * goldSpec;
+                        rollerRgb = mix(rollerRgb, goldCol, bandMask * 0.88);
+                    }
+                } else if (part == 1) {
+                    // 包金箍：拉丝古铜鎏金 + 双道微凹刻槽 + 锐利金属高光
+                    float groove = abs(sin(tPart * 6.2831853));
+                    float brushed = (vnoise(float2(nx * 28.0, p.y * 0.45)) - 0.5) * 0.07;
+                    float3 goldShadow = float3(0.36, 0.26, 0.11);
+                    float3 goldLit = float3(0.88, 0.73, 0.38);
+                    float spec = pow(max(dot(N, halfDir), 0.0), 44.0) * 0.64;
+                    rollerRgb = mix(goldShadow, goldLit, 0.28 + 0.72 * diff + brushed) * (0.86 + 0.14 * groove)
+                              + float3(1.0, 0.95, 0.78) * spec;
+                } else {
+                    // 碧玉/羊脂玉轴头：温润青白玉泽、隐隐玉纹与透润反光
+                    float jadeVein = fbm2(float2(nx * 4.5 + 2.3, tPart * 6.5));
+                    float3 jadeDark = float3(0.45, 0.52, 0.46);
+                    float3 jadeMid = float3(0.74, 0.80, 0.73);
+                    float3 jadeLight = float3(0.92, 0.94, 0.88);
+                    float3 jadeCol = mix(jadeDark, mix(jadeMid, jadeLight, smoothstep(0.35, 0.85, jadeVein)), 0.32 + 0.68 * diff);
+                    float spec = pow(max(dot(N, halfDir), 0.0), 36.0) * 0.46;
+                    float subRim = pow(1.0 - nz, 2.0) * 0.22;
+                    rollerRgb = jadeCol + float3(0.98, 0.99, 0.96) * spec + float3(0.68, 0.78, 0.68) * subRim;
+                    // 玉轴颈部一道极细暗金收口线
+                    float neckLine = 1.0 - smoothstep(0.02, 0.10, tPart);
+                    rollerRgb = mix(rollerRgb, float3(0.46, 0.35, 0.17), neckLine * 0.62);
+                }
+            }
         }
-        return float4(clamp(srcRgb, 0.0, 1.0), p.a * u.alpha);
+
+        // 2. 米金宋锦绫罗装裱宽边（位于 [matLeft, matRight] × [matTop, matBottom] 减去画心 [0, W] × [0, H]）
+        float2 matCenter = float2((matLeft + matRight) * 0.5, (matTop + matBottom) * 0.5);
+        float2 matHalf = float2((matRight - matLeft) * 0.5, (matBottom - matTop) * 0.5);
+        float sdfMatOuter = sdBox2D(p - matCenter, matHalf);
+        float matOuterCov = 1.0 - smoothstep(-aa, aa, sdfMatOuter);
+        float outCanvasCov = 1.0 - smoothstep(-aa, aa, dIn); // > 0 在画心之外（绫边区域）
+        float matCov = matOuterCov * outCanvasCov;
+
+        float3 matRgb = float3(0.0);
+        if (matCov > 0.001) {
+            // 距画心外缘距离 dOut（>= 0）与距绫边外缘距离 dEdge
+            float dOut = max(0.0, -dIn);
+            float dEdge = max(0.0, -sdfMatOuter);
+
+            // 温润古旧米金宣绢底色 + 做旧纸纹微韵
+            float patina = fbm2(p * 0.026 + float2(11.3, 3.7));
+            float fiberFine = (vnoise(p * 0.38) - 0.5) * 0.028;
+            float3 silkBase = mix(float3(0.825, 0.752, 0.608), float3(0.902, 0.842, 0.708), patina) + fiberFine;
+
+            // 宋锦织物经纬暗纹 + 菱格云锦暗花（随缩放平滑消隐，杜绝摩尔纹）
+            float detailFade = clamp((u.scale - 0.30) * 0.85, 0.0, 1.0);
+            float weaveFreq = 2.6;
+            float warpWeft = (sin(p.x * weaveFreq) * 0.5 + sin(p.y * weaveFreq) * 0.5) * 0.011 * detailFade;
+            float2 dUV = float2(p.x + p.y, p.y - p.x) * (0.095 / max(0.35, unit / 800.0));
+            float2 fUV = fract(dUV) - 0.5;
+            float diamond = abs(abs(fUV.x) + abs(fUV.y) - 0.44);
+            float damaskLine = 1.0 - smoothstep(0.03, 0.11, diamond);
+            float rosette = 1.0 - smoothstep(0.08, 0.22, length(fUV));
+            float damask = max(damaskLine * 0.85, rosette * 0.55) * (0.45 + 0.55 * detailFade);
+            silkBase += warpWeft + float3(0.072, 0.062, 0.036) * damask;
+
+            // 牙白隔水边（紧贴画心外缘 0 .. 0.0046*unit）与墨/泥金双细框
+            float slipW = unit * 0.0046;
+            float slipMask = 1.0 - smoothstep(slipW - aa * 0.8, slipW + aa * 0.8, dOut);
+            float3 ivorySlip = float3(0.945, 0.912, 0.836) + fiberFine * 0.7;
+            matRgb = mix(silkBase, ivorySlip, slipMask);
+
+            // 三道精致装裱细线：画心墨口线、隔水泥金线、绫边内收细线
+            float hairW = max(aa * 0.85, unit * 0.00085);
+            float lineInner = 1.0 - smoothstep(hairW * 0.5, hairW * 1.4, abs(dOut - hairW * 0.6));
+            float lineGold  = 1.0 - smoothstep(hairW * 0.5, hairW * 1.4, abs(dOut - slipW));
+            float lineRule  = 1.0 - smoothstep(hairW * 0.4, hairW * 1.2, abs(dOut - unit * 0.0082));
+            matRgb = mix(matRgb, float3(0.24, 0.18, 0.13), lineInner * 0.68);
+            matRgb = mix(matRgb, float3(0.76, 0.60, 0.30), lineGold * 0.78);
+            matRgb = mix(matRgb, float3(0.46, 0.37, 0.24), lineRule * 0.36);
+
+            // 上下外缘紫檀细包边（含极细鎏金内线）
+            float outerRimW = unit * 0.0048;
+            float topBotMask = (p.y < 0.0 || p.y > H) ? 1.0 : 0.0;
+            float outerRim = (1.0 - smoothstep(outerRimW - aa, outerRimW + aa, min(p.y - matTop, matBottom - p.y))) * topBotMask;
+            float outerGoldLine = (1.0 - smoothstep(hairW * 0.5, hairW * 1.4, abs(min(p.y - matTop, matBottom - p.y) - outerRimW))) * topBotMask;
+            matRgb = mix(matRgb, float3(0.27, 0.13, 0.082), outerRim * 0.94);
+            matRgb = mix(matRgb, float3(0.76, 0.61, 0.32), outerGoldLine * 0.65);
+
+            // 四角纤细回纹/云纹鎏金包角（严格在绫边四角，线条纤细流畅、对称无锯齿）
+            float cx = min(p.x - matLeft, matRight - p.x);
+            float cy = min(p.y - matTop, matBottom - p.y);
+            float gx = cx / matH;
+            float gy = cy / matH;
+            if (gx >= 0.06 && gx <= 2.25 && gy >= 0.06 && gy <= 2.15) {
+                float lw = max(0.026, (aa / matH) * 1.05);
+                // 纤细 L 形双轨金边 + 转角回纹方格 + 端头云头小勾
+                float dF = 1e6;
+                // 横臂外轨与内轨（上/下宽绫边）
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.16, 0.22), float2(1.96, 0.22)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.44, 0.58), float2(1.66, 0.58)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(1.96, 0.22), float2(1.96, 0.44)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(1.96, 0.44), float2(1.66, 0.44)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(1.66, 0.44), float2(1.66, 0.58)));
+                // 竖臂外轨与内轨（左/右窄绫边，严格止于 gx <= 0.58 不入画心）
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.16, 0.22), float2(0.16, 1.88)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.44, 0.58), float2(0.44, 1.58)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.16, 1.88), float2(0.36, 1.88)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.36, 1.88), float2(0.36, 1.58)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.36, 1.58), float2(0.44, 1.58)));
+                // 隅角万字回纹心（细腻小巧的回旋勾）
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.16, 0.58), float2(0.32, 0.58)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.32, 0.58), float2(0.32, 0.38)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.32, 0.38), float2(0.58, 0.38)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(0.58, 0.38), float2(0.58, 0.22)));
+                // 横臂中段云纹小回格
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(1.06, 0.22), float2(1.06, 0.42)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(1.06, 0.42), float2(1.30, 0.42)));
+                dF = min(dF, sdSeg2D(float2(gx, gy), float2(1.30, 0.42), float2(1.30, 0.58)));
+
+                float filigree = 1.0 - smoothstep(lw * 0.45, lw * 1.45, dF);
+                float filigreeGroove = 1.0 - smoothstep(lw * 1.2, lw * 2.5, dF);
+                // 柔和暗铜刻槽底衬 + 细腻温润鎏金丝线
+                matRgb = mix(matRgb, float3(0.38, 0.28, 0.16), filigreeGroove * 0.24);
+                float3 goldThread = mix(float3(0.70, 0.54, 0.25), float3(0.92, 0.80, 0.48), clamp(1.0 - (gx + gy) * 0.22, 0.0, 1.0));
+                matRgb = mix(matRgb, goldThread, filigree * 0.90);
+            }
+
+            // 卷轴贴合绫边处自然卷入阴影（令绫布仿佛真实缠绕进左右紫檀木轴）
+            float distRollerSide = min(abs(p.x - matLeft), abs(p.x - matRight));
+            float rollShade = exp(-distRollerSide / (unit * 0.0055)) * 0.38;
+            matRgb *= (1.0 - rollShade);
+
+            // 绫边外缘柔和倒角立体光
+            float edgeBevel = exp(-dEdge / (unit * 0.0032)) * 0.10;
+            matRgb *= (1.0 - edgeBevel);
+        }
+
+        // 3. 画心交界处柔和内阴影（Inner Shadow）与宣纸微卷晕染过渡
+        float innerAlpha = 0.0;
+        float3 innerRgb = float3(0.18, 0.13, 0.085);
+        if (dIn >= -aa && dIn < innerW) {
+            float dPos = max(0.0, dIn);
+            // 西北受光：上缘与左缘内阴影略深，下缘与右缘更柔润（连续平滑权重，四角零斜接痕）
+            float wTL = max(exp(-max(0.0, dInT) / (unit * 0.015)), exp(-max(0.0, dInL) / (unit * 0.015)));
+            float dirWeight = mix(0.80, 1.18, clamp(wTL, 0.0, 1.0));
+
+            float tightShadow = exp(-dPos / (unit * 0.0038)) * 0.30 * dirWeight;
+            float softShadow  = exp(-dPos / (unit * 0.0135)) * 0.13 * dirWeight;
+            float paperSoak = 0.88 + 0.24 * fbm2(p * 0.11);
+            float insideMask = smoothstep(-aa, aa, dIn);
+            innerAlpha = clamp((tightShadow + softShadow) * paperSoak, 0.0, 0.44) * insideMask;
+            // 近接缝处极微弱的宣纸暖黄做旧边晕
+            innerRgb = mix(float3(0.16, 0.115, 0.075), float3(0.36, 0.27, 0.17), clamp(dPos / innerW, 0.0, 1.0));
+        }
+
+        // 4. 书案定向柔和投影（卷轴与装裱向东南投射在深核桃木书案上）
+        float2 sp = p - float2(unit * 0.007, unit * 0.010);
+        float dMatSh = sdBox2D(sp - matCenter, matHalf);
+        float dRolLSh = sdBox2D(sp - float2(rxL, H * 0.5), float2(rollerR * 0.94, H * 0.5 + matH + collarH + finialH * 0.92));
+        float dRolRSh = sdBox2D(sp - float2(rxR, H * 0.5), float2(rollerR * 0.94, H * 0.5 + matH + collarH + finialH * 0.92));
+        float dAnySh = min(dMatSh, min(dRolLSh, dRolRSh));
+        float deskShadowAlpha = 0.0;
+        if (dAnySh > -aa && dAnySh < unit * 0.036 && dIn < 0.0) {
+            deskShadowAlpha = exp(-max(0.0, dAnySh) / (unit * 0.0105)) * 0.44;
+        }
+
+        // 5. 自底向上精确合成（书案投影 → 画心内阴影 → 宋锦绫边 → 紫檀卷轴与玉轴头）
+        float4 col = float4(0.0);
+        if (deskShadowAlpha > 0.002) {
+            col = float4(0.055, 0.038, 0.024, deskShadowAlpha);
+        }
+        if (innerAlpha > 0.002) {
+            col.rgb = mix(col.rgb, innerRgb, innerAlpha / max(0.001, col.a + innerAlpha * (1.0 - col.a)));
+            col.a = col.a + innerAlpha * (1.0 - col.a);
+        }
+        if (matCov > 0.002) {
+            float3 m = matRgb;
+            if (u.lighting > 0.01) {
+                float2 mapUV = clamp(p / float2(W, H), 0.0, 1.0);
+                m *= studioLight(mapUV, u.lighting * 0.55);
+            }
+            float outA = matCov + col.a * (1.0 - matCov);
+            col.rgb = (m * matCov + col.rgb * col.a * (1.0 - matCov)) / max(0.001, outA);
+            col.a = outA;
+        }
+        if (rollerCov > 0.002) {
+            float3 r = rollerRgb;
+            if (u.lighting > 0.01) {
+                float2 mapUV = clamp(p / float2(W, H), 0.0, 1.0);
+                r *= studioLight(mapUV, u.lighting * 0.45);
+            }
+            float outA = rollerCov + col.a * (1.0 - rollerCov);
+            col.rgb = (r * rollerCov + col.rgb * col.a * (1.0 - rollerCov)) / max(0.001, outA);
+            col.a = outA;
+        }
+
+        if (col.a < 0.003) discard_fragment();
+        return float4(clamp(col.rgb, 0.0, 1.0), col.a * u.alpha);
     }
 
     // 逐顶点易主渐变：previous = 起始颜色 rgb + 开始时刻；clock = (此刻, 时长)。
@@ -1949,6 +2350,17 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
         return float4(t.sample(s, in.uv).rgb, 1.0);
+    }
+    // 离屏静态地图双层缓存直通合成（零顶点缓冲全屏三角形，1:1 视网膜像素零失真）
+    vertex QuadOut blitVertex(uint id [[vertex_id]]) {
+        float2 uv = float2((id == 1) ? 2.0 : 0.0, (id == 2) ? 2.0 : 0.0);
+        QuadOut o;
+        o.position = float4(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, 0.0, 1.0);
+        o.uv = uv;
+        return o;
+    }
+    fragment float4 blitFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
+        return t.sample(s, in.uv);
     }
     // 全视口无缝「御案织锦」书案背景：与卷轴、海陆统一西北暖光聚光 + 细腻双经纬织锦云花，四面一体零割裂。
     struct DeskOut { float4 position [[position]]; float2 uv; float2 screenPx; };

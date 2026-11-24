@@ -22,6 +22,8 @@ enum InkGlyph: String, CaseIterable {
     case save, export, wallpaper, sound, speed, trophy, person, peace
     // 2.8.3 补齐折叠与机巧符号（下展、右进、机巧推演），消除 SF Symbol 混搭
     case chevronDown, chevronRight, computer
+    // 4.2.6 地形工坊 12 枚独立规范矢量图标（深海、丘陵、高原、雪峰独立成符，告别复用雷同）
+    case trench, hill, plateau, peak
 }
 
 struct InkIcon: View {
@@ -31,6 +33,8 @@ struct InkIcon: View {
     var filled = false
     /// 可选点缀色；为空时在选中态用柔和前景色晕染焦点部件，平时以宋版双色套印（淡朱砂）点睛。
     var accent: Color? = nil
+    /// 统一线宽圆角几何模式（用于地形工坊 12 笔刷等小尺寸精密工具栏，选中反白绝不糊团变形）。
+    var crisp = false
 
     /// 视觉对齐（Optical Alignment）：非对称三角与上重下轻图标做几何中心微调，视觉上严格居中。
     private var opticalOffset: CGSize {
@@ -46,29 +50,40 @@ struct InkIcon: View {
         let scaleBoost: CGFloat = size <= 16 ? 1.12 : 1.0
         let w = weight * (size / 22) * scaleBoost
         ZStack {
-            if filled {
-                // 选中态的柔和墨/朱砂圆形水晕，替代生硬矩形框。
-                Circle()
-                    .fill(RadialGradient(colors: [Theme.seal.opacity(0.16), .clear], center: .center, startRadius: 0, endRadius: size * 0.56))
-                    .scaleEffect(1.15)
-            }
-            Group {
-                if let accent {
-                    InkAccentPath(glyph: glyph).fill(accent)
-                } else if filled {
-                    InkAccentPath(glyph: glyph).fill(Theme.seal.opacity(0.32))
-                } else {
-                    // 宋版双色套印：未选中态也在焦点部件（印纽、铜钱孔、火焰芯、旗面）敷一层克制淡朱砂，层次顿显。
-                    InkAccentPath(glyph: glyph).fill(Theme.seal.opacity(0.14))
+            if crisp {
+                Group {
+                    if let accent {
+                        InkAccentPath(glyph: glyph).fill(accent)
+                    }
+                    InkPath(glyph: glyph)
+                        .stroke(.foreground, style: StrokeStyle(lineWidth: max(1.25, w * 1.04), lineCap: .round, lineJoin: .round))
                 }
-                // 淡墨洇晕：纯矢量略宽淡墨底笔（去掉离屏 .blur/.drawingGroup，列表滚动零离屏合成开销且边缘更锐利）。
-                BrushShape(glyph: glyph, width: w * 1.56)
-                    .fill(.foreground.opacity(0.12))
-                // 主笔触：起顿行饱收锋。
-                BrushShape(glyph: glyph, width: w * 1.24)
-                    .fill(.foreground)
+                .offset(opticalOffset)
+            } else {
+                if filled {
+                    // 选中态的柔和墨/朱砂圆形水晕，替代生硬矩形框。
+                    Circle()
+                        .fill(RadialGradient(colors: [Theme.seal.opacity(0.16), .clear], center: .center, startRadius: 0, endRadius: size * 0.56))
+                        .scaleEffect(1.15)
+                }
+                Group {
+                    if let accent {
+                        InkAccentPath(glyph: glyph).fill(accent)
+                    } else if filled {
+                        InkAccentPath(glyph: glyph).fill(Theme.seal.opacity(0.32))
+                    } else {
+                        // 宋版双色套印：未选中态也在焦点部件（印纽、铜钱孔、火焰芯、旗面）敷一层克制淡朱砂，层次顿显。
+                        InkAccentPath(glyph: glyph).fill(Theme.seal.opacity(0.14))
+                    }
+                    // 淡墨洇晕：纯矢量略宽淡墨底笔（去掉离屏 .blur/.drawingGroup，列表滚动零离屏合成开销且边缘更锐利）。
+                    BrushShape(glyph: glyph, width: w * 1.56)
+                        .fill(.foreground.opacity(0.12))
+                    // 主笔触：起顿行饱收锋。
+                    BrushShape(glyph: glyph, width: w * 1.24)
+                        .fill(.foreground)
+                }
+                .offset(opticalOffset)
             }
-            .offset(opticalOffset)
         }
         .frame(width: size, height: size)
     }
@@ -292,11 +307,43 @@ struct InkAccentPath: Shape {
             p.addQuadCurve(to: pt(7.6, 14.6), control: pt(8.5, 18.8)); p.addQuadCurve(to: pt(12, 7.2), control: pt(6.6, 11.2)); p.closeSubpath()
         case .archive:
             p.addRoundedRect(in: CGRect(origin: pt(9.8, 5.2), size: CGSize(width: 4.4 * k, height: 14.4 * k)), cornerSize: CGSize(width: 0.8 * k, height: 0.8 * k))
+        case .trench:
+            // 深海渊谷底色面
+            p.move(to: pt(4.0, 14.2)); p.addLine(to: pt(9.0, 14.2)); p.addLine(to: pt(12.0, 19.6))
+            p.addLine(to: pt(15.0, 14.2)); p.addLine(to: pt(20.0, 14.2))
+            p.addLine(to: pt(20.0, 20.2)); p.addLine(to: pt(4.0, 20.2)); p.closeSubpath()
+        case .sea:
+            // 浅海微澜水色带
+            p.move(to: pt(3.6, 14.4)); p.addCurve(to: pt(20.4, 14.4), control1: pt(9.0, 11.4), control2: pt(15.0, 17.4))
+            p.addLine(to: pt(20.4, 19.2)); p.addLine(to: pt(3.6, 19.2)); p.closeSubpath()
         case .lake:
-            p.addEllipse(in: CGRect(origin: pt(6.5, 9.0), size: CGSize(width: 11.0 * k, height: 6.4 * k)))
+            // 内湖盆地水镜面
+            p.move(to: pt(5.0, 12.6)); p.addLine(to: pt(19.0, 12.6))
+            p.addQuadCurve(to: pt(12.0, 18.4), control: pt(18.6, 18.2))
+            p.addQuadCurve(to: pt(5.0, 12.6), control: pt(5.4, 18.2)); p.closeSubpath()
+        case .plain:
+            // 沃野平川微坡面
+            p.move(to: pt(3.4, 17.2)); p.addQuadCurve(to: pt(20.6, 17.2), control: pt(12.0, 14.6))
+            p.addLine(to: pt(20.6, 20.0)); p.addLine(to: pt(3.4, 20.0)); p.closeSubpath()
+        case .hill:
+            // 丘陵双穹润坡面
+            p.move(to: pt(3.2, 18.6)); p.addQuadCurve(to: pt(13.6, 18.6), control: pt(8.4, 10.6)); p.closeSubpath()
+            p.move(to: pt(10.0, 18.6)); p.addQuadCurve(to: pt(20.8, 18.6), control: pt(15.6, 8.2)); p.closeSubpath()
+        case .plateau:
+            // 高原平顶台地面
+            p.move(to: pt(4.2, 18.6)); p.addLine(to: pt(7.6, 9.0)); p.addLine(to: pt(16.4, 9.0)); p.addLine(to: pt(19.8, 18.6)); p.closeSubpath()
+        case .mountain:
+            // 连绵山脉主峰影
+            p.move(to: pt(3.2, 19.0)); p.addLine(to: pt(9.8, 6.4)); p.addLine(to: pt(15.6, 19.0)); p.closeSubpath()
+        case .peak:
+            // 雪峰洁白积雪顶冠（折齿雪线之上）
+            p.move(to: pt(12.0, 4.4)); p.addLine(to: pt(15.4, 11.0))
+            p.addLine(to: pt(13.6, 10.0)); p.addLine(to: pt(12.0, 11.8))
+            p.addLine(to: pt(10.4, 10.0)); p.addLine(to: pt(8.6, 11.0)); p.closeSubpath()
         case .island:
-            p.addEllipse(in: CGRect(origin: pt(6.0, 9.5), size: CGSize(width: 5.5 * k, height: 3.4 * k)))
-            p.addEllipse(in: CGRect(origin: pt(13.2, 7.6), size: CGSize(width: 4.6 * k, height: 3.0 * k)))
+            // 群岛双屿轮廓面
+            p.move(to: pt(4.4, 15.2)); p.addQuadCurve(to: pt(12.2, 15.2), control: pt(8.3, 9.2)); p.closeSubpath()
+            p.move(to: pt(13.2, 13.6)); p.addQuadCurve(to: pt(19.4, 13.6), control: pt(16.3, 8.8)); p.closeSubpath()
         case .trophy:
             p.move(to: pt(7.2, 6.2)); p.addLine(to: pt(16.8, 6.2)); p.addQuadCurve(to: pt(12, 13.8), control: pt(16.2, 12.2))
             p.addQuadCurve(to: pt(7.2, 6.2), control: pt(7.8, 12.2)); p.closeSubpath()
@@ -306,7 +353,7 @@ struct InkAccentPath: Shape {
             p.addEllipse(in: CGRect(origin: pt(14.5, 6.8), size: CGSize(width: 2.8 * k, height: 2.8 * k)))
         case .computer:
             p.addRoundedRect(in: CGRect(origin: pt(7.0, 7.6), size: CGSize(width: 10.0 * k, height: 6.2 * k)), cornerSize: CGSize(width: 1.2 * k, height: 1.2 * k))
-        case .sea, .plain, .mountain, .raise, .lower, .smooth, .menu, .close,
+        case .raise, .lower, .smooth, .menu, .close,
              .search, .settings, .refresh, .importSave, .brush, .anchor, .retreat, .march,
              .plus, .minus, .trash, .swap, .calendar, .save, .export, .sound, .speed, .person, .peace,
              .chevronDown, .chevronRight:
@@ -323,28 +370,60 @@ struct InkPath: Shape {
         func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * k, y: rect.minY + y * k) }
         var p = Path()
         switch glyph {
+        case .trench:
+            // 深海：上方双层重浪 + 下方深邃海沟 V 谷，一眼辨深渊。
+            p.move(to: pt(3.6, 6.8)); p.addCurve(to: pt(20.4, 6.8), control1: pt(8.6, 3.8), control2: pt(15.4, 9.8))
+            p.move(to: pt(3.6, 11.2)); p.addCurve(to: pt(20.4, 11.2), control1: pt(8.6, 8.2), control2: pt(15.4, 14.2))
+            p.move(to: pt(3.6, 15.2)); p.addLine(to: pt(8.6, 15.2)); p.addLine(to: pt(12.0, 19.8)); p.addLine(to: pt(15.4, 15.2)); p.addLine(to: pt(20.4, 15.2))
         case .sea:
-            for y in [CGFloat(7), 12, 17] {
-                p.move(to: pt(3, y)); p.addCurve(to: pt(21, y), control1: pt(9, y - 5), control2: pt(15, y + 5))
-            }
+            // 浅海：两道轻盈舒缓海波 + 浅滩水纹，明快轻灵。
+            p.move(to: pt(3.6, 9.4)); p.addCurve(to: pt(20.4, 9.4), control1: pt(8.8, 6.2), control2: pt(15.2, 12.6))
+            p.move(to: pt(3.6, 14.6)); p.addCurve(to: pt(20.4, 14.6), control1: pt(8.8, 11.4), control2: pt(15.2, 17.8))
+            p.move(to: pt(8.2, 18.8)); p.addLine(to: pt(15.8, 18.8))
         case .plain:
-            p.move(to: pt(3, 18)); p.addQuadCurve(to: pt(21, 18), control: pt(12, 14))
-            p.move(to: pt(8, 16)); p.addLine(to: pt(8, 8)); p.move(to: pt(8, 12)); p.addLine(to: pt(5, 9))
-            p.move(to: pt(8, 10)); p.addLine(to: pt(11, 7))
-            p.move(to: pt(15, 16)); p.addLine(to: pt(15, 10)); p.addLine(to: pt(18, 7))
+            // 平原：舒展层叠平川弧线 + 远野两株纤巧禾苗（疏朗不糊团）。
+            p.move(to: pt(3.4, 18.4)); p.addQuadCurve(to: pt(20.6, 18.4), control: pt(12.0, 15.6))
+            p.move(to: pt(4.6, 14.0)); p.addQuadCurve(to: pt(19.4, 14.0), control: pt(12.0, 12.0))
+            p.move(to: pt(9.0, 13.0)); p.addLine(to: pt(9.0, 7.0))
+            p.move(to: pt(9.0, 9.6)); p.addQuadCurve(to: pt(6.2, 7.6), control: pt(7.2, 9.4))
+            p.move(to: pt(15.0, 13.0)); p.addLine(to: pt(15.0, 8.2))
+            p.move(to: pt(15.0, 10.6)); p.addQuadCurve(to: pt(17.8, 8.6), control: pt(16.8, 10.4))
+        case .hill:
+            // 丘陵：左右交错两座柔缓圆丘（圆润穹顶 + 坡腰等高轻弧）。
+            p.move(to: pt(3.2, 18.6)); p.addQuadCurve(to: pt(14.0, 18.6), control: pt(8.6, 9.6))
+            p.move(to: pt(9.6, 18.6)); p.addQuadCurve(to: pt(20.8, 18.6), control: pt(15.4, 7.2))
+            p.move(to: pt(3.2, 18.6)); p.addLine(to: pt(20.8, 18.6))
+            p.move(to: pt(13.2, 14.6)); p.addQuadCurve(to: pt(17.6, 14.6), control: pt(15.4, 12.8))
+        case .plateau:
+            // 高原：平整桌状台地（宽阔平顶 + 两侧峻崖 + 岩层横纹），与圆润丘陵截然不同。
+            p.move(to: pt(3.2, 18.6)); p.addLine(to: pt(4.6, 18.6)); p.addLine(to: pt(7.6, 8.8)); p.addLine(to: pt(16.4, 8.8)); p.addLine(to: pt(19.4, 18.6)); p.addLine(to: pt(20.8, 18.6))
+            p.move(to: pt(4.6, 18.6)); p.addLine(to: pt(19.4, 18.6))
+            p.move(to: pt(8.2, 13.0)); p.addLine(to: pt(15.8, 13.0))
+            p.move(to: pt(7.0, 16.0)); p.addLine(to: pt(17.0, 16.0))
         case .mountain:
-            p.move(to: pt(2, 20)); p.addLine(to: pt(10, 4)); p.addLine(to: pt(18, 20)); p.closeSubpath()
-            p.move(to: pt(7, 10)); p.addLine(to: pt(10, 12)); p.addLine(to: pt(13, 10))
-            p.move(to: pt(15, 14)); p.addLine(to: pt(18, 9)); p.addLine(to: pt(23, 20)); p.addLine(to: pt(18, 20))
+            // 山脉：三座苍劲连绵尖峰，山脊棱线交错。
+            p.move(to: pt(3.0, 19.0)); p.addLine(to: pt(9.2, 6.6)); p.addLine(to: pt(15.4, 19.0))
+            p.move(to: pt(12.8, 13.8)); p.addLine(to: pt(16.4, 9.2)); p.addLine(to: pt(21.0, 19.0))
+            p.move(to: pt(3.0, 19.0)); p.addLine(to: pt(21.0, 19.0))
+            p.move(to: pt(9.2, 6.6)); p.addLine(to: pt(10.6, 13.4))
+        case .peak:
+            // 雪峰：巍峨高耸孤峰主巅 + 清晰折齿雪线（峰冠留白映雪）。
+            p.move(to: pt(3.4, 19.2)); p.addLine(to: pt(12.0, 4.4)); p.addLine(to: pt(20.6, 19.2)); p.closeSubpath()
+            p.move(to: pt(8.6, 11.0)); p.addLine(to: pt(10.4, 10.0)); p.addLine(to: pt(12.0, 11.8)); p.addLine(to: pt(13.6, 10.0)); p.addLine(to: pt(15.4, 11.0))
         case .raise, .lower:
+            // 抬高 / 压低：严格镜像对称的基准地线 + 挺拔方向矢 + 地形弧线。
             let up = glyph == .raise
-            p.move(to: pt(4, 20)); p.addLine(to: pt(20, 20))
-            p.move(to: pt(12, 4)); p.addLine(to: pt(12, 16))
-            let tip: CGFloat = up ? 4 : 16, base: CGFloat = up ? 9 : 11
-            p.move(to: pt(7, base)); p.addLine(to: pt(12, tip)); p.addLine(to: pt(17, base))
+            let baseY: CGFloat = up ? 19.0 : 5.2
+            p.move(to: pt(4.4, baseY)); p.addLine(to: pt(19.6, baseY))
+            p.move(to: pt(12.0, up ? 5.0 : 19.0)); p.addLine(to: pt(12.0, up ? 15.4 : 8.6))
+            let tipY: CGFloat = up ? 5.0 : 19.0
+            let wingY: CGFloat = up ? 9.8 : 14.2
+            p.move(to: pt(7.6, wingY)); p.addLine(to: pt(12.0, tipY)); p.addLine(to: pt(16.4, wingY))
         case .smooth:
-            p.move(to: pt(3, 7)); p.addLine(to: pt(7, 4)); p.addLine(to: pt(12, 9)); p.addLine(to: pt(17, 5)); p.addLine(to: pt(21, 7))
-            p.move(to: pt(3, 17)); p.addCurve(to: pt(21, 17), control1: pt(9, 12), control2: pt(15, 12))
+            // 平滑：柔和连续单波曲线 + 平顺基线，统一极简几何语汇。
+            p.move(to: pt(3.6, 10.4)); p.addCurve(to: pt(20.4, 10.4), control1: pt(8.6, 5.2), control2: pt(15.4, 15.6))
+            p.move(to: pt(3.6, 16.8)); p.addLine(to: pt(20.4, 16.8))
+            p.move(to: pt(9.0, 19.4)); p.addLine(to: pt(15.0, 19.4))
         case .nation:
             // 重檐城楼：飞檐、殿柱、城台与门拱。
             p.move(to: pt(2.5, 8.6)); p.addQuadCurve(to: pt(12, 3.6), control: pt(8, 7.6)); p.addQuadCurve(to: pt(21.5, 8.6), control: pt(16, 7.6))
@@ -557,19 +636,19 @@ struct InkPath: Shape {
             p.move(to: pt(10.8, 5.2)); p.addLine(to: pt(18.8, 5.2)); p.addLine(to: pt(18.8, 13.2))
             p.move(to: pt(4.2, 11.8)); p.addLine(to: pt(8.6, 11.8)); p.addLine(to: pt(8.6, 15.8))
         case .lake:
-            // 内陆明湖：水潭轮廓与平镜细波。
-            p.move(to: pt(3.5, 12.2))
-            p.addQuadCurve(to: pt(12.2, 6.8), control: pt(5.5, 6.2))
-            p.addQuadCurve(to: pt(20.5, 11.8), control: pt(18.8, 7.2))
-            p.addQuadCurve(to: pt(11.8, 17.6), control: pt(19.2, 17.8))
-            p.addQuadCurve(to: pt(3.5, 12.2), control: pt(4.6, 17.2))
-            p.move(to: pt(8.0, 11.2)); p.addLine(to: pt(15.6, 11.2))
-            p.move(to: pt(9.8, 14.0)); p.addLine(to: pt(14.6, 14.0))
+            // 内湖：岸畔澄湖盆地 + 两道水平明镜细波 + 远山轻弧（彻底告别眼形误读）。
+            p.move(to: pt(3.6, 9.6)); p.addQuadCurve(to: pt(9.8, 7.6), control: pt(6.6, 5.6))
+            p.addQuadCurve(to: pt(16.6, 9.2), control: pt(13.2, 9.8))
+            p.addQuadCurve(to: pt(20.4, 8.4), control: pt(18.6, 6.8))
+            p.move(to: pt(4.4, 12.6)); p.addLine(to: pt(19.6, 12.6))
+            p.move(to: pt(5.0, 12.6)); p.addQuadCurve(to: pt(12.0, 18.4), control: pt(5.4, 18.2))
+            p.addQuadCurve(to: pt(19.0, 12.6), control: pt(18.6, 18.2))
+            p.move(to: pt(8.6, 15.2)); p.addLine(to: pt(15.4, 15.2))
         case .island:
-            // 星罗群岛：三岛浮波。
-            p.move(to: pt(4.0, 14.0)); p.addQuadCurve(to: pt(12.0, 14.0), control: pt(8.0, 8.2)); p.closeSubpath()
-            p.move(to: pt(12.6, 11.4)); p.addQuadCurve(to: pt(19.6, 11.4), control: pt(16.2, 6.8)); p.closeSubpath()
-            p.move(to: pt(3.0, 18.2)); p.addCurve(to: pt(21.0, 18.2), control1: pt(9.0, 15.2), control2: pt(15.0, 21.0))
+            // 群岛：错落双岛礁浮于舒展水波之上，疏朗精致。
+            p.move(to: pt(4.4, 15.2)); p.addQuadCurve(to: pt(12.2, 15.2), control: pt(8.3, 9.2)); p.closeSubpath()
+            p.move(to: pt(13.2, 13.6)); p.addQuadCurve(to: pt(19.4, 13.6), control: pt(16.3, 8.8)); p.closeSubpath()
+            p.move(to: pt(3.4, 18.6)); p.addCurve(to: pt(20.6, 18.6), control1: pt(8.8, 16.0), control2: pt(15.2, 21.0))
         case .plus:
             p.addEllipse(in: CGRect(origin: pt(3.6, 3.6), size: CGSize(width: 16.8 * k, height: 16.8 * k)))
             p.move(to: pt(12, 7.6)); p.addLine(to: pt(12, 16.4))

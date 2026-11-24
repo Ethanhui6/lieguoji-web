@@ -570,7 +570,7 @@ struct DiplomacySheet: View {
             .sheet(item: $pickingRole) { role in
                 nationPickerSheet(role: role, map: map, state: state, alive: alive)
                     .presentationDetents([.medium, .fraction(0.89)])
-                    .background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper)
+                    .background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }
                     .presentationDragIndicator(.hidden)
                     .presentationCornerRadius(Theme.Control.cornerSheet)
                     .font(Theme.section)

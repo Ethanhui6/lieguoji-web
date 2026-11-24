@@ -273,7 +273,7 @@ struct TitleView: View {
                 inputs: model.previewInputs
             )
             .background(MemorialPaper().ignoresSafeArea())
-            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
             WorldArchiveSheet(model: model) { world in
@@ -284,7 +284,7 @@ struct TitleView: View {
                 }
             }
             .background(MemorialPaper().ignoresSafeArea())
-            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $settings) {
             ScrollView {
@@ -313,9 +313,9 @@ struct TitleView: View {
                 .padding(.bottom, 24)
             }
             .background(MemorialPaper().ignoresSafeArea())
-            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden)
+            .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
-        .sheet(isPresented: $notes) { ReleaseNotesSheet().background(MemorialPaper().ignoresSafeArea()).presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden) }
+        .sheet(isPresented: $notes) { ReleaseNotesSheet().background(MemorialPaper().ignoresSafeArea()).presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden) }
     }
 }
 
@@ -487,7 +487,7 @@ struct NewWorldSheet: View {
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
 
-            // 3. 地形模板（2×2 手绘微缩山河轮廓卡 + 战略标签）
+            // 3. 地形模板（2×2 精细等高线微缩舆图卡 + 无截断标题与战略标签）
             SectionLabel("山河格局")
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(Names.templates, id: \.id) { t in
@@ -497,26 +497,35 @@ struct NewWorldSheet: View {
                         immediateRoll = true
                         withAnimation(Motion.tap) { selectedPreset = nil; options.template = t.id }
                     } label: {
-                        HStack(spacing: 10) {
+                        HStack(spacing: 9) {
                             TerrainSilhouette(template: t.id, active: on)
-                                .frame(width: 38, height: 34)
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 4) {
-                                    Text(t.name).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1)
-                                    if let tag = art?.tag {
-                                        Text(tag).font(Theme.kai(10))
-                                            .foregroundStyle(on ? Theme.paper2.opacity(0.92) : Theme.seal)
-                                            .padding(.horizontal, 5).padding(.vertical, 1)
-                                            .background(on ? Theme.paper2.opacity(0.18) : Theme.seal.opacity(0.09), in: Capsule())
-                                    }
+                                .frame(width: 48, height: 48)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(t.name)
+                                    .font(Theme.kai(14.5))
+                                    .foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.88)
+                                if let tag = art?.tag {
+                                    Text(tag)
+                                        .font(Theme.kai(10))
+                                        .foregroundStyle(on ? Theme.paper2.opacity(0.94) : Theme.seal)
+                                        .padding(.horizontal, 6).padding(.vertical, 1.5)
+                                        .background(on ? Theme.paper2.opacity(0.18) : Theme.seal.opacity(0.09), in: Capsule())
+                                        .lineLimit(1)
                                 }
-                                Text(art?.note ?? "").font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.84) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
+                                Text(art?.note ?? "")
+                                    .font(Theme.kai(10.5))
+                                    .foregroundStyle(on ? Theme.paper2.opacity(0.84) : Theme.ink2)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.76)
                             }
-                            Spacer(minLength: 0)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .padding(.horizontal, 11).frame(height: 62)
+                        .padding(.horizontal, 9).padding(.vertical, 10)
+                        .frame(minHeight: 72)
                         .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.16), lineWidth: 0.85))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Theme.gold.opacity(0.42) : Theme.ink.opacity(0.16), lineWidth: on ? 1.0 : 0.85))
                     }
                     .buttonStyle(PressStyle())
                 }
@@ -835,50 +844,183 @@ struct NewWorldSheet: View {
     }
 }
 
-/// 开局选图页 4 种地形格局的手绘微缩舆图轮廓（多大陆 / 联合大陆 / 群岛 / 高山大岛）。
+/// 开局选图页 4 种「山河格局」的精细微型等高线舆图缩略图（多大陆 / 联合大陆 / 群岛 / 高山大岛）：
+/// 采用闭合 Catmull-Rom 有机海岸曲线、浅滩晕圈、多层海拔等高线、山脊人字峰与海浪纹绘就，彻底告别粗糙多边形。
 private struct TerrainSilhouette: View {
     let template: String
     let active: Bool
+
+    /// 将控制点列表生成顺滑闭合的有机海岸曲线（Catmull-Rom 样条转三次贝塞尔）。
+    private static func organicLoop(_ pts: [(CGFloat, CGFloat)], in size: CGSize) -> Path {
+        let n = pts.count
+        guard n >= 3 else { return Path() }
+        let cg = pts.map { CGPoint(x: $0.0 * size.width, y: $0.1 * size.height) }
+        var p = Path()
+        p.move(to: cg[0])
+        for i in 0..<n {
+            let p0 = cg[(i - 1 + n) % n]
+            let p1 = cg[i]
+            let p2 = cg[(i + 1) % n]
+            let p3 = cg[(i + 2) % n]
+            let c1 = CGPoint(x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6)
+            let c2 = CGPoint(x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6)
+            p.addCurve(to: p2, control1: c1, control2: c2)
+        }
+        p.closeSubpath()
+        return p
+    }
+
     var body: some View {
-        let fg = active ? Theme.paper2 : Theme.seal
-        let sea = active ? Theme.paper2.opacity(0.14) : Theme.jade.opacity(0.11)
+        let seaTop = active ? Color.white.opacity(0.16) : Color(red: 0.72, green: 0.82, blue: 0.84).opacity(0.46)
+        let seaBot = active ? Color.black.opacity(0.14) : Color(red: 0.56, green: 0.71, blue: 0.77).opacity(0.42)
+        let shoalColor = active ? Theme.paper2.opacity(0.14) : Color(red: 0.82, green: 0.89, blue: 0.88).opacity(0.72)
+        let landBase = active ? Theme.paper2.opacity(0.28) : Color(red: 0.86, green: 0.80, blue: 0.65).opacity(0.95)
+        let landMid = active ? Theme.paper2.opacity(0.24) : Color(red: 0.71, green: 0.74, blue: 0.52).opacity(0.76)
+        let landHigh = active ? Theme.paper2.opacity(0.32) : Color(red: 0.64, green: 0.54, blue: 0.37).opacity(0.68)
+        let coastStroke = active ? Theme.paper2.opacity(0.92) : Theme.ink.opacity(0.62)
+        let contourStroke = active ? Theme.paper2.opacity(0.48) : Theme.ink.opacity(0.26)
+        let waveStroke = active ? Theme.paper2.opacity(0.42) : Color(red: 0.28, green: 0.48, blue: 0.58).opacity(0.45)
+        let ridgeStroke = active ? Theme.paper2.opacity(0.96) : Theme.seal.opacity(0.86)
+
         ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(sea)
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(LinearGradient(colors: [seaTop, seaBot], startPoint: .topLeading, endPoint: .bottomTrailing))
             Canvas { ctx, size in
                 let w = size.width, h = size.height
-                func blob(_ pts: [(CGFloat, CGFloat)], fill: Color, stroke: Color) {
-                    var p = Path()
-                    guard let first = pts.first else { return }
-                    p.move(to: CGPoint(x: first.0 * w, y: first.1 * h))
-                    for pt in pts.dropFirst() { p.addLine(to: CGPoint(x: pt.0 * w, y: pt.1 * h)) }
-                    p.closeSubpath()
-                    ctx.fill(p, with: .color(fill))
-                    ctx.stroke(p, with: .color(stroke), lineWidth: 1.0)
+
+                // 微弱航海经纬格线
+                var grid = Path()
+                grid.move(to: CGPoint(x: w * 0.5, y: 2)); grid.addLine(to: CGPoint(x: w * 0.5, y: h - 2))
+                grid.move(to: CGPoint(x: 2, y: h * 0.5)); grid.addLine(to: CGPoint(x: w - 2, y: h * 0.5))
+                ctx.stroke(grid, with: .color(waveStroke.opacity(0.35)), style: StrokeStyle(lineWidth: 0.5, dash: [2, 2.5]))
+
+                func drawWave(_ x: CGFloat, _ y: CGFloat, _ span: CGFloat) {
+                    var wp = Path()
+                    let x0 = x * w, y0 = y * h, sw = span * w
+                    wp.move(to: CGPoint(x: x0, y: y0))
+                    wp.addQuadCurve(to: CGPoint(x: x0 + sw * 0.5, y: y0), control: CGPoint(x: x0 + sw * 0.25, y: y0 - 1.8))
+                    wp.addQuadCurve(to: CGPoint(x: x0 + sw, y: y0), control: CGPoint(x: x0 + sw * 0.75, y: y0 + 1.8))
+                    ctx.stroke(wp, with: .color(waveStroke), style: StrokeStyle(lineWidth: 0.85, lineCap: .round))
                 }
-                let landFill = fg.opacity(active ? 0.30 : 0.22)
-                let landStroke = fg.opacity(active ? 0.92 : 0.82)
+
+                func drawLand(_ pts: [(CGFloat, CGFloat)], contour: [(CGFloat, CGFloat)]? = nil, high: [(CGFloat, CGFloat)]? = nil) {
+                    let path = Self.organicLoop(pts, in: size)
+                    // 沿海浅滩晕圈
+                    ctx.stroke(path, with: .color(shoalColor), style: StrokeStyle(lineWidth: 3.4, lineJoin: .round))
+                    // 陆地底色与海岸线
+                    ctx.fill(path, with: .color(landBase))
+                    if let c = contour {
+                        let cp = Self.organicLoop(c, in: size)
+                        ctx.fill(cp, with: .color(landMid))
+                        ctx.stroke(cp, with: .color(contourStroke), style: StrokeStyle(lineWidth: 0.65, lineJoin: .round))
+                    }
+                    if let hi = high {
+                        let hp = Self.organicLoop(hi, in: size)
+                        ctx.fill(hp, with: .color(landHigh))
+                        ctx.stroke(hp, with: .color(contourStroke), style: StrokeStyle(lineWidth: 0.65, lineJoin: .round))
+                    }
+                    ctx.stroke(path, with: .color(coastStroke), style: StrokeStyle(lineWidth: 1.05, lineJoin: .round))
+                }
+
+                func drawPeak(_ cx: CGFloat, _ cy: CGFloat, _ rw: CGFloat, _ rh: CGFloat, snow: Bool = false) {
+                    var m = Path()
+                    m.move(to: CGPoint(x: (cx - rw) * w, y: (cy + rh) * h))
+                    m.addLine(to: CGPoint(x: cx * w, y: (cy - rh) * h))
+                    m.addLine(to: CGPoint(x: (cx + rw) * w, y: (cy + rh) * h))
+                    ctx.stroke(m, with: .color(ridgeStroke), style: StrokeStyle(lineWidth: 1.15, lineCap: .round, lineJoin: .round))
+                    if snow {
+                        var sn = Path()
+                        sn.move(to: CGPoint(x: (cx - rw * 0.42) * w, y: (cy - rh * 0.14) * h))
+                        sn.addLine(to: CGPoint(x: cx * w, y: (cy - rh) * h))
+                        sn.addLine(to: CGPoint(x: (cx + rw * 0.42) * w, y: (cy - rh * 0.14) * h))
+                        sn.closeSubpath()
+                        ctx.fill(sn, with: .color(active ? Theme.paper2 : Color.white.opacity(0.92)))
+                    }
+                }
+
                 switch template {
                 case "pangea":
-                    blob([(0.18, 0.30), (0.45, 0.16), (0.76, 0.24), (0.86, 0.50), (0.72, 0.78), (0.42, 0.84), (0.16, 0.66)], fill: landFill, stroke: landStroke)
+                    // 联合大陆：气势恢宏的中央主陆 + 东南海湾 + 双阶等高圈 + 纵贯山脊
+                    drawLand(
+                        [(0.16, 0.34), (0.28, 0.16), (0.52, 0.13), (0.76, 0.22), (0.86, 0.42),
+                         (0.78, 0.62), (0.64, 0.56), (0.58, 0.78), (0.36, 0.84), (0.18, 0.70), (0.12, 0.52)],
+                        contour: [(0.26, 0.38), (0.42, 0.24), (0.66, 0.28), (0.72, 0.46), (0.54, 0.66), (0.30, 0.66)],
+                        high: [(0.38, 0.42), (0.52, 0.34), (0.60, 0.46), (0.46, 0.54)]
+                    )
+                    drawPeak(0.45, 0.42, 0.065, 0.06)
+                    drawPeak(0.55, 0.44, 0.055, 0.05)
+                    drawWave(0.70, 0.78, 0.18)
+                    drawWave(0.10, 0.86, 0.16)
+
                 case "archipelago":
-                    blob([(0.16, 0.24), (0.34, 0.20), (0.36, 0.38), (0.20, 0.42)], fill: landFill, stroke: landStroke)
-                    blob([(0.54, 0.18), (0.76, 0.22), (0.80, 0.42), (0.58, 0.40)], fill: landFill, stroke: landStroke)
-                    blob([(0.24, 0.58), (0.44, 0.56), (0.46, 0.78), (0.26, 0.80)], fill: landFill, stroke: landStroke)
-                    blob([(0.62, 0.60), (0.84, 0.56), (0.82, 0.80), (0.64, 0.78)], fill: landFill, stroke: landStroke)
+                    // 群岛：大小错落的七座弧形列岛与环礁，海波萦绕
+                    drawWave(0.38, 0.49, 0.22)
+                    drawWave(0.12, 0.76, 0.18)
+                    drawWave(0.66, 0.20, 0.18)
+                    drawLand(
+                        [(0.12, 0.28), (0.26, 0.16), (0.42, 0.22), (0.38, 0.38), (0.20, 0.40)],
+                        contour: [(0.22, 0.26), (0.32, 0.24), (0.32, 0.33), (0.21, 0.33)]
+                    )
+                    drawLand(
+                        [(0.54, 0.30), (0.70, 0.26), (0.84, 0.36), (0.78, 0.50), (0.60, 0.48)],
+                        contour: [(0.64, 0.36), (0.74, 0.35), (0.74, 0.43), (0.64, 0.42)]
+                    )
+                    drawLand([(0.18, 0.58), (0.34, 0.54), (0.40, 0.66), (0.28, 0.72), (0.16, 0.66)])
+                    drawLand(
+                        [(0.52, 0.64), (0.68, 0.60), (0.80, 0.70), (0.72, 0.84), (0.54, 0.80)],
+                        contour: [(0.60, 0.70), (0.70, 0.69), (0.69, 0.77), (0.60, 0.76)]
+                    )
+                    // 散布小礁屿
+                    drawLand([(0.44, 0.16), (0.52, 0.14), (0.53, 0.22), (0.45, 0.23)])
+                    drawLand([(0.41, 0.76), (0.48, 0.75), (0.49, 0.83), (0.42, 0.84)])
+                    drawLand([(0.82, 0.56), (0.89, 0.55), (0.90, 0.62), (0.83, 0.63)])
+
                 case "highIsland":
-                    blob([(0.18, 0.46), (0.38, 0.20), (0.66, 0.22), (0.84, 0.52), (0.68, 0.80), (0.32, 0.78)], fill: landFill, stroke: landStroke)
-                    var ridge = Path()
-                    ridge.move(to: CGPoint(x: 0.32 * w, y: 0.58 * h))
-                    ridge.addLine(to: CGPoint(x: 0.48 * w, y: 0.34 * h))
-                    ridge.addLine(to: CGPoint(x: 0.60 * w, y: 0.54 * h))
-                    ridge.addLine(to: CGPoint(x: 0.68 * w, y: 0.42 * h))
-                    ridge.addLine(to: CGPoint(x: 0.76 * w, y: 0.60 * h))
-                    ctx.stroke(ridge, with: .color(landStroke), style: StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round))
+                    // 高山大岛：轮廓峻拔的大岛 + 三阶同心等高线 + 层叠山脊雪峰
+                    drawWave(0.08, 0.22, 0.16)
+                    drawWave(0.76, 0.82, 0.16)
+                    drawLand(
+                        [(0.14, 0.50), (0.24, 0.24), (0.48, 0.15), (0.74, 0.22), (0.86, 0.46),
+                         (0.78, 0.74), (0.52, 0.84), (0.24, 0.76)],
+                        contour: [(0.24, 0.50), (0.34, 0.30), (0.54, 0.26), (0.72, 0.36), (0.72, 0.62), (0.50, 0.72), (0.28, 0.64)],
+                        high: [(0.34, 0.50), (0.44, 0.36), (0.62, 0.40), (0.62, 0.58), (0.44, 0.62)]
+                    )
+                    drawPeak(0.38, 0.52, 0.085, 0.085, snow: false)
+                    drawPeak(0.62, 0.52, 0.085, 0.085, snow: false)
+                    drawPeak(0.50, 0.44, 0.115, 0.13, snow: true)
+
                 default: // continents
-                    blob([(0.12, 0.24), (0.42, 0.18), (0.48, 0.48), (0.34, 0.78), (0.14, 0.64)], fill: landFill, stroke: landStroke)
-                    blob([(0.56, 0.22), (0.86, 0.26), (0.88, 0.58), (0.66, 0.80), (0.54, 0.56)], fill: landFill, stroke: landStroke)
+                    // 多大陆：隔海相望的三大有机大陆 + 曲折海湾 + 海峡波纹 + 内陆高地等高线
+                    drawWave(0.41, 0.54, 0.18)
+                    drawWave(0.45, 0.22, 0.15)
+                    // 西北主陆
+                    drawLand(
+                        [(0.10, 0.26), (0.26, 0.14), (0.43, 0.20), (0.45, 0.38), (0.34, 0.48),
+                         (0.38, 0.64), (0.22, 0.72), (0.10, 0.56)],
+                        contour: [(0.18, 0.30), (0.32, 0.24), (0.34, 0.40), (0.22, 0.54)]
+                    )
+                    drawPeak(0.26, 0.34, 0.06, 0.055)
+                    // 东南主陆
+                    drawLand(
+                        [(0.58, 0.24), (0.78, 0.16), (0.90, 0.32), (0.86, 0.56), (0.72, 0.72),
+                         (0.56, 0.62), (0.60, 0.44), (0.52, 0.36)],
+                        contour: [(0.66, 0.32), (0.80, 0.28), (0.80, 0.52), (0.66, 0.54)]
+                    )
+                    drawPeak(0.73, 0.41, 0.06, 0.055)
+                    // 南方海岛
+                    drawLand([(0.34, 0.76), (0.50, 0.74), (0.54, 0.85), (0.38, 0.87)])
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .stroke(active ? Theme.paper2.opacity(0.36) : Theme.ink.opacity(0.20), lineWidth: 0.85)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 7.5, style: .continuous)
+                    .stroke(active ? Theme.paper2.opacity(0.16) : Theme.gold.opacity(0.28), lineWidth: 0.5)
+                    .padding(1.8)
+            )
         }
     }
 }

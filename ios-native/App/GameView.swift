@@ -495,18 +495,25 @@ struct GameView: View {
             }) {
                 if let active = panel ?? lastPanel {
                     let hasBack = trail.last != nil
-                    ZStack(alignment: .top) {
-                        sheet(for: active)
-                            .id(active.id)
-                            .environment(\.inSidePanel, false)
-                            .environment(\.hasBackBar, hasBack)
-                            .transition(.asymmetric(
-                                insertion: .opacity.combined(with: .offset(x: backward ? -24 : 24)),
-                                removal: .opacity.combined(with: .offset(x: backward ? 24 : -24))
-                            ))
+                    VStack(spacing: 0) {
+                        SheetTopSafeClearance()
+                        if let last = trail.last {
+                            backRow(last, current: active, isSidePanel: false)
+                        }
+                        ZStack(alignment: .top) {
+                            sheet(for: active)
+                                .id(active.id)
+                                .environment(\.inSidePanel, false)
+                                .environment(\.hasBackBar, hasBack)
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .offset(x: backward ? -24 : 24)),
+                                    removal: .opacity.combined(with: .offset(x: backward ? 24 : -24))
+                                ))
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .clipped()
                     }
                     .animation(Motion.sheetSwap, value: active.id)
-                    .clipped()
                     .simultaneousGesture(
                         DragGesture(minimumDistance: 28)
                             .onEnded { v in
@@ -516,20 +523,11 @@ struct GameView: View {
                                 }
                             }
                     )
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        VStack(spacing: 0) {
-                            SheetTopSafeClearance()
-                            if let last = trail.last {
-                                backRow(last, current: active, isSidePanel: false)
-                            }
-                        }
-                        .background(Theme.paper.opacity(0.96))
-                    }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .background(MemorialPaper().ignoresSafeArea())
                     .presentationDetents([Self.lowDetent, Self.midDetent, Self.highDetent], selection: $sheetDetent)
                     .presentationBackgroundInteraction(.enabled(upThrough: Self.midDetent))
-                    .presentationBackground(Theme.paper)
+                    .presentationBackground { MemorialPaper() }
                     .presentationDragIndicator(.hidden)
                     .presentationCornerRadius(Theme.Control.cornerSheet)
                     .font(Theme.section)
@@ -647,7 +645,6 @@ struct GameView: View {
             .padding(.bottom, isSidePanel ? 0 : 4)
             Rectangle().fill(Theme.ink.opacity(0.11)).frame(height: 0.75)
         }
-        .background(Theme.paper.opacity(0.96))
     }
 
     @ViewBuilder private func sheet(for panel: Panel) -> some View {
@@ -1122,29 +1119,32 @@ struct GameView: View {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 let hasBack = trail.last != nil
-                sheet(for: panel)
-                    .id(panel.id)
-                    .environment(\.inSidePanel, true)
-                    .environment(\.hasBackBar, hasBack)
-                    .environment(\.sidePanelClose, { closePage() })
-                    .transition(.asymmetric(
-                        insertion: .move(edge: backward ? .leading : .trailing).combined(with: .opacity),
-                        removal: .move(edge: backward ? .trailing : .leading).combined(with: .opacity)
-                    ))
-                    .clipped()
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        if let last = trail.last {
-                            backRow(last, current: panel, isSidePanel: true)
-                        }
+                VStack(spacing: 0) {
+                    if let last = trail.last {
+                        backRow(last, current: panel, isSidePanel: true)
                     }
-                    .font(Theme.section)
-                    .frame(width: panelW)
-                    .frame(maxHeight: .infinity)
-                    .background(MemorialPaper(rules: true, fullBleed: false))
-                    .clipShape(shape)
-                    .overlay(shape.stroke(Theme.ink.opacity(0.18), lineWidth: 0.85).allowsHitTesting(false))
-                    .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.22), radius: 16, x: -3, y: 3)
-                    .padding(.trailing, 8).padding(.vertical, 8)
+                    ZStack(alignment: .top) {
+                        sheet(for: panel)
+                            .id(panel.id)
+                            .environment(\.inSidePanel, true)
+                            .environment(\.hasBackBar, hasBack)
+                            .environment(\.sidePanelClose, { closePage() })
+                            .transition(.asymmetric(
+                                insertion: .move(edge: backward ? .leading : .trailing).combined(with: .opacity),
+                                removal: .move(edge: backward ? .trailing : .leading).combined(with: .opacity)
+                            ))
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .clipped()
+                }
+                .font(Theme.section)
+                .frame(width: panelW)
+                .frame(maxHeight: .infinity)
+                .background(MemorialPaper(rules: true, fullBleed: false))
+                .clipShape(shape)
+                .overlay(shape.stroke(Theme.ink.opacity(0.18), lineWidth: 0.85).allowsHitTesting(false))
+                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.22), radius: 16, x: -3, y: 3)
+                .padding(.trailing, 8).padding(.vertical, 8)
             }
             .transition(.move(edge: .trailing).combined(with: .opacity))
         }

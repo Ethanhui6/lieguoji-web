@@ -1,5 +1,37 @@
 # 更新日志
 
+## 4.2.6 / build 169 — 2026-11-24
+
+### 一、UI 细节、矢量图标规范与视觉材质全面重构
+- **地形编辑面板 12 枚功能图标统一重铸（`InkIcons.swift`、`MapEditor.swift`）**：
+  - 为 `深海(.trench)`、`浅海(.sea)`、`内湖(.lake)`、`平原(.plain)`、`丘陵(.hill)`、`高原(.plateau)`、`山脉(.mountain)`、`雪峰(.peak)`、`群岛(.island)`、`抬高(.raise)`、`压低(.lower)`、`平滑(.smooth)` 建立 **12 枚彼此独立的规范矢量几何图标**（彻底告别深浅海、丘陵高原、山脉雪峰复用雷同，重绘内湖为岸畔盆地水纹告别“眼形”误读，重绘平原为疏朗沃野禾苗彻底杜绝选中糊成一团）；
+  - 新增 `InkIcon(crisp: true)` 统一等宽圆头圆角描边渲染与选中态暗红反白逻辑，并统一 12 枚笔刷右上角精巧地貌色标，未选中与选中反色均清晰锐利。
+- **国家详情抽屉与全站弹窗：根除顶部白边、统一无缝宣纸底纹、移除概览低质模糊横幅（`GameView.swift`、`NationSheet.swift`、全站 13 个视图文件）**：
+  - 查明国家页顶栏（`< 返回列国 | 国家`）泛白割裂源自 `backRow` 与 `.safeAreaInset(edge: .top)` 叠加的实底浅白层 `Theme.paper.opacity(0.96)` 与下方做旧宣纸 `MemorialPaper` 色温错层：现重构为顶栏直接置于主内容裁切区之上、全抽屉从顶部圆角至最底端共用同一张无缝 `MemorialPaper` 宣纸纹理（仅以 `0.75pt` 细墨线区隔顶栏与主标题），并将全站剩余 28 处 `.presentationBackground(Theme.paper)` 全部统一为 `.presentationBackground { MemorialPaper() }`；
+  - 彻底移除国家页「概览」Tab 下方的低分辨率模糊横幅插画容器与动态加载代码，让「国情卷宗」卡片紧接 Tab 栏呈现，排版更紧凑清爽，同时进一步降低国家页打开耗时。
+- **开局设置页「山河格局」微型等高线舆图重绘与文字截断修复（`TitleViews.swift`）**：
+  - 全面重构 `TerrainSilhouette`：以闭合 Catmull-Rom 有机海岸曲线、浅滩晕圈、多层海拔等高圈、山脊雪峰与海浪纹精细绘制 `多大陆`、`联合大陆`、`群岛`、`高山大岛` 四幅古风微缩等高线海图；
+  - 重排 2×2 格局卡片为「`48×48` 舆图缩略图 + 独占整行完整标题 + 下置战略标签胶囊 + 精简地势评语」，彻底根除「联合…」「高山…」标题截断问题。
+
+### 二、沙盘地图边框重铸：高精细程序化古风舆图卷轴装裱
+- **全面替代生硬拼接贴图，以 Metal 视网膜级程序化着色器重绘古风舆图装裱（`MapRenderer.swift`）**：
+  - 全新编写 `scrollMountFragment` 空心四框零过绘着色器（画心内部 0% 过绘）：
+    - **左右紫檀木卷轴与包金玉轴头**：真实三维圆柱法线光照、细长红酸枝木纹年轮与漆面高光、上下双弦纹拉丝鎏金箍，以及车制圆润拱顶的青白碧玉轴头与东南书案柔影；
+    - **米金宋锦绫罗装裱宽边**：织物经纬暗纹 + 菱格云锦暗花光泽 + 做旧宣纸微韵 + 牙白隔水边 + 墨口/泥金双细框 + 卷轴自然卷入阴影；
+    - **四角回纹云纹鎏金包角**：全视网膜分辨率抗锯齿矢量纤细回纹与云钩，严守绫边四隅不侵画心；
+    - **画心柔和内阴影（Inner Shadow）**：沿手工微起伏毛边向内渲染多阶温润暖褐内阴影与宣纸微卷过渡（西北略深、东南柔润），彻底告别生硬贴图割裂感。
+
+### 三、核心性能深度重构：离屏静态地图双层缓存 × 主循环零抖动 × 动效零掉帧
+- **接入离屏静态地图双层 RenderTarget 缓存与 Dirty Flag 机制（`MapRenderer.swift`）**：
+  - 新增 `cachedBaseTex`（海图 + 20,000+ 地块地形/国色）与 `cachedOverlayTex`（州界、双层河网、手绘河道、海路、经纬线、海岸细饰、矢量地貌、国界、城徽/要塞/海港 13 层静态矢量）双层离屏缓存纹理（物理机 MSAA 瞬态目标采用 `.memoryless` 零显存占用），仅在缩放、平移落定、领土易主、节气/天时或显示开关变更时按需烘焙；
+  - 推演期间镜头静止时，60fps 军队行军、战争墨晕（`InkField` + `FlipSweep`）与战斗动画帧直接通过 2 个全屏三角形（`blitVertex` / `blitFragment`）直通合成静态底图与静态叠加层，严禁每帧全量重绘 20,000 地块与 13 层矢量，GPU 帧耗时骤降约 85%–92%，同时完整保留国土易主渐变与战争墨晕实时 60fps 渲染。
+- **渲染与 SwiftUI 状态彻底解耦：消除推演每步 5–7 次整页重排（`MapView.swift`、`GameModel.swift`）**：
+  - 将 `MapController` 上 20 余项纯渲染高频字段（`world` / `armies` / `route` / `effects` / `washes` / `relations` / `seaPorts` / `forts` / `holy` / 镜头聚焦请求等）全部移出 `@Published`，改由单步原子合批的 `scheduleSync()` / `flushSync()` 直达 `MapView.Coordinator.sync()`，让 `GameModel` 节流机制真正生效；
+  - 同步优化主线程热路径：`MapLabelsView.setCities` 改为零字符串分配快速签名比对、`nationLabels` 增加单位字宽测量缓存、`GameModel` 缓存 `cityByProv` 省城索引。
+- **消除动画与传报触发瞬间掉帧（`MapArt.swift`、`MapEffects.swift`、`InkVideoPlayer.swift`）**：
+  - 新增 `BundleArt.prewarmAsync()` 与 `EffectsView.prewarmAsync()`，进入世界时即在后台线程通过 `preparingForDisplay()` 预解码全部 36 帧高密度战斗/海战/围城/插旗/抢滩图集与四季粒子，彻底消除首次触发动画时的主线程 PNG 解码卡顿，并合理收敛海量大战同屏粒子上限；
+  - 升级 `InkVideoPlayer` 后台异步预加载视频轨元数据（`loadValuesAsynchronously`）后再创建 `AVPlayerLooper`，彻底消除传报横幅弹出瞬间主线程阻塞 `mediaserverd` 导致的掉帧。
+
 ## 4.2.5 / build 168 — 2026-11-24
 
 ### 一、底部抽屉与地图联动 4 项核心交互 Bug 彻底修复

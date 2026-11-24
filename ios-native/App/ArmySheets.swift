@@ -193,7 +193,7 @@ struct ArmySheet: View {
                     .padding(.horizontal, Theme.Layout.pageInset)
                     Spacer(minLength: 0)
                 }
-                .presentationDetents([.medium]).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet)
+                .presentationDetents([.medium]).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet)
             }
             .sheet(isPresented: $renaming) {
                 VStack(alignment: .leading, spacing: 14) {
@@ -206,7 +206,7 @@ struct ArmySheet: View {
                     .padding(.horizontal, Theme.Layout.pageInset)
                 }
                 .padding(.bottom, 16)
-                .presentationDetents([.height(280)]).background(MemorialPaper().ignoresSafeArea()).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet)
+                .presentationDetents([.height(280)]).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).presentationCornerRadius(Theme.Control.cornerSheet)
             }
         } else {
             VStack(spacing: 16) {

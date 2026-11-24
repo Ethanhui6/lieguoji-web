@@ -47,11 +47,14 @@ import LieguojiCore
         }
         var glyph: InkGlyph {
             switch self {
-            case .trench, .sea: return .sea
+            case .trench: return .trench
+            case .sea: return .sea
             case .lake: return .lake
             case .plain: return .plain
-            case .hill, .plateau: return .views
-            case .mountain, .peak: return .mountain
+            case .hill: return .hill
+            case .plateau: return .plateau
+            case .mountain: return .mountain
+            case .peak: return .peak
             case .island: return .island
             case .raise: return .raise
             case .lower: return .lower
@@ -723,7 +726,7 @@ struct EditorView: View {
             .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.height(310)])
             .presentationCornerRadius(Theme.Control.cornerSheet)
-            .presentationBackground(Theme.paper)
+            .presentationBackground { MemorialPaper() }
             .presentationDragIndicator(.hidden)
             .font(Theme.section)
         }
@@ -749,7 +752,7 @@ struct EditorView: View {
             .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.medium])
             .presentationCornerRadius(Theme.Control.cornerSheet)
-            .presentationBackground(Theme.paper)
+            .presentationBackground { MemorialPaper() }
             .presentationDragIndicator(.hidden)
             .font(Theme.section)
         }
@@ -830,7 +833,7 @@ struct EditorView: View {
                     .frame(width: 32, height: 3.5)
                     .padding(.top, 4)
                 HStack(spacing: 8) {
-                    InkIcon(glyph: editor.step == .terrain ? editor.tool.glyph : .nation, size: 16).foregroundStyle(Theme.seal)
+                    InkIcon(glyph: editor.step == .terrain ? editor.tool.glyph : .nation, size: 16, crisp: editor.step == .terrain).foregroundStyle(Theme.seal)
                     Text(editor.step == .terrain ? "正在绘制：\(editor.tool.title)（上滑或点此展开画板）" : "上滑或点此展开「划定列国」画板")
                         .font(Theme.label).foregroundStyle(Theme.ink)
                 }
@@ -1043,6 +1046,11 @@ struct EditorView: View {
 
     private func brushTile(_ t: MapEditor.Tool, width: CGFloat?, height: CGFloat) -> some View {
         let on = editor.tool == t
+        let accentColor: Color? = {
+            if t.target == nil && t != .island { return nil }
+            if on { return Theme.paper2.opacity(t == .peak ? 0.42 : 0.24) }
+            return t.swatch.opacity(t == .peak ? 0.72 : 0.36)
+        }()
         return Button {
             withAnimation(Motion.tap) {
                 editor.tool = t
@@ -1050,20 +1058,32 @@ struct EditorView: View {
             }
             GameFeel.shared.tap()
         } label: {
-            VStack(spacing: 2.5) {
-                ZStack {
-                    if !on && t.target != nil {
-                        Circle().fill(t.swatch.opacity(0.28)).frame(width: 22, height: 22)
-                    }
-                    InkIcon(glyph: t.glyph, size: 16.5).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                }
-                .frame(height: 20)
-                Text(t.title).font(Theme.caption).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
+            VStack(spacing: 3) {
+                InkIcon(glyph: t.glyph, size: 18, weight: 1.55, accent: accentColor, crisp: true)
+                    .foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                    .frame(height: 19)
+                Text(t.title)
+                    .font(Theme.caption)
+                    .foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
             .frame(width: width, height: height)
             .frame(maxWidth: width == nil ? .infinity : nil)
             .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.line))
+            .overlay(alignment: .topTrailing) {
+                if t.target != nil || t == .island {
+                    Circle()
+                        .fill(on ? Theme.paper2.opacity(0.82) : t.swatch)
+                        .frame(width: 4.5, height: 4.5)
+                        .overlay(Circle().stroke(on ? Theme.seal.opacity(0.35) : Theme.ink.opacity(0.18), lineWidth: 0.5))
+                        .padding(4.5)
+                }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                    .stroke(on ? Theme.gold.opacity(0.42) : Theme.line, lineWidth: on ? 1 : 0.8)
+            )
         }
         .buttonStyle(PressStyle())
     }

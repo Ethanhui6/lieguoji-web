@@ -146,7 +146,7 @@ struct RootView: View {
             }
             .padding(.bottom, 24)
             .background(MemorialPaper().ignoresSafeArea())
-            .presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground(Theme.paper).presentationDragIndicator(.hidden).font(Theme.section)
+            .presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
         }
     }
 
@@ -500,6 +500,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("4.2.6", ["【地形编辑 12 枚矢量图标重铸 × 国家页零白边去模糊横幅 × 山河格局等高线缩略图】为深海/浅海/内湖/平原/丘陵/高原/山脉/雪峰/群岛/抬高/压低/平滑重绘 12 枚统一线宽圆角、区分度鲜明的独立矢量图标，选中暗红反白绝不糊团；根除国家抽屉顶栏纯白割裂带并统一全站 28 处弹窗为无缝宣纸底纹，直接移除概览页低质模糊横幅让国情卷宗紧接页签；重绘开局「山河格局」有机等高线微缩舆图并修复「联合…」「高山…」标题截断。",
+                   "【沙盘地图边框重铸：视网膜级程序化古风舆图卷轴装裱】彻底摒弃生硬粗糙的拼接贴图边框，以全新 Metal 程序化空心四框着色器精细绘制三维紫檀木纹卷轴、双弦纹鎏金箍与车制碧玉拱顶轴头、米金宋锦菱格暗纹绫罗宽边、牙白隔水与四角纤细回纹鎏金包角，并在画心交界加入手工毛边多阶柔和内阴影（Inner Shadow），任意倍率均纤毫毕现。",
+                   "【核心性能深度重构：离屏静态地图双层缓存 × 主循环解耦 × 动画零掉帧】接入海陆 20,000 地块与 13 层静态矢量双层离屏缓存纹理与 Dirty Flag 机制（物理机 .memoryless 零显存 MSAA），推演期间每帧仅 2 个全屏三角形直通合成，GPU 负载骤降 ~85% 且完整保留 60fps 战争墨晕、国土易主与军队滑行；将 MapController 高频渲染通道移出 @Published 改由单步原子合批，后台预解码全部 36 帧战斗/围城/插旗图集并异步预加载传报视频元数据，彻底根治推演与动效卡顿掉帧。"]),
         ("4.2.5", ["【底部抽屉半屏聚焦防遮挡 × 全屏顶部状态栏安全区适配】新增 MapCamera.focused 可视安全区居中投影算法：竖屏弹出半屏抽屉或横屏展开侧栏时，聚焦国家名、州郡、军团与都城自动上移/左移至可视安全区正中央，彻底根除国家大字被抽屉顶边截断的遮挡问题；全站抽屉统一封顶 .fraction(0.89) 并叠加硬件安全区防侵入垫片，拉升全屏时 < 返回州郡 与标题栏永不与灵动岛、时间与信号栏重叠。",
                    "【地形编辑画板顶部统一拖拽条 × 抽屉切换平滑过渡零闪烁】在自绘地图底部工具板最顶部新增与详情抽屉一致的居中灰色圆角拖拽指示条，支持橡皮筋上下拖拽与轻点切换「收起 / 精简 / 标准 / 展开」四档高度；重构主抽屉为统一 sheetDetent 与 280ms 流体缓动过渡，州郡页后台预热国家详情缓存且国家页第 0 帧同步渲染四格数字，彻底消除从州郡切入国家详情时的高度硬切与数据跳闪。",
                    "【历史动态画卷短视频库由 19 卷暴增至 54 卷（60fps 全文明物理动效 × 16 卷防重轮播）】精选 35 幅公有领域传世历史名画（《千里江山图》《汉宫春晓图》《出警入跸图》《步辇图》《文会图》《关原合战》《罗马元老院》《特拉法加海战》《火船破敌》《丝路驼队》《维苏威火山》《1680 大彗星》等）调和为古宣丝绢色韵并以逐像素物理光流合成为 60fps 动态短视频，总数达 54 卷，结合文明/政体/事件语义路由与 16 卷防重记忆环，告别视觉重复。"]),

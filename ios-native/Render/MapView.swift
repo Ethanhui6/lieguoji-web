@@ -5,15 +5,33 @@ import LieguojiCore
 
 /// State shared between SwiftUI panels and the Metal map.
 @MainActor final class MapController: ObservableObject {
+    /// 4.2.6 渲染直通合批通道：地图高频数据（world/armies/effects/washes/relations/camera requests）不再触发 SwiftUI 整页重排，
+    /// 而是自动合批为每步至多 1 次 `Coordinator.sync()`，彻底消除推演期间每步 5~7 次无效全屏 SwiftUI diff 卡顿！
+    var onNeedsSync: (() -> Void)?
+    private var syncScheduled = false
+    func scheduleSync() {
+        guard !syncScheduled else { return }
+        syncScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.syncScheduled = false
+            self.onNeedsSync?()
+        }
+    }
+    func flushSync() {
+        syncScheduled = false
+        onNeedsSync?()
+    }
+
     @Published var mode: MapMode = .political
     /// The selected state's relations on the map (StateRelationsHighlighter): nation → 0xRRGGBB.
-    @Published var relations: [Int: UInt32] = [:]
+    var relations: [Int: UInt32] = [:] { didSet { scheduleSync() } }
     /// A colour view's province fills (nil: the state view).
-    @Published var viewFills: [RGB]?
+    var viewFills: [RGB]? { didSet { scheduleSync() } }
     /// The state whose relation colours are shown (its sheet page set them).
-    @Published var relationsNation: Int?
+    var relationsNation: Int? { didSet { scheduleSync() } }
     /// A colour view's group names, shown instead of the state names (nil: state names).
-    @Published var viewLabels: [GroupLabel]?
+    var viewLabels: [GroupLabel]? { didSet { scheduleSync() } }
     @Published var selectedProvince: Int?
     @Published var showMetrics = false
     /// The next army update places every icon at once (a world just opened), with no walk or fade.
@@ -25,20 +43,20 @@ import LieguojiCore
     /// 推演与画面 settings (armies shown, war arrows, icon size, frame rate, autosave).
     @Published var play = PlaySettings.load() { didSet { play.save() } }
     /// Province to fly to; the id makes repeated requests for the same province animate again.
-    @Published var focus: (province: Int, id: UUID)?
-    @Published var resetRequest = UUID() { didSet { onFramingRequest?() } }
+    var focus: (province: Int, id: UUID)? { didSet { scheduleSync() } }
+    var resetRequest = UUID() { didSet { onFramingRequest?() } }
     /// 地图展开: the camera draws back until the whole map is on screen.
-    @Published var unrollRequest = UUID() { didSet { onFramingRequest?() } }
+    var unrollRequest = UUID() { didSet { onFramingRequest?() } }
     var onFramingRequest: (() -> Void)?
     /// The camera's scale now and the scale at which the whole map fits (CI checks the map can be unrolled).
     var cameraScale: (() -> (scale: Double, fit: Double))?
     /// CI 测量：当前的地图渲染器。
     var renderer: (() -> MapRenderer?)?
     /// Zoom by a factor around the screen centre (the + / − buttons).
-    @Published var zoomRequest: (factor: Double, id: UUID)?
+    var zoomRequest: (factor: Double, id: UUID)? { didSet { scheduleSync() } }
     /// Army icons and the selected army's remaining route, from the simulation (nil keeps the opening icons).
-    @Published var armies: [MapRenderer.ArmySprite]? { didSet { armiesRevision &+= 1 } }
-    @Published var route: [SIMD2<Float>] = [] { didSet { armiesRevision &+= 1 } }
+    var armies: [MapRenderer.ArmySprite]? { didSet { armiesRevision &+= 1; scheduleSync() } }
+    var route: [SIMD2<Float>] = [] { didSet { armiesRevision &+= 1; scheduleSync() } }
     private(set) var armiesRevision = 0
     @Published var selectedArmy: Int?
     /// 选中军队的稳定 ID（推演中数组下标变化或军队覆灭时仍能准确找回，避免点军团出现空白页）。
@@ -55,9 +73,9 @@ import LieguojiCore
     @Published var groupArmies: [Int] = []
     var onGroupTarget: ((Int) -> Void)?
     /// Battles, sieges and capture flashes over the map.
-    @Published var effects = MapEffects()
+    var effects = MapEffects() { didSet { scheduleSync() } }
     /// The live world (ownership and nation labels follow the engine); nil keeps the opening map.
-    @Published var world: WorldMap? { didSet { worldRevision &+= 1 } }
+    var world: WorldMap? { didSet { worldRevision &+= 1; scheduleSync() } }
     /// Bumped on every world change: the map compares this instead of every province.
     private(set) var worldRevision = 0
     /// How long army icons glide to their next positions (the play step interval).
@@ -68,20 +86,20 @@ import LieguojiCore
     var troopRatios: [String: Float] = [:]
     var troopBarColors: [String: RGB] = [:]
     /// 战争晕染（墨场）：本步的行军、守军、围城与最近的攻占（GameModel.refreshWashes），与世界代次（读档、换世界时变）。
-    var washes = WashFrame.empty
+    var washes = WashFrame.empty { didSet { scheduleSync() } }
     /// 本步阵亡军队（军队标识 → 阵亡时刻，秒，自本步动画开始）：图标停到那一刻，阵亡动画同时开始。
     var deathDelays: [String: Double] = [:]
-    var washEpoch = 0
+    var washEpoch = 0 { didSet { scheduleSync() } }
     /// CI 巡览演示占领晕染时为真：推演不覆盖演示输入。
     var washDemo = false
     /// 当前着色视图的标识（同一视图里填色随推演刷新时渐变，换视图时瞬切）。
     var viewKey = ""
     /// 四时节气光影相位（0..1，由模拟日期驱动）。
-    var seasonPhase: Float = -1
+    var seasonPhase: Float = -1 { didSet { scheduleSync() } }
     /// 实时活跃天时与灾异州郡（暴雪/大旱/洪涝/瘟疫/丰年），同步驱动 GPU 地表着色与全屏/局部天气粒子层。
     var weatherZones: [WeatherOverlayView.Zone] = []
     var weatherGPUZones: [(x: Float, y: Float, radius: Float, kind: Float)] = []
-    var weatherRevision: Int = 0
+    var weatherRevision: Int = 0 { didSet { scheduleSync() } }
     /// 玩家最近一次主动触碰地图的时刻（用于观战巡弋导演镜头自动礼让手动操作）。
     var lastUserTouchTime: CFTimeInterval = 0
     /// 沉浸式自适应 HUD 回调：玩家拖拽/双指缩放浏览地图时自动收起外围功能栏；轻点画布时唤回 HUD。
@@ -92,11 +110,11 @@ import LieguojiCore
     /// CI 连续帧对比: the state names on screen in this frame and how opaque each is drawn.
     var nameFrame: (() -> [String: Float])?
     /// Harbour points in map units. The sea-route layer is rebuilt when this changes.
-    @Published var seaPorts: [SIMD2<Float>] = []
+    var seaPorts: [SIMD2<Float>] = [] { didSet { scheduleSync() } }
     /// 要塞 marks: the cities of fortified provinces, in map units.
-    @Published var forts: [SIMD2<Float>] = []
+    var forts: [SIMD2<Float>] = [] { didSet { scheduleSync() } }
     /// 圣地 marks: the cities of holy provinces, in map units.
-    @Published var holy: [SIMD2<Float>] = []
+    var holy: [SIMD2<Float>] = [] { didSet { scheduleSync() } }
     /// A fleet waiting for its port: the next province tap is its destination.
     @Published var marchingFleet: Int?
     /// 绘制疆域: provinces tapped or dragged over go to this state.
@@ -112,7 +130,7 @@ import LieguojiCore
     /// The drawn terrain to show; bump the revision to redraw (sea texture too when seaDirty).
     var editorMap: WorldMap?
     var editorSeaDirty = false
-    @Published var editorRevision = 0
+    var editorRevision = 0 { didSet { scheduleSync() } }
     /// The brush circle under the finger (map units), drawn while painting.
     var brushRadius: Double = 30
     var onPaint: ((Int) -> Void)?
@@ -120,9 +138,9 @@ import LieguojiCore
     @Published var brushName: String?
     var brushAction: ((Int) -> Void)?
     /// 地图标注.
-    @Published var customLabels: [GameModel.MapLabel] = []
-    @Published var customImages: [GameModel.MapImage] = []
-    @Published var customRivers: [[Float]] = []
+    var customLabels: [GameModel.MapLabel] = [] { didSet { scheduleSync() } }
+    var customImages: [GameModel.MapImage] = [] { didSet { scheduleSync() } }
+    var customRivers: [[Float]] = [] { didSet { scheduleSync() } }
     /// 长按地图: the province and the finger's place in the view.
     var onLongPress: ((Int, CGPoint) -> Void)?
     /// 地图点选: a page asked for a province (a new capital…): the prompt on the banner and what the tap does.
@@ -182,17 +200,17 @@ import LieguojiCore
     @Published var foundingStage = 0
     func fly(to province: Int) { focus = (province, UUID()) }
     /// 聚焦整个国家核心疆域与国名中心（避免国家大字被底部抽屉顶边截断）。
-    @Published var focusNation: (nation: Int, id: UUID)?
+    var focusNation: (nation: Int, id: UUID)? { didSet { scheduleSync() } }
     func fly(toNation nation: Int) { focusNation = (nation, UUID()) }
     /// 点选州郡弹出底部半屏抽屉时，若目标恰好落在抽屉遮挡区内则平滑轻移至上方可视安全区正中（不突兀改缩放）。
-    @Published var panAboveSheet: (province: Int, id: UUID)?
+    var panAboveSheet: (province: Int, id: UUID)? { didSet { scheduleSync() } }
     func panAboveSheetIfNeeded(province: Int) { panAboveSheet = (province, UUID()) }
     /// Flies to a map point and zooms in (an army or fleet), the point above the sheet.
-    @Published var focusPoint: (x: Double, y: Double, id: UUID)?
+    var focusPoint: (x: Double, y: Double, id: UUID)? { didSet { scheduleSync() } }
     func fly(x: Double, y: Double) { focusPoint = (x, y, UUID()) }
     func zoom(_ factor: Double) { zoomRequest = (factor, UUID()) }
     /// 查看都城: the camera glides to the place, zooms in and a vermilion seal ring closes on it.
-    @Published var spotlight: (x: Double, y: Double, id: UUID)?
+    var spotlight: (x: Double, y: Double, id: UUID)? { didSet { scheduleSync() } }
     func showPlace(x: Double, y: Double) { spotlight = (x, y, UUID()) }
 }
 
@@ -595,6 +613,7 @@ struct MapView: UIViewRepresentable {
                 return (renderer.camera.scale, self.bounds.lowerBound)
             }
             controller.onFramingRequest = { [weak self] in self?.applyFramingRequests() }
+            controller.onNeedsSync = { [weak self] in self?.sync() }
             controller.nameFrame = { [weak self] in self?.labels?.nameFrame() ?? [:] }
             controller.renderer = { [weak self] in self?.renderer }
             controller.placed = { [weak self] key in
@@ -1413,7 +1432,12 @@ struct MapView: UIViewRepresentable {
             }
         }
 
-        func stop() { link?.invalidate(); link = nil; drift?.invalidate(); drift = nil; effects.stopWaves() }
+        func stop() {
+            link?.invalidate(); link = nil
+            drift?.invalidate(); drift = nil
+            effects.stopWaves()
+            controller.onNeedsSync = nil
+        }
 
         private var drift: CADisplayLink?
         private var driftFrame = 0
@@ -1561,11 +1585,14 @@ final class MapLabelsView: UIView {
         }.sorted { $0.mapEm > $1.mapEm }
     }
     /// The cities changed (a preview replaced by the founded world, whose cities have names): rebuild them.
-    private var cityKey = ""
+    /// 4.2.6 零字符串分配快速签名比对：普通疆域易主跳过全城字符串拼接与 MapLayers.cityMarks 扫描。
+    private var citySignature: (count: Int, nameHash: Int, capitals: [Int])?
     func setCities(map: WorldMap) {
-        let key = map.meta.cities.map(\.name).joined(separator: "|") + zip(map.meta.cities.indices, MapLayers.cityMarks(map)).filter { $0.1 == .capital }.map { "\($0.0)" }.joined(separator: ",")
-        guard key != cityKey else { return }
-        cityKey = key
+        var hasher = Hasher()
+        for c in map.meta.cities { hasher.combine(c.name) }
+        let sig = (count: map.meta.cities.count, nameHash: hasher.finalize(), capitals: map.meta.nations.map(\.capital))
+        if let old = citySignature, old.count == sig.count && old.nameHash == sig.nameHash && old.capitals == sig.capitals { return }
+        citySignature = sig
         for l in cities { l.view.removeFromSuperview() }
         cities = Self.cityLabels(map)
         capitalCityLabels = cities.filter { $0.fill === Self.capitalInk }
@@ -1586,11 +1613,21 @@ final class MapLabelsView: UIView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
+    /// 缓存 1pt 单位字宽测量结果，疆域易主重算国名盒时免去重复主线程 CoreText 排版开销。
+    private static var emSizeCache: [String: CGSize] = [:]
+    private static func measureEm(_ text: String) -> CGSize {
+        if let hit = emSizeCache[text] { return hit }
+        let measured = (text as NSString).size(withAttributes: [.font: font(1)])
+        if emSizeCache.count > 512 { emSizeCache.removeAll(keepingCapacity: true) }
+        emSizeCache[text] = measured
+        return measured
+    }
+
     private static func nationLabels(_ map: WorldMap, unit: Double, full: Bool) -> [Label] {
         map.meta.labels.filter { $0.nation >= 0 && map.meta.nations.indices.contains($0.nation) }.map { box in
             let n = map.meta.nations[box.nation]
             let shown = MapLayers.stateLabel(n.name, full: full)
-            let measured = (shown as NSString).size(withAttributes: [.font: font(1)])
+            let measured = measureEm(shown)
             let size = MapLayers.labelFontSize(box: box, emWidth: Float(measured.width), emHeight: Float(measured.height))
             let l = Label(text: shown, x: Double(box.x), y: Double(box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 3.2, province: nil)
             l.angle = Double(box.angle ?? 0)
@@ -1602,7 +1639,7 @@ final class MapLabelsView: UIView {
     func setGroups(_ groups: [GroupLabel], animated: Bool = true) {
         let unit = Double(MapLayers.fontUnit)
         let fresh = groups.map { g -> Label in
-            let measured = (g.name as NSString).size(withAttributes: [.font: Self.font(1)])
+            let measured = Self.measureEm(g.name)
             let size = MapLayers.labelFontSize(box: g.box, emWidth: Float(measured.width), emHeight: Float(measured.height))
             return Label(text: g.name, x: Double(g.box.x), y: Double(g.box.y), mapEm: Double(size) * unit, fill: .black, stroke: UIColor(red: 0xF3 / 255.0, green: 0xE7 / 255.0, blue: 0xCA / 255.0, alpha: 0.75), strokeWidth: 6.0 / 64, minPoints: 4, province: nil)
         }.sorted { $0.mapEm > $1.mapEm }

@@ -807,7 +807,7 @@ struct PaperMenu<T: Hashable>: View {
             .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.medium, .fraction(0.89)])
             .presentationCornerRadius(Theme.Control.cornerSheet)
-            .presentationBackground(Theme.paper)
+            .presentationBackground { MemorialPaper() }
             .presentationDragIndicator(.hidden)
             .font(Theme.section)
         }

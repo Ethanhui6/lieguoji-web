@@ -519,7 +519,9 @@ public enum SeaDominion {
         let provName = r.world.cities.asArray.first { $0.provinceId.asString == port.provinceId }?.name.asString
             ?? r.world.provinces.asArray.first { $0.id.asString == port.provinceId }?.name.asString ?? "海港"
         let ownCount = Naval.fleets(r).filter { $0.nationId.asString == nation }.count
-        let fname = (customName?.isEmpty == false) ? customName! : "\(provName)第\(ChineseNumeral.of(ownCount + 1))水师"
+        let ordinals = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+        let ord = ownCount < ordinals.count ? ordinals[ownCount] : "\(ownCount + 1)"
+        let fname = (customName?.isEmpty == false) ? customName! : "\(provName)第\(ord)水师"
         let crew = total * crewPerShip
         let food = total * foodPerShip
 

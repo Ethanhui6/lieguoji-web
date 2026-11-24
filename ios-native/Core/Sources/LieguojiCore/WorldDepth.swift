@@ -697,7 +697,7 @@ extension NativeEngine {
             milRows.append(makeLine("国库军饷保障", "\(pct >= 0 ? "+" : "")\(pct)%", pct >= 0 ? "good" : "bad"))
         }
         let season = WorldSeason.of(month: r.life.currentDate.month.asInt)
-        milRows.append(makeLine("当前节气（\(season.label)）", season.note))
+        milRows.append(makeLine("当前节气（\(season.fullName)）", season.summary))
         out.military = .array(milRows)
 
         // 3. 海军与制海权拆解
@@ -740,7 +740,8 @@ extension NativeEngine {
         let spProf = Trade.profiles[min(Trade.profiles.count - 1, max(0, spIdx))]
 
         var rows = [JS]()
-        rows.append(makeLine("地形底质（\(prof.name)）", "商税 ×\(String(format: "%.2f", prof.tax)) · 天然防御 ×\(String(format: "%.2f", prof.defenseBonus))"))
+        let terrainName = prof.summary.components(separatedBy: "：").first ?? "平原"
+        rows.append(makeLine("地形底质（\(terrainName)）", "商税 ×\(String(format: "%.2f", prof.tax)) · 天然防御 ×\(String(format: "%.2f", prof.defenseBonus))"))
         rows.append(makeLine("本地特产：\(spProf.name)（\(spProf.tier)）", spProf.effectText, "good"))
         for slot in WorldDepth.InfraSlot.allCases {
             let lvl = WorldDepth.infraLevel(r, provinceId: pid, slot: slot)

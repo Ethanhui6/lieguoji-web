@@ -1,38 +1,34 @@
 # 更新日志
 
-## 4.4.0 / build 164 — 2026-11-23
+## 4.2.1 / build 164 — 2026-11-23
 
-### 开局选图双缓冲丝滑过渡（根治「换一方山河」横线动画）
-- **双缓冲水墨溶叠与战略地势勘评（`TitleViews.swift`）**：
-  - 彻底移除新世界预览图（`terrainCard`）在点击「换一方山河」时覆盖全宽的 `InkBusy()` 4pt 横线进度条与半透明闪白遮罩，并取消手动换图的 110ms 人工等待延迟；
-  - 实装 `previousTerrain` + `terrain` 双缓冲无缝溶叠与 `1.022 -> 1.0` 微幅水墨落定过渡，点按「换一方山河」伴随 180° 旋钮微动效；支持直接轻点预览图切换「地貌 / 势力」、点左上角胶囊一键复制种子，并在底部勘测栏实时生成战略地势评语（如「星罗海疆 · 舟师争雄」「崇山天险 · 关隘易守」「广袤中土 · 铁骑逐鹿」）。
+### 一、开局换图与全局 60/120fps 点击流畅度重铸
+- **彻底清除「换一方山河」横穿预览图的横线动画（`TitleViews.swift`）**：
+  - 移除新世界预览卡（`terrainCard`）上方全宽 `InkBusy()` 4pt 横线进度条与半透明闪白遮罩，取消手动换图 110ms 人工等待；
+  - 升级为 `previousTerrain → terrain` 双缓冲水墨微绽溶叠过渡，按钮旋钮支持 180° 弹簧转动；支持轻点预览图直切「地貌 / 势力」、点左上角胶囊一键复制种子，并在底部勘测栏实时生成战略地势评语。
+- **全局点击零掉帧与 60fps 建世开卷（`MapView.swift`、`GameView.swift`、`GameModel.swift`、`PaperControls.swift`、`TitleViews.swift`）**：
+  - 解除程序镜头飞行与惯性滑行期间的 `presentsWithTransaction` 主线程同步阻塞（严格仅在手指物理拖拽/捏合时同步），并将弹窗打开后的后台 30fps 省电节流延后 `0.50s` 至弹簧动画落定后生效，彻底解决点选州郡/军团/底栏时的掉帧卡顿；
+  - 大地图点选新增 0 毫秒 GPU/CoreAnimation 朱墨落指双圈水波纹反馈（`showTapFeedback`）；移除 `StatTile` 开页首帧并发状态重排并合并点选刷新；
+  - 解耦「新世界 / 世界卷宗」弹窗退场动画与后台建世；`FoundingView` 升级为 60fps 独立时钟 + GPU `scaleEffect` 进度条，展卷提速至 3.6 秒（续档 1.8 秒）并支持「轻点立即入局 ›」一键跳过。
 
-### 开局建世与局内点击 60/120fps 全链路防掉帧架构升级
-- **解除 CoreAnimation / Metal 同步阻塞与面板首帧并发重排（`MapView.swift`、`GameView.swift`、`GameModel.swift`、`PaperControls.swift`、`TitleViews.swift`、`ArmySheets.swift`）**：
-  - 根治局内点击州郡、军团、舰队或底栏按钮时的掉帧卡顿：将 `MTKView.presentsWithTransaction` 严格限定在手指物理拖拽/捏合期间，程序镜头飞行与惯性滑行全面改为异步提交；并将弹窗打开后的后台地图 30fps 省电节流延后 `0.50s` 至 `.sheet` 弹簧动画完全落定后生效，彻底消除 30fps Metal 帧阻塞 60/120Hz 弹窗动画；
-  - 大地图点选州郡、军团、舰队新增 0 毫秒 CoreAnimation `CAShapeLayer` 朱墨水波纹即时落指反馈（`showTapFeedback`）；移除 `StatTile` 开页首帧逐格并发状态重排并合并选中军团/舰队的异步刷新，并拆分 `FleetSheet` 视图层级提升编译与渲染效率；
-  - 解耦标题页「新世界 / 世界卷宗」弹窗退场动画与后台 20,000 格建世计算；`FoundingView` 改为 60fps 独立时钟驱动 + GPU `scaleEffect` 进度条（关闭 `publishProgress` 对 `RootView` 的高频广播），新世界展卷提速至 3.6 秒（续档 1.8 秒）并新增「轻点立即入局 ›」一键跳过展卷功能。
-
-## 4.3.0 / build 163 — 2026-11-23
-
-### 四季与雨雪天象屏幕画卷回归与升级
+### 二、四季雨雪手绘粒子回归 × 36 帧连拍图集 × 60fps 历史画卷短视频
 - **恢复并升级手绘四季与天气屏幕粒子（`WeatherOverlay.swift`、`MapArt.swift`）**：
-  - 全面移除代码硬画的多边形粒子，恢复项目手绘桃花瓣（`fx-petal`）、丹枫（`fx-maple`）、冰晶雪花（`fx-snowflake`）与灾丰微标（`fx-weather-*`），按屏幕点尺寸精确归一化缩放；
-  - 新增远近双景深手绘斜风银雨（`fx-raindrop`）、流云山霭（`fx-cloud-mist`）以及霖雨/洪涝期间 36 帧（30fps）连续水花涟漪序列帧（`atlas-rain-ripple-36`）；修复 `ArtEmblem` 忽略传入印信图像的问题。
+  - 彻底停用代码手绘多边形，恢复手绘桃花瓣（`fx-petal`）、丹枫（`fx-maple`）、冰晶雪花（`fx-snowflake`）与灾丰宋画微标（按屏幕点尺寸精确归一化）；新增双景深手绘斜风银雨（`fx-raindrop`）、流云山霭（`fx-cloud-mist`）及霖雨 36 帧（30fps）水花涟漪序列帧（`atlas-rain-ripple-36`）；修复 `ArtEmblem` 徽记渲染。
+- **36～64 帧高密度拼接图集与 180 帧真 60fps 画卷视频（`SpriteAnimator.swift`、`MapEffects.swift`、`InkVideoPlayer.swift`）**：
+  - 陆战、海战、围城全面移除代码折线弧框，实装 `1536×1536`（`6×6` 共 36 帧 @ 30fps）高密度拼接图集 `atlas-battle-36`、`atlas-naval-36`、`atlas-siege-36`；
+  - 6 部画卷视频（`herald-war / naval / siege / peace / regime / weather.mp4`）全面重制为 `640×360` 180 帧真 60fps H.264 无缝循环动画并解除压暗裁切。
 
-### 36～64 帧高密度序列帧动画 × 180 帧真 60fps 历史画卷短视频
-- **多图拼接高帧率战场特效与高清画卷视频（`SpriteAnimator.swift`、`MapEffects.swift`、`InkVideoPlayer.swift`）**：
-  - 陆战、海战、围城全面移除 `CAShapeLayer` 简陋折线弧框，实装 `1536×1536`（`6×6` 共 36 帧 @ 30fps）连续拼接图集 `atlas-battle-36`（融合原作 40 帧双剑交击序列＋气浪火星）、`atlas-naval-36`（双舷火炮齐射＋黑铁炮弹火弧＋冲天水柱＋原作 64 帧海浪碎沫）与 `atlas-siege-36`（手绘燃烧石堡＋滚烟飞烬）；
-  - 6 部画卷视频（`herald-war / naval / siege / peace / regime / weather.mp4`）全面重制为 `640×360` 180 帧真 60fps H.264 无缝循环动画，并解除 `InkVideoStage` 宽幅遮罩裁暗限制。
+### 三、高倍放大地图细节、原作海陆棋子与军事/水师/国家页对齐重构
+- **高倍放大零三角山、零杂块（`MapRenderer.swift`、`MapLayers.swift`、`MapDetail.swift`）**：
+  - 清除放大后刺眼的平涂几何三角山（`MapLayers.relief`）、城郊黄褐色平行四边形杂块（`MapDetail.fineDetail`）、河道双影脱节与都城印记重影；
+  - 升级 7 套 `512×512` 焦墨古舆图地貌印章（`stamp-*`），在 Metal 正片叠底管线接入 `512×512` 无缝原作宣纸纤维细节纹理（`paper-detail.jpg`）。
+- **原作清晰单枚海陆棋子与页面对齐修复（`UnitArt.swift`、`WorldSheets.swift`、`ArmySheets.swift`、`NationSheet.swift`、`GameView.swift`、`Districts.swift`）**：
+  - 地图与面板统一回归原作清晰国色兵种与战舰/运兵船/商船单枚大棋；
+  - 军事总览重构为「军情 / 战局 / 陆军 / 水师」四主签整宽对齐（彻底解决水师标签被截断）并嵌入 60fps 海战画卷；净化舰队页内部调试文案并拆分视图层级提速渲染，新增国家页「国情卷宗」导语与舰队点击直达；
+  - 统一 `StatStrip` 图标基线与 `.medium` 默认展开高度，消除横屏右侧栏重复抬头与日期截断，并修复 `Districts` 区域只读查询污染冻结存档的问题。
 
-### 高倍缩放地图细节重铸与陆海军棋子/对应页面重构
-- **高倍放大零三角山、零拉伸噪块（`MapRenderer.swift`、`MapLayers.swift`、`MapDetail.swift`、`MapView.swift`）**：
-  - 清除放大后暴露的 `MapLayers.relief` 平涂几何三角块、`MapDetail.fineDetail` 城郊黄褐色平行四边形杂块、河道双影脱节与都城印记重影；
-  - 升级 7 套 `512×512` 高精古舆图铜版线雕地貌印章（`stamp-*`），并在 Metal 正片叠底管线接入 `512×512` 无缝原作宣纸纤维细节纹理（`paper-detail.jpg`）。
-- **原作陆海军高辨识棋子与军事/水师/国家页对齐重构（`UnitArt.swift`、`MapRenderer.swift`、`WorldSheets.swift`、`ArmySheets.swift`、`NationSheet.swift`、`PaperControls.swift`、`GameView.swift`、`Districts.swift`）**：
-  - 地图与面板统一回归原作清晰国色兵种与战舰/运兵船/商船图标（`World/unit-*.png`），单枚醒目大棋呈现；
-  - 军事总览重构为「军情 / 战局 / 陆军 / 水师」四主签整宽对齐，水师直接置顶可见并嵌入 60fps 海战画卷；净化舰队页内部调试文案，新增国家页「国情卷宗」导语与舰队点击直达；
-  - 修复 `StatStrip` 单列混排图标错位、面板 `.height(320)` / `.fraction(0.38)` 截断、横屏右侧栏重复抬头与日期截断，以及 `Districts` 区域查询写盘导致的冻结世界校验失败。
+### 四、GitHub 统一中文发布规范
+- GitHub Actions 自动读取版本号与构建号，打包输出带版本号的 `lieguoji-4.2.1-build164-unsigned.ipa`，将统一中文更新日志同步写入 Actions 摘要与 GitHub Release（`v4.2.1`）。
 
 ## 4.2.0 / build 162 — 2026-11-23
 

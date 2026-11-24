@@ -467,7 +467,10 @@ struct NationSheet: View {
         let myFleets = (state.fleets ?? []).filter { $0.nation == nation && $0.status != "lost" }
         let rulerSummary: String = {
             if let r = info.ruler {
-                return "\(r.title)\(r.styledName ?? r.name)执掌国柄"
+                let display = r.styledName ?? r.name
+                let title = r.title.trimmingCharacters(in: .whitespaces)
+                let full = (!title.isEmpty && !display.hasPrefix(title)) ? "\(title) \(display)" : display
+                return "\(full)执掌国柄"
             }
             return "中枢摄理国政"
         }()

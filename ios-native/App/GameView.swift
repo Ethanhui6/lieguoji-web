@@ -199,8 +199,8 @@ struct GameView: View {
                             if model.herald?.id == h.id { model.dismissHerald() }
                         }).id(h.id)
                             .transition(.asymmetric(
-                                insertion: .move(edge: .top).combined(with: .scale(scale: 0.94, anchor: .top)).combined(with: .opacity),
-                                removal: .move(edge: .top).combined(with: .opacity)
+                                insertion: .scale(scale: 0.94, anchor: .top).combined(with: .opacity),
+                                removal: .scale(scale: 0.96, anchor: .top).combined(with: .opacity)
                             ))
                     }
                 }
@@ -734,26 +734,27 @@ struct GameView: View {
     /// - 横屏 36pt 等高：右侧面板展开时自动收缩至左侧可见舆图区，绝不与侧栏或左侧导航坞碰撞。
     private func topBar(trailInset: CGFloat) -> some View {
         let h = barHeight
-        let toolW: CGFloat = landscape ? 32 : 34
+        let tightLandscape = landscape && panel != nil
+        let toolW: CGFloat = tightLandscape ? 28 : (landscape ? 32 : 34)
         let rtsActive = controller.boxSelecting || !controller.groupArmies.isEmpty
 
-        return HStack(spacing: 6) {
-            HStack(spacing: landscape ? 6 : 5) {
+        return HStack(spacing: tightLandscape ? 4 : 6) {
+            HStack(spacing: tightLandscape ? 4 : (landscape ? 6 : 5)) {
                 Button {
                     GameFeel.shared.tap()
                     show(.chronicle)
                 } label: {
-                    HStack(spacing: 4.5) {
+                    HStack(spacing: tightLandscape ? 3.5 : 4.5) {
                         Circle()
                             .fill(model.playing ? Theme.jade : Theme.ink2.opacity(0.42))
                             .frame(width: 5.5, height: 5.5)
                             .animation(Motion.panel, value: model.playing)
                         Text(compactDateText)
-                            .font(landscape ? Theme.kai(13.5) : Theme.kai(12.8))
+                            .font(tightLandscape ? Theme.kai(12.2) : (landscape ? Theme.kai(13.5) : Theme.kai(12.8)))
                             .foregroundStyle(Theme.ink)
                             .monospacedDigit()
                             .lineLimit(1)
-                            .minimumScaleFactor(0.76)
+                            .minimumScaleFactor(0.68)
                             .layoutPriority(1)
                             .contentTransition(.numericText())
                             .animation(Motion.tap, value: compactDateText)
@@ -765,7 +766,7 @@ struct GameView: View {
                                 Text(s.name).font(Theme.kai(10)).foregroundStyle(sColor)
                             }
                             .fixedSize(horizontal: true, vertical: false)
-                            .padding(.horizontal, 5).padding(.vertical, 1.5)
+                            .padding(.horizontal, tightLandscape ? 4 : 5).padding(.vertical, 1.5)
                             .background(sColor.opacity(0.11), in: Capsule())
                             .overlay(Capsule().stroke(sColor.opacity(0.28), lineWidth: 0.55))
                             .animation(Motion.fade, value: s.rawValue)
@@ -796,7 +797,7 @@ struct GameView: View {
                     InkIcon(glyph: .computer, size: 12, weight: 1.75).foregroundStyle(Theme.jade)
                 }
             }
-            .padding(.horizontal, landscape ? 10 : 9)
+            .padding(.horizontal, tightLandscape ? 7 : (landscape ? 10 : 9))
             .frame(height: h)
             .glass(Capsule())
             .animation(Motion.panel, value: (model.state?.wars.count ?? 0) > 0)

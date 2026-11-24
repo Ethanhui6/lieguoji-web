@@ -24,7 +24,7 @@ on:
       - 'ios-native/**'
       - '.github/workflows/ios-native-unsigned.yml'
 permissions:
-  contents: read
+  contents: write
 jobs:
   core-linux:
     if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.run_tests)
@@ -98,17 +98,81 @@ jobs:
       - name: Archive unsigned application
         run: |
           xcodebuild -project ios-native/LieguojiNative.xcodeproj -scheme LieguojiNative -configuration Release -destination 'generic/platform=iOS' -archivePath ios-native/build/LieguojiNative.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO archive
+      - name: Read version and release notes
+        id: meta
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+
+          yml = Path('ios-native/project.yml').read_text(encoding='utf-8')
+          ver_m = re.search(r'MARKETING_VERSION:\s*"([^"]+)"', yml)
+          bld_m = re.search(r'CURRENT_PROJECT_VERSION:\s*"([^"]+)"', yml)
+          version = ver_m.group(1) if ver_m else '0.0.0'
+          build = bld_m.group(1) if bld_m else '0'
+          ipa_name = f"lieguoji-{version}-build{build}-unsigned.ipa"
+          artifact_name = f"lieguoji-{version}-build{build}-unsigned"
+
+          changelog = Path('CHANGELOG.md').read_text(encoding='utf-8')
+          sections = re.split(r'(?m)^(?=## )', changelog)
+          notes = ''
+          for sec in sections:
+              if sec.startswith(f'## {version}'):
+                  notes = sec.strip()
+                  break
+          if not notes:
+              for sec in sections:
+                  if sec.startswith('## '):
+                      notes = sec.strip()
+                      break
+          if not notes:
+              notes = f"## {version} / build {build}\n\n- 列国纪 iOS 原生未签名构建包。"
+
+          Path('/tmp/release-notes.md').write_text(notes + '\n', encoding='utf-8')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as out:
+              out.write(f"version={version}\n")
+              out.write(f"build={build}\n")
+              out.write(f"ipa_name={ipa_name}\n")
+              out.write(f"artifact_name={artifact_name}\n")
+          PY
       - name: Package
         run: |
           mkdir -p ios-native/build/Payload
           cp -R ios-native/build/LieguojiNative.xcarchive/Products/Applications/*.app ios-native/build/Payload/
-          ditto -c -k --keepParent ios-native/build/Payload ios-native/build/lieguoji-native-unsigned.ipa
+          ditto -c -k --keepParent ios-native/build/Payload "ios-native/build/${{ steps.meta.outputs.ipa_name }}"
       - uses: actions/upload-artifact@v4
         with:
-          name: lieguoji-native-unsigned
-          path: ios-native/build/lieguoji-native-unsigned.ipa
+          name: ${{ steps.meta.outputs.artifact_name }}
+          path: ios-native/build/${{ steps.meta.outputs.ipa_name }}
           if-no-files-found: error
           retention-days: 14
+      - name: Write Chinese summary and publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          BUILD="${{ steps.meta.outputs.build }}"
+          IPA_NAME="${{ steps.meta.outputs.ipa_name }}"
+          IPA_PATH="ios-native/build/${IPA_NAME}"
+          {
+            echo "# 列国纪 iOS 原生版 v${VERSION}（构建 ${BUILD}）"
+            echo ""
+            echo "- 安装包：\`${IPA_NAME}\`"
+            echo "- 提交：\`${GITHUB_SHA::8}\`"
+            echo ""
+            cat /tmp/release-notes.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            TAG="v${VERSION}"
+            TITLE="列国纪 v${VERSION}（构建 ${BUILD}）"
+            if gh release view "${TAG}" >/dev/null 2>&1; then
+              gh release edit "${TAG}" --title "${TITLE}" --notes-file /tmp/release-notes.md --latest
+              gh release upload "${TAG}" "${IPA_PATH}" --clobber
+            else
+              gh release create "${TAG}" "${IPA_PATH}" --title "${TITLE}" --notes-file /tmp/release-notes.md --latest --target "${GITHUB_SHA}"
+            fi
+          fi
   screenshots:
     # The app tours itself in the simulator (LGJ_SHOT=1); manual dispatch only so pushes ship IPA fast.
     if: github.event_name == 'workflow_dispatch' && inputs.run_screenshots

@@ -198,24 +198,24 @@ struct NationDecreesTab: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 22) {
             if !info.alive {
-                Text("此国已亡，无法颁布政令。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
+                Text("此国已亡，无法施政。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
             } else {
-                // 全图统一自动委托总控条（置顶一键掌控全天下自动施政，绝不强迫逐国手动点开设置）
+                // 顶部极简委托栏（合并旧版重复托管按钮，平铺于宣纸面，零彩色大卡）
                 globalDelegationCard
 
-                // 顶部主分类切换（长期国策 vs 三大御批诏令）
+                // 主分类极简下划线页签
                 ChipPicker(items: Category.allCases.map { ($0, $0.rawValue) }, selection: $category)
                     .padding(.horizontal, Theme.Layout.pageInset)
 
                 if category == .reforms {
-                    reformsSection
+                    ViewBoundary { reformsSection }
                 } else {
-                    decreesGridSection
+                    ViewBoundary { decreesGridSection }
                 }
 
-                // 禅位择君置于底部独立卡，不挤占核心政策视区
+                // 禅位择君置于底部独立平铺行
                 throneCard
             }
         }
@@ -225,31 +225,25 @@ struct NationDecreesTab: View {
     private var globalDelegationCard: some View {
         let globalOn = info.globalAutoGovern ?? true
         let nationOn = info.autoStrategy ?? globalOn
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                InkIcon(glyph: .edict, size: 17, weight: 1.85, accent: (globalOn ? Theme.jade : Theme.seal).opacity(0.24))
-                    .foregroundStyle(globalOn ? Theme.jade : Theme.seal)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("自动治理委托").font(Theme.section).foregroundStyle(Theme.ink)
-                    Text(globalOn ? "已统一委托天下各国自动施政，无需逐国手动" : "全图已转为手动治理，可一键恢复统一委托")
-                        .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
-                }
-                Spacer(minLength: 4)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                PhosphorIcon(glyph: .sliders, size: 15, weight: .light).foregroundStyle(Theme.ink2)
+                Text("施政委托").font(Theme.serif(15.5)).tracking(1.4).foregroundStyle(Theme.ink)
+                Spacer()
+                Text(globalOn ? "天下自动治理中" : "全图手动治理").font(Theme.sans(12)).foregroundStyle(globalOn ? Theme.ink2 : Theme.seal)
             }
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 Button {
                     GameFeel.shared.tap()
                     runDecreeKind(globalOn ? "globalAutoGovern:off" : "globalAutoGovern:on",
                                   fallback: globalOn ? "已关闭全图统一委托" : "已开启全图列国统一自动治理")
                 } label: {
-                    HStack(spacing: 5) {
-                        Circle().fill(globalOn ? Theme.paper2 : Theme.jade).frame(width: 6.5, height: 6.5)
-                        Text(globalOn ? "全图自动中 · 点按关闭" : "一键全图自动治理").font(Theme.caption)
-                    }
-                    .foregroundStyle(globalOn ? Theme.paper2 : Theme.jade)
-                    .frame(maxWidth: .infinity).frame(height: 34)
-                    .background(globalOn ? Theme.jade : Theme.jade.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(globalOn ? Color.clear : Theme.jade.opacity(0.32), lineWidth: 0.8))
+                    Text(globalOn ? "全图托管中 · 点按关闭" : "开启全图自动治理")
+                        .font(Theme.sans(13, weight: .medium))
+                        .foregroundStyle(globalOn ? Theme.paperLight : Theme.ink)
+                        .frame(maxWidth: .infinity).frame(height: 38)
+                        .background(globalOn ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(globalOn ? Color.clear : Theme.ink.opacity(0.24), lineWidth: 0.75))
                 }
                 .buttonStyle(PressStyle())
                 .disabled(busy)
@@ -259,21 +253,17 @@ struct NationDecreesTab: View {
                     runDecreeKind(nationOn ? "strategyAuto:off" : "strategyAuto:on",
                                   fallback: nationOn ? "本国已切为手动接管" : "本国已恢复自动治理")
                 } label: {
-                    HStack(spacing: 5) {
-                        Circle().fill(nationOn ? Theme.jade : Theme.seal).frame(width: 6.5, height: 6.5)
-                        Text(nationOn ? "本国：委托中" : "本国：已接管").font(Theme.caption)
-                    }
-                    .foregroundStyle(nationOn ? Theme.ink : Theme.seal)
-                    .frame(maxWidth: .infinity).frame(height: 34)
-                    .background((nationOn ? Theme.ink : Theme.seal).opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke((nationOn ? Theme.ink : Theme.seal).opacity(0.24), lineWidth: 0.8))
+                    Text(nationOn ? "本国：AI 托管" : "本国：手动接管")
+                        .font(Theme.sans(13, weight: nationOn ? .regular : .medium))
+                        .foregroundStyle(nationOn ? Theme.ink : Theme.seal)
+                        .frame(maxWidth: .infinity).frame(height: 38)
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(nationOn ? Theme.hairline : Theme.seal.opacity(0.5), lineWidth: 0.75))
                 }
                 .buttonStyle(PressStyle())
                 .disabled(busy)
             }
+            EditorialDivider()
         }
-        .padding(14)
-        .paperCard(tint: globalOn ? Theme.jade : Theme.seal)
         .padding(.horizontal, Theme.Layout.pageInset)
     }
 
@@ -284,151 +274,121 @@ struct NationDecreesTab: View {
         let activeRows = list.filter(\.on)
         let net = Self.netChips(for: activeRows.map(\.id))
 
-        // 1. 一键智能战略预设 + 季度自动托管（按战时/兴商/维稳/扩张/科研自动组合最优互斥国策）
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("智能战略一键调配").font(Theme.section).foregroundStyle(Theme.ink)
-                    Text("轻点方案自动匹配互斥国策与权力重心").font(Theme.caption).foregroundStyle(Theme.ink2)
+        VStack(alignment: .leading, spacing: 22) {
+            // 1. 现行国策总效（极简古籍统计 + Cormorant Garamond 衬线数字，无彩色胶囊堆砌）
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("现行长期国策").font(Theme.serif(16)).tracking(1.4).foregroundStyle(Theme.ink)
+                    Spacer()
+                    EditorialValueText("\(activeRows.count)/\(max(1, list.count))", size: 22, color: Theme.seal)
                 }
-                Spacer()
-                let autoOn = info.autoStrategy == true
-                Button {
-                    GameFeel.shared.tap()
-                    runDecreeKind(autoOn ? "strategyAuto:off" : "strategyAuto:on", fallback: autoOn ? "已关闭智能托管" : "已开启季度智能托管")
-                } label: {
-                    HStack(spacing: 4) {
-                        Circle().fill(autoOn ? Theme.jade : Theme.ink2.opacity(0.45)).frame(width: 6.5, height: 6.5)
-                        Text(autoOn ? "自动托管中" : "开启托管").font(Theme.caption)
-                    }
-                    .foregroundStyle(autoOn ? Theme.jade : Theme.ink2)
-                    .padding(.horizontal, 9).frame(height: 28)
-                    .background((autoOn ? Theme.jade : Theme.ink).opacity(0.09), in: Capsule())
-                    .overlay(Capsule().stroke((autoOn ? Theme.jade : Theme.ink).opacity(0.24), lineWidth: 0.7))
+                InkBar(fraction: Double(activeRows.count) / Double(max(1, list.count)), color: Theme.seal, track: Theme.hairline, height: 2.5)
+                if net.isEmpty {
+                    Text("尚未确立长期国策，可在下方择定立国路线或开启专项制度。")
+                        .font(Theme.sans(12.5)).foregroundStyle(Theme.ink2)
+                } else {
+                    Text(net.map(\.text).joined(separator: "  ·  "))
+                        .font(Theme.sans(12.5)).foregroundStyle(Theme.ink2).monospacedDigit().lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .buttonStyle(PressStyle())
-                .disabled(busy)
-            }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(Self.strategies) { sp in
-                        let active = info.strategy == sp.id
-                        Button {
-                            GameFeel.shared.tap()
-                            runDecreeKind("strategy:\(sp.id)", fallback: "已启用「\(sp.title)」方案")
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 4) {
-                                    InkIcon(glyph: sp.glyph, size: 12, weight: 1.8).foregroundStyle(active ? Theme.paper2 : sp.tone)
-                                    Text(sp.title).font(Theme.label).foregroundStyle(active ? Theme.paper2 : Theme.ink)
-                                }
-                                Text(sp.note).font(Theme.caption).foregroundStyle(active ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1)
-                            }
-                            .padding(.horizontal, 11).padding(.vertical, 7)
-                            .background(active ? sp.tone : Theme.paper2.opacity(0.9), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(active ? Color.clear : sp.tone.opacity(0.25), lineWidth: 0.85))
-                        }
-                        .buttonStyle(PressStyle())
-                        .disabled(busy)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .paperCard()
-        .padding(.horizontal, Theme.Layout.pageInset)
-
-        // 2. 苹果式国策总效洞察卡（Apple Insight Card 构图）
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("现行国策总览").font(Theme.caption).foregroundStyle(Theme.ink2)
-                    Text("已施行 \(activeRows.count) 项制度").font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
-                }
-                Spacer()
-                Text("\(activeRows.count)/\(max(1, list.count))")
-                    .font(Theme.kai(20)).foregroundStyle(Theme.seal).monospacedDigit()
-            }
-            InkBar(fraction: Double(activeRows.count) / Double(max(1, list.count)), color: Theme.seal, track: Theme.ink.opacity(0.08), height: 4.5)
-            if net.isEmpty {
-                Text("尚未确立长期国策，可在下方择定立国路线或开启专项制度。")
-                    .font(Theme.caption).foregroundStyle(Theme.ink2)
-            } else {
-                WrapLayout(spacing: 6) {
-                    ForEach(net) { chip in
-                        Text(chip.text)
-                            .font(Theme.caption)
-                            .foregroundStyle(chip.good ? Theme.jade : Theme.seal)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background((chip.good ? Theme.jade : Theme.seal).opacity(0.10), in: Capsule())
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .paperCard()
-        .padding(.horizontal, Theme.Layout.pageInset)
-
-        // 2. 四大治国领域细分筛选（统一温润朱砂选中态，告别突兀黑底）
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
-                ForEach(ReformDomain.allCases, id: \.self) { dom in
-                    let on = reformDomain == dom
-                    Button {
-                        GameFeel.shared.tap()
-                        withAnimation(Motion.tap) { reformDomain = dom }
-                    } label: {
-                        Text(dom.rawValue)
-                            .font(Theme.label)
-                            .foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                            .padding(.horizontal, 12).frame(height: 30)
-                            .background(on ? Theme.seal : Theme.paper2.opacity(0.88), in: Capsule())
-                            .overlay(Capsule().stroke(on ? Color.clear : Theme.ink.opacity(0.15), lineWidth: 0.85))
-                    }
-                    .buttonStyle(PressStyle())
-                }
+                EditorialDivider()
             }
             .padding(.horizontal, Theme.Layout.pageInset)
-        }
 
-        if list.isEmpty {
-            Group2 { Row(label: "国策", value: "当前政体暂无可选长期国策") }
-                .padding(.horizontal, Theme.Layout.pageInset)
-        } else {
-            // 3. 互斥立国路线（双栏/三栏直观对照卡片）
-            let groups = Self.mutexGroups.filter { g in
-                (reformDomain == .all || g.domain == reformDomain) && g.ids.contains { byId[$0] != nil }
-            }
-            if !groups.isEmpty {
-                SectionLabel("立国路线（同组互斥）")
-                ForEach(groups) { g in
-                    let available = g.ids.compactMap { byId[$0] }
-                    mutexRouteCard(group: g, rows: available)
+            // 2. 一键战略路线（精简横向单行细框，去冗余第二个托管开关）
+            VStack(alignment: .leading, spacing: 10) {
+                Text("战略方针预设").font(Theme.sans(12, weight: .medium)).tracking(1.0).foregroundStyle(Theme.ink2)
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Self.strategies) { sp in
+                            let active = info.strategy == sp.id
+                            Button {
+                                GameFeel.shared.tap()
+                                runDecreeKind("strategy:\(sp.id)", fallback: "已启用「\(sp.title)」方案")
+                            } label: {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(sp.title)
+                                        .font(Theme.sans(13.5, weight: active ? .semibold : .medium))
+                                        .foregroundStyle(active ? Theme.paperLight : Theme.ink)
+                                    Text(sp.note)
+                                        .font(Theme.sans(11.5))
+                                        .foregroundStyle(active ? Theme.paperLight.opacity(0.82) : Theme.ink2)
+                                        .lineLimit(1)
+                                }
+                                .padding(.horizontal, 13).padding(.vertical, 9)
+                                .background(active ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(active ? Color.clear : Theme.hairline, lineWidth: 0.75))
+                            }
+                            .buttonStyle(PressStyle())
+                            .disabled(busy)
+                        }
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
                 }
             }
 
-            // 4. 专项制度拨钮（Apple Settings Switch 风格）
-            let groupedIds = Set(Self.mutexGroups.flatMap(\.ids))
-            let specIds = Set(Self.independentSpecs.map(\.id))
-            let specRows: [NationInfo.ReformRow] = Self.independentSpecs.compactMap { spec in
-                guard reformDomain == .all || spec.domain == reformDomain else { return nil }
-                return byId[spec.id]
-            }
-            let extraRows: [NationInfo.ReformRow] = reformDomain == .all
-                ? list.filter { !groupedIds.contains($0.id) && !specIds.contains($0.id) }
-                : []
-            let independents = specRows + extraRows
-            if !independents.isEmpty {
-                SectionLabel("专项制度（独立开关）")
-                Group2 {
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(independents.enumerated()), id: \.element.id) { idx, r in
-                            independentSwitchRow(r)
-                            if idx < independents.count - 1 { Divider2() }
+            // 3. 四大治国领域极简筛选
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 18) {
+                    ForEach(ReformDomain.allCases, id: \.self) { dom in
+                        let on = reformDomain == dom
+                        Button {
+                            GameFeel.shared.tap()
+                            withAnimation(Motion.tap) { reformDomain = dom }
+                        } label: {
+                            VStack(spacing: 5) {
+                                Text(dom.rawValue)
+                                    .font(Theme.sans(13.5, weight: on ? .semibold : .regular))
+                                    .foregroundStyle(on ? Theme.seal : Theme.ink2)
+                                Rectangle()
+                                    .fill(on ? Theme.seal : Color.clear)
+                                    .frame(height: 1.5)
+                            }
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
+            }
+
+            if list.isEmpty {
+                Group2 { Row(label: "国策", value: "当前政体暂无可选长期国策") }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+            } else {
+                let groups = Self.mutexGroups.filter { g in
+                    (reformDomain == .all || g.domain == reformDomain) && g.ids.contains { byId[$0] != nil }
+                }
+                if !groups.isEmpty {
+                    SectionLabel("立国路线 · 同组互斥")
+                    ForEach(groups) { g in
+                        let available = g.ids.compactMap { byId[$0] }
+                        mutexRouteCard(group: g, rows: available)
+                    }
+                }
+
+                let groupedIds = Set(Self.mutexGroups.flatMap(\.ids))
+                let specIds = Set(Self.independentSpecs.map(\.id))
+                let specRows: [NationInfo.ReformRow] = Self.independentSpecs.compactMap { spec in
+                    guard reformDomain == .all || spec.domain == reformDomain else { return nil }
+                    return byId[spec.id]
+                }
+                let extraRows: [NationInfo.ReformRow] = reformDomain == .all
+                    ? list.filter { !groupedIds.contains($0.id) && !specIds.contains($0.id) }
+                    : []
+                let independents = specRows + extraRows
+                if !independents.isEmpty {
+                    SectionLabel("专项制度 · 独立开关")
+                    Group2 {
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(independents.enumerated()), id: \.element.id) { idx, r in
+                                independentSwitchRow(r)
+                                if idx < independents.count - 1 { Divider2() }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                }
             }
         }
     }
@@ -436,17 +396,11 @@ struct NationDecreesTab: View {
     private func mutexRouteCard(group: MutexGroup, rows: [NationInfo.ReformRow]) -> some View {
         let activeName = rows.first(where: \.on)?.name
         return VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                Text(group.title).font(Theme.body).foregroundStyle(Theme.ink)
+            HStack(spacing: 8) {
+                Text(group.title).font(Theme.sans(14, weight: .medium)).foregroundStyle(Theme.ink)
                 Spacer()
-                if let activeName {
-                    Text("已行 · \(activeName)")
-                        .font(Theme.caption).foregroundStyle(Theme.seal)
-                        .padding(.horizontal, 8).padding(.vertical, 2)
-                        .background(Theme.seal.opacity(0.10), in: Capsule())
-                } else {
-                    Text(group.hint).font(Theme.caption).foregroundStyle(Theme.ink2)
-                }
+                Text(activeName.map { "已行 · \($0)" } ?? group.hint)
+                    .font(Theme.sans(12)).foregroundStyle(activeName != nil ? Theme.seal : Theme.ink2)
             }
             HStack(spacing: 8) {
                 ForEach(rows, id: \.id) { r in
@@ -455,75 +409,68 @@ struct NationDecreesTab: View {
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 4) {
                                 Text(r.name)
-                                    .font(Theme.body)
+                                    .font(Theme.sans(14, weight: r.on ? .semibold : .medium))
                                     .foregroundStyle(r.on ? Theme.seal : Theme.ink)
                                     .lineLimit(1).minimumScaleFactor(0.8)
                                 Spacer(minLength: 2)
-                                Image(systemName: r.on ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(r.on ? Theme.seal : Theme.ink2.opacity(0.35))
+                                if r.on {
+                                    PhosphorIcon(glyph: .check, size: 13, weight: .fill).foregroundStyle(Theme.seal)
+                                }
                             }
                             VStack(alignment: .leading, spacing: 3) {
                                 ForEach(chips.prefix(3)) { chip in
                                     Text(chip.text)
-                                        .font(Theme.kai(11))
-                                        .foregroundStyle(chip.good ? Theme.jade : Theme.seal)
+                                        .font(Theme.sans(11.5))
+                                        .foregroundStyle(chip.good ? Theme.ink2 : Theme.seal)
+                                        .monospacedDigit()
                                         .lineLimit(1)
                                 }
                             }
                             Spacer(minLength: 0)
                         }
-                        .padding(10)
-                        .frame(maxWidth: .infinity, minHeight: 82, alignment: .topLeading)
-                        .background(r.on ? Theme.seal.opacity(0.07) : Theme.paper.opacity(0.58), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(r.on ? Theme.seal.opacity(0.55) : Theme.ink.opacity(0.12), lineWidth: r.on ? 1.2 : 0.8))
-                        .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .padding(12)
+                        .frame(maxWidth: .infinity, minHeight: 84, alignment: .topLeading)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                                .stroke(r.on ? Theme.seal : Theme.hairline, lineWidth: r.on ? 1.15 : 0.75)
+                        )
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(PressStyle())
                     .disabled(busy)
                 }
             }
+            EditorialDivider().padding(.top, 4)
         }
-        .padding(13)
-        .paperCard()
         .padding(.horizontal, Theme.Layout.pageInset)
     }
 
     private func independentSwitchRow(_ r: NationInfo.ReformRow) -> some View {
         let chips = Self.effectChips(for: r.id)
         return Button { toggleReform(r) } label: {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(r.name).font(Theme.body).foregroundStyle(r.on ? Theme.ink : Theme.ink.opacity(0.88))
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(r.name).font(Theme.sans(14.5, weight: r.on ? .semibold : .regular)).foregroundStyle(r.on ? Theme.seal : Theme.ink)
                     if !chips.isEmpty {
-                        HStack(spacing: 5) {
-                            ForEach(chips.prefix(3)) { chip in
-                                Text(chip.text)
-                                    .font(Theme.kai(11))
-                                    .foregroundStyle(chip.good ? Theme.jade : Theme.seal)
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .background((chip.good ? Theme.jade : Theme.seal).opacity(0.09), in: Capsule())
-                            }
-                        }
+                        Text(chips.prefix(3).map(\.text).joined(separator: "  ·  "))
+                            .font(Theme.sans(12)).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
                     } else {
-                        Text(r.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                        Text(r.text).font(Theme.sans(12)).foregroundStyle(Theme.ink2).lineLimit(1)
                     }
                 }
-                Spacer(minLength: 6)
-                // Apple 规范 Switch 控件（轨道 Track + 圆钮 Thumb）
+                Spacer(minLength: 8)
                 ZStack(alignment: r.on ? .trailing : .leading) {
                     Capsule()
                         .fill(r.on ? Theme.seal : Theme.ink.opacity(0.16))
-                        .frame(width: 44, height: 26)
+                        .frame(width: 42, height: 24)
                     Circle()
-                        .fill(Theme.paper2)
-                        .shadow(color: .black.opacity(0.16), radius: 2, y: 1)
-                        .frame(width: 22, height: 22)
+                        .fill(Theme.paperLight)
+                        .frame(width: 20, height: 20)
                         .padding(2)
                 }
                 .animation(Motion.tap, value: r.on)
             }
-            .padding(.horizontal, 14).padding(.vertical, 11)
+            .padding(.horizontal, 4).padding(.vertical, 14)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -534,68 +481,69 @@ struct NationDecreesTab: View {
     private var decreesGridSection: some View {
         let items = Self.decrees.filter { $0.category == category }
         let lex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
-        SectionLabel("\(lex.decreePrefix)\(category.rawValue)（点击立即施行）")
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-            ForEach(items) { item in
-                Button { issue(item) } label: {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            InkIcon(glyph: item.glyph, size: 18, weight: 1.85, accent: item.tone.opacity(0.22))
-                                .foregroundStyle(item.tone)
-                                .frame(width: 32, height: 32)
-                                .background(item.tone.opacity(0.10), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                            Spacer()
-                            Text(item.badge)
-                                .font(Theme.kai(11)).foregroundStyle(item.tone)
-                                .padding(.horizontal, 7).padding(.vertical, 2.5)
-                                .background(item.tone.opacity(0.09), in: Capsule())
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.title).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                            Text(item.note).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
-                        }
-                        Spacer(minLength: 0)
-                        HStack {
-                            Spacer()
-                            Text(lex.enactVerb).font(Theme.kai(11)).foregroundStyle(item.tone)
-                        }
+        VStack(alignment: .leading, spacing: 8) {
+            SectionLabel("\(lex.decreePrefix)\(category.rawValue)")
+            Text("政令施行后须经休养期（90–180 日）方可再颁。")
+                .font(Theme.sans(12)).foregroundStyle(Theme.ink2)
+                .padding(.horizontal, Theme.Layout.sectionInset)
+                .padding(.bottom, 4)
+
+            VStack(spacing: 0) {
+                EditorialDivider()
+                ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
+                    let isCostly = item.badge.contains("−") || item.badge.contains("耗") || item.note.contains("−")
+                    EditorialActionRow(
+                        title: item.title,
+                        detail: item.note,
+                        consequence: item.badge,
+                        icon: Self.phosphorFor(item.glyph),
+                        accentConsequence: isCostly,
+                        disabled: busy
+                    ) {
+                        issue(item)
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
-                    .paperCard()
-                    .opacity(busy ? 0.55 : 1)
-                    .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+                    if idx < items.count - 1 { EditorialDivider() }
                 }
-                .buttonStyle(PressStyle())
-                .disabled(busy)
+                EditorialDivider()
             }
+            .padding(.horizontal, Theme.Layout.pageInset)
         }
-        .padding(.horizontal, Theme.Layout.pageInset)
+    }
+
+    private static func phosphorFor(_ g: InkGlyph) -> PhosphorGlyph {
+        switch g {
+        case .goods: return .goods
+        case .polity: return .polity
+        case .economy: return .economy
+        case .region: return .region
+        case .views: return .views
+        case .military: return .military
+        case .command: return .command
+        case .nation: return .nation
+        case .war: return .war
+        case .anchor: return .anchor
+        case .chronicle: return .chronicle
+        case .culture: return .culture
+        case .religion: return .religion
+        case .house: return .house
+        case .alliance: return .alliance
+        case .peace: return .peace
+        default: return .edict
+        }
     }
 
     private var throneCard: some View {
         let lex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
-        return Group2 {
-            Button {
-                GameFeel.shared.tap()
+        return VStack(spacing: 0) {
+            EditorialDivider()
+            EditorialActionRow(
+                title: lex.successionAction,
+                detail: info.ruler.map { "现任 · \($0.styledName ?? ($0.title + $0.name))" } ?? "择本国在世贤能执掌国政",
+                icon: .crown
+            ) {
                 onEnthrone()
-            } label: {
-                HStack(spacing: 10) {
-                    InkIcon(glyph: .crown, size: 18, weight: 1.85, accent: Theme.seal.opacity(0.26))
-                        .foregroundStyle(Theme.seal)
-                        .frame(width: 32, height: 32)
-                        .background(Theme.seal.opacity(0.09), in: Circle())
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(lex.successionAction).font(Theme.body).foregroundStyle(Theme.ink)
-                        Text(info.ruler.map { "现任：\($0.styledName ?? ($0.title + $0.name))" } ?? "择本国在世贤能执掌国政")
-                            .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
-                    }
-                    Spacer(minLength: 4)
-                    InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal)
-                }
-                .padding(.horizontal, 14).padding(.vertical, 10).contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            EditorialDivider()
         }
         .padding(.horizontal, Theme.Layout.pageInset)
     }

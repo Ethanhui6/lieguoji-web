@@ -8,79 +8,63 @@ struct ChipPicker<T: Hashable>: View {
     @Binding var selection: T
     @Namespace private var pill
     var body: some View {
-        // 严格视觉一致性：只有当整排所有选项均配有手绘图标时才展示图标，杜绝同一排中「有的有图标、有的纯文字」的割裂感。
-        let showIcons = !items.isEmpty && items.allSatisfy { Glyph.of($0.1) != nil }
-        // 5 项且每项为 2-4 字短词（如国家页五主签）采用整宽分段栏；超过 5 项或含长标题自动横向滚动，彻底杜绝文字挤压错乱。
         let useScroll = items.count > 5 || (items.count == 5 && items.contains { $0.1.count > 4 })
-        if useScroll {
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(items.indices, id: \.self) { i in
-                            chip(items[i], showIcons: showIcons, segmented: false)
-                                .id(items[i].0)
+        VStack(spacing: 0) {
+            if useScroll {
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 20) {
+                            ForEach(items.indices, id: \.self) { i in
+                                chip(items[i], segmented: false)
+                                    .id(items[i].0)
+                            }
                         }
+                        .padding(.horizontal, 2)
                     }
-                    .padding(.vertical, 1)
+                    .onAppear { proxy.scrollTo(selection, anchor: .center) }
+                    .onChange(of: selection) { _, next in
+                        withAnimation(Motion.tap) { proxy.scrollTo(next, anchor: .center) }
+                    }
                 }
-                .onAppear { proxy.scrollTo(selection, anchor: .center) }
-                .onChange(of: selection) { _, next in
-                    withAnimation(Motion.tap) { proxy.scrollTo(next, anchor: .center) }
-                }
-            }
-        } else {
-            // 苹果式同心圆角分段控件（外槽 14pt continuous + 3.5pt 内边距 + 内滑块 10.5pt continuous）
-            let outerShape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-            HStack(spacing: 4) {
-                ForEach(items.indices, id: \.self) { i in
-                    chip(items[i], showIcons: showIcons, segmented: true)
+            } else {
+                HStack(spacing: 0) {
+                    ForEach(items.indices, id: \.self) { i in
+                        chip(items[i], segmented: true)
+                    }
                 }
             }
-            .padding(3.5)
-            .background(Theme.wash.opacity(0.68), in: outerShape)
-            .overlay(outerShape.stroke(Theme.ink.opacity(0.11), lineWidth: 0.8))
+            Rectangle().fill(Theme.hairline).frame(height: 0.75)
         }
     }
-    private func chip(_ item: (T, String), showIcons: Bool, segmented: Bool) -> some View {
+    private func chip(_ item: (T, String), segmented: Bool) -> some View {
         let on = item.0 == selection
-        let corner: CGFloat = segmented ? 10.5 : Theme.Control.cornerControl
         return Button {
             GameFeel.shared.tap()
             withAnimation(Motion.tap) { selection = item.0 }
         } label: {
-            VStack(spacing: 2) {
-                if showIcons, let s = Glyph.of(item.1) {
-                    if let g = GameActionLabel.glyph(for: s) {
-                        InkIcon(glyph: g, size: 15, weight: on ? 1.85 : 1.55, filled: on,
-                                accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.24))
-                            .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.86))
-                            .frame(height: 17)
-                    } else {
-                        InkIcon(glyph: .edict, size: 15, weight: on ? 1.85 : 1.55, filled: on,
-                                accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.24))
-                            .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
-                            .frame(height: 17)
+            VStack(spacing: 8) {
+                Text(item.1)
+                    .font(on ? Theme.serif(14.5) : Theme.sans(14, weight: .regular))
+                    .tracking(on ? 1.0 : 0.3)
+                    .foregroundStyle(on ? Theme.seal : Theme.ink2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                ZStack {
+                    Color.clear.frame(height: 1.75)
+                    if on {
+                        Rectangle()
+                            .fill(Theme.seal)
+                            .frame(height: 1.75)
+                            .matchedGeometryEffect(id: "chip-underline", in: pill)
                     }
                 }
-                Text(item.1).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
             }
-            .padding(.horizontal, segmented ? 4 : 13)
-            .frame(minWidth: segmented ? nil : 62, maxWidth: segmented ? .infinity : nil)
-            .frame(height: showIcons ? 46 : 36)
-            .background {
-                let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
-                if on {
-                    shape.fill(Theme.seal)
-                        .matchedGeometryEffect(id: "chip-pill", in: pill)
-                        .shadow(color: Theme.seal.opacity(0.24), radius: 4, y: 1.5)
-                } else if !segmented {
-                    shape.fill(Theme.paper2.opacity(0.88))
-                        .overlay(shape.stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
-                }
-            }
-            .contentShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
+            .padding(.top, 8)
+            .padding(.horizontal, segmented ? 4 : 2)
+            .frame(maxWidth: segmented ? .infinity : nil)
+            .contentShape(Rectangle())
         }
-        .buttonStyle(PressStyle())
+        .buttonStyle(.plain)
     }
 }
 
@@ -214,7 +198,7 @@ struct StatTile: View {
         }
     }
     private var content: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Group {
                 if showIcon {
                     GlyphLabel(text: label)
@@ -222,24 +206,23 @@ struct StatTile: View {
                     Text(label)
                 }
             }
-            .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.78)
+            .font(Theme.sans(12)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.78)
             .frame(height: 16, alignment: .leading)
-            Text(value).font(Theme.kai(18.5)).foregroundStyle(warn ? Theme.seal : Theme.ink)
-                .lineLimit(1).minimumScaleFactor(0.72).monospacedDigit()
-                .frame(height: 23, alignment: .leading)
+            EditorialValueText(value, size: 20, color: warn ? Theme.seal : Theme.ink)
+                .frame(height: 26, alignment: .leading)
                 .contentTransition(.numericText()).animation(Motion.tap, value: value)
             if let fraction {
-                InkBar(fraction: fraction, color: warn ? Theme.seal : Theme.ink.opacity(0.65), height: 4)
+                InkBar(fraction: fraction, color: warn ? Theme.seal : Theme.ink.opacity(0.62), height: 2.5)
                     .animation(Motion.panel, value: fraction)
-            } else if reserveBar { Color.clear.frame(height: 4) }
+            } else if reserveBar { Color.clear.frame(height: 2.5) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 11).padding(.vertical, 10)
+        .padding(.horizontal, 10).padding(.vertical, 13)
         .contentShape(Rectangle())
     }
 }
 
-/// A row of stat tiles in one memorial fold, split by hairlines.
+/// 平铺于宣纸上的四列核心数值栏（高对比 Cormorant Garamond 衬线数字 + 1px 淡墨纵线分割，零卡片盒嵌套）。
 struct StatStrip: View {
     let tiles: [StatTile]
     private func tile(_ i: Int, _ bars: Bool, _ uniformIcons: Bool) -> StatTile {
@@ -249,17 +232,18 @@ struct StatStrip: View {
         return t
     }
     var body: some View {
-        Group2 {
-            let bars = tiles.contains { $0.fraction != nil }
-            let uniformIcons = !tiles.isEmpty && tiles.allSatisfy { Glyph.of($0.label) != nil }
+        let bars = tiles.contains { $0.fraction != nil }
+        let uniformIcons = !tiles.isEmpty && tiles.allSatisfy { Glyph.of($0.label) != nil }
+        VStack(spacing: 0) {
             HStack(alignment: .top, spacing: 0) {
                 ForEach(tiles.indices, id: \.self) { i in
-                    if i > 0 { Rectangle().fill(Theme.ink.opacity(0.12)).frame(width: 0.8).frame(maxHeight: .infinity).padding(.vertical, 10) }
+                    if i > 0 { Rectangle().fill(Theme.hairline).frame(width: 0.75).frame(maxHeight: .infinity).padding(.vertical, 12) }
                     tile(i, bars, uniformIcons)
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
+            Rectangle().fill(Theme.hairline).frame(height: 0.75)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, Theme.Layout.pageInset)
     }
 }

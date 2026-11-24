@@ -147,6 +147,10 @@ enum ShotTour {
         if !(model.state?.fleets ?? []).isEmpty { show(.fleet(0)); await wait(1.4); await shoot("13b-fleet") }
         NationSheet.tourTab = .court
         show(nil); await wait(0.5); show(.nation(nation)); await wait(1.4); await shoot("11c-court")
+        NationSheet.tourTab = .govern
+        NationSheet.tourGovernSub = "decrees"
+        show(nil); await wait(0.5); show(.nation(nation)); await wait(1.4); await shoot("11d-decrees")
+        NationSheet.tourGovernSub = nil
         NationSheet.tourTab = nil
         show(nil); await wait(0.8)
         model.tourLandscape = true

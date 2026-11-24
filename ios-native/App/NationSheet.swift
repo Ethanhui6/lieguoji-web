@@ -298,12 +298,12 @@ struct NationSheet: View {
             let s = state.nations[nation]
             let shownInfo = info ?? model.cachedNationInfo(nation)
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 14) {
+                LazyVStack(alignment: .leading, spacing: 20) {
                     if let focus {
                         ViewBoundary { focusPage(focus, info: shownInfo, map: map, state: state, meta: meta) }
                     } else {
                     let lex = LocalizationEngine.lexicon(culture: shownInfo?.culture ?? s.culture ?? meta?.culture, polity: shownInfo?.polity ?? s.polity ?? meta?.polity, style: shownInfo?.style)
-                    SheetHeader(title: meta?.name ?? shownInfo?.name ?? "", subtitle: s.alive ? "\(s.provinces) \(lex.adminUnit) · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) }, seal: shownInfo?.emblem ?? "国")
+                    SheetHeader(title: meta?.name ?? shownInfo?.name ?? "", subtitle: s.alive ? "\(s.provinces) \(lex.adminUnit) · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) }, seal: "龙")
                     // 第 0 帧即以实时同步态渲染核心四格数字与主签，配合州郡页预取缓存，切换瞬间绝不出现空白或数字跳闪。
                     StatStrip(tiles: [
                         StatTile(label: "疆域", value: "\(s.provinces)\(lex.adminUnit)", edit: s.alive ? { paint(nation) } : nil),
@@ -329,7 +329,7 @@ struct NationSheet: View {
                     }
                     }
                 }
-                .padding(.bottom, 36)
+                .padding(.bottom, 44)
             }
             .scrollContentBackground(.hidden)
             .ignoresSafeArea(.container, edges: .bottom)
@@ -536,227 +536,232 @@ struct NationSheet: View {
             return "四境暂得承平，拥兵 \(Names.wan(sNat.troops))" + (myFleets.isEmpty ? "" : "、水师战船 \(myFleets.reduce(0) { $0 + $1.ships }) 艘")
         }()
 
-        VStack(alignment: .leading, spacing: 14) {
-                // 国情卷宗导语（仿原作国策档案卷首叙事，一眼纵览政体、都城、执政与海陆军势，附透明数值拆解入口）
-                Group2 {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 6) {
-                            ArtEmblem(image: BundleArt.sealCourt, size: 22, fallback: .crown)
-                            Text("国情卷宗").font(Theme.section).foregroundStyle(Theme.ink)
-                            PaperTag(text: info.styleLabel ?? Names.polity[info.polity] ?? info.polity, color: Theme.seal, size: 10)
-                            if let culName = Names.culture[info.culture] {
-                                PaperTag(text: culName, color: Theme.jade, size: 10)
-                            }
-                            Spacer()
-                            Button {
-                                GameFeel.shared.scrollOpen()
-                                showingBreakdown = true
-                            } label: {
-                                Text("数值明细").font(Theme.caption).foregroundStyle(Theme.jade)
-                                    .padding(.horizontal, 8).padding(.vertical, 3)
-                                    .background(Theme.jade.opacity(0.10), in: Capsule())
-                                    .overlay(Capsule().stroke(Theme.jade.opacity(0.30), lineWidth: 0.7))
-                            }
-                            .buttonStyle(PressStyle())
-                        }
-                        Text("\(info.name)定鼎于\(capName)，领 \(sNat.provinces) \(ovLex.adminUnit) \(sNat.cities) 城；今由\(rulerSummary)，\(postureSummary)。")
-                            .font(Theme.caption)
-                            .foregroundStyle(Theme.ink2)
-                            .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 24) {
+                // 页顶唯一核心焦点（渐进式披露：只突出 1 项最紧急战况 / 待决议案 / 国情纲要，直铺宣纸零套娃卡片）
+                VStack(alignment: .leading, spacing: 14) {
+                    let pendingAgenda: NationInfo.CourtAgenda? = (info.agenda != nil && (info.agenda?.cooldownDays ?? 0) == 0) ? info.agenda : nil
+                    if !info.wars.isEmpty {
+                        EditorialFocusLead(
+                            eyebrow: "战事告急 · 共 \(info.wars.count) 场交锋",
+                            headline: "\(info.name)正值战时状态",
+                            detail: "定鼎\(capName)，\(rulerSummary)，\(postureSummary)。",
+                            urgent: true,
+                            actionTitle: "查看战况与军事",
+                            onAction: { withAnimation(Motion.tap) { tab = .military } }
+                        )
+                    } else if let ag = pendingAgenda {
+                        EditorialFocusLead(
+                            eyebrow: "待决议案 · \(ag.tag ?? ovLex.agendaTag)",
+                            headline: ag.title,
+                            detail: ag.desc,
+                            urgent: true,
+                            actionTitle: "前往\(ovLex.courtTabTitle)表决",
+                            onAction: { withAnimation(Motion.tap) { tab = .court } }
+                        )
+                    } else {
+                        EditorialFocusLead(
+                            eyebrow: "\(info.styleLabel ?? Names.polity[info.polity] ?? info.polity) · \(Names.culture[info.culture] ?? info.culture)",
+                            headline: "\(rulerSummary)",
+                            detail: "定鼎\(capName)，领 \(sNat.provinces) \(ovLex.adminUnit) \(sNat.cities) 城；\(postureSummary)。",
+                            urgent: false
+                        )
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 12)
-                }
-                .padding(.horizontal, 16)
 
-                // 共和/立宪等议会制国家：在概览首屏即展示紧凑议会席位分布条（一键直达议政页掌控议会）
+                    HStack(spacing: 14) {
+                        Button {
+                            GameFeel.shared.scrollOpen()
+                            showingBreakdown = true
+                        } label: {
+                            HStack(spacing: 5) {
+                                PhosphorIcon(glyph: .info, size: 14, weight: .light)
+                                Text("国力数值明细").font(Theme.sans(13, weight: .medium))
+                            }
+                            .foregroundStyle(Theme.ink)
+                        }
+                        .buttonStyle(.plain)
+
+                        if info.alive {
+                            Spacer(minLength: 8)
+                            Button {
+                                GameFeel.shared.tap()
+                                if nation < map.meta.nations.count, map.meta.cities.indices.contains(map.meta.nations[nation].capital) {
+                                    let c = map.meta.cities[map.meta.nations[nation].capital]
+                                    lower(); model.controller.showPlace(x: Double(c.x), y: Double(c.y))
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    PhosphorIcon(glyph: .locate, size: 14, weight: .light)
+                                    Text("都城").font(Theme.sans(13))
+                                }
+                                .foregroundStyle(Theme.ink2)
+                            }
+                            .buttonStyle(.plain)
+
+                            Button { GameFeel.shared.tap(); paint(nation) } label: {
+                                HStack(spacing: 4) {
+                                    PhosphorIcon(glyph: .brush, size: 14, weight: .light)
+                                    Text("划疆").font(Theme.sans(13))
+                                }
+                                .foregroundStyle(Theme.ink2)
+                            }
+                            .buttonStyle(.plain)
+
+                            Button { GameFeel.shared.tap(); placeArmy(nation) } label: {
+                                HStack(spacing: 4) {
+                                    PhosphorIcon(glyph: .military, size: 14, weight: .light)
+                                    Text("放兵").font(Theme.sans(13, weight: .medium))
+                                }
+                                .foregroundStyle(Theme.seal)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    EditorialDivider()
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+
+                // 共和/立宪议会格局：克制三色阶席位条（无杂色胶囊，直铺宣纸）
                 if let parties = info.parties, !parties.isEmpty {
                     let sortedP = parties.sorted { $0.seats > $1.seats }
                     let rulingP = sortedP.first
-                    Group2 {
-                        VStack(alignment: .leading, spacing: 7) {
-                            HStack(spacing: 6) {
-                                InkIcon(glyph: .polity, size: 15, weight: 1.8, accent: Theme.jade.opacity(0.24)).foregroundStyle(Theme.jade)
-                                Text("议会格局").font(Theme.section).foregroundStyle(Theme.ink)
-                                if let r = rulingP { PaperTag(text: "执政 · \(r.name) \(r.seats)席", color: Theme.seal, size: 10) }
-                                Spacer()
-                                Button {
-                                    GameFeel.shared.tap()
-                                    withAnimation(Motion.tap) { tab = .court }
-                                } label: {
-                                    Text("进议会 ›").font(Theme.caption).foregroundStyle(Theme.seal)
-                                }
-                                .buttonStyle(.plain)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            PhosphorIcon(glyph: .polity, size: 15, weight: .light).foregroundStyle(Theme.ink2)
+                            Text("议会席位").font(Theme.serif(15.5)).tracking(1.4).foregroundStyle(Theme.ink)
+                            if let r = rulingP {
+                                Text("执政 · \(r.name) \(r.seats)席").font(Theme.sans(12.5)).foregroundStyle(Theme.seal).monospacedDigit()
                             }
-                            GeometryReader { g in
-                                HStack(spacing: 1.5) {
-                                    ForEach(Array(parties.enumerated()), id: \.offset) { i, p in
-                                        Rectangle().fill(Self.partyColor(i)).frame(width: max(3, g.size.width * CGFloat(p.seats) / 100))
-                                    }
+                            Spacer()
+                            Button {
+                                GameFeel.shared.tap()
+                                withAnimation(Motion.tap) { tab = .court }
+                            } label: {
+                                HStack(spacing: 3) {
+                                    Text("议政").font(Theme.sans(12.5))
+                                    PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light)
                                 }
-                                .clipShape(Capsule())
+                                .foregroundStyle(Theme.ink2)
                             }
-                            .frame(height: 8)
-                            WrapLayout(spacing: 8) {
-                                ForEach(Array(sortedP.prefix(4).enumerated()), id: \.offset) { _, p in
-                                    let idx = parties.firstIndex { $0.name == p.name } ?? 0
-                                    HStack(spacing: 4) {
-                                        Circle().fill(Self.partyColor(idx)).frame(width: 7, height: 7)
-                                        Text("\(p.name) \(p.seats)席").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
-                                    }
-                                }
-                            }
+                            .buttonStyle(.plain)
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 12)
+                        GeometryReader { g in
+                            HStack(spacing: 1.5) {
+                                ForEach(Array(sortedP.enumerated()), id: \.offset) { i, p in
+                                    let shade: Color = i == 0 ? Theme.seal : i == 1 ? Theme.ink : i == 2 ? Theme.ink2 : Theme.ink.opacity(0.24)
+                                    Rectangle().fill(shade).frame(width: max(3, g.size.width * CGFloat(p.seats) / 100))
+                                }
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
+                        }
+                        .frame(height: 5)
+                        Text(sortedP.prefix(4).map { "\($0.name) \($0.seats)席" }.joined(separator: "  ·  "))
+                            .font(Theme.sans(12.5)).foregroundStyle(Theme.ink2).monospacedDigit()
+                        EditorialDivider()
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Theme.Layout.pageInset)
                 }
 
-                // 文明文化学说 × 国教教义与圣地实效卡（清晰呈现高权重文化与宗教加成）
+                // 国力走势（Cormorant Garamond 衬线百分比 + 宣纸直铺折线）
+                if let p = info.power, p.count >= 2 {
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("国力走势").font(Theme.sans(12)).foregroundStyle(Theme.ink2)
+                            let change = (p.last ?? 0) - (p.first ?? 0)
+                            let pctStr = String(format: "%.0f%%", abs(change) / max(1, p.first ?? 1) * 100)
+                            EditorialValueText((change >= 0 ? "+" : "−") + pctStr, size: 22, color: change < 0 ? Theme.seal : Theme.ink)
+                            Text(p.count >= 24 ? "近 \(p.count / 12) 年" : "近 \(p.count) 个月").font(Theme.sans(11.5)).foregroundStyle(Theme.ink2)
+                        }
+                        Sparkline(values: p).frame(height: 44)
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                    EditorialDivider(inset: Theme.Layout.pageInset)
+                }
+
+                // 渐进式披露：文化学说、国教圣地、科技信誉、国势五维默认折叠，保持首屏高度疏朗呼吸感
                 if info.cultureDoctrine != nil || !(info.creedEffect ?? "").isEmpty {
-                    Group2 {
-                        VStack(alignment: .leading, spacing: 8) {
+                    let culSummary = [info.cultureDoctrine?.title, Names.religion[info.religion]].compactMap { $0 }.joined(separator: " · ")
+                    FoldSection("文化学说与国教", expanded: false, summary: culSummary) {
+                        VStack(alignment: .leading, spacing: 14) {
                             if let doc = info.cultureDoctrine {
-                                HStack(spacing: 6) {
-                                    InkIcon(glyph: .culture, size: 15, weight: 1.8, accent: Theme.jade.opacity(0.24)).foregroundStyle(Theme.jade)
-                                    Text("文化学说 · \(doc.title)").font(Theme.section).foregroundStyle(Theme.ink)
-                                    Spacer()
-                                    if let culName = Names.culture[info.culture] { PaperTag(text: culName, color: Theme.jade, size: 10) }
-                                }
-                                Text(doc.summary).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
-                                WrapLayout(spacing: 5) {
-                                    ForEach(doc.effectLine.components(separatedBy: " · "), id: \.self) { token in
-                                        let neg = token.contains("−") || token.contains("-")
-                                        Text(token).font(Theme.caption).foregroundStyle(neg ? Theme.seal : Theme.jade)
-                                            .padding(.horizontal, 7).padding(.vertical, 2.5)
-                                            .background((neg ? Theme.seal : Theme.jade).opacity(0.10), in: Capsule())
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 7) {
+                                        PhosphorIcon(glyph: .culture, size: 15, weight: .light).foregroundStyle(Theme.ink)
+                                        Text(doc.title).font(Theme.serif(15)).foregroundStyle(Theme.ink)
+                                        Spacer()
+                                        if let culName = Names.culture[info.culture] {
+                                            Text(culName).font(Theme.sans(12)).foregroundStyle(Theme.ink2)
+                                        }
                                     }
+                                    Text(doc.summary).font(Theme.sans(13)).foregroundStyle(Theme.ink2).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+                                    Text(doc.effectLine).font(Theme.sans(12.5)).foregroundStyle(Theme.ink).monospacedDigit().fixedSize(horizontal: false, vertical: true)
                                 }
                             }
                             if let creedText = info.creedEffect, !creedText.isEmpty {
-                                if info.cultureDoctrine != nil { Divider2() }
-                                HStack(spacing: 6) {
-                                    InkIcon(glyph: .religion, size: 15, weight: 1.8, accent: Theme.gold.opacity(0.24)).foregroundStyle(Theme.gold)
-                                    Text("国教 · \(Names.religion[info.religion] ?? info.religion)").font(Theme.section).foregroundStyle(Theme.ink)
-                                    Spacer()
-                                    if info.holdsHolySite == true {
-                                        PaperTag(text: "圣地庇佑 +12%战力/+15%税", color: Theme.gold, size: 10)
+                                if info.cultureDoctrine != nil { EditorialDivider() }
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 7) {
+                                        PhosphorIcon(glyph: .religion, size: 15, weight: .light).foregroundStyle(Theme.ink)
+                                        Text(Names.religion[info.religion] ?? info.religion).font(Theme.serif(15)).foregroundStyle(Theme.ink)
+                                        Spacer()
+                                        if info.holdsHolySite == true {
+                                            PaperTag(text: "圣地庇佑", color: Theme.seal, size: 11)
+                                        }
                                     }
+                                    Text(creedText).font(Theme.sans(13)).foregroundStyle(Theme.ink2).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
                                 }
-                                Text(creedText).font(Theme.caption).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
                             }
+                            EditorialDivider()
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 12)
+                        .padding(.horizontal, Theme.Layout.pageInset)
                     }
-                    .padding(.horizontal, 16)
                 }
 
                 NationDepthSection(model: model, nation: nation, info: info, onReload: { await reload() }, onMessage: { flash = $0 })
 
-                if info.alive {
-                    HStack(spacing: 8) {
-                        Button {
-                            GameFeel.shared.tap()
-                            if nation < map.meta.nations.count, map.meta.cities.indices.contains(map.meta.nations[nation].capital) {
-                                let c = map.meta.cities[map.meta.nations[nation].capital]
-                                lower(); model.controller.showPlace(x: Double(c.x), y: Double(c.y))
-                            }
-                        } label: {
-                            HStack(spacing: 5) {
-                                InkIcon(glyph: .locate, size: 15, weight: 1.7)
-                                Text("定位都城").font(Theme.label)
-                            }
-                            .foregroundStyle(Theme.ink)
-                            .frame(maxWidth: .infinity).frame(height: 36)
-                            .background(Theme.paper2.opacity(0.85), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.line, lineWidth: 0.7))
-                        }
-                        .buttonStyle(PressStyle())
-
-                        Button { GameFeel.shared.tap(); paint(nation) } label: {
-                            HStack(spacing: 5) {
-                                InkIcon(glyph: .brush, size: 15, weight: 1.7)
-                                Text("绘制疆域").font(Theme.label)
-                            }
-                            .foregroundStyle(Theme.ink)
-                            .frame(maxWidth: .infinity).frame(height: 36)
-                            .background(Theme.paper2.opacity(0.85), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.line, lineWidth: 0.7))
-                        }
-                        .buttonStyle(PressStyle())
-
-                        Button { GameFeel.shared.tap(); placeArmy(nation) } label: {
-                            HStack(spacing: 5) {
-                                InkIcon(glyph: .military, size: 15, weight: 1.7)
-                                Text("放置新军").font(Theme.label)
-                            }
-                            .foregroundStyle(Theme.seal)
-                            .frame(maxWidth: .infinity).frame(height: 36)
-                            .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.seal.opacity(0.32), lineWidth: 0.7))
-                        }
-                        .buttonStyle(PressStyle())
-                    }
-                    .padding(.horizontal, 16)
-                }
-                if let p = info.power, p.count >= 2 {
-                    // 国力走势: rise and fall at a glance.
-                    Group2 {
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("国力走势").font(Theme.label).foregroundStyle(Theme.ink2)
-                                let change = (p.last ?? 0) - (p.first ?? 0)
-                                Text((change >= 0 ? "↑ " : "↓ ") + String(format: "%.0f%%", abs(change) / max(1, p.first ?? 1) * 100))
-                                    .font(Theme.section).foregroundStyle(change >= 0 ? Theme.jade : Theme.seal)
-                                Text(p.count >= 24 ? "近 \(p.count / 12) 年" : "近 \(p.count) 个月").font(Theme.caption).foregroundStyle(Theme.ink2)
-                            }
-                            Sparkline(values: p).frame(height: 44)
-                        }
-                        .padding(.horizontal, 16).padding(.vertical, 10)
-                    }
-                    .padding(.horizontal, 16)
-                }
                 if let sway = info.sway, !sway.isEmpty {
                     let warCount = info.wars.count
                     let lostProvs = info.court?.lost ?? 0
                     let season = WorldSeason.of(month: state.date.month)
-                    FoldSection("国势五维", expanded: true, summary: "\(season.fullName) · " + (warCount > 0 ? "战事 \(warCount) 场" : "天下承平")) {
+                    FoldSection("国势五维", expanded: false, summary: "\(season.fullName) · " + (warCount > 0 ? "战事 \(warCount) 场" : "四境承平")) {
                         Group2 {
                             VStack(alignment: .leading, spacing: 0) {
-                                HStack(spacing: 8) {
-                                    PaperTag(text: season.fullName, color: season == .winter ? Color(red: 0.24, green: 0.44, blue: 0.62) : season == .autumn ? Color(red: 0.74, green: 0.42, blue: 0.12) : Theme.jade, size: 11)
-                                    Text(season.summary).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                                HStack(spacing: 10) {
+                                    Text(season.fullName).font(Theme.sans(13, weight: .medium)).foregroundStyle(Theme.ink)
+                                    Text(season.summary).font(Theme.sans(12.5)).foregroundStyle(Theme.ink2).lineLimit(2).fixedSize(horizontal: false, vertical: true)
                                     Spacer(minLength: 0)
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 9)
+                                .padding(.horizontal, 4).padding(.vertical, 12)
                                 if warCount > 0 || lostProvs > 0 {
                                     Divider2()
                                     let exhaustion = min(100, warCount * 18 + lostProvs * 12 + (info.polityDetail?.defeatShock ?? 0))
                                     HStack(spacing: 8) {
-                                        InkIcon(glyph: .war, size: 14, weight: 1.7).foregroundStyle(exhaustion >= 40 ? Theme.seal : Theme.ink2)
-                                        Text("战事疲弊").font(Theme.body).foregroundStyle(Theme.ink2)
+                                        PhosphorIcon(glyph: .war, size: 15, weight: .light).foregroundStyle(exhaustion >= 40 ? Theme.seal : Theme.ink2)
+                                        Text("战事疲弊").font(Theme.sans(14)).foregroundStyle(Theme.ink2)
                                         Spacer()
-                                        Text(exhaustion >= 60 ? "兵疲民困（\(exhaustion)%）" : exhaustion >= 30 ? "军需吃紧（\(exhaustion)%）" : "尚可持久（\(exhaustion)%）")
-                                            .font(Theme.label).foregroundStyle(exhaustion >= 40 ? Theme.seal : Theme.ink)
+                                        Text(exhaustion >= 60 ? "兵疲民困 · \(exhaustion)%" : exhaustion >= 30 ? "军需吃紧 · \(exhaustion)%" : "尚可持久 · \(exhaustion)%")
+                                            .font(Theme.sans(13.5, weight: exhaustion >= 40 ? .medium : .regular))
+                                            .foregroundStyle(exhaustion >= 40 ? Theme.seal : Theme.ink)
+                                            .monospacedDigit()
                                     }
-                                    .padding(.horizontal, 16).padding(.vertical, 9)
+                                    .padding(.horizontal, 4).padding(.vertical, 12)
                                 }
                                 ForEach(Array(sway.enumerated()), id: \.offset) { _, row in
                                     Divider2()
-                                    let g: InkGlyph = row.name.contains("军") ? .military : row.name.contains("守") ? .fortress : row.name.contains("财") ? .economy : row.name.contains("民") ? .house : .crown
-                                    HStack(spacing: 10) {
-                                        InkIcon(glyph: g, size: 15, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.85)).frame(width: 18)
-                                        VStack(alignment: .leading, spacing: 1) {
-                                            Text(row.name).font(Theme.body).foregroundStyle(Theme.ink)
-                                            Text(row.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
+                                    let g: PhosphorGlyph = row.name.contains("军") ? .military : row.name.contains("守") ? .fortress : row.name.contains("财") ? .economy : row.name.contains("民") ? .house : .crown
+                                    HStack(spacing: 12) {
+                                        PhosphorIcon(glyph: g, size: 15, weight: .light).foregroundStyle(Theme.ink2)
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text(row.name).font(Theme.sans(14, weight: .medium)).foregroundStyle(Theme.ink)
+                                            Text(row.text).font(Theme.sans(12)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
                                         }
-                                        Spacer(minLength: 6)
-                                        Text(row.value).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
+                                        Spacer(minLength: 8)
+                                        EditorialValueText(row.value, size: 17, color: Theme.ink)
                                     }
-                                    .padding(.horizontal, 16).padding(.vertical, 8)
+                                    .padding(.horizontal, 4).padding(.vertical, 12)
                                 }
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, Theme.Layout.pageInset)
                     }
                 }
                 FoldSection("基本信息", expanded: true) {
@@ -879,248 +884,228 @@ struct NationSheet: View {
     }
     @ViewBuilder private func courtTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         let lex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
-        VStack(alignment: .leading, spacing: 14) {
-                // 中枢元首与实际掌权者统一卡片（落实多政体双轨掌权展示 + 年号尊号与在位性格实效）
+        VStack(alignment: .leading, spacing: 24) {
                 if info.alive {
-                    Group2 {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 12) {
-                                // 国家元首
+                    // 1. 页顶单一核心待办：当期大政议案（移至朝政第一屏，直接平铺宣纸 + 真实朱砂「议」印 + 明确后果主按钮）
+                    if let ag = info.agenda {
+                        let cd = ag.cooldownDays ?? 0
+                        VStack(alignment: .leading, spacing: 14) {
+                            HStack(alignment: .center, spacing: 12) {
+                                Seal(text: "议", size: 30)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(cd > 0 ? "休会 · 余 \(cd) 日" : (ag.tag ?? lex.agendaTag))
+                                        .font(Theme.sans(11.5, weight: .medium))
+                                        .tracking(1.2)
+                                        .foregroundStyle(cd > 0 ? Theme.ink2 : Theme.seal)
+                                        .monospacedDigit()
+                                    Text(cd > 0 ? (ag.resolvedTitle ?? ag.title) : ag.title)
+                                        .font(Theme.serif(18.5))
+                                        .tracking(1.2)
+                                        .foregroundStyle(Theme.ink)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer(minLength: 4)
+                            }
+
+                            if cd > 0 {
+                                Text(ag.resolvedOutcome ?? "本期议案已表决通过，待下届议期开启后将呈递新案。")
+                                    .font(Theme.sans(13.5)).foregroundStyle(Theme.ink2).lineSpacing(3.5).fixedSize(horizontal: false, vertical: true)
+                            } else {
+                                Text(ag.desc)
+                                    .font(Theme.sans(13.5)).foregroundStyle(Theme.ink2).lineSpacing(3.5).fixedSize(horizontal: false, vertical: true)
+                                HStack(spacing: 12) {
+                                    Text("力主 · \(ag.support)").font(Theme.sans(12.5)).foregroundStyle(Theme.ink)
+                                    Text("阻挠 · \(ag.oppose)").font(Theme.sans(12.5)).foregroundStyle(Theme.seal)
+                                    Spacer()
+                                }
+                                if let choices = ag.choices, !choices.isEmpty {
+                                    VStack(spacing: 10) {
+                                        ForEach(Array(choices.enumerated()), id: \.element.id) { idx, ch in
+                                            if idx == 0 {
+                                                // 主决策按钮：松烟暖墨深底 + 宣纸白字，直接写明核心后果
+                                                EditorialInkButton(
+                                                    title: ch.label,
+                                                    consequence: ch.tag,
+                                                    emphasized: false
+                                                ) {
+                                                    Task { await run { await model.nationDecree(nation, kind: ch.id) } }
+                                                }
+                                                Text(ch.detail)
+                                                    .font(Theme.sans(12)).foregroundStyle(Theme.ink2)
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                                    .padding(.bottom, 2)
+                                            } else {
+                                                EditorialActionRow(
+                                                    title: ch.label,
+                                                    detail: ch.detail,
+                                                    consequence: ch.tag,
+                                                    icon: ch.tone == "force" ? .gavel : ch.tone == "compromise" ? .scales : .edict,
+                                                    accentConsequence: ch.tone == "force"
+                                                ) {
+                                                    Task { await run { await model.nationDecree(nation, kind: ch.id) } }
+                                                }
+                                                if idx < choices.count - 1 { EditorialDivider() }
+                                            }
+                                        }
+                                    }
+                                    .padding(.top, 2)
+                                } else {
+                                    EditorialInkButton(title: lex.forceActionLabel, consequence: ag.effect) {
+                                        Task { await run { await model.nationDecree(nation, kind: ag.id) } }
+                                    }
+                                }
+                            }
+                            EditorialDivider()
+                        }
+                        .padding(.horizontal, Theme.Layout.pageInset)
+                    }
+
+                    // 2. 中枢双轨执政（平铺宣纸 + 1px 淡墨纵线分割，零杂色胶囊与帝制漏网词）
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack(alignment: .top, spacing: 16) {
+                            Button {
+                                if let r = info.ruler, let id = r.id {
+                                    editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: r.female ?? false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50])
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    HStack(spacing: 6) {
+                                        Text(info.ruler?.title ?? lex.leaderTitle)
+                                            .font(Theme.sans(12, weight: .medium)).foregroundStyle(Theme.seal)
+                                        if let era = info.ruler?.eraYearText, !era.isEmpty {
+                                            Text(era).font(Theme.sans(11.5)).foregroundStyle(Theme.ink2)
+                                        } else if let hon = info.ruler?.honorific, !hon.isEmpty {
+                                            Text(hon).font(Theme.sans(11.5)).foregroundStyle(Theme.ink2)
+                                        }
+                                        if info.heads?.premierRules == true {
+                                            Text("虚位").font(Theme.sans(11)).foregroundStyle(Theme.ink2)
+                                        }
+                                    }
+                                    Text(info.ruler?.styledName ?? info.ruler?.name ?? "空缺")
+                                        .font(Theme.serif(18)).tracking(0.8).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                                    if let r = info.ruler {
+                                        Text("\(Int(r.age)) 岁 · 点按编辑").font(Theme.sans(12)).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+
+                            if let h = info.heads {
+                                Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 52)
                                 Button {
-                                    if let r = info.ruler, let id = r.id {
-                                        editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: r.female ?? false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50])
+                                    if let hid = h.premierHouseId, !hid.isEmpty {
+                                        tree = TreePick(id: hid, name: info.court?.actualRuler?.houseName ?? lex.houseUnitLabel)
+                                    } else {
+                                        appointing = AppointTarget(office: "Chancellor")
                                     }
                                 } label: {
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        HStack(spacing: 5) {
-                                            Text(info.ruler?.title ?? "君主").font(Theme.caption).foregroundStyle(Theme.seal)
-                                            if let era = info.ruler?.eraYearText, !era.isEmpty {
-                                                PaperTag(text: era, color: Theme.seal, size: 10)
-                                            } else if let hon = info.ruler?.honorific, !hon.isEmpty {
-                                                PaperTag(text: hon, color: Theme.jade, size: 10)
-                                            }
-                                            if info.heads?.premierRules == true { PaperTag(text: "虚位", color: Theme.ink2, size: 10) }
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        HStack(spacing: 6) {
+                                            Text(h.premierTitle)
+                                                .font(Theme.sans(12, weight: .medium))
+                                                .foregroundStyle(h.premierRules ? Theme.seal : Theme.ink2)
+                                            if h.premierRules { Text("实权").font(Theme.sans(11)).foregroundStyle(Theme.seal) }
                                         }
-                                        Text(info.ruler?.styledName ?? info.ruler?.name ?? "空缺").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
-                                        if let r = info.ruler {
-                                            Text("\(Int(r.age))岁 · 点按编辑").font(Theme.caption).foregroundStyle(Theme.ink2)
-                                        }
+                                        Text(h.premierName ?? "出缺")
+                                            .font(Theme.serif(18)).tracking(0.8).foregroundStyle(Theme.ink).lineLimit(1)
+                                        Text(info.court?.actualRuler?.houseName.map { "\($0) · 谱系" } ?? (h.elected ? "议会推举" : "中枢辅政"))
+                                            .font(Theme.sans(12)).foregroundStyle(Theme.ink2).lineLimit(1)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
-
-                                if let h = info.heads {
-                                    Divider().frame(height: 36)
-                                    Button {
-                                        if let hid = h.premierHouseId, !hid.isEmpty {
-                                            tree = TreePick(id: hid, name: info.court?.actualRuler?.houseName ?? "掌权世家")
-                                        } else {
-                                            appointing = AppointTarget(office: "Chancellor")
-                                        }
-                                    } label: {
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            HStack(spacing: 5) {
-                                                Text(h.premierTitle).font(Theme.caption).foregroundStyle(h.premierRules ? Theme.seal : Theme.jade)
-                                                if h.premierRules { PaperTag(text: "实权", color: Theme.seal, size: 10) }
-                                            }
-                                            Text(h.premierName ?? "出缺").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                                            Text(info.court?.actualRuler?.houseName.map { "\($0) · 点看族谱" } ?? (h.elected ? "议会推举" : "中枢辅政"))
-                                                .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
-                                        }
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            if let summary = info.ruler?.traitSummary, !summary.isEmpty {
-                                Divider2()
-                                VStack(alignment: .leading, spacing: 6) {
-                                    PaperTag(text: "掌权实效", color: Theme.jade, size: 10)
-                                    WrapLayout(spacing: 5) {
-                                        ForEach(summary, id: \.self) { item in
-                                            let neg = item.contains("-") || item.contains("−")
-                                            Text(item)
-                                                .font(Theme.caption).monospacedDigit()
-                                                .foregroundStyle(neg ? Theme.seal : Theme.jade)
-                                                .padding(.horizontal, 7).padding(.vertical, 2.5)
-                                                .background((neg ? Theme.seal : Theme.jade).opacity(0.10), in: Capsule())
-                                                .fixedSize()
-                                        }
-                                    }
-                                }
                             }
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 14)
+
+                        if let summary = info.ruler?.traitSummary, !summary.isEmpty {
+                            Text("执政实效  ·  " + summary.joined(separator: "  ·  "))
+                                .font(Theme.sans(12.5)).foregroundStyle(Theme.ink2).monospacedDigit().lineSpacing(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        EditorialDivider()
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)
 
-                    // 共和国 / 联邦 / 君主立宪等议会制政体：议会与政党格局大幅前置并默认展开，一眼统揽执政党、议席与改选！
+                    // 3. 议会与政党格局（共和 / 立宪制前置展开）
                     if let parties = info.parties, !parties.isEmpty {
                         parliamentSection(info: info, parties: parties)
                     }
 
-                    // 动态四方权力天平（完全按文化 × 政体切换，共和绝不出现朝堂／世家／文官）
+                    // 4. 动态四方权力天平（三色极简：朱砂红标主导方 + 三阶松烟暖墨 + 真实「权」印 + Cormorant Garamond 数字）
                     if let cp = info.courtPower {
                         let pillars = (cp.pillars?.count == 4 ? cp.pillars! : lex.pillarShort)
-                        Group2 {
-                            VStack(alignment: .leading, spacing: 9) {
-                                HStack(spacing: 6) {
-                                    ArtEmblem(image: BundleArt.sealCourt, size: 24, fallback: .polity)
-                                    Text(cp.title ?? lex.powerBalanceTitle).font(Theme.section).foregroundStyle(Theme.ink)
-                                    Spacer()
-                                    PaperTag(text: "主导 · \(cp.dominant)", color: Theme.seal, size: 11)
-                                }
-                                if let reg = cp.regency, !reg.isEmpty {
-                                    HStack(spacing: 6) {
-                                        InkIcon(glyph: .crown, size: 13, weight: 1.75).foregroundStyle(Theme.seal)
-                                        Text(reg).font(Theme.caption).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
-                                    }
-                                    .padding(.horizontal, 10).padding(.vertical, 6)
-                                    .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                }
-                                if let warn = cp.imbalance, !warn.isEmpty {
-                                    HStack(spacing: 6) {
-                                        InkIcon(glyph: .fire, size: 13, weight: 1.75).foregroundStyle(Theme.seal)
-                                        Text(warn).font(Theme.caption).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
-                                    }
-                                    .padding(.horizontal, 10).padding(.vertical, 6)
-                                    .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                }
-                                GeometryReader { g in
-                                    let w = g.size.width
-                                    HStack(spacing: 1.5) {
-                                        Rectangle().fill(Theme.seal).frame(width: max(6, w * CGFloat(cp.crown) / 100))
-                                        Rectangle().fill(Color(red: 0.72, green: 0.48, blue: 0.16)).frame(width: max(6, w * CGFloat(cp.houses) / 100))
-                                        Rectangle().fill(Theme.ink).frame(width: max(6, w * CGFloat(cp.military) / 100))
-                                        Rectangle().fill(Theme.jade).frame(width: max(6, w * CGFloat(cp.council) / 100))
-                                    }
-                                    .clipShape(Capsule())
-                                }
-                                .frame(height: 8)
-                                HStack(spacing: 6) {
-                                    powerPillarChip(pillars[0], pct: cp.crown, color: Theme.seal, code: "crown")
-                                    powerPillarChip(pillars[1], pct: cp.houses, color: Color(red: 0.72, green: 0.48, blue: 0.16), code: "houses")
-                                    powerPillarChip(pillars[2], pct: cp.military, color: Theme.ink, code: "military")
-                                    powerPillarChip(pillars[3], pct: cp.council, color: Theme.jade, code: "council")
-                                }
-                                Text("\(cp.effect)（轻点任一方可主动扶植调衡）").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                        VStack(alignment: .leading, spacing: 14) {
+                            HStack(alignment: .center, spacing: 10) {
+                                Seal(text: "权", size: 26)
+                                Text(cp.title ?? lex.powerBalanceTitle)
+                                    .font(Theme.serif(16)).tracking(1.4).foregroundStyle(Theme.ink)
+                                Spacer()
+                                PaperTag(text: "主导 · \(cp.dominant)", color: Theme.seal, size: 11)
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 14)
+                            if let reg = cp.regency, !reg.isEmpty {
+                                HStack(spacing: 8) {
+                                    PhosphorIcon(glyph: .crown, size: 14, weight: .light).foregroundStyle(Theme.seal)
+                                    Text(reg).font(Theme.sans(12.5)).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            if let warn = cp.imbalance, !warn.isEmpty {
+                                HStack(spacing: 8) {
+                                    PhosphorIcon(glyph: .warning, size: 14, weight: .light).foregroundStyle(Theme.seal)
+                                    Text(warn).font(Theme.sans(12.5)).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            GeometryReader { g in
+                                let w = g.size.width
+                                HStack(spacing: 2) {
+                                    Rectangle().fill(Theme.seal).frame(width: max(4, w * CGFloat(cp.crown) / 100))
+                                    Rectangle().fill(Theme.ink).frame(width: max(4, w * CGFloat(cp.houses) / 100))
+                                    Rectangle().fill(Theme.ink2).frame(width: max(4, w * CGFloat(cp.military) / 100))
+                                    Rectangle().fill(Theme.ink.opacity(0.24)).frame(width: max(4, w * CGFloat(cp.council) / 100))
+                                }
+                                .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
+                            }
+                            .frame(height: 5)
+                            HStack(spacing: 6) {
+                                powerPillarChip(pillars[0], pct: cp.crown, color: Theme.seal, code: "crown")
+                                powerPillarChip(pillars[1], pct: cp.houses, color: Theme.ink, code: "houses")
+                                powerPillarChip(pillars[2], pct: cp.military, color: Theme.ink2, code: "military")
+                                powerPillarChip(pillars[3], pct: cp.council, color: Theme.ink.opacity(0.32), code: "council")
+                            }
+                            Text("\(cp.effect) · 轻点任一方可扶植调衡")
+                                .font(Theme.sans(12.5)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                            EditorialDivider()
                         }
                         .padding(.horizontal, Theme.Layout.pageInset)
                     }
 
-                    // 当期多分支大政议案（内置 180 日议期冷却锁，彻底杜绝无限点击刷资源）
-                    if let ag = info.agenda {
-                        let cd = ag.cooldownDays ?? 0
-                        Group2 {
-                            VStack(alignment: .leading, spacing: 9) {
-                                HStack(spacing: 6) {
-                                    ArtEmblem(image: BundleArt.sealCouncil, size: 24, fallback: .edict)
-                                    Text(cd > 0 ? (ag.resolvedTitle ?? ag.title) : ag.title).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
-                                    Spacer()
-                                    PaperTag(text: cd > 0 ? "休会 · 余\(cd)日" : (ag.tag ?? lex.agendaTag), color: cd > 0 ? Theme.ink2 : Theme.jade, size: 10)
-                                }
-                                if cd > 0 {
-                                    Text(ag.resolvedOutcome ?? "本期议案已表决通过，待下届议期开启后将呈递新案。")
-                                        .font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
-                                    HStack(spacing: 6) {
-                                        InkIcon(glyph: .calendar, size: 12, weight: 1.7).foregroundStyle(Theme.jade)
-                                        Text("本议期已定案落印 · 距下届\(ag.tag ?? lex.agendaTag)尚余 \(cd) 日").font(Theme.caption).foregroundStyle(Theme.jade)
-                                        Spacer()
-                                    }
-                                    .padding(.horizontal, 10).padding(.vertical, 6)
-                                    .background(Theme.jade.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                } else {
-                                    Text(ag.desc).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
-                                    HStack(spacing: 10) {
-                                        Text("力主：\(ag.support)").font(Theme.caption).foregroundStyle(Theme.jade)
-                                        Text("·").foregroundStyle(Theme.ink2)
-                                        Text("阻挠：\(ag.oppose)").font(Theme.caption).foregroundStyle(Theme.seal)
-                                        Spacer()
-                                    }
-                                    if let choices = ag.choices, !choices.isEmpty {
-                                        VStack(spacing: 7) {
-                                            ForEach(choices) { ch in
-                                                let tint: Color = ch.tone == "force" ? Theme.seal : ch.tone == "compromise" ? Theme.jade : ch.tone == "bargain" ? Color(red: 0.72, green: 0.48, blue: 0.16) : Theme.ink2
-                                                Button {
-                                                    GameFeel.shared.tap()
-                                                    Task { await run { await model.nationDecree(nation, kind: ch.id) } }
-                                                } label: {
-                                                    HStack(alignment: .center, spacing: 8) {
-                                                        VStack(alignment: .leading, spacing: 2) {
-                                                            HStack(spacing: 5) {
-                                                                Text(ch.label).font(Theme.label).foregroundStyle(Theme.ink)
-                                                                PaperTag(text: ch.tag, color: tint, size: 10)
-                                                            }
-                                                            Text(ch.detail).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
-                                                        }
-                                                        Spacer(minLength: 4)
-                                                        InkIcon(glyph: .chevronRight, size: 12, weight: 1.8).foregroundStyle(tint)
-                                                    }
-                                                    .padding(.horizontal, 11).padding(.vertical, 8)
-                                                    .background(tint.opacity(0.06), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                                                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(tint.opacity(0.26), lineWidth: 0.8))
-                                                    .contentShape(Rectangle())
-                                                }
-                                                .buttonStyle(PressStyle())
-                                            }
-                                        }
-                                    } else {
-                                        HStack(spacing: 10) {
-                                            Text(ag.effect).font(Theme.caption).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
-                                            Spacer(minLength: 4)
-                                            Button {
-                                                GameFeel.shared.tap()
-                                                Task { await run { await model.nationDecree(nation, kind: ag.id) } }
-                                            } label: {
-                                                HStack(spacing: 4) {
-                                                    InkIcon(glyph: .edict, size: 13, weight: 1.8)
-                                                    Text(lex.forceActionLabel).font(Theme.label)
-                                                }
-                                                .foregroundStyle(Theme.paper2)
-                                                .padding(.horizontal, 12).frame(height: 30)
-                                                .background(Theme.seal, in: Capsule())
-                                            }
-                                            .buttonStyle(PressStyle())
-                                        }
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 16).padding(.vertical, 14)
-                        }
-                        .padding(.horizontal, Theme.Layout.pageInset)
-                    }
-
-                    // 政体个性、政局安定与政变风险仪 + 现实政体更迭入口
+                    // 5. 政体个性、政局安定与政变风险仪（平铺极简 + 更迭选项默认折叠）
                     if let pd = info.polityDetail {
-                        Group2 {
-                            VStack(alignment: .leading, spacing: 10) {
-                                HStack(spacing: 6) {
-                                    Text(info.styleLabel ?? Names.polity[info.polity] ?? info.polity).font(Theme.section).foregroundStyle(Theme.ink)
-                                    PaperTag(text: pd.camp + "阵营", color: Theme.ink, size: 11)
-                                    PaperTag(text: pd.fiefRule, color: pd.allowsFiefs ? Theme.jade : Theme.ink2, size: 11)
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 8) {
+                                Text(info.styleLabel ?? Names.polity[info.polity] ?? info.polity)
+                                    .font(Theme.serif(16)).tracking(1.2).foregroundStyle(Theme.ink)
+                                PaperTag(text: pd.camp + "阵营", color: Theme.ink2, size: 11)
+                                PaperTag(text: pd.fiefRule, color: Theme.ink2, size: 11)
+                                Spacer()
+                            }
+                            Text(pd.summary).font(Theme.sans(13)).foregroundStyle(Theme.ink2).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+                            Text(pd.traitLine).font(Theme.sans(12.5)).foregroundStyle(Theme.seal)
+                            StabilityRiskMeter(stability: pd.stability, risk: pd.coupRisk, level: pd.coupLevel)
+                            if let shock = pd.defeatShock, shock >= 5 {
+                                HStack(spacing: 8) {
+                                    PaperTag(text: "战败震荡 −\(shock)%", color: Theme.seal, size: 11)
+                                    if let mood = pd.mood {
+                                        Text("民心 \(mood >= 0 ? "+\(mood)" : "\(mood)")").font(Theme.sans(12.5)).foregroundStyle(mood < -20 ? Theme.seal : Theme.ink2).monospacedDigit()
+                                    }
                                     Spacer()
                                 }
-                                Text(pd.summary).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
-                                Text(pd.traitLine).font(Theme.caption).foregroundStyle(Theme.seal)
-                                Divider2()
-                                StabilityRiskMeter(stability: pd.stability, risk: pd.coupRisk, level: pd.coupLevel)
-                                if let shock = pd.defeatShock, shock >= 5 {
-                                    HStack(spacing: 6) {
-                                        PaperTag(text: "战败震荡 −\(shock)%", color: Theme.seal, size: 11)
-                                        if let mood = pd.mood {
-                                            Text("朝野民心 \(mood >= 0 ? "+\(mood)" : "\(mood)")").font(Theme.caption).foregroundStyle(mood < -20 ? Theme.seal : Theme.ink2)
-                                        }
-                                        Spacer()
-                                    }
-                                }
-                                Text("主导风向：\(pd.pressure)（\(pd.likelyPath)）").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 14)
+                            Text("主导风向 · \(pd.pressure)（\(pd.likelyPath)）")
+                                .font(Theme.sans(12.5)).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                            EditorialDivider()
                         }
                         .padding(.horizontal, Theme.Layout.pageInset)
 
@@ -2583,14 +2568,16 @@ struct NationSheet: View {
             GameFeel.shared.tap()
             Task { await run { await model.nationDecree(nation, kind: "balancePower:\(code)") } }
         } label: {
-            HStack(spacing: 4) {
-                Circle().fill(color).frame(width: 6.5, height: 6.5)
-                Text("\(label) \(pct)%").font(Theme.caption).foregroundStyle(Theme.ink).monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 4) {
+                    Circle().fill(color).frame(width: 5.5, height: 5.5)
+                    Text(label).font(Theme.sans(11.5)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
+                }
+                EditorialValueText("\(pct)%", size: 16, color: color == Theme.seal ? Theme.seal : Theme.ink)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 5)
-            .background(color.opacity(0.09), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(color.opacity(0.28), lineWidth: 0.7))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8).padding(.vertical, 7)
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
         }
         .buttonStyle(PressStyle())
     }
@@ -2740,13 +2727,13 @@ struct NationSheet: View {
     }
 }
 
-/// 国家页分类: five tabs with polity-aware second tab title (朝政 / 议政 / 国政 / 国务 / 军政 / 教政 / 部政).
+/// 国家页分类: five editorial underline tabs with polity-aware second tab title (朝政 / 议政 / 国政 / 国务 / 军政 / 教政 / 部政).
 struct NationTabs: View {
     @Binding var tab: NationSheet.Tab
     var courtTitle: String = "朝政"
     var body: some View {
         ChipPicker(items: NationSheet.Tab.allCases.map { t in (t, t == .court ? courtTitle : t.rawValue) }, selection: $tab)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Theme.Layout.pageInset)
     }
 }
 

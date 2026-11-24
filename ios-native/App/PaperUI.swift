@@ -8,57 +8,32 @@ import LieguojiCore
 // a warm wash, faint vermilion column rules, a double border, brush (TW-Kai) headings with a
 // vermilion seal, Chinese numerals for ranks, and ink that unfolds rather than pops.
 
-/// Aged paper: the original parchment, warmed, with faint vertical memorial rules.
+/// 极简古籍宣纸底面（#F5F0E6 暖白宣底 + 轻量 256×256 无缝细宣纤维，内存仅 ~256KB 较旧双 1024×1024 降 32 倍）。
+/// 彻底清除旧版杂乱红竖格与重渐变，让排版呼吸感与墨字层次成为绝对主角。
 struct MemorialPaper: View {
     var rules = true
-    /// Full-bleed under a whole sheet; false for small paper chips (it must not grow past them).
     var fullBleed = true
-    /// The parchment multiplied onto the paper colour once, with its warm wash: drawing it is then a
-    /// plain image (a live multiply blend made every sheet animation render offscreen and stutter).
-    private static let texture: UIImage? = {
-        guard let url = Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"), let parchment = UIImage(contentsOfFile: url.path) else { return nil }
-        let size = CGSize(width: 1024, height: 1024), rect = CGRect(origin: .zero, size: size)
-        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
+    private static let grainTexture: UIImage? = {
+        guard let url = Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"),
+              let parchment = UIImage(contentsOfFile: url.path) else { return nil }
+        let size = CGSize(width: 256, height: 256), rect = CGRect(origin: .zero, size: size)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
         return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
-            UIColor(Theme.paper).setFill(); ctx.fill(rect)
-            let k = max(size.width / parchment.size.width, size.height / parchment.size.height)
-            let w = parchment.size.width * k, h = parchment.size.height * k
-            parchment.draw(in: CGRect(x: (size.width - w) / 2, y: (size.height - h) / 2, width: w, height: h), blendMode: .multiply, alpha: 0.55)
-            let colors = [UIColor(red: 0.96, green: 0.93, blue: 0.85, alpha: 0.22).cgColor, UIColor.clear.cgColor, UIColor(red: 0.55, green: 0.42, blue: 0.25, alpha: 0.12).cgColor] as CFArray
-            if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.5, 1]) {
-                ctx.cgContext.drawLinearGradient(g, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
-            }
-        }
-    }()
-    /// 性能优化：将奏折纸面微韵与朱红竖格预烘焙为静态纹理（去除刺眼白边竖带与顶边切角红条，边缘通透无缝）。
-    private static let ruledTexture: UIImage? = {
-        guard let base = texture else { return nil }
-        let size = base.size, rect = CGRect(origin: .zero, size: size)
-        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
-        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
-            base.draw(in: rect)
-            let cg = ctx.cgContext
-            cg.setStrokeColor(UIColor(Theme.seal).withAlphaComponent(0.045).cgColor)
-            cg.setLineWidth(0.75)
-            var c: CGFloat = 34
-            while c < size.width {
-                cg.move(to: CGPoint(x: c, y: 0))
-                cg.addLine(to: CGPoint(x: c, y: size.height))
-                c += 48
-            }
-            cg.strokePath()
+            UIColor(Theme.paper).setFill()
+            ctx.fill(rect)
+            parchment.draw(in: rect, blendMode: .multiply, alpha: 0.14)
         }
     }()
     var body: some View {
-        // The base colour takes exactly the offered size; the pre-baked image is an overlay clipped to
-        // it. Crucially, `scaledToFill()` on a 1024×1024 square extends its hit-test rect far beyond
-        // `.clipped()`/`.clipShape()` in SwiftUI, so decorative overlays MUST disable hit-testing
-        // and the base must clip hit-testing via `.contentShape(Rectangle())`.
-        let image = rules ? (Self.ruledTexture ?? Self.texture) : Self.texture
         let paper = Theme.paper
             .overlay {
-                if let t = image {
-                    Image(uiImage: t).resizable().scaledToFill().allowsHitTesting(false)
+                if let t = Self.grainTexture {
+                    Image(uiImage: t)
+                        .resizable(resizingMode: .tile)
+                        .opacity(0.65)
+                        .allowsHitTesting(false)
                 }
             }
             .clipped()
@@ -139,26 +114,36 @@ private struct SealSpecks: Shape {
     }
 }
 
-/// 宣纸古韵朱砂印章（轻透斑驳纸纹融纸，彻底去掉厚重贴图感）。
+/// 真实朱砂篆刻印章透明素材（龙 / 史 / 溯 / 权 / 议），彻底取代代码绘制的红色圆角方框假印。
 struct Seal: View {
     let text: String
     var size: CGFloat = 40
     @State private var pressed = false
     var body: some View {
-        SealFace(text: text, size: size)
-            .rotationEffect(.degrees(-4))
-            .scaleEffect(pressed ? 1 : 1.24).opacity(pressed ? 0.94 : 0)
-            .onAppear { withAnimation(Motion.stamp) { pressed = true } }
+        Group {
+            if let img = BundleArt.carvedSeal(for: text) {
+                Image(uiImage: img)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: size, height: size)
+            } else {
+                SealFace(text: text, size: size)
+            }
+        }
+        .rotationEffect(.degrees(-2.5))
+        .scaleEffect(pressed ? 1 : 1.08).opacity(pressed ? 0.94 : 0)
+        .onAppear { withAnimation(Motion.fade) { pressed = true } }
+        .accessibilityLabel(text)
     }
 }
 
-/// A memorial heading: brush title, an ink rule and a seal; the subtitle reads like the docket line.
+/// 新中式极简古籍页头：思源宋体标题、1px 淡墨分割线与真实朱砂篆刻印章。
 struct MemorialHeader: View {
     let title: String
     var subtitle: String?
     var seal: String = "御览"
     var showGrabber = true
-    @State private var inked = false
     @Environment(\.inSidePanel) private var inSidePanel
     @Environment(\.hasBackBar) private var hasBackBar
     @Environment(\.sidePanelClose) private var sidePanelClose
@@ -167,22 +152,35 @@ struct MemorialHeader: View {
         VStack(spacing: 0) {
             if grabberVisible { SheetGrabber() }
             HStack(alignment: .center, spacing: 14) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(title).font(Theme.kai(inSidePanel ? 24 : 28)).foregroundStyle(Theme.ink).tracking(2).lineLimit(1).minimumScaleFactor(0.75)
-                    Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.75), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
-                        .frame(height: 1.5).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
-                    if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8) }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(Theme.serif(inSidePanel ? 23 : 26))
+                        .foregroundStyle(Theme.ink)
+                        .tracking(2.2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(Theme.sans(13))
+                            .foregroundStyle(Theme.ink2)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.82)
+                    }
                 }
                 Spacer(minLength: 8)
-                Seal(text: seal, size: inSidePanel ? 28 : 32)
+                Seal(text: seal, size: inSidePanel ? 32 : 36)
                 if inSidePanel, !hasBackBar, let close = sidePanelClose {
                     CardCloseButton(action: close)
                 }
             }
             .padding(.horizontal, Theme.Layout.sectionInset)
-            .padding(.top, grabberVisible ? Theme.Layout.headerTop : 12)
+            .padding(.top, grabberVisible ? 10 : 16)
+            .padding(.bottom, 16)
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 0.75)
+                .padding(.horizontal, Theme.Layout.sectionInset)
         }
-        .onAppear { withAnimation(Motion.reveal) { inked = true } }
     }
 }
 
@@ -731,14 +729,14 @@ struct ScrollRod: View {
     }
 }
 
-/// The one heading style for sections in every panel: a short seal-red stroke and the title.
+/// 新中式古籍分节标题：思源宋体 + 舒朗字距 + 2pt 细朱砂标线。
 struct SectionLabel: View {
     let title: String; var inset = true
     init(_ title: String, inset: Bool = true) { self.title = title; self.inset = inset }
     var body: some View {
-        HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 1.5, style: .continuous).fill(Theme.seal).frame(width: 3, height: 15)
-            Text(title).font(Theme.section).foregroundStyle(Theme.ink)
+        HStack(spacing: 9) {
+            Rectangle().fill(Theme.seal).frame(width: 2, height: 14)
+            Text(title).font(Theme.serif(15.5)).tracking(1.6).foregroundStyle(Theme.ink)
         }
         .frame(maxWidth: inset ? .infinity : nil, alignment: .leading)
         .padding(.horizontal, inset ? Theme.Layout.sectionInset : 0)
@@ -865,7 +863,7 @@ struct InkBusy: View {
     }
 }
 
-/// The confirming action of a panel: a full-width seal-red plate.
+/// 核心主操作按钮：严守三色铁律（松烟暖墨深底 #2C241E + 宣纸白字 #FAF7F0，无阴影渐变）。
 struct SealButton: View {
     let title: String
     var busy = false
@@ -874,11 +872,11 @@ struct SealButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                if busy { InkBusy(tint: Theme.paper2, track: Theme.paper2.opacity(0.35)).frame(width: 44) }
-                Text(title).font(Theme.section)
+                if busy { InkBusy(tint: Theme.paperLight, track: Theme.paperLight.opacity(0.35)).frame(width: 44) }
+                Text(title).font(Theme.sans(15, weight: .medium)).tracking(0.8)
             }
-            .foregroundStyle(Theme.paper2).frame(maxWidth: .infinity).frame(height: 48)
-            .background(Theme.seal.opacity(disabled ? 0.35 : 1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .foregroundStyle(Theme.paperLight).frame(maxWidth: .infinity).frame(height: 46)
+            .background(Theme.ink.opacity(disabled ? 0.35 : 1), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
         }
         .buttonStyle(PressStyle()).disabled(disabled || busy)
     }
@@ -1063,28 +1061,33 @@ struct InkBar: View {
 }
 
 extension View {
-    /// 全应用统一温润宣纸卡片（与 Group2 完全同源）：无双框白边、无刺眼泛白，单层暖墨细边收口。
+    /// 极简古籍平铺分区：去除厚重灰底圆角盒与阴影，仅在宣纸面以 1px 淡墨上下细线界定留白。
     func paperCard(tint: Color? = nil) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
-        return self
-            .background(
-                shape.fill(Color(red: 0.926, green: 0.890, blue: 0.824).opacity(0.84))
-            )
-            .background((tint ?? .clear).opacity(0.06), in: shape)
-            .clipShape(shape)
-            .overlay(shape.strokeBorder((tint ?? Theme.ink).opacity(tint == nil ? 0.15 : 0.30), lineWidth: 0.75))
+        VStack(spacing: 0) {
+            Rectangle().fill(tint == Theme.seal ? Theme.seal.opacity(0.35) : Theme.hairline).frame(height: 0.75)
+            self
+            Rectangle().fill(Theme.hairline).frame(height: 0.75)
+        }
     }
 }
 
-/// The one tag look: a short word on a filled capsule (状态、等级、立场…).
+/// 极简三色古籍角标：彻底淘汰花花绿绿的实心彩色胶囊；默认以细墨框浅墨字呈现，仅关键警示/选中项点缀朱砂红。
 struct PaperTag: View {
     let text: String
     var color: Color = Theme.seal
-    var size: CGFloat = 12
+    var size: CGFloat = 11.5
     var body: some View {
-        Text(text).font(Theme.kai(size)).foregroundStyle(Theme.paper2).lineLimit(1).fixedSize()
+        let isAccent = (color == Theme.seal || color == Theme.danger)
+        let fg = isAccent ? Theme.seal : Theme.ink2
+        Text(text)
+            .font(Theme.sans(size, weight: isAccent ? .medium : .regular))
+            .foregroundStyle(fg)
+            .lineLimit(1).fixedSize()
             .padding(.horizontal, 6).padding(.vertical, 2)
-            .background(color, in: Capsule())
+            .overlay(
+                RoundedRectangle(cornerRadius: 3.5, style: .continuous)
+                    .stroke(isAccent ? Theme.seal.opacity(0.45) : Theme.hairline, lineWidth: 0.75)
+            )
     }
 }
 

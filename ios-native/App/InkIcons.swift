@@ -28,64 +28,93 @@ enum InkGlyph: String, CaseIterable {
 
 struct InkIcon: View {
     let glyph: InkGlyph
-    var size: CGFloat = 22
+    var size: CGFloat = 20
     var weight: CGFloat = 1.7
     var filled = false
-    /// 可选点缀色；为空时在选中态用柔和前景色晕染焦点部件，平时以宋版双色套印（淡朱砂）点睛。
+    /// 保留参数以兼容旧调用位；新中式极简规范下功能图标严格保持单色 Phosphor light/fill，不叠廉价双色晕块。
     var accent: Color? = nil
-    /// 统一线宽圆角几何模式（用于地形工坊 12 笔刷等小尺寸精密工具栏，选中反白绝不糊团变形）。
+    /// 地形工坊 12 枚定制地貌笔刷保留统一线宽矢量模式；其余全部功能 UI 图标统一走官方 Phosphor Icons。
     var crisp = false
 
-    /// 视觉对齐（Optical Alignment）：非对称三角与上重下轻图标做几何中心微调，视觉上严格居中。
-    private var opticalOffset: CGSize {
+    private var phosphorGlyph: PhosphorGlyph? {
         switch glyph {
-        case .play, .chevronRight: return CGSize(width: size * 0.05, height: 0)
-        case .rewind: return CGSize(width: -size * 0.04, height: 0)
-        case .crown, .locate, .fortress: return CGSize(width: 0, height: -size * 0.02)
-        default: return .zero
+        case .nation: return .nation
+        case .military: return .military
+        case .diplomacy: return .diplomacy
+        case .chronicle: return .chronicle
+        case .ranking: return .ranking
+        case .views: return .views
+        case .command: return .command
+        case .menu: return .menu
+        case .close: return .close
+        case .war: return .war
+        case .house: return .house
+        case .crown: return .crown
+        case .alliance: return .alliance
+        case .culture: return .culture
+        case .religion: return .religion
+        case .polity: return .polity
+        case .economy: return .economy
+        case .goods: return .goods
+        case .region: return .region
+        case .play: return .play
+        case .pause: return .pause
+        case .marriage: return .marriage
+        case .edict: return .edict
+        case .locate: return .locate
+        case .replay: return .replay
+        case .rewind: return .rewind
+        case .stepBack: return .stepBack
+        case .stepForward: return .stepForward
+        case .search: return .search
+        case .settings: return .settings
+        case .refresh: return .refresh
+        case .archive: return .archive
+        case .importSave: return .importSave
+        case .brush: return .brush
+        case .fortress: return .fortress
+        case .anchor: return .anchor
+        case .fire: return .fire
+        case .retreat: return .retreat
+        case .march: return .march
+        case .plus: return .plus
+        case .minus: return .minus
+        case .trash: return .trash
+        case .swap: return .swap
+        case .eye: return .eye
+        case .calendar: return .calendar
+        case .save: return .save
+        case .export: return .export
+        case .wallpaper: return .wallpaper
+        case .sound: return .sound
+        case .speed: return .speed
+        case .trophy: return .trophy
+        case .person: return .person
+        case .peace: return .peace
+        case .chevronDown: return .chevronDown
+        case .chevronRight: return .chevronRight
+        case .computer: return .computer
+        // 地形工坊 12 枚专用几何地貌笔刷保留既有规范矢量路径
+        case .sea, .trench, .lake, .plain, .hill, .plateau, .mountain, .peak, .island, .raise, .lower, .smooth:
+            return nil
         }
     }
 
     var body: some View {
-        let scaleBoost: CGFloat = size <= 16 ? 1.12 : 1.0
-        let w = weight * (size / 22) * scaleBoost
-        ZStack {
-            if crisp {
-                Group {
-                    if let accent {
-                        InkAccentPath(glyph: glyph).fill(accent)
-                    }
-                    InkPath(glyph: glyph)
-                        .stroke(.foreground, style: StrokeStyle(lineWidth: max(1.25, w * 1.04), lineCap: .round, lineJoin: .round))
+        if let pg = phosphorGlyph {
+            PhosphorIcon(glyph: pg, size: size, weight: filled ? .fill : .light)
+        } else {
+            let scaleBoost: CGFloat = size <= 16 ? 1.12 : 1.0
+            let w = weight * (size / 22) * scaleBoost
+            ZStack {
+                if let accent {
+                    InkAccentPath(glyph: glyph).fill(accent)
                 }
-                .offset(opticalOffset)
-            } else {
-                if filled {
-                    // 选中态的柔和墨/朱砂圆形水晕，替代生硬矩形框。
-                    Circle()
-                        .fill(RadialGradient(colors: [Theme.seal.opacity(0.16), .clear], center: .center, startRadius: 0, endRadius: size * 0.56))
-                        .scaleEffect(1.15)
-                }
-                Group {
-                    if let accent {
-                        InkAccentPath(glyph: glyph).fill(accent)
-                    } else if filled {
-                        InkAccentPath(glyph: glyph).fill(Theme.seal.opacity(0.32))
-                    } else {
-                        // 宋版双色套印：未选中态也在焦点部件（印纽、铜钱孔、火焰芯、旗面）敷一层克制淡朱砂，层次顿显。
-                        InkAccentPath(glyph: glyph).fill(Theme.seal.opacity(0.14))
-                    }
-                    // 淡墨洇晕：纯矢量略宽淡墨底笔（去掉离屏 .blur/.drawingGroup，列表滚动零离屏合成开销且边缘更锐利）。
-                    BrushShape(glyph: glyph, width: w * 1.56)
-                        .fill(.foreground.opacity(0.12))
-                    // 主笔触：起顿行饱收锋。
-                    BrushShape(glyph: glyph, width: w * 1.24)
-                        .fill(.foreground)
-                }
-                .offset(opticalOffset)
+                InkPath(glyph: glyph)
+                    .stroke(.foreground, style: StrokeStyle(lineWidth: max(1.25, w * 1.04), lineCap: .round, lineJoin: .round))
             }
+            .frame(width: size, height: size)
         }
-        .frame(width: size, height: size)
     }
 }
 

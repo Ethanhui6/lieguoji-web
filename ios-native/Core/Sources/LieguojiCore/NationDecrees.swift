@@ -17,6 +17,32 @@ extension NativeEngine {
         guard !ownedIndices.isEmpty else { return (false, "该国已无实控州郡。") }
         let fin = r.finance.nations[id]
         let destinyRow = r.destiny.nations[id]
+        let civ = r.civilization.nations[id]
+        let lex = LocalizationEngine.lexicon(culture: civ.cultureId.optionalString, polity: civ.polity.optionalString, style: Regimes.styleProfile(r, id).id)
+
+        // 玩家政令后端防无限连点冷却闸门（纯可选 JS 字段，100% 兼容既有旧存档；策略切换/自动托管/议案/权力调衡走各自逻辑不在此锁）
+        let decreeCooldownDays: Int = {
+            switch kind {
+            case "mobilize", "landSurvey": return 180
+            case "prosper", "rewardArmies", "antiCorruption", "relief", "roadNetwork", "granary", "fortifyBorder", "armsUpgrade", "navalDockyard", "techAcademy": return 120
+            case "assimilateCulture", "convertFaith", "amnesty", "academy", "envoyGoodwill", "taxRelief": return 90
+            default: return 0
+            }
+        }()
+        let nbCd = Regimes.book(r, id)
+        let nowDayCd = r.world.day.asInt
+        if decreeCooldownDays > 0 {
+            let until = nbCd.decreeCooldowns.isNull ? 0 : (nbCd.decreeCooldowns[kind].optionalNumber.map(Int.init) ?? 0)
+            if nowDayCd < until {
+                let left = until - nowDayCd
+                return (false, "该项\(lex.decreePrefix)政令尚在休养期，需待 \(left) 日后方可再行\(lex.enactVerb)。")
+            }
+        }
+        func markDecreeCooldown() {
+            guard decreeCooldownDays > 0 else { return }
+            if nbCd.decreeCooldowns.isNull { nbCd.decreeCooldowns = JS.object() }
+            nbCd.decreeCooldowns[kind] = JS(nowDayCd + decreeCooldownDays)
+        }
 
         switch kind {
         case "prosper":
@@ -36,8 +62,9 @@ extension NativeEngine {
                 s.grain = JS(min(50_000_000, max(grain + 1200, (grain * 1.2).rounded())))
             }
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 5)) }
-            People.announce(r, kind: "event", text: "\(stateName)颁布休养生息之诏",
-                            reason: "轻徭薄赋、劝课农桑：全国 \(ownedIndices.count) 州增丁 \(popAdded) 人、存粮充盈，国运 +5。",
+            markDecreeCooldown()
+            People.announce(r, kind: "event", text: "\(stateName)施行休养生息\(lex.decreePrefix)令",
+                            reason: "轻徭薄赋、劝课农桑：全国 \(ownedIndices.count) \(lex.adminUnit)增丁 \(popAdded) 人、存粮充盈，国运 +5。",
                             nations: [id], province: nil)
             return (true, "休养生息：全国增丁 \(popAdded) 人，存粮 +20%，国运 +5。")
 
@@ -52,12 +79,13 @@ extension NativeEngine {
                 return (popMap[pa] ?? 0) > (popMap[pb] ?? 0)
             }
             let picks = Array(sorted.prefix(3))
-            guard !picks.isEmpty else { return (false, "境内没有可征募驻军的州郡。") }
+            guard !picks.isEmpty else { return (false, "境内没有可征募驻军的\(lex.adminUnit)。") }
             for idx in picks { Armies.create(r, nation: id, home: provinces[idx].id.asString, kind: "emergency") }
             if !destinyRow.isNull { destinyRow.destiny = JS(max(0, (destinyRow.destiny.optionalNumber ?? 50) - 4)) }
             Daily.reconcileMilitaryClock(r)
+            markDecreeCooldown()
             let names = picks.map { provinces[$0].name.asString }.joined(separator: "、")
-            People.announce(r, kind: "event", text: "\(stateName)下诏全国大征兵",
+            People.announce(r, kind: "event", text: "\(stateName)启动全国紧急征兵",
                             reason: "于\(names)紧急编练新军 \(picks.count) 支以备战守。",
                             nations: [id], province: provinces[picks[0]].id.asString)
             return (true, "于\(names)新征 \(picks.count) 支军队。")
@@ -73,6 +101,7 @@ extension NativeEngine {
                 a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 35))
                 a.supplies = JS(100)
             }
+            markDecreeCooldown()
             People.recordHistory(r, kind: "event", text: "\(stateName)犒赏三军",
                                  reason: "拨金 \(Int(cost)) 劳军，\(armies.count) 支现役军队士气大振、补给充盈。",
                                  nations: [id], province: nil)
@@ -87,7 +116,8 @@ extension NativeEngine {
             if !r.regimes.governance.isNull, let cur = r.regimes.governance[id].optionalNumber, cur < 0.7 {
                 r.regimes.governance.delete(id)
             }
-            People.announce(r, kind: "event", text: "\(stateName)下诏整顿吏治",
+            markDecreeCooldown()
+            People.announce(r, kind: "event", text: "\(stateName)推行整顿吏治",
                             reason: "清查贪墨、肃清纲纪，腐化度由 \(Int(before)) 降至 \(Int(after))，国运 +4。",
                             nations: [id], province: nil)
             return (true, "吏治整顿完成：腐化度降至 \(Int(after))，国运 +4。")
@@ -116,6 +146,7 @@ extension NativeEngine {
                 }
             }
             guard upgraded > 0 else { return (false, "边防诸州城防已全部达顶（10 级）。") }
+            markDecreeCooldown()
             People.recordHistory(r, kind: "event", text: "\(stateName)加固边防工事",
                                  reason: "修缮边塞城池与关隘，共 \(upgraded) 座重镇城防提升。",
                                  nations: [id], province: nil)
@@ -137,6 +168,7 @@ extension NativeEngine {
                 }
             }
             guard changed > 0 else { return (false, "境内各城均已归附本国文化。") }
+            markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)推行文教同化",
                             reason: "兴办官学、同文同轨，境内 \(changed) 座城池归入本国文化。",
                             nations: [id], province: nil)
@@ -159,6 +191,7 @@ extension NativeEngine {
             Regimes.setHouses(r, id, religion)
             let faithName = Regimes.creeds[religion]?.name ?? religion
             if changed == 0 { return (true, "境内诸州与世家皆已尊奉\(faithName)。") }
+            markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)诏令统一国教",
                             reason: "宣谕四方、归宗\(faithName)，共 \(changed) 州改奉国教。",
                             nations: [id], province: nil)
@@ -176,6 +209,7 @@ extension NativeEngine {
                 touched += 1
             }
             guard touched > 0 else { return (false, "本国尚无其他门阀世家需要安抚。") }
+            markDecreeCooldown()
             People.announce(r, kind: "family", text: "\(stateName)大赦天下、加恩诸世家",
                             reason: "朝廷赐爵安抚国内 \(touched) 家门阀，与宗室情谊各增 20。",
                             nations: [id], province: nil)
@@ -192,6 +226,7 @@ extension NativeEngine {
                 s.grain = JS(min(50_000_000, max(g + 2500, (g * 1.3).rounded())))
             }
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+            markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)开仓放粮赈济万民",
                             reason: "调拨官仓粮秣赈济饥民，全境存粮大增 30%，国运 +4。",
                             nations: [id], province: nil)
@@ -203,6 +238,7 @@ extension NativeEngine {
             Finance.setCorruption(r, id, max(0, before - 10))
             let gain = max(120, (fin.goldPerMonth.optionalNumber ?? 100) * 1.5).rounded()
             if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + gain) }
+            markDecreeCooldown()
             People.announce(r, kind: "politics", text: "\(stateName)下诏清丈天下田亩",
                             reason: "清查豪强隐匿田产、均平税负：国库进项 +\(Int(gain)) 金，腐化 −10。",
                             nations: [id], province: nil)
@@ -224,6 +260,7 @@ extension NativeEngine {
                 a.morale = JS(min(100, (a.morale.optionalNumber ?? 60) + 20))
                 a.supplies = JS(100)
             }
+            markDecreeCooldown()
             People.recordHistory(r, kind: "event", text: "\(stateName)颁行军械改良令",
                                  reason: "拨银 \(Int(cost)) 打造新式甲械，\(armies.count) 支军队兵员整补且士气 +20。",
                                  nations: [id], province: nil)
@@ -243,6 +280,7 @@ extension NativeEngine {
             }
             Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 4))
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 3)) }
+            markDecreeCooldown()
             People.announce(r, kind: "culture", text: "\(stateName)兴办太学、广育英才",
                             reason: "开设国立学馆、举荐贤能：中枢政略与外交能力精进，腐化 −4，国运 +3。",
                             nations: [id], province: nil)
@@ -263,6 +301,7 @@ extension NativeEngine {
             }
             if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + 180) }
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+            markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)大兴驿路交通基建",
                             reason: "修筑官道驿站、疏通商旅：全国增丁 \(popAdded) 人，商税回流 +180 金，国运 +4。",
                             nations: [id], province: nil)
@@ -279,6 +318,7 @@ extension NativeEngine {
                 s.grain = JS(min(50_000_000, max(g + 3200, (g * 1.45).rounded())))
             }
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 5)) }
+            markDecreeCooldown()
             People.recordHistory(r, kind: "event", text: "\(stateName)广设常平战略粮仓",
                                  reason: "兴修官仓、平籴积谷，全境战略存粮大增 45%，国运 +5。",
                                  nations: [id], province: nil)
@@ -297,6 +337,7 @@ extension NativeEngine {
                 a.morale = JS(min(100, (a.morale.optionalNumber ?? 60) + 15))
             }
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
+            markDecreeCooldown()
             People.announce(r, kind: "culture", text: "\(stateName)兴办格物科研院",
                             reason: "拨资革新工械与兵法：中枢军政能力 +4，全军士气 +15，国运 +4。",
                             nations: [id], province: nil)
@@ -321,6 +362,7 @@ extension NativeEngine {
                 fl.food = JS(max(fl.food.asNumber, fl.ships.asNumber * 2400))
                 repaired += 1
             }
+            markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)扩建船坞与海运船队",
                             reason: "增建跨海运输船队（运力 +2 支）并修缮 \(repaired) 支水师舰船船体。",
                             nations: [id], province: nil)
@@ -339,6 +381,7 @@ extension NativeEngine {
                 touched += 1
             }
             guard touched > 0 else { return (false, "当前无非交战邻国可派遣使节。") }
+            markDecreeCooldown()
             People.announce(r, kind: "diplomacy", text: "\(stateName)遣使四方、广结善邻",
                             reason: "派遣外交使团走访 \(touched) 国，双边邦交好感普遍 +18。",
                             nations: [id], province: nil)
@@ -351,6 +394,7 @@ extension NativeEngine {
             if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
             Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 10))
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 6)) }
+            markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)颁行减赋纾困安民令",
                             reason: "蠲免苛捐杂税、抚恤黎庶：腐化 −10，国运 +6，地方安定大增。",
                             nations: [id], province: nil)

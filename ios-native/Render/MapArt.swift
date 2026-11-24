@@ -69,6 +69,30 @@ enum BundleArt {
     static var compassRose: UIImage? { load("compass-rose", maxPx: 256) }
     static var scrollCorner: UIImage? { load("scroll-corner", maxPx: 256) }
 
+    /// 三级手绘真实朱砂篆刻印章透明素材（龙 / 史 / 溯 / 权 / 议），彻底取代代码红框假印。
+    static var sealStampDragon: UIImage? { load("seal-stamp-dragon", maxPx: 192) }
+    static var sealStampHistory: UIImage? { load("seal-stamp-history", maxPx: 192) }
+    static var sealStampTrace: UIImage? { load("seal-stamp-trace", maxPx: 192) }
+    static var sealStampPower: UIImage? { load("seal-stamp-power", maxPx: 192) }
+    static var sealStampCouncil: UIImage? { load("seal-stamp-council", maxPx: 192) }
+
+    static func carvedSeal(for text: String) -> UIImage? {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.contains("史") || t.contains("纪") || t.contains("传") || t.contains("志") || t.contains("卷") {
+            return sealStampHistory ?? sealStampDragon
+        }
+        if t.contains("溯") || t.contains("回") || t.contains("览") || t.contains("阅") {
+            return sealStampTrace ?? sealStampHistory
+        }
+        if t.contains("权") || t.contains("朝") || t.contains("政") || t.contains("君") || t.contains("主") || t.contains("法") || t.contains("战") || t.contains("军") {
+            return sealStampPower ?? sealStampDragon
+        }
+        if t.contains("议") || t.contains("令") || t.contains("诏") || t.contains("策") || t.contains("盟") || t.contains("交") || t.contains("人") || t.contains("典") || t.contains("改") {
+            return sealStampCouncil ?? sealStampPower
+        }
+        return sealStampDragon ?? sealStampPower
+    }
+
     static var capitalChinese: UIImage? { load("landmark-capital", maxPx: 192) }
     static var capitalJapanese: UIImage? { load("capital-japanese", maxPx: 192) }
     static var capitalWestern: UIImage? { load("capital-western", maxPx: 192) }

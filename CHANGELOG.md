@@ -1,5 +1,31 @@
 # 更新日志
 
+## 4.3.0 / build 174 — 2026-11-24
+
+### 一、Phase 0：新中式极简古籍编辑风设计基座（不改底层核心业务）
+- **三色铁律与三级离线字体体系（`LieguojiApp.swift`、`Resources/Fonts/`）**：
+  - 统一宣纸暖白底色（`#F5F0E6` / `#FAF7F0`）、松烟暖墨文字与深墨主按钮（`#2C241E` / `#6E655D`、`rgba(44,36,30,0.12)` 极细 1px 淡墨分割线）、唯一朱砂红强调色（`#A83226`，仅落于选中态、关键进度条、警示与篆刻印章）。
+  - 离线内置静态固化 SemiBold 子集字体 **`NotoSerifSC-SemiBold.ttf`**（3.24 MB，覆盖 GB2312 与全库用字）与 **`CormorantGaramond-SemiBold.ttf`**（69.5 KB，高对比衬线等宽数值），配合 iOS 原生 `PingFang SC` 正文构成三级字体规范，并在启动时经 `CGFont.postScriptName` 精准注册。
+- **官方 Phosphor Icons 零依赖矢量引擎（`PhosphorIcons.swift`、`InkIcons.swift`）**：
+  - 从官方 MIT `@phosphor-icons/core` 预编译 73 枚功能图标 × `light`/`fill` 双字重（共 146 组 `CGPath`），首次渲染后永久缓存，全站 50+ 功能 UI 图标全面告别慢速 CPU 手绘折线与廉价红色径向光晕；完整保留地形工坊 12 枚统一几何地貌笔刷图标。
+- **5 枚真实朱砂篆刻印章透明素材 + 32 倍轻量化宣纸（`Resources/Art/seal-stamp-*.png`、`MapArt.swift`、`PaperUI.swift`）**：
+  - 新增真实石刻感透明朱砂篆刻印章「龍」「史」「溯」「權」「議」，彻底取代代码绘制的红色圆角方框假印；
+  - `MemorialPaper` 废除旧版两张 1024×1024（8 MB 常驻内存）底图与杂乱红竖格，改用 `#F5F0E6` 底面 + 轻量 256×256 宣纸微粒无缝平铺（内存仅 ~256 KB，直降 32 倍）。
+- **非泛型古籍组件库（`EditorialComponents.swift`、`PaperControls.swift`）**：
+  - 新增 `EditorialDivider`、`EditorialValueText`（Cormorant Garamond 数字 + PingFang 单位自动基线混排）、`EditorialSectionHeader`、`EditorialInkButton`（深墨底宣纸白字并直标后果）、`EditorialActionRow`、`EditorialTabStrip`、`EditorialFocusLead`；同步将全局 `Group2`、`StatStrip`、`ChipPicker` 升级为去卡片嵌套的宣纸平铺 + 1px 分割线 + 极简朱砂下划线页签（全部维持非泛型边界，严格守住真机 1 MB 主线程栈安全红线）。
+
+### 二、Phase 1：四大核心样板间重塑与边界 Bug 修补（保护模块 3/4/5/6 主体逻辑）
+- **国家概览页（`NationSheet.swift`）**：
+  - 页顶实行渐进式披露，仅突出 1 项核心焦点（战事告急 / 待决议案 / 国情纲要）；移除杂色胶囊堆叠，议会席位改用三阶暖墨 + 朱砂单色条，国力走势接入 Cormorant Garamond 衬线百分比；文化学说/国教与国势五维默认折叠，页面呼吸感与首屏可读性大幅跃升。
+- **朝政 / 议政页（`NationSheet.swift`）**：
+  - 将待决大政议案提至朝政首屏，配真实「議」朱砂印与深墨主决策按钮（直接写明核心后果）；双轨中枢（国家元首 / 政府首脑）以 1px 淡墨纵线平铺，顺手清除该处残留的硬编码「君主 / 掌权世家」词条，完全遵循 `LocalizationEngine` 政体词库；动态四方权力天平换用真实「權」印与三阶暖墨 + 朱砂占比格。
+- **政令与国策页（`NationDecreeViews.swift`、`NationDecrees.swift`）**：
+  - 合并旧版重复出现的两个「本国自动治理托管」开关为页顶单条极简委托栏；长期国策改用 Cormorant Garamond 计数与克制细框互斥卡；18 项御批政令改为疏朗单列平铺操作行，直接注明核心后果与休养期；
+  - **后端边界修补**：在 `NationDecrees.swift` 中为全部 18 项常规玩家政令补齐 90–180 日 `decreeCooldowns` 冷却闸门（纯可选字段，100% 兼容旧存档），封堵同日无限连点刷资源的边界漏洞，并在 `V4RefactorTests.swift` 增补专项回归单测。
+- **史记与编年页（`ChronicleViews.swift`、`WorldSheets.swift`）**：
+  - 山河回放入口升级为真实「溯」朱砂篆章 + 深墨主按钮；分类筛选改用极简下划线条（去胶囊套娃）；事件类型图标全数切换为 15pt Monochrome Phosphor `light` 线刻图标；年份标题与岁纪柱图接入 Cormorant Garamond 衬线数字与三色体系；行间距扩增至 14pt 留白呼吸感。
+- **CI 样板间截图补全（`ShotTour.swift`）**：新增 `11d-decrees`（国家政令页）巡览截屏，配合 `11-nation`、`11c-court`、`15-chronicle` 全覆盖四页样板间供视觉验收。
+
 ## 4.2.10 / build 173 — 2026-11-24
 
 ### 一、根据真机 `.ips` 崩溃堆栈彻底根治进图闪退（SwiftUI 主线程 1 MB 栈溢出）

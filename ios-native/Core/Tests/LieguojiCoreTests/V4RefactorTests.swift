@@ -155,4 +155,23 @@ final class V4RefactorTests: XCTestCase {
         let refitRes = engine.refitFleetNow(fid)
         XCTAssertTrue(refitRes.ok, refitRes.reason)
     }
+
+    func testRegularDecreeCooldownBlocksSameDayRepeat() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+
+        // 首次颁布普通政令成功
+        let first = engine.nationDecree(0, kind: "prosper")
+        XCTAssertTrue(first.ok, first.reason)
+
+        // 同日立即再次点击必须被冷却闸门拒绝，封堵无限刷资源漏洞
+        let repeatSameDay = engine.nationDecree(0, kind: "prosper")
+        XCTAssertFalse(repeatSameDay.ok)
+        XCTAssertTrue(repeatSameDay.reason.contains("休养期"), repeatSameDay.reason)
+
+        // 推进超过 120 日后应自动恢复可颁布
+        engine.run.world.day = JS(engine.run.world.day.asInt + 121)
+        let afterCooldown = engine.nationDecree(0, kind: "prosper")
+        XCTAssertTrue(afterCooldown.ok, afterCooldown.reason)
+    }
 }

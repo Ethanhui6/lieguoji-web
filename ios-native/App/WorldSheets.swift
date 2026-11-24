@@ -921,19 +921,19 @@ struct ChronicleSheet: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: 20) {
                 SheetHeader(title: "史记", subtitle: model.state?.dateText, seal: "史")
 
                 ChipPicker(items: [("annals", "编年大事"), ("era", "兴衰长卷")], selection: $page)
                     .padding(.horizontal, Theme.Layout.pageInset)
 
                 if page == "annals" {
-                    annalsBody
+                    ViewBoundary { annalsBody }
                 } else {
-                    eraOverviewBody
+                    ViewBoundary { eraOverviewBody }
                 }
             }
-            .padding(.bottom, 28)
+            .padding(.bottom, 40)
         }
         .scrollIndicators(.hidden)
         .onAppear {
@@ -958,55 +958,81 @@ struct ChronicleSheet: View {
         let groups = grouped(visible)
         let newestId = allShown.first?.id
 
-        // 精简山河回放快捷入口（与列国/外交卡片 1:1 统一视觉语言）
-        Button {
-            GameFeel.shared.tap()
-            openReplay(nil)
-        } label: {
-            HStack(spacing: 11) {
-                ArtEmblem(image: BundleArt.sealReplay, size: 36, fallback: .replay)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("山河回放 · 时光倒流").font(Theme.section).foregroundStyle(Theme.ink)
-                    Text("纵览版图兴替，拖动进度或回溯至历史节点").font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+        // 顶部山河回放极简导览条：真实「溯」朱砂篆刻章 + 深墨主按钮（无红边卡片套娃）
+        VStack(alignment: .leading, spacing: 0) {
+            EditorialDivider()
+            HStack(alignment: .center, spacing: 14) {
+                if let stamp = BundleArt.sealStampTrace {
+                    Image(uiImage: stamp)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(width: 34, height: 34)
+                } else {
+                    Seal(text: "溯", size: 32)
                 }
-                Spacer(minLength: 6)
-                HStack(spacing: 4) {
-                    InkIcon(glyph: .replay, size: 13, weight: 1.8)
-                    Text("回放").font(Theme.label)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("山河回放 · 时光倒流")
+                        .font(Theme.serif(16))
+                        .foregroundStyle(Theme.ink)
+                        .tracking(1.0)
+                    Text("纵览版图兴替，拖动进度或回溯至历史节点")
+                        .font(Theme.sans(12))
+                        .foregroundStyle(Theme.ink2)
+                        .lineLimit(1)
                 }
-                .foregroundStyle(Theme.paper2)
-                .padding(.horizontal, 12).frame(height: 30)
-                .background(Theme.seal, in: Capsule())
+                Spacer(minLength: 8)
+                Button {
+                    GameFeel.shared.tap()
+                    openReplay(nil)
+                } label: {
+                    HStack(spacing: 5) {
+                        PhosphorIcon(glyph: .replay, size: 13, weight: .light)
+                        Text("回放").font(Theme.sans(13, weight: .medium))
+                    }
+                    .foregroundStyle(Theme.paper2)
+                    .padding(.horizontal, 14).frame(height: 34)
+                    .background(Theme.ink, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                }
+                .buttonStyle(PressStyle())
             }
-            .padding(.horizontal, 14).padding(.vertical, 11)
-            .paperCard(tint: Theme.seal)
+            .padding(.vertical, 14)
+            EditorialDivider()
         }
-        .buttonStyle(PressStyle())
         .padding(.horizontal, Theme.Layout.pageInset)
 
-        // 搜索 + 只看一国
+        // 极简搜寻 + 只看一国
         ChronicleFilterBar(keyword: $keyword, nation: filterName, clearNation: { nationFilter = nil })
             .padding(.horizontal, Theme.Layout.pageInset)
 
-        // 轻盈胶囊分类筛选（与军事/外交筛选签完全同高同曲率）
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
-                ForEach(Self.categories, id: \.0) { c in
-                    let on = category == c.0
-                    Button {
-                        GameFeel.shared.tap()
-                        withAnimation(Motion.tap) { category = c.0 }
-                    } label: {
-                        Text(c.1).font(Theme.label)
-                            .foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                            .padding(.horizontal, 13).frame(height: 32)
-                            .background(on ? Theme.seal : Theme.paper2.opacity(0.9), in: Capsule())
-                            .overlay(Capsule().strokeBorder(on ? Color.clear : Theme.ink.opacity(0.16), lineWidth: 0.85))
+        // 极简下划线分类条（去胶囊套娃，朱砂红仅落于选中项底线）
+        VStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 20) {
+                    ForEach(Self.categories, id: \.0) { c in
+                        let on = category == c.0
+                        Button {
+                            GameFeel.shared.tap()
+                            withAnimation(Motion.tap) { category = c.0 }
+                        } label: {
+                            VStack(spacing: 7) {
+                                Text(c.1)
+                                    .font(on ? Theme.serif(14) : Theme.sans(13.5))
+                                    .foregroundStyle(on ? Theme.seal : Theme.ink2)
+                                    .tracking(on ? 0.6 : 0)
+                                Rectangle()
+                                    .fill(on ? Theme.seal : Color.clear)
+                                    .frame(height: 1.75)
+                            }
+                            .padding(.top, 4)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(PressStyle())
                 }
+                .padding(.horizontal, Theme.Layout.pageInset)
             }
-            .padding(.horizontal, Theme.Layout.pageInset)
+            EditorialDivider(inset: Theme.Layout.pageInset)
         }
 
         if groups.isEmpty {
@@ -1017,19 +1043,33 @@ struct ChronicleSheet: View {
         } else {
             ForEach(groups) { group in
                 let y = group.id
-                HStack(spacing: 6) {
-                    SectionLabel(y > 0 ? "\(era)\(y)年" : "\(era)前\(1 - y)年", inset: false)
-                    Spacer()
-                    Text("\(group.items.count) 记").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
-                }
-                .padding(.horizontal, Theme.Layout.sectionInset)
-                .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        HStack(alignment: .firstTextBaseline, spacing: 3) {
+                            Text(y > 0 ? era : "\(era)前")
+                                .font(Theme.serif(15))
+                                .foregroundStyle(Theme.ink)
+                                .tracking(1.2)
+                            Text(y > 0 ? "\(y)" : "\(1 - y)")
+                                .font(Theme.numeral(19))
+                                .foregroundStyle(Theme.ink)
+                                .monospacedDigit()
+                            Text("年")
+                                .font(Theme.serif(14))
+                                .foregroundStyle(Theme.ink2)
+                        }
+                        Spacer()
+                        EditorialValueText("\(group.items.count) 记", size: 13, color: Theme.ink2)
+                    }
+                    .padding(.top, 6)
+                    .padding(.bottom, 10)
+                    EditorialDivider()
 
-                Group2 {
                     ForEach(Array(group.items.enumerated()), id: \.offset) { idx, e in
                         chronicleRow(e, isNewest: e.id == newestId)
-                        if idx < group.items.count - 1 { Divider2() }
+                        if idx < group.items.count - 1 { EditorialDivider() }
                     }
+                    EditorialDivider()
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
@@ -1050,32 +1090,34 @@ struct ChronicleSheet: View {
     @ViewBuilder
     private func chronicleRow(_ e: ChronicleEntry, isNewest: Bool) -> some View {
         let isOpen = open == e.id
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Button {
                 GameFeel.shared.tap()
                 withAnimation(Motion.panel) { open = isOpen ? nil : e.id }
             } label: {
-                HStack(alignment: .top, spacing: 10) {
-                    KindSeal(kind: .of(e.kind), size: 22).padding(.top, 1)
-                    VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .top, spacing: 12) {
+                    KindSeal(kind: .of(e.kind), size: 16).padding(.top, 3)
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(e.text)
-                            .font(Theme.body)
+                            .font(Theme.sans(14.5))
                             .foregroundStyle(Theme.ink)
+                            .lineSpacing(3.5)
                             .fixedSize(horizontal: false, vertical: true)
                             .multilineTextAlignment(.leading)
                         if isOpen, !e.reason.isEmpty {
                             Text(e.reason)
-                                .font(Theme.label)
+                                .font(Theme.sans(13))
                                 .foregroundStyle(Theme.ink2)
+                                .lineSpacing(3)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .multilineTextAlignment(.leading)
                         }
                     }
-                    Spacer(minLength: 4)
+                    Spacer(minLength: 6)
                     if isNewest {
                         PaperTag(text: "新", color: Theme.seal, size: 11)
                     } else {
-                        InkIcon(glyph: .chevronDown, size: 11, weight: 1.7)
+                        PhosphorIcon(glyph: .chevronDown, size: 12, weight: .light)
                             .foregroundStyle(Theme.ink2.opacity(0.65))
                             .rotationEffect(.degrees(isOpen ? 180 : 0))
                             .padding(.top, 5)
@@ -1089,23 +1131,22 @@ struct ChronicleSheet: View {
                 GameFeel.shared.tap()
                 withAnimation(Motion.tap) { nationFilter = nationFilter == n ? nil : n }
             }
-            .padding(.leading, 32)
+            .padding(.leading, 28)
 
             if isOpen {
-                HStack(spacing: 8) {
+                HStack(spacing: 12) {
                     if let place = e.province {
                         Button {
                             GameFeel.shared.tap()
                             fly(place)
                         } label: {
                             HStack(spacing: 5) {
-                                InkIcon(glyph: .locate, size: 12, weight: 1.8)
-                                Text("定位舆图").font(Theme.caption)
+                                PhosphorIcon(glyph: .locate, size: 13, weight: .light)
+                                Text("定位舆图").font(Theme.sans(12, weight: .medium))
                             }
                             .foregroundStyle(Theme.seal)
-                            .padding(.horizontal, 10).frame(height: 28)
-                            .background(Theme.seal.opacity(0.09), in: Capsule())
-                            .overlay(Capsule().strokeBorder(Theme.seal.opacity(0.28), lineWidth: 0.7))
+                            .padding(.horizontal, 12).frame(height: 30)
+                            .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).stroke(Theme.seal.opacity(0.45), lineWidth: 0.75))
                         }
                         .buttonStyle(PressStyle())
                     }
@@ -1114,24 +1155,23 @@ struct ChronicleSheet: View {
                         openReplay(e.day)
                     } label: {
                         HStack(spacing: 5) {
-                            InkIcon(glyph: .replay, size: 12, weight: 1.8)
-                            Text("此日回放").font(Theme.caption)
+                            PhosphorIcon(glyph: .replay, size: 13, weight: .light)
+                            Text("此日回放").font(Theme.sans(12, weight: .medium))
                         }
-                        .foregroundStyle(Theme.jade)
-                        .padding(.horizontal, 10).frame(height: 28)
-                        .background(Theme.jade.opacity(0.10), in: Capsule())
-                        .overlay(Capsule().strokeBorder(Theme.jade.opacity(0.28), lineWidth: 0.7))
+                        .foregroundStyle(Theme.ink)
+                        .padding(.horizontal, 12).frame(height: 30)
+                        .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).stroke(Theme.ink.opacity(0.28), lineWidth: 0.75))
                     }
                     .buttonStyle(PressStyle())
                     Spacer(minLength: 0)
                 }
-                .padding(.leading, 32)
-                .padding(.top, 2)
+                .padding(.leading, 28)
+                .padding(.top, 4)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(isOpen ? Theme.seal.opacity(0.035) : Color.clear)
+        .padding(.vertical, 14)
+        .background(isOpen ? Theme.ink.opacity(0.028) : Color.clear)
     }
 
     @ViewBuilder
@@ -1157,7 +1197,7 @@ struct ChronicleSheet: View {
     }
 }
 
-/// 纪事页「列国兴衰时间长卷」：横向展示各历史节点的列强疆域消长色带与头号霸主，点击任一节点即可直接跳转至该日山河回放。
+/// 纪事页「列国兴衰时间长卷」：平铺于宣纸之上，真实朱砂「史」章 + 极细 1px 分割线，点击直达回放。
 struct ChronicleDynastyScroll: View {
     let timeline: ReplayTimelineData
     var onSelectDay: (Int) -> Void
@@ -1181,20 +1221,29 @@ struct ChronicleDynastyScroll: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                ArtEmblem(image: BundleArt.sealChronicle, size: 26, fallback: .chronicle)
-                Text("列国兴衰长卷").font(Theme.section).foregroundStyle(Theme.ink)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                if let stamp = BundleArt.sealStampHistory {
+                    Image(uiImage: stamp)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                } else {
+                    Seal(text: "史", size: 22)
+                }
+                Text("列国兴衰长卷").font(Theme.serif(16)).foregroundStyle(Theme.ink).tracking(1.6)
                 Spacer(minLength: 4)
-                Text("共 \(timeline.frames.count) 帧 · 点按直达回放").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                EditorialValueText("共 \(timeline.frames.count) 帧", size: 12.5, color: Theme.ink2)
             }
+            EditorialDivider()
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .bottom, spacing: 7) {
+                HStack(alignment: .bottom, spacing: 10) {
                     ForEach(sampledFrames) { f in
                         Button {
                             onSelectDay(f.day)
                         } label: {
-                            VStack(spacing: 4) {
+                            VStack(spacing: 5) {
                                 GeometryReader { geo in
                                     let slices = f.topPowers ?? [ReplayTimelineData.PowerSlice(i: f.topNation, p: max(1, f.topProvinces))]
                                     let total = max(1, slices.reduce(0) { $0 + max(1, $1.p) })
@@ -1205,42 +1254,35 @@ struct ChronicleDynastyScroll: View {
                                                 .frame(height: max(3, geo.size.height * CGFloat(sl.p) / CGFloat(total)))
                                         }
                                     }
-                                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                                    .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                            .strokeBorder(f.major ? Theme.seal : Theme.ink.opacity(0.16), lineWidth: f.major ? 1.1 : 0.6)
+                                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                            .strokeBorder(f.major ? Theme.seal : Theme.hairline, lineWidth: f.major ? 1.1 : 0.65)
                                     )
                                 }
-                                .frame(width: 26, height: 58)
+                                .frame(width: 26, height: 60)
 
                                 Text(MapLayers.stateLabel(f.topName, full: false))
-                                    .font(Theme.kai(10))
+                                    .font(Theme.sans(10.5))
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(1)
-                                    .frame(width: 38)
-                                Text(f.year > 0 ? "\(f.year)年" : "前\(1 - f.year)")
-                                    .font(Theme.kai(9).monospacedDigit())
+                                    .frame(width: 40)
+                                Text(f.year > 0 ? "\(f.year)" : "前\(1 - f.year)")
+                                    .font(Theme.numeral(11.5))
                                     .foregroundStyle(f.major ? Theme.seal : Theme.ink2)
+                                    .monospacedDigit()
                                     .lineLimit(1)
                             }
                             .padding(.vertical, 6)
                             .padding(.horizontal, 4)
-                            .background(
-                                f.major ? Theme.seal.opacity(0.07) : Theme.paper2.opacity(0.75),
-                                in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous)
-                                    .strokeBorder(f.major ? Theme.seal.opacity(0.28) : Theme.ink.opacity(0.08), lineWidth: 0.6)
-                            )
                         }
                         .buttonStyle(PressStyle())
                     }
                 }
                 .padding(.vertical, 2)
             }
+            EditorialDivider()
         }
-        .padding(14)
-        .paperCard()
+        .padding(.vertical, 6)
     }
 }

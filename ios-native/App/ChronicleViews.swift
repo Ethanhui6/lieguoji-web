@@ -55,24 +55,31 @@ enum ChronicleKind {
     }
 }
 
-/// 纪事类别工笔微绘徽章（全面取代旧版单字方块印，同步应用于史记、国史与山河回放）。
+/// 二级信息列表极简图标：彻底清除史记/外交列表左侧琐碎彩色迷你插图，
+/// 统一改用 Phosphor `light` 单色细线图标（#6E655D 浅墨；战事/领土重大变动克制点朱砂红 #A83226）。
 struct KindSeal: View {
     let kind: ChronicleKind
-    var size: CGFloat = 22
-    private var artwork: UIImage? {
+    var size: CGFloat = 15
+    private var glyph: PhosphorGlyph {
         switch kind {
-        case .war: return BundleArt.heraldWar
-        case .land: return BundleArt.fxBannerVictory
-        case .politics: return BundleArt.heraldEdict
-        case .reform, .culture: return BundleArt.fxTalent
-        case .faith: return BundleArt.fxHarvest
-        case .house: return BundleArt.landmarkCapital
-        case .pact: return BundleArt.heraldPeace
-        case .event: return BundleArt.fxTrade
+        case .war: return .war
+        case .land: return .flag
+        case .politics: return .crown
+        case .reform: return .scales
+        case .culture: return .culture
+        case .faith: return .religion
+        case .house: return .familyTree
+        case .pact: return .diplomacy
+        case .event: return .edict
         }
     }
+    private var tint: Color {
+        (kind == .war || kind == .land) ? Theme.seal : Theme.ink2
+    }
     var body: some View {
-        ArtEmblem(image: artwork, size: max(20, size + 2), fallback: .chronicle)
+        PhosphorIcon(glyph: glyph, size: min(16, max(14, size)), weight: .light)
+            .foregroundStyle(tint)
+            .frame(width: 18, height: 18)
             .accessibilityLabel(kind.label)
     }
 }
@@ -123,32 +130,41 @@ struct ChronicleDigest: View {
     var body: some View {
         let rows = years
         let peak = max(1, rows.map(\.total).max() ?? 1)
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
-                Text("岁纪").font(Theme.section).foregroundStyle(Theme.ink)
+                HStack(spacing: 7) {
+                    PhosphorIcon(glyph: .chronicle, size: 15, weight: .light)
+                        .foregroundStyle(Theme.ink2)
+                    Text("岁纪").font(Theme.serif(16)).foregroundStyle(Theme.ink).tracking(1.6)
+                }
                 Spacer()
                 DigestKey(color: Theme.seal, text: "战")
                 DigestKey(color: Theme.ink, text: "政")
-                DigestKey(color: Theme.jade, text: "盟")
-                DigestKey(color: Theme.ink2.opacity(0.45), text: "余")
+                DigestKey(color: Theme.ink.opacity(0.45), text: "盟")
+                DigestKey(color: Theme.ink2.opacity(0.28), text: "余")
             }
+            EditorialDivider()
             if rows.isEmpty {
                 Text("尚无记载").font(Theme.label).foregroundStyle(Theme.ink2)
             } else {
-                HStack(alignment: .bottom, spacing: 6) {
+                HStack(alignment: .bottom, spacing: 8) {
                     ForEach(rows) { row in
                         DigestBar(year: row, peak: peak, label: yearText(row.id), latest: row.id == rows.last?.id)
                     }
                 }
-                .frame(height: 96)
+                .frame(height: 104)
+                .padding(.top, 4)
                 if let now = rows.last {
                     Text(note(now, rows.count > 1 ? rows[rows.count - 2] : nil))
-                        .font(Theme.label).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                        .font(Theme.sans(13))
+                        .foregroundStyle(Theme.ink2)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            EditorialDivider()
         }
-        .padding(14)
-        .paperCard()
+        .padding(.vertical, 6)
     }
 }
 
@@ -156,8 +172,8 @@ private struct DigestKey: View {
     let color: Color
     let text: String
     var body: some View {
-        HStack(spacing: 3) {
-            RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 9, height: 9)
+        HStack(spacing: 4) {
+            Rectangle().fill(color).frame(width: 8, height: 8)
             Text(text).font(Theme.caption).foregroundStyle(Theme.ink2)
         }
     }
@@ -168,57 +184,66 @@ private struct DigestBar: View {
     let peak: Int
     let label: String
     let latest: Bool
-    private func height(_ count: Int) -> CGFloat { CGFloat(count) / CGFloat(peak) * 58 }
+    private func height(_ count: Int) -> CGFloat { CGFloat(count) / CGFloat(peak) * 62 }
     var body: some View {
-        VStack(spacing: 3) {
-            Text("\(year.total)").font(Theme.caption).foregroundStyle(latest ? Theme.seal : Theme.ink2).monospacedDigit()
+        VStack(spacing: 4) {
+            Text("\(year.total)")
+                .font(Theme.numeral(13))
+                .foregroundStyle(latest ? Theme.seal : Theme.ink2)
+                .monospacedDigit()
             VStack(spacing: 0) {
-                Rectangle().fill(Theme.ink2.opacity(0.45)).frame(height: height(year.other))
-                Rectangle().fill(Theme.jade).frame(height: height(year.pact))
+                Rectangle().fill(Theme.ink2.opacity(0.28)).frame(height: height(year.other))
+                Rectangle().fill(Theme.ink.opacity(0.45)).frame(height: height(year.pact))
                 Rectangle().fill(Theme.ink).frame(height: height(year.politics))
                 Rectangle().fill(Theme.seal).frame(height: height(year.war))
             }
-            .frame(maxWidth: 22)
-            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
-            Text(label).font(Theme.caption).foregroundStyle(latest ? Theme.seal : Theme.ink2).lineLimit(1).minimumScaleFactor(0.6)
+            .frame(maxWidth: 16)
+            .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
+            Text(label)
+                .font(Theme.numeral(12))
+                .foregroundStyle(latest ? Theme.seal : Theme.ink2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
     }
 }
 
-/// 搜寻 and 只看一国: a paper search box, and the state the list is narrowed to.
+/// 搜寻 and 只看一国: 极简宣纸细线搜寻栏，移除重边框与红底胶囊。
 struct ChronicleFilterBar: View {
     @Binding var keyword: String
     let nation: String?
     let clearNation: () -> Void
     var body: some View {
-        HStack(spacing: 8) {
-            HStack(spacing: 7) {
-                InkIcon(glyph: .search, size: 14, weight: 1.75).foregroundStyle(Theme.ink2)
-                TextField("", text: $keyword, prompt: Text("搜寻史册……").foregroundColor(Theme.ink2.opacity(0.65)))
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                PhosphorIcon(glyph: .search, size: 15, weight: .light).foregroundStyle(Theme.ink2)
+                TextField("", text: $keyword, prompt: Text("搜寻史册……").foregroundColor(Theme.ink2.opacity(0.6)))
                     .font(Theme.body).foregroundStyle(Theme.ink).tint(Theme.seal)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !keyword.isEmpty {
                     Button { keyword = "" } label: {
-                        InkIcon(glyph: .close, size: 11, weight: 1.8)
+                        PhosphorIcon(glyph: .close, size: 12, weight: .light)
                             .foregroundStyle(Theme.ink2)
                             .frame(width: 24, height: 24)
-                            .background(Theme.ink.opacity(0.06), in: Circle())
-                            .contentShape(Circle())
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .paperField()
+            .padding(.horizontal, 12).frame(height: 40)
+            .background(Theme.paper2.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
+
             if let nation {
                 Button(action: clearNation) {
                     HStack(spacing: 5) {
-                        Text(nation).font(Theme.label).lineLimit(1)
-                        InkIcon(glyph: .close, size: 10, weight: 2.0)
+                        Text(nation).font(Theme.sans(12, weight: .medium)).lineLimit(1)
+                        PhosphorIcon(glyph: .close, size: 10, weight: .light)
                     }
                     .foregroundStyle(Theme.paper2)
                     .padding(.horizontal, 12).frame(height: 40)
-                    .background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                    .background(Theme.ink, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
                 .buttonStyle(PressStyle())
             }
@@ -243,8 +268,11 @@ struct ChronicleEntryMeta: View {
         return Array(unique.prefix(3))
     }
     var body: some View {
-        HStack(spacing: 6) {
-            Text(ChronicleKind.of(entry.kind).label + " · " + age).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize()
+        HStack(spacing: 8) {
+            Text(ChronicleKind.of(entry.kind).label + " · " + age)
+                .font(Theme.sans(11.5))
+                .foregroundStyle(Theme.ink2)
+                .fixedSize()
             ForEach(involved, id: \.self) { n in
                 Button { pick(n) } label: { NationTag(map: map, nation: n) }.buttonStyle(.plain)
             }
@@ -259,13 +287,15 @@ private struct NationTag: View {
     var body: some View {
         if let map, nation >= 0, nation < map.meta.nations.count {
             let n = map.meta.nations[nation]
-            HStack(spacing: 3) {
-                RoundedRectangle(cornerRadius: 2).fill(Names.color(n.color)).frame(width: 8, height: 8)
-                Text(MapLayers.stateLabel(n.name, full: false)).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+            HStack(spacing: 4) {
+                Rectangle().fill(Names.color(n.color)).frame(width: 6, height: 6)
+                Text(MapLayers.stateLabel(n.name, full: false))
+                    .font(Theme.sans(11.5))
+                    .foregroundStyle(Theme.ink2)
+                    .lineLimit(1)
             }
             .padding(.horizontal, 6).padding(.vertical, 2)
-            .background(Theme.paper2, in: Capsule())
-            .overlay(Capsule().stroke(Theme.line, lineWidth: 0.8))
+            .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).stroke(Theme.hairline, lineWidth: 0.65))
         }
     }
 }

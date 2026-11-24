@@ -6,55 +6,86 @@ import LieguojiCore
 @main struct LieguojiApp: App {
     init() {
         CrashBreadcrumb.install()
-        // The original's map font (TW-Kai), used for every text in the app.
-        if let url = Bundle.main.url(forResource: "TW-Kai", withExtension: "ttf", subdirectory: "Fonts") {
-            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
-        }
-        let kai = UIFont(name: Theme.fontName, size: 17) ?? .systemFont(ofSize: 17)
-        UISegmentedControl.appearance().setTitleTextAttributes([.font: kai.withSize(14)], for: .normal)
-        UINavigationBar.appearance().titleTextAttributes = [.font: kai]
+        Theme.registerBundledFonts()
+        let barFont = UIFont(name: Theme.serifFontName, size: 17) ?? .systemFont(ofSize: 17, weight: .semibold)
+        UISegmentedControl.appearance().setTitleTextAttributes([.font: UIFont.systemFont(ofSize: 13.5, weight: .medium)], for: .normal)
+        UINavigationBar.appearance().titleTextAttributes = [.font: barFont]
     }
-    var body: some Scene { WindowGroup { RootView().font(Theme.section).preferredColorScheme(.light).environment(\.colorScheme, .light) } }
+    var body: some Scene { WindowGroup { RootView().font(Theme.body).preferredColorScheme(.light).environment(\.colorScheme, .light) } }
 }
 
-/// Warm paper and ink, one vermilion seal colour and the jade of the web game.
+/// 新中式极简古籍编辑风三色体系 × 三级离线字体规范：
+/// - 宣纸底色：`#F5F0E6`（主纸面）/ `#FAF7F0`（亮纸面）
+/// - 松烟暖墨：`#2C241E`（主文字与深墨主按钮）/ `#6E655D`（辅助灰墨）/ `rgba(44,36,30,0.12)`（1px 淡墨分割线）
+/// - 唯一强调色：朱砂红 `#A83226`（仅用于选中态、关键进度条、警示与真实篆刻印章）
+/// - 三级字体：`Noto Serif SC`（标题） + `Cormorant Garamond`（衬线等宽数字） + iOS 原生 `PingFang SC`（清晰正文）
 enum Theme {
     static let fontName = "TW-Kai-98_1"
-    static let paper = Color(red: 0.949, green: 0.922, blue: 0.870)
-    static let paper2 = Color(red: 0.936, green: 0.903, blue: 0.842)
-    static let ink = Color(red: 0.098, green: 0.082, blue: 0.063)
-    static let ink2 = Color(red: 0.36, green: 0.325, blue: 0.27)
-    static let line = Color(red: 0.165, green: 0.145, blue: 0.114).opacity(0.14)
-    static let wash = Color(red: 0.925, green: 0.894, blue: 0.835)
-    static let seal = Color(red: 0.706, green: 0.255, blue: 0.18)
-    static let jade = Color(red: 0.184, green: 0.365, blue: 0.314)
-    static let gold = Color(red: 0.686, green: 0.494, blue: 0.145)
-    static let danger = Color(red: 0.745, green: 0.188, blue: 0.145)
+    static private(set) var serifFontName = "NotoSerifSC-ExtraLight"
+    static private(set) var numeralFontName = "CormorantGaramond-Light"
+
+    private static func registerFont(resource: String) -> String? {
+        guard let url = Bundle.main.url(forResource: resource, withExtension: "ttf", subdirectory: "Fonts") else { return nil }
+        CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        guard let provider = CGDataProvider(url: url as CFURL),
+              let cgFont = CGFont(provider),
+              let psName = cgFont.postScriptName as String? else { return nil }
+        return psName
+    }
+
+    static func registerBundledFonts() {
+        _ = registerFont(resource: "TW-Kai")
+        if let serif = registerFont(resource: "NotoSerifSC-SemiBold") { serifFontName = serif }
+        if let num = registerFont(resource: "CormorantGaramond-SemiBold") { numeralFontName = num }
+    }
+
+    static let paper = Color(red: 0.961, green: 0.941, blue: 0.902)       // #F5F0E6 宣纸暖白
+    static let paperLight = Color(red: 0.980, green: 0.969, blue: 0.941)  // #FAF7F0 亮宣白
+    static let paper2 = paperLight
+    static let ink = Color(red: 0.173, green: 0.141, blue: 0.118)         // #2C241E 松烟暖墨
+    static let ink2 = Color(red: 0.431, green: 0.396, blue: 0.365)        // #6E655D 辅助灰墨
+    static let hairline = Color(red: 0.173, green: 0.141, blue: 0.118).opacity(0.12) // rgba(44,36,30,0.12)
+    static let line = hairline
+    static let wash = Color(red: 0.933, green: 0.910, blue: 0.867)
+    static let seal = Color(red: 0.659, green: 0.196, blue: 0.149)        // #A83226 朱砂红（唯一强调色）
+    static let jade = Color(red: 0.247, green: 0.333, blue: 0.286)        // 克制青墨（仅地图语义与兼容位）
+    static let gold = Color(red: 0.545, green: 0.435, blue: 0.247)        // 暗古金（仅兼容位）
+    static let danger = seal
+
     /// Backdrop behind the map. Follows the sea preset so the edges are not a different blue.
     static func seaColor(_ ocean: String) -> Color {
         let c = MapPalette.ocean(ocean).deep
         return Color(red: Double(c.r), green: Double(c.g), blue: Double(c.b))
     }
-    static func kai(_ size: CGFloat) -> Font { .custom(fontName, size: size) }
-    /// 字号五级（国家页等信息页统一用这几级，不再各写各的号数）：
-    /// 标题 22（页名、国名）、分节 17（分节标题、主按钮）、正文 15（名称、数值、行内容）、标注 13（次要说明、单位）、注释 12（小注、标签）。
-    static let title = kai(22)
-    static let section = kai(17)
-    static let body = kai(15)
-    static let label = kai(13)
-    static let caption = kai(12)
-    /// 全应用统一排版尺度：卡片外边距 16、分节与页头边距 20、卡片内边距 14、模块间距 12、左侧图标对齐通道 22。
+
+    /// 一级标题字体：思源宋体（Noto Serif SC），压住历史厚重感。
+    static func serif(_ size: CGFloat) -> Font { .custom(serifFontName, size: size) }
+    /// 二级核心数值字体：Cormorant Garamond 高对比衬线数字（配合 .monospacedDigit() 防抖动）。
+    static func numeral(_ size: CGFloat) -> Font { .custom(numeralFontName, size: size) }
+    /// 三级正文与辅助字体：iOS 原生 PingFang SC，移动端小屏极高可读性。
+    static func sans(_ size: CGFloat, weight: Font.Weight = .regular) -> Font { .system(size: size, weight: weight) }
+    /// 兼容旧调用位：大号走思源宋体，小号正文字体走清晰无衬线体。
+    static func kai(_ size: CGFloat) -> Font { size >= 18 ? serif(size) : sans(size, weight: size >= 15 ? .medium : .regular) }
+
+    /// 统一古籍编辑五阶字号：标题 23（思源宋体）、分节 16.5（思源宋体）、正文 14.5（原生无衬线）、标注 13、注释 12。
+    static var title: Font { serif(23) }
+    static var section: Font { serif(16.5) }
+    static let body = sans(14.5, weight: .regular)
+    static let label = sans(13, weight: .regular)
+    static let caption = sans(12, weight: .regular)
+
+    /// 呼吸感大幅提升的古籍排版尺度（边距与留白提升 40%~60%）。
     enum Layout {
-        static let pageInset: CGFloat = 16
-        static let sectionInset: CGFloat = 20
-        static let cardPadding: CGFloat = 14
-        static let stackGap: CGFloat = 12
+        static let pageInset: CGFloat = 22
+        static let sectionInset: CGFloat = 22
+        static let cardPadding: CGFloat = 18
+        static let stackGap: CGFloat = 18
+        static let sectionGap: CGFloat = 28
+        static let rowPadV: CGFloat = 14
         static let iconGutter: CGFloat = 22
-        static let headerTop: CGFloat = 10
+        static let headerTop: CGFloat = 12
     }
     /// 统一控件与同心圆角尺度：
-    /// 顶栏 42pt 与底栏 46pt（内嵌 38pt 同心朱印钮）视觉体量严格平衡，彻底告别顶小底大的割裂感；
-    /// 圆角严守同心连续曲率：面板 28pt → 外卡片 16pt → 内控件 12pt → 轻标签 10pt。
     enum Control {
         static let screenInset: CGFloat = 16
         static let topHeight: CGFloat = 42
@@ -62,10 +93,10 @@ enum Theme {
         static let sealButtonSize: CGFloat = 38
         static let tickerHeight: CGFloat = 32
         static let gap: CGFloat = 8
-        static let cornerSheet: CGFloat = 28
-        static let cornerCard: CGFloat = 16
-        static let cornerControl: CGFloat = 12
-        static let cornerChip: CGFloat = 10
+        static let cornerSheet: CGFloat = 26
+        static let cornerCard: CGFloat = 10
+        static let cornerControl: CGFloat = 8
+        static let cornerChip: CGFloat = 6
     }
 }
 
@@ -194,18 +225,23 @@ struct VerticalText: View {
 struct PrimaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
-        GameActionLabel(title: title, symbol: symbol).font(Theme.section).frame(maxWidth: .infinity).frame(minHeight: 50).padding(.horizontal, 12)
-            .foregroundStyle(Theme.paper2).background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous).stroke(Theme.paper2.opacity(0.24), lineWidth: 0.7).padding(2))
-            .shadow(color: Theme.seal.opacity(0.22), radius: 5, y: 2)
+        GameActionLabel(title: title, symbol: symbol)
+            .font(Theme.sans(15, weight: .medium))
+            .tracking(0.8)
+            .frame(maxWidth: .infinity).frame(minHeight: 48).padding(.horizontal, 16)
+            .foregroundStyle(Theme.paperLight)
+            .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
     }
 }
 struct SecondaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
-        GameActionLabel(title: title, symbol: symbol).font(Theme.section).frame(maxWidth: .infinity).frame(minHeight: 50).padding(.horizontal, 12)
-            .foregroundStyle(Theme.ink).background(Theme.paper2.opacity(0.92), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.ink.opacity(0.16), lineWidth: 0.9))
+        GameActionLabel(title: title, symbol: symbol)
+            .font(Theme.sans(14.5, weight: .regular))
+            .frame(maxWidth: .infinity).frame(minHeight: 46).padding(.horizontal, 16)
+            .foregroundStyle(Theme.ink)
+            .background(Color.clear, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.ink.opacity(0.22), lineWidth: 0.75))
     }
 }
 
@@ -404,15 +440,13 @@ struct SheetGrabber: View {
     }
 }
 
-/// Memorial heading: a colour tab (签条) for a state, the brush title, an ink rule that draws
-/// itself, the docket line, and a small seal.
+/// 新中式极简古籍页头：思源宋体大标题 + 舒朗字距 + 1px 淡墨分割线 + 真实朱砂篆刻印章（无渐变、无重影）。
 struct SheetHeader: View {
     let title: String
     var subtitle: String?
     var color: Color?
     var seal: String = "阅"
     var showGrabber = true
-    @State private var inked = false
     @Environment(\.inSidePanel) private var inSidePanel
     @Environment(\.hasBackBar) private var hasBackBar
     @Environment(\.sidePanelClose) private var sidePanelClose
@@ -420,28 +454,41 @@ struct SheetHeader: View {
         let grabberVisible = showGrabber && !inSidePanel && !hasBackBar
         VStack(spacing: 0) {
             if grabberVisible { SheetGrabber() }
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: 14) {
                 if let color {
-                    RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 7, height: 42)
-                        .shadow(color: Theme.ink.opacity(0.15), radius: 1, y: 1)
+                    Rectangle()
+                        .fill(color)
+                        .frame(width: 3, height: inSidePanel ? 34 : 38)
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(Theme.kai(inSidePanel ? 23 : 26)).foregroundStyle(Theme.ink).tracking(1.5).lineLimit(1).minimumScaleFactor(0.72)
-                    Rectangle().fill(LinearGradient(colors: [Theme.ink.opacity(0.7), Theme.ink.opacity(0)], startPoint: .leading, endPoint: .trailing))
-                        .frame(height: 1.2).scaleEffect(x: inked ? 1 : 0, anchor: .leading)
-                    if let subtitle { Text(subtitle).font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8) }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(Theme.serif(inSidePanel ? 23 : 26))
+                        .foregroundStyle(Theme.ink)
+                        .tracking(2.2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.74)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(Theme.sans(13))
+                            .foregroundStyle(Theme.ink2)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.82)
+                    }
                 }
-                Spacer(minLength: 6)
-                Seal(text: seal, size: inSidePanel ? 28 : 32)
+                Spacer(minLength: 8)
+                Seal(text: seal, size: inSidePanel ? 32 : 36)
                 if inSidePanel, !hasBackBar, let close = sidePanelClose {
                     CardCloseButton(action: close)
                 }
             }
             .padding(.horizontal, Theme.Layout.sectionInset)
-            .padding(.top, grabberVisible ? Theme.Layout.headerTop : 12)
-            .padding(.bottom, 8)
+            .padding(.top, grabberVisible ? 10 : 16)
+            .padding(.bottom, 16)
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 0.75)
+                .padding(.horizontal, Theme.Layout.sectionInset)
         }
-        .onAppear { withAnimation(Motion.reveal) { inked = true } }
     }
 }
 
@@ -455,45 +502,43 @@ struct ViewBoundary: View {
     var body: some View { build() }
 }
 
-/// 奏折统一温润宣纸卡片：与底纸自然融合的暖宣底色 + 单层精致墨线收口（彻底清除旧版双框 2.5pt 泛白亮边与反光边）。
-/// 非泛型设计：切断所有内页卡片向父视图传播的巨型 `ModifiedContent` 泛型类型膨胀。
+/// 极简古籍平铺区块（拆除层层套娃的圆角灰底阴影卡片）：直接平铺于宣纸暖白底面，仅以顶部/底部 1px 淡墨分割线界定层次。
+/// 非泛型设计：同时切断内页向父视图传播的巨型 `ModifiedContent` 泛型类型膨胀。
 struct Group2: View {
     private let content: AnyView
     init<Content: View>(@ViewBuilder content: () -> Content) {
         self.content = AnyView(content())
     }
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
-        VStack(spacing: 0) { content }
-            .background(
-                shape.fill(Color(red: 0.926, green: 0.890, blue: 0.824).opacity(0.84))
-            )
-            .clipShape(shape)
-            .overlay(shape.strokeBorder(Theme.ink.opacity(0.15), lineWidth: 0.75))
+        VStack(spacing: 0) {
+            Rectangle().fill(Theme.hairline).frame(height: 0.75)
+            content
+            Rectangle().fill(Theme.hairline).frame(height: 0.75)
+        }
     }
 }
 
-/// A docket line: label, a dotted leader, the value.
+/// A docket line: clean editorial row with Phosphor light icon, muted ink label, and crisp right-aligned value.
 struct Row: View {
     let label: String; let value: String
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .center, spacing: 16) {
-                HStack(spacing: 8) { Glyph.icon(label, fallback: .edict); Text(label).foregroundStyle(Theme.ink2) }.fixedSize()
-                Spacer(minLength: 12)
-                Text(value).foregroundStyle(Theme.ink).monospacedDigit().fixedSize()
+                HStack(spacing: 9) { Glyph.icon(label, fallback: .edict); Text(label).font(Theme.sans(14)).foregroundStyle(Theme.ink2) }.fixedSize()
+                Spacer(minLength: 14)
+                EditorialValueText(value, size: 15, color: Theme.ink)
             }
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) { Glyph.icon(label, fallback: .edict); Text(label).foregroundStyle(Theme.ink2) }
-                Text(value).foregroundStyle(Theme.ink).monospacedDigit().fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 9) { Glyph.icon(label, fallback: .edict); Text(label).font(Theme.sans(14)).foregroundStyle(Theme.ink2) }
+                Text(value).font(Theme.sans(14.5)).foregroundStyle(Theme.ink).monospacedDigit().fixedSize(horizontal: false, vertical: true)
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
-        .font(Theme.section).frame(minHeight: 22).padding(.horizontal, 16).padding(.vertical, 12)
+        .frame(minHeight: 24).padding(.horizontal, 4).padding(.vertical, 13)
         .accessibilityElement(children: .combine)
     }
 }
 
-struct Divider2: View { var body: some View { Rectangle().fill(Theme.ink.opacity(0.12)).frame(height: 0.8).padding(.horizontal, 16) } }
+struct Divider2: View { var body: some View { Rectangle().fill(Theme.hairline).frame(height: 0.75).padding(.horizontal, 4) } }
 
 struct NationChip: View {
     let map: WorldMap; let nation: Int
@@ -516,6 +561,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("4.3.0", ["【新中式极简古籍编辑风（Phase 0 设计基座 + Phase 1 核心样板间）】全面落地极简三色铁律（#F5F0E6/#FAF7F0 宣纸暖白底、#2C241E/#6E655D 松烟暖墨字与深墨主按钮、#A83226 唯一朱砂强调色）与三级离线字体体系：思源宋体（Noto Serif SC）压镇国名/大标题、Cormorant Garamond 等宽衬线数字呈现核心国力数据、iOS 原生 PingFang SC 保障移动端小屏正文清晰可读。",
+                   "【官方 Phosphor 矢量图标引擎 × 5 枚真实朱砂篆刻印章 × 32 倍轻量化宣纸】原生零依赖内置 73 枚 MIT 官方 Phosphor Icons（light 细线白描 + fill 实心朱砂双字重、首次渲染缓存 CGPath，保留地形工坊 12 枚定制地貌笔刷）；5 枚真实石刻透明朱砂篆章（龙/史/溯/权/议）取代代码红框假印；MemorialPaper 废除 8MB 双大图，改用 256×256 细宣纹理（内存直降 32 倍）。",
+                   "【国家总览 / 朝政 / 政令 / 史记四页样板间重塑与呼吸感升级】拆除层层套娃的圆角灰底阴影卡片，改以宣纸直铺 + 1px 淡墨分割线 + 大幅留白与渐进式披露（文化/国教/国势五维默认折叠、待决议案提至朝政页顶并直标核心后果）；合并政令页重复托管开关、全站 18 项普通政令补齐 90–180 日后端防连点冷却闸门（100% 兼容旧存档）；史记页升级真「溯」章回放入口、下划线分类条与极简 Phosphor 轻线编年列表。"]),
         ("4.2.10", ["【根据真机 .ips 崩溃堆栈彻底根治进图闪退（SwiftUI 主线程 1 MB 栈溢出）】结合真机面包屑（play.enter，内存 212MB/温控正常）与真机 .ips 反汇编锁定 5 层崩溃链：单结构体 GameView 将顶栏/底栏/侧栏/5 条操作横幅/双份 16 分支弹窗与 28 组修饰符堆成 3,911B 巨型泛型 Body 与 56 次动态 ___chkstk_darwin 栈分配，模拟器 8MB 栈可过而 iPhone 真机 1MB 主线程栈在进入地图瞬间即刻溢出；现已将 GameView 彻底重构为 20 个独立具体 View 结构体与双 ViewModifier，大幅压缩栈帧并降低 HUD 无谓重绘发热。",
                     "【同步排空全站其余巨型视图栈溢出隐患】全二进制扫描发现国家页（9,436B）、山河回放（2,700B）、州郡页（2,485B）、自绘地图（2,245B）与陆海军团页（2,185B）均存在同类巨型泛型嵌套；现将 Group2 与 FoldSection 升级为非泛型边界并在上述 6 大页面全量切分视图边界，进图与切换任意详情页均稳如磐石。",
                     "【Core 全局钩子清理与单测全绿】修复 NativeEngine 初始化未清 DeclarationEngine.opinionBias 的旧世界闭包残留，并补齐 CreationStabilityTests 退出清理。"]),

@@ -167,7 +167,7 @@ public enum MaritimeWarfare {
             return sum + max(0, SeaDominion.shipyardLevel(r, provinceId: provinces[idx].id.asString) - 1)
         }
         let techBonus = max(0, WorldDepth.techLevel(r, nation: nation, branch: .naval) - 1)
-        return max(1, ports.count * 2 + ships / 2 + bonus + dockBonus + techBonus)
+        return max(2, ports.count * 2 + ships + bonus + dockBonus + techBonus)
     }
 
     /// 统计该国当前已在海上航行或已排定渡海航程的陆军支数（可排除正在重下军令的军队本身）。

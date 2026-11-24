@@ -1,5 +1,44 @@
 # 更新日志
 
+## 4.4.0 / build 175 — 2026-11-24
+
+### 一、全站字体、按钮触感与游戏内外 UI 全面视觉对齐（Phase 1.5 + Phase 2）
+- **彻底告别 iOS 系统默认字体（`LieguojiApp.swift`、`EditorialComponents.swift`）**：
+  - 全应用零 `.font(.system(...))`，统一升级为古典三阶字系：**`Noto Serif SC SemiBold`**（国名 / 大标题 / 节标题）+ **`TW-Kai` 正楷**（全站正文 / 按钮 / 页签 / 列表 / HUD / 弹窗）+ **`Cormorant Garamond SemiBold`**（等宽衬线核心数据），启动时后台静默预热 `MemorialPaper` 与 `PhosphorPathCache` 压低首次开页耗时。
+- ** unmistakable 触感按钮体系 & 100% 统一图标与真实篆印（`EditorialComponents.swift`、`PhosphorIcons.swift`、`InkIcons.swift`、`MapArt.swift`）**：
+  - 新增 `EditorialTactileButton`（亮宣纸底 `#FAF7F0` + 暖墨细框 + `1.5pt` 轻压立体底缘）与深墨实心主按钮，终结“简约但看不清哪儿能点”；
+  - 清零全站最后 15 处残留 `Image(systemName:)`（含 `QuickSheet`、`DiplomacyBoard`、`NationEditors`、`ProvinceSheet`、`WorldSheets`、`WorldPanels`），100% 切换为 MIT 官方 Phosphor Icons；
+  - 新增「邑」「盟」2 枚真实石刻透明朱砂篆刻印章（全站共 7 枚真篆印：龍 / 史 / 溯 / 權 / 議 / 邑 / 盟）。
+- **游戏外与游戏内全页面统一转绘 + 双模式 HUD**：
+  - 游戏外（`TitleViews.swift`、`WorldArchive.swift`、`MenuSheets.swift`）：标题页、新世界向导、存档卷宗、设置页与更新日志全面转绘古籍编辑风；
+  - 游戏内（`GameView.swift`、`NationSheet.swift`、`NationDecreeViews.swift`、`WorldSheets.swift`、`ProvinceSheet.swift`、`ArmySheets.swift`、`DiplomacyBoard.swift`、`WorldPanels.swift`、`HeraldScene.swift`、`QuickSheet.swift`）：横竖屏 HUD、长按快捷弹窗（`ProvinceQuickSheet` / `ReformCard` 严格对齐 20pt 页边距与纸框瓦片）、大事传报（去除糖果彩色渐变为统一宣纸微阶御卷）全部视觉统一；
+  - 新增设置项 `@AppStorage("hud.autoHide")`：默认「常驻 HUD + 右上角净图眼钮」，可选切换「静置 6 秒自动隐去、轻点地图唤出」。
+
+### 二、实机试玩核心玩法与体验痛点专项根治
+- **海军扩编与岛国/滨海大国跨海出征（`Shipyards.swift`、`Naval.swift`、`MaritimeWarfare.swift`、`ArmyOrders.swift`）**：
+  - `Shipyards.expandNavies`（仅 App 模式生效，零影响网页黄金测试）：开局首月为岛国与滨海大国快速成军护航水师，此后月度自主排产扩编至 2–6 支主力舰队，并加速船坞新舰增补；
+  - `Naval.attackCount` 放开 1–2 支舰队全数出击跨海制海，下调远洋粮草警戒阈值与储备余量；`MaritimeWarfare.seaTransportCapacity` 扩容海运运力；
+  - `ArmyOrders` 在存在无陆邻海外敌国时自动将敌方最近海港与沿海州郡纳入作战目标，岛国与滨海大国真正跨海交锋。
+- **和平时期军队巡边换防（`ArmyOrders.swift`）**：
+  - 承平时期久驻满 40–74 日后按确定性 `CreationForces.fnv` 错峰重新抽选边境、海港或都城防区移驻，彻底消除和平期全图军队死寂不动。
+- **根除缩放/拖动时地图、军队与文字图层分离（`MapView.swift`、`MapRenderer.swift`）**：
+  - 拖拽、双指缩放、惯性滑行与镜头飞越统一纳入单次 `CATransaction` + `presentsWithTransaction = true` + 共享 `MapRenderer.pinnedFrameTime` 帧时钟（严格通过 `fromLayout` 与 `inSyncDraw` 隔离 `layoutSubviews` 零重入），Metal 底图/兵牌与 UIKit 地名/兵力数锁定至同一硬件帧零错位。
+- **皇帝 / 元首去世与继统传报（`GameModel.swift`、`HeraldScene.swift`）**：
+  - 新增 `Herald.Kind.succession`，完整承接 `accession` 继统与君主/元首驾崩、崩逝、逝世、去世、圆寂、被处死事件（同国去重防双弹），配对应文明画卷与动态标题（大行崩逝 / 元首逝世 / 教宗圆寂 / 大选更替 / 新主继统）。
+- **彻底消除「第1次XX战役」频繁刷屏（`WorldExtras.swift`）**：
+  - 取消小规模初战即弹史册播报，仅当单一战区总兵力峰值 ≥ 2.4 万、都城保卫战 ≥ 1.2 万或 ≥ 4 支军团会战时才记入大事播报，施加全局 120 日播报冷却，首次会战简称为「XX之战」。
+- **模块 4 / 模块 5 边界清理（`NationDecrees.swift`、`PolitySystem.swift`、`MapDetail.swift`）**：
+  - 清除 `NationDecrees` 残留硬编码 `"下诏"`（接入 `lex.enactVerb`）及多处 `"州郡"`/`"王室联姻"` 漏网词；`PolitySystem` 新增 AI 长期国策 360 日防抖锁并尊重玩家手选战略；清理 `MapDetail` 废弃 `compassCorner`。
+
+### 三、博物馆级手绘卷轴装裱 + 干净高精地图光影与流畅动画回归（Phase 3，守住冷静防闪退红线）
+- **真实手绘卷轴四框装裱（`MapRenderer.swift`）**：
+  - 采用仓库已打包的高精手绘卷轴素材（`scroll-border-h.png` 镜像无缝绫边、`scroll-roller-v.png` 紫檀双箍卷轴、`scroll-corner.png` 四隅白玉铜扣包角）配合 24 顶点极轻中空柔影环（0% 压盖地图画心），并恢复解析丝绸云锦书案底纹；
+  - 尊重玩家审美品味，**严禁在地图内景铺设繁杂的照相写实地貌贴图**，保持地图画心朗润清晰、一眼辨识疆域与兵势。
+- **零噪声解析光影 × 60fps 丝滑动画 × 零 KVC 四季天气回归（`MapRenderer.swift`、`MapView.swift`、`MapEffects.swift`、`WeatherOverlay.swift`）**：
+  - 全面保留单 Pass `framebufferOnly = true`、14 MB 有界缓存与零稳态逐像素噪声架构；
+  - 回归宋画青绿浅海大陆架渐变、双波法线日照水光、铜版细浪与冬日北洋寒冰；陆地西北暖阳浮雕与高倍缩放双尺度 `paper-detail.jpg` 宣纸纤维；军团真实航向踏步倾身与交战冲锋回弹（100% 保护 `UnitArt.swift` 雕漆兵牌造型）；
+  - 均衡档回归 60fps 丝滑行军与战局特效（微温自动降 30fps、高温降 15fps）、标题页 30fps 缓游；安全重铸 `WeatherOverlayView` 四季手绘飘花/夏曦/红枫/飞雪/霖雨涟漪与灾区微章（100% 公开 CoreAnimation API，零私有 KVC）。
+
 ## 4.3.0 / build 174 — 2026-11-24
 
 ### 一、Phase 0：新中式极简古籍编辑风设计基座（不改底层核心业务）

@@ -22,35 +22,31 @@ struct ArmyRow: View {
         HStack(spacing: 10) {
             UnitMark(unit: army.embarked == true ? "Transport" : army.unit, color: tint)
                 .frame(width: 36, height: 36)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(army.name).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
+                    Text(army.name).font(Theme.serif(15.5)).foregroundStyle(Theme.ink).lineLimit(1)
                     if let br = army.branchLabel, !br.isEmpty {
-                        Text(br).font(Theme.caption).foregroundStyle(Theme.jade)
-                            .padding(.horizontal, 6).padding(.vertical, 1.5)
-                            .background(Theme.jade.opacity(0.10), in: Capsule())
+                        PaperTag(text: br, color: Theme.ink2, size: 10.5)
                     } else {
-                        Text(Echelon.name(troops: army.troops, culture: map.meta.nations.indices.contains(army.nation) ? map.meta.nations[army.nation].culture : ""))
-                            .font(Theme.caption).foregroundStyle(Theme.ink2)
-                            .padding(.horizontal, 6).padding(.vertical, 1.5)
-                            .background(Theme.wash, in: Capsule())
+                        PaperTag(text: Echelon.name(troops: army.troops, culture: map.meta.nations.indices.contains(army.nation) ? map.meta.nations[army.nation].culture : ""), color: Theme.ink2, size: 10.5)
                     }
                     if let duty = army.duty.flatMap({ Self.duties[$0] }) {
-                        Text(duty).font(Theme.caption).foregroundStyle(Theme.seal)
-                            .padding(.horizontal, 6).padding(.vertical, 1.5)
-                            .background(Theme.seal.opacity(0.09), in: Capsule())
-                            .overlay(Capsule().stroke(Theme.seal.opacity(0.35), lineWidth: 0.7))
+                        PaperTag(text: duty, color: Theme.seal, size: 10.5)
                     }
                 }
                 let grpPrefix = army.armyGroup.map { "\($0) · " } ?? ""
                 Text("\(grpPrefix)\(Names.unit[army.unit] ?? army.unit) · \(map.meta.provinces.indices.contains(army.province) ? map.meta.provinces[army.province].name : "途中") · \(Names.status(army.status))\(Self.dest(map, army))")
-                    .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
+                    .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
             }
-            Spacer()
-            Text(Names.wan(army.troops)).font(Theme.section).foregroundStyle(Theme.ink).monospacedDigit()
-            InkIcon(glyph: .chevronRight, size: 12, weight: 1.6).foregroundStyle(Theme.ink2)
+            Spacer(minLength: 8)
+            EditorialValueText(Names.wan(army.troops), size: 15.5, color: Theme.ink)
+            PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light)
+                .foregroundStyle(Theme.ink2)
+                .frame(width: 22, height: 22)
+                .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
         }
-        .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+        .padding(.horizontal, 4).padding(.vertical, 11).contentShape(Rectangle())
     }
 }
 

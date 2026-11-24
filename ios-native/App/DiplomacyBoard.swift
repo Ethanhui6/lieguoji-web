@@ -47,13 +47,14 @@ struct DiplomacyBoard: View {
     private func color(_ n: Int) -> Color { map.meta.nations.indices.contains(n) ? Names.color(map.meta.nations[n].color) : Theme.ink2 }
 
     private func posturePill(label: String, count: Int, tint: Color) -> some View {
-        HStack(spacing: 4) {
+        let isUrgent = (tint == Theme.seal || tint == Theme.danger) && count > 0
+        return HStack(spacing: 5) {
             Text(label).font(Theme.caption).foregroundStyle(Theme.ink2)
-            Text("\(count)").font(Theme.body).foregroundStyle(count > 0 ? tint : Theme.ink2).monospacedDigit()
-                .contentTransition(.numericText())
+            EditorialValueText("\(count)", size: 15, color: isUrgent ? Theme.seal : Theme.ink)
         }
-        .frame(maxWidth: .infinity).frame(height: 32)
-        .background(count > 0 ? tint.opacity(0.10) : Theme.wash.opacity(0.65), in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+        .frame(maxWidth: .infinity).frame(height: 36)
+        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(isUrgent ? Theme.seal.opacity(0.42) : Theme.hairline, lineWidth: 0.8))
     }
 
     private func relations(_ info: DiplomacyOverview) -> [Relation] {

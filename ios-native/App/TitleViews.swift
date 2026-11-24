@@ -139,12 +139,16 @@ struct InkHills: Shape {
     }
 }
 
-/// The app's seal: museum-grade carved antique sovereign crest.
+/// The app's seal: authentic carved cinnabar seal stamp (「龍」).
 struct SealMark: View {
     var size: CGFloat
     var body: some View {
-        ArtEmblem(image: BundleArt.sealCourt, size: size * 1.16, fallback: .crown)
-            .shadow(color: Theme.ink.opacity(0.22), radius: size * 0.08, y: size * 0.03)
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.14, style: .continuous)
+                .fill(Theme.paperLight.opacity(0.92))
+                .frame(width: size * 1.08, height: size * 1.08)
+            Seal(text: "龙", size: size)
+        }
     }
 }
 
@@ -328,58 +332,56 @@ func terrainThumbnail(_ inputs: PreviewWorld.Inputs, seed: String, template: Str
     return (UIImage(cgImage: image), t.stats)
 }
 
-/// The title screen's main action: a vermilion seal plate (or a paper one) with an icon, a title and a
-/// line of what it does.
+/// 标题页主操作钮：深松烟暖墨实底 `#241D17` 配宣纸白字（主操作）或亮宣描边触感纸面（次操作），与游戏内古籍风格 1:1 统一。
 struct HeroAction: View {
     let title: String; let detail: String; let symbol: String
     var primary = true
     var body: some View {
         HStack(spacing: 14) {
-            Group {
-                if let g = GameActionLabel.glyph(for: symbol) {
-                    InkIcon(glyph: g, size: 22, weight: 1.85, accent: primary ? Theme.seal.opacity(0.26) : Theme.paper2.opacity(0.32))
-                } else {
-                    Image(systemName: symbol).font(.system(size: 22, weight: .medium))
-                }
-            }
-            .foregroundStyle(primary ? Theme.seal : Theme.paper2)
-            .frame(width: 46, height: 46)
-            .background(primary ? Theme.paper2 : Theme.seal, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            InkIcon(glyph: GameActionLabel.glyph(for: symbol) ?? .edict, size: 21, weight: 1.75, filled: false)
+                .foregroundStyle(primary ? Theme.paperLight : Theme.ink)
+            .frame(width: 44, height: 44)
+            .background(primary ? Theme.paperLight.opacity(0.11) : Theme.paper, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(primary ? Theme.paperLight.opacity(0.22) : Theme.hairline, lineWidth: 0.75))
+
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(Theme.title).foregroundStyle(primary ? Theme.paper2 : Theme.ink)
-                Text(detail).font(Theme.caption).foregroundStyle(primary ? Theme.paper2.opacity(0.84) : Theme.ink2).lineLimit(1)
+                Text(title).font(Theme.serif(20)).tracking(1.6).foregroundStyle(primary ? Theme.paperLight : Theme.ink)
+                Text(detail).font(Theme.caption).foregroundStyle(primary ? Theme.paperLight.opacity(0.76) : Theme.ink2).lineLimit(1)
             }
             Spacer(minLength: 6)
-            InkIcon(glyph: .chevronRight, size: 13, weight: 1.8).foregroundStyle(primary ? Theme.paper2.opacity(0.85) : Theme.ink2)
+            PhosphorIcon(glyph: .chevronRight, size: 14, weight: .light)
+                .foregroundStyle(primary ? Theme.paperLight.opacity(0.82) : Theme.ink2)
         }
-        .padding(.horizontal, Theme.Layout.cardPadding).frame(height: 74)
-        .background((primary ? Theme.seal : Theme.paper2), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        // A seal's inner rule.
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(primary ? Theme.paper2.opacity(0.35) : Theme.seal.opacity(0.18), lineWidth: 0.8).padding(4))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(primary ? Color.clear : Theme.line))
-        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, 16).frame(height: 70)
+        .background(primary ? Theme.ink : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 3, style: .continuous)
+                .stroke(primary ? Theme.paperLight.opacity(0.18) : Color.clear, lineWidth: 0.7)
+                .padding(3.5)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
+                .stroke(primary ? Color.clear : Theme.line, lineWidth: 0.95)
+        )
+        .shadow(color: Theme.ink.opacity(primary ? 0.16 : 0.08), radius: primary ? 6 : 0, y: primary ? 3 : 1.5)
+        .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
     }
 }
 
-/// A small square action under the main ones: icon over a word.
+/// 标题页底排四枚触感纸框功钮：亮宣纸底 + 暖墨细框 + 轻压底缘 + 单色 Phosphor 轻线图标，清晰可点。
 struct TileAction: View {
     let title: String; let symbol: String
     var body: some View {
         VStack(spacing: 6) {
-            Group {
-                if let g = GameActionLabel.glyph(for: symbol) {
-                    InkIcon(glyph: g, size: 19, weight: 1.75, accent: Theme.seal.opacity(0.24))
-                } else {
-                    Image(systemName: symbol).font(.system(size: 18, weight: .medium))
-                }
-            }
-            .foregroundStyle(Theme.seal).frame(height: 22)
+            InkIcon(glyph: GameActionLabel.glyph(for: symbol) ?? .edict, size: 19, weight: 1.7)
+                .foregroundStyle(Theme.ink).frame(height: 22)
             Text(title).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity).frame(height: 64)
-        .background(Theme.paper2.opacity(0.95), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.line))
-        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .frame(maxWidth: .infinity).frame(height: 62)
+        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line, lineWidth: 0.95))
+        .shadow(color: Theme.ink.opacity(0.08), radius: 0, y: 1.5)
+        .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
     }
 }
 
@@ -466,20 +468,22 @@ struct NewWorldSheet: View {
                                 options.naming = "historical-names"
                             }
                         } label: {
-                            HStack(spacing: 9) {
-                                SealFace(text: p.seal, size: 28, color: on ? Theme.paper2 : Theme.seal, filled: !on)
+                            HStack(spacing: 10) {
+                                SealFace(text: p.seal, size: 28, color: on ? Theme.paperLight : Theme.seal, filled: false)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    HStack(spacing: 5) {
-                                        Text(p.title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                        Text("\(p.nations)国").font(Theme.kai(11))
-                                            .foregroundStyle(on ? Theme.paper2.opacity(0.9) : Theme.seal)
+                                    HStack(spacing: 6) {
+                                        Text(p.title).font(Theme.serif(15)).foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                        Text("\(p.nations)国").font(Theme.numeral(13))
+                                            .foregroundStyle(on ? Theme.paperLight.opacity(0.88) : Theme.seal)
+                                            .monospacedDigit()
                                     }
-                                    Text(p.note).font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.84) : Theme.ink2)
+                                    Text(p.note).font(Theme.caption).foregroundStyle(on ? Theme.paperLight.opacity(0.8) : Theme.ink2)
                                 }
                             }
-                            .padding(.horizontal, 12).padding(.vertical, 9)
-                            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.16), lineWidth: 0.85))
+                            .padding(.horizontal, 13).padding(.vertical, 10)
+                            .background(on ? Theme.ink : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Theme.seal.opacity(0.6) : Theme.line, lineWidth: on ? 1.1 : 0.9))
+                            .shadow(color: Theme.ink.opacity(0.07), radius: 0, y: 1.5)
                         }
                         .buttonStyle(PressStyle())
                     }
@@ -487,7 +491,7 @@ struct NewWorldSheet: View {
                 .padding(.horizontal, Theme.Layout.pageInset)
             }
 
-            // 3. 地形模板（2×2 精细等高线微缩舆图卡 + 无截断标题与战略标签）
+            // 3. 地形模板（2×2 精细等高线微缩舆图卡 + 触感纸框/深墨选中态）
             SectionLabel("山河格局")
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(Names.templates, id: \.id) { t in
@@ -502,30 +506,29 @@ struct NewWorldSheet: View {
                                 .frame(width: 48, height: 48)
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(t.name)
-                                    .font(Theme.kai(14.5))
-                                    .foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                    .font(Theme.serif(15))
+                                    .foregroundStyle(on ? Theme.paperLight : Theme.ink)
                                     .lineLimit(1)
-                                    .minimumScaleFactor(0.88)
+                                    .minimumScaleFactor(0.86)
                                 if let tag = art?.tag {
                                     Text(tag)
-                                        .font(Theme.kai(10))
-                                        .foregroundStyle(on ? Theme.paper2.opacity(0.94) : Theme.seal)
-                                        .padding(.horizontal, 6).padding(.vertical, 1.5)
-                                        .background(on ? Theme.paper2.opacity(0.18) : Theme.seal.opacity(0.09), in: Capsule())
+                                        .font(Theme.caption)
+                                        .foregroundStyle(on ? Theme.paperLight.opacity(0.92) : Theme.seal)
                                         .lineLimit(1)
                                 }
                                 Text(art?.note ?? "")
-                                    .font(Theme.kai(10.5))
-                                    .foregroundStyle(on ? Theme.paper2.opacity(0.84) : Theme.ink2)
+                                    .font(Theme.sans(11))
+                                    .foregroundStyle(on ? Theme.paperLight.opacity(0.76) : Theme.ink2)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.76)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .padding(.horizontal, 9).padding(.vertical, 10)
-                        .frame(minHeight: 72)
-                        .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Theme.gold.opacity(0.42) : Theme.ink.opacity(0.16), lineWidth: on ? 1.0 : 0.85))
+                        .padding(.horizontal, 10).padding(.vertical, 10)
+                        .frame(minHeight: 74)
+                        .background(on ? Theme.ink : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Theme.seal.opacity(0.65) : Theme.line, lineWidth: on ? 1.15 : 0.9))
+                        .shadow(color: Theme.ink.opacity(0.07), radius: 0, y: 1.5)
                     }
                     .buttonStyle(PressStyle())
                 }
@@ -547,11 +550,12 @@ struct NewWorldSheet: View {
                                 options.provinces = String(sp.provinces)
                             }
                         } label: {
-                            Text(sp.title).font(Theme.kai(12)).lineLimit(1).minimumScaleFactor(0.78)
-                                .foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                .frame(maxWidth: .infinity).frame(height: 34)
-                                .background(on ? Theme.seal : Theme.paper2.opacity(0.88), in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.15), lineWidth: 0.85))
+                            Text(sp.title).font(Theme.sans(12.5)).lineLimit(1).minimumScaleFactor(0.76)
+                                .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                .frame(maxWidth: .infinity).frame(height: 36)
+                                .background(on ? Theme.ink : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(on ? Color.clear : Theme.line, lineWidth: 0.9))
+                                .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1)
                         }
                         .buttonStyle(PressStyle())
                     }
@@ -602,13 +606,16 @@ struct NewWorldSheet: View {
                 SectionLabel("文明文化（\(options.cultures.count)）", inset: false)
                 Spacer()
                 ForEach(Self.cultureGroups) { g in
+                    let active = options.cultures == g.list
                     Button(g.title) {
                         GameFeel.shared.tap()
                         withAnimation(Motion.tap) { options.cultures = g.list }
                     }
-                    .font(Theme.caption).foregroundStyle(options.cultures == g.list ? Theme.paper2 : Theme.seal)
-                    .padding(.horizontal, 9).frame(height: 26)
-                    .background(options.cultures == g.list ? Theme.seal : Theme.seal.opacity(0.08), in: Capsule())
+                    .font(Theme.caption)
+                    .foregroundStyle(active ? Theme.paperLight : Theme.ink)
+                    .padding(.horizontal, 10).frame(height: 28)
+                    .background(active ? Theme.ink : Theme.paperLight, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(active ? Color.clear : Theme.line, lineWidth: 0.85))
                 }
             }
             .padding(.horizontal, Theme.Layout.sectionInset)
@@ -617,14 +624,13 @@ struct NewWorldSheet: View {
                     let on = options.cultures.contains(c)
                     Button {
                         withAnimation(Motion.tap) {
-                            // At least one culture stays chosen.
                             if on { if options.cultures.count > 1 { options.cultures.remove(c) } } else { options.cultures.insert(c) }
                         }
                     } label: {
-                        Text(Names.culture[c] ?? c).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                        Text(Names.culture[c] ?? c).font(Theme.body).foregroundStyle(on ? Theme.paperLight : Theme.ink)
                             .frame(maxWidth: .infinity).frame(height: 36)
-                            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.16), lineWidth: 0.85))
+                            .background(on ? Theme.ink : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(on ? Color.clear : Theme.line, lineWidth: 0.85))
                     }
                     .buttonStyle(PressStyle())
                 }
@@ -708,18 +714,17 @@ struct NewWorldSheet: View {
                                 immediateRoll = true
                                 withAnimation(Motion.tap) { previewShowNations = mode }
                             } label: {
-                                Text(label).font(Theme.kai(11))
-                                    .foregroundStyle(previewShowNations == mode ? Theme.paper2 : Theme.ink)
-                                    .padding(.horizontal, 9).frame(height: 24)
-                                    .background(previewShowNations == mode ? Theme.seal : Color.clear, in: Capsule())
+                                Text(label).font(Theme.caption)
+                                    .foregroundStyle(previewShowNations == mode ? Theme.paperLight : Theme.ink)
+                                    .padding(.horizontal, 10).frame(height: 26)
+                                    .background(previewShowNations == mode ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                             }
                             .buttonStyle(.plain)
                         }
                     }
                     .padding(2.5)
-                    .background(Theme.paper2.opacity(0.92), in: Capsule())
-                    .overlay(Capsule().stroke(Theme.ink.opacity(0.16), lineWidth: 0.75))
-                    .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.14), radius: 5, y: 2)
+                    .background(Theme.paperLight.opacity(0.94), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.line, lineWidth: 0.85))
                     .padding(10)
                 }
                 Button {
@@ -732,42 +737,36 @@ struct NewWorldSheet: View {
                     rolled = String(UInt32.random(in: 0...UInt32.max))
                 } label: {
                     HStack(spacing: 5) {
-                        InkIcon(glyph: .refresh, size: 13, weight: 1.8)
+                        InkIcon(glyph: .refresh, size: 13.5, weight: 1.75)
                             .rotationEffect(.degrees(refreshSpin))
                         Text("换一方山河").font(Theme.label)
                     }
-                    .foregroundStyle(Theme.paper2).padding(.horizontal, 12).frame(height: 32)
-                    .background(Theme.seal.opacity(renderingTerrain ? 0.88 : 1.0), in: Capsule())
-                    .shadow(color: Theme.seal.opacity(0.28), radius: 5, y: 2)
+                    .foregroundStyle(Theme.paperLight).padding(.horizontal, 13).frame(height: 34)
+                    .background(Theme.ink.opacity(renderingTerrain ? 0.82 : 0.96), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.paperLight.opacity(0.22), lineWidth: 0.7))
                 }
                 .buttonStyle(PressStyle()).padding(10)
             }
-            // 底部地理勘测条：实时显示陆地占比、山地比例、林地与战略地势评语
+            // 底部地理勘测条：Cormorant Garamond 衬线百分比 + 极简纸面分栏
             HStack(spacing: 8) {
                 if let st = terrainStats {
                     atlasStat(label: "陆地", value: "\(st.landPercent)%")
-                    Divider().frame(height: 11)
+                    Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 12)
                     atlasStat(label: "山地", value: "\(st.mountainPercent)%")
-                    Divider().frame(height: 11)
+                    Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 12)
                     atlasStat(label: "林泽", value: "\(st.forestPercent)%")
                     Spacer(minLength: 4)
-                    Text(terrainVerdict(st))
-                        .font(Theme.kai(11))
-                        .foregroundStyle(Theme.seal)
-                        .padding(.horizontal, 7).padding(.vertical, 2)
-                        .background(Theme.seal.opacity(0.09), in: Capsule())
-                        .lineLimit(1)
+                    PaperTag(text: terrainVerdict(st), color: Theme.seal, size: 11)
                 } else {
                     Text("正在铺宣勘绘山河……").font(Theme.caption).foregroundStyle(Theme.ink2)
                     Spacer(minLength: 0)
                 }
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(Theme.paper2.opacity(0.94))
+            .padding(.horizontal, 12).padding(.vertical, 9)
+            .background(Theme.paperLight)
         }
         .clipShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.ink.opacity(0.18), lineWidth: 0.9))
-        .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.10), radius: 8, y: 3)
+        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous).stroke(Theme.line, lineWidth: 0.95))
     }
 
     private func terrainVerdict(_ st: PreviewWorld.ThumbnailStats) -> String {
@@ -788,10 +787,8 @@ struct NewWorldSheet: View {
 
     private func atlasStat(label: String, value: String) -> some View {
         HStack(spacing: 3) {
-            Text(label).font(Theme.kai(11)).foregroundStyle(Theme.ink2)
-            Text(value).font(Theme.kai(12)).foregroundStyle(Theme.ink).monospacedDigit()
-                .contentTransition(.numericText())
-                .animation(Motion.tap, value: value)
+            Text(label).font(Theme.caption).foregroundStyle(Theme.ink2)
+            EditorialValueText(value, size: 13.5, color: Theme.ink)
         }
     }
 
@@ -820,25 +817,20 @@ struct NewWorldSheet: View {
             renderingTerrain = false
         }
     }
-    /// A two-way choice as an illustrated card.
+    /// A two-way tactile choice card (deep ink active / tactile rice paper inactive).
     private func choice(_ id: String, _ title: String, _ symbol: String, _ note: String, selection: Binding<String>) -> some View {
         let on = selection.wrappedValue == id
-        return Button { withAnimation(Motion.tap) { selection.wrappedValue = id } } label: {
-            VStack(spacing: 4) {
-                Group {
-                    if let g = GameActionLabel.glyph(for: symbol) {
-                        InkIcon(glyph: g, size: 21, weight: 1.75)
-                    } else {
-                        Image(systemName: symbol).font(.system(size: 21, weight: .light))
-                    }
-                }
-                .foregroundStyle(on ? Theme.paper2 : Theme.seal)
-                Text(title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                Text(note).font(Theme.caption).foregroundStyle(on ? Theme.paper2.opacity(0.85) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
+        return Button { GameFeel.shared.tap(); withAnimation(Motion.tap) { selection.wrappedValue = id } } label: {
+            VStack(spacing: 5) {
+                InkIcon(glyph: GameActionLabel.glyph(for: symbol) ?? .edict, size: 20, weight: 1.7, filled: on)
+                    .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                Text(title).font(Theme.serif(15)).foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                Text(note).font(Theme.caption).foregroundStyle(on ? Theme.paperLight.opacity(0.8) : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 10)
-            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(on ? Color.clear : Theme.ink.opacity(0.2)))
+            .frame(maxWidth: .infinity).padding(.vertical, 11).padding(.horizontal, 6)
+            .background(on ? Theme.ink : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Theme.seal.opacity(0.6) : Theme.line, lineWidth: on ? 1.1 : 0.9))
+            .shadow(color: Theme.ink.opacity(0.07), radius: 0, y: 1.5)
         }
         .buttonStyle(PressStyle())
     }
@@ -1135,33 +1127,28 @@ struct FoundingView: View {
                     FoundingCartoucheHeader(current: current)
                         .equatable()
 
-                    // 极轻纯 GPU 缩放墨金双色进度条
+                    // 极简三色进度条（朱砂细轨，零渐变）
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Theme.ink.opacity(0.11))
-                        LinearGradient(
-                            colors: [Theme.seal, Color(red: 0.80, green: 0.56, blue: 0.24)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .scaleEffect(x: max(0.015, min(1.0, progress)), y: 1, anchor: .leading)
+                        Capsule().fill(Theme.hairline)
+                        Capsule().fill(Theme.seal)
+                            .scaleEffect(x: max(0.015, min(1.0, progress)), y: 1, anchor: .leading)
                     }
-                    .frame(height: 4.5)
-                    .clipShape(Capsule())
+                    .frame(height: 3.5)
 
                     HStack(spacing: 8) {
-                        Text("\(Int(progress * 100))%")
-                            .font(Theme.kai(12))
-                            .foregroundStyle(Theme.ink2)
-                            .monospacedDigit()
+                        EditorialValueText("\(Int(progress * 100))%", size: 15, color: Theme.ink)
                         Spacer()
                         if canSkip {
                             Text("轻点立即入局 ›")
-                                .font(Theme.kai(12))
+                                .font(Theme.caption)
                                 .foregroundStyle(Theme.seal)
+                                .padding(.horizontal, 9).padding(.vertical, 3)
+                                .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.seal.opacity(0.4), lineWidth: 0.75))
                         } else {
                             Text(current < Self.stages.count ? "第 \(current + 1)/\(Self.stages.count) 笔" : "史卷落成")
-                                .font(Theme.kai(11.5))
-                                .foregroundStyle(Theme.ink2.opacity(0.8))
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.ink2)
                                 .monospacedDigit()
                         }
                     }
@@ -1244,20 +1231,20 @@ private struct FoundingCartoucheHeader: View, Equatable {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(meta.title)
-                            .font(Theme.kai(19))
+                            .font(Theme.serif(18.5))
                             .foregroundStyle(Theme.ink)
                             .lineLimit(1)
                             .id(clamped)
                             .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
                         if let prevTitle {
                             Text("· 已成\(prevTitle)")
-                                .font(Theme.kai(11.5))
-                                .foregroundStyle(Theme.jade)
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.ink2)
                                 .lineLimit(1)
                         }
                     }
                     Text(meta.poetic)
-                        .font(Theme.kai(12.5))
+                        .font(Theme.caption)
                         .foregroundStyle(Theme.ink2)
                         .lineLimit(1)
                         .id("p-\(clamped)")
@@ -1265,14 +1252,14 @@ private struct FoundingCartoucheHeader: View, Equatable {
                 }
                 Spacer(minLength: 0)
             }
-            // 八珠开卷进度点：已成青玉、当前朱砂长胶囊、未启淡墨
+            // 八珠开卷进度点：已成松烟墨、当前朱砂长胶囊、未启淡墨
             HStack(spacing: 5) {
                 ForEach(0..<FoundingView.stages.count, id: \.self) { i in
                     let done = i < clamped
                     let active = i == min(clamped, FoundingView.stages.count - 1)
                     Capsule()
-                        .fill(done ? Theme.jade.opacity(0.82) : (active ? Theme.seal : Theme.ink.opacity(0.14)))
-                        .frame(width: active ? 18 : 7, height: 4.5)
+                        .fill(done ? Theme.ink.opacity(0.65) : (active ? Theme.seal : Theme.hairline))
+                        .frame(width: active ? 18 : 7, height: 4)
                 }
                 Spacer(minLength: 0)
             }

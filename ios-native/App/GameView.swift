@@ -117,8 +117,12 @@ struct GameView: View {
     @State private var ripple: CGPoint?
     /// 入场: the controls settle in a moment after the map is whole.
     @State private var entered = false
-    /// 手动「净图」模式：默认 false（HUD 稳定常驻，绝不自动乱藏）；仅玩家主动点击顶栏眼睛钮才进入纯赏画态。
+    /// 手动「净图」模式：默认 false（HUD 稳定常驻）；仅点击顶栏眼睛钮手动切换净图。
     @State private var cleanMap = false
+    /// 模块三双模 HUD 开关（设置 › 界面与净图）：默认 false（常驻 + 右上角净图钮）；开启后静置 6 秒自动淡隐，轻点地图或展开钮丝滑唤出。
+    @AppStorage("hud.autoHide") private var hudAutoHide = false
+    @State private var idleHidden = false
+    @State private var idleSerial = 0
     /// 天时灾丰折叠清单展开态（绝不与日期栏抢占横向宽度）
     @State private var weatherDrawerOpen = false
     fileprivate static let hudSpring = Animation.spring(response: 0.34, dampingFraction: 0.88)
@@ -130,7 +134,7 @@ struct GameView: View {
     }
 
     private var chromeIn: Bool { controller.reveal >= 1 && entered }
-    private var hudVisible: Bool { chromeIn && !cleanMap }
+    private var hudVisible: Bool { chromeIn && !cleanMap && !(hudAutoHide && idleHidden) }
     private var barHeight: CGFloat { landscape ? 38 : Theme.Control.topHeight }
     private var sideKey: String? { landscape ? panel?.id : nil }
     private var pageShown: Binding<Bool> {
@@ -269,6 +273,15 @@ struct GameView: View {
             exitCleanMap: exitCleanMap,
             syncSheetFocusInsets: syncSheetFocusInsets
         ))
+        .task(id: "\(hudAutoHide)-\(idleSerial)-\(panel != nil)-\(viewsOpen)-\(cleanMap)-\(wallpaper)") {
+            guard hudAutoHide, !ShotTour.on, panel == nil, !viewsOpen, !cleanMap, !wallpaper else {
+                if idleHidden { withAnimation(Self.hudSpring) { idleHidden = false } }
+                return
+            }
+            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            guard !Task.isCancelled, hudAutoHide, panel == nil, !viewsOpen, !cleanMap, !wallpaper else { return }
+            withAnimation(Self.hudSpring) { idleHidden = true }
+        }
         .modifier(GameSelectionModifier(
             model: model,
             controller: controller,
@@ -298,8 +311,9 @@ struct GameView: View {
     }
 
     private func exitCleanMap() {
-        if cleanMap {
-            withAnimation(Self.hudSpring) { cleanMap = false }
+        idleSerial &+= 1
+        if cleanMap || idleHidden {
+            withAnimation(Self.hudSpring) { cleanMap = false; idleHidden = false }
         }
     }
 
@@ -589,7 +603,7 @@ private struct GameHudCanvas: View {
             }
             .overlay(alignment: .topTrailing) {
                 GameCleanMapChip(
-                    visible: chromeIn && cleanMap && !hiddenByMode,
+                    visible: chromeIn && !hudVisible && !hiddenByMode,
                     landscape: landscape,
                     onExpand: onExpandCleanMap
                 )
@@ -861,15 +875,16 @@ private struct GameTopDateCapsule: View {
             } label: {
                 HStack(alignment: .center, spacing: tightLandscape ? 4 : 5) {
                     Circle()
-                        .fill(model.playing ? Theme.jade : Theme.ink2.opacity(0.42))
+                        .fill(model.playing ? Theme.seal : Theme.ink2.opacity(0.42))
                         .frame(width: 6, height: 6)
                         .animation(Motion.panel, value: model.playing)
                     Text(compactDateText)
-                        .font(tightLandscape ? Theme.kai(12.5) : Theme.kai(13.5))
+                        .font(tightLandscape ? Theme.sans(12.5) : Theme.sans(13.5))
                         .foregroundStyle(Theme.ink)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
+                        .frame(maxWidth: tightLandscape ? 110 : 148, alignment: .leading)
                         .layoutPriority(1)
                     if let m = model.state?.date.month {
                         GameSeasonBadge(month: m, tight: tightLandscape)
@@ -912,19 +927,14 @@ private struct GameSeasonBadge: View {
     let tight: Bool
     var body: some View {
         let s = WorldSeason.of(month: month)
-        let sColor: Color = s == .spring ? Color(red: 0.76, green: 0.32, blue: 0.44)
-            : s == .summer ? Color(red: 0.20, green: 0.52, blue: 0.24)
-            : s == .autumn ? Color(red: 0.76, green: 0.38, blue: 0.10)
-            : Color(red: 0.22, green: 0.46, blue: 0.68)
-        HStack(spacing: 2.5) {
-            Circle().fill(sColor).frame(width: 4, height: 4)
-            Text(s.name).font(Theme.kai(10.5)).foregroundStyle(sColor)
-        }
-        .fixedSize(horizontal: true, vertical: false)
-        .padding(.horizontal, tight ? 4.5 : 5.5).padding(.vertical, 2)
-        .background(sColor.opacity(0.11), in: Capsule())
-        .overlay(Capsule().stroke(sColor.opacity(0.28), lineWidth: 0.55))
-        .animation(Motion.fade, value: s.rawValue)
+        Text(s.name)
+            .font(Theme.sans(11))
+            .foregroundStyle(Theme.ink2)
+            .fixedSize(horizontal: true, vertical: false)
+            .padding(.horizontal, tight ? 5 : 6).padding(.vertical, 1.5)
+            .background(Theme.paper, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
+            .animation(Motion.fade, value: s.rawValue)
     }
 }
 
@@ -1584,13 +1594,14 @@ private struct GamePanelBackRow: View {
                         onBack()
                     } label: {
                         HStack(spacing: 4) {
-                            InkIcon(glyph: .chevronRight, size: 11.5, weight: 1.9).rotationEffect(.degrees(180))
-                            Text("返回" + last.title).font(Theme.kai(13.5)).lineLimit(1)
+                            PhosphorIcon(glyph: .chevronLeft, size: 12, weight: .light)
+                            Text("返回" + last.title).font(Theme.sans(13.5)).lineLimit(1)
                         }
-                        .foregroundStyle(Theme.seal)
-                        .padding(.horizontal, 11).frame(height: 28)
-                        .background(Theme.seal.opacity(0.09), in: Capsule())
-                        .overlay(Capsule().stroke(Theme.seal.opacity(0.28), lineWidth: 0.75))
+                        .foregroundStyle(Theme.ink)
+                        .padding(.horizontal, 11).frame(height: 30)
+                        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.line, lineWidth: 0.9))
+                        .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1)
                     }
                     .buttonStyle(PressStyle())
                 } else if isSidePanel {

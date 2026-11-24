@@ -115,9 +115,22 @@ private struct PhosphorShape: Shape {
     }
 }
 
-private enum PhosphorPathCache {
+enum PhosphorPathCache {
     private static let lock = NSLock()
     private static var cache = [String: CGPath]()
+
+    /// 启动后台预编译高频 Phosphor 图标路径（<100KB 内存），消除首次弹出国家/史记页的主线程卡顿。
+    static func prewarmCore() {
+        let glyphs: [PhosphorGlyph] = [
+            .nation, .military, .diplomacy, .chronicle, .ranking, .views, .command, .menu,
+            .close, .eye, .chevronDown, .chevronRight, .search, .war, .crown, .polity,
+            .economy, .house, .culture, .religion, .edict, .locate, .replay, .brush, .info, .sliders, .check
+        ]
+        for g in glyphs {
+            _ = path(for: g, weight: .light)
+            _ = path(for: g, weight: .fill)
+        }
+    }
 
     static func path(for glyph: PhosphorGlyph, weight: PhosphorWeight) -> CGPath {
         let key = "\(weight.rawValue):\(glyph.rawValue)"

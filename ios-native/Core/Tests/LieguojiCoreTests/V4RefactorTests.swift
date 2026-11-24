@@ -174,4 +174,53 @@ final class V4RefactorTests: XCTestCase {
         let afterCooldown = engine.nationDecree(0, kind: "prosper")
         XCTAssertTrue(afterCooldown.ok, afterCooldown.reason)
     }
+
+    func testV44NavalExpansionAndOverseasReadiness() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+        let r = engine.run
+
+        // App 模式下 1–2 支舰队的岛国/滨海国可全数出击跨海制海，多舰队仍留至少 1 支护卫本土
+        XCTAssertEqual(Naval.attackCount(1), 1)
+        XCTAssertEqual(Naval.attackCount(2), 2)
+        XCTAssertGreaterThanOrEqual(Naval.attackCount(4), 3)
+        XCTAssertLessThan(Naval.attackCount(4), 4)
+
+        let before = Naval.fleets(r).filter { $0.status.asString != "lost" }.count
+        Shipyards.expandNavies(r)
+        let after = Naval.fleets(r).filter { $0.status.asString != "lost" }.count
+        XCTAssertGreaterThanOrEqual(after, before)
+    }
+
+    func testV44MajorBattleFilterSuppressesMinorSkirmishSpam() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+        let r = engine.run
+        let provs = r.world.provinces.asArray
+        // 挑一个非首都州郡模拟小规模摩擦与大规模会战
+        let capitals = Set(r.world.nations.asArray.compactMap { n -> String? in
+            guard let cid = n.capitalId.optionalString else { return nil }
+            return r.world.cities.asArray.first { $0.id.optionalString == cid }?.provinceId.optionalString
+        })
+        guard let p = provs.first(where: { !capitals.contains($0.id.asString) }) ?? provs.first else { return }
+        let n0 = r.world.nations[0].id.asString
+        let n1 = r.world.nations[1].id.asString
+        func fakeArmy(_ id: String, nation: String, troops: Double) -> Armies.Located {
+            let a = JS.object()
+            a.id = JS(id); a.nationId = JS(nation); a.status = JS("fighting"); a.troops = JS(troops)
+            return Armies.Located(army: a, travel: JS.object(), province: p, cell: 0)
+        }
+        let eventsBefore = r.chronicle.entries.asArray.count
+        // 1. 小规模交火（两军共 6,000 人）：不应刷屏播报「第1次XX战役爆发」
+        ArmyLedger.campaigns(r, [fakeArmy("sk-1", nation: n0, troops: 3000), fakeArmy("sk-2", nation: n1, troops: 3000)])
+        XCTAssertEqual(r.chronicle.entries.asArray.count, eventsBefore)
+
+        // 2. 升级为主力大会战（两军共 30,000 人）：应正式播报「XX之战爆发」（且不含冗长「第1次」）
+        ArmyLedger.campaigns(r, [fakeArmy("sk-1", nation: n0, troops: 15000), fakeArmy("sk-2", nation: n1, troops: 15000)])
+        let added = r.chronicle.entries.asArray.dropFirst(eventsBefore)
+        XCTAssertEqual(added.count, 1)
+        let text = added.first?.text.asString ?? ""
+        XCTAssertTrue(text.contains("之战爆发"), text)
+        XCTAssertFalse(text.contains("第1次"), text)
+    }
 }

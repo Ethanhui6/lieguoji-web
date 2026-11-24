@@ -812,31 +812,39 @@ struct GameActionLabel: View {
         case "arrow.uturn.backward", "arrow.uturn.left": return .retreat
         case "arrow.triangle.turn.up.right.diamond", "arrow.up.right", "figure.walk": return .march
         case "drop", "drop.fill", "water.waves": return .lake
-        case "circle.hexagongrid", "sparkles", "aqi.medium": return .island
+        case "circle.hexagongrid", "sparkles", "sparkle", "hands.sparkles", "aqi.medium", "moon.stars": return .religion
         case "plus", "plus.circle", "plus.circle.fill", "person.badge.plus": return .plus
         case "minus", "minus.circle", "person.badge.minus", "person.2.slash", "person.fill.xmark": return .minus
-        case "trash", "trash.fill", "xmark.bin", "eraser", "hammer", "xmark.octagon": return .trash
-        case "arrow.left.arrow.right", "arrow.2.squarepath", "square.stack.3d.up", "link.badge.plus", "rectangle.portrait.and.arrow.right": return .swap
+        case "trash", "trash.fill", "xmark.bin", "eraser", "hammer", "xmark.octagon", "xmark.shield": return .trash
+        case "arrow.left.arrow.right", "arrow.2.squarepath", "square.stack.3d.up", "link.badge.plus", "rectangle.portrait.and.arrow.right", "arrow.triangle.merge": return .swap
         case "eye", "eye.fill", "eye.slash": return .eye
         case "calendar", "calendar.badge.clock", "clock", "clock.fill": return .calendar
         case "bookmark", "bookmark.fill", "opticaldisc", "tray.full": return .save
         case "square.and.arrow.up", "arrow.up.doc": return .export
         case "photo", "photo.artframe", "photo.on.rectangle", "camera": return .wallpaper
         case "speaker.wave.2", "speaker.wave.2.fill", "music.note": return .sound
-        case "gauge.with.dots.needle.67percent", "speedometer", "bolt.fill", "hare", "tortoise": return .speed
-        case "trophy", "trophy.fill", "medal": return .trophy
-        case "person", "person.fill", "person.crop.circle", "person.text.rectangle": return .person
-        case "leaf", "leaf.fill", "hand.raised", "hand.raised.fill", "peace", "cross.case": return .peace
+        case "gauge.with.dots.needle.67percent", "speedometer", "bolt.fill", "bolt", "hare", "tortoise", "cloud.bolt": return .speed
+        case "trophy", "trophy.fill", "medal", "checkmark.seal", "checkmark.circle.fill": return .trophy
+        case "person", "person.fill", "person.crop.circle", "person.text.rectangle", "person.badge.shield.checkmark": return .person
+        case "leaf", "leaf.fill", "leaf.circle", "hand.raised", "hand.raised.fill", "peace", "cross.case": return .peace
         case "chevron.down", "chevron.compact.down": return .chevronDown
         case "chevron.right", "chevron.compact.right": return .chevronRight
         case "desktopcomputer", "laptopcomputer", "cpu": return .computer
+        case "shield.lefthalf.filled", "bolt.shield", "lock.shield": return .military
+        case "hand.draw", "square.dashed": return .brush
+        case "arrow.down.to.line": return .march
+        case "list.bullet", "list.number": return .ranking
+        case "lock", "lock.open", "lock.open.display": return .fortress
+        case "arrow.uturn.backward.circle": return .replay
+        case "dice": return .refresh
+        case "megaphone", "allergens", "drop.degreesign.slash": return .fire
+        case "building.2": return .polity
         default: return nil
         }
     }
     var body: some View {
         HStack(spacing: 7) {
-            if let g = Self.glyph(for: symbol) { InkIcon(glyph: g, size: 17, weight: 1.65) }
-            else { Image(systemName: symbol).font(.system(size: 16, weight: .regular)) }
+            InkIcon(glyph: Self.glyph(for: symbol) ?? .edict, size: 17, weight: 1.65)
             Text(title)
         }
     }

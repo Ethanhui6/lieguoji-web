@@ -44,13 +44,9 @@ struct HeraldBanner: View {
     private var accent: Color {
         switch herald.kind {
         case .war, .uprising, .house, .coup, .ultimatum: return Theme.seal
-        case .peace, .capital, .treaty: return Theme.jade
-        case .marriage: return Color(red: 0.78, green: 0.28, blue: 0.36)
-        case .restoration, .regime, .harvest: return Color(red: 0.74, green: 0.50, blue: 0.14)
-        case .blizzard: return Color(red: 0.22, green: 0.46, blue: 0.68)
-        case .drought: return Color(red: 0.78, green: 0.36, blue: 0.12)
-        case .flood: return Color(red: 0.20, green: 0.34, blue: 0.56)
-        case .plague: return Color(red: 0.38, green: 0.46, blue: 0.20)
+        case .peace, .capital, .treaty, .marriage: return Theme.ink
+        case .restoration, .regime, .succession, .harvest: return Color(red: 0.62, green: 0.42, blue: 0.14)
+        case .blizzard, .drought, .flood, .plague: return Theme.ink2
         case .capture, .extinction: return Theme.ink
         }
     }
@@ -60,7 +56,7 @@ struct HeraldBanner: View {
         switch herald.kind {
         case .war, .ultimatum, .coup, .uprising: return .warDispatch
         case .peace, .treaty, .marriage: return .peaceScroll
-        case .regime, .restoration, .house: return .imperialEdict
+        case .regime, .restoration, .house, .succession: return .imperialEdict
         case .blizzard, .drought, .flood, .harvest, .plague: return .weatherScroll
         case .capture, .capital, .extinction: return .fieldSlip
         }
@@ -77,38 +73,22 @@ struct HeraldBanner: View {
         default: return 68
         }
     }
+    /// 统一古籍宣纸暖白基底（彻底告别五颜六色糖果渐变），仅以微幅纸色明暗与朱砂/松烟细边区分礼仪轻重。
     private var paperGradient: [Color] {
         switch herald.kind {
         case .war, .ultimatum, .coup, .uprising:
-            return [Color(red: 0.985, green: 0.942, blue: 0.885), Color(red: 0.956, green: 0.892, blue: 0.822)]
-        case .peace, .treaty, .marriage:
-            return [Color(red: 0.948, green: 0.974, blue: 0.950), Color(red: 0.902, green: 0.946, blue: 0.914)]
-        case .regime, .restoration, .house, .harvest:
-            return [Color(red: 0.992, green: 0.960, blue: 0.872), Color(red: 0.956, green: 0.904, blue: 0.778)]
-        case .blizzard:
-            return [Color(red: 0.942, green: 0.968, blue: 0.994), Color(red: 0.874, green: 0.926, blue: 0.974)]
-        case .drought:
-            return [Color(red: 0.988, green: 0.934, blue: 0.844), Color(red: 0.948, green: 0.858, blue: 0.728)]
-        case .flood:
-            return [Color(red: 0.922, green: 0.946, blue: 0.974), Color(red: 0.856, green: 0.894, blue: 0.942)]
-        case .plague:
-            return [Color(red: 0.946, green: 0.954, blue: 0.894), Color(red: 0.894, green: 0.908, blue: 0.822)]
-        case .capture, .capital, .extinction:
-            return [Color(red: 0.978, green: 0.956, blue: 0.908), Color(red: 0.946, green: 0.914, blue: 0.850)]
+            return [Color(red: 0.980, green: 0.960, blue: 0.922), Color(red: 0.955, green: 0.928, blue: 0.880)]
+        case .regime, .restoration, .house, .succession, .harvest:
+            return [Color(red: 0.985, green: 0.968, blue: 0.928), Color(red: 0.958, green: 0.935, blue: 0.888)]
+        default:
+            return [Color(red: 0.980, green: 0.968, blue: 0.941), Color(red: 0.956, green: 0.938, blue: 0.900)]
         }
     }
     private var rollerColors: [Color] {
         switch form {
-        case .warDispatch: return [Color(red: 0.42, green: 0.13, blue: 0.10), Color(red: 0.66, green: 0.22, blue: 0.16), Color(red: 0.34, green: 0.10, blue: 0.08)]
-        case .peaceScroll: return [Color(red: 0.18, green: 0.42, blue: 0.34), Color(red: 0.32, green: 0.60, blue: 0.48), Color(red: 0.14, green: 0.34, blue: 0.27)]
-        case .imperialEdict: return [Color(red: 0.64, green: 0.46, blue: 0.16), Color(red: 0.88, green: 0.72, blue: 0.34), Color(red: 0.50, green: 0.35, blue: 0.12)]
-        case .weatherScroll:
-            if herald.kind == .blizzard || herald.kind == .flood {
-                return [Color(red: 0.22, green: 0.36, blue: 0.54), Color(red: 0.38, green: 0.56, blue: 0.76), Color(red: 0.16, green: 0.28, blue: 0.44)]
-            } else if herald.kind == .drought {
-                return [Color(red: 0.56, green: 0.28, blue: 0.12), Color(red: 0.78, green: 0.44, blue: 0.18), Color(red: 0.44, green: 0.20, blue: 0.09)]
-            }
-            return [Color(red: 0.56, green: 0.42, blue: 0.16), Color(red: 0.82, green: 0.64, blue: 0.28), Color(red: 0.44, green: 0.32, blue: 0.12)]
+        case .warDispatch: return [Color(red: 0.36, green: 0.12, blue: 0.10), Color(red: 0.56, green: 0.19, blue: 0.14), Color(red: 0.28, green: 0.09, blue: 0.08)]
+        case .imperialEdict: return [Color(red: 0.26, green: 0.20, blue: 0.14), Color(red: 0.44, green: 0.34, blue: 0.22), Color(red: 0.20, green: 0.15, blue: 0.10)]
+        case .peaceScroll, .weatherScroll: return [Color(red: 0.24, green: 0.19, blue: 0.15), Color(red: 0.38, green: 0.31, blue: 0.24), Color(red: 0.18, green: 0.14, blue: 0.11)]
         case .fieldSlip: return []
         }
     }
@@ -326,7 +306,7 @@ struct HeraldBanner: View {
             candidates = (isEastAsia || isJapan)
                 ? ["herald-monastery", "herald-festival", "herald-cathedral", "herald-peace", "herald-exam-hall"]
                 : ["herald-cathedral", "herald-monastery", "herald-sultan-divan", "herald-peace", "herald-succession"]
-        } else if t.contains("登基") || t.contains("即位") || t.contains("就职") || t.contains("加冕") || t.contains("传玺") || t.contains("储君") {
+        } else if t.contains("登基") || t.contains("即位") || t.contains("就职") || t.contains("加冕") || t.contains("传玺") || t.contains("储君") || t.contains("驾崩") || t.contains("崩逝") || t.contains("逝世") || t.contains("去世") || t.contains("圆寂") {
             if isRepublic {
                 candidates = ["herald-senate", "herald-parliament", "herald-election", "herald-coronation", "herald-succession"]
             } else if isIslamic {
@@ -376,10 +356,10 @@ struct HeraldBanner: View {
                 candidates = ["herald-alliance", "herald-banquet", "herald-vassal-tribute", "herald-silkroad", "herald-peace", "herald-sultan-divan"]
             case .marriage:
                 candidates = ["herald-marriage", "herald-banquet", "herald-festival", "herald-peace", "herald-succession", "herald-coronation"]
-            case .regime:
+            case .regime, .succession:
                 candidates = isRepublic
                     ? ["herald-parliament", "herald-senate", "herald-election", "herald-reform", "herald-regime"]
-                    : ["herald-regime", "herald-coronation", "herald-succession", "herald-vassal-tribute", "herald-exam-hall", "herald-shogun-court", "herald-sultan-divan"]
+                    : ["herald-succession", "herald-coronation", "herald-regime", "herald-vassal-tribute", "herald-exam-hall", "herald-shogun-court", "herald-sultan-divan"]
             case .restoration:
                 candidates = ["herald-succession", "herald-coronation", "herald-camp-muster", "herald-capture", "herald-vassal-tribute"]
             case .house:
@@ -716,7 +696,7 @@ struct HeraldBanner: View {
                 ctx.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 5.0, height: 3.0)),
                          with: .color(col.opacity(0.70 * sin(phase * .pi))))
             }
-        case .harvest, .regime, .restoration, .house:
+        case .harvest, .regime, .restoration, .house, .succession:
             // 丰年与国玺：暖金浮光微尘
             for i in 0..<10 {
                 let phase = (t * 0.45 + Double(i) * 0.19).truncatingRemainder(dividingBy: 1.0)
@@ -744,6 +724,12 @@ struct HeraldBanner: View {
         case .house: return "世家更迭"
         case .coup: return "宫廷政变"
         case .regime: return "改朝换代"
+        case .succession:
+            if herald.text.contains("驾崩") || herald.text.contains("崩逝") { return "大行崩逝" }
+            if herald.text.contains("大选") || herald.text.contains("当选") { return "大选更替" }
+            if herald.text.contains("圆寂") { return "教宗圆寂" }
+            if herald.text.contains("逝世") || herald.text.contains("去世") || herald.text.contains("被处死") { return "元首逝世" }
+            return "新主继统"
         case .treaty: return "列国盟约"
         case .ultimatum: return "最后通牒"
         case .blizzard: return "天时暴雪"

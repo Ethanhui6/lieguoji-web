@@ -106,7 +106,53 @@ struct EditorialSectionHeader: View {
     }
 }
 
-/// 古籍无框主操作按钮：松烟暖墨深底 `#2C241E` + 宣纸亮白字 `#FAF7F0`，直接写明核心后果，绝无廉价阴影渐变。
+/// 古籍触感次级按钮（亮宣纸面 #FAF7F0 + 清晰暖墨细框 + 1.5pt 压印底缘）：一眼可辨为可点按按钮，彻底告别“与纯说明文字混淆”。
+struct EditorialTactileButton: View {
+    let title: String
+    var icon: PhosphorGlyph? = nil
+    var accent: Bool = false
+    var solid: Bool = false
+    var compact: Bool = false
+    var fullWidth: Bool = false
+    var disabled: Bool = false
+    let action: () -> Void
+
+    var body: some View {
+        let fg: Color = solid ? Theme.paperLight : (accent ? Theme.seal : Theme.ink)
+        let bg: Color = solid ? (accent ? Theme.seal : Theme.ink) : (accent ? Theme.seal.opacity(0.06) : Theme.paperLight)
+        let stroke: Color = solid ? Color.clear : (accent ? Theme.seal.opacity(0.42) : Theme.line)
+        Button {
+            GameFeel.shared.tap()
+            action()
+        } label: {
+            HStack(spacing: compact ? 5 : 7) {
+                if let icon {
+                    PhosphorIcon(glyph: icon, size: compact ? 13.5 : 15, weight: solid ? .fill : .light)
+                }
+                Text(title)
+                    .font(Theme.sans(compact ? 13 : 14, weight: .medium))
+                    .tracking(0.4)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(fg)
+            .frame(maxWidth: fullWidth ? .infinity : nil)
+            .frame(height: compact ? 34 : 40)
+            .padding(.horizontal, compact ? 11 : 14)
+            .background(bg, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                    .stroke(stroke, lineWidth: 0.9)
+            )
+            .shadow(color: solid ? Color.clear : Theme.ink.opacity(0.08), radius: 0, y: 1.5)
+            .opacity(disabled ? 0.42 : 1.0)
+        }
+        .buttonStyle(PressStyle())
+        .disabled(disabled)
+    }
+}
+
+/// 古籍无框主操作按钮：松烟暖墨深底 `#241D17` + 宣纸亮白字 `#FAF7F0`，内镶极细书框线，直接写明核心后果。
 struct EditorialInkButton: View {
     let title: String
     var consequence: String? = nil
@@ -125,15 +171,15 @@ struct EditorialInkButton: View {
                     PhosphorIcon(glyph: icon, size: 15, weight: .light)
                 }
                 Text(title)
-                    .font(Theme.sans(14.5, weight: .medium))
-                    .tracking(0.6)
+                    .font(Theme.serif(15))
+                    .tracking(0.8)
                 if let consequence, !consequence.isEmpty {
                     Text("·")
                         .font(Theme.sans(13))
                         .opacity(0.65)
                     Text(consequence)
                         .font(Theme.sans(13, weight: .regular))
-                        .opacity(0.88)
+                        .opacity(0.9)
                         .monospacedDigit()
                 }
             }
@@ -145,18 +191,24 @@ struct EditorialInkButton: View {
                 (emphasized ? Theme.seal : Theme.ink).opacity(disabled ? 0.35 : 1.0),
                 in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                    .stroke(Theme.paperLight.opacity(0.2), lineWidth: 0.7)
+                    .padding(3)
+            )
         }
         .buttonStyle(PressStyle())
         .disabled(disabled)
     }
 }
 
-/// 古籍平铺列表操作行：直接铺在宣纸上，左侧 Phosphor 16pt 轻线图标 + 清晰后果标签 + 右侧极简动作。
+/// 古籍平铺列表操作行：直接铺在宣纸上，左侧 Phosphor 轻线图标 + 右侧清晰纸框动作标，一眼明确“这是一枚可点按指令”。
 struct EditorialActionRow: View {
     let title: String
     var detail: String? = nil
     var consequence: String? = nil
     var icon: PhosphorGlyph
+    var actionLabel: String = "执行"
     var accentConsequence: Bool = false
     var active: Bool = false
     var disabled: Bool = false
@@ -168,16 +220,17 @@ struct EditorialActionRow: View {
             action()
         } label: {
             HStack(alignment: .center, spacing: 12) {
-                PhosphorIcon(glyph: icon, size: 16, weight: active ? .fill : .light)
+                PhosphorIcon(glyph: icon, size: 17, weight: active ? .fill : .light)
                     .foregroundStyle(active ? Theme.seal : Theme.ink)
+                    .frame(width: 24)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(title)
-                            .font(Theme.sans(14.5, weight: active ? .semibold : .medium))
+                            .font(Theme.serif(15))
                             .foregroundStyle(active ? Theme.seal : Theme.ink)
                         if let consequence, !consequence.isEmpty {
                             Text(consequence)
-                                .font(Theme.sans(12, weight: .regular))
+                                .font(Theme.sans(12.5, weight: .regular))
                                 .foregroundStyle(accentConsequence ? Theme.seal : Theme.ink2)
                                 .monospacedDigit()
                                 .lineLimit(1)
@@ -196,12 +249,23 @@ struct EditorialActionRow: View {
                     Text("施行中")
                         .font(Theme.sans(12, weight: .medium))
                         .foregroundStyle(Theme.seal)
+                        .padding(.horizontal, 9).padding(.vertical, 4)
+                        .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.seal.opacity(0.4), lineWidth: 0.75))
                 } else {
-                    PhosphorIcon(glyph: .chevronRight, size: 14, weight: .light)
-                        .foregroundStyle(Theme.ink2.opacity(0.65))
+                    HStack(spacing: 3) {
+                        Text(actionLabel)
+                            .font(Theme.sans(12, weight: .medium))
+                        PhosphorIcon(glyph: .chevronRight, size: 11, weight: .light)
+                    }
+                    .foregroundStyle(accentConsequence ? Theme.seal : Theme.ink)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(accentConsequence ? Theme.seal.opacity(0.42) : Theme.line, lineWidth: 0.85))
+                    .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1)
                 }
             }
-            .padding(.vertical, 14)
+            .padding(.vertical, 13)
             .contentShape(Rectangle())
             .opacity(disabled ? 0.45 : 1.0)
         }
@@ -280,19 +344,14 @@ struct EditorialFocusLead: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if let actionTitle, let onAction {
-                    Button {
-                        GameFeel.shared.tap()
-                        onAction()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(actionTitle)
-                                .font(Theme.sans(13, weight: .medium))
-                            PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light)
-                        }
-                        .foregroundStyle(urgent ? Theme.seal : Theme.ink)
-                        .padding(.top, 4)
-                    }
-                    .buttonStyle(.plain)
+                    EditorialTactileButton(
+                        title: actionTitle,
+                        icon: .chevronRight,
+                        accent: urgent,
+                        compact: true,
+                        action: onAction
+                    )
+                    .padding(.top, 4)
                 }
             }
             Spacer(minLength: 0)

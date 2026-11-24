@@ -239,7 +239,7 @@ extension NativeEngine {
             let gain = max(120, (fin.goldPerMonth.optionalNumber ?? 100) * 1.5).rounded()
             if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + gain) }
             markDecreeCooldown()
-            People.announce(r, kind: "politics", text: "\(stateName)下诏清丈天下田亩",
+            People.announce(r, kind: "politics", text: "\(stateName)\(lex.enactVerb)清丈天下田亩",
                             reason: "清查豪强隐匿田产、均平税负：国库进项 +\(Int(gain)) 金，腐化 −10。",
                             nations: [id], province: nil)
             return (true, "清丈田亩完成：国库 +\(Int(gain)) 金，腐化 −10。")

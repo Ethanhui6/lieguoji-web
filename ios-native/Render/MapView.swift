@@ -303,10 +303,10 @@ struct PlaySettings: Codable, Equatable {
     var warArrows = true
     var iconScale = 1.0
     /// Frames a second while the map is dragged or zoomed, while armies march, and for
-    /// looping effects (Claude disciplined thermal defaults: 60fps interaction, 30fps march/effects).
+    /// looping effects (smooth 60fps when cool; automatically steps down to 30/20/15fps if device warms up).
     var mapFPS = 60
-    var marchFPS = 30
-    var effectFPS = 30
+    var marchFPS = 60
+    var effectFPS = 60
     /// Pixels per point the map is drawn at (capped at the screen's own; the names stay sharp).
     var renderScale = 2.0
     /// The share of real time the simulation may keep a core busy, in percent.
@@ -340,8 +340,8 @@ struct PlaySettings: Codable, Equatable {
         warArrows = try c.decodeIfPresent(Bool.self, forKey: .warArrows) ?? true
         iconScale = try c.decodeIfPresent(Double.self, forKey: .iconScale) ?? 1
         mapFPS = try c.decodeIfPresent(Int.self, forKey: .mapFPS) ?? ((try c.decodeIfPresent(Bool.self, forKey: .highFrameRate)) == true ? 120 : 60)
-        marchFPS = try c.decodeIfPresent(Int.self, forKey: .marchFPS) ?? 30
-        effectFPS = try c.decodeIfPresent(Int.self, forKey: .effectFPS) ?? 30
+        marchFPS = try c.decodeIfPresent(Int.self, forKey: .marchFPS) ?? 60
+        effectFPS = try c.decodeIfPresent(Int.self, forKey: .effectFPS) ?? 60
         renderScale = try c.decodeIfPresent(Double.self, forKey: .renderScale) ?? 2
         simLoad = try c.decodeIfPresent(Int.self, forKey: .simLoad) ?? 60
         autoCool = try c.decodeIfPresent(Bool.self, forKey: .autoCool) ?? true
@@ -357,10 +357,6 @@ struct PlaySettings: Codable, Equatable {
         showBattleFloats = try c.decodeIfPresent(Bool.self, forKey: .showBattleFloats) ?? true
         seaWaves = try c.decodeIfPresent(Bool.self, forKey: .seaWaves) ?? true
         pauseOnSheet = try c.decodeIfPresent(Bool.self, forKey: .pauseOnSheet) ?? true
-        // 自动将旧版强制拉满发烫的 60/60/60 默认均衡档回收至 Claude 冷静均衡档（交互 60fps、行军与动效 30fps）。
-        if mapFPS == 60 && marchFPS == 60 && effectFPS == 60 && renderScale == 2 {
-            marchFPS = 30; effectFPS = 30
-        }
     }
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: Keys.self)
@@ -378,9 +374,9 @@ struct PlaySettings: Codable, Equatable {
     /// 画面档位: 极省电, 省电, 均衡, 流畅 (nil: the values were set one by one).
     static let presets: [(key: String, name: String, mapFPS: Int, marchFPS: Int, effectFPS: Int, renderScale: Double, simLoad: Int)] = [
         ("cool", "极省电", 30, 20, 15, 1.5, 45),
-        ("saver", "省电", 60, 30, 15, 1.5, 50),
-        ("balanced", "均衡", 60, 30, 30, 2, 60),
-        ("smooth", "流畅", 120, 60, 45, 2.5, 80),
+        ("saver", "省电", 60, 30, 30, 1.5, 50),
+        ("balanced", "均衡", 60, 60, 60, 2, 60),
+        ("smooth", "流畅", 120, 60, 60, 2.5, 80),
     ]
     var preset: String {
         get { Self.presets.first { $0.mapFPS == mapFPS && $0.marchFPS == marchFPS && $0.effectFPS == effectFPS && $0.renderScale == renderScale && $0.simLoad == simLoad }?.key ?? "custom" }
@@ -442,6 +438,7 @@ struct MapView: UIViewRepresentable {
         private var pendingCamera: MapCamera?
         private var pendingPurePan = false
         private var panLabelTick = 0
+        private var inSyncDraw = false
         private var gestureCamera: MapCamera { pendingCamera ?? camera }
         /// 仅在手指物理拖拽或双指捏合期间开启同事务同步上屏；程序运镜、惯性滑行与弹窗过渡一律按帧合批。
         private var fingerDragging: Bool { pinching || panning }
@@ -750,7 +747,7 @@ struct MapView: UIViewRepresentable {
                 }
             }
             if !placed { renderer.camera = MapCamera.cover(map: mapSize, viewport: viewport); placed = true }
-            set(renderer.camera)
+            set(renderer.camera, fromLayout: true)
             applyFramingRequests()
             if !mountNotified {
                 mountNotified = true
@@ -777,7 +774,7 @@ struct MapView: UIViewRepresentable {
                 troops.clear()
             }
         }
-        private func set(_ camera: MapCamera, sync: Bool = false, skipLabels: Bool = false, fastPan: Bool = false) {
+        private func set(_ camera: MapCamera, sync: Bool = false, skipLabels: Bool = false, fastPan: Bool = false, fromLayout: Bool = false) {
             guard let renderer else { return }
             let vpSize = mtk.bounds.size
             guard vpSize.width > 0, vpSize.height > 0 else { return }
@@ -787,15 +784,16 @@ struct MapView: UIViewRepresentable {
             var c = camera.isValid ? camera : MapCamera.cover(map: mapSize, viewport: vp)
             c.scale = min(b.upperBound, max(b.lowerBound, c.scale))
             let clamped = c.clamped(map: mapSize, viewport: vp, margin: scrollEdgeMargin)
-            // 严禁在 CATransaction 或 layoutSubviews 内同步调用 mtk.draw()（真机 CAMetalLayer 双重绘制与 waitUntilScheduled 重入闪退根源）；
-            // 仅手指物理拖拽/双指捏合时启用同事务呈现，统一经 mtk.setNeedsDisplay() 交由 CoreAnimation 驱动。
-            let wantSync = sync && fingerDragging && !controller.sheetOpen
+            // 仅在非 layoutSubviews 期间（手势拖拽、捏合缩放、惯性滑行、镜头飞行）锁入同一 CATransaction 同步提交 Metal 与文字/兵力层，
+            // 彻底根治缩放与平移时「地图底图与文字、军队、数字分开错位」问题；静止看海/弹窗时切回异步保持冰凉。
+            let wantSync = sync && !fromLayout && !inSyncDraw && !controller.sheetOpen && mtk.window != nil
             setSyncPresent(wantSync)
             renderer.camera = clamped
             let clipRect = mapScreenRect(camera: clamped, viewport: vpSize)
             let canvasFrame = CGRect(x: -clipRect.minX, y: -clipRect.minY, width: vpSize.width, height: vpSize.height)
             let fullBounds = CGRect(origin: .zero, size: vpSize)
-            UIView.performWithoutAnimation {
+
+            func applyOverlays() {
                 if overlayHost.frame != clipRect { overlayHost.frame = clipRect }
                 if overlayCanvas.frame != canvasFrame { overlayCanvas.frame = canvasFrame }
                 for v in [effects, labels!, floats, troops, weather] as [UIView] where v.frame != fullBounds {
@@ -825,7 +823,23 @@ struct MapView: UIViewRepresentable {
                 }
                 placeSpot()
             }
-            mtk.setNeedsDisplay()
+
+            if wantSync {
+                inSyncDraw = true
+                renderer.pinnedFrameTime = CACurrentMediaTime()
+                CATransaction.begin()
+                CATransaction.setDisableActions(true)
+                applyOverlays()
+                mtk.draw()
+                CATransaction.commit()
+                renderer.pinnedFrameTime = nil
+                inSyncDraw = false
+            } else {
+                UIView.performWithoutAnimation {
+                    applyOverlays()
+                }
+                mtk.setNeedsDisplay()
+            }
         }
         private func updateTroops() {
             guard let renderer else { return }
@@ -1201,18 +1215,18 @@ struct MapView: UIViewRepresentable {
                 pace(l, to: .full)
                 let x = min(1, (CACurrentMediaTime() - a.start) / a.duration)
                 let eased = x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2
-                set(MapCamera.arcInterpolate(a.from, a.to, eased, bounds: bounds), sync: false)
+                set(MapCamera.arcInterpolate(a.from, a.to, eased, bounds: bounds), sync: true)
                 if x >= 1 { animation = nil; setSyncPresent(cameraInteractive) }
             } else if hypot(velocity.x, velocity.y) > 8 {
                 pace(l, to: .full)
                 // Exponential deceleration close to UIScrollView's normal rate.
-                set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt), sync: false, fastPan: true)
+                set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt), sync: true, fastPan: true)
                 let decay = CGFloat(pow(0.998, dt * 1000))
                 velocity = CGPoint(x: velocity.x * decay, y: velocity.y * decay)
                 if hypot(velocity.x, velocity.y) <= 8 {
                     velocity = .zero
                     panLabelTick = 0
-                    set(camera, sync: false)
+                    set(camera, sync: true)
                 }
             } else if fingerDragging {
                 // 手指按住未动时保持链路就绪但不空画，松手或下一帧滑动即刻跟手。
@@ -1542,8 +1556,7 @@ struct MapView: UIViewRepresentable {
         private func startDrift() {
             guard drift == nil, !controller.sheetOpen else { return }
             let l = CADisplayLink(target: self, selector: #selector(driftStep(_:)))
-            // Claude 经典 20fps 主页缓游：3 pt/s 的慢移在 20fps 下肉眼同样顺滑，GPU 重绘开销仅 60fps 的三分之一，开屏机身完全冰凉。
-            l.preferredFrameRateRange = CAFrameRateRange(minimum: 15, maximum: 24, preferred: 20)
+            l.preferredFrameRateRange = CAFrameRateRange(minimum: 24, maximum: 36, preferred: 30)
             l.add(to: .main, forMode: .common); drift = l
         }
         @objc private func driftStep(_ l: CADisplayLink) {

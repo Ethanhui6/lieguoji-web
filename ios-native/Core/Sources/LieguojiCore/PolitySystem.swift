@@ -725,28 +725,33 @@ extension Regimes {
         let nowDay = r.world.day.asInt
         let autoEnabled = isAutoGoverned(r, id)
 
-        // 1. 长期国策与战略自动适配（战时动员 / 财政危机 / 腐化整顿 / 国家个性原型）
+        // 1. 长期国策与战略自动适配（加入 360 日防抖锁，避免短促战和来回折腾互斥制度；同时尊重玩家已选战略预设）
         if autoEnabled {
-            let desired: [String]
-            if atWar && gold < 260 {
-                desired = ["conscription", "liangshui", "audit"]
-            } else if atWar {
-                desired = ["conscription", "jungong", "junxian"]
-            } else if corrupt >= 42 {
-                desired = ["keju", "audit", "charter"]
-            } else {
-                switch aiArchetype(r, id) {
-                case "warMobilize":  desired = ["conscription", "jungong", "junxian"]
-                case "prosperTrade": desired = ["seaopen", "free", "liangshui", "guild"]
-                case "stabilize":    desired = ["keju", "juntian", "audit", "charter"]
-                case "expand":       desired = ["mubing", "navyAct", "seaopen", "jungong"]
-                default:             desired = ["keju", "secular", "free", "audit"]
+            let lockUntil = b.aiStrategyLockUntil.optionalNumber.map(Int.init) ?? 0
+            let playerPickedPreset = !(b.strategy.optionalString ?? "").isEmpty && !b.autoStrategy.isTruthy
+            if nowDay >= lockUntil && !playerPickedPreset {
+                let desired: [String]
+                if atWar && gold < 260 {
+                    desired = ["conscription", "liangshui", "audit"]
+                } else if atWar {
+                    desired = ["conscription", "jungong", "junxian"]
+                } else if corrupt >= 42 {
+                    desired = ["keju", "audit", "charter"]
+                } else {
+                    switch aiArchetype(r, id) {
+                    case "warMobilize":  desired = ["conscription", "jungong", "junxian"]
+                    case "prosperTrade": desired = ["seaopen", "free", "liangshui", "guild"]
+                    case "stabilize":    desired = ["keju", "juntian", "audit", "charter"]
+                    case "expand":       desired = ["mubing", "navyAct", "seaopen", "jungong"]
+                    default:             desired = ["keju", "secular", "free", "audit"]
+                    }
                 }
-            }
-            let heldIds = Set(heldReforms(r, id).map(\.id))
-            if let pickId = desired.first(where: { !heldIds.contains($0) }),
-               let f = reforms.first(where: { $0.id == pickId }) {
-                setReform(r, id, f, on: true)
+                let heldIds = Set(heldReforms(r, id).map(\.id))
+                if let pickId = desired.first(where: { !heldIds.contains($0) }),
+                   let f = reforms.first(where: { $0.id == pickId }) {
+                    setReform(r, id, f, on: true)
+                    b.aiStrategyLockUntil = JS(nowDay + 360)
+                }
             }
 
             // 2. 季度危机政令自动施政（消耗真实国库与 180 日冷却，绝不白嫖）

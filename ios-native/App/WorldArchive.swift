@@ -124,23 +124,23 @@ struct WorldArchiveSheet: View {
     }
     private func row(_ w: ArchivedWorld) -> some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 2).fill(Theme.seal).frame(width: 4, height: 38)
+            Rectangle().fill(Theme.seal).frame(width: 2.5, height: 36)
             VStack(alignment: .leading, spacing: 3) {
-                Text(w.title).font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
-                Text(subtitle(w)).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.7).monospacedDigit()
+                Text(w.title).font(Theme.serif(16)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.74)
+                Text(subtitle(w)).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.74).monospacedDigit()
             }
             Spacer(minLength: 8)
             Button { burning = w } label: {
-                InkIcon(glyph: .fire, size: 15, weight: 1.7).foregroundStyle(Theme.ink2).frame(width: 34, height: 34)
+                PhosphorIcon(glyph: .trash, size: 15, weight: .light)
+                    .foregroundStyle(Theme.ink2)
+                    .frame(width: 34, height: 34)
+                    .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.line, lineWidth: 0.85))
             }
             .buttonStyle(PressStyle())
-            Button { open(w) } label: {
-                Text("展卷").font(Theme.body).foregroundStyle(Theme.paper2).padding(.horizontal, 14).frame(height: 34)
-                    .background(Theme.seal, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            }
-            .buttonStyle(PressStyle())
+            EditorialTactileButton(title: "展卷", solid: true, compact: true) { open(w) }
         }
-        .padding(.horizontal, 14).padding(.vertical, 11)
+        .padding(.horizontal, 4).padding(.vertical, 12)
     }
     private func subtitle(_ w: ArchivedWorld) -> String {
         var parts = [String]()

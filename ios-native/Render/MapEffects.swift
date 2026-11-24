@@ -78,8 +78,8 @@ struct MapEffects: Equatable {
 final class EffectsView: UIView {
     /// Smoke, fire and sparks (设置 › 粒子特效).
     static var particles = true
-    /// 动画帧率 (推演与画面): 恪守 Claude 冷静温控规范（默认 30fps，发热降至 15fps，绝不硬拉 120Hz 烧手机）。
-    static var fps = 30
+    /// 动画帧率 (推演与画面): 常温丝滑 60fps，微温自动收至 30fps，发热/低电量降至 15fps。
+    static var fps = 60
     static func calm(_ a: CAAnimation) -> CAAnimation {
         let target = Energy.hot ? min(fps, 15) : (Energy.level >= 1 ? min(fps, 30) : fps)
         let f = Float(max(12, target))
@@ -244,7 +244,7 @@ final class EffectsView: UIView {
         sheet.configure(spec: .atlasNaval36, state: .combat, fps: 30.0, phaseOffset: phase)
         root.addSublayer(sheet)
 
-        if Self.particles && Energy.level == 0 && battleLayers.count < 5 {
+        if Self.particles && Energy.level == 0 && battleLayers.count < 7 {
             let e = CAEmitterLayer(); e.emitterShape = .line; e.emitterSize = CGSize(width: 28, height: 1); e.emitterPosition = CGPoint(x: 28, y: 24)
             e.emitterCells = [
                 cell(Self.puff, color: UIColor(white: 0.96, alpha: 0.24), rate: 3.4, life: 1.6, velocity: 8, range: .pi / 4, scale: 0.26, scaleSpeed: 0.14, alphaSpeed: -0.14, spin: 0.22, angle: -.pi / 2),
@@ -298,7 +298,7 @@ final class EffectsView: UIView {
         sheet.configure(spec: .atlasBattle36, state: .combat, fps: 30.0, phaseOffset: phase)
         root.addSublayer(sheet)
 
-        if Self.particles && Energy.level == 0 && battleLayers.count < 5 {
+        if Self.particles && Energy.level == 0 && battleLayers.count < 7 {
             let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: 24, y: 22); root.insertSublayer(smoke, at: 0)
         }
         return root

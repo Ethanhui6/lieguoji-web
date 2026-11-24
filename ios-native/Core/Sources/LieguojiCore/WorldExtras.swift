@@ -135,6 +135,10 @@ enum ArmyLedger {
             guard let p = v.province else { continue }
             fighting[p.id.asString, default: (p, [])].armies.append(v.army)
         }
+        let capitals = Set(r.world.nations.asArray.compactMap { n -> String? in
+            guard let cid = n.capitalId.optionalString else { return nil }
+            return r.world.cities.asArray.first { $0.id.optionalString == cid }?.provinceId.optionalString
+        })
         for pid in fighting.keys.sorted() {
             let (p, armies) = fighting[pid]!
             let c: JS
@@ -142,12 +146,11 @@ enum ArmyLedger {
                 let n = (book.count[pid].optionalNumber ?? 0) + 1
                 book.count[pid] = JS(n)
                 let x = JS.object()
-                x.name = JS("第\(Int(n))次\(p.name.asString)战役"); x.province = JS(pid); x.start = JS(day); x.end = .null
-                x.armies = .array(); x.states = .array(); x.peak = JS(0)
+                let title = Int(n) <= 1 ? "\(p.name.asString)之战" : "第\(Int(n))次\(p.name.asString)之战"
+                x.name = JS(title); x.province = JS(pid); x.start = JS(day); x.end = .null
+                x.armies = .array(); x.states = .array(); x.peak = JS(0); x.announced = JS(false)
                 book.active[pid] = JS(book.list.length); book.list.push(x)
                 c = x
-                let states = Array(Set(armies.map { $0.nationId.asString })).sorted()
-                People.announce(r, kind: "battle", text: x.name.asString + "爆发", reason: states.map { Vassals.name(r, $0) }.joined(separator: "、") + "的军队在\(p.name.asString)交战。", nations: states, province: pid)
             }
             c.last = JS(day)
             var ids = Set(c.armies.asArray.map(\.asString)), states = Set(c.states.asArray.map(\.asString))
@@ -157,6 +160,16 @@ enum ArmyLedger {
             }
             let troops = armies.reduce(0.0) { $0 + $1.troops.asNumber }
             if troops > c.peak.asNumber { c.peak = JS(troops) }
+            // 仅真正的大规模会战或都城保卫战记入史册播报，且全局冷却 ≥ 120 日，彻底消除「第1次某某战役」低质刷屏。
+            let isMajor = c.peak.asNumber >= 24_000 || (capitals.contains(pid) && c.peak.asNumber >= 12_000) || c.armies.length >= 4
+            let lastDay = book.lastAnnouncedDay.optionalNumber ?? -999
+            if isMajor && !c.announced.isTruthy && (day - lastDay) >= 120 {
+                c.announced = JS(true)
+                book.lastAnnouncedDay = JS(day)
+                let stList = c.states.asArray.map(\.asString).sorted()
+                let peakWan = String(format: "%.1f万", c.peak.asNumber / 10000.0)
+                People.announce(r, kind: "battle", text: "\(c.name.asString)爆发", reason: "\(stList.map { Vassals.name(r, $0) }.joined(separator: "、"))投入兵力逾\(peakWan)在\(p.name.asString)展开主力会战。", nations: stList, province: pid)
+            }
         }
         for pid in book.active.objectKeys where fighting[pid] == nil {
             let c = book.list[book.active[pid].asInt]

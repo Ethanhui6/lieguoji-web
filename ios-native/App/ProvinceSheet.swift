@@ -116,7 +116,7 @@ struct ProvinceSheet: View {
 
                     switch tab {
                     case .overview:
-                        ViewBoundary { overviewSection(map: map, p: p, owner: owner, nation: nation, armies: armies, port: port, holyOf: holyOf) }
+                        ViewBoundary { overviewSection(map: map, p: p, owner: owner, nation: nation, lex: lex, armies: armies, port: port, holyOf: holyOf) }
                     case .military:
                         ViewBoundary { militarySection(map: map, owner: owner) }
                     case .admin:
@@ -138,7 +138,7 @@ struct ProvinceSheet: View {
                 info = await model.provinceInfo(province)
                 if region == nil { region = await model.regionInfo(province) }
             }
-            .confirmationDialog("更改本州特产", isPresented: $pickingGood, titleVisibility: .visible) {
+            .confirmationDialog("更改本\(lex.adminUnit)特产", isPresented: $pickingGood, titleVisibility: .visible) {
                 ForEach(Array(Trade.goods.enumerated()), id: \.offset) { i, n in
                     Button(n) { Task { report(await model.setSpecialty(province, i), "特产改为" + n); self.info = await model.provinceInfo(province) } }
                 }
@@ -200,64 +200,46 @@ struct ProvinceSheet: View {
     private func sovereignHeroCard(map: WorldMap, provinceName: String, owner: Int, nation: WorldMeta.Nation?, info: ProvinceInfo?) -> some View {
         if let n = nation {
             let tint = Names.color(n.color)
-            Button {
-                GameFeel.shared.tap()
-                openNation(owner)
-            } label: {
-                HStack(spacing: 12) {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(tint)
-                        .frame(width: 7, height: 46)
-                    VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: 6) {
-                            Text(n.name).font(Theme.kai(20)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
-                            if let info, info.core == true {
-                                PaperTag(text: "核心", color: Theme.jade, size: 11)
-                            }
+            HStack(spacing: 12) {
+                Rectangle()
+                    .fill(tint)
+                    .frame(width: 4, height: 42)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 7) {
+                        Text(n.name).font(Theme.serif(19)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                        if let info, info.core == true {
+                            PaperTag(text: "核心", color: Theme.ink2, size: 10.5)
                         }
-                        let legalNote: String = {
-                            if let info, info.owner != info.controller, info.owner >= 0, info.owner < map.meta.nations.count {
-                                return " · 法理属\(map.meta.nations[info.owner].name)"
-                            }
-                            return ""
-                        }()
-                        Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)\(legalNote)")
-                            .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                     }
-                    Spacer(minLength: 4)
-                    HStack(spacing: 4) {
-                        Text("国家详情").font(Theme.label)
-                        InkIcon(glyph: .chevronRight, size: 11, weight: 1.9)
-                    }
-                    .foregroundStyle(Theme.paper2)
-                    .padding(.horizontal, 12).frame(height: 34)
-                    .background(Theme.seal, in: Capsule())
-                    .shadow(color: Theme.seal.opacity(0.22), radius: 4, y: 1.5)
+                    let legalNote: String = {
+                        if let info, info.owner != info.controller, info.owner >= 0, info.owner < map.meta.nations.count {
+                            return " · 法理属\(map.meta.nations[info.owner].name)"
+                        }
+                        return ""
+                    }()
+                    Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)\(legalNote)")
+                        .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12)
-                .paperCard(tint: tint)
-                .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+                Spacer(minLength: 6)
+                EditorialTactileButton(title: "国家详情", icon: .chevronRight, solid: true, compact: true) {
+                    openNation(owner)
+                }
             }
-            .buttonStyle(PressStyle())
+            .padding(.vertical, 12)
+            .paperCard()
         } else {
             HStack(spacing: 12) {
-                ArtEmblem(image: BundleArt.sealChronicle, size: 34, fallback: .region)
+                Seal(text: "邑", size: 32)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("无主之地").font(Theme.section).foregroundStyle(Theme.ink)
-                    Text("尚未归属任何政权，可在此举旗立国").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    Text("无主之地").font(Theme.serif(16)).foregroundStyle(Theme.ink)
+                    Text("尚未归属政权，可在此立国").font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 Spacer()
-                Button {
-                    GameFeel.shared.tap()
+                EditorialTactileButton(title: "在此立国", solid: true, compact: true) {
                     Task { report(await model.foundNation(province, war: false), "新国已立"); self.info = await model.provinceInfo(province) }
-                } label: {
-                    Text("在此立国").font(Theme.label).foregroundStyle(Theme.paper2)
-                        .padding(.horizontal, 12).frame(height: 32)
-                        .background(Theme.seal, in: Capsule())
                 }
-                .buttonStyle(PressStyle())
             }
-            .padding(14)
+            .padding(.vertical, 12)
             .paperCard()
         }
     }
@@ -265,28 +247,28 @@ struct ProvinceSheet: View {
     // MARK: - 概览与驻军
 
     @ViewBuilder
-    private func overviewSection(map: WorldMap, p: WorldMeta.Province, owner: Int, nation: WorldMeta.Nation?, armies: [(offset: Int, element: GameState.Army)], port: GameState.Port?, holyOf: GameState.Holy?) -> some View {
-        // 一屏直达的 4 项州郡快捷操作
+    private func overviewSection(map: WorldMap, p: WorldMeta.Province, owner: Int, nation: WorldMeta.Nation?, lex: LocalizationEngine.Lexicon, armies: [(offset: Int, element: GameState.Army)], port: GameState.Port?, holyOf: GameState.Holy?) -> some View {
+        // 一屏直达的 4 项触感快捷按钮
         if let n = nation {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-                quickTile(title: "国家详情", glyph: .nation, tint: Theme.seal) { openNation(owner) }
-                quickTile(title: "划入他国", glyph: .brush, tint: Theme.seal) { grantTarget = -1; granting = true }
+                quickTile(title: "国家详情", glyph: .nation, tint: Theme.ink) { openNation(owner) }
+                quickTile(title: "划入他国", glyph: .brush, tint: Theme.ink) { grantTarget = -1; granting = true }
                 quickTile(title: "在此立国", glyph: .fire, tint: Theme.seal) {
-                    pressMenu = PressMenu(title: "在\(p.name)建立新国家", subtitle: "按本州文化生成国号、君主与家族", items: [
+                    pressMenu = PressMenu(title: "在\(p.name)建立新国家", subtitle: "按本地文化生成国号、执政者与氏族", items: [
                         PressMenuItem(title: "和平独立", symbol: "leaf") { Task { report(await model.foundNation(province, war: false), "新国已立"); self.info = await model.provinceInfo(province) } },
                         PressMenuItem(title: "举兵独立（与原主开战）", symbol: "flag.2.crossed", destructive: true) { Task { report(await model.foundNation(province, war: true), "已举兵"); self.info = await model.provinceInfo(province) } },
                     ])
                 }
-                quickTile(title: holyOf == nil ? "定为圣地" : "本教圣地", glyph: .religion, tint: holyOf == nil ? Theme.jade : Theme.ink2, disabled: holyOf != nil) {
+                quickTile(title: holyOf == nil ? "定为圣地" : "本教圣地", glyph: .religion, tint: Theme.ink, disabled: holyOf != nil) {
                     Task { report(await model.setHolyProvince(province), "已定为\(Names.religion[n.religion] ?? "本教")圣地") }
                 }
             }
             .padding(.horizontal, Theme.Layout.pageInset)
         }
 
-        // 本州驻军（前置展示，点击直接进入军团详情）
+        // 本境驻军（前置展示，点击直接进入军团详情）
         if !armies.isEmpty {
-            SectionLabel("本州驻军（\(armies.count) 军）")
+            SectionLabel("本\(lex.adminUnit)驻军（\(armies.count) 军）")
             Group2 {
                 ForEach(armies, id: \.element.id) { pair in
                     Button {
@@ -302,7 +284,7 @@ struct ProvinceSheet: View {
             .padding(.horizontal, Theme.Layout.pageInset)
         }
 
-        // 州郡五槽基建与特产战略实效面板
+        // 五槽基建与特产战略实效面板
         if let info {
             ProvinceInfraSection(
                 model: model,
@@ -313,21 +295,21 @@ struct ProvinceSheet: View {
             )
         }
 
-        // 州郡繁盛度与战略定位卡片
+        // 繁盛度与战略定位
         if let info, let prosp = info.prosperity {
-            SectionLabel("州郡治况与战略价值")
+            SectionLabel("\(lex.adminUnit)治况与战略价值")
             Group2 {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
                         if let role = info.strategicRole {
-                            PaperTag(text: role, color: role == "咽喉雄关" || role == "边荒险地" ? Theme.seal : Theme.jade, size: 11)
+                            PaperTag(text: role, color: role == "咽喉雄关" || role == "边荒险地" ? Theme.seal : Theme.ink2, size: 11)
                         }
                         Text("繁盛度").font(Theme.label).foregroundStyle(Theme.ink2)
-                        Text(info.prosperityLabel ?? "").font(Theme.body).foregroundStyle(prosp >= 62 ? Theme.jade : prosp < 40 ? Theme.seal : Theme.ink)
+                        Text(info.prosperityLabel ?? "").font(Theme.body).foregroundStyle(prosp < 40 ? Theme.seal : Theme.ink)
                         Spacer()
-                        Text("\(prosp) / 100").font(Theme.label).foregroundStyle(Theme.ink).monospacedDigit()
+                        EditorialValueText("\(prosp)/100", size: 15, color: Theme.ink)
                     }
-                    InkBar(fraction: Double(prosp) / 100.0, color: prosp >= 62 ? Theme.jade : prosp < 40 ? Theme.seal : Theme.ink.opacity(0.65), height: 6)
+                    InkBar(fraction: Double(prosp) / 100.0, color: prosp < 40 ? Theme.seal : Theme.ink.opacity(0.68), height: 4)
                     if !info.kinds.isEmpty {
                         Divider2()
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10, alignment: .leading), GridItem(.flexible(), spacing: 10, alignment: .leading)], alignment: .leading, spacing: 8) {
@@ -335,7 +317,7 @@ struct ProvinceSheet: View {
                                 HStack(alignment: .top, spacing: 6) {
                                     PaperTag(
                                         text: k.0,
-                                        color: k.0 == "边地" ? Theme.ink2 : (k.0 == "封锁" || k.0 == "民变" || k.0 == "瘟疫" || k.0 == "饥荒") ? Theme.seal : (k.0 == "核心" || k.0 == "善治" || k.0 == "粮仓") ? Theme.jade : Theme.seal,
+                                        color: (k.0 == "封锁" || k.0 == "民变" || k.0 == "瘟疫" || k.0 == "饥荒") ? Theme.seal : Theme.ink2,
                                         size: 11
                                     )
                                     Text(k.1).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).fixedSize(horizontal: false, vertical: true)
@@ -344,11 +326,11 @@ struct ProvinceSheet: View {
                         }
                     }
                 }
-                .padding(14)
+                .padding(.horizontal, 4).padding(.vertical, 14)
             }
             .padding(.horizontal, Theme.Layout.pageInset)
         } else if let info, !info.kinds.isEmpty {
-            SectionLabel("州郡风物与治况")
+            SectionLabel("\(lex.adminUnit)风物与治况")
             Group2 {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10, alignment: .leading), GridItem(.flexible(), spacing: 10, alignment: .leading)], alignment: .leading, spacing: 9) {
                     ForEach(Array(info.kinds.enumerated()), id: \.offset) { _, k in
@@ -526,23 +508,25 @@ struct ProvinceSheet: View {
     }
 
     private func quickTile(title: String, glyph: InkGlyph, tint: Color, disabled: Bool = false, action: @escaping () -> Void) -> some View {
-        Button {
+        let isAccent = (tint == Theme.seal)
+        return Button {
             GameFeel.shared.tap()
             action()
         } label: {
             VStack(spacing: 5) {
-                InkIcon(glyph: glyph, size: 17, weight: 1.75, accent: tint.opacity(0.22))
-                    .foregroundStyle(tint)
+                InkIcon(glyph: glyph, size: 17, weight: 1.7)
+                    .foregroundStyle(isAccent ? Theme.seal : Theme.ink)
                     .frame(height: 20)
-                Text(title).font(Theme.caption).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
+                Text(title).font(Theme.caption).foregroundStyle(isAccent ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
             }
             .frame(maxWidth: .infinity).frame(height: 58)
-            .background(Theme.paper2.opacity(0.9), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.85))
+            .background(isAccent ? Theme.seal.opacity(0.06) : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(isAccent ? Theme.seal.opacity(0.42) : Theme.line, lineWidth: 0.9))
+            .shadow(color: Theme.ink.opacity(0.07), radius: 0, y: 1.5)
             .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
         }
         .buttonStyle(PressStyle())
-        .disabled(disabled).opacity(disabled ? 0.45 : 1)
+        .disabled(disabled).opacity(disabled ? 0.42 : 1)
     }
 }
 

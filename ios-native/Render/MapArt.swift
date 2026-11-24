@@ -69,25 +69,33 @@ enum BundleArt {
     static var compassRose: UIImage? { load("compass-rose", maxPx: 256) }
     static var scrollCorner: UIImage? { load("scroll-corner", maxPx: 256) }
 
-    /// 三级手绘真实朱砂篆刻印章透明素材（龙 / 史 / 溯 / 权 / 议），彻底取代代码红框假印。
+    /// 三级手绘真实朱砂篆刻印章透明素材（龙 / 史 / 溯 / 权 / 议 / 邑 / 盟），彻底取代代码红框假印。
     static var sealStampDragon: UIImage? { load("seal-stamp-dragon", maxPx: 192) }
     static var sealStampHistory: UIImage? { load("seal-stamp-history", maxPx: 192) }
     static var sealStampTrace: UIImage? { load("seal-stamp-trace", maxPx: 192) }
     static var sealStampPower: UIImage? { load("seal-stamp-power", maxPx: 192) }
     static var sealStampCouncil: UIImage? { load("seal-stamp-council", maxPx: 192) }
+    static var sealStampCity: UIImage? { load("seal-stamp-city", maxPx: 192) }
+    static var sealStampPact: UIImage? { load("seal-stamp-pact", maxPx: 192) }
 
     static func carvedSeal(for text: String) -> UIImage? {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.contains("邑") || t.contains("州") || t.contains("城") || t.contains("省") || t.contains("疆") || t.contains("图") || t.contains("地") {
+            return sealStampCity ?? sealStampDragon
+        }
+        if t.contains("盟") || t.contains("交") || t.contains("和") || t.contains("约") || t.contains("聘") {
+            return sealStampPact ?? sealStampCouncil
+        }
         if t.contains("史") || t.contains("纪") || t.contains("传") || t.contains("志") || t.contains("卷") {
             return sealStampHistory ?? sealStampDragon
         }
         if t.contains("溯") || t.contains("回") || t.contains("览") || t.contains("阅") {
             return sealStampTrace ?? sealStampHistory
         }
-        if t.contains("权") || t.contains("朝") || t.contains("政") || t.contains("君") || t.contains("主") || t.contains("法") || t.contains("战") || t.contains("军") {
+        if t.contains("权") || t.contains("朝") || t.contains("政") || t.contains("君") || t.contains("主") || t.contains("法") || t.contains("战") || t.contains("军") || t.contains("兵") || t.contains("师") {
             return sealStampPower ?? sealStampDragon
         }
-        if t.contains("议") || t.contains("令") || t.contains("诏") || t.contains("策") || t.contains("盟") || t.contains("交") || t.contains("人") || t.contains("典") || t.contains("改") {
+        if t.contains("议") || t.contains("令") || t.contains("诏") || t.contains("策") || t.contains("人") || t.contains("典") || t.contains("改") || t.contains("设") || t.contains("选") {
             return sealStampCouncil ?? sealStampPower
         }
         return sealStampDragon ?? sealStampPower

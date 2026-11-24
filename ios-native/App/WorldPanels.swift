@@ -292,13 +292,14 @@ enum Glyph {
     /// 全作统一的手绘水墨行标图标：统一朱砂色阶，可选兜底图标保证同类列表中每行严格对齐、绝不出现无图标孤行。
     @ViewBuilder static func icon(_ label: String, size: CGFloat = 14, fallback: InkGlyph? = nil) -> some View {
         if let s = of(label), let g = GameActionLabel.glyph(for: s) {
-            InkIcon(glyph: g, size: size + 2, weight: 1.65, accent: Theme.seal.opacity(0.22))
-                .foregroundStyle(Theme.seal.opacity(0.86)).frame(width: size + 8)
+            InkIcon(glyph: g, size: size + 2, weight: 1.65)
+                .foregroundStyle(Theme.ink.opacity(0.78)).frame(width: size + 8)
         } else if let fallback {
-            InkIcon(glyph: fallback, size: size + 2, weight: 1.65, accent: Theme.seal.opacity(0.22))
-                .foregroundStyle(Theme.seal.opacity(0.86)).frame(width: size + 8)
-        } else if let s = of(label) {
-            Image(systemName: s).font(.system(size: size, weight: .regular)).foregroundStyle(Theme.seal.opacity(0.84)).frame(width: size + 8)
+            InkIcon(glyph: fallback, size: size + 2, weight: 1.65)
+                .foregroundStyle(Theme.ink.opacity(0.78)).frame(width: size + 8)
+        } else if of(label) != nil {
+            InkIcon(glyph: .edict, size: size + 2, weight: 1.65)
+                .foregroundStyle(Theme.ink.opacity(0.78)).frame(width: size + 8)
         }
     }
 }
@@ -309,12 +310,8 @@ struct GlyphLabel: View {
     var body: some View {
         HStack(spacing: 5) {
             if let s = Glyph.of(text) {
-                if let g = GameActionLabel.glyph(for: s) {
-                    InkIcon(glyph: g, size: 14, weight: 1.6, accent: Theme.seal.opacity(0.22))
-                        .foregroundStyle(Theme.seal.opacity(0.8)).frame(width: 16)
-                } else {
-                    Image(systemName: s).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.seal.opacity(0.75)).frame(width: 16)
-                }
+                InkIcon(glyph: GameActionLabel.glyph(for: s) ?? .edict, size: 14, weight: 1.6)
+                    .foregroundStyle(Theme.ink.opacity(0.76)).frame(width: 16)
             }
             Text(text)
         }
@@ -402,7 +399,7 @@ struct FaithCard: View {
                 if let map, let h = state?.holy?.first(where: { $0.religion == religion }), map.meta.provinces.indices.contains(h.province) {
                     let owner = state?.owners.indices.contains(h.province) == true ? state!.owners[h.province] : -1
                     HStack(spacing: 6) {
-                        Image(systemName: "sparkle").font(.system(size: 12)).foregroundStyle(Color(red: 0.72, green: 0.52, blue: 0.14))
+                        PhosphorIcon(glyph: .religion, size: 13, weight: .fill).foregroundStyle(Theme.seal)
                         Text("圣地 \(map.meta.provinces[h.province].name)").font(Theme.label).foregroundStyle(Theme.ink)
                         if owner >= 0, owner < map.meta.nations.count { Text("今属\(map.meta.nations[owner].name)").font(Theme.label).foregroundStyle(Theme.ink2) }
                     }

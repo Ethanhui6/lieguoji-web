@@ -184,18 +184,37 @@ struct AppointSheet: View {
     }
 }
 
-/// A row that opens an editor when tapped (a small brush mark shows it can be changed).
+/// A row that opens an editor when tapped: right-side framed tactile badge makes clickability unmistakable.
 struct EditRow: View {
     let label: String; let value: String; let action: () -> Void
     var body: some View {
-        Button(action: action) {
-            HStack(alignment: .center, spacing: 12) {
-                HStack(spacing: 8) { Glyph.icon(label); Text(label).foregroundStyle(Theme.ink2) }.fixedSize()
+        Button {
+            GameFeel.shared.tap()
+            action()
+        } label: {
+            HStack(alignment: .center, spacing: 10) {
+                HStack(spacing: 8) {
+                    Glyph.icon(label)
+                    Text(label).font(Theme.sans(14)).foregroundStyle(Theme.ink2)
+                }
+                .fixedSize()
                 Spacer(minLength: 8)
-                Text(value).foregroundStyle(Theme.ink).monospacedDigit().multilineTextAlignment(.trailing).lineLimit(2)
-                InkIcon(glyph: .brush, size: 11, weight: 1.7).foregroundStyle(Theme.seal.opacity(0.72))
+                HStack(spacing: 5) {
+                    Text(value)
+                        .font(Theme.sans(13.8, weight: .medium))
+                        .foregroundStyle(Theme.ink)
+                        .monospacedDigit()
+                        .multilineTextAlignment(.trailing)
+                        .lineLimit(2)
+                    PhosphorIcon(glyph: .brush, size: 11.5, weight: .light)
+                        .foregroundStyle(Theme.seal.opacity(0.85))
+                }
+                .padding(.horizontal, 9).padding(.vertical, 5)
+                .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.line, lineWidth: 0.85))
+                .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1)
             }
-            .font(Theme.section).padding(.horizontal, 16).padding(.vertical, 12).contentShape(Rectangle())
+            .padding(.horizontal, 4).padding(.vertical, 10).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

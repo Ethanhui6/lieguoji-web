@@ -57,20 +57,55 @@ struct ProvinceQuickSheet: View {
             let here = state.armies.filter { $0.province == province }
             let isCapital = nation.map { map.meta.cities.indices.contains($0.capital) && map.meta.cities[$0.capital].province == province } ?? false
             ScrollView {
-                VStack(spacing: 12) {
-                    SheetHeader(title: p.name, subtitle: [nation?.name, isCapital ? "都城" : nil, "\(here.count)支军队"].compactMap { $0 }.joined(separator: " · "), color: nation.map { Names.color($0.color) }, seal: "令")
-                    // 分类签：以前八节从上到下一长条；现在一次只显示一类，上次停在哪类下次还在哪类。
-                    ChipPicker(items: QuickTab.allCases.map { ($0, $0.rawValue) }, selection: Binding(get: { tab }, set: { GameFeel.shared.tap(); tabRaw = $0.rawValue }))
-                        .padding(.horizontal, 16)
+                VStack(alignment: .leading, spacing: 14) {
+                    // 极简古籍风顶栏：与国家/州郡页统一 20pt 左右留白 + 真实篆印 + 1px 淡墨分割线
+                    HStack(alignment: .center, spacing: 12) {
+                        SealFace(text: "令", size: 38, tint: Theme.seal)
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: 7) {
+                                if let nation {
+                                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                        .fill(Names.color(nation.color))
+                                        .frame(width: 4, height: 18)
+                                }
+                                Text(p.name)
+                                    .font(Theme.serif(22))
+                                    .tracking(1.0)
+                                    .foregroundStyle(Theme.ink)
+                                    .lineLimit(1)
+                            }
+                            Text([nation?.name, isCapital ? "都城" : nil, "\(here.count) 支军队"].compactMap { $0 }.joined(separator: " · "))
+                                .font(Theme.caption)
+                                .foregroundStyle(Theme.ink2)
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 4)
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                    .padding(.top, 18)
+
+                    EditorialHairline()
+                        .padding(.horizontal, Theme.Layout.pageInset)
+
+                    // 与国家页/史记页 1:1 对齐的朱砂下划线书签栏
+                    EditorialTabStrip(
+                        items: QuickTab.allCases.map { ($0, $0.rawValue) },
+                        selection: Binding(get: { tab }, set: { GameFeel.shared.tap(); tabRaw = $0.rawValue })
+                    )
+                    .padding(.horizontal, Theme.Layout.pageInset)
+
                     Group {
                     switch tab {
                     case .army:
                     section("放置军队") {
                         HStack(spacing: 10) {
-                            Glyph.icon("军队", size: 16)
-                            Text(armyNation >= 0 && map.meta.nations.indices.contains(armyNation) ? map.meta.nations[armyNation].name : nation?.name ?? "—").font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                            Glyph.icon("军队", size: 15)
+                            Text(armyNation >= 0 && map.meta.nations.indices.contains(armyNation) ? map.meta.nations[armyNation].name : nation?.name ?? "—")
+                                .font(Theme.body)
+                                .foregroundStyle(Theme.ink)
+                                .lineLimit(1)
                             Spacer()
-                            Button("换国家") { target = -1; picking = .army }.font(Theme.body).foregroundStyle(Theme.seal)
+                            EditorialTactileButton("换国家", glyph: .swap, compact: true) { target = -1; picking = .army }
                         }
                         slider("数量", value: Binding(get: { Double(count) }, set: { count = Int($0) }), 1...30, text: "\(count) 支")
                         tiles {
@@ -323,22 +358,27 @@ struct ReformCard: View {
     let say: (String) -> Void
     let reload: () async -> Void
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SectionLabel("国势")
-            VStack(spacing: 6) {
-                ForEach(info.sway ?? [], id: \.name) { row in
+        VStack(alignment: .leading, spacing: 14) {
+            EditorialSectionRule(title: "国势")
+                .padding(.horizontal, Theme.Layout.pageInset)
+            VStack(spacing: 8) {
+                ForEach(Array((info.sway ?? []).enumerated()), id: \.offset) { idx, row in
+                    if idx > 0 { EditorialHairline() }
                     HStack(spacing: 8) {
-                        Glyph.icon(row.name, size: 15)
-                        Text(row.name).font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 48, alignment: .leading)
-                        Text(row.value).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit()
+                        Glyph.icon(row.name, size: 14)
+                        Text(row.name).font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 52, alignment: .leading)
+                        Text(row.value).font(Theme.numeral(15)).foregroundStyle(Theme.ink)
                         Spacer(minLength: 4)
                         Text(row.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.trailing)
                     }
+                    .padding(.vertical, 2)
                 }
             }
-            .padding(12).paperCard().padding(.horizontal, 14)
-            SectionLabel("制度")
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+            .padding(.horizontal, Theme.Layout.pageInset)
+
+            EditorialSectionRule(title: "制度")
+                .padding(.horizontal, Theme.Layout.pageInset)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(info.reforms ?? [], id: \.id) { f in
                     Button {
                         GameFeel.shared.tap()
@@ -348,21 +388,23 @@ struct ReformCard: View {
                             await reload()
                         }
                     } label: {
-                        VStack(alignment: .leading, spacing: 3) {
+                        VStack(alignment: .leading, spacing: 4) {
                             HStack(spacing: 5) {
-                                InkIcon(glyph: .edict, size: 13, weight: 1.75, filled: f.on).foregroundStyle(f.on ? Theme.seal : Theme.ink2)
-                                Text(f.name).font(Theme.body).foregroundStyle(f.on ? Theme.seal : Theme.ink).lineLimit(1)
+                                PhosphorIcon(glyph: .edict, size: 13, weight: f.on ? .fill : .light)
+                                    .foregroundStyle(f.on ? Theme.seal : Theme.ink)
+                                Text(f.name).font(Theme.serif(14.5)).foregroundStyle(f.on ? Theme.seal : Theme.ink).lineLimit(1)
                             }
                             Text(f.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .padding(9).frame(maxWidth: .infinity, minHeight: 62, alignment: .topLeading)
-                        .background(f.on ? Theme.seal.opacity(0.08) : Theme.paper2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(f.on ? Theme.seal.opacity(0.4) : Theme.line))
+                        .padding(11).frame(maxWidth: .infinity, minHeight: 64, alignment: .topLeading)
+                        .background(f.on ? Theme.seal.opacity(0.06) : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(f.on ? Theme.seal.opacity(0.45) : Theme.line, lineWidth: 0.9))
+                        .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1.5)
                     }
                     .buttonStyle(PressStyle())
                 }
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, Theme.Layout.pageInset)
         }
     }
 }
@@ -389,38 +431,42 @@ struct PressRipple: View {
 
 
 func quickSection<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
-    VStack(alignment: .leading, spacing: 8) {
-        SectionLabel(title)
-        VStack(spacing: 10) { content() }.padding(14).paperCard().padding(.horizontal, 16)
+    VStack(alignment: .leading, spacing: 10) {
+        EditorialSectionRule(title: title)
+        VStack(alignment: .leading, spacing: 12) { content() }
     }
+    .padding(.horizontal, Theme.Layout.pageInset)
+    .padding(.top, 4)
 }
 func quickSlider(_ title: String, value: Binding<Double>, _ range: ClosedRange<Double>, step: Double = 1, text: String) -> some View {
     HStack(spacing: 10) {
-        Text(title).font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 64, alignment: .leading)
+        Text(title).font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 68, alignment: .leading)
         PaperTrack(value: value, range: range, step: step, onEditingChanged: nil)
-        Text(text).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit().frame(width: 72, alignment: .trailing).lineLimit(1).minimumScaleFactor(0.7)
+        Text(text).font(Theme.numeral(15)).foregroundStyle(Theme.ink).frame(width: 72, alignment: .trailing).lineLimit(1).minimumScaleFactor(0.75)
     }
 }
 func quickGrid<C: View>(@ViewBuilder _ content: () -> C) -> some View {
-    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) { content() }
+    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 9), count: 3), spacing: 9) { content() }
 }
 func quickTile(_ title: String, _ symbol: String, destructive: Bool = false, _ action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-        VStack(spacing: 5) {
-            Group {
-                if let g = GameActionLabel.glyph(for: symbol) {
-                    InkIcon(glyph: g, size: 19, weight: 1.75)
-                } else {
-                    Image(systemName: symbol).font(.system(size: 19, weight: .regular))
-                }
-            }
-            .frame(height: 24)
-            Text(title).font(Theme.label).lineLimit(1).minimumScaleFactor(0.7)
+    Button {
+        GameFeel.shared.tap()
+        action()
+    } label: {
+        VStack(spacing: 6) {
+            InkIcon(glyph: GameActionLabel.glyph(for: symbol) ?? .edict, size: 19, weight: 1.7)
+                .frame(height: 22)
+            Text(title).font(Theme.label).lineLimit(1).minimumScaleFactor(0.72)
         }
-        .foregroundStyle(destructive ? Theme.seal : Theme.ink).frame(maxWidth: .infinity).frame(height: 66)
-        .background(Theme.paper2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(destructive ? Theme.seal.opacity(0.35) : Theme.line))
-        .contentShape(Rectangle())
+        .foregroundStyle(destructive ? Theme.seal : Theme.ink)
+        .frame(maxWidth: .infinity).frame(height: 66)
+        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                .stroke(destructive ? Theme.seal.opacity(0.42) : Theme.line, lineWidth: 0.95)
+        )
+        .shadow(color: Theme.ink.opacity(0.07), radius: 0, y: 1.5)
+        .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
     }
     .buttonStyle(PressStyle())
 }

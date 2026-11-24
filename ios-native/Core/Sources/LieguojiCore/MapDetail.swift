@@ -21,21 +21,6 @@ extension MapLayers {
         }
         return m
     }
-    /// The emptiest corner of the sea, where the compass stands.
-    public static func compassCorner(_ map: WorldMap) -> (x: Float, y: Float) {
-        let inset: Float = 118
-        let corners: [(Float, Float)] = [(inset, inset), (map.width - inset, inset), (inset, map.height - inset), (map.width - inset, map.height - inset)]
-        var best = corners[0], fewest = Int.max
-        for (cx, cy) in corners {
-            var n = 0
-            for c in 0..<map.cellCount where map.isLand(c) {
-                let dx: Float = map.sites[c * 2] - cx, dy: Float = map.sites[c * 2 + 1] - cy
-                if dx * dx + dy * dy < 9025 { n += 1 }
-            }
-            if n < fewest { fewest = n; best = (cx, cy) }
-        }
-        return (best.0, best.1)
-    }
 
     /// Cells that touch the other element (land next to sea, sea next to land).
     private static func shoreCells(_ map: WorldMap) -> [Bool] {

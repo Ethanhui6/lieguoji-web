@@ -59,8 +59,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     /// 统一单调渲染时钟（秒）。
     let clockStart = CACurrentMediaTime()
     func clock(_ t: CFTimeInterval = CACurrentMediaTime()) -> Float { Float(t - clockStart) }
-    /// 本帧时刻（draw 开头取一次，各图层共用）。
+    /// 本帧时刻（draw 开头取一次，各图层共用；同事务拖拽缩放时由 MapView 钉住同一时刻，确保军队与兵力数字 0px 错位）。
     private(set) var frameTime: CFTimeInterval = CACurrentMediaTime()
+    var pinnedFrameTime: CFTimeInterval?
     private var fading: Bool { previousColors != nil && landFade.fading(at: clock()) }
     /// 某顶点此刻显示的陆地颜色（CI 逐帧记录用）。
     func displayedLand(_ v: Int, at t: Float) -> SIMD3<Float> { landFade.shown(v, at: t) }
@@ -83,9 +84,12 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     private let flatPipeline: MTLRenderPipelineState
     private let coloredPipeline: MTLRenderPipelineState
+    private let deskPipeline: MTLRenderPipelineState
     private let seaPipeline: MTLRenderPipelineState
     private let multiplyPipeline: MTLRenderPipelineState
     private let spritePipeline: MTLRenderPipelineState
+    private let scrollBorderPipeline: MTLRenderPipelineState
+    private let scrollArtPipeline: MTLRenderPipelineState
 
     /// Army icons grouped by unit type: texture, vertex buffer, count, and pool.
     private var units: [(texture: MTLTexture, buffer: MTLBuffer, count: Int, pool: MapBufferPool)] = []
@@ -118,11 +122,20 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var seaSource: [UInt8] = []
     private var seaMask: [UInt8] = []
     private var coastRefined = false
-    /// 预计算古风舆图卷轴装裱几何（单次 CPU 构建，1 指令 colorFragment 绘制，零每帧片元噪声/SDF 发热）。
+    /// 中空四边带卷轴内外投影环（24 顶点，画心内部 0% 过绘）+ 真实手绘生图卷轴装裱贴图网格（紫檀滚轴、宋锦绫边、白玉鎏金包角）。
     private var scrollMount: (buffer: MTLBuffer, count: Int)?
+    private var scrollArtH: (buffer: MTLBuffer, count: Int)?
+    private var scrollArtV: (buffer: MTLBuffer, count: Int)?
+    private var scrollArtCorners: (buffer: MTLBuffer, count: Int)?
     private var sea: MTLTexture?
     private let parchment: MTLTexture?
+    private let paperDetail: MTLTexture?
+    private let scrollBorderHTex: MTLTexture?
+    private let scrollRollerVTex: MTLTexture?
+    private let scrollCornerTex: MTLTexture?
     private let sampler: MTLSamplerState?
+    private let repeatSampler: MTLSamplerState?
+    private let mirrorSampler: MTLSamplerState?
     private(set) var map: WorldMap { didSet { revealFields = nil; revealFieldData = nil; coastInk = nil } }
     private var coastInk: (buffer: MTLBuffer, count: Int)?
     private(set) var nationColors: [RGB]
@@ -153,9 +166,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         var pad4: Float = 0
         var landTint: SIMD4<Float> = SIMD4(1, 1, 1, 1)
         var seaTint: SIMD4<Float> = SIMD4(1, 1, 1, 1)
+        /// CPU 预计算四季权重 `(winter, spring, summer, autumn)`，片元零三角函数运算。
+        var seasonWeights: SIMD4<Float> = SIMD4(0, 0, 0, 0)
     }
 
-    /// 跨世界复用的 10 条精简 Metal 管线与共享贴图（启动编译一次 ~25ms，后续切换世界零编译耗时）。
+    /// 跨世界复用的 12 条精简单 Pass Metal 管线与共享贴图（启动编译一次，后续切换世界零编译耗时）。
     private struct SharedMetalAssets {
         let deviceID: ObjectIdentifier
         let pixelFormat: MTLPixelFormat
@@ -166,13 +181,22 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let fadePipeline: MTLRenderPipelineState
         let flatPipeline: MTLRenderPipelineState
         let coloredPipeline: MTLRenderPipelineState
+        let deskPipeline: MTLRenderPipelineState
         let seaPipeline: MTLRenderPipelineState
         let multiplyPipeline: MTLRenderPipelineState
         let spritePipeline: MTLRenderPipelineState
+        let scrollBorderPipeline: MTLRenderPipelineState
+        let scrollArtPipeline: MTLRenderPipelineState
         let sweepPipeline: MTLRenderPipelineState
         let inkPipes: InkPipelines
         let parchment: MTLTexture?
+        let paperDetail: MTLTexture?
+        let scrollBorderHTex: MTLTexture?
+        let scrollRollerVTex: MTLTexture?
+        let scrollCornerTex: MTLTexture?
         let sampler: MTLSamplerState?
+        let repeatSampler: MTLSamplerState?
+        let mirrorSampler: MTLSamplerState?
         let unitTextures: [String: MTLTexture]
     }
     private static var sharedAssets: SharedMetalAssets?
@@ -248,10 +272,29 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
                 let loader = MTKTextureLoader(device: device)
                 let pTex: MTLTexture? = parchmentURL.flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
+                let dTex: MTLTexture? = Bundle.main.url(forResource: "paper-detail", withExtension: "jpg", subdirectory: "World")
+                    .flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
+                let sbHTex: MTLTexture? = Bundle.main.url(forResource: "scroll-border-h", withExtension: "png", subdirectory: "Art")
+                    .flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
+                let srVTex: MTLTexture? = Bundle.main.url(forResource: "scroll-roller-v", withExtension: "png", subdirectory: "Art")
+                    .flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
+                let scTex: MTLTexture? = Bundle.main.url(forResource: "scroll-corner", withExtension: "png", subdirectory: "Art")
+                    .flatMap { try? loader.newTexture(URL: $0, options: [.SRGB: false, .generateMipmaps: true]) }
                 let sDesc = MTLSamplerDescriptor()
                 sDesc.minFilter = .linear; sDesc.magFilter = .linear; sDesc.mipFilter = .linear
+                sDesc.maxAnisotropy = 4
                 sDesc.sAddressMode = .clampToEdge; sDesc.tAddressMode = .clampToEdge
                 let smp = device.makeSamplerState(descriptor: sDesc)
+                let rsDesc = MTLSamplerDescriptor()
+                rsDesc.minFilter = .linear; rsDesc.magFilter = .linear; rsDesc.mipFilter = .linear
+                rsDesc.maxAnisotropy = 4
+                rsDesc.sAddressMode = .repeat; rsDesc.tAddressMode = .repeat
+                let rsmp = device.makeSamplerState(descriptor: rsDesc)
+                let msDesc = MTLSamplerDescriptor()
+                msDesc.minFilter = .linear; msDesc.magFilter = .linear; msDesc.mipFilter = .linear
+                msDesc.maxAnisotropy = 4
+                msDesc.sAddressMode = .mirrorRepeat; msDesc.tAddressMode = .clampToEdge
+                let msmp = device.makeSamplerState(descriptor: msDesc)
 
                 var uTex: [String: MTLTexture] = [:]
                 for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Fleet", "Transport", "Port", "Merchant"] {
@@ -326,13 +369,22 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                     fadePipeline: try pipeline("fadeVertex", "landFragment", .none),
                     flatPipeline: try pipeline("flatVertex", "flatFragment", .alpha),
                     coloredPipeline: try pipeline("coloredVertex", "colorFragment", .alpha),
-                    seaPipeline: try pipeline("quadVertex", "seaFragment", .none),
-                    multiplyPipeline: try pipeline("quadVertex", "textureFragment", .multiply),
+                    deskPipeline: try pipeline("deskVertex", "deskFragment", .none),
+                    seaPipeline: try pipeline("seaVertex", "seaFragment", .none),
+                    multiplyPipeline: try pipeline("seaVertex", "parchmentFragment", .multiply),
                     spritePipeline: try pipeline("spriteVertex", "spriteFragment", .alpha),
+                    scrollBorderPipeline: try pipeline("scrollRingVertex", "scrollShadowFragment", .alpha),
+                    scrollArtPipeline: try pipeline("scrollArtVertex", "scrollArtFragment", .alpha),
                     sweepPipeline: try pipeline("sweepVertex", "sweepFragment", .alpha),
                     inkPipes: try InkPipelines.make(device: device, library: library, mainFormat: view.colorPixelFormat, sampleCount: view.sampleCount),
                     parchment: pTex,
+                    paperDetail: dTex,
+                    scrollBorderHTex: sbHTex,
+                    scrollRollerVTex: srVTex,
+                    scrollCornerTex: scTex,
                     sampler: smp,
+                    repeatSampler: rsmp,
+                    mirrorSampler: msmp,
                     unitTextures: uTex
                 )
                 Self.sharedAssets = assets
@@ -347,13 +399,22 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         fadePipeline = assets.fadePipeline
         flatPipeline = assets.flatPipeline
         coloredPipeline = assets.coloredPipeline
+        deskPipeline = assets.deskPipeline
         seaPipeline = assets.seaPipeline
         multiplyPipeline = assets.multiplyPipeline
         spritePipeline = assets.spritePipeline
+        scrollBorderPipeline = assets.scrollBorderPipeline
+        scrollArtPipeline = assets.scrollArtPipeline
         sweepPipeline = assets.sweepPipeline
         inkPipes = assets.inkPipes
         parchment = assets.parchment
+        paperDetail = assets.paperDetail
+        scrollBorderHTex = assets.scrollBorderHTex
+        scrollRollerVTex = assets.scrollRollerVTex
+        scrollCornerTex = assets.scrollCornerTex
         sampler = assets.sampler
+        repeatSampler = assets.repeatSampler
+        mirrorSampler = assets.mirrorSampler
         unitTextures = assets.unitTextures
 
         let mesh = CellMesh(map: map)
@@ -382,6 +443,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         fineDetail = buffer(ready?.fine ?? MapLayers.fineDetail(map).vertices, stride: 6)
         seaMask = ready?.sea ?? MapLayers.waterlines(map)
         scrollMount = Self.buildScrollMount(device: device, width: map.width, height: map.height)
+        let scrollArt = Self.buildScrollArt(device: device, width: map.width, height: map.height)
+        scrollArtH = scrollArt.h
+        scrollArtV = scrollArt.v
+        scrollArtCorners = scrollArt.corners
         uploadSea()
         if let start = map.meta.economy {
             setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
@@ -425,6 +490,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         portIcons = nil
         forts = nil
         scrollMount = nil
+        scrollArtH = nil
+        scrollArtV = nil
+        scrollArtCorners = nil
         route = nil
         units.removeAll(keepingCapacity: false)
         unitBufferPool.removeAll(keepingCapacity: false)
@@ -432,192 +500,79 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         prevColorBufferPool.reset()
     }
 
-    /// 预计算古风舆图卷轴装裱几何（仅构建一次，以 1 指令 `colorFragment` 渲染，零每帧片元噪声/SDF 发热）：
-    /// 紫檀立体圆柱滚轴（多带光影过渡）、双道鎏金箍、青白碧玉圆润轴头、米金宋锦宽绫边、牙白隔水与墨金双细框、四角回纹包角与画心六阶柔和内阴影。
+    /// 中空四边带卷轴内外投影网格（仅 24 顶点覆盖外缘投影区与画心窄内影带，画心中央 90% 面积 0% 过绘）。
     private static func buildScrollMount(device: MTLDevice, width w: Float, height h: Float) -> (MTLBuffer, Int)? {
         guard w > 0, h > 0 else { return nil }
         let u = min(w, h)
-        let matH = u * 0.036
-        let matSide = u * 0.025
-        let rollerR = u * 0.015
-        let collarH = u * 0.010
-        let finialH = u * 0.028
-        let innerW = u * 0.022
-
-        let matL = -matSide, matR = w + matSide, matT = -matH, matB = h + matH
-        let rxL = matL - rollerR, rxR = matR + rollerR
+        let padX = u * (0.072 + 0.044)
+        let padY = u * (0.046 + 0.044)
+        let innerW = min(u * 0.026, min(w, h) * 0.45)
 
         var out: [Float] = []
-        out.reserveCapacity(4096)
-        func emit(_ body: (inout ColoredMesh) -> Void) {
-            var tmp = ColoredMesh()
-            body(&tmp)
-            out.append(contentsOf: tmp.vertices)
-        }
-        func rect(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, _ c: RGB, alpha: Float = 1) {
+        out.reserveCapacity(48)
+        func strip(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float) {
             guard x1 > x0 && y1 > y0 else { return }
-            emit { $0.fill([x0, y0, x1, y0, x1, y1, x0, y1], c, alpha: alpha) }
+            out.append(contentsOf: [
+                x0, y0, x1, y0, x0, y1,
+                x0, y1, x1, y0, x1, y1,
+            ])
         }
-        func hBand(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, top: RGB, bot: RGB, alphaTop: Float, alphaBot: Float) {
-            let v: [Float] = [
-                x0, y0, top.r, top.g, top.b, alphaTop,
-                x1, y0, top.r, top.g, top.b, alphaTop,
-                x0, y1, bot.r, bot.g, bot.b, alphaBot,
-                x0, y1, bot.r, bot.g, bot.b, alphaBot,
-                x1, y0, top.r, top.g, top.b, alphaTop,
-                x1, y1, bot.r, bot.g, bot.b, alphaBot,
-            ]
-            out.append(contentsOf: v)
-        }
-        func vBand(_ x0: Float, _ y0: Float, _ x1: Float, _ y1: Float, left: RGB, right: RGB, alphaL: Float, alphaR: Float) {
-            let v: [Float] = [
-                x0, y0, left.r, left.g, left.b, alphaL,
-                x1, y0, right.r, right.g, right.b, alphaR,
-                x0, y1, left.r, left.g, left.b, alphaL,
-                x0, y1, left.r, left.g, left.b, alphaL,
-                x1, y0, right.r, right.g, right.b, alphaR,
-                x1, y1, right.r, right.g, right.b, alphaR,
-            ]
-            out.append(contentsOf: v)
-        }
-
-        // 1. 书案东南定向柔影（极轻几何条带，立体托起整卷舆图）
-        let shCol = RGB(0.14, 0.10, 0.06)
-        let shOffX = u * 0.008, shOffY = u * 0.011
-        hBand(matL + shOffX, matB, matR + shOffX, matB + shOffY * 1.9, top: shCol, bot: shCol, alphaTop: 0.24, alphaBot: 0)
-        vBand(rxR + rollerR, matT + shOffY, rxR + rollerR + shOffX * 1.9, matB + shOffY, left: shCol, right: shCol, alphaL: 0.24, alphaR: 0)
-
-        // 2. 米金宋锦绫罗宽边（四条非重叠空心框，画心零过绘）
-        let silkLight = RGB(0.886, 0.824, 0.690)
-        let silkMid = RGB(0.848, 0.778, 0.638)
-        let silkEdge = RGB(0.790, 0.718, 0.576)
-        hBand(matL, matT, matR, 0, top: silkEdge, bot: silkLight, alphaTop: 1, alphaBot: 1)
-        hBand(matL, h, matR, matB, top: silkLight, bot: silkEdge, alphaTop: 1, alphaBot: 1)
-        vBand(matL, 0, 0, h, left: silkMid, right: silkLight, alphaL: 1, alphaR: 1)
-        vBand(w, 0, matR, h, left: silkLight, right: silkMid, alphaL: 1, alphaR: 1)
-
-        // 3. 牙白隔水边 + 三道精致墨/泥金装裱细框 + 上下紫檀细包边
-        let slipW = u * 0.0046
-        let ivory = RGB(0.946, 0.914, 0.840)
-        rect(-slipW, -slipW, w + slipW, 0, ivory)
-        rect(-slipW, h, w + slipW, h + slipW, ivory)
-        rect(-slipW, 0, 0, h, ivory)
-        rect(w, 0, w + slipW, h, ivory)
-
-        let inkHair = RGB(0.24, 0.18, 0.13)
-        let goldHair = RGB(0.76, 0.60, 0.30)
-        let ruleHair = RGB(0.46, 0.37, 0.24)
-        let hw = max(0.7, u * 0.0010)
-        func frameBox(_ pad: Float, _ width: Float, _ col: RGB, alpha: Float) {
-            emit { $0.polyline([-pad, -pad, w + pad, -pad, w + pad, h + pad, -pad, h + pad, -pad, -pad], width: width, col, alpha: alpha) }
-        }
-        frameBox(0.3, hw * 1.15, inkHair, alpha: 0.72)
-        frameBox(slipW, hw * 1.1, goldHair, alpha: 0.82)
-        frameBox(u * 0.0082, hw * 0.85, ruleHair, alpha: 0.42)
-
-        // 上下紫檀细收边与泥金内线
-        let rimW = u * 0.0046
-        let roseDark = RGB(0.26, 0.125, 0.080)
-        rect(matL, matT, matR, matT + rimW, roseDark)
-        rect(matL, matB - rimW, matR, matB, roseDark)
-        emit {
-            $0.segment(matL, matT + rimW + hw * 0.5, matR, matT + rimW + hw * 0.5, width: hw, goldHair, alpha: 0.72)
-            $0.segment(matL, matB - rimW - hw * 0.5, matR, matB - rimW - hw * 0.5, width: hw, goldHair, alpha: 0.72)
-        }
-
-        // 卷轴贴合绫边处柔和卷入阴影
-        let rollSh = RGB(0.20, 0.13, 0.08)
-        vBand(matL, matT + rimW, matL + u * 0.009, matB - rimW, left: rollSh, right: rollSh, alphaL: 0.34, alphaR: 0)
-        vBand(matR - u * 0.009, matT + rimW, matR, matB - rimW, left: rollSh, right: rollSh, alphaL: 0, alphaR: 0.34)
-
-        // 4. 四角纤细回纹鎏金包角
-        let fw = max(0.75, u * 0.0013)
-        let armX = matH * 1.65, armY = matH * 1.45, insetX = matSide * 0.24, insetY = matH * 0.28
-        for (sx, ox) in [(Float(1), matL), (Float(-1), matR)] {
-            for (sy, oy) in [(Float(1), matT), (Float(-1), matB)] {
-                let x0 = ox + sx * insetX, y0 = oy + sy * insetY
-                let x1 = ox + sx * armX, y1 = oy + sy * armY
-                let x2 = ox + sx * (insetX + matSide * 0.34), y2 = oy + sy * (insetY + matH * 0.30)
-                emit {
-                    $0.polyline([x1, y0, x0, y0, x0, y1], width: fw, goldHair, alpha: 0.88)
-                    $0.polyline([x1 - sx * matH * 0.28, y2, x2, y2, x2, y1 - sy * matH * 0.28], width: fw * 0.85, goldHair, alpha: 0.74)
-                    $0.segment(x1, y0, x1, y0 + sy * matH * 0.18, width: fw * 0.85, goldHair, alpha: 0.82)
-                    $0.segment(x0, y1, x0 + sx * matSide * 0.22, y1, width: fw * 0.85, goldHair, alpha: 0.82)
-                }
-            }
-        }
-
-        // 5. 左右紫檀圆柱木轴（6 条渐变带模拟真实三维圆柱受光）+ 上下鎏金箍 + 车制碧玉拱顶轴头
-        let woodStops: [(Float, RGB)] = [
-            (-1.00, RGB(0.16, 0.072, 0.045)),
-            (-0.58, RGB(0.38, 0.185, 0.108)),
-            (-0.22, RGB(0.56, 0.305, 0.185)),
-            (0.18,  RGB(0.36, 0.172, 0.098)),
-            (0.62,  RGB(0.21, 0.095, 0.056)),
-            (1.00,  RGB(0.12, 0.052, 0.032))
-        ]
-        let goldStops: [(Float, RGB)] = [
-            (-1.00, RGB(0.42, 0.31, 0.13)),
-            (-0.52, RGB(0.84, 0.69, 0.34)),
-            (-0.18, RGB(0.99, 0.90, 0.58)),
-            (0.28,  RGB(0.76, 0.60, 0.28)),
-            (0.72,  RGB(0.48, 0.35, 0.15)),
-            (1.00,  RGB(0.30, 0.21, 0.09))
-        ]
-        let jadeStops: [(Float, RGB)] = [
-            (-1.00, RGB(0.46, 0.54, 0.48)),
-            (-0.52, RGB(0.76, 0.82, 0.76)),
-            (-0.18, RGB(0.95, 0.97, 0.92)),
-            (0.28,  RGB(0.72, 0.78, 0.72)),
-            (0.72,  RGB(0.50, 0.57, 0.51)),
-            (1.00,  RGB(0.38, 0.44, 0.39))
-        ]
-        func cylinder(_ cx: Float, _ y0: Float, _ y1: Float, radius: Float, stops: [(Float, RGB)]) {
-            for k in 0..<(stops.count - 1) {
-                let a = stops[k], b = stops[k + 1]
-                vBand(cx + a.0 * radius, y0, cx + b.0 * radius, y1, left: a.1, right: b.1, alphaL: 1, alphaR: 1)
-            }
-        }
-        for cx in [rxL, rxR] {
-            cylinder(cx, matT, matB, radius: rollerR, stops: woodStops)
-            // 轴身靠上下两道极细鎏金嵌环
-            cylinder(cx, matT + u * 0.003, matT + u * 0.0055, radius: rollerR * 1.01, stops: goldStops)
-            cylinder(cx, matB - u * 0.0055, matB - u * 0.003, radius: rollerR * 1.01, stops: goldStops)
-            // 上下包金箍 + 车制碧玉弧顶轴头（分 5 段收弧成优雅圆顶）
-            for dir: Float in [-1, 1] {
-                let baseY = dir < 0 ? matT : matB
-                let c0 = baseY, c1 = baseY + dir * collarH
-                cylinder(cx, min(c0, c1), max(c0, c1), radius: rollerR * 1.04, stops: goldStops)
-                let segs: [(Float, Float, Float)] = [
-                    (0.00, 0.24, 0.84),
-                    (0.24, 0.56, 0.95),
-                    (0.56, 0.76, 0.88),
-                    (0.76, 0.90, 0.68),
-                    (0.90, 1.00, 0.40)
-                ]
-                for (t0, t1, rMul) in segs {
-                    let yA = c1 + dir * finialH * t0, yB = c1 + dir * finialH * t1
-                    cylinder(cx, min(yA, yB), max(yA, yB), radius: rollerR * rMul, stops: jadeStops)
-                }
-            }
-        }
-
-        // 6. 画心四边柔和双阶内阴影（西北受光略深，东南温润，零斜接缝、画心中央 0% 过绘）
-        let inDark = RGB(0.16, 0.115, 0.075)
-        let inWarm = RGB(0.28, 0.20, 0.125)
-        let tight = innerW * 0.28
-        hBand(0, 0, w, tight, top: inDark, bot: inWarm, alphaTop: 0.30, alphaBot: 0.10)
-        hBand(0, tight, w, innerW, top: inWarm, bot: inWarm, alphaTop: 0.10, alphaBot: 0)
-        hBand(0, h - innerW, w, h - tight, top: inWarm, bot: inWarm, alphaTop: 0, alphaBot: 0.08)
-        hBand(0, h - tight, w, h, top: inWarm, bot: inDark, alphaTop: 0.08, alphaBot: 0.24)
-        vBand(0, 0, tight, h, left: inDark, right: inWarm, alphaL: 0.28, alphaR: 0.09)
-        vBand(tight, 0, innerW, h, left: inWarm, right: inWarm, alphaL: 0.09, alphaR: 0)
-        vBand(w - innerW, 0, w - tight, h, left: inWarm, right: inWarm, alphaL: 0, alphaR: 0.08)
-        vBand(w - tight, 0, w, h, left: inWarm, right: inDark, alphaL: 0.08, alphaR: 0.22)
+        strip(-padX, -padY, w + padX, innerW)
+        strip(-padX, h - innerW, w + padX, h + padY)
+        strip(-padX, innerW, innerW, h - innerW)
+        strip(w - innerW, innerW, w + padX, h - innerW)
 
         guard !out.isEmpty,
               let buf = device.makeBuffer(bytes: out, length: out.count * 4, options: .storageModeShared) else { return nil }
-        return (buf, out.count / 6)
+        return (buf, out.count / 2)
+    }
+
+    /// 构建真实手绘生图卷轴装裱网格（`scroll-border-h.png` 上下宋锦绫边 + `scroll-roller-v.png` 左右紫檀滚轴与宋锦侧边 + `scroll-corner.png` 四角白玉鎏金云纹包角）：
+    /// 全部位于画心外缘，0% 画心过绘，近景缩放自动视锥剔除，全视网膜分辨率纤毫毕现。
+    private static func buildScrollArt(device: MTLDevice, width w: Float, height h: Float)
+        -> (h: (MTLBuffer, Int)?, v: (MTLBuffer, Int)?, corners: (MTLBuffer, Int)?) {
+        guard w > 0, h > 0 else { return (nil, nil, nil) }
+        let u = min(w, h)
+        let matH = u * 0.046
+        let sideTotal = u * 0.072
+        let silkW = sideTotal * 0.56
+        let cornerS = u * 0.084
+
+        func makeBuf(_ verts: [Float]) -> (MTLBuffer, Int)? {
+            guard !verts.isEmpty,
+                  let b = device.makeBuffer(bytes: verts, length: verts.count * 4, options: .storageModeShared) else { return nil }
+            return (b, verts.count / 4)
+        }
+        func appendQuad(_ arr: inout [Float], x0: Float, y0: Float, x1: Float, y1: Float, u0: Float, v0: Float, u1: Float, v1: Float) {
+            arr.append(contentsOf: [
+                x0, y0, u0, v0,
+                x1, y0, u1, v0,
+                x0, y1, u0, v1,
+                x0, y1, u0, v1,
+                x1, y0, u1, v0,
+                x1, y1, u1, v1,
+            ])
+        }
+
+        // 1. 上下宋锦织锦横边（mirrorRepeat 无缝按 1024×192 原比例平铺，绝不拉伸变形）
+        let uSpan = max(1.0, w / max(1.0, matH * 5.3333))
+        var hVerts: [Float] = []
+        appendQuad(&hVerts, x0: 0, y0: -matH, x1: w, y1: 0, u0: 0, v0: 0, u1: uSpan, v1: 1)
+        appendQuad(&hVerts, x0: 0, y0: h, x1: w, y1: h + matH, u0: 0, v0: 1, u1: uSpan, v1: 0)
+
+        // 2. 左右紫檀雕云木轴＋宋锦侧绫边（左侧原图、右侧水平镜像，绫边紧贴画心、木轴居外侧）
+        var vVerts: [Float] = []
+        appendQuad(&vVerts, x0: -sideTotal, y0: -matH, x1: 0, y1: h + matH, u0: 0, v0: 0, u1: 1, v1: 1)
+        appendQuad(&vVerts, x0: w, y0: -matH, x1: w + sideTotal, y1: h + matH, u0: 1, v0: 0, u1: 0, v1: 1)
+
+        // 3. 四角白玉鎏金云纹包角（严密落在四隅宋锦框上，不侵占画心分毫）
+        var cVerts: [Float] = []
+        appendQuad(&cVerts, x0: -silkW, y0: -matH, x1: -silkW + cornerS, y1: -matH + cornerS, u0: 0, v0: 0, u1: 1, v1: 1)
+        appendQuad(&cVerts, x0: w + silkW - cornerS, y0: -matH, x1: w + silkW, y1: -matH + cornerS, u0: 1, v0: 0, u1: 0, v1: 1)
+        appendQuad(&cVerts, x0: -silkW, y0: h + matH - cornerS, x1: -silkW + cornerS, y1: h + matH, u0: 0, v0: 1, u1: 1, v1: 0)
+        appendQuad(&cVerts, x0: w + silkW - cornerS, y0: h + matH - cornerS, x1: w + silkW, y1: h + matH, u0: 1, v0: 1, u1: 0, v1: 0)
+
+        return (makeBuf(hVerts), makeBuf(vVerts), makeBuf(cVerts))
     }
 
     func setTerrain(_ next: WorldMap, refreshSea: Bool) {
@@ -949,7 +904,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         guard !s.key.isEmpty, let a = legFrom[s.key], let b = legTo[s.key] else {
             return (s.x.isFinite && s.y.isFinite) ? SIMD2(s.x, s.y) : .zero
         }
-        return Self.hermite(a, b, legLead[s.key] ?? (b - a), progress(CACurrentMediaTime()))
+        return Self.hermite(a, b, legLead[s.key] ?? (b - a), progress(pinnedFrameTime ?? CACurrentMediaTime()))
     }
     static func hermite(_ a: SIMD2<Float>, _ b: SIMD2<Float>, _ m0: SIMD2<Float>, _ t: Float) -> SIMD2<Float> {
         let fallback = (b.x.isFinite && b.y.isFinite) ? b : ((a.x.isFinite && a.y.isFinite) ? a : SIMD2<Float>(0, 0))
@@ -963,7 +918,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var lastLegVelocity: [String: (vel: SIMD2<Float>, time: CFTimeInterval)] = [:]
     private(set) var spread: [String: SIMD2<Float>] = [:]
     private func advanceChase() -> Float {
-        let t = progress(CACurrentMediaTime())
+        let t = progress(pinnedFrameTime ?? CACurrentMediaTime())
         chasing = t < 1
         return t
     }
@@ -1208,9 +1163,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
-    /// 在 CPU 单次预算出四季色温系数（每帧执行 1 次而非每像素 300 万次），海陆片元仅需 1 次乘法，彻底消除真机发烫！
-    private static func seasonalTints(phase: Float, lighting: Float) -> (land: SIMD4<Float>, sea: SIMD4<Float>) {
-        guard lighting > 0.01, phase >= 0 else { return (SIMD4(1, 1, 1, 1), SIMD4(1, 1, 1, 1)) }
+    /// 在 CPU 单次预算出四季色温系数与四季权重 `(winter, spring, summer, autumn)`，海陆片元零三角函数、零噪声运算。
+    private static func seasonalTints(phase: Float, lighting: Float) -> (land: SIMD4<Float>, sea: SIMD4<Float>, weights: SIMD4<Float>) {
+        guard lighting > 0.01, phase >= 0 else { return (SIMD4(1, 1, 1, 1), SIMD4(1, 1, 1, 1), SIMD4(0, 0, 0, 0)) }
         let ang = phase * Float.pi * 2
         func smooth(_ a: Float, _ b: Float, _ x: Float) -> Float {
             let t = max(0, min(1, (x - a) / (b - a)))
@@ -1223,23 +1178,23 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let wSum = max(0.001, wWinter + wSpring + wSummer + wAutumn)
         let nW = wWinter / wSum, nSp = wSpring / wSum, nSu = wSummer / wSum, nA = wAutumn / wSum
 
-        let landS = SIMD3<Float>(0.972, 1.038, 0.988) * nSp
-            + SIMD3<Float>(1.042, 1.018, 0.946) * nSu
-            + SIMD3<Float>(1.078, 0.985, 0.880) * nA
-            + SIMD3<Float>(0.946, 0.978, 1.055) * nW
-        let seaS = SIMD3<Float>(0.970, 1.028, 1.014) * nSp
-            + SIMD3<Float>(1.015, 1.026, 0.990) * nSu
-            + SIMD3<Float>(1.032, 0.982, 0.942) * nA
-            + SIMD3<Float>(0.936, 0.970, 1.042) * nW
-        let k = min(1, lighting) * 0.72
+        let landS = SIMD3<Float>(0.966, 1.044, 0.986) * nSp
+            + SIMD3<Float>(1.048, 1.022, 0.936) * nSu
+            + SIMD3<Float>(1.090, 0.985, 0.858) * nA
+            + SIMD3<Float>(0.936, 0.974, 1.064) * nW
+        let seaS = SIMD3<Float>(0.964, 1.032, 1.016) * nSp
+            + SIMD3<Float>(1.016, 1.030, 0.986) * nSu
+            + SIMD3<Float>(1.036, 0.978, 0.934) * nA
+            + SIMD3<Float>(0.924, 0.964, 1.048) * nW
+        let k = min(1, lighting) * 0.78
         let lt = SIMD3<Float>(1, 1, 1) + (landS - SIMD3<Float>(1, 1, 1)) * k
         let st = SIMD3<Float>(1, 1, 1) + (seaS - SIMD3<Float>(1, 1, 1)) * k
-        return (SIMD4(lt.x, lt.y, lt.z, 1), SIMD4(st.x, st.y, st.z, 1))
+        return (SIMD4(lt.x, lt.y, lt.z, 1), SIMD4(st.x, st.y, st.z, 1), SIMD4(nW, nSp, nSu, nA))
     }
 
     func draw(in view: MTKView) {
         guard let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable, let buffer = queue.makeCommandBuffer() else { return }
-        frameTime = CACurrentMediaTime()
+        frameTime = pinnedFrameTime ?? CACurrentMediaTime()
         let probe = Self.frameProbe
         var spriteProgress: Float = advanceChase()
         let size = view.bounds.size
@@ -1251,7 +1206,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let dw = min(targetTex.width, drawable.texture.width), dh = min(targetTex.height, drawable.texture.height)
         guard dw > 0, dh > 0 else { return }
 
-        let lightStrength: Float = (display.lighting ?? true) ? (Energy.hot ? 0.5 : 1.0) : 0.0
+        let lightStrength: Float = (display.lighting ?? true) ? (Energy.hot ? 0.55 : 1.0) : 0.0
         let tints = Self.seasonalTints(phase: seasonPhase, lighting: lightStrength)
         var u = Uniforms(
             viewport: SIMD2(Float(size.width), Float(size.height)),
@@ -1269,7 +1224,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             pad3: 0,
             pad4: 0,
             landTint: tints.land,
-            seaTint: tints.sea
+            seaTint: tints.sea,
+            seasonWeights: tints.weights
         )
         let uniformLength = MemoryLayout<Uniforms>.stride
         let fullScissor = MTLScissorRect(x: 0, y: 0, width: dw, height: dh)
@@ -1287,8 +1243,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let sx1 = Int(max(Double(sx0), min(Double(dw), ceil(rawX1))))
         let sy1 = Int(max(Double(sy0), min(Double(dh), ceil(rawY1))))
         let mapScissor = MTLScissorRect(x: sx0, y: sy0, width: sx1 - sx0, height: sy1 - sy0)
+        let deskVisible = sx0 > 0 || sy0 > 0 || sx1 < dw || sy1 < dh
 
         guard let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
+
+        // 0. 仅当缩远露出书案时绘制「御案织锦」背景（近景满屏看图时完全跳过，0 像素开销）
+        if deskVisible {
+            encoder.setScissorRect(fullScissor)
+            encoder.setRenderPipelineState(deskPipeline)
+            encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+            encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+        }
 
         func quad(_ texture: MTLTexture?, _ pipeline: MTLRenderPipelineState, x: Float, y: Float, width: Float, height: Float) {
             guard let texture else { return }
@@ -1316,7 +1282,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             let stage = reveal
             func ramp(_ from: Float) -> Float { min(1, max(0, (stage - from) / 0.07)) }
 
-            // 1. 海洋底图（1 次采样 + 1 次乘法，极速省电）
+            // 1. 宋画青绿海图底图（浅海青碧渐变 + 解析双波日照波光 + 铜版细浪 + 极北冬冰，零噪声）
             quad(sea, seaPipeline, x: 0, y: 0, width: map.width, height: map.height)
             if stage < 0.2 {
                 var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
@@ -1332,7 +1298,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
             }
 
-            // 2. 陆地地块（单次乘法着色，零片元噪声发热；绘制前硬校验 Metal 缓冲字节长度防真机越界）
+            // 2. 陆地地块（西北日照浮雕明暗 + 四季天光与北国冬雪，零噪声；硬校验缓冲字节长度）
             let minColorBytes = vertexCount * 16
             let minFieldBytes = vertexCount * 8
             let canDrawLand = indexCount > 0 && vertexCount > 0 && positions.length >= minFieldBytes && colors.length >= minColorBytes
@@ -1398,7 +1364,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 colored(portIcons, alpha: ramp(0.85))
             }
 
-            // 5. 军队、舰队与行军线（v4.1 雕漆军牌，单 Pass 零重复阴影绘制）
+            // 5. 军队、舰队与行军线（v4.1 雕漆军牌 + 航向踏步倾身冲锋微韵，单 Pass 零重复阴影绘制）
             if stage >= 1 {
                 colored(route)
                 if showArmies && !units.isEmpty {
@@ -1417,16 +1383,44 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 }
             }
 
-            // 6. 原作羊皮纸正片叠底（单纹理 1 次采样）
-            if display.parchment {
-                quad(parchment, multiplyPipeline, x: 0, y: 0, width: map.width, height: map.height)
+            // 6. 原作羊皮纸正片叠底 + 高倍缩放双尺度无缝宣纸纤维（远景单采样、近景纤毫毕现无糊块）
+            if display.parchment, let parchment {
+                var q = QuadUniforms(origin: SIMD2(0, 0), size: SIMD2(map.width, map.height))
+                encoder.setRenderPipelineState(multiplyPipeline)
+                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                encoder.setVertexBytes(&q, length: MemoryLayout<QuadUniforms>.stride, index: 3)
+                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentTexture(parchment, index: 0)
+                encoder.setFragmentTexture(paperDetail ?? parchment, index: 1)
+                encoder.setFragmentSamplerState(sampler, index: 0)
+                encoder.setFragmentSamplerState(repeatSampler ?? sampler, index: 1)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
             }
         }
 
-        // 7. 预计算几何古风舆图卷轴装裱（1 指令 colorFragment，零片元 SDF/噪声发热）
+        // 7. 真实生图古风舆图卷轴装裱（外缘书案柔影与画心内影 + 宋锦横边 + 紫檀木轴侧绫 + 四角白玉鎏金包角，画心中央 0% 过绘）
         encoder.setScissorRect(fullScissor)
         if display.scrollMount ?? display.darkEdges {
-            colored(scrollMount)
+            if let mb = scrollMount {
+                encoder.setRenderPipelineState(scrollBorderPipeline)
+                encoder.setVertexBuffer(mb.buffer, offset: 0, index: 0)
+                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: mb.count)
+            }
+            func drawArt(_ mesh: (buffer: MTLBuffer, count: Int)?, _ tex: MTLTexture?, _ smp: MTLSamplerState?) {
+                guard let mesh, let tex else { return }
+                encoder.setRenderPipelineState(scrollArtPipeline)
+                encoder.setVertexBuffer(mesh.buffer, offset: 0, index: 0)
+                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
+                encoder.setFragmentTexture(tex, index: 0)
+                encoder.setFragmentSamplerState(smp ?? sampler, index: 0)
+                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: mesh.count)
+            }
+            drawArt(scrollArtH, scrollBorderHTex, mirrorSampler)
+            drawArt(scrollArtV, scrollRollerVTex, sampler)
+            drawArt(scrollArtCorners, scrollCornerTex, sampler)
         }
 
         encoder.endEncoding()
@@ -1476,11 +1470,16 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float pad4;
         float4 landTint;
         float4 seaTint;
+        float4 seasonWeights;
     };
     struct QuadUniforms { float2 origin; float2 size; };
     struct ColorOut { float4 position [[position]]; float4 color; };
+    struct LandOut { float4 position [[position]]; float4 color; float2 world; float scale; };
     struct FlatOut { float4 position [[position]]; };
     struct QuadOut { float4 position [[position]]; float2 uv; };
+    struct SeaOut { float4 position [[position]]; float2 uv; float2 world; float scale; };
+    struct DeskOut { float4 position [[position]]; float2 uv; float2 screenPx; };
+    struct ScrollRingOut { float4 position [[position]]; float2 world; };
 
     static float4 clip(float2 world, constant Uniforms& u, float2 offset) {
         float2 s = (world - u.center) * u.scale + u.viewport * 0.5 + offset;
@@ -1500,26 +1499,61 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         for (int k = 0; k < 3; k++) { v += a * vnoise(p); p = p * 2.03 + float2(17.1, 9.2); a *= 0.48; }
         return v;
     }
+    // 统一西北御案主光（纯解析零噪声：西北角温润暖阳，东南角柔和古意）
+    static float3 studioLight(float2 uv, float strength) {
+        float diag = clamp(1.0 - (uv.x * 0.55 + uv.y * 0.45), 0.0, 1.0);
+        float3 nwSun = float3(1.032, 1.018, 0.988);
+        float3 seDepth = float3(0.946, 0.942, 0.954);
+        return mix(float3(1.0), mix(seDepth, nwSun, diag), strength);
+    }
 
-    vertex ColorOut cellVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]],
-                               const device float4* colors [[buffer(1)]], constant Uniforms& u [[buffer(2)]]) {
-        ColorOut o; o.position = clip(positions[id], u, float2(0.0)); o.color = colors[id]; return o;
+    vertex LandOut cellVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]],
+                              const device float4* colors [[buffer(1)]], constant Uniforms& u [[buffer(2)]]) {
+        LandOut o; float2 w = positions[id];
+        o.position = clip(w, u, float2(0.0)); o.color = colors[id]; o.world = w; o.scale = u.scale; return o;
     }
     struct ColoredVertex { packed_float2 position; packed_float4 color; };
     vertex ColorOut coloredVertex(uint id [[vertex_id]], const device ColoredVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
         ColorOut o; o.position = clip(float2(v[id].position), u, float2(0.0)); o.color = float4(v[id].color); o.color.a *= u.alpha; return o;
     }
     fragment float4 colorFragment(ColorOut in [[stage_in]]) { return in.color; }
-    fragment float4 landFragment(ColorOut in [[stage_in]], constant Uniforms& u [[buffer(2)]]) {
-        return float4(clamp(in.color.rgb * u.landTint.rgb, 0.0, 1.0), in.color.a);
+    // 陆地浮雕光影与四季天光（零噪声纯解析：西北向阳暖坡 × 东南青灰谷影 × CPU 预算四季色温与北国轻雪）
+    fragment float4 landFragment(LandOut in [[stage_in]], constant Uniforms& u [[buffer(2)]]) {
+        float3 rgb = in.color.rgb * u.landTint.rgb;
+        if (u.lighting > 0.01) {
+            float k = u.lighting;
+            float lum = dot(in.color.rgb, float3(0.299, 0.587, 0.114));
+            float reliefMask = smoothstep(0.24, 0.78, lum);
+            float3 warmSun = float3(1.052, 1.026, 0.974);
+            float3 coolValley = float3(0.934, 0.956, 1.018);
+            rgb *= mix(float3(1.0), mix(coolValley, warmSun, reliefMask), k);
+            float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
+            rgb *= studioLight(mapUV, k * 0.92);
+            // 解析四季地域微韵（u.seasonWeights = winter, spring, summer, autumn）
+            float wWinter = u.seasonWeights.x;
+            float wAutumn = u.seasonWeights.w;
+            if (wAutumn > 0.02) {
+                float midLat = smoothstep(0.06, 0.36, mapUV.y) * smoothstep(0.94, 0.56, mapUV.y);
+                rgb = mix(rgb, rgb * float3(1.10, 0.94, 0.76) + float3(0.024, 0.008, -0.012), wAutumn * midLat * 0.22 * k);
+            }
+            if (wWinter > 0.02) {
+                float northBelt = smoothstep(0.68, 0.08, mapUV.y);
+                float highlandBelt = smoothstep(0.50, 0.80, lum);
+                float organic = (sin(in.world.x * 0.024 + sin(in.world.y * 0.019) * 1.4) * 0.5 + 0.5) * 0.14;
+                float snowCover = wWinter * smoothstep(0.26, 0.86, northBelt * 0.62 + highlandBelt * 0.32 + organic) * 0.38 * k;
+                rgb = mix(rgb, float3(0.955, 0.975, 1.0), snowCover);
+            }
+        }
+        return float4(clamp(rgb, 0.0, 1.0), in.color.a);
     }
 
-    vertex ColorOut fadeVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
-                               constant Uniforms& u [[buffer(2)]], const device float4* previous [[buffer(3)]], constant float2& clock [[buffer(4)]]) {
+    vertex LandOut fadeVertex(uint id [[vertex_id]], const device float2* positions [[buffer(0)]], const device float4* colors [[buffer(1)]],
+                              constant Uniforms& u [[buffer(2)]], const device float4* previous [[buffer(3)]], constant float2& clock [[buffer(4)]]) {
         float4 p = previous[id];
         float x = clamp((clock.x - p.a) / clock.y, 0.0, 1.0);
         x = x * x * (3.0 - 2.0 * x);
-        ColorOut o; o.position = clip(positions[id], u, float2(0.0)); o.color = float4(mix(p.rgb, colors[id].rgb, x), colors[id].a); return o;
+        float2 w = positions[id];
+        LandOut o; o.position = clip(w, u, float2(0.0)); o.color = float4(mix(p.rgb, colors[id].rgb, x), colors[id].a); o.world = w; o.scale = u.scale; return o;
     }
 
     struct RevealOut { float4 position [[position]]; float4 color; float4 terrain; float2 world; float2 field; };
@@ -1572,11 +1606,192 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         const float2 corners[6] = { float2(0, 0), float2(1, 0), float2(0, 1), float2(0, 1), float2(1, 0), float2(1, 1) };
         QuadOut o; float2 c = corners[id]; o.position = clip(q.origin + c * q.size, u, float2(0.0)); o.uv = c; return o;
     }
-    fragment float4 seaFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]], constant Uniforms& u [[buffer(2)]]) {
-        return float4(clamp(t.sample(s, in.uv).rgb * u.seaTint.rgb, 0.0, 1.0), 1.0);
+
+    // 御案织锦书案背景（纯解析零噪声，仅在缩远露出卷轴外书案时渲染）：西北柔光聚光 + 经纬云锦暗纹
+    vertex DeskOut deskVertex(uint id [[vertex_id]], constant Uniforms& u [[buffer(2)]]) {
+        const float2 ndc[6] = { float2(-1, -1), float2(1, -1), float2(-1, 1), float2(-1, 1), float2(1, -1), float2(1, 1) };
+        float2 p = ndc[id];
+        DeskOut o;
+        o.position = float4(p, 0.0, 1.0);
+        o.uv = p * 0.5 + 0.5;
+        o.screenPx = o.uv * u.viewport;
+        return o;
     }
-    fragment float4 textureFragment(QuadOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]]) {
-        return float4(t.sample(s, in.uv).rgb, 1.0);
+    fragment float4 deskFragment(DeskOut in [[stage_in]], constant Uniforms& u [[buffer(2)]]) {
+        float2 p = in.screenPx;
+        float warp = sin(p.x * 1.55) * 0.5 + 0.5;
+        float weft = sin(p.y * 1.55) * 0.5 + 0.5;
+        float weave = (warp * 0.5 + weft * 0.5 - 0.5) * 0.014;
+        float2 dCell = fract(p / 36.0) - 0.5;
+        float diamond = abs(dCell.x) + abs(dCell.y);
+        float outerLatt = smoothstep(0.45, 0.49, diamond) * (1.0 - smoothstep(0.49, 0.53, diamond));
+        float innerMed = smoothstep(0.20, 0.23, diamond) * (1.0 - smoothstep(0.23, 0.26, diamond));
+        float damask = outerLatt * 0.020 + innerMed * 0.013;
+        float2 lightCenter = float2(0.44, 0.56);
+        float2 c = (in.uv - lightCenter) * float2(1.36, 1.30);
+        float r2 = clamp(dot(c, c), 0.0, 1.35);
+        float3 centerTone = float3(0.896, 0.854, 0.774);
+        float3 outerTone = float3(0.736, 0.672, 0.566);
+        float3 rgb = mix(centerTone, outerTone, smoothstep(0.06, 1.05, r2));
+        rgb = clamp(rgb + weave + damask, 0.0, 1.0);
+        return float4(rgb, 1.0);
+    }
+
+    // 宋画青绿海图着色器（纯解析零噪声）：青碧浅海大陆架 + 双波法线日照波光 + 铜版细浪刻纹 + 近岸微沫 + 冬日北洋寒冰
+    vertex SeaOut seaVertex(uint id [[vertex_id]], constant Uniforms& u [[buffer(2)]], constant QuadUniforms& q [[buffer(3)]]) {
+        const float2 corners[6] = { float2(0, 0), float2(1, 0), float2(0, 1), float2(0, 1), float2(1, 0), float2(1, 1) };
+        float2 c = corners[id];
+        float2 w = q.origin + c * q.size;
+        SeaOut o;
+        o.position = clip(w, u, float2(0.0));
+        o.uv = c;
+        o.world = w;
+        o.scale = u.scale;
+        return o;
+    }
+    fragment float4 seaFragment(SeaOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]], constant Uniforms& u [[buffer(2)]]) {
+        float3 base = t.sample(s, in.uv).rgb;
+        float detail = clamp((in.scale - 0.30) / 1.35, 0.0, 1.0);
+        float2 w = in.world;
+        float tm = u.time;
+        float lum = dot(base, float3(0.299, 0.587, 0.114));
+        float shallowMask = smoothstep(0.42, 0.78, lum);
+        float3 shallowTint = float3(0.92, 1.072, 1.062);
+        float3 deepTint = float3(0.90, 0.952, 1.050);
+        float3 rgb = base * mix(deepTint, shallowTint, shallowMask);
+        rgb += float3(0.012, 0.038, 0.032) * shallowMask;
+
+        float p1 = w.x * 0.18 + w.y * 0.58 - tm * 0.68;
+        float p2 = w.x * 0.31 - w.y * 0.44 + tm * 0.46;
+        float waveSlopeX = cos(p1) * 0.18 + cos(p2) * 0.21;
+        float waveSlopeY = cos(p1) * 0.58 - cos(p2) * 0.30;
+        float3 waveN = normalize(float3(-waveSlopeX * 0.34, -waveSlopeY * 0.34, 1.0));
+        float3 halfVec = normalize(float3(-0.34, -0.30, 0.89));
+        float spec = pow(max(0.0, dot(waveN, halfVec)), 18.0);
+        float glint = spec * (0.056 + 0.078 * detail) * u.lighting;
+
+        float engraving = sin(w.y * 0.82 + sin(w.x * 0.14 + tm * 0.18) * 1.25) * (0.010 + 0.010 * detail);
+        float surfPulse = (sin(w.x * 0.11 + w.y * 0.13 - tm * 1.15) * 0.5 + 0.5) * shallowMask * 0.034 * u.lighting;
+        rgb += engraving + surfPulse;
+        rgb += float3(1.0, 0.96, 0.85) * glint;
+
+        if (u.lighting > 0.01) {
+            float k = u.lighting;
+            rgb *= studioLight(in.uv, k * 0.96);
+            rgb *= u.seaTint.rgb;
+            float wWinter = u.seasonWeights.x;
+            if (wWinter > 0.02) {
+                float northSea = smoothstep(0.48, 0.04, in.uv.y);
+                float iceRim = wWinter * northSea * (0.14 + 0.16 * shallowMask) * k;
+                rgb = mix(rgb, float3(0.84, 0.91, 0.97), iceRim);
+            }
+        }
+        return float4(clamp(rgb, 0.0, 1.0), 1.0);
+    }
+
+    // 高倍缩放无缝古宣纸肌理正片叠底：远景单纹理保留古卷明暗，近景渐进混入双尺度无缝宣纸纤维（零糊块、零色偏）
+    fragment float4 parchmentFragment(SeaOut in [[stage_in]],
+                                      texture2d<float> macroTex [[texture(0)]],
+                                      texture2d<float> detailTex [[texture(1)]],
+                                      sampler clampS [[sampler(0)]],
+                                      sampler repS [[sampler(1)]]) {
+        float3 macro = macroTex.sample(clampS, in.uv).rgb;
+        float zoom = smoothstep(0.72, 2.55, in.scale);
+        if (zoom > 0.005) {
+            float3 d1 = detailTex.sample(repS, in.world / 168.0).rgb;
+            float3 d2 = detailTex.sample(repS, in.world / 52.0 + float2(0.37, 0.61)).rgb;
+            float f1 = dot(d1, float3(0.299, 0.587, 0.114)) - 0.885;
+            float f2 = dot(d2, float3(0.299, 0.587, 0.114)) - 0.885;
+            float fiberDelta = (f1 * 0.62 + f2 * 0.38) * 0.80 * zoom;
+            float3 cleanMacro = mix(macro, mix(macro, float3(0.955, 0.936, 0.896), 0.42), zoom);
+            macro = clamp(cleanMacro + fiberDelta, 0.0, 1.0);
+        }
+        return float4(macro, 1.0);
+    }
+
+    // 中空四边带卷轴内外投影着色器（极轻量：仅绘书案定向柔影 + 画心四边内阴影与细墨金口，本体交由真实生图贴图 `scrollArtFragment` 呈献）
+    static float sdBox2D(float2 p, float2 b) {
+        float2 q = abs(p) - b;
+        return length(max(q, float2(0.0))) + min(max(q.x, q.y), 0.0);
+    }
+    vertex ScrollRingOut scrollRingVertex(uint id [[vertex_id]], const device float2* pos [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
+        ScrollRingOut o;
+        float2 w = pos[id];
+        o.world = w;
+        o.position = clip(w, u, float2(0.0));
+        return o;
+    }
+    fragment float4 scrollShadowFragment(ScrollRingOut in [[stage_in]], constant Uniforms& u [[buffer(2)]]) {
+        float W = max(1.0, u.mapWidth);
+        float H = max(1.0, u.mapHeight);
+        float unit = min(W, H);
+        float2 p = in.world;
+        float aa = max(length(float2(dfdx(p.x), dfdy(p.y))) * 0.72, 0.25);
+
+        float matH = unit * 0.046;
+        float sideTotal = unit * 0.072;
+        float innerW = unit * 0.024;
+
+        float dInL = p.x;
+        float dInR = W - p.x;
+        float dInT = p.y;
+        float dInB = H - p.y;
+        float dIn = min(min(dInL, dInR), min(dInT, dInB));
+
+        // 1. 画心四边柔和双阶内阴影 + 紧贴画心的极细墨金口线
+        if (dIn >= -aa && dIn < innerW) {
+            float dPos = max(0.0, dIn);
+            float wTL = max(exp(-max(0.0, dInT) / (unit * 0.015)), exp(-max(0.0, dInL) / (unit * 0.015)));
+            float dirWeight = mix(0.80, 1.18, clamp(wTL, 0.0, 1.0));
+            float tightShadow = exp(-dPos / (unit * 0.0038)) * 0.30 * dirWeight;
+            float softShadow  = exp(-dPos / (unit * 0.0135)) * 0.13 * dirWeight;
+            float insideMask = smoothstep(-aa, aa, dIn);
+            float innerAlpha = clamp(tightShadow + softShadow, 0.0, 0.44) * insideMask;
+            float3 innerRgb = mix(float3(0.16, 0.115, 0.075), float3(0.36, 0.27, 0.17), clamp(dPos / innerW, 0.0, 1.0));
+            float hairW = max(aa * 0.9, unit * 0.0009);
+            float hair = (1.0 - smoothstep(hairW * 0.4, hairW * 1.4, abs(dPos - hairW * 0.5))) * insideMask;
+            if (hair > 0.01) {
+                innerRgb = mix(innerRgb, float3(0.20, 0.15, 0.10), hair * 0.72);
+                innerAlpha = max(innerAlpha, hair * 0.65);
+            }
+            if (innerAlpha < 0.003) discard_fragment();
+            return float4(innerRgb, innerAlpha * u.alpha);
+        }
+
+        // 2. 书案东南定向柔和投影（托起整个装裱卷轴，零过绘）
+        if (dIn < 0.0) {
+            float2 outerCenter = float2(W * 0.5, H * 0.5);
+            float2 outerHalf = float2(W * 0.5 + sideTotal, H * 0.5 + matH);
+            float2 sp = p - float2(unit * 0.008, unit * 0.012);
+            float dSh = sdBox2D(sp - outerCenter, outerHalf);
+            if (dSh > -aa && dSh < unit * 0.038) {
+                float a = exp(-max(0.0, dSh) / (unit * 0.011)) * 0.46;
+                if (a >= 0.003) { return float4(0.06, 0.04, 0.025, a * u.alpha); }
+            }
+        }
+        discard_fragment();
+    }
+
+    // 真实手绘生图卷轴装裱贴图管线（scroll-border-h / scroll-roller-v / scroll-corner，1 次纹理采样 + 西北主光统一色温）
+    struct ScrollArtVertex { packed_float2 world; packed_float2 uv; };
+    struct ScrollArtOut { float4 position [[position]]; float2 world; float2 uv; };
+    vertex ScrollArtOut scrollArtVertex(uint id [[vertex_id]], const device ScrollArtVertex* v [[buffer(0)]], constant Uniforms& u [[buffer(2)]]) {
+        ScrollArtVertex sv = v[id];
+        ScrollArtOut o;
+        o.world = float2(sv.world);
+        o.position = clip(o.world, u, float2(0.0));
+        o.uv = float2(sv.uv);
+        return o;
+    }
+    fragment float4 scrollArtFragment(ScrollArtOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]], constant Uniforms& u [[buffer(2)]]) {
+        float4 p = t.sample(s, in.uv);
+        if (p.a < 0.02) discard_fragment();
+        float3 rgb = clamp(p.rgb / max(p.a, 0.001), 0.0, 1.0);
+        if (u.lighting > 0.01) {
+            float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
+            rgb *= studioLight(mapUV, u.lighting * 0.48);
+        }
+        return float4(clamp(rgb, 0.0, 1.0), p.a * u.alpha);
     }
 
     struct SpriteVertex { packed_float2 center; packed_float2 corner; packed_float4 tint; float size; packed_float2 target; packed_float2 shift; packed_float2 lead; };
@@ -1593,7 +1808,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             float d = -tint.a - 2.0;
             float fadeT = clamp((progress - d) / 0.16, 0.0, 1.0);
             tint.a = 1.0 - fadeT;
-            sinkY = fadeT * 0.20 * pixels;
+            sinkY = fadeT * 0.22 * pixels;
         } else if (tint.a < 0.0) {
             tint.a = progress;
         } else if (fighting) {
@@ -1602,15 +1817,39 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float t = progress, t2 = t * t, t3 = t2 * t;
         float2 a = float2(s.center), b = float2(s.target);
         float2 delta = b - a;
+        float dist = length(delta);
+        bool moving = (dist > 0.06);
+        float2 dir = moving ? (delta / dist) : float2(1.0, 0.0);
         float2 walk = a * (2.0 * t3 - 3.0 * t2 + 1.0) + float2(s.lead) * (t3 - 2.0 * t2 + t) + b * (3.0 * t2 - 2.0 * t3) + delta * (t3 - t2);
-        float2 jab = float2(0.0, sinkY);
+        // 真实航向踏步倾身、弹性呼吸与交战双向冲锋回弹（仅顶点着色器运算，零片元负担，完整保留 4.1 雕漆兵牌造型）
+        float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2831853;
+        float2 corner = float2(s.corner);
+        float2 extraPx = float2(0.0, sinkY);
         if (fighting) {
-            float seed = fract(s.center[0] * 0.137 + s.center[1] * 0.071) * 6.2831853;
-            float beat = time * 4.8 + seed;
-            jab += float2(sin(beat) * 0.05 * pixels, -max(0.0, sin(beat * 0.5)) * 0.07 * pixels);
+            float beat = sin(time * 8.4 + seed);
+            float lunge = pow(max(0.0, beat), 3.0) - 0.25 * max(0.0, -beat);
+            float2 thrustDir = moving ? dir : float2((fract(seed * 1.7) > 0.5) ? 1.0 : -1.0, (fract(seed * 3.1) - 0.5) * 0.45);
+            extraPx += thrustDir * (lunge * pixels * 0.12) + float2(0.0, -abs(lunge) * pixels * 0.05);
+            float squash = 1.0 + lunge * 0.055;
+            corner = float2(corner.x * squash, corner.y / squash);
+            float ang = clamp(thrustDir.x * lunge * 0.11, -0.16, 0.16);
+            float ca = cos(ang), sa = sin(ang);
+            corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
+        } else if (moving && !dying) {
+            float stride = sin(time * 9.2 + seed);
+            float stepLift = abs(stride);
+            extraPx += dir * (stride * min(1.1, pixels * 0.036)) + float2(0.0, -stepLift * min(1.8, pixels * 0.062));
+            float stretchY = 1.0 + (stepLift - 0.5) * 0.055;
+            corner = float2(corner.x / sqrt(stretchY), corner.y * stretchY);
+            float lean = clamp(dir.x * 0.085 + dir.y * 0.035 + stride * 0.042, -0.15, 0.15);
+            float ca = cos(lean), sa = sin(lean);
+            corner = float2(corner.x * ca - corner.y * sa, corner.x * sa + corner.y * ca);
+        } else if (!dying) {
+            float breath = sin(time * 2.4 + seed) * 0.016;
+            corner *= float2(1.0 - breath * 0.5, 1.0 + breath);
         }
         SpriteOut o;
-        o.position = clip(walk, u, (float2(s.corner) + float2(s.shift)) * pixels + jab);
+        o.position = clip(walk, u, (corner + float2(s.shift)) * pixels + extraPx);
         o.uv = float2(s.corner) + 0.5;
         o.tint = tint;
         return o;
@@ -1619,8 +1858,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         float4 p = t.sample(s, in.uv);
         if (p.a <= 0.01) discard_fragment();
         float lum = p.r / max(p.a, 0.001);
-        float3 fill = clamp(in.tint.rgb * (1.08 - 0.16 * in.uv.y), 0.0, 1.0);
-        float3 rim = mix(float3(0.12, 0.10, 0.08), in.tint.rgb, 0.25);
+        float lightGrad = 1.12 - 0.16 * in.uv.y - 0.08 * in.uv.x;
+        float3 fill = clamp(in.tint.rgb * lightGrad, 0.0, 1.0);
+        float3 rim = mix(float3(0.11, 0.09, 0.07), in.tint.rgb, 0.24);
         float3 c = mix(rim, fill, smoothstep(0.42, 0.94, lum));
         return float4(c, p.a * in.tint.a);
     }

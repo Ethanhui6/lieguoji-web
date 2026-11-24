@@ -553,15 +553,25 @@ public enum ArmyOrders {
                         for p in ArmyAutonomy.Context.regularCandidateIds(invaded: invaded + lost, borders: borders) { add(p) }
                         // 协助盟友: an ally's invaded or occupied land is ours to relieve as well.
                         for p in alliedFront(nation, enemySet) { add(p) }
-                        // 远征 (app worlds): an enemy with no border to ours (across the sea, or beyond a
-                        // third state) is still fought: its provinces nearest this army — by sea, or through
-                        // land we may cross — become targets (they used to wait out the truce at home).
-                        let bordering = owned.contains { i in provinces[i].neighbors.asArray.contains { q in controller(q.asString).map { enemySet.contains($0) } ?? false } }
-                        if attack.isEmpty && !bordering {
+                        // 跨海远征（App 模式）：凡存在无陆地接壤的海外敌国（岛国出征、陆权跨海登陆、或隔海夹击），
+                        // 均将敌方最近海港与沿海州郡纳入作战目标，使岛国与滨海大国真正登船跨海作战。
+                        var landBorderEnemies = Set<String>()
+                        for i in owned {
+                            for q in provinces[i].neighbors.asArray {
+                                if let oc = controller(q.asString), enemySet.contains(oc) { landBorderEnemies.insert(oc) }
+                            }
+                        }
+                        let overseasEnemies = enemySet.subtracting(landBorderEnemies)
+                        let bordering = !landBorderEnemies.isEmpty
+                        if !overseasEnemies.isEmpty || (attack.isEmpty && !bordering) {
+                            let targetFoes = overseasEnemies.isEmpty ? enemySet : overseasEnemies
                             let at = here.travel.origin.isNull ? nil : (x: here.travel.origin.x.asNumber, y: here.travel.origin.y.asNumber)
                             let cx = at?.x ?? provinces[owned.first ?? 0].center.x.asNumber, cy = at?.y ?? provinces[owned.first ?? 0].center.y.asNumber
-                            let far = provinces.indices.filter { enemySet.contains(provinces[$0].controller.asString) }
+                            let far = provinces.indices.filter { targetFoes.contains(provinces[$0].controller.asString) }
                                 .sorted { a, b in
+                                    let pa = ports.contains(provinces[a].id.asString) ? 0 : (geo.coasts.contains(a) ? 1 : 2)
+                                    let pb = ports.contains(provinces[b].id.asString) ? 0 : (geo.coasts.contains(b) ? 1 : 2)
+                                    if pa != pb { return pa < pb }
                                     let da = (provinces[a].center.x.asNumber - cx) * (provinces[a].center.x.asNumber - cx) + (provinces[a].center.y.asNumber - cy) * (provinces[a].center.y.asNumber - cy)
                                     let db = (provinces[b].center.x.asNumber - cx) * (provinces[b].center.x.asNumber - cx) + (provinces[b].center.y.asNumber - cy) * (provinces[b].center.y.asNumber - cy)
                                     return da != db ? da < db : a < b
@@ -646,6 +656,26 @@ public enum ArmyOrders {
             }
             if en.isEmpty, let hp = here.province, hp.controller.asString == nation {
                 var gid: Int? = row.garrisonId.isNull ? nil : index(r, row.garrisonId.asString)
+                // 和平巡边换防（App 模式）：久驻一地满 40–74 日后按确定性错峰重新抽选边境/海港/都城防区，避免承平时全图军队彻底静止。
+                if r.regimes.enabled.isTruthy, owned.count >= 2, let curGid = gid, provinces[curGid].id.asString == hp.id.asString {
+                    let rotateDays = 40 + Int(CreationForces.fnv(id) % 35)
+                    let since = row.issuedTick.optionalNumber.map(Int.init) ?? tick
+                    if tick - since >= rotateDays * 120 {
+                        var rotated = chooseIdle(r, a, owned: owned, home: homeIndex, geo: geo)
+                        if rotated == nil || provinces[rotated!].id.asString == hp.id.asString {
+                            let others = owned.filter { provinces[$0].id.asString != hp.id.asString }
+                            let patrolPool = others.filter { q in
+                                geo.coasts.contains(q) || provinces[q].neighbors.asArray.contains { nb in controller(nb.asString) != nation }
+                            }
+                            let pickList = patrolPool.isEmpty ? others : patrolPool
+                            if !pickList.isEmpty {
+                                let idx = Int(CreationForces.fnv("\(id)/\(tick)/patrol") % UInt32(pickList.count))
+                                rotated = pickList[idx]
+                            }
+                        }
+                        gid = rotated
+                    }
+                }
                 if gid == nil { gid = chooseIdle(r, a, owned: owned, home: homeIndex, geo: geo) }
                 if let gid {
                     let pid = provinces[gid].id.asString
@@ -653,12 +683,12 @@ public enum ArmyOrders {
                     if hp.id.asString == pid {
                         if ongoing { halt() }
                         row.targetId = JS(pid); row.campaignId = .null; if row.issuedTick.isNull { row.issuedTick = JS(tick) }
-                        note("garrison", "驻守已分配的本国地区，保留驻地，不每天重抽。"); continue
+                        note("garrison", "驻守已分配的本国地区，按周期巡边换防。"); continue
                     }
                     if let refused = reason(r, id, .move(province: gid, retreat: false)) { why = refused }
                     else {
                         issue(r, id, .move(province: gid, retreat: false))
-                        row.targetId = JS(pid); row.campaignId = .null; row.issuedTick = JS(tick); note("garrison", "按原作首都圈与边境驻防权重部署，沿真实路线前往驻地。"); continue
+                        row.targetId = JS(pid); row.campaignId = .null; row.issuedTick = JS(tick); note("garrison", "按首都圈与边境海港权重巡边移驻。"); continue
                     }
                 }
             }

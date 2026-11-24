@@ -13,6 +13,7 @@ import LieguojiCore
 struct MemorialPaper: View {
     var rules = true
     var fullBleed = true
+    static func prewarm() { _ = grainTexture }
     private static let grainTexture: UIImage? = {
         guard let url = Bundle.main.url(forResource: "parchment", withExtension: "jpg", subdirectory: "World"),
               let parchment = UIImage(contentsOfFile: url.path) else { return nil }
@@ -60,41 +61,37 @@ enum Motion {
     static let stamp = Animation.bouncy(duration: 0.36, extraBounce: 0.20)
 }
 
-/// 印面：全作统一的朱印。始终是正方形，按字数定版式，使一字印与多字印的视觉重量一致——
-/// 一字居中大字；两字竖排一列；三、四字两列，自右列起、自上而下（传统印文读序）。
-/// 统一的圆角、内框细线、朱色与压印斑驳；`filled` 为假时是白文转朱文的描边印（用于可点的链接印）。
+/// 印面：兜底朱文细刻方印（与 7 枚真朱砂篆章保持一致的透底红框白文风格，彻底淘汰旧版实心红块）。
 struct SealFace: View {
     let text: String
     var size: CGFloat = 40
     var color: Color = Theme.seal
-    var filled = true
+    var filled = false
     var body: some View {
         let chars = Array(text.prefix(4)).map(String.init)
         let ink = filled ? Theme.paper2 : color
-        let shape = RoundedRectangle(cornerRadius: max(3.5, size * 0.16), style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: max(3, size * 0.12), style: .continuous)
         ZStack {
-            if filled { shape.fill(color) } else { shape.fill(Theme.paper2) }
-            // 压印斑驳：几处纸色细点，让印面像真的盖在纸上（位置由字决定，固定不闪）。
+            if filled { shape.fill(color) } else { shape.fill(Color.clear) }
             if filled { SealSpecks(seed: text).fill(Theme.paper2.opacity(0.16)) }
-            shape.inset(by: max(1.5, size * 0.08)).strokeBorder(ink.opacity(filled ? 0.75 : 0.6), lineWidth: max(0.8, size * 0.025))
+            shape.strokeBorder(color.opacity(filled ? 0.9 : 0.85), lineWidth: max(1.3, size * 0.055))
             Group {
                 switch chars.count {
                 case 0: EmptyView()
-                case 1: Text(chars[0]).font(Theme.kai(size * 0.6))
-                case 2: VStack(spacing: -size * 0.04) { ForEach(chars.indices, id: \.self) { Text(chars[$0]).font(Theme.kai(size * 0.36)) } }
+                case 1: Text(chars[0]).font(Theme.serif(size * 0.58))
+                case 2: VStack(spacing: -size * 0.04) { ForEach(chars.indices, id: \.self) { Text(chars[$0]).font(Theme.serif(size * 0.36)) } }
                 default:
-                    // 右列先读：右列放前一半，左列放后一半。
                     let half = (chars.count + 1) / 2
                     HStack(spacing: size * 0.02) {
-                        VStack(spacing: -size * 0.03) { ForEach(half..<chars.count, id: \.self) { Text(chars[$0]).font(Theme.kai(size * 0.34)) } }
-                        VStack(spacing: -size * 0.03) { ForEach(0..<half, id: \.self) { Text(chars[$0]).font(Theme.kai(size * 0.34)) } }
+                        VStack(spacing: -size * 0.03) { ForEach(half..<chars.count, id: \.self) { Text(chars[$0]).font(Theme.serif(size * 0.34)) } }
+                        VStack(spacing: -size * 0.03) { ForEach(0..<half, id: \.self) { Text(chars[$0]).font(Theme.serif(size * 0.34)) } }
                     }
                 }
             }
             .foregroundStyle(ink)
+            if !filled { SealSpecks(seed: text).fill(Theme.paper.opacity(0.32)) }
         }
         .frame(width: size, height: size)
-        .overlay(filled ? nil : shape.strokeBorder(color.opacity(0.7), lineWidth: max(0.8, size * 0.03)))
     }
 }
 
@@ -424,25 +421,21 @@ struct StatisticsSheet: View {
                                         withAnimation(Motion.tap) { category = c.id }
                                     } label: {
                                         HStack(spacing: 5) {
-                                            if let g = GameActionLabel.glyph(for: Self.categoryIcon[c.id] ?? "") {
-                                                InkIcon(glyph: g, size: 15, weight: on ? 1.85 : 1.55, filled: on,
-                                                        accent: on ? Theme.paper2.opacity(0.3) : Theme.seal.opacity(0.24))
-                                                    .foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.88))
-                                            } else {
-                                                Image(systemName: Self.categoryIcon[c.id] ?? "list.number").font(.system(size: 13)).foregroundStyle(on ? Theme.paper2 : Theme.seal.opacity(0.85))
-                                            }
-                                            Text(c.title).font(Theme.body).foregroundStyle(on ? Theme.paper2 : Theme.ink)
+                                            InkIcon(glyph: GameActionLabel.glyph(for: Self.categoryIcon[c.id] ?? "") ?? .ranking, size: 15, weight: on ? 1.85 : 1.55, filled: on)
+                                                .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                            Text(c.title).font(Theme.body).foregroundStyle(on ? Theme.paperLight : Theme.ink)
                                         }
-                                        .padding(.horizontal, 14).frame(height: 38)
+                                        .padding(.horizontal, 13).frame(height: 36)
                                         .background {
                                             let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
                                             if on {
-                                                shape.fill(Theme.seal)
+                                                shape.fill(Theme.ink)
                                                     .matchedGeometryEffect(id: "stat-cat", in: catPill)
-                                                    .shadow(color: Theme.seal.opacity(0.24), radius: 5, y: 2)
+                                                    .overlay(shape.stroke(Theme.seal.opacity(0.55), lineWidth: 0.9))
                                             } else {
-                                                shape.fill(Theme.paper2.opacity(0.88))
-                                                    .overlay(shape.stroke(Theme.ink.opacity(0.15), lineWidth: 0.9))
+                                                shape.fill(Theme.paperLight)
+                                                    .overlay(shape.stroke(Theme.line, lineWidth: 0.9))
+                                                    .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1.5)
                                             }
                                         }
                                     }
@@ -769,10 +762,19 @@ struct PaperMenu<T: Hashable>: View {
                 Glyph.icon(title, size: 15, fallback: .edict)
                 Text(title).font(Theme.body).foregroundStyle(Theme.ink2)
                 Spacer(minLength: 12)
-                Text(items.first { $0.0 == selection }?.1 ?? "请选择").font(Theme.section).foregroundStyle(Theme.ink).lineLimit(1)
-                InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.ink2)
+                HStack(spacing: 5) {
+                    Text(items.first { $0.0 == selection }?.1 ?? "请选择")
+                        .font(Theme.sans(13.5, weight: .medium))
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+                    PhosphorIcon(glyph: .chevronRight, size: 11, weight: .light).foregroundStyle(Theme.ink2)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.line, lineWidth: 0.85))
+                .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1)
             }
-            .padding(.horizontal, 16).frame(minHeight: 46).contentShape(Rectangle())
+            .padding(.horizontal, 4).frame(minHeight: 48).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $open) {
@@ -1133,12 +1135,8 @@ private struct PressMenuCard: View {
                 Divider2()
                 Button { GameFeel.shared.tap(); close(); item.action() } label: {
                     HStack(spacing: 12) {
-                        if let g = GameActionLabel.glyph(for: item.symbol) {
-                            InkIcon(glyph: g, size: 16, weight: 1.75, accent: Theme.seal.opacity(0.28))
-                                .foregroundStyle(Theme.seal).frame(width: 22)
-                        } else {
-                            Image(systemName: item.symbol).font(.system(size: 15)).foregroundStyle(Theme.seal).frame(width: 22)
-                        }
+                        InkIcon(glyph: GameActionLabel.glyph(for: item.symbol) ?? .edict, size: 16, weight: 1.75)
+                            .foregroundStyle(item.destructive ? Theme.seal : Theme.ink).frame(width: 22)
                         Text(item.title).font(Theme.section).foregroundStyle(item.destructive ? Theme.seal : Theme.ink)
                         Spacer()
                         InkIcon(glyph: .chevronRight, size: 11, weight: 1.7).foregroundStyle(Theme.ink2.opacity(0.5))

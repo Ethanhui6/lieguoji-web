@@ -13,46 +13,57 @@ struct NationsSheet: View {
             // A state just founded may not be in the map legend yet: list only the ones it has.
             let order = state.nations.indices.filter { $0 < map.meta.nations.count && (!livingOnly || state.nations[$0].alive) && (search.isEmpty || map.meta.nations[$0].name.localizedCaseInsensitiveContains(search)) }.sorted { state.nations[$0].provinces > state.nations[$1].provinces }
             ScrollView {
-                LazyVStack(spacing: 14) {
-                    SheetHeader(title: "国家", subtitle: "\(state.nations.filter(\.alive).count) 国并立")
+                LazyVStack(spacing: 16) {
+                    SheetHeader(title: "列国", subtitle: "\(state.nations.filter(\.alive).count) 国并立", seal: "龙")
                     VStack(spacing: 10) {
                         HStack(spacing: 8) {
-                            InkIcon(glyph: .search, size: 15, weight: 1.65).foregroundStyle(Theme.ink2)
-                            TextField("", text: $search, prompt: Text("搜索国名").foregroundColor(Theme.ink2.opacity(0.6)))
+                            PhosphorIcon(glyph: .search, size: 15, weight: .light).foregroundStyle(Theme.ink2)
+                            TextField("", text: $search, prompt: Text("搜索国名……").foregroundColor(Theme.ink2.opacity(0.6)))
+                                .font(Theme.body).foregroundStyle(Theme.ink).tint(Theme.seal)
                         }
-                        .paperField()
+                        .padding(.horizontal, 12).frame(height: 40)
+                        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.line, lineWidth: 0.85))
                         ChipPicker(items: [(true, "现存"), (false, "全部（含已亡）")], selection: $livingOnly)
-                        if order.isEmpty { Text("没有符合条件的国家").foregroundStyle(Theme.ink2) }
-                    }.padding(.horizontal, 16)
+                        if order.isEmpty { Text("没有符合条件的国家").font(Theme.label).foregroundStyle(Theme.ink2) }
+                    }.padding(.horizontal, Theme.Layout.pageInset)
                     Group2 {
                         ForEach(order, id: \.self) { i in
                             let n = map.meta.nations[i], s = state.nations[i]
-                            Button { select(i) } label: {
+                            let nLex = LocalizationEngine.lexicon(culture: s.culture ?? n.culture, polity: s.polity ?? n.polity, style: nil)
+                            Button {
+                                GameFeel.shared.tap()
+                                select(i)
+                            } label: {
                                 HStack(spacing: 12) {
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Names.color(n.color)).frame(width: 22, height: 22)
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        HStack(spacing: 6) {
-                                            Text(n.name).font(Theme.section).foregroundStyle(s.alive ? Theme.ink : Theme.ink2).lineLimit(1).minimumScaleFactor(0.7)
-                                            if !s.alive { Text("已亡").font(Theme.caption).foregroundStyle(Theme.ink2) }
+                                    Rectangle().fill(Names.color(n.color)).frame(width: 4, height: 36)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack(spacing: 7) {
+                                            Text(n.name).font(Theme.serif(16)).foregroundStyle(s.alive ? Theme.ink : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
+                                            if !s.alive { PaperTag(text: "已亡", color: Theme.ink2, size: 10.5) }
+                                            else if !s.enemies.isEmpty { PaperTag(text: "交战", color: Theme.seal, size: 10.5) }
                                         }
-                                        HStack(spacing: 6) {
-                                            Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)").font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
-                                            if !s.enemies.isEmpty { Text("交战").font(Theme.caption).foregroundStyle(Theme.seal).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal.opacity(0.1), in: Capsule()) }
-                                        }
+                                        Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)")
+                                            .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                                     }
-                                    Spacer()
+                                    Spacer(minLength: 8)
                                     VStack(alignment: .trailing, spacing: 3) {
-                                        Text("\(s.provinces) 省").font(Theme.section).foregroundStyle(Theme.ink)
-                                        Text("\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵").font(Theme.label).foregroundStyle(Theme.ink2)
+                                        EditorialValueText("\(s.provinces) \(nLex.adminUnit)", size: 15.5, color: Theme.ink)
+                                        Text("\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
                                     }
+                                    PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light)
+                                        .foregroundStyle(Theme.ink2)
+                                        .frame(width: 22, height: 22)
+                                        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 11).contentShape(Rectangle())
+                                .padding(.horizontal, 4).padding(.vertical, 12).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             if i != order.last { Divider2() }
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Theme.Layout.pageInset)
                 }
                 .padding(.bottom, 36)
             }
@@ -106,17 +117,9 @@ struct MilitarySheet: View {
                     ArtEmblem(image: BundleArt.warCrest(for: atkCulture), size: 22, fallback: .war)
                     Button { GameFeel.shared.tap(); openNation(war.defender) } label: { NationChip(map: map, nation: war.defender) }.buttonStyle(.plain)
                     Spacer(minLength: 4)
-                    Button { GameFeel.shared.tap(); showFront(map, state, war) } label: {
-                        HStack(spacing: 4) {
-                            InkIcon(glyph: .locate, size: 13, weight: 1.7)
-                            Text("前线").font(Theme.caption)
-                        }
-                        .foregroundStyle(Theme.seal)
-                        .padding(.horizontal, 9).frame(height: 26)
-                        .background(Theme.seal.opacity(0.09), in: Capsule())
-                        .overlay(Capsule().stroke(Theme.seal.opacity(0.3), lineWidth: 0.8))
+                    EditorialTactileButton(title: "前线", icon: .locate, accent: true, compact: true) {
+                        showFront(map, state, war)
                     }
-                    .buttonStyle(PressStyle())
                 }
                 HStack(spacing: 6) {
                     Text([war.casusBelli, war.goal].filter { !$0.isEmpty }.joined(separator: " · "))
@@ -150,26 +153,17 @@ struct MilitarySheet: View {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     SheetHeader(title: "军事", subtitle: "\(state.armies.count) 支陆军" + ((state.fleets ?? []).isEmpty ? "" : " · \(state.fleets!.count) 支水师舰队"), seal: "军")
                     ChipPicker(items: [("overview", "军情"), ("wars", "战局"), ("land", "陆军"), ("navy", "水师")], selection: $filter)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, Theme.Layout.pageInset)
                     if filter == "land" {
                         HStack(spacing: 8) {
                             ForEach([("all", "全部陆军"), ("battle", "交战围城"), ("manual", "亲自指挥")], id: \.0) { item in
                                 let on = landScope == item.0
-                                Button {
-                                    GameFeel.shared.tap()
+                                EditorialTactileButton(title: item.1, solid: on, compact: true, fullWidth: true) {
                                     withAnimation(Motion.tap) { landScope = item.0 }
-                                } label: {
-                                    Text(item.1)
-                                        .font(Theme.label)
-                                        .foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                                        .frame(maxWidth: .infinity).frame(height: 32)
-                                        .background(on ? Theme.seal : Theme.paper2.opacity(0.88), in: Capsule())
-                                        .overlay(Capsule().stroke(on ? Color.clear : Theme.ink.opacity(0.14), lineWidth: 0.8))
                                 }
-                                .buttonStyle(PressStyle())
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, Theme.Layout.pageInset)
                     }
                     // 全军交 AI: every army and fleet the player commands goes back to the war council.
                     let manualCount = state.armies.filter(\.manual).count
@@ -797,7 +791,7 @@ struct DiplomacySheet: View {
                                 }
                                 Spacer()
                                 if on {
-                                    Image(systemName: "checkmark.circle.fill").font(.system(size: 16)).foregroundStyle(Theme.seal)
+                                    PhosphorIcon(glyph: .check, size: 15, weight: .fill).foregroundStyle(Theme.seal)
                                 }
                             }
                             .padding(.horizontal, 14).padding(.vertical, 10)
@@ -976,8 +970,8 @@ struct ChronicleSheet: View {
                         .font(Theme.serif(16))
                         .foregroundStyle(Theme.ink)
                         .tracking(1.0)
-                    Text("纵览版图兴替，拖动进度或回溯至历史节点")
-                        .font(Theme.sans(12))
+                    Text("纵览版图兴替 · 回溯历史节点")
+                        .font(Theme.caption)
                         .foregroundStyle(Theme.ink2)
                         .lineLimit(1)
                 }

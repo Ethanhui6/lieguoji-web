@@ -87,8 +87,14 @@ public enum Naval {
     }
     static func attackCount(_ count: Int) -> Int {
         if count <= 0 { return 0 }
-        // App worlds (制海权): six fleets in ten put to sea against the enemy (the original: about a third).
-        var n = max(0, min(count, Int(f(f(Double(count)) * f(UnitKinds.enabled ? Tuning.current.navyAttackShare : 0.35)).rounded(.up))))
+        if UnitKinds.enabled {
+            // App 模式：单支或两支舰队的岛国/滨海国可全数出击跨海制海，三支以上保留至少一支护卫本土
+            if count <= 2 { return count }
+            let share = max(0.70, Tuning.current.navyAttackShare)
+            let n = max(2, min(count - 1, Int(f(f(Double(count)) * f(share)).rounded(.up))))
+            return n
+        }
+        var n = max(0, min(count, Int(f(f(Double(count)) * f(0.35)).rounded(.up))))
         if count >= 2 { n = min(n, count - 1) }
         return max(1, n)
     }
@@ -343,7 +349,8 @@ public enum Naval {
                 }
             }
             let activeMission: MaritimeWarfare.FleetMission = appNaval ? MaritimeWarfare.fleetMeta(r, fleet: fl).mission : .patrol
-            let foodLow = fl.food.asNumber < fl.crew.asNumber * 30
+            let foodLow = fl.food.asNumber < fl.crew.asNumber * (appNaval ? 18 : 30)
+            let reserveFood = fl.crew.asNumber * (appNaval ? 12 : 30)
             let refitNeed = appNaval && activeMission == .refit
             let candidates = candidatesIn(component), low = foodLow || refitNeed, safe = safeIn(nation, component, foodLow)
             let assigned = row.assignedPortId.optionalString
@@ -377,7 +384,7 @@ public enum Naval {
                         if atAnchor(port) { sailD = 0 }
                         else {
                             let p = preview(r, id, .sail(port: port.id))
-                            guard p.valid && food >= rationNow * (days(p.distance) + 3) + crew * 30 else { continue }
+                            guard p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood else { continue }
                             sailD = p.distance
                         }
                         if intercept == nil || df < intercept!.distToFoe { intercept = (port, df, sailD) }
@@ -414,7 +421,7 @@ public enum Naval {
                         let control = r.portControl.ports[port.provinceId]
                         var row0: (port: Port, control: JS, distance: Double)?
                         if atAnchor(port) { row0 = (port, control, 0) }
-                        else { let p = preview(r, id, .sail(port: port.id)); if p.valid && food >= rationNow * (days(p.distance) + 3) + crew * 30 { row0 = (port, control, p.distance) } }
+                        else { let p = preview(r, id, .sail(port: port.id)); if p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood { row0 = (port, control, p.distance) } }
                         guard let c = row0 else { continue }
                         func rankOf(_ x: (port: Port, control: JS, distance: Double)) -> Int {
                             if x.control.landOwnerId.asString == nation { return activeMission == .blockade ? 1 : 0 }

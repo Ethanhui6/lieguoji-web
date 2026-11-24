@@ -159,40 +159,54 @@ struct MenuSheet: View {
     }
 
     private func menuTile(title: String, note: String, symbol: String, tint: Color, action: @escaping () -> Void) -> some View {
-        Button {
+        let accent = (tint == Theme.seal)
+        return Button {
             GameFeel.shared.tap()
             action()
         } label: {
             VStack(alignment: .leading, spacing: 8) {
-                Group {
-                    if let g = GameActionLabel.glyph(for: symbol) {
-                        InkIcon(glyph: g, size: 19, weight: 1.85, accent: tint.opacity(0.22))
-                    } else {
-                        Image(systemName: symbol).font(.system(size: 17, weight: .medium))
-                    }
+                HStack {
+                    InkIcon(glyph: GameActionLabel.glyph(for: symbol) ?? .settings, size: 18, weight: 1.7)
+                        .foregroundStyle(accent ? Theme.seal : Theme.ink)
+                    Spacer()
+                    PhosphorIcon(glyph: .chevronRight, size: 11, weight: .light).foregroundStyle(Theme.ink2.opacity(0.65))
                 }
-                .foregroundStyle(tint)
-                .frame(width: 34, height: 34)
-                .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(Theme.serif(15.5)).foregroundStyle(Theme.ink).lineLimit(1)
                     Text(note).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
                 }
             }
-            .padding(12)
+            .padding(13)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .paperCard()
-            .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(accent ? Theme.seal.opacity(0.38) : Theme.line, lineWidth: 0.95))
+            .shadow(color: Theme.ink.opacity(0.07), radius: 0, y: 1.5)
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
         }
         .buttonStyle(PressStyle())
     }
 }
 
-/// 精简清晰的地图显示设置：彻底去除重复开关与无关悬浮小笺，分为「地图元素」与「视觉装裱」两张清爽分组卡。
+/// 精简清晰的地图显示设置：含模块三「界面显隐模式」双模开关（默认常驻 + 右上角净图钮 / 可选静置自动隐去）。
 struct MapDisplaySettings: View {
     @ObservedObject var controller: MapController
+    @AppStorage("hud.autoHide") private var hudAutoHide = false
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            SectionLabel("界面与净图")
+            Group2 {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("界面显隐模式").font(Theme.body).foregroundStyle(Theme.ink)
+                        Spacer()
+                        Text(hudAutoHide ? "静置自动淡隐" : "默认常驻").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    }
+                    ChipPicker(items: [(false, "常驻 · 右上角净图"), (true, "静置自动隐去")], selection: $hudAutoHide)
+                }
+                .padding(.horizontal, 4).padding(.vertical, 12)
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+
             SectionLabel("军队与舰队")
             Group2 {
                 PaperSwitch(title: "显示军队与舰队", on: $controller.play.showArmies)
@@ -271,17 +285,21 @@ struct MenuRow: View {
         HStack(spacing: 12) {
             Group {
                 if let g = GameActionLabel.glyph(for: symbol) {
-                    InkIcon(glyph: g, size: 18, weight: 1.7, accent: Theme.seal.opacity(0.22))
+                    InkIcon(glyph: g, size: 17, weight: 1.7)
                 } else {
                     Glyph.icon(title, size: 15, fallback: .edict)
                 }
             }
-            .frame(width: 24).foregroundStyle(Theme.seal)
-            Text(title).font(Theme.section).foregroundStyle(Theme.ink)
+            .frame(width: 24).foregroundStyle(Theme.ink)
+            Text(title).font(Theme.body).foregroundStyle(Theme.ink)
             Spacer()
-            InkIcon(glyph: .chevronRight, size: 12, weight: 1.8).foregroundStyle(Theme.ink2)
+            PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light)
+                .foregroundStyle(Theme.ink2)
+                .frame(width: 24, height: 24)
+                .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
         }
-        .padding(.horizontal, 16).padding(.vertical, 13).contentShape(Rectangle())
+        .padding(.horizontal, 4).padding(.vertical, 12).contentShape(Rectangle())
     }
 }
 
@@ -361,7 +379,7 @@ struct FrameSettings: View {
                 Divider2()
                 row("行军帧率", "军队移动时", [(15, "15"), (24, "24"), (30, "30"), (60, "60")], $controller.play.marchFPS)
                 Divider2()
-                row("动画帧率", "海浪与战场特效", [(12, "12"), (15, "15"), (20, "20"), (30, "30")], $controller.play.effectFPS)
+                row("动画帧率", "海浪与战场特效", [(15, "15"), (30, "30"), (60, "60")], $controller.play.effectFPS)
                 Divider2()
                 row("地图清晰度", "越高越耗电", [(1.0, "低"), (1.5, "中"), (2.0, "高"), (3.0, "原生")], $controller.play.renderScale)
                 Divider2()

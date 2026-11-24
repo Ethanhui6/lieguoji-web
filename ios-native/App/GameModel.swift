@@ -130,7 +130,7 @@ import LieguojiCore
         var day: Int = 0
         var month: Int = 1
         var dateText: String = ""
-        enum Kind { case war, peace, capture, uprising, restoration, extinction, capital, marriage, house, coup, regime, treaty, ultimatum, blizzard, drought, flood, harvest, plague }
+        enum Kind { case war, peace, capture, uprising, restoration, extinction, capital, marriage, house, coup, regime, succession, treaty, ultimatum, blizzard, drought, flood, harvest, plague }
     }
     @Published var herald: Herald?
     private var heraldQueue: [Herald] = []
@@ -1184,7 +1184,13 @@ import LieguojiCore
                 }
             }
         }
-        // Rebellions, restorations, dynasties dying out and capitals moving: the original's big news.
+        // Rebellions, restorations, dynasties dying out, capitals moving and ruler death / succession: big news.
+        var successionNations = Set<Int>()
+        for e in newEvents where e.kind == "accession" {
+            let nats = eventNations(e)
+            for n in nats { successionNations.insert(n) }
+            enqueue(makeHerald(.succession, e.text, nats))
+        }
         for e in newEvents {
             let nats = eventNations(e)
             switch e.kind {
@@ -1192,6 +1198,12 @@ import LieguojiCore
             case "restoration": enqueue(makeHerald(.restoration, e.text, nats))
             case "extinction": enqueue(makeHerald(.extinction, e.text, nats))
             case "capital": enqueue(makeHerald(.capital, e.text, nats))
+            case "diplomacy":
+                // 君主/元首去世若当刻尚未产生继承人（未触发 accession），仍主动弹出大行崩逝/元首逝世传报
+                let isDeath = e.text.contains("驾崩") || e.text.contains("崩逝") || e.text.contains("逝世") || e.text.contains("去世") || e.text.contains("圆寂") || e.text.contains("被处死")
+                if isDeath && !nats.contains(where: { successionNations.contains($0) }) {
+                    enqueue(makeHerald(.succession, e.text, nats))
+                }
             default: break
             }
         }
@@ -1236,7 +1248,7 @@ import LieguojiCore
                 switch h.kind {
                 case .war, .uprising, .house, .coup, .ultimatum, .blizzard, .drought, .flood, .plague: GameFeel.shared.news(.warning)
                 case .peace, .restoration, .marriage, .treaty, .regime, .harvest: GameFeel.shared.news(.success)
-                case .capture, .extinction, .capital: GameFeel.shared.newsTap()
+                case .capture, .extinction, .capital, .succession: GameFeel.shared.newsTap()
                 }
                 // 高倍速下收短停留时长，保证传报始终与当前日期同步；1×/2× 下从容阅览。
                 let baseSeconds: Double = (h.kind == .war || h.kind == .coup || h.kind == .ultimatum) ? 2.4 : (h.kind == .capture ? 1.6 : 2.1)

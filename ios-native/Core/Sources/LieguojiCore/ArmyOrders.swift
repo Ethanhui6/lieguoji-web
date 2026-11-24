@@ -657,7 +657,7 @@ public enum ArmyOrders {
             if en.isEmpty, let hp = here.province, hp.controller.asString == nation {
                 var gid: Int? = row.garrisonId.isNull ? nil : index(r, row.garrisonId.asString)
                 // 和平巡边换防（App 模式）：久驻一地满 40–74 日后按确定性错峰重新抽选边境/海港/都城防区，避免承平时全图军队彻底静止。
-                if r.regimes.enabled.isTruthy, owned.count >= 2, let curGid = gid, provinces[curGid].id.asString == hp.id.asString {
+                if originalTargets, owned.count >= 2, let curGid = gid, provinces[curGid].id.asString == hp.id.asString {
                     let rotateDays = 40 + Int(CreationForces.fnv(id) % 35)
                     let since = row.issuedTick.optionalNumber.map(Int.init) ?? tick
                     if tick - since >= rotateDays * 120 {
@@ -683,12 +683,12 @@ public enum ArmyOrders {
                     if hp.id.asString == pid {
                         if ongoing { halt() }
                         row.targetId = JS(pid); row.campaignId = .null; if row.issuedTick.isNull { row.issuedTick = JS(tick) }
-                        note("garrison", "驻守已分配的本国地区，按周期巡边换防。"); continue
+                        note("garrison", originalTargets ? "驻守已分配的本国地区，按周期巡边换防。" : "驻守已分配的本国地区，保留驻地，不每天重抽。"); continue
                     }
                     if let refused = reason(r, id, .move(province: gid, retreat: false)) { why = refused }
                     else {
                         issue(r, id, .move(province: gid, retreat: false))
-                        row.targetId = JS(pid); row.campaignId = .null; row.issuedTick = JS(tick); note("garrison", "按首都圈与边境海港权重巡边移驻。"); continue
+                        row.targetId = JS(pid); row.campaignId = .null; row.issuedTick = JS(tick); note("garrison", originalTargets ? "按首都圈与边境海港权重巡边移驻。" : "按原作首都圈与边境驻防权重部署，沿真实路线前往驻地。"); continue
                     }
                 }
             }

@@ -60,7 +60,7 @@ struct ProvinceQuickSheet: View {
                 VStack(alignment: .leading, spacing: 14) {
                     // 极简古籍风顶栏：与国家/州郡页统一 20pt 左右留白 + 真实篆印 + 1px 淡墨分割线
                     HStack(alignment: .center, spacing: 12) {
-                        SealFace(text: "令", size: 38, tint: Theme.seal)
+                        SealFace(text: "令", size: 38, color: Theme.seal)
                         VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 7) {
                                 if let nation {
@@ -84,7 +84,7 @@ struct ProvinceQuickSheet: View {
                     .padding(.horizontal, Theme.Layout.pageInset)
                     .padding(.top, 18)
 
-                    EditorialHairline()
+                    EditorialDivider()
                         .padding(.horizontal, Theme.Layout.pageInset)
 
                     // 与国家页/史记页 1:1 对齐的朱砂下划线书签栏
@@ -105,7 +105,7 @@ struct ProvinceQuickSheet: View {
                                 .foregroundStyle(Theme.ink)
                                 .lineLimit(1)
                             Spacer()
-                            EditorialTactileButton("换国家", glyph: .swap, compact: true) { target = -1; picking = .army }
+                            EditorialTactileButton(title: "换国家", icon: .swap, compact: true) { target = -1; picking = .army }
                         }
                         slider("数量", value: Binding(get: { Double(count) }, set: { count = Int($0) }), 1...30, text: "\(count) 支")
                         tiles {
@@ -359,11 +359,11 @@ struct ReformCard: View {
     let reload: () async -> Void
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            EditorialSectionRule(title: "国势")
+            EditorialSectionHeader(title: "国势")
                 .padding(.horizontal, Theme.Layout.pageInset)
             VStack(spacing: 8) {
                 ForEach(Array((info.sway ?? []).enumerated()), id: \.offset) { idx, row in
-                    if idx > 0 { EditorialHairline() }
+                    if idx > 0 { EditorialDivider() }
                     HStack(spacing: 8) {
                         Glyph.icon(row.name, size: 14)
                         Text(row.name).font(Theme.body).foregroundStyle(Theme.ink2).frame(width: 52, alignment: .leading)
@@ -376,7 +376,7 @@ struct ReformCard: View {
             }
             .padding(.horizontal, Theme.Layout.pageInset)
 
-            EditorialSectionRule(title: "制度")
+            EditorialSectionHeader(title: "制度")
                 .padding(.horizontal, Theme.Layout.pageInset)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(info.reforms ?? [], id: \.id) { f in
@@ -432,7 +432,7 @@ struct PressRipple: View {
 
 func quickSection<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
     VStack(alignment: .leading, spacing: 10) {
-        EditorialSectionRule(title: title)
+        EditorialSectionHeader(title: title)
         VStack(alignment: .leading, spacing: 12) { content() }
     }
     .padding(.horizontal, Theme.Layout.pageInset)

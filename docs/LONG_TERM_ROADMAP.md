@@ -67,3 +67,8 @@
 - [x] 传报系统全面整改：打开任意面板/抽屉/回放立即同步止停并清空待播队列；新增 `isHeraldTimely` 35 日时效、四时季节与战局一致性硬门禁，彻底根除跨季错放；顶部横幅新增「某年某月·某季」等宽时间徽签
 - [x] 跨世界复用已编译 Metal 着色器库/20 条管线/16 张兵种贴图（`SharedMetalAssets`），消除进局 ~485ms 主线程冻结；读档/建世等地图挂载后轻快 1.15s/2.0s 展卷并支持轻点跳过
 - [x] 离屏底图缓存节气分桶减频 5×（`120 → 24` 档/年）、8×/16× 高倍速零解码静帧海报、动效 30Hz 节流、顶栏去除高频数字形变动画与国色查表/省城索引热路径优化
+
+## 第八大包（底层回归 Claude 硬核架构）：v4.2.8（构建 171）—— 根治建图进局闪退 × 根治开屏发烫 × 渲染/内存大瘦身
+- [x] `MapRenderer.swift` 精炼重构（删减近千行冗余，20 管线 → 10 管线，MSL 着色器 960 行 → 150 行，回归单 Pass 直绘）：删除 `.memoryless` 双离屏缓存、删除全部逐像素噪声/三角波/300 行 SDF 发热着色器，四季色温改 CPU 预算 1 指令乘法，古风卷轴装裱改 CPU 预建几何 1 指令绘制，旧世界卸载即时释放全部 Metal 缓冲
+- [x] `MapView.swift` / `WeatherOverlay.swift` 彻底清除 `CATransaction` 同步 `mtk.draw()` 与 `layoutSubviews` 同步 `sync()` 重入闪退，删除私有 KVC 与全屏 `CAEmitterLayer`/5.1MB 图集预分配；标题页漂移回归 Claude 20fps、默认均衡档回归 `60/30/30` 并恢复 `.fair`/`.hot` 阶梯温控
+- [x] `MapArt.swift` / `MapEffects.swift` / `InkVideoPlayer.swift` / `GameModel.swift` 消除 ~100MB PNG 内存炸弹与 H.264 视频解码发热（`BundleArt` 改 14MB 有界 `NSCache` + `ImageIO` 缩略解码、`MapLabelsView` 收敛至 16MB、进局清缓存 + `autoreleasepool` + 错峰 1.5s 归档存盘、54 卷古画 0%-CPU 缓推）

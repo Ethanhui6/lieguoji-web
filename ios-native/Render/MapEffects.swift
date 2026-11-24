@@ -78,11 +78,12 @@ struct MapEffects: Equatable {
 final class EffectsView: UIView {
     /// Smoke, fire and sparks (设置 › 粒子特效).
     static var particles = true
-    /// 动画帧率 (推演与画面): 默认解锁真 60/120fps 丝滑实时动画（仅高温时柔和回落至 30fps）。
-    static var fps = 60
+    /// 动画帧率 (推演与画面): 恪守 Claude 冷静温控规范（默认 30fps，发热降至 15fps，绝不硬拉 120Hz 烧手机）。
+    static var fps = 30
     static func calm(_ a: CAAnimation) -> CAAnimation {
-        let f = Float(Energy.hot ? min(fps, 30) : max(60, fps))
-        a.preferredFrameRateRange = CAFrameRateRange(minimum: max(30, f / 2), maximum: max(f, 120), preferred: f)
+        let target = Energy.hot ? min(fps, 15) : (Energy.level >= 1 ? min(fps, 30) : fps)
+        let f = Float(max(12, target))
+        a.preferredFrameRateRange = CAFrameRateRange(minimum: max(10, f / 2), maximum: f, preferred: f)
         return a
     }
     private var battleLayers: [String: (layer: CALayer, x: Double, y: Double)] = [:]
@@ -122,16 +123,8 @@ final class EffectsView: UIView {
         return (img.preparingForDisplay() ?? img).cgImage
     }
     private static var prewarmed = false
-    /// 后台预解码剑影、海浪、宣称与和平鸽图集，杜绝首次交战/海浪现身时的主线程掉帧。
     static func prewarmAsync() {
-        guard !prewarmed else { return }
-        prewarmed = true
-        DispatchQueue.global(qos: .utility).async {
-            _ = swords
-            _ = waveSheet
-            _ = claimIcon
-            _ = dove
-        }
+        // 惰性按需加载，避免开局瞬间提前解码 11MB+ 战争图集加重真机内存峰值。
     }
     /// The original BattleSword atlas: 5 × 8 frames of 258 × 194.
     nonisolated private static let swords = image("battle-sword")
@@ -251,7 +244,7 @@ final class EffectsView: UIView {
         sheet.configure(spec: .atlasNaval36, state: .combat, fps: 30.0, phaseOffset: phase)
         root.addSublayer(sheet)
 
-        if Self.particles && !Energy.hot && battleLayers.count < 8 {
+        if Self.particles && Energy.level == 0 && battleLayers.count < 5 {
             let e = CAEmitterLayer(); e.emitterShape = .line; e.emitterSize = CGSize(width: 28, height: 1); e.emitterPosition = CGPoint(x: 28, y: 24)
             e.emitterCells = [
                 cell(Self.puff, color: UIColor(white: 0.96, alpha: 0.24), rate: 3.4, life: 1.6, velocity: 8, range: .pi / 4, scale: 0.26, scaleSpeed: 0.14, alphaSpeed: -0.14, spin: 0.22, angle: -.pi / 2),
@@ -305,7 +298,7 @@ final class EffectsView: UIView {
         sheet.configure(spec: .atlasBattle36, state: .combat, fps: 30.0, phaseOffset: phase)
         root.addSublayer(sheet)
 
-        if Self.particles && !Energy.hot && battleLayers.count < 8 {
+        if Self.particles && Energy.level == 0 && battleLayers.count < 5 {
             let smoke = battleSmoke(); smoke.emitterPosition = CGPoint(x: 24, y: 22); root.insertSublayer(smoke, at: 0)
         }
         return root

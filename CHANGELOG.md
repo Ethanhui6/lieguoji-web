@@ -1,5 +1,27 @@
 # 更新日志
 
+## 4.2.8 / build 171 — 2026-11-24
+
+### 一、底层渲染与生命周期回归 Claude 硬核架构：彻底根治建图进入游戏闪退
+- **彻底拆除真机闪退的三大根源（`MapRenderer.swift`、`MapView.swift`、`WeatherOverlay.swift`）**：
+  1. **移除真机 `.memoryless` 双离屏缓存渲染通道**：删除 `v4.2.6` 引入的 `cachedBaseTex` / `cachedOverlayTex` / `cacheMSAATex`（物理机启用 `.memoryless` 且在模拟器上被 `#if targetEnvironment(simulator)` 跳过，恰在建图完成 `reveal == 1.0` 进入游戏首帧触发）及冗余 `blit` 管线，回归 Claude 单 Pass 直绘 Metal 管线，直接省去 ~36–48MB 离屏显存并消除真机离屏 MSAA 风险；
+  2. **彻底清除 `CATransaction` / `layoutSubviews()` 内同步调用 `mtk.draw()` 与同步 `sync()` 的重入闪退路径**：修复 `v4.2.3` 误回流进 `MapView.Coordinator.set` 的 `mtk.draw()` + `waitUntilScheduled()` 事务重入问题，所有重绘统一交由 `mtk.setNeedsDisplay()` 安全驱动，仅手指物理拖拽/双指捏合启用同事务呈现，建世展卷与镜头飞行全程异步零阻塞；
+  3. **清除 `WeatherOverlayView` 私有 KVC（`particleType`/`orientationLongitude`）与全屏粒子层膨胀**：重构为不足 95 行的轻量灾异州郡微标层，移除 4 份 5.1MB `atlasRainRipple36` 预分配与全屏 `CAEmitterLayer` 粒子风暴。
+- **彻底拆除进局 ~100MB 内存峰值炸弹（`MapArt.swift`、`MapEffects.swift`、`InkVideoPlayer.swift`、`GameModel.swift`）**：
+  - 废除 `BundleArt` 60 余张常驻 `static let` 未压缩位图与进局瞬间拉满内存的 `BundleArt.prewarmAsync()` / `EffectsView.prewarmAsync()`；改为 **14MB 有界 `NSCache` + `ImageIO` 硬件缩略解码**（36 帧战局图集由 `1536×1536` 9MB/张 缩略至 `576px` 1.3MB/张，省下 7 倍内存，且收到系统内存警告自动清空）；
+  - `MapLabelsView` 字图缓存上限由 48MB 收敛至 16MB 并挂载内存警告自动清理；旧 `MapView` 卸载时立即调用 `renderer.releaseResources()` 归还全部 Metal 顶点/海图/墨场缓冲；
+  - `GameModel.generate()` / `continueGame()` 在挂载新世界前先清理图片缓存、用 `autoreleasepool` 及时释放 JSON 解码临时对象，并将新建世界后的 `archiveCurrent()` 与首次 `save()` 错峰延后 1.5 秒执行，彻底消除建图进入瞬间触发 iOS Jetsam 内存杀进程闪退。
+
+### 二、彻底根治“一打开游戏手机就特别烫”：GPU 算力削减 ~75 倍 + 恢复 Claude 级冷静温控
+- **Metal 渲染核瘦身重构（`MapRenderer.swift` 从 2,563 行精炼至 1,579 行，删减近千行冗余，20 条管线精简为 10 条、MSL 着色器从 ~960 行精炼至 ~150 行）**：
+  - 彻底清除全部高耗电逐像素噪声/三角函数/SDF 着色器（删除 `deskFragment` 改用零开销硬件清屏、`landFragment` 150 条片元运算砍至 1 次乘法由 CPU 预计算四季色温、`seaFragment` 120 条海浪三角运算砍至 1 次纹理采样+1 次乘法、羊皮纸回归 Claude 单纹理 1 次采样、移除 `spriteShadowPipeline` 重复全军重绘将柔影直接烘焙进 4.1 雕漆盾牌）；
+  - 300 行逐像素 SDF 卷轴着色器（`scrollMountFragment`）重构为单次 CPU 预计算的几何古风卷轴装裱（紫檀 6 段圆柱明暗、双鎏金箍、碧玉圆顶轴头、米金宋锦绫边、牙白隔水、四角回纹与画心双阶内阴影），以 **1 指令 `colorFragment`** 绘制，零片元发热。
+- **恢复 Claude 原版开屏冷静帧率与真温控体系（`MapView.swift`、`MapEffects.swift`）**：
+  - 标题页背景漂移由 60–120fps 回调至 Claude 经典 **20fps**（3 pt/s 慢移肉眼同样顺滑、重绘次数降至 1/3~1/6），一打开 App 机身保持冰凉；
+  - 默认「均衡」档回归 Claude 规范（`mapFPS: 60 / marchFPS: 30 / effectFPS: 30`）并自动回调旧版强制拉满发烫的 `60/60/60` 存档设置；恢复微温 `.fair → 30fps`、发热/低电量 `.hot → 20fps / 15fps` 阶梯温控，且 `EffectsView.calm` 严格遵守 `effectFPS` 上限不再硬拉 120Hz。
+- **传报长卷零视频解码发热（`InkVideoPlayer.swift`）**：
+  - 移除传报横幅频繁拉起 `AVQueuePlayer` / `AVPlayerLooper` 硬件 H.264 解码器带来的 `mediaserverd` 阻塞与发热；以 8MB 有界缓存即时呈现 54 卷全文明预烘焙古画长卷并叠加零 CPU 占用的轻柔缓推，同时完整保留 `v4.2.7` 的「军队归属锁防冻结、开页即停传报、35 日/季节硬校验（杜绝夏天放春天事件）与传报精确年月季节徽签」。
+
 ## 4.2.7 / build 170 — 2026-11-24
 
 ### 一、紧急根治重大 Bug：军队在地图上完全不动、只有事件在动

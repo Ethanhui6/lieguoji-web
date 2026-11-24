@@ -1,18 +1,19 @@
 import SwiftUI
 import UIKit
+import ImageIO
 
 /// 基于 `cultures.json` 全部 26 种历史文明划分的十大美术大系，自动驱动各国差异化都城、要塞、港口、战旗、战舰与传报画卷。
 enum CultureStyle: String, CaseIterable {
-    case chinese      // 中华汉字圈：汉、朝鲜、越南、吐蕃
-    case japanese     // 日本和风：天守阁、和风军旗
-    case western      // 西欧骑士：英、法、德、西、意、葡、荷、匈
-    case classical    // 古典罗马/希腊：大理石卫城与穹顶宫殿
-    case nordic       // 北欧维京：龙头木堡与维京长船
-    case slavic       // 斯拉夫：克里姆林洋葱穹顶红砖要塞
-    case islamic      // 中东伊斯兰/古埃及：青绿穹顶宣礼塔宫殿与弯月战旗
-    case steppe       // 草原蒙古：黄金汗帐与苏鲁锭牦尾军纛
-    case indian       // 南亚印度：红砂岩白大理石穹亭宫城
-    case mesoamerican // 美洲阿兹特克/印加：阶梯石砌金字塔神庙
+    case chinese
+    case japanese
+    case western
+    case classical
+    case nordic
+    case slavic
+    case islamic
+    case steppe
+    case indian
+    case mesoamerican
 
     static func of(_ culture: String?) -> CultureStyle {
         switch (culture ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
@@ -44,88 +45,98 @@ enum CultureStyle: String, CaseIterable {
     }
 }
 
-/// 打包在 `Resources/Art` 的全套纯 AI 生成无圆框透明美术资源（只解码一次，零主线程重复 IO，全文明差异化自动调度）。
+/// 打包在 `Resources/Art` 的美术资源管理器（严格受限 14MB `NSCache` + 缩略解码 + 内存警告自动清空）：
+/// 彻底废除旧版 60+ 常驻 `static let` 与进局全量预解码导致的 ~100MB 真机内存峰值与 Jetsam 闪退。
 enum BundleArt {
-    // MARK: - 地图舆图罗盘与装裱角饰
-    static let compassRose: UIImage? = load("compass-rose")
-    static let scrollCorner: UIImage? = load("scroll-corner")
+    private static let cache: NSCache<NSString, UIImage> = {
+        let c = NSCache<NSString, UIImage>()
+        c.countLimit = 40
+        c.totalCostLimit = 14 << 20
+        NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main) { _ in
+            c.removeAllObjects()
+        }
+        return c
+    }()
 
-    // MARK: - 十大文明大系都城微缩地标
-    static let capitalChinese: UIImage? = load("landmark-capital")
-    static let capitalJapanese: UIImage? = load("capital-japanese")
-    static let capitalWestern: UIImage? = load("capital-western")
-    static let capitalClassical: UIImage? = load("capital-classical")
-    static let capitalNordic: UIImage? = load("capital-nordic")
-    static let capitalSlavic: UIImage? = load("capital-slavic")
-    static let capitalIslamic: UIImage? = load("capital-islamic")
-    static let capitalSteppe: UIImage? = load("capital-steppe")
-    static let capitalIndian: UIImage? = load("capital-indian")
-    static let capitalMesoamerican: UIImage? = load("capital-mesoamerican")
+    static func clearCache() {
+        cache.removeAllObjects()
+    }
 
-    // MARK: - 多文明要塞与海港地标
-    static let fortressEast: UIImage? = load("landmark-fortress")
-    static let fortressWest: UIImage? = load("fortress-west")
-    static let fortressIslamic: UIImage? = load("fortress-islamic")
-    static let portEast: UIImage? = load("landmark-port")
-    static let portWest: UIImage? = load("port-west")
+    static func prewarmAsync() {
+        // 按需惰性缩略解码，严禁进局瞬间集中把几十兆 PNG 压进真机内存触发闪退。
+    }
 
-    // MARK: - 多文明活态战旗（攻占飘扬 / 战败折断）与战舰
-    static let bannerVictoryEast: UIImage? = load("banner-victory-east")
-    static let bannerVictoryWest: UIImage? = load("banner-victory-west")
-    static let bannerVictoryIslamic: UIImage? = load("banner-victory-islamic")
-    static let bannerVictorySteppe: UIImage? = load("banner-victory-steppe")
+    static var compassRose: UIImage? { load("compass-rose", maxPx: 256) }
+    static var scrollCorner: UIImage? { load("scroll-corner", maxPx: 256) }
 
-    static let bannerFallenEast: UIImage? = load("fx-banner-fallen")
-    static let bannerFallenWest: UIImage? = load("banner-fallen-west")
-    static let bannerFallenIslamic: UIImage? = load("banner-fallen-islamic")
+    static var capitalChinese: UIImage? { load("landmark-capital", maxPx: 192) }
+    static var capitalJapanese: UIImage? { load("capital-japanese", maxPx: 192) }
+    static var capitalWestern: UIImage? { load("capital-western", maxPx: 192) }
+    static var capitalClassical: UIImage? { load("capital-classical", maxPx: 192) }
+    static var capitalNordic: UIImage? { load("capital-nordic", maxPx: 192) }
+    static var capitalSlavic: UIImage? { load("capital-slavic", maxPx: 192) }
+    static var capitalIslamic: UIImage? { load("capital-islamic", maxPx: 192) }
+    static var capitalSteppe: UIImage? { load("capital-steppe", maxPx: 192) }
+    static var capitalIndian: UIImage? { load("capital-indian", maxPx: 192) }
+    static var capitalMesoamerican: UIImage? { load("capital-mesoamerican", maxPx: 192) }
 
-    static let navalEast: UIImage? = load("naval-east")
-    static let navalWest: UIImage? = load("naval-west")
-    static let navalNordic: UIImage? = load("naval-nordic")
+    static var fortressEast: UIImage? { load("landmark-fortress", maxPx: 160) }
+    static var fortressWest: UIImage? { load("fortress-west", maxPx: 160) }
+    static var fortressIslamic: UIImage? { load("fortress-islamic", maxPx: 160) }
+    static var portEast: UIImage? { load("landmark-port", maxPx: 160) }
+    static var portWest: UIImage? { load("port-west", maxPx: 160) }
 
-    // MARK: - 无圆框传报与世界事件插画
-    static let heraldWarEast: UIImage? = load("herald-war")
-    static let heraldWarWest: UIImage? = load("herald-war-west")
-    static let heraldEdictEast: UIImage? = load("herald-edict")
-    static let heraldEdictWest: UIImage? = load("herald-edict-west")
-    static let heraldPeace: UIImage? = load("herald-peace")
-    static let heraldUprising: UIImage? = load("herald-uprising")
+    static var bannerVictoryEast: UIImage? { load("banner-victory-east", maxPx: 160) }
+    static var bannerVictoryWest: UIImage? { load("banner-victory-west", maxPx: 160) }
+    static var bannerVictoryIslamic: UIImage? { load("banner-victory-islamic", maxPx: 160) }
+    static var bannerVictorySteppe: UIImage? { load("banner-victory-steppe", maxPx: 160) }
 
-    // MARK: - 攻城、四季天气与世界灾丰事件真 AI 透明图
-    static let fxSiegeFlame: UIImage? = load("fx-siege-flame")
-    static let fxHarvest: UIImage? = load("fx-harvest")
-    static let fxTrade: UIImage? = load("fx-trade")
-    static let fxTalent: UIImage? = load("fx-talent")
-    static let fxWeatherSnow: UIImage? = load("fx-weather-snow")
-    static let fxWeatherDrought: UIImage? = load("fx-weather-drought")
-    static let fxWeatherStorm: UIImage? = load("fx-weather-storm")
-    static let fxPlague: UIImage? = load("fx-plague")
+    static var bannerFallenEast: UIImage? { load("fx-banner-fallen", maxPx: 160) }
+    static var bannerFallenWest: UIImage? { load("banner-fallen-west", maxPx: 160) }
+    static var bannerFallenIslamic: UIImage? { load("banner-fallen-islamic", maxPx: 160) }
 
-    // MARK: - 四季实时大气粒子真 AI 透明图
-    static let fxPetal: UIImage? = load("fx-petal")
-    static let fxMaple: UIImage? = load("fx-maple")
-    static let fxSnowflake: UIImage? = load("fx-snowflake")
-    static let fxRaindrop: UIImage? = load("fx-raindrop")
-    static let fxCloudMist: UIImage? = load("fx-cloud-mist")
+    static var navalEast: UIImage? { load("naval-east", maxPx: 160) }
+    static var navalWest: UIImage? { load("naval-west", maxPx: 160) }
+    static var navalNordic: UIImage? { load("naval-nordic", maxPx: 160) }
 
-    // MARK: - 36 帧（6×6 @ 30fps）高密度连续序列帧动画图集
-    static let atlasBattle36: UIImage? = load("atlas-battle-36")
-    static let atlasNaval36: UIImage? = load("atlas-naval-36")
-    static let atlasSiege36: UIImage? = load("atlas-siege-36")
-    static let atlasRainRipple36: UIImage? = load("atlas-rain-ripple-36")
-    static let atlasAmphibious36: UIImage? = load("atlas-amphibious-36")
-    static let atlasCaptureFlag36: UIImage? = load("atlas-capture-flag-36")
+    static var heraldWarEast: UIImage? { load("herald-war", maxPx: 192) }
+    static var heraldWarWest: UIImage? { load("herald-war-west", maxPx: 192) }
+    static var heraldEdictEast: UIImage? { load("herald-edict", maxPx: 192) }
+    static var heraldEdictWest: UIImage? { load("herald-edict-west", maxPx: 192) }
+    static var heraldPeace: UIImage? { load("herald-peace", maxPx: 192) }
+    static var heraldUprising: UIImage? { load("herald-uprising", maxPx: 192) }
 
-    // MARK: - 真 AI 篆刻朱砂／鎏金古风印章（全面取代代码简易红框）
-    static let sealChronicle: UIImage? = load("seal-chronicle")
-    static let sealReplay: UIImage? = load("seal-replay")
-    static let sealCourt: UIImage? = load("seal-court")
-    static let sealCouncil: UIImage? = load("seal-council")
+    static var fxSiegeFlame: UIImage? { load("fx-siege-flame", maxPx: 160) }
+    static var fxHarvest: UIImage? { load("fx-harvest", maxPx: 128) }
+    static var fxTrade: UIImage? { load("fx-trade", maxPx: 128) }
+    static var fxTalent: UIImage? { load("fx-talent", maxPx: 128) }
+    static var fxWeatherSnow: UIImage? { load("fx-weather-snow", maxPx: 128) }
+    static var fxWeatherDrought: UIImage? { load("fx-weather-drought", maxPx: 128) }
+    static var fxWeatherStorm: UIImage? { load("fx-weather-storm", maxPx: 128) }
+    static var fxPlague: UIImage? { load("fx-plague", maxPx: 128) }
 
-    // MARK: - 极简古舆图焦墨细线都城印记（白底提纯透明墨线，与宣纸国色无缝融纸）
-    static let stampCapitalEast: UIImage? = load("stamp-capital-east")
-    static let stampCapitalWest: UIImage? = load("stamp-capital-west")
-    static let stampCapitalIslamic: UIImage? = load("stamp-capital-islamic")
+    static var fxPetal: UIImage? { load("fx-petal", maxPx: 96) }
+    static var fxMaple: UIImage? { load("fx-maple", maxPx: 96) }
+    static var fxSnowflake: UIImage? { load("fx-snowflake", maxPx: 96) }
+    static var fxRaindrop: UIImage? { load("fx-raindrop", maxPx: 96) }
+    static var fxCloudMist: UIImage? { load("fx-cloud-mist", maxPx: 192) }
+
+    /// 36 帧（6×6）图集按 576px 缩略解码（每张仅 ~1.3MB 而非 9MB，省下 7 倍内存，屏幕上 48pt 依然清晰锐利）。
+    static var atlasBattle36: UIImage? { load("atlas-battle-36", maxPx: 576) }
+    static var atlasNaval36: UIImage? { load("atlas-naval-36", maxPx: 576) }
+    static var atlasSiege36: UIImage? { load("atlas-siege-36", maxPx: 576) }
+    static var atlasRainRipple36: UIImage? { load("atlas-rain-ripple-36", maxPx: 576) }
+    static var atlasAmphibious36: UIImage? { load("atlas-amphibious-36", maxPx: 576) }
+    static var atlasCaptureFlag36: UIImage? { load("atlas-capture-flag-36", maxPx: 576) }
+
+    static var sealChronicle: UIImage? { load("seal-chronicle", maxPx: 144) }
+    static var sealReplay: UIImage? { load("seal-replay", maxPx: 144) }
+    static var sealCourt: UIImage? { load("seal-court", maxPx: 144) }
+    static var sealCouncil: UIImage? { load("seal-council", maxPx: 144) }
+
+    static var stampCapitalEast: UIImage? { load("stamp-capital-east", maxPx: 160) }
+    static var stampCapitalWest: UIImage? { load("stamp-capital-west", maxPx: 160) }
+    static var stampCapitalIslamic: UIImage? { load("stamp-capital-islamic", maxPx: 160) }
 
     static func capitalInkStamp(for culture: String?) -> UIImage? {
         switch CultureStyle.of(culture) {
@@ -135,17 +146,16 @@ enum BundleArt {
         }
     }
 
-    // MARK: - 4×1 透明序列帧动画图集（1024×256，供 SpriteAnimator 与 Metal GPU 管线共享）
-    static let sheetInfantryMarch: UIImage? = load("sheet-infantry-march")
-    static let sheetCavalryCharge: UIImage? = load("sheet-cavalry-charge")
-    static let sheetWarshipEast: UIImage? = load("sheet-warship-east")
-    static let sheetWarshipWest: UIImage? = load("sheet-warship-west")
-    static let sheetWarshipNordic: UIImage? = load("sheet-warship-nordic")
-    static let sheetWarshipIslamic: UIImage? = load("sheet-warship-islamic")
-    static let sheetTransportShip: UIImage? = load("sheet-transport-ship")
-    static let sheetBattleClash: UIImage? = load("sheet-battle-clash")
-    static let sheetSiegeSmoke: UIImage? = load("sheet-siege-smoke")
-    static let sheetBannerWave: UIImage? = load("sheet-banner-wave")
+    static var sheetInfantryMarch: UIImage? { load("sheet-infantry-march", maxPx: 512) }
+    static var sheetCavalryCharge: UIImage? { load("sheet-cavalry-charge", maxPx: 512) }
+    static var sheetWarshipEast: UIImage? { load("sheet-warship-east", maxPx: 512) }
+    static var sheetWarshipWest: UIImage? { load("sheet-warship-west", maxPx: 512) }
+    static var sheetWarshipNordic: UIImage? { load("sheet-warship-nordic", maxPx: 512) }
+    static var sheetWarshipIslamic: UIImage? { load("sheet-warship-islamic", maxPx: 512) }
+    static var sheetTransportShip: UIImage? { load("sheet-transport-ship", maxPx: 512) }
+    static var sheetBattleClash: UIImage? { load("sheet-battle-clash", maxPx: 512) }
+    static var sheetSiegeSmoke: UIImage? { load("sheet-siege-smoke", maxPx: 512) }
+    static var sheetBannerWave: UIImage? { load("sheet-banner-wave", maxPx: 512) }
 
     static func spriteSheet(_ name: String) -> UIImage? {
         switch name {
@@ -165,11 +175,10 @@ enum BundleArt {
         case "atlas-rain-ripple-36": return atlasRainRipple36
         case "atlas-amphibious-36": return atlasAmphibious36
         case "atlas-capture-flag-36": return atlasCaptureFlag36
-        default: return load(name)
+        default: return load(name, maxPx: 512)
         }
     }
 
-    /// 将全应用面板与印信语义映射至对应的 museum-grade 真 AI 雕刻印章，彻底消灭代码红框单字印。
     static func sealArt(for tag: String) -> UIImage? {
         switch tag.trimmingCharacters(in: .whitespacesAndNewlines) {
         case "史", "纪", "历", "卷", "典": return sealChronicle ?? sealCouncil
@@ -184,7 +193,6 @@ enum BundleArt {
         }
     }
 
-    // MARK: - 默认兼容别名（全部为无圆框纯 AI 透明图）
     static var landmarkCapital: UIImage? { capitalChinese }
     static var landmarkFortress: UIImage? { fortressEast }
     static var landmarkPort: UIImage? { portEast }
@@ -196,7 +204,6 @@ enum BundleArt {
     static var fxBannerFallen: UIImage? { bannerFallenEast }
     static var fxNavalClash: UIImage? { navalEast }
 
-    // MARK: - 按文明大系自动调度差异化建筑、旗帜、战舰与兵戈画卷
     static func capital(for culture: String?) -> UIImage? {
         switch CultureStyle.of(culture) {
         case .chinese: return capitalChinese
@@ -257,54 +264,41 @@ enum BundleArt {
         CultureStyle.of(culture).isEasternWeapon ? heraldEdictEast : (heraldEdictWest ?? heraldEdictEast)
     }
 
-    /// 供 Metal `MTKTextureLoader` 载入世界写实山脉、森林、沙漠与卷轴角饰贴图。
     static func url(_ name: String) -> URL? {
         if let u = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "Art") { return u }
         return Bundle.main.url(forResource: name, withExtension: "png")
     }
 
-    private static func load(_ name: String) -> UIImage? {
-        guard let u = url(name), let img = UIImage(contentsOfFile: u.path) else { return nil }
-        return img.preparingForDisplay() ?? img
-    }
-
-    private static var prewarmed = false
-    /// 后台预解码高密度 36 帧战斗/围城/插旗/登陆动画图集与四季粒子，彻底消除首次触发战争动效时的主线程 PNG 解码卡顿。
-    static func prewarmAsync() {
-        guard !prewarmed else { return }
-        prewarmed = true
-        DispatchQueue.global(qos: .utility).async {
-            _ = atlasBattle36
-            _ = atlasNaval36
-            _ = atlasSiege36
-            _ = atlasCaptureFlag36
-            _ = atlasAmphibious36
-            _ = atlasRainRipple36
-            _ = bannerVictoryEast
-            _ = bannerVictoryWest
-            _ = bannerVictoryIslamic
-            _ = bannerVictorySteppe
-            _ = bannerFallenEast
-            _ = bannerFallenWest
-            _ = bannerFallenIslamic
-            _ = fxSiegeFlame
-            _ = fxHarvest
-            _ = fxTrade
-            _ = fxTalent
-            _ = fxWeatherSnow
-            _ = fxWeatherDrought
-            _ = fxWeatherStorm
-            _ = fxPlague
-            _ = fxPetal
-            _ = fxMaple
-            _ = fxSnowflake
-            _ = fxRaindrop
-            _ = fxCloudMist
+    /// 使用 ImageIO 硬件缩略管线直接按目标像素上限解码（不先把 1536×1536 9MB 原图铺满内存），并按真实像素字节记入有界缓存。
+    private static func load(_ name: String, maxPx: Int) -> UIImage? {
+        let key = "\(name)#\(maxPx)" as NSString
+        if let hit = cache.object(forKey: key) { return hit }
+        guard let u = url(name) else { return nil }
+        let image: UIImage?
+        if let src = CGImageSourceCreateWithURL(u as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary) {
+            let opts: [CFString: Any] = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceShouldCacheImmediately: true,
+                kCGImageSourceThumbnailMaxPixelSize: maxPx
+            ]
+            if let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) {
+                image = UIImage(cgImage: cg)
+            } else {
+                image = UIImage(contentsOfFile: u.path)
+            }
+        } else {
+            image = UIImage(contentsOfFile: u.path)
         }
+        guard let image else { return nil }
+        let cost: Int
+        if let cg = image.cgImage { cost = cg.bytesPerRow * cg.height }
+        else { cost = Int(image.size.width * image.size.height * image.scale * image.scale * 4) }
+        cache.setObject(image, forKey: key, cost: max(1, cost))
+        return image
     }
 }
 
-/// 全应用统一古风手绘印信与徽章（优先呈现高精插画/朱砂鎏金印信，缺失时优雅回退至水墨线描纹章）。
 struct ArtEmblem: View {
     let image: UIImage?
     var size: CGFloat = 32

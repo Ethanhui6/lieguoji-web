@@ -1116,7 +1116,7 @@ struct FoundingView: View {
     @State private var started = Date()
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { context in
             let reveal = liveReveal
             let canSkip = controller.revealClock != nil && reveal > 0.06 && !ShotTour.on
             let waited = reveal >= 1 ? context.date.timeIntervalSince(started) : 0

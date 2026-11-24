@@ -290,9 +290,14 @@ import LieguojiCore
             guard epoch == worldEpoch else { return }
             controller.editorMap = nil
             phase = .playing; controller.interactive = true
-            await archiveCurrent()
-            save()
-            autoConnect()
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                guard let self, self.worldEpoch == epoch, self.phase == .playing else { return }
+                await self.archiveCurrent()
+                guard self.worldEpoch == epoch, self.phase == .playing else { return }
+                self.save()
+                self.autoConnect()
+            }
         } catch {
             guard epoch == worldEpoch else { return }
             failure = error.localizedDescription
@@ -420,6 +425,9 @@ import LieguojiCore
             let world: WorldMap
             switch founded {
             case .native(let created):
+                MapLabelsView.clearImages()
+                BundleArt.clearCache()
+                InkPlayerHostView.clearCache()
                 let loaded = try await decodeFinalNative(created, epoch: epoch, prepareLayers: true)
                 guard epoch == worldEpoch else { return }
                 if let layers = loaded.layers { MapRenderer.prepared = layers }
@@ -439,6 +447,9 @@ import LieguojiCore
                 guard epoch == worldEpoch else { return }
                 world = loaded.world
             case .web(let built):
+                MapLabelsView.clearImages()
+                BundleArt.clearCache()
+                InkPlayerHostView.clearCache()
                 let mountBefore = controller.mapMountToken
                 world = try await open(built)
                 try checkWorld(epoch)
@@ -455,9 +466,15 @@ import LieguojiCore
             phase = .playing; controller.interactive = true
             // A coast too broken for the provinces asked for: the engine took more.
             if world.meta.provinces.count > options.provinceCount { notice = "这片陆地支离破碎，州郡已增至 \(world.meta.provinces.count) 个" }
-            await archiveCurrent()
-            save()
-            autoConnect()
+            // 错峰延后 1.5 秒再执行归档与首次落盘，避免进局瞬间把地图重建、Metal 渲染与大体积存档序列化叠在一起触发真机内存峰值闪退。
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                guard let self, self.worldEpoch == epoch, self.phase == .playing else { return }
+                await self.archiveCurrent()
+                guard self.worldEpoch == epoch, self.phase == .playing else { return }
+                self.save()
+                self.autoConnect()
+            }
         } catch {
             guard epoch == worldEpoch else { return }
             failure = error.localizedDescription
@@ -504,13 +521,18 @@ import LieguojiCore
                 try checkWorld(epoch)
                 guard let mapData = opened.map else { throw EngineError.message("存档缺少地图") }
                 let loaded = try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared) in
-                    struct Saved: Decodable { let bin: String; let meta: WorldMeta }
-                    let m = try JSONDecoder().decode(Saved.self, from: mapData)
-                    guard let bin = Data(base64Encoded: m.bin) else { throw EngineError.message("地图数据损坏") }
-                    let w = try WorldMap(binary: bin, meta: m.meta)
-                    return (w, try JSONDecoder().decode(GameState.self, from: opened.state), MapLayers.prepare(w))
+                    try autoreleasepool {
+                        struct Saved: Decodable { let bin: String; let meta: WorldMeta }
+                        let m = try JSONDecoder().decode(Saved.self, from: mapData)
+                        guard let bin = Data(base64Encoded: m.bin) else { throw EngineError.message("地图数据损坏") }
+                        let w = try WorldMap(binary: bin, meta: m.meta)
+                        return (w, try JSONDecoder().decode(GameState.self, from: opened.state), MapLayers.prepare(w))
+                    }
                 }.value
                 try checkWorld(epoch)
+                MapLabelsView.clearImages()
+                BundleArt.clearCache()
+                InkPlayerHostView.clearCache()
                 MapRenderer.prepared = loaded.2
                 state = nil
                 controller.armies = []
@@ -521,8 +543,6 @@ import LieguojiCore
                 controller.snapArmies = true
                 controller.reveal = 0
                 map = loaded.0; worldID = UUID(); controller.world = nil
-                BundleArt.prewarmAsync()
-                EffectsView.prewarmAsync()
                 apply(loaded.1); lastSavedDay = loaded.1.day
                 world = loaded.0
             } else {
@@ -570,23 +590,25 @@ import LieguojiCore
         let finalStateData = await native.state() ?? made.state
         try checkWorld(epoch)
         return try await Task.detached(priority: .userInitiated) { () throws -> (WorldMap, GameState, MapLayers.Prepared?) in
-            struct Saved: Decodable { let bin: String; let meta: WorldMeta }
-            let m = try JSONDecoder().decode(Saved.self, from: mapData)
-            guard let bin = Data(base64Encoded: m.bin) else { throw EngineError.message("地图数据损坏") }
-            var world = try WorldMap(binary: bin, meta: m.meta)
-            let finalState = try JSONDecoder().decode(GameState.self, from: finalStateData)
-            // 将启用本作规则后的最终国号、国色、疆域与标签同步进地图元数据
-            for (i, owner) in finalState.owners.enumerated() where i < world.meta.provinces.count {
-                world.meta.provinces[i].nation = owner
+            try autoreleasepool {
+                struct Saved: Decodable { let bin: String; let meta: WorldMeta }
+                let m = try JSONDecoder().decode(Saved.self, from: mapData)
+                guard let bin = Data(base64Encoded: m.bin) else { throw EngineError.message("地图数据损坏") }
+                var world = try WorldMap(binary: bin, meta: m.meta)
+                let finalState = try JSONDecoder().decode(GameState.self, from: finalStateData)
+                // 将启用本作规则后的最终国号、国色、疆域与标签同步进地图元数据
+                for (i, owner) in finalState.owners.enumerated() where i < world.meta.provinces.count {
+                    world.meta.provinces[i].nation = owner
+                }
+                for (i, s) in finalState.nations.enumerated() {
+                    guard let id = s.id, let name = s.name, let color = s.color else { continue }
+                    let entry = WorldMeta.Nation(id: id, name: name, color: color, line: s.line ?? color, capital: s.capital ?? -1, culture: s.culture ?? "", polity: s.polity ?? "", religion: s.religion ?? "")
+                    if i < world.meta.nations.count { world.meta.nations[i] = entry }
+                    else { world.meta.nations.append(entry) }
+                }
+                if let labels = finalState.labels { world.meta.labels = labels }
+                return (world, finalState, prepareLayers ? MapLayers.prepare(world) : nil)
             }
-            for (i, s) in finalState.nations.enumerated() {
-                guard let id = s.id, let name = s.name, let color = s.color else { continue }
-                let entry = WorldMeta.Nation(id: id, name: name, color: color, line: s.line ?? color, capital: s.capital ?? -1, culture: s.culture ?? "", polity: s.polity ?? "", religion: s.religion ?? "")
-                if i < world.meta.nations.count { world.meta.nations[i] = entry }
-                else { world.meta.nations.append(entry) }
-            }
-            if let labels = finalState.labels { world.meta.labels = labels }
-            return (world, finalState, prepareLayers ? MapLayers.prepare(world) : nil)
         }.value
     }
     /// 本机 Swift 建好的世界（NativeHost.create）：先完成规则生效与国名国色同步，再一次性呈现在地图上。
@@ -612,8 +634,6 @@ import LieguojiCore
         } else {
             map = loaded.0; worldID = UUID(); controller.world = nil
         }
-        BundleArt.prewarmAsync()
-        EffectsView.prewarmAsync()
         apply(loaded.1)
         lastSavedDay = loaded.1.day
         return loaded.0

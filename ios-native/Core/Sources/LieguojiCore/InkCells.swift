@@ -273,7 +273,7 @@ public final class InkCells: @unchecked Sendable {
             }
             let seeds = buildFriendlySeeds(armies: h.armies, expectedOwner: h.attacker)
             guard !seeds.isEmpty else { continue }
-            let radiusFactor: Float = h.kind == .reclaim ? 0.86 : 0.56
+            let radiusFactor: Float = h.kind == .reclaim ? 0.86 : 0.45
             let budget = t.scale * radiusFactor * Self.width(troops: max(4000, h.troops))
             spread(from: seeds, budget: budget, within: nil) { c, d, delay in
                 guard owner(c) == h.attacker else { return }

@@ -527,10 +527,7 @@ public enum MapLayers {
         return (0..<map.cellCount).map { c in
             guard map.isLand(c) else { return 1 }
             let lit = gx[c] * lx + gy[c] * ly
-            let elev = Float(map.elevation[c])
-            let elevBoost = max(0, elev - 48) * 0.0022
-            let valleyAO: Float = elev < 30 ? -0.025 : 0
-            return min(1.18, max(0.79, 1 + max(-0.21, min(0.18, lit * 0.165)) + elevBoost + valleyAO))
+            return 1 + max(-0.18, min(0.14, lit * 0.165))
         }
     }
 

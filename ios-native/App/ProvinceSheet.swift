@@ -58,7 +58,7 @@ struct ProvinceSheet: View {
                     )
 
                     // 1. 置顶主权国家大卡：点击任意处立即直达「国家详情」，再也不用翻到最底找入口
-                    sovereignHeroCard(map: map, provinceName: p.name, owner: owner, nation: nation, info: info)
+                    ViewBoundary { sovereignHeroCard(map: map, provinceName: p.name, owner: owner, nation: nation, info: info) }
                         .padding(.horizontal, Theme.Layout.pageInset)
 
                     // 2. 四格核心指标（人口 / 存粮 / 城防或驻军 / 特产一键可改）
@@ -116,11 +116,11 @@ struct ProvinceSheet: View {
 
                     switch tab {
                     case .overview:
-                        overviewSection(map: map, p: p, owner: owner, nation: nation, armies: armies, port: port, holyOf: holyOf)
+                        ViewBoundary { overviewSection(map: map, p: p, owner: owner, nation: nation, armies: armies, port: port, holyOf: holyOf) }
                     case .military:
-                        militarySection(map: map, owner: owner)
+                        ViewBoundary { militarySection(map: map, owner: owner) }
                     case .admin:
-                        adminSection(map: map, owner: owner, nation: nation, holyOf: holyOf)
+                        ViewBoundary { adminSection(map: map, owner: owner, nation: nation, holyOf: holyOf) }
                     }
                 }
                 .padding(.bottom, 36)

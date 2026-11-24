@@ -156,11 +156,11 @@ struct ArmySheet: View {
 
                     switch tab {
                     case .orders:
-                        ordersSection(map: map, a: a, fighting: fighting, peers: peers)
+                        ViewBoundary { ordersSection(map: map, a: a, fighting: fighting, peers: peers) }
                     case .reorganize:
-                        reorganizeSection(a: a)
+                        ViewBoundary { reorganizeSection(a: a) }
                     case .service:
-                        serviceSection(a: a)
+                        ViewBoundary { serviceSection(a: a) }
                     }
                 }
                 .padding(.bottom, 36)
@@ -698,25 +698,27 @@ struct FleetSheet: View {
 
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
-                    fleetTopSummary(f: f, nation: nation, tint: tint, rank: rank, cls: cls, curMission: curMission)
+                    ViewBoundary { fleetTopSummary(f: f, nation: nation, tint: tint, rank: rank, cls: cls, curMission: curMission) }
 
                     switch tab {
                     case .orders:
-                        fleetOrdersSection(
-                            map: map,
-                            f: f,
-                            busy: busy,
-                            curMission: curMission,
-                            enemyPortsCount: enemyPorts.count,
-                            shownEnemy: shownEnemy,
-                            friendlyPortsCount: friendlyPorts.count,
-                            shownFriendly: shownFriendly,
-                            targetIsEnemy: targetIsEnemy
-                        )
+                        ViewBoundary {
+                            fleetOrdersSection(
+                                map: map,
+                                f: f,
+                                busy: busy,
+                                curMission: curMission,
+                                enemyPortsCount: enemyPorts.count,
+                                shownEnemy: shownEnemy,
+                                friendlyPortsCount: friendlyPorts.count,
+                                shownFriendly: shownFriendly,
+                                targetIsEnemy: targetIsEnemy
+                            )
+                        }
                     case .reorganize:
-                        fleetReorganizeSection(f: f, cls: cls)
+                        ViewBoundary { fleetReorganizeSection(f: f, cls: cls) }
                     case .ports:
-                        fleetPortsSection(map: map, f: f, tint: tint, enemies: enemies, allMapPorts: allMapPorts)
+                        ViewBoundary { fleetPortsSection(map: map, f: f, tint: tint, enemies: enemies, allMapPorts: allMapPorts) }
                     }
                 }
                 .padding(.bottom, 24)

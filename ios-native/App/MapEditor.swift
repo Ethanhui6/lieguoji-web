@@ -682,7 +682,7 @@ struct EditorView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            topBar
+            ViewBoundary { topBar }
                 .padding(.horizontal, landscape ? 18 : 14)
                 .padding(.top, landscape ? 2 : 4)
 
@@ -700,13 +700,13 @@ struct EditorView: View {
             Spacer(minLength: 8)
 
             if collapsed {
-                collapsedBar
+                ViewBoundary { collapsedBar }
                     .offset(y: max(-24, min(14, rubberBandDragY)))
                     .gesture(deckDragGesture)
                     .padding(.bottom, landscape ? 6 : 8)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
-                bottomDeck
+                ViewBoundary { bottomDeck }
                     .offset(y: max(-18, min(36, rubberBandDragY)))
                     .padding(.horizontal, landscape ? 24 : 12)
                     .padding(.bottom, landscape ? 4 : 6)
@@ -874,9 +874,9 @@ struct EditorView: View {
             deckGrabber
             VStack(spacing: landscape ? 8 : 10) {
                 switch editor.step {
-                case .terrain: terrainTools
-                case .provinces: provinceTools
-                case .nations: nationTools
+                case .terrain: ViewBoundary { terrainTools }
+                case .provinces: ViewBoundary { provinceTools }
+                case .nations: ViewBoundary { nationTools }
                 }
             }
             .padding(.horizontal, landscape ? 11 : 14)

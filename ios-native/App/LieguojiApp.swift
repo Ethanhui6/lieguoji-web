@@ -445,9 +445,23 @@ struct SheetHeader: View {
     }
 }
 
+/// 非泛型 SwiftUI 视图边界：切断巨型嵌套 `some View` 泛型类型树与动态 `___chkstk_darwin` 栈分配，
+/// 让 SwiftUI AttributeGraph 在独立浅栈帧中求值子视图，彻底规避 iOS 真机 1 MB 主线程栈溢出。
+struct ViewBoundary: View {
+    private let build: () -> AnyView
+    init<V: View>(@ViewBuilder _ content: @escaping () -> V) {
+        self.build = { AnyView(content()) }
+    }
+    var body: some View { build() }
+}
+
 /// 奏折统一温润宣纸卡片：与底纸自然融合的暖宣底色 + 单层精致墨线收口（彻底清除旧版双框 2.5pt 泛白亮边与反光边）。
-struct Group2<Content: View>: View {
-    @ViewBuilder let content: Content
+/// 非泛型设计：切断所有内页卡片向父视图传播的巨型 `ModifiedContent` 泛型类型膨胀。
+struct Group2: View {
+    private let content: AnyView
+    init<Content: View>(@ViewBuilder content: () -> Content) {
+        self.content = AnyView(content())
+    }
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
         VStack(spacing: 0) { content }
@@ -502,6 +516,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("4.2.10", ["【根据真机 .ips 崩溃堆栈彻底根治进图闪退（SwiftUI 主线程 1 MB 栈溢出）】结合真机面包屑（play.enter，内存 212MB/温控正常）与真机 .ips 反汇编锁定 5 层崩溃链：单结构体 GameView 将顶栏/底栏/侧栏/5 条操作横幅/双份 16 分支弹窗与 28 组修饰符堆成 3,911B 巨型泛型 Body 与 56 次动态 ___chkstk_darwin 栈分配，模拟器 8MB 栈可过而 iPhone 真机 1MB 主线程栈在进入地图瞬间即刻溢出；现已将 GameView 彻底重构为 20 个独立具体 View 结构体与双 ViewModifier，大幅压缩栈帧并降低 HUD 无谓重绘发热。",
+                    "【同步排空全站其余巨型视图栈溢出隐患】全二进制扫描发现国家页（9,436B）、山河回放（2,700B）、州郡页（2,485B）、自绘地图（2,245B）与陆海军团页（2,185B）均存在同类巨型泛型嵌套；现将 Group2 与 FoldSection 升级为非泛型边界并在上述 6 大页面全量切分视图边界，进图与切换任意详情页均稳如磐石。",
+                    "【Core 全局钩子清理与单测全绿】修复 NativeEngine 初始化未清 DeclarationEngine.opinionBias 的旧世界闭包残留，并补齐 CreationStabilityTests 退出清理。"]),
         ("4.2.9", ["【彻底根治建图与读档进入游戏闪退（实证真凶清除）】查明 v4.2.6–v4.2.8 世界切换瞬间 `GameModel` 在新 `MapView` 尚未挂载前就同步调用 `controller.flushSync()` 将新世界灌入濒死旧地图渲染器、触发 `baseColors` 数组越界（SIGTRAP）或 Metal 顶点缓冲越界读的致命漏洞；现为 `MapController` 引入严格 `activeWorldID` 世界代次锁与原子 `bindController/unregisterSync` 归属隔离，旧视图立即静默并抢先释放瞬态墨场/拓扑，`layoutSubviews` 异步延后起动开卷消除 UIKit 布局重入。",
                    "【Metal 硬边界防护 × 真机内存再省 ~45MB × 存盘零尖峰】`MapRenderer.setMap` 硬拒跨拓扑调用、`baseColors`/`recolor`/`draw`/`drawInk` 全链路补齐顶点缓冲长度守卫、`makeSafeBuffer` 消灭空数组 UB 并开启 `framebufferOnly = true`；`PreviewWorld.Inputs` 与 `NativeHost.creationInputs` 共享同一份 20k 静态格网（立省 ~45MB 常驻内存）；`JS.jsonData` 流式 UTF-8 写出消除进局存盘 ~60MB 临时堆尖峰。",
                    "【Core 建世防崩清雷 × 真机零开销诊断面板】清除 `CreationPolitics`/`CreationForces`/`CreationGeography` 中全部随机种子可触发的 `precondition`/强制解包 `!` 崩溃点，并新增 12 组多模板（多大陆/联合大陆/群岛/高山）× 和平/战乱 × 有机疆界压力单测；「设置 › 性能与帧率」新增轻量「运行诊断与内存」折叠栏，可随时查看与复制实时内存、温控档位与上次运行轨迹。"]),

@@ -140,17 +140,19 @@ struct NationInfo: Decodable {
 
 /// CollapsibleSectionUI (original StateInfoNewUI sections): a header with a chevron; 0.25 s fold
 /// animation (m_AnimationDuration). The default state is given per section (m_StartExpanded).
-struct FoldSection<Content: View>: View {
+/// 非泛型延迟闭包设计：彻底切断折叠分节向父视图传播的巨型泛型类型树，且收起时不构建子视图树。
+struct FoldSection: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let title: String
     var summary: String?
     private let key: String
     @State var expanded: Bool
-    @ViewBuilder let content: () -> Content
+    private let content: () -> AnyView
     /// 展开与否按标题（去掉括号里的数目）记住，下次打开还是玩家上次的样子；收起时标题右侧给一行摘要，
     /// 不展开也知道大概，页面不用一路往下翻。
-    init(_ title: String, expanded: Bool, summary: String? = nil, @ViewBuilder content: @escaping () -> Content) {
-        self.title = title; self.summary = summary; self.content = content
+    init<Content: View>(_ title: String, expanded: Bool, summary: String? = nil, @ViewBuilder content: @escaping () -> Content) {
+        self.title = title; self.summary = summary
+        self.content = { AnyView(content()) }
         key = "fold." + (title.components(separatedBy: "（").first ?? title)
         _expanded = State(initialValue: (UserDefaults.standard.object(forKey: key) as? Bool) ?? expanded)
     }
@@ -298,7 +300,7 @@ struct NationSheet: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
                     if let focus {
-                        focusPage(focus, info: shownInfo, map: map, state: state, meta: meta)
+                        ViewBoundary { focusPage(focus, info: shownInfo, map: map, state: state, meta: meta) }
                     } else {
                     let lex = LocalizationEngine.lexicon(culture: shownInfo?.culture ?? s.culture ?? meta?.culture, polity: shownInfo?.polity ?? s.polity ?? meta?.polity, style: shownInfo?.style)
                     SheetHeader(title: meta?.name ?? shownInfo?.name ?? "", subtitle: s.alive ? "\(s.provinces) \(lex.adminUnit) · \(s.cities) 城" : "已亡", color: meta.map { Names.color($0.color) }, seal: shownInfo?.emblem ?? "国")
@@ -320,7 +322,7 @@ struct NationSheet: View {
                     NationTabs(tab: $tab, courtTitle: lex.courtTabTitle)
                     if let shownInfo {
                         if bodyReady || ShotTour.on || model.cachedNationInfo(nation) != nil {
-                            tabContent(shownInfo, map, state)
+                            ViewBoundary { tabContent(shownInfo, map, state) }
                         }
                     } else {
                         PanelPending(failed: failed, busy: true) { Task { await reload() } }
@@ -390,7 +392,7 @@ struct NationSheet: View {
                 .background(MemorialPaper().ignoresSafeArea())
                 .presentationDetents([.fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
-            .sheet(item: $picking) { pick in pickSheet(pick, map, state).background(MemorialPaper().ignoresSafeArea()).presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section) }
+            .sheet(item: $picking) { pick in ViewBoundary { pickSheet(pick, map, state) }.background(MemorialPaper().ignoresSafeArea()).presentationDetents([.medium]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section) }
             .sheet(item: $tree, onDismiss: { Task { await reload() } }) { t in
                 FamilyTreeSheet(model: model, family: t.id, name: t.name)
                     .background(MemorialPaper().ignoresSafeArea())
@@ -413,29 +415,31 @@ struct NationSheet: View {
                 .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
             .sheet(isPresented: $creatingHouse) {
-                let lex = LocalizationEngine.lexicon(culture: info?.culture ?? s.culture ?? meta?.culture, polity: info?.polity ?? s.polity ?? meta?.polity, style: info?.style)
-                let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
-                VStack(alignment: .leading, spacing: 14) {
-                    SheetHeader(title: "扶立新\(lex.houseUnitLabel)", subtitle: lex.isRepublican ? "在指定\(lex.adminUnit)设立新地方派系与财团" : "赐封\(lex.adminUnit)，册立新门阀", seal: "政")
-                    Group2 {
-                        PaperMenu(title: "选定\(lex.adminUnit)", items: owned.map { ($0, map.meta.provinces[$0].name) }, selection: $newHouseProvince)
-                    }
-                    .padding(.horizontal, 16)
-                    TextField("", text: $newHouseSurname, prompt: Text("名称／族姓（留空按本国文化自动取名）").foregroundColor(Theme.ink2.opacity(0.6)))
-                        .paperField().padding(.horizontal, 16)
-                    SealButton(title: lex.isRepublican ? "核准设立" : "颁诏册立", disabled: !owned.contains(newHouseProvince)) {
-                        let p = newHouseProvince
-                        let s = newHouseSurname.trimmingCharacters(in: .whitespacesAndNewlines)
-                        creatingHouse = false
-                        Task {
-                            await run(success: "新\(lex.houseUnitLabel)已设立") {
-                                await model.edit("createHouse", ["n": nation, "province": p, "surname": s.isEmpty ? NSNull() as Any : s as Any])
+                ViewBoundary {
+                    let lex = LocalizationEngine.lexicon(culture: info?.culture ?? s.culture ?? meta?.culture, polity: info?.polity ?? s.polity ?? meta?.polity, style: info?.style)
+                    let owned = state.owners.indices.filter { state.owners[$0] == nation && $0 < map.meta.provinces.count }
+                    VStack(alignment: .leading, spacing: 14) {
+                        SheetHeader(title: "扶立新\(lex.houseUnitLabel)", subtitle: lex.isRepublican ? "在指定\(lex.adminUnit)设立新地方派系与财团" : "赐封\(lex.adminUnit)，册立新门阀", seal: "政")
+                        Group2 {
+                            PaperMenu(title: "选定\(lex.adminUnit)", items: owned.map { ($0, map.meta.provinces[$0].name) }, selection: $newHouseProvince)
+                        }
+                        .padding(.horizontal, 16)
+                        TextField("", text: $newHouseSurname, prompt: Text("名称／族姓（留空按本国文化自动取名）").foregroundColor(Theme.ink2.opacity(0.6)))
+                            .paperField().padding(.horizontal, 16)
+                        SealButton(title: lex.isRepublican ? "核准设立" : "颁诏册立", disabled: !owned.contains(newHouseProvince)) {
+                            let p = newHouseProvince
+                            let s = newHouseSurname.trimmingCharacters(in: .whitespacesAndNewlines)
+                            creatingHouse = false
+                            Task {
+                                await run(success: "新\(lex.houseUnitLabel)已设立") {
+                                    await model.edit("createHouse", ["n": nation, "province": p, "surname": s.isEmpty ? NSNull() as Any : s as Any])
+                                }
                             }
                         }
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.bottom, 22)
                 }
-                .padding(.bottom, 22)
                 .background(MemorialPaper().ignoresSafeArea())
                 .presentationDetents([.height(340)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
@@ -2165,10 +2169,10 @@ struct NationSheet: View {
     /// 五页主体：概览 / 朝政 / 军事 / 外交 / 治理（内含政令、疆土、史册、定制四子项）。
     @ViewBuilder private func tabContent(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
         switch tab {
-        case .overview: overviewTab(info, map, state)
-        case .court: courtTab(info, map, state)
-        case .military: militaryTab(info, map, state)
-        case .diplomacy: diplomacyTab(info, map, state)
+        case .overview: ViewBoundary { overviewTab(info, map, state) }
+        case .court: ViewBoundary { courtTab(info, map, state) }
+        case .military: ViewBoundary { militaryTab(info, map, state) }
+        case .diplomacy: ViewBoundary { diplomacyTab(info, map, state) }
         case .govern:
             VStack(alignment: .leading, spacing: 12) {
                 ChipPicker(items: [
@@ -2205,7 +2209,7 @@ struct NationSheet: View {
                         onOpenReplay: openReplay
                     )
                 case "custom":
-                    if info.alive { customView(info, map, state) }
+                    if info.alive { ViewBoundary { customView(info, map, state) } }
                     else { Text("此国已亡，无可设定。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, 20) }
                 default:
                     NationDecreesTab(
@@ -2240,7 +2244,7 @@ struct NationSheet: View {
         if let pane = customPane {
             VStack(alignment: .leading, spacing: 12) {
                 customBar(pane)
-                customPaneBody(pane, info, map, state, owned: owned, current: current)
+                ViewBoundary { customPaneBody(pane, info, map, state, owned: owned, current: current) }
                     .id(pane)
                     .transition(.opacity.combined(with: .offset(x: 10)))
             }

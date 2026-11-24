@@ -1,5 +1,22 @@
 # 更新日志
 
+## 4.2.10 / build 173 — 2026-11-24
+
+### 一、根据真机 `.ips` 崩溃堆栈彻底根治进图闪退（SwiftUI 主线程 1 MB 栈溢出）
+- **实证定位真机进图闪退真凶（`GameView.swift`、`v4.2.9` arm64 二进制符号化还原）**：
+  - 结合真机面包屑（`boot → title → gen.start.continents → gen.founded → gen.decoded → gen.mounted → play.enter`，物理内存仅 212 MB / 温控正常）与真机 `.ips` 崩溃地址反汇编还原出 5 层精准调用链：
+    `GameView.backdrop(size:)` → 顶部 `VStack` → 顶栏/横幅构建器（含 11 次动态 `___chkstk_darwin` 栈探针）→ `__swift_instantiateConcreteTypeFromMangledName` → `_swift_getTypeByMangledNameInContext2`。
+  - **为何模拟器 100% 通过而真机 100% 闪退**：macOS / iOS 模拟器主线程栈高达 **8 MB**，而 iPhone 真机主线程栈仅有 **1 MB**。原 `GameView` 把全部顶栏、底栏、横屏侧栏、5 条操作横幅、16 分支 `Panel` 弹窗（且横竖屏各嵌入一遍）及 28 个 `.overlay`/`.onChange`/`.animation` 修饰符全部写在同一 `struct GameView` 的辅助方法（`-> some View`）中，编译成单个高达 **3,911 字节**的巨型嵌套泛型 `Body` 类型与 **56 次动态 `___chkstk_darwin` 栈分配**；首次进入 `play.enter` 挂载 `GameView` 时，`AttributeGraph` 栈帧叠加 `_swift_getTypeByMangledNameInContext2` 递归解名直接击穿真机 1 MB 主线程栈上限。
+- **全面重构 `GameView` 为 20 个独立具体 `struct: View` 与双 `ViewModifier`（零 `AnyView` 热路径损耗）**：
+  - 将 `GameView` 拆分为 `GameRootStage`、`GameHudCanvas`、`GameInkVignette`、`GameTopChrome`、`GameTopBar`、`GameTopDateCapsule`、`GameSeasonBadge`、`GameWeatherOverflowBar`、`GameActionBanners`（及 5 个独立横幅结构体）、`GameHeraldHost`、`GameCleanMapChip`、`GameTransportPill`、`GameBottomChrome`、`GamePortraitBottomBar`、`GameLandscapeRail`、`GameWallpaperOverlay`、`GameLegendOverlay`、`GameViewSwitcherOverlay`、`GameToastOverlay`、`GamePanelBackRow`、`GameSidePanelOverlay`、`GamePortraitSheetHost`、`GamePanelRouter`（再拆为实体/世界双路由）以及 `GameLifecycleModifier` / `GameSelectionModifier`；同时减少无关 HUD 局部刷新、进一步降低主线程发热。
+- **同步清除全应用其余巨型 SwiftUI 栈溢出隐患（防止进图后点国家/州郡/军团/回放/编辑再闪退）**：
+  - 全二进制扫描发现 `NationSheet` 单体泛型 `Body` 高达 **9,436 字节**（`GameView` 的 2.4 倍）、`ReplayOverlay`（2,700 字节）、`ProvinceSheet`（2,485 字节）、`EditorView`（2,245 字节）、`ArmySheet/FleetSheet`（2,185 字节、54 次动态栈分配）；
+  - 将全站通用的 `Group2` 与 `FoldSection` 改造为非泛型视图边界（`FoldSection` 收起时延迟零构建），新增 `ViewBoundary` 并在 `NationSheet`（五页签、聚焦页、定制子页、新建世家/外交通牒弹窗）、`ProvinceSheet`、`ArmySheet`、`FleetSheet`、`ReplayOverlay`、`EditorView` 全面切断巨型泛型类型传播链。
+
+### 二、Core 单测隔离与旧世界回调泄漏修复
+- **`NativeEngine.swift`**：在两个初始化器中同步清理 `DeclarationEngine.opinionBias = nil`，修复旧世界关闭后的闭包残留引用。
+- **`CreationStabilityTests.swift`**：补充 `defer` 清理全部全局规则钩子（`Session.uninstall()`、`UnitKinds.enabled`、`DeclarationEngine.*`、`ArmyAutonomy.temper`），保证 `core-linux` 全量黄金回归单测与多模板稳定性压力测试 100% 全绿。
+
 ## 4.2.9 / build 172 — 2026-11-24
 
 ### 一、彻底根治真机建图/读档进入游戏闪退（实证四重真凶全清零）

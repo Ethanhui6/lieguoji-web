@@ -758,11 +758,11 @@ struct ReplayOverlay: View {
             Color.clear
                 .allowsHitTesting(false)
                 .overlay(alignment: .top) {
-                    topBar(timeline: timeline, idx: shownIdx, frame: frame)
+                    ViewBoundary { topBar(timeline: timeline, idx: shownIdx, frame: frame) }
                 }
                 .overlay(alignment: .topLeading) {
                     if showDetails {
-                        frameDetailCard(timeline: timeline, idx: shownIdx, frame: frame)
+                        ViewBoundary { frameDetailCard(timeline: timeline, idx: shownIdx, frame: frame) }
                             .padding(.top, Theme.Control.topHeight + 10)
                             .padding(.leading, Theme.Control.screenInset)
                             .transition(.opacity.combined(with: .move(edge: .top)).combined(with: .scale(scale: 0.96, anchor: .topLeading)))
@@ -770,17 +770,17 @@ struct ReplayOverlay: View {
                     }
                 }
                 .overlay(alignment: .bottom) {
-                    bottomBar(timeline: timeline, idx: shownIdx, frame: frame, nearCP: nearCP, multiFrame: multiFrame)
+                    ViewBoundary { bottomBar(timeline: timeline, idx: shownIdx, frame: frame, nearCP: nearCP, multiFrame: multiFrame) }
                 }
                 .overlay {
                     if landscape && showNodes {
-                        landscapeNodesPage(timeline: timeline)
+                        ViewBoundary { landscapeNodesPage(timeline: timeline) }
                             .zIndex(20)
                     }
                 }
                 .overlay {
                     if let cp = confirmRollback {
-                        rollbackConfirmCard(cp)
+                        ViewBoundary { rollbackConfirmCard(cp) }
                             .transition(.opacity.combined(with: .scale(scale: 0.94)))
                             .zIndex(30)
                     }

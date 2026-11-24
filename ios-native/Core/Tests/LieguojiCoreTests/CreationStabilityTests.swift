@@ -36,6 +36,15 @@ final class CreationStabilityTests: XCTestCase {
     }
 
     func testOrganicMultiTemplateCreationAndSaveRoundTrip() throws {
+        defer {
+            Session.uninstall()
+            UnitKinds.enabled = false
+            DeclarationEngine.temper = nil
+            DeclarationEngine.pact = nil
+            DeclarationEngine.opinionBias = nil
+            DeclarationEngine.stance = nil
+            ArmyAutonomy.temper = nil
+        }
         let inputs = try NativeCreationTests.inputs()
         let cases: [(seed: String, template: String, nations: Int, cities: Int, relations: String)] = [
             ("429001", "continents", 8, 80, "peace"),

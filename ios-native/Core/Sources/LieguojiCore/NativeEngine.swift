@@ -30,7 +30,7 @@ public final class NativeEngine {
         run = o.run; statics = o.statics
         UnitKinds.enabled = false  // until enableAppRules: a plain run keeps the original's five units
         // Nor the app's war temper and treaty hooks of a world opened before this one.
-        DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil
+        DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.opinionBias = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil
         try install()
     }
     /// A run whose statics are already installed (module tests).
@@ -41,7 +41,7 @@ public final class NativeEngine {
     init(created run: JS, statics: JS) throws {
         self.run = run; self.statics = statics
         UnitKinds.enabled = false
-        DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil
+        DeclarationEngine.temper = nil; DeclarationEngine.pact = nil; DeclarationEngine.opinionBias = nil; DeclarationEngine.stance = nil; ArmyAutonomy.temper = nil
         try install()
     }
     func install() throws {

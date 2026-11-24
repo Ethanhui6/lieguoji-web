@@ -80,12 +80,15 @@ extension NativeEngine {
         let home = force.homeId.optionalString ?? ""
         let stock = r.world.statecraft.provinces.asArray.first { $0.provinceId.asString == home }
         let people = Int(max(0, (stock?.population.optionalNumber ?? 0) - 100))
-        let n = min(missing, Int(gold / 0.5), people)
-        guard n > 0 else { return (false, gold < 0.5 ? "国库不足，无法补员。" : "驻地人口不足，无法补员。") }
+        // 战略特产「铁矿」(索引 4) 降低募兵补员军械费用 18%
+        let unitCost = (UnitKinds.enabled && Trade.holdings(r, a.nationId.asString)[4, default: 0] > 0) ? 0.41 : 0.5
+        let n = min(missing, Int(gold / unitCost), people)
+        guard n > 0 else { return (false, gold < unitCost ? "国库不足，无法补员。" : "驻地人口不足，无法补员。") }
         a.troops = JS(a.troops.asInt + n)
-        fin.gold = JS(gold - Double(n) * 0.5)
+        fin.gold = JS(gold - Double(n) * unitCost)
         if let stock { stock.population = JS((stock.population.optionalNumber ?? 0) - Double(n)) }
-        return (true, "\(a.name.asString)补充兵员 \(n) 人，耗金 \(Int((Double(n) * 0.5).rounded()))。")
+        let discountNote = unitCost < 0.5 ? "（铁矿特产 −18%）" : ""
+        return (true, "\(a.name.asString)补充兵员 \(n) 人，耗金 \(Int((Double(n) * unitCost).rounded()))\(discountNote)。")
     }
 
     /// 分兵: half the troops form a new army at the same spot, with the same arm, orders and records.
@@ -249,6 +252,7 @@ extension NativeEngine {
         var bestName: String? = nil
         var bestScore = -1.0
         var bestBonus = 10
+        var bestSkill = SeaDominion.AdmiralSkill.fireAttack
         if !r.people.isNull, !r.people.people.isNull {
             for p in r.people.people.asArray where p.nationId.optionalString == nation && p.alive.asBool && (p.age.optionalNumber ?? 0) >= 18 {
                 let mil = p.skills.military.optionalNumber ?? 40
@@ -259,6 +263,7 @@ extension NativeEngine {
                     bestScore = score
                     bestName = p.name.optionalString ?? (p.firstName.optionalString ?? "无名")
                     bestBonus = max(8, min(32, Int((mil / 4.2 + (navalTrait > 0 ? 10 : 0)).rounded())))
+                    bestSkill = SeaDominion.AdmiralSkill.pick(traits: traits, military: mil, seed: p.id.asInt)
                 }
             }
         }
@@ -266,9 +271,10 @@ extension NativeEngine {
         if !r.regimes.isNull {
             r.regimes.fleetMeta[id].admiralName = JS(chosen)
             r.regimes.fleetMeta[id].admiralBonus = JS(bestBonus)
+            r.regimes.fleetMeta[id].admiralSkill = JS(bestSkill.rawValue)
         }
-        Daily.event(r, "politics", "委任\(chosen)为\(fl.name.asString)水师提督", "提督统帅水师出征，舰队海战战力提升 +\(bestBonus)%。")
-        return (true, "已委任「\(chosen)」出任水师提督（海战火力 +\(bestBonus)%）。")
+        Daily.event(r, "politics", "委任\(chosen)为\(fl.name.asString)水师提督〔\(bestSkill.label)〕", "提督统帅水师出征，舰队海战战力提升 +\(bestBonus)%，特技「\(bestSkill.label)」：\(bestSkill.note)")
+        return (true, "已委任「\(chosen)」出任水师提督（火力 +\(bestBonus)% · 特技「\(bestSkill.label)」）。")
     }
 
     /// 改名.

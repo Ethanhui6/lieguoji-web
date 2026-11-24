@@ -192,9 +192,28 @@ extension NativeEngine {
             }
         }()
         o.seasonNote = JS(sNote)
-        // 特产 (app rules) and its index for the custom picker.
+        // 特产 (app rules) and its index + strategic bonus for the custom picker & province detail.
         let good = Trade.of(r, id)
-        o.specialty = JS(Trade.goods[good]); o.specialtyIndex = JS(good)
+        let goodProf = Trade.profiles[min(Trade.profiles.count - 1, max(0, good))]
+        o.specialty = JS(goodProf.name); o.specialtyIndex = JS(good)
+        o.specialtyTier = JS(goodProf.tier); o.specialtyEffect = JS(goodProf.effectText)
+        o.isPort = JS(hasPort)
+        o.shipyardLevel = JS(hasPort ? SeaDominion.shipyardLevel(r, provinceId: id) : 0)
+        // v4.2.2 州郡五类基建槽（水利 / 商市 / 要塞 / 船坞 / 学院）
+        o.infra = .array(WorldDepth.InfraSlot.allCases.map { slot in
+            let lvl = slot == .shipyard ? (hasPort ? SeaDominion.shipyardLevel(r, provinceId: id) : 0) : WorldDepth.infraLevel(r, provinceId: id, slot: slot)
+            let row = JS.object()
+            row.id = JS(slot.rawValue)
+            row.label = JS(slot.label)
+            row.short = JS(slot.short)
+            row.level = JS(lvl)
+            row.maxLevel = JS(3)
+            row.available = JS(slot != .shipyard || hasPort)
+            row.effect = JS(slot.effectNote)
+            let nextLvl = lvl + 1
+            row.cost = JS(slot == .shipyard ? (lvl == 1 ? 260 : 480) : Int(slot.cost(nextLevel: nextLvl)))
+            return row
+        })
         if let city = w.cities.asArray.first(where: { $0.provinceId.asString == id }) { o.cityCulture = r.civilization.cities[city.id.asString].cultureId }
         // 地利: what this land does to each of the original's arms in battle (Efficiency's terrain
         // tables, the same numbers the volleys use), attacking into it and defending it.

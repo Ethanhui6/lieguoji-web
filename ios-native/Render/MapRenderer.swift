@@ -274,29 +274,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         frame = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         mount = buffer(MapLayers.mapMount(width: map.width, height: map.height).vertices, stride: 6)
         uploadSea()
-        // v4.2 极简古舆图焦墨线描地貌印章（白底提纯透明墨线，与底层半透明水彩晕染 MapLayers.relief 及顶层羊皮纸正片叠底浑然天成，彻底零厚涂贴图感）。
+        // v4.2.2 彻底停用 AI 生图地貌贴片（零贴图违和感），全面回归与地图画风 100% 浑然一体的纯矢量水彩精绘地貌层（MapLayers.relief）。
         let loader = MTKTextureLoader(device: device)
-        let stampFiles: [(Int, String)] = [
-            (0, "stamp-mountain"),
-            (1, "stamp-mountain-snow"),
-            (2, "stamp-forest"),
-            (3, "stamp-pine"),
-            (4, "stamp-desert"),
-            (5, "stamp-hill"),
-            (6, "stamp-forest"),
-            (7, "stamp-marsh"),
-            (8, "stamp-mountain-snow")
-        ]
-        for (k, name) in stampFiles {
-            if let url = BundleArt.url(name),
-               let tex = try? loader.newTexture(URL: url, options: [.SRGB: false, .generateMipmaps: true]) {
-                terrainTextures[k] = tex
-            }
-        }
-        rebuildTerrainSprites(map)
+        terrainTextures.removeAll()
+        terrainBatches.removeAll()
         scrollCornerTexture = nil
         scrollCornerBuffer = nil
-        // 恢复经典雕漆国色军团与水师棋子（含风格完全统一的跨海运兵船 `Transport`），任意缩放下清晰高辨识、零贴图割裂感。
+        // 恢复上版经典雕漆漆盾国色军团与水师战舰棋子（256×256 四阶象牙浮雕矢量纹理），任意缩放倍率均精致清晰。
         for role in ["infantry", "spear", "shield", "archer", "crossbow", "cavalry", "heavy", "horseArcher", "elite", "elephant", "Fleet", "Transport", "Port", "Merchant"] {
             let probe = ["Fleet", "Transport", "Port", "Merchant"].contains(role) ? role : (UnitKinds.kinds.first { $0.role.rawValue == role }?.key ?? "Infantry")
             guard let image = UnitArt.image(probe) else { continue }
@@ -304,17 +288,47 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             else if let texture = Self.texture(device, image) { unitTextures[role] = texture }
         }
         unitTextures["banner"] = unitTextures["elite"]
-        // 温润宣纸背衬微光环 (128×128): 柔和象牙浅晕衬底，令同色疆域上的原作国色棋子与战舰轮廓分明、清爽利落。
+        // 军牌底盘 (128×128): 精雕漆盾军牌（平肩微弧收尖盾形 + 浓墨外漆框 + 西北至东南立体受光面 + 内切雕槽与双铆钉），
+        // 叠加国色后与顶部象牙浮雕兵种纹样层次分明，任意缩放下都兼具古舆图战棋质感。
         let plateArt = UIGraphicsImageRenderer(size: CGSize(width: 128, height: 128), format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; f.preferredRange = .standard; return f }()).image { ctx in
             let g = ctx.cgContext
-            let colors = [
-                UIColor(white: 1.0, alpha: 0.68).cgColor,
-                UIColor(white: 1.0, alpha: 0.32).cgColor,
-                UIColor(white: 1.0, alpha: 0.0).cgColor
-            ] as CFArray
-            if let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0.0, 0.62, 1.0]) {
-                g.drawRadialGradient(grad, startCenter: CGPoint(x: 64, y: 66), startRadius: 8, endCenter: CGPoint(x: 64, y: 66), endRadius: 56, options: [])
+            func shieldPath(inset d: CGFloat) -> CGPath {
+                let p = CGMutablePath()
+                let l = 10 + d, r = 118 - d, t = 8 + d, midY = 74 - d * 0.15, b = 120 - d
+                let corner: CGFloat = max(4, 16 - d * 0.65)
+                p.move(to: CGPoint(x: l + corner, y: t))
+                p.addLine(to: CGPoint(x: r - corner, y: t))
+                p.addQuadCurve(to: CGPoint(x: r, y: t + corner), control: CGPoint(x: r, y: t))
+                p.addLine(to: CGPoint(x: r, y: midY))
+                p.addQuadCurve(to: CGPoint(x: 64, y: b), control: CGPoint(x: r - 2, y: b - 14))
+                p.addQuadCurve(to: CGPoint(x: l, y: midY), control: CGPoint(x: l + 2, y: b - 14))
+                p.addLine(to: CGPoint(x: l, y: t + corner))
+                p.addQuadCurve(to: CGPoint(x: l + corner, y: t), control: CGPoint(x: l, y: t))
+                p.closeSubpath()
+                return p
             }
+            // 外圈浓墨漆框
+            g.setFillColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1)
+            g.addPath(shieldPath(inset: 0)); g.fillPath()
+            // 中层温润亮边倒角
+            g.setFillColor(red: 0.68, green: 0.68, blue: 0.68, alpha: 1)
+            g.addPath(shieldPath(inset: 5.5)); g.fillPath()
+            // 内盾受光渐变面
+            let inner = shieldPath(inset: 8.5)
+            g.saveGState()
+            g.addPath(inner); g.clip()
+            if let grad = CGGradient(colorSpace: CGColorSpaceCreateDeviceRGB(), colorComponents: [1.0, 1.0, 1.0, 1.0, 0.93, 0.93, 0.93, 1.0, 0.78, 0.78, 0.78, 1.0], locations: [0.0, 0.52, 1.0], count: 3) {
+                g.drawLinearGradient(grad, start: CGPoint(x: 16, y: 12), end: CGPoint(x: 112, y: 116), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            } else {
+                g.setFillColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1); g.fill(CGRect(x: 0, y: 0, width: 128, height: 128))
+            }
+            g.restoreGState()
+            // 盾内细雕槽 + 顶部双铆钉
+            g.setStrokeColor(red: 0.36, green: 0.36, blue: 0.36, alpha: 0.50); g.setLineWidth(1.9)
+            g.addPath(shieldPath(inset: 14.0)); g.strokePath()
+            g.setFillColor(red: 0.34, green: 0.34, blue: 0.34, alpha: 0.60)
+            g.fillEllipse(in: CGRect(x: 28, y: 20, width: 5.5, height: 5.5))
+            g.fillEllipse(in: CGRect(x: 94.5, y: 20, width: 5.5, height: 5.5))
         }.cgImage
         if let plateArt { unitTextures["0plate"] = (try? loader.newTexture(cgImage: plateArt, options: [.SRGB: false, .generateMipmaps: true])) ?? Self.texture(device, plateArt) }
         // 水师舰队浪花尾迹底纹 (128×128): 双层弧形碎浪与微晕水环，衬托战舰浮于碧海之上的立体感。
@@ -352,7 +366,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         provinceLines = buffer(MapLayers.provinceLines(next).vertices, stride: 6)
         rivers = next.rivers.isEmpty ? nil : buffer(next.rivers, stride: 2)
         relief = buffer(MapLayers.relief(next).vertices, stride: 6)
-        rebuildTerrainSprites(next)
+        terrainBatches.removeAll()
         outlines = buffer(MapLayers.outlines(next, wide: borderWide).vertices, stride: 6)
         icons = buffer(MapLayers.cityIcons(next).vertices, stride: 6)
         if refreshSea {
@@ -732,10 +746,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
 
     /// Where every icon is drawn right now (mid-walk included), for taps and troop labels.
-    /// 清晰放大原作国色兵种与战舰单枚主棋（+26% 视觉尺寸），远近缩放皆锐利醒目。
-    static func iconZoom(_ scale: Double) -> Double { 1.24 * min(22.5 / 3.0112, max(7.4 / 3.0112, scale * 0.68)) }
+    /// 上版经典缩放曲线，供着色器和屏幕点选、兵力条共用。
+    static func iconZoom(_ scale: Double) -> Double { 1.12 * min(21.0 / 3.0112, max(6.8 / 3.0112, scale * 0.66)) }
     /// 一支军队主图标在屏幕上的边长（点）。
-    static func iconPoints(_ scale: Double, iconScale: Double) -> Double { 2.56 * 0.88 * 0.38 * (1600.0 / 240.0) * 0.6 * iconScale * iconZoom(scale) }
+    static func iconPoints(_ scale: Double, iconScale: Double) -> Double { 2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6 * iconScale * iconZoom(scale) }
     func placedSprites() -> [(sprite: ArmySprite, x: Float, y: Float)] {
         armySprites.map { s in let p = displayed(s); return (s, p.x, p.y) }
     }
@@ -834,7 +848,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         do {
             let sprites = armySprites + dying
             let ghosts = Set(dying.map(\.key))
-            let iconSize = Float(2.56 * 0.88 * 0.38 * (1600.0 / 240.0) * 0.6)
+            let iconSize = Float(2.56 * 0.84 * 0.35 * (1600.0 / 240.0) * 0.6)
             var byRole: [String: [Float]] = [:]
             byRole.reserveCapacity(16)
             // Alpha −1 asks the shader to fade the icon in with the leg's progress.
@@ -886,31 +900,46 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 lead = legLead[a.key] ?? (end - at)
                 let size = iconSize * iconScale * (a.unit == "Port" ? 0.7 : a.unit == "Merchant" ? 0.75 : 1) * (a.selected ? 1.3 : 1)
 
-                // 100% 回归原作清晰单枚国色兵种棋子与水师战舰（大编制适度放大棋身＋统帅旌旗，彻底告别 3 枚微缩图标挤成一团糊块）
+                // 恢复上版经典雕漆漆盾军牌 + 按编制排成 1–3 枚棋子战阵 / 水师破浪编队，层次清晰锐利。
                 let resolvedRole: String = (a.embarked || a.unit == "Transport") ? "Transport" : role
                 let isNavalPiece = (resolvedRole == "Fleet" || resolvedRole == "Transport")
-                let tierBoost: Float = (role == "Port" || a.army <= -100_000) ? 1.0 : (a.tier >= 3 ? 1.16 : (a.tier == 2 ? 1.08 : 1.0))
 
                 // 统帅／君主亲征帅旗立于棋子右后方
                 if a.banner > 0 {
-                    let k: Float = 0.66 * tierBoost
-                    quad("banner", at, a.banner == 2 ? RGB(0.95, 0.76, 0.24) : RGB(0.78, 0.20, 0.14), size * k, (0.52 + o.x) / k, (-0.44 + o.y) / k)
+                    let k: Float = 0.62
+                    quad("banner", at, a.banner == 2 ? RGB(0.95, 0.76, 0.24) : RGB(0.78, 0.20, 0.14), size * k, (0.52 + o.x) / k, (-0.42 + o.y) / k)
                 }
                 if isNavalPiece, unitTextures["0fleetwake"] != nil {
-                    let wk: Float = 1.28 * tierBoost
-                    quad("0fleetwake", at, RGB(0.95, 0.98, 1.0), size * wk, o.x / wk, (0.20 + o.y) / wk)
-                } else if role != "Port" && role != "Merchant" && a.army > -100_000, unitTextures["0plate"] != nil {
-                    let hk: Float = 1.12 * tierBoost
-                    quad("0plate", at, RGB(0.99, 0.97, 0.92), size * hk, o.x / hk, (0.04 + o.y) / hk)
+                    quad("0fleetwake", at, RGB(0.95, 0.98, 1.0), size * 1.24, o.x / 1.24, (0.22 + o.y) / 1.24)
                 }
-                let pieceScale: Float = (isNavalPiece ? 1.12 : 1.0) * tierBoost
-                quad(resolvedRole, at, c, size * pieceScale, o.x / pieceScale, o.y / pieceScale)
+                let token = !isNavalPiece && role != "Port" && role != "Merchant" && a.army > -100_000 && unitTextures["0plate"] != nil
+                if token {
+                    quad("0plate", at, c, size * 0.98, o.x / 0.98, (0.14 + o.y) / 0.98)
+                }
+                let piece: RGB = token
+                    ? RGB(0.86 + c.r * 0.14, 0.86 + c.g * 0.14, 0.86 + c.b * 0.14)
+                    : (isNavalPiece ? RGB(min(1, c.r * 1.10 + 0.12), min(1, c.g * 1.10 + 0.12), min(1, c.b * 1.10 + 0.12)) : c)
+                // 陆军按编制排成清晰棋子战阵，水师舰队按舰数排成破浪编队
+                let n = role == "Port" || a.army <= -100_000 ? 1 : max(1, min(3, a.tier))
+                let layout: [(Float, Float, Float)] = {
+                    if isNavalPiece {
+                        return n == 1 ? [(0, 0, 1.08)]
+                            : n == 2 ? [(-0.32, -0.14, 0.78), (0.10, 0.04, 1.08)]
+                            : [(-0.38, -0.10, 0.74), (0.38, -0.10, 0.74), (0, 0.06, 1.10)]
+                    }
+                    return n == 1 ? [(0, -0.06, 1)] : n == 2 ? [(0.26, -0.16, 0.74), (0, -0.04, 1)]
+                        : [(-0.28, -0.16, 0.70), (0.28, -0.16, 0.70), (0, -0.04, 1)]
+                }()
+                for (i, (dx, dy, k)) in layout.enumerated() {
+                    let shade: Float = i < layout.count - 1 && n > 1 ? 0.90 : 1
+                    quad(resolvedRole, at, RGB(piece.r * shade, piece.g * shade, piece.b * shade), size * k, (dx + o.x) / k, (dy + o.y) / k)
+                }
             }
             func roleLayerOrder(_ key: String) -> Int {
                 switch key {
                 case "0fleetwake": return 0
-                case "0plate": return 1
-                case "banner": return 2
+                case "banner": return 1
+                case "0plate": return 2
                 default: return 3
                 }
             }
@@ -1216,24 +1245,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         if chart && fineFade > 0.01 { colored(fineDetail, alpha: ramp(0.44) * fineFade) }
         if display.vegetation {
             let vegAlpha = ramp(0.44)
-            if !terrainBatches.isEmpty {
-                if vegAlpha > 0.01 {
-                    u.alpha = vegAlpha * 0.84
-                    encoder.setRenderPipelineState(terrainPipeline)
-                    encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-                    encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
-                    encoder.setFragmentBytes(&weatherUniforms, length: weatherUniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 3)
-                    encoder.setFragmentSamplerState(sampler, index: 0)
-                    for batch in terrainBatches {
-                        encoder.setVertexBuffer(batch.buffer, offset: 0, index: 0)
-                        encoder.setFragmentTexture(batch.texture, index: 0)
-                        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: batch.count)
-                    }
-                    u.alpha = 1
-                }
-            } else {
-                colored(relief, alpha: vegAlpha * 0.56)
-            }
+            // 纯矢量水彩融纸地貌层（0 张 AI 生图贴片），与宣纸底图、河流、城池精度完全统一，任意高倍缩放依然锐利典雅。
+            colored(relief, alpha: vegAlpha * 0.76)
         }
         if display.borders { colored(outlines, alpha: ramp(0.75)) }
         if display.cityIcons { colored(icons, alpha: ramp(0.85)); colored(forts, alpha: ramp(0.85)); colored(portIcons, alpha: ramp(0.85)) }
@@ -1244,15 +1257,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBytes(&clock, length: MemoryLayout<Float>.stride, index: 5)
         let shadowFade = Float(min(1, max(0, (camera.scale - 0.62) / 0.25)))
         if showArmies && lightStrength > 0.1 && shadowFade > 0.02 {
-            // 军团棋子东南落地阴影：序列帧军团与战舰投影与当前动作帧严格同频
+            // 军团棋子东南落地阴影：漆盾军牌与水师战舰投下柔和统一落影
             u.alpha = shadowFade
             encoder.setVertexBytes(&u, length: uniformLength, index: 2)
             encoder.setFragmentSamplerState(sampler, index: 0)
-            let ignoreShadowA = unitTextures["0fleetwake"]
-            let ignoreShadowB = unitTextures["0plate"]
+            let wakeTex = unitTextures["0fleetwake"]
             for unit in units {
-                if let ignoreShadowA, unit.texture === ignoreShadowA { continue }
-                if let ignoreShadowB, unit.texture === ignoreShadowB { continue }
+                if let wakeTex, unit.texture === wakeTex { continue }
                 encoder.setRenderPipelineState(unit.isSheet ? spriteSheetShadowPipeline : spriteShadowPipeline)
                 encoder.setVertexBuffer(unit.buffer, offset: 0, index: 0)
                 encoder.setFragmentTexture(unit.texture, index: 0)
@@ -1953,8 +1964,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             float3 d2 = detailTex.sample(repS, in.world / 52.0 + float2(0.37, 0.61)).rgb;
             float f1 = dot(d1, float3(0.299, 0.587, 0.114)) - 0.885;
             float f2 = dot(d2, float3(0.299, 0.587, 0.114)) - 0.885;
-            float fiberDelta = (f1 * 0.62 + f2 * 0.38) * 1.42 * zoom;
-            float3 cleanMacro = mix(macro, mix(macro, float3(0.950, 0.928, 0.884), 0.50), zoom);
+            float fiberDelta = (f1 * 0.62 + f2 * 0.38) * 0.82 * zoom;
+            float3 cleanMacro = mix(macro, mix(macro, float3(0.955, 0.936, 0.896), 0.42), zoom);
             macro = clamp(cleanMacro + fiberDelta, 0.0, 1.0);
         }
         return float4(macro, 1.0);

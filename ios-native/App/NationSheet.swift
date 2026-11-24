@@ -65,8 +65,27 @@ struct NationInfo: Decodable {
     struct SeaTransport: Decodable {
         let used: Int; let capacity: Int
         let totalPorts: Int; let blockadedPorts: Int; let unblockedPorts: Int
+        var controlScore: Int? = nil; var controlLabel: String? = nil; var tradeBonusPct: Int? = nil
     }
     var seaTransport: SeaTransport? = nil
+    struct ReputationInfo: Decodable {
+        let score: Int; let label: String; let opinionMod: Int
+    }
+    var reputation: ReputationInfo? = nil
+    struct TechRow: Decodable, Identifiable {
+        let id: String; let label: String; let short: String
+        let level: Int; let progress: Int; let tierName: String
+        let effect: String; let investCost: Int
+    }
+    var tech: [TechRow]? = nil
+    struct ActiveChain: Decodable, Identifiable {
+        struct Choice: Decodable, Identifiable {
+            let id: String; let label: String; let tag: String; let detail: String
+        }
+        let id: String; let title: String; let category: String; let desc: String
+        let choices: [Choice]
+    }
+    var activeChain: ActiveChain? = nil
     var strategy: String? = nil
     var autoStrategy: Bool? = nil
     var emblem: String? = nil
@@ -237,6 +256,7 @@ struct NationSheet: View {
     @State private var ultimatumDemand = "tribute"
     @State private var covertKind = "fundRebels"
     @State private var bodyReady = false
+    @State private var showingBreakdown = false
     enum Pick: String, Identifiable {
         case war = "宣战", alliance = "缔结盟约", vassal = "收为附庸", annex = "吞并"
         case pact = "互不侵犯条约", marriage = "王室联姻", trade = "通商协定", defense = "共同防御条约"
@@ -300,8 +320,10 @@ struct NationSheet: View {
                     }
                     }
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 36)
             }
+            .scrollContentBackground(.hidden)
+            .ignoresSafeArea(.container, edges: .bottom)
             .pressMenuHost($pressMenu)
             .paperToast($flash)
             .task(id: state.day / 30) {
@@ -401,6 +423,10 @@ struct NationSheet: View {
                 }
                 .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
+            .sheet(isPresented: $showingBreakdown) {
+                NationBreakdownSheet(model: model, nation: nation, nationName: meta?.name ?? info?.name ?? "")
+                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            }
         }
     }
 
@@ -467,9 +493,9 @@ struct NationSheet: View {
         let myFleets = (state.fleets ?? []).filter { $0.nation == nation && $0.status != "lost" }
         let rulerSummary: String = {
             if let r = info.ruler {
-                let display = r.styledName ?? r.name
+                let display = (r.styledName ?? r.name).trimmingCharacters(in: .whitespaces)
                 let title = r.title.trimmingCharacters(in: .whitespaces)
-                let full = (!title.isEmpty && !display.hasPrefix(title)) ? "\(title) \(display)" : display
+                let full = (!title.isEmpty && !display.contains(title)) ? "\(title) \(display)" : display
                 return "\(full)执掌国柄"
             }
             return "中枢摄理国政"
@@ -482,13 +508,19 @@ struct NationSheet: View {
         }()
 
         LazyVStack(alignment: .leading, spacing: 14) {
-                if !info.wars.isEmpty, InkVideoStage.hasVideo("herald-war") {
-                    InkVideoStage(clip: "herald-war", cornerRadius: 12, tint: Theme.seal)
+                let heroClip: String = {
+                    if !info.wars.isEmpty { return "herald-war" }
+                    if (info.seaTransport?.totalPorts ?? 0) >= 2 && !myFleets.isEmpty { return "herald-voyage" }
+                    if ovLex.isRepublican { return "herald-reform" }
+                    return "herald-coronation"
+                }()
+                if InkVideoStage.hasVideo(heroClip) {
+                    InkVideoStage(clip: heroClip, cornerRadius: 12, tint: !info.wars.isEmpty ? Theme.seal : Theme.jade)
                         .frame(height: 68)
                         .padding(.horizontal, 16)
                 }
 
-                // 国情卷宗导语（仿原作国策档案卷首叙事，一眼纵览政体、都城、执政与海陆军势）
+                // 国情卷宗导语（仿原作国策档案卷首叙事，一眼纵览政体、都城、执政与海陆军势，附透明数值拆解入口）
                 Group2 {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 6) {
@@ -499,6 +531,16 @@ struct NationSheet: View {
                                 PaperTag(text: culName, color: Theme.jade, size: 10)
                             }
                             Spacer()
+                            Button {
+                                GameFeel.shared.scrollOpen()
+                                showingBreakdown = true
+                            } label: {
+                                Text("数值明细").font(Theme.caption).foregroundStyle(Theme.jade)
+                                    .padding(.horizontal, 8).padding(.vertical, 3)
+                                    .background(Theme.jade.opacity(0.10), in: Capsule())
+                                    .overlay(Capsule().stroke(Theme.jade.opacity(0.30), lineWidth: 0.7))
+                            }
+                            .buttonStyle(PressStyle())
                         }
                         Text("\(info.name)定鼎于\(capName)，领 \(sNat.provinces) \(ovLex.adminUnit) \(sNat.cities) 城；今由\(rulerSummary)，\(postureSummary)。")
                             .font(Theme.caption)
@@ -508,6 +550,8 @@ struct NationSheet: View {
                     .padding(.horizontal, 16).padding(.vertical, 12)
                 }
                 .padding(.horizontal, 16)
+
+                NationDepthSection(model: model, nation: nation, info: info, onReload: { await reload() }, onMessage: { flash = $0 })
 
                 if info.alive {
                     HStack(spacing: 8) {
@@ -1363,7 +1407,8 @@ struct NationSheet: View {
                                     HStack(spacing: 6) {
                                         Text(a.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
                                         if let br = a.branchLabel, !br.isEmpty { PaperTag(text: br, color: Theme.jade, size: 10) }
-                                        if a.banner != nil { PaperTag(text: a.banner == "ruler" ? "御驾" : "帅旗", size: 10) }
+                                        let lexMil = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
+                                        if a.banner != nil { PaperTag(text: a.banner == "ruler" ? (lexMil.isRepublican ? "元首" : "御驾") : "帅旗", size: 10) }
                                     }
                                     HStack(spacing: 6) {
                                         PaperTag(text: status.0, color: status.1, size: 10)
@@ -1405,6 +1450,9 @@ struct NationSheet: View {
                         HStack(spacing: 6) {
                             InkIcon(glyph: .anchor, size: 15, weight: 1.85).foregroundStyle(Theme.jade)
                             Text("海运运力与制海权").font(Theme.section).foregroundStyle(Theme.ink)
+                            if let sc = st.controlScore {
+                                PaperTag(text: "制海 \(sc)% · \(st.controlLabel ?? "")", color: sc >= 65 ? Theme.jade : sc < 40 ? Theme.seal : Theme.gold, size: 10)
+                            }
                             Spacer()
                             PaperTag(text: "运力 \(st.used)/\(st.capacity) 船队", color: st.capacity == 0 ? Theme.seal : (st.used >= st.capacity ? Color(red: 0.72, green: 0.48, blue: 0.16) : Theme.jade), size: 11)
                         }
@@ -1742,7 +1790,8 @@ struct NationSheet: View {
                     if i < c.offices.count - 1 { Divider2() }
                 }
                 Divider2()
-                PaperSwitch(title: "亲自任免（朝廷不再自行换人）", on: Binding(get: { c.manual ?? false }, set: { on in Task { await run(success: on ? "官员由你亲自任免" : "朝廷恢复自主任免") { await model.setCourtManual(nation, manual: on) } } }))
+                let lexCourt = LocalizationEngine.lexicon(culture: info?.culture, polity: info?.polity, style: info?.style)
+                PaperSwitch(title: "亲自任免（\(lexCourt.isRepublican ? "政府" : "朝廷")不再自行换人）", on: Binding(get: { c.manual ?? false }, set: { on in Task { await run(success: on ? "官员由你亲自任免" : "\(lexCourt.isRepublican ? "政府" : "朝廷")恢复自主任免") { await model.setCourtManual(nation, manual: on) } } }))
             }
             .padding(.horizontal, 16)
             if c.occupied > 0 || c.lost > 0 || !c.commanders.isEmpty {

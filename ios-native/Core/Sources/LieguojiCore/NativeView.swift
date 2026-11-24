@@ -434,7 +434,7 @@ extension NativeEngine {
                 if let wg = Regimes.warGodAura(r, nationId: a.nationId.asString) {
                     x.warGodAura = "\(wg.rank) \(wg.name)〔\(wg.skill.name)〕· \(wg.buffSummary)"
                 }
-                // 跨海登船状态（供前端切换 4 帧运兵运输船序列帧）、两栖抢滩与海外断补标记
+                // 跨海登船状态、两栖抢滩与海外断补标记
                 x.embarked = (v.province == nil)
                 if !r.regimes.landingDays.isNull, let ld = r.regimes.landingDays[id].optionalNumber.map(Int.init), ld > 0 {
                     x.landingDays = ld
@@ -442,6 +442,17 @@ extension NativeEngine {
                 if !r.regimes.seaSupplyCut.isNull, r.regimes.seaSupplyCut[id].isTruthy {
                     x.seaSupplyCut = true
                 }
+                // v4.2.2 陆军完全体状态（战阵 / 战场军令 / 老兵勋阶 / 陆海补给状态与来源州）
+                let form = ArmyTactics.formation(r, armyId: id)
+                if form != .standard { x.formation = form.rawValue }
+                let fld = ArmyTactics.fieldOrder(r, armyId: id)
+                if fld != .normal { x.fieldOrder = fld.rawValue }
+                let vet = ArmyTactics.veterancyInfo(r, armyId: id, nationId: nid)
+                x.veterancy = vet.rank
+                x.veterancyLabel = vet.label
+                let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil)
+                x.supplyState = sup.state.rawValue
+                x.supplyOriginProvince = sup.originProvince
             }
             return x
         }
@@ -481,19 +492,38 @@ extension NativeEngine {
                     flRow.gunboats = meta.gunboats
                     flRow.admiral = meta.admiralName
                     flRow.admiralBonus = meta.admiralBonus > 0 ? meta.admiralBonus : nil
+                    flRow.admiralSkill = meta.admiralSkill?.rawValue
+                    flRow.admiralSkillLabel = meta.admiralSkill?.label
+                    flRow.admiralSkillNote = meta.admiralSkill?.note
                     flRow.experience = meta.rank > 0 ? meta.rank : nil
+                    if let dockId = fl.dockId.optionalString, let dockPort = Naval.sea?.ports.first(where: { $0.id == dockId }) {
+                        flRow.dockLevel = SeaDominion.shipyardLevel(r, provinceId: dockPort.provinceId)
+                    } else if let portObj = port {
+                        flRow.dockLevel = SeaDominion.shipyardLevel(r, provinceId: portObj.provinceId)
+                    }
                 }
                 fleetRows.append(flRow)
             }
         }
-        // 造舰: sunk fleets their state is rebuilding, with the months left.
+        // 造舰: sunk fleets their state is rebuilding + custom shipyard build orders, with the months left.
         var yards: [GameState.Yard]?
+        var yardList = [GameState.Yard]()
         if !r.navy.isNull, !r.navy.fleets.isNull {
-            yards = r.navy.fleets.asArray.compactMap { fl in
-                guard let left = Shipyards.remaining(r, fl) else { return nil }
-                return GameState.Yard(name: fl.name.asString, nation: ni[fl.nationId.asString] ?? -1, months: left.rounded(.up))
+            for fl in r.navy.fleets.asArray {
+                if let left = Shipyards.remaining(r, fl) {
+                    yardList.append(GameState.Yard(name: fl.name.asString, nation: ni[fl.nationId.asString] ?? -1, months: left.rounded(.up)))
+                }
             }
         }
+        if !r.regimes.isNull, !r.regimes.shipyard.isNull, !r.regimes.shipyard.orders.isNull {
+            for ord in r.regimes.shipyard.orders.asArray {
+                let nIdx = ni[ord.nation.asString] ?? -1
+                let h = ord.heavy.asInt, l = ord.light.asInt, g = ord.gunboats.asInt
+                let label = "排产新舰（主\(h)/轻\(l)/炮\(g)）"
+                yardList.append(GameState.Yard(name: label, nation: nIdx, months: max(1, (ord.monthsLeft.optionalNumber ?? 1).rounded(.up))))
+            }
+        }
+        if !yardList.isEmpty { yards = yardList }
         // 圣地: each faith's holy province.
         let holy = Regimes.holyProvinces(r).map { GameState.Holy(religion: $0.religion, province: $0.province) }
         // 要塞: provinces whose city defence is level three or more (a fortress mark on the map).
@@ -502,9 +532,10 @@ extension NativeEngine {
             guard let q = pi[port.provinceId] else { return nil }
             let c = r.portControl.isNull ? JS.null : r.portControl.ports[port.provinceId]
             let blk = UnitKinds.enabled ? MaritimeWarfare.isPortBlockaded(r, provinceId: port.provinceId) : false
+            let dLvl = UnitKinds.enabled ? SeaDominion.shipyardLevel(r, provinceId: port.provinceId) : 1
             return GameState.Port(province: q, x: Float(port.center.x / sc), y: Float(port.center.y / sc), owner: c.isNull ? -1 : ni[c.landOwnerId.asString] ?? -1,
                                   occupier: c.isNull ? -1 : ni[c.occupierId.asString] ?? -1, value: c.isNull ? 100 : c.value.asNumber.rounded(),
-                                  blockaded: blk ? true : nil)
+                                  blockaded: blk ? true : nil, shipyardLevel: dLvl)
         }
         var armyIndex = [String: Int](); for (i, v) in space.enumerated() { armyIndex[Daily.key("army", v.army.id.asString)] = i }
         let contacts = pairs.compactMap { p -> [Int]? in

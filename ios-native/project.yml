@@ -44,14 +44,18 @@ targets:
       - path: Resources/Music
         type: folder
         buildPhase: resources
+      # 轻量化古风交互音效包（落印、翻卷、拔锚、行军、刀兵、火炮、传报，可自由开关）
+      - path: Resources/Audio
+        type: folder
+        buildPhase: resources
     dependencies:
       - package: LieguojiCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lieguoji.native
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        MARKETING_VERSION: "4.2.1"
-        CURRENT_PROJECT_VERSION: "164"
+        MARKETING_VERSION: "4.2.2"
+        CURRENT_PROJECT_VERSION: "165"
     info:
       path: App/Info.plist
       properties:

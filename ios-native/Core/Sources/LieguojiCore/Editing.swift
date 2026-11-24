@@ -56,6 +56,8 @@ extension Regimes {
         if UnitKinds.enabled && r.regimes.enabled.isTruthy {
             let unitKey = r.units[army].optionalString ?? "Infantry"
             sp *= Regimes.armyBranch(r, armyId: army, unitKey: unitKey).speedFactor
+            sp *= ArmyTactics.formation(r, armyId: army).speedFactor
+            sp *= ArmyTactics.fieldOrder(r, armyId: army).speedFactor
             if let nid = nation, let wg = Regimes.warGodAura(r, nationId: nid) {
                 let spdPct = wg.tier.speedPct + wg.skill.speedPct
                 if spdPct > 0 { sp *= (1.0 + spdPct / 100.0) }

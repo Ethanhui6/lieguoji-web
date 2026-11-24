@@ -387,69 +387,83 @@ public enum MapLayers {
             let x = sx + jx, y = sy + jy
 
             if h >= 61 {
-                // 1. 宋元轻墨连峰：柔和向阳坡 + 淡墨背阴坡 + 纤细山脊勾线（高脊轻敷雪冠）
-                if h < 69 && pick < 45 { continue }
-                if h >= 69 && pick < 18 { continue }
-                guard mtnGrid.insert(gridKey(sx, sy, 38)).inserted else { continue }
+                // 1. 宋元披麻轻墨连峰：柔和弧形山坡（摒弃生硬直角三角块）+ 向阳宣白坡 + 淡墨背阴坡 + 纤细山脊勾线
+                if h < 69 && pick < 42 { continue }
+                if h >= 69 && pick < 16 { continue }
+                guard mtnGrid.insert(gridKey(sx, sy, 36)).inserted else { continue }
                 if nearCity(x, y, 165) { continue }
-                let scale = (0.85 + v1 * 0.34) * (1.0 + min(0.45, (h - 61) * 0.024))
-                let w = 13.5 * scale, ph = 9.4 * scale
+                let scale = (0.85 + v1 * 0.34) * (1.0 + min(0.42, (h - 61) * 0.022))
+                let w = 13.8 * scale, ph = 9.2 * scale
                 let ridgeOff = (v2 - 0.5) * 2.2 * scale
+                let px = x + ridgeOff, py = y - ph
                 // 柔和山麓淡影
-                m.disc(x + 0.6, y + 1.4, radius: w * 0.72, ink, alpha: 0.06, sides: 8)
+                m.disc(x + 0.5, y + 1.4, radius: w * 0.68, ink, alpha: 0.055, sides: 10)
+                // 弧坡曲点（向山脚柔和舒展，放大后仍显工笔山水气韵）
+                let lx1 = x - w * 0.62, ly1 = y - ph * 0.24
+                let lx2 = x - w * 0.28 + ridgeOff * 0.4, ly2 = y - ph * 0.66
+                let rx1 = x + w * 0.28 + ridgeOff * 0.4, ry1 = y - ph * 0.64
+                let rx2 = x + w * 0.64, ry2 = y - ph * 0.22
+                let midBaseX = x + ridgeOff * 0.28
                 // 左向阳淡宣坡 + 右背阴淡墨坡
-                m.fill([x - w, y + 1.2, x + ridgeOff, y - ph, x + ridgeOff * 0.3, y + 1.4], mtnSun, alpha: 0.34)
-                m.fill([x + ridgeOff, y - ph, x + w, y + 1.2, x + ridgeOff * 0.3, y + 1.4], mtnShade, alpha: 0.28)
+                m.fill([x - w, y + 1.2, lx1, ly1, lx2, ly2, px, py, midBaseX, y + 1.3], mtnSun, alpha: 0.36)
+                m.fill([px, py, rx1, ry1, rx2, ry2, x + w, y + 1.2, midBaseX, y + 1.3], mtnShade, alpha: 0.28)
                 // 伴生侧峰（成脉呼应）
                 if pick % 2 == 0 {
-                    let sx2 = x + (v1 > 0.5 ? -w * 0.68 : w * 0.68), sy2 = y + 1.6
-                    let w2 = w * 0.64, ph2 = ph * 0.66
-                    m.fill([sx2 - w2, sy2, sx2, sy2 - ph2, sx2, sy2 + 0.4], mtnSun, alpha: 0.26)
-                    m.fill([sx2, sy2 - ph2, sx2 + w2, sy2, sx2, sy2 + 0.4], mtnShade, alpha: 0.22)
-                    m.polyline([sx2 - w2, sy2, sx2, sy2 - ph2, sx2 + w2, sy2], width: 0.55, ink, alpha: 0.38)
+                    let dir: Float = v1 > 0.5 ? -1 : 1
+                    let sx2 = x + dir * w * 0.64, sy2 = y + 1.5
+                    let w2 = w * 0.62, ph2 = ph * 0.64
+                    m.fill([sx2 - w2, sy2, sx2 - w2 * 0.42, sy2 - ph2 * 0.48, sx2, sy2 - ph2, sx2, sy2 + 0.4], mtnSun, alpha: 0.26)
+                    m.fill([sx2, sy2 - ph2, sx2 + w2 * 0.44, sy2 - ph2 * 0.46, sx2 + w2, sy2, sx2, sy2 + 0.4], mtnShade, alpha: 0.21)
+                    m.polyline([sx2 - w2, sy2, sx2 - w2 * 0.42, sy2 - ph2 * 0.48, sx2, sy2 - ph2, sx2 + w2 * 0.44, sy2 - ph2 * 0.46, sx2 + w2, sy2], width: 0.50, ink, alpha: 0.36)
                 }
                 // 高山雪峰轻敷冰白冠
                 if h >= 72 {
-                    let sY = y - ph * 0.42
-                    m.fill([x + ridgeOff - w * 0.42, sY, x + ridgeOff, y - ph, x + ridgeOff, sY + 1.1], snowSun, alpha: 0.58)
-                    m.fill([x + ridgeOff, y - ph, x + ridgeOff + w * 0.42, sY, x + ridgeOff, sY + 1.1], snowShade, alpha: 0.46)
+                    let sY = y - ph * 0.48
+                    m.fill([px - w * 0.36, sY, lx2, ly2, px, py, px, sY + 1.0], snowSun, alpha: 0.62)
+                    m.fill([px, py, rx1, ry1, px + w * 0.36, sY, px, sY + 1.0], snowShade, alpha: 0.48)
                 }
-                // 轻盈主脊细墨勾线（不粗重、不压国界）
-                m.polyline([x - w, y + 1.2, x + ridgeOff, y - ph, x + w, y + 1.2], width: 0.72, ink, alpha: 0.48)
-                m.segment(x + ridgeOff, y - ph, x + ridgeOff * 0.35, y + 0.6, width: 0.46, ink, alpha: 0.30)
+                // 轻盈弧形主脊细墨勾线（附一笔披麻山脉皴纹）
+                m.polyline([x - w, y + 1.2, lx1, ly1, lx2, ly2, px, py, rx1, ry1, rx2, ry2, x + w, y + 1.2], width: 0.68, ink, alpha: 0.46)
+                m.polyline([px, py, midBaseX + ridgeOff * 0.12, y - ph * 0.36, midBaseX, y + 0.6], width: 0.42, ink, alpha: 0.28)
             } else if h >= 22 && biome >= 5 && biome <= 9 {
-                // 2. 极简水彩林冠团簇（彻底无 T 字树！半透明叠晕，林海轻灵通透）
+                // 2. 极简水彩林冠团簇（纯矢量手绘融纸，林海轻灵通透、千林各异）
                 if grove(sx, sy) < -0.26 || pick < 24 { continue }
-                guard woodGrid.insert(gridKey(sx, sy, 27)).inserted else { continue }
+                guard woodGrid.insert(gridKey(sx, sy, 26)).inserted else { continue }
                 if nearCity(x, y, 130) { continue }
                 let isPine = (biome == 9) || (sy < map.height * 0.26 && pick < 55)
                 if isPine {
-                    // 北方松柏：两三株轻淡青黛小尖杉（半透明融纸）
+                    // 北方松柏：三株错落轻淡青黛叠层松影（半透明融纸）
                     for k in 0..<3 {
-                        let ox = Float(k - 1) * 4.4 + (v1 - 0.5) * 1.6
+                        let ox = Float(k - 1) * 4.2 + (v1 - 0.5) * 1.6
                         let oy = Float(k % 2) * 1.4 - 0.6
-                        let th: Float = (k == 1 ? 6.8 : 5.2) * (0.9 + v2 * 0.2)
-                        let tw: Float = th * 0.42
-                        m.fill([x + ox - tw, y + oy + 1.4, x + ox, y + oy - th, x + ox + tw, y + oy + 1.4], pineWash, alpha: 0.38)
-                        m.polyline([x + ox - tw * 0.85, y + oy + 1.2, x + ox, y + oy - th, x + ox + tw * 0.85, y + oy + 1.2], width: 0.45, pineInk, alpha: 0.36)
+                        let th: Float = (k == 1 ? 6.6 : 5.0) * (0.9 + v2 * 0.2)
+                        let tw: Float = th * 0.40
+                        // 双层塔松轮廓（柔而不僵）
+                        m.fill([x + ox - tw, y + oy + 1.3, x + ox - tw * 0.52, y + oy - th * 0.42, x + ox, y + oy - th, x + ox + tw * 0.52, y + oy - th * 0.42, x + ox + tw, y + oy + 1.3], pineWash, alpha: 0.36)
+                        m.polyline([x + ox - tw * 0.85, y + oy + 1.1, x + ox - tw * 0.48, y + oy - th * 0.44, x + ox, y + oy - th, x + ox + tw * 0.48, y + oy - th * 0.44, x + ox + tw * 0.85, y + oy + 1.1], width: 0.42, pineInk, alpha: 0.34)
                     }
                 } else {
-                    // 温带/江南阔叶林：柔软半透明水彩林团（三层错落柔圆冠晕 + 淡墨弧边）
-                    let r0: Float = 4.2 + v1 * 1.8
-                    m.disc(x - r0 * 0.72, y + 0.6, radius: r0 * 0.84, forestWash, alpha: 0.30, sides: 9)
-                    m.disc(x + r0 * 0.72, y + 0.8, radius: r0 * 0.80, forestWash, alpha: 0.28, sides: 9)
-                    m.disc(x, y - r0 * 0.32, radius: r0 * 0.94, forestLit, alpha: 0.32, sides: 10)
-                    // 极淡松烟弧顶勾勒，增加一点宣纸工笔灵韵
-                    m.polyline([x - r0 * 1.35, y + 1.1, x - r0 * 0.72, y - r0 * 0.35, x, y - r0 * 1.15, x + r0 * 0.76, y - r0 * 0.28, x + r0 * 1.32, y + 1.1], width: 0.50, forestInk, alpha: 0.34)
+                    // 温带/江南阔叶林：柔软半透明水彩林团（多瓣错落柔圆冠晕 + 淡墨云弧顶）
+                    let r0: Float = 4.0 + v1 * 1.9
+                    let shift: Float = (v2 - 0.5) * 1.6
+                    m.disc(x - r0 * 0.78 + shift * 0.4, y + 0.7, radius: r0 * 0.82, forestWash, alpha: 0.28, sides: 10)
+                    m.disc(x + r0 * 0.76 - shift * 0.3, y + 0.8, radius: r0 * 0.78, forestWash, alpha: 0.26, sides: 10)
+                    m.disc(x + shift * 0.2, y - r0 * 0.34, radius: r0 * 0.92, forestLit, alpha: 0.31, sides: 11)
+                    if pick % 3 == 0 {
+                        m.disc(x + (v1 > 0.5 ? r0 * 1.28 : -r0 * 1.28), y + 1.2, radius: r0 * 0.58, forestWash, alpha: 0.24, sides: 8)
+                    }
+                    // 极淡松烟弧顶勾勒，增加宣纸工笔灵韵
+                    m.polyline([x - r0 * 1.32, y + 1.1, x - r0 * 0.72, y - r0 * 0.36, x, y - r0 * 1.12, x + r0 * 0.74, y - r0 * 0.30, x + r0 * 1.30, y + 1.1], width: 0.46, forestInk, alpha: 0.32)
                 }
             } else if h >= 46 {
-                // 3. 温润淡墨软丘陵（轻透土丘晕影 + 柔弧线）
-                if pick < 54 { continue }
-                if mtnGrid.contains(gridKey(sx, sy, 36)) || !hillGrid.insert(gridKey(sx, sy, 32)).inserted { continue }
+                // 3. 温润淡墨软丘陵（7 点舒缓弧丘 + 淡影）
+                if pick < 52 { continue }
+                if mtnGrid.contains(gridKey(sx, sy, 36)) || !hillGrid.insert(gridKey(sx, sy, 31)).inserted { continue }
                 if nearCity(x, y, 145) { continue }
-                let w: Float = 8.4 + v1 * 3.0, hh: Float = 3.2 + v2 * 1.4
-                m.fill([x - w, y + 1.2, x - w * 0.48, y - hh * 0.78, x, y - hh, x + w * 0.48, y - hh * 0.78, x + w, y + 1.2], hillWash, alpha: 0.22)
-                m.polyline([x - w, y + 1.2, x - w * 0.48, y - hh * 0.78, x, y - hh, x + w * 0.48, y - hh * 0.78, x + w, y + 1.2], width: 0.55, hillLine, alpha: 0.34)
+                let w: Float = 8.6 + v1 * 3.0, hh: Float = 3.1 + v2 * 1.3
+                let pts: [Float] = [x - w, y + 1.2, x - w * 0.68, y - hh * 0.48, x - w * 0.34, y - hh * 0.88, x, y - hh, x + w * 0.34, y - hh * 0.88, x + w * 0.68, y - hh * 0.48, x + w, y + 1.2]
+                m.fill(pts, hillWash, alpha: 0.21)
+                m.polyline(pts, width: 0.52, hillLine, alpha: 0.33)
             } else if h >= Float(WorldMap.seaLevel) + 2 && (biome == 1 || biome == 2) {
                 // 4. 大漠流沙：柔金月牙沙丘波纹 + 极稀碧水微绿洲
                 if pick < 52 { continue }

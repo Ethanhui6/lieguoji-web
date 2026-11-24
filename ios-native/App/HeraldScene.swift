@@ -270,15 +270,30 @@ struct HeraldBanner: View {
     }
 
     private var videoClipName: String {
-        if herald.text.contains("水师") || herald.text.contains("舰队") || herald.text.contains("海港") || herald.text.contains("封锁") || herald.text.contains("海战") {
+        let t = herald.text
+        if t.contains("大航海") || t.contains("船坞") || t.contains("下水") || t.contains("远洋") || t.contains("海贸") {
+            return "herald-voyage"
+        }
+        if t.contains("水师") || t.contains("舰队") || t.contains("海港") || t.contains("封锁") || t.contains("海战") {
             return "herald-naval"
+        }
+        if t.contains("登基") || t.contains("即位") || t.contains("大选") || t.contains("就职") || t.contains("加冕") {
+            return "herald-coronation"
+        }
+        if t.contains("科技") || t.contains("突破") || t.contains("维新") || t.contains("变法") || t.contains("革新") || t.contains("学宫") {
+            return "herald-reform"
+        }
+        if t.contains("赈灾") || t.contains("赈济") || t.contains("丰登") || t.contains("丰年") || t.contains("屯田") || t.contains("疫病") {
+            return "herald-relief"
         }
         switch herald.kind {
         case .war, .ultimatum, .coup: return "herald-war"
         case .capture, .uprising, .extinction: return "herald-siege"
         case .peace, .treaty, .marriage: return "herald-peace"
-        case .regime, .restoration, .house, .capital: return "herald-regime"
-        case .blizzard, .drought, .flood, .harvest, .plague: return "herald-weather"
+        case .regime, .restoration: return "herald-coronation"
+        case .house, .capital: return "herald-regime"
+        case .harvest: return "herald-relief"
+        case .blizzard, .drought, .flood, .plague: return "herald-weather"
         }
     }
 

@@ -231,6 +231,7 @@ struct DisplaySettings: Codable, Equatable {
 /// 推演与画面 (the original's IsDisplayArmy and the like), kept between launches.
 struct PlaySettings: Codable, Equatable {
     var showArmies = true
+    var showTroopBars = true
     var warArrows = true
     var iconScale = 1.0
     /// Frames a second while the map is dragged or zoomed, while armies march, and for
@@ -262,11 +263,12 @@ struct PlaySettings: Codable, Equatable {
     var pauseOnSheet = true
     static let key = "playSettings.v1"
     init() {}
-    private enum Keys: String, CodingKey { case showArmies, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave, pauseOnNews, showTacticalPill, showScrollPlacard, showReplayPlacard, directorCruise, showHeralds, showBattleFloats, seaWaves, pauseOnSheet }
+    private enum Keys: String, CodingKey { case showArmies, showTroopBars, warArrows, iconScale, highFrameRate, mapFPS, marchFPS, effectFPS, renderScale, simLoad, autoCool, introCamera, easeReveal, autosave, pauseOnNews, showTacticalPill, showScrollPlacard, showReplayPlacard, directorCruise, showHeralds, showBattleFloats, seaWaves, pauseOnSheet }
     // Every field is optional in a stored setting: older versions saved fewer (and a 高帧率 switch).
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
         showArmies = try c.decodeIfPresent(Bool.self, forKey: .showArmies) ?? true
+        showTroopBars = try c.decodeIfPresent(Bool.self, forKey: .showTroopBars) ?? true
         warArrows = try c.decodeIfPresent(Bool.self, forKey: .warArrows) ?? true
         iconScale = try c.decodeIfPresent(Double.self, forKey: .iconScale) ?? 1
         mapFPS = try c.decodeIfPresent(Int.self, forKey: .mapFPS) ?? ((try c.decodeIfPresent(Bool.self, forKey: .highFrameRate)) == true ? 120 : 60)
@@ -294,7 +296,7 @@ struct PlaySettings: Codable, Equatable {
     }
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: Keys.self)
-        try c.encode(showArmies, forKey: .showArmies); try c.encode(warArrows, forKey: .warArrows); try c.encode(iconScale, forKey: .iconScale)
+        try c.encode(showArmies, forKey: .showArmies); try c.encode(showTroopBars, forKey: .showTroopBars); try c.encode(warArrows, forKey: .warArrows); try c.encode(iconScale, forKey: .iconScale)
         try c.encode(mapFPS, forKey: .mapFPS); try c.encode(marchFPS, forKey: .marchFPS); try c.encode(effectFPS, forKey: .effectFPS)
         try c.encode(renderScale, forKey: .renderScale); try c.encode(simLoad, forKey: .simLoad); try c.encode(autoCool, forKey: .autoCool)
         try c.encode(introCamera, forKey: .introCamera); try c.encode(easeReveal, forKey: .easeReveal)
@@ -492,8 +494,8 @@ struct MapView: UIViewRepresentable {
                 renderer.setReveal(1)
                 self.labels?.alpha = 1
                 self.effects.alpha = 1
-                self.set(MapCamera.cover(map: self.mapSize, viewport: self.viewport))
-                self.mtk.setNeedsDisplay()
+                self.syncTroopVisibility(reveal: 1)
+                self.set(MapCamera.cover(map: self.mapSize, viewport: self.viewport), sync: true)
             }
             controller.onHits = { [weak self] hits in
                 guard let self, self.controller.play.showBattleFloats, !self.controller.sheetOpen, let renderer = self.renderer else { return }
@@ -507,6 +509,7 @@ struct MapView: UIViewRepresentable {
             labels = MapLabelsView(map: map)
             labels?.alpha = CGFloat(max(0, min(1, (initialReveal - 0.85) / 0.15)))
             effects.alpha = CGFloat(max(0, min(1, (initialReveal - 0.9) / 0.1)))
+            syncTroopVisibility(reveal: initialReveal)
             mtk.frame = container.bounds; mtk.autoresizingMask = [.flexibleWidth, .flexibleHeight]; container.addSubview(mtk)
             // 统一将全部地图覆盖层（战争特效、国名地名、飘字、兵力条）收入 overlayHost -> overlayCanvas，
             // 通过 overlayHost.clipsToBounds 硬件剪裁在卷轴画心内（零 layer.mask 离屏渲染开销）。
@@ -632,6 +635,14 @@ struct MapView: UIViewRepresentable {
                 revealStarted()
             }
         }
+        private func syncTroopVisibility(reveal: Float) {
+            let allow = reveal >= 0.99 && (controller.play.showArmies || controller.replayLocked) && controller.play.showTroopBars
+            troops.alpha = allow ? 1 : 0
+            troops.isHidden = !allow
+            if !allow && !troops.isEmpty {
+                troops.clear()
+            }
+        }
         private func set(_ camera: MapCamera, sync: Bool = false, skipLabels: Bool = false) {
             guard let renderer else { return }
             let vpSize = mtk.bounds.size
@@ -641,12 +652,15 @@ struct MapView: UIViewRepresentable {
             var c = camera.isValid ? camera : MapCamera.cover(map: mapSize, viewport: vp)
             c.scale = min(b.upperBound, max(b.lowerBound, c.scale))
             let clamped = c.clamped(map: mapSize, viewport: vp, margin: scrollEdgeMargin)
-            let wantSync = sync && fingerDragging
+            // 同事务帧锁：凡用户拖拽、双指缩放、惯性滑行与镜头动画均与 Metal 地图在同一 CATransaction 内同步提交，彻底杜绝底图与军团动效/地名分层错位。
+            let wantSync = sync && !controller.sheetOpen
             setSyncPresent(wantSync)
             renderer.camera = clamped
             let clipRect = mapScreenRect(camera: clamped, viewport: vpSize)
             let canvasFrame = CGRect(x: -clipRect.minX, y: -clipRect.minY, width: vpSize.width, height: vpSize.height)
             let fullBounds = CGRect(origin: .zero, size: vpSize)
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
             UIView.performWithoutAnimation {
                 if overlayHost.frame != clipRect { overlayHost.frame = clipRect }
                 if overlayCanvas.frame != canvasFrame { overlayCanvas.frame = canvasFrame }
@@ -659,16 +673,32 @@ struct MapView: UIViewRepresentable {
                 if !skipLabels && effects.alpha > 0.01 {
                     effects.update(camera: clamped, viewport: vpSize)
                 }
-                if !skipLabels && renderer.reveal >= 1 {
+                if !skipLabels && renderer.reveal >= 0.99 {
                     updateTroops()
                     syncWeather()
+                } else if renderer.reveal < 0.99 {
+                    syncTroopVisibility(reveal: renderer.reveal)
                 }
                 placeSpot()
             }
-            mtk.setNeedsDisplay()
+            if wantSync {
+                mtk.draw()
+            } else {
+                mtk.setNeedsDisplay()
+            }
+            CATransaction.commit()
         }
         private func updateTroops() {
             guard let renderer else { return }
+            let allow = renderer.reveal >= 0.99 && (controller.play.showArmies || controller.replayLocked) && controller.play.showTroopBars
+            guard allow else {
+                troops.alpha = 0
+                troops.isHidden = true
+                if !troops.isEmpty { troops.clear() }
+                return
+            }
+            troops.alpha = 1
+            troops.isHidden = false
             // Zoomed out the banners carry no marks: skip collecting every army's position each frame.
             if !troops.shows(renderer.camera) && troops.isEmpty { return }
             troops.texts = controller.troopTexts
@@ -793,6 +823,8 @@ struct MapView: UIViewRepresentable {
             default:
                 pinching = false; pinchTouches = 2
                 controller.onMapBrowsing?(false)
+                // 松手尾帧强制同事务提交一次，防止最后一个缩放帧出现底图与动效层短暂错开。
+                set(camera, sync: true)
                 setSyncPresent(cameraInteractive)
             }
         }
@@ -955,7 +987,9 @@ struct MapView: UIViewRepresentable {
             guard placed else { return }
             appliedRevealSerial = controller.revealClockSerial
             if let c = controller.revealClock, let renderer {
-                renderer.setReveal(controller.revealNow ?? c.from)
+                let startReveal = controller.revealNow ?? c.from
+                renderer.setReveal(startReveal)
+                syncTroopVisibility(reveal: startReveal)
                 if c.push {
                     let target = camera
                     var from = target; from.scale = target.scale * 1.25
@@ -971,9 +1005,15 @@ struct MapView: UIViewRepresentable {
             renderer.setReveal(t)
             labels?.alpha = CGFloat(max(0, min(1, (t - 0.85) / 0.15)))
             effects.alpha = CGFloat(max(0, min(1, (t - 0.9) / 0.1)))
+            syncTroopVisibility(reveal: t)
             mtk.setNeedsDisplay()
             // The owner (GameModel) clears the clock once the published value has caught up.
-            if controller.revealDone { renderer.setReveal(controller.revealClock?.to ?? t); return false }
+            if controller.revealDone {
+                let finalT = controller.revealClock?.to ?? t
+                renderer.setReveal(finalT)
+                syncTroopVisibility(reveal: finalT)
+                return false
+            }
             return true
         }
         @objc private func step(_ l: CADisplayLink) {
@@ -984,17 +1024,17 @@ struct MapView: UIViewRepresentable {
             if let a = animation {
                 let x = min(1, (CACurrentMediaTime() - a.start) / a.duration)
                 let eased = x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2
-                set(MapCamera.arcInterpolate(a.from, a.to, eased, bounds: bounds), sync: false)
-                if x >= 1 { animation = nil; setSyncPresent(fingerDragging) }
+                set(MapCamera.arcInterpolate(a.from, a.to, eased, bounds: bounds), sync: true)
+                if x >= 1 { animation = nil; setSyncPresent(cameraInteractive) }
             } else if hypot(velocity.x, velocity.y) > 8 {
-                // Exponential deceleration close to UIScrollView's normal rate.
-                set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt), sync: false)
+                // Exponential deceleration close to UIScrollView's normal rate — synced atomically with Metal.
+                set(camera.panned(dx: Double(velocity.x) * dt, dy: Double(velocity.y) * dt), sync: true)
                 let decay = CGFloat(pow(0.998, dt * 1000))
                 velocity = CGPoint(x: velocity.x * decay, y: velocity.y * decay)
             } else if !sheetThrottled && renderer?.isAnimating == true {
                 setSyncPresent(false)
                 velocity = .zero
-                updateTroops()
+                if (renderer?.reveal ?? 0) >= 0.99 { updateTroops() }
                 mtk.setNeedsDisplay()
             } else if !revealing {
                 setSyncPresent(false)
@@ -1050,9 +1090,10 @@ struct MapView: UIViewRepresentable {
             if controller.revealClock != nil && !controller.revealDone && link == nil { startLink() }
             if controller.revealClock == nil {
                 if let renderer, renderer.reveal != controller.reveal { renderer.setReveal(controller.reveal); dirty = true }
-                // Names ink in last, with the cities.
+                // Names ink in last, with the cities; troop bars stay completely hidden & cleared until reveal completes.
                 labels?.alpha = CGFloat(max(0, min(1, (controller.reveal - 0.85) / 0.15)))
                 effects.alpha = CGFloat(max(0, min(1, (controller.reveal - 0.9) / 0.1)))
+                syncTroopVisibility(reveal: controller.reveal)
             }
             mtk?.isUserInteractionEnabled = controller.interactive
             if controller.drifting { startDrift() }
@@ -1088,9 +1129,11 @@ struct MapView: UIViewRepresentable {
                 renderer?.setArmies(armies, route: controller.route, snap: snapped)
                 controller.snapArmies = false
                 if snapped || !controller.route.isEmpty { dirty = true }
-                if !controller.sheetOpen {
+                if !controller.sheetOpen && (renderer?.reveal ?? 0) >= 0.99 {
                     updateTroops()
                     if renderer?.isAnimating == true { startLink() }
+                } else if (renderer?.reveal ?? 0) < 0.99 {
+                    syncTroopVisibility(reveal: renderer?.reveal ?? 0)
                 }
             }
             if controller.washes != shownWashes || controller.washEpoch != shownWashEpoch {
@@ -1138,6 +1181,7 @@ struct MapView: UIViewRepresentable {
                 if controller.play != appliedPlay {
                     appliedPlay = controller.play
                     syncWaves()
+                    updateTroops()
                     gliding = false; link?.preferredFrameRateRange = frameRange
                     dirty = true
                 }
@@ -1767,17 +1811,25 @@ final class TroopLabelsView: UIView {
     /// The army icons' size setting (推演与画面).
     var iconScale = 1.0
     var isEmpty: Bool { layers.isEmpty && bars.isEmpty }
-    /// Whether icons are large enough at this zoom to carry a strength bar or troop mark.
-    func shows(_ camera: MapCamera) -> Bool { MapRenderer.iconPoints(camera.scale, iconScale: iconScale) >= 12 }
+    func clear() {
+        guard !bars.isEmpty || !layers.isEmpty else { return }
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        for (_, pair) in bars { pair.track.removeFromSuperlayer() }
+        for (_, l) in layers { l.removeFromSuperlayer() }
+        bars.removeAll(); layers.removeAll()
+        CATransaction.commit()
+    }
+    /// 仅在大幅度放大近观时才显露纤细兵力条（不遮挡中远景舆图与军团棋子），并支持在设置中一键彻底关闭。
+    func shows(_ camera: MapCamera) -> Bool { MapRenderer.iconPoints(camera.scale, iconScale: iconScale) >= 19.5 }
     func update(_ placed: [(sprite: MapRenderer.ArmySprite, x: Float, y: Float)], camera: MapCamera, viewport: CGSize, spread: [String: SIMD2<Float>] = [:]) {
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         // Icon size on screen (the renderer's icon size in map units × scale).
         let icon = MapRenderer.iconPoints(camera.scale, iconScale: iconScale)
         var seenText = Set<String>(), seenBar = Set<String>()
         CATransaction.begin(); CATransaction.setDisableActions(true)
-        if icon >= 12 {
-            let barW = min(26.0, max(16.0, icon * 1.05))
-            let barH: Double = 3.0
+        if icon >= 19.5 {
+            let barW = min(22.0, max(14.0, icon * 0.78))
+            let barH: Double = 2.6
             for p in placed where p.sprite.army > -100_000 {
                 let key = p.sprite.key
                 guard let ratio = ratios[key], ratio > 0 else { continue }
@@ -1785,10 +1837,10 @@ final class TroopLabelsView: UIView {
                 guard s.x > -40, s.y > -40, s.x < vp.width + 40, s.y < vp.height + 40 else { continue }
                 let o = spread[key] ?? SIMD2<Float>(0, 0)
                 let bx = s.x + Double(o.x) * icon
-                let by = s.y + (Double(o.y) + 0.62) * icon
+                let by = s.y + (Double(o.y) + 0.66) * icon
                 let pair = bars[key] ?? makeBar(key)
                 let clamped = Double(min(1, max(0.04, ratio)))
-                let h = p.sprite.fighting ? 3.8 : barH
+                let h = p.sprite.fighting ? 3.2 : barH
                 pair.track.bounds = CGRect(x: 0, y: 0, width: barW, height: h)
                 pair.track.position = CGPoint(x: bx, y: by)
                 pair.fill.frame = CGRect(x: 0, y: 0, width: barW * clamped, height: h)
@@ -1803,15 +1855,15 @@ final class TroopLabelsView: UIView {
                 }
                 seenBar.insert(key)
 
-                // 高倍观战交锋时去文字化：交战部队仅保留清晰血条，避免密密麻麻数字遮挡兵种序列帧演出
-                if icon >= 19, !p.sprite.fighting, let text = texts[key] {
+                // 超高倍近观且非交战时才浮现小号兵力数字，保持画面清透。
+                if icon >= 22.5, !p.sprite.fighting, let text = texts[key] {
                     let l = layers[key] ?? make(key)
                     if (l.string as? String) != text {
                         l.string = text
                         let w = ceil((text as NSString).size(withAttributes: [.font: Self.font]).width) + 6
                         l.bounds = CGRect(x: 0, y: 0, width: w, height: 14)
                     }
-                    l.position = CGPoint(x: bx, y: by + 9.5)
+                    l.position = CGPoint(x: bx, y: by + 8.5)
                     seenText.insert(key)
                 }
             }
@@ -1822,9 +1874,9 @@ final class TroopLabelsView: UIView {
     }
     private func makeBar(_ key: String) -> (track: CALayer, fill: CALayer) {
         let track = CALayer()
-        track.backgroundColor = UIColor(red: 0.12, green: 0.09, blue: 0.07, alpha: 0.72).cgColor
-        track.cornerRadius = 1.5; track.masksToBounds = true
-        track.borderWidth = 0.55; track.borderColor = UIColor(red: 0.98, green: 0.95, blue: 0.88, alpha: 0.92).cgColor
+        track.backgroundColor = UIColor(red: 0.12, green: 0.09, blue: 0.07, alpha: 0.62).cgColor
+        track.cornerRadius = 1.3; track.masksToBounds = true
+        track.borderWidth = 0.45; track.borderColor = UIColor(red: 0.96, green: 0.93, blue: 0.86, alpha: 0.68).cgColor
         let fill = CALayer()
         track.addSublayer(fill)
         layer.addSublayer(track)

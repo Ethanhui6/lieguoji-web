@@ -3,6 +3,7 @@ import LieguojiCore
 
 /// 国家页顶部的五键快捷操控条：划疆、放兵、颁诏、疆土、看都城，让高频操控一触即达。
 struct NationQuickBar: View {
+    var decreeTitle: String = "颁诏"
     let onPaint: () -> Void
     let onPlaceArmy: () -> Void
     let onDecrees: () -> Void
@@ -12,7 +13,7 @@ struct NationQuickBar: View {
         HStack(spacing: 7) {
             quickButton(title: "划疆", glyph: .views, tint: Theme.ink, action: onPaint)
             quickButton(title: "放兵", glyph: .military, tint: Theme.seal, action: onPlaceArmy)
-            quickButton(title: "颁诏", glyph: .edict, tint: Theme.seal, action: onDecrees)
+            quickButton(title: decreeTitle, glyph: .edict, tint: Theme.seal, action: onDecrees)
             quickButton(title: "疆土", glyph: .region, tint: Theme.jade, action: onTerritory)
             quickButton(title: "都城", glyph: .crown, tint: Theme.ink, action: onCapital)
         }

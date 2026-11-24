@@ -30,7 +30,7 @@ struct MemorialPaper: View {
             }
         }
     }()
-    /// 性能优化：将奏折折页光影与朱红竖格预烘焙为静态纹理，彻底消除 Sheet 弹起／缩放动画期间逐帧 Canvas 重绘卡顿。
+    /// 性能优化：将奏折纸面微韵与朱红竖格预烘焙为静态纹理（去除刺眼白边竖带与顶边切角红条，边缘通透无缝）。
     private static let ruledTexture: UIImage? = {
         guard let base = texture else { return nil }
         let size = base.size, rect = CGRect(origin: .zero, size: size)
@@ -38,34 +38,13 @@ struct MemorialPaper: View {
         return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
             base.draw(in: rect)
             let cg = ctx.cgContext
-            let panel: CGFloat = 170
-            var x: CGFloat = 0, i = 0
-            let space = CGColorSpaceCreateDeviceRGB()
-            while x < size.width {
-                let c0 = (i % 2 == 0 ? UIColor.white.withAlphaComponent(0.10) : UIColor.black.withAlphaComponent(0.035)).cgColor
-                let c1 = UIColor.clear.cgColor
-                if let g = CGGradient(colorsSpace: space, colors: [c0, c1] as CFArray, locations: [0, 1]) {
-                    cg.saveGState()
-                    cg.clip(to: CGRect(x: x, y: 0, width: panel, height: size.height))
-                    cg.drawLinearGradient(g, start: CGPoint(x: x, y: 0), end: CGPoint(x: x + panel, y: 0), options: [])
-                    cg.restoreGState()
-                }
-                if x > 0 {
-                    cg.setStrokeColor(UIColor(red: 0.4, green: 0.3, blue: 0.18, alpha: 0.10).cgColor)
-                    cg.setLineWidth(1.2)
-                    cg.move(to: CGPoint(x: x, y: 0))
-                    cg.addLine(to: CGPoint(x: x, y: size.height))
-                    cg.strokePath()
-                }
-                x += panel; i += 1
-            }
-            cg.setStrokeColor(UIColor(Theme.seal).withAlphaComponent(0.06).cgColor)
-            cg.setLineWidth(0.8)
-            var c: CGFloat = 28
+            cg.setStrokeColor(UIColor(Theme.seal).withAlphaComponent(0.045).cgColor)
+            cg.setLineWidth(0.75)
+            var c: CGFloat = 34
             while c < size.width {
                 cg.move(to: CGPoint(x: c, y: 0))
                 cg.addLine(to: CGPoint(x: c, y: size.height))
-                c += 42
+                c += 48
             }
             cg.strokePath()
         }
@@ -73,23 +52,13 @@ struct MemorialPaper: View {
     var body: some View {
         // The base colour takes exactly the offered size; the pre-baked image is an overlay clipped to
         // it. Crucially, `scaledToFill()` on a 1024×1024 square extends its hit-test rect far beyond
-        // `.clipped()`/`.clipShape()` in SwiftUI, so both decorative overlays MUST disable hit-testing
+        // `.clipped()`/`.clipShape()` in SwiftUI, so decorative overlays MUST disable hit-testing
         // and the base must clip hit-testing via `.contentShape(Rectangle())`.
         let image = rules ? (Self.ruledTexture ?? Self.texture) : Self.texture
         let paper = Theme.paper
             .overlay {
                 if let t = image {
                     Image(uiImage: t).resizable().scaledToFill().allowsHitTesting(false)
-                }
-            }
-            .overlay(alignment: .top) {
-                // The brocade binding of a memorial's cover: a deep red band edged in gold.
-                if rules && fullBleed {
-                    VStack(spacing: 0) {
-                        LinearGradient(colors: [Color(red: 0.45, green: 0.12, blue: 0.08), Color(red: 0.6, green: 0.18, blue: 0.11)], startPoint: .top, endPoint: .bottom).frame(height: 5)
-                        Rectangle().fill(Color(red: 0.78, green: 0.62, blue: 0.3).opacity(0.85)).frame(height: 1)
-                    }
-                    .allowsHitTesting(false)
                 }
             }
             .clipped()
@@ -1094,12 +1063,12 @@ extension View {
         let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
         return self
             .background(
-                shape.fill(Theme.paper2.opacity(0.86))
-                    .shadow(color: Color(red: 0.22, green: 0.16, blue: 0.08).opacity(0.07), radius: 6, y: 2)
+                shape.fill(Theme.paper2.opacity(0.82))
+                    .shadow(color: Color(red: 0.22, green: 0.16, blue: 0.08).opacity(0.06), radius: 5, y: 1.5)
             )
             .background((tint ?? .clear).opacity(0.055), in: shape)
-            .overlay(shape.strokeBorder((tint ?? Theme.ink).opacity(tint == nil ? 0.15 : 0.34), lineWidth: 0.9))
-            .overlay(shape.inset(by: 2.5).strokeBorder((tint ?? Theme.seal).opacity(0.11), lineWidth: 0.55))
+            .overlay(shape.strokeBorder((tint ?? Theme.ink).opacity(tint == nil ? 0.13 : 0.32), lineWidth: 0.85))
+            .overlay(shape.inset(by: 2.5).strokeBorder((tint ?? Theme.seal).opacity(0.08), lineWidth: 0.5))
     }
 }
 

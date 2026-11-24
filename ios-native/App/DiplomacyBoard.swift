@@ -296,16 +296,21 @@ struct DiplomacyBoard: View {
             .padding(.horizontal, Theme.Layout.pageInset)
         }
         .paperToast($flash)
-        .confirmationDialog(
-            warConfirmTarget.map { "\(name(nation)) 向 \(name($0)) 宣战？" } ?? "",
-            isPresented: Binding(get: { warConfirmTarget != nil }, set: { if !$0 { warConfirmTarget = nil } }),
-            titleVisibility: .visible
-        ) {
+        .sheet(isPresented: Binding(get: { warConfirmTarget != nil }, set: { if !$0 { warConfirmTarget = nil } })) {
             if let target = warConfirmTarget {
-                Button("立即宣战", role: .destructive) {
-                    warConfirmTarget = nil
-                    runQuick("已向\(name(target))宣战") { await model.declareWar(nation, on: target) }
-                }
+                WarCompareSheet(
+                    model: model,
+                    attacker: nation,
+                    defender: target,
+                    onConfirm: {
+                        warConfirmTarget = nil
+                        runQuick("已向\(name(target))宣战") { await model.declareWar(nation, on: target) }
+                    },
+                    onCancel: {
+                        warConfirmTarget = nil
+                    }
+                )
+                .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
             }
         }
         .task(id: "\(nation)-\(state.day / 30)-\(attempt)") {

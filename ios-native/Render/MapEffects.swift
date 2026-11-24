@@ -47,9 +47,9 @@ struct MapEffects: Equatable {
         let shallow: (Double, Double, Double); let deep: (Double, Double, Double)
         static func == (a: Arrow, b: Arrow) -> Bool { a.key == b.key && a.sx == b.sx && a.sy == b.sy && a.ex == b.ex && a.ey == b.ey && a.cx == b.cx && a.cy == b.cy && a.deep == b.deep }
     }
-    /// 外交地缘视线弧线与军团海陆补给脉络（war: 朱红敌对线；ally: 青玉同盟线；vassal: 鎏金宗藩线；supply: 军团后勤补给虚线）。
+    /// 外交地缘视线弧线与军团海陆补给/护航脉络（war: 朱红敌对线；ally: 青玉同盟线；vassal: 鎏金宗藩线；supply: 军团后勤补给虚线；escort: 舰队护航虚线）。
     struct GeoArc: Equatable {
-        enum Kind: Equatable { case war, ally, vassal, supply }
+        enum Kind: Equatable { case war, ally, vassal, supply, escort }
         let key: String; let fromX: Double; let fromY: Double; let toX: Double; let toY: Double
         let kind: Kind; var severed: Bool = false
     }
@@ -286,85 +286,93 @@ final class EffectsView: UIView {
     }
 
     private func siegeLayer(color: UIColor) -> (CALayer, CAShapeLayer) {
-        // 36 帧（6×6 @ 30fps）手绘攻城烽烟序列帧（燃烧石堡＋滚滚浓烟＋飞升火烬）＋国色顺时针围城进度弧
-        let side: CGFloat = 38, mid = side / 2, radius: CGFloat = 13.8
+        // 无圆框纯净攻城烽烟（36 帧 6×6 @ 30fps 烈焰浓烟）＋城下纤细水平围城进度条（彻底去除丑陋白色圆盘罩）
+        let side: CGFloat = 38
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: side, height: side)
-        let circle = UIBezierPath(arcCenter: CGPoint(x: mid, y: mid), radius: radius, startAngle: -.pi / 2, endAngle: .pi * 1.5, clockwise: true)
-
-        let back = CAShapeLayer(); back.frame = root.bounds; back.path = circle.cgPath
-        back.fillColor = UIColor(red: 0.97, green: 0.94, blue: 0.87, alpha: 0.62).cgColor
-        back.strokeColor = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 0.36).cgColor; back.lineWidth = 1.7
 
         let siegeAnim = SpriteSheetLayer(spec: .atlasSiege36)
-        siegeAnim.frame = CGRect(x: mid - 12.5, y: mid - 13.5, width: 25, height: 25)
+        siegeAnim.frame = CGRect(x: 4, y: 1, width: 30, height: 30)
         siegeAnim.minificationFilter = .trilinear
         siegeAnim.magnificationFilter = .linear
         siegeAnim.configure(spec: .atlasSiege36, state: .siege, fps: 30.0, phaseOffset: Double.random(in: 0..<1.2))
-
-        let ring = CAShapeLayer(); ring.frame = root.bounds; ring.path = circle.cgPath
-        ring.fillColor = nil; ring.strokeColor = color.cgColor; ring.lineWidth = 2.8; ring.lineCap = .round; ring.strokeEnd = 0
-
-        root.addSublayer(back)
         root.addSublayer(siegeAnim)
-        root.addSublayer(ring)
-        return (root, ring)
+
+        let barPath = UIBezierPath()
+        barPath.move(to: CGPoint(x: 5, y: 33.5))
+        barPath.addLine(to: CGPoint(x: 33, y: 33.5))
+
+        let track = CAShapeLayer(); track.frame = root.bounds; track.path = barPath.cgPath
+        track.fillColor = nil; track.strokeColor = UIColor(red: 0.14, green: 0.10, blue: 0.08, alpha: 0.65).cgColor
+        track.lineWidth = 3.2; track.lineCap = .round
+
+        let bar = CAShapeLayer(); bar.frame = root.bounds; bar.path = barPath.cgPath
+        bar.fillColor = nil; bar.strokeColor = color.cgColor
+        bar.lineWidth = 2.2; bar.lineCap = .round; bar.strokeEnd = 0
+
+        root.addSublayer(track)
+        root.addSublayer(bar)
+        return (root, bar)
     }
 
-    /// 近海港口封锁警戒圈：旋转朱墨锁链虚线环 + 逆向十字锚标刻度 + 外扩封锁警示脉冲。
+    /// 近海港口封锁徽记：无圆框精细朱砂铁锚锁链微标 + 轻柔海波浮沉动效（彻底去除三重旋转虚线圆圈）。
     private func blockadeLayer(color: UIColor) -> CALayer {
-        let side: CGFloat = 44, mid = side / 2
+        let side: CGFloat = 34
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: side, height: side)
-        let crimson = UIColor(red: 0.82, green: 0.18, blue: 0.14, alpha: 0.92)
+        let crimson = UIColor(red: 0.78, green: 0.17, blue: 0.13, alpha: 0.96)
+        let ink = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 0.88)
 
-        let pulse = CAShapeLayer(); pulse.frame = root.bounds
-        pulse.path = UIBezierPath(ovalIn: CGRect(x: mid - 14, y: mid - 14, width: 28, height: 28)).cgPath
-        pulse.fillColor = nil; pulse.strokeColor = crimson.withAlphaComponent(0.55).cgColor; pulse.lineWidth = 1.2
-        let pScale = CABasicAnimation(keyPath: "transform.scale"); pScale.fromValue = 0.82; pScale.toValue = 1.45
-        let pFade = CABasicAnimation(keyPath: "opacity"); pFade.fromValue = 0.72; pFade.toValue = 0.0
-        let pg = CAAnimationGroup(); pg.animations = [pScale, pFade]; pg.duration = 1.5; pg.repeatCount = .infinity
-        pulse.add(Self.calm(pg), forKey: "blkPulse")
-        root.addSublayer(pulse)
+        // 精细铁锚轮廓
+        let anchor = CAShapeLayer(); anchor.frame = root.bounds
+        let ap = UIBezierPath()
+        ap.move(to: CGPoint(x: 17, y: 7)); ap.addLine(to: CGPoint(x: 17, y: 24))
+        ap.move(to: CGPoint(x: 12, y: 12)); ap.addLine(to: CGPoint(x: 22, y: 12))
+        ap.move(to: CGPoint(x: 10, y: 19))
+        ap.addQuadCurve(to: CGPoint(x: 17, y: 25), controlPoint: CGPoint(x: 11.5, y: 24.5))
+        ap.addQuadCurve(to: CGPoint(x: 24, y: 19), controlPoint: CGPoint(x: 22.5, y: 24.5))
+        anchor.path = ap.cgPath; anchor.fillColor = nil
+        anchor.strokeColor = ink.cgColor; anchor.lineWidth = 1.9; anchor.lineCap = .round; anchor.lineJoin = .round
+        anchor.shadowColor = UIColor(red: 0.99, green: 0.97, blue: 0.91, alpha: 1).cgColor
+        anchor.shadowOpacity = 0.85; anchor.shadowRadius = 1.5; anchor.shadowOffset = .zero
+        root.addSublayer(anchor)
 
-        let chain = CAShapeLayer(); chain.frame = root.bounds
-        chain.path = UIBezierPath(ovalIn: CGRect(x: mid - 16, y: mid - 16, width: 32, height: 32)).cgPath
-        chain.fillColor = nil; chain.strokeColor = crimson.cgColor
-        chain.lineWidth = 1.9; chain.lineDashPattern = [5, 3.5]; chain.lineCap = .round
-        let spin = CABasicAnimation(keyPath: "transform.rotation.z"); spin.fromValue = 0; spin.toValue = Double.pi * 2; spin.duration = 5.4; spin.repeatCount = .infinity
-        chain.add(Self.calm(spin), forKey: "blkSpin")
-        root.addSublayer(chain)
+        // 朱砂封锁斜封条
+        let slash = CAShapeLayer(); slash.frame = root.bounds
+        let sp = UIBezierPath()
+        sp.move(to: CGPoint(x: 8.5, y: 25.5)); sp.addLine(to: CGPoint(x: 25.5, y: 8.5))
+        slash.path = sp.cgPath; slash.fillColor = nil
+        slash.strokeColor = crimson.cgColor; slash.lineWidth = 2.1; slash.lineCap = .round
+        let pulse = CAKeyframeAnimation(keyPath: "opacity"); pulse.values = [0.65, 1.0, 0.65]; pulse.duration = 1.6; pulse.repeatCount = .infinity
+        slash.add(Self.calm(pulse), forKey: "blkPulse")
+        root.addSublayer(slash)
 
-        let inner = CAShapeLayer(); inner.frame = root.bounds
-        let ip = UIBezierPath(ovalIn: CGRect(x: mid - 11.5, y: mid - 11.5, width: 23, height: 23))
-        inner.path = ip.cgPath; inner.fillColor = nil
-        inner.strokeColor = color.withAlphaComponent(0.78).cgColor
-        inner.lineWidth = 1.2; inner.lineDashPattern = [2.5, 4.5]
-        let rev = CABasicAnimation(keyPath: "transform.rotation.z"); rev.fromValue = Double.pi * 2; rev.toValue = 0; rev.duration = 4.2; rev.repeatCount = .infinity
-        inner.add(Self.calm(rev), forKey: "blkRev")
-        root.addSublayer(inner)
+        // 轻盈国色双波尾迹
+        let wake = CAShapeLayer(); wake.frame = root.bounds
+        let wp = UIBezierPath()
+        wp.move(to: CGPoint(x: 9, y: 28)); wp.addQuadCurve(to: CGPoint(x: 17, y: 27), controlPoint: CGPoint(x: 13, y: 29.5))
+        wp.addQuadCurve(to: CGPoint(x: 25, y: 28), controlPoint: CGPoint(x: 21, y: 29.5))
+        wake.path = wp.cgPath; wake.fillColor = nil
+        wake.strokeColor = color.withAlphaComponent(0.88).cgColor; wake.lineWidth = 1.5; wake.lineCap = .round
+        root.addSublayer(wake)
+
+        let bob = CAKeyframeAnimation(keyPath: "transform.translation.y")
+        bob.values = [0, -1.6, 0, 1.2, 0]; bob.duration = 2.2; bob.repeatCount = .infinity
+        bob.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        root.add(Self.calm(bob), forKey: "blkBob")
         return root
     }
 
-    /// 两栖抢滩登陆滩头阵地与近海舰炮岸轰弹道弧。
+    /// 两栖抢滩登陆 36 帧（6×6 @ 30fps）无圆框岸轰炮火序列帧 + 近海舰炮金火弹道弧。
     private func landingLayer(color: UIColor, hasFire: Bool) -> (CALayer, CAShapeLayer?) {
-        let side: CGFloat = 40, mid = side / 2
+        _ = color
+        let side: CGFloat = 46
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: side, height: side)
-        let gold = UIColor(red: 0.96, green: 0.78, blue: 0.28, alpha: 0.95)
-        let surf = UIColor(red: 0.94, green: 0.99, blue: 1.0, alpha: 0.90)
 
-        for i in 0..<2 {
-            let wave = CAShapeLayer(); wave.frame = root.bounds
-            let r = CGFloat(9 + i * 5)
-            wave.path = UIBezierPath(ovalIn: CGRect(x: mid - r, y: mid - r * 0.72, width: r * 2, height: r * 1.44)).cgPath
-            wave.fillColor = nil
-            wave.strokeColor = (i == 0 ? surf : gold).cgColor
-            wave.lineWidth = i == 0 ? 1.8 : 1.3; wave.lineDashPattern = [6, 3]
-            let s = CABasicAnimation(keyPath: "transform.scale"); s.fromValue = 0.55; s.toValue = 1.55
-            let o = CAKeyframeAnimation(keyPath: "opacity"); o.values = [0.0, 0.92, 0.0]; o.keyTimes = [0, 0.28, 1]
-            let g = CAAnimationGroup(); g.animations = [s, o]; g.duration = 1.20; g.repeatCount = .infinity
-            g.timeOffset = Double(i) * 0.60
-            wave.add(Self.calm(g), forKey: "lndWave-\(i)")
-            root.addSublayer(wave)
-        }
+        let sheet = SpriteSheetLayer(spec: .atlasAmphibious36)
+        sheet.frame = root.bounds
+        sheet.minificationFilter = .trilinear
+        sheet.magnificationFilter = .linear
+        sheet.configure(spec: .atlasAmphibious36, state: .combat, fps: 30.0, phaseOffset: Double.random(in: 0..<1.2))
+        root.addSublayer(sheet)
 
         var fireArc: CAShapeLayer? = nil
         if hasFire {
@@ -383,31 +391,22 @@ final class EffectsView: UIView {
     }
 
     private func flashLayer(color: UIColor, culture: String) -> CALayer {
-        // 60/120fps 真丝滑矢量国色飘扬战旗：旗杆弹性插落 + 连续贝塞尔路径丝绸招展（真正 60/120fps 柔波）+ 双层水墨与国色涟漪 + 鎏金星芒。
+        // 无圆框纯净攻占插旗：36 帧淡烟升腾序列帧 + 60/120fps 矢量国色飘扬燕尾战旗 + 鎏金星芒（彻底去除地面双椭圆套圈）。
         _ = culture
         let root = CALayer(); root.bounds = CGRect(x: 0, y: 0, width: 120, height: 120)
         let ink = UIColor(red: 0.16, green: 0.12, blue: 0.09, alpha: 1)
         let gold = UIColor(red: 0.94, green: 0.76, blue: 0.28, alpha: 1)
 
-        let ripple = CAShapeLayer(); ripple.frame = root.bounds
-        ripple.path = UIBezierPath(ovalIn: CGRect(x: 48, y: 57, width: 24, height: 10)).cgPath
-        ripple.fillColor = nil; ripple.strokeColor = ink.withAlphaComponent(0.55).cgColor; ripple.lineWidth = 1.2; ripple.opacity = 0
-        let grow = CABasicAnimation(keyPath: "transform.scale"); grow.fromValue = 0.4; grow.toValue = 2.35
-        let fadeRing = CAKeyframeAnimation(keyPath: "opacity"); fadeRing.values = [0, 0.88, 0]; fadeRing.keyTimes = [0, 0.2, 1]
-        let rippleGroup = CAAnimationGroup(); rippleGroup.animations = [grow, fadeRing]; rippleGroup.duration = 1.15
-        rippleGroup.beginTime = CACurrentMediaTime() + 0.18; rippleGroup.timingFunction = CAMediaTimingFunction(controlPoints: 0.15, 0.6, 0.3, 1)
-        rippleGroup.fillMode = .both; rippleGroup.isRemovedOnCompletion = false
-        ripple.add(Self.calm(rippleGroup), forKey: "ripple"); root.addSublayer(ripple)
-
-        let echo = CAShapeLayer(); echo.frame = root.bounds
-        echo.path = UIBezierPath(ovalIn: CGRect(x: 46, y: 56, width: 28, height: 12)).cgPath
-        echo.fillColor = nil; echo.strokeColor = color.withAlphaComponent(0.76).cgColor; echo.lineWidth = 1.5; echo.opacity = 0
-        let echoGrow = CABasicAnimation(keyPath: "transform.scale"); echoGrow.fromValue = 0.5; echoGrow.toValue = 2.8
-        let echoFade = CAKeyframeAnimation(keyPath: "opacity"); echoFade.values = [0, 0.86, 0]; echoFade.keyTimes = [0, 0.22, 1]
-        let echoGroup = CAAnimationGroup(); echoGroup.animations = [echoGrow, echoFade]; echoGroup.duration = 1.25
-        echoGroup.beginTime = CACurrentMediaTime() + 0.28; echoGroup.timingFunction = CAMediaTimingFunction(controlPoints: 0.15, 0.6, 0.3, 1)
-        echoGroup.fillMode = .both; echoGroup.isRemovedOnCompletion = false
-        echo.add(Self.calm(echoGroup), forKey: "echo"); root.addSublayer(echo)
+        let dust = SpriteSheetLayer(spec: .atlasCaptureFlag36)
+        dust.frame = CGRect(x: 34, y: 34, width: 52, height: 52)
+        dust.minificationFilter = .trilinear
+        dust.magnificationFilter = .linear
+        dust.opacity = 0.86
+        dust.configure(spec: .atlasCaptureFlag36, state: .combat, fps: 30.0, phaseOffset: 0)
+        let dustFade = CAKeyframeAnimation(keyPath: "opacity"); dustFade.values = [0, 0.86, 0.72, 0]; dustFade.keyTimes = [0, 0.14, 0.70, 1]; dustFade.duration = 2.0
+        dustFade.fillMode = .forwards; dustFade.isRemovedOnCompletion = false
+        dust.add(Self.calm(dustFade), forKey: "dustFade")
+        root.addSublayer(dust)
 
         // 矢量国色燕尾旗组合层（旗杆不动，旗面 60/120fps 连续贝塞尔柔波变形）
         let flagHost = CALayer()
@@ -790,9 +789,8 @@ final class EffectsView: UIView {
                 DispatchQueue.main.asyncAfter(deadline: .now() + b.delay + 0.55) { e.birthRate = 0 }
             }
         default:
-            // 60/120fps 纯净水墨线描事件活态徽记（与纸墨舆图浑然一体，告别厚重贴图）
+            // 纯净无圆框手绘宋画事件微标（彻底去除套圈与外扩圆环，仅保留精致微标浮现与轻柔阴影）
             let accent = Self.eventColor(b.kind, nation: color)
-            root.addSublayer(inkRing(accent))
             root.addSublayer(calligraphicEventLayer(b.kind, accent: accent))
         }
         return root
@@ -833,82 +831,52 @@ final class EffectsView: UIView {
         return host
     }
 
-    /// 60/120fps 水墨线描事件活态演出：淡宣微底＋手绘矢量意象，依事件语义丝滑飘升、劈斩、摇曳或流转（2.35 秒）。
+    /// 纯净无圆框手绘事件浮标：优先展示透明手绘水墨徽标（附轻柔宣纸阴影提亮），无圆盘、无套圈，依事件语义丝滑浮升淡出。
     private func calligraphicEventLayer(_ kind: MapEffects.Burst.Kind, accent: UIColor) -> CALayer {
         let host = CALayer()
-        host.bounds = CGRect(x: 0, y: 0, width: 42, height: 42)
-        host.position = CGPoint(x: 60, y: 56)
+        host.bounds = CGRect(x: 0, y: 0, width: 36, height: 36)
+        host.position = CGPoint(x: 60, y: 54)
         host.opacity = 0
 
-        // 轻透宣纸晕底（非实心圆框，仅提亮线描辨识度）
-        let wash = CAShapeLayer(); wash.frame = host.bounds
-        wash.path = UIBezierPath(ovalIn: CGRect(x: 7, y: 7, width: 28, height: 28)).cgPath
-        wash.fillColor = UIColor(red: 0.975, green: 0.952, blue: 0.900, alpha: 0.84).cgColor
-        wash.strokeColor = accent.withAlphaComponent(0.45).cgColor
-        wash.lineWidth = 1.0
-        host.addSublayer(wash)
+        let artImage: UIImage? = {
+            switch kind {
+            case .harvest: return BundleArt.fxHarvest
+            case .trade: return BundleArt.fxTrade
+            case .talent: return BundleArt.fxTalent
+            case .drought: return BundleArt.fxWeatherDrought
+            case .snow: return BundleArt.fxWeatherSnow
+            case .flood, .disaster: return BundleArt.fxWeatherStorm
+            case .plague: return BundleArt.fxPlague
+            case .shock, .coup: return BundleArt.heraldWar
+            case .regime, .founded: return BundleArt.heraldEdict
+            case .destroyed: return nil
+            }
+        }()
 
-        let glyph = CAShapeLayer(); glyph.frame = host.bounds
-        glyph.fillColor = nil; glyph.strokeColor = accent.cgColor
-        glyph.lineWidth = 1.9; glyph.lineCap = .round; glyph.lineJoin = .round
-        let p = UIBezierPath()
-        switch kind {
-        case .shock, .coup:
-            // 双锋斜劈＋中心火花
-            p.move(to: CGPoint(x: 13, y: 29)); p.addLine(to: CGPoint(x: 29, y: 13))
-            p.move(to: CGPoint(x: 29, y: 29)); p.addLine(to: CGPoint(x: 13, y: 13))
-            p.move(to: CGPoint(x: 11, y: 24)); p.addLine(to: CGPoint(x: 18, y: 31))
-            p.move(to: CGPoint(x: 31, y: 24)); p.addLine(to: CGPoint(x: 24, y: 31))
-        case .founded:
-            // 舒展燕尾立国旗
-            p.move(to: CGPoint(x: 15, y: 31)); p.addLine(to: CGPoint(x: 15, y: 11))
-            p.addLine(to: CGPoint(x: 29, y: 14)); p.addLine(to: CGPoint(x: 25, y: 18)); p.addLine(to: CGPoint(x: 29, y: 22)); p.addLine(to: CGPoint(x: 15, y: 22))
-        case .harvest:
-            // 双枝金穗
-            p.move(to: CGPoint(x: 21, y: 31)); p.addQuadCurve(to: CGPoint(x: 16, y: 12), controlPoint: CGPoint(x: 16, y: 22))
-            p.move(to: CGPoint(x: 21, y: 31)); p.addQuadCurve(to: CGPoint(x: 26, y: 12), controlPoint: CGPoint(x: 26, y: 22))
-            p.move(to: CGPoint(x: 14, y: 18)); p.addLine(to: CGPoint(x: 18, y: 16))
-            p.move(to: CGPoint(x: 28, y: 18)); p.addLine(to: CGPoint(x: 24, y: 16))
-        case .trade:
-            // 方孔通宝钱
-            p.append(UIBezierPath(ovalIn: CGRect(x: 12.5, y: 12.5, width: 17, height: 17)))
-            p.append(UIBezierPath(rect: CGRect(x: 18.2, y: 18.2, width: 5.6, height: 5.6)))
-        case .talent:
-            // 四芒才星＋舒卷书轴
-            p.move(to: CGPoint(x: 21, y: 10)); p.addLine(to: CGPoint(x: 23.2, y: 18.8)); p.addLine(to: CGPoint(x: 32, y: 21))
-            p.addLine(to: CGPoint(x: 23.2, y: 23.2)); p.addLine(to: CGPoint(x: 21, y: 32)); p.addLine(to: CGPoint(x: 18.8, y: 23.2))
-            p.addLine(to: CGPoint(x: 10, y: 21)); p.addLine(to: CGPoint(x: 18.8, y: 18.8)); p.close()
-        case .drought:
-            // 烈日炙芒
-            p.append(UIBezierPath(ovalIn: CGRect(x: 16, y: 16, width: 10, height: 10)))
-            for i in 0..<8 {
-                let a = CGFloat(i) * .pi / 4
-                p.move(to: CGPoint(x: 21 + cos(a) * 7.2, y: 21 + sin(a) * 7.2))
-                p.addLine(to: CGPoint(x: 21 + cos(a) * 10.6, y: 21 + sin(a) * 10.6))
-            }
-        case .snow:
-            // 六出霜晶
-            for i in 0..<6 {
-                let a = CGFloat(i) * .pi / 3
-                p.move(to: CGPoint(x: 21, y: 21))
-                p.addLine(to: CGPoint(x: 21 + cos(a) * 9.8, y: 21 + sin(a) * 9.8))
-            }
-        case .flood, .disaster:
-            // 骤雨雷电
-            p.move(to: CGPoint(x: 23, y: 11)); p.addLine(to: CGPoint(x: 16, y: 22)); p.addLine(to: CGPoint(x: 21.5, y: 22))
-            p.addLine(to: CGPoint(x: 18.5, y: 31)); p.addLine(to: CGPoint(x: 26.5, y: 19.5)); p.addLine(to: CGPoint(x: 21.5, y: 19.5)); p.close()
-        case .plague:
-            // 瘴雾双旋
-            p.append(UIBezierPath(arcCenter: CGPoint(x: 21, y: 21), radius: 7.5, startAngle: 0.2, endAngle: .pi * 1.45, clockwise: true))
-            p.append(UIBezierPath(arcCenter: CGPoint(x: 21, y: 21), radius: 3.6, startAngle: .pi * 0.9, endAngle: .pi * 2.25, clockwise: true))
-        default:
-            // 改朝宝玺菱印
-            p.move(to: CGPoint(x: 21, y: 11)); p.addLine(to: CGPoint(x: 31, y: 21))
-            p.addLine(to: CGPoint(x: 21, y: 31)); p.addLine(to: CGPoint(x: 11, y: 21)); p.close()
-            p.append(UIBezierPath(ovalIn: CGRect(x: 18, y: 18, width: 6, height: 6)))
+        if let cg = artImage?.cgImage {
+            let sprite = CALayer()
+            sprite.frame = CGRect(x: 3, y: 3, width: 30, height: 30)
+            sprite.contents = cg
+            sprite.contentsGravity = .resizeAspect
+            sprite.minificationFilter = .trilinear
+            sprite.magnificationFilter = .linear
+            sprite.shadowColor = UIColor(red: 0.99, green: 0.97, blue: 0.91, alpha: 1).cgColor
+            sprite.shadowOpacity = 0.85
+            sprite.shadowRadius = 2.0
+            sprite.shadowOffset = .zero
+            host.addSublayer(sprite)
+        } else {
+            let glyph = CAShapeLayer(); glyph.frame = host.bounds
+            glyph.fillColor = nil; glyph.strokeColor = accent.cgColor
+            glyph.lineWidth = 2.0; glyph.lineCap = .round; glyph.lineJoin = .round
+            glyph.shadowColor = UIColor(red: 0.99, green: 0.97, blue: 0.91, alpha: 1).cgColor
+            glyph.shadowOpacity = 0.90; glyph.shadowRadius = 1.8; glyph.shadowOffset = .zero
+            let p = UIBezierPath()
+            p.move(to: CGPoint(x: 18, y: 9)); p.addLine(to: CGPoint(x: 27, y: 18))
+            p.addLine(to: CGPoint(x: 18, y: 27)); p.addLine(to: CGPoint(x: 9, y: 18)); p.close()
+            glyph.path = p.cgPath
+            host.addSublayer(glyph)
         }
-        glyph.path = p.cgPath
-        host.addSublayer(glyph)
 
         let fade = CAKeyframeAnimation(keyPath: "opacity")
         fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.10, 0.78, 1]
@@ -1102,6 +1070,9 @@ final class EffectsView: UIView {
                         ? UIColor(red: 0.68, green: 0.18, blue: 0.14, alpha: 0.58).cgColor
                         : UIColor(red: 0.22, green: 0.20, blue: 0.16, alpha: 0.56).cgColor
                     l.lineWidth = 1.4; l.lineDashPattern = arc.severed ? [2, 5] : [4, 3]
+                case .escort:
+                    l.strokeColor = UIColor(red: 0.16, green: 0.48, blue: 0.68, alpha: 0.72).cgColor
+                    l.lineWidth = 1.5; l.lineDashPattern = [6, 3]
                 }
                 layer.insertSublayer(l, at: 0)
                 geoArcLayers[arc.key] = (l, arc)

@@ -38,6 +38,7 @@ public enum MaritimeWarfare {
         public let gunboats: Int
         public let admiralName: String?
         public let admiralBonus: Int
+        public let admiralSkill: SeaDominion.AdmiralSkill?
         public let xp: Int
         public var rank: Int { xp >= 120 ? 3 : xp >= 60 ? 2 : xp >= 25 ? 1 : 0 }
         public var total: Int { max(1, heavy + light + gunboats) }
@@ -92,23 +93,27 @@ public enum MaritimeWarfare {
             let g = max(0, rec.gunboats.optionalNumber.map(Int.init) ?? 0)
             let admName = rec.admiralName.optionalString
             let admBonus = rec.admiralBonus.optionalNumber.map(Int.init) ?? 0
+            let admSkill = rec.admiralSkill.optionalString.flatMap(SeaDominion.AdmiralSkill.init(rawValue:))
             let xp = rec.xp.optionalNumber.map(Int.init) ?? 0
-            return FleetMeta(mission: m, heavy: h, light: l, gunboats: g, admiralName: admName, admiralBonus: admBonus, xp: xp)
+            return FleetMeta(mission: m, heavy: h, light: l, gunboats: g, admiralName: admName, admiralBonus: admBonus, admiralSkill: admSkill, xp: xp)
         }
         let h = max(1, (ships + 1) / 3), l = max(0, (ships - h + 1) / 2), g = max(0, ships - h - l)
-        return FleetMeta(mission: .patrol, heavy: h, light: l, gunboats: g, admiralName: nil, admiralBonus: 0, xp: 0)
+        return FleetMeta(mission: .patrol, heavy: h, light: l, gunboats: g, admiralName: nil, admiralBonus: 0, admiralSkill: nil, xp: 0)
     }
 
-    /// 舰队综合海战修正（供 Naval.combatInput 接入真实海战火力结算）。
+    /// 舰队综合海战修正（供 Naval.combatInput 接入真实海战火力结算：含三舰种、勋阶、提督与特技及航海科技）。
     public static func navalCombatBonus(_ r: JS, nation: String) -> Double {
         guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy else { return 0 }
         let mine = Naval.fleets(r).filter { $0.nationId.optionalString == nation && $0.status.asString != "lost" && $0.ships.asInt > 0 }
         guard !mine.isEmpty else { return 0 }
+        let navTech = Double(max(0, WorldDepth.techLevel(r, nation: nation, branch: .naval) - 1)) * 0.07
         var sum = 0.0
         for fl in mine {
             let meta = fleetMeta(r, fleet: fl)
-            var b = meta.heavyShare * 0.16 + Double(meta.rank) * 0.06 + Double(meta.admiralBonus) / 100.0
+            var b = meta.heavyShare * 0.16 + Double(meta.rank) * 0.06 + Double(meta.admiralBonus) / 100.0 + navTech
             if meta.mission == .patrol { b += 0.10 }
+            if meta.admiralSkill == .fireAttack { b += 0.18 }
+            else if meta.admiralSkill == .windGauge { b += 0.14 }
             sum += b
         }
         return sum / Double(mine.count)
@@ -155,7 +160,13 @@ public enum MaritimeWarfare {
             .reduce(0) { $0 + max(0, $1.ships.asInt) }
         let bonus = (!r.regimes.isNull && !r.regimes.nations[nation].isNull)
             ? (r.regimes.nations[nation].seaTransportBonus.optionalNumber.map(Int.init) ?? 0) : 0
-        return max(1, ports.count * 2 + ships / 2 + bonus)
+        let provinces = r.world.provinces.asArray
+        let dockBonus = ports.reduce(0) { sum, idx in
+            guard provinces.indices.contains(idx) else { return sum }
+            return sum + max(0, SeaDominion.shipyardLevel(r, provinceId: provinces[idx].id.asString) - 1)
+        }
+        let techBonus = max(0, WorldDepth.techLevel(r, nation: nation, branch: .naval) - 1)
+        return max(1, ports.count * 2 + ships / 2 + bonus + dockBonus + techBonus)
     }
 
     /// 统计该国当前已在海上航行或已排定渡海航程的陆军支数（可排除正在重下军令的军队本身）。
@@ -237,11 +248,13 @@ public enum MaritimeWarfare {
                     let curCrew = fl.crew.asInt
                     if curHull < maxHull - 0.5 || curCrew < maxCrew {
                         r.regimes.repairingFleets[fid] = JS(true)
-                        let rate = meta.mission == .refit ? 0.065 : 0.025
+                        let dockLvl = SeaDominion.shipyardLevel(r, provinceId: dockedPort.provinceId)
+                        let dockSpeed = dockLvl >= 3 ? 1.70 : dockLvl == 2 ? 1.35 : 1.0
+                        let rate = (meta.mission == .refit ? 0.065 : 0.025) * dockSpeed
                         let nextHull = min(maxHull, curHull + maxHull * rate)
                         r.maritime.hulls[fid] = JS(nextHull)
                         if curCrew < maxCrew {
-                            let addCrew = min(maxCrew - curCrew, meta.mission == .refit ? 24 : 10)
+                            let addCrew = min(maxCrew - curCrew, Int((Double(meta.mission == .refit ? 24 : 10) * dockSpeed).rounded()))
                             fl.crew = JS(curCrew + addCrew)
                         }
                     } else if meta.mission == .refit {
@@ -252,34 +265,41 @@ public enum MaritimeWarfare {
             }
         }
 
-        // 2. 判定近海港口封锁：敌对战斗舰队盘踞港口近海（封锁炮舰占比越高封锁半径与压制越强）
+        // 2. 判定近海港口封锁：敌对战斗舰队盘踞港口近海（封锁炮舰与铁链锁港特技显著增强封锁范围与战分压制）
         if let sea = Naval.sea, !r.portControl.isNull, !r.portControl.ports.isNull {
             for port in sea.ports {
                 let pid = port.provinceId
                 let pc = r.portControl.ports[pid]
                 guard !pc.isNull, let owner = pc.landOwnerId.optionalString else { continue }
                 let hostiles = liveFleets.filter {
-                    let rad = 55.0 + $0.meta.gunboatShare * 26.0 + ($0.meta.mission == .blockade ? 12.0 : 0.0)
+                    let chainBoost = $0.meta.admiralSkill == .ironChain ? 1.30 : 1.0
+                    let rad = (55.0 + $0.meta.gunboatShare * 26.0 + ($0.meta.mission == .blockade ? 12.0 : 0.0)) * chainBoost
                     return Wars.relation(r, owner, $0.nation)?.status.asString == "war" && jsHypot($0.x - port.center.x, $0.y - port.center.y) <= rad
                 }
                 let friendlies = liveFleets.filter { RunWindow.access(r, owner, $0.nation) && jsHypot($0.x - port.center.x, $0.y - port.center.y) <= 60 }
-                let hPower = hostiles.reduce(0.0) { $0 + Double($1.ships) * (1.0 + 0.45 * $1.meta.gunboatShare + ($1.meta.mission == .blockade ? 0.30 : 0.0)) }
+                let hPower = hostiles.reduce(0.0) { $0 + Double($1.ships) * (1.0 + 0.45 * $1.meta.gunboatShare + ($1.meta.mission == .blockade ? 0.30 : 0.0) + ($1.meta.admiralSkill == .ironChain ? 0.35 : 0.0)) }
                 let fPower = friendlies.reduce(0.0) { $0 + Double($1.ships) * (1.0 + 0.25 * $1.meta.heavyShare) }
                 if hPower > fPower && hPower > 0 {
                     r.regimes.blockadedPorts[pid] = JS(true)
                     for hf in hostiles {
                         r.regimes.blockadingFleets[hf.id] = JS(true)
-                        // 每 10 日封锁敌港累积战功并截夺敌方海贸关税充入己方国库
+                        // 每 10 日封锁敌港累积战功、截夺海贸关税，并持续压低敌方战意/国运（加速敌方求和）
                         if day % 10 == 0 {
                             let curXp = r.regimes.fleetMeta[hf.id].xp.optionalNumber ?? 0
                             r.regimes.fleetMeta[hf.id].xp = JS(curXp + 2)
-                            let spoil = (16.0 + Double(hf.ships) * 4.5) * (1.0 + 0.35 * hf.meta.gunboatShare)
+                            let chainMult = hf.meta.admiralSkill == .ironChain ? 1.40 : 1.0
+                            let spoil = (16.0 + Double(hf.ships) * 4.5) * (1.0 + 0.35 * hf.meta.gunboatShare) * chainMult
                             if let atkNat = r.world.nations.asArray.first(where: { $0.id.asString == hf.nation }),
                                let defNat = r.world.nations.asArray.first(where: { $0.id.asString == owner }) {
                                 let taken = min(max(0, defNat.gold.asNumber * 0.03), spoil)
                                 if taken >= 5 {
                                     defNat.gold = JS(max(0, defNat.gold.asNumber - taken))
                                     atkNat.gold = JS(atkNat.gold.asNumber + taken)
+                                }
+                                let defDest = r.destiny.nations[owner]
+                                if !defDest.isNull {
+                                    let pressure = 0.25 * chainMult
+                                    defDest.destiny = JS(max(5, (defDest.destiny.optionalNumber ?? 50) - pressure))
                                 }
                             }
                         }
@@ -322,6 +342,7 @@ public enum MaritimeWarfare {
                     let strongEscort = escorts.contains { $0.meta.mission == .escort || $0.meta.heavy >= 2 }
                     var lossRate = escorted ? (strongEscort ? 0.035 : 0.055) : 0.18
                     if raider.meta.mission == .raid { lossRate *= 1.35 }
+                    if raider.meta.admiralSkill == .commerceRaider { lossRate *= 1.40 }
                     lossRate *= (1.0 + 0.25 * raider.meta.lightShare + Double(raider.meta.rank) * 0.06)
                     let curTroops = a.troops.asNumber
                     let lost = max(1.0, (curTroops * min(0.45, lossRate)).rounded())

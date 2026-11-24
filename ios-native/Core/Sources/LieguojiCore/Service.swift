@@ -279,6 +279,16 @@ public final class EngineService {
         case "grantFief": return command(engine?.grantFief(int("n"), familyId: str("family"), provinceIndex: optInt("province")))
         case "revokeFief": lastOwners = []; return command(engine?.revokeFief(int("n"), familyId: str("family")))
         case "partyAction": return command(engine?.partyAction(int("n"), partyIndex: int("party"), action: str("action")))
+        case "setArmyFormation": return command(engine?.setArmyFormation(str("armyId"), formation: str("text")))
+        case "setArmyFieldOrder": return command(engine?.setArmyFieldOrder(str("armyId"), order: str("text")))
+        case "upgradeShipyard": return command(engine?.upgradeShipyard(provinceIndex: int("province")))
+        case "queueShipbuilding": return command(engine?.queueShipbuilding(nationIndex: int("n"), provinceIndex: int("province"), fleetId: optStr("fleetId"), spec: str("spec")))
+        case "buildProvinceInfra": return command(engine?.buildProvinceInfra(int("province"), slot: str("slot")))
+        case "investTech": return command(engine?.investTech(int("n"), branch: str("branch")))
+        case "resolveEventChain": return command(engine?.resolveEventChain(int("n"), chainId: str("chainId"), choice: str("choice")))
+        case "nationBreakdown": return data(engine?.nationBreakdown(int("n")))
+        case "provinceBreakdown": return data(engine?.provinceBreakdown(int("province")))
+        case "warCompare": return data(engine?.warCompare(attacker: int("a"), defender: int("b")))
         default: return Reply(ok: false, reason: "未知请求 \(call)。")
         }
     }

@@ -133,13 +133,18 @@ public enum DiplomacyDeep {
         r.regimes.pacts.push(p)
     }
 
-    /// 两国开战时，自动废止通商、互不侵犯、军事通行、共同防御与岁币条约。
+    /// 两国开战时，自动废止通商、互不侵犯、军事通行、共同防御与岁币条约；若属撕毁条约则重创宣战方国际信誉。
     public static func breakTreatiesOnWar(_ r: JS, _ a: String, _ b: String) {
         guard !r.regimes.isNull, !r.regimes.pacts.isNull else { return }
-        r.regimes.pacts = .array(r.regimes.pacts.asArray.filter { p in
+        let before = r.regimes.pacts.asArray
+        let kept = before.filter { p in
             let x = p.a.asString, y = p.b.asString
             return !((x == a && y == b) || (x == b && y == a))
-        })
+        }
+        if kept.count < before.count {
+            WorldDepth.adjustReputation(r, nation: a, delta: -18, reason: "公然撕毁与\(Vassals.name(r, b))的有效双边条约宣战，天下各国戒心骤增。")
+        }
+        r.regimes.pacts = .array(kept)
     }
 
     /// 登记跨国联姻带来的「王位宣称」（持续 25 年）。
@@ -242,6 +247,12 @@ public enum DiplomacyDeep {
         if !r.regimes.isNull, !r.regimes.opinionMod.isNull {
             let mod = Int((r.regimes.opinionMod[pairKey(a, b)].optionalNumber ?? 0).rounded())
             if mod != 0 { add(mod > 0 ? "邦交礼尚往来" : "外交摩擦与猜忌", mod) }
+        }
+
+        // 国际信誉修正
+        let repMod = WorldDepth.reputationOpinionModifier(r, of: b)
+        if repMod != 0 {
+            add(repMod > 0 ? "国际信誉昭著" : "背盟失信受天下忌惮", repMod)
         }
 
         // 王位宣称张力

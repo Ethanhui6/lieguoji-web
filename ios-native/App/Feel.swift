@@ -9,22 +9,37 @@ import UIKit
 
     @Published var music: Bool { didSet { store(); music ? play() : fadeOut() } }
     @Published var volume: Double { didSet { store(); player?.volume = Float(volume) } }
+    @Published var sfx: Bool { didSet { store() } }
+    @Published var sfxVolume: Double { didSet { store() } }
     @Published var haptics: Bool { didSet { store() } }
     @Published var particles: Bool { didSet { store(); EffectsView.particles = particles } }
     /// Opening a big panel pauses the world (and the map redraws at 30 fps) until it closes.
     @Published var pauseInMenus: Bool { didSet { store() } }
     @Published private(set) var track = ""
 
+    enum InkSound: String, CaseIterable {
+        case seal   = "sfx-seal"
+        case scroll = "sfx-scroll"
+        case anchor = "sfx-anchor"
+        case march  = "sfx-march"
+        case clash  = "sfx-clash"
+        case cannon = "sfx-cannon"
+        case herald = "sfx-herald"
+    }
+
     static let tracks = ["deplasa-pe", "final-stance", "guild-of-adventurers", "land-of-heroes", "wonders-and-mysteries-alt"]
     static let trackNames = ["deplasa-pe": "Deplasa Pe", "final-stance": "Final Stance", "guild-of-adventurers": "Guild of Adventurers",
                              "land-of-heroes": "Land of Heroes", "wonders-and-mysteries-alt": "Wonders and Mysteries"]
     private var player: AVAudioPlayer?
+    private var sfxPlayers = [InkSound: AVAudioPlayer]()
     private var queue: [String] = []
 
     private override init() {
         let d = UserDefaults.standard
         music = d.object(forKey: "feel.music") as? Bool ?? true
         volume = d.object(forKey: "feel.volume") as? Double ?? 0.55
+        sfx = d.object(forKey: "feel.sfx") as? Bool ?? true
+        sfxVolume = d.object(forKey: "feel.sfxVolume") as? Double ?? 0.65
         haptics = d.object(forKey: "feel.haptics") as? Bool ?? true
         particles = d.object(forKey: "feel.particles") as? Bool ?? true
         pauseInMenus = d.object(forKey: "feel.pauseInMenus") as? Bool ?? true
@@ -33,7 +48,9 @@ import UIKit
     }
     private func store() {
         let d = UserDefaults.standard
-        d.set(music, forKey: "feel.music"); d.set(volume, forKey: "feel.volume"); d.set(haptics, forKey: "feel.haptics"); d.set(particles, forKey: "feel.particles"); d.set(pauseInMenus, forKey: "feel.pauseInMenus")
+        d.set(music, forKey: "feel.music"); d.set(volume, forKey: "feel.volume")
+        d.set(sfx, forKey: "feel.sfx"); d.set(sfxVolume, forKey: "feel.sfxVolume")
+        d.set(haptics, forKey: "feel.haptics"); d.set(particles, forKey: "feel.particles"); d.set(pauseInMenus, forKey: "feel.pauseInMenus")
     }
 
     // MARK: music
@@ -68,17 +85,58 @@ import UIKit
         Task { @MainActor in self.player = nil; self.play() }
     }
 
-    // MARK: haptics
+    // MARK: haptics & antique SFX
 
     private let light = UIImpactFeedbackGenerator(style: .light), heavy = UIImpactFeedbackGenerator(style: .heavy), rigid = UIImpactFeedbackGenerator(style: .rigid)
     private let notice = UINotificationFeedbackGenerator()
-    func tap() { if haptics { light.impactOccurred() } }
+    func playSfx(_ sound: InkSound, gain: Float = 1.0) {
+        guard sfx, !ShotTour.on else { return }
+        guard due("sfx.\(sound.rawValue)", sound == .seal ? 0.08 : 0.25) else { return }
+        if let cached = sfxPlayers[sound] {
+            cached.volume = Float(sfxVolume) * gain
+            cached.currentTime = 0
+            cached.play()
+            return
+        }
+        guard let url = Bundle.main.url(forResource: sound.rawValue, withExtension: "wav", subdirectory: "Audio")
+                ?? Bundle.main.url(forResource: sound.rawValue, withExtension: "wav"),
+              let p = try? AVAudioPlayer(contentsOf: url) else { return }
+        p.volume = Float(sfxVolume) * gain
+        p.prepareToPlay()
+        p.play()
+        sfxPlayers[sound] = p
+    }
+    func tap() { if haptics { light.impactOccurred() }; playSfx(.seal, gain: 0.42) }
+    func scrollOpen() { if haptics { light.impactOccurred(intensity: 0.55) }; playSfx(.scroll, gain: 0.55) }
+    func orderMarch() { if haptics { rigid.impactOccurred(intensity: 0.7) }; playSfx(.march, gain: 0.75) }
+    func orderAnchor() { if haptics { rigid.impactOccurred(intensity: 0.65) }; playSfx(.anchor, gain: 0.72) }
     /// A new battle: at most once every eight seconds (with many armies a new fight began every step,
     /// and the phone buzzed without pause).
-    func clash() { if haptics && due("clash", 8) { rigid.impactOccurred(intensity: 0.6) } }
+    func clash() {
+        if due("clash", 8) {
+            if haptics { rigid.impactOccurred(intensity: 0.6) }
+            playSfx(.clash, gain: 0.58)
+        }
+    }
+    func cannon() {
+        if due("cannon", 6) {
+            if haptics { heavy.impactOccurred(intensity: 0.55) }
+            playSfx(.cannon, gain: 0.65)
+        }
+    }
     /// News of the world (a war, a peace, a fall): at most once every five seconds, each kind.
-    func news(_ kind: UINotificationFeedbackGenerator.FeedbackType) { if haptics && due("news", 5) { notice.notificationOccurred(kind) } }
-    func newsTap() { if haptics && due("news", 5) { light.impactOccurred(intensity: 0.6) } }
+    func news(_ kind: UINotificationFeedbackGenerator.FeedbackType) {
+        if due("news", 5) {
+            if haptics { notice.notificationOccurred(kind) }
+            playSfx(kind == .warning ? .clash : .herald, gain: 0.62)
+        }
+    }
+    func newsTap() {
+        if due("news", 5) {
+            if haptics { light.impactOccurred(intensity: 0.6) }
+            playSfx(.herald, gain: 0.48)
+        }
+    }
     private var last = [String: CFTimeInterval]()
     private func due(_ key: String, _ gap: CFTimeInterval) -> Bool {
         let now = CACurrentMediaTime()
@@ -159,9 +217,15 @@ struct FeelSettings: View {
                     Button { feel.next() } label: { Label(feel.track, systemImage: "forward.fill").font(Theme.label).foregroundStyle(Theme.seal).lineLimit(1) }
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                PaperSlider(title: "音量", value: $feel.volume, range: 0...1, step: 0.05) { "\(Int($0 * 100))%" }
+                PaperSlider(title: "音乐音量", value: $feel.volume, range: 0...1, step: 0.05) { "\(Int($0 * 100))%" }
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
+            Divider2()
+            PaperSwitch(title: "古风交互音效（落印/翻卷/兵戈/海炮）", on: $feel.sfx)
+            if feel.sfx {
+                PaperSlider(title: "音效音量", value: $feel.sfxVolume, range: 0...1, step: 0.05) { "\(Int($0 * 100))%" }
+                    .padding(.horizontal, 16).padding(.bottom, 8)
+            }
             Divider2()
             PaperSwitch(title: "震动反馈", on: $feel.haptics)
             Divider2()

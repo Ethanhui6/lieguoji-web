@@ -164,7 +164,9 @@ public enum Daily {
         func contested(_ p: JS) -> Bool { (located[p.id.asString] ?? []).contains { $0.army.status.asString != "retreating" && atWar($0.army.nationId.asString, p.controller.asString) } }
         func capacity(_ p: JS) -> Double { r.finance.provinces[p.id.asString].maxPopulation.asNumber }
         func production(_ p: JS, _ population: Double, _ occupied: Bool) -> Double {
-            (min(population, capacity(p)) * (p.terrain.asString == "plain" ? 1.12 : p.terrain.asString == "forest" ? 1.04 : 0.82) * (occupied ? 0.5 : 1)).rounded(.down)
+            let base = min(population, capacity(p)) * (p.terrain.asString == "plain" ? 1.12 : p.terrain.asString == "forest" ? 1.04 : 0.82) * (occupied ? 0.5 : 1)
+            let boost = (UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy) ? WorldDepth.provinceGrainMultiplier(r, provinceId: p.id.asString) : 1.0
+            return (base * boost).rounded(.down)
         }
         for v in space { v.army.supplies = JS(max(0, v.army.supplies.asNumber - rationPoints(v))) }
         for p in management.nations.asArray {
@@ -414,6 +416,7 @@ public enum Daily {
                     let ratios = land.isNull || land.biomes.isNull ? [] : land.biomes.asArray.map(\.asNumber)
                     let main = ratios.indices.max { ratios[$0] < ratios[$1] } ?? 4
                     local *= ForceMotion.terrainProfile(biome: main, mountain: land.mountain.isTruthy).tax * seasonTax
+                    local *= WorldDepth.provinceTaxMultiplier(r, provinceId: pid)
                 }
                 return Treasury.provinceIncome(Treasury.ProvinceInput(population: data.population.asInt, capacity: p.maxPopulation.asInt, cells: p.cellBiomes.length, resources: resources,
                                                                       local: local),
@@ -472,6 +475,7 @@ public enum Daily {
         if Profile.measure("d.people", { People.month(r) }) || r.world.day.asInt % 30 == 0 { Government.refreshLeaderCombat(r) }
         Profile.measure("d.fleets") { Naval.settleFleetFood(r) }
         Profile.measure("d.maritime") { MaritimeWarfare.dailyTick(r) }
+        Profile.measure("d.tactics") { ArmyTactics.dailyTick(r) }
         Profile.measure("d.economy") { economy(r) }
         _ = Profile.measure("d.armyDay") { originalArmyDay(r) }
         Profile.measure("d.forces") { finishForces(r); retire(r); recover(r) }

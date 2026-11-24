@@ -36,6 +36,8 @@ struct SpriteSheetSpec {
     static let atlasNaval36 = SpriteSheetSpec(name: "atlas-naval-36", cols: 6, rows: 6, defaultFPS: 30.0)
     static let atlasSiege36 = SpriteSheetSpec(name: "atlas-siege-36", cols: 6, rows: 6, defaultFPS: 30.0)
     static let atlasRainRipple36 = SpriteSheetSpec(name: "atlas-rain-ripple-36", cols: 6, rows: 6, defaultFPS: 30.0)
+    static let atlasAmphibious36 = SpriteSheetSpec(name: "atlas-amphibious-36", cols: 6, rows: 6, defaultFPS: 30.0)
+    static let atlasCaptureFlag36 = SpriteSheetSpec(name: "atlas-capture-flag-36", cols: 6, rows: 6, defaultFPS: 30.0)
 
     /// 按文明大系自动调度对应战舰序列帧（东亚楼船 / 北欧维京长船 / 伊斯兰三角帆战舰 / 西洋风帆盖伦）。
     static func warship(for culture: String?) -> SpriteSheetSpec {

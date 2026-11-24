@@ -163,6 +163,38 @@ public enum CombatReader {
                 if dis == "snow" { polAtk = f(polAtk * f(0.86)) }
                 else if dis == "flood" || dis == "storm" { polAtk = f(polAtk * f(0.88)) }
             }
+            // v4.2.2 陆军完全体：战阵、战场军令、四阶老兵勋阶、陆海补给状态、军备科技与良马战略特产真实接入攻防与破城公式
+            let form = ArmyTactics.formation(r, armyId: aid)
+            let fldOrder = ArmyTactics.fieldOrder(r, armyId: aid)
+            let vet = ArmyTactics.veterancyInfo(r, armyId: aid, nationId: nation)
+            let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: index)
+            let role = UnitKinds.byKey[unitKey]?.role
+            var formAtk = form.attackFactor
+            if form == .wedge && (role == .cavalry || role == .heavy || role == .horseArcher) { formAtk += 0.06 }
+            polAtk = f(polAtk * f(formAtk))
+            polDef = f(polDef * f(form.defenseFactor * fldOrder.defenseFactor))
+            dmgProv = f(dmgProv * f(form.siegeFactor))
+            if vet.combatPct > 0 {
+                let vf = f(1.0 + Double(vet.combatPct) / 100.0)
+                polAtk = f(polAtk * vf)
+                polDef = f(polDef * vf)
+            }
+            if sup.state != .full {
+                let sf = f(sup.state.combatFactor)
+                polAtk = f(polAtk * sf)
+                polDef = f(polDef * sf)
+            }
+            let milLvl = WorldDepth.techLevel(r, nation: nation, branch: .military)
+            if milLvl > 1 {
+                let tf = f(1.0 + Double(milLvl - 1) * 0.05)
+                polAtk = f(polAtk * tf)
+                polDef = f(polDef * tf)
+                dmgProv = f(dmgProv * f(1.0 + Double(milLvl - 1) * 0.06))
+            }
+            // 战略特产「良马」(索引 3) 额外强化骑兵系进攻 +15%
+            if (role == .cavalry || role == .heavy || role == .horseArcher), Trade.holdings(r, nation)[3, default: 0] > 0 {
+                polAtk = f(polAtk * f(1.15))
+            }
             dmgArmy = f(dmgArmy)
         }
         let input = Efficiency.Input(unit: r.units[a.id.asString].asString, command: snapshot.command.asString, official: official, base: base.base.asNumber, destiny: state.destiny.asNumber,

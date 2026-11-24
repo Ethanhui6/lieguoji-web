@@ -278,12 +278,49 @@ extension NativeEngine {
             let unblocked = MaritimeWarfare.unblockedFriendlyPortIndices(r, nation: id).count
             let seaCap = MaritimeWarfare.seaTransportCapacity(r, nation: id)
             let seaUsed = MaritimeWarfare.activeSeaTransports(r, nation: id)
+            let seaCtrl = SeaDominion.seaControl(r, nation: id)
             stInfo.used = JS(seaUsed)
             stInfo.capacity = JS(seaCap)
             stInfo.totalPorts = JS(blk.ports)
             stInfo.blockadedPorts = JS(blk.held)
             stInfo.unblockedPorts = JS(unblocked)
+            stInfo.controlScore = JS(seaCtrl.score)
+            stInfo.controlLabel = JS(seaCtrl.label)
+            stInfo.tradeBonusPct = JS(seaCtrl.tradeBonusPct)
             o.seaTransport = stInfo
+            // v4.2.2 外交国际信誉度
+            let repVal = WorldDepth.reputation(r, nation: id)
+            let repObj = JS.object()
+            repObj.score = JS(repVal)
+            repObj.label = JS(WorldDepth.reputationLabel(repVal))
+            repObj.opinionMod = JS(WorldDepth.reputationOpinionModifier(r, of: id))
+            o.reputation = repObj
+            // v4.2.2 四线时代科技演进
+            o.tech = .array(WorldDepth.TechBranch.allCases.map { b in
+                let lvl = WorldDepth.techLevel(r, nation: id, branch: b)
+                let prog = WorldDepth.techProgress(r, nation: id, branch: b)
+                let row = JS.object()
+                row.id = JS(b.rawValue)
+                row.label = JS(b.label)
+                row.short = JS(b.short)
+                row.level = JS(lvl)
+                row.progress = JS(prog)
+                row.tierName = JS(b.tierName(lvl))
+                row.effect = JS(b.perLevelEffect)
+                row.investCost = JS(150 + lvl * 70)
+                return row
+            })
+            // v4.2.2 当前待裁决的多阶段因果事件链
+            if let ch = WorldDepth.activeChain(r, nationId: id) {
+                let cObj = JS.object()
+                cObj.id = JS(ch.id); cObj.title = JS(ch.title); cObj.category = JS(ch.category); cObj.desc = JS(ch.desc)
+                cObj.choices = .array(ch.choices.map { opt in
+                    let co = JS.object()
+                    co.id = JS(opt.id); co.label = JS(opt.label); co.tag = JS(opt.tag); co.detail = JS(opt.detail)
+                    return co
+                })
+                o.activeChain = cObj
+            }
             // 王位宣称（来自跨国王室联姻）
             if !r.regimes.claims.isNull {
                 let nowM = r.regimes.month.asInt

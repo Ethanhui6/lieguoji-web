@@ -1,5 +1,36 @@
 # 更新日志
 
+## 4.2.2 / build 165 — 2026-11-23
+
+### 一、实机反馈核心体验与视觉缺陷全面根治
+- **完整回归 v4.1 雕漆兵牌与纯矢量宋画融纸地貌（`UnitArt.swift`、`MapRenderer.swift`、`MapLayers.swift`）**：
+  - 彻底撤回 PC 原作散件图标与 AI 生图地貌贴片，100% 回归 v4.1 经典雕漆漆盾（`0plate`）＋256×256 四阶象牙浮雕矢量兵牌与 1–3 枚水陆编队战阵；
+  - 将纯矢量水彩融纸地貌升级为 7 点曲弧宋画远山、多瓣阔叶林团、叠层松柏与柔和丘陵，缩放任意倍率均与宣纸底纹、河流、城池浑然一体。
+- **全面去除地图事件与战事上的丑陋圆圈套框（`MapEffects.swift`、`atlas-battle-36.png`、`atlas-amphibious-36.png`、`atlas-capture-flag-36.png`）**：
+  - 清除交战红白圆环、围城乳白大圆盘与粗圈、港口封锁三重虚线圆圈、两栖登陆脉冲椭圆、插旗双椭圆及地图事件外扩圆环/圆盘底，全面替换为纯净无圆框 36 帧交锋刀光火花、攻城烽烟＋城下纤细水平进度条、两栖岸轰炮火、精细铁锚封锁标与手绘无框宋画微标。
+- **根治建图血条堆叠、缩放图层错位、血条挡视野与国家页白边（`MapView.swift`、`GameModel.swift`、`MenuSheets.swift`、`PaperUI.swift`、`LieguojiApp.swift`、`GameView.swift`、`NationSheet.swift`、`WorldSheets.swift`）**：
+  - 开局、换图、读档与退回标题时立即清空兵力条缓存，并在 `reveal < 0.99` 期间严格锁隐 `TroopLabelsView`，彻底根治生成地图时浮现一堆血条的旧病；
+  - 将兵力条触发倍率大幅抬高至超高倍近观（`icon >= 19.5`，数字 `>= 22.5`）并瘦身精修，同时在「设置 › 画面」新增「放大时显示军队血条」开关支持一键彻底关闭；
+  - 拖拽、双指缩放、松手尾帧、惯性滑行及镜头飞行全程在单一 `CATransaction` 内同步 `mtk.draw()`，彻底根治缩放时地图底图与军团动画/覆盖层错位分离的顽疾；
+  - 去除 `MemorialPaper` 两侧刺眼竖向白带与顶边切角红条，柔化卡片纸色与边框，为国家/州郡/军团/舰队/国家列表补齐全底边无截断滚动（`.scrollContentBackground(.hidden)` + `.ignoresSafeArea(.container, edges: .bottom)`），修复国家页重复称谓与传报横幅退场撞顶栏。
+
+### 二、10 部全画幅 60fps 历史长卷短视频 × 7 套古风交互音效
+- **彻底告别白纸贴图标循环（`InkVideoPlayer.swift`、`HeraldScene.swift`、`NationSheet.swift`）**：
+  - 以 10 幅全画幅宋明工笔青绿水墨长卷重制全部 10 部 `640×360` 180 帧真 60fps H.264 历史短视频（大战、海战、围城、登基、变法、大航海、丰年赈济、江山和约、庙堂议政、关山风雪），赋予每部独特视差运镜、飘雪/飞花/波涛/烛火/云雾/祥鹤动态；
+  - 新增 7 套轻量化零阻塞古风交互音效（`sfx-seal / scroll / anchor / march / clash / cannon / herald.wav`，`Feel.swift`），可在设置内自由开关。
+
+### 三、陆海完全体 × 州郡五槽基建 × 四线科技 × 16 组因果事件链 × 全数值透明拆解
+- **陆军完全体（`TacticalSystems.swift`、`CombatReader.swift`、`Editing.swift`、`Daily.swift`、`ArmySheets.swift`、`StrategyDepthViews.swift`）**：
+  - 实装五阵型（常规/锋矢/鹤翼/方阵/游击）与四野战军令（常规/强行军/扎营掘壕/坚壁清野），真实联动攻防/移速/围城/耗粮/士气；
+  - 实装四阶老兵勋阶（新募/精锐/百战/虎贲·近卫）、陆海动态补给线与地图补给弧线高亮、兵种相克清单可视化。
+- **海军完全体（`TacticalSystems.swift`、`Shipyards.swift`、`MaritimeWarfare.swift`、`ArmySheets.swift`）**：
+  - 统一 `200` 水兵/艘与 `12000` 海粮/艘口径；实装 `1–3` 级海港船坞扩建（上限 `5/8/12` 艘）、船台定制三舰种造舰与另立新舰队队列、海域制海权评分（`0–100%` 与海贸红利）、水师提督四大特技（火攻/顺风/铁索/破交）以及地图友军护航连线（`.escort`）。
+- **深度策略大系统与全站透明拆解（`WorldDepth.swift`、`NationInfo.swift`、`Commands.swift`、`DiplomacyBoard.swift`、`ProvinceSheet.swift`）**：
+  - 州郡新增五槽基建（水利/商市/要塞/船坞/书院，Lv 0–3 真实加成税收/粮产/城防/船坞/科研）与战略特产实体联动（良马骑攻 +15%、铁矿补员 −18%、良木造舰耗时 −20%）；
+  - 国家新增四线时代科技演进（军备/航海/农商/治政，1–5 阶）、外交国际信誉度（影响邦交好感，毁约宣战重扣 −18）、16 组多阶段因果事件链与 6 个月后因果回响；
+  - 实装国家/州郡全核心数值「数值明细」透明修正来源拆解弹窗与宣战前「敌我双边实力评估」弹窗，清零全站残留帝制硬编码，补齐二级页左边缘右滑返回手势；
+  - 新增 `StrategyDepthTests.swift` 完整单元测试覆盖全部新系统并确保原版黄金回归全绿。
+
 ## 4.2.1 / build 164 — 2026-11-23
 
 ### 一、开局换图与全局 60/120fps 点击流畅度重铸

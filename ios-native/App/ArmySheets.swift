@@ -110,7 +110,8 @@ struct ArmySheet: View {
                             HStack(spacing: 6) {
                                 Text(a.name).font(Theme.kai(24)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.72)
                                 if a.banner == "ruler" {
-                                    PaperTag(text: "御驾亲征", color: Theme.seal, size: 11)
+                                    let lexArmy = LocalizationEngine.lexicon(culture: nation?.culture, polity: nation?.polity, style: nil)
+                                    PaperTag(text: lexArmy.isRepublican ? "元首亲征" : "御驾亲征", color: Theme.seal, size: 11)
                                 }
                             }
                             HStack(spacing: 6) {
@@ -162,8 +163,10 @@ struct ArmySheet: View {
                         serviceSection(a: a)
                     }
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 36)
             }
+            .scrollContentBackground(.hidden)
+            .ignoresSafeArea(.container, edges: .bottom)
             .onAppear { syncEditor(for: a) }
             .onChange(of: a.id) { _, _ in syncEditor(for: a) }
             .onChange(of: tab) { _, next in if next == .reorganize { syncEditor(for: a) } }
@@ -299,6 +302,11 @@ struct ArmySheet: View {
             .padding(.horizontal, 16).padding(.vertical, 11)
         }
         .padding(.horizontal, Theme.Layout.pageInset)
+
+        // 深度战术体系：精锐勋阶 + 实时补给线 + 兵种克制 + 五阵型 + 四野战指令
+        ArmyTacticsPanel(model: model, army: a, map: map) { msg in
+            say(msg)
+        }
 
         // 主行军指令排：调兵 / 撤退 / 停止
         HStack(spacing: 10) {
@@ -775,6 +783,9 @@ struct FleetSheet: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text("水师提督：\(f.admiral ?? "未委任")").font(Theme.section).foregroundStyle(Theme.ink)
+                        if let skillLabel = f.admiralSkillLabel, !skillLabel.isEmpty {
+                            PaperTag(text: skillLabel, color: Theme.gold, size: 10)
+                        }
                         if let bonus = f.admiralBonus, bonus > 0 {
                             PaperTag(text: "海战火力 +\(bonus)%", color: Theme.seal, size: 10)
                         }
@@ -782,7 +793,8 @@ struct FleetSheet: View {
                             PaperTag(text: "船坞抢修中", color: Theme.jade, size: 10)
                         }
                     }
-                    Text("战功 \(f.experience ?? 0) · \(FleetText.cleanReason(f))")
+                    Text(([f.admiralSkillNote, "战功 \(f.experience ?? 0)", FleetText.cleanReason(f)]
+                        .compactMap { $0 }.filter { !$0.isEmpty }).joined(separator: " · "))
                         .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2)
                 }
                 Spacer(minLength: 4)
@@ -846,6 +858,11 @@ struct FleetSheet: View {
             .padding(12)
         }
         .padding(.horizontal, Theme.Layout.pageInset)
+
+        // 船坞扩建（1-3级）与船台自建舰队面板
+        FleetShipyardPanel(model: model, fleet: f, map: map) { msg in
+            feedback = msg
+        }
 
         HStack(spacing: 10) {
             Button {

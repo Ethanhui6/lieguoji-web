@@ -36,7 +36,7 @@ struct NationsSheet: View {
                                             if !s.alive { Text("已亡").font(Theme.caption).foregroundStyle(Theme.ink2) }
                                         }
                                         HStack(spacing: 6) {
-                                            Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)文化").font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
+                                            Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)").font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
                                             if !s.enemies.isEmpty { Text("交战").font(Theme.caption).foregroundStyle(Theme.seal).padding(.horizontal, 5).padding(.vertical, 1).background(Theme.seal.opacity(0.1), in: Capsule()) }
                                         }
                                     }
@@ -54,8 +54,10 @@ struct NationsSheet: View {
                     }
                     .padding(.horizontal, 16)
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 36)
             }
+            .scrollContentBackground(.hidden)
+            .ignoresSafeArea(.container, edges: .bottom)
         }
     }
 }

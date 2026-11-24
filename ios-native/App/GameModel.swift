@@ -370,6 +370,11 @@ import LieguojiCore
         generationNote = "正在生成地形"
         controller.drifting = false
         controller.reveal = 0
+        controller.armies = []
+        controller.troopTexts = [:]
+        controller.troopRatios = [:]
+        controller.troopBarColors = [:]
+        controller.effects = MapEffects()
         phase = .founding
         let seed = options.seed.isEmpty ? String(UInt32.random(in: 0...UInt32.max)) : options.seed
         do {
@@ -388,7 +393,7 @@ import LieguojiCore
                 guard epoch == worldEpoch else { return }
                 if let layers = loaded.layers { MapRenderer.prepared = layers }
                 let mountBefore = controller.mapMountToken
-                state = nil; controller.world = nil; controller.armies = []; controller.effects = MapEffects(); controller.seaPorts = []
+                state = nil; controller.world = nil; controller.armies = []; controller.troopTexts = [:]; controller.troopRatios = [:]; controller.troopBarColors = [:]; controller.effects = MapEffects(); controller.seaPorts = []
                 controller.reveal = 0
                 map = loaded.world; worldID = UUID()
                 controller.snapArmies = true
@@ -477,6 +482,10 @@ import LieguojiCore
                 try checkWorld(epoch)
                 MapRenderer.prepared = loaded.2
                 state = nil
+                controller.armies = []
+                controller.troopTexts = [:]
+                controller.troopRatios = [:]
+                controller.troopBarColors = [:]
                 controller.effects = MapEffects()
                 controller.snapArmies = true
                 controller.reveal = 0
@@ -604,7 +613,11 @@ import LieguojiCore
         controller.endReveal()
     }
 
-    func backToTitle() { pause(); dismissHerald(); save(); phase = .title }
+    func backToTitle() {
+        pause(); dismissHerald(); save()
+        controller.armies = []; controller.troopTexts = [:]; controller.troopRatios = [:]; controller.troopBarColors = [:]
+        phase = .title
+    }
 
     // MARK: time
 
@@ -1392,17 +1405,37 @@ import LieguojiCore
         }()
         if let a = pickedArmy {
             if a.troops > 0 {
-                var bestDist = Double.infinity
                 var bestPt: (Double, Double)? = nil
-                for (pi, owner) in state.owners.enumerated() where owner == a.nation && map.meta.provinces.indices.contains(pi) {
-                    let pr = map.meta.provinces[pi]
-                    let d = hypot(Double(pr.x - a.x), Double(pr.y - a.y))
-                    if d < bestDist { bestDist = d; bestPt = (Double(pr.x), Double(pr.y)) }
+                var bestDist = Double.infinity
+                if let oi = a.supplyOriginProvince, map.meta.provinces.indices.contains(oi) {
+                    let pr = map.meta.provinces[oi]
+                    bestPt = (Double(pr.x), Double(pr.y))
+                    bestDist = hypot(Double(pr.x - a.x), Double(pr.y - a.y))
+                } else {
+                    for (pi, owner) in state.owners.enumerated() where owner == a.nation && map.meta.provinces.indices.contains(pi) {
+                        let pr = map.meta.provinces[pi]
+                        let d = hypot(Double(pr.x - a.x), Double(pr.y - a.y))
+                        if d < bestDist { bestDist = d; bestPt = (Double(pr.x), Double(pr.y)) }
+                    }
                 }
                 if let src = bestPt, bestDist > 4 {
                     let inOwn = a.province >= 0 && state.owners.indices.contains(a.province) && state.owners[a.province] == a.nation
-                    let severed = !inOwn && (a.supplies < 25 || bestDist > 160)
+                    let severed = (a.supplyState == "cut") || (!inOwn && (a.supplies < 25 || bestDist > 160))
                     e.geoArcs.append(.init(key: "gs-\(a.id)", fromX: src.0, fromY: src.1, toX: Double(a.x), toY: Double(a.y), kind: .supply, severed: severed))
+                }
+            }
+        }
+        // 友军水师护航连线：正在执行护航任务的舰队与其掩护的跨海运兵船队之间连出青蓝护航虚线
+        if let fleets = state.fleets {
+            let embarked = state.armies.filter { $0.troops > 0 && ($0.embarked == true || $0.province < 0) }
+            for fl in fleets where fl.status != "lost" && fl.ships > 0 && fl.escorting == true {
+                if let nearest = embarked.filter({ $0.nation == fl.nation }).min(by: {
+                    hypot(Double($0.x - fl.x), Double($0.y - fl.y)) < hypot(Double($1.x - fl.x), Double($1.y - fl.y))
+                }) {
+                    let dist = hypot(Double(nearest.x - fl.x), Double(nearest.y - fl.y))
+                    if dist > 4 && dist < 240 {
+                        e.geoArcs.append(.init(key: "ge-\(fl.id)-\(nearest.id)", fromX: Double(fl.x), fromY: Double(fl.y), toX: Double(nearest.x), toY: Double(nearest.y), kind: .escort))
+                    }
                 }
             }
         }

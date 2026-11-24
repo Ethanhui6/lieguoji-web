@@ -197,6 +197,8 @@ struct MapDisplaySettings: View {
             Group2 {
                 PaperSwitch(title: "显示军队与舰队", on: $controller.play.showArmies)
                 Divider2()
+                PaperSwitch(title: "放大时显示军队血条", on: $controller.play.showTroopBars)
+                Divider2()
                 PaperSlider(title: "图标大小", value: $controller.play.iconScale, range: 0.7...1.5, step: 0.1) { String(format: "%.1f×", $0) }
                     .padding(.horizontal, 16).padding(.vertical, 10)
             }

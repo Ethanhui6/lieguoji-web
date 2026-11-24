@@ -183,7 +183,7 @@ struct GameView: View {
                 }
                 .padding(.leading, leadSafe).padding(.trailing, trailSafe)
 
-                VStack(spacing: 0) {
+                ZStack(alignment: .top) {
                     if hudVisible, controller.play.showHeralds, let h = model.herald, let map = model.map {
                         HeraldBanner(herald: h, map: map, onTap: {
                             guard model.herald?.id == h.id else { return }
@@ -198,12 +198,11 @@ struct GameView: View {
                         }, onDismiss: {
                             if model.herald?.id == h.id { model.dismissHerald() }
                         }).id(h.id)
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.94, anchor: .top).combined(with: .opacity),
-                                removal: .scale(scale: 0.96, anchor: .top).combined(with: .opacity)
-                            ))
+                            .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .top)
+                .clipped()
                 .padding(.leading, leadSafe).padding(.trailing, trailSafe)
                 .animation(Motion.panel, value: model.herald?.id)
                 .animation(Self.hudSpring, value: hudVisible)
@@ -491,6 +490,15 @@ struct GameView: View {
                         .transition(.asymmetric(insertion: .move(edge: backward ? .leading : .trailing).combined(with: .opacity),
                                                 removal: .move(edge: backward ? .trailing : .leading).combined(with: .opacity)))
                         .clipped()
+                        .simultaneousGesture(
+                            DragGesture(minimumDistance: 28)
+                                .onEnded { v in
+                                    if hasBack && v.startLocation.x < 44 && v.translation.width > 72 && abs(v.translation.height) < 70 {
+                                        GameFeel.shared.scrollOpen()
+                                        back()
+                                    }
+                                }
+                        )
                         .safeAreaInset(edge: .top, spacing: 0) {
                             if let last = trail.last {
                                 backRow(last, current: panel, isSidePanel: false)
@@ -505,6 +513,7 @@ struct GameView: View {
     /// Opens a page from inside the sheet: the current page goes on the trail.
     private func open(_ next: Panel) {
         guard next != panel else { return }
+        GameFeel.shared.scrollOpen()
         backward = false
         withAnimation(Motion.panel) {
             if let panel { trail.append(panel); if trail.count > 8 { trail.removeFirst() } }
@@ -523,6 +532,7 @@ struct GameView: View {
     /// A map pick or a bottom tab starts a fresh docket (no trail); an open sheet slides to it.
     private func show(_ next: Panel) {
         guard next != panel else { return }
+        GameFeel.shared.scrollOpen()
         backward = false
         if panel == nil { trail = []; panel = next; return }
         withAnimation(Motion.panel) { trail = []; panel = next }

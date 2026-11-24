@@ -71,6 +71,37 @@ extension NativeEngine {
         let all = r.regimes.isNull || r.regimes.campaigns.isNull ? [] : r.regimes.campaigns.list.asArray.filter { c in c.armies.asArray.contains { $0.asString == id } }
         o.campaigns = JS(all.count)
         o.campaign = JS(all.last { $0.end.isNull }?.name.optionalString ?? "")
+        // v4.2.2 陆军深度战术状态、兵种相克表与全数值透明修正拆解
+        let unitKey = r.units[id].optionalString ?? "Infantry"
+        let nid = a.nationId.asString
+        let form = ArmyTactics.formation(r, armyId: id)
+        let fldOrder = ArmyTactics.fieldOrder(r, armyId: id)
+        let vet = ArmyTactics.veterancyInfo(r, armyId: id, nationId: nid)
+        let locProv = Armies.space(r).first(where: { $0.army.id.asString == id })?.province.flatMap { p in provinces.firstIndex { $0.id.asString == p.id.asString } }
+        let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: locProv)
+        let counters = ArmyTactics.counterReport(for: unitKey)
+        o.formation = JS(form.rawValue); o.formationLabel = JS(form.label); o.formationNote = JS(form.note)
+        o.fieldOrder = JS(fldOrder.rawValue); o.fieldOrderLabel = JS(fldOrder.label); o.fieldOrderNote = JS(fldOrder.note)
+        o.veterancyLabel = JS(vet.label); o.veterancyBonus = JS(vet.combatPct)
+        o.supplyState = JS(sup.state.rawValue); o.supplyLabel = JS(sup.state.label); o.supplyReason = JS(sup.reason)
+        o.countersStrong = .array(counters.strong.map { JS($0) })
+        o.countersWeak = .array(counters.weak.map { JS($0) })
+        var bRows = [JS]()
+        func addB(_ label: String, _ val: String, _ tone: String = "neutral") {
+            let row = JS.object(); row.label = JS(label); row.value = JS(val); row.tone = JS(tone); bRows.append(row)
+        }
+        let uKind = UnitKinds.byKey[unitKey]
+        addB("兵种基础（\(uKind?.name ?? unitKey)）", "战力 ×\(String(format: "%.2f", uKind?.power ?? 1)) · 移速 ×\(String(format: "%.2f", uKind?.speed ?? 1))")
+        addB("当前战阵：\(form.label)", form.note, form == .standard ? "neutral" : "good")
+        addB("战场军令：\(fldOrder.label)", fldOrder.note, fldOrder == .normal ? "neutral" : "good")
+        if vet.combatPct > 0 { addB("老兵勋阶：\(vet.label)（\(vet.battles)战）", "攻防 +\(vet.combatPct)%", "good") }
+        addB("后勤补给：\(sup.state.label)", sup.reason, sup.state == .full ? "good" : "bad")
+        let milTech = WorldDepth.techLevel(r, nation: nid, branch: .military)
+        if milTech > 1 { addB("军备科技（\(milTech)阶）", "攻防 +\((milTech - 1) * 5)% · 破城 +\((milTech - 1) * 6)%", "good") }
+        let br = Regimes.armyBranch(r, armyId: id, unitKey: unitKey)
+        addB("军制职能", br.roleNote)
+        if let wg = Regimes.warGodAura(r, nationId: nid) { addB("战神谱光环（\(wg.name)）", wg.buffSummary, "good") }
+        o.breakdown = .array(bRows)
         return Data(o.json.utf8)
     }
 }

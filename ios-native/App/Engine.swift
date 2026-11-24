@@ -158,6 +158,12 @@ struct ProvinceInfo: Decodable {
     var seasonName: String? = nil; var seasonNote: String? = nil
     /// 特产 and its index in the goods list.
     var specialty: String? = nil; var specialtyIndex: Int? = nil
+    var specialtyTier: String? = nil; var specialtyEffect: String? = nil
+    var isPort: Bool? = nil; var shipyardLevel: Int? = nil
+    struct InfraRow: Decodable, Identifiable {
+        let id: String; let label: String; let level: Int; let cost: Int; let effect: String; let available: Bool
+    }
+    var infra: [InfraRow]? = nil
     /// The province city's own culture.
     var cityCulture: String? = nil
     /// 地利: each original arm's attack and defence multiplier on this land.

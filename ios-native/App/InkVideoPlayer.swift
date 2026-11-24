@@ -11,7 +11,10 @@ struct InkVideoStage: View {
     var tint: Color = Theme.seal
 
     private static let urlCache: [String: URL] = {
-        let names = ["herald-war", "herald-naval", "herald-siege", "herald-peace", "herald-regime", "herald-weather"]
+        let names = [
+            "herald-war", "herald-naval", "herald-siege", "herald-peace", "herald-regime", "herald-weather",
+            "herald-coronation", "herald-reform", "herald-voyage", "herald-relief"
+        ]
         var map: [String: URL] = [:]
         for n in names {
             if let u = Bundle.main.url(forResource: n, withExtension: "mp4", subdirectory: "Video") ?? Bundle.main.url(forResource: n, withExtension: "mp4") {
@@ -134,6 +137,22 @@ final class InkPlayerHostView: UIView {
             art = BundleArt.fxWeatherSnow
             bgTop = UIColor(red: 0.92, green: 0.95, blue: 0.98, alpha: 1)
             bgBot = UIColor(red: 0.83, green: 0.89, blue: 0.95, alpha: 1)
+        case "herald-coronation":
+            art = BundleArt.sealCourt
+            bgTop = UIColor(red: 0.98, green: 0.93, blue: 0.82, alpha: 1)
+            bgBot = UIColor(red: 0.92, green: 0.84, blue: 0.68, alpha: 1)
+        case "herald-reform":
+            art = BundleArt.heraldEdictEast
+            bgTop = UIColor(red: 0.93, green: 0.95, blue: 0.96, alpha: 1)
+            bgBot = UIColor(red: 0.85, green: 0.90, blue: 0.92, alpha: 1)
+        case "herald-voyage":
+            art = BundleArt.navalEast
+            bgTop = UIColor(red: 0.88, green: 0.94, blue: 0.97, alpha: 1)
+            bgBot = UIColor(red: 0.76, green: 0.87, blue: 0.92, alpha: 1)
+        case "herald-relief":
+            art = BundleArt.fxTrade
+            bgTop = UIColor(red: 0.96, green: 0.95, blue: 0.86, alpha: 1)
+            bgBot = UIColor(red: 0.88, green: 0.87, blue: 0.74, alpha: 1)
         default:
             art = BundleArt.heraldWarEast
             bgTop = UIColor(red: 0.96, green: 0.91, blue: 0.85, alpha: 1)

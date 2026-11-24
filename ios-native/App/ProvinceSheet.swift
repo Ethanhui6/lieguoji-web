@@ -28,6 +28,7 @@ struct ProvinceSheet: View {
     @State private var regionName = ""
     @State private var flash: String?
     @State private var pressMenu: PressMenu?
+    @State private var showingBreakdown = false
 
     private func report(_ e: String?, _ ok: String) {
         flash = e ?? ok
@@ -65,11 +66,12 @@ struct ProvinceSheet: View {
                         let popFrac = info.capacity > 0 ? min(1, Double(info.population) / Double(info.capacity)) : nil
                         let defLv = Int((info.defense ?? 1).rounded())
                         StatStrip(tiles: [
-                            StatTile(label: "人口", value: Names.wan(info.population), fraction: popFrac),
-                            StatTile(label: "存粮", value: Names.wan(Int(info.grain))),
+                            StatTile(label: "人口", value: Names.wan(info.population), fraction: popFrac, edit: { GameFeel.shared.scrollOpen(); showingBreakdown = true }),
+                            StatTile(label: "存粮", value: Names.wan(Int(info.grain)), edit: { GameFeel.shared.scrollOpen(); showingBreakdown = true }),
                             StatTile(label: armies.isEmpty ? "城防" : "驻军",
                                      value: armies.isEmpty ? "\(defLv) 级" : "\(armies.count) 军",
-                                     warn: siege != nil),
+                                     warn: siege != nil,
+                                     edit: { GameFeel.shared.scrollOpen(); showingBreakdown = true }),
                             StatTile(label: "特产", value: info.specialty ?? "常产", edit: info.specialty != nil ? { pickingGood = true } : nil),
                         ])
                     }
@@ -121,10 +123,16 @@ struct ProvinceSheet: View {
                         adminSection(map: map, owner: owner, nation: nation, holyOf: holyOf)
                     }
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 36)
             }
+            .scrollContentBackground(.hidden)
+            .ignoresSafeArea(.container, edges: .bottom)
             .pressMenuHost($pressMenu)
             .paperToast($flash)
+            .sheet(isPresented: $showingBreakdown) {
+                ProvinceBreakdownSheet(model: model, province: province, provinceName: p.name)
+                    .presentationDetents([.medium, .large]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden).font(Theme.section)
+            }
             .task(id: model.state?.day) {
                 info = await model.provinceInfo(province)
                 if region == nil { region = await model.regionInfo(province) }
@@ -291,6 +299,17 @@ struct ProvinceSheet: View {
                 }
             }
             .padding(.horizontal, Theme.Layout.pageInset)
+        }
+
+        // 州郡五槽基建与特产战略实效面板
+        if let info {
+            ProvinceInfraSection(
+                model: model,
+                province: province,
+                info: info,
+                onRefresh: { self.info = await model.provinceInfo(province) },
+                onMessage: { flash = $0 }
+            )
         }
 
         // 州郡繁盛度与战略定位卡片

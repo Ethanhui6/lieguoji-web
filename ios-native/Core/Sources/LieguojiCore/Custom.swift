@@ -352,6 +352,7 @@ public enum Regimes {
         DiplomacyDeep.month(r, key)
         ArmyAutonomy.noAllySupport = r.regimes.world.noAssist.isTruthy
         Shipyards.month(r)
+        WorldDepth.month(r, key: key)
     }
 
     /// 国家加成 (自定义), in percent: income, attack, defense, growth (a year), speed. nil when unset.

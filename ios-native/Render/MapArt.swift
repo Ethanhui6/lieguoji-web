@@ -113,6 +113,8 @@ enum BundleArt {
     static let atlasNaval36: UIImage? = load("atlas-naval-36")
     static let atlasSiege36: UIImage? = load("atlas-siege-36")
     static let atlasRainRipple36: UIImage? = load("atlas-rain-ripple-36")
+    static let atlasAmphibious36: UIImage? = load("atlas-amphibious-36")
+    static let atlasCaptureFlag36: UIImage? = load("atlas-capture-flag-36")
 
     // MARK: - 真 AI 篆刻朱砂／鎏金古风印章（全面取代代码简易红框）
     static let sealChronicle: UIImage? = load("seal-chronicle")
@@ -161,6 +163,8 @@ enum BundleArt {
         case "atlas-naval-36": return atlasNaval36
         case "atlas-siege-36": return atlasSiege36
         case "atlas-rain-ripple-36": return atlasRainRipple36
+        case "atlas-amphibious-36": return atlasAmphibious36
+        case "atlas-capture-flag-36": return atlasCaptureFlag36
         default: return load(name)
         }
     }

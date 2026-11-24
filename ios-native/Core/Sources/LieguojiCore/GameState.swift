@@ -36,6 +36,13 @@ public struct GameState: Codable, Equatable, Sendable {
         public var embarked: Bool? = nil
         public var landingDays: Int? = nil
         public var seaSupplyCut: Bool? = nil
+        /// v4.2.2 陆军完全体：战阵、战场军令、四阶老兵勋阶、陆海补给状态与补给来源州。
+        public var formation: String? = nil
+        public var fieldOrder: String? = nil
+        public var veterancy: Int? = nil
+        public var veterancyLabel: String? = nil
+        public var supplyState: String? = nil
+        public var supplyOriginProvince: Int? = nil
     }
     /// A fleet at its actual sea point (open-sea worlds) and its naval command.
     public struct Fleet: Codable, Equatable, Identifiable, Sendable {
@@ -49,15 +56,20 @@ public struct GameState: Codable, Equatable, Sendable {
         public var gunboats: Int? = nil
         public var admiral: String? = nil
         public var admiralBonus: Int? = nil
+        public var admiralSkill: String? = nil
+        public var admiralSkillLabel: String? = nil
+        public var admiralSkillNote: String? = nil
         public var experience: Int? = nil
         public var repairActive: Bool? = nil
+        public var dockLevel: Int? = nil
     }
     /// A harbour port: its land owner, current occupier and control value.
     public struct Port: Codable, Equatable, Sendable {
         public let province: Int; public let x: Float; public let y: Float; public let owner: Int; public let occupier: Int; public let value: Double
         public var blockaded: Bool? = nil
-        public init(province: Int, x: Float, y: Float, owner: Int, occupier: Int, value: Double, blockaded: Bool? = nil) {
-            self.province = province; self.x = x; self.y = y; self.owner = owner; self.occupier = occupier; self.value = value; self.blockaded = blockaded
+        public var shipyardLevel: Int? = nil
+        public init(province: Int, x: Float, y: Float, owner: Int, occupier: Int, value: Double, blockaded: Bool? = nil, shipyardLevel: Int? = nil) {
+            self.province = province; self.x = x; self.y = y; self.owner = owner; self.occupier = occupier; self.value = value; self.blockaded = blockaded; self.shipyardLevel = shipyardLevel
         }
     }
     public struct Participant: Codable, Equatable, Sendable { public let nation: Int; public let side: Int }

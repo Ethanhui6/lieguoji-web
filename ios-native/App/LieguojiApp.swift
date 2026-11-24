@@ -19,8 +19,8 @@ import LieguojiCore
 /// Warm paper and ink, one vermilion seal colour and the jade of the web game.
 enum Theme {
     static let fontName = "TW-Kai-98_1"
-    static let paper = Color(red: 0.957, green: 0.933, blue: 0.886)
-    static let paper2 = Color(red: 0.984, green: 0.972, blue: 0.945)
+    static let paper = Color(red: 0.949, green: 0.922, blue: 0.870)
+    static let paper2 = Color(red: 0.968, green: 0.947, blue: 0.905)
     static let ink = Color(red: 0.098, green: 0.082, blue: 0.063)
     static let ink2 = Color(red: 0.36, green: 0.325, blue: 0.27)
     static let line = Color(red: 0.165, green: 0.145, blue: 0.114).opacity(0.14)
@@ -454,11 +454,11 @@ struct Group2<Content: View>: View {
         let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
         VStack(spacing: 0) { content }
             .background(
-                shape.fill(Theme.paper2.opacity(0.86))
-                    .shadow(color: Color(red: 0.22, green: 0.16, blue: 0.08).opacity(0.07), radius: 6, y: 2)
+                shape.fill(Theme.paper2.opacity(0.82))
+                    .shadow(color: Color(red: 0.22, green: 0.16, blue: 0.08).opacity(0.06), radius: 5, y: 1.5)
             )
-            .overlay(shape.strokeBorder(Theme.ink.opacity(0.15), lineWidth: 0.9))
-            .overlay(shape.inset(by: 2.5).strokeBorder(Theme.seal.opacity(0.11), lineWidth: 0.55))
+            .overlay(shape.strokeBorder(Theme.ink.opacity(0.13), lineWidth: 0.85))
+            .overlay(shape.inset(by: 2.5).strokeBorder(Theme.seal.opacity(0.08), lineWidth: 0.5))
     }
 }
 
@@ -505,6 +505,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("4.2.2", ["【回归 4.1 雕漆兵牌 × 零 AI 地图贴片 × 彻底去圆框动效】完整回退至 4.1 经典雕漆漆盾象牙浮雕军团与水师战舰编队；彻底移除所有生图地貌贴片，回归纯矢量宋画融纸山水；全面清除陆战/围城/封锁/登陆/地图事件上的丑陋圆圈套框，改用纯净无框 36 帧交锋/攻城/抢滩序列帧与手绘宋画微标。",
+                   "【彻底根治建图血条堆叠、缩放图层错位、血条挡视野与国家页白边】开局与换图时彻底清空并锁定隐藏血条层，彻底消除生成地图时浮现一堆血条的旧病；将血条触发阈值大幅抬高至超高倍近观并在「设置 › 画面」新增「放大时显示军队血条」独立开关；拖拽/双指缩放/惯性滑行/镜头动画全程启用 CATransaction 同事务同步 Metal 提交，彻底根治地图层与军团动画层分离；重写奏折底纹与滚动边界，彻底去除国家页白边、顶栏红条切角及传报撞顶栏问题。",
+                   "【10 部全画幅 60fps 古风历史长卷视频 × 7 套古风交互音效】全面淘汰旧版白纸贴图标短视频，以 10 幅全画幅宋明工笔青绿长卷重制 10 部 180 帧真 60fps 历史短视频（大战/海战/围城/登基/变法/航海/赈济/和约/庙堂/风雪）；新增落印/翻卷/拔锚/行军/刀兵/火炮/传报 7 套轻量古风交互音效（可于设置自由开关）。",
+                   "【陆海完全体 × 州郡五槽基建 × 四线科技 × 16 组因果事件链 × 透明拆解与战前评估】陆军新增五阵型/四野战军令/四阶精锐勋阶/陆海补给线与兵种克制；海军统一 200 水兵/艘与 1–3 级船坞扩建、自建舰队、提督四大特技、制海权商税红利及护航连线；州郡新增五槽基建与战略特产实效；国家新增四线科技演进、国际信誉、16 组多阶段因果事件链与 6 个月后回响、全数值透明明细拆解，以及宣战前「敌我双边实力评估」弹窗。"]),
         ("4.2.1", ["【开局换图横线彻底清除 × 双缓冲水墨溶叠展卷】彻底删除新世界预览图「换一方山河」时横穿画心的横线进度条与延迟闪白，升级为双缓冲微缩溶叠、180° 旋钮弹性反馈、点击预览图直切「地貌/势力」、左上角一键复制种子与底部实时战略地势评语。",
                    "【全局 60/120fps 点击零掉帧 × 轻点跳过展卷】解除程序运镜与弹窗展开期间的 Metal 同步阻塞与 30fps 抢先降帧，新增大地图 0 毫秒朱墨双圈落指水波纹反馈；移除指标栏开页首帧并发重排；建世开卷升级为 60fps 独立进度条（提速至 3.6 秒、续档 1.8 秒）并支持轻点一键跳过。",
                    "【手绘四季雨雪粒子回归 × 36 帧拼接图集 × 60fps 历史短视频】全面恢复手绘桃花、丹枫、雪花与灾丰微标，新增双景深斜风银雨、流云山霭与 36 帧霖雨水花涟漪；大地图陆战/海战/围城升级为 36 帧（30fps）连续拼接图集，6 部传报与军事/水师画卷视频重制为 180 帧真 60fps 无缝循环。",

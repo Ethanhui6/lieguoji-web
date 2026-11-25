@@ -117,7 +117,7 @@ extension Regimes {
         if n > 18 {
             let over = Double(n - 18)
             let prof = styleProfile(r, id)
-            let adminLv = WorldDepth.techLevel(r, nation: id, branch: .admin)
+            let adminLv = WorldDepth.techLevel(r, nation: id, branch: .statecraft)
             let relief: Double = (adminLv >= 3 ? 0.25 : 0.0) + (prof.id == "federal" || prof.camp == .constitutional ? 0.15 : 0.0)
             let factor = max(0.55, 1.0 - relief)
             let atkDrag = -min(22.0, over * 1.15 * factor)
@@ -252,7 +252,7 @@ extension Regimes {
     /// 专项制度行政承载上限（3–5 槽，随行政科技与掌权者治政能力扩容），彻底杜绝无脑全开叠加全部增益。
     public static func maxIndependentReforms(_ r: JS, _ id: String) -> Int {
         var cap = 3
-        if WorldDepth.techLevel(r, nation: id, branch: .admin) >= 3 { cap += 1 }
+        if WorldDepth.techLevel(r, nation: id, branch: .statecraft) >= 3 { cap += 1 }
         let leader = governor(r, id) ?? ruler(r, id)
         let adm = leader.map { People.skills($0).administrative } ?? 50
         if adm >= 74 { cap += 1 }
@@ -270,7 +270,7 @@ extension Regimes {
         Reform(id: "mubing", name: "募兵制", polities: nil, conflicts: ["fubing", "conscription"], effect: Leverage(attack: 11, income: -6)),
         Reform(id: "jungong", name: "军功授爵", polities: ["Kingdom", "Empire", "Tribal"], conflicts: [], effect: Leverage(attack: 12, stability: -5, corruption: 3)),
         Reform(id: "knight", name: "骑士制度", polities: ["Kingdom", "Empire", "Theocracy"], conflicts: [], effect: Leverage(attack: 8, defense: 4, income: -6)),
-        Reform(id: "guild", name: "行会特许", polities: ["Republic", "Federation", "Kingdom"], conflicts: [], effect: Leverage(income: 8, defense: -2, corruption: 4)),
+        Reform(id: "guild", name: "行会特许", polities: ["Republic", "Federation", "Kingdom"], conflicts: [], effect: Leverage(defense: -2, income: 8, corruption: 4)),
         Reform(id: "serf", name: "农奴制", polities: ["Kingdom", "Empire", "Tribal"], conflicts: ["free", "juntian"], effect: Leverage(income: 6, growth: -5, stability: -5)),
         Reform(id: "free", name: "废除奴役", polities: nil, conflicts: ["serf", "juntian"], effect: Leverage(income: -3, growth: 6, stability: 5)),
         Reform(id: "parliament", name: "议会制度", polities: ["Republic", "Federation", "Kingdom"], conflicts: [], effect: Leverage(attack: -4, income: 4, stability: 8, corruption: -5)),

@@ -300,7 +300,7 @@ extension ArmyOrders {
                 return RunWindow.access(r, nation, provinces[idx].controller.asString)
             }
             if !myPorts.isEmpty {
-                let geo = geography(r)
+                let geo = c.geo
                 for enemy in overseasEnemies {
                     let enemyProvs = provinces.indices.filter { provinces[$0].controller.asString == enemy }
                     let beachheads = enemyProvs.filter { portPidSet.contains(provinces[$0].id.asString) || geo.coasts.contains($0) }

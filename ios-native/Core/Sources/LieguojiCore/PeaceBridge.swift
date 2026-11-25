@@ -201,11 +201,13 @@ public enum PeaceBridge {
     }
 
     @inline(never)
-    private static func executeCompleteSettlement(_ r: JS, _ c: JS, reason: Int, participants: [String], restoreOccupations: Bool) -> (box: SettlementBox, confirmed: [JS]) {
+    private static func executeCompleteSettlement(_ r: JS, _ c: JS, reason: Int, participants: [String], restoreOccupations: Bool) -> (box: SettlementBox?, confirmed: [JS]) {
         let s = r.nativeWars
         var w = world(r)
         let terms = war(c)
-        let res = Settlement.settle(war: terms, world: &w, reason: reason)
+        guard let res = Settlement.settle(war: terms, world: &w, reason: reason) else {
+            return (nil, [])
+        }
         var confirmed = [JS]()
         for t in res.applied {
             let p = r.world.provinces.asArray.first { $0.id.asString == s.provinceIds[t.provinceId - 1].asString }!, owner = nation(r, t.to)

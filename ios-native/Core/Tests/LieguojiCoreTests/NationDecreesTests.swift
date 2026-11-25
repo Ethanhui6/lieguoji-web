@@ -26,6 +26,7 @@ final class NationDecreesTests: XCTestCase {
         let engine = try appWorld()
         let r = engine.run
         let id = r.world.nations[0].id.asString
+        r.finance.nations[id].gold = JS(5000.0)
 
         // 1. 休养生息
         let beforePop = r.world.statecraft.provinces.asArray
@@ -45,6 +46,9 @@ final class NationDecreesTests: XCTestCase {
         let armiesAfter = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 }.count
         XCTAssertGreaterThan(armiesAfter, armiesBefore)
 
+        // 跨季推进（严守每季 2 道施政额度）
+        r.world.day = JS(r.world.day.asInt + 95)
+
         // 3. 犒赏三军
         if let firstArmy = r.world.armies.asArray.first(where: { $0.nationId.optionalString == id && $0.troops.asNumber > 0 }) {
             firstArmy.morale = JS(40)
@@ -60,6 +64,9 @@ final class NationDecreesTests: XCTestCase {
         XCTAssertTrue(resAnti.ok, resAnti.reason)
         XCTAssertLessThan(Finance.corruption(r, id), 45)
 
+        // 跨季推进
+        r.world.day = JS(r.world.day.asInt + 95)
+
         // 5. 加固边防
         let resFort = engine.nationDecree(0, kind: "fortifyBorder")
         XCTAssertTrue(resFort.ok, resFort.reason)
@@ -73,6 +80,9 @@ final class NationDecreesTests: XCTestCase {
             XCTAssertTrue(resCult.ok, resCult.reason)
             XCTAssertEqual(r.civilization.cities[city.id.asString].cultureId.asString, stateCult)
         }
+
+        // 跨季推进
+        r.world.day = JS(r.world.day.asInt + 95)
 
         // 7. 统一国教
         let stateFaith = r.civilization.nations[id].religionId.asString

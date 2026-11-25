@@ -420,8 +420,11 @@ final class PolityDiplomacyNamingTests: XCTestCase {
         XCTAssertNotNil(goods.first?["tier"])
         XCTAssertNotNil(goods.first?["effect"])
 
-        // 7. 4 项新增御批政令（12 项完整可用）
-        for kind in ["relief", "landSurvey", "armsUpgrade", "academy"] {
+        // 7. 4 项新增御批政令（12 项完整可用，严格校验国库与每季 2 道限额）
+        let n0Id = engine.run.world.nations[0].id.asString
+        engine.run.finance.nations[n0Id].gold = JS(5000.0)
+        for (i, kind) in ["relief", "landSurvey", "armsUpgrade", "academy"].enumerated() {
+            if i > 0 && i % 2 == 0 { engine.run.world.day = JS(engine.run.world.day.asInt + 95) }
             let res = engine.nationDecree(0, kind: kind)
             XCTAssertTrue(res.ok, "政令 \(kind) 失败：\(res.reason)")
         }

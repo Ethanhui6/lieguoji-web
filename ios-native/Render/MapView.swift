@@ -1166,7 +1166,7 @@ struct MapView: UIViewRepresentable {
             case .ambient: l.preferredFrameRateRange = ambientRange
             }
         }
-        /// A reveal clock began: the map follows it frame by frame; with `push` the camera eases out from 1.25×.
+        /// A reveal clock began: the map follows it frame by frame; with `push` the camera eases out gently from 1.18×.
         private func revealStarted() {
             guard placed else { return }
             appliedRevealSerial = controller.revealClockSerial
@@ -1176,9 +1176,9 @@ struct MapView: UIViewRepresentable {
                 syncTroopVisibility(reveal: startReveal)
                 if c.push {
                     let target = camera
-                    var from = target; from.scale = target.scale * 1.25
+                    var from = target; from.scale = target.scale * 1.18
                     set(from)
-                    animate(to: target, duration: c.duration * 1.1)
+                    animate(to: target, duration: c.duration * 1.08)
                 }
             }
             startLink()
@@ -1187,14 +1187,20 @@ struct MapView: UIViewRepresentable {
         private func advanceReveal() -> Bool {
             guard let t = controller.revealNow, let renderer else { return false }
             renderer.setReveal(t)
-            labels?.alpha = CGFloat(max(0, min(1, (t - 0.85) / 0.15)))
-            effects.alpha = CGFloat(max(0, min(1, (t - 0.9) / 0.1)))
+            let labelRaw = max(0, min(1, (t - 0.80) / 0.20))
+            let labelEase = 1 - pow(1 - labelRaw, 3)
+            let effectRaw = max(0, min(1, (t - 0.86) / 0.14))
+            let effectEase = 1 - pow(1 - effectRaw, 3)
+            labels?.alpha = CGFloat(labelEase)
+            effects.alpha = CGFloat(effectEase)
             syncTroopVisibility(reveal: t)
             mtk.setNeedsDisplay()
             // The owner (GameModel) clears the clock once the published value has caught up.
             if controller.revealDone {
                 let finalT = controller.revealClock?.to ?? t
                 renderer.setReveal(finalT)
+                labels?.alpha = 1
+                effects.alpha = 1
                 syncTroopVisibility(reveal: finalT)
                 return false
             }
@@ -2024,13 +2030,13 @@ final class MapLabelsView: UIView {
         }
         let capitalNames = showCities ? capitalCityLabels : []
         let otherCities = showCities ? otherCityLabels : []
-        // Enlarged capital names (the map seen from afar) give way to the state names; at their own size
-        // (close up) they come first, as before.
-        let enlarged = capitalNames.first.map { $0.mapEm * camera.scale < $0.floorPoints } ?? false
-        // 国名先排、都城名其次：首都圈已最先占位，国名不会盖住首都标记；都城名若与国名相撞，先换到圈下方再试。
-        // （都城名排在国名前时，近看能显示的都城名会把附近的大国名挤掉，边界一动国名就时隐时现。）
-        _ = enlarged
-        let order = custom + nations + capitalNames + otherCities
+        // 大图性能优化：预计算世界坐标可视视锥，屏外标签零投影直接 O(1) 隐藏；且免除每帧合并 4 个大数组的内存分配。
+        let invScale = 1.0 / max(0.001, camera.scale)
+        let padX = 320.0 * invScale, padY = 140.0 * invScale
+        let halfW = (vp.width * 0.5) * invScale + padX
+        let halfH = (vp.height * 0.5) * invScale + padY
+        let visMinX = camera.x - halfW, visMaxX = camera.x + halfW
+        let visMinY = camera.y - halfH, visMaxY = camera.y + halfH
         var placedNationTexts = Set<String>()
         var syncBudget = 6
         func blockedByTextOnly(_ b: Box, margin: CGFloat) -> Bool {
@@ -2038,10 +2044,21 @@ final class MapLabelsView: UIView {
             for c in cells(b, margin) { for i in grid[c] ?? [] where !taken[i].text.isEmpty && Self.clash(taken[i], b, margin: margin) { return true } }
             return false
         }
-        for l in order {
+        func layoutGroup(_ group: [Label]) {
+        for l in group {
+            // 视锥预剔除（多州大图 200+ 城池直接 O(1) 跳过屏外与远景极小城名）
+            if l.x < visMinX || l.x > visMaxX || l.y < visMinY || l.y > visMaxY {
+                if !l.view.isHidden { l.view.isHidden = true }
+                continue
+            }
             var points = l.mapEm * camera.scale * (l.province == nil ? nameScale : 1)
-            var p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
+            let minimum = l.view.isHidden ? l.minPoints : l.minPoints * 0.88
             if points < l.floorPoints, points >= 4.5, l.anchorY != nil { points = l.floorPoints }
+            if !points.isFinite || points < minimum || points >= 900 {
+                if !l.view.isHidden { l.view.isHidden = true }
+                continue
+            }
+            var p = camera.toScreen(x: l.x, y: l.y, viewport: vp)
             if let anchor = l.anchorY, points >= 4.5 {
                 let at = camera.toScreen(x: l.x, y: anchor, viewport: vp)
                 // Clear of its own rings as the layout sees them (their box, the slack a hidden name is asked
@@ -2051,10 +2068,10 @@ final class MapLabelsView: UIView {
                 let aboveY = min(p.y, at.y - lift)
                 p = (x: at.x, y: aboveY < Double(innerMap.minY) + points * 0.55 ? at.y + lift : aboveY)
             }
-            // A name larger than the screen can show is hidden (a continent-wide group zoomed in close).
-            // 滞回：已显示的名字在下限的 88% 以下才隐藏，免得缩放停在临界处时名字反复出没。
-            let minimum = l.view.isHidden ? l.minPoints : l.minPoints * 0.88
-            guard points.isFinite, p.x.isFinite, p.y.isFinite, points >= minimum, points < 900, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else { l.view.isHidden = true; continue }
+            guard p.x.isFinite, p.y.isFinite, p.x > -300, p.y > -120, p.x < vp.width + 300, p.y < vp.height + 120 else {
+                if !l.view.isHidden { l.view.isHidden = true }
+                continue
+            }
             // Rendered at most 96 pt and scaled beyond: a label image never grows to thousands of pixels
             // (that ran memory out and closed the app when a big group label was zoomed in).
             let wanted = min(96, points)
@@ -2130,6 +2147,11 @@ final class MapLabelsView: UIView {
                 l.view.alpha = 1
             }
         }
+        }
+        layoutGroup(custom)
+        layoutGroup(nations)
+        layoutGroup(capitalNames)
+        layoutGroup(otherCities)
     }
 }
 

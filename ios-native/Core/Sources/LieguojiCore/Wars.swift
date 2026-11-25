@@ -30,7 +30,18 @@ public enum Wars {
         let w = r.world, u = r.upperCombat
         let ids = Set(w.nations.asArray.map(\.id.asString))
         for id in u.nations.objectKeys where !ids.contains(id) { u.nations.delete(id) }
-        var byId = [String: JS](); for p in w.provinces.asArray { byId[p.id.asString] = p }
+        // 大图性能优化：单次 O(P + C) 预分桶，消除原先 O(N × (P + C)) 嵌套全图扫描（结果逐字节一致）。
+        var byId = [String: JS]()
+        var ownedListByNation = [String: [String]]()
+        var ownedSetByNation = [String: Set<String>]()
+        for p in w.provinces.asArray {
+            let pid = p.id.asString, ctrl = p.controller.asString
+            byId[pid] = p
+            ownedListByNation[ctrl, default: []].append(pid)
+            ownedSetByNation[ctrl, default: []].insert(pid)
+        }
+        var cityProvById = [String: String]()
+        for city in w.cities.asArray { cityProvById[city.id.asString] = city.provinceId.asString }
         for n in w.nations.asArray {
             let nid = n.id.asString
             var s = u.nations[nid]
@@ -39,12 +50,12 @@ public enum Wars {
                 s = .object(); s.polity = JS(Nobility.polities[initial("native-no-culture-polity", 6)]); s.traits = .array(); s.destiny = JS(10 + initial("native-destiny", 80))
                 s.coreThreshold = JS(2); s.coreYear = JS(w.day.asInt / 360); s.provinceOrder = .array(); u.nations[nid] = s
             }
-            let owned = Set(w.provinces.asArray.filter { $0.controller.asString == nid }.map(\.id.asString))
+            let owned = ownedSetByNation[nid] ?? []
             var order = s.provinceOrder.asArray.map(\.asString).filter { owned.contains($0) }
             let existing = Set(order)
-            for p in w.provinces.asArray where owned.contains(p.id.asString) && !existing.contains(p.id.asString) { order.append(p.id.asString) }
+            for pid in ownedListByNation[nid] ?? [] where !existing.contains(pid) { order.append(pid) }
             s.provinceOrder = .array(order.map { JS($0) })
-            let capital = w.cities.asArray.first { $0.id.optionalString == n.capitalId.optionalString }.map(\.provinceId.asString)
+            let capital = n.capitalId.optionalString.flatMap { cityProvById[$0] }
             let distances = capital.flatMap { owned.contains($0) ? coreDistances(byId, nid, $0, order) : nil }
             for id in order {
                 let d = distances?[id]
@@ -149,17 +160,27 @@ public enum Wars {
     /// reconcileParticipants28.
     public static func reconcileParticipants(_ r: JS) {
         let s = r.nativeWars
-        for c in s.campaigns.asArray where c.endedTick.isNull {
+        let active = s.campaigns.asArray.filter { $0.endedTick.isNull }
+        guard !active.isEmpty else { return }
+        // 大图性能优化：单次预构建在世控制国、stateId 映射与活跃战争关系集，将 O(W × (M × P + R)) 降至 O(P + R)。
+        var living = Set<String>()
+        for p in r.world.provinces.asArray { living.insert(p.controller.asString) }
+        var nationByState = [Int: String]()
+        for (nid, row) in r.people.nations.objectEntries { nationByState[row.id.asInt] = nid }
+        var warRelIds = Set<String>()
+        for rel in r.world.statecraft.relations.asArray where rel.status.asString == "war" {
+            warRelIds.insert(relationIdentity(rel.a.asString, rel.b.asString, rel.sinceDay.asInt))
+        }
+        for c in active {
             let vanished = c.participants.asArray.filter { p in
-                guard let n = r.people.nations.objectEntries.first(where: { $0.1.id.asInt == p.stateId.asInt })?.0 else { return true }
-                return !r.world.provinces.asArray.contains { $0.controller.asString == n }
+                guard let n = nationByState[p.stateId.asInt] else { return true }
+                return !living.contains(n)
             }
             if !vanished.isEmpty {
                 revise(s); c.participants.asArray = c.participants.asArray.filter { p in !vanished.contains { $0 === p } }
                 for v in vanished { c.destroyedParticipants.push(v) }
             }
-            let alive = r.world.statecraft.relations.asArray.contains { relationIdentity($0.a.asString, $0.b.asString, $0.sinceDay.asInt) == c.relationId.asString && $0.status.asString == "war" }
-            if !alive { revise(s); c.endedTick = r.clock.tick.clone() }
+            if !warRelIds.contains(c.relationId.asString) { revise(s); c.endedTick = r.clock.tick.clone() }
         }
     }
     /// war28DamageSink: raw float damage per attacker and victim in the first opposed active war.

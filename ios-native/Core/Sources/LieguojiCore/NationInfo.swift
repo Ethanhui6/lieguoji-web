@@ -274,6 +274,17 @@ extension NativeEngine {
             let nowDayInfo = r.world.day.asInt
             let stratUntil = (!nb.isNull ? nb.strategyCooldownUntil.optionalNumber.map(Int.init) : nil) ?? 0
             o.strategyCooldown = JS(max(0, stratUntil - nowDayInfo))
+            let qKeyInfo = nowDayInfo / 90
+            let qUsedInfo = (!nb.isNull && nb.edictQuarterKey.optionalNumber.map(Int.init) == qKeyInfo)
+                ? (nb.edictQuarterUsed.optionalNumber.map(Int.init) ?? 0) : 0
+            o.edictQuotaUsed = JS(qUsedInfo)
+            o.edictQuotaMax = JS(2)
+            o.centralization = JS((!nb.isNull ? nb.centralization.optionalString : nil) ?? "balanced")
+            let centUntil = (!nb.isNull ? nb.centralCooldownUntil.optionalNumber.map(Int.init) : nil) ?? 0
+            o.centralCooldown = JS(max(0, centUntil - nowDayInfo))
+            let refUntil = (!nb.isNull ? nb.reformCooldownUntil.optionalNumber.map(Int.init) : nil) ?? 0
+            o.reformCooldown = JS(max(0, refUntil - nowDayInfo))
+            o.autoDecide = JS((!nb.isNull && nb.autoDecideSet.isTruthy) ? nb.autoDecide.isTruthy : Regimes.isAutoGoverned(r, id))
             let cdMap = JS.object()
             if !nb.isNull, !nb.decreeCooldowns.isNull {
                 for (k, v) in nb.decreeCooldowns.objectEntries {
@@ -296,6 +307,13 @@ extension NativeEngine {
             let sObj = JS.object()
             sObj.level = JS(strain.level); sObj.label = JS(strain.label); sObj.summary = JS(strain.summary)
             o.realmStrain = sObj
+            // v5.2.0 君主与将领军事谋略（实时影响军队 AI 智商）
+            let iq = Regimes.tacticalIQ(r, nation: id)
+            let iqObj = JS.object()
+            iqObj.score = JS(iq.score); iqObj.tier = JS(iq.tier); iqObj.label = JS(iq.label)
+            iqObj.summary = JS(iq.summary); iqObj.commanderName = JS(iq.commanderName)
+            iqObj.commanderMilitary = JS(iq.commanderMilitary); iqObj.rulerMilitary = JS(iq.rulerMilitary)
+            o.tacticalIQ = iqObj
             // 文明文化学说与圣地实效
             let doc = CultureDoctrines.of(civ.cultureId.optionalString)
             let docObj = JS.object()

@@ -84,8 +84,13 @@ final class V4RefactorTests: XCTestCase {
     func testExpandedDecreesAndSmartStrategyPresets() throws {
         let engine = try loadWorld()
         defer { cleanup() }
+        let id = engine.run.world.nations[0].id.asString
+        engine.run.finance.nations[id].gold = JS(5000.0)
 
-        for kind in ["roadNetwork", "granary", "techAcademy", "navalDockyard", "taxRelief"] {
+        for (i, kind) in ["roadNetwork", "granary", "techAcademy", "navalDockyard", "taxRelief"].enumerated() {
+            if i > 0 && i % 2 == 0 {
+                engine.run.world.day = JS(engine.run.world.day.asInt + 95)
+            }
             let res = engine.nationDecree(0, kind: kind)
             XCTAssertTrue(res.ok, "政令 \(kind) 应可执行：\(res.reason)")
         }
@@ -96,7 +101,6 @@ final class V4RefactorTests: XCTestCase {
         let autoOn = engine.nationDecree(0, kind: "strategyAuto:on")
         XCTAssertTrue(autoOn.ok, autoOn.reason)
 
-        let id = engine.run.world.nations[0].id.asString
         let heldIds = Set(Regimes.heldReforms(engine.run, id).map(\.id))
         XCTAssertTrue(heldIds.contains("seaopen"))
         XCTAssertTrue(heldIds.contains("liangshui"))
@@ -159,6 +163,8 @@ final class V4RefactorTests: XCTestCase {
     func testRegularDecreeCooldownBlocksSameDayRepeat() throws {
         let engine = try loadWorld()
         defer { cleanup() }
+        let n0 = engine.run.world.nations[0].id.asString
+        engine.run.finance.nations[n0].gold = JS(2000.0)
 
         // 首次颁布普通政令成功
         let first = engine.nationDecree(0, kind: "prosper")
@@ -306,11 +312,13 @@ final class V4RefactorTests: XCTestCase {
         XCTAssertFalse(afterSwitchIds.contains("liangshui"))
         XCTAssertTrue(afterSwitchIds.contains("jungong"))
 
-        // 3. 四项新增政令均可执行并写入冷却表，nationInfo 正确导出 decreeCooldowns / rulerEval / realmStrain
+        // 3. 四项新增政令均可执行并写入冷却表（严守每季 2 道施政额度），nationInfo 正确导出 decreeCooldowns / rulerEval / realmStrain
         r.finance.nations[n0].gold = JS(5000.0)
         XCTAssertTrue(engine.nationDecree(0, kind: "imperialInspection").ok)
         XCTAssertFalse(engine.nationDecree(0, kind: "imperialInspection").ok) // 立刻复点被冷却拦截
         XCTAssertTrue(engine.nationDecree(0, kind: "warBond").ok)
+        XCTAssertFalse(engine.nationDecree(0, kind: "eliteDrill").ok)        // 同季第 3 道政令被季度额度闸门拦截
+        r.world.day = JS(r.world.day.asInt + 95)
         XCTAssertTrue(engine.nationDecree(0, kind: "eliteDrill").ok)
         XCTAssertTrue(engine.nationDecree(0, kind: "scholarlyEdict").ok)
         let infoData = try XCTUnwrap(engine.nationInfo(0))
@@ -410,9 +418,10 @@ final class V4RefactorTests: XCTestCase {
         XCTAssertEqual(r.kin.persons.objectKeys.count, beforeCount + 1)
         XCTAssertFalse(engine.nationDecree(0, kind: "recruitTalent").ok) // 冷却拦截
 
-        // 4. 敕封名将 & 大酺庆典
+        // 4. 敕封名将 & 大酺庆典（跨季执行以尊重每季 2 道额度）
         let prom = engine.nationDecree(0, kind: "promoteCommander")
         XCTAssertTrue(prom.ok, prom.reason)
+        r.world.day = JS(r.world.day.asInt + 95)
         if r.regimes.defeatShock.isNull { r.regimes.defeatShock = JS.object() }
         r.regimes.defeatShock[n0] = JS(0.24)
         let feast = engine.nationDecree(0, kind: "grandFeast")
@@ -527,5 +536,121 @@ final class V4RefactorTests: XCTestCase {
             XCTAssertEqual(Int((r.regimes.armyXP[spawned.id.asString].optionalNumber ?? 0).rounded()), 45)
         }
         XCTAssertFalse(engine.hireMercenary(0, mercId: "xuanjia").ok)
+    }
+
+    /// v5.2.0 综合回归：君主与将领战术 AI 谋略、杜绝「地名+朝/王朝」、治理强国库/防重复/季度额度/央地集权/自动裁决、
+    /// 四海探索与古迹远征、大图性能核心分桶与主权法理整合。
+    func testV520TacticalIQRulerTurnoverGovernanceBalanceNamingAndExploration() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+        let r = engine.run
+        let nations = r.world.nations.asArray
+        XCTAssertGreaterThanOrEqual(nations.count, 2)
+        let n0 = nations[0].id.asString
+
+        // 1. 君主与将领军事谋略（TacticalIQ）：明君名将高智商 vs 昏君庸将低智商瞎指挥
+        if let lid = r.people.nations[n0].leaderId.optionalNumber, let ruler = People.person(r, Int(lid)) {
+            ruler.base.military = JS(95); ruler.base.administrative = JS(88); ruler.base.charisma = JS(88)
+            ruler.traits = JS.array([JS("Visionary"), JS("Tactician"), JS("Strategist")])
+            let highIQ = Regimes.tacticalIQ(r, nation: n0)
+            XCTAssertGreaterThanOrEqual(highIQ.tier, 1)
+            XCTAssertLessThanOrEqual(highIQ.retreatRatio, 1.50)
+            XCTAssertGreaterThanOrEqual(highIQ.musterPatience, 17)
+            XCTAssertEqual(highIQ.blunderJitter, 0)
+
+            ruler.base.military = JS(12); ruler.base.administrative = JS(15); ruler.base.charisma = JS(15)
+            ruler.traits = JS.array([JS("Incompetent"), JS("Tyrant")])
+            if let cmd = Regimes.activeCommander(r, nation: n0), let cp = People.person(r, cmd.personId) {
+                cp.base.military = JS(14); cp.traits = JS.array([JS("Incompetent")])
+            }
+            let lowIQ = Regimes.tacticalIQ(r, nation: n0)
+            XCTAssertLessThanOrEqual(lowIQ.tier, -1)
+            XCTAssertGreaterThanOrEqual(lowIQ.retreatRatio, 2.0)
+            XCTAssertGreaterThanOrEqual(lowIQ.blunderJitter, 80)
+        }
+
+        // 2. 现实感国名校验：绝不产生「襄阳朝」「姑苏朝」「江南朝」「江南王朝」「威尼斯王朝」
+        let dynasty = Regimes.styles.first { $0.id == "dynasty" }!
+        let empire = Regimes.styles.first { $0.id == "empire" }!
+        for place in ["襄阳", "姑苏", "江南", "巴蜀", "岭南"] {
+            let t1 = NamingCatalog.formatStateTitle(base: place, style: dynasty, religion: "chineseFolk", culture: "chinese", ordinal: "", rulingSurname: "李", template: nil)
+            XCTAssertFalse(t1.hasSuffix("朝"), "禁止地名+朝：\(t1)")
+            XCTAssertEqual(t1, place + "王国")
+            let t2 = NamingCatalog.formatStateTitle(base: place, style: empire, religion: "chineseFolk", culture: "chinese", ordinal: "", rulingSurname: "李", template: nil)
+            XCTAssertFalse(t2.hasSuffix("王朝"), "禁止地名+王朝：\(t2)")
+        }
+        let venice = NamingCatalog.formatStateTitle(base: "威尼斯", style: dynasty, religion: "catholic", culture: "italian", ordinal: "", rulingSurname: "", template: nil)
+        XCTAssertFalse(venice.hasSuffix("王朝"), "禁止异域城名+王朝：\(venice)")
+        XCTAssertEqual(venice, "威尼斯王国")
+        let bourbon = NamingCatalog.formatStateTitle(base: "波旁", style: dynasty, religion: "catholic", culture: "french", ordinal: "", rulingSurname: "波旁", template: nil)
+        XCTAssertEqual(bourbon, "波旁王朝")
+
+        // 3. 治理平衡：0 金拒颁付费政令 + 季度 2 道限额 + 央地集权三档 + 变法 90 日冷却 + 国家抉择防重复与自动裁决
+        r.finance.nations[n0].gold = JS(0.0)
+        XCTAssertFalse(engine.nationDecree(0, kind: "prosper").ok)
+        XCTAssertFalse(engine.nationDecree(0, kind: "roadNetwork").ok)
+        XCTAssertFalse(engine.nationDecree(0, kind: "antiCorruption").ok)
+
+        r.finance.nations[n0].gold = JS(2000.0)
+        XCTAssertTrue(engine.nationDecree(0, kind: "prosper").ok)
+        XCTAssertTrue(engine.nationDecree(0, kind: "granary").ok)
+        XCTAssertFalse(engine.nationDecree(0, kind: "relief").ok) // 同季第 3 道政令被季度额度闸门拦截
+
+        // 央地集权三档与 180 日转轨冷却
+        let cOn = engine.nationDecree(0, kind: "centralization:central")
+        XCTAssertTrue(cOn.ok, cOn.reason)
+        XCTAssertFalse(engine.nationDecree(0, kind: "centralization:autonomous").ok) // 冷却期内禁止频繁改制
+        let levCentral = Regimes.leverage(r, n0)
+        r.world.day = JS(r.world.day.asInt + 200)
+        XCTAssertTrue(engine.nationDecree(0, kind: "centralization:autonomous").ok)
+        let levAuto = Regimes.leverage(r, n0)
+        XCTAssertGreaterThan(levCentral.income, levAuto.income + 15)
+        XCTAssertGreaterThan(levAuto.stability, levCentral.stability + 10)
+
+        // 变法 90 日冷却
+        let ref1 = engine.setReform(0, reform: "audit", on: true)
+        XCTAssertTrue(ref1.ok, ref1.reason)
+        XCTAssertFalse(engine.setReform(0, reform: "minting", on: true).ok)
+
+        // 国家因果抉择严格防重复 + 满 2 月自动裁决
+        Regimes.enable(r)
+        if r.regimes.eventChains.isNull { r.regimes.eventChains = JS.object() }
+        let chObj = JS.object(); chObj.id = JS("famineRelief"); chObj.month = JS(1)
+        r.regimes.eventChains[n0] = chObj
+        let res1 = engine.resolveEventChain(0, chainId: "famineRelief", choice: "a")
+        XCTAssertTrue(res1.ok, res1.reason)
+        XCTAssertFalse(engine.resolveEventChain(0, chainId: "famineRelief", choice: "a").ok) // 严禁重复领取
+
+        let chAuto = JS.object(); chAuto.id = JS("enlightenmentReform"); chAuto.month = JS(2)
+        r.regimes.eventChains[n0] = chAuto
+        _ = engine.nationDecree(0, kind: "autoDecide:on")
+        WorldDepth.month(r, key: 4) // 满 2 个月触发自动裁决
+        XCTAssertTrue(r.regimes.eventChains[n0].isNull)
+
+        // 4. 四海探索与古迹远征：10 处古迹导出、派遣扣金、防重复与防并行、4 月完成发掘并生效永久加成
+        let gData = try XCTUnwrap(engine.grandInfo(0))
+        let gJson = try XCTUnwrap(JSONSerialization.jsonObject(with: gData) as? [String: Any])
+        XCTAssertEqual((gJson["expeditions"] as? [[String: Any]])?.count, 10)
+
+        r.finance.nations[n0].gold = JS(1000.0)
+        let expStart = engine.dispatchExpedition(0, siteId: "kunlunRuins")
+        XCTAssertTrue(expStart.ok, expStart.reason)
+        XCTAssertFalse(engine.dispatchExpedition(0, siteId: "kunlunRuins").ok)
+        XCTAssertFalse(engine.dispatchExpedition(0, siteId: "penglaiIsle").ok)
+        for m in 1...4 {
+            GrandSystems.month(r, nations[0], n0, 10 + m, addGold: { _ in }, addDestiny: { _ in })
+        }
+        XCTAssertEqual(r.regimes.expeditions["kunlunRuins"].status.optionalString, "done")
+        let expBonus = GrandSystems.leverageBonus(r, nationId: n0)
+        XCTAssertGreaterThanOrEqual(expBonus.attack, 5.0)
+        XCTAssertGreaterThanOrEqual(expBonus.defense, 5.0)
+
+        // 5. nationInfo 完整导出 tacticalIQ / edictQuota / centralization / autoDecide
+        let nInfoRaw = try XCTUnwrap(engine.nationInfo(0))
+        let nInfoJson = try XCTUnwrap(JSONSerialization.jsonObject(with: nInfoRaw) as? [String: Any])
+        XCTAssertNotNil(nInfoJson["tacticalIQ"])
+        XCTAssertEqual(nInfoJson["edictQuotaMax"] as? Int, 2)
+        XCTAssertEqual(nInfoJson["centralization"] as? String, "autonomous")
+        XCTAssertEqual(nInfoJson["autoDecide"] as? Bool, true)
     }
 }

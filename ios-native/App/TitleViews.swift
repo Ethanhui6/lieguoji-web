@@ -1103,7 +1103,7 @@ struct FoundingView: View {
     @State private var started = Date()
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { context in
             let reveal = liveReveal
             let canSkip = controller.revealClock != nil && reveal > 0.06 && !ShotTour.on
             let waited = reveal >= 1 ? context.date.timeIntervalSince(started) : 0
@@ -1111,10 +1111,11 @@ struct FoundingView: View {
             let current = reveal < 1
                 ? (Self.stages.firstIndex { reveal < $0.until } ?? Self.stages.count - 1)
                 : Self.stages.count + laterIndex
-            let creep: Double = (1 - exp(-waited / 8)) * 0.9
-            let progress: Double = reveal < 1
+            let creep: Double = (1 - exp(-waited / 7.5)) * 0.92
+            let rawProgress: Double = reveal < 1
                 ? Double(reveal) * 0.85
                 : 0.85 + (Double(laterIndex) + creep) / Double(Self.later.count) * 0.15
+            let progress = max(0.015, min(1.0, rawProgress))
 
             VStack {
                 Spacer()
@@ -1122,13 +1123,13 @@ struct FoundingView: View {
                     FoundingCartoucheHeader(current: current)
                         .equatable()
 
-                    // 极简三色进度条（朱砂细轨，零渐变）
+                    // 4.3 极简平铺宣纸朱砂进度条（60fps 丝滑无阶跃）
                     ZStack(alignment: .leading) {
                         Capsule().fill(Theme.hairline)
                         Capsule().fill(Theme.seal)
-                            .scaleEffect(x: max(0.015, min(1.0, progress)), y: 1, anchor: .leading)
+                            .scaleEffect(x: progress, y: 1, anchor: .leading)
                     }
-                    .frame(height: 3.5)
+                    .frame(height: 3)
 
                     HStack(spacing: 8) {
                         EditorialValueText("\(Int(progress * 100))%", size: 15, color: Theme.ink)
@@ -1138,8 +1139,7 @@ struct FoundingView: View {
                                 .font(Theme.caption)
                                 .foregroundStyle(Theme.seal)
                                 .padding(.horizontal, 9).padding(.vertical, 3)
-                                .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.seal.opacity(0.4), lineWidth: 0.75))
+                                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.seal.opacity(0.45), lineWidth: 0.75))
                         } else {
                             Text(current < Self.stages.count ? "第 \(current + 1)/\(Self.stages.count) 笔" : "史卷落成")
                                 .font(Theme.caption)
@@ -1165,24 +1165,17 @@ struct FoundingView: View {
                     }
                 }
                 .padding(.horizontal, 18).padding(.vertical, 15)
-                .frame(maxWidth: 356, alignment: .leading)
+                .frame(maxWidth: 352, alignment: .leading)
                 .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Theme.paper2.opacity(0.95))
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Theme.paperLight.opacity(0.96))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(SplashView.gold.opacity(0.42), lineWidth: 0.75)
-                        .padding(4)
+                        .stroke(Theme.hairline, lineWidth: 0.9)
                         .allowsHitTesting(false)
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Theme.ink.opacity(0.20), lineWidth: 0.9)
-                        .allowsHitTesting(false)
-                )
-                .shadow(color: Color(red: 0.12, green: 0.09, blue: 0.05).opacity(0.22), radius: 14, y: 6)
-                .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .onTapGesture {
                     if canSkip {
                         GameFeel.shared.tap()

@@ -347,6 +347,15 @@ public enum ArmyOrders {
         }
         // 协助盟友 (app worlds): allied land where an enemy of ours stands or that an enemy holds.
         var alliedOf = [String: [Int]]()
+        // v5.2.0 君主与名将军事智商缓存（每批只算一次，决定撤退止损、伏击规避与军令响应频率）
+        var iqOf = [String: Regimes.TacticalIQ]()
+        func tacticalIQ(_ nation: String) -> Regimes.TacticalIQ? {
+            guard UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy else { return nil }
+            if let v = iqOf[nation] { return v }
+            let v = Regimes.tacticalIQ(r, nation: nation)
+            iqOf[nation] = v
+            return v
+        }
         func alliedFront(_ nation: String, _ enemySet: Set<String>) -> [Int] {
             if let v = alliedOf[nation] { return v }
             var out = [Int]()
@@ -364,8 +373,10 @@ public enum ArmyOrders {
         for id in ids {
             let a = armyById[id]!, row = state.armies[id], nation = a.nationId.asString
             let en = enemiesOf(nation), enemySet = Set(en.map(\.nation))
+            let iq = tacticalIQ(nation)
+            let nationRetry = iq?.retryTicks ?? retry
             func note(_ d: String, _ reason: String, clear: Bool = false) {
-                row.decision = JS(d); row.reason = JS(reason); row.nextTick = JS(tick + retry)
+                row.decision = JS(d); row.reason = JS(reason); row.nextTick = JS(tick + nationRetry)
                 if clear { row.targetId = .null; row.campaignId = .null; row.issuedTick = .null }
             }
             func halt() { if reason(r, id, .halt) == nil { issue(r, id, .halt) } }
@@ -398,8 +409,11 @@ public enum ArmyOrders {
                     foesNear += troopsAt(t.id.asString, ours: false)
                     friendsNear += troopsAt(t.id.asString, ours: true)
                 }
-                let outmatched = foesNear > 1.6 * max(friendsNear, a.troops.asNumber)
-                let exhausted = a.morale.asNumber < 24 || a.supplies.asNumber <= 0
+                let retreatRatio = iq?.retreatRatio ?? 1.6
+                let retreatMorale = iq?.retreatMorale ?? 24
+                let supplyFloor: Double = (iq?.tier ?? 0) >= 1 ? 14 : ((iq?.tier ?? 0) <= -1 ? -1 : 0)
+                let outmatched = foesNear > retreatRatio * max(friendsNear, a.troops.asNumber)
+                let exhausted = a.morale.asNumber < retreatMorale || a.supplies.asNumber <= supplyFloor
                 if outmatched || exhausted {
                     let at = g.location(bridge.travel(here.travel)).point
                     func far(_ q: Int) -> Double { jsHypot(provinceList[q].center.x.asNumber - at.x, provinceList[q].center.y.asNumber - at.y) }
@@ -462,9 +476,11 @@ public enum ArmyOrders {
                         headingOf[nation] = h
                     }
                     let converging = max(a.troops.asNumber, headingOf[nation]?[tid] ?? a.troops.asNumber)
-                    if foesThere > 1.85 * converging { trapAbort = true }
-                    // 残兵惜力：士气低迷或兵力残破时不再孤军冲击有敌军据守的城池
-                    if (a.morale.optionalNumber ?? 1.0) < 0.24 || a.troops.asNumber < 320, foesThere > a.troops.asNumber * 0.75 {
+                    let abortRatio = iq?.trapAbortRatio ?? 1.85
+                    if foesThere > abortRatio * converging { trapAbort = true }
+                    // 残兵惜力：名将统军士气低迷或兵力残破时主动止损，昏君则放任孤军送死
+                    let moraleFloor = (iq?.retreatMorale ?? 24) / 100.0
+                    if (iq?.tier ?? 0) >= 0, (a.morale.optionalNumber ?? 1.0) < moraleFloor || a.troops.asNumber < 320, foesThere > a.troops.asNumber * 0.75 {
                         trapAbort = true
                     }
                 }
@@ -632,7 +648,8 @@ public enum ArmyOrders {
                     (presentAt[provinces[p].id.asString] ?? []).reduce(0) { $1.status.asString != "retreating" && enemySet.contains($1.nationId.asString) ? $0 + $1.troops.asNumber : $0 }
                 }
                 func friends(_ p: Int) -> Double { let pid = provinces[p].id.asString; return max(0, (h[pid] ?? 0) - (ownTarget == pid ? mine : 0)) }
-                let viable = candidates.filter { invadedSet.contains($0.id) || foes($0.id) <= 1.6 * (mine + friends($0.id)) }
+                let viableRatio = iq?.retreatRatio ?? 1.6
+                let viable = candidates.filter { invadedSet.contains($0.id) || foes($0.id) <= viableRatio * (mine + friends($0.id)) }
                 if !viable.isEmpty { candidates = viable }
                 func dist(_ t: ArmyAutonomy.Context.Target) -> Double { ((t.x - location.point.x) * (t.x - location.point.x) + (t.y - location.point.y) * (t.y - location.point.y)).squareRoot() }
                 // 前线分配: our invaded provinces are covered first, each until the troops on their way

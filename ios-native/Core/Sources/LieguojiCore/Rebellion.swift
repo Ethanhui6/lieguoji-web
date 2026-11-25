@@ -72,11 +72,21 @@ public enum Rebellion {
         if interval > Double(monthsSince(r, s.lastRebel[id].optionalNumber ?? 0)) { return false }
         return monthsSince(r, bornTime(r, id)) >= 15
     }
+    private static var provLookupCache: (world: ObjectIdentifier, count: Int, map: [String: JS])?
+    private static func provinceById(_ r: JS, _ pid: String) -> JS? {
+        let list = r.world.provinces.asArray, wid = ObjectIdentifier(r)
+        if provLookupCache?.world != wid || provLookupCache?.count != list.count {
+            var m = [String: JS](); m.reserveCapacity(list.count)
+            for p in list { m[p.id.asString] = p }
+            provLookupCache = (wid, list.count, m)
+        }
+        return provLookupCache?.map[pid]
+    }
     static func provinceAtWar(_ r: JS, _ province: String) -> Bool {
-        guard let p = r.world.provinces.asArray.first(where: { $0.id.asString == province }) else { return false }
+        guard let p = provinceById(r, province) else { return false }
         if r.occupation.sieges.asArray.contains(where: { $0.provinceId.asString == province }) { return true }
         return p.neighbors.asArray.contains { n in
-            guard let q = r.world.provinces.asArray.first(where: { $0.id.asString == n.asString }) else { return false }
+            guard let q = provinceById(r, n.asString) else { return false }
             return q.controller.asString != p.controller.asString && Wars.relation(r, p.controller.asString, q.controller.asString)?.status.asString == "war"
         }
     }
@@ -84,7 +94,7 @@ public enum Rebellion {
     @discardableResult
     public static func tryRebel(_ r: JS, _ province: String, force: Bool) -> Bool {
         let s = r.foundings
-        guard let p = r.world.provinces.asArray.first(where: { $0.id.asString == province }) else { return false }
+        guard let p = provinceById(r, province) else { return false }
         let owner = p.controller.asString
         if !force {
             if !s.enabled.isTruthy || capitalProvince(r, owner) == province { return false }
@@ -105,7 +115,7 @@ public enum Rebellion {
         return onRebel(r, province, force)
     }
     static func updateCoreMonths(_ r: JS, _ s: JS, _ province: String) {
-        guard let p = r.world.provinces.asArray.first(where: { $0.id.asString == province }) else { return }
+        guard let p = provinceById(r, province) else { return }
         let owner = p.controller.asString, core = isCore(r, province, owner)
         let m = s.coreMonths[province].isNull ? JS.object() : s.coreMonths[province]
         if core { m[owner] = JS(f((m[owner].optionalNumber ?? 0) + 1)) }

@@ -479,7 +479,7 @@ public enum NamingCatalog {
                     return "教宗领"
                 }
             }
-            if style.id == "dynasty" { return "朝" }
+            if style.id == "dynasty" { return culture == "chinese" ? "王国" : "帝国" }
             if style.id == "junta" { return "军政府" }
             if style.id == "dictatorship" { return culture == "chinese" ? "执政府" : "独裁国" }
             if style.id == "fascist" { return culture == "italian" ? "社会共和国" : "民族国" }
@@ -518,7 +518,11 @@ public enum NamingCatalog {
                     let stripped = base.hasPrefix("大") ? String(base.dropFirst()) : base
                     return (ordinal == "第二" ? "后" : "续") + stripped
                 }
-                return ordinal.isEmpty ? base + "朝" : "续" + base
+                // 严禁把“朝/王朝”硬贴在地理名或城池名后（杜绝「襄阳朝」「姑苏朝」「江南朝」）：
+                // 地理双字或多字基名按真实历史规制称「中华帝国」或「XX王国」。
+                if base == "中华" || base == "华夏" { return base + ordinal + "帝国" }
+                if base.hasSuffix("国") || base.hasSuffix("朝") { return ordinal.isEmpty ? base : "后" + base }
+                return base + ordinal + "王国"
             }
             if isMonarchy {
                 // 双字完整朝代号（如 北魏、南唐、蜀汉、吴越、西夏、大理、大顺、南明）：绝不乱加「王国/帝国」
@@ -535,10 +539,12 @@ public enum NamingCatalog {
                     if style.base == "Kingdom" { return (ordinal.isEmpty ? "" : "后") + base + "国" }
                     if style.base == "Empire" { return ordinal.isEmpty ? "大" + base : "后" + base }
                 }
-                // 地理双字名（如 江南、关中、巴蜀、岭南）：称「江南王府/王国」「巴蜀公国」「中华帝国」，避免生硬拼接
+                // 地理双字名（如 江南、关中、巴蜀、岭南、襄阳）：绝不拼「XX王朝/XX朝」，按政体称「公国 / 王国 / 帝国」
                 if style.id == "principality" { return base + ordinal + "公国" }
                 if style.id == "constitutional" { return base + ordinal + "立宪王国" }
-                if style.base == "Empire" { return (base == "中华" || base == "华夏") ? base + ordinal + "帝国" : base + ordinal + "王朝" }
+                if style.base == "Empire" {
+                    return (base == "中华" || base == "华夏" || style.id == "empire") ? base + ordinal + "帝国" : base + ordinal + "王国"
+                }
                 if style.base == "Kingdom" { return base + ordinal + "王国" }
             }
             if style.id == "warlord" || style.id == "junta" { return base + "军政府" }
@@ -565,7 +571,7 @@ public enum NamingCatalog {
         if culture == "english" && style.id == "union" && (base == "不列颠" || base == "英格兰") && ordinal.isEmpty { return "大不列颠联合王国" }
         if culture == "german" && (style.id == "nazi" || style.id == "fascist") && base == "德意志" { return "德意志\(ordinal.isEmpty ? "第三" : ordinal)帝国" }
 
-        // 2. 其余文化「新朝/王朝」政体
+        // 2. 其余文化「新朝/王朝」政体：仅真实皇室姓氏/朝代基名加「王朝」，地理城池名改称「王国」杜绝「威尼斯王朝」「巴伐利亚朝」
         if style.id == "dynasty" {
             if base.count == 1 {
                 return ordinal.isEmpty ? "大" + base : "后" + base
@@ -573,7 +579,10 @@ public enum NamingCatalog {
             if base.hasPrefix("大") || ["东", "西", "南", "北", "前", "后"].contains(where: { base.hasPrefix($0) }) {
                 return ordinal.isEmpty ? base : "后" + base
             }
-            return base + ordinal + "王朝"
+            if dynasticOnlyBases[culture]?.contains(base) == true {
+                return base + ordinal + "王朝"
+            }
+            return base + ordinal + "王国"
         }
 
         // 3. 防止重复后缀：若基名已包含该政体后缀或完整政体词，不再叠拼。
@@ -601,7 +610,7 @@ public enum NamingCatalog {
         TemplatePreset(label: "{名}{号}", template: "{名}{号}"),
         TemplatePreset(label: "{名}{序}{号}", template: "{名}{序}{号}"),
         TemplatePreset(label: "{序}{名}{号}", template: "{序}{名}{号}"),
-        TemplatePreset(label: "大{名}王朝", template: "大{名}王朝"),
+        TemplatePreset(label: "{姓}氏王朝", template: "{姓}氏王朝"),
         TemplatePreset(label: "{姓}氏{名}", template: "{姓}氏{名}"),
         TemplatePreset(label: "大{姓}", template: "大{姓}"),
     ]

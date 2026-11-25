@@ -202,8 +202,10 @@ public enum Daily {
             if priority != "military" { refill(population * (priority == "civilian" ? 3 : 1)) }
             add(ledger, "closingGrain", economy.grain.asNumber)
         }
+        var nationById = [String: JS]()
+        for n in w.nations.asArray { nationById[n.id.asString] = n }
         for policy in management.nations.asArray {
-            let l = policy.lastLedger, nation = w.nations.asArray.first { $0.id.asString == policy.nationId.asString }!
+            let l = policy.lastLedger, nation = nationById[policy.nationId.asString]!
             let deaths = l.starvationDeaths.asNumber
             if deaths != 0 || w.day.asInt % 7 == 0 {
                 event(r, "economy", "\(nation.name.asString)日粮结算\(deaths != 0 ? "：饥荒死亡 \(jsNumber(deaths))" : "")",

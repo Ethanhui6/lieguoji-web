@@ -126,11 +126,15 @@ final class StrategyDepthTests: XCTestCase {
         }
         XCTAssertGreaterThanOrEqual(WorldDepth.techLevel(r, nation: n0, branch: .military), 2)
 
-        // 3. 外交信誉与 16 组多阶段因果事件链 + 6 个月后回响
+        // 3. 外交信誉与 16 组多阶段因果事件链 + 6 个月后回响（严禁重复领取）
         XCTAssertEqual(WorldDepth.eventChainTemplates.count, 16)
         let beforeRep = WorldDepth.reputation(r, nation: n0)
+        if r.regimes.eventChains.isNull { r.regimes.eventChains = JS.object() }
+        let seedCh = JS.object(); seedCh.id = JS("famineRelief"); seedCh.month = JS(max(1, r.regimes.month.asInt))
+        r.regimes.eventChains[n0] = seedCh
         let ch = engine.resolveEventChain(0, chainId: "famineRelief", choice: "a")
         XCTAssertTrue(ch.ok, ch.reason)
+        XCTAssertFalse(engine.resolveEventChain(0, chainId: "famineRelief", choice: "a").ok)
         XCTAssertGreaterThan(WorldDepth.reputation(r, nation: n0), beforeRep)
         XCTAssertGreaterThanOrEqual(r.regimes.pendingEchoes.asArray.count, 1)
 

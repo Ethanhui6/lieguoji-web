@@ -99,14 +99,28 @@ struct NationInfo: Decodable {
         let missionsTotal: Int
         let goldenAgeLeft: Int
         let goldenAgeCanStart: Bool
+        var expeditionsDone: Int? = nil
+        var expeditionsTotal: Int? = nil
+        var expeditionActive: String? = nil
     }
     var grand: GrandSummary? = nil
     var reformSlotsUsed: Int? = nil
     var reformSlotsMax: Int? = nil
+    var edictQuotaUsed: Int? = nil
+    var edictQuotaMax: Int? = nil
+    var centralization: String? = nil
+    var centralCooldown: Int? = nil
+    var reformCooldown: Int? = nil
+    var autoDecide: Bool? = nil
     struct RulerEvalInfo: Decodable { let tier: Int; let label: String; let summary: String }
     struct RealmStrainInfo: Decodable { let level: Int; let label: String; let summary: String }
+    struct TacticalIQInfo: Decodable {
+        let score: Int; let tier: Int; let label: String; let summary: String
+        let commanderName: String; let commanderMilitary: Int; let rulerMilitary: Int
+    }
     var rulerEval: RulerEvalInfo? = nil
     var realmStrain: RealmStrainInfo? = nil
+    var tacticalIQ: TacticalIQInfo? = nil
     var autoStrategy: Bool? = nil
     var globalAutoGovern: Bool? = nil
     struct CultureDoctrineInfo: Decodable { let title: String; let summary: String; let effectLine: String }
@@ -247,11 +261,12 @@ struct NationSheet: View {
     /// 分类：精简为五页（概览 / 朝政 / 军事 / 外交 / 治理），免横滑翻找；重型子模块收进极简二级菜单秒开不卡顿。
     enum Tab: String, CaseIterable { case overview = "概览", court = "朝政", military = "军事", diplomacy = "外交", govern = "治理" }
     enum OverviewSub: String, Identifiable {
-        case wonders, ambitions, mercenaries, techCulture, financeTrade, profile
+        case wonders, exploration, ambitions, mercenaries, techCulture, financeTrade, profile
         var id: String { rawValue }
         var title: String {
             switch self {
             case .wonders: return "天下奇观与大工程"
+            case .exploration: return "四海探索与古迹远征"
             case .ambitions: return "霸业使命与黄金盛世"
             case .mercenaries: return "天下雇佣兵团"
             case .techCulture: return "科技、信誉与文化"
@@ -762,6 +777,13 @@ struct NationSheet: View {
                 let hasChain = info.activeChain != nil
 
                 SectionLabel("治国方略与大工程")
+                let expActive = gs?.expeditionActive ?? ""
+                let expDone = gs?.expeditionsDone ?? 0
+                let expTotal = gs?.expeditionsTotal ?? 10
+                let expSub = !expActive.isEmpty
+                    ? "远征勘探中：\(expActive) · 已发掘 \(expDone)/\(expTotal) 处古迹"
+                    : (expDone > 0 ? "本国已发掘 \(expDone)/\(expTotal) 处传世秘境古迹，享永久加成" : "10 处传世秘境古迹待探索，发掘可得宝藏、科技与永久加成")
+                let expBadge: String? = !expActive.isEmpty ? "探索中" : (expDone > 0 ? "\(expDone)/\(expTotal)" : "远征")
                 Group2 {
                     EditorialSubMenuRow(
                         title: "天下奇观与大工程",
@@ -770,6 +792,14 @@ struct NationSheet: View {
                         accentBadge: (gs?.wonderBuilding.isEmpty == false) || (gs?.wondersOwned ?? 0) > 0,
                         icon: .polity
                     ) { withAnimation(Motion.tap) { overviewSub = .wonders } }
+                    Divider2()
+                    EditorialSubMenuRow(
+                        title: "四海探索与古迹远征",
+                        subtitle: expSub,
+                        badge: expBadge,
+                        accentBadge: !expActive.isEmpty || expDone > 0,
+                        icon: .views
+                    ) { withAnimation(Motion.tap) { overviewSub = .exploration } }
                     Divider2()
                     EditorialSubMenuRow(
                         title: "霸业使命与黄金盛世",
@@ -826,6 +856,22 @@ struct NationSheet: View {
         switch sub {
         case .wonders:
             NationWondersSubPage(
+                model: model,
+                nation: nation,
+                alive: info.alive,
+                onLocateProvince: { pIdx in
+                    if map.meta.provinces.indices.contains(pIdx) {
+                        let pr = map.meta.provinces[pIdx]
+                        lower()
+                        model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
+                        fly(pIdx)
+                    }
+                },
+                onMessage: { flash = $0 },
+                onRefreshParent: { await reload() }
+            )
+        case .exploration:
+            NationExplorationSubPage(
                 model: model,
                 nation: nation,
                 alive: info.alive,
@@ -1471,6 +1517,30 @@ struct NationSheet: View {
                 StatTile(label: "交战", value: "\(fighting)支", warn: fighting > 0),
                 StatTile(label: "士气", value: "\(morale)", fraction: Double(morale) / 100, warn: morale < 40),
             ])
+            if let iq = info.tacticalIQ {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("军队战术谋略").font(Theme.serif(15)).tracking(1.0).foregroundStyle(Theme.ink)
+                        PaperTag(text: "\(iq.label) · \(iq.score)分", color: iq.tier < 0 ? Theme.seal : Theme.ink, size: 10.5)
+                        Spacer(minLength: 4)
+                        Text("主帅 \(iq.commanderName)(武\(iq.commanderMilitary)) · 君主武\(iq.rulerMilitary)")
+                            .font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
+                    }
+                    InkBar(fraction: Double(iq.score) / 100.0, color: iq.tier < 0 ? Theme.seal : Theme.ink.opacity(0.62), track: Theme.hairline, height: 2.5)
+                    HStack(alignment: .center, spacing: 8) {
+                        Text(iq.summary).font(Theme.caption).foregroundStyle(iq.tier < 0 ? Theme.seal : Theme.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 4)
+                        if info.alive && iq.tier <= -1 {
+                            EditorialTactileButton(title: "赴朝换将", icon: .crown, accent: true, solid: false, compact: true) {
+                                withAnimation(Motion.tap) { tab = .court }
+                            }
+                        }
+                    }
+                    EditorialDivider()
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
             NationMilitaryControlBar(
                 model: model,
                 nation: nation,
@@ -1540,8 +1610,8 @@ struct NationSheet: View {
                                     }
                                     Spacer(minLength: 0)
                                 }
-                                .padding(10)
-                                .background(Theme.seal.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .padding(.vertical, 6)
+                                Divider2()
                             }
                             if !groupRows.isEmpty {
                                 VStack(alignment: .leading, spacing: 6) {
@@ -2533,8 +2603,7 @@ struct NationSheet: View {
             }
             .padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
             .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line, lineWidth: 0.9))
-            .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1.5)
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
             .contentShape(Rectangle())
         }
         .buttonStyle(PressStyle())

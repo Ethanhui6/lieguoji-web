@@ -785,6 +785,37 @@ extension Regimes {
                     b.aiDecreeCooldownUntil = JS(nowDay + 180)
                 }
             }
+
+            // 2b. 自动裁决当期朝议法案（避免议案长期无人过问，平衡温和推进且严守 180 日议期冷却）
+            let autoDecide = b.autoDecideSet.isTruthy ? b.autoDecide.isTruthy : autoEnabled
+            let agendaCd = b.agendaCooldownUntil.optionalNumber.map(Int.init) ?? 0
+            if autoDecide && nowDay >= agendaCd {
+                b.agendaCooldownUntil = JS(nowDay + 180)
+                let shock = defeatPenalty(r, id)
+                if shock >= 0.05 {
+                    if !r.regimes.defeatShock.isNull, let cur = r.regimes.defeatShock[id].optionalNumber { r.regimes.defeatShock[id] = JS(cur * 0.5) }
+                    for a in monthArmies(r, id) { a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 12)) }
+                    addDestiny(3)
+                    b.agendaLastTitle = JS(lex.isRepublican ? "《国防听证与军备重整法案》" : "《战后问责与整军复仇案》")
+                    b.agendaLastOutcome = JS("自动折中重整：战败震荡减半、全军士气 +12、国运 +3。")
+                } else if atWar {
+                    if !fin.isNull { fin.gold = JS(gold + 180) }
+                    for a in monthArmies(r, id) { a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 10)) }
+                    b.agendaLastTitle = JS(lex.isRepublican ? "《战时国防特别预算与债券法案》" : "《战时急征军饷与前线犒师案》")
+                    b.agendaLastOutcome = JS("自动核定军债：国库 +180 金、前线士气 +10。")
+                } else if corrupt >= 34 || gold < 260 {
+                    Finance.setCorruption(r, id, max(0, corrupt - 6))
+                    if !fin.isNull { fin.gold = JS(gold + 150) }
+                    addDestiny(2)
+                    b.agendaLastTitle = JS(lex.isRepublican ? "《联邦审计反腐与税制改革法案》" : "《整顿盐铁与清查亏空案》")
+                    b.agendaLastOutcome = JS("自动渐进税改：腐化 −6、国库 +150 金、国运 +2。")
+                } else {
+                    Finance.setCorruption(r, id, max(0, corrupt - 4))
+                    addDestiny(3)
+                    b.agendaLastTitle = JS(lex.isRepublican ? "《国民教育普及与基建振兴法案》" : "《开科取士与劝农兴学案》")
+                    b.agendaLastOutcome = JS("自动稳健兴学：腐化 −4、国运 +3。")
+                }
+            }
         }
 
         // 3. 权力天平失衡连锁事件（当长期偏置同一派系且国内安定度跌破 42 时触发真实宪政／军方危机）
@@ -831,6 +862,108 @@ extension Regimes {
                                     text: "\(n.name.asString)举行换届大选，\(winner)胜出执政",
                                     reason: "四年一届常规议会改选落幕，\(winner)赢得最多议席并主导新一届\(lex.courtSectionTitle)。",
                                     nations: [id], province: Rebellion.capitalProvince(r, id))
+            }
+        }
+    }
+
+    /// v5.2.0 真实历史君主与执政更迭引擎（仅 App 模式）：
+    /// 1) 战时亲征阵亡/殉国（打仗或失地时君主显著更易变更）；
+    /// 2) 战败兵变废立 / 逼宫禅让（失地、昏君或重败引发政权换主）；
+    /// 3) 共和/联邦四年任期轮替（8 年连任上限）；
+    /// 4) 历史平均在位年限校准（约 12–18 年，不再动辄在位四五十载）。
+    static func rulerTurnoverMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
+        guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy else { return }
+        guard !isBlank(r, id), monthLandCount(r, id) > 0 else { return }
+        guard let ldr = ruler(r, id), ldr.isAlive.asBool else { return }
+        let nowDay = r.world.day.asNumber
+        let history = r.chronicle.leaders[id]
+        let lastReign = history.isNull ? nil : history.asArray.last
+        let ascended = lastReign?.ascendedDay.optionalNumber ?? max(0, nowDay - 365)
+        let reignYears = max(0, (nowDay - ascended) / 365.0)
+        let age = ldr.age.asInt
+        let atWar = isAtWar(r, id)
+        let lost = monthLostCount(r, id)
+        let polity = r.civilization.nations[id].polity.optionalString ?? "Kingdom"
+        let eval = rulerAssessment(r, id)
+
+        // 1. 战时御驾亲征阵亡 / 城破殉国
+        if atWar && age >= 16 {
+            let mil = People.skills(ldr).military
+            let martialRuler = mil >= 62 || rulerHas(r, id, { $0.id.optionalString == "Brave" || $0.id.optionalString == "Conqueror" })
+            var kiaRisk = 0.011
+            if lost >= 1 { kiaRisk += 0.014 }
+            if lost >= 3 { kiaRisk += 0.016 }
+            if martialRuler { kiaRisk += 0.008 }
+            if chance("\(id)|\(key)|war_kia") < kiaRisk {
+                People.die(r, ldr, cause: "battle")
+                Government.refreshLeaderCombat(r)
+                return
+            }
+        }
+
+        // 2. 战败兵变废立 / 逼宫禅让（战争年代失地重败或昏君当政时高频变动）
+        let shock = defeatPenalty(r, id)
+        let outlook = coupOutlook(r, id)
+        if reignYears >= 0.75 && (shock >= 0.18 || (atWar && lost >= 2) || (eval.tier <= -1 && (atWar || outlook.stability < 46))) {
+            var mutinyRisk = 0.022
+            if lost >= 2 { mutinyRisk += 0.024 }
+            if shock >= 0.25 { mutinyRisk += 0.022 }
+            if eval.tier <= -1 { mutinyRisk += 0.028 }
+            if chance("\(id)|\(key)|war_mutiny") < mutinyRisk {
+                let sid = Offices.stateId(r, id)
+                let curId = ldr.id.asInt
+                let rulingFam = People.rulingFamilyId(r, id)
+                let heirId = rulingFam > 0 ? (r.kin.families[String(rulingFam)].heirId.optionalNumber.map(Int.init) ?? -1) : -1
+                var best: JS? = nil
+                var bestScore = -1.0
+                for p in r.kin.persons.objectValues {
+                    guard case .object = p.storage, p.isAlive.optionalBool == true else { continue }
+                    guard p.stateId.asInt == sid, p.id.asInt != curId, (p.age.optionalNumber ?? 0) >= 16 else { continue }
+                    let s = People.skills(p)
+                    var sc = s.military * 1.4 + s.charisma + s.administrative
+                    if p.id.asInt == heirId { sc += 40 }
+                    else if p.familyId.asInt == rulingFam { sc += 18 }
+                    if sc > bestScore { bestScore = sc; best = p }
+                }
+                if let successor = best {
+                    let oldName = NativeEngine.displayPersonName(ldr)
+                    let newName = NativeEngine.displayPersonName(successor)
+                    Government.closeLeaderRole(r, id, "abdication")
+                    _ = People.appointKnownPerson(r, id, successor, cause: "abdication")
+                    Government.refreshLeaderCombat(r)
+                    if !r.regimes.defeatShock.isNull, let curSh = r.regimes.defeatShock[id].optionalNumber {
+                        r.regimes.defeatShock[id] = JS(curSh * 0.5)
+                    }
+                    _ = People.announce(r, kind: "politics",
+                                        text: "\(n.name.asString)战局震荡，\(oldName)被迫逊位、\(newName)代掌大政",
+                                        reason: atWar ? "兵戈失利、军心浮躁，朝野与前线将领共议废立，改由\(newName)统揽危局。" : "朝政失据、民怨沸腾，重臣宗室逼宫禅让，奉迎\(newName)即位稳局。",
+                                        nations: [id], province: Rebellion.capitalProvince(r, id))
+                    return
+                }
+            }
+        }
+
+        // 3. 共和与联邦四年定期换届（严格执行 8 年两届上限；战败失势满 4 年必换人）
+        if (polity == "Republic" || polity == "Federation") && reignYears >= 4.0 && key % 12 == 0 {
+            let mustRotate = reignYears >= 8.0 || shock >= 0.1 || outlook.stability < 50 || chance("\(id)|\(key)|rep_rot") < 0.58
+            if mustRotate {
+                let stateId = r.people.nations[id].id.asInt
+                let fams = People.electionFamilies(r, id).filter { $0.k.stateId.asInt == stateId }
+                if let next = People.republicLeader(r, families: fams, excluding: ldr.id.asInt), next.id.asInt != ldr.id.asInt {
+                    Government.closeLeaderRole(r, id, "election")
+                    _ = People.appointKnownPerson(r, id, next, cause: "election")
+                    Government.refreshLeaderCombat(r)
+                    return
+                }
+            }
+        }
+
+        // 4. 真实历史寿数与染疾更迭（避免太平年代君主清一色在位 40–55 年）
+        if reignYears >= 2.0 {
+            let illRisk: Double = age >= 72 ? 0.028 : age >= 62 ? 0.013 : age >= 50 ? 0.0055 : age >= 36 ? 0.0022 : 0.0009
+            if chance("\(id)|\(key)|ruler_ill") < illRisk {
+                People.die(r, ldr, cause: "illness")
+                Government.refreshLeaderCombat(r)
             }
         }
     }

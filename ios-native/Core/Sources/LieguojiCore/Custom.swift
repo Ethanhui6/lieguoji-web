@@ -555,6 +555,8 @@ public enum Regimes {
         reform(r, n, id, key)
         // 现实感政体更迭与政变引擎（由军变、权臣摄政、立宪维新、社会革命与复辟条件真实驱动）
         realisticPoliticsMonth(r, n, id, key)
+        // v5.2.0 真实君主与执政更迭（战时亲征阵亡、战败兵变废立、共和定期换届、自然染疾）
+        rulerTurnoverMonth(r, n, id, key)
         // AI 季度自主施政与自动国策统筹引擎（仅在 App 规则开启时运行，绝不影响网页黄金逐字节重放）
         if UnitKinds.enabled && key % 3 == 0 {
             aiAutonomousGovernanceQuarter(r, n, id, key, addGold: addGold, addDestiny: addDestiny)

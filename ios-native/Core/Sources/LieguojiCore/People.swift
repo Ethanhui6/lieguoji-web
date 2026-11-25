@@ -448,8 +448,23 @@ public enum People {
                 old.endedDay = r.world.day.clone()
                 r.people.nations[nationId].leaderId = .null
                 let nationName = r.world.nations.asArray.first { $0.id.asString == nationId }?.name.optionalString ?? nationId, age = p.age.asInt, name = p.identity.name.optionalString ?? ""
-                let entry = announce(r, kind: "diplomacy", text: "\(nationName)\(name)\(cause == "executed" ? "被处死" : "逝世")",
-                                     reason: cause == "executed" ? "享年\(age)岁。被下令处死；终止实际任期，保留人物及其家谱履历。" : "享年\(age)岁。真实月检按原作年龄概率发生自然死亡；终止实际任期，保留人物及其家谱履历。",
+                let deathVerb: String
+                let deathReason: String
+                if UnitKinds.enabled && cause == "battle" {
+                    deathVerb = "亲征殉国"
+                    deathReason = "享年\(age)岁。战时督师前线、不幸阵亡殉国；终止实际任期，依国制立继大统，保留人物及其家谱履历。"
+                } else if UnitKinds.enabled && cause == "illness" {
+                    deathVerb = "染疾辞世"
+                    deathReason = "享年\(age)岁。操劳国事、染疾不治而终；终止实际任期，依国制立继大统，保留人物及其家谱履历。"
+                } else if cause == "executed" {
+                    deathVerb = "被处死"
+                    deathReason = "享年\(age)岁。被下令处死；终止实际任期，保留人物及其家谱履历。"
+                } else {
+                    deathVerb = "逝世"
+                    deathReason = "享年\(age)岁。真实月检按原作年龄概率发生自然死亡；终止实际任期，保留人物及其家谱履历。"
+                }
+                let entry = announce(r, kind: "diplomacy", text: "\(nationName)\(name)\(deathVerb)",
+                                     reason: deathReason,
                                      nations: [nationId], province: nil, people: [old])
                 row.deathHistoryId = entry.id.clone()
             } else {

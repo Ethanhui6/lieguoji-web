@@ -32,7 +32,15 @@ extension NativeEngine {
         }()
         let nbCd = Regimes.book(r, id)
         let nowDayCd = r.world.day.asInt
+        let edictQuarterKey = nowDayCd / 90
+        let edictQuotaMax = 2
+        let edictQuotaUsed = (nbCd.edictQuarterKey.optionalNumber.map(Int.init) == edictQuarterKey)
+            ? (nbCd.edictQuarterUsed.optionalNumber.map(Int.init) ?? 0) : 0
         if decreeCooldownDays > 0 {
+            if edictQuotaUsed >= edictQuotaMax {
+                let leftDays = max(1, 90 - (nowDayCd % 90))
+                return (false, "本季\(lex.decreePrefix)施政额度已满（\(edictQuotaUsed)/\(edictQuotaMax)），请待 \(leftDays) 日后下季再颁新政。")
+            }
             let until = nbCd.decreeCooldowns.isNull ? 0 : (nbCd.decreeCooldowns[kind].optionalNumber.map(Int.init) ?? 0)
             if nowDayCd < until {
                 let left = until - nowDayCd
@@ -43,14 +51,22 @@ extension NativeEngine {
             guard decreeCooldownDays > 0 else { return }
             if nbCd.decreeCooldowns.isNull { nbCd.decreeCooldowns = JS.object() }
             nbCd.decreeCooldowns[kind] = JS(nowDayCd + decreeCooldownDays)
+            nbCd.edictQuarterKey = JS(edictQuarterKey)
+            nbCd.edictQuarterUsed = JS(edictQuotaUsed + 1)
+        }
+        func spendGold(_ amount: Double) -> Bool {
+            guard amount > 0 else { return true }
+            let cur = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            guard cur >= amount else { return false }
+            if !fin.isNull { fin.gold = JS(max(0, cur - amount)) }
+            return true
         }
 
         switch kind {
         case "prosper":
-            // 休养生息：小额拨款，全国实控州人口 +3%（不超上限）、存粮 +20%，国运 +5。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(250, (gold * 0.15).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            // 休养生息：耗 180 金，全国实控州人口 +3%（不超上限）、存粮 +20%，国运 +5。
+            let cost = 180.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以施行休养生息。") }
             let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
             var popAdded = 0
             for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
@@ -65,12 +81,12 @@ extension NativeEngine {
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 5)) }
             markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)施行休养生息\(lex.decreePrefix)令",
-                            reason: "轻徭薄赋、劝课农桑：全国 \(ownedIndices.count) \(lex.adminUnit)增丁 \(popAdded) 人、存粮充盈，国运 +5。",
+                            reason: "拨资 \(Int(cost)) 金轻徭薄赋、劝课农桑：全国 \(ownedIndices.count) \(lex.adminUnit)增丁 \(popAdded) 人、存粮充盈，国运 +5。",
                             nations: [id], province: nil)
-            return (true, "休养生息：全国增丁 \(popAdded) 人，存粮 +20%，国运 +5。")
+            return (true, "休养生息（耗 \(Int(cost)) 金）：全国增丁 \(popAdded) 人，存粮 +20%，国运 +5。")
 
         case "mobilize":
-            // 全国大征兵：择都城及人口最盛的至多 3 个己方州郡各征新军 1 支，国运 -4。
+            // 全国大征兵：耗 140 金，择都城及人口最盛的至多 3 个己方州郡各征新军 1 支，国运 -4。
             let capPid = Rebellion.capitalProvince(r, id)
             var popMap = [String: Double]()
             for s in r.world.statecraft.provinces.asArray { popMap[s.provinceId.asString] = s.population.optionalNumber ?? 0 }
@@ -81,23 +97,23 @@ extension NativeEngine {
             }
             let picks = Array(sorted.prefix(3))
             guard !picks.isEmpty else { return (false, "境内没有可征募驻军的\(lex.adminUnit)。") }
+            guard spendGold(140) else { return (false, "国库不足 140 金，难以筹措全国征兵军费。") }
             for idx in picks { Armies.create(r, nation: id, home: provinces[idx].id.asString, kind: "emergency") }
             if !destinyRow.isNull { destinyRow.destiny = JS(max(0, (destinyRow.destiny.optionalNumber ?? 50) - 4)) }
             Daily.reconcileMilitaryClock(r)
             markDecreeCooldown()
             let names = picks.map { provinces[$0].name.asString }.joined(separator: "、")
             People.announce(r, kind: "event", text: "\(stateName)启动全国紧急征兵",
-                            reason: "于\(names)紧急编练新军 \(picks.count) 支以备战守。",
+                            reason: "拨资 140 金于\(names)紧急编练新军 \(picks.count) 支以备战守（国运 −4）。",
                             nations: [id], province: provinces[picks[0]].id.asString)
-            return (true, "于\(names)新征 \(picks.count) 支军队。")
+            return (true, "耗 140 金于\(names)新征 \(picks.count) 支军队（国运 −4）。")
 
         case "rewardArmies":
-            // 犒赏三军：全军士气 +35（上限 100）、军粮补满至 100。
+            // 犒赏三军：耗 200 金，全军士气 +35（上限 100）、军粮补满至 100。
             let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
             guard !armies.isEmpty else { return (false, "该国当前没有现役陆军。") }
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(200, (gold * 0.12).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let cost = 200.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，无力犒赏三军。") }
             for a in armies {
                 a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 35))
                 a.supplies = JS(100)
@@ -106,10 +122,12 @@ extension NativeEngine {
             People.recordHistory(r, kind: "event", text: "\(stateName)犒赏三军",
                                  reason: "拨金 \(Int(cost)) 劳军，\(armies.count) 支现役军队士气大振、补给充盈。",
                                  nations: [id], province: nil)
-            return (true, "已犒赏 \(armies.count) 支军队，士气大振、补给满额。")
+            return (true, "耗 \(Int(cost)) 金犒赏 \(armies.count) 支军队，士气大振、补给满额。")
 
         case "antiCorruption":
-            // 整顿吏治：腐化度直降 15，国运 +4，并解除过低的手动施政锁。
+            // 整顿吏治：耗 180 金，腐化度直降 15，国运 +4，并解除过低的手动施政锁。
+            let cost = 180.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以派遣钦差彻查吏治。") }
             let before = Finance.corruption(r, id)
             Finance.setCorruption(r, id, max(0, before - 15))
             let after = Finance.corruption(r, id)
@@ -119,12 +137,12 @@ extension NativeEngine {
             }
             markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)推行整顿吏治",
-                            reason: "清查贪墨、肃清纲纪，腐化度由 \(Int(before)) 降至 \(Int(after))，国运 +4。",
+                            reason: "耗资 \(Int(cost)) 金清查贪墨、肃清纲纪，腐化度由 \(Int(before)) 降至 \(Int(after))，国运 +4。",
                             nations: [id], province: nil)
-            return (true, "吏治整顿完成：腐化度降至 \(Int(after))，国运 +4。")
+            return (true, "吏治整顿完成（耗 \(Int(cost)) 金）：腐化度降至 \(Int(after))，国运 +4。")
 
         case "fortifyBorder":
-            // 加固边防：对所有邻接他国（或全境若为海岛）的至多 12 个州郡提升城防 +1（上限 10）。
+            // 加固边防：耗 220 金，对邻接他国的至多 10 个州郡提升城防 +1（上限 10）。
             var byId = [String: JS]()
             for p in provinces { byId[p.id.asString] = p }
             var border = ownedIndices.filter { idx in
@@ -134,93 +152,85 @@ extension NativeEngine {
                 }
             }
             if border.isEmpty { border = ownedIndices }
+            let upgradable = border.prefix(10).filter { idx in
+                let d = r.upperCombat.provinces[provinces[idx].id.asString]
+                return !d.isNull && Int((d.storedDefense.optionalNumber ?? 1).rounded()) < 10
+            }
+            guard !upgradable.isEmpty else { return (false, "边防诸州城防已全部达顶（10 级）。") }
+            let cost = 220.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以修缮边塞城防。") }
             var upgraded = 0
-            for idx in border.prefix(12) {
+            for idx in upgradable {
                 let pid = provinces[idx].id.asString
                 let d = r.upperCombat.provinces[pid]
-                guard !d.isNull else { continue }
                 let cur = Int((d.storedDefense.optionalNumber ?? 1).rounded())
-                if cur < 10 {
-                    d.storedDefense = JS(min(10, cur + 1))
-                    if cur + 1 >= 3 { d.manualSet = JS(true); d.manualFortress = JS(true) }
-                    upgraded += 1
-                }
+                d.storedDefense = JS(min(10, cur + 1))
+                if cur + 1 >= 3 { d.manualSet = JS(true); d.manualFortress = JS(true) }
+                upgraded += 1
             }
-            guard upgraded > 0 else { return (false, "边防诸州城防已全部达顶（10 级）。") }
             markDecreeCooldown()
             People.recordHistory(r, kind: "event", text: "\(stateName)加固边防工事",
-                                 reason: "修缮边塞城池与关隘，共 \(upgraded) 座重镇城防提升。",
+                                 reason: "拨资 \(Int(cost)) 金修缮边塞城池与关隘，共 \(upgraded) 座重镇城防提升。",
                                  nations: [id], province: nil)
-            return (true, "已加固 \(upgraded) 座边防州郡城防（+1 级）。")
+            return (true, "耗 \(Int(cost)) 金加固 \(upgraded) 座边防州郡城防（+1 级）。")
 
         case "assimilateCulture":
-            // 推行文教：令全国所有实控州城池同化为本国主体文化。
+            // 推行文教：耗 160 金，令全国所有实控州城池同化为本国主体文化。
             guard let culture = r.civilization.nations[id].cultureId.optionalString, !culture.isEmpty else {
                 return (false, "该国尚未设定主体文化。")
             }
             let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
-            var changed = 0
-            for city in r.world.cities.asArray where ownedIds.contains(city.provinceId.asString) {
-                let c = r.civilization.cities[city.id.asString]
-                guard !c.isNull else { continue }
-                if c.cultureId.optionalString != culture {
-                    c.cultureId = JS(culture)
-                    changed += 1
-                }
-            }
-            guard changed > 0 else { return (false, "境内各城均已归附本国文化。") }
+            let targets = r.world.cities.asArray.filter { ownedIds.contains($0.provinceId.asString) && !r.civilization.cities[$0.id.asString].isNull && r.civilization.cities[$0.id.asString].cultureId.optionalString != culture }
+            guard !targets.isEmpty else { return (false, "境内各城均已归附本国文化。") }
+            let cost = 160.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以兴办官学同化。") }
+            for city in targets { r.civilization.cities[city.id.asString].cultureId = JS(culture) }
             markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)推行文教同化",
-                            reason: "兴办官学、同文同轨，境内 \(changed) 座城池归入本国文化。",
+                            reason: "耗资 \(Int(cost)) 金兴办官学、同文同轨，境内 \(targets.count) 座城池归入本国文化。",
                             nations: [id], province: nil)
-            return (true, "文教推行完成：\(changed) 座城池已同化为本国文化。")
+            return (true, "文教推行完成（耗 \(Int(cost)) 金）：\(targets.count) 座城池已同化为本国文化。")
 
         case "convertFaith":
-            // 统一国教：令全国所有实控州郡及本国世家归宗国教。
+            // 统一国教：耗 160 金，令全国所有实控州郡及本国世家归宗国教。
             guard let religion = r.civilization.nations[id].religionId.optionalString, !religion.isEmpty else {
                 return (false, "该国尚未确立国教。")
             }
-            if r.regimes.faith.isNull { r.regimes.faith = .object() }
-            var changed = 0
-            for idx in ownedIndices {
-                let p = provinces[idx], pid = p.id.asString
-                if Regimes.provinceFaith(r, p) != religion {
-                    r.regimes.faith[pid] = JS(religion)
-                    changed += 1
-                }
-            }
-            Regimes.setHouses(r, id, religion)
+            let diffIndices = ownedIndices.filter { Regimes.provinceFaith(r, provinces[$0]) != religion }
             let faithName = Regimes.creeds[religion]?.name ?? religion
-            if changed == 0 { return (true, "境内诸州与世家皆已尊奉\(faithName)。") }
+            guard !diffIndices.isEmpty else { return (false, "境内诸州皆已尊奉\(faithName)，无需重复推行。") }
+            let cost = 160.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以遣使宣化国教。") }
+            if r.regimes.faith.isNull { r.regimes.faith = .object() }
+            for idx in diffIndices { r.regimes.faith[provinces[idx].id.asString] = JS(religion) }
+            Regimes.setHouses(r, id, religion)
             markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)诏令统一国教",
-                            reason: "宣谕四方、归宗\(faithName)，共 \(changed) 州改奉国教。",
+                            reason: "耗资 \(Int(cost)) 金宣谕四方、归宗\(faithName)，共 \(diffIndices.count) 州改奉国教。",
                             nations: [id], province: nil)
-            return (true, "已令 \(changed) 州归奉\(faithName)，异教民变风险清零。")
+            return (true, "耗 \(Int(cost)) 金令 \(diffIndices.count) 州归奉\(faithName)。")
 
         case "amnesty":
-            // 大赦安抚世家：宗室与本国所有其他世家关系 +20，缓解离心与谋逆。
+            // 大赦安抚世家：耗 140 金，宗室与本国所有其他世家关系 +20，缓解离心与谋逆。
             guard !r.nobility.isNull, !r.nobility.families.isNull else { return (false, "该世界未启用世家系统。") }
             let ruling = People.rulingFamilyId(r, id)
             let rulingKey = String(ruling)
             guard ruling > 0, r.nobility.families.has(rulingKey) else { return (false, "未找到本国宗室世家。") }
-            var touched = 0
-            for (k, fam) in r.nobility.families.objectEntries where fam.nationId.optionalString == id && k != rulingKey {
-                FamilyPolitics.adjustRelation(r, k, rulingKey, delta: 20)
-                touched += 1
-            }
-            guard touched > 0 else { return (false, "本国尚无其他门阀世家需要安抚。") }
+            let others = r.nobility.families.objectEntries.filter { $0.1.nationId.optionalString == id && $0.0 != rulingKey }
+            guard !others.isEmpty else { return (false, "本国尚无其他门阀世家需要安抚。") }
+            let cost = 140.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以赏赐安抚诸世家。") }
+            for (k, _) in others { FamilyPolitics.adjustRelation(r, k, rulingKey, delta: 20) }
             markDecreeCooldown()
             People.announce(r, kind: "family", text: "\(stateName)大赦天下、加恩诸世家",
-                            reason: "朝廷赐爵安抚国内 \(touched) 家门阀，与宗室情谊各增 20。",
+                            reason: "耗资 \(Int(cost)) 金赐爵安抚国内 \(others.count) 家门阀，与宗室情谊各增 20。",
                             nations: [id], province: nil)
-            return (true, "大赦安抚 \(touched) 家门阀，与宗室关系各 +20。")
+            return (true, "耗 \(Int(cost)) 金安抚 \(others.count) 家门阀，与宗室关系各 +20。")
 
         case "relief":
-            // 开仓赈灾：平抑饥荒、全国存粮保底充盈、叛乱风险骤降、国运 +4。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(180, (gold * 0.1).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            // 开仓赈灾：耗 180 金，全国存粮 +30%、国运 +4。
+            let cost = 180.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以开仓赈灾。") }
             let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
             for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
                 let g = s.grain.optionalNumber ?? 0
@@ -229,29 +239,29 @@ extension NativeEngine {
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
             markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)开仓放粮赈济万民",
-                            reason: "调拨官仓粮秣赈济饥民，全境存粮大增 30%，国运 +4。",
+                            reason: "拨资 \(Int(cost)) 金调拨官仓粮秣赈济饥民，全境存粮大增 30%，国运 +4。",
                             nations: [id], province: nil)
-            return (true, "开仓赈灾完成：全国存粮 +30%，国运 +4。")
+            return (true, "开仓赈灾完成（耗 \(Int(cost)) 金）：全国存粮 +30%，国运 +4。")
 
         case "landSurvey":
-            // 清丈田亩：核实隐田、腐化 -10、即得一月半额外岁入。
+            // 清丈田亩：核实隐田、腐化 -8、即得一月半额外岁入，但触动豪强致国运 -3（权衡代价）。
             let before = Finance.corruption(r, id)
-            Finance.setCorruption(r, id, max(0, before - 10))
-            let gain = max(120, (fin.goldPerMonth.optionalNumber ?? 100) * 1.5).rounded()
+            Finance.setCorruption(r, id, max(0, before - 8))
+            let gain = max(120, (fin.goldPerMonth.optionalNumber ?? 100) * 1.4).rounded()
             if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + gain) }
+            if !destinyRow.isNull { destinyRow.destiny = JS(max(5, (destinyRow.destiny.optionalNumber ?? 50) - 3)) }
             markDecreeCooldown()
             People.announce(r, kind: "politics", text: "\(stateName)\(lex.enactVerb)清丈天下田亩",
-                            reason: "清查豪强隐匿田产、均平税负：国库进项 +\(Int(gain)) 金，腐化 −10。",
+                            reason: "清查豪强隐匿田产、均平税负：国库进项 +\(Int(gain)) 金，腐化 −8，豪强怨怼致国运 −3。",
                             nations: [id], province: nil)
-            return (true, "清丈田亩完成：国库 +\(Int(gain)) 金，腐化 −10。")
+            return (true, "清丈田亩完成：国库 +\(Int(gain)) 金，腐化 −8，代价：国运 −3。")
 
         case "armsUpgrade":
-            // 军械改良：为现役各军更新甲胄兵刃，士气 +20、补给补满、兵力小幅整补 +6%（不超满编）。
+            // 军械改良：耗 260 金，为现役各军更新甲胄兵刃，士气 +20、补给补满、兵力整补 +6%。
             let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
             guard !armies.isEmpty else { return (false, "该国暂无现役陆军。") }
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(260, (gold * 0.14).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let cost = 260.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，无力为三军换装新械。") }
             for a in armies {
                 let aid = a.id.asString
                 let cur = a.troops.asNumber
@@ -265,13 +275,12 @@ extension NativeEngine {
             People.recordHistory(r, kind: "event", text: "\(stateName)颁行军械改良令",
                                  reason: "拨银 \(Int(cost)) 打造新式甲械，\(armies.count) 支军队兵员整补且士气 +20。",
                                  nations: [id], province: nil)
-            return (true, "军械改良完成：\(armies.count) 支军队补给满额、士气 +20。")
+            return (true, "军械改良完成（耗 \(Int(cost)) 金）：\(armies.count) 支军队补给满额、士气 +20。")
 
         case "academy":
-            // 兴办太学／国立学院：提升在位君主与核心大臣能力 +3，国运 +3，腐化 -4。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(200, (gold * 0.12).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            // 兴办太学／国立学院：耗 200 金，提升在位君主与核心大臣能力 +3，国运 +3，腐化 -4。
+            let cost = 200.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以兴办国立学馆。") }
             if let ldr = Regimes.ruler(r, id) {
                 ldr.base.administrative = JS(min(100, (ldr.base.administrative.optionalNumber ?? 50) + 3))
                 ldr.base.diplomatic = JS(min(100, (ldr.base.diplomatic.optionalNumber ?? 50) + 3))
@@ -283,15 +292,14 @@ extension NativeEngine {
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 3)) }
             markDecreeCooldown()
             People.announce(r, kind: "culture", text: "\(stateName)兴办太学、广育英才",
-                            reason: "开设国立学馆、举荐贤能：中枢政略与外交能力精进，腐化 −4，国运 +3。",
+                            reason: "耗资 \(Int(cost)) 金开设国立学馆、举荐贤能：中枢政略与外交能力精进，腐化 −4，国运 +3。",
                             nations: [id], province: nil)
-            return (true, "太学兴办完成：中枢能力精进，腐化 −4，国运 +3。")
+            return (true, "太学兴办完成（耗 \(Int(cost)) 金）：中枢能力精进，腐化 −4，国运 +3。")
 
         case "roadNetwork":
-            // 驰道驿路 / 交通基建：耗 240 金，全境人口 +2%，国库商业回流 +180，国运 +4。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(240, (gold * 0.14).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            // 驰道驿路 / 交通基建：严格耗 240 金（彻底修复 0 金刷钱漏洞），全境人口 +2%、存粮 +15%、腐化 -2、国运 +4。
+            let cost = 240.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以兴修全国驰道驿路。") }
             let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
             var popAdded = 0
             for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
@@ -299,20 +307,21 @@ extension NativeEngine {
                 let gain = max(40, (curPop * 0.02).rounded())
                 s.population = JS((curPop + gain).rounded())
                 popAdded += Int(gain)
+                let g = s.grain.optionalNumber ?? 0
+                s.grain = JS(min(50_000_000, max(g + 1000, (g * 1.15).rounded())))
             }
-            if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + 180) }
+            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 2))
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
             markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)大兴驿路交通基建",
-                            reason: "修筑官道驿站、疏通商旅：全国增丁 \(popAdded) 人，商税回流 +180 金，国运 +4。",
+                            reason: "拨资 \(Int(cost)) 金修筑官道驿站、疏通商旅：全国增丁 \(popAdded) 人，存粮 +15%，腐化 −2，国运 +4。",
                             nations: [id], province: nil)
-            return (true, "交通基建完成：全国增丁 \(popAdded) 人，商税 +180 金，国运 +4。")
+            return (true, "交通基建完成（耗 \(Int(cost)) 金）：增丁 \(popAdded) 人，存粮 +15%，国运 +4。")
 
         case "granary":
             // 常平义仓 / 战略粮储：耗 180 金，全境存粮 +45%，国运 +5。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(180, (gold * 0.11).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let cost = 180.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以兴修常平粮仓。") }
             let ownedIds = Set(ownedIndices.map { provinces[$0].id.asString })
             for s in r.world.statecraft.provinces.asArray where ownedIds.contains(s.provinceId.asString) {
                 let g = s.grain.optionalNumber ?? 0
@@ -321,15 +330,14 @@ extension NativeEngine {
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 5)) }
             markDecreeCooldown()
             People.recordHistory(r, kind: "event", text: "\(stateName)广设常平战略粮仓",
-                                 reason: "兴修官仓、平籴积谷，全境战略存粮大增 45%，国运 +5。",
+                                 reason: "拨资 \(Int(cost)) 金兴修官仓、平籴积谷，全境战略存粮大增 45%，国运 +5。",
                                  nations: [id], province: nil)
-            return (true, "战略粮储完成：全境存粮 +45%，国运 +5。")
+            return (true, "战略粮储完成（耗 \(Int(cost)) 金）：全境存粮 +45%，国运 +5。")
 
         case "techAcademy":
             // 格物兴科 / 国家科研：耗 260 金，中枢军事与行政能力 +4，现役全军士气 +15，国运 +4。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(260, (gold * 0.14).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let cost = 260.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以资助国家科研院。") }
             if let ldr = Regimes.ruler(r, id) {
                 ldr.base.military = JS(min(100, (ldr.base.military.optionalNumber ?? 50) + 4))
                 ldr.base.administrative = JS(min(100, (ldr.base.administrative.optionalNumber ?? 50) + 4))
@@ -340,15 +348,14 @@ extension NativeEngine {
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 4)) }
             markDecreeCooldown()
             People.announce(r, kind: "culture", text: "\(stateName)兴办格物科研院",
-                            reason: "拨资革新工械与兵法：中枢军政能力 +4，全军士气 +15，国运 +4。",
+                            reason: "拨资 \(Int(cost)) 金革新工械与兵法：中枢军政能力 +4，全军士气 +15，国运 +4。",
                             nations: [id], province: nil)
-            return (true, "格物兴科完成：中枢军政 +4，全军士气 +15，国运 +4。")
+            return (true, "格物兴科完成（耗 \(Int(cost)) 金）：中枢军政 +4，全军士气 +15，国运 +4。")
 
         case "navalDockyard":
-            // 扩建水师船坞 / 海运统筹：提升跨海运力 +2 编队，并修复本国所有舰队船体至 100%。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(240, (gold * 0.14).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            // 扩建水师船坞 / 海运统筹：耗 240 金，提升跨海运力 +2 编队，并修复本国所有舰队船体至 100%。
+            let cost = 240.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以扩建水师船坞。") }
             let nb = Regimes.book(r, id)
             let curCap = nb.seaTransportBonus.optionalNumber.map(Int.init) ?? 0
             nb.seaTransportBonus = JS(min(12, curCap + 2))
@@ -365,54 +372,49 @@ extension NativeEngine {
             }
             markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)扩建船坞与海运船队",
-                            reason: "增建跨海运输船队（运力 +2 支）并修缮 \(repaired) 支水师舰船船体。",
+                            reason: "拨资 \(Int(cost)) 金增建跨海运输船队（运力 +2 支）并修缮 \(repaired) 支水师舰船船体。",
                             nations: [id], province: nil)
-            return (true, "海运扩建完成：跨海运力 +2，已修缮 \(repaired) 支舰队。")
+            return (true, "海运扩建完成（耗 \(Int(cost)) 金）：跨海运力 +2，已修缮 \(repaired) 支舰队。")
 
         case "envoyGoodwill":
-            // 遣使修好 / 外交斡旋：与全部非交战存活国好感 +18。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(200, (gold * 0.12).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
-            var touched = 0
-            for other in nations {
-                let oid = other.id.asString
-                guard oid != id, Vassals.alive(r, oid), !Regimes.atWar(r, id, oid) else { continue }
-                DiplomacyDeep.adjustOpinionMod(r, id, oid, delta: 18)
-                touched += 1
+            // 遣使修好 / 外交斡旋：耗 200 金，与全部非交战存活国好感 +18。
+            let targets = nations.filter { oid in
+                let s = oid.id.asString
+                return s != id && Vassals.alive(r, s) && !Regimes.atWar(r, id, s)
             }
-            guard touched > 0 else { return (false, "当前无非交战邻国可派遣使节。") }
+            guard !targets.isEmpty else { return (false, "当前无非交战邻国可派遣使节。") }
+            let cost = 200.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以筹备外交使团。") }
+            for other in targets { DiplomacyDeep.adjustOpinionMod(r, id, other.id.asString, delta: 18) }
             markDecreeCooldown()
             People.announce(r, kind: "diplomacy", text: "\(stateName)遣使四方、广结善邻",
-                            reason: "派遣外交使团走访 \(touched) 国，双边邦交好感普遍 +18。",
+                            reason: "拨资 \(Int(cost)) 金派遣外交使团走访 \(targets.count) 国，双边邦交好感普遍 +18。",
                             nations: [id], province: nil)
-            return (true, "外交斡旋完成：与 \(touched) 国关系好感 +18。")
+            return (true, "外交斡旋完成（耗 \(Int(cost)) 金）：与 \(targets.count) 国关系好感 +18。")
 
         case "taxRelief":
-            // 减赋安民 / 民生纾困：腐化 -10、国运 +6、民心回升。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(160, (gold * 0.10).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            // 减赋安民 / 民生纾困：耗 160 金，腐化 -10、国运 +6。
+            let cost = 160.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以推行减赋纾困。") }
             Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 10))
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 6)) }
             markDecreeCooldown()
             People.announce(r, kind: "event", text: "\(stateName)颁行减赋纾困安民令",
-                            reason: "蠲免苛捐杂税、抚恤黎庶：腐化 −10，国运 +6，地方安定大增。",
+                            reason: "拨资 \(Int(cost)) 金蠲免苛捐杂税、抚恤黎庶：腐化 −10，国运 +6，地方安定大增。",
                             nations: [id], province: nil)
-            return (true, "减赋安民完成：腐化 −10，国运 +6。")
+            return (true, "减赋安民完成（耗 \(Int(cost)) 金）：腐化 −10，国运 +6。")
 
         case "imperialInspection":
             // 巡狩省方：耗 180 金，整饬地方吏治、震慑豪强并提振国运 +6、腐化 -6。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(180, (gold * 0.12).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let cost = 180.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以筹备巡狩省方。") }
             Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 6))
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 6)) }
             markDecreeCooldown()
             People.announce(r, kind: "politics", text: "\(stateName)巡狩四境、省察民瘼",
-                            reason: "中枢亲巡诸\(lex.adminUnit)、考核官吏并抚慰黎庶：腐化 −6，国运 +6，地方动乱暗流随之平息。",
+                            reason: "拨资 \(Int(cost)) 金亲巡诸\(lex.adminUnit)、考核官吏并抚慰黎庶：腐化 −6，国运 +6。",
                             nations: [id], province: nil)
-            return (true, "巡狩省方完成：腐化 −6，国运 +6，地方安定大增。")
+            return (true, "巡狩省方完成（耗 \(Int(cost)) 金）：腐化 −6，国运 +6。")
 
         case "warBond":
             // 举债筹饷 / 紧急军债：立筹 2.2 月军资入库，但腐化 +6、国运 -5（饮鸩止渴之策）。
@@ -431,9 +433,8 @@ extension NativeEngine {
             // 大阅禁军：耗 220 金，全军精锐历练 +14、士气 +25、补给补满，整肃军纪。
             let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
             guard !armies.isEmpty else { return (false, "该国当前暂无现役陆军可大阅。") }
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(220, (gold * 0.14).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let cost = 220.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以举办秋狝大阅。") }
             if r.regimes.armyXP.isNull { r.regimes.armyXP = JS.object() }
             for a in armies {
                 let aid = a.id.asString
@@ -446,24 +447,23 @@ extension NativeEngine {
             People.announce(r, kind: "event", text: "\(stateName)秋狝大阅、整肃三军",
                             reason: "拨资 \(Int(cost)) 金校阅 \(armies.count) 支常备军、演练阵法：全军历练 +14、士气 +25。",
                             nations: [id], province: nil)
-            return (true, "大阅三军完成：\(armies.count) 支军队历练 +14，士气 +25。")
+            return (true, "大阅三军完成（耗 \(Int(cost)) 金）：\(armies.count) 支军队历练 +14，士气 +25。")
 
         case "scholarlyEdict":
             // 开馆修史：耗 160 金，彰明文德与法统：国际信誉 +8、国运 +5、腐化 -4。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, min(160, (gold * 0.10).rounded()))
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let cost = 160.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以开馆修史。") }
             WorldDepth.adjustReputation(r, nation: id, delta: 8)
             Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 4))
             if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 5)) }
             markDecreeCooldown()
             People.announce(r, kind: "culture", text: "\(stateName)开馆修史、广布声教",
-                            reason: "敕命儒臣与史官编纂典籍、宣示仁政：国际信誉 +8，国运 +5，腐化 −4。",
+                            reason: "拨资 \(Int(cost)) 金编纂典籍、宣示仁政：国际信誉 +8，国运 +5，腐化 −4。",
                             nations: [id], province: nil)
-            return (true, "开馆修史完成：国际信誉 +8，国运 +5，腐化 −4。")
+            return (true, "开馆修史完成（耗 \(Int(cost)) 金）：国际信誉 +8，国运 +5，腐化 −4。")
 
         case "deposeMonarch":
-            // 弹劾废立昏君：仅当现任掌权者评级为昏君/暴君/庸主（tier <= -1）时可执行；择本国最贤能的储君或重臣即位，并整肃纲纪。
+            // 弹劾废立昏君：仅当现任掌权者评级为昏君/暴君/庸主（tier <= -1）时可执行；耗 220 金。
             let eval = Regimes.rulerAssessment(r, id)
             guard eval.tier <= -1 else {
                 return (false, "现任执政乃「\(eval.label)」，尚无失道之过，朝野不附废立。")
@@ -486,9 +486,8 @@ extension NativeEngine {
             guard let successor = bestCandidate else {
                 return (false, "境内暂无年满十六岁的可堪大任继任者。")
             }
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, 220)
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let cost = 220.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以串联朝野筹备废立。") }
             let oldName = (curLeader > 0 ? People.person(r, curLeader).map(Self.displayPersonName) : nil) ?? "旧主"
             let res = enthronePerson(index, personId: successor.id.asInt)
             guard res.ok else { return res }
@@ -508,9 +507,7 @@ extension NativeEngine {
 
         case "recruitTalent":
             // 广纳奇才：礼聘一位高才名将或名相入朝听用（主专精 78–92 + 鲜明历史特质，360 日冷却）。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            guard gold >= 260 else { return (false, "国库不足 260 金，难以厚礼延揽天下奇才。") }
-            if !fin.isNull { fin.gold = JS(max(0, gold - 260)) }
+            guard spendGold(260) else { return (false, "国库不足 260 金，难以厚礼延揽天下奇才。") }
             let culture = civ.cultureId.optionalString ?? "chinese"
             let religion = civ.religionId
             let sid = Offices.stateId(r, id)
@@ -556,13 +553,12 @@ extension NativeEngine {
             return (true, "延揽成功：\(fullName)（\(roleWord)）已入朝听用！")
 
         case "promoteCommander":
-            // 敕封名将：嘉奖并加封现任在阵统帅（武略 +10 封顶 100，赐「越战越勇」特质，全军士气 +15）。
+            // 敕封名将：耗 200 金，嘉奖并加封现任在阵统帅（武略 +10 封顶 100，赐「越战越勇」特质，全军士气 +15）。
             guard let cmd = Regimes.activeCommander(r, nation: id, enemy: nil), let cp = People.person(r, cmd.personId) else {
                 return (false, "该国当前暂无在阵统帅可敕封。")
             }
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, 200)
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let cost = 200.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以敕封节钺。") }
             let beforeMil = Int((cp.base.military.optionalNumber ?? 50).rounded())
             let afterMil = min(100, beforeMil + 10)
             cp.base.military = JS(Double(afterMil))
@@ -579,13 +575,12 @@ extension NativeEngine {
             People.announce(r, kind: "event", text: "\(stateName)敕封名将\(cmd.name)节钺",
                             reason: "御赐金印节钺、加封\(cmd.roleTitle)\(cmd.name)：武略由 \(beforeMil) 跃升至 \(afterMil) 并获「越战越勇」，全军士气 +15。",
                             nations: [id], province: nil)
-            return (true, "已敕封\(cmd.name)：武略升至 \(afterMil)，全军士气 +15！")
+            return (true, "已敕封\(cmd.name)（耗 \(Int(cost)) 金）：武略升至 \(afterMil)，全军士气 +15！")
 
         case "grandFeast":
             // 大酺庆典：耗 200 金与民同乐，战败震荡减半、国运 +8、腐化 -5、全军士气 +10。
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
-            let cost = min(gold, 200)
-            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let cost = 200.0
+            guard spendGold(cost) else { return (false, "国库不足 \(Int(cost)) 金，难以举办全国大酺庆典。") }
             if !r.regimes.defeatShock.isNull, let sh = r.regimes.defeatShock[id].optionalNumber {
                 r.regimes.defeatShock[id] = JS(sh * 0.5)
             }
@@ -598,7 +593,7 @@ extension NativeEngine {
             People.announce(r, kind: "culture", text: "\(stateName)敕赐大酺、举国同庆",
                             reason: "拨资 \(Int(cost)) 金大宴群臣、赐民酺饮：战败震荡减半，国运 +8，腐化 −5，三军士气 +10。",
                             nations: [id], province: nil)
-            return (true, "大酺庆典完成：国运 +8，腐化 −5，战败震荡减半。")
+            return (true, "大酺庆典完成（耗 \(Int(cost)) 金）：国运 +8，腐化 −5，战败震荡减半。")
 
         case let k where k.hasPrefix("strategy:"):
             // 唯一互斥大战略方案（切换时自动清空其他战略遗留的独立专项制度，绝不允许逐个点击无限叠加，且带 180 日转轨冷却）
@@ -669,8 +664,33 @@ extension NativeEngine {
             }
             return (true, on ? "已开启「全图列国自动治理」：天下各国自动施政调策，无需逐国手动操劳。" : "已关闭「全图列国自动治理」：列国将保持现状，等待玩家逐国手动治理。")
 
+        case let k where k.hasPrefix("autoDecide:"):
+            let on = k.hasSuffix(":on")
+            let nb = Regimes.book(r, id)
+            nb.autoDecide = JS(on)
+            nb.autoDecideSet = JS(true)
+            return (true, on ? "已开启自动裁决：待决国家抉择与朝议法案到期将由中枢自动依势裁断。" : "已关闭自动裁决：国家抉择与朝议法案将优先等待玩家亲断。")
+
+        case let k where k.hasPrefix("centralization:"):
+            let mode = String(k.dropFirst("centralization:".count))
+            guard ["central", "balanced", "autonomous"].contains(mode) else { return (false, "未知中央集权档位。") }
+            let nb = Regimes.book(r, id)
+            let curMode = nb.centralization.optionalString ?? "balanced"
+            if curMode == mode { return (false, "本国当前已处于该中央集权体制。") }
+            let cUntil = nb.centralCooldownUntil.optionalNumber.map(Int.init) ?? 0
+            if nowDayCd < cUntil {
+                return (false, "央地集权体制尚在磨合期，需待 \(cUntil - nowDayCd) 日后方可再行调整。")
+            }
+            nb.centralization = JS(mode)
+            nb.centralCooldownUntil = JS(nowDayCd + 180)
+            let label = mode == "central" ? "高度集权" : mode == "autonomous" ? "藩镇自治" : "郡县均衡"
+            let note = mode == "central" ? "岁入 +12%、进攻 +8%，代价：安定 −6、腐化 +5" : mode == "autonomous" ? "安定 +10、腐化 −6、民生 +3%，代价：岁入 −10%" : "央地权责居中调和，无额外偏向"
+            People.recordHistory(r, kind: "reform", text: "\(stateName)改行「\(label)」央地体制",
+                                 reason: "\(note)（180 日内不可再易）。", nations: [id], province: nil)
+            return (true, "已改行「\(label)」：\(note)。")
+
         case let k where k.hasPrefix("agenda:") || k.hasPrefix("agenda_"):
-            // 防无限点击漏洞：全部政治议案严格执行 180 日（搁置休会 90 日）议期冷却，杜绝单回合刷金刷士气！
+            // 防无限点击漏洞：全部政治议案严格执行 180 日（搁置休会 90 日）议期冷却 + 付费路线真实国库校验！
             let nb = Regimes.book(r, id)
             let nowDay = r.world.day.asInt
             let cdUntil = nb.agendaCooldownUntil.optionalNumber.map(Int.init) ?? 0
@@ -691,11 +711,23 @@ extension NativeEngine {
                 topic = String(k.dropFirst("agenda_".count))
                 branch = "force"
             }
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let agendaCost: Double = {
+                switch (topic, branch) {
+                case ("accountability", "force"): return 180
+                case ("imbalance", "force"): return 220
+                case ("imbalance", "bargain"): return 320
+                case ("civil", "force"): return 160
+                default: return 0
+                }
+            }()
+            if agendaCost > 0 && gold < agendaCost {
+                return (false, "国库不足 \(Int(agendaCost)) 金，难以强推该路线，请改选温和或休会方案。")
+            }
             let cooldownSpan = (branch == "table") ? 90 : 180
             nb.agendaCooldownUntil = JS(nowDay + cooldownSpan)
 
             let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
-            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
             var title = "本期\(lex.agendaTag)"
             var outcome = ""
 

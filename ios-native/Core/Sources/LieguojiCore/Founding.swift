@@ -258,6 +258,10 @@ public enum Founding {
             fresh = opened
         } else {
             fresh = (firstProv.name.optionalString ?? "新邦\(index)", "state/\(cultureId)/fallback/\(index)")
+            // 若回退到州郡地理名（如“襄阳”“姑苏”），切勿套用「王朝/朝」后缀，改为现实封建/公国政体。
+            if UnitKinds.enabled, chosenStyle?.id == "dynasty" {
+                chosenStyle = Regimes.styles.first { $0.id == "feudal" } ?? chosenStyle
+            }
         }
         let identity = JS.object()
         identity.cultureId = JS(rawCultureId.isEmpty ? cultureId : rawCultureId); identity.religionId = JS(religionId); identity.polity = JS(profile.suggestedPolity)

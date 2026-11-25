@@ -63,23 +63,38 @@ public enum DiplomacyBridge {
     public static func world(_ r: JS) -> DiplomacyWorld {
         let w = r.world, s = r.nativeDiplomacy
         var index = [String: Int](), provinceIndex = [String: Int]()
+        var ownedByNation = [String: [String: JS]]()
+        var ownedKeysByNation = [String: [String]]()
         for (i, n) in w.nations.asArray.enumerated() { index[n.id.asString] = i }
-        for (i, p) in w.provinces.asArray.enumerated() { provinceIndex[p.id.asString] = i }
+        for (i, p) in w.provinces.asArray.enumerated() {
+            let pid = p.id.asString, ctrl = p.controller.asString
+            provinceIndex[pid] = i
+            ownedByNation[ctrl, default: [:]][pid] = p
+            ownedKeysByNation[ctrl, default: []].append(pid)
+        }
         let alliances = r.alliances.records.asArray
         let start = r.life.startDate
         let cargo = r.transports.cargo.isNull ? [] : r.transports.cargo.asArray.map(\.army)
-        // 性能优化：单次扫描预聚合各国陆军兵力与舰队船数，避免 O(N × (A + F)) 重复过滤（结果逐字节一致）。
+        // 性能优化：单次扫描预聚合各国陆军兵力、舰队船数与战力，彻底消除 O(N × (P + A + F)) 重复扫描（结果逐字节一致）。
         var troopsByNation = [String: [Int]]()
+        var armyPowerByNation = [String: Double]()
         for a in w.armies.asArray where a.status.asString != "destroyed" {
-            troopsByNation[a.nationId.asString, default: []].append(a.troops.asInt)
+            let nid = a.nationId.asString
+            troopsByNation[nid, default: []].append(a.troops.asInt)
+            armyPowerByNation[nid] = f((armyPowerByNation[nid] ?? 0) + f(f(max(0, a.troops.asNumber)) / f(2000)))
         }
         for a in cargo where a.status.asString != "destroyed" {
-            troopsByNation[a.nationId.asString, default: []].append(a.troops.asInt)
+            let nid = a.nationId.asString
+            troopsByNation[nid, default: []].append(a.troops.asInt)
+            armyPowerByNation[nid] = f((armyPowerByNation[nid] ?? 0) + f(f(max(0, a.troops.asNumber)) / f(2000)))
         }
         var shipsByNation = [String: [Int]]()
+        var navyPowerByNation = [String: Double]()
         if !r.navy.fleets.isNull {
             for fl in r.navy.fleets.asArray where fl.status.asString != "lost" {
-                shipsByNation[fl.nationId.asString, default: []].append(fl.ships.asInt)
+                let nid = fl.nationId.asString
+                shipsByNation[nid, default: []].append(fl.ships.asInt)
+                navyPowerByNation[nid] = f((navyPowerByNation[nid] ?? 0) + f(f(max(0, min(5, fl.ships.asNumber))) / f(5)))
             }
         }
         let nations = w.nations.asArray.map { n -> DiplomacyWorld.Nation in
@@ -94,12 +109,19 @@ public enum DiplomacyBridge {
             } ?? p.map { p in
                 DiplomacyWorld.Leader(alive: p.alive.optionalBool == true, traits: p.traits.asArray.map { t in DiplomacyWorld.Trait(name: t.asString, bonus: Nobility.trait(t.asString)?.relationshipBonus.optionalNumber ?? 0) }, diplomatic: People.skills(p).diplomatic)
             }
-            return DiplomacyWorld.Nation(id: r.people.nations[id].id.asInt, provinces: Wars.orderedProvinces(r, id).map { provinceIndex[$0.id.asString]! }, overlord: lord, auto: r.diplomacy.nations[id].optionalBool == true,
+            let owned = ownedByNation[id] ?? [:], keys = ownedKeysByNation[id] ?? []
+            var seen = Set<String>(), ordered = [String]()
+            let order = r.upperCombat.nations[id].provinceOrder
+            for pid in (order.isNull ? [] : order.asArray.map(\.asString)) where owned[pid] != nil && seen.insert(pid).inserted { ordered.append(pid) }
+            let orderedIndices = (ordered + keys.filter { !seen.contains($0) }).map { provinceIndex[$0]! }
+            let armyP = armyPowerByNation[id] ?? 0, navyP = navyPowerByNation[id] ?? 0, land = Double(keys.count)
+            let str = f(f(f(f(navyP + navyP) + f(armyP + armyP)) + f(f(land) * f(5))) + f(1))
+            return DiplomacyWorld.Nation(id: r.people.nations[id].id.asInt, provinces: orderedIndices, overlord: lord, auto: r.diplomacy.nations[id].optionalBool == true,
                                          expansionism: d.expansionism.asNumber, culture: (cultures.firstIndex(of: r.civilization.nations[id].cultureId.asString) ?? -1) + 1,
                                          polity: polities.firstIndex(of: r.upperCombat.nations[id].polity.asString) ?? -1, alliance: alliance, leader: leader,
                                          activeTime: d.activeTime.optionalNumber, passiveTime: d.passiveTime.optionalNumber,
                                          pools: DiplomacyWorld.Pools(power: d.pools.power.asNumber, startWar: d.pools.startWar.asNumber, endWar: d.pools.endWar.asNumber, efficiency: d.pools.efficiency.asNumber),
-                                         strength: PeaceBridge.strength(r, id),
+                                         strength: str,
                                          troops: troopsByNation[id] ?? [],
                                          ships: shipsByNation[id] ?? [])
         }

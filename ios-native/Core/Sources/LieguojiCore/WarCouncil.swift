@@ -187,6 +187,10 @@ extension ArmyOrders {
     static func warPlan(_ r: JS, nation: String, enemies enemySet: Set<String>, _ c: CouncilContext, bridge: ForceBridge) -> [String: WarCouncil.Duty] {
         let g = bridge.graph, state = r.armyAutonomy, provinces = c.provinces
         let owned = c.ownedBy[nation] ?? []
+        let iq = UnitKinds.enabled ? Regimes.tacticalIQ(r, nation: nation) : nil
+        let focusW = iq?.focusWeight ?? 1.0
+        let blunder = iq?.blunderJitter ?? 0.0
+        let blunderDayBucket = r.world.day.asInt / 10
         // 旧都落在敌方控制下时，由「收复失地」评估，不能列为我军安静驻防点。
         let capital = Rebellion.capitalProvince(r, nation).flatMap { c.provinceAt[$0] }.flatMap { owned.contains($0) ? $0 : nil }
         var invadedFoes = 0.0, homeTroops = 0.0
@@ -409,16 +413,16 @@ extension ArmyOrders {
                 let pid = provinces[p].id.asString
                 var v = jsHypot(at.x - cx, at.y - cy)
                 if let heart { v += 0.7 * jsHypot(at.x - heart.x, at.y - heart.y) }
-                // 直捣黄龙：可直取敌都时大幅提权
-                if p == enemyCapitalIdx { v -= 140 }
+                // 直捣黄龙：可直取敌都时大幅提权（名将敏锐直扑敌心，昏君难察战机）
+                if p == enemyCapitalIdx { v -= 140 * focusW }
                 // 乘胜追击：我军已在围困该州时持续加压至破城
-                if let prog = ourSiegeOnEnemy[pid], prog > 0.05 { v -= 85 + prog * 60 }
+                if let prog = ourSiegeOnEnemy[pid], prog > 0.05 { v -= (85 + prog * 60) * focusW }
                 // 避实击虚：优先突破敌军空虚防线
-                if foes(p) <= 0 { v -= 55 }
-                if targeted.contains(p) { v -= 60 }
-                if CombatReader.protruding(r, p) { v -= 35 }
-                // 故土光复与突出部合围：优先收复本国法定故土、优先拔除深入我境的敌方孤立突出部与飞地
-                if provinces[p].legalOwner.optionalString == nation { v -= 52 }
+                if foes(p) <= 0 { v -= 55 * focusW }
+                if targeted.contains(p) { v -= 60 * max(0.5, focusW) }
+                if CombatReader.protruding(r, p) { v -= 35 * focusW }
+                // 故土光复与突出部合围：名将擅长剪除敌军突出部与飞地，以少胜多
+                if provinces[p].legalOwner.optionalString == nation { v -= 52 * max(0.7, focusW) }
                 var ourAdj = 0, enemyAdj = 0
                 for q in provinces[p].neighbors.asArray {
                     if let qi = c.provinceAt[q.asString] {
@@ -427,9 +431,14 @@ extension ArmyOrders {
                         else if ctrl == enemy { enemyAdj += 1 }
                     }
                 }
-                if ourAdj >= 2 && enemyAdj <= 1 { v -= 48 }
-                if ourAdj >= 3 { v -= 24 }
-                v -= 40 * min(2.5, (people[pid] ?? 0) / meanPopulation)
+                if ourAdj >= 2 && enemyAdj <= 1 { v -= 54 * focusW }
+                if ourAdj >= 3 { v -= 28 * focusW }
+                v -= 40 * min(2.5, (people[pid] ?? 0) / meanPopulation) * max(0.6, focusW)
+                // 昏君/庸将战略误判偏移（确定性哈希，保证回放一致）：容易错失破绽、胡乱换靶或死磕坚城
+                if blunder > 1 {
+                    let h = Opening.hash("\(r.world.custom.seed.asString)|iq|\(nation)|\(blunderDayBucket)|\(p)")
+                    v += (Double(h % 200) / 100.0 - 1.0) * blunder
+                }
                 return v
             }
             let sorted = list.map { (p: $0, v: value($0)) }.sorted { x, y in x.v != y.v ? x.v < y.v : x.p < y.p }
@@ -441,10 +450,13 @@ extension ArmyOrders {
                 for q in provinces[item.p].neighbors.asArray {
                     if let qi = c.provinceAt[q.asString], enemySet.contains(provinces[qi].controller.asString) { nearby += foes(qi) }
                 }
-                let baseNeed = max((foes(item.p) + nearby * 0.5) * (isOverseasFront ? 1.65 : 1.4), isOverseasFront ? max(siege * 1.6, mine * 0.28) : siege)
+                // 名将更重视集中优势兵力（避免添油战术），昏君常以偏师硬撞重兵
+                let oddsScale = (iq?.tier ?? 0) >= 1 ? 1.55 : ((iq?.tier ?? 0) <= -1 ? 1.05 : 1.40)
+                let baseNeed = max((foes(item.p) + nearby * 0.5) * (isOverseasFront ? 1.65 : oddsScale), isOverseasFront ? max(siege * 1.6, mine * 0.28) : siege)
                 let need = baseNeed
-                // A stronghold the whole host could not take is left for later.
-                if need > max(freeTroops, mine * 0.5) * 1.1 && !attack.isEmpty { continue }
+                // A stronghold the whole host could not take is left for later (昏君容易盲目硬攻坚城).
+                let skipLimit = (iq?.tier ?? 0) <= -2 ? 2.4 : 1.1
+                if need > max(freeTroops, mine * 0.5) * skipLimit && !attack.isEmpty { continue }
                 attack.append(post(item.p, need: need))
                 if !isOverseasFront {
                     var best = -1, bestDistance = Double.infinity
@@ -458,8 +470,8 @@ extension ArmyOrders {
                 }
             }
         }
-        let holdBudget = hasLandFront ? (mine * 0.35) : (mine * 0.14)
+        let holdBudget = hasLandFront ? (mine * ((iq?.tier ?? 0) >= 1 ? 0.32 : 0.38)) : (mine * 0.14)
         let duties = WarCouncil.assign(forces: forces, defend: defend, hold: hold, holdBudget: holdBudget, attack: attack)
-        return WarCouncil.muster(duties, forces: forces, attack: attack, rally: rally)
+        return WarCouncil.muster(duties, forces: forces, attack: attack, rally: rally, patience: iq?.musterPatience ?? 15)
     }
 }

@@ -124,6 +124,73 @@ public enum GrandSystems {
 
     public static let mercById: [String: MercSpec] = Dictionary(uniqueKeysWithValues: mercenaries.map { ($0.id, $0) })
 
+    // MARK: - 4. 四海探索与古迹远征（10 处传世秘境古迹，耗时 4 月探索，发掘后获永久古迹增益与宝藏）
+
+    public struct ExpeditionSite: Sendable, Identifiable {
+        public let id: String
+        public let name: String
+        public let regionKind: String
+        public let cost: Double
+        public let months: Int
+        public let rewardLine: String
+        public let flavor: String
+        public let goldReward: Double
+        public let techBranch: WorldDepth.TechBranch
+        public let techPts: Int
+        public let attack: Double
+        public let defense: Double
+        public let income: Double
+        public let growth: Double
+        public let stability: Double
+        public let corruption: Double
+        public let seaTransport: Int
+    }
+
+    public static let expeditions: [ExpeditionSite] = [
+        ExpeditionSite(id: "kunlunRuins", name: "昆仑古秘境", regionKind: "峻岭", cost: 160, months: 4,
+                       rewardLine: "永久攻 +5% · 守 +5% · 军备科技 +30 · 国运 +5",
+                       flavor: "雪峰深处流传上古兵家石刻与玄铁炉遗址。",
+                       goldReward: 220, techBranch: .military, techPts: 30, attack: 5, defense: 5, income: 0, growth: 0, stability: 2, corruption: 0, seaTransport: 0),
+        ExpeditionSite(id: "penglaiIsle", name: "蓬莱海外仙洲", regionKind: "海域", cost: 160, months: 4,
+                       rewardLine: "跨海运力 +1 · 永久岁入 +6% · 航海科技 +35",
+                       flavor: "雾霭重洋之外隐现古航路灯塔与珍稀药林。",
+                       goldReward: 280, techBranch: .naval, techPts: 35, attack: 0, defense: 0, income: 6, growth: 1.0, stability: 2, corruption: 0, seaTransport: 1),
+        ExpeditionSite(id: "sunkenCapital", name: "沉没古都遗迹", regionKind: "遗迹", cost: 160, months: 4,
+                       rewardLine: "宝藏 +420 金 · 永久岁入 +8% · 治政科技 +28",
+                       flavor: "古河道改道掩埋的旧朝金库与石碑典章。",
+                       goldReward: 420, techBranch: .statecraft, techPts: 28, attack: 0, defense: 0, income: 8, growth: 0, stability: 3, corruption: -2, seaTransport: 0),
+        ExpeditionSite(id: "loulanOasis", name: "大漠楼兰古城", regionKind: "丝路", cost: 160, months: 4,
+                       rewardLine: "宝藏 +380 金 · 永久岁入 +7% · 农商科技 +32",
+                       flavor: "风沙下的商队故城，留存东西方失传商路秘图。",
+                       goldReward: 380, techBranch: .economy, techPts: 32, attack: 0, defense: 0, income: 7, growth: 0.5, stability: 2, corruption: -1, seaTransport: 0),
+        ExpeditionSite(id: "arcticTomb", name: "极北冰原古墓", regionKind: "边塞", cost: 160, months: 4,
+                       rewardLine: "永久守御 +8% · 军备科技 +28 · 全军历练 +10",
+                       flavor: "冻土之下埋藏远古北境战王甲胄与铁骑阵图。",
+                       goldReward: 200, techBranch: .military, techPts: 28, attack: 3, defense: 8, income: 0, growth: 0, stability: 0, corruption: 0, seaTransport: 0),
+        ExpeditionSite(id: "jungleTemple", name: "雨林失落神庙", regionKind: "秘林", cost: 160, months: 4,
+                       rewardLine: "宝藏 +360 金 · 永久安定 +6 · 腐化 −4 · 治政 +25",
+                       flavor: "密林深处的石造天文神殿，铭刻历法与治世铭文。",
+                       goldReward: 360, techBranch: .statecraft, techPts: 25, attack: 0, defense: 0, income: 3, growth: 1.0, stability: 6, corruption: -4, seaTransport: 0),
+        ExpeditionSite(id: "silkCanyon", name: "丝路宝藏峡谷", regionKind: "关隘", cost: 160, months: 4,
+                       rewardLine: "宝藏 +460 金 · 永久岁入 +6% · 农商科技 +30",
+                       flavor: "千佛石窟与商旅密道纵横，藏有历代西域珍玩。",
+                       goldReward: 460, techBranch: .economy, techPts: 30, attack: 0, defense: 3, income: 6, growth: 0, stability: 0, corruption: 0, seaTransport: 0),
+        ExpeditionSite(id: "spiceArchipelago", name: "远洋香料群岛", regionKind: "远洋", cost: 160, months: 4,
+                       rewardLine: "跨海运力 +1 · 宝藏 +340 金 · 永久岁入 +8% · 航海 +32",
+                       flavor: "季风吹拂的热带列岛，盛产万邦垂涎的珍贵香料。",
+                       goldReward: 340, techBranch: .naval, techPts: 32, attack: 0, defense: 0, income: 8, growth: 0.5, stability: 0, corruption: 0, seaTransport: 1),
+        ExpeditionSite(id: "warScrollCave", name: "古兵书石窟", regionKind: "名山", cost: 160, months: 4,
+                       rewardLine: "永久全军进攻 +8% · 军备科技 +36 · 统帅武略 +4",
+                       flavor: "绝壁石室封存失传古兵法竹简与攻城机巧图纸。",
+                       goldReward: 180, techBranch: .military, techPts: 36, attack: 8, defense: 2, income: 0, growth: 0, stability: 0, corruption: 0, seaTransport: 0),
+        ExpeditionSite(id: "starIronVein", name: "星陨精铁矿脉", regionKind: "奇矿", cost: 160, months: 4,
+                       rewardLine: "永久攻 +6% · 守 +6% · 岁入 +4% · 军备科技 +28",
+                       flavor: "天外陨铁坠落古谷，冶炼百炼钢甲锐不可当。",
+                       goldReward: 260, techBranch: .military, techPts: 28, attack: 6, defense: 6, income: 4, growth: 0, stability: 0, corruption: 0, seaTransport: 0),
+    ]
+
+    public static let expeditionById: [String: ExpeditionSite] = Dictionary(uniqueKeysWithValues: expeditions.map { ($0.id, $0) })
+
     // MARK: - 存储初始化与实时收益查询
 
     private static func ensureStore(_ r: JS) {
@@ -132,6 +199,27 @@ public enum GrandSystems {
         if r.regimes.goldenAge.isNull { r.regimes.goldenAge = JS.object() }
         if r.regimes.missions.isNull { r.regimes.missions = JS.object() }
         if r.regimes.mercCooldown.isNull { r.regimes.mercCooldown = JS.object() }
+        if r.regimes.expeditions.isNull { r.regimes.expeditions = JS.object() }
+    }
+
+    /// 确定性锚定每个探索古迹对应的世界州郡索引（让每个世界都有可定位的真实地理奇遇）。
+    public static func anchorProvinceIndex(_ r: JS, siteId: String) -> Int {
+        let count = r.world.provinces.length
+        guard count > 0 else { return -1 }
+        let seed = r.world.custom.seed.optionalString ?? "world"
+        return Int(Opening.hash("\(seed)|expedition|\(siteId)") % UInt32(count))
+    }
+
+    public static func discoveredExpeditions(_ r: JS, nationId: String) -> [ExpeditionSite] {
+        guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy, !r.regimes.expeditions.isNull else { return [] }
+        var out = [ExpeditionSite]()
+        for (sid, row) in r.regimes.expeditions.objectEntries {
+            guard row.status.optionalString == "done",
+                  row.discovererId.optionalString == nationId,
+                  let spec = expeditionById[sid] else { continue }
+            out.append(spec)
+        }
+        return out
     }
 
     /// 列出当前由指定国家实际控制（按奇观所在州郡的实时 controller 判定，攻陷敌州即可夺取奇观！）的已竣工奇观。
@@ -180,6 +268,14 @@ public enum GrandSystems {
             l.stability += w.stability
             l.corruption += w.corruption
         }
+        for e in discoveredExpeditions(r, nationId: nationId) {
+            l.attack += e.attack
+            l.defense += e.defense
+            l.income += e.income
+            l.growth += e.growth
+            l.stability += e.stability
+            l.corruption += e.corruption
+        }
         if goldenAgeRemaining(r, nationId: nationId) > 0 {
             l.attack += 16
             l.defense += 14
@@ -191,9 +287,10 @@ public enum GrandSystems {
         return l
     }
 
-    /// 奇观带来的额外跨海运力加成（宝船大船坞 +3、沧溟大灯塔 +2）。
+    /// 奇观与远洋探索带来的额外跨海运力加成（宝船大船坞 +3、沧溟大灯塔 +2、远洋奇遇 +1）。
     public static func seaTransportBonus(_ r: JS, nation: String) -> Int {
         controlledWonders(r, nationId: nation).reduce(0) { $0 + $1.seaTransport }
+            + discoveredExpeditions(r, nationId: nation).reduce(0) { $0 + $1.seaTransport }
     }
 
     // MARK: - 霸业使命进度评估
@@ -296,6 +393,17 @@ public enum GrandSystems {
         o.missionsTotal = JS(missions.count)
         o.goldenAgeLeft = JS(gaRem)
         o.goldenAgeCanStart = JS(canGA)
+        let doneExp = discoveredExpeditions(r, nationId: nationId).count
+        var activeExpName = ""
+        if !r.regimes.isNull, !r.regimes.expeditions.isNull {
+            for (sid, row) in r.regimes.expeditions.objectEntries where row.status.optionalString == "exploring" && row.explorerId.optionalString == nationId {
+                activeExpName = expeditionById[sid]?.name ?? ""
+                break
+            }
+        }
+        o.expeditionsDone = JS(doneExp)
+        o.expeditionsTotal = JS(expeditions.count)
+        o.expeditionActive = JS(activeExpName)
         return o
     }
 
@@ -375,6 +483,56 @@ public enum GrandSystems {
                                         reason: "于\(site.name.asString)大兴土木，预计 \(spec.months) 个月竣工（\(spec.effectLine)）。",
                                         nations: [id], province: site.id.asString)
                 }
+            }
+        }
+
+        // 4. 推进该国正在进行的「四海探索与古迹远征」
+        var currentlyExploring = false
+        for (sid, row) in r.regimes.expeditions.objectEntries {
+            guard row.status.optionalString == "exploring", row.explorerId.optionalString == id else { continue }
+            currentlyExploring = true
+            let prog = (row.progress.optionalNumber.map(Int.init) ?? 0) + 1
+            let total = row.totalMonths.optionalNumber.map(Int.init) ?? (expeditionById[sid]?.months ?? 4)
+            row.progress = JS(prog)
+            if prog >= total, let spec = expeditionById[sid] {
+                row.status = JS("done")
+                row.discovererId = JS(id)
+                row.completedDay = r.world.day.clone()
+                if !r.finance.nations[id].isNull {
+                    r.finance.nations[id].gold = JS((r.finance.nations[id].gold.optionalNumber ?? 0) + spec.goldReward)
+                }
+                addDestiny(5)
+                WorldDepth.addTechProgress(r, nation: id, branch: spec.techBranch, points: spec.techPts)
+                if spec.id == "warScrollCave", let cmd = Regimes.activeCommander(r, nation: id, enemy: nil), let cp = People.person(r, cmd.personId) {
+                    cp.base.military = JS(min(100, (cp.base.military.optionalNumber ?? 50) + 4))
+                }
+                if spec.id == "arcticTomb" {
+                    if r.regimes.armyXP.isNull { r.regimes.armyXP = JS.object() }
+                    for a in Regimes.monthArmies(r, id) {
+                        let aid = a.id.asString
+                        r.regimes.armyXP[aid] = JS(min(100, (r.regimes.armyXP[aid].optionalNumber ?? 0) + 10))
+                    }
+                }
+                let pIdx = anchorProvinceIndex(r, siteId: sid)
+                let pId = (pIdx >= 0 && pIdx < provinces.count) ? provinces[pIdx].id.asString : nil
+                _ = People.announce(r, kind: "voyage",
+                                    text: "古迹发掘：\(n.name.asString)探索「\(spec.name)」大获奇珍！",
+                                    reason: "远征队凯旋献宝：获得 \(Int(spec.goldReward)) 金与永久古迹加持（\(spec.rewardLine)）。",
+                                    nations: [id], province: pId)
+            }
+        }
+
+        // 5. AI 列国偶发派出远征队探索四海古迹（丰富沙盒探索感）
+        if isAuto && !currentlyExploring && gold >= 680 && Regimes.chance("\(id)|\(key)|aiexp") < 0.032 {
+            let taken = Set(r.regimes.expeditions.objectKeys)
+            let avail = expeditions.filter { !taken.contains($0.id) }
+            if !avail.isEmpty {
+                let spec = avail[Int(Regimes.draw("\(id)|\(key)|aiepick")) % avail.count]
+                r.finance.nations[id].gold = JS(max(0, gold - spec.cost))
+                let row = JS.object()
+                row.status = JS("exploring"); row.explorerId = JS(id)
+                row.progress = JS(0); row.totalMonths = JS(spec.months); row.startedDay = r.world.day.clone()
+                r.regimes.expeditions[spec.id] = row
             }
         }
     }
@@ -491,6 +649,33 @@ extension NativeEngine {
             mercRows.push(row)
         }
         o.mercenaries = mercRows
+
+        let expRows = JS.array()
+        for site in GrandSystems.expeditions {
+            let row = JS.object()
+            let pIdx = GrandSystems.anchorProvinceIndex(r, siteId: site.id)
+            let pName = (pIdx >= 0 && pIdx < provinces.count) ? provinces[pIdx].name.asString : "未知秘境"
+            row.id = JS(site.id); row.name = JS(site.name); row.regionKind = JS(site.regionKind)
+            row.cost = JS(Int(site.cost)); row.months = JS(site.months)
+            row.rewardLine = JS(site.rewardLine); row.flavor = JS(site.flavor)
+            row.provinceIndex = JS(pIdx); row.provinceName = JS(pName)
+            let stObj = (!r.regimes.isNull && !r.regimes.expeditions.isNull) ? r.regimes.expeditions[site.id] : .null
+            if !stObj.isNull {
+                let st = stObj.status.optionalString ?? "available"
+                let holder = st == "done" ? (stObj.discovererId.optionalString ?? "") : (stObj.explorerId.optionalString ?? "")
+                row.status = JS(st)
+                row.mine = JS(holder == id)
+                row.holderName = JS(nationNameById[holder] ?? "他国")
+                row.progress = JS(stObj.progress.optionalNumber.map(Int.init) ?? 0)
+            } else {
+                row.status = JS("available")
+                row.mine = JS(false)
+                row.holderName = JS("")
+                row.progress = JS(0)
+            }
+            expRows.push(row)
+        }
+        o.expeditions = expRows
         return Data(o.json.utf8)
     }
 
@@ -690,5 +875,41 @@ extension NativeEngine {
                         reason: "斥资 \(Int(spec.cost)) 金于\(siteName)成军 \(spec.troops) 名百战精锐（历练 \(spec.xp) · 士气 95），即刻投入战局！",
                         nations: [id], province: homePid)
         return (true, "「\(spec.name)」（\(spec.troops) 精锐）已于\(siteName)成军待命！")
+    }
+
+    /// 派遣远征队探索天下秘境与古迹（耗时 4 月，发掘后获宝藏、科技突破与永久全国古迹增益）。
+    public func dispatchExpedition(_ nationIndex: Int, siteId: String) -> (ok: Bool, reason: String) {
+        let r = run, nations = r.world.nations.asArray
+        guard nations.indices.contains(nationIndex) else { return (false, "国家不存在。") }
+        let n = nations[nationIndex], id = n.id.asString, stateName = n.name.asString
+        guard Vassals.alive(r, id) else { return (false, "该国已亡，无法派遣远征队。") }
+        guard let spec = GrandSystems.expeditionById[siteId] else { return (false, "未知的古迹秘境。") }
+        Regimes.enable(r)
+        if r.regimes.expeditions.isNull { r.regimes.expeditions = JS.object() }
+        if !r.regimes.expeditions[siteId].isNull {
+            let st = r.regimes.expeditions[siteId].status.optionalString ?? ""
+            return (false, st == "done" ? "「\(spec.name)」已被发掘归藏，举世唯一不可重复探索。" : "「\(spec.name)」已有远征队正在勘探之中。")
+        }
+        for (_, row) in r.regimes.expeditions.objectEntries {
+            if row.status.optionalString == "exploring", row.explorerId.optionalString == id {
+                return (false, "本国当前已有远征队在外勘探，请待凯旋后再启新程。")
+            }
+        }
+        let fin = r.finance.nations[id]
+        let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+        guard gold >= spec.cost else { return (false, "国库不足 \(Int(spec.cost)) 金，难以筹备「\(spec.name)」远征队。") }
+        if !fin.isNull { fin.gold = JS(max(0, gold - spec.cost)) }
+
+        let row = JS.object()
+        row.status = JS("exploring"); row.explorerId = JS(id)
+        row.progress = JS(0); row.totalMonths = JS(spec.months); row.startedDay = r.world.day.clone()
+        r.regimes.expeditions[siteId] = row
+        let pIdx = GrandSystems.anchorProvinceIndex(r, siteId: siteId)
+        let pName = (pIdx >= 0 && pIdx < r.world.provinces.length) ? r.world.provinces[pIdx].name.asString : "远方秘境"
+        let pId = (pIdx >= 0 && pIdx < r.world.provinces.length) ? r.world.provinces[pIdx].id.asString : nil
+        People.announce(r, kind: "voyage", text: "\(stateName)派遣远征队探访「\(spec.name)」",
+                        reason: "斥资 \(Int(spec.cost)) 金赴\(pName)一带勘察古迹，预计 \(spec.months) 个月归来（\(spec.rewardLine)）。",
+                        nations: [id], province: pId)
+        return (true, "远征队已启程前往\(pName)探访「\(spec.name)」，预计 \(spec.months) 个月凯旋！")
     }
 }

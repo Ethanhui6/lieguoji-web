@@ -103,9 +103,26 @@ public enum NobleRevolt {
     }
     static func tryRestoration(_ r: JS, _ id: String) -> String? {
         let n = r.nobility, fam = n.families[id]
+        let cap: Double = UnitKinds.enabled ? 2 : 15
+        let nowDay = r.world.day.asNumber
+        if UnitKinds.enabled {
+            // 战时占领地或新征服驻防绥靖期（<24 月）不触发贵族复辟，避免占领后立即复国循环。
+            let mother = fam.nationId.asString
+            var provMap = [String: JS]()
+            for p in r.world.provinces.asArray { provMap[p.id.asString] = p }
+            let famProvs = fam.controlledProvinces.asArray.map(\.asString)
+            let occupiedOrFresh = famProvs.contains { pid in
+                guard let p = provMap[pid] else { return false }
+                if let leg = p.legalOwner.optionalString, leg != mother { return true }
+                if !r.foundings.isNull && !r.foundings.conquered[pid].isNull && Rebellion.monthsSince(r, r.foundings.conquered[pid].time.asNumber) < 24 { return true }
+                return false
+            }
+            if occupiedOrFresh { return nil }
+        }
         for state in fam.historicalStateIds.asArray.map(\.asString) {
-            if !r.people.nations.has(state) || alive(r, state) || (r.sovereignty.restorations[state].optionalNumber ?? 0) >= 15 { continue }
-            let w = restorationWeight(r, id, state)
+            if !r.people.nations.has(state) || alive(r, state) || (r.sovereignty.restorations[state].optionalNumber ?? 0) >= cap { continue }
+            if UnitKinds.enabled, !r.chronicle.ended.isNull, let endedDay = r.chronicle.ended[state].day.optionalNumber, nowDay - endedDay < 1080 { continue }
+            let w = restorationWeight(r, id, state) * (UnitKinds.enabled ? 0.45 : 1.0)
             if w > f(Nobility.Random(n: n).value() * 100) { return state }
         }
         return nil

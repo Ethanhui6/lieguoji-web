@@ -100,15 +100,22 @@ public enum Government {
     public static func reconcileContinuity(_ r: JS) {
         var changed = false
         let appMode = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
+        // 大图性能优化（每帧必走）：单次 O(P) 预分桶各国家实控与法理州郡，取代 O(N × P) 全图遍历（结果逐字节一致）。
+        var landByNation = [String: [JS]]()
+        var legalOwners = Set<String>()
+        for p in r.world.provinces.asArray {
+            landByNation[p.controller.asString, default: []].append(p)
+            if appMode, let leg = p.legalOwner.optionalString { legalOwners.insert(leg) }
+        }
         for n in r.world.nations.asArray {
-            let id = n.id.asString, land = r.world.provinces.asArray.filter { $0.controller.asString == id }, ended = r.chronicle.ended.has(id)
+            let id = n.id.asString, land = landByNation[id] ?? [], ended = r.chronicle.ended.has(id)
             let history = r.chronicle.leaders[id]
             guard !history.isNull, let last = history.asArray.last else { continue }
             if land.isEmpty && !ended {
                 // App 模式修复：战时全境暂被占领但仍握有法理州郡且尚在交战时，暂不提前判定“覆亡”，
                 // 待和约正式割地或全吞后再定存亡，彻底杜绝“战时判亡 → 和谈归还占领地 → 第二XX国”无限死循环。
                 if appMode {
-                    let hasLegalLand = r.world.provinces.asArray.contains { $0.legalOwner.optionalString == id }
+                    let hasLegalLand = legalOwners.contains(id)
                     let inWar = Wars.activeCampaignCount(r, for: id) > 0
                     if hasLegalLand && inWar { continue }
                 }

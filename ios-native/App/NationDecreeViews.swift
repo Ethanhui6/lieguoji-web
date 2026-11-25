@@ -168,6 +168,7 @@ struct NationDecreesTab: View {
         let category: Category
         let title: String
         let badge: String
+        let cost: Int
         let note: String
         let glyph: InkGlyph
         let tone: Color
@@ -175,45 +176,51 @@ struct NationDecreesTab: View {
 
     static let decrees: [DecreeItem] = [
         // 内政基建（10 项）
-        DecreeItem(id: "prosper", category: .domestic, title: "休养生息", badge: "人丁 +3%", note: "存粮 +20% · 国运 +5", glyph: .goods, tone: Theme.ink),
-        DecreeItem(id: "antiCorruption", category: .domestic, title: "整顿吏治", badge: "腐化 −15", note: "肃清贪墨 · 国运 +4", glyph: .polity, tone: Theme.ink),
-        DecreeItem(id: "deposeMonarch", category: .domestic, title: "废黜昏君", badge: "耗 220 金", note: "仅昏君/庸主时可用 · 择贤即位 · 腐化 −8", glyph: .crown, tone: Theme.seal),
-        DecreeItem(id: "grandFeast", category: .domestic, title: "大酺庆典", badge: "耗 200 金", note: "国运 +8 · 战败震荡减半 · 腐化 −5", glyph: .peace, tone: Theme.ink),
-        DecreeItem(id: "imperialInspection", category: .domestic, title: "巡狩省方", badge: "耗 180 金", note: "震慑豪强 · 腐化 −6 · 国运 +6", glyph: .views, tone: Theme.ink),
-        DecreeItem(id: "relief", category: .domestic, title: "开仓赈灾", badge: "耗 180 金", note: "存粮 +30% · 国运 +4", glyph: .economy, tone: Theme.ink),
-        DecreeItem(id: "landSurvey", category: .domestic, title: "清丈田亩", badge: "得半岁税", note: "厘清税籍 · 腐化 −10", glyph: .region, tone: Theme.ink),
-        DecreeItem(id: "roadNetwork", category: .domestic, title: "交通基建", badge: "耗 240 金", note: "驰道驿路 · 人丁+2% · 回流+180金", glyph: .views, tone: Theme.ink),
-        DecreeItem(id: "granary", category: .domestic, title: "战略粮储", badge: "耗 180 金", note: "常平义仓 · 存粮 +45% · 国运 +5", glyph: .goods, tone: Theme.ink),
-        DecreeItem(id: "warBond", category: .domestic, title: "举债筹饷", badge: "国运 −5", note: "急筹 2.2 月军资 · 代价：腐化 +6", glyph: .economy, tone: Theme.seal),
+        DecreeItem(id: "prosper", category: .domestic, title: "休养生息", badge: "耗 180 金", cost: 180, note: "人丁 +3% · 存粮 +20% · 国运 +5", glyph: .goods, tone: Theme.ink),
+        DecreeItem(id: "antiCorruption", category: .domestic, title: "整顿吏治", badge: "耗 180 金", cost: 180, note: "腐化 −15 · 国运 +4", glyph: .polity, tone: Theme.ink),
+        DecreeItem(id: "deposeMonarch", category: .domestic, title: "废黜昏君", badge: "耗 220 金", cost: 220, note: "仅昏君/庸主时可用 · 择贤即位 · 腐化 −8", glyph: .crown, tone: Theme.seal),
+        DecreeItem(id: "grandFeast", category: .domestic, title: "大酺庆典", badge: "耗 200 金", cost: 200, note: "国运 +8 · 战败震荡减半 · 腐化 −5", glyph: .peace, tone: Theme.ink),
+        DecreeItem(id: "imperialInspection", category: .domestic, title: "巡狩省方", badge: "耗 180 金", cost: 180, note: "震慑豪强 · 腐化 −6 · 国运 +6", glyph: .views, tone: Theme.ink),
+        DecreeItem(id: "relief", category: .domestic, title: "开仓赈灾", badge: "耗 180 金", cost: 180, note: "存粮 +30% · 国运 +4", glyph: .economy, tone: Theme.ink),
+        DecreeItem(id: "landSurvey", category: .domestic, title: "清丈田亩", badge: "国运 −3", cost: 0, note: "得 1.4 月岁入 · 腐化 −8 · 代价：豪强怨怼", glyph: .region, tone: Theme.seal),
+        DecreeItem(id: "roadNetwork", category: .domestic, title: "交通基建", badge: "耗 240 金", cost: 240, note: "驰道驿路 · 人丁 +2% · 存粮 +15% · 腐化 −2", glyph: .views, tone: Theme.ink),
+        DecreeItem(id: "granary", category: .domestic, title: "战略粮储", badge: "耗 180 金", cost: 180, note: "常平义仓 · 存粮 +45% · 国运 +5", glyph: .goods, tone: Theme.ink),
+        DecreeItem(id: "warBond", category: .domestic, title: "举债筹饷", badge: "国运 −5", cost: 0, note: "急筹 2.2 月军资 · 代价：腐化 +6", glyph: .economy, tone: Theme.seal),
         // 军事海运（8 项）
-        DecreeItem(id: "mobilize", category: .military, title: "全国大征兵", badge: "国运 −4", note: "重镇紧急编练 3 支新军", glyph: .military, tone: Theme.seal),
-        DecreeItem(id: "promoteCommander", category: .military, title: "敕封名将", badge: "耗 200 金", note: "统帅武略 +10 · 赐越战越勇 · 全军士气 +15", glyph: .crown, tone: Theme.seal),
-        DecreeItem(id: "eliteDrill", category: .military, title: "大阅禁军", badge: "耗 220 金", note: "全军历练 +14 · 士气 +25 · 补满", glyph: .command, tone: Theme.seal),
-        DecreeItem(id: "rewardArmies", category: .military, title: "犒赏三军", badge: "耗 200 金", note: "全军士气 +35 · 军粮补满", glyph: .command, tone: Theme.ink),
-        DecreeItem(id: "fortifyBorder", category: .military, title: "加固边防", badge: "城防 +1", note: "边塞至多 12 处修城筑垒", glyph: .nation, tone: Theme.ink),
-        DecreeItem(id: "armsUpgrade", category: .military, title: "军械改良", badge: "耗 260 金", note: "全军整补 +6% · 士气 +20", glyph: .war, tone: Theme.seal),
-        DecreeItem(id: "navalDockyard", category: .military, title: "海运船坞", badge: "耗 240 金", note: "跨海运力 +2 · 舰体全修", glyph: .anchor, tone: Theme.ink),
-        DecreeItem(id: "techAcademy", category: .military, title: "格物兴科", badge: "耗 260 金", note: "中枢军政 +4 · 全军士气 +15", glyph: .chronicle, tone: Theme.ink),
+        DecreeItem(id: "mobilize", category: .military, title: "全国大征兵", badge: "耗 140 金", cost: 140, note: "重镇急征 3 支新军 · 代价：国运 −4", glyph: .military, tone: Theme.seal),
+        DecreeItem(id: "promoteCommander", category: .military, title: "敕封名将", badge: "耗 200 金", cost: 200, note: "统帅武略 +10 · 赐越战越勇 · 全军士气 +15", glyph: .crown, tone: Theme.seal),
+        DecreeItem(id: "eliteDrill", category: .military, title: "大阅禁军", badge: "耗 220 金", cost: 220, note: "全军历练 +14 · 士气 +25 · 补满", glyph: .command, tone: Theme.seal),
+        DecreeItem(id: "rewardArmies", category: .military, title: "犒赏三军", badge: "耗 200 金", cost: 200, note: "全军士气 +35 · 军粮补满", glyph: .command, tone: Theme.ink),
+        DecreeItem(id: "fortifyBorder", category: .military, title: "加固边防", badge: "耗 220 金", cost: 220, note: "边塞至多 10 处修城筑垒 · 城防 +1", glyph: .nation, tone: Theme.ink),
+        DecreeItem(id: "armsUpgrade", category: .military, title: "军械改良", badge: "耗 260 金", cost: 260, note: "全军整补 +6% · 士气 +20", glyph: .war, tone: Theme.seal),
+        DecreeItem(id: "navalDockyard", category: .military, title: "海运船坞", badge: "耗 240 金", cost: 240, note: "跨海运力 +2 · 舰体全修", glyph: .anchor, tone: Theme.ink),
+        DecreeItem(id: "techAcademy", category: .military, title: "格物兴科", badge: "耗 260 金", cost: 260, note: "中枢军政 +4 · 全军士气 +15", glyph: .chronicle, tone: Theme.ink),
         // 文教外交（8 项）
-        DecreeItem(id: "recruitTalent", category: .culture, title: "广纳奇才", badge: "耗 260 金", note: "礼聘高才名将或名相入朝（专精 78–92）", glyph: .crown, tone: Theme.seal),
-        DecreeItem(id: "assimilateCulture", category: .culture, title: "推行文教", badge: "教化归心", note: "境内城池归入主体文化", glyph: .culture, tone: Theme.ink),
-        DecreeItem(id: "convertFaith", category: .culture, title: "统一国教", badge: "礼法一统", note: "全境归奉主体信仰", glyph: .religion, tone: Theme.ink),
-        DecreeItem(id: "amnesty", category: .culture, title: "大赦安抚", badge: "情谊 +20", note: "缓和国内各派系关系", glyph: .house, tone: Theme.ink),
-        DecreeItem(id: "academy", category: .culture, title: "兴办国立院", badge: "耗 200 金", note: "中枢才干精进 · 腐化 −4 · 国运 +3", glyph: .chronicle, tone: Theme.ink),
-        DecreeItem(id: "scholarlyEdict", category: .culture, title: "开馆修史", badge: "耗 160 金", note: "国际信誉 +8 · 国运 +5 · 腐化 −4", glyph: .chronicle, tone: Theme.ink),
-        DecreeItem(id: "envoyGoodwill", category: .culture, title: "遣使修好", badge: "耗 200 金", note: "走访非交战邻国 · 好感 +18", glyph: .alliance, tone: Theme.ink),
-        DecreeItem(id: "taxRelief", category: .culture, title: "减赋安民", badge: "耗 160 金", note: "腐化 −10 · 国运 +6 · 安定回升", glyph: .peace, tone: Theme.ink),
+        DecreeItem(id: "recruitTalent", category: .culture, title: "广纳奇才", badge: "耗 260 金", cost: 260, note: "礼聘高才名将或名相入朝（专精 78–92）", glyph: .crown, tone: Theme.seal),
+        DecreeItem(id: "assimilateCulture", category: .culture, title: "推行文教", badge: "耗 160 金", cost: 160, note: "境内城池归入主体文化", glyph: .culture, tone: Theme.ink),
+        DecreeItem(id: "convertFaith", category: .culture, title: "统一国教", badge: "耗 160 金", cost: 160, note: "全境归奉主体信仰", glyph: .religion, tone: Theme.ink),
+        DecreeItem(id: "amnesty", category: .culture, title: "大赦安抚", badge: "耗 140 金", cost: 140, note: "缓和国内各派系关系 · 情谊 +20", glyph: .house, tone: Theme.ink),
+        DecreeItem(id: "academy", category: .culture, title: "兴办国立院", badge: "耗 200 金", cost: 200, note: "中枢才干精进 · 腐化 −4 · 国运 +3", glyph: .chronicle, tone: Theme.ink),
+        DecreeItem(id: "scholarlyEdict", category: .culture, title: "开馆修史", badge: "耗 160 金", cost: 160, note: "国际信誉 +8 · 国运 +5 · 腐化 −4", glyph: .chronicle, tone: Theme.ink),
+        DecreeItem(id: "envoyGoodwill", category: .culture, title: "遣使修好", badge: "耗 200 金", cost: 200, note: "走访非交战邻国 · 好感 +18", glyph: .alliance, tone: Theme.ink),
+        DecreeItem(id: "taxRelief", category: .culture, title: "减赋安民", badge: "耗 160 金", cost: 160, note: "腐化 −10 · 国运 +6 · 安定回升", glyph: .peace, tone: Theme.ink),
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 20) {
             if !info.alive {
                 Text("此国已亡，无法施政。").font(Theme.body).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.Layout.sectionInset)
             } else {
-                // 顶部极简委托栏（合并旧版重复托管按钮，平铺于宣纸面，零彩色大卡）
-                globalDelegationCard
+                // 0. 待决国家因果抉择（防重复领取 · 开启自动裁决满 2 月中枢自动决断）
+                if let ch = info.activeChain {
+                    pendingChainSection(ch)
+                }
 
-                // 主分类极简下划线页签
+                // 1. 顶部极简委托栏 + 自动裁决 + 本季施政额度 + 央地集权三档直控
+                globalDelegationCard
+                centralizationCard
+
+                // 2. 主分类极简下划线页签
                 ChipPicker(items: Category.allCases.map { ($0, $0.rawValue) }, selection: $category)
                     .padding(.horizontal, Theme.Layout.pageInset)
 
@@ -223,9 +230,56 @@ struct NationDecreesTab: View {
                     ViewBoundary { decreesGridSection }
                 }
 
-                // 禅位择君置于底部独立平铺行
+                // 3. 禅位择君置于底部独立平铺行
                 throneCard
             }
+        }
+    }
+
+    @ViewBuilder
+    private func pendingChainSection(_ ch: NationInfo.ActiveChain) -> some View {
+        let autoDec = info.autoDecide ?? (info.autoStrategy ?? true)
+        VStack(alignment: .leading, spacing: 10) {
+            EditorialFocusLead(
+                eyebrow: "待决国家抉择 · 仅可裁断一次" + (autoDec ? "（满 2 月自动裁决）" : "（满 6 月超时自动裁决）"),
+                headline: ch.title,
+                detail: ch.desc,
+                urgent: true
+            )
+            VStack(spacing: 8) {
+                ForEach(Array(ch.choices.enumerated()), id: \.element.id) { idx, opt in
+                    if idx == 0 {
+                        EditorialInkButton(title: opt.label, consequence: opt.tag, emphasized: true, disabled: busy) {
+                            resolveChain(ch.id, choice: opt.id, label: opt.label)
+                        }
+                        Text(opt.detail).font(Theme.caption).foregroundStyle(Theme.ink2)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        EditorialActionRow(title: opt.label, detail: opt.detail, consequence: opt.tag, icon: .scales, disabled: busy) {
+                            resolveChain(ch.id, choice: opt.id, label: opt.label)
+                        }
+                    }
+                }
+            }
+            EditorialDivider()
+        }
+        .padding(.horizontal, Theme.Layout.pageInset)
+    }
+
+    private func resolveChain(_ chainId: String, choice: String, label: String) {
+        guard !busy else { return }
+        busy = true
+        Task {
+            let err = await model.resolveEventChain(nation: nation, chainId: chainId, choice: choice)
+            await onReload()
+            if let err {
+                onToast(err)
+                GameFeel.shared.notify(.error)
+            } else {
+                onToast("已裁决「\(label)」")
+                GameFeel.shared.notify(.success)
+            }
+            busy = false
         }
     }
 
@@ -233,44 +287,92 @@ struct NationDecreesTab: View {
     private var globalDelegationCard: some View {
         let globalOn = info.globalAutoGovern ?? true
         let nationOn = info.autoStrategy ?? globalOn
-        VStack(alignment: .leading, spacing: 12) {
+        let autoDec = info.autoDecide ?? nationOn
+        let qUsed = info.edictQuotaUsed ?? 0
+        let qMax = info.edictQuotaMax ?? 2
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 PhosphorIcon(glyph: .sliders, size: 15, weight: .light).foregroundStyle(Theme.ink2)
-                Text("施政委托").font(Theme.serif(15.5)).tracking(1.4).foregroundStyle(Theme.ink)
+                Text("施政与自动裁决").font(Theme.serif(15.5)).tracking(1.4).foregroundStyle(Theme.ink)
                 Spacer()
-                Text(globalOn ? "天下自动治理中" : "全图手动治理").font(Theme.sans(12)).foregroundStyle(globalOn ? Theme.ink2 : Theme.seal)
+                Text("本季额度 \(max(0, qMax - qUsed))/\(qMax) · 存金 \(Int(info.gold).formatted())")
+                    .font(Theme.sans(12))
+                    .foregroundStyle(qUsed >= qMax ? Theme.seal : Theme.ink2)
+                    .monospacedDigit()
             }
-            HStack(spacing: 10) {
-                Button {
-                    GameFeel.shared.tap()
+            HStack(spacing: 8) {
+                EditorialTactileButton(
+                    title: globalOn ? "全图托管中" : "全图手动",
+                    accent: globalOn,
+                    solid: globalOn,
+                    compact: true,
+                    fullWidth: true,
+                    disabled: busy
+                ) {
                     runDecreeKind(globalOn ? "globalAutoGovern:off" : "globalAutoGovern:on",
                                   fallback: globalOn ? "已关闭全图统一委托" : "已开启全图列国统一自动治理")
-                } label: {
-                    Text(globalOn ? "全图托管中 · 点按关闭" : "开启全图自动治理")
-                        .font(Theme.sans(13, weight: .regular))
-                        .foregroundStyle(globalOn ? Theme.paperLight : Theme.ink)
-                        .frame(maxWidth: .infinity).frame(height: 38)
-                        .background(globalOn ? Theme.seal : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(globalOn ? Color.clear : Theme.hairline, lineWidth: 0.65))
                 }
-                .buttonStyle(PressStyle())
-                .disabled(busy)
-
-                Button {
-                    GameFeel.shared.tap()
+                EditorialTactileButton(
+                    title: nationOn ? "本国AI托管" : "本国手动",
+                    accent: !nationOn,
+                    solid: !nationOn,
+                    compact: true,
+                    fullWidth: true,
+                    disabled: busy
+                ) {
                     runDecreeKind(nationOn ? "strategyAuto:off" : "strategyAuto:on",
                                   fallback: nationOn ? "本国已切为手动接管" : "本国已恢复自动治理")
-                } label: {
-                    Text(nationOn ? "本国：AI 托管" : "本国：手动接管")
-                        .font(Theme.sans(13, weight: .regular))
-                        .foregroundStyle(nationOn ? Theme.ink : Theme.seal)
-                        .frame(maxWidth: .infinity).frame(height: 38)
-                        .background(nationOn ? Theme.wash.opacity(0.55) : Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(nationOn ? Theme.hairline : Theme.seal.opacity(0.35), lineWidth: 0.65))
                 }
-                .buttonStyle(PressStyle())
-                .disabled(busy)
+                EditorialTactileButton(
+                    title: autoDec ? "抉择自动" : "抉择亲断",
+                    accent: !autoDec,
+                    solid: autoDec,
+                    compact: true,
+                    fullWidth: true,
+                    disabled: busy
+                ) {
+                    runDecreeKind(autoDec ? "autoDecide:off" : "autoDecide:on",
+                                  fallback: autoDec ? "国家抉择已改为优先等待玩家亲断" : "国家抉择与朝议已开启自动裁决")
+                }
             }
+            EditorialDivider()
+        }
+        .padding(.horizontal, Theme.Layout.pageInset)
+    }
+
+    @ViewBuilder
+    private var centralizationCard: some View {
+        let cur = info.centralization ?? "balanced"
+        let cd = info.centralCooldown ?? 0
+        let note = cur == "central"
+            ? "高度集权 · 岁入 +12% · 进攻 +8% · 代价：安定 −6 · 腐化 +5"
+            : cur == "autonomous"
+                ? "藩镇自治 · 安定 +10 · 腐化 −6 · 人口 +3% · 代价：岁入 −10%"
+                : "郡县均衡 · 央地权责中正调和，无额外偏向"
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("央地集权体制").font(Theme.sans(12.5, weight: .medium)).foregroundStyle(Theme.ink2)
+                Spacer()
+                Text(cd > 0 ? "磨合冷却 · 余 \(cd) 日" : "180 日转轨冷却")
+                    .font(Theme.caption).foregroundStyle(cd > 0 ? Theme.seal : Theme.ink2).monospacedDigit()
+            }
+            HStack(spacing: 8) {
+                ForEach([("central", "高度集权"), ("balanced", "郡县均衡"), ("autonomous", "藩镇自治")], id: \.0) { mode, label in
+                    let on = cur == mode
+                    EditorialTactileButton(
+                        title: label,
+                        accent: mode == "central",
+                        solid: on,
+                        compact: true,
+                        fullWidth: true,
+                        disabled: busy || (!on && cd > 0)
+                    ) {
+                        guard !on else { return }
+                        runDecreeKind("centralization:\(mode)", fallback: "已改行「\(label)」")
+                    }
+                }
+            }
+            Text(note).font(Theme.caption).foregroundStyle(cur == "central" ? Theme.seal : Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
             EditorialDivider()
         }
         .padding(.horizontal, Theme.Layout.pageInset)
@@ -288,6 +390,11 @@ struct NationDecreesTab: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("现行长期国策").font(Theme.serif(16)).tracking(1.4).foregroundStyle(Theme.ink)
+                    if let rcd = info.reformCooldown, rcd > 0 {
+                        PaperTag(text: "变法磨合余 \(rcd) 日", color: Theme.seal, size: 10.5)
+                    } else {
+                        PaperTag(text: "变法 100 金 · 90 日冷却", color: Theme.ink2, size: 10.5)
+                    }
                     Spacer()
                     EditorialValueText("\(activeRows.count)/\(max(1, list.count))", size: 22, color: Theme.seal)
                 }
@@ -529,10 +636,14 @@ struct NationDecreesTab: View {
         let items = Self.decrees.filter { $0.category == category }
         let lex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
         let cds = info.decreeCooldowns ?? [:]
+        let qUsed = info.edictQuotaUsed ?? 0
+        let qMax = info.edictQuotaMax ?? 2
+        let quotaFull = qUsed >= qMax
+        let curGold = Int(info.gold)
         VStack(alignment: .leading, spacing: 8) {
             SectionLabel("\(lex.decreePrefix)\(category.rawValue)")
-            Text("每项政令均有实质国库或国运代价，颁行后进入 90–180 日休养冷却期，不可连点刷取。")
-                .font(Theme.sans(12)).foregroundStyle(Theme.ink2)
+            Text("每季限颁 \(qMax) 道政令（已用 \(qUsed)/\(qMax)），付费政令严格核验国库，颁行后进入 90–360 日冷却期，不可免费刷取。")
+                .font(Theme.sans(12)).foregroundStyle(quotaFull ? Theme.seal : Theme.ink2)
                 .padding(.horizontal, Theme.Layout.sectionInset)
                 .padding(.bottom, 4)
 
@@ -541,15 +652,18 @@ struct NationDecreesTab: View {
                 ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
                     let remDays = cds[item.id] ?? 0
                     let onCooldown = remDays > 0
+                    let shortGold = item.cost > 0 && curGold < item.cost
+                    let locked = busy || onCooldown || quotaFull || shortGold
+                    let actionLabel = onCooldown ? "冷却中" : (quotaFull ? "本季已满" : (shortGold ? "缺 \(item.cost - curGold) 金" : "颁行"))
                     let isCostly = item.badge.contains("−") || item.badge.contains("耗") || item.note.contains("−")
                     EditorialActionRow(
                         title: item.title,
                         detail: item.note,
                         consequence: onCooldown ? "休养余 \(remDays) 日" : item.badge,
                         icon: Self.phosphorFor(item.glyph),
-                        actionLabel: onCooldown ? "冷却中" : "颁行",
-                        accentConsequence: isCostly && !onCooldown,
-                        disabled: busy || onCooldown
+                        actionLabel: actionLabel,
+                        accentConsequence: (isCostly || shortGold) && !onCooldown,
+                        disabled: locked
                     ) {
                         issue(item)
                     }

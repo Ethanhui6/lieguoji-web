@@ -42,6 +42,21 @@ struct GrandInfoData: Decodable {
         let note: String
         let cooldownDays: Int
     }
+    struct ExpeditionRow: Decodable, Identifiable {
+        let id: String
+        let name: String
+        let regionKind: String
+        let cost: Int
+        let months: Int
+        let rewardLine: String
+        let flavor: String
+        let provinceIndex: Int
+        let provinceName: String
+        let status: String // "available" | "exploring" | "done"
+        let mine: Bool
+        let holderName: String
+        let progress: Int
+    }
 
     let gold: Double
     let hasPort: Bool
@@ -52,6 +67,7 @@ struct GrandInfoData: Decodable {
     let wonders: [WonderRow]
     let missions: [MissionRow]
     let mercenaries: [MercRow]
+    var expeditions: [ExpeditionRow]? = nil
 }
 
 extension GameModel {
@@ -82,6 +98,12 @@ extension GameModel {
     func hireMercenary(_ nation: Int, merc: String) async -> String? {
         let err = await edit("hireMercenary", ["n": nation, "merc": merc])
         if err == nil { GameFeel.shared.orderMarch() }
+        return err
+    }
+
+    func dispatchExpedition(_ nation: Int, site: String) async -> String? {
+        let err = await edit("dispatchExpedition", ["n": nation, "site": site])
+        if err == nil { GameFeel.shared.scrollOpen() }
         return err
     }
 }
@@ -431,5 +453,142 @@ struct NationMercenariesSubPage: View {
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 13)
+    }
+}
+
+// MARK: - 二级子页 4：四海探索与古迹远征（10 处秘境古迹，发掘即享宝藏、科技与永久加成）
+
+struct NationExplorationSubPage: View {
+    @ObservedObject var model: GameModel
+    let nation: Int
+    let alive: Bool
+    let onLocateProvince: (Int) -> Void
+    let onMessage: (String) -> Void
+    let onRefreshParent: () async -> Void
+
+    @State private var data: GrandInfoData?
+    @State private var filter = "all"
+    @State private var busy = false
+
+    private func reload() async {
+        data = await model.grandInfo(nation)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            if let data {
+                let sites = data.expeditions ?? []
+                let myDone = sites.filter { $0.status == "done" && $0.mine }
+                let myActive = sites.first { $0.status == "exploring" && $0.mine }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    EditorialFocusLead(
+                        eyebrow: "四海探索与古迹远征 · 现存国库 \(Int(data.gold).formatted()) 金",
+                        headline: myActive.map { "远征勘探中：\($0.name)（\($0.progress)/\($0.months)月）" }
+                            ?? (myDone.isEmpty ? "十处天下古迹待远征发掘" : "本国已发掘 \(myDone.count) 处传世秘境古迹"),
+                        detail: myActive.map { "位于\($0.provinceName)一带 · \($0.rewardLine)" }
+                            ?? (myDone.isEmpty ? "派遣远征队耗 160 金、历时 4 月勘探秘境，凯旋即获古藏金帛、科技突破与永久全国加成。" : myDone.map(\.name).joined(separator: " · ")),
+                        urgent: myActive != nil
+                    )
+                    if let act = myActive {
+                        InkBar(fraction: Double(act.progress) / Double(max(1, act.months)), color: Theme.seal, track: Theme.hairline, height: 3)
+                    }
+                    EditorialDivider()
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+
+                ChipPicker(items: [("all", "全部 \(sites.count) 处"), ("available", "待探索"), ("done", "已发掘/勘探")], selection: $filter)
+                    .padding(.horizontal, Theme.Layout.pageInset)
+
+                let shown = sites.filter { s in
+                    switch filter {
+                    case "available": return s.status == "available"
+                    case "done": return s.status != "available"
+                    default: return true
+                    }
+                }
+
+                if shown.isEmpty {
+                    Text("当前分类下暂无秘境古迹。").font(Theme.body).foregroundStyle(Theme.ink2)
+                        .padding(.horizontal, Theme.Layout.pageInset)
+                } else {
+                    Group2 {
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(shown.enumerated()), id: \.element.id) { idx, site in
+                                expeditionRow(site, hasActive: myActive != nil, gold: data.gold)
+                                if idx < shown.count - 1 { Divider2() }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                }
+            } else {
+                PanelPending(failed: false, busy: true) { Task { await reload() } }
+            }
+        }
+        .task { await reload() }
+    }
+
+    private func expeditionRow(_ s: GrandInfoData.ExpeditionRow, hasActive: Bool, gold: Double) -> some View {
+        let canSend = alive && s.status == "available" && !hasActive && gold >= Double(s.cost)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(s.name)
+                    .font(Theme.serif(16))
+                    .foregroundStyle(s.mine ? Theme.seal : Theme.ink)
+                PaperTag(text: s.regionKind, color: Theme.ink2, size: 10.5)
+                Spacer(minLength: 4)
+                if s.status == "done" {
+                    PaperTag(text: s.mine ? "本国已发掘" : "\(s.holderName)发掘", color: s.mine ? Theme.seal : Theme.ink2, size: 10.5)
+                } else if s.status == "exploring" {
+                    PaperTag(text: "\(s.holderName)勘探 \(s.progress)/\(s.months)月", color: Theme.seal, size: 10.5)
+                } else {
+                    Text("\(s.cost) 金 · \(s.months) 月")
+                        .font(Theme.sans(12.5))
+                        .foregroundStyle(gold >= Double(s.cost) ? Theme.ink : Theme.seal)
+                        .monospacedDigit()
+                }
+            }
+
+            Text(s.rewardLine)
+                .font(Theme.sans(13))
+                .foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("\(s.flavor) · 坐标：\(s.provinceName)一带")
+                .font(Theme.sans(12))
+                .foregroundStyle(Theme.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                if s.status == "available" {
+                    EditorialTactileButton(
+                        title: hasActive ? "已有远征队在外" : (gold < Double(s.cost) ? "国库不足（需 \(s.cost) 金）" : "派遣远征 · \(s.cost) 金"),
+                        icon: .views,
+                        accent: canSend,
+                        solid: canSend,
+                        compact: true,
+                        disabled: busy || !canSend
+                    ) {
+                        guard !busy else { return }
+                        busy = true
+                        Task {
+                            let err = await model.dispatchExpedition(nation, site: s.id)
+                            await reload()
+                            await onRefreshParent()
+                            onMessage(err ?? "远征队已启程前往探访「\(s.name)」！")
+                            busy = false
+                        }
+                    }
+                }
+                if s.provinceIndex >= 0 {
+                    EditorialTactileButton(title: "前往\(s.provinceName)", icon: .locate, compact: true) {
+                        onLocateProvince(s.provinceIndex)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 14)
     }
 }

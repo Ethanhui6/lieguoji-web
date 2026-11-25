@@ -298,6 +298,7 @@ public final class EngineService {
         case "claimMission": return command(engine?.claimMission(int("n"), missionId: str("mission")))
         case "startGoldenAge": return command(engine?.startGoldenAge(int("n")))
         case "hireMercenary": return command(engine?.hireMercenary(int("n"), mercId: str("merc")))
+        case "dispatchExpedition": return command(engine?.dispatchExpedition(int("n"), siteId: str("site")))
         default: return Reply(ok: false, reason: "未知请求 \(call)。")
         }
     }

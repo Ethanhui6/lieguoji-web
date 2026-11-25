@@ -191,6 +191,88 @@ extension Regimes {
         )
     }
 
+    /// v5.2.0 君主与统帅军事谋略（直接决定军队 AI 战术智商：合围补刀、避实击虚、集结齐发、残兵保全 vs 昏君微操送死）。
+    public struct TacticalIQ: Sendable {
+        public let score: Int
+        public let tier: Int
+        public let label: String
+        public let summary: String
+        public let commanderName: String
+        public let commanderMilitary: Int
+        public let rulerMilitary: Int
+        public let retreatRatio: Double
+        public let retreatMorale: Double
+        public let trapAbortRatio: Double
+        public let musterPatience: Double
+        public let focusWeight: Double
+        public let retryTicks: Int
+        public let blunderJitter: Double
+    }
+
+    public static func tacticalIQ(_ r: JS, nation: String, enemy: String? = nil) -> TacticalIQ {
+        let cmd = activeCommander(r, nation: nation, enemy: enemy)
+        let ldrId = r.people.nations[nation].leaderId
+        let ldr = governor(r, nation) ?? (ldrId.isNull ? nil : People.person(r, ldrId.asInt))
+        let rulerMil = ldr.map { Int(People.skills($0).military.rounded()) } ?? 50
+        let cmdMil = cmd?.military ?? rulerMil
+        let rEval = rulerAssessment(r, nation)
+
+        // 统帅占 62%，君主/掌权者军事素养占 38%，并叠加明君/昏君与名将特质实效
+        var raw = Double(cmdMil) * 0.62 + Double(rulerMil) * 0.38
+        if let cmd {
+            raw += Double(cmd.combatBonusPct) * 0.30
+        }
+        // 昏君掣肘与瞎指挥会直接拖垮军机智商；明君亲政则鼓舞全军令行禁止
+        switch rEval.tier {
+        case 2: raw += 10
+        case 1: raw += 5
+        case -1: raw -= 12
+        case -2: raw -= 24
+        default: break
+        }
+        let score = max(5, min(100, Int(raw.rounded())))
+        let tier: Int
+        let label: String
+        let summary: String
+        let retreatRatio: Double
+        let retreatMorale: Double
+        let trapAbortRatio: Double
+        let musterPatience: Double
+        let focusWeight: Double
+        let retryTicks: Int
+        let blunderJitter: Double
+
+        if score >= 80 {
+            tier = 2; label = "神机妙算"
+            summary = "主帅\(cmd?.name ?? "中枢")用兵如神：主动合围孤敌、避实击虚、集结齐发、残军善退保全"
+            retreatRatio = 1.32; retreatMorale = 34; trapAbortRatio = 1.42; musterPatience = 20; focusWeight = 1.55; retryTicks = 14; blunderJitter = 0
+        } else if score >= 64 {
+            tier = 1; label = "治军有方"
+            summary = "主帅\(cmd?.name ?? "中枢")调度有法：协同推进、重视解围与补给，少作无谓孤军消耗"
+            retreatRatio = 1.48; retreatMorale = 28; trapAbortRatio = 1.62; musterPatience = 17; focusWeight = 1.25; retryTicks = 17; blunderJitter = 0
+        } else if score >= 44 {
+            tier = 0; label = "循规蹈矩"
+            summary = "军机按常法调度推进，攻守中规中矩"
+            retreatRatio = 1.65; retreatMorale = 22; trapAbortRatio = 1.85; musterPatience = 14; focusWeight = 1.00; retryTicks = 20; blunderJitter = 12
+        } else if score >= 28 {
+            tier = -1; label = "用兵失度"
+            summary = "君主或将帅武略偏弱：集结松散、偶有轻敌冒进与调度迟滞"
+            retreatRatio = 2.05; retreatMorale = 15; trapAbortRatio = 2.45; musterPatience = 6; focusWeight = 0.65; retryTicks = 26; blunderJitter = 85
+        } else {
+            tier = -2; label = "昏君瞎指挥"
+            summary = "朝堂掣肘、将帅庸碌：分兵添油、盲冲坚城、残军不知及时撤退"
+            retreatRatio = 2.60; retreatMorale = 10; trapAbortRatio = 9.90; musterPatience = 3; focusWeight = 0.35; retryTicks = 32; blunderJitter = 165
+        }
+        return TacticalIQ(
+            score: score, tier: tier, label: label, summary: summary,
+            commanderName: cmd?.name ?? (ldr.map(NativeEngine.displayPersonName) ?? "无主帅"),
+            commanderMilitary: cmdMil, rulerMilitary: rulerMil,
+            retreatRatio: retreatRatio, retreatMorale: retreatMorale,
+            trapAbortRatio: trapAbortRatio, musterPatience: musterPatience,
+            focusWeight: focusWeight, retryTicks: retryTicks, blunderJitter: blunderJitter
+        )
+    }
+
     private static func computeLeverage(_ r: JS, _ id: String) -> Leverage {
         guard !r.regimes.isNull, r.regimes.enabled.isTruthy else { return Leverage() }
         var mil = 50.0, adm = 50.0, cha = 50.0
@@ -213,17 +295,23 @@ extension Regimes {
         let rulerEval = amp ? rulerAssessment(r, id) : RulerAssessment(tier: 0, label: "", attack: 0, defense: 0, income: 0, stability: 0, corruption: 0, summary: "")
         let strain = realmStrain(r, id)
         let grand = GrandSystems.leverageBonus(r, nationId: id)
+        let centMode = amp ? (r.regimes.nations[id].centralization.optionalString ?? "balanced") : "balanced"
+        let centAtk: Double = centMode == "central" ? 8 : 0
+        let centInc: Double = centMode == "central" ? 12 : (centMode == "autonomous" ? -10 : 0)
+        let centGrowth: Double = centMode == "autonomous" ? 3 : 0
+        let centStab: Double = centMode == "central" ? -6 : (centMode == "autonomous" ? 10 : 0)
+        let centCorr: Double = centMode == "central" ? 5 : (centMode == "autonomous" ? -6 : 0)
         var l = Leverage()
-        l.attack = (mil - 50) * (amp ? 1.25 : 0.8) + (fortune - 50) * 0.28 - graft * 0.18 + sum.attack + prof.attack + pTrait.attack + goodsBonus.attack + (cultDoc?.attack ?? 0) + rulerEval.attack + strain.attackDrag + grand.attack
+        l.attack = (mil - 50) * (amp ? 1.25 : 0.8) + (fortune - 50) * 0.28 - graft * 0.18 + sum.attack + prof.attack + pTrait.attack + goodsBonus.attack + (cultDoc?.attack ?? 0) + rulerEval.attack + strain.attackDrag + grand.attack + centAtk
         l.defense = (mil - 50) * (amp ? 0.72 : 0.4) + (cha - 50) * (amp ? 0.38 : 0.2) + (fortune - 50) * 0.28 - graft * 0.14 + sum.defense + prof.defense + pTrait.defense + goodsBonus.defense + (cultDoc?.defense ?? 0) + rulerEval.defense + strain.defenseBonus + grand.defense
-        l.income = (adm - 50) * (amp ? 1.25 : 0.8) - graft * 0.34 + sum.income + prof.income + pTrait.income + goodsBonus.income + (cultDoc?.income ?? 0) + rulerEval.income + strain.incomeDelta + grand.income
-        l.growth = (adm - 50) * (amp ? 0.16 : 0.1) + (cha - 50) * (amp ? 0.14 : 0.1) + sum.growth + pTrait.growth + goodsBonus.growth + (cultDoc?.growth ?? 0) + grand.growth
-        l.corruption = sum.corruption + prof.corruption + pTrait.corruption + (cultDoc?.corruption ?? 0) + rulerEval.corruption + strain.corruptionDelta + grand.corruption
+        l.income = (adm - 50) * (amp ? 1.25 : 0.8) - graft * 0.34 + sum.income + prof.income + pTrait.income + goodsBonus.income + (cultDoc?.income ?? 0) + rulerEval.income + strain.incomeDelta + grand.income + centInc
+        l.growth = (adm - 50) * (amp ? 0.16 : 0.1) + (cha - 50) * (amp ? 0.14 : 0.1) + sum.growth + pTrait.growth + goodsBonus.growth + (cultDoc?.growth ?? 0) + grand.growth + centGrowth
+        l.corruption = sum.corruption + prof.corruption + pTrait.corruption + (cultDoc?.corruption ?? 0) + rulerEval.corruption + strain.corruptionDelta + grand.corruption + centCorr
         _ = grit(r, id)
         let land = Double(gritCache?.counts[id] ?? 0), total = max(1, Double(gritCache?.counts.values.reduce(0, +) ?? 1))
         var owed = 0.0
         if !r.finance.nations[id].isNull { let income = max(1, monthlyIncome(r, id)); owed = min(15, debt(r, id) / income / 12 * 10) }
-        l.stability = 60 + (adm - 50) * (amp ? 0.50 : 0.35) + (crown - 50) * (amp ? 0.54 : 0.35) + (fortune - 50) * 0.42 - graft * 0.45 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability + pTrait.stability + goodsBonus.stability + (cultDoc?.stability ?? 0) + rulerEval.stability + strain.stabilityDelta + grand.stability
+        l.stability = 60 + (adm - 50) * (amp ? 0.50 : 0.35) + (crown - 50) * (amp ? 0.54 : 0.35) + (fortune - 50) * 0.42 - graft * 0.45 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability + pTrait.stability + goodsBonus.stability + (cultDoc?.stability ?? 0) + rulerEval.stability + strain.stabilityDelta + grand.stability + centStab
         return l
     }
     static func attributeMonth(_ r: JS, _ id: String, addGold: (Double) -> Void) {
@@ -467,24 +555,30 @@ extension Regimes {
               let city = r.world.cities.asArray.first(where: { $0.provinceId.asString == seed }) else { return nil }
         let land = region(r, owner, seed, max(1, size), byId), s = r.foundings, c = r.civilization
         let tag = "\(owner)|\(seed)|\(Int(r.clock.tick.asNumber))|rise", cityCulture = c.cities[city.id.asString].cultureId.optionalString ?? ""
-        // 潜在复国民族: 优先有真实历史法理（coreMonths）且复国未超过 3 次的旧邦；无历史法理时仅以较低概率复国，杜绝同一死国（如大金）无限反复复活。
+        // 潜在复国民族：严格要求在该州有真实历史法理（coreMonths > 18）、复国次数 < 2 且亡国已满 3 年（1080 天），
+        // 绝不再凭同文化随机复活任意亡国，彻底根治“占领一州就无限复国”。
         var heirs = [String]()
-        var coreHeir = false
         if restoring == nil, wanted == nil || wanted == "restoration" {
             let months = s.coreMonths[seed]
+            let nowDay = r.world.day.asNumber
+            let maxRestores: Double = UnitKinds.enabled ? 2 : 3
+            let minCoreMonths: Double = UnitKinds.enabled ? 18 : 6
             let eligible: (String) -> Bool = { nid in
-                nid != owner && !Vassals.alive(r, nid) && !isBlank(r, nid) && (r.sovereignty.restorations[nid].optionalNumber ?? 0) < 3
+                guard nid != owner && !Vassals.alive(r, nid) && !isBlank(r, nid) else { return false }
+                if (r.sovereignty.restorations[nid].optionalNumber ?? 0) >= maxRestores { return false }
+                if UnitKinds.enabled, !r.chronicle.ended.isNull, let endDay = r.chronicle.ended[nid].day.optionalNumber, nowDay - endDay < 1080 {
+                    return false
+                }
+                return true
             }
-            heirs = months.isNull ? [] : months.objectEntries.filter { $0.1.asNumber > 6 && eligible($0.0) }.map(\.0).sorted()
-            if !heirs.isEmpty {
-                coreHeir = true
-            } else {
+            heirs = months.isNull ? [] : months.objectEntries.filter { $0.1.asNumber > minCoreMonths && eligible($0.0) }.map(\.0).sorted()
+            if heirs.isEmpty && !UnitKinds.enabled {
                 heirs = r.world.nations.asArray.map(\.id.asString).filter {
                     eligible($0) && c.nations[$0].cultureId.optionalString == cityCulture
                 }.sorted()
             }
         }
-        let restoreProb = coreHeir ? 0.45 : 0.22
+        let restoreProb = UnitKinds.enabled ? 0.28 : 0.45
         let heir = restoring ?? (!heirs.isEmpty && (wanted == "restoration" || chance(tag + "|restore") < restoreProb) ? heirs[Int(draw(tag + "|heir") % UInt32(heirs.count))] : nil)
         if heir == nil && r.world.nations.length >= 160 { return nil }
         if wanted == "restoration" && heir == nil { return nil }
@@ -514,7 +608,9 @@ extension Regimes {
                 if cityCulture == "chinese" {
                     let dynPick = unusedName(r, NamingCatalog.dynastyPool(culture: "chinese"), tag + "|name")
                         ?? NamingCatalog.pickStateBase(culture: "chinese", mode: c.mode.optionalString ?? "historical-names", seed: tag + "|peasant", used: NamingCatalog.usedStateKeys(r), styleId: "dynasty")
-                    retitle(r, rebel, base: dynPick, style: "dynasty")
+                    let cleanPick = dynPick.map { NamingCatalog.cleanStateBase($0) } ?? ""
+                    let validDyn = !cleanPick.isEmpty && (cleanPick.count == 1 || NamingCatalog.chineseCompleteMonarchyTitles.contains(cleanPick))
+                    retitle(r, rebel, base: validDyn ? cleanPick : NamingCatalog.cleanStateBase(p.name.asString), style: validDyn ? "dynasty" : "peasant")
                 } else {
                     let regPick = unusedName(r, NamingCatalog.modernRegionStates[cityCulture] ?? [], tag + "|peasant-reg") ?? NamingCatalog.cleanStateBase(p.name.asString)
                     retitle(r, rebel, base: regPick, style: "peasant")
@@ -536,19 +632,55 @@ extension Regimes {
         Wars.reconcileLosses(r); Vassals.reconcileAlliances(r); DiplomacyBridge.reconcile(r); Wars.reconcileIdentities(r)
         RebelWar.startInternalWar(r, rebel: rebel, mother: owner, casusBelli: 14, legacyType: 2)
         RebelWar.spawn(r, rebel, max(3, min(30, land.count * 2)))
+        if UnitKinds.enabled && !r.regimes.isNull {
+            if r.regimes.provRebelCD.isNull { r.regimes.provRebelCD = JS.object() }
+            let cdUntil = r.world.day.asInt + 1800
+            for q in land { r.regimes.provRebelCD[q] = JS(cdUntil) }
+        }
         Rebellion.recordNew(r, s, owner)
         return (rebel, text)
     }
     /// Once a world-month: states that have lost the people's trust come apart.
     static func uprisingsMonth(_ r: JS, _ key: Int) {
+        // App 模式：月度主权法理归属整合——和平实控满 24 月或原法理主权国已灭亡且未处于交战的州郡，正式归入当前实控国法理领土，
+        // 避免残留旧法理引发反复割让/复国异常。
+        if UnitKinds.enabled, !r.foundings.isNull {
+            var activeWarPairs = Set<String>()
+            if !r.nativeWars.isNull {
+                for c in r.nativeWars.campaigns.asArray where c.endedTick.isNull {
+                    let ids = c.nations.asArray.map(\.asString)
+                    for i in 0..<ids.count {
+                        for j in (i + 1)..<ids.count {
+                            activeWarPairs.insert("\(ids[i])|\(ids[j])")
+                            activeWarPairs.insert("\(ids[j])|\(ids[i])")
+                        }
+                    }
+                }
+            }
+            var aliveSet = Set<String>()
+            for p in r.world.provinces.asArray { aliveSet.insert(p.controller.asString) }
+            for p in r.world.provinces.asArray {
+                let ctrl = p.controller.asString
+                guard let legal = p.legalOwner.optionalString, legal != ctrl else { continue }
+                if activeWarPairs.contains("\(ctrl)|\(legal)") { continue }
+                let pid = p.id.asString
+                let legalDead = !aliveSet.contains(legal)
+                let heldMonths = Rebellion.monthsSince(r, r.foundings.conquered[pid].time.asNumber)
+                if legalDead || heldMonths >= 24 {
+                    p.legalOwner = JS(ctrl)
+                }
+            }
+        }
         guard !r.foundings.isNull, r.foundings.enabled.isTruthy, Rebellion.monthsSince(r, Rebellion.never) >= Tuning.current.calmMonths else { return }
         let cityPids = Set(r.world.cities.asArray.map(\.provinceId.asString))
+        let nowDay = r.world.day.asInt
         for n in r.world.nations.asArray {
             let id = n.id.asString
             guard monthLandCount(r, id) >= 5, !isBlank(r, id) else { continue }
             let owned = monthLand(r, id)
             let b = book(r, id)
-            if let last = b.lastUprising.optionalNumber, Double(key) - last < 8 { continue }
+            let minGap: Double = UnitKinds.enabled ? 18 : 8
+            if let last = b.lastUprising.optionalNumber, Double(key) - last < minGap { continue }
             var calm = leverage(r, id).stability
             if isAtWar(r, id) { calm -= 6 }
             let tag = "\(id)|\(key)|uprising", risk = (max(0, 55 - calm) / 100 * 0.35 * Tuning.current.unrest + (owned.count > 20 ? 0.004 : 0)) * rule(r, "rebel")
@@ -556,8 +688,16 @@ extension Regimes {
             let capital = Rebellion.capitalProvince(r, id)
             var weighted = [(String, UInt32)]()
             for p in owned where p.id.asString != capital && cityPids.contains(p.id.asString) {
-                let distance = r.upperCombat.provinces[p.id.asString].distance.optionalNumber ?? 1
-                weighted.append((p.id.asString, UInt32(max(1, distance + 2 + Double(faithUnrest(r, p))))))
+                let pid = p.id.asString
+                if UnitKinds.enabled {
+                    // 战时占领地、新征服未满 24 个月的驻防绥靖区、或 5 年内刚起事过的州郡，不立即再次触发叛乱/复国。
+                    if let legal = p.legalOwner.optionalString, legal != id { continue }
+                    if !r.foundings.conquered[pid].isNull, Rebellion.monthsSince(r, r.foundings.conquered[pid].time.asNumber) < 24 { continue }
+                    if !r.regimes.provRebelCD.isNull, let cd = r.regimes.provRebelCD[pid].optionalNumber, Double(nowDay) < cd { continue }
+                    if Rebellion.provinceAtWar(r, pid) { continue }
+                }
+                let distance = r.upperCombat.provinces[pid].distance.optionalNumber ?? 1
+                weighted.append((pid, UInt32(max(1, distance + 2 + Double(faithUnrest(r, p))))))
             }
             guard !weighted.isEmpty else { continue }
             var roll = draw(tag + "|seed") % weighted.reduce(0) { $0 + $1.1 }, seed = weighted[0].0
@@ -693,16 +833,32 @@ extension NativeEngine {
         let r = run, nations = r.world.nations.asArray
         guard nations.indices.contains(index), let f = Regimes.reforms.first(where: { $0.id == reform }), !r.regimes.isNull else { return (false, "制度不存在。") }
         let nid = nations[index].id.asString
+        let nb = Regimes.book(r, nid)
+        let nowDay = r.world.day.asInt
+        let held = Regimes.heldReforms(r, nid).map(\.id)
+        if on && held.contains(f.id) { return (false, "\(f.name)已在施行之中，无需重复颁行。") }
+        if !on && !held.contains(f.id) { return (false, "\(f.name)尚未施行。") }
+        if UnitKinds.enabled {
+            let refUntil = nb.reformCooldownUntil.optionalNumber.map(Int.init) ?? 0
+            if nowDay < refUntil {
+                return (false, "变法更制尚在朝野磨合期，请待 \(refUntil - nowDay) 日后再动国制。")
+            }
+        }
         if on && Regimes.independentReformIds.contains(f.id) {
-            let held = Regimes.heldReforms(r, nid).map(\.id)
-            if held.contains(f.id) { return (true, "\(f.name)已在施行之中。") }
             let remainingIndep = held.filter { Regimes.independentReformIds.contains($0) && !f.conflicts.contains($0) }.count
             let cap = Regimes.maxIndependentReforms(r, nid)
             if remainingIndep >= cap {
                 return (false, "专项制度槽位已满（\(remainingIndep)/\(cap)），请先废止一项现行制度，或提升行政科技／任用贤能扩容。")
             }
         }
+        if on && UnitKinds.enabled {
+            let fin = r.finance.nations[nid]
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            guard gold >= 100 else { return (false, "国库不足 100 金，难以推行「\(f.name)」变法。") }
+            if !fin.isNull { fin.gold = JS(max(0, gold - 100)) }
+        }
         Regimes.setReform(r, nid, f, on: on)
-        return (true, on ? "已颁行\(f.name)（\(f.text)）" : "已废止\(f.name)")
+        if UnitKinds.enabled { nb.reformCooldownUntil = JS(nowDay + 90) }
+        return (true, on ? "耗 100 金颁行\(f.name)（\(f.text)）" : "已废止\(f.name)")
     }
 }

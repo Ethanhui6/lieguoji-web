@@ -39,16 +39,49 @@ public enum PeaceBridge {
     }
     /// The world as the peace queries read it.
     static func world(_ r: JS) -> PeaceWorld {
+        let provinces = r.world.provinces.asArray
         var index = [String: Int]()
-        for (i, p) in r.world.provinces.asArray.enumerated() { index[p.id.asString] = i + 1 }
+        var ownedByNation = [String: [String: JS]]()
+        var ownedKeysByNation = [String: [String]]()
+        for (i, p) in provinces.enumerated() {
+            let pid = p.id.asString, ctrl = p.controller.asString
+            index[pid] = i + 1
+            ownedByNation[ctrl, default: [:]][pid] = p
+            ownedKeysByNation[ctrl, default: []].append(pid)
+        }
+        // 大图性能优化：单次扫描预聚合各国陆海实力（保持与 strength() 完全一致的 float32 累加顺序，逐字节一致）。
+        var armyByNation = [String: Double]()
+        let cargo = r.transports.cargo.isNull ? [] : r.transports.cargo.asArray.map(\.army)
+        for a in r.world.armies.asArray where a.status.asString != "destroyed" {
+            let nid = a.nationId.asString
+            armyByNation[nid] = f((armyByNation[nid] ?? 0) + f(f(max(0, a.troops.asNumber)) / f(2000)))
+        }
+        for a in cargo where a.status.asString != "destroyed" {
+            let nid = a.nationId.asString
+            armyByNation[nid] = f((armyByNation[nid] ?? 0) + f(f(max(0, a.troops.asNumber)) / f(2000)))
+        }
+        var navyByNation = [String: Double]()
+        if !r.navy.fleets.isNull {
+            for fl in r.navy.fleets.asArray where fl.status.asString != "lost" {
+                let nid = fl.nationId.asString
+                navyByNation[nid] = f((navyByNation[nid] ?? 0) + f(f(max(0, min(5, fl.ships.asNumber))) / f(5)))
+            }
+        }
         let start = r.life.startDate
         return PeaceWorld(gameTime: r.life.gameTime.asNumber, secondsPerDay: r.life.secondsPerDay.asNumber, start: DiplomacyWorld.Start(year: start.year.asInt, month: start.month.asInt, day: start.day.asInt),
-                          provinceStates: r.world.provinces.asArray.map { Wars.stateNumber(r, $0.controller.asString) },
+                          provinceStates: provinces.map { Wars.stateNumber(r, $0.controller.asString) },
                           states: r.world.nations.asArray.map { n in
                               let id = n.id.asString, fin = r.finance.nations[id]
-                              return PeaceWorld.State(id: Wars.stateNumber(r, id), dead: !r.world.provinces.asArray.contains { $0.controller.asString == id },
-                                                      provinces: Wars.orderedProvinces(r, id).map { index[$0.id.asString]! }, gold: fin.gold.asNumber, goldPerMonth: fin.goldPerMonth.asNumber,
-                                                      armyCostGold: fin.armyCostGold.asNumber, strength: strength(r, id), lossThreshold: f(lossThreshold[r.civilization.nations[id].polity.asString]!),
+                              let owned = ownedByNation[id] ?? [:], keys = ownedKeysByNation[id] ?? []
+                              var seen = Set<String>(), ordered = [String]()
+                              let order = r.upperCombat.nations[id].provinceOrder
+                              for pid in (order.isNull ? [] : order.asArray.map(\.asString)) where owned[pid] != nil && seen.insert(pid).inserted { ordered.append(pid) }
+                              let orderedIndices = (ordered + keys.filter { !seen.contains($0) }).map { index[$0]! }
+                              let army = armyByNation[id] ?? 0, navy = navyByNation[id] ?? 0, land = Double(keys.count)
+                              let str = f(f(f(f(navy + navy) + f(army + army)) + f(f(land) * f(5))) + f(1))
+                              return PeaceWorld.State(id: Wars.stateNumber(r, id), dead: keys.isEmpty,
+                                                      provinces: orderedIndices, gold: fin.gold.asNumber, goldPerMonth: fin.goldPerMonth.asNumber,
+                                                      armyCostGold: fin.armyCostGold.asNumber, strength: str, lossThreshold: f(lossThreshold[r.civilization.nations[id].polity.asString]!),
                                                       autonomous: r.diplomacy.nations[id].optionalBool == true,
                                                       fightToEnd: UnitKinds.enabled && Armies.stateTraits(r, id).contains("FightToTheEnd") ? true : nil)
                           })
@@ -185,17 +218,29 @@ public enum PeaceBridge {
                 for st in w.states { let fin = r.finance.nations[nation(r, st.id)]; if fin.gold.asNumber != st.gold { fin.gold = JS(st.gold) } }
                 if restoreOccupations {
                     confirmed = confirmOccupiedCessions(r, war: terms, result: result)
-                    // App 模式：若防守主国全境沦陷（实控归零）且总法理州郡 ≤ 6 省、战败或崩溃，由占领方正式兼并全境，
-                    // 杜绝“全境占领 → 和谈归还占领地 → 第二/第三XX国循环”。
-                    if UnitKinds.enabled && (result.winnerSide == 0 || reason == 2) {
-                        let defNation = nation(r, terms.primaryDefenderId)
-                        let defControlled = r.world.provinces.asArray.filter { $0.controller.asString == defNation }.count
-                        let defLegal = r.world.provinces.asArray.filter { $0.legalOwner.optionalString == defNation }
-                        if defControlled == 0 && !defLegal.isEmpty && defLegal.count <= 6 {
-                            let attackers = Settlement.sideIDs(terms, 0)
+                    // App 模式：任意战败或实控归零的参战方（含盟友与中等国家，≤14 州），若全境沦陷则由占领方正式兼并，
+                    // 彻底杜绝“全境占领 → 和谈归还占领地 → 第二/第三XX国无限循环复国”。
+                    if UnitKinds.enabled && reason != 11 && (result.winnerSide != nil || reason == 2) {
+                        var ctrlCount = [String: Int]()
+                        var legalByNation = [String: [JS]]()
+                        for p in r.world.provinces.asArray {
+                            let cId = p.controller.asString
+                            ctrlCount[cId, default: 0] += 1
+                            if let lId = p.legalOwner.optionalString { legalByNation[lId, default: []].append(p) }
+                        }
+                        let side0 = Settlement.sideIDs(terms, 0)
+                        let side1 = Settlement.sideIDs(terms, 1)
+                        for part in terms.participants {
+                            let lostOrCollapsed = (result.winnerSide.map { $0 != part.side } ?? false) || reason == 2
+                            guard lostOrCollapsed else { continue }
+                            let defNation = nation(r, part.stateId)
+                            guard (ctrlCount[defNation] ?? 0) == 0,
+                                  let defLegal = legalByNation[defNation],
+                                  !defLegal.isEmpty, defLegal.count <= 14 else { continue }
+                            let victors = part.side == 0 ? side1 : side0
                             for p in defLegal {
                                 let ctrl = p.controller.asString
-                                guard ctrl != defNation, let cid = r.people.nations[ctrl].id.optionalNumber, attackers.contains(Int(cid)) else { continue }
+                                guard ctrl != defNation, let cid = r.people.nations[ctrl].id.optionalNumber, victors.contains(Int(cid)) else { continue }
                                 let pid = Wars.provinceNumber(s, p.id.asString)
                                 p.legalOwner = p.controller.clone()
                                 if pid > 0 {
@@ -232,12 +277,25 @@ public enum PeaceBridge {
         var restoredNations = Set<String>()
         if !endedEnemies.isEmpty {
             let livingRegistry = Set(r.world.nations.asArray.map(\.id.asString))
+            var ctrlCount = [String: Int]()
+            if UnitKinds.enabled {
+                for p in r.world.provinces.asArray { ctrlCount[p.controller.asString, default: 0] += 1 }
+            }
             for p in r.world.provinces.asArray {
                 let controller = p.controller.asString
                 guard let owner = p.legalOwner.optionalString, livingRegistry.contains(owner),
                       endedEnemies[controller]?.contains(owner) == true else { continue }
-                // 正式割让已改法理归属。停战双方其余仍属军事占领的州恢复原主。
                 let id = p.id.asString
+                // App 模式：若原主已实控归零（全境沦陷）或已记入亡国录（非玩家强制白和），不再凭空还地复活旧政权，直接完成法理归属变更。
+                if UnitKinds.enabled && reason != 11 {
+                    let alreadyEnded = !r.chronicle.ended.isNull && !r.chronicle.ended[owner].isNull
+                    if alreadyEnded || (ctrlCount[owner] ?? 0) == 0 {
+                        p.legalOwner = p.controller.clone()
+                        stripOffice(r, Wars.provinceNumber(s, id))
+                        continue
+                    }
+                }
+                // 正式割让已改法理归属。停战双方其余仍属军事占领的州恢复原主。
                 transferEconomy(r, id, controller, owner)
                 p.controller = JS(owner)
                 stripOffice(r, Wars.provinceNumber(s, id))
@@ -293,9 +351,19 @@ public enum PeaceBridge {
     /// advancePeace47.
     public static func advance(_ r: JS, monthStart: Bool) {
         let s = r.nativeWars
-        for id in s.campaigns.asArray.filter({ $0.endedTick.isNull }).map(\.id.asInt) {
-            let c = s.campaigns.asArray.first { $0.id.asInt == id }!
-            if c.nations.asArray.contains(where: { n in !r.world.provinces.asArray.contains { $0.controller.asString == n.asString } }) { settle(r, c, reason: 2) }
+        let openIds = s.campaigns.asArray.filter({ $0.endedTick.isNull }).map(\.id.asInt)
+        if !openIds.isEmpty {
+            var living = Set<String>()
+            for p in r.world.provinces.asArray { living.insert(p.controller.asString) }
+            for id in openIds {
+                guard let c = s.campaigns.asArray.first(where: { $0.id.asInt == id }), c.endedTick.isNull else { continue }
+                if c.nations.asArray.contains(where: { !living.contains($0.asString) }) {
+                    if settle(r, c, reason: 2) {
+                        living.removeAll(keepingCapacity: true)
+                        for p in r.world.provinces.asArray { living.insert(p.controller.asString) }
+                    }
+                }
+            }
         }
         if !monthStart || !r.diplomacy.worldAuto.isTruthy || r.life.currentDate.day.asInt != 1 { return }
         func complete() -> [JS] { s.campaigns.asArray.filter { $0.endedTick.isNull && $0.history.asString == "complete" } }

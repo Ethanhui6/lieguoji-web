@@ -151,11 +151,20 @@ public enum MaritimeWarfare {
         return false
     }
 
-    /// 国家当前跨海海运运力上限（未封锁本国港口 × 2 + 活跃舰队总船数 ÷ 2 + 船坞政令加成）。
-    /// 无未封锁海港时运力为 0（彻底杜绝无港陆军徒步踏海）。
+    /// 国家当前跨海海运运力上限（未封锁海港 × 5 + 现役战船 × 2 + 船坞/科技/政令加成 + 全局跨海运力规则倍率）。
+    /// 无沿海海港的内陆国运力为 0（严禁陆军徒步踏海）；若拥有海港但全港暂遭敌舰封锁，仍保留 2 支应急突围运力（并承受封锁与拦截战损），彻底杜绝岛国二十万大军彻底冻死。
     public static func seaTransportCapacity(_ r: JS, nation: String) -> Int {
         let ports = unblockedFriendlyPortIndices(r, nation: nation)
-        guard !ports.isEmpty else { return 0 }
+        let transportMult = Regimes.rule(r, "seaTransport")
+        if ports.isEmpty {
+            guard !r.portControl.isNull, !r.portControl.ports.isNull else { return 0 }
+            let ownsAnyPort = r.portControl.ports.objectEntries.contains { _, pc in
+                let lo = pc.landOwnerId.optionalString ?? ""
+                return !lo.isEmpty && RunWindow.access(r, nation, lo)
+            }
+            guard ownsAnyPort else { return 0 }
+            return max(2, Int((2.0 * transportMult).rounded()))
+        }
         let ships = Naval.fleets(r)
             .filter { $0.nationId.optionalString == nation && $0.status.asString != "lost" }
             .reduce(0) { $0 + max(0, $1.ships.asInt) }
@@ -167,7 +176,8 @@ public enum MaritimeWarfare {
             return sum + max(0, SeaDominion.shipyardLevel(r, provinceId: provinces[idx].id.asString) - 1)
         }
         let techBonus = max(0, WorldDepth.techLevel(r, nation: nation, branch: .naval) - 1)
-        return max(2, ports.count * 2 + ships + bonus + dockBonus + techBonus)
+        let raw = ports.count * 5 + ships * 2 + bonus * 2 + dockBonus * 3 + techBonus * 2 + 4
+        return max(4, Int((Double(raw) * transportMult).rounded()))
     }
 
     /// 统计该国当前已在海上航行或已排定渡海航程的陆军支数（可排除正在重下军令的军队本身）。

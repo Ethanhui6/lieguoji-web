@@ -190,6 +190,21 @@ extension NativeEngine {
         return (true, "\(fl.name.asString)奉命执行「\(m.label)」：\(m.note)")
     }
 
+    /// 全军水师战略统调：一键为该国全部现役舰队统一下达制海、护航、封锁、破交或归港修整指令。
+    public func setNationNavalDoctrine(_ nationIndex: Int, mission raw: String) -> (ok: Bool, reason: String) {
+        let r = run
+        let nations = r.world.nations.asArray
+        guard nations.indices.contains(nationIndex) else { return (false, "国家不存在。") }
+        guard let m = MaritimeWarfare.FleetMission(rawValue: raw) else { return (false, "未知的水师战略指令。") }
+        let nid = nations[nationIndex].id.asString
+        let myFleets = Naval.fleets(r).filter { $0.nationId.asString == nid && $0.status.asString != "lost" && $0.ships.asInt > 0 }
+        guard !myFleets.isEmpty else { return (false, "该国当前尚无现役水师舰队。") }
+        for fl in myFleets {
+            _ = setFleetMission(fl.id.asString, mission: m.rawValue)
+        }
+        return (true, "\(nations[nationIndex].name.asString)全水师（共 \(myFleets.count) 支舰队）已统一奉行「\(m.label)」。")
+    }
+
     /// 三舰种编制重编（格式 "主力,轻舰,炮舰"，总艘数 1…12，同步更新水兵、船体与海粮）。
     public func setFleetComposition(_ id: String, spec: String) -> (ok: Bool, reason: String) {
         let r = run

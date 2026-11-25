@@ -397,9 +397,8 @@ struct ReformCard: View {
                             Text(f.text).font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(2).minimumScaleFactor(0.8).frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(11).frame(maxWidth: .infinity, minHeight: 64, alignment: .topLeading)
-                        .background(f.on ? Theme.seal.opacity(0.06) : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(f.on ? Theme.seal.opacity(0.45) : Theme.line, lineWidth: 0.9))
-                        .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1.5)
+                        .background(f.on ? Theme.seal.opacity(0.06) : Theme.wash.opacity(0.48), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(f.on ? Theme.seal.opacity(0.32) : Theme.hairline, lineWidth: 0.65))
                     }
                     .buttonStyle(PressStyle())
                 }
@@ -459,13 +458,12 @@ func quickTile(_ title: String, _ symbol: String, destructive: Bool = false, _ a
             Text(title).font(Theme.label).lineLimit(1).minimumScaleFactor(0.72)
         }
         .foregroundStyle(destructive ? Theme.seal : Theme.ink)
-        .frame(maxWidth: .infinity).frame(height: 66)
-        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+        .frame(maxWidth: .infinity).frame(height: 62)
+        .background(destructive ? Theme.seal.opacity(0.05) : Theme.wash.opacity(0.48), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                .stroke(destructive ? Theme.seal.opacity(0.42) : Theme.line, lineWidth: 0.95)
+                .stroke(destructive ? Theme.seal.opacity(0.28) : Theme.hairline, lineWidth: 0.65)
         )
-        .shadow(color: Theme.ink.opacity(0.07), radius: 0, y: 1.5)
         .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
     }
     .buttonStyle(PressStyle())

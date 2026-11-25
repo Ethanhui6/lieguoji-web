@@ -336,8 +336,8 @@ final class WeatherOverlayView: UIView {
                 zoneLayers[z.province] = entry
             }
             let p = camera.toScreen(x: z.x, y: z.y, viewport: vp)
-            let pt = CGPoint(x: p.x, y: p.y - 18 * Double(k))
-            let onScreen = visible.contains(pt) && camera.scale >= 0.55
+            let pt = CGPoint(x: p.x, y: p.y)
+            let onScreen = visible.contains(pt) && camera.scale >= 0.42
             entry.layer.isHidden = !onScreen
             if onScreen {
                 entry.layer.position = pt
@@ -346,34 +346,100 @@ final class WeatherOverlayView: UIView {
         }
     }
 
+    private static let softHalo: CGImage? = UIGraphicsImageRenderer(size: CGSize(width: 48, height: 48)).image { ctx in
+        let colors = [
+            UIColor.white.withAlphaComponent(0.55).cgColor,
+            UIColor.white.withAlphaComponent(0.18).cgColor,
+            UIColor.white.withAlphaComponent(0.0).cgColor
+        ] as CFArray
+        if let g = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 0.55, 1]) {
+            ctx.cgContext.drawRadialGradient(g, startCenter: CGPoint(x: 24, y: 24), startRadius: 0, endCenter: CGPoint(x: 24, y: 24), endRadius: 24, options: [])
+        }
+    }.cgImage
+
+    /// 彻底废除违和的旧版贴纸图标，改为与地图融为一体的局部实景大气粒子与涟漪（飘雪旋风 / 旱地浮尘 / 雨澜波纹 / 瘴雾游气 / 丰年金辉）。
     private func makeZoneLayer(kind: Int) -> CALayer {
         let root = CALayer()
-        root.bounds = CGRect(x: 0, y: 0, width: 26, height: 26)
-        let artImage: UIImage? = {
-            switch kind {
-            case 1: return BundleArt.fxWeatherSnow
-            case 2: return BundleArt.fxWeatherDrought
-            case 3: return BundleArt.fxWeatherStorm
-            case 4: return BundleArt.fxPlague
-            default: return BundleArt.fxHarvest
-            }
-        }()
-        if let cg = artImage?.cgImage {
-            let sprite = CALayer()
-            sprite.frame = root.bounds
-            sprite.contents = cg
-            sprite.contentsGravity = .resizeAspect
-            sprite.minificationFilter = .trilinear
-            sprite.magnificationFilter = .linear
-            sprite.opacity = 0.90
-            root.addSublayer(sprite)
+        root.bounds = CGRect(x: 0, y: 0, width: 76, height: 76)
+
+        if kind == 3 {
+            // 洪涝：局部 36 帧雨澜涟漪与微雨斜丝，直接融于地图水面/地貌
+            let ripple = SpriteSheetLayer(spec: .atlasRainRipple36)
+            ripple.frame = CGRect(x: 10, y: 10, width: 56, height: 56)
+            ripple.opacity = 0.62
+            ripple.configure(spec: .atlasRainRipple36, state: .idle, fps: 24.0, phaseOffset: 0.15)
+            root.addSublayer(ripple)
+            return root
         }
-        let bob = CAKeyframeAnimation(keyPath: "transform.translation.y")
-        bob.values = [0, -2.2, 0, 1.4, 0]
-        bob.duration = 2.8
-        bob.repeatCount = .infinity
-        bob.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        root.add(EffectsView.calm(bob), forKey: "zoneFloat")
+
+        let localEmitter = CAEmitterLayer()
+        localEmitter.frame = root.bounds
+        localEmitter.emitterPosition = CGPoint(x: 38, y: 38)
+        localEmitter.emitterShape = .circle
+        localEmitter.emitterSize = CGSize(width: 52, height: 42)
+        localEmitter.renderMode = .unordered
+
+        let c = CAEmitterCell()
+        switch kind {
+        case 1:
+            // 暴雪灾区：局部加密细雪随风斜飘（零雪花图标贴纸）
+            c.contents = BundleArt.fxSnowflake?.cgImage ?? Self.softHalo
+            c.color = UIColor(red: 0.94, green: 0.98, blue: 1.0, alpha: 0.90).cgColor
+            c.birthRate = 6.5
+            c.lifetime = 2.6
+            c.lifetimeRange = 0.8
+            c.velocity = 18
+            c.velocityRange = 8
+            c.emissionLongitude = .pi * 0.62
+            c.emissionRange = 0.45
+            c.scale = Self.normScale(BundleArt.fxSnowflake?.cgImage ?? Self.softHalo, targetPt: 11.0)
+            c.scaleRange = Self.normScale(BundleArt.fxSnowflake?.cgImage ?? Self.softHalo, targetPt: 4.0)
+            c.spin = 0.85
+            c.alphaSpeed = -0.30
+        case 2:
+            // 赤地大旱：缓慢升腾的赭金燥热浮尘（零太阳贴纸）
+            c.contents = Self.sunMote
+            c.color = UIColor(red: 0.92, green: 0.58, blue: 0.20, alpha: 0.62).cgColor
+            c.birthRate = 4.2
+            c.lifetime = 3.0
+            c.lifetimeRange = 0.9
+            c.velocity = 12
+            c.velocityRange = 5
+            c.emissionLongitude = -.pi * 0.44
+            c.emissionRange = 0.40
+            c.scale = Self.normScale(Self.sunMote, targetPt: 13.0)
+            c.scaleRange = Self.normScale(Self.sunMote, targetPt: 4.5)
+            c.alphaSpeed = -0.22
+        case 4:
+            // 疾疫瘴区：贴地盘旋的低饱和枯青薄瘴气雾（零骷髅/毒泡贴纸）
+            c.contents = Self.softHalo
+            c.color = UIColor(red: 0.48, green: 0.54, blue: 0.34, alpha: 0.34).cgColor
+            c.birthRate = 2.6
+            c.lifetime = 3.8
+            c.lifetimeRange = 1.0
+            c.velocity = 7
+            c.velocityRange = 4
+            c.emissionRange = .pi * 2
+            c.scale = Self.normScale(Self.softHalo, targetPt: 28.0)
+            c.scaleSpeed = 0.08
+            c.alphaSpeed = -0.14
+        default:
+            // 金秋丰登：轻盈暖金麦香曦光微尘（零麦穗贴纸）
+            c.contents = Self.sunMote
+            c.color = UIColor(red: 0.98, green: 0.82, blue: 0.34, alpha: 0.68).cgColor
+            c.birthRate = 3.8
+            c.lifetime = 2.8
+            c.lifetimeRange = 0.8
+            c.velocity = 10
+            c.velocityRange = 5
+            c.emissionLongitude = -.pi * 0.5
+            c.emissionRange = 0.7
+            c.scale = Self.normScale(Self.sunMote, targetPt: 10.5)
+            c.scaleRange = Self.normScale(Self.sunMote, targetPt: 3.5)
+            c.alphaSpeed = -0.24
+        }
+        localEmitter.emitterCells = [c]
+        root.addSublayer(localEmitter)
         return root
     }
 }

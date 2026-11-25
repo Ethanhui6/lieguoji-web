@@ -263,6 +263,7 @@ public final class EngineService {
         case "fleetComposition": return command(engine?.setFleetComposition(str("armyId"), spec: str("text")))
         case "fleetRepair": return command(engine?.refitFleetNow(str("armyId")))
         case "fleetAdmiral": return command(engine?.assignFleetAdmiral(str("armyId")))
+        case "nationNavalDoctrine": return command(engine?.setNationNavalDoctrine(int("n"), mission: str("text")))
         case "nationDecree": return command(engine?.nationDecree(int("n"), kind: str("kind")))
         case "nationMilitaryOrder": return command(engine?.nationMilitaryOrder(int("n"), kind: str("kind")))
         case "nationDiplomacyOrder": return command(engine?.nationDiplomacyOrder(int("n"), kind: str("kind")))

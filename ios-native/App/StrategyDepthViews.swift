@@ -75,6 +75,12 @@ extension GameModel {
         return err
     }
 
+    func setNationNavalDoctrine(nation: Int, mission: String) async -> String? {
+        let err = await edit("nationNavalDoctrine", ["n": nation, "text": mission])
+        if err == nil { GameFeel.shared.orderAnchor() }
+        return err
+    }
+
     func buildProvinceInfra(province: Int, slot: String) async -> String? {
         let err = await edit("buildProvinceInfra", ["province": province, "slot": slot])
         if err == nil { GameFeel.shared.tap() }
@@ -456,6 +462,9 @@ struct FleetShipyardPanel: View {
     let map: WorldMap
     let onMessage: (String) -> Void
     @State private var busy = false
+    @State private var newHeavy = 2
+    @State private var newLight = 1
+    @State private var newGun = 1
 
     private var portProvince: Int { fleet.port }
     private var portName: String {
@@ -466,6 +475,50 @@ struct FleetShipyardPanel: View {
         let lvl = model.state?.ports?.first(where: { $0.province == portProvince })?.shipyardLevel ?? 1
         let maxCap = lvl >= 3 ? 12 : (lvl == 2 ? 8 : 5)
         let upgradeCost = lvl == 1 ? 260 : 480
+        let newTotal = max(1, newHeavy + newLight + newGun)
+        let newCost = newHeavy * 110 + newLight * 85 + newGun * 100
+        let nationFleets = (model.state?.fleets ?? []).filter { $0.nation == fleet.nation && $0.status != "lost" }
+
+        SectionLabel("全水师战略统调（共 \(nationFleets.count) 支舰队）")
+        Group2 {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("一键向本国全部现役舰队下达统一海域方略，便于跨海登陆护航或全线封港：")
+                    .font(Theme.caption).foregroundStyle(Theme.ink2)
+                HStack(spacing: 6) {
+                    ForEach(MaritimeWarfare.FleetMission.allCases, id: \.rawValue) { m in
+                        let shortTitle: String = {
+                            switch m {
+                            case .patrol: return "巡弋"
+                            case .escort: return "护航"
+                            case .blockade: return "封锁"
+                            case .raid: return "破交"
+                            case .repair: return "修整"
+                            }
+                        }()
+                        let isAllOn = !nationFleets.isEmpty && nationFleets.allSatisfy { ($0.mission ?? "patrol") == m.rawValue }
+                        Button {
+                            guard !busy else { return }
+                            busy = true
+                            Task {
+                                let err = await model.setNationNavalDoctrine(nation: fleet.nation, mission: m.rawValue)
+                                onMessage(err ?? "本国全水师已统一奉行「\(m.label)」方略")
+                                busy = false
+                            }
+                        } label: {
+                            Text(shortTitle)
+                                .font(Theme.caption)
+                                .foregroundStyle(isAllOn ? Theme.paperLight : Theme.ink)
+                                .frame(maxWidth: .infinity).padding(.vertical, 7)
+                                .background(isAllOn ? Theme.seal : Theme.wash.opacity(0.65), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(isAllOn ? Color.clear : Theme.hairline, lineWidth: 0.7))
+                        }
+                        .buttonStyle(PressStyle()).disabled(busy)
+                    }
+                }
+            }
+            .padding(14)
+        }
+        .padding(.horizontal, Theme.Layout.pageInset)
 
         SectionLabel("船坞扩建与自建舰队（\(portName)）")
         Group2 {
@@ -486,10 +539,10 @@ struct FleetShipyardPanel: View {
                             }
                         } label: {
                             Text("升\(lvl + 1)级·\(upgradeCost)金")
-                                .font(Theme.caption).foregroundStyle(Theme.jade)
+                                .font(Theme.caption).foregroundStyle(Theme.seal)
                                 .padding(.horizontal, 9).padding(.vertical, 5)
-                                .background(Theme.jade.opacity(0.10), in: Capsule())
-                                .overlay(Capsule().stroke(Theme.jade.opacity(0.32), lineWidth: 0.75))
+                                .background(Theme.seal.opacity(0.08), in: Capsule())
+                                .overlay(Capsule().stroke(Theme.seal.opacity(0.32), lineWidth: 0.7))
                         }
                         .buttonStyle(PressStyle()).disabled(busy)
                     } else {
@@ -498,38 +551,80 @@ struct FleetShipyardPanel: View {
                 }
 
                 Divider2()
-                Text("船台下令造舰（消耗国库，完工后自动编入舰队或成立新水师）：")
+                Text("为本舰队快速增造单舰（完工自动编入）：")
                     .font(Theme.caption).foregroundStyle(Theme.ink2)
 
                 HStack(spacing: 7) {
-                    buildChip("增造主力×1", cost: "110金", spec: "1:0:0", targetFleet: fleet.id)
-                    buildChip("增造快舰×1", cost: "85金", spec: "0:1:0", targetFleet: fleet.id)
-                    buildChip("增造炮舰×1", cost: "100金", spec: "0:0:1", targetFleet: fleet.id)
+                    buildChip("增造主力×1", cost: "110金", spec: "1,0,0", targetFleet: fleet.id)
+                    buildChip("增造快舰×1", cost: "85金", spec: "0,1,0", targetFleet: fleet.id)
+                    buildChip("增造炮舰×1", cost: "100金", spec: "0,0,1", targetFleet: fleet.id)
+                }
+
+                Divider2()
+                HStack {
+                    Text("在本港自订新水师编成（1–8 艘）").font(Theme.caption).foregroundStyle(Theme.ink2)
+                    Spacer()
+                    Text("共 \(newTotal) 艘 · \(newCost)金").font(Theme.caption).foregroundStyle(Theme.seal).monospacedDigit()
+                }
+                HStack(spacing: 6) {
+                    miniShipCounter(label: "主力", count: $newHeavy, others: newLight + newGun)
+                    miniShipCounter(label: "快舰", count: $newLight, others: newHeavy + newGun)
+                    miniShipCounter(label: "炮舰", count: $newGun, others: newHeavy + newLight)
                 }
 
                 Button {
                     guard !busy, portProvince >= 0 else { return }
                     busy = true
+                    let spec = "\(newHeavy),\(newLight),\(newGun)"
                     Task {
-                        let err = await model.queueShipbuilding(nation: fleet.nation, province: portProvince, fleetId: nil, spec: "1:1:1")
-                        onMessage(err ?? "已在\(portName)船台立项编成全新水师（主1/快1/炮1）")
+                        let err = await model.queueShipbuilding(nation: fleet.nation, province: portProvince, fleetId: nil, spec: spec)
+                        onMessage(err ?? "已在\(portName)船台立项编成全新水师（主\(newHeavy)/快\(newLight)/炮\(newGun)）")
                         busy = false
                     }
                 } label: {
                     HStack(spacing: 6) {
-                        InkIcon(glyph: .anchor, size: 14, weight: 1.8)
-                        Text("在本港另立新舰队（主1/快1/炮1 · 295金）").font(Theme.label)
+                        PhosphorIcon(glyph: .anchor, size: 14, weight: .light)
+                        Text("立项另建新舰队（主\(newHeavy)/快\(newLight)/炮\(newGun) · \(newCost)金）").font(Theme.label)
                     }
-                    .foregroundStyle(Theme.seal)
-                    .frame(maxWidth: .infinity).padding(.vertical, 9)
-                    .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.seal.opacity(0.30), lineWidth: 0.8))
+                    .foregroundStyle(Theme.paperLight)
+                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                    .background(Theme.seal, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(PressStyle()).disabled(busy || portProvince < 0)
             }
             .padding(14)
         }
         .padding(.horizontal, Theme.Layout.pageInset)
+    }
+
+    private func miniShipCounter(label: String, count: Binding<Int>, others: Int) -> some View {
+        HStack(spacing: 4) {
+            Text(label).font(Theme.caption).foregroundStyle(Theme.ink2)
+            Spacer(minLength: 2)
+            Button {
+                GameFeel.shared.tap()
+                if count.wrappedValue > 0 && count.wrappedValue + others > 1 { count.wrappedValue -= 1 }
+            } label: {
+                Text("−").font(Theme.label).foregroundStyle(Theme.ink)
+                    .frame(width: 22, height: 22)
+                    .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
+            }.buttonStyle(.plain)
+            Text("\(count.wrappedValue)").font(Theme.label).foregroundStyle(Theme.ink).monospacedDigit().frame(minWidth: 14)
+            Button {
+                GameFeel.shared.tap()
+                if count.wrappedValue + others < 8 { count.wrappedValue += 1 }
+            } label: {
+                Text("+").font(Theme.label).foregroundStyle(Theme.ink)
+                    .frame(width: 22, height: 22)
+                    .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
+            }.buttonStyle(.plain)
+        }
+        .padding(.horizontal, 7).padding(.vertical, 6)
+        .frame(maxWidth: .infinity)
+        .background(Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Theme.hairline, lineWidth: 0.65))
     }
 
     private func buildChip(_ title: String, cost: String, spec: String, targetFleet: String) -> some View {
@@ -544,11 +639,11 @@ struct FleetShipyardPanel: View {
         } label: {
             VStack(spacing: 2) {
                 Text(title).font(Theme.caption).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
-                Text(cost).font(Theme.kai(10)).foregroundStyle(Theme.ink2)
+                Text(cost).font(Theme.kai(10.5)).foregroundStyle(Theme.ink2)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 7).padding(.horizontal, 4)
-            .background(Theme.paper.opacity(0.70), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(Theme.ink.opacity(0.14), lineWidth: 0.75))
+            .background(Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Theme.hairline, lineWidth: 0.65))
         }
         .buttonStyle(PressStyle()).disabled(busy || portProvince < 0)
     }

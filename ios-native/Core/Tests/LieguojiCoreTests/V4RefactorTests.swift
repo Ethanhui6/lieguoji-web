@@ -223,4 +223,51 @@ final class V4RefactorTests: XCTestCase {
         XCTAssertTrue(text.contains("之战爆发"), text)
         XCTAssertFalse(text.contains("第1次"), text)
     }
+
+    func testV45NavalRulesDoctrineShipbuildingAndOverseasWarCouncil() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+        let r = engine.run
+
+        // 1. 天下规则「水师规模 / 跨海运力」上下限注册与真实运力倍增生效
+        XCTAssertNotNil(Regimes.ruleRanges["navyScale"])
+        XCTAssertNotNil(Regimes.ruleRanges["seaTransport"])
+        XCTAssertEqual(Naval.attackCount(3), 3)
+        XCTAssertGreaterThanOrEqual(Naval.attackCount(5), 4)
+
+        let fleets = Naval.fleets(r).filter { $0.status.asString != "lost" }
+        if let first = fleets.first {
+            let nationId = first.nationId.asString
+            let nationIdx = r.world.nations.asArray.firstIndex { $0.id.asString == nationId } ?? 0
+            let baseCap = MaritimeWarfare.seaTransportCapacity(r, nation: nationId)
+            _ = engine.setWorldRule("seaTransport", percent: 250)
+            let boostedCap = MaritimeWarfare.seaTransportCapacity(r, nation: nationId)
+            if baseCap > 0 {
+                XCTAssertGreaterThan(boostedCap, baseCap)
+            }
+
+            // 2. 全水师战略统调一次性切换同国所有舰队方略
+            let docRes = engine.setNationNavalDoctrine(nationIdx, mission: "escort")
+            XCTAssertTrue(docRes.ok, docRes.reason)
+            for fl in Naval.fleets(r) where fl.nationId.asString == nationId && fl.status.asString != "lost" {
+                XCTAssertEqual(MaritimeWarfare.fleetMeta(r, fleet: fl).mission, .escort)
+            }
+
+            // 3. 船坞造舰编成同时兼容逗号与冒号分隔符（修复 1:0:0 历史 Bug）
+            r.finance.nations[nationId].gold = JS(5000.0)
+            if let portIdx = r.world.provinces.asArray.firstIndex(where: { $0.id.asString == first.portProvinceId.asString }) {
+                let resComma = engine.queueShipbuilding(nationIndex: nationIdx, provinceIndex: portIdx, fleetId: nil, spec: "2,1,1")
+                XCTAssertTrue(resComma.ok, resComma.reason)
+                let resColon = engine.queueShipbuilding(nationIndex: nationIdx, provinceIndex: portIdx, fleetId: first.id.asString, spec: "1:0:0")
+                XCTAssertTrue(resColon.ok, resColon.reason)
+            }
+
+            // 4. 调高水师规模规则后扩编引擎正常放大编队，无越界无崩溃
+            _ = engine.setWorldRule("navyScale", percent: 250)
+            let beforeCount = Naval.fleets(r).filter { $0.status.asString != "lost" }.count
+            Shipyards.expandNavies(r)
+            let afterCount = Naval.fleets(r).filter { $0.status.asString != "lost" }.count
+            XCTAssertGreaterThanOrEqual(afterCount, beforeCount)
+        }
+    }
 }

@@ -178,9 +178,8 @@ struct MenuSheet: View {
             }
             .padding(13)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(accent ? Theme.seal.opacity(0.38) : Theme.line, lineWidth: 0.95))
-            .shadow(color: Theme.ink.opacity(0.07), radius: 0, y: 1.5)
+            .background(accent ? Theme.seal.opacity(0.05) : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(accent ? Theme.seal.opacity(0.28) : Theme.hairline, lineWidth: 0.7))
             .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
         }
         .buttonStyle(PressStyle())
@@ -293,13 +292,10 @@ struct MenuRow: View {
             .frame(width: 24).foregroundStyle(Theme.ink)
             Text(title).font(Theme.body).foregroundStyle(Theme.ink)
             Spacer()
-            PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light)
-                .foregroundStyle(Theme.ink2)
-                .frame(width: 24, height: 24)
-                .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
+            PhosphorIcon(glyph: .chevronRight, size: 13, weight: .light)
+                .foregroundStyle(Theme.ink2.opacity(0.68))
         }
-        .padding(.horizontal, 4).padding(.vertical, 12).contentShape(Rectangle())
+        .padding(.horizontal, 4).padding(.vertical, 13).contentShape(Rectangle())
     }
 }
 

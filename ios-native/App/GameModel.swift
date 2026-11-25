@@ -1250,9 +1250,10 @@ import LieguojiCore
                 case .peace, .restoration, .marriage, .treaty, .regime, .harvest: GameFeel.shared.news(.success)
                 case .capture, .extinction, .capital, .succession: GameFeel.shared.newsTap()
                 }
-                // 高倍速下收短停留时长，保证传报始终与当前日期同步；1×/2× 下从容阅览。
-                let baseSeconds: Double = (h.kind == .war || h.kind == .coup || h.kind == .ultimatum) ? 2.4 : (h.kind == .capture ? 1.6 : 2.1)
-                let seconds: Double = (self.speed >= 4 && !ShotTour.on) ? min(baseSeconds, 1.55) : baseSeconds
+                // 留足从容阅读时间，杜绝尚未看清便一闪而过；轻点或上滑可随时立即收起。
+                let isMajor = [Herald.Kind.war, .coup, .ultimatum, .uprising, .extinction, .regime, .succession, .restoration].contains(h.kind)
+                let baseSeconds: Double = isMajor ? 3.6 : (h.kind == .capture ? 2.5 : 3.0)
+                let seconds: Double = (self.speed >= 4 && !ShotTour.on) ? max(2.2, baseSeconds * 0.78) : baseSeconds
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
                 // A host under load may take longer than the banner's normal lifetime to take the shot.
                 if ShotTour.on {

@@ -288,6 +288,40 @@ extension ArmyOrders {
         // 主攻: the enemy to finish first. Armies already committed keep it from changing every week.
         var frontier = [String: [Int]]()
         for p in stateBorders(r, nation, enemySet) { frontier[provinces[p].controller.asString, default: []].append(p) }
+        let hasLandFront = !frontier.isEmpty
+        // 跨海远征统筹（解决岛国大军滞留本土、或陆权大国不发兵攻打海外岛敌的问题）：
+        // 凡无陆地接壤的海外敌国，只要本国拥有海港，直接将敌方海港与沿海登陆点纳入主力进攻纵队。
+        let overseasEnemies = enemySet.subtracting(Set(frontier.keys)).sorted()
+        var overseasSet = Set<String>()
+        if !overseasEnemies.isEmpty, let sea = Naval.sea, !sea.ports.isEmpty {
+            let portPidSet = Set(sea.ports.map(\.provinceId))
+            let myPorts = sea.ports.filter { port in
+                guard let idx = c.provinceAt[port.provinceId] else { return false }
+                return RunWindow.access(r, nation, provinces[idx].controller.asString)
+            }
+            if !myPorts.isEmpty {
+                let geo = geography(r)
+                for enemy in overseasEnemies {
+                    let enemyProvs = provinces.indices.filter { provinces[$0].controller.asString == enemy }
+                    let beachheads = enemyProvs.filter { portPidSet.contains(provinces[$0].id.asString) || geo.coasts.contains($0) }
+                    let pool = beachheads.isEmpty ? enemyProvs : beachheads
+                    let ranked = pool.sorted { a, b in
+                        let pa = portPidSet.contains(provinces[a].id.asString) ? 0 : 1
+                        let pb = portPidSet.contains(provinces[b].id.asString) ? 0 : 1
+                        if pa != pb { return pa < pb }
+                        let ca = center(a), cb = center(b)
+                        let da = myPorts.reduce(Double.infinity) { min($0, jsHypot(ca.x - $1.center.x, ca.y - $1.center.y)) }
+                        let db = myPorts.reduce(Double.infinity) { min($0, jsHypot(cb.x - $1.center.x, cb.y - $1.center.y)) }
+                        return da != db ? da < db : a < b
+                    }
+                    let chosen = Array(ranked.prefix(6))
+                    if !chosen.isEmpty {
+                        frontier[enemy] = chosen
+                        overseasSet.insert(enemy)
+                    }
+                }
+            }
+        }
         var committed = [String: Double]()
         for f in forces { if let t = f.target, enemySet.contains(provinces[t].controller.asString) { committed[provinces[t].controller.asString, default: 0] += f.troops } }
         var invaders = [String: Double]()
@@ -317,11 +351,10 @@ extension ArmyOrders {
 
         // 分守: the borders we are not attacking across keep a holding force; a host too small to divide does not.
         var hold = [WarCouncil.Post]()
-        // 京畿驻军 (app rule, at the player's request): at war the capital keeps a standing guard of about
-        // an eighth of the host, first call on the holding budget. The original weighs the capital and
-        // its neighbours only in its peacetime garrison choice (FindTargetIdleProvince, chooseIdle).
-        if forces.count >= 2, let cp = capital, !invaded.contains(cp) {
-            hold.append(post(cp, need: max(average, mine * 0.12), mustHold: true))
+        // 京畿驻军 (app rule): 纯岛国海外出征时（无陆地战线），仅留 1 军守都（forces >= 4），释放大部兵力跨海远征！
+        let needCapGuard = hasLandFront ? (forces.count >= 2) : (forces.count >= 4)
+        if needCapGuard, let cp = capital, !invaded.contains(cp) {
+            hold.append(post(cp, need: max(average, mine * (hasLandFront ? 0.12 : 0.08)), mustHold: true))
         }
         if forces.count >= 3 {
             let others = contact.keys.filter { $0 != order.first && !RunWindow.access(r, nation, $0) }.sorted { x, y in
@@ -400,27 +433,33 @@ extension ArmyOrders {
                 return v
             }
             let sorted = list.map { (p: $0, v: value($0)) }.sorted { x, y in x.v != y.v ? x.v < y.v : x.p < y.p }
-            for item in sorted.prefix(k == 0 ? columns : max(1, columns / 2)) {
+            let isOverseasFront = overseasSet.contains(enemy)
+            let frontCols = isOverseasFront ? max(2, min(6, (forces.count + 1) / 2)) : (k == 0 ? columns : max(1, columns / 2))
+            for item in sorted.prefix(frontCols) {
                 // The enemy next door will come to its aid: half of them count.
                 var nearby = 0.0
                 for q in provinces[item.p].neighbors.asArray {
                     if let qi = c.provinceAt[q.asString], enemySet.contains(provinces[qi].controller.asString) { nearby += foes(qi) }
                 }
-                let need = max((foes(item.p) + nearby * 0.5) * 1.4, siege)
+                let baseNeed = max((foes(item.p) + nearby * 0.5) * (isOverseasFront ? 1.65 : 1.4), isOverseasFront ? max(siege * 1.6, mine * 0.28) : siege)
+                let need = baseNeed
                 // A stronghold the whole host could not take is left for later.
                 if need > max(freeTroops, mine * 0.5) * 1.1 && !attack.isEmpty { continue }
                 attack.append(post(item.p, need: need))
-                var best = -1, bestDistance = Double.infinity
-                for q in provinces[item.p].neighbors.asArray {
-                    guard let qi = c.provinceAt[q.asString], provinces[qi].controller.asString == nation, foes(qi) == 0 else { continue }
-                    let at = center(qi)
-                    let d: Double = jsHypot(at.x - cx, at.y - cy)
-                    if d < bestDistance || (d == bestDistance && qi < best) { bestDistance = d; best = qi }
+                if !isOverseasFront {
+                    var best = -1, bestDistance = Double.infinity
+                    for q in provinces[item.p].neighbors.asArray {
+                        guard let qi = c.provinceAt[q.asString], provinces[qi].controller.asString == nation, foes(qi) == 0 else { continue }
+                        let at = center(qi)
+                        let d: Double = jsHypot(at.x - cx, at.y - cy)
+                        if d < bestDistance || (d == bestDistance && qi < best) { bestDistance = d; best = qi }
+                    }
+                    if best >= 0 { rally[item.p] = best }
                 }
-                if best >= 0 { rally[item.p] = best }
             }
         }
-        let duties = WarCouncil.assign(forces: forces, defend: defend, hold: hold, holdBudget: mine * 0.35, attack: attack)
+        let holdBudget = hasLandFront ? (mine * 0.35) : (mine * 0.14)
+        let duties = WarCouncil.assign(forces: forces, defend: defend, hold: hold, holdBudget: holdBudget, attack: attack)
         return WarCouncil.muster(duties, forces: forces, attack: attack, rally: rally)
     }
 }

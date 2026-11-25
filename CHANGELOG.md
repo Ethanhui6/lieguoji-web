@@ -1,5 +1,42 @@
 # 更新日志
 
+## 4.5.0 / build 176 — 2026-11-24
+
+### 一、全站字体统一、特色朱砂红回归、呼吸感修复与游戏内外 100% 视觉对齐
+- **根除点击标题/页签字体跳变 & 替换古怪 Cormorant 下沉数字（`LieguojiApp.swift`、`EditorialComponents.swift`、`PaperControls.swift`）**：
+  - 将 `Theme.serif`、`Theme.numeral`、`Theme.sans`、`Theme.kai` 全部收敛至经典的离线全字库正楷 **`TW-Kai-98_1`**，彻底消除点击标签或标题时在 `Noto Serif SC` 与 `TW-Kai` 间切换的割裂感；国家/军事/排行页面所有数值全面换回经典等宽正楷对齐数字（`.monospacedDigit()`），彻底告别 `Cormorant Garamond` 大小参差的下沉数字。
+- **全面回归列国纪特色朱砂红（`#A83226`）与疏朗留白呼吸感**：
+  - 所有主操作按钮（`PrimaryLabel`、`EditorialInkButton`、`EditorialTactileButton(solid: true)`、`SealButton`、`HeroAction`、新世界/自绘地图/史记/政令/排行选中态）全面由突兀黑块回归招牌朱砂红；
+  - 拆除次级按钮与列表行箭头外圈厚重边框与 `1.5pt` 硬影，改以轻淡宣纸底（`Theme.wash`）与 `0.65pt` 极细淡墨线托底，恢复疏朗古籍呼吸感；
+  - 修复 `BundleArt.carvedSeal(for:)` 漏配「郡/县/道/部」导致州郡详情页错显「龍」印的 Bug（现准确亮出真刻「邑」印）。
+- **游戏外（标题页 / 新世界 / 自绘地图）与游戏内 100% 同源对齐（`TitleViews.swift`、`MapEditor.swift`、`WorldSheets.swift`、`MenuSheets.swift`、`QuickSheet.swift`）**：
+  - 标题页、新世界向导（同步修复地图勘测栏「陆地」意外折成两行）、自绘地图工坊全套笔刷/步骤条/快捷条，与游戏内全部弹窗统一至同一套温润宣纸 + 朱砂红 + 统一正楷风格。
+
+### 二、顶部大事传报彻底丝滑 60/120fps（零掉帧、清晰可读）
+- **根除帧率暴跌元凶（`HeraldScene.swift`、`InkVideoPlayer.swift`）**：
+  - 废除每秒 30 次触发布局重算的 `TimelineView` + 动态 `paperW` 宽度动画与离屏 `Canvas` 重绘，改为固定几何尺寸 + 纯 GPU 合成 SwiftUI `.snappy(duration: 0.24)` 展卷；
+  - 传报缩略画卷改用 `ImageIO` 后台线程按 `maxPx: 240` 下采样异步解码（彻底消除主线程全尺寸 JPEG 解码卡顿）。
+- **拉长可读停留节奏（`GameModel.swift`）**：
+  - 重大战报/继统/改制停留提升至 `3.6s`、常规大事 `3.0s`、攻城 `2.5s`，即便 `4×–16×` 高倍速推演仍保留 `≥2.2s` 清晰阅读窗口，不再一闪而过。
+
+### 三、四季分明回归 × 灾异天气彻底融入地图 × 卷轴与远景细节精修
+- **零发热四时冷暖回归 + GPU 局部天灾着色 + 轻量流云掠影（`MapRenderer.swift`）**：
+  - 严守单 Pass `framebufferOnly = true` 与零 `vnoise` 低温红线，大幅增强春夏秋冬四时地形/海域色温反差（冬季积雪覆盖率与北洋流冰显著可辨、秋日金赭暖调、春日嫩碧、轻量双正弦解析流云掠影）；
+  - 恢复 GPU `weatherUniforms` 局部灾区地表着色（雪灾银白霜覆、旱灾龟裂黄褐、洪涝深青水渍、瘟疫暗晦瘴气、五谷丰登金芒），与地形自然融为一体。
+- **彻底清除违和旧版卡通灾异贴纸图标（`WeatherOverlay.swift`、`MapEffects.swift`）**：
+  - 全面废除地图上漂浮的旧版雪花/太阳/乌云/骷髅卡通徽章贴纸，替换为纯地图原生局部粒子（寒霜飘雪、旱地扬尘、雨漪波纹、低空瘴岚、丰年微芒）；
+  - 精修手绘卷轴边距比例使画心更舒展；全图远景（`scale < 0.48`）自动隐藏堆叠白字伤亡飘字，看海更干净。
+
+### 四、彻底解困岛国大军 × 水师大幅扩编 × 精细海权调节与全水师统调
+- **打通岛国大军跨海出征全链路（`WarCouncil.swift`、`MaritimeWarfare.swift`、`ArmyOrders.swift`、`Shipyards.swift`、`Naval.swift`、`Custom.swift`）**：
+  - `WarCouncil.warPlan` 正式纳入无陆邻海外敌国两栖战线（按敌港与沿海州郡分派 2–6 路主力大军跨海登陆，纯岛国本土留防占比由 `35%` 降至 `14%`，4 军以上即可留 1 军护都其余跨海出征）；
+  - `MaritimeWarfare.seaTransportCapacity` 显著扩容海运运力，并在港口全部遭封锁时允许有港岛国强行突围渡海（`2×` 突围运力）；`ArmyOrders` 放开跨海抢滩多军集结与封锁突围登船；
+  - `Shipyards.expandNavies` 接入开局首日成军（`Custom.enableAppRules`），岛国/滨海大国按疆域扩编至 `3–10` 支主力多舰水师（全图上限 `260` 支），`Naval.attackCount` 放宽 3 支以内全数出击、4 支以上出动 ≥78%，`tryEscort` 修正护航粮草余量门槛，`tryPortAttack` 优先击破封锁本国海港的敌舰。
+- **精细海军调节与造舰修复（`TacticalSystems.swift`、`ArmyCommands.swift`、`WarRuleSettings.swift`、`StrategyDepthViews.swift`、`WorldSheets.swift`）**：
+  - 修复隐藏多版的 `queueShipbuilding` 编成参数分隔符 Bug（兼容 `,` 与 `:` 且统一造价 `110/85/100`）；
+  - 天下规则新增「水师规模（25%–400%）」与「跨海运力（50%–400%）」独立调节滑杆；
+  - 军事 › 水师页与舰队船坞页新增一键「全水师战略统调（巡弋 / 护航 / 封锁 / 破交 / 修整）」与 1–8 艘三舰种自订新水师造舰台。
+
 ## 4.4.0 / build 175 — 2026-11-24
 
 ### 一、全站字体、按钮触感与游戏内外 UI 全面视觉对齐（Phase 1.5 + Phase 2）

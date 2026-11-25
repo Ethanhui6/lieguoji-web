@@ -654,14 +654,14 @@ extension NativeEngine {
         guard !MaritimeWarfare.isPortBlockaded(r, provinceId: targetPid, landOwner: nid) else {
             return (false, "目标海港正遭敌舰封锁，无法开工造舰。")
         }
-        let parts = spec.split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
+        let parts = spec.split(whereSeparator: { $0 == "," || $0 == ":" }).compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
         guard parts.count == 3 else { return (false, "造舰编成参数无效。") }
         let h = max(0, parts[0]), l = max(0, parts[1]), g = max(0, parts[2])
         let total = h + l + g
-        guard (1...6).contains(total) else { return (false, "单批造舰须为 1 至 6 艘。") }
+        guard (1...8).contains(total) else { return (false, "单批造舰须为 1 至 8 艘。") }
 
         let timberDiscount = Trade.holdings(r, nid)[1, default: 0] > 0 ? 0.85 : 1.0
-        let rawCost = Double(h * 140 + l * 95 + g * 105) * timberDiscount
+        let rawCost = Double(h * 110 + l * 85 + g * 100) * timberDiscount
         let cost = rawCost.rounded()
         let fin = r.finance.nations[nid]
         let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)

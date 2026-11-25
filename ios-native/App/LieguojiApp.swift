@@ -7,8 +7,8 @@ import LieguojiCore
     init() {
         CrashBreadcrumb.install()
         Theme.registerBundledFonts()
-        let barFont = UIFont(name: Theme.serifFontName, size: 17) ?? UIFont(name: Theme.fontName, size: 17) ?? .systemFont(ofSize: 17, weight: .semibold)
-        let segFont = UIFont(name: Theme.fontName, size: 14.5) ?? UIFont(name: Theme.serifFontName, size: 14) ?? .systemFont(ofSize: 14, weight: .medium)
+        let barFont = UIFont(name: Theme.fontName, size: 17) ?? .systemFont(ofSize: 17, weight: .semibold)
+        let segFont = UIFont(name: Theme.fontName, size: 14.5) ?? .systemFont(ofSize: 14, weight: .medium)
         UISegmentedControl.appearance().setTitleTextAttributes([.font: segFont], for: .normal)
         UINavigationBar.appearance().titleTextAttributes = [.font: barFont]
         // 后台异步预热宣纸 256px 纹理与核心 Phosphor 矢量路径（约 300KB 内存），根除首开详情页顿挫。
@@ -20,11 +20,11 @@ import LieguojiCore
     var body: some Scene { WindowGroup { RootView().font(Theme.body).preferredColorScheme(.light).environment(\.colorScheme, .light) } }
 }
 
-/// 新中式极简古籍编辑风三色体系 × 古典书卷三级离线字体规范（零 iOS 系统默认字体）：
-/// - 宣纸底色：`#F5F0E6`（主纸面）/ `#FAF7F0`（亮纸面与触感按钮面）
-/// - 松烟暖墨：`#241D17`（主文字与深墨主按钮）/ `#5E564E`（辅助灰墨）/ `rgba(36,29,23,0.14)`（1px 淡墨分割线）
-/// - 唯一强调色：朱砂红 `#A83226`（仅用于选中态、关键进度条、警示与真实篆刻印章）
-/// - 三级古典离线字体：`Noto Serif SC`（思源宋体主标题） + `Cormorant Garamond`（等宽衬线核心数字） + `TW-Kai`（古典正楷正文/按钮/HUD）
+/// 新中式极简古籍编辑风三色体系 × 统一全字库正楷（TW-Kai）经典书卷排版：
+/// - 宣纸底色：`#F5F0E6`（主纸面）/ `#FAF7F0`（亮纸面）
+/// - 松烟暖墨：`#241D17`（主文字）/ `#5E564E`（辅助灰墨）/ `rgba(36,29,23,0.11)`（极细淡墨分割线）
+/// - 特色朱砂红：`#A83226`（主按钮、选中态、关键进度条、警示与真实篆刻印章）
+/// - 统一离线字族：`TW-Kai-98_1`（标题/页签/正文/按钮/经典等宽数字全站一致，绝不切换字形、绝不落回系统字体）
 enum Theme {
     static let fontName = "TW-Kai-98_1"
     static private(set) var serifFontName = "NotoSerifSC-ExtraLight"
@@ -46,14 +46,14 @@ enum Theme {
     }
 
     static let paper = Color(red: 0.961, green: 0.941, blue: 0.902)       // #F5F0E6 宣纸暖白
-    static let paperLight = Color(red: 0.980, green: 0.969, blue: 0.941)  // #FAF7F0 亮宣白（触感按钮面）
+    static let paperLight = Color(red: 0.980, green: 0.969, blue: 0.941)  // #FAF7F0 亮宣白
     static let paper2 = paperLight
-    static let ink = Color(red: 0.141, green: 0.114, blue: 0.090)         // #241D17 浓松烟暖墨（楷体高对比更清晰）
+    static let ink = Color(red: 0.141, green: 0.114, blue: 0.090)         // #241D17 松烟暖墨
     static let ink2 = Color(red: 0.369, green: 0.337, blue: 0.306)        // #5E564E 辅助灰墨
-    static let hairline = Color(red: 0.141, green: 0.114, blue: 0.090).opacity(0.14) // 1px 淡墨分割线
-    static let line = Color(red: 0.141, green: 0.114, blue: 0.090).opacity(0.24)     // 按钮清晰描边线
-    static let wash = Color(red: 0.922, green: 0.894, blue: 0.847)        // 浅绢按钮按压/底衬色
-    static let seal = Color(red: 0.659, green: 0.196, blue: 0.149)        // #A83226 朱砂红（唯一强调色）
+    static let hairline = Color(red: 0.141, green: 0.114, blue: 0.090).opacity(0.11) // 极细淡墨分割线（留白呼吸感）
+    static let line = Color(red: 0.141, green: 0.114, blue: 0.090).opacity(0.16)     // 柔润纸边线
+    static let wash = Color(red: 0.922, green: 0.894, blue: 0.847)        // 浅绢底衬色
+    static let seal = Color(red: 0.659, green: 0.196, blue: 0.149)        // #A83226 特色朱砂红（主按钮与核心强调色）
     static let jade = Color(red: 0.247, green: 0.333, blue: 0.286)        // 克制青墨（仅地图语义与兼容位）
     static let gold = Color(red: 0.545, green: 0.435, blue: 0.247)        // 暗古金（仅兼容位）
     static let danger = seal
@@ -64,19 +64,17 @@ enum Theme {
         return Color(red: Double(c.r), green: Double(c.g), blue: Double(c.b))
     }
 
-    /// 一级标题字体：思源宋体（Noto Serif SC），压住史书厚重感。
-    static func serif(_ size: CGFloat) -> Font { .custom(serifFontName, size: size) }
-    /// 二级核心数值字体：Cormorant Garamond 高对比衬线数字（配合 .monospacedDigit() 防抖动）。
-    static func numeral(_ size: CGFloat) -> Font { .custom(numeralFontName, size: size) }
-    /// 三级正文与交互字体：彻底弃用 iOS 系统默认字体，全面回归古典正楷（TW-Kai）并作光学字号补偿（清晰锐利、书卷气十足）。
+    /// 全局统一古典正楷字体（TW-Kai）：标题、页签、正文与核心数字共享同一古籍笔韵，
+    /// 彻底消除点击页签或标题时的字体跳变割裂感，并回归旧版清秀等高数字字形。
+    static func serif(_ size: CGFloat) -> Font { .custom(fontName, size: size + (size <= 16 ? 0.6 : 0.4)) }
+    static func numeral(_ size: CGFloat) -> Font { .custom(fontName, size: size) }
     static func sans(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        let boost: CGFloat = size <= 13 ? 1.2 : (size <= 15 ? 0.9 : 0.4)
+        let boost: CGFloat = size <= 13 ? 1.1 : (size <= 15 ? 0.8 : 0.4)
         return .custom(fontName, size: size + boost)
     }
-    /// 兼容旧调用位：大号走思源宋体，正文/按钮走古典正楷（零系统字体）。
-    static func kai(_ size: CGFloat) -> Font { size >= 19 ? serif(size) : .custom(fontName, size: size + (size <= 13 ? 0.8 : 0.4)) }
+    static func kai(_ size: CGFloat) -> Font { .custom(fontName, size: size + (size <= 13 ? 0.8 : 0.4)) }
 
-    /// 统一古籍编辑五阶字号：标题 23（思源宋体）、分节 16.5（思源宋体）、正文 15（古典正楷）、标注 13.5、注释 12.5。
+    /// 统一古籍编辑五阶字号（全系 TW-Kai，靠字号、字距与朱墨明暗自然分层）。
     static var title: Font { serif(23) }
     static var section: Font { serif(16.5) }
     static let body = sans(14.8, weight: .regular)
@@ -235,25 +233,24 @@ struct PrimaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
         GameActionLabel(title: title, symbol: symbol)
-            .font(Theme.serif(15.5))
-            .tracking(1.2)
+            .font(Theme.serif(16))
+            .tracking(1.4)
             .frame(maxWidth: .infinity).frame(minHeight: 48).padding(.horizontal, 16)
             .foregroundStyle(Theme.paperLight)
-            .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.paperLight.opacity(0.18), lineWidth: 0.75).padding(3))
+            .background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.paperLight.opacity(0.24), lineWidth: 0.7).padding(3))
     }
 }
 struct SecondaryLabel: View {
     let title: String; let symbol: String
     var body: some View {
         GameActionLabel(title: title, symbol: symbol)
-            .font(Theme.sans(14.5, weight: .medium))
+            .font(Theme.sans(14.5, weight: .regular))
             .tracking(0.6)
             .frame(maxWidth: .infinity).frame(minHeight: 46).padding(.horizontal, 16)
             .foregroundStyle(Theme.ink)
             .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line, lineWidth: 0.95))
-            .shadow(color: Theme.ink.opacity(0.08), radius: 0, y: 1.5)
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line, lineWidth: 0.7))
     }
 }
 
@@ -573,6 +570,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("4.5.0", ["【全站字体统一 × 回归特色朱砂红 × 恢复疏朗呼吸感 × 游戏内外完全一致】彻底消除点击页签或标题时字体来回跳变的割裂感，全站标题、页签、正文、按钮及国家/军事等数据全面统一为经典全字库正楷（TW-Kai）与老版等宽数字（告别古怪的 Cormorant 下沉数字）；所有核心主按钮与选中态全面回归列国纪特色朱砂红（#A83226），拆除次级按钮与列表箭头的厚重描边硬影，恢复疏朗留白与宣纸呼吸感；游戏外标题页、新世界向导（同步修复「陆地」折行）、自绘地图工坊与游戏内所有面板实现 100% 同源设计对齐，并修复州郡页「郡」字印错用「龙」印的问题。",
+                   "【顶部大事传报彻底丝滑不掉帧 × 可读节奏调优】彻底移除 HeraldScene 每秒 30 次触发 SwiftUI 全卷重排与 Canvas 离屏重绘的掉帧元凶，并将缩略画卷改为 ImageIO 后台异步低分辨率解码（零主线程卡顿），纯 GPU 合成丝滑展开；同步将大事传报停留时长上调至 2.5–3.6 秒（高倍速仍保留 ≥2.2 秒），每一条战报、继统与诏令都能从容看清。",
+                   "【四季分明回归 × 灾异天气彻底融入地图 × 卷轴与远景细节精修】在守住零发热单 Pass 架构下大幅拉升春夏秋冬四时土地/海面冷暖对比（冬覆积雪冰封、北洋寒冰流浮、秋染金赭、春润嫩碧、轻量解析流云掠影）；彻底废除地图上突兀的旧版雪灾/旱灾/水患/瘟疫卡通贴纸图标，改为与地图融为一体的 GPU 局部地面覆雪/旱裂/洪涝/瘟瘴/丰稔着色 + 原生局部落雪/沙尘/雨漪/瘴岚微粒；精修手绘卷轴边比例，并在缩至全图远景时自动隐藏堆叠伤亡数字。",
+                   "【彻底解困岛国大军 × 水师大幅扩编 × 精细海权调节与统调】全面打通岛国与滨海大国跨海登陆链路：军机处（WarCouncil）新增海外两栖战线并大幅压低纯岛国本土死守占比（35%→14%），大幅扩容跨海海运运力并支持封锁下强行突围渡海，开局即成军多支多舰水师且允许单国扩编至 3–10 支（上限 260 舰）；修复长期隐藏的船坞造舰编成参数分隔符 Bug；天下诏令新增「水师规模（25–400%）」与「跨海运力（50–400%）」调节滑杆，水师/舰队页新增一键「全水师战略统调（巡弋/护航/封锁/破交/修整）」与自订三舰种新水师造舰台。"]),
         ("4.4.0", ["【全站告别 iOS 系统字体 × 清晰触感按钮 × 游戏内外全面视觉对齐】全站正文字体彻底停用系统 PingFang，统一升级为古典三阶字系：思源宋体（Noto Serif SC）压镇国名与大标题、经典全字库正楷（TW-Kai）承载全站正文/按钮/页签/HUD、Cormorant Garamond 呈现等宽衬线核心数据；所有操作按钮统一实装亮宣纸细框 + 立体底缘或深墨实体主钮，一眼分明不再与正文混淆；游戏外标题页/新世界向导/存档卷宗/设置页/更新日志与游戏内 HUD/列国/军事/州郡/外交/史记/长按快捷面板/大事传报全部视觉对齐，并彻底清零最后 15 处残留旧系统图标（全站 100% 统一 Phosphor Icons + 新增「邑」「盟」两枚真实石刻朱砂印，共 7 枚真篆印）；新增设置项支持 HUD「常驻（默认） / 静置自动隐去」双模式自由切换。",
                    "【深度实测玩法修复：强盛水师跨海出征 × 承平巡边换防 × 帝王崩逝传报 × 根除低质战役刷屏】岛国与滨海大国开局即扩编多支护航水师并月度自主造舰扩充至 2–6 支，开放 1–2 支舰队全数出击跨海制海、下调远洋补给警戒线并扩大海运运力，陆军主动将海外敌国海港与海岸纳入远征目标，岛国与大国彻底告别无舰出战；和平时期军队每 40–74 日按确定性周期巡边换防，大地图不再死寂静止；新增元首/皇帝驾崩、逝世、圆寂、禅让与大选更替专属传报横幅（去重防刷屏）；重构战史战役判定，仅总兵力逾 2.4 万的主力大会战、都城保卫战或 4 军会战才播报（全局 120 日冷却并改称「XX之战」），彻底终结「第1次XX战役」频繁刷屏。",
                    "【零缩放图层错位 × 博物馆级真实手绘卷轴边框 × 地图光影/动画全面回归（低温零闪退）】拖拽、双指捏合、惯性滑行与运镜全程启用同帧 CATransaction 事务与共享帧时钟锁定，彻底消除缩放时地图底图、军队棋子与地名兵力数字分离错位；地图四框正式实装真实手绘古风宋锦织锦横边、紫檀金箍卷轴与四角白玉铜扣包角（0% 压盖地图画心，坚持干净清爽的地图内景绝不铺设杂乱照相贴图）；在严守单 Pass 零发热零闪退架构下，全面回归宋画青绿浅海大陆架与日照铜版水波、西北山川光影浮雕、高倍缩放双尺度无缝宣纸纤维、军团真实航向踏步倾身与交战突刺、60fps 战局特效（自动温控步降）与零私有 KVC 的手绘四季飞花/秋枫/冬雪/细雨涟漪天气层，并同步修补模块 4/5 残留帝制词与 AI 国策 360 日防抖锁。"]),

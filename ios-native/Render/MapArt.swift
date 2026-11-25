@@ -80,7 +80,7 @@ enum BundleArt {
 
     static func carvedSeal(for text: String) -> UIImage? {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if t.contains("邑") || t.contains("州") || t.contains("城") || t.contains("省") || t.contains("疆") || t.contains("图") || t.contains("地") {
+        if t.contains("邑") || t.contains("州") || t.contains("郡") || t.contains("县") || t.contains("道") || t.contains("城") || t.contains("省") || t.contains("疆") || t.contains("图") || t.contains("地") || t.contains("部") {
             return sealStampCity ?? sealStampDragon
         }
         if t.contains("盟") || t.contains("交") || t.contains("和") || t.contains("约") || t.contains("聘") {

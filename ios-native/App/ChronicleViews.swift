@@ -241,9 +241,9 @@ struct ChronicleFilterBar: View {
                         Text(nation).font(Theme.sans(12, weight: .medium)).lineLimit(1)
                         PhosphorIcon(glyph: .close, size: 10, weight: .light)
                     }
-                    .foregroundStyle(Theme.paper2)
+                    .foregroundStyle(Theme.paperLight)
                     .padding(.horizontal, 12).frame(height: 40)
-                    .background(Theme.ink, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .background(Theme.seal, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
                 .buttonStyle(PressStyle())
             }

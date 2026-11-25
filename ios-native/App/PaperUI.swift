@@ -429,13 +429,11 @@ struct StatisticsSheet: View {
                                         .background {
                                             let shape = RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
                                             if on {
-                                                shape.fill(Theme.ink)
+                                                shape.fill(Theme.seal)
                                                     .matchedGeometryEffect(id: "stat-cat", in: catPill)
-                                                    .overlay(shape.stroke(Theme.seal.opacity(0.55), lineWidth: 0.9))
                                             } else {
-                                                shape.fill(Theme.paperLight)
-                                                    .overlay(shape.stroke(Theme.line, lineWidth: 0.9))
-                                                    .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1.5)
+                                                shape.fill(Theme.wash.opacity(0.55))
+                                                    .overlay(shape.stroke(Theme.hairline, lineWidth: 0.65))
                                             }
                                         }
                                     }
@@ -865,7 +863,7 @@ struct InkBusy: View {
     }
 }
 
-/// 核心主操作按钮：严守三色铁律（松烟暖墨深底 #2C241E + 宣纸白字 #FAF7F0，无阴影渐变）。
+/// 核心主操作按钮：恢复招牌特色朱砂红 `#A83226` 配宣纸白字与极细内书框。
 struct SealButton: View {
     let title: String
     var busy = false
@@ -875,10 +873,11 @@ struct SealButton: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 if busy { InkBusy(tint: Theme.paperLight, track: Theme.paperLight.opacity(0.35)).frame(width: 44) }
-                Text(title).font(Theme.sans(15, weight: .medium)).tracking(0.8)
+                Text(title).font(Theme.serif(15.5)).tracking(1.0)
             }
             .foregroundStyle(Theme.paperLight).frame(maxWidth: .infinity).frame(height: 46)
-            .background(Theme.ink.opacity(disabled ? 0.35 : 1), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .background(Theme.seal.opacity(disabled ? 0.35 : 1), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.paperLight.opacity(0.24), lineWidth: 0.7).padding(3))
         }
         .buttonStyle(PressStyle()).disabled(disabled || busy)
     }

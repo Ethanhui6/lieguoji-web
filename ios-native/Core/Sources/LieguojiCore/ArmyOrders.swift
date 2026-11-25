@@ -104,10 +104,23 @@ public enum ArmyOrders {
             let allowSea = r.reorganization.active[id].isNull
             let strictMaritime = UnitKinds.enabled && r.regimes.enabled.isTruthy && allowSea && (Naval.sea?.ports.isEmpty == false)
             let unblockedPorts = strictMaritime ? MaritimeWarfare.unblockedFriendlyPortIndices(r, nation: nation) : []
-            // 港口登船 (app worlds): 有海港体系时严禁陆军徒步踏海，必须自本国或友邦未封锁海港登船。
+            let fallbackOwnPorts: Set<Int> = {
+                guard strictMaritime && unblockedPorts.isEmpty, let sea = Naval.sea else { return [] }
+                var out = Set<Int>()
+                let provs = r.world.provinces.asArray
+                for port in sea.ports {
+                    if let idx = provs.firstIndex(where: { $0.id.asString == port.provinceId }),
+                       RunWindow.access(r, nation, provs[idx].controller.asString) {
+                        out.insert(idx)
+                    }
+                }
+                return out
+            }()
+            let allowedEmbarkPorts = unblockedPorts.isEmpty ? fallbackOwnPorts : unblockedPorts
+            // 港口登船 (app worlds): 有海港体系时严禁陆军从无港海岸徒步踏海，必须自本国或友邦海港登船（全港遭封锁时允许有限应急突围）。
             let embark: ((Int) -> Double)? = r.regimes.enabled.isTruthy && allowSea ? {
                 if strictMaritime {
-                    return { q in unblockedPorts.contains(q) ? 0 : 1_000_000_000 }
+                    return { q in allowedEmbarkPorts.contains(q) ? 0 : 1_000_000_000 }
                 }
                 let ports = portProvinces(r), cost = embarkPenalty(g)
                 return { q in ports.contains(q) ? 0 : cost }
@@ -115,21 +128,21 @@ public enum ArmyOrders {
             guard let path = g.path(from: here.cell, to: target, allowSea: allowSea, canEnterProvince: { q in
                 canTraverse(r, nation: nation, controller: r.world.provinces[q].controller.asString, anchor: anchor, retreat: v)
             }, embark: embark, aStar: r.regimes.enabled.isTruthy, seaRate: r.regimes.enabled.isTruthy ? 0.5 : 1, terrainCost: r.regimes.enabled.isTruthy) else { return .failure(Refused(reason: allowSea ? "没有符合当前外交通行限制的海陆路线。" : "重编期间保留陆上行军，暂不能进入海域。")) }
-            // 跨海运力与未封锁港口核验：自陆地发起渡海时必须从可用港口出发且具备剩余海运运力
+            // 跨海运力与海港核验：自陆地发起渡海时必须从可用港口出发且具备剩余海运运力
             if strictMaritime && g.provinces.indices.contains(here.cell) && g.provinces[here.cell] >= 0 {
                 if let firstWaterIdx = path.nodes.firstIndex(where: { g.provinces.indices.contains($0) && g.provinces[$0] < 0 }) {
                     let seaCap = MaritimeWarfare.seaTransportCapacity(r, nation: nation)
                     guard seaCap > 0 else {
-                        return .failure(Refused(reason: "本国无可用未封锁海港，陆军无法登船渡海（请先夺回或解除港口封锁）。"))
+                        return .failure(Refused(reason: "本国无沿海海港，陆军无法登船渡海（请先夺取沿海良港）。"))
                     }
                     let embarkLandCell = firstWaterIdx > 0 ? path.nodes[firstWaterIdx - 1] : here.cell
                     let embarkProv = g.provinces.indices.contains(embarkLandCell) ? Int(g.provinces[embarkLandCell]) : -1
-                    if embarkProv < 0 || !unblockedPorts.contains(embarkProv) {
-                        return .failure(Refused(reason: "陆军无法从无港或被封锁海岸直接踏海，需经己方未封锁海港登船。"))
+                    if embarkProv < 0 || !allowedEmbarkPorts.contains(embarkProv) {
+                        return .failure(Refused(reason: "陆军无法从无港海岸直接踏海，需经己方海港登船。"))
                     }
                     let inUse = MaritimeWarfare.activeSeaTransports(r, nation: nation, excludingArmyId: id)
                     if inUse >= seaCap {
-                        return .failure(Refused(reason: "跨海海运运力已满（当前 \(inUse)/\(seaCap) 支船队），请扩建海运船坞、增造战舰或待前批登陆。"))
+                        return .failure(Refused(reason: "跨海海运运力已满（当前 \(inUse)/\(seaCap) 支船队），请扩建船坞、增造战舰或调高跨海运力规则。"))
                     }
                 }
             }
@@ -576,7 +589,7 @@ public enum ArmyOrders {
                                     let db = (provinces[b].center.x.asNumber - cx) * (provinces[b].center.x.asNumber - cx) + (provinces[b].center.y.asNumber - cy) * (provinces[b].center.y.asNumber - cy)
                                     return da != db ? da < db : a < b
                                 }
-                            for p in far.prefix(6) { add(p) }
+                            for p in far.prefix(10) { add(p) }
                         }
                     }
                 } else {
@@ -627,11 +640,12 @@ public enum ArmyOrders {
                 let uncovered = candidates.filter { invadedSet.contains($0.id) && foes($0.id) * 1.2 > friends($0.id) }
                 if !uncovered.isEmpty { candidates = uncovered }
                 else {
-                    // 分兵合击: a target needs only so many troops, half again what stands there (or, with
-                    // nobody there, about two columns for the siege). One that the comrades marching on it
-                    // already cover is left to them, so the armies spread along the front instead of all
-                    // pouring onto one point (the old 集中兵力 rule snowballed every army onto one target).
-                    func needed(_ p: Int) -> Double { max(foes(p) * 1.4, mine * 1.2) }
+                    // 分兵合击: 陆地战线按 1.4× 敌军分路推进；跨海两栖登陆允许多路大军集中登陆同一滩头建立稳固桥头堡！
+                    let myFeat = geo.cellFeature[location.cell]
+                    func needed(_ p: Int) -> Double {
+                        let crossSea = (geo.provinceFeature[provinces[p].id.asString] ?? -1) != myFeat
+                        return crossSea ? max(foes(p) * 2.0, mine * 3.0) : max(foes(p) * 1.4, mine * 1.2)
+                    }
                     let open = candidates.filter { friends($0.id) < needed($0.id) }
                     if !open.isEmpty { candidates = open }
                 }

@@ -44,17 +44,17 @@ struct ChipPicker<T: Hashable>: View {
         } label: {
             VStack(spacing: 8) {
                 Text(item.1)
-                    .font(on ? Theme.serif(14.5) : Theme.sans(14, weight: .regular))
-                    .tracking(on ? 1.0 : 0.3)
+                    .font(Theme.serif(15))
+                    .tracking(0.8)
                     .foregroundStyle(on ? Theme.seal : Theme.ink2)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
                 ZStack {
-                    Color.clear.frame(height: 1.75)
+                    Color.clear.frame(height: 1.8)
                     if on {
                         Rectangle()
                             .fill(Theme.seal)
-                            .frame(height: 1.75)
+                            .frame(height: 1.8)
                             .matchedGeometryEffect(id: "chip-underline", in: pill)
                     }
                 }

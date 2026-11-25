@@ -1070,11 +1070,11 @@ struct EditorView: View {
             }
             .frame(width: width, height: height)
             .frame(maxWidth: width == nil ? .infinity : nil)
-            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .background(on ? Theme.seal : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
             .overlay(alignment: .topTrailing) {
                 if t.target != nil || t == .island {
                     Circle()
-                        .fill(on ? Theme.paper2.opacity(0.82) : t.swatch)
+                        .fill(on ? Theme.paperLight.opacity(0.85) : t.swatch)
                         .frame(width: 4.5, height: 4.5)
                         .overlay(Circle().stroke(on ? Theme.seal.opacity(0.35) : Theme.ink.opacity(0.18), lineWidth: 0.5))
                         .padding(4.5)
@@ -1082,7 +1082,7 @@ struct EditorView: View {
             }
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .stroke(on ? Theme.gold.opacity(0.42) : Theme.line, lineWidth: on ? 1 : 0.8)
+                    .stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.65)
             )
         }
         .buttonStyle(PressStyle())
@@ -1091,12 +1091,12 @@ struct EditorView: View {
     private func quickTerrainChip(_ title: String, glyph: InkGlyph, active: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 4) {
-                InkIcon(glyph: glyph, size: 13).foregroundStyle(active ? Theme.paper2 : Theme.seal)
-                Text(title).font(Theme.caption).foregroundStyle(active ? Theme.paper2 : Theme.ink)
+                InkIcon(glyph: glyph, size: 13).foregroundStyle(active ? Theme.paperLight : Theme.seal)
+                Text(title).font(Theme.caption).foregroundStyle(active ? Theme.paperLight : Theme.ink)
             }
             .padding(.horizontal, 10).frame(height: 30)
-            .background(active ? Theme.seal : Theme.paper2, in: Capsule())
-            .overlay(Capsule().stroke(active ? Color.clear : Theme.line))
+            .background(active ? Theme.seal : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(active ? Color.clear : Theme.hairline, lineWidth: 0.65))
         }
         .buttonStyle(PressStyle())
     }
@@ -1125,8 +1125,8 @@ struct EditorView: View {
                             Text("\(p.provinces)州 · \(p.nations)国").font(Theme.caption).foregroundStyle(active ? Theme.paper2.opacity(0.85) : Theme.ink2)
                         }
                         .frame(maxWidth: .infinity).frame(height: 40)
-                        .background(active ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(active ? Color.clear : Theme.line))
+                        .background(active ? Theme.seal : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(active ? Color.clear : Theme.hairline, lineWidth: 0.65))
                     }
                     .buttonStyle(PressStyle())
                 }
@@ -1146,18 +1146,18 @@ struct EditorView: View {
         }
     }
 
-    /// 划定列国：一键加国、自然重分、单州／连片画笔，配色与实机开局严格一致。
+    /// 划定列国：一键加国、自然重分、单州／连片画笔，与全游戏古籍呼吸感及朱砂主色完全统一。
     private var nationTools: some View {
         VStack(spacing: 10) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 7) {
                     Button { editor.quickAddNation() } label: {
                         HStack(spacing: 4) {
-                            InkIcon(glyph: .plus, size: 14).foregroundStyle(Theme.paper2)
-                            Text("新建国").font(Theme.label).foregroundStyle(Theme.paper2)
+                            InkIcon(glyph: .plus, size: 14).foregroundStyle(Theme.paperLight)
+                            Text("新建国").font(Theme.label).foregroundStyle(Theme.paperLight)
                         }
                         .padding(.horizontal, 11).frame(height: 34)
-                        .background(Theme.seal, in: Capsule())
+                        .background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
                     }
                     .buttonStyle(PressStyle())
                     .disabled(editor.seeds.count >= 24).opacity(editor.seeds.count >= 24 ? 0.45 : 1)
@@ -1167,13 +1167,13 @@ struct EditorView: View {
                         let active = editor.selected == i
                         Button { editor.select(i); GameFeel.shared.tap() } label: {
                             HStack(spacing: 6) {
-                                Circle().fill(Names.color(editor.nationHex(at: i))).frame(width: 13, height: 13)
-                                    .overlay(Circle().stroke(Theme.ink.opacity(0.25), lineWidth: 0.7))
+                                Circle().fill(Names.color(editor.nationHex(at: i))).frame(width: 12, height: 12)
+                                    .overlay(Circle().stroke(Theme.ink.opacity(0.22), lineWidth: 0.6))
                                 Text("\(i + 1)号 · \(count)州").font(Theme.label).foregroundStyle(active ? Theme.seal : Theme.ink)
                             }
                             .padding(.horizontal, 10).frame(height: 34)
-                            .background(active ? Theme.seal.opacity(0.14) : Theme.paper2, in: Capsule())
-                            .overlay(Capsule().stroke(active ? Theme.seal : Theme.line, lineWidth: active ? 1.5 : 1))
+                            .background(active ? Theme.seal.opacity(0.10) : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerChip, style: .continuous).stroke(active ? Theme.seal.opacity(0.65) : Theme.hairline, lineWidth: active ? 1.1 : 0.65))
                         }
                         .buttonStyle(PressStyle())
                     }
@@ -1190,20 +1190,20 @@ struct EditorView: View {
                     withAnimation(Motion.tap) { editor.paintCluster.toggle() }
                 } label: {
                     HStack(spacing: 4) {
-                        InkIcon(glyph: .region, size: 15).foregroundStyle(editor.paintCluster ? Theme.paper2 : Theme.ink)
-                        Text(editor.paintCluster ? "连片" : "单州").font(Theme.caption).foregroundStyle(editor.paintCluster ? Theme.paper2 : Theme.ink)
+                        InkIcon(glyph: .region, size: 15).foregroundStyle(editor.paintCluster ? Theme.paperLight : Theme.ink)
+                        Text(editor.paintCluster ? "连片" : "单州").font(Theme.caption).foregroundStyle(editor.paintCluster ? Theme.paperLight : Theme.ink)
                     }
                     .padding(.horizontal, 9).frame(height: 36)
-                    .background(editor.paintCluster ? Theme.jade : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(editor.paintCluster ? Color.clear : Theme.line))
+                    .background(editor.paintCluster ? Theme.seal : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(editor.paintCluster ? Color.clear : Theme.hairline, lineWidth: 0.65))
                 }
                 .buttonStyle(PressStyle())
 
                 Button { editor.rebalanceOrganically() } label: {
                     InkIcon(glyph: .swap, size: 16).foregroundStyle(Theme.ink)
                         .frame(width: 38, height: 36)
-                        .background(Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line))
+                        .background(Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.hairline, lineWidth: 0.65))
                 }
                 .buttonStyle(PressStyle())
                 .accessibilityLabel("自然重分疆域")
@@ -1211,8 +1211,8 @@ struct EditorView: View {
                 Button { editor.removeSelected() } label: {
                     InkIcon(glyph: .trash, size: 16).foregroundStyle(Theme.seal)
                         .frame(width: 38, height: 36)
-                        .background(Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line))
+                        .background(Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.hairline, lineWidth: 0.65))
                 }
                 .buttonStyle(PressStyle())
                 .disabled(editor.seeds.count <= 2).opacity(editor.seeds.count <= 2 ? 0.38 : 1)
@@ -1237,12 +1237,12 @@ struct EditorView: View {
             GameFeel.shared.tap()
         } label: {
             HStack(spacing: 4) {
-                InkIcon(glyph: glyph, size: 15).foregroundStyle(on ? Theme.paper2 : Theme.ink)
-                Text(title).font(Theme.caption).foregroundStyle(on ? Theme.paper2 : Theme.ink).lineLimit(1)
+                InkIcon(glyph: glyph, size: 15).foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                Text(title).font(Theme.caption).foregroundStyle(on ? Theme.paperLight : Theme.ink).lineLimit(1)
             }
             .padding(.horizontal, 8).frame(maxWidth: .infinity).frame(height: 36)
-            .background(on ? Theme.seal : Theme.paper2, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.line))
+            .background(on ? Theme.seal : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.65))
         }
         .buttonStyle(PressStyle())
     }
@@ -1266,9 +1266,8 @@ struct EditorView: View {
     private func stepPill(_ title: String, active: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(Theme.caption)
+                .font(Theme.label)
                 .foregroundStyle(active ? Theme.seal : Theme.ink2)
-                .fontWeight(active ? .semibold : .regular)
         }
         .buttonStyle(.plain)
     }

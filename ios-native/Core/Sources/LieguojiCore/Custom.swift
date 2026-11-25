@@ -416,9 +416,9 @@ public enum Regimes {
     static var gritCache: (world: ObjectIdentifier, day: Double, counts: [String: Int])?
 
     /// 天下规则 (自定义): world-wide rates in percent of normal — war frequency, combat intensity, march
-    /// speed, levy size and shipbuilding speed. 100 (or unset) is the normal game.
-    public static let ruleKeys = ["war", "damage", "march", "levy", "ships", "rebel", "event"]
-    public static let ruleRanges: [String: ClosedRange<Double>] = ["war": 0...300, "damage": 25...400, "march": 25...300, "levy": 25...400, "ships": 25...400, "rebel": 0...400, "event": 0...400]
+    /// speed, levy size, shipbuilding speed, navy scale and sea transport capacity. 100 (or unset) is normal.
+    public static let ruleKeys = ["war", "damage", "march", "levy", "ships", "navyScale", "seaTransport", "rebel", "event"]
+    public static let ruleRanges: [String: ClosedRange<Double>] = ["war": 0...300, "damage": 25...400, "march": 25...300, "levy": 25...400, "ships": 25...400, "navyScale": 25...400, "seaTransport": 50...400, "rebel": 0...400, "event": 0...400]
     public static func rule(_ r: JS, _ key: String) -> Double {
         guard !r.regimes.isNull, let v = r.regimes.world[key].optionalNumber else { return 1 }
         if key == "war" || key == "rebel" || key == "event" { return max(0, v / 100) }
@@ -923,6 +923,11 @@ extension NativeEngine {
                 fl.ships = JS(Int(n)); fl.crew = JS(Int((40 * n * condition).rounded(.up))); fl.food = JS(max(fl.food.asNumber, 2400 * n))
                 if !r.maritime.isNull { r.maritime.hulls[id] = JS((100 * n * condition).rounded()) }
             }
+        }
+        // Day-1 bootstrap: island & maritime powers open with an active multi-fleet navy right away.
+        if !r.regimes.isNull && !r.regimes.navyBootstrapped.isTruthy && Naval.sea != nil && r.world.day.asInt <= 1 {
+            r.regimes.navyBootstrapped = JS(true)
+            Shipyards.expandNavies(r)
         }
         // Once per world: the opening armies take their culture's arms (renamed to match).
         if !r.regimes.isNull && !r.regimes.armsByCulture.isTruthy {

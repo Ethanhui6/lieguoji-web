@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import ImageIO
 
 /// 轻量级古风历史长卷画卷舞台（零 AVQueuePlayer/H.264 硬件解码内存与 mediaserverd 发热卡顿）：
 /// - 完整保留 54 卷全文明预烘焙历史长卷画作（poster-*.jpg），8MB 有界缓存且支持系统内存警告自动释放；
@@ -118,36 +119,68 @@ final class InkPlayerHostView: UIView {
         return c
     }()
 
+    private static let decodeQueue = DispatchQueue(label: "lieguoji.poster.decode", qos: .userInitiated, attributes: .concurrent)
+
     static func clearCache() { posterCache.removeAllObjects() }
 
-    private static func posterImage(for clip: String) -> UIImage? {
+    private static func decodeDownsampled(url: URL, maxPx: CGFloat = 240) -> UIImage? {
+        guard let src = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        let opts: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPx
+        ]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
+        return UIImage(cgImage: cg)
+    }
+
+    private static func cachedPoster(for clip: String) -> UIImage? {
+        posterCache.object(forKey: clip as NSString)
+    }
+
+    static func prewarmPoster(for clip: String) {
         let key = clip as NSString
-        if let cached = posterCache.object(forKey: key) { return cached }
-        if let url = InkVideoStage.posterURL(for: clip),
-           let ui = UIImage(contentsOfFile: url.path) {
-            let cost = Int(ui.size.width * ui.size.height * ui.scale * ui.scale * 4)
-            posterCache.setObject(ui, forKey: key, cost: max(1, cost))
-            return ui
+        if posterCache.object(forKey: key) != nil { return }
+        guard let url = InkVideoStage.posterURL(for: clip)
+            ?? Bundle.main.url(forResource: "poster-herald-war", withExtension: "jpg", subdirectory: "Video") else { return }
+        decodeQueue.async {
+            if let img = decodeDownsampled(url: url, maxPx: 240) {
+                let cost = Int(img.size.width * img.size.height * img.scale * img.scale * 4)
+                posterCache.setObject(img, forKey: key, cost: max(1, cost))
+            }
         }
-        if let fallbackURL = Bundle.main.url(forResource: "poster-herald-war", withExtension: "jpg", subdirectory: "Video"),
-           let fallback = UIImage(contentsOfFile: fallbackURL.path) {
-            let cost = Int(fallback.size.width * fallback.size.height * fallback.scale * fallback.scale * 4)
-            posterCache.setObject(fallback, forKey: key, cost: max(1, cost))
-            return fallback
-        }
-        return nil
     }
 
     func load(clip: String, playVideo: Bool = true) {
         guard clip != currentClip else { return }
         teardown()
         currentClip = clip
-        posterView.image = Self.posterImage(for: clip)
+        let expectedClip = clip
+        if let cached = Self.cachedPoster(for: clip) {
+            posterView.image = cached
+        } else {
+            posterView.image = nil
+            posterView.backgroundColor = UIColor(Theme.wash)
+            if let url = InkVideoStage.posterURL(for: clip)
+                ?? Bundle.main.url(forResource: "poster-herald-war", withExtension: "jpg", subdirectory: "Video") {
+                Self.decodeQueue.async { [weak self] in
+                    guard let img = Self.decodeDownsampled(url: url, maxPx: 240) else { return }
+                    let cost = Int(img.size.width * img.size.height * img.scale * img.scale * 4)
+                    Self.posterCache.setObject(img, forKey: expectedClip as NSString, cost: max(1, cost))
+                    DispatchQueue.main.async {
+                        guard let self, self.currentClip == expectedClip else { return }
+                        self.posterView.image = img
+                        self.posterView.backgroundColor = .clear
+                    }
+                }
+            }
+        }
         guard playVideo, !ShotTour.on, !Energy.hot, !UIAccessibility.isReduceMotionEnabled else { return }
         let zoom = CABasicAnimation(keyPath: "transform.scale")
         zoom.fromValue = 1.0
-        zoom.toValue = 1.06
-        zoom.duration = 3.2
+        zoom.toValue = 1.05
+        zoom.duration = 3.6
         zoom.autoreverses = true
         zoom.repeatCount = .infinity
         zoom.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)

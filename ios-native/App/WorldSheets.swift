@@ -51,11 +51,8 @@ struct NationsSheet: View {
                                         EditorialValueText("\(s.provinces) \(nLex.adminUnit)", size: 15.5, color: Theme.ink)
                                         Text("\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
                                     }
-                                    PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light)
-                                        .foregroundStyle(Theme.ink2)
-                                        .frame(width: 22, height: 22)
-                                        .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                                        .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
+                                    PhosphorIcon(glyph: .chevronRight, size: 13, weight: .light)
+                                        .foregroundStyle(Theme.ink2.opacity(0.72))
                                 }
                                 .padding(.horizontal, 4).padding(.vertical, 12).contentShape(Rectangle())
                             }
@@ -84,6 +81,7 @@ struct MilitarySheet: View {
     /// 名将谱, reread each month of the game.
     @State private var generals: [GeneralEntry] = []
     @State private var released: String?
+    @State private var navyDoctrineNation: Int = -1
     @ObservedObject var model: GameModel
     let select: (Int) -> Void
     var selectFleet: (Int) -> Void = { _ in }
@@ -238,6 +236,71 @@ struct MilitarySheet: View {
                             StatTile(label: "海港/封锁", value: "\((state.ports ?? []).count)/\(blockadedPorts)", warn: blockadedPorts > 0),
                             StatTile(label: "海战/船坞", value: "\(seaFights)/\((state.yards ?? []).count)", warn: seaFights > 0),
                         ])
+                        let fleetsByNation = Dictionary(grouping: activeFleets, by: \.nation)
+                        let navalNations = fleetsByNation.keys.filter { map.meta.nations.indices.contains($0) }
+                            .sorted { (fleetsByNation[$0]?.reduce(0) { $0 + $1.ships } ?? 0) > (fleetsByNation[$1]?.reduce(0) { $0 + $1.ships } ?? 0) }
+                        if let defaultNation = navalNations.first {
+                            let chosenNation = navalNations.contains(navyDoctrineNation) ? navyDoctrineNation : defaultNation
+                            let chosenFleets = fleetsByNation[chosenNation] ?? []
+                            SectionLabel("全军水师方略统调")
+                            Group2 {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    if navalNations.count > 1 {
+                                        ScrollView(.horizontal, showsIndicators: false) {
+                                            HStack(spacing: 6) {
+                                                ForEach(navalNations.prefix(8), id: \.self) { nid in
+                                                    let on = nid == chosenNation
+                                                    let shipCnt = (fleetsByNation[nid] ?? []).reduce(0) { $0 + $1.ships }
+                                                    Button {
+                                                        GameFeel.shared.tap()
+                                                        navyDoctrineNation = nid
+                                                    } label: {
+                                                        HStack(spacing: 5) {
+                                                            Circle().fill(Names.color(map.meta.nations[nid].color)).frame(width: 7, height: 7)
+                                                            Text("\(map.meta.nations[nid].name) \(shipCnt)艘")
+                                                                .font(Theme.caption)
+                                                                .foregroundStyle(on ? Theme.paperLight : Theme.ink)
+                                                        }
+                                                        .padding(.horizontal, 10).padding(.vertical, 5)
+                                                        .background(on ? Theme.seal : Theme.wash.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                                        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.65))
+                                                    }.buttonStyle(.plain)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    HStack(spacing: 6) {
+                                        ForEach(MaritimeWarfare.FleetMission.allCases, id: \.rawValue) { m in
+                                            let shortTitle: String = {
+                                                switch m {
+                                                case .patrol: return "巡弋"
+                                                case .escort: return "护航"
+                                                case .blockade: return "封锁"
+                                                case .raid: return "破交"
+                                                case .repair: return "修整"
+                                                }
+                                            }()
+                                            let allOn = !chosenFleets.isEmpty && chosenFleets.allSatisfy { ($0.mission ?? "patrol") == m.rawValue }
+                                            Button {
+                                                Task {
+                                                    let err = await model.setNationNavalDoctrine(nation: chosenNation, mission: m.rawValue)
+                                                    released = err ?? "\(map.meta.nations[chosenNation].name)全水师已奉行「\(m.label)」"
+                                                }
+                                            } label: {
+                                                Text(shortTitle)
+                                                    .font(Theme.caption)
+                                                    .foregroundStyle(allOn ? Theme.paperLight : Theme.ink)
+                                                    .frame(maxWidth: .infinity).padding(.vertical, 7)
+                                                    .background(allOn ? Theme.seal : Theme.wash.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(allOn ? Color.clear : Theme.hairline, lineWidth: 0.65))
+                                            }.buttonStyle(PressStyle())
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 12).padding(.vertical, 10)
+                            }
+                            .padding(.horizontal, 16)
+                        }
                         if let sbs = state.seaBattles, !sbs.isEmpty {
                             SectionLabel("当前海上会战（\(sbs.count) 处交火海域）")
                             Group2 {
@@ -250,18 +313,25 @@ struct MilitarySheet: View {
                                         GameFeel.shared.tap()
                                         if sb.count >= 2 { flyTo(sb[0], sb[1]) }
                                     } label: {
-                                        HStack(spacing: 10) {
-                                            InkIcon(glyph: .war, size: 15, weight: 1.75).foregroundStyle(Theme.danger)
-                                            if map.meta.nations.indices.contains(na) { NationChip(map: map, nation: na) }
-                                            Text("vs").font(Theme.caption).foregroundStyle(Theme.ink2)
-                                            if map.meta.nations.indices.contains(nb) { NationChip(map: map, nation: nb) }
-                                            Spacer()
-                                            if sa + sbStrength > 0 {
-                                                Text("\(Names.wan(sa)) : \(Names.wan(sbStrength))").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                        HStack(spacing: 8) {
+                                            InkIcon(glyph: .war, size: 15, weight: 1.75).foregroundStyle(Theme.seal)
+                                            HStack(spacing: 5) {
+                                                if map.meta.nations.indices.contains(na) {
+                                                    NationChip(map: map, nation: na).lineLimit(1).minimumScaleFactor(0.75)
+                                                }
+                                                Text("⚔").font(Theme.caption).foregroundStyle(Theme.seal)
+                                                if map.meta.nations.indices.contains(nb) {
+                                                    NationChip(map: map, nation: nb).lineLimit(1).minimumScaleFactor(0.75)
+                                                }
                                             }
-                                            PaperTag(text: "观战", color: Theme.seal, size: 10)
+                                            .layoutPriority(1)
+                                            Spacer(minLength: 4)
+                                            if sa + sbStrength > 0 {
+                                                Text("\(Names.wan(sa)):\(Names.wan(sbStrength))").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1).fixedSize()
+                                            }
+                                            PaperTag(text: "观战", color: Theme.seal, size: 10.5)
                                         }
-                                        .padding(.horizontal, 14).padding(.vertical, 10).contentShape(Rectangle())
+                                        .padding(.horizontal, 12).padding(.vertical, 10).contentShape(Rectangle())
                                     }
                                     .buttonStyle(.plain)
                                     if idx < sbs.count - 1 { Divider2() }
@@ -982,11 +1052,11 @@ struct ChronicleSheet: View {
                 } label: {
                     HStack(spacing: 5) {
                         PhosphorIcon(glyph: .replay, size: 13, weight: .light)
-                        Text("回放").font(Theme.sans(13, weight: .medium))
+                        Text("回放").font(Theme.sans(13, weight: .regular))
                     }
-                    .foregroundStyle(Theme.paper2)
+                    .foregroundStyle(Theme.paperLight)
                     .padding(.horizontal, 14).frame(height: 34)
-                    .background(Theme.ink, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .background(Theme.seal, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
                 .buttonStyle(PressStyle())
             }

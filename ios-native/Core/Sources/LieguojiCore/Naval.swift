@@ -88,10 +88,10 @@ public enum Naval {
     static func attackCount(_ count: Int) -> Int {
         if count <= 0 { return 0 }
         if UnitKinds.enabled {
-            // App 模式：单支或两支舰队的岛国/滨海国可全数出击跨海制海，三支以上保留至少一支护卫本土
-            if count <= 2 { return count }
-            let share = max(0.70, Tuning.current.navyAttackShare)
-            let n = max(2, min(count - 1, Int(f(f(Double(count)) * f(share)).rounded(.up))))
+            // App 模式：3 支及以下舰队战时全数出击跨海制海护航；4 支以上至少派出 78% 主力决战、保留 1 支护卫母港
+            if count <= 3 { return count }
+            let share = max(0.78, Tuning.current.navyAttackShare)
+            let n = max(3, min(count - 1, Int(f(f(Double(count)) * f(share)).rounded(.up))))
             return n
         }
         var n = max(0, min(count, Int(f(f(Double(count)) * f(0.35)).rounded(.up))))
@@ -404,7 +404,7 @@ public enum Naval {
                             if escortPick == nil || df < escortPick!.distToConvoy { escortPick = (port, df) }
                         } else {
                             let p = preview(r, id, .sail(port: port.id))
-                            if p.valid && food >= rationNow * (days(p.distance) + 3) + crew * 25 {
+                            if p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood {
                                 if escortPick == nil || df < escortPick!.distToConvoy { escortPick = (port, df) }
                             }
                         }
@@ -417,8 +417,10 @@ public enum Naval {
                 }
                 func tryPortAttack() -> Bool {
                     var best: (port: Port, control: JS, distance: Double)?
-                    for port in candidates where portTarget(r.portControl.ports[port.provinceId], nation, enemy) {
+                    for port in candidates {
                         let control = r.portControl.ports[port.provinceId]
+                        let isBlockedHome = appNaval && control.landOwnerId.asString == nation && MaritimeWarfare.isPortBlockaded(r, provinceId: port.provinceId, landOwner: nation)
+                        guard isBlockedHome || portTarget(control, nation, enemy) else { continue }
                         var row0: (port: Port, control: JS, distance: Double)?
                         if atAnchor(port) { row0 = (port, control, 0) }
                         else { let p = preview(r, id, .sail(port: port.id)); if p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood { row0 = (port, control, p.distance) } }
@@ -439,7 +441,7 @@ public enum Naval {
                     guard let best else { return false }
                     order.targetId = JS(best.port.provinceId)
                     if atAnchor(best.port) { row.assignedPortId = JS(best.port.id); note("attacking", activeMission == .blockade ? "死锁敌港外海，切断海运并截夺海贸岁入。" : "在实际敌港等待争夺完成。") }
-                    else { start(best.port.id, "attacking", best.control.landOwnerId.asString == nation ? "先夺回本国海港；沿真实海路航行。" : (activeMission == .blockade ? "奉封锁令抵近敌港实施海上封锁。" : "前往可在余粮范围内抵达的敌港。")) }
+                    else { start(best.port.id, "attacking", best.control.landOwnerId.asString == nation ? "驰援本国受困海港，破除敌舰封锁。" : (activeMission == .blockade ? "奉封锁令抵近敌港实施海上封锁。" : "前往可在余粮范围内抵达的敌港。")) }
                     return true
                 }
                 let dispatched: Bool

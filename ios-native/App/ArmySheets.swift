@@ -40,13 +40,10 @@ struct ArmyRow: View {
             }
             Spacer(minLength: 8)
             EditorialValueText(Names.wan(army.troops), size: 15.5, color: Theme.ink)
-            PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light)
-                .foregroundStyle(Theme.ink2)
-                .frame(width: 22, height: 22)
-                .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.hairline, lineWidth: 0.75))
+            PhosphorIcon(glyph: .chevronRight, size: 13, weight: .light)
+                .foregroundStyle(Theme.ink2.opacity(0.68))
         }
-        .padding(.horizontal, 4).padding(.vertical, 11).contentShape(Rectangle())
+        .padding(.horizontal, 4).padding(.vertical, 12).contentShape(Rectangle())
     }
 }
 

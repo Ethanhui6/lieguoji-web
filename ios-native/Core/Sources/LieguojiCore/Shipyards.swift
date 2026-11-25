@@ -85,7 +85,7 @@ public enum Shipyards {
             guard fl.ships.asInt < cap else { continue }
             let done = (s.progress[key].optionalNumber ?? 0) + 1
             let baseNeed = buildMonths(r, nation, provinceId: port.provinceId)
-            let needed = appMode ? max(1.0, baseNeed * (fl.ships.asInt < 2 ? 0.75 : 1.15)) : (baseNeed * 2)
+            let needed = appMode ? max(1.0, baseNeed * (fl.ships.asInt < 4 ? 0.55 : 0.95)) : (baseNeed * 2)
             if done < needed { s.progress[key] = JS(done); continue }
             s.progress.delete(key)
             let n = fl.ships.asInt + 1
@@ -126,13 +126,15 @@ public enum Shipyards {
             aliveFleetsByNation[nid, default: []].append(fl)
             if let d = fl.dockId.optionalString { fleetsAtPort[d, default: 0] += 1 }
         }
-        let pendingNations = Set(s.orders.asArray.map(\.nation.asString))
+        var pendingByNation = [String: Int]()
+        for o in s.orders.asArray { pendingByNation[o.nation.asString, default: 0] += 1 }
         let day = r.world.day.asInt
+        let navyScale = Regimes.rule(r, "navyScale")
         var globalFleetTotal = allFleets.filter { $0.status.asString != "lost" }.count
 
         for n in r.world.nations.asArray {
             let nid = n.id.asString
-            guard Vassals.alive(r, nid), globalFleetTotal < 180 else { continue }
+            guard Vassals.alive(r, nid), globalFleetTotal < 260 else { continue }
             guard let myPorts = portsByNation[nid], !myPorts.isEmpty else { continue }
             let myProvs = ownedProvs[nid] ?? []
             let hasLandNeighbor = myProvs.contains { p in
@@ -144,43 +146,55 @@ public enum Shipyards {
             let isIsland = !hasLandNeighbor
             let maritime = (r.economy.nations[nid].ethnic.optionalString == "Maritime")
                 || ((CultureDoctrines.forNation(r, nid)?.navalPower ?? 0) > 0)
-            let targetFleets: Int = {
-                if isIsland { return min(6, max(2, myPorts.count + 1)) }
+            let baseTarget: Double = {
+                if isIsland { return Double(max(3, myPorts.count + 2)) }
                 if myPorts.count >= 2 || myProvs.count >= 6 || maritime {
-                    return min(6, max(2, (myPorts.count + 1) / 2 + (maritime ? 1 : 0)))
+                    return Double(max(2, (myPorts.count + 1) / 2 + 1) + (maritime ? 1 : 0))
                 }
-                return 1
+                return 1.5
             }()
+            let targetFleets = min(10, max(isIsland ? 2 : 1, Int((baseTarget * navyScale).rounded())))
             let curFleets = aliveFleetsByNation[nid] ?? []
             guard curFleets.count < targetFleets else { continue }
 
-            let pickPort = myPorts.min { a, b in
-                let ca = fleetsAtPort[a.id, default: 0], cb = fleetsAtPort[b.id, default: 0]
-                return ca != cb ? ca < cb : a.id < b.id
-            } ?? myPorts[0]
+            func nextPort() -> Naval.Port {
+                myPorts.min { a, b in
+                    let ca = fleetsAtPort[a.id, default: 0], cb = fleetsAtPort[b.id, default: 0]
+                    return ca != cb ? ca < cb : a.id < b.id
+                } ?? myPorts[0]
+            }
 
-            // 开局首月为岛国与滨海大国快速成军第二支护航水师，开篇即可跨海巡弋与护航
-            if day <= 45 && s.bootstrapped[nid].isNull && targetFleets >= 2 {
+            // 开局前两月为岛国与滨海大国整编成军多支主力护航舰队（3–5 艘/支），开局即可纵横海疆与掩护大军跨海登陆
+            if day <= 60 && s.bootstrapped[nid].isNull {
                 s.bootstrapped[nid] = JS(true)
-                let heavy = 1, light = 1, gunboats = (isIsland || myProvs.count >= 8) ? 1 : 0
-                if SeaDominion.launchNewFleet(r, nation: nid, port: pickPort, heavy: heavy, light: light, gunboats: gunboats) != nil {
-                    fleetsAtPort[pickPort.id, default: 0] += 1
-                    globalFleetTotal += 1
+                let toSpawn = min(targetFleets - curFleets.count, isIsland ? 3 : (myPorts.count >= 2 || maritime ? 2 : 1))
+                for _ in 0..<max(1, toSpawn) {
+                    guard globalFleetTotal < 260 else { break }
+                    let pickPort = nextPort()
+                    let heavy = (isIsland || myProvs.count >= 6 || maritime) ? 2 : 1
+                    let light = (isIsland || maritime) ? 2 : 1
+                    let gunboats = 1
+                    if SeaDominion.launchNewFleet(r, nation: nid, port: pickPort, heavy: heavy, light: light, gunboats: gunboats) != nil {
+                        fleetsAtPort[pickPort.id, default: 0] += 1
+                        globalFleetTotal += 1
+                    }
                 }
                 continue
             }
 
-            // 常规月度自主排产造舰（不覆盖玩家或已有造舰队列）
-            guard !pendingNations.contains(nid) else { continue }
+            // 常规月度自主排产造舰（岛国与交战大国可双船台并行造舰，快速补足主力水师）
+            let maxPending = (isIsland || myPorts.count >= 3 || maritime) ? 2 : 1
+            guard (pendingByNation[nid] ?? 0) < maxPending else { continue }
             let fin = r.finance.nations[nid]
             let gold = fin.isNull ? 0.0 : (fin.gold.optionalNumber ?? 0.0)
-            let cost = (isIsland || curFleets.count < 2) ? 140.0 : 240.0
+            let cost = (isIsland || curFleets.count < 2) ? 85.0 : 150.0
             guard gold >= cost else { continue }
             fin.gold = JS(gold - cost)
-            let heavy = 1
-            let light = 1
-            let gunboats = (isIsland || myProvs.count >= 8 || maritime) ? 1 : 0
-            let months = max(2.0, min(4.0, buildMonths(r, nid, provinceId: pickPort.provinceId) * 0.65))
+            let pickPort = nextPort()
+            let heavy = (isIsland || myProvs.count >= 6 || maritime) ? 2 : 1
+            let light = (isIsland || maritime) ? 2 : 1
+            let gunboats = 1
+            let months = max(1.5, min(3.0, buildMonths(r, nid, provinceId: pickPort.provinceId) * 0.52))
             let order = JS.object()
             order.nation = JS(nid)
             order.provinceId = JS(pickPort.provinceId)
@@ -189,6 +203,7 @@ public enum Shipyards {
             order.gunboats = JS(gunboats)
             order.monthsLeft = JS(months)
             s.orders.push(order)
+            pendingByNation[nid, default: 0] += 1
             globalFleetTotal += 1
         }
     }

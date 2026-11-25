@@ -519,10 +519,9 @@ struct ProvinceSheet: View {
                     .frame(height: 20)
                 Text(title).font(Theme.caption).foregroundStyle(isAccent ? Theme.seal : Theme.ink).lineLimit(1).minimumScaleFactor(0.75)
             }
-            .frame(maxWidth: .infinity).frame(height: 58)
-            .background(isAccent ? Theme.seal.opacity(0.06) : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(isAccent ? Theme.seal.opacity(0.42) : Theme.line, lineWidth: 0.9))
-            .shadow(color: Theme.ink.opacity(0.07), radius: 0, y: 1.5)
+            .frame(maxWidth: .infinity).frame(height: 56)
+            .background(isAccent ? Theme.seal.opacity(0.06) : Theme.wash.opacity(0.48), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(isAccent ? Theme.seal.opacity(0.28) : Theme.hairline, lineWidth: 0.65))
             .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
         }
         .buttonStyle(PressStyle())

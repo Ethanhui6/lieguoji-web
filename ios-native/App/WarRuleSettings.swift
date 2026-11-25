@@ -99,7 +99,8 @@ struct WarRateRows: View {
     private static let rates = [
         Rate(id: "war", title: "战争频率"), Rate(id: "damage", title: "战斗烈度"),
         Rate(id: "march", title: "行军速度"), Rate(id: "levy", title: "征兵规模"),
-        Rate(id: "ships", title: "造舰速度"), Rate(id: "rebel", title: "叛乱频率"),
+        Rate(id: "ships", title: "造舰速度"), Rate(id: "navyScale", title: "水师规模"),
+        Rate(id: "seaTransport", title: "跨海运力"), Rate(id: "rebel", title: "叛乱频率"),
         Rate(id: "event", title: "事件频率")
     ]
 

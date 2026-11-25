@@ -145,9 +145,9 @@ final class EffectsView: UIView {
     /// 飘字放在地名之上的一层（特效本身在地名之下）。
     weak var floatHost: CALayer?
     func float(_ text: String, worldX: Double, worldY: Double, naval: Bool) {
-        // 超高倍近观时适度让位给精细战局演出，其余倍镜一律精准贴合地图世界坐标随动。
-        guard !Energy.hot, (camera?.scale ?? 1.0) < 2.2, activeFloats.count < 8, window != nil,
-              let camera, viewport.width > 0, viewport.height > 0 else { return }
+        // 缩远全景（< 0.48×）与超高倍近观（≥ 2.2×）隐藏飘字，避免全卷缩略视图出现巨型白字叠压。
+        guard !Energy.hot, let camera, camera.scale >= 0.48, camera.scale < 2.2, activeFloats.count < 8, window != nil,
+              viewport.width > 0, viewport.height > 0 else { return }
         let vp = (width: Double(viewport.width), height: Double(viewport.height))
         let s = camera.toScreen(x: worldX, y: worldY, viewport: vp)
         guard s.x > -40, s.y > 20, s.x < vp.width + 40, s.y < vp.height + 20 else { return }
@@ -808,9 +808,21 @@ final class EffectsView: UIView {
                 DispatchQueue.main.asyncAfter(deadline: .now() + b.delay + 0.55) { e.birthRate = 0 }
             }
         default:
-            // 纯净无圆框手绘宋画事件微标（彻底去除套圈与外扩圆环，仅保留精致微标浮现与轻柔阴影）
+            // 融图水墨大气荡纹（彻底废除违和的旧版贴纸图标浮标：天灾、丰年、政变、兴邦皆以纯墨晕涟漪＋局部微粒融于山河）
             let accent = Self.eventColor(b.kind, nation: color)
-            root.addSublayer(calligraphicEventLayer(b.kind, accent: accent))
+            root.addSublayer(inkRing(accent))
+            if Self.particles && !Energy.hot && burstLayers.count < 8 {
+                let e = CAEmitterLayer()
+                e.emitterShape = .circle; e.emitterSize = CGSize(width: 24, height: 24)
+                e.emitterPosition = CGPoint(x: 60, y: 60)
+                let particleImg: CGImage? = (b.kind == .snow) ? (BundleArt.fxSnowflake?.cgImage ?? Self.puff) : Self.puff
+                let pScale: CGFloat = (b.kind == .snow) ? 0.14 : 0.22
+                e.emitterCells = [
+                    cell(particleImg, color: accent.withAlphaComponent(0.62), rate: 8, life: 1.15, velocity: 18, range: .pi * 2, scale: pScale, scaleSpeed: 0.10, alphaSpeed: -0.52, spin: 0.7)
+                ]
+                root.addSublayer(e)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { e.birthRate = 0 }
+            }
         }
         return root
     }
@@ -849,100 +861,6 @@ final class EffectsView: UIView {
         }
         return host
     }
-
-    /// 纯净无圆框手绘事件浮标：优先展示透明手绘水墨徽标（附轻柔宣纸阴影提亮），无圆盘、无套圈，依事件语义丝滑浮升淡出。
-    private func calligraphicEventLayer(_ kind: MapEffects.Burst.Kind, accent: UIColor) -> CALayer {
-        let host = CALayer()
-        host.bounds = CGRect(x: 0, y: 0, width: 36, height: 36)
-        host.position = CGPoint(x: 60, y: 54)
-        host.opacity = 0
-
-        let artImage: UIImage? = {
-            switch kind {
-            case .harvest: return BundleArt.fxHarvest
-            case .trade: return BundleArt.fxTrade
-            case .talent: return BundleArt.fxTalent
-            case .drought: return BundleArt.fxWeatherDrought
-            case .snow: return BundleArt.fxWeatherSnow
-            case .flood, .disaster: return BundleArt.fxWeatherStorm
-            case .plague: return BundleArt.fxPlague
-            case .shock, .coup: return BundleArt.heraldWar
-            case .regime, .founded: return BundleArt.heraldEdict
-            case .destroyed: return nil
-            }
-        }()
-
-        if let cg = artImage?.cgImage {
-            let sprite = CALayer()
-            sprite.frame = CGRect(x: 3, y: 3, width: 30, height: 30)
-            sprite.contents = cg
-            sprite.contentsGravity = .resizeAspect
-            sprite.minificationFilter = .trilinear
-            sprite.magnificationFilter = .linear
-            sprite.shadowColor = UIColor(red: 0.99, green: 0.97, blue: 0.91, alpha: 1).cgColor
-            sprite.shadowOpacity = 0.85
-            sprite.shadowRadius = 2.0
-            sprite.shadowOffset = .zero
-            host.addSublayer(sprite)
-        } else {
-            let glyph = CAShapeLayer(); glyph.frame = host.bounds
-            glyph.fillColor = nil; glyph.strokeColor = accent.cgColor
-            glyph.lineWidth = 2.0; glyph.lineCap = .round; glyph.lineJoin = .round
-            glyph.shadowColor = UIColor(red: 0.99, green: 0.97, blue: 0.91, alpha: 1).cgColor
-            glyph.shadowOpacity = 0.90; glyph.shadowRadius = 1.8; glyph.shadowOffset = .zero
-            let p = UIBezierPath()
-            p.move(to: CGPoint(x: 18, y: 9)); p.addLine(to: CGPoint(x: 27, y: 18))
-            p.addLine(to: CGPoint(x: 18, y: 27)); p.addLine(to: CGPoint(x: 9, y: 18)); p.close()
-            glyph.path = p.cgPath
-            host.addSublayer(glyph)
-        }
-
-        let fade = CAKeyframeAnimation(keyPath: "opacity")
-        fade.values = [0, 1, 1, 0]; fade.keyTimes = [0, 0.10, 0.78, 1]
-        var anims: [CAAnimation] = [fade]
-
-        switch kind {
-        case .shock, .coup:
-            let slam = CAKeyframeAnimation(keyPath: "transform.scale")
-            slam.values = [1.45, 0.90, 1.06, 1.0, 0.96]; slam.keyTimes = [0, 0.14, 0.28, 0.44, 1]
-            let shake = CAKeyframeAnimation(keyPath: "transform.rotation.z")
-            shake.values = [-0.14, 0.12, -0.07, 0.04, 0]; shake.keyTimes = [0, 0.20, 0.40, 0.62, 1]
-            anims += [slam, shake]
-        case .harvest, .trade, .talent:
-            let pop = CAKeyframeAnimation(keyPath: "transform.scale")
-            pop.values = [0.60, 1.12, 1.0, 1.03, 0.96]; pop.keyTimes = [0, 0.18, 0.36, 0.72, 1]
-            let floatUp = CABasicAnimation(keyPath: "transform.translation.y"); floatUp.fromValue = 7; floatUp.toValue = -13
-            anims += [pop, floatUp]
-        case .drought:
-            let pulse = CAKeyframeAnimation(keyPath: "transform.scale")
-            pulse.values = [0.68, 1.14, 0.98, 1.12, 0.98, 1.06]; pulse.keyTimes = [0, 0.16, 0.36, 0.56, 0.76, 1]
-            anims += [pulse]
-        case .snow:
-            let spin = CABasicAnimation(keyPath: "transform.rotation.z"); spin.fromValue = -0.25; spin.toValue = 0.65
-            let down = CABasicAnimation(keyPath: "transform.translation.y"); down.fromValue = -8; down.toValue = 5
-            anims += [spin, down]
-        case .flood, .disaster:
-            let pop = CAKeyframeAnimation(keyPath: "transform.scale"); pop.values = [0.66, 1.16, 0.96, 1.08, 1.0]
-            let jolt = CAKeyframeAnimation(keyPath: "transform.translation.x"); jolt.values = [0, -3, 3, -2, 1.5, 0]
-            anims += [pop, jolt]
-        case .plague:
-            let swell = CAKeyframeAnimation(keyPath: "transform.scale"); swell.values = [0.58, 1.08, 1.16]
-            let swirl = CABasicAnimation(keyPath: "transform.rotation.z"); swirl.fromValue = 0; swirl.toValue = 0.45
-            anims += [swell, swirl]
-        default:
-            let drop = CAKeyframeAnimation(keyPath: "transform.translation.y"); drop.values = [-12, 1, -1.5, 0]; drop.keyTimes = [0, 0.22, 0.38, 1]
-            let scale = CAKeyframeAnimation(keyPath: "transform.scale"); scale.values = [0.74, 1.12, 0.98, 1.0]; scale.keyTimes = [0, 0.22, 0.38, 1]
-            anims += [drop, scale]
-        }
-
-        let g = CAAnimationGroup()
-        g.animations = anims; g.duration = 2.35
-        g.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        g.fillMode = .forwards; g.isRemovedOnCompletion = false
-        host.add(Self.calm(g), forKey: "eventGlyph")
-        return host
-    }
-
 
     /// The army's figure (UnitArt) tinted in a state's colour.
     private static var unitImages = [String: CGImage]()

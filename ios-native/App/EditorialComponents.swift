@@ -13,8 +13,7 @@ struct EditorialDivider: View {
     }
 }
 
-/// 衬线数字混排：自动识别数值中的 ASCII 数字/标点用 Cormorant Garamond（高对比衬线 + 等宽防抖），
-/// 汉字单位（万/亿/省/州/金/年）用 PingFang SC 清晰对齐基线。
+/// 古典清秀数值混排（回归旧版 TW-Kai 等高数字 + 等宽防抖）：数字清晰端正，汉字单位基线自然齐平。
 struct EditorialValueText: View {
     let raw: String
     var size: CGFloat = 20
@@ -32,18 +31,18 @@ struct EditorialValueText: View {
             ForEach(Array(parts.enumerated()), id: \.offset) { _, seg in
                 if seg.isNum {
                     Text(seg.text)
-                        .font(Theme.numeral(size * 1.18))
+                        .font(Theme.numeral(size))
                         .foregroundStyle(color)
                         .monospacedDigit()
                 } else {
                     Text(seg.text)
-                        .font(Theme.sans(max(11.5, size * 0.72), weight: .regular))
+                        .font(Theme.sans(max(11.5, size * 0.74), weight: .regular))
                         .foregroundStyle(color == Theme.seal ? Theme.seal : Theme.ink2)
                 }
             }
         }
         .lineLimit(1)
-        .minimumScaleFactor(0.72)
+        .minimumScaleFactor(0.74)
         .fixedSize(horizontal: true, vertical: false)
     }
 
@@ -106,7 +105,7 @@ struct EditorialSectionHeader: View {
     }
 }
 
-/// 古籍触感次级按钮（亮宣纸面 #FAF7F0 + 清晰暖墨细框 + 1.5pt 压印底缘）：一眼可辨为可点按按钮，彻底告别“与纯说明文字混淆”。
+/// 疏朗呼吸感交互按钮：实心主按钮回归特色朱砂红 `#A83226`，次级按钮改用淡绢轻底与 0.65pt 极细边（零厚重黑框与硬投影）。
 struct EditorialTactileButton: View {
     let title: String
     var icon: PhosphorGlyph? = nil
@@ -119,8 +118,8 @@ struct EditorialTactileButton: View {
 
     var body: some View {
         let fg: Color = solid ? Theme.paperLight : (accent ? Theme.seal : Theme.ink)
-        let bg: Color = solid ? (accent ? Theme.seal : Theme.ink) : (accent ? Theme.seal.opacity(0.06) : Theme.paperLight)
-        let stroke: Color = solid ? Color.clear : (accent ? Theme.seal.opacity(0.42) : Theme.line)
+        let bg: Color = solid ? Theme.seal : (accent ? Theme.seal.opacity(0.07) : Theme.wash.opacity(0.55))
+        let stroke: Color = solid ? Theme.paperLight.opacity(0.22) : (accent ? Theme.seal.opacity(0.28) : Theme.hairline)
         Button {
             GameFeel.shared.tap()
             action()
@@ -130,21 +129,21 @@ struct EditorialTactileButton: View {
                     PhosphorIcon(glyph: icon, size: compact ? 13.5 : 15, weight: solid ? .fill : .light)
                 }
                 Text(title)
-                    .font(Theme.sans(compact ? 13 : 14, weight: .medium))
-                    .tracking(0.4)
+                    .font(Theme.sans(compact ? 13 : 14, weight: .regular))
+                    .tracking(0.5)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
             .foregroundStyle(fg)
             .frame(maxWidth: fullWidth ? .infinity : nil)
             .frame(height: compact ? 34 : 40)
-            .padding(.horizontal, compact ? 11 : 14)
+            .padding(.horizontal, compact ? 12 : 15)
             .background(bg, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .stroke(stroke, lineWidth: 0.9)
+                    .stroke(stroke, lineWidth: solid ? 0.65 : 0.65)
+                    .padding(solid ? 2.5 : 0)
             )
-            .shadow(color: solid ? Color.clear : Theme.ink.opacity(0.08), radius: 0, y: 1.5)
             .opacity(disabled ? 0.42 : 1.0)
         }
         .buttonStyle(PressStyle())
@@ -152,7 +151,7 @@ struct EditorialTactileButton: View {
     }
 }
 
-/// 古籍无框主操作按钮：松烟暖墨深底 `#241D17` + 宣纸亮白字 `#FAF7F0`，内镶极细书框线，直接写明核心后果。
+/// 古籍特色朱砂主操作按钮：恢复招牌朱砂红底 `#A83226` 配宣纸白字与极细内书框，直接写明核心后果。
 struct EditorialInkButton: View {
     let title: String
     var consequence: String? = nil
@@ -171,15 +170,15 @@ struct EditorialInkButton: View {
                     PhosphorIcon(glyph: icon, size: 15, weight: .light)
                 }
                 Text(title)
-                    .font(Theme.serif(15))
-                    .tracking(0.8)
+                    .font(Theme.serif(15.5))
+                    .tracking(1.0)
                 if let consequence, !consequence.isEmpty {
                     Text("·")
                         .font(Theme.sans(13))
                         .opacity(0.65)
                     Text(consequence)
                         .font(Theme.sans(13, weight: .regular))
-                        .opacity(0.9)
+                        .opacity(0.92)
                         .monospacedDigit()
                 }
             }
@@ -188,12 +187,12 @@ struct EditorialInkButton: View {
             .frame(minHeight: 46)
             .padding(.horizontal, 16)
             .background(
-                (emphasized ? Theme.seal : Theme.ink).opacity(disabled ? 0.35 : 1.0),
+                Theme.seal.opacity(disabled ? 0.35 : 1.0),
                 in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .stroke(Theme.paperLight.opacity(0.2), lineWidth: 0.7)
+                    .stroke(Theme.paperLight.opacity(0.24), lineWidth: 0.7)
                     .padding(3)
             )
         }
@@ -202,7 +201,7 @@ struct EditorialInkButton: View {
     }
 }
 
-/// 古籍平铺列表操作行：直接铺在宣纸上，左侧 Phosphor 轻线图标 + 右侧清晰纸框动作标，一眼明确“这是一枚可点按指令”。
+/// 古籍平铺列表操作行：直接铺在宣纸上，左侧 Phosphor 轻线图标 + 右侧淡墨柔底动作指示，疏朗克制零按钮堆砌。
 struct EditorialActionRow: View {
     let title: String
     var detail: String? = nil
@@ -247,22 +246,19 @@ struct EditorialActionRow: View {
                 Spacer(minLength: 8)
                 if active {
                     Text("施行中")
-                        .font(Theme.sans(12, weight: .medium))
+                        .font(Theme.sans(12, weight: .regular))
                         .foregroundStyle(Theme.seal)
                         .padding(.horizontal, 9).padding(.vertical, 4)
                         .background(Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(Theme.seal.opacity(0.4), lineWidth: 0.75))
                 } else {
                     HStack(spacing: 3) {
                         Text(actionLabel)
-                            .font(Theme.sans(12, weight: .medium))
+                            .font(Theme.sans(12.5, weight: .regular))
                         PhosphorIcon(glyph: .chevronRight, size: 11, weight: .light)
                     }
-                    .foregroundStyle(accentConsequence ? Theme.seal : Theme.ink)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).stroke(accentConsequence ? Theme.seal.opacity(0.42) : Theme.line, lineWidth: 0.85))
-                    .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1)
+                    .foregroundStyle(accentConsequence ? Theme.seal : Theme.ink2)
+                    .padding(.horizontal, 9).padding(.vertical, 5)
+                    .background(accentConsequence ? Theme.seal.opacity(0.07) : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
             }
             .padding(.vertical, 13)
@@ -274,7 +270,7 @@ struct EditorialActionRow: View {
     }
 }
 
-/// 古籍线刻页签条：无厚重胶囊壳，以思源宋体/无衬线文本 + 1.5pt 朱砂下划线指示选中态。
+/// 古籍线刻页签条：选中与未选中严格共用同一古典正楷字形，仅以朱砂色与底部 1.8pt 朱砂线区分（彻底消除点击换字体割裂感）。
 struct EditorialTabStrip<Value: Hashable>: View {
     let items: [(Value, String)]
     @Binding var selection: Value
@@ -291,14 +287,14 @@ struct EditorialTabStrip<Value: Hashable>: View {
                     } label: {
                         VStack(spacing: 9) {
                             Text(item.1)
-                                .font(active ? Theme.serif(15) : Theme.sans(14.5, weight: .regular))
-                                .tracking(active ? 1.2 : 0.4)
+                                .font(Theme.serif(15))
+                                .tracking(0.8)
                                 .foregroundStyle(active ? Theme.seal : Theme.ink2)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                             Rectangle()
                                 .fill(active ? Theme.seal : Color.clear)
-                                .frame(height: 1.75)
+                                .frame(height: 1.8)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.top, 10)

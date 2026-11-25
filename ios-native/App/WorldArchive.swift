@@ -134,8 +134,7 @@ struct WorldArchiveSheet: View {
                 PhosphorIcon(glyph: .trash, size: 15, weight: .light)
                     .foregroundStyle(Theme.ink2)
                     .frame(width: 34, height: 34)
-                    .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Theme.line, lineWidth: 0.85))
+                    .background(Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
             .buttonStyle(PressStyle())
             EditorialTactileButton(title: "展卷", solid: true, compact: true) { open(w) }

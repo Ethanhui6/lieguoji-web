@@ -560,7 +560,7 @@ final class V4RefactorTests: XCTestCase {
 
             ruler.base.military = JS(12); ruler.base.administrative = JS(15); ruler.base.charisma = JS(15)
             ruler.traits = JS.array([JS("Incompetent"), JS("Tyrant")])
-            if let cmd = Regimes.activeCommander(r, nation: n0), let cp = People.person(r, cmd.personId) {
+            if let cmd = Regimes.activeCommander(r, nation: n0, enemy: nil), let cp = People.person(r, cmd.personId) {
                 cp.base.military = JS(14); cp.traits = JS.array([JS("Incompetent")])
             }
             let lowIQ = Regimes.tacticalIQ(r, nation: n0)

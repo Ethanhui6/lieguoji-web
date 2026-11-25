@@ -2035,8 +2035,8 @@ final class MapLabelsView: UIView {
         let padX = 320.0 * invScale, padY = 140.0 * invScale
         let halfW = (vp.width * 0.5) * invScale + padX
         let halfH = (vp.height * 0.5) * invScale + padY
-        let visMinX = camera.x - halfW, visMaxX = camera.x + halfW
-        let visMinY = camera.y - halfH, visMaxY = camera.y + halfH
+        let visMinX = camera.centerX - halfW, visMaxX = camera.centerX + halfW
+        let visMinY = camera.centerY - halfH, visMaxY = camera.centerY + halfH
         var placedNationTexts = Set<String>()
         var syncBudget = 6
         func blockedByTextOnly(_ b: Box, margin: CGFloat) -> Bool {

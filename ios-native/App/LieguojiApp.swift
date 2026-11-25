@@ -179,11 +179,10 @@ struct RootView: View {
             if model.phase == .splash { SplashView { finishSplash() }.transition(.opacity).zIndex(10) }
         }
         .animation(Motion.reveal, value: model.phase)
-        // Leaving the app saves (autosave runs only every 90 days).
-        // Leaving pauses and saves; coming back reattaches to the computer if its link broke meanwhile.
+        // 退入后台时优雅暂驻服务器并落盘本地；切回前台自动秒级无感续连并恢复推演。
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background, model.phase == .playing { model.pause(); model.save() }
-            if phase == .active, model.phase == .playing { Task { if await model.native.lost { model.remoteLost() } } }
+            if phase == .background, model.phase == .playing { Task { await model.handleAppBackground() } }
+            if phase == .active, model.phase == .playing { Task { await model.handleAppForeground() } }
         }
         .task { GameFeel.shared.start() }
         // 云更新: the latest balance numbers and notice; a running world takes them at once.
@@ -581,6 +580,9 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("5.2.1", ["【网络游戏级远程计算服务器 v5 × 后台无缝重连 × 云端存档卷宗】全新部署专用国内直连网关（lieguoji-edge.pages.dev），修复旧生产站点返回网页导致连不上服务器的根本隐患；升级持久 WebSocket 双通道、电脑端多线程防僵尸连接接管与单帧预推演流水线，退入后台自动发送 park 热留存电脑内存，切回前台毫秒级自动续连并恢复推演；「世界卷宗」与设置页全新上线「云端存档」（zlib 压缩上传、列表查看、跨设备下载展卷与删除）及实时毫秒测速。",
+                   "【四季政区清晰可读 × 邻国零撞色 × 端正境内国名排版】政区模式下四季光影与冬雪/天灾改为克制半透微韵（地形模式保留完整浓厚四季风貌），再也不怕隆冬积雪把国家颜色盖成一片白；国色扩充至 36 枚高区分矿物色并升级为真实陆地接壤图着色（DSATUR + 2-pass 局部精修），接壤邻国色差 ΔE ≥ 26；国名升级 8 邻域欧氏距离场 + 二维 15 点内接矩形校验，大幅偏向端正水平排版（倾角严限 ±14° 内），绝不滑越国界。",
+                   "【陆海军战争体系深度拓展 × 奇观古迹落图 × 国家页与文化名精修】新增「合围断道」（敌境无友邻与海援时攻防 −22%、耗粮加倍、地图断线与军事页标红警示）、「真实士气杠杆与铁骑乘胜追击」（溃军触发追斩、缴获粮草并提振士气）、「近海舰炮持久岸轰（破城 +22%）」、「封锁敌港加速破城（+35%）」以及「水师主动寻歼敌舰、驰援沿海围城、破交掠商与 42% 船体自动返港抢修」；地图实时绘制已建成天下奇观（金顶古阁）与已发掘四海古迹（古铜青玉星碑）；国家页新增国政四维简报/储君预览、军事前线警报与外交列强兵势对比；全面清洗文化国名与城名冗余尾缀。"]),
         ("5.2.0", ["【君主与将领战术 AI 谋略（明君名将神机妙算 × 昏君瞎指挥）】新增实时「军队战术谋略」体系（综合主帅武略/特质 62% + 君主武略/治乱 38%），在军事页直显 5 档谋略评级：名将明君主动合围孤敌、优先攻都解围、集结齐发、残军善退；昏君庸将则战略误判、分兵添油、硬冲坚城且调度迟缓。",
                    "【彻底根治「占领后反复复国死循环」× 告别「地名+朝」违和国名】和约结算对任意实控归零的战败方（≤14 州）直接正式兼并、绝不再向死国还地；起义与复辟严格要求深厚历史法理（>18 月）、亡国满 3 年且最多复国 2 次，新增新征服 24 月绥靖保护期与月度法理归属自动整合；全面修正命名规则，彻底消灭「襄阳朝」「姑苏朝」「江南王朝」「威尼斯王朝」等违和国名。",
                    "【治理页深度重构 × 防零金白嫖与重复抉择 × 自动裁决 × 战时君主高频更迭】封堵 0 金白嫖与刷金漏洞，全面落实付费政令真实国库校验、季度施政额度（每季 2 道）、变法 90 日磨合冷却、央地集权三档直控与事件链先行核销防重复；新增「抉择与朝议自动裁决」开关避免悬停卡死；实装战时御驾亲征殉国、战败兵变废立、共和 4 年定期换届与真实染疾更迭，战争年代君主更替更有历史真实感。",

@@ -344,7 +344,7 @@ public enum Naval {
             let curHull = r.maritime.hulls[id].optionalNumber ?? maxHull
             if appNaval {
                 let initMeta = MaritimeWarfare.fleetMeta(r, fleet: fl)
-                if curHull < maxHull * 0.30 && initMeta.mission != .refit && !r.regimes.fleetMeta[id].playerMission.isTruthy {
+                if curHull < maxHull * 0.42 && initMeta.mission != .refit && !r.regimes.fleetMeta[id].playerMission.isTruthy {
                     r.regimes.fleetMeta[id].mission = JS("refit")
                 }
             }
@@ -444,12 +444,58 @@ public enum Naval {
                     else { start(best.port.id, "attacking", best.control.landOwnerId.asString == nation ? "驰援本国受困海港，破除敌舰封锁。" : (activeMission == .blockade ? "奉封锁令抵近敌港实施海上封锁。" : "前往可在余粮范围内抵达的敌港。")) }
                     return true
                 }
+                func tryHuntFleet() -> Bool {
+                    guard appNaval else { return false }
+                    let enemyFleets = view.fleets.filter {
+                        $0.fleet.id.asString != id && enemy($0.fleet.nationId.asString) && sea.component($0.face) == component
+                    }
+                    guard !enemyFleets.isEmpty else { return false }
+                    var bestPick: (port: Port, distToEnemy: Double)?
+                    for port in candidates {
+                        let landCtrl = landById[port.provinceId]?.controller.asString ?? ""
+                        guard landCtrl == nation || enemy(landCtrl) || RunWindow.access(r, nation, landCtrl) else { continue }
+                        let de = enemyFleets.reduce(Double.infinity) { min($0, jsHypot(port.center.x - $1.point.x, port.center.y - $1.point.y)) }
+                        guard de <= 130 else { continue }
+                        if atAnchor(port) {
+                            if bestPick == nil || de < bestPick!.distToEnemy { bestPick = (port, de) }
+                        } else {
+                            let p = preview(r, id, .sail(port: port.id))
+                            if p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood {
+                                if bestPick == nil || de < bestPick!.distToEnemy { bestPick = (port, de) }
+                            }
+                        }
+                    }
+                    guard let bestPick else { return false }
+                    order.targetId = enemy(landById[bestPick.port.provinceId]?.controller.asString ?? "") ? JS(bestPick.port.provinceId) : .null
+                    if atAnchor(bestPick.port) { row.assignedPortId = JS(bestPick.port.id); note("attacking", "巡弋战区主动寻歼敌国主力舰队。") }
+                    else { start(bestPick.port.id, "attacking", "主动出击猎杀同海域敌国主力舰队，争夺制海权。") }
+                    return true
+                }
+                func tryShoreSupport() -> Bool {
+                    guard appNaval else { return false }
+                    // 优先驰援正在围攻敌国沿海州郡的己方陆军，提供 +22% 舰炮破城火力！
+                    let activeSiegePids = Set(r.occupation.sieges.asArray.filter { $0.attacker.asString == nation }.map(\.provinceId.asString))
+                    guard !activeSiegePids.isEmpty else { return false }
+                    var bestPort: (port: Port, dist: Double)?
+                    for port in candidates where activeSiegePids.contains(port.provinceId) {
+                        if atAnchor(port) { bestPort = (port, 0); break }
+                        let p = preview(r, id, .sail(port: port.id))
+                        if p.valid && food >= rationNow * (days(p.distance) + 3) + reserveFood {
+                            if bestPort == nil || p.distance < bestPort!.dist { bestPort = (port, p.distance) }
+                        }
+                    }
+                    guard let bestPort else { return false }
+                    order.targetId = JS(bestPort.port.provinceId)
+                    if atAnchor(bestPort.port) { row.assignedPortId = JS(bestPort.port.id); note("attacking", "近海舰炮岸轰，强力支援己方陆军破城！") }
+                    else { start(bestPort.port.id, "attacking", "驰赴友军沿海围城战区，实施近海舰炮岸轰支援。") }
+                    return true
+                }
                 let dispatched: Bool
                 switch activeMission {
-                case .escort:   dispatched = tryEscort() || tryIntercept() || tryPortAttack()
-                case .blockade: dispatched = tryPortAttack() || tryIntercept() || tryEscort()
-                case .raid:     dispatched = tryIntercept() || tryPortAttack() || tryEscort()
-                case .patrol, .refit: dispatched = tryIntercept() || tryEscort() || tryPortAttack()
+                case .escort:   dispatched = tryEscort() || tryShoreSupport() || tryIntercept() || tryPortAttack()
+                case .blockade: dispatched = tryPortAttack() || tryShoreSupport() || tryIntercept() || tryEscort()
+                case .raid:     dispatched = tryIntercept() || tryHuntFleet() || tryPortAttack() || tryEscort()
+                case .patrol, .refit: dispatched = tryIntercept() || tryHuntFleet() || tryShoreSupport() || tryEscort() || tryPortAttack()
                 }
                 if dispatched { continue }
             }

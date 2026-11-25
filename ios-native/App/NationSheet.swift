@@ -653,6 +653,44 @@ struct NationSheet: View {
                         }
                     }
 
+                    // 国政核心四维简报（极简宣纸平铺，零额外卡片与性能负担）
+                    if info.alive {
+                        let stab = info.polityDetail?.stability ?? 60
+                        let rep = info.reputation?.score ?? 50
+                        let seaStr: String = {
+                            if let sc = info.seaTransport?.controlScore, (info.seaTransport?.totalPorts ?? 0) > 0 || !myFleets.isEmpty {
+                                return "\(sc)%"
+                            }
+                            return "内陆"
+                        }()
+                        let heir = info.people?.first(where: { $0.role == "继承人" })
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 0) {
+                                miniBriefCell(title: "国运", value: "\(Int(info.destiny))", warn: info.destiny < 35)
+                                Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 22)
+                                miniBriefCell(title: "安定", value: "\(stab)%", warn: stab < 40)
+                                Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 22)
+                                miniBriefCell(title: "信誉", value: "\(rep)", warn: rep < 35)
+                                Rectangle().fill(Theme.hairline).frame(width: 0.75, height: 22)
+                                miniBriefCell(title: "制海", value: seaStr, warn: (info.seaTransport?.blockadedPorts ?? 0) > 0)
+                            }
+                            .padding(.vertical, 6)
+                            .overlay(Rectangle().fill(Theme.hairline).frame(height: 0.75), alignment: .top)
+                            .overlay(Rectangle().fill(Theme.hairline).frame(height: 0.75), alignment: .bottom)
+
+                            if let h = heir {
+                                let mil = h.skills.count > 1 ? Int(h.skills[1]) : 50
+                                let adm = h.skills.count > 3 ? Int(h.skills[3]) : 50
+                                HStack(spacing: 6) {
+                                    Text(ovLex.isRepublican ? "候任" : "储君").font(Theme.caption).foregroundStyle(Theme.seal)
+                                    Text("\(h.name)（\(Int(h.age))岁）").font(Theme.caption).foregroundStyle(Theme.ink)
+                                    Spacer(minLength: 4)
+                                    Text("武\(mil) · 政\(adm)").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                }
+                            }
+                        }
+                    }
+
                     // 君主治乱与疆域负荷实时脉象（遇昏君庸主直接弹劾废立）
                     if info.rulerEval != nil || info.realmStrain != nil {
                         VStack(alignment: .leading, spacing: 7) {
@@ -1549,6 +1587,38 @@ struct NationSheet: View {
                 onToast: { flash = $0 },
                 onReload: { await reload() }
             )
+            // 前线战局简报（合围/断粮警报 + 正在进行的围城与近海封锁）
+            let encCount = mine.filter { state.armies[$0].encircled == true }.count
+            let cutCount = mine.filter { state.armies[$0].supplyState == "cut" || state.armies[$0].seaSupplyCut == true }.count
+            let mySieges = state.sieges.filter { $0.nation == nation }.count
+            let underSiege = state.sieges.filter { state.owners.indices.contains($0.province) && state.owners[$0.province] == nation }.count
+            if !info.wars.isEmpty || encCount > 0 || cutCount > 0 || mySieges > 0 || underSiege > 0 {
+                Group2 {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            Text("前线态势").font(Theme.serif(14.5)).foregroundStyle(Theme.ink)
+                            Spacer()
+                            if mySieges > 0 { PaperTag(text: "攻城 \(mySieges) 处", color: Theme.jade, size: 10) }
+                            if underSiege > 0 { PaperTag(text: "遭围 \(underSiege) 城", color: Theme.seal, size: 10) }
+                            if encCount > 0 { PaperTag(text: "\(encCount) 军合围", color: Theme.seal, size: 10) }
+                            if cutCount > 0 { PaperTag(text: "\(cutCount) 军断粮", color: Theme.seal, size: 10) }
+                        }
+                        let alertLine: String = {
+                            if encCount > 0 { return "警告：有 \(encCount) 支前线军团深陷敌境合围（攻防 −22%、耗粮加倍），请火速策应解围或破港通援！" }
+                            if cutCount > 0 { return "后勤告急：\(cutCount) 支军团粮道受阻或遭海上封锁，建议就地扎营或派舰护航。" }
+                            if underSiege > 0 { return "本国 \(underSiege) 处城池正遭敌军围攻，宜调主力驰援解围。" }
+                            if mySieges > 0 { return "我军正围攻敌国 \(mySieges) 座城池；若派水师封锁敌沿海港，攻城速度可再提速 35%。" }
+                            return "前线粮道畅通，士气齐整，可随时协同舰队发动两栖或陆路攻势。"
+                        }()
+                        Text(alertLine)
+                            .font(Theme.caption)
+                            .foregroundStyle((encCount > 0 || cutCount > 0 || underSiege > 0) ? Theme.seal : Theme.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 10)
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
             if info.alive {
                 Group2 {
                     EditorialSubMenuRow(
@@ -1708,9 +1778,11 @@ struct NationSheet: View {
                                     }
                                     HStack(spacing: 6) {
                                         PaperTag(text: status.0, color: status.1, size: 10)
+                                        if a.encircled == true { PaperTag(text: "陷入合围", color: Theme.seal, size: 10) }
                                         if a.embarked == true { PaperTag(text: "登船渡海", color: Theme.jade, size: 10) }
                                         if let ld = a.landingDays, ld > 0 { PaperTag(text: "两栖抢滩\(ld)日", color: Theme.seal, size: 10) }
                                         if a.seaSupplyCut == true { PaperTag(text: "海路断补", color: Theme.seal, size: 10) }
+                                        else if a.supplyState == "cut" { PaperTag(text: "断粮", color: Theme.seal, size: 10) }
                                         if let grp = a.armyGroup, !grp.isEmpty {
                                             Text(grp).font(Theme.caption).foregroundStyle(Theme.seal).lineLimit(1)
                                         } else {
@@ -1903,9 +1975,85 @@ struct NationSheet: View {
                 }
                 .padding(.horizontal, 16)
             }
+            // 周边及天下强国实力对比（一眼洞悉强弱，轻点直达外交与定位）
+            let myTroops = max(1, state.nations[nation].troops)
+            let rivals = state.nations.indices
+                .filter { $0 != nation && state.nations[$0].alive && $0 < map.meta.nations.count }
+                .sorted {
+                    let wa = info.enemies.contains($0) ? 1 : 0, wb = info.enemies.contains($1) ? 1 : 0
+                    if wa != wb { return wa > wb }
+                    let sa = state.nations[$0].troops + state.nations[$0].provinces * 600
+                    let sb = state.nations[$1].troops + state.nations[$1].provinces * 600
+                    return sa != sb ? sa > sb : $0 < $1
+                }
+                .prefix(5)
+            if !rivals.isEmpty {
+                FoldSection("列强兵势对比（前 \(rivals.count) 强）", expanded: startExpanded, summary: "兵力与疆域速览") {
+                    Group2 {
+                        ForEach(Array(rivals.enumerated()), id: \.element) { idx, other in
+                            let ot = state.nations[other]
+                            let om = map.meta.nations[other]
+                            let isEnemy = info.enemies.contains(other)
+                            let isAlly = (info.alliance?.members.contains(other) == true)
+                            let ratio = Double(ot.troops) / Double(myTroops)
+                            let cmpText = ratio >= 1.35 ? "强于我" : ratio <= 0.72 ? "弱于我" : "势均"
+                            let cmpColor: Color = ratio >= 1.35 ? Theme.seal : ratio <= 0.72 ? Theme.jade : Theme.ink2
+                            Button {
+                                GameFeel.shared.tap()
+                                let capProv = map.meta.cities.indices.contains(om.capital) ? map.meta.cities[om.capital].province : 0
+                                var items: [PressMenuItem] = [
+                                    PressMenuItem(title: "飞往\(om.name)都城", symbol: "map") { lower(); fly(capProv) }
+                                ]
+                                if info.alive {
+                                    if isEnemy {
+                                        items.append(PressMenuItem(title: "与\(om.name)立即议和", symbol: "scroll") {
+                                            Task { await run(success: "已与\(om.name)议和") { await model.makePeace(nation, other) } }
+                                        })
+                                    } else if info.overlord < 0 && !isAlly {
+                                        items.append(PressMenuItem(title: "向\(om.name)宣战", symbol: "flag.2.crossed", destructive: true) {
+                                            Task { await run(success: "已向\(om.name)宣战") { await model.declareWar(nation, on: other) } }
+                                        })
+                                    }
+                                }
+                                pressMenu = PressMenu(title: om.name, subtitle: "\(ot.provinces) 州 · 兵力 \(Names.wan(ot.troops))", items: items)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(Names.color(om.color)).frame(width: 8, height: 22)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack(spacing: 5) {
+                                            Text(om.name).font(Theme.body).foregroundStyle(Theme.ink).lineLimit(1)
+                                            if isEnemy { PaperTag(text: "交战", color: Theme.seal, size: 10) }
+                                            else if isAlly { PaperTag(text: "同盟", color: Theme.jade, size: 10) }
+                                        }
+                                        Text("\(ot.provinces) 州 · 人口 \(Names.wan(ot.population))").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    }
+                                    Spacer(minLength: 4)
+                                    VStack(alignment: .trailing, spacing: 2) {
+                                        Text(Names.wan(ot.troops)).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit()
+                                        Text(cmpText).font(Theme.caption).foregroundStyle(cmpColor)
+                                    }
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 9).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            if idx < rivals.count - 1 { Divider2() }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+            }
             if info.alive { FoldSection("国家行为", expanded: startExpanded) { actions(info, map) } }
         }
     }
+    /// 概览顶部国政简报四格单元（纯宣纸平铺，轻量化零负担）。
+    private func miniBriefCell(title: String, value: String, warn: Bool) -> some View {
+        VStack(spacing: 2) {
+            Text(value).font(Theme.serif(14.5)).foregroundStyle(warn ? Theme.seal : Theme.ink).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+            Text(title).font(Theme.caption).foregroundStyle(Theme.ink2)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     /// The capital's city name (the legend's capital is a city index).
     func capitalName(_ map: WorldMap, _ n: WorldMeta.Nation?) -> String? {
         guard let n, map.meta.cities.indices.contains(n.capital) else { return nil }

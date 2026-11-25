@@ -9,7 +9,7 @@ import {checkNativeTour,requiredShots} from './check-native-tour.mjs';
 function fixture(t) {
   const directory = mkdtempSync(join(tmpdir(),'lieguoji-tour-'));
   t.after(() => {
-    for(const name of ['tour-status.json','founding-time.json','advance-ownership.json','panel-profile.json','name-stability.json','color-contrast.json','map-unrolled.json','wash-demo.json','war-rule-settings.json',...requiredShots.map(name => `${name}.png`)]) {
+    for(const name of ['tour-status.json','founding-time.json','advance-ownership.json','panel-profile.json','name-stability.json','name-placement.json','color-contrast.json','map-unrolled.json','wash-demo.json','war-rule-settings.json',...requiredShots.map(name => `${name}.png`)]) {
       try { unlinkSync(join(directory,name)); } catch(error) { if(error.code !== 'ENOENT') throw error; }
     }
     rmdirSync(directory);
@@ -24,7 +24,8 @@ function fixture(t) {
   writeFileSync(join(directory,'panel-profile.json'),JSON.stringify({version:1,frozen:true,day:10,endDay:10,worldSHA256:'a'.repeat(64),
     panels:['nation','province','ranking'].map(scene => ({scene,cycles:3,samples:100,averageMs:20,p95Ms:40,maxMs:60,hitches:2}))}));
   writeFileSync(join(directory,'name-stability.json'),JSON.stringify({version:1,passed:true,frames:2000,names:12,blinks:0,provincesChanged:9,created:1,moved:3,fadedIn:1}));
-  writeFileSync(join(directory,'color-contrast.json'),JSON.stringify({version:1,passed:true,states:12,leastDifference:27.4,closestPair:'#fec2cb #8d9d50'}));
+  writeFileSync(join(directory,'name-placement.json'),JSON.stringify({version:1,passed:true,total:12,inside:12,insideRatio:1.0,horizontalCount:11,maxAngleDeg:8.5}));
+  writeFileSync(join(directory,'color-contrast.json'),JSON.stringify({version:1,passed:true,states:12,leastDifference:27.4,closestPair:'#fec2cb #8d9d50',borderPairs:18,borderLeastDifference:29.1,borderClosestPair:'#e87a8a #4ca8de'}));
   writeFileSync(join(directory,'map-unrolled.json'),JSON.stringify({version:1,passed:true,scale:0.2437,fit:0.2437}));
   writeFileSync(join(directory,'wash-demo.json'),JSON.stringify({version:3,after:{
     encodeMs:{samples:600},callbackGapMs:{p95:16.7},stress:{provinces:48,callbackGapMs:{p95:20}},
@@ -105,4 +106,9 @@ test('a world built by the web engine fallback fails',t => {
   const d = fixture(t);
   writeFileSync(join(d,'founding-time.json'),JSON.stringify({swift:{seconds:0,cityCount:null,error:'失败'},web:{seconds:40,cityCount:null,error:null}}));
   assert.throws(() => checkNativeTour(d),/没有由 Swift 建成/);
+});
+test('misplaced or overly tilted state names fail the tour',t => {
+  const d = fixture(t);
+  writeFileSync(join(d,'name-placement.json'),JSON.stringify({version:1,passed:false,total:12,inside:8,insideRatio:0.66,horizontalCount:5,maxAngleDeg:28.0}));
+  assert.throws(() => checkNativeTour(d),/国名排版回归失败/);
 });

@@ -55,67 +55,198 @@ import LieguojiCore
     @Published var speed = 1
     /// 远程计算: the computer simulating this world (nil: the phone does).
     @Published private(set) var remoteAddress: String?
+    /// 当前远程链路形态（局域网直连 / 云端高速通道 / 云端中转）。
+    @Published private(set) var remoteTransport: String = ""
+    /// 实测平滑往返延迟（毫秒）。
+    @Published private(set) var remoteRTTMs: Int?
+    /// 正在静默/自动重连电脑服务器（界面展示重连态，不惊动用户）。
+    @Published private(set) var remoteReconnecting = false
+    private var wasPlayingBeforeBackground = false
+    private var wasRemoteBeforeBackground = false
+    private var appInBackground = false
     /// A one-line notice for the game screen (e.g. the computer's link broke).
     @Published var notice: String?
     func connectRemote(_ address: String) async -> String? {
         do {
             let a = try await native.connect(address)
-            remoteAddress = a; UserDefaults.standard.set(address, forKey: "remote.address"); UserDefaults.standard.set(true, forKey: "remote.auto")
+            remoteAddress = a
+            remoteTransport = await native.remoteTransport
+            remoteRTTMs = await native.lastRTTMs
+            remoteReconnecting = false
+            UserDefaults.standard.set(address, forKey: "remote.address")
+            UserDefaults.standard.set(true, forKey: "remote.auto")
+            if playing { await syncRemoteStream() }
             return nil
         } catch { return error.localizedDescription }
     }
-    func disconnectRemote() async { await native.disconnect(); remoteAddress = nil; UserDefaults.standard.set(false, forKey: "remote.auto") }
-    /// 自动接入: while a world is open, the player's computer is looked for (now and every 90 s) and
-    /// used as soon as it is on, once the player turns this on in 设置 › 远程计算.
+    func disconnectRemote() async {
+        await native.disconnect()
+        remoteAddress = nil
+        remoteTransport = ""
+        remoteRTTMs = nil
+        remoteReconnecting = false
+        wasRemoteBeforeBackground = false
+        UserDefaults.standard.set(false, forKey: "remote.auto")
+    }
+    func refreshRemoteRTT() async -> Int? {
+        let ms = await native.measureRTT()
+        remoteRTTMs = ms
+        return ms
+    }
+    private func syncRemoteStream() async {
+        guard remoteAddress != nil else { return }
+        let wanted = CloudConfig.shared.pace[speed] ?? [1: 3, 2: 6, 4: 12, 8: 24, 16: 40][speed] ?? 3
+        let far = remoteAddress.map { !$0.contains("局域网") } ?? false
+        await native.configureRemoteStream(playing: playing && phase == .playing && !replayActive, days: far ? min(48, wanted * 2) : wanted)
+    }
+    /// 退入后台：优雅暂驻电脑服务器内存并落盘本地热备，绝不在系统挂起时误判断线降级手机。
+    func handleAppBackground() async {
+        appInBackground = true
+        wasPlayingBeforeBackground = playing
+        wasRemoteBeforeBackground = (remoteAddress != nil || reconnecting || remoteReconnecting || (await native.isRemoteActiveOrParked))
+        if playing { pause(saving: false) }
+        if state != nil { save() }
+        if wasRemoteBeforeBackground {
+            _ = await native.parkForBackground()
+            remoteReconnecting = false
+        }
+    }
+    /// 回到前台：局域网优先 → 云端 WebSocket → HTTP 中转，秒级无感重连并恢复推演。
+    func handleAppForeground() async {
+        let shouldResumePlay = wasPlayingBeforeBackground
+        let shouldReconnect = wasRemoteBeforeBackground || reconnecting || (await native.isRemoteActiveOrParked)
+        appInBackground = false
+        wasPlayingBeforeBackground = false
+        guard phase == .playing, state != nil else { return }
+
+        if shouldReconnect {
+            remoteReconnecting = true
+            notice = "正在无缝续连电脑服务器…"
+            let delays: [UInt64] = [300_000_000, 800_000_000, 1_500_000_000]
+            for attempt in 0..<delays.count {
+                let res = await native.resumeFromForeground()
+                if res.connected, let label = res.label {
+                    remoteAddress = label
+                    remoteTransport = res.transport
+                    remoteRTTMs = res.rttMs
+                    remoteReconnecting = false
+                    reconnecting = false
+                    wasRemoteBeforeBackground = false
+                    if let data = res.state, let fresh = await Self.decode(GameState.self, from: data) {
+                        apply(fresh)
+                    }
+                    let msText = res.rttMs.map { " \($0)ms" } ?? ""
+                    notice = "已无缝续连电脑（\(res.transport)\(msText)）"
+                    if shouldResumePlay { play() }
+                    return
+                }
+                if attempt + 1 < delays.count {
+                    try? await Task.sleep(nanoseconds: delays[attempt])
+                }
+            }
+            remoteReconnecting = false
+            remoteLost(resumePlay: shouldResumePlay)
+            return
+        }
+
+        if autoRemote && remoteAddress == nil {
+            Task { _ = await findComputerNow() }
+        }
+        if shouldResumePlay && !playing { play() }
+    }
+    /// 自动接入: while a world is open, the player's computer is looked for (now and every 60 s) and
+    /// used as soon as it is on, once the player turns this on in 设置 › 远程计算与云端存档.
     var autoRemote: Bool {
-        // Off unless the player turns it on (设置 › 远程计算): the phone computes everything itself; a
-        // computer that was often unreachable made the default worse than the phone alone.
         get { UserDefaults.standard.object(forKey: "remote.autoAll") as? Bool ?? false }
         set { UserDefaults.standard.set(newValue, forKey: "remote.autoAll"); if newValue { autoConnect() } }
     }
     private var autoTask: Task<Void, Never>?
-    /// 立即查找: look for the computer now (instead of the next 90-second check).
-    /// The computer's link broke (background, network): pause quietly and reattach; after several
-    /// failures continue on the phone from the last copy.
+    /// 链路意外中断时的快速自适应重连（若正处后台则静默挂起，等切回前台再秒连）。
     private var reconnecting = false
-    func remoteLost() {
-        let wasPlaying = playing
+    func remoteLost(resumePlay: Bool? = nil) {
+        let wasPlaying = resumePlay ?? playing
         if playing { loopToken = nil; loop?.cancel(); loop = nil; playing = false }
         remoteAddress = nil
+        remoteRTTMs = nil
+        if appInBackground {
+            wasPlayingBeforeBackground = wasPlayingBeforeBackground || wasPlaying
+            wasRemoteBeforeBackground = true
+            return
+        }
         guard !reconnecting else { return }
         reconnecting = true
-        notice = "与电脑的连接中断，正在重连…"
+        remoteReconnecting = true
+        notice = "与电脑链路波动，正在自动续连…"
         Task {
-            for _ in 0..<8 {
+            let delays: [UInt64] = [500_000_000, 1_000_000_000, 2_000_000_000, 3_000_000_000, 4_000_000_000, 5_000_000_000]
+            for waitNs in delays {
+                if appInBackground {
+                    reconnecting = false
+                    remoteReconnecting = false
+                    wasRemoteBeforeBackground = true
+                    wasPlayingBeforeBackground = wasPlayingBeforeBackground || wasPlaying
+                    return
+                }
                 if let a = await native.reattach() {
-                    remoteAddress = a; reconnecting = false; notice = "已重新接上电脑"
+                    remoteAddress = a
+                    remoteTransport = await native.remoteTransport
+                    remoteRTTMs = await native.lastRTTMs
+                    reconnecting = false
+                    remoteReconnecting = false
+                    if let data = await native.state(), let fresh = await Self.decode(GameState.self, from: data) {
+                        apply(fresh)
+                    }
+                    let msText = remoteRTTMs.map { " \($0)ms" } ?? ""
+                    notice = "已重新接上电脑（\(remoteTransport)\(msText)）"
                     if wasPlaying { play() }
                     return
                 }
-                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                try? await Task.sleep(nanoseconds: waitNs)
             }
             await native.fallbackLocal()
             reconnecting = false
-            notice = "电脑暂时连不上，改用手机继续（从最近一次存档）"
-            if let data = await native.state(), let next = try? JSONDecoder().decode(GameState.self, from: data) { apply(next) }
+            remoteReconnecting = false
+            remoteTransport = ""
+            remoteRTTMs = nil
+            notice = "电脑暂时连不上，已无缝切回手机继续（从最近热备）"
+            if let data = await native.state(), let next = await Self.decode(GameState.self, from: data) { apply(next) }
+            if wasPlaying { play() }
         }
     }
     func findComputerNow() async -> Bool {
         guard remoteAddress == nil else { return true }
-        guard let a = await native.connectAuto() else { return false }
-        remoteAddress = a; notice = "已接入你的电脑（\(a)）"
+        guard let found = await native.connectAuto() else { return false }
+        remoteAddress = found.label
+        remoteTransport = found.transport
+        remoteRTTMs = found.rttMs
+        remoteReconnecting = false
+        let msText = found.rttMs.map { " · \($0)ms" } ?? ""
+        notice = "已接入电脑计算（\(found.transport)\(msText)）"
+        if playing { await syncRemoteStream() }
         return true
     }
     func autoConnect() {
         guard autoTask == nil else { return }
         autoTask = Task { [weak self] in
             while let self, !Task.isCancelled {
-                if self.autoRemote, self.remoteAddress == nil, self.phase == .playing {
-                    if let a = await self.native.connectAuto() { self.remoteAddress = a; self.notice = "已自动接入电脑计算（\(a)）" }
-                    else if let saved = UserDefaults.standard.string(forKey: "remote.address"), !saved.isEmpty, UserDefaults.standard.bool(forKey: "remote.auto"),
-                            let a = try? await self.native.connect(saved) { self.remoteAddress = a; self.notice = "已自动接入电脑计算（\(a)）" }
+                if self.autoRemote, !self.appInBackground, !self.reconnecting, self.remoteAddress == nil, self.phase == .playing {
+                    if let found = await self.native.connectAuto() {
+                        self.remoteAddress = found.label
+                        self.remoteTransport = found.transport
+                        self.remoteRTTMs = found.rttMs
+                        let msText = found.rttMs.map { " · \($0)ms" } ?? ""
+                        self.notice = "已自动接入电脑计算（\(found.transport)\(msText)）"
+                        if self.playing { await self.syncRemoteStream() }
+                    } else if let saved = UserDefaults.standard.string(forKey: "remote.address"), !saved.isEmpty, UserDefaults.standard.bool(forKey: "remote.auto"),
+                              let a = try? await self.native.connect(saved) {
+                        self.remoteAddress = a
+                        self.remoteTransport = await self.native.remoteTransport
+                        self.remoteRTTMs = await self.native.lastRTTMs
+                        self.notice = "已自动接入电脑计算（\(a)）"
+                        if self.playing { await self.syncRemoteStream() }
+                    }
                 }
-                try? await Task.sleep(nanoseconds: 90_000_000_000)
+                try? await Task.sleep(nanoseconds: 60_000_000_000)
             }
         }
     }
@@ -739,6 +870,7 @@ import LieguojiCore
         let token = UUID()
         loopToken = token
         playing = true
+        if remoteAddress != nil { Task { await syncRemoteStream() } }
         loop = Task { [weak self] in
             // 任何退出路径都清理 loop 与 playing，彻底杜绝“界面仍显示运行、推演已停滞需重新暂停再开始”的假死。
             defer {
@@ -785,10 +917,12 @@ import LieguojiCore
                 // A step may take longer at the higher speeds (the map glides over a whole step on the GPU,
                 // so a longer step is still smooth): large worlds then really run faster at 4× and 8×.
                 let stepTime = [1: 0.13, 2: 0.2, 4: 0.32, 8: 0.5, 16: 0.6][self.speed] ?? 0.13
-                // Only a share of each step goes to the engine (less when the phone runs warm; see Energy).
-                let affordable = max(1, Int((stepTime * Energy.duty / max(0.004, self.dayCost)).rounded(.down)))
+                // Only a share of each step goes to the engine on phone CPU; when PC server computes,
+                // let the computer run at full speed without phone thermal throttling!
+                let isRemoteNow = self.remoteAddress != nil
+                let affordable = isRemoteNow ? wanted : max(1, Int((stepTime * Energy.duty / max(0.004, self.dayCost)).rounded(.down)))
                 let pace = min(wanted, affordable)
-                let days = far ? pace * 2 : pace
+                let days = far ? min(48, pace * 2) : pace
                 self.lastDays = days
                 do {
                     // The next step is asked for before this one is applied: the engine works on it while
@@ -821,13 +955,14 @@ import LieguojiCore
                 let budget = max(0.2, stepTime)
                 // The processor rests for part of every step, more when the phone is warm: a large world
                 // used to keep a core busy without pause, which is what heated the phone.
-                let rest = max(budget - spent, far ? 0 : spent * (1 / Energy.duty - 1))
+                let rest = max(budget - spent, (far || isRemoteNow) ? 0 : spent * (1 / Energy.duty - 1))
                 if rest > 0 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) } else { await Task.yield() }
             }
         }
     }
     func pause(saving: Bool = true) {
         let was = playing; loopToken = nil; loop?.cancel(); loop = nil; playing = false
+        if remoteAddress != nil { Task { await syncRemoteStream() } }
         // Ownership held back while playing reaches the map — after the page that paused the game has
         // slid in (a page opening paused and redrew the map and every state name during its animation:
         // the stutter measured on every page).
@@ -836,7 +971,10 @@ import LieguojiCore
         if was, saving, let s = state { apply(s) }
         if saving, was, let day = state?.day { save(); lastSavedDay = day }
     }
-    func cycleSpeed() { speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : 1 }
+    func cycleSpeed() {
+        speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : 1
+        if remoteAddress != nil && playing { Task { await syncRemoteStream() } }
+    }
     func stepOnce() {
         guard !replayActive, !playing, phase == .playing, state != nil else { return }
         let ticket = advanceOwnership.begin(world: worldEpoch), revision = nativeRevision
@@ -898,7 +1036,8 @@ import LieguojiCore
         // 本机推演直接拿到结构体；远程的 JSON 已在引擎执行器上解码。
         let next = try step.get()
         guard owns(ticket) else { return }
-        if remoteAddress != nil, !isRemote { remoteAddress = nil }
+        if remoteAddress != nil, !isRemote { remoteAddress = nil; remoteTransport = ""; remoteRTTMs = nil }
+        if isRemote { remoteRTTMs = await native.lastRTTMs }
         let now = CACurrentMediaTime()
         if playing, let last = lastApplied, now - last < 2 { stepInterval = stepInterval * 0.7 + (now - last) * 0.3 }
         lastApplied = playing ? now : nil
@@ -908,7 +1047,8 @@ import LieguojiCore
         onAdvanceApplied?(next.day)
         applyCost = applyCost * 0.7 + (CACurrentMediaTime() - applying) * 0.3
         if controller.showMetrics {
-            controller.simText = String(format: "  推演 %.1f ms/日 · 每步 %d 日 · 界面更新 %.1f ms  ", dayCost * 1000, lastDays, applyCost * 1000)
+            let netTag = isRemote ? " · \(remoteTransport.isEmpty ? "电脑" : remoteTransport) \(remoteRTTMs.map { "\($0)ms" } ?? "")" : ""
+            controller.simText = String(format: "  推演 %.1f ms/日 · 每步 %d 日 · 界面 %.1f ms%@  ", dayCost * 1000, lastDays, applyCost * 1000, netTag)
         }
         // Autosave by real time, at most every two minutes while playing (a save serializes the whole
         // world on the engine and the steps wait behind it: every 90 days stalled fast play every few
@@ -997,23 +1137,30 @@ import LieguojiCore
         if ports != controller.seaPorts { controller.seaPorts = ports }
         let changedForts = next.forts != previous?.forts ? next.forts : nil
         let changedHoly = next.holy != previous?.holy ? next.holy : nil
-        if let meta = map?.meta, changedForts != nil || changedHoly != nil {
+        let changedWonders = next.wonders != previous?.wonders ? next.wonders : nil
+        let changedRuins = next.ruins != previous?.ruins ? next.ruins : nil
+        if let meta = map?.meta, changedForts != nil || changedHoly != nil || changedWonders != nil || changedRuins != nil {
             let cityByProv = cityByProvCache
+            func pinPoint(_ p: Int) -> SIMD2<Float>? {
+                guard meta.provinces.indices.contains(p) else { return nil }
+                if let c = cityByProv[p] { return SIMD2(c.x, c.y) }
+                return SIMD2(meta.provinces[p].x, meta.provinces[p].y)
+            }
             if let list = changedForts {
-                let forts = list.compactMap { p -> SIMD2<Float>? in
-                    guard meta.provinces.indices.contains(p) else { return nil }
-                    if let c = cityByProv[p] { return SIMD2(c.x, c.y) }
-                    return SIMD2(meta.provinces[p].x, meta.provinces[p].y)
-                }
+                let forts = list.compactMap(pinPoint)
                 if forts != controller.forts { controller.forts = forts }
             }
             if let list = changedHoly {
-                let holy = list.compactMap { h -> SIMD2<Float>? in
-                    guard meta.provinces.indices.contains(h.province) else { return nil }
-                    if let c = cityByProv[h.province] { return SIMD2(c.x, c.y) }
-                    return SIMD2(meta.provinces[h.province].x, meta.provinces[h.province].y)
-                }
+                let holy = list.compactMap { pinPoint($0.province) }
                 if holy != controller.holy { controller.holy = holy }
+            }
+            if changedWonders != nil {
+                let wonders = (next.wonders ?? []).compactMap(pinPoint)
+                if wonders != controller.wonders { controller.wonders = wonders }
+            }
+            if changedRuins != nil {
+                let ruins = (next.ruins ?? []).compactMap(pinPoint)
+                if ruins != controller.ruins { controller.ruins = ruins }
             }
         }
         // 同步活跃四季天气与灾丰州郡至 GPU 着色缓冲与 60fps 大气粒子层。
@@ -1564,7 +1711,7 @@ import LieguojiCore
                 }
                 if let src = bestPt, bestDist > 4 {
                     let inOwn = a.province >= 0 && state.owners.indices.contains(a.province) && state.owners[a.province] == a.nation
-                    let severed = (a.supplyState == "cut") || (!inOwn && (a.supplies < 25 || bestDist > 160))
+                    let severed = (a.encircled == true) || (a.supplyState == "cut") || (!inOwn && (a.supplies < 25 || bestDist > 160))
                     e.geoArcs.append(.init(key: "gs-\(a.id)", fromX: src.0, fromY: src.1, toX: Double(a.x), toY: Double(a.y), kind: .supply, severed: severed))
                 }
             }

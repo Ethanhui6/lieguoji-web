@@ -91,7 +91,32 @@ public final class EngineService {
         func data(_ d: Data?) -> Reply { Reply(ok: d != nil, reason: d == nil ? "世界尚未载入。" : "", data: d) }
 
         switch call {
-        case "ping": return Reply(reason: EngineWire.greeting)
+        case "ping":
+            var r = Reply(reason: EngineWire.greeting)
+            r.text = engine.map { "day:\($0.run.world.day.asInt)" } ?? "idle"
+            return r
+        case "park":
+            // 手机切入后台：保持电脑端世界常驻内存并返还最新状态，不断线也不丢进度。
+            var r = Reply(ok: true, reason: "parked")
+            r.text = engine.map { "day:\($0.run.world.day.asInt)" } ?? "idle"
+            return r
+        case "resume":
+            // 手机回到前台：立取当前权威世界状态并补齐国名框，无感续推。
+            guard engine != nil else { return Reply(ok: false, reason: "世界尚未载入。") }
+            lastOwners = []; lastNationSig = []
+            return data(state(stepping: false))
+        case "stepBatch":
+            guard engine != nil else { return Reply(ok: false, reason: "世界尚未载入。") }
+            let days = max(1, min(60, int("days")))
+            engine?.advance(days: days)
+            return data(state(stepping: true))
+        case "streamConfig":
+            return Reply(ok: true, reason: "ok")
+        case "pullLatest":
+            guard engine != nil else { return Reply(ok: false, reason: "世界尚未载入。") }
+            let days = max(1, min(60, optInt("days") ?? 3))
+            engine?.advance(days: days)
+            return data(state(stepping: true))
         case "catalogs":
             guard let payload, let o = (try? JSONSerialization.jsonObject(with: payload)) as? [String: String],
                   let traits = o["traits"].flatMap({ Data(base64Encoded: $0) }), let noble = o["nobleCultures"].flatMap({ Data(base64Encoded: $0) }),
@@ -313,9 +338,10 @@ public enum RemoteRoom {
 
 /// Frame helpers shared by the server and the app's remote link.
 public enum EngineWire {
-    /// What a server answers to `ping`. The app only hands its world to a server with the same rules:
-    /// raise the number whenever the engine or this protocol changes in a way an older server would get wrong.
-    public static let greeting = "列国纪远程计算·4"
+    /// What a server answers to `ping`. The app accepts both v4 and v5 servers so players are never
+    /// locked out before updating `LieguojiServer.exe`, while lighting up streaming/ping/resume on v5.
+    public static let greeting = "列国纪远程计算·5"
+    public static let compatibleGreetings: Set<String> = ["列国纪远程计算·5", "列国纪远程计算·4"]
     public static func u32(_ n: Int) -> Data { var v = UInt32(n).bigEndian; return Data(bytes: &v, count: 4) }
     public static func readU32(_ d: Data, at i: Int) -> Int { d[d.startIndex + i..<d.startIndex + i + 4].reduce(0) { $0 << 8 | Int($1) } }
     public static func request(_ call: String, _ args: [String: Any], payload: Data?) -> Data {

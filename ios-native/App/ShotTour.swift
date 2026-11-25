@@ -77,6 +77,8 @@ enum ShotTour {
         await shoot("03-world")
         await checkWarRules(model)
         await checkColors(model)
+        await checkNamePlacement(model)
+        await shootWinterReadability(model)
         await checkAdvanceOwnership(model)
         await checkEarlyHeralds(model)
         // 国名稳定: while the war redraws the borders and the camera stands still, every frame is compared
@@ -151,6 +153,10 @@ enum ShotTour {
         NationSheet.tourGovernSub = "decrees"
         show(nil); await wait(0.5); show(.nation(nation)); await wait(1.4); await shoot("11d-decrees")
         NationSheet.tourGovernSub = nil
+        NationSheet.tourTab = .military
+        show(nil); await wait(0.5); show(.nation(nation)); await wait(1.4); await shoot("11e-nation-military")
+        NationSheet.tourTab = .diplomacy
+        show(nil); await wait(0.5); show(.nation(nation)); await wait(1.4); await shoot("11f-nation-diplomacy")
         NationSheet.tourTab = nil
         show(nil); await wait(0.8)
         model.tourLandscape = true
@@ -344,7 +350,36 @@ enum ShotTour {
             let spread = near.reduce(0) { $0 + hypot($1.x - a.x, $1.y - a.y) }
             if near.count == 4, densest == nil || spread < densest!.spread { densest = (a.x, a.y, spread) }
         }
-        let report: [String: Any] = ["version": 1, "states": seats.count, "leastDifference": least, "closestPair": pair, "passed": seats.count >= 2 && least >= 15]
+        // 同步核对真实陆地接壤国最小色差（基于地图格子邻边，确保紧贴国界的相邻列国绝不撞色）
+        var borderPairs = Set<Int>()
+        for e in map.edges where e.a >= 0 && e.b >= 0 {
+            let ca = Int(e.a), cb = Int(e.b)
+            guard map.isLand(ca), map.isLand(cb) else { continue }
+            let pa = Int(map.province[ca]), pb = Int(map.province[cb])
+            guard pa >= 0, pb >= 0, pa < map.meta.provinces.count, pb < map.meta.provinces.count else { continue }
+            let na = map.meta.provinces[pa].nation, nb = map.meta.provinces[pb].nation
+            if na >= 0, nb >= 0, na != nb, na < map.meta.nations.count, nb < map.meta.nations.count {
+                let lo = min(na, nb), hi = max(na, nb)
+                borderPairs.insert(lo * 10_000 + hi)
+            }
+        }
+        var borderLeast = 999.0, borderClosest = ""
+        for code in borderPairs {
+            let na = code / 10_000, nb = code % 10_000
+            let ca = map.meta.nations[na].color, cb = map.meta.nations[nb].color
+            let d = NationColors.difference(ca, cb)
+            if d < borderLeast { borderLeast = d; borderClosest = "\(ca) \(cb)" }
+        }
+        let report: [String: Any] = [
+            "version": 1,
+            "states": seats.count,
+            "leastDifference": least,
+            "closestPair": pair,
+            "borderPairs": borderPairs.count,
+            "borderLeastDifference": borderPairs.isEmpty ? least : borderLeast,
+            "borderClosestPair": borderClosest,
+            "passed": seats.count >= 2 && least >= 15 && (borderPairs.isEmpty || borderLeast >= 20)
+        ]
         if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {
             try? data.write(to: dir.appendingPathComponent("color-contrast.json"), options: .atomic)
         }
@@ -353,6 +388,53 @@ enum ShotTour {
             await wait(2.2); await shoot("03b-colors-dense")
             model.controller.resetRequest = UUID(); await wait(0.9)
         }
+    }
+
+    /// 校验全部国名锚点是否稳居本国领土内部、且倾角端正（≤ 15°）。
+    @MainActor private static func checkNamePlacement(_ model: GameModel) async {
+        guard let map = model.map else { return }
+        let picker = CellPicker(map: map)
+        var total = 0, inside = 0, horizontalCount = 0
+        var maxAngleDeg = 0.0
+        for box in map.meta.labels {
+            guard box.nation >= 0, box.nation < map.meta.nations.count else { continue }
+            total += 1
+            let deg = abs(Double(box.angle)) * 180.0 / .pi
+            if deg > maxAngleDeg { maxAngleDeg = deg }
+            if deg < 0.5 { horizontalCount += 1 }
+            if let cell = picker.cell(atX: box.x, y: box.y), map.isLand(cell) {
+                let prov = Int(map.province[cell])
+                if prov >= 0, prov < map.meta.provinces.count, map.meta.provinces[prov].nation == box.nation {
+                    inside += 1
+                }
+            }
+        }
+        let ratio = total > 0 ? Double(inside) / Double(total) : 0.0
+        let passed = total >= 2 && ratio >= 0.85 && maxAngleDeg <= 15.5
+        let report: [String: Any] = [
+            "version": 1,
+            "total": total,
+            "inside": inside,
+            "insideRatio": ratio,
+            "horizontalCount": horizontalCount,
+            "maxAngleDeg": maxAngleDeg,
+            "passed": passed
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: report, options: .sortedKeys) {
+            try? data.write(to: dir.appendingPathComponent("name-placement.json"), options: .atomic)
+        }
+    }
+
+    /// 隆冬政区色块可读性实拍：固定隆冬节气相位（0.0），确认冬季薄霜光影不淹没列国国色。
+    @MainActor private static func shootWinterReadability(_ model: GameModel) async {
+        let prev = model.controller.seasonPhase
+        model.controller.seasonPhase = 0.0
+        model.controller.flushSync()
+        await wait(0.8)
+        await shoot("03c-season-winter")
+        model.controller.seasonPhase = prev
+        model.controller.flushSync()
+        await wait(0.3)
     }
 
     /// 连续帧对比: samples the state names of every displayed frame (MapLabelsView.nameFrame).

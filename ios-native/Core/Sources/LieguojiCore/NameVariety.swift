@@ -102,6 +102,19 @@ enum NameVariety {
             }
             n.name = JS(Regimes.title(r, id, base: c.name.value.optionalString ?? MapLayers.stateLabel(n.name.asString, full: false), style: st))
         }
+        // 清洗开局城池与州郡名中的冗余地名尾缀（如「剑桥郡」「辽阳行省」「钦察草原」「特斯科科城」），保持地图清爽考究
+        for city in r.world.cities.asArray {
+            if let raw = city.name.optionalString {
+                let cleaned = NamingCatalog.cleanCityName(raw)
+                if cleaned != raw { city.name = JS(cleaned) }
+            }
+        }
+        for prov in r.world.provinces.asArray {
+            if let raw = prov.name.optionalString {
+                let cleaned = NamingCatalog.cleanCityName(raw)
+                if cleaned != raw { prov.name = JS(cleaned) }
+            }
+        }
         polishHousesAndPeople(r, seed: seed)
         // 为第 0 天开局已编成的所有军队分配真实军事职能分部与地道番号
         for a in r.world.armies.asArray where a.troops.asNumber > 0 && a.status.asString != "destroyed" {

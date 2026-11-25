@@ -130,22 +130,45 @@ extension NativeEngine {
             let mid = (lo + hi) / 2
             var labelX = cx + ux * mid, labelY = cy + uy * mid, labelAngle = theta, labelWidth = width, labelHeight = height, labelMin = 15.0
             if fit {
-                var queue = [Int](); queue.reserveCapacity(list.count)
+                // 8 邻域切角欧氏距离场（正交步长 2、斜向步长 3），精准求得不规则/斜向疆域的真实腹地不可达极点（Pole of Inaccessibility）
+                for c in list { depth[c] = 1_000_000 }
+                var buckets = [[Int]](repeating: [], count: 64)
+                var maxBucket = 0
                 for c in list {
                     var edge = false
                     for i in 0..<4 { let d = neighbour(c, i); if d < 0 || d >= n || group(d) != k { edge = true; break } }
-                    if edge { depth[c] = 0; queue.append(c) }
+                    if edge { depth[c] = 0; buckets[0].append(c) }
                 }
-                var head = 0
-                while head < queue.count {
-                    let c = queue[head]; head += 1
-                    for i in 0..<4 { let d = neighbour(c, i); if d >= 0 && d < n && depth[d] < 0 && group(d) == k { depth[d] = depth[c] + 1; queue.append(d) } }
+                let diagOffsets: [(Int, Int, Int32)] = [(-1, 0, 2), (1, 0, 2), (0, -1, 2), (0, 1, 2), (-1, -1, 3), (1, -1, 3), (-1, 1, 3), (1, 1, 3)]
+                var curDist = 0
+                while curDist <= maxBucket {
+                    let bIdx = curDist & 63
+                    let wave = buckets[bIdx]
+                    if !wave.isEmpty {
+                        buckets[bIdx].removeAll(keepingCapacity: true)
+                        for c in wave {
+                            if Int(depth[c]) != curDist { continue }
+                            let gx = c % cellsX, gy = c / cellsX
+                            for (ox, oy, wCost) in diagOffsets {
+                                let nx = gx + ox, ny = gy + oy
+                                guard nx >= 0 && nx < cellsX && ny >= 0 && ny < rows else { continue }
+                                let d = ny * cellsX + nx
+                                guard group(d) == k else { continue }
+                                let nd = depth[c] + wCost
+                                if nd < depth[d] {
+                                    depth[d] = nd
+                                    let ndi = Int(nd)
+                                    buckets[ndi & 63].append(d)
+                                    if ndi > maxBucket { maxBucket = ndi }
+                                }
+                            }
+                        }
+                    }
+                    curDist += 1
                 }
-                // 国名居中（2.0.2 舆图视觉优化）：在领土腹地（距离边界 >= 55% 最大纵深）选取最多 16 个空间均衡锚点
-                // （含最深点、质心最近点与四象限腹心），倾角收敛在 ±20° 内并优先水平排版，同时适度避让本国都城印记。
                 var deepestDepth: Int32 = 0
                 for c in list where depth[c] > deepestDepth { deepestDepth = depth[c] }
-                let inner = list.filter { depth[$0] * 100 >= deepestDepth * 55 }.sorted { depth[$0] != depth[$1] ? depth[$0] > depth[$1] : $0 < $1 }
+                let inner = list.filter { depth[$0] * 100 >= deepestDepth * 58 }.sorted { depth[$0] != depth[$1] ? depth[$0] > depth[$1] : $0 < $1 }
                 var places = [Int]()
                 var picked = Set<Int>()
                 func addPlace(_ c: Int) { if picked.insert(c).inserted { places.append(c) } }
@@ -162,51 +185,84 @@ extension NativeEngine {
                     }
                     addPlace(nearCenter)
                     for q in quadBest where q >= 0 { addPlace(q) }
-                    let stride = max(1, inner.count / 12)
-                    for idx in Swift.stride(from: 0, to: inner.count, by: stride) where places.count < 16 {
+                    let stride = max(1, inner.count / 14)
+                    for idx in Swift.stride(from: 0, to: inner.count, by: stride) where places.count < 20 {
                         addPlace(inner[idx])
                     }
                 }
+                // 仅当领土呈明显狭长斜带（主轴/次轴特征比 ≥ 2.1）时才考虑 ±14° 温和倾角；其余一律端正水平排版！
+                let trace = sxx + syy
+                let disc = max(0.0, (sxx - syy) * (sxx - syy) + 4 * sxy * sxy).squareRoot()
+                let lambdaMax = max(1e-6, (trace + disc) * 0.5)
+                let lambdaMin = max(1e-6, (trace - disc) * 0.5)
+                let eigenRatio = (lambdaMax / lambdaMin).squareRoot()
+                let gentleTheta = max(-0.24, min(0.24, theta))
+                let candidateAngles: [Double] = (eigenRatio >= 2.1 && abs(gentleTheta) >= 0.10) ? [0, gentleTheta] : [0]
+
                 let letters = Double(max(1, MapLayers.stateLabel(name?(k) ?? (k >= 0 && k < run.world.nations.length ? run.world.nations[k].name.optionalString ?? "" : ""), full: true).count))
-                let step = min(dx, dy) * 0.6
-                let calmTheta = max(-0.35, min(0.35, theta))
-                let candidateAngles: [Double] = abs(calmTheta) < 0.08 ? [0] : [0, calmTheta * 0.5, calmTheta]
+                let step = min(dx, dy) * 0.55
                 let capPos = capitalPos[k]
                 var bestScore = -Double.infinity
                 for place in places {
                     let px = pts[2 * place], py = pts[2 * place + 1]
                     func reach(_ ax: Double, _ ay: Double) -> Double {
-                        var t = 0.0, end = 0.0, misses = 0
-                        while misses < 2 && t < 3000 {
+                        var t = 0.0, end = 0.0
+                        while t < 2400 {
                             t += step
-                            if let c = cell(px + ax * t, py + ay * t), group(c) == k { end = t; misses = 0 } else { misses += 1 }
+                            if let c = cell(px + ax * t, py + ay * t), group(c) == k { end = t } else { break }
                         }
                         return end
                     }
                     for angle in candidateAngles {
-                        let ax = cos(angle), ay = sin(angle), a = reach(ax, ay), b = reach(-ax, -ay)
-                        guard a + b > 0 else { continue }
-                        // The clearance along the middle 70 % of the run: the name's band must fit inside it.
-                        let mid = (a - b) / 2, half = (a + b) / 2 * 0.7
-                        var clear = depth[place]
-                        for j in 0...6 {
-                            let t = mid + half * (Double(j) / 3 - 1)
-                            let d = cell(px + ax * t, py + ay * t).map { group($0) == k ? depth[$0] : 0 } ?? 0
-                            clear = min(clear, max(0, d))
-                        }
-                        let width = (a + b) / unit * 0.78
-                        let across = Double(clear + 1) * min(dx, dy) * 2 / unit
-                        let height = min(max(width / 2.8, 1.6), max(1.1, across * 0.92))
+                        let ax = cos(angle), ay = sin(angle), nx = -ay, ny = ax
+                        let a = reach(ax, ay), b = reach(-ax, -ay)
+                        let span = a + b
+                        guard span > 0 else { continue }
+                        // 限制中点偏移，确保国名锚点始终留在腹地深处、绝不漂移进狭颈或越界
+                        var mid = (a - b) * 0.5
+                        let maxShift = min(span * 0.25, Double(depth[place]) * min(dx, dy) * 0.45)
+                        mid = max(-maxShift, min(maxShift, mid))
                         let x = px + ax * mid, y = py + ay * mid
+                        guard let centerCell = cell(x, y), group(centerCell) == k else { continue }
+                        let centerClear = Double(depth[centerCell]) * min(dx, dy) * 0.5
+                        let rawW = span * 0.76
+                        let rawH = min(max(rawW / max(2.2, letters * 0.92), unit * 1.4), max(unit * 1.15, centerClear * 1.65))
+                        // 二维 3×5 = 15 点内接矩形境内校验：尝试 100% / 85% / 72% 尺度，保证国名整框稳居疆域内部
+                        var chosenW = rawW, chosenH = rawH, chosenInside = 0.0
+                        for shrink in [1.0, 0.85, 0.72] {
+                            let halfW = rawW * shrink * 0.45
+                            let halfH = rawH * shrink * 0.42
+                            var hits = 0
+                            for ix in -2...2 {
+                                let ox = halfW * (Double(ix) * 0.5)
+                                for iy in -1...1 {
+                                    let oy = halfH * Double(iy)
+                                    let sx = x + ax * ox + nx * oy
+                                    let sy = y + ay * ox + ny * oy
+                                    if let sc = cell(sx, sy), group(sc) == k { hits += 1 }
+                                }
+                            }
+                            let frac = Double(hits) / 15.0
+                            if frac > chosenInside {
+                                chosenInside = frac
+                                chosenW = rawW * shrink
+                                chosenH = rawH * shrink
+                            }
+                            if frac >= 0.93 { break }
+                        }
+                        let width = chosenW / unit
+                        let height = chosenH / unit
                         let away = ((x - cx) * (x - cx) + (y - cy) * (y - cy)).squareRoot() / unit
-                        // 水平排版优先（+12% 清晰度加权），仅当狭长斜向领土显著更宽时才温和倾斜
                         let baseSize = min(width / letters, height)
-                        let orientationBonus: Double = angle == 0 ? 1.12 : (abs(angle) < 0.22 ? 1.04 : 1.0)
-                        var score = baseSize * orientationBonus - away * 0.006
+                        // 端正水平排版享受 1.35× 优先权；非完全境内候选施加严厉立方惩罚
+                        let orientationBonus: Double = angle == 0 ? 1.35 : 1.0
+                        let insideFactor = chosenInside >= 0.86 ? (0.85 + chosenInside * 0.15) : (chosenInside * chosenInside * chosenInside * 0.55)
+                        let depthBonus = 1.0 + min(0.28, Double(depth[centerCell]) / max(4.0, Double(deepestDepth)) * 0.28)
+                        var score = baseSize * orientationBonus * insideFactor * depthBonus - away * 0.008
                         if let cap = capPos {
                             let capDist = ((x - cap.0) * (x - cap.0) + (y - cap.1) * (y - cap.1)).squareRoot()
-                            if capDist < 22 {
-                                score -= (22 - capDist) / 22 * baseSize * 0.42
+                            if capDist < 24 {
+                                score -= (24 - capDist) / 24 * baseSize * 0.48
                             }
                         }
                         if score > bestScore {
@@ -453,6 +509,9 @@ extension NativeEngine {
                 let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil)
                 x.supplyState = sup.state.rawValue
                 x.supplyOriginProvince = sup.originProvince
+                if ArmyTactics.isEncircled(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil) {
+                    x.encircled = true
+                }
                 let warsNow = Offices.wars(r, nid)
                 let enemyHint = warsNow.count == 1 ? warsNow[0].enemy : nil
                 if let cmd = Regimes.activeCommander(r, nation: nid, enemy: enemyHint) {
@@ -537,6 +596,23 @@ extension NativeEngine {
         let holy = Regimes.holyProvinces(r).map { GameState.Holy(religion: $0.religion, province: $0.province) }
         // 要塞: provinces whose city defence is level three or more (a fortress mark on the map).
         let forts = provinces.enumerated().compactMap { i, p -> Int? in (r.upperCombat.provinces[p.id.asString].storedDefense.optionalNumber ?? 1) >= 3 ? i : nil }
+        // 已建成奇观与已发掘古迹所在州索引（在舆图上绘制金顶古阁与古铜青玉星碑）
+        var wonderProvs = [Int]()
+        var ruinProvs = [Int]()
+        if UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy {
+            if !r.regimes.wonders.isNull {
+                for (_, row) in r.regimes.wonders.objectEntries where row.status.optionalString == "done" {
+                    if let pid = row.provinceId.optionalString, let idx = pi[pid] { wonderProvs.append(idx) }
+                }
+            }
+            if !r.regimes.expeditions.isNull {
+                for (sid, row) in r.regimes.expeditions.objectEntries where row.status.optionalString == "done" {
+                    let idx = GrandSystems.anchorProvinceIndex(r, siteId: sid)
+                    if idx >= 0 && idx < provinces.count { ruinProvs.append(idx) }
+                }
+            }
+        }
+        wonderProvs.sort(); ruinProvs.sort()
         let ports = (Naval.sea?.ports ?? []).compactMap { port -> GameState.Port? in
             guard let q = pi[port.provinceId] else { return nil }
             let c = r.portControl.isNull ? JS.null : r.portControl.ports[port.provinceId]
@@ -605,6 +681,8 @@ extension NativeEngine {
         }
         var out = GameState(day: w.day.asInt, date: date, owners: owners, labels: labelBoxes, nations: nationRows, armies: armyRows, wars: wars, sieges: sieges, events: events)
         out.fleets = fleetRows; out.yards = yards; out.ports = ports; out.forts = forts; out.holy = holy
+        out.wonders = wonderProvs.isEmpty ? nil : wonderProvs
+        out.ruins = ruinProvs.isEmpty ? nil : ruinProvs
         // 汇总当前持续中的天时与灾异州郡（暴雪/大旱/洪涝/瘟疫/丰年），供地图 GPU 着色与天气粒子实时呈现
         var wzs = [GameState.WeatherZone]()
         if !r.regimes.isNull, !r.regimes.disasters.isNull {

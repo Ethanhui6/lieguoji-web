@@ -637,9 +637,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     private var extraRiverKey: [[Float]] = []
 
-    @discardableResult func setForts(_ points: [SIMD2<Float>], holy: [SIMD2<Float>] = []) -> Bool {
-        guard points != fortKey || holy != holyKey else { return false }
-        fortKey = points; holyKey = holy
+    private var wonderKey: [SIMD2<Float>] = []
+    private var ruinKey: [SIMD2<Float>] = []
+    @discardableResult func setForts(_ points: [SIMD2<Float>], holy: [SIMD2<Float>] = [], wonders: [SIMD2<Float>] = [], ruins: [SIMD2<Float>] = []) -> Bool {
+        guard points != fortKey || holy != holyKey || wonders != wonderKey || ruins != ruinKey else { return false }
+        fortKey = points; holyKey = holy; wonderKey = wonders; ruinKey = ruins
         var m = ColoredMesh()
         let u = MapLayers.cityUnit
         let shadow = RGB(hex: 0x1E140A), ink = RGB(0.18, 0.13, 0.09), wallLit = RGB(0.95, 0.91, 0.82), wallShade = RGB(0.76, 0.70, 0.59), seal = RGB(0.74, 0.18, 0.14)
@@ -666,6 +668,32 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 m.fill([x - d, y - d, x, y - dk, x + d, y - d, x + dk, y, x + d, y + d, x, y + dk, x - d, y + d, x - dk, y], c, alpha: 0.92)
             }
             m.disc(x, y, radius: 0.42 * u, pearl, alpha: 0.98, sides: 10)
+        }
+        // 已建成天下奇观：重檐金顶朱柱古阁印记（单 Pass 矢量，零贴图额外开销）
+        for p in wonders {
+            let x = p.x, y = p.y - 3.05 * u
+            m.disc(x + 0.30 * u, y + 0.35 * u, radius: 1.95 * u, shadow, alpha: 0.24, sides: 14)
+            m.disc(x, y, radius: 2.30 * u, goldHi, alpha: 0.26, sides: 16)
+            // 底座与朱柱殿身
+            rect(x - 1.55 * u, y + 0.55 * u, x + 1.55 * u, y + 1.12 * u, ink, alpha: 0.96)
+            rect(x - 1.25 * u, y + 0.65 * u, x + 1.25 * u, y + 0.98 * u, wallLit, alpha: 0.96)
+            rect(x - 1.05 * u, y - 0.55 * u, x + 1.05 * u, y + 0.58 * u, seal, alpha: 0.96)
+            // 下檐 + 上檐飞角金顶
+            m.fill([x - 1.85 * u, y - 0.35 * u, x, y - 1.25 * u, x + 1.85 * u, y - 0.35 * u], ink, alpha: 0.96)
+            m.fill([x - 1.52 * u, y - 0.45 * u, x, y - 1.12 * u, x + 1.52 * u, y - 0.45 * u], gold, alpha: 0.98)
+            m.fill([x - 1.22 * u, y - 1.12 * u, x, y - 2.05 * u, x + 1.22 * u, y - 1.12 * u], ink, alpha: 0.96)
+            m.fill([x - 0.92 * u, y - 1.18 * u, x, y - 1.88 * u, x + 0.92 * u, y - 1.18 * u], goldHi, alpha: 0.98)
+            m.disc(x, y - 2.08 * u, radius: 0.34 * u, gold, alpha: 1.0, sides: 10)
+        }
+        // 已发掘四海古迹秘境：古铜青玉八角星碑
+        let bronze = RGB(0.58, 0.43, 0.24), jade = RGB(0.24, 0.56, 0.46)
+        for p in ruins {
+            let x = p.x + 2.35 * u, y = p.y + 2.25 * u
+            m.disc(x + 0.22 * u, y + 0.26 * u, radius: 1.35 * u, shadow, alpha: 0.20, sides: 12)
+            let r1 = 1.48 * u, r2 = 1.12 * u
+            m.fill([x, y - r1, x + r1, y, x, y + r1, x - r1, y], ink, alpha: 0.92)
+            m.fill([x, y - r2, x + r2, y, x, y + r2, x - r2, y], bronze, alpha: 0.96)
+            m.disc(x, y, radius: 0.48 * u, jade, alpha: 0.98, sides: 10)
         }
         forts = buffer(m.vertices, stride: 6)
         return true
@@ -1176,7 +1204,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
     /// 在 CPU 单次预算出四季色温系数与四季权重 `(winter, spring, summer, autumn)`，海陆片元零三角函数、零噪声运算。
-    private static func seasonalTints(phase: Float, lighting: Float) -> (land: SIMD4<Float>, sea: SIMD4<Float>, weights: SIMD4<Float>) {
+    /// 政区模式下陆地色温严格克制（≤ ±3.5%），杜绝秋冬白雪/赭染把列国国色盖灰或混色；地形模式保留饱满四季色貌。
+    private static func seasonalTints(phase: Float, lighting: Float, terrainMode: Bool) -> (land: SIMD4<Float>, sea: SIMD4<Float>, weights: SIMD4<Float>) {
         guard lighting > 0.01, phase >= 0 else { return (SIMD4(1, 1, 1, 1), SIMD4(1, 1, 1, 1), SIMD4(0, 0, 0, 0)) }
         let ang = phase * Float.pi * 2
         func smooth(_ a: Float, _ b: Float, _ x: Float) -> Float {
@@ -1190,17 +1219,18 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         let wSum = max(0.001, wWinter + wSpring + wSummer + wAutumn)
         let nW = wWinter / wSum, nSp = wSpring / wSum, nSu = wSummer / wSum, nA = wAutumn / wSum
 
-        let landS = SIMD3<Float>(0.942, 1.076, 0.974) * nSp
-            + SIMD3<Float>(1.068, 1.036, 0.902) * nSu
-            + SIMD3<Float>(1.148, 0.972, 0.802) * nA
-            + SIMD3<Float>(0.892, 0.954, 1.096) * nW
+        let landS = SIMD3<Float>(0.956, 1.058, 0.980) * nSp
+            + SIMD3<Float>(1.052, 1.028, 0.924) * nSu
+            + SIMD3<Float>(1.118, 0.982, 0.846) * nA
+            + SIMD3<Float>(0.916, 0.962, 1.074) * nW
         let seaS = SIMD3<Float>(0.946, 1.052, 1.024) * nSp
             + SIMD3<Float>(1.024, 1.044, 0.978) * nSu
             + SIMD3<Float>(1.054, 0.974, 0.916) * nA
             + SIMD3<Float>(0.896, 0.950, 1.078) * nW
-        let k = min(1, lighting) * 0.95
-        let lt = SIMD3<Float>(1, 1, 1) + (landS - SIMD3<Float>(1, 1, 1)) * k
-        let st = SIMD3<Float>(1, 1, 1) + (seaS - SIMD3<Float>(1, 1, 1)) * k
+        let kLand = min(1, lighting) * (terrainMode ? 0.92 : 0.28)
+        let kSea = min(1, lighting) * 0.88
+        let lt = SIMD3<Float>(1, 1, 1) + (landS - SIMD3<Float>(1, 1, 1)) * kLand
+        let st = SIMD3<Float>(1, 1, 1) + (seaS - SIMD3<Float>(1, 1, 1)) * kSea
         return (SIMD4(lt.x, lt.y, lt.z, 1), SIMD4(st.x, st.y, st.z, 1), SIMD4(nW, nSp, nSu, nA))
     }
 
@@ -1219,7 +1249,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         guard dw > 0, dh > 0 else { return }
 
         let lightStrength: Float = (display.lighting ?? true) ? (Energy.hot ? 0.55 : 1.0) : 0.0
-        let tints = Self.seasonalTints(phase: seasonPhase, lighting: lightStrength)
+        let isTerrainMode = (mode == .terrain)
+        let tints = Self.seasonalTints(phase: seasonPhase, lighting: lightStrength, terrainMode: isTerrainMode)
         var u = Uniforms(
             viewport: SIMD2(Float(size.width), Float(size.height)),
             center: SIMD2(Float(camera.centerX), Float(camera.centerY)),
@@ -1232,7 +1263,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             mapHeight: max(1, map.height),
             pad: seasonPhase,
             iconZoom: Float(Self.iconZoom(camera.scale)),
-            pad2: 0,
+            pad2: isTerrainMode ? 1.0 : 0.0,
             pad3: 0,
             pad4: 0,
             landTint: tints.land,
@@ -1368,7 +1399,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             if display.gridLines == true && stage >= 1 { colored(gridLines) }
             let chart = display.mapDetail ?? true
             if chart { colored(ornaments, alpha: ramp(0.44)) }
-            let fineFade = Float(min(1, max(0, (camera.scale - 0.58) / 0.46)))
+            let fineFade = Float(min(1, max(0, (camera.scale - 0.46) / 0.44)))
             if chart && fineFade > 0.01 { colored(fineDetail, alpha: ramp(0.44) * fineFade) }
             if display.vegetation { colored(relief, alpha: ramp(0.44) * 0.94) }
             if display.borders { colored(outlines, alpha: ramp(0.75)) }
@@ -1525,29 +1556,32 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             float2 mapUV = clamp(in.world / float2(max(1.0, u.mapWidth), max(1.0, u.mapHeight)), 0.0, 1.0);
             rgb *= studioLight(mapUV, k * 0.94);
 
-            // 解析鲜明四季地域风貌（u.seasonWeights = winter, spring, summer, autumn）
+            // 解析四季地域风貌（u.pad2 == 1 为地形图全强度，政区图采用克制清透微韵，确保四季轮转绝不遮盖或浑浊列国国色）
+            float isTerrain = u.pad2;
+            float sScale = mix(0.24, 1.0, isTerrain);
             float wWinter = u.seasonWeights.x;
             float wSpring = u.seasonWeights.y;
             float wSummer = u.seasonWeights.z;
             float wAutumn = u.seasonWeights.w;
             if (wSpring > 0.02) {
                 float valleyMist = smoothstep(0.65, 0.25, lum) * smoothstep(0.08, 0.45, mapUV.y);
-                rgb = mix(rgb, rgb * float3(0.95, 1.08, 0.98) + float3(0.012, 0.024, 0.012), wSpring * valleyMist * 0.26 * k);
+                rgb = mix(rgb, rgb * float3(0.96, 1.07, 0.98) + float3(0.010, 0.020, 0.010), wSpring * valleyMist * 0.26 * sScale * k);
             }
             if (wSummer > 0.02) {
                 float sunBelt = smoothstep(0.15, 0.72, mapUV.y);
-                rgb = mix(rgb, rgb * float3(1.07, 1.03, 0.90) + float3(0.020, 0.014, -0.008), wSummer * sunBelt * 0.22 * k);
+                rgb = mix(rgb, rgb * float3(1.06, 1.03, 0.92) + float3(0.016, 0.012, -0.006), wSummer * sunBelt * 0.22 * sScale * k);
             }
             if (wAutumn > 0.02) {
                 float midLat = smoothstep(0.04, 0.34, mapUV.y) * smoothstep(0.96, 0.54, mapUV.y);
                 float foliage = (sin(in.world.x * 0.022 + cos(in.world.y * 0.019) * 1.3) * 0.5 + 0.5) * 0.20 + 0.80;
-                rgb = mix(rgb, rgb * float3(1.16, 0.92, 0.70) + float3(0.045, 0.016, -0.018), wAutumn * midLat * foliage * 0.38 * k);
+                rgb = mix(rgb, rgb * float3(1.13, 0.94, 0.76) + float3(0.032, 0.012, -0.012), wAutumn * midLat * foliage * 0.36 * sScale * k);
             }
             if (wWinter > 0.02) {
-                float northBelt = smoothstep(0.76, 0.06, mapUV.y);
-                float highlandBelt = smoothstep(0.46, 0.78, lum);
-                float organic = (sin(in.world.x * 0.024 + sin(in.world.y * 0.019) * 1.4) * 0.5 + 0.5) * 0.16;
-                float snowCover = wWinter * smoothstep(0.18, 0.80, northBelt * 0.68 + highlandBelt * 0.38 + organic) * 0.62 * k;
+                float northBelt = smoothstep(mix(0.56, 0.76, isTerrain), 0.05, mapUV.y);
+                float highlandBelt = smoothstep(mix(0.56, 0.46, isTerrain), 0.82, lum);
+                float organic = (sin(in.world.x * 0.024 + sin(in.world.y * 0.019) * 1.4) * 0.5 + 0.5) * 0.14;
+                float winterCap = mix(0.17, 0.62, isTerrain);
+                float snowCover = wWinter * smoothstep(mix(0.32, 0.18, isTerrain), 0.84, northBelt * 0.64 + highlandBelt * 0.42 + organic) * winterCap * k;
                 rgb = mix(rgb, float3(0.955, 0.976, 1.0), snowCover);
             }
 
@@ -1555,12 +1589,13 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             float c1 = sin(in.world.x * 0.0085 + in.world.y * 0.0045 - u.time * 0.14);
             float c2 = sin(in.world.x * 0.0052 - in.world.y * 0.0092 - u.time * 0.09);
             float cloudShadow = smoothstep(0.32, 0.94, (c1 + c2) * 0.5);
-            rgb *= 1.0 - cloudShadow * 0.072 * k;
+            rgb *= 1.0 - cloudShadow * mix(0.045, 0.072, isTerrain) * k;
         }
 
-        // 局部天时灾异与丰年地貌实景着染（雪灾积雪 / 大旱焦赭 / 洪涝水泽 / 瘟疫灰瘴 / 丰年金辉）
+        // 局部天时灾异与丰年地貌实景着染（政区模式下保持半透清雅，既见天象又不淹没国家色块）
         int wCount = int(weather[0].x + 0.5);
         if (wCount > 0) {
+            float wzScale = mix(0.42, 1.0, u.pad2);
             float org = sin(in.world.x * 0.045 + cos(in.world.y * 0.038) * 1.5) * 0.14;
             for (int i = 1; i <= wCount && i <= 12; i++) {
                 float4 wz = weather[i];
@@ -1570,20 +1605,15 @@ final class MapRenderer: NSObject, MTKViewDelegate {
                 if (edge <= 0.005) continue;
                 int kind = int(wz.w + 0.5);
                 if (kind == 1) {
-                    // 暴雪灾区：厚实素白覆雪与寒霜微蓝
-                    rgb = mix(rgb, float3(0.955, 0.978, 1.0), edge * 0.74);
+                    rgb = mix(rgb, float3(0.955, 0.978, 1.0), edge * 0.72 * wzScale);
                 } else if (kind == 2) {
-                    // 赤地大旱：焦黄暖赭干裂日晒
-                    rgb = mix(rgb, rgb * float3(1.16, 0.89, 0.60) + float3(0.085, 0.032, -0.025), edge * 0.62);
+                    rgb = mix(rgb, rgb * float3(1.14, 0.90, 0.64) + float3(0.065, 0.024, -0.018), edge * 0.60 * wzScale);
                 } else if (kind == 3) {
-                    // 江河洪涝：阴雨深青水泽漫溢
-                    rgb = mix(rgb, rgb * float3(0.68, 0.78, 0.92) + float3(-0.02, 0.01, 0.04), edge * 0.54);
+                    rgb = mix(rgb, rgb * float3(0.70, 0.80, 0.92) + float3(-0.015, 0.008, 0.032), edge * 0.52 * wzScale);
                 } else if (kind == 4) {
-                    // 疾疫瘴区：退饱和枯槁灰青薄瘴
-                    rgb = mix(rgb, float3(lum * 0.84, lum * 0.90, lum * 0.72), edge * 0.58);
+                    rgb = mix(rgb, float3(lum * 0.84, lum * 0.90, lum * 0.74), edge * 0.54 * wzScale);
                 } else {
-                    // 金秋丰登：温润丰穰暖金瑞光
-                    rgb = mix(rgb, rgb * float3(1.11, 1.05, 0.82) + float3(0.055, 0.042, -0.01), edge * 0.48);
+                    rgb = mix(rgb, rgb * float3(1.09, 1.04, 0.84) + float3(0.042, 0.032, -0.008), edge * 0.45 * wzScale);
                 }
             }
         }

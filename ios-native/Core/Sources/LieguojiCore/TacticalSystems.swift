@@ -219,6 +219,32 @@ public enum ArmyTactics {
         return (.strained, nil, "深入敌后，仅凭随军辎重维持")
     }
 
+    /// 判定军队是否陷入实质合围（身处敌控州，四周邻州皆非己方/友邦实控，且当地无可用未封锁海路退路）。
+    public static func isEncircled(_ r: JS, army: JS, provinceIndex: Int?) -> Bool {
+        guard let q = provinceIndex else { return false }
+        let provinces = r.world.provinces.asArray
+        guard provinces.indices.contains(q) else { return false }
+        let nation = army.nationId.asString
+        let here = provinces[q]
+        if RunWindow.access(r, nation, here.controller.asString) { return false }
+        var pidToIndex = [String: Int]()
+        pidToIndex.reserveCapacity(provinces.count)
+        for (i, p) in provinces.enumerated() { pidToIndex[p.id.asString] = i }
+        for nb in here.neighbors.asArray {
+            if let ni = pidToIndex[nb.asString], RunWindow.access(r, nation, provinces[ni].controller.asString) {
+                return false
+            }
+        }
+        // 若该州为沿海港且我方保有未封锁母港与海运通道，则仍可海路突围接济，不算彻底合围
+        if let sea = Naval.sea, sea.ports.contains(where: { $0.provinceId == here.id.asString }) {
+            let unblocked = MaritimeWarfare.unblockedFriendlyPortIndices(r, nation: nation)
+            if !unblocked.isEmpty && !MaritimeWarfare.isPortBlockaded(r, provinceId: here.id.asString) {
+                return false
+            }
+        }
+        return true
+    }
+
     /// 每日结算：战场军令（急行军士气/粮耗、扎营休整回复、焦土坚壁消耗同州敌军）与断粮孤军消耗。
     public static func dailyTick(_ r: JS) {
         guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy else { return }
@@ -283,16 +309,23 @@ public enum ArmyTactics {
                 }
             }
 
+            // 陷入合围孤军：四周无友邻退路且断绝海援，耗粮加倍、士气陡降
+            let encircled = isEncircled(r, army: a, provinceIndex: pIdx)
+            if encircled && a.status.asString != "retreating" {
+                supplies = max(0, supplies - 9.0)
+                morale = max(8, morale - 5.0)
+            }
+
             // 断粮孤军真实减员与士气滑坡（保留 25% 最低残部防无故蒸发）
             if sup.state == .cut && a.status.asString != "retreating" {
                 let cur = a.troops.asNumber
                 let full = max(cur, r.tactics.forces[aid].fullStrength.optionalNumber ?? cur)
-                let floorTroops = max(80.0, (full * 0.25).rounded(.down))
+                let floorTroops = max(80.0, (full * (encircled ? 0.15 : 0.25)).rounded(.down))
                 if cur > floorTroops {
-                    let drop = max(1.0, (cur * 0.015).rounded(.down))
+                    let drop = max(1.0, (cur * (encircled ? 0.028 : 0.015)).rounded(.down))
                     a.troops = JS(max(floorTroops, cur - drop))
                 }
-                morale = max(15, morale - 3.5)
+                morale = max(10, morale - 3.5)
             }
 
             // 特产「粮食」提升全军在己境补给恢复

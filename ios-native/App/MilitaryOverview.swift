@@ -72,7 +72,7 @@ struct MilitaryOverview: View {
         return Array(order.prefix(5))
     }
     private var troubled: [Int] {
-        let bad = state.armies.indices.filter { state.armies[$0].supplies <= 0 || state.armies[$0].status == "retreating" }
+        let bad = state.armies.indices.filter { state.armies[$0].encircled == true || state.armies[$0].supplies <= 0 || state.armies[$0].status == "retreating" }
         return Array(bad.sorted { state.armies[$0].troops > state.armies[$1].troops }.prefix(4))
     }
 
@@ -224,7 +224,7 @@ struct MilitaryOverview: View {
                 armyList(strongest)
             }
             if !troubled.isEmpty {
-                SectionLabel("断粮与溃退")
+                SectionLabel("合围、断粮与溃退")
                 armyList(troubled)
             }
             if state.armies.isEmpty {

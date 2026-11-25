@@ -146,59 +146,151 @@ import UIKit
     func notify(_ kind: UINotificationFeedbackGenerator.FeedbackType) { if haptics { notice.notificationOccurred(kind) } }
 }
 
-/// 远程计算: the computer (LieguojiServer on the same Wi-Fi) simulates, the phone only draws.
+/// 远程计算与云端服务：支持局域网直连（2–8ms）与云端高速 WebSocket 中转、退后台自动无感重连、实时延迟监测与一键云端存档同步。
 struct RemoteSettings: View {
     @ObservedObject var model: GameModel
     @State private var address = UserDefaults.standard.string(forKey: "remote.address") ?? ""
+    @State private var roomCode = UserDefaults.standard.string(forKey: "remote.roomCode") ?? ""
     @State private var busy = false
+    @State private var cloudUploading = false
     @State private var message = ""
+    @State private var messageGood = false
     @State private var advanced = false
-    /// 傻瓜式: the phone finds the player's computer by itself; nothing to type. Only a status, a
-    /// "find now" button and the on/off switch show; a manual address hides under 高级.
+
+    private var statusTitle: String {
+        if model.remoteAddress != nil {
+            let rtt = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
+            return "已连电脑（\(model.remoteTransport.isEmpty ? "远程" : model.remoteTransport)\(rtt)）"
+        }
+        if model.remoteReconnecting { return "正在无感重连电脑…" }
+        return model.autoRemote ? "正在待命连接电脑" : "本机推演"
+    }
+    private var statusSubtitle: String {
+        if let addr = model.remoteAddress { return "\(addr) · 电脑后台持续预推演，手机低发热零卡顿" }
+        if model.remoteReconnecting { return "世界仍热保存在电脑内存中，返回前台自动续接" }
+        return model.autoRemote ? "电脑开着「列国纪远程计算 v5」即自动接入，切后台不断档" : "开启后自动将重型模拟交由电脑运行，手机仅负责渲染画面"
+    }
+
     var body: some View {
         Group2 {
             HStack(spacing: 10) {
-                Circle().fill(model.remoteAddress != nil ? Theme.jade : model.autoRemote ? Color.orange.opacity(0.7) : Theme.ink.opacity(0.25)).frame(width: 9, height: 9)
+                Circle()
+                    .fill(model.remoteAddress != nil ? Theme.jade : (model.remoteReconnecting || model.autoRemote) ? Color.orange.opacity(0.75) : Theme.ink.opacity(0.25))
+                    .frame(width: 9, height: 9)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(model.remoteAddress != nil ? "已连接你的电脑" : model.autoRemote ? "正在等你的电脑上线" : "本机计算").font(Theme.body).foregroundStyle(Theme.ink)
-                    Text(model.remoteAddress ?? (model.autoRemote ? "电脑开着就会自动接上，不用填写任何东西" : "推演由手机完成")).font(Theme.caption).foregroundStyle(Theme.ink2)
+                    Text(statusTitle).font(Theme.body).foregroundStyle(Theme.ink).monospacedDigit()
+                    Text(statusSubtitle).font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer()
-                if busy { InkBusy().frame(width: 56) }
-                else if model.remoteAddress == nil && model.autoRemote {
-                    Button("立即查找") {
+                Spacer(minLength: 6)
+                if busy { InkBusy().frame(width: 48) }
+                else if model.remoteAddress == nil {
+                    Button("立即连接") {
                         busy = true; message = ""
-                        Task { let ok = await model.findComputerNow(); busy = false; message = ok ? "" : "没找到电脑：请确认电脑上的「列国纪远程计算」在运行。"; GameFeel.shared.notify(ok ? .success : .warning) }
+                        Task {
+                            let ok = await model.findComputerNow()
+                            busy = false
+                            messageGood = ok
+                            message = ok ? "已接通电脑算力，大地图推演将由电脑承担。" : "未发现电脑在线：请先在电脑运行「列国纪远程计算 v5」（配对码 \(NativeHost.activeRoomCode)）。"
+                            GameFeel.shared.notify(ok ? .success : .warning)
+                        }
                     }
                     .font(Theme.body).foregroundStyle(Theme.seal)
-                } else if model.remoteAddress != nil {
-                    Button("断开") { busy = true; Task { await model.disconnectRemote(); busy = false } }.font(Theme.body).foregroundStyle(Theme.seal)
+                } else {
+                    HStack(spacing: 12) {
+                        Button("测速") {
+                            busy = true
+                            Task {
+                                let ms = await model.refreshRemoteRTT()
+                                busy = false
+                                messageGood = ms != nil
+                                message = ms.map { "当前往返延迟 \($0) ms，连接稳固。" } ?? "测速超时，已触发自动重连。"
+                            }
+                        }
+                        .font(Theme.label).foregroundStyle(Theme.jade)
+                        Button("断开") { busy = true; Task { await model.disconnectRemote(); busy = false; message = "" } }
+                            .font(Theme.label).foregroundStyle(Theme.seal)
+                    }
                 }
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
-            if !message.isEmpty { Text(message).font(Theme.label).foregroundStyle(Theme.seal).padding(.horizontal, 16).padding(.bottom, 10).frame(maxWidth: .infinity, alignment: .leading) }
+
+            if !message.isEmpty {
+                Text(message).font(Theme.label).foregroundStyle(messageGood ? Theme.jade : Theme.seal)
+                    .padding(.horizontal, 16).padding(.bottom, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             Divider2()
-            PaperSwitch(title: "用我的电脑计算（自动）", on: Binding(get: { model.autoRemote }, set: { model.autoRemote = $0 }))
+            PaperSwitch(title: "自动连接我的电脑计算", on: Binding(get: { model.autoRemote }, set: { model.autoRemote = $0 }))
             Divider2()
-            Text("只需在电脑上运行一次「列国纪远程计算」（之后开机自动运行），手机进入世界就会自动接上：同一 Wi-Fi 直连，在外面经中转。").font(Theme.caption).foregroundStyle(Theme.ink2)
-                .padding(.horizontal, 16).padding(.vertical, 10).fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("云端存档即时同步").font(Theme.body).foregroundStyle(Theme.ink)
+                    Text("房间码 \(NativeHost.activeRoomCode) · 无需电脑开机，换设备随时下载").font(Theme.caption).foregroundStyle(Theme.ink2)
+                }
+                Spacer(minLength: 6)
+                EditorialTactileButton(title: cloudUploading ? "上传中…" : "上传云端", solid: true, compact: true) {
+                    guard !cloudUploading else { return }
+                    cloudUploading = true; message = ""
+                    Task {
+                        let res = await model.uploadCurrentToCloud()
+                        switch res {
+                        case .success(let card):
+                            messageGood = true
+                            message = "云端存档已同步：「\(card.title)」（\(card.sizeText)）"
+                            GameFeel.shared.notify(.success)
+                        case .failure(let err):
+                            messageGood = false
+                            message = err.localizedDescription
+                            GameFeel.shared.notify(.error)
+                        }
+                        cloudUploading = false
+                    }
+                }
+                .disabled(cloudUploading || (model.state == nil && !model.hasSave))
+            }
+            .padding(.horizontal, 16).padding(.vertical, 11)
             Divider2()
             Button { withAnimation(Motion.tap) { advanced.toggle() } } label: {
-                HStack { Text("高级：手动连接（一般不需要）").font(Theme.label).foregroundStyle(Theme.ink2); Spacer(); InkIcon(glyph: .chevronDown, size: 11, weight: 1.7).foregroundStyle(Theme.ink2).rotationEffect(.degrees(advanced ? 180 : 0)) }
-                    .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+                HStack {
+                    Text("高级：自定配对码或手动直连地址").font(Theme.label).foregroundStyle(Theme.ink2)
+                    Spacer()
+                    InkIcon(glyph: .chevronDown, size: 11, weight: 1.7).foregroundStyle(Theme.ink2).rotationEffect(.degrees(advanced ? 180 : 0))
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            if advanced && model.remoteAddress == nil {
-                HStack {
-                    TextField("", text: $address, prompt: Text("局域网地址或配对码").foregroundColor(Theme.ink2.opacity(0.6)))
-                        .paperField().keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.never)
-                    Button("连接") {
-                        busy = true; message = ""
-                        Task { let error = await model.connectRemote(address); busy = false; message = error ?? ""; GameFeel.shared.notify(error == nil ? .success : .error) }
+            if advanced {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        TextField("", text: $roomCode, prompt: Text("专属房间码（默认 \(RemoteRoom.personal)）").foregroundColor(Theme.ink2.opacity(0.6)))
+                            .paperField().keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.characters)
+                        Button("保存") {
+                            let clean = roomCode.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "-", with: "").uppercased()
+                            UserDefaults.standard.set(clean, forKey: "remote.roomCode")
+                            messageGood = true
+                            message = "房间码已更新为 \(NativeHost.activeRoomCode)（电脑端 pairing.txt 填相同码即可配对）"
+                        }
+                        .font(Theme.body).foregroundStyle(Theme.seal)
                     }
-                    .font(Theme.body).foregroundStyle(Theme.seal).disabled(busy || address.isEmpty)
+                    if model.remoteAddress == nil {
+                        HStack {
+                            TextField("", text: $address, prompt: Text("局域网 IP:8765 或配对码").foregroundColor(Theme.ink2.opacity(0.6)))
+                                .paperField().keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.never)
+                            Button("直连") {
+                                busy = true; message = ""
+                                Task {
+                                    let error = await model.connectRemote(address)
+                                    busy = false
+                                    messageGood = (error == nil)
+                                    message = error ?? "已成功接入电脑计算。"
+                                    GameFeel.shared.notify(error == nil ? .success : .error)
+                                }
+                            }
+                            .font(Theme.body).foregroundStyle(Theme.seal).disabled(busy || address.isEmpty)
+                        }
+                    }
                 }
-                .padding(.horizontal, 16).padding(.bottom, 10)
+                .padding(.horizontal, 16).padding(.bottom, 12)
             }
         }
         .padding(.horizontal, 16)
@@ -214,8 +306,14 @@ struct FeelSettings: View {
             Divider2()
             VStack(alignment: .leading, spacing: 8) {
                 if feel.music && !feel.track.isEmpty {
-                    Button { feel.next() } label: { Label(feel.track, systemImage: "forward.fill").font(Theme.label).foregroundStyle(Theme.seal).lineLimit(1) }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Button { feel.next() } label: {
+                        HStack(spacing: 6) {
+                            InkIcon(glyph: .play, size: 12, weight: 1.8)
+                            Text("切曲 · \(feel.track)").font(Theme.label).lineLimit(1)
+                        }
+                        .foregroundStyle(Theme.seal)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 PaperSlider(title: "音乐音量", value: $feel.volume, range: 0...1, step: 0.05) { "\(Int($0 * 100))%" }
             }

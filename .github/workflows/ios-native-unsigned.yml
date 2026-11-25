@@ -60,11 +60,11 @@ jobs:
           $rt = Split-Path $core
           Get-ChildItem $rt -Filter *.dll | ForEach-Object { Copy-Item $_.FullName $out/ }
           $readme = @"
-          列国纪远程计算服务器
-          1. 双击 LieguojiServer.exe（首次运行若弹出 Windows 防火墙提示，选择允许专用网络）。
-          2. 窗口里会显示这台电脑的地址，例如 192.168.1.20:8765。
-          3. 手机与电脑连同一个 Wi-Fi，在手机游戏「菜单 › 远程计算」填入地址并连接。
-          4. 连接后推演由电脑完成，手机只负责画面；关闭窗口即停止，手机会自动切回本机计算。
+          列国纪远程计算服务器 v5（高速流水线 + 双通道云端中转 + 自动热备）
+          1. 双击 LieguojiServer.exe（首次运行若弹出 Windows 防火墙提示，请允许「专用网络」访问）。
+          2. 同一 Wi-Fi 下手机自动毫秒级局域网直连（2–8 ms）；外出 4G/5G 自动通过云端持久 WebSocket 高速中转连接，无需输入任何 IP！
+          3. 手机退入后台再重新切回前台会自动无缝续连并恢复推演，世界热保留在电脑内存中；同时每 90 秒自动在 saves\autosave.lgj 热备。
+          4. 手机「世界卷宗 › 云端存档」支持一键上传、跨设备下载与删除云端存档。
           端口被占用时，可在命令行运行：LieguojiServer.exe 8766
           "@
           Set-Content -Path "$out/使用说明.txt" -Value $readme -Encoding utf8
@@ -226,7 +226,7 @@ jobs:
           done
           xcrun simctl io "$UDID" screenshot shots/zz-last.png || true
           [ "$finished" = 1 ] && printf '{"finished":true}\n' > shots/tour-status.json || printf '{"finished":false}\n' > shots/tour-status.json
-          for name in founding-time.json wash-demo.json name-stability.json color-contrast.json map-unrolled.json advance-ownership.json ci-control-world.lgj ci-control-tuning.json panel-profile.json ci-panel-world.lgj war-rule-settings.json; do
+          for name in founding-time.json wash-demo.json name-stability.json name-placement.json color-contrast.json map-unrolled.json advance-ownership.json ci-control-world.lgj ci-control-tuning.json panel-profile.json ci-panel-world.lgj war-rule-settings.json; do
             [ ! -f "$DATA/Documents/$name" ] || cp "$DATA/Documents/$name" shots/
           done
           node scripts/check-native-tour.mjs shots || {

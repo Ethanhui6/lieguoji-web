@@ -143,23 +143,42 @@ public enum CombatReader {
             if let cultDoc = CultureDoctrines.forNation(r, nation), cultDoc.siegeBonus != 0 {
                 dmgProv = f(dmgProv * f(1.0 + cultDoc.siegeBonus / 100.0))
             }
-            // 两栖抢滩登陆罚值（-28%）与近海友军舰队舰炮火力支援（+20% 抢滩抵消与 +25% 破城轰击）
-            if !r.regimes.landingDays.isNull, (r.regimes.landingDays[aid].optionalNumber ?? 0) > 0, attacking {
-                var offshoreFire = false
-                if let bridge = Armies.bridge {
-                    let rec = r.armyPositions.records[aid]
-                    if !rec.isNull {
-                        let pt = bridge.graph.location(bridge.travel(rec)).point
-                        offshoreFire = MaritimeWarfare.hasOffshoreNavalSupport(r, nation: nation, at: (pt.x, pt.y))
-                    }
+            // 两栖抢滩登陆罚值（-28%）与近海友军舰队持久舰炮岸轰支援（不仅限于抢滩三日，沿海围城/进攻全程享 +22% 破城与 +10% 进攻火力！）
+            var offshoreFire = false
+            if attacking, let bridge = Armies.bridge {
+                let rec = r.armyPositions.records[aid]
+                if !rec.isNull {
+                    let pt = bridge.graph.location(bridge.travel(rec)).point
+                    offshoreFire = MaritimeWarfare.hasOffshoreNavalSupport(r, nation: nation, at: (pt.x, pt.y))
                 }
+            }
+            if !r.regimes.landingDays.isNull, (r.regimes.landingDays[aid].optionalNumber ?? 0) > 0, attacking {
                 polAtk = f(polAtk * f(offshoreFire ? 0.92 : 0.72))
                 if offshoreFire { dmgProv = f(dmgProv * f(1.25)) }
+            } else if offshoreFire, attacking, let pObj = p, let sea = Naval.sea,
+                      sea.ports.contains(where: { $0.provinceId == pObj.id.asString }) {
+                polAtk = f(polAtk * f(1.10))
+                dmgProv = f(dmgProv * f(1.22))
             }
             // 海外补给线遭敌舰封锁切断：攻防各降 12%
             if !r.regimes.seaSupplyCut.isNull, r.regimes.seaSupplyCut[aid].isTruthy {
                 polAtk = f(polAtk * f(0.88))
                 polDef = f(polDef * f(0.88))
+            }
+            // 合围断道战力重挫（−22%）：孤军被敌包围且无海路接济时陷入绝境
+            if ArmyTactics.isEncircled(r, army: a, provinceIndex: index) {
+                polAtk = f(polAtk * f(0.78))
+                polDef = f(polDef * f(0.78))
+            }
+            // 真实士气杠杆：高昂士气（≥80）激发至高 +12% 突击锐气；士气崩塌（<35）导致至多 −25% 战力溃散
+            let moraleVal = max(0.0, min(100.0, a.morale.optionalNumber ?? 80.0))
+            if moraleVal >= 80.0 {
+                let mf = f(1.0 + ((moraleVal - 80.0) / 20.0) * 0.12)
+                polAtk = f(polAtk * mf)
+            } else if moraleVal < 35.0 {
+                let mf = f(0.75 + (moraleVal / 35.0) * 0.25)
+                polAtk = f(polAtk * mf)
+                polDef = f(polDef * mf)
             }
             // 天时天气联动：暴雪（-14%）与暴雨洪涝（-12%）显著迟滞进攻锋芒
             if let pObj = p, let dis = Regimes.disasterAt(r, pObj.id.asString), attacking {

@@ -155,6 +155,10 @@ import LieguojiCore
     var forts: [SIMD2<Float>] = [] { didSet { scheduleSync() } }
     /// 圣地 marks: the cities of holy provinces, in map units.
     var holy: [SIMD2<Float>] = [] { didSet { scheduleSync() } }
+    /// 已建成天下奇观坐标（在地图上绘出重檐金顶古阁）。
+    var wonders: [SIMD2<Float>] = [] { didSet { scheduleSync() } }
+    /// 已发掘四海古迹坐标（在地图上绘出古铜青玉星碑）。
+    var ruins: [SIMD2<Float>] = [] { didSet { scheduleSync() } }
     /// A fleet waiting for its port: the next province tap is its destination.
     @Published var marchingFleet: Int?
     /// 绘制疆域: provinces tapped or dragged over go to this state.
@@ -1420,7 +1424,7 @@ struct MapView: UIViewRepresentable {
             }
             if ambientActive && link == nil { startLink() }
             if renderer?.setSeaPorts(controller.seaPorts) == true { dirty = true }
-            if renderer?.setForts(controller.forts, holy: controller.holy) == true { dirty = true }
+            if renderer?.setForts(controller.forts, holy: controller.holy, wonders: controller.wonders, ruins: controller.ruins) == true { dirty = true }
             if labels.setCustom(controller.customLabels) { dirty = true }
             if labels.setImages(controller.customImages) { dirty = true }
             if renderer?.setExtraRivers(controller.customRivers) == true { dirty = true }
@@ -2093,23 +2097,33 @@ final class MapLabelsView: UIView {
                     if blocked(box, margin: margin) { l.view.isHidden = true; continue }
                     p = (x: p.x, y: below)
                 } else if l.province == nil {
-                    // 国名避让补救：只蹭到首都圈或邻国字边时先微移避让，仍被挡且该国主名尚未出现则略缩再试，避免国名无故消失。
-                    let stepY = max(12.0, Double(box.halfH) + max(ring, 4) + 5)
-                    let stepX = max(14.0, Double(box.halfW) * 0.45)
-                    let shifts: [(Double, Double)] = [(0, -stepY), (0, stepY), (-stepX, 0), (stepX, 0), (0, -stepY * 1.6), (0, stepY * 1.6)]
+                    // 国名避让补救：优先在原腹地锚点略微缩字保位，再做极克制的小幅微移（杜绝把国名推越国界或推到海里）。
                     var placedFallback = false
-                    for (dx, dy) in shifts {
-                        let nx = p.x + dx, ny = p.y + dy
-                        guard safeFallbackRect.contains(CGPoint(x: nx, y: ny)) else { continue }
-                        let cand = Box(x: CGFloat(nx), y: CGFloat(ny), halfW: box.halfW, halfH: box.halfH, cosine: box.cosine, sine: box.sine, nation: true, text: l.text)
-                        if !blocked(cand, margin: 1) {
-                            box = cand; p = (x: nx, y: ny); placedFallback = true; break
+                    let stepY = min(22.0, max(9.0, Double(box.halfH) * 0.95 + max(ring, 3) + 3))
+                    let stepX = min(24.0, max(10.0, Double(box.halfW) * 0.24))
+                    let tightShifts: [(Double, Double)] = [(0, -stepY), (0, stepY), (-stepX, 0), (stepX, 0)]
+                    // 1) 原位轻缩 86% 最先尝试，确保锚点留在领土最深腹地
+                    let mildK = k * 0.86
+                    let mildBox = Box(x: CGFloat(p.x), y: CGFloat(p.y), halfW: image.width * mildK / 2, halfH: image.height * mildK / 2, cosine: box.cosine, sine: box.sine, nation: true, text: l.text)
+                    if !blocked(mildBox, margin: 1) {
+                        k = mildK; box = mildBox; placedFallback = true
+                    }
+                    // 2) 若原位仍被都城圈等遮挡，仅做单步紧邻微移
+                    if !placedFallback {
+                        for (dx, dy) in tightShifts {
+                            let nx = p.x + dx, ny = p.y + dy
+                            guard safeFallbackRect.contains(CGPoint(x: nx, y: ny)) else { continue }
+                            let cand = Box(x: CGFloat(nx), y: CGFloat(ny), halfW: box.halfW, halfH: box.halfH, cosine: box.cosine, sine: box.sine, nation: true, text: l.text)
+                            if !blocked(cand, margin: 1) {
+                                box = cand; p = (x: nx, y: ny); placedFallback = true; break
+                            }
                         }
                     }
+                    // 3) 兜底确保主国名不会彻底消失：仅与文字防撞，缩至 78% 并紧贴原锚点
                     if !placedFallback && !placedNationTexts.contains(l.text) {
-                        let shrunkK = k * 0.82
+                        let shrunkK = k * 0.78
                         let sw = image.width * shrunkK / 2, sh = image.height * shrunkK / 2
-                        let rescues: [(Double, Double)] = [(0, 0), (0, -stepY), (0, stepY)]
+                        let rescues: [(Double, Double)] = [(0, 0), (0, -stepY * 0.85), (0, stepY * 0.85)]
                         for (dx, dy) in rescues {
                             let nx = p.x + dx, ny = p.y + dy
                             guard safeFallbackRect.contains(CGPoint(x: nx, y: ny)) else { continue }

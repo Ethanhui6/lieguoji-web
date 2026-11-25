@@ -5,8 +5,8 @@ import {fileURLToPath} from 'node:url';
 export const requiredShots = [
   '01-title','01b-settings','01c-new-world','01d-archive',
   '02-founding','02a-sea','02b-rise','02c-ink','02d-states','02e-borders',
-  '03-world','03b-colors-dense','04-war-0','04-war-1','04-war-2','04c-capital-spotlight','04d-map-unrolled','07-views',
-  '10-nations','11-nation','12-military','14-diplomacy','15-chronicle',
+  '03-world','03b-colors-dense','03c-season-winter','04-war-0','04-war-1','04-war-2','04c-capital-spotlight','04d-map-unrolled','07-views',
+  '10-nations','11-nation','11e-nation-military','11f-nation-diplomacy','12-military','14-diplomacy','15-chronicle',
   '16-statistics','17-edicts','18-menu','18b-war-rules','19-province','30-landscape','31-landscape-nation',
   '41e-herald-house','41f-herald-marriage',
 ];
@@ -38,6 +38,11 @@ export function checkNativeTour(directory) {
   const colors = JSON.parse(readFileSync(join(directory,'color-contrast.json'),'utf8'));
   if(colors.version !== 1 || colors.passed !== true || !(colors.states >= 2) || !(colors.leastDifference >= 15)) {
     throw Error('国色区分回归失败：相邻国家最小色差 ΔE ' + Number(colors.leastDifference).toFixed(1) + '（' + colors.closestPair + '），低于 15。');
+  }
+  const placement = JSON.parse(readFileSync(join(directory,'name-placement.json'),'utf8'));
+  if(placement.version !== 1 || placement.passed !== true || !(placement.total >= 2)
+    || !(placement.insideRatio >= 0.85) || !(placement.maxAngleDeg <= 15.5)) {
+    throw Error(`国名排版回归失败：境内命中 ${(Number(placement.insideRatio) * 100).toFixed(1)}%（${placement.inside}/${placement.total}），最大倾角 ${Number(placement.maxAngleDeg).toFixed(1)}°。`);
   }
   const unrolled = JSON.parse(readFileSync(join(directory,'map-unrolled.json'),'utf8'));
   if(unrolled.version !== 1 || unrolled.passed !== true || !(unrolled.fit > 0) || !(unrolled.scale <= unrolled.fit * 1.02)) {

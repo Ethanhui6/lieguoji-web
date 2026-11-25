@@ -1,0 +1,10 @@
+# 专用低延迟中转与云端存档网关（*.pages.dev，国内直连无需代理）。
+# 不影响 lieguoji-web.pages.dev 原冻结网页版；专门绑定 lieguoji-relay Durable Object（Room）。
+name = "lieguoji-edge"
+compatibility_date = "2026-09-01"
+pages_build_output_dir = "public"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+script_name = "lieguoji-relay"

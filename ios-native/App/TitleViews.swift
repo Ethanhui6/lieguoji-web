@@ -280,13 +280,13 @@ struct TitleView: View {
             .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
-            WorldArchiveSheet(model: model) { world in
+            WorldArchiveSheet(model: model, open: { world in
                 archive = false
                 Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 220_000_000)
                     await model.openArchived(world)
                 }
-            }
+            }, onCloudOpened: { archive = false })
             .background(MemorialPaper().ignoresSafeArea())
             .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
@@ -311,7 +311,7 @@ struct TitleView: View {
                     .padding(.horizontal, Theme.Layout.pageInset)
                     SectionLabel("声音与触感")
                     FeelSettings()
-                    SectionLabel("远程计算")
+                    SectionLabel("远程计算与云端存档")
                     RemoteSettings(model: model)
                 }
                 .padding(.bottom, 24)

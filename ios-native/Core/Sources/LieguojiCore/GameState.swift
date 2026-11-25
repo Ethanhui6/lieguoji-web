@@ -48,6 +48,8 @@ public struct GameState: Codable, Equatable, Sendable {
         public var commanderMilitary: Int? = nil
         public var commanderBonusPct: Int? = nil
         public var commanderTraits: [String]? = nil
+        /// v5.2.1 合围断道标志（敌境无友邻陆路且无可用海港，攻防 −22%、耗粮加倍）。
+        public var encircled: Bool? = nil
     }
     /// A fleet at its actual sea point (open-sea worlds) and its naval command.
     public struct Fleet: Codable, Equatable, Identifiable, Sendable {
@@ -101,6 +103,10 @@ public struct GameState: Codable, Equatable, Sendable {
     /// 圣地: each faith's holy province.
     public struct Holy: Codable, Equatable, Sendable { public let religion: String; public let province: Int }
     public var holy: [Holy]? = nil
+    /// 已建成天下奇观所在州索引（地图上绘制金顶古阁印记）。
+    public var wonders: [Int]? = nil
+    /// 已发掘四海古迹所在州索引（地图上绘制古铜青玉星碑）。
+    public var ruins: [Int]? = nil
     /// 活跃天时与灾异区域（暴雪/大旱/洪涝/瘟疫/丰年）：驱动地图 GPU 地表效果与大气粒子。
     public struct WeatherZone: Codable, Equatable, Sendable {
         public let province: Int; public let kind: String

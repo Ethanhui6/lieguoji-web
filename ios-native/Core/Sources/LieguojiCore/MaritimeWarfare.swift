@@ -269,9 +269,36 @@ public enum MaritimeWarfare {
                             let addCrew = min(maxCrew - curCrew, Int((Double(meta.mission == .refit ? 24 : 10) * dockSpeed).rounded()))
                             fl.crew = JS(curCrew + addCrew)
                         }
+                        if meta.mission == .refit && nextHull >= maxHull * 0.90 && fl.crew.asInt >= Int(Double(maxCrew) * 0.85) {
+                            r.regimes.fleetMeta[fid].mission = JS("patrol")
+                        }
                     } else if meta.mission == .refit {
                         // 修缮满编后自动切回制海巡弋，避免舰队永远停在船坞发呆
                         r.regimes.fleetMeta[fid].mission = JS("patrol")
+                    }
+                }
+            }
+        }
+
+        // 1b. 破交袭扰舰队主动劫掠敌方海上商路（每 10 日靠近敌国海港 140 单位内即掠夺商税并削弱敌国运）
+        if day % 10 == 5, let sea = Naval.sea, !r.portControl.isNull, !r.portControl.ports.isNull {
+            for rf in liveFleets where rf.meta.mission == .raid {
+                guard let victimPort = sea.ports.first(where: { port in
+                    let pc = r.portControl.ports[port.provinceId]
+                    guard !pc.isNull, let owner = pc.landOwnerId.optionalString else { return false }
+                    return Wars.relation(r, rf.nation, owner)?.status.asString == "war" && jsHypot(rf.x - port.center.x, rf.y - port.center.y) <= 140
+                }) else { continue }
+                let owner = r.portControl.ports[victimPort.provinceId].landOwnerId.asString
+                let raidBoost = rf.meta.admiralSkill == .commerceRaider ? 1.40 : 1.0
+                let loot = (14.0 + Double(rf.ships) * 4.2) * (1.0 + 0.30 * rf.meta.lightShare) * raidBoost
+                if let atkNat = r.world.nations.asArray.first(where: { $0.id.asString == rf.nation }),
+                   let defNat = r.world.nations.asArray.first(where: { $0.id.asString == owner }) {
+                    let taken = min(max(0, defNat.gold.asNumber * 0.025), loot)
+                    if taken >= 4 {
+                        defNat.gold = JS(max(0, defNat.gold.asNumber - taken))
+                        atkNat.gold = JS(atkNat.gold.asNumber + taken)
+                        let curXp = r.regimes.fleetMeta[rf.id].xp.optionalNumber ?? 0
+                        r.regimes.fleetMeta[rf.id].xp = JS(curXp + 2)
                     }
                 }
             }

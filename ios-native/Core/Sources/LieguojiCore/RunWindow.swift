@@ -133,9 +133,9 @@ public enum RunWindow {
                 for a in group.filter({ armyDue.contains($0.id.asString) }).sorted(by: { Collate.less($0.id.asString, $1.id.asString) }) {
                     let c = combat(a), base = f(c.damageToProvince * c.efficiency), damage = c.multiplier == 2 ? f(f(base) * 2) : base
                     let n = a.nationId.asString
-                    // App worlds: a siege falls in a third of the time (provinces here are few and large, so
-                    // land changed hands far more slowly than in the original).
-                    let assault = UnitKinds.enabled ? damage * Tuning.current.siege * Regimes.siegeOdds(r, n, p.controller.asString) : damage
+                    // App worlds: a siege falls in a third of the time; if enemy coastal port is blockaded by sea, siege collapses 35% faster!
+                    let blockadeCollapse: Double = (UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy && MaritimeWarfare.isPortBlockaded(r, provinceId: pid, landOwner: p.controller.asString)) ? 1.35 : 1.0
+                    let assault = UnitKinds.enabled ? damage * Tuning.current.siege * Regimes.siegeOdds(r, n, p.controller.asString) * blockadeCollapse : damage
                     if n == p.controller.asString { s.resistance = JS(min(s.maximum.asNumber, s.resistance.asNumber + damage)) }
                     else if war(n, p.controller.asString) { s.attacker = JS(n); s.resistance = JS(max(0, s.resistance.asNumber - assault)) }
                     s.pulse = JS(tick)
@@ -244,9 +244,51 @@ public enum RunWindow {
                 casualties.append((k, Int(strength), oldCrew - fl.crew.asInt, lostShips, true))
                 continue
             }
-            let a = armies[force.id]!, before = a.troops.asInt, strength = min(before, Int(whole))
+            let a = armies[force.id]!, before = a.troops.asInt
+            var strength = min(before, Int(whole))
             a.troops = JS(before - strength)
             if strength > 0 { a.morale = JS(max(0, a.morale.asNumber - max(0.2, Double(strength) / Double(max(1, before)) * 46))) }
+            // v5.2.1 决战溃败与骑兵乘胜追击（仅 App 模式生效，零影响网页逐字节黄金测试）：
+            // 当败军士气溃散（<16）或单轮折损逾 28% 时，胜军发起乘胜追击（骑兵/合围再加码），缴获辎重并提振三军士气。
+            if UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy, strength > 0, a.troops.asInt > 0 {
+                let moraleNow = a.morale.asNumber
+                let lossFrac = Double(strength) / Double(max(1, before))
+                let victimProv = provinceIndex(bridge, force.travel)
+                let isEnc = ArmyTactics.isEncircled(r, army: a, provinceIndex: victimProv)
+                if moraleNow < 16.0 || (lossFrac >= 0.28 && moraleNow < 42.0) {
+                    let hitterIds = Array(Set(hits.filter { $0.victim == k }.compactMap { armyKeys[$0.attacker] }))
+                    var cavPursuit = false
+                    for hid in hitterIds {
+                        let role = UnitKinds.byKey[r.units[hid].optionalString ?? "Infantry"]?.role
+                        if role == .cavalry || role == .heavy || role == .horseArcher { cavPursuit = true; break }
+                    }
+                    let pursuitRate = min(0.32, 0.14 + (cavPursuit ? 0.06 : 0.0) + (isEnc ? 0.08 : 0.0))
+                    let rem = a.troops.asInt
+                    let extra = min(rem, max(0, Int((Double(rem) * pursuitRate).rounded())))
+                    if extra > 0 {
+                        a.troops = JS(rem - extra)
+                        strength += extra
+                        for hid in hitterIds {
+                            if let victor = armies[hid], victor.troops.asInt > 0 {
+                                victor.morale = JS(min(100, (victor.morale.optionalNumber ?? 70) + 10))
+                                victor.supplies = JS(min(100, (victor.supplies.optionalNumber ?? 60) + 12))
+                                if ArmyLedger.on { ArmyLedger.hit(r, attacker: hid, victim: force.id, troops: Double(extra)) }
+                            }
+                        }
+                        if before >= 2200 && (a.troops.asInt == 0 || extra >= 600),
+                           let leadId = hitterIds.first, let victor = armies[leadId] {
+                            let dayNow = r.world.day.asInt
+                            let lastDay = r.regimes.lastPursuitDay.optionalNumber.map(Int.init) ?? -999
+                            if dayNow - lastDay >= 45 {
+                                r.regimes.lastPursuitDay = JS(dayNow)
+                                let tag = isEnc ? "合围全歼" : (cavPursuit ? "铁骑追亡" : "乘胜追击")
+                                Daily.event(r, "battle", "\(victor.name.asString)\(tag)，大破\(a.name.asString)（追斩 \(extra) 人）",
+                                            isEnc ? "敌军深陷合围退路断绝，全线溃散缴获粮草。" : "敌军士气崩塌引发溃退，胜军乘势掩杀并缴获辎重。")
+                            }
+                        }
+                    }
+                }
+            }
             if a.troops.asInt == 0 && !reorganize(r, a) {
                 a.status = JS("destroyed"); a.morale = JS(0); a.route = .array(); a.progress = JS(0)
                 let t = r.armyPositions.records[force.id].clone(); t.status = JS("halted"); r.armyPositions.records[force.id] = t

@@ -77,7 +77,7 @@ struct MenuSheet: View {
                 SectionLabel("声音与触感")
                 FeelSettings()
 
-                SectionLabel("远程计算")
+                SectionLabel("远程计算与云端存档")
                 RemoteSettings(model: model)
 
                 SectionLabel("调试与复位")
@@ -111,6 +111,20 @@ struct MenuSheet: View {
                     Divider2()
                     Button { wallpaper() } label: { MenuRow(symbol: "photo.on.rectangle", title: "壁纸观景模式") }.buttonStyle(.plain)
                     Divider2()
+                    Button {
+                        Task {
+                            let res = await model.uploadCurrentToCloud()
+                            switch res {
+                            case .success(let card):
+                                GameFeel.shared.notify(.success)
+                                say("已上传云端存档「\(card.title)」（\(card.sizeText)）")
+                            case .failure(let err):
+                                GameFeel.shared.notify(.error)
+                                say(err.localizedDescription)
+                            }
+                        }
+                    } label: { MenuRow(symbol: "square.and.arrow.up", title: "上传当前世界至云端存档") }.buttonStyle(.plain)
+                    Divider2()
                     Button { Task { exported = await model.exportCopy().map(ExportFile.init) } } label: { MenuRow(symbol: "square.and.arrow.up", title: "导出存档备份") }.buttonStyle(.plain)
                     Divider2()
                     Button { importing = true } label: { MenuRow(symbol: "tray.and.arrow.down", title: "导入外部存档") }.buttonStyle(.plain)
@@ -133,7 +147,7 @@ struct MenuSheet: View {
                 .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $archive) {
-            WorldArchiveSheet(model: model) { world in archive = false; close(); Task { await model.openArchived(world) } }
+            WorldArchiveSheet(model: model, open: { world in archive = false; close(); Task { await model.openArchived(world) } }, onCloudOpened: { archive = false; close() })
                 .presentationDetents([.medium, .fraction(0.89)]).presentationCornerRadius(Theme.Control.cornerSheet).background(MemorialPaper().ignoresSafeArea()).presentationBackground { MemorialPaper() }.presentationDragIndicator(.hidden)
         }
         .sheet(item: $exported) { file in ShareSheet(items: [file.url]) }

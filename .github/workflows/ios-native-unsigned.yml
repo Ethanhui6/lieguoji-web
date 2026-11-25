@@ -60,11 +60,11 @@ jobs:
           $rt = Split-Path $core
           Get-ChildItem $rt -Filter *.dll | ForEach-Object { Copy-Item $_.FullName $out/ }
           $readme = @"
-          列国纪远程计算服务器 v5（高速流水线 + 双通道云端中转 + 自动热备）
-          1. 双击 LieguojiServer.exe（首次运行若弹出 Windows 防火墙提示，请允许「专用网络」访问）。
-          2. 同一 Wi-Fi 下手机自动毫秒级局域网直连（2–8 ms）；外出 4G/5G 自动通过云端持久 WebSocket 高速中转连接，无需输入任何 IP！
-          3. 手机退入后台再重新切回前台会自动无缝续连并恢复推演，世界热保留在电脑内存中；同时每 90 秒自动在 saves\autosave.lgj 热备。
-          4. 手机「世界卷宗 › 云端存档」支持一键上传、跨设备下载与删除云端存档。
+          列国纪在线计算服务器 v6（真·网游级全双工主动推流 + LZ4 压缩 + 局域网 10ms 自动发现）
+          1. 双击 LieguojiServer.exe（首次运行若弹出 Windows 防火墙提示，请允许「专用网络」访问 TCP 8765 与 UDP 8766）。
+          2. 同一 Wi-Fi 下手机 10ms 零配置自动发现并直连全双工推流（2–6 ms，单帧仅 5–10 KB，60fps 丝滑）；外出 4G/5G 自动通过云端单向推流接入。
+          3. 手机退入后台再切回前台秒级无感续连，世界热保留在服务器内存并每 60 秒自动落盘 saves\autosave.lgj（彻底告别 30 秒卡顿）。
+          4. 如需电脑关机也能 15–35 ms 随时畅玩，可将仓库 server-deploy/ 目录一键 Docker 部署到国内轻量云服务器，在手机「设置 › 远程计算」填入 公网IP:8765 永久直连。
           端口被占用时，可在命令行运行：LieguojiServer.exe 8766
           "@
           Set-Content -Path "$out/使用说明.txt" -Value $readme -Encoding utf8

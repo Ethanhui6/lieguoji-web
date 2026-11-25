@@ -55,11 +55,15 @@ import LieguojiCore
     @Published var speed = 1
     /// 远程计算: the computer simulating this world (nil: the phone does).
     @Published private(set) var remoteAddress: String?
-    /// 当前远程链路形态（局域网直连 / 云端高速通道 / 云端中转）。
+    /// 当前远程链路形态（局域网直连推流 / 专属云服推流 / 云端推流 / 云端中转）。
     @Published private(set) var remoteTransport: String = ""
     /// 实测平滑往返延迟（毫秒）。
     @Published private(set) var remoteRTTMs: Int?
-    /// 正在静默/自动重连电脑服务器（界面展示重连态，不惊动用户）。
+    /// 实时推流单帧 LZ4 压缩体积（KB）。
+    @Published private(set) var remoteFrameKB: Double?
+    /// 当前是否正处于服务器主动推流模式（零问答停顿）。
+    @Published private(set) var remotePushActive = false
+    /// 正在静默/自动重连服务器（界面展示重连态，不惊动用户）。
     @Published private(set) var remoteReconnecting = false
     private var wasPlayingBeforeBackground = false
     private var wasRemoteBeforeBackground = false
@@ -72,18 +76,32 @@ import LieguojiCore
             remoteAddress = a
             remoteTransport = await native.remoteTransport
             remoteRTTMs = await native.lastRTTMs
+            remotePushActive = await native.serverSupportsPush
             remoteReconnecting = false
             UserDefaults.standard.set(address, forKey: "remote.address")
             UserDefaults.standard.set(true, forKey: "remote.auto")
-            if playing { await syncRemoteStream() }
+            if playing { await syncRemoteStream(resetEpoch: true) }
             return nil
         } catch { return error.localizedDescription }
+    }
+    /// 绑定并连接专属云服务器或固定局域网地址（永久记住，打开游戏优先毫秒直连，跳过海外中转）。
+    func connectDirectServer(_ address: String) async -> String? {
+        let clean = address.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { return "请输入服务器地址（例如 192.168.1.5:8765 或 云服务器IP:8765）" }
+        UserDefaults.standard.set(clean, forKey: "remote.directAddress")
+        UserDefaults.standard.set(true, forKey: "remote.autoAll")
+        return await connectRemote(clean)
+    }
+    func clearDirectServer() {
+        UserDefaults.standard.removeObject(forKey: "remote.directAddress")
     }
     func disconnectRemote() async {
         await native.disconnect()
         remoteAddress = nil
         remoteTransport = ""
         remoteRTTMs = nil
+        remoteFrameKB = nil
+        remotePushActive = false
         remoteReconnecting = false
         wasRemoteBeforeBackground = false
         UserDefaults.standard.set(false, forKey: "remote.auto")
@@ -93,23 +111,30 @@ import LieguojiCore
         remoteRTTMs = ms
         return ms
     }
-    private func syncRemoteStream() async {
-        guard remoteAddress != nil else { return }
+    private func streamParams() -> (days: Int, intervalMs: Int) {
         let wanted = CloudConfig.shared.pace[speed] ?? [1: 3, 2: 6, 4: 12, 8: 24, 16: 40][speed] ?? 3
-        let far = remoteAddress.map { !$0.contains("局域网") } ?? false
-        await native.configureRemoteStream(playing: playing && phase == .playing && !replayActive, days: far ? min(48, wanted * 2) : wanted)
+        let intervalMs = [1: 160, 2: 180, 4: 220, 8: 260, 16: 300][speed] ?? 160
+        let farRelay = remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
+        return (farRelay ? min(48, wanted * 2) : wanted, farRelay ? min(360, intervalMs + 40) : intervalMs)
     }
-    /// 退入后台：优雅暂驻电脑服务器内存并落盘本地热备，绝不在系统挂起时误判断线降级手机。
+    private func syncRemoteStream(resetEpoch: Bool = true) async {
+        guard remoteAddress != nil else { return }
+        let p = streamParams()
+        await native.configureRemoteStream(playing: playing && phase == .playing && !replayActive, days: p.days, intervalMs: p.intervalMs, resetEpoch: resetEpoch)
+    }
+    /// 退入后台：优雅暂驻服务器内存并仅拉取一份 LZ4 压缩热备，绝不在系统挂起时误判断线降级手机。
     func handleAppBackground() async {
         appInBackground = true
         wasPlayingBeforeBackground = playing
         let nativeActive = await native.isRemoteActiveOrParked
         wasRemoteBeforeBackground = (remoteAddress != nil || reconnecting || remoteReconnecting || nativeActive)
         if playing { pause(saving: false) }
-        if state != nil { save() }
         if wasRemoteBeforeBackground {
             _ = await native.parkForBackground()
+            remotePushActive = false
             remoteReconnecting = false
+        } else if state != nil {
+            save()
         }
     }
     /// 回到前台：局域网优先 → 云端 WebSocket → HTTP 中转，秒级无感重连并恢复推演。
@@ -131,6 +156,7 @@ import LieguojiCore
                     remoteAddress = label
                     remoteTransport = res.transport
                     remoteRTTMs = res.rttMs
+                    remotePushActive = await native.serverSupportsPush
                     remoteReconnecting = false
                     reconnecting = false
                     wasRemoteBeforeBackground = false
@@ -193,6 +219,7 @@ import LieguojiCore
                     remoteAddress = a
                     remoteTransport = await native.remoteTransport
                     remoteRTTMs = await native.lastRTTMs
+                    remotePushActive = await native.serverSupportsPush
                     reconnecting = false
                     remoteReconnecting = false
                     if let data = await native.state(), let fresh = await Self.decode(GameState.self, from: data) {
@@ -221,10 +248,11 @@ import LieguojiCore
         remoteAddress = found.label
         remoteTransport = found.transport
         remoteRTTMs = found.rttMs
+        remotePushActive = await native.serverSupportsPush
         remoteReconnecting = false
         let msText = found.rttMs.map { " · \($0)ms" } ?? ""
-        notice = "已接入电脑计算（\(found.transport)\(msText)）"
-        if playing { await syncRemoteStream() }
+        notice = "已接入在线计算（\(found.transport)\(msText)）"
+        if playing { await syncRemoteStream(resetEpoch: true) }
         return true
     }
     func autoConnect() {
@@ -872,7 +900,6 @@ import LieguojiCore
         let token = UUID()
         loopToken = token
         playing = true
-        if remoteAddress != nil { Task { await syncRemoteStream() } }
         loop = Task { [weak self] in
             // 任何退出路径都清理 loop 与 playing，彻底杜绝“界面仍显示运行、推演已停滞需重新暂停再开始”的假死。
             defer {
@@ -886,6 +913,10 @@ import LieguojiCore
             // ownership until it can display its result, even if play was paused before it finished.
             if let manual { await manual.value }
             guard let self, !Task.isCancelled, self.loopToken == token, self.playing, self.phase == .playing, self.worldEpoch == epoch else { return }
+            if self.remoteAddress != nil {
+                self.remotePushActive = await self.native.serverSupportsPush
+                await self.syncRemoteStream(resetEpoch: true)
+            }
             var revision = self.nativeRevision
             var ticket = self.advanceOwnership.begin(world: epoch)
             var nilRetries = 0
@@ -907,10 +938,52 @@ import LieguojiCore
                     ahead = nil
                 }
                 let started = Date()
+                // v6 真·网游级主动推流模式（Jitter Buffer 平滑消费）：
+                // 服务器按固定节拍单向推送 LZ4 精简帧（5–10 KB/帧），后台并发解码排队，主线程匀速出队插值，
+                // 彻底消除每步等待 RTT 的停顿感，控制指令零延迟并发直达。
+                var canPush = false
+                if self.remoteAddress != nil {
+                    canPush = await self.native.serverSupportsPush
+                }
+                if canPush {
+                    if !self.remotePushActive {
+                        self.remotePushActive = true
+                        await self.syncRemoteStream(resetEpoch: true)
+                    }
+                    let p = self.streamParams()
+                    self.lastDays = p.days
+                    if let pushed = await self.native.streamBuffer.nextFrame(timeoutSeconds: 2.2) {
+                        nilRetries = 0
+                        guard self.owns(ticket) else { continue }
+                        let stats = self.native.streamBuffer.stats()
+                        if stats.frameKB > 0 { self.remoteFrameKB = stats.frameKB }
+                        do {
+                            try await self.apply(step: .success(pushed), ticket: ticket)
+                        } catch {
+                            if self.owns(ticket) { self.failure = error.localizedDescription; self.pause() }; return
+                        }
+                        guard self.loopToken == token, self.playing, !Task.isCancelled else { return }
+                        let spent = Date().timeIntervalSince(started)
+                        let basePeriod = Double(p.intervalMs) / 1000.0
+                        // 自适应抖动缓冲节奏：队列偏满时平滑略微提速防落后；队列有 1–2 帧时匀速播放吸收网络抖动；空队列时零人工等待
+                        let targetPeriod: Double = stats.buffered >= 3 ? basePeriod * 0.70 : (stats.buffered >= 1 ? basePeriod * 0.92 : 0.0)
+                        let rest = max(0.0, targetPeriod - spent)
+                        if rest > 0.005 { try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000)) }
+                        else { await Task.yield() }
+                        continue
+                    } else {
+                        if await self.native.lost { self.remoteLost(); return }
+                        // 推流偶发空窗（如刚切换网络或切回 HTTP 降级）：立即重申推流配置并兜底拉一帧，绝不卡死
+                        await self.syncRemoteStream(resetEpoch: false)
+                    }
+                } else if self.remotePushActive {
+                    self.remotePushActive = false
+                }
+
                 // Speed is days per step: the engine runs that many days in one call and the map,
                 // the state and the panels refresh once, so 2×, 4× and 8× really are faster.
                 // Through the relay each round trip costs time: twice the days per step.
-                let far = self.remoteAddress.map { !$0.contains("局域网") } ?? false
+                let far = self.remoteAddress.map { $0.contains("云端") || $0.contains("配对码") } ?? false
                 // Days per step: as many as the device computes in its share of a step (measured),
                 // up to the speed's pace — a quick phone runs near the original's pace, a slow one
                 // runs fewer days rather than stuttering. The map glides between steps.
@@ -964,18 +1037,22 @@ import LieguojiCore
     }
     func pause(saving: Bool = true) {
         let was = playing; loopToken = nil; loop?.cancel(); loop = nil; playing = false
-        if remoteAddress != nil { Task { await syncRemoteStream() } }
-        // Ownership held back while playing reaches the map — after the page that paused the game has
-        // slid in (a page opening paused and redrew the map and every state name during its animation:
-        // the stutter measured on every page).
-        // A page pausing the game (saving: false) leaves the map as it is: closing the page resumes play,
-        // which brings the map up to date anyway, and redrawing it under the opening page was the stutter.
+        let wasRemote = remoteAddress != nil
+        if wasRemote {
+            Task {
+                await syncRemoteStream(resetEpoch: true)
+                // 暂停时顺手拉回一份 LZ4 压缩完整状态，确保点击任意军团/国家页立即呈现完整细节文案
+                if let data = await native.state(), let full = await Self.decode(GameState.self, from: data), !playing {
+                    apply(full)
+                }
+            }
+        }
         if was, saving, let s = state { apply(s) }
         if saving, was, let day = state?.day { save(); lastSavedDay = day }
     }
     func cycleSpeed() {
         speed = speed == 1 ? 2 : speed == 2 ? 4 : speed == 4 ? 8 : speed == 8 ? 16 : 1
-        if remoteAddress != nil && playing { Task { await syncRemoteStream() } }
+        if remoteAddress != nil && playing { Task { await syncRemoteStream(resetEpoch: false) } }
     }
     func stepOnce() {
         guard !replayActive, !playing, phase == .playing, state != nil else { return }
@@ -1049,15 +1126,16 @@ import LieguojiCore
         onAdvanceApplied?(next.day)
         applyCost = applyCost * 0.7 + (CACurrentMediaTime() - applying) * 0.3
         if controller.showMetrics {
-            let netTag = isRemote ? " · \(remoteTransport.isEmpty ? "电脑" : remoteTransport) \(remoteRTTMs.map { "\($0)ms" } ?? "")" : ""
+            let kbTag = (isRemote && (remoteFrameKB ?? 0) > 0) ? String(format: " · %.1fKB/帧", remoteFrameKB ?? 0) : ""
+            let netTag = isRemote ? " · \(remoteTransport.isEmpty ? "在线" : remoteTransport) \(remoteRTTMs.map { "\($0)ms" } ?? "")\(kbTag)" : ""
             controller.simText = String(format: "  推演 %.1f ms/日 · 每步 %d 日 · 界面 %.1f ms%@  ", dayCost * 1000, lastDays, applyCost * 1000, netTag)
         }
-        // Autosave by real time, at most every two minutes while playing (a save serializes the whole
-        // world on the engine and the steps wait behind it: every 90 days stalled fast play every few
-        // seconds). Pausing, leaving and backgrounding still save at once. With a computer, every
-        // 30 seconds, so its world is never far from the phone's copy.
-        let interval: TimeInterval = remoteAddress != nil ? 30 : Double(controller.play.autosave)
-        if interval > 0, next.day != lastSavedDay, Date().timeIntervalSince(lastSaveTime) >= interval { save(); lastSavedDay = next.day; lastSaveTime = Date() }
+        // 本机推演按设定间隔自动存档；远程连接时由电脑/云服务器在服务端每 60 秒静默落盘热备，
+        // 彻底杜绝旧版每 30 秒把 5–15 MB 全量存档拉回手机导致的周期性卡顿与断流！
+        if remoteAddress == nil {
+            let interval = Double(controller.play.autosave)
+            if interval > 0, next.day != lastSavedDay, Date().timeIntervalSince(lastSaveTime) >= interval { save(); lastSavedDay = next.day; lastSaveTime = Date() }
+        }
     }
 
     /// 战况飘字: each province's battle losses this step (and fleets' hull lost at sea) float up over the

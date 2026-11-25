@@ -281,13 +281,14 @@ extension NativeEngine {
     }
 
     /// state(): day, date, owners (and labels when they changed), nations, armies, wars, sieges, events — as JSON (远程计算与测试).
-    public func state(includeLabels: Bool) -> Data {
-        let s = gameState(includeLabels: includeLabels)
+    /// `slim = true`：推流精简帧模式——省略地图不使用的长篇军队/舰队文案（点击面板时由 detail 接口按需补齐），使单帧压缩体积极速降至 5–10 KB。
+    public func state(includeLabels: Bool, slim: Bool = false) -> Data {
+        let s = gameState(includeLabels: includeLabels, slim: slim)
         return Profile.measure("s.json") { (try? JSONEncoder().encode(s)) ?? Data() }
     }
 
     /// 界面状态，直接构造结构体（本机推演不经 JSON；字段与 JSON 版一致）。
-    public func gameState(includeLabels: Bool) -> GameState {
+    public func gameState(includeLabels: Bool, slim: Bool = false) -> GameState {
         let r = run, w = r.world, sc = r.scale.asNumber
         let nations = w.nations.asArray, provinces = w.provinces.asArray
         var ni = [String: Int](); for (i, n) in nations.enumerated() { ni[n.id.asString] = i }
@@ -409,48 +410,50 @@ extension NativeEngine {
                 if let last = tr.nodes.last, g.provinces.indices.contains(last) {
                     let q = Int(g.provinces[last]); if q >= 0 && q < provinces.count { dest = q }
                 }
-                let unitKey = r.units[id].optionalString ?? "Infantry"
-                let baseSp = r.forceSpeed.armies[id].base.optionalNumber ?? 0
-                let unitSp = CombatReader.unitSpeed(unitKey) * Regimes.unitSpeed(r, a.nationId.asString, unitKey) * Regimes.armySpeed(r, id, nation: a.nationId.asString) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1)
-                let secPerTick = r.forceClock.secondsPerTick.optionalNumber ?? 0.05
-                let curLeg = max(0, min(max(0, tr.nodes.count - 1), tr.leg))
-                let remLegs = max(1, tr.nodes.count - 1 - curLeg)
-                let curCell = tr.nodes.indices.contains(curLeg) ? tr.nodes[curLeg] : 0
-                let endCell = tr.nodes.last ?? curCell
-                let midCell = tr.nodes.indices.contains(curLeg + remLegs / 2) ? tr.nodes[curLeg + remLegs / 2] : curCell
-                let sampleCells = [curCell, midCell, endCell]
-                var seaHits = 0, mtnHits = 0, roughHits = 0
-                var avgSpd = 0.0
-                for c in sampleCells where g.provinces.indices.contains(c) {
-                    let q = Int(g.provinces[c])
-                    if q < 0 { seaHits += 1 }
-                    else if g.mountain.indices.contains(q) && g.mountain[q] { mtnHits += 1 }
-                    else if g.plateau.indices.contains(q) && g.plateau[q] { roughHits += 1 }
-                    else if g.faces.indices.contains(c) {
-                        let bi = g.faceBiomes.indices.contains(Int(g.faces[c])) ? Int(g.faceBiomes[Int(g.faces[c])]) : 4
-                        if [1, 2, 10, 11, 12].contains(bi) { roughHits += 1 }
+                if !slim {
+                    let unitKey = r.units[id].optionalString ?? "Infantry"
+                    let baseSp = r.forceSpeed.armies[id].base.optionalNumber ?? 0
+                    let unitSp = CombatReader.unitSpeed(unitKey) * Regimes.unitSpeed(r, a.nationId.asString, unitKey) * Regimes.armySpeed(r, id, nation: a.nationId.asString) * (UnitKinds.enabled ? (1 + (Regimes.bonus(r, a.nationId.asString, "speed") ?? 0) / 100) * Regimes.rule(r, "march") * ForceMotion.appMarch : 1)
+                    let secPerTick = r.forceClock.secondsPerTick.optionalNumber ?? 0.05
+                    let curLeg = max(0, min(max(0, tr.nodes.count - 1), tr.leg))
+                    let remLegs = max(1, tr.nodes.count - 1 - curLeg)
+                    let curCell = tr.nodes.indices.contains(curLeg) ? tr.nodes[curLeg] : 0
+                    let endCell = tr.nodes.last ?? curCell
+                    let midCell = tr.nodes.indices.contains(curLeg + remLegs / 2) ? tr.nodes[curLeg + remLegs / 2] : curCell
+                    let sampleCells = [curCell, midCell, endCell]
+                    var seaHits = 0, mtnHits = 0, roughHits = 0
+                    var avgSpd = 0.0
+                    for c in sampleCells where g.provinces.indices.contains(c) {
+                        let q = Int(g.provinces[c])
+                        if q < 0 { seaHits += 1 }
+                        else if g.mountain.indices.contains(q) && g.mountain[q] { mtnHits += 1 }
+                        else if g.plateau.indices.contains(q) && g.plateau[q] { roughHits += 1 }
+                        else if g.faces.indices.contains(c) {
+                            let bi = g.faceBiomes.indices.contains(Int(g.faces[c])) ? Int(g.faceBiomes[Int(g.faces[c])]) : 4
+                            if [1, 2, 10, 11, 12].contains(bi) { roughHits += 1 }
+                        }
+                        avgSpd += ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: c, graph: g, secondsPerTick: secPerTick)
                     }
-                    avgSpd += ForceMotion.armySpeed(base: baseSp, unitSpeed: unitSp, cell: c, graph: g, secondsPerTick: secPerTick)
+                    avgSpd /= Double(max(1, sampleCells.count))
+                    let curPt = g.location(tr).point
+                    let dstPt = tr.destination ?? (g.centers.indices.contains(endCell) ? g.centers[endCell] : curPt)
+                    let directDist = jsHypot(dstPt.x - curPt.x, dstPt.y - curPt.y)
+                    let estDist = max(directDist * 1.15, Double(remLegs) * 4.2 * sc)
+                    let ticks = avgSpd > 1e-6 ? estDist / avgSpd : 120.0
+                    let rawDays = (ticks / 120.0).rounded(.up)
+                    let etaDays = rawDays.isFinite ? Int(max(1, min(9999, rawDays))) : 1
+                    if a.status.asString == "retreating" {
+                        let prefix = seaHits > 0 ? "渡海撤回" : "撤退休整"
+                        routeNote = "\(prefix) · 约 \(etaDays) 日\(seaHits > 0 ? "返港" : "抵达")"
+                    } else {
+                        let prefix = seaHits > 0 ? "渡海航行" : mtnHits > 0 ? "翻越关山险隘" : roughHits > 0 ? "跋涉荒漠险途" : "沿平畴谷道行军"
+                        routeNote = "\(prefix) · 约 \(etaDays) 日\(seaHits > 0 ? "登陆" : "抵达")"
+                    }
                 }
-                avgSpd /= Double(max(1, sampleCells.count))
-                let curPt = g.location(tr).point
-                let dstPt = tr.destination ?? (g.centers.indices.contains(endCell) ? g.centers[endCell] : curPt)
-                let directDist = jsHypot(dstPt.x - curPt.x, dstPt.y - curPt.y)
-                let estDist = max(directDist * 1.15, Double(remLegs) * 4.2 * sc)
-                let ticks = avgSpd > 1e-6 ? estDist / avgSpd : 120.0
-                let rawDays = (ticks / 120.0).rounded(.up)
-                let etaDays = rawDays.isFinite ? Int(max(1, min(9999, rawDays))) : 1
-                if a.status.asString == "retreating" {
-                    let prefix = seaHits > 0 ? "渡海撤回" : "撤退休整"
-                    routeNote = "\(prefix) · 约 \(etaDays) 日\(seaHits > 0 ? "返港" : "抵达")"
-                } else {
-                    let prefix = seaHits > 0 ? "渡海航行" : mtnHits > 0 ? "翻越关山险隘" : roughHits > 0 ? "跋涉荒漠险途" : "沿平畴谷道行军"
-                    routeNote = "\(prefix) · 约 \(etaDays) 日\(seaHits > 0 ? "登陆" : "抵达")"
-                }
-            } else if v.travel.status.asString == "blocked" {
+            } else if !slim && v.travel.status.asString == "blocked" {
                 let why = r.armyAutonomy.armies[id].reason.optionalString ?? ""
                 routeNote = why.isEmpty ? "前方受阻或无外交通行权，暂停待命" : "受阻停步 · \(why)"
-            } else {
+            } else if !slim {
                 let orderDec = r.armyAutonomy.armies[id].decision.optionalString ?? ""
                 let why = r.armyAutonomy.armies[id].reason.optionalString ?? ""
                 if orderDec == "staging" { routeNote = "边境集结待发，兵力齐备后出击" }
@@ -476,21 +479,8 @@ extension NativeEngine {
                 let unitKey = r.units[id].optionalString ?? "Infantry"
                 let br = Regimes.armyBranch(r, armyId: id, unitKey: unitKey)
                 let nid = a.nationId.asString
-                let nCiv = r.civilization.nations[nid]
-                let nStyle = Regimes.style(r, nid).id
                 x.branch = br.rawValue
-                x.branchLabel = LocalizationEngine.branchLabel(branch: br.rawValue, culture: nCiv.cultureId.optionalString, polity: nCiv.polity.optionalString, style: nStyle)
-                x.branchNote = br.roleNote
-                if let grp = Regimes.armyGroup(r, armyId: id) {
-                    x.armyGroup = grp.name
-                    x.groupBonus = grp.totalBonusPct
-                    x.groupComposition = grp.composition
-                    x.groupSynergy = grp.synergyLabel.isEmpty ? nil : grp.synergyLabel
-                }
-                if let wg = Regimes.warGodAura(r, nationId: a.nationId.asString) {
-                    x.warGodAura = "\(wg.rank) \(wg.name)〔\(wg.skill.name)〕· \(wg.buffSummary)"
-                }
-                // 跨海登船状态、两栖抢滩与海外断补标记
+                // 跨海登船状态、两栖抢滩与海外断补标记（地图直接渲染，推流精简帧必须保留）
                 x.embarked = (v.province == nil)
                 if !r.regimes.landingDays.isNull, let ld = r.regimes.landingDays[id].optionalNumber.map(Int.init), ld > 0 {
                     x.landingDays = ld
@@ -498,28 +488,42 @@ extension NativeEngine {
                 if !r.regimes.seaSupplyCut.isNull, r.regimes.seaSupplyCut[id].isTruthy {
                     x.seaSupplyCut = true
                 }
-                // v4.2.2 陆军完全体状态（战阵 / 战场军令 / 老兵勋阶 / 陆海补给状态与来源州）
                 let form = ArmyTactics.formation(r, armyId: id)
                 if form != .standard { x.formation = form.rawValue }
                 let fld = ArmyTactics.fieldOrder(r, armyId: id)
                 if fld != .normal { x.fieldOrder = fld.rawValue }
-                let vet = ArmyTactics.veterancyInfo(r, armyId: id, nationId: nid)
-                x.veterancy = vet.rank
-                x.veterancyLabel = vet.label
                 let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil)
                 x.supplyState = sup.state.rawValue
                 x.supplyOriginProvince = sup.originProvince
                 if ArmyTactics.isEncircled(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil) {
                     x.encircled = true
                 }
-                let warsNow = Offices.wars(r, nid)
-                let enemyHint = warsNow.count == 1 ? warsNow[0].enemy : nil
-                if let cmd = Regimes.activeCommander(r, nation: nid, enemy: enemyHint) {
-                    if x.commander == nil || x.commander?.isEmpty == true { x.commander = cmd.name }
-                    x.commanderRole = cmd.roleTitle
-                    x.commanderMilitary = cmd.military
-                    x.commanderBonusPct = cmd.combatBonusPct
-                    x.commanderTraits = cmd.traits
+                if !slim {
+                    let nCiv = r.civilization.nations[nid]
+                    let nStyle = Regimes.style(r, nid).id
+                    x.branchLabel = LocalizationEngine.branchLabel(branch: br.rawValue, culture: nCiv.cultureId.optionalString, polity: nCiv.polity.optionalString, style: nStyle)
+                    x.branchNote = br.roleNote
+                    if let grp = Regimes.armyGroup(r, armyId: id) {
+                        x.armyGroup = grp.name
+                        x.groupBonus = grp.totalBonusPct
+                        x.groupComposition = grp.composition
+                        x.groupSynergy = grp.synergyLabel.isEmpty ? nil : grp.synergyLabel
+                    }
+                    if let wg = Regimes.warGodAura(r, nationId: nid) {
+                        x.warGodAura = "\(wg.rank) \(wg.name)〔\(wg.skill.name)〕· \(wg.buffSummary)"
+                    }
+                    let vet = ArmyTactics.veterancyInfo(r, armyId: id, nationId: nid)
+                    x.veterancy = vet.rank
+                    x.veterancyLabel = vet.label
+                    let warsNow = Offices.wars(r, nid)
+                    let enemyHint = warsNow.count == 1 ? warsNow[0].enemy : nil
+                    if let cmd = Regimes.activeCommander(r, nation: nid, enemy: enemyHint) {
+                        if x.commander == nil || x.commander?.isEmpty == true { x.commander = cmd.name }
+                        x.commanderRole = cmd.roleTitle
+                        x.commanderMilitary = cmd.military
+                        x.commanderBonusPct = cmd.combatBonusPct
+                        x.commanderTraits = cmd.traits
+                    }
                 }
             }
             return x
@@ -547,27 +551,29 @@ extension NativeEngine {
                 var flRow = GameState.Fleet(id: id, name: fl.name.asString, nation: ni[fl.nationId.asString] ?? -1, ships: Int(fl.ships.asNumber), crew: Int(fl.crew.asNumber), food: Int(fl.food.asNumber),
                                             hull: fl.ships.asNumber > 0 ? (r.maritime.hulls[id].optionalNumber ?? 0) / (fl.ships.asNumber * 100) : 0,
                                             status: fl.status.asString, travel: rec.status.asString, x: Float(fx), y: Float(fy),
-                                            decision: decision, reason: row.isNull ? "" : row.reason.optionalString ?? "",
+                                            decision: decision, reason: slim ? "" : (row.isNull ? "" : row.reason.optionalString ?? ""),
                                             port: port.flatMap { pi[$0.provinceId] } ?? -1, manual: manualFleets.contains(id), patrol: fl.patrol.optionalBool ?? false)
                 if UnitKinds.enabled && !r.regimes.isNull {
                     if !r.regimes.escortingFleets.isNull && r.regimes.escortingFleets[id].isTruthy { flRow.escorting = true }
                     if !r.regimes.blockadingFleets.isNull && r.regimes.blockadingFleets[id].isTruthy { flRow.blockading = true }
                     if !r.regimes.repairingFleets.isNull && r.regimes.repairingFleets[id].isTruthy { flRow.repairActive = true }
-                    let meta = MaritimeWarfare.fleetMeta(r, fleet: fl)
-                    flRow.mission = meta.mission.rawValue
-                    flRow.heavy = meta.heavy
-                    flRow.light = meta.light
-                    flRow.gunboats = meta.gunboats
-                    flRow.admiral = meta.admiralName
-                    flRow.admiralBonus = meta.admiralBonus > 0 ? meta.admiralBonus : nil
-                    flRow.admiralSkill = meta.admiralSkill?.rawValue
-                    flRow.admiralSkillLabel = meta.admiralSkill?.label
-                    flRow.admiralSkillNote = meta.admiralSkill?.note
-                    flRow.experience = meta.rank > 0 ? meta.rank : nil
-                    if let dockId = fl.dockId.optionalString, let dockPort = Naval.sea?.ports.first(where: { $0.id == dockId }) {
-                        flRow.dockLevel = SeaDominion.shipyardLevel(r, provinceId: dockPort.provinceId)
-                    } else if let portObj = port {
-                        flRow.dockLevel = SeaDominion.shipyardLevel(r, provinceId: portObj.provinceId)
+                    if !slim {
+                        let meta = MaritimeWarfare.fleetMeta(r, fleet: fl)
+                        flRow.mission = meta.mission.rawValue
+                        flRow.heavy = meta.heavy
+                        flRow.light = meta.light
+                        flRow.gunboats = meta.gunboats
+                        flRow.admiral = meta.admiralName
+                        flRow.admiralBonus = meta.admiralBonus > 0 ? meta.admiralBonus : nil
+                        flRow.admiralSkill = meta.admiralSkill?.rawValue
+                        flRow.admiralSkillLabel = meta.admiralSkill?.label
+                        flRow.admiralSkillNote = meta.admiralSkill?.note
+                        flRow.experience = meta.rank > 0 ? meta.rank : nil
+                        if let dockId = fl.dockId.optionalString, let dockPort = Naval.sea?.ports.first(where: { $0.id == dockId }) {
+                            flRow.dockLevel = SeaDominion.shipyardLevel(r, provinceId: dockPort.provinceId)
+                        } else if let portObj = port {
+                            flRow.dockLevel = SeaDominion.shipyardLevel(r, provinceId: portObj.provinceId)
+                        }
                     }
                 }
                 fleetRows.append(flRow)

@@ -10,7 +10,7 @@
 //    DELETE /room/<配对码>/saves/<id>    删除
 // 3. 实时探针：GET /room/<配对码>/ping 与 /status 返回在线态、局域网地址、WS 状态与云存档数。
 
-const ROUTE = /^\/room\/([A-Za-z0-9]{6,16})\/(status|ping|ws|call|next|reply|saves)(?:\/([A-Za-z0-9._-]{1,64}))?$/;
+const ROUTE = /^\/room\/([A-Za-z0-9]{6,16})\/(status|ping|ws|call|next|reply|push|saves)(?:\/([A-Za-z0-9._-]{1,64}))?$/;
 const CHUNK_SIZE = 512 * 1024;
 const MAX_SAVE_BYTES = 32 * 1024 * 1024;
 const MAX_SAVES_PER_ROOM = 16;
@@ -163,8 +163,9 @@ export class Room {
         t: Date.now(),
         online: this.online(),
         wsOnline: this.wsOnline(),
+        phoneOnline: this.phoneWs !== null && this.phoneWs.readyState === 1,
         lan: this.online() ? this.lan : [],
-        protocol: 5,
+        protocol: 6,
         serverVersion: this.serverVersion || undefined,
         savesCount: this.savesCount(),
       });
@@ -176,6 +177,24 @@ export class Room {
 
     if (action === 'ws') {
       return this.handleWebSocket(request, url);
+    }
+
+    // 单向服务器主动推流入口：PC 将 LZ4 精简帧直接 POST 至此，Durable Object 零等待直推手机长连 WebSocket（省去整趟手机→中转→PC 请求延迟）
+    if (action === 'push') {
+      this.lastSeen = Date.now();
+      if (!this.phoneWs || this.phoneWs.readyState !== 1) {
+        return new Response(null, { status: 204 });
+      }
+      const seq = (Number(url.searchParams.get('seq') || '0') >>> 0);
+      const buf = await request.arrayBuffer();
+      if (buf.byteLength > 0) {
+        try {
+          this.phoneWs.send(makeEnvelope(MSG_PUSH, seq, new Uint8Array(buf)));
+        } catch {
+          return new Response(null, { status: 204 });
+        }
+      }
+      return new Response(null, { status: 202 });
     }
 
     if (action === 'reply') {

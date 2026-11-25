@@ -32,8 +32,10 @@ public final class EngineService {
         }
         public static func decode(header: Data, data: Data, map: Data) -> Reply {
             let o = (try? JSONSerialization.jsonObject(with: header)) as? [String: Any] ?? [:]
-            var r = Reply(ok: o["ok"] as? Bool ?? false, reason: o["reason"] as? String ?? "", data: data.isEmpty ? nil : data)
-            r.map = map.isEmpty ? nil : map
+            let unpackedData = data.isEmpty ? Data() : WireCodec.decompressIfNeeded(data)
+            let unpackedMap = map.isEmpty ? Data() : WireCodec.decompressIfNeeded(map)
+            var r = Reply(ok: o["ok"] as? Bool ?? false, reason: o["reason"] as? String ?? "", data: unpackedData.isEmpty ? nil : unpackedData)
+            r.map = unpackedMap.isEmpty ? nil : unpackedMap
             r.strings = o["strings"] as? [String]; r.text = o["text"] as? String
             r.points = (o["points"] as? [[Any]])?.map { $0.compactMap { ($0 as? NSNumber)?.doubleValue } }
             return r
@@ -44,9 +46,9 @@ public final class EngineService {
     /// every fourth step (a conquest every step recomputed every state's label each step); the
     /// pending change is sent with a later step.
     private var stepsSinceLabels = 0
-    func state(stepping: Bool = false) -> Data {
+    func state(stepping: Bool = false, slim: Bool = false) -> Data {
         guard let e = engine else { return Data() }
-        return e.state(includeLabels: labelsDue(e, stepping: stepping))
+        return e.state(includeLabels: labelsDue(e, stepping: stepping), slim: slim)
     }
     /// 这一步是否要带国名框（领土易主、新国立国、或国名改称均触发刷新，避免改名或新独立小国漏掉国名）。
     private func labelsDue(_ e: NativeEngine, stepping: Bool) -> Bool {
@@ -109,24 +111,29 @@ public final class EngineService {
             guard engine != nil else { return Reply(ok: false, reason: "世界尚未载入。") }
             let days = max(1, min(60, int("days")))
             engine?.advance(days: days)
-            return data(state(stepping: true))
+            return data(state(stepping: true, slim: bool("slim")))
         case "streamConfig":
             return Reply(ok: true, reason: "ok")
+        case "enableMux":
+            return Reply(ok: true, reason: "mux-v6")
         case "pullLatest":
             guard engine != nil else { return Reply(ok: false, reason: "世界尚未载入。") }
             let days = max(1, min(60, optInt("days") ?? 3))
             engine?.advance(days: days)
-            return data(state(stepping: true))
+            return data(state(stepping: true, slim: bool("slim")))
         case "catalogs":
-            guard let payload, let o = (try? JSONSerialization.jsonObject(with: payload)) as? [String: String],
+            guard let rawPayload = payload else { return Reply(ok: false, reason: "目录数据缺失。") }
+            let unpacked = WireCodec.decompressIfNeeded(rawPayload)
+            guard let o = (try? JSONSerialization.jsonObject(with: unpacked)) as? [String: String],
                   let traits = o["traits"].flatMap({ Data(base64Encoded: $0) }), let noble = o["nobleCultures"].flatMap({ Data(base64Encoded: $0) }),
                   let cultures = o["cultures"].flatMap({ Data(base64Encoded: $0) }) else { return Reply(ok: false, reason: "目录数据缺失。") }
             do { try NativeEngine.loadCatalogs(traits: traits, nobleCultures: noble, cultures: cultures); return Reply() }
             catch { return Reply(ok: false, reason: error.localizedDescription) }
         case "open":
-            guard let payload else { return Reply(ok: false, reason: "缺少世界数据。") }
+            guard let rawPayload = payload else { return Reply(ok: false, reason: "缺少世界数据。") }
+            let unpacked = WireCodec.decompressIfNeeded(rawPayload)
             do {
-                let e = try NativeEngine(world: payload)
+                let e = try NativeEngine(world: unpacked)
                 engine = e; lastOwners = []; lastNationSig = []
                 var r = Reply(data: state()); r.map = e.mapJSON; return r
             } catch { return Reply(ok: false, reason: error.localizedDescription) }
@@ -134,7 +141,7 @@ public final class EngineService {
         case "close": engine = nil; return Reply()
         case "step":
             engine?.advance(days: max(1, int("days")))
-            return data(engine == nil ? nil : state(stepping: true))
+            return data(engine == nil ? nil : state(stepping: true, slim: bool("slim")))
         case "state": return data(engine == nil ? nil : state())
         case "order": return command(engine?.order(armyId: str("armyId"), provinceIndex: int("province")))
         case "retreat": return command(engine?.order(armyId: str("armyId"), provinceIndex: int("province"), retreat: true))
@@ -338,20 +345,42 @@ public enum RemoteRoom {
 
 /// Frame helpers shared by the server and the app's remote link.
 public enum EngineWire {
-    /// What a server answers to `ping`. The app accepts both v4 and v5 servers so players are never
-    /// locked out before updating `LieguojiServer.exe`, while lighting up streaming/ping/resume on v5.
-    public static let greeting = "列国纪远程计算·5"
-    public static let compatibleGreetings: Set<String> = ["列国纪远程计算·5", "列国纪远程计算·4"]
+    /// v6：全双工多路复用主动推流（TCP Mux + Relay Push）+ 跨平台 LZ4 二进制压缩 + 精简推演帧。
+    /// 向下兼容 v5/v4 服务器，玩家未更新电脑端时亦可正常连接。
+    public static let greeting = "列国纪远程计算·6"
+    public static let compatibleGreetings: Set<String> = ["列国纪远程计算·6", "列国纪远程计算·5", "列国纪远程计算·4"]
+
+    // Full-duplex multiplexed TCP frame types (after `enableMux` handshake)
+    public static let muxRequest: UInt8 = 1
+    public static let muxReply: UInt8 = 2
+    public static let muxPush: UInt8 = 3
+    public static let muxPing: UInt8 = 4
+    public static let muxPong: UInt8 = 5
+
     public static func u32(_ n: Int) -> Data { var v = UInt32(n).bigEndian; return Data(bytes: &v, count: 4) }
     public static func readU32(_ d: Data, at i: Int) -> Int { d[d.startIndex + i..<d.startIndex + i + 4].reduce(0) { $0 << 8 | Int($1) } }
-    public static func request(_ call: String, _ args: [String: Any], payload: Data?) -> Data {
-        let header = (try? JSONSerialization.data(withJSONObject: ["call": call, "args": args])) ?? Data("{}".utf8)
-        var out = u32(header.count); out.append(header)
-        let p = payload ?? Data(); out.append(u32(p.count)); out.append(p)
+    public static func muxFrame(type: UInt8, id: UInt32, body: Data) -> Data {
+        var out = Data(capacity: 9 + body.count)
+        out.append(type)
+        out.append(u32(Int(id)))
+        out.append(u32(body.count))
+        out.append(body)
         return out
     }
-    public static func reply(_ r: EngineService.Reply) -> Data {
-        let header = r.header(), data = r.data ?? Data(), map = r.map ?? Data()
+    public static func request(_ call: String, _ args: [String: Any], payload: Data?, compressPayload: Bool = false) -> Data {
+        let header = (try? JSONSerialization.data(withJSONObject: ["call": call, "args": args])) ?? Data("{}".utf8)
+        var out = u32(header.count); out.append(header)
+        let raw = payload ?? Data()
+        let p = (compressPayload && raw.count >= 256) ? WireCodec.compress(raw) : raw
+        out.append(u32(p.count)); out.append(p)
+        return out
+    }
+    public static func reply(_ r: EngineService.Reply, compress: Bool = false) -> Data {
+        let header = r.header()
+        let rawData = r.data ?? Data()
+        let rawMap = r.map ?? Data()
+        let data = (compress && rawData.count >= 256) ? WireCodec.compress(rawData) : rawData
+        let map = (compress && rawMap.count >= 256) ? WireCodec.compress(rawMap) : rawMap
         var out = u32(header.count); out.append(header)
         out.append(u32(data.count)); out.append(data)
         out.append(u32(map.count)); out.append(map)

@@ -147,10 +147,12 @@ import LieguojiCore
     func notify(_ kind: UINotificationFeedbackGenerator.FeedbackType) { if haptics { notice.notificationOccurred(kind) } }
 }
 
-/// 远程计算与云端服务：支持局域网直连（2–8ms）与云端高速 WebSocket 中转、退后台自动无感重连、实时延迟监测与一键云端存档同步。
+/// 在线计算服务器与云端存档（v6 真·网游级主动推流架构）：
+/// 支持 ① 专属国内云服务器 / 局域网毫秒级全双工直连推流（2–35 ms，LZ4 精简帧 5–10 KB/帧）、
+/// ② 家用电脑自动配对（同 Wi-Fi UDP 10ms 秒发现、外出走云端单向推流）、③ 退后台无感重连与一键云端存档。
 struct RemoteSettings: View {
     @ObservedObject var model: GameModel
-    @State private var address = UserDefaults.standard.string(forKey: "remote.address") ?? ""
+    @State private var directAddress = UserDefaults.standard.string(forKey: "remote.directAddress") ?? ""
     @State private var roomCode = UserDefaults.standard.string(forKey: "remote.roomCode") ?? ""
     @State private var busy = false
     @State private var cloudUploading = false
@@ -161,15 +163,18 @@ struct RemoteSettings: View {
     private var statusTitle: String {
         if model.remoteAddress != nil {
             let rtt = model.remoteRTTMs.map { " · \($0)ms" } ?? ""
-            return "已连电脑（\(model.remoteTransport.isEmpty ? "远程" : model.remoteTransport)\(rtt)）"
+            let kb = (model.remoteFrameKB ?? 0) > 0 ? String(format: " · %.1fKB/帧", model.remoteFrameKB ?? 0) : ""
+            return "已连服务器（\(model.remoteTransport.isEmpty ? "在线" : model.remoteTransport)\(rtt)\(kb)）"
         }
-        if model.remoteReconnecting { return "正在无感重连电脑…" }
-        return model.autoRemote ? "正在待命连接电脑" : "本机推演"
+        if model.remoteReconnecting { return "正在无感续连服务器…" }
+        return model.autoRemote ? "正在待命连接在线服务器" : "本机推演"
     }
     private var statusSubtitle: String {
-        if let addr = model.remoteAddress { return "\(addr) · 电脑后台持续预推演，手机低发热零卡顿" }
-        if model.remoteReconnecting { return "世界仍热保存在电脑内存中，返回前台自动续接" }
-        return model.autoRemote ? "电脑开着「列国纪远程计算 v5」即自动接入，切后台不断档" : "开启后自动将重型模拟交由电脑运行，手机仅负责渲染画面"
+        if let addr = model.remoteAddress {
+            return "\(addr) · v6 主动推流 + LZ4 压缩 + 抖动缓冲，手机零计算负担"
+        }
+        if model.remoteReconnecting { return "世界仍热保存在服务器内存中，返回前台自动秒连" }
+        return model.autoRemote ? "优先直连专属云服或同 Wi-Fi 电脑（UDP 秒发现），外出自动走云端推流" : "开启后自动将模拟交给专属云服务器或家用电脑，手机只负责 60fps 渲染"
     }
 
     var body: some View {
@@ -191,7 +196,7 @@ struct RemoteSettings: View {
                             let ok = await model.findComputerNow()
                             busy = false
                             messageGood = ok
-                            message = ok ? "已接通电脑算力，大地图推演将由电脑承担。" : "未发现电脑在线：请先在电脑运行「列国纪远程计算 v5」（配对码 \(NativeHost.activeRoomCode)）。"
+                            message = ok ? "已接通在线服务器（主动推流模式），大地图由服务器全速承担。" : "未发现服务器在线：可填入专属云服务器 IP:8765，或在电脑运行「列国纪远程计算 v6」（配对码 \(NativeHost.activeRoomCode)）。"
                             GameFeel.shared.notify(ok ? .success : .warning)
                         }
                     }
@@ -204,7 +209,8 @@ struct RemoteSettings: View {
                                 let ms = await model.refreshRemoteRTT()
                                 busy = false
                                 messageGood = ms != nil
-                                message = ms.map { "当前往返延迟 \($0) ms，连接稳固。" } ?? "测速超时，已触发自动重连。"
+                                let kbText = (model.remoteFrameKB ?? 0) > 0 ? String(format: "，单帧 %.1f KB", model.remoteFrameKB ?? 0) : ""
+                                message = ms.map { "实时网络延迟 \($0) ms\(kbText)，链路稳固。" } ?? "测速超时，已触发自动重连。"
                             }
                         }
                         .font(Theme.label).foregroundStyle(Theme.jade)
@@ -221,7 +227,40 @@ struct RemoteSettings: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             Divider2()
-            PaperSwitch(title: "自动连接我的电脑计算", on: Binding(get: { model.autoRemote }, set: { model.autoRemote = $0 }))
+            PaperSwitch(title: "自动连接在线服务器 / 我的电脑", on: Binding(get: { model.autoRemote }, set: { model.autoRemote = $0 }))
+            Divider2()
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("专属云服务器 / 局域网直连（推荐 · 2–35ms）").font(Theme.body).foregroundStyle(Theme.ink)
+                    Spacer()
+                    if !directAddress.isEmpty && model.remoteAddress == nil {
+                        Button("清除") {
+                            directAddress = ""
+                            model.clearDirectServer()
+                            messageGood = true
+                            message = "已清除固定直连地址，将自动通过局域网发现或云端中转连接。"
+                        }
+                        .font(Theme.caption).foregroundStyle(Theme.ink2)
+                    }
+                }
+                Text("填写国内轻量云服务器或电脑内网地址（例 120.55.x.x:8765），永久记住、跳过海外中转直达满帧丝滑。").font(Theme.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    TextField("", text: $directAddress, prompt: Text("云服务器或局域网 IP:8765").foregroundColor(Theme.ink2.opacity(0.6)))
+                        .paperField().keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.never)
+                    EditorialTactileButton(title: "直连", solid: true, compact: true) {
+                        busy = true; message = ""
+                        Task {
+                            let error = await model.connectDirectServer(directAddress)
+                            busy = false
+                            messageGood = (error == nil)
+                            message = error ?? "已成功接通专属直连推流服务器（已永久记住，下次打开秒连）。"
+                            GameFeel.shared.notify(error == nil ? .success : .error)
+                        }
+                    }
+                    .disabled(busy || directAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            .padding(.horizontal, 16).padding(.vertical, 11)
             Divider2()
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -229,7 +268,7 @@ struct RemoteSettings: View {
                     Text("房间码 \(NativeHost.activeRoomCode) · 无需电脑开机，换设备随时下载").font(Theme.caption).foregroundStyle(Theme.ink2)
                 }
                 Spacer(minLength: 6)
-                EditorialTactileButton(title: cloudUploading ? "上传中…" : "上传云端", solid: true, compact: true) {
+                EditorialTactileButton(title: cloudUploading ? "上传中…" : "上传云端", solid: false, compact: true) {
                     guard !cloudUploading else { return }
                     cloudUploading = true; message = ""
                     Task {
@@ -253,7 +292,7 @@ struct RemoteSettings: View {
             Divider2()
             Button { withAnimation(Motion.tap) { advanced.toggle() } } label: {
                 HStack {
-                    Text("高级：自定配对码或手动直连地址").font(Theme.label).foregroundStyle(Theme.ink2)
+                    Text("高级：自定家用电脑配对码").font(Theme.label).foregroundStyle(Theme.ink2)
                     Spacer()
                     InkIcon(glyph: .chevronDown, size: 11, weight: 1.7).foregroundStyle(Theme.ink2).rotationEffect(.degrees(advanced ? 180 : 0))
                 }
@@ -261,35 +300,16 @@ struct RemoteSettings: View {
             }
             .buttonStyle(.plain)
             if advanced {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        TextField("", text: $roomCode, prompt: Text("专属房间码（默认 \(RemoteRoom.personal)）").foregroundColor(Theme.ink2.opacity(0.6)))
-                            .paperField().keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.characters)
-                        Button("保存") {
-                            let clean = roomCode.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "-", with: "").uppercased()
-                            UserDefaults.standard.set(clean, forKey: "remote.roomCode")
-                            messageGood = true
-                            message = "房间码已更新为 \(NativeHost.activeRoomCode)（电脑端 pairing.txt 填相同码即可配对）"
-                        }
-                        .font(Theme.body).foregroundStyle(Theme.seal)
+                HStack {
+                    TextField("", text: $roomCode, prompt: Text("专属房间码（默认 \(RemoteRoom.personal)）").foregroundColor(Theme.ink2.opacity(0.6)))
+                        .paperField().keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.characters)
+                    Button("保存") {
+                        let clean = roomCode.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "-", with: "").uppercased()
+                        UserDefaults.standard.set(clean, forKey: "remote.roomCode")
+                        messageGood = true
+                        message = "房间码已更新为 \(NativeHost.activeRoomCode)（电脑端 pairing.txt 或环境变量 LGJ_PAIRING_CODE 填相同码即可）"
                     }
-                    if model.remoteAddress == nil {
-                        HStack {
-                            TextField("", text: $address, prompt: Text("局域网 IP:8765 或配对码").foregroundColor(Theme.ink2.opacity(0.6)))
-                                .paperField().keyboardType(.asciiCapable).autocorrectionDisabled().textInputAutocapitalization(.never)
-                            Button("直连") {
-                                busy = true; message = ""
-                                Task {
-                                    let error = await model.connectRemote(address)
-                                    busy = false
-                                    messageGood = (error == nil)
-                                    message = error ?? "已成功接入电脑计算。"
-                                    GameFeel.shared.notify(error == nil ? .success : .error)
-                                }
-                            }
-                            .font(Theme.body).foregroundStyle(Theme.seal).disabled(busy || address.isEmpty)
-                        }
-                    }
+                    .font(Theme.body).foregroundStyle(Theme.seal)
                 }
                 .padding(.horizontal, 16).padding(.bottom, 12)
             }

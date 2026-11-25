@@ -1,11 +1,168 @@
 import Foundation
 import Network
+import Darwin
 import LieguojiCore
+
+/// 独立于主线程与 Actor 之外的客户端推流解码缓冲队列（网游级 Jitter Buffer）：
+/// - 收到服务器主动推送的 LZ4 压缩精简帧后，立即在后台并发队列完成解压 + JSON 解码，0ms 阻塞 UI 查询与点击；
+/// - 队列容量上限 4 帧（超出自动丢弃最老中间帧防止落后），按 `epoch` 秒级丢弃暂停/下令前的过时在途帧；
+/// - 记录实时压缩体积（KB/帧）与缓冲水位，供状态胶囊与设置页实时展示。
+final class StreamFrameBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private let decodeQueue = DispatchQueue(label: "lieguoji.stream.decode", qos: .userInitiated)
+    private var epoch: UInt8 = 0
+    private var queue: [GameState] = []
+    private var waiter: CheckedContinuation<GameState?, Never>?
+    private var lastCompressedBytes: Int = 0
+    private var lastRawBytes: Int = 0
+    private var framesReceived: Int = 0
+    private let maxBuffered = 4
+
+    func reset(epoch: UInt8) {
+        lock.lock()
+        self.epoch = epoch
+        queue.removeAll(keepingCapacity: true)
+        let w = waiter
+        waiter = nil
+        lock.unlock()
+        w?.resume(returning: nil)
+    }
+
+    func ingest(tag: UInt32, compressedPayload: Data) {
+        let frameEpoch = UInt8((tag >> 24) & 0xFF)
+        lock.lock()
+        let accept = (frameEpoch == epoch)
+        lock.unlock()
+        guard accept else { return }
+
+        let compSize = compressedPayload.count
+        decodeQueue.async { [weak self] in
+            guard let self else { return }
+            let raw = WireCodec.decompressIfNeeded(compressedPayload)
+            guard !raw.isEmpty, let decoded = try? JSONDecoder().decode(GameState.self, from: raw) else { return }
+            self.lock.lock()
+            guard frameEpoch == self.epoch else {
+                self.lock.unlock()
+                return
+            }
+            self.lastCompressedBytes = compSize
+            self.lastRawBytes = raw.count
+            self.framesReceived += 1
+            if let w = self.waiter {
+                self.waiter = nil
+                self.lock.unlock()
+                w.resume(returning: decoded)
+                return
+            }
+            if self.queue.count >= self.maxBuffered {
+                self.queue.removeFirst(self.queue.count - self.maxBuffered + 1)
+            }
+            self.queue.append(decoded)
+            self.lock.unlock()
+        }
+    }
+
+    func nextFrame(timeoutSeconds: Double = 2.4) async -> GameState? {
+        lock.lock()
+        if !queue.isEmpty {
+            let first = queue.removeFirst()
+            lock.unlock()
+            return first
+        }
+        lock.unlock()
+
+        return await withCheckedContinuation { (cont: CheckedContinuation<GameState?, Never>) in
+            lock.lock()
+            if !queue.isEmpty {
+                let first = queue.removeFirst()
+                lock.unlock()
+                cont.resume(returning: first)
+                return
+            }
+            let prev = waiter
+            waiter = cont
+            let activeEpoch = epoch
+            lock.unlock()
+            prev?.resume(returning: nil)
+
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + timeoutSeconds) { [weak self] in
+                guard let self else { return }
+                self.lock.lock()
+                if self.epoch == activeEpoch, let w = self.waiter {
+                    self.waiter = nil
+                    self.lock.unlock()
+                    w.resume(returning: nil)
+                } else {
+                    self.lock.unlock()
+                }
+            }
+        }
+    }
+
+    func stats() -> (buffered: Int, frameKB: Double, rawKB: Double, total: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        return (queue.count, Double(lastCompressedBytes) / 1024.0, Double(lastRawBytes) / 1024.0, framesReceived)
+    }
+}
+
+/// 局域网 UDP 零配置自动发现（端口 8766）：同一 Wi-Fi 下无需经过外网中转，10–30 ms 秒连电脑。
+enum LANDiscovery {
+    static func discover(roomCode: String, timeoutSeconds: Double = 0.65) async -> String? {
+        await Task.detached(priority: .userInitiated) { () -> String? in
+            let sock = Darwin.socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+            guard sock >= 0 else { return nil }
+            defer { Darwin.close(sock) }
+            var one: Int32 = 1
+            _ = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &one, socklen_t(MemoryLayout<Int32>.size))
+            let usec = Int32(max(50_000, Int(timeoutSeconds * 1_000_000)))
+            var tv = timeval(tv_sec: Int(usec / 1_000_000), tv_usec: usec % 1_000_000)
+            _ = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+
+            var bcast = sockaddr_in()
+            bcast.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+            bcast.sin_family = sa_family_t(AF_INET)
+            bcast.sin_port = UInt16(8766).bigEndian
+            bcast.sin_addr.s_addr = in_addr_t(0xFFFF_FFFF)
+
+            let probe = Array("LGJ_DISCOVER:\(roomCode)".utf8)
+            _ = probe.withUnsafeBytes { raw in
+                guard let p = raw.baseAddress else { return -1 }
+                return withUnsafePointer(to: &bcast) { bp in
+                    bp.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
+                        sendto(sock, p, raw.count, 0, sa, socklen_t(MemoryLayout<sockaddr_in>.size))
+                    }
+                }
+            }
+
+            var buf = [UInt8](repeating: 0, count: 256)
+            var from = sockaddr_in()
+            var fromLen = socklen_t(MemoryLayout<sockaddr_in>.size)
+            let got = buf.withUnsafeMutableBytes { raw in
+                guard let p = raw.baseAddress else { return -1 }
+                return withUnsafeMutablePointer(to: &from) { fp in
+                    fp.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
+                        recvfrom(sock, p, raw.count, 0, sa, &fromLen)
+                    }
+                }
+            }
+            guard got > 0 else { return nil }
+            let text = String(decoding: buf.prefix(got), as: UTF8.self)
+            let parts = text.split(separator: ":")
+            guard parts.count >= 3, parts[0] == "LGJ_HERE", String(parts[1]).uppercased() == roomCode.uppercased() else { return nil }
+            var ipBuf = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
+            var addr = from.sin_addr
+            guard inet_ntop(AF_INET, &addr, &ipBuf, socklen_t(INET_ADDRSTRLEN)) != nil else { return nil }
+            let ip = String(cString: ipBuf)
+            let tcpPort = String(parts[2])
+            return "\(ip):\(tcpPort)"
+        }.value
+    }
+}
 
 /// The engine of the running world on its own serial executor (the engine keeps static tables, so
 /// every call goes through this one actor). Days, commands and saves run in Swift — on the phone, or,
-/// with 远程计算, on a computer running LieguojiServer (the phone then only draws). Both paths run the
-/// same EngineService requests.
+/// with 远程计算, on a computer / dedicated cloud server running LieguojiServer (the phone then only draws).
 actor NativeHost {
     private let service = EngineService()
     private var remote: EngineLink?
@@ -13,8 +170,14 @@ actor NativeHost {
     private(set) var remoteTransport: String = ""
     private(set) var lastRTTMs: Int?
     private(set) var serverSupportsStream = false
+    private(set) var serverSupportsPush = false
+    private(set) var serverSupportsLZ4 = false
     private(set) var parked = false
+    private var streamEpoch: UInt8 = 1
     private static var catalogs = false
+
+    /// 独立非隔离推流缓冲队列：服务器推送帧直接在此解码排队，绝不与主线程或面板查询争锁。
+    nonisolated let streamBuffer = StreamFrameBuffer()
 
     /// 玩家自定或默认配对房间码（用于远程计算与云端存档统一寻址）。
     nonisolated static var activeRoomCode: String {
@@ -26,6 +189,12 @@ actor NativeHost {
             return custom
         }
         return RemoteRoom.personal
+    }
+
+    /// 玩家保存的专属云服务器或固定局域网直连地址（例如 `1.2.3.4:8765`），优先直连实现 2–35 ms 真网游体验。
+    nonisolated static var savedDirectAddress: String {
+        (UserDefaults.standard.string(forKey: "remote.directAddress") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     static func catalogData() throws -> (traits: Data, noble: Data, cultures: Data) {
@@ -48,20 +217,20 @@ actor NativeHost {
     private var lastWorld: Data?
 
     /// One request, on the computer when connected, else in process.
-    /// 遇单次瞬时抖动先静默快速重连重试一次，避免偶发网络波动就把整局踢回本机。
     private func call(_ name: String, _ args: [String: Any] = [:], payload: Data? = nil) async -> EngineService.Reply {
         if let remote {
             let t0 = Date().timeIntervalSinceReferenceDate
             do {
                 let r = try await remote.call(name, args, payload: payload)
                 let ms = max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
-                if name == "ping" || name == "pullLatest" || name == "step" || name == "state" {
+                if name == "ping" || name == "pullLatest" || name == "step" || name == "state" || name == "streamConfig" {
                     lastRTTMs = lastRTTMs.map { Int(Double($0) * 0.65 + Double(ms) * 0.35) } ?? ms
                 }
                 return r
             } catch {
-                // 首次断链先尝试静默闪连恢复（仅非 open/catalogs 大包）
-                remote.cancel(); self.remote = nil; remoteAddress = nil; serverSupportsStream = false
+                remote.cancel(); self.remote = nil; remoteAddress = nil
+                serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
+                streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
                 if name != "open" && name != "catalogs" && !parked {
                     if let _ = await reattachQuick() {
                         if let fresh = self.remote, let retry = try? await fresh.call(name, args, payload: payload) {
@@ -70,29 +239,33 @@ actor NativeHost {
                     }
                 }
                 lost = true
-                return EngineService.Reply(ok: false, reason: "与电脑的连接中断")
+                return EngineService.Reply(ok: false, reason: "与服务器的连接中断")
             }
         }
         if parked { return EngineService.Reply(ok: false, reason: "已暂存后台，返回前台即自动续连") }
-        if lost { return EngineService.Reply(ok: false, reason: "与电脑的连接中断，正在重连") }
+        if lost { return EngineService.Reply(ok: false, reason: "与服务器的连接中断，正在重连") }
         return service.handle(name, args, payload: payload)
     }
 
-    /// Connects to a computer and moves the world there (catalogues first, then the current save).
-    func connect(_ address: String, timeout: Double = 6, reattach: Bool = false) async throws -> String {
+    /// Connects to a dedicated cloud server, LAN computer, or Cloudflare push relay and moves the world there.
+    func connect(_ address: String, timeout: Double = 5.5, reattach: Bool = false) async throws -> String {
         let text = address.trimmingCharacters(in: .whitespaces)
         let code = text.replacingOccurrences(of: "-", with: "").uppercased()
         let link: EngineLink, label: String, transport: String
-        if code.count >= 6, code.count <= 16, code.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber) }), !text.contains(".") {
-            // 优先持久 WebSocket 高速通道（零轮询开销），若运营商拦截 WS 自动无缝降级至 HTTP/2 Gzip 中转
+        var isDirectTCP = false
+        var directLinkRef: RemoteLink?
+        var wsLinkRef: RelayWSLink?
+
+        if code.count >= 6, code.count <= 16, code.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber) }), !text.contains(".") && !text.contains(":") {
             let relayProbe = RelayLink(code: code)
             let status = await relayProbe.status()
             guard let status else { throw EngineError.message("连不上云端中转服务器，请检查网络。") }
             guard status.online else { throw EngineError.message("电脑不在线：请在电脑上运行「列国纪远程计算」，并核对配对码。") }
             if let ws = try? await RelayWSLink.connect(code: code, base: relayProbe.activeBase) {
                 link = ws
-                transport = "云端高速通道"
-                label = code == Self.activeRoomCode ? "云端高速通道" : "配对码 \(code.prefix(4))-\(code.dropFirst(4))"
+                wsLinkRef = ws
+                transport = "云端推流"
+                label = code == Self.activeRoomCode ? "云端高速推流" : "配对码 \(code.prefix(4))-\(code.dropFirst(4))"
             } else {
                 try await relayProbe.start()
                 link = relayProbe
@@ -102,32 +275,55 @@ actor NativeHost {
         } else {
             var host = text, port: UInt16 = 8765
             if let i = host.lastIndex(of: ":"), let p = UInt16(host[host.index(after: i)...]) { port = p; host = String(host[..<i]) }
-            guard !host.isEmpty else { throw EngineError.message("请填写配对码或电脑的局域网地址") }
+            guard !host.isEmpty else { throw EngineError.message("请填写专属服务器地址（IP:8765）或配对码") }
             let direct = RemoteLink(host: host, port: port)
             try await direct.start(timeout: timeout)
             link = direct
-            transport = "局域网直连"
-            label = "\(host):\(port)（局域网）"
+            directLinkRef = direct
+            isDirectTCP = true
+            let isPrivate = host.hasPrefix("192.168.") || host.hasPrefix("10.") || host.hasPrefix("172.") || host.hasPrefix("127.") || host.hasSuffix(".local")
+            transport = isPrivate ? "局域网直连" : "专属云服"
+            label = isPrivate ? "\(host):\(port)（局域网）" : "\(host):\(port)（专属服）"
         }
+
         let t0 = Date().timeIntervalSinceReferenceDate
-        let hello = try await link.call("ping", [:], payload: nil)
+        let hello = try await link.call("ping", ["v": 6], payload: nil)
         let rtt = max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
         guard hello.ok else { link.cancel(); throw EngineError.message("对方不是列国纪远程计算服务器") }
         guard EngineWire.compatibleGreetings.contains(hello.reason) else {
             link.cancel()
-            throw EngineError.message("电脑上的计算服务器版本较旧，请更新后再连接；这局先用手机计算。")
+            throw EngineError.message("服务器版本较旧，请更新后再连接；这局先用手机计算。")
         }
-        let isV5 = (hello.reason == EngineWire.greeting)
+
+        let isV6 = (hello.reason == EngineWire.greeting)
+        let isV5OrNewer = isV6 || hello.reason == "列国纪远程计算·5"
+        var pushCapable = false
+
+        // v6 协议：直连 TCP 升级为全双工多路复用推流（MUX）；云端 WS 挂载单向 MSG_PUSH 监听 + LZ4 压缩。
+        let buf = self.streamBuffer
+        if isV6 {
+            if let directLinkRef {
+                directLinkRef.onPushFrame = { tag, data in buf.ingest(tag: tag, compressedPayload: data) }
+                if (try? await directLinkRef.upgradeToMux()) == true {
+                    pushCapable = true
+                }
+            } else if let wsLinkRef {
+                wsLinkRef.compressUploads = true
+                wsLinkRef.onPushFrame = { tag, data in buf.ingest(tag: tag, compressedPayload: data) }
+                pushCapable = true
+            }
+        }
+        let finalTransport = (pushCapable && isDirectTCP) ? "\(transport)推流" : transport
 
         if reattach {
             let isOpen = (try? await link.call("isOpen", [:], payload: nil))?.ok ?? false
             if isOpen {
-                remote = link; remoteAddress = label; remoteTransport = transport
-                lastRTTMs = rtt; serverSupportsStream = isV5
+                remote = link; remoteAddress = label; remoteTransport = finalTransport
+                lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
+                serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
                 lost = false; parked = false; lastAddress = address
                 return label
             }
-            // 电脑若在离开期间重启过，自动用最近热备无缝恢复世界！
             if let backup = lastWorld ?? service.engine?.save() {
                 let c = try Self.catalogData()
                 let catalogs = try JSONSerialization.data(withJSONObject: [
@@ -138,15 +334,16 @@ actor NativeHost {
                 guard (try await link.call("catalogs", [:], payload: catalogs)).ok,
                       (try await link.call("open", [:], payload: backup)).ok else {
                     link.cancel()
-                    throw EngineError.message("电脑重启后恢复世界失败")
+                    throw EngineError.message("服务器重启后恢复世界失败")
                 }
                 _ = try? await link.call("enableAppRules", [:], payload: nil)
-                remote = link; remoteAddress = label; remoteTransport = transport
-                lastRTTMs = rtt; serverSupportsStream = isV5
+                remote = link; remoteAddress = label; remoteTransport = finalTransport
+                lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
+                serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
                 lost = false; parked = false; lastAddress = address
                 return label
             }
-            link.cancel(); throw EngineError.message("电脑上的世界已关闭")
+            link.cancel(); throw EngineError.message("服务器上的世界已关闭")
         }
 
         let c = try Self.catalogData()
@@ -159,54 +356,57 @@ actor NativeHost {
         guard loaded.ok else { link.cancel(); throw EngineError.message(loaded.reason) }
         if let save = service.engine?.save() {
             let opened = try await link.call("open", [:], payload: save)
-            guard opened.ok else { link.cancel(); throw EngineError.message("电脑载入世界失败：\(opened.reason)") }
-            _ = try await link.call("enableAppRules", [:], payload: nil)
+            guard opened.ok else { link.cancel(); throw EngineError.message("服务器载入世界失败：\(opened.reason)") }
+            _ = try? await link.call("enableAppRules", [:], payload: nil)
             lastWorld = save
         }
-        remote = link; remoteAddress = label; remoteTransport = transport
-        lastRTTMs = rtt; serverSupportsStream = isV5
+        remote = link; remoteAddress = label; remoteTransport = finalTransport
+        lastRTTMs = rtt; serverSupportsStream = isV5OrNewer
+        serverSupportsPush = pushCapable; serverSupportsLZ4 = isV6
         lastAddress = address; lost = false; parked = false
         return label
     }
 
-    /// Back to the phone: the computer's world comes home first.
+    /// Back to the phone: the computer's world comes home first (LZ4-compressed for speed).
     func disconnect() async {
-        parked = false; lost = false; serverSupportsStream = false; lastRTTMs = nil
+        parked = false; lost = false
+        serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
+        lastRTTMs = nil
+        streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
         guard let link = remote else { remoteAddress = nil; remoteTransport = ""; return }
-        _ = try? await link.call("streamConfig", ["playing": false, "days": 3], payload: nil)
+        _ = try? await link.call("streamConfig", ["playing": false, "days": 3, "push": false], payload: nil)
         if let save = try? await link.call("save", [:], payload: nil), let data = save.data {
             _ = service.handle("open", [:], payload: data); service.engine?.enableAppRules()
             lastWorld = data
         }
-        link.cancel(); remote = nil; remoteAddress = nil; remoteTransport = ""
+        link.cancel(); remote = nil; remoteAddress = nil; remoteTransport = ""; lastAddress = nil
     }
 
-    /// 退入后台：优雅暂停服务端预推演并热保留电脑内存中的世界，不触发断线降级手机计算。
+    /// 退入后台：优雅暂驻服务器内存并落盘本地热备，保留状态不断档。
     func parkForBackground() async -> Bool {
-        guard let link = remote else { return parked || lost }
-        if serverSupportsStream {
-            _ = try? await link.call("streamConfig", ["playing": false, "days": 3], payload: nil)
-            _ = try? await link.call("park", [:], payload: nil)
-        }
-        link.cancel()
-        remote = nil
+        streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
+        guard let link = remote else { return false }
         parked = true
-        lost = false
+        _ = try? await link.call("streamConfig", ["playing": false, "days": 3, "push": false], payload: nil)
+        _ = try? await link.call("park", [:], payload: nil)
+        if let snap = try? await link.call("save", [:], payload: nil), let data = snap.data, !data.isEmpty {
+            lastWorld = data
+        }
         return true
     }
 
-    /// 回到前台：局域网优先 → 云端 WebSocket → HTTP 中转，秒级无感重挂世界并拉取最新权威状态。
+    /// 回到前台：极速探活现有长连接；若 iOS 系统回收了 socket，毫秒级直连或云端 WebSocket 无感重挂并同步最新权威状态。
     func resumeFromForeground() async -> (connected: Bool, label: String?, transport: String, rttMs: Int?, state: Data?) {
-        // 已在线时做一次轻探针确认链路鲜活
         if let link = remote {
             let t0 = Date().timeIntervalSinceReferenceDate
-            if let pong = try? await link.call("ping", [:], payload: nil), pong.ok {
+            if let pong = try? await link.call("ping", ["v": 6], payload: nil), pong.ok {
                 let rtt = max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
                 lastRTTMs = rtt; parked = false; lost = false
                 let resumed = (try? await link.call(serverSupportsStream ? "resume" : "state", [:], payload: nil))?.data
                 return (true, remoteAddress, remoteTransport, rtt, resumed)
             }
-            link.cancel(); remote = nil; remoteAddress = nil; serverSupportsStream = false
+            link.cancel(); remote = nil; remoteAddress = nil
+            serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
         }
         guard parked || lost else { return (false, nil, "", nil, nil) }
         if let label = await reattachBest() {
@@ -216,75 +416,101 @@ actor NativeHost {
         return (false, nil, "", nil, nil)
     }
 
-    /// The computer's link broke while it held the world; requests wait for a reattach or the fallback.
     private(set) var lost = false
     private var lastAddress: String?
 
-    /// 单次静默闪连（仅用 2.2s 超时，快速恢复瞬间网络抖动）。
     private func reattachQuick() async -> String? {
         guard let address = lastAddress else { return nil }
-        if let label = try? await connect(address, timeout: 2.2, reattach: true) { return label }
+        if let label = try? await connect(address, timeout: 2.0, reattach: true) { return label }
         let room = Self.activeRoomCode
         if address != room, let label = try? await connect(room, timeout: 2.8, reattach: true) { return label }
         return nil
     }
 
-    /// 智能最优重挂：先查询房间状态拿最新局域网 IP（支持换 Wi-Fi 后的新地址），局域网优先、云端 WS 兜底。
+    /// 最优路径秒级重连：专属直连地址 → 局域网 UDP 自动发现 → 云端最新 LAN IP → 云端 WebSocket 推流。
     private func reattachBest() async -> String? {
         let room = Self.activeRoomCode
+        let pinned = Self.savedDirectAddress
+        if !pinned.isEmpty, let label = try? await connect(pinned, timeout: 1.8, reattach: true) { return label }
+        if let lanFound = await LANDiscovery.discover(roomCode: room, timeoutSeconds: 0.55),
+           let label = try? await connect(lanFound, timeout: 1.4, reattach: true) { return label }
         if let status = await RelayLink(code: room).status(), status.online {
             for lanAddr in status.lan {
-                if let label = try? await connect(lanAddr, timeout: 1.4, reattach: true) { return label }
+                if let label = try? await connect(lanAddr, timeout: 1.3, reattach: true) { return label }
             }
-            if let label = try? await connect(room, timeout: 4.5, reattach: true) { return label }
+            if let label = try? await connect(room, timeout: 4.0, reattach: true) { return label }
         }
-        if let address = lastAddress, let label = try? await connect(address, timeout: 3.5, reattach: true) { return label }
+        if let address = lastAddress, let label = try? await connect(address, timeout: 3.0, reattach: true) { return label }
         return nil
     }
 
-    /// Reattaches to the computer still holding the world (no upload unless PC restarted); nil if unreachable.
     func reattach() async -> String? {
         guard lost || parked else { return remoteAddress }
         return await reattachBest()
     }
 
-    /// The computer is gone: continue on the phone from the last world it returned (the last save).
     func fallbackLocal() {
-        lost = false; parked = false; serverSupportsStream = false; lastRTTMs = nil
+        lost = false; parked = false
+        serverSupportsStream = false; serverSupportsPush = false; serverSupportsLZ4 = false
+        lastRTTMs = nil
+        streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
         remote?.cancel(); remote = nil; remoteAddress = nil; remoteTransport = ""
         if let lastWorld { _ = service.handle("open", [:], payload: lastWorld); service.engine?.enableAppRules() }
     }
     var isRemote: Bool { remote != nil }
     var isRemoteActiveOrParked: Bool { remote != nil || parked || lost }
 
-    /// 实时测速（供设置页与状态胶囊展示毫秒延迟）。
+    /// 实时测速：全双工直连走零锁 9 字节 `MUX_PING`，真实反映纯网络 RTT。
     func measureRTT() async -> Int? {
         guard let link = remote else { return nil }
+        if let direct = link as? RemoteLink, direct.isMuxActive {
+            if let ms = await direct.muxPingRTT() {
+                lastRTTMs = ms
+                return ms
+            }
+        }
         let t0 = Date().timeIntervalSinceReferenceDate
-        guard let pong = try? await link.call("ping", [:], payload: nil), pong.ok else { return nil }
+        guard let pong = try? await link.call("ping", ["v": 6], payload: nil), pong.ok else { return nil }
         let ms = max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
         lastRTTMs = ms
         return ms
     }
 
-    /// 通知 v5 电脑端开启/停止后台预推演流（让手机渲染的同时电脑已在并行计算下一步）。
-    func configureRemoteStream(playing: Bool, days: Int) async {
+    /// 配置服务器端推流（v6 启用主动推流 + epoch 防乱序；兼容 v5 预推演）。
+    func configureRemoteStream(playing: Bool, days: Int, intervalMs: Int = 160, resetEpoch: Bool = true) async {
+        if resetEpoch || !playing {
+            streamEpoch &+= 1
+            streamBuffer.reset(epoch: streamEpoch)
+        }
         guard let link = remote, serverSupportsStream else { return }
-        _ = try? await link.call("streamConfig", ["playing": playing, "days": max(1, min(60, days))], payload: nil)
+        _ = try? await link.call("streamConfig", [
+            "playing": playing,
+            "days": max(1, min(60, days)),
+            "intervalMs": max(70, min(800, intervalMs)),
+            "epoch": Int(streamEpoch),
+            "push": serverSupportsPush && playing
+        ], payload: nil)
     }
 
-    /// 自动接入: finds this player's computer through the relay room; on the same Wi-Fi it connects
-    /// directly via LAN TCP (2–8 ms), otherwise via persistent WebSocket relay. Nil when the computer is off.
+    /// 自动接入：专属云服务器地址 → 局域网 UDP 10ms 秒发现 → 云端中转 LAN 列表 → 云端 WebSocket 推流。
     func connectAuto() async -> (label: String, transport: String, rttMs: Int?)? {
         if lost || parked {
             if let label = await reattachBest() { return (label, remoteTransport, lastRTTMs) }
             return nil
         }
         guard remote == nil, service.engine != nil else { return nil }
+        let pinned = Self.savedDirectAddress
+        if !pinned.isEmpty, let label = try? await connect(pinned, timeout: 2.2) {
+            return (label, remoteTransport, lastRTTMs)
+        }
         let room = Self.activeRoomCode
+        if let lanFound = await LANDiscovery.discover(roomCode: room, timeoutSeconds: 0.65),
+           let label = try? await connect(lanFound, timeout: 1.5) {
+            return (label, remoteTransport, lastRTTMs)
+        }
         guard let status = await RelayLink(code: room).status(), status.online else { return nil }
         for address in status.lan {
-            if let label = try? await connect(address, timeout: 1.5) { return (label, remoteTransport, lastRTTMs) }
+            if let label = try? await connect(address, timeout: 1.3) { return (label, remoteTransport, lastRTTMs) }
         }
         if let label = try? await connect(room) { return (label, remoteTransport, lastRTTMs) }
         return nil
@@ -298,6 +524,7 @@ actor NativeHost {
         guard let revision = advances.replaceWorld(world: world) else { throw EngineError.message("世界已经切换，忽略旧的载入请求") }
         try Self.loadCatalogs()
         if remote != nil { lastWorld = data }
+        streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
         let r = await call("open", payload: data)
         guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的载入结果") }
         guard r.ok else { throw EngineError.message(r.reason) }
@@ -341,6 +568,7 @@ actor NativeHost {
             try NativeCreation.generate(options, inputs: x, worldId: UUID().uuidString.lowercased(), runId: "fms-" + UUID().uuidString.lowercased(), progress: progress)
         }
         guard advances.revision == revision else { throw EngineError.message("世界已经切换，忽略旧的建世界结果") }
+        streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
         let r: EngineService.Reply
         if remote != nil {
             let data = autoreleasepool { Data(built.json.utf8) }
@@ -363,8 +591,9 @@ actor NativeHost {
     }
     func close(world: Int) async {
         guard advances.replaceWorld(world: world) != nil else { return }
+        streamEpoch &+= 1; streamBuffer.reset(epoch: streamEpoch)
         if remote != nil, serverSupportsStream {
-            _ = try? await remote?.call("streamConfig", ["playing": false, "days": 3], payload: nil)
+            _ = try? await remote?.call("streamConfig", ["playing": false, "days": 3, "push": false], payload: nil)
         }
         _ = await call("close")
     }
@@ -377,7 +606,7 @@ actor NativeHost {
             return .success(s)
         }
         let op = serverSupportsStream ? "pullLatest" : "step"
-        let data = await call(op, ["days": days]).data ?? Data()
+        let data = await call(op, ["days": days, "slim": serverSupportsLZ4]).data ?? Data()
         guard !data.isEmpty else { return .failure(EngineError.message("推演没有返回有效世界状态")) }
         return Result { try JSONDecoder().decode(GameState.self, from: data) }
     }
@@ -510,7 +739,7 @@ actor NativeHost {
     }
 }
 
-/// A channel to LieguojiServer: direct LAN TCP, persistent WebSocket relay, or HTTP/2 relay fallback.
+/// A channel to LieguojiServer: direct full-duplex TCP (LAN / Cloud VPS), persistent WebSocket Push relay, or HTTP/2 fallback.
 protocol EngineLink: AnyObject, Sendable {
     func call(_ name: String, _ args: [String: Any], payload: Data?) async throws -> EngineService.Reply
     func cancel()
@@ -530,8 +759,7 @@ private func decodeWireReply(_ data: Data) throws -> EngineService.Reply {
     return EngineService.Reply.decode(header: header, data: body, map: map)
 }
 
-/// 持久双向 WebSocket 中转通道（wss://lieguoji-web.pages.dev/api/relay/room/<code>/ws?role=phone）：
-/// 单条长连接复用、二进制帧封装、12 秒主动心跳保活，消除每步新建 HTTPS 连接握手开销。
+/// 持久双向 WebSocket 中转通道：支持服务器单向 `MSG_PUSH` (type=3) 推流直达与 LZ4 压缩，12 秒主动心跳保活。
 final class RelayWSLink: EngineLink, @unchecked Sendable {
     private let session: URLSession
     private let task: URLSessionWebSocketTask
@@ -540,6 +768,8 @@ final class RelayWSLink: EngineLink, @unchecked Sendable {
     private var pending: [UInt32: CheckedContinuation<Data, Error>] = [:]
     private var closed = false
     private var heartbeatTask: Task<Void, Never>?
+    var compressUploads = false
+    var onPushFrame: (@Sendable (UInt32, Data) -> Void)?
 
     private init(session: URLSession, task: URLSessionWebSocketTask) {
         self.session = session
@@ -562,7 +792,6 @@ final class RelayWSLink: EngineLink, @unchecked Sendable {
         wsTask.maximumMessageSize = 64 * 1024 * 1024
         wsTask.resume()
 
-        // 发起一次二进制心跳探针（<= 3.5s）确认 WS 升级成功且链路畅通
         let link = RelayWSLink(session: session, task: wsTask)
         do {
             try await link.verifyHandshake(timeoutSeconds: 3.5)
@@ -633,6 +862,10 @@ final class RelayWSLink: EngineLink, @unchecked Sendable {
                         let cont = self.pending.removeValue(forKey: id)
                         self.lock.unlock()
                         cont?.resume(returning: payload)
+                    } else if type == 3 { // MSG_PUSH (服务器单向主动推流帧)
+                        let tag = UInt32(EngineWire.readU32(raw, at: 1))
+                        let payload = raw.subdata(in: (raw.startIndex + 5)..<raw.endIndex)
+                        self.onPushFrame?(tag, payload)
                     }
                 }
                 self.receiveLoop()
@@ -654,7 +887,7 @@ final class RelayWSLink: EngineLink, @unchecked Sendable {
         }()
         var frame = Data([1]) // MSG_REQ
         frame.append(EngineWire.u32(Int(reqId)))
-        frame.append(EngineWire.request(name, args, payload: payload))
+        frame.append(EngineWire.request(name, args, payload: payload, compressPayload: compressUploads))
 
         let replyData: Data = try await withCheckedThrowingContinuation { cont in
             lock.lock()
@@ -679,7 +912,7 @@ final class RelayWSLink: EngineLink, @unchecked Sendable {
     }
 }
 
-/// Through the 列国纪 relay on the game's own site (pages.dev, reachable without a VPN): HTTP/2 + gzip fallback.
+/// HTTP/2 + gzip fallback relay channel.
 final class RelayLink: EngineLink, @unchecked Sendable {
     static let bases = [
         "https://lieguoji-edge.pages.dev/api/relay",
@@ -730,10 +963,24 @@ final class RelayLink: EngineLink, @unchecked Sendable {
     }
 }
 
-/// A TCP link to LieguojiServer (EngineWire frames), low-latency TCP_NODELAY + TCP keepalive.
+/// 全双工多路复用直连 TCP 通道（局域网 2–6ms / 国内专属云服务器 15–35ms）：
+/// 握手后自动升级 `enableMux`，同时接收服务器 `MUX_PUSH` 主动压缩推流帧与并发指令回包。
 final class RemoteLink: EngineLink, @unchecked Sendable {
     private let connection: NWConnection
     private let queue = DispatchQueue(label: "lieguoji.remote")
+    private let lock = NSLock()
+    private var mux = false
+    private var closed = false
+    private var nextId: UInt32 = 1
+    private var pending: [UInt32: CheckedContinuation<Data, Error>] = [:]
+    private var heartbeatTask: Task<Void, Never>?
+    var onPushFrame: (@Sendable (UInt32, Data) -> Void)?
+
+    var isMuxActive: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return mux && !closed
+    }
+
     init(host: String, port: UInt16) {
         let tcp = NWProtocolTCP.Options()
         tcp.noDelay = true
@@ -743,6 +990,7 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         tcp.keepaliveCount = 3
         connection = NWConnection(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port) ?? 8765, using: NWParameters(tls: nil, tcp: tcp))
     }
+
     func start(timeout: Double = 5) async throws {
         let gate = Gate()
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
@@ -751,34 +999,122 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
                 switch state {
                 case .ready: finish(.success(()))
                 case .failed(let e): finish(.failure(e))
-                case .waiting(let e): finish(.failure(EngineError.message("连不上电脑（\(e.localizedDescription)）。请确认服务器已运行、地址正确、手机与电脑在同一局域网。")))
+                case .waiting(let e): finish(.failure(EngineError.message("连不上服务器（\(e.localizedDescription)）。请确认服务器已运行且端口开放。")))
                 default: break
                 }
             }
             connection.start(queue: queue)
-            queue.asyncAfter(deadline: .now() + timeout) { finish(.failure(EngineError.message("连接超时：请确认电脑上的服务器已运行且地址正确。"))) }
+            queue.asyncAfter(deadline: .now() + timeout) { finish(.failure(EngineError.message("连接超时：请确认服务器已运行且地址正确。"))) }
         }
     }
+
+    /// 协商升级为 v6 全双工多路复用主动推流模式。
+    func upgradeToMux() async throws -> Bool {
+        let r = try await legacyCall("enableMux", [:], payload: nil)
+        guard r.ok else { return false }
+        lock.lock(); mux = true; lock.unlock()
+        startMuxReader()
+        startMuxHeartbeat()
+        return true
+    }
+
+    func muxPingRTT() async -> Int? {
+        guard isMuxActive else { return nil }
+        let t0 = Date().timeIntervalSinceReferenceDate
+        let reqId = allocId()
+        let frame = EngineWire.muxFrame(type: EngineWire.muxPing, id: reqId, body: Data())
+        do {
+            _ = try await sendMuxAndWait(id: reqId, frame: frame)
+            return max(1, Int(((Date().timeIntervalSinceReferenceDate - t0) * 1000).rounded()))
+        } catch {
+            return nil
+        }
+    }
+
+    private func allocId() -> UInt32 {
+        lock.lock(); defer { lock.unlock() }
+        let v = nextId; nextId &+= 1; if nextId == 0 { nextId = 1 }
+        return v
+    }
+
+    private func failAll(_ err: Error) {
+        lock.lock()
+        if closed { lock.unlock(); return }
+        closed = true
+        let map = pending
+        pending.removeAll()
+        lock.unlock()
+        heartbeatTask?.cancel()
+        for (_, cont) in map { cont.resume(throwing: err) }
+    }
+
+    private func startMuxHeartbeat() {
+        heartbeatTask = Task.detached(priority: .utility) { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 12_000_000_000)
+                guard let self, self.isMuxActive else { return }
+                let id = self.allocId()
+                let ping = EngineWire.muxFrame(type: EngineWire.muxPing, id: id, body: Data())
+                try? await self.send(ping)
+            }
+        }
+    }
+
+    private func startMuxReader() {
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            do {
+                while self.isMuxActive {
+                    let prefix = try await self.receive(9)
+                    let type = prefix[prefix.startIndex]
+                    let frameId = UInt32(EngineWire.readU32(prefix, at: 1))
+                    let bodyLen = EngineWire.readU32(prefix, at: 5)
+                    guard bodyLen >= 0, bodyLen < 256 << 20 else {
+                        throw EngineError.message("服务器帧长异常")
+                    }
+                    let body = try await self.receive(bodyLen)
+                    if type == EngineWire.muxPush {
+                        self.onPushFrame?(frameId, body)
+                    } else if type == EngineWire.muxReply || type == EngineWire.muxPong {
+                        self.lock.lock()
+                        let cont = self.pending.removeValue(forKey: frameId)
+                        self.lock.unlock()
+                        cont?.resume(returning: body)
+                    }
+                }
+            } catch {
+                self.failAll(error)
+            }
+        }
+    }
+
     private final class Gate: @unchecked Sendable {
         private var done = false; private let lock = NSLock()
         func open() -> Bool { lock.lock(); defer { lock.unlock() }; if done { return false }; done = true; return true }
     }
-    func cancel() { connection.cancel() }
+
+    func cancel() {
+        failAll(EngineError.message("直连连接已关闭"))
+        connection.cancel()
+    }
+
     private func send(_ data: Data) async throws {
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
             connection.send(content: data, completion: .contentProcessed { e in if let e { c.resume(throwing: e) } else { c.resume() } })
         }
     }
+
     private func receive(_ count: Int) async throws -> Data {
         if count == 0 { return Data() }
         var out = Data()
+        out.reserveCapacity(count)
         while out.count < count {
             let want = count - out.count
             let chunk: Data = try await withCheckedThrowingContinuation { c in
                 connection.receive(minimumIncompleteLength: 1, maximumLength: want) { data, _, complete, e in
                     if let e { c.resume(throwing: e) }
                     else if let data, !data.isEmpty { c.resume(returning: data) }
-                    else if complete { c.resume(throwing: EngineError.message("电脑断开了连接")) }
+                    else if complete { c.resume(throwing: EngineError.message("服务器断开了连接")) }
                     else { c.resume(returning: Data()) }
                 }
             }
@@ -786,11 +1122,45 @@ final class RemoteLink: EngineLink, @unchecked Sendable {
         }
         return out
     }
-    func call(_ name: String, _ args: [String: Any], payload: Data?) async throws -> EngineService.Reply {
+
+    private func sendMuxAndWait(id: UInt32, frame: Data) async throws -> Data {
+        try await withCheckedThrowingContinuation { cont in
+            lock.lock()
+            if closed {
+                lock.unlock()
+                cont.resume(throwing: EngineError.message("直连通道已断开"))
+                return
+            }
+            pending[id] = cont
+            lock.unlock()
+
+            connection.send(content: frame, completion: .contentProcessed { [weak self] err in
+                if let err, let self {
+                    self.lock.lock()
+                    let c = self.pending.removeValue(forKey: id)
+                    self.lock.unlock()
+                    c?.resume(throwing: err)
+                }
+            })
+        }
+    }
+
+    private func legacyCall(_ name: String, _ args: [String: Any], payload: Data?) async throws -> EngineService.Reply {
         try await send(EngineWire.request(name, args, payload: payload))
         let h = EngineWire.readU32(try await receive(4), at: 0), header = try await receive(h)
         let d = EngineWire.readU32(try await receive(4), at: 0), data = try await receive(d)
         let m = EngineWire.readU32(try await receive(4), at: 0), map = try await receive(m)
         return EngineService.Reply.decode(header: header, data: data, map: map)
+    }
+
+    func call(_ name: String, _ args: [String: Any], payload: Data?) async throws -> EngineService.Reply {
+        if isMuxActive {
+            let reqId = allocId()
+            let inner = EngineWire.request(name, args, payload: payload, compressPayload: true)
+            let frame = EngineWire.muxFrame(type: EngineWire.muxRequest, id: reqId, body: inner)
+            let replyBody = try await sendMuxAndWait(id: reqId, frame: frame)
+            return try decodeWireReply(replyBody)
+        }
+        return try await legacyCall(name, args, payload: payload)
     }
 }

@@ -1,0 +1,17 @@
+services:
+  lieguoji-server:
+    build:
+      context: ..
+      dockerfile: server-deploy/Dockerfile
+    container_name: lieguoji-server
+    restart: unless-stopped
+    ports:
+      - "8765:8765/tcp"
+    environment:
+      LGJ_PORT: "8765"
+      LGJ_DATA_DIR: "/data/saves"
+      # 设为 1 仅走公网 TCP 毫秒直连（推荐国内云服务器）；若也希望兼作房间码中转，改为 0 并填写 LGJ_PAIRING_CODE
+      LGJ_DISABLE_RELAY: "1"
+      LGJ_PAIRING_CODE: "ECZV5UL3UV"
+    volumes:
+      - ./saves:/data/saves

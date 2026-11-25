@@ -3,7 +3,8 @@ import XCTest
 
 final class V521Tests: XCTestCase {
     func testEngineWireV5GreetingAndV4Compat() {
-        XCTAssertEqual(EngineWire.greeting, "列国纪远程计算·5")
+        XCTAssertEqual(EngineWire.greeting, "列国纪远程计算·6")
+        XCTAssertTrue(EngineWire.compatibleGreetings.contains("列国纪远程计算·6"))
         XCTAssertTrue(EngineWire.compatibleGreetings.contains("列国纪远程计算·5"))
         XCTAssertTrue(EngineWire.compatibleGreetings.contains("列国纪远程计算·4"))
 

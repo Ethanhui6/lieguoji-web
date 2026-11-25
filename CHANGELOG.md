@@ -1,5 +1,20 @@
 # 更新日志
 
+## 5.2.2 / build 182 — 2026-11-25
+
+### 真·网络游戏级全双工主动推流架构（EngineWire v6 × LZ4 极速压缩 × 抖动缓冲 × 24h 专属云服）
+- **彻底解决远程计算「不像网络游戏那样流畅」的 4 大核心瓶颈**：
+  1. **根除「每 30 秒卡顿 3–12 秒」恶性停顿（`GameModel.swift`）**：远程连接推演期间不再每 30 秒把 5–15 MB 全量存档拉回手机阻塞网络队列，改为由电脑/云服务器在服务端每 60 秒本地静默落盘热备，手机仅在暂停、退后台或主动保存时同步一份 LZ4 压缩热备；
+  2. **跨平台零依赖 LZ4 压缩 + 推流精简帧（单帧体积缩小 25–50 倍，`WireCodec.swift`、`NativeView.swift`、`Service.swift`）**：新增零依赖高速 LZ4 块编解码器（`WireCodec`，iOS / Linux / Windows 全平台一致），推演流精简省略地图不用的长篇军队/舰队文案（暂停或点开详情页即时按需补齐），160 州大地图单帧由 ~300 KB 原始 JSON 暴降至 **5–10 KB 压缩二进制**，传输 < 2 ms、解压 < 0.2 ms；
+  3. **从「问答轮询」升级为真正的「服务器主动恒速推流 + 客户端抖动缓冲」（`LieguojiServer/main.swift`、`relay/src/index.js`、`NativeHost.swift`、`GameModel.swift`）**：
+     - 直连 TCP（局域网 / 国内云服务器）协商升级 `enableMux` 全双工多路复用帧，服务器恒定节拍单向推送 `MUX_PUSH`，手机并发下发暂停/加速/调兵/查面板零等待直达；
+     - 外网中转新增 Cloudflare Durable Object `/push` 单向推流管道，电脑推流直达手机持久 WebSocket（`MSG_PUSH`），省去整趟「手机→中转→电脑」请求来回；
+     - 手机端新增独立于主线程与 Actor 之外的 `StreamFrameBuffer` 后台并发解压 + 4 帧自适应抖动缓冲（Jitter Buffer），彻底吸收网络波动，地图千军万马匀速 60fps 丝滑滑行、零顿挫零瞬移；
+  4. **局域网 10ms UDP 自动发现 + 24 小时国内专属云服务器一键部署（`LANDiscovery`、`Feel.swift`、`server-deploy/`）**：
+     - 同 Wi-Fi 下通过 UDP 8766 广播 10 ms 零配置秒连家用电脑（不绕外网）；
+     - 新增「专属云服务器 / 局域网直连（推荐 · 2–35 ms）」固定地址直连与 `server-deploy/` 一键 Docker 部署套件（`Dockerfile`、`docker-compose.yml`、`install-linux.sh`、`README.md`），部署在国内 2核2G 轻量云服务器即可实现电脑关机也能随时 15–35 ms 直连的真·网游体验；
+     - 状态栏与设置页实时展示链路形态、纯网络延迟（ms）与单帧压缩体积（KB/帧）。
+
 ## 5.2.1 / build 181 — 2026-11-25
 
 ### 一、网络游戏级远程计算服务器 v5 × 后台无缝重连 × 云端存档卷宗

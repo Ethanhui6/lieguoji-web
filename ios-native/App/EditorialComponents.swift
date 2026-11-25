@@ -105,7 +105,7 @@ struct EditorialSectionHeader: View {
     }
 }
 
-/// 疏朗呼吸感交互按钮：实心主按钮回归特色朱砂红 `#A83226`，次级按钮改用淡绢轻底与 0.65pt 极细边（零厚重黑框与硬投影）。
+/// 疏朗呼吸感交互按钮：实心主按钮采用古风朱漆红配描金内框，次级按钮采用温润亮宣配极细淡墨线（零黑块、零杂乱厚影）。
 struct EditorialTactileButton: View {
     let title: String
     var icon: PhosphorGlyph? = nil
@@ -118,8 +118,7 @@ struct EditorialTactileButton: View {
 
     var body: some View {
         let fg: Color = solid ? Theme.paperLight : (accent ? Theme.seal : Theme.ink)
-        let bg: Color = solid ? Theme.seal : (accent ? Theme.seal.opacity(0.07) : Theme.wash.opacity(0.55))
-        let stroke: Color = solid ? Theme.paperLight.opacity(0.22) : (accent ? Theme.seal.opacity(0.28) : Theme.hairline)
+        let stroke: Color = solid ? Color(red: 0.97, green: 0.89, blue: 0.72).opacity(0.38) : (accent ? Theme.seal.opacity(0.32) : Theme.line.opacity(0.75))
         Button {
             GameFeel.shared.tap()
             action()
@@ -138,10 +137,18 @@ struct EditorialTactileButton: View {
             .frame(maxWidth: fullWidth ? .infinity : nil)
             .frame(height: compact ? 34 : 40)
             .padding(.horizontal, compact ? 12 : 15)
-            .background(bg, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .background {
+                if solid {
+                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                        .fill(LinearGradient(colors: [Color(red: 0.70, green: 0.22, blue: 0.17), Theme.seal, Color(red: 0.58, green: 0.16, blue: 0.12)], startPoint: .top, endPoint: .bottom))
+                } else {
+                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                        .fill(accent ? Theme.seal.opacity(0.065) : Theme.paperLight.opacity(0.82))
+                }
+            }
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .stroke(stroke, lineWidth: solid ? 0.65 : 0.65)
+                    .stroke(stroke, lineWidth: solid ? 0.65 : 0.7)
                     .padding(solid ? 2.5 : 0)
             )
             .opacity(disabled ? 0.42 : 1.0)
@@ -151,7 +158,7 @@ struct EditorialTactileButton: View {
     }
 }
 
-/// 古籍特色朱砂主操作按钮：恢复招牌朱砂红底 `#A83226` 配宣纸白字与极细内书框，直接写明核心后果。
+/// 古籍特色朱漆主操作按钮：温润朱砂漆面配鎏金细内书框，直接写明核心后果。
 struct EditorialInkButton: View {
     let title: String
     var consequence: String? = nil
@@ -186,13 +193,14 @@ struct EditorialInkButton: View {
             .frame(maxWidth: .infinity)
             .frame(minHeight: 46)
             .padding(.horizontal, 16)
-            .background(
-                Theme.seal.opacity(disabled ? 0.35 : 1.0),
-                in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-            )
+            .background {
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                    .fill(LinearGradient(colors: [Color(red: 0.70, green: 0.22, blue: 0.17), Theme.seal, Color(red: 0.58, green: 0.16, blue: 0.12)], startPoint: .top, endPoint: .bottom))
+                    .opacity(disabled ? 0.36 : 1.0)
+            }
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .stroke(Theme.paperLight.opacity(0.24), lineWidth: 0.7)
+                    .stroke(Color(red: 0.97, green: 0.89, blue: 0.72).opacity(0.42), lineWidth: 0.7)
                     .padding(3)
             )
         }

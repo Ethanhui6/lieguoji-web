@@ -122,7 +122,8 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     private var seaSource: [UInt8] = []
     private var seaMask: [UInt8] = []
     private var coastRefined = false
-    /// 中空四边带卷轴内外投影环（24 顶点，画心内部 0% 过绘）+ 真实手绘生图卷轴装裱贴图网格（紫檀滚轴、宋锦绫边、白玉鎏金包角）。
+    /// 博物馆级御览手卷矢量装裱画框（24 段 Phong 紫檀滚轴 + 碧玉葫芦轴头 + 鎏金回纹包角 + 云锦菱格 + 45° 斜接柔影，任意倍缩放纤毫毕现）。
+    private var scrollFrameMesh: (buffer: MTLBuffer, count: Int)?
     private var scrollMount: (buffer: MTLBuffer, count: Int)?
     private var scrollArtH: (buffer: MTLBuffer, count: Int)?
     private var scrollArtV: (buffer: MTLBuffer, count: Int)?
@@ -442,11 +443,11 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         ornaments = buffer(ready?.ornaments ?? MapLayers.ornaments(map).vertices, stride: 6)
         fineDetail = buffer(ready?.fine ?? MapLayers.fineDetail(map).vertices, stride: 6)
         seaMask = ready?.sea ?? MapLayers.waterlines(map)
+        scrollFrameMesh = buffer(MapLayers.scrollFrame(width: map.width, height: map.height).vertices, stride: 6)
         scrollMount = Self.buildScrollMount(device: device, width: map.width, height: map.height)
-        let scrollArt = Self.buildScrollArt(device: device, width: map.width, height: map.height)
-        scrollArtH = scrollArt.h
-        scrollArtV = scrollArt.v
-        scrollArtCorners = scrollArt.corners
+        scrollArtH = nil
+        scrollArtV = nil
+        scrollArtCorners = nil
         uploadSea()
         if let start = map.meta.economy {
             setArmies(start.armies.filter { $0.troops > 0 }.enumerated().map { ArmySprite(army: $0.offset, x: $0.element.x, y: $0.element.y, unit: $0.element.unit, nation: $0.element.nation, selected: false) }, route: [])
@@ -489,6 +490,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
         seaLanes = nil
         portIcons = nil
         forts = nil
+        scrollFrameMesh = nil
         scrollMount = nil
         scrollArtH = nil
         scrollArtV = nil
@@ -1366,9 +1368,9 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             if display.gridLines == true && stage >= 1 { colored(gridLines) }
             let chart = display.mapDetail ?? true
             if chart { colored(ornaments, alpha: ramp(0.44)) }
-            let fineFade = Float(min(1, max(0, (camera.scale - 0.92) / 0.55)))
+            let fineFade = Float(min(1, max(0, (camera.scale - 0.36) / 0.48)))
             if chart && fineFade > 0.01 { colored(fineDetail, alpha: ramp(0.44) * fineFade) }
-            if display.vegetation { colored(relief, alpha: ramp(0.44) * 0.78) }
+            if display.vegetation { colored(relief, alpha: ramp(0.44) * 0.94) }
             if display.borders { colored(outlines, alpha: ramp(0.75)) }
             if display.cityIcons {
                 colored(icons, alpha: ramp(0.85))
@@ -1410,29 +1412,10 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             }
         }
 
-        // 7. 真实生图古风舆图卷轴装裱（外缘书案柔影与画心内影 + 宋锦横边 + 紫檀木轴侧绫 + 四角白玉鎏金包角，画心中央 0% 过绘）
+        // 7. 博物馆级「御览万里手卷」矢量装裱画框（24 段 Phong 紫檀滚轴、碧玉葫芦轴头、鎏金云锦绫边、回纹包角与 45° 斜接落影，全分辨率零拉伸失真）
         encoder.setScissorRect(fullScissor)
         if display.scrollMount ?? display.darkEdges {
-            if let mb = scrollMount {
-                encoder.setRenderPipelineState(scrollBorderPipeline)
-                encoder.setVertexBuffer(mb.buffer, offset: 0, index: 0)
-                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
-                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: mb.count)
-            }
-            func drawArt(_ mesh: (buffer: MTLBuffer, count: Int)?, _ tex: MTLTexture?, _ smp: MTLSamplerState?) {
-                guard let mesh, let tex else { return }
-                encoder.setRenderPipelineState(scrollArtPipeline)
-                encoder.setVertexBuffer(mesh.buffer, offset: 0, index: 0)
-                encoder.setVertexBytes(&u, length: uniformLength, index: 2)
-                encoder.setFragmentBytes(&u, length: uniformLength, index: 2)
-                encoder.setFragmentTexture(tex, index: 0)
-                encoder.setFragmentSamplerState(smp ?? sampler, index: 0)
-                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: mesh.count)
-            }
-            drawArt(scrollArtH, scrollBorderHTex, mirrorSampler)
-            drawArt(scrollArtV, scrollRollerVTex, sampler)
-            drawArt(scrollArtCorners, scrollCornerTex, sampler)
+            colored(scrollFrameMesh, alpha: 1)
         }
 
         encoder.endEncoding()
@@ -1711,29 +1694,54 @@ final class MapRenderer: NSObject, MTKViewDelegate {
     }
     fragment float4 seaFragment(SeaOut in [[stage_in]], texture2d<float> t [[texture(0)]], sampler s [[sampler(0)]], constant Uniforms& u [[buffer(2)]]) {
         float3 base = t.sample(s, in.uv).rgb;
-        float detail = clamp((in.scale - 0.30) / 1.35, 0.0, 1.0);
+        float detail = clamp((in.scale - 0.28) / 1.10, 0.0, 1.0);
+        float closeZoom = clamp((in.scale - 0.85) / 1.85, 0.0, 1.0);
         float2 w = in.world;
         float tm = u.time;
         float lum = dot(base, float3(0.299, 0.587, 0.114));
-        float shallowMask = smoothstep(0.42, 0.78, lum);
-        float3 shallowTint = float3(0.92, 1.072, 1.062);
-        float3 deepTint = float3(0.90, 0.952, 1.050);
+        float shallowMask = smoothstep(0.40, 0.78, lum);
+
+        // 澄澈古海图层次：深海沉蔚靛青 ↔ 浅海陆棚青碧通透，消除低分辨率底图发灰发糊感
+        float3 shallowTint = float3(0.91, 1.085, 1.072);
+        float3 deepTint = float3(0.84, 0.925, 1.042);
         float3 rgb = base * mix(deepTint, shallowTint, shallowMask);
-        rgb += float3(0.012, 0.038, 0.032) * shallowMask;
+        rgb += float3(0.015, 0.048, 0.042) * shallowMask;
 
-        float p1 = w.x * 0.18 + w.y * 0.58 - tm * 0.68;
-        float p2 = w.x * 0.31 - w.y * 0.44 + tm * 0.46;
-        float waveSlopeX = cos(p1) * 0.18 + cos(p2) * 0.21;
-        float waveSlopeY = cos(p1) * 0.58 - cos(p2) * 0.30;
-        float3 waveN = normalize(float3(-waveSlopeX * 0.34, -waveSlopeY * 0.34, 1.0));
+        // 缩放无关高清解析「海图等深水线」（基于屏幕导数 fwidth 保持任意缩放均为 1px 锐利古图墨青细线，彻底告别模糊宽边）
+        float fw = max(0.012, fwidth(shallowMask) * 1.45);
+        float iso1 = 1.0 - smoothstep(0.0, fw * 1.25, abs(shallowMask - 0.78));
+        float iso2 = 1.0 - smoothstep(0.0, fw * 1.35, abs(shallowMask - 0.56));
+        float iso3 = 1.0 - smoothstep(0.0, fw * 1.45, abs(shallowMask - 0.34));
+        float iso4 = 1.0 - smoothstep(0.0, fw * 1.55, abs(shallowMask - 0.16));
+        float isoLine = iso1 * 0.36 + iso2 * 0.28 + iso3 * 0.20 + iso4 * 0.12;
+        rgb = mix(rgb, float3(0.84, 0.94, 0.95), clamp(isoLine * (0.55 + 0.45 * detail), 0.0, 0.48));
+
+        // 宋画古海图双频铜版细浪刻纹（纯解析零噪声：中近景呈现清锐鱼鳞细浪与日光波光，绝不发糊）
+        float p1 = w.x * 0.20 + w.y * 0.62 - tm * 0.62;
+        float p2 = w.x * 0.34 - w.y * 0.48 + tm * 0.44;
+        float waveSlopeX = cos(p1) * 0.20 + cos(p2) * 0.24;
+        float waveSlopeY = cos(p1) * 0.62 - cos(p2) * 0.32;
+        float3 waveN = normalize(float3(-waveSlopeX * 0.36, -waveSlopeY * 0.36, 1.0));
         float3 halfVec = normalize(float3(-0.34, -0.30, 0.89));
-        float spec = pow(max(0.0, dot(waveN, halfVec)), 18.0);
-        float glint = spec * (0.056 + 0.078 * detail) * u.lighting;
+        float spec = pow(max(0.0, dot(waveN, halfVec)), 16.0);
+        float glint = spec * (0.068 + 0.095 * detail) * u.lighting;
 
-        float engraving = sin(w.y * 0.82 + sin(w.x * 0.14 + tm * 0.18) * 1.25) * (0.010 + 0.010 * detail);
-        float surfPulse = (sin(w.x * 0.11 + w.y * 0.13 - tm * 1.15) * 0.5 + 0.5) * shallowMask * 0.034 * u.lighting;
+        float scallop = sin(w.y * 0.86 + sin(w.x * 0.16 + tm * 0.20) * 1.35);
+        float crestEnv = smoothstep(0.15, 0.92, sin(w.x * 0.065 + w.y * 0.042) * sin(w.x * 0.048 - w.y * 0.078) * 0.5 + 0.5);
+        float fineRipple = sin(w.y * 2.15 + sin(w.x * 0.42 - tm * 0.35) * 1.1) * closeZoom;
+        float engraving = scallop * (0.016 + 0.022 * detail) * (0.45 + 0.55 * crestEnv) + fineRipple * 0.016;
+        float surfPulse = (sin(w.x * 0.12 + w.y * 0.14 - tm * 1.10) * 0.5 + 0.5) * shallowMask * 0.042 * u.lighting;
         rgb += engraving + surfPulse;
-        rgb += float3(1.0, 0.96, 0.85) * glint;
+        rgb += float3(1.0, 0.96, 0.86) * glint;
+
+        // 远洋极细古航海经纬刻度暗纹（纯解析 1px 铜版细线，赋予大片海域博物馆海图质感）
+        float gridStep = 112.0;
+        float gx = abs(fract(w.x / gridStep + 0.5) - 0.5) * gridStep;
+        float gy = abs(fract(w.y / gridStep + 0.5) - 0.5) * gridStep;
+        float pxW = max(0.35, 1.05 / max(0.25, in.scale));
+        float gLine = max(1.0 - smoothstep(0.0, pxW, gx), 1.0 - smoothstep(0.0, pxW, gy));
+        float openOcean = 1.0 - shallowMask * 0.72;
+        rgb = mix(rgb, rgb * 0.84 + float3(0.02, 0.03, 0.04), gLine * openOcean * (0.14 + 0.10 * detail));
 
         if (u.lighting > 0.01) {
             float k = u.lighting;

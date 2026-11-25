@@ -43,6 +43,11 @@ public struct GameState: Codable, Equatable, Sendable {
         public var veterancyLabel: String? = nil
         public var supplyState: String? = nil
         public var supplyOriginProvince: Int? = nil
+        /// v5.0 统帅实效：当前执掌野战的主将头衔、武略、特质与真实战场攻防加成百分比。
+        public var commanderRole: String? = nil
+        public var commanderMilitary: Int? = nil
+        public var commanderBonusPct: Int? = nil
+        public var commanderTraits: [String]? = nil
     }
     /// A fleet at its actual sea point (open-sea worlds) and its naval command.
     public struct Fleet: Codable, Equatable, Identifiable, Sendable {

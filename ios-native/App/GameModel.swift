@@ -278,6 +278,7 @@ import LieguojiCore
         var made = Self.nativeOptions(seed: ed.seed, template: ed.template, nations: ed.nations, provinces: max(ed.nations, ed.provinces), relations: o.relations,
                                       naming: o.naming, cultures: o.cultures, climate: o.climate)
         made.heights = ed.heights
+        made.customProvinces = ed.customProvinceCells
         if let layout = ed.layout, let seeds = layout["seeds"], let owners = layout["owners"] { made.layout = (seeds, owners); made.count = seeds.count }
         do {
             let founded = try await found(made, webOptions: text, epoch: epoch)

@@ -94,6 +94,163 @@ public enum PreviewWorld {
         return m
     }
 
+    public enum AutoSculptMode: Sendable { case full, mountains, lakes }
+
+    /// 依陆生景（v5.0 手绘工坊核心地形生成器）：
+    /// 严格保留玩家手绘的海陆轮廓，在陆地内部自动雕刻自然造山带、起伏丘陵、高原雪峰与内陆淡水湖泊，同时平滑海架水深。
+    public static func autoSculptTerrain(
+        graph: TerrainGraph,
+        heights: [UInt8],
+        seed: String,
+        mode: AutoSculptMode = .full
+    ) -> [UInt8] {
+        let n = min(heights.count, graph.points.count)
+        guard n > 0 else { return heights }
+        let isLand = (0..<n).map { heights[$0] >= 20 }
+        // 1. 双向 BFS 计算每格到海岸线的步距（陆地深入腹地距离 & 海洋远离海岸距离）
+        var landDist = [Int](repeating: -1, count: n)
+        var seaDist = [Int](repeating: -1, count: n)
+        var lq = [Int](), sq = [Int]()
+        for c in 0..<n {
+            let nbs = graph.neighbors[c]
+            let touchesOther = nbs.contains { $0 < n && isLand[$0] != isLand[c] }
+            if touchesOther {
+                if isLand[c] { landDist[c] = 1; lq.append(c) }
+                else { seaDist[c] = 1; sq.append(c) }
+            }
+        }
+        // 纯陆图（无海岸）时用图边作边缘距离起点
+        if lq.isEmpty && isLand.contains(true) {
+            for c in 0..<n where isLand[c] {
+                let pt = graph.points[c]
+                if pt.0 < 36 || pt.1 < 36 || pt.0 > graph.width - 36 || pt.1 > graph.height - 36 {
+                    landDist[c] = 1; lq.append(c)
+                }
+            }
+        }
+        var lh = 0
+        while lh < lq.count {
+            let cur = lq[lh]; lh += 1
+            let d = landDist[cur]
+            for nb in graph.neighbors[cur] where nb < n && isLand[nb] && landDist[nb] < 0 {
+                landDist[nb] = d + 1; lq.append(nb)
+            }
+        }
+        var sh = 0
+        while sh < sq.count {
+            let cur = sq[sh]; sh += 1
+            let d = seaDist[cur]
+            for nb in graph.neighbors[cur] where nb < n && !isLand[nb] && seaDist[nb] < 0 {
+                seaDist[nb] = d + 1; sq.append(nb)
+            }
+        }
+
+        // 2. 确定性多频构造场（山脉主脊 + 丘陵起伏 + 盆地洼地）
+        var hSeed: UInt64 = 14695981039346656037
+        for b in seed.utf8 { hSeed = (hSeed ^ UInt64(b)) &* 1099511628211 }
+        let p1 = Double(hSeed & 0xFFFF) / 65535.0 * 6.28318
+        let p2 = Double((hSeed >> 16) & 0xFFFF) / 65535.0 * 6.28318
+        let p3 = Double((hSeed >> 32) & 0xFFFF) / 65535.0 * 6.28318
+        let p4 = Double((hSeed >> 48) & 0xFFFF) / 65535.0 * 6.28318
+        let invW = 1.0 / max(1.0, graph.width), invH = 1.0 / max(1.0, graph.height)
+        func ridgeField(_ x: Double, _ y: Double) -> Double {
+            let u = x * invW * 6.28318, v = y * invH * 6.28318
+            let w1 = sin(u * 1.45 + v * 0.95 + p1) * 0.52 + cos(u * 0.85 - v * 1.75 + p2) * 0.48
+            let w2 = sin(u * 3.1 - v * 2.4 + p3) * 0.55 + cos(u * 2.7 + v * 3.2 + p4) * 0.45
+            let w3 = sin(u * 6.2 + v * 5.4 + p1 * 1.7) * 0.5 + cos(u * 5.8 - v * 6.5 + p2 * 1.3) * 0.5
+            let ridge = 1.0 - abs(w1 * 0.72 + w2 * 0.28)
+            return max(0, min(1, ridge * 0.72 + (w2 * 0.5 + 0.5) * 0.18 + (w3 * 0.5 + 0.5) * 0.10))
+        }
+        func basinField(_ x: Double, _ y: Double) -> Double {
+            let u = x * invW * 6.28318, v = y * invH * 6.28318
+            let b1 = sin(u * 2.35 - v * 1.85 + p2 * 1.9) * cos(u * 1.95 + v * 2.55 + p3 * 1.4)
+            let b2 = sin(u * 4.7 + v * 4.1 + p4) * 0.35
+            return b1 + b2
+        }
+
+        var out = heights
+        for c in 0..<n {
+            let pt = graph.points[c]
+            if !isLand[c] {
+                if mode == .full {
+                    let sd = seaDist[c] > 0 ? seaDist[c] : 16
+                    let shelf = max(3, min(18, Int((18.5 - Double(min(sd, 14)) * 1.05).rounded())))
+                    out[c] = UInt8(shelf)
+                }
+                continue
+            }
+            let d = max(1, landDist[c] > 0 ? landDist[c] : 8)
+            let interior = min(1.0, Double(d - 1) / 9.5)
+            let r = ridgeField(pt.0, pt.1)
+            let b = basinField(pt.0, pt.1)
+
+            switch mode {
+            case .lakes:
+                // 仅在内陆腹地（离海岸 ≥ 5 格，绝不破开海岸）雕出清澈淡水内湖
+                if d >= 5 && b < -0.58 && heights[c] < 54 {
+                    out[c] = UInt8(max(12, min(16, Int((15.5 + (b + 0.58) * 6.0).rounded()))))
+                }
+            case .mountains:
+                // 在既有陆地腹地叠加自然造山脉脊与雪峰，保留原本海岸与湖泊
+                if d >= 2 && r > 0.60 {
+                    let lift = (r - 0.60) / 0.40 * (38.0 + 26.0 * interior)
+                    let target = max(Int(heights[c]), min(94, 34 + Int(lift.rounded())))
+                    out[c] = UInt8(target)
+                }
+            case .full:
+                // 依陆生景全套地形：近岸平原 → 起伏丘陵 → 腹地造山脊与雪峰 → 腹地天然内湖
+                if d >= 5 && b < -0.62 {
+                    out[c] = UInt8(max(12, min(16, Int((15.5 + (b + 0.62) * 6.0).rounded()))))
+                } else {
+                    let basePlain = 22.0 + interior * 11.0
+                    let hillWave = max(0, r - 0.36) * 26.0 * (0.45 + 0.55 * interior)
+                    let mountainSpine = r > 0.66 ? pow((r - 0.66) / 0.34, 1.35) * (34.0 + 22.0 * interior) : 0.0
+                    let elev = basePlain + hillWave + mountainSpine
+                    out[c] = UInt8(max(21, min(95, Int(elev.rounded()))))
+                }
+            }
+        }
+        // 保护内湖与海岸边界：若新雕内湖意外触碰外海邻格则还原为低地沼泽平原（绝不破坏玩家手绘海岸线）
+        if mode == .full || mode == .lakes {
+            for c in 0..<n where isLand[c] && out[c] < 20 {
+                let touchesOriginalSea = graph.neighbors[c].contains { $0 < n && !isLand[$0] }
+                if touchesOriginalSea { out[c] = 22 }
+            }
+        }
+        return out
+    }
+
+    /// 根据玩家手绘的州郡格网 `cellProvinces` 构建可交互的州郡/列国预览图（Step 2 手绘州郡 → Step 3 划定列国）。
+    public static func buildCustomProvinces(_ input: Inputs, heights: [UInt8], cellProvinces: [Int], nations: Int) -> WorldMap? {
+        let elevations = heights.map(Int.init)
+        let t = terrain(input, heights: heights, sea: false)
+        var m = t.map
+        guard let part = Regions.fromCellAssignment(input.document, elevations: elevations, cellProvinces: cellProvinces, surface: t.surface) else { return nil }
+        let n = min(m.cellCount, heights.count)
+        var province = [Int32](repeating: -1, count: m.cellCount)
+        for (r, region) in part.regions.enumerated() {
+            for f in region.members {
+                for s in part.faces[f].source where s < n && heights[s] >= 20 && province[s] < 0 { province[s] = Int32(r) }
+            }
+        }
+        for c in 0..<n where heights[c] >= 20 && province[c] < 0 { province[c] = part.regions.isEmpty ? -1 : 0 }
+        let count = max(2, min(nations, part.regions.count))
+        let layout = Opening.layout(part.regions, count: count)
+        let provinces = part.regions.enumerated().map { i, r in
+            WorldMeta.Province(id: "p-\(i)", name: "", x: Float(r.center.0), y: Float(r.center.1), nation: layout.owners[i], terrain: r.height > 65 ? "mountain" : r.height > 45 ? "forest" : "plain")
+        }
+        m.province = province
+        m.meta.provinces = provinces
+        let colors = NationColors.assign(capitals: layout.seeds.map { (x: Double(provinces[$0].x), y: Double(provinces[$0].y)) })
+        m.meta.nations = layout.seeds.indices.map { i in
+            WorldMeta.Nation(id: "n-\(i)", name: "", color: colors[i], line: NativeEngine.stateLineColor(colors[i]), capital: i, culture: "", polity: "", religion: "")
+        }
+        m.meta.cities = layout.seeds.enumerated().map { _, s in WorldMeta.City(id: "c-\(s)", name: "", x: provinces[s].x, y: provinces[s].y, province: s) }
+        m.meta.labels = []
+        m.seaRGBA = sea(m)
+        return m
+    }
+
     /// engine.ts raisedCities.
     static func raisedCities(_ n: Int) -> Int { min(480, max(n + 1, Int((Double(n) * 1.15).rounded(.up)))) }
 

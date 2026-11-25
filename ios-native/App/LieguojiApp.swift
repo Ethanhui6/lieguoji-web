@@ -237,8 +237,11 @@ struct PrimaryLabel: View {
             .tracking(1.4)
             .frame(maxWidth: .infinity).frame(minHeight: 48).padding(.horizontal, 16)
             .foregroundStyle(Theme.paperLight)
-            .background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.paperLight.opacity(0.24), lineWidth: 0.7).padding(3))
+            .background {
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                    .fill(LinearGradient(colors: [Color(red: 0.70, green: 0.22, blue: 0.17), Theme.seal, Color(red: 0.58, green: 0.16, blue: 0.12)], startPoint: .top, endPoint: .bottom))
+            }
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Color(red: 0.97, green: 0.89, blue: 0.72).opacity(0.42), lineWidth: 0.7).padding(3))
     }
 }
 struct SecondaryLabel: View {
@@ -570,6 +573,11 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("5.0.0", ["【全面清除内页突兀图片 × 漆红古籍质感统一 × 春冬节气修正】移除国家事件链、军事、军团、舰队与战前评估中的拉伸视频横幅，全站回归疏朗温润宣纸排版；核心主按钮升级为皇家朱砂漆红微渐变配古金细线，彻底告别黑块与杂色；修复概览快捷栏截字与二月隆冬误落桃花。",
+                   "【政令与国家大战略彻底重做（严防全选叠加 × 槽位上限 × 冷却锁定）】国家大战略实行唯一互斥与 180 日转轨冷却，切换战略自动撤销旧战略专项制度，彻底杜绝五套叠加与重复点击；专项制度引入 3–5 槽行政上限与全量 24 项真实互斥权衡；新增「巡狩省方 / 举债筹饷 / 大阅禁军 / 开馆修史」共 22 项政令并实时显示冷却余日，全页配色统一。",
+                   "【根治和谈复国第二XX国死循环 × 政体稳态 × 大国过扩与明君昏君名将大强化】彻底修复战时占领提前判亡、和谈退地反复变「第二/第三XX国」的死循环（中小国全境沦陷直接并吞、和约停战延长至 180 日、退地不再递增复国序数）；拉长政体剧变稳态期至 48 个月；实装帝国过扩行政冗耗、小邦精治守土与最高 +300% 真乘法自定义加成，大幅放大明君/昏君治乱后果与名将临阵（−32% ~ +52%）实效并在国家与军团页直观呈现。",
+                   "【博物馆级御览手卷边框回归 × 缩放无关高清海图 × 丰富陆海古图细节】全面回归全分辨率矢量「御览万里手卷」（24 段 Phong 紫檀滚轴、碧玉葫芦轴头、流苏与四角鎏金回纹包角），展卷时完整入镜；以缩放无关锐利等深水线、铜版细浪、远洋经纬纹、十六方位鎏金罗盘与提前显影的山脊刻纹/林野点苔/大漠沙丘/朱点驿道彻底治愈糊海面与细节匮乏。",
+                   "【自绘地图工坊 2.0：零重叠布局 × 纯白底图 × 填充笔 × 依陆生景 × 手绘州郡】全面消除手绘模式顶栏与底板文字重叠；新增「纯白海洋」「纯陆平原」空白底图与一键「清空成海」；新增地形/州郡/列国全套 BFS「填充笔」；新增一键「依陆生景 / 生山脉 / 生内湖」（严守手绘海岸线自动雕山生湖）；新增 Step 2「手绘州郡」（涂画州界、填充州域、吸管、新建州与撤销重做）直通实机开局。"]),
         ("4.5.0", ["【全站字体统一 × 回归特色朱砂红 × 恢复疏朗呼吸感 × 游戏内外完全一致】彻底消除点击页签或标题时字体来回跳变的割裂感，全站标题、页签、正文、按钮及国家/军事等数据全面统一为经典全字库正楷（TW-Kai）与老版等宽数字（告别古怪的 Cormorant 下沉数字）；所有核心主按钮与选中态全面回归列国纪特色朱砂红（#A83226），拆除次级按钮与列表箭头的厚重描边硬影，恢复疏朗留白与宣纸呼吸感；游戏外标题页、新世界向导（同步修复「陆地」折行）、自绘地图工坊与游戏内所有面板实现 100% 同源设计对齐，并修复州郡页「郡」字印错用「龙」印的问题。",
                    "【顶部大事传报彻底丝滑不掉帧 × 可读节奏调优】彻底移除 HeraldScene 每秒 30 次触发 SwiftUI 全卷重排与 Canvas 离屏重绘的掉帧元凶，并将缩略画卷改为 ImageIO 后台异步低分辨率解码（零主线程卡顿），纯 GPU 合成丝滑展开；同步将大事传报停留时长上调至 2.5–3.6 秒（高倍速仍保留 ≥2.2 秒），每一条战报、继统与诏令都能从容看清。",
                    "【四季分明回归 × 灾异天气彻底融入地图 × 卷轴与远景细节精修】在守住零发热单 Pass 架构下大幅拉升春夏秋冬四时土地/海面冷暖对比（冬覆积雪冰封、北洋寒冰流浮、秋染金赭、春润嫩碧、轻量解析流云掠影）；彻底废除地图上突兀的旧版雪灾/旱灾/水患/瘟疫卡通贴纸图标，改为与地图融为一体的 GPU 局部地面覆雪/旱裂/洪涝/瘟瘴/丰稔着色 + 原生局部落雪/沙尘/雨漪/瘴岚微粒；精修手绘卷轴边比例，并在缩至全图远景时自动隐藏堆叠伤亡数字。",

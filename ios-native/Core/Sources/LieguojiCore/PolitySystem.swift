@@ -217,22 +217,25 @@ extension Regimes {
         let leader = ruler(r, id)
         let leaderAge = leader?.age.optionalNumber ?? 35
         let leaderAdm = leader.map { People.skills($0).administrative } ?? 50
+        let rulerEval = rulerAssessment(r, id)
         let atWar = isAtWar(r, id)
         let defeat = defeatPenalty(r, id)
 
-        var risk = max(0.0, 58.0 - Double(stability)) * 1.15
-        if corrupt >= 40 { risk += (corrupt - 35) * 0.45 }
+        var risk = max(0.0, 56.0 - Double(stability)) * 1.15
+        if corrupt >= 40 { risk += (corrupt - 35) * 0.48 }
         if gov < 0.35 { risk += (0.35 - gov) * 45 }
         if debtMon >= 18 { risk += min(25, (debtMon - 16) * 0.8) }
         if atWar { risk += 8 }
         if defeat > 0.05 { risk += defeat * 42 }
-        if prof.camp == .authoritarian { risk += 12 }
+        if rulerEval.tier <= -2 { risk += 18 } else if rulerEval.tier == -1 { risk += 8 }
+        if rulerEval.tier >= 1 { risk *= 0.72 }
+        if prof.camp == .authoritarian { risk += 10 }
         if prof.id == "regency" { risk += 10 }
-        if prof.camp == .constitutional { risk *= 0.65 }
+        if prof.camp == .constitutional { risk *= 0.62 }
         if rulerHas(r, id, { $0.isReformer.isTruthy }) { risk *= 0.72 }
         let clampedRisk = max(0, min(100, Int(risk.rounded())))
 
-        let level = clampedRisk >= 68 ? "濒变" : clampedRisk >= 44 ? "危局" : clampedRisk >= 22 ? "暗流" : "稳固"
+        let level = clampedRisk >= 68 ? "濒变" : clampedRisk >= 46 ? "危局" : clampedRisk >= 24 ? "暗流" : "稳固"
 
         // 判定主导政治压力来源
         let marshal = Offices.holder(r, id, "Marshal", Offices.stateId(r, id))
@@ -244,7 +247,10 @@ extension Regimes {
 
         let pressure: String
         let likelyPath: String
-        if defeat >= 0.25 && clampedRisk >= 34 {
+        if rulerEval.tier <= -2 && clampedRisk >= 36 {
+            pressure = "昏君失政、宠信奸佞，朝野离心且叛乱与逼宫暗潮汹涌"
+            likelyPath = prof.camp == .monarchy ? "权臣废立、军变或全民革命" : "倒阁罢免或强人夺权"
+        } else if defeat >= 0.25 && clampedRisk >= 34 {
             pressure = "新败失地、朝野震荡，究责与改制呼声高涨"
             likelyPath = prof.camp == .monarchy ? "立宪问责或军事政变" : "倒阁改组或强人夺权"
         } else if prof.camp == .authoritarian && clampedRisk < 40 && !atWar {
@@ -280,8 +286,8 @@ extension Regimes {
         b.calm = JS(b.calm.asInt + 1)
         let evRate = rule(r, "event")
         guard evRate > 0 else { return }
-        // 两次重大政体剧变之间至少间隔 30 个月（防止反复横跳失真）。
-        guard b.calm.asInt >= 30 else { return }
+        // 两次重大政体剧变之间至少间隔 48 个月（四年稳态期，彻底杜绝政体反复横跳）。
+        guard b.calm.asInt >= 48 else { return }
         let held = monthLandCount(r, id)
         guard held >= 3 else { return }
 
@@ -333,8 +339,8 @@ extension Regimes {
         // 4. 真正的危机驱动型政变／革命／威权夺权／复辟（高风险才会发生；关闭叛乱或动荡归零时不触发）
         if !r.foundings.isNull && !r.foundings.enabled.isTruthy { return }
         guard rule(r, "rebel") > 0 else { return }
-        guard outlook.risk >= 34 else { return }
-        let triggerProb = Double(outlook.risk - 28) / 100.0 * 0.045 * evRate
+        guard outlook.risk >= 46 else { return }
+        let triggerProb = Double(outlook.risk - 40) / 100.0 * 0.038 * evRate
         guard chance(tag + "|crisis") < triggerProb else { return }
 
         let lost = monthLostCount(r, id)

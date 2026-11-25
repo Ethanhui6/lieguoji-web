@@ -379,25 +379,39 @@ public enum Regimes {
     /// Damage multiplier for `attacker`'s army hitting `victim`'s (attack and defence bonuses, and the
     /// world's combat intensity).
     static func combatBonus(_ r: JS, attacker: String, victim: String) -> Double {
-        var a: Double = bonus(r, attacker, "attack") ?? 0
+        let customAtk: Double = bonus(r, attacker, "attack") ?? 0
+        let customDef: Double = bonus(r, victim, "defense") ?? 0
+        var a: Double = 0
         a += persona(r, attacker)?.attack ?? 0
         a += governing(r, attacker)?.attack ?? 0
         a += stateCreed(r, attacker)?.attack ?? 0
         if holdsHolySite(r, attacker) { a += 12 }
-        var d: Double = bonus(r, victim, "defense") ?? 0
+        var d: Double = 0
         d += persona(r, victim)?.defense ?? 0
         d += governing(r, victim)?.defense ?? 0
         d += stateCreed(r, victim)?.defense ?? 0
         if holdsHolySite(r, victim) { d += 12 }
         a += leverage(r, attacker).attack
         d += leverage(r, victim).defense
-        // App worlds fight at twice the original's lethality: evenly matched armies used to grind for a
-        // whole year; a battle now decides within weeks (战斗烈度 still scales it).
-        let ratio: Double = max(0.2, (1 + a / 100) / max(0.2, 1 + d / 100))
+        let appMode = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
+        let ratio: Double
+        if appMode {
+            // App 模式：玩家自定义攻防加成以真实独立乘法生效，绝不被大兵团数量压制淹没，让小国调优属性真正能以少胜多。
+            let baseRatio = max(0.22, (1 + a / 100) / max(0.22, 1 + d / 100))
+            let customRatio = max(0.25, (1 + customAtk / 100) / max(0.25, 1 + customDef / 100))
+            ratio = baseRatio * customRatio
+        } else {
+            ratio = max(0.2, (1 + (a + customAtk) / 100) / max(0.2, 1 + (d + customDef) / 100))
+        }
         let scaled: Double = ratio * rule(r, "damage") * Tuning.current.lethality
-        // 兵力悬殊: a host many times the enemy's strikes harder, and the few get no last-stand discount.
-        let o: Double = odds(r, attacker, victim)
-        return scaled * overwhelm(o) / (o >= 4 ? 1 : grit(r, victim))
+        // 兵力悬殊：在 App 模式下用双方自定义质量差修正有效兵力比，避免高强化小国白挨大国的 overwhelm 惩罚，并扩大坚韧生效上限至 6 倍。
+        let rawOdds: Double = odds(r, attacker, victim)
+        if appMode {
+            let qualityScale = max(0.25, min(3.5, (1 + customAtk / 100) / max(0.25, 1 + customDef / 100)))
+            let effOdds = rawOdds * qualityScale
+            return scaled * overwhelm(effOdds) / (effOdds >= 6 ? 1 : grit(r, victim))
+        }
+        return scaled * overwhelm(rawOdds) / (rawOdds >= 4 ? 1 : grit(r, victim))
     }
     /// 小国坚韧 (app worlds): a small state fights on its last land with its back to the wall; its armies
     /// take less damage the fewer provinces it holds (none at eight or more), so a great power cannot
@@ -411,7 +425,8 @@ public enum Regimes {
         }
         let n = gritCache?.counts[id] ?? 0
         guard n > 0, n < 8 else { return 1 }
-        return 1 + Tuning.current.smallStateGrit * Double(8 - n) / 7
+        let baseGrit = (UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy) ? max(Tuning.current.smallStateGrit, 0.45) : Tuning.current.smallStateGrit
+        return 1 + baseGrit * Double(8 - n) / 7
     }
     static var gritCache: (world: ObjectIdentifier, day: Double, counts: [String: Int])?
 
@@ -467,6 +482,37 @@ public enum Regimes {
         if blocked.ports > 0 { addGold(-0.3 * Double(blocked.held) / Double(blocked.ports)) }
         // 税制 and the treasury record (财政).
         Finance.month(r, id, addGold: addGold, addDestiny: addDestiny)
+        // 昏君失政与明君励治的月度深度演化（App 模式）：昏君引发贪腐飙升、兵心涣散与国库挥霍，明君则清肃吏治、振奋三军。
+        if UnitKinds.enabled {
+            let eval = rulerAssessment(r, id)
+            let strain = realmStrain(r, id)
+            if strain.level >= 1 {
+                Finance.setCorruption(r, id, Finance.corruption(r, id) + (strain.level >= 2 ? 0.55 : 0.25))
+            }
+            if eval.tier <= -2 {
+                Finance.setCorruption(r, id, Finance.corruption(r, id) + 0.65)
+                addDestiny(-0.45)
+                if rule(r, "event") > 0, chance("\(id)|\(key)|badmonarch") < 0.055 * rule(r, "event") {
+                    let which = Int(draw("\(id)|\(key)|badm_w") % 3)
+                    let rName = ruler(r, id).map { NativeEngine.displayPersonName($0) } ?? "国主"
+                    if which == 0 {
+                        addGold(-2.0); addDestiny(-3)
+                        _ = People.announce(r, kind: "politics", text: "\(n.name.asString)\(rName)大兴土木、挥霍国帑", reason: "君主昏庸失度，宠信近臣耗费国库两月岁入，腐化加剧、国运 −3。", nations: [id], province: nil)
+                    } else if which == 1 {
+                        for a in monthArmies(r, id) { a.morale = JS(max(15, a.morale.asNumber - 10)) }
+                        _ = People.announce(r, kind: "politics", text: "\(n.name.asString)克扣军饷，将士离心", reason: "朝政腐败、赏罚失据，全军士气 −10，前线战意低迷。", nations: [id], province: nil)
+                    } else {
+                        Finance.setCorruption(r, id, Finance.corruption(r, id) + 4)
+                        addDestiny(-2)
+                        _ = People.announce(r, kind: "politics", text: "\(n.name.asString)奸佞弄权，忠良遭贬", reason: "昏主听信谗言、卖官鬻爵，腐化 +4，国运 −2，政变与民变隐患骤增。", nations: [id], province: nil)
+                    }
+                }
+            } else if eval.tier >= 2 {
+                Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 0.35))
+                addDestiny(0.35)
+                for a in monthArmies(r, id) { a.morale = JS(min(100, a.morale.asNumber + 2)) }
+            }
+        }
         happenings(r, n, id, key, gain: gain, addGold: addGold, addDestiny: addDestiny)
         // 为在位君主与实权掌权者补齐鲜明历史个性特质 + 24 项深度动态历史事件
         if let ldr = Regimes.ruler(r, id) { MonarchLore.ensurePersonalityTraits(r, person: ldr) }
@@ -1169,8 +1215,8 @@ extension NativeEngine {
         if let value { r.regimes.temper[id] = JS(min(1.6, max(0.6, value))) } else { r.regimes.temper.delete(id) }
         return (true, value == nil ? "好战程度随君主性情" : "好战程度已设定")
     }
-    /// 国家加成 (自定义, percent): income −50…+200, attack/defense −50…+100, growth −20…+50 a
-    /// year, speed −50…+100; nil clears it. Each acts on the real rules (monthly gold, battle damage,
+    /// 国家加成 (自定义, percent): income −50…+300, attack/defense −50…+300, growth −20…+100 a
+    /// year, speed −50…+150; nil clears it. Each acts on the real rules (monthly gold, battle damage,
     /// population each month, march speed).
     public func setBonus(_ index: Int, key: String, value: Double?) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray
@@ -1178,7 +1224,7 @@ extension NativeEngine {
         if r.regimes.bonus.isNull { r.regimes.bonus = JS.object() }
         let id = nations[index].id.asString
         if r.regimes.bonus[id].isNull { r.regimes.bonus[id] = JS.object() }
-        let range: ClosedRange<Double> = key == "income" ? -50...200 : key == "growth" ? -20...50 : -50...100
+        let range: ClosedRange<Double> = key == "income" ? -50...300 : key == "growth" ? -20...100 : key == "speed" ? -50...150 : -50...300
         if let value { r.regimes.bonus[id][key] = JS(min(range.upperBound, max(range.lowerBound, value.rounded()))) } else { r.regimes.bonus[id].delete(key) }
         return (true, "加成已设定。")
     }

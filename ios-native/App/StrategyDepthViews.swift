@@ -229,12 +229,6 @@ struct WarCompareSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 SheetHeader(title: "战前实力评估", subtitle: "权衡双方兵力、水师、盟友与国际信誉", seal: "战")
-                let compareClip = InkVideoStage.pick(from: ["herald-ultimatum", "herald-camp-muster", "herald-war", "herald-cavalry", "herald-beacon"], seed: attacker &* 31 &+ defender)
-                if InkVideoStage.hasVideo(compareClip) {
-                    InkVideoStage(clip: compareClip, cornerRadius: 12, tint: Theme.seal)
-                        .frame(height: 64)
-                        .padding(.horizontal, Theme.Layout.pageInset)
-                }
 
                 if let d = data {
                     Group2 {
@@ -741,29 +735,12 @@ struct NationDepthSection: View {
     let onMessage: (String) -> Void
     @State private var busy = false
 
-    private func chainClip(_ cat: String, id: String) -> String {
-        let seed = abs(id.hashValue)
-        switch cat {
-        case "voyage": return InkVideoStage.pick(from: ["herald-voyage", "herald-voyage-fleet", "herald-harbor-trade", "herald-longship-raid"], seed: seed)
-        case "reform": return InkVideoStage.pick(from: ["herald-reform", "herald-exam-hall", "herald-library", "herald-parliament", "herald-mint"], seed: seed)
-        case "relief": return InkVideoStage.pick(from: ["herald-relief", "herald-festival", "herald-silkroad", "herald-locust"], seed: seed)
-        case "war": return InkVideoStage.pick(from: ["herald-war", "herald-cavalry", "herald-artillery", "herald-camp-muster", "herald-beacon"], seed: seed)
-        case "politics": return InkVideoStage.pick(from: ["herald-senate", "herald-coronation", "herald-succession", "herald-spy", "herald-banquet"], seed: seed)
-        default: return InkVideoStage.pick(from: ["herald-regime", "herald-vassal-tribute", "herald-cathedral", "herald-monastery", "herald-comet"], seed: seed)
-        }
-    }
-
     var body: some View {
         // 1. 待裁决的多阶段因果事件链（含 6 个月后因果回响）
         if let chain = info.activeChain, info.alive {
             SectionLabel("国是大事 · 因果抉择")
             Group2 {
                 VStack(alignment: .leading, spacing: 10) {
-                    let clip = chainClip(chain.category, id: chain.id)
-                    if InkVideoStage.hasVideo(clip) {
-                        InkVideoStage(clip: clip, cornerRadius: 10, tint: Theme.seal)
-                            .frame(height: 62)
-                    }
                     HStack(spacing: 6) {
                         PaperTag(text: "因果链", color: Theme.seal, size: 10)
                         Text(chain.title).font(Theme.section).foregroundStyle(Theme.ink)

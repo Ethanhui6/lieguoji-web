@@ -30,8 +30,9 @@ extension Regimes {
     /// A state's form of government may drift to one its culture and faith suit: sultanates, shogunates,
     /// caliphates, tsardoms, khanates, merchant republics, military orders…
     static func regimeDrift(_ r: JS, _ n: JS, _ id: String, _ key: Int) {
+        if UnitKinds.enabled && book(r, id).calm.asInt < 48 { return }
         let tag = "\(id)|\(key)|drift", roll = chance(tag)
-        guard roll < 0.025 else { return }
+        guard roll < 0.015 else { return }
         let civ = r.civilization.nations[id], polity = civ.polity.optionalString ?? "", culture = civ.cultureId.optionalString ?? "", faith = civ.religionId.optionalString ?? ""
         let land = r.world.provinces.asArray.reduce(0) { $1.controller.optionalString == id ? $0 + 1 : $0 }
         var list = [String]()

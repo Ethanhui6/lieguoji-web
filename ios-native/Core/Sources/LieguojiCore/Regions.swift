@@ -276,6 +276,173 @@ public enum Regions {
         return .ok(regions)
     }
 
+    /// 手绘州郡建图（v5.0 地图工坊 Step 2 专用）：
+    /// 根据玩家在地图格网上手绘的 `cellProvinces`（每格一个州编号，-1 表示未划）生成完全合法、闭环无孔、可直接进入实机推演的 `[Region]`。
+    public static func fromCellAssignment(
+        _ d: TerrainDocument,
+        elevations: [Int],
+        cellProvinces: [Int],
+        surface known: Climate.Surface? = nil
+    ) -> (regions: [Region], faces: [Face])? {
+        let faces = landFaces(d, elevations)
+        guard !faces.isEmpty else { return nil }
+        let surface = known ?? Climate.surface(d, elevations: elevations)
+
+        // 1. 逐面按源格多数表决初始州编号，未涂色陆面用最近邻 BFS 自动归属，确保零孤立陆面
+        var faceOwner = [Int](repeating: -1, count: faces.count)
+        for (fi, f) in faces.enumerated() {
+            var votes = [Int: Int]()
+            for s in f.source where s >= 0 && s < cellProvinces.count && elevations[s] >= 20 {
+                let p = cellProvinces[s]
+                if p >= 0 { votes[p, default: 0] += 1 }
+            }
+            if let best = votes.max(by: { $0.value == $1.value ? $0.key > $1.key : $0.value < $1.value })?.key {
+                faceOwner[fi] = best
+            }
+        }
+        var queue = faceOwner.indices.filter { faceOwner[$0] >= 0 }
+        if queue.isEmpty { return nil }
+        var head = 0
+        while head < queue.count {
+            let cur = queue[head]; head += 1
+            for nb in faces[cur].neighbors where faceOwner[nb] < 0 {
+                faceOwner[nb] = faceOwner[cur]
+                queue.append(nb)
+            }
+        }
+        // 仍有孤立海岛未被涂色时，独立自成一州
+        var nextAutoId = (faceOwner.max() ?? 0) + 1
+        for fi in faces.indices where faceOwner[fi] < 0 {
+            var q = [fi]; faceOwner[fi] = nextAutoId; var h = 0
+            while h < q.count {
+                let cur = q[h]; h += 1
+                for nb in faces[cur].neighbors where faceOwner[nb] < 0 {
+                    faceOwner[nb] = nextAutoId; q.append(nb)
+                }
+            }
+            nextAutoId += 1
+        }
+
+        // 2. 拆分为严格连通的州域片区，并将过碎（< 4 面）孤片并入最长公共边界邻州
+        var compId = [Int](repeating: -1, count: faces.count)
+        var groups = [[Int]]()
+        for fi in faces.indices where compId[fi] < 0 {
+            let pid = faceOwner[fi], cid = groups.count
+            var q = [fi]; compId[fi] = cid; var h = 0
+            while h < q.count {
+                let cur = q[h]; h += 1
+                for nb in faces[cur].neighbors where compId[nb] < 0 && faceOwner[nb] == pid {
+                    compId[nb] = cid; q.append(nb)
+                }
+            }
+            groups.append(q)
+        }
+        func simpleRing(_ ids: [Int]) -> [Vertex]? {
+            var keys = [String](), edges = [String: (Vertex, Vertex)]()
+            for id in ids {
+                let r = faces[id].ring
+                for i in r.indices {
+                    let a = r[i], b = r[(i + 1) % r.count], key = edgeKey(a, b)
+                    if edges[key] != nil { edges[key] = nil } else { edges[key] = (a, b); keys.append(key) }
+                }
+            }
+            let live = keys.filter { edges[$0] != nil }
+            if live.count < 3 { return nil }
+            var out = [String: (Vertex, Vertex)]()
+            for k in live {
+                let e = edges[k]!
+                if out[e.0.key] != nil { return nil }
+                out[e.0.key] = e
+            }
+            let start = edges[live[0]]!.0
+            var result = [Vertex](), p = start
+            while let e = out[p.key] { result.append(e.0); out[p.key] = nil; p = e.1 }
+            return p.key == start.key && out.isEmpty ? result : nil
+        }
+        func mergeSmallOrHoled() {
+            var changed = true, passes = 0
+            while changed && passes < 6 {
+                changed = false; passes += 1
+                for g in groups.indices where !groups[g].isEmpty {
+                    let needsMerge = groups[g].count < 4 || simpleRing(groups[g]) == nil
+                    guard needsMerge else { continue }
+                    var borderCounts = [Int: Int]()
+                    for fi in groups[g] {
+                        for nb in faces[fi].neighbors {
+                            let og = compId[nb]
+                            if og != g && og >= 0 && !groups[og].isEmpty { borderCounts[og, default: 0] += 1 }
+                        }
+                    }
+                    guard let target = borderCounts.max(by: { $0.value < $1.value })?.key else { continue }
+                    for fi in groups[g] { compId[fi] = target }
+                    groups[target].append(contentsOf: groups[g])
+                    groups[g].removeAll()
+                    changed = true
+                }
+            }
+        }
+        mergeSmallOrHoled()
+
+        // 3. 构造最终 Region 列表（超大无环片自动退回安全切分，确保 100% 合法闭合多边形）
+        var finalMemberGroups = [[Int]]()
+        var finalRings = [[Vertex]]()
+        for g in groups where !g.isEmpty {
+            if let ring = simpleRing(g), ring.count <= 200 {
+                finalMemberGroups.append(g)
+                finalRings.append(ring)
+            } else if let split = cuts(faces, max(2, min(8, g.count / 12))) {
+                // 若玩家手绘了环抱孔洞的巨州，借用安全切割保证多边形简单闭合
+                let subset = Set(g)
+                let filtered = split.filter { $0.members.contains(where: { subset.contains($0) }) }
+                if !filtered.isEmpty {
+                    for s in filtered { finalMemberGroups.append(s.members); finalRings.append(s.ring) }
+                } else if let r = simpleRing(g) {
+                    finalMemberGroups.append(g); finalRings.append(r)
+                }
+            } else if let r = simpleRing(g) {
+                finalMemberGroups.append(g); finalRings.append(r)
+            }
+        }
+        guard finalMemberGroups.count >= 2 else { return nil }
+
+        // 重新映射每面归属与邻接表
+        var ownerOfFace = [Int](repeating: -1, count: faces.count)
+        for (ri, mems) in finalMemberGroups.enumerated() {
+            for fi in mems { ownerOfFace[fi] = ri }
+        }
+        var adjSets = [Set<Int>](repeating: [], count: finalMemberGroups.count)
+        for fi in faces.indices {
+            let a = ownerOfFace[fi]; guard a >= 0 else { continue }
+            for nb in faces[fi].neighbors {
+                let b = ownerOfFace[nb]
+                if b >= 0 && b != a { adjSets[a].insert(b); adjSets[b].insert(a) }
+            }
+        }
+        var regions = [Region]()
+        regions.reserveCapacity(finalMemberGroups.count)
+        for (ri, mems) in finalMemberGroups.enumerated() {
+            let ring = finalRings[ri]
+            var area = 0.0, cx = 0.0, cy = 0.0, hSum = 0.0
+            for fi in mems {
+                let a = polygonArea(faces[fi].ring), p = middle(faces[fi].ring)
+                area += a; cx += p.0 * a; cy += p.1 * a; hSum += faces[fi].height * a
+            }
+            let safeArea = max(1e-6, area)
+            let mx = cx / safeArea, my = cy / safeArea, mh = hSum / safeArea
+            var best = mems[0], score = Double.infinity
+            let radius = max(1e-3, (safeArea / Double.pi).squareRoot())
+            for fi in mems {
+                let f = faces[fi], p = middle(f.ring), hs = f.source.map { elevations[$0] }
+                let slope = Double((hs.max() ?? 20) - (hs.min() ?? 20))
+                let water = f.source.contains { j in surface.rivers.riverIds[j] > 0 || d.neighbors[j].contains { elevations[$0] < 20 } }
+                let value = jsHypot(p.0 - mx, p.1 - my) / radius + max(0, f.height - 35) / 30 + slope / 35 - (water ? 0.15 : 0)
+                if value < score { score = value; best = fi }
+            }
+            regions.append(Region(ring: ring, area: safeArea, center: middle(faces[best].ring), height: mh, members: mems, neighbors: adjSets[ri].sorted()))
+        }
+        return (regions, faces)
+    }
+
     /// cutSettlementFaces: the bounded recursive splitter used when unions get stuck at low counts.
     static func cuts(_ faces: [Face], _ count: Int) -> [(ring: [Vertex], members: [Int])]? {
         let areas = faces.map { polygonArea($0.ring) }, points = faces.map { middle($0.ring) }

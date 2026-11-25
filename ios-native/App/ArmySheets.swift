@@ -113,8 +113,16 @@ struct ArmySheet: View {
                                     .font(Theme.label).foregroundStyle(Theme.ink2).lineLimit(1)
                             }
                             if let c = a.commander {
-                                Text(a.banner == "ruler" ? "亲征主帅：\(c)" : "主将：\(c)")
-                                    .font(Theme.caption).foregroundStyle(a.banner == "ruler" ? Theme.seal : Theme.ink2)
+                                let role = a.banner == "ruler" ? "亲征主帅" : (a.commanderRole ?? "主将")
+                                let bonusStr: String = {
+                                    guard let pct = a.commanderBonusPct else { return "" }
+                                    return pct == 0 ? "" : " · 战力\(pct > 0 ? "+" : "−")\(abs(pct))%"
+                                }()
+                                let milStr = a.commanderMilitary.map { " · 武\($0)" } ?? ""
+                                Text("\(role)：\(c)\(milStr)\(bonusStr)")
+                                    .font(Theme.caption)
+                                    .foregroundStyle((a.commanderBonusPct ?? 0) < 0 || a.banner == "ruler" ? Theme.seal : Theme.ink2)
+                                    .lineLimit(1)
                             }
                         }
                         Spacer(minLength: 4)
@@ -219,27 +227,6 @@ struct ArmySheet: View {
 
     @ViewBuilder
     private func ordersSection(map: WorldMap, a: GameState.Army, fighting: Bool, peers: [(offset: Int, element: GameState.Army)]) -> some View {
-        let armyClip: String = {
-            let cul = (map.meta.nations.indices.contains(a.nation) ? map.meta.nations[a.nation].culture : "").lowercased()
-            let seed = abs(a.id.hashValue)
-            if a.status == "sieging" {
-                return InkVideoStage.pick(from: ["herald-artillery", "herald-siege", "herald-capture"], seed: seed)
-            }
-            if WorldSeason.of(month: model.state?.date.month ?? 4) == .winter {
-                return InkVideoStage.pick(from: ["herald-winter-march", "herald-war", "herald-ambush"], seed: seed)
-            }
-            if a.unit == "Cavalry" || cul.contains("mongol") || cul.contains("turk") || cul.contains("steppe") {
-                return InkVideoStage.pick(from: ["herald-cavalry", "herald-knights-joust", "herald-desert-war"], seed: seed)
-            }
-            if cul.contains("japan") { return InkVideoStage.pick(from: ["herald-samurai-charge", "herald-ambush", "herald-war"], seed: seed) }
-            if cul.contains("arab") || cul.contains("persian") || cul.contains("egypt") { return InkVideoStage.pick(from: ["herald-desert-war", "herald-cavalry", "herald-war"], seed: seed) }
-            return InkVideoStage.pick(from: ["herald-war", "herald-ambush", "herald-knights-joust", "herald-camp-muster"], seed: seed)
-        }()
-        if (fighting || a.status == "sieging"), InkVideoStage.hasVideo(armyClip) {
-            InkVideoStage(clip: armyClip, cornerRadius: 12, tint: Theme.seal)
-                .frame(height: 72)
-                .padding(.horizontal, Theme.Layout.pageInset)
-        }
         // 状态、行军路线、补给粮道与当令节气综合战备卡
         let curSeason = WorldSeason.of(month: model.state?.date.month ?? 4)
         let supplyState: (text: String, color: Color) = a.supplies <= 15 ? ("断粮危殆（非战斗减员）", Theme.seal)
@@ -304,6 +291,18 @@ struct ArmySheet: View {
                     HStack(alignment: .center, spacing: 7) {
                         ArtEmblem(image: BundleArt.warCrest(for: armyCul), size: 22, fallback: .military)
                         Text(wg).font(Theme.caption).foregroundStyle(Theme.seal).fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                }
+                if let cName = a.commander, let mil = a.commanderMilitary, let pct = a.commanderBonusPct {
+                    Divider2()
+                    HStack(alignment: .firstTextBaseline, spacing: 7) {
+                        PaperTag(text: a.commanderRole ?? "统帅", color: pct < 0 ? Theme.seal : Theme.ink, size: 11)
+                        let traitsLine = (a.commanderTraits ?? []).isEmpty ? "" : " · \((a.commanderTraits ?? []).joined(separator: "、"))"
+                        Text("\(cName)（武略 \(mil)）· 攻防 \(pct >= 0 ? "+" : "−")\(abs(pct))%\(traitsLine)")
+                            .font(Theme.caption)
+                            .foregroundStyle(pct < 0 ? Theme.seal : Theme.ink)
+                            .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                     }
                 }
@@ -853,21 +852,6 @@ struct FleetSheet: View {
         shownFriendly: [FriendlyPortItem],
         targetIsEnemy: Bool
     ) -> some View {
-        let fleetClip: String = {
-            let cul = (map.meta.nations.indices.contains(f.nation) ? map.meta.nations[f.nation].culture : "").lowercased()
-            let seed = abs(f.id.hashValue)
-            if curMission == "blockade" { return InkVideoStage.pick(from: ["herald-blockade", "herald-galleon-broadside", "herald-naval"], seed: seed) }
-            if curMission == "escort" || curMission == "patrol" { return InkVideoStage.pick(from: ["herald-harbor-trade", "herald-voyage-fleet", "herald-voyage"], seed: seed) }
-            if cul.contains("nordic") || cul.contains("viking") { return InkVideoStage.pick(from: ["herald-longship-raid", "herald-naval", "herald-blockade"], seed: seed) }
-            if cul.contains("chinese") || cul.contains("japan") { return InkVideoStage.pick(from: ["herald-fire-ships", "herald-naval", "herald-voyage-fleet"], seed: seed) }
-            return InkVideoStage.pick(from: ["herald-galleon-broadside", "herald-naval", "herald-fire-ships", "herald-blockade"], seed: seed)
-        }()
-        if InkVideoStage.hasVideo(fleetClip) {
-            InkVideoStage(clip: fleetClip, cornerRadius: 12, tint: Theme.seal)
-                .frame(height: 74)
-                .padding(.horizontal, Theme.Layout.pageInset)
-        }
-
         SectionLabel("水师战略任务指令（五略）")
         Group2 {
             VStack(spacing: 7) {

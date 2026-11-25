@@ -17,6 +17,180 @@ extension Regimes {
         leverageCache?.values[id] = v
         return v
     }
+    // MARK: 君主治乱评估、疆域行政负荷与统帅战力
+
+    public struct RulerAssessment: Sendable {
+        /// -2 昏君/暴君, -1 庸主, 0 守成之主, +1 明君, +2 圣主/雄主
+        public let tier: Int
+        public let label: String
+        public let attack: Double
+        public let defense: Double
+        public let income: Double
+        public let stability: Double
+        public let corruption: Double
+        public let summary: String
+    }
+
+    /// 评估在位实际掌权者是明君、守成之主还是昏君（v5.0 大幅放大明君与昏君对国运、税赋、战力与政局的决定性影响）。
+    public static func rulerAssessment(_ r: JS, _ id: String) -> RulerAssessment {
+        guard !r.regimes.isNull, r.regimes.enabled.isTruthy else {
+            return RulerAssessment(tier: 0, label: "常主", attack: 0, defense: 0, income: 0, stability: 0, corruption: 0, summary: "")
+        }
+        let leaderId = r.people.nations[id].leaderId.optionalNumber
+        let leaderPerson = leaderId.flatMap { People.person(r, Int($0)) }
+        guard let p = governor(r, id) ?? leaderPerson, !p.base.isNull, p.isAlive.isTruthy else {
+            return RulerAssessment(tier: -1, label: "虚位无主", attack: -10, defense: -8, income: -12, stability: -12, corruption: 8, summary: "朝廷无主 · 攻−10% · 税−12% · 安定−12")
+        }
+        let s = People.skills(p)
+        let avg = (s.military + s.administrative + s.charisma) / 3.0
+        let traits = Set(p.traits.isNull ? [] : p.traits.asArray.compactMap(\.optionalString))
+        let badKeys: Set<String> = ["Incompetent", "Tyrant", "Extravagant", "Cruel", "Craven", "Greedy", "Stubborn", "Unconvincing"]
+        let goodKeys: Set<String> = ["Genius", "Visionary", "Tactician", "Conqueror", "Lawgiver", "Diligent", "Benevolent", "Beloved", "Administrator", "Reformer", "Just", "NaturalLeader"]
+        let badCount = traits.intersection(badKeys).count
+        let goodCount = traits.intersection(goodKeys).count
+        let score = avg + Double(goodCount) * 7.5 - Double(badCount) * 9.5
+
+        if traits.contains("Incompetent") || traits.contains("Tyrant") || score < 38 || (badCount >= 2 && avg < 52) {
+            let label = (traits.contains("Tyrant") || traits.contains("Cruel")) ? "暴君失道" : "昏君误国"
+            return RulerAssessment(
+                tier: -2, label: label,
+                attack: -18, defense: -16, income: -22, stability: -18, corruption: 14,
+                summary: "\(label) · 攻−18% 守−16% · 税−22% · 安定−18 · 腐化+14"
+            )
+        } else if score < 47 {
+            return RulerAssessment(
+                tier: -1, label: "庸主疲政",
+                attack: -8, defense: -8, income: -10, stability: -8, corruption: 6,
+                summary: "庸主疲政 · 攻守−8% · 税−10% · 安定−8 · 腐化+6"
+            )
+        } else if score >= 78 || (avg >= 72 && goodCount >= 2) {
+            return RulerAssessment(
+                tier: 2, label: "雄主圣明",
+                attack: 22, defense: 18, income: 24, stability: 18, corruption: -12,
+                summary: "雄主圣明 · 攻+22% 守+18% · 税+24% · 安定+18 · 腐化−12"
+            )
+        } else if score >= 64 || (avg >= 60 && goodCount >= 1) {
+            return RulerAssessment(
+                tier: 1, label: "明君励治",
+                attack: 12, defense: 10, income: 14, stability: 12, corruption: -8,
+                summary: "明君励治 · 攻+12% 守+10% · 税+14% · 安定+12 · 腐化−8"
+            )
+        } else {
+            return RulerAssessment(
+                tier: 0, label: "守成之主",
+                attack: 0, defense: 0, income: 0, stability: 0, corruption: 0,
+                summary: "守成之主 · 政局持中"
+            )
+        }
+    }
+
+    public struct RealmStrain: Sendable {
+        public let provinces: Int
+        /// < 0 小邦精治, 0 均衡疆域, > 0 大国过扩冗耗
+        public let level: Int
+        public let label: String
+        public let attackDrag: Double
+        public let defenseBonus: Double
+        public let incomeDelta: Double
+        public let stabilityDelta: Double
+        public let corruptionDelta: Double
+        public let summary: String
+    }
+
+    /// 评估疆域行政负荷：小国（≤6 州）享「小邦精治守土」高凝聚加成；超级大国（>18 州）承受真实的「疆域过扩冗耗」税赋/腐化/战线拖累。
+    public static func realmStrain(_ r: JS, _ id: String) -> RealmStrain {
+        _ = grit(r, id)
+        let n = gritCache?.counts[id] ?? 0
+        guard UnitKinds.enabled, !r.regimes.isNull, r.regimes.enabled.isTruthy, n > 0 else {
+            return RealmStrain(provinces: n, level: 0, label: "疆域适中", attackDrag: 0, defenseBonus: 0, incomeDelta: 0, stabilityDelta: 0, corruptionDelta: 0, summary: "")
+        }
+        if n <= 6 {
+            let bonusDef = Double(7 - n) * 2.5 // 1省+15%，6省+2.5%
+            let bonusInc = Double(7 - n) * 2.0 // 小国精干行政效率
+            return RealmStrain(
+                provinces: n, level: -1, label: "小邦精治",
+                attackDrag: 0, defenseBonus: bonusDef, incomeDelta: bonusInc,
+                stabilityDelta: 7, corruptionDelta: -5,
+                summary: "小邦精治 · 守御+\(Int(bonusDef.rounded()))% · 岁入+\(Int(bonusInc.rounded()))% · 安定+7 · 腐化−5"
+            )
+        }
+        if n > 18 {
+            let over = Double(n - 18)
+            let prof = styleProfile(r, id)
+            let adminLv = WorldDepth.techLevel(r, nation: id, branch: .admin)
+            let relief: Double = (adminLv >= 3 ? 0.25 : 0.0) + (prof.id == "federal" || prof.camp == .constitutional ? 0.15 : 0.0)
+            let factor = max(0.55, 1.0 - relief)
+            let atkDrag = -min(22.0, over * 1.15 * factor)
+            let incDelta = -min(24.0, over * 0.95 * factor)
+            let staDelta = -min(26.0, over * 1.25 * factor)
+            let corDelta = min(22.0, over * 0.72 * factor)
+            let severe = n >= 30
+            let lbl = severe ? "帝国过扩" : "疆广耗繁"
+            return RealmStrain(
+                provinces: n, level: severe ? 2 : 1, label: lbl,
+                attackDrag: atkDrag, defenseBonus: 0, incomeDelta: incDelta,
+                stabilityDelta: staDelta, corruptionDelta: corDelta,
+                summary: "\(lbl)（\(n)州）· 远征攻\(Int(atkDrag.rounded()))% · 岁入\(Int(incDelta.rounded()))% · 安定\(Int(staDelta.rounded())) · 腐化+\(Int(corDelta.rounded()))"
+            )
+        }
+        return RealmStrain(provinces: n, level: 0, label: "疆域适中", attackDrag: 0, defenseBonus: 0, incomeDelta: 0, stabilityDelta: 0, corruptionDelta: 0, summary: "疆域适中（\(n)州）· 政令通达")
+    }
+
+    public struct ActiveCommander: Sendable {
+        public let personId: Int
+        public let name: String
+        public let roleTitle: String
+        public let military: Int
+        public let traits: [String]
+        /// 战场总战力增减百分比（如 +34 或 -20）
+        public let combatBonusPct: Int
+        public let siegeBonusPct: Int
+    }
+
+    /// 查出某国当前执掌野战的主将（优先对敌征讨大将 WarCommander → 大元帅 Marshal → 亲征君主）及其真实战场统帅加成。
+    public static func activeCommander(_ r: JS, nation: String, enemy: String?) -> ActiveCommander? {
+        var person: JS? = nil
+        var roleTitle = "亲征君主"
+        if !r.offices47.isNull {
+            if let enemy, !r.people.nations[enemy].isNull,
+               let c = Offices.holder(r, nation, "WarCommander", r.people.nations[enemy].id.asInt) {
+                person = c; roleTitle = "征讨大将"
+            } else if let m = Offices.holder(r, nation, "Marshal", Offices.stateId(r, nation)) {
+                person = m; roleTitle = "全军统帅"
+            }
+        }
+        if person == nil {
+            let lid = r.people.nations[nation].leaderId
+            person = governor(r, nation) ?? (lid.isNull ? nil : People.person(r, lid.asInt))
+        }
+        guard let p = person, p.isAlive.isTruthy else { return nil }
+        let mil = People.skills(p).military
+        let rawTraits = p.traits.isNull ? [] : p.traits.asArray.compactMap(\.optionalString)
+        var pct = (mil - 50.0) * 0.92 // 90武 → +37%，20武 → -28%
+        var siege = (mil - 50.0) * 0.45
+        for t in rawTraits {
+            switch t {
+            case "Tactician", "Strategist", "BattleHardened", "Veteran": pct += 10; siege += 6
+            case "Conqueror", "Brave", "Unifier", "Genius": pct += 8; siege += 8
+            case "Incompetent", "Craven": pct -= 14; siege -= 10
+            case "WarWeary": pct -= 8
+            default: break
+            }
+        }
+        let clampedPct = max(-32, min(52, Int(pct.rounded())))
+        let clampedSiege = max(-20, min(35, Int(siege.rounded())))
+        let labels = rawTraits.prefix(3).map { MonarchLore.extraByKey[$0]?.label ?? Nobility.trait($0)?.name.optionalString ?? $0 }
+        return ActiveCommander(
+            personId: p.id.asInt,
+            name: NativeEngine.displayPersonName(p),
+            roleTitle: roleTitle,
+            military: Int(mil.rounded()),
+            traits: labels,
+            combatBonusPct: clampedPct,
+            siegeBonusPct: clampedSiege
+        )
+    }
+
     private static func computeLeverage(_ r: JS, _ id: String) -> Leverage {
         guard !r.regimes.isNull, r.regimes.enabled.isTruthy else { return Leverage() }
         var mil = 50.0, adm = 50.0, cha = 50.0
@@ -36,17 +210,19 @@ extension Regimes {
         let goodsBonus = Trade.nationalBonuses(r, id)
         let cultDoc = CultureDoctrines.forNation(r, id)
         let amp = UnitKinds.enabled
+        let rulerEval = amp ? rulerAssessment(r, id) : RulerAssessment(tier: 0, label: "", attack: 0, defense: 0, income: 0, stability: 0, corruption: 0, summary: "")
+        let strain = realmStrain(r, id)
         var l = Leverage()
-        l.attack = (mil - 50) * (amp ? 1.15 : 0.8) + (fortune - 50) * 0.28 - graft * 0.16 + sum.attack + prof.attack + pTrait.attack + goodsBonus.attack + (cultDoc?.attack ?? 0)
-        l.defense = (mil - 50) * (amp ? 0.65 : 0.4) + (cha - 50) * (amp ? 0.35 : 0.2) + (fortune - 50) * 0.28 - graft * 0.12 + sum.defense + prof.defense + pTrait.defense + goodsBonus.defense + (cultDoc?.defense ?? 0)
-        l.income = (adm - 50) * (amp ? 1.15 : 0.8) - graft * 0.32 + sum.income + prof.income + pTrait.income + goodsBonus.income + (cultDoc?.income ?? 0)
+        l.attack = (mil - 50) * (amp ? 1.25 : 0.8) + (fortune - 50) * 0.28 - graft * 0.18 + sum.attack + prof.attack + pTrait.attack + goodsBonus.attack + (cultDoc?.attack ?? 0) + rulerEval.attack + strain.attackDrag
+        l.defense = (mil - 50) * (amp ? 0.72 : 0.4) + (cha - 50) * (amp ? 0.38 : 0.2) + (fortune - 50) * 0.28 - graft * 0.14 + sum.defense + prof.defense + pTrait.defense + goodsBonus.defense + (cultDoc?.defense ?? 0) + rulerEval.defense + strain.defenseBonus
+        l.income = (adm - 50) * (amp ? 1.25 : 0.8) - graft * 0.34 + sum.income + prof.income + pTrait.income + goodsBonus.income + (cultDoc?.income ?? 0) + rulerEval.income + strain.incomeDelta
         l.growth = (adm - 50) * (amp ? 0.16 : 0.1) + (cha - 50) * (amp ? 0.14 : 0.1) + sum.growth + pTrait.growth + goodsBonus.growth + (cultDoc?.growth ?? 0)
-        l.corruption = sum.corruption + prof.corruption + pTrait.corruption + (cultDoc?.corruption ?? 0)
+        l.corruption = sum.corruption + prof.corruption + pTrait.corruption + (cultDoc?.corruption ?? 0) + rulerEval.corruption + strain.corruptionDelta
         _ = grit(r, id)
         let land = Double(gritCache?.counts[id] ?? 0), total = max(1, Double(gritCache?.counts.values.reduce(0, +) ?? 1))
         var owed = 0.0
         if !r.finance.nations[id].isNull { let income = max(1, monthlyIncome(r, id)); owed = min(15, debt(r, id) / income / 12 * 10) }
-        l.stability = 60 + (adm - 50) * (amp ? 0.46 : 0.35) + (crown - 50) * (amp ? 0.50 : 0.35) + (fortune - 50) * 0.42 - graft * 0.42 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability + pTrait.stability + goodsBonus.stability + (cultDoc?.stability ?? 0)
+        l.stability = 60 + (adm - 50) * (amp ? 0.50 : 0.35) + (crown - 50) * (amp ? 0.54 : 0.35) + (fortune - 50) * 0.42 - graft * 0.45 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability + pTrait.stability + goodsBonus.stability + (cultDoc?.stability ?? 0) + rulerEval.stability + strain.stabilityDelta
         return l
     }
     static func attributeMonth(_ r: JS, _ id: String, addGold: (Double) -> Void) {
@@ -70,31 +246,43 @@ extension Regimes {
             return parts.joined(separator: "，")
         }
     }
+    public static let independentReformIds: Set<String> = [
+        "audit", "parliament", "charter", "jungong", "knight", "minting", "liangshui", "tiaobian", "guild", "navyAct"
+    ]
+    /// 专项制度行政承载上限（3–5 槽，随行政科技与掌权者治政能力扩容），彻底杜绝无脑全开叠加全部增益。
+    public static func maxIndependentReforms(_ r: JS, _ id: String) -> Int {
+        var cap = 3
+        if WorldDepth.techLevel(r, nation: id, branch: .admin) >= 3 { cap += 1 }
+        let leader = governor(r, id) ?? ruler(r, id)
+        let adm = leader.map { People.skills($0).administrative } ?? 50
+        if adm >= 74 { cap += 1 }
+        return cap
+    }
     public static let reforms: [Reform] = [
         Reform(id: "keju", name: "科举取士", polities: ["Kingdom", "Empire"], conflicts: ["jiupin"], effect: Leverage(income: 3, stability: 4, corruption: -5)),
-        Reform(id: "jiupin", name: "九品中正", polities: ["Kingdom", "Empire"], conflicts: ["keju"], effect: Leverage(defense: 4, stability: 3, corruption: 5)),
-        Reform(id: "junxian", name: "郡县制", polities: ["Kingdom", "Empire", "Republic"], conflicts: ["fengjian"], effect: Leverage(income: 5, stability: 5)),
-        Reform(id: "fengjian", name: "分封诸侯", polities: ["Kingdom", "Empire", "Tribal"], conflicts: ["junxian"], effect: Leverage(defense: 8, income: -2, stability: -5)),
-        Reform(id: "juntian", name: "均田令", polities: nil, conflicts: ["serf"], effect: Leverage(income: 3, growth: 4, stability: 4)),
-        Reform(id: "liangshui", name: "两税法", polities: nil, conflicts: [], effect: Leverage(income: 8, corruption: 2)),
-        Reform(id: "tiaobian", name: "一条鞭法", polities: nil, conflicts: [], effect: Leverage(income: 10, stability: -2)),
-        Reform(id: "fubing", name: "府兵制", polities: nil, conflicts: ["mubing"], effect: Leverage(defense: 10, income: 2)),
-        Reform(id: "mubing", name: "募兵制", polities: nil, conflicts: ["fubing"], effect: Leverage(attack: 10, income: -5)),
-        Reform(id: "jungong", name: "军功授爵", polities: ["Kingdom", "Empire", "Tribal"], conflicts: [], effect: Leverage(attack: 12, stability: -4)),
-        Reform(id: "knight", name: "骑士制度", polities: ["Kingdom", "Empire", "Theocracy"], conflicts: [], effect: Leverage(attack: 7, defense: 3)),
-        Reform(id: "guild", name: "行会特许", polities: ["Republic", "Federation", "Kingdom"], conflicts: [], effect: Leverage(income: 7, corruption: 2)),
-        Reform(id: "serf", name: "农奴制", polities: ["Kingdom", "Empire", "Tribal"], conflicts: ["free", "juntian"], effect: Leverage(income: 5, growth: -5, stability: -5)),
-        Reform(id: "free", name: "废除奴役", polities: nil, conflicts: ["serf"], effect: Leverage(income: -3, growth: 5, stability: 5)),
-        Reform(id: "parliament", name: "议会制度", polities: ["Republic", "Federation", "Kingdom"], conflicts: [], effect: Leverage(attack: -3, stability: 7, corruption: -3)),
-        Reform(id: "charter", name: "大宪章", polities: ["Kingdom", "Republic", "Federation"], conflicts: [], effect: Leverage(stability: 6, corruption: -6)),
-        Reform(id: "sealock", name: "海禁", polities: nil, conflicts: ["seaopen"], effect: Leverage(income: -6, stability: 5)),
-        Reform(id: "seaopen", name: "开海通商", polities: nil, conflicts: ["sealock"], effect: Leverage(income: 9, corruption: 3)),
-        Reform(id: "stateChurch", name: "国教制度", polities: nil, conflicts: ["secular"], effect: Leverage(defense: 4, stability: 5)),
-        Reform(id: "secular", name: "政教分离", polities: ["Republic", "Federation", "Kingdom"], conflicts: ["stateChurch"], effect: Leverage(income: 4, stability: 2)),
-        Reform(id: "minting", name: "统一币制", polities: nil, conflicts: [], effect: Leverage(income: 7, stability: 3, corruption: -3)),
-        Reform(id: "navyAct", name: "航海条例", polities: nil, conflicts: ["sealock"], effect: Leverage(attack: 4, income: 8)),
-        Reform(id: "audit", name: "御史监察", polities: nil, conflicts: [], effect: Leverage(income: 2, stability: 5, corruption: -8)),
-        Reform(id: "conscription", name: "义务兵役", polities: nil, conflicts: ["fubing"], effect: Leverage(attack: 8, defense: 6, growth: -2)),
+        Reform(id: "jiupin", name: "九品中正", polities: ["Kingdom", "Empire"], conflicts: ["keju"], effect: Leverage(defense: 5, stability: 3, corruption: 5)),
+        Reform(id: "junxian", name: "郡县制", polities: ["Kingdom", "Empire", "Republic"], conflicts: ["fengjian"], effect: Leverage(income: 5, stability: 5, corruption: 2)),
+        Reform(id: "fengjian", name: "分封诸侯", polities: ["Kingdom", "Empire", "Tribal"], conflicts: ["junxian"], effect: Leverage(defense: 9, income: -3, stability: -5)),
+        Reform(id: "juntian", name: "均田令", polities: nil, conflicts: ["serf", "free"], effect: Leverage(income: 2, growth: 5, stability: 4)),
+        Reform(id: "liangshui", name: "两税法", polities: nil, conflicts: ["tiaobian"], effect: Leverage(income: 9, growth: -2, corruption: 2)),
+        Reform(id: "tiaobian", name: "一条鞭法", polities: nil, conflicts: ["liangshui"], effect: Leverage(income: 11, stability: -4, corruption: -3)),
+        Reform(id: "fubing", name: "府兵制", polities: nil, conflicts: ["mubing", "conscription"], effect: Leverage(attack: -2, defense: 10, income: 3)),
+        Reform(id: "mubing", name: "募兵制", polities: nil, conflicts: ["fubing", "conscription"], effect: Leverage(attack: 11, income: -6)),
+        Reform(id: "jungong", name: "军功授爵", polities: ["Kingdom", "Empire", "Tribal"], conflicts: [], effect: Leverage(attack: 12, stability: -5, corruption: 3)),
+        Reform(id: "knight", name: "骑士制度", polities: ["Kingdom", "Empire", "Theocracy"], conflicts: [], effect: Leverage(attack: 8, defense: 4, income: -6)),
+        Reform(id: "guild", name: "行会特许", polities: ["Republic", "Federation", "Kingdom"], conflicts: [], effect: Leverage(income: 8, defense: -2, corruption: 4)),
+        Reform(id: "serf", name: "农奴制", polities: ["Kingdom", "Empire", "Tribal"], conflicts: ["free", "juntian"], effect: Leverage(income: 6, growth: -5, stability: -5)),
+        Reform(id: "free", name: "废除奴役", polities: nil, conflicts: ["serf", "juntian"], effect: Leverage(income: -3, growth: 6, stability: 5)),
+        Reform(id: "parliament", name: "议会制度", polities: ["Republic", "Federation", "Kingdom"], conflicts: [], effect: Leverage(attack: -4, income: 4, stability: 8, corruption: -5)),
+        Reform(id: "charter", name: "大宪章", polities: ["Kingdom", "Republic", "Federation"], conflicts: [], effect: Leverage(attack: -3, defense: 4, stability: 7, corruption: -6)),
+        Reform(id: "sealock", name: "海禁", polities: nil, conflicts: ["seaopen", "navyAct"], effect: Leverage(defense: 4, income: -7, stability: 6)),
+        Reform(id: "seaopen", name: "开海通商", polities: nil, conflicts: ["sealock"], effect: Leverage(defense: -2, income: 10, corruption: 3)),
+        Reform(id: "stateChurch", name: "国教制度", polities: nil, conflicts: ["secular"], effect: Leverage(defense: 5, income: -2, stability: 5)),
+        Reform(id: "secular", name: "政教分离", polities: ["Republic", "Federation", "Kingdom"], conflicts: ["stateChurch"], effect: Leverage(income: 5, stability: -2, corruption: -3)),
+        Reform(id: "minting", name: "统一币制", polities: nil, conflicts: [], effect: Leverage(income: 8, stability: -2, corruption: -4)),
+        Reform(id: "navyAct", name: "航海条例", polities: nil, conflicts: ["sealock"], effect: Leverage(attack: 4, defense: -3, income: 9)),
+        Reform(id: "audit", name: "御史监察", polities: nil, conflicts: [], effect: Leverage(income: -2, stability: 5, corruption: -10)),
+        Reform(id: "conscription", name: "义务兵役", polities: nil, conflicts: ["fubing", "mubing"], effect: Leverage(attack: 8, defense: 6, income: -4, growth: -3)),
     ]
     static func heldReforms(_ r: JS, _ id: String) -> [Reform] {
         guard !r.regimes.isNull, !r.regimes.nations[id].reforms.isNull else { return [] }
@@ -503,7 +691,17 @@ extension NativeEngine {
     public func setReform(_ index: Int, reform: String, on: Bool) -> (ok: Bool, reason: String) {
         let r = run, nations = r.world.nations.asArray
         guard nations.indices.contains(index), let f = Regimes.reforms.first(where: { $0.id == reform }), !r.regimes.isNull else { return (false, "制度不存在。") }
-        Regimes.setReform(r, nations[index].id.asString, f, on: on)
-        return (true, on ? "已颁行\(f.name)" : "已废止\(f.name)")
+        let nid = nations[index].id.asString
+        if on && Regimes.independentReformIds.contains(f.id) {
+            let held = Regimes.heldReforms(r, nid).map(\.id)
+            if held.contains(f.id) { return (true, "\(f.name)已在施行之中。") }
+            let remainingIndep = held.filter { Regimes.independentReformIds.contains($0) && !f.conflicts.contains($0) }.count
+            let cap = Regimes.maxIndependentReforms(r, nid)
+            if remainingIndep >= cap {
+                return (false, "专项制度槽位已满（\(remainingIndep)/\(cap)），请先废止一项现行制度，或提升行政科技／任用贤能扩容。")
+            }
+        }
+        Regimes.setReform(r, nid, f, on: on)
+        return (true, on ? "已颁行\(f.name)（\(f.text)）" : "已废止\(f.name)")
     }
 }

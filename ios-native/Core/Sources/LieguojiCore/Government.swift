@@ -99,11 +99,19 @@ public enum Government {
     }
     public static func reconcileContinuity(_ r: JS) {
         var changed = false
+        let appMode = UnitKinds.enabled && !r.regimes.isNull && r.regimes.enabled.isTruthy
         for n in r.world.nations.asArray {
             let id = n.id.asString, land = r.world.provinces.asArray.filter { $0.controller.asString == id }, ended = r.chronicle.ended.has(id)
             let history = r.chronicle.leaders[id]
             guard !history.isNull, let last = history.asArray.last else { continue }
             if land.isEmpty && !ended {
+                // App 模式修复：战时全境暂被占领但仍握有法理州郡且尚在交战时，暂不提前判定“覆亡”，
+                // 待和约正式割地或全吞后再定存亡，彻底杜绝“战时判亡 → 和谈归还占领地 → 第二XX国”无限死循环。
+                if appMode {
+                    let hasLegalLand = r.world.provinces.asArray.contains { $0.legalOwner.optionalString == id }
+                    let inWar = Wars.activeCampaignCount(r, for: id) > 0
+                    if hasLegalLand && inWar { continue }
+                }
                 closeLeaderRole(r, id, "extinction"); r.chronicle.ended[id] = r.world.day.clone()
                 // Last province removed this tick: a dead state does not keep field armies.
                 // Positive-strength armies are cleared here (DestroyArmy), not left idle and not sent to allies.
@@ -112,17 +120,27 @@ public enum Government {
                 r.people.nations[id].leaderId = .null; r.people.revision = JS(r.people.revision.asNumber + 1); r.kin.lifecycle.vacancies.delete(id); r.kin.revision = JS(r.kin.revision.asNumber + 1); changed = true
                 People.announce(r, kind: "extinction", text: "\(n.name.asString)失去全部领土，国家覆亡", reason: "实控领土归零，结束当前任期；人物、家族、城市与历史保留。", nations: [id], province: nil, people: [last])
             } else if !land.isEmpty && ended {
+                let endedDay = r.chronicle.ended[id].optionalNumber ?? -9999
+                let peaceReturned = appMode && !r.sovereignty.peaceReturn.isNull && !r.sovereignty.peaceReturn[id].isNull
+                let briefOccupation = appMode && (peaceReturned || (r.world.day.asNumber - endedDay) < 360)
+                if peaceReturned { r.sovereignty.peaceReturn.delete(id) }
                 let prevKey = r.sovereignty.reigns[last.id.asString].asInt.description
                 let previous = r.kin.persons[prevKey], polity = r.civilization.nations[id].polity.optionalString ?? "Kingdom"
                 r.chronicle.ended.delete(id)
                 if !previous.isNull && previous.isAlive.asBool && (!["Republic", "Federation"].contains(polity) || previous.age.asInt >= 25) && (polity != "Tribal" || previous.age.asInt >= 12) {
-                    People.appointKnownPerson(r, id, previous, cause: "restoration", requestedName: last.regnalName.optionalString)
-                } else if !previous.isNull { People.resolveKnownSuccession(r, id, previous, cause: "restoration") }
-                r.sovereignty.restorations[id] = JS((r.sovereignty.restorations[id].optionalNumber ?? 0) + 1); r.sovereignty.revision = JS(r.sovereignty.revision.asNumber + 1); changed = true
-                Regimes.retitleRestored(r, id)
-                let reign = history.asArray.last ?? last, active = reign.endedDay.isNull
-                let tail = active ? "，\(reign.name.asString)\(!previous.isNull && r.sovereignty.reigns[reign.id.asString].asInt == previous.id.asInt ? "复位" : "接任")" : "，领袖暂缺"
-                People.announce(r, kind: "restoration", text: "\(n.name.asString)重获领土\(tail)", reason: "保留已知身份，符合本政体年龄资格的在世前任复位；否则按政体选已知候选，没有合法候选则保持空位。", nations: [id], province: land[0].id.asString, people: active ? [reign] : [])
+                    People.appointKnownPerson(r, id, previous, cause: briefOccupation ? "treaty_return" : "restoration", requestedName: last.regnalName.optionalString)
+                } else if !previous.isNull { People.resolveKnownSuccession(r, id, previous, cause: briefOccupation ? "treaty_return" : "restoration") }
+                changed = true
+                if !briefOccupation {
+                    r.sovereignty.restorations[id] = JS((r.sovereignty.restorations[id].optionalNumber ?? 0) + 1); r.sovereignty.revision = JS(r.sovereignty.revision.asNumber + 1)
+                    Regimes.retitleRestored(r, id)
+                    let reign = history.asArray.last ?? last, active = reign.endedDay.isNull
+                    let tail = active ? "，\(reign.name.asString)\(!previous.isNull && r.sovereignty.reigns[reign.id.asString].asInt == previous.id.asInt ? "复位" : "接任")" : "，领袖暂缺"
+                    People.announce(r, kind: "restoration", text: "\(n.name.asString)重获领土\(tail)", reason: "故国亡后经年光复，符合本政体年龄资格的在世前任复位；否则按政体选已知候选，没有合法候选则保持空位。", nations: [id], province: land[0].id.asString, people: active ? [reign] : [])
+                } else {
+                    let reign = history.asArray.last ?? last, active = reign.endedDay.isNull
+                    People.announce(r, kind: "diplomacy", text: "\(n.name.asString)依和约收回失地、重理国政", reason: "战时沦陷州郡随和约归还，国祚延续未断，不另起复国序数。", nations: [id], province: land[0].id.asString, people: active ? [reign] : [])
+                }
             }
         }
         if changed { refreshLeaderCombat(r) }

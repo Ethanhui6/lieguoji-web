@@ -179,12 +179,6 @@ struct MilitarySheet: View {
                     if filter == "overview" { MilitaryOverview(map: map, state: state, select: select, flyTo: flyTo, generals: generals) }
                     if filter == "wars" {
                         if !state.wars.isEmpty {
-                            let warClip = InkVideoStage.pick(from: ["herald-war", "herald-cavalry", "herald-artillery", "herald-knights-joust", "herald-samurai-charge", "herald-ambush", "herald-camp-muster"], seed: state.day / 60 + state.wars.count)
-                            if InkVideoStage.hasVideo(warClip) {
-                                InkVideoStage(clip: warClip, cornerRadius: 12, tint: Theme.seal)
-                                    .frame(height: 70)
-                                    .padding(.horizontal, 16)
-                            }
                             let involved = Set(state.wars.flatMap { [$0.attacker, $0.defender] + $0.participants.map(\.nation) })
                             let frontTroops = state.armies.reduce(0) { involved.contains($1.nation) ? $0 + $1.troops : $0 }
                             let fightingNow = state.armies.filter { $0.status == "fighting" }.count
@@ -220,12 +214,6 @@ struct MilitarySheet: View {
                         }
                     }
                     if filter == "navy" {
-                        let navyClip = InkVideoStage.pick(from: ["herald-galleon-broadside", "herald-naval", "herald-fire-ships", "herald-blockade", "herald-longship-raid", "herald-harbor-trade", "herald-voyage-fleet"], seed: state.day / 60 + (state.fleets?.count ?? 0))
-                        if InkVideoStage.hasVideo(navyClip) {
-                            InkVideoStage(clip: navyClip, cornerRadius: 12, tint: Theme.seal)
-                                .frame(height: 74)
-                                .padding(.horizontal, 16)
-                        }
                         let activeFleets = (state.fleets ?? []).filter { $0.status != "lost" }
                         let totalShips = activeFleets.reduce(0) { $0 + $1.ships }
                         let seaFights = (state.seaBattles ?? []).count

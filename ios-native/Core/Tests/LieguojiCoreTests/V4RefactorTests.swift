@@ -270,4 +270,114 @@ final class V4RefactorTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(afterCount, beforeCount)
         }
     }
+
+    func testV50DecreeSlotsStrategyMutexRestorationFixBalanceAndEditorSculpt() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+        let r = engine.run
+        let n0 = r.world.nations[0].id.asString
+        let n1 = r.world.nations[1].id.asString
+
+        // 1. 专项制度槽位上限：禁止无脑全开所有独立制度
+        let cap = Regimes.maxIndependentReforms(r, n0)
+        XCTAssertGreaterThanOrEqual(cap, 3)
+        XCTAssertLessThanOrEqual(cap, 5)
+        let indepList = ["audit", "minting", "jungong", "knight", "guild", "parliament"]
+        for rId in indepList { _ = engine.setReform(0, reform: rId, on: true) }
+        let heldIndep = Regimes.heldReforms(r, n0).filter { Regimes.independentReformIds.contains($0.id) }
+        XCTAssertLessThanOrEqual(heldIndep.count, cap)
+
+        // 2. 国家大战略严格互斥（绝不叠加旧方针独立制度）且强制 180 日转轨冷却
+        let s1 = engine.nationDecree(0, kind: "strategy:prosperTrade")
+        XCTAssertTrue(s1.ok, s1.reason)
+        // 同战略重复点击应被拦截
+        let sDup = engine.nationDecree(0, kind: "strategy:prosperTrade")
+        XCTAssertFalse(sDup.ok)
+        // 冷却期内切换他战略应被拦截
+        let sBlocked = engine.nationDecree(0, kind: "strategy:expand")
+        XCTAssertFalse(sBlocked.ok)
+        // 越过 180 日冷却期切换「经略扩张」：应自动撤销「富国兴商」的独立制度（如 minting/guild/liangshui），绝不叠加
+        r.world.day = JS(r.world.day.asNumber + 200)
+        let s2 = engine.nationDecree(0, kind: "strategy:expand")
+        XCTAssertTrue(s2.ok, s2.reason)
+        let afterSwitchIds = Set(Regimes.heldReforms(r, n0).map(\.id))
+        XCTAssertFalse(afterSwitchIds.contains("minting"))
+        XCTAssertFalse(afterSwitchIds.contains("guild"))
+        XCTAssertFalse(afterSwitchIds.contains("liangshui"))
+        XCTAssertTrue(afterSwitchIds.contains("jungong"))
+
+        // 3. 四项新增政令均可执行并写入冷却表，nationInfo 正确导出 decreeCooldowns / rulerEval / realmStrain
+        r.finance.nations[n0].gold = JS(5000.0)
+        XCTAssertTrue(engine.nationDecree(0, kind: "imperialInspection").ok)
+        XCTAssertFalse(engine.nationDecree(0, kind: "imperialInspection").ok) // 立刻复点被冷却拦截
+        XCTAssertTrue(engine.nationDecree(0, kind: "warBond").ok)
+        XCTAssertTrue(engine.nationDecree(0, kind: "eliteDrill").ok)
+        XCTAssertTrue(engine.nationDecree(0, kind: "scholarlyEdict").ok)
+        let infoData = try XCTUnwrap(engine.nationInfo(0))
+        let infoJson = try XCTUnwrap(JSONSerialization.jsonObject(with: infoData) as? [String: Any])
+        let cds = try XCTUnwrap(infoJson["decreeCooldowns"] as? [String: Any])
+        XCTAssertNotNil(cds["imperialInspection"])
+        XCTAssertNotNil(infoJson["rulerEval"])
+        XCTAssertNotNil(infoJson["realmStrain"])
+
+        // 4. 彻底根治“战时暂被占领 → 覆亡 → 和谈归还 → 第二XX国”无限循环
+        let n1Provs = r.world.provinces.asArray.filter { $0.controller.asString == n1 }
+        if !n1Provs.isEmpty {
+            // 令 n0 与 n1 交战并暂时占领 n1 全部州（保持 legalOwner == n1）
+            let rel = Wars.relation(r, n0, n1)!
+            rel.status = JS("war"); rel.sinceDay = r.world.day.clone()
+            _ = Wars.register(r, attacker: n0, defender: n1, goals: .array())
+            for p in n1Provs { p.controller = JS(n0) }
+            Government.reconcileContinuity(r)
+            // 仍在交战且保有法理州郡时，绝不可提前判亡！
+            XCTAssertFalse(r.chronicle.ended.has(n1))
+            XCTAssertEqual(Int(r.sovereignty.restorations[n1].optionalNumber ?? 0), 0)
+            // 归还占领地后仍不产生「第二XX国」复国序数
+            for p in n1Provs { p.controller = JS(n1) }
+            Government.reconcileContinuity(r)
+            XCTAssertEqual(Regimes.restorationOrdinal(r, n1), "")
+        }
+
+        // 5. 小国自定义攻防加成（最高 +300%）真正以独立乘法压制强敌，昏君 vs 明君显著改变国势
+        _ = engine.setBonus(0, key: "attack", value: 200)
+        _ = engine.setBonus(1, key: "defense", value: 0)
+        let boostedDmg = Regimes.combatBonus(r, attacker: n0, victim: n1)
+        _ = engine.setBonus(0, key: "attack", value: 0)
+        let plainDmg = Regimes.combatBonus(r, attacker: n0, victim: n1)
+        XCTAssertGreaterThan(boostedDmg, plainDmg * 2.2)
+
+        if let lid = r.people.nations[n0].leaderId.optionalNumber, let ruler = People.person(r, Int(lid)) {
+            ruler.base.military = JS(20); ruler.base.administrative = JS(20); ruler.base.charisma = JS(20)
+            ruler.traits = .array([JS("Incompetent"), JS("Tyrant")])
+            let badEval = Regimes.rulerAssessment(r, n0)
+            XCTAssertEqual(badEval.tier, -2)
+            XCTAssertLessThan(badEval.income, -15)
+
+            ruler.base.military = JS(90); ruler.base.administrative = JS(90); ruler.base.charisma = JS(90)
+            ruler.traits = .array([JS("Visionary"), JS("Tactician")])
+            let goodEval = Regimes.rulerAssessment(r, n0)
+            XCTAssertEqual(goodEval.tier, 2)
+            XCTAssertGreaterThan(goodEval.attack, 15)
+        }
+
+        // 6. 手绘地图「依陆生景」保留海陆轮廓同时生成山脉与内陆湖
+        let worldDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/World")
+        let gridData = try Data(contentsOf: worldDir.appendingPathComponent("grid20k.bin"))
+        let grid = try TerrainGraph(data: gridData)
+        var drawn = [UInt8](repeating: 6, count: grid.points.count)
+        for i in grid.points.indices {
+            let dx = (grid.points[i].0 - grid.width * 0.5) / (grid.width * 0.32)
+            let dy = (grid.points[i].1 - grid.height * 0.5) / (grid.height * 0.34)
+            if dx * dx + dy * dy < 1.0 { drawn[i] = 28 }
+        }
+        let sculpted = PreviewWorld.autoSculptTerrain(graph: grid, heights: drawn, seed: "v5-test", mode: .full)
+        // 原先海格 100% 保持海域，原先陆地诞生出高山 (> 60) 与内陆起伏
+        var seaPreserved = true, maxLandH: UInt8 = 0
+        for i in drawn.indices {
+            if drawn[i] < 20 && sculpted[i] >= 20 { seaPreserved = false }
+            if drawn[i] >= 20 && sculpted[i] > maxLandH { maxLandH = sculpted[i] }
+        }
+        XCTAssertTrue(seaPreserved)
+        XCTAssertGreaterThan(maxLandH, 60)
+    }
 }

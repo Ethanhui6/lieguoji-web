@@ -271,6 +271,29 @@ extension NativeEngine {
             o.strategy = (!nb.isNull ? nb.strategy.optionalString : nil).map { JS($0) } ?? JS("")
             o.autoStrategy = JS(Regimes.isAutoGoverned(r, id))
             o.globalAutoGovern = JS(Regimes.globalAutoGovern(r))
+            let nowDayInfo = r.world.day.asInt
+            let stratUntil = (!nb.isNull ? nb.strategyCooldownUntil.optionalNumber.map(Int.init) : nil) ?? 0
+            o.strategyCooldown = JS(max(0, stratUntil - nowDayInfo))
+            var cdMap = JS.object()
+            if !nb.isNull, !nb.decreeCooldowns.isNull {
+                for (k, v) in nb.decreeCooldowns.objectEntries {
+                    let rem = max(0, Int((v.optionalNumber ?? 0).rounded()) - nowDayInfo)
+                    if rem > 0 { cdMap[k] = JS(rem) }
+                }
+            }
+            o.decreeCooldowns = cdMap
+            let heldIndep = Regimes.heldReforms(r, id).filter { Regimes.independentReformIds.contains($0.id) }.count
+            o.reformSlotsUsed = JS(heldIndep)
+            o.reformSlotsMax = JS(Regimes.maxIndependentReforms(r, id))
+            // 君主治乱评级与疆域行政负荷（供概览页直显明君/昏君与大国过扩/小邦精治实效）
+            let rEval = Regimes.rulerAssessment(r, id)
+            let rObj = JS.object()
+            rObj.tier = JS(rEval.tier); rObj.label = JS(rEval.label); rObj.summary = JS(rEval.summary)
+            o.rulerEval = rObj
+            let strain = Regimes.realmStrain(r, id)
+            let sObj = JS.object()
+            sObj.level = JS(strain.level); sObj.label = JS(strain.label); sObj.summary = JS(strain.summary)
+            o.realmStrain = sObj
             // 文明文化学说与圣地实效
             let doc = CultureDoctrines.of(civ.cultureId.optionalString)
             let docObj = JS.object()

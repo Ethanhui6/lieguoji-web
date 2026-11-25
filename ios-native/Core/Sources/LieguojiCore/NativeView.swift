@@ -453,6 +453,15 @@ extension NativeEngine {
                 let sup = ArmyTactics.supplyStatus(r, army: a, provinceIndex: x.province >= 0 ? x.province : nil)
                 x.supplyState = sup.state.rawValue
                 x.supplyOriginProvince = sup.originProvince
+                let warsNow = Offices.wars(r, nid)
+                let enemyHint = warsNow.count == 1 ? warsNow[0].enemy : nil
+                if let cmd = Regimes.activeCommander(r, nation: nid, enemy: enemyHint) {
+                    if x.commander == nil || x.commander?.isEmpty == true { x.commander = cmd.name }
+                    x.commanderRole = cmd.roleTitle
+                    x.commanderMilitary = cmd.military
+                    x.commanderBonusPct = cmd.combatBonusPct
+                    x.commanderTraits = cmd.traits
+                }
             }
             return x
         }

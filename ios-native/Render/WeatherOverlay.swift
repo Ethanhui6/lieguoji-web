@@ -105,9 +105,9 @@ final class WeatherOverlayView: UIView {
             guard enableParticles else { return .off }
             if hasBlizzard { return .winterBlizzard }
             if hasFlood { return .stormRain }
-            if seasonPhase < 0.14 || seasonPhase >= 0.88 { return .winter }
-            if seasonPhase < 0.39 { return .spring }
-            if seasonPhase < 0.64 { return hasDrought ? .summerDrought : .summer }
+            if seasonPhase < (2.0 / 12.0) || seasonPhase >= (11.0 / 12.0) { return .winter }
+            if seasonPhase < (5.0 / 12.0) { return .spring }
+            if seasonPhase < (8.0 / 12.0) { return hasDrought ? .summerDrought : .summer }
             return .autumn
         }()
 

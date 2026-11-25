@@ -53,8 +53,14 @@ public enum Settlement {
     }
     /// ShouldDecisiveAnnex.
     static func decisiveAnnex(_ ai: PeaceAI, _ w: PeaceWar, _ victor: Int?) -> Bool {
-        guard victor == 0, let attacker = ai.byState[w.primaryAttackerId], let defender = ai.byState[w.primaryDefenderId], !defender.dead else { return false }
-        let current = ai.countLand(defender); if current < 1 { return false }
+        guard victor == 0, let attacker = ai.byState[w.primaryAttackerId], let defender = ai.byState[w.primaryDefenderId] else { return false }
+        let current = ai.countLand(defender)
+        // 全境沦陷并吞（App 模式）：中小国家（原领土 ≤ 6 省）被彻底占领归零时直接确认全境并吞，避免和谈退地陷入反复灭亡复国循环。
+        if UnitKinds.enabled && current == 0 {
+            let initial = ai.initialCounts[w.primaryDefenderId] ?? 0
+            if initial > 0 && initial <= 6 { return true }
+        }
+        guard !defender.dead, current >= 1 else { return false }
         // 并吞残局 (app worlds): what is left of a beaten state goes to a victor at least twice as strong.
         if UnitKinds.enabled, attacker.strength >= f(defender.strength * 2) {
             let initial = ai.initialCounts[w.primaryDefenderId] ?? 0

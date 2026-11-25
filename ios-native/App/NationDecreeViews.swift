@@ -65,11 +65,11 @@ struct NationDecreesTab: View {
     }
 
     static let strategies: [StrategyPreset] = [
-        StrategyPreset(id: "warMobilize",  title: "战时动员", note: "义务兵役 · 军功授爵", glyph: .war, tone: Theme.seal),
-        StrategyPreset(id: "prosperTrade", title: "富国兴商", note: "开海通商 · 工商行会", glyph: .economy, tone: Theme.jade),
-        StrategyPreset(id: "stabilize",    title: "固本维稳", note: "反腐审计 · 均田安民", glyph: .polity, tone: Theme.ink),
-        StrategyPreset(id: "expand",       title: "经略扩张", note: "海陆并进 · 强军拓土", glyph: .military, tone: Theme.seal),
-        StrategyPreset(id: "techFocus",    title: "格物兴科", note: "贤能取士 · 宪政革新", glyph: .chronicle, tone: Theme.jade),
+        StrategyPreset(id: "warMobilize",  title: "战时动员", note: "义务兵役 · 军功授爵 · 御史", glyph: .war, tone: Theme.seal),
+        StrategyPreset(id: "prosperTrade", title: "富国兴商", note: "开海通商 · 两税 · 行会 · 币制", glyph: .economy, tone: Theme.seal),
+        StrategyPreset(id: "stabilize",    title: "固本维稳", note: "科举均田 · 御史 · 大宪章", glyph: .polity, tone: Theme.seal),
+        StrategyPreset(id: "expand",       title: "经略扩张", note: "募兵开海 · 军功 · 航海条例", glyph: .military, tone: Theme.seal),
+        StrategyPreset(id: "techFocus",    title: "格物兴科", note: "科举政教分离 · 议会 · 御史", glyph: .chronicle, tone: Theme.seal),
     ]
 
     enum ReformDomain: String, CaseIterable {
@@ -174,27 +174,31 @@ struct NationDecreesTab: View {
     }
 
     static let decrees: [DecreeItem] = [
-        // 内政基建（6 项）
-        DecreeItem(id: "prosper", category: .domestic, title: "休养生息", badge: "人丁 +3%", note: "存粮 +20% · 国运 +5", glyph: .goods, tone: Theme.jade),
-        DecreeItem(id: "antiCorruption", category: .domestic, title: "整顿吏治", badge: "腐化 −15", note: "肃清贪墨 · 国运 +4", glyph: .polity, tone: Theme.jade),
-        DecreeItem(id: "relief", category: .domestic, title: "开仓赈灾", badge: "耗 180 金", note: "存粮 +30% · 国运 +4", glyph: .economy, tone: Theme.jade),
+        // 内政基建（8 项）
+        DecreeItem(id: "prosper", category: .domestic, title: "休养生息", badge: "人丁 +3%", note: "存粮 +20% · 国运 +5", glyph: .goods, tone: Theme.ink),
+        DecreeItem(id: "antiCorruption", category: .domestic, title: "整顿吏治", badge: "腐化 −15", note: "肃清贪墨 · 国运 +4", glyph: .polity, tone: Theme.ink),
+        DecreeItem(id: "imperialInspection", category: .domestic, title: "巡狩省方", badge: "耗 180 金", note: "震慑豪强 · 腐化 −6 · 国运 +6", glyph: .views, tone: Theme.ink),
+        DecreeItem(id: "relief", category: .domestic, title: "开仓赈灾", badge: "耗 180 金", note: "存粮 +30% · 国运 +4", glyph: .economy, tone: Theme.ink),
         DecreeItem(id: "landSurvey", category: .domestic, title: "清丈田亩", badge: "得半岁税", note: "厘清税籍 · 腐化 −10", glyph: .region, tone: Theme.ink),
-        DecreeItem(id: "roadNetwork", category: .domestic, title: "交通基建", badge: "增丁+商税", note: "驰道驿路 · 人丁+2% · +180金", glyph: .views, tone: Theme.jade),
-        DecreeItem(id: "granary", category: .domestic, title: "战略粮储", badge: "存粮 +45%", note: "广设常平义仓 · 国运 +5", glyph: .goods, tone: Theme.ink),
-        // 军事海运（6 项）
-        DecreeItem(id: "mobilize", category: .military, title: "全国大征兵", badge: "急征 3 军", note: "重镇紧急编练 · 国运 −4", glyph: .military, tone: Theme.seal),
-        DecreeItem(id: "rewardArmies", category: .military, title: "犒赏三军", badge: "士气 +35", note: "全军振奋 · 军粮补满", glyph: .command, tone: Theme.seal),
-        DecreeItem(id: "fortifyBorder", category: .military, title: "加固边防", badge: "城防 +1", note: "边塞至多 12 处修城", glyph: .nation, tone: Theme.ink),
-        DecreeItem(id: "armsUpgrade", category: .military, title: "军械改良", badge: "耗 260 金", note: "士气 +20 · 全军整补", glyph: .war, tone: Theme.seal),
-        DecreeItem(id: "navalDockyard", category: .military, title: "海运船坞", badge: "运力 +2", note: "扩建跨海船队 · 舰体全修", glyph: .anchor, tone: Theme.jade),
-        DecreeItem(id: "techAcademy", category: .military, title: "格物兴科", badge: "军政 +4", note: "科研革新 · 全军士气 +15", glyph: .chronicle, tone: Theme.seal),
-        // 文教外交（6 项）
+        DecreeItem(id: "roadNetwork", category: .domestic, title: "交通基建", badge: "耗 240 金", note: "驰道驿路 · 人丁+2% · 回流+180金", glyph: .views, tone: Theme.ink),
+        DecreeItem(id: "granary", category: .domestic, title: "战略粮储", badge: "耗 180 金", note: "常平义仓 · 存粮 +45% · 国运 +5", glyph: .goods, tone: Theme.ink),
+        DecreeItem(id: "warBond", category: .domestic, title: "举债筹饷", badge: "国运 −5", note: "急筹 2.2 月军资 · 代价：腐化 +6", glyph: .economy, tone: Theme.seal),
+        // 军事海运（7 项）
+        DecreeItem(id: "mobilize", category: .military, title: "全国大征兵", badge: "国运 −4", note: "重镇紧急编练 3 支新军", glyph: .military, tone: Theme.seal),
+        DecreeItem(id: "eliteDrill", category: .military, title: "大阅禁军", badge: "耗 220 金", note: "全军历练 +14 · 士气 +25 · 补满", glyph: .command, tone: Theme.seal),
+        DecreeItem(id: "rewardArmies", category: .military, title: "犒赏三军", badge: "耗 200 金", note: "全军士气 +35 · 军粮补满", glyph: .command, tone: Theme.ink),
+        DecreeItem(id: "fortifyBorder", category: .military, title: "加固边防", badge: "城防 +1", note: "边塞至多 12 处修城筑垒", glyph: .nation, tone: Theme.ink),
+        DecreeItem(id: "armsUpgrade", category: .military, title: "军械改良", badge: "耗 260 金", note: "全军整补 +6% · 士气 +20", glyph: .war, tone: Theme.seal),
+        DecreeItem(id: "navalDockyard", category: .military, title: "海运船坞", badge: "耗 240 金", note: "跨海运力 +2 · 舰体全修", glyph: .anchor, tone: Theme.ink),
+        DecreeItem(id: "techAcademy", category: .military, title: "格物兴科", badge: "耗 260 金", note: "中枢军政 +4 · 全军士气 +15", glyph: .chronicle, tone: Theme.ink),
+        // 文教外交（7 项）
         DecreeItem(id: "assimilateCulture", category: .culture, title: "推行文教", badge: "教化归心", note: "境内城池归入主体文化", glyph: .culture, tone: Theme.ink),
         DecreeItem(id: "convertFaith", category: .culture, title: "统一国教", badge: "礼法一统", note: "全境归奉主体信仰", glyph: .religion, tone: Theme.ink),
-        DecreeItem(id: "amnesty", category: .culture, title: "大赦安抚", badge: "情谊 +20", note: "缓和国内各派系关系", glyph: .house, tone: Theme.jade),
-        DecreeItem(id: "academy", category: .culture, title: "兴办国立院", badge: "耗 200 金", note: "能力精进 · 腐化 −4 · 国运 +3", glyph: .chronicle, tone: Theme.jade),
-        DecreeItem(id: "envoyGoodwill", category: .culture, title: "遣使修好", badge: "好感 +18", note: "走访非交战邻国 · 缓和孤立", glyph: .alliance, tone: Theme.jade),
-        DecreeItem(id: "taxRelief", category: .culture, title: "减赋安民", badge: "国运 +6", note: "民生纾困 · 腐化 −10", glyph: .peace, tone: Theme.jade),
+        DecreeItem(id: "amnesty", category: .culture, title: "大赦安抚", badge: "情谊 +20", note: "缓和国内各派系关系", glyph: .house, tone: Theme.ink),
+        DecreeItem(id: "academy", category: .culture, title: "兴办国立院", badge: "耗 200 金", note: "中枢才干精进 · 腐化 −4 · 国运 +3", glyph: .chronicle, tone: Theme.ink),
+        DecreeItem(id: "scholarlyEdict", category: .culture, title: "开馆修史", badge: "耗 160 金", note: "国际信誉 +8 · 国运 +5 · 腐化 −4", glyph: .chronicle, tone: Theme.ink),
+        DecreeItem(id: "envoyGoodwill", category: .culture, title: "遣使修好", badge: "耗 200 金", note: "走访非交战邻国 · 好感 +18", glyph: .alliance, tone: Theme.ink),
+        DecreeItem(id: "taxRelief", category: .culture, title: "减赋安民", badge: "耗 160 金", note: "腐化 −10 · 国运 +6 · 安定回升", glyph: .peace, tone: Theme.ink),
     ]
 
     var body: some View {
@@ -296,33 +300,47 @@ struct NationDecreesTab: View {
             }
             .padding(.horizontal, Theme.Layout.pageInset)
 
-            // 2. 一键战略路线（精简横向单行细框，去冗余第二个托管开关）
+            // 2. 唯一互斥国家大战略（切换时自动替换旧专项组合，不可叠加，180 日转轨冷却）
+            let stratCD = info.strategyCooldown ?? 0
             VStack(alignment: .leading, spacing: 10) {
-                Text("战略方针预设").font(Theme.sans(12, weight: .medium)).tracking(1.0).foregroundStyle(Theme.ink2)
-                    .padding(.horizontal, Theme.Layout.pageInset)
+                HStack(alignment: .firstTextBaseline) {
+                    Text("国家大战略 · 唯一互斥").font(Theme.sans(12, weight: .medium)).tracking(1.0).foregroundStyle(Theme.ink2)
+                    Spacer()
+                    Text(stratCD > 0 ? "转轨稳固中 · 余 \(stratCD) 日" : "切换将自动更替专项组合")
+                        .font(Theme.sans(11.5)).foregroundStyle(stratCD > 0 ? Theme.seal : Theme.ink2).monospacedDigit()
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(Self.strategies) { sp in
                             let active = info.strategy == sp.id
+                            let locked = active || stratCD > 0 || busy
                             Button {
+                                guard !locked else { return }
                                 GameFeel.shared.tap()
-                                runDecreeKind("strategy:\(sp.id)", fallback: "已启用「\(sp.title)」方案")
+                                runDecreeKind("strategy:\(sp.id)", fallback: "已切轨「\(sp.title)」方案")
                             } label: {
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(sp.title)
-                                        .font(Theme.sans(13.5, weight: active ? .semibold : .medium))
-                                        .foregroundStyle(active ? Theme.paperLight : Theme.ink)
+                                    HStack(spacing: 5) {
+                                        Text(sp.title)
+                                            .font(Theme.sans(13.5, weight: .regular))
+                                            .foregroundStyle(active ? Theme.paperLight : Theme.ink)
+                                        if active {
+                                            Text("奉行中").font(Theme.sans(10.5)).foregroundStyle(Theme.paperLight.opacity(0.88))
+                                        }
+                                    }
                                     Text(sp.note)
                                         .font(Theme.sans(11.5))
                                         .foregroundStyle(active ? Theme.paperLight.opacity(0.82) : Theme.ink2)
                                         .lineLimit(1)
                                 }
                                 .padding(.horizontal, 13).padding(.vertical, 9)
-                                .background(active ? Theme.seal : Theme.wash.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(active ? Color.clear : Theme.hairline, lineWidth: 0.65))
+                                .background(active ? Theme.seal : Theme.paperLight.opacity(0.85), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(active ? Color(red: 0.97, green: 0.89, blue: 0.72).opacity(0.38) : Theme.hairline, lineWidth: 0.65).padding(active ? 2 : 0))
+                                .opacity(!active && stratCD > 0 ? 0.50 : 1.0)
                             }
                             .buttonStyle(PressStyle())
-                            .disabled(busy)
+                            .disabled(locked)
                         }
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)
@@ -378,12 +396,20 @@ struct NationDecreesTab: View {
                     ? list.filter { !groupedIds.contains($0.id) && !specIds.contains($0.id) }
                     : []
                 let independents = specRows + extraRows
+                let slotsUsed = info.reformSlotsUsed ?? activeRows.filter { Regimes.independentReformIds.contains($0.id) }.count
+                let slotsMax = info.reformSlotsMax ?? 3
                 if !independents.isEmpty {
-                    SectionLabel("专项制度 · 独立开关")
+                    HStack(alignment: .firstTextBaseline) {
+                        SectionLabel("专项制度 · 朝纲槽位", inset: false)
+                        Spacer()
+                        Text("已行 \(slotsUsed)/\(slotsMax) 槽\(slotsUsed >= slotsMax ? "（已满）" : "")")
+                            .font(Theme.sans(12)).foregroundStyle(slotsUsed >= slotsMax ? Theme.seal : Theme.ink2).monospacedDigit()
+                    }
+                    .padding(.horizontal, Theme.Layout.sectionInset)
                     Group2 {
                         LazyVStack(spacing: 0) {
                             ForEach(Array(independents.enumerated()), id: \.element.id) { idx, r in
-                                independentSwitchRow(r)
+                                independentSwitchRow(r, slotsFull: slotsUsed >= slotsMax)
                                 if idx < independents.count - 1 { Divider2() }
                             }
                         }
@@ -431,12 +457,11 @@ struct NationDecreesTab: View {
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity, minHeight: 84, alignment: .topLeading)
-                        .background(r.on ? Theme.seal.opacity(0.06) : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                        .background(r.on ? Theme.seal.opacity(0.065) : Theme.paperLight.opacity(0.84), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                                .stroke(r.on ? Theme.seal : Theme.line, lineWidth: r.on ? 1.2 : 0.9)
+                                .stroke(r.on ? Theme.seal.opacity(0.75) : Theme.hairline, lineWidth: r.on ? 1.0 : 0.65)
                         )
-                        .shadow(color: Theme.ink.opacity(0.06), radius: 0, y: 1.5)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressStyle())
@@ -448,12 +473,19 @@ struct NationDecreesTab: View {
         .padding(.horizontal, Theme.Layout.pageInset)
     }
 
-    private func independentSwitchRow(_ r: NationInfo.ReformRow) -> some View {
+    private func independentSwitchRow(_ r: NationInfo.ReformRow, slotsFull: Bool) -> some View {
         let chips = Self.effectChips(for: r.id)
-        return Button { toggleReform(r) } label: {
+        let blocked = !r.on && slotsFull
+        return Button {
+            guard !blocked else {
+                onToast("专项制度槽位已满，请先废止一项现行制度或提升行政科技扩容。")
+                return
+            }
+            toggleReform(r)
+        } label: {
             HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(r.name).font(Theme.sans(14.5, weight: r.on ? .semibold : .regular)).foregroundStyle(r.on ? Theme.seal : Theme.ink)
+                    Text(r.name).font(Theme.sans(14.5, weight: .regular)).foregroundStyle(r.on ? Theme.seal : (blocked ? Theme.ink2 : Theme.ink))
                     if !chips.isEmpty {
                         Text(chips.prefix(3).map(\.text).joined(separator: "  ·  "))
                             .font(Theme.sans(12)).foregroundStyle(Theme.ink2).monospacedDigit().lineLimit(1)
@@ -462,18 +494,26 @@ struct NationDecreesTab: View {
                     }
                 }
                 Spacer(minLength: 8)
-                ZStack(alignment: r.on ? .trailing : .leading) {
-                    Capsule()
-                        .fill(r.on ? Theme.seal : Theme.ink.opacity(0.16))
-                        .frame(width: 42, height: 24)
-                    Circle()
-                        .fill(Theme.paperLight)
-                        .frame(width: 20, height: 20)
-                        .padding(2)
+                if blocked {
+                    Text("槽满")
+                        .font(Theme.sans(11.5)).foregroundStyle(Theme.ink2)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Theme.wash.opacity(0.7), in: Capsule())
+                } else {
+                    ZStack(alignment: r.on ? .trailing : .leading) {
+                        Capsule()
+                            .fill(r.on ? Theme.seal : Theme.ink.opacity(0.15))
+                            .frame(width: 42, height: 24)
+                        Circle()
+                            .fill(Theme.paperLight)
+                            .frame(width: 20, height: 20)
+                            .padding(2)
+                    }
+                    .animation(Motion.tap, value: r.on)
                 }
-                .animation(Motion.tap, value: r.on)
             }
-            .padding(.horizontal, 4).padding(.vertical, 14)
+            .padding(.horizontal, 4).padding(.vertical, 13)
+            .opacity(blocked ? 0.56 : 1.0)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -484,9 +524,10 @@ struct NationDecreesTab: View {
     private var decreesGridSection: some View {
         let items = Self.decrees.filter { $0.category == category }
         let lex = LocalizationEngine.lexicon(culture: info.culture, polity: info.polity, style: info.style)
+        let cds = info.decreeCooldowns ?? [:]
         VStack(alignment: .leading, spacing: 8) {
             SectionLabel("\(lex.decreePrefix)\(category.rawValue)")
-            Text("政令施行后须经休养期（90–180 日）方可再颁。")
+            Text("每项政令均有实质国库或国运代价，颁行后进入 90–180 日休养冷却期，不可连点刷取。")
                 .font(Theme.sans(12)).foregroundStyle(Theme.ink2)
                 .padding(.horizontal, Theme.Layout.sectionInset)
                 .padding(.bottom, 4)
@@ -494,14 +535,17 @@ struct NationDecreesTab: View {
             VStack(spacing: 0) {
                 EditorialDivider()
                 ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
+                    let remDays = cds[item.id] ?? 0
+                    let onCooldown = remDays > 0
                     let isCostly = item.badge.contains("−") || item.badge.contains("耗") || item.note.contains("−")
                     EditorialActionRow(
                         title: item.title,
                         detail: item.note,
-                        consequence: item.badge,
+                        consequence: onCooldown ? "休养余 \(remDays) 日" : item.badge,
                         icon: Self.phosphorFor(item.glyph),
-                        accentConsequence: isCostly,
-                        disabled: busy
+                        actionLabel: onCooldown ? "冷却中" : "颁行",
+                        accentConsequence: isCostly && !onCooldown,
+                        disabled: busy || onCooldown
                     ) {
                         issue(item)
                     }

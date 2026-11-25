@@ -10,6 +10,8 @@ public enum NativeCreation {
         public var precipitation: Double = 80, temperatureOffset: Double = 0, north: Double = 0.9, south: Double = -0.9
         /// 自绘地图的高程（每个原作格网格一个）；nil 用模板生成。
         public var heights: [UInt8]? = nil
+        /// 手绘州郡的格网归属（每格一个州编号，-1 为海/未划）；nil 时由系统自动按山河划分州郡。
+        public var customProvinces: [Int]? = nil
         /// 划定列国：各国首府辖区与每个辖区的所属国（序号）。
         public var layout: (seeds: [Int], owners: [Int])? = nil
         /// 有机自然疆界（移动端新世界默认开启，按山脊河谷阻力分疆；核心单测保持 false 以逐位对照网页基准）。
@@ -53,12 +55,12 @@ public enum NativeCreation {
         progress?("people")
         // 陆地太碎（岛屿、湖泊）放不下所选州数时，州数按网页的步长增加直到放得下。
         var found: (run: JS, travel: CreationGeography.Graph, sea: SeaGraph)?
-        // App 新世界（organicBorders == true）清理极小孤立礁石，避免 80 城模板被 1%–3% 边角微岛占掉名额（手绘自定布局与网页基准测试保持原地形不变）。
-        let effectiveHeights = (o.layout == nil && o.organicBorders) ? Regions.cleanTinyIslets(doc, elevations: heights, cities: cityCount) : heights
+        // App 新世界（organicBorders == true）清理极小孤立礁石，避免 80 城模板被 1%–3% 边角微岛占掉名额（手绘自定布局/手绘州郡与网页基准测试保持原地形不变）。
+        let effectiveHeights = (o.layout == nil && o.customProvinces == nil && o.organicBorders) ? Regions.cleanTinyIslets(doc, elevations: heights, cities: cityCount) : heights
         while found == nil {
             found = try opening(o, doc: doc, heights: effectiveHeights, count: count, cityCount: cityCount, enabled: enabled, worldId: worldId, runId: runId)
             if found == nil {
-                if o.layout != nil || cityCount >= 480 { throw CreationError.message("这片陆地放不下 \(cityCount) 个州郡，请编辑陆地或减少州郡。") }
+                if o.layout != nil || o.customProvinces != nil || cityCount >= 480 { throw CreationError.message("这片陆地放不下 \(cityCount) 个州郡，请编辑陆地或减少州郡。") }
                 cityCount = raised(cityCount)
             }
         }
@@ -85,9 +87,15 @@ public enum NativeCreation {
 
     /// createCivilizationWorld47 + attachGovernment47（含开局军队位置）。nil：这片陆地放不下 `cityCount` 个州。
     static func opening(_ o: Options, doc: TerrainDocument, heights: [Int], count: Int, cityCount: Int, enabled: [String], worldId: String, runId: String) throws -> (run: JS, travel: CreationGeography.Graph, sea: SeaGraph)? {
-        guard let part = Regions.partition(doc, elevations: heights, cities: cityCount, balanceAreas: o.layout == nil && o.organicBorders) else { return nil }
-        let regions = part.regions
-        let layout = o.layout ?? (o.organicBorders ? Opening.organicLayout(regions, count: count, seed: o.seed) : Opening.layout(regions, count: count))
+        let regions: [Regions.Region]
+        if let customCells = o.customProvinces, let customPart = Regions.fromCellAssignment(doc, elevations: heights, cellProvinces: customCells) {
+            regions = customPart.regions
+        } else {
+            guard let part = Regions.partition(doc, elevations: heights, cities: cityCount, balanceAreas: o.layout == nil && o.organicBorders) else { return nil }
+            regions = part.regions
+        }
+        let effCount = max(2, min(count, regions.count))
+        let layout = o.layout ?? (o.organicBorders ? Opening.organicLayout(regions, count: effCount, seed: o.seed) : Opening.layout(regions, count: effCount))
         if let l = o.layout, l.owners.count != regions.count || l.seeds.contains(where: { $0 < 0 || $0 >= regions.count }) { throw CreationError.message("国家领土布局无效，原稿未改动。") }
         guard let r = Creation.base(regions: regions, seeds: layout.seeds, owners: layout.owners, width: doc.width, height: doc.height, worldId: worldId, runId: runId,
                                     relations: "peace", mode: o.naming == "culture-generated" ? "culture-generated" : "historical-names", enabled: enabled, cultures: Founding.cultures)

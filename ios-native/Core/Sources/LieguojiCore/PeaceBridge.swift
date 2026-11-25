@@ -185,6 +185,26 @@ public enum PeaceBridge {
                 for st in w.states { let fin = r.finance.nations[nation(r, st.id)]; if fin.gold.asNumber != st.gold { fin.gold = JS(st.gold) } }
                 if restoreOccupations {
                     confirmed = confirmOccupiedCessions(r, war: terms, result: result)
+                    // App 模式：若防守主国全境沦陷（实控归零）且总法理州郡 ≤ 6 省、战败或崩溃，由占领方正式兼并全境，
+                    // 杜绝“全境占领 → 和谈归还占领地 → 第二/第三XX国循环”。
+                    if UnitKinds.enabled && (result.winnerSide == 0 || reason == 2) {
+                        let defNation = nation(r, terms.primaryDefenderId)
+                        let defControlled = r.world.provinces.asArray.filter { $0.controller.asString == defNation }.count
+                        let defLegal = r.world.provinces.asArray.filter { $0.legalOwner.optionalString == defNation }
+                        if defControlled == 0 && !defLegal.isEmpty && defLegal.count <= 6 {
+                            let attackers = Settlement.sideIDs(terms, 0)
+                            for p in defLegal {
+                                let ctrl = p.controller.asString
+                                guard ctrl != defNation, let cid = r.people.nations[ctrl].id.optionalNumber, attackers.contains(Int(cid)) else { continue }
+                                let pid = Wars.provinceNumber(s, p.id.asString)
+                                p.legalOwner = p.controller.clone()
+                                if pid > 0 {
+                                    stripOffice(r, pid)
+                                    confirmed.append(.array([JS(pid), JS(Int(cid))]))
+                                }
+                            }
+                        }
+                    }
                 } else {
                     for pair in c.initialOwners.asArray {
                         let pid = pair[0].asInt, original = pair[1].asInt
@@ -198,16 +218,18 @@ public enum PeaceBridge {
             }
         }
         var endedEnemies = [String: Set<String>]()
+        let truceDays: Double = (UnitKinds.enabled && r.regimes.enabled.isTruthy) ? 180 : 10
         for (a, b) in Wars.opposedPairs(s, c) {
             if s.campaigns.asArray.contains(where: { $0 !== c && $0.endedTick.isNull && Wars.coversPair($0, s, a, b) }) { continue }
             let rel = Wars.relation(r, a, b)!
-            rel.status = JS("peace"); rel.sinceDay = r.world.day.clone(); rel.truceUntilDay = JS(r.world.day.asNumber + 10)
+            rel.status = JS("peace"); rel.sinceDay = r.world.day.clone(); rel.truceUntilDay = JS(r.world.day.asNumber + truceDays)
             if restoreOccupations {
                 endedEnemies[a, default: []].insert(b)
                 endedEnemies[b, default: []].insert(a)
             }
         }
         var restored = 0
+        var restoredNations = Set<String>()
         if !endedEnemies.isEmpty {
             let livingRegistry = Set(r.world.nations.asArray.map(\.id.asString))
             for p in r.world.provinces.asArray {
@@ -220,6 +242,11 @@ public enum PeaceBridge {
                 p.controller = JS(owner)
                 stripOffice(r, Wars.provinceNumber(s, id))
                 restored += 1
+                restoredNations.insert(owner)
+            }
+            if UnitKinds.enabled && !restoredNations.isEmpty && !r.sovereignty.isNull {
+                if r.sovereignty.peaceReturn.isNull { r.sovereignty.peaceReturn = JS.object() }
+                for nid in restoredNations { r.sovereignty.peaceReturn[nid] = r.world.day.clone() }
             }
         }
         if complete {

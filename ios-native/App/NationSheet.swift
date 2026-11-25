@@ -87,6 +87,14 @@ struct NationInfo: Decodable {
     }
     var activeChain: ActiveChain? = nil
     var strategy: String? = nil
+    var strategyCooldown: Int? = nil
+    var decreeCooldowns: [String: Int]? = nil
+    var reformSlotsUsed: Int? = nil
+    var reformSlotsMax: Int? = nil
+    struct RulerEvalInfo: Decodable { let tier: Int; let label: String; let summary: String }
+    struct RealmStrainInfo: Decodable { let level: Int; let label: String; let summary: String }
+    var rulerEval: RulerEvalInfo? = nil
+    var realmStrain: RealmStrainInfo? = nil
     var autoStrategy: Bool? = nil
     var globalAutoGovern: Bool? = nil
     struct CultureDoctrineInfo: Decodable { let title: String; let summary: String; let effectLine: String }
@@ -569,7 +577,7 @@ struct NationSheet: View {
 
                     // 触感纸框快捷指令条：每枚均具备清晰描边与按压底缘，一眼可辨绝不与正文混淆
                     HStack(spacing: 8) {
-                        EditorialTactileButton(title: "国力明细", icon: .info, compact: true, fullWidth: true) {
+                        EditorialTactileButton(title: "国力", icon: .info, compact: true, fullWidth: true) {
                             showingBreakdown = true
                         }
                         if info.alive {
@@ -586,6 +594,35 @@ struct NationSheet: View {
                                 placeArmy(nation)
                             }
                         }
+                    }
+
+                    // 君主治乱与疆域负荷实时脉象（明君/昏君、小邦精治/帝国过扩真实数值直显，直铺宣纸零套娃）
+                    if info.rulerEval != nil || info.realmStrain != nil {
+                        VStack(alignment: .leading, spacing: 6) {
+                            if let re = info.rulerEval, !re.summary.isEmpty {
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Text(re.label)
+                                        .font(Theme.label)
+                                        .foregroundStyle(re.tier < 0 ? Theme.seal : Theme.ink)
+                                    Text(re.summary.replacingOccurrences(of: "\(re.label) · ", with: ""))
+                                        .font(Theme.caption)
+                                        .foregroundStyle(re.tier < 0 ? Theme.seal.opacity(0.88) : Theme.ink2)
+                                        .lineLimit(2)
+                                }
+                            }
+                            if let st = info.realmStrain, !st.summary.isEmpty {
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Text(st.label)
+                                        .font(Theme.label)
+                                        .foregroundStyle(st.level > 0 ? Theme.seal : Theme.ink)
+                                    Text(st.summary.replacingOccurrences(of: "\(st.label) · ", with: ""))
+                                        .font(Theme.caption)
+                                        .foregroundStyle(st.level > 0 ? Theme.seal.opacity(0.88) : Theme.ink2)
+                                        .lineLimit(2)
+                                }
+                            }
+                        }
+                        .padding(.top, 2)
                     }
                     EditorialDivider()
                 }
@@ -2442,8 +2479,8 @@ struct NationSheet: View {
                 VStack(spacing: 0) {
                     ForEach(Array(Self.bonuses.enumerated()), id: \.offset) { i, b in
                         EditRow(label: b.label, value: Self.percent(info.bonus?[b.key], zero: "无") + " · " + b.note) {
-                            // 引擎自己的范围（Regimes.setBonus），滑条正好覆盖它。
-                            let r = b.key == "income" ? "-50–200" : b.key == "growth" ? "-20–50" : "-50–100"
+                            // 引擎自己的范围（Regimes.setBonus），滑条正好覆盖它（支持小国最高 +300% 强兵富国加成）。
+                            let r = b.key == "income" ? "-50–300" : b.key == "growth" ? "-20–100" : b.key == "speed" ? "-50–150" : "-50–300"
                             numberEdit = NumberEdit(title: b.label + "（\(r)%）", unit: "%", value: info.bonus?[b.key] ?? 0) { v in await model.setBonus(nation, key: b.key, value: v) }
                         }
                         if i < Self.bonuses.count - 1 { Divider2() }

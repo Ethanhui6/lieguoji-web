@@ -23,9 +23,9 @@ extension NativeEngine {
         // 玩家政令后端防无限连点冷却闸门（纯可选 JS 字段，100% 兼容既有旧存档；策略切换/自动托管/议案/权力调衡走各自逻辑不在此锁）
         let decreeCooldownDays: Int = {
             switch kind {
-            case "mobilize", "landSurvey": return 180
-            case "prosper", "rewardArmies", "antiCorruption", "relief", "roadNetwork", "granary", "fortifyBorder", "armsUpgrade", "navalDockyard", "techAcademy": return 120
-            case "assimilateCulture", "convertFaith", "amnesty", "academy", "envoyGoodwill", "taxRelief": return 90
+            case "mobilize", "landSurvey", "warBond": return 180
+            case "prosper", "rewardArmies", "antiCorruption", "relief", "roadNetwork", "granary", "fortifyBorder", "armsUpgrade", "navalDockyard", "techAcademy", "imperialInspection", "eliteDrill": return 120
+            case "assimilateCulture", "convertFaith", "amnesty", "academy", "envoyGoodwill", "taxRelief", "scholarlyEdict": return 90
             default: return 0
             }
         }()
@@ -400,34 +400,113 @@ extension NativeEngine {
                             nations: [id], province: nil)
             return (true, "减赋安民完成：腐化 −10，国运 +6。")
 
+        case "imperialInspection":
+            // 巡狩省方：耗 180 金，整饬地方吏治、震慑豪强并提振国运 +6、腐化 -6。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(180, (gold * 0.12).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 6))
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 6)) }
+            markDecreeCooldown()
+            People.announce(r, kind: "politics", text: "\(stateName)巡狩四境、省察民瘼",
+                            reason: "中枢亲巡诸\(lex.adminUnit)、考核官吏并抚慰黎庶：腐化 −6，国运 +6，地方动乱暗流随之平息。",
+                            nations: [id], province: nil)
+            return (true, "巡狩省方完成：腐化 −6，国运 +6，地方安定大增。")
+
+        case "warBond":
+            // 举债筹饷 / 紧急军债：立筹 2.2 月军资入库，但腐化 +6、国运 -5（饮鸩止渴之策）。
+            let monthly = max(80, fin.goldPerMonth.optionalNumber ?? 100)
+            let raised = (monthly * 2.2).rounded()
+            if !fin.isNull { fin.gold = JS((fin.gold.optionalNumber ?? 0) + raised) }
+            Finance.setCorruption(r, id, min(100, Finance.corruption(r, id) + 6))
+            if !destinyRow.isNull { destinyRow.destiny = JS(max(0, (destinyRow.destiny.optionalNumber ?? 50) - 5)) }
+            markDecreeCooldown()
+            People.announce(r, kind: "politics", text: "\(stateName)发行紧急军饷公债",
+                            reason: "为解燃眉军费向商绅急筹 \(Int(raised)) 金入库，然苛派折损民望：国运 −5，腐化 +6。",
+                            nations: [id], province: nil)
+            return (true, "紧急筹饷 +\(Int(raised)) 金，代价：腐化 +6，国运 −5。")
+
+        case "eliteDrill":
+            // 大阅禁军：耗 220 金，全军精锐历练 +14、士气 +25、补给补满，整肃军纪。
+            let armies = r.world.armies.asArray.filter { $0.nationId.optionalString == id && $0.troops.asNumber > 0 && $0.status.asString != "destroyed" }
+            guard !armies.isEmpty else { return (false, "该国当前暂无现役陆军可大阅。") }
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(220, (gold * 0.14).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            if r.regimes.armyXP.isNull { r.regimes.armyXP = JS.object() }
+            for a in armies {
+                let aid = a.id.asString
+                let xp = r.regimes.armyXP[aid].optionalNumber ?? 0
+                r.regimes.armyXP[aid] = JS(min(100, xp + 14))
+                a.morale = JS(min(100, (a.morale.optionalNumber ?? 60) + 25))
+                a.supplies = JS(100)
+            }
+            markDecreeCooldown()
+            People.announce(r, kind: "event", text: "\(stateName)秋狝大阅、整肃三军",
+                            reason: "拨资 \(Int(cost)) 金校阅 \(armies.count) 支常备军、演练阵法：全军历练 +14、士气 +25。",
+                            nations: [id], province: nil)
+            return (true, "大阅三军完成：\(armies.count) 支军队历练 +14，士气 +25。")
+
+        case "scholarlyEdict":
+            // 开馆修史：耗 160 金，彰明文德与法统：国际信誉 +8、国运 +5、腐化 -4。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, min(160, (gold * 0.10).rounded()))
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            WorldDepth.adjustReputation(r, nation: id, delta: 8)
+            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 4))
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 5)) }
+            markDecreeCooldown()
+            People.announce(r, kind: "culture", text: "\(stateName)开馆修史、广布声教",
+                            reason: "敕命儒臣与史官编纂典籍、宣示仁政：国际信誉 +8，国运 +5，腐化 −4。",
+                            nations: [id], province: nil)
+            return (true, "开馆修史完成：国际信誉 +8，国运 +5，腐化 −4。")
+
         case let k where k.hasPrefix("strategy:"):
-            // 一键智能国策预设（自动匹配互斥国策组合与权力侧重）
+            // 唯一互斥大战略方案（切换时自动清空其他战略遗留的独立专项制度，绝不允许逐个点击无限叠加，且带 180 日转轨冷却）
             let preset = String(k.dropFirst("strategy:".count))
             let nb = Regimes.book(r, id)
             let spec: (title: String, reforms: [String], bias: String)? = {
                 switch preset {
-                case "warMobilize":  return ("战时动员", ["conscription", "jungong", "junxian", "audit"], "military")
+                case "warMobilize":  return ("战时动员", ["conscription", "junxian", "jungong", "audit"], "military")
                 case "prosperTrade": return ("富国兴商", ["seaopen", "free", "liangshui", "guild", "minting"], "council")
                 case "stabilize":    return ("固本维稳", ["keju", "juntian", "audit", "charter"], "crown")
-                case "expand":       return ("经略扩张", ["mubing", "jungong", "navyAct", "seaopen"], "military")
-                case "techFocus":    return ("格物兴科", ["keju", "secular", "parliament", "free", "audit"], "council")
+                case "expand":       return ("经略扩张", ["mubing", "seaopen", "jungong", "navyAct"], "military")
+                case "techFocus":    return ("格物兴科", ["keju", "secular", "free", "parliament", "audit"], "council")
                 default: return nil
                 }
             }()
             guard let spec else { return (false, "未知战略预设：\(preset)。") }
+            if nb.strategy.optionalString == preset {
+                return (false, "本国当前正奉行「\(spec.title)」大战略，无需重复施行。")
+            }
+            let stratUntil = nb.strategyCooldownUntil.optionalNumber.map(Int.init) ?? 0
+            if nowDayCd < stratUntil {
+                return (false, "国家大战略尚在转轨稳固期，请待 \(stratUntil - nowDayCd) 日后再议改弦更张。")
+            }
+            // 先废止不属于新战略的旧专项制度，彻底杜绝「五个战略挨个点一遍叠加全图 buff」漏洞！
+            let targetSet = Set(spec.reforms)
+            for held in Regimes.heldReforms(r, id) where Regimes.independentReformIds.contains(held.id) && !targetSet.contains(held.id) {
+                Regimes.setReform(r, id, held, on: false)
+            }
             nb.strategy = JS(preset)
             nb.powerBias = JS(spec.bias)
+            nb.strategyCooldownUntil = JS(nowDayCd + 180)
             var applied = [String]()
+            let cap = Regimes.maxIndependentReforms(r, id)
+            var usedIndep = 0
             for rid in spec.reforms {
-                if let f = Regimes.reforms.first(where: { $0.id == rid }) {
-                    Regimes.setReform(r, id, f, on: true)
-                    applied.append(f.name)
+                guard let f = Regimes.reforms.first(where: { $0.id == rid }) else { continue }
+                if Regimes.independentReformIds.contains(rid) {
+                    if usedIndep >= cap { continue }
+                    usedIndep += 1
                 }
+                Regimes.setReform(r, id, f, on: true)
+                applied.append(f.name)
             }
-            People.recordHistory(r, kind: "reform", text: "\(stateName)确立「\(spec.title)」大战略",
-                                 reason: "统筹调配长期国策（\(applied.joined(separator: "、"))）并校准权力重心。",
+            People.recordHistory(r, kind: "reform", text: "\(stateName)改定「\(spec.title)」大战略",
+                                 reason: "废旧立新、统筹颁行（\(applied.joined(separator: "、"))）并重塑朝堂权力重心（180 日内不可再易大政）。",
                                  nations: [id], province: nil)
-            return (true, "已应用「\(spec.title)」方案：自动启用 \(applied.joined(separator: "、"))。")
+            return (true, "已切轨「\(spec.title)」：同步更替为 \(applied.joined(separator: "、"))。")
 
         case let k where k.hasPrefix("strategyAuto:"):
             let on = k.hasSuffix(":on")

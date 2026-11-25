@@ -1047,6 +1047,43 @@ public enum MapLayers {
         m.polyline([ruleIn, ruleIn, w - ruleIn, ruleIn, w - ruleIn, h - ruleIn, ruleIn, h - ruleIn, ruleIn, ruleIn], width: max(1.0, unit * 0.0017), silkDeep, alpha: 0.74)
         m.polyline([ruleOut, ruleOut, w - ruleOut, ruleOut, w - ruleOut, h - ruleOut, ruleOut, h - ruleOut, ruleOut, ruleOut], width: max(0.85, unit * 0.0013), ink, alpha: 0.62)
 
+        // 四角御制「鎏金碧玉回纹包角」（严密契合上下云锦裱边与画心经纬刻度，全分辨率矢量零锯齿）
+        let cSpan = unit * 0.052
+        let cArm = unit * 0.015
+        for (cx, cy, sx, sy) in [
+            (ruleOut, ruleOut, Float(1), Float(1)),
+            (w - ruleOut, ruleOut, Float(-1), Float(1)),
+            (ruleOut, h - ruleOut, Float(1), Float(-1)),
+            (w - ruleOut, h - ruleOut, Float(-1), Float(-1)),
+        ] {
+            // 朱锦鎏金 L 型包角底板
+            let xA = min(cx, cx + sx * cSpan), xB = max(cx, cx + sx * cSpan)
+            let yA = min(cy, cy + sy * cArm), yB = max(cy, cy + sy * cArm)
+            rect(xA, yA, xB, yB, brocadeRed, alpha: 0.96)
+            let xC = min(cx, cx + sx * cArm), xD = max(cx, cx + sx * cArm)
+            let yC = min(cy, cy + sy * cSpan), yD = max(cy, cy + sy * cSpan)
+            rect(xC, yC, xD, yD, brocadeRed, alpha: 0.96)
+            // 双道鎏金回纹镶线
+            m.polyline([
+                cx + sx * cSpan, cy + sy * 1.6,
+                cx + sx * 1.6, cy + sy * 1.6,
+                cx + sx * 1.6, cy + sy * cSpan
+            ], width: threadW * 1.15, goldBright, alpha: 0.95)
+            m.polyline([
+                cx + sx * (cSpan - 3), cy + sy * (cArm - 1.6),
+                cx + sx * (cArm - 1.6), cy + sy * (cArm - 1.6),
+                cx + sx * (cArm - 1.6), cy + sy * (cSpan - 3)
+            ], width: threadW * 0.9, goldMid, alpha: 0.92)
+            // 回纹卷云几何拐角
+            let kx = cx + sx * (cArm * 0.56), ky = cy + sy * (cArm * 0.56)
+            m.disc(kx, ky, radius: cArm * 0.34, goldMid, alpha: 0.98, sides: 12)
+            m.disc(kx, ky, radius: cArm * 0.22, jadeMid, alpha: 0.96, sides: 10)
+            m.disc(kx - sx * 0.8, ky - sy * 0.8, radius: cArm * 0.09, jadeHi, alpha: 0.92, sides: 8)
+            // 翼端金钉
+            m.disc(cx + sx * (cSpan * 0.78), cy + sy * (cArm * 0.5), radius: cArm * 0.14, goldBright, alpha: 0.92, sides: 8)
+            m.disc(cx + sx * (cArm * 0.5), cy + sy * (cSpan * 0.78), radius: cArm * 0.14, goldBright, alpha: 0.92, sides: 8)
+        }
+
         // 3. 左右 24 段光滑圆柱立体紫檀卷轴 + 卷纸侧叠断面 + 鎏金雕花轴箍 + 雕刻青碧玉葫芦轴头 + 朱锦丝绦
         func drawRoller(x0: Float, x1: Float, inwardRight: Bool, addTassel: Bool) {
             let rw = x1 - x0, cx = (x0 + x1) * 0.5

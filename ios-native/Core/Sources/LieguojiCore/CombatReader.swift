@@ -198,6 +198,18 @@ public enum CombatReader {
             if (role == .cavalry || role == .heavy || role == .horseArcher), Trade.holdings(r, nation)[3, default: 0] > 0 {
                 polAtk = f(polAtk * f(1.15))
             }
+            // v5.0 将领统帅实效：名将临阵可提振三军攻防至高 +52% / 破城 +35%，庸将怯帅则令全军战力锐减（−32%），使任免名将真正左右战局。
+            if let cmd = Regimes.activeCommander(r, nation: nation, enemy: enemy) {
+                if cmd.combatBonusPct != 0 {
+                    let cf = f(max(0.60, 1.0 + Double(cmd.combatBonusPct) / 100.0))
+                    polAtk = f(polAtk * cf)
+                    polDef = f(polDef * cf)
+                }
+                if cmd.siegeBonusPct != 0 {
+                    let sf = f(max(0.70, 1.0 + Double(cmd.siegeBonusPct) / 100.0))
+                    dmgProv = f(dmgProv * sf)
+                }
+            }
             dmgArmy = f(dmgArmy)
         }
         let input = Efficiency.Input(unit: r.units[a.id.asString].asString, command: snapshot.command.asString, official: official, base: base.base.asNumber, destiny: state.destiny.asNumber,

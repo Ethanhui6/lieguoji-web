@@ -25,12 +25,13 @@ public struct MapCamera: Equatable, Sendable {
         return ((x - viewport.width / 2) / scale + centerX, (y - viewport.height / 2) / scale + centerY)
     }
 
-    /// Whole map visible ("aspect fit") and the closest zoom allowed (about 8 cells across a phone).
+    /// Whole map visible ("aspect fit" with graceful margin for the scroll rollers & finials) and the closest zoom allowed (about 8 cells across a phone).
     public static func scaleBounds(map: (width: Double, height: Double), viewport: (width: Double, height: Double)) -> ClosedRange<Double> {
         let mw = max(1, map.width.isFinite ? map.width : 1600), mh = max(1, map.height.isFinite ? map.height : 900)
         let vw = max(1, viewport.width.isFinite ? viewport.width : 390), vh = max(1, viewport.height.isFinite ? viewport.height : 844)
-        let fit = max(1e-4, min(vw / mw, vh / mh))
-        return fit...(fit * 40)
+        let rawFit = max(1e-4, min(vw / mw, vh / mh))
+        let framedFit = max(1e-4, min(vw / (mw * 1.11), vh / (mh * 1.11)))
+        return framedFit...(rawFit * 40)
     }
     public static func fit(map: (width: Double, height: Double), viewport: (width: Double, height: Double)) -> MapCamera {
         MapCamera(centerX: map.width / 2, centerY: map.height / 2, scale: scaleBounds(map: map, viewport: viewport).lowerBound)

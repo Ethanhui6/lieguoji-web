@@ -182,13 +182,13 @@ extension MapLayers {
         let smoothCoasts = BorderCurve.smooth(BorderCurve.chain(coastSegs))
         // 三层无缝斜接海岸晕带：外层碧青浅海陆棚 → 中层薄雾浪沫 → 内层暖沙岸线
         for loop in smoothCoasts {
-            m.smoothPolyline(loop, width: 8.4, shoalOuter, alpha: 0.14)
+            m.smoothPolyline(loop, width: 8.8, shoalOuter, alpha: 0.17)
         }
         for loop in smoothCoasts {
-            m.smoothPolyline(loop, width: 3.8, surfMist, alpha: 0.22)
+            m.smoothPolyline(loop, width: 4.0, surfMist, alpha: 0.26)
         }
         for loop in smoothCoasts {
-            m.smoothPolyline(loop, width: 2.0, shoalInner, alpha: 0.30)
+            m.smoothPolyline(loop, width: 2.1, shoalInner, alpha: 0.34)
         }
         // 内陆湖泊柔润碧青水色与连续平滑湖岸线
         let lakes = inlandLakeCells(map)
@@ -198,7 +198,7 @@ extension MapLayers {
                 var poly = [Float]()
                 poly.reserveCapacity((s1 - s0) * 2)
                 for v in s0..<s1 { poly.append(map.vertices[v * 2]); poly.append(map.vertices[v * 2 + 1]) }
-                m.fill(poly, lakeShallow, alpha: 0.36)
+                m.fill(poly, lakeShallow, alpha: 0.42)
             }
         }
         var lakeSegs = [BorderCurve.Segment]()
@@ -209,51 +209,164 @@ extension MapLayers {
             }
         }
         for loop in BorderCurve.smooth(BorderCurve.chain(lakeSegs)) {
-            m.smoothPolyline(loop, width: 1.05, lakeRim, alpha: 0.48)
+            m.smoothPolyline(loop, width: 1.15, lakeRim, alpha: 0.55)
+        }
+
+        // 远洋古典手绘海图细浪簇（稀疏点缀于开阔深海，赋予宋画海图清雅手工气息）
+        let shore = shoreCells(map)
+        let waveInk = RGB(hex: 0x1E4554)
+        let waveHighlight = RGB(hex: 0xCBE2E6)
+        for c in 0..<map.cellCount where !map.isLand(c) && !lakes[c] && !shore[c] && (hash(c &* 73 &+ 19) % 29 == 0) {
+            let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
+            guard x > 45 && x < map.width - 45 && y > 45 && y < map.height - 45 else { continue }
+            let wSpan: Float = 5.4
+            let hLift: Float = 1.65
+            let crest: [Float] = [
+                x - wSpan, y + 0.6,
+                x - wSpan * 0.5, y - hLift * 0.55,
+                x, y + 0.45,
+                x + wSpan * 0.5, y - hLift * 0.65,
+                x + wSpan, y + 0.55
+            ]
+            m.smoothPolyline(crest, width: 0.72, waveInk, alpha: 0.24)
+            let echo: [Float] = [
+                x - wSpan * 0.65, y + 2.4,
+                x, y + 1.55,
+                x + wSpan * 0.65, y + 2.4
+            ]
+            m.smoothPolyline(echo, width: 0.55, waveHighlight, alpha: 0.20)
+        }
+
+        // 古舆图十六方位鎏金航海罗盘与淡墨方位射线（自动择取最开阔海域内缩置放，绝不被卷轴边框裁切）
+        let padX = max(115, map.width * 0.085), padY = max(105, map.height * 0.125)
+        let candidates: [(Float, Float)] = [
+            (padX, map.height - padY),
+            (map.width - padX, map.height - padY),
+            (padX, padY),
+            (map.width - padX, padY),
+        ]
+        var bestCorner = candidates[0], bestWater = -1
+        for pt in candidates {
+            var waterScore = 0
+            for c in 0..<map.cellCount where !map.isLand(c) && !lakes[c] {
+                let dx = map.sites[c * 2] - pt.0, dy = map.sites[c * 2 + 1] - pt.1
+                if dx * dx + dy * dy < 95 * 95 { waterScore += 1 }
+            }
+            if waterScore > bestWater { bestWater = waterScore; bestCorner = pt }
+        }
+        if bestWater >= 8 {
+            let cx = bestCorner.0, cy = bestCorner.1
+            let rOuter: Float = min(map.width, map.height) * 0.036
+            let rInner: Float = rOuter * 0.78
+            let roseInk = RGB(hex: 0x2B2117)
+            let roseGold = RGB(hex: 0xC69A4A)
+            let roseCrimson = RGB(hex: 0xA83226)
+            let rhumb = RGB(hex: 0x243F4D)
+
+            // 八向远洋极细航海方位线
+            for k in 0..<8 {
+                let ang = Float(k) * .pi / 4
+                let rLen = min(map.width, map.height) * 0.18
+                let ex = max(24, min(map.width - 24, cx + cos(ang) * rLen))
+                let ey = max(24, min(map.height - 24, cy + sin(ang) * rLen))
+                m.segment(cx + cos(ang) * rOuter * 1.15, cy + sin(ang) * rOuter * 1.15, ex, ey, width: 0.52, rhumb, alpha: 0.16)
+            }
+            // 双重铜版罗盘外环
+            func circleRing(_ rad: Float, _ w: Float, _ col: RGB, _ a: Float) {
+                var ring = [Float]()
+                for i in 0...32 {
+                    let ang = Float(i) / 32 * 2 * .pi
+                    ring.append(cx + cos(ang) * rad); ring.append(cy + sin(ang) * rad)
+                }
+                m.polyline(ring, width: w, col, alpha: a)
+            }
+            circleRing(rOuter, 1.05, roseInk, 0.42)
+            circleRing(rInner, 0.72, roseGold, 0.56)
+            // 十六向副星芒 + 四向主星芒（正北朱砂指针）
+            for k in 0..<8 {
+                let ang = Float(k) * .pi / 4 + .pi / 8
+                let tipX = cx + cos(ang) * rInner * 0.92, tipY = cy + sin(ang) * rInner * 0.92
+                let sideA = ang - 0.16, sideB = ang + 0.16
+                let baseR = rOuter * 0.18
+                m.fill([cx, cy, cx + cos(sideA) * baseR, cy + sin(sideA) * baseR, tipX, tipY], roseGold, alpha: 0.45)
+                m.fill([cx, cy, tipX, tipY, cx + cos(sideB) * baseR, cy + sin(sideB) * baseR], roseInk, alpha: 0.36)
+            }
+            for k in 0..<4 {
+                let ang = Float(k) * .pi / 2 - .pi / 2 // 0 = 正北
+                let tipX = cx + cos(ang) * rOuter * 1.24, tipY = cy + sin(ang) * rOuter * 1.24
+                let sideA = ang - 0.24, sideB = ang + 0.24
+                let baseR = rOuter * 0.26
+                let primaryCol = (k == 0) ? roseCrimson : roseInk
+                m.fill([cx, cy, cx + cos(sideA) * baseR, cy + sin(sideA) * baseR, tipX, tipY], primaryCol, alpha: k == 0 ? 0.82 : 0.58)
+                m.fill([cx, cy, tipX, tipY, cx + cos(sideB) * baseR, cy + sin(sideB) * baseR], roseGold, alpha: 0.74)
+            }
+            m.disc(cx, cy, radius: rOuter * 0.13, roseInk, alpha: 0.65, sides: 12)
+            m.disc(cx, cy, radius: rOuter * 0.07, roseGold, alpha: 0.90, sides: 10)
         }
         return m
     }
 
-    /// Close up only: delicate curved imperial post-roads (`驿道`), river-mouth deltas (`河口沙洲`) & fine highland contour hachures (`山脊刻纹`).
-    /// 全手绘舆图精细铜版笔触，放大细看既有丰富古图地理肌理，又绝不杂乱遮挡国界与城池。
+    /// Close up & standard play: delicate curved imperial post-roads (`驿道`), river-mouth deltas (`河口沙洲`),
+    /// highland contour hachures (`山脊刻纹`), woodland ink clusters (`林野点苔`), dunes (`大漠沙丘`) & steppe tufts (`草原微纹`).
+    /// 全手绘舆图精细铜版笔触，远观清雅、近看丰富，绝不杂乱遮挡国界与城池。
     public static func fineDetail(_ map: WorldMap) -> ColoredMesh {
         var m = ColoredMesh()
-        let road = RGB(hex: 0x5C4728)
-        let milestone = RGB(hex: 0x8E3B2B)
-        let ridgeInk = RGB(hex: 0x5B4B39)
-        let forestInk = RGB(hex: 0x3D5B42)
-        let deltaWater = RGB(hex: 0x6AAAB5)
+        let road = RGB(hex: 0x5A4223)
+        let milestone = RGB(hex: 0xA83226)
+        let ridgeInk = RGB(hex: 0x4E3E2E)
+        let ridgeSun = RGB(hex: 0xDFD0B2)
+        let forestInk = RGB(hex: 0x35543B)
+        let forestLit = RGB(hex: 0x52734E)
+        let duneInk = RGB(hex: 0x9E7A4A)
+        let grassInk = RGB(hex: 0x5A6F42)
+        let deltaWater = RGB(hex: 0x5E9FAE)
 
-        // 1. 山脊微刻线（铜版古图柔和短弧，赋予高地近观肌理）与林野点苔
-        for c in 0..<map.cellCount where map.isLand(c) && (hash(c &* 17 &+ 3) % 5 == 0) {
+        // 1. 山脊铜版双笔刻纹、林野点苔、大漠新月沙丘与草原微纹
+        for c in 0..<map.cellCount where map.isLand(c) {
             let h = map.elevation[c]
             let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
-            if h >= 58 {
-                let tilt = Float(hash(c &* 29) % 100) / 100 * 0.5 - 0.25
-                let span: Float = h >= 72 ? 4.2 : 3.0
-                let lift: Float = h >= 72 ? 1.55 : 1.05
-                let pts: [Float] = [
+            let bio = c < map.biome.count ? Int(map.biome[c]) : 0
+            let hsh = hash(c &* 17 &+ 3)
+
+            if h >= 52 && (hsh % 2 == 0) {
+                let tilt = Float(hash(c &* 29) % 100) / 100 * 0.55 - 0.27
+                let span: Float = h >= 72 ? 4.8 : h >= 62 ? 3.8 : 2.9
+                let lift: Float = h >= 72 ? 1.95 : h >= 62 ? 1.45 : 1.05
+                let ridge: [Float] = [
                     x - span, y + lift * 0.55 + tilt,
-                    x - span * 0.35, y - lift * 0.45,
-                    x + span * 0.30, y - lift * 0.55,
-                    x + span, y + lift * 0.60 - tilt
+                    x - span * 0.34, y - lift * 0.52,
+                    x + span * 0.28, y - lift * 0.58,
+                    x + span, y + lift * 0.62 - tilt
                 ]
-                m.smoothPolyline(pts, width: 0.48, ridgeInk, alpha: h >= 72 ? 0.24 : 0.16)
-            } else if h >= 24 && h <= 46 && (hash(c &* 43 &+ 7) % 3 == 0) {
-                let bio = c < map.biome.count ? Int(map.biome[c]) : 0
-                if bio == 5 || bio == 6 || bio == 7 || bio == 8 || bio == 9 {
-                    m.disc(x, y, radius: 1.05, forestInk, alpha: 0.14, sides: 7)
-                    m.disc(x + 1.9, y + 0.7, radius: 0.82, forestInk, alpha: 0.12, sides: 6)
+                m.smoothPolyline(ridge, width: h >= 72 ? 0.66 : 0.54, ridgeInk, alpha: h >= 72 ? 0.34 : 0.24)
+                // 西北受光面淡金雪脊细笔
+                if h >= 66 {
+                    let sunArc: [Float] = [x - span * 0.72, y + lift * 0.15, x - span * 0.18, y - lift * 0.45, x + span * 0.22, y - lift * 0.32]
+                    m.smoothPolyline(sunArc, width: 0.44, ridgeSun, alpha: 0.28)
                 }
+            } else if h >= 22 && h <= 50 && (bio == 5 || bio == 6 || bio == 7 || bio == 8 || bio == 9) && (hsh % 4 == 0) {
+                // 林野点苔（双色水墨聚落树冠，清透不抢国界）
+                m.disc(x, y, radius: 1.25, forestInk, alpha: 0.22, sides: 7)
+                m.disc(x + 2.1, y + 0.75, radius: 1.02, forestLit, alpha: 0.20, sides: 7)
+                m.disc(x - 1.5, y + 1.15, radius: 0.88, forestInk, alpha: 0.17, sides: 6)
+            } else if h >= 21 && h <= 46 && (bio == 1 || bio == 2) && (hsh % 5 == 0) {
+                // 大漠流沙新月纹
+                let dSpan: Float = 3.6
+                m.smoothPolyline([x - dSpan, y + 0.7, x, y - 0.65, x + dSpan, y + 0.55], width: 0.52, duneInk, alpha: 0.26)
+            } else if h >= 22 && h <= 40 && (bio == 3 || bio == 4) && (hsh % 7 == 0) {
+                // 沃野草原轻墨点缀
+                m.segment(x - 1.4, y + 0.6, x - 0.8, y - 0.8, width: 0.42, grassInk, alpha: 0.22)
+                m.segment(x + 0.2, y + 0.7, x + 0.6, y - 0.9, width: 0.42, grassInk, alpha: 0.20)
+                m.segment(x + 1.5, y + 0.6, x + 2.0, y - 0.6, width: 0.42, grassInk, alpha: 0.18)
             }
         }
 
         // 2. 近岸低洼河口浅滩点纹（沿平缓入海口自然点缀清碧浅沙纹理）
         let shore = shoreCells(map)
-        for c in 0..<map.cellCount where shore[c] && map.isLand(c) && map.elevation[c] <= 23 && (hash(c &* 53 &+ 11) % 6 == 0) {
+        for c in 0..<map.cellCount where shore[c] && map.isLand(c) && map.elevation[c] <= 24 && (hash(c &* 53 &+ 11) % 4 == 0) {
             let x = map.sites[c * 2], y = map.sites[c * 2 + 1]
-            m.disc(x, y, radius: 1.45, deltaWater, alpha: 0.18, sides: 8)
-            m.disc(x + 2.1, y - 0.9, radius: 0.95, deltaWater, alpha: 0.14, sides: 6)
+            m.disc(x, y, radius: 1.55, deltaWater, alpha: 0.22, sides: 8)
+            m.disc(x + 2.2, y - 0.9, radius: 1.05, deltaWater, alpha: 0.18, sides: 6)
         }
 
         // 3. 官道驿路与中途驿站
@@ -294,12 +407,12 @@ extension MapLayers {
                 }
                 for k in stride(from: 1, to: steps - 1, by: 2) {
                     let p = at(Float(k) / Float(steps)), q = at(Float(k + 1) / Float(steps))
-                    m.segment(p.0, p.1, q.0, q.1, width: 0.72, road, alpha: 0.52)
+                    m.segment(p.0, p.1, q.0, q.1, width: 0.80, road, alpha: 0.62)
                 }
                 // 驿道中途朱点驿站标记（长驿道设驿）
                 if steps >= 10 {
                     let mid = at(0.5)
-                    m.disc(mid.0, mid.1, radius: 0.85, milestone, alpha: 0.62, sides: 8)
+                    m.disc(mid.0, mid.1, radius: 0.95, milestone, alpha: 0.72, sides: 8)
                 }
             }
         }

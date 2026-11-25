@@ -402,7 +402,7 @@ private struct NavalDoctrineCard: View {
         case .escort: shortTitle = "护航"
         case .blockade: shortTitle = "封锁"
         case .raid: shortTitle = "破交"
-        case .repair: shortTitle = "修整"
+        case .refit: shortTitle = "修整"
         }
         let allOn = !fleets.isEmpty && fleets.allSatisfy { ($0.mission ?? "patrol") == m.rawValue }
         let name = map.meta.nations.indices.contains(chosen) ? map.meta.nations[chosen].name : "本国"

@@ -578,7 +578,7 @@ struct FleetShipyardPanel: View {
         case .escort: shortTitle = "护航"
         case .blockade: shortTitle = "封锁"
         case .raid: shortTitle = "破交"
-        case .repair: shortTitle = "修整"
+        case .refit: shortTitle = "修整"
         }
         let isAllOn = !nationFleets.isEmpty && nationFleets.allSatisfy { ($0.mission ?? "patrol") == m.rawValue }
         return Button {

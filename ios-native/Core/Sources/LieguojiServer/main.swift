@@ -318,15 +318,19 @@ signal(SIGPIPE, SIG_IGN)
 func tuneClientSocket(_ s: Socket) {
     var one: Int32 = 1
     #if os(Windows)
-    _ = withUnsafePointer(to: &one) { $0.withMemoryRebound(to: CChar.self, capacity: 4) {
-        setsockopt(s, Int32(IPPROTO_TCP.rawValue), TCP_NODELAY, $0, 4)
-        setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, $0, 4)
-    } }
+    withUnsafePointer(to: &one) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
+            _ = setsockopt(s, Int32(IPPROTO_TCP.rawValue), Int32(TCP_NODELAY), ptr, 4)
+            _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_KEEPALIVE), ptr, 4)
+        }
+    }
     var timeoutMs: DWORD = 45_000
-    _ = withUnsafePointer(to: &timeoutMs) { $0.withMemoryRebound(to: CChar.self, capacity: 4) {
-        setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, $0, 4)
-        setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, $0, 4)
-    } }
+    withUnsafePointer(to: &timeoutMs) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 4) { ptr in
+            _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_RCVTIMEO), ptr, 4)
+            _ = setsockopt(s, Int32(SOL_SOCKET), Int32(SO_SNDTIMEO), ptr, 4)
+        }
+    }
     #elseif canImport(Glibc)
     setsockopt(s, Int32(IPPROTO_TCP), TCP_NODELAY, &one, socklen_t(MemoryLayout<Int32>.size))
     setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &one, socklen_t(MemoryLayout<Int32>.size))

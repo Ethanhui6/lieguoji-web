@@ -194,73 +194,127 @@ public enum PeaceBridge {
         return confirmed
     }
 
+    /// 将非平凡 Optional<Settlement.Result> 装箱并拆分热路径，既减小真机栈帧又规避 Swift 6.1 Windows 发布态 OSSA borrow-scope 校验器缺陷。
+    private final class SettlementBox {
+        let value: Settlement.Result
+        init(_ value: Settlement.Result) { self.value = value }
+    }
+
+    @inline(never)
+    private static func executeCompleteSettlement(_ r: JS, _ c: JS, reason: Int, participants: [String], restoreOccupations: Bool) -> (box: SettlementBox, confirmed: [JS]) {
+        let s = r.nativeWars
+        var w = world(r)
+        let terms = war(c)
+        let res = Settlement.settle(war: terms, world: &w, reason: reason)
+        var confirmed = [JS]()
+        for t in res.applied {
+            let p = r.world.provinces.asArray.first { $0.id.asString == s.provinceIds[t.provinceId - 1].asString }!, owner = nation(r, t.to)
+            if p.controller.asString != owner { transferEconomy(r, p.id.asString, p.controller.asString, owner) }
+            p.controller = JS(owner)
+            if participants.contains(p.legalOwner.asString) { p.legalOwner = JS(owner) }
+            stripOffice(r, t.provinceId); Wars.reconcileCore(r); Wars.reconcileParticipants(r)
+        }
+        // Reparations were paid on the typed world in effect order; its treasuries are written back.
+        for st in w.states { let fin = r.finance.nations[nation(r, st.id)]; if fin.gold.asNumber != st.gold { fin.gold = JS(st.gold) } }
+        if restoreOccupations {
+            confirmed = confirmOccupiedCessions(r, war: terms, result: res)
+            // App 模式：任意战败或实控归零的参战方（含盟友与中等国家，≤14 州），若全境沦陷则由占领方正式兼并，
+            // 彻底杜绝“全境占领 → 和谈归还占领地 → 第二/第三XX国无限循环复国”。
+            if UnitKinds.enabled && reason != 11 && (res.winnerSide != nil || reason == 2) {
+                var ctrlCount = [String: Int]()
+                var legalByNation = [String: [JS]]()
+                for p in r.world.provinces.asArray {
+                    let cId = p.controller.asString
+                    ctrlCount[cId, default: 0] += 1
+                    if let lId = p.legalOwner.optionalString { legalByNation[lId, default: []].append(p) }
+                }
+                let side0 = Settlement.sideIDs(terms, 0)
+                let side1 = Settlement.sideIDs(terms, 1)
+                for part in terms.participants {
+                    let lostOrCollapsed = (res.winnerSide.map { $0 != part.side } ?? false) || reason == 2
+                    guard lostOrCollapsed else { continue }
+                    let defNation = nation(r, part.stateId)
+                    guard (ctrlCount[defNation] ?? 0) == 0,
+                          let defLegal = legalByNation[defNation],
+                          !defLegal.isEmpty, defLegal.count <= 14 else { continue }
+                    let victors = part.side == 0 ? side1 : side0
+                    for p in defLegal {
+                        let ctrl = p.controller.asString
+                        guard ctrl != defNation, let cid = r.people.nations[ctrl].id.optionalNumber, victors.contains(Int(cid)) else { continue }
+                        let pid = Wars.provinceNumber(s, p.id.asString)
+                        p.legalOwner = p.controller.clone()
+                        if pid > 0 {
+                            stripOffice(r, pid)
+                            confirmed.append(.array([JS(pid), JS(Int(cid))]))
+                        }
+                    }
+                }
+            }
+        } else {
+            for pair in c.initialOwners.asArray {
+                let pid = pair[0].asInt, original = pair[1].asInt
+                let p = r.world.provinces.asArray.first { $0.id.asString == s.provinceIds[pid - 1].asString }!, owner = Wars.stateNumber(r, p.controller.asString)
+                if owner != original && participants.contains(p.controller.asString) && participants.contains(p.legalOwner.asString) {
+                    if p.legalOwner.asString != p.controller.asString { p.legalOwner = p.controller.clone(); stripOffice(r, pid) }
+                    confirmed.append(.array([JS(pid), JS(owner)]))
+                }
+            }
+        }
+        return (SettlementBox(res), confirmed)
+    }
+
+    @inline(never)
+    private static func recordCompleteSettlement(_ r: JS, _ c: JS, reason: Int, box: SettlementBox?, confirmed: [JS]) {
+        let o = JS.object()
+        o.reason = JS(reason); o.tick = r.clock.tick.clone()
+        if let box {
+            let res = box.value
+            o.winnerSide = res.winnerSide.map { JS($0) } ?? .null
+            o.outcomes = .array(res.outcomes.map { .array($0.map { JS($0) }) })
+            o.enforcedGoals = .array(res.enforcedGoals.map { JS($0) })
+            o.transfers = .array(res.applied.map { t in let x = JS.object(); x.sourceGoalId = JS(t.sourceGoalId); x.provinceId = JS(t.provinceId); x.from = JS(t.from); x.to = JS(t.to); x.type = JS(t.type); return x })
+            o.effects = .array(res.effects.map { e in let x = JS.object(); x.sourceGoalId = JS(e.sourceGoalId); x.type = JS(e.type); x.beneficiary = JS(e.beneficiary); x.target = JS(e.target); x.status = JS(e.status); x.reason = .null; return x })
+        } else {
+            o.winnerSide = .null
+            o.outcomes = .array([])
+            o.enforcedGoals = .array([])
+            o.transfers = .array([])
+            o.effects = .array([])
+        }
+        o.confirmedOwnership = .array(confirmed)
+        c.settlement = o
+        // 战败国内冲击（App 规则）：割地与战败在和约后持续影响民心、内阁问责与政局稳定。
+        if UnitKinds.enabled, !r.regimes.isNull, reason != 11, let box {
+            let result = box.value
+            let pw = war(c)
+            var cededBy = [Int: Int]()
+            for t in result.applied { cededBy[t.from, default: 0] += 1 }
+            for p in pw.participants {
+                let nid = nation(r, p.stateId)
+                let lostWar = result.winnerSide.map { $0 != p.side } ?? false
+                let ceded = cededBy[p.stateId] ?? 0
+                guard lostWar || ceded > 0 else { continue }
+                let shock = min(0.85, (lostWar ? 0.30 : 0.0) + Double(ceded) * 0.16)
+                let b = Regimes.book(r, nid)
+                let prev = Regimes.defeatPenalty(r, nid)
+                b.defeatShock = JS(max(prev, shock))
+                b.defeatTick = r.clock.tick.clone()
+            }
+        }
+    }
+
     /// settleWar47 for wars the typed treaty ports cover (external wars and player-ordered ends).
     @discardableResult
     public static func settle(_ r: JS, _ c: JS, reason: Int) -> Bool {
         if !c.endedTick.isNull { return false }
         let s = r.nativeWars, participants = Wars.participantNations(s, c), complete = c.history.asString == "complete"
         let restoreOccupations = r.regimes.enabled.isTruthy && c.internal.isNull
-        var result: Settlement.Result?
+        var resultBox: SettlementBox?
         var confirmed = [JS]()
         if complete {
-            var w = world(r)
-            let terms = war(c)
-            result = Settlement.settle(war: terms, world: &w, reason: reason)
-            if let result {
-                for t in result.applied {
-                    let p = r.world.provinces.asArray.first { $0.id.asString == s.provinceIds[t.provinceId - 1].asString }!, owner = nation(r, t.to)
-                    if p.controller.asString != owner { transferEconomy(r, p.id.asString, p.controller.asString, owner) }
-                    p.controller = JS(owner)
-                    if participants.contains(p.legalOwner.asString) { p.legalOwner = JS(owner) }
-                    stripOffice(r, t.provinceId); Wars.reconcileCore(r); Wars.reconcileParticipants(r)
-                }
-                // Reparations were paid on the typed world in effect order; its treasuries are written back.
-                for st in w.states { let fin = r.finance.nations[nation(r, st.id)]; if fin.gold.asNumber != st.gold { fin.gold = JS(st.gold) } }
-                if restoreOccupations {
-                    confirmed = confirmOccupiedCessions(r, war: terms, result: result)
-                    // App 模式：任意战败或实控归零的参战方（含盟友与中等国家，≤14 州），若全境沦陷则由占领方正式兼并，
-                    // 彻底杜绝“全境占领 → 和谈归还占领地 → 第二/第三XX国无限循环复国”。
-                    if UnitKinds.enabled && reason != 11 && (result.winnerSide != nil || reason == 2) {
-                        var ctrlCount = [String: Int]()
-                        var legalByNation = [String: [JS]]()
-                        for p in r.world.provinces.asArray {
-                            let cId = p.controller.asString
-                            ctrlCount[cId, default: 0] += 1
-                            if let lId = p.legalOwner.optionalString { legalByNation[lId, default: []].append(p) }
-                        }
-                        let side0 = Settlement.sideIDs(terms, 0)
-                        let side1 = Settlement.sideIDs(terms, 1)
-                        for part in terms.participants {
-                            let lostOrCollapsed = (result.winnerSide.map { $0 != part.side } ?? false) || reason == 2
-                            guard lostOrCollapsed else { continue }
-                            let defNation = nation(r, part.stateId)
-                            guard (ctrlCount[defNation] ?? 0) == 0,
-                                  let defLegal = legalByNation[defNation],
-                                  !defLegal.isEmpty, defLegal.count <= 14 else { continue }
-                            let victors = part.side == 0 ? side1 : side0
-                            for p in defLegal {
-                                let ctrl = p.controller.asString
-                                guard ctrl != defNation, let cid = r.people.nations[ctrl].id.optionalNumber, victors.contains(Int(cid)) else { continue }
-                                let pid = Wars.provinceNumber(s, p.id.asString)
-                                p.legalOwner = p.controller.clone()
-                                if pid > 0 {
-                                    stripOffice(r, pid)
-                                    confirmed.append(.array([JS(pid), JS(Int(cid))]))
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    for pair in c.initialOwners.asArray {
-                        let pid = pair[0].asInt, original = pair[1].asInt
-                        let p = r.world.provinces.asArray.first { $0.id.asString == s.provinceIds[pid - 1].asString }!, owner = Wars.stateNumber(r, p.controller.asString)
-                        if owner != original && participants.contains(p.controller.asString) && participants.contains(p.legalOwner.asString) {
-                            if p.legalOwner.asString != p.controller.asString { p.legalOwner = p.controller.clone(); stripOffice(r, pid) }
-                            confirmed.append(.array([JS(pid), JS(owner)]))
-                        }
-                    }
-                }
-            }
+            let done = executeCompleteSettlement(r, c, reason: reason, participants: participants, restoreOccupations: restoreOccupations)
+            resultBox = done.box
+            confirmed = done.confirmed
         }
         var endedEnemies = [String: Set<String>]()
         let truceDays: Double = (UnitKinds.enabled && r.regimes.enabled.isTruthy) ? 180 : 10
@@ -308,41 +362,30 @@ public enum PeaceBridge {
             }
         }
         if complete {
-            let o = JS.object()
-            o.reason = JS(reason); o.tick = r.clock.tick.clone(); o.winnerSide = result?.winnerSide.map { JS($0) } ?? .null
-            o.outcomes = .array((result?.outcomes ?? []).map { .array($0.map { JS($0) }) }); o.enforcedGoals = .array((result?.enforcedGoals ?? []).map { JS($0) })
-            o.transfers = .array((result?.applied ?? []).map { t in let x = JS.object(); x.sourceGoalId = JS(t.sourceGoalId); x.provinceId = JS(t.provinceId); x.from = JS(t.from); x.to = JS(t.to); x.type = JS(t.type); return x })
-            o.effects = .array((result?.effects ?? []).map { e in let x = JS.object(); x.sourceGoalId = JS(e.sourceGoalId); x.type = JS(e.type); x.beneficiary = JS(e.beneficiary); x.target = JS(e.target); x.status = JS(e.status); x.reason = .null; return x })
-            o.confirmedOwnership = .array(confirmed)
-            c.settlement = o
-            // 战败国内冲击（App 规则）：割地与战败在和约后持续影响民心、内阁问责与政局稳定。
-            if UnitKinds.enabled, !r.regimes.isNull, reason != 11, let result {
-                let pw = war(c)
-                var cededBy = [Int: Int]()
-                for t in result.applied { cededBy[t.from, default: 0] += 1 }
-                for p in pw.participants {
-                    let nid = nation(r, p.stateId)
-                    let lostWar = result.winnerSide.map { $0 != p.side } ?? false
-                    let ceded = cededBy[p.stateId] ?? 0
-                    guard lostWar || ceded > 0 else { continue }
-                    let shock = min(0.85, (lostWar ? 0.30 : 0.0) + Double(ceded) * 0.16)
-                    let b = Regimes.book(r, nid)
-                    let prev = Regimes.defeatPenalty(r, nid)
-                    b.defeatShock = JS(max(prev, shock))
-                    b.defeatTick = r.clock.tick.clone()
-                }
-            }
+            recordCompleteSettlement(r, c, reason: reason, box: resultBox, confirmed: confirmed)
         } else { c.settlement = .null }
         c.endedTick = r.clock.tick.clone(); Wars.revise(s)
         if restored > 0 { Wars.reconcileCore(r); Wars.reconcileParticipants(r) }
-        if restoreOccupations && (restored > 0 || result?.applied.isEmpty == false) { Naval.reconcileLandOwners(r) }
+        let appliedCount: Int
+        let winSide: Int?
+        let annexed: Bool
+        if let box = resultBox {
+            appliedCount = box.value.applied.count
+            winSide = box.value.winnerSide
+            annexed = box.value.annexation
+        } else {
+            appliedCount = 0
+            winSide = nil
+            annexed = false
+        }
+        if restoreOccupations && (restored > 0 || appliedCount > 0) { Naval.reconcileLandOwners(r) }
         let names = c.nations.asArray.map { id in r.world.nations.asArray.first { $0.id.asString == id.asString }!.name.asString }
         func nameOf(_ id: JS, _ fallback: String) -> String { r.world.nations.asArray.first { $0.id.optionalString == id.optionalString }?.name.asString ?? fallback }
         let declaration = r.nativeDiplomacy.declarations.asArray.first { $0.warId.asInt == c.id.asInt }
         let goal = declaration.flatMap { d in d.goals.asArray.first { $0.primary.isTruthy } ?? d.goals.asArray.first }
-        let text = settledText(aggressor: nameOf(c.attacker, names[0]), defender: nameOf(c.defender, names[1]), winnerSide: result?.winnerSide == 0 || result?.winnerSide == 1 ? result?.winnerSide : nil,
-                               annexed: result?.annexation ?? false, reason: reason, goal: goal, ceded: result?.applied.count ?? 0, months: Int(((c.endedTick.asNumber - c.openedTick.asNumber) / 120 / 30).rounded(.down)))
-        let prefix = reason == 11 ? "玩家干预停战，不执行割地和赔款。" : result != nil ? "按原作和约规则执行：\(result!.applied.count)项转地。" : "开局缺少宣战史，只结束已失去参战条件的战争，不编造条款。"
+        let text = settledText(aggressor: nameOf(c.attacker, names[0]), defender: nameOf(c.defender, names[1]), winnerSide: winSide == 0 || winSide == 1 ? winSide : nil,
+                               annexed: annexed, reason: reason, goal: goal, ceded: appliedCount, months: Int(((c.endedTick.asNumber - c.openedTick.asNumber) / 120 / 30).rounded(.down)))
+        let prefix = reason == 11 ? "玩家干预停战，不执行割地和赔款。" : resultBox != nil ? "按原作和约规则执行：\(appliedCount)项转地。" : "开局缺少宣战史，只结束已失去参战条件的战争，不编造条款。"
         let returned = restored > 0 ? "归还\(restored)处军事占领地。" : ""
         People.announce(r, kind: "diplomacy", text: text, reason: prefix + returned + historyDetails(r, c) + "其他仍在进行的战争保留。", nations: participants, province: nil)
         reconcileForces?(r, Set(participants))

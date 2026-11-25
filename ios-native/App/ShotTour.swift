@@ -399,7 +399,7 @@ enum ShotTour {
         for box in map.meta.labels {
             guard box.nation >= 0, box.nation < map.meta.nations.count else { continue }
             total += 1
-            let deg = abs(Double(box.angle)) * 180.0 / .pi
+            let deg = abs(Double(box.angle ?? 0)) * 180.0 / .pi
             if deg > maxAngleDeg { maxAngleDeg = deg }
             if deg < 0.5 { horizontalCount += 1 }
             if let cell = picker.cell(atX: box.x, y: box.y), map.isLand(cell) {

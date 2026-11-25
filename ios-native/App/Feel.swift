@@ -1,6 +1,7 @@
 import SwiftUI
 import AVFoundation
 import UIKit
+import LieguojiCore
 
 /// Sound and touch: the original's background music (RandomMusicPlayer: its five tracks in random
 /// order, one after another), haptic feedback, and the switches for both and for particle effects.

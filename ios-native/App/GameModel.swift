@@ -103,7 +103,8 @@ import LieguojiCore
     func handleAppBackground() async {
         appInBackground = true
         wasPlayingBeforeBackground = playing
-        wasRemoteBeforeBackground = (remoteAddress != nil || reconnecting || remoteReconnecting || (await native.isRemoteActiveOrParked))
+        let nativeActive = await native.isRemoteActiveOrParked
+        wasRemoteBeforeBackground = (remoteAddress != nil || reconnecting || remoteReconnecting || nativeActive)
         if playing { pause(saving: false) }
         if state != nil { save() }
         if wasRemoteBeforeBackground {
@@ -114,7 +115,8 @@ import LieguojiCore
     /// 回到前台：局域网优先 → 云端 WebSocket → HTTP 中转，秒级无感重连并恢复推演。
     func handleAppForeground() async {
         let shouldResumePlay = wasPlayingBeforeBackground
-        let shouldReconnect = wasRemoteBeforeBackground || reconnecting || (await native.isRemoteActiveOrParked)
+        let nativeActive = await native.isRemoteActiveOrParked
+        let shouldReconnect = wasRemoteBeforeBackground || reconnecting || nativeActive
         appInBackground = false
         wasPlayingBeforeBackground = false
         guard phase == .playing, state != nil else { return }

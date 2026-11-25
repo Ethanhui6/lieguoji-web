@@ -8,12 +8,12 @@ final class V521Tests: XCTestCase {
         XCTAssertTrue(EngineWire.compatibleGreetings.contains("列国纪远程计算·4"))
 
         let service = EngineService()
-        let ping = service.handle("ping")
+        let ping = service.handle("ping", [:])
         XCTAssertTrue(ping.ok)
         XCTAssertEqual(ping.reason, EngineWire.greeting)
         XCTAssertEqual(ping.text, "idle")
 
-        let park = service.handle("park")
+        let park = service.handle("park", [:])
         XCTAssertTrue(park.ok)
     }
 

@@ -42,7 +42,7 @@ struct ChipPicker<T: Hashable>: View {
             GameFeel.shared.tap()
             withAnimation(Motion.tap) { selection = item.0 }
         } label: {
-            VStack(spacing: 7) {
+            VStack(spacing: 8) {
                 Text(item.1)
                     .font(Theme.serif(15))
                     .tracking(0.8)
@@ -50,23 +50,18 @@ struct ChipPicker<T: Hashable>: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
                 ZStack {
-                    Color.clear.frame(height: 2.2)
+                    Color.clear.frame(height: 1.8)
                     if on {
-                        Capsule()
-                            .fill(Theme.cinnabarGradient)
-                            .frame(height: 2.2)
-                            .padding(.horizontal, segmented ? 8 : 2)
+                        Rectangle()
+                            .fill(Theme.seal)
+                            .frame(height: 1.8)
                             .matchedGeometryEffect(id: "chip-underline", in: pill)
                     }
                 }
             }
-            .padding(.top, 9)
-            .padding(.horizontal, segmented ? 4 : 4)
+            .padding(.top, 8)
+            .padding(.horizontal, segmented ? 4 : 2)
             .frame(maxWidth: segmented ? .infinity : nil)
-            .background(
-                on ? Theme.seal.opacity(0.055) : Color.clear,
-                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
-            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -232,7 +227,7 @@ struct StatTile: View {
     }
 }
 
-/// 宣纸御册四列核心数值栏：温润亮宣浅衬 + 鎏金淡墨上下书线 + 纵线等分（带可点改朱点微示，零卡片盒套娃）。
+/// 平铺于宣纸上的四列核心数值栏（回归 4.3 极简直铺 + 经典正楷等宽数字 + 1px 淡墨纵线分割，零底盒套娃）。
 struct StatStrip: View {
     let tiles: [StatTile]
     private func tile(_ i: Int, _ bars: Bool, _ uniformIcons: Bool) -> StatTile {
@@ -245,17 +240,15 @@ struct StatStrip: View {
         let bars = tiles.contains { $0.fraction != nil }
         let uniformIcons = !tiles.isEmpty && tiles.allSatisfy { Glyph.of($0.label) != nil }
         VStack(spacing: 0) {
-            Rectangle().fill(Theme.goldRim.opacity(0.36)).frame(height: 0.65)
             HStack(alignment: .top, spacing: 0) {
                 ForEach(tiles.indices, id: \.self) { i in
-                    if i > 0 { Rectangle().fill(Theme.hairline).frame(width: 0.75).frame(maxHeight: .infinity).padding(.vertical, 10) }
+                    if i > 0 { Rectangle().fill(Theme.hairline).frame(width: 0.75).frame(maxHeight: .infinity).padding(.vertical, 12) }
                     tile(i, bars, uniformIcons)
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
-            Rectangle().fill(Theme.hairline).frame(height: 0.8)
+            Rectangle().fill(Theme.hairline).frame(height: 0.75)
         }
-        .background(Theme.paperLight.opacity(0.56))
         .padding(.horizontal, Theme.Layout.pageInset)
     }
 }

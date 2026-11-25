@@ -105,7 +105,7 @@ struct EditorialSectionHeader: View {
     }
 }
 
-/// 疏朗呼吸感交互按钮：实心主按钮采用古风朱漆红配描金内框，次级按钮采用温润亮宣配极细淡墨线（零黑块、零杂乱厚影）。
+/// 极简古籍交互按钮（完整回归 4.3 轻盈无影美学：扁平朱砂主态 / 纯宣纸细墨边次态，零渐变零阴影零 GPU 卡顿）。
 struct EditorialTactileButton: View {
     let title: String
     var icon: PhosphorGlyph? = nil
@@ -118,7 +118,7 @@ struct EditorialTactileButton: View {
 
     var body: some View {
         let fg: Color = solid ? Theme.paperLight : (accent ? Theme.seal : Theme.ink)
-        let stroke: Color = solid ? Color(red: 0.97, green: 0.89, blue: 0.72).opacity(0.38) : (accent ? Theme.seal.opacity(0.32) : Theme.line.opacity(0.75))
+        let stroke: Color = solid ? Color.clear : (accent ? Theme.seal.opacity(0.34) : Theme.line.opacity(0.75))
         Button {
             GameFeel.shared.tap()
             action()
@@ -136,22 +136,15 @@ struct EditorialTactileButton: View {
             .foregroundStyle(fg)
             .frame(maxWidth: fullWidth ? .infinity : nil)
             .frame(height: compact ? 34 : 40)
-            .padding(.horizontal, compact ? 12 : 15)
-            .background {
-                if solid {
-                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                        .fill(Theme.cinnabarGradient)
-                } else {
-                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                        .fill(accent ? Theme.seal.opacity(0.075) : Theme.paperLight.opacity(0.88))
-                }
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.Control.cornerControl - (solid ? 2 : 0), style: .continuous)
-                    .stroke(stroke, lineWidth: solid ? 0.7 : 0.75)
-                    .padding(solid ? 2.5 : 0)
+            .padding(.horizontal, compact ? 11 : 14)
+            .background(
+                solid ? Theme.seal : (accent ? Theme.seal.opacity(0.055) : Theme.paperLight.opacity(0.84)),
+                in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
             )
-            .shadow(color: (solid ? Theme.seal : Theme.ink).opacity(solid ? 0.18 : 0.045), radius: solid ? 4 : 2, y: solid ? 1.5 : 1)
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                    .stroke(stroke, lineWidth: 0.7)
+            )
             .opacity(disabled ? 0.42 : 1.0)
         }
         .buttonStyle(PressStyle())
@@ -159,7 +152,7 @@ struct EditorialTactileButton: View {
     }
 }
 
-/// 古籍特色朱漆主操作按钮：温润朱砂漆面配鎏金细内书框，直接写明核心后果。
+/// 古籍无框主操作按钮（4.3 纯净朱砂实底 + 宣纸白字，直标核心后果，零阴影零廉价渐变）。
 struct EditorialInkButton: View {
     let title: String
     var consequence: String? = nil
@@ -192,19 +185,12 @@ struct EditorialInkButton: View {
             }
             .foregroundStyle(Theme.paperLight)
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 46)
+            .frame(minHeight: 44)
             .padding(.horizontal, 16)
-            .background {
-                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .fill(Theme.cinnabarGradient)
-                    .opacity(disabled ? 0.36 : 1.0)
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous)
-                    .stroke(Theme.goldRim.opacity(0.50), lineWidth: 0.75)
-                    .padding(3)
+            .background(
+                Theme.seal.opacity(disabled ? 0.36 : 1.0),
+                in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
             )
-            .shadow(color: Theme.seal.opacity(disabled ? 0 : 0.22), radius: 5, y: 2)
         }
         .buttonStyle(PressStyle())
         .disabled(disabled)
@@ -295,21 +281,19 @@ struct EditorialTabStrip<Value: Hashable>: View {
                         GameFeel.shared.tap()
                         withAnimation(Motion.tap) { selection = item.0 }
                     } label: {
-                        VStack(spacing: 8) {
+                        VStack(spacing: 9) {
                             Text(item.1)
                                 .font(Theme.serif(15))
                                 .tracking(0.8)
                                 .foregroundStyle(active ? Theme.seal : Theme.ink2)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
-                            Capsule()
-                                .fill(active ? Theme.cinnabarGradient : LinearGradient(colors: [.clear], startPoint: .top, endPoint: .bottom))
-                                .frame(height: 2.2)
-                                .padding(.horizontal, 6)
+                            Rectangle()
+                                .fill(active ? Theme.seal : Color.clear)
+                                .frame(height: 1.8)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.top, 9)
-                        .background(active ? Theme.seal.opacity(0.055) : Color.clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .padding(.top, 10)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -331,19 +315,17 @@ struct EditorialFocusLead: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            VStack(spacing: 0) {
-                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                    .fill(urgent ? Theme.seal : Theme.goldRim)
-                    .frame(width: 3)
-            }
+            Rectangle()
+                .fill(urgent ? Theme.seal : Theme.ink.opacity(0.32))
+                .frame(width: 2)
             VStack(alignment: .leading, spacing: 6) {
                 Text(eyebrow)
                     .font(Theme.sans(11.5, weight: .medium))
-                    .tracking(1.3)
+                    .tracking(1.2)
                     .foregroundStyle(urgent ? Theme.seal : Theme.ink2)
                 Text(headline)
-                    .font(Theme.serif(18))
-                    .tracking(1.0)
+                    .font(Theme.serif(17.5))
+                    .tracking(0.8)
                     .foregroundStyle(Theme.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 if let detail, !detail.isEmpty {
@@ -367,15 +349,91 @@ struct EditorialFocusLead: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(
-            urgent ? Theme.seal.opacity(0.05) : Theme.paperLight.opacity(0.62),
-            in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                .stroke(urgent ? Theme.seal.opacity(0.24) : Theme.goldRim.opacity(0.32), lineWidth: 0.75)
-        )
+        .padding(.vertical, 4)
+    }
+}
+
+/// 二级菜单目录入口行（4.3 极简宣纸风）：将重型子模块拆入独立二级子页，秒开不卡顿且留白疏朗。
+struct EditorialSubMenuRow: View {
+    let title: String
+    var subtitle: String? = nil
+    var badge: String? = nil
+    var accentBadge: Bool = false
+    let icon: PhosphorGlyph
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            GameFeel.shared.tap()
+            action()
+        } label: {
+            HStack(spacing: 12) {
+                PhosphorIcon(glyph: icon, size: 17, weight: accentBadge ? .fill : .light)
+                    .foregroundStyle(accentBadge ? Theme.seal : Theme.ink)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(Theme.serif(15.5))
+                        .tracking(0.6)
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+                    if let subtitle, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(Theme.sans(12.2))
+                            .foregroundStyle(Theme.ink2)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.82)
+                    }
+                }
+                Spacer(minLength: 6)
+                if let badge, !badge.isEmpty {
+                    PaperTag(text: badge, color: accentBadge ? Theme.seal : Theme.ink2, size: 10.5)
+                }
+                PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light)
+                    .foregroundStyle(Theme.ink2.opacity(0.65))
+            }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 13)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// 二级子页顶部轻盈返回条（零重弹窗卡顿，页内无缝返回主页面）。
+struct EditorialSubPageBar: View {
+    let parentTitle: String
+    let title: String
+    let onBack: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Button {
+                    GameFeel.shared.tap()
+                    onBack()
+                } label: {
+                    HStack(spacing: 4) {
+                        PhosphorIcon(glyph: .chevronRight, size: 12, weight: .light)
+                            .rotationEffect(.degrees(180))
+                        Text("返回\(parentTitle)")
+                            .font(Theme.sans(13.5))
+                    }
+                    .foregroundStyle(Theme.seal)
+                    .padding(.vertical, 6)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Spacer(minLength: 8)
+                Text(title)
+                    .font(Theme.serif(16))
+                    .tracking(1.2)
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, Theme.Layout.pageInset)
+            .padding(.vertical, 8)
+            EditorialDivider(inset: Theme.Layout.pageInset)
+        }
     }
 }

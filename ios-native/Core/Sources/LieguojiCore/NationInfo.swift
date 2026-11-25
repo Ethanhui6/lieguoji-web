@@ -283,6 +283,7 @@ extension NativeEngine {
             }
             o.decreeCooldowns = cdMap
             o.taxPolicy = JS(Finance.policy(r, id).key)
+            o.grand = GrandSystems.summary(r, nationId: id)
             let heldIndep = Regimes.heldReforms(r, id).filter { Regimes.independentReformIds.contains($0.id) }.count
             o.reformSlotsUsed = JS(heldIndep)
             o.reformSlotsMax = JS(Regimes.maxIndependentReforms(r, id))

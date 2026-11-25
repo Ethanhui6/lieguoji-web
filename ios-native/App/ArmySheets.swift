@@ -1341,16 +1341,9 @@ struct ArmyChip: View {
                 Text(title).font(Theme.label).lineLimit(1).minimumScaleFactor(0.7)
             }
             .foregroundStyle(danger ? Theme.seal : Theme.ink)
-            .frame(maxWidth: .infinity, minHeight: 56)
-            .background {
-                if danger {
-                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.seal.opacity(0.065))
-                } else {
-                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.vellumGradient)
-                }
-            }
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(danger ? Theme.seal.opacity(0.42) : Theme.line.opacity(0.85), lineWidth: 0.8))
-            .shadow(color: Theme.ink.opacity(0.045), radius: 2, y: 1)
+            .frame(maxWidth: .infinity, minHeight: 54)
+            .background(danger ? Theme.seal.opacity(0.055) : Theme.paperLight.opacity(0.88), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(danger ? Theme.seal.opacity(0.36) : Theme.hairline, lineWidth: 0.75))
             .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
         }
         .buttonStyle(PressStyle())

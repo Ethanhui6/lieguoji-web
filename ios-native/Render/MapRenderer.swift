@@ -1368,7 +1368,7 @@ final class MapRenderer: NSObject, MTKViewDelegate {
             if display.gridLines == true && stage >= 1 { colored(gridLines) }
             let chart = display.mapDetail ?? true
             if chart { colored(ornaments, alpha: ramp(0.44)) }
-            let fineFade = Float(min(1, max(0, (camera.scale - 0.36) / 0.48)))
+            let fineFade = Float(min(1, max(0, (camera.scale - 0.58) / 0.46)))
             if chart && fineFade > 0.01 { colored(fineDetail, alpha: ramp(0.44) * fineFade) }
             if display.vegetation { colored(relief, alpha: ramp(0.44) * 0.94) }
             if display.borders { colored(outlines, alpha: ramp(0.75)) }

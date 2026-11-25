@@ -171,27 +171,9 @@ final class WeatherOverlayView: UIView {
         }
 
         func configureClouds(tint: UIColor, rate: Float, speed: CGFloat) {
-            guard let mist = BundleArt.fxCloudMist?.cgImage, rate > 0 else {
-                cloudEmitter.birthRate = 0
-                cloudEmitter.emitterCells = nil
-                return
-            }
-            let c = CAEmitterCell()
-            c.contents = mist
-            c.color = tint.cgColor
-            c.birthRate = rate
-            c.lifetime = 26
-            c.lifetimeRange = 6
-            c.velocity = speed
-            c.velocityRange = speed * 0.35
-            c.emissionLongitude = 0
-            c.emissionRange = 0.08
-            c.scale = Self.normScale(mist, targetPt: 210)
-            c.scaleRange = Self.normScale(mist, targetPt: 60)
-            c.alphaRange = 0.08
-            c.alphaSpeed = -0.006
-            cloudEmitter.emitterCells = [c]
-            cloudEmitter.birthRate = 1
+            // 流云投影已由 Metal landFragment 纯解析零开销承担；关闭全屏 210pt CAEmitterLayer 大贴图叠合以大幅降低 GPU 合成负载与掉帧
+            cloudEmitter.birthRate = 0
+            cloudEmitter.emitterCells = nil
         }
 
         for (idx, rl) in rippleLayers.enumerated() {

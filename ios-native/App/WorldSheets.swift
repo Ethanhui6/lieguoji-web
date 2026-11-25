@@ -39,10 +39,7 @@ struct NationsSheet: View {
                             } label: {
                                 VStack(spacing: 7) {
                                     HStack(spacing: 12) {
-                                        HStack(spacing: 1.5) {
-                                            RoundedRectangle(cornerRadius: 1.5, style: .continuous).fill(nColor).frame(width: 4, height: 36)
-                                            Rectangle().fill(Theme.goldRim.opacity(0.42)).frame(width: 0.7, height: 32)
-                                        }
+                                        Rectangle().fill(nColor).frame(width: 3.5, height: 36)
                                         VStack(alignment: .leading, spacing: 4) {
                                             HStack(spacing: 7) {
                                                 Text(n.name).font(Theme.serif(16)).foregroundStyle(s.alive ? Theme.ink : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)

@@ -176,7 +176,8 @@ public enum MaritimeWarfare {
             return sum + max(0, SeaDominion.shipyardLevel(r, provinceId: provinces[idx].id.asString) - 1)
         }
         let techBonus = max(0, WorldDepth.techLevel(r, nation: nation, branch: .naval) - 1)
-        let raw = ports.count * 5 + ships * 2 + bonus * 2 + dockBonus * 3 + techBonus * 2 + 4
+        let wonderSea = GrandSystems.seaTransportBonus(r, nation: nation)
+        let raw = ports.count * 5 + ships * 2 + bonus * 2 + dockBonus * 3 + techBonus * 2 + wonderSea * 2 + 4
         return max(4, Int((Double(raw) * transportMult).rounded()))
     }
 

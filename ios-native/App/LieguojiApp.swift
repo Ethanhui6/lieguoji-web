@@ -247,14 +247,9 @@ struct PrimaryLabel: View {
         GameActionLabel(title: title, symbol: symbol)
             .font(Theme.serif(16))
             .tracking(1.4)
-            .frame(maxWidth: .infinity).frame(minHeight: 48).padding(.horizontal, 16)
+            .frame(maxWidth: .infinity).frame(minHeight: 46).padding(.horizontal, 16)
             .foregroundStyle(Theme.paperLight)
-            .background {
-                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .fill(Theme.cinnabarGradient)
-            }
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous).stroke(Theme.goldRim.opacity(0.50), lineWidth: 0.75).padding(3))
-            .shadow(color: Theme.seal.opacity(0.22), radius: 5, y: 2)
+            .background(Theme.seal, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
     }
 }
 struct SecondaryLabel: View {
@@ -263,24 +258,18 @@ struct SecondaryLabel: View {
         GameActionLabel(title: title, symbol: symbol)
             .font(Theme.sans(14.5, weight: .regular))
             .tracking(0.6)
-            .frame(maxWidth: .infinity).frame(minHeight: 46).padding(.horizontal, 16)
+            .frame(maxWidth: .infinity).frame(minHeight: 44).padding(.horizontal, 16)
             .foregroundStyle(Theme.ink)
-            .background(Theme.vellumGradient, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line, lineWidth: 0.75))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous).stroke(Theme.goldRim.opacity(0.22), lineWidth: 0.6).padding(2))
-            .shadow(color: Theme.ink.opacity(0.05), radius: 2, y: 1)
+            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line, lineWidth: 0.7))
     }
 }
 
 extension View {
-    /// 统一温润宣纸御卷悬浮条：亮宣暖白渐变 + 外层暖墨细线 + 内层浅鎏金丝边 + 柔和贴地投影，全局 HUD/底栏/传报/工坊同源质感。
+    /// 极简温润宣纸悬浮条（回归 4.3 轻盈单层构型：无多余叠框与重渐变，降低离屏合成负担）。
     func glass<S: InsettableShape>(_ shape: S) -> some View {
-        background(
-            shape.fill(Theme.vellumGradient)
-                .shadow(color: Color(red: 0.14, green: 0.10, blue: 0.05).opacity(0.15), radius: 8, y: 2.5)
-        )
-        .overlay(shape.strokeBorder(Theme.ink.opacity(0.18), lineWidth: 0.85))
-        .overlay(shape.inset(by: 1.5).strokeBorder(Theme.goldRim.opacity(0.28), lineWidth: 0.6))
+        background(shape.fill(Theme.paper.opacity(0.96)).shadow(color: Color(red: 0.14, green: 0.10, blue: 0.05).opacity(0.11), radius: 6, y: 2))
+            .overlay(shape.strokeBorder(Theme.ink.opacity(0.15), lineWidth: 0.8))
     }
 }
 
@@ -471,7 +460,7 @@ struct SheetGrabber: View {
     }
 }
 
-/// 新中式极简古籍双线书眉页头：全字库正楷大标题 + 舒朗字距 + 鎏金淡墨双书眉线 + 真实朱砂篆刻印章。
+/// 新中式极简古籍页头（完整回归 4.3 疏朗单线构型 + 统一全字库正楷 TW-Kai，零套娃双边）。
 struct SheetHeader: View {
     let title: String
     var subtitle: String?
@@ -487,20 +476,15 @@ struct SheetHeader: View {
             if grabberVisible { SheetGrabber() }
             HStack(alignment: .center, spacing: 14) {
                 if let color {
-                    HStack(spacing: 2) {
-                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                            .fill(color)
-                            .frame(width: 3.5, height: inSidePanel ? 34 : 38)
-                        Rectangle()
-                            .fill(Theme.goldRim.opacity(0.55))
-                            .frame(width: 0.8, height: inSidePanel ? 30 : 34)
-                    }
+                    Rectangle()
+                        .fill(color)
+                        .frame(width: 3, height: inSidePanel ? 34 : 38)
                 }
                 VStack(alignment: .leading, spacing: 5) {
                     Text(title)
                         .font(Theme.serif(inSidePanel ? 23 : 26))
                         .foregroundStyle(Theme.ink)
-                        .tracking(2.2)
+                        .tracking(2.0)
                         .lineLimit(1)
                         .minimumScaleFactor(0.74)
                     if let subtitle {
@@ -519,17 +503,11 @@ struct SheetHeader: View {
             }
             .padding(.horizontal, Theme.Layout.sectionInset)
             .padding(.top, grabberVisible ? 10 : 16)
-            .padding(.bottom, 15)
-            // 古籍双线书眉：上层细鎏金丝 + 下层松烟淡墨，瞬间拉开书卷档次而零卡片套娃
-            VStack(spacing: 2.5) {
-                Rectangle()
-                    .fill(Theme.goldRim.opacity(0.42))
-                    .frame(height: 0.65)
-                Rectangle()
-                    .fill(Theme.ink.opacity(0.14))
-                    .frame(height: 0.8)
-            }
-            .padding(.horizontal, Theme.Layout.sectionInset)
+            .padding(.bottom, 16)
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(height: 0.75)
+                .padding(.horizontal, Theme.Layout.sectionInset)
         }
     }
 }
@@ -544,7 +522,7 @@ struct ViewBoundary: View {
     var body: some View { build() }
 }
 
-/// 极简古籍宣纸平铺区块（零套娃圆角灰盒）：以温润亮宣浅衬 + 鎏金淡墨上下细书线界定层次，兼具高级纸张质感与呼吸感。
+/// 极简古籍平铺区块（回归 4.3 纯宣纸直铺：零卡片盒、零灰底、零阴影，仅以 1px 淡墨分割线界定呼吸感）。
 /// 非泛型设计：同时切断内页向父视图传播的巨型 `ModifiedContent` 泛型类型膨胀。
 struct Group2: View {
     private let content: AnyView
@@ -553,12 +531,10 @@ struct Group2: View {
     }
     var body: some View {
         VStack(spacing: 0) {
-            Rectangle().fill(Theme.goldRim.opacity(0.32)).frame(height: 0.6)
             Rectangle().fill(Theme.hairline).frame(height: 0.75)
             content
             Rectangle().fill(Theme.hairline).frame(height: 0.75)
         }
-        .background(Theme.paperLight.opacity(0.46))
     }
 }
 
@@ -605,6 +581,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("5.1.0", ["【全面回归 4.3 极简宣纸美学 × 100% 统一正楷字体 × 彻底减负提速】拆除按钮/卡片/分节上的鎏金双框、多段渐变与离屏阴影，全面回归 4.3 纯净宣纸 + 1px 淡墨分割线 + 扁平朱砂红（#A83226）高呼吸感风格，同时保留全站 100% 统一全字库正楷（TW-Kai）与清晰等宽数字，游戏内外视觉高度一致。",
+                   "【全新「二级菜单」架构 × 图形渲染减负，彻底告别卡顿】国家概览拆除原先一口气渲染 150+ 视图与重复制度卡的臃肿布局，改为轻盈极简的「二级菜单」按需懒加载目录，秒开零掉帧；同步关闭重复的全屏巨幅云雾 CAEmitter 合成并上调地图远景细纹阈值，大幅改善流畅度与发热。",
+                   "【重磅新玩法：12 座天下奇观与国家大工程】万里边城、通济大运河、万国皇城、神机军器监、稷下太学宫、宝船大船坞等 12 座举世唯一奇观正式上线！选州动工、逐月修建、AI 列强同场竞建，竣工享真实永久全局光环，攻占奇观所在州即可夺取奇观归属。",
+                   "【8 条国家霸业使命 × 5 年黄金盛世 × 6 支天下雇佣兵团】新增 8 条带实时进度条与丰厚奖赏的国家霸业线与 60 个月「黄金盛世」（岁入 +25%、全军攻 +16% 守 +14%、安定 +15、腐化 −10）；概览与军事页新增「天下雇佣兵团」，可重金直募玄甲铁骑、瑞士长枪、神机火器营等 6 支自带 95 士气与 45–60 历练的百战精锐即刻参战。"]),
         ("5.0.1", ["【全站宣纸鎏金 UI/UX 质感大升级 × 修复 5.0.0 构建并正式发布】修复 WorldMeta.Province 公开构造与工程警告；全站 HUD 顶栏/底栏/传报/工坊升级为温润亮宣渐变配松烟细墨与浅鎏金丝边，全部 20+ 奏折页头升级「古籍双线书眉」，StatStrip 核心数据栏新增可点改朱点微示，标题页/长按快捷面板/列国榜（新增疆域占比微条）与全站主按钮全面统一为皇家朱砂漆红与古籍纸卷质感。",
                    "【国家直控大政深度扩充 × 26 项国策政令】国家概览首屏新增「轻徭薄赋 / 常平正税 / 战时重敛」三档赋税直控条；遇昏君/庸主时可直接在概览或政令发动「废黜昏君 / 弹劾免职」择贤即位；新增「广纳奇才（礼聘 78–92 专精历史名将名相）」「敕封名将（武略 +10 并赐越战越勇）」「大酺庆典（国运 +8、震荡减半）」共 26 项政令。",
                    "【军团临阵换将与单军养成闭环】军团详情页「统帅将才实效」行新增一键「换将」，即刻拜授本国武略最高将才执掌全军/征讨大印；军机令格扩充至 10 项，新增「急补粮饷（前线一键满粮 +22 士气）」与「军中演武（单军历练 +15，亲手淬炼精锐/王牌/无双虎师）」。",

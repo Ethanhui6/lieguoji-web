@@ -293,6 +293,11 @@ public final class EngineService {
         case "nationBreakdown": return data(engine?.nationBreakdown(int("n")))
         case "provinceBreakdown": return data(engine?.provinceBreakdown(int("province")))
         case "warCompare": return data(engine?.warCompare(attacker: int("a"), defender: int("b")))
+        case "grandInfo": return data(engine?.grandInfo(int("n")))
+        case "startWonder": return command(engine?.startWonder(int("n"), wonderId: str("wonder"), provinceIndex: optInt("province")))
+        case "claimMission": return command(engine?.claimMission(int("n"), missionId: str("mission")))
+        case "startGoldenAge": return command(engine?.startGoldenAge(int("n")))
+        case "hireMercenary": return command(engine?.hireMercenary(int("n"), mercId: str("merc")))
         default: return Reply(ok: false, reason: "未知请求 \(call)。")
         }
     }

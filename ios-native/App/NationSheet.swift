@@ -90,6 +90,17 @@ struct NationInfo: Decodable {
     var strategyCooldown: Int? = nil
     var decreeCooldowns: [String: Int]? = nil
     var taxPolicy: String? = nil
+    struct GrandSummary: Decodable {
+        let wondersOwned: Int
+        let wonderBuilding: String
+        let wonderMonthsLeft: Int
+        let missionsClaimable: Int
+        let missionsClaimed: Int
+        let missionsTotal: Int
+        let goldenAgeLeft: Int
+        let goldenAgeCanStart: Bool
+    }
+    var grand: GrandSummary? = nil
     var reformSlotsUsed: Int? = nil
     var reformSlotsMax: Int? = nil
     struct RulerEvalInfo: Decodable { let tier: Int; let label: String; let summary: String }
@@ -233,9 +244,24 @@ struct NationSheet: View {
     @State private var religionChoice = ""
     @State private var info: NationInfo?
     @State private var failed = false
-    /// 分类：精简为五页（概览 / 朝政 / 军事 / 外交 / 治理），免横滑翻找；政令、疆土、史册、定制统一归入「治理」。
+    /// 分类：精简为五页（概览 / 朝政 / 军事 / 外交 / 治理），免横滑翻找；重型子模块收进极简二级菜单秒开不卡顿。
     enum Tab: String, CaseIterable { case overview = "概览", court = "朝政", military = "军事", diplomacy = "外交", govern = "治理" }
+    enum OverviewSub: String, Identifiable {
+        case wonders, ambitions, mercenaries, techCulture, financeTrade, profile
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .wonders: return "天下奇观与大工程"
+            case .ambitions: return "霸业使命与黄金盛世"
+            case .mercenaries: return "天下雇佣兵团"
+            case .techCulture: return "科技、信誉与文化"
+            case .financeTrade: return "财政账本与特产商贸"
+            case .profile: return "国势五维、档案与国史"
+            }
+        }
+    }
     @State private var tab: Tab = .overview
+    @State private var overviewSub: OverviewSub? = nil
     @State private var governSub = "decrees"
     @State private var enthroning = false
     @State private var confirmWarNeighbors = false
@@ -349,6 +375,7 @@ struct NationSheet: View {
                 if Self.tourFamily, tree == nil, let h = info?.court?.houses.first(where: { $0.id != nil }), let id = h.id { tree = TreePick(id: id, name: h.name) }
             }
             .task(id: tab) {
+                if tab != .overview { overviewSub = nil }
                 if tab == .court, postList.isEmpty { postList = await model.posts(nation) }
             }
             .onAppear {
@@ -545,13 +572,20 @@ struct NationSheet: View {
             return "四境承平 · 拥兵 \(Names.wan(sNat.troops))\(navy)"
         }()
 
-        VStack(alignment: .leading, spacing: 20) {
-                // 页顶唯一核心焦点（渐进式披露 + 精炼短句，绝不堆砌长篇废话）
+        VStack(alignment: .leading, spacing: 18) {
+            if let sub = overviewSub {
+                EditorialSubPageBar(parentTitle: "概览", title: sub.title) {
+                    withAnimation(Motion.tap) { overviewSub = nil }
+                }
+                ViewBoundary { overviewSubContent(sub, info: info, map: map, state: state, ovLex: ovLex) }
+            } else {
+                // 页顶唯一核心焦点（4.3 极简宣纸渐进式披露，首屏零重组件卡顿）
                 VStack(alignment: .leading, spacing: 14) {
                     let pendingAgenda: NationInfo.CourtAgenda? = (info.agenda != nil && (info.agenda?.cooldownDays ?? 0) == 0) ? info.agenda : nil
+                    let gaLeft = info.grand?.goldenAgeLeft ?? 0
                     if !info.wars.isEmpty {
                         EditorialFocusLead(
-                            eyebrow: "战事告急 · \(info.wars.count) 场交锋",
+                            eyebrow: "战事告急 · \(info.wars.count) 场交锋" + (gaLeft > 0 ? " · 黄金盛世余\(gaLeft)月" : ""),
                             headline: "\(info.name)正值战时",
                             detail: "都城 \(capName) · \(rulerSummary) · \(postureSummary)",
                             urgent: true,
@@ -560,12 +594,19 @@ struct NationSheet: View {
                         )
                     } else if let ag = pendingAgenda {
                         EditorialFocusLead(
-                            eyebrow: "待决议案 · \(ag.tag ?? ovLex.agendaTag)",
+                            eyebrow: "待决议案 · \(ag.tag ?? ovLex.agendaTag)" + (gaLeft > 0 ? " · 黄金盛世余\(gaLeft)月" : ""),
                             headline: ag.title,
                             detail: ag.desc,
                             urgent: true,
                             actionTitle: "前往\(ovLex.courtTabTitle)表决",
                             onAction: { withAnimation(Motion.tap) { tab = .court } }
+                        )
+                    } else if gaLeft > 0 {
+                        EditorialFocusLead(
+                            eyebrow: "黄金盛世 · 尚余 \(gaLeft) 个月 · 岁入+25% 攻+16%",
+                            headline: "\(rulerSummary)",
+                            detail: "都城 \(capName) · \(sNat.provinces) \(ovLex.adminUnit) \(sNat.cities) 城 · \(postureSummary)",
+                            urgent: true
                         )
                     } else {
                         EditorialFocusLead(
@@ -576,7 +617,7 @@ struct NationSheet: View {
                         )
                     }
 
-                    // 触感纸框快捷指令条：每枚均具备清晰描边与按压底缘，一眼可辨绝不与正文混淆
+                    // 4.3 扁平宣纸快捷指令条（零重影零折字）
                     HStack(spacing: 8) {
                         EditorialTactileButton(title: "国力", icon: .info, compact: true, fullWidth: true) {
                             showingBreakdown = true
@@ -597,7 +638,7 @@ struct NationSheet: View {
                         }
                     }
 
-                    // 君主治乱与疆域负荷实时脉象（明君/昏君、小邦精治/帝国过扩真实数值直显；若遇昏君庸主可当场弹劾废立！）
+                    // 君主治乱与疆域负荷实时脉象（遇昏君庸主直接弹劾废立）
                     if info.rulerEval != nil || info.realmStrain != nil {
                         VStack(alignment: .leading, spacing: 7) {
                             if let re = info.rulerEval, !re.summary.isEmpty {
@@ -640,13 +681,13 @@ struct NationSheet: View {
                         .padding(.top, 2)
                     }
 
-                    // 三档赋税直控条（轻徭薄赋 / 常平正税 / 战时重敛，一触即效无需翻找折叠财政）
+                    // 三档赋税直控条（一触即效）
                     if info.alive {
                         let curTax = info.taxPolicy ?? "normal"
                         let taxNote = curTax == "light" ? "轻徭薄赋 · 岁入 −20% · 国运与人丁稳增 · 压低腐化"
                             : curTax == "heavy" ? "战时重敛 · 岁入 +30% · 国运与人丁折损 · 腐化抬升"
                             : "常平正税 · 财政与民生均衡稳态"
-                        VStack(alignment: .leading, spacing: 7) {
+                        VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 7) {
                                 ForEach([("light", "轻徭薄赋"), ("normal", "常平正税"), ("heavy", "战时重敛")], id: \.0) { key, title in
                                     let on = curTax == key
@@ -661,17 +702,16 @@ struct NationSheet: View {
                                 .foregroundStyle(curTax == "heavy" ? Theme.seal : Theme.ink2)
                                 .lineLimit(1).minimumScaleFactor(0.8)
                         }
-                        .padding(.top, 2)
                     }
                     EditorialDivider()
                 }
                 .padding(.horizontal, Theme.Layout.pageInset)
 
-                // 共和/立宪议会格局：克制三色阶席位条（无杂色胶囊，直铺宣纸）
+                // 共和/立宪议会格局（精简一行展示）
                 if let parties = info.parties, !parties.isEmpty {
                     let sortedP = parties.sorted { $0.seats > $1.seats }
                     let rulingP = sortedP.first
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 10) {
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             PhosphorIcon(glyph: .polity, size: 15, weight: .light).foregroundStyle(Theme.ink2)
                             Text("议会席位").font(Theme.serif(15.5)).tracking(1.4).foregroundStyle(Theme.ink)
@@ -701,33 +741,128 @@ struct NationSheet: View {
                             .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
                         }
                         .frame(height: 5)
-                        Text(sortedP.prefix(4).map { "\($0.name) \($0.seats)席" }.joined(separator: "  ·  "))
-                            .font(Theme.sans(12.5)).foregroundStyle(Theme.ink2).monospacedDigit()
-                        EditorialDivider()
                     }
                     .padding(.horizontal, Theme.Layout.pageInset)
                 }
 
-                // 国力走势（Cormorant Garamond 衬线百分比 + 宣纸直铺折线）
-                if let p = info.power, p.count >= 2 {
-                    HStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("国力走势").font(Theme.sans(12)).foregroundStyle(Theme.ink2)
-                            let change = (p.last ?? 0) - (p.first ?? 0)
-                            let pctStr = String(format: "%.0f%%", abs(change) / max(1, p.first ?? 1) * 100)
-                            EditorialValueText((change >= 0 ? "+" : "−") + pctStr, size: 22, color: change < 0 ? Theme.seal : Theme.ink)
-                            Text(p.count >= 24 ? "近 \(p.count / 12) 年" : "近 \(p.count) 个月").font(Theme.sans(11.5)).foregroundStyle(Theme.ink2)
-                        }
-                        Sparkline(values: p).frame(height: 44)
-                    }
-                    .padding(.horizontal, Theme.Layout.pageInset)
-                    EditorialDivider(inset: Theme.Layout.pageInset)
-                }
+                // 4.3 极简宣纸二级菜单目录（将全部重型子系统拆入独立二级子页，秒开不卡顿且留白疏朗！）
+                let gs = info.grand
+                let wonderSub = (gs?.wonderBuilding.isEmpty == false)
+                    ? "兴建中：\(gs!.wonderBuilding)（余 \(gs!.wonderMonthsLeft) 月）"
+                    : ((gs?.wondersOwned ?? 0) > 0 ? "本国实控 \(gs!.wondersOwned) 座传世奇观" : "12 座传世奇观可动工兴建，享全局光环")
+                let wonderBadge: String? = (gs?.wonderBuilding.isEmpty == false) ? "在建中"
+                    : ((gs?.wondersOwned ?? 0) > 0 ? "\(gs!.wondersOwned) 座" : "新玩法")
+                let missionClaimable = gs?.missionsClaimable ?? 0
+                let missionSub = (gs?.goldenAgeLeft ?? 0) > 0
+                    ? "黄金盛世生效中（余 \(gs!.goldenAgeLeft) 月）· 霸业 \(gs?.missionsClaimed ?? 0)/\(gs?.missionsTotal ?? 8)"
+                    : "已完成 \(gs?.missionsClaimed ?? 0)/\(gs?.missionsTotal ?? 8) 项历史霸业，达标即可领赏与启盛世"
+                let missionBadge: String? = missionClaimable > 0 ? "可领赏 \(missionClaimable)"
+                    : ((gs?.goldenAgeCanStart ?? false) ? "可启盛世" : ((gs?.goldenAgeLeft ?? 0) > 0 ? "盛世中" : nil))
+                let techLvlSum = (info.tech ?? []).reduce(0) { $0 + $1.level }
+                let hasChain = info.activeChain != nil
 
-                // 渐进式披露：文化学说、国教圣地、科技信誉、国势五维默认折叠，保持首屏高度疏朗呼吸感
+                SectionLabel("治国方略与大工程")
+                Group2 {
+                    EditorialSubMenuRow(
+                        title: "天下奇观与大工程",
+                        subtitle: wonderSub,
+                        badge: wonderBadge,
+                        accentBadge: (gs?.wonderBuilding.isEmpty == false) || (gs?.wondersOwned ?? 0) > 0,
+                        icon: .polity
+                    ) { withAnimation(Motion.tap) { overviewSub = .wonders } }
+                    Divider2()
+                    EditorialSubMenuRow(
+                        title: "霸业使命与黄金盛世",
+                        subtitle: missionSub,
+                        badge: missionBadge,
+                        accentBadge: missionClaimable > 0 || (gs?.goldenAgeCanStart ?? false) || (gs?.goldenAgeLeft ?? 0) > 0,
+                        icon: .crown
+                    ) { withAnimation(Motion.tap) { overviewSub = .ambitions } }
+                    Divider2()
+                    EditorialSubMenuRow(
+                        title: "天下雇佣兵团",
+                        subtitle: "6 支百战精锐佣兵，重金直募都城即刻投入实战",
+                        badge: "应急精兵",
+                        accentBadge: !info.wars.isEmpty,
+                        icon: .military
+                    ) { withAnimation(Motion.tap) { overviewSub = .mercenaries } }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+
+                SectionLabel("国情卷宗 · 二级详览")
+                Group2 {
+                    EditorialSubMenuRow(
+                        title: "科技、信誉与文化学说",
+                        subtitle: [info.cultureDoctrine?.title, Names.religion[info.religion], techLvlSum > 0 ? "四科总级 \(techLvlSum)" : nil].compactMap { $0 }.joined(separator: " · "),
+                        badge: hasChain ? "待决事件" : (info.reputation.map { "信誉 \($0.score)" }),
+                        accentBadge: hasChain,
+                        icon: .culture
+                    ) { withAnimation(Motion.tap) { overviewSub = .techCulture } }
+                    Divider2()
+                    EditorialSubMenuRow(
+                        title: "财政账本与特产商贸",
+                        subtitle: "月净入 \(Int(info.goldPerMonth).formatted()) 金 · 国库 \(Names.wan(Int(info.gold))) · 商路与国债",
+                        badge: info.goldPerMonth < 0 ? "赤字" : nil,
+                        accentBadge: info.goldPerMonth < 0,
+                        icon: .economy
+                    ) { withAnimation(Motion.tap) { overviewSub = .financeTrade } }
+                    Divider2()
+                    EditorialSubMenuRow(
+                        title: "国势五维、档案与国史",
+                        subtitle: "点改君主/都城/政体/国运/生计 · 国力走势 · 历代国史",
+                        badge: history.isEmpty ? nil : "\(history.count) 条史记",
+                        accentBadge: false,
+                        icon: .chronicle
+                    ) { withAnimation(Motion.tap) { overviewSub = .profile } }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func overviewSubContent(_ sub: OverviewSub, info: NationInfo, map: WorldMap, state: GameState, ovLex: LocalizationEngine.Lexicon) -> some View {
+        let metaTint = nation < map.meta.nations.count ? Names.color(map.meta.nations[nation].color) : Theme.seal
+        switch sub {
+        case .wonders:
+            NationWondersSubPage(
+                model: model,
+                nation: nation,
+                alive: info.alive,
+                onLocateProvince: { pIdx in
+                    if map.meta.provinces.indices.contains(pIdx) {
+                        let pr = map.meta.provinces[pIdx]
+                        lower()
+                        model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
+                        fly(pIdx)
+                    }
+                },
+                onMessage: { flash = $0 },
+                onRefreshParent: { await reload() }
+            )
+        case .ambitions:
+            NationAmbitionsSubPage(
+                model: model,
+                nation: nation,
+                alive: info.alive,
+                onMessage: { flash = $0 },
+                onRefreshParent: { await reload() }
+            )
+        case .mercenaries:
+            NationMercenariesSubPage(
+                model: model,
+                nation: nation,
+                alive: info.alive,
+                tint: metaTint,
+                onMessage: { flash = $0 },
+                onRefreshParent: { await reload() }
+            )
+        case .techCulture:
+            VStack(alignment: .leading, spacing: 18) {
+                NationDepthSection(model: model, nation: nation, info: info, onReload: { await reload() }, onMessage: { flash = $0 })
                 if info.cultureDoctrine != nil || !(info.creedEffect ?? "").isEmpty {
-                    let culSummary = [info.cultureDoctrine?.title, Names.religion[info.religion]].compactMap { $0 }.joined(separator: " · ")
-                    FoldSection("文化学说与国教", expanded: false, summary: culSummary) {
+                    SectionLabel("文化学说与国教圣地")
+                    Group2 {
                         VStack(alignment: .leading, spacing: 14) {
                             if let doc = info.cultureDoctrine {
                                 VStack(alignment: .leading, spacing: 6) {
@@ -757,123 +892,141 @@ struct NationSheet: View {
                                     Text(creedText).font(Theme.sans(13)).foregroundStyle(Theme.ink2).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
                                 }
                             }
-                            EditorialDivider()
+                            if Faith.catalog[info.religion] != nil {
+                                EditorialDivider()
+                                FaithCard(religion: info.religion, state: model.state, map: map, effect: info.creedEffect, shares: info.faiths)
+                            }
                         }
-                        .padding(.horizontal, Theme.Layout.pageInset)
+                        .padding(.horizontal, 4).padding(.vertical, 12)
                     }
+                    .padding(.horizontal, Theme.Layout.pageInset)
                 }
-
-                NationDepthSection(model: model, nation: nation, info: info, onReload: { await reload() }, onMessage: { flash = $0 })
+            }
+        case .financeTrade:
+            VStack(alignment: .leading, spacing: 18) {
+                SectionLabel("财政收支与国债")
+                FinanceSection(model: model, nation: nation, day: state.day / 30, say: { flash = $0 })
+                SectionLabel("特产与对外商贸")
+                TradeSection(model: model, map: map, nation: nation, day: state.day / 30)
+            }
+        case .profile:
+            VStack(alignment: .leading, spacing: 18) {
+                if let p = info.power, p.count >= 2 {
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("国力走势").font(Theme.sans(12)).foregroundStyle(Theme.ink2)
+                            let change = (p.last ?? 0) - (p.first ?? 0)
+                            let pctStr = String(format: "%.0f%%", abs(change) / max(1, p.first ?? 1) * 100)
+                            EditorialValueText((change >= 0 ? "+" : "−") + pctStr, size: 22, color: change < 0 ? Theme.seal : Theme.ink)
+                            Text(p.count >= 24 ? "近 \(p.count / 12) 年" : "近 \(p.count) 个月").font(Theme.sans(11.5)).foregroundStyle(Theme.ink2)
+                        }
+                        Sparkline(values: p).frame(height: 44)
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                }
 
                 if let sway = info.sway, !sway.isEmpty {
                     let warCount = info.wars.count
                     let lostProvs = info.court?.lost ?? 0
                     let season = WorldSeason.of(month: state.date.month)
-                    FoldSection("国势五维", expanded: false, summary: "\(season.fullName) · " + (warCount > 0 ? "战事 \(warCount) 场" : "四境承平")) {
-                        Group2 {
-                            VStack(alignment: .leading, spacing: 0) {
-                                HStack(spacing: 10) {
-                                    Text(season.fullName).font(Theme.sans(13, weight: .medium)).foregroundStyle(Theme.ink)
-                                    Text(season.summary).font(Theme.sans(12.5)).foregroundStyle(Theme.ink2).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                                    Spacer(minLength: 0)
+                    SectionLabel("国势五维 · \(season.fullName)")
+                    Group2 {
+                        VStack(alignment: .leading, spacing: 0) {
+                            HStack(spacing: 10) {
+                                Text(season.fullName).font(Theme.sans(13, weight: .medium)).foregroundStyle(Theme.ink)
+                                Text(season.summary).font(Theme.sans(12.5)).foregroundStyle(Theme.ink2).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 4).padding(.vertical, 12)
+                            if warCount > 0 || lostProvs > 0 {
+                                Divider2()
+                                let exhaustion = min(100, warCount * 18 + lostProvs * 12 + (info.polityDetail?.defeatShock ?? 0))
+                                HStack(spacing: 8) {
+                                    PhosphorIcon(glyph: .war, size: 15, weight: .light).foregroundStyle(exhaustion >= 40 ? Theme.seal : Theme.ink2)
+                                    Text("战事疲弊").font(Theme.sans(14)).foregroundStyle(Theme.ink2)
+                                    Spacer()
+                                    Text(exhaustion >= 60 ? "兵疲民困 · \(exhaustion)%" : exhaustion >= 30 ? "军需吃紧 · \(exhaustion)%" : "尚可持久 · \(exhaustion)%")
+                                        .font(Theme.sans(13.5, weight: exhaustion >= 40 ? .medium : .regular))
+                                        .foregroundStyle(exhaustion >= 40 ? Theme.seal : Theme.ink)
+                                        .monospacedDigit()
                                 }
                                 .padding(.horizontal, 4).padding(.vertical, 12)
-                                if warCount > 0 || lostProvs > 0 {
-                                    Divider2()
-                                    let exhaustion = min(100, warCount * 18 + lostProvs * 12 + (info.polityDetail?.defeatShock ?? 0))
-                                    HStack(spacing: 8) {
-                                        PhosphorIcon(glyph: .war, size: 15, weight: .light).foregroundStyle(exhaustion >= 40 ? Theme.seal : Theme.ink2)
-                                        Text("战事疲弊").font(Theme.sans(14)).foregroundStyle(Theme.ink2)
-                                        Spacer()
-                                        Text(exhaustion >= 60 ? "兵疲民困 · \(exhaustion)%" : exhaustion >= 30 ? "军需吃紧 · \(exhaustion)%" : "尚可持久 · \(exhaustion)%")
-                                            .font(Theme.sans(13.5, weight: exhaustion >= 40 ? .medium : .regular))
-                                            .foregroundStyle(exhaustion >= 40 ? Theme.seal : Theme.ink)
-                                            .monospacedDigit()
+                            }
+                            ForEach(Array(sway.enumerated()), id: \.offset) { _, row in
+                                Divider2()
+                                let g: PhosphorGlyph = row.name.contains("军") ? .military : row.name.contains("守") ? .fortress : row.name.contains("财") ? .economy : row.name.contains("民") ? .house : .crown
+                                HStack(spacing: 12) {
+                                    PhosphorIcon(glyph: g, size: 15, weight: .light).foregroundStyle(Theme.ink2)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(row.name).font(Theme.sans(14, weight: .medium)).foregroundStyle(Theme.ink)
+                                        Text(row.text).font(Theme.sans(12)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
                                     }
-                                    .padding(.horizontal, 4).padding(.vertical, 12)
+                                    Spacer(minLength: 8)
+                                    EditorialValueText(row.value, size: 17, color: Theme.ink)
                                 }
-                                ForEach(Array(sway.enumerated()), id: \.offset) { _, row in
-                                    Divider2()
-                                    let g: PhosphorGlyph = row.name.contains("军") ? .military : row.name.contains("守") ? .fortress : row.name.contains("财") ? .economy : row.name.contains("民") ? .house : .crown
-                                    HStack(spacing: 12) {
-                                        PhosphorIcon(glyph: g, size: 15, weight: .light).foregroundStyle(Theme.ink2)
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            Text(row.name).font(Theme.sans(14, weight: .medium)).foregroundStyle(Theme.ink)
-                                            Text(row.text).font(Theme.sans(12)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.8)
-                                        }
-                                        Spacer(minLength: 8)
-                                        EditorialValueText(row.value, size: 17, color: Theme.ink)
-                                    }
-                                    .padding(.horizontal, 4).padding(.vertical, 12)
-                                }
+                                .padding(.horizontal, 4).padding(.vertical, 12)
                             }
                         }
-                        .padding(.horizontal, Theme.Layout.pageInset)
+                    }
+                    .padding(.horizontal, Theme.Layout.pageInset)
+                }
+
+                SectionLabel("国家档案（轻点可改）")
+                Group2 {
+                    if let r = info.ruler {
+                        let eraSuffix: String = {
+                            if let e = r.eraYearText, !e.isEmpty { return " · \(e)" }
+                            if let h = r.honorific, !h.isEmpty { return " · \(h)" }
+                            return ""
+                        }()
+                        let baseRuler = (r.styledName.flatMap { $0.isEmpty ? nil : $0 }) ?? r.name
+                        let displayRuler = baseRuler + "（\(Int(r.age))岁）" + eraSuffix + (info.heads?.premierRules == true ? " · 虚位" : "")
+                        EditRow(label: r.title, value: displayRuler) {
+                            if let id = r.id { editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: r.female ?? false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50]) }
+                        }
+                        if let summary = r.traitSummary, !summary.isEmpty {
+                            HStack(alignment: .top, spacing: 6) {
+                                PaperTag(text: "在位加成", color: Theme.ink2, size: 10)
+                                Text(summary.joined(separator: " · ")).font(Theme.caption).foregroundStyle(Theme.ink)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 12).padding(.bottom, 10)
+                        }
+                        Divider2()
+                    }
+                    if let h = info.heads {
+                        Row(label: h.premierTitle, value: (h.premierName ?? "出缺") + (h.premierRules ? " · 掌国政" : "") + (h.elected ? " · 大选组阁" : ""))
+                        Divider2()
+                    }
+                    EditRow(label: "政体", value: info.styleLabel ?? Names.polity[info.polity] ?? info.polity) { overviewSub = nil; governSub = "custom"; customPane = .polity; tab = .govern }; Divider2()
+                    EditRow(label: "都城", value: capitalName(map, nation < map.meta.nations.count ? map.meta.nations[nation] : nil) ?? "—") {
+                        let owned = state.owners.indices.filter { state.owners[$0] == nation }
+                        pickProvince("点选新都城：本国有城池的\(ovLex.adminUnit)") { p in
+                            guard owned.contains(p), map.meta.cities.contains(where: { $0.province == p }) else { say("只能迁都到本国有城池的\(ovLex.adminUnit)"); GameFeel.shared.notify(.error); return }
+                            Task { await run(success: "迁都\(map.meta.provinces[p].name)") { await model.setCapital(nation, province: p) } }
+                        }
+                    }
+                    Divider2()
+                    EditRow(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)") { overviewSub = nil; governSub = "custom"; customPane = .faith; tab = .govern }; Divider2()
+                    EditRow(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金" + Self.percent(info.bonus?["income"])) {
+                        numberEdit = NumberEdit(title: "月入加成（%）", unit: "%", value: info.bonus?["income"] ?? 0) { v in await model.setBonus(nation, key: "income", value: v) }
+                    }
+                    Divider2()
+                    EditRow(label: "国运", value: String(format: "%.0f", info.destiny)) {
+                        numberEdit = NumberEdit(title: "国运（0–100）", unit: "", value: info.destiny) { v in await model.editNation(nation, gold: nil, destiny: v, polity: nil) }
+                    }
+                    Divider2()
+                    EditRow(label: "生计", value: Livelihood.name(info.livelihood ?? "")) { pickingLivelihood = true }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+                .confirmationDialog("生计（民族特性）", isPresented: $pickingLivelihood, titleVisibility: .visible) {
+                    ForEach(Livelihood.all, id: \.key) { l in
+                        Button("\(l.name) · \(l.note)") { Task { await run { await model.setLivelihood(nation, l.key) } } }
                     }
                 }
-                FoldSection("基本信息", expanded: true) {
-                    Group2 {
-                        if let r = info.ruler {
-                            let eraSuffix: String = {
-                                if let e = r.eraYearText, !e.isEmpty { return " · \(e)" }
-                                if let h = r.honorific, !h.isEmpty { return " · \(h)" }
-                                return ""
-                            }()
-                            let baseRuler = (r.styledName.flatMap { $0.isEmpty ? nil : $0 }) ?? r.name
-                            let displayRuler = baseRuler + "（\(Int(r.age))岁）" + eraSuffix + (info.heads?.premierRules == true ? " · 虚位" : "")
-                            EditRow(label: r.title, value: displayRuler) {
-                                if let id = r.id { editing = NationInfo.Person(id: id, role: r.title, name: r.name, age: r.age, female: r.female ?? false, traits: r.traits ?? [], skills: r.skills ?? [50, 50, 50, 50]) }
-                            }
-                            if let summary = r.traitSummary, !summary.isEmpty {
-                                HStack(alignment: .top, spacing: 6) {
-                                    PaperTag(text: "在位加成", color: Theme.jade, size: 10)
-                                    Text(summary.joined(separator: " · ")).font(Theme.caption).foregroundStyle(Theme.ink)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                    Spacer(minLength: 0)
-                                }
-                                .padding(.horizontal, 16).padding(.bottom, 10)
-                            }
-                            Divider2()
-                        }
-                        // 掌权者: the head of government under the form's own title, apart from the head of state.
-                        if let h = info.heads {
-                            Row(label: h.premierTitle, value: (h.premierName ?? "出缺") + (h.premierRules ? " · 掌国政" : "") + (h.elected ? " · 大选组阁" : ""))
-                            Divider2()
-                        }
-                        EditRow(label: "政体", value: info.styleLabel ?? Names.polity[info.polity] ?? info.polity) { governSub = "custom"; customPane = .polity; tab = .govern }; Divider2()
-                        // 都城: tap to move it by tapping the map.
-                        EditRow(label: "都城", value: capitalName(map, nation < map.meta.nations.count ? map.meta.nations[nation] : nil) ?? "—") {
-                            let owned = state.owners.indices.filter { state.owners[$0] == nation }
-                            pickProvince("点选新都城：本国有城池的\(ovLex.adminUnit)") { p in
-                                guard owned.contains(p), map.meta.cities.contains(where: { $0.province == p }) else { say("只能迁都到本国有城池的\(ovLex.adminUnit)"); GameFeel.shared.notify(.error); return }
-                                Task { await run(success: "迁都\(map.meta.provinces[p].name)") { await model.setCapital(nation, province: p) } }
-                            }
-                        }
-                        Divider2()
-                        EditRow(label: "文化 · 宗教", value: "\(Names.culture[info.culture] ?? info.culture) · \(Names.religion[info.religion] ?? info.religion)") { governSub = "custom"; customPane = .faith; tab = .govern }; Divider2()
-                        ReformCard(model: model, nation: nation, info: info, say: { flash = $0 }, reload: { await reload() })
-                        if Faith.catalog[info.religion] != nil { FaithCard(religion: info.religion, state: model.state, map: map, effect: info.creedEffect, shares: info.faiths); Divider2() }
-                        EditRow(label: "月入", value: "\(Int(info.goldPerMonth).formatted()) 金" + Self.percent(info.bonus?["income"])) {
-                            numberEdit = NumberEdit(title: "月入加成（%）", unit: "%", value: info.bonus?["income"] ?? 0) { v in await model.setBonus(nation, key: "income", value: v) }
-                        }
-                        Divider2()
-                        EditRow(label: "国运", value: String(format: "%.0f", info.destiny)) {
-                            numberEdit = NumberEdit(title: "国运（0–100）", unit: "", value: info.destiny) { v in await model.editNation(nation, gold: nil, destiny: v, polity: nil) }
-                        }
-                        Divider2()
-                        EditRow(label: "生计", value: Livelihood.name(info.livelihood ?? "")) { pickingLivelihood = true }
-                    }
-                    .padding(.horizontal, 16)
-                    .confirmationDialog("生计（民族特性）", isPresented: $pickingLivelihood, titleVisibility: .visible) {
-                        ForEach(Livelihood.all, id: \.key) { l in
-                            Button("\(l.name) · \(l.note)") { Task { await run { await model.setLivelihood(nation, l.key) } } }
-                        }
-                    }
-                }
-                FoldSection("财政", expanded: false, summary: "月入 \(Int(info.goldPerMonth).formatted()) 金 · 国库 \(Names.wan(Int(info.gold)))") { FinanceSection(model: model, nation: nation, day: state.day / 30, say: { flash = $0 }) }
-                FoldSection("特产与贸易", expanded: false, summary: "特产、商路与贸易伙伴") { TradeSection(model: model, map: map, nation: nation, day: state.day / 30) }
+
                 if !regime.history.isEmpty {
-                    // 政体沿革: the polities this state has had, and the current one's standing bonus.
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 6) {
                             ForEach(Array(regime.history.suffix(6).enumerated()), id: \.offset) { i, p in
@@ -885,48 +1038,48 @@ struct NationSheet: View {
                     }
                     .padding(.horizontal, Theme.Layout.sectionInset)
                 }
-                // 国史: the chronicle entries naming this state, newest first (each locatable on the map).
-                FoldSection("国史", expanded: false, summary: history.first.map { "第\($0.day + 1)日 · " + $0.text } ?? "尚无记载") {
-                    Group2 {
-                        Button { withAnimation(Motion.tap) { governSub = "history"; tab = .govern } } label: {
-                            HStack(spacing: 8) {
-                                ArtEmblem(image: BundleArt.sealChronicle, size: 24, fallback: .chronicle)
-                                Text("查看历代执政世系、强势评级与完整史册").font(Theme.body).foregroundStyle(Theme.seal)
-                                Spacer()
-                                InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal)
-                            }
-                            .padding(.horizontal, 16).padding(.vertical, 10).contentShape(Rectangle())
+
+                SectionLabel("国史编年（最近 20 条）")
+                Group2 {
+                    Button { withAnimation(Motion.tap) { overviewSub = nil; governSub = "history"; tab = .govern } } label: {
+                        HStack(spacing: 8) {
+                            ArtEmblem(image: BundleArt.sealChronicle, size: 24, fallback: .chronicle)
+                            Text("查看历代执政世系、强势评级与完整史册").font(Theme.body).foregroundStyle(Theme.seal)
+                            Spacer()
+                            InkIcon(glyph: .chevronRight, size: 12, weight: 1.7).foregroundStyle(Theme.seal)
                         }
-                        .buttonStyle(.plain)
-                        if !history.isEmpty { Divider2() }
-                        if history.isEmpty { Row(label: "国史", value: "尚无记载") }
-                        ForEach(Array(history.prefix(20).enumerated()), id: \.offset) { i, e in
-                            HStack(alignment: .top, spacing: 8) {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text("第\(e.day + 1)日").font(Theme.caption).foregroundStyle(Theme.ink2)
-                                    Text(e.text).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
-                                }
-                                Spacer(minLength: 6)
-                                if let p = e.province, map.meta.provinces.indices.contains(p) {
-                                    Button {
-                                        GameFeel.shared.tap()
-                                        lower()
-                                        let pr = map.meta.provinces[p]
-                                        model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
-                                        fly(p)
-                                    } label: {
-                                        InkIcon(glyph: .locate, size: 13, weight: 1.7).foregroundStyle(Theme.seal)
-                                            .frame(width: 26, height: 26).background(Theme.seal.opacity(0.08), in: Circle())
-                                    }
-                                    .buttonStyle(PressStyle())
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.vertical, 9)
-                            if i < min(history.count, 20) - 1 { Divider2() }
-                        }
+                        .padding(.horizontal, 12).padding(.vertical, 10).contentShape(Rectangle())
                     }
-                    .padding(.horizontal, 16)
+                    .buttonStyle(.plain)
+                    if !history.isEmpty { Divider2() }
+                    if history.isEmpty { Row(label: "国史", value: "尚无记载") }
+                    ForEach(Array(history.prefix(20).enumerated()), id: \.offset) { i, e in
+                        HStack(alignment: .top, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("第\(e.day + 1)日").font(Theme.caption).foregroundStyle(Theme.ink2)
+                                Text(e.text).font(Theme.body).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: 6)
+                            if let p = e.province, map.meta.provinces.indices.contains(p) {
+                                Button {
+                                    GameFeel.shared.tap()
+                                    lower()
+                                    let pr = map.meta.provinces[p]
+                                    model.controller.showPlace(x: Double(pr.x), y: Double(pr.y))
+                                    fly(p)
+                                } label: {
+                                    InkIcon(glyph: .locate, size: 13, weight: 1.7).foregroundStyle(Theme.seal)
+                                        .frame(width: 26, height: 26).background(Theme.seal.opacity(0.08), in: Circle())
+                                }
+                                .buttonStyle(PressStyle())
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 12).padding(.vertical, 9)
+                        if i < min(history.count, 20) - 1 { Divider2() }
+                    }
                 }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
         }
     }
     @ViewBuilder private func courtTab(_ info: NationInfo, _ map: WorldMap, _ state: GameState) -> some View {
@@ -1217,11 +1370,11 @@ struct NationSheet: View {
                 }
                 if let court = info.court, info.alive { FoldSection(lex.courtSectionTitle, expanded: true) { courtView(court, map) } }
                 if let court = info.court, info.alive, !court.houses.isEmpty {
-                    FoldSection("\(lex.housesSectionTitle)（\(court.houses.count)）", expanded: court.houses.count <= 4, summary: "\(court.houses.count) 家\(lex.houseUnitLabel)") { housesSection(court) }
+                    FoldSection("\(lex.housesSectionTitle)（\(court.houses.count)）", expanded: court.houses.count <= 3, summary: "\(court.houses.count) 家\(lex.houseUnitLabel)") { housesSection(court) }
                 }
                 if let list = info.court?.governorList, !list.isEmpty, info.alive {
                     let filled = list.filter { $0.holder != nil }.count
-                    FoldSection("\(lex.adminPlural)\(lex.governorTitle)（\(filled)/\(list.count)）", expanded: list.count <= 6, summary: filled == list.count ? "全部满员" : "空缺 \(list.count - filled) \(lex.adminUnit)") {
+                    FoldSection("\(lex.adminPlural)\(lex.governorTitle)（\(filled)/\(list.count)）", expanded: false, summary: filled == list.count ? "全部满员" : "空缺 \(list.count - filled) \(lex.adminUnit)") {
                         Group2 {
                             ForEach(Array(list.enumerated()), id: \.offset) { i, g in
                                 Button { appointing = AppointTarget(office: "Governor:\(g.province)") } label: {
@@ -1326,6 +1479,23 @@ struct NationSheet: View {
                 onToast: { flash = $0 },
                 onReload: { await reload() }
             )
+            if info.alive {
+                Group2 {
+                    EditorialSubMenuRow(
+                        title: "天下雇佣兵团",
+                        subtitle: "6 支百战精锐佣兵 · 即刻集结都城投入实战",
+                        badge: "重金直募",
+                        accentBadge: !info.wars.isEmpty,
+                        icon: .military
+                    ) {
+                        withAnimation(Motion.tap) {
+                            overviewSub = .mercenaries
+                            tab = .overview
+                        }
+                    }
+                }
+                .padding(.horizontal, Theme.Layout.pageInset)
+            }
             if !mine.isEmpty {
                 // 集团军群、五部职能编制与战神谱实时加持总览
                 let groupRows: [(name: String, count: Int, troops: Int, bonus: Int, composition: String, synergy: String)] = {

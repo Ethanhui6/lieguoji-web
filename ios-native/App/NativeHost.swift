@@ -281,6 +281,7 @@ actor NativeHost {
     func nationHistory(_ n: Int) async -> Data? { await call("nationHistory", ["n": n]).data }
     func nationReigns(_ n: Int) async -> Data? { await call("nationReigns", ["n": n]).data }
     func nationBreakdown(_ n: Int) async -> Data? { await call("nationBreakdown", ["n": n]).data }
+    func grandInfo(_ n: Int) async -> Data? { await call("grandInfo", ["n": n]).data }
     func provinceBreakdown(_ province: Int) async -> Data? { await call("provinceBreakdown", ["province": province]).data }
     func warCompare(attacker: Int, defender: Int) async -> Data? { await call("warCompare", ["a": attacker, "b": defender]).data }
     func replayTimeline() async -> Data? { await call("replayTimeline").data }

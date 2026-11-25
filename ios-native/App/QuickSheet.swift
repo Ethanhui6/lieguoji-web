@@ -463,19 +463,12 @@ func quickTile(_ title: String, _ symbol: String, destructive: Bool = false, _ a
             Text(title).font(Theme.label).lineLimit(1).minimumScaleFactor(0.72)
         }
         .foregroundStyle(destructive ? Theme.seal : Theme.ink)
-        .frame(maxWidth: .infinity).frame(height: 62)
-        .background {
-            if destructive {
-                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.seal.opacity(0.065))
-            } else {
-                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.vellumGradient)
-            }
-        }
+        .frame(maxWidth: .infinity).frame(height: 60)
+        .background(destructive ? Theme.seal.opacity(0.055) : Theme.paperLight.opacity(0.88), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                .stroke(destructive ? Theme.seal.opacity(0.32) : Theme.line.opacity(0.85), lineWidth: 0.75)
+                .stroke(destructive ? Theme.seal.opacity(0.30) : Theme.hairline, lineWidth: 0.7)
         )
-        .shadow(color: Theme.ink.opacity(destructive ? 0.03 : 0.05), radius: 2, y: 1)
         .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
     }
     .buttonStyle(PressStyle())

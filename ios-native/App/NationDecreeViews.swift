@@ -339,14 +339,8 @@ struct NationDecreesTab: View {
                                         .lineLimit(1)
                                 }
                                 .padding(.horizontal, 13).padding(.vertical, 9)
-                                .background {
-                                    if active {
-                                        RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.cinnabarGradient)
-                                    } else {
-                                        RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.vellumGradient)
-                                    }
-                                }
-                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl - (active ? 2 : 0), style: .continuous).stroke(active ? Theme.goldRim.opacity(0.48) : Theme.line, lineWidth: 0.7).padding(active ? 2 : 0))
+                                .background(active ? Theme.seal : Theme.paperLight.opacity(0.88), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(active ? Color.clear : Theme.hairline, lineWidth: 0.7))
                                 .opacity(!active && stratCD > 0 ? 0.50 : 1.0)
                             }
                             .buttonStyle(PressStyle())

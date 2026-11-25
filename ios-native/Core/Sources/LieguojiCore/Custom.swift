@@ -518,6 +518,7 @@ public enum Regimes {
         if let ldr = Regimes.ruler(r, id) { MonarchLore.ensurePersonalityTraits(r, person: ldr) }
         if let gov = Regimes.governor(r, id) { MonarchLore.ensurePersonalityTraits(r, person: gov) }
         MonarchLore.dynamicEventMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
+        GrandSystems.month(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         // 党派对抗、家族对抗、国债.
         eventsMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)
         faithMonth(r, n, id, key, addGold: addGold, addDestiny: addDestiny)

@@ -389,7 +389,8 @@ final class V4RefactorTests: XCTestCase {
         XCTAssertEqual(prov.id, "p-1")
         XCTAssertEqual(prov.name, "长安")
 
-        let engine = try makeEngine(seed: "v501-agency", nations: 4)
+        let engine = try loadWorld()
+        defer { cleanup() }
         let r = engine.run
         let n0 = r.world.nations[0].id.asString
         r.finance.nations[n0].gold = JS(5000.0)
@@ -421,11 +422,11 @@ final class V4RefactorTests: XCTestCase {
         // 5. 废黜昏君：明君/常主被拒，昏君/暴君可废立换贤主
         if let lid = r.people.nations[n0].leaderId.optionalNumber, let ruler = People.person(r, Int(lid)) {
             ruler.base.military = JS(85); ruler.base.administrative = JS(85); ruler.base.charisma = JS(85)
-            ruler.traits = .array([JS("Visionary")])
+            ruler.traits = JS.array([JS("Visionary")])
             XCTAssertFalse(engine.nationDecree(0, kind: "deposeMonarch").ok)
 
             ruler.base.military = JS(15); ruler.base.administrative = JS(15); ruler.base.charisma = JS(15)
-            ruler.traits = .array([JS("Incompetent"), JS("Tyrant")])
+            ruler.traits = JS.array([JS("Incompetent"), JS("Tyrant")])
             let depose = engine.nationDecree(0, kind: "deposeMonarch")
             XCTAssertTrue(depose.ok, depose.reason)
             let newLid = r.people.nations[n0].leaderId.optionalNumber.map(Int.init) ?? -1
@@ -448,5 +449,83 @@ final class V4RefactorTests: XCTestCase {
             let swap = engine.appointBestCommander(aid)
             XCTAssertTrue(swap.ok, swap.reason)
         }
+    }
+
+    /// v5.1.0 回归：12 座天下奇观（动工/唯一性/月度竣工/全局光环/攻州易主）、8 条霸业使命（校验/领赏/防重领）、
+    /// 5 年黄金盛世（激活/光环/冷却）与 6 支天下雇佣兵团（高士气高历练直募与 180 日冷却）。
+    func testV510WondersAmbitionsGoldenAgeAndMercenaries() throws {
+        let engine = try loadWorld()
+        defer { cleanup() }
+        let r = engine.run
+        let nations = r.world.nations.asArray
+        XCTAssertGreaterThanOrEqual(nations.count, 2)
+        let n0 = nations[0].id.asString
+        let n1 = nations[1].id.asString
+
+        // 1. grandInfo 完整导出 12 奇观 / 8 霸业 / 6 佣兵
+        let raw0 = try XCTUnwrap(engine.grandInfo(0))
+        let json0 = try XCTUnwrap(JSONSerialization.jsonObject(with: raw0) as? [String: Any])
+        XCTAssertEqual((json0["wonders"] as? [[String: Any]])?.count, 12)
+        XCTAssertEqual((json0["missions"] as? [[String: Any]])?.count, 8)
+        XCTAssertEqual((json0["mercenaries"] as? [[String: Any]])?.count, 6)
+
+        // 2. 天下奇观：动工扣金、防重复与防并行、逐月推进竣工、真实 Leverage 加成、攻占所在州即易主
+        r.finance.nations[n0].gold = JS(3000.0)
+        let wStart = engine.startWonder(0, wonderId: "greatWall")
+        XCTAssertTrue(wStart.ok, wStart.reason)
+        XCTAssertEqual(Int((r.finance.nations[n0].gold.optionalNumber ?? 0).rounded()), 2280)
+        XCTAssertFalse(engine.startWonder(0, wonderId: "greatWall").ok)      // 举世唯一不可重复
+        XCTAssertFalse(engine.startWonder(0, wonderId: "grandCanal").ok)     // 同国不可同时开建两座
+
+        for m in 1...14 {
+            GrandSystems.month(r, nations[0], n0, m, addGold: { _ in }, addDestiny: { _ in })
+        }
+        XCTAssertEqual(r.regimes.wonders["greatWall"].status.optionalString, "done")
+        let bonOwner = GrandSystems.leverageBonus(r, nationId: n0)
+        XCTAssertGreaterThanOrEqual(bonOwner.defense, 18.0)
+
+        // 攻陷奇观所在州后，光环自动归属新实控国
+        if let pid = r.regimes.wonders["greatWall"].provinceId.optionalString,
+           let p = r.world.provinces.asArray.first(where: { $0.id.asString == pid }) {
+            let oldCtrl = p.controller.clone()
+            p.controller = JS(n1)
+            XCTAssertEqual(GrandSystems.controlledWonders(r, nationId: n0).count, 0)
+            XCTAssertEqual(GrandSystems.controlledWonders(r, nationId: n1).count, 1)
+            XCTAssertGreaterThanOrEqual(GrandSystems.leverageBonus(r, nationId: n1).defense, 18.0)
+            p.controller = oldCtrl
+        }
+
+        // 3. 国家霸业使命：未达标拒绝 → 达标领赏 → 禁止重复领取
+        r.finance.nations[n0].gold = JS(800.0)
+        XCTAssertFalse(engine.claimMission(0, missionId: "richTreasury").ok)
+        Finance.setCorruption(r, n0, 30.0)
+        r.finance.nations[n0].gold = JS(3200.0)
+        let claim = engine.claimMission(0, missionId: "richTreasury")
+        XCTAssertTrue(claim.ok, claim.reason)
+        XCTAssertLessThan(Finance.corruption(r, n0), 22.0)
+        XCTAssertFalse(engine.claimMission(0, missionId: "richTreasury").ok)
+
+        // 4. 五年黄金盛世：已实控奇观满足门槛 → 开启 60 个月盛世 → 真实攻防岁入加成 → 不可重复开启
+        let ga = engine.startGoldenAge(0)
+        XCTAssertTrue(ga.ok, ga.reason)
+        XCTAssertEqual(GrandSystems.goldenAgeRemaining(r, nationId: n0), 60)
+        let gaBon = GrandSystems.leverageBonus(r, nationId: n0)
+        XCTAssertGreaterThanOrEqual(gaBon.attack, 16.0)
+        XCTAssertGreaterThanOrEqual(gaBon.income, 25.0)
+        XCTAssertFalse(engine.startGoldenAge(0).ok)
+
+        // 5. 天下雇佣兵团：直募玄甲铁骑团（4800 精锐、士气 95、历练 45）并触发 180 日休整冷却
+        let armyBefore = r.world.armies.asArray.count
+        let merc = engine.hireMercenary(0, mercId: "xuanjia")
+        XCTAssertTrue(merc.ok, merc.reason)
+        XCTAssertEqual(r.world.armies.asArray.count, armyBefore + 1)
+        if let spawned = r.world.armies.asArray.last {
+            XCTAssertEqual(spawned.name.optionalString, "玄甲铁骑团")
+            XCTAssertEqual(spawned.troops.asInt, 4800)
+            XCTAssertEqual(spawned.morale.asInt, 95)
+            XCTAssertEqual(r.units[spawned.id.asString].optionalString, "HeavyCavalry")
+            XCTAssertEqual(Int((r.regimes.armyXP[spawned.id.asString].optionalNumber ?? 0).rounded()), 45)
+        }
+        XCTAssertFalse(engine.hireMercenary(0, mercId: "xuanjia").ok)
     }
 }

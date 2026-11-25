@@ -212,17 +212,18 @@ extension Regimes {
         let amp = UnitKinds.enabled
         let rulerEval = amp ? rulerAssessment(r, id) : RulerAssessment(tier: 0, label: "", attack: 0, defense: 0, income: 0, stability: 0, corruption: 0, summary: "")
         let strain = realmStrain(r, id)
+        let grand = GrandSystems.leverageBonus(r, nationId: id)
         var l = Leverage()
-        l.attack = (mil - 50) * (amp ? 1.25 : 0.8) + (fortune - 50) * 0.28 - graft * 0.18 + sum.attack + prof.attack + pTrait.attack + goodsBonus.attack + (cultDoc?.attack ?? 0) + rulerEval.attack + strain.attackDrag
-        l.defense = (mil - 50) * (amp ? 0.72 : 0.4) + (cha - 50) * (amp ? 0.38 : 0.2) + (fortune - 50) * 0.28 - graft * 0.14 + sum.defense + prof.defense + pTrait.defense + goodsBonus.defense + (cultDoc?.defense ?? 0) + rulerEval.defense + strain.defenseBonus
-        l.income = (adm - 50) * (amp ? 1.25 : 0.8) - graft * 0.34 + sum.income + prof.income + pTrait.income + goodsBonus.income + (cultDoc?.income ?? 0) + rulerEval.income + strain.incomeDelta
-        l.growth = (adm - 50) * (amp ? 0.16 : 0.1) + (cha - 50) * (amp ? 0.14 : 0.1) + sum.growth + pTrait.growth + goodsBonus.growth + (cultDoc?.growth ?? 0)
-        l.corruption = sum.corruption + prof.corruption + pTrait.corruption + (cultDoc?.corruption ?? 0) + rulerEval.corruption + strain.corruptionDelta
+        l.attack = (mil - 50) * (amp ? 1.25 : 0.8) + (fortune - 50) * 0.28 - graft * 0.18 + sum.attack + prof.attack + pTrait.attack + goodsBonus.attack + (cultDoc?.attack ?? 0) + rulerEval.attack + strain.attackDrag + grand.attack
+        l.defense = (mil - 50) * (amp ? 0.72 : 0.4) + (cha - 50) * (amp ? 0.38 : 0.2) + (fortune - 50) * 0.28 - graft * 0.14 + sum.defense + prof.defense + pTrait.defense + goodsBonus.defense + (cultDoc?.defense ?? 0) + rulerEval.defense + strain.defenseBonus + grand.defense
+        l.income = (adm - 50) * (amp ? 1.25 : 0.8) - graft * 0.34 + sum.income + prof.income + pTrait.income + goodsBonus.income + (cultDoc?.income ?? 0) + rulerEval.income + strain.incomeDelta + grand.income
+        l.growth = (adm - 50) * (amp ? 0.16 : 0.1) + (cha - 50) * (amp ? 0.14 : 0.1) + sum.growth + pTrait.growth + goodsBonus.growth + (cultDoc?.growth ?? 0) + grand.growth
+        l.corruption = sum.corruption + prof.corruption + pTrait.corruption + (cultDoc?.corruption ?? 0) + rulerEval.corruption + strain.corruptionDelta + grand.corruption
         _ = grit(r, id)
         let land = Double(gritCache?.counts[id] ?? 0), total = max(1, Double(gritCache?.counts.values.reduce(0, +) ?? 1))
         var owed = 0.0
         if !r.finance.nations[id].isNull { let income = max(1, monthlyIncome(r, id)); owed = min(15, debt(r, id) / income / 12 * 10) }
-        l.stability = 60 + (adm - 50) * (amp ? 0.50 : 0.35) + (crown - 50) * (amp ? 0.54 : 0.35) + (fortune - 50) * 0.42 - graft * 0.45 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability + pTrait.stability + goodsBonus.stability + (cultDoc?.stability ?? 0) + rulerEval.stability + strain.stabilityDelta
+        l.stability = 60 + (adm - 50) * (amp ? 0.50 : 0.35) + (crown - 50) * (amp ? 0.54 : 0.35) + (fortune - 50) * 0.42 - graft * 0.45 - max(0, land - 10) - owed - (land / total > 0.3 ? 10 : 0) + sum.stability + prof.stability + pTrait.stability + goodsBonus.stability + (cultDoc?.stability ?? 0) + rulerEval.stability + strain.stabilityDelta + grand.stability
         return l
     }
     static func attributeMonth(_ r: JS, _ id: String, addGold: (Double) -> Void) {

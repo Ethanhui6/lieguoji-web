@@ -89,6 +89,7 @@ struct NationInfo: Decodable {
     var strategy: String? = nil
     var strategyCooldown: Int? = nil
     var decreeCooldowns: [String: Int]? = nil
+    var taxPolicy: String? = nil
     var reformSlotsUsed: Int? = nil
     var reformSlotsMax: Int? = nil
     struct RulerEvalInfo: Decodable { let tier: Int; let label: String; let summary: String }
@@ -596,18 +597,32 @@ struct NationSheet: View {
                         }
                     }
 
-                    // 君主治乱与疆域负荷实时脉象（明君/昏君、小邦精治/帝国过扩真实数值直显，直铺宣纸零套娃）
+                    // 君主治乱与疆域负荷实时脉象（明君/昏君、小邦精治/帝国过扩真实数值直显；若遇昏君庸主可当场弹劾废立！）
                     if info.rulerEval != nil || info.realmStrain != nil {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 7) {
                             if let re = info.rulerEval, !re.summary.isEmpty {
-                                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                    Text(re.label)
-                                        .font(Theme.label)
-                                        .foregroundStyle(re.tier < 0 ? Theme.seal : Theme.ink)
-                                    Text(re.summary.replacingOccurrences(of: "\(re.label) · ", with: ""))
-                                        .font(Theme.caption)
-                                        .foregroundStyle(re.tier < 0 ? Theme.seal.opacity(0.88) : Theme.ink2)
-                                        .lineLimit(2)
+                                HStack(alignment: .center, spacing: 8) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(re.label)
+                                            .font(Theme.label)
+                                            .foregroundStyle(re.tier < 0 ? Theme.seal : Theme.ink)
+                                        Text(re.summary.replacingOccurrences(of: "\(re.label) · ", with: ""))
+                                            .font(Theme.caption)
+                                            .foregroundStyle(re.tier < 0 ? Theme.seal.opacity(0.88) : Theme.ink2)
+                                            .lineLimit(2)
+                                    }
+                                    Spacer(minLength: 4)
+                                    if info.alive && re.tier <= -1 {
+                                        EditorialTactileButton(
+                                            title: ovLex.isRepublican ? "弹劾免职" : "废立更君",
+                                            icon: .gavel,
+                                            accent: true,
+                                            solid: true,
+                                            compact: true
+                                        ) {
+                                            Task { await run { await model.nationDecree(nation, kind: "deposeMonarch") } }
+                                        }
+                                    }
                                 }
                             }
                             if let st = info.realmStrain, !st.summary.isEmpty {
@@ -621,6 +636,30 @@ struct NationSheet: View {
                                         .lineLimit(2)
                                 }
                             }
+                        }
+                        .padding(.top, 2)
+                    }
+
+                    // 三档赋税直控条（轻徭薄赋 / 常平正税 / 战时重敛，一触即效无需翻找折叠财政）
+                    if info.alive {
+                        let curTax = info.taxPolicy ?? "normal"
+                        let taxNote = curTax == "light" ? "轻徭薄赋 · 岁入 −20% · 国运与人丁稳增 · 压低腐化"
+                            : curTax == "heavy" ? "战时重敛 · 岁入 +30% · 国运与人丁折损 · 腐化抬升"
+                            : "常平正税 · 财政与民生均衡稳态"
+                        VStack(alignment: .leading, spacing: 7) {
+                            HStack(spacing: 7) {
+                                ForEach([("light", "轻徭薄赋"), ("normal", "常平正税"), ("heavy", "战时重敛")], id: \.0) { key, title in
+                                    let on = curTax == key
+                                    EditorialTactileButton(title: title, accent: key == "heavy", solid: on, compact: true, fullWidth: true) {
+                                        guard !on else { return }
+                                        Task { await run(success: "税制已改为「\(title)」") { await model.setTax(nation, key) } }
+                                    }
+                                }
+                            }
+                            Text(taxNote)
+                                .font(Theme.caption)
+                                .foregroundStyle(curTax == "heavy" ? Theme.seal : Theme.ink2)
+                                .lineLimit(1).minimumScaleFactor(0.8)
                         }
                         .padding(.top, 2)
                     }

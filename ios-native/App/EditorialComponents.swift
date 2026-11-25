@@ -140,17 +140,18 @@ struct EditorialTactileButton: View {
             .background {
                 if solid {
                     RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                        .fill(LinearGradient(colors: [Color(red: 0.70, green: 0.22, blue: 0.17), Theme.seal, Color(red: 0.58, green: 0.16, blue: 0.12)], startPoint: .top, endPoint: .bottom))
+                        .fill(Theme.cinnabarGradient)
                 } else {
                     RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                        .fill(accent ? Theme.seal.opacity(0.065) : Theme.paperLight.opacity(0.82))
+                        .fill(accent ? Theme.seal.opacity(0.075) : Theme.paperLight.opacity(0.88))
                 }
             }
             .overlay(
-                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .stroke(stroke, lineWidth: solid ? 0.65 : 0.7)
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl - (solid ? 2 : 0), style: .continuous)
+                    .stroke(stroke, lineWidth: solid ? 0.7 : 0.75)
                     .padding(solid ? 2.5 : 0)
             )
+            .shadow(color: (solid ? Theme.seal : Theme.ink).opacity(solid ? 0.18 : 0.045), radius: solid ? 4 : 2, y: solid ? 1.5 : 1)
             .opacity(disabled ? 0.42 : 1.0)
         }
         .buttonStyle(PressStyle())
@@ -195,14 +196,15 @@ struct EditorialInkButton: View {
             .padding(.horizontal, 16)
             .background {
                 RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .fill(LinearGradient(colors: [Color(red: 0.70, green: 0.22, blue: 0.17), Theme.seal, Color(red: 0.58, green: 0.16, blue: 0.12)], startPoint: .top, endPoint: .bottom))
+                    .fill(Theme.cinnabarGradient)
                     .opacity(disabled ? 0.36 : 1.0)
             }
             .overlay(
-                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .stroke(Color(red: 0.97, green: 0.89, blue: 0.72).opacity(0.42), lineWidth: 0.7)
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous)
+                    .stroke(Theme.goldRim.opacity(0.50), lineWidth: 0.75)
                     .padding(3)
             )
+            .shadow(color: Theme.seal.opacity(disabled ? 0 : 0.22), radius: 5, y: 2)
         }
         .buttonStyle(PressStyle())
         .disabled(disabled)
@@ -293,19 +295,21 @@ struct EditorialTabStrip<Value: Hashable>: View {
                         GameFeel.shared.tap()
                         withAnimation(Motion.tap) { selection = item.0 }
                     } label: {
-                        VStack(spacing: 9) {
+                        VStack(spacing: 8) {
                             Text(item.1)
                                 .font(Theme.serif(15))
                                 .tracking(0.8)
                                 .foregroundStyle(active ? Theme.seal : Theme.ink2)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
-                            Rectangle()
-                                .fill(active ? Theme.seal : Color.clear)
-                                .frame(height: 1.8)
+                            Capsule()
+                                .fill(active ? Theme.cinnabarGradient : LinearGradient(colors: [.clear], startPoint: .top, endPoint: .bottom))
+                                .frame(height: 2.2)
+                                .padding(.horizontal, 6)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.top, 10)
+                        .padding(.top, 9)
+                        .background(active ? Theme.seal.opacity(0.055) : Color.clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -327,17 +331,19 @@ struct EditorialFocusLead: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            Rectangle()
-                .fill(urgent ? Theme.seal : Theme.ink.opacity(0.32))
-                .frame(width: 2)
+            VStack(spacing: 0) {
+                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                    .fill(urgent ? Theme.seal : Theme.goldRim)
+                    .frame(width: 3)
+            }
             VStack(alignment: .leading, spacing: 6) {
                 Text(eyebrow)
                     .font(Theme.sans(11.5, weight: .medium))
-                    .tracking(1.2)
+                    .tracking(1.3)
                     .foregroundStyle(urgent ? Theme.seal : Theme.ink2)
                 Text(headline)
-                    .font(Theme.serif(17))
-                    .tracking(0.8)
+                    .font(Theme.serif(18))
+                    .tracking(1.0)
                     .foregroundStyle(Theme.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 if let detail, !detail.isEmpty {
@@ -352,6 +358,7 @@ struct EditorialFocusLead: View {
                         title: actionTitle,
                         icon: .chevronRight,
                         accent: urgent,
+                        solid: urgent,
                         compact: true,
                         action: onAction
                     )
@@ -360,6 +367,15 @@ struct EditorialFocusLead: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            urgent ? Theme.seal.opacity(0.05) : Theme.paperLight.opacity(0.62),
+            in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                .stroke(urgent ? Theme.seal.opacity(0.24) : Theme.goldRim.opacity(0.32), lineWidth: 0.75)
+        )
     }
 }

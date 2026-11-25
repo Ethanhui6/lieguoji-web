@@ -42,7 +42,7 @@ struct ChipPicker<T: Hashable>: View {
             GameFeel.shared.tap()
             withAnimation(Motion.tap) { selection = item.0 }
         } label: {
-            VStack(spacing: 8) {
+            VStack(spacing: 7) {
                 Text(item.1)
                     .font(Theme.serif(15))
                     .tracking(0.8)
@@ -50,18 +50,23 @@ struct ChipPicker<T: Hashable>: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
                 ZStack {
-                    Color.clear.frame(height: 1.8)
+                    Color.clear.frame(height: 2.2)
                     if on {
-                        Rectangle()
-                            .fill(Theme.seal)
-                            .frame(height: 1.8)
+                        Capsule()
+                            .fill(Theme.cinnabarGradient)
+                            .frame(height: 2.2)
+                            .padding(.horizontal, segmented ? 8 : 2)
                             .matchedGeometryEffect(id: "chip-underline", in: pill)
                     }
                 }
             }
-            .padding(.top, 8)
-            .padding(.horizontal, segmented ? 4 : 2)
+            .padding(.top, 9)
+            .padding(.horizontal, segmented ? 4 : 4)
             .frame(maxWidth: segmented ? .infinity : nil)
+            .background(
+                on ? Theme.seal.opacity(0.055) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -199,14 +204,19 @@ struct StatTile: View {
     }
     private var content: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Group {
-                if showIcon {
-                    GlyphLabel(text: label)
-                } else {
-                    Text(label)
+            HStack(spacing: 4) {
+                Group {
+                    if showIcon {
+                        GlyphLabel(text: label)
+                    } else {
+                        Text(label)
+                    }
+                }
+                .font(Theme.sans(12)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.78)
+                if edit != nil {
+                    Circle().fill(Theme.seal.opacity(0.55)).frame(width: 4, height: 4)
                 }
             }
-            .font(Theme.sans(12)).foregroundStyle(Theme.ink2).lineLimit(1).minimumScaleFactor(0.78)
             .frame(height: 16, alignment: .leading)
             EditorialValueText(value, size: 20, color: warn ? Theme.seal : Theme.ink)
                 .frame(height: 26, alignment: .leading)
@@ -217,12 +227,12 @@ struct StatTile: View {
             } else if reserveBar { Color.clear.frame(height: 2.5) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 10).padding(.vertical, 13)
+        .padding(.horizontal, 10).padding(.vertical, 12)
         .contentShape(Rectangle())
     }
 }
 
-/// 平铺于宣纸上的四列核心数值栏（高对比 Cormorant Garamond 衬线数字 + 1px 淡墨纵线分割，零卡片盒嵌套）。
+/// 宣纸御册四列核心数值栏：温润亮宣浅衬 + 鎏金淡墨上下书线 + 纵线等分（带可点改朱点微示，零卡片盒套娃）。
 struct StatStrip: View {
     let tiles: [StatTile]
     private func tile(_ i: Int, _ bars: Bool, _ uniformIcons: Bool) -> StatTile {
@@ -235,15 +245,17 @@ struct StatStrip: View {
         let bars = tiles.contains { $0.fraction != nil }
         let uniformIcons = !tiles.isEmpty && tiles.allSatisfy { Glyph.of($0.label) != nil }
         VStack(spacing: 0) {
+            Rectangle().fill(Theme.goldRim.opacity(0.36)).frame(height: 0.65)
             HStack(alignment: .top, spacing: 0) {
                 ForEach(tiles.indices, id: \.self) { i in
-                    if i > 0 { Rectangle().fill(Theme.hairline).frame(width: 0.75).frame(maxHeight: .infinity).padding(.vertical, 12) }
+                    if i > 0 { Rectangle().fill(Theme.hairline).frame(width: 0.75).frame(maxHeight: .infinity).padding(.vertical, 10) }
                     tile(i, bars, uniformIcons)
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
-            Rectangle().fill(Theme.hairline).frame(height: 0.75)
+            Rectangle().fill(Theme.hairline).frame(height: 0.8)
         }
+        .background(Theme.paperLight.opacity(0.56))
         .padding(.horizontal, Theme.Layout.pageInset)
     }
 }

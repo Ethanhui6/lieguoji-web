@@ -174,24 +174,28 @@ struct NationDecreesTab: View {
     }
 
     static let decrees: [DecreeItem] = [
-        // 内政基建（8 项）
+        // 内政基建（10 项）
         DecreeItem(id: "prosper", category: .domestic, title: "休养生息", badge: "人丁 +3%", note: "存粮 +20% · 国运 +5", glyph: .goods, tone: Theme.ink),
         DecreeItem(id: "antiCorruption", category: .domestic, title: "整顿吏治", badge: "腐化 −15", note: "肃清贪墨 · 国运 +4", glyph: .polity, tone: Theme.ink),
+        DecreeItem(id: "deposeMonarch", category: .domestic, title: "废黜昏君", badge: "耗 220 金", note: "仅昏君/庸主时可用 · 择贤即位 · 腐化 −8", glyph: .crown, tone: Theme.seal),
+        DecreeItem(id: "grandFeast", category: .domestic, title: "大酺庆典", badge: "耗 200 金", note: "国运 +8 · 战败震荡减半 · 腐化 −5", glyph: .peace, tone: Theme.ink),
         DecreeItem(id: "imperialInspection", category: .domestic, title: "巡狩省方", badge: "耗 180 金", note: "震慑豪强 · 腐化 −6 · 国运 +6", glyph: .views, tone: Theme.ink),
         DecreeItem(id: "relief", category: .domestic, title: "开仓赈灾", badge: "耗 180 金", note: "存粮 +30% · 国运 +4", glyph: .economy, tone: Theme.ink),
         DecreeItem(id: "landSurvey", category: .domestic, title: "清丈田亩", badge: "得半岁税", note: "厘清税籍 · 腐化 −10", glyph: .region, tone: Theme.ink),
         DecreeItem(id: "roadNetwork", category: .domestic, title: "交通基建", badge: "耗 240 金", note: "驰道驿路 · 人丁+2% · 回流+180金", glyph: .views, tone: Theme.ink),
         DecreeItem(id: "granary", category: .domestic, title: "战略粮储", badge: "耗 180 金", note: "常平义仓 · 存粮 +45% · 国运 +5", glyph: .goods, tone: Theme.ink),
         DecreeItem(id: "warBond", category: .domestic, title: "举债筹饷", badge: "国运 −5", note: "急筹 2.2 月军资 · 代价：腐化 +6", glyph: .economy, tone: Theme.seal),
-        // 军事海运（7 项）
+        // 军事海运（8 项）
         DecreeItem(id: "mobilize", category: .military, title: "全国大征兵", badge: "国运 −4", note: "重镇紧急编练 3 支新军", glyph: .military, tone: Theme.seal),
+        DecreeItem(id: "promoteCommander", category: .military, title: "敕封名将", badge: "耗 200 金", note: "统帅武略 +10 · 赐越战越勇 · 全军士气 +15", glyph: .crown, tone: Theme.seal),
         DecreeItem(id: "eliteDrill", category: .military, title: "大阅禁军", badge: "耗 220 金", note: "全军历练 +14 · 士气 +25 · 补满", glyph: .command, tone: Theme.seal),
         DecreeItem(id: "rewardArmies", category: .military, title: "犒赏三军", badge: "耗 200 金", note: "全军士气 +35 · 军粮补满", glyph: .command, tone: Theme.ink),
         DecreeItem(id: "fortifyBorder", category: .military, title: "加固边防", badge: "城防 +1", note: "边塞至多 12 处修城筑垒", glyph: .nation, tone: Theme.ink),
         DecreeItem(id: "armsUpgrade", category: .military, title: "军械改良", badge: "耗 260 金", note: "全军整补 +6% · 士气 +20", glyph: .war, tone: Theme.seal),
         DecreeItem(id: "navalDockyard", category: .military, title: "海运船坞", badge: "耗 240 金", note: "跨海运力 +2 · 舰体全修", glyph: .anchor, tone: Theme.ink),
         DecreeItem(id: "techAcademy", category: .military, title: "格物兴科", badge: "耗 260 金", note: "中枢军政 +4 · 全军士气 +15", glyph: .chronicle, tone: Theme.ink),
-        // 文教外交（7 项）
+        // 文教外交（8 项）
+        DecreeItem(id: "recruitTalent", category: .culture, title: "广纳奇才", badge: "耗 260 金", note: "礼聘高才名将或名相入朝（专精 78–92）", glyph: .crown, tone: Theme.seal),
         DecreeItem(id: "assimilateCulture", category: .culture, title: "推行文教", badge: "教化归心", note: "境内城池归入主体文化", glyph: .culture, tone: Theme.ink),
         DecreeItem(id: "convertFaith", category: .culture, title: "统一国教", badge: "礼法一统", note: "全境归奉主体信仰", glyph: .religion, tone: Theme.ink),
         DecreeItem(id: "amnesty", category: .culture, title: "大赦安抚", badge: "情谊 +20", note: "缓和国内各派系关系", glyph: .house, tone: Theme.ink),
@@ -335,8 +339,14 @@ struct NationDecreesTab: View {
                                         .lineLimit(1)
                                 }
                                 .padding(.horizontal, 13).padding(.vertical, 9)
-                                .background(active ? Theme.seal : Theme.paperLight.opacity(0.85), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(active ? Color(red: 0.97, green: 0.89, blue: 0.72).opacity(0.38) : Theme.hairline, lineWidth: 0.65).padding(active ? 2 : 0))
+                                .background {
+                                    if active {
+                                        RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.cinnabarGradient)
+                                    } else {
+                                        RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.vellumGradient)
+                                    }
+                                }
+                                .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl - (active ? 2 : 0), style: .continuous).stroke(active ? Theme.goldRim.opacity(0.48) : Theme.line, lineWidth: 0.7).padding(active ? 2 : 0))
                                 .opacity(!active && stratCD > 0 ? 0.50 : 1.0)
                             }
                             .buttonStyle(PressStyle())

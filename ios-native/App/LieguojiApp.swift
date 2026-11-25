@@ -56,7 +56,19 @@ enum Theme {
     static let seal = Color(red: 0.659, green: 0.196, blue: 0.149)        // #A83226 特色朱砂红（主按钮与核心强调色）
     static let jade = Color(red: 0.247, green: 0.333, blue: 0.286)        // 克制青墨（仅地图语义与兼容位）
     static let gold = Color(red: 0.545, green: 0.435, blue: 0.247)        // 暗古金（仅兼容位）
+    static let goldRim = Color(red: 0.82, green: 0.69, blue: 0.43)        // 浅鎏金丝（御卷细框与漆面内嵌）
     static let danger = seal
+
+    /// 皇家朱砂漆红渐变：主按钮与核心选中态的统一立体漆面质感（彻底取代死板黑块）。
+    static let cinnabarGradient = LinearGradient(
+        colors: [Color(red: 0.72, green: 0.23, blue: 0.17), Theme.seal, Color(red: 0.56, green: 0.15, blue: 0.11)],
+        startPoint: .top, endPoint: .bottom
+    )
+    /// 温润宣纸叠层渐变：用于悬浮 HUD 胶囊、御卷标题卡片与次级触感控件。
+    static let vellumGradient = LinearGradient(
+        colors: [Color(red: 0.988, green: 0.976, blue: 0.948), Color(red: 0.952, green: 0.928, blue: 0.882)],
+        startPoint: .top, endPoint: .bottom
+    )
 
     /// Backdrop behind the map. Follows the sea preset so the edges are not a different blue.
     static func seaColor(_ ocean: String) -> Color {
@@ -239,9 +251,10 @@ struct PrimaryLabel: View {
             .foregroundStyle(Theme.paperLight)
             .background {
                 RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                    .fill(LinearGradient(colors: [Color(red: 0.70, green: 0.22, blue: 0.17), Theme.seal, Color(red: 0.58, green: 0.16, blue: 0.12)], startPoint: .top, endPoint: .bottom))
+                    .fill(Theme.cinnabarGradient)
             }
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Color(red: 0.97, green: 0.89, blue: 0.72).opacity(0.42), lineWidth: 0.7).padding(3))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous).stroke(Theme.goldRim.opacity(0.50), lineWidth: 0.75).padding(3))
+            .shadow(color: Theme.seal.opacity(0.22), radius: 5, y: 2)
     }
 }
 struct SecondaryLabel: View {
@@ -252,16 +265,22 @@ struct SecondaryLabel: View {
             .tracking(0.6)
             .frame(maxWidth: .infinity).frame(minHeight: 46).padding(.horizontal, 16)
             .foregroundStyle(Theme.ink)
-            .background(Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line, lineWidth: 0.7))
+            .background(Theme.vellumGradient, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line, lineWidth: 0.75))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous).stroke(Theme.goldRim.opacity(0.22), lineWidth: 0.6).padding(2))
+            .shadow(color: Theme.ink.opacity(0.05), radius: 2, y: 1)
     }
 }
 
 extension View {
-    /// 统一温润宣纸悬浮条：单层暖墨细边 + 柔和贴地投影，彻底去除旧版双框 2.5pt 间隙形成的泛白亮边。
+    /// 统一温润宣纸御卷悬浮条：亮宣暖白渐变 + 外层暖墨细线 + 内层浅鎏金丝边 + 柔和贴地投影，全局 HUD/底栏/传报/工坊同源质感。
     func glass<S: InsettableShape>(_ shape: S) -> some View {
-        background(shape.fill(Theme.paper.opacity(0.95)).shadow(color: Color(red: 0.14, green: 0.10, blue: 0.05).opacity(0.13), radius: 8, y: 2.5))
-            .overlay(shape.strokeBorder(Theme.ink.opacity(0.17), lineWidth: 0.85))
+        background(
+            shape.fill(Theme.vellumGradient)
+                .shadow(color: Color(red: 0.14, green: 0.10, blue: 0.05).opacity(0.15), radius: 8, y: 2.5)
+        )
+        .overlay(shape.strokeBorder(Theme.ink.opacity(0.18), lineWidth: 0.85))
+        .overlay(shape.inset(by: 1.5).strokeBorder(Theme.goldRim.opacity(0.28), lineWidth: 0.6))
     }
 }
 
@@ -452,7 +471,7 @@ struct SheetGrabber: View {
     }
 }
 
-/// 新中式极简古籍页头：思源宋体大标题 + 舒朗字距 + 1px 淡墨分割线 + 真实朱砂篆刻印章（无渐变、无重影）。
+/// 新中式极简古籍双线书眉页头：全字库正楷大标题 + 舒朗字距 + 鎏金淡墨双书眉线 + 真实朱砂篆刻印章。
 struct SheetHeader: View {
     let title: String
     var subtitle: String?
@@ -468,11 +487,16 @@ struct SheetHeader: View {
             if grabberVisible { SheetGrabber() }
             HStack(alignment: .center, spacing: 14) {
                 if let color {
-                    Rectangle()
-                        .fill(color)
-                        .frame(width: 3, height: inSidePanel ? 34 : 38)
+                    HStack(spacing: 2) {
+                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                            .fill(color)
+                            .frame(width: 3.5, height: inSidePanel ? 34 : 38)
+                        Rectangle()
+                            .fill(Theme.goldRim.opacity(0.55))
+                            .frame(width: 0.8, height: inSidePanel ? 30 : 34)
+                    }
                 }
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 5) {
                     Text(title)
                         .font(Theme.serif(inSidePanel ? 23 : 26))
                         .foregroundStyle(Theme.ink)
@@ -495,11 +519,17 @@ struct SheetHeader: View {
             }
             .padding(.horizontal, Theme.Layout.sectionInset)
             .padding(.top, grabberVisible ? 10 : 16)
-            .padding(.bottom, 16)
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: 0.75)
-                .padding(.horizontal, Theme.Layout.sectionInset)
+            .padding(.bottom, 15)
+            // 古籍双线书眉：上层细鎏金丝 + 下层松烟淡墨，瞬间拉开书卷档次而零卡片套娃
+            VStack(spacing: 2.5) {
+                Rectangle()
+                    .fill(Theme.goldRim.opacity(0.42))
+                    .frame(height: 0.65)
+                Rectangle()
+                    .fill(Theme.ink.opacity(0.14))
+                    .frame(height: 0.8)
+            }
+            .padding(.horizontal, Theme.Layout.sectionInset)
         }
     }
 }
@@ -514,7 +544,7 @@ struct ViewBoundary: View {
     var body: some View { build() }
 }
 
-/// 极简古籍平铺区块（拆除层层套娃的圆角灰底阴影卡片）：直接平铺于宣纸暖白底面，仅以顶部/底部 1px 淡墨分割线界定层次。
+/// 极简古籍宣纸平铺区块（零套娃圆角灰盒）：以温润亮宣浅衬 + 鎏金淡墨上下细书线界定层次，兼具高级纸张质感与呼吸感。
 /// 非泛型设计：同时切断内页向父视图传播的巨型 `ModifiedContent` 泛型类型膨胀。
 struct Group2: View {
     private let content: AnyView
@@ -523,10 +553,12 @@ struct Group2: View {
     }
     var body: some View {
         VStack(spacing: 0) {
+            Rectangle().fill(Theme.goldRim.opacity(0.32)).frame(height: 0.6)
             Rectangle().fill(Theme.hairline).frame(height: 0.75)
             content
             Rectangle().fill(Theme.hairline).frame(height: 0.75)
         }
+        .background(Theme.paperLight.opacity(0.46))
     }
 }
 
@@ -573,6 +605,10 @@ enum AppVersion {
 /// What changed in each version, newest first.
 struct ReleaseNotesSheet: View {
     static let notes: [(version: String, lines: [String])] = [
+        ("5.0.1", ["【全站宣纸鎏金 UI/UX 质感大升级 × 修复 5.0.0 构建并正式发布】修复 WorldMeta.Province 公开构造与工程警告；全站 HUD 顶栏/底栏/传报/工坊升级为温润亮宣渐变配松烟细墨与浅鎏金丝边，全部 20+ 奏折页头升级「古籍双线书眉」，StatStrip 核心数据栏新增可点改朱点微示，标题页/长按快捷面板/列国榜（新增疆域占比微条）与全站主按钮全面统一为皇家朱砂漆红与古籍纸卷质感。",
+                   "【国家直控大政深度扩充 × 26 项国策政令】国家概览首屏新增「轻徭薄赋 / 常平正税 / 战时重敛」三档赋税直控条；遇昏君/庸主时可直接在概览或政令发动「废黜昏君 / 弹劾免职」择贤即位；新增「广纳奇才（礼聘 78–92 专精历史名将名相）」「敕封名将（武略 +10 并赐越战越勇）」「大酺庆典（国运 +8、震荡减半）」共 26 项政令。",
+                   "【军团临阵换将与单军养成闭环】军团详情页「统帅将才实效」行新增一键「换将」，即刻拜授本国武略最高将才执掌全军/征讨大印；军机令格扩充至 10 项，新增「急补粮饷（前线一键满粮 +22 士气）」与「军中演武（单军历练 +15，亲手淬炼精锐/王牌/无双虎师）」。",
+                   "【42 项丰富动态史事 × 8 大精选剧本 × 完整承继 5.0.0 全量核心重铸】动态历史事件由 24 项扩充至 42 项（名将练兵、宝船远航、试制火炮、直臣极谏、水师剿寇、运河漕运、豪杰来投、边塞屯田等，兼具古典文辞与真实数值影响）；新世界新增「海权争霸」「大漠铁骑」共 8 套精选剧本，长按快捷页新增「强兵 +150% / 广纳奇才 / 敕封名将」；完整包含 5.0.0 全部核心修复（战略互斥与槽位上限、根治第二XX国和谈复国循环、帝国过扩与明君昏君大强化、矢量御览手卷与高清海图、自绘地图工坊 2.0 空白底图/填充笔/依陆生景/手绘州郡）。"]),
         ("5.0.0", ["【全面清除内页突兀图片 × 漆红古籍质感统一 × 春冬节气修正】移除国家事件链、军事、军团、舰队与战前评估中的拉伸视频横幅，全站回归疏朗温润宣纸排版；核心主按钮升级为皇家朱砂漆红微渐变配古金细线，彻底告别黑块与杂色；修复概览快捷栏截字与二月隆冬误落桃花。",
                    "【政令与国家大战略彻底重做（严防全选叠加 × 槽位上限 × 冷却锁定）】国家大战略实行唯一互斥与 180 日转轨冷却，切换战略自动撤销旧战略专项制度，彻底杜绝五套叠加与重复点击；专项制度引入 3–5 槽行政上限与全量 24 项真实互斥权衡；新增「巡狩省方 / 举债筹饷 / 大阅禁军 / 开馆修史」共 22 项政令并实时显示冷却余日，全页配色统一。",
                    "【根治和谈复国第二XX国死循环 × 政体稳态 × 大国过扩与明君昏君名将大强化】彻底修复战时占领提前判亡、和谈退地反复变「第二/第三XX国」的死循环（中小国全境沦陷直接并吞、和约停战延长至 180 日、退地不再递增复国序数）；拉长政体剧变稳态期至 48 个月；实装帝国过扩行政冗耗、小邦精治守土与最高 +300% 真乘法自定义加成，大幅放大明君/昏君治乱后果与名将临阵（−32% ~ +52%）实效并在国家与军团页直观呈现。",

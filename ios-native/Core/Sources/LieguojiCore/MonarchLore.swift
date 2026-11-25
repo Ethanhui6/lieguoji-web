@@ -446,14 +446,14 @@ public enum MonarchLore {
         return (atk, def, inc, gro, sta, cor, op, parts)
     }
 
-    // MARK: - 3. 24 项全新深度历史动态事件
+    // MARK: - 3. 42 项深度历史动态事件（朝堂、兵戈、海贸、科技、灾异、名将与人文全维度叙事）
 
     public static func dynamicEventMonth(_ r: JS, _ n: JS, _ id: String, _ key: Int, addGold: (Double) -> Void, addDestiny: (Double) -> Void) {
         let evRate = Regimes.rule(r, "event")
         guard evRate > 0 else { return }
         let seed = r.world.custom.seed.optionalString ?? ""
         let tag = "\(seed)|dynev|\(id)|\(key)"
-        guard Regimes.chance(tag) < 0.065 * evRate else { return }
+        guard Regimes.chance(tag) < 0.082 * evRate else { return }
         let land = Regimes.monthLand(r, id)
         guard !land.isEmpty else { return }
         let pick = Int(Regimes.draw(tag + "|p"))
@@ -465,100 +465,217 @@ public enum MonarchLore {
             _ = People.announce(r, kind: kind, text: text, reason: reason, nations: [id], province: p?.id.optionalString)
         }
         func corrupt(_ d: Double) { Finance.setCorruption(r, id, Finance.corruption(r, id) + d) }
+        func bumpArmyXP(_ delta: Double, maxCount: Int = 3) {
+            if r.regimes.armyXP.isNull { r.regimes.armyXP = JS.object() }
+            for a in armies.prefix(maxCount) {
+                let aid = a.id.asString
+                let cur = r.regimes.armyXP[aid].optionalNumber ?? 0
+                r.regimes.armyXP[aid] = JS(min(100, cur + delta))
+            }
+        }
 
-        switch Int(Regimes.draw(tag + "|w") % 24) {
+        switch Int(Regimes.draw(tag + "|w") % 42) {
         case 0:
             addGold(2.5); addDestiny(2)
-            say("\(name)丝路商帮云集", "四方豪商赴\(pname)互市贸易，关税丰盈：国库增两月半岁入，国运 +2。", p: place)
+            say("\(name)丝路商帮云集", "驼铃贯道、四方豪商赴\(pname)互市通货，市舶与关税盈溢：国库增两月半岁入，国运 +2。", p: place)
         case 1:
             corrupt(-5); addDestiny(3)
-            say("\(name)御史台弹劾巨贪", "朝廷严办蠹虫、追缴赃银充库：腐化 −5，国运 +3。", kind: "politics")
+            say("\(name)御史台弹劾巨贪", "台谏风闻奏事，朝廷雷霆查办蠹虫、抄没赃银充实太仓：腐化 −5，国运 +3。", kind: "politics")
         case 2:
             for a in armies { a.morale = JS(min(100, a.morale.asNumber + 12)) }
-            say("\(name)校场大阅兵", "旌旗蔽空、军容严整，全军士气 +12。", p: place)
+            bumpArmyXP(6)
+            say("\(name)秋狝校场大阅", "旌旗蔽空、金鼓震野，三军于\(pname)演练破阵合围之法：全军士气 +12，历练精进。", p: place)
         case 3:
             addGold(-1.5); addDestiny(3)
-            say("\(name)兴修水利工程", "在\(pname)开凿运河堤坝以利灌排：耗一个半月岁入，国运 +3。", p: place)
+            say("\(name)大兴水利浚渠", "征发民夫于\(pname)开凿运渠、修筑石堤以利灌排与漕运：耗一月半岁入，国运 +3。", p: place)
         case 4:
             if let st = Regimes.monthStock(r, place.id.asString) {
                 st.population = JS((st.population.asNumber * 1.05).rounded())
-                st.grain = JS((st.grain.asNumber * 1.18).rounded())
+                st.grain = JS((st.grain.asNumber * 1.20).rounded())
             }
-            say("\(pname)新稻试种大熟", "良种推广，亩产倍增：\(pname)人口 +5%、存粮 +18%。", p: place)
+            say("\(pname)占城良稻试种大熟", "早熟高产良种遍播阡陌、仓廪满溢：\(pname)人口 +5%、存粮 +20%。", p: place)
         case 5:
             addGold(-2); corrupt(4); addDestiny(-2)
-            say("\(name)银钱贬值风潮", "市面私铸劣钱泛滥、物价腾贵：损失两月岁入，腐化 +4，国运 −2。")
+            say("\(name)私铸劣钱引发币潮", "市肆劣币充斥、盐粮腾贵，商旅观望不前：损失两月岁入，腐化 +4，国运 −2。")
         case 6:
             addDestiny(4)
-            say("\(name)殿试状元名动天下", "俊彦登科、士林振奋：国运 +4。", kind: "culture")
+            say("\(name)春闱金榜名动天下", "寒门俊彦登科入仕、士林气象焕然一新：国运 +4。", kind: "culture")
         case 7:
             corrupt(5); addDestiny(-2)
-            say("\(name)宫廷党争白热化", "朝臣结党攻讦、政令阻滞：腐化 +5，国运 −2。", kind: "politics")
+            say("\(name)庙堂党争白热化", "新旧派系互相弹劾倾轧，公文积压、政令多所掣肘：腐化 +5，国运 −2。", kind: "politics")
         case 8:
             addGold(3)
-            say("\(pname)新探得富饶矿脉", "工匠于\(pname)山地发现金银铜矿：国库大增三月岁入。", p: place)
+            say("\(pname)深山探得富饶金银矿", "矿师勘明\(pname)山谷蕴藏厚脉，官督商办炉火日夜不息：国库大增三月岁入。", p: place)
         case 9:
             for a in armies { a.supplies = JS(100); a.morale = JS(min(100, a.morale.asNumber + 8)) }
-            say("\(name)改良军需辎重", "新建官驿粮站，全军补给满额、士气 +8。")
+            say("\(name)整饬驿传与军需辎重", "沿边增设粮台马驿、推行木牛流马转运：全军补给满额、士气 +8。")
         case 10:
             addGold(1.8); addDestiny(1)
-            say("\(pname)工坊工艺革故鼎新", "织机与冶铁技艺精进，产值骤增：国库增近两月岁入，国运 +1。", p: place)
+            say("\(pname)百工织冶革故鼎新", "水排鼓风与新式提花织机广为传习，工坊产值倍增：国库增近两月岁入，国运 +1。", p: place)
         case 11:
             addDestiny(-3)
             if let st = Regimes.monthStock(r, place.id.asString) { st.grain = JS((st.grain.asNumber * 0.72).rounded()) }
-            say("\(pname)赤地千里大旱", "连月无雨、田畴龟裂：\(pname)存粮 −28%，国运 −3。", p: place)
+            say("\(pname)赤地千里、夏旱成灾", "连月酷暑无雨、河渠断流，田苗枯槁：\(pname)存粮 −28%，国运 −3。", p: place)
         case 12:
             if style.parties {
-                say("\(name)议会通过重大税改案", "各党激辩终成折衷方案，财政与民心趋稳：腐化 −4，国运 +2。", kind: "politics")
+                say("\(name)议会激辩通过财税新案", "朝野各党折衷妥协，厘清财政预算与地方分税：腐化 −4，国运 +2。", kind: "politics")
                 corrupt(-4); addDestiny(2)
             } else {
-                say("\(name)颁行清丈田亩诏", "核实豪强隐田、均平赋役：腐化 −4，国库增两月岁入。", kind: "politics")
+                say("\(name)颁行鱼鳞图册清丈诏", "核实勋贵豪强隐匿田亩、均平天下赋役：腐化 −4，国库增两月岁入。", kind: "politics")
                 corrupt(-4); addGold(2)
             }
         case 13:
             addDestiny(3); corrupt(-2)
-            say("\(name)名医著书济世", "良方广布郡县、疫疠顿减：国运 +3，腐化 −2。", kind: "culture")
+            say("\(name)太医署刊行济世方书", "名医集诸家验方印布郡县、设惠民药局：疾疫顿减，国运 +3，腐化 −2。", kind: "culture")
         case 14:
             if let leader = Regimes.ruler(r, id) {
                 leader.base.administrative = JS(min(100, (leader.base.administrative.optionalNumber ?? 50) + 3))
             }
             addDestiny(2)
-            say("\(name)御前经筵讲学", "名儒宿老进讲治国之道：君主行政能力 +3，国运 +2。", kind: "culture")
+            say("\(name)御前经筵论治道", "硕儒宿老进讲历代兴亡鉴戒：执政行政才干 +3，国运 +2。", kind: "culture")
         case 15:
             addGold(-1.5); addDestiny(-2)
-            say("\(pname)边关走私猖獗", "豪强勾结边吏偷运违禁物资：损失一个半月岁入，国运 −2。", p: place)
+            say("\(pname)边关茶马盐铁私贩猖獗", "不法豪商勾结关吏偷运违禁铁器盐茶：损失一月半岁入，国运 −2。", p: place)
         case 16:
             if let st = Regimes.monthStock(r, place.id.asString) {
                 st.population = JS((st.population.asNumber * 1.04).rounded())
             }
-            addGold(1.2)
-            say("\(pname)海港开埠通洋", "远洋帆影络绎不绝：\(pname)人口 +4%，国库增一月余岁入。", p: place)
+            addGold(1.4)
+            say("\(pname)海港开埠、番舶云集", "远洋商船载香料瓷丝而来，码头货栈林立：\(pname)人口 +4%，国库增一月余岁入。", p: place)
         case 17:
             if let d = r.upperCombat.provinces[place.id.asString].isNull ? nil : r.upperCombat.provinces[place.id.asString] {
                 let cur = Int((d.storedDefense.optionalNumber ?? 1).rounded())
                 if cur < 10 { d.storedDefense = JS(cur + 1) }
             }
-            say("\(pname)重修关隘城垣", "军民协力筑城浚濠：\(pname)城防 +1 级。", p: place)
+            say("\(pname)重修雄关瓮城与烽燧", "军民协力包砖筑垣、深浚护城河：\(pname)城防稳固 +1 级。", p: place)
         case 18:
             addDestiny(2); addGold(1.5)
-            say("\(name)刊印典籍风行海内", "活字雕版盛行、书肆林立：国运 +2，国库增一月半岁入。", kind: "culture")
+            say("\(name)活字刊书风行海内", "书坊林立、经史兵法广为流传，文风蔚然：国运 +2，国库增一月半岁入。", kind: "culture")
         case 19:
             for a in armies.prefix(2) { a.morale = JS(max(10, a.morale.asNumber - 10)) }
-            say("\(name)边镇欠饷风波", "军饷延误引发士卒哗怨：前线两军士气 −10。", kind: "politics")
+            say("\(name)边镇欠饷酿成喧哗", "度支调拨迟滞致使戌卒怨望鼓噪：前线两军士气 −10。", kind: "politics")
         case 20:
-            addDestiny(3)
-            say("\(name)四方使节来朝观礼", "邻邦遣使致贺、声威远播：国运 +3。", kind: "diplomacy")
+            addDestiny(3); WorldDepth.adjustReputation(r, nation: id, delta: 4)
+            say("\(name)万邦使节来朝献礼", "周边诸国遣使递交国书、瞻仰威仪：国运 +3，国际信誉 +4。", kind: "diplomacy")
         case 21:
             corrupt(4); addGold(-1)
-            say("\(name)权贵争产兴讼", "勋戚世家侵占民田引发怨声：腐化 +4，耗一月岁入。", kind: "family")
+            say("\(name)勋戚兼并民田兴讼", "权贵豪门强占膏腴之地引发闾阎怨声：腐化 +4，耗一月岁入。", kind: "family")
         case 22:
             if let leader = Regimes.ruler(r, id) {
                 leader.base.military = JS(min(100, (leader.base.military.optionalNumber ?? 50) + 3))
             }
-            say("\(name)兵书新著进呈御览", "宿将献平戎策：君主军事能力 +3。", kind: "event")
-        default:
+            say("\(name)宿将献《平戎方略》", "久经沙场的老将撰述攻守奇正兵书进呈御览：执政军事才干 +3。", kind: "event")
+        case 23:
             addGold(2); addDestiny(2)
-            say("\(name)盛世气象初现", "仓廪实而礼节兴，百姓安居乐业：国库增两月岁入，国运 +2。", kind: "culture")
+            say("\(name)海内升平、盛世初现", "仓廪实而礼节兴，四境夜不闭户、商旅不绝：国库增两月岁入，国运 +2。", kind: "culture")
+        case 24:
+            // 名将武艺精进与全军振奋
+            if let cmd = Regimes.activeCommander(r, nation: id, enemy: nil), let cp = People.person(r, cmd.personId) {
+                cp.base.military = JS(min(100, (cp.base.military.optionalNumber ?? 50) + 4))
+                bumpArmyXP(8, maxCount: 4)
+                say("\(name)名将\(cmd.name)练兵成阵", "\(cmd.roleTitle)\(cmd.name)独创严整阵法、亲率部伍演习破敌：\(cmd.name)武略 +4，主力历练 +8。", kind: "event")
+            } else {
+                bumpArmyXP(8)
+                say("\(name)军营推行严明军纪", "诸军整肃号令、赏罚分明：主力军团历练 +8。", kind: "event")
+            }
+        case 25:
+            // 宝船远航探索与海贸暴利
+            addGold(2.8); WorldDepth.adjustReputation(r, nation: id, delta: 5)
+            say("\(name)宝船远航满载而归", "远洋船队破浪万里、通使海外诸邦并带回珍货海图：国库增近三月岁入，国际信誉 +5。", kind: "diplomacy", p: place)
+        case 26:
+            // 火器与军工局试射突破
+            bumpArmyXP(10, maxCount: 3)
+            for a in armies { a.morale = JS(min(100, a.morale.asNumber + 10)) }
+            say("\(name)军器监试制新式火炮成功", "百工改良铸炮火药配比，校场试射石破天惊：主力历练 +10，全军士气 +10。", kind: "event", p: place)
+        case 27:
+            // 边关互市与战马牧场兴旺
+            addGold(1.6)
+            for a in armies.prefix(3) { a.supplies = JS(100) }
+            say("\(pname)边市茶马互通、骏马成群", "胡汉商旅云集边镇易马市茶，官牧孳息日盛：国库增收，三军粮秣充盈。", p: place)
+        case 28:
+            // 清官犯颜直谏
+            corrupt(-6); addDestiny(4)
+            say("\(name)直臣犯颜极谏获纳", "谏官不避权贵、条陈时弊十事，中枢从善如流下诏革弊：腐化 −6，国运 +4。", kind: "politics")
+        case 29:
+            // 书院讲学与学术黄金时代
+            addDestiny(4); corrupt(-3)
+            if let leader = Regimes.ruler(r, id) {
+                leader.base.diplomatic = JS(min(100, (leader.base.diplomatic.optionalNumber ?? 50) + 3))
+                leader.base.charisma = JS(min(100, (leader.base.charisma.optionalNumber ?? 50) + 2))
+            }
+            say("\(name)诸子百家争鸣、书院林立", "名士大儒云集\(pname)讲学论道、海内士子负笈来游：中枢威望与外交精进，国运 +4。", kind: "culture", p: place)
+        case 30:
+            // 水师清剿海盗、航道肃清
+            addGold(2.2); addDestiny(2)
+            for fl in Naval.fleets(r) where fl.nationId.optionalString == id && fl.status.asString != "lost" {
+                fl.food = JS(max(fl.food.asNumber, fl.ships.asNumber * 2600))
+            }
+            say("\(name)水师出洋肃清海寇", "战船连破倭寇海盗巢穴，近海商道畅通无阻：国库增两月余岁入，水师海粮补足。", kind: "event", p: place)
+        case 31:
+            // 义仓赈济流民、化危为安
+            addGold(-1.2); addDestiny(5)
+            if let st = Regimes.monthStock(r, place.id.asString) {
+                st.population = JS((st.population.asNumber * 1.04).rounded())
+                st.grain = JS(max(st.grain.asNumber, 6000))
+            }
+            say("\(name)广设义仓安辑流民", "乱世流民闻仁政而来，官府授田发种、安土重迁：\(pname)增丁 4%，国运 +5。", p: place)
+        case 32:
+            // 运河漕运全线贯通
+            addGold(2.4); corrupt(-2)
+            if let st = Regimes.monthStock(r, place.id.asString) { st.grain = JS((st.grain.asNumber * 1.25).rounded()) }
+            say("\(pname)大运河漕运全线贯通", "千帆竞发、南北粮赋百货昼夜转输京畿：国库大增两月半岁入，\(pname)存粮 +25%。", p: place)
+        case 33:
+            // 百年古都修缮营建
+            addGold(-1.8); addDestiny(5); WorldDepth.adjustReputation(r, nation: id, delta: 4)
+            say("\(name)重修王城礼殿与市坊", "宫阙巍峨、坊市井然，远近使商无不叹服：国运 +5，国际信誉 +4。", kind: "culture", p: place)
+        case 34:
+            // 权臣擅权与清君侧风波
+            corrupt(6); addDestiny(-3)
+            say("\(name)权臣专横引发朝野震动", "权要私植党羽、把持枢机，地方藩镇暗生异心：腐化 +6，国运 −3。", kind: "politics")
+        case 35:
+            // 严寒暴雪冻毙牲畜
+            addDestiny(-2)
+            if let st = Regimes.monthStock(r, place.id.asString) { st.grain = JS((st.grain.asNumber * 0.80).rounded()) }
+            for a in armies.prefix(2) { a.supplies = JS(max(20, a.supplies.asNumber - 18)) }
+            say("\(pname)大雪封山、寒潮凛冽", "暴雪连旬阻绝驿道，军民柴粮告急：\(pname)存粮 −20%，前线军粮损耗，国运 −2。", p: place)
+        case 36:
+            // 丰年大赦与减租诏
+            addDestiny(5); corrupt(-4)
+            say("\(name)大稔之年颁行大赦宽政", "五谷丰登、朝廷减租免赋并大赦轻囚，万民欢腾：国运 +5，腐化 −4。", kind: "politics")
+        case 37:
+            // 宗门辩经与宗教热潮
+            addDestiny(3)
+            for a in armies { a.morale = JS(min(100, a.morale.asNumber + 8)) }
+            say("\(name)高僧大德御前辩经", "法会盛况空前、信众归心，三军士卒深信天命所归：全军士气 +8，国运 +3。", kind: "culture")
+        case 38:
+            // 豪杰义士来投
+            if let cmd = Regimes.activeCommander(r, nation: id, enemy: nil), let cp = People.person(r, cmd.personId) {
+                cp.base.charisma = JS(min(100, (cp.base.charisma.optionalNumber ?? 50) + 4))
+                cp.base.military = JS(min(100, (cp.base.military.optionalNumber ?? 50) + 3))
+            }
+            for a in armies.prefix(2) {
+                let cur = a.troops.asNumber
+                let full = max(cur, r.tactics.forces[a.id.asString].fullStrength.optionalNumber ?? cur)
+                a.troops = JS(min(full, (cur * 1.08).rounded()))
+                a.morale = JS(min(100, a.morale.asNumber + 12))
+            }
+            say("\(name)四方豪杰慕名投效", "侠士义勇携乡兵来归，愿效死力：主力兵员整补 +8%，士气 +12。", kind: "event", p: place)
+        case 39:
+            // 皇储/继任者贤明声望大振
+            addDestiny(4); WorldDepth.adjustReputation(r, nation: id, delta: 3)
+            say("\(name)储位贤明、中外归心", "继任储君监国处事明决宽仁，朝野上下对来日充满期许：国运 +4，国际信誉 +3。", kind: "family")
+        case 40:
+            // 官营盐铁茶专卖丰盈
+            addGold(2.6); corrupt(2)
+            say("\(name)盐铁官营岁课大增", "官榷盐铁茶酒利归公家，国库充实但吏胥亦借机渔利：国库大增，腐化微升 +2。", kind: "politics")
+        default:
+            // 边疆屯田实边、兵农合一
+            if let st = Regimes.monthStock(r, place.id.asString) {
+                st.grain = JS((st.grain.asNumber * 1.28).rounded())
+                st.population = JS((st.population.asNumber * 1.03).rounded())
+            }
+            for a in armies.prefix(2) { a.supplies = JS(100) }
+            say("\(pname)边塞屯田实边见效", "戍卒且耕且守、化荒原为良田，军粮就地自给：\(pname)存粮 +28%、增丁 3%。", p: place)
         }
     }
 }

@@ -28,33 +28,44 @@ struct NationsSheet: View {
                         if order.isEmpty { Text("没有符合条件的国家").font(Theme.label).foregroundStyle(Theme.ink2) }
                     }.padding(.horizontal, Theme.Layout.pageInset)
                     Group2 {
+                        let maxProvs = max(1, order.map { state.nations[$0].provinces }.max() ?? 1)
                         ForEach(order, id: \.self) { i in
                             let n = map.meta.nations[i], s = state.nations[i]
                             let nLex = LocalizationEngine.lexicon(culture: s.culture ?? n.culture, polity: s.polity ?? n.polity, style: nil)
+                            let nColor = Names.color(n.color)
                             Button {
                                 GameFeel.shared.tap()
                                 select(i)
                             } label: {
-                                HStack(spacing: 12) {
-                                    Rectangle().fill(Names.color(n.color)).frame(width: 4, height: 36)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack(spacing: 7) {
-                                            Text(n.name).font(Theme.serif(16)).foregroundStyle(s.alive ? Theme.ink : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
-                                            if !s.alive { PaperTag(text: "已亡", color: Theme.ink2, size: 10.5) }
-                                            else if !s.enemies.isEmpty { PaperTag(text: "交战", color: Theme.seal, size: 10.5) }
+                                VStack(spacing: 7) {
+                                    HStack(spacing: 12) {
+                                        HStack(spacing: 1.5) {
+                                            RoundedRectangle(cornerRadius: 1.5, style: .continuous).fill(nColor).frame(width: 4, height: 36)
+                                            Rectangle().fill(Theme.goldRim.opacity(0.42)).frame(width: 0.7, height: 32)
                                         }
-                                        Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)")
-                                            .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            HStack(spacing: 7) {
+                                                Text(n.name).font(Theme.serif(16)).foregroundStyle(s.alive ? Theme.ink : Theme.ink2).lineLimit(1).minimumScaleFactor(0.75)
+                                                if !s.alive { PaperTag(text: "已亡", color: Theme.ink2, size: 10.5) }
+                                                else if !s.enemies.isEmpty { PaperTag(text: "交战", color: Theme.seal, size: 10.5) }
+                                            }
+                                            Text("\(Names.polity[n.polity] ?? n.polity) · \(Names.culture[n.culture] ?? n.culture)")
+                                                .font(Theme.caption).foregroundStyle(Theme.ink2).lineLimit(1)
+                                        }
+                                        Spacer(minLength: 8)
+                                        VStack(alignment: .trailing, spacing: 3) {
+                                            EditorialValueText("\(s.provinces) \(nLex.adminUnit)", size: 15.5, color: Theme.ink)
+                                            Text("\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                        }
+                                        PhosphorIcon(glyph: .chevronRight, size: 13, weight: .light)
+                                            .foregroundStyle(Theme.ink2.opacity(0.72))
                                     }
-                                    Spacer(minLength: 8)
-                                    VStack(alignment: .trailing, spacing: 3) {
-                                        EditorialValueText("\(s.provinces) \(nLex.adminUnit)", size: 15.5, color: Theme.ink)
-                                        Text("\(Names.wan(s.population))人 · \(Names.wan(s.troops))兵").font(Theme.caption).foregroundStyle(Theme.ink2).monospacedDigit()
+                                    if s.alive && s.provinces > 0 {
+                                        InkBar(fraction: Double(s.provinces) / Double(maxProvs), color: nColor.opacity(0.72), track: Theme.ink.opacity(0.06), height: 2.5)
+                                            .padding(.leading, 18)
                                     }
-                                    PhosphorIcon(glyph: .chevronRight, size: 13, weight: .light)
-                                        .foregroundStyle(Theme.ink2.opacity(0.72))
                                 }
-                                .padding(.horizontal, 4).padding(.vertical, 12).contentShape(Rectangle())
+                                .padding(.horizontal, 6).padding(.vertical, 11).contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             if i != order.last { Divider2() }

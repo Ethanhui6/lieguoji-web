@@ -812,7 +812,7 @@ struct GameActionLabel: View {
         case "arrow.uturn.backward", "arrow.uturn.left": return .retreat
         case "arrow.triangle.turn.up.right.diamond", "arrow.up.right", "figure.walk": return .march
         case "drop", "drop.fill", "water.waves": return .lake
-        case "circle.hexagongrid", "sparkles", "sparkle", "hands.sparkles", "aqi.medium", "moon.stars": return .religion
+        case "circle.hexagongrid", "sparkles", "aqi.medium", "moon.stars": return .religion
         case "plus", "plus.circle", "plus.circle.fill", "person.badge.plus": return .plus
         case "minus", "minus.circle", "person.badge.minus", "person.2.slash", "person.fill.xmark": return .minus
         case "trash", "trash.fill", "xmark.bin", "eraser", "hammer", "xmark.octagon", "xmark.shield": return .trash
@@ -823,22 +823,20 @@ struct GameActionLabel: View {
         case "square.and.arrow.up", "arrow.up.doc": return .export
         case "photo", "photo.artframe", "photo.on.rectangle", "camera": return .wallpaper
         case "speaker.wave.2", "speaker.wave.2.fill", "music.note": return .sound
-        case "gauge.with.dots.needle.67percent", "speedometer", "bolt.fill", "bolt", "hare", "tortoise", "cloud.bolt": return .speed
-        case "trophy", "trophy.fill", "medal", "checkmark.seal", "checkmark.circle.fill": return .trophy
+        case "gauge.with.dots.needle.67percent", "speedometer", "bolt.fill", "hare", "tortoise", "cloud.bolt": return .speed
+        case "trophy", "trophy.fill", "medal": return .trophy
         case "person", "person.fill", "person.crop.circle", "person.text.rectangle", "person.badge.shield.checkmark": return .person
         case "leaf", "leaf.fill", "leaf.circle", "hand.raised", "hand.raised.fill", "peace", "cross.case": return .peace
         case "chevron.down", "chevron.compact.down": return .chevronDown
         case "chevron.right", "chevron.compact.right": return .chevronRight
         case "desktopcomputer", "laptopcomputer", "cpu": return .computer
-        case "shield.lefthalf.filled", "bolt.shield", "lock.shield": return .military
-        case "hand.draw", "square.dashed": return .brush
+        case "bolt.shield", "lock.shield": return .military
+        case "hand.draw": return .brush
         case "arrow.down.to.line": return .march
-        case "list.bullet", "list.number": return .ranking
-        case "lock", "lock.open", "lock.open.display": return .fortress
+        case "list.bullet": return .ranking
+        case "lock.open", "lock.open.display": return .fortress
         case "arrow.uturn.backward.circle": return .replay
-        case "dice": return .refresh
-        case "megaphone", "allergens", "drop.degreesign.slash": return .fire
-        case "building.2": return .polity
+        case "megaphone": return .fire
         default: return nil
         }
     }

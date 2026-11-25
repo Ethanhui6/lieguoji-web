@@ -332,7 +332,7 @@ func terrainThumbnail(_ inputs: PreviewWorld.Inputs, seed: String, template: Str
     return (UIImage(cgImage: image), t.stats)
 }
 
-/// 标题页主操作钮：恢复招牌特色朱砂红 `#A83226` 配宣纸白字与极细内书框（主操作），次操作采用轻盈亮宣纸面配极细淡墨边（零厚重黑框与硬阴影）。
+/// 标题页主操作钮：皇家朱砂漆红渐变配鎏金内书框（主操作），次操作采用温润亮宣渐变配浅鎏金内线，与游戏内奏折质感 100% 同源。
 struct HeroAction: View {
     let title: String; let detail: String; let symbol: String
     var primary = true
@@ -341,33 +341,42 @@ struct HeroAction: View {
             InkIcon(glyph: GameActionLabel.glyph(for: symbol) ?? .edict, size: 21, weight: 1.7, filled: false)
                 .foregroundStyle(primary ? Theme.paperLight : Theme.seal)
             .frame(width: 42, height: 42)
-            .background(primary ? Theme.paperLight.opacity(0.14) : Theme.seal.opacity(0.07), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(primary ? Theme.paperLight.opacity(0.15) : Theme.seal.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(primary ? Theme.goldRim.opacity(0.32) : Theme.seal.opacity(0.18), lineWidth: 0.65))
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title).font(Theme.serif(20)).tracking(1.8).foregroundStyle(primary ? Theme.paperLight : Theme.ink)
-                Text(detail).font(Theme.caption).foregroundStyle(primary ? Theme.paperLight.opacity(0.84) : Theme.ink2).lineLimit(1)
+                Text(detail).font(Theme.caption).foregroundStyle(primary ? Theme.paperLight.opacity(0.86) : Theme.ink2).lineLimit(1)
             }
             Spacer(minLength: 6)
             PhosphorIcon(glyph: .chevronRight, size: 14, weight: .light)
-                .foregroundStyle(primary ? Theme.paperLight.opacity(0.85) : Theme.ink2)
+                .foregroundStyle(primary ? Theme.paperLight.opacity(0.88) : Theme.ink2)
         }
         .padding(.horizontal, 16).frame(height: 68)
-        .background(primary ? Theme.seal : Theme.paperLight.opacity(0.95), in: RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
+        .background {
+            if primary {
+                RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
+                    .fill(Theme.cinnabarGradient)
+            } else {
+                RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
+                    .fill(Theme.vellumGradient)
+            }
+        }
         .overlay(
             RoundedRectangle(cornerRadius: Theme.Control.cornerCard - 3, style: .continuous)
-                .stroke(primary ? Theme.paperLight.opacity(0.24) : Color.clear, lineWidth: 0.7)
+                .stroke(primary ? Theme.goldRim.opacity(0.52) : Theme.goldRim.opacity(0.28), lineWidth: 0.75)
                 .padding(3.5)
         )
         .overlay(
             RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous)
-                .stroke(primary ? Color.clear : Theme.hairline, lineWidth: 0.75)
+                .stroke(primary ? Color.clear : Theme.line, lineWidth: 0.8)
         )
-        .shadow(color: (primary ? Theme.seal : Theme.ink).opacity(primary ? 0.18 : 0.05), radius: primary ? 8 : 4, y: primary ? 3 : 1.5)
+        .shadow(color: (primary ? Theme.seal : Theme.ink).opacity(primary ? 0.24 : 0.08), radius: primary ? 9 : 5, y: primary ? 3.5 : 2)
         .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerCard, style: .continuous))
     }
 }
 
-/// 标题页底排四枚疏朗纸卷功钮：与游戏内古籍轻盈留白一致（亮宣轻底 + 0.65pt 极细淡墨边，零厚重框线与硬阴影）。
+/// 标题页底排四枚御卷功钮：温润亮宣渐变 + 顶缘浅鎏金细线 + 轻盈投影，与内页纸卷统一。
 struct TileAction: View {
     let title: String; let symbol: String
     var body: some View {
@@ -376,9 +385,11 @@ struct TileAction: View {
                 .foregroundStyle(Theme.ink).frame(height: 22)
             Text(title).font(Theme.label).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity).frame(height: 60)
-        .background(Theme.paperLight.opacity(0.92), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.hairline, lineWidth: 0.7))
+        .frame(maxWidth: .infinity).frame(height: 62)
+        .background(Theme.vellumGradient, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.line, lineWidth: 0.75))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous).stroke(Theme.goldRim.opacity(0.24), lineWidth: 0.6).padding(2))
+        .shadow(color: Theme.ink.opacity(0.06), radius: 3, y: 1.5)
         .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
     }
 }
@@ -413,6 +424,8 @@ struct NewWorldSheet: View {
     static let presets: [ScenarioPreset] = [
         ScenarioPreset(id: "huaxia", title: "华夏群雄", note: "中原大陆 · 诸侯并起", seal: "夏", symbol: "crown", template: "pangea", nations: 12, provinces: 140, relations: "peace", cultures: ["chinese", "korean", "mongol", "vietnamese", "japanese"]),
         ScenarioPreset(id: "zhanguo", title: "战国七雄", note: "七强接壤 · 合纵连横", seal: "战", symbol: "flag.2.crossed", template: "pangea", nations: 7, provinces: 110, relations: "war", cultures: ["chinese"]),
+        ScenarioPreset(id: "seahegemon", title: "海权争霸", note: "岛国舰队 · 跨海即战", seal: "舰", symbol: "anchor", template: "archipelago", nations: 10, provinces: 125, relations: "war", cultures: ["english", "spanish", "portuguese", "dutch", "japanese", "chinese", "norse", "italian"]),
+        ScenarioPreset(id: "steppe", title: "大漠铁骑", note: "草原诸部 · 铁骑纵横", seal: "骑", symbol: "flag.2.crossed", template: "pangea", nations: 10, provinces: 135, relations: "war", cultures: ["mongol", "turkic", "chinese", "persian", "slavic", "hungarian", "tibetan"]),
         ScenarioPreset(id: "warring", title: "列国争霸", note: "多陆交锋 · 开局即战", seal: "霸", symbol: "flag.2.crossed", template: "continents", nations: 14, provinces: 160, relations: "war", cultures: Set(Names.cultureIds)),
         ScenarioPreset(id: "voyage", title: "大航海群岛", note: "星罗海岛 · 舟师竞渡", seal: "海", symbol: "water.waves", template: "archipelago", nations: 10, provinces: 120, relations: "peace", cultures: ["english", "french", "spanish", "portuguese", "dutch", "italian", "japanese", "chinese"]),
         ScenarioPreset(id: "silkroad", title: "丝路万邦", note: "高原群山 · 东西汇通", seal: "丝", symbol: "mountain.2", template: "highIsland", nations: 12, provinces: 130, relations: "peace", cultures: ["chinese", "mongol", "turkic", "persian", "arab", "indian", "greek", "italian", "slavic"]),
@@ -479,8 +492,19 @@ struct NewWorldSheet: View {
                                 }
                             }
                             .padding(.horizontal, 13).padding(.vertical, 10)
-                            .background(on ? Theme.seal : Theme.paperLight, in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.7))
+                            .background {
+                                if on {
+                                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.cinnabarGradient)
+                                } else {
+                                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.vellumGradient)
+                                }
+                            }
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Theme.Control.cornerControl - (on ? 2 : 0), style: .continuous)
+                                    .stroke(on ? Theme.goldRim.opacity(0.48) : Theme.line, lineWidth: 0.75)
+                                    .padding(on ? 2.5 : 0)
+                            )
+                            .shadow(color: (on ? Theme.seal : Theme.ink).opacity(on ? 0.18 : 0.045), radius: on ? 4 : 2, y: 1.5)
                         }
                         .buttonStyle(PressStyle())
                     }

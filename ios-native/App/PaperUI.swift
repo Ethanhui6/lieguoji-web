@@ -720,13 +720,16 @@ struct ScrollRod: View {
     }
 }
 
-/// 新中式古籍分节标题：思源宋体 + 舒朗字距 + 2pt 细朱砂标线。
+/// 新中式古籍双纹分节标题：朱砂竖标 + 鎏金伴线 + 舒朗字距。
 struct SectionLabel: View {
     let title: String; var inset = true
     init(_ title: String, inset: Bool = true) { self.title = title; self.inset = inset }
     var body: some View {
         HStack(spacing: 9) {
-            Rectangle().fill(Theme.seal).frame(width: 2, height: 14)
+            HStack(spacing: 2) {
+                RoundedRectangle(cornerRadius: 1, style: .continuous).fill(Theme.seal).frame(width: 2.5, height: 14)
+                Rectangle().fill(Theme.goldRim.opacity(0.65)).frame(width: 0.8, height: 11)
+            }
             Text(title).font(Theme.serif(15.5)).tracking(1.6).foregroundStyle(Theme.ink)
         }
         .frame(maxWidth: inset ? .infinity : nil, alignment: .leading)
@@ -863,7 +866,7 @@ struct InkBusy: View {
     }
 }
 
-/// 核心主操作按钮：恢复招牌特色朱砂红 `#A83226` 配宣纸白字与极细内书框。
+/// 核心主操作按钮：皇家朱砂漆红渐变配宣纸白字与鎏金细内书框，全局主操作视觉统一。
 struct SealButton: View {
     let title: String
     var busy = false
@@ -873,11 +876,16 @@ struct SealButton: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 if busy { InkBusy(tint: Theme.paperLight, track: Theme.paperLight.opacity(0.35)).frame(width: 44) }
-                Text(title).font(Theme.serif(15.5)).tracking(1.0)
+                Text(title).font(Theme.serif(15.5)).tracking(1.2)
             }
             .foregroundStyle(Theme.paperLight).frame(maxWidth: .infinity).frame(height: 46)
-            .background(Theme.seal.opacity(disabled ? 0.35 : 1), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(Theme.paperLight.opacity(0.24), lineWidth: 0.7).padding(3))
+            .background {
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
+                    .fill(Theme.cinnabarGradient)
+                    .opacity(disabled ? 0.36 : 1)
+            }
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl - 2, style: .continuous).stroke(Theme.goldRim.opacity(0.48), lineWidth: 0.75).padding(3))
+            .shadow(color: Theme.seal.opacity(disabled ? 0 : 0.20), radius: 5, y: 2)
         }
         .buttonStyle(PressStyle()).disabled(disabled || busy)
     }
@@ -1072,7 +1080,7 @@ extension View {
     }
 }
 
-/// 极简三色古籍角标：彻底淘汰花花绿绿的实心彩色胶囊；默认以细墨框浅墨字呈现，仅关键警示/选中项点缀朱砂红。
+/// 极简三色古籍角标：温润浅宣衬底 + 极细边线；仅关键警示/选中项以朱砂勾勒，彻底淘汰花哨实心彩色胶囊。
 struct PaperTag: View {
     let text: String
     var color: Color = Theme.seal
@@ -1084,10 +1092,14 @@ struct PaperTag: View {
             .font(Theme.sans(size, weight: isAccent ? .medium : .regular))
             .foregroundStyle(fg)
             .lineLimit(1).fixedSize()
-            .padding(.horizontal, 6).padding(.vertical, 2)
+            .padding(.horizontal, 6.5).padding(.vertical, 2.5)
+            .background(
+                (isAccent ? Theme.seal.opacity(0.065) : Theme.paperLight.opacity(0.75)),
+                in: RoundedRectangle(cornerRadius: 4, style: .continuous)
+            )
             .overlay(
-                RoundedRectangle(cornerRadius: 3.5, style: .continuous)
-                    .stroke(isAccent ? Theme.seal.opacity(0.45) : Theme.hairline, lineWidth: 0.75)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .stroke(isAccent ? Theme.seal.opacity(0.45) : Theme.line.opacity(0.75), lineWidth: 0.75)
             )
     }
 }

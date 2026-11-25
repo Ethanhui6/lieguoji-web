@@ -309,6 +309,78 @@ extension NativeEngine {
         return (true, "已整编为\(br.label)「\(newTitle)」，\(br.roleNote)")
     }
 
+    /// 换授名将：自动从本国在世成年人物中甄选武略最高之将才，授以常备军统帅（战时兼授征讨大将），立竿见影提升军团实战攻防。
+    public func appointBestCommander(_ id: String) -> (ok: Bool, reason: String) {
+        let r = run
+        guard let a = liveArmy(id) else { return (false, "这支军队不存在或已覆灭。") }
+        let nid = a.nationId.asString
+        let sid = Offices.stateId(r, nid)
+        let curMarshal = Offices.holder(r, nid, "Marshal", sid)?.id.asInt ?? -1
+        var pool = [(p: JS, score: Double)]()
+        for p in r.kin.persons.objectValues {
+            guard case .object = p.storage, p.isAlive.optionalBool == true else { continue }
+            guard p.stateId.asInt == sid, (p.age.optionalNumber ?? 0) >= 18 else { continue }
+            let mil = People.skills(p).military
+            let traits = Set(p.traits.isNull ? [] : p.traits.asArray.compactMap(\.optionalString))
+            var sc = mil
+            if traits.contains("Tactician") || traits.contains("Strategist") || traits.contains("BattleHardened") || traits.contains("Veteran") { sc += 12 }
+            if traits.contains("Conqueror") || traits.contains("Brave") || traits.contains("Genius") { sc += 8 }
+            if traits.contains("Incompetent") || traits.contains("Craven") { sc -= 18 }
+            pool.append((p, sc))
+        }
+        pool.sort { $0.score > $1.score }
+        guard let top = pool.first else { return (false, "本国暂无可授帅印的成年将才。") }
+        let chosen = (top.p.id.asInt == curMarshal && pool.count > 1 && pool[1].score >= top.score - 5) ? pool[1].p : top.p
+        let ctx = Offices.context(r, nid)
+        Offices.appoint(ctx, "Marshal", 0, sid, chosen.id.asInt)
+        for w in Offices.wars(r, nid) {
+            Offices.appoint(ctx, "WarCommander", 2, w.scopeId, chosen.id.asInt)
+        }
+        Government.refreshLeaderCombat(r)
+        let cmd = Regimes.activeCommander(r, nation: nid, enemy: Offices.wars(r, nid).first?.enemy)
+        let fullName = NativeEngine.displayPersonName(chosen)
+        let milVal = Int(People.skills(chosen).military.rounded())
+        let pctStr = cmd.map { " · 实战攻防 \($0.combatBonusPct >= 0 ? "+" : "−")\(abs($0.combatBonusPct))%" } ?? ""
+        People.recordHistory(r, kind: "politics", text: "拜\(fullName)为全军主帅",
+                             reason: "于\(a.name.asString)临阵换将，授\(fullName)（武略 \(milVal)）节制三军\(pctStr)。",
+                             nations: [nid], province: nil)
+        return (true, "已拜「\(fullName)」为主帅（武略 \(milVal)\(pctStr)）！")
+    }
+
+    /// 急补粮饷：耗 90 金立刻将该军补给补满至 100 并提振士气 +22（危急前线一键续命）。
+    public func fieldResupply(_ id: String) -> (ok: Bool, reason: String) {
+        let r = run
+        guard let a = liveArmy(id) else { return (false, "这支军队不存在或已覆灭。") }
+        let nid = a.nationId.asString
+        let fin = r.finance.nations[nid]
+        let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+        guard gold >= 90 else { return (false, "国库不足 90 金，无法前线急补粮饷。") }
+        if !fin.isNull { fin.gold = JS(max(0, gold - 90)) }
+        a.supplies = JS(100)
+        a.morale = JS(min(100, (a.morale.optionalNumber ?? 50) + 22))
+        return (true, "\(a.name.asString)急补粮饷完成：粮草满额（100），士气 +22（耗 90 金）。")
+    }
+
+    /// 军中演武：非交战时耗 80 金强化单军历练 +15（进阶精锐/王牌/无双勋阶）、士气 +12。
+    public func fieldDrill(_ id: String) -> (ok: Bool, reason: String) {
+        let r = run
+        guard let a = liveArmy(id) else { return (false, "这支军队不存在或已覆灭。") }
+        guard a.status.asString != "fighting" else { return (false, "交战中无法列阵演武。") }
+        let nid = a.nationId.asString
+        let fin = r.finance.nations[nid]
+        let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+        guard gold >= 80 else { return (false, "国库不足 80 金，无法组织军中演武。") }
+        if !fin.isNull { fin.gold = JS(max(0, gold - 80)) }
+        Regimes.enable(r)
+        if r.regimes.armyXP.isNull { r.regimes.armyXP = JS.object() }
+        let before = r.regimes.armyXP[id].optionalNumber ?? 0
+        let after = min(100, before + 15)
+        r.regimes.armyXP[id] = JS(after)
+        a.morale = JS(min(100, (a.morale.optionalNumber ?? 60) + 12))
+        let rankLabel = after >= 80 ? "无双虎师" : after >= 55 ? "王牌精锐" : after >= 30 ? "百战精锐" : "常备正军"
+        return (true, "\(a.name.asString)演武大成：历练升至 \(Int(after))（\(rankLabel)），士气 +12（耗 80 金）。")
+    }
+
     /// Marks an army gone the way a destroyed one is (the daily retirement then archives it).
     private func retire(_ a: JS) {
         let r = run, id = a.id.asString

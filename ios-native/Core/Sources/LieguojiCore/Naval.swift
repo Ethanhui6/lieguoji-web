@@ -369,7 +369,7 @@ public enum Naval {
             if low, let here { row.assignedPortId = JS(here.id); order.targetId = .null; note("resupply", refitNeed ? "已泊入安全船坞，加速抢修舰体与补员。" : "实际停在安全本国锚点，等待日结从当地粮储补给。"); continue }
             let home = candidates.first { $0.id == row.homePortId.optionalString }
             let homeLost = home.map { r.portControl.ports[$0.provinceId].occupierId.asString != nation } ?? false
-            let rationNow = Double(ration(fl.crew.asInt)), food = fl.food.asNumber, crew = fl.crew.asNumber
+            let rationNow = Double(ration(fl.crew.asInt)), food = fl.food.asNumber
             func days(_ d: Double) -> Double { (d / speed / 120).rounded(.up) }
             let missionActive = appNaval && (activeMission == .blockade || activeMission == .raid || activeMission == .escort)
             if !low && atWarNow && (r.portControl.attackFleetIds.asArray.contains { $0.asString == id } || homeLost || goalAttack || missionActive || (UnitKinds.enabled && (seaArmiesByComp[component]?.contains { enemy($0.nation) } ?? false))) {

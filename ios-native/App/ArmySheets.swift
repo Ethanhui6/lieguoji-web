@@ -296,14 +296,17 @@ struct ArmySheet: View {
                 }
                 if let cName = a.commander, let mil = a.commanderMilitary, let pct = a.commanderBonusPct {
                     Divider2()
-                    HStack(alignment: .firstTextBaseline, spacing: 7) {
+                    HStack(alignment: .center, spacing: 7) {
                         PaperTag(text: a.commanderRole ?? "统帅", color: pct < 0 ? Theme.seal : Theme.ink, size: 11)
                         let traitsLine = (a.commanderTraits ?? []).isEmpty ? "" : " · \((a.commanderTraits ?? []).joined(separator: "、"))"
                         Text("\(cName)（武略 \(mil)）· 攻防 \(pct >= 0 ? "+" : "−")\(abs(pct))%\(traitsLine)")
                             .font(Theme.caption)
                             .foregroundStyle(pct < 0 ? Theme.seal : Theme.ink)
                             .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 0)
+                        Spacer(minLength: 4)
+                        EditorialTactileButton(title: "换将", icon: .crown, accent: pct < 0, compact: true) {
+                            act("appointBestCommander", a)
+                        }
                     }
                 }
             }
@@ -330,12 +333,14 @@ struct ArmySheet: View {
         .padding(.horizontal, Theme.Layout.pageInset)
         .animation(Motion.tap, value: a.travel)
 
-        // 2×4 军机令格
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-            ArmyChip(title: a.manual ? "交还AI" : "亲自指挥", symbol: a.manual ? "cpu" : "person.fill") { act("armyManual", a, flag: !a.manual) }
+        // 2×5 军机令格（含急补粮饷与军中演武精锐养成）
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 7), count: 5), spacing: 8) {
+            ArmyChip(title: a.manual ? "交AI" : "亲掌", symbol: a.manual ? "cpu" : "person.fill") { act("armyManual", a, flag: !a.manual) }
             ArmyChip(title: "驻守", symbol: "flag.fill") { act("holdArmy", a) }
             ArmyChip(title: "回师", symbol: "house.fill") { act("returnHome", a) }
             ArmyChip(title: "补员", symbol: "person.3.fill", disabled: fighting) { act("reinforceArmy", a) }
+            ArmyChip(title: "急补粮", symbol: "shippingbox.fill") { act("fieldResupply", a) }
+            ArmyChip(title: "演武", symbol: "bolt.shield", disabled: fighting) { act("fieldDrill", a) }
             ArmyChip(title: "分兵", symbol: "arrow.triangle.branch", disabled: fighting || a.troops < 400) { act("splitArmy", a) }
             ArmyChip(title: "合兵", symbol: "arrow.triangle.merge", disabled: fighting || peers.isEmpty) { merging = true }
             ArmyChip(title: "改名", symbol: "pencil") { newName = a.name; renaming = true }
@@ -1337,8 +1342,15 @@ struct ArmyChip: View {
             }
             .foregroundStyle(danger ? Theme.seal : Theme.ink)
             .frame(maxWidth: .infinity, minHeight: 56)
-            .background(Theme.paper2.opacity(0.9), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(danger ? Theme.seal.opacity(0.42) : Theme.ink.opacity(0.14), lineWidth: 0.9))
+            .background {
+                if danger {
+                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.seal.opacity(0.065))
+                } else {
+                    RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.vellumGradient)
+                }
+            }
+            .overlay(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).stroke(danger ? Theme.seal.opacity(0.42) : Theme.line.opacity(0.85), lineWidth: 0.8))
+            .shadow(color: Theme.ink.opacity(0.045), radius: 2, y: 1)
             .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
         }
         .buttonStyle(PressStyle())

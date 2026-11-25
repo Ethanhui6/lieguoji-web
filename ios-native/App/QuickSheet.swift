@@ -238,7 +238,12 @@ struct ProvinceQuickSheet: View {
                                 }
                                 tile("和平主义", "leaf") { act("该国转趋和平") { await model.setTemper(owner, 0.6) } }
                                 tile("穷兵黩武", "bolt", destructive: true) { act("该国转趋好战") { await model.setTemper(owner, 1.6) } }
-                                tile("军威大振", "bolt.shield") { act("该国进攻 +50%") { await model.setBonus(owner, key: "attack", value: 50) } }
+                                tile("强兵 +150%", "bolt.shield") { act("该国攻守均 +150%（以小博大）") {
+                                    if let e = await model.setBonus(owner, key: "attack", value: 150) { return e }
+                                    return await model.setBonus(owner, key: "defense", value: 150)
+                                } }
+                                tile("广纳奇才", "person.badge.plus") { act("奇才入朝听用") { await model.nationDecree(owner, kind: "recruitTalent") } }
+                                tile("敕封名将", "crown") { act("已敕封本国统帅") { await model.nationDecree(owner, kind: "promoteCommander") } }
                                 tile("国库大增", "banknote") {
                                     let gold = state.nations.indices.contains(owner) ? state.nations[owner].gold : 0
                                     act("国库 +5000") { await model.editNation(owner, gold: gold + 5000, destiny: nil, polity: nil) }
@@ -459,11 +464,18 @@ func quickTile(_ title: String, _ symbol: String, destructive: Bool = false, _ a
         }
         .foregroundStyle(destructive ? Theme.seal : Theme.ink)
         .frame(maxWidth: .infinity).frame(height: 62)
-        .background(destructive ? Theme.seal.opacity(0.05) : Theme.wash.opacity(0.48), in: RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
+        .background {
+            if destructive {
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.seal.opacity(0.065))
+            } else {
+                RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous).fill(Theme.vellumGradient)
+            }
+        }
         .overlay(
             RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous)
-                .stroke(destructive ? Theme.seal.opacity(0.28) : Theme.hairline, lineWidth: 0.65)
+                .stroke(destructive ? Theme.seal.opacity(0.32) : Theme.line.opacity(0.85), lineWidth: 0.75)
         )
+        .shadow(color: Theme.ink.opacity(destructive ? 0.03 : 0.05), radius: 2, y: 1)
         .contentShape(RoundedRectangle(cornerRadius: Theme.Control.cornerControl, style: .continuous))
     }
     .buttonStyle(PressStyle())

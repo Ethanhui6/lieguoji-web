@@ -23,7 +23,8 @@ extension NativeEngine {
         // 玩家政令后端防无限连点冷却闸门（纯可选 JS 字段，100% 兼容既有旧存档；策略切换/自动托管/议案/权力调衡走各自逻辑不在此锁）
         let decreeCooldownDays: Int = {
             switch kind {
-            case "mobilize", "landSurvey", "warBond": return 180
+            case "deposeMonarch", "recruitTalent", "promoteCommander": return 360
+            case "mobilize", "landSurvey", "warBond", "grandFeast": return 180
             case "prosper", "rewardArmies", "antiCorruption", "relief", "roadNetwork", "granary", "fortifyBorder", "armsUpgrade", "navalDockyard", "techAcademy", "imperialInspection", "eliteDrill": return 120
             case "assimilateCulture", "convertFaith", "amnesty", "academy", "envoyGoodwill", "taxRelief", "scholarlyEdict": return 90
             default: return 0
@@ -460,6 +461,144 @@ extension NativeEngine {
                             reason: "敕命儒臣与史官编纂典籍、宣示仁政：国际信誉 +8，国运 +5，腐化 −4。",
                             nations: [id], province: nil)
             return (true, "开馆修史完成：国际信誉 +8，国运 +5，腐化 −4。")
+
+        case "deposeMonarch":
+            // 弹劾废立昏君：仅当现任掌权者评级为昏君/暴君/庸主（tier <= -1）时可执行；择本国最贤能的储君或重臣即位，并整肃纲纪。
+            let eval = Regimes.rulerAssessment(r, id)
+            guard eval.tier <= -1 else {
+                return (false, "现任执政乃「\(eval.label)」，尚无失道之过，朝野不附废立。")
+            }
+            let sid = Offices.stateId(r, id)
+            let curLeader = r.people.nations[id].leaderId.optionalNumber.map(Int.init) ?? -1
+            let rulingFam = People.rulingFamilyId(r, id)
+            let heirId = rulingFam > 0 ? (r.kin.families[String(rulingFam)].heirId.optionalNumber.map(Int.init) ?? -1) : -1
+            var bestCandidate: JS? = nil
+            var bestScore = -1.0
+            for p in r.kin.persons.objectValues {
+                guard case .object = p.storage, p.isAlive.optionalBool == true else { continue }
+                guard p.stateId.asInt == sid, p.id.asInt != curLeader, (p.age.optionalNumber ?? 0) >= 16 else { continue }
+                let s = People.skills(p)
+                var sc = s.charisma + s.military + s.diplomatic + s.administrative
+                if p.id.asInt == heirId { sc += 45 }
+                else if p.familyId.asInt == rulingFam { sc += 20 }
+                if sc > bestScore { bestScore = sc; bestCandidate = p }
+            }
+            guard let successor = bestCandidate else {
+                return (false, "境内暂无年满十六岁的可堪大任继任者。")
+            }
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, 220)
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let oldName = (curLeader > 0 ? People.person(r, curLeader).map(Self.displayPersonName) : nil) ?? "旧主"
+            let res = enthronePerson(index, personId: successor.id.asInt)
+            guard res.ok else { return res }
+            if !r.regimes.defeatShock.isNull, let sh = r.regimes.defeatShock[id].optionalNumber {
+                r.regimes.defeatShock[id] = JS(sh * 0.5)
+            }
+            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 8))
+            if !destinyRow.isNull { destinyRow.destiny = JS(max(10, (destinyRow.destiny.optionalNumber ?? 50) - 5)) }
+            markDecreeCooldown()
+            let newName = Self.displayPersonName(successor)
+            let titleText = lex.isRepublican ? "\(stateName)议会弹劾免职、改选新主" : "\(stateName)朝野废黜昏君、奉迎贤主"
+            let bodyText = lex.isRepublican
+                ? "因\(oldName)施政失当（\(eval.label)），议会表决弹劾免职，公推\(newName)出任执政；肃清积弊、腐化 −8（耗 \(Int(cost)) 金）。"
+                : "因\(oldName)昏聩失道（\(eval.label)），重臣宗室共议废立，迎立\(newName)承继大统；一扫颓风、腐化 −8（耗 \(Int(cost)) 金）。"
+            People.announce(r, kind: "politics", text: titleText, reason: bodyText, nations: [id], province: nil)
+            return (true, "已废立更君：由\(newName)执掌\(stateName)，腐化 −8。")
+
+        case "recruitTalent":
+            // 广纳奇才：礼聘一位高才名将或名相入朝听用（主专精 78–92 + 鲜明历史特质，360 日冷却）。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            guard gold >= 260 else { return (false, "国库不足 260 金，难以厚礼延揽天下奇才。") }
+            if !fin.isNull { fin.gold = JS(max(0, gold - 260)) }
+            let culture = civ.cultureId.optionalString ?? "chinese"
+            let religion = civ.religionId
+            let sid = Offices.stateId(r, id)
+            let houses = NamingCatalog.houseNames(culture: culture)
+            let malePool = NamingCatalog.givenNames(r, culture: culture, gender: 0)
+            let femalePool = NamingCatalog.givenNames(r, culture: culture, gender: 1)
+            let hSeed = "\(r.world.custom.seed.optionalString ?? "")|talent|\(id)|\(nowDayCd)|\(r.people.nextPersonId.asInt)"
+            let draw = Int(Regimes.draw(hSeed))
+            let gender = (draw % 5 == 0 && !femalePool.isEmpty) ? 1 : 0
+            let gPool = (gender == 1 && !femalePool.isEmpty) ? femalePool : (malePool.isEmpty ? ["明远", "子龙", "玄龄", "克明"] : malePool)
+            let first = gPool[draw % gPool.count]
+            let surname = houses.isEmpty ? "李" : houses[(draw / 7) % houses.count]
+            let rand = Nobility.Random(n: r.nobility)
+            let p = Nobility.createNamed(r, first: first, last: surname, gender: gender, culture: culture, source: "talent-recruit", religionId: religion, identity: Nobility.personName(culture, given: first, house: surname, gender: gender), random: rand)
+            let age = Double(24 + (draw % 15))
+            p.birthTime = JS(Native.fr(r.life.gameTime.asNumber - age * 365.25 * r.life.secondsPerDay.asNumber))
+            p.age = JS(People.yearSince(r, p.birthTime.asNumber, now: r.kin.ageTime.asNumber))
+            let rulingFam = People.rulingFamilyId(r, id)
+            let famId = rulingFam > 0 ? rulingFam : 0
+            p.familyId = JS(famId); p.originalFamilyId = JS(famId); p.stateId = JS(sid); p.isHistoricallyImportant = JS(true)
+            let martial = (draw % 2 == 0)
+            let high = Double(78 + (draw % 15))
+            let secondary = Double(66 + ((draw / 3) % 16))
+            p.base.military = JS(martial ? high : secondary)
+            p.base.administrative = JS(martial ? secondary : high)
+            p.base.diplomatic = JS(Double(62 + ((draw / 5) % 20)))
+            p.base.charisma = JS(Double(65 + ((draw / 11) % 20)))
+            let sigTrait = martial ? ["Tactician", "Veteran", "BattleHardened", "Conqueror"][draw % 4] : ["Lawgiver", "Financier", "Visionary", "Diligent"][draw % 4]
+            p.traits = .array([JS(sigTrait), JS(martial ? "Strategist" : "Administrator")])
+            r.kin.persons[p.id.asInt.description] = p
+            let lp = JS.object(); lp.source = JS("native-talent"); lp.birthTime = p.birthTime.clone(); lp.age = p.age.clone(); lp.initialAge = .null; lp.updatedMonth = r.kin.lastAgeMonth.clone()
+            r.life.persons[p.id.asInt.description] = lp
+            if famId > 0, !r.kin.families[String(famId)].isNull {
+                r.kin.families[String(famId)].collateralMemberIds.push(p.id.clone())
+            }
+            Vassals.bump(r.kin)
+            markDecreeCooldown()
+            let fullName = Self.displayPersonName(p)
+            let roleWord = martial ? "将才（武略 \(Int(high))）" : "相才（治政 \(Int(high))）"
+            People.announce(r, kind: "politics", text: "\(stateName)礼贤下士，招得奇才\(fullName)",
+                            reason: "斥资 260 金遍访草泽，聘得\(roleWord)\(fullName)入朝听用，随时可授以统帅、总督或中枢重任。",
+                            nations: [id], province: nil)
+            return (true, "延揽成功：\(fullName)（\(roleWord)）已入朝听用！")
+
+        case "promoteCommander":
+            // 敕封名将：嘉奖并加封现任在阵统帅（武略 +10 封顶 100，赐「越战越勇」特质，全军士气 +15）。
+            guard let cmd = Regimes.activeCommander(r, nation: id, enemy: nil), let cp = People.person(r, cmd.personId) else {
+                return (false, "该国当前暂无在阵统帅可敕封。")
+            }
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, 200)
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            let beforeMil = Int((cp.base.military.optionalNumber ?? 50).rounded())
+            let afterMil = min(100, beforeMil + 10)
+            cp.base.military = JS(Double(afterMil))
+            let curTraits = cp.traits.isNull ? [String]() : cp.traits.asArray.compactMap(\.optionalString)
+            if !curTraits.contains("BattleHardened") {
+                if cp.traits.isNull { cp.traits = .array() }
+                cp.traits.push(JS("BattleHardened"))
+            }
+            for a in r.world.armies.asArray where a.nationId.optionalString == id && a.troops.asNumber > 0 && a.status.asString != "destroyed" {
+                a.morale = JS(min(100, (a.morale.optionalNumber ?? 60) + 15))
+            }
+            Government.refreshLeaderCombat(r)
+            markDecreeCooldown()
+            People.announce(r, kind: "event", text: "\(stateName)敕封名将\(cmd.name)节钺",
+                            reason: "御赐金印节钺、加封\(cmd.roleTitle)\(cmd.name)：武略由 \(beforeMil) 跃升至 \(afterMil) 并获「越战越勇」，全军士气 +15。",
+                            nations: [id], province: nil)
+            return (true, "已敕封\(cmd.name)：武略升至 \(afterMil)，全军士气 +15！")
+
+        case "grandFeast":
+            // 大酺庆典：耗 200 金与民同乐，战败震荡减半、国运 +8、腐化 -5、全军士气 +10。
+            let gold = fin.isNull ? 0 : (fin.gold.optionalNumber ?? 0)
+            let cost = min(gold, 200)
+            if !fin.isNull, cost > 0 { fin.gold = JS(max(0, gold - cost)) }
+            if !r.regimes.defeatShock.isNull, let sh = r.regimes.defeatShock[id].optionalNumber {
+                r.regimes.defeatShock[id] = JS(sh * 0.5)
+            }
+            Finance.setCorruption(r, id, max(0, Finance.corruption(r, id) - 5))
+            if !destinyRow.isNull { destinyRow.destiny = JS(min(100, (destinyRow.destiny.optionalNumber ?? 50) + 8)) }
+            for a in r.world.armies.asArray where a.nationId.optionalString == id && a.troops.asNumber > 0 && a.status.asString != "destroyed" {
+                a.morale = JS(min(100, (a.morale.optionalNumber ?? 60) + 10))
+            }
+            markDecreeCooldown()
+            People.announce(r, kind: "culture", text: "\(stateName)敕赐大酺、举国同庆",
+                            reason: "拨资 \(Int(cost)) 金大宴群臣、赐民酺饮：战败震荡减半，国运 +8，腐化 −5，三军士气 +10。",
+                            nations: [id], province: nil)
+            return (true, "大酺庆典完成：国运 +8，腐化 −5，战败震荡减半。")
 
         case let k where k.hasPrefix("strategy:"):
             // 唯一互斥大战略方案（切换时自动清空其他战略遗留的独立专项制度，绝不允许逐个点击无限叠加，且带 180 日转轨冷却）

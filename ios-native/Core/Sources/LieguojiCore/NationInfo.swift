@@ -274,7 +274,7 @@ extension NativeEngine {
             let nowDayInfo = r.world.day.asInt
             let stratUntil = (!nb.isNull ? nb.strategyCooldownUntil.optionalNumber.map(Int.init) : nil) ?? 0
             o.strategyCooldown = JS(max(0, stratUntil - nowDayInfo))
-            var cdMap = JS.object()
+            let cdMap = JS.object()
             if !nb.isNull, !nb.decreeCooldowns.isNull {
                 for (k, v) in nb.decreeCooldowns.objectEntries {
                     let rem = max(0, Int((v.optionalNumber ?? 0).rounded()) - nowDayInfo)
@@ -282,6 +282,7 @@ extension NativeEngine {
                 }
             }
             o.decreeCooldowns = cdMap
+            o.taxPolicy = JS(Finance.policy(r, id).key)
             let heldIndep = Regimes.heldReforms(r, id).filter { Regimes.independentReformIds.contains($0.id) }.count
             o.reformSlotsUsed = JS(heldIndep)
             o.reformSlotsMax = JS(Regimes.maxIndependentReforms(r, id))

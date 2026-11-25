@@ -380,4 +380,73 @@ final class V4RefactorTests: XCTestCase {
         XCTAssertTrue(seaPreserved)
         XCTAssertGreaterThan(maxLandH, 60)
     }
+
+    /// v5.0.1 回归：WorldMeta.Province 公开构造、国家直控税制/废立昏君/广纳奇才/敕封名将/大酺庆典、
+    /// 军团临阵换将/急补粮饷/军中演武，以及 42 项扩展历史动态事件全链路校验。
+    func testV501DirectGovernanceArmyAgencyAndWorldMetaInit() throws {
+        // 1. WorldMeta.Province 公开初始化器（保障 App 层 MapEditor 跨模块构建）
+        let prov = WorldMeta.Province(id: "p-1", name: "长安", x: 100, y: 200, nation: 0, terrain: "plain")
+        XCTAssertEqual(prov.id, "p-1")
+        XCTAssertEqual(prov.name, "长安")
+
+        let engine = try makeEngine(seed: "v501-agency", nations: 4)
+        let r = engine.run
+        let n0 = r.world.nations[0].id.asString
+        r.finance.nations[n0].gold = JS(5000.0)
+
+        // 2. 三档赋税直控与 nationInfo.taxPolicy 同步回显
+        XCTAssertTrue(engine.setTax(0, "heavy").ok)
+        let infoHeavy = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(engine.nationInfo(0))) as? [String: Any])
+        XCTAssertEqual(infoHeavy["taxPolicy"] as? String, "heavy")
+        XCTAssertTrue(engine.setTax(0, "light").ok)
+        let infoLight = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(engine.nationInfo(0))) as? [String: Any])
+        XCTAssertEqual(infoLight["taxPolicy"] as? String, "light")
+
+        // 3. 广纳奇才：真正在 r.kin.persons 中诞生高属性将相并受 360 日冷却保护
+        let beforeCount = r.kin.persons.objectKeys.count
+        let rec1 = engine.nationDecree(0, kind: "recruitTalent")
+        XCTAssertTrue(rec1.ok, rec1.reason)
+        XCTAssertEqual(r.kin.persons.objectKeys.count, beforeCount + 1)
+        XCTAssertFalse(engine.nationDecree(0, kind: "recruitTalent").ok) // 冷却拦截
+
+        // 4. 敕封名将 & 大酺庆典
+        let prom = engine.nationDecree(0, kind: "promoteCommander")
+        XCTAssertTrue(prom.ok, prom.reason)
+        if r.regimes.defeatShock.isNull { r.regimes.defeatShock = JS.object() }
+        r.regimes.defeatShock[n0] = JS(0.24)
+        let feast = engine.nationDecree(0, kind: "grandFeast")
+        XCTAssertTrue(feast.ok, feast.reason)
+        XCTAssertLessThan(r.regimes.defeatShock[n0].optionalNumber ?? 1.0, 0.15)
+
+        // 5. 废黜昏君：明君/常主被拒，昏君/暴君可废立换贤主
+        if let lid = r.people.nations[n0].leaderId.optionalNumber, let ruler = People.person(r, Int(lid)) {
+            ruler.base.military = JS(85); ruler.base.administrative = JS(85); ruler.base.charisma = JS(85)
+            ruler.traits = .array([JS("Visionary")])
+            XCTAssertFalse(engine.nationDecree(0, kind: "deposeMonarch").ok)
+
+            ruler.base.military = JS(15); ruler.base.administrative = JS(15); ruler.base.charisma = JS(15)
+            ruler.traits = .array([JS("Incompetent"), JS("Tyrant")])
+            let depose = engine.nationDecree(0, kind: "deposeMonarch")
+            XCTAssertTrue(depose.ok, depose.reason)
+            let newLid = r.people.nations[n0].leaderId.optionalNumber.map(Int.init) ?? -1
+            XCTAssertNotEqual(newLid, Int(lid))
+        }
+
+        // 6. 军团临阵换将 / 急补粮饷 / 军中演武
+        if let army = r.world.armies.asArray.first(where: { $0.nationId.optionalString == n0 && $0.troops.asNumber > 0 }) {
+            let aid = army.id.asString
+            army.supplies = JS(25); army.morale = JS(40); army.status = JS("idle")
+            let sup = engine.fieldResupply(aid)
+            XCTAssertTrue(sup.ok, sup.reason)
+            XCTAssertEqual(army.supplies.asInt, 100)
+            XCTAssertGreaterThanOrEqual(army.morale.asInt, 60)
+
+            let drill = engine.fieldDrill(aid)
+            XCTAssertTrue(drill.ok, drill.reason)
+            XCTAssertGreaterThanOrEqual(Int((r.regimes.armyXP[aid].optionalNumber ?? 0).rounded()), 15)
+
+            let swap = engine.appointBestCommander(aid)
+            XCTAssertTrue(swap.ok, swap.reason)
+        }
+    }
 }

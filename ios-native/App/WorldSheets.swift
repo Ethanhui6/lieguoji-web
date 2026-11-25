@@ -236,71 +236,13 @@ struct MilitarySheet: View {
                             StatTile(label: "海港/封锁", value: "\((state.ports ?? []).count)/\(blockadedPorts)", warn: blockadedPorts > 0),
                             StatTile(label: "海战/船坞", value: "\(seaFights)/\((state.yards ?? []).count)", warn: seaFights > 0),
                         ])
-                        let fleetsByNation = Dictionary(grouping: activeFleets, by: \.nation)
-                        let navalNations = fleetsByNation.keys.filter { map.meta.nations.indices.contains($0) }
-                            .sorted { (fleetsByNation[$0]?.reduce(0) { $0 + $1.ships } ?? 0) > (fleetsByNation[$1]?.reduce(0) { $0 + $1.ships } ?? 0) }
-                        if let defaultNation = navalNations.first {
-                            let chosenNation = navalNations.contains(navyDoctrineNation) ? navyDoctrineNation : defaultNation
-                            let chosenFleets = fleetsByNation[chosenNation] ?? []
-                            SectionLabel("全军水师方略统调")
-                            Group2 {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    if navalNations.count > 1 {
-                                        ScrollView(.horizontal, showsIndicators: false) {
-                                            HStack(spacing: 6) {
-                                                ForEach(navalNations.prefix(8), id: \.self) { nid in
-                                                    let on = nid == chosenNation
-                                                    let shipCnt = (fleetsByNation[nid] ?? []).reduce(0) { $0 + $1.ships }
-                                                    Button {
-                                                        GameFeel.shared.tap()
-                                                        navyDoctrineNation = nid
-                                                    } label: {
-                                                        HStack(spacing: 5) {
-                                                            Circle().fill(Names.color(map.meta.nations[nid].color)).frame(width: 7, height: 7)
-                                                            Text("\(map.meta.nations[nid].name) \(shipCnt)艘")
-                                                                .font(Theme.caption)
-                                                                .foregroundStyle(on ? Theme.paperLight : Theme.ink)
-                                                        }
-                                                        .padding(.horizontal, 10).padding(.vertical, 5)
-                                                        .background(on ? Theme.seal : Theme.wash.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                                        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.65))
-                                                    }.buttonStyle(.plain)
-                                                }
-                                            }
-                                        }
-                                    }
-                                    HStack(spacing: 6) {
-                                        ForEach(MaritimeWarfare.FleetMission.allCases, id: \.rawValue) { m in
-                                            let shortTitle: String = {
-                                                switch m {
-                                                case .patrol: return "巡弋"
-                                                case .escort: return "护航"
-                                                case .blockade: return "封锁"
-                                                case .raid: return "破交"
-                                                case .repair: return "修整"
-                                                }
-                                            }()
-                                            let allOn = !chosenFleets.isEmpty && chosenFleets.allSatisfy { ($0.mission ?? "patrol") == m.rawValue }
-                                            Button {
-                                                Task {
-                                                    let err = await model.setNationNavalDoctrine(nation: chosenNation, mission: m.rawValue)
-                                                    released = err ?? "\(map.meta.nations[chosenNation].name)全水师已奉行「\(m.label)」"
-                                                }
-                                            } label: {
-                                                Text(shortTitle)
-                                                    .font(Theme.caption)
-                                                    .foregroundStyle(allOn ? Theme.paperLight : Theme.ink)
-                                                    .frame(maxWidth: .infinity).padding(.vertical, 7)
-                                                    .background(allOn ? Theme.seal : Theme.wash.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(allOn ? Color.clear : Theme.hairline, lineWidth: 0.65))
-                                            }.buttonStyle(PressStyle())
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 12).padding(.vertical, 10)
-                            }
-                            .padding(.horizontal, 16)
-                        }
+                        NavalDoctrineCard(
+                            model: model,
+                            map: map,
+                            activeFleets: activeFleets,
+                            selectedNation: $navyDoctrineNation,
+                            onMessage: { released = $0 }
+                        )
                         if let sbs = state.seaBattles, !sbs.isEmpty {
                             SectionLabel("当前海上会战（\(sbs.count) 处交火海域）")
                             Group2 {
@@ -386,6 +328,98 @@ struct MilitarySheet: View {
             }
             .task(id: state.day / 30) { generals = await model.generals() }
         }
+    }
+}
+
+private struct NavalDoctrineCard: View {
+    @ObservedObject var model: GameModel
+    let map: WorldMap
+    let activeFleets: [GameState.Fleet]
+    @Binding var selectedNation: Int
+    let onMessage: (String) -> Void
+
+    var body: some View {
+        let grouped = Dictionary(grouping: activeFleets, by: \.nation)
+        let nations = grouped.keys
+            .filter { map.meta.nations.indices.contains($0) }
+            .sorted { shipTotal(grouped[$0]) > shipTotal(grouped[$1]) }
+        if let first = nations.first {
+            let chosen = nations.contains(selectedNation) ? selectedNation : first
+            let fleets = grouped[chosen] ?? []
+            VStack(alignment: .leading, spacing: 10) {
+                SectionLabel("全军水师方略统调")
+                Group2 {
+                    VStack(alignment: .leading, spacing: 10) {
+                        if nations.count > 1 {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 6) {
+                                    ForEach(Array(nations.prefix(8)), id: \.self) { nid in
+                                        nationChip(nid: nid, chosen: chosen, ships: shipTotal(grouped[nid]))
+                                    }
+                                }
+                            }
+                        }
+                        HStack(spacing: 6) {
+                            ForEach(MaritimeWarfare.FleetMission.allCases, id: \.rawValue) { m in
+                                missionChip(m, chosen: chosen, fleets: fleets)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 10)
+                }
+                .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    private func shipTotal(_ list: [GameState.Fleet]?) -> Int {
+        (list ?? []).reduce(0) { $0 + $1.ships }
+    }
+
+    private func nationChip(nid: Int, chosen: Int, ships: Int) -> some View {
+        let on = nid == chosen
+        let meta = map.meta.nations[nid]
+        let label = "\(meta.name) \(ships)艘"
+        return Button {
+            GameFeel.shared.tap()
+            selectedNation = nid
+        } label: {
+            HStack(spacing: 5) {
+                Circle().fill(Names.color(meta.color)).frame(width: 7, height: 7)
+                Text(label).font(Theme.caption).foregroundStyle(on ? Theme.paperLight : Theme.ink)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(on ? Theme.seal : Theme.wash.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(on ? Color.clear : Theme.hairline, lineWidth: 0.65))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func missionChip(_ m: MaritimeWarfare.FleetMission, chosen: Int, fleets: [GameState.Fleet]) -> some View {
+        let shortTitle: String
+        switch m {
+        case .patrol: shortTitle = "巡弋"
+        case .escort: shortTitle = "护航"
+        case .blockade: shortTitle = "封锁"
+        case .raid: shortTitle = "破交"
+        case .repair: shortTitle = "修整"
+        }
+        let allOn = !fleets.isEmpty && fleets.allSatisfy { ($0.mission ?? "patrol") == m.rawValue }
+        let name = map.meta.nations.indices.contains(chosen) ? map.meta.nations[chosen].name : "本国"
+        return Button {
+            Task {
+                let err = await model.setNationNavalDoctrine(nation: chosen, mission: m.rawValue)
+                onMessage(err ?? "\(name)全水师已奉行「\(m.label)」")
+            }
+        } label: {
+            Text(shortTitle)
+                .font(Theme.caption)
+                .foregroundStyle(allOn ? Theme.paperLight : Theme.ink)
+                .frame(maxWidth: .infinity).padding(.vertical, 7)
+                .background(allOn ? Theme.seal : Theme.wash.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(allOn ? Color.clear : Theme.hairline, lineWidth: 0.65))
+        }
+        .buttonStyle(PressStyle())
     }
 }
 

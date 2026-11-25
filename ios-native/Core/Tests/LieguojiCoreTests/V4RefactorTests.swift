@@ -240,7 +240,7 @@ final class V4RefactorTests: XCTestCase {
             let nationId = first.nationId.asString
             let nationIdx = r.world.nations.asArray.firstIndex { $0.id.asString == nationId } ?? 0
             let baseCap = MaritimeWarfare.seaTransportCapacity(r, nation: nationId)
-            _ = engine.setWorldRule("seaTransport", percent: 250)
+            _ = engine.setWorldRule("seaTransport", value: 250)
             let boostedCap = MaritimeWarfare.seaTransportCapacity(r, nation: nationId)
             if baseCap > 0 {
                 XCTAssertGreaterThan(boostedCap, baseCap)
@@ -263,7 +263,7 @@ final class V4RefactorTests: XCTestCase {
             }
 
             // 4. 调高水师规模规则后扩编引擎正常放大编队，无越界无崩溃
-            _ = engine.setWorldRule("navyScale", percent: 250)
+            _ = engine.setWorldRule("navyScale", value: 250)
             let beforeCount = Naval.fleets(r).filter { $0.status.asString != "lost" }.count
             Shipyards.expandNavies(r)
             let afterCount = Naval.fleets(r).filter { $0.status.asString != "lost" }.count

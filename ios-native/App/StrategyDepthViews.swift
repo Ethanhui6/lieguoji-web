@@ -486,33 +486,7 @@ struct FleetShipyardPanel: View {
                     .font(Theme.caption).foregroundStyle(Theme.ink2)
                 HStack(spacing: 6) {
                     ForEach(MaritimeWarfare.FleetMission.allCases, id: \.rawValue) { m in
-                        let shortTitle: String = {
-                            switch m {
-                            case .patrol: return "巡弋"
-                            case .escort: return "护航"
-                            case .blockade: return "封锁"
-                            case .raid: return "破交"
-                            case .repair: return "修整"
-                            }
-                        }()
-                        let isAllOn = !nationFleets.isEmpty && nationFleets.allSatisfy { ($0.mission ?? "patrol") == m.rawValue }
-                        Button {
-                            guard !busy else { return }
-                            busy = true
-                            Task {
-                                let err = await model.setNationNavalDoctrine(nation: fleet.nation, mission: m.rawValue)
-                                onMessage(err ?? "本国全水师已统一奉行「\(m.label)」方略")
-                                busy = false
-                            }
-                        } label: {
-                            Text(shortTitle)
-                                .font(Theme.caption)
-                                .foregroundStyle(isAllOn ? Theme.paperLight : Theme.ink)
-                                .frame(maxWidth: .infinity).padding(.vertical, 7)
-                                .background(isAllOn ? Theme.seal : Theme.wash.opacity(0.65), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(isAllOn ? Color.clear : Theme.hairline, lineWidth: 0.7))
-                        }
-                        .buttonStyle(PressStyle()).disabled(busy)
+                        doctrineChip(m, nationFleets: nationFleets)
                     }
                 }
             }
@@ -595,6 +569,35 @@ struct FleetShipyardPanel: View {
             .padding(14)
         }
         .padding(.horizontal, Theme.Layout.pageInset)
+    }
+
+    private func doctrineChip(_ m: MaritimeWarfare.FleetMission, nationFleets: [GameState.Fleet]) -> some View {
+        let shortTitle: String
+        switch m {
+        case .patrol: shortTitle = "巡弋"
+        case .escort: shortTitle = "护航"
+        case .blockade: shortTitle = "封锁"
+        case .raid: shortTitle = "破交"
+        case .repair: shortTitle = "修整"
+        }
+        let isAllOn = !nationFleets.isEmpty && nationFleets.allSatisfy { ($0.mission ?? "patrol") == m.rawValue }
+        return Button {
+            guard !busy else { return }
+            busy = true
+            Task {
+                let err = await model.setNationNavalDoctrine(nation: fleet.nation, mission: m.rawValue)
+                onMessage(err ?? "本国全水师已统一奉行「\(m.label)」方略")
+                busy = false
+            }
+        } label: {
+            Text(shortTitle)
+                .font(Theme.caption)
+                .foregroundStyle(isAllOn ? Theme.paperLight : Theme.ink)
+                .frame(maxWidth: .infinity).padding(.vertical, 7)
+                .background(isAllOn ? Theme.seal : Theme.wash.opacity(0.65), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(isAllOn ? Color.clear : Theme.hairline, lineWidth: 0.7))
+        }
+        .buttonStyle(PressStyle()).disabled(busy)
     }
 
     private func miniShipCounter(label: String, count: Binding<Int>, others: Int) -> some View {

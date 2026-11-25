@@ -1265,7 +1265,7 @@ private struct GameHeraldHost: View {
     var body: some View {
         ZStack(alignment: .top) {
             if hudVisible, !panelOpen, !model.pageOpen, !viewsOpen, controller.play.showHeralds, let h = model.herald, let map = model.map {
-                HeraldBanner(herald: h, map: map, playVideo: model.speed <= 4, onTap: {
+                HeraldBanner(herald: h, map: map, playVideo: false, onTap: {
                     guard model.herald?.id == h.id else { return }
                     if let map = model.map, let n = h.nations.first, map.meta.nations.indices.contains(n) {
                         let cap = map.meta.nations[n].capital
